@@ -1,0 +1,88 @@
+# Global Git Ignore for GameLink
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor/IDE
+.idea/
+.vscode/
+*.code-workspace
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Environment and local config (do not commit secrets)
+.env
+.env.*
+!.env.example
+.envrc
+.npmrc
+
+# Caches
+.cache/
+**/.eslintcache
+**/.turbo
+**/.parcel-cache
+
+# Claude/AI tool local files
+.claude/
+
+# Go build/test artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+*.coverprofile
+coverage.out
+cover.out
+profile.out
+
+# Go local caches (do not commit)
+backend/.gocache/
+backend/.modcache/
+backend/.gopath/
+.golangci-cache/
+
+# Go build output (conventional)
+backend/bin/
+backend/build/
+backend/dist/
+
+# Runtime data and local DBs
+var/
+tmp/
+temp/
+backend/var/*.db
+backend/var/*.sqlite
+backend/var/*.sqlite3
+backend/var/*.db-shm
+backend/var/*.db-wal
+backend/var/*.log
+
+# Node/Frontend
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+frontend/build/
+**/*.tsbuildinfo
+frontend/.vite/
+frontend/.cache/
+
+# Test artifacts and reports
+coverage/
+reports/
+junit.xml
+
