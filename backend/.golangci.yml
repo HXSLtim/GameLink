@@ -1,0 +1,63 @@
+run:
+  timeout: 5m
+  tests: true
+
+linters-settings:
+  gocyclo:
+    min-complexity: 15
+  gocritic:
+    disabled-checks:
+      - ifElseChain
+  revive:
+    severity: warning
+    rules:
+      - name: exported
+      - name: blank-imports
+      - name: context-as-argument
+      - name: errorf
+      - name: error-naming
+      - name: indent-error-flow
+      - name: increment-decrement
+      - name: var-naming
+  misspell:
+    locale: US
+  dupl:
+    threshold: 150
+  gofmt:
+    simplify: true
+  goimports:
+    local-prefixes: gamelink
+
+linters:
+  disable-all: true
+  enable:
+    - govet
+    - gofmt
+    - goimports
+    - revive
+    - gocyclo
+    - gosimple
+    - ineffassign
+    - misspell
+    - staticcheck
+    - typecheck
+    - unused
+    - errcheck
+    - dupl
+
+issues:
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  exclude:
+    - 'error return value not checked.*(Close|Write|Stop|Flush)'
+  exclude-rules:
+    - path: internal/repository/gormrepo
+      linters:
+        - dupl
+    - path: internal/admin/helpers.go
+      linters:
+        - misspell
+    - path: internal/db/migrate.go
+      linters:
+        - misspell

@@ -1,0 +1,141 @@
+---
+globs: **/*.less,**/*.module.less
+description: CSS and styling standards
+---
+
+# Styling Standards
+
+## CSS Modules
+Always use CSS Modules for component styles:
+
+```typescript
+// UserProfile.tsx
+import styles from './UserProfile.module.less';
+
+export const UserProfile = () => {
+  return (
+    <div className={styles.container}>
+      <h1 className={styles.title}>Profile</h1>
+      <img src="..." className={styles.avatar} />
+    </div>
+  );
+};
+```
+
+```less
+// UserProfile.module.less
+.container {
+  padding: 20px;
+  background: #fff;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+}
+```
+
+## Class Naming (BEM-style recommended)
+```less
+.card {
+  // Block
+  &__header {
+    // Element
+  }
+
+  &__body {
+    // Element
+  }
+
+  &--featured {
+    // Modifier
+  }
+}
+```
+
+## Arco Design Integration
+Use Arco Design's design tokens:
+
+```less
+@import '@arco-design/web-react/es/style/index.less';
+
+.customButton {
+  color: var(--color-primary);
+  background: var(--color-bg-2);
+  border-radius: var(--border-radius-small);
+  padding: var(--spacing-2) var(--spacing-4);
+}
+```
+
+## Responsive Design
+Use mobile-first approach:
+
+```less
+.container {
+  padding: 10px;
+
+  @media (min-width: 768px) {
+    padding: 20px;
+  }
+
+  @media (min-width: 1024px) {
+    padding: 30px;
+  }
+}
+```
+
+## Avoid Inline Styles
+❌ Avoid:
+```typescript
+<div style={{ padding: '20px', color: 'red' }}>Content</div>
+```
+
+✅ Prefer CSS Modules:
+```typescript
+<div className={styles.content}>Content</div>
+```
+
+Only use inline styles for dynamic values:
+```typescript
+<div style={{ width: `${percentage}%` }}>Progress</div>
+```
+
+## Style Organization
+- Global styles: `src/styles/global.less`
+- Component styles: `ComponentName.module.less` (in same directory as component)
+- Theme customization: Use Arco Design theme configuration
+
+## LESS Features
+Leverage LESS features:
+
+```less
+// Variables
+@primary-color: #1890ff;
+@border-radius: 4px;
+
+// Nesting
+.card {
+  border-radius: @border-radius;
+  
+  .header {
+    background: @primary-color;
+  }
+}
+
+// Mixins
+.flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.button {
+  .flex-center();
+}
+```

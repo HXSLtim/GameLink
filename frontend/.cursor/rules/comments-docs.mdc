@@ -1,0 +1,123 @@
+---
+description: Code comments and documentation standards
+---
+
+# Comments & Documentation Standards
+
+## JSDoc for Functions
+Document complex functions with JSDoc:
+
+```typescript
+/**
+ * Calculate the total price of items in cart including tax
+ * 
+ * @param items - Array of cart items
+ * @param taxRate - Tax rate as decimal (0-1)
+ * @returns Total price including tax
+ * 
+ * @example
+ * ```typescript
+ * const total = calculateCartTotal([{ price: 100 }, { price: 200 }], 0.1);
+ * // Returns: 330
+ * ```
+ */
+export function calculateCartTotal(
+  items: CartItem[],
+  taxRate: number
+): number {
+  const subtotal = items.reduce((sum, item) => sum + item.price, 0);
+  return subtotal * (1 + taxRate);
+}
+```
+
+## Component Documentation
+```typescript
+/**
+ * User profile card component
+ * 
+ * Displays user information with edit functionality
+ * 
+ * @component
+ * @example
+ * ```tsx
+ * <UserCard
+ *   user={user}
+ *   onEdit={(id) => console.log('Edit user:', id)}
+ * />
+ * ```
+ */
+export const UserCard: React.FC<UserCardProps> = ({ user, onEdit }) => {
+  // Implementation
+};
+```
+
+## Interface/Type Documentation
+```typescript
+/**
+ * User information
+ */
+interface User {
+  /** Unique user identifier */
+  id: string;
+  
+  /** User's display name */
+  name: string;
+  
+  /** User's email address */
+  email: string;
+  
+  /** User role in the system */
+  role: UserRole;
+  
+  /** Account creation timestamp */
+  createdAt: Date;
+}
+```
+
+## Inline Comments
+Use sparingly and only when necessary:
+
+✅ Good - explains WHY:
+```typescript
+// Debounce search to avoid excessive API calls
+const debouncedSearch = useDebounce(searchTerm, 300);
+
+// TODO: Add caching to improve performance
+const data = await fetchData();
+
+// FIXME: Handle edge case when array is empty
+const firstItem = items[0];
+```
+
+❌ Bad - states the obvious:
+```typescript
+// Set loading to true
+setIsLoading(true);
+
+// Loop through items
+items.forEach(item => {});
+
+// This is a variable
+const count = 10;
+```
+
+## File Header Comments
+Add file headers for complex modules:
+
+```typescript
+/**
+ * User Authentication Service
+ * 
+ * @module services/auth
+ * @description Handles user authentication, token management, and session persistence
+ */
+```
+
+## Comment Guidelines
+- Write self-documenting code (good naming > comments)
+- Comment WHY, not WHAT
+- Keep comments up-to-date with code changes
+- Use TODO/FIXME/NOTE for annotations
+- Remove commented-out code before committing
+- Use JSDoc for public APIs
+- Explain complex algorithms or business logic

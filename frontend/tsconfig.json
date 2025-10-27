@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": "./src",
+    "jsx": "react-jsx",
+    "resolveJsonModule": true,
+    "types": ["vite/client", "vitest/globals", "@testing-library/jest-dom", "node"]
+  },
+  "include": ["src", "vite.config.ts"]
+}

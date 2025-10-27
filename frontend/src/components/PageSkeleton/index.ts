@@ -1,0 +1,2 @@
+export { PageSkeleton } from './PageSkeleton';
+

@@ -1,0 +1,130 @@
+---
+globs: src/api/**,src/services/**
+description: API and service layer patterns
+---
+
+# API & Service Layer Standards
+
+## API Client Pattern
+Use a centralized API client with typed responses:
+
+```typescript
+// api/client.ts
+interface ApiResponse<T> {
+  data: T;
+  message: string;
+  status: number;
+}
+
+class ApiClient {
+  async get<T>(endpoint: string): Promise<ApiResponse<T>> {
+    // implementation
+  }
+  
+  async post<T>(endpoint: string, data: unknown): Promise<ApiResponse<T>> {
+    // implementation
+  }
+  
+  async put<T>(endpoint: string, data: unknown): Promise<ApiResponse<T>> {
+    // implementation
+  }
+  
+  async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
+    // implementation
+  }
+}
+
+export const apiClient = new ApiClient(API_BASE_URL);
+```
+
+## API Module Organization
+Organize API calls by resource/domain:
+
+```typescript
+// api/user.ts
+import { apiClient } from './client';
+import type { User, UserCreateDto, UserUpdateDto } from '../types/user.types';
+
+export const userApi = {
+  getUsers: () => apiClient.get<User[]>('/users'),
+  
+  getUserById: (id: string) => apiClient.get<User>(`/users/${id}`),
+  
+  createUser: (data: UserCreateDto) => apiClient.post<User>('/users', data),
+  
+  updateUser: (id: string, data: UserUpdateDto) => 
+    apiClient.put<User>(`/users/${id}`, data),
+  
+  deleteUser: (id: string) => apiClient.delete(`/users/${id}`),
+};
+```
+
+## Custom Fetch Hook Pattern
+```typescript
+export const useFetch = <T>(url: string) => {
+  const [data, setData] = useState<T | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const response = await apiClient.get<T>(url);
+        setData(response.data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [url]);
+
+  return { data, isLoading, error };
+};
+```
+
+## Error Handling
+Always handle errors consistently:
+
+```typescript
+try {
+  const data = await apiClient.get<User>('/users/1');
+  setUser(data.data);
+} catch (error) {
+  if (error instanceof ApiError) {
+    setError(error.message);
+  } else if (error instanceof Error) {
+    setError(error.message);
+  } else {
+    setError('An unknown error occurred');
+  }
+}
+```
+
+## Type Definitions
+Keep API types in separate files:
+
+```typescript
+// types/api.types.ts
+export interface ApiResponse<T> {
+  data: T;
+  message: string;
+  status: number;
+}
+
+export interface ApiError {
+  message: string;
+  code: string;
+  details?: Record<string, unknown>;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+```

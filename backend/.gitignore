@@ -1,0 +1,23 @@
+# Go build caches
+.gocache/
+.gopath/
+.modcache/
+
+# Binaries
+user-service
+*.exe
+*.out
+
+# Databases and local data
+var/
+*.db
+
+# Coverage
+coverage.out
+
+# IDE/editor
+.idea/
+.vscode/
+*.swp
+*.swo
+

@@ -1,0 +1,17 @@
+# 生产环境配置文件
+# 用于生产环境部署
+
+server:
+  port: "8080"
+  enable_swagger: false
+
+database:
+  type: "postgres"
+  dsn: "host=localhost user=gamelink password=your_password dbname=gamelink port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+
+cache:
+  type: "redis"
+  redis:
+    addr: "127.0.0.1:6379"
+    password: ""
+    db: 0

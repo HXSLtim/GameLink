@@ -1,0 +1,104 @@
+---
+alwaysApply: false
+description: Git commit message standards and branch naming
+---
+
+# Git Commit & Branch Standards
+
+## Commit Message Format
+Follow Conventional Commits specification:
+
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+### Commit Types
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation changes
+- `style`: Code formatting (no functional changes)
+- `refactor`: Code refactoring
+- `perf`: Performance improvements
+- `test`: Adding or updating tests
+- `chore`: Build process or tooling changes
+- `ci`: CI/CD configuration changes
+
+### Examples
+
+✅ Good commits:
+```
+feat(auth): add user login functionality
+
+Implemented JWT-based user authentication system
+- Add login form component
+- Implement API request and response handling
+- Add token storage and validation
+
+Closes #123
+```
+
+```
+fix(user): fix user list pagination issue
+
+Reset to first page when page number exceeds range
+```
+
+```
+refactor(api): optimize API error handling
+
+Centralize error handling logic for better maintainability
+```
+
+```
+perf(list): add virtualization for long lists
+
+Use react-window to improve rendering performance for lists with 1000+ items
+```
+
+❌ Bad commits:
+```
+update code
+fix bug
+add feature
+WIP
+changes
+```
+
+## Branch Naming
+```
+main              - Production branch
+develop           - Development branch
+feature/*         - Feature branches (e.g., feature/user-login)
+bugfix/*          - Bug fix branches (e.g., bugfix/fix-pagination)
+hotfix/*          - Emergency fixes
+release/*         - Release branches
+```
+
+### Examples
+```
+feature/user-authentication
+feature/game-list-view
+bugfix/fix-login-validation
+hotfix/security-patch
+```
+
+## Commit Best Practices
+- Write clear, descriptive commit messages
+- Keep commits atomic (one logical change per commit)
+- Reference issue numbers when applicable
+- Use imperative mood ("add" not "added" or "adds")
+- Separate subject from body with a blank line
+- Limit subject line to 72 characters
+- Wrap body at 100 characters
+
+## Pre-commit Checklist
+Before committing:
+1. Run `npm run lint` to check code quality
+2. Run `npm run typecheck` to verify TypeScript
+3. Run `npm run test` to ensure tests pass
+4. Run `npm run format` to format code
+5. Review changes carefully

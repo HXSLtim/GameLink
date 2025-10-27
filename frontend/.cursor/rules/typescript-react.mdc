@@ -1,0 +1,112 @@
+---
+globs: *.tsx,*.ts
+description: TypeScript and React component coding standards
+---
+
+# TypeScript & React Standards
+
+## Naming Conventions
+- Component files: `PascalCase.tsx` (e.g., `UserProfile.tsx`)
+- Utility files: `camelCase.ts` (e.g., `formatDate.ts`)
+- Constants: `UPPER_SNAKE_CASE` (e.g., `API_BASE_URL`)
+- Boolean variables: use `is`, `has`, `should` prefix (e.g., `isLoading`, `hasPermission`)
+- Event handlers: use `handle` prefix (e.g., `handleClick`, `handleSubmit`)
+- Custom hooks: must start with `use` (e.g., `useAuth`, `useFetch`)
+
+## TypeScript Rules
+- **Always** use `interface` for object types (use `type` only for unions/intersections)
+- **Never** use `any` type - use `unknown` or proper types
+- **Always** explicitly define function parameters and return types
+- **Always** use `import type` when importing only types
+- Use descriptive type names without `I` prefix
+
+Example:
+```typescript
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+function fetchUser(id: string): Promise<User> {
+  // ...
+}
+```
+
+## React Component Structure
+Components must follow this order:
+1. Props destructuring
+2. Hooks (useState, useContext, useRef, etc.)
+3. Derived state and computed values (useMemo)
+4. Event handler functions (useCallback)
+5. Side effects (useEffect)
+6. Early returns (loading/error states)
+7. Main render
+
+Example:
+```typescript
+export const UserProfile: React.FC<UserProfileProps> = ({ userId, onEdit }) => {
+  // 1. Props destructuring (already done above)
+  
+  // 2. Hooks
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // 3. Derived state
+  const displayName = useMemo(() => {
+    return user ? `${user.firstName} ${user.lastName}` : '';
+  }, [user]);
+  
+  // 4. Event handlers
+  const handleEdit = useCallback(() => {
+    onEdit(userId);
+  }, [userId, onEdit]);
+  
+  // 5. Side effects
+  useEffect(() => {
+    fetchUserData(userId);
+  }, [userId]);
+  
+  // 6. Early returns
+  if (isLoading) return <Spinner />;
+  if (!user) return <ErrorMessage />;
+  
+  // 7. Main render
+  return <div>{displayName}</div>;
+};
+```
+
+## Component Props
+- Always define props interface
+- Use destructuring with default values
+- Mark optional props with `?`
+
+```typescript
+interface ButtonProps {
+  text: string;
+  onClick: () => void;
+  disabled?: boolean;
+  variant?: 'primary' | 'secondary';
+}
+
+export const Button: React.FC<ButtonProps> = ({
+  text,
+  onClick,
+  disabled = false,
+  variant = 'primary',
+}) => {
+  // ...
+};
+```
+
+## Performance Optimization
+- Use `useMemo` for expensive calculations
+- Use `useCallback` for event handlers passed to child components
+- Use `React.memo` for components that receive stable props
+- Use lazy loading for routes: `const Home = lazy(() => import('./pages/Home'))`
+
+## Hooks Rules
+- Always specify dependency arrays for useEffect
+- Clean up side effects in useEffect return function
+- Extract reusable logic into custom hooks
+- Custom hooks must start with `use`

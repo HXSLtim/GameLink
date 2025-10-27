@@ -1,0 +1,17 @@
+# 开发环境配置文件
+# 用于本地开发和测试
+
+server:
+  port: "8080"
+  enable_swagger: true
+
+database:
+  type: "sqlite"
+  dsn: "./var/dev.db"
+
+cache:
+  type: "memory"
+  redis:
+    addr: "127.0.0.1:6379"
+    password: ""
+    db: 0

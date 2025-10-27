@@ -1,0 +1,75 @@
+---
+alwaysApply: true
+---
+
+# GameLink Frontend Project Structure
+
+## Technology Stack
+- React 18.3+ with Hooks
+- TypeScript 5.6+
+- Vite 5.4+ (build tool)
+- Arco Design (UI library)
+- React Router 6.27+ (routing)
+- Vitest (testing)
+
+## Directory Structure
+```
+src/
+├── api/              # API request definitions
+├── components/       # Shared components
+├── contexts/         # React Context providers
+├── hooks/            # Custom hooks
+├── layouts/          # Page layout components
+├── pages/            # Page components
+├── services/         # Business logic services
+├── styles/           # Global styles
+├── types/            # Type definitions
+├── utils/            # Utility functions
+├── config.ts         # Configuration
+└── main.tsx          # Entry point
+```
+
+## Component Organization
+Each component should have its own directory:
+```
+ComponentName/
+├── ComponentName.tsx
+├── ComponentName.module.less
+├── ComponentName.test.tsx
+├── index.ts
+└── types.ts (optional)
+```
+
+The `index.ts` should export:
+```typescript
+export { ComponentName } from './ComponentName';
+export type { ComponentNameProps } from './ComponentName';
+```
+
+## Import Path Aliases
+- Use `baseUrl: "./src"` configured in tsconfig.json
+- Import from src root: `import { Button } from 'components/Button'`
+
+## File Naming Conventions
+- React components: `PascalCase.tsx`
+- Utilities/hooks: `camelCase.ts` or `camelCase.tsx`
+- Types: `descriptive.types.ts`
+- Styles: `ComponentName.module.less`
+- Tests: `ComponentName.test.tsx`
+
+## Code Formatting
+Project uses Prettier with these settings:
+- Single quotes
+- Semicolons required
+- Trailing commas
+- Max line width: 100 characters
+
+Always run `npm run format` before committing.
+
+## Key Files
+- Configuration: [config.ts](mdc:src/config.ts)
+- Entry point: [main.tsx](mdc:src/main.tsx)
+- Root component: [App.tsx](mdc:src/App.tsx)
+- ESLint config: [eslint.config.js](mdc:eslint.config.js)
+- TypeScript config: [tsconfig.json](mdc:tsconfig.json)
+- Vite config: [vite.config.ts](mdc:vite.config.ts)

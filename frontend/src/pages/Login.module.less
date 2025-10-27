@@ -1,0 +1,302 @@
+// 登录页面容器
+.loginPage {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+// 背景装饰
+.background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  z-index: 0;
+}
+
+// 渐变球体装饰
+.gradientOrb1,
+.gradientOrb2,
+.gradientOrb3 {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.3;
+  animation: float 20s ease-in-out infinite;
+}
+
+.gradientOrb1 {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(255, 107, 107, 0.8) 0%, transparent 70%);
+  top: -10%;
+  left: -10%;
+  animation-delay: 0s;
+}
+
+.gradientOrb2 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(78, 205, 196, 0.8) 0%, transparent 70%);
+  bottom: -15%;
+  right: -10%;
+  animation-delay: 7s;
+}
+
+.gradientOrb3 {
+  width: 350px;
+  height: 350px;
+  background: radial-gradient(circle, rgba(255, 195, 113, 0.8) 0%, transparent 70%);
+  top: 40%;
+  right: 20%;
+  animation-delay: 14s;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -30px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+}
+
+// 主容器
+.container {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 420px;
+  padding: 20px;
+  animation: slideUp 0.6s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Logo 和标题区域
+.header {
+  text-align: center;
+  margin-bottom: 32px;
+  animation: fadeIn 0.8s ease-out 0.2s both;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.logoContainer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 10px 40px rgba(102, 126, 234, 0.4);
+  animation: bounce 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.logo {
+  font-size: 40px;
+  color: #fff;
+}
+
+.title {
+  color: #fff;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.subtitle {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+}
+
+// 登录卡片
+.card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  padding: 40px;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.25);
+  }
+}
+
+// 表单选项（记住我 + 忘记密码）
+.formOptions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: -8px;
+}
+
+.forgotPassword {
+  font-size: 14px;
+  transition: color 0.3s ease;
+
+  &:hover {
+    color: var(--color-primary-light-3);
+  }
+}
+
+// 登录按钮
+.loginButton {
+  height: 44px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(102, 126, 234, 0.4);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// 分割线
+.divider {
+  margin: 24px 0;
+  color: rgba(0, 0, 0, 0.4);
+  font-size: 12px;
+}
+
+// 开发环境提示
+.devInfo {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+
+.hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #4a5568;
+
+  strong {
+    color: #667eea;
+    font-weight: 600;
+  }
+}
+
+.hintIcon {
+  font-size: 16px;
+}
+
+// 页脚
+.footer {
+  text-align: center;
+  margin-top: 24px;
+  animation: fadeIn 1s ease-out 0.4s both;
+}
+
+.footerText {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+}
+
+// 响应式设计
+@media (max-width: 768px) {
+  .container {
+    max-width: 100%;
+    padding: 16px;
+  }
+
+  .card {
+    padding: 24px;
+  }
+
+  .header {
+    margin-bottom: 24px;
+  }
+
+  .logoContainer {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 16px;
+  }
+
+  .logo {
+    font-size: 32px;
+  }
+
+  .title {
+    font-size: 20px;
+  }
+
+  .gradientOrb1,
+  .gradientOrb2,
+  .gradientOrb3 {
+    width: 300px;
+    height: 300px;
+  }
+}
+
+@media (max-width: 480px) {
+  .card {
+    padding: 20px;
+  }
+
+  .formOptions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .forgotPassword {
+    margin-left: 0;
+  }
+}

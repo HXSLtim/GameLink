@@ -1,0 +1,100 @@
+---
+globs: **/*.test.ts,**/*.test.tsx,src/test/**
+description: Testing standards and patterns
+---
+
+# Testing Standards
+
+## Test File Naming
+- Component tests: `ComponentName.test.tsx`
+- Utility tests: `utilityName.test.ts`
+- Hook tests: `useHookName.test.tsx`
+
+## Component Testing Pattern
+```typescript
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { Button } from './Button';
+
+describe('Button', () => {
+  it('should render with text', () => {
+    render(<Button text="Click me" onClick={() => {}} />);
+    expect(screen.getByText('Click me')).toBeInTheDocument();
+  });
+
+  it('should call onClick when clicked', () => {
+    const handleClick = vi.fn();
+    render(<Button text="Click me" onClick={handleClick} />);
+    
+    fireEvent.click(screen.getByText('Click me'));
+    expect(handleClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('should be disabled when disabled prop is true', () => {
+    render(<Button text="Click me" onClick={() => {}} disabled />);
+    expect(screen.getByText('Click me')).toBeDisabled();
+  });
+});
+```
+
+## Hook Testing Pattern
+```typescript
+import { renderHook, waitFor } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
+import { useFetch } from './useFetch';
+
+describe('useFetch', () => {
+  it('should fetch data successfully', async () => {
+    const { result } = renderHook(() => useFetch<User>('/api/user/1'));
+
+    expect(result.current.isLoading).toBe(true);
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.data).toBeDefined();
+    expect(result.current.error).toBeNull();
+  });
+});
+```
+
+## Test Organization
+```typescript
+describe('ComponentName', () => {
+  // Group related tests
+  describe('rendering', () => {
+    it('should render correctly', () => {});
+    it('should render with props', () => {});
+  });
+
+  describe('interactions', () => {
+    it('should handle click events', () => {});
+    it('should handle form submission', () => {});
+  });
+
+  describe('edge cases', () => {
+    it('should handle empty data', () => {});
+    it('should handle errors', () => {});
+  });
+});
+```
+
+## Testing Best Practices
+- Test user behavior, not implementation details
+- Use `screen` queries from Testing Library
+- Prefer `getByRole` over `getByTestId`
+- Mock external dependencies (API calls, etc.)
+- Test accessibility (aria labels, roles)
+- Aim for >80% coverage
+
+## Coverage Goals
+- Statements: >80%
+- Branches: >75%
+- Functions: >80%
+- Lines: >80%
+
+Run tests with coverage:
+```bash
+npm run test -- --coverage
+```
