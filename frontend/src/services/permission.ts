@@ -9,6 +9,6 @@ export type Permission = {
 
 export const permissionService = {
   list(query?: PageQuery) {
-    return http.get<PageResult<Permission>>('/permissions', query as any);
+    return http.get<PageResult<Permission>>('/permissions', query);
   },
 };

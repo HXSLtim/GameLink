@@ -7,7 +7,8 @@ server:
 
 database:
   type: "postgres"
-  dsn: "host=localhost user=gamelink password=your_password dbname=gamelink port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+  # dsn intentionally left blank for production; set via env DB_DSN
+  dsn: ""
 
 cache:
   type: "redis"

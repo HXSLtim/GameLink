@@ -1,12 +1,13 @@
 package gormrepo
 
 import (
-	"context"
+    "context"
+    "strings"
 
-	"gorm.io/gorm"
+    "gorm.io/gorm"
 
-	"gamelink/internal/model"
-	"gamelink/internal/repository"
+    "gamelink/internal/model"
+    "gamelink/internal/repository"
 )
 
 // UserRepository 实现用户管理仓储。
@@ -47,6 +48,41 @@ func (r *UserRepository) ListPaged(ctx context.Context, page, pageSize int) ([]m
 		return nil, 0, err
 	}
 	return users, total, nil
+}
+
+// ListWithFilters returns a page of users with filters and the total count.
+func (r *UserRepository) ListWithFilters(ctx context.Context, opts repository.UserListOptions) ([]model.User, int64, error) {
+    page := repository.NormalizePage(opts.Page)
+    pageSize := repository.NormalizePageSize(opts.PageSize)
+    offset := (page - 1) * pageSize
+
+    q := r.db.WithContext(ctx).Model(&model.User{})
+    if len(opts.Roles) > 0 {
+        q = q.Where("role IN ?", opts.Roles)
+    }
+    if len(opts.Statuses) > 0 {
+        q = q.Where("status IN ?", opts.Statuses)
+    }
+    if opts.DateFrom != nil {
+        q = q.Where("created_at >= ?", *opts.DateFrom)
+    }
+    if opts.DateTo != nil {
+        q = q.Where("created_at <= ?", *opts.DateTo)
+    }
+    if kw := strings.TrimSpace(opts.Keyword); kw != "" {
+        like := "%" + kw + "%"
+        q = q.Where("name LIKE ? OR email LIKE ? OR phone LIKE ?", like, like, like)
+    }
+
+    var total int64
+    if err := q.Count(&total).Error; err != nil {
+        return nil, 0, err
+    }
+    var users []model.User
+    if err := q.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&users).Error; err != nil {
+        return nil, 0, err
+    }
+    return users, total, nil
 }
 
 // Get returns a user by id.

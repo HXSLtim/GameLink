@@ -1,2 +1,1 @@
-export { Permissions } from '../Permissions';
-
+export { PermissionList } from './PermissionList';

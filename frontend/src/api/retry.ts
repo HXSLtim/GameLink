@@ -101,10 +101,7 @@ function wait(ms: number): Promise<void> {
  * @param options 重试选项
  * @returns Promise<T>
  */
-export async function retryAsync<T>(
-  fn: () => Promise<T>,
-  options: RetryOptions = {},
-): Promise<T> {
+export async function retryAsync<T>(fn: () => Promise<T>, options: RetryOptions = {}): Promise<T> {
   const opts: Required<RetryOptions> = {
     ...DEFAULT_RETRY_OPTIONS,
     ...options,
@@ -157,38 +154,34 @@ export function createRetryFetch(
   options: RetryOptions = {},
 ): typeof fetch {
   return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-    return retryAsync(
-      () => fetchFn(input, init),
-      {
-        ...options,
-        shouldRetry: (error: unknown, attempt: number) => {
-          // 自定义重试逻辑
-          if (options.shouldRetry) {
-            return options.shouldRetry(error, attempt);
-          }
+    return retryAsync(() => fetchFn(input, init), {
+      ...options,
+      shouldRetry: (error: unknown, attempt: number) => {
+        // 自定义重试逻辑
+        if (options.shouldRetry) {
+          return options.shouldRetry(error, attempt);
+        }
 
-          // 网络错误
-          if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-            return true;
-          }
+        // 网络错误
+        if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+          return true;
+        }
 
-          // Response 对象
-          if (error instanceof Response) {
-            // 5xx 错误重试
-            return error.status >= 500 && error.status < 600;
-          }
+        // Response 对象
+        if (error instanceof Response) {
+          // 5xx 错误重试
+          return error.status >= 500 && error.status < 600;
+        }
 
-          return false;
-        },
-        onRetry: (error: unknown, attempt: number, delay: number) => {
-          console.warn(
-            `[Retry] Attempt ${attempt}/${options.maxRetries || 3} failed, retrying in ${delay}ms...`,
-            error,
-          );
-          options.onRetry?.(error, attempt, delay);
-        },
+        return false;
       },
-    );
+      onRetry: (error: unknown, attempt: number, delay: number) => {
+        console.warn(
+          `[Retry] Attempt ${attempt}/${options.maxRetries || 3} failed, retrying in ${delay}ms...`,
+          error,
+        );
+        options.onRetry?.(error, attempt, delay);
+      },
+    });
   };
 }
-

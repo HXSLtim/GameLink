@@ -1,0 +1,53 @@
+@import '../../styles/variables.less';
+
+.badgeWrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  transform: translate(50%, -50%);
+  transform-origin: 100% 0%;
+  z-index: 1;
+}
+
+.badgeStandalone {
+  display: inline-block;
+}
+
+.dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background-color: var(--bg-inverse);
+  border: 1px solid var(--bg-primary);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.count {
+  display: inline-block;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: var(--font-weight-semibold);
+  line-height: 20px;
+  text-align: center;
+  background-color: var(--bg-inverse);
+  color: var(--text-inverse);
+  border: 1px solid var(--bg-primary);
+  white-space: nowrap;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}

@@ -1,0 +1,128 @@
+@import '../../styles/variables.less';
+
+.sidebar {
+  width: 240px;
+  height: calc(100vh - 64px);
+  background-color: var(--bg-primary);
+  border-right: var(--border-width-base) solid var(--border-color);
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: width var(--duration-medium) var(--ease-out);
+  position: sticky;
+  top: 64px;
+
+  &.collapsed {
+    width: 64px;
+
+    .label {
+      opacity: 0;
+      width: 0;
+    }
+  }
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-base);
+  gap: var(--spacing-xs);
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-base);
+  padding: var(--spacing-base);
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  border: var(--border-width-base) solid transparent;
+  transition: all var(--duration-base) var(--ease-out);
+  position: relative;
+  white-space: nowrap;
+
+  &:hover {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color);
+    box-shadow: var(--shadow-xs);
+    transform: translate(-1px, -1px);
+  }
+
+  &:active {
+    transform: translate(0, 0);
+    box-shadow: none;
+  }
+
+  &.active {
+    background-color: var(--bg-inverse);
+    color: var(--text-inverse);
+    border-color: var(--border-color);
+    box-shadow: var(--shadow-sm);
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background-color: var(--text-inverse);
+    }
+  }
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+
+  svg {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.label {
+  flex: 1;
+  transition:
+    opacity var(--duration-base) var(--ease-out),
+    width var(--duration-base) var(--ease-out);
+  overflow: hidden;
+}
+
+// 滚动条样式
+.sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: var(--text-tertiary);
+  border-radius: 0;
+
+  &:hover {
+    background: var(--text-secondary);
+  }
+}
+
+// 响应式
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 64px;
+    z-index: var(--z-index-fixed);
+    box-shadow: var(--shadow-lg);
+
+    &.collapsed {
+      transform: translateX(-100%);
+    }
+  }
+}

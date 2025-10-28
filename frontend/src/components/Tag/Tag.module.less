@@ -1,0 +1,121 @@
+@import '../../styles/variables.less';
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 2px var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.bordered {
+  border: var(--border-width-base) solid;
+}
+
+.text {
+  display: inline-block;
+}
+
+.closeButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  opacity: 0.6;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+// 颜色主题
+.default {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+.success {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+  position: relative;
+
+  &::before {
+    content: '✓';
+    margin-right: 4px;
+    font-weight: bold;
+  }
+}
+
+.warning {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+  position: relative;
+
+  &::before {
+    content: '!';
+    margin-right: 4px;
+    font-weight: bold;
+  }
+}
+
+.error {
+  background-color: var(--bg-error);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+  position: relative;
+
+  &::before {
+    content: '✕';
+    margin-right: 4px;
+    font-weight: bold;
+  }
+}
+
+.info {
+  background-color: var(--bg-secondary);
+  color: var(--text-secondary);
+  border-color: var(--border-color);
+}
+
+.pending {
+  background-color: var(--bg-primary);
+  color: var(--text-secondary);
+  border-color: var(--border-color);
+  position: relative;
+
+  &::before {
+    content: '○';
+    margin-right: 4px;
+  }
+}
+
+.processing {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+  position: relative;
+
+  &::before {
+    content: '◐';
+    margin-right: 4px;
+    animation: rotate 1s linear infinite;
+  }
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

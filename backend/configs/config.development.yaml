@@ -7,7 +7,7 @@ server:
 
 database:
   type: "sqlite"
-  dsn: "./var/dev.db"
+  dsn: "file:./var/dev.db?mode=rwc&_pragma=busy_timeout(5000)&_pragma=foreign_keys(1)"
 
 cache:
   type: "memory"

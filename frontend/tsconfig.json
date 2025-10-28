@@ -8,6 +8,17 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "baseUrl": "./src",
+    "paths": {
+      "components": ["components/index.ts"],
+      "components/*": ["components/*"],
+      "pages/*": ["pages/*"],
+      "utils/*": ["utils/*"],
+      "hooks/*": ["hooks/*"],
+      "services/*": ["services/*"],
+      "types/*": ["types/*"],
+      "contexts/*": ["contexts/*"],
+      "styles/*": ["styles/*"]
+    },
     "jsx": "react-jsx",
     "resolveJsonModule": true,
     "types": ["vite/client", "vitest/globals", "@testing-library/jest-dom", "node"]

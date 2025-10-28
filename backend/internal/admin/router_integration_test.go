@@ -113,7 +113,10 @@ type fakeUserRepo struct{}
 
 func (f *fakeUserRepo) List(ctx context.Context) ([]model.User, error) { return nil, nil }
 func (f *fakeUserRepo) ListPaged(ctx context.Context, page, size int) ([]model.User, int64, error) {
-	return nil, 0, nil
+    return nil, 0, nil
+}
+func (f *fakeUserRepo) ListWithFilters(ctx context.Context, opts repository.UserListOptions) ([]model.User, int64, error) {
+    return nil, 0, nil
 }
 func (f *fakeUserRepo) Get(ctx context.Context, id uint64) (*model.User, error) {
 	return nil, repository.ErrNotFound
@@ -144,13 +147,18 @@ func (f *fakePlayerRepo) Delete(ctx context.Context, id uint64) error       { re
 type fakeOrderRepo struct{ obj *model.Order }
 
 func (f *fakeOrderRepo) List(ctx context.Context, _ repository.OrderListOptions) ([]model.Order, int64, error) {
-	return nil, 0, nil
+    return nil, 0, nil
+}
+func (f *fakeOrderRepo) Create(ctx context.Context, o *model.Order) error {
+    if o.ID == 0 { o.ID = 1 }
+    f.obj = o
+    return nil
 }
 func (f *fakeOrderRepo) Get(ctx context.Context, id uint64) (*model.Order, error) {
-	if f.obj == nil {
-		return nil, repository.ErrNotFound
-	}
-	return f.obj, nil
+    if f.obj == nil {
+        return nil, repository.ErrNotFound
+    }
+    return f.obj, nil
 }
 func (f *fakeOrderRepo) Update(ctx context.Context, o *model.Order) error { f.obj = o; return nil }
 func (f *fakeOrderRepo) Delete(ctx context.Context, id uint64) error      { return nil }
@@ -158,10 +166,11 @@ func (f *fakeOrderRepo) Delete(ctx context.Context, id uint64) error      { retu
 type fakePaymentRepo struct{}
 
 func (f *fakePaymentRepo) List(ctx context.Context, _ repository.PaymentListOptions) ([]model.Payment, int64, error) {
-	return nil, 0, nil
+    return nil, 0, nil
 }
+func (f *fakePaymentRepo) Create(ctx context.Context, p *model.Payment) error { return nil }
 func (f *fakePaymentRepo) Get(ctx context.Context, id uint64) (*model.Payment, error) {
-	return nil, repository.ErrNotFound
+    return nil, repository.ErrNotFound
 }
 func (f *fakePaymentRepo) Update(ctx context.Context, p *model.Payment) error { return nil }
 func (f *fakePaymentRepo) Delete(ctx context.Context, id uint64) error        { return nil }
@@ -189,16 +198,84 @@ func TestPaymentHandler_InvalidTime_Returns400(t *testing.T) {
 	}
 }
 
+func TestAdminUserValidation_InvalidEmailAndPhone(t *testing.T) {
+	t.Setenv("APP_ENV", "development")
+	t.Setenv("ADMIN_TOKEN", "")
+
+	svc := service.NewAdminService(&fakeGameRepo{}, &fakeUserRepo{}, &fakePlayerRepo{}, &fakeOrderRepo{}, &fakePaymentRepo{}, nil)
+	r := buildTestRouter(svc)
+
+	// invalid email
+	badEmail := map[string]any{
+		"email":    "not-an-email",
+		"password": "Abcdef1!",
+		"name":     "user",
+		"role":     "user",
+		"status":   "active",
+	}
+	buf, _ := json.Marshal(badEmail)
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/admin/users", bytes.NewReader(buf))
+	req.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 for invalid email, got %d", w.Code)
+	}
+
+	// invalid phone
+	badPhone := map[string]any{
+		"phone":    "12345",
+		"password": "Abcdef1!",
+		"name":     "user",
+		"role":     "user",
+		"status":   "active",
+	}
+	buf2, _ := json.Marshal(badPhone)
+	w2 := httptest.NewRecorder()
+	req2 := httptest.NewRequest(http.MethodPost, "/api/v1/admin/users", bytes.NewReader(buf2))
+	req2.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w2, req2)
+	if w2.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 for invalid phone, got %d", w2.Code)
+	}
+}
+
+func TestAdmin_CreateUserWithPlayer_InvalidEmail(t *testing.T) {
+	t.Setenv("APP_ENV", "development")
+	t.Setenv("ADMIN_TOKEN", "")
+
+	svc := service.NewAdminService(&fakeGameRepo{}, &fakeUserRepo{}, &fakePlayerRepo{}, &fakeOrderRepo{}, &fakePaymentRepo{}, nil)
+	r := buildTestRouter(svc)
+
+	body := map[string]any{
+		"email":    "bad",
+		"password": "Abcdef1!",
+		"name":     "n",
+		"role":     "user",
+		"status":   "active",
+		"player":   map[string]any{"verification_status": "pending"},
+	}
+	buf, _ := json.Marshal(body)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/admin/users/with-player", bytes.NewReader(buf))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 for invalid email, got %d", w.Code)
+	}
+}
+
 type fakePaymentRepoWithObj struct{ obj *model.Payment }
 
 func (f *fakePaymentRepoWithObj) List(ctx context.Context, _ repository.PaymentListOptions) ([]model.Payment, int64, error) {
-	return nil, 0, nil
+    return nil, 0, nil
 }
+func (f *fakePaymentRepoWithObj) Create(ctx context.Context, p *model.Payment) error { f.obj = p; return nil }
 func (f *fakePaymentRepoWithObj) Get(ctx context.Context, id uint64) (*model.Payment, error) {
-	if f.obj == nil {
-		return nil, repository.ErrNotFound
-	}
-	return f.obj, nil
+    if f.obj == nil {
+        return nil, repository.ErrNotFound
+    }
+    return f.obj, nil
 }
 func (f *fakePaymentRepoWithObj) Update(ctx context.Context, p *model.Payment) error {
 	f.obj = p

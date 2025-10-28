@@ -21,8 +21,9 @@ type PaymentListOptions struct {
 
 // PaymentRepository 管理支付记录。
 type PaymentRepository interface {
-	List(ctx context.Context, opts PaymentListOptions) ([]model.Payment, int64, error)
-	Get(ctx context.Context, id uint64) (*model.Payment, error)
-	Update(ctx context.Context, payment *model.Payment) error
-	Delete(ctx context.Context, id uint64) error
+    Create(ctx context.Context, payment *model.Payment) error
+    List(ctx context.Context, opts PaymentListOptions) ([]model.Payment, int64, error)
+    Get(ctx context.Context, id uint64) (*model.Payment, error)
+    Update(ctx context.Context, payment *model.Payment) error
+    Delete(ctx context.Context, id uint64) error
 }

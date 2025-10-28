@@ -123,4 +123,3 @@ describe('handleApiError', () => {
     consoleSpy.mockRestore();
   });
 });
-

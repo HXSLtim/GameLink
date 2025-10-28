@@ -56,4 +56,3 @@ export const i18n = {
   t,
   DEFAULT_LOCALE,
 };
-

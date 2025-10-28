@@ -1,2 +1,2 @@
-export { Users } from '../Users';
-
+export { UserList } from './UserList';
+export { UserDetail } from './UserDetail';

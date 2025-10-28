@@ -10,6 +10,8 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+
+	"gamelink/internal/metrics"
 )
 
 func openSQLite(dsn string) (*gorm.DB, error) {
@@ -39,6 +41,12 @@ func openSQLite(dsn string) (*gorm.DB, error) {
 	if err := runDataFixups(gormDB); err != nil {
 		return nil, err
 	}
+
+	if err := ensureIndexes(gormDB); err != nil {
+		return nil, err
+	}
+
+	_ = metrics.InstrumentGorm(gormDB)
 
 	return gormDB, nil
 }

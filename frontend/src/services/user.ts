@@ -4,6 +4,6 @@ import { User } from '../types/user';
 
 export const userService = {
   list(query?: PageQuery) {
-    return http.get<PageResult<User>>('/users', query as any);
+    return http.get<PageResult<User>>('/users', query);
   },
 };

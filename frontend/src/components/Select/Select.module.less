@@ -1,0 +1,137 @@
+@import '../../styles/variables.less';
+
+.select {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  min-width: 120px;
+}
+
+.selector {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-sm) var(--spacing-md);
+  min-height: 40px;
+  border: var(--border-width-base) solid var(--border-color);
+  background-color: var(--bg-primary);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+
+  &:hover {
+    background-color: var(--bg-secondary);
+  }
+
+  svg {
+    color: var(--text-secondary);
+    transition: transform var(--duration-fast);
+  }
+}
+
+.open {
+  .selector svg {
+    transform: rotate(180deg);
+  }
+}
+
+.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+
+  .selector {
+    cursor: not-allowed;
+    background-color: var(--bg-secondary);
+
+    &:hover {
+      background-color: var(--bg-secondary);
+    }
+  }
+}
+
+.value {
+  flex: 1;
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background-color: var(--bg-primary);
+  border: var(--border-width-base) solid var(--border-color);
+  box-shadow: var(--shadow-base);
+  z-index: 1000;
+  max-height: 280px;
+  overflow-y: auto;
+  animation: slideDown 0.2s ease-out;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--text-tertiary);
+
+    &:hover {
+      background: var(--text-secondary);
+    }
+  }
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-sm) var(--spacing-md);
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  border-bottom: var(--border-width-base) solid var(--border-color);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover:not(.optionDisabled) {
+    background-color: var(--bg-secondary);
+  }
+
+  svg {
+    color: var(--text-primary);
+  }
+}
+
+.optionSelected {
+  background-color: var(--bg-inverse);
+  color: var(--text-inverse);
+
+  &:hover {
+    background-color: var(--bg-inverse);
+  }
+
+  svg {
+    color: var(--text-inverse);
+  }
+}
+
+.optionDisabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

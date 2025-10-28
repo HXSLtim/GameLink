@@ -6,6 +6,8 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+
+	"gamelink/internal/metrics"
 )
 
 func openPostgres(dsn string) (*gorm.DB, error) {
@@ -27,6 +29,12 @@ func openPostgres(dsn string) (*gorm.DB, error) {
 	if err := runDataFixups(gormDB); err != nil {
 		return nil, err
 	}
+
+	if err := ensureIndexes(gormDB); err != nil {
+		return nil, err
+	}
+
+	_ = metrics.InstrumentGorm(gormDB)
 
 	return gormDB, nil
 }

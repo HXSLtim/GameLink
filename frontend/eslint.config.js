@@ -27,7 +27,10 @@ export default [
       'no-unused-vars': 'off',
       'no-undef': 'off',
       // TS
-      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
       '@typescript-eslint/no-explicit-any': 'off',
       // React
       'react/react-in-jsx-scope': 'off',
@@ -39,4 +42,3 @@ export default [
     },
   },
 ];
-

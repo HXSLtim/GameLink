@@ -136,4 +136,3 @@ describe('ThemeContext', () => {
     expect(localStorage.getItem('gamelink_theme')).toBe('dark');
   });
 });
-

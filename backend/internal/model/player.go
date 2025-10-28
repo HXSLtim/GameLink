@@ -16,8 +16,8 @@ type Player struct {
 	UserID             uint64             `json:"user_id" gorm:"uniqueIndex"`
 	Nickname           string             `json:"nickname,omitempty" gorm:"size:64"`
 	Bio                string             `json:"bio,omitempty" gorm:"type:text"`
-	RatingAverage      float32            `json:"rating_average"`
-	RatingCount        uint32             `json:"rating_count"`
+	RatingAverage      float32            `json:"rating_average" gorm:"default:0;check:rating_average >= 0 AND rating_average <= 5"`
+	RatingCount        uint32             `json:"rating_count" gorm:"default:0"`
 	HourlyRateCents    int64              `json:"hourly_rate_cents"`
 	MainGameID         uint64             `json:"main_game_id,omitempty" gorm:"index"`
 	VerificationStatus VerificationStatus `json:"verification_status" gorm:"size:32;index"`

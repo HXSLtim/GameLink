@@ -4,6 +4,10 @@ Scope: This file applies to the entire directory tree rooted at `backend/`.
 
 Use this guide to align code style, structure, and commands when making changes with an agent. When in doubt, defer to docs/go-coding-standards.md and existing code patterns.
 
+## Communication
+
+- 语言要求：所有与本仓库相关的代理回复一律使用中文（简体），除非用户在对话中明确要求使用其他语言。
+
 ## Project Structure
 
 - Entry points: `cmd/<service>/main.go` (compose dependencies only; no business logic)
@@ -50,4 +54,3 @@ If you add new top‑level folders, describe them in `docs/project-structure.md`
 - `golangci-lint run` is clean (or justified in PR).
 - Public APIs preserve the response envelope and versioned paths.
 - New/changed configs are documented in `docs/`.
-

@@ -13,7 +13,7 @@ export function getItem<T = string>(key: string, defaultValue: T | null = null):
   try {
     const item = localStorage.getItem(key);
     if (item === null) return defaultValue;
-    
+
     // 尝试解析 JSON
     try {
       return JSON.parse(item) as T;

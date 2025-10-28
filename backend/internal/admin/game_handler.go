@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	apierr "gamelink/internal/handler"
 	"gamelink/internal/model"
 	"gamelink/internal/service"
 )
@@ -20,16 +21,20 @@ func NewGameHandler(svc *service.AdminService) *GameHandler {
 	return &GameHandler{svc: svc}
 }
 
+// ListGames
+// @Summary      列出游戏
+// @Tags         Admin/Games
+// @Security     BearerAuth
+// @Param        page       query  int  false  "页码"
+// @Param        page_size  query  int  false  "每页数量"
+// @Produce      json
+// @Success      200  {object}  map[string]any
+// @Router       /admin/games [get]
+//
 // ListGames 返回全部游戏。
 func (h *GameHandler) ListGames(c *gin.Context) {
-	page, err := queryIntDefault(c, "page", 1)
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "invalid page")
-		return
-	}
-	pageSize, err := queryIntDefault(c, "page_size", 20)
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "invalid page_size")
+	page, pageSize, ok := parsePagination(c)
+	if !ok {
 		return
 	}
 
@@ -47,16 +52,26 @@ func (h *GameHandler) ListGames(c *gin.Context) {
 	})
 }
 
+// GetGame
+// @Summary      获取游戏
+// @Tags         Admin/Games
+// @Security     BearerAuth
+// @Param        id   path  int  true  "游戏ID"
+// @Produce      json
+// @Success      200  {object}  map[string]any
+// @Failure      404  {object}  map[string]any
+// @Router       /admin/games/{id} [get]
+//
 // GetGame 获取单个游戏。
 func (h *GameHandler) GetGame(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "invalid id")
+		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
 		return
 	}
 	game, err := h.svc.GetGame(c.Request.Context(), id)
 	if errors.Is(err, service.ErrNotFound) {
-		writeJSONError(c, http.StatusNotFound, "game not found")
+		writeJSONError(c, http.StatusNotFound, apierr.ErrGameNotFound)
 		return
 	}
 	if err != nil {
@@ -71,11 +86,22 @@ func (h *GameHandler) GetGame(c *gin.Context) {
 	})
 }
 
+// CreateGame
+// @Summary      创建游戏
+// @Tags         Admin/Games
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body  GamePayload  true  "游戏信息"
+// @Success      201  {object}  map[string]any
+// @Failure      400  {object}  map[string]any
+// @Router       /admin/games [post]
+//
 // CreateGame 创建新游戏。
 func (h *GameHandler) CreateGame(c *gin.Context) {
 	var payload GamePayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
-		writeJSONError(c, http.StatusBadRequest, "invalid json payload")
+		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
 		return
 	}
 
@@ -86,10 +112,10 @@ func (h *GameHandler) CreateGame(c *gin.Context) {
 		IconURL:     payload.IconURL,
 		Description: payload.Description,
 	})
-	if errors.Is(err, service.ErrValidation) {
-		writeJSONError(c, http.StatusBadRequest, "key 与 name 为必填字段")
-		return
-	}
+    if errors.Is(err, service.ErrValidation) {
+        _ = c.Error(service.ErrValidation)
+        return
+    }
 	if err != nil {
 		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -103,17 +129,29 @@ func (h *GameHandler) CreateGame(c *gin.Context) {
 	})
 }
 
+// UpdateGame
+// @Summary      更新游戏
+// @Tags         Admin/Games
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        id       path  int         true  "游戏ID"
+// @Param        request  body  GamePayload true  "游戏信息"
+// @Success      200  {object}  map[string]any
+// @Failure      404  {object}  map[string]any
+// @Router       /admin/games/{id} [put]
+//
 // UpdateGame 更新游戏信息。
 func (h *GameHandler) UpdateGame(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "invalid id")
+		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
 		return
 	}
 
 	var payload GamePayload
 	if bindErr := c.ShouldBindJSON(&payload); bindErr != nil {
-		writeJSONError(c, http.StatusBadRequest, "invalid json payload")
+		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
 		return
 	}
 
@@ -124,14 +162,14 @@ func (h *GameHandler) UpdateGame(c *gin.Context) {
 		IconURL:     payload.IconURL,
 		Description: payload.Description,
 	})
-	if errors.Is(err, service.ErrValidation) {
-		writeJSONError(c, http.StatusBadRequest, "key 与 name 为必填字段")
-		return
-	}
-	if errors.Is(err, service.ErrNotFound) {
-		writeJSONError(c, http.StatusNotFound, "game not found")
-		return
-	}
+    if errors.Is(err, service.ErrValidation) {
+        _ = c.Error(service.ErrValidation)
+        return
+    }
+    if errors.Is(err, service.ErrNotFound) {
+        _ = c.Error(service.ErrNotFound)
+        return
+    }
 	if err != nil {
 		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -145,21 +183,31 @@ func (h *GameHandler) UpdateGame(c *gin.Context) {
 	})
 }
 
+// DeleteGame
+// @Summary      删除游戏
+// @Tags         Admin/Games
+// @Security     BearerAuth
+// @Param        id   path  int  true  "游戏ID"
+// @Produce      json
+// @Success      200  {object}  map[string]any
+// @Failure      404  {object}  map[string]any
+// @Router       /admin/games/{id} [delete]
+//
 // DeleteGame 删除游戏。
 func (h *GameHandler) DeleteGame(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "invalid id")
+		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
 		return
 	}
 
-	if err := h.svc.DeleteGame(c.Request.Context(), id); errors.Is(err, service.ErrNotFound) {
-		writeJSONError(c, http.StatusNotFound, "game not found")
-		return
-	} else if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
+    if err := h.svc.DeleteGame(c.Request.Context(), id); errors.Is(err, service.ErrNotFound) {
+        _ = c.Error(service.ErrNotFound)
+        return
+    } else if err != nil {
+        writeJSONError(c, http.StatusInternalServerError, err.Error())
+        return
+    }
 
 	writeJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,

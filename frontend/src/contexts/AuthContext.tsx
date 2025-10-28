@@ -1,14 +1,6 @@
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  useCallback,
-} from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import { STORAGE_KEYS } from '../config';
 import type { CurrentUser } from '../types/auth';
-import { authService } from '../services/auth';
 import { storage } from '../utils/storage';
 
 interface AuthState {
@@ -16,7 +8,7 @@ interface AuthState {
   token: string | null;
   loading: boolean;
   loginLoading: boolean;
-  login: (token: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -28,45 +20,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [loginLoading, setLoginLoading] = useState(false);
 
-  // 初始化：从 localStorage 恢复 token
+  // 初始化：从 localStorage 恢复 token 和用户信息
   useEffect(() => {
     const t = storage.getItem<string>(STORAGE_KEYS.token);
-    setToken(t);
+    const u = storage.getItem<CurrentUser>(STORAGE_KEYS.user);
 
-    if (!t) {
-      setLoading(false);
-      return;
+    if (t && u) {
+      setToken(t);
+      setUser(u);
     }
 
-    // 验证 token 并获取用户信息
-    authService
-      .me()
-      .then((u) => setUser(u))
-      .catch(() => {
-        // Token 无效，清理
-        storage.removeItem(STORAGE_KEYS.token);
-        setToken(null);
-      })
-      .finally(() => setLoading(false));
+    setLoading(false);
   }, []);
 
-  // 登录方法
-  const login = useCallback(async (t: string): Promise<void> => {
+  // 登录方法 (Mock 实现)
+  const login = useCallback(async (username: string, password: string): Promise<void> => {
     setLoginLoading(true);
-    try {
-      // 保存 token
-      const saved = storage.setItem(STORAGE_KEYS.token, t);
-      if (!saved) {
-        throw new Error('Failed to save token');
-      }
-      setToken(t);
 
-      // 获取用户信息
-      const u = await authService.me();
-      setUser(u);
+    // 模拟网络延迟
+    await new Promise((resolve) => setTimeout(resolve, 800));
+
+    try {
+      // Mock 登录验证（任何用户名密码都可以登录）
+      if (!username || !password) {
+        throw new Error('用户名和密码不能为空');
+      }
+
+      // 生成 Mock Token
+      const mockToken = `mock-token-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+      // 创建 Mock 用户信息
+      const mockUser: CurrentUser = {
+        id: Math.floor(Math.random() * 1000),
+        username: username,
+        email: `${username}@gamelink.com`,
+        role: username === 'admin' ? 'admin' : 'user',
+        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      // 保存到 localStorage
+      storage.setItem(STORAGE_KEYS.token, mockToken);
+      storage.setItem(STORAGE_KEYS.user, mockUser);
+
+      // 更新状态
+      setToken(mockToken);
+      setUser(mockUser);
+
+      console.log('✅ Mock 登录成功:', { username, token: mockToken });
     } catch (error) {
       // 登录失败，清理状态
       storage.removeItem(STORAGE_KEYS.token);
+      storage.removeItem(STORAGE_KEYS.user);
       setToken(null);
       setUser(null);
       throw error;
@@ -78,8 +84,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // 登出方法
   const logout = useCallback(() => {
     storage.removeItem(STORAGE_KEYS.token);
+    storage.removeItem(STORAGE_KEYS.user);
     setToken(null);
     setUser(null);
+    console.log('✅ 退出登录成功');
   }, []);
 
   const value = useMemo<AuthState>(

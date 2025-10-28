@@ -121,4 +121,3 @@ export const useTable = <T>({
     reset,
   };
 };
-

@@ -1,0 +1,158 @@
+@import '../../styles/variables.less';
+
+.container {
+  padding: var(--spacing-lg);
+}
+
+// 统计卡片
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.statCard {
+  padding: var(--spacing-lg);
+  text-align: center;
+}
+
+.statLabel {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.statValue {
+  color: var(--text-primary);
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+}
+
+// 筛选区域
+.filterCard {
+  margin-bottom: var(--spacing-lg);
+}
+
+.filterRow {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 200px;
+}
+
+.filterSelect {
+  min-width: 150px;
+}
+
+.resetButton {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border: var(--border-width-base) solid var(--border-color);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+
+  &:hover {
+    background-color: var(--bg-secondary);
+  }
+
+  &:active {
+    background-color: var(--bg-tertiary);
+  }
+}
+
+// 表格区域
+.tableCard {
+  padding: 0;
+}
+
+.pagination {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-top: var(--border-width-base) solid var(--border-color);
+}
+
+// 表格单元格样式
+.orderNo {
+  color: var(--text-primary);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: text-decoration-color var(--duration-fast);
+
+  &:hover {
+    text-decoration-color: var(--border-color);
+  }
+}
+
+.userName,
+.playerName {
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+}
+
+.userPhone,
+.playerRating {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.noPlayer,
+.noReview {
+  color: var(--text-tertiary);
+  font-size: var(--font-size-sm);
+}
+
+.price {
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+// 操作按钮
+.actions {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.actionButton {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: var(--border-width-base) solid var(--border-color);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+
+  &:hover {
+    background-color: var(--bg-inverse);
+    color: var(--text-inverse);
+  }
+}
+
+// 响应式
+@media (max-width: 1024px) {
+  .statsGrid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+
+  .filterRow {
+    flex-direction: column;
+  }
+
+  .searchInput,
+  .filterSelect {
+    width: 100%;
+  }
+}

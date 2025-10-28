@@ -1,0 +1,53 @@
+@import '../../styles/variables.less';
+
+.card {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-primary);
+  border-radius: var(--border-radius-none);
+  transition: all var(--duration-base) var(--ease-out);
+  overflow: hidden;
+}
+
+.bordered {
+  border: var(--border-width-base) solid var(--border-color);
+  box-shadow: var(--shadow-base);
+}
+
+.hoverable {
+  cursor: pointer;
+
+  &:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translate(-2px, -2px);
+  }
+
+  &:active {
+    box-shadow: var(--shadow-sm);
+    transform: translate(0, 0);
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-xl);
+  border-bottom: var(--border-width-base) solid var(--border-color);
+  background-color: var(--bg-secondary);
+}
+
+.title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+.extra {
+  color: var(--text-secondary);
+}
+
+.body {
+  padding: var(--spacing-xl);
+  flex: 1;
+}

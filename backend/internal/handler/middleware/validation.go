@@ -205,20 +205,18 @@ func validatePassword(fl validator.FieldLevel) bool {
 	if len(password) < 8 {
 		return false
 	}
-
-	// 检查是否包含至少一个数字
 	hasNumber := false
-	// 检查是否包含至少一个字母
 	hasLetter := false
-
+	hasSpecial := false
 	for _, c := range password {
-		if c >= '0' && c <= '9' {
+		switch {
+		case c >= '0' && c <= '9':
 			hasNumber = true
-		}
-		if (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') {
+		case (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'):
 			hasLetter = true
+		default:
+			hasSpecial = true
 		}
 	}
-
-	return hasNumber && hasLetter
+	return hasNumber && hasLetter && hasSpecial
 }

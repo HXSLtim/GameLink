@@ -1,27 +1,31 @@
 package handler
 
 import (
-	"bytes"
-	"context"
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
-	"testing"
-	"time"
+    "bytes"
+    "context"
+    "encoding/json"
+    "net/http"
+    "net/http/httptest"
+    "testing"
+    "time"
 
-	"github.com/gin-gonic/gin"
-	"golang.org/x/crypto/bcrypt"
+    "github.com/gin-gonic/gin"
+    "golang.org/x/crypto/bcrypt"
 
-	"gamelink/internal/auth"
-	"gamelink/internal/model"
-	"gamelink/internal/service"
+    "gamelink/internal/auth"
+    "gamelink/internal/model"
+    "gamelink/internal/repository"
+    "gamelink/internal/service"
 )
 
 type fakeUserRepoAuth struct{ u *model.User }
 
 func (f *fakeUserRepoAuth) List(context.Context) ([]model.User, error) { return nil, nil }
 func (f *fakeUserRepoAuth) ListPaged(context.Context, int, int) ([]model.User, int64, error) {
-	return nil, 0, nil
+    return nil, 0, nil
+}
+func (f *fakeUserRepoAuth) ListWithFilters(context.Context, repository.UserListOptions) ([]model.User, int64, error) {
+    return nil, 0, nil
 }
 func (f *fakeUserRepoAuth) Get(context.Context, uint64) (*model.User, error) { return f.u, nil }
 func (f *fakeUserRepoAuth) FindByEmail(ctx context.Context, email string) (*model.User, error) {

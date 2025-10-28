@@ -18,9 +18,9 @@ const (
 // Order represents a play session request and assignment.
 type Order struct {
 	Base
-	UserID         uint64      `json:"user_id" gorm:"index"`             // customer
+	UserID         uint64      `json:"user_id" gorm:"not null;index"`    // customer
 	PlayerID       uint64      `json:"player_id,omitempty" gorm:"index"` // assigned player (optional until accepted)
-	GameID         uint64      `json:"game_id" gorm:"index"`
+	GameID         uint64      `json:"game_id" gorm:"not null;index"`
 	Title          string      `json:"title" gorm:"size:128"`
 	Description    string      `json:"description,omitempty" gorm:"type:text"`
 	Status         OrderStatus `json:"status" gorm:"size:32;index"`
@@ -29,4 +29,9 @@ type Order struct {
 	ScheduledStart *time.Time  `json:"scheduled_start,omitempty"`
 	ScheduledEnd   *time.Time  `json:"scheduled_end,omitempty"`
 	CancelReason   string      `json:"cancel_reason,omitempty" gorm:"type:text"`
+
+	// Relations + FKs
+	User   User    `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;foreignKey:UserID;references:ID"`
+	Player *Player `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;foreignKey:PlayerID;references:ID"`
+	Game   Game    `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;foreignKey:GameID;references:ID"`
 }

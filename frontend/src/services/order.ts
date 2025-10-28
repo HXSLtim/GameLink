@@ -4,6 +4,6 @@ import { Order } from '../types/order';
 
 export const orderService = {
   list(query?: PageQuery) {
-    return http.get<PageResult<Order>>('/orders', query as any);
+    return http.get<PageResult<Order>>('/orders', query);
   },
 };

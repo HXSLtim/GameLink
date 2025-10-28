@@ -1,6 +1,7 @@
 import { defineConfig, Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import FullReload from 'vite-plugin-full-reload';
+import path from 'path';
 
 /**
  * 开发环境认证 Mock 插件
@@ -88,6 +89,18 @@ export default defineConfig({
     // 当后端或配置文件变更时，触发浏览器整页刷新
     FullReload(['backend/**', 'configs/**', 'frontend/index.html']),
   ],
+  resolve: {
+    alias: {
+      components: path.resolve(__dirname, './src/components'),
+      pages: path.resolve(__dirname, './src/pages'),
+      utils: path.resolve(__dirname, './src/utils'),
+      hooks: path.resolve(__dirname, './src/hooks'),
+      services: path.resolve(__dirname, './src/services'),
+      types: path.resolve(__dirname, './src/types'),
+      contexts: path.resolve(__dirname, './src/contexts'),
+      styles: path.resolve(__dirname, './src/styles'),
+    },
+  },
   css: {
     preprocessorOptions: {
       less: {
@@ -102,14 +115,15 @@ export default defineConfig({
   server: {
     host: true,
     port: 5173,
-    open: true,
+    open: false,
     hmr: {
       protocol: 'ws',
       host: 'localhost',
+      overlay: true,
     },
     watch: {
-      // 在 WSL/网络卷/容器映射目录下更稳定的热更新（可通过 HMR_POLL=1 控制）
-      usePolling: Boolean(process.env.HMR_POLL),
+      // 在 WSL 下启用 polling 以确保文件变化被检测到
+      usePolling: true,
       interval: 100,
     },
     proxy: {
@@ -128,10 +142,6 @@ export default defineConfig({
         manualChunks: {
           // 将React相关库打包
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          // 将UI库打包
-          'ui-vendor': ['@arco-design/web-react', '@arco-design/web-react/icon'],
-          // 注意：仅打包已安装的工具库，lodash-es 和 dayjs 需先安装
-          // 'utils': ['lodash-es', 'dayjs'],
         },
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',

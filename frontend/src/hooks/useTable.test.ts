@@ -157,12 +157,7 @@ describe('useTable', () => {
   it('should set loading state during fetch', async () => {
     const mockFetchData = vi.fn<
       (page: number, pageSize: number) => Promise<{ items: unknown[]; total: number }>
-    >(
-      () =>
-        new Promise((resolve) =>
-          setTimeout(() => resolve({ items: [], total: 0 }), 100),
-        ),
-    );
+    >(() => new Promise((resolve) => setTimeout(() => resolve({ items: [], total: 0 }), 100)));
 
     const { result } = renderHook(() =>
       useTable({
@@ -179,4 +174,3 @@ describe('useTable', () => {
     });
   });
 });
-

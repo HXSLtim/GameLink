@@ -20,6 +20,7 @@
 ## 项目概述
 
 **技术栈：**
+
 - React 18.3+ (Hooks)
 - TypeScript 5.6+
 - Vite 5.4+ (构建工具)
@@ -28,6 +29,7 @@
 - Vitest (单元测试)
 
 **开发工具：**
+
 - ESLint 9+ (代码检查)
 - Prettier (代码格式化)
 - TypeScript Compiler (类型检查)
@@ -39,6 +41,7 @@
 ### 1. 文件命名
 
 #### React 组件文件
+
 - **PascalCase**（大驼峰）命名
 - 扩展名使用 `.tsx`
 
@@ -55,6 +58,7 @@ user_profile.tsx
 ```
 
 #### 工具函数/Hook 文件
+
 - **camelCase**（小驼峰）命名
 - 扩展名使用 `.ts` 或 `.tsx`
 
@@ -71,6 +75,7 @@ api_client.ts
 ```
 
 #### 类型定义文件
+
 - **camelCase** 或描述性命名
 - 使用 `.types.ts` 或 `.d.ts` 后缀
 
@@ -82,6 +87,7 @@ global.d.ts
 ```
 
 #### 样式文件
+
 - 与组件同名
 - 使用 `.module.less` 或 `.less`
 
@@ -94,6 +100,7 @@ global.less
 ### 2. 变量命名
 
 #### 常规变量
+
 - 使用 **camelCase**
 - 语义化命名，避免缩写
 
@@ -110,6 +117,7 @@ const gl = [];  // 缩写不清晰
 ```
 
 #### 常量
+
 - 使用 **UPPER_SNAKE_CASE**（全大写下划线）
 - 放在文件顶部或单独的常量文件中
 
@@ -125,6 +133,7 @@ const maxRetryCount = 3;
 ```
 
 #### 布尔值
+
 - 使用 `is`、`has`、`should` 等前缀
 
 ```typescript
@@ -141,6 +150,7 @@ const permission = false;
 ### 3. 函数命名
 
 #### 事件处理函数
+
 - 使用 `handle` 前缀
 
 ```typescript
@@ -155,6 +165,7 @@ const submit = () => {};
 ```
 
 #### 普通函数
+
 - 使用动词开头
 - 清晰描述功能
 
@@ -173,6 +184,7 @@ function total() {}
 ### 4. 类型/接口命名
 
 #### 接口（Interface）
+
 - 使用 **PascalCase**
 - 描述性命名，不使用 `I` 前缀
 
@@ -194,6 +206,7 @@ interface user {}   // 小写
 ```
 
 #### 类型别名（Type）
+
 - 使用 **PascalCase**
 
 ```typescript
@@ -207,6 +220,7 @@ type UserState = {
 ```
 
 #### 枚举（Enum）
+
 - 枚举名使用 **PascalCase**
 - 枚举值使用 **PascalCase** 或 **UPPER_SNAKE_CASE**
 
@@ -228,6 +242,7 @@ enum HttpStatus {
 ### 5. 组件命名
 
 #### 组件名
+
 - 使用 **PascalCase**
 - 功能描述清晰
 
@@ -243,6 +258,7 @@ export const Game_List_Item = () => {};
 ```
 
 #### 自定义 Hook
+
 - 必须以 `use` 开头
 - 使用 **camelCase**
 
@@ -305,6 +321,7 @@ src/
 ### 目录规范
 
 #### 1. 组件目录结构
+
 每个组件应该有独立的文件夹：
 
 ```
@@ -317,12 +334,14 @@ ComponentName/
 ```
 
 **index.ts 示例：**
+
 ```typescript
 export { ComponentName } from './ComponentName';
 export type { ComponentNameProps } from './ComponentName';
 ```
 
 #### 2. 页面目录结构
+
 页面组件遵循类似规则：
 
 ```
@@ -335,6 +354,7 @@ PageName/
 ```
 
 #### 3. API 目录结构
+
 按业务模块划分：
 
 ```
@@ -352,6 +372,7 @@ api/
 ### 1. 类型定义
 
 #### 优先使用 interface 定义对象类型
+
 ```typescript
 ✅ 推荐
 interface User {
@@ -366,6 +387,7 @@ type UserWithRole = User & { role: UserRole };
 ```
 
 #### 避免使用 any
+
 ```typescript
 ✅ 推荐
 interface ApiResponse<T> {
@@ -384,6 +406,7 @@ function fetchData(url: string): Promise<any> {
 ```
 
 #### 使用联合类型和枚举
+
 ```typescript
 ✅ 推荐
 type Status = 'pending' | 'success' | 'error';
@@ -401,6 +424,7 @@ type Status = string;  // 太宽泛
 ### 2. 函数类型
 
 #### 明确定义函数参数和返回值类型
+
 ```typescript
 ✅ 推荐
 function calculateTotal(items: number[], tax: number): number {
@@ -419,6 +443,7 @@ function calculateTotal(items, tax) {
 ```
 
 #### 使用可选参数和默认值
+
 ```typescript
 ✅ 推荐
 function fetchUsers(page: number = 1, pageSize: number = 20): Promise<User[]> {
@@ -434,6 +459,7 @@ interface Config {
 ### 3. 组件 Props 类型
 
 #### 定义清晰的 Props 接口
+
 ```typescript
 ✅ 推荐
 interface ButtonProps {
@@ -463,6 +489,7 @@ export const Button = ({ text, onClick, disabled, variant }: any) => {
 ```
 
 #### 使用泛型组件
+
 ```typescript
 ✅ 推荐
 interface ListProps<T> {
@@ -484,6 +511,7 @@ export const List = <T,>({ items, renderItem }: ListProps<T>) => {
 ### 4. 类型导入导出
 
 #### 使用 type 关键字导入类型
+
 ```typescript
 ✅ 推荐
 import type { User, UserRole } from './types/user.types';
@@ -494,6 +522,7 @@ import { User, UserRole, fetchUser } from './user';
 ```
 
 #### 统一导出类型
+
 ```typescript
 ✅ 推荐
 // types/index.ts
@@ -509,6 +538,7 @@ export type { ApiResponse, ApiError } from './api.types';
 ### 1. 组件定义
 
 #### 使用函数组件和 Hooks
+
 ```typescript
 ✅ 推荐
 export const UserProfile: React.FC<UserProfileProps> = ({ userId }) => {
@@ -529,6 +559,7 @@ class UserProfile extends React.Component {
 ```
 
 #### 组件结构顺序
+
 ```typescript
 export const MyComponent: React.FC<MyComponentProps> = (props) => {
   // 1. Props 解构
@@ -570,6 +601,7 @@ export const MyComponent: React.FC<MyComponentProps> = (props) => {
 ### 2. Props 规范
 
 #### Props 解构
+
 ```typescript
 ✅ 推荐
 interface ButtonProps {
@@ -597,6 +629,7 @@ export const Button: React.FC<ButtonProps> = (props) => {
 ```
 
 #### Children Props
+
 ```typescript
 ✅ 推荐
 interface CardProps {
@@ -617,6 +650,7 @@ export const Card: React.FC<CardProps> = ({ title, children }) => {
 ### 3. 状态管理
 
 #### 使用 useState
+
 ```typescript
 ✅ 推荐
 const [count, setCount] = useState<number>(0);
@@ -632,6 +666,7 @@ const [state, setState] = useState({ count: 0, user: null, filters: {} });
 ```
 
 #### 使用 useReducer（复杂状态）
+
 ```typescript
 ✅ 推荐
 interface State {
@@ -672,6 +707,7 @@ export const UserList = () => {
 ### 4. 副作用（useEffect）
 
 #### 明确依赖项
+
 ```typescript
 ✅ 推荐
 useEffect(() => {
@@ -690,6 +726,7 @@ useEffect(() => {
 ```
 
 #### 清理副作用
+
 ```typescript
 ✅ 推荐
 useEffect(() => {
@@ -714,6 +751,7 @@ useEffect(() => {
 ### 5. 自定义 Hooks
 
 #### 提取可复用逻辑
+
 ```typescript
 ✅ 推荐
 export const useFetch = <T>(url: string) => {
@@ -752,6 +790,7 @@ const UserProfile = ({ userId }: { userId: string }) => {
 ### 6. 性能优化
 
 #### 使用 useMemo 和 useCallback
+
 ```typescript
 ✅ 推荐
 export const ExpensiveComponent = ({ items, onItemClick }: Props) => {
@@ -786,6 +825,7 @@ export const ListItem = React.memo<ListItemProps>(({ item, onClick }) => {
 ### 7. 条件渲染
 
 #### 简洁的条件渲染
+
 ```typescript
 ✅ 推荐
 // 使用 && 运算符
@@ -811,6 +851,7 @@ return <Content />;
 ### 1. CSS Modules
 
 #### 使用 CSS Modules
+
 ```typescript
 ✅ 推荐
 // UserProfile.module.less
@@ -846,6 +887,7 @@ export const UserProfile = () => {
 ### 2. 类名规范
 
 #### BEM 命名约定（推荐但不强制）
+
 ```less
 // 推荐
 .card {
@@ -873,6 +915,7 @@ export const UserProfile = () => {
 ### 3. Arco Design 样式定制
 
 #### 使用 Arco Design 主题变量
+
 ```less
 // 使用 Arco Design 的设计令牌
 @import '@arco-design/web-react/es/style/index.less';
@@ -887,6 +930,7 @@ export const UserProfile = () => {
 ### 4. 响应式设计
 
 #### 使用媒体查询
+
 ```less
 .container {
   padding: 20px;
@@ -908,6 +952,7 @@ export const UserProfile = () => {
 ### 1. API 请求
 
 #### 统一的 API 客户端
+
 ```typescript
 ✅ 推荐
 // api/client.ts
@@ -973,6 +1018,7 @@ export const apiClient = new ApiClient(API_BASE_URL);
 ```
 
 #### API 模块化
+
 ```typescript
 ✅ 推荐
 // api/user.ts
@@ -981,14 +1027,14 @@ import type { User, UserCreateDto, UserUpdateDto } from '../types/user.types';
 
 export const userApi = {
   getUsers: () => apiClient.get<User[]>('/users'),
-  
+
   getUserById: (id: string) => apiClient.get<User>(`/users/${id}`),
-  
+
   createUser: (data: UserCreateDto) => apiClient.post<User>('/users', data),
-  
-  updateUser: (id: string, data: UserUpdateDto) => 
+
+  updateUser: (id: string, data: UserUpdateDto) =>
     apiClient.put<User>(`/users/${id}`, data),
-  
+
   deleteUser: (id: string) => apiClient.delete(`/users/${id}`),
 };
 ```
@@ -996,6 +1042,7 @@ export const userApi = {
 ### 2. Context 使用
 
 #### 创建 Context
+
 ```typescript
 ✅ 推荐
 // contexts/AuthContext.tsx
@@ -1062,6 +1109,7 @@ export const useAuth = () => {
 ```
 
 **说明：**
+
 - `singleQuote`: 使用单引号
 - `semi`: 使用分号
 - `trailingComma`: 在多行结构中使用尾随逗号
@@ -1070,6 +1118,7 @@ export const useAuth = () => {
 ### ESLint 规则
 
 主要规则：
+
 - 未使用的变量会警告（以 `_` 开头的除外）
 - 不允许使用 `any` 类型（已关闭，但不推荐使用）
 - React Hooks 规则严格执行
@@ -1097,7 +1146,7 @@ npm run typecheck
 ```typescript
 /**
  * 用户管理 API
- * 
+ *
  * @module api/user
  * @description 提供用户 CRUD 操作的 API 接口
  */
@@ -1105,15 +1154,15 @@ npm run typecheck
 
 ### 2. 函数注释
 
-```typescript
+````typescript
 ✅ 推荐
 /**
  * 计算购物车总价
- * 
+ *
  * @param items - 购物车商品列表
  * @param taxRate - 税率（0-1 之间）
  * @returns 包含税费的总价
- * 
+ *
  * @example
  * ```typescript
  * const total = calculateCartTotal([{ price: 100 }, { price: 200 }], 0.1);
@@ -1127,15 +1176,15 @@ export function calculateCartTotal(
   const subtotal = items.reduce((sum, item) => sum + item.price, 0);
   return subtotal * (1 + taxRate);
 }
-```
+````
 
 ### 3. 组件注释
 
-```typescript
+````typescript
 ✅ 推荐
 /**
  * 用户资料卡片组件
- * 
+ *
  * @component
  * @example
  * ```tsx
@@ -1148,7 +1197,7 @@ export function calculateCartTotal(
 export const UserCard: React.FC<UserCardProps> = ({ user, onEdit }) => {
   // ...
 };
-```
+````
 
 ### 4. 行内注释
 
@@ -1178,16 +1227,16 @@ const x = 10;  // 不要写显而易见的注释
 interface User {
   /** 用户唯一标识 */
   id: string;
-  
+
   /** 用户名 */
   name: string;
-  
+
   /** 电子邮件地址 */
   email: string;
-  
+
   /** 用户角色 */
   role: UserRole;
-  
+
   /** 账户创建时间 */
   createdAt: Date;
 }
@@ -1222,7 +1271,7 @@ describe('Button', () => {
   it('should call onClick when clicked', () => {
     const handleClick = vi.fn();
     render(<Button text="Click me" onClick={handleClick} />);
-    
+
     fireEvent.click(screen.getByText('Click me'));
     expect(handleClick).toHaveBeenCalledTimes(1);
   });
@@ -1266,6 +1315,7 @@ npm run test -- --coverage
 ```
 
 目标覆盖率：
+
 - 语句覆盖率（Statements）：> 80%
 - 分支覆盖率（Branches）：> 75%
 - 函数覆盖率（Functions）：> 80%
@@ -1508,6 +1558,7 @@ const routes = [
 ### 推荐工具和插件
 
 #### VS Code 插件
+
 - ESLint
 - Prettier - Code formatter
 - TypeScript Vue Plugin (Volar)
@@ -1516,6 +1567,7 @@ const routes = [
 - Import Cost
 
 #### 浏览器扩展
+
 - React Developer Tools
 - Redux DevTools（如果使用 Redux）
 
@@ -1536,4 +1588,3 @@ const routes = [
 ---
 
 **注意：** 本规范是团队共识的结晶，请所有团队成员遵守。如有疑问或建议，请及时与团队沟通。
-

@@ -1,0 +1,85 @@
+@import '../../styles/variables.less';
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+.formItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+// ==================== 表单布局 ====================
+
+// 垂直布局
+.vertical {
+  .label {
+    display: block;
+    margin-bottom: var(--spacing-sm);
+  }
+}
+
+// 水平布局
+.horizontal {
+  .formItem {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .label {
+    flex: 0 0 120px;
+    padding-top: var(--spacing-sm);
+    text-align: right;
+    padding-right: var(--spacing-base);
+  }
+
+  .control {
+    flex: 1;
+  }
+}
+
+// ==================== 表单元素 ====================
+
+.label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  line-height: var(--line-height-normal);
+}
+
+.required {
+  color: var(--text-primary);
+  margin-right: var(--spacing-xs);
+  font-weight: var(--font-weight-bold);
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.errorMessage {
+  font-size: var(--font-size-xs);
+  color: var(--text-primary);
+  line-height: var(--line-height-normal);
+  padding-left: var(--spacing-xs);
+}
+
+.helpMessage {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  line-height: var(--line-height-normal);
+  padding-left: var(--spacing-xs);
+}
+
+// ==================== 错误状态 ====================
+
+.error {
+  .label {
+    color: var(--text-primary);
+  }
+}

@@ -1,0 +1,227 @@
+/**
+ * GameLink 黑白设计系统 - CSS 变量定义
+ * Neo-brutalism 风格
+ */
+
+// ==================== 色彩系统 ====================
+:root {
+  // 主色调 - 纯黑白
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  // 灰度色阶
+  --color-gray-100: #f5f5f5;
+  --color-gray-200: #e5e5e5;
+  --color-gray-300: #d4d4d4;
+  --color-gray-400: #a3a3a3;
+  --color-gray-500: #737373;
+  --color-gray-600: #525252;
+  --color-gray-700: #404040;
+  --color-gray-800: #262626;
+  --color-gray-900: #171717;
+
+  // 文本颜色（浅色模式）
+  --text-primary: var(--color-black);
+  --text-secondary: #666666;
+  --text-tertiary: #999999;
+  --text-disabled: #cccccc;
+  --text-inverse: var(--color-white);
+
+  // 背景颜色（浅色模式）
+  --bg-primary: var(--color-white);
+  --bg-secondary: #fafafa;
+  --bg-tertiary: #f5f5f5;
+  --bg-inverse: var(--color-black);
+  --bg-error: #fff5f5;
+
+  // 边框颜色
+  --border-color: var(--color-black);
+  --border-color-light: #e0e0e0;
+
+  // 交互效果颜色
+  --ripple-dark: rgba(0, 0, 0, 0.1); // 浅色模式的涟漪效果
+  --ripple-light: rgba(255, 255, 255, 0.2); // 深色背景的涟漪效果
+  --ripple-subtle: rgba(0, 0, 0, 0.05); // 微弱的涟漪效果
+}
+
+// ==================== 深色模式 ====================
+body.dark-theme {
+  // 文本颜色（深色模式）
+  --text-primary: var(--color-white);
+  --text-secondary: #cccccc;
+  --text-tertiary: #999999;
+  --text-disabled: #666666;
+  --text-inverse: var(--color-black);
+
+  // 背景颜色（深色模式）
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #1a1a1a;
+  --bg-tertiary: #262626;
+  --bg-inverse: var(--color-white);
+  --bg-error: #3a0a0a;
+
+  // 边框颜色
+  --border-color: var(--color-white);
+  --border-color-light: #333333;
+
+  // 交互效果颜色（深色模式）
+  --ripple-dark: rgba(255, 255, 255, 0.1); // 深色模式的涟漪效果
+  --ripple-light: rgba(0, 0, 0, 0.2); // 浅色背景的涟漪效果
+  --ripple-subtle: rgba(255, 255, 255, 0.05); // 微弱的涟漪效果
+}
+
+// ==================== 间距系统 ====================
+:root {
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-base: 16px;
+  --spacing-lg: 20px;
+  --spacing-xl: 24px;
+  --spacing-2xl: 32px;
+  --spacing-3xl: 40px;
+  --spacing-4xl: 48px;
+  --spacing-5xl: 64px;
+}
+
+// ==================== 字体系统 ====================
+:root {
+  // 字体家族
+  --font-family-base:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --font-family-mono: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
+
+  // 字体大小
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-base: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 28px;
+  --font-size-4xl: 32px;
+  --font-size-5xl: 36px;
+  --font-size-6xl: 48px;
+
+  // 字重
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-black: 900;
+
+  // 行高
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+  --line-height-loose: 2;
+
+  // 字母间距
+  --letter-spacing-tight: -0.05em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide: 0.05em;
+  --letter-spacing-wider: 0.1em;
+}
+
+// ==================== 边框系统 ====================
+:root {
+  // 边框宽度
+  --border-width-thin: 1px;
+  --border-width-base: 2px;
+  --border-width-thick: 3px;
+  --border-width-heavy: 4px;
+
+  // 圆角 - Neo-brutalism 风格使用直角
+  --border-radius-none: 0;
+  --border-radius-sm: 2px;
+  --border-radius-base: 4px;
+  --border-radius-lg: 8px;
+  --border-radius-full: 9999px;
+}
+
+// ==================== 阴影系统 ====================
+:root {
+  // Neo-brutalism 实体阴影
+  --shadow-xs: 2px 2px 0 var(--color-black);
+  --shadow-sm: 4px 4px 0 var(--color-black);
+  --shadow-base: 8px 8px 0 var(--color-black);
+  --shadow-lg: 12px 12px 0 var(--color-black);
+  --shadow-xl: 16px 16px 0 var(--color-black);
+
+  // 柔和阴影（可选）
+  --shadow-soft-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-soft-base: 0 4px 16px rgba(0, 0, 0, 0.15);
+  --shadow-soft-lg: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+// ==================== 动画系统 ====================
+:root {
+  // 动画时长
+  --duration-instant: 0ms;
+  --duration-fast: 100ms;
+  --duration-base: 200ms;
+  --duration-medium: 300ms;
+  --duration-slow: 400ms;
+  --duration-slower: 600ms;
+
+  // 缓动函数
+  --ease-linear: cubic-bezier(0, 0, 1, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+// ==================== 层级系统 ====================
+:root {
+  --z-index-base: 0;
+  --z-index-dropdown: 100;
+  --z-index-sticky: 200;
+  --z-index-fixed: 300;
+  --z-index-modal-backdrop: 400;
+  --z-index-modal: 500;
+  --z-index-popover: 600;
+  --z-index-tooltip: 700;
+  --z-index-notification: 800;
+}
+
+// ==================== 布局系统 ====================
+:root {
+  // 容器宽度
+  --container-xs: 480px;
+  --container-sm: 640px;
+  --container-md: 768px;
+  --container-lg: 1024px;
+  --container-xl: 1280px;
+  --container-2xl: 1536px;
+
+  // 断点
+  --breakpoint-xs: 0px;
+  --breakpoint-sm: 576px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 992px;
+  --breakpoint-xl: 1200px;
+  --breakpoint-2xl: 1600px;
+}
+
+// ==================== 组件尺寸 ====================
+:root {
+  // 输入框高度
+  --input-height-sm: 32px;
+  --input-height-base: 40px;
+  --input-height-lg: 48px;
+
+  // 按钮高度
+  --button-height-sm: 32px;
+  --button-height-base: 40px;
+  --button-height-lg: 48px;
+
+  // 图标尺寸
+  --icon-size-xs: 12px;
+  --icon-size-sm: 16px;
+  --icon-size-base: 20px;
+  --icon-size-lg: 24px;
+  --icon-size-xl: 32px;
+}

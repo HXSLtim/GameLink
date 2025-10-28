@@ -238,7 +238,8 @@ module.exports = {
 
 ### Q: 为什么使用绝对路径？
 
-**A:** 
+**A:**
+
 - ✅ 更清晰：一目了然知道文件来自哪个目录
 - ✅ 易维护：移动文件时不需要修改导入路径
 - ✅ 避免混淆：`../../../utils` vs `utils`
@@ -246,6 +247,7 @@ module.exports = {
 ### Q: 什么时候可以使用相对路径？
 
 **A:**
+
 - ✅ 样式文件 (`./Button.module.less`)
 - ✅ 同目录辅助文件 (`./helpers.ts`)
 - ✅ 测试文件导入被测文件
@@ -256,6 +258,7 @@ module.exports = {
 **A:** 配置 IDE：
 
 **VSCode:**
+
 ```json
 // settings.json
 {
@@ -282,4 +285,3 @@ Settings → Editor → Code Style → TypeScript → Imports → Use paths rela
 - [TypeScript Module Resolution](https://www.typescriptlang.org/docs/handbook/module-resolution.html)
 - [Vite Resolve Alias](https://vitejs.dev/config/shared-options.html#resolve-alias)
 - [ESLint no-restricted-imports](https://eslint.org/docs/latest/rules/no-restricted-imports)
-

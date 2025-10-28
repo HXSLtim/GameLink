@@ -1,0 +1,21 @@
+@import '../../styles/variables.less';
+
+.layout {
+  min-height: 100vh;
+  background-color: var(--bg-secondary);
+}
+
+.container {
+  display: flex;
+  min-height: calc(100vh - 64px);
+}
+
+.main {
+  flex: 1;
+  padding: var(--spacing-xl);
+  overflow-x: hidden;
+
+  @media (max-width: 768px) {
+    padding: var(--spacing-base);
+  }
+}

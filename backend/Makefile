@@ -26,3 +26,5 @@ swagger:
 	@echo "Generating Swagger docs from annotations..."
 	$(GOCMD) env GOPATH >/dev/null 2>&1
 	swag init -g cmd/user-service/main.go -o docs/swagger -q
+	@# Keep embedded swagger json in sync for /swagger.json endpoint
+	cp docs/swagger/swagger.json internal/handler/swagger/openapi.json

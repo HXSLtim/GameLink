@@ -54,7 +54,10 @@ type fakeUserRepo struct{ last *model.User }
 
 func (f *fakeUserRepo) List(ctx context.Context) ([]model.User, error) { return nil, nil }
 func (f *fakeUserRepo) ListPaged(ctx context.Context, page, size int) ([]model.User, int64, error) {
-	return nil, 0, nil
+    return nil, 0, nil
+}
+func (f *fakeUserRepo) ListWithFilters(ctx context.Context, opts repository.UserListOptions) ([]model.User, int64, error) {
+    return nil, 0, nil
 }
 func (f *fakeUserRepo) Get(ctx context.Context, id uint64) (*model.User, error) {
 	if f.last != nil && f.last.ID == id {
@@ -94,13 +97,18 @@ func (f *fakePlayerRepo) Delete(ctx context.Context, id uint64) error       { re
 type fakeOrderRepo struct{ obj *model.Order }
 
 func (f *fakeOrderRepo) List(ctx context.Context, _ repository.OrderListOptions) ([]model.Order, int64, error) {
-	return nil, 0, nil
+    return nil, 0, nil
+}
+func (f *fakeOrderRepo) Create(ctx context.Context, o *model.Order) error {
+    if o.ID == 0 { o.ID = 1 }
+    f.obj = o
+    return nil
 }
 func (f *fakeOrderRepo) Get(ctx context.Context, id uint64) (*model.Order, error) {
-	if f.obj == nil {
-		return nil, repository.ErrNotFound
-	}
-	return f.obj, nil
+    if f.obj == nil {
+        return nil, repository.ErrNotFound
+    }
+    return f.obj, nil
 }
 func (f *fakeOrderRepo) Update(ctx context.Context, o *model.Order) error { f.obj = o; return nil }
 func (f *fakeOrderRepo) Delete(ctx context.Context, id uint64) error      { return nil }
@@ -108,13 +116,18 @@ func (f *fakeOrderRepo) Delete(ctx context.Context, id uint64) error      { retu
 type fakePaymentRepo struct{ obj *model.Payment }
 
 func (f *fakePaymentRepo) List(ctx context.Context, _ repository.PaymentListOptions) ([]model.Payment, int64, error) {
-	return nil, 0, nil
+    return nil, 0, nil
+}
+func (f *fakePaymentRepo) Create(ctx context.Context, p *model.Payment) error {
+    if p.ID == 0 { p.ID = 1 }
+    f.obj = p
+    return nil
 }
 func (f *fakePaymentRepo) Get(ctx context.Context, id uint64) (*model.Payment, error) {
-	if f.obj == nil {
-		return nil, repository.ErrNotFound
-	}
-	return f.obj, nil
+    if f.obj == nil {
+        return nil, repository.ErrNotFound
+    }
+    return f.obj, nil
 }
 func (f *fakePaymentRepo) Update(ctx context.Context, p *model.Payment) error { f.obj = p; return nil }
 func (f *fakePaymentRepo) Delete(ctx context.Context, id uint64) error        { return nil }
@@ -286,5 +299,35 @@ func TestService_UpdateUser_PasswordOptional(t *testing.T) {
 	}
 	if u3.PasswordHash != original {
 		t.Fatalf("password should not change when blank")
+	}
+}
+
+func TestService_OrderStateMachine(t *testing.T) {
+	o := &model.Order{Base: model.Base{ID: 1}, Status: model.OrderStatusPending}
+	oRepo := &fakeOrderRepo{obj: o}
+	s := NewAdminService(&fakeGameRepo{}, &fakeUserRepo{}, &fakePlayerRepo{}, oRepo, &fakePaymentRepo{}, cache.NewMemory())
+
+	// pending -> confirmed ok
+	if _, err := s.UpdateOrder(context.Background(), 1, UpdateOrderInput{Status: model.OrderStatusConfirmed, PriceCents: 1, Currency: model.CurrencyCNY}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// confirmed -> pending not allowed
+	if _, err := s.UpdateOrder(context.Background(), 1, UpdateOrderInput{Status: model.OrderStatusPending, PriceCents: 1, Currency: model.CurrencyCNY}); err == nil {
+		t.Fatalf("expected invalid transition error")
+	}
+}
+
+func TestService_PaymentStateMachine(t *testing.T) {
+	p := &model.Payment{Base: model.Base{ID: 1}, Status: model.PaymentStatusPending}
+	pRepo := &fakePaymentRepo{obj: p}
+	s := NewAdminService(&fakeGameRepo{}, &fakeUserRepo{}, &fakePlayerRepo{}, &fakeOrderRepo{}, pRepo, cache.NewMemory())
+
+	// pending -> paid ok
+	if _, err := s.UpdatePayment(context.Background(), 1, UpdatePaymentInput{Status: model.PaymentStatusPaid}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// paid -> failed not allowed
+	if _, err := s.UpdatePayment(context.Background(), 1, UpdatePaymentInput{Status: model.PaymentStatusFailed}); err == nil {
+		t.Fatalf("expected invalid transition error")
 	}
 }

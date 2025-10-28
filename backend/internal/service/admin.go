@@ -1,18 +1,22 @@
 package service
 
 import (
-	"context"
-	"encoding/json"
-	"errors"
-	"os"
-	"strings"
-	"time"
+    "context"
+    "encoding/json"
+    "errors"
+    "os"
+    "strings"
+    "time"
+
+	"log/slog"
 
 	"golang.org/x/crypto/bcrypt"
 
-	"gamelink/internal/cache"
-	"gamelink/internal/model"
-	"gamelink/internal/repository"
+    "gamelink/internal/cache"
+    "gamelink/internal/logging"
+    "gamelink/internal/model"
+    "gamelink/internal/repository"
+    "gamelink/internal/repository/gormrepo"
 )
 
 // ErrValidation 表示输入校验失败。
@@ -23,12 +27,13 @@ var ErrNotFound = repository.ErrNotFound
 
 // AdminService 聚合后台管理所需的业务逻辑。
 type AdminService struct {
-	games    repository.GameRepository
-	users    repository.UserRepository
-	players  repository.PlayerRepository
-	orders   repository.OrderRepository
-	payments repository.PaymentRepository
-	cache    cache.Cache
+    games    repository.GameRepository
+    users    repository.UserRepository
+    players  repository.PlayerRepository
+    orders   repository.OrderRepository
+    payments repository.PaymentRepository
+    cache    cache.Cache
+    tx       TxManager
 }
 
 const (
@@ -67,6 +72,83 @@ func NewAdminService(
 		payments: payments,
 		cache:    cache,
 	}
+}
+
+// TxManager abstracts UnitOfWork for transactional operations.
+type TxManager interface {
+	WithTx(ctx context.Context, fn func(r *gormrepo.Repos) error) error
+}
+
+// SetTxManager injects a transaction manager.
+func (s *AdminService) SetTxManager(tx TxManager) { s.tx = tx }
+
+// UpdatePlayerSkillTags 替换玩家技能标签集合（需要 TxManager）。
+func (s *AdminService) UpdatePlayerSkillTags(ctx context.Context, playerID uint64, tags []string) error {
+    if s.tx == nil { return errors.New("transaction manager not configured") }
+    return s.tx.WithTx(ctx, func(r *gormrepo.Repos) error {
+        // ensure player exists
+        if _, err := r.Players.Get(ctx, playerID); err != nil { return err }
+        return r.Tags.ReplaceTags(ctx, playerID, tags)
+    })
+}
+
+// RegisterUserAndPlayer creates a user and a player profile in a single transaction.
+func (s *AdminService) RegisterUserAndPlayer(ctx context.Context, u CreateUserInput, p CreatePlayerInput) (*model.User, *model.Player, error) {
+	if s.tx == nil {
+		return nil, nil, errors.New("transaction manager not configured")
+	}
+	// basic validations reuse existing ones
+	if err := validateUserInput(u.Name, u.Role, u.Status, u.Password); err != nil {
+		return nil, nil, err
+	}
+	// For registration flow, user will be created first; only verify player fields except UserID.
+	if p.VerificationStatus == "" {
+		return nil, nil, ErrValidation
+	}
+
+	var createdUser *model.User
+	var createdPlayer *model.Player
+
+	err := s.tx.WithTx(ctx, func(r *gormrepo.Repos) error {
+		// hash password
+		hashed, err := hashPassword(u.Password)
+		if err != nil {
+			return err
+		}
+		user := &model.User{
+			Phone:        strings.TrimSpace(u.Phone),
+			Email:        strings.TrimSpace(u.Email),
+			PasswordHash: hashed,
+			Name:         strings.TrimSpace(u.Name),
+			AvatarURL:    strings.TrimSpace(u.AvatarURL),
+			Role:         u.Role,
+			Status:       u.Status,
+		}
+		if err := r.Users.Create(ctx, user); err != nil {
+			return err
+		}
+		createdUser = user
+
+		player := &model.Player{
+			UserID:             user.ID,
+			Nickname:           strings.TrimSpace(p.Nickname),
+			Bio:                strings.TrimSpace(p.Bio),
+			HourlyRateCents:    p.HourlyRateCents,
+			MainGameID:         p.MainGameID,
+			VerificationStatus: p.VerificationStatus,
+		}
+		if err := r.Players.Create(ctx, player); err != nil {
+			return err
+		}
+		createdPlayer = player
+		return nil
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	// invalidate relevant caches
+	s.invalidateCache(ctx, cacheKeyUsers, cacheKeyPlayers)
+	return createdUser, createdPlayer, nil
 }
 
 // --- Game management ---
@@ -211,14 +293,25 @@ func (s *AdminService) ListUsers(ctx context.Context) ([]model.User, error) {
 
 // ListUsersPaged 返回分页用户列表。
 func (s *AdminService) ListUsersPaged(ctx context.Context, page, pageSize int) ([]model.User, *model.Pagination, error) {
-	page = repository.NormalizePage(page)
-	pageSize = repository.NormalizePageSize(pageSize)
-	items, total, err := s.users.ListPaged(ctx, page, pageSize)
-	if err != nil {
-		return nil, nil, err
-	}
-	p := buildPagination(page, pageSize, total)
-	return items, &p, nil
+    page = repository.NormalizePage(page)
+    pageSize = repository.NormalizePageSize(pageSize)
+    items, total, err := s.users.ListPaged(ctx, page, pageSize)
+    if err != nil {
+        return nil, nil, err
+    }
+    p := buildPagination(page, pageSize, total)
+    return items, &p, nil
+}
+
+// ListUsersWithOptions 返回带筛选的分页用户列表。
+func (s *AdminService) ListUsersWithOptions(ctx context.Context, opts repository.UserListOptions) ([]model.User, *model.Pagination, error) {
+    normalized := opts
+    normalized.Page = repository.NormalizePage(opts.Page)
+    normalized.PageSize = repository.NormalizePageSize(opts.PageSize)
+    items, total, err := s.users.ListWithFilters(ctx, normalized)
+    if err != nil { return nil, nil, err }
+    p := buildPagination(normalized.Page, normalized.PageSize, total)
+    return items, &p, nil
 }
 
 // GetUser 返回指定用户。
@@ -251,6 +344,11 @@ func (s *AdminService) CreateUser(ctx context.Context, input CreateUserInput) (*
 		return nil, err
 	}
 	s.invalidateCache(ctx, cacheKeyUsers)
+	if rid, ok := logging.RequestIDFromContext(ctx); ok {
+		slog.Info("user_created", slog.Uint64("user_id", user.ID), slog.String("role", string(user.Role)), slog.String("status", string(user.Status)), slog.String("request_id", rid))
+	} else {
+		slog.Info("user_created", slog.Uint64("user_id", user.ID), slog.String("role", string(user.Role)), slog.String("status", string(user.Status)))
+	}
 	return user, nil
 }
 
@@ -284,6 +382,11 @@ func (s *AdminService) UpdateUser(ctx context.Context, id uint64, input UpdateUs
 		return nil, err
 	}
 	s.invalidateCache(ctx, cacheKeyUsers)
+	if rid, ok := logging.RequestIDFromContext(ctx); ok {
+		slog.Info("user_updated", slog.Uint64("user_id", user.ID), slog.String("request_id", rid))
+	} else {
+		slog.Info("user_updated", slog.Uint64("user_id", user.ID))
+	}
 	return user, nil
 }
 
@@ -293,6 +396,11 @@ func (s *AdminService) DeleteUser(ctx context.Context, id uint64) error {
 		return err
 	}
 	s.invalidateCache(ctx, cacheKeyUsers)
+	if rid, ok := logging.RequestIDFromContext(ctx); ok {
+		slog.Info("user_deleted", slog.Uint64("user_id", id), slog.String("request_id", rid))
+	} else {
+		slog.Info("user_deleted", slog.Uint64("user_id", id))
+	}
 	return nil
 }
 
@@ -459,6 +567,67 @@ func validatePlayerInput(userID uint64, verification model.VerificationStatus) e
 
 // --- Order management ---
 
+// CreateOrderInput 创建订单请求。
+type CreateOrderInput struct {
+    UserID         uint64
+    PlayerID       *uint64
+    GameID         uint64
+    Title          string
+    Description    string
+    PriceCents     int64
+    Currency       model.Currency
+    ScheduledStart *time.Time
+    ScheduledEnd   *time.Time
+}
+
+// CreateOrder 新建订单，默认状态为 pending。
+func (s *AdminService) CreateOrder(ctx context.Context, in CreateOrderInput) (*model.Order, error) {
+    if in.UserID == 0 || in.GameID == 0 || in.PriceCents < 0 || !model.IsValidCurrency(in.Currency) {
+        return nil, ErrValidation
+    }
+    if in.ScheduledStart != nil && in.ScheduledEnd != nil && in.ScheduledEnd.Before(*in.ScheduledStart) {
+        return nil, ErrValidation
+    }
+    if in.PlayerID != nil && *in.PlayerID != 0 {
+        if _, err := s.players.Get(ctx, *in.PlayerID); err != nil { return nil, err }
+    }
+    order := &model.Order{
+        UserID:         in.UserID,
+        PlayerID:       0,
+        GameID:         in.GameID,
+        Title:          strings.TrimSpace(in.Title),
+        Description:    strings.TrimSpace(in.Description),
+        Status:         model.OrderStatusPending,
+        PriceCents:     in.PriceCents,
+        Currency:       in.Currency,
+        ScheduledStart: in.ScheduledStart,
+        ScheduledEnd:   in.ScheduledEnd,
+    }
+    if in.PlayerID != nil { order.PlayerID = *in.PlayerID }
+    if err := s.orders.Create(ctx, order); err != nil { return nil, err }
+    s.invalidateCache(ctx, cacheKeyOrders)
+    s.appendLogAsync(ctx, "order", order.ID, "create", map[string]any{"status": order.Status})
+    return order, nil
+}
+
+// AssignOrder 指派陪玩师。
+func (s *AdminService) AssignOrder(ctx context.Context, id uint64, playerID uint64) (*model.Order, error) {
+    if playerID == 0 { return nil, ErrValidation }
+    if _, err := s.players.Get(ctx, playerID); err != nil { return nil, err }
+    order, err := s.orders.Get(ctx, id)
+    if err != nil { return nil, err }
+    // 不允许在完成/取消/退款后指派
+    switch order.Status {
+    case model.OrderStatusCompleted, model.OrderStatusCanceled, model.OrderStatusRefunded:
+        return nil, ErrValidation
+    }
+    order.PlayerID = playerID
+    if err := s.orders.Update(ctx, order); err != nil { return nil, err }
+    s.invalidateCache(ctx, cacheKeyOrders)
+    s.appendLogAsync(ctx, "order", order.ID, "assign_player", map[string]any{"player_id": playerID})
+    return order, nil
+}
+
 // UpdateOrderInput 用于更新订单状态。
 type UpdateOrderInput struct {
 	Status         model.OrderStatus
@@ -509,6 +678,11 @@ func (s *AdminService) UpdateOrder(ctx context.Context, id uint64, input UpdateO
 		return nil, ErrValidation
 	}
 
+	// state machine guard
+	if !isAllowedOrderTransition(order.Status, input.Status) {
+		return nil, ErrValidation
+	}
+
 	order.Status = input.Status
 	order.PriceCents = input.PriceCents
 	order.Currency = input.Currency
@@ -519,7 +693,13 @@ func (s *AdminService) UpdateOrder(ctx context.Context, id uint64, input UpdateO
 	if err := s.orders.Update(ctx, order); err != nil {
 		return nil, err
 	}
-	s.invalidateCache(ctx, cacheKeyOrders)
+    s.invalidateCache(ctx, cacheKeyOrders)
+    s.appendLogAsync(ctx, "order", order.ID, "update_status", map[string]any{"status": order.Status, "reason": order.CancelReason})
+	if rid, ok := logging.RequestIDFromContext(ctx); ok {
+		slog.Info("order_status_changed", slog.Uint64("order_id", order.ID), slog.String("status", string(order.Status)), slog.String("request_id", rid))
+	} else {
+		slog.Info("order_status_changed", slog.Uint64("order_id", order.ID), slog.String("status", string(order.Status)))
+	}
 	return order, nil
 }
 
@@ -528,8 +708,9 @@ func (s *AdminService) DeleteOrder(ctx context.Context, id uint64) error {
 	if err := s.orders.Delete(ctx, id); err != nil {
 		return err
 	}
-	s.invalidateCache(ctx, cacheKeyOrders)
-	return nil
+    s.invalidateCache(ctx, cacheKeyOrders)
+    s.appendLogAsync(ctx, "order", id, "delete", nil)
+    return nil
 }
 
 // --- Payment management ---
@@ -541,6 +722,63 @@ type UpdatePaymentInput struct {
 	ProviderRaw     json.RawMessage
 	PaidAt          *time.Time
 	RefundedAt      *time.Time
+}
+
+// CreatePaymentInput 创建支付记录。
+type CreatePaymentInput struct {
+    OrderID     uint64
+    UserID      uint64
+    Method      model.PaymentMethod
+    AmountCents int64
+    Currency    model.Currency
+    ProviderRaw json.RawMessage
+}
+
+// CreatePayment 新建支付记录，默认状态 pending。
+func (s *AdminService) CreatePayment(ctx context.Context, in CreatePaymentInput) (*model.Payment, error) {
+    if in.OrderID == 0 || in.UserID == 0 || in.AmountCents <= 0 || !model.IsValidCurrency(in.Currency) {
+        return nil, ErrValidation
+    }
+    if in.Method == "" {
+        return nil, ErrValidation
+    }
+    if _, err := s.orders.Get(ctx, in.OrderID); err != nil { return nil, err }
+    if _, err := s.users.Get(ctx, in.UserID); err != nil { return nil, err }
+    pay := &model.Payment{
+        OrderID:     in.OrderID,
+        UserID:      in.UserID,
+        Method:      in.Method,
+        AmountCents: in.AmountCents,
+        Currency:    in.Currency,
+        Status:      model.PaymentStatusPending,
+        ProviderRaw: in.ProviderRaw,
+    }
+    if err := s.payments.Create(ctx, pay); err != nil { return nil, err }
+    s.invalidateCache(ctx, cacheKeyPayments)
+    s.appendLogAsync(ctx, "payment", pay.ID, "create", map[string]any{"status": pay.Status, "method": pay.Method})
+    return pay, nil
+}
+
+// CapturePaymentInput 确认入账。
+type CapturePaymentInput struct {
+    ProviderTradeNo string
+    ProviderRaw     json.RawMessage
+    PaidAt          *time.Time
+}
+
+// CapturePayment 将支付置为 paid。
+func (s *AdminService) CapturePayment(ctx context.Context, id uint64, in CapturePaymentInput) (*model.Payment, error) {
+    pay, err := s.payments.Get(ctx, id)
+    if err != nil { return nil, err }
+    if !isAllowedPaymentTransition(pay.Status, model.PaymentStatusPaid) { return nil, ErrValidation }
+    pay.Status = model.PaymentStatusPaid
+    pay.ProviderTradeNo = strings.TrimSpace(in.ProviderTradeNo)
+    pay.ProviderRaw = in.ProviderRaw
+    if in.PaidAt != nil { pay.PaidAt = in.PaidAt } else { now := time.Now().UTC(); pay.PaidAt = &now }
+    if err := s.payments.Update(ctx, pay); err != nil { return nil, err }
+    s.invalidateCache(ctx, cacheKeyPayments)
+    s.appendLogAsync(ctx, "payment", pay.ID, "capture", map[string]any{"trade_no": pay.ProviderTradeNo})
+    return pay, nil
 }
 
 // ListPayments 列出支付记录。
@@ -574,6 +812,10 @@ func (s *AdminService) UpdatePayment(ctx context.Context, id uint64, input Updat
 		return nil, ErrValidation
 	}
 
+	if !isAllowedPaymentTransition(payment.Status, input.Status) {
+		return nil, ErrValidation
+	}
+
 	payment.Status = input.Status
 	payment.ProviderTradeNo = strings.TrimSpace(input.ProviderTradeNo)
 	payment.ProviderRaw = input.ProviderRaw
@@ -583,7 +825,13 @@ func (s *AdminService) UpdatePayment(ctx context.Context, id uint64, input Updat
 	if err := s.payments.Update(ctx, payment); err != nil {
 		return nil, err
 	}
-	s.invalidateCache(ctx, cacheKeyPayments)
+    s.invalidateCache(ctx, cacheKeyPayments)
+    s.appendLogAsync(ctx, "payment", payment.ID, "update_status", map[string]any{"status": payment.Status})
+	if rid, ok := logging.RequestIDFromContext(ctx); ok {
+		slog.Info("payment_status_changed", slog.Uint64("payment_id", payment.ID), slog.String("status", string(payment.Status)), slog.String("request_id", rid))
+	} else {
+		slog.Info("payment_status_changed", slog.Uint64("payment_id", payment.ID), slog.String("status", string(payment.Status)))
+	}
 	return payment, nil
 }
 
@@ -592,8 +840,24 @@ func (s *AdminService) DeletePayment(ctx context.Context, id uint64) error {
 	if err := s.payments.Delete(ctx, id); err != nil {
 		return err
 	}
-	s.invalidateCache(ctx, cacheKeyPayments)
-	return nil
+    s.invalidateCache(ctx, cacheKeyPayments)
+    s.appendLogAsync(ctx, "payment", id, "delete", nil)
+    return nil
+}
+
+// appendLogAsync 追加操作日志（尽力而为，不影响主流程）。
+func (s *AdminService) appendLogAsync(ctx context.Context, entity string, id uint64, action string, meta map[string]any) {
+    if s.tx == nil {
+        return
+    }
+    _ = s.tx.WithTx(ctx, func(r *gormrepo.Repos) error {
+        var raw []byte
+        if meta != nil {
+            if b, err := json.Marshal(meta); err == nil { raw = b }
+        }
+        log := &model.OperationLog{EntityType: entity, EntityID: id, Action: action, MetadataJSON: raw}
+        return r.OpLogs.Append(ctx, log)
+    })
 }
 
 func isValidOrderStatus(status model.OrderStatus) bool {
@@ -606,10 +870,46 @@ func isValidOrderStatus(status model.OrderStatus) bool {
 	}
 }
 
+func isAllowedOrderTransition(prev, next model.OrderStatus) bool {
+	if prev == next {
+		return true
+	}
+	switch prev {
+	case model.OrderStatusPending:
+		return next == model.OrderStatusConfirmed || next == model.OrderStatusCanceled
+	case model.OrderStatusConfirmed:
+		return next == model.OrderStatusInProgress || next == model.OrderStatusCanceled
+	case model.OrderStatusInProgress:
+		return next == model.OrderStatusCompleted || next == model.OrderStatusCanceled
+	case model.OrderStatusCompleted:
+		return false
+	case model.OrderStatusCanceled, model.OrderStatusRefunded:
+		return false
+	default:
+		return false
+	}
+}
+
 func isValidPaymentStatus(status model.PaymentStatus) bool {
 	switch status {
 	case model.PaymentStatusPending, model.PaymentStatusPaid, model.PaymentStatusFailed, model.PaymentStatusRefunded:
 		return true
+	default:
+		return false
+	}
+}
+
+func isAllowedPaymentTransition(prev, next model.PaymentStatus) bool {
+	if prev == next {
+		return true
+	}
+	switch prev {
+	case model.PaymentStatusPending:
+		return next == model.PaymentStatusPaid || next == model.PaymentStatusFailed || next == model.PaymentStatusRefunded
+	case model.PaymentStatusPaid:
+		return next == model.PaymentStatusRefunded
+	case model.PaymentStatusFailed, model.PaymentStatusRefunded:
+		return false
 	default:
 		return false
 	}
@@ -638,6 +938,97 @@ func buildPagination(page, pageSize int, total int64) model.Pagination {
 		HasNext:    page < totalPages,
 		HasPrev:    page > 1,
 	}
+}
+
+// ListOperationLogs 返回实体的操作日志。
+func (s *AdminService) ListOperationLogs(ctx context.Context, entityType string, entityID uint64, page, pageSize int) ([]model.OperationLog, *model.Pagination, error) {
+    if s.tx == nil {
+        return nil, nil, errors.New("transaction manager not configured")
+    }
+    var logs []model.OperationLog
+    var total int64
+    err := s.tx.WithTx(ctx, func(r *gormrepo.Repos) error {
+        items, cnt, err := r.OpLogs.ListByEntity(ctx, entityType, entityID, repository.NormalizePage(page), repository.NormalizePageSize(pageSize))
+        if err != nil { return err }
+        logs, total = items, cnt
+        return nil
+    })
+    if err != nil { return nil, nil, err }
+    p := buildPagination(repository.NormalizePage(page), repository.NormalizePageSize(pageSize), total)
+    return logs, &p, nil
+}
+
+// --- Review management ---
+
+// ListReviews 列出评价。
+func (s *AdminService) ListReviews(ctx context.Context, opts repository.ReviewListOptions) ([]model.Review, *model.Pagination, error) {
+    if s.tx == nil {
+        return nil, nil, errors.New("transaction manager not configured")
+    }
+    var items []model.Review
+    var total int64
+    err := s.tx.WithTx(ctx, func(r *gormrepo.Repos) error {
+        page := repository.NormalizePage(opts.Page)
+        size := repository.NormalizePageSize(opts.PageSize)
+        out, cnt, err := r.Reviews.List(ctx, repository.ReviewListOptions{
+            Page: page, PageSize: size, OrderID: opts.OrderID, UserID: opts.UserID, PlayerID: opts.PlayerID, DateFrom: opts.DateFrom, DateTo: opts.DateTo,
+        })
+        if err != nil { return err }
+        items, total = out, cnt
+        return nil
+    })
+    if err != nil { return nil, nil, err }
+    p := buildPagination(repository.NormalizePage(opts.Page), repository.NormalizePageSize(opts.PageSize), total)
+    return items, &p, nil
+}
+
+// GetReview 返回评价详情。
+func (s *AdminService) GetReview(ctx context.Context, id uint64) (*model.Review, error) {
+    if s.tx == nil {
+        return nil, errors.New("transaction manager not configured")
+    }
+    var item *model.Review
+    err := s.tx.WithTx(ctx, func(r *gormrepo.Repos) error {
+        var err error
+        item, err = r.Reviews.Get(ctx, id)
+        return err
+    })
+    return item, err
+}
+
+// CreateReview 新建评价。
+func (s *AdminService) CreateReview(ctx context.Context, r model.Review) (*model.Review, error) {
+    if !r.Score.Valid() || r.OrderID == 0 || r.UserID == 0 || r.PlayerID == 0 {
+        return nil, ErrValidation
+    }
+    if s.tx == nil { return nil, errors.New("transaction manager not configured") }
+    err := s.tx.WithTx(ctx, func(txr *gormrepo.Repos) error { return txr.Reviews.Create(ctx, &r) })
+    if err != nil { return nil, err }
+    return &r, nil
+}
+
+// UpdateReview 修改评价分数/内容。
+func (s *AdminService) UpdateReview(ctx context.Context, id uint64, score model.Rating, content string) (*model.Review, error) {
+    if !score.Valid() { return nil, ErrValidation }
+    if s.tx == nil { return nil, errors.New("transaction manager not configured") }
+    var item *model.Review
+    err := s.tx.WithTx(ctx, func(r *gormrepo.Repos) error {
+        obj, err := r.Reviews.Get(ctx, id)
+        if err != nil { return err }
+        obj.Score = score
+        obj.Content = strings.TrimSpace(content)
+        if err := r.Reviews.Update(ctx, obj); err != nil { return err }
+        item = obj
+        return nil
+    })
+    if err != nil { return nil, err }
+    return item, nil
+}
+
+// DeleteReview 删除评价。
+func (s *AdminService) DeleteReview(ctx context.Context, id uint64) error {
+    if s.tx == nil { return errors.New("transaction manager not configured") }
+    return s.tx.WithTx(ctx, func(r *gormrepo.Repos) error { return r.Reviews.Delete(ctx, id) })
 }
 
 func getCachedList[T any](ctx context.Context, c cache.Cache, key string, ttl time.Duration, fetch func() ([]T, error)) ([]T, error) {

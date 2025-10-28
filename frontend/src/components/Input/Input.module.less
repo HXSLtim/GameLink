@@ -1,0 +1,151 @@
+@import '../../styles/variables.less';
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 0 var(--spacing-base);
+  min-height: 40px;
+  background-color: var(--bg-primary);
+  border: var(--border-width-base) solid var(--border-color);
+  border-radius: var(--border-radius-none);
+  transition: all var(--duration-base) var(--ease-out);
+  position: relative;
+
+  &:hover:not(.disabled) {
+    box-shadow: var(--shadow-sm);
+  }
+
+  &:focus-within:not(.disabled) {
+    box-shadow: var(--shadow-sm);
+    transform: translate(-1px, -1px);
+  }
+
+  &.error {
+    border-color: var(--border-color);
+    background-color: var(--bg-error);
+  }
+
+  &.disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    background-color: var(--bg-tertiary);
+  }
+}
+
+.input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-normal);
+
+  &::placeholder {
+    color: var(--text-tertiary);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
+
+.prefix,
+.suffix {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+
+  svg {
+    width: var(--icon-size-base);
+    height: var(--icon-size-base);
+  }
+}
+
+.clearBtn,
+.eyeBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: color var(--duration-base) var(--ease-out);
+  flex-shrink: 0;
+
+  &:hover {
+    color: var(--text-primary);
+  }
+
+  svg {
+    width: var(--icon-size-base);
+    height: var(--icon-size-base);
+  }
+}
+
+.errorMessage {
+  font-size: var(--font-size-xs);
+  color: var(--text-primary);
+  padding-left: var(--spacing-xs);
+}
+
+// ==================== 尺寸样式 ====================
+
+.small {
+  height: var(--input-height-sm);
+  padding: 0 var(--spacing-sm);
+
+  .input {
+    font-size: var(--font-size-sm);
+  }
+
+  .prefix,
+  .suffix,
+  .clearBtn,
+  .eyeBtn {
+    svg {
+      width: var(--icon-size-sm);
+      height: var(--icon-size-sm);
+    }
+  }
+}
+
+.medium {
+  height: var(--input-height-base);
+  padding: 0 var(--spacing-base);
+
+  .input {
+    font-size: var(--font-size-base);
+  }
+}
+
+.large {
+  height: var(--input-height-lg);
+  padding: 0 var(--spacing-lg);
+
+  .input {
+    font-size: var(--font-size-lg);
+  }
+
+  .prefix,
+  .suffix,
+  .clearBtn,
+  .eyeBtn {
+    svg {
+      width: var(--icon-size-lg);
+      height: var(--icon-size-lg);
+    }
+  }
+}

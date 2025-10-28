@@ -15,6 +15,13 @@ func TestRunDataFixups_OrderStatusSpelling(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
+	// seed minimal referenced rows to satisfy FKs
+	if err := db1.Exec("INSERT INTO users (id, name, role, status) VALUES (1,'u','user','active')").Error; err != nil {
+		t.Fatalf("seed user: %v", err)
+	}
+	if err := db1.Exec("INSERT INTO games (id, key, name) VALUES (1,'g','game')").Error; err != nil {
+		t.Fatalf("seed game: %v", err)
+	}
 	// insert legacy value
 	if err := db1.Exec("INSERT INTO orders (id, user_id, game_id, title, status, price_cents) VALUES (1,1,1,'t','cancelled',0)").Error; err != nil {
 		t.Fatalf("insert legacy: %v", err)

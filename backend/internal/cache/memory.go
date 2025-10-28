@@ -15,13 +15,17 @@ type memoryEntry struct {
 type memoryCache struct {
 	mu     sync.RWMutex
 	values map[string]memoryEntry
+	stopCh chan struct{}
 }
 
 // NewMemory 创建内存缓存。
 func NewMemory() Cache {
-	return &memoryCache{
+	c := &memoryCache{
 		values: make(map[string]memoryEntry),
+		stopCh: make(chan struct{}),
 	}
+	go c.janitor(1 * time.Minute)
+	return c
 }
 
 func (c *memoryCache) Get(_ context.Context, key string) (string, bool, error) {
@@ -59,8 +63,29 @@ func (c *memoryCache) Delete(_ context.Context, key string) error {
 }
 
 func (c *memoryCache) Close(context.Context) error {
+	close(c.stopCh)
 	c.mu.Lock()
 	c.values = make(map[string]memoryEntry)
 	c.mu.Unlock()
 	return nil
+}
+
+func (c *memoryCache) janitor(interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			now := time.Now()
+			c.mu.Lock()
+			for k, v := range c.values {
+				if !v.expiry.IsZero() && now.After(v.expiry) {
+					delete(c.values, k)
+				}
+			}
+			c.mu.Unlock()
+		case <-c.stopCh:
+			return
+		}
+	}
 }

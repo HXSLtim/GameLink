@@ -11,12 +11,17 @@ import (
 
 // PaymentRepository 使用 GORM 管理支付记录。
 type PaymentRepository struct {
-	db *gorm.DB
+    db *gorm.DB
 }
 
 // NewPaymentRepository 创建实例。
 func NewPaymentRepository(db *gorm.DB) *PaymentRepository {
-	return &PaymentRepository{db: db}
+    return &PaymentRepository{db: db}
+}
+
+// Create inserts a new payment row.
+func (r *PaymentRepository) Create(ctx context.Context, payment *model.Payment) error {
+    return r.db.WithContext(ctx).Create(payment).Error
 }
 
 // List returns a page of payments and the total count with filters applied.

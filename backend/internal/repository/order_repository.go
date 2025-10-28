@@ -22,8 +22,9 @@ type OrderListOptions struct {
 
 // OrderRepository 管理订单生命周期。
 type OrderRepository interface {
-	List(ctx context.Context, opts OrderListOptions) ([]model.Order, int64, error)
-	Get(ctx context.Context, id uint64) (*model.Order, error)
-	Update(ctx context.Context, order *model.Order) error
-	Delete(ctx context.Context, id uint64) error
+    Create(ctx context.Context, order *model.Order) error
+    List(ctx context.Context, opts OrderListOptions) ([]model.Order, int64, error)
+    Get(ctx context.Context, id uint64) (*model.Order, error)
+    Update(ctx context.Context, order *model.Order) error
+    Delete(ctx context.Context, id uint64) error
 }

@@ -28,8 +28,8 @@ const (
 // Payment records a payment attempt/result for an order.
 type Payment struct {
 	Base
-	OrderID         uint64          `json:"order_id" gorm:"index"`
-	UserID          uint64          `json:"user_id" gorm:"index"`
+	OrderID         uint64          `json:"order_id" gorm:"not null;index"`
+	UserID          uint64          `json:"user_id" gorm:"not null;index"`
 	Method          PaymentMethod   `json:"method" gorm:"size:32"`
 	AmountCents     int64           `json:"amount_cents"`
 	Currency        Currency        `json:"currency,omitempty" gorm:"type:char(3)"` // default CNY
@@ -38,4 +38,8 @@ type Payment struct {
 	ProviderRaw     json.RawMessage `json:"provider_raw,omitempty" gorm:"type:json"` // provider response payload
 	PaidAt          *time.Time      `json:"paid_at,omitempty"`
 	RefundedAt      *time.Time      `json:"refunded_at,omitempty"`
+
+	// Relations + FKs
+	Order Order `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;foreignKey:OrderID;references:ID"`
+	User  User  `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;foreignKey:UserID;references:ID"`
 }

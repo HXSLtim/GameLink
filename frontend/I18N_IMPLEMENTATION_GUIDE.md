@@ -26,6 +26,7 @@ npm install react-i18next i18next
 ```
 
 **优点**：
+
 - 功能完整，社区成熟
 - 支持复数、插值、命名空间等高级功能
 - 性能优化良好
@@ -40,19 +41,17 @@ import { initReactI18next } from 'react-i18next';
 import { zhCN } from './locales/zh-CN';
 import { enUS } from './locales/en-US';
 
-i18n
-  .use(initReactI18next)
-  .init({
-    resources: {
-      'zh-CN': { translation: zhCN },
-      'en-US': { translation: enUS },
-    },
-    lng: 'zh-CN',
-    fallbackLng: 'zh-CN',
-    interpolation: {
-      escapeValue: false,
-    },
-  });
+i18n.use(initReactI18next).init({
+  resources: {
+    'zh-CN': { translation: zhCN },
+    'en-US': { translation: enUS },
+  },
+  lng: 'zh-CN',
+  fallbackLng: 'zh-CN',
+  interpolation: {
+    escapeValue: false,
+  },
+});
 
 export default i18n;
 ```
@@ -64,7 +63,7 @@ import { useTranslation } from 'react-i18next';
 
 function MyComponent() {
   const { t } = useTranslation();
-  
+
   return (
     <div>
       <h1>{t('common.confirm')}</h1>
@@ -85,7 +84,7 @@ import enUS from '@arco-design/web-react/es/locale/en-US';
 
 function App() {
   const [locale, setLocale] = useState(zhCN);
-  
+
   return (
     <ConfigProvider locale={locale}>
       {/* 应用内容 */}
@@ -143,7 +142,7 @@ import { useTranslation } from 'react-i18next';
 
 export const LanguageSwitcher: React.FC = () => {
   const { i18n } = useTranslation();
-  
+
   return (
     <Select
       value={i18n.language}
@@ -230,4 +229,3 @@ export type TypeSafeTranslate = TFunction<'translation', undefined, TranslationK
 - [react-i18next 文档](https://react.i18next.com/)
 - [i18next 文档](https://www.i18next.com/)
 - [Arco Design 国际化](https://arco.design/react/docs/i18n)
-

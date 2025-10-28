@@ -1,0 +1,254 @@
+@import '../../styles/variables.less';
+
+// ==================== 登录页面容器 ====================
+.loginContainer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: var(--bg-primary);
+  overflow: hidden;
+  animation: fadeIn 0.8s ease-out;
+}
+
+// ==================== 背景装饰 ====================
+.bgDecoration {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 0;
+
+  // 装饰圆圈 - 黑白渐变效果
+  .circle1,
+  .circle2,
+  .circle3 {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--text-primary) 08 0%, transparent 70%);
+    animation: float 20s ease-in-out infinite;
+  }
+
+  .circle1 {
+    width: 400px;
+    height: 400px;
+    top: -200px;
+    left: -200px;
+    animation-delay: 0s;
+  }
+
+  .circle2 {
+    width: 500px;
+    height: 500px;
+    bottom: -250px;
+    right: -250px;
+    animation-delay: 5s;
+  }
+
+  .circle3 {
+    width: 300px;
+    height: 300px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation-delay: 10s;
+  }
+}
+
+// ==================== 登录卡片 ====================
+.loginCard {
+  position: relative;
+  z-index: 1;
+  width: 420px;
+  padding: 48px 40px;
+  background-color: var(--bg-primary);
+  border: var(--border-width-base) solid var(--border-color);
+  border-radius: var(--border-radius-none);
+  box-shadow: var(--shadow-base);
+  animation: slideUp 0.6s ease-out;
+  transition: all var(--duration-normal) var(--ease-out);
+
+  &:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translate(-2px, -2px);
+  }
+}
+
+// ==================== 头部 ====================
+.header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.title {
+  margin: 0;
+  font-size: 36px;
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  letter-spacing: 2px;
+  animation: slideDown 0.6s ease-out;
+}
+
+.subtitle {
+  margin: var(--spacing-sm) 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-normal);
+  animation: slideDown 0.6s ease-out 0.1s;
+  animation-fill-mode: both;
+}
+
+// ==================== 表单 ====================
+.form {
+  // 表单项间距已通过 FormItem 的 gap 属性处理
+}
+
+// ==================== 提交按钮 ====================
+.submitBtn {
+  height: 48px;
+  margin-top: var(--spacing-sm);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 1px;
+  position: relative;
+  overflow: hidden;
+  // Button 组件已经处理了基础样式
+}
+
+// ==================== 底部 ====================
+.footer {
+  text-align: center;
+  margin-top: var(--spacing-xl);
+  font-size: var(--font-size-sm);
+}
+
+.footerText {
+  color: var(--text-secondary);
+}
+
+.link {
+  color: var(--text-primary);
+  font-weight: var(--font-weight-semibold);
+  text-decoration: none;
+  margin-left: var(--spacing-sm);
+  position: relative;
+  transition: all var(--duration-normal) var(--ease-out);
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: var(--border-width-base);
+    background-color: var(--border-color);
+    transition: width var(--duration-normal) var(--ease-out);
+  }
+
+  &:hover {
+    &::after {
+      width: 100%;
+    }
+  }
+}
+
+// ==================== 版权信息 ====================
+.copyright {
+  position: absolute;
+  bottom: 20px;
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  z-index: 1;
+  animation: fadeIn 1s ease-out 0.5s;
+  animation-fill-mode: both;
+}
+
+// ==================== 动画定义 ====================
+
+// 页面淡入
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+// 卡片上滑
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// 标题下滑
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// 背景装饰浮动
+@keyframes float {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -30px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+}
+
+// ==================== 响应式设计 ====================
+@media (max-width: 768px) {
+  .loginCard {
+    width: 90%;
+    max-width: 420px;
+    padding: 40px 32px;
+    box-shadow: var(--shadow-sm);
+
+    &:hover {
+      box-shadow: var(--shadow-base);
+    }
+  }
+
+  .title {
+    font-size: 32px;
+  }
+
+  .bgDecoration {
+    .circle1,
+    .circle2,
+    .circle3 {
+      width: 200px;
+      height: 200px;
+    }
+  }
+}
+
+// ==================== 无障碍优化 ====================
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

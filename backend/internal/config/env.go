@@ -75,9 +75,13 @@ func Load() AppConfig {
 	overrideFromEnv(&cfg)
 
 	if cfg.Database.DSN == "" {
-		if sample := SampleDSN(cfg.Database.Type); sample != "" {
-			cfg.Database.DSN = sample
-			log.Printf("DB_DSN 未配置，使用 %s 示例 DSN：%s", cfg.Database.Type, sample)
+		if env != "production" {
+			if sample := SampleDSN(cfg.Database.Type); sample != "" {
+				cfg.Database.DSN = sample
+				log.Printf("DB_DSN 未配置，使用 %s 示例 DSN：%s", cfg.Database.Type, sample)
+			}
+		} else {
+			log.Printf("DB_DSN 未配置，生产环境将保持为空并由外部注入")
 		}
 	}
 

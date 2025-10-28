@@ -1,0 +1,307 @@
+@import '../../styles/variables.less';
+
+.container {
+  padding: var(--spacing-lg);
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.title {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  margin: 0 0 var(--spacing-xl) 0;
+}
+
+// 统计卡片
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-2xl);
+}
+
+.statCard {
+  padding: var(--spacing-lg);
+  display: flex;
+  gap: var(--spacing-md);
+  cursor: default;
+  transition: all var(--duration-normal);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+}
+
+.statIcon {
+  width: 56px;
+  height: 56px;
+  background-color: var(--bg-inverse);
+  border: var(--border-width-base) solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  svg {
+    color: var(--text-inverse);
+  }
+}
+
+.statContent {
+  flex: 1;
+}
+
+.statLabel {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.statValue {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-xs);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.statTrend {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.trendUp {
+  color: var(--text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+// 快捷入口
+.quickActions {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.sectionTitle {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  margin: 0 0 var(--spacing-lg) 0;
+}
+
+.actionsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.actionCard {
+  padding: var(--spacing-xl);
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--duration-normal);
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  &:active {
+    transform: translateY(-2px);
+  }
+}
+
+.actionIcon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto var(--spacing-md);
+  background-color: var(--bg-inverse);
+  border: var(--border-width-base) solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  svg {
+    color: var(--text-inverse);
+  }
+}
+
+.actionTitle {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+}
+
+.actionDesc {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+// 最近订单
+.recentOrders,
+.pendingReviews {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-lg);
+}
+
+.viewAllButton {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: var(--border-width-base) solid var(--border-color);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+
+  &:hover {
+    background-color: var(--bg-inverse);
+    color: var(--text-inverse);
+  }
+}
+
+.ordersList,
+.reviewsList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.orderCard,
+.reviewCard {
+  padding: var(--spacing-lg);
+  cursor: pointer;
+  transition: all var(--duration-normal);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-base);
+  }
+}
+
+.orderHeader,
+.reviewHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: var(--border-width-base) solid var(--border-color);
+}
+
+.orderNo {
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+}
+
+.orderInfo {
+  margin-bottom: var(--spacing-md);
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.infoLabel {
+  color: var(--text-secondary);
+}
+
+.infoValue {
+  color: var(--text-primary);
+  font-weight: var(--font-weight-medium);
+
+  &.price {
+    font-weight: var(--font-weight-semibold);
+  }
+}
+
+.orderFooter {
+  padding-top: var(--spacing-sm);
+  border-top: var(--border-width-base) solid var(--border-color);
+}
+
+.orderTime {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+}
+
+// 待审核订单
+.reviewContent {
+  margin-bottom: var(--spacing-sm);
+}
+
+.reviewText {
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+  line-height: 1.5;
+
+  strong {
+    font-weight: var(--font-weight-semibold);
+  }
+}
+
+.reviewMeta {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+// 响应式
+@media (max-width: 1024px) {
+  .statsGrid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+
+  .actionsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .ordersList,
+  .reviewsList {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: var(--spacing-md);
+  }
+
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .actionsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sectionHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+  }
+}

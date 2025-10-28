@@ -1,0 +1,119 @@
+@import '../../styles/variables.less';
+
+.tableWrapper {
+  width: 100%;
+  background-color: var(--bg-primary);
+  border: var(--border-width-base) solid var(--border-color);
+  overflow: hidden;
+}
+
+.tableScroll {
+  overflow-x: auto;
+  overflow-y: auto;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--text-tertiary);
+    border-radius: 0;
+
+    &:hover {
+      background: var(--text-secondary);
+    }
+  }
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+.thead {
+  background-color: var(--bg-inverse);
+  color: var(--text-inverse);
+}
+
+.th {
+  padding: var(--spacing-md) var(--spacing-sm);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: var(--border-width-base) solid var(--border-color);
+  white-space: nowrap;
+  background-color: var(--bg-inverse);
+  color: var(--text-inverse);
+}
+
+.tbody {
+  background-color: var(--bg-primary);
+}
+
+.row {
+  border-bottom: var(--border-width-base) solid var(--border-color);
+  cursor: pointer;
+  transition: background-color var(--duration-fast);
+
+  &:hover {
+    background-color: var(--bg-secondary);
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.td {
+  padding: var(--spacing-md) var(--spacing-sm);
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+  border-bottom: var(--border-width-base) solid var(--border-color);
+}
+
+.loading,
+.empty {
+  text-align: center;
+  padding: var(--spacing-xl) 0;
+}
+
+.loadingContent,
+.emptyContent {
+  display: inline-block;
+  padding: var(--spacing-lg);
+  color: var(--text-secondary);
+  font-size: var(--font-size-base);
+}
+
+// 固定列阴影效果
+.th,
+.td {
+  &[style*='position: sticky'] {
+    z-index: 1;
+    background-color: inherit;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background-color: var(--border-color);
+    }
+  }
+
+  &[style*='left:']::after {
+    right: -2px;
+  }
+
+  &[style*='right:']::after {
+    left: -2px;
+  }
+}

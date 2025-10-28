@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -25,6 +26,7 @@ type Claims struct {
 type JWTManager struct {
 	secretKey     string        // 签名密钥
 	tokenDuration time.Duration // Token有效期
+	maxRefresh    time.Duration // 允许刷新窗口（自签发起）
 }
 
 // NewJWTManager 创建JWT管理器
@@ -32,7 +34,18 @@ func NewJWTManager(secretKey string, tokenDuration time.Duration) *JWTManager {
 	return &JWTManager{
 		secretKey:     secretKey,
 		tokenDuration: tokenDuration,
+		maxRefresh:    readMaxRefreshWindow(),
 	}
+}
+
+func readMaxRefreshWindow() time.Duration {
+	v := os.Getenv("JWT_MAX_REFRESH")
+	if v != "" {
+		if d, err := time.ParseDuration(v); err == nil {
+			return d
+		}
+	}
+	return 7 * 24 * time.Hour
 }
 
 // GenerateToken 生成JWT Token
@@ -116,6 +129,11 @@ func (manager *JWTManager) RefreshToken(claims *Claims) (string, error) {
 	// 检查Token是否还有足够的时间
 	if time.Until(claims.ExpiresAt.Time) > 30*time.Second {
 		return "", errors.New("Token还未到刷新时间")
+	}
+
+	// 限制刷新窗口：签发时间距今不得超过 maxRefresh
+	if !claims.IssuedAt.Time.IsZero() && time.Since(claims.IssuedAt.Time) > manager.maxRefresh {
+		return "", errors.New("Token已超过可刷新窗口")
 	}
 
 	// 生成新的Token

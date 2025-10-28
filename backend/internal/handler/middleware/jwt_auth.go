@@ -20,7 +20,16 @@ func JWTAuth() gin.HandlerFunc {
 	// 从环境变量获取JWT密钥
 	secretKey := os.Getenv("JWT_SECRET_KEY")
 	if secretKey == "" {
-		// 如果没有设置密钥，使用默认值（仅用于开发环境）
+		if os.Getenv("APP_ENV") == "production" {
+			return func(c *gin.Context) {
+				c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{
+					"success": false,
+					"code":    http.StatusServiceUnavailable,
+					"message": "jwt not configured",
+				})
+			}
+		}
+		// 开发环境使用默认值
 		secretKey = "gamelink-default-secret-key-change-in-production"
 	}
 
@@ -157,6 +166,10 @@ func OptionalAuth() gin.HandlerFunc {
 	// 从环境变量获取JWT密钥
 	secretKey := os.Getenv("JWT_SECRET_KEY")
 	if secretKey == "" {
+		if os.Getenv("APP_ENV") == "production" {
+			// 生产环境未配置则视为未认证通过（但 optional 允许继续）
+			return func(c *gin.Context) { c.Next() }
+		}
 		secretKey = "gamelink-default-secret-key-change-in-production"
 	}
 
