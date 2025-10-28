@@ -7,14 +7,18 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:analyze": "ANALYZE=true vite build",
     "preview": "vite preview",
     "lint": "eslint \"src/**/*.{ts,tsx,js,jsx}\" --max-warnings=0",
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "axios": "^1.13.0",
+    "crypto-js": "^4.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.30.1"
@@ -22,6 +26,7 @@
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.0.1",
+    "@types/crypto-js": "^4.2.2",
     "@types/node": "^20.11.30",
     "@types/react": "^18.3.10",
     "@types/react-dom": "^18.3.0",
@@ -35,6 +40,7 @@
     "jsdom": "^25.0.1",
     "less": "^4.2.0",
     "prettier": "^3.3.3",
+    "rollup-plugin-visualizer": "^6.0.5",
     "typescript": "^5.6.3",
     "vite": "^5.4.10",
     "vite-plugin-full-reload": "^1.1.0",

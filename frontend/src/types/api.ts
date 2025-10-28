@@ -1,25 +1,40 @@
 /**
- * API 成功响应类型
+ * API 成功响应格式 - 与后端统一
  */
 export interface ApiSuccessResponse<T> {
   success: true;
-  code: 0;
-  message: string;
   data: T;
+  message?: string;
 }
 
 /**
- * API 错误响应类型
+ * API 列表响应格式 - 与后端统一
+ */
+export interface ApiListResponse<T> {
+  success: true;
+  data: T[];
+  pagination: {
+    page: number;
+    page_size: number;
+    total: number;
+    total_pages: number;
+    has_next: boolean;
+    has_prev: boolean;
+  };
+}
+
+/**
+ * API 错误响应格式 - 与后端统一
  */
 export interface ApiErrorResponse {
   success: false;
   code: number;
   message: string;
-  data: null;
+  details?: any;
 }
 
 /**
- * API响应基础类型 - 与后端保持一致
+ * API 响应基础类型
  * 使用联合类型严格区分成功和失败响应
  */
 export type ApiResponse<T = unknown> = ApiSuccessResponse<T> | ApiErrorResponse;
@@ -33,21 +48,36 @@ export interface PageQuery {
   sort_by?: string;
   sort_order?: 'asc' | 'desc';
   keyword?: string;
-  filter?: Record<string, unknown>;
-  fields?: string[];
+  [key: string]: unknown; // 索引签名，允许额外的查询参数
 }
 
 /**
- * 分页结果
+ * 分页信息
  */
-export interface PageResult<T> {
-  items: T[];
-  total: number;
+export interface Pagination {
   page: number;
   page_size: number;
+  total: number;
+  total_pages: number;
   has_next: boolean;
   has_prev: boolean;
 }
+
+/**
+ * 列表响应（不包含 success 字段的数据部分）
+ */
+export interface ListResult<T> {
+  list: T[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+/**
+ * 分页结果（废弃，使用 ListResult 代替）
+ * @deprecated 使用 ListResult 代替
+ */
+export type PageResult<T> = ListResult<T>;
 
 /**
  * API错误类

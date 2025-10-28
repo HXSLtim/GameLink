@@ -1,23 +1,27 @@
-import { BaseEntity } from './user';
+import type { BaseEntity } from './user';
 
 /**
  * 货币类型枚举
  */
-export type Currency = 'CNY' | 'USD' | 'EUR';
+export enum Currency {
+  CNY = 'CNY',
+  USD = 'USD',
+}
 
 /**
- * 订单状态枚举
+ * 订单状态枚举 - 与后端 model.Order 保持一致
  */
-export type OrderStatus =
-  | 'pending'
-  | 'confirmed'
-  | 'in_progress'
-  | 'completed'
-  | 'cancelled'
-  | 'refunded';
+export enum OrderStatus {
+  PENDING = 'pending', // 待处理
+  CONFIRMED = 'confirmed', // 已确认
+  IN_PROGRESS = 'in_progress', // 进行中
+  COMPLETED = 'completed', // 已完成
+  CANCELED = 'canceled', // 已取消（拼写与后端一致）
+  REFUNDED = 'refunded', // 已退款
+}
 
 /**
- * 订单实体 - 与后端model.Order保持一致
+ * 订单实体 - 与后端 model.Order 保持一致
  */
 export interface Order extends BaseEntity {
   user_id: number;
@@ -31,6 +35,56 @@ export interface Order extends BaseEntity {
   scheduled_start?: string;
   scheduled_end?: string;
   cancel_reason?: string;
+
+  // 关联信息（API 返回时可能包含）
+  user?: {
+    id: number;
+    name: string;
+    avatar_url?: string;
+  };
+  player?: {
+    id: number;
+    nickname?: string;
+    avatar_url?: string;
+  };
+  game?: {
+    id: number;
+    name: string;
+    icon_url?: string;
+  };
+}
+
+/**
+ * 订单详情（包含扩展信息）
+ */
+export interface OrderDetail extends Order {
+  // 时间节点
+  paid_at?: string;
+  accepted_at?: string;
+  started_at?: string;
+  completed_at?: string;
+  cancelled_at?: string;
+
+  // 操作日志
+  logs?: Array<{
+    id: number;
+    action: string;
+    operator_id: number;
+    operator_name: string;
+    note?: string;
+    created_at: string;
+  }>;
+
+  // 审核记录
+  reviews?: Array<{
+    id: number;
+    result: 'approved' | 'rejected';
+    reason?: string;
+    comment?: string;
+    reviewer_id: number;
+    reviewer_name: string;
+    created_at: string;
+  }>;
 }
 
 /**
@@ -71,37 +125,82 @@ export interface CreateOrderRequest {
 export interface UpdateOrderRequest {
   title?: string;
   description?: string;
-  status?: OrderStatus;
   price_cents?: number;
   currency?: Currency;
   scheduled_start?: string;
   scheduled_end?: string;
-  cancel_reason?: string;
 }
+
+/**
+ * 分配订单请求
+ */
+export interface AssignOrderRequest {
+  player_id: number;
+  note?: string;
+}
+
+/**
+ * 审核订单请求
+ */
+export interface ReviewOrderRequest {
+  result: 'approved' | 'rejected';
+  reason?: string;
+  comment?: string;
+}
+
+/**
+ * 取消订单请求
+ */
+export interface CancelOrderRequest {
+  cancel_reason: string;
+}
+
+/**
+ * 订单统计数据
+ */
+export interface OrderStatistics {
+  total: number;
+  pending: number;
+  confirmed: number;
+  in_progress: number;
+  completed: number;
+  canceled: number;
+  refunded: number;
+  today_orders: number;
+  today_revenue: number; // 分
+}
+
+/**
+ * 订单状态显示文本
+ */
+export const ORDER_STATUS_TEXT: Record<OrderStatus, string> = {
+  [OrderStatus.PENDING]: '待处理',
+  [OrderStatus.CONFIRMED]: '已确认',
+  [OrderStatus.IN_PROGRESS]: '进行中',
+  [OrderStatus.COMPLETED]: '已完成',
+  [OrderStatus.CANCELED]: '已取消',
+  [OrderStatus.REFUNDED]: '已退款',
+};
 
 /**
  * 订单状态映射到徽章类型
  */
 export const ORDER_STATUS_BADGE: Record<
   OrderStatus,
-  'success' | 'warning' | 'error' | 'processing'
+  'success' | 'warning' | 'error' | 'processing' | 'default'
 > = {
-  pending: 'processing',
-  confirmed: 'processing',
-  in_progress: 'processing',
-  completed: 'success',
-  cancelled: 'warning',
-  refunded: 'warning',
+  [OrderStatus.PENDING]: 'processing',
+  [OrderStatus.CONFIRMED]: 'processing',
+  [OrderStatus.IN_PROGRESS]: 'processing',
+  [OrderStatus.COMPLETED]: 'success',
+  [OrderStatus.CANCELED]: 'default',
+  [OrderStatus.REFUNDED]: 'warning',
 };
 
 /**
- * 订单状态显示文本
+ * 货币符号
  */
-export const ORDER_STATUS_TEXT: Record<OrderStatus, string> = {
-  pending: '待处理',
-  confirmed: '已确认',
-  in_progress: '进行中',
-  completed: '已完成',
-  cancelled: '已取消',
-  refunded: '已退款',
+export const CURRENCY_SYMBOL: Record<Currency, string> = {
+  [Currency.CNY]: '¥',
+  [Currency.USD]: '$',
 };

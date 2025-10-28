@@ -20,17 +20,14 @@ export interface TableProps<T = any> {
   loading?: boolean;
   emptyText?: string;
   onRow?: (record: T, index: number) => React.HTMLAttributes<HTMLTableRowElement>;
-  scroll?: {
-    x?: number | string;
-    y?: number | string;
-  };
+  scroll?: React.CSSProperties;
   className?: string;
   rowClassName?: string | ((record: T, index: number) => string);
 }
 
 export const Table = <T extends Record<string, any>>({
-  columns,
-  dataSource,
+  columns = [],
+  dataSource = [],
   rowKey = 'id',
   loading = false,
   emptyText = '暂无数据',
@@ -66,7 +63,7 @@ export const Table = <T extends Record<string, any>>({
         <table className={styles.table}>
           <thead className={styles.thead}>
             <tr>
-              {columns.map((column) => (
+              {(columns || []).map((column) => (
                 <th
                   key={column.key}
                   className={styles.th}
@@ -86,24 +83,24 @@ export const Table = <T extends Record<string, any>>({
           <tbody className={styles.tbody}>
             {loading ? (
               <tr>
-                <td colSpan={columns.length} className={styles.loading}>
+                <td colSpan={(columns || []).length} className={styles.loading}>
                   <div className={styles.loadingContent}>加载中...</div>
                 </td>
               </tr>
-            ) : dataSource.length === 0 ? (
+            ) : !dataSource || dataSource.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className={styles.empty}>
+                <td colSpan={(columns || []).length} className={styles.empty}>
                   <div className={styles.emptyContent}>{emptyText}</div>
                 </td>
               </tr>
             ) : (
-              dataSource.map((record, index) => (
+              (dataSource || []).map((record, index) => (
                 <tr
                   key={getRowKey(record, index)}
                   className={getRowClassName(record, index)}
                   {...(onRow ? onRow(record, index) : {})}
                 >
-                  {columns.map((column) => (
+                  {(columns || []).map((column) => (
                     <td
                       key={column.key}
                       className={styles.td}

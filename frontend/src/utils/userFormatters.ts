@@ -1,4 +1,4 @@
-import { UserRole, UserStatus, VerificationStatus } from '../types/user.types';
+import { UserRole, UserStatus, VerificationStatus } from '../types/user';
 
 /**
  * 格式化用户角色

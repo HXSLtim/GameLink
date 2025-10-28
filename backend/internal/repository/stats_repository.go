@@ -2,6 +2,7 @@ package repository
 
 import (
     "context"
+    "time"
 )
 
 // DateValue 表示按天聚合的数值。
@@ -36,5 +37,8 @@ type StatsRepository interface {
     UserGrowth(ctx context.Context, days int) ([]DateValue, error)
     OrdersByStatus(ctx context.Context) (map[string]int64, error)
     TopPlayers(ctx context.Context, limit int) ([]PlayerTop, error)
+    // Audit overview: counts grouped by entity_type and action within optional time window
+    AuditOverview(ctx context.Context, from, to *time.Time) (map[string]int64, map[string]int64, error)
+    // Audit trend: count per day within time window, optional entity/action filter
+    AuditTrend(ctx context.Context, from, to *time.Time, entity, action string) ([]DateValue, error)
 }
-

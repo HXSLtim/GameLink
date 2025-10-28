@@ -1,7 +1,7 @@
 import { InputHTMLAttributes, ReactNode, forwardRef, useState } from 'react';
 import styles from './Input.module.less';
 
-export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
+export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size' | 'prefix'> {
   /** 输入框尺寸 */
   size?: 'small' | 'medium' | 'large';
   /** 前缀图标 */

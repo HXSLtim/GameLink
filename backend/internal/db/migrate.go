@@ -38,7 +38,7 @@ func runDataFixups(db *gorm.DB) error {
 }
 
 func ensureIndexes(db *gorm.DB) error {
-	stmts := []string{
+    stmts := []string{
 		// Orders composite indexes
 		"CREATE INDEX IF NOT EXISTS idx_orders_status_created ON orders (status, created_at DESC)",
 		"CREATE INDEX IF NOT EXISTS idx_orders_user_created ON orders (user_id, created_at DESC)",
@@ -47,8 +47,12 @@ func ensureIndexes(db *gorm.DB) error {
 		// Payments composite indexes
 		"CREATE INDEX IF NOT EXISTS idx_payments_status_created ON payments (status, created_at DESC)",
 		"CREATE INDEX IF NOT EXISTS idx_payments_user_created ON payments (user_id, created_at DESC)",
-		"CREATE INDEX IF NOT EXISTS idx_payments_order_created ON payments (order_id, created_at DESC)",
-	}
+        "CREATE INDEX IF NOT EXISTS idx_payments_order_created ON payments (order_id, created_at DESC)",
+        // Operation logs indexes
+        "CREATE INDEX IF NOT EXISTS idx_oplogs_entity ON operation_logs (entity_type, entity_id, created_at DESC)",
+        "CREATE INDEX IF NOT EXISTS idx_oplogs_actor ON operation_logs (actor_user_id, created_at DESC)",
+        "CREATE INDEX IF NOT EXISTS idx_oplogs_action ON operation_logs (action, created_at DESC)",
+    }
 	for _, s := range stmts {
 		if err := db.Exec(s).Error; err != nil {
 			return err

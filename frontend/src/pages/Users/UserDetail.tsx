@@ -1,7 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Button, Tag } from '../../components';
-import { getMockUserDetail } from '../../services/userMockData';
+import { Card, Button, Tag, PageSkeleton } from '../../components';
+import { userApi, UserDetail as UserDetailType } from '../../services/api/user';
 import {
   formatUserRole,
   getUserRoleColor,
@@ -16,24 +16,59 @@ import {
   formatPrice,
 } from '../../utils/userFormatters';
 import { formatDateTime } from '../../utils/formatters';
-import { UserRole } from '../../types/user.types';
+import { UserRole } from '../../types/user';
 import styles from './UserDetail.module.less';
 
 export const UserDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const userDetail = useMemo(() => {
-    if (!id) return null;
-    return getMockUserDetail(Number(id));
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [userDetail, setUserDetail] = useState<UserDetailType | null>(null);
+
+  // 加载用户详情
+  useEffect(() => {
+    const loadUserDetail = async () => {
+      if (!id) {
+        setError('用户ID无效');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await userApi.getDetail(Number(id));
+        setUserDetail(data);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : '加载用户详情失败';
+        setError(errorMessage);
+        console.error('加载用户详情失败:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUserDetail();
   }, [id]);
 
-  if (!userDetail) {
+  // 加载中状态
+  if (loading) {
+    return (
+      <div className={styles.container}>
+        <PageSkeleton />
+      </div>
+    );
+  }
+
+  // 错误状态
+  if (error || !userDetail) {
     return (
       <div className={styles.container}>
         <Card className={styles.errorCard}>
           <h2>用户未找到</h2>
-          <p>用户 ID: {id} 不存在</p>
+          <p>{error || `用户 ID: ${id} 不存在`}</p>
           <Button onClick={() => navigate('/users')}>返回用户列表</Button>
         </Card>
       </div>

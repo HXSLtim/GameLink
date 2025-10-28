@@ -36,6 +36,7 @@ func RegisterRoutes(router gin.IRouter, svc *service.AdminService) {
 		group.GET("/games/:id", gameHandler.GetGame)
 		group.PUT("/games/:id", gameHandler.UpdateGame)
 		group.DELETE("/games/:id", gameHandler.DeleteGame)
+        group.GET("/games/:id/logs", gameHandler.ListGameLogs)
 
 		group.GET("/users", userHandler.ListUsers)
 		group.POST("/users", userHandler.CreateUser)
@@ -46,6 +47,7 @@ func RegisterRoutes(router gin.IRouter, svc *service.AdminService) {
 		group.PUT("/users/:id/status", userHandler.UpdateUserStatus)
 		group.PUT("/users/:id/role", userHandler.UpdateUserRole)
 		group.GET("/users/:id/orders", userHandler.ListUserOrders)
+        group.GET("/users/:id/logs", userHandler.ListUserLogs)
 
 		group.GET("/players", playerHandler.ListPlayers)
 		group.POST("/players", playerHandler.CreatePlayer)
@@ -55,6 +57,7 @@ func RegisterRoutes(router gin.IRouter, svc *service.AdminService) {
         group.PUT("/players/:id/verification", playerHandler.UpdatePlayerVerification)
         group.PUT("/players/:id/games", playerHandler.UpdatePlayerGames)
         group.PUT("/players/:id/skill-tags", playerHandler.UpdatePlayerSkillTags)
+        group.GET("/players/:id/logs", playerHandler.ListPlayerLogs)
 
         group.GET("/orders", orderHandler.ListOrders)
         group.POST("/orders", orderHandler.CreateOrder)
@@ -82,6 +85,7 @@ func RegisterRoutes(router gin.IRouter, svc *service.AdminService) {
         group.PUT("/reviews/:id", reviewHandler.UpdateReview)
         group.DELETE("/reviews/:id", reviewHandler.DeleteReview)
         group.GET("/players/:id/reviews", reviewHandler.ListPlayerReviews)
+        group.GET("/reviews/:id/logs", reviewHandler.ListReviewLogs)
 	}
 }
 
@@ -105,4 +109,6 @@ func RegisterStatsRoutes(router gin.IRouter, stats *service.StatsService) {
     group.GET("/stats/user-growth", h.UserGrowth)
     group.GET("/stats/orders", h.OrdersSummary)
     group.GET("/stats/top-players", h.TopPlayers)
+    group.GET("/stats/audit/overview", h.AuditOverview)
+    group.GET("/stats/audit/trend", h.AuditTrend)
 }

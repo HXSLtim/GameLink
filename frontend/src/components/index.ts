@@ -16,5 +16,6 @@ export {
   CardSkeleton,
   StatCardSkeleton,
   ListItemSkeleton,
+  PageSkeleton,
 } from './Skeleton';
 export { ReviewModal } from './ReviewModal';

@@ -1,5 +1,5 @@
-import { BaseEntity } from './user';
-import { Currency } from './order';
+import type { BaseEntity } from './user';
+import type { Currency } from './order';
 
 /**
  * 支付方式枚举
@@ -12,19 +12,30 @@ export type PaymentMethod = 'wechat' | 'alipay';
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 
 /**
- * 支付实体 - 与后端model.Payment保持一致
+ * 支付实体 - 与后端 model.Payment 保持一致
  */
 export interface Payment extends BaseEntity {
   order_id: number;
-  user_id: number;
-  method: PaymentMethod;
   amount_cents: number;
   currency?: Currency;
-  status: PaymentStatus;
-  provider_trade_no?: string;
-  provider_raw?: any; // JSON对象
-  paid_at?: string;
-  refunded_at?: string;
+  method: string;
+  status: string;
+  provider_tx_id?: string;
+}
+
+/**
+ * 支付详情（包含扩展信息）
+ */
+export interface PaymentDetail extends Payment {
+  order?: {
+    id: number;
+    order_no?: string;
+    title?: string;
+  };
+  user?: {
+    id: number;
+    name: string;
+  };
 }
 
 /**
@@ -40,7 +51,7 @@ export interface PaymentListQuery {
   currency?: Currency;
   date_from?: string;
   date_to?: string;
-  sort_by?: 'created_at' | 'updated_at' | 'amount_cents' | 'paid_at';
+  sort_by?: 'created_at' | 'updated_at' | 'amount_cents';
   sort_order?: 'asc' | 'desc';
 }
 
@@ -49,10 +60,25 @@ export interface PaymentListQuery {
  */
 export interface CreatePaymentRequest {
   order_id: number;
-  user_id: number;
   method: PaymentMethod;
   amount_cents: number;
   currency?: Currency;
+}
+
+/**
+ * 更新支付请求
+ */
+export interface UpdatePaymentRequest {
+  status?: PaymentStatus;
+  provider_tx_id?: string;
+}
+
+/**
+ * 退款请求
+ */
+export interface RefundPaymentRequest {
+  reason: string;
+  amount_cents?: number; // 部分退款金额，不传则全额退款
 }
 
 /**
@@ -97,7 +123,8 @@ export const PAYMENT_METHOD_ICON: Record<PaymentMethod, string> = {
 /**
  * 金额格式化（分转元）
  */
-export const formatAmount = (cents: number, currency: Currency = 'CNY'): string => {
+export const formatAmount = (cents: number, currency?: Currency): string => {
   const amount = cents / 100;
-  return `${amount.toFixed(2)} ${currency}`;
+  const curr = currency || 'CNY';
+  return `${amount.toFixed(2)} ${curr}`;
 };

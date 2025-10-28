@@ -13,3 +13,34 @@ type OperationLog struct {
     MetadataJSON json.RawMessage `json:"metadata,omitempty" gorm:"type:json"`
 }
 
+// OperationAction 枚举所有标准化的审计动作。
+type OperationAction string
+
+const (
+    // 通用
+    OpActionCreate       OperationAction = "create"
+    OpActionUpdateStatus OperationAction = "update_status"
+    OpActionDelete       OperationAction = "delete"
+
+    // 订单
+    OpActionAssignPlayer OperationAction = "assign_player"
+    OpActionCancel       OperationAction = "cancel"
+
+    // 支付
+    OpActionCapture OperationAction = "capture"
+    OpActionRefund  OperationAction = "refund"
+    OpActionUpdate  OperationAction = "update"
+    OpActionUpdateRole   OperationAction = "update_role"
+)
+
+// OperationEntityType 枚举被审计的实体类型。
+type OperationEntityType string
+
+const (
+    OpEntityOrder   OperationEntityType = "order"
+    OpEntityPayment OperationEntityType = "payment"
+    OpEntityPlayer  OperationEntityType = "player"
+    OpEntityGame    OperationEntityType = "game"
+    OpEntityReview  OperationEntityType = "review"
+    OpEntityUser    OperationEntityType = "user"
+)

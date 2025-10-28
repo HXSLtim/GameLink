@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Button, Input, Select, Table, Tag, Pagination } from '../../components';
-import { User, UserRole, UserStatus } from '../../types/user.types';
-import { getMockUserList } from '../../services/userMockData';
+import type { TableColumn } from '../../components/Table';
+import { UserRole, UserStatus } from '../../types/user';
+import { userApi, UserInfo } from '../../services/api/user';
+import type { User } from '../../types/user';
 import {
   formatUserRole,
   getUserRoleColor,
@@ -24,8 +26,9 @@ const SearchIcon = () => (
 export const UserList: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<UserInfo[]>([]);
   const [total, setTotal] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   // 筛选条件
   const [keyword, setKeyword] = useState('');
@@ -36,13 +39,13 @@ export const UserList: React.FC = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  // 加载数据
-  const loadData = () => {
+  // 加载数据 - 使用真实API
+  const loadData = async () => {
     setLoading(true);
+    setError(null);
 
-    // 模拟 API 调用延迟
-    setTimeout(() => {
-      const result = getMockUserList({
+    try {
+      const result = await userApi.getList({
         page,
         page_size: pageSize,
         keyword: keyword || undefined,
@@ -52,8 +55,13 @@ export const UserList: React.FC = () => {
 
       setUsers(result.list);
       setTotal(result.total);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : '加载用户列表失败';
+      setError(errorMessage);
+      console.error('加载用户列表失败:', err);
+    } finally {
       setLoading(false);
-    }, 300);
+    }
   };
 
   // 搜索
@@ -82,17 +90,17 @@ export const UserList: React.FC = () => {
   }, [page, pageSize]);
 
   // 表格列定义
-  const columns = [
+  const columns: TableColumn<UserInfo>[] = [
     {
       title: 'ID',
-      dataIndex: 'id',
+      dataIndex: 'id' as keyof UserInfo,
       key: 'id',
       width: '80px',
     },
     {
       title: '用户信息',
       key: 'userInfo',
-      render: (_: unknown, record: User) => (
+      render: (_: unknown, record: UserInfo) => (
         <div className={styles.userInfo}>
           {record.avatar_url && (
             <img src={record.avatar_url} alt={record.name} className={styles.avatar} />
@@ -113,7 +121,7 @@ export const UserList: React.FC = () => {
       title: '角色',
       key: 'role',
       width: '120px',
-      render: (_: unknown, record: User) => (
+      render: (_: unknown, record: UserInfo) => (
         <Tag color={getUserRoleColor(record.role)}>{formatUserRole(record.role)}</Tag>
       ),
     },
@@ -121,7 +129,7 @@ export const UserList: React.FC = () => {
       title: '状态',
       key: 'status',
       width: '100px',
-      render: (_: unknown, record: User) => (
+      render: (_: unknown, record: UserInfo) => (
         <Tag color={getUserStatusColor(record.status)}>{formatUserStatus(record.status)}</Tag>
       ),
     },
@@ -129,7 +137,7 @@ export const UserList: React.FC = () => {
       title: '最后登录',
       key: 'lastLogin',
       width: '160px',
-      render: (_: unknown, record: User) => (
+      render: (_: unknown, record: UserInfo) => (
         <div className={styles.timeInfo}>
           {record.last_login_at ? (
             <>
@@ -146,13 +154,13 @@ export const UserList: React.FC = () => {
       title: '注册时间',
       key: 'createdAt',
       width: '160px',
-      render: (_: unknown, record: User) => formatDateTime(record.created_at),
+      render: (_: unknown, record: UserInfo) => formatDateTime(record.created_at),
     },
     {
       title: '操作',
       key: 'actions',
       width: '120px',
-      render: (_: unknown, record: User) => (
+      render: (_: unknown, record: UserInfo) => (
         <div className={styles.actions}>
           <Button
             variant="text"

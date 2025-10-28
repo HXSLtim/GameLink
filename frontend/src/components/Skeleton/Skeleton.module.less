@@ -142,6 +142,35 @@
   gap: var(--spacing-xs);
 }
 
+// 页面骨架屏
+.pageSkeleton {
+  width: 100%;
+  padding: var(--spacing-lg);
+}
+
+.pageHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.pageContent {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--spacing-lg);
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pageColumn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
 // 闪烁动画
 @keyframes shimmer {
   0% {

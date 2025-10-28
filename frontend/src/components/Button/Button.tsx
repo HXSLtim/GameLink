@@ -5,7 +5,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   /** 按钮内容 */
   children: ReactNode;
   /** 按钮类型 */
-  variant?: 'primary' | 'secondary' | 'text';
+  variant?: 'primary' | 'secondary' | 'text' | 'outlined';
   /** 按钮尺寸 */
   size?: 'small' | 'medium' | 'large';
   /** 是否为块级按钮 */

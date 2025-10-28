@@ -6,10 +6,12 @@ import (
     "net/mail"
     "regexp"
     "strings"
+    "time"
 
     "github.com/gin-gonic/gin"
 
     apierr "gamelink/internal/handler"
+    "gamelink/internal/repository"
     "gamelink/internal/model"
     "gamelink/internal/service"
 )
@@ -252,6 +254,38 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 	})
 }
 
+// ListUserLogs
+// @Summary      获取用户操作日志
+// @Tags         Admin/Users
+// @Security     BearerAuth
+// @Produce      json
+// @Param        id           path   int  true  "用户ID"
+// @Param        page         query  int  false "页码"
+// @Param        page_size    query  int  false "每页数量"
+// @Param        action       query  string false "动作过滤" Enums(create,update,delete)
+// @Param        actor_user_id query int   false "操作者用户ID"
+// @Param        date_from    query  string false "开始时间"
+// @Param        date_to      query  string false "结束时间"
+// @Param        export       query  string false "导出格式" Enums(csv)
+// @Param        fields       query  string false "导出列（逗号分隔）"
+// @Param        header_lang  query  string false "列头语言" Enums(en,zh)
+// @Success      200  {object}  map[string]any
+// @Router       /admin/users/{id}/logs [get]
+func (h *UserHandler) ListUserLogs(c *gin.Context) {
+    id, err := parseUintParam(c, "id"); if err != nil { writeJSONError(c, 400, apierr.ErrInvalidID); return }
+    page, pageSize, ok := parsePagination(c); if !ok { return }
+    var actorID *uint64
+    if v, err := queryUint64Ptr(c, "actor_user_id"); err == nil { actorID = v }
+    var dateFrom, dateTo *time.Time
+    if v, err := queryTimePtr(c, "date_from"); err == nil { dateFrom = v } else if err != nil { writeJSONError(c, 400, apierr.ErrInvalidDateFrom); return }
+    if v, err := queryTimePtr(c, "date_to"); err == nil { dateTo = v } else if err != nil { writeJSONError(c, 400, apierr.ErrInvalidDateTo); return }
+    opts := repository.OperationLogListOptions{ Page: page, PageSize: pageSize, Action: strings.TrimSpace(c.Query("action")), ActorUserID: actorID, DateFrom: dateFrom, DateTo: dateTo }
+    items, p, err := h.svc.ListOperationLogs(c.Request.Context(), "user", id, opts)
+    if err != nil { writeJSONError(c, 500, err.Error()); return }
+    if strings.EqualFold(strings.TrimSpace(c.Query("export")), "csv") { exportOperationLogsCSV(c, "user", id, items); return }
+    writeJSON(c, 200, model.APIResponse[[]model.OperationLog]{ Success: true, Code: 200, Message: "OK", Data: items, Pagination: p })
+}
+
 // UpdateUserStatus
 // @Summary      更新用户状态
 // @Tags         Admin/Users
@@ -265,33 +299,12 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 // @Router       /admin/users/{id}/status [put]
 func (h *UserHandler) UpdateUserStatus(c *gin.Context) {
     id, err := parseUintParam(c, "id")
-    if err != nil {
-        writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
-        return
-    }
+    if err != nil { writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID); return }
     var payload struct{ Status string `json:"status" binding:"required"` }
-    if bindErr := c.ShouldBindJSON(&payload); bindErr != nil {
-        writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
-        return
-    }
-    user, err := h.svc.GetUser(c.Request.Context(), id)
-    if errors.Is(err, service.ErrNotFound) {
-        _ = c.Error(service.ErrNotFound)
-        return
-    }
-    if err != nil {
-        writeJSONError(c, http.StatusInternalServerError, err.Error())
-        return
-    }
-    out, err := h.svc.UpdateUser(c.Request.Context(), id, service.UpdateUserInput{
-        Phone:     user.Phone,
-        Email:     user.Email,
-        Name:      user.Name,
-        AvatarURL: user.AvatarURL,
-        Role:      user.Role,
-        Status:    model.UserStatus(payload.Status),
-    })
+    if bindErr := c.ShouldBindJSON(&payload); bindErr != nil { writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload); return }
+    out, err := h.svc.UpdateUserStatus(c.Request.Context(), id, model.UserStatus(payload.Status))
     if errors.Is(err, service.ErrValidation) { _ = c.Error(service.ErrValidation); return }
+    if errors.Is(err, service.ErrNotFound) { _ = c.Error(service.ErrNotFound); return }
     if err != nil { writeJSONError(c, http.StatusInternalServerError, err.Error()); return }
     writeJSON(c, http.StatusOK, model.APIResponse[*model.User]{ Success: true, Code: http.StatusOK, Message: "updated", Data: out })
 }
@@ -309,27 +322,12 @@ func (h *UserHandler) UpdateUserStatus(c *gin.Context) {
 // @Router       /admin/users/{id}/role [put]
 func (h *UserHandler) UpdateUserRole(c *gin.Context) {
     id, err := parseUintParam(c, "id")
-    if err != nil {
-        writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
-        return
-    }
+    if err != nil { writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID); return }
     var payload struct{ Role string `json:"role" binding:"required"` }
-    if bindErr := c.ShouldBindJSON(&payload); bindErr != nil {
-        writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
-        return
-    }
-    user, err := h.svc.GetUser(c.Request.Context(), id)
-    if errors.Is(err, service.ErrNotFound) { _ = c.Error(service.ErrNotFound); return }
-    if err != nil { writeJSONError(c, http.StatusInternalServerError, err.Error()); return }
-    out, err := h.svc.UpdateUser(c.Request.Context(), id, service.UpdateUserInput{
-        Phone:     user.Phone,
-        Email:     user.Email,
-        Name:      user.Name,
-        AvatarURL: user.AvatarURL,
-        Role:      model.Role(payload.Role),
-        Status:    user.Status,
-    })
+    if bindErr := c.ShouldBindJSON(&payload); bindErr != nil { writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload); return }
+    out, err := h.svc.UpdateUserRole(c.Request.Context(), id, model.Role(payload.Role))
     if errors.Is(err, service.ErrValidation) { _ = c.Error(service.ErrValidation); return }
+    if errors.Is(err, service.ErrNotFound) { _ = c.Error(service.ErrNotFound); return }
     if err != nil { writeJSONError(c, http.StatusInternalServerError, err.Error()); return }
     writeJSON(c, http.StatusOK, model.APIResponse[*model.User]{ Success: true, Code: http.StatusOK, Message: "updated", Data: out })
 }

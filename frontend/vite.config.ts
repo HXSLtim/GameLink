@@ -1,6 +1,7 @@
 import { defineConfig, Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import FullReload from 'vite-plugin-full-reload';
+import { visualizer } from 'rollup-plugin-visualizer';
 import path from 'path';
 
 /**
@@ -88,7 +89,15 @@ export default defineConfig({
     devAuthMock(),
     // 当后端或配置文件变更时，触发浏览器整页刷新
     FullReload(['backend/**', 'configs/**', 'frontend/index.html']),
-  ],
+    // Bundle 分析器（仅在需要时启用）
+    process.env.ANALYZE === 'true' &&
+      visualizer({
+        filename: 'dist/stats.html',
+        open: true,
+        gzipSize: true,
+        brotliSize: true,
+      }),
+  ].filter(Boolean) as Plugin[],
   resolve: {
     alias: {
       components: path.resolve(__dirname, './src/components'),
@@ -140,8 +149,11 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          // 将React相关库打包
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          // 优化代码分割策略
+          'react-core': ['react', 'react-dom'],
+          'router': ['react-router-dom'],
+          'http': ['axios'],
+          'crypto': ['crypto-js'],
         },
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',
@@ -149,5 +161,13 @@ export default defineConfig({
       },
     },
     chunkSizeWarningLimit: 1000,
+    // 优化构建性能
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true, // 生产环境移除 console
+        drop_debugger: true,
+      },
+    },
   },
 });

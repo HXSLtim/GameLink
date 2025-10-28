@@ -1,6 +1,7 @@
 package admin
 
 import (
+    "encoding/csv"
     "encoding/json"
     "errors"
     "net/http"
@@ -11,7 +12,9 @@ import (
 
     apierr "gamelink/internal/handler"
     "gamelink/internal/model"
+    "gamelink/internal/repository"
     "gamelink/internal/service"
+    "strconv"
 )
 
 // OrderHandler 管理订单相关接口。
@@ -265,6 +268,13 @@ func (h *OrderHandler) DeleteOrder(c *gin.Context) {
 // @Param        id         path   int  true  "订单ID"
 // @Param        page       query  int  false "页码"
 // @Param        page_size  query  int  false "每页数量"
+// @Param        action     query  string false "动作过滤" Enums(create,assign_player,update_status,cancel,delete)
+// @Param        actor_user_id query int false "操作者用户ID"
+// @Param        date_from  query  string false "开始时间"
+// @Param        date_to    query  string false "结束时间"
+// @Param        export     query  string false "导出格式" Enums(csv)
+// @Param        fields     query  string false "导出列（逗号分隔），默认：id,entity_type,entity_id,actor_user_id,action,reason,metadata,created_at"
+// @Param        header_lang query string false "列头语言" Enums(en,zh)
 // @Success      200  {object}  map[string]any
 // @Router       /admin/orders/{id}/logs [get]
 func (h *OrderHandler) ListOrderLogs(c *gin.Context) {
@@ -272,8 +282,18 @@ func (h *OrderHandler) ListOrderLogs(c *gin.Context) {
     if err != nil { writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID); return }
     page, pageSize, ok := parsePagination(c)
     if !ok { return }
-    items, p, err := h.svc.ListOperationLogs(c.Request.Context(), "order", id, page, pageSize)
+    var actorID *uint64
+    if v, err := queryUint64Ptr(c, "actor_user_id"); err == nil { actorID = v }
+    var dateFrom, dateTo *time.Time
+    if v, err := queryTimePtr(c, "date_from"); err == nil { dateFrom = v } else if err != nil { writeJSONError(c, 400, apierr.ErrInvalidDateFrom); return }
+    if v, err := queryTimePtr(c, "date_to"); err == nil { dateTo = v } else if err != nil { writeJSONError(c, 400, apierr.ErrInvalidDateTo); return }
+    opts := repository.OperationLogListOptions{ Page: page, PageSize: pageSize, Action: strings.TrimSpace(c.Query("action")), ActorUserID: actorID, DateFrom: dateFrom, DateTo: dateTo }
+    items, p, err := h.svc.ListOperationLogs(c.Request.Context(), "order", id, opts)
     if err != nil { writeJSONError(c, http.StatusInternalServerError, err.Error()); return }
+    if strings.EqualFold(strings.TrimSpace(c.Query("export")), "csv") {
+        exportOperationLogsCSV(c, "order", id, items)
+        return
+    }
     writeJSON(c, http.StatusOK, model.APIResponse[[]model.OperationLog]{ Success: true, Code: http.StatusOK, Message: "OK", Data: items, Pagination: p })
 }
 
@@ -549,6 +569,13 @@ func (h *PaymentHandler) DeletePayment(c *gin.Context) {
 // @Param        id         path   int  true  "支付ID"
 // @Param        page       query  int  false "页码"
 // @Param        page_size  query  int  false "每页数量"
+// @Param        action     query  string false "动作过滤" Enums(create,capture,update_status,refund,delete)
+// @Param        actor_user_id query int false "操作者用户ID"
+// @Param        date_from  query  string false "开始时间"
+// @Param        date_to    query  string false "结束时间"
+// @Param        export     query  string false "导出格式" Enums(csv)
+// @Param        fields     query  string false "导出列（逗号分隔），默认：id,entity_type,entity_id,actor_user_id,action,reason,metadata,created_at"
+// @Param        header_lang query string false "列头语言" Enums(en,zh)
 // @Success      200  {object}  map[string]any
 // @Router       /admin/payments/{id}/logs [get]
 func (h *PaymentHandler) ListPaymentLogs(c *gin.Context) {
@@ -556,9 +583,109 @@ func (h *PaymentHandler) ListPaymentLogs(c *gin.Context) {
     if err != nil { writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID); return }
     page, pageSize, ok := parsePagination(c)
     if !ok { return }
-    items, p, err := h.svc.ListOperationLogs(c.Request.Context(), "payment", id, page, pageSize)
+    var actorID *uint64
+    if v, err := queryUint64Ptr(c, "actor_user_id"); err == nil { actorID = v }
+    var dateFrom, dateTo *time.Time
+    if v, err := queryTimePtr(c, "date_from"); err == nil { dateFrom = v } else if err != nil { writeJSONError(c, 400, apierr.ErrInvalidDateFrom); return }
+    if v, err := queryTimePtr(c, "date_to"); err == nil { dateTo = v } else if err != nil { writeJSONError(c, 400, apierr.ErrInvalidDateTo); return }
+    opts := repository.OperationLogListOptions{ Page: page, PageSize: pageSize, Action: strings.TrimSpace(c.Query("action")), ActorUserID: actorID, DateFrom: dateFrom, DateTo: dateTo }
+    items, p, err := h.svc.ListOperationLogs(c.Request.Context(), "payment", id, opts)
     if err != nil { writeJSONError(c, http.StatusInternalServerError, err.Error()); return }
+    if strings.EqualFold(strings.TrimSpace(c.Query("export")), "csv") {
+        exportOperationLogsCSV(c, "payment", id, items)
+        return
+    }
     writeJSON(c, http.StatusOK, model.APIResponse[[]model.OperationLog]{ Success: true, Code: http.StatusOK, Message: "OK", Data: items, Pagination: p })
+}
+
+// exportOperationLogsCSV writes operation logs as CSV attachment.
+func exportOperationLogsCSV(c *gin.Context, entity string, entityID uint64, items []model.OperationLog) {
+    // default columns
+    allowed := []string{"id", "entity_type", "entity_id", "actor_user_id", "action", "reason", "metadata", "created_at"}
+    // parse fields
+    rawFields := strings.TrimSpace(c.Query("fields"))
+    fields := allowed
+    if rawFields != "" {
+        req := parseCSVParams([]string{rawFields})
+        // validate and keep order
+        pick := make([]string, 0, len(req))
+        for _, f := range req {
+            for _, a := range allowed {
+                if f == a {
+                    pick = append(pick, f)
+                    break
+                }
+            }
+        }
+        if len(pick) > 0 {
+            fields = pick
+        }
+    }
+
+    // header i18n
+    lang := strings.ToLower(strings.TrimSpace(c.Query("header_lang")))
+    headerMapEn := map[string]string{
+        "id": "id", "entity_type": "entity_type", "entity_id": "entity_id", "actor_user_id": "actor_user_id",
+        "action": "action", "reason": "reason", "metadata": "metadata", "created_at": "created_at",
+    }
+    headerMapZh := map[string]string{
+        "id": "编号", "entity_type": "实体", "entity_id": "实体ID", "actor_user_id": "操作人ID",
+        "action": "动作", "reason": "原因", "metadata": "元数据", "created_at": "创建时间",
+    }
+    var header []string
+    for _, f := range fields {
+        if lang == "zh" {
+            header = append(header, headerMapZh[f])
+        } else {
+            header = append(header, headerMapEn[f])
+        }
+    }
+
+    filename := entity + "_" + strconv.FormatUint(entityID, 10) + "_logs.csv"
+    c.Header("Content-Type", "text/csv; charset=utf-8")
+    c.Header("Content-Disposition", "attachment; filename=\""+filename+"\"")
+    // excel-friendly BOM when requested or zh header
+    bom := strings.EqualFold(strings.TrimSpace(c.Query("bom")), "true") || lang == "zh"
+    if bom {
+        _, _ = c.Writer.Write([]byte{0xEF, 0xBB, 0xBF})
+    }
+    w := csv.NewWriter(c.Writer)
+    _ = w.Write(header)
+    // timezone
+    tz := strings.TrimSpace(c.Query("tz"))
+    var loc *time.Location
+    if tz != "" {
+        if l, err := time.LoadLocation(tz); err == nil { loc = l }
+    }
+    for _, it := range items {
+        row := make([]string, 0, len(fields))
+        for _, f := range fields {
+            switch f {
+            case "id":
+                row = append(row, strconv.FormatUint(it.ID, 10))
+            case "entity_type":
+                row = append(row, it.EntityType)
+            case "entity_id":
+                row = append(row, strconv.FormatUint(it.EntityID, 10))
+            case "actor_user_id":
+                if it.ActorUserID != nil { row = append(row, strconv.FormatUint(*it.ActorUserID, 10)) } else { row = append(row, "") }
+            case "action":
+                row = append(row, it.Action)
+            case "reason":
+                row = append(row, it.Reason)
+            case "metadata":
+                row = append(row, string(it.MetadataJSON))
+            case "created_at":
+                t := it.CreatedAt
+                if loc != nil { t = t.In(loc) }
+                row = append(row, t.Format(time.RFC3339))
+            default:
+                row = append(row, "")
+            }
+        }
+        _ = w.Write(row)
+    }
+    w.Flush()
 }
 
 // UpdatePaymentPayload defines the request body for updating a payment.

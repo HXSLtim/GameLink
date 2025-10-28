@@ -3,6 +3,7 @@ package admin
 import (
     "net/http"
     "strconv"
+    "strings"
 
     "github.com/gin-gonic/gin"
 
@@ -92,3 +93,40 @@ func parseIntDefault(s string, def int) int {
     return def
 }
 
+// AuditOverview
+// @Summary      审计总览（按实体/动作汇总）
+// @Tags         Admin/Stats
+// @Security     BearerAuth
+// @Produce      json
+// @Param        date_from  query  string  false  "开始时间"
+// @Param        date_to    query  string  false  "结束时间"
+// @Success      200  {object}  map[string]any
+// @Router       /admin/stats/audit/overview [get]
+func (h *StatsHandler) AuditOverview(c *gin.Context) {
+    from, err := queryTimePtr(c, "date_from"); if err != nil { c.JSON(400, model.APIResponse[any]{Success:false, Code:400, Message:"invalid date_from"}); return }
+    to, err := queryTimePtr(c, "date_to"); if err != nil { c.JSON(400, model.APIResponse[any]{Success:false, Code:400, Message:"invalid date_to"}); return }
+    byEntity, byAction, err := h.svc.AuditOverview(c.Request.Context(), from, to)
+    if err != nil { c.JSON(500, model.APIResponse[any]{Success:false, Code:500, Message: err.Error()}); return }
+    c.JSON(200, model.APIResponse[map[string]any]{ Success:true, Code:200, Message:"OK", Data: map[string]any{"by_entity": byEntity, "by_action": byAction} })
+}
+
+// AuditTrend
+// @Summary      审计趋势（日）
+// @Tags         Admin/Stats
+// @Security     BearerAuth
+// @Produce      json
+// @Param        date_from  query  string  false  "开始时间"
+// @Param        date_to    query  string  false  "结束时间"
+// @Param        entity     query  string  false  "实体类型" Enums(order,payment,player,game,review,user)
+// @Param        action     query  string  false  "动作"
+// @Success      200  {object}  map[string]any
+// @Router       /admin/stats/audit/trend [get]
+func (h *StatsHandler) AuditTrend(c *gin.Context) {
+    from, err := queryTimePtr(c, "date_from"); if err != nil { c.JSON(400, model.APIResponse[any]{Success:false, Code:400, Message:"invalid date_from"}); return }
+    to, err := queryTimePtr(c, "date_to"); if err != nil { c.JSON(400, model.APIResponse[any]{Success:false, Code:400, Message:"invalid date_to"}); return }
+    entity := strings.TrimSpace(c.Query("entity"))
+    action := strings.TrimSpace(c.Query("action"))
+    items, err := h.svc.AuditTrend(c.Request.Context(), from, to, entity, action)
+    if err != nil { c.JSON(500, model.APIResponse[any]{Success:false, Code:500, Message: err.Error()}); return }
+    c.JSON(200, model.APIResponse[any]{ Success:true, Code:200, Message:"OK", Data: items })
+}

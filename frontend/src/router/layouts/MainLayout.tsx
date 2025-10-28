@@ -229,8 +229,8 @@ export const MainLayout = () => {
       headerProps={{
         user: user
           ? {
-              username: user.username,
-              role: user.role || 'user',
+              username: user.username || user.name,
+              role: (user.role as string) || 'user',
             }
           : undefined,
         onLogout: handleLogout,

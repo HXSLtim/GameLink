@@ -229,6 +229,106 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/games/{id}/logs": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin/Games"
+                ],
+                "summary": "获取游戏操作日志",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "游戏ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "create",
+                            "update",
+                            "delete"
+                        ],
+                        "type": "string",
+                        "description": "动作过滤",
+                        "name": "action",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "操作者用户ID",
+                        "name": "actor_user_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "开始时间",
+                        "name": "date_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束时间",
+                        "name": "date_to",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "csv"
+                        ],
+                        "type": "string",
+                        "description": "导出格式",
+                        "name": "export",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "导出列（逗号分隔）",
+                        "name": "fields",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "en",
+                            "zh"
+                        ],
+                        "type": "string",
+                        "description": "列头语言",
+                        "name": "header_lang",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/admin/orders": {
             "get": {
                 "security": [
@@ -622,6 +722,62 @@ const docTemplate = `{
                         "type": "integer",
                         "description": "每页数量",
                         "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "create",
+                            "assign_player",
+                            "update_status",
+                            "cancel",
+                            "delete"
+                        ],
+                        "type": "string",
+                        "description": "动作过滤",
+                        "name": "action",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "操作者用户ID",
+                        "name": "actor_user_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "开始时间",
+                        "name": "date_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束时间",
+                        "name": "date_to",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "csv"
+                        ],
+                        "type": "string",
+                        "description": "导出格式",
+                        "name": "export",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "导出列（逗号分隔），默认：id,entity_type,entity_id,actor_user_id,action,reason,metadata,created_at",
+                        "name": "fields",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "en",
+                            "zh"
+                        ],
+                        "type": "string",
+                        "description": "列头语言",
+                        "name": "header_lang",
                         "in": "query"
                     }
                 ],
@@ -1034,6 +1190,62 @@ const docTemplate = `{
                         "description": "每页数量",
                         "name": "page_size",
                         "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "create",
+                            "capture",
+                            "update_status",
+                            "refund",
+                            "delete"
+                        ],
+                        "type": "string",
+                        "description": "动作过滤",
+                        "name": "action",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "操作者用户ID",
+                        "name": "actor_user_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "开始时间",
+                        "name": "date_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束时间",
+                        "name": "date_to",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "csv"
+                        ],
+                        "type": "string",
+                        "description": "导出格式",
+                        "name": "export",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "导出列（逗号分隔），默认：id,entity_type,entity_id,actor_user_id,action,reason,metadata,created_at",
+                        "name": "fields",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "en",
+                            "zh"
+                        ],
+                        "type": "string",
+                        "description": "列头语言",
+                        "name": "header_lang",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1362,6 +1574,106 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/players/{id}/logs": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin/Players"
+                ],
+                "summary": "获取玩家操作日志",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "玩家ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "create",
+                            "update",
+                            "delete"
+                        ],
+                        "type": "string",
+                        "description": "动作过滤",
+                        "name": "action",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "操作者用户ID",
+                        "name": "actor_user_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "开始时间",
+                        "name": "date_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束时间",
+                        "name": "date_to",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "csv"
+                        ],
+                        "type": "string",
+                        "description": "导出格式",
+                        "name": "export",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "导出列（逗号分隔）",
+                        "name": "fields",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "en",
+                            "zh"
+                        ],
+                        "type": "string",
+                        "description": "列头语言",
+                        "name": "header_lang",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -1769,6 +2081,204 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/reviews/{id}/logs": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin/Reviews"
+                ],
+                "summary": "获取评价操作日志",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "评价ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "create",
+                            "update",
+                            "delete"
+                        ],
+                        "type": "string",
+                        "description": "动作过滤",
+                        "name": "action",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "操作者用户ID",
+                        "name": "actor_user_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "开始时间",
+                        "name": "date_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束时间",
+                        "name": "date_to",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "csv"
+                        ],
+                        "type": "string",
+                        "description": "导出格式",
+                        "name": "export",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "导出列（逗号分隔）",
+                        "name": "fields",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "en",
+                            "zh"
+                        ],
+                        "type": "string",
+                        "description": "列头语言",
+                        "name": "header_lang",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/stats/audit/overview": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin/Stats"
+                ],
+                "summary": "审计总览（按实体/动作汇总）",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "开始时间",
+                        "name": "date_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束时间",
+                        "name": "date_to",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/stats/audit/trend": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin/Stats"
+                ],
+                "summary": "审计趋势（日）",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "开始时间",
+                        "name": "date_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束时间",
+                        "name": "date_to",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "order",
+                            "payment",
+                            "player",
+                            "game",
+                            "review",
+                            "user"
+                        ],
+                        "type": "string",
+                        "description": "实体类型",
+                        "name": "entity",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "动作",
+                        "name": "action",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/admin/stats/dashboard": {
             "get": {
                 "security": [
@@ -2163,6 +2673,106 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/users/{id}/logs": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin/Users"
+                ],
+                "summary": "获取用户操作日志",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "用户ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "create",
+                            "update",
+                            "delete"
+                        ],
+                        "type": "string",
+                        "description": "动作过滤",
+                        "name": "action",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "操作者用户ID",
+                        "name": "actor_user_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "开始时间",
+                        "name": "date_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束时间",
+                        "name": "date_to",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "csv"
+                        ],
+                        "type": "string",
+                        "description": "导出格式",
+                        "name": "export",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "导出列（逗号分隔）",
+                        "name": "fields",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "en",
+                            "zh"
+                        ],
+                        "type": "string",
+                        "description": "列头语言",
+                        "name": "header_lang",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true

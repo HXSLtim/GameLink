@@ -98,7 +98,7 @@ describe('AuthContext', () => {
     });
 
     act(() => {
-      result.current.login('new-token');
+      result.current.login('test@example.com', 'password123');
     });
 
     expect(localStorage.getItem('gamelink_token')).toBe('new-token');
@@ -142,7 +142,7 @@ describe('AuthContext', () => {
     });
 
     act(() => {
-      result.current.login('test-token');
+      result.current.login('test@example.com', 'password123');
     });
 
     await waitFor(() => {

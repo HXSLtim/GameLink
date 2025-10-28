@@ -154,3 +154,37 @@ export const ListItemSkeleton: React.FC<ListItemSkeletonProps> = ({
     </div>
   );
 };
+
+/**
+ * 页面骨架屏 - 用于整个页面的加载状态
+ */
+export interface PageSkeletonProps {
+  className?: string;
+}
+
+export const PageSkeleton: React.FC<PageSkeletonProps> = ({ className }) => {
+  return (
+    <div className={`${styles.pageSkeleton} ${className || ''}`}>
+      {/* 页面头部 */}
+      <div className={styles.pageHeader}>
+        <Skeleton variant="rect" width={100} height={40} />
+        <Skeleton variant="text" width={200} height={32} />
+      </div>
+
+      {/* 页面内容 */}
+      <div className={styles.pageContent}>
+        {/* 左侧内容 */}
+        <div className={styles.pageColumn}>
+          <CardSkeleton hasImage={true} lines={6} />
+          <CardSkeleton lines={4} />
+        </div>
+
+        {/* 右侧内容 */}
+        <div className={styles.pageColumn}>
+          <CardSkeleton lines={3} />
+          <CardSkeleton lines={4} />
+        </div>
+      </div>
+    </div>
+  );
+};

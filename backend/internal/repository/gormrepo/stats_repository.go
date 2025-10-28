@@ -79,5 +79,34 @@ func (r *StatsRepository) TopPlayers(ctx context.Context, limit int) ([]reposito
     return rows, nil
 }
 
+// AuditOverview returns counts grouped by entity_type and action.
+func (r *StatsRepository) AuditOverview(ctx context.Context, from, to *time.Time) (map[string]int64, map[string]int64, error) {
+    byEntity := map[string]int64{}
+    byAction := map[string]int64{}
+    q := r.db.WithContext(ctx).Table("operation_logs")
+    if from != nil { q = q.Where("created_at >= ?", *from) }
+    if to != nil { q = q.Where("created_at <= ?", *to) }
+    type pair struct{ K string; V int64 }
+    var rows []pair
+    if err := q.Select("entity_type as k, COUNT(1) as v").Group("entity_type").Scan(&rows).Error; err != nil { return nil, nil, err }
+    for _, p := range rows { byEntity[p.K] = p.V }
+    rows = nil
+    if err := q.Select("action as k, COUNT(1) as v").Group("action").Scan(&rows).Error; err != nil { return nil, nil, err }
+    for _, p := range rows { byAction[p.K] = p.V }
+    return byEntity, byAction, nil
+}
+
+// AuditTrend returns per-day counts within range, with optional entity/action filters.
+func (r *StatsRepository) AuditTrend(ctx context.Context, from, to *time.Time, entity, action string) ([]repository.DateValue, error) {
+    q := r.db.WithContext(ctx).Table("operation_logs")
+    if from != nil { q = q.Where("created_at >= ?", *from) }
+    if to != nil { q = q.Where("created_at <= ?", *to) }
+    if entity != "" { q = q.Where("entity_type = ?", entity) }
+    if action != "" { q = q.Where("action = ?", action) }
+    var rows []repository.DateValue
+    if err := q.Select("DATE(created_at) as date, COUNT(1) as value").Group("DATE(created_at)").Order("DATE(created_at)").Scan(&rows).Error; err != nil { return nil, err }
+    return rows, nil
+}
+
 // compile-time assertion
 var _ repository.StatsRepository = (*StatsRepository)(nil)

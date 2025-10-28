@@ -16,3 +16,17 @@ cache:
     addr: "127.0.0.1:6379"
     password: ""
     db: 0
+
+crypto:
+  enabled: true
+  secret_key: "" # 生产环境通过环境变量 CRYPTO_SECRET_KEY 提供
+  iv: ""         # 生产环境通过环境变量 CRYPTO_IV 提供
+  methods:
+    - POST
+    - PUT
+    - PATCH
+  exclude_paths:
+    - "/api/v1/health"
+    - "/api/v1/ping"
+    - "/api/v1/auth/refresh"
+  use_signature: true

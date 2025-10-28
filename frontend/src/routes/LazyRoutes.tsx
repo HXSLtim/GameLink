@@ -1,5 +1,5 @@
 import { lazy } from 'react';
-import { PageSkeleton } from 'components/PageSkeleton';
+import { PageSkeleton } from 'components';
 
 /**
  * 懒加载页面组件

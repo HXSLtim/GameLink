@@ -1,4 +1,4 @@
-import { BaseEntity } from './user';
+import type { BaseEntity } from './user';
 
 /**
  * 游戏分类枚举
@@ -14,12 +14,12 @@ export type GameCategory =
   | 'other';
 
 /**
- * 游戏实体 - 与后端model.Game保持一致
+ * 游戏实体 - 与后端 model.Game 保持一致
  */
 export interface Game extends BaseEntity {
   key: string;
   name: string;
-  category?: GameCategory;
+  category: string;
   icon_url?: string;
   description?: string;
 }
@@ -30,7 +30,7 @@ export interface Game extends BaseEntity {
 export interface GameListQuery {
   page?: number;
   page_size?: number;
-  category?: GameCategory;
+  category?: string;
   keyword?: string;
   sort_by?: 'created_at' | 'updated_at' | 'name';
   sort_order?: 'asc' | 'desc';
@@ -42,7 +42,7 @@ export interface GameListQuery {
 export interface CreateGameRequest {
   key: string;
   name: string;
-  category?: GameCategory;
+  category: string;
   icon_url?: string;
   description?: string;
 }
@@ -53,7 +53,7 @@ export interface CreateGameRequest {
 export interface UpdateGameRequest {
   key?: string;
   name?: string;
-  category?: GameCategory;
+  category?: string;
   icon_url?: string;
   description?: string;
 }

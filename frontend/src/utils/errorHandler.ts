@@ -1,4 +1,4 @@
-import { Message } from '@arco-design/web-react';
+// import { Message } from '@arco-design/web-react';
 
 /**
  * Error severity levels
@@ -161,10 +161,10 @@ class ErrorHandler {
     if (error instanceof AppError) {
       switch (error.severity) {
         case ErrorSeverity.INFO:
-          Message.info(message);
+          console.info(message);
           return;
         case ErrorSeverity.WARNING:
-          Message.warning(message);
+          console.warn(message);
           duration = 4000;
           break;
         case ErrorSeverity.CRITICAL:
@@ -174,10 +174,7 @@ class ErrorHandler {
       }
     }
 
-    Message.error({
-      content: message,
-      duration,
-    });
+    console.error(message);
   }
 
   /**

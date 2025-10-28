@@ -1,14 +1,17 @@
 package admin
 
 import (
-	"errors"
-	"net/http"
+    "errors"
+    "net/http"
+    "strings"
+    "time"
 
-	"github.com/gin-gonic/gin"
+    "github.com/gin-gonic/gin"
 
-	apierr "gamelink/internal/handler"
-	"gamelink/internal/model"
-	"gamelink/internal/service"
+    apierr "gamelink/internal/handler"
+    "gamelink/internal/model"
+    "gamelink/internal/repository"
+    "gamelink/internal/service"
 )
 
 // GameHandler 处理后台游戏管理接口。
@@ -214,6 +217,38 @@ func (h *GameHandler) DeleteGame(c *gin.Context) {
 		Code:    http.StatusOK,
 		Message: "deleted",
 	})
+}
+
+// ListGameLogs
+// @Summary      获取游戏操作日志
+// @Tags         Admin/Games
+// @Security     BearerAuth
+// @Produce      json
+// @Param        id           path   int  true  "游戏ID"
+// @Param        page         query  int  false "页码"
+// @Param        page_size    query  int  false "每页数量"
+// @Param        action       query  string false "动作过滤" Enums(create,update,delete)
+// @Param        actor_user_id query int   false "操作者用户ID"
+// @Param        date_from    query  string false "开始时间"
+// @Param        date_to      query  string false "结束时间"
+// @Param        export       query  string false "导出格式" Enums(csv)
+// @Param        fields       query  string false "导出列（逗号分隔）"
+// @Param        header_lang  query  string false "列头语言" Enums(en,zh)
+// @Success      200  {object}  map[string]any
+// @Router       /admin/games/{id}/logs [get]
+func (h *GameHandler) ListGameLogs(c *gin.Context) {
+    id, err := parseUintParam(c, "id"); if err != nil { writeJSONError(c, 400, apierr.ErrInvalidID); return }
+    page, pageSize, ok := parsePagination(c); if !ok { return }
+    var actorID *uint64
+    if v, err := queryUint64Ptr(c, "actor_user_id"); err == nil { actorID = v }
+    var dateFrom, dateTo *time.Time
+    if v, err := queryTimePtr(c, "date_from"); err == nil { dateFrom = v } else if err != nil { writeJSONError(c, 400, apierr.ErrInvalidDateFrom); return }
+    if v, err := queryTimePtr(c, "date_to"); err == nil { dateTo = v } else if err != nil { writeJSONError(c, 400, apierr.ErrInvalidDateTo); return }
+    opts := repository.OperationLogListOptions{ Page: page, PageSize: pageSize, Action: strings.TrimSpace(c.Query("action")), ActorUserID: actorID, DateFrom: dateFrom, DateTo: dateTo }
+    items, p, err := h.svc.ListOperationLogs(c.Request.Context(), "game", id, opts)
+    if err != nil { writeJSONError(c, 500, err.Error()); return }
+    if strings.EqualFold(strings.TrimSpace(c.Query("export")), "csv") { exportOperationLogsCSV(c, "game", id, items); return }
+    writeJSON(c, 200, model.APIResponse[[]model.OperationLog]{ Success: true, Code: 200, Message: "OK", Data: items, Pagination: p })
 }
 
 // GamePayload defines request body for creating/updating a game.

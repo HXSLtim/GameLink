@@ -1,10 +1,13 @@
 package middleware
 
 import (
-	"net/http"
-	"os"
+    "net/http"
+    "os"
+    "strconv"
 
-	"github.com/gin-gonic/gin"
+    "github.com/gin-gonic/gin"
+
+    "gamelink/internal/logging"
 )
 
 // AdminAuth enforces a simple bearer token for admin endpoints.
@@ -27,10 +30,20 @@ func AdminAuth() gin.HandlerFunc {
 		}
 	}
 
-	// If no token configured (development), allow requests.
-	if token == "" {
-		return func(c *gin.Context) { c.Next() }
-	}
+    // If no token configured (development), allow requests and optional actor injection
+    if token == "" {
+        return func(c *gin.Context) {
+            // In non-production, allow an optional X-Admin-User-ID to mark actor for audit.
+            if os.Getenv("APP_ENV") != "production" {
+                if v := c.GetHeader("X-Admin-User-ID"); v != "" {
+                    if id, err := strconv.ParseUint(v, 10, 64); err == nil && id != 0 {
+                        c.Request = c.Request.WithContext(logging.WithActorUserID(c.Request.Context(), id))
+                    }
+                }
+            }
+            c.Next()
+        }
+    }
 
 	// Enforce bearer token
 	prefix := "Bearer "

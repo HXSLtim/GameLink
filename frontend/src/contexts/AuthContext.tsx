@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import { STORAGE_KEYS } from '../config';
 import type { CurrentUser } from '../types/auth';
+import { UserRole, UserStatus } from '../types/user';
 import { storage } from '../utils/storage';
+import { authApi } from '../services/api/auth';
 
 interface AuthState {
   user: CurrentUser | null;
@@ -33,48 +35,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(false);
   }, []);
 
-  // 登录方法 (Mock 实现)
+  // 登录方法 (真实API实现)
   const login = useCallback(async (username: string, password: string): Promise<void> => {
     setLoginLoading(true);
 
-    // 模拟网络延迟
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
     try {
-      // Mock 登录验证（任何用户名密码都可以登录）
-      if (!username || !password) {
-        throw new Error('用户名和密码不能为空');
-      }
+      // 调用真实的登录API
+      const response = await authApi.login({
+        username, // 后端使用 username 字段
+        password,
+      });
 
-      // 生成 Mock Token
-      const mockToken = `mock-token-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      // 保存 Token
+      storage.setItem(STORAGE_KEYS.token, response.token);
 
-      // 创建 Mock 用户信息
-      const mockUser: CurrentUser = {
-        id: Math.floor(Math.random() * 1000),
-        username: username,
-        email: `${username}@gamelink.com`,
-        role: username === 'admin' ? 'admin' : 'user',
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+      // 转换用户信息格式（兼容前端现有结构）
+      const currentUser: CurrentUser = {
+        id: response.user?.id || 0,
+        name: response.user?.name || username,
+        email: response.user?.email,
+        phone: response.user?.phone,
+        avatar_url: response.user?.avatar_url,
+        role: response.user?.role || ('user' as UserRole),
+        status: response.user?.status || ('active' as UserStatus),
+        last_login_at: response.user?.last_login_at,
+        // 兼容字段
+        username: response.user?.name || username,
+        avatar: response.user?.avatar_url,
       };
 
-      // 保存到 localStorage
-      storage.setItem(STORAGE_KEYS.token, mockToken);
-      storage.setItem(STORAGE_KEYS.user, mockUser);
+      // 保存用户信息
+      storage.setItem(STORAGE_KEYS.user, currentUser);
 
       // 更新状态
-      setToken(mockToken);
-      setUser(mockUser);
+      setToken(response.token);
+      setUser(currentUser);
 
-      console.log('✅ Mock 登录成功:', { username, token: mockToken });
+      console.log('✅ 登录成功:', {
+        username: currentUser.name,
+        role: currentUser.role,
+        token: response.token.substring(0, 20) + '...',
+      });
     } catch (error) {
       // 登录失败，清理状态
       storage.removeItem(STORAGE_KEYS.token);
       storage.removeItem(STORAGE_KEYS.user);
       setToken(null);
       setUser(null);
+
+      console.error('❌ 登录失败:', error);
       throw error;
     } finally {
       setLoginLoading(false);
@@ -82,12 +91,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // 登出方法
-  const logout = useCallback(() => {
-    storage.removeItem(STORAGE_KEYS.token);
-    storage.removeItem(STORAGE_KEYS.user);
-    setToken(null);
-    setUser(null);
-    console.log('✅ 退出登录成功');
+  const logout = useCallback(async () => {
+    try {
+      // 调用真实的登出API（即使失败也继续清理本地状态）
+      await authApi.logout().catch((err) => {
+        console.warn('登出API调用失败（已忽略）:', err);
+      });
+    } finally {
+      // 清理本地状态
+      storage.removeItem(STORAGE_KEYS.token);
+      storage.removeItem(STORAGE_KEYS.user);
+      setToken(null);
+      setUser(null);
+      console.log('✅ 退出登录成功');
+    }
   }, []);
 
   const value = useMemo<AuthState>(

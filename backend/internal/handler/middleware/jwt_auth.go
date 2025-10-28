@@ -1,13 +1,14 @@
 package middleware
 
 import (
-	"net/http"
-	"os"
-	"time"
+    "net/http"
+    "os"
+    "time"
 
-	"github.com/gin-gonic/gin"
+    "github.com/gin-gonic/gin"
 
-	"gamelink/internal/auth"
+    "gamelink/internal/auth"
+    "gamelink/internal/logging"
 )
 
 // JWTAuth JWT认证中间件
@@ -87,10 +88,12 @@ func JWTAuth() gin.HandlerFunc {
 			return
 		}
 
-		// 将用户信息存储到Context中，供后续处理使用
-		c.Set("user_id", claims.UserID)
-		c.Set("user_role", claims.Role)
-		c.Set("jwt_claims", claims)
+        // 将用户信息存储到Context中，供后续处理使用
+        c.Set("user_id", claims.UserID)
+        c.Set("user_role", claims.Role)
+        c.Set("jwt_claims", claims)
+        // 注入 actor 到 request context，便于服务层审计日志使用
+        c.Request = c.Request.WithContext(logging.WithActorUserID(c.Request.Context(), claims.UserID))
 
 		// 检查Token剩余时间，如果快要过期，在响应头中提示前端刷新Token
 		remainingTime := auth.GetTokenRemainingTime(claims)
@@ -205,11 +208,13 @@ func OptionalAuth() gin.HandlerFunc {
 			return
 		}
 
-		// Token有效，将用户信息存储到Context中
-		c.Set("user_id", claims.UserID)
-		c.Set("user_role", claims.Role)
-		c.Set("jwt_claims", claims)
-		c.Set("is_authenticated", true)
+        // Token有效，将用户信息存储到Context中
+        c.Set("user_id", claims.UserID)
+        c.Set("user_role", claims.Role)
+        c.Set("jwt_claims", claims)
+        c.Set("is_authenticated", true)
+        // 注入 actor
+        c.Request = c.Request.WithContext(logging.WithActorUserID(c.Request.Context(), claims.UserID))
 
 		c.Next()
 	}

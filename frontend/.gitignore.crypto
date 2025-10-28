@@ -1,0 +1,9 @@
+# 加密相关的敏感文件
+.env.local
+.env.production
+.env.*.local
+
+# 密钥备份
+*.key
+*.pem
+*.p12

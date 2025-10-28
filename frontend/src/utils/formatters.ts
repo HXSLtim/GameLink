@@ -1,25 +1,27 @@
-import {
-  OrderStatus,
-  ReviewStatus,
-  GameType,
-  ServiceType,
-  type TagColor,
-} from '../types/order.types';
+import { OrderStatus } from '../types/order';
 
 /**
- * 格式化订单状态文本
+ * Tag 颜色类型
+ */
+export type TagColor =
+  | 'success'
+  | 'warning'
+  | 'error'
+  | 'info'
+  | 'processing'
+  | 'pending'
+  | 'default';
+
+/**
+ * 格式化订单状态文本 - 与后端一致
  */
 export const formatOrderStatus = (status: OrderStatus): string => {
   const statusMap: Record<OrderStatus, string> = {
-    [OrderStatus.PENDING_PAYMENT]: '待支付',
-    [OrderStatus.PENDING_ACCEPT]: '待接单',
-    [OrderStatus.PENDING_REVIEW]: '待审核',
-    [OrderStatus.IN_REVIEW]: '审核中',
-    [OrderStatus.REVIEW_APPROVED]: '审核通过',
-    [OrderStatus.REVIEW_REJECTED]: '审核拒绝',
+    [OrderStatus.PENDING]: '待处理',
+    [OrderStatus.CONFIRMED]: '已确认',
     [OrderStatus.IN_PROGRESS]: '进行中',
     [OrderStatus.COMPLETED]: '已完成',
-    [OrderStatus.CANCELLED]: '已取消',
+    [OrderStatus.CANCELED]: '已取消',
     [OrderStatus.REFUNDED]: '已退款',
   };
   return statusMap[status] || '未知';
@@ -30,78 +32,22 @@ export const formatOrderStatus = (status: OrderStatus): string => {
  */
 export const getOrderStatusColor = (status: OrderStatus): TagColor => {
   const colorMap: Record<OrderStatus, TagColor> = {
-    [OrderStatus.PENDING_PAYMENT]: 'warning',
-    [OrderStatus.PENDING_ACCEPT]: 'info',
-    [OrderStatus.PENDING_REVIEW]: 'pending',
-    [OrderStatus.IN_REVIEW]: 'processing',
-    [OrderStatus.REVIEW_APPROVED]: 'success',
-    [OrderStatus.REVIEW_REJECTED]: 'error',
+    [OrderStatus.PENDING]: 'warning',
+    [OrderStatus.CONFIRMED]: 'info',
     [OrderStatus.IN_PROGRESS]: 'processing',
     [OrderStatus.COMPLETED]: 'success',
-    [OrderStatus.CANCELLED]: 'default',
+    [OrderStatus.CANCELED]: 'default',
     [OrderStatus.REFUNDED]: 'error',
   };
   return colorMap[status] || 'default';
 };
 
 /**
- * 格式化审核状态文本
+ * 格式化金额（分转元）
  */
-export const formatReviewStatus = (status: ReviewStatus): string => {
-  const statusMap: Record<ReviewStatus, string> = {
-    [ReviewStatus.PENDING]: '待审核',
-    [ReviewStatus.IN_REVIEW]: '审核中',
-    [ReviewStatus.APPROVED]: '已通过',
-    [ReviewStatus.REJECTED]: '已拒绝',
-  };
-  return statusMap[status] || '未知';
-};
-
-/**
- * 获取审核状态对应的标签颜色
- */
-export const getReviewStatusColor = (status: ReviewStatus): TagColor => {
-  const colorMap: Record<ReviewStatus, TagColor> = {
-    [ReviewStatus.PENDING]: 'pending',
-    [ReviewStatus.IN_REVIEW]: 'processing',
-    [ReviewStatus.APPROVED]: 'success',
-    [ReviewStatus.REJECTED]: 'error',
-  };
-  return colorMap[status] || 'default';
-};
-
-/**
- * 格式化游戏类型文本
- */
-export const formatGameType = (type: GameType): string => {
-  const typeMap: Record<GameType, string> = {
-    [GameType.HONOR_OF_KINGS]: '王者荣耀',
-    [GameType.LEAGUE_OF_LEGENDS]: '英雄联盟',
-    [GameType.PEACEKEEPER_ELITE]: '和平精英',
-    [GameType.GENSHIN_IMPACT]: '原神',
-    [GameType.OTHER]: '其他',
-  };
-  return typeMap[type] || '未知';
-};
-
-/**
- * 格式化服务类型文本
- */
-export const formatServiceType = (type: ServiceType): string => {
-  const typeMap: Record<ServiceType, string> = {
-    [ServiceType.ACCOMPANY]: '陪玩',
-    [ServiceType.BOOST]: '代练',
-    [ServiceType.RANK_UP]: '上分',
-    [ServiceType.ENTERTAINMENT]: '娱乐',
-  };
-  return typeMap[type] || '未知';
-};
-
-/**
- * 格式化金额
- */
-export const formatCurrency = (amount: number): string => {
-  return `¥${amount.toFixed(2)}`;
+export const formatCurrency = (cents: number): string => {
+  const yuan = cents / 100;
+  return `¥${yuan.toFixed(2)}`;
 };
 
 /**
@@ -116,7 +62,15 @@ export const formatDuration = (hours: number): string => {
  */
 export const formatDateTime = (dateStr?: string): string => {
   if (!dateStr) return '-';
-  return dateStr;
+  
+  const date = new Date(dateStr);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  
+  return `${year}-${month}-${day} ${hours}:${minutes}`;
 };
 
 /**
@@ -142,4 +96,11 @@ export const formatRelativeTime = (dateStr: string): string => {
   } else {
     return formatDateTime(dateStr);
   }
+};
+
+/**
+ * 格式化价格（分转元）
+ */
+export const formatPrice = (cents: number): string => {
+  return formatCurrency(cents);
 };

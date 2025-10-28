@@ -85,11 +85,15 @@ func (s *AdminService) SetTxManager(tx TxManager) { s.tx = tx }
 // UpdatePlayerSkillTags 替换玩家技能标签集合（需要 TxManager）。
 func (s *AdminService) UpdatePlayerSkillTags(ctx context.Context, playerID uint64, tags []string) error {
     if s.tx == nil { return errors.New("transaction manager not configured") }
-    return s.tx.WithTx(ctx, func(r *gormrepo.Repos) error {
+    err := s.tx.WithTx(ctx, func(r *gormrepo.Repos) error {
         // ensure player exists
         if _, err := r.Players.Get(ctx, playerID); err != nil { return err }
         return r.Tags.ReplaceTags(ctx, playerID, tags)
     })
+    if err == nil {
+        s.appendLogAsync(ctx, string(model.OpEntityPlayer), playerID, string(model.OpActionUpdate), map[string]any{"tags_count": len(tags)})
+    }
+    return err
 }
 
 // RegisterUserAndPlayer creates a user and a player profile in a single transaction.
@@ -110,11 +114,11 @@ func (s *AdminService) RegisterUserAndPlayer(ctx context.Context, u CreateUserIn
 	var createdPlayer *model.Player
 
 	err := s.tx.WithTx(ctx, func(r *gormrepo.Repos) error {
-		// hash password
-		hashed, err := hashPassword(u.Password)
-		if err != nil {
-			return err
-		}
+        // hash password
+        hashed, err := hashPassword(u.Password)
+        if err != nil {
+            return err
+        }
 		user := &model.User{
 			Phone:        strings.TrimSpace(u.Phone),
 			Email:        strings.TrimSpace(u.Email),
@@ -214,6 +218,8 @@ func (s *AdminService) CreateGame(ctx context.Context, input CreateGameInput) (*
 	}
 
 	s.invalidateCache(ctx, cacheKeyGames)
+	// audit
+	s.appendLogAsync(ctx, string(model.OpEntityGame), game.ID, string(model.OpActionCreate), map[string]any{"key": game.Key})
 
 	return game, nil
 }
@@ -240,6 +246,8 @@ func (s *AdminService) UpdateGame(ctx context.Context, id uint64, input UpdateGa
 	}
 
 	s.invalidateCache(ctx, cacheKeyGames)
+	// audit
+	s.appendLogAsync(ctx, string(model.OpEntityGame), game.ID, string(model.OpActionUpdate), map[string]any{"key": game.Key})
 
 	return game, nil
 }
@@ -250,6 +258,8 @@ func (s *AdminService) DeleteGame(ctx context.Context, id uint64) error {
 		return err
 	}
 	s.invalidateCache(ctx, cacheKeyGames)
+	// audit
+	s.appendLogAsync(ctx, string(model.OpEntityGame), id, string(model.OpActionDelete), nil)
 	return nil
 }
 
@@ -344,6 +354,8 @@ func (s *AdminService) CreateUser(ctx context.Context, input CreateUserInput) (*
 		return nil, err
 	}
 	s.invalidateCache(ctx, cacheKeyUsers)
+	// audit
+	s.appendLogAsync(ctx, string(model.OpEntityUser), user.ID, string(model.OpActionCreate), map[string]any{"role": user.Role, "status": user.Status})
 	if rid, ok := logging.RequestIDFromContext(ctx); ok {
 		slog.Info("user_created", slog.Uint64("user_id", user.ID), slog.String("role", string(user.Role)), slog.String("status", string(user.Status)), slog.String("request_id", rid))
 	} else {
@@ -363,8 +375,13 @@ func (s *AdminService) UpdateUser(ctx context.Context, id uint64, input UpdateUs
 		return nil, err
 	}
 
-	user.Phone = strings.TrimSpace(input.Phone)
-	user.Email = strings.TrimSpace(input.Email)
+    // 避免将唯一字段更新为空字符串导致唯一索引冲突；空值保持原值
+    if v := strings.TrimSpace(input.Phone); v != "" {
+        user.Phone = v
+    }
+    if v := strings.TrimSpace(input.Email); v != "" {
+        user.Email = v
+    }
 	user.Name = strings.TrimSpace(input.Name)
 	user.AvatarURL = strings.TrimSpace(input.AvatarURL)
 	user.Role = input.Role
@@ -382,6 +399,8 @@ func (s *AdminService) UpdateUser(ctx context.Context, id uint64, input UpdateUs
 		return nil, err
 	}
 	s.invalidateCache(ctx, cacheKeyUsers)
+	// audit
+	s.appendLogAsync(ctx, string(model.OpEntityUser), user.ID, string(model.OpActionUpdate), map[string]any{"role": user.Role, "status": user.Status})
 	if rid, ok := logging.RequestIDFromContext(ctx); ok {
 		slog.Info("user_updated", slog.Uint64("user_id", user.ID), slog.String("request_id", rid))
 	} else {
@@ -396,12 +415,38 @@ func (s *AdminService) DeleteUser(ctx context.Context, id uint64) error {
 		return err
 	}
 	s.invalidateCache(ctx, cacheKeyUsers)
+	// audit
+	s.appendLogAsync(ctx, string(model.OpEntityUser), id, string(model.OpActionDelete), nil)
 	if rid, ok := logging.RequestIDFromContext(ctx); ok {
 		slog.Info("user_deleted", slog.Uint64("user_id", id), slog.String("request_id", rid))
 	} else {
 		slog.Info("user_deleted", slog.Uint64("user_id", id))
 	}
 	return nil
+}
+
+// UpdateUserStatus 单独更新用户状态并记录审计。
+func (s *AdminService) UpdateUserStatus(ctx context.Context, id uint64, status model.UserStatus) (*model.User, error) {
+    user, err := s.users.Get(ctx, id)
+    if err != nil { return nil, err }
+    if err := validateUserInput(user.Name, user.Role, status, ""); err != nil { return nil, err }
+    user.Status = status
+    if err := s.users.Update(ctx, user); err != nil { return nil, err }
+    s.invalidateCache(ctx, cacheKeyUsers)
+    s.appendLogAsync(ctx, string(model.OpEntityUser), user.ID, string(model.OpActionUpdateStatus), map[string]any{"status": user.Status})
+    return user, nil
+}
+
+// UpdateUserRole 单独更新用户角色并记录审计。
+func (s *AdminService) UpdateUserRole(ctx context.Context, id uint64, role model.Role) (*model.User, error) {
+    user, err := s.users.Get(ctx, id)
+    if err != nil { return nil, err }
+    if err := validateUserInput(user.Name, role, user.Status, ""); err != nil { return nil, err }
+    user.Role = role
+    if err := s.users.Update(ctx, user); err != nil { return nil, err }
+    s.invalidateCache(ctx, cacheKeyUsers)
+    s.appendLogAsync(ctx, string(model.OpEntityUser), user.ID, string(model.OpActionUpdateRole), map[string]any{"role": user.Role})
+    return user, nil
 }
 
 func validateUserInput(name string, role model.Role, status model.UserStatus, password string) error {
@@ -519,6 +564,8 @@ func (s *AdminService) CreatePlayer(ctx context.Context, input CreatePlayerInput
 		return nil, err
 	}
 	s.invalidateCache(ctx, cacheKeyPlayers)
+	// audit
+	s.appendLogAsync(ctx, string(model.OpEntityPlayer), player.ID, string(model.OpActionCreate), map[string]any{"user_id": player.UserID})
 	return player, nil
 }
 
@@ -543,6 +590,8 @@ func (s *AdminService) UpdatePlayer(ctx context.Context, id uint64, input Update
 		return nil, err
 	}
 	s.invalidateCache(ctx, cacheKeyPlayers)
+	// audit
+	s.appendLogAsync(ctx, string(model.OpEntityPlayer), player.ID, string(model.OpActionUpdate), map[string]any{"main_game_id": player.MainGameID})
 	return player, nil
 }
 
@@ -552,6 +601,8 @@ func (s *AdminService) DeletePlayer(ctx context.Context, id uint64) error {
 		return err
 	}
 	s.invalidateCache(ctx, cacheKeyPlayers)
+	// audit
+	s.appendLogAsync(ctx, string(model.OpEntityPlayer), id, string(model.OpActionDelete), nil)
 	return nil
 }
 
@@ -606,7 +657,7 @@ func (s *AdminService) CreateOrder(ctx context.Context, in CreateOrderInput) (*m
     if in.PlayerID != nil { order.PlayerID = *in.PlayerID }
     if err := s.orders.Create(ctx, order); err != nil { return nil, err }
     s.invalidateCache(ctx, cacheKeyOrders)
-    s.appendLogAsync(ctx, "order", order.ID, "create", map[string]any{"status": order.Status})
+    s.appendLogAsync(ctx, string(model.OpEntityOrder), order.ID, string(model.OpActionCreate), map[string]any{"status": order.Status})
     return order, nil
 }
 
@@ -624,7 +675,7 @@ func (s *AdminService) AssignOrder(ctx context.Context, id uint64, playerID uint
     order.PlayerID = playerID
     if err := s.orders.Update(ctx, order); err != nil { return nil, err }
     s.invalidateCache(ctx, cacheKeyOrders)
-    s.appendLogAsync(ctx, "order", order.ID, "assign_player", map[string]any{"player_id": playerID})
+    s.appendLogAsync(ctx, string(model.OpEntityOrder), order.ID, string(model.OpActionAssignPlayer), map[string]any{"player_id": playerID})
     return order, nil
 }
 
@@ -694,7 +745,11 @@ func (s *AdminService) UpdateOrder(ctx context.Context, id uint64, input UpdateO
 		return nil, err
 	}
     s.invalidateCache(ctx, cacheKeyOrders)
-    s.appendLogAsync(ctx, "order", order.ID, "update_status", map[string]any{"status": order.Status, "reason": order.CancelReason})
+    action := model.OpActionUpdateStatus
+    if order.Status == model.OrderStatusCanceled {
+        action = model.OpActionCancel
+    }
+    s.appendLogAsync(ctx, string(model.OpEntityOrder), order.ID, string(action), map[string]any{"status": order.Status, "reason": order.CancelReason})
 	if rid, ok := logging.RequestIDFromContext(ctx); ok {
 		slog.Info("order_status_changed", slog.Uint64("order_id", order.ID), slog.String("status", string(order.Status)), slog.String("request_id", rid))
 	} else {
@@ -709,7 +764,7 @@ func (s *AdminService) DeleteOrder(ctx context.Context, id uint64) error {
 		return err
 	}
     s.invalidateCache(ctx, cacheKeyOrders)
-    s.appendLogAsync(ctx, "order", id, "delete", nil)
+    s.appendLogAsync(ctx, string(model.OpEntityOrder), id, string(model.OpActionDelete), nil)
     return nil
 }
 
@@ -755,7 +810,7 @@ func (s *AdminService) CreatePayment(ctx context.Context, in CreatePaymentInput)
     }
     if err := s.payments.Create(ctx, pay); err != nil { return nil, err }
     s.invalidateCache(ctx, cacheKeyPayments)
-    s.appendLogAsync(ctx, "payment", pay.ID, "create", map[string]any{"status": pay.Status, "method": pay.Method})
+    s.appendLogAsync(ctx, string(model.OpEntityPayment), pay.ID, string(model.OpActionCreate), map[string]any{"status": pay.Status, "method": pay.Method})
     return pay, nil
 }
 
@@ -777,7 +832,7 @@ func (s *AdminService) CapturePayment(ctx context.Context, id uint64, in Capture
     if in.PaidAt != nil { pay.PaidAt = in.PaidAt } else { now := time.Now().UTC(); pay.PaidAt = &now }
     if err := s.payments.Update(ctx, pay); err != nil { return nil, err }
     s.invalidateCache(ctx, cacheKeyPayments)
-    s.appendLogAsync(ctx, "payment", pay.ID, "capture", map[string]any{"trade_no": pay.ProviderTradeNo})
+    s.appendLogAsync(ctx, string(model.OpEntityPayment), pay.ID, string(model.OpActionCapture), map[string]any{"trade_no": pay.ProviderTradeNo})
     return pay, nil
 }
 
@@ -826,7 +881,11 @@ func (s *AdminService) UpdatePayment(ctx context.Context, id uint64, input Updat
 		return nil, err
 	}
     s.invalidateCache(ctx, cacheKeyPayments)
-    s.appendLogAsync(ctx, "payment", payment.ID, "update_status", map[string]any{"status": payment.Status})
+    payAction := model.OpActionUpdateStatus
+    if input.Status == model.PaymentStatusRefunded {
+        payAction = model.OpActionRefund
+    }
+    s.appendLogAsync(ctx, string(model.OpEntityPayment), payment.ID, string(payAction), map[string]any{"status": payment.Status})
 	if rid, ok := logging.RequestIDFromContext(ctx); ok {
 		slog.Info("payment_status_changed", slog.Uint64("payment_id", payment.ID), slog.String("status", string(payment.Status)), slog.String("request_id", rid))
 	} else {
@@ -841,7 +900,7 @@ func (s *AdminService) DeletePayment(ctx context.Context, id uint64) error {
 		return err
 	}
     s.invalidateCache(ctx, cacheKeyPayments)
-    s.appendLogAsync(ctx, "payment", id, "delete", nil)
+    s.appendLogAsync(ctx, string(model.OpEntityPayment), id, string(model.OpActionDelete), nil)
     return nil
 }
 
@@ -855,7 +914,12 @@ func (s *AdminService) appendLogAsync(ctx context.Context, entity string, id uin
         if meta != nil {
             if b, err := json.Marshal(meta); err == nil { raw = b }
         }
-        log := &model.OperationLog{EntityType: entity, EntityID: id, Action: action, MetadataJSON: raw}
+        var actorPtr *uint64
+        if uid, ok := logging.ActorUserIDFromContext(ctx); ok {
+            actorID := uid
+            actorPtr = &actorID
+        }
+        log := &model.OperationLog{EntityType: entity, EntityID: id, Action: action, ActorUserID: actorPtr, MetadataJSON: raw}
         return r.OpLogs.Append(ctx, log)
     })
 }
@@ -941,20 +1005,28 @@ func buildPagination(page, pageSize int, total int64) model.Pagination {
 }
 
 // ListOperationLogs 返回实体的操作日志。
-func (s *AdminService) ListOperationLogs(ctx context.Context, entityType string, entityID uint64, page, pageSize int) ([]model.OperationLog, *model.Pagination, error) {
+func (s *AdminService) ListOperationLogs(ctx context.Context, entityType string, entityID uint64, opts repository.OperationLogListOptions) ([]model.OperationLog, *model.Pagination, error) {
     if s.tx == nil {
         return nil, nil, errors.New("transaction manager not configured")
     }
     var logs []model.OperationLog
     var total int64
     err := s.tx.WithTx(ctx, func(r *gormrepo.Repos) error {
-        items, cnt, err := r.OpLogs.ListByEntity(ctx, entityType, entityID, repository.NormalizePage(page), repository.NormalizePageSize(pageSize))
+        norm := repository.OperationLogListOptions{
+            Page: repository.NormalizePage(opts.Page),
+            PageSize: repository.NormalizePageSize(opts.PageSize),
+            Action: opts.Action,
+            ActorUserID: opts.ActorUserID,
+            DateFrom: opts.DateFrom,
+            DateTo: opts.DateTo,
+        }
+        items, cnt, err := r.OpLogs.ListByEntity(ctx, entityType, entityID, norm)
         if err != nil { return err }
         logs, total = items, cnt
         return nil
     })
     if err != nil { return nil, nil, err }
-    p := buildPagination(repository.NormalizePage(page), repository.NormalizePageSize(pageSize), total)
+    p := buildPagination(repository.NormalizePage(opts.Page), repository.NormalizePageSize(opts.PageSize), total)
     return logs, &p, nil
 }
 
@@ -1004,6 +1076,7 @@ func (s *AdminService) CreateReview(ctx context.Context, r model.Review) (*model
     if s.tx == nil { return nil, errors.New("transaction manager not configured") }
     err := s.tx.WithTx(ctx, func(txr *gormrepo.Repos) error { return txr.Reviews.Create(ctx, &r) })
     if err != nil { return nil, err }
+    s.appendLogAsync(ctx, string(model.OpEntityReview), r.ID, string(model.OpActionCreate), map[string]any{"order_id": r.OrderID, "player_id": r.PlayerID})
     return &r, nil
 }
 
@@ -1022,6 +1095,7 @@ func (s *AdminService) UpdateReview(ctx context.Context, id uint64, score model.
         return nil
     })
     if err != nil { return nil, err }
+    s.appendLogAsync(ctx, string(model.OpEntityReview), id, string(model.OpActionUpdate), nil)
     return item, nil
 }
 

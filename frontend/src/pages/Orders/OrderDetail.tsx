@@ -1,21 +1,15 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Tag, Button, Badge, ReviewModal } from '../../components';
-import type { ReviewFormData } from '../../components/ReviewModal';
-import { getOrderDetail } from '../../services/mockData';
+import { Card, Tag, Button } from '../../components';
+import { orderApi, OrderDetailType } from '../../services/api/order';
+import { OrderStatus } from '../../types/order';
 import {
   formatOrderStatus,
   getOrderStatusColor,
-  formatReviewStatus,
-  getReviewStatusColor,
-  formatGameType,
-  formatServiceType,
   formatCurrency,
-  formatDuration,
   formatDateTime,
   formatRelativeTime,
 } from '../../utils/formatters';
-import { OrderStatus, ReviewStatus, OrderActionType } from '../../types/order.types';
 import styles from './OrderDetail.module.less';
 
 const UserIcon = () => (
@@ -40,322 +34,294 @@ const ClockIcon = () => (
 export const OrderDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [orderDetail, setOrderDetail] = useState<OrderDetailType | null>(null);
 
-  const orderDetail = useMemo(() => {
-    if (!id) return null;
-    return getOrderDetail(id);
+  // 加载订单详情
+  useEffect(() => {
+    const loadOrderDetail = async () => {
+      if (!id) {
+        setError('订单ID无效');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await orderApi.getDetail(Number(id));
+        setOrderDetail(data);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : '加载订单详情失败';
+        setError(errorMessage);
+        console.error('加载订单详情失败:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadOrderDetail();
   }, [id]);
 
-  const handleReviewSubmit = async (data: ReviewFormData) => {
-    console.log('审核提交:', data);
-    // 这里可以调用API提交审核
-    // await orderService.review(id, data);
+  // 加载中状态
+  if (loading) {
+    return (
+      <div className={styles.container}>
+        <p>加载中...</p>
+      </div>
+    );
+  }
 
-    // 模拟API调用
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    // 提示成功
-    alert(data.result === 'approved' ? '审核通过！' : '审核拒绝！');
-
-    // 可以刷新页面数据
-    // 这里简单地关闭modal，实际应该重新获取订单数据
-  };
-
-  if (!orderDetail) {
+  // 错误状态
+  if (error || !orderDetail) {
     return (
       <div className={styles.container}>
         <Card className={styles.errorCard}>
           <h2>订单未找到</h2>
-          <p>订单 ID: {id} 不存在</p>
+          <p>{error || `订单 ID: ${id} 不存在`}</p>
           <Button onClick={() => navigate('/orders')}>返回订单列表</Button>
         </Card>
       </div>
     );
   }
 
-  const { order, logs, reviews } = orderDetail;
-
-  // 判断是否可以审核
-  const canReview =
-    order.status === OrderStatus.PENDING_REVIEW && order.reviewStatus === ReviewStatus.PENDING;
-
-  // 获取操作图标
-  const getActionIcon = (action: OrderActionType) => {
-    const icons: Record<OrderActionType, string> = {
-      [OrderActionType.CREATE]: '📝',
-      [OrderActionType.PAY]: '💰',
-      [OrderActionType.ACCEPT]: '✅',
-      [OrderActionType.START]: '🎮',
-      [OrderActionType.SUBMIT_REVIEW]: '📋',
-      [OrderActionType.APPROVE]: '✔️',
-      [OrderActionType.REJECT]: '❌',
-      [OrderActionType.COMPLETE]: '🎉',
-      [OrderActionType.CANCEL]: '🚫',
-      [OrderActionType.REQUEST_REFUND]: '💸',
-      [OrderActionType.REFUND]: '💵',
-    };
-    return icons[action] || '📌';
-  };
-
   return (
     <div className={styles.container}>
-      {/* 头部信息 */}
+      {/* 头部 */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <Button variant="outlined" onClick={() => navigate('/orders')}>
+          <Button variant="primary" onClick={() => navigate('/orders')}>
             ← 返回列表
           </Button>
           <h1 className={styles.title}>订单详情</h1>
         </div>
         <div className={styles.headerRight}>
-          <Tag color={getOrderStatusColor(order.status)}>{formatOrderStatus(order.status)}</Tag>
-          {order.reviewStatus && (
-            <Tag color={getReviewStatusColor(order.reviewStatus)}>
-              {formatReviewStatus(order.reviewStatus)}
-            </Tag>
-          )}
+          <Tag color={getOrderStatusColor(orderDetail.status)}>
+            {formatOrderStatus(orderDetail.status)}
+          </Tag>
         </div>
       </div>
 
-      {/* 主要内容区 */}
+      {/* 主要内容 */}
       <div className={styles.content}>
-        {/* 左侧栏 */}
-        <div className={styles.leftColumn}>
-          {/* 订单基本信息 */}
-          <Card className={styles.section}>
-            <h2 className={styles.sectionTitle}>订单信息</h2>
-            <div className={styles.infoGrid}>
+        {/* 基本信息 */}
+        <Card className={styles.section}>
+          <h2 className={styles.sectionTitle}>基本信息</h2>
+          <div className={styles.infoGrid}>
+            <div className={styles.infoItem}>
+              <span className={styles.infoLabel}>订单标题</span>
+              <span className={styles.infoValue}>{orderDetail.title}</span>
+            </div>
+            {orderDetail.description && (
               <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>订单号</span>
-                <span className={styles.infoValue}>{order.orderNo}</span>
+                <span className={styles.infoLabel}>订单描述</span>
+                <span className={styles.infoValue}>{orderDetail.description}</span>
               </div>
+            )}
+            <div className={styles.infoItem}>
+              <span className={styles.infoLabel}>订单金额</span>
+              <span className={`${styles.infoValue} ${styles.price}`}>
+                {formatCurrency(orderDetail.price_cents)}
+              </span>
+            </div>
+            <div className={styles.infoItem}>
+              <span className={styles.infoLabel}>创建时间</span>
+              <span className={styles.infoValue}>{formatDateTime(orderDetail.created_at)}</span>
+            </div>
+            <div className={styles.infoItem}>
+              <span className={styles.infoLabel}>更新时间</span>
+              <span className={styles.infoValue}>{formatDateTime(orderDetail.updated_at)}</span>
+            </div>
+            {orderDetail.scheduled_start && (
               <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>创建时间</span>
-                <span className={styles.infoValue}>{formatDateTime(order.createdAt)}</span>
-              </div>
-              <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>游戏类型</span>
-                <span className={styles.infoValue}>{formatGameType(order.gameType)}</span>
-              </div>
-              <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>服务类型</span>
-                <span className={styles.infoValue}>{formatServiceType(order.serviceType)}</span>
-              </div>
-              <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>服务时长</span>
-                <span className={styles.infoValue}>{formatDuration(order.duration)}</span>
-              </div>
-              <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>订单金额</span>
-                <span className={`${styles.infoValue} ${styles.price}`}>
-                  {formatCurrency(order.price)}
+                <span className={styles.infoLabel}>计划开始</span>
+                <span className={styles.infoValue}>
+                  {formatDateTime(orderDetail.scheduled_start)}
                 </span>
               </div>
-            </div>
-
-            {order.description && (
-              <div className={styles.descriptionSection}>
-                <h3 className={styles.subTitle}>订单描述</h3>
-                <p className={styles.description}>{order.description}</p>
+            )}
+            {orderDetail.scheduled_end && (
+              <div className={styles.infoItem}>
+                <span className={styles.infoLabel}>计划结束</span>
+                <span className={styles.infoValue}>
+                  {formatDateTime(orderDetail.scheduled_end)}
+                </span>
               </div>
             )}
-
-            {order.requirements && (
-              <div className={styles.descriptionSection}>
-                <h3 className={styles.subTitle}>特殊要求</h3>
-                <p className={styles.description}>{order.requirements}</p>
+            {orderDetail.cancel_reason && (
+              <div className={styles.infoItem}>
+                <span className={styles.infoLabel}>取消原因</span>
+                <span className={styles.infoValue}>{orderDetail.cancel_reason}</span>
               </div>
             )}
-          </Card>
+          </div>
+        </Card>
 
-          {/* 用户信息 */}
+        {/* 用户信息 */}
+        {orderDetail.user && (
           <Card className={styles.section}>
             <h2 className={styles.sectionTitle}>
               <UserIcon />
               用户信息
             </h2>
-            <div className={styles.userCard}>
-              <div className={styles.userAvatar}>{order.user.username.charAt(0)}</div>
-              <div className={styles.userInfo}>
-                <div className={styles.userName}>{order.user.username}</div>
-                {order.user.phone && <div className={styles.userMeta}>{order.user.phone}</div>}
-                <div className={styles.userMeta}>用户 ID: {order.user.id}</div>
+            <div className={styles.userInfo}>
+              <div className={styles.infoItem}>
+                <span className={styles.infoLabel}>用户名</span>
+                <span className={styles.infoValue}>{orderDetail.user.name}</span>
+              </div>
+              <div className={styles.infoItem}>
+                <span className={styles.infoLabel}>用户ID</span>
+                <span className={styles.infoValue}>{orderDetail.user.id}</span>
               </div>
             </div>
           </Card>
+        )}
 
-          {/* 陪玩者信息 */}
-          {order.player && (
-            <Card className={styles.section}>
-              <h2 className={styles.sectionTitle}>
-                <UserIcon />
-                陪玩者信息
-              </h2>
-              <div className={styles.playerCard}>
-                <div className={styles.playerAvatar}>{order.player.username.charAt(0)}</div>
-                <div className={styles.playerInfo}>
-                  <div className={styles.playerName}>{order.player.username}</div>
-                  <div className={styles.playerMeta}>
-                    ⭐ {order.player.rating} 分 · {order.player.completedOrders} 单
-                  </div>
-                  <div className={styles.playerMeta}>等级 {order.player.level}</div>
-                  <div className={styles.playerTags}>
-                    {order.player.tags.map((tag, index) => (
-                      <Tag key={index} color="info">
-                        {tag}
-                      </Tag>
-                    ))}
-                  </div>
-                </div>
+        {/* 陪玩师信息 */}
+        {orderDetail.player && (
+          <Card className={styles.section}>
+            <h2 className={styles.sectionTitle}>
+              <UserIcon />
+              陪玩师信息
+            </h2>
+            <div className={styles.playerInfo}>
+              <div className={styles.infoItem}>
+                <span className={styles.infoLabel}>昵称</span>
+                <span className={styles.infoValue}>{orderDetail.player.nickname || '-'}</span>
               </div>
-            </Card>
-          )}
+              <div className={styles.infoItem}>
+                <span className={styles.infoLabel}>陪玩师ID</span>
+                <span className={styles.infoValue}>{orderDetail.player.id}</span>
+              </div>
+            </div>
+          </Card>
+        )}
 
-          {/* 时间节点 */}
+        {/* 游戏信息 */}
+        {orderDetail.game && (
+          <Card className={styles.section}>
+            <h2 className={styles.sectionTitle}>游戏信息</h2>
+            <div className={styles.gameInfo}>
+              <div className={styles.infoItem}>
+                <span className={styles.infoLabel}>游戏名称</span>
+                <span className={styles.infoValue}>{orderDetail.game.name}</span>
+              </div>
+              <div className={styles.infoItem}>
+                <span className={styles.infoLabel}>游戏ID</span>
+                <span className={styles.infoValue}>{orderDetail.game.id}</span>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* 操作日志 */}
+        {orderDetail.logs && orderDetail.logs.length > 0 && (
           <Card className={styles.section}>
             <h2 className={styles.sectionTitle}>
               <ClockIcon />
-              时间节点
-            </h2>
-            <div className={styles.timelineGrid}>
-              {order.createdAt && (
-                <div className={styles.timeItem}>
-                  <span className={styles.timeLabel}>创建时间</span>
-                  <span className={styles.timeValue}>{formatDateTime(order.createdAt)}</span>
-                </div>
-              )}
-              {order.paidAt && (
-                <div className={styles.timeItem}>
-                  <span className={styles.timeLabel}>支付时间</span>
-                  <span className={styles.timeValue}>{formatDateTime(order.paidAt)}</span>
-                </div>
-              )}
-              {order.acceptedAt && (
-                <div className={styles.timeItem}>
-                  <span className={styles.timeLabel}>接单时间</span>
-                  <span className={styles.timeValue}>{formatDateTime(order.acceptedAt)}</span>
-                </div>
-              )}
-              {order.startedAt && (
-                <div className={styles.timeItem}>
-                  <span className={styles.timeLabel}>开始时间</span>
-                  <span className={styles.timeValue}>{formatDateTime(order.startedAt)}</span>
-                </div>
-              )}
-              {order.completedAt && (
-                <div className={styles.timeItem}>
-                  <span className={styles.timeLabel}>完成时间</span>
-                  <span className={styles.timeValue}>{formatDateTime(order.completedAt)}</span>
-                </div>
-              )}
-              {order.cancelledAt && (
-                <div className={styles.timeItem}>
-                  <span className={styles.timeLabel}>取消时间</span>
-                  <span className={styles.timeValue}>{formatDateTime(order.cancelledAt)}</span>
-                </div>
-              )}
-            </div>
-          </Card>
-        </div>
-
-        {/* 右侧栏 */}
-        <div className={styles.rightColumn}>
-          {/* 操作按钮 */}
-          {canReview && (
-            <Card className={styles.section}>
-              <h2 className={styles.sectionTitle}>订单操作</h2>
-              <div className={styles.actions}>
-                <Button
-                  variant="primary"
-                  onClick={() => setShowReviewModal(true)}
-                  className={styles.actionButton}
-                >
-                  📋 开始审核
-                </Button>
-              </div>
-            </Card>
-          )}
-
-          {/* 审核记录 */}
-          {reviews.length > 0 && (
-            <Card className={styles.section}>
-              <h2 className={styles.sectionTitle}>
-                审核记录
-                <Badge count={reviews.length} />
-              </h2>
-              <div className={styles.reviewList}>
-                {reviews.map((review) => (
-                  <div key={review.id} className={styles.reviewItem}>
-                    <div className={styles.reviewHeader}>
-                      <Tag color={getReviewStatusColor(review.status)}>
-                        {formatReviewStatus(review.status)}
-                      </Tag>
-                      <span className={styles.reviewTime}>
-                        {formatRelativeTime(review.createdAt)}
-                      </span>
-                    </div>
-                    <div className={styles.reviewBody}>
-                      <div className={styles.reviewMeta}>审核人: {review.reviewer}</div>
-                      {review.reason && <div className={styles.reviewReason}>{review.reason}</div>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          )}
-
-          {/* 操作历史 */}
-          <Card className={styles.section}>
-            <h2 className={styles.sectionTitle}>
-              操作历史
-              <Badge count={logs.length} />
+              操作日志
             </h2>
             <div className={styles.timeline}>
-              {logs.map((log, index) => (
+              {orderDetail.logs.map((log) => (
                 <div key={log.id} className={styles.timelineItem}>
-                  <div className={styles.timelineDot}>{getActionIcon(log.action)}</div>
+                  <div className={styles.timelineDot} />
                   <div className={styles.timelineContent}>
-                    <div className={styles.timelineHeader}>
-                      <span className={styles.timelineAction}>{log.content}</span>
-                      <span className={styles.timelineTime}>
-                        {formatRelativeTime(log.createdAt)}
+                    <div className={styles.logHeader}>
+                      <span className={styles.logAction}>{log.action}</span>
+                      <span className={styles.logTime}>
+                        {formatRelativeTime(log.created_at)}
                       </span>
                     </div>
-                    <div className={styles.timelineMeta}>
-                      {log.operator} · {log.operatorRole}
+                    <div className={styles.logDetails}>
+                      <span className={styles.logOperator}>{log.operator_name}</span>
+                      {log.note && <span className={styles.logNote}>{log.note}</span>}
                     </div>
-                    {(log.statusBefore || log.statusAfter) && (
-                      <div className={styles.timelineStatus}>
-                        {log.statusBefore && (
-                          <Tag color={getOrderStatusColor(log.statusBefore)}>
-                            {formatOrderStatus(log.statusBefore)}
-                          </Tag>
-                        )}
-                        {log.statusBefore && log.statusAfter && <span>→</span>}
-                        {log.statusAfter && (
-                          <Tag color={getOrderStatusColor(log.statusAfter)}>
-                            {formatOrderStatus(log.statusAfter)}
-                          </Tag>
-                        )}
-                      </div>
-                    )}
                   </div>
-                  {index < logs.length - 1 && <div className={styles.timelineLine} />}
                 </div>
               ))}
             </div>
           </Card>
-        </div>
-      </div>
+        )}
 
-      {/* 审核Modal */}
-      <ReviewModal
-        visible={showReviewModal}
-        orderNo={order.orderNo}
-        onClose={() => setShowReviewModal(false)}
-        onSubmit={handleReviewSubmit}
-      />
+        {/* 审核记录 */}
+        {orderDetail.reviews && orderDetail.reviews.length > 0 && (
+          <Card className={styles.section}>
+            <h2 className={styles.sectionTitle}>审核记录</h2>
+            <div className={styles.reviewsList}>
+              {orderDetail.reviews.map((review) => (
+                <div key={review.id} className={styles.reviewItem}>
+                  <div className={styles.reviewHeader}>
+                    <Tag color={review.result === 'approved' ? 'success' : 'error'}>
+                      {review.result === 'approved' ? '审核通过' : '审核拒绝'}
+                    </Tag>
+                    <span className={styles.reviewTime}>
+                      {formatDateTime(review.created_at)}
+                    </span>
+                  </div>
+                  <div className={styles.reviewContent}>
+                    <div className={styles.reviewItem}>
+                      <span className={styles.infoLabel}>审核人:</span>
+                      <span className={styles.infoValue}>{review.reviewer_name}</span>
+                    </div>
+                    {review.reason && (
+                      <div className={styles.reviewItem}>
+                        <span className={styles.infoLabel}>原因:</span>
+                        <span className={styles.infoValue}>{review.reason}</span>
+                      </div>
+                    )}
+                    {review.comment && (
+                      <div className={styles.reviewItem}>
+                        <span className={styles.infoLabel}>备注:</span>
+                        <span className={styles.infoValue}>{review.comment}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
+        {/* 操作区域 */}
+        <Card className={styles.section}>
+          <h2 className={styles.sectionTitle}>订单操作</h2>
+          <div className={styles.actions}>
+            {orderDetail.status === OrderStatus.PENDING && (
+              <Button
+                variant="primary"
+                onClick={() => console.log('确认订单')}
+              >
+                确认订单
+              </Button>
+            )}
+            {orderDetail.status === OrderStatus.CONFIRMED && (
+              <Button
+                variant="primary"
+                onClick={() => console.log('开始服务')}
+              >
+                开始服务
+              </Button>
+            )}
+            {orderDetail.status === OrderStatus.IN_PROGRESS && (
+              <Button
+                variant="primary"
+                onClick={() => console.log('完成订单')}
+              >
+                完成订单
+              </Button>
+            )}
+            {[OrderStatus.PENDING, OrderStatus.CONFIRMED].includes(orderDetail.status) && (
+              <Button
+                variant="secondary"
+                onClick={() => console.log('取消订单')}
+              >
+                取消订单
+              </Button>
+            )}
+          </div>
+        </Card>
+      </div>
     </div>
   );
 };

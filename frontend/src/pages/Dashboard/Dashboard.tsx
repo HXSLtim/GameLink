@@ -1,14 +1,13 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Tag, Badge } from '../../components';
-import { mockStatistics, mockOrders } from '../../services/mockData';
-import { OrderStatus, ReviewStatus } from '../../types/order.types';
+import { orderApi } from '../../services/api/order';
+import type { Order, OrderStatistics } from '../../types/order';
+import { OrderStatus } from '../../types/order';
 import {
   formatOrderStatus,
   getOrderStatusColor,
   formatCurrency,
-  formatGameType,
-  formatServiceType,
   formatRelativeTime,
 } from '../../utils/formatters';
 import styles from './Dashboard.module.less';
@@ -33,19 +32,6 @@ const OrderIcon = () => (
   </svg>
 );
 
-const ReviewIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-    <path d="M9 11L12 14L22 4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <path
-      d="M21 12V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H16"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <circle cx="17" cy="6" r="3" strokeWidth="2" />
-  </svg>
-);
-
 const MoneyIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
     <line x1="12" y1="1" x2="12" y2="23" strokeWidth="2" strokeLinecap="round" />
@@ -60,12 +46,58 @@ const MoneyIcon = () => (
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+  const [statistics, setStatistics] = useState<OrderStatistics>({
+    total: 0,
+    pending: 0,
+    confirmed: 0,
+    in_progress: 0,
+    completed: 0,
+    canceled: 0,
+    refunded: 0,
+    today_orders: 0,
+    today_revenue: 0,
+  });
+  const [recentOrders, setRecentOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // 获取最近订单（前5个）
-  const recentOrders = mockOrders.slice(0, 5);
+  // 加载数据
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        
+        // 加载统计数据
+        const stats = await orderApi.getStatistics();
+        setStatistics(stats);
 
-  // 获取待审核订单
-  const pendingReviews = mockOrders.filter((order) => order.reviewStatus === ReviewStatus.PENDING);
+        // 加载最近订单
+        const ordersResult = await orderApi.getList({
+          page: 1,
+          page_size: 5,
+          sort_by: 'created_at',
+          sort_order: 'desc',
+        });
+        setRecentOrders(ordersResult.list || []);
+      } catch (error) {
+        console.error('加载仪表盘数据失败:', error);
+        // 确保即使出错也设置为空数组
+        setRecentOrders([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className={styles.container}>
+        <h1 className={styles.title}>仪表盘</h1>
+        <p>加载中...</p>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>
@@ -79,10 +111,7 @@ export const Dashboard: React.FC = () => {
           </div>
           <div className={styles.statContent}>
             <div className={styles.statLabel}>总订单数</div>
-            <div className={styles.statValue}>{mockStatistics.total}</div>
-            <div className={styles.statTrend}>
-              <span className={styles.trendUp}>↑ 12% 较上月</span>
-            </div>
+            <div className={styles.statValue}>{statistics.total}</div>
           </div>
         </Card>
 
@@ -92,24 +121,20 @@ export const Dashboard: React.FC = () => {
           </div>
           <div className={styles.statContent}>
             <div className={styles.statLabel}>今日订单</div>
-            <div className={styles.statValue}>{mockStatistics.todayOrders}</div>
-            <div className={styles.statTrend}>
-              <span className={styles.trendUp}>↑ 8% 较昨日</span>
-            </div>
+            <div className={styles.statValue}>{statistics.today_orders}</div>
           </div>
         </Card>
 
         <Card className={styles.statCard}>
           <div className={styles.statIcon}>
-            <ReviewIcon />
+            <OrderIcon />
           </div>
           <div className={styles.statContent}>
-            <div className={styles.statLabel}>待审核</div>
+            <div className={styles.statLabel}>进行中</div>
             <div className={styles.statValue}>
-              <Badge count={mockStatistics.pendingReview} />
-              {mockStatistics.pendingReview}
+              {statistics.in_progress > 0 && <Badge count={statistics.in_progress} />}
+              {statistics.in_progress}
             </div>
-            <div className={styles.statTrend}>需要处理</div>
           </div>
         </Card>
 
@@ -119,10 +144,7 @@ export const Dashboard: React.FC = () => {
           </div>
           <div className={styles.statContent}>
             <div className={styles.statLabel}>今日收入</div>
-            <div className={styles.statValue}>{formatCurrency(mockStatistics.todayRevenue)}</div>
-            <div className={styles.statTrend}>
-              <span className={styles.trendUp}>↑ 15% 较昨日</span>
-            </div>
+            <div className={styles.statValue}>{formatCurrency(statistics.today_revenue)}</div>
           </div>
         </Card>
       </div>
@@ -131,45 +153,53 @@ export const Dashboard: React.FC = () => {
       <div className={styles.quickActions}>
         <h2 className={styles.sectionTitle}>快捷入口</h2>
         <div className={styles.actionsGrid}>
-          <Card className={styles.actionCard} onClick={() => navigate('/orders')}>
-            <div className={styles.actionIcon}>
-              <OrderIcon />
+          <Card className={styles.actionCard}>
+            <div className={styles.actionContent} onClick={() => navigate('/orders')}>
+              <div className={styles.actionIcon}>
+                <OrderIcon />
+              </div>
+              <div className={styles.actionTitle}>所有订单</div>
+              <div className={styles.actionDesc}>查看和管理所有订单</div>
             </div>
-            <div className={styles.actionTitle}>所有订单</div>
-            <div className={styles.actionDesc}>查看和管理所有订单</div>
           </Card>
 
-          <Card
-            className={styles.actionCard}
-            onClick={() => navigate('/orders?status=pending_review')}
-          >
-            <div className={styles.actionIcon}>
-              <ReviewIcon />
+          <Card className={styles.actionCard}>
+            <div
+              className={styles.actionContent}
+              onClick={() => navigate(`/orders?status=${OrderStatus.PENDING}`)}
+            >
+              <div className={styles.actionIcon}>
+                <OrderIcon />
+              </div>
+              <div className={styles.actionTitle}>
+                待处理订单
+                {statistics.pending > 0 && <Badge count={statistics.pending} />}
+              </div>
+              <div className={styles.actionDesc}>处理需要确认的订单</div>
             </div>
-            <div className={styles.actionTitle}>
-              待审核订单
-              {mockStatistics.pendingReview > 0 && <Badge count={mockStatistics.pendingReview} />}
-            </div>
-            <div className={styles.actionDesc}>处理需要审核的订单</div>
           </Card>
 
-          <Card
-            className={styles.actionCard}
-            onClick={() => navigate('/orders?status=in_progress')}
-          >
-            <div className={styles.actionIcon}>
-              <StatsIcon />
+          <Card className={styles.actionCard}>
+            <div
+              className={styles.actionContent}
+              onClick={() => navigate(`/orders?status=${OrderStatus.IN_PROGRESS}`)}
+            >
+              <div className={styles.actionIcon}>
+                <StatsIcon />
+              </div>
+              <div className={styles.actionTitle}>进行中订单</div>
+              <div className={styles.actionDesc}>监控正在进行的订单</div>
             </div>
-            <div className={styles.actionTitle}>进行中订单</div>
-            <div className={styles.actionDesc}>监控正在进行的订单</div>
           </Card>
 
-          <Card className={styles.actionCard} onClick={() => navigate('/orders')}>
-            <div className={styles.actionIcon}>
-              <MoneyIcon />
+          <Card className={styles.actionCard}>
+            <div className={styles.actionContent} onClick={() => navigate('/users')}>
+              <div className={styles.actionIcon}>
+                <MoneyIcon />
+              </div>
+              <div className={styles.actionTitle}>用户管理</div>
+              <div className={styles.actionDesc}>管理用户和陪玩师</div>
             </div>
-            <div className={styles.actionTitle}>财务报表</div>
-            <div className={styles.actionDesc}>查看收入和统计数据</div>
           </Card>
         </div>
       </div>
@@ -184,93 +214,52 @@ export const Dashboard: React.FC = () => {
         </div>
 
         <div className={styles.ordersList}>
-          {recentOrders.map((order) => (
-            <Card
-              key={order.id}
-              className={styles.orderCard}
-              onClick={() => navigate(`/orders/${order.id}`)}
-            >
-              <div className={styles.orderHeader}>
-                <div className={styles.orderNo}>{order.orderNo}</div>
-                <Tag color={getOrderStatusColor(order.status)}>
-                  {formatOrderStatus(order.status)}
-                </Tag>
-              </div>
-
-              <div className={styles.orderInfo}>
-                <div className={styles.infoRow}>
-                  <span className={styles.infoLabel}>用户:</span>
-                  <span className={styles.infoValue}>{order.user.username}</span>
-                </div>
-                <div className={styles.infoRow}>
-                  <span className={styles.infoLabel}>游戏:</span>
-                  <span className={styles.infoValue}>{formatGameType(order.gameType)}</span>
-                </div>
-                <div className={styles.infoRow}>
-                  <span className={styles.infoLabel}>服务:</span>
-                  <span className={styles.infoValue}>{formatServiceType(order.serviceType)}</span>
-                </div>
-                <div className={styles.infoRow}>
-                  <span className={styles.infoLabel}>金额:</span>
-                  <span className={`${styles.infoValue} ${styles.price}`}>
-                    {formatCurrency(order.price)}
-                  </span>
-                </div>
-              </div>
-
-              <div className={styles.orderFooter}>
-                <span className={styles.orderTime}>{formatRelativeTime(order.createdAt)}</span>
-              </div>
-            </Card>
-          ))}
-        </div>
-      </div>
-
-      {/* 待审核订单 */}
-      {pendingReviews.length > 0 && (
-        <div className={styles.pendingReviews}>
-          <div className={styles.sectionHeader}>
-            <h2 className={styles.sectionTitle}>
-              待审核订单
-              <Badge count={pendingReviews.length} />
-            </h2>
-            <button
-              className={styles.viewAllButton}
-              onClick={() => navigate('/orders?reviewStatus=pending')}
-            >
-              查看全部 →
-            </button>
-          </div>
-
-          <div className={styles.reviewsList}>
-            {pendingReviews.slice(0, 3).map((order) => (
-              <Card
-                key={order.id}
-                className={styles.reviewCard}
-                onClick={() => navigate(`/orders/${order.id}`)}
-              >
-                <div className={styles.reviewHeader}>
-                  <div className={styles.orderNo}>{order.orderNo}</div>
-                  <Tag color="warning">待审核</Tag>
-                </div>
-
-                <div className={styles.reviewContent}>
-                  <div className={styles.reviewText}>
-                    用户 <strong>{order.user.username}</strong> 的订单已完成，等待审核
+          {!recentOrders || recentOrders.length === 0 ? (
+            <p>暂无订单</p>
+          ) : (
+            recentOrders.map((order) => (
+              <Card className={styles.orderCard} key={order.id}>
+                <div
+                  className={styles.orderContent}
+                  onClick={() => navigate(`/orders/${order.id}`)}
+                >
+                  <div className={styles.orderHeader}>
+                    <div className={styles.orderTitle}>{order.title}</div>
+                    <Tag color={getOrderStatusColor(order.status)}>
+                      {formatOrderStatus(order.status)}
+                    </Tag>
                   </div>
-                  <div className={styles.reviewMeta}>
-                    <span>{formatGameType(order.gameType)}</span>
-                    <span>•</span>
-                    <span>{formatCurrency(order.price)}</span>
-                    <span>•</span>
-                    <span>{formatRelativeTime(order.updatedAt)}</span>
+
+                  <div className={styles.orderInfo}>
+                    {order.user && (
+                      <div className={styles.infoRow}>
+                        <span className={styles.infoLabel}>用户:</span>
+                        <span className={styles.infoValue}>{order.user.name}</span>
+                      </div>
+                    )}
+                    {order.game && (
+                      <div className={styles.infoRow}>
+                        <span className={styles.infoLabel}>游戏:</span>
+                        <span className={styles.infoValue}>{order.game.name}</span>
+                      </div>
+                    )}
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>金额:</span>
+                      <span className={`${styles.infoValue} ${styles.price}`}>
+                        {formatCurrency(order.price_cents)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className={styles.orderFooter}>
+                    <span className={styles.orderTime}>{formatRelativeTime(order.created_at)}</span>
                   </div>
                 </div>
               </Card>
-            ))}
-          </div>
+            ))
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };

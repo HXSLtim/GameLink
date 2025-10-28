@@ -2,6 +2,7 @@ package service
 
 import (
     "context"
+    "time"
 
     "gamelink/internal/repository"
 )
@@ -33,3 +34,12 @@ func (s *StatsService) TopPlayers(ctx context.Context, limit int) ([]repository.
     return s.repo.TopPlayers(ctx, limit)
 }
 
+// AuditOverview returns counts grouped by entity and action within a time window.
+func (s *StatsService) AuditOverview(ctx context.Context, from, to *time.Time) (map[string]int64, map[string]int64, error) {
+    return s.repo.AuditOverview(ctx, from, to)
+}
+
+// AuditTrend returns daily counts filtered by time and optional entity/action.
+func (s *StatsService) AuditTrend(ctx context.Context, from, to *time.Time, entity, action string) ([]repository.DateValue, error) {
+    return s.repo.AuditTrend(ctx, from, to, entity, action)
+}

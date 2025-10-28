@@ -4,3 +4,13 @@ dist
 *.log
 coverage
 
+
+# 环境变量配置（敏感信息）
+.env.local
+.env.*.local
+.env.production.local
+
+# 密钥文件
+*.key
+*.pem
+*.p12

@@ -425,6 +425,72 @@ paths:
       summary: 更新游戏
       tags:
       - Admin/Games
+  /admin/games/{id}/logs:
+    get:
+      parameters:
+      - description: 游戏ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 页码
+        in: query
+        name: page
+        type: integer
+      - description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      - description: 动作过滤
+        enum:
+        - create
+        - update
+        - delete
+        in: query
+        name: action
+        type: string
+      - description: 操作者用户ID
+        in: query
+        name: actor_user_id
+        type: integer
+      - description: 开始时间
+        in: query
+        name: date_from
+        type: string
+      - description: 结束时间
+        in: query
+        name: date_to
+        type: string
+      - description: 导出格式
+        enum:
+        - csv
+        in: query
+        name: export
+        type: string
+      - description: 导出列（逗号分隔）
+        in: query
+        name: fields
+        type: string
+      - description: 列头语言
+        enum:
+        - en
+        - zh
+        in: query
+        name: header_lang
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 获取游戏操作日志
+      tags:
+      - Admin/Games
   /admin/orders:
     get:
       description: 根据状态/用户/玩家/游戏和时间范围筛选，支持分页
@@ -673,6 +739,45 @@ paths:
         in: query
         name: page_size
         type: integer
+      - description: 动作过滤
+        enum:
+        - create
+        - assign_player
+        - update_status
+        - cancel
+        - delete
+        in: query
+        name: action
+        type: string
+      - description: 操作者用户ID
+        in: query
+        name: actor_user_id
+        type: integer
+      - description: 开始时间
+        in: query
+        name: date_from
+        type: string
+      - description: 结束时间
+        in: query
+        name: date_to
+        type: string
+      - description: 导出格式
+        enum:
+        - csv
+        in: query
+        name: export
+        type: string
+      - description: 导出列（逗号分隔），默认：id,entity_type,entity_id,actor_user_id,action,reason,metadata,created_at
+        in: query
+        name: fields
+        type: string
+      - description: 列头语言
+        enum:
+        - en
+        - zh
+        in: query
+        name: header_lang
+        type: string
       produces:
       - application/json
       responses:
@@ -937,6 +1042,45 @@ paths:
         in: query
         name: page_size
         type: integer
+      - description: 动作过滤
+        enum:
+        - create
+        - capture
+        - update_status
+        - refund
+        - delete
+        in: query
+        name: action
+        type: string
+      - description: 操作者用户ID
+        in: query
+        name: actor_user_id
+        type: integer
+      - description: 开始时间
+        in: query
+        name: date_from
+        type: string
+      - description: 结束时间
+        in: query
+        name: date_to
+        type: string
+      - description: 导出格式
+        enum:
+        - csv
+        in: query
+        name: export
+        type: string
+      - description: 导出列（逗号分隔），默认：id,entity_type,entity_id,actor_user_id,action,reason,metadata,created_at
+        in: query
+        name: fields
+        type: string
+      - description: 列头语言
+        enum:
+        - en
+        - zh
+        in: query
+        name: header_lang
+        type: string
       produces:
       - application/json
       responses:
@@ -1154,6 +1298,72 @@ paths:
       security:
       - BearerAuth: []
       summary: 更新玩家主游戏
+      tags:
+      - Admin/Players
+  /admin/players/{id}/logs:
+    get:
+      parameters:
+      - description: 玩家ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 页码
+        in: query
+        name: page
+        type: integer
+      - description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      - description: 动作过滤
+        enum:
+        - create
+        - update
+        - delete
+        in: query
+        name: action
+        type: string
+      - description: 操作者用户ID
+        in: query
+        name: actor_user_id
+        type: integer
+      - description: 开始时间
+        in: query
+        name: date_from
+        type: string
+      - description: 结束时间
+        in: query
+        name: date_to
+        type: string
+      - description: 导出格式
+        enum:
+        - csv
+        in: query
+        name: export
+        type: string
+      - description: 导出列（逗号分隔）
+        in: query
+        name: fields
+        type: string
+      - description: 列头语言
+        enum:
+        - en
+        - zh
+        in: query
+        name: header_lang
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 获取玩家操作日志
       tags:
       - Admin/Players
   /admin/players/{id}/reviews:
@@ -1411,6 +1621,135 @@ paths:
       summary: 更新评价
       tags:
       - Admin/Reviews
+  /admin/reviews/{id}/logs:
+    get:
+      parameters:
+      - description: 评价ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 页码
+        in: query
+        name: page
+        type: integer
+      - description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      - description: 动作过滤
+        enum:
+        - create
+        - update
+        - delete
+        in: query
+        name: action
+        type: string
+      - description: 操作者用户ID
+        in: query
+        name: actor_user_id
+        type: integer
+      - description: 开始时间
+        in: query
+        name: date_from
+        type: string
+      - description: 结束时间
+        in: query
+        name: date_to
+        type: string
+      - description: 导出格式
+        enum:
+        - csv
+        in: query
+        name: export
+        type: string
+      - description: 导出列（逗号分隔）
+        in: query
+        name: fields
+        type: string
+      - description: 列头语言
+        enum:
+        - en
+        - zh
+        in: query
+        name: header_lang
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 获取评价操作日志
+      tags:
+      - Admin/Reviews
+  /admin/stats/audit/overview:
+    get:
+      parameters:
+      - description: 开始时间
+        in: query
+        name: date_from
+        type: string
+      - description: 结束时间
+        in: query
+        name: date_to
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 审计总览（按实体/动作汇总）
+      tags:
+      - Admin/Stats
+  /admin/stats/audit/trend:
+    get:
+      parameters:
+      - description: 开始时间
+        in: query
+        name: date_from
+        type: string
+      - description: 结束时间
+        in: query
+        name: date_to
+        type: string
+      - description: 实体类型
+        enum:
+        - order
+        - payment
+        - player
+        - game
+        - review
+        - user
+        in: query
+        name: entity
+        type: string
+      - description: 动作
+        in: query
+        name: action
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 审计趋势（日）
+      tags:
+      - Admin/Stats
   /admin/stats/dashboard:
     get:
       produces:
@@ -1662,6 +2001,72 @@ paths:
       security:
       - BearerAuth: []
       summary: 更新用户
+      tags:
+      - Admin/Users
+  /admin/users/{id}/logs:
+    get:
+      parameters:
+      - description: 用户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 页码
+        in: query
+        name: page
+        type: integer
+      - description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      - description: 动作过滤
+        enum:
+        - create
+        - update
+        - delete
+        in: query
+        name: action
+        type: string
+      - description: 操作者用户ID
+        in: query
+        name: actor_user_id
+        type: integer
+      - description: 开始时间
+        in: query
+        name: date_from
+        type: string
+      - description: 结束时间
+        in: query
+        name: date_to
+        type: string
+      - description: 导出格式
+        enum:
+        - csv
+        in: query
+        name: export
+        type: string
+      - description: 导出列（逗号分隔）
+        in: query
+        name: fields
+        type: string
+      - description: 列头语言
+        enum:
+        - en
+        - zh
+        in: query
+        name: header_lang
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 获取用户操作日志
       tags:
       - Admin/Users
   /admin/users/{id}/orders:
