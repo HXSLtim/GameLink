@@ -7,6 +7,7 @@
 ## 🔒 加密方式
 
 ### 加密算法
+
 - **对称加密**: AES-256-CBC
 - **哈希算法**: SHA-256（签名）、MD5（可选）
 - **模式**: CBC（密码块链接模式）
@@ -15,6 +16,7 @@
 ### 加密流程
 
 #### 请求加密（前端 → 后端）
+
 ```typescript
 // 原始请求数据
 {
@@ -32,6 +34,7 @@
 ```
 
 #### 响应解密（后端 → 前端）
+
 ```typescript
 // 加密的响应数据
 {
@@ -81,7 +84,7 @@ VITE_CRYPTO_IV=your-iv-16-bytes
 // 普通请求会自动加密
 const result = await apiClient.post('/api/v1/auth/login', {
   username: 'admin',
-  password: '123456'
+  password: '123456',
 });
 
 // 响应会自动解密
@@ -100,10 +103,7 @@ const encrypted = CryptoUtil.encrypt({ password: '123456' });
 const decrypted = CryptoUtil.decrypt(encrypted);
 
 // 部分字段加密
-const data = CryptoUtil.encryptFields(
-  { username: 'admin', password: '123456' },
-  ['password']
-);
+const data = CryptoUtil.encryptFields({ username: 'admin', password: '123456' }, ['password']);
 
 // 生成签名
 const signature = CryptoUtil.generateSignature(data, Date.now());
@@ -134,11 +134,11 @@ cryptoMiddleware.disable();
 
 ### 环境配置
 
-| 变量 | 说明 | 默认值 |
-|------|------|--------|
-| `VITE_CRYPTO_ENABLED` | 是否启用加密 | `true` |
+| 变量                     | 说明               | 默认值                           |
+| ------------------------ | ------------------ | -------------------------------- |
+| `VITE_CRYPTO_ENABLED`    | 是否启用加密       | `true`                           |
 | `VITE_CRYPTO_SECRET_KEY` | AES 密钥（32字节） | `GameLink2025SecretKey!@#123456` |
-| `VITE_CRYPTO_IV` | AES 向量（16字节） | `GameLink2025IV!!!` |
+| `VITE_CRYPTO_IV`         | AES 向量（16字节） | `GameLink2025IV!!!`              |
 
 ## 🎯 加密策略
 
@@ -162,7 +162,7 @@ config.data = {
   encrypted: true,
   payload: encryptedData, // 整个 data 加密
   timestamp: Date.now(),
-  signature: '...'
+  signature: '...',
 };
 ```
 
@@ -176,7 +176,7 @@ config.data = {
 
 const data = CryptoUtil.encryptFields(
   { username: 'admin', password: '123456' },
-  ['password'] // 仅加密 password
+  ['password'], // 仅加密 password
 );
 ```
 
@@ -221,7 +221,7 @@ describe('CryptoUtil', () => {
     const original = { test: 'data' };
     const encrypted = CryptoUtil.encrypt(original);
     const decrypted = CryptoUtil.decrypt(encrypted);
-    
+
     expect(decrypted).toEqual(original);
   });
 
@@ -229,7 +229,7 @@ describe('CryptoUtil', () => {
     const data = { test: 'data' };
     const timestamp = Date.now();
     const signature = CryptoUtil.generateSignature(data, timestamp);
-    
+
     expect(signature).toBeTruthy();
     expect(signature.length).toBe(64); // SHA-256 = 64 hex chars
   });
@@ -245,9 +245,9 @@ describe('Crypto Middleware', () => {
   it('should encrypt request and decrypt response', async () => {
     const response = await apiClient.post('/api/v1/auth/login', {
       username: 'test',
-      password: 'test123'
+      password: 'test123',
     });
-    
+
     expect(response).toBeDefined();
     // 响应应该是解密后的数据
   });
@@ -271,7 +271,7 @@ describe('Crypto Middleware', () => {
 
 ```typescript
 // 方法 1: 环境变量
-VITE_CRYPTO_ENABLED=false
+VITE_CRYPTO_ENABLED = false;
 
 // 方法 2: 代码
 cryptoMiddleware.disable();
@@ -279,14 +279,15 @@ cryptoMiddleware.disable();
 
 ## 📊 性能影响
 
-| 操作 | 耗时 | 影响 |
-|------|------|------|
-| 加密 1KB 数据 | ~1ms | 可忽略 |
-| 解密 1KB 数据 | ~1ms | 可忽略 |
-| 签名生成 | ~0.5ms | 可忽略 |
-| 签名验证 | ~0.5ms | 可忽略 |
+| 操作          | 耗时   | 影响   |
+| ------------- | ------ | ------ |
+| 加密 1KB 数据 | ~1ms   | 可忽略 |
+| 解密 1KB 数据 | ~1ms   | 可忽略 |
+| 签名生成      | ~0.5ms | 可忽略 |
+| 签名验证      | ~0.5ms | 可忽略 |
 
 **建议**：
+
 - 小数据（< 10KB）：全量加密
 - 大数据（> 10KB）：部分字段加密或压缩后加密
 
@@ -302,7 +303,7 @@ func DecryptMiddleware() gin.HandlerFunc {
         if err := c.ShouldBindJSON(&req); err != nil {
             return
         }
-        
+
         if req.Encrypted {
             // 解密
             decrypted := Decrypt(req.Payload, secretKey, iv)
@@ -314,7 +315,7 @@ func DecryptMiddleware() gin.HandlerFunc {
             // 替换请求体
             c.Set("decrypted_data", decrypted)
         }
-        
+
         c.Next()
     }
 }
@@ -330,15 +331,19 @@ func DecryptMiddleware() gin.HandlerFunc {
 ## 🆘 常见问题
 
 ### Q: 加密后请求失败？
+
 A: 检查前后端密钥是否一致，后端是否实现了解密中间件。
 
 ### Q: 性能影响大吗？
+
 A: 对于小数据（< 10KB）几乎无影响，大数据建议使用部分加密。
 
 ### Q: 可以只加密敏感字段吗？
+
 A: 可以，修改中间件配置使用模式 2（部分字段加密）。
 
 ### Q: 如何在开发环境禁用加密？
+
 A: 设置 `VITE_CRYPTO_ENABLED=false` 或调用 `cryptoMiddleware.disable()`。
 
 ## 📝 更新日志
@@ -348,4 +353,3 @@ A: 设置 `VITE_CRYPTO_ENABLED=false` 或调用 `cryptoMiddleware.disable()`。
   - 支持 AES-256-CBC 加密
   - 支持 SHA-256 签名验证
   - 支持全量/部分加密模式
-

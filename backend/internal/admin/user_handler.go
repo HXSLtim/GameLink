@@ -1,19 +1,19 @@
 package admin
 
 import (
-    "errors"
-    "net/http"
-    "net/mail"
-    "regexp"
-    "strings"
-    "time"
+	"errors"
+	"net/http"
+	"net/mail"
+	"regexp"
+	"strings"
+	"time"
 
-    "github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin"
 
-    apierr "gamelink/internal/handler"
-    "gamelink/internal/repository"
-    "gamelink/internal/model"
-    "gamelink/internal/service"
+	apierr "gamelink/internal/handler"
+	"gamelink/internal/model"
+	"gamelink/internal/repository"
+	"gamelink/internal/service"
 )
 
 // UserHandler 处理后台用户管理接口。
@@ -44,14 +44,17 @@ func NewUserHandler(svc *service.AdminService) *UserHandler {
 //
 // ListUsers returns a paginated list of users.
 func (h *UserHandler) ListUsers(c *gin.Context) {
-    opts, ok := buildUserListOptions(c)
-    if !ok { return }
-    users, pagination, err := h.svc.ListUsersWithOptions(c.Request.Context(), opts)
-    if err != nil {
-        writeJSONError(c, http.StatusInternalServerError, err.Error())
-        return
-    }
-    writeJSON(c, http.StatusOK, model.APIResponse[[]model.User]{
+	opts, ok := buildUserListOptions(c)
+	if !ok {
+		return
+	}
+	users, pagination, err := h.svc.ListUsersWithOptions(c.Request.Context(), opts)
+	if err != nil {
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	users = ensureSlice(users)
+	writeJSON(c, http.StatusOK, model.APIResponse[[]model.User]{
 		Success:    true,
 		Code:       http.StatusOK,
 		Message:    "OK",
@@ -78,10 +81,10 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 		return
 	}
 	user, err := h.svc.GetUser(c.Request.Context(), id)
-    if errors.Is(err, service.ErrNotFound) {
-        _ = c.Error(service.ErrNotFound)
-        return
-    }
+	if errors.Is(err, service.ErrNotFound) {
+		_ = c.Error(service.ErrNotFound)
+		return
+	}
 	if err != nil {
 		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -131,10 +134,10 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		Role:      model.Role(payload.Role),
 		Status:    model.UserStatus(payload.Status),
 	})
-    if errors.Is(err, service.ErrValidation) {
-        _ = c.Error(service.ErrValidation)
-        return
-    }
+	if errors.Is(err, service.ErrValidation) {
+		_ = c.Error(service.ErrValidation)
+		return
+	}
 	if err != nil {
 		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -201,14 +204,14 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		Status:    model.UserStatus(payload.Status),
 		Password:  passwordPtr,
 	})
-    if errors.Is(err, service.ErrValidation) {
-        _ = c.Error(service.ErrValidation)
-        return
-    }
-    if errors.Is(err, service.ErrNotFound) {
-        _ = c.Error(service.ErrNotFound)
-        return
-    }
+	if errors.Is(err, service.ErrValidation) {
+		_ = c.Error(service.ErrValidation)
+		return
+	}
+	if errors.Is(err, service.ErrNotFound) {
+		_ = c.Error(service.ErrNotFound)
+		return
+	}
 	if err != nil {
 		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -239,13 +242,13 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
 		return
 	}
-    if err := h.svc.DeleteUser(c.Request.Context(), id); errors.Is(err, service.ErrNotFound) {
-        _ = c.Error(service.ErrNotFound)
-        return
-    } else if err != nil {
-        writeJSONError(c, http.StatusInternalServerError, err.Error())
-        return
-    }
+	if err := h.svc.DeleteUser(c.Request.Context(), id); errors.Is(err, service.ErrNotFound) {
+		_ = c.Error(service.ErrNotFound)
+		return
+	} else if err != nil {
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
 
 	writeJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
@@ -272,18 +275,44 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 // @Success      200  {object}  map[string]any
 // @Router       /admin/users/{id}/logs [get]
 func (h *UserHandler) ListUserLogs(c *gin.Context) {
-    id, err := parseUintParam(c, "id"); if err != nil { writeJSONError(c, 400, apierr.ErrInvalidID); return }
-    page, pageSize, ok := parsePagination(c); if !ok { return }
-    var actorID *uint64
-    if v, err := queryUint64Ptr(c, "actor_user_id"); err == nil { actorID = v }
-    var dateFrom, dateTo *time.Time
-    if v, err := queryTimePtr(c, "date_from"); err == nil { dateFrom = v } else if err != nil { writeJSONError(c, 400, apierr.ErrInvalidDateFrom); return }
-    if v, err := queryTimePtr(c, "date_to"); err == nil { dateTo = v } else if err != nil { writeJSONError(c, 400, apierr.ErrInvalidDateTo); return }
-    opts := repository.OperationLogListOptions{ Page: page, PageSize: pageSize, Action: strings.TrimSpace(c.Query("action")), ActorUserID: actorID, DateFrom: dateFrom, DateTo: dateTo }
-    items, p, err := h.svc.ListOperationLogs(c.Request.Context(), "user", id, opts)
-    if err != nil { writeJSONError(c, 500, err.Error()); return }
-    if strings.EqualFold(strings.TrimSpace(c.Query("export")), "csv") { exportOperationLogsCSV(c, "user", id, items); return }
-    writeJSON(c, 200, model.APIResponse[[]model.OperationLog]{ Success: true, Code: 200, Message: "OK", Data: items, Pagination: p })
+	id, err := parseUintParam(c, "id")
+	if err != nil {
+		writeJSONError(c, 400, apierr.ErrInvalidID)
+		return
+	}
+	page, pageSize, ok := parsePagination(c)
+	if !ok {
+		return
+	}
+	var actorID *uint64
+	if v, err := queryUint64Ptr(c, "actor_user_id"); err == nil {
+		actorID = v
+	}
+	var dateFrom, dateTo *time.Time
+	if v, err := queryTimePtr(c, "date_from"); err == nil {
+		dateFrom = v
+	} else if err != nil {
+		writeJSONError(c, 400, apierr.ErrInvalidDateFrom)
+		return
+	}
+	if v, err := queryTimePtr(c, "date_to"); err == nil {
+		dateTo = v
+	} else if err != nil {
+		writeJSONError(c, 400, apierr.ErrInvalidDateTo)
+		return
+	}
+	opts := repository.OperationLogListOptions{Page: page, PageSize: pageSize, Action: strings.TrimSpace(c.Query("action")), ActorUserID: actorID, DateFrom: dateFrom, DateTo: dateTo}
+	items, p, err := h.svc.ListOperationLogs(c.Request.Context(), "user", id, opts)
+	if err != nil {
+		writeJSONError(c, 500, err.Error())
+		return
+	}
+	if strings.EqualFold(strings.TrimSpace(c.Query("export")), "csv") {
+		exportOperationLogsCSV(c, "user", id, items)
+		return
+	}
+	items = ensureSlice(items)
+	writeJSON(c, 200, model.APIResponse[[]model.OperationLog]{Success: true, Code: 200, Message: "OK", Data: items, Pagination: p})
 }
 
 // UpdateUserStatus
@@ -298,15 +327,32 @@ func (h *UserHandler) ListUserLogs(c *gin.Context) {
 // @Failure      404  {object}  map[string]any
 // @Router       /admin/users/{id}/status [put]
 func (h *UserHandler) UpdateUserStatus(c *gin.Context) {
-    id, err := parseUintParam(c, "id")
-    if err != nil { writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID); return }
-    var payload struct{ Status string `json:"status" binding:"required"` }
-    if bindErr := c.ShouldBindJSON(&payload); bindErr != nil { writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload); return }
-    out, err := h.svc.UpdateUserStatus(c.Request.Context(), id, model.UserStatus(payload.Status))
-    if errors.Is(err, service.ErrValidation) { _ = c.Error(service.ErrValidation); return }
-    if errors.Is(err, service.ErrNotFound) { _ = c.Error(service.ErrNotFound); return }
-    if err != nil { writeJSONError(c, http.StatusInternalServerError, err.Error()); return }
-    writeJSON(c, http.StatusOK, model.APIResponse[*model.User]{ Success: true, Code: http.StatusOK, Message: "updated", Data: out })
+	id, err := parseUintParam(c, "id")
+	if err != nil {
+		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		return
+	}
+	var payload struct {
+		Status string `json:"status" binding:"required"`
+	}
+	if bindErr := c.ShouldBindJSON(&payload); bindErr != nil {
+		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+		return
+	}
+	out, err := h.svc.UpdateUserStatus(c.Request.Context(), id, model.UserStatus(payload.Status))
+	if errors.Is(err, service.ErrValidation) {
+		_ = c.Error(service.ErrValidation)
+		return
+	}
+	if errors.Is(err, service.ErrNotFound) {
+		_ = c.Error(service.ErrNotFound)
+		return
+	}
+	if err != nil {
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(c, http.StatusOK, model.APIResponse[*model.User]{Success: true, Code: http.StatusOK, Message: "updated", Data: out})
 }
 
 // UpdateUserRole
@@ -321,15 +367,32 @@ func (h *UserHandler) UpdateUserStatus(c *gin.Context) {
 // @Failure      404  {object}  map[string]any
 // @Router       /admin/users/{id}/role [put]
 func (h *UserHandler) UpdateUserRole(c *gin.Context) {
-    id, err := parseUintParam(c, "id")
-    if err != nil { writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID); return }
-    var payload struct{ Role string `json:"role" binding:"required"` }
-    if bindErr := c.ShouldBindJSON(&payload); bindErr != nil { writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload); return }
-    out, err := h.svc.UpdateUserRole(c.Request.Context(), id, model.Role(payload.Role))
-    if errors.Is(err, service.ErrValidation) { _ = c.Error(service.ErrValidation); return }
-    if errors.Is(err, service.ErrNotFound) { _ = c.Error(service.ErrNotFound); return }
-    if err != nil { writeJSONError(c, http.StatusInternalServerError, err.Error()); return }
-    writeJSON(c, http.StatusOK, model.APIResponse[*model.User]{ Success: true, Code: http.StatusOK, Message: "updated", Data: out })
+	id, err := parseUintParam(c, "id")
+	if err != nil {
+		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		return
+	}
+	var payload struct {
+		Role string `json:"role" binding:"required"`
+	}
+	if bindErr := c.ShouldBindJSON(&payload); bindErr != nil {
+		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+		return
+	}
+	out, err := h.svc.UpdateUserRole(c.Request.Context(), id, model.Role(payload.Role))
+	if errors.Is(err, service.ErrValidation) {
+		_ = c.Error(service.ErrValidation)
+		return
+	}
+	if errors.Is(err, service.ErrNotFound) {
+		_ = c.Error(service.ErrNotFound)
+		return
+	}
+	if err != nil {
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(c, http.StatusOK, model.APIResponse[*model.User]{Success: true, Code: http.StatusOK, Message: "updated", Data: out})
 }
 
 // ListUserOrders
@@ -347,28 +410,34 @@ func (h *UserHandler) UpdateUserRole(c *gin.Context) {
 // @Failure      404  {object}  map[string]any
 // @Router       /admin/users/{id}/orders [get]
 func (h *UserHandler) ListUserOrders(c *gin.Context) {
-    id, err := parseUintParam(c, "id")
-    if err != nil { writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID); return }
-    // Ensure user exists
-    if _, err := h.svc.GetUser(c.Request.Context(), id); errors.Is(err, service.ErrNotFound) {
-        _ = c.Error(service.ErrNotFound)
-        return
-    } else if err != nil {
-        writeJSONError(c, http.StatusInternalServerError, err.Error())
-        return
-    }
-    // Build options from query, then enforce user scope
-    opts, ok := buildOrderListOptions(c)
-    if !ok { return }
-    // Force user scope
-    uid := id
-    opts.UserID = &uid
-    orders, pagination, err := h.svc.ListOrders(c.Request.Context(), opts)
-    if err != nil {
-        writeJSONError(c, http.StatusInternalServerError, err.Error())
-        return
-    }
-    writeJSON(c, http.StatusOK, model.APIResponse[[]model.Order]{ Success: true, Code: http.StatusOK, Message: "OK", Data: orders, Pagination: pagination })
+	id, err := parseUintParam(c, "id")
+	if err != nil {
+		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		return
+	}
+	// Ensure user exists
+	if _, err := h.svc.GetUser(c.Request.Context(), id); errors.Is(err, service.ErrNotFound) {
+		_ = c.Error(service.ErrNotFound)
+		return
+	} else if err != nil {
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	// Build options from query, then enforce user scope
+	opts, ok := buildOrderListOptions(c)
+	if !ok {
+		return
+	}
+	// Force user scope
+	uid := id
+	opts.UserID = &uid
+	orders, pagination, err := h.svc.ListOrders(c.Request.Context(), opts)
+	if err != nil {
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	orders = ensureSlice(orders)
+	writeJSON(c, http.StatusOK, model.APIResponse[[]model.Order]{Success: true, Code: http.StatusOK, Message: "OK", Data: orders, Pagination: pagination})
 }
 
 // CreateUserPayload defines the request body for creating a user.
@@ -446,10 +515,10 @@ func (h *UserHandler) CreateUserWithPlayer(c *gin.Context) {
 			VerificationStatus: model.VerificationStatus(payload.Player.VerificationStatus),
 		},
 	)
-    if errors.Is(err, service.ErrValidation) {
-        _ = c.Error(service.ErrValidation)
-        return
-    }
+	if errors.Is(err, service.ErrValidation) {
+		_ = c.Error(service.ErrValidation)
+		return
+	}
 	if err != nil {
 		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return

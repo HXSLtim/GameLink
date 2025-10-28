@@ -1,16 +1,16 @@
 package admin
 
 import (
-    "errors"
-    "strings"
-    "time"
+	"errors"
+	"strings"
+	"time"
 
-    "github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin"
 
-    apierr "gamelink/internal/handler"
-    "gamelink/internal/model"
-    "gamelink/internal/repository"
-    "gamelink/internal/service"
+	apierr "gamelink/internal/handler"
+	"gamelink/internal/model"
+	"gamelink/internal/repository"
+	"gamelink/internal/service"
 )
 
 // ReviewHandler 管理评价接口。
@@ -33,17 +33,46 @@ func NewReviewHandler(s *service.AdminService) *ReviewHandler { return &ReviewHa
 // @Success      200  {object}  map[string]any
 // @Router       /admin/reviews [get]
 func (h *ReviewHandler) ListReviews(c *gin.Context) {
-    page, pageSize, ok := parsePagination(c)
-    if !ok { return }
-    var orderID, userID, playerID *uint64
-    if v, err := queryUint64Ptr(c, "order_id"); err != nil { writeJSONError(c, 400, apierr.ErrInvalidOrderID); return } else { orderID = v }
-    if v, err := queryUint64Ptr(c, "user_id"); err != nil { writeJSONError(c, 400, apierr.ErrInvalidUserID); return } else { userID = v }
-    if v, err := queryUint64Ptr(c, "player_id"); err != nil { writeJSONError(c, 400, apierr.ErrInvalidPlayerID); return } else { playerID = v }
-    dateFrom, err := queryTimePtr(c, "date_from"); if err != nil { writeJSONError(c, 400, apierr.ErrInvalidDateFrom); return }
-    dateTo, err := queryTimePtr(c, "date_to"); if err != nil { writeJSONError(c, 400, apierr.ErrInvalidDateTo); return }
-    items, p, err := h.svc.ListReviews(c.Request.Context(), repository.ReviewListOptions{ Page: page, PageSize: pageSize, OrderID: orderID, UserID: userID, PlayerID: playerID, DateFrom: dateFrom, DateTo: dateTo })
-    if err != nil { writeJSONError(c, 500, err.Error()); return }
-    writeJSON(c, 200, model.APIResponse[[]model.Review]{ Success: true, Code: 200, Message: "OK", Data: items, Pagination: p })
+	page, pageSize, ok := parsePagination(c)
+	if !ok {
+		return
+	}
+	var orderID, userID, playerID *uint64
+	if v, err := queryUint64Ptr(c, "order_id"); err != nil {
+		writeJSONError(c, 400, apierr.ErrInvalidOrderID)
+		return
+	} else {
+		orderID = v
+	}
+	if v, err := queryUint64Ptr(c, "user_id"); err != nil {
+		writeJSONError(c, 400, apierr.ErrInvalidUserID)
+		return
+	} else {
+		userID = v
+	}
+	if v, err := queryUint64Ptr(c, "player_id"); err != nil {
+		writeJSONError(c, 400, apierr.ErrInvalidPlayerID)
+		return
+	} else {
+		playerID = v
+	}
+	dateFrom, err := queryTimePtr(c, "date_from")
+	if err != nil {
+		writeJSONError(c, 400, apierr.ErrInvalidDateFrom)
+		return
+	}
+	dateTo, err := queryTimePtr(c, "date_to")
+	if err != nil {
+		writeJSONError(c, 400, apierr.ErrInvalidDateTo)
+		return
+	}
+	items, p, err := h.svc.ListReviews(c.Request.Context(), repository.ReviewListOptions{Page: page, PageSize: pageSize, OrderID: orderID, UserID: userID, PlayerID: playerID, DateFrom: dateFrom, DateTo: dateTo})
+	if err != nil {
+		writeJSONError(c, 500, err.Error())
+		return
+	}
+	items = ensureSlice(items)
+	writeJSON(c, 200, model.APIResponse[[]model.Review]{Success: true, Code: 200, Message: "OK", Data: items, Pagination: p})
 }
 
 // GetReview
@@ -56,11 +85,21 @@ func (h *ReviewHandler) ListReviews(c *gin.Context) {
 // @Failure      404  {object}  map[string]any
 // @Router       /admin/reviews/{id} [get]
 func (h *ReviewHandler) GetReview(c *gin.Context) {
-    id, err := parseUintParam(c, "id"); if err != nil { writeJSONError(c, 400, apierr.ErrInvalidID); return }
-    item, err := h.svc.GetReview(c.Request.Context(), id)
-    if errors.Is(err, service.ErrNotFound) { _ = c.Error(service.ErrNotFound); return }
-    if err != nil { writeJSONError(c, 500, err.Error()); return }
-    writeJSON(c, 200, model.APIResponse[*model.Review]{ Success: true, Code: 200, Message: "OK", Data: item })
+	id, err := parseUintParam(c, "id")
+	if err != nil {
+		writeJSONError(c, 400, apierr.ErrInvalidID)
+		return
+	}
+	item, err := h.svc.GetReview(c.Request.Context(), id)
+	if errors.Is(err, service.ErrNotFound) {
+		_ = c.Error(service.ErrNotFound)
+		return
+	}
+	if err != nil {
+		writeJSONError(c, 500, err.Error())
+		return
+	}
+	writeJSON(c, 200, model.APIResponse[*model.Review]{Success: true, Code: 200, Message: "OK", Data: item})
 }
 
 // CreateReview
@@ -74,13 +113,22 @@ func (h *ReviewHandler) GetReview(c *gin.Context) {
 // @Failure      400  {object}  map[string]any
 // @Router       /admin/reviews [post]
 func (h *ReviewHandler) CreateReview(c *gin.Context) {
-    var p CreateReviewPayload
-    if err := c.ShouldBindJSON(&p); err != nil { writeJSONError(c, 400, apierr.ErrInvalidJSONPayload); return }
-    r := model.Review{ OrderID: p.OrderID, UserID: p.UserID, PlayerID: p.PlayerID, Score: model.Rating(p.Score), Content: strings.TrimSpace(p.Content) }
-    out, err := h.svc.CreateReview(c.Request.Context(), r)
-    if errors.Is(err, service.ErrValidation) { _ = c.Error(service.ErrValidation); return }
-    if err != nil { writeJSONError(c, 500, err.Error()); return }
-    writeJSON(c, 201, model.APIResponse[*model.Review]{ Success: true, Code: 201, Message: "created", Data: out })
+	var p CreateReviewPayload
+	if err := c.ShouldBindJSON(&p); err != nil {
+		writeJSONError(c, 400, apierr.ErrInvalidJSONPayload)
+		return
+	}
+	r := model.Review{OrderID: p.OrderID, UserID: p.UserID, PlayerID: p.PlayerID, Score: model.Rating(p.Score), Content: strings.TrimSpace(p.Content)}
+	out, err := h.svc.CreateReview(c.Request.Context(), r)
+	if errors.Is(err, service.ErrValidation) {
+		_ = c.Error(service.ErrValidation)
+		return
+	}
+	if err != nil {
+		writeJSONError(c, 500, err.Error())
+		return
+	}
+	writeJSON(c, 201, model.APIResponse[*model.Review]{Success: true, Code: 201, Message: "created", Data: out})
 }
 
 // UpdateReview
@@ -95,14 +143,30 @@ func (h *ReviewHandler) CreateReview(c *gin.Context) {
 // @Failure      404  {object}  map[string]any
 // @Router       /admin/reviews/{id} [put]
 func (h *ReviewHandler) UpdateReview(c *gin.Context) {
-    id, err := parseUintParam(c, "id"); if err != nil { writeJSONError(c, 400, apierr.ErrInvalidID); return }
-    var p UpdateReviewPayload
-    if err := c.ShouldBindJSON(&p); err != nil { writeJSONError(c, 400, apierr.ErrInvalidJSONPayload); return }
-    out, err := h.svc.UpdateReview(c.Request.Context(), id, model.Rating(p.Score), p.Content)
-    if errors.Is(err, service.ErrValidation) { _ = c.Error(service.ErrValidation); return }
-    if errors.Is(err, service.ErrNotFound) { _ = c.Error(service.ErrNotFound); return }
-    if err != nil { writeJSONError(c, 500, err.Error()); return }
-    writeJSON(c, 200, model.APIResponse[*model.Review]{ Success: true, Code: 200, Message: "updated", Data: out })
+	id, err := parseUintParam(c, "id")
+	if err != nil {
+		writeJSONError(c, 400, apierr.ErrInvalidID)
+		return
+	}
+	var p UpdateReviewPayload
+	if err := c.ShouldBindJSON(&p); err != nil {
+		writeJSONError(c, 400, apierr.ErrInvalidJSONPayload)
+		return
+	}
+	out, err := h.svc.UpdateReview(c.Request.Context(), id, model.Rating(p.Score), p.Content)
+	if errors.Is(err, service.ErrValidation) {
+		_ = c.Error(service.ErrValidation)
+		return
+	}
+	if errors.Is(err, service.ErrNotFound) {
+		_ = c.Error(service.ErrNotFound)
+		return
+	}
+	if err != nil {
+		writeJSONError(c, 500, err.Error())
+		return
+	}
+	writeJSON(c, 200, model.APIResponse[*model.Review]{Success: true, Code: 200, Message: "updated", Data: out})
 }
 
 // DeleteReview
@@ -115,9 +179,19 @@ func (h *ReviewHandler) UpdateReview(c *gin.Context) {
 // @Failure      404  {object}  map[string]any
 // @Router       /admin/reviews/{id} [delete]
 func (h *ReviewHandler) DeleteReview(c *gin.Context) {
-    id, err := parseUintParam(c, "id"); if err != nil { writeJSONError(c, 400, apierr.ErrInvalidID); return }
-    if err := h.svc.DeleteReview(c.Request.Context(), id); errors.Is(err, service.ErrNotFound) { _ = c.Error(service.ErrNotFound); return } else if err != nil { writeJSONError(c, 500, err.Error()); return }
-    writeJSON(c, 200, model.APIResponse[any]{ Success: true, Code: 200, Message: "deleted" })
+	id, err := parseUintParam(c, "id")
+	if err != nil {
+		writeJSONError(c, 400, apierr.ErrInvalidID)
+		return
+	}
+	if err := h.svc.DeleteReview(c.Request.Context(), id); errors.Is(err, service.ErrNotFound) {
+		_ = c.Error(service.ErrNotFound)
+		return
+	} else if err != nil {
+		writeJSONError(c, 500, err.Error())
+		return
+	}
+	writeJSON(c, 200, model.APIResponse[any]{Success: true, Code: 200, Message: "deleted"})
 }
 
 // ListReviewLogs
@@ -138,18 +212,44 @@ func (h *ReviewHandler) DeleteReview(c *gin.Context) {
 // @Success      200  {object}  map[string]any
 // @Router       /admin/reviews/{id}/logs [get]
 func (h *ReviewHandler) ListReviewLogs(c *gin.Context) {
-    id, err := parseUintParam(c, "id"); if err != nil { writeJSONError(c, 400, apierr.ErrInvalidID); return }
-    page, pageSize, ok := parsePagination(c); if !ok { return }
-    var actorID *uint64
-    if v, err := queryUint64Ptr(c, "actor_user_id"); err == nil { actorID = v }
-    var dateFrom, dateTo *time.Time
-    if v, err := queryTimePtr(c, "date_from"); err == nil { dateFrom = v } else if err != nil { writeJSONError(c, 400, apierr.ErrInvalidDateFrom); return }
-    if v, err := queryTimePtr(c, "date_to"); err == nil { dateTo = v } else if err != nil { writeJSONError(c, 400, apierr.ErrInvalidDateTo); return }
-    opts := repository.OperationLogListOptions{ Page: page, PageSize: pageSize, Action: strings.TrimSpace(c.Query("action")), ActorUserID: actorID, DateFrom: dateFrom, DateTo: dateTo }
-    items, p, err := h.svc.ListOperationLogs(c.Request.Context(), "review", id, opts)
-    if err != nil { writeJSONError(c, 500, err.Error()); return }
-    if strings.EqualFold(strings.TrimSpace(c.Query("export")), "csv") { exportOperationLogsCSV(c, "review", id, items); return }
-    writeJSON(c, 200, model.APIResponse[[]model.OperationLog]{ Success: true, Code: 200, Message: "OK", Data: items, Pagination: p })
+	id, err := parseUintParam(c, "id")
+	if err != nil {
+		writeJSONError(c, 400, apierr.ErrInvalidID)
+		return
+	}
+	page, pageSize, ok := parsePagination(c)
+	if !ok {
+		return
+	}
+	var actorID *uint64
+	if v, err := queryUint64Ptr(c, "actor_user_id"); err == nil {
+		actorID = v
+	}
+	var dateFrom, dateTo *time.Time
+	if v, err := queryTimePtr(c, "date_from"); err == nil {
+		dateFrom = v
+	} else if err != nil {
+		writeJSONError(c, 400, apierr.ErrInvalidDateFrom)
+		return
+	}
+	if v, err := queryTimePtr(c, "date_to"); err == nil {
+		dateTo = v
+	} else if err != nil {
+		writeJSONError(c, 400, apierr.ErrInvalidDateTo)
+		return
+	}
+	opts := repository.OperationLogListOptions{Page: page, PageSize: pageSize, Action: strings.TrimSpace(c.Query("action")), ActorUserID: actorID, DateFrom: dateFrom, DateTo: dateTo}
+	items, p, err := h.svc.ListOperationLogs(c.Request.Context(), "review", id, opts)
+	if err != nil {
+		writeJSONError(c, 500, err.Error())
+		return
+	}
+	if strings.EqualFold(strings.TrimSpace(c.Query("export")), "csv") {
+		exportOperationLogsCSV(c, "review", id, items)
+		return
+	}
+	items = ensureSlice(items)
+	writeJSON(c, 200, model.APIResponse[[]model.OperationLog]{Success: true, Code: 200, Message: "OK", Data: items, Pagination: p})
 }
 
 // ListPlayerReviews
@@ -163,23 +263,34 @@ func (h *ReviewHandler) ListReviewLogs(c *gin.Context) {
 // @Success      200  {object}  map[string]any
 // @Router       /admin/players/{id}/reviews [get]
 func (h *ReviewHandler) ListPlayerReviews(c *gin.Context) {
-    id, err := parseUintParam(c, "id"); if err != nil { writeJSONError(c, 400, apierr.ErrInvalidID); return }
-    page, pageSize, ok := parsePagination(c); if !ok { return }
-    pid := id
-    items, p, err := h.svc.ListReviews(c.Request.Context(), repository.ReviewListOptions{ Page: page, PageSize: pageSize, PlayerID: &pid })
-    if err != nil { writeJSONError(c, 500, err.Error()); return }
-    writeJSON(c, 200, model.APIResponse[[]model.Review]{ Success: true, Code: 200, Message: "OK", Data: items, Pagination: p })
+	id, err := parseUintParam(c, "id")
+	if err != nil {
+		writeJSONError(c, 400, apierr.ErrInvalidID)
+		return
+	}
+	page, pageSize, ok := parsePagination(c)
+	if !ok {
+		return
+	}
+	pid := id
+	items, p, err := h.svc.ListReviews(c.Request.Context(), repository.ReviewListOptions{Page: page, PageSize: pageSize, PlayerID: &pid})
+	if err != nil {
+		writeJSONError(c, 500, err.Error())
+		return
+	}
+	items = ensureSlice(items)
+	writeJSON(c, 200, model.APIResponse[[]model.Review]{Success: true, Code: 200, Message: "OK", Data: items, Pagination: p})
 }
 
 type CreateReviewPayload struct {
-    OrderID  uint64 `json:"order_id" binding:"required"`
-    UserID   uint64 `json:"user_id" binding:"required"`
-    PlayerID uint64 `json:"player_id" binding:"required"`
-    Score    uint8  `json:"score" binding:"required"`
-    Content  string `json:"content"`
+	OrderID  uint64 `json:"order_id" binding:"required"`
+	UserID   uint64 `json:"user_id" binding:"required"`
+	PlayerID uint64 `json:"player_id" binding:"required"`
+	Score    uint8  `json:"score" binding:"required"`
+	Content  string `json:"content"`
 }
 
 type UpdateReviewPayload struct {
-    Score   uint8  `json:"score" binding:"required"`
-    Content string `json:"content"`
+	Score   uint8  `json:"score" binding:"required"`
+	Content string `json:"content"`
 }

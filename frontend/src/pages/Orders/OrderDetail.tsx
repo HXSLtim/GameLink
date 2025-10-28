@@ -229,9 +229,7 @@ export const OrderDetail: React.FC = () => {
                   <div className={styles.timelineContent}>
                     <div className={styles.logHeader}>
                       <span className={styles.logAction}>{log.action}</span>
-                      <span className={styles.logTime}>
-                        {formatRelativeTime(log.created_at)}
-                      </span>
+                      <span className={styles.logTime}>{formatRelativeTime(log.created_at)}</span>
                     </div>
                     <div className={styles.logDetails}>
                       <span className={styles.logOperator}>{log.operator_name}</span>
@@ -255,9 +253,7 @@ export const OrderDetail: React.FC = () => {
                     <Tag color={review.result === 'approved' ? 'success' : 'error'}>
                       {review.result === 'approved' ? '审核通过' : '审核拒绝'}
                     </Tag>
-                    <span className={styles.reviewTime}>
-                      {formatDateTime(review.created_at)}
-                    </span>
+                    <span className={styles.reviewTime}>{formatDateTime(review.created_at)}</span>
                   </div>
                   <div className={styles.reviewContent}>
                     <div className={styles.reviewItem}>
@@ -288,34 +284,22 @@ export const OrderDetail: React.FC = () => {
           <h2 className={styles.sectionTitle}>订单操作</h2>
           <div className={styles.actions}>
             {orderDetail.status === OrderStatus.PENDING && (
-              <Button
-                variant="primary"
-                onClick={() => console.log('确认订单')}
-              >
+              <Button variant="primary" onClick={() => console.log('确认订单')}>
                 确认订单
               </Button>
             )}
             {orderDetail.status === OrderStatus.CONFIRMED && (
-              <Button
-                variant="primary"
-                onClick={() => console.log('开始服务')}
-              >
+              <Button variant="primary" onClick={() => console.log('开始服务')}>
                 开始服务
               </Button>
             )}
             {orderDetail.status === OrderStatus.IN_PROGRESS && (
-              <Button
-                variant="primary"
-                onClick={() => console.log('完成订单')}
-              >
+              <Button variant="primary" onClick={() => console.log('完成订单')}>
                 完成订单
               </Button>
             )}
             {[OrderStatus.PENDING, OrderStatus.CONFIRMED].includes(orderDetail.status) && (
-              <Button
-                variant="secondary"
-                onClick={() => console.log('取消订单')}
-              >
+              <Button variant="secondary" onClick={() => console.log('取消订单')}>
                 取消订单
               </Button>
             )}

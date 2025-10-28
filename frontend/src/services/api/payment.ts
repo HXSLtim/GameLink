@@ -74,4 +74,3 @@ export const paymentApi = {
     return apiClient.get(`/api/v1/admin/payments/${id}/logs`);
   },
 };
-

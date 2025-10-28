@@ -11,10 +11,12 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
+	"gamelink/internal/config"
 	"gamelink/internal/metrics"
 )
 
-func openSQLite(dsn string) (*gorm.DB, error) {
+func openSQLite(cfg config.AppConfig) (*gorm.DB, error) {
+	dsn := cfg.Database.DSN
 	if err := ensureSQLiteDir(dsn); err != nil {
 		return nil, err
 	}
@@ -44,6 +46,12 @@ func openSQLite(dsn string) (*gorm.DB, error) {
 
 	if err := ensureIndexes(gormDB); err != nil {
 		return nil, err
+	}
+
+	if cfg.Seed.Enabled {
+		if err := applySeeds(gormDB); err != nil {
+			return nil, err
+		}
 	}
 
 	_ = metrics.InstrumentGorm(gormDB)

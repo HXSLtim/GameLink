@@ -228,7 +228,6 @@ export const UserList: React.FC = () => {
 
           <div className={styles.filterActions}>
             <Button variant="primary" onClick={handleSearch} className={styles.filterButton}>
-              <SearchIcon />
               搜索
             </Button>
             <Button variant="outlined" onClick={handleReset} className={styles.filterButton}>

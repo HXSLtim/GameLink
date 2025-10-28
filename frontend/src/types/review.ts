@@ -100,4 +100,3 @@ export const getRatingColor = (rating: number): string => {
   if (rating >= 2.5) return '#ff7a45'; // 橙红
   return '#f5222d'; // 红色
 };
-

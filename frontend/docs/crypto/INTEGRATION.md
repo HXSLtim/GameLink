@@ -4,28 +4,28 @@
 
 ### 1. 核心文件
 
-| 文件 | 说明 | 状态 |
-|------|------|------|
-| `src/utils/crypto.ts` | 加密工具类（AES-256-CBC） | ✅ |
-| `src/middleware/crypto.ts` | 加密中间件 | ✅ |
-| `src/api/client.ts` | API 客户端集成加密 | ✅ |
-| `src/utils/crypto.test.ts` | 单元测试 | ✅ |
+| 文件                       | 说明                      | 状态 |
+| -------------------------- | ------------------------- | ---- |
+| `src/utils/crypto.ts`      | 加密工具类（AES-256-CBC） | ✅   |
+| `src/middleware/crypto.ts` | 加密中间件                | ✅   |
+| `src/api/client.ts`        | API 客户端集成加密        | ✅   |
+| `src/utils/crypto.test.ts` | 单元测试                  | ✅   |
 
 ### 2. 文档
 
-| 文件 | 说明 | 状态 |
-|------|------|------|
-| `CRYPTO_MIDDLEWARE.md` | 详细技术文档 | ✅ |
-| `CRYPTO_USAGE_EXAMPLES.md` | 使用示例 | ✅ |
-| `CRYPTO_INTEGRATION.md` | 本文档（集成说明） | ✅ |
+| 文件                       | 说明               | 状态 |
+| -------------------------- | ------------------ | ---- |
+| `CRYPTO_MIDDLEWARE.md`     | 详细技术文档       | ✅   |
+| `CRYPTO_USAGE_EXAMPLES.md` | 使用示例           | ✅   |
+| `CRYPTO_INTEGRATION.md`    | 本文档（集成说明） | ✅   |
 
 ### 3. 配置文件
 
-| 文件 | 说明 | 状态 |
-|------|------|------|
-| `.env.example` | 环境变量示例 | ✅ |
-| `.env.development` | 开发环境配置 | ✅ |
-| `package.json` | 添加 crypto-js 依赖 | ✅ |
+| 文件               | 说明                | 状态 |
+| ------------------ | ------------------- | ---- |
+| `.env.example`     | 环境变量示例        | ✅   |
+| `.env.development` | 开发环境配置        | ✅   |
+| `package.json`     | 添加 crypto-js 依赖 | ✅   |
 
 ## 🚀 快速开始
 
@@ -167,7 +167,7 @@ import { cryptoMiddleware } from 'middleware/crypto';
 
 // 更新配置
 cryptoMiddleware.updateConfig({
-  methods: ['POST'],              // 只加密 POST
+  methods: ['POST'], // 只加密 POST
   excludePaths: ['/api/public/*'], // 公开接口不加密
 });
 
@@ -202,6 +202,7 @@ npm run test crypto
 ### ⚠️ 必做项
 
 1. **修改默认密钥**
+
    ```bash
    # 生成强密钥
    node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
@@ -247,7 +248,7 @@ func DecryptMiddleware() gin.HandlerFunc {
         if err := c.ShouldBindJSON(&req); err != nil {
             return
         }
-        
+
         if req.Encrypted {
             // 1. 解密数据
             decrypted, err := Decrypt(req.Payload, secretKey, iv)
@@ -255,18 +256,18 @@ func DecryptMiddleware() gin.HandlerFunc {
                 c.JSON(400, gin.H{"error": "decrypt failed"})
                 return
             }
-            
+
             // 2. 验证签名
             expectedSig := GenerateSignature(decrypted, req.Timestamp)
             if expectedSig != req.Signature {
                 c.JSON(400, gin.H{"error": "invalid signature"})
                 return
             }
-            
+
             // 3. 替换请求体
             c.Set("body", decrypted)
         }
-        
+
         c.Next()
     }
 }
@@ -282,40 +283,39 @@ export const decryptMiddleware = (req, res, next) => {
   if (req.body.encrypted) {
     try {
       // 1. 解密
-      const decrypted = CryptoJS.AES.decrypt(
-        req.body.payload,
-        SECRET_KEY,
-        { iv: IV }
-      ).toString(CryptoJS.enc.Utf8);
-      
+      const decrypted = CryptoJS.AES.decrypt(req.body.payload, SECRET_KEY, { iv: IV }).toString(
+        CryptoJS.enc.Utf8,
+      );
+
       // 2. 验证签名
       const expected = generateSignature(decrypted, req.body.timestamp);
       if (expected !== req.body.signature) {
         return res.status(400).json({ error: 'Invalid signature' });
       }
-      
+
       // 3. 替换请求体
       req.body = JSON.parse(decrypted);
     } catch (error) {
       return res.status(400).json({ error: 'Decrypt failed' });
     }
   }
-  
+
   next();
 };
 ```
 
 ## 📊 性能影响
 
-| 操作 | 数据大小 | 耗时 | 影响 |
-|------|---------|------|------|
-| 加密 | 1KB | ~1ms | 可忽略 |
-| 加密 | 10KB | ~5ms | 很小 |
-| 加密 | 100KB | ~30ms | 可接受 |
-| 解密 | 1KB | ~1ms | 可忽略 |
-| 签名 | 任意 | ~0.5ms | 可忽略 |
+| 操作 | 数据大小 | 耗时   | 影响   |
+| ---- | -------- | ------ | ------ |
+| 加密 | 1KB      | ~1ms   | 可忽略 |
+| 加密 | 10KB     | ~5ms   | 很小   |
+| 加密 | 100KB    | ~30ms  | 可接受 |
+| 解密 | 1KB      | ~1ms   | 可忽略 |
+| 签名 | 任意     | ~0.5ms | 可忽略 |
 
 **建议**：
+
 - < 10KB：全量加密
 - 10KB ~ 100KB：视情况而定
 - \> 100KB：考虑部分加密或压缩
@@ -327,6 +327,7 @@ export const decryptMiddleware = (req, res, next) => {
 **原因**：后端无法解密数据
 
 **解决**：
+
 1. 检查前后端密钥是否一致
 2. 检查后端是否实现了解密中间件
 3. 查看后端日志确认错误原因
@@ -336,6 +337,7 @@ export const decryptMiddleware = (req, res, next) => {
 **原因**：数据或密钥不一致
 
 **解决**：
+
 1. 确保前后端使用相同的签名算法
 2. 确保时间戳传递正确
 3. 确保密钥完全一致（包括大小写）
@@ -345,6 +347,7 @@ export const decryptMiddleware = (req, res, next) => {
 **原因**：加密大数据导致
 
 **解决**：
+
 1. 使用部分字段加密
 2. 添加加密白名单
 3. 考虑只在必要时启用
@@ -366,6 +369,7 @@ export const decryptMiddleware = (req, res, next) => {
 ## 📞 技术支持
 
 遇到问题？
+
 1. 查看 [故障排查](#故障排查) 章节
 2. 阅读 [详细文档](./CRYPTO_MIDDLEWARE.md)
 3. 查看 [使用示例](./CRYPTO_USAGE_EXAMPLES.md)
@@ -373,8 +377,8 @@ export const decryptMiddleware = (req, res, next) => {
 ---
 
 **重要提示**：
+
 - ✅ 已集成到项目，开箱即用
 - ⚠️ 生产环境务必修改默认密钥
 - 🔒 必须配合 HTTPS 使用
 - 🤝 需要后端同步实现解密中间件
-

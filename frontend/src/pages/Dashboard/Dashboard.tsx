@@ -65,7 +65,7 @@ export const Dashboard: React.FC = () => {
     const loadData = async () => {
       try {
         setLoading(true);
-        
+
         // 加载统计数据
         const stats = await orderApi.getStatistics();
         setStatistics(stats);

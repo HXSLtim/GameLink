@@ -7,11 +7,12 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
+	"gamelink/internal/config"
 	"gamelink/internal/metrics"
 )
 
-func openPostgres(dsn string) (*gorm.DB, error) {
-	gormDB, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+func openPostgres(cfg config.AppConfig) (*gorm.DB, error) {
+	gormDB, err := gorm.Open(postgres.Open(cfg.Database.DSN), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Warn),
 	})
 	if err != nil {
@@ -32,6 +33,12 @@ func openPostgres(dsn string) (*gorm.DB, error) {
 
 	if err := ensureIndexes(gormDB); err != nil {
 		return nil, err
+	}
+
+	if cfg.Seed.Enabled {
+		if err := applySeeds(gormDB); err != nil {
+			return nil, err
+		}
 	}
 
 	_ = metrics.InstrumentGorm(gormDB)

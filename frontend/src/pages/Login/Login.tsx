@@ -1,5 +1,5 @@
 import { useState, FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button, Input, PasswordInput, Form, FormItem } from 'components';
 import { useAuth } from 'contexts/AuthContext';
 import styles from './Login.module.less';
@@ -166,9 +166,9 @@ export const Login = () => {
         {/* 底部 */}
         <div className={styles.footer}>
           <span className={styles.footerText}>还没有账号？</span>
-          <a href="#" className={styles.link}>
+          <Link to="/register" className={styles.link}>
             立即注册
-          </a>
+          </Link>
         </div>
       </div>
 

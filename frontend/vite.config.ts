@@ -151,9 +151,9 @@ export default defineConfig({
         manualChunks: {
           // 优化代码分割策略
           'react-core': ['react', 'react-dom'],
-          'router': ['react-router-dom'],
-          'http': ['axios'],
-          'crypto': ['crypto-js'],
+          router: ['react-router-dom'],
+          http: ['axios'],
+          crypto: ['crypto-js'],
         },
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',

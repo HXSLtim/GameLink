@@ -30,3 +30,6 @@ crypto:
     - "/api/v1/ping"
     - "/api/v1/auth/refresh"
   use_signature: true
+
+seed:
+  enabled: false

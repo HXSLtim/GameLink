@@ -131,15 +131,19 @@ chmod +x organize-docs.sh
 整理后需要更新以下文件中的文档链接：
 
 ### 1. README.md
+
 ```markdown
 # 旧
+
 - [加密文档](./CRYPTO_README.md)
 
 # 新
+
 - [加密文档](./docs/crypto/README.md)
 ```
 
 ### 2. package.json 中的文档链接
+
 ```json
 {
   "homepage": "docs/README.md"
@@ -147,9 +151,12 @@ chmod +x organize-docs.sh
 ```
 
 ### 3. 各文档间的交叉引用
+
 使用相对路径：
+
 ```markdown
 # 在 docs/crypto/README.md 中
+
 - 详细文档: [INTEGRATION.md](./INTEGRATION.md)
 - API 文档: [../api/REQUIREMENTS.md](../api/REQUIREMENTS.md)
 ```
@@ -171,6 +178,7 @@ git commit -m "docs: 整理项目文档结构"
 ## 📊 整理前后对比
 
 ### 整理前
+
 ```
 frontend/
 ├── API_INTEGRATION_COMPLETE.md
@@ -190,6 +198,7 @@ frontend/
 ```
 
 ### 整理后
+
 ```
 frontend/
 ├── README.md                 # 项目主文档
@@ -221,4 +230,3 @@ frontend/
 ---
 
 **需要帮助？** 查看 [DOCS_INDEX.md](./DOCS_INDEX.md)
-

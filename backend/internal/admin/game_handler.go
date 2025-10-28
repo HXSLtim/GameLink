@@ -1,17 +1,17 @@
 package admin
 
 import (
-    "errors"
-    "net/http"
-    "strings"
-    "time"
+	"errors"
+	"net/http"
+	"strings"
+	"time"
 
-    "github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin"
 
-    apierr "gamelink/internal/handler"
-    "gamelink/internal/model"
-    "gamelink/internal/repository"
-    "gamelink/internal/service"
+	apierr "gamelink/internal/handler"
+	"gamelink/internal/model"
+	"gamelink/internal/repository"
+	"gamelink/internal/service"
 )
 
 // GameHandler 处理后台游戏管理接口。
@@ -46,6 +46,7 @@ func (h *GameHandler) ListGames(c *gin.Context) {
 		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
+	games = ensureSlice(games)
 	writeJSON(c, http.StatusOK, model.APIResponse[[]model.Game]{
 		Success:    true,
 		Code:       http.StatusOK,
@@ -115,10 +116,10 @@ func (h *GameHandler) CreateGame(c *gin.Context) {
 		IconURL:     payload.IconURL,
 		Description: payload.Description,
 	})
-    if errors.Is(err, service.ErrValidation) {
-        _ = c.Error(service.ErrValidation)
-        return
-    }
+	if errors.Is(err, service.ErrValidation) {
+		_ = c.Error(service.ErrValidation)
+		return
+	}
 	if err != nil {
 		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -165,14 +166,14 @@ func (h *GameHandler) UpdateGame(c *gin.Context) {
 		IconURL:     payload.IconURL,
 		Description: payload.Description,
 	})
-    if errors.Is(err, service.ErrValidation) {
-        _ = c.Error(service.ErrValidation)
-        return
-    }
-    if errors.Is(err, service.ErrNotFound) {
-        _ = c.Error(service.ErrNotFound)
-        return
-    }
+	if errors.Is(err, service.ErrValidation) {
+		_ = c.Error(service.ErrValidation)
+		return
+	}
+	if errors.Is(err, service.ErrNotFound) {
+		_ = c.Error(service.ErrNotFound)
+		return
+	}
 	if err != nil {
 		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -204,13 +205,13 @@ func (h *GameHandler) DeleteGame(c *gin.Context) {
 		return
 	}
 
-    if err := h.svc.DeleteGame(c.Request.Context(), id); errors.Is(err, service.ErrNotFound) {
-        _ = c.Error(service.ErrNotFound)
-        return
-    } else if err != nil {
-        writeJSONError(c, http.StatusInternalServerError, err.Error())
-        return
-    }
+	if err := h.svc.DeleteGame(c.Request.Context(), id); errors.Is(err, service.ErrNotFound) {
+		_ = c.Error(service.ErrNotFound)
+		return
+	} else if err != nil {
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
 
 	writeJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
@@ -237,18 +238,44 @@ func (h *GameHandler) DeleteGame(c *gin.Context) {
 // @Success      200  {object}  map[string]any
 // @Router       /admin/games/{id}/logs [get]
 func (h *GameHandler) ListGameLogs(c *gin.Context) {
-    id, err := parseUintParam(c, "id"); if err != nil { writeJSONError(c, 400, apierr.ErrInvalidID); return }
-    page, pageSize, ok := parsePagination(c); if !ok { return }
-    var actorID *uint64
-    if v, err := queryUint64Ptr(c, "actor_user_id"); err == nil { actorID = v }
-    var dateFrom, dateTo *time.Time
-    if v, err := queryTimePtr(c, "date_from"); err == nil { dateFrom = v } else if err != nil { writeJSONError(c, 400, apierr.ErrInvalidDateFrom); return }
-    if v, err := queryTimePtr(c, "date_to"); err == nil { dateTo = v } else if err != nil { writeJSONError(c, 400, apierr.ErrInvalidDateTo); return }
-    opts := repository.OperationLogListOptions{ Page: page, PageSize: pageSize, Action: strings.TrimSpace(c.Query("action")), ActorUserID: actorID, DateFrom: dateFrom, DateTo: dateTo }
-    items, p, err := h.svc.ListOperationLogs(c.Request.Context(), "game", id, opts)
-    if err != nil { writeJSONError(c, 500, err.Error()); return }
-    if strings.EqualFold(strings.TrimSpace(c.Query("export")), "csv") { exportOperationLogsCSV(c, "game", id, items); return }
-    writeJSON(c, 200, model.APIResponse[[]model.OperationLog]{ Success: true, Code: 200, Message: "OK", Data: items, Pagination: p })
+	id, err := parseUintParam(c, "id")
+	if err != nil {
+		writeJSONError(c, 400, apierr.ErrInvalidID)
+		return
+	}
+	page, pageSize, ok := parsePagination(c)
+	if !ok {
+		return
+	}
+	var actorID *uint64
+	if v, err := queryUint64Ptr(c, "actor_user_id"); err == nil {
+		actorID = v
+	}
+	var dateFrom, dateTo *time.Time
+	if v, err := queryTimePtr(c, "date_from"); err == nil {
+		dateFrom = v
+	} else if err != nil {
+		writeJSONError(c, 400, apierr.ErrInvalidDateFrom)
+		return
+	}
+	if v, err := queryTimePtr(c, "date_to"); err == nil {
+		dateTo = v
+	} else if err != nil {
+		writeJSONError(c, 400, apierr.ErrInvalidDateTo)
+		return
+	}
+	opts := repository.OperationLogListOptions{Page: page, PageSize: pageSize, Action: strings.TrimSpace(c.Query("action")), ActorUserID: actorID, DateFrom: dateFrom, DateTo: dateTo}
+	items, p, err := h.svc.ListOperationLogs(c.Request.Context(), "game", id, opts)
+	if err != nil {
+		writeJSONError(c, 500, err.Error())
+		return
+	}
+	if strings.EqualFold(strings.TrimSpace(c.Query("export")), "csv") {
+		exportOperationLogsCSV(c, "game", id, items)
+		return
+	}
+	items = ensureSlice(items)
+	writeJSON(c, 200, model.APIResponse[[]model.OperationLog]{Success: true, Code: 200, Message: "OK", Data: items, Pagination: p})
 }
 
 // GamePayload defines request body for creating/updating a game.

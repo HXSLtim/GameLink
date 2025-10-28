@@ -1,10 +1,5 @@
 import { apiClient } from '../../api/client';
-import type {
-  Game,
-  GameListQuery,
-  CreateGameRequest,
-  UpdateGameRequest,
-} from '../../types/game';
+import type { Game, GameListQuery, CreateGameRequest, UpdateGameRequest } from '../../types/game';
 import type { ListResult } from '../../types/api';
 
 /**
@@ -58,4 +53,3 @@ export const gameApi = {
     return apiClient.get(`/api/v1/admin/games/${id}/logs`);
   },
 };
-

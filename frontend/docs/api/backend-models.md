@@ -166,100 +166,100 @@ interface Review {
 
 ### 认证模块 (/api/v1/auth)
 
-| 方法 | 路径 | 描述 |
-|------|------|------|
-| POST | `/api/v1/auth/login` | 用户登录 |
+| 方法 | 路径                   | 描述     |
+| ---- | ---------------------- | -------- |
+| POST | `/api/v1/auth/login`   | 用户登录 |
 | POST | `/api/v1/auth/refresh` | 刷新令牌 |
-| POST | `/api/v1/auth/logout` | 用户登出 |
+| POST | `/api/v1/auth/logout`  | 用户登出 |
 
 ### 用户管理 (/api/v1/admin/users)
 
-| 方法 | 路径 | 描述 |
-|------|------|------|
-| GET | `/api/v1/admin/users` | 获取用户列表 |
-| POST | `/api/v1/admin/users` | 创建用户 |
-| GET | `/api/v1/admin/users/:id` | 获取用户详情 |
-| PUT | `/api/v1/admin/users/:id` | 更新用户信息 |
-| DELETE | `/api/v1/admin/users/:id` | 删除用户 |
-| PUT | `/api/v1/admin/users/:id/status` | 更新用户状态 |
-| PUT | `/api/v1/admin/users/:id/role` | 更新用户角色 |
-| GET | `/api/v1/admin/users/:id/orders` | 获取用户订单 |
-| POST | `/api/v1/admin/users/with-player` | 创建用户及陪玩师信息 |
-| GET | `/api/v1/admin/users/:id/logs` | 获取用户操作日志 |
+| 方法   | 路径                              | 描述                 |
+| ------ | --------------------------------- | -------------------- |
+| GET    | `/api/v1/admin/users`             | 获取用户列表         |
+| POST   | `/api/v1/admin/users`             | 创建用户             |
+| GET    | `/api/v1/admin/users/:id`         | 获取用户详情         |
+| PUT    | `/api/v1/admin/users/:id`         | 更新用户信息         |
+| DELETE | `/api/v1/admin/users/:id`         | 删除用户             |
+| PUT    | `/api/v1/admin/users/:id/status`  | 更新用户状态         |
+| PUT    | `/api/v1/admin/users/:id/role`    | 更新用户角色         |
+| GET    | `/api/v1/admin/users/:id/orders`  | 获取用户订单         |
+| POST   | `/api/v1/admin/users/with-player` | 创建用户及陪玩师信息 |
+| GET    | `/api/v1/admin/users/:id/logs`    | 获取用户操作日志     |
 
 ### 游戏管理 (/api/v1/admin/games)
 
-| 方法 | 路径 | 描述 |
-|------|------|------|
-| GET | `/api/v1/admin/games` | 获取游戏列表 |
-| POST | `/api/v1/admin/games` | 创建游戏 |
-| GET | `/api/v1/admin/games/:id` | 获取游戏详情 |
-| PUT | `/api/v1/admin/games/:id` | 更新游戏信息 |
-| DELETE | `/api/v1/admin/games/:id` | 删除游戏 |
-| GET | `/api/v1/admin/games/:id/logs` | 获取游戏操作日志 |
+| 方法   | 路径                           | 描述             |
+| ------ | ------------------------------ | ---------------- |
+| GET    | `/api/v1/admin/games`          | 获取游戏列表     |
+| POST   | `/api/v1/admin/games`          | 创建游戏         |
+| GET    | `/api/v1/admin/games/:id`      | 获取游戏详情     |
+| PUT    | `/api/v1/admin/games/:id`      | 更新游戏信息     |
+| DELETE | `/api/v1/admin/games/:id`      | 删除游戏         |
+| GET    | `/api/v1/admin/games/:id/logs` | 获取游戏操作日志 |
 
 ### 陪玩师管理 (/api/v1/admin/players)
 
-| 方法 | 路径 | 描述 |
-|------|------|------|
-| GET | `/api/v1/admin/players` | 获取陪玩师列表 |
-| POST | `/api/v1/admin/players` | 创建陪玩师 |
-| GET | `/api/v1/admin/players/:id` | 获取陪玩师详情 |
-| PUT | `/api/v1/admin/players/:id` | 更新陪玩师信息 |
-| DELETE | `/api/v1/admin/players/:id` | 删除陪玩师 |
-| PUT | `/api/v1/admin/players/:id/verification` | 更新验证状态 |
-| PUT | `/api/v1/admin/players/:id/games` | 更新陪玩师游戏 |
-| PUT | `/api/v1/admin/players/:id/skill-tags` | 更新技能标签 |
-| GET | `/api/v1/admin/players/:id/logs` | 获取陪玩师操作日志 |
+| 方法   | 路径                                     | 描述               |
+| ------ | ---------------------------------------- | ------------------ |
+| GET    | `/api/v1/admin/players`                  | 获取陪玩师列表     |
+| POST   | `/api/v1/admin/players`                  | 创建陪玩师         |
+| GET    | `/api/v1/admin/players/:id`              | 获取陪玩师详情     |
+| PUT    | `/api/v1/admin/players/:id`              | 更新陪玩师信息     |
+| DELETE | `/api/v1/admin/players/:id`              | 删除陪玩师         |
+| PUT    | `/api/v1/admin/players/:id/verification` | 更新验证状态       |
+| PUT    | `/api/v1/admin/players/:id/games`        | 更新陪玩师游戏     |
+| PUT    | `/api/v1/admin/players/:id/skill-tags`   | 更新技能标签       |
+| GET    | `/api/v1/admin/players/:id/logs`         | 获取陪玩师操作日志 |
 
 ### 订单管理 (/api/v1/admin/orders)
 
-| 方法 | 路径 | 描述 |
-|------|------|------|
-| GET | `/api/v1/admin/orders` | 获取订单列表 |
-| POST | `/api/v1/admin/orders` | 创建订单 |
-| GET | `/api/v1/admin/orders/:id` | 获取订单详情 |
-| PUT | `/api/v1/admin/orders/:id` | 更新订单 |
-| DELETE | `/api/v1/admin/orders/:id` | 删除订单 |
-| POST | `/api/v1/admin/orders/:id/review` | 订单评价 |
-| POST | `/api/v1/admin/orders/:id/cancel` | 取消订单 |
-| POST | `/api/v1/admin/orders/:id/assign` | 分配订单 |
-| GET | `/api/v1/admin/orders/:id/logs` | 获取订单操作日志 |
+| 方法   | 路径                              | 描述             |
+| ------ | --------------------------------- | ---------------- |
+| GET    | `/api/v1/admin/orders`            | 获取订单列表     |
+| POST   | `/api/v1/admin/orders`            | 创建订单         |
+| GET    | `/api/v1/admin/orders/:id`        | 获取订单详情     |
+| PUT    | `/api/v1/admin/orders/:id`        | 更新订单         |
+| DELETE | `/api/v1/admin/orders/:id`        | 删除订单         |
+| POST   | `/api/v1/admin/orders/:id/review` | 订单评价         |
+| POST   | `/api/v1/admin/orders/:id/cancel` | 取消订单         |
+| POST   | `/api/v1/admin/orders/:id/assign` | 分配订单         |
+| GET    | `/api/v1/admin/orders/:id/logs`   | 获取订单操作日志 |
 
 ### 支付管理 (/api/v1/admin/payments)
 
-| 方法 | 路径 | 描述 |
-|------|------|------|
-| GET | `/api/v1/admin/payments` | 获取支付列表 |
-| POST | `/api/v1/admin/payments` | 创建支付 |
-| GET | `/api/v1/admin/payments/:id` | 获取支付详情 |
-| PUT | `/api/v1/admin/payments/:id` | 更新支付 |
-| DELETE | `/api/v1/admin/payments/:id` | 删除支付 |
-| POST | `/api/v1/admin/payments/:id/refund` | 申请退款 |
-| POST | `/api/v1/admin/payments/:id/capture` | 确认收款 |
-| GET | `/api/v1/admin/payments/:id/logs` | 获取支付操作日志 |
+| 方法   | 路径                                 | 描述             |
+| ------ | ------------------------------------ | ---------------- |
+| GET    | `/api/v1/admin/payments`             | 获取支付列表     |
+| POST   | `/api/v1/admin/payments`             | 创建支付         |
+| GET    | `/api/v1/admin/payments/:id`         | 获取支付详情     |
+| PUT    | `/api/v1/admin/payments/:id`         | 更新支付         |
+| DELETE | `/api/v1/admin/payments/:id`         | 删除支付         |
+| POST   | `/api/v1/admin/payments/:id/refund`  | 申请退款         |
+| POST   | `/api/v1/admin/payments/:id/capture` | 确认收款         |
+| GET    | `/api/v1/admin/payments/:id/logs`    | 获取支付操作日志 |
 
 ### 评价管理 (/api/v1/admin/reviews)
 
-| 方法 | 路径 | 描述 |
-|------|------|------|
-| GET | `/api/v1/admin/reviews` | 获取评价列表 |
-| POST | `/api/v1/admin/reviews` | 创建评价 |
-| GET | `/api/v1/admin/reviews/:id` | 获取评价详情 |
-| PUT | `/api/v1/admin/reviews/:id` | 更新评价 |
-| DELETE | `/api/v1/admin/reviews/:id` | 删除评价 |
-| GET | `/api/v1/admin/players/:id/reviews` | 获取陪玩师评价 |
-| GET | `/api/v1/admin/reviews/:id/logs` | 获取评价操作日志 |
+| 方法   | 路径                                | 描述             |
+| ------ | ----------------------------------- | ---------------- |
+| GET    | `/api/v1/admin/reviews`             | 获取评价列表     |
+| POST   | `/api/v1/admin/reviews`             | 创建评价         |
+| GET    | `/api/v1/admin/reviews/:id`         | 获取评价详情     |
+| PUT    | `/api/v1/admin/reviews/:id`         | 更新评价         |
+| DELETE | `/api/v1/admin/reviews/:id`         | 删除评价         |
+| GET    | `/api/v1/admin/players/:id/reviews` | 获取陪玩师评价   |
+| GET    | `/api/v1/admin/reviews/:id/logs`    | 获取评价操作日志 |
 
 ### 统计数据 (/api/v1/admin/stats)
 
-| 方法 | 路径 | 描述 |
-|------|------|------|
-| GET | `/api/v1/admin/stats/dashboard` | 仪表板数据 |
-| GET | `/api/v1/admin/stats/revenue-trend` | 收入趋势 |
-| GET | `/api/v1/admin/stats/user-growth` | 用户增长 |
-| GET | `/api/v1/admin/stats/orders` | 订单统计 |
-| GET | `/api/v1/admin/stats/top-players` | 热门陪玩师 |
+| 方法 | 路径                                | 描述       |
+| ---- | ----------------------------------- | ---------- |
+| GET  | `/api/v1/admin/stats/dashboard`     | 仪表板数据 |
+| GET  | `/api/v1/admin/stats/revenue-trend` | 收入趋势   |
+| GET  | `/api/v1/admin/stats/user-growth`   | 用户增长   |
+| GET  | `/api/v1/admin/stats/orders`        | 订单统计   |
+| GET  | `/api/v1/admin/stats/top-players`   | 热门陪玩师 |
 
 ## 📄 响应格式规范
 

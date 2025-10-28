@@ -37,7 +37,7 @@ export const Login = () => {
     try {
       // ✅ 请求会自动加密
       await login('admin', 'password123');
-      
+
       // 实际发送的数据：
       // {
       //   encrypted: true,
@@ -76,7 +76,7 @@ export const CreateOrder = () => {
     try {
       // ✅ 请求会自动加密
       const result = await orderApi.create(orderData);
-      
+
       // ✅ 响应会自动解密
       console.log('创建成功:', result);
     } catch (error) {
@@ -99,9 +99,7 @@ const encryptedPassword = CryptoUtil.encrypt('password123');
 localStorage.setItem('pwd', encryptedPassword);
 
 // 解密
-const decryptedPassword = CryptoUtil.decrypt<string>(
-  localStorage.getItem('pwd')!
-);
+const decryptedPassword = CryptoUtil.decrypt<string>(localStorage.getItem('pwd')!);
 
 // 加密对象
 const userData = {
@@ -130,10 +128,7 @@ const formData = {
 };
 
 // 只加密 password 和 phone
-const encryptedData = CryptoUtil.encryptFields(
-  formData,
-  ['password', 'phone']
-);
+const encryptedData = CryptoUtil.encryptFields(formData, ['password', 'phone']);
 
 console.log(encryptedData);
 // {
@@ -170,10 +165,7 @@ const receivedData = payload.data;
 const receivedTimestamp = payload.timestamp;
 const receivedSignature = payload.signature;
 
-const expectedSignature = CryptoUtil.generateSignature(
-  receivedData,
-  receivedTimestamp
-);
+const expectedSignature = CryptoUtil.generateSignature(receivedData, receivedTimestamp);
 
 if (expectedSignature === receivedSignature) {
   console.log('✅ 签名验证通过，数据未被篡改');
@@ -209,14 +201,12 @@ const customClient = axios.create({
 });
 
 // 应用加密中间件
-customClient.interceptors.request.use(
-  customCrypto.requestInterceptor,
-  (error) => Promise.reject(error)
+customClient.interceptors.request.use(customCrypto.requestInterceptor, (error) =>
+  Promise.reject(error),
 );
 
-customClient.interceptors.response.use(
-  customCrypto.responseInterceptor,
-  (error) => Promise.reject(error)
+customClient.interceptors.response.use(customCrypto.responseInterceptor, (error) =>
+  Promise.reject(error),
 );
 ```
 
@@ -418,14 +408,14 @@ const encryptionCache = new Map<string, string>();
 
 function getCachedEncryption(data: string): string {
   const key = CryptoUtil.md5(data);
-  
+
   if (encryptionCache.has(key)) {
     return encryptionCache.get(key)!;
   }
-  
+
   const encrypted = CryptoUtil.encrypt(data);
   encryptionCache.set(key, encrypted);
-  
+
   return encrypted;
 }
 ```
@@ -505,4 +495,3 @@ function getKeyByVersion(version: number): string {
 3. 定期更新密钥，建议每季度一次
 4. 监控加密性能，避免影响用户体验
 5. 记录所有加密/解密错误，及时发现问题
-

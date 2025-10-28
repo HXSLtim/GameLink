@@ -13,7 +13,6 @@ import {
 } from '../../utils/formatters';
 import styles from './OrderList.module.less';
 
-
 export const OrderList: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -49,12 +48,22 @@ export const OrderList: React.FC = () => {
         status: queryParams.status,
       });
 
-      setOrders(result.list);
-      setTotal(result.total);
+      // 添加数据验证
+      if (result && result.list) {
+        setOrders(result.list);
+        setTotal(result.total || 0);
+      } else {
+        console.warn('⚠️ API 返回数据格式异常:', result);
+        setOrders([]);
+        setTotal(0);
+        setError('数据格式异常');
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '加载订单列表失败';
       setError(errorMessage);
-      console.error('加载订单列表失败:', err);
+      setOrders([]);
+      setTotal(0);
+      console.error('❌ 加载订单列表失败:', err);
     } finally {
       setLoading(false);
     }
@@ -64,9 +73,27 @@ export const OrderList: React.FC = () => {
   const loadStatistics = async () => {
     try {
       const stats = await orderApi.getStatistics();
-      setStatistics(stats);
+      if (stats) {
+        setStatistics(stats);
+      } else {
+        console.warn('⚠️ 订单统计数据为空');
+        setStatistics({
+          total: 0,
+          pending: 0,
+          in_progress: 0,
+          today_orders: 0,
+          today_revenue: 0,
+        });
+      }
     } catch (err) {
-      console.error('加载统计数据失败:', err);
+      console.error('❌ 加载统计数据失败:', err);
+      setStatistics({
+        total: 0,
+        pending: 0,
+        in_progress: 0,
+        today_orders: 0,
+        today_revenue: 0,
+      });
     }
   };
 
@@ -102,11 +129,7 @@ export const OrderList: React.FC = () => {
       width: 120,
       render: (_, record) => (
         <div>
-          {record.user ? (
-            <div className={styles.userName}>{record.user.name}</div>
-          ) : (
-            <span>-</span>
-          )}
+          {record.user ? <div className={styles.userName}>{record.user.name}</div> : <span>-</span>}
         </div>
       ),
     },
@@ -128,11 +151,7 @@ export const OrderList: React.FC = () => {
       key: 'game',
       title: '游戏',
       width: 120,
-      render: (_, record) => (
-        <div>
-          {record.game ? record.game.name : '-'}
-        </div>
-      ),
+      render: (_, record) => <div>{record.game ? record.game.name : '-'}</div>,
     },
     {
       key: 'price_cents',
@@ -184,7 +203,6 @@ export const OrderList: React.FC = () => {
       page: 1,
     });
   };
-
 
   // 处理分页
   const handlePageChange = (page: number) => {
@@ -258,7 +276,6 @@ export const OrderList: React.FC = () => {
             className={styles.filterSelect}
           />
 
-
           <button className={styles.resetButton} onClick={handleReset}>
             重置
           </button>
@@ -273,7 +290,12 @@ export const OrderList: React.FC = () => {
           <p>加载失败: {error}</p>
         ) : (
           <>
-            <Table columns={columns} dataSource={orders} rowKey="id" scroll={{ overflowX: 'auto', minWidth: '1400px' } as React.CSSProperties} />
+            <Table
+              columns={columns}
+              dataSource={orders}
+              rowKey="id"
+              scroll={{ overflowX: 'auto', minWidth: '1400px' } as React.CSSProperties}
+            />
 
             <Pagination
               current={queryParams.page!}

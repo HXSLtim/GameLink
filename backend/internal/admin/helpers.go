@@ -1,16 +1,16 @@
 package admin
 
 import (
-    "errors"
-    "strconv"
-    "strings"
-    "time"
+	"errors"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
-    apierr "gamelink/internal/handler"
-    "gamelink/internal/model"
-    "gamelink/internal/repository"
+	apierr "gamelink/internal/handler"
+	"gamelink/internal/model"
+	"gamelink/internal/repository"
 )
 
 func parseUintParam(c *gin.Context, key string) (uint64, error) {
@@ -86,6 +86,13 @@ func writeJSONError(c *gin.Context, status int, message string) {
 		Code:    status,
 		Message: message,
 	})
+}
+
+func ensureSlice[T any](items []T) []T {
+	if items == nil {
+		return make([]T, 0)
+	}
+	return items
 }
 
 // parsePagination parses page and page_size with defaults and writes error response when invalid.
@@ -221,29 +228,41 @@ func normalizeOrderStatus(s string) model.OrderStatus { //nolint:misspell // acc
 
 // buildUserListOptions parses query parameters for user listing.
 func buildUserListOptions(c *gin.Context) (repository.UserListOptions, bool) {
-    page, pageSize, ok := parsePagination(c)
-    if !ok { return repository.UserListOptions{}, false }
+	page, pageSize, ok := parsePagination(c)
+	if !ok {
+		return repository.UserListOptions{}, false
+	}
 
-    roleTokens := parseCSVParams(c.QueryArray("role"))
-    roles := make([]model.Role, 0, len(roleTokens))
-    for _, t := range roleTokens { roles = append(roles, model.Role(strings.ToLower(t))) }
+	roleTokens := parseCSVParams(c.QueryArray("role"))
+	roles := make([]model.Role, 0, len(roleTokens))
+	for _, t := range roleTokens {
+		roles = append(roles, model.Role(strings.ToLower(t)))
+	}
 
-    statusTokens := parseCSVParams(c.QueryArray("status"))
-    statuses := make([]model.UserStatus, 0, len(statusTokens))
-    for _, t := range statusTokens { statuses = append(statuses, model.UserStatus(strings.ToLower(t))) }
+	statusTokens := parseCSVParams(c.QueryArray("status"))
+	statuses := make([]model.UserStatus, 0, len(statusTokens))
+	for _, t := range statusTokens {
+		statuses = append(statuses, model.UserStatus(strings.ToLower(t)))
+	}
 
-    dateFrom, err := queryTimePtr(c, "date_from")
-    if err != nil { writeJSONError(c, 400, apierr.ErrInvalidDateFrom); return repository.UserListOptions{}, false }
-    dateTo, err := queryTimePtr(c, "date_to")
-    if err != nil { writeJSONError(c, 400, apierr.ErrInvalidDateTo); return repository.UserListOptions{}, false }
+	dateFrom, err := queryTimePtr(c, "date_from")
+	if err != nil {
+		writeJSONError(c, 400, apierr.ErrInvalidDateFrom)
+		return repository.UserListOptions{}, false
+	}
+	dateTo, err := queryTimePtr(c, "date_to")
+	if err != nil {
+		writeJSONError(c, 400, apierr.ErrInvalidDateTo)
+		return repository.UserListOptions{}, false
+	}
 
-    return repository.UserListOptions{
-        Page:     page,
-        PageSize: pageSize,
-        Roles:    roles,
-        Statuses: statuses,
-        DateFrom: dateFrom,
-        DateTo:   dateTo,
-        Keyword:  strings.TrimSpace(c.Query("keyword")),
-    }, true
+	return repository.UserListOptions{
+		Page:     page,
+		PageSize: pageSize,
+		Roles:    roles,
+		Statuses: statuses,
+		DateFrom: dateFrom,
+		DateTo:   dateTo,
+		Keyword:  strings.TrimSpace(c.Query("keyword")),
+	}, true
 }

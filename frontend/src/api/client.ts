@@ -99,9 +99,7 @@ apiClient.interceptors.response.use(
       }
 
       // 返回错误消息
-      return Promise.reject(
-        new Error(apiResponse?.message || `请求失败 (${status})`),
-      );
+      return Promise.reject(new Error(apiResponse?.message || `请求失败 (${status})`));
     } else if (error.request) {
       // 请求已发出但没有收到响应
       console.error('网络错误，请检查网络连接');
@@ -118,4 +116,3 @@ apiClient.interceptors.response.use(
  * 导出配置好的 axios 实例
  */
 export default apiClient;
-

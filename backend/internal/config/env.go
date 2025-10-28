@@ -18,6 +18,7 @@ type AppConfig struct {
 	Database      DatabaseConfig
 	Cache         CacheConfig
 	Crypto        CryptoConfig
+	Seed          SeedConfig
 }
 
 // DatabaseConfig 描述数据库驱动与连接信息。
@@ -49,6 +50,11 @@ type CryptoConfig struct {
 	UseSignature bool     `yaml:"use_signature"`
 }
 
+// SeedConfig 控制是否注入演示数据。
+type SeedConfig struct {
+	Enabled bool `yaml:"enabled"`
+}
+
 type cryptoFileConfig struct {
 	Enabled      *bool    `yaml:"enabled"`
 	SecretKey    string   `yaml:"secret_key"`
@@ -66,6 +72,7 @@ type fileConfig struct {
 	Database DatabaseConfig   `yaml:"database"`
 	Cache    CacheConfig      `yaml:"cache"`
 	Crypto   cryptoFileConfig `yaml:"crypto"`
+	Seed     SeedConfig       `yaml:"seed"`
 }
 
 // Load 读取配置文件及环境变量，生成最终配置。
@@ -98,6 +105,7 @@ func Load() AppConfig {
 			ExcludePaths: []string{"/api/v1/health", "/api/v1/ping", "/api/v1/auth/refresh"},
 			UseSignature: true,
 		},
+		Seed: SeedConfig{Enabled: false},
 	}
 
 	loadFromFile(env, &cfg)
@@ -173,6 +181,9 @@ func loadFromFile(env string, cfg *AppConfig) {
 	if fc.Crypto.UseSignature != nil {
 		cfg.Crypto.UseSignature = *fc.Crypto.UseSignature
 	}
+	if fc.Seed.Enabled {
+		cfg.Seed.Enabled = fc.Seed.Enabled
+	}
 }
 
 func overrideFromEnv(cfg *AppConfig) {
@@ -237,6 +248,14 @@ func overrideFromEnv(cfg *AppConfig) {
 			log.Printf("CRYPTO_USE_SIGNATURE=%q 无法解析，保持原值 %v", useSignature, cfg.Crypto.UseSignature)
 		} else {
 			cfg.Crypto.UseSignature = enabled
+		}
+	}
+
+	if seed := os.Getenv("SEED_ENABLED"); seed != "" {
+		if enabled, err := strconv.ParseBool(seed); err != nil {
+			log.Printf("SEED_ENABLED=%q 无法解析，保持原值 %v", seed, cfg.Seed.Enabled)
+		} else {
+			cfg.Seed.Enabled = enabled
 		}
 	}
 }

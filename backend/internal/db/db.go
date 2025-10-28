@@ -12,9 +12,9 @@ import (
 func Open(cfg config.AppConfig) (*gorm.DB, error) {
 	switch cfg.Database.Type {
 	case "sqlite":
-		return openSQLite(cfg.Database.DSN)
+		return openSQLite(cfg)
 	case "postgres":
-		return openPostgres(cfg.Database.DSN)
+		return openPostgres(cfg)
 	default:
 		return nil, fmt.Errorf("暂不支持的数据库类型: %s", cfg.Database.Type)
 	}

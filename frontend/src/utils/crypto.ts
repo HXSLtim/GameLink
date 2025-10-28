@@ -191,4 +191,3 @@ export const { encrypt, decrypt, encryptFields, decryptFields, md5, sha256, gene
  * 导出加密状态
  */
 export const isCryptoEnabled = CryptoUtil.isEnabled();
-

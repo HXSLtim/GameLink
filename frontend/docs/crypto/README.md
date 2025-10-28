@@ -58,13 +58,13 @@ src/
 
 ## ⚙️ 默认配置
 
-| 配置项 | 默认值 | 说明 |
-|--------|--------|------|
-| 加密算法 | AES-256-CBC | 对称加密 |
-| 签名算法 | SHA-256 | 防篡改 |
+| 配置项   | 默认值         | 说明      |
+| -------- | -------------- | --------- |
+| 加密算法 | AES-256-CBC    | 对称加密  |
+| 签名算法 | SHA-256        | 防篡改    |
 | 加密方法 | POST/PUT/PATCH | GET不加密 |
-| 开发环境 | 禁用 | 方便调试 |
-| 生产环境 | 启用 | 保护数据 |
+| 开发环境 | 禁用           | 方便调试  |
+| 生产环境 | 启用           | 保护数据  |
 
 ## 🎯 三种使用模式
 
@@ -85,10 +85,7 @@ const encrypted = CryptoUtil.encrypt({ password: '123' });
 ### 模式 3: 部分字段加密
 
 ```typescript
-const data = CryptoUtil.encryptFields(
-  { name: 'John', password: '123' },
-  ['password']
-);
+const data = CryptoUtil.encryptFields({ name: 'John', password: '123' }, ['password']);
 ```
 
 ## 🔧 常用操作
@@ -108,7 +105,7 @@ cryptoMiddleware.isEnabled(); // true/false
 // 更新配置
 cryptoMiddleware.updateConfig({
   methods: ['POST'],
-  excludePaths: ['/api/public/*']
+  excludePaths: ['/api/public/*'],
 });
 ```
 
@@ -210,24 +207,28 @@ VITE_CRYPTO_ENABLED=false npm run dev
 <summary><b>Q: 为什么请求失败返回 400？</b></summary>
 
 A: 检查后端是否实现了解密中间件，密钥是否一致。
+
 </details>
 
 <details>
 <summary><b>Q: 如何在开发环境禁用加密？</b></summary>
 
 A: 已默认禁用，如需启用设置 `VITE_CRYPTO_ENABLED=true`
+
 </details>
 
 <details>
 <summary><b>Q: 加密会影响性能吗？</b></summary>
 
 A: 对小数据（< 10KB）几乎无影响，耗时约 1-5ms。
+
 </details>
 
 <details>
 <summary><b>Q: 如何修改密钥？</b></summary>
 
 A: 在 `.env.local` 中设置 `VITE_CRYPTO_SECRET_KEY` 和 `VITE_CRYPTO_IV`
+
 </details>
 
 ## 📞 获取帮助
@@ -243,4 +244,3 @@ A: 在 `.env.local` 中设置 `VITE_CRYPTO_SECRET_KEY` 和 `VITE_CRYPTO_IV`
 **版本**: 1.0.0
 
 **最后更新**: 2025-01-28
-
