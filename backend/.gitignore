@@ -8,6 +8,9 @@ user-service
 *.exe
 *.out
 
+# Local environment
+.env
+
 # Databases and local data
 var/
 *.db
@@ -15,9 +18,14 @@ var/
 # Coverage
 coverage.out
 
+# Generated API docs
+docs/swagger.json
+docs/swagger.yaml
+docs/docs.go
+docs/docs_test.go
+
 # IDE/editor
 .idea/
 .vscode/
 *.swp
 *.swo
-
