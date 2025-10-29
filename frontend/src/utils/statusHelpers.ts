@@ -113,11 +113,11 @@ export const getUserStatusColor = (status: UserStatus): string => {
 
 // ==================== 评分 ====================
 export const RATING_MAP: Record<number, string> = {
-  1: '⭐ 非常差',
-  2: '⭐⭐ 较差',
-  3: '⭐⭐⭐ 一般',
-  4: '⭐⭐⭐⭐ 满意',
-  5: '⭐⭐⭐⭐⭐ 非常满意',
+  1: '非常差',
+  2: '较差',
+  3: '一般',
+  4: '满意',
+  5: '非常满意',
 };
 
 export const RATING_COLORS: Record<number, string> = {

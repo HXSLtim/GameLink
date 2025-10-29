@@ -1,6 +1,9 @@
 import { Outlet, useNavigate } from 'react-router-dom';
-import { Layout, MenuItem } from 'components/Layout';
+import { Layout, RouteCache } from 'components';
+import type { MenuItem } from 'components/Layout';
 import { useAuth } from 'contexts/AuthContext';
+import { useBreadcrumb } from '../../hooks/useBreadcrumb';
+import { useRouteCache } from '../../hooks/useRouteCache';
 
 // Dashboard 图标
 const DashboardIcon = () => (
@@ -177,7 +180,7 @@ export const MainLayout = () => {
   const navigate = useNavigate();
 
   // 菜单配置
-  const menuItems: MenuItem[] = [
+  const menuItems = [
     {
       key: 'dashboard',
       label: '仪表盘',
@@ -245,6 +248,24 @@ export const MainLayout = () => {
     navigate('/login');
   };
 
+  // 获取面包屑
+  const breadcrumbs = useBreadcrumb();
+
+  // 路由缓存配置
+  const cacheControl = useRouteCache({
+    enabled: true,
+    maxCache: 10,
+    cacheRoutes: [
+      '/users',
+      '/orders',
+      '/games',
+      '/players',
+      '/payments',
+      '/reviews',
+    ],
+    excludeRoutes: ['/login', '/register'],
+  });
+
   return (
     <Layout
       headerProps={{
@@ -255,13 +276,21 @@ export const MainLayout = () => {
             }
           : undefined,
         onLogout: handleLogout,
+        breadcrumbs: breadcrumbs.length > 0 ? breadcrumbs : undefined,
       }}
       sidebarProps={{
         menuItems,
       }}
       showSidebar={true}
     >
-      <Outlet />
+      <RouteCache
+        enabled={cacheControl.config.enabled}
+        maxCache={cacheControl.config.maxCache}
+        cacheRoutes={cacheControl.config.cacheRoutes}
+        excludeRoutes={cacheControl.config.excludeRoutes}
+      >
+        <Outlet />
+      </RouteCache>
     </Layout>
   );
 };

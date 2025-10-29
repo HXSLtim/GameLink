@@ -1,197 +1,237 @@
-@import '../../styles/variables.less';
-
 .container {
-  padding: var(--spacing-lg);
-  max-width: 1400px;
+  padding: 24px;
+  max-width: 1200px;
   margin: 0 auto;
+}
+
+.loading,
+.error {
+  text-align: center;
+  padding: 48px 24px;
+  font-size: 16px;
+  color: #666;
+}
+
+.error {
+  color: #f5222d;
 }
 
 // 头部
 .header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--spacing-xl);
-  gap: var(--spacing-md);
-  flex-wrap: wrap;
-}
-
-.headerLeft {
-  display: flex;
   align-items: center;
-  gap: var(--spacing-md);
+  margin-bottom: 24px;
 }
 
-.headerRight {
+.backButton {
+  font-size: 14px;
+  padding: 0;
+  
+  &:hover {
+    color: #1890ff;
+  }
+}
+
+.headerActions {
   display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
+  gap: 12px;
 }
 
-.title {
-  font-size: var(--font-size-2xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--text-primary);
-  margin: 0;
+// 基本信息卡片
+.infoCard {
+  margin-bottom: 24px;
 }
 
-// 内容区域
-.content {
+.gameHeader {
   display: flex;
-  flex-direction: column;
-  gap: var(--spacing-lg);
-}
-
-.section {
-  padding: var(--spacing-lg);
-}
-
-.sectionHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--spacing-lg);
-}
-
-.sectionTitle {
-  font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-semibold);
-  color: var(--text-primary);
-  margin: 0;
-}
-
-.sectionActions {
-  display: flex;
-  gap: var(--spacing-sm);
-}
-
-.subTitle {
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-semibold);
-  color: var(--text-primary);
-  margin: 0 0 var(--spacing-md) 0;
-}
-
-// 信息网格
-.infoGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: var(--spacing-lg);
-}
-
-.infoItem {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-}
-
-.infoLabel {
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
-  font-weight: var(--font-weight-medium);
-}
-
-.infoValue {
-  font-size: var(--font-size-base);
-  color: var(--text-primary);
-}
-
-// 描述区域
-.descriptionSection {
-  margin-top: var(--spacing-lg);
-  padding-top: var(--spacing-lg);
-  border-top: 1px solid var(--border-color);
-}
-
-.description {
-  font-size: var(--font-size-base);
-  color: var(--text-primary);
-  line-height: 1.6;
-  margin: 0;
-  white-space: pre-wrap;
-}
-
-// 图标预览
-.iconPreview {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: var(--spacing-2xl);
-  background: var(--bg-2);
-  border-radius: var(--border-radius);
+  gap: 24px;
+  margin-bottom: 24px;
 }
 
 .gameIcon {
-  max-width: 200px;
-  max-height: 200px;
-  object-fit: contain;
-  border-radius: var(--border-radius);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+  background: #f5f5f5;
 }
 
-// 错误卡片
-.errorCard {
-  padding: var(--spacing-2xl);
-  text-align: center;
+.gameInfo {
+  flex: 1;
+}
 
-  h2 {
-    color: var(--text-primary);
-    margin: 0 0 var(--spacing-md) 0;
+.gameName {
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.gameMeta {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: #666;
+}
+
+.metaItem {
+  strong {
+    font-weight: 500;
+    color: #333;
+    margin-right: 8px;
   }
+}
 
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag {
+  font-size: 12px;
+}
+
+.description {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #f0f0f0;
+  
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  
   p {
-    color: var(--text-secondary);
-    margin: 0 0 var(--spacing-xl) 0;
+    line-height: 1.6;
+    color: #666;
+    white-space: pre-wrap;
   }
 }
 
-// 响应式
-@media (max-width: 1200px) {
-  .infoGrid {
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+.timestamps {
+  display: flex;
+  gap: 32px;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #f0f0f0;
+  font-size: 14px;
+}
+
+.timestamp {
+  display: flex;
+  gap: 8px;
+}
+
+.timestampLabel {
+  color: #999;
+}
+
+.timestampValue {
+  color: #333;
+}
+
+.relative {
+  color: #999;
+  margin-left: 8px;
+}
+
+// 统计信息卡片
+.statsCard {
+  margin-bottom: 24px;
+}
+
+.cardTitle {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 24px;
+}
+
+.statItem {
+  text-align: center;
+  padding: 20px;
+  background: #fafafa;
+  border-radius: 8px;
+}
+
+.statLabel {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.statValue {
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+}
+
+// 热门陪玩师卡片
+.playersCard {
+  margin-bottom: 24px;
+}
+
+.playersList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.playerItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #fafafa;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    background: #f0f0f0;
+    transform: translateY(-2px);
   }
 }
 
-@media (max-width: 768px) {
-  .container {
-    padding: var(--spacing-md);
-  }
+.playerAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #e0e0e0;
+}
 
-  .header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+.playerInfo {
+  flex: 1;
+}
 
-  .headerLeft {
-    width: 100%;
-    flex-direction: column;
-    align-items: flex-start;
-  }
+.playerName {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
 
-  .title {
-    font-size: var(--font-size-xl);
-  }
+.playerRating {
+  font-size: 12px;
+  color: #666;
+}
 
-  .infoGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .section {
-    padding: var(--spacing-md);
-  }
-
-  .sectionHeader {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--spacing-md);
-  }
-
-  .sectionActions {
-    width: 100%;
-  }
-
-  .gameIcon {
-    max-width: 150px;
-    max-height: 150px;
-  }
+.warning {
+  margin-top: 12px;
+  padding: 12px;
+  background: #fff7e6;
+  border-radius: 4px;
+  color: #d46b08;
+  font-size: 14px;
 }

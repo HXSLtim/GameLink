@@ -208,7 +208,7 @@ export const PaymentList: React.FC = () => {
     },
     {
       title: '交易号',
-      dataIndex: 'transactionId',
+      dataIndex: 'transactionId' as keyof Payment,
       key: 'transactionId',
       width: '200px',
       render: (transactionId: string) => (

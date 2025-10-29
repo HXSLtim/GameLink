@@ -1,0 +1,273 @@
+.container {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.loading,
+.error {
+  text-align: center;
+  padding: 48px 24px;
+  font-size: 16px;
+  color: #666;
+}
+
+.error {
+  color: #f5222d;
+}
+
+// 头部
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.backButton {
+  font-size: 14px;
+  padding: 0;
+  
+  &:hover {
+    color: #1890ff;
+  }
+}
+
+.headerActions {
+  display: flex;
+  gap: 12px;
+}
+
+// 支付信息卡片
+.infoCard {
+  margin-bottom: 24px;
+}
+
+.paymentHeader {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.paymentIcon {
+  font-size: 64px;
+  line-height: 1;
+}
+
+.paymentInfo {
+  flex: 1;
+}
+
+.paymentAmount {
+  font-size: 36px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+.paymentMeta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 14px;
+}
+
+.paymentMethod {
+  color: #666;
+}
+
+.paymentId {
+  color: #999;
+}
+
+// 详情网格
+.detailsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.detailItem {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detailLabel {
+  font-size: 13px;
+  color: #999;
+}
+
+.detailValue {
+  font-size: 15px;
+  color: #333;
+  font-weight: 500;
+}
+
+// 时间戳
+.timestamps {
+  display: flex;
+  gap: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #f0f0f0;
+  font-size: 14px;
+}
+
+.timestamp {
+  display: flex;
+  gap: 8px;
+}
+
+.timestampLabel {
+  color: #999;
+}
+
+.timestampValue {
+  color: #333;
+}
+
+.relative {
+  color: #999;
+  margin-left: 8px;
+}
+
+// 关联订单卡片
+.orderCard,
+.userCard,
+.refundCard,
+.providerCard {
+  margin-bottom: 24px;
+}
+
+.cardTitle {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.orderInfo,
+.userInfo,
+.refundInfo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.orderItem,
+.userItem,
+.refundItem {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.orderLabel,
+.userLabel,
+.refundLabel {
+  font-size: 13px;
+  color: #999;
+}
+
+.orderValue,
+.userValue,
+.refundValue {
+  font-size: 15px;
+  color: #333;
+}
+
+.orderLink,
+.userLink {
+  font-size: 15px;
+  padding: 0;
+  color: #1890ff;
+  
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+// 第三方数据
+.providerRaw {
+  background: #fafafa;
+  padding: 16px;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-x: auto;
+  margin: 0;
+}
+
+// 退款表单
+.refundForm {
+  padding: 16px 0;
+}
+
+.refundTip {
+  margin-bottom: 16px;
+  font-size: 14px;
+  
+  strong {
+    color: #f5222d;
+    font-size: 18px;
+  }
+}
+
+.formItem {
+  margin-bottom: 16px;
+}
+
+.formLabel {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.required {
+  color: #f5222d;
+  margin-left: 4px;
+}
+
+.formTextarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: vertical;
+  transition: border-color 0.3s;
+  
+  &:focus {
+    outline: none;
+    border-color: #1890ff;
+    box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+  }
+  
+  &::placeholder {
+    color: #bfbfbf;
+  }
+}
+
+.refundWarning {
+  margin-top: 16px;
+  padding: 12px;
+  background: #fff7e6;
+  border-radius: 4px;
+  color: #d46b08;
+  font-size: 13px;
+}
+
+.deleteWarning {
+  margin-top: 12px;
+  padding: 12px;
+  background: #fff2f0;
+  border-radius: 4px;
+  color: #f5222d;
+  font-size: 13px;
+}
+

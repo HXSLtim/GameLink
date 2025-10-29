@@ -43,8 +43,20 @@
 }
 
 .userContact {
+  display: flex;
+  gap: var(--spacing-md);
   font-size: var(--font-size-sm);
   color: var(--text-secondary);
+}
+
+.contactItem {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  
+  svg {
+    flex-shrink: 0;
+  }
 }
 
 // 时间信息

@@ -71,11 +71,11 @@ export const RATING_OPTIONS: SelectOption[] = [
 ];
 
 export const RATING_SELECT_OPTIONS: SelectOption[] = [
-  { label: '⭐ 1星 - 非常差', value: '1' },
-  { label: '⭐⭐ 2星 - 较差', value: '2' },
-  { label: '⭐⭐⭐ 3星 - 一般', value: '3' },
-  { label: '⭐⭐⭐⭐ 4星 - 满意', value: '4' },
-  { label: '⭐⭐⭐⭐⭐ 5星 - 非常满意', value: '5' },
+  { label: '1星 - 非常差', value: '1' },
+  { label: '2星 - 较差', value: '2' },
+  { label: '3星 - 一般', value: '3' },
+  { label: '4星 - 满意', value: '4' },
+  { label: '5星 - 非常满意', value: '5' },
 ];
 
 // ==================== 游戏分类选项 ====================

@@ -1,0 +1,22 @@
+@import '../../styles/variables.less';
+
+.cacheContainer {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.cacheItem {
+  width: 100%;
+  height: 100%;
+  
+  &[style*='display: none'] {
+    // 保留在 DOM 中但隐藏
+    position: absolute;
+    top: 0;
+    left: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+

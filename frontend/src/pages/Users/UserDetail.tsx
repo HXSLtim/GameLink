@@ -2,6 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, Button, Tag, PageSkeleton, Table, Pagination } from '../../components';
 import type { TableColumn } from '../../components/Table/Table';
+import {
+  BanIcon,
+  CheckIcon,
+  StarFilledIcon,
+  CreditCardIcon,
+  ClipboardIcon,
+  PauseIcon,
+} from '../../components/Icons/icons';
 import { userApi, UserDetail as UserDetailType } from '../../services/api/user';
 import { orderApi, OrderInfo } from '../../services/api/order';
 import {
@@ -314,7 +322,7 @@ export const UserDetail: React.FC = () => {
                 className={styles.actionButton}
                 disabled={userDetail.status !== 'active'}
               >
-                ⏸️ 暂停账户
+                <PauseIcon size={16} /> 暂停账户
               </Button>
               <Button
                 variant="outlined"
@@ -322,7 +330,7 @@ export const UserDetail: React.FC = () => {
                 className={styles.actionButton}
                 disabled={userDetail.status === 'banned'}
               >
-                🚫 封禁账户
+                <BanIcon size={16} /> 封禁账户
               </Button>
               {userDetail.status !== 'active' && (
                 <Button
@@ -330,7 +338,7 @@ export const UserDetail: React.FC = () => {
                   onClick={() => console.log('解除限制')}
                   className={styles.actionButton}
                 >
-                  ✅ 解除限制
+                  <CheckIcon size={16} /> 解除限制
                 </Button>
               )}
             </div>
@@ -345,14 +353,14 @@ export const UserDetail: React.FC = () => {
                 onClick={() => console.log('查看评价')}
                 className={styles.linkButton}
               >
-                ⭐ 查看用户评价
+                <StarFilledIcon size={16} /> 查看用户评价
               </Button>
               <Button
                 variant="text"
                 onClick={() => console.log('查看支付')}
                 className={styles.linkButton}
               >
-                💳 查看支付记录
+                <CreditCardIcon size={16} /> 查看支付记录
               </Button>
             </div>
           </Card>
@@ -362,7 +370,9 @@ export const UserDetail: React.FC = () => {
       {/* 用户订单列表 */}
       <Card className={styles.ordersSection}>
         <div className={styles.ordersSectionHeader}>
-          <h2 className={styles.sectionTitle}>📋 订单记录</h2>
+          <h2 className={styles.sectionTitle}>
+            <ClipboardIcon size={20} /> 订单记录
+          </h2>
           <Tag color={'blue' as any}>共 {ordersTotal} 条订单</Tag>
         </div>
 

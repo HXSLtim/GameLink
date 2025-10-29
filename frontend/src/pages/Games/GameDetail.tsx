@@ -1,138 +1,79 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Button, Tag } from '../../components';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Card, Button, Tag, Modal } from '../../components';
 import { gameApi } from '../../services/api/game';
-import type { Game, GameCategory } from '../../types/game';
-import { GAME_CATEGORY_TEXT } from '../../types/game';
-import { formatDateTime } from '../../utils/formatters';
+import type { GameDetail, UpdateGameRequest } from '../../types/game';
+import { GAME_CATEGORY_TEXT, GAME_STATUS_TEXT, GAME_STATUS_COLOR } from '../../types/game';
+import { formatCurrency, formatDateTime, formatRelativeTime } from '../../utils/formatters';
+import { GameFormModal } from './GameFormModal';
 import styles from './GameDetail.module.less';
 
-// 图标组件
-const ArrowLeftIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-    <line x1="19" y1="12" x2="5" y2="12" strokeWidth="2" strokeLinecap="round" />
-    <polyline
-      points="12 19 5 12 12 5"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
-const EditIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-    <path
-      d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
-const TrashIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-    <polyline points="3 6 5 6 21 6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <path
-      d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
-export const GameDetail: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+const GameDetail: React.FC = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [game, setGame] = useState<Game | null>(null);
+  const { id } = useParams<{ id: string }>();
+  const [loading, setLoading] = useState(false);
+  const [game, setGame] = useState<GameDetail | null>(null);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
 
   // 加载游戏详情
+  const loadGameDetail = async () => {
+    if (!id) return;
+
+    setLoading(true);
+    try {
+      const data = await gameApi.getDetail(Number(id));
+      setGame(data);
+    } catch (err) {
+      console.error('加载游戏详情失败:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const loadGameDetail = async () => {
-      if (!id) {
-        setError('游戏ID无效');
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await gameApi.getDetail(Number(id));
-        setGame(data);
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : '加载游戏详情失败';
-        setError(errorMessage);
-        console.error('加载游戏详情失败:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadGameDetail();
   }, [id]);
 
+  // 编辑游戏
+  const handleEdit = async (data: UpdateGameRequest) => {
+    if (!id) return;
+
+    try {
+      await gameApi.update(Number(id), data);
+      setEditModalVisible(false);
+      await loadGameDetail();
+    } catch (err) {
+      console.error('更新游戏失败:', err);
+      throw err;
+    }
+  };
+
   // 删除游戏
   const handleDelete = async () => {
-    if (!id || !game) return;
-
-    if (!window.confirm(`确定要删除游戏 "${game.name}" 吗？`)) {
-      return;
-    }
+    if (!id) return;
 
     try {
       await gameApi.delete(Number(id));
-      alert('游戏删除成功');
+      setDeleteModalVisible(false);
       navigate('/games');
     } catch (err) {
       console.error('删除游戏失败:', err);
-      alert('删除游戏失败: ' + (err instanceof Error ? err.message : '未知错误'));
     }
   };
 
-  // 获取分类颜色
-  const getCategoryColor = (category: string): string => {
-    const colorMap: Record<string, string> = {
-      moba: 'blue',
-      fps: 'red',
-      rpg: 'purple',
-      strategy: 'green',
-      sports: 'orange',
-      racing: 'cyan',
-      puzzle: 'pink',
-      other: 'default',
-    };
-    return colorMap[category] || 'default';
-  };
-
-  // 加载中状态
   if (loading) {
     return (
       <div className={styles.container}>
-        <p>加载中...</p>
+        <div className={styles.loading}>加载中...</div>
       </div>
     );
   }
 
-  // 错误状态
-  if (error || !game) {
+  if (!game) {
     return (
       <div className={styles.container}>
-        <Card className={styles.errorCard}>
-          <h2>游戏未找到</h2>
-          <p>{error || `游戏 ID: ${id} 不存在`}</p>
-          <Button onClick={() => navigate('/games')}>返回游戏列表</Button>
-        </Card>
+        <div className={styles.error}>游戏不存在</div>
       </div>
     );
   }
@@ -141,97 +82,163 @@ export const GameDetail: React.FC = () => {
     <div className={styles.container}>
       {/* 头部 */}
       <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <Button variant="outlined" onClick={() => navigate('/games')}>
-            <ArrowLeftIcon />
-            返回列表
+        <Button variant="text" onClick={() => navigate('/games')} className={styles.backButton}>
+          ← 返回列表
+        </Button>
+        <div className={styles.headerActions}>
+          <Button variant="outlined" onClick={() => setEditModalVisible(true)}>
+            编辑
           </Button>
-          <h1 className={styles.title}>游戏详情</h1>
-        </div>
-        <div className={styles.headerRight}>
-          <Tag color={getCategoryColor(game.category) as any}>
-            {GAME_CATEGORY_TEXT[game.category as GameCategory] || game.category}
-          </Tag>
+          <Button variant="outlined" onClick={() => setDeleteModalVisible(true)}>
+            删除
+          </Button>
         </div>
       </div>
 
-      {/* 主要内容 */}
-      <div className={styles.content}>
-        {/* 基本信息 */}
-        <Card className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <h2 className={styles.sectionTitle}>基本信息</h2>
-            <div className={styles.sectionActions}>
-              <Button variant="outlined" onClick={() => console.log('编辑游戏')}>
-                <EditIcon />
-                编辑
-              </Button>
-              <Button variant="secondary" onClick={handleDelete}>
-                <TrashIcon />
-                删除
-              </Button>
-            </div>
-          </div>
-
-          <div className={styles.infoGrid}>
-            <div className={styles.infoItem}>
-              <span className={styles.infoLabel}>游戏ID</span>
-              <span className={styles.infoValue}>{game.id}</span>
-            </div>
-
-            <div className={styles.infoItem}>
-              <span className={styles.infoLabel}>游戏标识</span>
-              <span className={styles.infoValue}>{game.key}</span>
-            </div>
-
-            <div className={styles.infoItem}>
-              <span className={styles.infoLabel}>游戏名称</span>
-              <span className={styles.infoValue}>{game.name}</span>
-            </div>
-
-            <div className={styles.infoItem}>
-              <span className={styles.infoLabel}>分类</span>
-              <span className={styles.infoValue}>
-                <Tag color={getCategoryColor(game.category) as any}>
-                  {GAME_CATEGORY_TEXT[game.category as GameCategory] || game.category}
+      {/* 基本信息卡片 */}
+      <Card className={styles.infoCard}>
+        <div className={styles.gameHeader}>
+          {game.iconUrl && (
+            <img src={game.iconUrl} alt={game.name} className={styles.gameIcon} />
+          )}
+          <div className={styles.gameInfo}>
+            <div className={styles.gameName}>
+              {game.name}
+              {game.status && (
+                <Tag color={GAME_STATUS_COLOR[game.status] as any}>
+                  {GAME_STATUS_TEXT[game.status]}
                 </Tag>
+              )}
+            </div>
+            <div className={styles.gameMeta}>
+              <span className={styles.metaItem}>
+                <strong>游戏标识:</strong> {game.key}
+              </span>
+              <span className={styles.metaItem}>
+                <strong>分类:</strong> {GAME_CATEGORY_TEXT[game.category as keyof typeof GAME_CATEGORY_TEXT] || game.category}
+              </span>
+              <span className={styles.metaItem}>
+                <strong>ID:</strong> {game.id}
               </span>
             </div>
+            {game.tags && game.tags.length > 0 && (
+              <div className={styles.tags}>
+                {game.tags.map((tag) => (
+                  <Tag key={tag} className={styles.tag}>
+                    {tag}
+                  </Tag>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
 
-            <div className={styles.infoItem}>
-              <span className={styles.infoLabel}>图标URL</span>
-              <span className={styles.infoValue}>{game.iconUrl || '-'}</span>
+        {game.description && (
+          <div className={styles.description}>
+            <h3>游戏简介</h3>
+            <p>{game.description}</p>
+          </div>
+        )}
+
+        <div className={styles.timestamps}>
+          <div className={styles.timestamp}>
+            <span className={styles.timestampLabel}>创建时间:</span>
+            <span className={styles.timestampValue}>
+              {formatDateTime(game.createdAt)}
+              <span className={styles.relative}>({formatRelativeTime(game.createdAt)})</span>
+            </span>
+          </div>
+          <div className={styles.timestamp}>
+            <span className={styles.timestampLabel}>更新时间:</span>
+            <span className={styles.timestampValue}>
+              {formatDateTime(game.updatedAt)}
+              <span className={styles.relative}>({formatRelativeTime(game.updatedAt)})</span>
+            </span>
+          </div>
+        </div>
+      </Card>
+
+      {/* 统计信息卡片 */}
+      {game.stats && (
+        <Card className={styles.statsCard}>
+          <h3 className={styles.cardTitle}>统计数据</h3>
+          <div className={styles.statsGrid}>
+            <div className={styles.statItem}>
+              <div className={styles.statLabel}>陪玩师数量</div>
+              <div className={styles.statValue}>{game.stats.totalPlayers}</div>
             </div>
-
-            <div className={styles.infoItem}>
-              <span className={styles.infoLabel}>创建时间</span>
-              <span className={styles.infoValue}>{formatDateTime(game.createdAt)}</span>
+            <div className={styles.statItem}>
+              <div className={styles.statLabel}>订单数量</div>
+              <div className={styles.statValue}>{game.stats.totalOrders}</div>
             </div>
-
-            <div className={styles.infoItem}>
-              <span className={styles.infoLabel}>更新时间</span>
-              <span className={styles.infoValue}>{formatDateTime(game.updatedAt)}</span>
+            <div className={styles.statItem}>
+              <div className={styles.statLabel}>总收入</div>
+              <div className={styles.statValue}>
+                {formatCurrency(game.stats.totalRevenue)}
+              </div>
+            </div>
+            <div className={styles.statItem}>
+              <div className={styles.statLabel}>平均评分</div>
+              <div className={styles.statValue}>
+                {game.stats.avgRating.toFixed(1)} ⭐
+              </div>
             </div>
           </div>
-
-          {game.description && (
-            <div className={styles.descriptionSection}>
-              <h3 className={styles.subTitle}>游戏描述</h3>
-              <p className={styles.description}>{game.description}</p>
-            </div>
-          )}
         </Card>
+      )}
 
-        {/* 游戏图标预览 */}
-        {game.iconUrl && (
-          <Card className={styles.section}>
-            <h2 className={styles.sectionTitle}>图标预览</h2>
-            <div className={styles.iconPreview}>
-              <img src={game.iconUrl} alt={game.name} className={styles.gameIcon} />
-            </div>
-          </Card>
+      {/* 热门陪玩师卡片 */}
+      {game.topPlayers && game.topPlayers.length > 0 && (
+        <Card className={styles.playersCard}>
+          <h3 className={styles.cardTitle}>热门陪玩师</h3>
+          <div className={styles.playersList}>
+            {game.topPlayers.map((player) => (
+              <div
+                key={player.id}
+                className={styles.playerItem}
+                onClick={() => navigate(`/players/${player.id}`)}
+              >
+                {player.avatarUrl && (
+                  <img src={player.avatarUrl} alt={player.nickname} className={styles.playerAvatar} />
+                )}
+                <div className={styles.playerInfo}>
+                  <div className={styles.playerName}>{player.nickname}</div>
+                  <div className={styles.playerRating}>⭐ {player.rating.toFixed(1)}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* 编辑Modal */}
+      <GameFormModal
+        visible={editModalVisible}
+        game={game}
+        onClose={() => setEditModalVisible(false)}
+        onSubmit={handleEdit}
+      />
+
+      {/* 删除确认Modal */}
+      <Modal
+        visible={deleteModalVisible}
+        title="确认删除"
+        onClose={() => setDeleteModalVisible(false)}
+        onOk={handleDelete}
+        onCancel={() => setDeleteModalVisible(false)}
+        okText="确定删除"
+        cancelText="取消"
+        width={400}
+      >
+        <p>确定要删除游戏 "{game.name}" 吗？此操作不可恢复。</p>
+        {game.stats && game.stats.totalOrders > 0 && (
+          <p className={styles.warning}>
+            ⚠️ 该游戏已有 {game.stats.totalOrders} 个订单，删除可能影响历史数据。
+          </p>
         )}
-      </div>
+      </Modal>
     </div>
   );
 };
+
+export default GameDetail;

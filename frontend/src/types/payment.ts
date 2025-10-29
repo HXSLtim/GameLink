@@ -1,5 +1,7 @@
 import type { BaseEntity } from './user';
 import type { Currency } from './order';
+import type { IconProps } from '../components/Icons/icons';
+import { WechatPayIcon, AlipayIcon, BalanceIcon } from '../components/Icons/icons';
 
 /**
  * 支付方式枚举
@@ -12,31 +14,45 @@ export type PaymentMethod = 'wechat' | 'alipay' | 'balance';
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded' | 'cancelled';
 
 /**
- * 支付实体 - 与后端 model.Payment 保持一致
+ * 支付实体 - 与后端 model.Payment 保持一致（camelCase）
  */
 export interface Payment extends BaseEntity {
   orderId: number;
   userId: number;
+  method: PaymentMethod;
   amountCents: number;
   currency?: Currency;
-  method: string;
-  status: string;
-  transactionId?: string;
-  providerTxId?: string;
+  status: PaymentStatus;
+  providerTradeNo?: string;
+  providerRaw?: any; // 第三方支付返回的原始数据
+  paidAt?: string;
+  refundedAt?: string;
 }
 
 /**
  * 支付详情（包含扩展信息）
  */
 export interface PaymentDetail extends Payment {
+  // 关联订单信息
   order?: {
     id: number;
-    orderNo?: string;
     title?: string;
+    status?: string;
+    userId?: number;
+    playerId?: number;
   };
+  // 关联用户信息
   user?: {
     id: number;
     name: string;
+    phone?: string;
+    email?: string;
+  };
+  // 退款信息
+  refundInfo?: {
+    refundAmount: number;
+    refundReason: string;
+    refundedAt: string;
   };
 }
 
@@ -119,12 +135,12 @@ export const PAYMENT_METHOD_TEXT: Record<PaymentMethod, string> = {
 };
 
 /**
- * 支付方式图标
+ * 支付方式图标（SVG 组件）
  */
-export const PAYMENT_METHOD_ICON: Record<PaymentMethod, string> = {
-  wechat: '💚',
-  alipay: '💙',
-  balance: '💰',
+export const PAYMENT_METHOD_ICON: Record<PaymentMethod, React.FC<IconProps>> = {
+  wechat: WechatPayIcon,
+  alipay: AlipayIcon,
+  balance: BalanceIcon,
 };
 
 /**

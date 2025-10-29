@@ -14,6 +14,11 @@ export type GameCategory =
   | 'other';
 
 /**
+ * 游戏状态枚举
+ */
+export type GameStatus = 'active' | 'inactive' | 'maintenance';
+
+/**
  * 游戏实体 - 与后端 model.Game 保持一致
  */
 export interface Game extends BaseEntity {
@@ -22,6 +27,31 @@ export interface Game extends BaseEntity {
   category: string;
   iconUrl?: string;
   description?: string;
+  status?: GameStatus; // 游戏状态
+  tags?: string[]; // 游戏标签
+  playerCount?: number; // 玩家数量（统计）
+  orderCount?: number; // 订单数量（统计）
+  popularityScore?: number; // 热度评分
+}
+
+/**
+ * 游戏详情（包含扩展信息）
+ */
+export interface GameDetail extends Game {
+  // 统计信息
+  stats?: {
+    totalPlayers: number;
+    totalOrders: number;
+    totalRevenue: number;
+    avgRating: number;
+  };
+  // 热门陪玩师
+  topPlayers?: Array<{
+    id: number;
+    nickname: string;
+    avatarUrl?: string;
+    rating: number;
+  }>;
 }
 
 /**
@@ -31,8 +61,9 @@ export interface GameListQuery {
   page?: number;
   pageSize?: number;
   category?: string;
+  status?: GameStatus;
   keyword?: string;
-  sortBy?: 'createdAt' | 'updatedAt' | 'name';
+  sortBy?: 'createdAt' | 'updatedAt' | 'name' | 'popularityScore';
   sortOrder?: 'asc' | 'desc';
 }
 
@@ -45,6 +76,8 @@ export interface CreateGameRequest {
   category: string;
   iconUrl?: string;
   description?: string;
+  status?: GameStatus;
+  tags?: string[];
 }
 
 /**
@@ -56,6 +89,25 @@ export interface UpdateGameRequest {
   category?: string;
   iconUrl?: string;
   description?: string;
+  status?: GameStatus;
+  tags?: string[];
+}
+
+/**
+ * 批量操作请求
+ */
+export interface BulkGameRequest {
+  ids: number[];
+  action: 'delete' | 'activate' | 'deactivate' | 'maintenance';
+}
+
+/**
+ * 批量操作结果
+ */
+export interface BulkGameResult {
+  success: number;
+  failed: number;
+  errors?: Array<{ id: number; error: string }>;
 }
 
 /**
@@ -70,6 +122,24 @@ export const GAME_CATEGORY_TEXT: Record<GameCategory, string> = {
   racing: '竞速',
   puzzle: '益智',
   other: '其他',
+};
+
+/**
+ * 游戏状态显示文本
+ */
+export const GAME_STATUS_TEXT: Record<GameStatus, string> = {
+  active: '正常',
+  inactive: '已下架',
+  maintenance: '维护中',
+};
+
+/**
+ * 游戏状态颜色
+ */
+export const GAME_STATUS_COLOR: Record<GameStatus, string> = {
+  active: 'green',
+  inactive: 'default',
+  maintenance: 'orange',
 };
 
 /**

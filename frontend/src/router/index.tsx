@@ -6,7 +6,7 @@ import { OrderList, OrderDetail } from 'pages/Orders';
 import { GameList, GameDetail } from 'pages/Games';
 import { PlayerList } from 'pages/Players';
 import { UserList, UserDetail } from 'pages/Users';
-import { PaymentList } from 'pages/Payments';
+import { PaymentList, PaymentDetailPage } from 'pages/Payments';
 import { ReviewList } from 'pages/Reviews';
 import { ReportDashboard } from 'pages/Reports';
 import { PermissionList } from 'pages/Permissions';
@@ -69,6 +69,10 @@ export const router = createBrowserRouter([
           {
             path: 'payments',
             element: <PaymentList />,
+          },
+          {
+            path: 'payments/:id',
+            element: <PaymentDetailPage />,
           },
           {
             path: 'reviews',

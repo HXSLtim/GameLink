@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DataTable, Button, Input, Select, Tag, Modal } from '../../components';
+import { DataTable, Button, Input, Select, Tag, Modal, SimpleRating, getRatingColor } from '../../components';
 import type { FilterConfig } from '../../components/DataTable';
 import type { TableColumn } from '../../components/Table/Table';
 import { reviewApi } from '../../services/api/review';
@@ -147,25 +147,6 @@ export const ReviewList: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryParams.page, queryParams.pageSize]);
 
-  // 评分格式化
-  const formatRating = (rating: number): string => {
-    const ratingMap: Record<number, string> = {
-      1: '⭐ 非常差',
-      2: '⭐⭐ 较差',
-      3: '⭐⭐⭐ 一般',
-      4: '⭐⭐⭐⭐ 满意',
-      5: '⭐⭐⭐⭐⭐ 非常满意',
-    };
-    return ratingMap[rating] || `${rating} 星`;
-  };
-
-  // 评分颜色
-  const getRatingColor = (rating: number): string => {
-    if (rating >= 4) return 'green';
-    if (rating >= 3) return 'blue';
-    if (rating >= 2) return 'orange';
-    return 'red';
-  };
 
   // 表格列定义
   const columns: TableColumn<Review>[] = [
@@ -231,7 +212,7 @@ export const ReviewList: React.FC = () => {
       key: 'rating',
       width: '150px',
       render: (_: unknown, record: Review) => (
-        <Tag color={getRatingColor(record.rating) as any}>{formatRating(record.rating)}</Tag>
+        <SimpleRating value={record.rating} size={16} />
       ),
     },
     {

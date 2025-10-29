@@ -11,6 +11,7 @@ import {
 } from '../../components';
 import type { FilterConfig } from '../../components/DataTable';
 import type { TableColumn } from '../../components/Table/Table';
+import { PhoneIcon, EmailIcon } from '../../components/Icons/icons';
 import { userApi } from '../../services/api/user';
 import type { User, UserListQuery, CreateUserRequest, UpdateUserRequest } from '../../types/user';
 import { formatDateTime, formatRelativeTime } from '../../utils/formatters';
@@ -151,8 +152,18 @@ export const UserList: React.FC = () => {
           <div className={styles.userDetails}>
             <div className={styles.userName}>{record.name}</div>
             <div className={styles.userContact}>
-              {record.phone && <span>📱 {record.phone}</span>}
-              {record.email && <span>✉️ {record.email}</span>}
+              {record.phone && (
+                <span className={styles.contactItem}>
+                  <PhoneIcon size={14} />
+                  {record.phone}
+                </span>
+              )}
+              {record.email && (
+                <span className={styles.contactItem}>
+                  <EmailIcon size={14} />
+                  {record.email}
+                </span>
+              )}
             </div>
           </div>
         </div>

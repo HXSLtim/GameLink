@@ -17,6 +17,8 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-xl);
+  flex: 1;
+  min-width: 0; // 允许 flex 子元素缩小
 }
 
 .menuButton {
@@ -50,6 +52,67 @@
   font-weight: var(--font-weight-bold);
   color: var(--text-primary);
   letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+// Logo 和面包屑之间的分隔符
+.separator {
+  color: var(--text-tertiary);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-light);
+  margin: 0 var(--spacing-sm);
+}
+
+// 面包屑样式
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex-wrap: nowrap;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.breadcrumbItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+}
+
+.breadcrumbLink {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-weight: var(--font-weight-medium);
+  transition: color var(--duration-base) var(--ease-out);
+
+  &:hover {
+    color: var(--text-primary);
+  }
+}
+
+.breadcrumbLabel {
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-normal);
+}
+
+.breadcrumbCurrent {
+  color: var(--text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.breadcrumbSeparator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  opacity: 0.6;
+
+  svg {
+    width: var(--icon-size-sm);
+    height: var(--icon-size-sm);
+  }
 }
 
 .right {
@@ -232,6 +295,12 @@
   }
 
   .username {
+    display: none;
+  }
+
+  // 小屏幕隐藏面包屑
+  .separator,
+  .breadcrumb {
     display: none;
   }
 }

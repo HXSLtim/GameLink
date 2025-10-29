@@ -1,2 +1,2 @@
 export { GameList } from './GameList';
-export { GameDetail } from './GameDetail';
+export { default as GameDetail } from './GameDetail';

@@ -1,0 +1,59 @@
+.container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px;
+  background: #f0f5ff;
+  border: 1px solid #d9e6ff;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #333;
+}
+
+.selectedCount {
+  strong {
+    color: #1890ff;
+    font-weight: 600;
+    margin: 0 4px;
+  }
+}
+
+.totalCount {
+  color: #999;
+  font-size: 13px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dangerButton {
+  color: #ff4d4f !important;
+  border-color: #ff4d4f !important;
+  
+  &:hover {
+    background: #fff2f0 !important;
+  }
+}
+

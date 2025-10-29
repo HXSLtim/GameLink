@@ -1,0 +1,68 @@
+@import '../../styles/variables.less';
+
+.rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.star {
+  display: inline-block;
+  transition: transform var(--duration-base) var(--ease-out);
+  
+  &:hover {
+    transform: scale(1.1);
+  }
+  
+  // 实心星星使用当前颜色
+  &.filled {
+    color: inherit;
+  }
+  
+  // 空心星星使用次要文本颜色
+  &.outlined {
+    color: var(--text-tertiary);
+    opacity: 0.4;
+  }
+}
+
+.number {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  margin-left: var(--spacing-xs);
+}
+
+.text {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin-left: var(--spacing-xs);
+}
+
+.simpleRating {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  
+  .number {
+    margin-left: var(--spacing-xs);
+  }
+}
+
+// 评分颜色类（使用主题变量）
+.ratingExcellent {
+  color: var(--rating-excellent);
+}
+
+.ratingGood {
+  color: var(--rating-good);
+}
+
+.ratingAverage {
+  color: var(--rating-average);
+}
+
+.ratingPoor {
+  color: var(--rating-poor);
+}
+
