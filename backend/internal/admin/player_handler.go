@@ -119,6 +119,7 @@ func (h *PlayerHandler) CreatePlayer(c *gin.Context) {
 		UserID:             payload.UserID,
 		Nickname:           payload.Nickname,
 		Bio:                payload.Bio,
+		Rank:               payload.Rank,
 		HourlyRateCents:    payload.HourlyRateCents,
 		MainGameID:         payload.MainGameID,
 		VerificationStatus: model.VerificationStatus(payload.VerificationStatus),
@@ -169,6 +170,7 @@ func (h *PlayerHandler) UpdatePlayer(c *gin.Context) {
 	player, err := h.svc.UpdatePlayer(c.Request.Context(), id, service.UpdatePlayerInput{
 		Nickname:           payload.Nickname,
 		Bio:                payload.Bio,
+		Rank:               payload.Rank,
 		HourlyRateCents:    payload.HourlyRateCents,
 		MainGameID:         payload.MainGameID,
 		VerificationStatus: model.VerificationStatus(payload.VerificationStatus),
@@ -436,6 +438,7 @@ type CreatePlayerPayload struct {
 	UserID             uint64 `json:"user_id" binding:"required"`
 	Nickname           string `json:"nickname"`
 	Bio                string `json:"bio"`
+	Rank               string `json:"rank"`
 	HourlyRateCents    int64  `json:"hourly_rate_cents"`
 	MainGameID         uint64 `json:"main_game_id"`
 	VerificationStatus string `json:"verification_status" binding:"required"`
@@ -445,6 +448,7 @@ type CreatePlayerPayload struct {
 type UpdatePlayerPayload struct {
 	Nickname           string `json:"nickname"`
 	Bio                string `json:"bio"`
+	Rank               string `json:"rank"`
 	HourlyRateCents    int64  `json:"hourly_rate_cents"`
 	MainGameID         uint64 `json:"main_game_id"`
 	VerificationStatus string `json:"verification_status" binding:"required"`

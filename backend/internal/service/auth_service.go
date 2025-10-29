@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"net/mail"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -19,47 +20,47 @@ import (
 // 2. Token生成和验证
 // 3. 用户注册
 type AuthService struct {
-    userRepo   repository.UserRepository
-    jwtManager *auth.JWTManager
+	userRepo   repository.UserRepository
+	jwtManager *auth.JWTManager
 }
 
 // NewAuthService 创建认证服务
 func NewAuthService(userRepo repository.UserRepository, jwtManager *auth.JWTManager) *AuthService {
-    return &AuthService{
-        userRepo:   userRepo,
-        jwtManager: jwtManager,
-    }
+	return &AuthService{
+		userRepo:   userRepo,
+		jwtManager: jwtManager,
+	}
 }
 
 // GetUser returns a user by id (for /auth/me endpoint).
 func (s *AuthService) GetUser(ctx context.Context, id uint64) (*model.User, error) {
-    return s.userRepo.Get(ctx, id)
+	return s.userRepo.Get(ctx, id)
 }
 
 // Me verifies Authorization header and returns current user.
 func (s *AuthService) Me(ctx context.Context, authorizationHeader string) (*model.User, error) {
-    if authorizationHeader == "" {
-        return nil, errors.New("missing authorization header")
-    }
-    token, err := auth.ExtractTokenFromHeader(authorizationHeader)
-    if err != nil {
-        return nil, err
-    }
-    claims, err := s.jwtManager.VerifyToken(token)
-    if err != nil {
-        return nil, err
-    }
-    if auth.IsTokenExpired(claims) {
-        return nil, errors.New("token expired")
-    }
-    user, err := s.userRepo.Get(ctx, claims.UserID)
-    if err != nil {
-        return nil, err
-    }
-    if user.Status != model.UserStatusActive {
-        return nil, ErrUserDisabled
-    }
-    return user, nil
+	if authorizationHeader == "" {
+		return nil, errors.New("missing authorization header")
+	}
+	token, err := auth.ExtractTokenFromHeader(authorizationHeader)
+	if err != nil {
+		return nil, err
+	}
+	claims, err := s.jwtManager.VerifyToken(token)
+	if err != nil {
+		return nil, err
+	}
+	if auth.IsTokenExpired(claims) {
+		return nil, errors.New("token expired")
+	}
+	user, err := s.userRepo.Get(ctx, claims.UserID)
+	if err != nil {
+		return nil, err
+	}
+	if user.Status != model.UserStatusActive {
+		return nil, ErrUserDisabled
+	}
+	return user, nil
 }
 
 // LoginRequest 登录请求
@@ -111,22 +112,22 @@ func (s *AuthService) Login(ctx context.Context, req LoginRequest) (*LoginRespon
 		user, err = s.userRepo.FindByPhone(ctx, req.Username)
 	}
 
-    if err != nil {
-        if err == repository.ErrNotFound {
-            return nil, ErrInvalidCredentials
-        }
-        return nil, err
-    }
+	if err != nil {
+		if err == repository.ErrNotFound {
+			return nil, ErrInvalidCredentials
+		}
+		return nil, err
+	}
 
 	// 检查用户状态
-    if user.Status != model.UserStatusActive {
-        return nil, ErrUserDisabled
-    }
+	if user.Status != model.UserStatusActive {
+		return nil, ErrUserDisabled
+	}
 
 	// 验证密码
-    if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
-        return nil, ErrInvalidCredentials
-    }
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
+		return nil, ErrInvalidCredentials
+	}
 
 	// 生成JWT Token
 	token, err := s.jwtManager.GenerateToken(user.ID, string(user.Role))
@@ -227,9 +228,9 @@ func (s *AuthService) RefreshToken(ctx context.Context, tokenString string) (str
 		return "", err
 	}
 
-    if user.Status != model.UserStatusActive {
-        return "", ErrUserDisabled
-    }
+	if user.Status != model.UserStatusActive {
+		return "", ErrUserDisabled
+	}
 
 	// 刷新Token
 	newToken, err := s.jwtManager.RefreshToken(claims)
@@ -242,18 +243,18 @@ func (s *AuthService) RefreshToken(ctx context.Context, tokenString string) (str
 
 // validateRegisterInput 验证注册输入
 func validateRegisterInput(req RegisterRequest) error {
-    if req.Name == "" {
-        return errors.New("name is required")
-    }
-    if req.Email == "" && req.Phone == "" {
-        return errors.New("email or phone is required")
-    }
-    if req.Password == "" {
-        return errors.New("password is required")
-    }
-    if len(req.Password) < 6 {
-        return errors.New("password must be at least 6 characters")
-    }
+	if req.Name == "" {
+		return errors.New("name is required")
+	}
+	if req.Email == "" && req.Phone == "" {
+		return errors.New("email or phone is required")
+	}
+	if req.Password == "" {
+		return errors.New("password is required")
+	}
+	if len(req.Password) < 6 {
+		return errors.New("password must be at least 6 characters")
+	}
 	if req.Role == "" {
 		req.Role = model.RoleUser // 默认角色
 	}
@@ -262,8 +263,9 @@ func validateRegisterInput(req RegisterRequest) error {
 
 // isValidEmail 检查是否是有效的邮箱格式
 func isValidEmail(email string) bool {
-	// 简单的邮箱验证
-	return len(email) > 3 && email[len(email)-4:] == ".com" ||
-		len(email) > 3 && email[len(email)-3:] == ".cn" ||
-		len(email) > 6 && email[len(email)-7:] == ".org.cn"
+	if email == "" {
+		return false
+	}
+	_, err := mail.ParseAddress(email)
+	return err == nil
 }

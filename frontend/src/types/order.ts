@@ -78,7 +78,7 @@ export interface OrderDetail extends Order {
   // 审核记录
   reviews?: Array<{
     id: number;
-    result: 'approved' | 'rejected';
+    approved: boolean; // true=通过，false=拒绝
     reason?: string;
     comment?: string;
     reviewer_id: number;
@@ -106,29 +106,30 @@ export interface OrderListQuery {
 }
 
 /**
- * 创建订单请求
+ * 创建订单请求 - 与后端 Swagger 同步
  */
 export interface CreateOrderRequest {
   user_id: number;
   game_id: number;
-  title: string;
+  player_id?: number; // 可选：在创建时指定陪玩师
+  title?: string;
   description?: string;
   price_cents: number;
-  currency?: Currency;
+  currency: string; // 必填
   scheduled_start?: string;
   scheduled_end?: string;
 }
 
 /**
- * 更新订单请求
+ * 更新订单请求 - 与后端 Swagger 同步
  */
 export interface UpdateOrderRequest {
-  title?: string;
-  description?: string;
-  price_cents?: number;
-  currency?: Currency;
+  currency: string; // 必填
+  price_cents: number; // 必填
+  status: string; // 必填：订单状态
   scheduled_start?: string;
   scheduled_end?: string;
+  cancel_reason?: string; // 取消原因
 }
 
 /**
@@ -140,25 +141,24 @@ export interface AssignOrderRequest {
 }
 
 /**
- * 审核订单请求
+ * 审核订单请求 - 与后端 Swagger 同步
  */
 export interface ReviewOrderRequest {
-  result: 'approved' | 'rejected';
-  reason?: string;
-  comment?: string;
+  approved: boolean; // true=通过，false=拒绝
+  reason?: string; // 拒绝原因或备注
 }
 
 /**
- * 取消订单请求
+ * 取消订单请求 - 与后端 Swagger 同步
  */
 export interface CancelOrderRequest {
-  cancel_reason: string;
+  reason?: string; // 取消原因
 }
 
 /**
  * 订单统计数据
  */
-export interface OrderStatistics {
+export interface OrderStatsData {
   total: number;
   pending: number;
   confirmed: number;

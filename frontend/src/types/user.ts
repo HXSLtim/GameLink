@@ -63,13 +63,19 @@ export interface User extends BaseEntity {
  */
 export interface Player extends BaseEntity {
   user_id: number;
+  user?: User; // 关联用户信息
   nickname?: string;
   bio?: string;
+  rank?: string;
+  rating?: number;
   rating_average: number;
   rating_count: number;
   hourly_rate_cents: number;
   main_game_id?: number;
+  main_game?: { id: number; name: string }; // 关联游戏信息
   verification_status: VerificationStatus;
+  is_verified?: boolean;
+  is_available?: boolean;
 }
 
 /**
@@ -116,6 +122,7 @@ export interface PlayerListQuery {
   user_id?: number;
   main_game_id?: number;
   verification_status?: VerificationStatus;
+  is_verified?: boolean;
   min_rating?: number;
   max_rating?: number;
   min_hourly_rate?: number;

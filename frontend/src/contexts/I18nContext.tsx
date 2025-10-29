@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { zhCN, type TranslationKeys } from '../i18n/locales/zh-CN';
 import { enUS } from '../i18n/locales/en-US';
 

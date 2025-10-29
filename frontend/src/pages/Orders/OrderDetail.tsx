@@ -12,6 +12,14 @@ import {
 } from '../../utils/formatters';
 import styles from './OrderDetail.module.less';
 
+// 操作按钮的加载状态
+interface ActionLoading {
+  confirm?: boolean;
+  start?: boolean;
+  complete?: boolean;
+  cancel?: boolean;
+}
+
 const UserIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
     <path
@@ -31,12 +39,49 @@ const ClockIcon = () => (
   </svg>
 );
 
+const CheckIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+    <path d="M20 6L9 17L4 12" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const PlayIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+    <polygon
+      points="5 3 19 12 5 21 5 3"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const FlagIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+    <path
+      d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <line x1="4" y1="22" x2="4" y2="15" strokeWidth="2" />
+  </svg>
+);
+
+const XIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+    <line x1="18" y1="6" x2="6" y2="18" strokeWidth="2" strokeLinecap="round" />
+    <line x1="6" y1="6" x2="18" y2="18" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+);
+
 export const OrderDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [orderDetail, setOrderDetail] = useState<OrderDetailType | null>(null);
+  const [actionLoading, setActionLoading] = useState<ActionLoading>({});
 
   // 加载订单详情
   useEffect(() => {
@@ -63,6 +108,107 @@ export const OrderDetail: React.FC = () => {
 
     loadOrderDetail();
   }, [id]);
+
+  // 确认订单
+  const handleConfirmOrder = async () => {
+    if (!id || !orderDetail) return;
+
+    try {
+      setActionLoading({ ...actionLoading, confirm: true });
+      await orderApi.update(Number(id), {
+        currency: orderDetail.currency || 'CNY',
+        price_cents: orderDetail.price_cents,
+        status: OrderStatus.CONFIRMED,
+        scheduled_start: orderDetail.scheduled_start,
+        scheduled_end: orderDetail.scheduled_end,
+      });
+
+      // 重新加载订单详情
+      const data = await orderApi.getDetail(Number(id));
+      setOrderDetail(data);
+      alert('订单已确认');
+    } catch (err) {
+      console.error('确认订单失败:', err);
+      alert('确认订单失败: ' + (err instanceof Error ? err.message : '未知错误'));
+    } finally {
+      setActionLoading({ ...actionLoading, confirm: false });
+    }
+  };
+
+  // 开始服务
+  const handleStartService = async () => {
+    if (!id || !orderDetail) return;
+
+    try {
+      setActionLoading({ ...actionLoading, start: true });
+      await orderApi.update(Number(id), {
+        currency: orderDetail.currency || 'CNY',
+        price_cents: orderDetail.price_cents,
+        status: OrderStatus.IN_PROGRESS,
+        scheduled_start: orderDetail.scheduled_start,
+        scheduled_end: orderDetail.scheduled_end,
+      });
+
+      // 重新加载订单详情
+      const data = await orderApi.getDetail(Number(id));
+      setOrderDetail(data);
+      alert('服务已开始');
+    } catch (err) {
+      console.error('开始服务失败:', err);
+      alert('开始服务失败: ' + (err instanceof Error ? err.message : '未知错误'));
+    } finally {
+      setActionLoading({ ...actionLoading, start: false });
+    }
+  };
+
+  // 完成订单
+  const handleCompleteOrder = async () => {
+    if (!id || !orderDetail) return;
+
+    try {
+      setActionLoading({ ...actionLoading, complete: true });
+      await orderApi.update(Number(id), {
+        currency: orderDetail.currency || 'CNY',
+        price_cents: orderDetail.price_cents,
+        status: OrderStatus.COMPLETED,
+        scheduled_start: orderDetail.scheduled_start,
+        scheduled_end: orderDetail.scheduled_end,
+      });
+
+      // 重新加载订单详情
+      const data = await orderApi.getDetail(Number(id));
+      setOrderDetail(data);
+      alert('订单已完成');
+    } catch (err) {
+      console.error('完成订单失败:', err);
+      alert('完成订单失败: ' + (err instanceof Error ? err.message : '未知错误'));
+    } finally {
+      setActionLoading({ ...actionLoading, complete: false });
+    }
+  };
+
+  // 取消订单
+  const handleCancelOrder = async () => {
+    if (!id) return;
+
+    const reason = prompt('请输入取消原因:');
+    if (!reason) return;
+
+    try {
+      setActionLoading({ ...actionLoading, cancel: true });
+      await orderApi.cancel(Number(id), { reason });
+
+      // 重新加载订单详情
+      const data = await orderApi.getDetail(Number(id));
+      setOrderDetail(data);
+      alert('订单已取消');
+    } catch (err) {
+      console.error('取消订单失败:', err);
+      alert('取消订单失败: ' + (err instanceof Error ? err.message : '未知错误'));
+    } finally {
+      setActionLoading({ ...actionLoading, cancel: false });
+    }
+  };
 
   // 加载中状态
   if (loading) {
@@ -250,8 +396,8 @@ export const OrderDetail: React.FC = () => {
               {orderDetail.reviews.map((review) => (
                 <div key={review.id} className={styles.reviewItem}>
                   <div className={styles.reviewHeader}>
-                    <Tag color={review.result === 'approved' ? 'success' : 'error'}>
-                      {review.result === 'approved' ? '审核通过' : '审核拒绝'}
+                    <Tag color={review.approved ? 'success' : 'error'}>
+                      {review.approved ? '审核通过' : '审核拒绝'}
                     </Tag>
                     <span className={styles.reviewTime}>{formatDateTime(review.created_at)}</span>
                   </div>
@@ -284,23 +430,39 @@ export const OrderDetail: React.FC = () => {
           <h2 className={styles.sectionTitle}>订单操作</h2>
           <div className={styles.actions}>
             {orderDetail.status === OrderStatus.PENDING && (
-              <Button variant="primary" onClick={() => console.log('确认订单')}>
-                确认订单
+              <Button
+                variant="primary"
+                onClick={handleConfirmOrder}
+                disabled={actionLoading.confirm}
+              >
+                <CheckIcon />
+                {actionLoading.confirm ? '确认中...' : '确认订单'}
               </Button>
             )}
             {orderDetail.status === OrderStatus.CONFIRMED && (
-              <Button variant="primary" onClick={() => console.log('开始服务')}>
-                开始服务
+              <Button variant="primary" onClick={handleStartService} disabled={actionLoading.start}>
+                <PlayIcon />
+                {actionLoading.start ? '开始中...' : '开始服务'}
               </Button>
             )}
             {orderDetail.status === OrderStatus.IN_PROGRESS && (
-              <Button variant="primary" onClick={() => console.log('完成订单')}>
-                完成订单
+              <Button
+                variant="primary"
+                onClick={handleCompleteOrder}
+                disabled={actionLoading.complete}
+              >
+                <FlagIcon />
+                {actionLoading.complete ? '完成中...' : '完成订单'}
               </Button>
             )}
             {[OrderStatus.PENDING, OrderStatus.CONFIRMED].includes(orderDetail.status) && (
-              <Button variant="secondary" onClick={() => console.log('取消订单')}>
-                取消订单
+              <Button
+                variant="secondary"
+                onClick={handleCancelOrder}
+                disabled={actionLoading.cancel}
+              >
+                <XIcon />
+                {actionLoading.cancel ? '取消中...' : '取消订单'}
               </Button>
             )}
           </div>

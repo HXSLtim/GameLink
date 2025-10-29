@@ -8,7 +8,19 @@ export type TagColor =
   | 'error'
   | 'info'
   | 'pending'
-  | 'processing';
+  | 'processing'
+  | 'green'
+  | 'blue'
+  | 'red'
+  | 'orange'
+  | 'purple'
+  | 'cyan'
+  | 'magenta'
+  | 'yellow'
+  | 'lime'
+  | 'gold'
+  | 'volcano'
+  | 'geekblue';
 
 export interface TagProps {
   children: React.ReactNode;

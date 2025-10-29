@@ -22,3 +22,6 @@ export * from './payment';
 
 // 评价类型
 export * from './review';
+
+// 统计类型
+export * from './stats';

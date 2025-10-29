@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Tag, Badge } from '../../components';
 import { orderApi } from '../../services/api/order';
-import type { Order, OrderStatistics } from '../../types/order';
+import { statsApi } from '../../services/api/stats';
+import type { Order } from '../../types/order';
+import type { DashboardStats } from '../../types/stats';
 import { OrderStatus } from '../../types/order';
 import {
   formatOrderStatus,
@@ -44,19 +46,45 @@ const MoneyIcon = () => (
   </svg>
 );
 
+const UserIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+    <path
+      d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <circle cx="12" cy="7" r="4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const PlayerIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+    <path
+      d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <circle cx="9" cy="7" r="4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path
+      d="M23 21V19C23 18.1645 22.7275 17.3645 22.2297 16.7262C21.7318 16.0879 21.0415 15.6474 20.2605 15.4772"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M16 3.13C16.7819 3.29965 17.4733 3.74032 17.9719 4.37917C18.4704 5.01802 18.7429 5.81924 18.7429 6.655C18.7429 7.49076 18.4704 8.29198 17.9719 8.93083C17.4733 9.56968 16.7819 10.0103 16 10.18"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [statistics, setStatistics] = useState<OrderStatistics>({
-    total: 0,
-    pending: 0,
-    confirmed: 0,
-    in_progress: 0,
-    completed: 0,
-    canceled: 0,
-    refunded: 0,
-    today_orders: 0,
-    today_revenue: 0,
-  });
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -66,16 +94,14 @@ export const Dashboard: React.FC = () => {
       try {
         setLoading(true);
 
-        // 加载统计数据
-        const stats = await orderApi.getStatistics();
-        setStatistics(stats);
+        // 加载 Dashboard 完整统计数据
+        const stats = await statsApi.getDashboard();
+        setDashboardStats(stats);
 
         // 加载最近订单
         const ordersResult = await orderApi.getList({
           page: 1,
           page_size: 5,
-          sort_by: 'created_at',
-          sort_order: 'desc',
         });
         setRecentOrders(ordersResult.list || []);
       } catch (error) {
@@ -99,42 +125,58 @@ export const Dashboard: React.FC = () => {
     );
   }
 
+  if (!dashboardStats) {
+    return (
+      <div className={styles.container}>
+        <h1 className={styles.title}>仪表盘</h1>
+        <p>加载数据失败</p>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>仪表盘</h1>
 
-      {/* 统计卡片 */}
+      {/* 基础统计卡片 */}
       <div className={styles.statsGrid}>
+        <Card className={styles.statCard}>
+          <div className={styles.statIcon}>
+            <UserIcon />
+          </div>
+          <div className={styles.statContent}>
+            <div className={styles.statLabel}>总用户数</div>
+            <div className={styles.statValue}>{dashboardStats.totalUsers}</div>
+          </div>
+        </Card>
+
+        <Card className={styles.statCard}>
+          <div className={styles.statIcon}>
+            <PlayerIcon />
+          </div>
+          <div className={styles.statContent}>
+            <div className={styles.statLabel}>总陪玩师</div>
+            <div className={styles.statValue}>{dashboardStats.totalPlayers}</div>
+          </div>
+        </Card>
+
         <Card className={styles.statCard}>
           <div className={styles.statIcon}>
             <StatsIcon />
           </div>
           <div className={styles.statContent}>
+            <div className={styles.statLabel}>总游戏数</div>
+            <div className={styles.statValue}>{dashboardStats.totalGames}</div>
+          </div>
+        </Card>
+
+        <Card className={styles.statCard}>
+          <div className={styles.statIcon}>
+            <OrderIcon />
+          </div>
+          <div className={styles.statContent}>
             <div className={styles.statLabel}>总订单数</div>
-            <div className={styles.statValue}>{statistics.total}</div>
-          </div>
-        </Card>
-
-        <Card className={styles.statCard}>
-          <div className={styles.statIcon}>
-            <OrderIcon />
-          </div>
-          <div className={styles.statContent}>
-            <div className={styles.statLabel}>今日订单</div>
-            <div className={styles.statValue}>{statistics.today_orders}</div>
-          </div>
-        </Card>
-
-        <Card className={styles.statCard}>
-          <div className={styles.statIcon}>
-            <OrderIcon />
-          </div>
-          <div className={styles.statContent}>
-            <div className={styles.statLabel}>进行中</div>
-            <div className={styles.statValue}>
-              {statistics.in_progress > 0 && <Badge count={statistics.in_progress} />}
-              {statistics.in_progress}
-            </div>
+            <div className={styles.statValue}>{dashboardStats.totalOrders}</div>
           </div>
         </Card>
 
@@ -143,10 +185,86 @@ export const Dashboard: React.FC = () => {
             <MoneyIcon />
           </div>
           <div className={styles.statContent}>
-            <div className={styles.statLabel}>今日收入</div>
-            <div className={styles.statValue}>{formatCurrency(statistics.today_revenue)}</div>
+            <div className={styles.statLabel}>总收入</div>
+            <div className={styles.statValue}>
+              {formatCurrency(dashboardStats.totalPaidAmountCents)}
+            </div>
           </div>
         </Card>
+      </div>
+
+      {/* 订单状态统计 */}
+      <div className={styles.orderStatsSection}>
+        <h2 className={styles.sectionTitle}>订单状态</h2>
+        <div className={styles.orderStatsGrid}>
+          <Card className={`${styles.orderStatCard} ${styles.pending}`}>
+            <div
+              className={styles.orderStatWrapper}
+              onClick={() => navigate(`/orders?status=${OrderStatus.PENDING}`)}
+            >
+              <div className={styles.orderStatContent}>
+                <div className={styles.orderStatLabel}>待处理</div>
+                <div className={styles.orderStatValue}>
+                  {dashboardStats.ordersByStatus?.pending || 0}
+                </div>
+              </div>
+              <div className={styles.orderStatIcon}>
+                <Badge count={dashboardStats.ordersByStatus?.pending || 0} />
+              </div>
+            </div>
+          </Card>
+
+          <Card className={`${styles.orderStatCard} ${styles.inProgress}`}>
+            <div
+              className={styles.orderStatWrapper}
+              onClick={() => navigate(`/orders?status=${OrderStatus.IN_PROGRESS}`)}
+            >
+              <div className={styles.orderStatContent}>
+                <div className={styles.orderStatLabel}>进行中</div>
+                <div className={styles.orderStatValue}>
+                  {dashboardStats.ordersByStatus?.in_progress || 0}
+                </div>
+              </div>
+              <div className={styles.orderStatIcon}>
+                <Badge count={dashboardStats.ordersByStatus?.in_progress || 0} />
+              </div>
+            </div>
+          </Card>
+
+          <Card className={`${styles.orderStatCard} ${styles.completed}`}>
+            <div
+              className={styles.orderStatWrapper}
+              onClick={() => navigate(`/orders?status=${OrderStatus.COMPLETED}`)}
+            >
+              <div className={styles.orderStatContent}>
+                <div className={styles.orderStatLabel}>已完成</div>
+                <div className={styles.orderStatValue}>
+                  {dashboardStats.ordersByStatus?.completed || 0}
+                </div>
+              </div>
+              <div className={styles.orderStatIcon}>
+                <Badge count={dashboardStats.ordersByStatus?.completed || 0} />
+              </div>
+            </div>
+          </Card>
+
+          <Card className={`${styles.orderStatCard} ${styles.canceled}`}>
+            <div
+              className={styles.orderStatWrapper}
+              onClick={() => navigate(`/orders?status=${OrderStatus.CANCELED}`)}
+            >
+              <div className={styles.orderStatContent}>
+                <div className={styles.orderStatLabel}>已取消</div>
+                <div className={styles.orderStatValue}>
+                  {dashboardStats.ordersByStatus?.canceled || 0}
+                </div>
+              </div>
+              <div className={styles.orderStatIcon}>
+                <Badge count={dashboardStats.ordersByStatus?.canceled || 0} />
+              </div>
+            </div>
+          </Card>
+        </div>
       </div>
 
       {/* 快捷入口 */}
@@ -173,7 +291,9 @@ export const Dashboard: React.FC = () => {
               </div>
               <div className={styles.actionTitle}>
                 待处理订单
-                {statistics.pending > 0 && <Badge count={statistics.pending} />}
+                {dashboardStats.ordersByStatus?.pending > 0 && (
+                  <Badge count={dashboardStats.ordersByStatus.pending} />
+                )}
               </div>
               <div className={styles.actionDesc}>处理需要确认的订单</div>
             </div>

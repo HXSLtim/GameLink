@@ -92,11 +92,11 @@ export const RATING_TEXT: Record<number, string> = {
 };
 
 /**
- * 获取评分颜色
+ * 获取评分颜色（使用CSS变量，符合黑白设计风格）
  */
 export const getRatingColor = (rating: number): string => {
-  if (rating >= 4.5) return '#52c41a'; // 绿色
-  if (rating >= 3.5) return '#faad14'; // 橙色
-  if (rating >= 2.5) return '#ff7a45'; // 橙红
-  return '#f5222d'; // 红色
+  if (rating >= 4.5) return 'var(--rating-excellent)'; // 优秀 - 黑色/白色
+  if (rating >= 3.5) return 'var(--rating-good)'; // 良好 - 深灰/浅灰
+  if (rating >= 2.5) return 'var(--rating-average)'; // 一般 - 中灰
+  return 'var(--rating-poor)'; // 较差 - 浅灰/深灰
 };

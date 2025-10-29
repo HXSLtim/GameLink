@@ -26,11 +26,15 @@ export SEED_ENABLED=true
 ## 种子内容
 
 - 游戏：示例游戏（英雄联盟、DOTA 2、无畏契约）
-- 用户：
-  - `demo.user@gamelink.com` / `User@123456`（普通用户）
-  - `pro.player@gamelink.com` / `Player@123456`（陪玩师账号）
-- 陪玩师档案：绑定上述陪玩师账号，含基础简介与评分
-- 订单 & 支付：一条已完成的示例订单以及对应支付记录
-- 评价：对该订单的五星评价
+- 用户（均为演示用途，密码仅限本地环境）：
+  1. `demo.user@gamelink.com` / `User@123456`（普通用户）
+  2. `pro.player@gamelink.com` / `Player@123456`（陪玩师账号）
+  3. `vip.user@gamelink.com` / `Vip@123456`（高级会员用户）
+  4. `new.user@gamelink.com` / `User@123789`（体验用户）
+  5. `streamer@gamelink.com` / `Player@654321`（陪玩主播账号）
+- 陪玩师档案：为陪玩师账号生成两条档案，涵盖 MOBA/FPS 不同领域
+- 订单：4 笔不同状态的订单（已完成、进行中、待开始、已取消）
+- 支付：针对订单生成对应支付记录（包含已支付、待支付、已退款等状态）
+- 评价：示例评价 2 条，对应不同订单状态
 
 如需定制更多演示数据，可在 `internal/db/seed.go` 中扩展。

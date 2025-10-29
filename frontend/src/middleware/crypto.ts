@@ -1,4 +1,4 @@
-import { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { CryptoUtil } from '../utils/crypto';
 
 /**

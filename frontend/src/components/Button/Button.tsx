@@ -2,8 +2,8 @@ import { ButtonHTMLAttributes, ReactNode } from 'react';
 import styles from './Button.module.less';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  /** 按钮内容 */
-  children: ReactNode;
+  /** 按钮内容 (可选，支持仅图标按钮) */
+  children?: ReactNode;
   /** 按钮类型 */
   variant?: 'primary' | 'secondary' | 'text' | 'outlined';
   /** 按钮尺寸 */

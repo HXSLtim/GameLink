@@ -3,7 +3,7 @@ import { Login } from 'pages/Login';
 import { Register } from 'pages/Register';
 import { Dashboard } from 'pages/Dashboard';
 import { OrderList, OrderDetail } from 'pages/Orders';
-import { GameList } from 'pages/Games';
+import { GameList, GameDetail } from 'pages/Games';
 import { PlayerList } from 'pages/Players';
 import { UserList, UserDetail } from 'pages/Users';
 import { PaymentList } from 'pages/Payments';
@@ -48,6 +48,10 @@ export const router = createBrowserRouter([
           {
             path: 'games',
             element: <GameList />,
+          },
+          {
+            path: 'games/:id',
+            element: <GameDetail />,
           },
           {
             path: 'players',

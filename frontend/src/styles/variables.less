@@ -22,52 +22,67 @@
 
   // 文本颜色（浅色模式）
   --text-primary: var(--color-black);
-  --text-secondary: #666666;
-  --text-tertiary: #999999;
-  --text-disabled: #cccccc;
+  --text-secondary: var(--color-gray-500);
+  --text-tertiary: var(--color-gray-400);
+  --text-disabled: var(--color-gray-300);
   --text-inverse: var(--color-white);
 
   // 背景颜色（浅色模式）
   --bg-primary: var(--color-white);
-  --bg-secondary: #fafafa;
-  --bg-tertiary: #f5f5f5;
+  --bg-secondary: var(--color-gray-100);
+  --bg-tertiary: var(--color-gray-100);
   --bg-inverse: var(--color-black);
-  --bg-error: #fff5f5;
+  --bg-error: var(--color-white);
 
   // 边框颜色
   --border-color: var(--color-black);
-  --border-color-light: #e0e0e0;
+  --border-color-light: var(--color-gray-200);
 
   // 交互效果颜色
   --ripple-dark: rgba(0, 0, 0, 0.1); // 浅色模式的涟漪效果
   --ripple-light: rgba(255, 255, 255, 0.2); // 深色背景的涟漪效果
   --ripple-subtle: rgba(0, 0, 0, 0.05); // 微弱的涟漪效果
+
+  // 遮罩颜色
+  --modal-mask: rgba(0, 0, 0, 0.5); // 模态框遮罩
+
+  // 评分颜色（黑白风格）
+  --rating-excellent: var(--color-black); // 4.5+ 分
+  --rating-good: var(--color-gray-700); // 3.5-4.4 分
+  --rating-average: var(--color-gray-500); // 2.5-3.4 分
+  --rating-poor: var(--color-gray-300); // < 2.5 分
 }
 
 // ==================== 深色模式 ====================
 body.dark-theme {
   // 文本颜色（深色模式）
   --text-primary: var(--color-white);
-  --text-secondary: #cccccc;
-  --text-tertiary: #999999;
-  --text-disabled: #666666;
+  --text-secondary: var(--color-gray-300);
+  --text-tertiary: var(--color-gray-400);
+  --text-disabled: var(--color-gray-600);
   --text-inverse: var(--color-black);
 
   // 背景颜色（深色模式）
-  --bg-primary: #0a0a0a;
-  --bg-secondary: #1a1a1a;
-  --bg-tertiary: #262626;
+  --bg-primary: var(--color-gray-900);
+  --bg-secondary: var(--color-gray-800);
+  --bg-tertiary: var(--color-gray-700);
   --bg-inverse: var(--color-white);
-  --bg-error: #3a0a0a;
+  --bg-error: #2a0a0a; // 保持轻微的红色调用于错误背景
 
   // 边框颜色
   --border-color: var(--color-white);
-  --border-color-light: #333333;
+  --border-color-light: var(--color-gray-600);
 
   // 交互效果颜色（深色模式）
   --ripple-dark: rgba(255, 255, 255, 0.1); // 深色模式的涟漪效果
   --ripple-light: rgba(0, 0, 0, 0.2); // 浅色背景的涟漪效果
   --ripple-subtle: rgba(255, 255, 255, 0.05); // 微弱的涟漪效果
+
+  // 评分颜色（深色模式）
+  --rating-excellent: var(--color-white); // 4.5+ 分
+  --rating-good: var(--color-gray-200); // 3.5-4.4 分
+  --rating-average: var(--color-gray-400); // 2.5-3.4 分
+  --rating-poor: var(--color-gray-600); // < 2.5 分
 }
 
 // ==================== 间距系统 ====================
@@ -151,9 +166,14 @@ body.dark-theme {
   --shadow-xl: 16px 16px 0 var(--color-black);
 
   // 柔和阴影（可选）
-  --shadow-soft-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
-  --shadow-soft-base: 0 4px 16px rgba(0, 0, 0, 0.15);
-  --shadow-soft-lg: 0 8px 24px rgba(0, 0, 0, 0.2);
+  --shadow-soft-sm: 0 2px 8px rgba(0, 0, 0, var(--shadow-alpha-sm));
+  --shadow-soft-base: 0 4px 16px rgba(0, 0, 0, var(--shadow-alpha-base));
+  --shadow-soft-lg: 0 8px 24px rgba(0, 0, 0, var(--shadow-alpha-lg));
+
+  // 柔和阴影透明度变量
+  --shadow-alpha-sm: 0.1;
+  --shadow-alpha-base: 0.15;
+  --shadow-alpha-lg: 0.2;
 }
 
 // ==================== 动画系统 ====================

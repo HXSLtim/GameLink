@@ -8,7 +8,7 @@ import type {
   AssignOrderRequest,
   ReviewOrderRequest,
   CancelOrderRequest,
-  OrderStatistics,
+  OrderStatsData,
 } from '../../types/order';
 import type { ListResult } from '../../types/api';
 
@@ -87,8 +87,24 @@ export const orderApi = {
   /**
    * 获取订单统计
    */
-  getStatistics: (): Promise<OrderStatistics> => {
+  getStatistics: (): Promise<OrderStatsData> => {
     return apiClient.get('/api/v1/admin/stats/orders');
+  },
+
+  /**
+   * 获取用户的订单列表
+   */
+  getUserOrders: (
+    userId: number,
+    params?: {
+      page?: number;
+      page_size?: number;
+      status?: string[];
+      date_from?: string;
+      date_to?: string;
+    },
+  ): Promise<OrderListResponse> => {
+    return apiClient.get(`/api/v1/admin/users/${userId}/orders`, { params });
   },
 };
 

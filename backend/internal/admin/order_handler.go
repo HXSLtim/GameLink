@@ -117,6 +117,129 @@ func (h *OrderHandler) AssignOrder(c *gin.Context) {
 	writeJSON(c, http.StatusOK, model.APIResponse[*model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: order})
 }
 
+// ConfirmOrder 确认订单。
+// @Summary      确认订单
+// @Description  将订单状态从 pending 置为 confirmed
+// @Tags         Admin/Orders
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        id       path  int               true  "订单ID"
+// @Param        request  body  orderNotePayload  false "备注（可选）"
+// @Success      200  {object}  map[string]any
+// @Failure      404  {object}  map[string]any
+// @Router       /admin/orders/{id}/confirm [post]
+func (h *OrderHandler) ConfirmOrder(c *gin.Context) {
+	id, err := parseUintParam(c, "id")
+	if err != nil {
+		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		return
+	}
+	var payload orderNotePayload
+	if c.Request.ContentLength > 0 {
+		if bindErr := c.ShouldBindJSON(&payload); bindErr != nil {
+			writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+			return
+		}
+	}
+	order, err := h.svc.ConfirmOrder(c.Request.Context(), id, payload.Note)
+	if errors.Is(err, service.ErrValidation) {
+		_ = c.Error(service.ErrValidation)
+		return
+	}
+	if errors.Is(err, service.ErrNotFound) {
+		_ = c.Error(service.ErrNotFound)
+		return
+	}
+	if err != nil {
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(c, http.StatusOK, model.APIResponse[*model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: order})
+}
+
+// StartOrder 开始服务。
+// @Summary      开始服务
+// @Description  将订单状态从 confirmed 置为 in_progress，并记录开始时间
+// @Tags         Admin/Orders
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        id       path  int               true  "订单ID"
+// @Param        request  body  orderNotePayload  false "备注（可选）"
+// @Success      200  {object}  map[string]any
+// @Failure      404  {object}  map[string]any
+// @Router       /admin/orders/{id}/start [post]
+func (h *OrderHandler) StartOrder(c *gin.Context) {
+	id, err := parseUintParam(c, "id")
+	if err != nil {
+		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		return
+	}
+	var payload orderNotePayload
+	if c.Request.ContentLength > 0 {
+		if bindErr := c.ShouldBindJSON(&payload); bindErr != nil {
+			writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+			return
+		}
+	}
+	order, err := h.svc.StartOrder(c.Request.Context(), id, payload.Note)
+	if errors.Is(err, service.ErrValidation) {
+		_ = c.Error(service.ErrValidation)
+		return
+	}
+	if errors.Is(err, service.ErrNotFound) {
+		_ = c.Error(service.ErrNotFound)
+		return
+	}
+	if err != nil {
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(c, http.StatusOK, model.APIResponse[*model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: order})
+}
+
+// CompleteOrder 完成订单。
+// @Summary      完成订单
+// @Description  将订单状态从 in_progress 置为 completed，并记录完成时间
+// @Tags         Admin/Orders
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        id       path  int               true  "订单ID"
+// @Param        request  body  orderNotePayload  false "备注（可选）"
+// @Success      200  {object}  map[string]any
+// @Failure      404  {object}  map[string]any
+// @Router       /admin/orders/{id}/complete [post]
+func (h *OrderHandler) CompleteOrder(c *gin.Context) {
+	id, err := parseUintParam(c, "id")
+	if err != nil {
+		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		return
+	}
+	var payload orderNotePayload
+	if c.Request.ContentLength > 0 {
+		if bindErr := c.ShouldBindJSON(&payload); bindErr != nil {
+			writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+			return
+		}
+	}
+	order, err := h.svc.CompleteOrder(c.Request.Context(), id, payload.Note)
+	if errors.Is(err, service.ErrValidation) {
+		_ = c.Error(service.ErrValidation)
+		return
+	}
+	if errors.Is(err, service.ErrNotFound) {
+		_ = c.Error(service.ErrNotFound)
+		return
+	}
+	if err != nil {
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(c, http.StatusOK, model.APIResponse[*model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: order})
+}
+
 // ListOrders
 // @Summary      列出订单
 // @Description  根据状态/用户/玩家/游戏和时间范围筛选，支持分页
@@ -188,6 +311,159 @@ func (h *OrderHandler) GetOrder(c *gin.Context) {
 		Message: "OK",
 		Data:    order,
 	})
+}
+
+// RefundOrder 处理订单退款。
+// @Summary      订单退款
+// @Description  将订单状态标记为 refunded，并记录退款金额与原因，同时关联支付退款
+// @Tags         Admin/Orders
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        id       path  int                  true  "订单ID"
+// @Param        request  body  orderRefundPayload   true  "退款信息"
+// @Success      200  {object}  map[string]any
+// @Failure      404  {object}  map[string]any
+// @Router       /admin/orders/{id}/refund [post]
+func (h *OrderHandler) RefundOrder(c *gin.Context) {
+	id, err := parseUintParam(c, "id")
+	if err != nil {
+		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		return
+	}
+	var payload orderRefundPayload
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+		return
+	}
+	order, err := h.svc.RefundOrder(c.Request.Context(), id, service.RefundOrderInput{
+		Reason:      payload.Reason,
+		AmountCents: payload.AmountCents,
+		Note:        payload.Note,
+	})
+	if errors.Is(err, service.ErrValidation) {
+		_ = c.Error(service.ErrValidation)
+		return
+	}
+	if errors.Is(err, service.ErrNotFound) {
+		_ = c.Error(service.ErrNotFound)
+		return
+	}
+	if err != nil {
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(c, http.StatusOK, model.APIResponse[*model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: order})
+}
+
+// GetOrderTimeline 返回订单时间线。
+// @Summary      获取订单时间线
+// @Description  汇总订单的状态变更、操作日志、支付事件等信息
+// @Tags         Admin/Orders
+// @Security     BearerAuth
+// @Produce      json
+// @Param        id   path  int  true  "订单ID"
+// @Success      200  {object}  map[string]any
+// @Failure      404  {object}  map[string]any
+// @Router       /admin/orders/{id}/timeline [get]
+func (h *OrderHandler) GetOrderTimeline(c *gin.Context) {
+	id, err := parseUintParam(c, "id")
+	if err != nil {
+		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		return
+	}
+	items, err := h.svc.GetOrderTimeline(c.Request.Context(), id)
+	if errors.Is(err, service.ErrNotFound) {
+		_ = c.Error(service.ErrNotFound)
+		return
+	}
+	if err != nil {
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(c, http.StatusOK, model.APIResponse[[]service.OrderTimelineItem]{Success: true, Code: http.StatusOK, Message: "OK", Data: ensureSlice(items)})
+}
+
+// ListOrderPayments 返回订单关联的支付记录。
+// @Summary      获取订单支付记录
+// @Tags         Admin/Orders
+// @Security     BearerAuth
+// @Produce      json
+// @Param        id   path  int  true  "订单ID"
+// @Success      200  {object}  map[string]any
+// @Failure      404  {object}  map[string]any
+// @Router       /admin/orders/{id}/payments [get]
+func (h *OrderHandler) ListOrderPayments(c *gin.Context) {
+	id, err := parseUintParam(c, "id")
+	if err != nil {
+		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		return
+	}
+	items, err := h.svc.GetOrderPayments(c.Request.Context(), id)
+	if errors.Is(err, service.ErrNotFound) {
+		_ = c.Error(service.ErrNotFound)
+		return
+	}
+	if err != nil {
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	payments := ensureSlice(items)
+	writeJSON(c, http.StatusOK, model.APIResponse[[]model.Payment]{Success: true, Code: http.StatusOK, Message: "OK", Data: payments})
+}
+
+// ListOrderRefunds 返回订单的退款记录。
+// @Summary      获取订单退款记录
+// @Tags         Admin/Orders
+// @Security     BearerAuth
+// @Produce      json
+// @Param        id   path  int  true  "订单ID"
+// @Success      200  {object}  map[string]any
+// @Failure      404  {object}  map[string]any
+// @Router       /admin/orders/{id}/refunds [get]
+func (h *OrderHandler) ListOrderRefunds(c *gin.Context) {
+	id, err := parseUintParam(c, "id")
+	if err != nil {
+		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		return
+	}
+	items, err := h.svc.GetOrderRefunds(c.Request.Context(), id)
+	if errors.Is(err, service.ErrNotFound) {
+		_ = c.Error(service.ErrNotFound)
+		return
+	}
+	if err != nil {
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(c, http.StatusOK, model.APIResponse[[]service.OrderRefundItem]{Success: true, Code: http.StatusOK, Message: "OK", Data: ensureSlice(items)})
+}
+
+// ListOrderReviews 返回订单评价列表。
+// @Summary      获取订单评价列表
+// @Tags         Admin/Orders
+// @Security     BearerAuth
+// @Produce      json
+// @Param        id   path  int  true  "订单ID"
+// @Success      200  {object}  map[string]any
+// @Failure      404  {object}  map[string]any
+// @Router       /admin/orders/{id}/reviews [get]
+func (h *OrderHandler) ListOrderReviews(c *gin.Context) {
+	id, err := parseUintParam(c, "id")
+	if err != nil {
+		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		return
+	}
+	items, err := h.svc.GetOrderReviews(c.Request.Context(), id)
+	if errors.Is(err, service.ErrNotFound) {
+		_ = c.Error(service.ErrNotFound)
+		return
+	}
+	if err != nil {
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(c, http.StatusOK, model.APIResponse[[]model.Review]{Success: true, Code: http.StatusOK, Message: "OK", Data: ensureSlice(items)})
 }
 
 // UpdateOrder
@@ -801,9 +1077,9 @@ func exportOperationLogsCSV(c *gin.Context, entity string, entityID uint64, item
 type UpdatePaymentPayload struct {
 	Status          string          `json:"status" binding:"required"`
 	ProviderTradeNo string          `json:"provider_trade_no"`
-	ProviderRaw     json.RawMessage `json:"provider_raw"`
-	PaidAt          *string         `json:"paid_at"`
-	RefundedAt      *string         `json:"refunded_at"`
+	ProviderRaw     json.RawMessage `json:"provider_raw,omitempty" swaggertype:"string" example:"{\"result\":\"update\"}"`
+	PaidAt          *string         `json:"paid_at,omitempty" example:"2025-10-28T10:00:00Z"`
+	RefundedAt      *string         `json:"refunded_at,omitempty" example:"2025-10-28T12:00:00Z"`
 }
 
 // CreatePaymentPayload defines create payment body.
@@ -813,14 +1089,14 @@ type CreatePaymentPayload struct {
 	Method      string          `json:"method" binding:"required"`
 	AmountCents int64           `json:"amount_cents" binding:"required"`
 	Currency    string          `json:"currency" binding:"required"`
-	ProviderRaw json.RawMessage `json:"provider_raw"`
+	ProviderRaw json.RawMessage `json:"provider_raw,omitempty" swaggertype:"string" example:"{\"result\":\"success\"}"`
 }
 
 // CapturePaymentPayload defines capture info.
 type CapturePaymentPayload struct {
 	ProviderTradeNo string          `json:"provider_trade_no"`
-	ProviderRaw     json.RawMessage `json:"provider_raw"`
-	PaidAt          *string         `json:"paid_at"`
+	ProviderRaw     json.RawMessage `json:"provider_raw,omitempty" swaggertype:"string" example:"{\"result\":\"captured\"}"`
+	PaidAt          *string         `json:"paid_at" example:"2025-10-28T10:00:00Z"`
 }
 
 // RefundPayment
@@ -891,9 +1167,9 @@ func (h *PaymentHandler) RefundPayment(c *gin.Context) {
 
 // RefundPaymentPayload defines optional refund fields.
 type RefundPaymentPayload struct {
-	RefundedAt      *string         `json:"refunded_at"`
-	ProviderTradeNo string          `json:"provider_trade_no"`
-	ProviderRaw     json.RawMessage `json:"provider_raw"`
+	RefundedAt      *string         `json:"refunded_at,omitempty" example:"2025-10-28T12:00:00Z"`
+	ProviderTradeNo string          `json:"provider_trade_no,omitempty"`
+	ProviderRaw     json.RawMessage `json:"provider_raw,omitempty" swaggertype:"string" example:"{\"result\":\"refunded\"}"`
 }
 
 func parseRFC3339Ptr(value *string) (*time.Time, error) {
@@ -1039,4 +1315,14 @@ type ReviewOrderPayload struct {
 // CancelOrderPayload defines cancel reason.
 type CancelOrderPayload struct {
 	Reason string `json:"reason"`
+}
+
+type orderNotePayload struct {
+	Note string `json:"note"`
+}
+
+type orderRefundPayload struct {
+	Reason      string `json:"reason" binding:"required"`
+	AmountCents *int64 `json:"amount_cents,omitempty"`
+	Note        string `json:"note"`
 }

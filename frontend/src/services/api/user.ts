@@ -143,6 +143,20 @@ export const playerApi = {
   },
 
   /**
+   * 更新主游戏
+   */
+  updateMainGame: (id: number, main_game_id: number): Promise<Player> => {
+    return apiClient.put(`/api/v1/admin/players/${id}/games`, { main_game_id });
+  },
+
+  /**
+   * 更新技能标签
+   */
+  updateSkillTags: (id: number, tags: string[]): Promise<Player> => {
+    return apiClient.put(`/api/v1/admin/players/${id}/skill-tags`, { tags });
+  },
+
+  /**
    * 删除陪玩师
    */
   delete: (id: number): Promise<void> => {

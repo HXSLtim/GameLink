@@ -52,11 +52,23 @@ apiClient.interceptors.response.use(
     // 1. 先解密响应数据
     const decryptedResponse = cryptoMiddleware.responseInterceptor(response);
 
-    // 2. 处理后端统一格式 { success, code, message, data }
-    const apiResponse = decryptedResponse.data as ApiResponse;
+    // 2. 处理后端统一格式 { success, code, message, data, pagination }
+    const apiResponse = decryptedResponse.data;
 
     if (apiResponse.success) {
-      // 成功：直接返回 data 部分
+      // 如果有 pagination 字段，说明是列表响应，需要转换格式
+      if (apiResponse.pagination) {
+        return {
+          list: apiResponse.data,
+          total: apiResponse.pagination.total,
+          page: apiResponse.pagination.page,
+          page_size: apiResponse.pagination.page_size,
+          total_pages: apiResponse.pagination.total_pages,
+          has_next: apiResponse.pagination.has_next,
+          has_prev: apiResponse.pagination.has_prev,
+        };
+      }
+      // 普通响应：直接返回 data 部分
       return apiResponse.data;
     } else {
       // 失败：抛出错误

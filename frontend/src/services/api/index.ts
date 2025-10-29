@@ -8,3 +8,5 @@ export * from './game';
 export * from './order';
 export * from './payment';
 export * from './review';
+export * from './stats';
+

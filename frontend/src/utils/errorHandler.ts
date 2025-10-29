@@ -53,7 +53,7 @@ class ConsoleErrorLogger implements ErrorLogger {
   log(error: Error | AppError, context?: Record<string, unknown>): void {
     const isAppError = error instanceof AppError;
 
-    console.group(`🔴 Error: ${error.message}`);
+    console.group(`[ERROR] ${error.message}`);
     console.error('Type:', error.name);
     console.error('Message:', error.message);
 
@@ -156,7 +156,6 @@ class ErrorHandler {
    */
   private notifyUser(error: Error | AppError): void {
     let message = error.message;
-    let duration = 3000;
 
     if (error instanceof AppError) {
       switch (error.severity) {
@@ -165,10 +164,8 @@ class ErrorHandler {
           return;
         case ErrorSeverity.WARNING:
           console.warn(message);
-          duration = 4000;
           break;
         case ErrorSeverity.CRITICAL:
-          duration = 5000;
           message = `严重错误: ${message}`;
           break;
       }
@@ -183,7 +180,7 @@ class ErrorHandler {
   private reportToService(error: Error | AppError): void {
     // TODO: Implement error reporting service (e.g., Sentry)
     // In production, you would send errors to monitoring service
-    console.log('📊 Error reported to monitoring service:', error.message);
+    console.log('[MONITORING] Error reported to monitoring service:', error.message);
   }
 }
 

@@ -10,7 +10,7 @@ export const SettingsDashboard: React.FC = () => {
       </div>
 
       <Card className={styles.content}>
-        <p className={styles.placeholder}>⚙️ 系统设置模块开发中...</p>
+        <p className={styles.placeholder}>[TODO] 系统设置模块开发中...</p>
       </Card>
     </div>
   );

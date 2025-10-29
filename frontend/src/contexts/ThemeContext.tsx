@@ -84,7 +84,7 @@ const applyThemeWithRipple = (theme: EffectiveTheme, x: number, y: number): void
     width: 0;
     height: 0;
     border-radius: 50%;
-    background-color: ${theme === 'dark' ? '#0a0a0a' : '#ffffff'};
+    background-color: ${theme === 'dark' ? 'var(--bg-inverse)' : 'var(--bg-primary)'};
     transform: translate(-50%, -50%) scale(0);
     opacity: 1;
     pointer-events: none;
@@ -105,7 +105,7 @@ const applyThemeWithRipple = (theme: EffectiveTheme, x: number, y: number): void
     ripple.style.transform = 'translate(-50%, -50%) scale(1)';
   });
 
-  // 🔑 关键：等扩散完全覆盖屏幕后再切换主题
+  // 关键：等扩散完全覆盖屏幕后再切换主题
   setTimeout(() => {
     // 切换主题类名
     if (theme === 'dark') {

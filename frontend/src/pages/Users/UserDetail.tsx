@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Button, Tag, PageSkeleton } from '../../components';
+import { Card, Button, Tag, PageSkeleton, Table, Pagination } from '../../components';
+import type { TableColumn } from '../../components/Table/Table';
 import { userApi, UserDetail as UserDetailType } from '../../services/api/user';
+import { orderApi, OrderInfo } from '../../services/api/order';
 import {
   formatUserRole,
   getUserRoleColor,
@@ -15,7 +17,12 @@ import {
   formatRating,
   formatPrice,
 } from '../../utils/userFormatters';
-import { formatDateTime } from '../../utils/formatters';
+import {
+  formatDateTime,
+  formatCurrency,
+  formatOrderStatus,
+  getOrderStatusColor,
+} from '../../utils/formatters';
 import { UserRole } from '../../types/user';
 import styles from './UserDetail.module.less';
 
@@ -26,6 +33,13 @@ export const UserDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userDetail, setUserDetail] = useState<UserDetailType | null>(null);
+
+  // 用户订单列表状态
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [orders, setOrders] = useState<OrderInfo[]>([]);
+  const [ordersTotal, setOrdersTotal] = useState(0);
+  const [ordersPage, setOrdersPage] = useState(1);
+  const ordersPageSize = 10;
 
   // 加载用户详情
   useEffect(() => {
@@ -53,6 +67,37 @@ export const UserDetail: React.FC = () => {
     loadUserDetail();
   }, [id]);
 
+  // 加载用户订单列表
+  useEffect(() => {
+    const loadUserOrders = async () => {
+      if (!id) return;
+
+      try {
+        setOrdersLoading(true);
+        const result = await orderApi.getUserOrders(Number(id), {
+          page: ordersPage,
+          page_size: ordersPageSize,
+        });
+
+        if (result && result.list) {
+          setOrders(result.list);
+          setOrdersTotal(result.total || 0);
+        } else {
+          setOrders([]);
+          setOrdersTotal(0);
+        }
+      } catch (err) {
+        console.error('加载用户订单失败:', err);
+        setOrders([]);
+        setOrdersTotal(0);
+      } finally {
+        setOrdersLoading(false);
+      }
+    };
+
+    loadUserOrders();
+  }, [id, ordersPage]);
+
   // 加载中状态
   if (loading) {
     return (
@@ -76,6 +121,56 @@ export const UserDetail: React.FC = () => {
   }
 
   const isPlayer = userDetail.role === UserRole.PLAYER && userDetail.player;
+
+  // 订单表格列定义
+  const orderColumns: TableColumn<OrderInfo>[] = [
+    {
+      title: '订单ID',
+      dataIndex: 'id',
+      key: 'id',
+      width: 80,
+    },
+    {
+      title: '标题',
+      dataIndex: 'title',
+      key: 'title',
+      width: 200,
+    },
+    {
+      title: '状态',
+      dataIndex: 'status',
+      key: 'status',
+      width: 100,
+      render: (status: string) => (
+        <Tag color={getOrderStatusColor(status as any)}>{formatOrderStatus(status as any)}</Tag>
+      ),
+    },
+    {
+      title: '金额',
+      dataIndex: 'price_cents',
+      key: 'price_cents',
+      width: 100,
+      render: (price_cents: number) =>
+        formatCurrency(price_cents),
+    },
+    {
+      title: '创建时间',
+      dataIndex: 'created_at',
+      key: 'created_at',
+      width: 150,
+      render: (created_at: string) => formatDateTime(created_at),
+    },
+    {
+      title: '操作',
+      key: 'actions',
+      width: 100,
+      render: (_: any, record: OrderInfo) => (
+        <Button variant="text" onClick={() => navigate(`/orders/${record.id}`)}>
+          查看详情
+        </Button>
+      ),
+    },
+  ];
 
   return (
     <div className={styles.container}>
@@ -248,13 +343,6 @@ export const UserDetail: React.FC = () => {
             <div className={styles.quickLinks}>
               <Button
                 variant="text"
-                onClick={() => console.log('查看订单')}
-                className={styles.linkButton}
-              >
-                📋 查看订单记录
-              </Button>
-              <Button
-                variant="text"
                 onClick={() => console.log('查看评价')}
                 className={styles.linkButton}
               >
@@ -271,6 +359,33 @@ export const UserDetail: React.FC = () => {
           </Card>
         </div>
       </div>
+
+      {/* 用户订单列表 */}
+      <Card className={styles.ordersSection}>
+        <div className={styles.ordersSectionHeader}>
+          <h2 className={styles.sectionTitle}>📋 订单记录</h2>
+          <Tag color={"blue" as any}>共 {ordersTotal} 条订单</Tag>
+        </div>
+
+        <Table
+          columns={orderColumns}
+          dataSource={orders}
+          rowKey="id"
+          loading={ordersLoading}
+          emptyText={orders.length === 0 ? '暂无订单记录' : undefined}
+        />
+
+        {ordersTotal > ordersPageSize && (
+          <div className={styles.paginationWrapper}>
+            <Pagination
+              current={ordersPage}
+              total={ordersTotal}
+              pageSize={ordersPageSize}
+              onChange={setOrdersPage}
+            />
+          </div>
+        )}
+      </Card>
     </div>
   );
 };

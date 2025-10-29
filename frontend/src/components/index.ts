@@ -19,3 +19,5 @@ export {
   PageSkeleton,
 } from './Skeleton';
 export { ReviewModal } from './ReviewModal';
+export { DataTable } from './DataTable';
+export type { DataTableProps, FilterConfig } from './DataTable';

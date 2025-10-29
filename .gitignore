@@ -86,3 +86,18 @@ coverage/
 reports/
 junit.xml
 
+# Windows/System temporary files
+nul
+*.tmp
+desktop.ini
+
+# Generated API documentation
+swagger.json
+swagger.yaml
+**/swagger/docs.go
+**/swagger/swagger.json
+**/swagger/swagger.yaml
+
+# Generated files
+*.generated.*
+

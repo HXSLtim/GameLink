@@ -4,22 +4,24 @@ import type { Currency } from './order';
 /**
  * 支付方式枚举
  */
-export type PaymentMethod = 'wechat' | 'alipay';
+export type PaymentMethod = 'wechat' | 'alipay' | 'balance';
 
 /**
  * 支付状态枚举
  */
-export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
+export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded' | 'cancelled';
 
 /**
  * 支付实体 - 与后端 model.Payment 保持一致
  */
 export interface Payment extends BaseEntity {
   order_id: number;
+  user_id: number;
   amount_cents: number;
   currency?: Currency;
   method: string;
   status: string;
+  transaction_id?: string;
   provider_tx_id?: string;
 }
 
@@ -44,6 +46,7 @@ export interface PaymentDetail extends Payment {
 export interface PaymentListQuery {
   page?: number;
   page_size?: number;
+  keyword?: string; // 搜索关键词（交易号/订单ID）
   order_id?: number;
   user_id?: number;
   method?: PaymentMethod;
@@ -89,6 +92,7 @@ export const PAYMENT_STATUS_TEXT: Record<PaymentStatus, string> = {
   paid: '已支付',
   failed: '支付失败',
   refunded: '已退款',
+  cancelled: '已取消',
 };
 
 /**
@@ -102,6 +106,7 @@ export const PAYMENT_STATUS_BADGE: Record<
   paid: 'success',
   failed: 'error',
   refunded: 'warning',
+  cancelled: 'error',
 };
 
 /**
@@ -110,6 +115,7 @@ export const PAYMENT_STATUS_BADGE: Record<
 export const PAYMENT_METHOD_TEXT: Record<PaymentMethod, string> = {
   wechat: '微信支付',
   alipay: '支付宝',
+  balance: '余额支付',
 };
 
 /**
@@ -118,6 +124,7 @@ export const PAYMENT_METHOD_TEXT: Record<PaymentMethod, string> = {
 export const PAYMENT_METHOD_ICON: Record<PaymentMethod, string> = {
   wechat: '💚',
   alipay: '💙',
+  balance: '💰',
 };
 
 /**

@@ -1,0 +1,197 @@
+@import '../../styles/variables.less';
+
+.container {
+  padding: var(--spacing-lg);
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+// 头部
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-xl);
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.title {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+// 内容区域
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.section {
+  padding: var(--spacing-lg);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-lg);
+}
+
+.sectionTitle {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.sectionActions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.subTitle {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin: 0 0 var(--spacing-md) 0;
+}
+
+// 信息网格
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.infoItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.infoLabel {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.infoValue {
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+}
+
+// 描述区域
+.descriptionSection {
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--border-color);
+}
+
+.description {
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+  line-height: 1.6;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+// 图标预览
+.iconPreview {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--spacing-2xl);
+  background: var(--bg-2);
+  border-radius: var(--border-radius);
+}
+
+.gameIcon {
+  max-width: 200px;
+  max-height: 200px;
+  object-fit: contain;
+  border-radius: var(--border-radius);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+// 错误卡片
+.errorCard {
+  padding: var(--spacing-2xl);
+  text-align: center;
+
+  h2 {
+    color: var(--text-primary);
+    margin: 0 0 var(--spacing-md) 0;
+  }
+
+  p {
+    color: var(--text-secondary);
+    margin: 0 0 var(--spacing-xl) 0;
+  }
+}
+
+// 响应式
+@media (max-width: 1200px) {
+  .infoGrid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: var(--spacing-md);
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .headerLeft {
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .title {
+    font-size: var(--font-size-xl);
+  }
+
+  .infoGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .section {
+    padding: var(--spacing-md);
+  }
+
+  .sectionHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+  }
+
+  .sectionActions {
+    width: 100%;
+  }
+
+  .gameIcon {
+    max-width: 150px;
+    max-height: 150px;
+  }
+}

@@ -117,11 +117,31 @@
   }
 
   &:active:not(:disabled) {
-    background-color: var(--color-gray-200);
+    background-color: var(--bg-tertiary);
   }
 
   &::before {
     display: none;
+  }
+}
+
+// 轮廓按钮
+.outlined {
+  background-color: transparent;
+  color: var(--text-primary);
+  box-shadow: none;
+
+  &:hover:not(:disabled) {
+    background-color: var(--bg-secondary);
+    transform: none;
+  }
+
+  &:active:not(:disabled) {
+    background-color: var(--bg-tertiary);
+  }
+
+  &::before {
+    background-color: var(--ripple-subtle);
   }
 }
 

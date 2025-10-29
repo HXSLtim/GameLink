@@ -1,32 +1,122 @@
 @import '../../styles/variables.less';
 
-.container {
-  padding: var(--spacing-lg);
-  max-width: 1600px;
-  margin: 0 auto;
+// 陪玩师信息
+.playerInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
 }
 
-.header {
-  margin-bottom: var(--spacing-xl);
+.avatar {
+  width: 48px;
+  height: 48px;
+  border: var(--border-width-base) solid var(--border-color);
+  object-fit: cover;
 }
 
-.title {
-  font-size: var(--font-size-2xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--text-primary);
-  margin: 0;
-}
-
-.content {
-  padding: var(--spacing-2xl);
-  min-height: 400px;
+.avatarPlaceholder {
+  width: 48px;
+  height: 48px;
+  border: var(--border-width-base) solid var(--border-color);
+  background-color: var(--bg-inverse);
+  color: var(--text-inverse);
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
 }
 
-.placeholder {
-  font-size: var(--font-size-xl);
+.playerDetails {
+  flex: 1;
+  min-width: 0;
+}
+
+.playerName {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.playerContact {
+  font-size: var(--font-size-sm);
   color: var(--text-secondary);
-  text-align: center;
+}
+
+// 时薪
+.rate {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+// 评分
+.rating {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+}
+
+// 时间信息
+.timeInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.timeDetail {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+}
+
+// 操作按钮
+.actionButton {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-sm);
+}
+
+
+.playerName {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.playerContact {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+// 时薪
+.rate {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+// 评分
+.rating {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+}
+
+// 时间信息
+.timeInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.timeDetail {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+}
+
+// 操作按钮
+.actionButton {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-sm);
 }

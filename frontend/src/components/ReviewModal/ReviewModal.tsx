@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { Modal, Button, Form, FormItem, Input } from '../index';
+import { Modal, Button, Form, FormItem } from '../index';
 import { Select } from '../Select/Select';
 import styles from './ReviewModal.module.less';
 
 export interface ReviewFormData {
-  result: 'approved' | 'rejected';
+  approved: boolean; // true=通过, false=拒绝
   reason: string;
-  note?: string;
 }
 
 export interface ReviewModalProps {
@@ -24,20 +23,15 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<ReviewFormData>({
-    result: 'approved',
+    approved: true,
     reason: '',
-    note: '',
   });
   const [errors, setErrors] = useState<Partial<Record<keyof ReviewFormData, string>>>({});
 
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof ReviewFormData, string>> = {};
 
-    if (!formData.result) {
-      newErrors.result = '请选择审核结果';
-    }
-
-    if (formData.result === 'rejected' && !formData.reason) {
+    if (!formData.approved && !formData.reason) {
       newErrors.reason = '拒绝时必须填写原因';
     }
 
@@ -55,9 +49,8 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
       await onSubmit(formData);
       // 重置表单
       setFormData({
-        result: 'approved',
+        approved: true,
         reason: '',
-        note: '',
       });
       setErrors({});
       onClose();
@@ -72,9 +65,8 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
   const handleCancel = () => {
     // 重置表单
     setFormData({
-      result: 'approved',
+      approved: true,
       reason: '',
-      note: '',
     });
     setErrors({});
     onClose();
@@ -104,21 +96,20 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
         </div>
 
         <Form>
-          <FormItem label="审核结果" required error={errors.result}>
+          <FormItem label="审核结果" required>
             <Select
-              value={formData.result}
+              value={formData.approved ? 'approved' : 'rejected'}
               options={[
                 { label: '✅ 审核通过', value: 'approved' },
                 { label: '❌ 审核拒绝', value: 'rejected' },
               ]}
               onChange={(value) => {
-                setFormData({ ...formData, result: value as 'approved' | 'rejected' });
-                setErrors({ ...errors, result: undefined });
+                setFormData({ ...formData, approved: value === 'approved' });
               }}
             />
           </FormItem>
 
-          {formData.result === 'rejected' && (
+          {!formData.approved && (
             <FormItem label="拒绝原因" required error={errors.reason}>
               <Select
                 value={formData.reason}
@@ -142,12 +133,10 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
           <FormItem label="备注说明">
             <textarea
               className={styles.textarea}
-              value={formData.note}
-              onChange={(e) => setFormData({ ...formData, note: e.target.value })}
+              value={formData.reason}
+              onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
               placeholder={
-                formData.result === 'approved'
-                  ? '请填写审核通过的备注（选填）'
-                  : '请详细说明拒绝的具体原因（选填）'
+                formData.approved ? '请填写审核通过的备注（选填）' : '请详细说明拒绝的具体原因'
               }
               rows={4}
             />
@@ -157,7 +146,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
         <div className={styles.tips}>
           <div className={styles.tipsTitle}>📌 审核提示</div>
           <ul className={styles.tipsList}>
-            {formData.result === 'approved' ? (
+            {formData.approved ? (
               <>
                 <li>审核通过后，订单将自动完成</li>
                 <li>陪玩师将收到相应的报酬</li>

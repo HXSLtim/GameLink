@@ -1,0 +1,166 @@
+@import '../../styles/variables.less';
+
+.container {
+  padding: var(--spacing-lg);
+  max-width: 1800px;
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: var(--spacing-lg);
+}
+
+.title {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+// 筛选卡片
+.filterCard {
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.filterRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.filterItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.filterLabel {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+}
+
+.filterActions {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
+}
+
+// 表格卡片
+.tableCard {
+  padding: var(--spacing-lg);
+}
+
+// 分页
+.pagination {
+  margin-top: var(--spacing-lg);
+  display: flex;
+  justify-content: flex-end;
+}
+
+// 响应式
+@media (max-width: 768px) {
+  .container {
+    padding: var(--spacing-md);
+  }
+
+  .filterRow {
+    grid-template-columns: 1fr;
+  }
+
+  .filterActions {
+    flex-direction: column;
+  }
+}
+
+
+
+.container {
+  padding: var(--spacing-lg);
+  max-width: 1800px;
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: var(--spacing-lg);
+}
+
+.title {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+// 筛选卡片
+.filterCard {
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.filterRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.filterItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.filterLabel {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+}
+
+.filterActions {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
+}
+
+// 表格卡片
+.tableCard {
+  padding: var(--spacing-lg);
+}
+
+// 分页
+.pagination {
+  margin-top: var(--spacing-lg);
+  display: flex;
+  justify-content: flex-end;
+}
+
+// 响应式
+@media (max-width: 768px) {
+  .container {
+    padding: var(--spacing-md);
+  }
+
+  .filterRow {
+    grid-template-columns: 1fr;
+  }
+
+  .filterActions {
+    flex-direction: column;
+  }
+}
+
+
+

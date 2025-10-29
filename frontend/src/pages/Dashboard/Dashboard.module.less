@@ -69,14 +69,113 @@
   gap: var(--spacing-xs);
 }
 
-.statTrend {
+.statBreakdown {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
   font-size: var(--font-size-sm);
+}
+
+.breakdownItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.breakdownLabel {
   color: var(--text-secondary);
 }
 
-.trendUp {
+.breakdownValue {
+  font-weight: var(--font-weight-semibold);
   color: var(--text-primary);
-  font-weight: var(--font-weight-medium);
+}
+
+// 订单状态统计
+.orderStatsSection {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.orderStatsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.orderStatCard {
+  padding: 0;
+  border-left: 4px solid transparent;
+  transition: all var(--duration-normal);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &.pending {
+    border-left-color: #faad14;
+
+    &:hover {
+      background-color: #fffbe6;
+    }
+  }
+
+  &.inProgress {
+    border-left-color: #1890ff;
+
+    &:hover {
+      background-color: #e6f7ff;
+    }
+  }
+
+  &.completed {
+    border-left-color: #52c41a;
+
+    &:hover {
+      background-color: #f6ffed;
+    }
+  }
+
+  &.canceled {
+    border-left-color: #8c8c8c;
+
+    &:hover {
+      background-color: #fafafa;
+    }
+  }
+}
+
+.orderStatWrapper {
+  padding: var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.orderStatContent {
+  flex: 1;
+}
+
+.orderStatLabel {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.orderStatValue {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+}
+
+.orderStatIcon {
+  flex-shrink: 0;
 }
 
 // 快捷入口
@@ -276,6 +375,10 @@
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   }
 
+  .orderStatsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
   .actionsGrid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -292,6 +395,117 @@
   }
 
   .statsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .orderStatsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .actionsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sectionHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+  }
+}
+
+
+.orderInfo {
+  margin-bottom: var(--spacing-md);
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.infoLabel {
+  color: var(--text-secondary);
+}
+
+.infoValue {
+  color: var(--text-primary);
+  font-weight: var(--font-weight-medium);
+
+  &.price {
+    font-weight: var(--font-weight-semibold);
+  }
+}
+
+.orderFooter {
+  padding-top: var(--spacing-sm);
+  border-top: var(--border-width-base) solid var(--border-color);
+}
+
+.orderTime {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+}
+
+// 待审核订单
+.reviewContent {
+  margin-bottom: var(--spacing-sm);
+}
+
+.reviewText {
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+  line-height: 1.5;
+
+  strong {
+    font-weight: var(--font-weight-semibold);
+  }
+}
+
+.reviewMeta {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+// 响应式
+@media (max-width: 1024px) {
+  .statsGrid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+
+  .orderStatsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .actionsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .ordersList,
+  .reviewsList {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: var(--spacing-md);
+  }
+
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .orderStatsGrid {
     grid-template-columns: 1fr;
   }
 

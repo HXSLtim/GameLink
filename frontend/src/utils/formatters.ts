@@ -36,7 +36,7 @@ export const getOrderStatusColor = (status: OrderStatus): TagColor => {
     [OrderStatus.CONFIRMED]: 'info',
     [OrderStatus.IN_PROGRESS]: 'processing',
     [OrderStatus.COMPLETED]: 'success',
-    [OrderStatus.CANCELED]: 'default',
+    [OrderStatus.CANCELED]: 'error',
     [OrderStatus.REFUNDED]: 'error',
   };
   return colorMap[status] || 'default';

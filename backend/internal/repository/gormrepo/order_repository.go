@@ -12,17 +12,17 @@ import (
 
 // OrderRepository 使用 GORM 管理订单。
 type OrderRepository struct {
-    db *gorm.DB
+	db *gorm.DB
 }
 
 // NewOrderRepository 创建实例。
 func NewOrderRepository(db *gorm.DB) *OrderRepository {
-    return &OrderRepository{db: db}
+	return &OrderRepository{db: db}
 }
 
 // Create inserts a new order.
 func (r *OrderRepository) Create(ctx context.Context, order *model.Order) error {
-    return r.db.WithContext(ctx).Create(order).Error
+	return r.db.WithContext(ctx).Create(order).Error
 }
 
 // List returns a page of orders and the total count with filters applied.
@@ -83,14 +83,19 @@ func (r *OrderRepository) Get(ctx context.Context, id uint64) (*model.Order, err
 
 // Update updates editable fields of an order.
 func (r *OrderRepository) Update(ctx context.Context, order *model.Order) error {
-    tx := r.db.WithContext(ctx).Model(order).Where("id = ?", order.ID).Updates(map[string]any{
-        "player_id":       order.PlayerID,
-        "status":          order.Status,
-        "price_cents":     order.PriceCents,
-        "currency":        order.Currency,
-        "scheduled_start": order.ScheduledStart,
-        "scheduled_end":   order.ScheduledEnd,
-		"cancel_reason":   order.CancelReason,
+	tx := r.db.WithContext(ctx).Model(order).Where("id = ?", order.ID).Updates(map[string]any{
+		"player_id":           order.PlayerID,
+		"status":              order.Status,
+		"price_cents":         order.PriceCents,
+		"currency":            order.Currency,
+		"scheduled_start":     order.ScheduledStart,
+		"scheduled_end":       order.ScheduledEnd,
+		"cancel_reason":       order.CancelReason,
+		"started_at":          order.StartedAt,
+		"completed_at":        order.CompletedAt,
+		"refund_amount_cents": order.RefundAmountCents,
+		"refund_reason":       order.RefundReason,
+		"refunded_at":         order.RefundedAt,
 	})
 	if tx.Error != nil {
 		return tx.Error
