@@ -29,7 +29,7 @@ func NewPlayerHandler(svc *service.AdminService) *PlayerHandler {
 // @Tags         Admin/Players
 // @Security     BearerAuth
 // @Param        page       query  int  false  "页码"
-// @Param        page_size  query  int  false  "每页数量"
+// @Param        pageSize   query     int       false  "每页数量"
 // @Produce      json
 // @Success      200  {object}  map[string]any
 // @Router       /admin/players [get]
@@ -235,11 +235,11 @@ func (h *PlayerHandler) DeletePlayer(c *gin.Context) {
 // @Produce      json
 // @Param        id           path   int  true  "玩家ID"
 // @Param        page         query  int  false "页码"
-// @Param        page_size    query  int  false "每页数量"
+// @Param        pageSize   query     int       false  "每页数量"
 // @Param        action       query  string false "动作过滤" Enums(create,update,delete)
 // @Param        actor_user_id query int   false "操作者用户ID"
-// @Param        date_from    query  string false "开始时间"
-// @Param        date_to      query  string false "结束时间"
+// @Param        dateFrom   query     string    false  "开始时间"
+// @Param        dateTo     query     string    false  "结束时间"
 // @Param        export       query  string false "导出格式" Enums(csv)
 // @Param        fields       query  string false "导出列（逗号分隔）"
 // @Param        header_lang  query  string false "列头语言" Enums(en,zh)

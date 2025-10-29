@@ -11,6 +11,12 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const (
+	// DefaultDevJWTSecret 为开发环境提供兜底的 JWT 密钥（仅限本地调试）。
+	DefaultDevJWTSecret = "gamelink-default-secret-key-change-in-development"
+	defaultTokenTTL     = 24
+)
+
 // AppConfig 汇总服务运行所需的核心配置。
 type AppConfig struct {
 	Port          string
@@ -18,6 +24,7 @@ type AppConfig struct {
 	Database      DatabaseConfig
 	Cache         CacheConfig
 	Crypto        CryptoConfig
+	Auth          AuthConfig
 	Seed          SeedConfig
 }
 
@@ -50,6 +57,12 @@ type CryptoConfig struct {
 	UseSignature bool     `yaml:"use_signature"`
 }
 
+// AuthConfig 描述鉴权配置。
+type AuthConfig struct {
+	JWTSecret     string `yaml:"jwt_secret"`
+	TokenTTLHours int    `yaml:"token_ttl_hours"`
+}
+
 // SeedConfig 控制是否注入演示数据。
 type SeedConfig struct {
 	Enabled bool `yaml:"enabled"`
@@ -64,6 +77,11 @@ type cryptoFileConfig struct {
 	UseSignature *bool    `yaml:"use_signature"`
 }
 
+type authFileConfig struct {
+	JWTSecret     string `yaml:"jwt_secret"`
+	TokenTTLHours *int   `yaml:"token_ttl_hours"`
+}
+
 type fileConfig struct {
 	Server struct {
 		Port          string `yaml:"port"`
@@ -72,6 +90,7 @@ type fileConfig struct {
 	Database DatabaseConfig   `yaml:"database"`
 	Cache    CacheConfig      `yaml:"cache"`
 	Crypto   cryptoFileConfig `yaml:"crypto"`
+	Auth     authFileConfig   `yaml:"auth"`
 	Seed     SeedConfig       `yaml:"seed"`
 }
 
@@ -105,6 +124,10 @@ func Load() AppConfig {
 			ExcludePaths: []string{"/api/v1/health", "/api/v1/ping", "/api/v1/auth/refresh"},
 			UseSignature: true,
 		},
+		Auth: AuthConfig{
+			JWTSecret:     "",
+			TokenTTLHours: defaultTokenTTL,
+		},
 		Seed: SeedConfig{Enabled: false},
 	}
 
@@ -119,6 +142,17 @@ func Load() AppConfig {
 			}
 		} else {
 			log.Printf("DB_DSN 未配置，生产环境将保持为空并由外部注入")
+		}
+	}
+
+	if cfg.Auth.TokenTTLHours <= 0 {
+		cfg.Auth.TokenTTLHours = defaultTokenTTL
+	}
+	if strings.TrimSpace(cfg.Auth.JWTSecret) == "" {
+		if env == "production" {
+			log.Printf("JWT_SECRET_KEY 未配置，生产环境请通过配置或环境变量提供")
+		} else {
+			cfg.Auth.JWTSecret = DefaultDevJWTSecret
 		}
 	}
 
@@ -180,6 +214,12 @@ func loadFromFile(env string, cfg *AppConfig) {
 	}
 	if fc.Crypto.UseSignature != nil {
 		cfg.Crypto.UseSignature = *fc.Crypto.UseSignature
+	}
+	if fc.Auth.JWTSecret != "" {
+		cfg.Auth.JWTSecret = fc.Auth.JWTSecret
+	}
+	if fc.Auth.TokenTTLHours != nil {
+		cfg.Auth.TokenTTLHours = *fc.Auth.TokenTTLHours
 	}
 	if fc.Seed.Enabled {
 		cfg.Seed.Enabled = fc.Seed.Enabled
@@ -248,6 +288,17 @@ func overrideFromEnv(cfg *AppConfig) {
 			log.Printf("CRYPTO_USE_SIGNATURE=%q 无法解析，保持原值 %v", useSignature, cfg.Crypto.UseSignature)
 		} else {
 			cfg.Crypto.UseSignature = enabled
+		}
+	}
+
+	if jwtSecret := os.Getenv("JWT_SECRET_KEY"); jwtSecret != "" {
+		cfg.Auth.JWTSecret = jwtSecret
+	}
+	if ttl := os.Getenv("JWT_TOKEN_TTL_HOURS"); ttl != "" {
+		if hours, err := strconv.Atoi(ttl); err != nil {
+			log.Printf("JWT_TOKEN_TTL_HOURS=%q 无法解析，保持原值 %d", ttl, cfg.Auth.TokenTTLHours)
+		} else {
+			cfg.Auth.TokenTTLHours = hours
 		}
 	}
 

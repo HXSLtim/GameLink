@@ -1,74 +1,5 @@
 @import '../../styles/variables.less';
 
-.container {
-  padding: var(--spacing-lg);
-  max-width: 1800px;
-  margin: 0 auto;
-}
-
-.header {
-  margin-bottom: var(--spacing-xl);
-}
-
-.title {
-  font-size: var(--font-size-2xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--text-primary);
-  margin: 0;
-}
-
-// 筛选卡片
-.filterCard {
-  padding: var(--spacing-lg);
-  margin-bottom: var(--spacing-lg);
-}
-
-.filters {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-md);
-}
-
-.filterRow {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: var(--spacing-md);
-}
-
-.filterItem {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-}
-
-.filterLabel {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--text-secondary);
-}
-
-.filterInput,
-.filterSelect {
-  width: 100%;
-}
-
-.filterActions {
-  display: flex;
-  gap: var(--spacing-sm);
-  margin-top: var(--spacing-sm);
-}
-
-.filterButton {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-}
-
-// 表格卡片
-.tableCard {
-  padding: var(--spacing-xl);
-}
-
 // 用户信息
 .userInfo {
   display: flex;
@@ -79,6 +10,7 @@
 .avatar {
   width: 48px;
   height: 48px;
+  border-radius: 50%;
   border: var(--border-width-base) solid var(--border-color);
   object-fit: cover;
 }
@@ -86,6 +18,7 @@
 .avatarPlaceholder {
   width: 48px;
   height: 48px;
+  border-radius: 50%;
   border: var(--border-width-base) solid var(--border-color);
   background-color: var(--bg-inverse);
   color: var(--text-inverse);
@@ -94,6 +27,7 @@
   justify-content: center;
   font-size: var(--font-size-xl);
   font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
 }
 
 .userDetails {
@@ -125,6 +59,11 @@
   color: var(--text-tertiary);
 }
 
+.noData {
+  font-size: var(--font-size-sm);
+  color: var(--text-tertiary);
+}
+
 // 操作按钮
 .actions {
   display: flex;
@@ -136,29 +75,12 @@
   font-size: var(--font-size-sm);
 }
 
-// 分页
-.pagination {
-  margin-top: var(--spacing-xl);
-  display: flex;
-  justify-content: flex-end;
-}
+.deleteButton {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-error, #f53f3f);
 
-// 响应式
-@media (max-width: 768px) {
-  .container {
-    padding: var(--spacing-md);
-  }
-
-  .filterRow {
-    grid-template-columns: 1fr;
-  }
-
-  .filterActions {
-    flex-direction: column;
-  }
-
-  .filterButton {
-    width: 100%;
-    justify-content: center;
+  &:hover {
+    color: var(--color-error-hover, #cb272d);
   }
 }

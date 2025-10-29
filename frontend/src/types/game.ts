@@ -20,7 +20,7 @@ export interface Game extends BaseEntity {
   key: string;
   name: string;
   category: string;
-  icon_url?: string;
+  iconUrl?: string;
   description?: string;
 }
 
@@ -29,11 +29,11 @@ export interface Game extends BaseEntity {
  */
 export interface GameListQuery {
   page?: number;
-  page_size?: number;
+  pageSize?: number;
   category?: string;
   keyword?: string;
-  sort_by?: 'created_at' | 'updated_at' | 'name';
-  sort_order?: 'asc' | 'desc';
+  sortBy?: 'createdAt' | 'updatedAt' | 'name';
+  sortOrder?: 'asc' | 'desc';
 }
 
 /**
@@ -43,7 +43,7 @@ export interface CreateGameRequest {
   key: string;
   name: string;
   category: string;
-  icon_url?: string;
+  iconUrl?: string;
   description?: string;
 }
 
@@ -54,7 +54,7 @@ export interface UpdateGameRequest {
   key?: string;
   name?: string;
   category?: string;
-  icon_url?: string;
+  iconUrl?: string;
   description?: string;
 }
 
@@ -79,7 +79,7 @@ export const POPULAR_GAMES: Array<{
   key: string;
   name: string;
   category: GameCategory;
-  icon_url?: string;
+  iconUrl?: string;
 }> = [
   { key: 'lol', name: '英雄联盟', category: 'moba' },
   { key: 'dota2', name: 'Dota 2', category: 'moba' },

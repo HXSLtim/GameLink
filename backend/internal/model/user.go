@@ -27,10 +27,10 @@ type User struct {
 	Base
 	Phone        string     `json:"phone,omitempty" gorm:"size:32;uniqueIndex"`
 	Email        string     `json:"email,omitempty" gorm:"size:128;uniqueIndex"`
-	PasswordHash string     `json:"-" gorm:"size:255"`
+	PasswordHash string     `json:"-" gorm:"column:password_hash;size:255"`
 	Name         string     `json:"name" gorm:"size:64"`
-	AvatarURL    string     `json:"avatar_url,omitempty" gorm:"size:255"`
+	AvatarURL    string     `json:"avatarUrl,omitempty" gorm:"column:avatar_url;size:255"`
 	Role         Role       `json:"role" gorm:"size:32"`
 	Status       UserStatus `json:"status" gorm:"size:32;index"`
-	LastLoginAt  *time.Time `json:"last_login_at,omitempty"`
+	LastLoginAt  *time.Time `json:"lastLoginAt,omitempty" gorm:"column:last_login_at"`
 }

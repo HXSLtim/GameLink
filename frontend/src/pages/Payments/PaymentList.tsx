@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DataTable, Button, Input, Select, Tag } from '../../components';
+import { DataTable, Button, Input, Select, Tag, Modal } from '../../components';
 import type { FilterConfig } from '../../components/DataTable';
 import type { TableColumn } from '../../components/Table/Table';
 import { paymentApi } from '../../services/api/payment';
@@ -14,10 +14,14 @@ export const PaymentList: React.FC = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [total, setTotal] = useState(0);
 
+  // 删除确认Modal状态
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [deletingPayment, setDeletingPayment] = useState<Payment | null>(null);
+
   // 查询参数
   const [queryParams, setQueryParams] = useState<PaymentListQuery>({
     page: 1,
-    page_size: 10,
+    pageSize: 10,
     keyword: '',
     status: undefined,
     method: undefined,
@@ -30,7 +34,7 @@ export const PaymentList: React.FC = () => {
     try {
       const result = await paymentApi.getList({
         page: queryParams.page,
-        page_size: queryParams.page_size,
+        pageSize: queryParams.pageSize,
         keyword: queryParams.keyword || undefined,
         status: queryParams.status,
         method: queryParams.method,
@@ -53,19 +57,42 @@ export const PaymentList: React.FC = () => {
   };
 
   // 搜索
-  const handleSearch = () => {
+  const handleSearch = async () => {
     setQueryParams((prev) => ({ ...prev, page: 1 }));
+    await loadPayments();
   };
 
   // 重置
-  const handleReset = () => {
-    setQueryParams({
+  const handleReset = async () => {
+    const resetParams = {
       page: 1,
-      page_size: 10,
+      pageSize: 10,
       keyword: '',
       status: undefined,
       method: undefined,
-    });
+    };
+    setQueryParams(resetParams);
+    // 使用重置后的参数立即加载数据
+    setLoading(true);
+    try {
+      const result = await paymentApi.getList({
+        page: resetParams.page,
+        pageSize: resetParams.pageSize,
+      });
+      if (result && result.list) {
+        setPayments(result.list);
+        setTotal(result.total || 0);
+      } else {
+        setPayments([]);
+        setTotal(0);
+      }
+    } catch (err) {
+      console.error('加载支付列表失败:', err);
+      setPayments([]);
+      setTotal(0);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // 分页变化
@@ -73,11 +100,31 @@ export const PaymentList: React.FC = () => {
     setQueryParams((prev) => ({ ...prev, page }));
   };
 
+  // 删除支付记录
+  const handleDelete = (payment: Payment) => {
+    setDeletingPayment(payment);
+    setDeleteModalVisible(true);
+  };
+
+  // 确认删除
+  const handleConfirmDelete = async () => {
+    if (!deletingPayment) return;
+
+    try {
+      await paymentApi.delete(deletingPayment.id);
+      setDeleteModalVisible(false);
+      setDeletingPayment(null);
+      await loadPayments();
+    } catch (err) {
+      console.error('删除失败:', err);
+    }
+  };
+
   // 加载数据
   useEffect(() => {
     loadPayments();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queryParams.page, queryParams.page_size]);
+  }, [queryParams.page, queryParams.pageSize]);
 
   // 状态格式化
   const formatStatus = (status: PaymentStatus): string => {
@@ -123,14 +170,14 @@ export const PaymentList: React.FC = () => {
     },
     {
       title: '订单ID',
-      dataIndex: 'order_id',
-      key: 'order_id',
+      dataIndex: 'orderId',
+      key: 'orderId',
       width: '100px',
     },
     {
       title: '用户ID',
-      dataIndex: 'user_id',
-      key: 'user_id',
+      dataIndex: 'userId',
+      key: 'userId',
       width: '100px',
     },
     {
@@ -138,7 +185,7 @@ export const PaymentList: React.FC = () => {
       key: 'amount',
       width: '120px',
       render: (_: unknown, record: Payment) => (
-        <div className={styles.amount}>{formatCurrency(record.amount_cents)}</div>
+        <div className={styles.amount}>{formatCurrency(record.amountCents)}</div>
       ),
     },
     {
@@ -161,31 +208,40 @@ export const PaymentList: React.FC = () => {
     },
     {
       title: '交易号',
-      dataIndex: 'transaction_id',
-      key: 'transaction_id',
+      dataIndex: 'transactionId',
+      key: 'transactionId',
       width: '200px',
-      render: (transaction_id: string) => (
-        <div className={styles.transactionId}>{transaction_id || '-'}</div>
+      render: (transactionId: string) => (
+        <div className={styles.transactionId}>{transactionId || '-'}</div>
       ),
     },
     {
       title: '创建时间',
       key: 'createdAt',
       width: '160px',
-      render: (_: unknown, record: Payment) => formatDateTime(record.created_at),
+      render: (_: unknown, record: Payment) => formatDateTime(record.createdAt),
     },
     {
       title: '操作',
       key: 'actions',
-      width: '120px',
+      width: '180px',
       render: (_: unknown, record: Payment) => (
-        <Button
-          variant="text"
-          onClick={() => navigate(`/payments/${record.id}`)}
-          className={styles.actionButton}
-        >
-          查看详情
-        </Button>
+        <div className={styles.actions}>
+          <Button
+            variant="text"
+            onClick={() => navigate(`/payments/${record.id}`)}
+            className={styles.actionButton}
+          >
+            详情
+          </Button>
+          <Button
+            variant="text"
+            onClick={() => handleDelete(record)}
+            className={styles.deleteButton}
+          >
+            删除
+          </Button>
+        </div>
       ),
     },
   ];
@@ -198,9 +254,7 @@ export const PaymentList: React.FC = () => {
       element: (
         <Input
           value={queryParams.keyword}
-          onChange={(e) =>
-            setQueryParams((prev) => ({ ...prev, keyword: e.target.value }))
-          }
+          onChange={(e) => setQueryParams((prev) => ({ ...prev, keyword: e.target.value }))}
           placeholder="交易号/订单ID"
           onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
         />
@@ -265,20 +319,42 @@ export const PaymentList: React.FC = () => {
   );
 
   return (
-    <DataTable
-      title="支付管理"
-      filters={filters}
-      filterActions={filterActions}
-      columns={columns}
-      dataSource={payments}
-      loading={loading}
-      rowKey="id"
-      pagination={{
-        current: queryParams.page || 1,
-        pageSize: queryParams.page_size || 10,
-        total,
-        onChange: handlePageChange,
-      }}
-    />
+    <>
+      <DataTable
+        title="支付管理"
+        filters={filters}
+        filterActions={filterActions}
+        columns={columns}
+        dataSource={payments}
+        loading={loading}
+        rowKey="id"
+        pagination={{
+          current: queryParams.page || 1,
+          pageSize: queryParams.pageSize || 10,
+          total,
+          onChange: handlePageChange,
+        }}
+      />
+
+      {/* 删除确认Modal */}
+      <Modal
+        visible={deleteModalVisible}
+        title="确认删除"
+        onClose={() => {
+          setDeleteModalVisible(false);
+          setDeletingPayment(null);
+        }}
+        onOk={handleConfirmDelete}
+        onCancel={() => {
+          setDeleteModalVisible(false);
+          setDeletingPayment(null);
+        }}
+        okText="确定删除"
+        cancelText="取消"
+        width={400}
+      >
+        <p>确定要删除支付记录（ID: {deletingPayment?.id}）吗？此操作不可恢复。</p>
+      </Modal>
+    </>
   );
 };

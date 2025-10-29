@@ -55,13 +55,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         name: response.user?.name || username,
         email: response.user?.email,
         phone: response.user?.phone,
-        avatar_url: response.user?.avatar_url,
+        avatarUrl: response.user?.avatarUrl,
         role: response.user?.role || ('user' as UserRole),
         status: response.user?.status || ('active' as UserStatus),
-        last_login_at: response.user?.last_login_at,
+        lastLoginAt: response.user?.lastLoginAt,
+        createdAt: response.user?.createdAt,
+        updatedAt: response.user?.updatedAt,
         // 兼容字段
         username: response.user?.name || username,
-        avatar: response.user?.avatar_url,
+        avatar: response.user?.avatarUrl,
       };
 
       // 保存用户信息

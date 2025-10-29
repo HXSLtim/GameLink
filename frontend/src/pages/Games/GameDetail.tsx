@@ -200,17 +200,17 @@ export const GameDetail: React.FC = () => {
 
             <div className={styles.infoItem}>
               <span className={styles.infoLabel}>图标URL</span>
-              <span className={styles.infoValue}>{game.icon_url || '-'}</span>
+              <span className={styles.infoValue}>{game.iconUrl || '-'}</span>
             </div>
 
             <div className={styles.infoItem}>
               <span className={styles.infoLabel}>创建时间</span>
-              <span className={styles.infoValue}>{formatDateTime(game.created_at)}</span>
+              <span className={styles.infoValue}>{formatDateTime(game.createdAt)}</span>
             </div>
 
             <div className={styles.infoItem}>
               <span className={styles.infoLabel}>更新时间</span>
-              <span className={styles.infoValue}>{formatDateTime(game.updated_at)}</span>
+              <span className={styles.infoValue}>{formatDateTime(game.updatedAt)}</span>
             </div>
           </div>
 
@@ -223,11 +223,11 @@ export const GameDetail: React.FC = () => {
         </Card>
 
         {/* 游戏图标预览 */}
-        {game.icon_url && (
+        {game.iconUrl && (
           <Card className={styles.section}>
             <h2 className={styles.sectionTitle}>图标预览</h2>
             <div className={styles.iconPreview}>
-              <img src={game.icon_url} alt={game.name} className={styles.gameIcon} />
+              <img src={game.iconUrl} alt={game.name} className={styles.gameIcon} />
             </div>
           </Card>
         )}

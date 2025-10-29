@@ -15,10 +15,10 @@ export interface DashboardStats {
   totalGames: number;
   totalOrders: number;
   totalPaidAmountCents: number;
-  
+
   // 订单状态分布
   ordersByStatus: Record<string, number>;
-  
+
   // 支付状态分布
   paymentsByStatus: Record<string, number>;
 }
@@ -41,9 +41,9 @@ export interface OrderStatistics {
  * 收入趋势数据点
  */
 export interface RevenueTrendPoint {
-  date: string;           // 日期 (YYYY-MM-DD)
-  revenue_cents: number;  // 收入（分）
-  order_count: number;    // 订单数量
+  date: string; // 日期 (YYYY-MM-DD)
+  revenue_cents: number; // 收入（分）
+  order_count: number; // 订单数量
   avg_order_value: number; // 平均订单价值
 }
 
@@ -63,11 +63,11 @@ export interface RevenueTrendData {
  * 用户增长数据点
  */
 export interface UserGrowthPoint {
-  date: string;           // 日期 (YYYY-MM-DD)
-  new_users: number;      // 新增用户
-  new_players: number;    // 新增陪玩师
-  total_users: number;    // 累计用户
-  total_players: number;  // 累计陪玩师
+  date: string; // 日期 (YYYY-MM-DD)
+  new_users: number; // 新增用户
+  new_players: number; // 新增陪玩师
+  total_users: number; // 累计用户
+  total_players: number; // 累计陪玩师
 }
 
 /**
@@ -135,10 +135,10 @@ export interface AuditOverviewData {
  * 审计趋势数据点
  */
 export interface AuditTrendPoint {
-  date: string;           // 日期 (YYYY-MM-DD)
-  action_count: number;   // 操作数量
-  entity_type?: string;   // 实体类型（如果有筛选）
-  action?: string;        // 操作类型（如果有筛选）
+  date: string; // 日期 (YYYY-MM-DD)
+  action_count: number; // 操作数量
+  entity_type?: string; // 实体类型（如果有筛选）
+  action?: string; // 操作类型（如果有筛选）
 }
 
 /**
@@ -184,15 +184,15 @@ export interface TopPlayersQuery {
  */
 export interface AuditOverviewQuery {
   date_from?: string; // 开始时间
-  date_to?: string;   // 结束时间
+  date_to?: string; // 结束时间
 }
 
 /**
  * 统计查询参数 - 审计趋势
  */
 export interface AuditTrendQuery {
-  date_from?: string;         // 开始时间
-  date_to?: string;           // 结束时间
-  entity?: AuditEntityType;   // 实体类型
-  action?: string;            // 操作类型
+  date_from?: string; // 开始时间
+  date_to?: string; // 结束时间
+  entity?: AuditEntityType; // 实体类型
+  action?: string; // 操作类型
 }

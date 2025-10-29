@@ -1,0 +1,24 @@
+@import '../../styles/variables.less';
+
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+}
+
+.required {
+  color: var(--color-error, #f53f3f);
+  margin-left: 2px;
+}
+
+.error {
+  font-size: var(--font-size-xs);
+  color: var(--color-error, #f53f3f);
+  margin-top: 2px;
+}

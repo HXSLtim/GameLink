@@ -3,8 +3,9 @@
 <div align="center">
 
 ![GameLink Logo](https://img.shields.io/badge/GameLink-陪玩平台-blue?style=for-the-badge)
-![Go](https://img.shields.io/badge/Go-1.21+-00ADD8?style=for-the-badge&logo=go)
+![Go](https://img.shields.io/badge/Go-1.24+-00ADD8?style=for-the-badge&logo=go)
 ![React](https://img.shields.io/badge/React-18+-61DAFB?style=for-the-badge&logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5+-3178C6?style=for-the-badge&logo=typescript)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
 **高性能陪玩订单分发和用户管理平台**
@@ -15,7 +16,7 @@
 
 ## 📋 项目概述
 
-GameLink是一个现代化的陪玩管理平台，专注于为游戏陪玩服务提供高效的订单分发、用户管理和打手管理功能。平台采用Go语言微服务架构，支持高并发、低延迟的业务场景。
+GameLink是一个现代化的陪玩管理平台，专注于为游戏陪玩服务提供高效的订单分发、用户管理和打手管理功能。平台采用Go语言后端+React前端的架构，支持高并发、低延迟的业务场景。目前已完成**camelCase命名规范统一**，前后端API接口完全一致。
 
 ### 🎯 核心目标
 - **订单智能分发**: 基于算法的智能订单匹配系统
@@ -95,11 +96,13 @@ GameLink是一个现代化的陪玩管理平台，专注于为游戏陪玩服务
 ## 🚀 快速开始
 
 ### 环境要求
-- Go 1.21+
+- Go 1.24+
 - Node.js 18+
-- Docker & Docker Compose
-- MySQL 8.0+
-- Redis 7.0+
+- PowerShell (Windows 11)
+- Git
+- Docker & Docker Compose (可选)
+- MySQL 8.0+ (生产环境)
+- Redis 7.0+ (生产环境)
 
 ### 本地开发环境搭建
 
@@ -110,47 +113,39 @@ cd gamelink
 ```
 
 2. **后端服务启动**
-```bash
-# 安装依赖
+```powershell
+# 进入后端目录
 cd backend
-go mod download
 
-# 启动基础服务 (MySQL, Redis, MongoDB)
-docker-compose up -d
+# 安装Go依赖
+make deps
 
-# 运行数据库迁移
-go run cmd/migrate/main.go
+# 启动用户服务 (开发模式)
+make run CMD=user-service
 
-# 启动用户服务
-go run cmd/user-service/main.go
-
-# 启动订单服务
-go run cmd/order-service/main.go
-
-# 启动API网关
-go run cmd/gateway/main.go
+# 或者手动运行
+go run ./cmd/user-service
 ```
 
 3. **前端应用启动**
-```bash
-# 用户端应用
-cd frontend/user-app
-npm install
-npm run dev
+```powershell
+# 进入前端目录
+cd frontend
 
-# 管理端应用
-cd frontend/admin-app
+# 安装NPM依赖
 npm install
+
+# 启动开发服务器
 npm run dev
 ```
 
 4. **验证安装**
-```bash
-# 检查服务状态
-curl http://localhost:8080/health
+```powershell
+# 检查后端API
+curl http://localhost:8080/healthz
 
-# 查看API文档
-open http://localhost:8080/swagger/index.html
+# 查看Swagger文档
+# 浏览器访问: http://localhost:8080/swagger
 ```
 
 ## 📁 项目结构
@@ -159,46 +154,83 @@ open http://localhost:8080/swagger/index.html
 GameLink/
 ├── backend/                 # Go后端服务
 │   ├── cmd/                # 应用入口
-│   │   ├── user-service/   # 用户服务
-│   │   ├── order-service/  # 订单服务
-│   │   ├── payment-service/# 支付服务
-│   │   └── gateway/        # API网关
+│   │   └── user-service/   # 用户服务主程序
 │   ├── internal/           # 内部包
+│   │   ├── admin/          # 管理端处理器
+│   │   ├── auth/           # 认证模块
+│   │   ├── cache/          # 缓存层
 │   │   ├── config/         # 配置管理
+│   │   ├── db/             # 数据库连接
 │   │   ├── handler/        # HTTP处理器
-│   │   ├── service/        # 业务逻辑
-│   │   ├── repository/     # 数据访问层
 │   │   ├── model/          # 数据模型
-│   │   └── middleware/     # 中间件
-│   ├── pkg/                # 公共包
-│   │   ├── database/       # 数据库连接
-│   │   ├── cache/          # 缓存封装
-│   │   ├── logger/         # 日志工具
-│   │   └── utils/          # 工具函数
-│   ├── api/                # API定义
-│   ├── docs/               # 文档
+│   │   ├── repository/     # 数据访问层
+│   │   ├── service/        # 业务逻辑层
+│   │   └── handler/middleware/ # 中间件
 │   ├── scripts/            # 脚本文件
-│   └── configs/            # 配置文件
+│   │   └── sql/            # SQL迁移脚本
+│   ├── configs/            # 配置文件
+│   ├── docs/               # 后端文档
+│   ├── go.mod              # Go模块定义
+│   └── Makefile            # 构建脚本
 ├── frontend/               # 前端应用
-│   ├── user-app/           # 用户端应用
-│   ├── player-app/         # 打手端应用
-│   └── admin-app/          # 管理端应用
-├── deployments/            # 部署配置
-│   ├── docker/             # Docker配置
-│   ├── k8s/                # Kubernetes配置
-│   └── helm/               # Helm Charts
+│   ├── src/                # 源代码
+│   │   ├── api/            # API调用层
+│   │   ├── components/     # 可复用组件
+│   │   ├── contexts/       # React Context
+│   │   ├── layouts/        # 布局组件
+│   │   ├── pages/          # 页面组件
+│   │   ├── services/       # 业务服务层
+│   │   ├── types/          # TypeScript类型定义
+│   │   └── utils/          # 工具函数
+│   ├── public/             # 静态资源
+│   ├── docs/               # 前端文档
+│   ├── package.json        # NPM依赖配置
+│   ├── tsconfig.json       # TypeScript配置
+│   ├── vite.config.ts      # Vite构建配置
+│   └── .eslintrc.cjs       # ESLint配置
+├── configs/                # 全局配置文件
+│   ├── config.development.yaml  # 开发环境配置
+│   └── config.production.yaml   # 生产环境配置
 ├── docs/                   # 项目文档
+│   ├── CAMELCASE_MIGRATION_REPORT.md # 迁移报告
+│   ├── go-coding-standards.md     # Go编码规范
+│   └── api-design-standards.md    # API设计规范
 ├── scripts/                # 构建脚本
-└── tools/                  # 开发工具
+├── .gitignore              # Git忽略文件
+├── README.md               # 项目说明
+├── CONTRIBUTING.md         # 贡献指南
+├── AGENTS.md               # AI开发指南
+├── CLAUDE.md               # Claude开发配置
+└── optimization_guide.md   # 性能优化指南
 ```
 
 ## 🔧 开发指南
 
 ### 代码规范
+
+#### Go代码规范
 - 遵循 [Go Code Review Comments](https://github.com/golang/go/wiki/CodeReviewComments)
 - 使用 `golangci-lint` 进行代码检查
-- 函数和方法必须有注释
+- 所有导出的函数、类型、常量必须有注释
+- 使用 JSDoc 风格的注释
+
+#### TypeScript代码规范
+- 使用严格的 TypeScript 配置
+- 所有函数必须有参数和返回值类型
+- 使用 interface 定义对象类型
+- 避免使用 any 类型
+
+#### 命名规范
+- **API 接口**: 统一使用 camelCase 命名
+- **数据库字段**: 保持 snake_case (GORM标签处理)
+- **常量**: UpperCamelCase 或 SCREAMING_SNAKE_CASE
+- **变量**: lowerCamelCase
+
+### 测试要求
 - 单元测试覆盖率 > 80%
+- 前端组件测试覆盖
+- API 集成测试
+- E2E 测试覆盖核心流程
 
 ### 提交规范
 ```bash
@@ -255,48 +287,85 @@ kubectl get pods -n gamelink
 ## 📚 API文档
 
 ### 在线文档
-- Swagger UI: http://localhost:8080/swagger/index.html
-- API文档: [docs/api.md](docs/api.md)
+- **Swagger UI**: http://localhost:8080/swagger
+- **API 文档**: http://localhost:8080/swagger.json
+- **根路径**: http://localhost:8080/ (显示所有端点)
+
+### API 规范
+- **命名规范**: 统一 camelCase (已迁移完成)
+- **认证方式**: Bearer Token (JWT)
+- **响应格式**: 统一 JSON 格式
+- **错误处理**: 标准化错误码和消息
 
 ### 主要API端点
 ```
-用户服务:
-POST   /api/v1/auth/register     # 用户注册
+认证相关:
 POST   /api/v1/auth/login        # 用户登录
-GET    /api/v1/users/profile     # 获取用户信息
+GET    /api/v1/auth/me           # 获取当前用户信息
+POST   /api/v1/auth/logout       # 用户登出
 
-订单服务:
-POST   /api/v1/orders            # 创建订单
-GET    /api/v1/orders            # 获取订单列表
-PUT    /api/v1/orders/{id}       # 更新订单状态
+管理端 - 用户管理:
+GET    /api/v1/admin/users       # 获取用户列表
+POST   /api/v1/admin/users       # 创建用户
+GET    /api/v1/admin/users/{id}  # 获取用户详情
+PUT    /api/v1/admin/users/{id}  # 更新用户信息
+DELETE /api/v1/admin/users/{id}  # 删除用户
 
-支付服务:
-POST   /api/v1/payments/wechat   # 微信支付
-POST   /api/v1/payments/alipay   # 支付宝支付
+管理端 - 订单管理:
+GET    /api/v1/admin/orders      # 获取订单列表
+GET    /api/v1/admin/orders/{id} # 获取订单详情
+PUT    /api/v1/admin/orders/{id} # 更新订单状态
+DELETE /api/v1/admin/orders/{id} # 删除订单
+
+管理端 - 游戏管理:
+GET    /api/v1/admin/games       # 获取游戏列表
+POST   /api/v1/admin/games       # 创建游戏
+GET    /api/v1/admin/games/{id}  # 获取游戏详情
+PUT    /api/v1/admin/games/{id}  # 更新游戏信息
+DELETE /api/v1/admin/games/{id}  # 删除游戏
 ```
+
+### 📖 详细文档
+- [CamelCase 迁移报告](docs/CAMELCASE_MIGRATION_REPORT.md)
+- [Go 编码规范](docs/go-coding-standards.md)
+- [API 设计规范](docs/api-design-standards.md)
 
 ## 🧪 测试
 
-### 运行测试
-```bash
-# 单元测试
-go test ./...
+### 后端测试
+```powershell
+# 在 backend/ 目录下执行
 
-# 集成测试
-go test -tags=integration ./...
+# 运行所有测试
+make test
 
-# 性能测试
-go test -bench=. ./...
+# 运行特定测试
+go test ./internal/service
 
-# 测试覆盖率
+# 生成覆盖率报告
 go test -coverprofile=coverage.out ./...
 go tool cover -html=coverage.out
 ```
 
+### 前端测试
+```powershell
+# 在 frontend/ 目录下执行
+
+# 运行测试
+npm run test
+
+# 运行测试并生成覆盖率
+npm run test:run
+
+# 监听模式
+npm run test -- --watch
+```
+
 ### 测试环境
-- 单元测试覆盖率要求: 80%+
-- 集成测试环境: 独立的测试数据库
-- 性能测试: 模拟真实负载场景
+- **单元测试覆盖率要求**: 80%+
+- **集成测试环境**: 独立的测试数据库
+- **性能测试**: 模拟真实负载场景
+- **E2E 测试**: 核心业务流程覆盖
 
 ## 📈 监控和日志
 

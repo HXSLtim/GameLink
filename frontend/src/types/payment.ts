@@ -15,14 +15,14 @@ export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded' | 'cancel
  * 支付实体 - 与后端 model.Payment 保持一致
  */
 export interface Payment extends BaseEntity {
-  order_id: number;
-  user_id: number;
-  amount_cents: number;
+  orderId: number;
+  userId: number;
+  amountCents: number;
   currency?: Currency;
   method: string;
   status: string;
-  transaction_id?: string;
-  provider_tx_id?: string;
+  transactionId?: string;
+  providerTxId?: string;
 }
 
 /**
@@ -31,7 +31,7 @@ export interface Payment extends BaseEntity {
 export interface PaymentDetail extends Payment {
   order?: {
     id: number;
-    order_no?: string;
+    orderNo?: string;
     title?: string;
   };
   user?: {
@@ -45,26 +45,26 @@ export interface PaymentDetail extends Payment {
  */
 export interface PaymentListQuery {
   page?: number;
-  page_size?: number;
+  pageSize?: number;
   keyword?: string; // 搜索关键词（交易号/订单ID）
-  order_id?: number;
-  user_id?: number;
+  orderId?: number;
+  userId?: number;
   method?: PaymentMethod;
   status?: PaymentStatus;
   currency?: Currency;
-  date_from?: string;
-  date_to?: string;
-  sort_by?: 'created_at' | 'updated_at' | 'amount_cents';
-  sort_order?: 'asc' | 'desc';
+  dateFrom?: string;
+  dateTo?: string;
+  sortBy?: 'createdAt' | 'updatedAt' | 'amountCents';
+  sortOrder?: 'asc' | 'desc';
 }
 
 /**
  * 创建支付请求
  */
 export interface CreatePaymentRequest {
-  order_id: number;
+  orderId: number;
   method: PaymentMethod;
-  amount_cents: number;
+  amountCents: number;
   currency?: Currency;
 }
 
@@ -73,7 +73,7 @@ export interface CreatePaymentRequest {
  */
 export interface UpdatePaymentRequest {
   status?: PaymentStatus;
-  provider_tx_id?: string;
+  providerTxId?: string;
 }
 
 /**
@@ -81,7 +81,7 @@ export interface UpdatePaymentRequest {
  */
 export interface RefundPaymentRequest {
   reason: string;
-  amount_cents?: number; // 部分退款金额，不传则全额退款
+  amountCents?: number; // 部分退款金额，不传则全额退款
 }
 
 /**

@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, matchPath } from 'react-router-dom';
 import styles from './Sidebar.module.less';
 
 export interface MenuItem {
@@ -17,11 +17,44 @@ export interface SidebarProps {
   collapsed?: boolean;
 }
 
+/**
+ * 侧边栏导航组件
+ * 支持精确匹配和子路由匹配
+ */
 export const Sidebar: React.FC<SidebarProps> = ({ menuItems, collapsed = false }) => {
   const location = useLocation();
 
-  const isActive = (path: string) => {
-    return location.pathname === path;
+  /**
+   * 判断菜单项是否激活
+   * 支持：
+   * 1. 精确路径匹配
+   * 2. 子路由匹配（如 /orders/:id 激活 /orders）
+   * 3. 忽略查询参数
+   */
+  const isActive = (path: string): boolean => {
+    // 精确匹配（忽略查询参数和hash）
+    if (location.pathname === path) {
+      return true;
+    }
+
+    // 子路由匹配
+    // 例如：/orders/:id 应该激活 /orders 菜单项
+    if (path !== '/' && path !== '/dashboard') {
+      const match = matchPath(
+        {
+          path: `${path}/*`,
+          caseSensitive: false,
+          end: false,
+        },
+        location.pathname,
+      );
+
+      if (match) {
+        return true;
+      }
+    }
+
+    return false;
   };
 
   return (

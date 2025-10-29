@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"gorm.io/driver/sqlite"
+	sqlite "github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 )
 

@@ -20,11 +20,17 @@ import (
 	"gamelink/internal/repository/gormrepo"
 )
 
-// ErrValidation 表示输入校验失败。
-var ErrValidation = errors.New("validation failed")
+var (
+	// ErrValidation 表示输入校验失败。
+	ErrValidation = errors.New("validation failed")
+	// ErrUserNotFound 用于统一标识用户不存在的场景。
+	ErrUserNotFound = errors.New("user not found")
+	// ErrOrderInvalidTransition 代表订单状态流转不合法。
+	ErrOrderInvalidTransition = errors.New("invalid order status transition")
 
-// ErrNotFound 暴露仓储的未找到错误，便于 handler 判定。
-var ErrNotFound = repository.ErrNotFound
+	// ErrNotFound 暴露仓储的未找到错误，便于 handler 判定。
+	ErrNotFound = repository.ErrNotFound
+)
 
 // AdminService 聚合后台管理所需的业务逻辑。
 type AdminService struct {
@@ -333,7 +339,11 @@ func (s *AdminService) ListUsersWithOptions(ctx context.Context, opts repository
 
 // GetUser 返回指定用户。
 func (s *AdminService) GetUser(ctx context.Context, id uint64) (*model.User, error) {
-	return s.users.Get(ctx, id)
+	user, err := s.users.Get(ctx, id)
+	if err != nil {
+		return nil, mapUserError(err)
+	}
+	return user, nil
 }
 
 // CreateUser 新建用户并对密码加密。
@@ -375,7 +385,7 @@ func (s *AdminService) CreateUser(ctx context.Context, input CreateUserInput) (*
 func (s *AdminService) UpdateUser(ctx context.Context, id uint64, input UpdateUserInput) (*model.User, error) {
 	user, err := s.users.Get(ctx, id)
 	if err != nil {
-		return nil, err
+		return nil, mapUserError(err)
 	}
 
 	if err := validateUserInput(input.Name, input.Role, input.Status, optionalPassword(input.Password)); err != nil {
@@ -419,7 +429,7 @@ func (s *AdminService) UpdateUser(ctx context.Context, id uint64, input UpdateUs
 // DeleteUser 删除用户。
 func (s *AdminService) DeleteUser(ctx context.Context, id uint64) error {
 	if err := s.users.Delete(ctx, id); err != nil {
-		return err
+		return mapUserError(err)
 	}
 	s.invalidateCache(ctx, cacheKeyUsers)
 	// audit
@@ -436,7 +446,7 @@ func (s *AdminService) DeleteUser(ctx context.Context, id uint64) error {
 func (s *AdminService) UpdateUserStatus(ctx context.Context, id uint64, status model.UserStatus) (*model.User, error) {
 	user, err := s.users.Get(ctx, id)
 	if err != nil {
-		return nil, err
+		return nil, mapUserError(err)
 	}
 	if err := validateUserInput(user.Name, user.Role, status, ""); err != nil {
 		return nil, err
@@ -454,7 +464,7 @@ func (s *AdminService) UpdateUserStatus(ctx context.Context, id uint64, status m
 func (s *AdminService) UpdateUserRole(ctx context.Context, id uint64, role model.Role) (*model.User, error) {
 	user, err := s.users.Get(ctx, id)
 	if err != nil {
-		return nil, err
+		return nil, mapUserError(err)
 	}
 	if err := validateUserInput(user.Name, role, user.Status, ""); err != nil {
 		return nil, err
@@ -810,7 +820,7 @@ func (s *AdminService) UpdateOrder(ctx context.Context, id uint64, input UpdateO
 
 	// state machine guard
 	if !isAllowedOrderTransition(order.Status, input.Status) {
-		return nil, ErrValidation
+		return nil, ErrOrderInvalidTransition
 	}
 
 	prevStatus := order.Status
@@ -1262,7 +1272,7 @@ func (s *AdminService) CreatePayment(ctx context.Context, in CreatePaymentInput)
 		return nil, err
 	}
 	if _, err := s.users.Get(ctx, in.UserID); err != nil {
-		return nil, err
+		return nil, mapUserError(err)
 	}
 	pay := &model.Payment{
 		OrderID:     in.OrderID,
@@ -1514,6 +1524,16 @@ func (s *AdminService) resolveUser(ctx context.Context, cache map[uint64]*model.
 	}
 	cache[id] = user
 	return user
+}
+
+func mapUserError(err error) error {
+	if err == nil {
+		return nil
+	}
+	if errors.Is(err, repository.ErrNotFound) {
+		return ErrUserNotFound
+	}
+	return err
 }
 
 func mapRefundStatus(status model.PaymentStatus) string {

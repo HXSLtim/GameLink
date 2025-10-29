@@ -81,7 +81,7 @@ export const userApi = {
   /**
    * 获取用户的订单列表
    */
-  getUserOrders: (id: number, params: { page?: number; page_size?: number }): Promise<unknown> => {
+  getUserOrders: (id: number, params: { page?: number; pageSize?: number }): Promise<unknown> => {
     return apiClient.get(`/api/v1/admin/users/${id}/orders`, { params });
   },
 
@@ -137,7 +137,7 @@ export const playerApi = {
    */
   updateVerification: (
     id: number,
-    data: { verification_status: 'pending' | 'verified' | 'rejected' },
+    data: { verificationStatus: 'pending' | 'verified' | 'rejected' },
   ): Promise<Player> => {
     return apiClient.put(`/api/v1/admin/players/${id}/verification`, data);
   },
@@ -145,8 +145,8 @@ export const playerApi = {
   /**
    * 更新主游戏
    */
-  updateMainGame: (id: number, main_game_id: number): Promise<Player> => {
-    return apiClient.put(`/api/v1/admin/players/${id}/games`, { main_game_id });
+  updateMainGame: (id: number, mainGameId: number): Promise<Player> => {
+    return apiClient.put(`/api/v1/admin/players/${id}/games`, { mainGameId });
   },
 
   /**

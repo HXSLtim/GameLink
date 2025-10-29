@@ -108,10 +108,12 @@ func ensureSuperAdmin(db *gorm.DB) error {
 
 	var existing model.User
 	err := lookup.First(&existing).Error
-	if err == nil {
+	switch {
+	case err == nil:
 		return nil
-	}
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+	case errors.Is(err, gorm.ErrRecordNotFound):
+		// fall through and create admin user
+	default:
 		return err
 	}
 

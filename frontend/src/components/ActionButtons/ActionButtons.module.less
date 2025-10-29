@@ -1,0 +1,21 @@
+@import '../../styles/variables.less';
+
+.actions {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.actionButton {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-sm);
+}
+
+.deleteButton {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-error, #f53f3f);
+
+  &:hover {
+    color: var(--color-error-hover, #cb272d);
+  }
+}

@@ -306,7 +306,6 @@ const [queryParams, setQueryParams] = useState({
 **文档版本**: v1.0  
 **最后更新**: 2025-10-28
 
-
 > 修复时间: 2025-10-28  
 > 问题类型: 快捷入口筛选失效 + 下拉框遮挡问题
 
@@ -612,5 +611,3 @@ const [queryParams, setQueryParams] = useState({
 
 **文档版本**: v1.0  
 **最后更新**: 2025-10-28
-
-

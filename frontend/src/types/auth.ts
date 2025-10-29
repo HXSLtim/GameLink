@@ -13,7 +13,7 @@ export interface LoginRequest {
  */
 export interface LoginResult {
   token: string;
-  expires_in?: number;
+  expiresIn?: number;
   user?: CurrentUser;
 }
 
@@ -21,7 +21,7 @@ export interface LoginResult {
  * 刷新令牌请求
  */
 export interface RefreshTokenRequest {
-  refresh_token: string;
+  refreshToken: string;
 }
 
 /**
@@ -32,12 +32,12 @@ export interface CurrentUser {
   name: string;
   email?: string;
   phone?: string;
-  avatar_url?: string;
+  avatarUrl?: string;
   role: UserRole;
   status: UserStatus;
-  last_login_at?: string;
-  created_at?: string;
-  updated_at?: string;
+  lastLoginAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
   // 兼容字段
   username?: string;
   avatar?: string;

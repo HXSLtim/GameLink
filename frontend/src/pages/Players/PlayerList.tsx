@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DataTable, Button, Input, Select, Tag } from '../../components';
+import { DataTable, Button, Input, Select, Tag, Modal } from '../../components';
 import type { FilterConfig } from '../../components/DataTable';
 import type { TableColumn } from '../../components/Table/Table';
 import { playerApi } from '../../services/api/user';
-import type { Player, PlayerListQuery } from '../../types/user';
+import type {
+  Player,
+  PlayerListQuery,
+  CreatePlayerRequest,
+  UpdatePlayerRequest,
+} from '../../types/user';
 import { formatCurrency, formatDateTime, formatRelativeTime } from '../../utils/formatters';
+import { PlayerFormModal } from './PlayerFormModal';
 import styles from './PlayerList.module.less';
 
 export const PlayerList: React.FC = () => {
@@ -14,12 +20,20 @@ export const PlayerList: React.FC = () => {
   const [players, setPlayers] = useState<Player[]>([]);
   const [total, setTotal] = useState(0);
 
+  // 表单Modal状态
+  const [formModalVisible, setFormModalVisible] = useState(false);
+  const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
+
+  // 删除确认Modal状态
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [deletingPlayer, setDeletingPlayer] = useState<Player | null>(null);
+
   // 查询参数
   const [queryParams, setQueryParams] = useState<PlayerListQuery>({
     page: 1,
-    page_size: 10,
+    pageSize: 10,
     keyword: '',
-    is_verified: undefined,
+    isVerified: undefined,
   });
 
   // 加载陪玩师列表
@@ -29,9 +43,9 @@ export const PlayerList: React.FC = () => {
     try {
       const result = await playerApi.getList({
         page: queryParams.page,
-        page_size: queryParams.page_size,
+        pageSize: queryParams.pageSize,
         keyword: queryParams.keyword || undefined,
-        is_verified: queryParams.is_verified,
+        isVerified: queryParams.isVerified,
       });
 
       if (result && result.list) {
@@ -51,18 +65,41 @@ export const PlayerList: React.FC = () => {
   };
 
   // 搜索
-  const handleSearch = () => {
+  const handleSearch = async () => {
     setQueryParams((prev) => ({ ...prev, page: 1 }));
+    await loadPlayers();
   };
 
   // 重置
-  const handleReset = () => {
-    setQueryParams({
+  const handleReset = async () => {
+    const resetParams = {
       page: 1,
-      page_size: 10,
+      pageSize: 10,
       keyword: '',
-      is_verified: undefined,
-    });
+      isVerified: undefined,
+    };
+    setQueryParams(resetParams);
+    // 使用重置后的参数立即加载数据
+    setLoading(true);
+    try {
+      const result = await playerApi.getList({
+        page: resetParams.page,
+        pageSize: resetParams.pageSize,
+      });
+      if (result && result.list) {
+        setPlayers(result.list);
+        setTotal(result.total || 0);
+      } else {
+        setPlayers([]);
+        setTotal(0);
+      }
+    } catch (err) {
+      console.error('加载陪玩师列表失败:', err);
+      setPlayers([]);
+      setTotal(0);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // 分页变化
@@ -70,11 +107,58 @@ export const PlayerList: React.FC = () => {
     setQueryParams((prev) => ({ ...prev, page }));
   };
 
+  // 新增陪玩师
+  const handleCreate = () => {
+    setEditingPlayer(null);
+    setFormModalVisible(true);
+  };
+
+  // 编辑陪玩师
+  const handleEdit = (player: Player) => {
+    setEditingPlayer(player);
+    setFormModalVisible(true);
+  };
+
+  // 提交表单
+  const handleFormSubmit = async (data: CreatePlayerRequest | UpdatePlayerRequest) => {
+    try {
+      if (editingPlayer) {
+        await playerApi.update(editingPlayer.id, data as UpdatePlayerRequest);
+      } else {
+        await playerApi.create(data as CreatePlayerRequest);
+      }
+      await loadPlayers();
+    } catch (err) {
+      console.error('操作失败:', err);
+      throw err;
+    }
+  };
+
+  // 删除陪玩师
+  const handleDelete = (player: Player) => {
+    setDeletingPlayer(player);
+    setDeleteModalVisible(true);
+  };
+
+  // 确认删除
+  const handleConfirmDelete = async () => {
+    if (!deletingPlayer) return;
+
+    try {
+      await playerApi.delete(deletingPlayer.id);
+      setDeleteModalVisible(false);
+      setDeletingPlayer(null);
+      await loadPlayers();
+    } catch (err) {
+      console.error('删除失败:', err);
+    }
+  };
+
   // 加载数据
   useEffect(() => {
     loadPlayers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queryParams.page, queryParams.page_size]);
+  }, [queryParams.page, queryParams.pageSize]);
 
   // 表格列定义
   const columns: TableColumn<Player>[] = [
@@ -89,17 +173,11 @@ export const PlayerList: React.FC = () => {
       key: 'playerInfo',
       render: (_: unknown, record: Player) => (
         <div className={styles.playerInfo}>
-          {record.user?.avatar_url && (
-            <img 
-              src={record.user.avatar_url} 
-              alt={record.user.name} 
-              className={styles.avatar} 
-            />
+          {record.user?.avatarUrl && (
+            <img src={record.user.avatarUrl} alt={record.user.name} className={styles.avatar} />
           )}
-          {!record.user?.avatar_url && (
-            <div className={styles.avatarPlaceholder}>
-              {record.user?.name.charAt(0) || '?'}
-            </div>
+          {!record.user?.avatarUrl && (
+            <div className={styles.avatarPlaceholder}>{record.user?.name.charAt(0) || '?'}</div>
           )}
           <div className={styles.playerDetails}>
             <div className={styles.playerName}>{record.user?.name || '-'}</div>
@@ -114,9 +192,7 @@ export const PlayerList: React.FC = () => {
       title: '主游戏',
       key: 'mainGame',
       width: '120px',
-      render: (_: unknown, record: Player) => (
-        <div>{record.main_game?.name || '-'}</div>
-      ),
+      render: (_: unknown, record: Player) => <div>{record.mainGame?.name || '-'}</div>,
     },
     {
       title: '段位',
@@ -130,9 +206,7 @@ export const PlayerList: React.FC = () => {
       key: 'hourlyRate',
       width: '100px',
       render: (_: unknown, record: Player) => (
-        <div className={styles.rate}>
-          {formatCurrency(record.hourly_rate_cents)}
-        </div>
+        <div className={styles.rate}>{formatCurrency(record.hourlyRateCents)}</div>
       ),
     },
     {
@@ -141,9 +215,7 @@ export const PlayerList: React.FC = () => {
       key: 'rating',
       width: '80px',
       render: (rating: number) => (
-        <div className={styles.rating}>
-          {rating ? `${rating.toFixed(1)} ⭐` : '-'}
-        </div>
+        <div className={styles.rating}>{rating ? `${rating.toFixed(1)} ⭐` : '-'}</div>
       ),
     },
     {
@@ -151,8 +223,8 @@ export const PlayerList: React.FC = () => {
       key: 'verified',
       width: '100px',
       render: (_: unknown, record: Player) => (
-        <Tag color={record.is_verified ? 'green' : 'orange'}>
-          {record.is_verified ? '已认证' : '未认证'}
+        <Tag color={record.isVerified ? 'green' : 'orange'}>
+          {record.isVerified ? '已认证' : '未认证'}
         </Tag>
       ),
     },
@@ -161,8 +233,8 @@ export const PlayerList: React.FC = () => {
       key: 'available',
       width: '100px',
       render: (_: unknown, record: Player) => (
-        <Tag color={record.is_available ? 'blue' : 'default'}>
-          {record.is_available ? '可接单' : '不可接单'}
+        <Tag color={record.isAvailable ? 'blue' : 'default'}>
+          {record.isAvailable ? '可接单' : '不可接单'}
         </Tag>
       ),
     },
@@ -172,23 +244,35 @@ export const PlayerList: React.FC = () => {
       width: '160px',
       render: (_: unknown, record: Player) => (
         <div className={styles.timeInfo}>
-          <div>{formatRelativeTime(record.created_at)}</div>
-          <div className={styles.timeDetail}>{formatDateTime(record.created_at)}</div>
+          <div>{formatRelativeTime(record.createdAt)}</div>
+          <div className={styles.timeDetail}>{formatDateTime(record.createdAt)}</div>
         </div>
       ),
     },
     {
       title: '操作',
       key: 'actions',
-      width: '120px',
+      width: '200px',
       render: (_: unknown, record: Player) => (
-        <Button
-          variant="text"
-          onClick={() => navigate(`/players/${record.id}`)}
-          className={styles.actionButton}
-        >
-          查看详情
-        </Button>
+        <div className={styles.actions}>
+          <Button
+            variant="text"
+            onClick={() => navigate(`/players/${record.id}`)}
+            className={styles.actionButton}
+          >
+            详情
+          </Button>
+          <Button variant="text" onClick={() => handleEdit(record)} className={styles.actionButton}>
+            编辑
+          </Button>
+          <Button
+            variant="text"
+            onClick={() => handleDelete(record)}
+            className={styles.deleteButton}
+          >
+            删除
+          </Button>
+        </div>
       ),
     },
   ];
@@ -201,9 +285,7 @@ export const PlayerList: React.FC = () => {
       element: (
         <Input
           value={queryParams.keyword}
-          onChange={(e) =>
-            setQueryParams((prev) => ({ ...prev, keyword: e.target.value }))
-          }
+          onChange={(e) => setQueryParams((prev) => ({ ...prev, keyword: e.target.value }))}
           placeholder="陪玩师姓名/手机号"
           onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
         />
@@ -211,21 +293,16 @@ export const PlayerList: React.FC = () => {
     },
     {
       label: '认证状态',
-      key: 'is_verified',
+      key: 'isVerified',
       element: (
         <Select
           value={
-            queryParams.is_verified === undefined
-              ? ''
-              : queryParams.is_verified
-                ? 'true'
-                : 'false'
+            queryParams.isVerified === undefined ? '' : queryParams.isVerified ? 'true' : 'false'
           }
           onChange={(value) =>
             setQueryParams((prev) => ({
               ...prev,
-              is_verified:
-                value === '' ? undefined : value === 'true',
+              isVerified: value === '' ? undefined : value === 'true',
             }))
           }
           options={[
@@ -250,21 +327,62 @@ export const PlayerList: React.FC = () => {
     </>
   );
 
+  // 头部操作按钮
+  const headerActions = (
+    <Button variant="primary" onClick={handleCreate}>
+      新增陪玩师
+    </Button>
+  );
+
   return (
-    <DataTable
-      title="陪玩师管理"
-      filters={filters}
-      filterActions={filterActions}
-      columns={columns}
-      dataSource={players}
-      loading={loading}
-      rowKey="id"
-      pagination={{
-        current: queryParams.page || 1,
-        pageSize: queryParams.page_size || 10,
-        total,
-        onChange: handlePageChange,
-      }}
-    />
+    <>
+      <DataTable
+        title="陪玩师管理"
+        headerActions={headerActions}
+        filters={filters}
+        filterActions={filterActions}
+        columns={columns}
+        dataSource={players}
+        loading={loading}
+        rowKey="id"
+        pagination={{
+          current: queryParams.page || 1,
+          pageSize: queryParams.pageSize || 10,
+          total,
+          onChange: handlePageChange,
+        }}
+      />
+
+      {/* 新增/编辑Modal */}
+      <PlayerFormModal
+        visible={formModalVisible}
+        player={editingPlayer}
+        onClose={() => {
+          setFormModalVisible(false);
+          setEditingPlayer(null);
+        }}
+        onSubmit={handleFormSubmit}
+      />
+
+      {/* 删除确认Modal */}
+      <Modal
+        visible={deleteModalVisible}
+        title="确认删除"
+        onClose={() => {
+          setDeleteModalVisible(false);
+          setDeletingPlayer(null);
+        }}
+        onOk={handleConfirmDelete}
+        onCancel={() => {
+          setDeleteModalVisible(false);
+          setDeletingPlayer(null);
+        }}
+        okText="确定删除"
+        cancelText="取消"
+        width={400}
+      >
+        <p>确定要删除陪玩师 "{deletingPlayer?.user?.name}" 吗？此操作不可恢复。</p>
+      </Modal>
+    </>
   );
 };

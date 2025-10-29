@@ -36,7 +36,7 @@
                     {
                         "type": "integer",
                         "description": "每页数量",
-                        "name": "page_size",
+                        "name": "pageSize",
                         "in": "query"
                     }
                 ],
@@ -73,7 +73,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/admin.GamePayload"
+                            "$ref": "#/definitions/internal_admin.GamePayload"
                         }
                     }
                 ],
@@ -165,7 +165,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/admin.GamePayload"
+                            "$ref": "#/definitions/internal_admin.GamePayload"
                         }
                     }
                 ],
@@ -257,7 +257,7 @@
                     {
                         "type": "integer",
                         "description": "每页数量",
-                        "name": "page_size",
+                        "name": "pageSize",
                         "in": "query"
                     },
                     {
@@ -274,19 +274,19 @@
                     {
                         "type": "integer",
                         "description": "操作者用户ID",
-                        "name": "actor_user_id",
+                        "name": "actorUserId",
                         "in": "query"
                     },
                     {
                         "type": "string",
                         "description": "开始时间",
-                        "name": "date_from",
+                        "name": "dateFrom",
                         "in": "query"
                     },
                     {
                         "type": "string",
                         "description": "结束时间",
-                        "name": "date_to",
+                        "name": "dateTo",
                         "in": "query"
                     },
                     {
@@ -351,7 +351,7 @@
                     {
                         "type": "integer",
                         "description": "每页数量",
-                        "name": "page_size",
+                        "name": "pageSize",
                         "in": "query"
                     },
                     {
@@ -385,13 +385,13 @@
                     {
                         "type": "string",
                         "description": "开始时间",
-                        "name": "date_from",
+                        "name": "dateFrom",
                         "in": "query"
                     },
                     {
                         "type": "string",
                         "description": "结束时间",
-                        "name": "date_to",
+                        "name": "dateTo",
                         "in": "query"
                     }
                 ],
@@ -428,7 +428,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/admin.CreateOrderPayload"
+                            "$ref": "#/definitions/internal_admin.CreateOrderPayload"
                         }
                     }
                 ],
@@ -520,7 +520,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/admin.UpdateOrderPayload"
+                            "$ref": "#/definitions/internal_admin.UpdateOrderPayload"
                         }
                     }
                 ],
@@ -612,7 +612,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/admin.AssignOrderPayload"
+                            "$ref": "#/definitions/internal_admin.AssignOrderPayload"
                         }
                     }
                 ],
@@ -665,7 +665,113 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/admin.CancelOrderPayload"
+                            "$ref": "#/definitions/internal_admin.CancelOrderPayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/orders/{id}/complete": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "将订单状态从 in_progress 置为 completed，并记录完成时间",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin/Orders"
+                ],
+                "summary": "完成订单",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "订单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "备注（可选）",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/internal_admin.orderNotePayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/orders/{id}/confirm": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "将订单状态从 pending 置为 confirmed",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin/Orders"
+                ],
+                "summary": "确认订单",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "订单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "备注（可选）",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/internal_admin.orderNotePayload"
                         }
                     }
                 ],
@@ -718,7 +824,7 @@
                     {
                         "type": "integer",
                         "description": "每页数量",
-                        "name": "page_size",
+                        "name": "pageSize",
                         "in": "query"
                     },
                     {
@@ -737,19 +843,19 @@
                     {
                         "type": "integer",
                         "description": "操作者用户ID",
-                        "name": "actor_user_id",
+                        "name": "actorUserId",
                         "in": "query"
                     },
                     {
                         "type": "string",
                         "description": "开始时间",
-                        "name": "date_from",
+                        "name": "dateFrom",
                         "in": "query"
                     },
                     {
                         "type": "string",
                         "description": "结束时间",
-                        "name": "date_to",
+                        "name": "dateTo",
                         "in": "query"
                     },
                     {
@@ -763,7 +869,7 @@
                     },
                     {
                         "type": "string",
-                        "description": "导出列（逗号分隔），默认：id,entity_type,entity_id,actor_user_id,action,reason,metadata,created_at",
+                        "description": "导出列（逗号分隔），默认：id,entity_type,entity_id,actorUserId,action,reason,metadata,createdAt",
                         "name": "fields",
                         "in": "query"
                     },
@@ -781,6 +887,142 @@
                 "responses": {
                     "200": {
                         "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/orders/{id}/payments": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin/Orders"
+                ],
+                "summary": "获取订单支付记录",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "订单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/orders/{id}/refund": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "将订单状态标记为 refunded，并记录退款金额与原因，同时关联支付退款",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin/Orders"
+                ],
+                "summary": "订单退款",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "订单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "退款信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_admin.orderRefundPayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/orders/{id}/refunds": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin/Orders"
+                ],
+                "summary": "获取订单退款记录",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "订单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -820,8 +1062,144 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/admin.ReviewOrderPayload"
+                            "$ref": "#/definitions/internal_admin.ReviewOrderPayload"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/orders/{id}/reviews": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin/Orders"
+                ],
+                "summary": "获取订单评价列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "订单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/orders/{id}/start": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "将订单状态从 confirmed 置为 in_progress，并记录开始时间",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin/Orders"
+                ],
+                "summary": "开始服务",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "订单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "备注（可选）",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/internal_admin.orderNotePayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/orders/{id}/timeline": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "汇总订单的状态变更、操作日志、支付事件等信息",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin/Orders"
+                ],
+                "summary": "获取订单时间线",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "订单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -867,7 +1245,7 @@
                     {
                         "type": "integer",
                         "description": "每页数量",
-                        "name": "page_size",
+                        "name": "pageSize",
                         "in": "query"
                     },
                     {
@@ -905,13 +1283,13 @@
                     {
                         "type": "string",
                         "description": "开始时间",
-                        "name": "date_from",
+                        "name": "dateFrom",
                         "in": "query"
                     },
                     {
                         "type": "string",
                         "description": "结束时间",
-                        "name": "date_to",
+                        "name": "dateTo",
                         "in": "query"
                     }
                 ],
@@ -948,7 +1326,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/admin.CreatePaymentPayload"
+                            "$ref": "#/definitions/internal_admin.CreatePaymentPayload"
                         }
                     }
                 ],
@@ -1040,7 +1418,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/admin.UpdatePaymentPayload"
+                            "$ref": "#/definitions/internal_admin.UpdatePaymentPayload"
                         }
                     }
                 ],
@@ -1132,7 +1510,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/admin.CapturePaymentPayload"
+                            "$ref": "#/definitions/internal_admin.CapturePaymentPayload"
                         }
                     }
                 ],
@@ -1185,7 +1563,7 @@
                     {
                         "type": "integer",
                         "description": "每页数量",
-                        "name": "page_size",
+                        "name": "pageSize",
                         "in": "query"
                     },
                     {
@@ -1204,19 +1582,19 @@
                     {
                         "type": "integer",
                         "description": "操作者用户ID",
-                        "name": "actor_user_id",
+                        "name": "actorUserId",
                         "in": "query"
                     },
                     {
                         "type": "string",
                         "description": "开始时间",
-                        "name": "date_from",
+                        "name": "dateFrom",
                         "in": "query"
                     },
                     {
                         "type": "string",
                         "description": "结束时间",
-                        "name": "date_to",
+                        "name": "dateTo",
                         "in": "query"
                     },
                     {
@@ -1230,7 +1608,7 @@
                     },
                     {
                         "type": "string",
-                        "description": "导出列（逗号分隔），默认：id,entity_type,entity_id,actor_user_id,action,reason,metadata,created_at",
+                        "description": "导出列（逗号分隔），默认：id,entity_type,entity_id,actorUserId,action,reason,metadata,createdAt",
                         "name": "fields",
                         "in": "query"
                     },
@@ -1286,7 +1664,7 @@
                         "name": "request",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/admin.RefundPaymentPayload"
+                            "$ref": "#/definitions/internal_admin.RefundPaymentPayload"
                         }
                     }
                 ],
@@ -1332,7 +1710,7 @@
                     {
                         "type": "integer",
                         "description": "每页数量",
-                        "name": "page_size",
+                        "name": "pageSize",
                         "in": "query"
                     }
                 ],
@@ -1369,7 +1747,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/admin.CreatePlayerPayload"
+                            "$ref": "#/definitions/internal_admin.CreatePlayerPayload"
                         }
                     }
                 ],
@@ -1461,7 +1839,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/admin.UpdatePlayerPayload"
+                            "$ref": "#/definitions/internal_admin.UpdatePlayerPayload"
                         }
                     }
                 ],
@@ -1548,7 +1926,7 @@
                         "required": true
                     },
                     {
-                        "description": "{main_game_id}",
+                        "description": "{mainGameId}",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -1610,7 +1988,7 @@
                     {
                         "type": "integer",
                         "description": "每页数量",
-                        "name": "page_size",
+                        "name": "pageSize",
                         "in": "query"
                     },
                     {
@@ -1627,19 +2005,19 @@
                     {
                         "type": "integer",
                         "description": "操作者用户ID",
-                        "name": "actor_user_id",
+                        "name": "actorUserId",
                         "in": "query"
                     },
                     {
                         "type": "string",
                         "description": "开始时间",
-                        "name": "date_from",
+                        "name": "dateFrom",
                         "in": "query"
                     },
                     {
                         "type": "string",
                         "description": "结束时间",
-                        "name": "date_to",
+                        "name": "dateTo",
                         "in": "query"
                     },
                     {
@@ -1710,7 +2088,7 @@
                     {
                         "type": "integer",
                         "description": "每页数量",
-                        "name": "page_size",
+                        "name": "pageSize",
                         "in": "query"
                     }
                 ],
@@ -1756,7 +2134,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/admin.SkillTagsBody"
+                            "$ref": "#/definitions/internal_admin.SkillTagsBody"
                         }
                     }
                 ],
@@ -1804,7 +2182,7 @@
                         "required": true
                     },
                     {
-                        "description": "{verification_status}",
+                        "description": "{verificationStatus}",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -1858,7 +2236,7 @@
                     {
                         "type": "integer",
                         "description": "每页数量",
-                        "name": "page_size",
+                        "name": "pageSize",
                         "in": "query"
                     },
                     {
@@ -1882,13 +2260,13 @@
                     {
                         "type": "string",
                         "description": "开始时间",
-                        "name": "date_from",
+                        "name": "dateFrom",
                         "in": "query"
                     },
                     {
                         "type": "string",
                         "description": "结束时间",
-                        "name": "date_to",
+                        "name": "dateTo",
                         "in": "query"
                     }
                 ],
@@ -1925,7 +2303,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/admin.CreateReviewPayload"
+                            "$ref": "#/definitions/internal_admin.CreateReviewPayload"
                         }
                     }
                 ],
@@ -2017,7 +2395,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/admin.UpdateReviewPayload"
+                            "$ref": "#/definitions/internal_admin.UpdateReviewPayload"
                         }
                     }
                 ],
@@ -2109,7 +2487,7 @@
                     {
                         "type": "integer",
                         "description": "每页数量",
-                        "name": "page_size",
+                        "name": "pageSize",
                         "in": "query"
                     },
                     {
@@ -2126,19 +2504,19 @@
                     {
                         "type": "integer",
                         "description": "操作者用户ID",
-                        "name": "actor_user_id",
+                        "name": "actorUserId",
                         "in": "query"
                     },
                     {
                         "type": "string",
                         "description": "开始时间",
-                        "name": "date_from",
+                        "name": "dateFrom",
                         "in": "query"
                     },
                     {
                         "type": "string",
                         "description": "结束时间",
-                        "name": "date_to",
+                        "name": "dateTo",
                         "in": "query"
                     },
                     {
@@ -2196,13 +2574,13 @@
                     {
                         "type": "string",
                         "description": "开始时间",
-                        "name": "date_from",
+                        "name": "dateFrom",
                         "in": "query"
                     },
                     {
                         "type": "string",
                         "description": "结束时间",
-                        "name": "date_to",
+                        "name": "dateTo",
                         "in": "query"
                     }
                 ],
@@ -2235,13 +2613,13 @@
                     {
                         "type": "string",
                         "description": "开始时间",
-                        "name": "date_from",
+                        "name": "dateFrom",
                         "in": "query"
                     },
                     {
                         "type": "string",
                         "description": "结束时间",
-                        "name": "date_to",
+                        "name": "dateTo",
                         "in": "query"
                     },
                     {
@@ -2450,7 +2828,7 @@
                     {
                         "type": "integer",
                         "description": "每页数量",
-                        "name": "page_size",
+                        "name": "pageSize",
                         "in": "query"
                     },
                     {
@@ -2476,13 +2854,13 @@
                     {
                         "type": "string",
                         "description": "开始时间",
-                        "name": "date_from",
+                        "name": "dateFrom",
                         "in": "query"
                     },
                     {
                         "type": "string",
                         "description": "结束时间",
-                        "name": "date_to",
+                        "name": "dateTo",
                         "in": "query"
                     },
                     {
@@ -2525,7 +2903,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/admin.CreateUserPayload"
+                            "$ref": "#/definitions/internal_admin.CreateUserPayload"
                         }
                     }
                 ],
@@ -2617,7 +2995,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/admin.UpdateUserPayload"
+                            "$ref": "#/definitions/internal_admin.UpdateUserPayload"
                         }
                     }
                 ],
@@ -2709,7 +3087,7 @@
                     {
                         "type": "integer",
                         "description": "每页数量",
-                        "name": "page_size",
+                        "name": "pageSize",
                         "in": "query"
                     },
                     {
@@ -2726,19 +3104,19 @@
                     {
                         "type": "integer",
                         "description": "操作者用户ID",
-                        "name": "actor_user_id",
+                        "name": "actorUserId",
                         "in": "query"
                     },
                     {
                         "type": "string",
                         "description": "开始时间",
-                        "name": "date_from",
+                        "name": "dateFrom",
                         "in": "query"
                     },
                     {
                         "type": "string",
                         "description": "结束时间",
-                        "name": "date_to",
+                        "name": "dateTo",
                         "in": "query"
                     },
                     {
@@ -2809,7 +3187,7 @@
                     {
                         "type": "integer",
                         "description": "每页数量",
-                        "name": "page_size",
+                        "name": "pageSize",
                         "in": "query"
                     },
                     {
@@ -2825,13 +3203,13 @@
                     {
                         "type": "string",
                         "description": "开始时间",
-                        "name": "date_from",
+                        "name": "dateFrom",
                         "in": "query"
                     },
                     {
                         "type": "string",
                         "description": "结束时间",
-                        "name": "date_to",
+                        "name": "dateTo",
                         "in": "query"
                     }
                 ],
@@ -2985,7 +3363,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handler.loginRequest"
+                            "$ref": "#/definitions/internal_handler.loginRequest"
                         }
                     }
                 ],
@@ -2993,7 +3371,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handler.loginResponse"
+                            "$ref": "#/definitions/internal_handler.loginResponse"
                         }
                     },
                     "400": {
@@ -3053,7 +3431,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handler.loginResponse"
+                            "$ref": "#/definitions/internal_handler.loginResponse"
                         }
                     },
                     "401": {
@@ -3085,7 +3463,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handler.tokenPayload"
+                            "$ref": "#/definitions/internal_handler.tokenPayload"
                         }
                     },
                     "401": {
@@ -3118,7 +3496,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handler.registerRequest"
+                            "$ref": "#/definitions/internal_handler.registerRequest"
                         }
                     }
                 ],
@@ -3126,7 +3504,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handler.loginResponse"
+                            "$ref": "#/definitions/internal_handler.loginResponse"
                         }
                     },
                     "400": {
@@ -3141,7 +3519,68 @@
         }
     },
     "definitions": {
-        "admin.AssignOrderPayload": {
+        "gamelink_internal_model.Role": {
+            "type": "string",
+            "enum": [
+                "user",
+                "player",
+                "admin"
+            ],
+            "x-enum-varnames": [
+                "RoleUser",
+                "RolePlayer",
+                "RoleAdmin"
+            ]
+        },
+        "gamelink_internal_model.User": {
+            "type": "object",
+            "properties": {
+                "avatarUrl": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "lastLoginAt": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "role": {
+                    "$ref": "#/definitions/gamelink_internal_model.Role"
+                },
+                "status": {
+                    "$ref": "#/definitions/gamelink_internal_model.UserStatus"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.UserStatus": {
+            "type": "string",
+            "enum": [
+                "active",
+                "suspended",
+                "banned"
+            ],
+            "x-enum-varnames": [
+                "UserStatusActive",
+                "UserStatusSuspended",
+                "UserStatusBanned"
+            ]
+        },
+        "internal_admin.AssignOrderPayload": {
             "type": "object",
             "required": [
                 "player_id"
@@ -3152,7 +3591,7 @@
                 }
             }
         },
-        "admin.CancelOrderPayload": {
+        "internal_admin.CancelOrderPayload": {
             "type": "object",
             "properties": {
                 "reason": {
@@ -3160,15 +3599,28 @@
                 }
             }
         },
-        "admin.CapturePaymentPayload": {
-            "type": "object"
+        "internal_admin.CapturePaymentPayload": {
+            "type": "object",
+            "properties": {
+                "paid_at": {
+                    "type": "string",
+                    "example": "2025-10-28T10:00:00Z"
+                },
+                "provider_raw": {
+                    "type": "string",
+                    "example": "{\"result\":\"captured\"}"
+                },
+                "provider_trade_no": {
+                    "type": "string"
+                }
+            }
         },
-        "admin.CreateOrderPayload": {
+        "internal_admin.CreateOrderPayload": {
             "type": "object",
             "required": [
                 "currency",
                 "game_id",
-                "price_cents",
+                "priceCents",
                 "user_id"
             ],
             "properties": {
@@ -3184,13 +3636,13 @@
                 "player_id": {
                     "type": "integer"
                 },
-                "price_cents": {
+                "priceCents": {
                     "type": "integer"
                 },
-                "scheduled_end": {
+                "scheduledEnd": {
                     "type": "string"
                 },
-                "scheduled_start": {
+                "scheduledStart": {
                     "type": "string"
                 },
                 "title": {
@@ -3201,37 +3653,68 @@
                 }
             }
         },
-        "admin.CreatePaymentPayload": {
-            "type": "object"
+        "internal_admin.CreatePaymentPayload": {
+            "type": "object",
+            "required": [
+                "amount_cents",
+                "currency",
+                "method",
+                "order_id",
+                "user_id"
+            ],
+            "properties": {
+                "amount_cents": {
+                    "type": "integer"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "method": {
+                    "type": "string"
+                },
+                "order_id": {
+                    "type": "integer"
+                },
+                "provider_raw": {
+                    "type": "string",
+                    "example": "{\"result\":\"success\"}"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
         },
-        "admin.CreatePlayerPayload": {
+        "internal_admin.CreatePlayerPayload": {
             "type": "object",
             "required": [
                 "user_id",
-                "verification_status"
+                "verificationStatus"
             ],
             "properties": {
                 "bio": {
                     "type": "string"
                 },
-                "hourly_rate_cents": {
+                "hourlyRateCents": {
                     "type": "integer"
                 },
-                "main_game_id": {
+                "mainGameId": {
                     "type": "integer"
                 },
                 "nickname": {
                     "type": "string"
                 },
+                "rank": {
+                    "type": "string"
+                },
                 "user_id": {
                     "type": "integer"
                 },
-                "verification_status": {
+                "verificationStatus": {
                     "type": "string"
                 }
             }
         },
-        "admin.CreateReviewPayload": {
+        "internal_admin.CreateReviewPayload": {
             "type": "object",
             "required": [
                 "order_id",
@@ -3257,7 +3740,7 @@
                 }
             }
         },
-        "admin.CreateUserPayload": {
+        "internal_admin.CreateUserPayload": {
             "type": "object",
             "required": [
                 "name",
@@ -3266,7 +3749,7 @@
                 "status"
             ],
             "properties": {
-                "avatar_url": {
+                "avatarUrl": {
                     "type": "string"
                 },
                 "email": {
@@ -3290,7 +3773,7 @@
                 }
             }
         },
-        "admin.GamePayload": {
+        "internal_admin.GamePayload": {
             "type": "object",
             "required": [
                 "key",
@@ -3314,10 +3797,23 @@
                 }
             }
         },
-        "admin.RefundPaymentPayload": {
-            "type": "object"
+        "internal_admin.RefundPaymentPayload": {
+            "type": "object",
+            "properties": {
+                "provider_raw": {
+                    "type": "string",
+                    "example": "{\"result\":\"refunded\"}"
+                },
+                "provider_trade_no": {
+                    "type": "string"
+                },
+                "refunded_at": {
+                    "type": "string",
+                    "example": "2025-10-28T12:00:00Z"
+                }
+            }
         },
-        "admin.ReviewOrderPayload": {
+        "internal_admin.ReviewOrderPayload": {
             "type": "object",
             "properties": {
                 "approved": {
@@ -3328,7 +3824,7 @@
                 }
             }
         },
-        "admin.SkillTagsBody": {
+        "internal_admin.SkillTagsBody": {
             "type": "object",
             "required": [
                 "tags"
@@ -3342,27 +3838,27 @@
                 }
             }
         },
-        "admin.UpdateOrderPayload": {
+        "internal_admin.UpdateOrderPayload": {
             "type": "object",
             "required": [
                 "currency",
-                "price_cents",
+                "priceCents",
                 "status"
             ],
             "properties": {
-                "cancel_reason": {
+                "cancelReason": {
                     "type": "string"
                 },
                 "currency": {
                     "type": "string"
                 },
-                "price_cents": {
+                "priceCents": {
                     "type": "integer"
                 },
-                "scheduled_end": {
+                "scheduledEnd": {
                     "type": "string"
                 },
-                "scheduled_start": {
+                "scheduledStart": {
                     "type": "string"
                 },
                 "status": {
@@ -3370,33 +3866,59 @@
                 }
             }
         },
-        "admin.UpdatePaymentPayload": {
-            "type": "object"
-        },
-        "admin.UpdatePlayerPayload": {
+        "internal_admin.UpdatePaymentPayload": {
             "type": "object",
             "required": [
-                "verification_status"
+                "status"
+            ],
+            "properties": {
+                "paid_at": {
+                    "type": "string",
+                    "example": "2025-10-28T10:00:00Z"
+                },
+                "provider_raw": {
+                    "type": "string",
+                    "example": "{\"result\":\"update\"}"
+                },
+                "provider_trade_no": {
+                    "type": "string"
+                },
+                "refunded_at": {
+                    "type": "string",
+                    "example": "2025-10-28T12:00:00Z"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_admin.UpdatePlayerPayload": {
+            "type": "object",
+            "required": [
+                "verificationStatus"
             ],
             "properties": {
                 "bio": {
                     "type": "string"
                 },
-                "hourly_rate_cents": {
+                "hourlyRateCents": {
                     "type": "integer"
                 },
-                "main_game_id": {
+                "mainGameId": {
                     "type": "integer"
                 },
                 "nickname": {
                     "type": "string"
                 },
-                "verification_status": {
+                "rank": {
+                    "type": "string"
+                },
+                "verificationStatus": {
                     "type": "string"
                 }
             }
         },
-        "admin.UpdateReviewPayload": {
+        "internal_admin.UpdateReviewPayload": {
             "type": "object",
             "required": [
                 "score"
@@ -3410,7 +3932,7 @@
                 }
             }
         },
-        "admin.UpdateUserPayload": {
+        "internal_admin.UpdateUserPayload": {
             "type": "object",
             "required": [
                 "name",
@@ -3418,7 +3940,7 @@
                 "status"
             ],
             "properties": {
-                "avatar_url": {
+                "avatarUrl": {
                     "type": "string"
                 },
                 "email": {
@@ -3441,7 +3963,32 @@
                 }
             }
         },
-        "handler.loginRequest": {
+        "internal_admin.orderNotePayload": {
+            "type": "object",
+            "properties": {
+                "note": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_admin.orderRefundPayload": {
+            "type": "object",
+            "required": [
+                "reason"
+            ],
+            "properties": {
+                "amount_cents": {
+                    "type": "integer"
+                },
+                "note": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler.loginRequest": {
             "type": "object",
             "required": [
                 "password",
@@ -3456,7 +4003,7 @@
                 }
             }
         },
-        "handler.loginResponse": {
+        "internal_handler.loginResponse": {
             "type": "object",
             "properties": {
                 "expires_at": {
@@ -3466,11 +4013,11 @@
                     "type": "string"
                 },
                 "user": {
-                    "$ref": "#/definitions/model.User"
+                    "$ref": "#/definitions/gamelink_internal_model.User"
                 }
             }
         },
-        "handler.registerRequest": {
+        "internal_handler.registerRequest": {
             "type": "object",
             "required": [
                 "name",
@@ -3492,74 +4039,13 @@
                 }
             }
         },
-        "handler.tokenPayload": {
+        "internal_handler.tokenPayload": {
             "type": "object",
             "properties": {
                 "token": {
                     "type": "string"
                 }
             }
-        },
-        "model.Role": {
-            "type": "string",
-            "enum": [
-                "user",
-                "player",
-                "admin"
-            ],
-            "x-enum-varnames": [
-                "RoleUser",
-                "RolePlayer",
-                "RoleAdmin"
-            ]
-        },
-        "model.User": {
-            "type": "object",
-            "properties": {
-                "avatar_url": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "last_login_at": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "phone": {
-                    "type": "string"
-                },
-                "role": {
-                    "$ref": "#/definitions/model.Role"
-                },
-                "status": {
-                    "$ref": "#/definitions/model.UserStatus"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "model.UserStatus": {
-            "type": "string",
-            "enum": [
-                "active",
-                "suspended",
-                "banned"
-            ],
-            "x-enum-varnames": [
-                "UserStatusActive",
-                "UserStatusSuspended",
-                "UserStatusBanned"
-            ]
         }
     },
     "securityDefinitions": {

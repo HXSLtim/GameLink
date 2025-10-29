@@ -7,6 +7,7 @@ import { GameList, GameDetail } from 'pages/Games';
 import { PlayerList } from 'pages/Players';
 import { UserList, UserDetail } from 'pages/Users';
 import { PaymentList } from 'pages/Payments';
+import { ReviewList } from 'pages/Reviews';
 import { ReportDashboard } from 'pages/Reports';
 import { PermissionList } from 'pages/Permissions';
 import { SettingsDashboard } from 'pages/Settings';
@@ -68,6 +69,10 @@ export const router = createBrowserRouter([
           {
             path: 'payments',
             element: <PaymentList />,
+          },
+          {
+            path: 'reviews',
+            element: <ReviewList />,
           },
           {
             path: 'reports',

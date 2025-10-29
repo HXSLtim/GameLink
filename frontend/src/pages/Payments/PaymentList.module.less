@@ -1,0 +1,52 @@
+@import '../../styles/variables.less';
+
+// 金额
+.amount {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+// 交易号
+.transactionId {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  font-family: monospace;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// 时间信息
+.timeInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.timeDetail {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+}
+
+// 操作按钮
+.actions {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.actionButton {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-sm);
+}
+
+.deleteButton {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-error, #f53f3f);
+
+  &:hover {
+    color: var(--color-error-hover, #cb272d);
+  }
+}

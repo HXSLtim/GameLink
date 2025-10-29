@@ -117,10 +117,10 @@ export const OrderDetail: React.FC = () => {
       setActionLoading({ ...actionLoading, confirm: true });
       await orderApi.update(Number(id), {
         currency: orderDetail.currency || 'CNY',
-        price_cents: orderDetail.price_cents,
+        priceCents: orderDetail.priceCents,
         status: OrderStatus.CONFIRMED,
-        scheduled_start: orderDetail.scheduled_start,
-        scheduled_end: orderDetail.scheduled_end,
+        scheduledStart: orderDetail.scheduledStart,
+        scheduledEnd: orderDetail.scheduledEnd,
       });
 
       // 重新加载订单详情
@@ -143,10 +143,10 @@ export const OrderDetail: React.FC = () => {
       setActionLoading({ ...actionLoading, start: true });
       await orderApi.update(Number(id), {
         currency: orderDetail.currency || 'CNY',
-        price_cents: orderDetail.price_cents,
+        priceCents: orderDetail.priceCents,
         status: OrderStatus.IN_PROGRESS,
-        scheduled_start: orderDetail.scheduled_start,
-        scheduled_end: orderDetail.scheduled_end,
+        scheduledStart: orderDetail.scheduledStart,
+        scheduledEnd: orderDetail.scheduledEnd,
       });
 
       // 重新加载订单详情
@@ -169,10 +169,10 @@ export const OrderDetail: React.FC = () => {
       setActionLoading({ ...actionLoading, complete: true });
       await orderApi.update(Number(id), {
         currency: orderDetail.currency || 'CNY',
-        price_cents: orderDetail.price_cents,
+        priceCents: orderDetail.priceCents,
         status: OrderStatus.COMPLETED,
-        scheduled_start: orderDetail.scheduled_start,
-        scheduled_end: orderDetail.scheduled_end,
+        scheduledStart: orderDetail.scheduledStart,
+        scheduledEnd: orderDetail.scheduledEnd,
       });
 
       // 重新加载订单详情
@@ -268,37 +268,37 @@ export const OrderDetail: React.FC = () => {
             <div className={styles.infoItem}>
               <span className={styles.infoLabel}>订单金额</span>
               <span className={`${styles.infoValue} ${styles.price}`}>
-                {formatCurrency(orderDetail.price_cents)}
+                {formatCurrency(orderDetail.priceCents)}
               </span>
             </div>
             <div className={styles.infoItem}>
               <span className={styles.infoLabel}>创建时间</span>
-              <span className={styles.infoValue}>{formatDateTime(orderDetail.created_at)}</span>
+              <span className={styles.infoValue}>{formatDateTime(orderDetail.createdAt)}</span>
             </div>
             <div className={styles.infoItem}>
               <span className={styles.infoLabel}>更新时间</span>
-              <span className={styles.infoValue}>{formatDateTime(orderDetail.updated_at)}</span>
+              <span className={styles.infoValue}>{formatDateTime(orderDetail.updatedAt)}</span>
             </div>
-            {orderDetail.scheduled_start && (
+            {orderDetail.scheduledStart && (
               <div className={styles.infoItem}>
                 <span className={styles.infoLabel}>计划开始</span>
                 <span className={styles.infoValue}>
-                  {formatDateTime(orderDetail.scheduled_start)}
+                  {formatDateTime(orderDetail.scheduledStart)}
                 </span>
               </div>
             )}
-            {orderDetail.scheduled_end && (
+            {orderDetail.scheduledEnd && (
               <div className={styles.infoItem}>
                 <span className={styles.infoLabel}>计划结束</span>
                 <span className={styles.infoValue}>
-                  {formatDateTime(orderDetail.scheduled_end)}
+                  {formatDateTime(orderDetail.scheduledEnd)}
                 </span>
               </div>
             )}
-            {orderDetail.cancel_reason && (
+            {orderDetail.cancelReason && (
               <div className={styles.infoItem}>
                 <span className={styles.infoLabel}>取消原因</span>
-                <span className={styles.infoValue}>{orderDetail.cancel_reason}</span>
+                <span className={styles.infoValue}>{orderDetail.cancelReason}</span>
               </div>
             )}
           </div>
@@ -375,10 +375,10 @@ export const OrderDetail: React.FC = () => {
                   <div className={styles.timelineContent}>
                     <div className={styles.logHeader}>
                       <span className={styles.logAction}>{log.action}</span>
-                      <span className={styles.logTime}>{formatRelativeTime(log.created_at)}</span>
+                      <span className={styles.logTime}>{formatRelativeTime(log.createdAt)}</span>
                     </div>
                     <div className={styles.logDetails}>
-                      <span className={styles.logOperator}>{log.operator_name}</span>
+                      <span className={styles.logOperator}>{log.operatorName}</span>
                       {log.note && <span className={styles.logNote}>{log.note}</span>}
                     </div>
                   </div>
@@ -399,12 +399,12 @@ export const OrderDetail: React.FC = () => {
                     <Tag color={review.approved ? 'success' : 'error'}>
                       {review.approved ? '审核通过' : '审核拒绝'}
                     </Tag>
-                    <span className={styles.reviewTime}>{formatDateTime(review.created_at)}</span>
+                    <span className={styles.reviewTime}>{formatDateTime(review.createdAt)}</span>
                   </div>
                   <div className={styles.reviewContent}>
                     <div className={styles.reviewItem}>
                       <span className={styles.infoLabel}>审核人:</span>
-                      <span className={styles.infoValue}>{review.reviewer_name}</span>
+                      <span className={styles.infoValue}>{review.reviewerName}</span>
                     </div>
                     {review.reason && (
                       <div className={styles.reviewItem}>

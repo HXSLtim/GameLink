@@ -40,9 +40,9 @@ export interface BaseEntity {
    * 实体 ID
    */
   id: number;
-  created_at: string;
-  updated_at: string;
-  deleted_at?: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
 }
 
 /**
@@ -52,30 +52,30 @@ export interface User extends BaseEntity {
   phone?: string;
   email?: string;
   name: string;
-  avatar_url?: string;
+  avatarUrl?: string;
   role: UserRole;
   status: UserStatus;
-  last_login_at?: string;
+  lastLoginAt?: string;
 }
 
 /**
  * 陪玩师信息 - 与后端 model.Player 保持一致
  */
 export interface Player extends BaseEntity {
-  user_id: number;
+  userId: number;
   user?: User; // 关联用户信息
   nickname?: string;
   bio?: string;
   rank?: string;
   rating?: number;
-  rating_average: number;
-  rating_count: number;
-  hourly_rate_cents: number;
-  main_game_id?: number;
-  main_game?: { id: number; name: string }; // 关联游戏信息
-  verification_status: VerificationStatus;
-  is_verified?: boolean;
-  is_available?: boolean;
+  ratingAverage: number;
+  ratingCount: number;
+  hourlyRateCents: number;
+  mainGameId?: number;
+  mainGame?: { id: number; name: string }; // 关联游戏信息
+  verificationStatus: VerificationStatus;
+  isVerified?: boolean;
+  isAvailable?: boolean;
 }
 
 /**
@@ -83,9 +83,9 @@ export interface Player extends BaseEntity {
  */
 export interface UserDetail extends User {
   // 统计信息
-  order_count?: number; // 订单数量
-  total_spent?: number; // 总消费（分）
-  review_count?: number; // 评价数量
+  orderCount?: number; // 订单数量
+  totalSpent?: number; // 总消费（分）
+  reviewCount?: number; // 评价数量
 
   // 陪玩师信息（如果角色是 player）
   player?: Player;
@@ -103,14 +103,14 @@ export interface PlayerDetail extends Player {
  */
 export interface UserListQuery {
   page?: number;
-  page_size?: number;
+  pageSize?: number;
   keyword?: string; // 搜索关键词（姓名/手机/邮箱）
   role?: UserRole;
   status?: UserStatus;
-  created_start?: string;
-  created_end?: string;
-  sort_by?: 'created_at' | 'updated_at' | 'name' | 'last_login_at';
-  sort_order?: 'asc' | 'desc';
+  createdStart?: string;
+  createdEnd?: string;
+  sortBy?: 'createdAt' | 'updatedAt' | 'name' | 'lastLoginAt';
+  sortOrder?: 'asc' | 'desc';
 }
 
 /**
@@ -118,18 +118,18 @@ export interface UserListQuery {
  */
 export interface PlayerListQuery {
   page?: number;
-  page_size?: number;
-  user_id?: number;
-  main_game_id?: number;
-  verification_status?: VerificationStatus;
-  is_verified?: boolean;
-  min_rating?: number;
-  max_rating?: number;
-  min_hourly_rate?: number;
-  max_hourly_rate?: number;
+  pageSize?: number;
+  userId?: number;
+  mainGameId?: number;
+  verificationStatus?: VerificationStatus;
+  isVerified?: boolean;
+  minRating?: number;
+  maxRating?: number;
+  minHourlyRate?: number;
+  maxHourlyRate?: number;
   keyword?: string;
-  sort_by?: 'created_at' | 'updated_at' | 'rating_average' | 'hourly_rate_cents' | 'rating_count';
-  sort_order?: 'asc' | 'desc';
+  sortBy?: 'createdAt' | 'updatedAt' | 'ratingAverage' | 'hourlyRateCents' | 'ratingCount';
+  sortOrder?: 'asc' | 'desc';
 }
 
 /**
@@ -151,7 +151,7 @@ export interface UpdateUserRequest {
   phone?: string;
   email?: string;
   name?: string;
-  avatar_url?: string;
+  avatarUrl?: string;
   role?: UserRole;
   status?: UserStatus;
 }
@@ -175,11 +175,11 @@ export interface UpdateUserRoleRequest {
  * 创建陪玩师请求
  */
 export interface CreatePlayerRequest {
-  user_id: number;
+  userId: number;
   nickname?: string;
   bio?: string;
-  hourly_rate_cents: number;
-  main_game_id?: number;
+  hourlyRateCents: number;
+  mainGameId?: number;
 }
 
 /**
@@ -188,9 +188,9 @@ export interface CreatePlayerRequest {
 export interface UpdatePlayerRequest {
   nickname?: string;
   bio?: string;
-  hourly_rate_cents?: number;
-  main_game_id?: number;
-  verification_status?: VerificationStatus;
+  hourlyRateCents?: number;
+  mainGameId?: number;
+  verificationStatus?: VerificationStatus;
 }
 
 /**

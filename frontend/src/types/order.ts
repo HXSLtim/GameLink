@@ -24,33 +24,33 @@ export enum OrderStatus {
  * 订单实体 - 与后端 model.Order 保持一致
  */
 export interface Order extends BaseEntity {
-  user_id: number;
-  player_id?: number;
-  game_id: number;
+  userId: number;
+  playerId?: number;
+  gameId: number;
   title: string;
   description?: string;
   status: OrderStatus;
-  price_cents: number;
+  priceCents: number;
   currency?: Currency;
-  scheduled_start?: string;
-  scheduled_end?: string;
-  cancel_reason?: string;
+  scheduledStart?: string;
+  scheduledEnd?: string;
+  cancelReason?: string;
 
   // 关联信息（API 返回时可能包含）
   user?: {
     id: number;
     name: string;
-    avatar_url?: string;
+    avatarUrl?: string;
   };
   player?: {
     id: number;
     nickname?: string;
-    avatar_url?: string;
+    avatarUrl?: string;
   };
   game?: {
     id: number;
     name: string;
-    icon_url?: string;
+    iconUrl?: string;
   };
 }
 
@@ -59,20 +59,20 @@ export interface Order extends BaseEntity {
  */
 export interface OrderDetail extends Order {
   // 时间节点
-  paid_at?: string;
-  accepted_at?: string;
-  started_at?: string;
-  completed_at?: string;
-  cancelled_at?: string;
+  paidAt?: string;
+  acceptedAt?: string;
+  startedAt?: string;
+  completedAt?: string;
+  cancelledAt?: string;
 
   // 操作日志
   logs?: Array<{
     id: number;
     action: string;
-    operator_id: number;
-    operator_name: string;
+    operatorId: number;
+    operatorName: string;
     note?: string;
-    created_at: string;
+    createdAt: string;
   }>;
 
   // 审核记录
@@ -81,9 +81,9 @@ export interface OrderDetail extends Order {
     approved: boolean; // true=通过，false=拒绝
     reason?: string;
     comment?: string;
-    reviewer_id: number;
-    reviewer_name: string;
-    created_at: string;
+    reviewerId: number;
+    reviewerName: string;
+    createdAt: string;
   }>;
 }
 
@@ -92,32 +92,32 @@ export interface OrderDetail extends Order {
  */
 export interface OrderListQuery {
   page?: number;
-  page_size?: number;
-  user_id?: number;
-  player_id?: number;
-  game_id?: number;
+  pageSize?: number;
+  userId?: number;
+  playerId?: number;
+  gameId?: number;
   status?: OrderStatus;
   currency?: Currency;
   keyword?: string;
-  date_from?: string;
-  date_to?: string;
-  sort_by?: 'created_at' | 'updated_at' | 'scheduled_start' | 'price_cents';
-  sort_order?: 'asc' | 'desc';
+  dateFrom?: string;
+  dateTo?: string;
+  sortBy?: 'createdAt' | 'updatedAt' | 'scheduledStart' | 'priceCents';
+  sortOrder?: 'asc' | 'desc';
 }
 
 /**
  * 创建订单请求 - 与后端 Swagger 同步
  */
 export interface CreateOrderRequest {
-  user_id: number;
-  game_id: number;
-  player_id?: number; // 可选：在创建时指定陪玩师
+  userId: number;
+  gameId: number;
+  playerId?: number; // 可选：在创建时指定陪玩师
   title?: string;
   description?: string;
-  price_cents: number;
+  priceCents: number;
   currency: string; // 必填
-  scheduled_start?: string;
-  scheduled_end?: string;
+  scheduledStart?: string;
+  scheduledEnd?: string;
 }
 
 /**
@@ -125,18 +125,18 @@ export interface CreateOrderRequest {
  */
 export interface UpdateOrderRequest {
   currency: string; // 必填
-  price_cents: number; // 必填
+  priceCents: number; // 必填
   status: string; // 必填：订单状态
-  scheduled_start?: string;
-  scheduled_end?: string;
-  cancel_reason?: string; // 取消原因
+  scheduledStart?: string;
+  scheduledEnd?: string;
+  cancelReason?: string; // 取消原因
 }
 
 /**
  * 分配订单请求
  */
 export interface AssignOrderRequest {
-  player_id: number;
+  playerId: number;
   note?: string;
 }
 

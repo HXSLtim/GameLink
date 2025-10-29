@@ -10,6 +10,7 @@
 .avatar {
   width: 48px;
   height: 48px;
+  border-radius: 50%;
   border: var(--border-width-base) solid var(--border-color);
   object-fit: cover;
 }
@@ -17,6 +18,7 @@
 .avatarPlaceholder {
   width: 48px;
   height: 48px;
+  border-radius: 50%;
   border: var(--border-width-base) solid var(--border-color);
   background-color: var(--bg-inverse);
   color: var(--text-inverse);
@@ -71,52 +73,22 @@
 }
 
 // 操作按钮
-.actionButton {
-  padding: var(--spacing-xs) var(--spacing-sm);
-  font-size: var(--font-size-sm);
-}
-
-
-.playerName {
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-semibold);
-  color: var(--text-primary);
-  margin-bottom: 4px;
-}
-
-.playerContact {
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
-}
-
-// 时薪
-.rate {
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-semibold);
-  color: var(--text-primary);
-}
-
-// 评分
-.rating {
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-medium);
-  color: var(--text-primary);
-}
-
-// 时间信息
-.timeInfo {
+.actions {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  gap: var(--spacing-xs);
 }
 
-.timeDetail {
-  font-size: var(--font-size-xs);
-  color: var(--text-tertiary);
-}
-
-// 操作按钮
 .actionButton {
   padding: var(--spacing-xs) var(--spacing-sm);
   font-size: var(--font-size-sm);
+}
+
+.deleteButton {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-error, #f53f3f);
+
+  &:hover {
+    color: var(--color-error-hover, #cb272d);
+  }
 }

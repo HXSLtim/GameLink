@@ -5,12 +5,12 @@ import "encoding/json"
 // OperationLog 记录后台关键业务操作日志，用于审计与可视化。
 type OperationLog struct {
 	Base
-	EntityType   string          `json:"entity_type" gorm:"size:32;index"` // order | payment
-	EntityID     uint64          `json:"entity_id" gorm:"index"`
-	ActorUserID  *uint64         `json:"actor_user_id" gorm:"index"`
+	EntityType   string          `json:"entityType" gorm:"column:entity_type;size:32;index"` // order | payment
+	EntityID     uint64          `json:"entityId" gorm:"column:entity_id;index"`
+	ActorUserID  *uint64         `json:"actorUserId" gorm:"column:actor_user_id;index"`
 	Action       string          `json:"action" gorm:"size:64;index"`
 	Reason       string          `json:"reason,omitempty" gorm:"type:text"`
-	MetadataJSON json.RawMessage `json:"metadata,omitempty" gorm:"type:json"`
+	MetadataJSON json.RawMessage `json:"metadata,omitempty" gorm:"column:metadata_json;type:json"`
 }
 
 // OperationAction 枚举所有标准化的审计动作。

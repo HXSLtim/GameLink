@@ -101,7 +101,7 @@ export const Dashboard: React.FC = () => {
         // 加载最近订单
         const ordersResult = await orderApi.getList({
           page: 1,
-          page_size: 5,
+          pageSize: 5,
         });
         setRecentOrders(ordersResult.list || []);
       } catch (error) {
@@ -366,13 +366,13 @@ export const Dashboard: React.FC = () => {
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>金额:</span>
                       <span className={`${styles.infoValue} ${styles.price}`}>
-                        {formatCurrency(order.price_cents)}
+                        {formatCurrency(order.priceCents)}
                       </span>
                     </div>
                   </div>
 
                   <div className={styles.orderFooter}>
-                    <span className={styles.orderTime}>{formatRelativeTime(order.created_at)}</span>
+                    <span className={styles.orderTime}>{formatRelativeTime(order.createdAt)}</span>
                   </div>
                 </div>
               </Card>

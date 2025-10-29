@@ -114,6 +114,21 @@ const PaymentsIcon = () => (
   </svg>
 );
 
+// 评价图标
+const ReviewsIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+    <path
+      d="M21 11.5C21 16.75 16.5 21 12 21C11.5 21 10.96 20.93 10.5 20.85C9.5 21.5 8 22 6.5 22C6.5 22 6.78 20.5 6.5 19.5C4.5 18 3 15.5 3 11.5C3 6.25 7.5 2 12 2C16.5 2 21 6.25 21 11.5Z"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path d="M9 11H9.01" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M12 11H12.01" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M15 11H15.01" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 // 报表图标
 const ReportsIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -198,6 +213,12 @@ export const MainLayout = () => {
       label: '支付管理',
       icon: <PaymentsIcon />,
       path: '/payments',
+    },
+    {
+      key: 'reviews',
+      label: '评价管理',
+      icon: <ReviewsIcon />,
+      path: '/reviews',
     },
     {
       key: 'reports',

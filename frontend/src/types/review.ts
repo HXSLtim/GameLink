@@ -2,11 +2,12 @@ import type { BaseEntity } from './user';
 
 /**
  * 评价实体 - 与后端 model.Review 保持一致
+ * 使用 camelCase 命名规范
  */
 export interface Review extends BaseEntity {
-  order_id: number;
-  reviewer_id: number;
-  player_id: number;
+  orderId: number;
+  reviewerId: number;
+  playerId: number;
   rating: number; // 评分 (1-5)
   comment?: string;
 
@@ -14,16 +15,16 @@ export interface Review extends BaseEntity {
   reviewer?: {
     id: number;
     name: string;
-    avatar_url?: string;
+    avatarUrl?: string;
   };
   player?: {
     id: number;
     nickname?: string;
-    avatar_url?: string;
+    avatarUrl?: string;
   };
   order?: {
     id: number;
-    order_no?: string;
+    orderNo?: string;
     title?: string;
   };
 }
@@ -33,17 +34,17 @@ export interface Review extends BaseEntity {
  */
 export interface ReviewListQuery {
   page?: number;
-  page_size?: number;
-  order_id?: number;
-  reviewer_id?: number;
-  player_id?: number;
-  min_rating?: number;
-  max_rating?: number;
+  pageSize?: number;
+  orderId?: number;
+  reviewerId?: number;
+  playerId?: number;
+  minRating?: number;
+  maxRating?: number;
   keyword?: string;
-  date_from?: string;
-  date_to?: string;
-  sort_by?: 'created_at' | 'updated_at' | 'rating';
-  sort_order?: 'asc' | 'desc';
+  dateFrom?: string;
+  dateTo?: string;
+  sortBy?: 'createdAt' | 'updatedAt' | 'rating';
+  sortOrder?: 'asc' | 'desc';
 }
 
 /**

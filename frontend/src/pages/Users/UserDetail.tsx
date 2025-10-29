@@ -76,7 +76,7 @@ export const UserDetail: React.FC = () => {
         setOrdersLoading(true);
         const result = await orderApi.getUserOrders(Number(id), {
           page: ordersPage,
-          page_size: ordersPageSize,
+          pageSize: ordersPageSize,
         });
 
         if (result && result.list) {
@@ -147,18 +147,17 @@ export const UserDetail: React.FC = () => {
     },
     {
       title: '金额',
-      dataIndex: 'price_cents',
-      key: 'price_cents',
+      dataIndex: 'priceCents',
+      key: 'priceCents',
       width: 100,
-      render: (price_cents: number) =>
-        formatCurrency(price_cents),
+      render: (priceCents: number) => formatCurrency(priceCents),
     },
     {
       title: '创建时间',
-      dataIndex: 'created_at',
-      key: 'created_at',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
       width: 150,
-      render: (created_at: string) => formatDateTime(created_at),
+      render: (createdAt: string) => formatDateTime(createdAt),
     },
     {
       title: '操作',
@@ -199,10 +198,10 @@ export const UserDetail: React.FC = () => {
             <h2 className={styles.sectionTitle}>基本信息</h2>
 
             <div className={styles.userHeader}>
-              {userDetail.avatar_url && (
-                <img src={userDetail.avatar_url} alt={userDetail.name} className={styles.avatar} />
+              {userDetail.avatarUrl && (
+                <img src={userDetail.avatarUrl} alt={userDetail.name} className={styles.avatar} />
               )}
-              {!userDetail.avatar_url && (
+              {!userDetail.avatarUrl && (
                 <div className={styles.avatarPlaceholder}>{userDetail.name.charAt(0)}</div>
               )}
               <div className={styles.userBasicInfo}>
@@ -222,12 +221,12 @@ export const UserDetail: React.FC = () => {
               </div>
               <div className={styles.infoItem}>
                 <span className={styles.infoLabel}>注册时间</span>
-                <span className={styles.infoValue}>{formatDateTime(userDetail.created_at)}</span>
+                <span className={styles.infoValue}>{formatDateTime(userDetail.createdAt)}</span>
               </div>
               <div className={styles.infoItem}>
                 <span className={styles.infoLabel}>最后登录</span>
                 <span className={styles.infoValue}>
-                  {userDetail.last_login_at ? formatDateTime(userDetail.last_login_at) : '从未登录'}
+                  {userDetail.lastLoginAt ? formatDateTime(userDetail.lastLoginAt) : '从未登录'}
                 </span>
               </div>
             </div>
@@ -238,17 +237,17 @@ export const UserDetail: React.FC = () => {
             <h2 className={styles.sectionTitle}>统计数据</h2>
             <div className={styles.statsGrid}>
               <div className={styles.statItem}>
-                <div className={styles.statValue}>{userDetail.order_count || 0}</div>
+                <div className={styles.statValue}>{userDetail.orderCount || 0}</div>
                 <div className={styles.statLabel}>订单数量</div>
               </div>
               <div className={styles.statItem}>
                 <div className={styles.statValue}>
-                  {userDetail.total_spent ? formatPrice(userDetail.total_spent) : '¥0'}
+                  {userDetail.totalSpent ? formatPrice(userDetail.totalSpent) : '¥0'}
                 </div>
                 <div className={styles.statLabel}>总消费</div>
               </div>
               <div className={styles.statItem}>
-                <div className={styles.statValue}>{userDetail.review_count || 0}</div>
+                <div className={styles.statValue}>{userDetail.reviewCount || 0}</div>
                 <div className={styles.statLabel}>评价数量</div>
               </div>
             </div>
@@ -260,10 +259,10 @@ export const UserDetail: React.FC = () => {
               <h2 className={styles.sectionTitle}>
                 陪玩师信息
                 <Tag
-                  color={getVerificationStatusColor(userDetail.player.verification_status)}
+                  color={getVerificationStatusColor(userDetail.player.verificationStatus)}
                   className={styles.verificationTag}
                 >
-                  {formatVerificationStatus(userDetail.player.verification_status)}
+                  {formatVerificationStatus(userDetail.player.verificationStatus)}
                 </Tag>
               </h2>
 
@@ -275,20 +274,20 @@ export const UserDetail: React.FC = () => {
                 <div className={styles.infoItem}>
                   <span className={styles.infoLabel}>时薪</span>
                   <span className={styles.infoValue}>
-                    {formatHourlyRate(userDetail.player.hourly_rate_cents)}
+                    {formatHourlyRate(userDetail.player.hourlyRateCents)}
                   </span>
                 </div>
                 <div className={styles.infoItem}>
                   <span className={styles.infoLabel}>评分</span>
                   <span className={styles.infoValue}>
-                    {formatRating(userDetail.player.rating_average)} (
-                    {userDetail.player.rating_count}条评价)
+                    {formatRating(userDetail.player.ratingAverage)} (
+                    {userDetail.player.ratingCount}条评价)
                   </span>
                 </div>
                 <div className={styles.infoItem}>
                   <span className={styles.infoLabel}>认证时间</span>
                   <span className={styles.infoValue}>
-                    {formatDateTime(userDetail.player.created_at)}
+                    {formatDateTime(userDetail.player.createdAt)}
                   </span>
                 </div>
               </div>
@@ -364,7 +363,7 @@ export const UserDetail: React.FC = () => {
       <Card className={styles.ordersSection}>
         <div className={styles.ordersSectionHeader}>
           <h2 className={styles.sectionTitle}>📋 订单记录</h2>
-          <Tag color={"blue" as any}>共 {ordersTotal} 条订单</Tag>
+          <Tag color={'blue' as any}>共 {ordersTotal} 条订单</Tag>
         </div>
 
         <Table

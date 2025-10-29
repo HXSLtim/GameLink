@@ -32,11 +32,11 @@ func NewUserHandler(svc *service.AdminService) *UserHandler {
 // @Tags         Admin/Users
 // @Security     BearerAuth
 // @Param        page       query     int       false  "页码"
-// @Param        page_size  query     int       false  "每页数量"
+// @Param        pageSize   query     int       false  "每页数量"
 // @Param        role       query     []string  false  "角色过滤，可多值"
 // @Param        status     query     []string  false  "状态过滤，可多值"
-// @Param        date_from  query     string    false  "开始时间"
-// @Param        date_to    query     string    false  "结束时间"
+// @Param        dateFrom   query     string    false  "开始时间"
+// @Param        dateTo     query     string    false  "结束时间"
 // @Param        keyword    query     string    false  "关键字（匹配 name/email/phone）"
 // @Produce      json
 // @Success      200  {object}  map[string]any
@@ -81,6 +81,10 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 		return
 	}
 	user, err := h.svc.GetUser(c.Request.Context(), id)
+	if errors.Is(err, service.ErrUserNotFound) {
+		_ = c.Error(service.ErrUserNotFound)
+		return
+	}
 	if errors.Is(err, service.ErrNotFound) {
 		_ = c.Error(service.ErrNotFound)
 		return
@@ -208,6 +212,10 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		_ = c.Error(service.ErrValidation)
 		return
 	}
+	if errors.Is(err, service.ErrUserNotFound) {
+		_ = c.Error(service.ErrUserNotFound)
+		return
+	}
 	if errors.Is(err, service.ErrNotFound) {
 		_ = c.Error(service.ErrNotFound)
 		return
@@ -242,7 +250,10 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
 		return
 	}
-	if err := h.svc.DeleteUser(c.Request.Context(), id); errors.Is(err, service.ErrNotFound) {
+	if err := h.svc.DeleteUser(c.Request.Context(), id); errors.Is(err, service.ErrUserNotFound) {
+		_ = c.Error(service.ErrUserNotFound)
+		return
+	} else if errors.Is(err, service.ErrNotFound) {
 		_ = c.Error(service.ErrNotFound)
 		return
 	} else if err != nil {
@@ -264,11 +275,11 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 // @Produce      json
 // @Param        id           path   int  true  "用户ID"
 // @Param        page         query  int  false "页码"
-// @Param        page_size    query  int  false "每页数量"
+// @Param        pageSize   query     int       false  "每页数量"
 // @Param        action       query  string false "动作过滤" Enums(create,update,delete)
 // @Param        actor_user_id query int   false "操作者用户ID"
-// @Param        date_from    query  string false "开始时间"
-// @Param        date_to      query  string false "结束时间"
+// @Param        dateFrom   query     string    false  "开始时间"
+// @Param        dateTo     query     string    false  "结束时间"
 // @Param        export       query  string false "导出格式" Enums(csv)
 // @Param        fields       query  string false "导出列（逗号分隔）"
 // @Param        header_lang  query  string false "列头语言" Enums(en,zh)
@@ -344,6 +355,10 @@ func (h *UserHandler) UpdateUserStatus(c *gin.Context) {
 		_ = c.Error(service.ErrValidation)
 		return
 	}
+	if errors.Is(err, service.ErrUserNotFound) {
+		_ = c.Error(service.ErrUserNotFound)
+		return
+	}
 	if errors.Is(err, service.ErrNotFound) {
 		_ = c.Error(service.ErrNotFound)
 		return
@@ -384,6 +399,10 @@ func (h *UserHandler) UpdateUserRole(c *gin.Context) {
 		_ = c.Error(service.ErrValidation)
 		return
 	}
+	if errors.Is(err, service.ErrUserNotFound) {
+		_ = c.Error(service.ErrUserNotFound)
+		return
+	}
 	if errors.Is(err, service.ErrNotFound) {
 		_ = c.Error(service.ErrNotFound)
 		return
@@ -402,10 +421,10 @@ func (h *UserHandler) UpdateUserRole(c *gin.Context) {
 // @Produce      json
 // @Param        id         path   int      true   "用户ID"
 // @Param        page       query  int      false  "页码"
-// @Param        page_size  query  int      false  "每页数量"
+// @Param        pageSize   query     int       false  "每页数量"
 // @Param        status     query  []string false  "订单状态"
-// @Param        date_from  query  string  false  "开始时间"
-// @Param        date_to    query  string  false  "结束时间"
+// @Param        dateFrom   query     string    false  "开始时间"
+// @Param        dateTo     query     string    false  "结束时间"
 // @Success      200  {object}  map[string]any
 // @Failure      404  {object}  map[string]any
 // @Router       /admin/users/{id}/orders [get]

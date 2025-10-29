@@ -1,0 +1,92 @@
+@import '../../styles/variables.less';
+
+// 游戏信息
+.gameInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.gameIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  border: var(--border-width-base) solid var(--border-color);
+  object-fit: cover;
+}
+
+.iconPlaceholder {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  border: var(--border-width-base) solid var(--border-color);
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+  color: var(--text-inverse);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+}
+
+.gameDetails {
+  flex: 1;
+  min-width: 0;
+}
+
+.gameName {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.gameKey {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  font-family: monospace;
+}
+
+// 描述
+.description {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// 时间信息
+.timeInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.timeDetail {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+}
+
+// 操作按钮
+.actions {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.actionButton {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-sm);
+}
+
+.deleteButton {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-error, #f53f3f);
+
+  &:hover {
+    color: var(--color-error-hover, #cb272d);
+  }
+}

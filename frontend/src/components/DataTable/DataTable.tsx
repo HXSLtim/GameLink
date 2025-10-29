@@ -12,17 +12,20 @@ export interface FilterConfig {
 export interface DataTableProps<T = any> {
   // 标题
   title: string;
-  
+
+  // 头部操作按钮（如新增按钮）
+  headerActions?: ReactNode;
+
   // 筛选配置
   filters?: FilterConfig[];
   filterActions?: ReactNode;
-  
+
   // 表格数据
   columns: TableColumn<T>[];
   dataSource: T[];
   loading?: boolean;
   rowKey?: string | ((record: T) => string);
-  
+
   // 分页
   pagination?: {
     current: number;
@@ -30,13 +33,14 @@ export interface DataTableProps<T = any> {
     total: number;
     onChange: (page: number) => void;
   };
-  
+
   // 自定义样式
   className?: string;
 }
 
 export const DataTable = <T extends Record<string, any>>({
   title,
+  headerActions,
   filters,
   filterActions,
   columns,
@@ -48,9 +52,10 @@ export const DataTable = <T extends Record<string, any>>({
 }: DataTableProps<T>) => {
   return (
     <div className={`${styles.container} ${className || ''}`}>
-      {/* 标题 */}
+      {/* 标题和操作按钮 */}
       <div className={styles.header}>
         <h1 className={styles.title}>{title}</h1>
+        {headerActions && <div className={styles.headerActions}>{headerActions}</div>}
       </div>
 
       {/* 筛选区域 */}
@@ -65,22 +70,15 @@ export const DataTable = <T extends Record<string, any>>({
                 </div>
               ))}
             </div>
-            
-            {filterActions && (
-              <div className={styles.filterActions}>{filterActions}</div>
-            )}
+
+            {filterActions && <div className={styles.filterActions}>{filterActions}</div>}
           </div>
         </Card>
       )}
 
       {/* 数据表格 */}
       <Card className={styles.tableCard}>
-        <Table 
-          columns={columns} 
-          dataSource={dataSource} 
-          loading={loading} 
-          rowKey={rowKey} 
-        />
+        <Table columns={columns} dataSource={dataSource} loading={loading} rowKey={rowKey} />
 
         {/* 分页 */}
         {pagination && pagination.total > 0 && (

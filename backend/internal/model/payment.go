@@ -28,16 +28,16 @@ const (
 // Payment records a payment attempt/result for an order.
 type Payment struct {
 	Base
-	OrderID         uint64          `json:"order_id" gorm:"not null;index"`
-	UserID          uint64          `json:"user_id" gorm:"not null;index"`
+	OrderID         uint64          `json:"orderId" gorm:"column:order_id;not null;index"`
+	UserID          uint64          `json:"userId" gorm:"column:user_id;not null;index"`
 	Method          PaymentMethod   `json:"method" gorm:"size:32"`
-	AmountCents     int64           `json:"amount_cents"`
+	AmountCents     int64           `json:"amountCents" gorm:"column:amount_cents"`
 	Currency        Currency        `json:"currency,omitempty" gorm:"type:char(3)"` // default CNY
 	Status          PaymentStatus   `json:"status" gorm:"size:32;index"`
-	ProviderTradeNo string          `json:"provider_trade_no,omitempty" gorm:"size:128"`
-	ProviderRaw     json.RawMessage `json:"provider_raw,omitempty" gorm:"type:json"` // provider response payload
-	PaidAt          *time.Time      `json:"paid_at,omitempty"`
-	RefundedAt      *time.Time      `json:"refunded_at,omitempty"`
+	ProviderTradeNo string          `json:"providerTradeNo,omitempty" gorm:"column:provider_trade_no;size:128"`
+	ProviderRaw     json.RawMessage `json:"providerRaw,omitempty" gorm:"column:provider_raw;type:json"` // provider response payload
+	PaidAt          *time.Time      `json:"paidAt,omitempty" gorm:"column:paid_at"`
+	RefundedAt      *time.Time      `json:"refundedAt,omitempty" gorm:"column:refunded_at"`
 
 	// Relations + FKs
 	Order Order `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;foreignKey:OrderID;references:ID"`

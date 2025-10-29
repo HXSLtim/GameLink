@@ -98,10 +98,10 @@ export const orderApi = {
     userId: number,
     params?: {
       page?: number;
-      page_size?: number;
+      pageSize?: number;
       status?: string[];
-      date_from?: string;
-      date_to?: string;
+      dateFrom?: string;
+      dateTo?: string;
     },
   ): Promise<OrderListResponse> => {
     return apiClient.get(`/api/v1/admin/users/${userId}/orders`, { params });
