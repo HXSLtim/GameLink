@@ -26,7 +26,7 @@ If you add new top‑level folders, describe them in `docs/project-structure.md`
 - Follow `docs/go-coding-standards.md` strictly.
 - Formatting/imports: `gofmt` + `goimports` with local prefix `gamelink`.
 - Naming: short lowercase package names; exported identifiers use UpperCamelCase.
-- 变量命名：除官方规范要求的全局变量外，其余变量统一使用小驼峰命名。
+- JSON 字段命名：对前端暴露的 JSON 数据，键名必须使用小驼峰命名。
 - Errors: fail fast, wrap with `%w`, use `errors.Is`; use `service.ErrValidation` and `repository.ErrNotFound` consistently.
 - Context: pass `ctx` to external I/O (`db.WithContext(ctx)`, cache, etc.).
 - HTTP layer: RESTful, snake_case JSON, unified envelope `{success, code, message, data}`; admin routes must have auth + rate limit.

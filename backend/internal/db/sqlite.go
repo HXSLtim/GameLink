@@ -7,12 +7,15 @@ import (
 	"strings"
 	"time"
 
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
 	"gamelink/internal/config"
 	"gamelink/internal/metrics"
+	
+	// 使用纯 Go 实现的 SQLite GORM 驱动（无需 CGO）
+	// github.com/glebarez/sqlite 基于 modernc.org/sqlite
+	sqlite "github.com/glebarez/sqlite"
 )
 
 func openSQLite(cfg config.AppConfig) (*gorm.DB, error) {
