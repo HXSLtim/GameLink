@@ -21,7 +21,7 @@ func NewPermissionRepository(db *gorm.DB) repository.PermissionRepository {
 
 func (r *permissionRepository) List(ctx context.Context) ([]model.Permission, error) {
 	var permissions []model.Permission
-	err := r.db.WithContext(ctx).Order("group, method, path").Find(&permissions).Error
+	err := r.db.WithContext(ctx).Order("permissions.\"group\", permissions.method, permissions.path").Find(&permissions).Error
 	return permissions, err
 }
 
@@ -36,7 +36,7 @@ func (r *permissionRepository) ListPaged(ctx context.Context, page, pageSize int
 	}
 
 	offset := (page - 1) * pageSize
-	err := query.Order("group, method, path").
+	err := query.Order("permissions.\"group\", permissions.method, permissions.path").
 		Offset(offset).
 		Limit(pageSize).
 		Find(&permissions).Error
@@ -47,7 +47,7 @@ func (r *permissionRepository) ListPaged(ctx context.Context, page, pageSize int
 func (r *permissionRepository) ListByGroup(ctx context.Context) (map[string][]model.Permission, error) {
 	var permissions []model.Permission
 	err := r.db.WithContext(ctx).
-		Order("\"group\", method, path").
+		Order("permissions.\"group\", permissions.method, permissions.path").
 		Find(&permissions).Error
 	if err != nil {
 		return nil, err
@@ -65,10 +65,10 @@ func (r *permissionRepository) ListGroups(ctx context.Context) ([]string, error)
 	var groups []string
 	err := r.db.WithContext(ctx).
 		Model(&model.Permission{}).
-		Distinct("\"group\"").
-		Where("\"group\" != ''").
-		Order("\"group\"").
-		Pluck("group", &groups).Error
+		Distinct("permissions.\"group\"").
+		Where("permissions.\"group\" != ''").
+		Order("permissions.\"group\"").
+		Pluck("permissions.\"group\"", &groups).Error
 	return groups, err
 }
 
@@ -170,7 +170,7 @@ func (r *permissionRepository) ListByRoleID(ctx context.Context, roleID uint64) 
 	err := r.db.WithContext(ctx).
 		Joins("JOIN role_permissions ON role_permissions.permission_id = permissions.id").
 		Where("role_permissions.role_id = ?", roleID).
-		Order("permissions.group, permissions.method, permissions.path").
+		Order("permissions.\"group\", permissions.method, permissions.path").
 		Find(&permissions).Error
 	return permissions, err
 }
@@ -182,7 +182,7 @@ func (r *permissionRepository) ListByUserID(ctx context.Context, userID uint64) 
 		Joins("JOIN role_permissions ON role_permissions.permission_id = permissions.id").
 		Joins("JOIN user_roles ON user_roles.role_id = role_permissions.role_id").
 		Where("user_roles.user_id = ?", userID).
-		Order("permissions.group, permissions.method, permissions.path").
+		Order("permissions.\"group\", permissions.method, permissions.path").
 		Find(&permissions).Error
 	return permissions, err
 }

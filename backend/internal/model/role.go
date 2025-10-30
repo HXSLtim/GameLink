@@ -21,8 +21,8 @@ type RoleModel struct {
 	IsSystem    bool   `json:"isSystem" gorm:"column:is_system;default:false;comment:是否系统角色（不可删除）"`
 
 	// 关联关系
-	Permissions []Permission `json:"permissions,omitempty" gorm:"many2many:role_permissions;"`
-	Users       []User       `json:"users,omitempty" gorm:"many2many:user_roles;"`
+	Permissions []Permission `json:"permissions,omitempty" gorm:"many2many:role_permissions;foreignKey:ID;joinForeignKey:RoleID;References:ID;joinReferences:PermissionID"`
+	Users       []User       `json:"users,omitempty" gorm:"many2many:user_roles;foreignKey:ID;joinForeignKey:RoleID;References:ID;joinReferences:UserID"`
 }
 
 // TableName specifies the table name for RoleModel.
@@ -39,6 +39,3 @@ func (r *RoleModel) IsSystemRole() bool {
 func (r *RoleModel) IsSuperAdmin() bool {
 	return r.Slug == string(RoleSlugSuperAdmin)
 }
-
-
-

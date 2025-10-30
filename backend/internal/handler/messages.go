@@ -4,6 +4,7 @@ package handler
 const (
 	ErrInvalidJSONPayload           = "invalid json payload"
 	ErrInvalidID                    = "invalid id"
+	ErrInvalidParameter             = "invalid parameter"
 	ErrInvalidPage                  = "invalid page"
 	ErrInvalidPageSize              = "invalid page_size"
 	ErrInvalidUserID                = "invalid user_id"
