@@ -1,15 +1,16 @@
 package admin
 
 import (
-    "context"
-    "encoding/json"
-    "testing"
-    "time"
+	"context"
+	"encoding/json"
+	"errors"
+	"testing"
+	"time"
 
-    "gamelink/internal/cache"
-    "gamelink/internal/model"
-    "gamelink/internal/repository"
-    "gamelink/internal/repository/common"
+	"gamelink/internal/cache"
+	"gamelink/internal/model"
+	"gamelink/internal/repository"
+	"gamelink/internal/repository/common"
 )
 
 // mockGameRepository 是一个简单的mock实现。
@@ -103,34 +104,34 @@ func TestSetTxManager(t *testing.T) {
 // ---- Fakes for admin package tests ----
 
 type fakeGameRepo struct {
-    items     []model.Game
-    listCalls int
+	items     []model.Game
+	listCalls int
 }
 
 func (f *fakeGameRepo) List(ctx context.Context) ([]model.Game, error) {
-    f.listCalls++
-    cp := append([]model.Game(nil), f.items...)
-    return cp, nil
+	f.listCalls++
+	cp := append([]model.Game(nil), f.items...)
+	return cp, nil
 }
 func (f *fakeGameRepo) ListPaged(ctx context.Context, page, size int) ([]model.Game, int64, error) {
-    cp := append([]model.Game(nil), f.items...)
-    return cp, int64(len(cp)), nil
+	cp := append([]model.Game(nil), f.items...)
+	return cp, int64(len(cp)), nil
 }
 func (f *fakeGameRepo) Get(ctx context.Context, id uint64) (*model.Game, error) {
-    for i := range f.items {
-        if f.items[i].ID == id {
-            c := f.items[i]
-            return &c, nil
-        }
-    }
-    return nil, repository.ErrNotFound
+	for i := range f.items {
+		if f.items[i].ID == id {
+			c := f.items[i]
+			return &c, nil
+		}
+	}
+	return nil, repository.ErrNotFound
 }
 func (f *fakeGameRepo) Create(ctx context.Context, g *model.Game) error {
-    if g.ID == 0 {
-        g.ID = uint64(len(f.items) + 1)
-    }
-    f.items = append(f.items, *g)
-    return nil
+	if g.ID == 0 {
+		g.ID = uint64(len(f.items) + 1)
+	}
+	f.items = append(f.items, *g)
+	return nil
 }
 func (f *fakeGameRepo) Update(ctx context.Context, g *model.Game) error { return nil }
 func (f *fakeGameRepo) Delete(ctx context.Context, id uint64) error     { return nil }
@@ -139,26 +140,32 @@ type fakeUserRepo struct{ last *model.User }
 
 func (f *fakeUserRepo) List(ctx context.Context) ([]model.User, error) { return nil, nil }
 func (f *fakeUserRepo) ListPaged(ctx context.Context, page, size int) ([]model.User, int64, error) {
-    return []model.User{}, 250, nil
+	return []model.User{}, 250, nil
 }
 func (f *fakeUserRepo) ListWithFilters(ctx context.Context, opts repository.UserListOptions) ([]model.User, int64, error) {
-    return []model.User{}, 250, nil
+	return []model.User{}, 250, nil
 }
 func (f *fakeUserRepo) Get(ctx context.Context, id uint64) (*model.User, error) {
-    if f.last != nil && f.last.ID == id {
-        return f.last, nil
-    }
-    return nil, repository.ErrNotFound
+	if f.last != nil && f.last.ID == id {
+		return f.last, nil
+	}
+	return nil, repository.ErrNotFound
 }
-func (f *fakeUserRepo) GetByPhone(ctx context.Context, phone string) (*model.User, error) { return nil, repository.ErrNotFound }
-func (f *fakeUserRepo) FindByEmail(ctx context.Context, email string) (*model.User, error) { return f.last, nil }
-func (f *fakeUserRepo) FindByPhone(ctx context.Context, phone string) (*model.User, error) { return f.last, nil }
+func (f *fakeUserRepo) GetByPhone(ctx context.Context, phone string) (*model.User, error) {
+	return nil, repository.ErrNotFound
+}
+func (f *fakeUserRepo) FindByEmail(ctx context.Context, email string) (*model.User, error) {
+	return f.last, nil
+}
+func (f *fakeUserRepo) FindByPhone(ctx context.Context, phone string) (*model.User, error) {
+	return f.last, nil
+}
 func (f *fakeUserRepo) Create(ctx context.Context, u *model.User) error {
-    if u.ID == 0 {
-        u.ID = 42
-    }
-    f.last = u
-    return nil
+	if u.ID == 0 {
+		u.ID = 42
+	}
+	f.last = u
+	return nil
 }
 func (f *fakeUserRepo) Update(ctx context.Context, u *model.User) error { f.last = u; return nil }
 func (f *fakeUserRepo) Delete(ctx context.Context, id uint64) error     { return nil }
@@ -167,20 +174,20 @@ type fakePlayerRepo struct{ last *model.Player }
 
 func (f *fakePlayerRepo) List(ctx context.Context) ([]model.Player, error) { return nil, nil }
 func (f *fakePlayerRepo) ListPaged(ctx context.Context, page, size int) ([]model.Player, int64, error) {
-    return []model.Player{}, 0, nil
+	return []model.Player{}, 0, nil
 }
 func (f *fakePlayerRepo) Get(ctx context.Context, id uint64) (*model.Player, error) {
-    if f.last != nil && f.last.ID == id {
-        return f.last, nil
-    }
-    return nil, repository.ErrNotFound
+	if f.last != nil && f.last.ID == id {
+		return f.last, nil
+	}
+	return nil, repository.ErrNotFound
 }
 func (f *fakePlayerRepo) Create(ctx context.Context, p *model.Player) error {
-    if p.ID == 0 {
-        p.ID = 99
-    }
-    f.last = p
-    return nil
+	if p.ID == 0 {
+		p.ID = 99
+	}
+	f.last = p
+	return nil
 }
 func (f *fakePlayerRepo) Update(ctx context.Context, p *model.Player) error { f.last = p; return nil }
 func (f *fakePlayerRepo) Delete(ctx context.Context, id uint64) error       { return nil }
@@ -188,14 +195,14 @@ func (f *fakePlayerRepo) Delete(ctx context.Context, id uint64) error       { re
 type fakeOrderRepo struct{ obj *model.Order }
 
 func (f *fakeOrderRepo) List(ctx context.Context, _ repository.OrderListOptions) ([]model.Order, int64, error) {
-    return nil, 0, nil
+	return nil, 0, nil
 }
 func (f *fakeOrderRepo) Create(ctx context.Context, o *model.Order) error { f.obj = o; return nil }
 func (f *fakeOrderRepo) Get(ctx context.Context, id uint64) (*model.Order, error) {
-    if f.obj == nil {
-        return nil, repository.ErrNotFound
-    }
-    return f.obj, nil
+	if f.obj == nil {
+		return nil, repository.ErrNotFound
+	}
+	return f.obj, nil
 }
 func (f *fakeOrderRepo) Update(ctx context.Context, o *model.Order) error { f.obj = o; return nil }
 func (f *fakeOrderRepo) Delete(ctx context.Context, id uint64) error      { return nil }
@@ -203,14 +210,14 @@ func (f *fakeOrderRepo) Delete(ctx context.Context, id uint64) error      { retu
 type fakePaymentRepo struct{ obj *model.Payment }
 
 func (f *fakePaymentRepo) List(ctx context.Context, _ repository.PaymentListOptions) ([]model.Payment, int64, error) {
-    return nil, 0, nil
+	return nil, 0, nil
 }
 func (f *fakePaymentRepo) Create(ctx context.Context, p *model.Payment) error { f.obj = p; return nil }
 func (f *fakePaymentRepo) Get(ctx context.Context, id uint64) (*model.Payment, error) {
-    if f.obj == nil {
-        return nil, repository.ErrNotFound
-    }
-    return f.obj, nil
+	if f.obj == nil {
+		return nil, repository.ErrNotFound
+	}
+	return f.obj, nil
 }
 func (f *fakePaymentRepo) Update(ctx context.Context, p *model.Payment) error { f.obj = p; return nil }
 func (f *fakePaymentRepo) Delete(ctx context.Context, id uint64) error        { return nil }
@@ -219,221 +226,227 @@ type fakeRoleRepo struct{}
 
 func (f *fakeRoleRepo) List(ctx context.Context) ([]model.RoleModel, error) { return nil, nil }
 func (f *fakeRoleRepo) ListPaged(ctx context.Context, page, pageSize int) ([]model.RoleModel, int64, error) {
-    return nil, 0, nil
+	return nil, 0, nil
 }
 func (f *fakeRoleRepo) ListWithPermissions(ctx context.Context) ([]model.RoleModel, error) {
-    return nil, nil
+	return nil, nil
 }
 func (f *fakeRoleRepo) Get(ctx context.Context, id uint64) (*model.RoleModel, error) {
-    return nil, repository.ErrNotFound
+	return nil, repository.ErrNotFound
 }
 func (f *fakeRoleRepo) GetWithPermissions(ctx context.Context, id uint64) (*model.RoleModel, error) {
-    return nil, repository.ErrNotFound
+	return nil, repository.ErrNotFound
 }
 func (f *fakeRoleRepo) GetBySlug(ctx context.Context, slug string) (*model.RoleModel, error) {
-    return nil, repository.ErrNotFound
+	return nil, repository.ErrNotFound
 }
 func (f *fakeRoleRepo) Create(ctx context.Context, role *model.RoleModel) error { return nil }
 func (f *fakeRoleRepo) Update(ctx context.Context, role *model.RoleModel) error { return nil }
 func (f *fakeRoleRepo) Delete(ctx context.Context, id uint64) error             { return nil }
 func (f *fakeRoleRepo) AssignPermissions(ctx context.Context, roleID uint64, permissionIDs []uint64) error {
-    return nil
+	return nil
 }
 func (f *fakeRoleRepo) AddPermissions(ctx context.Context, roleID uint64, permissionIDs []uint64) error {
-    return nil
+	return nil
 }
 func (f *fakeRoleRepo) RemovePermissions(ctx context.Context, roleID uint64, permissionIDs []uint64) error {
-    return nil
+	return nil
 }
-func (f *fakeRoleRepo) AssignToUser(ctx context.Context, userID uint64, roleIDs []uint64) error { return nil }
+func (f *fakeRoleRepo) AssignToUser(ctx context.Context, userID uint64, roleIDs []uint64) error {
+	return nil
+}
 func (f *fakeRoleRepo) RemoveFromUser(ctx context.Context, userID uint64, roleIDs []uint64) error {
-    return nil
+	return nil
 }
-func (f *fakeRoleRepo) ListByUserID(ctx context.Context, userID uint64) ([]model.RoleModel, error) { return nil, nil }
+func (f *fakeRoleRepo) ListByUserID(ctx context.Context, userID uint64) ([]model.RoleModel, error) {
+	return nil, nil
+}
 func (f *fakeRoleRepo) CheckUserHasRole(ctx context.Context, userID uint64, roleSlug string) (bool, error) {
-    return false, nil
+	return false, nil
 }
 
 type fakeTxManager struct{ repos *common.Repos }
 
-func (m *fakeTxManager) WithTx(ctx context.Context, fn func(r *common.Repos) error) error { return fn(m.repos) }
+func (m *fakeTxManager) WithTx(ctx context.Context, fn func(r *common.Repos) error) error {
+	return fn(m.repos)
+}
 
 // ---- Tests covering cache, validation, state machine, pagination, tx ----
 
 func TestAdmin_ListGames_UsesCacheAndInvalidatesOnWrite(t *testing.T) {
-    gRepo := &fakeGameRepo{items: []model.Game{{Base: model.Base{ID: 1}, Key: "lol", Name: "League"}}}
-    s := NewAdminService(gRepo, &fakeUserRepo{}, &fakePlayerRepo{}, &fakeOrderRepo{}, &fakePaymentRepo{}, &fakeRoleRepo{}, cache.NewMemory())
+	gRepo := &fakeGameRepo{items: []model.Game{{Base: model.Base{ID: 1}, Key: "lol", Name: "League"}}}
+	s := NewAdminService(gRepo, &fakeUserRepo{}, &fakePlayerRepo{}, &fakeOrderRepo{}, &fakePaymentRepo{}, &fakeRoleRepo{}, cache.NewMemory())
 
-    ctx := context.Background()
+	ctx := context.Background()
 
-    // first call hits repo
-    if _, err := s.ListGames(ctx); err != nil {
-        t.Fatalf("ListGames err: %v", err)
-    }
-    if gRepo.listCalls != 1 {
-        t.Fatalf("expected 1 repo call, got %d", gRepo.listCalls)
-    }
-    // second call served from cache
-    if _, err := s.ListGames(ctx); err != nil {
-        t.Fatalf("ListGames err: %v", err)
-    }
-    if gRepo.listCalls != 1 {
-        t.Fatalf("expected cached result, repo calls=%d", gRepo.listCalls)
-    }
-    // write invalidates cache
-    if _, err := s.CreateGame(ctx, CreateGameInput{Key: "dota2", Name: "DOTA2"}); err != nil {
-        t.Fatalf("CreateGame err: %v", err)
-    }
-    if _, err := s.ListGames(ctx); err != nil {
-        t.Fatalf("ListGames err: %v", err)
-    }
-    if gRepo.listCalls != 2 {
-        t.Fatalf("expected cache invalidation; repo calls=%d", gRepo.listCalls)
-    }
+	// first call hits repo
+	if _, err := s.ListGames(ctx); err != nil {
+		t.Fatalf("ListGames err: %v", err)
+	}
+	if gRepo.listCalls != 1 {
+		t.Fatalf("expected 1 repo call, got %d", gRepo.listCalls)
+	}
+	// second call served from cache
+	if _, err := s.ListGames(ctx); err != nil {
+		t.Fatalf("ListGames err: %v", err)
+	}
+	if gRepo.listCalls != 1 {
+		t.Fatalf("expected cached result, repo calls=%d", gRepo.listCalls)
+	}
+	// write invalidates cache
+	if _, err := s.CreateGame(ctx, CreateGameInput{Key: "dota2", Name: "DOTA2"}); err != nil {
+		t.Fatalf("CreateGame err: %v", err)
+	}
+	if _, err := s.ListGames(ctx); err != nil {
+		t.Fatalf("ListGames err: %v", err)
+	}
+	if gRepo.listCalls != 2 {
+		t.Fatalf("expected cache invalidation; repo calls=%d", gRepo.listCalls)
+	}
 }
 
 func TestAdmin_CreateGame_Validation(t *testing.T) {
-    s := NewAdminService(&fakeGameRepo{}, &fakeUserRepo{}, &fakePlayerRepo{}, &fakeOrderRepo{}, &fakePaymentRepo{}, &fakeRoleRepo{}, cache.NewMemory())
-    if _, err := s.CreateGame(context.Background(), CreateGameInput{Key: "", Name: ""}); err == nil {
-        t.Fatalf("expected validation error for empty key/name")
-    }
+	s := NewAdminService(&fakeGameRepo{}, &fakeUserRepo{}, &fakePlayerRepo{}, &fakeOrderRepo{}, &fakePaymentRepo{}, &fakeRoleRepo{}, cache.NewMemory())
+	if _, err := s.CreateGame(context.Background(), CreateGameInput{Key: "", Name: ""}); err == nil {
+		t.Fatalf("expected validation error for empty key/name")
+	}
 }
 
 func TestAdmin_UpdateOrder_Validation(t *testing.T) {
-    now := time.Now()
-    order := &model.Order{Base: model.Base{ID: 1}, Status: model.OrderStatusPending}
-    oRepo := &fakeOrderRepo{obj: order}
-    s := NewAdminService(&fakeGameRepo{}, &fakeUserRepo{}, &fakePlayerRepo{}, oRepo, &fakePaymentRepo{}, &fakeRoleRepo{}, cache.NewMemory())
+	now := time.Now()
+	order := &model.Order{Base: model.Base{ID: 1}, Status: model.OrderStatusPending}
+	oRepo := &fakeOrderRepo{obj: order}
+	s := NewAdminService(&fakeGameRepo{}, &fakeUserRepo{}, &fakePlayerRepo{}, oRepo, &fakePaymentRepo{}, &fakeRoleRepo{}, cache.NewMemory())
 
-    // invalid status
-    if _, err := s.UpdateOrder(context.Background(), 1, UpdateOrderInput{Status: "bad", PriceCents: 1, Currency: model.CurrencyCNY}); err == nil {
-        t.Fatalf("expected validation error for bad status")
-    }
-    // invalid currency
-    if _, err := s.UpdateOrder(context.Background(), 1, UpdateOrderInput{Status: model.OrderStatusConfirmed, PriceCents: 1, Currency: "XYZ"}); err == nil {
-        t.Fatalf("expected validation error for bad currency")
-    }
-    // negative price
-    if _, err := s.UpdateOrder(context.Background(), 1, UpdateOrderInput{Status: model.OrderStatusConfirmed, PriceCents: -1, Currency: model.CurrencyCNY}); err == nil {
-        t.Fatalf("expected validation error for negative price")
-    }
-    // valid update
-    in := UpdateOrderInput{Status: model.OrderStatusCanceled, PriceCents: 100, Currency: model.CurrencyUSD, ScheduledStart: &now}
-    out, err := s.UpdateOrder(context.Background(), 1, in)
-    if err != nil {
-        t.Fatalf("unexpected error: %v", err)
-    }
-    if out.Status != model.OrderStatusCanceled || out.PriceCents != 100 || out.Currency != model.CurrencyUSD {
-        t.Fatalf("unexpected order after update: %#v", out)
-    }
+	// invalid status
+	if _, err := s.UpdateOrder(context.Background(), 1, UpdateOrderInput{Status: "bad", PriceCents: 1, Currency: model.CurrencyCNY}); err == nil {
+		t.Fatalf("expected validation error for bad status")
+	}
+	// invalid currency
+	if _, err := s.UpdateOrder(context.Background(), 1, UpdateOrderInput{Status: model.OrderStatusConfirmed, PriceCents: 1, Currency: "XYZ"}); err == nil {
+		t.Fatalf("expected validation error for bad currency")
+	}
+	// negative price
+	if _, err := s.UpdateOrder(context.Background(), 1, UpdateOrderInput{Status: model.OrderStatusConfirmed, PriceCents: -1, Currency: model.CurrencyCNY}); err == nil {
+		t.Fatalf("expected validation error for negative price")
+	}
+	// valid update
+	in := UpdateOrderInput{Status: model.OrderStatusCanceled, PriceCents: 100, Currency: model.CurrencyUSD, ScheduledStart: &now}
+	out, err := s.UpdateOrder(context.Background(), 1, in)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if out.Status != model.OrderStatusCanceled || out.PriceCents != 100 || out.Currency != model.CurrencyUSD {
+		t.Fatalf("unexpected order after update: %#v", out)
+	}
 }
 
 func TestAdmin_UpdatePayment_Validation(t *testing.T) {
-    p := &model.Payment{Base: model.Base{ID: 1}, Status: model.PaymentStatusPending}
-    pRepo := &fakePaymentRepo{obj: p}
-    s := NewAdminService(&fakeGameRepo{}, &fakeUserRepo{}, &fakePlayerRepo{}, &fakeOrderRepo{}, pRepo, &fakeRoleRepo{}, cache.NewMemory())
+	p := &model.Payment{Base: model.Base{ID: 1}, Status: model.PaymentStatusPending}
+	pRepo := &fakePaymentRepo{obj: p}
+	s := NewAdminService(&fakeGameRepo{}, &fakeUserRepo{}, &fakePlayerRepo{}, &fakeOrderRepo{}, pRepo, &fakeRoleRepo{}, cache.NewMemory())
 
-    // invalid status
-    if _, err := s.UpdatePayment(context.Background(), 1, UpdatePaymentInput{Status: "oops"}); err == nil {
-        t.Fatalf("expected validation error for bad status")
-    }
-    // valid update
-    raw := json.RawMessage(`{"from":"test"}`)
-    out, err := s.UpdatePayment(context.Background(), 1, UpdatePaymentInput{Status: model.PaymentStatusPaid, ProviderRaw: raw})
-    if err != nil {
-        t.Fatalf("unexpected error: %v", err)
-    }
-    if out.Status != model.PaymentStatusPaid {
-        t.Fatalf("unexpected status: %v", out.Status)
-    }
-    if string(out.ProviderRaw) != string(raw) {
-        t.Fatalf("unexpected raw: %s", string(out.ProviderRaw))
-    }
+	// invalid status
+	if _, err := s.UpdatePayment(context.Background(), 1, UpdatePaymentInput{Status: "oops"}); err == nil {
+		t.Fatalf("expected validation error for bad status")
+	}
+	// valid update
+	raw := json.RawMessage(`{"from":"test"}`)
+	out, err := s.UpdatePayment(context.Background(), 1, UpdatePaymentInput{Status: model.PaymentStatusPaid, ProviderRaw: raw})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if out.Status != model.PaymentStatusPaid {
+		t.Fatalf("unexpected status: %v", out.Status)
+	}
+	if string(out.ProviderRaw) != string(raw) {
+		t.Fatalf("unexpected raw: %s", string(out.ProviderRaw))
+	}
 }
 
 func TestAdmin_OrderStateMachine(t *testing.T) {
-    o := &model.Order{Base: model.Base{ID: 1}, Status: model.OrderStatusPending}
-    oRepo := &fakeOrderRepo{obj: o}
-    s := NewAdminService(&fakeGameRepo{}, &fakeUserRepo{}, &fakePlayerRepo{}, oRepo, &fakePaymentRepo{}, &fakeRoleRepo{}, cache.NewMemory())
+	o := &model.Order{Base: model.Base{ID: 1}, Status: model.OrderStatusPending}
+	oRepo := &fakeOrderRepo{obj: o}
+	s := NewAdminService(&fakeGameRepo{}, &fakeUserRepo{}, &fakePlayerRepo{}, oRepo, &fakePaymentRepo{}, &fakeRoleRepo{}, cache.NewMemory())
 
-    // pending -> confirmed ok
-    if _, err := s.UpdateOrder(context.Background(), 1, UpdateOrderInput{Status: model.OrderStatusConfirmed, PriceCents: 1, Currency: model.CurrencyCNY}); err != nil {
-        t.Fatalf("unexpected error: %v", err)
-    }
-    // confirmed -> pending not allowed
-    if _, err := s.UpdateOrder(context.Background(), 1, UpdateOrderInput{Status: model.OrderStatusPending, PriceCents: 1, Currency: model.CurrencyCNY}); err == nil {
-        t.Fatalf("expected invalid transition error")
-    }
+	// pending -> confirmed ok
+	if _, err := s.UpdateOrder(context.Background(), 1, UpdateOrderInput{Status: model.OrderStatusConfirmed, PriceCents: 1, Currency: model.CurrencyCNY}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// confirmed -> pending not allowed
+	if _, err := s.UpdateOrder(context.Background(), 1, UpdateOrderInput{Status: model.OrderStatusPending, PriceCents: 1, Currency: model.CurrencyCNY}); err == nil {
+		t.Fatalf("expected invalid transition error")
+	}
 }
 
 func TestAdmin_PaymentStateMachine(t *testing.T) {
-    p := &model.Payment{Base: model.Base{ID: 1}, Status: model.PaymentStatusPending}
-    pRepo := &fakePaymentRepo{obj: p}
-    s := NewAdminService(&fakeGameRepo{}, &fakeUserRepo{}, &fakePlayerRepo{}, &fakeOrderRepo{}, pRepo, &fakeRoleRepo{}, cache.NewMemory())
+	p := &model.Payment{Base: model.Base{ID: 1}, Status: model.PaymentStatusPending}
+	pRepo := &fakePaymentRepo{obj: p}
+	s := NewAdminService(&fakeGameRepo{}, &fakeUserRepo{}, &fakePlayerRepo{}, &fakeOrderRepo{}, pRepo, &fakeRoleRepo{}, cache.NewMemory())
 
-    // pending -> paid ok
-    if _, err := s.UpdatePayment(context.Background(), 1, UpdatePaymentInput{Status: model.PaymentStatusPaid}); err != nil {
-        t.Fatalf("unexpected error: %v", err)
-    }
-    // paid -> failed not allowed
-    if _, err := s.UpdatePayment(context.Background(), 1, UpdatePaymentInput{Status: model.PaymentStatusFailed}); err == nil {
-        t.Fatalf("expected invalid transition error")
-    }
+	// pending -> paid ok
+	if _, err := s.UpdatePayment(context.Background(), 1, UpdatePaymentInput{Status: model.PaymentStatusPaid}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// paid -> failed not allowed
+	if _, err := s.UpdatePayment(context.Background(), 1, UpdatePaymentInput{Status: model.PaymentStatusFailed}); err == nil {
+		t.Fatalf("expected invalid transition error")
+	}
 }
 
 func TestAdmin_Pagination_Normalization(t *testing.T) {
-    uRepo := &fakeUserRepo{}
-    s := NewAdminService(&fakeGameRepo{}, uRepo, &fakePlayerRepo{}, &fakeOrderRepo{}, &fakePaymentRepo{}, &fakeRoleRepo{}, cache.NewMemory())
-    // page=0 and size=1000 should be normalized to 1 and 100
-    _, p, err := s.ListUsersPaged(context.Background(), 0, 1000)
-    if err != nil {
-        t.Fatalf("ListUsersPaged err: %v", err)
-    }
-    if p.TotalPages != 3 || p.HasNext != true || p.HasPrev != false {
-        t.Fatalf("unexpected pagination: %#v", p)
-    }
-    // last page
-    _, p2, err := s.ListUsersPaged(context.Background(), 3, 100)
-    if err != nil {
-        t.Fatalf("ListUsersPaged err: %v", err)
-    }
-    if p2.TotalPages != 3 || p2.HasNext != false || p2.HasPrev != true {
-        t.Fatalf("unexpected pagination last page: %#v", p2)
-    }
+	uRepo := &fakeUserRepo{}
+	s := NewAdminService(&fakeGameRepo{}, uRepo, &fakePlayerRepo{}, &fakeOrderRepo{}, &fakePaymentRepo{}, &fakeRoleRepo{}, cache.NewMemory())
+	// page=0 and size=1000 should be normalized to 1 and 100
+	_, p, err := s.ListUsersPaged(context.Background(), 0, 1000)
+	if err != nil {
+		t.Fatalf("ListUsersPaged err: %v", err)
+	}
+	if p.TotalPages != 3 || p.HasNext != true || p.HasPrev != false {
+		t.Fatalf("unexpected pagination: %#v", p)
+	}
+	// last page
+	_, p2, err := s.ListUsersPaged(context.Background(), 3, 100)
+	if err != nil {
+		t.Fatalf("ListUsersPaged err: %v", err)
+	}
+	if p2.TotalPages != 3 || p2.HasNext != false || p2.HasPrev != true {
+		t.Fatalf("unexpected pagination last page: %#v", p2)
+	}
 }
 
 func TestAdmin_RegisterUserAndPlayer_TxAndCacheInvalidation(t *testing.T) {
-    mem := cache.NewMemory()
-    g := &fakeGameRepo{}
-    s := NewAdminService(g, &fakeUserRepo{}, &fakePlayerRepo{}, &fakeOrderRepo{}, &fakePaymentRepo{}, &fakeRoleRepo{}, mem)
+	mem := cache.NewMemory()
+	g := &fakeGameRepo{}
+	s := NewAdminService(g, &fakeUserRepo{}, &fakePlayerRepo{}, &fakeOrderRepo{}, &fakePaymentRepo{}, &fakeRoleRepo{}, mem)
 
-    // when tx is nil
-    if _, _, err := s.RegisterUserAndPlayer(context.Background(), CreateUserInput{Name: "alice", Password: "password1", Role: model.RoleUser, Status: model.UserStatusActive}, CreatePlayerInput{Nickname: "p", VerificationStatus: model.VerificationVerified}); err == nil {
-        t.Fatalf("expected tx not configured error")
-    }
+	// when tx is nil
+	if _, _, err := s.RegisterUserAndPlayer(context.Background(), CreateUserInput{Name: "alice", Password: "password1", Role: model.RoleUser, Status: model.UserStatusActive}, CreatePlayerInput{Nickname: "p", VerificationStatus: model.VerificationVerified}); err == nil {
+		t.Fatalf("expected tx not configured error")
+	}
 
-    // prepare tx repos
-    txU := &fakeUserRepo{}
-    txP := &fakePlayerRepo{}
-    s.SetTxManager(&fakeTxManager{repos: &common.Repos{Users: txU, Players: txP}})
+	// prepare tx repos
+	txU := &fakeUserRepo{}
+	txP := &fakePlayerRepo{}
+	s.SetTxManager(&fakeTxManager{repos: &common.Repos{Users: txU, Players: txP}})
 
-    // seed caches and ensure invalidation happens later
-    _ = mem.Set(context.Background(), cacheKeyUsers, "x", 10*time.Minute)
-    _ = mem.Set(context.Background(), cacheKeyPlayers, "y", 10*time.Minute)
+	// seed caches and ensure invalidation happens later
+	_ = mem.Set(context.Background(), cacheKeyUsers, "x", 10*time.Minute)
+	_ = mem.Set(context.Background(), cacheKeyPlayers, "y", 10*time.Minute)
 
-    u, p, err := s.RegisterUserAndPlayer(context.Background(), CreateUserInput{Name: "alice", Password: "password1", Role: model.RoleUser, Status: model.UserStatusActive}, CreatePlayerInput{Nickname: "pro", VerificationStatus: model.VerificationVerified})
-    if err != nil {
-        t.Fatalf("RegisterUserAndPlayer err: %v", err)
-    }
-    if u == nil || p == nil || u.ID == 0 || p.UserID != u.ID {
-        t.Fatalf("unexpected created entities: user=%#v player=%#v", u, p)
-    }
-    if _, ok, _ := mem.Get(context.Background(), cacheKeyUsers); ok {
-        t.Fatalf("users cache should be invalidated")
-    }
-    if _, ok, _ := mem.Get(context.Background(), cacheKeyPlayers); ok {
-        t.Fatalf("players cache should be invalidated")
-    }
+	u, p, err := s.RegisterUserAndPlayer(context.Background(), CreateUserInput{Name: "alice", Password: "password1", Role: model.RoleUser, Status: model.UserStatusActive}, CreatePlayerInput{Nickname: "pro", VerificationStatus: model.VerificationVerified})
+	if err != nil {
+		t.Fatalf("RegisterUserAndPlayer err: %v", err)
+	}
+	if u == nil || p == nil || u.ID == 0 || p.UserID != u.ID {
+		t.Fatalf("unexpected created entities: user=%#v player=%#v", u, p)
+	}
+	if _, ok, _ := mem.Get(context.Background(), cacheKeyUsers); ok {
+		t.Fatalf("users cache should be invalidated")
+	}
+	if _, ok, _ := mem.Get(context.Background(), cacheKeyPlayers); ok {
+		t.Fatalf("players cache should be invalidated")
+	}
 }
 
 // ===== 新增测试：用户管理 =====
@@ -584,16 +597,16 @@ func TestValidPassword(t *testing.T) {
 		password string
 		valid    bool
 	}{
-		{"pass123", true},    // 有字母和数字，长度>=6
-		{"abc123", true},     // 有字母和数字，长度>=6
-		{"Test99", true},     // 有字母和数字，长度>=6
-		{"123456", false},    // 只有数字
-		{"abcdef", false},    // 只有字母
-		{"12345", false},     // 长度<6
-		{"abc", false},       // 长度<6且只有字母
-		{"", false},          // 空字符串
-		{"Pass1", false},     // 长度不足6
-		{"Password1", true},  // 有字母和数字，长度>=6
+		{"pass123", true},   // 有字母和数字，长度>=6
+		{"abc123", true},    // 有字母和数字，长度>=6
+		{"Test99", true},    // 有字母和数字，长度>=6
+		{"123456", false},   // 只有数字
+		{"abcdef", false},   // 只有字母
+		{"12345", false},    // 长度<6
+		{"abc", false},      // 长度<6且只有字母
+		{"", false},         // 空字符串
+		{"Pass1", false},    // 长度不足6
+		{"Password1", true}, // 有字母和数字，长度>=6
 	}
 
 	for _, tt := range tests {
@@ -1052,4 +1065,1048 @@ func TestDeletePlayer_Success(t *testing.T) {
 	if err != nil {
 		t.Errorf("DeletePlayer failed: %v", err)
 	}
+}
+
+// ===== 订单管理测试 =====
+
+func TestCreateOrder_Success(t *testing.T) {
+	orders := &fakeOrderRepo{}
+	players := &fakePlayerRepo{
+		last: &model.Player{Base: model.Base{ID: 99}, UserID: 42},
+	}
+
+	svc := NewAdminService(
+		&fakeGameRepo{},
+		&fakeUserRepo{},
+		players,
+		orders,
+		&fakePaymentRepo{},
+		&fakeRoleRepo{},
+		cache.NewMemory(),
+	)
+
+	playerID := uint64(99)
+	input := CreateOrderInput{
+		UserID:     42,
+		PlayerID:   &playerID,
+		GameID:     1,
+		Title:      "Test Order",
+		PriceCents: 10000,
+		Currency:   model.CurrencyCNY,
+	}
+
+	order, err := svc.CreateOrder(context.Background(), input)
+	if err != nil {
+		t.Fatalf("CreateOrder failed: %v", err)
+	}
+
+	if order.Status != model.OrderStatusPending {
+		t.Errorf("Expected status Pending, got %s", order.Status)
+	}
+	if order.PriceCents != 10000 {
+		t.Errorf("Expected price 10000, got %d", order.PriceCents)
+	}
+}
+
+func TestCreateOrder_InvalidInput(t *testing.T) {
+	svc := NewAdminService(
+		&fakeGameRepo{},
+		&fakeUserRepo{},
+		&fakePlayerRepo{},
+		&fakeOrderRepo{},
+		&fakePaymentRepo{},
+		&fakeRoleRepo{},
+		cache.NewMemory(),
+	)
+
+	tests := []struct {
+		name  string
+		input CreateOrderInput
+	}{
+		{
+			name: "UserID为0",
+			input: CreateOrderInput{
+				UserID:     0,
+				GameID:     1,
+				PriceCents: 100,
+				Currency:   model.CurrencyCNY,
+			},
+		},
+		{
+			name: "PriceCents负数",
+			input: CreateOrderInput{
+				UserID:     42,
+				GameID:     1,
+				PriceCents: -100,
+				Currency:   model.CurrencyCNY,
+			},
+		},
+		{
+			name: "无效货币",
+			input: CreateOrderInput{
+				UserID:     42,
+				GameID:     1,
+				PriceCents: 100,
+				Currency:   "INVALID",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := svc.CreateOrder(context.Background(), tt.input)
+			if err != ErrValidation {
+				t.Errorf("Expected ErrValidation, got %v", err)
+			}
+		})
+	}
+}
+
+func TestAssignOrder_Success(t *testing.T) {
+	orders := &fakeOrderRepo{
+		obj: &model.Order{
+			Base:   model.Base{ID: 123},
+			Status: model.OrderStatusPending,
+		},
+	}
+	players := &fakePlayerRepo{
+		last: &model.Player{Base: model.Base{ID: 99}, UserID: 42},
+	}
+
+	svc := NewAdminService(
+		&fakeGameRepo{},
+		&fakeUserRepo{},
+		players,
+		orders,
+		&fakePaymentRepo{},
+		&fakeRoleRepo{},
+		cache.NewMemory(),
+	)
+
+	order, err := svc.AssignOrder(context.Background(), 123, 99)
+	if err != nil {
+		t.Fatalf("AssignOrder failed: %v", err)
+	}
+
+	if order.PlayerID != 99 {
+		t.Errorf("Expected PlayerID 99, got %d", order.PlayerID)
+	}
+}
+
+func TestAssignOrder_InvalidPlayerID(t *testing.T) {
+	orders := &fakeOrderRepo{
+		obj: &model.Order{
+			Base:   model.Base{ID: 123},
+			Status: model.OrderStatusPending,
+		},
+	}
+
+	svc := NewAdminService(
+		&fakeGameRepo{},
+		&fakeUserRepo{},
+		&fakePlayerRepo{},
+		orders,
+		&fakePaymentRepo{},
+		&fakeRoleRepo{},
+		cache.NewMemory(),
+	)
+
+	_, err := svc.AssignOrder(context.Background(), 123, 0)
+	if err != ErrValidation {
+		t.Errorf("Expected ErrValidation for playerID=0, got %v", err)
+	}
+}
+
+func TestAssignOrder_CompletedOrder(t *testing.T) {
+	orders := &fakeOrderRepo{
+		obj: &model.Order{
+			Base:   model.Base{ID: 123},
+			Status: model.OrderStatusCompleted,
+		},
+	}
+	players := &fakePlayerRepo{
+		last: &model.Player{Base: model.Base{ID: 99}, UserID: 42},
+	}
+
+	svc := NewAdminService(
+		&fakeGameRepo{},
+		&fakeUserRepo{},
+		players,
+		orders,
+		&fakePaymentRepo{},
+		&fakeRoleRepo{},
+		cache.NewMemory(),
+	)
+
+	_, err := svc.AssignOrder(context.Background(), 123, 99)
+	if err != ErrValidation {
+		t.Errorf("Expected ErrValidation for completed order, got %v", err)
+	}
+}
+
+func TestGetOrder_Success(t *testing.T) {
+	orders := &fakeOrderRepo{
+		obj: &model.Order{Base: model.Base{ID: 123}, Title: "Test Order"},
+	}
+
+	svc := NewAdminService(
+		&fakeGameRepo{},
+		&fakeUserRepo{},
+		&fakePlayerRepo{},
+		orders,
+		&fakePaymentRepo{},
+		&fakeRoleRepo{},
+		cache.NewMemory(),
+	)
+
+	order, err := svc.GetOrder(context.Background(), 123)
+	if err != nil {
+		t.Fatalf("GetOrder failed: %v", err)
+	}
+
+	if order.Title != "Test Order" {
+		t.Errorf("Expected title 'Test Order', got '%s'", order.Title)
+	}
+}
+
+func TestDeleteOrder_Success(t *testing.T) {
+	svc := NewAdminService(
+		&fakeGameRepo{},
+		&fakeUserRepo{},
+		&fakePlayerRepo{},
+		&fakeOrderRepo{},
+		&fakePaymentRepo{},
+		&fakeRoleRepo{},
+		cache.NewMemory(),
+	)
+
+	err := svc.DeleteOrder(context.Background(), 123)
+	if err != nil {
+		t.Errorf("DeleteOrder failed: %v", err)
+	}
+}
+
+func TestUpdateOrder_StatusTransition(t *testing.T) {
+	tests := []struct {
+		name       string
+		prevStatus model.OrderStatus
+		nextStatus model.OrderStatus
+		shouldFail bool
+	}{
+		{"Pending->Confirmed", model.OrderStatusPending, model.OrderStatusConfirmed, false},
+		{"Confirmed->InProgress", model.OrderStatusConfirmed, model.OrderStatusInProgress, false},
+		{"InProgress->Completed", model.OrderStatusInProgress, model.OrderStatusCompleted, false},
+		{"Completed->Refunded", model.OrderStatusCompleted, model.OrderStatusRefunded, false},
+		{"Completed->Pending", model.OrderStatusCompleted, model.OrderStatusPending, true},
+		{"Canceled->Confirmed", model.OrderStatusCanceled, model.OrderStatusConfirmed, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			orders := &fakeOrderRepo{
+				obj: &model.Order{
+					Base:       model.Base{ID: 123},
+					Status:     tt.prevStatus,
+					PriceCents: 10000,
+					Currency:   model.CurrencyCNY,
+				},
+			}
+
+			svc := NewAdminService(
+				&fakeGameRepo{},
+				&fakeUserRepo{},
+				&fakePlayerRepo{},
+				orders,
+				&fakePaymentRepo{},
+				&fakeRoleRepo{},
+				cache.NewMemory(),
+			)
+
+			input := UpdateOrderInput{
+				Status:     tt.nextStatus,
+				PriceCents: 10000,
+				Currency:   model.CurrencyCNY,
+			}
+
+			_, err := svc.UpdateOrder(context.Background(), 123, input)
+			if tt.shouldFail && err != ErrOrderInvalidTransition {
+				t.Errorf("Expected ErrOrderInvalidTransition, got %v", err)
+			}
+			if !tt.shouldFail && err != nil {
+				t.Errorf("Expected no error, got %v", err)
+			}
+		})
+	}
+}
+
+func TestConfirmOrder_Success(t *testing.T) {
+	orders := &fakeOrderRepo{
+		obj: &model.Order{
+			Base:       model.Base{ID: 123},
+			Status:     model.OrderStatusPending,
+			PriceCents: 10000,
+			Currency:   model.CurrencyCNY,
+		},
+	}
+
+	svc := NewAdminService(
+		&fakeGameRepo{},
+		&fakeUserRepo{},
+		&fakePlayerRepo{},
+		orders,
+		&fakePaymentRepo{},
+		&fakeRoleRepo{},
+		cache.NewMemory(),
+	)
+
+	order, err := svc.ConfirmOrder(context.Background(), 123, "confirmed by admin")
+	if err != nil {
+		t.Fatalf("ConfirmOrder failed: %v", err)
+	}
+
+	if order.Status != model.OrderStatusConfirmed {
+		t.Errorf("Expected status Confirmed, got %s", order.Status)
+	}
+}
+
+func TestStartOrder_Success(t *testing.T) {
+	orders := &fakeOrderRepo{
+		obj: &model.Order{
+			Base:       model.Base{ID: 123},
+			Status:     model.OrderStatusConfirmed,
+			PriceCents: 10000,
+			Currency:   model.CurrencyCNY,
+		},
+	}
+
+	svc := NewAdminService(
+		&fakeGameRepo{},
+		&fakeUserRepo{},
+		&fakePlayerRepo{},
+		orders,
+		&fakePaymentRepo{},
+		&fakeRoleRepo{},
+		cache.NewMemory(),
+	)
+
+	order, err := svc.StartOrder(context.Background(), 123, "service started")
+	if err != nil {
+		t.Fatalf("StartOrder failed: %v", err)
+	}
+
+	if order.Status != model.OrderStatusInProgress {
+		t.Errorf("Expected status InProgress, got %s", order.Status)
+	}
+	if order.StartedAt == nil {
+		t.Error("Expected StartedAt to be set")
+	}
+}
+
+func TestCompleteOrder_Success(t *testing.T) {
+	orders := &fakeOrderRepo{
+		obj: &model.Order{
+			Base:       model.Base{ID: 123},
+			Status:     model.OrderStatusInProgress,
+			PriceCents: 10000,
+			Currency:   model.CurrencyCNY,
+		},
+	}
+
+	svc := NewAdminService(
+		&fakeGameRepo{},
+		&fakeUserRepo{},
+		&fakePlayerRepo{},
+		orders,
+		&fakePaymentRepo{},
+		&fakeRoleRepo{},
+		cache.NewMemory(),
+	)
+
+	order, err := svc.CompleteOrder(context.Background(), 123, "service completed")
+	if err != nil {
+		t.Fatalf("CompleteOrder failed: %v", err)
+	}
+
+	if order.Status != model.OrderStatusCompleted {
+		t.Errorf("Expected status Completed, got %s", order.Status)
+	}
+	if order.CompletedAt == nil {
+		t.Error("Expected CompletedAt to be set")
+	}
+}
+
+// ===== 支付管理测试 =====
+
+func TestCreatePayment_Success(t *testing.T) {
+	payments := &fakePaymentRepo{}
+	users := &fakeUserRepo{
+		last: &model.User{Base: model.Base{ID: 42}, Name: "Test User"},
+	}
+	orders := &fakeOrderRepo{
+		obj: &model.Order{Base: model.Base{ID: 123}},
+	}
+
+	svc := NewAdminService(
+		&fakeGameRepo{},
+		users,
+		&fakePlayerRepo{},
+		orders,
+		payments,
+		&fakeRoleRepo{},
+		cache.NewMemory(),
+	)
+
+	input := CreatePaymentInput{
+		OrderID:     123,
+		UserID:      42,
+		Method:      model.PaymentMethodAlipay,
+		AmountCents: 10000,
+		Currency:    model.CurrencyCNY,
+	}
+
+	payment, err := svc.CreatePayment(context.Background(), input)
+	if err != nil {
+		t.Fatalf("CreatePayment failed: %v", err)
+	}
+
+	if payment.Status != model.PaymentStatusPending {
+		t.Errorf("Expected status Pending, got %s", payment.Status)
+	}
+	if payment.AmountCents != 10000 {
+		t.Errorf("Expected amount 10000, got %d", payment.AmountCents)
+	}
+}
+
+func TestCreatePayment_InvalidInput(t *testing.T) {
+	svc := NewAdminService(
+		&fakeGameRepo{},
+		&fakeUserRepo{},
+		&fakePlayerRepo{},
+		&fakeOrderRepo{},
+		&fakePaymentRepo{},
+		&fakeRoleRepo{},
+		cache.NewMemory(),
+	)
+
+	tests := []struct {
+		name  string
+		input CreatePaymentInput
+	}{
+		{
+			name: "OrderID为0",
+			input: CreatePaymentInput{
+				OrderID:     0,
+				UserID:      42,
+				Method:      model.PaymentMethodAlipay,
+				AmountCents: 100,
+				Currency:    model.CurrencyCNY,
+			},
+		},
+		{
+			name: "AmountCents为0",
+			input: CreatePaymentInput{
+				OrderID:     123,
+				UserID:      42,
+				Method:      model.PaymentMethodAlipay,
+				AmountCents: 0,
+				Currency:    model.CurrencyCNY,
+			},
+		},
+		{
+			name: "Method为空",
+			input: CreatePaymentInput{
+				OrderID:     123,
+				UserID:      42,
+				Method:      "",
+				AmountCents: 100,
+				Currency:    model.CurrencyCNY,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := svc.CreatePayment(context.Background(), tt.input)
+			if err != ErrValidation {
+				t.Errorf("Expected ErrValidation, got %v", err)
+			}
+		})
+	}
+}
+
+func TestCapturePayment_Success(t *testing.T) {
+	now := time.Now().UTC()
+	payments := &fakePaymentRepo{
+		obj: &model.Payment{
+			Base:   model.Base{ID: 456},
+			Status: model.PaymentStatusPending,
+		},
+	}
+
+	svc := NewAdminService(
+		&fakeGameRepo{},
+		&fakeUserRepo{},
+		&fakePlayerRepo{},
+		&fakeOrderRepo{},
+		payments,
+		&fakeRoleRepo{},
+		cache.NewMemory(),
+	)
+
+	input := CapturePaymentInput{
+		ProviderTradeNo: "TRADE123456",
+		PaidAt:          &now,
+	}
+
+	payment, err := svc.CapturePayment(context.Background(), 456, input)
+	if err != nil {
+		t.Fatalf("CapturePayment failed: %v", err)
+	}
+
+	if payment.Status != model.PaymentStatusPaid {
+		t.Errorf("Expected status Paid, got %s", payment.Status)
+	}
+	if payment.ProviderTradeNo != "TRADE123456" {
+		t.Errorf("Expected trade no 'TRADE123456', got '%s'", payment.ProviderTradeNo)
+	}
+}
+
+func TestCapturePayment_InvalidTransition(t *testing.T) {
+	payments := &fakePaymentRepo{
+		obj: &model.Payment{
+			Base:   model.Base{ID: 456},
+			Status: model.PaymentStatusFailed, // Failed status cannot transition to Paid
+		},
+	}
+
+	svc := NewAdminService(
+		&fakeGameRepo{},
+		&fakeUserRepo{},
+		&fakePlayerRepo{},
+		&fakeOrderRepo{},
+		payments,
+		&fakeRoleRepo{},
+		cache.NewMemory(),
+	)
+
+	input := CapturePaymentInput{
+		ProviderTradeNo: "TRADE123456",
+	}
+
+	_, err := svc.CapturePayment(context.Background(), 456, input)
+	if err != ErrValidation {
+		t.Errorf("Expected ErrValidation for invalid transition, got %v", err)
+	}
+}
+
+func TestUpdatePayment_StatusTransition(t *testing.T) {
+	tests := []struct {
+		name       string
+		prevStatus model.PaymentStatus
+		nextStatus model.PaymentStatus
+		shouldFail bool
+	}{
+		{"Pending->Paid", model.PaymentStatusPending, model.PaymentStatusPaid, false},
+		{"Pending->Failed", model.PaymentStatusPending, model.PaymentStatusFailed, false},
+		{"Paid->Refunded", model.PaymentStatusPaid, model.PaymentStatusRefunded, false},
+		{"Failed->Paid", model.PaymentStatusFailed, model.PaymentStatusPaid, true},
+		{"Refunded->Paid", model.PaymentStatusRefunded, model.PaymentStatusPaid, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			payments := &fakePaymentRepo{
+				obj: &model.Payment{
+					Base:   model.Base{ID: 456},
+					Status: tt.prevStatus,
+				},
+			}
+
+			svc := NewAdminService(
+				&fakeGameRepo{},
+				&fakeUserRepo{},
+				&fakePlayerRepo{},
+				&fakeOrderRepo{},
+				payments,
+				&fakeRoleRepo{},
+				cache.NewMemory(),
+			)
+
+			input := UpdatePaymentInput{
+				Status: tt.nextStatus,
+			}
+
+			_, err := svc.UpdatePayment(context.Background(), 456, input)
+			if tt.shouldFail && err != ErrValidation {
+				t.Errorf("Expected ErrValidation, got %v", err)
+			}
+			if !tt.shouldFail && err != nil {
+				t.Errorf("Expected no error, got %v", err)
+			}
+		})
+	}
+}
+
+func TestGetPayment_Success(t *testing.T) {
+	payments := &fakePaymentRepo{
+		obj: &model.Payment{
+			Base:        model.Base{ID: 456},
+			OrderID:     123,
+			AmountCents: 10000,
+		},
+	}
+
+	svc := NewAdminService(
+		&fakeGameRepo{},
+		&fakeUserRepo{},
+		&fakePlayerRepo{},
+		&fakeOrderRepo{},
+		payments,
+		&fakeRoleRepo{},
+		cache.NewMemory(),
+	)
+
+	payment, err := svc.GetPayment(context.Background(), 456)
+	if err != nil {
+		t.Fatalf("GetPayment failed: %v", err)
+	}
+
+	if payment.AmountCents != 10000 {
+		t.Errorf("Expected amount 10000, got %d", payment.AmountCents)
+	}
+}
+
+func TestDeletePayment_Success(t *testing.T) {
+	svc := NewAdminService(
+		&fakeGameRepo{},
+		&fakeUserRepo{},
+		&fakePlayerRepo{},
+		&fakeOrderRepo{},
+		&fakePaymentRepo{},
+		&fakeRoleRepo{},
+		cache.NewMemory(),
+	)
+
+	err := svc.DeletePayment(context.Background(), 456)
+	if err != nil {
+		t.Errorf("DeletePayment failed: %v", err)
+	}
+}
+
+// ===== 状态机验证测试 =====
+
+func TestIsValidOrderStatus(t *testing.T) {
+	tests := []struct {
+		status model.OrderStatus
+		valid  bool
+	}{
+		{model.OrderStatusPending, true},
+		{model.OrderStatusConfirmed, true},
+		{model.OrderStatusInProgress, true},
+		{model.OrderStatusCompleted, true},
+		{model.OrderStatusCanceled, true},
+		{model.OrderStatusRefunded, true},
+		{"invalid", false},
+		{"", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(string(tt.status), func(t *testing.T) {
+			result := isValidOrderStatus(tt.status)
+			if result != tt.valid {
+				t.Errorf("isValidOrderStatus(%q) = %v, want %v", tt.status, result, tt.valid)
+			}
+		})
+	}
+}
+
+func TestIsValidPaymentStatus(t *testing.T) {
+	tests := []struct {
+		status model.PaymentStatus
+		valid  bool
+	}{
+		{model.PaymentStatusPending, true},
+		{model.PaymentStatusPaid, true},
+		{model.PaymentStatusFailed, true},
+		{model.PaymentStatusRefunded, true},
+		{"invalid", false},
+		{"", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(string(tt.status), func(t *testing.T) {
+			result := isValidPaymentStatus(tt.status)
+			if result != tt.valid {
+				t.Errorf("isValidPaymentStatus(%q) = %v, want %v", tt.status, result, tt.valid)
+			}
+		})
+	}
+}
+
+func TestIsAllowedOrderTransition(t *testing.T) {
+	tests := []struct {
+		name    string
+		prev    model.OrderStatus
+		next    model.OrderStatus
+		allowed bool
+	}{
+		{"Same status", model.OrderStatusPending, model.OrderStatusPending, true},
+		{"Pending to Confirmed", model.OrderStatusPending, model.OrderStatusConfirmed, true},
+		{"Confirmed to InProgress", model.OrderStatusConfirmed, model.OrderStatusInProgress, true},
+		{"InProgress to Completed", model.OrderStatusInProgress, model.OrderStatusCompleted, true},
+		{"Completed to Refunded", model.OrderStatusCompleted, model.OrderStatusRefunded, true},
+		{"Completed to Pending", model.OrderStatusCompleted, model.OrderStatusPending, false},
+		{"Canceled to any", model.OrderStatusCanceled, model.OrderStatusConfirmed, false},
+		{"Refunded to any", model.OrderStatusRefunded, model.OrderStatusCompleted, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := isAllowedOrderTransition(tt.prev, tt.next)
+			if result != tt.allowed {
+				t.Errorf("isAllowedOrderTransition(%s, %s) = %v, want %v", tt.prev, tt.next, result, tt.allowed)
+			}
+		})
+	}
+}
+
+func TestIsAllowedPaymentTransition(t *testing.T) {
+	tests := []struct {
+		name    string
+		prev    model.PaymentStatus
+		next    model.PaymentStatus
+		allowed bool
+	}{
+		{"Same status", model.PaymentStatusPending, model.PaymentStatusPending, true},
+		{"Pending to Paid", model.PaymentStatusPending, model.PaymentStatusPaid, true},
+		{"Pending to Failed", model.PaymentStatusPending, model.PaymentStatusFailed, true},
+		{"Paid to Refunded", model.PaymentStatusPaid, model.PaymentStatusRefunded, true},
+		{"Failed to Paid", model.PaymentStatusFailed, model.PaymentStatusPaid, false},
+		{"Refunded to any", model.PaymentStatusRefunded, model.PaymentStatusPaid, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := isAllowedPaymentTransition(tt.prev, tt.next)
+			if result != tt.allowed {
+				t.Errorf("isAllowedPaymentTransition(%s, %s) = %v, want %v", tt.prev, tt.next, result, tt.allowed)
+			}
+		})
+	}
+}
+
+// ===== 缓存测试 =====
+
+func TestListGames_Cache(t *testing.T) {
+	games := &fakeGameRepo{
+		items: []model.Game{
+			{Base: model.Base{ID: 1}, Key: "lol", Name: "LOL"},
+			{Base: model.Base{ID: 2}, Key: "dota", Name: "DOTA"},
+		},
+	}
+
+	cache := cache.NewMemory()
+	svc := NewAdminService(
+		games,
+		&fakeUserRepo{},
+		&fakePlayerRepo{},
+		&fakeOrderRepo{},
+		&fakePaymentRepo{},
+		&fakeRoleRepo{},
+		cache,
+	)
+
+	// 第一次调用，应该从数据库读取
+	list1, err := svc.ListGames(context.Background())
+	if err != nil {
+		t.Fatalf("ListGames failed: %v", err)
+	}
+	if len(list1) != 2 {
+		t.Errorf("Expected 2 games, got %d", len(list1))
+	}
+	if games.listCalls != 1 {
+		t.Errorf("Expected 1 DB call, got %d", games.listCalls)
+	}
+
+	// 第二次调用，应该从缓存读取
+	list2, err := svc.ListGames(context.Background())
+	if err != nil {
+		t.Fatalf("ListGames failed: %v", err)
+	}
+	if len(list2) != 2 {
+		t.Errorf("Expected 2 games, got %d", len(list2))
+	}
+	// listCalls 仍然是 1，说明使用了缓存
+	if games.listCalls != 1 {
+		t.Errorf("Expected 1 DB call (cached), got %d", games.listCalls)
+	}
+}
+
+func TestCreateGame_InvalidatesCache(t *testing.T) {
+	games := &fakeGameRepo{
+		items: []model.Game{
+			{Base: model.Base{ID: 1}, Key: "lol", Name: "LOL"},
+		},
+	}
+
+	cache := cache.NewMemory()
+	svc := NewAdminService(
+		games,
+		&fakeUserRepo{},
+		&fakePlayerRepo{},
+		&fakeOrderRepo{},
+		&fakePaymentRepo{},
+		&fakeRoleRepo{},
+		cache,
+	)
+
+	// 先读取一次，填充缓存
+	_, _ = svc.ListGames(context.Background())
+	if games.listCalls != 1 {
+		t.Errorf("Expected 1 DB call, got %d", games.listCalls)
+	}
+
+	// 创建新游戏，应该清空缓存
+	input := CreateGameInput{
+		Key:  "dota",
+		Name: "DOTA 2",
+	}
+	_, err := svc.CreateGame(context.Background(), input)
+	if err != nil {
+		t.Fatalf("CreateGame failed: %v", err)
+	}
+
+	// 再次读取，由于缓存已清空，应该再次查询数据库
+	_, _ = svc.ListGames(context.Background())
+	if games.listCalls != 2 {
+		t.Errorf("Expected 2 DB calls after cache invalidation, got %d", games.listCalls)
+	}
+}
+
+func TestListUsersPaged_Success(t *testing.T) {
+	users := &fakeUserRepo{}
+	svc := NewAdminService(
+		&fakeGameRepo{},
+		users,
+		&fakePlayerRepo{},
+		&fakeOrderRepo{},
+		&fakePaymentRepo{},
+		&fakeRoleRepo{},
+		cache.NewMemory(),
+	)
+
+	items, pagination, err := svc.ListUsersPaged(context.Background(), 1, 20)
+	if err != nil {
+		t.Fatalf("ListUsersPaged failed: %v", err)
+	}
+
+	if items == nil {
+		t.Error("Expected non-nil items")
+	}
+
+	if pagination == nil {
+		t.Fatal("Expected non-nil pagination")
+	}
+
+	// fakeUserRepo 返回 total=250
+	if pagination.Total != 250 {
+		t.Errorf("Expected total 250, got %d", pagination.Total)
+	}
+
+	// 250 / 20 = 13 pages (rounded up)
+	if pagination.TotalPages != 13 {
+		t.Errorf("Expected 13 total pages, got %d", pagination.TotalPages)
+	}
+
+	if !pagination.HasNext {
+		t.Error("Expected HasNext to be true on page 1")
+	}
+
+	if pagination.HasPrev {
+		t.Error("Expected HasPrev to be false on page 1")
+	}
+}
+
+func TestListUsersWithOptions_Success(t *testing.T) {
+	users := &fakeUserRepo{}
+	svc := NewAdminService(
+		&fakeGameRepo{},
+		users,
+		&fakePlayerRepo{},
+		&fakeOrderRepo{},
+		&fakePaymentRepo{},
+		&fakeRoleRepo{},
+		cache.NewMemory(),
+	)
+
+	opts := repository.UserListOptions{
+		Page:     2,
+		PageSize: 25,
+	}
+
+	items, pagination, err := svc.ListUsersWithOptions(context.Background(), opts)
+	if err != nil {
+		t.Fatalf("ListUsersWithOptions failed: %v", err)
+	}
+
+	if items == nil {
+		t.Error("Expected non-nil items")
+	}
+
+	if pagination == nil {
+		t.Fatal("Expected non-nil pagination")
+	}
+
+	if pagination.Page != 2 {
+		t.Errorf("Expected page 2, got %d", pagination.Page)
+	}
+
+	if pagination.PageSize != 25 {
+		t.Errorf("Expected page size 25, got %d", pagination.PageSize)
+	}
+}
+
+func TestListGamesPaged_Success(t *testing.T) {
+	games := &fakeGameRepo{
+		items: []model.Game{
+			{Base: model.Base{ID: 1}, Key: "lol", Name: "LOL"},
+			{Base: model.Base{ID: 2}, Key: "dota", Name: "DOTA"},
+		},
+	}
+
+	svc := NewAdminService(
+		games,
+		&fakeUserRepo{},
+		&fakePlayerRepo{},
+		&fakeOrderRepo{},
+		&fakePaymentRepo{},
+		&fakeRoleRepo{},
+		cache.NewMemory(),
+	)
+
+	items, pagination, err := svc.ListGamesPaged(context.Background(), 1, 10)
+	if err != nil {
+		t.Fatalf("ListGamesPaged failed: %v", err)
+	}
+
+	if len(items) != 2 {
+		t.Errorf("Expected 2 items, got %d", len(items))
+	}
+
+	if pagination == nil {
+		t.Fatal("Expected non-nil pagination")
+	}
+
+	if pagination.Total != 2 {
+		t.Errorf("Expected total 2, got %d", pagination.Total)
+	}
+}
+
+func TestListPlayersPaged_Success(t *testing.T) {
+	svc := NewAdminService(
+		&fakeGameRepo{},
+		&fakeUserRepo{},
+		&fakePlayerRepo{},
+		&fakeOrderRepo{},
+		&fakePaymentRepo{},
+		&fakeRoleRepo{},
+		cache.NewMemory(),
+	)
+
+	items, pagination, err := svc.ListPlayersPaged(context.Background(), 1, 20)
+	if err != nil {
+		t.Fatalf("ListPlayersPaged failed: %v", err)
+	}
+
+	if items == nil {
+		t.Error("Expected non-nil items")
+	}
+
+	if pagination != nil && pagination.Total != 0 {
+		t.Errorf("Expected total 0, got %d", pagination.Total)
+	}
+}
+
+func TestListOrders_Success(t *testing.T) {
+	svc := NewAdminService(
+		&fakeGameRepo{},
+		&fakeUserRepo{},
+		&fakePlayerRepo{},
+		&fakeOrderRepo{},
+		&fakePaymentRepo{},
+		&fakeRoleRepo{},
+		cache.NewMemory(),
+	)
+
+	opts := repository.OrderListOptions{
+		Page:     1,
+		PageSize: 20,
+	}
+
+	_, pagination, err := svc.ListOrders(context.Background(), opts)
+	if err != nil {
+		t.Fatalf("ListOrders failed: %v", err)
+	}
+
+	if pagination == nil {
+		t.Fatal("Expected non-nil pagination")
+	}
+
+	if pagination.Total != 0 {
+		t.Errorf("Expected total 0, got %d", pagination.Total)
+	}
+}
+
+func TestListPayments_Success(t *testing.T) {
+	svc := NewAdminService(
+		&fakeGameRepo{},
+		&fakeUserRepo{},
+		&fakePlayerRepo{},
+		&fakeOrderRepo{},
+		&fakePaymentRepo{},
+		&fakeRoleRepo{},
+		cache.NewMemory(),
+	)
+
+	opts := repository.PaymentListOptions{
+		Page:     1,
+		PageSize: 20,
+	}
+
+	_, pagination, err := svc.ListPayments(context.Background(), opts)
+	if err != nil {
+		t.Fatalf("ListPayments failed: %v", err)
+	}
+
+	if pagination == nil {
+		t.Fatal("Expected non-nil pagination")
+	}
+
+	if pagination.Total != 0 {
+		t.Errorf("Expected total 0, got %d", pagination.Total)
+	}
+}
+
+func TestMapUserError(t *testing.T) {
+	t.Run("ErrNotFound maps to ErrUserNotFound", func(t *testing.T) {
+		err := mapUserError(repository.ErrNotFound)
+		if err != ErrUserNotFound {
+			t.Errorf("Expected ErrUserNotFound, got %v", err)
+		}
+	})
+
+	t.Run("Other errors pass through", func(t *testing.T) {
+		testErr := errors.New("test error")
+		err := mapUserError(testErr)
+		if err != testErr {
+			t.Errorf("Expected same error, got %v", err)
+		}
+	})
+
+	t.Run("Nil error returns nil", func(t *testing.T) {
+		err := mapUserError(nil)
+		if err != nil {
+			t.Errorf("Expected nil, got %v", err)
+		}
+	})
 }

@@ -50,4 +50,3 @@ func TestRecovery(t *testing.T) {
 		}
 	})
 }
-

@@ -482,4 +482,3 @@ func TestIsAuthenticated(t *testing.T) {
 		}
 	})
 }
-

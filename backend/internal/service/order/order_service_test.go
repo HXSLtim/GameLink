@@ -459,3 +459,485 @@ func TestGetMyOrdersWithStatusFilter(t *testing.T) {
 		t.Errorf("expected pending status, got %s", resp.Orders[0].Status)
 	}
 }
+
+// ---- Additional Tests for Better Coverage ----
+
+func TestCompleteOrder(t *testing.T) {
+	orderRepo := newMockOrderRepository()
+	svc := NewOrderService(
+		orderRepo,
+		&mockPlayerRepository{},
+		&mockUserRepository{},
+		&mockGameRepository{},
+		&mockPaymentRepository{},
+		&mockReviewRepository{},
+	)
+
+	// Create an in-progress order
+	now := time.Now()
+	order := &model.Order{
+		Base:           model.Base{ID: 1},
+		UserID:         1,
+		PlayerID:       1,
+		Status:         model.OrderStatusInProgress,
+		PriceCents:     10000,
+		ScheduledStart: &now,
+	}
+	orderRepo.orders[1] = order
+
+	err := svc.CompleteOrder(context.Background(), 1, 1)
+
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	updatedOrder := orderRepo.orders[1]
+	if updatedOrder.Status != model.OrderStatusCompleted {
+		t.Errorf("expected completed status, got %s", updatedOrder.Status)
+	}
+}
+
+func TestCompleteOrder_InvalidTransition(t *testing.T) {
+	orderRepo := newMockOrderRepository()
+	svc := NewOrderService(
+		orderRepo,
+		&mockPlayerRepository{},
+		&mockUserRepository{},
+		&mockGameRepository{},
+		&mockPaymentRepository{},
+		&mockReviewRepository{},
+	)
+
+	// Create a pending order (can't complete directly)
+	now := time.Now()
+	order := &model.Order{
+		Base:           model.Base{ID: 1},
+		UserID:         1,
+		Status:         model.OrderStatusPending,
+		PriceCents:     10000,
+		ScheduledStart: &now,
+	}
+	orderRepo.orders[1] = order
+
+	err := svc.CompleteOrder(context.Background(), 1, 1)
+
+	if err != ErrInvalidTransition {
+		t.Errorf("expected ErrInvalidTransition, got %v", err)
+	}
+}
+
+func TestAcceptOrder_Success(t *testing.T) {
+	orderRepo := newMockOrderRepository()
+	svc := NewOrderService(
+		orderRepo,
+		&mockPlayerRepository{},
+		&mockUserRepository{},
+		&mockGameRepository{},
+		&mockPaymentRepository{},
+		&mockReviewRepository{},
+	)
+
+	// Create a confirmed order (ready to be accepted)
+	now := time.Now()
+	order := &model.Order{
+		Base:           model.Base{ID: 1},
+		UserID:         2,                          // Different user
+		Status:         model.OrderStatusConfirmed, // Must be confirmed to accept
+		PriceCents:     10000,
+		ScheduledStart: &now,
+	}
+	orderRepo.orders[1] = order
+
+	// Player (user 1) accepts the order
+	err := svc.AcceptOrder(context.Background(), 1, 1)
+
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	updatedOrder := orderRepo.orders[1]
+	if updatedOrder.Status != model.OrderStatusInProgress { // After accepting, it should be in-progress
+		t.Errorf("expected in-progress status, got %s", updatedOrder.Status)
+	}
+
+	if updatedOrder.PlayerID == 0 {
+		t.Error("expected player ID to be set")
+	}
+}
+
+func TestCompleteOrder_InvalidStatus(t *testing.T) {
+	orderRepo := newMockOrderRepository()
+	svc := NewOrderService(
+		orderRepo,
+		&mockPlayerRepository{},
+		&mockUserRepository{},
+		&mockGameRepository{},
+		&mockPaymentRepository{},
+		&mockReviewRepository{},
+	)
+
+	// Create a pending order (not yet in progress)
+	now := time.Now()
+	order := &model.Order{
+		Base:           model.Base{ID: 1},
+		UserID:         1,
+		Status:         model.OrderStatusPending,
+		PriceCents:     10000,
+		ScheduledStart: &now,
+	}
+	orderRepo.orders[1] = order
+
+	// Try to complete (should fail - must be in-progress first)
+	err := svc.CompleteOrder(context.Background(), 1, 1)
+
+	if err == nil {
+		t.Error("expected error for invalid status transition")
+	}
+}
+
+func TestCompleteOrderByPlayer(t *testing.T) {
+	orderRepo := newMockOrderRepository()
+	svc := NewOrderService(
+		orderRepo,
+		&mockPlayerRepository{},
+		&mockUserRepository{},
+		&mockGameRepository{},
+		&mockPaymentRepository{},
+		&mockReviewRepository{},
+	)
+
+	// Create an in-progress order assigned to player 1
+	now := time.Now()
+	order := &model.Order{
+		Base:           model.Base{ID: 1},
+		UserID:         2,
+		PlayerID:       1,
+		Status:         model.OrderStatusInProgress,
+		PriceCents:     10000,
+		ScheduledStart: &now,
+	}
+	orderRepo.orders[1] = order
+
+	// Player 1 completes the order
+	err := svc.CompleteOrderByPlayer(context.Background(), 1, 1)
+
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	updatedOrder := orderRepo.orders[1]
+	if updatedOrder.Status != model.OrderStatusCompleted {
+		t.Errorf("expected completed status, got %s", updatedOrder.Status)
+	}
+}
+
+func TestCompleteOrderByPlayer_Unauthorized(t *testing.T) {
+	orderRepo := newMockOrderRepository()
+	svc := NewOrderService(
+		orderRepo,
+		&mockPlayerRepository{},
+		&mockUserRepository{},
+		&mockGameRepository{},
+		&mockPaymentRepository{},
+		&mockReviewRepository{},
+	)
+
+	// Create an order assigned to player 2
+	now := time.Now()
+	order := &model.Order{
+		Base:           model.Base{ID: 1},
+		UserID:         3,
+		PlayerID:       2, // Different player
+		Status:         model.OrderStatusInProgress,
+		PriceCents:     10000,
+		ScheduledStart: &now,
+	}
+	orderRepo.orders[1] = order
+
+	// Player 1 tries to complete player 2's order (should fail)
+	err := svc.CompleteOrderByPlayer(context.Background(), 1, 1)
+
+	if err != ErrUnauthorized {
+		t.Errorf("expected ErrUnauthorized, got %v", err)
+	}
+}
+
+func TestGetMyOrders_EmptyList(t *testing.T) {
+	svc := NewOrderService(
+		newMockOrderRepository(),
+		&mockPlayerRepository{},
+		&mockUserRepository{},
+		&mockGameRepository{},
+		&mockPaymentRepository{},
+		&mockReviewRepository{},
+	)
+
+	resp, err := svc.GetMyOrders(context.Background(), 1, MyOrderListRequest{
+		Page:     1,
+		PageSize: 20,
+	})
+
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if resp == nil {
+		t.Fatal("expected response, got nil")
+	}
+
+	if len(resp.Orders) != 0 {
+		t.Errorf("expected 0 orders, got %d", len(resp.Orders))
+	}
+}
+
+func TestCancelOrder_InvalidStatus(t *testing.T) {
+	orderRepo := newMockOrderRepository()
+	svc := NewOrderService(
+		orderRepo,
+		&mockPlayerRepository{},
+		&mockUserRepository{},
+		&mockGameRepository{},
+		&mockPaymentRepository{},
+		&mockReviewRepository{},
+	)
+
+	// Create a completed order (cannot be canceled)
+	now := time.Now()
+	order := &model.Order{
+		Base:           model.Base{ID: 1},
+		UserID:         1,
+		Status:         model.OrderStatusCompleted,
+		PriceCents:     10000,
+		ScheduledStart: &now,
+	}
+	orderRepo.orders[1] = order
+
+	err := svc.CancelOrder(context.Background(), 1, 1, CancelOrderRequest{
+		Reason: "Test",
+	})
+
+	if err == nil {
+		t.Error("expected error when canceling completed order")
+	}
+}
+
+func TestCompleteOrder_Unauthorized(t *testing.T) {
+	orderRepo := newMockOrderRepository()
+	svc := NewOrderService(
+		orderRepo,
+		&mockPlayerRepository{},
+		&mockUserRepository{},
+		&mockGameRepository{},
+		&mockPaymentRepository{},
+		&mockReviewRepository{},
+	)
+
+	// Create an order for user 2
+	now := time.Now()
+	order := &model.Order{
+		Base:           model.Base{ID: 1},
+		UserID:         2, // Different user
+		Status:         model.OrderStatusInProgress,
+		PriceCents:     10000,
+		ScheduledStart: &now,
+	}
+	orderRepo.orders[1] = order
+
+	// User 1 tries to complete user 2's order
+	err := svc.CompleteOrder(context.Background(), 1, 1)
+
+	if err != ErrUnauthorized {
+		t.Errorf("expected ErrUnauthorized, got %v", err)
+	}
+}
+
+func TestGetOrderDetail_Unauthorized(t *testing.T) {
+	orderRepo := newMockOrderRepository()
+	svc := NewOrderService(
+		orderRepo,
+		&mockPlayerRepository{},
+		&mockUserRepository{},
+		&mockGameRepository{},
+		&mockPaymentRepository{},
+		&mockReviewRepository{},
+	)
+
+	// Create an order for user 2
+	now := time.Now()
+	order := &model.Order{
+		Base:           model.Base{ID: 1, CreatedAt: now},
+		UserID:         2, // Different user
+		PlayerID:       3,
+		GameID:         1,
+		Title:          "Test Order",
+		Status:         model.OrderStatusPending,
+		PriceCents:     10000,
+		ScheduledStart: &now,
+	}
+	orderRepo.orders[1] = order
+
+	// User 1 tries to view user 2's order (not their order and not their player order)
+	_, err := svc.GetOrderDetail(context.Background(), 1, 1)
+
+	if err != ErrUnauthorized {
+		t.Errorf("expected ErrUnauthorized, got %v", err)
+	}
+}
+
+func TestGetOrderDetail_NotFound(t *testing.T) {
+	orderRepo := newMockOrderRepository()
+	svc := NewOrderService(
+		orderRepo,
+		&mockPlayerRepository{},
+		&mockUserRepository{},
+		&mockGameRepository{},
+		&mockPaymentRepository{},
+		&mockReviewRepository{},
+	)
+
+	// Try to get non-existent order
+	_, err := svc.GetOrderDetail(context.Background(), 1, 9999)
+
+	if err != ErrNotFound {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestCancelOrder_NotFound(t *testing.T) {
+	orderRepo := newMockOrderRepository()
+	svc := NewOrderService(
+		orderRepo,
+		&mockPlayerRepository{},
+		&mockUserRepository{},
+		&mockGameRepository{},
+		&mockPaymentRepository{},
+		&mockReviewRepository{},
+	)
+
+	// Try to cancel non-existent order
+	err := svc.CancelOrder(context.Background(), 1, 9999, CancelOrderRequest{
+		Reason: "Test",
+	})
+
+	if err != ErrNotFound {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestCompleteOrder_NotFound(t *testing.T) {
+	orderRepo := newMockOrderRepository()
+	svc := NewOrderService(
+		orderRepo,
+		&mockPlayerRepository{},
+		&mockUserRepository{},
+		&mockGameRepository{},
+		&mockPaymentRepository{},
+		&mockReviewRepository{},
+	)
+
+	// Try to complete non-existent order
+	err := svc.CompleteOrder(context.Background(), 1, 9999)
+
+	if err != ErrNotFound {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestCompleteOrderByPlayer_NotFound(t *testing.T) {
+	orderRepo := newMockOrderRepository()
+	svc := NewOrderService(
+		orderRepo,
+		&mockPlayerRepository{},
+		&mockUserRepository{},
+		&mockGameRepository{},
+		&mockPaymentRepository{},
+		&mockReviewRepository{},
+	)
+
+	// Try to complete non-existent order
+	err := svc.CompleteOrderByPlayer(context.Background(), 1, 9999)
+
+	if err != ErrNotFound {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestAcceptOrder_NotFound(t *testing.T) {
+	orderRepo := newMockOrderRepository()
+	svc := NewOrderService(
+		orderRepo,
+		&mockPlayerRepository{},
+		&mockUserRepository{},
+		&mockGameRepository{},
+		&mockPaymentRepository{},
+		&mockReviewRepository{},
+	)
+
+	// Try to accept non-existent order
+	err := svc.AcceptOrder(context.Background(), 1, 9999)
+
+	if err != ErrNotFound {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestAcceptOrder_InvalidStatus(t *testing.T) {
+	orderRepo := newMockOrderRepository()
+	svc := NewOrderService(
+		orderRepo,
+		&mockPlayerRepository{},
+		&mockUserRepository{},
+		&mockGameRepository{},
+		&mockPaymentRepository{},
+		&mockReviewRepository{},
+	)
+
+	// Create a pending order (not confirmed yet)
+	now := time.Now()
+	order := &model.Order{
+		Base:           model.Base{ID: 1},
+		UserID:         2,
+		Status:         model.OrderStatusPending, // Wrong status for accepting
+		PriceCents:     10000,
+		ScheduledStart: &now,
+	}
+	orderRepo.orders[1] = order
+
+	// Try to accept (should fail)
+	err := svc.AcceptOrder(context.Background(), 1, 1)
+
+	if err != ErrInvalidTransition {
+		t.Errorf("expected ErrInvalidTransition, got %v", err)
+	}
+}
+
+func TestCompleteOrderByPlayer_InvalidStatus(t *testing.T) {
+	orderRepo := newMockOrderRepository()
+	svc := NewOrderService(
+		orderRepo,
+		&mockPlayerRepository{},
+		&mockUserRepository{},
+		&mockGameRepository{},
+		&mockPaymentRepository{},
+		&mockReviewRepository{},
+	)
+
+	// Create a pending order (not in-progress)
+	now := time.Now()
+	order := &model.Order{
+		Base:           model.Base{ID: 1},
+		UserID:         2,
+		PlayerID:       1,
+		Status:         model.OrderStatusPending, // Wrong status for completing
+		PriceCents:     10000,
+		ScheduledStart: &now,
+	}
+	orderRepo.orders[1] = order
+
+	// Try to complete (should fail)
+	err := svc.CompleteOrderByPlayer(context.Background(), 1, 1)
+
+	if err == nil {
+		t.Error("expected error for invalid status transition")
+	}
+}
