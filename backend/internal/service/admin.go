@@ -39,6 +39,7 @@ type AdminService struct {
 	players  repository.PlayerRepository
 	orders   repository.OrderRepository
 	payments repository.PaymentRepository
+	roles    repository.RoleRepository
 	cache    cache.Cache
 	tx       TxManager
 }
@@ -69,6 +70,7 @@ func NewAdminService(
 	players repository.PlayerRepository,
 	orders repository.OrderRepository,
 	payments repository.PaymentRepository,
+	roles repository.RoleRepository,
 	cache cache.Cache,
 ) *AdminService {
 	return &AdminService{
@@ -77,6 +79,7 @@ func NewAdminService(
 		players:  players,
 		orders:   orders,
 		payments: payments,
+		roles:    roles,
 		cache:    cache,
 	}
 }
@@ -370,6 +373,13 @@ func (s *AdminService) CreateUser(ctx context.Context, input CreateUserInput) (*
 	if err := s.users.Create(ctx, user); err != nil {
 		return nil, err
 	}
+
+	// 同步 user.Role 到 user_roles 表
+	if err := s.syncUserRoleToTable(ctx, user.ID, user.Role); err != nil {
+		slog.Warn("failed to sync user_role to table", slog.Uint64("user_id", user.ID), slog.String("error", err.Error()))
+		// 不中断流程，继续执行
+	}
+
 	s.invalidateCache(ctx, cacheKeyUsers)
 	// audit
 	s.appendLogAsync(ctx, string(model.OpEntityUser), user.ID, string(model.OpActionCreate), map[string]any{"role": user.Role, "status": user.Status})
@@ -415,6 +425,13 @@ func (s *AdminService) UpdateUser(ctx context.Context, id uint64, input UpdateUs
 	if err := s.users.Update(ctx, user); err != nil {
 		return nil, err
 	}
+
+	// 同步 user.Role 到 user_roles 表
+	if err := s.syncUserRoleToTable(ctx, user.ID, user.Role); err != nil {
+		slog.Warn("failed to sync user_role to table", slog.Uint64("user_id", user.ID), slog.String("error", err.Error()))
+		// 不中断流程，继续执行
+	}
+
 	s.invalidateCache(ctx, cacheKeyUsers)
 	// audit
 	s.appendLogAsync(ctx, string(model.OpEntityUser), user.ID, string(model.OpActionUpdate), map[string]any{"role": user.Role, "status": user.Status})
@@ -473,6 +490,13 @@ func (s *AdminService) UpdateUserRole(ctx context.Context, id uint64, role model
 	if err := s.users.Update(ctx, user); err != nil {
 		return nil, err
 	}
+
+	// 同步 user.Role 到 user_roles 表
+	if err := s.syncUserRoleToTable(ctx, user.ID, user.Role); err != nil {
+		slog.Warn("failed to sync user_role to table", slog.Uint64("user_id", user.ID), slog.String("error", err.Error()))
+		// 不中断流程，继续执行
+	}
+
 	s.invalidateCache(ctx, cacheKeyUsers)
 	s.appendLogAsync(ctx, string(model.OpEntityUser), user.ID, string(model.OpActionUpdateRole), map[string]any{"role": user.Role})
 	return user, nil
@@ -488,6 +512,42 @@ func validateUserInput(name string, role model.Role, status model.UserStatus, pa
 	if password != "" && !validPassword(password) {
 		return ErrValidation
 	}
+	return nil
+}
+
+// syncUserRoleToTable 同步 user.Role 到 user_roles 多对多表。
+// 根据 user.Role 字段的值，在 user_roles 表中创建对应的关联记录。
+func (s *AdminService) syncUserRoleToTable(ctx context.Context, userID uint64, role model.Role) error {
+	// 根据 role 字段查找对应的 RoleModel
+	var roleSlug string
+	switch role {
+	case model.RoleAdmin:
+		roleSlug = string(model.RoleSlugAdmin)
+	case model.RolePlayer:
+		roleSlug = string(model.RoleSlugPlayer)
+	case model.RoleUser:
+		roleSlug = string(model.RoleSlugUser)
+	default:
+		// 未知角色，记录日志但不报错
+		slog.Warn("unknown user role, skipping user_roles sync", slog.String("role", string(role)), slog.Uint64("user_id", userID))
+		return nil
+	}
+
+	roleModel, err := s.roles.GetBySlug(ctx, roleSlug)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			slog.Warn("role not found in database, skipping user_roles sync", slog.String("slug", roleSlug), slog.Uint64("user_id", userID))
+			return nil
+		}
+		return err
+	}
+
+	// 为用户分配该角色（替换现有所有角色，保持与 user.Role 字段一致）
+	if err := s.roles.AssignToUser(ctx, userID, []uint64{roleModel.ID}); err != nil {
+		return err
+	}
+
+	slog.Info("user_role_synced_to_table", slog.Uint64("user_id", userID), slog.String("role", string(role)), slog.Uint64("role_id", roleModel.ID))
 	return nil
 }
 

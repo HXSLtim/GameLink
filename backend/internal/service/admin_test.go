@@ -54,10 +54,10 @@ type fakeUserRepo struct{ last *model.User }
 
 func (f *fakeUserRepo) List(ctx context.Context) ([]model.User, error) { return nil, nil }
 func (f *fakeUserRepo) ListPaged(ctx context.Context, page, size int) ([]model.User, int64, error) {
-    return nil, 0, nil
+	return nil, 0, nil
 }
 func (f *fakeUserRepo) ListWithFilters(ctx context.Context, opts repository.UserListOptions) ([]model.User, int64, error) {
-    return nil, 0, nil
+	return nil, 0, nil
 }
 func (f *fakeUserRepo) Get(ctx context.Context, id uint64) (*model.User, error) {
 	if f.last != nil && f.last.ID == id {
@@ -97,18 +97,20 @@ func (f *fakePlayerRepo) Delete(ctx context.Context, id uint64) error       { re
 type fakeOrderRepo struct{ obj *model.Order }
 
 func (f *fakeOrderRepo) List(ctx context.Context, _ repository.OrderListOptions) ([]model.Order, int64, error) {
-    return nil, 0, nil
+	return nil, 0, nil
 }
 func (f *fakeOrderRepo) Create(ctx context.Context, o *model.Order) error {
-    if o.ID == 0 { o.ID = 1 }
-    f.obj = o
-    return nil
+	if o.ID == 0 {
+		o.ID = 1
+	}
+	f.obj = o
+	return nil
 }
 func (f *fakeOrderRepo) Get(ctx context.Context, id uint64) (*model.Order, error) {
-    if f.obj == nil {
-        return nil, repository.ErrNotFound
-    }
-    return f.obj, nil
+	if f.obj == nil {
+		return nil, repository.ErrNotFound
+	}
+	return f.obj, nil
 }
 func (f *fakeOrderRepo) Update(ctx context.Context, o *model.Order) error { f.obj = o; return nil }
 func (f *fakeOrderRepo) Delete(ctx context.Context, id uint64) error      { return nil }
@@ -116,27 +118,72 @@ func (f *fakeOrderRepo) Delete(ctx context.Context, id uint64) error      { retu
 type fakePaymentRepo struct{ obj *model.Payment }
 
 func (f *fakePaymentRepo) List(ctx context.Context, _ repository.PaymentListOptions) ([]model.Payment, int64, error) {
-    return nil, 0, nil
+	return nil, 0, nil
 }
 func (f *fakePaymentRepo) Create(ctx context.Context, p *model.Payment) error {
-    if p.ID == 0 { p.ID = 1 }
-    f.obj = p
-    return nil
+	if p.ID == 0 {
+		p.ID = 1
+	}
+	f.obj = p
+	return nil
 }
 func (f *fakePaymentRepo) Get(ctx context.Context, id uint64) (*model.Payment, error) {
-    if f.obj == nil {
-        return nil, repository.ErrNotFound
-    }
-    return f.obj, nil
+	if f.obj == nil {
+		return nil, repository.ErrNotFound
+	}
+	return f.obj, nil
 }
 func (f *fakePaymentRepo) Update(ctx context.Context, p *model.Payment) error { f.obj = p; return nil }
 func (f *fakePaymentRepo) Delete(ctx context.Context, id uint64) error        { return nil }
+
+type fakeRoleRepo struct{}
+
+func (f *fakeRoleRepo) List(ctx context.Context) ([]model.RoleModel, error) { return nil, nil }
+func (f *fakeRoleRepo) ListPaged(ctx context.Context, page, pageSize int) ([]model.RoleModel, int64, error) {
+	return nil, 0, nil
+}
+func (f *fakeRoleRepo) ListWithPermissions(ctx context.Context) ([]model.RoleModel, error) {
+	return nil, nil
+}
+func (f *fakeRoleRepo) Get(ctx context.Context, id uint64) (*model.RoleModel, error) {
+	return nil, repository.ErrNotFound
+}
+func (f *fakeRoleRepo) GetWithPermissions(ctx context.Context, id uint64) (*model.RoleModel, error) {
+	return nil, repository.ErrNotFound
+}
+func (f *fakeRoleRepo) GetBySlug(ctx context.Context, slug string) (*model.RoleModel, error) {
+	return nil, repository.ErrNotFound
+}
+func (f *fakeRoleRepo) Create(ctx context.Context, role *model.RoleModel) error { return nil }
+func (f *fakeRoleRepo) Update(ctx context.Context, role *model.RoleModel) error { return nil }
+func (f *fakeRoleRepo) Delete(ctx context.Context, id uint64) error             { return nil }
+func (f *fakeRoleRepo) AssignPermissions(ctx context.Context, roleID uint64, permissionIDs []uint64) error {
+	return nil
+}
+func (f *fakeRoleRepo) AddPermissions(ctx context.Context, roleID uint64, permissionIDs []uint64) error {
+	return nil
+}
+func (f *fakeRoleRepo) RemovePermissions(ctx context.Context, roleID uint64, permissionIDs []uint64) error {
+	return nil
+}
+func (f *fakeRoleRepo) ListByUserID(ctx context.Context, userID uint64) ([]model.RoleModel, error) {
+	return nil, nil
+}
+func (f *fakeRoleRepo) AssignToUser(ctx context.Context, userID uint64, roleIDs []uint64) error {
+	return nil
+}
+func (f *fakeRoleRepo) RemoveFromUser(ctx context.Context, userID uint64, roleIDs []uint64) error {
+	return nil
+}
+func (f *fakeRoleRepo) CheckUserHasRole(ctx context.Context, userID uint64, roleSlug string) (bool, error) {
+	return false, nil
+}
 
 // ---- Tests ----
 
 func TestService_ListGames_UsesCacheAndInvalidatesOnWrite(t *testing.T) {
 	gRepo := &fakeGameRepo{items: []model.Game{{Base: model.Base{ID: 1}, Key: "lol", Name: "League"}}}
-	s := NewAdminService(gRepo, &fakeUserRepo{}, &fakePlayerRepo{}, &fakeOrderRepo{}, &fakePaymentRepo{}, cache.NewMemory())
+	s := NewAdminService(gRepo, &fakeUserRepo{}, &fakePlayerRepo{}, &fakeOrderRepo{}, &fakePaymentRepo{}, &fakeRoleRepo{}, cache.NewMemory())
 
 	ctx := context.Background()
 
@@ -176,7 +223,7 @@ func TestService_ListGames_UsesCacheAndInvalidatesOnWrite(t *testing.T) {
 }
 
 func TestService_CreateGame_Validation(t *testing.T) {
-	s := NewAdminService(&fakeGameRepo{}, &fakeUserRepo{}, &fakePlayerRepo{}, &fakeOrderRepo{}, &fakePaymentRepo{}, cache.NewMemory())
+	s := NewAdminService(&fakeGameRepo{}, &fakeUserRepo{}, &fakePlayerRepo{}, &fakeOrderRepo{}, &fakePaymentRepo{}, &fakeRoleRepo{}, cache.NewMemory())
 	if _, err := s.CreateGame(context.Background(), CreateGameInput{Key: "", Name: ""}); err == nil {
 		t.Fatalf("expected validation error for empty key/name")
 	}
@@ -186,7 +233,7 @@ func TestService_UpdateOrder_Validation(t *testing.T) {
 	now := time.Now()
 	order := &model.Order{Base: model.Base{ID: 1}, Status: model.OrderStatusPending}
 	oRepo := &fakeOrderRepo{obj: order}
-	s := NewAdminService(&fakeGameRepo{}, &fakeUserRepo{}, &fakePlayerRepo{}, oRepo, &fakePaymentRepo{}, cache.NewMemory())
+	s := NewAdminService(&fakeGameRepo{}, &fakeUserRepo{}, &fakePlayerRepo{}, oRepo, &fakePaymentRepo{}, &fakeRoleRepo{}, cache.NewMemory())
 
 	// invalid status
 	_, err := s.UpdateOrder(context.Background(), 1, UpdateOrderInput{Status: "bad", PriceCents: 1, Currency: model.CurrencyCNY})
@@ -220,7 +267,7 @@ func TestService_UpdateOrder_Validation(t *testing.T) {
 func TestService_UpdatePayment_Validation(t *testing.T) {
 	p := &model.Payment{Base: model.Base{ID: 1}, Status: model.PaymentStatusPending}
 	pRepo := &fakePaymentRepo{obj: p}
-	s := NewAdminService(&fakeGameRepo{}, &fakeUserRepo{}, &fakePlayerRepo{}, &fakeOrderRepo{}, pRepo, cache.NewMemory())
+	s := NewAdminService(&fakeGameRepo{}, &fakeUserRepo{}, &fakePlayerRepo{}, &fakeOrderRepo{}, pRepo, &fakeRoleRepo{}, cache.NewMemory())
 
 	// invalid status
 	_, err := s.UpdatePayment(context.Background(), 1, UpdatePaymentInput{Status: "oops"})
@@ -244,7 +291,7 @@ func TestService_UpdatePayment_Validation(t *testing.T) {
 
 func TestService_CreateUser_HashesPassword(t *testing.T) {
 	uRepo := &fakeUserRepo{}
-	s := NewAdminService(&fakeGameRepo{}, uRepo, &fakePlayerRepo{}, &fakeOrderRepo{}, &fakePaymentRepo{}, cache.NewMemory())
+	s := NewAdminService(&fakeGameRepo{}, uRepo, &fakePlayerRepo{}, &fakeOrderRepo{}, &fakePaymentRepo{}, &fakeRoleRepo{}, cache.NewMemory())
 	out, err := s.CreateUser(context.Background(), CreateUserInput{
 		Phone: "1", Email: "a@b", Password: "secret123", Name: "alice", Role: model.RoleUser, Status: model.UserStatusActive,
 	})
@@ -260,7 +307,7 @@ func TestService_CreateUser_HashesPassword(t *testing.T) {
 }
 
 func TestService_CreateUser_PasswordTooShort(t *testing.T) {
-	s := NewAdminService(&fakeGameRepo{}, &fakeUserRepo{}, &fakePlayerRepo{}, &fakeOrderRepo{}, &fakePaymentRepo{}, cache.NewMemory())
+	s := NewAdminService(&fakeGameRepo{}, &fakeUserRepo{}, &fakePlayerRepo{}, &fakeOrderRepo{}, &fakePaymentRepo{}, &fakeRoleRepo{}, cache.NewMemory())
 	_, err := s.CreateUser(context.Background(), CreateUserInput{
 		Name: "alice", Password: "123", Role: model.RoleUser, Status: model.UserStatusActive,
 	})
@@ -271,7 +318,7 @@ func TestService_CreateUser_PasswordTooShort(t *testing.T) {
 
 func TestService_UpdateUser_PasswordOptional(t *testing.T) {
 	uRepo := &fakeUserRepo{}
-	s := NewAdminService(&fakeGameRepo{}, uRepo, &fakePlayerRepo{}, &fakeOrderRepo{}, &fakePaymentRepo{}, cache.NewMemory())
+	s := NewAdminService(&fakeGameRepo{}, uRepo, &fakePlayerRepo{}, &fakeOrderRepo{}, &fakePaymentRepo{}, &fakeRoleRepo{}, cache.NewMemory())
 
 	// create user first
 	u, err := s.CreateUser(context.Background(), CreateUserInput{
@@ -305,7 +352,7 @@ func TestService_UpdateUser_PasswordOptional(t *testing.T) {
 func TestService_OrderStateMachine(t *testing.T) {
 	o := &model.Order{Base: model.Base{ID: 1}, Status: model.OrderStatusPending}
 	oRepo := &fakeOrderRepo{obj: o}
-	s := NewAdminService(&fakeGameRepo{}, &fakeUserRepo{}, &fakePlayerRepo{}, oRepo, &fakePaymentRepo{}, cache.NewMemory())
+	s := NewAdminService(&fakeGameRepo{}, &fakeUserRepo{}, &fakePlayerRepo{}, oRepo, &fakePaymentRepo{}, &fakeRoleRepo{}, cache.NewMemory())
 
 	// pending -> confirmed ok
 	if _, err := s.UpdateOrder(context.Background(), 1, UpdateOrderInput{Status: model.OrderStatusConfirmed, PriceCents: 1, Currency: model.CurrencyCNY}); err != nil {
@@ -320,7 +367,7 @@ func TestService_OrderStateMachine(t *testing.T) {
 func TestService_PaymentStateMachine(t *testing.T) {
 	p := &model.Payment{Base: model.Base{ID: 1}, Status: model.PaymentStatusPending}
 	pRepo := &fakePaymentRepo{obj: p}
-	s := NewAdminService(&fakeGameRepo{}, &fakeUserRepo{}, &fakePlayerRepo{}, &fakeOrderRepo{}, pRepo, cache.NewMemory())
+	s := NewAdminService(&fakeGameRepo{}, &fakeUserRepo{}, &fakePlayerRepo{}, &fakeOrderRepo{}, pRepo, &fakeRoleRepo{}, cache.NewMemory())
 
 	// pending -> paid ok
 	if _, err := s.UpdatePayment(context.Background(), 1, UpdatePaymentInput{Status: model.PaymentStatusPaid}); err != nil {

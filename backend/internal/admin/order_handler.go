@@ -555,10 +555,12 @@ func (h *OrderHandler) DeleteOrder(c *gin.Context) {
 		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
 		return
 	}
-	if err := h.svc.DeleteOrder(c.Request.Context(), id); errors.Is(err, service.ErrNotFound) {
+	err = h.svc.DeleteOrder(c.Request.Context(), id)
+	if errors.Is(err, service.ErrNotFound) {
 		_ = c.Error(service.ErrNotFound)
 		return
-	} else if err != nil {
+	}
+	if err != nil {
 		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -604,13 +606,13 @@ func (h *OrderHandler) ListOrderLogs(c *gin.Context) {
 	var dateFrom, dateTo *time.Time
 	if v, err := queryTimePtr(c, "date_from"); err == nil {
 		dateFrom = v
-	} else if err != nil {
+	} else {
 		writeJSONError(c, 400, apierr.ErrInvalidDateFrom)
 		return
 	}
 	if v, err := queryTimePtr(c, "date_to"); err == nil {
 		dateTo = v
-	} else if err != nil {
+	} else {
 		writeJSONError(c, 400, apierr.ErrInvalidDateTo)
 		return
 	}
@@ -905,7 +907,8 @@ func (h *PaymentHandler) DeletePayment(c *gin.Context) {
 		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
 		return
 	}
-	if err := h.svc.DeletePayment(c.Request.Context(), id); errors.Is(err, service.ErrNotFound) {
+	err = h.svc.DeletePayment(c.Request.Context(), id)
+	if errors.Is(err, service.ErrNotFound) {
 		_ = c.Error(service.ErrNotFound)
 		return
 	}
@@ -955,13 +958,13 @@ func (h *PaymentHandler) ListPaymentLogs(c *gin.Context) {
 	var dateFrom, dateTo *time.Time
 	if v, err := queryTimePtr(c, "date_from"); err == nil {
 		dateFrom = v
-	} else if err != nil {
+	} else {
 		writeJSONError(c, 400, apierr.ErrInvalidDateFrom)
 		return
 	}
 	if v, err := queryTimePtr(c, "date_to"); err == nil {
 		dateTo = v
-	} else if err != nil {
+	} else {
 		writeJSONError(c, 400, apierr.ErrInvalidDateTo)
 		return
 	}

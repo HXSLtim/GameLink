@@ -187,7 +187,7 @@ func (h *ReviewHandler) DeleteReview(c *gin.Context) {
 	if err := h.svc.DeleteReview(c.Request.Context(), id); errors.Is(err, service.ErrNotFound) {
 		_ = c.Error(service.ErrNotFound)
 		return
-	} else if err != nil {
+	} else {
 		writeJSONError(c, 500, err.Error())
 		return
 	}
@@ -228,13 +228,13 @@ func (h *ReviewHandler) ListReviewLogs(c *gin.Context) {
 	var dateFrom, dateTo *time.Time
 	if v, err := queryTimePtr(c, "date_from"); err == nil {
 		dateFrom = v
-	} else if err != nil {
+	} else {
 		writeJSONError(c, 400, apierr.ErrInvalidDateFrom)
 		return
 	}
 	if v, err := queryTimePtr(c, "date_to"); err == nil {
 		dateTo = v
-	} else if err != nil {
+	} else {
 		writeJSONError(c, 400, apierr.ErrInvalidDateTo)
 		return
 	}

@@ -25,6 +25,11 @@ func autoMigrate(db *gorm.DB) error {
 		&model.Payment{},
 		&model.Review{},
 		&model.OperationLog{},
+		// RBAC models
+		&model.Permission{},
+		&model.RoleModel{},
+		&model.RolePermission{},
+		&model.UserRole{},
 	)
 }
 
@@ -40,6 +45,10 @@ func runDataFixups(db *gorm.DB) error {
 		return err
 	}
 	if err := db.Exec("UPDATE players SET rating_count = 0 WHERE rating_count < 0").Error; err != nil {
+		return err
+	}
+	// Ensure RBAC default roles exist
+	if err := ensureDefaultRoles(db); err != nil {
 		return err
 	}
 	return ensureSuperAdmin(db)
@@ -66,6 +75,63 @@ func ensureIndexes(db *gorm.DB) error {
 			return err
 		}
 	}
+	return nil
+}
+
+// ensureDefaultRoles creates system predefined roles if they don't exist.
+func ensureDefaultRoles(db *gorm.DB) error {
+	roles := []model.RoleModel{
+		{
+			Slug:        string(model.RoleSlugSuperAdmin),
+			Name:        "超级管理员",
+			Description: "拥有系统所有权限，不可删除",
+			IsSystem:    true,
+		},
+		{
+			Slug:        string(model.RoleSlugAdmin),
+			Name:        "管理员",
+			Description: "后台管理权限",
+			IsSystem:    true,
+		},
+		{
+			Slug:        string(model.RoleSlugPlayer),
+			Name:        "陪玩师",
+			Description: "提供陪玩服务的用户",
+			IsSystem:    true,
+		},
+		{
+			Slug:        string(model.RoleSlugUser),
+			Name:        "普通用户",
+			Description: "平台普通用户",
+			IsSystem:    true,
+		},
+	}
+
+	for i := range roles {
+		role := &roles[i]
+		var existing model.RoleModel
+		err := db.Where("slug = ?", role.Slug).First(&existing).Error
+		if err == nil {
+			// Role exists, update description if needed
+			if existing.Name != role.Name || existing.Description != role.Description {
+				db.Model(&existing).Updates(map[string]interface{}{
+					"name":        role.Name,
+					"description": role.Description,
+					"is_system":   true,
+				})
+			}
+			continue
+		}
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+		// Create new role
+		if err := db.Create(role).Error; err != nil {
+			return err
+		}
+		log.Printf("created system role: %s (id=%d)", role.Slug, role.ID)
+	}
+
 	return nil
 }
 
@@ -133,6 +199,28 @@ func ensureSuperAdmin(db *gorm.DB) error {
 
 	if err := db.Create(admin).Error; err != nil {
 		return err
+	}
+
+	// Assign super_admin role to this user
+	var superAdminRole model.RoleModel
+	if err := db.Where("slug = ?", model.RoleSlugSuperAdmin).First(&superAdminRole).Error; err != nil {
+		log.Printf("warning: super_admin role not found, skipping role assignment: %v", err)
+	} else {
+		// Check if user already has the role
+		var existingUserRole model.UserRole
+		err := db.Where("user_id = ? AND role_id = ?", admin.ID, superAdminRole.ID).First(&existingUserRole).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// Assign role
+			userRole := &model.UserRole{
+				UserID: admin.ID,
+				RoleID: superAdminRole.ID,
+			}
+			if err := db.Create(userRole).Error; err != nil {
+				log.Printf("warning: failed to assign super_admin role: %v", err)
+			} else {
+				log.Printf("assigned super_admin role to user id=%d", admin.ID)
+			}
+		}
 	}
 
 	log.Printf("super admin user ensured: email=%s phone=%s id=%d", email, phone, admin.ID)

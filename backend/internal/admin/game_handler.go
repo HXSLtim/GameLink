@@ -208,7 +208,7 @@ func (h *GameHandler) DeleteGame(c *gin.Context) {
 	if err := h.svc.DeleteGame(c.Request.Context(), id); errors.Is(err, service.ErrNotFound) {
 		_ = c.Error(service.ErrNotFound)
 		return
-	} else if err != nil {
+	} else {
 		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -254,13 +254,13 @@ func (h *GameHandler) ListGameLogs(c *gin.Context) {
 	var dateFrom, dateTo *time.Time
 	if v, err := queryTimePtr(c, "date_from"); err == nil {
 		dateFrom = v
-	} else if err != nil {
+	} else {
 		writeJSONError(c, 400, apierr.ErrInvalidDateFrom)
 		return
 	}
 	if v, err := queryTimePtr(c, "date_to"); err == nil {
 		dateTo = v
-	} else if err != nil {
+	} else {
 		writeJSONError(c, 400, apierr.ErrInvalidDateTo)
 		return
 	}

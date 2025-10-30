@@ -30,7 +30,10 @@ type User struct {
 	PasswordHash string     `json:"-" gorm:"column:password_hash;size:255"`
 	Name         string     `json:"name" gorm:"size:64"`
 	AvatarURL    string     `json:"avatarUrl,omitempty" gorm:"column:avatar_url;size:255"`
-	Role         Role       `json:"role" gorm:"size:32"`
+	Role         Role       `json:"role" gorm:"size:32;comment:主要角色（向后兼容）"`
 	Status       UserStatus `json:"status" gorm:"size:32;index"`
 	LastLoginAt  *time.Time `json:"lastLoginAt,omitempty" gorm:"column:last_login_at"`
+
+	// 多角色支持（新增）
+	Roles []RoleModel `json:"roles,omitempty" gorm:"many2many:user_roles;"`
 }

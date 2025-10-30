@@ -256,7 +256,7 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 	} else if errors.Is(err, service.ErrNotFound) {
 		_ = c.Error(service.ErrNotFound)
 		return
-	} else if err != nil {
+	} else {
 		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -302,13 +302,13 @@ func (h *UserHandler) ListUserLogs(c *gin.Context) {
 	var dateFrom, dateTo *time.Time
 	if v, err := queryTimePtr(c, "date_from"); err == nil {
 		dateFrom = v
-	} else if err != nil {
+	} else {
 		writeJSONError(c, 400, apierr.ErrInvalidDateFrom)
 		return
 	}
 	if v, err := queryTimePtr(c, "date_to"); err == nil {
 		dateTo = v
-	} else if err != nil {
+	} else {
 		writeJSONError(c, 400, apierr.ErrInvalidDateTo)
 		return
 	}
@@ -438,7 +438,7 @@ func (h *UserHandler) ListUserOrders(c *gin.Context) {
 	if _, err := h.svc.GetUser(c.Request.Context(), id); errors.Is(err, service.ErrNotFound) {
 		_ = c.Error(service.ErrNotFound)
 		return
-	} else if err != nil {
+	} else {
 		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
