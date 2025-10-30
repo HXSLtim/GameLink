@@ -19,3 +19,5 @@ func (UserRole) TableName() string {
 	return "user_roles"
 }
 
+
+

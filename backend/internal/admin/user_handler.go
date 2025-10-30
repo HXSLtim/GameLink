@@ -250,13 +250,16 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
 		return
 	}
-	if err := h.svc.DeleteUser(c.Request.Context(), id); errors.Is(err, service.ErrUserNotFound) {
+	err = h.svc.DeleteUser(c.Request.Context(), id)
+	if errors.Is(err, service.ErrUserNotFound) {
 		_ = c.Error(service.ErrUserNotFound)
 		return
-	} else if errors.Is(err, service.ErrNotFound) {
+	}
+	if errors.Is(err, service.ErrNotFound) {
 		_ = c.Error(service.ErrNotFound)
 		return
-	} else {
+	}
+	if err != nil {
 		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -435,10 +438,12 @@ func (h *UserHandler) ListUserOrders(c *gin.Context) {
 		return
 	}
 	// Ensure user exists
-	if _, err := h.svc.GetUser(c.Request.Context(), id); errors.Is(err, service.ErrNotFound) {
+	_, err = h.svc.GetUser(c.Request.Context(), id)
+	if errors.Is(err, service.ErrNotFound) {
 		_ = c.Error(service.ErrNotFound)
 		return
-	} else {
+	}
+	if err != nil {
 		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
 	}

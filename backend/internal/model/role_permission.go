@@ -18,3 +18,5 @@ func (RolePermission) TableName() string {
 	return "role_permissions"
 }
 
+
+

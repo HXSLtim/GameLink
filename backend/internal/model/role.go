@@ -40,3 +40,5 @@ func (r *RoleModel) IsSuperAdmin() bool {
 	return r.Slug == string(RoleSlugSuperAdmin)
 }
 
+
+

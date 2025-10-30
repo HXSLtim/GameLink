@@ -71,6 +71,9 @@ func (f *fakeUserRepo) FindByEmail(ctx context.Context, email string) (*model.Us
 func (f *fakeUserRepo) FindByPhone(ctx context.Context, phone string) (*model.User, error) {
 	return f.last, nil
 }
+func (f *fakeUserRepo) GetByPhone(ctx context.Context, phone string) (*model.User, error) {
+	return f.last, nil
+}
 func (f *fakeUserRepo) Create(ctx context.Context, u *model.User) error {
 	if u.ID == 0 {
 		u.ID = 1

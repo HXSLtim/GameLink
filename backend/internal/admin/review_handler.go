@@ -184,10 +184,12 @@ func (h *ReviewHandler) DeleteReview(c *gin.Context) {
 		writeJSONError(c, 400, apierr.ErrInvalidID)
 		return
 	}
-	if err := h.svc.DeleteReview(c.Request.Context(), id); errors.Is(err, service.ErrNotFound) {
+	err = h.svc.DeleteReview(c.Request.Context(), id)
+	if errors.Is(err, service.ErrNotFound) {
 		_ = c.Error(service.ErrNotFound)
 		return
-	} else {
+	}
+	if err != nil {
 		writeJSONError(c, 500, err.Error())
 		return
 	}

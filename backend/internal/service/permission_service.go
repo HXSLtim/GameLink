@@ -50,7 +50,11 @@ func (s *PermissionService) ListPermissionsPaged(ctx context.Context, page, page
 
 // ListPermissionsByGroup 按分组获取权限。
 func (s *PermissionService) ListPermissionsByGroup(ctx context.Context, group string) ([]model.Permission, error) {
-	return s.permissions.ListByGroup(ctx, group)
+	grouped, err := s.permissions.ListByGroup(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return grouped[group], nil
 }
 
 // GetPermission 根据ID获取权限。
@@ -66,7 +70,7 @@ func (s *PermissionService) CreatePermission(ctx context.Context, permission *mo
 	}
 
 	// 检查 method+path 是否已存在
-	existing, err := s.permissions.GetByMethodAndPath(ctx, permission.Method, permission.Path)
+	existing, err := s.permissions.GetByMethodAndPath(ctx, string(permission.Method), permission.Path)
 	if err == nil && existing != nil {
 		return fmt.Errorf("%w: permission with method %s and path %s already exists", ErrValidation, permission.Method, permission.Path)
 	}

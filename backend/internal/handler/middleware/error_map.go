@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	apierr "gamelink/internal/handler"
+	"gamelink/internal/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	"gamelink/internal/service"

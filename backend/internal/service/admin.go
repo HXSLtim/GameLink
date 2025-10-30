@@ -17,7 +17,7 @@ import (
 	"gamelink/internal/logging"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
-	"gamelink/internal/repository/gormrepo"
+	"gamelink/internal/repository/common"
 )
 
 var (
@@ -86,7 +86,7 @@ func NewAdminService(
 
 // TxManager abstracts UnitOfWork for transactional operations.
 type TxManager interface {
-	WithTx(ctx context.Context, fn func(r *gormrepo.Repos) error) error
+	WithTx(ctx context.Context, fn func(r *common.Repos) error) error
 }
 
 // SetTxManager injects a transaction manager.
@@ -97,7 +97,7 @@ func (s *AdminService) UpdatePlayerSkillTags(ctx context.Context, playerID uint6
 	if s.tx == nil {
 		return errors.New("transaction manager not configured")
 	}
-	err := s.tx.WithTx(ctx, func(r *gormrepo.Repos) error {
+	err := s.tx.WithTx(ctx, func(r *common.Repos) error {
 		// ensure player exists
 		if _, err := r.Players.Get(ctx, playerID); err != nil {
 			return err
@@ -127,7 +127,7 @@ func (s *AdminService) RegisterUserAndPlayer(ctx context.Context, u CreateUserIn
 	var createdUser *model.User
 	var createdPlayer *model.Player
 
-	err := s.tx.WithTx(ctx, func(r *gormrepo.Repos) error {
+	err := s.tx.WithTx(ctx, func(r *common.Repos) error {
 		// hash password
 		hashed, err := hashPassword(u.Password)
 		if err != nil {
@@ -912,11 +912,12 @@ func (s *AdminService) UpdateOrder(ctx context.Context, id uint64, input UpdateO
 	}
 	s.invalidateCache(ctx, cacheKeyOrders)
 	action := model.OpActionUpdateStatus
-	if order.Status == model.OrderStatusCanceled {
+	switch order.Status {
+	case model.OrderStatusCanceled:
 		action = model.OpActionCancel
-	} else if order.Status == model.OrderStatusRefunded {
+	case model.OrderStatusRefunded:
 		action = model.OpActionRefund
-	} else {
+	default:
 		switch {
 		case prevStatus == model.OrderStatusPending && order.Status == model.OrderStatusConfirmed:
 			action = model.OpActionConfirm
@@ -1457,7 +1458,7 @@ func (s *AdminService) appendLogAsync(ctx context.Context, entity string, id uin
 	if s.tx == nil {
 		return
 	}
-	_ = s.tx.WithTx(ctx, func(r *gormrepo.Repos) error {
+	_ = s.tx.WithTx(ctx, func(r *common.Repos) error {
 		var raw []byte
 		if meta != nil {
 			if b, err := json.Marshal(meta); err == nil {
@@ -1682,7 +1683,7 @@ func (s *AdminService) ListOperationLogs(ctx context.Context, entityType string,
 	}
 	var logs []model.OperationLog
 	var total int64
-	err := s.tx.WithTx(ctx, func(r *gormrepo.Repos) error {
+	err := s.tx.WithTx(ctx, func(r *common.Repos) error {
 		norm := repository.OperationLogListOptions{
 			Page:        repository.NormalizePage(opts.Page),
 			PageSize:    repository.NormalizePageSize(opts.PageSize),
@@ -1714,7 +1715,7 @@ func (s *AdminService) ListReviews(ctx context.Context, opts repository.ReviewLi
 	}
 	var items []model.Review
 	var total int64
-	err := s.tx.WithTx(ctx, func(r *gormrepo.Repos) error {
+	err := s.tx.WithTx(ctx, func(r *common.Repos) error {
 		page := repository.NormalizePage(opts.Page)
 		size := repository.NormalizePageSize(opts.PageSize)
 		out, cnt, err := r.Reviews.List(ctx, repository.ReviewListOptions{
@@ -1739,7 +1740,7 @@ func (s *AdminService) GetReview(ctx context.Context, id uint64) (*model.Review,
 		return nil, errors.New("transaction manager not configured")
 	}
 	var item *model.Review
-	err := s.tx.WithTx(ctx, func(r *gormrepo.Repos) error {
+	err := s.tx.WithTx(ctx, func(r *common.Repos) error {
 		var err error
 		item, err = r.Reviews.Get(ctx, id)
 		return err
@@ -1755,7 +1756,7 @@ func (s *AdminService) CreateReview(ctx context.Context, r model.Review) (*model
 	if s.tx == nil {
 		return nil, errors.New("transaction manager not configured")
 	}
-	err := s.tx.WithTx(ctx, func(txr *gormrepo.Repos) error { return txr.Reviews.Create(ctx, &r) })
+	err := s.tx.WithTx(ctx, func(txr *common.Repos) error { return txr.Reviews.Create(ctx, &r) })
 	if err != nil {
 		return nil, err
 	}
@@ -1772,7 +1773,7 @@ func (s *AdminService) UpdateReview(ctx context.Context, id uint64, score model.
 		return nil, errors.New("transaction manager not configured")
 	}
 	var item *model.Review
-	err := s.tx.WithTx(ctx, func(r *gormrepo.Repos) error {
+	err := s.tx.WithTx(ctx, func(r *common.Repos) error {
 		obj, err := r.Reviews.Get(ctx, id)
 		if err != nil {
 			return err
@@ -1797,7 +1798,7 @@ func (s *AdminService) DeleteReview(ctx context.Context, id uint64) error {
 	if s.tx == nil {
 		return errors.New("transaction manager not configured")
 	}
-	return s.tx.WithTx(ctx, func(r *gormrepo.Repos) error { return r.Reviews.Delete(ctx, id) })
+	return s.tx.WithTx(ctx, func(r *common.Repos) error { return r.Reviews.Delete(ctx, id) })
 }
 
 func getCachedList[T any](ctx context.Context, c cache.Cache, key string, ttl time.Duration, fetch func() ([]T, error)) ([]T, error) {

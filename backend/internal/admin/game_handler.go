@@ -205,10 +205,12 @@ func (h *GameHandler) DeleteGame(c *gin.Context) {
 		return
 	}
 
-	if err := h.svc.DeleteGame(c.Request.Context(), id); errors.Is(err, service.ErrNotFound) {
+	err = h.svc.DeleteGame(c.Request.Context(), id)
+	if errors.Is(err, service.ErrNotFound) {
 		_ = c.Error(service.ErrNotFound)
 		return
-	} else {
+	}
+	if err != nil {
 		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
 	}

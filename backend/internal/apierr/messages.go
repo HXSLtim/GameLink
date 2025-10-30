@@ -1,0 +1,32 @@
+package apierr
+
+// Standard API error messages to keep language consistent and avoid duplication.
+const (
+	ErrInvalidJSONPayload           = "invalid json payload"
+	ErrInvalidID                    = "invalid id"
+	ErrInvalidPage                  = "invalid page"
+	ErrInvalidPageSize              = "invalid page_size"
+	ErrInvalidUserID                = "invalid user_id"
+	ErrInvalidOrderID               = "invalid order_id"
+	ErrGameNotFound                 = "game not found"
+	ErrPlayerNotFound               = "player not found"
+	ErrInvalidPlayerID              = "invalid player_id"
+	ErrInvalidGameID                = "invalid game_id"
+	ErrInvalidDateFrom              = "invalid date_from"
+	ErrInvalidDateTo                = "invalid date_to"
+	ErrInvalidPaidAt                = "invalid paid_at format"
+	ErrInvalidRefundedAt            = "invalid refunded_at format"
+	ErrInvalidScheduledStart        = "invalid scheduled_start format"
+	ErrInvalidScheduledEnd          = "invalid scheduled_end format"
+	ErrInvalidEmailFormat           = "invalid email format"
+	ErrInvalidPhoneFormat           = "invalid phone format"
+	ErrMissingFieldsOrShortPassword = "missing required fields or password too short"
+	ErrMissingRequiredFields        = "missing required fields"
+	ErrUserNotFound                 = "user not found"
+	ErrOrderNotFound                = "order not found"
+	ErrPaymentNotFound              = "payment not found"
+	ErrOrderInvalidTransition       = "invalid order status transition"
+	ErrInvalidPaymentPayload        = "invalid payment payload"
+	ErrInvalidOrderPayload          = "invalid order payload"
+)
+

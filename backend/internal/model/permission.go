@@ -28,3 +28,5 @@ func (Permission) TableName() string {
 	return "permissions"
 }
 
+
+

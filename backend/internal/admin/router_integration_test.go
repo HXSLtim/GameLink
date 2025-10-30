@@ -177,6 +177,9 @@ func (f *fakeUserRepo) FindByEmail(ctx context.Context, email string) (*model.Us
 func (f *fakeUserRepo) FindByPhone(ctx context.Context, phone string) (*model.User, error) {
 	return nil, repository.ErrNotFound
 }
+func (f *fakeUserRepo) GetByPhone(ctx context.Context, phone string) (*model.User, error) {
+	return nil, repository.ErrNotFound
+}
 func (f *fakeUserRepo) Create(ctx context.Context, u *model.User) error { return nil }
 func (f *fakeUserRepo) Update(ctx context.Context, u *model.User) error { return nil }
 func (f *fakeUserRepo) Delete(ctx context.Context, id uint64) error     { return nil }
@@ -443,14 +446,17 @@ func (f *fakePermissionRepo) List(ctx context.Context) ([]model.Permission, erro
 func (f *fakePermissionRepo) ListPaged(ctx context.Context, page, pageSize int) ([]model.Permission, int64, error) {
 	return nil, 0, nil
 }
-func (f *fakePermissionRepo) ListByGroup(ctx context.Context, group string) ([]model.Permission, error) {
+func (f *fakePermissionRepo) ListByGroup(ctx context.Context) (map[string][]model.Permission, error) {
 	return nil, nil
 }
 func (f *fakePermissionRepo) ListGroups(ctx context.Context) ([]string, error) { return nil, nil }
 func (f *fakePermissionRepo) Get(ctx context.Context, id uint64) (*model.Permission, error) {
 	return nil, repository.ErrNotFound
 }
-func (f *fakePermissionRepo) GetByMethodAndPath(ctx context.Context, method model.HTTPMethod, path string) (*model.Permission, error) {
+func (f *fakePermissionRepo) GetByResource(ctx context.Context, resource, action string) (*model.Permission, error) {
+	return nil, repository.ErrNotFound
+}
+func (f *fakePermissionRepo) GetByMethodAndPath(ctx context.Context, method string, path string) (*model.Permission, error) {
 	return nil, repository.ErrNotFound
 }
 func (f *fakePermissionRepo) GetByCode(ctx context.Context, code string) (*model.Permission, error) {
@@ -479,6 +485,268 @@ func (f *fakePermissionRepo) ListByUserID(ctx context.Context, userID uint64) ([
 	}
 	// 默认返回空（由 super_admin 快速通道处理）
 	return nil, nil
+}
+
+// TestMultiRoleUser 测试用户拥有多个角色的场景
+func TestMultiRoleUser(t *testing.T) {
+	t.Setenv("APP_ENV", "development")
+	t.Setenv("ADMIN_AUTH_MODE", "jwt")
+
+	roleRepo := newFakeRoleRepo()
+	permRepo := newFakePermissionRepo()
+
+	// 设置用户角色：userID=4 拥有 game_viewer 和 order_viewer 两个角色
+	roleRepo.setUserRoles(4, []model.RoleModel{
+		{
+			Base:     model.Base{ID: 10},
+			Slug:     "game_viewer",
+			Name:     "游戏查看员",
+			IsSystem: false,
+		},
+		{
+			Base:     model.Base{ID: 12},
+			Slug:     "order_viewer",
+			Name:     "订单查看员",
+			IsSystem: false,
+		},
+	})
+
+	// 设置权限：game_viewer 有 GET /games，order_viewer 有 GET /orders
+	permRepo.setUserPermissions(4, []model.Permission{
+		{
+			Base:   model.Base{ID: 1},
+			Method: model.HTTPMethodGET,
+			Path:   "/api/v1/admin/games",
+			Group:  "/admin/games",
+			Code:   "admin.games.list",
+		},
+		{
+			Base:   model.Base{ID: 3},
+			Method: model.HTTPMethodGET,
+			Path:   "/api/v1/admin/orders",
+			Group:  "/admin/orders",
+			Code:   "admin.orders.list",
+		},
+	})
+
+	svc := service.NewAdminService(&fakeGameRepo{}, &fakeUserRepo{}, &fakePlayerRepo{}, &fakeOrderRepo{}, &fakePaymentRepo{}, &fakeRoleRepo{}, nil)
+	r := buildTestRouterWithConfig(svc, &testRouterConfig{
+		permRepo: permRepo,
+		roleRepo: roleRepo,
+	})
+
+	// 测试：可以访问游戏列表（game_viewer 权限）
+	req1 := httptest.NewRequest(http.MethodGet, "/api/v1/admin/games", nil)
+	req1.Header.Set("Authorization", "Bearer "+generateTestJWT(4, "game_viewer,order_viewer"))
+	w1 := httptest.NewRecorder()
+	r.ServeHTTP(w1, req1)
+	if w1.Code != http.StatusOK {
+		t.Fatalf("expected 200 for GET /games, got %d", w1.Code)
+	}
+
+	// 测试：可以访问订单列表（order_viewer 权限）
+	req2 := httptest.NewRequest(http.MethodGet, "/api/v1/admin/orders", nil)
+	req2.Header.Set("Authorization", "Bearer "+generateTestJWT(4, "game_viewer,order_viewer"))
+	w2 := httptest.NewRecorder()
+	r.ServeHTTP(w2, req2)
+	if w2.Code != http.StatusOK {
+		t.Fatalf("expected 200 for GET /orders, got %d", w2.Code)
+	}
+
+	// 测试：不能创建游戏（没有 POST 权限）
+	body := map[string]any{"key": "test", "name": "Test"}
+	buf, _ := json.Marshal(body)
+	req3 := httptest.NewRequest(http.MethodPost, "/api/v1/admin/games", bytes.NewReader(buf))
+	req3.Header.Set("Content-Type", "application/json")
+	req3.Header.Set("Authorization", "Bearer "+generateTestJWT(4, "game_viewer,order_viewer"))
+	w3 := httptest.NewRecorder()
+	r.ServeHTTP(w3, req3)
+	if w3.Code != http.StatusForbidden {
+		t.Fatalf("expected 403 for POST /games, got %d", w3.Code)
+	}
+}
+
+// TestUserWithoutRoles 测试没有角色的用户访问被拒绝
+func TestUserWithoutRoles(t *testing.T) {
+	t.Setenv("APP_ENV", "development")
+	t.Setenv("ADMIN_AUTH_MODE", "jwt")
+
+	roleRepo := newFakeRoleRepo()
+	permRepo := newFakePermissionRepo()
+
+	// 为 userID=5 设置空角色列表（而不是不设置）
+	roleRepo.setUserRoles(5, []model.RoleModel{})
+
+	svc := service.NewAdminService(&fakeGameRepo{}, &fakeUserRepo{}, &fakePlayerRepo{}, &fakeOrderRepo{}, &fakePaymentRepo{}, roleRepo, nil)
+	r := buildTestRouterWithConfig(svc, &testRouterConfig{
+		permRepo: permRepo,
+		roleRepo: roleRepo,
+	})
+
+	// 测试：无角色用户访问任何接口都应被拒绝
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/admin/games", nil)
+	req.Header.Set("Authorization", "Bearer "+generateTestJWT(5, "user"))
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("expected 403 for user without roles, got %d; body=%s", w.Code, w.Body.String())
+	}
+
+	// 验证错误消息
+	if !bytes.Contains(w.Body.Bytes(), []byte("权限不足")) {
+		t.Fatalf("expected '权限不足' in error message, got: %s", w.Body.String())
+	}
+}
+
+// TestRolePermissionCache 测试权限缓存机制
+func TestRolePermissionCache(t *testing.T) {
+	t.Setenv("APP_ENV", "development")
+	t.Setenv("ADMIN_AUTH_MODE", "jwt")
+
+	roleRepo := newFakeRoleRepo()
+	permRepo := newFakePermissionRepo()
+
+	// 设置用户权限
+	permRepo.setUserPermissions(6, []model.Permission{
+		{
+			Base:   model.Base{ID: 1},
+			Method: model.HTTPMethodGET,
+			Path:   "/api/v1/admin/games",
+			Group:  "/admin/games",
+			Code:   "admin.games.list",
+		},
+	})
+
+	svc := service.NewAdminService(&fakeGameRepo{items: []model.Game{{Name: "Test"}}}, &fakeUserRepo{}, &fakePlayerRepo{}, &fakeOrderRepo{}, &fakePaymentRepo{}, &fakeRoleRepo{}, nil)
+	r := buildTestRouterWithConfig(svc, &testRouterConfig{
+		permRepo: permRepo,
+		roleRepo: roleRepo,
+	})
+
+	// 第一次请求
+	req1 := httptest.NewRequest(http.MethodGet, "/api/v1/admin/games", nil)
+	req1.Header.Set("Authorization", "Bearer "+generateTestJWT(6, "game_viewer"))
+	w1 := httptest.NewRecorder()
+	r.ServeHTTP(w1, req1)
+	if w1.Code != http.StatusOK {
+		t.Fatalf("first request failed: %d", w1.Code)
+	}
+
+	// 第二次请求（测试缓存）
+	req2 := httptest.NewRequest(http.MethodGet, "/api/v1/admin/games", nil)
+	req2.Header.Set("Authorization", "Bearer "+generateTestJWT(6, "game_viewer"))
+	w2 := httptest.NewRecorder()
+	r.ServeHTTP(w2, req2)
+	if w2.Code != http.StatusOK {
+		t.Fatalf("second request (cached) failed: %d", w2.Code)
+	}
+
+	// 验证两次请求都成功
+	if w1.Code != w2.Code {
+		t.Fatalf("cache inconsistency: first=%d, second=%d", w1.Code, w2.Code)
+	}
+}
+
+// TestRequireAnyRoleMiddleware 测试 RequireAnyRole 中间件
+func TestRequireAnyRoleMiddleware(t *testing.T) {
+	t.Setenv("APP_ENV", "development")
+	t.Setenv("ADMIN_AUTH_MODE", "jwt")
+
+	roleRepo := newFakeRoleRepo()
+	permRepo := newFakePermissionRepo()
+
+	// 设置用户角色：userID=7 只有 game_viewer 角色
+	roleRepo.setUserRoles(7, []model.RoleModel{
+		{
+			Base:     model.Base{ID: 10},
+			Slug:     "game_viewer",
+			Name:     "游戏查看员",
+			IsSystem: false,
+		},
+	})
+
+	// 设置用户权限：game_viewer 有 GET /games 权限
+	permRepo.setUserPermissions(7, []model.Permission{
+		{
+			Base:   model.Base{ID: 1},
+			Method: model.HTTPMethodGET,
+			Path:   "/api/v1/admin/games",
+			Group:  "/admin/games",
+			Code:   "admin.games.list",
+		},
+	})
+
+	svc := service.NewAdminService(&fakeGameRepo{items: []model.Game{{Name: "Test"}}}, &fakeUserRepo{}, &fakePlayerRepo{}, &fakeOrderRepo{}, &fakePaymentRepo{}, roleRepo, nil)
+	r := buildTestRouterWithConfig(svc, &testRouterConfig{
+		permRepo: permRepo,
+		roleRepo: roleRepo,
+	})
+
+	// 测试：有 game_viewer 角色和权限，可以访问 GET /games
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/admin/games", nil)
+	req.Header.Set("Authorization", "Bearer "+generateTestJWT(7, "game_viewer"))
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200 for user with game_viewer role, got %d; body=%s", w.Code, w.Body.String())
+	}
+}
+
+// TestRoleInheritance 测试角色继承（如果实现）
+func TestRoleInheritance(t *testing.T) {
+	t.Setenv("APP_ENV", "development")
+	t.Setenv("ADMIN_AUTH_MODE", "jwt")
+
+	roleRepo := newFakeRoleRepo()
+	permRepo := newFakePermissionRepo()
+
+	// 设置用户角色：userID=8 有基础角色
+	roleRepo.setUserRoles(8, []model.RoleModel{
+		{
+			Base:     model.Base{ID: 13},
+			Slug:     "basic_user",
+			Name:     "基础用户",
+			IsSystem: false,
+		},
+	})
+
+	// 设置权限：基础用户只能查看
+	permRepo.setUserPermissions(8, []model.Permission{
+		{
+			Base:   model.Base{ID: 1},
+			Method: model.HTTPMethodGET,
+			Path:   "/api/v1/admin/games",
+			Group:  "/admin/games",
+			Code:   "admin.games.list",
+		},
+	})
+
+	svc := service.NewAdminService(&fakeGameRepo{}, &fakeUserRepo{}, &fakePlayerRepo{}, &fakeOrderRepo{}, &fakePaymentRepo{}, &fakeRoleRepo{}, nil)
+	r := buildTestRouterWithConfig(svc, &testRouterConfig{
+		permRepo: permRepo,
+		roleRepo: roleRepo,
+	})
+
+	// 测试：基础用户可以查看游戏列表
+	req1 := httptest.NewRequest(http.MethodGet, "/api/v1/admin/games", nil)
+	req1.Header.Set("Authorization", "Bearer "+generateTestJWT(8, "basic_user"))
+	w1 := httptest.NewRecorder()
+	r.ServeHTTP(w1, req1)
+	if w1.Code != http.StatusOK {
+		t.Fatalf("expected 200 for basic_user viewing games, got %d", w1.Code)
+	}
+
+	// 测试：基础用户不能创建游戏
+	body := map[string]any{"key": "test", "name": "Test"}
+	buf, _ := json.Marshal(body)
+	req2 := httptest.NewRequest(http.MethodPost, "/api/v1/admin/games", bytes.NewReader(buf))
+	req2.Header.Set("Content-Type", "application/json")
+	req2.Header.Set("Authorization", "Bearer "+generateTestJWT(8, "basic_user"))
+	w2 := httptest.NewRecorder()
+	r.ServeHTTP(w2, req2)
+	if w2.Code != http.StatusForbidden {
+		t.Fatalf("expected 403 for basic_user creating games, got %d", w2.Code)
+	}
 }
 
 // ========== RBAC 自定义角色权限测试 ==========

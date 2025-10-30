@@ -1,14 +1,15 @@
 package handler
 
 import (
-    "net/http"
-    "time"
+	"net/http"
+	"time"
 
-    "github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin"
 
-    "gamelink/internal/auth"
-    "gamelink/internal/model"
-    "gamelink/internal/service"
+	"gamelink/internal/auth"
+	"gamelink/internal/model"
+	"gamelink/internal/service"
+	authservice "gamelink/internal/service/auth"
 )
 
 // RegisterAuthRoutes registers authentication endpoints under the given router group.
@@ -17,14 +18,14 @@ import (
 // POST /auth/refresh  -> Authorization: Bearer <token>
 // POST /auth/logout   -> stateless logout, client discards token
 // GET  /auth/me       -> return current user info (JWT required)
-func RegisterAuthRoutes(router gin.IRouter, svc *service.AuthService) {
-    auth := router.Group("/auth")
-    auth.POST("/login", func(c *gin.Context) { loginHandler(c, svc) })
-    auth.POST("/register", func(c *gin.Context) { registerHandler(c, svc) })
-    auth.POST("/refresh", func(c *gin.Context) { refreshHandler(c, svc) })
-    auth.POST("/logout", logoutHandler)
+func RegisterAuthRoutes(router gin.IRouter, svc *authservice.AuthService) {
+	auth := router.Group("/auth")
+	auth.POST("/login", func(c *gin.Context) { loginHandler(c, svc) })
+	auth.POST("/register", func(c *gin.Context) { registerHandler(c, svc) })
+	auth.POST("/refresh", func(c *gin.Context) { refreshHandler(c, svc) })
+	auth.POST("/logout", logoutHandler)
 
-    auth.GET("/me", func(c *gin.Context) { meHandler(c, svc) })
+	auth.GET("/me", func(c *gin.Context) { meHandler(c, svc) })
 }
 
 type loginRequest struct {
@@ -33,23 +34,20 @@ type loginRequest struct {
 }
 
 type loginResponse struct {
-    Token     string     `json:"token"`
-    ExpiresAt time.Time  `json:"expires_at"`
-    User      model.User `json:"user"`
+	Token     string     `json:"token"`
+	ExpiresAt time.Time  `json:"expires_at"`
+	User      model.User `json:"user"`
 }
 
-// tokenPayload is used for Swagger response schema.
-// tokenPayload is used for Swagger response schema.
-// nolint:unused
 type tokenPayload struct {
-    Token string `json:"token"`
+	Token string `json:"token"`
 }
 
 type registerRequest struct {
-    Phone    string `json:"phone"`
-    Email    string `json:"email"`
-    Password string `json:"password" binding:"required,min=6"`
-    Name     string `json:"name" binding:"required"`
+	Phone    string `json:"phone"`
+	Email    string `json:"email"`
+	Password string `json:"password" binding:"required,min=6"`
+	Name     string `json:"name" binding:"required"`
 }
 
 // Login
@@ -63,26 +61,26 @@ type registerRequest struct {
 // @Failure      400      {object}  map[string]any
 // @Failure      401      {object}  map[string]any
 // @Router       /auth/login [post]
-func loginHandler(c *gin.Context, svc *service.AuthService) {
+func loginHandler(c *gin.Context, svc *authservice.AuthService) {
 	var req loginRequest
-    if err := c.ShouldBindJSON(&req); err != nil {
-        respondError(c, http.StatusBadRequest, ErrInvalidJSONPayload)
-        return
-    }
-    resp, err := svc.Login(c.Request.Context(), service.LoginRequest{Username: req.Username, Password: req.Password})
-    if err != nil {
-        status := http.StatusUnauthorized
-        switch err {
-        case service.ErrInvalidCredentials:
-            status = http.StatusUnauthorized
-        case service.ErrUserDisabled:
-            status = http.StatusForbidden
-        default:
-            status = http.StatusUnauthorized
-        }
-        respondJSON(c, status, model.APIResponse[any]{Success: false, Code: status, Message: err.Error()})
-        return
-    }
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, ErrInvalidJSONPayload)
+		return
+	}
+	resp, err := svc.Login(c.Request.Context(), authservice.LoginRequest{Username: req.Username, Password: req.Password})
+	if err != nil {
+		status := http.StatusUnauthorized
+		switch err {
+		case service.ErrInvalidCredentials:
+			status = http.StatusUnauthorized
+		case service.ErrUserDisabled:
+			status = http.StatusForbidden
+		default:
+			status = http.StatusUnauthorized
+		}
+		respondJSON(c, status, model.APIResponse[any]{Success: false, Code: status, Message: err.Error()})
+		return
+	}
 	respondJSON(c, http.StatusOK, model.APIResponse[loginResponse]{
 		Success: true,
 		Code:    http.StatusOK,
@@ -101,29 +99,29 @@ func loginHandler(c *gin.Context, svc *service.AuthService) {
 // @Success      200      {object}  loginResponse
 // @Failure      400      {object}  map[string]any
 // @Router       /auth/register [post]
-func registerHandler(c *gin.Context, svc *service.AuthService) {
-    var req registerRequest
-    if err := c.ShouldBindJSON(&req); err != nil {
-        respondError(c, http.StatusBadRequest, ErrInvalidJSONPayload)
-        return
-    }
-    resp, err := svc.Register(c.Request.Context(), service.RegisterRequest{
-        Phone:    req.Phone,
-        Email:    req.Email,
-        Password: req.Password,
-        Name:     req.Name,
-        Role:     model.RoleUser,
-    })
-    if err != nil {
-        respondError(c, http.StatusBadRequest, err.Error())
-        return
-    }
-    respondJSON(c, http.StatusOK, model.APIResponse[loginResponse]{
-        Success: true,
-        Code:    http.StatusOK,
-        Message: "OK",
-        Data:    loginResponse{Token: resp.Token, ExpiresAt: resp.ExpiresAt, User: resp.User},
-    })
+func registerHandler(c *gin.Context, svc *authservice.AuthService) {
+	var req registerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, ErrInvalidJSONPayload)
+		return
+	}
+	resp, err := svc.Register(c.Request.Context(), authservice.RegisterRequest{
+		Phone:    req.Phone,
+		Email:    req.Email,
+		Password: req.Password,
+		Name:     req.Name,
+		Role:     model.RoleUser,
+	})
+	if err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	respondJSON(c, http.StatusOK, model.APIResponse[loginResponse]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: "OK",
+		Data:    loginResponse{Token: resp.Token, ExpiresAt: resp.ExpiresAt, User: resp.User},
+	})
 }
 
 // Me
@@ -134,22 +132,22 @@ func registerHandler(c *gin.Context, svc *service.AuthService) {
 // @Success      200  {object}  loginResponse
 // @Failure      401  {object}  map[string]any
 // @Router       /auth/me [get]
-func meHandler(c *gin.Context, svc *service.AuthService) {
-    user, err := svc.Me(c.Request.Context(), c.GetHeader("Authorization"))
-    if err != nil {
-        status := http.StatusUnauthorized
-        if err == service.ErrUserDisabled {
-            status = http.StatusForbidden
-        }
-        respondError(c, status, err.Error())
-        return
-    }
-    respondJSON(c, http.StatusOK, model.APIResponse[loginResponse]{
-        Success: true,
-        Code:    http.StatusOK,
-        Message: "OK",
-        Data:    loginResponse{Token: "", ExpiresAt: time.Time{}, User: *user},
-    })
+func meHandler(c *gin.Context, svc *authservice.AuthService) {
+	user, err := svc.Me(c.Request.Context(), c.GetHeader("Authorization"))
+	if err != nil {
+		status := http.StatusUnauthorized
+		if err == service.ErrUserDisabled {
+			status = http.StatusForbidden
+		}
+		respondError(c, status, err.Error())
+		return
+	}
+	respondJSON(c, http.StatusOK, model.APIResponse[loginResponse]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: "OK",
+		Data:    loginResponse{Token: "", ExpiresAt: time.Time{}, User: *user},
+	})
 }
 
 // Refresh
@@ -161,27 +159,27 @@ func meHandler(c *gin.Context, svc *service.AuthService) {
 // @Success      200  {object}  tokenPayload
 // @Failure      401  {object}  map[string]any
 // @Router       /auth/refresh [post]
-func refreshHandler(c *gin.Context, svc *service.AuthService) {
+func refreshHandler(c *gin.Context, svc *authservice.AuthService) {
 	token, err := auth.ExtractTokenFromHeader(c.GetHeader("Authorization"))
 	if err != nil {
 		respondError(c, http.StatusUnauthorized, err.Error())
 		return
 	}
-    newToken, err := svc.RefreshToken(c.Request.Context(), token)
-    if err != nil {
-        status := http.StatusUnauthorized
-        if err == service.ErrUserDisabled {
-            status = http.StatusForbidden
-        }
-        respondError(c, status, err.Error())
-        return
-    }
+	newToken, err := svc.RefreshToken(c.Request.Context(), token)
+	if err != nil {
+		status := http.StatusUnauthorized
+		if err == service.ErrUserDisabled {
+			status = http.StatusForbidden
+		}
+		respondError(c, status, err.Error())
+		return
+	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[map[string]any]{
+	respondJSON(c, http.StatusOK, model.APIResponse[tokenPayload]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
-		Data:    map[string]any{"token": newToken},
+		Data:    tokenPayload{Token: newToken},
 	})
 }
 
