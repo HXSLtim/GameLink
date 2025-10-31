@@ -17,6 +17,8 @@ var/
 
 # Coverage
 coverage.out
+/# Coverage directories at repo root
+/coverage*/
 /*_coverage*/
 /*_cov*/
 /*_coverage_final*/
@@ -26,6 +28,12 @@ docs/swagger.json
 docs/swagger.yaml
 docs/docs.go
 docs/docs_test.go
+
+# Generated Swagger artifacts folder
+/docs/swagger/*
+
+# Test logs
+/test_full_run.log
 
 # IDE/editor
 .idea/

@@ -4,10 +4,10 @@
 
 | 环境变量 | 说明 | 默认值（非生产环境） |
 |----------|------|----------------------|
-| `SUPER_ADMIN_EMAIL` | 超管邮箱，用作唯一登录标识 | `admin@gamelink.local` |
+| `SUPER_ADMIN_EMAIL` | 超管邮箱，用作唯一登录标识 | `superAdmin@GameLink.com` |
 | `SUPER_ADMIN_PHONE` | 超管手机号，可选 | 空 |
 | `SUPER_ADMIN_NAME` | 显示名称 | `Super Admin` |
-| `SUPER_ADMIN_PASSWORD` | 登录密码（明文，启动时会自动加密） | `Admin@123456` |
+| `SUPER_ADMIN_PASSWORD` | 登录密码（明文，启动时会自动加密） | `admin123` |
 
 - 若邮箱和手机号均未设置且当前环境为生产（`APP_ENV=production`），迁移会中止并提示必须配置其中一个。
 - 在生产环境中同样要求显式提供 `SUPER_ADMIN_PASSWORD`，否则启动会失败，避免使用默认弱口令。

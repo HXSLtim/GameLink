@@ -81,18 +81,35 @@ apiClient.interceptors.response.use(
     if (error.response) {
       const status = error.response.status;
       const apiResponse = error.response.data as ApiResponse;
+      const reqUrl = (error.response?.config?.url || error.config?.url || '');
+      const token = storage.getItem<string>(STORAGE_KEYS.token);
 
       switch (status) {
-        case 401:
-          // Token 过期或无效
-          console.error('认证失败，请重新登录');
-          storage.removeItem(STORAGE_KEYS.token);
-          storage.removeItem(STORAGE_KEYS.user);
-          // 跳转到登录页（避免循环跳转）
-          if (window.location.pathname !== '/login') {
-            window.location.href = '/login';
+        case 401: {
+          // 401 可能来自两类情况：
+          // 1) 会话失效（auth 相关接口）——需要清理并跳转登录
+          // 2) 权限不足/资源受限（如 /admin/**）——不应直接清理会话，避免登录后立刻被登出
+
+          const isAuthEndpoint =
+            reqUrl.includes('/api/v1/auth/login') ||
+            reqUrl.includes('/api/v1/auth/me') ||
+            reqUrl.includes('/api/v1/auth/refresh') ||
+            reqUrl.includes('/api/v1/auth/logout');
+
+          if (!token || isAuthEndpoint) {
+            // 会话确实失效或认证接口失败：清理并跳转登录
+            console.error('认证失败或会话失效，重定向到登录');
+            storage.removeItem(STORAGE_KEYS.token);
+            storage.removeItem(STORAGE_KEYS.user);
+            if (window.location.pathname !== '/login') {
+              window.location.href = '/login';
+            }
+          } else {
+            // 保留会话，向上抛错让页面自行处理（例如显示“无权限/加载失败”）
+            console.warn(`接口返回401（已保留会话）：${reqUrl}`);
           }
           break;
+        }
 
         case 403:
           console.error('权限不足');

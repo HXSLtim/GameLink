@@ -150,14 +150,14 @@ func ensureSuperAdmin(db *gorm.DB) error {
 		if env == "production" {
 			return errors.New("SUPER_ADMIN_EMAIL or SUPER_ADMIN_PHONE must be set in production")
 		}
-		email = "admin@gamelink.local"
+		email = "superAdmin@GameLink.com"
 	}
 
 	if password == "" {
 		if env == "production" {
 			return errors.New("SUPER_ADMIN_PASSWORD must be set in production")
 		}
-		password = "Admin@123456"
+		password = "admin123"
 	}
 
 	// Avoid unique constraint conflicts when phone 为空且已有空手机号行
