@@ -7,6 +7,8 @@ WORKDIR /app
 # Increase Node memory to avoid OOM during Vite/Rollup build
 ARG NODE_OPTIONS=--max_old_space_size=2048
 ENV NODE_OPTIONS=$NODE_OPTIONS
+ENV CI=true \
+    VITE_SOURCEMAP=false
 
 # Install dependencies with cache
 COPY package.json package-lock.json ./
