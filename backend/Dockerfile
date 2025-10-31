@@ -4,6 +4,14 @@
 FROM golang:1.24-alpine AS build
 WORKDIR /app
 
+# Build-time configuration for Go modules (overridable via build-args)
+ARG GOPROXY=https://goproxy.cn,direct
+ARG GOPRIVATE=
+ARG GONOSUMDB=
+ENV GOPROXY=$GOPROXY \
+    GOPRIVATE=$GOPRIVATE \
+    GONOSUMDB=$GONOSUMDB
+
 # Install git for go modules that require it
 RUN apk add --no-cache git ca-certificates && update-ca-certificates
 
@@ -14,7 +22,7 @@ RUN --mount=type=cache,target=/go/pkg/mod go mod download
 # Copy source and build
 COPY . .
 # Build a static binary for linux amd64
-RUN --mount=type=cache,target=/go/pkg/mod CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o server ./cmd/main.go
+RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o server ./cmd/main.go
 
 # --- Runtime stage ---
 FROM alpine:3.19 AS runtime

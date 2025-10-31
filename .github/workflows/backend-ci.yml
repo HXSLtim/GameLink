@@ -11,6 +11,10 @@ on:
 jobs:
   lint-test-build:
     runs-on: ubuntu-latest
+    env:
+      GOPROXY: https://goproxy.cn,direct
+      GOPRIVATE: ${{ vars.GOPRIVATE }}
+      GONOSUMDB: ${{ vars.GONOSUMDB }}
     defaults:
       run:
         working-directory: backend

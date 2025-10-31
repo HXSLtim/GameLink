@@ -14,6 +14,7 @@
     - `latest`（main 分支）
     - `sha-<短SHA>`（所有推送）
     - `<分支/标签名>`（斜杠会转为 `-`，并统一为小写）
+  - 默认模块代理：后端 Dockerfile 默认 `GOPROXY=https://goproxy.cn,direct`
 
 - 可选部署（SSH）：`.github/workflows/deploy.yml`
   - 触发：
@@ -56,6 +57,16 @@
   - `SUPER_ADMIN_PASSWORD`
   - （可选）`REDIS_ADDR`、`REDIS_PASSWORD`、`REDIS_DB`
 
+## 可选仓库变量（构建加速/私有依赖）
+
+在 `Settings → Variables → Repository variables` 中可按需设置（覆盖默认值）：
+
+- `GOPROXY`：Go 模块代理（默认已为国内：`https://goproxy.cn,direct`；如需官方代理可改为 `https://proxy.golang.org,direct`）
+- `GOPRIVATE`：私有模块前缀（如 `github.com/your-org/*`）
+- `GONOSUMDB`：不使用 `sum.golang.org` 校验的模块前缀（通常与 `GOPRIVATE` 一致）
+
+镜像工作流会在存在上述变量时，自动以 `build-args` 传入构建阶段；否则使用 Dockerfile 默认的 `GOPROXY`。
+
 ## 服务器上的 env 文件（示例）
 
 工作流会在部署时生成并上传 `gamelink.env`，其内容示例：
@@ -96,3 +107,4 @@ IMAGE_TAG=latest
 - GHCR 推送失败：检查仓库是否允许 `GITHUB_TOKEN` 推送包，或改用 `GHCR_TOKEN`（PAT）在构建工作流登录并推送。
 - 服务器端拉取失败：确认服务器已安装 Docker（含 Compose v2）、开放 22 端口，以及 `GHCR_USERNAME/GHCR_TOKEN` 是否有效。
 - 前端无法访问 API：`frontend/nginx.conf` 已将 `/api/` 代理到 `http://backend:8080`，确保 Compose 网络与服务名一致。
+- Go 依赖下载失败：已在 Dockerfile 启用 BuildKit 缓存与 `GOPROXY`；如处于大陆网络，建议在仓库变量设置 `GOPROXY=https://goproxy.cn,direct`，或检查是否存在需要配置 `GOPRIVATE/GONOSUMDB` 的私有依赖。

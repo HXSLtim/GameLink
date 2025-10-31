@@ -68,6 +68,21 @@ jobs:
           fi
           echo "tags=$TAGS" >> $GITHUB_OUTPUT
 
+      - name: Prepare build args (optional)
+        id: buildargs
+        run: |
+          ARGS=""
+          if [ -n "${{ vars.GOPROXY }}" ]; then
+            ARGS="${ARGS}GOPROXY=${{ vars.GOPROXY }}\n"
+          fi
+          if [ -n "${{ vars.GOPRIVATE }}" ]; then
+            ARGS="${ARGS}GOPRIVATE=${{ vars.GOPRIVATE }}\n"
+          fi
+          if [ -n "${{ vars.GONOSUMDB }}" ]; then
+            ARGS="${ARGS}GONOSUMDB=${{ vars.GONOSUMDB }}\n"
+          fi
+          echo -e "args<<EOF\n${ARGS}EOF" >> $GITHUB_OUTPUT
+
       - name: Build and push ${{ matrix.name }}
         uses: docker/build-push-action@v5
         with:
@@ -75,6 +90,7 @@ jobs:
           file: ${{ matrix.dockerfile }}
           push: true
           tags: ${{ steps.tags.outputs.tags }}
+          build-args: ${{ steps.buildargs.outputs.args }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
