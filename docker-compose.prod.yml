@@ -1,0 +1,37 @@
+version: "3.9"
+
+services:
+  backend:
+    image: ${IMAGE_REGISTRY}/${IMAGE_REPOSITORY_PREFIX}-backend:${IMAGE_TAG}
+    container_name: gamelink-backend
+    environment:
+      - APP_ENV=production
+      - ENABLE_SWAGGER=false
+      - DB_TYPE=${DB_TYPE:-postgres}
+      - DB_DSN=${DB_DSN}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - CRYPTO_SECRET_KEY=${CRYPTO_SECRET_KEY}
+      - CRYPTO_IV=${CRYPTO_IV}
+      - SUPER_ADMIN_EMAIL=${SUPER_ADMIN_EMAIL}
+      - SUPER_ADMIN_PASSWORD=${SUPER_ADMIN_PASSWORD}
+      - REDIS_ADDR=${REDIS_ADDR}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_DB=${REDIS_DB:-0}
+    ports:
+      - "8080:8080"
+    networks:
+      - gamelink-net
+
+  frontend:
+    image: ${IMAGE_REGISTRY}/${IMAGE_REPOSITORY_PREFIX}-frontend:${IMAGE_TAG}
+    container_name: gamelink-frontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+    networks:
+      - gamelink-net
+
+networks:
+  gamelink-net:
+    driver: bridge

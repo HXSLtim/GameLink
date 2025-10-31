@@ -1,0 +1,157 @@
+name: Deploy (Optional)
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Target environment (staging/production)'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      image_tag:
+        description: 'Image tag to deploy (default: latest for main, tag name for release)'
+        required: false
+
+jobs:
+  deploy-staging:
+    if: ${{ ((github.event_name == 'workflow_dispatch' && inputs.target == 'staging') || github.ref == 'refs/heads/main') && secrets.DEPLOY_HOST != '' }}
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare variables
+        id: vars
+        run: |
+          echo "repo_lower=${GITHUB_REPOSITORY,,}" >> $GITHUB_OUTPUT
+          echo "sha_short=$(echo ${GITHUB_SHA} | cut -c1-7)" >> $GITHUB_OUTPUT
+          TAG="${{ inputs.image_tag }}"
+          if [ -z "$TAG" ]; then
+            TAG="latest"
+          fi
+          echo "image_tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Write env file (gamelink.env)
+        run: |
+          cat > gamelink.env <<EOF
+          APP_ENV=production
+          ENABLE_SWAGGER=false
+          DB_TYPE=postgres
+          DB_DSN=${{ secrets.DB_DSN }}
+          JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}
+          CRYPTO_SECRET_KEY=${{ secrets.CRYPTO_SECRET_KEY }}
+          CRYPTO_IV=${{ secrets.CRYPTO_IV }}
+          SUPER_ADMIN_EMAIL=${{ secrets.SUPER_ADMIN_EMAIL }}
+          SUPER_ADMIN_PASSWORD=${{ secrets.SUPER_ADMIN_PASSWORD }}
+          REDIS_ADDR=${{ secrets.REDIS_ADDR }}
+          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+          REDIS_DB=${{ secrets.REDIS_DB }}
+          IMAGE_REGISTRY=ghcr.io
+          IMAGE_REPOSITORY_PREFIX=${{ steps.vars.outputs.repo_lower }}
+          IMAGE_TAG=${{ steps.vars.outputs.image_tag }}
+          EOF
+
+      - name: Copy compose and env to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          source: "docker-compose.prod.yml,gamelink.env"
+          target: ${{ secrets.DEPLOY_PATH }}
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          script: |
+            set -euo pipefail
+            mkdir -p ${{ secrets.DEPLOY_PATH }}
+            cd ${{ secrets.DEPLOY_PATH }}
+            echo "Logging in to GHCR"
+            docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} -p ${{ secrets.GHCR_TOKEN }}
+            echo "Pulling images and starting services"
+            docker compose --env-file gamelink.env -f docker-compose.prod.yml pull
+            docker compose --env-file gamelink.env -f docker-compose.prod.yml up -d
+            docker image prune -f
+
+  deploy-production:
+    if: ${{ ((github.event_name == 'workflow_dispatch' && inputs.target == 'production') || startsWith(github.ref, 'refs/tags/')) && secrets.DEPLOY_HOST != '' }}
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare variables
+        id: vars
+        run: |
+          echo "repo_lower=${GITHUB_REPOSITORY,,}" >> $GITHUB_OUTPUT
+          echo "sha_short=$(echo ${GITHUB_SHA} | cut -c1-7)" >> $GITHUB_OUTPUT
+          ref="${GITHUB_REF#refs/tags/}"
+          TAG="${{ inputs.image_tag }}"
+          if [ -z "$TAG" ]; then
+            TAG="$ref"
+          fi
+          echo "image_tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Write env file (gamelink.env)
+        run: |
+          cat > gamelink.env <<EOF
+          APP_ENV=production
+          ENABLE_SWAGGER=false
+          DB_TYPE=postgres
+          DB_DSN=${{ secrets.DB_DSN }}
+          JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}
+          CRYPTO_SECRET_KEY=${{ secrets.CRYPTO_SECRET_KEY }}
+          CRYPTO_IV=${{ secrets.CRYPTO_IV }}
+          SUPER_ADMIN_EMAIL=${{ secrets.SUPER_ADMIN_EMAIL }}
+          SUPER_ADMIN_PASSWORD=${{ secrets.SUPER_ADMIN_PASSWORD }}
+          REDIS_ADDR=${{ secrets.REDIS_ADDR }}
+          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+          REDIS_DB=${{ secrets.REDIS_DB }}
+          IMAGE_REGISTRY=ghcr.io
+          IMAGE_REPOSITORY_PREFIX=${{ steps.vars.outputs.repo_lower }}
+          IMAGE_TAG=${{ steps.vars.outputs.image_tag }}
+          EOF
+
+      - name: Copy compose and env to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          source: "docker-compose.prod.yml,gamelink.env"
+          target: ${{ secrets.DEPLOY_PATH }}
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          script: |
+            set -euo pipefail
+            mkdir -p ${{ secrets.DEPLOY_PATH }}
+            cd ${{ secrets.DEPLOY_PATH }}
+            echo "Logging in to GHCR"
+            docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} -p ${{ secrets.GHCR_TOKEN }}
+            echo "Pulling images and starting services"
+            docker compose --env-file gamelink.env -f docker-compose.prod.yml pull
+            docker compose --env-file gamelink.env -f docker-compose.prod.yml up -d
+            docker image prune -f
