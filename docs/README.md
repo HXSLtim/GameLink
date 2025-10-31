@@ -401,7 +401,7 @@ npm run test -- --watch
 
 - **项目主页**: https://github.com/your-org/gamelink
 - **问题反馈**: https://github.com/your-org/gamelink/issues
-- **邮箱**: dev@gamelink.com
+- **邮箱**: a2778978136@163.com
 - **文档**: https://docs.gamelink.com
 
 ## 🙏 致谢

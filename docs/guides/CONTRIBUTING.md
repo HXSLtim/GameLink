@@ -245,7 +245,7 @@ npm run test:e2e
 
 - **GitHub Issues**: [项目Issues页面](https://github.com/your-org/gamelink/issues)
 - **讨论区**: [GitHub Discussions](https://github.com/your-org/gamelink/discussions)
-- **邮箱**: dev@gamelink.com
+ - **邮箱**: a2778978136@163.com
 - **微信群**: 扫描二维码加入开发交流群
 
 ## 🏆 贡献者

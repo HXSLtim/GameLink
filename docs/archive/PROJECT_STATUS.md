@@ -189,9 +189,9 @@
 ## 📞 项目联系
 
 - **开发团队**: GameLink Team
-- **技术支持**: dev@gamelink.com
+- **技术支持**: a2778978136@163.com
 - **问题反馈**: [GitHub Issues](https://github.com/your-org/gamelink/issues)
-- **文档维护**: docs@gamelink.com
+- **文档维护**: a2778978136@163.com
 
 ---
 

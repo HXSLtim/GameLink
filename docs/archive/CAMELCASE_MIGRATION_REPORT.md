@@ -268,8 +268,8 @@ user.avatarUrl?.length
 如有任何问题或建议，请联系：
 
 - **项目负责人**: GameLink 开发团队
-- **技术支持**: dev@gamelink.com
-- **文档维护**: docs@gamelink.com
+ - **技术支持**: a2778978136@163.com
+ - **文档维护**: a2778978136@163.com
 
 ---
 
