@@ -1,0 +1,24 @@
+# Dependencies
+node_modules
+.npm
+
+# Builds
+dist
+
+# Env & local
+.env
+.env.*
+.DS_Store
+.vscode
+
+# Tests & coverage
+coverage
+**/*.test.*
+**/*.spec.*
+
+# CI & VCS
+.git
+.github
+
+# Docs (not needed for build)
+docs
