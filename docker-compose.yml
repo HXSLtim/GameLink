@@ -1,0 +1,37 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: gamelink-backend
+    environment:
+      - APP_ENV=development
+      - ENABLE_SWAGGER=true
+      # 可按需覆盖数据库等：
+      # - DB_TYPE=sqlite
+      # - DB_DSN=file:./var/dev.db?mode=rwc&_pragma=busy_timeout(5000)&_pragma=foreign_keys(1)
+      # - JWT_SECRET_KEY=gamelink-default-secret-key-change-in-development
+    volumes:
+      - ./backend/var:/app/var
+    ports:
+      - "8080:8080"
+    networks:
+      - gamelink-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: gamelink-frontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+    networks:
+      - gamelink-net
+
+networks:
+  gamelink-net:
+    driver: bridge
