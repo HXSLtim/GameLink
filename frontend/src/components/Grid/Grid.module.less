@@ -1,0 +1,86 @@
+@import '../../styles/variables.less';
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.wrap {
+  flex-wrap: wrap;
+}
+
+.noWrap {
+  flex-wrap: nowrap;
+}
+
+.col {
+  box-sizing: border-box;
+  min-height: 1px;
+  padding-left: var(--spacing-sm);
+  padding-right: var(--spacing-sm);
+}
+
+.grid {
+  width: 100%;
+}
+
+// Justify
+.justify-start { justify-content: flex-start; }
+.justify-center { justify-content: center; }
+.justify-end { justify-content: flex-end; }
+.justify-space-between { justify-content: space-between; }
+.justify-space-around { justify-content: space-around; }
+
+// Align
+.align-top { align-items: flex-start; }
+.align-middle { align-items: center; }
+.align-bottom { align-items: flex-end; }
+
+// Responsive via CSS variables
+.col {
+  --span: 0;
+  --offset: 0;
+  flex-basis: calc(var(--span) / 24 * 100%);
+  max-width: calc(var(--span) / 24 * 100%);
+  margin-left: calc(var(--offset) / 24 * 100%);
+}
+
+@media (max-width: 576px) {
+  .col {
+    flex-basis: calc(var(--span-xs, var(--span)) / 24 * 100%);
+    max-width: calc(var(--span-xs, var(--span)) / 24 * 100%);
+    margin-left: calc(var(--offset-xs, var(--offset)) / 24 * 100%);
+  }
+}
+
+@media (min-width: 577px) and (max-width: 768px) {
+  .col {
+    flex-basis: calc(var(--span-sm, var(--span)) / 24 * 100%);
+    max-width: calc(var(--span-sm, var(--span)) / 24 * 100%);
+    margin-left: calc(var(--offset-sm, var(--offset)) / 24 * 100%);
+  }
+}
+
+@media (min-width: 769px) and (max-width: 992px) {
+  .col {
+    flex-basis: calc(var(--span-md, var(--span)) / 24 * 100%);
+    max-width: calc(var(--span-md, var(--span)) / 24 * 100%);
+    margin-left: calc(var(--offset-md, var(--offset)) / 24 * 100%);
+  }
+}
+
+@media (min-width: 993px) and (max-width: 1200px) {
+  .col {
+    flex-basis: calc(var(--span-lg, var(--span)) / 24 * 100%);
+    max-width: calc(var(--span-lg, var(--span)) / 24 * 100%);
+    margin-left: calc(var(--offset-lg, var(--offset)) / 24 * 100%);
+  }
+}
+
+@media (min-width: 1201px) {
+  .col {
+    flex-basis: calc(var(--span-xl, var(--span)) / 24 * 100%);
+    max-width: calc(var(--span-xl, var(--span)) / 24 * 100%);
+    margin-left: calc(var(--offset-xl, var(--offset)) / 24 * 100%);
+  }
+}

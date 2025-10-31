@@ -37,6 +37,10 @@ func (m *mockReviewRepoForUserReview) List(ctx context.Context, opts repository.
 		if opts.UserID != nil && *opts.UserID != r.UserID {
 			continue
 		}
+		// Filter by order if specified
+		if opts.OrderID != nil && *opts.OrderID != r.OrderID {
+			continue
+		}
 		result = append(result, *r)
 	}
 	return result, int64(len(result)), nil
@@ -75,16 +79,19 @@ func (m *mockReviewRepoForUserReview) Delete(ctx context.Context, id uint64) err
 }
 
 // ---- Tests for user_review.go ----
+// Note: Fake repositories are shared from user_order_test.go
 
 func TestCreateReviewHandler_Success(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	reviewRepo := newMockReviewRepoForUserReview()
 	orderRepo := newFakeOrderRepository()
-	// Create a completed order for user 100
-	orderRepo.Create(context.Background(), &model.Order{
-		Base: model.Base{ID: 20}, UserID: 100, PlayerID: 1, Status: model.OrderStatusCompleted,
-	})
+	// Create a completed order for user 100 with a different order ID (not 10 or 11 which already have reviews)
+	order := &model.Order{
+		UserID: 100, PlayerID: 1, Status: model.OrderStatusCompleted,
+	}
+	orderRepo.Create(context.Background(), order)
+	// order.ID will be set by Create method to 1 (first order in empty repo)
 
 	reviewSvc := review.NewReviewService(reviewRepo, orderRepo, &fakePlayerRepository{}, &fakeUserRepository{})
 
@@ -95,7 +102,7 @@ func TestCreateReviewHandler_Success(t *testing.T) {
 	})
 
 	reqBody := review.CreateReviewRequest{
-		OrderID: 20,
+		OrderID: order.ID, // Use the actual ID assigned by Create
 		Rating:  5,
 		Comment: "Excellent service!",
 	}
@@ -147,10 +154,12 @@ func TestCreateReviewHandler_AlreadyReviewed(t *testing.T) {
 
 	reviewRepo := newMockReviewRepoForUserReview()
 	orderRepo := newFakeOrderRepository()
-	// Create a completed order
-	orderRepo.Create(context.Background(), &model.Order{
-		Base: model.Base{ID: 10}, UserID: 100, PlayerID: 1, Status: model.OrderStatusCompleted,
-	})
+	// Create a completed order that matches the review mock data (OrderID 10)
+	order := &model.Order{
+		Base:   model.Base{ID: 10},
+		UserID: 100, PlayerID: 1, Status: model.OrderStatusCompleted,
+	}
+	orderRepo.orders[10] = order // Manually add to match mock review data
 
 	reviewSvc := review.NewReviewService(reviewRepo, orderRepo, &fakePlayerRepository{}, &fakeUserRepository{})
 
@@ -160,7 +169,7 @@ func TestCreateReviewHandler_AlreadyReviewed(t *testing.T) {
 		createReviewHandler(c, reviewSvc)
 	})
 
-	// Order 10 already has a review
+	// Order 10 already has a review (review ID 1 in mock data has OrderID 10)
 	reqBody := review.CreateReviewRequest{
 		OrderID: 10,
 		Rating:  5,

@@ -17,6 +17,9 @@ var/
 
 # Coverage
 coverage.out
+/*_coverage*/
+/*_cov*/
+/*_coverage_final*/
 
 # Generated API docs
 docs/swagger.json

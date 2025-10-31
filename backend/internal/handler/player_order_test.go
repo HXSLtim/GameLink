@@ -23,9 +23,9 @@ type mockOrderRepoForPlayerOrder struct {
 func newMockOrderRepoForPlayerOrder() *mockOrderRepoForPlayerOrder {
 	return &mockOrderRepoForPlayerOrder{
 		orders: map[uint64]*model.Order{
-			1: {Base: model.Base{ID: 1}, UserID: 100, GameID: 10, Status: model.OrderStatusPending, PriceCents: 5000},
+			1: {Base: model.Base{ID: 1}, UserID: 100, GameID: 10, Status: model.OrderStatusConfirmed, PriceCents: 5000},
 			2: {Base: model.Base{ID: 2}, UserID: 101, GameID: 10, Status: model.OrderStatusPending, PriceCents: 8000},
-			3: {Base: model.Base{ID: 3}, UserID: 102, PlayerID: 200, GameID: 20, Status: model.OrderStatusConfirmed, PriceCents: 3000},
+			3: {Base: model.Base{ID: 3}, UserID: 102, PlayerID: 1, GameID: 20, Status: model.OrderStatusInProgress, PriceCents: 3000},
 		},
 	}
 }
@@ -67,6 +67,44 @@ func (m *mockOrderRepoForPlayerOrder) Update(ctx context.Context, o *model.Order
 func (m *mockOrderRepoForPlayerOrder) Delete(ctx context.Context, id uint64) error {
 	delete(m.orders, id)
 	return nil
+}
+
+// ---- Fake PlayerRepository for order tests ----
+
+type fakePlayerRepositoryForOrder struct{}
+
+func (m *fakePlayerRepositoryForOrder) List(ctx context.Context) ([]model.Player, error) {
+	return []model.Player{}, nil
+}
+
+func (m *fakePlayerRepositoryForOrder) ListPaged(ctx context.Context, page, pageSize int) ([]model.Player, int64, error) {
+	return []model.Player{
+		{Base: model.Base{ID: 1}, UserID: 200, Nickname: "TestPlayer"},
+	}, 1, nil
+}
+
+func (m *fakePlayerRepositoryForOrder) Get(ctx context.Context, id uint64) (*model.Player, error) {
+	return &model.Player{Base: model.Base{ID: id}, UserID: 200, Nickname: "TestPlayer"}, nil
+}
+
+func (m *fakePlayerRepositoryForOrder) GetByUserID(ctx context.Context, userID uint64) (*model.Player, error) {
+	return &model.Player{Base: model.Base{ID: 1}, UserID: userID, Nickname: "TestPlayer"}, nil
+}
+
+func (m *fakePlayerRepositoryForOrder) Create(ctx context.Context, player *model.Player) error {
+	return nil
+}
+
+func (m *fakePlayerRepositoryForOrder) Update(ctx context.Context, player *model.Player) error {
+	return nil
+}
+
+func (m *fakePlayerRepositoryForOrder) Delete(ctx context.Context, id uint64) error {
+	return nil
+}
+
+func (m *fakePlayerRepositoryForOrder) ListByGameID(ctx context.Context, gameID uint64) ([]model.Player, error) {
+	return []model.Player{}, nil
 }
 
 // ---- Tests for player_order.go ----
@@ -126,6 +164,7 @@ func TestAcceptOrderHandler_Success(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	orderRepo := newMockOrderRepoForPlayerOrder()
+	// Order 1 has status Pending and no PlayerID, so it can be accepted
 	orderSvc := order.NewOrderService(orderRepo, &fakePlayerRepositoryForOrder{}, &fakeUserRepository{}, &fakeGameRepository{}, &fakePaymentRepository{}, &fakeReviewRepository{})
 
 	router := gin.New()
@@ -134,6 +173,7 @@ func TestAcceptOrderHandler_Success(t *testing.T) {
 		acceptOrderHandler(c, orderSvc)
 	})
 
+	// Use order 1 which has status OrderStatusPending
 	req := httptest.NewRequest(http.MethodPost, "/player/orders/1/accept", nil)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
@@ -219,6 +259,7 @@ func TestCompleteOrderByPlayerHandler_Success(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	orderRepo := newMockOrderRepoForPlayerOrder()
+	// Order 3 has PlayerID=200 and status=Confirmed, owned by player with UserID=200
 	orderSvc := order.NewOrderService(orderRepo, &fakePlayerRepositoryForOrder{}, &fakeUserRepository{}, &fakeGameRepository{}, &fakePaymentRepository{}, &fakeReviewRepository{})
 
 	router := gin.New()
@@ -227,6 +268,7 @@ func TestCompleteOrderByPlayerHandler_Success(t *testing.T) {
 		completeOrderByPlayerHandler(c, orderSvc)
 	})
 
+	// Use order 3 which has PlayerID=200 and status=OrderStatusConfirmed
 	req := httptest.NewRequest(http.MethodPut, "/player/orders/3/complete", nil)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)

@@ -1,0 +1,42 @@
+@import '../../styles/variables.less';
+
+.space {
+  display: inline-flex;
+  align-items: center;
+}
+
+.horizontal {
+  flex-direction: row;
+}
+
+.vertical {
+  flex-direction: column;
+}
+
+.wrap {
+  flex-wrap: wrap;
+}
+
+.noWrap {
+  flex-wrap: nowrap;
+}
+
+.align-start { align-items: flex-start; }
+.align-center { align-items: center; }
+.align-end { align-items: flex-end; }
+.align-baseline { align-items: baseline; }
+
+.split {
+  display: inline-flex;
+  margin: 0 var(--spacing-sm);
+  color: var(--text-tertiary);
+}
+
+// Preset sizes via gap
+.space.horizontal {
+  gap: var(--spacing-md);
+}
+
+.space.vertical {
+  gap: var(--spacing-sm);
+}

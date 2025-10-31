@@ -4,6 +4,7 @@ import type { MenuItem } from 'components/Layout';
 import { useAuth } from 'contexts/AuthContext';
 import { useBreadcrumb } from '../../hooks/useBreadcrumb';
 import { useRouteCache } from '../../hooks/useRouteCache';
+import { FEATURE_FLAGS } from '../../config';
 
 // Dashboard 图标
 const DashboardIcon = () => (
@@ -114,6 +115,16 @@ const PaymentsIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
     <rect x="2" y="5" width="20" height="14" rx="2" strokeWidth="2" />
     <path d="M2 10H22" strokeWidth="2" />
+  </svg>
+);
+
+// 组件演示图标
+const ComponentsIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+    <rect x="3" y="3" width="7" height="7" strokeWidth="2" />
+    <rect x="14" y="3" width="7" height="7" strokeWidth="2" />
+    <rect x="3" y="14" width="7" height="7" strokeWidth="2" />
+    <rect x="14" y="14" width="7" height="7" strokeWidth="2" />
   </svg>
 );
 
@@ -241,6 +252,16 @@ export const MainLayout = () => {
       icon: <SettingsIcon />,
       path: '/settings',
     },
+    ...(FEATURE_FLAGS.showcase.enableComponentsRoute
+      ? [
+          {
+            key: 'components',
+            label: '组件演示',
+            icon: <ComponentsIcon />,
+            path: '/components',
+          },
+        ]
+      : []),
   ];
 
   const handleLogout = () => {

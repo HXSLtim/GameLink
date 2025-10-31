@@ -1,9 +1,0 @@
-mode: set
-gamelink/internal/service/stats/stats_service.go:15.69,15.105 1 1
-gamelink/internal/service/stats/stats_service.go:17.85,19.2 1 1
-gamelink/internal/service/stats/stats_service.go:21.100,23.2 1 1
-gamelink/internal/service/stats/stats_service.go:25.98,27.2 1 1
-gamelink/internal/service/stats/stats_service.go:29.86,31.2 1 1
-gamelink/internal/service/stats/stats_service.go:33.99,35.2 1 1
-gamelink/internal/service/stats/stats_service.go:38.124,40.2 1 1
-gamelink/internal/service/stats/stats_service.go:43.132,45.2 1 1

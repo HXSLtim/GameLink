@@ -1,0 +1,52 @@
+@import '../../styles/variables.less';
+
+.tree {}
+
+.treeGroup {
+  list-style: none;
+  padding-left: var(--spacing-md);
+}
+
+.treeItem {
+  margin: var(--spacing-xs) 0;
+}
+
+.itemRow {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.expandBtn {
+  width: 20px;
+  height: 20px;
+  border: var(--border-width-base) solid var(--border-color);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.titleBtn {
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.selected .titleBtn {
+  font-weight: var(--font-weight-semibold);
+}
+
+.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}

@@ -15,6 +15,52 @@ import (
 	"gamelink/internal/service/payment"
 )
 
+// ---- Fake OrderRepository for payment tests ----
+
+type fakeOrderRepositoryForPayment struct {
+	orders map[uint64]*model.Order
+}
+
+func newFakeOrderRepositoryForPayment() *fakeOrderRepositoryForPayment {
+	return &fakeOrderRepositoryForPayment{
+		orders: map[uint64]*model.Order{
+			10: {Base: model.Base{ID: 10}, UserID: 100, GameID: 1, Status: model.OrderStatusPending, PriceCents: 5000},
+			11: {Base: model.Base{ID: 11}, UserID: 101, GameID: 1, Status: model.OrderStatusPending, PriceCents: 8000},
+		},
+	}
+}
+
+func (m *fakeOrderRepositoryForPayment) Create(ctx context.Context, o *model.Order) error {
+	o.ID = uint64(len(m.orders) + 1)
+	m.orders[o.ID] = o
+	return nil
+}
+
+func (m *fakeOrderRepositoryForPayment) List(ctx context.Context, opts repository.OrderListOptions) ([]model.Order, int64, error) {
+	var result []model.Order
+	for _, o := range m.orders {
+		result = append(result, *o)
+	}
+	return result, int64(len(result)), nil
+}
+
+func (m *fakeOrderRepositoryForPayment) Get(ctx context.Context, id uint64) (*model.Order, error) {
+	if o, ok := m.orders[id]; ok {
+		return o, nil
+	}
+	return nil, repository.ErrNotFound
+}
+
+func (m *fakeOrderRepositoryForPayment) Update(ctx context.Context, o *model.Order) error {
+	m.orders[o.ID] = o
+	return nil
+}
+
+func (m *fakeOrderRepositoryForPayment) Delete(ctx context.Context, id uint64) error {
+	delete(m.orders, id)
+	return nil
+}
+
 // ---- Fake PaymentRepository for user_payment tests ----
 
 type mockPaymentRepoForUserPayment struct {

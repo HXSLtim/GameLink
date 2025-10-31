@@ -14,6 +14,8 @@ export { FormField } from './FormField';
 export * from './Icons';
 export { Input, PasswordInput } from './Input';
 export { Layout, Header, Sidebar } from './Layout';
+export { Grid, Row, Col } from './Grid/Grid';
+export { Space } from './Space/Space';
 export { Modal } from './Modal';
 export { Pagination } from './Pagination';
 export { Rating, SimpleRating, getRatingText, getRatingColor } from './Rating';
@@ -32,3 +34,6 @@ export {
 } from './Skeleton';
 export { Table } from './Table';
 export { Tag } from './Tag';
+export { Tabs } from './Tabs/Tabs';
+export { Tree } from './Tree/Tree';
+export { Notification, notify, Message, message } from './Notification/Notification';

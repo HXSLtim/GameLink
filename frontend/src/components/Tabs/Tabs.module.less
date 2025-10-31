@@ -1,0 +1,46 @@
+@import '../../styles/variables.less';
+
+.tabs {
+  width: 100%;
+}
+
+.tabList {
+  display: flex;
+  gap: var(--spacing-sm);
+  border-bottom: var(--border-width-base) solid var(--border-color);
+  margin-bottom: var(--spacing-md);
+}
+
+.tab {
+  appearance: none;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border: var(--border-width-base) solid var(--border-color);
+  border-bottom: none;
+  padding: var(--spacing-sm) var(--spacing-md);
+  cursor: pointer;
+  transition: all var(--duration-base) var(--ease-out);
+
+  &:hover:not(.disabled) {
+    box-shadow: var(--shadow-sm);
+    transform: translate(-1px, -1px);
+  }
+
+  &.disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}
+
+.active {
+  background: var(--bg-secondary);
+  box-shadow: var(--shadow-sm);
+}
+
+.tabPanel {
+  border: var(--border-width-base) solid var(--border-color);
+  padding: var(--spacing-md);
+}
+
+.hidden { display: none; }
+.visible { display: block; }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, ReactNode, useRef, cloneElement, isValidElement } from 'react';
+import React, { useState, useEffect, ReactNode, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import styles from './RouteCache.module.less';
 
@@ -52,26 +52,26 @@ export const RouteCache: React.FC<RouteCacheProps> = ({
   const [cacheMap, setCacheMap] = useState<Map<string, RouteCacheItem>>(new Map());
   const currentPath = location.pathname;
 
-  // 判断当前路由是否应该缓存
-  const shouldCache = () => {
+  // 判断当前路由是否应该缓存（基于依赖稳定计算，避免 effect 死循环）
+  const isCacheEnabledForCurrent = useMemo(() => {
     if (!enabled) return false;
 
-    // 检查是否在排除列表中
+    // 排除列表优先
     if (excludeRoutes.some((route) => currentPath.startsWith(route))) {
       return false;
     }
 
-    // 如果指定了缓存路由，只缓存列表中的
+    // 指定缓存列表（若存在则只缓存其中）
     if (cacheRoutes.length > 0) {
       return cacheRoutes.some((route) => currentPath.startsWith(route));
     }
 
-    // 默认缓存所有（除了排除列表）
+    // 默认缓存所有（除排除列表）
     return true;
-  };
+  }, [enabled, currentPath, cacheRoutes, excludeRoutes]);
 
   useEffect(() => {
-    if (shouldCache()) {
+    if (isCacheEnabledForCurrent) {
       setCacheMap((prev) => {
         const newMap = new Map(prev);
 
@@ -103,9 +103,9 @@ export const RouteCache: React.FC<RouteCacheProps> = ({
         return newMap;
       });
     }
-  }, [currentPath, children, maxCache, shouldCache]);
+  }, [currentPath, children, maxCache, isCacheEnabledForCurrent]);
 
-  if (!enabled || !shouldCache()) {
+  if (!enabled || !isCacheEnabledForCurrent) {
     return <>{children}</>;
   }
 
