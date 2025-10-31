@@ -86,16 +86,16 @@ func applySeeds(db *gorm.DB) error {
 			{Key: "customerB", Email: "vip.user@gamelink.com", Phone: "13800138002", Name: "高级会员", Role: model.RoleUser, Password: "Vip@123456"},
 			{Key: "customerC", Email: "new.user@gamelink.com", Phone: "13800138003", Name: "体验用户", Role: model.RoleUser, Password: "User@123789"},
 			{Key: "proB", Email: "streamer@gamelink.com", Phone: "13800138004", Name: "魔王主播", Role: model.RolePlayer, Password: "Player@654321"},
-			// adminA removed - 只使用迁移时创建的超级管理员 (superAdmin@GameLink.com)
-			{Key: "customerD", Email: "casual.player@gamelink.com", Phone: "13800138005", Name: "休闲玩家", Role: model.RoleUser, Password: "User@123789"},
-			{Key: "customerE", Email: "competitive.gamer@gamelink.com", Phone: "13800138006", Name: "竞技高手", Role: model.RoleUser, Password: "User@456789"},
-			{Key: "proC", Email: "fps.master@gamelink.com", Phone: "13800138007", Name: "FPS大神", Role: model.RolePlayer, Password: "Player@987654"},
-			{Key: "proD", Email: "rpg.explorer@gamelink.com", Phone: "13800138008", Name: "RPG探险家", Role: model.RolePlayer, Password: "Player@456123"},
-			{Key: "customerF", Email: "weekend.gamer@gamelink.com", Phone: "13800138009", Name: "周末玩家", Role: model.RoleUser, Password: "User@789456"},
-			{Key: "proE", Email: "sports.champion@gamelink.com", Phone: "13800138010", Name: "体育冠军", Role: model.RolePlayer, Password: "Player@789012"},
-			{Key: "customerG", Email: "newbie.player@gamelink.com", Phone: "13800138011", Name: "新手玩家", Role: model.RoleUser, Password: "User@234567"},
-			{Key: "proF", Email: "party.entertainer@gamelink.com", Phone: "13800138012", Name: "派对达人", Role: model.RolePlayer, Password: "Player@345678"},
-			{Key: "customerH", Email: "business.professional@gamelink.com", Phone: "13800138013", Name: "商务人士", Role: model.RoleUser, Password: "User@567890"},
+			{Key: "adminA", Email: "admin@gamelink.com", Phone: "13800138005", Name: "系统管理员", Role: model.RoleAdmin, Password: "Admin@123456"},
+			{Key: "customerD", Email: "casual.player@gamelink.com", Phone: "13800138006", Name: "休闲玩家", Role: model.RoleUser, Password: "User@123789"},
+			{Key: "customerE", Email: "competitive.gamer@gamelink.com", Phone: "13800138007", Name: "竞技高手", Role: model.RoleUser, Password: "User@456789"},
+			{Key: "proC", Email: "fps.master@gamelink.com", Phone: "13800138008", Name: "FPS大神", Role: model.RolePlayer, Password: "Player@987654"},
+			{Key: "proD", Email: "rpg.explorer@gamelink.com", Phone: "13800138009", Name: "RPG探险家", Role: model.RolePlayer, Password: "Player@456123"},
+			{Key: "customerF", Email: "weekend.gamer@gamelink.com", Phone: "13800138010", Name: "周末玩家", Role: model.RoleUser, Password: "User@789456"},
+			{Key: "proE", Email: "sports.champion@gamelink.com", Phone: "13800138011", Name: "体育冠军", Role: model.RolePlayer, Password: "Player@789012"},
+			{Key: "customerG", Email: "newbie.player@gamelink.com", Phone: "13800138012", Name: "新手玩家", Role: model.RoleUser, Password: "User@234567"},
+			{Key: "proF", Email: "party.entertainer@gamelink.com", Phone: "13800138013", Name: "派对达人", Role: model.RolePlayer, Password: "Player@345678"},
+			{Key: "customerH", Email: "business.professional@gamelink.com", Phone: "13800138014", Name: "商务人士", Role: model.RoleUser, Password: "User@567890"},
 		}
 
 		users := make(map[string]*model.User, len(userInputs))

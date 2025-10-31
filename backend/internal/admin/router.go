@@ -2,9 +2,11 @@ package admin
 
 import (
 	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
+	"gamelink/internal/config"
 	mw "gamelink/internal/handler/middleware"
 	"gamelink/internal/model"
 	"gamelink/internal/service"
@@ -22,12 +24,13 @@ func RegisterRoutes(router gin.IRouter, svc *service.AdminService, pm *mw.Permis
 
 	group := router.Group("/admin")
 	// 所有管理接口均需要认证 + 速率限制
-	// 生产环境强制 JWT；开发环境可由 ADMIN_AUTH_MODE 控制
+	cfg := config.Load()
 	if os.Getenv("APP_ENV") == "production" {
 		group.Use(pm.RequireAuth(), mw.RateLimitAdmin())
 	} else {
-		switch os.Getenv("ADMIN_AUTH_MODE") {
-		case "jwt", "JWT":
+		// 使用配置中的 admin_auth.mode
+		switch strings.ToLower(cfg.AdminAuth.Mode) {
+		case "jwt":
 			group.Use(pm.RequireAuth(), mw.RateLimitAdmin())
 		default:
 			// 开发模式：保留旧的 AdminAuth（Bearer Token）
@@ -112,11 +115,13 @@ func RegisterStatsRoutes(router gin.IRouter, stats *service.StatsService, pm *mw
 	h := NewStatsHandler(stats)
 	group := router.Group("/admin")
 	// 统计接口均需要认证 + 速率限制
+	cfg := config.Load()
 	if os.Getenv("APP_ENV") == "production" {
 		group.Use(pm.RequireAuth(), mw.RateLimitAdmin())
 	} else {
-		switch os.Getenv("ADMIN_AUTH_MODE") {
-		case "jwt", "JWT":
+		// 使用配置中的 admin_auth.mode
+		switch strings.ToLower(cfg.AdminAuth.Mode) {
+		case "jwt":
 			group.Use(pm.RequireAuth(), mw.RateLimitAdmin())
 		default:
 			group.Use(mw.AdminAuth(), mw.RateLimitAdmin())

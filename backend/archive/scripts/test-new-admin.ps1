@@ -133,3 +133,4 @@ Write-Host "`nYou can now use these credentials in your frontend:" -ForegroundCo
 Write-Host "  Email: $email" -ForegroundColor Cyan
 Write-Host "  Password: $password`n" -ForegroundColor Cyan
 
+

@@ -36,3 +36,12 @@ auth:
 
 seed:
   enabled: true
+
+super_admin:
+  email: "admin@gamelink.com"
+  password: "123456"
+  name: "Super Admin"
+  phone: ""
+
+admin_auth:
+  mode: "jwt"

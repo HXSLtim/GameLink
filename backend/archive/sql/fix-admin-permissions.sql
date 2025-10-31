@@ -28,3 +28,4 @@ JOIN users u ON ur.user_id = u.id
 JOIN roles r ON ur.role_id = r.id
 WHERE u.email = 'admin@gamelink.com';
 
+

@@ -37,3 +37,12 @@ auth:
 
 seed:
   enabled: false
+
+super_admin:
+  email: "" # 生产环境通过环境变量 SUPER_ADMIN_EMAIL 提供
+  password: "" # 生产环境通过环境变量 SUPER_ADMIN_PASSWORD 提供
+  name: "Super Admin"
+  phone: ""
+
+admin_auth:
+  mode: "jwt"

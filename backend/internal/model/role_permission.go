@@ -20,3 +20,4 @@ func (RolePermission) TableName() string {
 
 
 
+

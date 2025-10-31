@@ -11,6 +11,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 
+	"gamelink/internal/config"
 	"gamelink/internal/model"
 )
 
@@ -136,11 +137,12 @@ func ensureDefaultRoles(db *gorm.DB) error {
 }
 
 func ensureSuperAdmin(db *gorm.DB) error {
+	cfg := config.Load()
 	env := strings.TrimSpace(os.Getenv("APP_ENV"))
-	email := strings.TrimSpace(os.Getenv("SUPER_ADMIN_EMAIL"))
-	phone := strings.TrimSpace(os.Getenv("SUPER_ADMIN_PHONE"))
-	name := strings.TrimSpace(os.Getenv("SUPER_ADMIN_NAME"))
-	password := os.Getenv("SUPER_ADMIN_PASSWORD")
+	email := strings.TrimSpace(cfg.SuperAdmin.Email)
+	phone := strings.TrimSpace(cfg.SuperAdmin.Phone)
+	name := strings.TrimSpace(cfg.SuperAdmin.Name)
+	password := cfg.SuperAdmin.Password
 
 	if name == "" {
 		name = "Super Admin"
@@ -150,14 +152,14 @@ func ensureSuperAdmin(db *gorm.DB) error {
 		if env == "production" {
 			return errors.New("SUPER_ADMIN_EMAIL or SUPER_ADMIN_PHONE must be set in production")
 		}
-		email = "superAdmin@GameLink.com"
+		email = "admin@gamelink.local"
 	}
 
 	if password == "" {
 		if env == "production" {
 			return errors.New("SUPER_ADMIN_PASSWORD must be set in production")
 		}
-		password = "admin123"
+		password = "Admin@123456"
 	}
 
 	// Avoid unique constraint conflicts when phone 为空且已有空手机号行

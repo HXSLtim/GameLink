@@ -26,6 +26,8 @@ type AppConfig struct {
 	Crypto        CryptoConfig
 	Auth          AuthConfig
 	Seed          SeedConfig
+	SuperAdmin    SuperAdminConfig
+	AdminAuth     AdminAuthConfig
 }
 
 // DatabaseConfig 描述数据库驱动与连接信息。
@@ -68,6 +70,19 @@ type SeedConfig struct {
 	Enabled bool `yaml:"enabled"`
 }
 
+// SuperAdminConfig 描述超级管理员初始化配置。
+type SuperAdminConfig struct {
+	Email    string `yaml:"email"`
+	Password string `yaml:"password"`
+	Name     string `yaml:"name"`
+	Phone    string `yaml:"phone"`
+}
+
+// AdminAuthConfig 描述管理员认证模式配置。
+type AdminAuthConfig struct {
+	Mode string `yaml:"mode"`
+}
+
 type cryptoFileConfig struct {
 	Enabled      *bool    `yaml:"enabled"`
 	SecretKey    string   `yaml:"secret_key"`
@@ -82,16 +97,29 @@ type authFileConfig struct {
 	TokenTTLHours *int   `yaml:"token_ttl_hours"`
 }
 
+type superAdminFileConfig struct {
+	Email    string `yaml:"email"`
+	Password string `yaml:"password"`
+	Name     string `yaml:"name"`
+	Phone    string `yaml:"phone"`
+}
+
+type adminAuthFileConfig struct {
+	Mode string `yaml:"mode"`
+}
+
 type fileConfig struct {
 	Server struct {
 		Port          string `yaml:"port"`
 		EnableSwagger *bool  `yaml:"enable_swagger"`
 	} `yaml:"server"`
-	Database DatabaseConfig   `yaml:"database"`
-	Cache    CacheConfig      `yaml:"cache"`
-	Crypto   cryptoFileConfig `yaml:"crypto"`
-	Auth     authFileConfig   `yaml:"auth"`
-	Seed     SeedConfig       `yaml:"seed"`
+	Database  DatabaseConfig   `yaml:"database"`
+	Cache     CacheConfig      `yaml:"cache"`
+	Crypto    cryptoFileConfig `yaml:"crypto"`
+	Auth      authFileConfig   `yaml:"auth"`
+	Seed      SeedConfig       `yaml:"seed"`
+	SuperAdmin superAdminFileConfig  `yaml:"super_admin"`
+	AdminAuth  adminAuthFileConfig  `yaml:"admin_auth"`
 }
 
 // Load 读取配置文件及环境变量，生成最终配置。
@@ -129,6 +157,15 @@ func Load() AppConfig {
 			TokenTTLHours: defaultTokenTTL,
 		},
 		Seed: SeedConfig{Enabled: false},
+		SuperAdmin: SuperAdminConfig{
+			Email:    "admin@gamelink.local",
+			Password: "Admin@123456",
+			Name:     "Super Admin",
+			Phone:    "",
+		},
+		AdminAuth: AdminAuthConfig{
+			Mode: "admin", // 默认使用 AdminAuth，生产环境建议使用 jwt
+		},
 	}
 
 	loadFromFile(env, &cfg)
@@ -224,6 +261,21 @@ func loadFromFile(env string, cfg *AppConfig) {
 	if fc.Seed.Enabled {
 		cfg.Seed.Enabled = fc.Seed.Enabled
 	}
+	if fc.SuperAdmin.Email != "" {
+		cfg.SuperAdmin.Email = fc.SuperAdmin.Email
+	}
+	if fc.SuperAdmin.Password != "" {
+		cfg.SuperAdmin.Password = fc.SuperAdmin.Password
+	}
+	if fc.SuperAdmin.Name != "" {
+		cfg.SuperAdmin.Name = fc.SuperAdmin.Name
+	}
+	if fc.SuperAdmin.Phone != "" {
+		cfg.SuperAdmin.Phone = fc.SuperAdmin.Phone
+	}
+	if fc.AdminAuth.Mode != "" {
+		cfg.AdminAuth.Mode = fc.AdminAuth.Mode
+	}
 }
 
 func overrideFromEnv(cfg *AppConfig) {
@@ -308,6 +360,25 @@ func overrideFromEnv(cfg *AppConfig) {
 		} else {
 			cfg.Seed.Enabled = enabled
 		}
+	}
+
+	// 超级管理员配置
+	if email := os.Getenv("SUPER_ADMIN_EMAIL"); email != "" {
+		cfg.SuperAdmin.Email = email
+	}
+	if password := os.Getenv("SUPER_ADMIN_PASSWORD"); password != "" {
+		cfg.SuperAdmin.Password = password
+	}
+	if name := os.Getenv("SUPER_ADMIN_NAME"); name != "" {
+		cfg.SuperAdmin.Name = name
+	}
+	if phone := os.Getenv("SUPER_ADMIN_PHONE"); phone != "" {
+		cfg.SuperAdmin.Phone = phone
+	}
+
+	// 管理员认证模式
+	if mode := os.Getenv("ADMIN_AUTH_MODE"); mode != "" {
+		cfg.AdminAuth.Mode = strings.ToLower(mode)
 	}
 }
 
