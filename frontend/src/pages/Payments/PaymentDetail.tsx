@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Card, Button, Tag, Modal, Input } from '../../components';
+import { Card, Button, Tag, Modal } from '../../components';
 import { paymentApi } from '../../services/api/payment';
 import type { PaymentDetail, RefundPaymentRequest } from '../../types/payment';
 import { PAYMENT_STATUS_TEXT, PAYMENT_METHOD_TEXT, PAYMENT_METHOD_ICON } from '../../types/payment';
@@ -22,7 +22,7 @@ export const PaymentDetailPage: React.FC = () => {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
 
   // 加载支付详情
-  const loadPaymentDetail = async () => {
+  const loadPaymentDetail = useCallback(async () => {
     if (!id) return;
 
     setLoading(true);
@@ -34,11 +34,11 @@ export const PaymentDetailPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     loadPaymentDetail();
-  }, [id]);
+  }, [loadPaymentDetail]);
 
   // 申请退款
   const handleRefund = async () => {

@@ -24,6 +24,9 @@ func NewRoleHandler(roleSvc *service.RoleService) *RoleHandler {
 // ListRoles 获取角色列表。
 func (h *RoleHandler) ListRoles(c *gin.Context) {
 	withPermissions := c.Query("with_permissions") == "true"
+	keyword := c.Query("keyword")
+	isSystemStr := c.Query("isSystem")
+
 	page, pageSize, ok := parsePagination(c)
 	if !ok {
 		return
@@ -37,7 +40,19 @@ func (h *RoleHandler) ListRoles(c *gin.Context) {
 		roles, err = h.roleSvc.ListRolesWithPermissions(c.Request.Context())
 		total = int64(len(roles))
 	} else {
-		roles, total, err = h.roleSvc.ListRolesPaged(c.Request.Context(), page, pageSize)
+		// 解析 isSystem 参数
+		var isSystem *bool
+		if isSystemStr != "" {
+			val := isSystemStr == "true"
+			isSystem = &val
+		}
+
+		// 如果有过滤条件，使用过滤查询
+		if keyword != "" || isSystem != nil {
+			roles, total, err = h.roleSvc.ListRolesPagedWithFilter(c.Request.Context(), page, pageSize, keyword, isSystem)
+		} else {
+			roles, total, err = h.roleSvc.ListRolesPaged(c.Request.Context(), page, pageSize)
+		}
 	}
 
 	if err != nil {

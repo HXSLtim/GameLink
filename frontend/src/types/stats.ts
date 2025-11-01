@@ -27,14 +27,12 @@ export interface DashboardStats {
  * 订单统计
  */
 export interface OrderStatistics {
-  total: number;
-  pending: number;
-  confirmed: number;
-  in_progress: number;
-  completed: number;
-  cancelled: number;
-  today_orders: number;
-  today_revenue: number;
+  pending?: number;
+  confirmed?: number;
+  in_progress?: number;
+  completed?: number;
+  canceled?: number;
+  refunded?: number;
 }
 
 /**
@@ -42,70 +40,41 @@ export interface OrderStatistics {
  */
 export interface RevenueTrendPoint {
   date: string; // 日期 (YYYY-MM-DD)
-  revenue_cents: number; // 收入（分）
-  order_count: number; // 订单数量
-  avg_order_value: number; // 平均订单价值
+  value: number; // 收入（分）
 }
 
 /**
- * 收入趋势数据
+ * 收入趋势数据（后端直接返回数组）
  */
-export interface RevenueTrendData {
-  trend: RevenueTrendPoint[];
-  total_revenue_cents: number;
-  total_orders: number;
-  avg_daily_revenue_cents: number;
-  period_start: string;
-  period_end: string;
-}
+export type RevenueTrendData = RevenueTrendPoint[];
 
 /**
  * 用户增长数据点
  */
 export interface UserGrowthPoint {
   date: string; // 日期 (YYYY-MM-DD)
-  new_users: number; // 新增用户
-  new_players: number; // 新增陪玩师
-  total_users: number; // 累计用户
-  total_players: number; // 累计陪玩师
+  value: number; // 新增数量
 }
 
 /**
- * 用户增长数据
+ * 用户增长数据（后端直接返回数组）
  */
-export interface UserGrowthData {
-  trend: UserGrowthPoint[];
-  total_new_users: number;
-  total_new_players: number;
-  avg_daily_new_users: number;
-  period_start: string;
-  period_end: string;
-}
+export type UserGrowthData = UserGrowthPoint[];
 
 /**
  * TOP 陪玩师
  */
 export interface TopPlayer {
-  player_id: number;
-  user_id: number;
-  player_name: string;
-  avatar_url?: string;
-  order_count: number;
-  total_revenue_cents: number;
-  avg_rating: number;
-  review_count: number;
-  completion_rate: number;
-  main_game?: string;
+  playerId: number;
+  nickname: string;
+  ratingAverage: number;
+  ratingCount: number;
 }
 
 /**
- * TOP 陪玩师数据
+ * TOP 陪玩师数据（后端直接返回数组）
  */
-export interface TopPlayersData {
-  players: TopPlayer[];
-  period_start: string;
-  period_end: string;
-}
+export type TopPlayersData = TopPlayer[];
 
 /**
  * 审计总览 - 按实体类型统计

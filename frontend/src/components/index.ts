@@ -6,6 +6,8 @@ export { BulkActions } from './BulkActions';
 export type { BulkAction } from './BulkActions';
 export { Button } from './Button';
 export { Card } from './Card';
+export { Checkbox } from './Checkbox';
+export type { CheckboxProps } from './Checkbox';
 export { DataTable } from './DataTable';
 export type { DataTableProps, FilterConfig } from './DataTable';
 export { DeleteConfirmModal } from './DeleteConfirmModal';

@@ -48,6 +48,17 @@ func (s *PermissionService) ListPermissionsPaged(ctx context.Context, page, page
 	return s.permissions.ListPaged(ctx, page, pageSize)
 }
 
+// ListPermissionsPagedWithFilter 分页获取权限列表（支持过滤）。
+func (s *PermissionService) ListPermissionsPagedWithFilter(ctx context.Context, page, pageSize int, keyword, method, group string) ([]model.Permission, int64, error) {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 20
+	}
+	return s.permissions.ListPagedWithFilter(ctx, page, pageSize, keyword, method, group)
+}
+
 // ListPermissionsByGroup 按分组获取权限。
 func (s *PermissionService) ListPermissionsByGroup(ctx context.Context, group string) ([]model.Permission, error) {
 	grouped, err := s.permissions.ListByGroup(ctx)

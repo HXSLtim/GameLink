@@ -157,7 +157,7 @@ export const Select: React.FC<SelectProps> = ({
         const result = await asyncSearch(val);
         setInternalOptions(result);
         setHighlightIndex(0);
-      } catch (e) {
+      } catch {
         // swallow errors to keep UX smooth
       }
     }

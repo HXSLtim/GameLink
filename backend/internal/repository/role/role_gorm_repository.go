@@ -44,6 +44,38 @@ func (r *roleRepository) ListPaged(ctx context.Context, page, pageSize int) ([]m
 	return roles, total, err
 }
 
+// ListPagedWithFilter 分页获取角色列表（支持过滤）
+func (r *roleRepository) ListPagedWithFilter(ctx context.Context, page, pageSize int, keyword string, isSystem *bool) ([]model.RoleModel, int64, error) {
+	var roles []model.RoleModel
+	var total int64
+
+	query := r.db.WithContext(ctx).Model(&model.RoleModel{})
+
+	// 关键词搜索（匹配name或slug）
+	if keyword != "" {
+		query = query.Where("name LIKE ? OR slug LIKE ?", "%"+keyword+"%", "%"+keyword+"%")
+	}
+
+	// 系统角色过滤
+	if isSystem != nil {
+		query = query.Where("is_system = ?", *isSystem)
+	}
+
+	// 统计总数
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// 分页查询
+	offset := (page - 1) * pageSize
+	err := query.Order("is_system DESC, slug").
+		Offset(offset).
+		Limit(pageSize).
+		Find(&roles).Error
+
+	return roles, total, err
+}
+
 func (r *roleRepository) ListWithPermissions(ctx context.Context) ([]model.RoleModel, error) {
 	var roles []model.RoleModel
 	err := r.db.WithContext(ctx).

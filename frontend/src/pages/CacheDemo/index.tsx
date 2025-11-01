@@ -29,7 +29,7 @@ export const CacheDemo: React.FC = () => {
               跳转到页面 B
             </Button>
           </Space>
-          <div style={{ marginTop: 12, color: '#666' }}>
+          <div style={{ marginTop: 12, color: 'var(--text-secondary)' }}>
             在开启缓存时，页面内的计时器与输入内容会在 A/B 跳转间保持；关闭缓存将导致子页重新挂载。
           </div>
         </Card>

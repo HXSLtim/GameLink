@@ -21,3 +21,5 @@ func (RolePermission) TableName() string {
 
 
 
+
+

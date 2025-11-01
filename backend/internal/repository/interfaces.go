@@ -63,6 +63,7 @@ type PaymentRepository interface {
 type PermissionRepository interface {
 	List(ctx context.Context) ([]model.Permission, error)
 	ListPaged(ctx context.Context, page, pageSize int) ([]model.Permission, int64, error)
+	ListPagedWithFilter(ctx context.Context, page, pageSize int, keyword, method, group string) ([]model.Permission, int64, error)
 	ListByGroup(ctx context.Context) (map[string][]model.Permission, error)
 	ListGroups(ctx context.Context) ([]string, error)
 	Get(ctx context.Context, id uint64) (*model.Permission, error)
@@ -80,6 +81,7 @@ type PermissionRepository interface {
 type RoleRepository interface {
 	List(ctx context.Context) ([]model.RoleModel, error)
 	ListPaged(ctx context.Context, page, pageSize int) ([]model.RoleModel, int64, error)
+	ListPagedWithFilter(ctx context.Context, page, pageSize int, keyword string, isSystem *bool) ([]model.RoleModel, int64, error)
 	ListWithPermissions(ctx context.Context) ([]model.RoleModel, error)
 	Get(ctx context.Context, id uint64) (*model.RoleModel, error)
 	GetWithPermissions(ctx context.Context, id uint64) (*model.RoleModel, error)

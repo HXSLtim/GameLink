@@ -23,7 +23,10 @@ func NewPermissionHandler(permissionSvc *service.PermissionService) *PermissionH
 
 // ListPermissions 获取权限列表。
 func (h *PermissionHandler) ListPermissions(c *gin.Context) {
+	keyword := c.Query("keyword")
+	method := c.Query("method")
 	group := c.Query("group")
+
 	page, pageSize, ok := parsePagination(c)
 	if !ok {
 		return
@@ -33,9 +36,9 @@ func (h *PermissionHandler) ListPermissions(c *gin.Context) {
 	var total int64
 	var err error
 
-	if group != "" {
-		permissions, err = h.permissionSvc.ListPermissionsByGroup(c.Request.Context(), group)
-		total = int64(len(permissions))
+	// 如果有过滤条件，使用过滤查询
+	if keyword != "" || method != "" || group != "" {
+		permissions, total, err = h.permissionSvc.ListPermissionsPagedWithFilter(c.Request.Context(), page, pageSize, keyword, method, group)
 	} else {
 		permissions, total, err = h.permissionSvc.ListPermissionsPaged(c.Request.Context(), page, pageSize)
 	}
@@ -188,7 +191,7 @@ func (h *PermissionHandler) DeletePermission(c *gin.Context) {
 
 // GetRolePermissions 获取角色的权限列表。
 func (h *PermissionHandler) GetRolePermissions(c *gin.Context) {
-	roleID, err := parseUintParam(c, "role_id")
+	roleID, err := parseUintParam(c, "id")
 	if err != nil {
 		writeJSONError(c, http.StatusBadRequest, "无效的角色ID")
 		return
@@ -210,7 +213,7 @@ func (h *PermissionHandler) GetRolePermissions(c *gin.Context) {
 
 // GetUserPermissions 获取用户的权限列表。
 func (h *PermissionHandler) GetUserPermissions(c *gin.Context) {
-	userID, err := parseUintParam(c, "user_id")
+	userID, err := parseUintParam(c, "id")
 	if err != nil {
 		writeJSONError(c, http.StatusBadRequest, "无效的用户ID")
 		return

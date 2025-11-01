@@ -1,0 +1,111 @@
+// ==================== 权限管理页面样式 ====================
+// Neo-brutalism 设计系统 - 纯黑白风格
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+  height: 100%;
+}
+
+// ==================== HTTP方法标签 ====================
+
+.methodTag {
+  font-weight: var(--font-weight-black);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-width: var(--border-width-base);
+  min-width: 70px;
+  text-align: center;
+  font-family: monospace;
+}
+
+// ==================== 路径显示 ====================
+
+.path {
+  font-family: monospace;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  background-color: var(--bg-secondary);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: var(--border-width-base) solid var(--border-color);
+  display: inline-block;
+  font-weight: var(--font-weight-medium);
+}
+
+// ==================== 权限代码 ====================
+
+.code {
+  font-family: monospace;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+// ==================== 分组标签 ====================
+
+.groupTag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 2px var(--spacing-sm);
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: var(--border-width-base) solid var(--border-color);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+// ==================== 描述文本 ====================
+
+.description {
+  max-width: 300px;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-relaxed);
+}
+
+// ==================== 操作按钮组 ====================
+
+.actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  
+  button {
+    min-width: 60px;
+  }
+}
+
+// ==================== 响应式 ====================
+
+@media (max-width: 768px) {
+  .container {
+    gap: var(--spacing-lg);
+  }
+
+  .actions {
+    flex-direction: column;
+    
+    button {
+      width: 100%;
+    }
+  }
+
+  .path {
+    font-size: var(--font-size-xs);
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .description {
+    max-width: 100%;
+  }
+}
+
+
+

@@ -1,6 +1,5 @@
 import { Outlet, useNavigate } from 'react-router-dom';
 import { Layout, RouteCache } from 'components';
-import type { MenuItem } from 'components/Layout';
 import { useAuth } from 'contexts/AuthContext';
 import { useBreadcrumb } from '../../hooks/useBreadcrumb';
 import { useRouteCache } from '../../hooks/useRouteCache';

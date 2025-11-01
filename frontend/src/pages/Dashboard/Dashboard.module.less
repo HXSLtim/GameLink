@@ -118,34 +118,34 @@
   }
 
   &.pending {
-    border-left-color: #faad14;
+    border-left-color: var(--color-warning);
 
     &:hover {
-      background-color: #fffbe6;
+      background-color: var(--bg-warning);
     }
   }
 
   &.inProgress {
-    border-left-color: #1890ff;
+    border-left-color: var(--color-info);
 
     &:hover {
-      background-color: #e6f7ff;
+      background-color: var(--bg-info);
     }
   }
 
   &.completed {
-    border-left-color: #52c41a;
+    border-left-color: var(--color-success);
 
     &:hover {
-      background-color: #f6ffed;
+      background-color: var(--bg-success);
     }
   }
 
   &.canceled {
-    border-left-color: #8c8c8c;
+    border-left-color: var(--text-tertiary);
 
     &:hover {
-      background-color: #fafafa;
+      background-color: var(--bg-secondary);
     }
   }
 }

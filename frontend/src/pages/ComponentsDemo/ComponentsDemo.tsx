@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
   Button,
-  Grid,
   Row,
   Col,
   Space,
@@ -65,6 +64,139 @@ const treeData = [
     ],
   },
 ];
+
+type RowType = { id: number; name: string; status: 'active' | 'inactive'; createdAt: string };
+
+const DataTableDemoSection: React.FC = () => {
+  const dtMock = useMemo<RowType[]>(
+    () =>
+      Array.from({ length: 24 }).map((_, i) => ({
+        id: i + 1,
+        name: `用户-${i + 1}`,
+        status: i % 3 === 0 ? 'inactive' : 'active',
+        createdAt: new Date(2024, 0, 1 + i).toISOString().slice(0, 10),
+      })),
+    [],
+  );
+  const [dtQuery, setDtQuery] = useState('');
+  const [dtStatus, setDtStatus] = useState<string | undefined>(undefined);
+  const [dtPage, setDtPage] = useState(1);
+  const dtPageSize = 5;
+  const dtFiltered = useMemo(
+    () =>
+      dtMock.filter(
+        (r) => (!dtQuery || r.name.includes(dtQuery)) && (!dtStatus || r.status === dtStatus),
+      ),
+    [dtMock, dtQuery, dtStatus],
+  );
+  const dtTotal = dtFiltered.length;
+  const dtPaged = useMemo(
+    () => dtFiltered.slice((dtPage - 1) * dtPageSize, dtPage * dtPageSize),
+    [dtFiltered, dtPage],
+  );
+  const dtColumns = [
+    { key: 'name', title: '姓名', dataIndex: 'name' as const },
+    {
+      key: 'status',
+      title: '状态',
+      render: (_: any, r: RowType) => (
+        <Tag color={r.status === 'active' ? 'success' : 'default'}>{r.status}</Tag>
+      ),
+    },
+    { key: 'created', title: '创建日期', dataIndex: 'createdAt' as const },
+    {
+      key: 'op',
+      title: '操作',
+      render: (_: any, r: RowType) => (
+        <ActionButtons
+          onView={() => message({ type: 'info', content: `查看 ${r.name}` })}
+          onEdit={() => message({ type: 'success', content: `编辑 ${r.name}` })}
+          onDelete={() => message({ type: 'warning', content: `删除 ${r.name}` })}
+        />
+      ),
+    },
+  ];
+
+  return (
+    <section className={styles.section}>
+      <h2 className={styles.sectionTitle}>DataTable</h2>
+      <DataTable<RowType>
+        title="用户列表"
+        headerActions={
+          <Button
+            onClick={() =>
+              notify({ type: 'success', title: '新增', description: '创建成功' })
+            }
+          >
+            新增
+          </Button>
+        }
+        filters={[
+          {
+            label: '关键词',
+            key: 'query',
+            element: (
+              <Input
+                placeholder="按姓名搜索"
+                value={dtQuery}
+                onChange={(e) => setDtQuery(e.target.value)}
+                allowClear
+              />
+            ),
+          },
+          {
+            label: '状态',
+            key: 'status',
+            element: (
+              <Select
+                value={dtStatus}
+                options={[
+                  { label: '全部', value: undefined as any },
+                  { label: '启用', value: 'active' },
+                  { label: '停用', value: 'inactive' },
+                ]}
+                onChange={(val) =>
+                  setDtStatus(Array.isArray(val) ? undefined : (val as string))
+                }
+                placeholder="选择状态"
+              />
+            ),
+          },
+        ]}
+        filterActions={(
+          <Space>
+            <Button
+              variant="outlined"
+              onClick={() => {
+                setDtQuery('');
+                setDtStatus(undefined);
+                setDtPage(1);
+              }}
+            >
+              重置
+            </Button>
+            <Button
+              onClick={() =>
+                notify({ type: 'info', title: '筛选', description: `结果：${dtTotal} 条` })
+              }
+            >
+              筛选
+            </Button>
+          </Space>
+        )}
+        columns={dtColumns}
+        dataSource={dtPaged}
+        rowKey="id"
+        pagination={{
+          current: dtPage,
+          pageSize: dtPageSize,
+          total: dtTotal,
+          onChange: (p) => setDtPage(p),
+        }}
+      />
+    </section>
+  );
+};
 
 export const ComponentsDemo: React.FC = () => {
   const gutter = useMemo<[number, number]>(() => [16, 16], []);
@@ -482,67 +614,7 @@ export const ComponentsDemo: React.FC = () => {
         </Space>
       </section>
 
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>DataTable</h2>
-        {(() => {
-          type RowType = { id: number; name: string; status: 'active' | 'inactive'; createdAt: string };
-          const dtMock: RowType[] = Array.from({ length: 24 }).map((_, i) => ({
-            id: i + 1,
-            name: `用户-${i + 1}`,
-            status: i % 3 === 0 ? 'inactive' : 'active',
-            createdAt: new Date(2024, 0, 1 + i).toISOString().slice(0, 10),
-          }));
-          const [dtQuery, setDtQuery] = useState('');
-          const [dtStatus, setDtStatus] = useState<string | undefined>(undefined);
-          const [dtPage, setDtPage] = useState(1);
-          const dtPageSize = 5;
-          const dtFiltered = useMemo(() => dtMock.filter((r) =>
-            (!dtQuery || r.name.includes(dtQuery)) && (!dtStatus || r.status === dtStatus)
-          ), [dtQuery, dtStatus]);
-          const dtTotal = dtFiltered.length;
-          const dtPaged = useMemo(() => dtFiltered.slice((dtPage - 1) * dtPageSize, dtPage * dtPageSize), [dtFiltered, dtPage]);
-          const dtColumns = [
-            { key: 'name', title: '姓名', dataIndex: 'name' as const },
-            { key: 'status', title: '状态', render: (_: any, r: RowType) => (<Tag color={r.status === 'active' ? 'success' : 'default'}>{r.status}</Tag>) },
-            { key: 'created', title: '创建日期', dataIndex: 'createdAt' as const },
-            { key: 'op', title: '操作', render: (_: any, r: RowType) => (
-              <ActionButtons
-                onView={() => message({ type: 'info', content: `查看 ${r.name}` })}
-                onEdit={() => message({ type: 'success', content: `编辑 ${r.name}` })}
-                onDelete={() => message({ type: 'warning', content: `删除 ${r.name}` })}
-              />
-            ) },
-          ];
-
-          return (
-            <DataTable<RowType>
-              title="用户列表"
-              headerActions={<Button onClick={() => notify({ type: 'success', title: '新增', description: '创建成功' })}>新增</Button>}
-              filters={[
-                { label: '关键词', key: 'query', element: <Input placeholder="按姓名搜索" value={dtQuery} onChange={(e) => setDtQuery(e.target.value)} allowClear /> },
-                { label: '状态', key: 'status', element: (
-                  <Select
-                    value={dtStatus}
-                    options={[{ label: '全部', value: undefined as any }, { label: '启用', value: 'active' }, { label: '停用', value: 'inactive' }]}
-                    onChange={(val) => setDtStatus(Array.isArray(val) ? undefined : (val as string))}
-                    placeholder="选择状态"
-                  />
-                ) },
-              ]}
-              filterActions={(
-                <Space>
-                  <Button variant="outlined" onClick={() => { setDtQuery(''); setDtStatus(undefined); setDtPage(1); }}>重置</Button>
-                  <Button onClick={() => notify({ type: 'info', title: '筛选', description: `结果：${dtTotal} 条` })}>筛选</Button>
-                </Space>
-              )}
-              columns={dtColumns}
-              dataSource={dtPaged}
-              rowKey="id"
-              pagination={{ current: dtPage, pageSize: dtPageSize, total: dtTotal, onChange: (p) => setDtPage(p) }}
-            />
-          );
-        })()}
-      </section>
+      <DataTableDemoSection />
 
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Notification & Message</h2>

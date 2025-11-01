@@ -1,0 +1,70 @@
+// ==================== 角色表单模态框样式 ====================
+// Neo-brutalism 设计系统 - 纯黑白风格
+
+.modalFooter {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: flex-end;
+  
+  button {
+    min-width: 100px;
+  }
+}
+
+.formContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+  padding: var(--spacing-md) 0;
+}
+
+.errorMessage {
+  padding: var(--spacing-md);
+  background-color: var(--bg-secondary);
+  border: var(--border-width-thick) solid var(--border-color);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+}
+
+.formItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.formLabel {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.required {
+  color: var(--text-primary);
+}
+
+.formHint {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  font-style: italic;
+  margin-top: var(--spacing-xs);
+}
+
+@media (max-width: 768px) {
+  .modalFooter {
+    flex-direction: column;
+    
+    button {
+      width: 100%;
+    }
+  }
+
+  .formContent {
+    gap: var(--spacing-lg);
+  }
+}
+

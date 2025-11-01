@@ -44,6 +44,43 @@ func (r *permissionRepository) ListPaged(ctx context.Context, page, pageSize int
 	return permissions, total, err
 }
 
+// ListPagedWithFilter 分页获取权限列表（支持过滤）
+func (r *permissionRepository) ListPagedWithFilter(ctx context.Context, page, pageSize int, keyword, method, group string) ([]model.Permission, int64, error) {
+	var permissions []model.Permission
+	var total int64
+
+	query := r.db.WithContext(ctx).Model(&model.Permission{})
+
+	// 关键词搜索（匹配code, path, description）
+	if keyword != "" {
+		query = query.Where("code LIKE ? OR path LIKE ? OR description LIKE ?", "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%")
+	}
+
+	// HTTP方法过滤
+	if method != "" {
+		query = query.Where("method = ?", method)
+	}
+
+	// 分组过滤
+	if group != "" {
+		query = query.Where("permissions.\"group\" = ?", group)
+	}
+
+	// 统计总数
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// 分页查询
+	offset := (page - 1) * pageSize
+	err := query.Order("permissions.\"group\", permissions.method, permissions.path").
+		Offset(offset).
+		Limit(pageSize).
+		Find(&permissions).Error
+
+	return permissions, total, err
+}
+
 func (r *permissionRepository) ListByGroup(ctx context.Context) (map[string][]model.Permission, error) {
 	var permissions []model.Permission
 	err := r.db.WithContext(ctx).

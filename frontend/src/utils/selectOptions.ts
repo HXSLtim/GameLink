@@ -96,3 +96,20 @@ export const CURRENCY_OPTIONS: SelectOption[] = [
   { label: '人民币', value: 'CNY' },
   { label: '美元', value: 'USD' },
 ];
+
+// ==================== HTTP方法选项 ====================
+export const HTTP_METHOD_OPTIONS: SelectOption[] = [
+  { label: '全部方法', value: '' },
+  { label: 'GET', value: 'GET' },
+  { label: 'POST', value: 'POST' },
+  { label: 'PUT', value: 'PUT' },
+  { label: 'PATCH', value: 'PATCH' },
+  { label: 'DELETE', value: 'DELETE' },
+];
+
+// ==================== 布尔选项 ====================
+export const BOOLEAN_OPTIONS: SelectOption[] = [
+  { label: '全部', value: '' },
+  { label: '是', value: 'true' },
+  { label: '否', value: 'false' },
+];

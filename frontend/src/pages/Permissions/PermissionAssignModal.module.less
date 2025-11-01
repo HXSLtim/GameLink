@@ -1,0 +1,327 @@
+// ==================== 权限分配模态框样式 ====================
+// Neo-brutalism 设计系统 - 纯黑白风格
+
+.container {
+  padding: var(--spacing-lg);
+}
+
+// ==================== 加载和错误状态 ====================
+
+.loading,
+.error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  padding: var(--spacing-2xl);
+}
+
+.error {
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  text-align: center;
+  background-color: var(--bg-secondary);
+  border: var(--border-width-thick) solid var(--border-color);
+  box-shadow: var(--shadow-base);
+}
+
+// ==================== 搜索框 ====================
+
+.searchBox {
+  margin-bottom: var(--spacing-xl);
+  
+  input {
+    width: 100%;
+    padding: var(--spacing-md);
+    border: var(--border-width-base) solid var(--border-color);
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
+    transition: all var(--duration-base);
+    
+    &:focus {
+      outline: none;
+      border-width: var(--border-width-thick);
+      box-shadow: var(--shadow-sm);
+      transform: translateY(-1px);
+    }
+    
+    &::placeholder {
+      color: var(--text-tertiary);
+    }
+  }
+}
+
+// ==================== 权限树容器 ====================
+
+.treeContainer {
+  max-height: 500px;
+  overflow-y: auto;
+  border: var(--border-width-base) solid var(--border-color);
+  background-color: var(--bg-primary);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow-sm);
+  
+  // 滚动条样式
+  &::-webkit-scrollbar {
+    width: 12px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-left: var(--border-width-base) solid var(--border-color);
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border: 2px solid var(--bg-secondary);
+    
+    &:hover {
+      background: var(--text-primary);
+    }
+  }
+}
+
+// ==================== 权限分组 ====================
+
+.permissionGroup {
+  margin-bottom: var(--spacing-xl);
+  border: var(--border-width-base) solid var(--border-color);
+  background-color: var(--bg-primary);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--duration-base);
+  
+  &:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 var(--border-color);
+  }
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.groupHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  background-color: var(--bg-secondary);
+  border-bottom: var(--border-width-base) solid var(--border-color);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+  
+  &:hover {
+    background-color: var(--bg-inverse);
+    color: var(--text-inverse);
+  }
+}
+
+.groupCheckbox {
+  flex-shrink: 0;
+}
+
+.groupName {
+  flex: 1;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.groupCount {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-semibold);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background-color: var(--bg-primary);
+  border: var(--border-width-base) solid var(--border-color);
+}
+
+// ==================== 权限列表 ====================
+
+.permissionList {
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.permissionItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background-color: var(--bg-primary);
+  border: var(--border-width-base) solid transparent;
+  transition: all var(--duration-fast);
+  
+  &:hover {
+    border-color: var(--border-color);
+    background-color: var(--bg-secondary);
+    transform: translateX(4px);
+  }
+}
+
+.permissionCheckbox {
+  flex-shrink: 0;
+}
+
+.permissionDetails {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.permissionMain {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.methodBadge {
+  font-family: monospace;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-black);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 2px var(--spacing-sm);
+  border: var(--border-width-base) solid var(--border-color);
+  min-width: 60px;
+  text-align: center;
+  
+  &.get {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+  }
+  
+  &.post {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+  
+  &.put,
+  &.patch {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border-width: var(--border-width-thick);
+  }
+  
+  &.delete {
+    background-color: var(--bg-inverse);
+    color: var(--text-inverse);
+    border-width: var(--border-width-thick);
+  }
+}
+
+.permissionPath {
+  font-family: monospace;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+}
+
+.permissionCode {
+  font-family: monospace;
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.permissionDescription {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+
+// ==================== 统计信息 ====================
+
+.statsBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-lg);
+  margin-top: var(--spacing-xl);
+  background-color: var(--bg-secondary);
+  border: var(--border-width-base) solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.statsText {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  
+  strong {
+    font-weight: var(--font-weight-black);
+    font-size: var(--font-size-lg);
+    margin: 0 var(--spacing-xs);
+  }
+}
+
+// ==================== 操作按钮 ====================
+
+.actions {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-xl);
+  
+  button {
+    flex: 1;
+  }
+}
+
+// ==================== 响应式 ====================
+
+@media (max-width: 768px) {
+  .container {
+    padding: var(--spacing-md);
+  }
+
+  .treeContainer {
+    max-height: 400px;
+    padding: var(--spacing-md);
+  }
+
+  .permissionGroup {
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .groupHeader {
+    padding: var(--spacing-md);
+  }
+
+  .groupName {
+    font-size: var(--font-size-base);
+  }
+
+  .permissionItem {
+    padding: var(--spacing-sm);
+  }
+
+  .permissionMain {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+  }
+
+  .statsBar {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    text-align: center;
+  }
+
+  .actions {
+    flex-direction: column;
+    
+    button {
+      width: 100%;
+    }
+  }
+}
+
+
+

@@ -9,11 +9,11 @@
   text-align: center;
   padding: 48px 24px;
   font-size: 16px;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .error {
-  color: #f5222d;
+  color: var(--color-error);
 }
 
 // 头部
@@ -29,7 +29,7 @@
   padding: 0;
   
   &:hover {
-    color: #1890ff;
+    color: var(--text-primary);
   }
 }
 
@@ -48,7 +48,7 @@
   gap: 24px;
   margin-bottom: 32px;
   padding-bottom: 24px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--border-color-light);
 }
 
 .paymentIcon {
@@ -63,7 +63,7 @@
 .paymentAmount {
   font-size: 36px;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 12px;
 }
 
@@ -75,11 +75,11 @@
 }
 
 .paymentMethod {
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .paymentId {
-  color: #999;
+  color: var(--text-tertiary);
 }
 
 // 详情网格
@@ -98,12 +98,12 @@
 
 .detailLabel {
   font-size: 13px;
-  color: #999;
+  color: var(--text-tertiary);
 }
 
 .detailValue {
   font-size: 15px;
-  color: #333;
+  color: var(--text-primary);
   font-weight: 500;
 }
 
@@ -112,7 +112,7 @@
   display: flex;
   gap: 32px;
   padding-top: 24px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--border-color-light);
   font-size: 14px;
 }
 
@@ -122,15 +122,15 @@
 }
 
 .timestampLabel {
-  color: #999;
+  color: var(--text-tertiary);
 }
 
 .timestampValue {
-  color: #333;
+  color: var(--text-primary);
 }
 
 .relative {
-  color: #999;
+  color: var(--text-tertiary);
   margin-left: 8px;
 }
 
@@ -168,21 +168,21 @@
 .userLabel,
 .refundLabel {
   font-size: 13px;
-  color: #999;
+  color: var(--text-tertiary);
 }
 
 .orderValue,
 .userValue,
 .refundValue {
   font-size: 15px;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .orderLink,
 .userLink {
   font-size: 15px;
   padding: 0;
-  color: #1890ff;
+  color: var(--text-primary);
   
   &:hover {
     text-decoration: underline;
@@ -191,7 +191,7 @@
 
 // 第三方数据
 .providerRaw {
-  background: #fafafa;
+  background: var(--bg-secondary);
   padding: 16px;
   border-radius: 4px;
   font-size: 12px;
@@ -210,7 +210,7 @@
   font-size: 14px;
   
   strong {
-    color: #f5222d;
+    color: var(--color-error);
     font-size: 18px;
   }
 }
@@ -224,18 +224,18 @@
   font-size: 14px;
   font-weight: 500;
   margin-bottom: 8px;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .required {
-  color: #f5222d;
+  color: var(--color-error);
   margin-left: 4px;
 }
 
 .formTextarea {
   width: 100%;
   padding: 8px 12px;
-  border: 1px solid #d9d9d9;
+  border: 1px solid var(--border-color-light);
   border-radius: 4px;
   font-size: 14px;
   line-height: 1.5;
@@ -244,30 +244,30 @@
   
   &:focus {
     outline: none;
-    border-color: #1890ff;
-    box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+    border-color: var(--border-color);
+    box-shadow: 0 0 0 2px var(--ripple-subtle);
   }
   
   &::placeholder {
-    color: #bfbfbf;
+    color: var(--text-disabled);
   }
 }
 
 .refundWarning {
   margin-top: 16px;
   padding: 12px;
-  background: #fff7e6;
-  border-radius: 4px;
-  color: #d46b08;
+  background: var(--bg-warning);
+  border-radius: 0;
+  color: var(--color-warning);
   font-size: 13px;
 }
 
 .deleteWarning {
   margin-top: 12px;
   padding: 12px;
-  background: #fff2f0;
+  background: var(--bg-error-subtle);
   border-radius: 4px;
-  color: #f5222d;
+  color: var(--color-error);
   font-size: 13px;
 }
 

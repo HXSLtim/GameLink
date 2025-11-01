@@ -35,10 +35,15 @@ export const Modal: React.FC<ModalProps> = ({
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
 
+  const handleClose = () => {
+    onClose?.();
+    onCancel?.();
+  };
+
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && visible && onClose) {
-        onClose();
+      if (e.key === 'Escape' && visible) {
+        handleClose();
       }
     };
 
@@ -51,17 +56,16 @@ export const Modal: React.FC<ModalProps> = ({
       document.removeEventListener('keydown', handleEsc);
       document.body.style.overflow = '';
     };
-  }, [visible, onClose]);
+  }, [visible, onClose, onCancel]);
 
   const handleMaskClick = (e: React.MouseEvent) => {
-    if (maskClosable && e.target === e.currentTarget && onClose) {
-      onClose();
+    if (maskClosable && e.target === e.currentTarget) {
+      handleClose();
     }
   };
 
   const handleCancel = () => {
-    onCancel?.();
-    onClose?.();
+    handleClose();
   };
 
   const handleOk = () => {
@@ -76,7 +80,7 @@ export const Modal: React.FC<ModalProps> = ({
       <div className={styles.modalContainer}>
         <div ref={modalRef} className={`${styles.modal} ${className || ''}`} style={{ width }}>
           {closable && (
-            <button className={styles.closeButton} onClick={onClose} aria-label="关闭">
+            <button className={styles.closeButton} onClick={handleClose} aria-label="关闭">
               <CloseIcon />
             </button>
           )}

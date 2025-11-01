@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DataTable, Button, Input, Select, Tag, Modal, SimpleRating, getRatingColor } from '../../components';
+import { DataTable, Button, Input, Select, Modal, SimpleRating } from '../../components';
 import type { FilterConfig } from '../../components/DataTable';
 import type { TableColumn } from '../../components/Table/Table';
 import { reviewApi } from '../../services/api/review';

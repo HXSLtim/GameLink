@@ -40,7 +40,7 @@ export const Tabs: React.FC<TabsProps> = ({
     target?.focus();
   };
 
-  const currentIndex = items.findIndex((i) => i.key === internalKey);
+  // removed unused currentIndex to satisfy lint
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     const enabledItems = items.filter((i) => !i.disabled);
@@ -98,7 +98,7 @@ export const Tabs: React.FC<TabsProps> = ({
         onKeyDown={handleKeyDown}
         ref={listRef}
       >
-        {items.map((item, index) => {
+        {items.map((item) => {
           const selected = item.key === internalKey;
           return (
             <button

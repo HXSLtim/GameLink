@@ -68,6 +68,18 @@ apiClient.interceptors.response.use(
           has_prev: apiResponse.pagination.has_prev,
         };
       }
+      
+      // 检查 data 是否包含 items 和 totalCount（另一种分页格式）
+      if (apiResponse.data && typeof apiResponse.data === 'object' && 
+          'items' in apiResponse.data && 'totalCount' in apiResponse.data) {
+        return {
+          list: apiResponse.data.items,
+          total: apiResponse.data.totalCount,
+          page: apiResponse.data.page || 1,
+          page_size: apiResponse.data.pageSize || 10,
+        };
+      }
+      
       // 普通响应：直接返回 data 部分
       return apiResponse.data;
     } else {

@@ -1,6 +1,7 @@
 import type { OrderStatus } from '../types/order';
 import type { PaymentStatus, PaymentMethod } from '../types/payment';
 import type { UserRole, UserStatus } from '../types/user';
+import type { HTTPMethod } from '../types/rbac';
 
 /**
  * 通用状态格式化工具函数
@@ -168,4 +169,17 @@ export const formatGameCategory = (category: string): string => {
 
 export const getGameCategoryColor = (category: string): string => {
   return GAME_CATEGORY_COLORS[category] || 'default';
+};
+
+// ==================== HTTP 方法 ====================
+export const HTTP_METHOD_COLORS: Record<HTTPMethod, string> = {
+  GET: 'blue',
+  POST: 'green',
+  PUT: 'orange',
+  PATCH: 'cyan',
+  DELETE: 'red',
+};
+
+export const getHTTPMethodColor = (method: HTTPMethod): string => {
+  return HTTP_METHOD_COLORS[method] || 'default';
 };

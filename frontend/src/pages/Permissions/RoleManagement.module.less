@@ -1,0 +1,86 @@
+// ==================== 角色管理页面样式 ====================
+// Neo-brutalism 设计系统 - 纯黑白风格
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+  height: 100%;
+}
+
+// ==================== 操作按钮组 ====================
+
+.actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  
+  button {
+    min-width: 80px;
+  }
+}
+
+// ==================== 表格样式增强 ====================
+
+.statusTag {
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.systemBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 2px var(--spacing-sm);
+  background-color: var(--bg-inverse);
+  color: var(--text-inverse);
+  border: var(--border-width-base) solid var(--border-color);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.normalBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 2px var(--spacing-sm);
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border: var(--border-width-base) solid var(--border-color);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.description {
+  max-width: 400px;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-relaxed);
+}
+
+// ==================== 响应式 ====================
+
+@media (max-width: 768px) {
+  .container {
+    gap: var(--spacing-lg);
+  }
+
+  .actions {
+    flex-direction: column;
+    
+    button {
+      width: 100%;
+    }
+  }
+
+  .description {
+    max-width: 100%;
+  }
+}
+
+
+

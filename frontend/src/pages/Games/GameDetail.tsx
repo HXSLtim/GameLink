@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, Button, Tag, Modal } from '../../components';
 import { gameApi } from '../../services/api/game';
@@ -17,7 +17,7 @@ const GameDetail: React.FC = () => {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
 
   // 加载游戏详情
-  const loadGameDetail = async () => {
+  const loadGameDetail = useCallback(async () => {
     if (!id) return;
 
     setLoading(true);
@@ -29,11 +29,11 @@ const GameDetail: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     loadGameDetail();
-  }, [id]);
+  }, [loadGameDetail]);
 
   // 编辑游戏
   const handleEdit = async (data: UpdateGameRequest) => {

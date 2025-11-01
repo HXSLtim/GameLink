@@ -212,6 +212,9 @@ func main() {
 	statsSvc := service.NewStatsService(statsrepo.NewStatsRepository(orm))
 	admin.RegisterStatsRoutes(api, statsSvc, permMiddleware)
 
+	// System info routes（使用新的权限中间件）
+	admin.RegisterSystemRoutes(api, cfg, sqlDB, cacheClient, permMiddleware)
+
 	// 注册角色和权限管理路由（使用细粒度权限控制）
 	roleHandler := admin.NewRoleHandler(roleSvc)
 	permHandler := admin.NewPermissionHandler(permService)

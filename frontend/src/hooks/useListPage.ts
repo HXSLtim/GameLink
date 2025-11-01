@@ -43,7 +43,7 @@ export interface UseListPageResult<T, Q extends ListQueryParams> {
 export function useListPage<T, Q extends ListQueryParams>({
   initialParams,
   fetchData,
-  autoSearch = true,
+  autoSearch: _autoSearch = true,
   urlParamKeys = [],
 }: UseListPageOptions<T, Q>): UseListPageResult<T, Q> {
   const [searchParams] = useSearchParams();

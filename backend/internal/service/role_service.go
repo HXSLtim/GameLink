@@ -47,6 +47,17 @@ func (s *RoleService) ListRolesPaged(ctx context.Context, page, pageSize int) ([
 	return s.roles.ListPaged(ctx, page, pageSize)
 }
 
+// ListRolesPagedWithFilter 分页获取角色列表（支持过滤）。
+func (s *RoleService) ListRolesPagedWithFilter(ctx context.Context, page, pageSize int, keyword string, isSystem *bool) ([]model.RoleModel, int64, error) {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 20
+	}
+	return s.roles.ListPagedWithFilter(ctx, page, pageSize, keyword, isSystem)
+}
+
 // ListRolesWithPermissions 获取角色列表，预加载权限。
 func (s *RoleService) ListRolesWithPermissions(ctx context.Context) ([]model.RoleModel, error) {
 	return s.roles.ListWithPermissions(ctx)
