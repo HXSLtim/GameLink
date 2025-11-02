@@ -25,7 +25,17 @@ func autoMigrate(db *gorm.DB) error {
 		&model.Order{},
 		&model.Payment{},
 		&model.Review{},
+		&model.Withdraw{},
 		&model.OperationLog{},
+		// Service Item (统一管理护航服务和礼物)
+		&model.ServiceItem{},
+		// Commission models
+		&model.CommissionRule{},
+		&model.CommissionRecord{},
+		&model.MonthlySettlement{},
+		// Ranking models
+		&model.PlayerRanking{},
+		&model.RankingCommissionConfig{},
 		// RBAC models
 		&model.Permission{},
 		&model.RoleModel{},
@@ -52,6 +62,10 @@ func runDataFixups(db *gorm.DB) error {
 	if err := ensureDefaultRoles(db); err != nil {
 		return err
 	}
+	// Ensure default commission rule exists
+	if err := ensureDefaultCommissionRule(db); err != nil {
+		return err
+	}
 	return ensureSuperAdmin(db)
 }
 
@@ -62,10 +76,25 @@ func ensureIndexes(db *gorm.DB) error {
 		"CREATE INDEX IF NOT EXISTS idx_orders_user_created ON orders (user_id, created_at DESC)",
 		"CREATE INDEX IF NOT EXISTS idx_orders_player_created ON orders (player_id, created_at DESC)",
 		"CREATE INDEX IF NOT EXISTS idx_orders_game_created ON orders (game_id, created_at DESC)",
+		"CREATE INDEX IF NOT EXISTS idx_orders_service_type ON orders (service_type, created_at DESC)",
 		// Payments composite indexes
 		"CREATE INDEX IF NOT EXISTS idx_payments_status_created ON payments (status, created_at DESC)",
 		"CREATE INDEX IF NOT EXISTS idx_payments_user_created ON payments (user_id, created_at DESC)",
 		"CREATE INDEX IF NOT EXISTS idx_payments_order_created ON payments (order_id, created_at DESC)",
+		// Withdraws composite indexes
+		"CREATE INDEX IF NOT EXISTS idx_withdraws_status_created ON withdraws (status, created_at DESC)",
+		"CREATE INDEX IF NOT EXISTS idx_withdraws_player_created ON withdraws (player_id, created_at DESC)",
+		"CREATE INDEX IF NOT EXISTS idx_withdraws_user_created ON withdraws (user_id, created_at DESC)",
+		// Service Items indexes
+		"CREATE INDEX IF NOT EXISTS idx_service_items_game_subcat ON service_items (game_id, sub_category)",
+		"CREATE INDEX IF NOT EXISTS idx_service_items_subcat_active ON service_items (sub_category, is_active)",
+		"CREATE INDEX IF NOT EXISTS idx_orders_item_created ON orders (item_id, created_at DESC)",
+		"CREATE INDEX IF NOT EXISTS idx_orders_recipient_player ON orders (recipient_player_id, created_at DESC)",
+		// Commission indexes
+		"CREATE INDEX IF NOT EXISTS idx_commission_records_player_month ON commission_records (player_id, settlement_month)",
+		"CREATE INDEX IF NOT EXISTS idx_commission_records_status_month ON commission_records (settlement_status, settlement_month)",
+		"CREATE INDEX IF NOT EXISTS idx_monthly_settlements_player_month ON monthly_settlements (player_id, settlement_month)",
+		"CREATE INDEX IF NOT EXISTS idx_monthly_settlements_month_status ON monthly_settlements (settlement_month, status)",
 		// Operation logs indexes
 		"CREATE INDEX IF NOT EXISTS idx_oplogs_entity ON operation_logs (entity_type, entity_id, created_at DESC)",
 		"CREATE INDEX IF NOT EXISTS idx_oplogs_actor ON operation_logs (actor_user_id, created_at DESC)",
@@ -226,5 +255,38 @@ func ensureSuperAdmin(db *gorm.DB) error {
 	}
 
 	log.Printf("super admin user ensured: email=%s phone=%s id=%d", email, phone, admin.ID)
+	return nil
+}
+
+// ensureDefaultCommissionRule 确保默认抽成规则存在
+func ensureDefaultCommissionRule(db *gorm.DB) error {
+	var existing model.CommissionRule
+	err := db.Where("type = ? AND is_active = ?", "default", true).
+		Where("game_id IS NULL AND player_id IS NULL AND service_type IS NULL").
+		First(&existing).Error
+
+	if err == nil {
+		// 默认规则已存在
+		return nil
+	}
+
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
+	}
+
+	// 创建默认抽成规则：20%
+	defaultRule := &model.CommissionRule{
+		Name:        "默认抽成规则",
+		Description: "平台默认抽成比例为20%",
+		Type:        "default",
+		Rate:        20,
+		IsActive:    true,
+	}
+
+	if err := db.Create(defaultRule).Error; err != nil {
+		return err
+	}
+
+	log.Printf("created default commission rule: 20%% (id=%d)", defaultRule.ID)
 	return nil
 }

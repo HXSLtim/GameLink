@@ -10,14 +10,14 @@ export const STORAGE_KEYS = {
 export const FEATURE_FLAGS = {
   showcase: {
     // 是否默认展开组件使用示例
-    expandExamplesByDefault: true,
+    expandExamplesByDefault: import.meta.env.VITE_SHOWCASE_EXPAND_EXAMPLES !== 'false',
     // 是否启用独立的 /showcase 路由（生产默认关闭）
-    enableShowcaseRoute: !import.meta.env.PROD,
+    enableShowcaseRoute: import.meta.env.VITE_SHOWCASE_ENABLE_ROUTE === 'true' || (!import.meta.env.PROD && import.meta.env.VITE_SHOWCASE_ENABLE_ROUTE !== 'false'),
     // 是否在主布局中启用 /components 子路由与菜单项（生产默认关闭）
-    enableComponentsRoute: !import.meta.env.PROD,
+    enableComponentsRoute: import.meta.env.VITE_SHOWCASE_ENABLE_COMPONENTS === 'true' || (!import.meta.env.PROD && import.meta.env.VITE_SHOWCASE_ENABLE_COMPONENTS !== 'false'),
   },
   cacheDemo: {
     // 是否启用 /cache-demo 演示路由（生产默认关闭）
-    enableCacheDemoRoute: !import.meta.env.PROD,
+    enableCacheDemoRoute: import.meta.env.VITE_CACHE_DEMO_ENABLE_ROUTE === 'true' || (!import.meta.env.PROD && import.meta.env.VITE_CACHE_DEMO_ENABLE_ROUTE !== 'false'),
   },
 };

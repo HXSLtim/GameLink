@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTheme } from 'contexts/ThemeContext';
+import { Breadcrumb } from '../Breadcrumb';
 import type { BreadcrumbItem } from '../Breadcrumb/Breadcrumb';
 import styles from './Header.module.less';
 
@@ -157,17 +158,6 @@ const MoonIcon = () => (
   </svg>
 );
 
-// 箭头图标
-const ArrowIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-    <polyline
-      points="9 18 15 12 9 6"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
 
 export const Header: React.FC<HeaderProps> = ({ user, onLogout, onToggleSidebar, breadcrumbs }) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -195,33 +185,11 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onToggleSidebar,
         </button>
         <h1 className={styles.logo}>GameLink</h1>
         
-        {/* 面包屑 */}
+        {/* 面包屑：复用通用组件并使用 Link 导航 */}
         {breadcrumbs && breadcrumbs.length > 0 && (
           <>
             <span className={styles.separator}>|</span>
-            <nav className={styles.breadcrumb} aria-label="面包屑导航">
-              {breadcrumbs.map((item, index) => {
-                const isLast = index === breadcrumbs.length - 1;
-                return (
-                  <span key={index} className={styles.breadcrumbItem}>
-                    {item.path && !isLast ? (
-                      <a href={item.path} className={styles.breadcrumbLink}>
-                        {item.label}
-                      </a>
-                    ) : (
-                      <span className={isLast ? styles.breadcrumbCurrent : styles.breadcrumbLabel}>
-                        {item.label}
-                      </span>
-                    )}
-                    {!isLast && (
-                      <span className={styles.breadcrumbSeparator}>
-                        <ArrowIcon />
-                      </span>
-                    )}
-                  </span>
-                );
-              })}
-            </nav>
+            <Breadcrumb items={breadcrumbs} />
           </>
         )}
       </div>

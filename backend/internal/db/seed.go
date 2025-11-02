@@ -782,19 +782,23 @@ func seedOrder(tx *gorm.DB, input seedOrderParams) (*model.Order, error) {
 		return nil, err
 	}
 	order := &model.Order{
-		UserID:         input.UserID,
-		GameID:         input.GameID,
-		Title:          input.Title,
-		Description:    input.Description,
-		Status:         input.Status,
-		PriceCents:     input.PriceCents,
-		Currency:       input.Currency,
-		ScheduledStart: input.ScheduledStart,
-		ScheduledEnd:   input.ScheduledEnd,
-		CancelReason:   strings.TrimSpace(input.CancelReason),
+		OrderNo:         model.GenerateEscortOrderNo(),
+		UserID:          input.UserID,
+		ItemID:          1, // TODO: 需要从service_items获取
+		GameID:          &input.GameID,
+		Quantity:        1,
+		UnitPriceCents:  input.PriceCents,
+		TotalPriceCents: input.PriceCents,
+		Currency:        input.Currency,
+		Status:          input.Status,
+		Title:           input.Title,
+		Description:     input.Description,
+		ScheduledStart:  input.ScheduledStart,
+		ScheduledEnd:    input.ScheduledEnd,
+		CancelReason:    strings.TrimSpace(input.CancelReason),
 	}
 	if input.PlayerID != nil {
-		order.PlayerID = *input.PlayerID
+		order.PlayerID = input.PlayerID
 	}
 	if input.StartedAt != nil {
 		order.StartedAt = input.StartedAt

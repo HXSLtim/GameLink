@@ -26,33 +26,47 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
-	"gamelink/internal/admin"
 	"gamelink/internal/auth"
 	"gamelink/internal/cache"
 	"gamelink/internal/config"
 	"gamelink/internal/db"
+	adminhandler "gamelink/internal/handler/admin"
 	"gamelink/internal/handler"
 	"gamelink/internal/handler/middleware"
+	playerhandler "gamelink/internal/handler/player"
+	userhandler "gamelink/internal/handler/user"
 	"gamelink/internal/logging"
 	"gamelink/internal/model"
 	"gamelink/internal/repository/common"
+	commissionrepo "gamelink/internal/repository/commission"
 	gamerepo "gamelink/internal/repository/game"
 	orderrepo "gamelink/internal/repository/order"
 	paymentrepo "gamelink/internal/repository/payment"
 	permissionrepo "gamelink/internal/repository/permission"
 	playerrepo "gamelink/internal/repository/player"
 	playertagrepo "gamelink/internal/repository/player_tag"
+	rankingrepo "gamelink/internal/repository/ranking"
 	reviewrepo "gamelink/internal/repository/review"
 	rolerepo "gamelink/internal/repository/role"
+	serviceitemrepo "gamelink/internal/repository/serviceitem"
 	statsrepo "gamelink/internal/repository/stats"
 	userrepo "gamelink/internal/repository/user"
-	"gamelink/internal/service"
+	withdrawrepo "gamelink/internal/repository/withdraw"
+	"gamelink/internal/repository"
+	"gamelink/internal/scheduler"
+	adminservice "gamelink/internal/service/admin"
 	authservice "gamelink/internal/service/auth"
+	commissionservice "gamelink/internal/service/commission"
 	earningsservice "gamelink/internal/service/earnings"
+	giftservice "gamelink/internal/service/gift"
+	itemservice "gamelink/internal/service/item"
 	orderservice "gamelink/internal/service/order"
 	paymentservice "gamelink/internal/service/payment"
+	permissionservice "gamelink/internal/service/permission"
 	playerservice "gamelink/internal/service/player"
 	reviewservice "gamelink/internal/service/review"
+	roleservice "gamelink/internal/service/role"
+	statsservice "gamelink/internal/service/stats"
 )
 
 func main() {
@@ -93,7 +107,7 @@ func main() {
 	// RBAC - 初始化 RoleRepository（需要在 AdminService 之前）
 	roleRepo := rolerepo.NewRoleRepository(orm)
 
-	adminSvc := service.NewAdminService(
+	adminSvc := adminservice.NewAdminService(
 		gamerepo.NewGameRepository(orm),
 		userrepo.NewUserRepository(orm),
 		playerrepo.NewPlayerRepository(orm),
@@ -159,32 +173,47 @@ func main() {
 	paymentRepo := paymentrepo.NewPaymentRepository(orm)
 	reviewRepo := reviewrepo.NewReviewRepository(orm)
 	playerTagRepo := playertagrepo.NewPlayerTagRepository(orm)
+	withdrawRepo := withdrawrepo.NewWithdrawRepository(orm)
+	commissionRepo := commissionrepo.NewCommissionRepository(orm)
+	serviceItemRepo := serviceitemrepo.NewServiceItemRepository(orm)
+	rankingCommissionRepo := rankingrepo.NewRankingCommissionRepository(orm)
 
 	// Initialize user-side services
-	orderSvc := orderservice.NewOrderService(orderRepo, playerRepo, userRepo, gameRepo, paymentRepo, reviewRepo)
+	commissionSvc := commissionservice.NewCommissionService(commissionRepo, orderRepo, playerRepo)
+    serviceItemSvc := itemservice.NewServiceItemService(serviceItemRepo, gameRepo, playerRepo)
+	giftSvc := giftservice.NewGiftService(serviceItemRepo, orderRepo, playerRepo, commissionRepo)
+	orderSvc := orderservice.NewOrderService(orderRepo, playerRepo, userRepo, gameRepo, paymentRepo, reviewRepo, commissionRepo)
 	paymentSvc := paymentservice.NewPaymentService(paymentRepo, orderRepo)
 	playerSvc := playerservice.NewPlayerService(playerRepo, userRepo, gameRepo, orderRepo, reviewRepo, playerTagRepo, cacheClient)
 	reviewSvc := reviewservice.NewReviewService(reviewRepo, orderRepo, playerRepo, userRepo)
-	earningsSvc := earningsservice.NewEarningsService(playerRepo, orderRepo)
+	earningsSvc := earningsservice.NewEarningsService(playerRepo, orderRepo, withdrawRepo)
+
+	// Initialize settlement scheduler
+	settlementScheduler := scheduler.NewSettlementScheduler(commissionSvc)
+	settlementScheduler.Start()
+	defer settlementScheduler.Stop()
 
 	// Register user-side routes (require authentication)
 	authMiddleware := middleware.JWTAuth()
 	userGroup := api.Group("/user")
 	userGroup.Use(authMiddleware)
 	{
-		handler.RegisterUserOrderRoutes(userGroup, orderSvc, authMiddleware)
-		handler.RegisterUserPaymentRoutes(userGroup, paymentSvc, authMiddleware)
-		handler.RegisterUserPlayerRoutes(userGroup, playerSvc, authMiddleware)
-		handler.RegisterUserReviewRoutes(userGroup, reviewSvc, authMiddleware)
+		userhandler.RegisterOrderRoutes(userGroup, orderSvc, authMiddleware)
+		userhandler.RegisterPaymentRoutes(userGroup, paymentSvc, authMiddleware)
+		userhandler.RegisterPlayerRoutes(userGroup, playerSvc, authMiddleware)
+		userhandler.RegisterReviewRoutes(userGroup, reviewSvc, authMiddleware)
+		userhandler.RegisterGiftRoutes(userGroup, giftSvc, serviceItemSvc, authMiddleware)
 	}
 
 	// Register player-side routes (require authentication)
 	playerGroup := api.Group("/player")
 	playerGroup.Use(authMiddleware)
 	{
-		handler.RegisterPlayerProfileRoutes(playerGroup, playerSvc, authMiddleware)
-		handler.RegisterPlayerOrderRoutes(playerGroup, orderSvc, authMiddleware)
-		handler.RegisterPlayerEarningsRoutes(playerGroup, earningsSvc, authMiddleware)
+		playerhandler.RegisterProfileRoutes(playerGroup, playerSvc, authMiddleware)
+		playerhandler.RegisterOrderRoutes(playerGroup, orderSvc, authMiddleware)
+		playerhandler.RegisterEarningsRoutes(playerGroup, earningsSvc, authMiddleware)
+		playerhandler.RegisterCommissionRoutes(playerGroup, commissionSvc, authMiddleware)
+		playerhandler.RegisterGiftRoutes(playerGroup, giftSvc, authMiddleware)
 	}
 
 	if cfg.EnableSwagger {
@@ -199,25 +228,25 @@ func main() {
 
 	// RBAC - 权限服务（RoleRepository 已在 AdminService 创建时初始化）
 	permRepo := permissionrepo.NewPermissionRepository(orm)
-	permService := service.NewPermissionService(permRepo, cacheClient)
-	roleSvc := service.NewRoleService(roleRepo, cacheClient)
+	permService := permissionservice.NewPermissionService(permRepo, cacheClient)
+	roleSvc := roleservice.NewRoleService(roleRepo, cacheClient)
 
 	// 权限中间件
 	permMiddleware := middleware.NewPermissionMiddleware(jwtMgr, permService, roleSvc)
 
 	// Register admin routes under versioned prefix: /api/v1/admin（使用新的权限中间件）
-	admin.RegisterRoutes(api, adminSvc, permMiddleware)
+	adminhandler.RegisterRoutes(api, adminSvc, permMiddleware)
 
 	// Stats routes（使用新的权限中间件）
-	statsSvc := service.NewStatsService(statsrepo.NewStatsRepository(orm))
-	admin.RegisterStatsRoutes(api, statsSvc, permMiddleware)
+	statsSvc := statsservice.NewStatsService(statsrepo.NewStatsRepository(orm))
+	adminhandler.RegisterStatsRoutes(api, statsSvc, permMiddleware)
 
 	// System info routes（使用新的权限中间件）
-	admin.RegisterSystemRoutes(api, cfg, sqlDB, cacheClient, permMiddleware)
+	adminhandler.RegisterSystemRoutes(api, cfg, sqlDB, cacheClient, permMiddleware)
 
 	// 注册角色和权限管理路由（使用细粒度权限控制）
-	roleHandler := admin.NewRoleHandler(roleSvc)
-	permHandler := admin.NewPermissionHandler(permService)
+	roleHandler := adminhandler.NewRoleHandler(roleSvc)
+	permHandler := adminhandler.NewPermissionHandler(permService)
 
 	// RBAC routes
 	rbacGroup := api.Group("/admin")
@@ -243,6 +272,24 @@ func main() {
 		rbacGroup.GET("/roles/:id/permissions", permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/roles/:id/permissions"), permHandler.GetRolePermissions)
 		rbacGroup.GET("/users/:id/permissions", permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/:id/permissions"), permHandler.GetUserPermissions)
 	}
+
+	// Commission management routes (admin)
+	adminhandler.RegisterCommissionRoutes(rbacGroup, commissionSvc, settlementScheduler)
+
+	// Service Item management routes (admin) - 统一管理护航服务和礼物
+	adminhandler.RegisterServiceItemRoutes(rbacGroup, serviceItemSvc)
+
+	// Withdraw management routes (admin) - 提现审核管理
+	adminhandler.RegisterWithdrawRoutes(rbacGroup, withdrawRepo)
+
+	// Dashboard routes (admin) - 数据统计和Dashboard
+	adminhandler.RegisterDashboardRoutes(rbacGroup, userRepo, playerRepo, orderRepo, withdrawRepo, serviceItemRepo, commissionRepo)
+
+	// Stats routes (admin) - 统计分析
+	adminhandler.RegisterStatsAnalysisRoutes(rbacGroup, orderRepo, commissionRepo, serviceItemRepo)
+
+	// Ranking Commission routes (admin) - 排名抽成配置
+	adminhandler.RegisterRankingCommissionRoutes(rbacGroup, rankingCommissionRepo)
 
 	// 同步 API 路由到权限表（开发环境自动同步）
 	if os.Getenv("APP_ENV") != "production" || os.Getenv("SYNC_API_PERMISSIONS") == "true" {
@@ -296,7 +343,7 @@ func main() {
 }
 
 // assignDefaultRolePermissions 为默认角色（admin 和 super_admin）分配所有管理权限。
-func assignDefaultRolePermissions(ctx context.Context, roleSvc *service.RoleService, permService *service.PermissionService) error {
+func assignDefaultRolePermissions(ctx context.Context, roleSvc *roleservice.RoleService, permService *permissionservice.PermissionService) error {
 	// 获取所有权限
 	allPermissions, err := permService.ListPermissions(ctx)
 	if err != nil {
