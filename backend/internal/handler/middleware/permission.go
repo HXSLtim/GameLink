@@ -1,14 +1,15 @@
 package middleware
 
 import (
-	"net/http"
-	"strings"
+    "net/http"
+    "strings"
 
-	"github.com/gin-gonic/gin"
+    "github.com/gin-gonic/gin"
 
-	"gamelink/internal/auth"
-	"gamelink/internal/model"
-	"gamelink/internal/service"
+    "gamelink/internal/auth"
+    "gamelink/internal/model"
+    roleservice "gamelink/internal/service/role"
+    permissionservice "gamelink/internal/service/permission"
 )
 
 const (
@@ -22,22 +23,22 @@ const (
 
 // PermissionMiddleware 权限中间件配置。
 type PermissionMiddleware struct {
-	jwtManager    *auth.JWTManager
-	permissionSvc *service.PermissionService
-	roleSvc       *service.RoleService
+    jwtManager    *auth.JWTManager
+    permissionSvc *permissionservice.PermissionService
+    roleSvc       *roleservice.RoleService
 }
 
 // NewPermissionMiddleware 创建权限中间件实例。
 func NewPermissionMiddleware(
-	jwtManager *auth.JWTManager,
-	permissionSvc *service.PermissionService,
-	roleSvc *service.RoleService,
+    jwtManager *auth.JWTManager,
+    permissionSvc *permissionservice.PermissionService,
+    roleSvc *roleservice.RoleService,
 ) *PermissionMiddleware {
-	return &PermissionMiddleware{
-		jwtManager:    jwtManager,
-		permissionSvc: permissionSvc,
-		roleSvc:       roleSvc,
-	}
+    return &PermissionMiddleware{
+        jwtManager:    jwtManager,
+        permissionSvc: permissionSvc,
+        roleSvc:       roleSvc,
+    }
 }
 
 // RequireAuth 要求用户已登录（验证 JWT）。

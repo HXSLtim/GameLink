@@ -11,7 +11,8 @@ import (
 )
 
 var (
-	// ErrNotFound 订单不存�?	ErrNotFound = repository.ErrNotFound
+	// ErrNotFound 订单不存在
+	ErrNotFound = repository.ErrNotFound
 	// ErrValidation 表示输入校验失败
 	ErrValidation = errors.New("validation failed")
 	// ErrInvalidTransition 订单状态流转不合法
@@ -22,9 +23,11 @@ var (
 
 // OrderService 订单服务
 //
-// 功能�?// 1. 用户端订单管理（创建、查询、取消、完成）
+// 功能：
+// 1. 用户端订单管理（创建、查询、取消、完成）
 // 2. 陪玩师端订单管理（接单、开始、完成）
-// 3. 订单状态流转管�?type OrderService struct {
+// 3. 订单状态流转管理
+type OrderService struct {
 	orders      repository.OrderRepository
 	players     repository.PlayerRepository
 	users       repository.UserRepository
@@ -102,7 +105,8 @@ type OrderDetailDTO struct {
 	RefundReason string     `json:"refundReason"`
 }
 
-// OrderTimelineDTO 订单时间�?type OrderTimelineDTO struct {
+// OrderTimelineDTO 订单时间线
+type OrderTimelineDTO struct {
 	Time    time.Time `json:"time"`
 	Status  string    `json:"status"`
 	Message string    `json:"message"`
@@ -126,7 +130,8 @@ type ReviewDTO struct {
 	CreatedAt string `json:"createdAt"`
 }
 
-// PlayerCardDTO 陪玩师卡片信�?type PlayerCardDTO struct {
+// PlayerCardDTO 陪玩师卡片信息
+type PlayerCardDTO struct {
 	ID        uint64 `json:"id"`
 	Nickname  string `json:"nickname"`
 	AvatarURL string `json:"avatarUrl"`
@@ -165,8 +170,10 @@ type CompleteOrderRequest struct {
 	Confirm bool `json:"confirm"`
 }
 
-// CreateOrder 创建订单（用户端�?func (s *OrderService) CreateOrder(ctx context.Context, userID uint64, req CreateOrderRequest) (*CreateOrderResponse, error) {
-	// 验证陪玩�?	player, err := s.players.Get(ctx, req.PlayerID)
+// CreateOrder 创建订单（用户端）
+func (s *OrderService) CreateOrder(ctx context.Context, userID uint64, req CreateOrderRequest) (*CreateOrderResponse, error) {
+	// 验证陪玩师
+	player, err := s.players.Get(ctx, req.PlayerID)
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +185,8 @@ type CompleteOrderRequest struct {
 	}
 
 	// 从陪玩师时薪计算价格（简化版本）
-	// TODO: 后续集成ServiceItem，从service_items表获取价�?	hourlyRate := player.HourlyRateCents
+	// TODO: 后续集成 ServiceItem，从 service_items 表获取价格
+	hourlyRate := player.HourlyRateCents
 	totalPrice := int64(float32(hourlyRate) * req.DurationHours)
 
 	// 默认抽成20%
@@ -189,12 +197,14 @@ type CompleteOrderRequest struct {
 	// 计算结束时间
 	scheduledEnd := req.ScheduledStart.Add(time.Duration(req.DurationHours * float32(time.Hour)))
 
-	// 创建订单（使用新的Order结构�?	playerID := req.PlayerID
+	// 创建订单（使用新的 Order 结构）
+	playerID := req.PlayerID
 	gameID := req.GameID
 	order := &model.Order{
 		OrderNo:           model.GenerateEscortOrderNo(),
 		UserID:            userID,
-		ItemID:            1, // TODO: 需要从service_items选择对应的服务项�?		PlayerID:          &playerID,
+		ItemID:            1, // TODO: 需要从 service_items 选择对应的服务项
+		PlayerID:          &playerID,
 		GameID:            &gameID,
 		Quantity:          1,
 		UnitPriceCents:    totalPrice,
@@ -220,7 +230,8 @@ type CompleteOrderRequest struct {
 	}, nil
 }
 
-// GetMyOrders 获取我的订单列表（用户端�?func (s *OrderService) GetMyOrders(ctx context.Context, userID uint64, req MyOrderListRequest) (*MyOrderListResponse, error) {
+// GetMyOrders 获取我的订单列表（用户端）
+func (s *OrderService) GetMyOrders(ctx context.Context, userID uint64, req MyOrderListRequest) (*MyOrderListResponse, error) {
 	// 默认分页参数
 	if req.Page < 1 {
 		req.Page = 1
@@ -236,7 +247,8 @@ type CompleteOrderRequest struct {
 		PageSize: req.PageSize,
 	}
 
-	// 状态过�?	if req.Status != "" {
+	// 状态过滤
+	if req.Status != "" {
 		opts.Statuses = []model.OrderStatus{model.OrderStatus(req.Status)}
 	}
 
@@ -246,7 +258,7 @@ type CompleteOrderRequest struct {
 		return nil, err
 	}
 
-	// 转换�?DTO
+	// 转换为 DTO
 	orderCards := make([]OrderCardDTO, 0, len(orders))
 	for _, o := range orders {
 		card, err := s.toOrderCardDTO(ctx, &o, userID)
@@ -270,11 +282,13 @@ func (s *OrderService) GetOrderDetail(ctx context.Context, userID uint64, orderI
 		return nil, err
 	}
 
-	// 权限检查：只能查看自己的订单或者自己接的订�?	if order.UserID != userID && order.GetPlayerID() != userID {
+	// 权限检查：只能查看自己的订单或者自己接的订单
+	if order.UserID != userID && order.GetPlayerID() != userID {
 		return nil, ErrUnauthorized
 	}
 
-	// 获取陪玩师信�?	var playerCard *PlayerCardDTO
+	// 获取陪玩师信息
+	var playerCard *PlayerCardDTO
 	playerID := order.GetPlayerID()
 	if playerID > 0 {
 		player, err := s.players.Get(ctx, playerID)
@@ -328,7 +342,8 @@ func (s *OrderService) GetOrderDetail(ctx context.Context, userID uint64, orderI
 		}
 	}
 
-	// 构建时间�?	timeline := s.buildOrderTimeline(order)
+	// 构建时间线
+	timeline := s.buildOrderTimeline(order)
 
 	// 构建订单详情
 	card, err := s.toOrderCardDTO(ctx, order, userID)
@@ -356,28 +371,35 @@ func (s *OrderService) GetOrderDetail(ctx context.Context, userID uint64, orderI
 	}, nil
 }
 
-// CancelOrder 取消订单（用户端�?func (s *OrderService) CancelOrder(ctx context.Context, userID uint64, orderID uint64, req CancelOrderRequest) error {
+// CancelOrder 取消订单（用户端）
+func (s *OrderService) CancelOrder(ctx context.Context, userID uint64, orderID uint64, req CancelOrderRequest) error {
 	// 获取订单
 	order, err := s.orders.Get(ctx, orderID)
 	if err != nil {
 		return err
 	}
 
-	// 权限检�?	if order.UserID != userID {
+	// 权限检查
+	if order.UserID != userID {
 		return ErrUnauthorized
 	}
 
-	// 状态检查：只有 pending �?confirmed 状态可以取�?	if order.Status != model.OrderStatusPending && order.Status != model.OrderStatusConfirmed {
+	// 状态检查：只有 pending 或 confirmed 状态可以取消
+	if order.Status != model.OrderStatusPending && order.Status != model.OrderStatusConfirmed {
 		return ErrInvalidTransition
 	}
 
-	// 保存原始状�?	originalStatus := order.Status
+	// 保存原始状态
+	originalStatus := order.Status
 
-	// 更新订单状�?	order.Status = model.OrderStatusCanceled
+	// 更新订单状态
+	order.Status = model.OrderStatusCanceled
 	order.CancelReason = req.Reason
 
-	// 如果已支付，需要退�?	if originalStatus == model.OrderStatusConfirmed {
-		// 查找支付记录并执行退�?		orderIDPtr := &orderID
+	// 如果已支付，需要退款
+	if originalStatus == model.OrderStatusConfirmed {
+		// 查找支付记录并执行退款
+		orderIDPtr := &orderID
 		payments, _, err := s.payments.List(ctx, repository.PaymentListOptions{
 			OrderID:  orderIDPtr,
 			Page:     1,
@@ -385,7 +407,8 @@ func (s *OrderService) GetOrderDetail(ctx context.Context, userID uint64, orderI
 		})
 		if err == nil && len(payments) > 0 {
 			payment := payments[0]
-			// 如果支付已完成，执行退�?			if payment.Status == model.PaymentStatusPaid {
+			// 如果支付已完成，执行退款
+			if payment.Status == model.PaymentStatusPaid {
 				// 注意：这里直接更新订单状态，实际退款由支付服务的RefundPayment处理
 				now := time.Now()
 				order.RefundAmountCents = order.TotalPriceCents
@@ -399,22 +422,26 @@ func (s *OrderService) GetOrderDetail(ctx context.Context, userID uint64, orderI
 	return s.orders.Update(ctx, order)
 }
 
-// CompleteOrder 确认完成订单（用户端�?func (s *OrderService) CompleteOrder(ctx context.Context, userID uint64, orderID uint64) error {
+// CompleteOrder 确认完成订单（用户端）
+func (s *OrderService) CompleteOrder(ctx context.Context, userID uint64, orderID uint64) error {
 	// 获取订单
 	order, err := s.orders.Get(ctx, orderID)
 	if err != nil {
 		return err
 	}
 
-	// 权限检�?	if order.UserID != userID {
+	// 权限检查
+	if order.UserID != userID {
 		return ErrUnauthorized
 	}
 
-	// 状态检查：只有 in_progress 状态可以完�?	if order.Status != model.OrderStatusInProgress {
+	// 状态检查：只有 in_progress 状态可以完成
+	if order.Status != model.OrderStatusInProgress {
 		return ErrInvalidTransition
 	}
 
-	// 更新订单状�?	now := time.Now()
+	// 更新订单状态
+	now := time.Now()
 	order.Status = model.OrderStatusCompleted
 	order.CompletedAt = &now
 
@@ -485,7 +512,8 @@ func (s *OrderService) recordCommissionAsync(ctx context.Context, orderID uint64
 
 // toOrderCardDTO 转换为订单卡�?DTO
 func (s *OrderService) toOrderCardDTO(ctx context.Context, order *model.Order, userID uint64) (*OrderCardDTO, error) {
-	// 获取陪玩师信�?	var playerNickname, playerAvatar string
+	// 获取陪玩师信息
+	var playerNickname, playerAvatar string
 	playerID := order.GetPlayerID()
 	if playerID > 0 {
 		player, err := s.players.Get(ctx, playerID)
@@ -523,7 +551,8 @@ func (s *OrderService) toOrderCardDTO(ctx context.Context, order *model.Order, u
 			PageSize: 1,
 		})
 		if err == nil && len(reviews) > 0 {
-			canReview = false // 已评�?		}
+			canReview = false // 已评价
+		}
 	}
 
 	return &OrderCardDTO{
@@ -543,13 +572,14 @@ func (s *OrderService) toOrderCardDTO(ctx context.Context, order *model.Order, u
 	}, nil
 }
 
-// buildOrderTimeline 构建订单时间�?func (s *OrderService) buildOrderTimeline(order *model.Order) []OrderTimelineDTO {
+// buildOrderTimeline 构建订单时间线
+func (s *OrderService) buildOrderTimeline(order *model.Order) []OrderTimelineDTO {
 	ctx := context.Background()
 	timeline := []OrderTimelineDTO{
 		{
 			Time:    order.CreatedAt,
 			Status:  string(model.OrderStatusPending),
-			Message: "订单已创�?,
+				Message: "订单已创建",
 		},
 	}
 
@@ -572,7 +602,7 @@ func (s *OrderService) toOrderCardDTO(ctx context.Context, order *model.Order, u
 		timeline = append(timeline, OrderTimelineDTO{
 			Time:    paidTime,
 			Status:  string(model.OrderStatusConfirmed),
-			Message: "订单已支�?,
+			Message: "订单已支付",
 		})
 	}
 
@@ -580,7 +610,7 @@ func (s *OrderService) toOrderCardDTO(ctx context.Context, order *model.Order, u
 		timeline = append(timeline, OrderTimelineDTO{
 			Time:    *order.StartedAt,
 			Status:  string(model.OrderStatusInProgress),
-			Message: "订单进行�?,
+			Message: "订单进行中",
 		})
 	}
 
@@ -588,7 +618,7 @@ func (s *OrderService) toOrderCardDTO(ctx context.Context, order *model.Order, u
 		timeline = append(timeline, OrderTimelineDTO{
 			Time:    *order.CompletedAt,
 			Status:  string(model.OrderStatusCompleted),
-			Message: "订单已完�?,
+			Message: "订单已完成",
 		})
 	}
 
@@ -596,7 +626,7 @@ func (s *OrderService) toOrderCardDTO(ctx context.Context, order *model.Order, u
 		timeline = append(timeline, OrderTimelineDTO{
 			Time:    order.UpdatedAt,
 			Status:  string(model.OrderStatusCanceled),
-			Message: "订单已取�? " + order.CancelReason,
+			Message: "订单已取消： " + order.CancelReason,
 		})
 	}
 
@@ -604,7 +634,7 @@ func (s *OrderService) toOrderCardDTO(ctx context.Context, order *model.Order, u
 		timeline = append(timeline, OrderTimelineDTO{
 			Time:    *order.RefundedAt,
 			Status:  string(model.OrderStatusRefunded),
-			Message: "订单已退�?,
+			Message: "订单已退款",
 		})
 	}
 
@@ -641,7 +671,8 @@ func (s *OrderService) GetAvailableOrders(ctx context.Context, req AvailableOrde
 		req.PageSize = 20
 	}
 
-	// 构建查询条件：查询已支付但未接单的订�?	opts := repository.OrderListOptions{
+	// 构建查询条件：查询已支付但未接单的订单
+	opts := repository.OrderListOptions{
 		Statuses: []model.OrderStatus{model.OrderStatusConfirmed},
 		GameID:   req.GameID,
 		Page:     req.Page,
@@ -700,7 +731,8 @@ func (s *OrderService) GetAvailableOrders(ctx context.Context, req AvailableOrde
 
 // AcceptOrder 接单（陪玩师端）
 func (s *OrderService) AcceptOrder(ctx context.Context, playerUserID uint64, orderID uint64) error {
-	// 查找陪玩�?	players, _, err := s.players.ListPaged(ctx, 1, 100)
+	// 查找陪玩师
+	players, _, err := s.players.ListPaged(ctx, 1, 100)
 	if err != nil {
 		return err
 	}
@@ -723,7 +755,8 @@ func (s *OrderService) AcceptOrder(ctx context.Context, playerUserID uint64, ord
 		return err
 	}
 
-	// 状态检查：只有 confirmed 状态可以接�?	if order.Status != model.OrderStatusConfirmed {
+	// 状态检查：只有 confirmed 状态可以接单
+	if order.Status != model.OrderStatusConfirmed {
 		return ErrInvalidTransition
 	}
 
@@ -738,7 +771,8 @@ func (s *OrderService) AcceptOrder(ctx context.Context, playerUserID uint64, ord
 
 // CompleteOrderByPlayer 完成订单（陪玩师端）
 func (s *OrderService) CompleteOrderByPlayer(ctx context.Context, playerUserID uint64, orderID uint64) error {
-	// 查找陪玩�?	players, _, err := s.players.ListPaged(ctx, 1, 100)
+	// 查找陪玩师
+	players, _, err := s.players.ListPaged(ctx, 1, 100)
 	if err != nil {
 		return err
 	}
@@ -761,11 +795,13 @@ func (s *OrderService) CompleteOrderByPlayer(ctx context.Context, playerUserID u
 		return err
 	}
 
-	// 权限检�?	if order.GetPlayerID() != playerID {
+	// 权限检查
+	if order.GetPlayerID() != playerID {
 		return ErrUnauthorized
 	}
 
-	// 状态检查：只有 in_progress 状态可以完�?	if order.Status != model.OrderStatusInProgress {
+	// 状态检查：只有 in_progress 状态可以完成
+	if order.Status != model.OrderStatusInProgress {
 		return ErrInvalidTransition
 	}
 

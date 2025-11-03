@@ -11,15 +11,18 @@ import (
 	"gamelink/internal/service"
 )
 
-// PermissionHandler 权限管理处理器�?type PermissionHandler struct {
+// PermissionHandler 权限管理处理器
+type PermissionHandler struct {
 	permissionSvc *service.PermissionService
 }
 
-// NewPermissionHandler 创建权限处理器实例�?func NewPermissionHandler(permissionSvc *service.PermissionService) *PermissionHandler {
+// NewPermissionHandler 创建权限处理器实例
+func NewPermissionHandler(permissionSvc *service.PermissionService) *PermissionHandler {
 	return &PermissionHandler{permissionSvc: permissionSvc}
 }
 
-// ListPermissions 获取权限列表�?func (h *PermissionHandler) ListPermissions(c *gin.Context) {
+// ListPermissions 获取权限列表
+func (h *PermissionHandler) ListPermissions(c *gin.Context) {
 	keyword := c.Query("keyword")
 	method := c.Query("method")
 	group := c.Query("group")
@@ -58,7 +61,8 @@ import (
 	})
 }
 
-// GetPermission 获取权限详情�?func (h *PermissionHandler) GetPermission(c *gin.Context) {
+// GetPermission 获取权限详情
+func (h *PermissionHandler) GetPermission(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
 		writeJSONError(c, http.StatusBadRequest, "无效的权限ID")
@@ -68,7 +72,7 @@ import (
 	permission, err := h.permissionSvc.GetPermission(c.Request.Context(), id)
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
-			writeJSONError(c, http.StatusNotFound, "权限不存�?)
+			writeJSONError(c, http.StatusNotFound, "权限不存在")
 		} else {
 			writeJSONError(c, http.StatusInternalServerError, err.Error())
 		}
@@ -83,7 +87,8 @@ import (
 	})
 }
 
-// CreatePermission 创建权限�?func (h *PermissionHandler) CreatePermission(c *gin.Context) {
+// CreatePermission 创建权限
+func (h *PermissionHandler) CreatePermission(c *gin.Context) {
 	var req struct {
 		Method      model.HTTPMethod `json:"method" binding:"required"`
 		Path        string           `json:"path" binding:"required,max=255"`
@@ -118,7 +123,8 @@ import (
 	})
 }
 
-// UpdatePermission 更新权限�?func (h *PermissionHandler) UpdatePermission(c *gin.Context) {
+// UpdatePermission 更新权限
+func (h *PermissionHandler) UpdatePermission(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
 		writeJSONError(c, http.StatusBadRequest, "无效的权限ID")

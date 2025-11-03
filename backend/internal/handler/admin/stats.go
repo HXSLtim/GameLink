@@ -10,7 +10,8 @@ import (
 	"gamelink/internal/repository"
 )
 
-// RegisterStatsAnalysisRoutes 注册管理端统计分析路�?func RegisterStatsAnalysisRoutes(
+// RegisterStatsAnalysisRoutes 注册管理端统计分析路由
+func RegisterStatsAnalysisRoutes(
 	router gin.IRouter,
 	orderRepo repository.OrderRepository,
 	commissionRepo repository.CommissionRepository,
@@ -35,7 +36,8 @@ import (
 
 // getServiceItemStatsHandler 服务项目统计
 // @Summary      服务项目统计
-// @Description  统计各服务项目的销售情�?// @Tags         Admin - Stats
+// @Description  统计各服务项目的销售情况
+// @Tags         Admin - Stats
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"

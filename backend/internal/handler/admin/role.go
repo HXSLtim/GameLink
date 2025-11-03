@@ -11,15 +11,18 @@ import (
 	"gamelink/internal/service"
 )
 
-// RoleHandler 角色管理处理器�?type RoleHandler struct {
+// RoleHandler 角色管理处理器
+type RoleHandler struct {
 	roleSvc *service.RoleService
 }
 
-// NewRoleHandler 创建角色处理器实例�?func NewRoleHandler(roleSvc *service.RoleService) *RoleHandler {
+// NewRoleHandler 创建角色处理器实例
+func NewRoleHandler(roleSvc *service.RoleService) *RoleHandler {
 	return &RoleHandler{roleSvc: roleSvc}
 }
 
-// ListRoles 获取角色列表�?func (h *RoleHandler) ListRoles(c *gin.Context) {
+// ListRoles 获取角色列表
+func (h *RoleHandler) ListRoles(c *gin.Context) {
 	withPermissions := c.Query("with_permissions") == "true"
 	keyword := c.Query("keyword")
 	isSystemStr := c.Query("isSystem")
@@ -70,7 +73,8 @@ import (
 	})
 }
 
-// GetRole 获取角色详情�?func (h *RoleHandler) GetRole(c *gin.Context) {
+// GetRole 获取角色详情
+func (h *RoleHandler) GetRole(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
 		writeJSONError(c, http.StatusBadRequest, "无效的角色ID")
@@ -88,7 +92,7 @@ import (
 
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
-			writeJSONError(c, http.StatusNotFound, "角色不存�?)
+			writeJSONError(c, http.StatusNotFound, "角色不存在")
 		} else {
 			writeJSONError(c, http.StatusInternalServerError, err.Error())
 		}

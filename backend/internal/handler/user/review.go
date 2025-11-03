@@ -10,12 +10,12 @@ import (
 	"gamelink/internal/service/review"
 )
 
-// RegisterReviewRoutes 注册用户端评价路�?func RegisterReviewRoutes(router gin.IRouter, svc *review.ReviewService, authMiddleware gin.HandlerFunc) {
-	group := router.Group("/user/reviews")
-	group.Use(authMiddleware) // 需要认�?	{
-		group.POST("", func(c *gin.Context) { createReviewHandler(c, svc) })
-		group.GET("/my", func(c *gin.Context) { getMyReviewsHandler(c, svc) })
-	}
+// RegisterReviewRoutes 注册用户端评价路由
+func RegisterReviewRoutes(router gin.IRouter, svc *review.ReviewService, authMiddleware gin.HandlerFunc) {
+    group := router.Group("/user/reviews")
+    group.Use(authMiddleware) // 需要认证
+    group.POST("", func(c *gin.Context) { createReviewHandler(c, svc) })
+    group.GET("/my", func(c *gin.Context) { getMyReviewsHandler(c, svc) })
 }
 
 // createReviewHandler 创建评价

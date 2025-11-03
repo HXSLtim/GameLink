@@ -12,18 +12,18 @@ import (
 
 // RegisterEarningsRoutes 注册陪玩师端收益管理路由
 func RegisterEarningsRoutes(router gin.IRouter, svc *earnings.EarningsService, authMiddleware gin.HandlerFunc) {
-	group := router.Group("/player/earnings")
-	group.Use(authMiddleware) // 需要认�?	{
-		group.GET("/summary", func(c *gin.Context) { getEarningsSummaryHandler(c, svc) })
-		group.GET("/trend", func(c *gin.Context) { getEarningsTrendHandler(c, svc) })
-		group.POST("/withdraw", func(c *gin.Context) { requestWithdrawHandler(c, svc) })
-		group.GET("/withdraw-history", func(c *gin.Context) { getWithdrawHistoryHandler(c, svc) })
-	}
+    group := router.Group("/player/earnings")
+    group.Use(authMiddleware) // 需要认证
+    group.GET("/summary", func(c *gin.Context) { getEarningsSummaryHandler(c, svc) })
+    group.GET("/trend", func(c *gin.Context) { getEarningsTrendHandler(c, svc) })
+    group.POST("/withdraw", func(c *gin.Context) { requestWithdrawHandler(c, svc) })
+    group.GET("/withdraw-history", func(c *gin.Context) { getWithdrawHistoryHandler(c, svc) })
 }
 
 // getEarningsSummaryHandler 获取收益概览
 // @Summary      获取收益概览
-// @Description  获取陪玩师收益概�?// @Tags         Player - Earnings
+// @Description  获取陪玩师收益概览
+// @Tags         Player - Earnings
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
@@ -116,7 +116,7 @@ func requestWithdrawHandler(c *gin.Context, svc *earnings.EarningsService) {
 	respondJSON(c, http.StatusOK, model.APIResponse[earnings.WithdrawResponse]{
 		Success: true,
 		Code:    http.StatusOK,
-		Message: "提现申请已提�?,
+		Message: "提现申请已提交",
 		Data:    *resp,
 	})
 }

@@ -1,14 +1,13 @@
 package ranking
 
 import (
-	"context"
-	"errors"
-	"time"
+    "context"
+    "errors"
+    "time"
 
-	"gamelink/internal/model"
-	"gamelink/internal/repository"
-	"gamelink/internal/repository/ranking"
-	"gamelink/internal/repository/order"
+    "gamelink/internal/model"
+    "gamelink/internal/repository"
+    "gamelink/internal/repository/ranking"
 )
 
 var (
@@ -20,22 +19,22 @@ var (
 
 // RankingService 排名服务
 type RankingService struct {
-	rankings    ranking.RankingRepository
-	commissions ranking.RankingCommissionRepository
-	orders      order.OrderRepository
+    rankings    ranking.RankingRepository
+    commissions ranking.RankingCommissionRepository
+    orders      repository.OrderRepository
 }
 
 // NewRankingService 创建排名服务
 func NewRankingService(
-	rankings ranking.RankingRepository,
-	commissions ranking.RankingCommissionRepository,
-	orders order.OrderRepository,
+    rankings ranking.RankingRepository,
+    commissions ranking.RankingCommissionRepository,
+    orders repository.OrderRepository,
 ) *RankingService {
-	return &RankingService{
-		rankings:    rankings,
-		commissions: commissions,
-		orders:      orders,
-	}
+    return &RankingService{
+        rankings:    rankings,
+        commissions: commissions,
+        orders:      orders,
+    }
 }
 
 // CalculateMonthlyRankings 计算月度排名

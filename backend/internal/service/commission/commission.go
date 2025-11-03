@@ -52,7 +52,8 @@ func (s *CommissionService) CalculateCommission(ctx context.Context, orderID uin
 		return nil, err
 	}
 
-	// 调用完整的三层抽成计�?	return s.CalculateOrderCommission(ctx, order)
+	// 调用完整的三层抽成计算
+	return s.CalculateOrderCommission(ctx, order)
 }
 
 // RecordCommission 记录订单抽成
@@ -170,7 +171,8 @@ func (s *CommissionService) SettleMonth(ctx context.Context, month string) error
 		}
 	}
 
-	// 5. 更新抽成记录状�?	now := time.Now()
+	// 5. 更新抽成记录状态
+	now := time.Now()
 	for _, record := range records {
 		record.SettlementStatus = "settled"
 		record.SettledAt = &now
@@ -223,7 +225,8 @@ func (s *CommissionService) GetPlayerCommissionSummary(ctx context.Context, play
 	}, nil
 }
 
-// CommissionSummaryResponse 抽成汇总响�?type CommissionSummaryResponse struct {
+// CommissionSummaryResponse 抽成汇总响应
+type CommissionSummaryResponse struct {
 	MonthlyIncome   int64 `json:"monthlyIncome"`
 	TotalCommission int64 `json:"totalCommission"`
 	TotalIncome     int64 `json:"totalIncome"`
@@ -338,7 +341,8 @@ type SettlementListResponse struct {
 	Total       int64           `json:"total"`
 }
 
-// CreateCommissionRule 创建抽成规则（管理员�?func (s *CommissionService) CreateCommissionRule(ctx context.Context, req CreateCommissionRuleRequest) (*model.CommissionRule, error) {
+// CreateCommissionRule 创建抽成规则（管理员）
+func (s *CommissionService) CreateCommissionRule(ctx context.Context, req CreateCommissionRuleRequest) (*model.CommissionRule, error) {
 	// 验证抽成比例
 	if req.Rate < 0 || req.Rate > 100 {
 		return nil, fmt.Errorf("commission rate must be between 0 and 100")
@@ -373,7 +377,8 @@ type CreateCommissionRuleRequest struct {
 	ServiceType *string `json:"serviceType"`
 }
 
-// UpdateCommissionRule 更新抽成规则（管理员�?func (s *CommissionService) UpdateCommissionRule(ctx context.Context, id uint64, req UpdateCommissionRuleRequest) error {
+// UpdateCommissionRule 更新抽成规则（管理员）
+func (s *CommissionService) UpdateCommissionRule(ctx context.Context, id uint64, req UpdateCommissionRuleRequest) error {
 	rule, err := s.commissions.GetRule(ctx, id)
 	if err != nil {
 		return err
@@ -406,7 +411,8 @@ type UpdateCommissionRuleRequest struct {
 	IsActive    *bool   `json:"isActive"`
 }
 
-// GetPlatformStats 获取平台统计（管理员�?func (s *CommissionService) GetPlatformStats(ctx context.Context, month string) (*PlatformStatsResponse, error) {
+// GetPlatformStats 获取平台统计（管理员）
+func (s *CommissionService) GetPlatformStats(ctx context.Context, month string) (*PlatformStatsResponse, error) {
 	stats, err := s.commissions.GetMonthlyStats(ctx, month)
 	if err != nil {
 		return nil, err
@@ -447,6 +453,7 @@ func (s *CommissionService) CalculateOrderCommission(ctx context.Context, order 
 	var candidateRates []CommissionCandidate
 
 	// 1. 获取服务项目抽成（基础抽成�?	serviceItem, err := s.getServiceItemForOrder(ctx, order.ItemID)
+	serviceItem, err := s.getServiceItemForOrder(ctx, order.ItemID)
 	if err == nil && serviceItem != nil {
 		candidateRates = append(candidateRates, CommissionCandidate{
 			Source: "服务项目",
@@ -456,11 +463,12 @@ func (s *CommissionService) CalculateOrderCommission(ctx context.Context, order 
 	}
 
 	// 2. 查找陪玩师专属抽成规�?	playerID := order.GetPlayerID()
+	playerID := order.GetPlayerID()
 	if playerID > 0 {
 		playerRule, err := s.commissions.GetRuleForOrder(ctx, order.GameID, order.PlayerID, nil)
 		if err == nil && playerRule != nil {
 			candidateRates = append(candidateRates, CommissionCandidate{
-				Source: "陪玩师专�?,
+				Source: "陪玩师专属",
 				Rate:   playerRule.Rate,
 				Detail: playerRule.Name,
 			})
@@ -492,6 +500,7 @@ func (s *CommissionService) CalculateOrderCommission(ctx context.Context, order 
 	// 取最低抽成比�?	finalRate := selectLowestRate(candidateRates)
 
 	// 计算抽成金额
+	finalRate := selectLowestRate(candidateRates)
 	totalAmount := order.TotalPriceCents
 	commissionCents := totalAmount * int64(finalRate.Rate) / 100
 	playerIncome := totalAmount - commissionCents
@@ -511,16 +520,21 @@ func (s *CommissionService) CalculateOrderCommission(ctx context.Context, order 
 // CommissionCandidate 抽成候选项
 type CommissionCandidate struct {
 	Source string `json:"source"` // 来源：服务项�?陪玩师专�?排名优惠/默认规则
-	Rate   int    `json:"rate"`   // 抽成比例�?�?	Detail string `json:"detail"` // 详细说明
+	Rate   int    `json:"rate"`   // 抽成比例
+	Detail string `json:"detail"` // 详细说明
 }
 
 // CommissionCalculation 抽成计算结果
 type CommissionCalculation struct {
 	OrderID           uint64                `json:"orderId"`
 	TotalAmountCents  int64                 `json:"totalAmountCents"`
-	CommissionRate    int                   `json:"commissionRate"`    // 实际使用的抽成比�?	CommissionCents   int64                 `json:"commissionCents"`   // 平台抽成
-	PlayerIncomeCents int64                 `json:"playerIncomeCents"` // 陪玩师收�?	AppliedRule       string                `json:"appliedRule"`       // 实际应用的规�?	AppliedRuleDetail string                `json:"appliedRuleDetail"` // 规则详情
-	CandidateRates    []CommissionCandidate `json:"candidateRates"`    // 所有候选抽�?}
+	CommissionRate    int                   `json:"commissionRate"`    // 实际使用的抽成比例
+	CommissionCents   int64                 `json:"commissionCents"`   // 平台抽成
+	PlayerIncomeCents int64                 `json:"playerIncomeCents"` // 陪玩师收入
+	AppliedRule       string                `json:"appliedRule"`       // 实际应用的规则
+	AppliedRuleDetail string                `json:"appliedRuleDetail"` // 规则详情
+	CandidateRates    []CommissionCandidate `json:"candidateRates"`    // 所有候选抽成
+}
 
 // getRankingCommissionRate 获取陪玩师的排名抽成比例
 func (s *CommissionService) getRankingCommissionRate(ctx context.Context, playerID uint64) (int, string) {
@@ -545,15 +559,18 @@ func (s *CommissionService) getRankingCommissionRate(ctx context.Context, player
 	//     }
 	// }
 
-	return 0, "" // 暂时返回0，等待排名系统完整实�?}
+    return 0, "" // 暂时返回0，等待排名系统完整实现
+}
 
-// getServiceItemForOrder 获取订单的服务项�?func (s *CommissionService) getServiceItemForOrder(ctx context.Context, itemID uint64) (*model.ServiceItem, error) {
+// getServiceItemForOrder 获取订单的服务项
+func (s *CommissionService) getServiceItemForOrder(ctx context.Context, itemID uint64) (*model.ServiceItem, error) {
 	// TODO: 需要注�?ServiceItemRepository
 	// return s.serviceItems.Get(ctx, itemID)
 	return nil, nil // 暂时返回nil
 }
 
-// selectLowestRate 选择最低抽成比�?func selectLowestRate(candidates []CommissionCandidate) CommissionCandidate {
+// selectLowestRate 选择最低抽成比例
+func selectLowestRate(candidates []CommissionCandidate) CommissionCandidate {
 	if len(candidates) == 0 {
 		return CommissionCandidate{
 			Source: "默认规则",
@@ -581,15 +598,18 @@ func ParseRankingCommissionRules(rulesJSON string) ([]model.RankingCommissionRul
 	return rules, nil
 }
 
-// FindCommissionRateForRank 根据排名查找对应的抽成比�?func FindCommissionRateForRank(rules []model.RankingCommissionRule, rank int) int {
+// FindCommissionRateForRank 根据排名查找对应的抽成比例
+func FindCommissionRateForRank(rules []model.RankingCommissionRule, rank int) int {
 	for _, rule := range rules {
 		if rank >= rule.RankStart && rank <= rule.RankEnd {
 			return rule.CommissionRate
 		}
 	}
-	return 0 // 不在任何规则范围�?}
+    return 0 // 不在任何规则范围内
+}
 
-// ValidateRankingRules 验证排名规则的合法�?func ValidateRankingRules(rules []model.RankingCommissionRule) error {
+// ValidateRankingRules 验证排名规则的合法性
+func ValidateRankingRules(rules []model.RankingCommissionRule) error {
 	for _, rule := range rules {
 		if rule.RankStart < 1 || rule.RankEnd < rule.RankStart {
 			return ErrValidation
@@ -611,7 +631,8 @@ func ParseRankingCommissionRules(rulesJSON string) ([]model.RankingCommissionRul
 	return nil
 }
 
-// rangesOverlap 检查两个范围是否重�?func rangesOverlap(start1, end1, start2, end2 int) bool {
+// rangesOverlap 检查两个范围是否重叠
+func rangesOverlap(start1, end1, start2, end2 int) bool {
 	return math.Max(float64(start1), float64(start2)) <= math.Min(float64(end1), float64(end2))
 }
 

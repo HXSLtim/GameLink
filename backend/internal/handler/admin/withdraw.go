@@ -21,7 +21,8 @@ type WithdrawAdminService interface {
 	CompleteWithdraw(ctx context.Context, id uint64, adminID uint64) error
 }
 
-// RegisterWithdrawRoutes 注册管理端提现管理路�?func RegisterWithdrawRoutes(router gin.IRouter, withdrawRepo repository.WithdrawRepository) {
+// RegisterWithdrawRoutes 注册管理端提现管理路由
+func RegisterWithdrawRoutes(router gin.IRouter, withdrawRepo repository.WithdrawRepository) {
 	group := router.Group("/admin/withdraws")
 	{
 		group.GET("", func(c *gin.Context) { listWithdrawsHandler(c, withdrawRepo) })
@@ -34,7 +35,8 @@ type WithdrawAdminService interface {
 
 // listWithdrawsHandler 获取提现申请列表
 // @Summary      获取提现申请列表
-// @Description  管理员查看所有提现申�?// @Tags         Admin - Withdraw
+// @Description  管理员查看所有提现申请
+// @Tags         Admin - Withdraw
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true   "Bearer {token}"

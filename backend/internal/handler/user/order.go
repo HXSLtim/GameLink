@@ -10,15 +10,15 @@ import (
 	"gamelink/internal/service/order"
 )
 
-// RegisterOrderRoutes 注册用户端订单路�?func RegisterOrderRoutes(router gin.IRouter, svc *order.OrderService, authMiddleware gin.HandlerFunc) {
-	group := router.Group("/user/orders")
-	group.Use(authMiddleware) // 需要认�?	{
-		group.POST("", func(c *gin.Context) { createOrderHandler(c, svc) })
-		group.GET("", func(c *gin.Context) { getMyOrdersHandler(c, svc) })
-		group.GET("/:id", func(c *gin.Context) { getOrderDetailHandler(c, svc) })
-		group.PUT("/:id/cancel", func(c *gin.Context) { cancelOrderHandler(c, svc) })
-		group.PUT("/:id/complete", func(c *gin.Context) { completeOrderHandler(c, svc) })
-	}
+// RegisterOrderRoutes 注册用户端订单路由
+func RegisterOrderRoutes(router gin.IRouter, svc *order.OrderService, authMiddleware gin.HandlerFunc) {
+    group := router.Group("/user/orders")
+    group.Use(authMiddleware) // 需要认证
+    group.POST("", func(c *gin.Context) { createOrderHandler(c, svc) })
+    group.GET("", func(c *gin.Context) { getMyOrdersHandler(c, svc) })
+    group.GET("/:id", func(c *gin.Context) { getOrderDetailHandler(c, svc) })
+    group.PUT("/:id/cancel", func(c *gin.Context) { cancelOrderHandler(c, svc) })
+    group.PUT("/:id/complete", func(c *gin.Context) { completeOrderHandler(c, svc) })
 }
 
 // createOrderHandler 创建订单
@@ -182,7 +182,7 @@ func cancelOrderHandler(c *gin.Context, svc *order.OrderService) {
 	respondJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
-		Message: "订单已取�?,
+		Message: "订单已取消",
 	})
 }
 
@@ -224,13 +224,13 @@ func completeOrderHandler(c *gin.Context, svc *order.OrderService) {
 	respondJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
-		Message: "订单已完�?,
+		Message: "订单已完成",
 	})
 }
 
 // getUserIDFromContext 从上下文获取用户ID
 func getUserIDFromContext(c *gin.Context) uint64 {
-	// �?JWT 中间件设置的上下文中获取用户ID
+    // 从 JWT 中间件设置的上下文中获取用户ID
 	userIDVal, exists := c.Get("user_id")
 	if !exists {
 		return 0

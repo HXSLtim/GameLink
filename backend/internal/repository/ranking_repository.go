@@ -200,3 +200,4 @@ func (r *rankingRepository) GetRewardForRank(ctx context.Context, rankingType mo
 	return &reward, nil
 }
 
+

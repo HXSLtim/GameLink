@@ -1,15 +1,15 @@
 package middleware
 
 import (
-	"context"
-	"fmt"
-	"log"
-	"strings"
+    "context"
+    "fmt"
+    "log"
+    "strings"
 
-	"github.com/gin-gonic/gin"
+    "github.com/gin-gonic/gin"
 
-	"gamelink/internal/model"
-	"gamelink/internal/service"
+    "gamelink/internal/model"
+    permissionservice "gamelink/internal/service/permission"
 )
 
 // APISyncConfig API 同步配置。
@@ -24,7 +24,7 @@ type APISyncConfig struct {
 
 // SyncAPIPermissions 同步 API 路由到权限表。
 // 在应用启动后调用，遍历所有路由并注册到 permissions 表。
-func SyncAPIPermissions(router *gin.Engine, permissionSvc *service.PermissionService, cfg APISyncConfig) error {
+func SyncAPIPermissions(router *gin.Engine, permissionSvc *permissionservice.PermissionService, cfg APISyncConfig) error {
 	routes := router.Routes()
 
 	var permissions []model.Permission

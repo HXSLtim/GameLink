@@ -12,18 +12,18 @@ import (
 
 // RegisterOrderRoutes 注册陪玩师端订单管理路由
 func RegisterOrderRoutes(router gin.IRouter, svc *order.OrderService, authMiddleware gin.HandlerFunc) {
-	group := router.Group("/player/orders")
-	group.Use(authMiddleware) // 需要认�?	{
-		group.GET("/available", func(c *gin.Context) { getAvailableOrdersHandler(c, svc) })
-		group.POST("/:id/accept", func(c *gin.Context) { acceptOrderHandler(c, svc) })
-		group.GET("/my", func(c *gin.Context) { getMyAcceptedOrdersHandler(c, svc) })
-		group.PUT("/:id/complete", func(c *gin.Context) { completeOrderByPlayerHandler(c, svc) })
-	}
+    group := router.Group("/player/orders")
+    group.Use(authMiddleware) // 需要认证
+    group.GET("/available", func(c *gin.Context) { getAvailableOrdersHandler(c, svc) })
+    group.POST("/:id/accept", func(c *gin.Context) { acceptOrderHandler(c, svc) })
+    group.GET("/my", func(c *gin.Context) { getMyAcceptedOrdersHandler(c, svc) })
+    group.PUT("/:id/complete", func(c *gin.Context) { completeOrderByPlayerHandler(c, svc) })
 }
 
 // getAvailableOrdersHandler 获取可接订单列表
 // @Summary      获取可接订单列表
-// @Description  获取订单大厅的可接订单列�?// @Tags         Player - Orders
+// @Description  获取订单大厅的可接订单列表
+// @Tags         Player - Orders
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true   "Bearer {token}"
@@ -166,6 +166,6 @@ func completeOrderByPlayerHandler(c *gin.Context, svc *order.OrderService) {
 	respondJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
-		Message: "订单已完�?,
+		Message: "订单已完成",
 	})
 }

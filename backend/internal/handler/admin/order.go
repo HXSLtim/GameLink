@@ -13,15 +13,17 @@ import (
 	apierr "gamelink/internal/handler"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
-	adminservice "gamelink/internal/service/admin"
+    service "gamelink/internal/service/admin"
 	"strconv"
 )
 
-// OrderHandler 管理订单相关接口�?type OrderHandler struct {
+// OrderHandler 管理订单相关接口
+type OrderHandler struct {
 	svc *service.AdminService
 }
 
-// NewOrderHandler 创建 Handler�?func NewOrderHandler(svc *service.AdminService) *OrderHandler {
+// NewOrderHandler 创建 Handler
+func NewOrderHandler(svc *service.AdminService) *OrderHandler {
 	return &OrderHandler{svc: svc}
 }
 
@@ -642,11 +644,13 @@ type AssignOrderPayload struct {
 	PlayerID uint64 `json:"player_id" binding:"required"`
 }
 
-// PaymentHandler 管理支付记录�?type PaymentHandler struct {
+// PaymentHandler 管理支付记录
+type PaymentHandler struct {
 	svc *service.AdminService
 }
 
-// NewPaymentHandler 创建 Handler�?func NewPaymentHandler(svc *service.AdminService) *PaymentHandler {
+// NewPaymentHandler 创建 Handler
+func NewPaymentHandler(svc *service.AdminService) *PaymentHandler {
 	return &PaymentHandler{svc: svc}
 }
 
@@ -994,10 +998,10 @@ func exportOperationLogsCSV(c *gin.Context, entity string, entityID uint64, item
 		"id": "id", "entity_type": "entity_type", "entity_id": "entity_id", "actor_user_id": "actor_user_id",
 		"action": "action", "reason": "reason", "metadata": "metadata", "created_at": "created_at",
 	}
-	headerMapZh := map[string]string{
-		"id": "编号", "entity_type": "实体", "entity_id": "实体ID", "actor_user_id": "操作人ID",
-		"action": "动作", "reason": "原因", "metadata": "元数�?, "created_at": "创建时间",
-	}
+		headerMapZh := map[string]string{
+			"id": "编号", "entity_type": "实体", "entity_id": "实体ID", "actor_user_id": "操作人ID",
+			"action": "动作", "reason": "原因", "metadata": "元数据", "created_at": "创建时间",
+		}
 	var header []string
 	for _, f := range fields {
 		if lang == "zh" {

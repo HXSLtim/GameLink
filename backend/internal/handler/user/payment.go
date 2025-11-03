@@ -10,18 +10,19 @@ import (
 	"gamelink/internal/service/payment"
 )
 
-// RegisterPaymentRoutes 注册用户端支付路�?func RegisterPaymentRoutes(router gin.IRouter, svc *payment.PaymentService, authMiddleware gin.HandlerFunc) {
-	group := router.Group("/user/payments")
-	group.Use(authMiddleware) // 需要认�?	{
-		group.POST("", func(c *gin.Context) { createPaymentHandler(c, svc) })
-		group.GET("/:id", func(c *gin.Context) { getPaymentStatusHandler(c, svc) })
-		group.POST("/:id/cancel", func(c *gin.Context) { cancelPaymentHandler(c, svc) })
-	}
+// RegisterPaymentRoutes 注册用户端支付路由
+func RegisterPaymentRoutes(router gin.IRouter, svc *payment.PaymentService, authMiddleware gin.HandlerFunc) {
+    group := router.Group("/user/payments")
+    group.Use(authMiddleware) // 需要认证
+    group.POST("", func(c *gin.Context) { createPaymentHandler(c, svc) })
+    group.GET("/:id", func(c *gin.Context) { getPaymentStatusHandler(c, svc) })
+    group.POST("/:id/cancel", func(c *gin.Context) { cancelPaymentHandler(c, svc) })
 }
 
 // createPaymentHandler 创建支付
 // @Summary      创建支付
-// @Description  为订单创建支�?// @Tags         User - Payments
+// @Description  为订单创建支付
+// @Tags         User - Payments
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string                          true  "Bearer {token}"
@@ -119,6 +120,6 @@ func cancelPaymentHandler(c *gin.Context, svc *payment.PaymentService) {
 	respondJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
-		Message: "支付已取�?,
+		Message: "支付已取消",
 	})
 }

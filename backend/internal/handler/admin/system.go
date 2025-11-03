@@ -13,11 +13,13 @@ import (
     "gamelink/internal/model"
 )
 
-// RegisterSystemRoutes 注册系统信息相关路由（管理端）�?// 使用细粒度权限控制（method+path 级别）�?func RegisterSystemRoutes(router gin.IRouter, cfg config.AppConfig, sqlDB *sql.DB, cacheClient cache.Cache, pm *mw.PermissionMiddleware) {
+// RegisterSystemRoutes 注册系统信息相关路由（管理端）
+// 使用细粒度权限控制（method+path 级别）
+func RegisterSystemRoutes(router gin.IRouter, cfg config.AppConfig, sqlDB *sql.DB, cacheClient cache.Cache, pm *mw.PermissionMiddleware) {
     h := NewSystemInfoHandler(cfg, sqlDB, cacheClient)
 
     group := router.Group("/admin")
-    // 系统信息接口均需要认�?+ 速率限制
+    // 系统信息接口均需要认证 + 速率限制
     if os.Getenv("APP_ENV") == "production" {
         group.Use(pm.RequireAuth(), mw.RateLimitAdmin())
     } else {
@@ -30,7 +32,8 @@ import (
         }
     }
 
-    // 系统信息接口 - 使用细粒度权�?    group.GET("/system/config", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/system/config"), h.Config)
+    // 系统信息接口 - 使用细粒度权限
+    group.GET("/system/config", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/system/config"), h.Config)
     group.GET("/system/db", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/system/db"), h.DBStatus)
     group.GET("/system/cache", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/system/cache"), h.CacheStatus)
     group.GET("/system/resources", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/system/resources"), h.Resources)

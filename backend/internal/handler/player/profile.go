@@ -11,13 +11,12 @@ import (
 
 // RegisterProfileRoutes 注册陪玩师端资料管理路由
 func RegisterProfileRoutes(router gin.IRouter, svc *player.PlayerService, authMiddleware gin.HandlerFunc) {
-	group := router.Group("/player")
-	group.Use(authMiddleware) // 需要认�?	{
-		group.POST("/apply", func(c *gin.Context) { applyAsPlayerHandler(c, svc) })
-		group.GET("/profile", func(c *gin.Context) { getPlayerProfileHandler(c, svc) })
-		group.PUT("/profile", func(c *gin.Context) { updatePlayerProfileHandler(c, svc) })
-		group.PUT("/status", func(c *gin.Context) { setPlayerStatusHandler(c, svc) })
-	}
+    group := router.Group("/player")
+    group.Use(authMiddleware) // 需要认证
+    group.POST("/apply", func(c *gin.Context) { applyAsPlayerHandler(c, svc) })
+    group.GET("/profile", func(c *gin.Context) { getPlayerProfileHandler(c, svc) })
+    group.PUT("/profile", func(c *gin.Context) { updatePlayerProfileHandler(c, svc) })
+    group.PUT("/status", func(c *gin.Context) { setPlayerStatusHandler(c, svc) })
 }
 
 // applyAsPlayerHandler 申请成为陪玩�?// @Summary      申请成为陪玩�?// @Description  用户申请成为陪玩�?// @Tags         Player - Profile
@@ -147,6 +146,6 @@ func setPlayerStatusHandler(c *gin.Context, svc *player.PlayerService) {
 	respondJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
-		Message: "状态更新成�?,
+		Message: "状态更新成功",
 	})
 }
