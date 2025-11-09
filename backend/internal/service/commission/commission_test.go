@@ -3,10 +3,10 @@ package commission
 import (
 	"context"
 	"testing"
-	"time"
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
+	commissionrepo "gamelink/internal/repository/commission"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -48,7 +48,7 @@ func (m *MockCommissionRepo) GetRuleForOrder(ctx context.Context, gameID, player
 	return args.Get(0).(*model.CommissionRule), args.Error(1)
 }
 
-func (m *MockCommissionRepo) ListRules(ctx context.Context, opts repository.CommissionRuleListOptions) ([]model.CommissionRule, int64, error) {
+func (m *MockCommissionRepo) ListRules(ctx context.Context, opts commissionrepo.CommissionRuleListOptions) ([]model.CommissionRule, int64, error) {
 	args := m.Called(ctx, opts)
 	return args.Get(0).([]model.CommissionRule), args.Get(1).(int64), args.Error(2)
 }
@@ -87,7 +87,7 @@ func (m *MockCommissionRepo) GetRecordByOrderID(ctx context.Context, orderID uin
 	return args.Get(0).(*model.CommissionRecord), args.Error(1)
 }
 
-func (m *MockCommissionRepo) ListRecords(ctx context.Context, opts repository.CommissionRecordListOptions) ([]model.CommissionRecord, int64, error) {
+func (m *MockCommissionRepo) ListRecords(ctx context.Context, opts commissionrepo.CommissionRecordListOptions) ([]model.CommissionRecord, int64, error) {
 	args := m.Called(ctx, opts)
 	return args.Get(0).([]model.CommissionRecord), args.Get(1).(int64), args.Error(2)
 }
@@ -118,7 +118,7 @@ func (m *MockCommissionRepo) GetSettlementByPlayerMonth(ctx context.Context, pla
 	return args.Get(0).(*model.MonthlySettlement), args.Error(1)
 }
 
-func (m *MockCommissionRepo) ListSettlements(ctx context.Context, opts repository.SettlementListOptions) ([]model.MonthlySettlement, int64, error) {
+func (m *MockCommissionRepo) ListSettlements(ctx context.Context, opts commissionrepo.SettlementListOptions) ([]model.MonthlySettlement, int64, error) {
 	args := m.Called(ctx, opts)
 	return args.Get(0).([]model.MonthlySettlement), args.Get(1).(int64), args.Error(2)
 }
@@ -128,12 +128,12 @@ func (m *MockCommissionRepo) UpdateSettlement(ctx context.Context, settlement *m
 	return args.Error(0)
 }
 
-func (m *MockCommissionRepo) GetMonthlyStats(ctx context.Context, month string) (*repository.MonthlyStats, error) {
+func (m *MockCommissionRepo) GetMonthlyStats(ctx context.Context, month string) (*commissionrepo.MonthlyStats, error) {
 	args := m.Called(ctx, month)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*repository.MonthlyStats), args.Error(1)
+	return args.Get(0).(*commissionrepo.MonthlyStats), args.Error(1)
 }
 
 func (m *MockCommissionRepo) GetPlayerMonthlyIncome(ctx context.Context, playerID uint64, month string) (int64, error) {
@@ -163,6 +163,11 @@ func (m *MockOrderRepo) Update(ctx context.Context, order *model.Order) error {
 	return args.Error(0)
 }
 
+func (m *MockOrderRepo) Delete(ctx context.Context, id uint64) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
 func (m *MockOrderRepo) List(ctx context.Context, opts repository.OrderListOptions) ([]model.Order, int64, error) {
 	args := m.Called(ctx, opts)
 	return args.Get(0).([]model.Order), args.Get(1).(int64), args.Error(2)
@@ -182,6 +187,8 @@ func (m *MockPlayerRepo) Get(ctx context.Context, id uint64) (*model.Player, err
 
 func (m *MockPlayerRepo) Create(ctx context.Context, player *model.Player) error { return nil }
 func (m *MockPlayerRepo) Update(ctx context.Context, player *model.Player) error { return nil }
+func (m *MockPlayerRepo) Delete(ctx context.Context, id uint64) error            { return nil }
+func (m *MockPlayerRepo) List(ctx context.Context) ([]model.Player, error)       { return nil, nil }
 func (m *MockPlayerRepo) ListPaged(ctx context.Context, page, pageSize int) ([]model.Player, int64, error) {
 	return nil, 0, nil
 }
@@ -199,11 +206,11 @@ func TestCommissionService_CalculateCommission(t *testing.T) {
 		gameID := uint64(1)
 		playerID := uint64(5)
 		order := &model.Order{
-			ID:              1001,
 			GameID:          &gameID,
 			PlayerID:        &playerID,
 			TotalPriceCents: 50000,
 		}
+		order.ID = 1001
 
 		defaultRule := &model.CommissionRule{
 			Rate: 20, // 20%
@@ -223,8 +230,8 @@ func TestCommissionService_CalculateCommission(t *testing.T) {
 		assert.Equal(t, uint64(1001), calc.OrderID)
 		assert.Equal(t, int64(50000), calc.TotalAmountCents)
 		assert.Equal(t, 20, calc.CommissionRate)
-		assert.Equal(t, int64(10000), calc.CommissionCents)      // 20%
-		assert.Equal(t, int64(40000), calc.PlayerIncomeCents)    // 80%
+		assert.Equal(t, int64(10000), calc.CommissionCents)   // 20%
+		assert.Equal(t, int64(40000), calc.PlayerIncomeCents) // 80%
 	})
 
 	t.Run("使用特殊抽成规则", func(t *testing.T) {
@@ -237,11 +244,11 @@ func TestCommissionService_CalculateCommission(t *testing.T) {
 		gameID := uint64(1)
 		playerID := uint64(5)
 		order := &model.Order{
-			ID:              1002,
 			GameID:          &gameID,
 			PlayerID:        &playerID,
 			TotalPriceCents: 100000,
 		}
+		order.ID = 1002
 
 		// 特殊规则：15%抽成
 		specialRule := &model.CommissionRule{
@@ -277,11 +284,11 @@ func TestCommissionService_RecordCommission(t *testing.T) {
 		gameID := uint64(1)
 		playerID := uint64(5)
 		order := &model.Order{
-			ID:              1001,
 			GameID:          &gameID,
 			PlayerID:        &playerID,
 			TotalPriceCents: 50000,
 		}
+		order.ID = 1001
 
 		defaultRule := &model.CommissionRule{
 			Rate: 20,
@@ -351,7 +358,7 @@ func TestCommissionService_SettleMonth(t *testing.T) {
 		status := "pending"
 
 		// Mock: 该月没有结算记录
-		commissionRepo.On("ListSettlements", ctx, mock.MatchedBy(func(opts repository.SettlementListOptions) bool {
+		commissionRepo.On("ListSettlements", ctx, mock.MatchedBy(func(opts commissionrepo.SettlementListOptions) bool {
 			return *opts.SettlementMonth == month
 		})).Return([]model.MonthlySettlement{}, int64(0), nil)
 
@@ -362,7 +369,7 @@ func TestCommissionService_SettleMonth(t *testing.T) {
 			{ID: 3, OrderID: 103, PlayerID: 6, TotalAmountCents: 40000, CommissionCents: 8000, PlayerIncomeCents: 32000},
 		}
 
-		commissionRepo.On("ListRecords", ctx, mock.MatchedBy(func(opts repository.CommissionRecordListOptions) bool {
+		commissionRepo.On("ListRecords", ctx, mock.MatchedBy(func(opts commissionrepo.CommissionRecordListOptions) bool {
 			return *opts.SettlementMonth == month && *opts.SettlementStatus == status
 		})).Return(records, int64(3), nil)
 
@@ -371,9 +378,9 @@ func TestCommissionService_SettleMonth(t *testing.T) {
 			if settlement.PlayerID == 5 {
 				// 陪玩师5: 2笔订单
 				assert.Equal(t, int64(2), settlement.TotalOrderCount)
-				assert.Equal(t, int64(80000), settlement.TotalAmountCents)  // 50000+30000
+				assert.Equal(t, int64(80000), settlement.TotalAmountCents)     // 50000+30000
 				assert.Equal(t, int64(16000), settlement.TotalCommissionCents) // 10000+6000
-				assert.Equal(t, int64(64000), settlement.TotalIncomeCents)  // 40000+24000
+				assert.Equal(t, int64(64000), settlement.TotalIncomeCents)     // 40000+24000
 			} else if settlement.PlayerID == 6 {
 				// 陪玩师6: 1笔订单
 				assert.Equal(t, int64(1), settlement.TotalOrderCount)
@@ -413,8 +420,9 @@ func TestCommissionService_SettleMonth(t *testing.T) {
 			{ID: 1, PlayerID: 5, SettlementMonth: month},
 		}
 
-		commissionRepo.On("ListSettlements", ctx, mock.AnythingOfType("repository.SettlementListOptions")).
-			Return(existingSettlement, int64(1), nil)
+		commissionRepo.On("ListSettlements", ctx, mock.MatchedBy(func(opts commissionrepo.SettlementListOptions) bool {
+			return *opts.SettlementMonth == month
+		})).Return(existingSettlement, int64(1), nil)
 
 		// 尝试重复结算
 		err := svc.SettleMonth(ctx, month)
@@ -498,4 +506,3 @@ func TestCommissionService_CreateCommissionRule(t *testing.T) {
 		assert.NotNil(t, rule)
 	})
 }
-

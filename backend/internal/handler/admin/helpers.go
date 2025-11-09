@@ -64,7 +64,7 @@ func queryTimePtr(c *gin.Context, key string) (*time.Time, error) {
 }
 
 func parseCSVParams(values []string) []string {
-	var result []string
+	result := make([]string, 0)
 	for _, raw := range values {
 		parts := strings.Split(raw, ",")
 		for _, part := range parts {

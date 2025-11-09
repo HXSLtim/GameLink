@@ -9,12 +9,13 @@ import (
 	"gamelink/internal/config"
 	mw "gamelink/internal/handler/middleware"
 	"gamelink/internal/model"
-	"gamelink/internal/service"
+	adminservice "gamelink/internal/service/admin"
+	statsservice "gamelink/internal/service/stats"
 )
 
-// RegisterRoutes 注册后台管理相关路由�?
-// 使用细粒度权限控制（method+path 级别）�?
-func RegisterRoutes(router gin.IRouter, svc *service.AdminService, pm *mw.PermissionMiddleware) {
+// RegisterRoutes 注册后台管理相关路由
+// 使用细粒度权限控制（method+path 级别）
+func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, pm *mw.PermissionMiddleware) {
 	gameHandler := NewGameHandler(svc)
 	userHandler := NewUserHandler(svc)
 	playerHandler := NewPlayerHandler(svc)
@@ -111,7 +112,7 @@ func RegisterRoutes(router gin.IRouter, svc *service.AdminService, pm *mw.Permis
 
 // RegisterStatsRoutes 注册统计相关路由�?
 // 使用细粒度权限控制（method+path 级别）�?
-func RegisterStatsRoutes(router gin.IRouter, stats *service.StatsService, pm *mw.PermissionMiddleware) {
+func RegisterStatsRoutes(router gin.IRouter, stats *statsservice.StatsService, pm *mw.PermissionMiddleware) {
 	h := NewStatsHandler(stats)
 	group := router.Group("/admin")
 	// 统计接口均需要认�?+ 速率限制

@@ -1,0 +1,583 @@
+---
+globs: frontend/src/**/*.{ts,tsx}
+description: TypeScript 和 React 组件规范
+---
+
+# TypeScript 和 React 组件规范
+
+## TypeScript 配置
+
+项目使用 **严格模式** TypeScript，配置见 [tsconfig.json](mdc:frontend/tsconfig.json)
+
+```json
+{
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true
+  }
+}
+```
+
+## 组件定义
+
+### 函数组件 (推荐)
+
+```typescript
+/**
+ * 用户卡片组件
+ */
+export const UserCard: React.FC<UserCardProps> = ({ user, onEdit, onDelete }) => {
+  return (
+    <div className={styles.card}>
+      <h3>{user.name}</h3>
+      <p>{user.phone}</p>
+      <button onClick={() => onEdit(user.id)}>编辑</button>
+      <button onClick={() => onDelete(user.id)}>删除</button>
+    </div>
+  );
+};
+```
+
+### Props 类型定义
+
+```typescript
+/**
+ * 用户卡片组件属性
+ */
+export interface UserCardProps {
+  /** 用户信息 */
+  user: User;
+  /** 编辑回调 */
+  onEdit?: (id: number) => void;
+  /** 删除回调 */
+  onDelete?: (id: number) => void;
+  /** 自定义类名 */
+  className?: string;
+  /** 子元素 */
+  children?: React.ReactNode;
+}
+```
+
+### 组件导出
+
+```typescript
+// UserCard/index.ts
+export { UserCard } from './UserCard';
+export type { UserCardProps } from './UserCard';
+```
+
+## Hooks 使用
+
+### useState
+
+```typescript
+// ✅ 显式指定类型
+const [user, setUser] = useState<User | null>(null);
+const [users, setUsers] = useState<User[]>([]);
+const [loading, setLoading] = useState<boolean>(false);
+
+// ✅ 可以省略类型 (能推断出来)
+const [count, setCount] = useState(0);
+const [name, setName] = useState('');
+```
+
+### useEffect
+
+```typescript
+// ✅ 清理副作用
+useEffect(() => {
+  const timer = setInterval(() => {
+    // ...
+  }, 1000);
+
+  return () => clearInterval(timer);
+}, []);
+
+// ✅ 正确的依赖项
+useEffect(() => {
+  loadUser(userId);
+}, [userId]); // userId 是依赖项
+```
+
+### useCallback
+
+```typescript
+// ✅ 缓存函数引用
+const handleEdit = useCallback((id: number) => {
+  // ...
+}, []);
+
+const handleDelete = useCallback((id: number) => {
+  // ...
+}, []);
+```
+
+### useMemo
+
+```typescript
+// ✅ 缓存计算结果
+const filteredUsers = useMemo(() => {
+  return users.filter(user => 
+    user.name.includes(searchTerm)
+  );
+}, [users, searchTerm]);
+```
+
+### 自定义 Hook
+
+```typescript
+/**
+ * 用户列表 Hook
+ */
+export function useUserList(params: ListUsersParams) {
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>();
+
+  const loadUsers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await userApi.list(params);
+      setUsers(data.users);
+    } catch (err) {
+      setError(handleApiError(err));
+    } finally {
+      setLoading(false);
+    }
+  }, [params]);
+
+  useEffect(() => {
+    loadUsers();
+  }, [loadUsers]);
+
+  return { users, loading, error, reload: loadUsers };
+}
+
+// 使用
+const { users, loading, error, reload } = useUserList({ page: 1 });
+```
+
+## 类型定义
+
+### 基础类型
+
+```typescript
+// ✅ 使用 interface 定义对象类型
+export interface User {
+  id: number;
+  name: string;
+  phone: string;
+  role: UserRole;
+  avatar?: string;        // 可选属性
+}
+
+// ✅ 使用 type 定义联合类型
+export type UserRole = 'admin' | 'user' | 'player';
+
+export type OrderStatus = 
+  | 'pending'
+  | 'confirmed'
+  | 'in_progress'
+  | 'completed'
+  | 'cancelled';
+```
+
+### 继承和扩展
+
+```typescript
+// 继承
+export interface Admin extends User {
+  permissions: string[];
+}
+
+// 扩展
+export type UserWithOrders = User & {
+  orders: Order[];
+};
+
+// Pick 和 Omit
+export type CreateUserData = Omit<User, 'id' | 'createdAt'>;
+export type UserBasicInfo = Pick<User, 'id' | 'name' | 'phone'>;
+
+// Partial 和 Required
+export type UpdateUserData = Partial<User>;
+export type RequiredUser = Required<User>;
+```
+
+### 泛型
+
+```typescript
+// 泛型接口
+export interface ApiResponse<T> {
+  data: T;
+  message?: string;
+  error?: string;
+}
+
+export interface ListResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+// 使用
+const userResponse: ApiResponse<User> = await api.getUser(1);
+const userList: ListResponse<User> = await api.listUsers();
+```
+
+## 事件处理
+
+### 事件类型
+
+```typescript
+// 表单事件
+const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  // ...
+};
+
+// 输入事件
+const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  setValue(e.target.value);
+};
+
+// 点击事件
+const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+  // ...
+};
+
+// 键盘事件
+const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  if (e.key === 'Enter') {
+    // ...
+  }
+};
+```
+
+### 事件处理器类型
+
+```typescript
+interface ButtonProps {
+  onClick?: React.MouseEventHandler<HTMLButtonElement>;
+  onChange?: React.ChangeEventHandler<HTMLInputElement>;
+}
+```
+
+## 条件渲染
+
+### ✅ 推荐
+
+```typescript
+// 使用 && 操作符
+{loading && <Spinner />}
+{error && <ErrorMessage message={error} />}
+
+// 使用三元运算符
+{user ? <UserProfile user={user} /> : <Login />}
+
+// 使用早期返回
+if (loading) return <Spinner />;
+if (error) return <ErrorMessage message={error} />;
+if (!data) return null;
+
+return <DataView data={data} />;
+```
+
+### ❌ 避免
+
+```typescript
+// 避免复杂的嵌套条件
+❌ {user && user.profile && user.profile.avatar && (
+     <img src={user.profile.avatar} />
+   )}
+
+✅ {user?.profile?.avatar && <img src={user.profile.avatar} />}
+```
+
+## 组件组合
+
+### Children
+
+```typescript
+interface ContainerProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export const Container: React.FC<ContainerProps> = ({ children, className }) => {
+  return <div className={className}>{children}</div>;
+};
+```
+
+### Render Props
+
+```typescript
+interface DataFetcherProps<T> {
+  url: string;
+  render: (data: T, loading: boolean, error?: string) => React.ReactNode;
+}
+
+export function DataFetcher<T>({ url, render }: DataFetcherProps<T>) {
+  const [data, setData] = useState<T>();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>();
+
+  useEffect(() => {
+    // fetch data...
+  }, [url]);
+
+  return <>{render(data!, loading, error)}</>;
+}
+
+// 使用
+<DataFetcher<User>
+  url="/api/users/1"
+  render={(user, loading, error) => {
+    if (loading) return <Spinner />;
+    if (error) return <Error message={error} />;
+    return <UserCard user={user} />;
+  }}
+/>
+```
+
+## 表单处理
+
+### 受控组件
+
+```typescript
+export const UserForm: React.FC<UserFormProps> = ({ onSubmit }) => {
+  const [formData, setFormData] = useState<CreateUserRequest>({
+    phone: '',
+    password: '',
+    name: '',
+  });
+
+  const handleChange = (field: keyof CreateUserRequest) => 
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setFormData(prev => ({
+        ...prev,
+        [field]: e.target.value,
+      }));
+    };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input
+        type="text"
+        value={formData.name}
+        onChange={handleChange('name')}
+      />
+      <input
+        type="tel"
+        value={formData.phone}
+        onChange={handleChange('phone')}
+      />
+      <button type="submit">提交</button>
+    </form>
+  );
+};
+```
+
+## 性能优化
+
+### React.memo
+
+```typescript
+// 避免不必要的重新渲染
+export const UserCard = React.memo<UserCardProps>(({ user, onEdit }) => {
+  return (
+    <div>
+      <h3>{user.name}</h3>
+      <button onClick={() => onEdit(user.id)}>编辑</button>
+    </div>
+  );
+}, (prevProps, nextProps) => {
+  // 自定义比较函数
+  return prevProps.user.id === nextProps.user.id;
+});
+```
+
+### useCallback 和 useMemo
+
+```typescript
+export const UserList: React.FC = () => {
+  const [users, setUsers] = useState<User[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // 缓存过滤结果
+  const filteredUsers = useMemo(() => {
+    return users.filter(user => 
+      user.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [users, searchTerm]);
+
+  // 缓存回调函数
+  const handleEdit = useCallback((id: number) => {
+    // ...
+  }, []);
+
+  return (
+    <div>
+      {filteredUsers.map(user => (
+        <UserCard key={user.id} user={user} onEdit={handleEdit} />
+      ))}
+    </div>
+  );
+};
+```
+
+## 错误边界
+
+```typescript
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error?: Error;
+}
+
+export class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  ErrorBoundaryState
+> {
+  state: ErrorBoundaryState = { hasError: false };
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Error caught by boundary:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <ErrorFallback error={this.state.error} />;
+    }
+
+    return this.props.children;
+  }
+}
+```
+
+## Context
+
+### 定义 Context
+
+```typescript
+// contexts/AuthContext.tsx
+interface AuthContextValue {
+  user: User | null;
+  login: (credentials: LoginCredentials) => Promise<void>;
+  logout: () => void;
+  isAuthenticated: boolean;
+}
+
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+
+  const login = async (credentials: LoginCredentials) => {
+    const user = await authApi.login(credentials);
+    setUser(user);
+  };
+
+  const logout = () => {
+    setUser(null);
+  };
+
+  const value: AuthContextValue = {
+    user,
+    login,
+    logout,
+    isAuthenticated: !!user,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+// 自定义 Hook
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within AuthProvider');
+  }
+  return context;
+};
+```
+
+## 最佳实践
+
+### ✅ 推荐
+
+```typescript
+// 1. 使用函数组件和 Hooks
+✅ export const UserCard: React.FC<UserCardProps> = (props) => { };
+
+// 2. 明确的类型定义
+✅ const [user, setUser] = useState<User | null>(null);
+
+// 3. 使用可选链和空值合并
+✅ const name = user?.profile?.name ?? 'Anonymous';
+
+// 4. 解构 Props
+✅ export const UserCard: React.FC<UserCardProps> = ({ user, onEdit }) => { };
+
+// 5. 使用 TypeScript 枚举或联合类型
+✅ type Status = 'pending' | 'success' | 'error';
+
+// 6. 组件文件组织
+✅ UserCard/
+   ├── UserCard.tsx
+   ├── UserCard.module.less
+   ├── UserCard.test.tsx
+   └── index.ts
+```
+
+### ❌ 避免
+
+```typescript
+// 1. 不要使用 any
+❌ const data: any = await fetchData();
+✅ const data: User = await fetchData();
+
+// 2. 不要忽略类型错误
+❌ // @ts-ignore
+✅ // 正确处理类型问题
+
+// 3. 不要在组件内部定义组件
+❌ const Parent = () => {
+     const Child = () => <div />;
+     return <Child />;
+   };
+
+// 4. 不要直接修改 state
+❌ user.name = 'new name';
+✅ setUser({ ...user, name: 'new name' });
+
+// 5. 不要忘记依赖项
+❌ useEffect(() => {
+     loadData(userId);
+   }, []); // 缺少 userId 依赖
+```
+
+## 检查清单
+
+编写组件时，确保：
+
+- [ ] 使用函数组件和 Hooks
+- [ ] 定义完整的 Props 类型
+- [ ] 添加 JSDoc 注释
+- [ ] 正确使用 useEffect 依赖项
+- [ ] 使用 useCallback 缓存回调函数
+- [ ] 使用 useMemo 缓存计算结果
+- [ ] 实现错误处理
+- [ ] 考虑性能优化 (React.memo)
+- [ ] 编写组件测试
+- [ ] 遵循项目的文件组织规范

@@ -1,0 +1,51 @@
+﻿
+ok  	gamelink/cmd	0.099s	coverage: 2.8% of statements
+ok  	gamelink/docs	0.075s	coverage: 100.0% of statements
+ok  	gamelink/internal/apierr	0.056s	coverage: [no statements]
+ok  	gamelink/internal/auth	0.065s	coverage: 60.0% of statements
+ok  	gamelink/internal/cache	0.419s	coverage: 73.8% of statements
+ok  	gamelink/internal/config	0.106s	coverage: 61.1% of statements
+ok  	gamelink/internal/db	0.306s	coverage: 30.9% of statements
+ok  	gamelink/internal/handler	0.579s	coverage: 73.4% of statements
+	gamelink/internal/handler/admin		coverage: 0.0% of statements
+ok  	gamelink/internal/handler/middleware	0.173s	coverage: 65.0% of statements
+ok  	gamelink/internal/handler/player	0.137s	coverage: 39.1% of statements
+coverage: 39.7% of statements
+ok  	gamelink/internal/logging	0.065s	coverage: 29.2% of statements
+ok  	gamelink/internal/metrics	0.093s	coverage: 19.2% of statements
+ok  	gamelink/internal/model	0.072s	coverage: 8.1% of statements
+ok  	gamelink/internal/repository	0.068s	coverage: 100.0% of statements
+ok  	gamelink/internal/repository/commission	0.379s	coverage: 34.7% of statements
+ok  	gamelink/internal/repository/common	0.103s	coverage: 100.0% of statements
+ok  	gamelink/internal/repository/game	0.203s	coverage: 83.3% of statements
+	gamelink/internal/repository/mocks		coverage: 0.0% of statements
+ok  	gamelink/internal/repository/operation_log	0.197s	coverage: 90.5% of statements
+ok  	gamelink/internal/repository/order	0.209s	coverage: 89.1% of statements
+ok  	gamelink/internal/repository/payment	0.216s	coverage: 88.4% of statements
+ok  	gamelink/internal/repository/permission	0.275s	coverage: 63.2% of statements
+ok  	gamelink/internal/repository/player	0.178s	coverage: 82.9% of statements
+ok  	gamelink/internal/repository/player_tag	0.185s	coverage: 90.3% of statements
+	gamelink/internal/repository/ranking		coverage: 0.0% of statements
+ok  	gamelink/internal/repository/review	0.176s	coverage: 87.8% of statements
+ok  	gamelink/internal/repository/role	0.277s	coverage: 74.5% of statements
+ok  	gamelink/internal/repository/serviceitem	0.154s	coverage: 50.9% of statements
+ok  	gamelink/internal/repository/stats	0.231s	coverage: 76.1% of statements
+ok  	gamelink/internal/repository/user	0.164s	coverage: 85.7% of statements
+ok  	gamelink/internal/repository/withdraw	0.232s	coverage: 78.0% of statements
+	gamelink/internal/scheduler		coverage: 0.0% of statements
+ok  	gamelink/internal/service	0.172s	coverage: [no statements]
+coverage: 42.2% of statements
+ok  	gamelink/internal/service/auth	1.841s	coverage: 92.1% of statements
+ok  	gamelink/internal/service/earnings	0.110s	coverage: 80.6% of statements
+ok  	gamelink/internal/service/gift	0.116s	coverage: 87.0% of statements
+ok  	gamelink/internal/service/item	1.716s	coverage: 66.3% of statements
+ok  	gamelink/internal/service/order	1.685s	coverage: 67.8% of statements
+ok  	gamelink/internal/service/payment	1.720s	coverage: 75.5% of statements
+ok  	gamelink/internal/service/permission	1.354s	coverage: 88.1% of statements
+ok  	gamelink/internal/service/player	0.056s	coverage: 62.1% of statements
+	gamelink/internal/service/ranking		coverage: 0.0% of statements
+ok  	gamelink/internal/service/review	0.050s	coverage: 78.6% of statements
+ok  	gamelink/internal/service/role	0.095s	coverage: 55.5% of statements
+ok  	gamelink/internal/service/stats	0.090s	coverage: 100.0% of statements
+
+

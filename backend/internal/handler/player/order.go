@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"gamelink/internal/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/service/order"
 )
@@ -75,7 +76,7 @@ func acceptOrderHandler(c *gin.Context, svc *order.OrderService) {
 	idStr := c.Param("id")
 	orderID, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		respondError(c, http.StatusBadRequest, ErrInvalidID)
+		respondError(c, http.StatusBadRequest, apierr.ErrInvalidID)
 		return
 	}
 
@@ -146,7 +147,7 @@ func completeOrderByPlayerHandler(c *gin.Context, svc *order.OrderService) {
 	idStr := c.Param("id")
 	orderID, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		respondError(c, http.StatusBadRequest, ErrInvalidID)
+		respondError(c, http.StatusBadRequest, apierr.ErrInvalidID)
 		return
 	}
 

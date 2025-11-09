@@ -7,6 +7,7 @@ import (
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
+	withdrawrepo "gamelink/internal/repository/withdraw"
 )
 
 // Mock repositories
@@ -64,7 +65,7 @@ func (m *mockOrderRepository) List(ctx context.Context, opts repository.OrderLis
 	var result []model.Order
 	for _, o := range m.orders {
 		// Filter by PlayerID
-		if opts.PlayerID != nil && o.PlayerID != *opts.PlayerID {
+		if opts.PlayerID != nil && o.PlayerID != nil && *o.PlayerID != *opts.PlayerID {
 			continue
 		}
 		// Filter by Statuses
@@ -116,9 +117,63 @@ func (m *mockOrderRepository) Delete(ctx context.Context, id uint64) error {
 	return nil
 }
 
+// mockWithdrawRepository mock 提现仓库
+type mockWithdrawRepository struct {
+	data   map[uint64]*model.Withdraw
+	nextID uint64
+}
+
+func newMockWithdrawRepository() *mockWithdrawRepository {
+	return &mockWithdrawRepository{
+		data:   make(map[uint64]*model.Withdraw),
+		nextID: 0,
+	}
+}
+
+func (m *mockWithdrawRepository) Create(ctx context.Context, withdraw *model.Withdraw) error {
+	m.nextID++
+	withdraw.ID = m.nextID
+	m.data[withdraw.ID] = withdraw
+	return nil
+}
+
+func (m *mockWithdrawRepository) Get(ctx context.Context, id uint64) (*model.Withdraw, error) {
+	if w, ok := m.data[id]; ok {
+		return w, nil
+	}
+	return nil, repository.ErrNotFound
+}
+
+func (m *mockWithdrawRepository) Update(ctx context.Context, withdraw *model.Withdraw) error {
+	if _, ok := m.data[withdraw.ID]; ok {
+		m.data[withdraw.ID] = withdraw
+		return nil
+	}
+	return repository.ErrNotFound
+}
+
+func (m *mockWithdrawRepository) List(ctx context.Context, opts withdrawrepo.WithdrawListOptions) ([]model.Withdraw, int64, error) {
+	var result []model.Withdraw
+	for _, w := range m.data {
+		// Filter by PlayerID if specified
+		if opts.PlayerID != nil && w.PlayerID != *opts.PlayerID {
+			continue
+		}
+		result = append(result, *w)
+	}
+	return result, int64(len(result)), nil
+}
+
+func (m *mockWithdrawRepository) GetPlayerBalance(ctx context.Context, playerID uint64) (*withdrawrepo.PlayerBalance, error) {
+	// 返回错误，让服务使用备用计算方法（基于订单）
+	return nil, repository.ErrNotFound
+}
+
 func TestGetEarningsSummary(t *testing.T) {
 	orderRepo := newMockOrderRepository()
-	svc := NewEarningsService(&mockPlayerRepository{}, orderRepo)
+	withdrawRepo := newMockWithdrawRepository()
+	playerID := uint64(1)
+	svc := NewEarningsService(&mockPlayerRepository{}, orderRepo, withdrawRepo)
 
 	// 创建一些已完成的订单
 	now := time.Now()
@@ -128,9 +183,9 @@ func TestGetEarningsSummary(t *testing.T) {
 			Base: model.Base{
 				CreatedAt: createdAt,
 			},
-			PlayerID:   1,
-			Status:     model.OrderStatusCompleted,
-			PriceCents: 10000,
+			PlayerID:        &playerID,
+			Status:          model.OrderStatusCompleted,
+			TotalPriceCents: 10000,
 		}
 		_ = orderRepo.Create(context.Background(), order)
 	}
@@ -171,7 +226,9 @@ func TestGetEarningsSummary(t *testing.T) {
 
 func TestGetEarningsTrend(t *testing.T) {
 	orderRepo := newMockOrderRepository()
-	svc := NewEarningsService(&mockPlayerRepository{}, orderRepo)
+	withdrawRepo := newMockWithdrawRepository()
+	playerID := uint64(1)
+	svc := NewEarningsService(&mockPlayerRepository{}, orderRepo, withdrawRepo)
 
 	// 创建过去7天的订单
 	now := time.Now()
@@ -181,9 +238,9 @@ func TestGetEarningsTrend(t *testing.T) {
 			Base: model.Base{
 				CreatedAt: createdAt,
 			},
-			PlayerID:   1,
-			Status:     model.OrderStatusCompleted,
-			PriceCents: int64((i + 1) * 1000),
+			PlayerID:        &playerID,
+			Status:          model.OrderStatusCompleted,
+			TotalPriceCents: int64((i + 1) * 1000),
 		}
 		_ = orderRepo.Create(context.Background(), order)
 	}
@@ -216,7 +273,8 @@ func TestGetEarningsTrend(t *testing.T) {
 
 func TestGetEarningsTrendInvalidDays(t *testing.T) {
 	orderRepo := newMockOrderRepository()
-	svc := NewEarningsService(&mockPlayerRepository{}, orderRepo)
+	withdrawRepo := newMockWithdrawRepository()
+	svc := NewEarningsService(&mockPlayerRepository{}, orderRepo, withdrawRepo)
 
 	// 测试小于7天（应该自动调整为7）
 	resp, err := svc.GetEarningsTrend(context.Background(), 1, 5)
@@ -239,7 +297,9 @@ func TestGetEarningsTrendInvalidDays(t *testing.T) {
 
 func TestRequestWithdraw(t *testing.T) {
 	orderRepo := newMockOrderRepository()
-	svc := NewEarningsService(&mockPlayerRepository{}, orderRepo)
+	withdrawRepo := newMockWithdrawRepository()
+	playerID := uint64(1)
+	svc := NewEarningsService(&mockPlayerRepository{}, orderRepo, withdrawRepo)
 
 	// 创建足够的收益
 	for i := 0; i < 10; i++ {
@@ -247,9 +307,9 @@ func TestRequestWithdraw(t *testing.T) {
 			Base: model.Base{
 				CreatedAt: time.Now(),
 			},
-			PlayerID:   1,
-			Status:     model.OrderStatusCompleted,
-			PriceCents: 20000,
+			PlayerID:        &playerID,
+			Status:          model.OrderStatusCompleted,
+			TotalPriceCents: 20000,
 		}
 		_ = orderRepo.Create(context.Background(), order)
 	}
@@ -280,16 +340,18 @@ func TestRequestWithdraw(t *testing.T) {
 
 func TestRequestWithdrawInsufficientBalance(t *testing.T) {
 	orderRepo := newMockOrderRepository()
-	svc := NewEarningsService(&mockPlayerRepository{}, orderRepo)
+	withdrawRepo := newMockWithdrawRepository()
+	playerID := uint64(1)
+	svc := NewEarningsService(&mockPlayerRepository{}, orderRepo, withdrawRepo)
 
 	// 只创建少量收益
 	order := &model.Order{
 		Base: model.Base{
 			CreatedAt: time.Now(),
 		},
-		PlayerID:   1,
-		Status:     model.OrderStatusCompleted,
-		PriceCents: 5000, // 50元
+		PlayerID:        &playerID,
+		Status:          model.OrderStatusCompleted,
+		TotalPriceCents: 5000, // 50元
 	}
 	_ = orderRepo.Create(context.Background(), order)
 
@@ -307,7 +369,8 @@ func TestRequestWithdrawInsufficientBalance(t *testing.T) {
 
 func TestGetWithdrawHistory(t *testing.T) {
 	orderRepo := newMockOrderRepository()
-	svc := NewEarningsService(&mockPlayerRepository{}, orderRepo)
+	withdrawRepo := newMockWithdrawRepository()
+	svc := NewEarningsService(&mockPlayerRepository{}, orderRepo, withdrawRepo)
 
 	// 测试获取提现记录（当前返回空列表）
 	resp, err := svc.GetWithdrawHistory(context.Background(), 1, 1, 20)
@@ -331,7 +394,8 @@ func TestGetWithdrawHistory(t *testing.T) {
 
 func TestFindPlayerByUserID(t *testing.T) {
 	orderRepo := newMockOrderRepository()
-	svc := NewEarningsService(&mockPlayerRepository{}, orderRepo)
+	withdrawRepo := newMockWithdrawRepository()
+	svc := NewEarningsService(&mockPlayerRepository{}, orderRepo, withdrawRepo)
 
 	// 测试查找陪玩师
 	player, err := svc.findPlayerByUserID(context.Background(), 1)
@@ -351,7 +415,8 @@ func TestFindPlayerByUserID(t *testing.T) {
 
 func TestFindPlayerByUserIDNotFound(t *testing.T) {
 	orderRepo := newMockOrderRepository()
-	svc := NewEarningsService(&mockPlayerRepository{}, orderRepo)
+	withdrawRepo := newMockWithdrawRepository()
+	svc := NewEarningsService(&mockPlayerRepository{}, orderRepo, withdrawRepo)
 
 	// 测试查找不存在的陪玩师
 	_, err := svc.findPlayerByUserID(context.Background(), 999)

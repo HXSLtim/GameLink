@@ -50,7 +50,19 @@ func NewServiceItemRepository(db *gorm.DB) ServiceItemRepository {
 
 // Create 创建服务项目
 func (r *serviceItemRepository) Create(ctx context.Context, item *model.ServiceItem) error {
-	return r.db.WithContext(ctx).Create(item).Error
+	desiredActive := item.IsActive
+	if err := r.db.WithContext(ctx).Create(item).Error; err != nil {
+		return err
+	}
+	if !desiredActive {
+		if err := r.db.WithContext(ctx).
+			Model(item).
+			Update("is_active", false).Error; err != nil {
+			return err
+		}
+		item.IsActive = false
+	}
+	return nil
 }
 
 // Get 获取服务项目

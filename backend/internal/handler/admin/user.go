@@ -21,8 +21,8 @@ type UserHandler struct {
 	svc *adminservice.AdminService
 }
 
-// NewUserHandler 创建 Handler�?
-func NewUserHandler(svc *service.AdminService) *UserHandler {
+// NewUserHandler 创建Handler
+func NewUserHandler(svc *adminservice.AdminService) *UserHandler {
 	return &UserHandler{svc: svc}
 }
 
@@ -81,12 +81,8 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 		return
 	}
 	user, err := h.svc.GetUser(c.Request.Context(), id)
-	if errors.Is(err, service.ErrUserNotFound) {
-		_ = c.Error(service.ErrUserNotFound)
-		return
-	}
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {
@@ -129,7 +125,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		return
 	}
 
-	user, err := h.svc.CreateUser(c.Request.Context(), service.CreateUserInput{
+	user, err := h.svc.CreateUser(c.Request.Context(), adminservice.CreateUserInput{
 		Phone:     payload.Phone,
 		Email:     payload.Email,
 		Password:  payload.Password,
@@ -138,8 +134,8 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		Role:      model.Role(payload.Role),
 		Status:    model.UserStatus(payload.Status),
 	})
-	if errors.Is(err, service.ErrValidation) {
-		_ = c.Error(service.ErrValidation)
+	if errors.Is(err, adminservice.ErrValidation) {
+		_ = c.Error(adminservice.ErrValidation)
 		return
 	}
 	if err != nil {
@@ -199,7 +195,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		}
 	}
 
-	user, err := h.svc.UpdateUser(c.Request.Context(), id, service.UpdateUserInput{
+	user, err := h.svc.UpdateUser(c.Request.Context(), id, adminservice.UpdateUserInput{
 		Phone:     payload.Phone,
 		Email:     payload.Email,
 		Name:      payload.Name,
@@ -208,16 +204,12 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		Status:    model.UserStatus(payload.Status),
 		Password:  passwordPtr,
 	})
-	if errors.Is(err, service.ErrValidation) {
-		_ = c.Error(service.ErrValidation)
+	if errors.Is(err, adminservice.ErrValidation) {
+		_ = c.Error(adminservice.ErrValidation)
 		return
 	}
-	if errors.Is(err, service.ErrUserNotFound) {
-		_ = c.Error(service.ErrUserNotFound)
-		return
-	}
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {
@@ -251,12 +243,8 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 		return
 	}
 	err = h.svc.DeleteUser(c.Request.Context(), id)
-	if errors.Is(err, service.ErrUserNotFound) {
-		_ = c.Error(service.ErrUserNotFound)
-		return
-	}
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {
@@ -354,16 +342,16 @@ func (h *UserHandler) UpdateUserStatus(c *gin.Context) {
 		return
 	}
 	out, err := h.svc.UpdateUserStatus(c.Request.Context(), id, model.UserStatus(payload.Status))
-	if errors.Is(err, service.ErrValidation) {
-		_ = c.Error(service.ErrValidation)
+	if errors.Is(err, adminservice.ErrValidation) {
+		_ = c.Error(adminservice.ErrValidation)
 		return
 	}
-	if errors.Is(err, service.ErrUserNotFound) {
-		_ = c.Error(service.ErrUserNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {
@@ -398,16 +386,16 @@ func (h *UserHandler) UpdateUserRole(c *gin.Context) {
 		return
 	}
 	out, err := h.svc.UpdateUserRole(c.Request.Context(), id, model.Role(payload.Role))
-	if errors.Is(err, service.ErrValidation) {
-		_ = c.Error(service.ErrValidation)
+	if errors.Is(err, adminservice.ErrValidation) {
+		_ = c.Error(adminservice.ErrValidation)
 		return
 	}
-	if errors.Is(err, service.ErrUserNotFound) {
-		_ = c.Error(service.ErrUserNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {
@@ -439,8 +427,8 @@ func (h *UserHandler) ListUserOrders(c *gin.Context) {
 	}
 	// Ensure user exists
 	_, err = h.svc.GetUser(c.Request.Context(), id)
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {
@@ -522,7 +510,7 @@ func (h *UserHandler) CreateUserWithPlayer(c *gin.Context) {
 	}
 
 	user, player, err := h.svc.RegisterUserAndPlayer(c.Request.Context(),
-		service.CreateUserInput{
+		adminservice.CreateUserInput{
 			Phone:     payload.Phone,
 			Email:     payload.Email,
 			Password:  payload.Password,
@@ -531,7 +519,7 @@ func (h *UserHandler) CreateUserWithPlayer(c *gin.Context) {
 			Role:      model.Role(payload.Role),
 			Status:    model.UserStatus(payload.Status),
 		},
-		service.CreatePlayerInput{
+		adminservice.CreatePlayerInput{
 			Nickname:           payload.Player.Nickname,
 			Bio:                payload.Player.Bio,
 			HourlyRateCents:    payload.Player.HourlyRateCents,
@@ -539,8 +527,8 @@ func (h *UserHandler) CreateUserWithPlayer(c *gin.Context) {
 			VerificationStatus: model.VerificationStatus(payload.Player.VerificationStatus),
 		},
 	)
-	if errors.Is(err, service.ErrValidation) {
-		_ = c.Error(service.ErrValidation)
+	if errors.Is(err, adminservice.ErrValidation) {
+		_ = c.Error(adminservice.ErrValidation)
 		return
 	}
 	if err != nil {

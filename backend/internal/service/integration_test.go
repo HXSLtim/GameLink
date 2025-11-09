@@ -7,13 +7,15 @@ import (
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
+	"gamelink/internal/repository/commission"
+	"gamelink/internal/repository/serviceitem"
 	commissionservice "gamelink/internal/service/commission"
 	giftservice "gamelink/internal/service/gift"
 	itemservice "gamelink/internal/service/item"
 
+	"github.com/glebarez/sqlite"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
@@ -46,9 +48,9 @@ func TestGiftOrderFlow(t *testing.T) {
 	// 初始化repositories
 	gameRepo := &mockGameRepo{db: db}
 	playerRepo := &mockPlayerRepo{db: db}
-	serviceItemRepo := repository.NewServiceItemRepository(db)
+	serviceItemRepo := serviceitem.NewServiceItemRepository(db)
 	orderRepo := &mockOrderRepo{db: db}
-	commissionRepo := repository.NewCommissionRepository(db)
+	commissionRepo := commission.NewCommissionRepository(db)
 
 	// 初始化services
 	itemSvc := itemservice.NewServiceItemService(serviceItemRepo, gameRepo, playerRepo)
@@ -137,7 +139,7 @@ func TestGiftOrderFlow(t *testing.T) {
 		assert.Equal(t, "高端玫瑰", resp.GiftName)
 		assert.Equal(t, 3, resp.Quantity)
 		assert.Equal(t, int64(30000), resp.TotalPrice) // 10000 * 3
-		assert.NotNil(t, resp.DeliveredAt) // 立即送达
+		assert.NotNil(t, resp.DeliveredAt)             // 立即送达
 
 		orderID = resp.OrderID
 	})
@@ -152,8 +154,8 @@ func TestGiftOrderFlow(t *testing.T) {
 		assert.Equal(t, 3, order.Quantity)
 		assert.Equal(t, int64(10000), order.UnitPriceCents)
 		assert.Equal(t, int64(30000), order.TotalPriceCents)
-		assert.Equal(t, int64(6000), order.CommissionCents)      // 20%
-		assert.Equal(t, int64(24000), order.PlayerIncomeCents)   // 80%
+		assert.Equal(t, int64(6000), order.CommissionCents)    // 20%
+		assert.Equal(t, int64(24000), order.PlayerIncomeCents) // 80%
 		assert.Equal(t, "感谢你的陪伴！", order.GiftMessage)
 		assert.False(t, order.IsAnonymous)
 		assert.NotNil(t, order.RecipientPlayerID)
@@ -230,9 +232,14 @@ func (m *mockGameRepo) Get(ctx context.Context, id uint64) (*model.Game, error) 
 
 func (m *mockGameRepo) Create(ctx context.Context, game *model.Game) error { return nil }
 func (m *mockGameRepo) Update(ctx context.Context, game *model.Game) error { return nil }
-func (m *mockGameRepo) Delete(ctx context.Context, id uint64) error { return nil }
-func (m *mockGameRepo) List(ctx context.Context) ([]model.Game, error) { return nil, nil }
-func (m *mockGameRepo) GetByKey(ctx context.Context, key string) (*model.Game, error) { return nil, nil }
+func (m *mockGameRepo) Delete(ctx context.Context, id uint64) error        { return nil }
+func (m *mockGameRepo) List(ctx context.Context) ([]model.Game, error)     { return nil, nil }
+func (m *mockGameRepo) ListPaged(ctx context.Context, page, pageSize int) ([]model.Game, int64, error) {
+	return nil, 0, nil
+}
+func (m *mockGameRepo) GetByKey(ctx context.Context, key string) (*model.Game, error) {
+	return nil, nil
+}
 
 type mockPlayerRepo struct {
 	db *gorm.DB
@@ -246,6 +253,8 @@ func (m *mockPlayerRepo) Get(ctx context.Context, id uint64) (*model.Player, err
 
 func (m *mockPlayerRepo) Create(ctx context.Context, player *model.Player) error { return nil }
 func (m *mockPlayerRepo) Update(ctx context.Context, player *model.Player) error { return nil }
+func (m *mockPlayerRepo) Delete(ctx context.Context, id uint64) error            { return nil }
+func (m *mockPlayerRepo) List(ctx context.Context) ([]model.Player, error)       { return nil, nil }
 func (m *mockPlayerRepo) ListPaged(ctx context.Context, page, pageSize int) ([]model.Player, int64, error) {
 	return nil, 0, nil
 }
@@ -268,6 +277,10 @@ func (m *mockOrderRepo) Update(ctx context.Context, order *model.Order) error {
 	return m.db.WithContext(ctx).Save(order).Error
 }
 
+func (m *mockOrderRepo) Delete(ctx context.Context, id uint64) error {
+	return m.db.WithContext(ctx).Delete(&model.Order{}, id).Error
+}
+
 func (m *mockOrderRepo) List(ctx context.Context, opts repository.OrderListOptions) ([]model.Order, int64, error) {
 	query := m.db.WithContext(ctx).Model(&model.Order{})
 
@@ -287,5 +300,3 @@ func (m *mockOrderRepo) List(ctx context.Context, opts repository.OrderListOptio
 
 	return orders, total, nil
 }
-
-

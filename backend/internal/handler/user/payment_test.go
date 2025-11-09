@@ -22,10 +22,11 @@ type fakeOrderRepositoryForPayment struct {
 }
 
 func newFakeOrderRepositoryForPayment() *fakeOrderRepositoryForPayment {
+	gameID := uint64(1)
 	return &fakeOrderRepositoryForPayment{
 		orders: map[uint64]*model.Order{
-			10: {Base: model.Base{ID: 10}, UserID: 100, GameID: 1, Status: model.OrderStatusPending, PriceCents: 5000},
-			11: {Base: model.Base{ID: 11}, UserID: 101, GameID: 1, Status: model.OrderStatusPending, PriceCents: 8000},
+			10: {Base: model.Base{ID: 10}, UserID: 100, GameID: &gameID, ItemID: 1, OrderNo: "PAYMENT-TEST-01", Status: model.OrderStatusPending, TotalPriceCents: 5000, UnitPriceCents: 5000},
+			11: {Base: model.Base{ID: 11}, UserID: 101, GameID: &gameID, ItemID: 1, OrderNo: "PAYMENT-TEST-02", Status: model.OrderStatusPending, TotalPriceCents: 8000, UnitPriceCents: 8000},
 		},
 	}
 }
@@ -83,11 +84,35 @@ func (m *mockPaymentRepoForUserPayment) Create(ctx context.Context, payment *mod
 }
 
 func (m *mockPaymentRepoForUserPayment) List(ctx context.Context, opts repository.PaymentListOptions) ([]model.Payment, int64, error) {
-	var result []model.Payment
+	var filtered []model.Payment
 	for _, p := range m.payments {
-		result = append(result, *p)
+		if opts.OrderID != nil && p.OrderID != *opts.OrderID {
+			continue
+		}
+		if opts.UserID != nil && p.UserID != *opts.UserID {
+			continue
+		}
+		if opts.Status != nil && p.Status != *opts.Status {
+			continue
+		}
+		if opts.Method != nil && p.Method != *opts.Method {
+			continue
+		}
+		filtered = append(filtered, *p)
 	}
-	return result, int64(len(result)), nil
+
+	total := int64(len(filtered))
+	page := repository.NormalizePage(opts.Page)
+	pageSize := repository.NormalizePageSize(opts.PageSize)
+	start := (page - 1) * pageSize
+	if start >= len(filtered) {
+		return []model.Payment{}, total, nil
+	}
+	end := start + pageSize
+	if end > len(filtered) {
+		end = len(filtered)
+	}
+	return filtered[start:end], total, nil
 }
 
 func (m *mockPaymentRepoForUserPayment) Get(ctx context.Context, id uint64) (*model.Payment, error) {

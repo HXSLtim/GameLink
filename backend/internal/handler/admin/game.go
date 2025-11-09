@@ -19,8 +19,8 @@ type GameHandler struct {
 	svc *adminservice.AdminService
 }
 
-// NewGameHandler 创建 Handler�?
-func NewGameHandler(svc *service.AdminService) *GameHandler {
+// NewGameHandler 创建Handler
+func NewGameHandler(svc *adminservice.AdminService) *GameHandler {
 	return &GameHandler{svc: svc}
 }
 
@@ -74,7 +74,7 @@ func (h *GameHandler) GetGame(c *gin.Context) {
 		return
 	}
 	game, err := h.svc.GetGame(c.Request.Context(), id)
-	if errors.Is(err, service.ErrNotFound) {
+	if errors.Is(err, repository.ErrNotFound) {
 		writeJSONError(c, http.StatusNotFound, apierr.ErrGameNotFound)
 		return
 	}
@@ -109,15 +109,15 @@ func (h *GameHandler) CreateGame(c *gin.Context) {
 		return
 	}
 
-	game, err := h.svc.CreateGame(c.Request.Context(), service.CreateGameInput{
+	game, err := h.svc.CreateGame(c.Request.Context(), adminservice.CreateGameInput{
 		Key:         payload.Key,
 		Name:        payload.Name,
 		Category:    payload.Category,
 		IconURL:     payload.IconURL,
 		Description: payload.Description,
 	})
-	if errors.Is(err, service.ErrValidation) {
-		_ = c.Error(service.ErrValidation)
+	if errors.Is(err, adminservice.ErrValidation) {
+		writeJSONError(c, http.StatusBadRequest, "Validation failed")
 		return
 	}
 	if err != nil {
@@ -159,19 +159,19 @@ func (h *GameHandler) UpdateGame(c *gin.Context) {
 		return
 	}
 
-	game, err := h.svc.UpdateGame(c.Request.Context(), id, service.UpdateGameInput{
+	game, err := h.svc.UpdateGame(c.Request.Context(), id, adminservice.UpdateGameInput{
 		Key:         payload.Key,
 		Name:        payload.Name,
 		Category:    payload.Category,
 		IconURL:     payload.IconURL,
 		Description: payload.Description,
 	})
-	if errors.Is(err, service.ErrValidation) {
-		_ = c.Error(service.ErrValidation)
+	if errors.Is(err, adminservice.ErrValidation) {
+		writeJSONError(c, http.StatusBadRequest, "Validation failed")
 		return
 	}
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, repository.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {
@@ -206,8 +206,8 @@ func (h *GameHandler) DeleteGame(c *gin.Context) {
 	}
 
 	err = h.svc.DeleteGame(c.Request.Context(), id)
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, repository.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {

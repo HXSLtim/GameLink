@@ -6,8 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-    "gamelink/internal/model"
-    "gamelink/internal/service/item"
+	"gamelink/internal/model"
+	"gamelink/internal/service/item"
 )
 
 // RegisterServiceItemRoutes 注册管理端服务项目管理路�?
@@ -37,19 +37,19 @@ func RegisterServiceItemRoutes(router gin.IRouter, svc *item.ServiceItemService)
 // @Failure      401            {object}  model.APIResponse[any]
 // @Router       /admin/service-items [post]
 func createServiceItemHandler(c *gin.Context, svc *item.ServiceItemService) {
-    var req item.CreateServiceItemRequest
+	var req item.CreateServiceItemRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, err.Error())
+		writeJSONError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	item, err := svc.CreateServiceItem(c.Request.Context(), req)
 	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-    respondJSON(c, http.StatusOK, model.APIResponse[model.ServiceItem]{
+	writeJSON(c, http.StatusOK, model.APIResponse[model.ServiceItem]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "Service item created successfully",
@@ -75,19 +75,19 @@ func createServiceItemHandler(c *gin.Context, svc *item.ServiceItemService) {
 // @Failure      401            {object}  model.APIResponse[any]
 // @Router       /admin/service-items [get]
 func listServiceItemsHandler(c *gin.Context, svc *item.ServiceItemService) {
-    var req item.ListServiceItemsRequest
+	var req item.ListServiceItemsRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
-		respondError(c, http.StatusBadRequest, err.Error())
+		writeJSONError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	resp, err := svc.ListServiceItems(c.Request.Context(), req)
 	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-    respondJSON(c, http.StatusOK, model.APIResponse[item.ServiceItemListResponse]{
+	writeJSON(c, http.StatusOK, model.APIResponse[item.ServiceItemListResponse]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
@@ -111,21 +111,21 @@ func getServiceItemHandler(c *gin.Context, svc *item.ServiceItemService) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		respondError(c, http.StatusBadRequest, "Invalid service item ID")
+		writeJSONError(c, http.StatusBadRequest, "Invalid service item ID")
 		return
 	}
 
 	resp, err := svc.GetServiceItem(c.Request.Context(), id)
-    if err != nil {
-        if err == item.ErrNotFound {
-			respondError(c, http.StatusNotFound, "Service item not found")
+	if err != nil {
+		if err == item.ErrNotFound {
+			writeJSONError(c, http.StatusNotFound, "Service item not found")
 			return
 		}
-		respondError(c, http.StatusInternalServerError, err.Error())
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-    respondJSON(c, http.StatusOK, model.APIResponse[item.ServiceItemDTO]{
+	writeJSON(c, http.StatusOK, model.APIResponse[item.ServiceItemDTO]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
@@ -150,23 +150,23 @@ func updateServiceItemHandler(c *gin.Context, svc *item.ServiceItemService) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		respondError(c, http.StatusBadRequest, "Invalid service item ID")
+		writeJSONError(c, http.StatusBadRequest, "Invalid service item ID")
 		return
 	}
 
-    var req item.UpdateServiceItemRequest
+	var req item.UpdateServiceItemRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, err.Error())
+		writeJSONError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	err = svc.UpdateServiceItem(c.Request.Context(), id, req)
 	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[any]{
+	writeJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "Service item updated successfully",
@@ -189,17 +189,17 @@ func deleteServiceItemHandler(c *gin.Context, svc *item.ServiceItemService) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		respondError(c, http.StatusBadRequest, "Invalid service item ID")
+		writeJSONError(c, http.StatusBadRequest, "Invalid service item ID")
 		return
 	}
 
 	err = svc.DeleteServiceItem(c.Request.Context(), id)
 	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[any]{
+	writeJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "Service item deleted successfully",
@@ -219,19 +219,19 @@ func deleteServiceItemHandler(c *gin.Context, svc *item.ServiceItemService) {
 // @Failure      401            {object}  model.APIResponse[any]
 // @Router       /admin/service-items/batch-update-status [post]
 func batchUpdateStatusHandler(c *gin.Context, svc *item.ServiceItemService) {
-    var req item.BatchUpdateStatusRequest
+	var req item.BatchUpdateStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, err.Error())
+		writeJSONError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	err := svc.BatchUpdateStatus(c.Request.Context(), req)
 	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[any]{
+	writeJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "Status updated successfully",
@@ -251,22 +251,21 @@ func batchUpdateStatusHandler(c *gin.Context, svc *item.ServiceItemService) {
 // @Failure      401            {object}  model.APIResponse[any]
 // @Router       /admin/service-items/batch-update-price [post]
 func batchUpdatePriceHandler(c *gin.Context, svc *item.ServiceItemService) {
-    var req item.BatchUpdatePriceRequest
+	var req item.BatchUpdatePriceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, err.Error())
+		writeJSONError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	err := svc.BatchUpdatePrice(c.Request.Context(), req)
 	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[any]{
+	writeJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "Price updated successfully",
 	})
 }
-

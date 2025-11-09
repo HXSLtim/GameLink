@@ -145,15 +145,21 @@ func (s *EarningsService) GetEarningsSummary(ctx context.Context, userID uint64)
 	}
 
 	// 从数据库获取余额信息
-	balance, err := s.withdraws.GetPlayerBalance(ctx, player.ID)
-	if err != nil {
-		// 如果获取失败，使用计算值
+	var balance *withdrawrepo.PlayerBalance
+	if s.withdraws != nil {
+		balance, err = s.withdraws.GetPlayerBalance(ctx, player.ID)
+	}
+	if s.withdraws == nil || err != nil {
+		// 如果获取失败或withdraws为nil，使用计算值
+		// 80%可提现，20%待结算
+		availableBalance := totalEarnings * 8 / 10
+		pendingBalance := totalEarnings - availableBalance
 		balance = &withdrawrepo.PlayerBalance{
 			TotalEarnings:    totalEarnings,
 			WithdrawTotal:    0,
 			PendingWithdraw:  0,
-			AvailableBalance: totalEarnings,
-			PendingBalance:   0,
+			AvailableBalance: availableBalance,
+			PendingBalance:   pendingBalance,
 		}
 	}
 

@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"gamelink/internal/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/service/player"
 )
@@ -68,7 +69,7 @@ func getPlayerDetailHandler(c *gin.Context, svc *player.PlayerService) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		respondError(c, http.StatusBadRequest, ErrInvalidID)
+		respondError(c, http.StatusBadRequest, apierr.ErrInvalidID)
 		return
 	}
 

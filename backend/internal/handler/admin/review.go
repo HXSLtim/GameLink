@@ -10,7 +10,7 @@ import (
 	apierr "gamelink/internal/handler"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
-	"gamelink/internal/service"
+	adminservice "gamelink/internal/service/admin"
 )
 
 // ReviewHandler 管理评价接口�?
@@ -91,8 +91,8 @@ func (h *ReviewHandler) GetReview(c *gin.Context) {
 		return
 	}
 	item, err := h.svc.GetReview(c.Request.Context(), id)
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {
@@ -120,8 +120,8 @@ func (h *ReviewHandler) CreateReview(c *gin.Context) {
 	}
 	r := model.Review{OrderID: p.OrderID, UserID: p.UserID, PlayerID: p.PlayerID, Score: model.Rating(p.Score), Content: strings.TrimSpace(p.Content)}
 	out, err := h.svc.CreateReview(c.Request.Context(), r)
-	if errors.Is(err, service.ErrValidation) {
-		_ = c.Error(service.ErrValidation)
+	if errors.Is(err, adminservice.ErrValidation) {
+		_ = c.Error(adminservice.ErrValidation)
 		return
 	}
 	if err != nil {
@@ -154,12 +154,12 @@ func (h *ReviewHandler) UpdateReview(c *gin.Context) {
 		return
 	}
 	out, err := h.svc.UpdateReview(c.Request.Context(), id, model.Rating(p.Score), p.Content)
-	if errors.Is(err, service.ErrValidation) {
-		_ = c.Error(service.ErrValidation)
+	if errors.Is(err, adminservice.ErrValidation) {
+		_ = c.Error(adminservice.ErrValidation)
 		return
 	}
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {
@@ -185,8 +185,8 @@ func (h *ReviewHandler) DeleteReview(c *gin.Context) {
 		return
 	}
 	err = h.svc.DeleteReview(c.Request.Context(), id)
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {

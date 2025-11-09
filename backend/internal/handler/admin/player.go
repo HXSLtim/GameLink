@@ -19,8 +19,8 @@ type PlayerHandler struct {
 	svc *adminservice.AdminService
 }
 
-// NewPlayerHandler 创建 Handler�?
-func NewPlayerHandler(svc *service.AdminService) *PlayerHandler {
+// NewPlayerHandler 创建Handler
+func NewPlayerHandler(svc *adminservice.AdminService) *PlayerHandler {
 	return &PlayerHandler{svc: svc}
 }
 
@@ -80,8 +80,8 @@ func (h *PlayerHandler) GetPlayer(c *gin.Context) {
 		return
 	}
 	player, err := h.svc.GetPlayer(c.Request.Context(), id)
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {
@@ -115,7 +115,7 @@ func (h *PlayerHandler) CreatePlayer(c *gin.Context) {
 		return
 	}
 
-	player, err := h.svc.CreatePlayer(c.Request.Context(), service.CreatePlayerInput{
+	player, err := h.svc.CreatePlayer(c.Request.Context(), adminservice.CreatePlayerInput{
 		UserID:             payload.UserID,
 		Nickname:           payload.Nickname,
 		Bio:                payload.Bio,
@@ -124,8 +124,8 @@ func (h *PlayerHandler) CreatePlayer(c *gin.Context) {
 		MainGameID:         payload.MainGameID,
 		VerificationStatus: model.VerificationStatus(payload.VerificationStatus),
 	})
-	if errors.Is(err, service.ErrValidation) {
-		_ = c.Error(service.ErrValidation)
+	if errors.Is(err, adminservice.ErrValidation) {
+		_ = c.Error(adminservice.ErrValidation)
 		return
 	}
 	if err != nil {
@@ -167,7 +167,7 @@ func (h *PlayerHandler) UpdatePlayer(c *gin.Context) {
 		return
 	}
 
-	player, err := h.svc.UpdatePlayer(c.Request.Context(), id, service.UpdatePlayerInput{
+	player, err := h.svc.UpdatePlayer(c.Request.Context(), id, adminservice.UpdatePlayerInput{
 		Nickname:           payload.Nickname,
 		Bio:                payload.Bio,
 		Rank:               payload.Rank,
@@ -175,12 +175,12 @@ func (h *PlayerHandler) UpdatePlayer(c *gin.Context) {
 		MainGameID:         payload.MainGameID,
 		VerificationStatus: model.VerificationStatus(payload.VerificationStatus),
 	})
-	if errors.Is(err, service.ErrValidation) {
-		_ = c.Error(service.ErrValidation)
+	if errors.Is(err, adminservice.ErrValidation) {
+		_ = c.Error(adminservice.ErrValidation)
 		return
 	}
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {
@@ -213,8 +213,8 @@ func (h *PlayerHandler) DeletePlayer(c *gin.Context) {
 		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
 		return
 	}
-	if err := h.svc.DeletePlayer(c.Request.Context(), id); errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if err := h.svc.DeletePlayer(c.Request.Context(), id); errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	} else if err != nil {
 		writeJSONError(c, http.StatusInternalServerError, err.Error())
@@ -312,8 +312,8 @@ func (h *PlayerHandler) UpdatePlayerVerification(c *gin.Context) {
 	}
 
 	player, err := h.svc.GetPlayer(c.Request.Context(), id)
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {
@@ -321,15 +321,15 @@ func (h *PlayerHandler) UpdatePlayerVerification(c *gin.Context) {
 		return
 	}
 
-	out, err := h.svc.UpdatePlayer(c.Request.Context(), id, service.UpdatePlayerInput{
+	out, err := h.svc.UpdatePlayer(c.Request.Context(), id, adminservice.UpdatePlayerInput{
 		Nickname:           player.Nickname,
 		Bio:                player.Bio,
 		HourlyRateCents:    player.HourlyRateCents,
 		MainGameID:         player.MainGameID,
 		VerificationStatus: model.VerificationStatus(payload.VerificationStatus),
 	})
-	if errors.Is(err, service.ErrValidation) {
-		_ = c.Error(service.ErrValidation)
+	if errors.Is(err, adminservice.ErrValidation) {
+		_ = c.Error(adminservice.ErrValidation)
 		return
 	}
 	if err != nil {
@@ -365,8 +365,8 @@ func (h *PlayerHandler) UpdatePlayerGames(c *gin.Context) {
 	}
 
 	player, err := h.svc.GetPlayer(c.Request.Context(), id)
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {
@@ -374,15 +374,15 @@ func (h *PlayerHandler) UpdatePlayerGames(c *gin.Context) {
 		return
 	}
 
-	out, err := h.svc.UpdatePlayer(c.Request.Context(), id, service.UpdatePlayerInput{
+	out, err := h.svc.UpdatePlayer(c.Request.Context(), id, adminservice.UpdatePlayerInput{
 		Nickname:           player.Nickname,
 		Bio:                player.Bio,
 		HourlyRateCents:    player.HourlyRateCents,
 		MainGameID:         payload.MainGameID,
 		VerificationStatus: player.VerificationStatus,
 	})
-	if errors.Is(err, service.ErrValidation) {
-		_ = c.Error(service.ErrValidation)
+	if errors.Is(err, adminservice.ErrValidation) {
+		_ = c.Error(adminservice.ErrValidation)
 		return
 	}
 	if err != nil {
@@ -415,8 +415,8 @@ func (h *PlayerHandler) UpdatePlayerSkillTags(c *gin.Context) {
 		return
 	}
 	// Ensure player exists first
-	if _, err := h.svc.GetPlayer(c.Request.Context(), id); errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if _, err := h.svc.GetPlayer(c.Request.Context(), id); errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	} else if err != nil {
 		writeJSONError(c, http.StatusInternalServerError, err.Error())

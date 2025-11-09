@@ -104,9 +104,12 @@ func TestCreatePayment(t *testing.T) {
 
 	// 创建测试订单
 	order := &model.Order{
-		UserID:     1,
-		Status:     model.OrderStatusPending,
-		PriceCents: 10000,
+		UserID:          1,
+		Status:          model.OrderStatusPending,
+		TotalPriceCents: 10000,
+		UnitPriceCents:  10000,
+		Quantity:        1,
+		ItemID:          1,
 	}
 	_ = orderRepo.Create(context.Background(), order)
 
@@ -149,9 +152,12 @@ func TestGetPaymentStatus(t *testing.T) {
 
 	// 创建测试订单和支付
 	order := &model.Order{
-		UserID:     1,
-		Status:     model.OrderStatusPending,
-		PriceCents: 10000,
+		UserID:          1,
+		Status:          model.OrderStatusPending,
+		TotalPriceCents: 10000,
+		UnitPriceCents:  10000,
+		Quantity:        1,
+		ItemID:          1,
 	}
 	_ = orderRepo.Create(context.Background(), order)
 
@@ -220,9 +226,12 @@ func TestCreatePaymentInvalidOrderStatus(t *testing.T) {
 
 	// 创建已支付的订单
 	order := &model.Order{
-		UserID:     1,
-		Status:     model.OrderStatusConfirmed,
-		PriceCents: 10000,
+		UserID:          1,
+		Status:          model.OrderStatusConfirmed,
+		TotalPriceCents: 10000,
+		UnitPriceCents:  10000,
+		Quantity:        1,
+		ItemID:          1,
 	}
 	_ = orderRepo.Create(context.Background(), order)
 
@@ -244,9 +253,12 @@ func TestCreatePaymentUnauthorized(t *testing.T) {
 
 	// 创建其他用户的订单
 	order := &model.Order{
-		UserID:     2,
-		Status:     model.OrderStatusPending,
-		PriceCents: 10000,
+		UserID:          2,
+		Status:          model.OrderStatusPending,
+		TotalPriceCents: 10000,
+		UnitPriceCents:  10000,
+		Quantity:        1,
+		ItemID:          1,
 	}
 	_ = orderRepo.Create(context.Background(), order)
 
@@ -266,10 +278,19 @@ func TestRefundPayment(t *testing.T) {
 	orderRepo := newMockOrderRepository()
 	svc := NewPaymentService(paymentRepo, orderRepo)
 
+	// 先创建订单
+	order := &model.Order{
+		UserID:          1,
+		Status:          model.OrderStatusConfirmed,
+		TotalPriceCents: 10000,
+		Currency:        "CNY",
+	}
+	_ = orderRepo.Create(context.Background(), order)
+
 	// 创建已支付的支付记录
 	now := time.Now()
 	payment := &model.Payment{
-		OrderID:     1,
+		OrderID:     order.ID,
 		UserID:      1,
 		Status:      model.PaymentStatusPaid,
 		AmountCents: 10000,
@@ -285,12 +306,74 @@ func TestRefundPayment(t *testing.T) {
 	}
 
 	// 验证退款状态
-	refunded, _ := paymentRepo.Get(context.Background(), payment.ID)
+	refunded, err := paymentRepo.Get(context.Background(), payment.ID)
+	if err != nil {
+		t.Fatalf("failed to get refunded payment: %v", err)
+	}
+	
 	if refunded.Status != model.PaymentStatusRefunded {
 		t.Errorf("expected status refunded, got %s", refunded.Status)
 	}
 
 	if refunded.RefundedAt == nil {
 		t.Error("expected refunded_at to be set")
+	}
+}
+
+func TestHandlePaymentCallback(t *testing.T) {
+	paymentRepo := newMockPaymentRepository()
+	orderRepo := newMockOrderRepository()
+	svc := NewPaymentService(paymentRepo, orderRepo)
+
+	// 创建订单和待支付的支付记录
+	order := &model.Order{
+		UserID:          1,
+		Status:          model.OrderStatusConfirmed,
+		TotalPriceCents: 10000,
+		Currency:        "CNY",
+	}
+	_ = orderRepo.Create(context.Background(), order)
+
+	payment := &model.Payment{
+		OrderID:     order.ID,
+		UserID:      1,
+		Status:      model.PaymentStatusPending,
+		Method:      model.PaymentMethodAlipay,
+		AmountCents: 10000,
+	}
+	_ = paymentRepo.Create(context.Background(), payment)
+
+	// 模拟支付回调数据
+	callbackData := map[string]interface{}{
+		"payment_id":   float64(payment.ID),
+		"status":       "paid",
+		"trade_no":     "MOCK123456",
+		"amount_cents": int64(10000),
+	}
+
+	err := svc.HandlePaymentCallback(context.Background(), "alipay", callbackData)
+
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	// 验证支付状态已更新
+	updated, err := paymentRepo.Get(context.Background(), payment.ID)
+	if err != nil {
+		t.Fatalf("failed to get updated payment: %v", err)
+	}
+	
+	if updated.Status != model.PaymentStatusPaid {
+		t.Errorf("expected status paid, got %s", updated.Status)
+	}
+
+	// 验证订单状态已更新
+	updatedOrder, err := orderRepo.Get(context.Background(), order.ID)
+	if err != nil {
+		t.Fatalf("failed to get updated order: %v", err)
+	}
+	
+	if updatedOrder.Status != model.OrderStatusConfirmed {
+		t.Errorf("expected order status confirmed, got %s", updatedOrder.Status)
 	}
 }

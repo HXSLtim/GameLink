@@ -54,13 +54,13 @@ func TestOrderRepository_Create(t *testing.T) {
 	playerID := uint64(1)
 	gameID := uint64(1)
 	order := &model.Order{
-		UserID:           1,
-		PlayerID:         &playerID,
-		ItemID:           gameID,
-		OrderNo:          "TEST-ORDER-001",
-		TotalPriceCents:  10000,
-		Status:           model.OrderStatusPending,
-		ScheduledStart:   &now,
+		UserID:          1,
+		PlayerID:        &playerID,
+		ItemID:          gameID,
+		OrderNo:         "TEST-ORDER-001",
+		TotalPriceCents: 10000,
+		Status:          model.OrderStatusPending,
+		ScheduledStart:  &now,
 	}
 
 	err := repo.Create(testContext(), order)
@@ -89,12 +89,16 @@ func TestOrderRepository_Get(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewOrderRepository(db)
 
+	gameID := uint64(1)
 	order := &model.Order{
-		UserID:     2,
-		GameID:     1,
-		Title:      "Get Test",
-		Status:     model.OrderStatusPending,
-		PriceCents: 5000,
+		UserID:          2,
+		GameID:          &gameID,
+		ItemID:          1,
+		OrderNo:         "TEST-GET-001",
+		Title:           "Get Test",
+		Status:          model.OrderStatusPending,
+		TotalPriceCents: 5000,
+		UnitPriceCents:  5000,
 	}
 	_ = repo.Create(testContext(), order)
 
@@ -120,18 +124,23 @@ func TestOrderRepository_Update(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewOrderRepository(db)
 
+	gameID := uint64(1)
 	order := &model.Order{
-		UserID:     3,
-		GameID:     1,
-		Title:      "Update Test",
-		Status:     model.OrderStatusPending,
-		PriceCents: 8000,
+		UserID:          3,
+		GameID:          &gameID,
+		ItemID:          1,
+		OrderNo:         "TEST-UPDATE-001",
+		Title:           "Update Test",
+		Status:          model.OrderStatusPending,
+		TotalPriceCents: 8000,
+		UnitPriceCents:  8000,
 	}
 	_ = repo.Create(testContext(), order)
 
 	t.Run("Update existing order", func(t *testing.T) {
 		order.Status = model.OrderStatusConfirmed
-		order.PriceCents = 12000
+		order.TotalPriceCents = 12000
+		order.UnitPriceCents = 12000
 		order.CancelReason = "Test reason"
 
 		err := repo.Update(testContext(), order)
@@ -143,8 +152,8 @@ func TestOrderRepository_Update(t *testing.T) {
 		if updated.Status != model.OrderStatusConfirmed {
 			t.Errorf("expected status confirmed, got %s", updated.Status)
 		}
-		if updated.PriceCents != 12000 {
-			t.Errorf("expected price 12000, got %d", updated.PriceCents)
+		if updated.TotalPriceCents != 12000 {
+			t.Errorf("expected price 12000, got %d", updated.TotalPriceCents)
 		}
 	})
 
@@ -161,12 +170,16 @@ func TestOrderRepository_Delete(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewOrderRepository(db)
 
+	gameID := uint64(1)
 	order := &model.Order{
-		UserID:     4,
-		GameID:     1,
-		Title:      "Delete Test",
-		Status:     model.OrderStatusPending,
-		PriceCents: 6000,
+		UserID:          4,
+		GameID:          &gameID,
+		ItemID:          1,
+		OrderNo:         "TEST-DELETE-001",
+		Title:           "Delete Test",
+		Status:          model.OrderStatusPending,
+		TotalPriceCents: 6000,
+		UnitPriceCents:  6000,
 	}
 	_ = repo.Create(testContext(), order)
 
@@ -203,13 +216,19 @@ func TestOrderRepository_List(t *testing.T) {
 			status = model.OrderStatusCompleted
 		}
 
+		playerID := uint64(20 + i%2)
+		gameID := uint64(1 + i%2)
+		priceCents := int64(1000 * (i + 1))
 		order := &model.Order{
-			UserID:     uint64(10 + i%3),
-			PlayerID:   uint64(20 + i%2),
-			GameID:     uint64(1 + i%2),
-			Title:      "Order " + string(rune('A'+i)),
-			Status:     status,
-			PriceCents: int64(1000 * (i + 1)),
+			UserID:          uint64(10 + i%3),
+			PlayerID:        &playerID,
+			GameID:          &gameID,
+			ItemID:          1,
+			OrderNo:         "TEST-LIST-" + string(rune('A'+i)),
+			Title:           "Order " + string(rune('A'+i)),
+			Status:          status,
+			TotalPriceCents: priceCents,
+			UnitPriceCents:  priceCents,
 		}
 		_ = repo.Create(testContext(), order)
 	}

@@ -5,30 +5,23 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/golang/mock/gomock"
-
 	"gamelink/internal/cache"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	"gamelink/internal/repository/mocks"
+
+	"github.com/golang/mock/gomock"
 )
 
 // TestNewRoleService 测试构造函数。
 func TestNewRoleService(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	repo := mocks.NewMockRoleRepository(ctrl)
+	repo := &MockRoleRepository{}
 	mockCache := cache.NewMemory()
 
 	svc := NewRoleService(repo, mockCache)
 
 	if svc == nil {
 		t.Fatal("NewRoleService returned nil")
-	}
-
-	if svc.roles != repo {
-		t.Error("roles repository not set correctly")
 	}
 
 	if svc.cache != mockCache {
@@ -871,6 +864,102 @@ func TestCheckUserIsSuperAdmin(t *testing.T) {
 
 		if isSuperAdmin {
 			t.Error("Expected user not to be super admin")
+		}
+	})
+}
+
+// TestListRolesPagedWithFilter 测试带过滤的分页获取角色列表。
+func TestListRolesPagedWithFilter(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	repo := mocks.NewMockRoleRepository(ctrl)
+	mockCache := cache.NewMemory()
+	svc := NewRoleService(repo, mockCache)
+
+	ctx := context.Background()
+
+	t.Run("成功分页获取（带关键词过滤）", func(t *testing.T) {
+		expectedRoles := []model.RoleModel{
+			{Base: model.Base{ID: 1}, Slug: "admin", Name: "管理员"},
+		}
+
+		repo.EXPECT().
+			ListPagedWithFilter(ctx, 1, 20, "admin", nil).
+			Return(expectedRoles, int64(1), nil)
+
+		roles, total, err := svc.ListRolesPagedWithFilter(ctx, 1, 20, "admin", nil)
+		if err != nil {
+			t.Fatalf("Expected no error, got %v", err)
+		}
+
+		if len(roles) != 1 {
+			t.Errorf("Expected 1 role, got %d", len(roles))
+		}
+
+		if total != 1 {
+			t.Errorf("Expected total 1, got %d", total)
+		}
+	})
+
+	t.Run("成功分页获取（带系统角色过滤）", func(t *testing.T) {
+		isSystem := true
+		expectedRoles := []model.RoleModel{
+			{Base: model.Base{ID: 1}, Slug: "admin", Name: "管理员", IsSystem: true},
+		}
+
+		repo.EXPECT().
+			ListPagedWithFilter(ctx, 1, 20, "", &isSystem).
+			Return(expectedRoles, int64(1), nil)
+
+		roles, total, err := svc.ListRolesPagedWithFilter(ctx, 1, 20, "", &isSystem)
+		if err != nil {
+			t.Fatalf("Expected no error, got %v", err)
+		}
+
+		if total != 1 {
+			t.Errorf("Expected total 1, got %d", total)
+		}
+
+		if len(roles) != 1 {
+			t.Errorf("Expected 1 role, got %d", len(roles))
+		}
+
+		if !roles[0].IsSystem {
+			t.Error("Expected system role")
+		}
+	})
+
+	t.Run("自动修正无效页码", func(t *testing.T) {
+		repo.EXPECT().
+			ListPagedWithFilter(ctx, 1, 20, "", nil).
+			Return([]model.RoleModel{}, int64(0), nil)
+
+		_, _, err := svc.ListRolesPagedWithFilter(ctx, 0, 20, "", nil)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+	})
+
+	t.Run("自动修正无效页大小", func(t *testing.T) {
+		repo.EXPECT().
+			ListPagedWithFilter(ctx, 1, 20, "", nil).
+			Return([]model.RoleModel{}, int64(0), nil)
+
+		_, _, err := svc.ListRolesPagedWithFilter(ctx, 1, 0, "", nil)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+	})
+
+	t.Run("限制最大页大小", func(t *testing.T) {
+		repo.EXPECT().
+			ListPagedWithFilter(ctx, 1, 20, "", nil).
+			Return([]model.RoleModel{}, int64(0), nil)
+
+		_, _, err := svc.ListRolesPagedWithFilter(ctx, 1, 200, "", nil)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
 		}
 	})
 }

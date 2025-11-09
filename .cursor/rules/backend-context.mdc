@@ -1,0 +1,390 @@
+---
+globs: backend/**/*.go
+description: Context 使用规范
+---
+
+# Context 使用规范
+
+## 核心原则
+
+1. **第一参数规则** - 所有公共方法的第一个参数应该是 `context.Context`
+2. **传递性** - Context 应该在调用链中传递
+3. **不存储** - 不要在结构体中存储 Context
+4. **取消感知** - 长时间运行的操作应该检查 Context 取消
+
+## Context 作为第一参数
+
+### ✅ 推荐
+
+```go
+// Repository 层
+func (r *UserRepository) GetByID(ctx context.Context, id uint64) (*User, error)
+func (r *UserRepository) Create(ctx context.Context, user *User) error
+func (r *UserRepository) Update(ctx context.Context, user *User) error
+
+// Service 层
+func (s *UserService) CreateUser(ctx context.Context, req *CreateUserRequest) error
+func (s *OrderService) ProcessPayment(ctx context.Context, orderID uint64) error
+
+// Handler 层
+func (h *UserHandler) CreateUser(c *gin.Context) {
+    ctx := c.Request.Context()
+    err := h.service.CreateUser(ctx, req)
+}
+```
+
+### ❌ 避免
+
+```go
+❌ func (r *UserRepository) GetByID(id uint64, ctx context.Context) (*User, error)  // Context 不是第一个参数
+❌ func (s *UserService) CreateUser(req *CreateUserRequest) error                    // 缺少 Context
+```
+
+## Context 传递
+
+### Handler → Service → Repository
+
+```go
+// Handler 层
+func (h *UserHandler) CreateUser(c *gin.Context) {
+    // 从 Gin Context 获取 Request Context
+    ctx := c.Request.Context()
+    
+    var req CreateUserRequest
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(400, gin.H{"error": err.Error()})
+        return
+    }
+    
+    // 传递给 Service
+    user, err := h.service.CreateUser(ctx, &req)
+    if err != nil {
+        c.JSON(500, gin.H{"error": err.Error()})
+        return
+    }
+    
+    c.JSON(201, user)
+}
+
+// Service 层
+func (s *UserService) CreateUser(ctx context.Context, req *CreateUserRequest) (*User, error) {
+    // 验证
+    if err := s.validateUser(req); err != nil {
+        return nil, err
+    }
+    
+    user := req.ToModel()
+    
+    // 传递给 Repository
+    if err := s.repo.Create(ctx, user); err != nil {
+        return nil, fmt.Errorf("failed to create user: %w", err)
+    }
+    
+    return user, nil
+}
+
+// Repository 层
+func (r *userRepository) Create(ctx context.Context, user *User) error {
+    // 使用 Context
+    return r.db.WithContext(ctx).Create(user).Error
+}
+```
+
+## GORM 中使用 Context
+
+### ✅ 推荐
+
+```go
+// 单个查询
+func (r *userRepository) GetByID(ctx context.Context, id uint64) (*User, error) {
+    var user User
+    err := r.db.WithContext(ctx).First(&user, id).Error
+    if err != nil {
+        return nil, err
+    }
+    return &user, nil
+}
+
+// 列表查询
+func (r *userRepository) List(ctx context.Context, page, pageSize int) ([]User, error) {
+    var users []User
+    err := r.db.WithContext(ctx).
+        Offset((page - 1) * pageSize).
+        Limit(pageSize).
+        Find(&users).Error
+    return users, err
+}
+
+// 复杂查询
+func (r *orderRepository) GetOrdersWithUser(ctx context.Context, userID uint64) ([]Order, error) {
+    var orders []Order
+    err := r.db.WithContext(ctx).
+        Preload("User").
+        Where("user_id = ?", userID).
+        Find(&orders).Error
+    return orders, err
+}
+```
+
+## Context 超时控制
+
+### 设置超时
+
+```go
+// Service 层设置超时
+func (s *UserService) ProcessExpensiveOperation(ctx context.Context, data *Data) error {
+    // 设置 5 秒超时
+    ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+    defer cancel()
+    
+    // 执行操作
+    return s.repo.ExpensiveQuery(ctx, data)
+}
+
+// Repository 层检查超时
+func (r *dataRepository) ExpensiveQuery(ctx context.Context, data *Data) error {
+    // GORM 会自动处理 Context 超时
+    return r.db.WithContext(ctx).
+        // 复杂查询...
+        Find(&result).Error
+}
+```
+
+### 检查 Context 取消
+
+```go
+func (s *OrderService) ProcessBatchOrders(ctx context.Context, orderIDs []uint64) error {
+    for _, id := range orderIDs {
+        // 检查 Context 是否已取消
+        select {
+        case <-ctx.Done():
+            return ctx.Err()
+        default:
+        }
+        
+        // 处理订单
+        if err := s.processOrder(ctx, id); err != nil {
+            return err
+        }
+    }
+    return nil
+}
+```
+
+## Context 值传递
+
+### 存储请求相关信息
+
+```go
+// 定义 Context Key 类型 (避免冲突)
+type contextKey string
+
+const (
+    userIDKey     contextKey = "userID"
+    requestIDKey  contextKey = "requestID"
+    userRoleKey   contextKey = "userRole"
+)
+
+// 设置值
+func WithUserID(ctx context.Context, userID uint64) context.Context {
+    return context.WithValue(ctx, userIDKey, userID)
+}
+
+// 获取值
+func GetUserID(ctx context.Context) (uint64, bool) {
+    userID, ok := ctx.Value(userIDKey).(uint64)
+    return userID, ok
+}
+
+// 在中间件中使用
+func (m *AuthMiddleware) JWTAuth() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        // 验证 JWT token
+        claims, err := m.validateToken(c.GetHeader("Authorization"))
+        if err != nil {
+            c.AbortWithStatusJSON(401, gin.H{"error": "unauthorized"})
+            return
+        }
+        
+        // 将用户信息存入 Context
+        ctx := c.Request.Context()
+        ctx = WithUserID(ctx, claims.UserID)
+        ctx = WithUserRole(ctx, claims.Role)
+        
+        // 更新请求的 Context
+        c.Request = c.Request.WithContext(ctx)
+        
+        c.Next()
+    }
+}
+
+// 在 Service 中使用
+func (s *OrderService) CreateOrder(ctx context.Context, req *CreateOrderRequest) error {
+    // 从 Context 获取当前用户 ID
+    userID, ok := GetUserID(ctx)
+    if !ok {
+        return errors.New("user not authenticated")
+    }
+    
+    // 使用用户 ID
+    order := &Order{
+        UserID: userID,
+        // ...
+    }
+    
+    return s.repo.Create(ctx, order)
+}
+```
+
+## 日志记录中使用 Context
+
+### 结构化日志
+
+```go
+import "log/slog"
+
+func (s *UserService) CreateUser(ctx context.Context, req *CreateUserRequest) error {
+    // 从 Context 创建带有上下文信息的 logger
+    logger := slog.With(
+        "phone", req.Phone,
+        "requestID", GetRequestID(ctx),
+    )
+    
+    logger.Info("creating user")
+    
+    if err := s.repo.Create(ctx, req.ToModel()); err != nil {
+        logger.Error("failed to create user", "error", err)
+        return err
+    }
+    
+    logger.Info("user created successfully")
+    return nil
+}
+```
+
+## 测试中的 Context
+
+### 基本测试
+
+```go
+func TestUserService_CreateUser(t *testing.T) {
+    // 使用 context.Background()
+    ctx := context.Background()
+    
+    mockRepo := &MockUserRepository{}
+    service := NewUserService(mockRepo)
+    
+    req := &CreateUserRequest{Phone: "13800138000"}
+    mockRepo.On("Create", ctx, mock.Anything).Return(nil)
+    
+    err := service.CreateUser(ctx, req)
+    assert.NoError(t, err)
+}
+```
+
+### 测试超时
+
+```go
+func TestUserService_CreateUser_Timeout(t *testing.T) {
+    // 设置超时 Context
+    ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+    defer cancel()
+    
+    mockRepo := &MockUserRepository{}
+    service := NewUserService(mockRepo)
+    
+    // Mock 一个慢操作
+    mockRepo.On("Create", ctx, mock.Anything).Return(nil).After(200 * time.Millisecond)
+    
+    err := service.CreateUser(ctx, &CreateUserRequest{})
+    
+    // 应该返回超时错误
+    assert.Error(t, err)
+    assert.True(t, errors.Is(err, context.DeadlineExceeded))
+}
+```
+
+### 测试取消
+
+```go
+func TestUserService_ProcessBatch_Cancelled(t *testing.T) {
+    ctx, cancel := context.WithCancel(context.Background())
+    
+    service := NewUserService(mockRepo)
+    
+    // 在另一个 goroutine 中取消
+    go func() {
+        time.Sleep(50 * time.Millisecond)
+        cancel()
+    }()
+    
+    err := service.ProcessBatchOrders(ctx, largeOrderList)
+    
+    // 应该返回取消错误
+    assert.Error(t, err)
+    assert.True(t, errors.Is(err, context.Canceled))
+}
+```
+
+## Context 使用反模式
+
+### ❌ 不要在结构体中存储 Context
+
+```go
+❌ type UserService struct {
+       ctx  context.Context  // 不要这样做!
+       repo UserRepository
+   }
+
+✅ type UserService struct {
+       repo UserRepository
+   }
+   
+   func (s *UserService) CreateUser(ctx context.Context, req *CreateUserRequest) error {
+       // Context 作为参数传递
+   }
+```
+
+### ❌ 不要传递 nil Context
+
+```go
+❌ service.CreateUser(nil, req)
+
+✅ service.CreateUser(context.Background(), req)
+✅ service.CreateUser(c.Request.Context(), req)
+```
+
+### ❌ 不要忽略 Context 取消
+
+```go
+❌ func (s *Service) Process(ctx context.Context, items []Item) error {
+       for _, item := range items {
+           // 忽略了 Context 取消
+           process(item)
+       }
+   }
+
+✅ func (s *Service) Process(ctx context.Context, items []Item) error {
+       for _, item := range items {
+           select {
+           case <-ctx.Done():
+               return ctx.Err()
+           default:
+           }
+           process(item)
+       }
+   }
+```
+
+## Context 最佳实践检查清单
+
+编写代码时，确保：
+
+- [ ] 所有公共方法的第一个参数是 `context.Context`
+- [ ] Context 在调用链中正确传递
+- [ ] 不在结构体中存储 Context
+- [ ] 使用 `r.db.WithContext(ctx)` 进行数据库操作
+- [ ] 长时间运行的操作检查 Context 取消
+- [ ] 使用自定义类型作为 Context Key
+- [ ] 测试中使用 `context.Background()`
+- [ ] 不传递 `nil` Context

@@ -8,24 +8,25 @@ import (
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
-	"gamelink/internal/service"
+	permissionservice "gamelink/internal/service/permission"
 )
 
 // PermissionHandler 权限管理处理器
 type PermissionHandler struct {
-	permissionSvc *service.PermissionService
+	permissionSvc *permissionservice.PermissionService
 }
 
 // NewPermissionHandler 创建权限处理器实例
-func NewPermissionHandler(permissionSvc *service.PermissionService) *PermissionHandler {
+func NewPermissionHandler(permissionSvc *permissionservice.PermissionService) *PermissionHandler {
 	return &PermissionHandler{permissionSvc: permissionSvc}
 }
 
 // ListPermissions 获取权限列表
 func (h *PermissionHandler) ListPermissions(c *gin.Context) {
-	keyword := c.Query("keyword")
-	method := c.Query("method")
-	group := c.Query("group")
+	// TODO: 实现keyword, method, group过滤功能
+	_ = c.Query("keyword")
+	_ = c.Query("method")
+	_ = c.Query("group")
 
 	page, pageSize, ok := parsePagination(c)
 	if !ok {
@@ -36,12 +37,8 @@ func (h *PermissionHandler) ListPermissions(c *gin.Context) {
 	var total int64
 	var err error
 
-	// 如果有过滤条件，使用过滤查询
-	if keyword != "" || method != "" || group != "" {
-		permissions, total, err = h.permissionSvc.ListPermissionsPagedWithFilter(c.Request.Context(), page, pageSize, keyword, method, group)
-	} else {
-		permissions, total, err = h.permissionSvc.ListPermissionsPaged(c.Request.Context(), page, pageSize)
-	}
+	// 直接调用ListPermissionsPaged
+	permissions, total, err = h.permissionSvc.ListPermissionsPaged(c.Request.Context(), page, pageSize)
 
 	if err != nil {
 		writeJSONError(c, http.StatusInternalServerError, err.Error())
@@ -168,7 +165,8 @@ func (h *PermissionHandler) UpdatePermission(c *gin.Context) {
 	})
 }
 
-// DeletePermission 删除权限�?func (h *PermissionHandler) DeletePermission(c *gin.Context) {
+// DeletePermission 删除权限
+func (h *PermissionHandler) DeletePermission(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
 		writeJSONError(c, http.StatusBadRequest, "无效的权限ID")
@@ -188,7 +186,8 @@ func (h *PermissionHandler) UpdatePermission(c *gin.Context) {
 	})
 }
 
-// GetRolePermissions 获取角色的权限列表�?func (h *PermissionHandler) GetRolePermissions(c *gin.Context) {
+// GetRolePermissions 获取角色的权限列表
+func (h *PermissionHandler) GetRolePermissions(c *gin.Context) {
 	roleID, err := parseUintParam(c, "id")
 	if err != nil {
 		writeJSONError(c, http.StatusBadRequest, "无效的角色ID")
@@ -209,7 +208,8 @@ func (h *PermissionHandler) UpdatePermission(c *gin.Context) {
 	})
 }
 
-// GetUserPermissions 获取用户的权限列表�?func (h *PermissionHandler) GetUserPermissions(c *gin.Context) {
+// GetUserPermissions 获取用户的权限列表
+func (h *PermissionHandler) GetUserPermissions(c *gin.Context) {
 	userID, err := parseUintParam(c, "id")
 	if err != nil {
 		writeJSONError(c, http.StatusBadRequest, "无效的用户ID")
@@ -230,7 +230,8 @@ func (h *PermissionHandler) UpdatePermission(c *gin.Context) {
 	})
 }
 
-// GetPermissionGroups 获取所有权限分组列表�?func (h *PermissionHandler) GetPermissionGroups(c *gin.Context) {
+// GetPermissionGroups 获取所有权限分组列表
+func (h *PermissionHandler) GetPermissionGroups(c *gin.Context) {
 	groups, err := h.permissionSvc.ListPermissionGroups(c.Request.Context())
 	if err != nil {
 		writeJSONError(c, http.StatusInternalServerError, err.Error())

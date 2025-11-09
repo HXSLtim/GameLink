@@ -40,17 +40,17 @@ func RegisterCommissionRoutes(router gin.IRouter, svc *commission.CommissionServ
 func createCommissionRuleHandler(c *gin.Context, svc *commission.CommissionService) {
 	var req commission.CreateCommissionRuleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, err.Error())
+		writeJSONError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	rule, err := svc.CreateCommissionRule(c.Request.Context(), req)
 	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[model.CommissionRule]{
+	writeJSON(c, http.StatusOK, model.APIResponse[model.CommissionRule]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "Commission rule created successfully",
@@ -75,23 +75,23 @@ func updateCommissionRuleHandler(c *gin.Context, svc *commission.CommissionServi
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		respondError(c, http.StatusBadRequest, "Invalid rule ID")
+		writeJSONError(c, http.StatusBadRequest, "Invalid rule ID")
 		return
 	}
 
 	var req commission.UpdateCommissionRuleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, err.Error())
+		writeJSONError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	err = svc.UpdateCommissionRule(c.Request.Context(), id, req)
 	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[any]{
+	writeJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "Commission rule updated successfully",
@@ -120,11 +120,11 @@ func triggerSettlementHandler(c *gin.Context, scheduler interface{ TriggerSettle
 
 	err := scheduler.TriggerSettlement(month)
 	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[any]{
+	writeJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "Settlement triggered successfully for month: " + month,
@@ -148,15 +148,14 @@ func getPlatformStatsHandler(c *gin.Context, svc *commission.CommissionService) 
 
 	stats, err := svc.GetPlatformStats(c.Request.Context(), month)
 	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[commission.PlatformStatsResponse]{
+	writeJSON(c, http.StatusOK, model.APIResponse[commission.PlatformStatsResponse]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
 		Data:    *stats,
 	})
 }
-

@@ -1,0 +1,434 @@
+---
+alwaysApply: true
+description: Git 工作流程和提交规范
+---
+
+# Git 工作流程和提交规范
+
+## 分支管理
+
+### 分支命名规范
+
+```
+main              - 生产分支 (受保护)
+develop           - 开发分支
+feature/*         - 功能分支 (feature/user-authentication)
+bugfix/*          - Bug 修复分支 (bugfix/fix-login-error)
+hotfix/*          - 紧急修复分支 (hotfix/security-patch)
+release/*         - 发布分支 (release/v1.0.0)
+```
+
+### 分支创建示例
+
+```bash
+# 创建功能分支
+git checkout -b feature/user-registration
+
+# 创建 Bug 修复分支
+git checkout -b bugfix/fix-order-status
+
+# 创建热修复分支
+git checkout -b hotfix/critical-security-fix
+```
+
+## 提交消息规范
+
+### Conventional Commits 格式
+
+```
+<类型>(<范围>): <描述>
+
+[可选的正文]
+
+[可选的脚注]
+```
+
+### 提交类型
+
+```
+feat      - 新功能
+fix       - Bug 修复
+docs      - 文档更新
+style     - 代码格式化 (不影响功能)
+refactor  - 代码重构
+perf      - 性能优化
+test      - 添加或修改测试
+chore     - 构建过程或辅助工具变动
+ci        - CI/CD 配置变更
+```
+
+### ✅ 好的提交消息示例
+
+```bash
+# 后端功能
+feat(handler): 添加用户登录API
+
+实现JWT认证的用户登录功能
+- 添加登录Handler和路由
+- 实现JWT token生成
+- 添加用户验证逻辑
+- 添加单元测试
+
+Closes #123
+
+# 后端修复
+fix(service): 修复订单状态更新错误
+
+在订单状态从pending更新到confirmed时，
+正确触发支付流程
+
+# 前端功能
+feat(components): 添加用户列表组件
+
+实现管理端用户列表页面
+- 添加分页功能
+- 实现搜索和筛选
+- 添加用户操作按钮
+
+# 重构
+refactor(repository): 优化用户查询性能
+
+使用GORM的预加载功能减少N+1查询问题
+
+# 测试
+test(service): 添加订单服务单元测试
+
+覆盖订单创建、更新、取消等核心流程
+
+# 文档
+docs(api): 更新API文档
+
+添加新的支付接口文档说明
+
+# 性能优化
+perf(handler): 优化用户列表查询
+
+添加Redis缓存层，减少数据库查询次数
+```
+
+### ❌ 不好的提交消息
+
+```bash
+❌ fix bug
+❌ update
+❌ changes
+❌ WIP
+❌ 修改代码
+❌ add feature
+❌ temp commit
+```
+
+## 提交范围 (Scope)
+
+### 后端范围
+
+```
+handler       - Handler 层
+service       - Service 层
+repository    - Repository 层
+model         - Model 层
+middleware    - 中间件
+auth          - 认证相关
+cache         - 缓存相关
+config        - 配置相关
+```
+
+### 前端范围
+
+```
+components    - 组件
+pages         - 页面
+api           - API 调用
+hooks         - 自定义 Hooks
+utils         - 工具函数
+types         - 类型定义
+styles        - 样式
+```
+
+### 功能模块范围
+
+```
+user          - 用户功能
+order         - 订单功能
+payment       - 支付功能
+player        - 陪玩师功能
+admin         - 管理功能
+```
+
+## 提交最佳实践
+
+### 1. 原子提交
+
+每次提交应该是一个完整的、可独立工作的变更：
+
+```bash
+✅ feat(handler): 添加用户创建API
+✅ test(service): 添加用户服务测试
+✅ docs(api): 更新用户API文档
+
+❌ 一次提交包含：新功能 + Bug修复 + 文档更新 + 代码格式化
+```
+
+### 2. 提交前检查
+
+```bash
+# 后端检查
+cd backend
+go fmt ./...                    # 格式化代码
+go vet ./...                    # 代码检查
+golangci-lint run              # Lint 检查
+go test ./...                   # 运行测试
+
+# 前端检查
+cd frontend
+npm run lint                    # ESLint 检查
+npm run typecheck              # TypeScript 检查
+npm run test                    # 运行测试
+npm run format                  # 格式化代码
+```
+
+### 3. 提交大小
+
+```
+✅ 小而频繁的提交 (每个提交 < 500 行变更)
+❌ 大型提交 (数千行变更)
+```
+
+## 工作流程
+
+### 功能开发流程
+
+```bash
+# 1. 从 main 创建功能分支
+git checkout main
+git pull origin main
+git checkout -b feature/user-profile
+
+# 2. 开发功能
+# ... 编写代码 ...
+
+# 3. 提交前检查
+# 运行测试和 lint
+
+# 4. 提交代码
+git add .
+git commit -m "feat(user): 添加用户资料页面
+
+实现用户资料查看和编辑功能
+- 添加用户资料组件
+- 实现头像上传
+- 添加表单验证
+
+Closes #45"
+
+# 5. 推送到远程
+git push origin feature/user-profile
+
+# 6. 创建 Pull Request
+# 在 GitHub/GitLab 上创建 PR
+
+# 7. 代码审查后合并
+# 审查通过后合并到 main
+```
+
+### Bug 修复流程
+
+```bash
+# 1. 创建修复分支
+git checkout -b bugfix/fix-login-validation
+
+# 2. 修复 Bug
+# ... 编写代码 ...
+
+# 3. 添加测试
+# 确保 Bug 不会再次出现
+
+# 4. 提交
+git commit -m "fix(auth): 修复登录表单验证错误
+
+修复手机号格式验证不正确的问题
+
+Fixes #78"
+
+# 5. 推送并创建 PR
+git push origin bugfix/fix-login-validation
+```
+
+### 紧急修复流程
+
+```bash
+# 1. 从 main 创建 hotfix 分支
+git checkout main
+git checkout -b hotfix/security-fix
+
+# 2. 修复问题
+# ... 编写代码 ...
+
+# 3. 测试
+# 确保修复有效
+
+# 4. 提交并合并到 main 和 develop
+git commit -m "fix(security): 修复JWT token验证漏洞"
+git push origin hotfix/security-fix
+
+# 5. 合并到 main 和 develop
+# 通过 PR 或直接合并
+```
+
+## Pull Request 规范
+
+### PR 标题
+
+使用与提交消息相同的格式：
+
+```
+feat(user): 添加用户管理功能
+fix(order): 修复订单状态同步问题
+docs(api): 更新API文档
+```
+
+### PR 描述模板
+
+```markdown
+## 变更描述
+简要描述这个 PR 做了什么
+
+## 变更类型
+- [ ] 新功能 (feature)
+- [ ] Bug 修复 (fix)
+- [ ] 文档更新 (docs)
+- [ ] 代码重构 (refactor)
+- [ ] 性能优化 (perf)
+- [ ] 测试 (test)
+
+## 测试
+描述如何测试这些变更
+
+## 相关 Issue
+Closes #123
+Related to #456
+
+## 检查清单
+- [ ] 代码遵循项目规范
+- [ ] 添加了必要的测试
+- [ ] 测试全部通过
+- [ ] 更新了相关文档
+- [ ] Lint 检查通过
+```
+
+## 代码审查
+
+### 审查要点
+
+#### 后端代码审查
+- [ ] 遵循 Go 编码规范
+- [ ] 正确使用四层架构
+- [ ] 错误处理完善
+- [ ] 添加了单元测试
+- [ ] 性能考虑合理
+- [ ] 安全性检查
+
+#### 前端代码审查
+- [ ] 遵循 TypeScript 规范
+- [ ] 组件设计合理
+- [ ] 类型定义完整
+- [ ] 用户体验良好
+- [ ] 无性能问题
+
+## Git 配置建议
+
+### 用户配置
+
+```bash
+# 设置用户名和邮箱
+git config --global user.name "Your Name"
+git config --global user.email "your.email@example.com"
+
+# 设置默认编辑器
+git config --global core.editor "code --wait"
+
+# 启用颜色输出
+git config --global color.ui auto
+```
+
+### 提交模板
+
+创建 `.gitmessage` 文件：
+
+```
+<类型>(<范围>): <描述>
+
+# 为什么需要这次提交？
+
+# 这次提交做了什么？
+
+# 有什么副作用或注意事项吗？
+
+# 相关 Issue: #
+```
+
+配置使用模板：
+
+```bash
+git config --global commit.template ~/.gitmessage
+```
+
+## 常用 Git 命令
+
+### 日常操作
+
+```bash
+# 查看状态
+git status
+
+# 查看改动
+git diff
+
+# 暂存文件
+git add <file>
+git add .
+
+# 提交
+git commit -m "feat(user): add user profile"
+
+# 推送
+git push origin <branch>
+
+# 拉取
+git pull origin main
+
+# 查看日志
+git log --oneline --graph
+```
+
+### 撤销操作
+
+```bash
+# 撤销工作区改动
+git checkout -- <file>
+
+# 撤销暂存
+git reset HEAD <file>
+
+# 修改最后一次提交
+git commit --amend
+
+# 撤销提交但保留改动
+git reset --soft HEAD^
+
+# 完全撤销提交
+git reset --hard HEAD^
+```
+
+## 提交检查清单
+
+提交前确保：
+
+- [ ] 代码已格式化
+- [ ] Lint 检查通过
+- [ ] 测试全部通过
+- [ ] 提交消息遵循规范
+- [ ] 提交是原子的 (单一职责)
+- [ ] 没有提交敏感信息
+- [ ] 没有提交调试代码
+- [ ] 相关文档已更新

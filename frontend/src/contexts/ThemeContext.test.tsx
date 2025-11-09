@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ThemeProvider, useTheme } from './ThemeContext';
 
@@ -91,34 +91,40 @@ describe('ThemeContext', () => {
     expect(['light', 'dark']).toContain(result.current.effective);
   });
 
-  it('should apply dark theme class to document', () => {
+  it('should apply dark theme class to document', async () => {
     const { result } = renderHook(() => useTheme(), { wrapper });
 
     act(() => {
       result.current.setMode('dark');
     });
 
-    expect(document.documentElement.classList.contains('arco-theme-dark')).toBe(true);
-    expect(document.body.classList.contains('arco-theme-dark')).toBe(true);
-    expect(document.body.getAttribute('arco-theme')).toBe('dark');
+    // 等待DOM更新
+    await waitFor(() => {
+      expect(document.documentElement.classList.contains('dark-theme')).toBe(true);
+      expect(document.body.classList.contains('dark-theme')).toBe(true);
+    });
   });
 
-  it('should remove dark theme class when switching to light', () => {
+  it('should remove dark theme class when switching to light', async () => {
     const { result } = renderHook(() => useTheme(), { wrapper });
 
     act(() => {
       result.current.setMode('dark');
     });
 
-    expect(document.documentElement.classList.contains('arco-theme-dark')).toBe(true);
+    await waitFor(() => {
+      expect(document.documentElement.classList.contains('dark-theme')).toBe(true);
+    });
 
     act(() => {
       result.current.setMode('light');
     });
 
-    expect(document.documentElement.classList.contains('arco-theme-dark')).toBe(false);
-    expect(document.body.classList.contains('arco-theme-dark')).toBe(false);
-    expect(document.body.getAttribute('arco-theme')).toBeNull();
+    // 等待DOM更新
+    await waitFor(() => {
+      expect(document.documentElement.classList.contains('dark-theme')).toBe(false);
+      expect(document.body.classList.contains('dark-theme')).toBe(false);
+    });
   });
 
   it('should persist theme preference across rerenders', () => {

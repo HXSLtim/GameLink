@@ -1,0 +1,191 @@
+---
+globs: backend/**/*.go
+description: 后端架构和分层规范
+---
+
+# 后端架构规范
+
+## 四层架构设计
+
+GameLink 后端采用严格的四层架构：
+
+```
+HTTP 请求
+   ↓
+🎯 Handler 层 (HTTP 处理)
+   ↓
+💼 Service 层 (业务逻辑)
+   ↓
+🗄️ Repository 层 (数据访问)
+   ↓
+📊 Model 层 (数据模型)
+   ↓
+数据库
+```
+
+## 各层职责
+
+### Model 层
+- **职责**: 纯数据模型定义
+- **禁止**: 包含任何业务逻辑
+- **位置**: `internal/model/`
+- **示例**:
+```go
+type User struct {
+    ID        uint64    `gorm:"primaryKey" json:"id"`
+    Phone     string    `gorm:"uniqueIndex;not null" json:"phone"`
+    Name      string    `gorm:"size:100;not null" json:"name"`
+    Role      UserRole  `gorm:"type:varchar(20);not null" json:"role"`
+    CreatedAt time.Time `json:"createdAt"`
+    UpdatedAt time.Time `json:"updatedAt"`
+}
+```
+
+### Repository 层
+- **职责**: 纯数据访问操作 (CRUD)
+- **禁止**: 包含业务逻辑
+- **位置**: `internal/repository/`
+- **规范**:
+  - 必须定义接口
+  - 第一个参数总是 `context.Context`
+  - 使用依赖注入
+
+**示例**:
+```go
+// 接口定义
+type UserRepository interface {
+    Create(ctx context.Context, user *model.User) error
+    GetByID(ctx context.Context, id uint64) (*model.User, error)
+    Update(ctx context.Context, user *model.User) error
+    Delete(ctx context.Context, id uint64) error
+}
+
+// 实现
+type userRepository struct {
+    db *gorm.DB
+}
+
+func NewUserRepository(db *gorm.DB) UserRepository {
+    return &userRepository{db: db}
+}
+```
+
+### Service 层
+- **职责**: 业务逻辑处理
+- **禁止**: 直接处理 HTTP 请求/响应
+- **位置**: `internal/service/`
+- **规范**:
+  - 依赖 Repository 接口而非具体实现
+  - 处理业务验证和错误
+  - 包装错误信息
+
+**示例**:
+```go
+type UserService struct {
+    repo  repository.UserRepository
+    cache cache.Cache
+}
+
+func (s *UserService) CreateUser(ctx context.Context, req *CreateUserRequest) error {
+    // 业务验证
+    if err := s.validateUser(req); err != nil {
+        return fmt.Errorf("validation failed: %w", err)
+    }
+
+    // 业务逻辑
+    user := req.ToModel()
+    if err := s.repo.Create(ctx, user); err != nil {
+        return fmt.Errorf("failed to create user: %w", err)
+    }
+
+    return nil
+}
+```
+
+### Handler 层
+- **职责**: HTTP 请求/响应处理
+- **禁止**: 包含业务逻辑
+- **位置**: `internal/handler/`
+- **规范**:
+  - 按角色组织 (admin/, user/, player/)
+  - 只处理 HTTP 相关操作
+  - 调用 Service 层方法
+
+**示例**:
+```go
+type UserHandler struct {
+    service *service.UserService
+}
+
+func (h *UserHandler) CreateUser(c *gin.Context) {
+    var req CreateUserRequest
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+
+    if err := h.service.CreateUser(c.Request.Context(), &req); err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+
+    c.JSON(http.StatusCreated, gin.H{"message": "success"})
+}
+```
+
+## 目录结构规范
+
+```
+internal/
+├── model/                    # 数据模型 (纯定义)
+│   ├── user.go
+│   ├── order.go
+│   └── ...
+├── repository/               # 数据访问层
+│   ├── interfaces.go         # 所有 Repository 接口
+│   ├── user_repository.go
+│   ├── order_repository.go
+│   └── ...
+├── service/                  # 业务逻辑层
+│   ├── auth/
+│   │   └── auth.go
+│   ├── order/
+│   │   └── order.go
+│   └── ...
+└── handler/                  # HTTP 处理层
+    ├── admin/               # 管理端 Handler
+    │   ├── user.go
+    │   ├── order.go
+    │   └── router.go
+    ├── user/                # 用户端 Handler
+    └── player/              # 陪玩师端 Handler
+```
+
+## 依赖注入原则
+
+使用构造函数进行依赖注入：
+
+```go
+// Service 依赖 Repository 接口
+func NewUserService(repo repository.UserRepository, cache cache.Cache) *UserService {
+    return &UserService{
+        repo:  repo,
+        cache: cache,
+    }
+}
+
+// Handler 依赖 Service
+func NewUserHandler(service *service.UserService) *UserHandler {
+    return &UserHandler{
+        service: service,
+    }
+}
+```
+
+## 关键原则
+
+1. **单向依赖**: Handler → Service → Repository → Model
+2. **接口隔离**: 使用接口而非具体实现
+3. **职责单一**: 每层只做自己的事情
+4. **依赖注入**: 通过构造函数注入依赖
+5. **错误包装**: 每层都应该包装错误，提供上下文信息

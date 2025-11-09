@@ -385,3 +385,289 @@ func TestListPlayersWithFilters(t *testing.T) {
 		t.Fatal("expected response, got nil")
 	}
 }
+
+func TestGetPlayerProfile(t *testing.T) {
+	svc := NewPlayerService(
+		&mockPlayerRepository{},
+		&mockUserRepository{},
+		&mockGameRepository{},
+		&mockOrderRepository{},
+		&mockReviewRepository{},
+		&mockPlayerTagRepository{},
+		&mockCache{},
+	)
+
+	// 测试获取陪玩师个人资料
+	resp, err := svc.GetPlayerProfile(context.Background(), 1)
+
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if resp == nil {
+		t.Fatal("expected response, got nil")
+	}
+
+	if resp.Player.Nickname != "TestPlayer" {
+		t.Errorf("expected nickname 'TestPlayer', got '%s'", resp.Player.Nickname)
+	}
+}
+
+// TestGetPlayerDetail_WithStats 测试获取陪玩师详情（包含统计数据）
+func TestGetPlayerDetail_WithStats(t *testing.T) {
+	// 创建mock repositories with data
+	playerID := uint64(1)
+	orderRepo := &mockOrderRepositoryWithData{
+		orders: []model.Order{
+			{
+				Base:     model.Base{ID: 1, CreatedAt: time.Now()},
+				UserID:   1,
+				PlayerID: &playerID,
+				Status:   model.OrderStatusCompleted,
+			},
+			{
+				Base:     model.Base{ID: 2, CreatedAt: time.Now()},
+				UserID:   1,
+				PlayerID: &playerID,
+				Status:   model.OrderStatusCompleted,
+			},
+		},
+	}
+
+	reviewRepo := &mockReviewRepositoryWithData{
+		reviews: []model.Review{
+			{
+				Base:     model.Base{ID: 1, CreatedAt: time.Now()},
+				UserID:   1,
+				PlayerID: playerID,
+				Score:    5,
+			},
+			{
+				Base:     model.Base{ID: 2, CreatedAt: time.Now()},
+				UserID:   1,
+				PlayerID: playerID,
+				Score:    4,
+			},
+			{
+				Base:     model.Base{ID: 3, CreatedAt: time.Now()},
+				UserID:   1,
+				PlayerID: playerID,
+				Score:    3,
+			},
+		},
+	}
+
+	svc := NewPlayerService(
+		&mockPlayerRepository{},
+		&mockUserRepository{},
+		&mockGameRepository{},
+		orderRepo,
+		reviewRepo,
+		&mockPlayerTagRepository{},
+		&mockCache{},
+	)
+
+	resp, err := svc.GetPlayerDetail(context.Background(), 1)
+
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if resp == nil {
+		t.Fatal("expected response, got nil")
+	}
+
+	// 验证统计数据
+	if resp.Stats.TotalOrders == 0 {
+		t.Error("expected total orders > 0")
+	}
+
+	// 验证好评率（3个评价中2个是4分以上，应该是2/3 ≈ 0.67）
+	if resp.Player.GoodRatio < 0.6 || resp.Player.GoodRatio > 0.7 {
+		t.Errorf("expected good ratio around 0.67, got %f", resp.Player.GoodRatio)
+	}
+
+	// 验证评价列表
+	if len(resp.Reviews) == 0 {
+		t.Error("expected reviews")
+	}
+}
+
+// mockOrderRepositoryWithData 提供数据的mock订单仓库
+type mockOrderRepositoryWithData struct {
+	orders []model.Order
+}
+
+func (m *mockOrderRepositoryWithData) Create(ctx context.Context, order *model.Order) error {
+	return nil
+}
+
+func (m *mockOrderRepositoryWithData) List(ctx context.Context, opts repository.OrderListOptions) ([]model.Order, int64, error) {
+	var filtered []model.Order
+	for _, o := range m.orders {
+		if opts.PlayerID != nil && o.PlayerID != nil && *o.PlayerID != *opts.PlayerID {
+			continue
+		}
+		if len(opts.Statuses) > 0 {
+			match := false
+			for _, s := range opts.Statuses {
+				if o.Status == s {
+					match = true
+					break
+				}
+			}
+			if !match {
+				continue
+			}
+		}
+		filtered = append(filtered, o)
+	}
+	return filtered, int64(len(filtered)), nil
+}
+
+func (m *mockOrderRepositoryWithData) Get(ctx context.Context, id uint64) (*model.Order, error) {
+	return &model.Order{}, nil
+}
+
+func (m *mockOrderRepositoryWithData) Update(ctx context.Context, order *model.Order) error {
+	return nil
+}
+
+func (m *mockOrderRepositoryWithData) Delete(ctx context.Context, id uint64) error {
+	return nil
+}
+
+// mockReviewRepositoryWithData 提供数据的mock评价仓库
+type mockReviewRepositoryWithData struct {
+	reviews []model.Review
+}
+
+func (m *mockReviewRepositoryWithData) List(ctx context.Context, opts repository.ReviewListOptions) ([]model.Review, int64, error) {
+	var filtered []model.Review
+	for _, r := range m.reviews {
+		if opts.PlayerID != nil && r.PlayerID != *opts.PlayerID {
+			continue
+		}
+		filtered = append(filtered, r)
+	}
+	// 限制返回数量
+	if opts.PageSize > 0 && len(filtered) > opts.PageSize {
+		filtered = filtered[:opts.PageSize]
+	}
+	return filtered, int64(len(filtered)), nil
+}
+
+func (m *mockReviewRepositoryWithData) Get(ctx context.Context, id uint64) (*model.Review, error) {
+	return &model.Review{}, nil
+}
+
+func (m *mockReviewRepositoryWithData) Create(ctx context.Context, review *model.Review) error {
+	return nil
+}
+
+func (m *mockReviewRepositoryWithData) Update(ctx context.Context, review *model.Review) error {
+	return nil
+}
+
+func (m *mockReviewRepositoryWithData) Delete(ctx context.Context, id uint64) error {
+	return nil
+}
+
+// TestGetPlayerDetail_CalculateRepeatRate 测试复购率计算
+func TestGetPlayerDetail_CalculateRepeatRate(t *testing.T) {
+	now := time.Now()
+	playerID := uint64(1)
+	
+	// 创建有复购的订单数据（用户1有2个订单，用户2有1个订单）
+	orderRepo := &mockOrderRepositoryWithData{
+		orders: []model.Order{
+			{
+				Base:    model.Base{ID: 1, CreatedAt: now},
+				UserID:  1,
+				PlayerID: &playerID,
+				Status:  model.OrderStatusCompleted,
+			},
+			{
+				Base:    model.Base{ID: 2, CreatedAt: now},
+				UserID:  1,
+				PlayerID: &playerID,
+				Status:  model.OrderStatusCompleted,
+			},
+			{
+				Base:    model.Base{ID: 3, CreatedAt: now},
+				UserID:  2,
+				PlayerID: &playerID,
+				Status:  model.OrderStatusCompleted,
+			},
+		},
+	}
+
+	svc := NewPlayerService(
+		&mockPlayerRepository{},
+		&mockUserRepository{},
+		&mockGameRepository{},
+		orderRepo,
+		&mockReviewRepository{},
+		&mockPlayerTagRepository{},
+		&mockCache{},
+	)
+
+	resp, err := svc.GetPlayerDetail(context.Background(), 1)
+
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	// 2个用户，1个有复购，复购率应该是0.5
+	if resp.Stats.RepeatRate < 0.4 || resp.Stats.RepeatRate > 0.6 {
+		t.Errorf("expected repeat rate around 0.5, got %f", resp.Stats.RepeatRate)
+	}
+}
+
+// TestGetPlayerDetail_CalculateAvgResponseTime 测试平均响应时间计算
+func TestGetPlayerDetail_CalculateAvgResponseTime(t *testing.T) {
+	now := time.Now()
+	playerID := uint64(1)
+	startedAt1 := now.Add(30 * time.Minute)
+	startedAt2 := now.Add(60 * time.Minute)
+
+	orderRepo := &mockOrderRepositoryWithData{
+		orders: []model.Order{
+			{
+				Base:     model.Base{ID: 1, CreatedAt: now},
+				UserID:   1,
+				PlayerID: &playerID,
+				Status:   model.OrderStatusCompleted,
+				StartedAt: &startedAt1,
+			},
+			{
+				Base:     model.Base{ID: 2, CreatedAt: now},
+				UserID:   1,
+				PlayerID: &playerID,
+				Status:   model.OrderStatusCompleted,
+				StartedAt: &startedAt2,
+			},
+		},
+	}
+
+	svc := NewPlayerService(
+		&mockPlayerRepository{},
+		&mockUserRepository{},
+		&mockGameRepository{},
+		orderRepo,
+		&mockReviewRepository{},
+		&mockPlayerTagRepository{},
+		&mockCache{},
+	)
+
+	resp, err := svc.GetPlayerDetail(context.Background(), 1)
+
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	// 平均响应时间应该是 (30+60)/2 = 45分钟
+	if resp.Player.AvgResponseMin < 40 || resp.Player.AvgResponseMin > 50 {
+		t.Errorf("expected avg response time around 45 minutes, got %d", resp.Player.AvgResponseMin)
+	}
+}

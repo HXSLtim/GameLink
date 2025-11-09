@@ -1,0 +1,414 @@
+---
+globs: backend/**/*_test.go
+description: 后端测试规范
+---
+
+# 测试规范
+
+## 测试文件组织
+
+### 文件命名和位置
+
+```
+✅ 推荐: 测试文件与源文件同目录
+repository/
+├── user_repository.go
+└── user_repository_test.go
+
+service/auth/
+├── auth.go
+└── auth_test.go
+```
+
+### 包名
+
+```go
+// 测试文件与源文件使用相同的包名
+package user
+
+import (
+    "testing"
+    "github.com/stretchr/testify/assert"
+    "github.com/stretchr/testify/require"
+)
+```
+
+## 测试函数命名
+
+### 命名模式
+
+```
+Test + 类型名 + _ + 方法名 + _ + 测试场景
+```
+
+### ✅ 推荐
+
+```go
+func TestUserService_CreateUser(t *testing.T) { }
+func TestUserService_CreateUser_WithInvalidInput(t *testing.T) { }
+func TestUserService_CreateUser_UserAlreadyExists(t *testing.T) { }
+
+func TestUserRepository_GetByID(t *testing.T) { }
+func TestUserRepository_GetByID_NotFound(t *testing.T) { }
+
+func TestOrderService_ProcessPayment_Success(t *testing.T) { }
+func TestOrderService_ProcessPayment_InsufficientFunds(t *testing.T) { }
+```
+
+## 测试结构
+
+### AAA 模式 (Arrange-Act-Assert)
+
+```go
+func TestUserService_CreateUser(t *testing.T) {
+    // Arrange - 准备测试数据和依赖
+    ctx := context.Background()
+    mockRepo := &MockUserRepository{}
+    service := NewUserService(mockRepo)
+    
+    req := &CreateUserRequest{
+        Phone:    "13800138000",
+        Password: "password123",
+        Name:     "测试用户",
+    }
+    
+    mockRepo.On("Create", ctx, mock.AnythingOfType("*model.User")).Return(nil)
+    
+    // Act - 执行被测试的方法
+    err := service.CreateUser(ctx, req)
+    
+    // Assert - 验证结果
+    assert.NoError(t, err)
+    mockRepo.AssertExpectations(t)
+}
+```
+
+### 表驱动测试
+
+对于多个测试场景，使用表驱动测试：
+
+```go
+func TestUserService_ValidateUser(t *testing.T) {
+    tests := []struct {
+        name    string
+        input   *CreateUserRequest
+        wantErr bool
+        errType error
+    }{
+        {
+            name: "valid user",
+            input: &CreateUserRequest{
+                Phone:    "13800138000",
+                Password: "password123",
+                Name:     "张三",
+            },
+            wantErr: false,
+        },
+        {
+            name: "invalid phone",
+            input: &CreateUserRequest{
+                Phone:    "invalid",
+                Password: "password123",
+                Name:     "张三",
+            },
+            wantErr: true,
+            errType: ErrInvalidInput,
+        },
+        {
+            name: "password too short",
+            input: &CreateUserRequest{
+                Phone:    "13800138000",
+                Password: "123",
+                Name:     "张三",
+            },
+            wantErr: true,
+            errType: ErrInvalidInput,
+        },
+    }
+    
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            service := NewUserService(nil)
+            
+            err := service.ValidateUser(tt.input)
+            
+            if tt.wantErr {
+                assert.Error(t, err)
+                if tt.errType != nil {
+                    assert.ErrorIs(t, err, tt.errType)
+                }
+            } else {
+                assert.NoError(t, err)
+            }
+        })
+    }
+}
+```
+
+## Mock 使用
+
+### 使用 testify/mock
+
+```go
+// Mock 定义
+type MockUserRepository struct {
+    mock.Mock
+}
+
+func (m *MockUserRepository) Create(ctx context.Context, user *model.User) error {
+    args := m.Called(ctx, user)
+    return args.Error(0)
+}
+
+func (m *MockUserRepository) GetByID(ctx context.Context, id uint64) (*model.User, error) {
+    args := m.Called(ctx, id)
+    if args.Get(0) == nil {
+        return nil, args.Error(1)
+    }
+    return args.Get(0).(*model.User), args.Error(1)
+}
+
+// 使用 Mock
+func TestUserService_GetUser(t *testing.T) {
+    ctx := context.Background()
+    mockRepo := &MockUserRepository{}
+    service := NewUserService(mockRepo)
+    
+    expectedUser := &model.User{
+        ID:    1,
+        Name:  "测试用户",
+        Phone: "13800138000",
+    }
+    
+    // 设置 Mock 期望
+    mockRepo.On("GetByID", ctx, uint64(1)).Return(expectedUser, nil)
+    
+    // 执行测试
+    user, err := service.GetUser(ctx, 1)
+    
+    // 验证
+    assert.NoError(t, err)
+    assert.Equal(t, expectedUser, user)
+    mockRepo.AssertExpectations(t)
+}
+```
+
+### Mock 最佳实践
+
+```go
+// ✅ 使用 mock.Anything 匹配任意参数
+mockRepo.On("Create", mock.Anything, mock.AnythingOfType("*model.User")).Return(nil)
+
+// ✅ 使用 mock.MatchedBy 进行自定义匹配
+mockRepo.On("Create", mock.Anything, mock.MatchedBy(func(u *model.User) bool {
+    return u.Phone == "13800138000"
+})).Return(nil)
+
+// ✅ 验证方法被调用的次数
+mockRepo.On("GetByID", mock.Anything, uint64(1)).Return(nil, nil).Once()
+mockRepo.On("Create", mock.Anything, mock.Anything).Return(nil).Times(3)
+```
+
+## 断言库使用
+
+### testify/assert vs testify/require
+
+```go
+// assert: 失败后继续执行
+assert.NoError(t, err)
+assert.Equal(t, expected, actual)
+assert.NotNil(t, obj)
+
+// require: 失败后立即停止测试
+require.NoError(t, err)  // 如果 err != nil，测试立即停止
+require.NotNil(t, obj)   // 如果 obj == nil，测试立即停止
+```
+
+### 常用断言
+
+```go
+// 错误断言
+assert.NoError(t, err)
+assert.Error(t, err)
+assert.ErrorIs(t, err, ErrUserNotFound)
+assert.ErrorAs(t, err, &validationErr)
+
+// 相等性断言
+assert.Equal(t, expected, actual)
+assert.NotEqual(t, expected, actual)
+assert.EqualValues(t, expected, actual)
+
+// 布尔断言
+assert.True(t, value)
+assert.False(t, value)
+
+// 空值断言
+assert.Nil(t, obj)
+assert.NotNil(t, obj)
+assert.Empty(t, slice)
+assert.NotEmpty(t, slice)
+
+// 包含断言
+assert.Contains(t, "hello world", "world")
+assert.NotContains(t, slice, element)
+
+// 类型断言
+assert.IsType(t, &User{}, obj)
+```
+
+## 测试上下文
+
+### 使用 context.Context
+
+```go
+func TestUserService_CreateUser(t *testing.T) {
+    // ✅ 使用带超时的 context
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+    
+    // 或使用测试专用 context
+    ctx := context.Background()
+    
+    // 在测试中传递 context
+    err := service.CreateUser(ctx, req)
+    assert.NoError(t, err)
+}
+```
+
+## Repository 层测试
+
+### 使用内存数据库
+
+```go
+func setupTestDB(t *testing.T) *gorm.DB {
+    db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+    require.NoError(t, err)
+    
+    // 自动迁移
+    err = db.AutoMigrate(&model.User{}, &model.Order{})
+    require.NoError(t, err)
+    
+    return db
+}
+
+func TestUserRepository_Create(t *testing.T) {
+    db := setupTestDB(t)
+    repo := NewUserRepository(db)
+    ctx := context.Background()
+    
+    user := &model.User{
+        Phone:    "13800138000",
+        Name:     "测试用户",
+        Password: "hashedpassword",
+    }
+    
+    err := repo.Create(ctx, user)
+    
+    assert.NoError(t, err)
+    assert.NotZero(t, user.ID)
+}
+```
+
+## 集成测试
+
+### 测试完整流程
+
+```go
+func TestOrderService_Integration(t *testing.T) {
+    // 设置测试环境
+    db := setupTestDB(t)
+    defer cleanupTestDB(db)
+    
+    // 创建真实依赖
+    userRepo := repository.NewUserRepository(db)
+    orderRepo := repository.NewOrderRepository(db)
+    service := service.NewOrderService(orderRepo, userRepo)
+    
+    ctx := context.Background()
+    
+    // 准备测试数据
+    user := &model.User{Phone: "13800138000", Name: "测试用户"}
+    err := userRepo.Create(ctx, user)
+    require.NoError(t, err)
+    
+    // 测试完整流程
+    req := &CreateOrderRequest{
+        UserID: user.ID,
+        GameID: 1,
+        Price:  100,
+    }
+    
+    order, err := service.CreateOrder(ctx, req)
+    require.NoError(t, err)
+    assert.NotZero(t, order.ID)
+    
+    // 验证订单状态
+    retrieved, err := service.GetOrder(ctx, order.ID)
+    require.NoError(t, err)
+    assert.Equal(t, order.ID, retrieved.ID)
+}
+```
+
+## 基准测试
+
+```go
+func BenchmarkUserService_CreateUser(b *testing.B) {
+    // 准备
+    mockRepo := &MockUserRepository{}
+    service := NewUserService(mockRepo)
+    ctx := context.Background()
+    
+    req := &CreateUserRequest{
+        Phone:    "13800138000",
+        Password: "password123",
+        Name:     "测试用户",
+    }
+    
+    mockRepo.On("Create", mock.Anything, mock.Anything).Return(nil)
+    
+    // 重置计时器
+    b.ResetTimer()
+    
+    // 运行基准测试
+    for i := 0; i < b.N; i++ {
+        _ = service.CreateUser(ctx, req)
+    }
+}
+```
+
+## 测试覆盖率
+
+### 运行测试覆盖率
+
+```bash
+# 运行测试并生成覆盖率报告
+go test ./... -coverprofile=coverage.out
+
+# 查看覆盖率
+go tool cover -func=coverage.out
+
+# 生成 HTML 报告
+go tool cover -html=coverage.out -o coverage.html
+```
+
+### 覆盖率目标
+
+- **Repository 层**: 90%+
+- **Service 层**: 85%+
+- **Handler 层**: 80%+
+- **整体项目**: 80%+
+
+## 测试清单
+
+编写测试时，确保：
+
+- [ ] 测试文件与源文件在同一目录
+- [ ] 使用清晰的测试命名
+- [ ] 遵循 AAA 模式 (Arrange-Act-Assert)
+- [ ] 测试正常情况和异常情况
+- [ ] 使用表驱动测试处理多个场景
+- [ ] 正确使用 Mock
+- [ ] 验证 Mock 的期望调用
+- [ ] 测试边界条件
+- [ ] 使用适当的断言
+- [ ] 清理测试资源 (使用 defer)

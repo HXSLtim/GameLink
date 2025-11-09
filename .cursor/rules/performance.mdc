@@ -1,0 +1,561 @@
+---
+description: 性能优化指南
+---
+
+# 性能优化指南
+
+## 后端性能优化
+
+### 数据库优化
+
+#### 使用索引
+
+```go
+// 创建索引
+type User struct {
+    ID    uint64 `gorm:"primaryKey"`
+    Phone string `gorm:"uniqueIndex"` // 唯一索引
+    Email string `gorm:"index"`       // 普通索引
+}
+
+// 复合索引
+type Order struct {
+    ID     uint64 `gorm:"primaryKey"`
+    UserID uint64 `gorm:"index:idx_user_status"`
+    Status string `gorm:"index:idx_user_status"`
+}
+```
+
+#### 避免 N+1 查询
+
+```go
+// ❌ N+1 问题
+orders, _ := db.Find(&orders)
+for i := range orders {
+    db.First(&orders[i].User, orders[i].UserID) // N次查询
+}
+
+// ✅ 使用预加载
+db.Preload("User").Find(&orders) // 2次查询
+```
+
+#### 批量操作
+
+```go
+// ✅ 批量插入
+users := []User{{...}, {...}, {...}}
+db.CreateInBatches(users, 100) // 每批100条
+
+// ✅ 批量更新
+db.Model(&User{}).
+    Where("status = ?", "inactive").
+    Update("status", "active")
+```
+
+#### 查询优化
+
+```go
+// ✅ 只查询需要的字段
+db.Select("id", "name", "phone").Find(&users)
+
+// ✅ 分页查询
+db.Offset((page - 1) * pageSize).
+    Limit(pageSize).
+    Find(&users)
+
+// ✅ 使用计数优化
+var count int64
+db.Model(&User{}).Where("status = ?", "active").Count(&count)
+```
+
+### 缓存策略
+
+#### Redis 缓存
+
+```go
+// 缓存用户信息
+func (r *userRepository) GetByID(ctx context.Context, id uint64) (*User, error) {
+    cacheKey := fmt.Sprintf("user:%d", id)
+
+    // 尝试从缓存获取
+    cached, err := r.cache.Get(ctx, cacheKey)
+    if err == nil && cached != "" {
+        var user User
+        if err := json.Unmarshal([]byte(cached), &user); err == nil {
+            return &user, nil
+        }
+    }
+
+    // 从数据库查询
+    var user User
+    if err := r.db.WithContext(ctx).First(&user, id).Error; err != nil {
+        return nil, err
+    }
+
+    // 存入缓存 (TTL: 5分钟)
+    if data, err := json.Marshal(user); err == nil {
+        r.cache.Set(ctx, cacheKey, string(data), 5*time.Minute)
+    }
+
+    return &user, nil
+}
+```
+
+#### 内存缓存
+
+```go
+// 使用 sync.Map
+type MemoryCache struct {
+    cache sync.Map
+}
+
+func (c *MemoryCache) Get(key string) (interface{}, bool) {
+    return c.cache.Load(key)
+}
+
+func (c *MemoryCache) Set(key string, value interface{}) {
+    c.cache.Store(key, value)
+}
+
+// 使用 go-cache (带过期时间)
+import "github.com/patrickmn/go-cache"
+
+cache := cache.New(5*time.Minute, 10*time.Minute)
+cache.Set("user:1", user, cache.DefaultExpiration)
+```
+
+### 并发优化
+
+#### 使用 Worker Pool
+
+```go
+type WorkerPool struct {
+    tasks   chan func()
+    workers int
+}
+
+func NewWorkerPool(workers int) *WorkerPool {
+    pool := &WorkerPool{
+        tasks:   make(chan func(), 100),
+        workers: workers,
+    }
+
+    for i := 0; i < workers; i++ {
+        go pool.worker()
+    }
+
+    return pool
+}
+
+func (p *WorkerPool) worker() {
+    for task := range p.tasks {
+        task()
+    }
+}
+
+func (p *WorkerPool) Submit(task func()) {
+    p.tasks <- task
+}
+
+// 使用
+pool := NewWorkerPool(10)
+for _, order := range orders {
+    order := order // 避免闭包问题
+    pool.Submit(func() {
+        processOrder(order)
+    })
+}
+```
+
+#### 使用 errgroup
+
+```go
+import "golang.org/x/sync/errgroup"
+
+func ProcessOrders(ctx context.Context, orderIDs []uint64) error {
+    g, ctx := errgroup.WithContext(ctx)
+
+    for _, id := range orderIDs {
+        id := id
+        g.Go(func() error {
+            return processOrder(ctx, id)
+        })
+    }
+
+    return g.Wait()
+}
+```
+
+### 连接池优化
+
+```go
+// 数据库连接池
+sqlDB, _ := db.DB()
+sqlDB.SetMaxIdleConns(10)           // 最大空闲连接
+sqlDB.SetMaxOpenConns(100)          // 最大打开连接
+sqlDB.SetConnMaxLifetime(time.Hour) // 连接最大生命周期
+
+// HTTP 客户端连接池
+client := &http.Client{
+    Transport: &http.Transport{
+        MaxIdleConns:        100,
+        MaxIdleConnsPerHost: 10,
+        IdleConnTimeout:     90 * time.Second,
+    },
+    Timeout: 10 * time.Second,
+}
+```
+
+## 前端性能优化
+
+### React 性能优化
+
+#### React.memo
+
+```typescript
+// 避免不必要的重新渲染
+export const UserCard = React.memo<UserCardProps>(
+  ({ user, onEdit }) => {
+    return (
+      <div>
+        <h3>{user.name}</h3>
+        <button onClick={() => onEdit(user.id)}>编辑</button>
+      </div>
+    );
+  },
+  (prevProps, nextProps) => {
+    // 自定义比较
+    return prevProps.user.id === nextProps.user.id;
+  }
+);
+```
+
+#### useMemo 和 useCallback
+
+```typescript
+export const UserList: React.FC = () => {
+  const [users, setUsers] = useState<User[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // 缓存过滤结果
+  const filteredUsers = useMemo(() => {
+    return users.filter((user) =>
+      user.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [users, searchTerm]);
+
+  // 缓存回调函数
+  const handleEdit = useCallback((id: number) => {
+    // ...
+  }, []);
+
+  return (
+    <div>
+      {filteredUsers.map((user) => (
+        <UserCard key={user.id} user={user} onEdit={handleEdit} />
+      ))}
+    </div>
+  );
+};
+```
+
+#### 虚拟列表
+
+```typescript
+// 使用 react-window 处理长列表
+import { FixedSizeList } from 'react-window';
+
+export const LongUserList: React.FC<{ users: User[] }> = ({ users }) => {
+  const Row = ({ index, style }: { index: number; style: React.CSSProperties }) => (
+    <div style={style}>
+      <UserCard user={users[index]} />
+    </div>
+  );
+
+  return (
+    <FixedSizeList height={600} itemCount={users.length} itemSize={80} width="100%">
+      {Row}
+    </FixedSizeList>
+  );
+};
+```
+
+### 代码分割
+
+#### 路由级别分割
+
+```typescript
+import { lazy, Suspense } from 'react';
+
+// 懒加载页面组件
+const UserList = lazy(() => import('pages/Users/UserList'));
+const OrderList = lazy(() => import('pages/Orders/OrderList'));
+
+export const Routes = () => (
+  <Suspense fallback={<Loading />}>
+    <Switch>
+      <Route path="/users" component={UserList} />
+      <Route path="/orders" component={OrderList} />
+    </Switch>
+  </Suspense>
+);
+```
+
+#### 组件级别分割
+
+```typescript
+// 按需加载大型组件
+const HeavyChart = lazy(() => import('components/HeavyChart'));
+
+export const Dashboard = () => {
+  return (
+    <div>
+      <Suspense fallback={<ChartSkeleton />}>
+        <HeavyChart data={data} />
+      </Suspense>
+    </div>
+  );
+};
+```
+
+### 资源优化
+
+#### 图片优化
+
+```typescript
+// 懒加载图片
+export const LazyImage: React.FC<{ src: string; alt: string }> = ({ src, alt }) => {
+  const [imageSrc, setImageSrc] = useState<string>();
+  const imageRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setImageSrc(src);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (imageRef.current) {
+      observer.observe(imageRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [src]);
+
+  return <img ref={imageRef} src={imageSrc} alt={alt} loading="lazy" />;
+};
+```
+
+#### 使用 WebP
+
+```typescript
+// 优先使用 WebP，降级到 PNG/JPG
+<picture>
+  <source srcSet="/images/photo.webp" type="image/webp" />
+  <source srcSet="/images/photo.jpg" type="image/jpeg" />
+  <img src="/images/photo.jpg" alt="Photo" />
+</picture>
+```
+
+### API 请求优化
+
+#### 请求去重
+
+```typescript
+// 防止重复请求
+const requestCache = new Map<string, Promise<any>>();
+
+export async function fetchWithDedup<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
+  if (requestCache.has(key)) {
+    return requestCache.get(key)!;
+  }
+
+  const promise = fetcher().finally(() => {
+    requestCache.delete(key);
+  });
+
+  requestCache.set(key, promise);
+  return promise;
+}
+```
+
+#### 请求合并
+
+```typescript
+// 使用 DataLoader 模式合并请求
+class UserDataLoader {
+  private queue: number[] = [];
+  private promise?: Promise<User[]>;
+
+  load(id: number): Promise<User> {
+    this.queue.push(id);
+
+    if (!this.promise) {
+      this.promise = new Promise((resolve) => {
+        setTimeout(() => {
+          const ids = [...this.queue];
+          this.queue = [];
+          this.promise = undefined;
+
+          // 批量请求
+          userApi.getByIds(ids).then(resolve);
+        }, 10);
+      });
+    }
+
+    return this.promise.then((users) => users.find((u) => u.id === id)!);
+  }
+}
+```
+
+#### 防抖和节流
+
+```typescript
+// 防抖
+export function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  delay: number
+): (...args: Parameters<T>) => void {
+  let timeoutId: NodeJS.Timeout;
+
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func(...args), delay);
+  };
+}
+
+// 节流
+export function throttle<T extends (...args: any[]) => any>(
+  func: T,
+  delay: number
+): (...args: Parameters<T>) => void {
+  let lastCall = 0;
+
+  return (...args: Parameters<T>) => {
+    const now = Date.now();
+    if (now - lastCall >= delay) {
+      lastCall = now;
+      func(...args);
+    }
+  };
+}
+
+// 使用
+const handleSearch = debounce((term: string) => {
+  searchUsers(term);
+}, 300);
+```
+
+### 构建优化
+
+#### Vite 配置
+
+```typescript
+// vite.config.ts
+export default defineConfig({
+  build: {
+    // 代码分割
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui-vendor': ['antd', '@arco-design/web-react'],
+        },
+      },
+    },
+    // 压缩
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true, // 移除 console
+        drop_debugger: true,
+      },
+    },
+    // 启用 gzip
+    reportCompressedSize: true,
+  },
+});
+```
+
+## 性能监控
+
+### 后端监控
+
+```go
+// 使用 Prometheus
+import "github.com/prometheus/client_golang/prometheus"
+
+var (
+    requestDuration = prometheus.NewHistogramVec(
+        prometheus.HistogramOpts{
+            Name: "http_request_duration_seconds",
+            Help: "HTTP request duration",
+        },
+        []string{"method", "endpoint", "status"},
+    )
+)
+
+func init() {
+    prometheus.MustRegister(requestDuration)
+}
+
+// 中间件
+func MetricsMiddleware() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        start := time.Now()
+        c.Next()
+        duration := time.Since(start).Seconds()
+
+        requestDuration.WithLabelValues(
+            c.Request.Method,
+            c.Request.URL.Path,
+            strconv.Itoa(c.Writer.Status()),
+        ).Observe(duration)
+    }
+}
+```
+
+### 前端监控
+
+```typescript
+// Performance API
+export function measurePageLoad(): void {
+  window.addEventListener('load', () => {
+    const perfData = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+
+    console.log({
+      dns: perfData.domainLookupEnd - perfData.domainLookupStart,
+      tcp: perfData.connectEnd - perfData.connectStart,
+      request: perfData.responseStart - perfData.requestStart,
+      response: perfData.responseEnd - perfData.responseStart,
+      dom: perfData.domComplete - perfData.domLoading,
+      loadComplete: perfData.loadEventEnd - perfData.loadEventStart,
+    });
+  });
+}
+```
+
+## 性能检查清单
+
+### 后端
+- [ ] 添加数据库索引
+- [ ] 使用预加载避免 N+1
+- [ ] 实现缓存策略 (Redis)
+- [ ] 优化数据库查询
+- [ ] 配置连接池
+- [ ] 使用 Worker Pool 处理并发
+- [ ] 实现性能监控
+
+### 前端
+- [ ] 使用 React.memo 避免重渲染
+- [ ] 实现代码分割
+- [ ] 图片懒加载和优化
+- [ ] 虚拟列表处理长列表
+- [ ] 请求去重和合并
+- [ ] 防抖和节流
+- [ ] 优化构建配置
+- [ ] 实现性能监控

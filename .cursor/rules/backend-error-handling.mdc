@@ -1,0 +1,317 @@
+---
+globs: backend/**/*.go
+description: 错误处理规范
+---
+
+# 错误处理规范
+
+## 核心原则
+
+1. **明确的错误信息** - 错误应该清晰说明发生了什么
+2. **错误包装** - 每层都应该包装错误，添加上下文信息
+3. **统一的错误响应** - API 返回统一的错误格式
+
+## 错误定义
+
+### 预定义错误变量
+
+在包级别定义常见错误：
+
+```go
+var (
+    ErrUserNotFound      = errors.New("user not found")
+    ErrInvalidPassword   = errors.New("invalid password")
+    ErrOrderExpired      = errors.New("order expired")
+    ErrPermissionDenied  = errors.New("permission denied")
+    ErrInvalidInput      = errors.New("invalid input")
+)
+```
+
+### 自定义错误类型
+
+对于需要携带额外信息的错误：
+
+```go
+type ValidationError struct {
+    Field   string
+    Message string
+}
+
+func (e *ValidationError) Error() string {
+    return fmt.Sprintf("validation error: %s - %s", e.Field, e.Message)
+}
+
+// 使用
+return &ValidationError{
+    Field:   "phone",
+    Message: "invalid phone number format",
+}
+```
+
+## 错误包装
+
+### 使用 fmt.Errorf 和 %w
+
+**每层都应该包装错误，添加上下文**：
+
+```go
+// Repository 层
+func (r *userRepository) GetByID(ctx context.Context, id uint64) (*model.User, error) {
+    var user model.User
+    if err := r.db.WithContext(ctx).First(&user, id).Error; err != nil {
+        if errors.Is(err, gorm.ErrRecordNotFound) {
+            return nil, ErrUserNotFound
+        }
+        return nil, fmt.Errorf("failed to get user from db: %w", err)
+    }
+    return &user, nil
+}
+
+// Service 层
+func (s *UserService) GetUser(ctx context.Context, id uint64) (*model.User, error) {
+    if id <= 0 {
+        return nil, fmt.Errorf("invalid user id: %d", id)
+    }
+
+    user, err := s.repo.GetByID(ctx, id)
+    if err != nil {
+        return nil, fmt.Errorf("failed to get user: %w", err)
+    }
+
+    return user, nil
+}
+
+// Handler 层
+func (h *UserHandler) GetUser(c *gin.Context) {
+    id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
+        return
+    }
+
+    user, err := h.service.GetUser(c.Request.Context(), id)
+    if err != nil {
+        if errors.Is(err, ErrUserNotFound) {
+            c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+            return
+        }
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+
+    c.JSON(http.StatusOK, user)
+}
+```
+
+## 错误检查模式
+
+### 使用 errors.Is 和 errors.As
+
+```go
+// 检查特定错误
+if errors.Is(err, ErrUserNotFound) {
+    // 处理用户不存在的情况
+}
+
+// 提取错误类型
+var validationErr *ValidationError
+if errors.As(err, &validationErr) {
+    // 处理验证错误
+    fmt.Printf("Field: %s, Message: %s\n", validationErr.Field, validationErr.Message)
+}
+```
+
+### GORM 错误处理
+
+```go
+func (r *userRepository) GetByID(ctx context.Context, id uint64) (*model.User, error) {
+    var user model.User
+    err := r.db.WithContext(ctx).First(&user, id).Error
+    
+    // 检查 GORM 特定错误
+    if err != nil {
+        if errors.Is(err, gorm.ErrRecordNotFound) {
+            return nil, ErrUserNotFound
+        }
+        return nil, fmt.Errorf("database error: %w", err)
+    }
+    
+    return &user, nil
+}
+```
+
+## Handler 层错误响应
+
+### 统一的错误响应格式
+
+使用项目中定义的错误响应格式：
+
+```go
+// ✅ 推荐: 使用统一的错误响应
+func (h *UserHandler) CreateUser(c *gin.Context) {
+    var req CreateUserRequest
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{
+            "error": "invalid request format",
+        })
+        return
+    }
+
+    if err := h.service.CreateUser(c.Request.Context(), &req); err != nil {
+        // 根据错误类型返回不同的状态码
+        if errors.Is(err, ErrInvalidInput) {
+            c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+            return
+        }
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+
+    c.JSON(http.StatusCreated, gin.H{
+        "message": "user created successfully",
+    })
+}
+```
+
+### 错误状态码映射
+
+```go
+// 常见错误与 HTTP 状态码对应
+var errorStatusMap = map[error]int{
+    ErrUserNotFound:     http.StatusNotFound,      // 404
+    ErrInvalidInput:     http.StatusBadRequest,    // 400
+    ErrPermissionDenied: http.StatusForbidden,     // 403
+    ErrOrderExpired:     http.StatusBadRequest,    // 400
+}
+
+// 辅助函数
+func getStatusCode(err error) int {
+    for e, code := range errorStatusMap {
+        if errors.Is(err, e) {
+            return code
+        }
+    }
+    return http.StatusInternalServerError
+}
+```
+
+## 业务逻辑验证
+
+### 输入验证
+
+```go
+func (s *UserService) CreateUser(ctx context.Context, req *CreateUserRequest) error {
+    // 验证手机号
+    if req.Phone == "" {
+        return fmt.Errorf("%w: phone is required", ErrInvalidInput)
+    }
+    
+    if !isValidPhone(req.Phone) {
+        return fmt.Errorf("%w: invalid phone format", ErrInvalidInput)
+    }
+    
+    // 验证密码强度
+    if len(req.Password) < 6 {
+        return fmt.Errorf("%w: password too short", ErrInvalidInput)
+    }
+    
+    // 检查用户是否已存在
+    exists, err := s.repo.ExistsByPhone(ctx, req.Phone)
+    if err != nil {
+        return fmt.Errorf("failed to check user existence: %w", err)
+    }
+    if exists {
+        return fmt.Errorf("%w: user already exists", ErrInvalidInput)
+    }
+    
+    // 创建用户
+    user := req.ToModel()
+    if err := s.repo.Create(ctx, user); err != nil {
+        return fmt.Errorf("failed to create user: %w", err)
+    }
+    
+    return nil
+}
+```
+
+## 日志记录
+
+### 错误日志
+
+使用结构化日志记录错误：
+
+```go
+import "log/slog"
+
+func (s *UserService) CreateUser(ctx context.Context, req *CreateUserRequest) error {
+    logger := slog.With("phone", req.Phone)
+    
+    logger.Info("creating user")
+    
+    if err := s.repo.Create(ctx, req.ToModel()); err != nil {
+        logger.Error("failed to create user", "error", err)
+        return fmt.Errorf("failed to create user: %w", err)
+    }
+    
+    logger.Info("user created successfully")
+    return nil
+}
+```
+
+## 错误处理检查清单
+
+在编写代码时，确保：
+
+- [ ] 所有错误都被检查并处理
+- [ ] 错误被适当包装，提供上下文信息
+- [ ] 使用 `%w` 而不是 `%v` 来包装错误
+- [ ] Handler 层返回适当的 HTTP 状态码
+- [ ] 重要操作记录错误日志
+- [ ] 使用 `errors.Is` 或 `errors.As` 检查错误类型
+- [ ] 不要忽略错误 (避免 `_ = ...`)
+- [ ] 错误消息清晰、有意义
+
+## 反模式 (避免)
+
+### ❌ 不要忽略错误
+
+```go
+❌ user, _ := s.repo.GetByID(ctx, id)
+✅ user, err := s.repo.GetByID(ctx, id)
+   if err != nil {
+       return nil, fmt.Errorf("failed to get user: %w", err)
+   }
+```
+
+### ❌ 不要吞噬错误
+
+```go
+❌ if err := doSomething(); err != nil {
+       // 什么都不做
+   }
+
+✅ if err := doSomething(); err != nil {
+       log.Error("operation failed", "error", err)
+       return fmt.Errorf("failed to do something: %w", err)
+   }
+```
+
+### ❌ 不要使用 panic 处理业务错误
+
+```go
+❌ if err != nil {
+       panic(err)  // 不要在业务代码中使用 panic
+   }
+
+✅ if err != nil {
+       return fmt.Errorf("operation failed: %w", err)
+   }
+```
+
+### ❌ 不要返回未包装的错误
+
+```go
+❌ return err
+
+✅ return fmt.Errorf("context information: %w", err)
+```

@@ -1,0 +1,452 @@
+---
+globs: backend/**/*.go,frontend/src/**/*.{ts,tsx}
+description: 日志记录规范
+---
+
+# 日志记录规范
+
+## 后端日志 (Go)
+
+### 使用 slog (结构化日志)
+
+```go
+import "log/slog"
+
+// 基础日志
+slog.Info("server started", "port", 8080)
+slog.Error("failed to connect to database", "error", err)
+slog.Warn("cache miss", "key", cacheKey)
+slog.Debug("processing request", "path", req.URL.Path)
+```
+
+### 创建带上下文的 Logger
+
+```go
+// 创建带有公共字段的 logger
+func (s *UserService) CreateUser(ctx context.Context, req *CreateUserRequest) error {
+    logger := slog.With(
+        "service", "user",
+        "operation", "create",
+        "phone", req.Phone,
+    )
+
+    logger.Info("creating user")
+
+    if err := s.repo.Create(ctx, req.ToModel()); err != nil {
+        logger.Error("failed to create user", "error", err)
+        return err
+    }
+
+    logger.Info("user created successfully")
+    return nil
+}
+```
+
+### 日志级别
+
+```go
+// Debug - 调试信息
+slog.Debug("query executed", "sql", query, "duration", duration)
+
+// Info - 一般信息
+slog.Info("request completed", "method", method, "path", path, "status", status)
+
+// Warn - 警告信息
+slog.Warn("deprecated API called", "endpoint", endpoint)
+
+// Error - 错误信息
+slog.Error("database connection failed", "error", err)
+```
+
+### 请求日志中间件
+
+```go
+// HTTP 请求日志
+func RequestLogger() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        start := time.Now()
+        path := c.Request.URL.Path
+        method := c.Request.Method
+
+        logger := slog.With(
+            "method", method,
+            "path", path,
+            "ip", c.ClientIP(),
+        )
+
+        logger.Info("request started")
+
+        c.Next()
+
+        duration := time.Since(start)
+        status := c.Writer.Status()
+
+        logger.Info("request completed",
+            "status", status,
+            "duration", duration.String(),
+        )
+    }
+}
+```
+
+### 错误日志
+
+```go
+// 记录错误上下文
+func (s *OrderService) ProcessOrder(ctx context.Context, orderID uint64) error {
+    logger := slog.With("orderID", orderID)
+
+    order, err := s.repo.GetByID(ctx, orderID)
+    if err != nil {
+        logger.Error("failed to get order",
+            "error", err,
+            "operation", "GetByID",
+        )
+        return fmt.Errorf("failed to get order: %w", err)
+    }
+
+    if err := s.validateOrder(order); err != nil {
+        logger.Warn("order validation failed",
+            "error", err,
+            "status", order.Status,
+        )
+        return err
+    }
+
+    logger.Info("order processed successfully")
+    return nil
+}
+```
+
+### 性能日志
+
+```go
+// 记录操作耗时
+func (s *UserService) ComplexOperation(ctx context.Context) error {
+    logger := slog.With("operation", "complex_operation")
+    start := time.Now()
+
+    defer func() {
+        duration := time.Since(start)
+        logger.Info("operation completed", "duration", duration.String())
+    }()
+
+    // 执行操作...
+
+    return nil
+}
+
+// 使用 defer 记录性能
+func LogDuration(operation string) func() {
+    start := time.Now()
+    return func() {
+        duration := time.Since(start)
+        slog.Info("operation duration",
+            "operation", operation,
+            "duration", duration.String(),
+        )
+    }
+}
+
+// 使用
+defer LogDuration("create_user")()
+```
+
+### 数据库查询日志
+
+```go
+// GORM Logger 配置
+func SetupDatabase() (*gorm.DB, error) {
+    // 自定义日志级别
+    logLevel := logger.Info
+    if os.Getenv("ENV") == "production" {
+        logLevel = logger.Warn
+    }
+
+    db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+        Logger: logger.Default.LogMode(logLevel),
+    })
+
+    return db, err
+}
+
+// 记录慢查询
+func (r *userRepository) SlowQuery(ctx context.Context) error {
+    start := time.Now()
+
+    var users []User
+    err := r.db.WithContext(ctx).Find(&users).Error
+
+    duration := time.Since(start)
+    if duration > 100*time.Millisecond {
+        slog.Warn("slow query detected",
+            "duration", duration.String(),
+            "query", "find_users",
+        )
+    }
+
+    return err
+}
+```
+
+## 前端日志
+
+### Console 日志封装
+
+```typescript
+// utils/logger.ts
+
+export enum LogLevel {
+  DEBUG = 'debug',
+  INFO = 'info',
+  WARN = 'warn',
+  ERROR = 'error',
+}
+
+class Logger {
+  private isDev = import.meta.env.DEV;
+
+  debug(message: string, ...args: any[]): void {
+    if (this.isDev) {
+      console.log(`[DEBUG] ${message}`, ...args);
+    }
+  }
+
+  info(message: string, ...args: any[]): void {
+    console.info(`[INFO] ${message}`, ...args);
+  }
+
+  warn(message: string, ...args: any[]): void {
+    console.warn(`[WARN] ${message}`, ...args);
+  }
+
+  error(message: string, error?: Error, ...args: any[]): void {
+    console.error(`[ERROR] ${message}`, error, ...args);
+
+    // 在生产环境发送到错误追踪服务
+    if (!this.isDev && error) {
+      this.reportError(message, error);
+    }
+  }
+
+  private reportError(message: string, error: Error): void {
+    // 发送到错误追踪服务 (如 Sentry)
+    // errorTracker.captureException(error, { message });
+  }
+}
+
+export const logger = new Logger();
+```
+
+### 使用日志
+
+```typescript
+import { logger } from 'utils/logger';
+
+// 组件中使用
+export const UserList: React.FC = () => {
+  const loadUsers = async () => {
+    logger.debug('Loading users');
+
+    try {
+      const data = await userApi.list();
+      logger.info('Users loaded', { count: data.users.length });
+      setUsers(data.users);
+    } catch (error) {
+      logger.error('Failed to load users', error as Error);
+      setError('加载用户失败');
+    }
+  };
+
+  // ...
+};
+```
+
+### API 请求日志
+
+```typescript
+// API 拦截器中添加日志
+apiClient.interceptors.request.use((config) => {
+  logger.debug('API Request', {
+    method: config.method,
+    url: config.url,
+    data: config.data,
+  });
+  return config;
+});
+
+apiClient.interceptors.response.use(
+  (response) => {
+    logger.debug('API Response', {
+      url: response.config.url,
+      status: response.status,
+    });
+    return response;
+  },
+  (error) => {
+    logger.error('API Error', error, {
+      url: error.config?.url,
+      status: error.response?.status,
+    });
+    return Promise.reject(error);
+  }
+);
+```
+
+### 性能监控
+
+```typescript
+// 性能监控工具
+export function measurePerformance(
+  name: string,
+  fn: () => void | Promise<void>
+): void {
+  const start = performance.now();
+
+  const cleanup = () => {
+    const duration = performance.now() - start;
+    logger.debug('Performance', { name, duration: `${duration.toFixed(2)}ms` });
+  };
+
+  const result = fn();
+
+  if (result instanceof Promise) {
+    result.finally(cleanup);
+  } else {
+    cleanup();
+  }
+}
+
+// 使用
+measurePerformance('loadUsers', async () => {
+  await userApi.list();
+});
+```
+
+### 错误边界日志
+
+```typescript
+export class ErrorBoundary extends React.Component<Props, State> {
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    logger.error('React Error Boundary', error, {
+      componentStack: errorInfo.componentStack,
+    });
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <ErrorFallback error={this.state.error} />;
+    }
+    return this.props.children;
+  }
+}
+```
+
+## 日志最佳实践
+
+### ✅ 推荐
+
+```go
+// 1. 使用结构化日志
+✅ slog.Info("user created", "userID", user.ID, "phone", user.Phone)
+❌ log.Printf("user created: %d", user.ID)
+
+// 2. 记录关键操作
+✅ logger.Info("order created", "orderID", order.ID)
+✅ logger.Error("payment failed", "error", err, "orderID", orderID)
+
+// 3. 包含上下文信息
+✅ logger := slog.With("service", "user", "operation", "create")
+
+// 4. 使用合适的日志级别
+✅ slog.Debug("cache hit", "key", key)
+✅ slog.Info("request completed", "status", status)
+✅ slog.Warn("deprecated API", "endpoint", endpoint)
+✅ slog.Error("database error", "error", err)
+
+// 5. 记录性能指标
+✅ logger.Info("query completed", "duration", duration.String())
+```
+
+### ❌ 避免
+
+```go
+// 1. 不要记录敏感信息
+❌ logger.Info("user login", "password", password)
+❌ logger.Info("payment", "cardNumber", cardNumber)
+
+// 2. 不要过度日志
+❌ logger.Debug("entering function")
+❌ logger.Debug("exiting function")
+
+// 3. 不要使用 panic 代替日志
+❌ panic("something went wrong")
+✅ logger.Error("operation failed", "error", err)
+
+// 4. 不要记录整个对象
+❌ logger.Info("user", "user", user)  // 可能包含敏感信息
+✅ logger.Info("user", "userID", user.ID, "name", user.Name)
+```
+
+## 日志配置
+
+### 生产环境配置
+
+```go
+// 根据环境配置日志级别
+func setupLogger() {
+    var level slog.Level
+
+    switch os.Getenv("LOG_LEVEL") {
+    case "debug":
+        level = slog.LevelDebug
+    case "info":
+        level = slog.LevelInfo
+    case "warn":
+        level = slog.LevelWarn
+    case "error":
+        level = slog.LevelError
+    default:
+        level = slog.LevelInfo
+    }
+
+    handler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+        Level: level,
+    })
+
+    logger := slog.New(handler)
+    slog.SetDefault(logger)
+}
+```
+
+### 日志轮转
+
+```go
+// 使用 lumberjack 实现日志轮转
+import "gopkg.in/natefinch/lumberjack.v2"
+
+func setupLogFile() io.Writer {
+    return &lumberjack.Logger{
+        Filename:   "/var/log/gamelink/app.log",
+        MaxSize:    100,  // MB
+        MaxBackups: 3,
+        MaxAge:     28,   // days
+        Compress:   true,
+    }
+}
+```
+
+## 检查清单
+
+记录日志时，确保：
+
+- [ ] 使用结构化日志 (slog)
+- [ ] 选择合适的日志级别
+- [ ] 包含足够的上下文信息
+- [ ] 不记录敏感信息 (密码、token等)
+- [ ] 记录关键业务操作
+- [ ] 记录错误和异常
+- [ ] 记录性能指标
+- [ ] 生产环境配置日志级别
+- [ ] 实现日志轮转
+- [ ] 考虑日志存储和查询方案

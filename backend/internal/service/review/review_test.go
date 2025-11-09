@@ -185,10 +185,12 @@ func TestCreateReview(t *testing.T) {
 	svc := NewReviewService(reviewRepo, orderRepo, &mockPlayerRepository{}, &mockUserRepository{})
 
 	// 创建已完成的订单
+	playerID := uint64(1)
 	order := &model.Order{
 		UserID:   1,
-		PlayerID: 1,
+		PlayerID: &playerID,
 		Status:   model.OrderStatusCompleted,
+		ItemID:   1,
 	}
 	_ = orderRepo.Create(context.Background(), order)
 
@@ -233,10 +235,12 @@ func TestCreateReviewOrderNotCompleted(t *testing.T) {
 	svc := NewReviewService(reviewRepo, orderRepo, &mockPlayerRepository{}, &mockUserRepository{})
 
 	// 创建进行中的订单
+	playerID := uint64(1)
 	order := &model.Order{
 		UserID:   1,
-		PlayerID: 1,
+		PlayerID: &playerID,
 		Status:   model.OrderStatusInProgress,
+		ItemID:   1,
 	}
 	_ = orderRepo.Create(context.Background(), order)
 
@@ -258,10 +262,12 @@ func TestCreateReviewUnauthorized(t *testing.T) {
 	svc := NewReviewService(reviewRepo, orderRepo, &mockPlayerRepository{}, &mockUserRepository{})
 
 	// 创建其他用户的订单
+	playerID := uint64(1)
 	order := &model.Order{
 		UserID:   2,
-		PlayerID: 1,
+		PlayerID: &playerID,
 		Status:   model.OrderStatusCompleted,
+		ItemID:   1,
 	}
 	_ = orderRepo.Create(context.Background(), order)
 
@@ -283,10 +289,12 @@ func TestCreateReviewAlreadyReviewed(t *testing.T) {
 	svc := NewReviewService(reviewRepo, orderRepo, &mockPlayerRepository{}, &mockUserRepository{})
 
 	// 创建已完成的订单
+	playerID := uint64(1)
 	order := &model.Order{
 		UserID:   1,
-		PlayerID: 1,
+		PlayerID: &playerID,
 		Status:   model.OrderStatusCompleted,
+		ItemID:   1,
 	}
 	_ = orderRepo.Create(context.Background(), order)
 
@@ -319,18 +327,20 @@ func TestGetMyReviews(t *testing.T) {
 	svc := NewReviewService(reviewRepo, orderRepo, &mockPlayerRepository{}, &mockUserRepository{})
 
 	// 创建订单和评价
+	playerID := uint64(1)
 	order := &model.Order{
 		UserID:   1,
-		PlayerID: 1,
+		PlayerID: &playerID,
 		Title:    "Test Order",
 		Status:   model.OrderStatusCompleted,
+		ItemID:   1,
 	}
 	_ = orderRepo.Create(context.Background(), order)
 
 	review := &model.Review{
 		OrderID:  order.ID,
 		UserID:   1,
-		PlayerID: 1,
+		PlayerID: playerID,
 		Score:    5,
 		Content:  "Great!",
 	}
@@ -366,11 +376,12 @@ func TestGetPlayerReviews(t *testing.T) {
 	svc := NewReviewService(reviewRepo, orderRepo, &mockPlayerRepository{}, &mockUserRepository{})
 
 	// 创建多个评价
+	playerID := uint64(1)
 	for i := 1; i <= 3; i++ {
 		review := &model.Review{
 			OrderID:  uint64(i),
 			UserID:   uint64(i),
-			PlayerID: 1,
+			PlayerID: playerID,
 			Score:    model.Rating(i + 2), // 3, 4, 5
 			Content:  "Review " + string(rune(i)),
 		}

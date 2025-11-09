@@ -7,10 +7,11 @@ import (
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
+	commissionrepo "gamelink/internal/repository/commission"
+	serviceitemrepo "gamelink/internal/repository/serviceitem"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 // Mock Repositories
@@ -39,7 +40,7 @@ func (m *MockServiceItemRepo) GetByCode(ctx context.Context, code string) (*mode
 	return args.Get(0).(*model.ServiceItem), args.Error(1)
 }
 
-func (m *MockServiceItemRepo) List(ctx context.Context, opts repository.ServiceItemListOptions) ([]model.ServiceItem, int64, error) {
+func (m *MockServiceItemRepo) List(ctx context.Context, opts serviceitemrepo.ServiceItemListOptions) ([]model.ServiceItem, int64, error) {
 	args := m.Called(ctx, opts)
 	return args.Get(0).([]model.ServiceItem), args.Get(1).(int64), args.Error(2)
 }
@@ -114,6 +115,22 @@ type MockPlayerRepo struct {
 	mock.Mock
 }
 
+func (m *MockPlayerRepo) List(ctx context.Context) ([]model.Player, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]model.Player), args.Error(1)
+}
+
+func (m *MockPlayerRepo) ListPaged(ctx context.Context, page, pageSize int) ([]model.Player, int64, error) {
+	args := m.Called(ctx, page, pageSize)
+	if args.Get(0) == nil {
+		return nil, 0, args.Error(2)
+	}
+	return args.Get(0).([]model.Player), args.Get(1).(int64), args.Error(2)
+}
+
 func (m *MockPlayerRepo) Get(ctx context.Context, id uint64) (*model.Player, error) {
 	args := m.Called(ctx, id)
 	if args.Get(0) == nil {
@@ -132,9 +149,9 @@ func (m *MockPlayerRepo) Update(ctx context.Context, player *model.Player) error
 	return args.Error(0)
 }
 
-func (m *MockPlayerRepo) ListPaged(ctx context.Context, page, pageSize int) ([]model.Player, int64, error) {
-	args := m.Called(ctx, page, pageSize)
-	return args.Get(0).([]model.Player), args.Get(1).(int64), args.Error(2)
+func (m *MockPlayerRepo) Delete(ctx context.Context, id uint64) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
 }
 
 type MockCommissionRepo struct {
@@ -155,23 +172,59 @@ func (m *MockCommissionRepo) GetRecordByOrderID(ctx context.Context, orderID uin
 }
 
 // Mock所有其他必需的方法
-func (m *MockCommissionRepo) CreateRule(ctx context.Context, rule *model.CommissionRule) error { return nil }
-func (m *MockCommissionRepo) GetRule(ctx context.Context, id uint64) (*model.CommissionRule, error) { return nil, nil }
-func (m *MockCommissionRepo) GetDefaultRule(ctx context.Context) (*model.CommissionRule, error) { return nil, nil }
-func (m *MockCommissionRepo) GetRuleForOrder(ctx context.Context, gameID, playerID *uint64, serviceType *string) (*model.CommissionRule, error) { return nil, nil }
-func (m *MockCommissionRepo) ListRules(ctx context.Context, opts repository.CommissionRuleListOptions) ([]model.CommissionRule, int64, error) { return nil, 0, nil }
-func (m *MockCommissionRepo) UpdateRule(ctx context.Context, rule *model.CommissionRule) error { return nil }
+func (m *MockCommissionRepo) CreateRule(ctx context.Context, rule *model.CommissionRule) error {
+	return nil
+}
+func (m *MockCommissionRepo) GetRule(ctx context.Context, id uint64) (*model.CommissionRule, error) {
+	return nil, nil
+}
+func (m *MockCommissionRepo) GetDefaultRule(ctx context.Context) (*model.CommissionRule, error) {
+	return nil, nil
+}
+func (m *MockCommissionRepo) GetRuleForOrder(ctx context.Context, gameID, playerID *uint64, serviceType *string) (*model.CommissionRule, error) {
+	return nil, nil
+}
+func (m *MockCommissionRepo) ListRules(ctx context.Context, opts commissionrepo.CommissionRuleListOptions) ([]model.CommissionRule, int64, error) {
+	return nil, 0, nil
+}
+func (m *MockCommissionRepo) UpdateRule(ctx context.Context, rule *model.CommissionRule) error {
+	return nil
+}
 func (m *MockCommissionRepo) DeleteRule(ctx context.Context, id uint64) error { return nil }
-func (m *MockCommissionRepo) GetRecord(ctx context.Context, id uint64) (*model.CommissionRecord, error) { return nil, nil }
-func (m *MockCommissionRepo) ListRecords(ctx context.Context, opts repository.CommissionRecordListOptions) ([]model.CommissionRecord, int64, error) { return nil, 0, nil }
-func (m *MockCommissionRepo) UpdateRecord(ctx context.Context, record *model.CommissionRecord) error { return nil }
-func (m *MockCommissionRepo) CreateSettlement(ctx context.Context, settlement *model.MonthlySettlement) error { return nil }
-func (m *MockCommissionRepo) GetSettlement(ctx context.Context, id uint64) (*model.MonthlySettlement, error) { return nil, nil }
-func (m *MockCommissionRepo) GetSettlementByPlayerMonth(ctx context.Context, playerID uint64, month string) (*model.MonthlySettlement, error) { return nil, nil }
-func (m *MockCommissionRepo) ListSettlements(ctx context.Context, opts repository.SettlementListOptions) ([]model.MonthlySettlement, int64, error) { return nil, 0, nil }
-func (m *MockCommissionRepo) UpdateSettlement(ctx context.Context, settlement *model.MonthlySettlement) error { return nil }
-func (m *MockCommissionRepo) GetMonthlyStats(ctx context.Context, month string) (*repository.MonthlyStats, error) { return nil, nil }
-func (m *MockCommissionRepo) GetPlayerMonthlyIncome(ctx context.Context, playerID uint64, month string) (int64, error) { return 0, nil }
+func (m *MockCommissionRepo) GetRecord(ctx context.Context, id uint64) (*model.CommissionRecord, error) {
+	return nil, nil
+}
+func (m *MockCommissionRepo) ListRecords(ctx context.Context, opts commissionrepo.CommissionRecordListOptions) ([]model.CommissionRecord, int64, error) {
+	return nil, 0, nil
+}
+func (m *MockCommissionRepo) UpdateRecord(ctx context.Context, record *model.CommissionRecord) error {
+	return nil
+}
+func (m *MockCommissionRepo) CreateSettlement(ctx context.Context, settlement *model.MonthlySettlement) error {
+	return nil
+}
+func (m *MockCommissionRepo) GetSettlement(ctx context.Context, id uint64) (*model.MonthlySettlement, error) {
+	return nil, nil
+}
+func (m *MockCommissionRepo) GetSettlementByPlayerMonth(ctx context.Context, playerID uint64, month string) (*model.MonthlySettlement, error) {
+	return nil, nil
+}
+func (m *MockCommissionRepo) ListSettlements(ctx context.Context, opts commissionrepo.SettlementListOptions) ([]model.MonthlySettlement, int64, error) {
+	return nil, 0, nil
+}
+func (m *MockCommissionRepo) UpdateSettlement(ctx context.Context, settlement *model.MonthlySettlement) error {
+	return nil
+}
+func (m *MockCommissionRepo) GetMonthlyStats(ctx context.Context, month string) (*commissionrepo.MonthlyStats, error) {
+	args := m.Called(ctx, month)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*commissionrepo.MonthlyStats), args.Error(1)
+}
+func (m *MockCommissionRepo) GetPlayerMonthlyIncome(ctx context.Context, playerID uint64, month string) (int64, error) {
+	return 0, nil
+}
 
 func TestGiftService_SendGift(t *testing.T) {
 	ctx := context.Background()
@@ -198,7 +251,7 @@ func TestGiftService_SendGift(t *testing.T) {
 
 		// Mock陪玩师
 		player := &model.Player{
-			ID:       5,
+			Base:     model.Base{ID: 5},
 			Nickname: "测试陪玩师",
 		}
 
@@ -368,7 +421,10 @@ func TestGiftService_GetPlayerReceivedGifts(t *testing.T) {
 	deliveredAt := time.Now()
 
 	giftOrder := model.Order{
-		ID:                1001,
+		Base: model.Base{
+			ID:        1001,
+			CreatedAt: time.Now(),
+		},
 		OrderNo:           "GIFT001",
 		ItemID:            1,
 		RecipientPlayerID: &recipientID, // 礼物订单
@@ -378,11 +434,12 @@ func TestGiftService_GetPlayerReceivedGifts(t *testing.T) {
 		GiftMessage:       "谢谢！",
 		IsAnonymous:       false,
 		DeliveredAt:       &deliveredAt,
-		CreatedAt:         time.Now(),
 	}
 
 	escortOrder := model.Order{
-		ID:                1002,
+		Base: model.Base{
+			ID: 1002,
+		},
 		OrderNo:           "ESC001",
 		ItemID:            2,
 		PlayerID:          &playerID, // 护航订单（不是礼物）
@@ -432,7 +489,9 @@ func TestGiftService_GetGiftStats(t *testing.T) {
 	recipientID := uint64(5)
 	orders := []model.Order{
 		{
-			ID:                1001,
+			Base: model.Base{
+				ID: 1001,
+			},
 			ItemID:            1,
 			RecipientPlayerID: &recipientID,
 			Quantity:          2,
@@ -440,7 +499,9 @@ func TestGiftService_GetGiftStats(t *testing.T) {
 			Status:            model.OrderStatusCompleted,
 		},
 		{
-			ID:                1002,
+			Base: model.Base{
+				ID: 1002,
+			},
 			ItemID:            1,
 			RecipientPlayerID: &recipientID,
 			Quantity:          1,
@@ -448,7 +509,9 @@ func TestGiftService_GetGiftStats(t *testing.T) {
 			Status:            model.OrderStatusCompleted,
 		},
 		{
-			ID:                1003,
+			Base: model.Base{
+				ID: 1003,
+			},
 			ItemID:            2,
 			RecipientPlayerID: &recipientID,
 			Quantity:          5,
@@ -466,8 +529,7 @@ func TestGiftService_GetGiftStats(t *testing.T) {
 	// 验证
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
-	assert.Equal(t, int64(8), resp.TotalGiftsReceived)      // 2+1+5
-	assert.Equal(t, int64(64000), resp.TotalGiftIncome)     // 16000+8000+40000
+	assert.Equal(t, int64(8), resp.TotalGiftsReceived)  // 2+1+5
+	assert.Equal(t, int64(64000), resp.TotalGiftIncome) // 16000+8000+40000
 	assert.Equal(t, int64(3), resp.TotalGiftOrders)
 }
-

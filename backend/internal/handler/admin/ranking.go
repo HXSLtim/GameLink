@@ -8,12 +8,12 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"gamelink/internal/model"
-	"gamelink/internal/repository"
+	rankingrepo "gamelink/internal/repository/ranking"
 	commissionservice "gamelink/internal/service/commission"
 )
 
-// RegisterRankingCommissionRoutes 注册管理端排名抽成配置路�?
-func RegisterRankingCommissionRoutes(router gin.IRouter, repo repository.RankingCommissionRepository) {
+// RegisterRankingCommissionRoutes 注册管理端排名抽成配置路由
+func RegisterRankingCommissionRoutes(router gin.IRouter, repo rankingrepo.RankingCommissionRepository) {
 	group := router.Group("/admin/ranking-commission")
 	{
 		group.POST("/configs", func(c *gin.Context) { createRankingCommissionConfigHandler(c, repo) })
@@ -26,11 +26,11 @@ func RegisterRankingCommissionRoutes(router gin.IRouter, repo repository.Ranking
 
 // CreateRankingCommissionConfigRequest 创建排名抽成配置请求
 type CreateRankingCommissionConfigRequest struct {
-	Name        string                              `json:"name" binding:"required"`
-	RankingType model.RankingType                   `json:"rankingType" binding:"required,oneof=income order_count"`
-	Month       string                              `json:"month" binding:"required"` // YYYY-MM
-	Rules       []model.RankingCommissionRule       `json:"rules" binding:"required,min=1"`
-	Description string                              `json:"description"`
+	Name        string                        `json:"name" binding:"required"`
+	RankingType model.RankingType             `json:"rankingType" binding:"required,oneof=income order_count"`
+	Month       string                        `json:"month" binding:"required"` // YYYY-MM
+	Rules       []model.RankingCommissionRule `json:"rules" binding:"required,min=1"`
+	Description string                        `json:"description"`
 }
 
 // createRankingCommissionConfigHandler 创建排名抽成配置
@@ -45,23 +45,23 @@ type CreateRankingCommissionConfigRequest struct {
 // @Failure      400            {object}  model.APIResponse[any]
 // @Failure      401            {object}  model.APIResponse[any]
 // @Router       /admin/ranking-commission/configs [post]
-func createRankingCommissionConfigHandler(c *gin.Context, repo repository.RankingCommissionRepository) {
+func createRankingCommissionConfigHandler(c *gin.Context, repo rankingrepo.RankingCommissionRepository) {
 	var req CreateRankingCommissionConfigRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, err.Error())
+		writeJSONError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	// 验证规则
 	if err := commissionservice.ValidateRankingRules(req.Rules); err != nil {
-		respondError(c, http.StatusBadRequest, "Invalid rules: "+err.Error())
+		writeJSONError(c, http.StatusBadRequest, "Invalid rules: "+err.Error())
 		return
 	}
 
 	// 序列化规�?
 	rulesJSON, err := json.Marshal(req.Rules)
 	if err != nil {
-		respondError(c, http.StatusBadRequest, "Failed to serialize rules")
+		writeJSONError(c, http.StatusBadRequest, "Failed to serialize rules")
 		return
 	}
 
@@ -77,11 +77,11 @@ func createRankingCommissionConfigHandler(c *gin.Context, repo repository.Rankin
 	}
 
 	if err := repo.CreateConfig(c.Request.Context(), config); err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[model.RankingCommissionConfig]{
+	writeJSON(c, http.StatusOK, model.APIResponse[model.RankingCommissionConfig]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "Ranking commission config created successfully",
@@ -104,11 +104,11 @@ func createRankingCommissionConfigHandler(c *gin.Context, repo repository.Rankin
 // @Failure      400            {object}  model.APIResponse[any]
 // @Failure      401            {object}  model.APIResponse[any]
 // @Router       /admin/ranking-commission/configs [get]
-func listRankingCommissionConfigsHandler(c *gin.Context, repo repository.RankingCommissionRepository) {
+func listRankingCommissionConfigsHandler(c *gin.Context, repo rankingrepo.RankingCommissionRepository) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "20"))
 
-	opts := repository.RankingCommissionConfigListOptions{
+	opts := rankingrepo.RankingCommissionConfigListOptions{
 		Page:     page,
 		PageSize: pageSize,
 	}
@@ -124,7 +124,7 @@ func listRankingCommissionConfigsHandler(c *gin.Context, repo repository.Ranking
 
 	configs, total, err := repo.ListConfigs(c.Request.Context(), opts)
 	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -145,7 +145,7 @@ func listRankingCommissionConfigsHandler(c *gin.Context, repo repository.Ranking
 		})
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[any]{
+	writeJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
@@ -168,17 +168,17 @@ func listRankingCommissionConfigsHandler(c *gin.Context, repo repository.Ranking
 // @Failure      400            {object}  model.APIResponse[any]
 // @Failure      401            {object}  model.APIResponse[any]
 // @Router       /admin/ranking-commission/configs/{id} [get]
-func getRankingCommissionConfigHandler(c *gin.Context, repo repository.RankingCommissionRepository) {
+func getRankingCommissionConfigHandler(c *gin.Context, repo rankingrepo.RankingCommissionRepository) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		respondError(c, http.StatusBadRequest, "Invalid config ID")
+		writeJSONError(c, http.StatusBadRequest, "Invalid config ID")
 		return
 	}
 
 	config, err := repo.GetConfig(c.Request.Context(), id)
 	if err != nil {
-		respondError(c, http.StatusNotFound, "Config not found")
+		writeJSONError(c, http.StatusNotFound, "Config not found")
 		return
 	}
 
@@ -186,7 +186,7 @@ func getRankingCommissionConfigHandler(c *gin.Context, repo repository.RankingCo
 	var rules []model.RankingCommissionRule
 	json.Unmarshal([]byte(config.RulesJSON), &rules)
 
-	respondJSON(c, http.StatusOK, model.APIResponse[any]{
+	writeJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
@@ -199,10 +199,10 @@ func getRankingCommissionConfigHandler(c *gin.Context, repo repository.RankingCo
 
 // UpdateRankingCommissionConfigRequest 更新配置请求
 type UpdateRankingCommissionConfigRequest struct {
-	Name        *string                            `json:"name"`
-	Rules       *[]model.RankingCommissionRule     `json:"rules"`
-	Description *string                            `json:"description"`
-	IsActive    *bool                              `json:"isActive"`
+	Name        *string                        `json:"name"`
+	Rules       *[]model.RankingCommissionRule `json:"rules"`
+	Description *string                        `json:"description"`
+	IsActive    *bool                          `json:"isActive"`
 }
 
 // updateRankingCommissionConfigHandler 更新排名抽成配置
@@ -218,23 +218,23 @@ type UpdateRankingCommissionConfigRequest struct {
 // @Failure      400            {object}  model.APIResponse[any]
 // @Failure      401            {object}  model.APIResponse[any]
 // @Router       /admin/ranking-commission/configs/{id} [put]
-func updateRankingCommissionConfigHandler(c *gin.Context, repo repository.RankingCommissionRepository) {
+func updateRankingCommissionConfigHandler(c *gin.Context, repo rankingrepo.RankingCommissionRepository) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		respondError(c, http.StatusBadRequest, "Invalid config ID")
+		writeJSONError(c, http.StatusBadRequest, "Invalid config ID")
 		return
 	}
 
 	var req UpdateRankingCommissionConfigRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, err.Error())
+		writeJSONError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	config, err := repo.GetConfig(c.Request.Context(), id)
 	if err != nil {
-		respondError(c, http.StatusNotFound, "Config not found")
+		writeJSONError(c, http.StatusNotFound, "Config not found")
 		return
 	}
 
@@ -251,25 +251,25 @@ func updateRankingCommissionConfigHandler(c *gin.Context, repo repository.Rankin
 	if req.Rules != nil {
 		// 验证规则
 		if err := commissionservice.ValidateRankingRules(*req.Rules); err != nil {
-			respondError(c, http.StatusBadRequest, "Invalid rules: "+err.Error())
+			writeJSONError(c, http.StatusBadRequest, "Invalid rules: "+err.Error())
 			return
 		}
 
 		// 序列化规�?
 		rulesJSON, err := json.Marshal(*req.Rules)
 		if err != nil {
-			respondError(c, http.StatusBadRequest, "Failed to serialize rules")
+			writeJSONError(c, http.StatusBadRequest, "Failed to serialize rules")
 			return
 		}
 		config.RulesJSON = string(rulesJSON)
 	}
 
 	if err := repo.UpdateConfig(c.Request.Context(), config); err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[any]{
+	writeJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "Config updated successfully",
@@ -288,23 +288,22 @@ func updateRankingCommissionConfigHandler(c *gin.Context, repo repository.Rankin
 // @Failure      400            {object}  model.APIResponse[any]
 // @Failure      401            {object}  model.APIResponse[any]
 // @Router       /admin/ranking-commission/configs/{id} [delete]
-func deleteRankingCommissionConfigHandler(c *gin.Context, repo repository.RankingCommissionRepository) {
+func deleteRankingCommissionConfigHandler(c *gin.Context, repo rankingrepo.RankingCommissionRepository) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		respondError(c, http.StatusBadRequest, "Invalid config ID")
+		writeJSONError(c, http.StatusBadRequest, "Invalid config ID")
 		return
 	}
 
 	if err := repo.DeleteConfig(c.Request.Context(), id); err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[any]{
+	writeJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "Config deleted successfully",
 	})
 }
-

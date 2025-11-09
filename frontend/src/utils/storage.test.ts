@@ -5,6 +5,8 @@ describe('storage utils', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.clearAllMocks();
+    // 恢复所有Mock以避免污染
+    vi.restoreAllMocks();
   });
 
   describe('getItem', () => {

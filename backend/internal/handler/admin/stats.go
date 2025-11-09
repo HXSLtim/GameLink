@@ -8,14 +8,16 @@ import (
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
+	commissionrepo "gamelink/internal/repository/commission"
+	serviceitemrepo "gamelink/internal/repository/serviceitem"
 )
 
 // RegisterStatsAnalysisRoutes 注册管理端统计分析路由
 func RegisterStatsAnalysisRoutes(
 	router gin.IRouter,
 	orderRepo repository.OrderRepository,
-	commissionRepo repository.CommissionRepository,
-	serviceItemRepo repository.ServiceItemRepository,
+	commissionRepo commissionrepo.CommissionRepository,
+	serviceItemRepo serviceitemrepo.ServiceItemRepository,
 ) {
 	group := router.Group("/admin/stats")
 	{
@@ -48,32 +50,35 @@ func RegisterStatsAnalysisRoutes(
 func getServiceItemStatsHandler(
 	c *gin.Context,
 	orderRepo repository.OrderRepository,
-	serviceItemRepo repository.ServiceItemRepository,
+	serviceItemRepo serviceitemrepo.ServiceItemRepository,
 ) {
 	ctx := c.Request.Context()
 
-	// 获取所有服务项�?	items, _, err := serviceItemRepo.List(ctx, repository.ServiceItemListOptions{
+	// 获取所有服务项
+	items, _, err := serviceItemRepo.List(ctx, serviceitemrepo.ServiceItemListOptions{
 		Page:     1,
 		PageSize: 1000,
 	})
 	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	// 统计每个服务项目的订单数和收�?	type ItemStats struct {
-		ItemID      uint64 `json:"itemId"`
-		ItemCode    string `json:"itemCode"`
-		ItemName    string `json:"itemName"`
-		SubCategory string `json:"subCategory"`
-		OrderCount  int64  `json:"orderCount"`
-		TotalRevenue int64 `json:"totalRevenue"`
+	// 统计每个服务项目的订单数和收益
+	type ItemStats struct {
+		ItemID       uint64 `json:"itemId"`
+		ItemCode     string `json:"itemCode"`
+		ItemName     string `json:"itemName"`
+		SubCategory  string `json:"subCategory"`
+		OrderCount   int64  `json:"orderCount"`
+		TotalRevenue int64  `json:"totalRevenue"`
 	}
 
 	stats := make([]ItemStats, 0, len(items))
 	for _, item := range items {
-		// 查询该服务项目的所有订�?		orders, _, _ := orderRepo.List(ctx, repository.OrderListOptions{
-			// TODO: 需要添�?ItemID 过滤
+		// 查询该服务项目的所有订单
+		orders, _, _ := orderRepo.List(ctx, repository.OrderListOptions{
+			// TODO: 需要添加 ItemID 过滤
 			Statuses: []model.OrderStatus{model.OrderStatusCompleted},
 			Page:     1,
 			PageSize: 10000,
@@ -98,7 +103,7 @@ func getServiceItemStatsHandler(
 		})
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[any]{
+	writeJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
@@ -118,15 +123,15 @@ func getServiceItemStatsHandler(
 // @Failure      400            {object}  model.APIResponse[any]
 // @Failure      401            {object}  model.APIResponse[any]
 // @Router       /admin/stats/top-players [get]
-func getTopPlayersHandler(c *gin.Context, commissionRepo repository.CommissionRepository) {
-	ctx := c.Request.Context()
+func getTopPlayersHandler(c *gin.Context, commissionRepo commissionrepo.CommissionRepository) {
 	month := c.DefaultQuery("month", time.Now().Format("2006-01"))
 	limit := 10
 
-	// TODO: 实现Top陪玩师查�?	// 暂时返回空数�?	_ = ctx
+	// TODO: 实现Top陪玩师查询
+	// 暂时返回空数据
 	_ = month
 
-	respondJSON(c, http.StatusOK, model.APIResponse[any]{
+	writeJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
@@ -151,22 +156,28 @@ func getTopPlayersHandler(c *gin.Context, commissionRepo repository.CommissionRe
 func getAdminGiftStatsHandler(
 	c *gin.Context,
 	orderRepo repository.OrderRepository,
-	serviceItemRepo repository.ServiceItemRepository,
+	serviceItemRepo serviceitemrepo.ServiceItemRepository,
 ) {
 	ctx := c.Request.Context()
 
-	// 获取所有礼�?	gifts, _, _ := serviceItemRepo.GetGifts(ctx, 1, 1000)
+	// 获取所有礼物
+	gifts, _, err := serviceItemRepo.GetGifts(ctx, 1, 1000)
+	if err != nil {
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
 
 	type GiftStat struct {
-		GiftID      uint64 `json:"giftId"`
-		GiftName    string `json:"giftName"`
-		TotalSent   int64  `json:"totalSent"`
-		TotalRevenue int64 `json:"totalRevenue"`
+		GiftID       uint64 `json:"giftId"`
+		GiftName     string `json:"giftName"`
+		TotalSent    int64  `json:"totalSent"`
+		TotalRevenue int64  `json:"totalRevenue"`
 	}
 
 	giftStats := make([]GiftStat, 0, len(gifts))
 	for _, gift := range gifts {
-		// 统计该礼物的销�?		orders, _, _ := orderRepo.List(ctx, repository.OrderListOptions{
+		// 统计该礼物的销量
+		orders, _, _ := orderRepo.List(ctx, repository.OrderListOptions{
 			Statuses: []model.OrderStatus{model.OrderStatusCompleted},
 			Page:     1,
 			PageSize: 10000,
@@ -189,7 +200,7 @@ func getAdminGiftStatsHandler(
 		})
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[any]{
+	writeJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
@@ -217,7 +228,7 @@ func getRevenueByGameHandler(c *gin.Context, orderRepo repository.OrderRepositor
 		PageSize: 10000,
 	})
 	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -237,10 +248,11 @@ func getRevenueByGameHandler(c *gin.Context, orderRepo repository.OrderRepositor
 		}
 	}
 
-	// 转换为数�?	type GameRevenue struct {
-		GameID      uint64 `json:"gameId"`
-		OrderCount  int64  `json:"orderCount"`
-		TotalRevenue int64 `json:"totalRevenue"`
+	// 转换为数组
+	type GameRevenue struct {
+		GameID       uint64 `json:"gameId"`
+		OrderCount   int64  `json:"orderCount"`
+		TotalRevenue int64  `json:"totalRevenue"`
 	}
 
 	result := make([]GameRevenue, 0, len(gameStats))
@@ -252,7 +264,7 @@ func getRevenueByGameHandler(c *gin.Context, orderRepo repository.OrderRepositor
 		})
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[any]{
+	writeJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
@@ -261,4 +273,3 @@ func getRevenueByGameHandler(c *gin.Context, orderRepo repository.OrderRepositor
 		},
 	})
 }
-

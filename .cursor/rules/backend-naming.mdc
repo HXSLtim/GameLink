@@ -1,0 +1,296 @@
+---
+globs: backend/**/*.go
+description: 后端命名规范
+---
+
+# Go 命名规范
+
+## 核心原则
+
+1. **简洁清晰** - 避免冗余后缀和前缀
+2. **一致性** - 遵循统一的命名模式
+3. **可读性** - 名称应该自解释
+
+## 文件命名
+
+### ✅ 推荐
+
+```
+✅ user.go              # Model 文件
+✅ user_repository.go   # Repository 文件
+✅ auth.go              # Service 文件 (在 service/auth/ 目录下)
+✅ user.go              # Handler 文件 (在 handler/admin/ 目录下)
+✅ user_test.go         # 测试文件
+```
+
+### ❌ 避免
+
+```
+❌ user_model.go        # 冗余 _model 后缀
+❌ user_gorm_repository.go  # 技术细节前缀
+❌ user_handler.go      # 冗余 _handler 后缀 (目录已表明是 handler)
+❌ test_user.go         # 不要前缀
+❌ User.go              # 文件名不使用大写开头
+```
+
+## 包命名
+
+### ✅ 推荐
+
+```go
+package user        // 简洁、小写、有意义
+package order
+package auth
+package cache
+```
+
+### ❌ 避免
+
+```go
+package userservice      // 太长
+package repositoryimpl   // 实现细节
+package utils           // 太通用
+package pkg             // 无意义
+```
+
+## 接口命名
+
+### Repository 接口
+
+```go
+// ✅ 推荐: 使用 Repository 后缀
+type UserRepository interface {
+    Create(ctx context.Context, user *model.User) error
+    GetByID(ctx context.Context, id uint64) (*model.User, error)
+}
+
+// ✅ 也可以: 使用能力描述 (以 -er 结尾)
+type UserCreator interface {
+    CreateUser(ctx context.Context, user *model.User) error
+}
+```
+
+### Service 接口 (如需要)
+
+```go
+// ✅ 推荐: 使用具体名称
+type OrderService interface {
+    CreateOrder(ctx context.Context, req *CreateOrderRequest) error
+    GetOrder(ctx context.Context, id uint64) (*model.Order, error)
+}
+```
+
+## 结构体命名
+
+### ✅ 推荐
+
+```go
+// 大写开头，驼峰命名
+type UserService struct {
+    repo  repository.UserRepository
+    cache cache.Cache
+}
+
+type OrderRequest struct {
+    UserID uint64 `json:"userId"`
+    Amount int64  `json:"amount"`
+}
+
+// 私有结构体小写开头
+type config struct {
+    database DatabaseConfig
+}
+```
+
+### ❌ 避免冗余
+
+```go
+❌ type UserServiceImpl struct { }    // 不要 Impl 后缀
+❌ type UserStruct struct { }         // 不要 Struct 后缀
+❌ type IUserRepository interface { } // 不要 I 前缀
+```
+
+## 方法命名
+
+### ✅ 推荐
+
+```go
+// 动词 + 名词，驼峰命名
+func (s *UserService) CreateUser(ctx context.Context, user *User) error
+func (s *OrderService) ProcessPayment(ctx context.Context, orderID uint64) error
+func (r *UserRepository) FindByID(ctx context.Context, id uint64) (*User, error)
+
+// 私有方法小写开头
+func (s *UserService) validateUser(user *User) error
+func (s *UserService) hashPassword(password string) string
+```
+
+### 常用方法命名模式
+
+```go
+// CRUD 操作
+Create(...)       // 创建
+GetByID(...)      // 按 ID 获取
+Update(...)       // 更新
+Delete(...)       // 删除
+
+// 查询操作
+Find(...)         // 查找
+List(...)         // 列表
+Search(...)       // 搜索
+
+// 业务操作
+Process(...)      // 处理
+Validate(...)     // 验证
+Calculate(...)    // 计算
+```
+
+## 变量命名
+
+### ✅ 推荐
+
+```go
+var userService *UserService
+var orderRepository OrderRepository
+var databaseConfig DatabaseConfig
+
+// 短作用域可以使用缩写
+for i, user := range users {
+    // i 和 user 是可以接受的
+}
+
+// 接收者命名: 使用类型首字母 (小写)
+func (u *User) GetFullName() string { }
+func (s *UserService) CreateUser(...) error { }
+func (r *userRepository) GetByID(...) (*User, error) { }
+```
+
+### ❌ 避免
+
+```go
+❌ var us *UserService         // 缩写不清晰
+❌ var userServiceInstance     // 太长
+❌ var _userService            // 不要下划线前缀
+❌ var user_service            // 不要下划线
+```
+
+## 常量命名
+
+### ✅ 推荐
+
+```go
+const (
+    // 导出常量: 驼峰命名
+    DefaultTimeout = 30 * time.Second
+    MaxRetries     = 3
+    
+    // 字符串常量
+    UserRoleAdmin  = "admin"
+    UserRoleUser   = "user"
+    UserRolePlayer = "player"
+    
+    // 状态常量
+    OrderStatusPending   = "pending"
+    OrderStatusConfirmed = "confirmed"
+)
+
+// 私有常量
+const (
+    defaultPageSize = 20
+    maxPageSize     = 100
+)
+```
+
+## 错误变量命名
+
+### ✅ 推荐
+
+```go
+var (
+    ErrUserNotFound      = errors.New("user not found")
+    ErrInvalidPassword   = errors.New("invalid password")
+    ErrOrderExpired      = errors.New("order expired")
+    ErrPermissionDenied  = errors.New("permission denied")
+)
+```
+
+## Request/Response 命名
+
+### ✅ 推荐
+
+```go
+// Request 结构
+type CreateUserRequest struct {
+    Phone    string `json:"phone" binding:"required"`
+    Password string `json:"password" binding:"required"`
+    Name     string `json:"name" binding:"required"`
+}
+
+type UpdateUserRequest struct {
+    Name   *string `json:"name,omitempty"`
+    Avatar *string `json:"avatar,omitempty"`
+}
+
+// Response 结构
+type UserResponse struct {
+    ID        uint64    `json:"id"`
+    Phone     string    `json:"phone"`
+    Name      string    `json:"name"`
+    CreatedAt time.Time `json:"createdAt"`
+}
+
+type ListUsersResponse struct {
+    Users      []UserResponse `json:"users"`
+    Total      int64          `json:"total"`
+    Page       int            `json:"page"`
+    PageSize   int            `json:"pageSize"`
+}
+```
+
+## 测试命名
+
+### ✅ 推荐
+
+```go
+// 测试函数: Test + 被测函数名 + 测试场景
+func TestUserService_CreateUser(t *testing.T) { }
+func TestUserService_CreateUser_WithInvalidInput(t *testing.T) { }
+func TestUserRepository_GetByID_NotFound(t *testing.T) { }
+
+// Mock 结构
+type MockUserRepository struct {
+    mock.Mock
+}
+
+// 基准测试
+func BenchmarkUserService_CreateUser(b *testing.B) { }
+```
+
+## JSON 标签命名
+
+### ✅ 推荐 (camelCase)
+
+```go
+type User struct {
+    ID        uint64    `json:"id"`
+    Phone     string    `json:"phone"`
+    UserName  string    `json:"userName"`    // camelCase
+    CreatedAt time.Time `json:"createdAt"`   // camelCase
+}
+```
+
+**注意**: 项目统一使用 camelCase，与前端保持一致
+
+## 命名检查清单
+
+在编写代码前，确保：
+
+- [ ] 文件名没有冗余后缀 (如 _model, _handler)
+- [ ] 包名简洁、小写、有意义
+- [ ] 结构体名称清晰描述其用途
+- [ ] 方法名以动词开头
+- [ ] 私有方法/变量小写开头
+- [ ] 导出方法/变量大写开头
+- [ ] 接口名称描述能力或使用具体名称
+- [ ] 常量使用驼峰命名
+- [ ] JSON 标签使用 camelCase

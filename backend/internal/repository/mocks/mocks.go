@@ -1014,6 +1014,22 @@ func (mr *MockRoleRepositoryMockRecorder) ListPaged(ctx, page, pageSize interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPaged", reflect.TypeOf((*MockRoleRepository)(nil).ListPaged), ctx, page, pageSize)
 }
 
+// ListPagedWithFilter mocks base method.
+func (m *MockRoleRepository) ListPagedWithFilter(ctx context.Context, page, pageSize int, keyword string, isSystem *bool) ([]model.RoleModel, int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListPagedWithFilter", ctx, page, pageSize, keyword, isSystem)
+	ret0, _ := ret[0].([]model.RoleModel)
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// ListPagedWithFilter indicates an expected call of ListPagedWithFilter.
+func (mr *MockRoleRepositoryMockRecorder) ListPagedWithFilter(ctx, page, pageSize, keyword, isSystem interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPagedWithFilter", reflect.TypeOf((*MockRoleRepository)(nil).ListPagedWithFilter), ctx, page, pageSize, keyword, isSystem)
+}
+
 // ListWithPermissions mocks base method.
 func (m *MockRoleRepository) ListWithPermissions(ctx context.Context) ([]model.RoleModel, error) {
 	m.ctrl.T.Helper()

@@ -13,7 +13,8 @@ import (
 	apierr "gamelink/internal/handler"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
-    service "gamelink/internal/service/admin"
+	adminservice "gamelink/internal/service/admin"
+	service "gamelink/internal/service/admin"
 	"strconv"
 )
 
@@ -58,18 +59,18 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		playerID = p.PlayerID
 	}
 	order, err := h.svc.CreateOrder(c.Request.Context(), service.CreateOrderInput{
-		UserID:         p.UserID,
-		PlayerID:       playerID,
-		GameID:         p.GameID,
-		Title:          p.Title,
-		Description:    p.Description,
-		PriceCents:     p.PriceCents,
-		Currency:       model.Currency(strings.ToUpper(strings.TrimSpace(p.Currency))),
-		ScheduledStart: start,
-		ScheduledEnd:   end,
+		UserID:          p.UserID,
+		PlayerID:        playerID,
+		GameID:          p.GameID,
+		Title:           p.Title,
+		Description:     p.Description,
+		TotalPriceCents: p.TotalPriceCents,
+		Currency:        model.Currency(strings.ToUpper(strings.TrimSpace(p.Currency))),
+		ScheduledStart:  start,
+		ScheduledEnd:    end,
 	})
-	if errors.Is(err, service.ErrValidation) {
-		_ = c.Error(service.ErrValidation)
+	if errors.Is(err, adminservice.ErrValidation) {
+		_ = c.Error(adminservice.ErrValidation)
 		return
 	}
 	if err != nil {
@@ -102,12 +103,12 @@ func (h *OrderHandler) AssignOrder(c *gin.Context) {
 		return
 	}
 	order, err := h.svc.AssignOrder(c.Request.Context(), id, p.PlayerID)
-	if errors.Is(err, service.ErrValidation) {
-		_ = c.Error(service.ErrValidation)
+	if errors.Is(err, adminservice.ErrValidation) {
+		_ = c.Error(adminservice.ErrValidation)
 		return
 	}
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {
@@ -142,12 +143,12 @@ func (h *OrderHandler) ConfirmOrder(c *gin.Context) {
 		}
 	}
 	order, err := h.svc.ConfirmOrder(c.Request.Context(), id, payload.Note)
-	if errors.Is(err, service.ErrValidation) {
-		_ = c.Error(service.ErrValidation)
+	if errors.Is(err, adminservice.ErrValidation) {
+		_ = c.Error(adminservice.ErrValidation)
 		return
 	}
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {
@@ -180,12 +181,12 @@ func (h *OrderHandler) StartOrder(c *gin.Context) {
 		}
 	}
 	order, err := h.svc.StartOrder(c.Request.Context(), id, payload.Note)
-	if errors.Is(err, service.ErrValidation) {
-		_ = c.Error(service.ErrValidation)
+	if errors.Is(err, adminservice.ErrValidation) {
+		_ = c.Error(adminservice.ErrValidation)
 		return
 	}
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {
@@ -220,12 +221,12 @@ func (h *OrderHandler) CompleteOrder(c *gin.Context) {
 		}
 	}
 	order, err := h.svc.CompleteOrder(c.Request.Context(), id, payload.Note)
-	if errors.Is(err, service.ErrValidation) {
-		_ = c.Error(service.ErrValidation)
+	if errors.Is(err, adminservice.ErrValidation) {
+		_ = c.Error(adminservice.ErrValidation)
 		return
 	}
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {
@@ -292,7 +293,7 @@ func (h *OrderHandler) GetOrder(c *gin.Context) {
 		return
 	}
 	order, err := h.svc.GetOrder(c.Request.Context(), id)
-	if errors.Is(err, service.ErrNotFound) {
+	if errors.Is(err, adminservice.ErrNotFound) {
 		writeJSONError(c, http.StatusNotFound, apierr.ErrOrderNotFound)
 		return
 	}
@@ -333,12 +334,12 @@ func (h *OrderHandler) RefundOrder(c *gin.Context) {
 		AmountCents: payload.AmountCents,
 		Note:        payload.Note,
 	})
-	if errors.Is(err, service.ErrValidation) {
-		_ = c.Error(service.ErrValidation)
+	if errors.Is(err, adminservice.ErrValidation) {
+		_ = c.Error(adminservice.ErrValidation)
 		return
 	}
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {
@@ -363,8 +364,8 @@ func (h *OrderHandler) GetOrderTimeline(c *gin.Context) {
 		return
 	}
 	items, err := h.svc.GetOrderTimeline(c.Request.Context(), id)
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {
@@ -389,8 +390,8 @@ func (h *OrderHandler) ListOrderPayments(c *gin.Context) {
 		return
 	}
 	items, err := h.svc.GetOrderPayments(c.Request.Context(), id)
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {
@@ -415,8 +416,8 @@ func (h *OrderHandler) ListOrderRefunds(c *gin.Context) {
 		return
 	}
 	items, err := h.svc.GetOrderRefunds(c.Request.Context(), id)
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {
@@ -441,8 +442,8 @@ func (h *OrderHandler) ListOrderReviews(c *gin.Context) {
 		return
 	}
 	items, err := h.svc.GetOrderReviews(c.Request.Context(), id)
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {
@@ -490,12 +491,12 @@ func (h *OrderHandler) UpdateOrder(c *gin.Context) {
 	}
 
 	input := service.UpdateOrderInput{
-		Status:         normalizeOrderStatus(payload.Status),
-		PriceCents:     payload.PriceCents,
-		Currency:       model.Currency(strings.ToUpper(strings.TrimSpace(payload.Currency))),
-		ScheduledStart: scheduledStart,
-		ScheduledEnd:   scheduledEnd,
-		CancelReason:   payload.CancelReason,
+		Status:          normalizeOrderStatus(payload.Status),
+		TotalPriceCents: payload.TotalPriceCents,
+		Currency:        model.Currency(strings.ToUpper(strings.TrimSpace(payload.Currency))),
+		ScheduledStart:  scheduledStart,
+		ScheduledEnd:    scheduledEnd,
+		CancelReason:    payload.CancelReason,
 	}
 
 	order, err := h.svc.UpdateOrder(c.Request.Context(), id, input)
@@ -503,12 +504,12 @@ func (h *OrderHandler) UpdateOrder(c *gin.Context) {
 		_ = c.Error(service.ErrOrderInvalidTransition)
 		return
 	}
-	if errors.Is(err, service.ErrValidation) {
-		_ = c.Error(service.ErrValidation)
+	if errors.Is(err, adminservice.ErrValidation) {
+		_ = c.Error(adminservice.ErrValidation)
 		return
 	}
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {
@@ -542,8 +543,8 @@ func (h *OrderHandler) DeleteOrder(c *gin.Context) {
 		return
 	}
 	err = h.svc.DeleteOrder(c.Request.Context(), id)
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {
@@ -618,25 +619,25 @@ func (h *OrderHandler) ListOrderLogs(c *gin.Context) {
 
 // UpdateOrderPayload defines the request body for updating an order.
 type UpdateOrderPayload struct {
-	Status         string  `json:"status" binding:"required"`
-	PriceCents     int64   `json:"price_cents" binding:"required"`
-	Currency       string  `json:"currency" binding:"required"`
-	ScheduledStart *string `json:"scheduled_start"`
-	ScheduledEnd   *string `json:"scheduled_end"`
-	CancelReason   string  `json:"cancel_reason"`
+	Status          string  `json:"status" binding:"required"`
+	TotalPriceCents int64   `json:"total_price_cents" binding:"required"`
+	Currency        string  `json:"currency" binding:"required"`
+	ScheduledStart  *string `json:"scheduled_start"`
+	ScheduledEnd    *string `json:"scheduled_end"`
+	CancelReason    string  `json:"cancel_reason"`
 }
 
 // CreateOrderPayload defines payload for creating an order.
 type CreateOrderPayload struct {
-	UserID         uint64  `json:"user_id" binding:"required"`
-	PlayerID       *uint64 `json:"player_id"`
-	GameID         uint64  `json:"game_id" binding:"required"`
-	Title          string  `json:"title"`
-	Description    string  `json:"description"`
-	PriceCents     int64   `json:"price_cents" binding:"required"`
-	Currency       string  `json:"currency" binding:"required"`
-	ScheduledStart *string `json:"scheduled_start"`
-	ScheduledEnd   *string `json:"scheduled_end"`
+	UserID          uint64  `json:"user_id" binding:"required"`
+	PlayerID        *uint64 `json:"player_id"`
+	GameID          uint64  `json:"game_id" binding:"required"`
+	Title           string  `json:"title"`
+	Description     string  `json:"description"`
+	TotalPriceCents int64   `json:"total_price_cents" binding:"required"`
+	Currency        string  `json:"currency" binding:"required"`
+	ScheduledStart  *string `json:"scheduled_start"`
+	ScheduledEnd    *string `json:"scheduled_end"`
 }
 
 // AssignOrderPayload defines player assignment.
@@ -678,8 +679,8 @@ func (h *PaymentHandler) CreatePayment(c *gin.Context) {
 		Currency:    model.Currency(strings.ToUpper(strings.TrimSpace(p.Currency))),
 		ProviderRaw: p.ProviderRaw,
 	})
-	if errors.Is(err, service.ErrValidation) {
-		_ = c.Error(service.ErrValidation)
+	if errors.Is(err, adminservice.ErrValidation) {
+		_ = c.Error(adminservice.ErrValidation)
 		return
 	}
 	if err != nil {
@@ -721,12 +722,12 @@ func (h *PaymentHandler) CapturePayment(c *gin.Context) {
 		ProviderRaw:     p.ProviderRaw,
 		PaidAt:          paidAt,
 	})
-	if errors.Is(err, service.ErrValidation) {
-		_ = c.Error(service.ErrValidation)
+	if errors.Is(err, adminservice.ErrValidation) {
+		_ = c.Error(adminservice.ErrValidation)
 		return
 	}
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {
@@ -793,7 +794,7 @@ func (h *PaymentHandler) GetPayment(c *gin.Context) {
 		return
 	}
 	payment, err := h.svc.GetPayment(c.Request.Context(), id)
-	if errors.Is(err, service.ErrNotFound) {
+	if errors.Is(err, adminservice.ErrNotFound) {
 		writeJSONError(c, http.StatusNotFound, apierr.ErrPaymentNotFound)
 		return
 	}
@@ -855,12 +856,12 @@ func (h *PaymentHandler) UpdatePayment(c *gin.Context) {
 	}
 
 	payment, err := h.svc.UpdatePayment(c.Request.Context(), id, input)
-	if errors.Is(err, service.ErrValidation) {
-		_ = c.Error(service.ErrValidation)
+	if errors.Is(err, adminservice.ErrValidation) {
+		_ = c.Error(adminservice.ErrValidation)
 		return
 	}
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {
@@ -894,8 +895,8 @@ func (h *PaymentHandler) DeletePayment(c *gin.Context) {
 		return
 	}
 	err = h.svc.DeletePayment(c.Request.Context(), id)
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {
@@ -998,10 +999,10 @@ func exportOperationLogsCSV(c *gin.Context, entity string, entityID uint64, item
 		"id": "id", "entity_type": "entity_type", "entity_id": "entity_id", "actor_user_id": "actor_user_id",
 		"action": "action", "reason": "reason", "metadata": "metadata", "created_at": "created_at",
 	}
-		headerMapZh := map[string]string{
-			"id": "编号", "entity_type": "实体", "entity_id": "实体ID", "actor_user_id": "操作人ID",
-			"action": "动作", "reason": "原因", "metadata": "元数据", "created_at": "创建时间",
-		}
+	headerMapZh := map[string]string{
+		"id": "编号", "entity_type": "实体", "entity_id": "实体ID", "actor_user_id": "操作人ID",
+		"action": "动作", "reason": "原因", "metadata": "元数据", "created_at": "创建时间",
+	}
 	var header []string
 	for _, f := range fields {
 		if lang == "zh" {
@@ -1124,8 +1125,8 @@ func (h *PaymentHandler) RefundPayment(c *gin.Context) {
 	}
 
 	payment, err := h.svc.GetPayment(c.Request.Context(), id)
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {
@@ -1142,12 +1143,12 @@ func (h *PaymentHandler) RefundPayment(c *gin.Context) {
 		RefundedAt:      refundedAt,
 	}
 	updated, err := h.svc.UpdatePayment(c.Request.Context(), id, input)
-	if errors.Is(err, service.ErrValidation) {
-		_ = c.Error(service.ErrValidation)
+	if errors.Is(err, adminservice.ErrValidation) {
+		_ = c.Error(adminservice.ErrValidation)
 		return
 	}
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {
@@ -1198,8 +1199,8 @@ func (h *OrderHandler) ReviewOrder(c *gin.Context) {
 	}
 
 	order, err := h.svc.GetOrder(c.Request.Context(), id)
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {
@@ -1215,24 +1216,24 @@ func (h *OrderHandler) ReviewOrder(c *gin.Context) {
 	}
 
 	input := service.UpdateOrderInput{
-		Status:         next,
-		PriceCents:     order.TotalPriceCents,
-		Currency:       order.Currency,
-		ScheduledStart: order.ScheduledStart,
-		ScheduledEnd:   order.ScheduledEnd,
-		CancelReason:   cancelReason,
+		Status:          next,
+		TotalPriceCents: order.TotalPriceCents,
+		Currency:        order.Currency,
+		ScheduledStart:  order.ScheduledStart,
+		ScheduledEnd:    order.ScheduledEnd,
+		CancelReason:    cancelReason,
 	}
 	updated, err := h.svc.UpdateOrder(c.Request.Context(), id, input)
 	if errors.Is(err, service.ErrOrderInvalidTransition) {
 		_ = c.Error(service.ErrOrderInvalidTransition)
 		return
 	}
-	if errors.Is(err, service.ErrValidation) {
-		_ = c.Error(service.ErrValidation)
+	if errors.Is(err, adminservice.ErrValidation) {
+		_ = c.Error(adminservice.ErrValidation)
 		return
 	}
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {
@@ -1267,8 +1268,8 @@ func (h *OrderHandler) CancelOrder(c *gin.Context) {
 	}
 
 	order, err := h.svc.GetOrder(c.Request.Context(), id)
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {
@@ -1277,24 +1278,24 @@ func (h *OrderHandler) CancelOrder(c *gin.Context) {
 	}
 
 	input := service.UpdateOrderInput{
-		Status:         model.OrderStatusCanceled,
-		PriceCents:     order.TotalPriceCents,
-		Currency:       order.Currency,
-		ScheduledStart: order.ScheduledStart,
-		ScheduledEnd:   order.ScheduledEnd,
-		CancelReason:   strings.TrimSpace(payload.Reason),
+		Status:          model.OrderStatusCanceled,
+		TotalPriceCents: order.TotalPriceCents,
+		Currency:        order.Currency,
+		ScheduledStart:  order.ScheduledStart,
+		ScheduledEnd:    order.ScheduledEnd,
+		CancelReason:    strings.TrimSpace(payload.Reason),
 	}
 	updated, err := h.svc.UpdateOrder(c.Request.Context(), id, input)
 	if errors.Is(err, service.ErrOrderInvalidTransition) {
 		_ = c.Error(service.ErrOrderInvalidTransition)
 		return
 	}
-	if errors.Is(err, service.ErrValidation) {
-		_ = c.Error(service.ErrValidation)
+	if errors.Is(err, adminservice.ErrValidation) {
+		_ = c.Error(adminservice.ErrValidation)
 		return
 	}
-	if errors.Is(err, service.ErrNotFound) {
-		_ = c.Error(service.ErrNotFound)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
 		return
 	}
 	if err != nil {

@@ -1,0 +1,549 @@
+---
+globs: frontend/src/**/*.{ts,tsx}
+description: 前端 API 和服务层规范
+---
+
+# API 和服务层规范
+
+## API 客户端结构
+
+### 统一的 API 客户端
+
+项目使用 Axios 作为 HTTP 客户端，参考: [src/api/http.ts](mdc:frontend/src/api/http.ts)
+
+```typescript
+import axios from 'axios';
+
+// 创建 Axios 实例
+export const apiClient = axios.create({
+  baseURL: '/api/v1',
+  timeout: 30000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// 请求拦截器 - 添加认证 token
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// 响应拦截器 - 统一错误处理
+apiClient.interceptors.response.use(
+  (response) => response.data,
+  (error) => {
+    // 统一错误处理
+    if (error.response?.status === 401) {
+      // 处理未授权
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+```
+
+## API 服务组织
+
+### 按业务模块组织
+
+```
+src/services/api/
+├── user.ts          # 用户相关 API
+├── order.ts         # 订单相关 API
+├── payment.ts       # 支付相关 API
+├── player.ts        # 陪玩师相关 API
+├── admin.ts         # 管理相关 API
+└── index.ts         # 导出所有 API
+```
+
+### API 服务示例
+
+```typescript
+// services/api/user.ts
+import { apiClient } from 'api/http';
+import type { User, CreateUserRequest, UpdateUserRequest } from 'types/user';
+
+/**
+ * 用户 API 服务
+ */
+export const userApi = {
+  /**
+   * 获取用户列表
+   */
+  list: (params: {
+    page?: number;
+    pageSize?: number;
+    keyword?: string;
+  }) => {
+    return apiClient.get<{
+      users: User[];
+      total: number;
+      page: number;
+      pageSize: number;
+    }>('/users', { params });
+  },
+
+  /**
+   * 获取用户详情
+   */
+  getById: (id: number) => {
+    return apiClient.get<User>(`/users/${id}`);
+  },
+
+  /**
+   * 创建用户
+   */
+  create: (data: CreateUserRequest) => {
+    return apiClient.post<User>('/users', data);
+  },
+
+  /**
+   * 更新用户
+   */
+  update: (id: number, data: UpdateUserRequest) => {
+    return apiClient.put<User>(`/users/${id}`, data);
+  },
+
+  /**
+   * 删除用户
+   */
+  delete: (id: number) => {
+    return apiClient.delete(`/users/${id}`);
+  },
+};
+```
+
+## 类型定义
+
+### Request 类型
+
+```typescript
+// types/user.ts
+
+/**
+ * 创建用户请求
+ */
+export interface CreateUserRequest {
+  phone: string;
+  password: string;
+  name: string;
+  role?: UserRole;
+}
+
+/**
+ * 更新用户请求
+ */
+export interface UpdateUserRequest {
+  name?: string;
+  avatar?: string;
+  email?: string;
+}
+
+/**
+ * 用户列表查询参数
+ */
+export interface ListUsersParams {
+  page?: number;
+  pageSize?: number;
+  keyword?: string;
+  role?: UserRole;
+}
+```
+
+### Response 类型
+
+```typescript
+/**
+ * 用户信息
+ */
+export interface User {
+  id: number;
+  phone: string;
+  name: string;
+  role: UserRole;
+  avatar?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * 用户列表响应
+ */
+export interface ListUsersResponse {
+  users: User[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+/**
+ * 通用响应
+ */
+export interface ApiResponse<T = any> {
+  data?: T;
+  message?: string;
+  error?: string;
+}
+```
+
+## 错误处理
+
+### 统一错误处理
+
+```typescript
+// utils/errorHandler.ts
+
+/**
+ * API 错误处理
+ */
+export function handleApiError(error: any): string {
+  if (error.response) {
+    // 服务器返回错误
+    const { status, data } = error.response;
+    
+    switch (status) {
+      case 400:
+        return data.error || '请求参数错误';
+      case 401:
+        return '未登录或登录已过期';
+      case 403:
+        return '没有权限执行此操作';
+      case 404:
+        return '请求的资源不存在';
+      case 500:
+        return '服务器错误，请稍后重试';
+      default:
+        return data.error || '请求失败';
+    }
+  } else if (error.request) {
+    // 请求已发送但没有收到响应
+    return '网络错误，请检查网络连接';
+  } else {
+    // 请求配置错误
+    return error.message || '请求失败';
+  }
+}
+```
+
+### 在组件中使用
+
+```typescript
+import { userApi } from 'services/api/user';
+import { handleApiError } from 'utils/errorHandler';
+
+export const UserList: React.FC = () => {
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>();
+
+  const loadUsers = async () => {
+    setLoading(true);
+    setError(undefined);
+    
+    try {
+      const data = await userApi.list({ page: 1, pageSize: 20 });
+      setUsers(data.users);
+    } catch (err) {
+      setError(handleApiError(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ...
+};
+```
+
+## 自定义 Hooks
+
+### useApi Hook
+
+```typescript
+// hooks/useApi.ts
+
+import { useState, useCallback } from 'react';
+import { handleApiError } from 'utils/errorHandler';
+
+/**
+ * API 请求 Hook
+ */
+export function useApi<T, P extends any[] = any[]>(
+  apiFunc: (...args: P) => Promise<T>
+) {
+  const [data, setData] = useState<T>();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>();
+
+  const execute = useCallback(
+    async (...args: P) => {
+      setLoading(true);
+      setError(undefined);
+
+      try {
+        const result = await apiFunc(...args);
+        setData(result);
+        return result;
+      } catch (err) {
+        const errorMessage = handleApiError(err);
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [apiFunc]
+  );
+
+  return {
+    data,
+    loading,
+    error,
+    execute,
+  };
+}
+```
+
+### 使用示例
+
+```typescript
+import { useApi } from 'hooks/useApi';
+import { userApi } from 'services/api/user';
+
+export const UserList: React.FC = () => {
+  const { data, loading, error, execute } = useApi(userApi.list);
+
+  useEffect(() => {
+    execute({ page: 1, pageSize: 20 });
+  }, [execute]);
+
+  if (loading) return <div>加载中...</div>;
+  if (error) return <div>错误: {error}</div>;
+
+  return (
+    <div>
+      {data?.users.map(user => (
+        <UserCard key={user.id} user={user} />
+      ))}
+    </div>
+  );
+};
+```
+
+## 请求重试
+
+### 实现重试逻辑
+
+参考: [src/api/retry.ts](mdc:frontend/src/api/retry.ts)
+
+```typescript
+/**
+ * 重试配置
+ */
+interface RetryConfig {
+  maxRetries?: number;
+  retryDelay?: number;
+  shouldRetry?: (error: any) => boolean;
+}
+
+/**
+ * 带重试的 API 请求
+ */
+export async function apiWithRetry<T>(
+  apiFunc: () => Promise<T>,
+  config: RetryConfig = {}
+): Promise<T> {
+  const {
+    maxRetries = 3,
+    retryDelay = 1000,
+    shouldRetry = (error) => error.response?.status >= 500,
+  } = config;
+
+  let lastError: any;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await apiFunc();
+    } catch (error) {
+      lastError = error;
+
+      // 判断是否应该重试
+      if (attempt < maxRetries && shouldRetry(error)) {
+        // 等待后重试
+        await new Promise((resolve) => 
+          setTimeout(resolve, retryDelay * Math.pow(2, attempt))
+        );
+        continue;
+      }
+
+      throw error;
+    }
+  }
+
+  throw lastError;
+}
+```
+
+## 缓存策略
+
+### 简单的内存缓存
+
+```typescript
+/**
+ * API 缓存
+ */
+class ApiCache {
+  private cache = new Map<string, { data: any; timestamp: number }>();
+  private ttl = 5 * 60 * 1000; // 5分钟
+
+  get(key: string): any | null {
+    const cached = this.cache.get(key);
+    if (!cached) return null;
+
+    // 检查是否过期
+    if (Date.now() - cached.timestamp > this.ttl) {
+      this.cache.delete(key);
+      return null;
+    }
+
+    return cached.data;
+  }
+
+  set(key: string, data: any): void {
+    this.cache.set(key, {
+      data,
+      timestamp: Date.now(),
+    });
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+}
+
+export const apiCache = new ApiCache();
+```
+
+### 使用缓存
+
+```typescript
+export const userApi = {
+  getById: async (id: number) => {
+    const cacheKey = `user:${id}`;
+    
+    // 检查缓存
+    const cached = apiCache.get(cacheKey);
+    if (cached) return cached;
+    
+    // 请求数据
+    const data = await apiClient.get<User>(`/users/${id}`);
+    
+    // 存入缓存
+    apiCache.set(cacheKey, data);
+    
+    return data;
+  },
+};
+```
+
+## API 调用最佳实践
+
+### ✅ 推荐
+
+```typescript
+// 1. 使用类型定义
+const createUser = (data: CreateUserRequest): Promise<User> => {
+  return apiClient.post<User>('/users', data);
+};
+
+// 2. 统一错误处理
+try {
+  await userApi.create(userData);
+} catch (error) {
+  const message = handleApiError(error);
+  showNotification({ type: 'error', message });
+}
+
+// 3. 使用自定义 Hook
+const { data, loading, error, execute } = useApi(userApi.list);
+
+// 4. 请求取消
+const controller = new AbortController();
+apiClient.get('/users', { signal: controller.signal });
+
+// 5. 添加 JSDoc 注释
+/**
+ * 创建新用户
+ * @param data - 用户数据
+ * @returns 创建的用户信息
+ */
+export const createUser = (data: CreateUserRequest) => { };
+```
+
+### ❌ 避免
+
+```typescript
+// 1. 不要直接使用 axios
+❌ axios.get('http://localhost:8080/api/v1/users');
+✅ apiClient.get('/users');
+
+// 2. 不要忽略类型
+❌ const data: any = await apiClient.get('/users');
+✅ const data = await apiClient.get<User[]>('/users');
+
+// 3. 不要忽略错误处理
+❌ await userApi.create(data);
+✅ try { await userApi.create(data); } catch (error) { }
+
+// 4. 不要在组件中硬编码 API URL
+❌ fetch(`/api/v1/users/${id}`);
+✅ userApi.getById(id);
+```
+
+## API 测试
+
+### Mock API 响应
+
+```typescript
+// __tests__/api/user.test.ts
+import { userApi } from 'services/api/user';
+import { apiClient } from 'api/http';
+
+jest.mock('api/http');
+
+describe('userApi', () => {
+  describe('list', () => {
+    it('should fetch users list', async () => {
+      const mockData = {
+        users: [{ id: 1, name: '测试用户' }],
+        total: 1,
+      };
+
+      (apiClient.get as jest.Mock).mockResolvedValue(mockData);
+
+      const result = await userApi.list({ page: 1 });
+
+      expect(result).toEqual(mockData);
+      expect(apiClient.get).toHaveBeenCalledWith('/users', {
+        params: { page: 1 },
+      });
+    });
+  });
+});
+```
+
+## 检查清单
+
+编写 API 代码时，确保：
+
+- [ ] 使用统一的 API 客户端
+- [ ] 按业务模块组织 API 服务
+- [ ] 定义完整的类型
+- [ ] 实现统一的错误处理
+- [ ] 添加 JSDoc 注释
+- [ ] 使用自定义 Hook 简化调用
+- [ ] 考虑请求重试和缓存
+- [ ] 编写 API 测试

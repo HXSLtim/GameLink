@@ -30,15 +30,15 @@ import (
 	"gamelink/internal/cache"
 	"gamelink/internal/config"
 	"gamelink/internal/db"
-	adminhandler "gamelink/internal/handler/admin"
 	"gamelink/internal/handler"
+	adminhandler "gamelink/internal/handler/admin"
 	"gamelink/internal/handler/middleware"
 	playerhandler "gamelink/internal/handler/player"
 	userhandler "gamelink/internal/handler/user"
 	"gamelink/internal/logging"
 	"gamelink/internal/model"
-	"gamelink/internal/repository/common"
 	commissionrepo "gamelink/internal/repository/commission"
+	"gamelink/internal/repository/common"
 	gamerepo "gamelink/internal/repository/game"
 	orderrepo "gamelink/internal/repository/order"
 	paymentrepo "gamelink/internal/repository/payment"
@@ -52,7 +52,6 @@ import (
 	statsrepo "gamelink/internal/repository/stats"
 	userrepo "gamelink/internal/repository/user"
 	withdrawrepo "gamelink/internal/repository/withdraw"
-	"gamelink/internal/repository"
 	"gamelink/internal/scheduler"
 	adminservice "gamelink/internal/service/admin"
 	authservice "gamelink/internal/service/auth"
@@ -180,7 +179,7 @@ func main() {
 
 	// Initialize user-side services
 	commissionSvc := commissionservice.NewCommissionService(commissionRepo, orderRepo, playerRepo)
-    serviceItemSvc := itemservice.NewServiceItemService(serviceItemRepo, gameRepo, playerRepo)
+	serviceItemSvc := itemservice.NewServiceItemService(serviceItemRepo, gameRepo, playerRepo)
 	giftSvc := giftservice.NewGiftService(serviceItemRepo, orderRepo, playerRepo, commissionRepo)
 	orderSvc := orderservice.NewOrderService(orderRepo, playerRepo, userRepo, gameRepo, paymentRepo, reviewRepo, commissionRepo)
 	paymentSvc := paymentservice.NewPaymentService(paymentRepo, orderRepo)

@@ -6,6 +6,7 @@ import (
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
+	serviceitemrepo "gamelink/internal/repository/serviceitem"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -39,7 +40,7 @@ func (m *MockServiceItemRepo) GetByCode(ctx context.Context, code string) (*mode
 	return args.Get(0).(*model.ServiceItem), args.Error(1)
 }
 
-func (m *MockServiceItemRepo) List(ctx context.Context, opts repository.ServiceItemListOptions) ([]model.ServiceItem, int64, error) {
+func (m *MockServiceItemRepo) List(ctx context.Context, opts serviceitemrepo.ServiceItemListOptions) ([]model.ServiceItem, int64, error) {
 	args := m.Called(ctx, opts)
 	return args.Get(0).([]model.ServiceItem), args.Get(1).(int64), args.Error(2)
 }
@@ -88,9 +89,14 @@ func (m *MockGameRepo) Get(ctx context.Context, id uint64) (*model.Game, error) 
 
 func (m *MockGameRepo) Create(ctx context.Context, game *model.Game) error { return nil }
 func (m *MockGameRepo) Update(ctx context.Context, game *model.Game) error { return nil }
-func (m *MockGameRepo) Delete(ctx context.Context, id uint64) error { return nil }
-func (m *MockGameRepo) List(ctx context.Context) ([]model.Game, error) { return nil, nil }
-func (m *MockGameRepo) GetByKey(ctx context.Context, key string) (*model.Game, error) { return nil, nil }
+func (m *MockGameRepo) Delete(ctx context.Context, id uint64) error        { return nil }
+func (m *MockGameRepo) List(ctx context.Context) ([]model.Game, error)     { return nil, nil }
+func (m *MockGameRepo) ListPaged(ctx context.Context, page, pageSize int) ([]model.Game, int64, error) {
+	return nil, 0, nil
+}
+func (m *MockGameRepo) GetByKey(ctx context.Context, key string) (*model.Game, error) {
+	return nil, nil
+}
 
 type MockPlayerRepo struct {
 	mock.Mock
@@ -106,6 +112,8 @@ func (m *MockPlayerRepo) Get(ctx context.Context, id uint64) (*model.Player, err
 
 func (m *MockPlayerRepo) Create(ctx context.Context, player *model.Player) error { return nil }
 func (m *MockPlayerRepo) Update(ctx context.Context, player *model.Player) error { return nil }
+func (m *MockPlayerRepo) Delete(ctx context.Context, id uint64) error            { return nil }
+func (m *MockPlayerRepo) List(ctx context.Context) ([]model.Player, error)       { return nil, nil }
 func (m *MockPlayerRepo) ListPaged(ctx context.Context, page, pageSize int) ([]model.Player, int64, error) {
 	return nil, 0, nil
 }
@@ -121,7 +129,9 @@ func TestServiceItemService_CreateServiceItem(t *testing.T) {
 
 	t.Run("创建护航服务成功", func(t *testing.T) {
 		game := &model.Game{
-			ID:   1,
+			Base: model.Base{
+				ID: 1,
+			},
 			Name: "王者荣耀",
 		}
 		gameID := uint64(1)
@@ -341,3 +351,147 @@ func TestServiceItemService_BatchOperations(t *testing.T) {
 	})
 }
 
+func TestServiceItemService_GetServiceItem(t *testing.T) {
+	ctx := context.Background()
+
+	itemRepo := new(MockServiceItemRepo)
+	gameRepo := new(MockGameRepo)
+	playerRepo := new(MockPlayerRepo)
+
+	svc := NewServiceItemService(itemRepo, gameRepo, playerRepo)
+
+	t.Run("成功获取服务项目", func(t *testing.T) {
+		item := &model.ServiceItem{
+			ID:             1,
+			ItemCode:       "TEST_ITEM",
+			Name:           "测试服务",
+			BasePriceCents: 10000,
+			SubCategory:    model.SubCategorySolo,
+		}
+
+		itemRepo.On("Get", ctx, uint64(1)).Return(item, nil)
+
+		result, err := svc.GetServiceItem(ctx, 1)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Equal(t, "TEST_ITEM", result.ItemCode)
+	})
+
+	t.Run("服务项目不存在", func(t *testing.T) {
+		itemRepo := new(MockServiceItemRepo)
+		gameRepo := new(MockGameRepo)
+		playerRepo := new(MockPlayerRepo)
+
+		svc := NewServiceItemService(itemRepo, gameRepo, playerRepo)
+
+		itemRepo.On("Get", ctx, uint64(999)).Return(nil, repository.ErrNotFound)
+
+		result, err := svc.GetServiceItem(ctx, 999)
+
+		assert.Error(t, err)
+		assert.Nil(t, result)
+	})
+}
+
+func TestServiceItemService_UpdateServiceItem(t *testing.T) {
+	ctx := context.Background()
+
+	itemRepo := new(MockServiceItemRepo)
+	gameRepo := new(MockGameRepo)
+	playerRepo := new(MockPlayerRepo)
+
+	svc := NewServiceItemService(itemRepo, gameRepo, playerRepo)
+
+	existingItem := &model.ServiceItem{
+		ID:             1,
+		ItemCode:       "TEST_ITEM",
+		SubCategory:    model.SubCategorySolo,
+		ServiceHours:   1,
+		BasePriceCents: 10000,
+	}
+
+	itemRepo.On("Get", ctx, uint64(1)).Return(existingItem, nil)
+	itemRepo.On("Update", ctx, mock.AnythingOfType("*model.ServiceItem")).Return(nil)
+
+	name := "Updated Name"
+	price := int64(15000)
+	req := UpdateServiceItemRequest{
+		Name:           &name,
+		BasePriceCents: &price,
+	}
+
+	err := svc.UpdateServiceItem(ctx, 1, req)
+
+	assert.NoError(t, err)
+	itemRepo.AssertExpectations(t)
+}
+
+func TestServiceItemService_DeleteServiceItem(t *testing.T) {
+	ctx := context.Background()
+
+	itemRepo := new(MockServiceItemRepo)
+	gameRepo := new(MockGameRepo)
+	playerRepo := new(MockPlayerRepo)
+
+	svc := NewServiceItemService(itemRepo, gameRepo, playerRepo)
+
+	existingItem := &model.ServiceItem{
+		ID:       1,
+		ItemCode: "TEST_ITEM",
+	}
+
+	itemRepo.On("Get", ctx, uint64(1)).Return(existingItem, nil)
+	itemRepo.On("Delete", ctx, uint64(1)).Return(nil)
+
+	err := svc.DeleteServiceItem(ctx, 1)
+
+	assert.NoError(t, err)
+	itemRepo.AssertExpectations(t)
+}
+
+func TestServiceItemService_ListServiceItems(t *testing.T) {
+	ctx := context.Background()
+
+	itemRepo := new(MockServiceItemRepo)
+	gameRepo := new(MockGameRepo)
+	playerRepo := new(MockPlayerRepo)
+
+	svc := NewServiceItemService(itemRepo, gameRepo, playerRepo)
+
+	items := []model.ServiceItem{
+		{
+			ID:             1,
+			ItemCode:       "ITEM1",
+			Name:           "服务1",
+			SubCategory:    model.SubCategorySolo,
+			BasePriceCents: 10000,
+		},
+		{
+			ID:             2,
+			ItemCode:       "ITEM2",
+			Name:           "服务2",
+			SubCategory:    model.SubCategoryTeam,
+			BasePriceCents: 20000,
+		},
+	}
+
+	opts := serviceitemrepo.ServiceItemListOptions{
+		Page:     1,
+		PageSize: 20,
+	}
+
+	itemRepo.On("List", ctx, opts).Return(items, int64(2), nil)
+
+	req := ListServiceItemsRequest{
+		Page:     1,
+		PageSize: 20,
+	}
+
+	result, err := svc.ListServiceItems(ctx, req)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Len(t, result.Items, 2)
+	assert.Equal(t, int64(2), result.Total)
+}

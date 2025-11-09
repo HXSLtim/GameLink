@@ -131,7 +131,7 @@ func (r *withdrawRepository) GetPlayerBalance(ctx context.Context, playerID uint
 	err := r.db.WithContext(ctx).
 		Model(&model.Order{}).
 		Where("player_id = ? AND status = ?", playerID, model.OrderStatusCompleted).
-		Select("COALESCE(SUM(price_cents), 0)").
+		Select("COALESCE(SUM(total_price_cents), 0)").
 		Scan(&totalEarnings).Error
 	if err != nil {
 		return nil, err
@@ -170,7 +170,7 @@ func (r *withdrawRepository) GetPlayerBalance(ctx context.Context, playerID uint
 	err = r.db.WithContext(ctx).
 		Model(&model.Order{}).
 		Where("player_id = ? AND status = ?", playerID, model.OrderStatusInProgress).
-		Select("COALESCE(SUM(price_cents), 0)").
+		Select("COALESCE(SUM(total_price_cents), 0)").
 		Scan(&pendingBalance).Error
 	if err != nil {
 		return nil, err

@@ -1,0 +1,82 @@
+---
+alwaysApply: true
+---
+
+# GameLink 项目概览
+
+## 项目简介
+
+GameLink 是一个现代化的游戏陪玩管理平台，采用前后端分离的架构设计。
+
+## 技术栈
+
+### 后端
+- **语言**: Go 1.25.3
+- **框架**: Gin (Web) + GORM (ORM)
+- **数据库**: SQLite (开发) / PostgreSQL (生产)
+- **缓存**: Redis
+- **认证**: JWT (golang-jwt/jwt/v5)
+- **文档**: Swagger (swaggo)
+- **测试**: testify + golang/mock
+
+### 前端
+- **框架**: React 18 + TypeScript 5.6
+- **构建**: Vite 5.4
+- **路由**: React Router 6
+- **HTTP**: Axios
+- **样式**: Less + CSS Modules
+- **测试**: Vitest + Testing Library
+
+## 核心业务模型
+
+- **User**: 用户基础信息 (角色: user/player/admin)
+- **Player**: 陪玩师认证信息
+- **Game**: 游戏配置
+- **Order**: 订单管理
+- **Payment**: 支付记录
+- **Review**: 评价系统
+
+## 项目结构
+
+```
+GameLink/
+├── backend/              # Go 后端服务
+│   ├── cmd/             # 应用入口
+│   ├── internal/        # 内部包
+│   │   ├── model/       # 数据模型
+│   │   ├── repository/  # 数据访问层
+│   │   ├── service/     # 业务逻辑层
+│   │   ├── handler/     # HTTP 处理层
+│   │   ├── middleware/  # 中间件
+│   │   └── ...
+│   ├── configs/         # 配置文件
+│   └── docs/            # 文档
+├── frontend/            # React 前端应用
+│   └── src/
+│       ├── api/         # API 调用
+│       ├── components/  # 组件
+│       ├── pages/       # 页面
+│       ├── services/    # 服务层
+│       └── types/       # 类型定义
+└── docs/                # 项目文档
+```
+
+## 重要参考文档
+
+- 后端编码规范: [backend/CODING_STANDARDS.md](mdc:backend/CODING_STANDARDS.md)
+- 后端项目指南: [backend/PROJECT_GUIDELINES.md](mdc:backend/PROJECT_GUIDELINES.md)
+- Go 编码标准: [docs/api/go-coding-standards.md](mdc:docs/api/go-coding-standards.md)
+
+## 开发原则
+
+1. **简洁性** - 代码应该简洁明了，避免过度设计
+2. **可读性** - 代码应该易于理解和维护
+3. **一致性** - 遵循统一的命名和结构规范
+4. **测试性** - 代码应该易于测试
+5. **质量优先** - 功能实现必须以保证代码质量为前提
+
+## 响应语言
+
+- 项目使用**简体中文**进行交流和注释
+- 代码中的变量、函数名使用英文
+- 注释和文档使用中文

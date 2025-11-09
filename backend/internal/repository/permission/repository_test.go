@@ -597,3 +597,137 @@ func TestPermissionRepository_CompleteWorkflow(t *testing.T) {
 		t.Error("expected permission to be deleted")
 	}
 }
+
+// TestPermissionRepository_GetByCode 测试通过code获取权限
+func TestPermissionRepository_GetByCode(t *testing.T) {
+	db := setupTestDB(t)
+	repo := NewPermissionRepository(db)
+
+	permission := &model.Permission{
+		Method: "GET",
+		Path:   "/api/users",
+		Code:   "users.read",
+		Group:  "/api/users",
+	}
+	err := repo.Create(testContext(), permission)
+	if err != nil {
+		t.Fatalf("Create failed: %v", err)
+	}
+
+	t.Run("通过code获取存在的权限", func(t *testing.T) {
+		result, err := repo.GetByCode(testContext(), "users.read")
+		if err != nil {
+			t.Fatalf("GetByCode failed: %v", err)
+		}
+		if result.Code != "users.read" {
+			t.Errorf("expected code 'users.read', got '%s'", result.Code)
+		}
+		if result.Path != "/api/users" {
+			t.Errorf("expected path '/api/users', got '%s'", result.Path)
+		}
+	})
+
+	t.Run("通过code获取不存在的权限", func(t *testing.T) {
+		_, err := repo.GetByCode(testContext(), "nonexistent.code")
+		if err == nil {
+			t.Error("expected error for nonexistent code")
+		}
+		if err != repository.ErrNotFound {
+			t.Errorf("expected ErrNotFound, got %v", err)
+		}
+	})
+}
+
+// TestPermissionRepository_ListByGroup_EdgeCases 测试ListByGroup的边界条件
+func TestPermissionRepository_ListByGroup_EdgeCases(t *testing.T) {
+	db := setupTestDB(t)
+	repo := NewPermissionRepository(db)
+
+	t.Run("空数据库返回空map", func(t *testing.T) {
+		grouped, err := repo.ListByGroup(testContext())
+		if err != nil {
+			t.Fatalf("ListByGroup failed: %v", err)
+		}
+		if grouped == nil {
+			t.Error("expected non-nil map")
+		}
+		if len(grouped) != 0 {
+			t.Errorf("expected empty map, got %d groups", len(grouped))
+		}
+	})
+
+	t.Run("权限没有group字段时", func(t *testing.T) {
+		permission := &model.Permission{
+			Method: "GET",
+			Path:   "/api/test",
+			Code:   "test.read",
+			Group:  "", // 空group
+		}
+		err := repo.Create(testContext(), permission)
+		if err != nil {
+			t.Fatalf("Create failed: %v", err)
+		}
+
+		grouped, err := repo.ListByGroup(testContext())
+		if err != nil {
+			t.Fatalf("ListByGroup failed: %v", err)
+		}
+		// 空group应该被包含在结果中
+		if len(grouped) == 0 {
+			t.Error("expected at least one group (empty string group)")
+		}
+	})
+}
+
+// TestPermissionRepository_GetUserPermissions_EdgeCases 测试GetUserPermissions（ListByUserID）的边界条件
+func TestPermissionRepository_GetUserPermissions_EdgeCases(t *testing.T) {
+	db := setupTestDB(t)
+	repo := NewPermissionRepository(db)
+
+	t.Run("查询不存在的用户权限", func(t *testing.T) {
+		permissions, err := repo.ListByUserID(testContext(), 99999)
+		if err != nil {
+			t.Fatalf("ListByUserID should not error for nonexistent user, got: %v", err)
+		}
+		if len(permissions) != 0 {
+			t.Errorf("expected empty permissions for nonexistent user, got %d", len(permissions))
+		}
+	})
+
+	t.Run("用户没有分配角色时返回空列表", func(t *testing.T) {
+		// 创建用户但不分配角色
+		user := &model.User{Email: "no-role@example.com", Name: "No Role User"}
+		db.Create(user)
+
+		permissions, err := repo.ListByUserID(testContext(), user.ID)
+		if err != nil {
+			t.Fatalf("ListByUserID failed: %v", err)
+		}
+		if len(permissions) != 0 {
+			t.Errorf("expected empty permissions for user without roles, got %d", len(permissions))
+		}
+	})
+
+	t.Run("角色没有分配权限时返回空列表", func(t *testing.T) {
+		// 创建权限
+		perm := &model.Permission{Method: "GET", Path: "/api/test", Code: "test.read"}
+		_ = repo.Create(testContext(), perm)
+
+		// 创建角色但不分配权限
+		role := &model.RoleModel{Name: "Empty Role", Slug: "empty_role"}
+		db.Create(role)
+
+		// 创建用户并分配角色
+		user := &model.User{Email: "empty-role@example.com", Name: "Empty Role User"}
+		db.Create(user)
+		db.Create(&model.UserRole{UserID: user.ID, RoleID: role.ID})
+
+		permissions, err := repo.ListByUserID(testContext(), user.ID)
+		if err != nil {
+			t.Fatalf("ListByUserID failed: %v", err)
+		}
+		if len(permissions) != 0 {
+			t.Errorf("expected empty permissions for role without permissions, got %d", len(permissions))
+		}
+	})
+}

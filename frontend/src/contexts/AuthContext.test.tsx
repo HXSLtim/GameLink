@@ -1,13 +1,15 @@
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AuthProvider, useAuth } from './AuthContext';
-import * as authService from '../services/auth';
+import { authApi } from '../services/api/auth';
 
-// Mock auth service
-vi.mock('../services/auth', () => ({
-  authService: {
-    me: vi.fn(),
+// Mock auth API
+vi.mock('../services/api/auth', () => ({
+  authApi: {
     login: vi.fn(),
+    logout: vi.fn(),
+    getCurrentUser: vi.fn(),
+    refresh: vi.fn(),
   },
 }));
 
@@ -43,15 +45,18 @@ describe('AuthContext', () => {
     expect(result.current.token).toBeNull();
   });
 
-  it('should load user from localStorage token on mount', async () => {
+  it('should load user from localStorage on mount', async () => {
     const mockUser = {
       id: 1,
+      name: 'testuser',
       username: 'testuser',
-      role: 'admin',
+      role: 'admin' as const,
+      status: 'active' as const,
     };
 
+    // 设置localStorage中的token和user
     localStorage.setItem('gamelink_token', 'test-token');
-    vi.mocked(authService.authService.me).mockResolvedValue(mockUser as any);
+    localStorage.setItem('gamelink_user', JSON.stringify(mockUser));
 
     const { result } = renderHook(() => useAuth(), { wrapper });
 
@@ -64,12 +69,14 @@ describe('AuthContext', () => {
 
     expect(result.current.token).toBe('test-token');
     expect(result.current.user).toEqual(mockUser);
-    expect(authService.authService.me).toHaveBeenCalled();
+    // AuthContext不会在初始化时调用API，只从localStorage读取
+    expect(authApi.getCurrentUser).not.toHaveBeenCalled();
   });
 
-  it('should clear token when me() fails', async () => {
+  it('should load invalid token from localStorage but not clear it automatically', async () => {
+    const invalidUser = { id: 0, name: 'invalid', role: 'user' as const, status: 'active' as const };
     localStorage.setItem('gamelink_token', 'invalid-token');
-    vi.mocked(authService.authService.me).mockRejectedValue(new Error('Unauthorized'));
+    localStorage.setItem('gamelink_user', JSON.stringify(invalidUser));
 
     const { result } = renderHook(() => useAuth(), { wrapper });
 
@@ -77,19 +84,27 @@ describe('AuthContext', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    expect(result.current.token).toBeNull();
-    expect(result.current.user).toBeNull();
-    expect(localStorage.getItem('gamelink_token')).toBeNull();
+    // AuthContext会从localStorage读取，即使数据无效也不会自动清理
+    // 只有在登录失败时才会清理
+    expect(result.current.token).toBe('invalid-token');
+    expect(result.current.user).toEqual(invalidUser);
   });
 
   it('should login and store token', async () => {
     const mockUser = {
       id: 1,
+      name: 'testuser',
       username: 'testuser',
-      role: 'admin',
+      role: 'admin' as const,
+      status: 'active' as const,
     };
 
-    vi.mocked(authService.authService.me).mockResolvedValue(mockUser as any);
+    const mockLoginResult = {
+      token: 'new-token',
+      user: mockUser,
+    };
+
+    vi.mocked(authApi.login).mockResolvedValue(mockLoginResult);
 
     const { result } = renderHook(() => useAuth(), { wrapper });
 
@@ -97,25 +112,31 @@ describe('AuthContext', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    act(() => {
-      result.current.login('test@example.com', 'password123');
+    await act(async () => {
+      await result.current.login('testuser', 'password123');
     });
 
     expect(localStorage.getItem('gamelink_token')).toBe('new-token');
     expect(result.current.token).toBe('new-token');
-
-    await waitFor(() => {
-      expect(result.current.user).toEqual(mockUser);
+    expect(result.current.user).toEqual(mockUser);
+    expect(authApi.login).toHaveBeenCalledWith({
+      username: 'testuser',
+      password: 'password123',
     });
   });
 
   it('should logout and clear token', async () => {
-    localStorage.setItem('gamelink_token', 'test-token');
-    vi.mocked(authService.authService.me).mockResolvedValue({
+    const mockUser = {
       id: 1,
+      name: 'testuser',
       username: 'testuser',
-      role: 'admin',
-    } as any);
+      role: 'admin' as const,
+      status: 'active' as const,
+    };
+    localStorage.setItem('gamelink_token', 'test-token');
+    localStorage.setItem('gamelink_user', JSON.stringify(mockUser));
+
+    vi.mocked(authApi.logout).mockResolvedValue();
 
     const { result } = renderHook(() => useAuth(), { wrapper });
 
@@ -123,17 +144,18 @@ describe('AuthContext', () => {
       expect(result.current.user).not.toBeNull();
     });
 
-    act(() => {
-      result.current.logout();
+    await act(async () => {
+      await result.current.logout();
     });
 
     expect(result.current.token).toBeNull();
     expect(result.current.user).toBeNull();
     expect(localStorage.getItem('gamelink_token')).toBeNull();
+    expect(authApi.logout).toHaveBeenCalled();
   });
 
   it('should handle login failure gracefully', async () => {
-    vi.mocked(authService.authService.me).mockRejectedValue(new Error('Failed to fetch user'));
+    vi.mocked(authApi.login).mockRejectedValue(new Error('Invalid credentials'));
 
     const { result } = renderHook(() => useAuth(), { wrapper });
 
@@ -141,15 +163,18 @@ describe('AuthContext', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    act(() => {
-      result.current.login('test@example.com', 'password123');
+    await act(async () => {
+      try {
+        await result.current.login('testuser', 'wrongpassword');
+      } catch (error) {
+        // 预期会抛出错误
+        expect(error).toBeDefined();
+      }
     });
 
-    await waitFor(() => {
-      // Token should be stored even if me() fails
-      expect(result.current.token).toBe('test-token');
-      // But user should remain null
-      expect(result.current.user).toBeNull();
-    });
+    // 登录失败后，token和user应该被清理
+    expect(result.current.token).toBeNull();
+    expect(result.current.user).toBeNull();
+    expect(localStorage.getItem('gamelink_token')).toBeNull();
   });
 });

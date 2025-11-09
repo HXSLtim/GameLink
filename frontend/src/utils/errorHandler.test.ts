@@ -88,6 +88,22 @@ describe('errorHandler', () => {
 
     expect(data).toBeNull();
     expect(error).toBeInstanceOf(Error);
+    // 当error是字符串时，normalizeError会直接使用字符串作为错误消息，而不是defaultMessage
+    // 只有当error不是Error实例也不是字符串时，才会使用defaultMessage
+    expect(error?.message).toBe('Unknown error');
+
+    consoleSpy.mockRestore();
+  });
+
+  it('should use custom message when error is not string or Error', async () => {
+    const failurePromise = Promise.reject({ unknown: 'object' });
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const [data, error] = await errorHandler.handleAsync(failurePromise, 'Custom error');
+
+    expect(data).toBeNull();
+    expect(error).toBeInstanceOf(Error);
+    // 当error是对象时，会使用defaultMessage
     expect(error?.message).toBe('Custom error');
 
     consoleSpy.mockRestore();

@@ -1,0 +1,522 @@
+---
+alwaysApply: true
+description: 安全性规范和最佳实践
+---
+
+# 安全性规范
+
+## 认证和授权
+
+### JWT 认证
+
+```go
+// 生成 Token
+func GenerateToken(userID uint64, role string) (string, error) {
+    claims := jwt.MapClaims{
+        "user_id": userID,
+        "role":    role,
+        "exp":     time.Now().Add(24 * time.Hour).Unix(),
+        "iat":     time.Now().Unix(),
+    }
+
+    token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+    return token.SignedString([]byte(jwtSecret))
+}
+
+// 验证 Token
+func ValidateToken(tokenString string) (*Claims, error) {
+    token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+        if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+            return nil, fmt.Errorf("unexpected signing method")
+        }
+        return []byte(jwtSecret), nil
+    })
+
+    if err != nil {
+        return nil, err
+    }
+
+    if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+        return &Claims{
+            UserID: uint64(claims["user_id"].(float64)),
+            Role:   claims["role"].(string),
+        }, nil
+    }
+
+    return nil, errors.New("invalid token")
+}
+```
+
+### 权限中间件
+
+```go
+// 认证中间件
+func RequireAuth() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        tokenString := c.GetHeader("Authorization")
+        if tokenString == "" {
+            c.JSON(401, gin.H{"error": "missing authorization header"})
+            c.Abort()
+            return
+        }
+
+        // 移除 "Bearer " 前缀
+        tokenString = strings.TrimPrefix(tokenString, "Bearer ")
+
+        claims, err := ValidateToken(tokenString)
+        if err != nil {
+            c.JSON(401, gin.H{"error": "invalid token"})
+            c.Abort()
+            return
+        }
+
+        // 将用户信息存入 Context
+        c.Set("userID", claims.UserID)
+        c.Set("userRole", claims.Role)
+        c.Next()
+    }
+}
+
+// 角色检查中间件
+func RequireRole(allowedRoles ...string) gin.HandlerFunc {
+    return func(c *gin.Context) {
+        role, exists := c.Get("userRole")
+        if !exists {
+            c.JSON(403, gin.H{"error": "forbidden"})
+            c.Abort()
+            return
+        }
+
+        userRole := role.(string)
+        allowed := false
+        for _, allowedRole := range allowedRoles {
+            if userRole == allowedRole {
+                allowed = true
+                break
+            }
+        }
+
+        if !allowed {
+            c.JSON(403, gin.H{"error": "insufficient permissions"})
+            c.Abort()
+            return
+        }
+
+        c.Next()
+    }
+}
+```
+
+## 密码安全
+
+### 密码加密
+
+```go
+import "golang.org/x/crypto/bcrypt"
+
+// ✅ 使用 bcrypt 加密密码
+func HashPassword(password string) (string, error) {
+    hashedPassword, err := bcrypt.GenerateFromPassword(
+        []byte(password),
+        bcrypt.DefaultCost,
+    )
+    if err != nil {
+        return "", err
+    }
+    return string(hashedPassword), nil
+}
+
+// 验证密码
+func CheckPassword(hashedPassword, password string) bool {
+    err := bcrypt.CompareHashAndPassword(
+        []byte(hashedPassword),
+        []byte(password),
+    )
+    return err == nil
+}
+
+// ❌ 不要使用简单的 hash
+❌ hash := md5.Sum([]byte(password))
+❌ hash := sha256.Sum256([]byte(password))
+```
+
+### 密码策略
+
+```go
+// 密码强度验证
+func ValidatePassword(password string) error {
+    if len(password) < 8 {
+        return errors.New("password must be at least 8 characters")
+    }
+
+    hasUpper := false
+    hasLower := false
+    hasNumber := false
+    hasSpecial := false
+
+    for _, char := range password {
+        switch {
+        case unicode.IsUpper(char):
+            hasUpper = true
+        case unicode.IsLower(char):
+            hasLower = true
+        case unicode.IsNumber(char):
+            hasNumber = true
+        case unicode.IsPunct(char) || unicode.IsSymbol(char):
+            hasSpecial = true
+        }
+    }
+
+    if !hasUpper || !hasLower || !hasNumber || !hasSpecial {
+        return errors.New("password must contain uppercase, lowercase, number and special character")
+    }
+
+    return nil
+}
+```
+
+## 输入验证
+
+### SQL 注入防护
+
+```go
+// ✅ 使用参数化查询
+db.Where("phone = ?", phone).First(&user)
+db.Where("id IN ?", ids).Find(&users)
+
+// ❌ 不要拼接 SQL
+❌ db.Where(fmt.Sprintf("phone = '%s'", phone)).First(&user)
+```
+
+### XSS 防护
+
+```go
+import "html"
+
+// 清理用户输入
+func SanitizeInput(input string) string {
+    // HTML 转义
+    escaped := html.EscapeString(input)
+    
+    // 移除潜在的脚本标签
+    escaped = strings.ReplaceAll(escaped, "<script>", "")
+    escaped = strings.ReplaceAll(escaped, "</script>", "")
+    
+    return escaped
+}
+```
+
+### 数据验证
+
+```go
+// 使用 validator 包
+type CreateUserRequest struct {
+    Phone    string `json:"phone" binding:"required,len=11"`
+    Password string `json:"password" binding:"required,min=8"`
+    Name     string `json:"name" binding:"required,max=100"`
+    Email    string `json:"email" binding:"omitempty,email"`
+}
+
+// 手机号验证
+func ValidatePhone(phone string) bool {
+    matched, _ := regexp.MatchString(`^1[3-9]\d{9}$`, phone)
+    return matched
+}
+
+// 邮箱验证
+func ValidateEmail(email string) bool {
+    matched, _ := regexp.MatchString(
+        `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`,
+        email,
+    )
+    return matched
+}
+```
+
+## CORS 配置
+
+```go
+// CORS 中间件
+func CORSMiddleware() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        // 生产环境应该配置具体的域名
+        allowedOrigins := []string{
+            "http://localhost:5173",  // 开发环境
+            "https://yourdomain.com", // 生产环境
+        }
+
+        origin := c.Request.Header.Get("Origin")
+        for _, allowed := range allowedOrigins {
+            if origin == allowed {
+                c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
+                break
+            }
+        }
+
+        c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+        c.Writer.Header().Set("Access-Control-Allow-Headers", 
+            "Content-Type, Content-Length, Authorization, Accept, X-Requested-With")
+        c.Writer.Header().Set("Access-Control-Allow-Methods", 
+            "POST, GET, OPTIONS, PUT, DELETE, PATCH")
+
+        if c.Request.Method == "OPTIONS" {
+            c.AbortWithStatus(204)
+            return
+        }
+
+        c.Next()
+    }
+}
+```
+
+## 速率限制
+
+```go
+import "golang.org/x/time/rate"
+
+// 速率限制中间件
+func RateLimitMiddleware(limiter *rate.Limiter) gin.HandlerFunc {
+    return func(c *gin.Context) {
+        if !limiter.Allow() {
+            c.JSON(429, gin.H{
+                "error": "too many requests",
+            })
+            c.Abort()
+            return
+        }
+        c.Next()
+    }
+}
+
+// 使用
+limiter := rate.NewLimiter(rate.Every(time.Second), 10) // 每秒10个请求
+router.Use(RateLimitMiddleware(limiter))
+```
+
+## 敏感信息处理
+
+### 不要记录敏感信息
+
+```go
+// ✅ 正确: 不记录密码
+logger.Info("user login", "phone", user.Phone)
+
+// ❌ 错误: 记录了密码
+logger.Info("user login", "phone", user.Phone, "password", password)
+```
+
+### 不要在响应中返回敏感信息
+
+```go
+// ✅ 正确: Password 字段标记为 json:"-"
+type User struct {
+    ID       uint64 `json:"id"`
+    Phone    string `json:"phone"`
+    Password string `json:"-"`  // 不序列化到 JSON
+    Name     string `json:"name"`
+}
+
+// ✅ 使用专门的响应结构
+type UserResponse struct {
+    ID    uint64 `json:"id"`
+    Phone string `json:"phone"`
+    Name  string `json:"name"`
+    // 不包含 Password
+}
+```
+
+### 环境变量管理
+
+```go
+// ✅ 从环境变量读取敏感配置
+jwtSecret := os.Getenv("JWT_SECRET")
+databaseURL := os.Getenv("DATABASE_URL")
+redisURL := os.Getenv("REDIS_URL")
+
+// ❌ 不要硬编码敏感信息
+❌ const jwtSecret = "my-secret-key"
+❌ const dbPassword = "admin123"
+```
+
+## HTTPS/TLS
+
+### 强制 HTTPS
+
+```go
+// HTTPS 重定向中间件
+func HTTPSRedirect() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        if c.Request.Header.Get("X-Forwarded-Proto") != "https" {
+            httpsURL := "https://" + c.Request.Host + c.Request.RequestURI
+            c.Redirect(301, httpsURL)
+            c.Abort()
+            return
+        }
+        c.Next()
+    }
+}
+```
+
+### 安全响应头
+
+```go
+// 安全头中间件
+func SecureHeaders() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        // 防止点击劫持
+        c.Header("X-Frame-Options", "DENY")
+        
+        // XSS 保护
+        c.Header("X-XSS-Protection", "1; mode=block")
+        
+        // 禁止 MIME 类型嗅探
+        c.Header("X-Content-Type-Options", "nosniff")
+        
+        // HSTS
+        c.Header("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+        
+        // CSP
+        c.Header("Content-Security-Policy", "default-src 'self'")
+        
+        c.Next()
+    }
+}
+```
+
+## 文件上传安全
+
+```go
+// 文件上传验证
+func ValidateUpload(file *multipart.FileHeader) error {
+    // 检查文件大小 (5MB)
+    if file.Size > 5*1024*1024 {
+        return errors.New("file too large")
+    }
+
+    // 检查文件类型
+    allowedTypes := map[string]bool{
+        "image/jpeg": true,
+        "image/png":  true,
+        "image/gif":  true,
+    }
+
+    contentType := file.Header.Get("Content-Type")
+    if !allowedTypes[contentType] {
+        return errors.New("invalid file type")
+    }
+
+    // 检查文件扩展名
+    ext := filepath.Ext(file.Filename)
+    allowedExts := map[string]bool{
+        ".jpg":  true,
+        ".jpeg": true,
+        ".png":  true,
+        ".gif":  true,
+    }
+
+    if !allowedExts[strings.ToLower(ext)] {
+        return errors.New("invalid file extension")
+    }
+
+    return nil
+}
+
+// 生成安全的文件名
+func GenerateSafeFilename(originalFilename string) string {
+    // 使用 UUID 生成唯一文件名
+    id := uuid.New().String()
+    ext := filepath.Ext(originalFilename)
+    return id + ext
+}
+```
+
+## 前端安全
+
+### Token 存储
+
+```typescript
+// ✅ 使用 httpOnly Cookie (最安全)
+// 或者 localStorage (需要注意 XSS)
+
+// 存储 token
+export function setToken(token: string): void {
+  localStorage.setItem('token', token);
+}
+
+// 获取 token
+export function getToken(): string | null {
+  return localStorage.getItem('token');
+}
+
+// 清除 token
+export function clearToken(): void {
+  localStorage.removeItem('token');
+}
+
+// ❌ 不要存储在全局变量中
+❌ window.token = token;
+```
+
+### XSS 防护
+
+```typescript
+// ✅ React 自动转义
+<div>{user.name}</div>  // 自动转义
+
+// ✅ 使用 DOMPurify 清理 HTML
+import DOMPurify from 'dompurify';
+
+const cleanHTML = DOMPurify.sanitize(dirtyHTML);
+
+// ❌ 不要使用 dangerouslySetInnerHTML (除非必要)
+❌ <div dangerouslySetInnerHTML={{ __html: userInput }} />
+```
+
+### CSRF 防护
+
+```typescript
+// 在请求中包含 CSRF Token
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+apiClient.interceptors.request.use((config) => {
+  if (csrfToken) {
+    config.headers['X-CSRF-Token'] = csrfToken;
+  }
+  return config;
+});
+```
+
+## 安全检查清单
+
+开发时确保：
+
+### 后端
+- [ ] 使用 HTTPS
+- [ ] 实现 JWT 认证
+- [ ] 添加权限检查
+- [ ] 密码使用 bcrypt 加密
+- [ ] 实现速率限制
+- [ ] 验证所有用户输入
+- [ ] 使用参数化查询防止 SQL 注入
+- [ ] 配置 CORS
+- [ ] 不记录敏感信息
+- [ ] 使用环境变量存储密钥
+- [ ] 添加安全响应头
+
+### 前端
+- [ ] 使用 HTTPS
+- [ ] Token 安全存储
+- [ ] 实现自动登出
+- [ ] 验证用户输入
+- [ ] 防止 XSS 攻击
+- [ ] 防止 CSRF 攻击
+- [ ] 不在客户端存储敏感信息
+- [ ] 使用 Content Security Policy
+
+### 通用
+- [ ] 定期更新依赖
+- [ ] 进行安全审计
+- [ ] 实现日志监控
+- [ ] 配置防火墙
+- [ ] 数据库访问控制
+- [ ] 定期备份数据

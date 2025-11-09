@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"gamelink/internal/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/service/payment"
 )
@@ -68,7 +69,7 @@ func getPaymentStatusHandler(c *gin.Context, svc *payment.PaymentService) {
 	idStr := c.Param("id")
 	paymentID, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		respondError(c, http.StatusBadRequest, ErrInvalidID)
+		respondError(c, http.StatusBadRequest, apierr.ErrInvalidID)
 		return
 	}
 
@@ -108,7 +109,7 @@ func cancelPaymentHandler(c *gin.Context, svc *payment.PaymentService) {
 	idStr := c.Param("id")
 	paymentID, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		respondError(c, http.StatusBadRequest, ErrInvalidID)
+		respondError(c, http.StatusBadRequest, apierr.ErrInvalidID)
 		return
 	}
 

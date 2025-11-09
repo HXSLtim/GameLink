@@ -1,0 +1,544 @@
+---
+globs: backend/internal/model/**/*.go,backend/internal/repository/**/*.go
+description: 数据库设计和 GORM 使用规范
+---
+
+# 数据库设计和 GORM 使用规范
+
+## 数据模型定义
+
+### Model 结构体
+
+```go
+// ✅ 推荐: 完整的模型定义
+type User struct {
+    ID        uint64         `gorm:"primaryKey" json:"id"`
+    Phone     string         `gorm:"uniqueIndex;size:20;not null" json:"phone"`
+    Password  string         `gorm:"size:255;not null" json:"-"`  // 不序列化到 JSON
+    Name      string         `gorm:"size:100;not null" json:"name"`
+    Avatar    string         `gorm:"size:500" json:"avatar,omitempty"`
+    Role      UserRole       `gorm:"type:varchar(20);not null;default:'user'" json:"role"`
+    Status    UserStatus     `gorm:"type:varchar(20);not null;default:'active'" json:"status"`
+    CreatedAt time.Time      `json:"createdAt"`
+    UpdatedAt time.Time      `json:"updatedAt"`
+    DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`  // 软删除
+}
+
+// TableName 自定义表名
+func (User) TableName() string {
+    return "users"
+}
+```
+
+### 字段标签规范
+
+```go
+// GORM 标签
+`gorm:"primaryKey"`                    // 主键
+`gorm:"uniqueIndex"`                   // 唯一索引
+`gorm:"index"`                         // 普通索引
+`gorm:"size:100"`                      // 字段大小
+`gorm:"not null"`                      // 非空
+`gorm:"default:'active'"`              // 默认值
+`gorm:"type:varchar(20)"`              // 数据类型
+`gorm:"column:user_name"`              // 自定义列名
+`gorm:"->"`                            // 只读
+`gorm:"-"`                             // 忽略字段
+`gorm:"embedded"`                      // 嵌入式结构
+
+// JSON 标签
+`json:"id"`                            // JSON 字段名
+`json:"password,omitempty"`            // 省略空值
+`json:"-"`                             // 不序列化
+```
+
+### 枚举类型
+
+```go
+// 使用字符串常量
+type UserRole string
+
+const (
+    UserRoleAdmin  UserRole = "admin"
+    UserRoleUser   UserRole = "user"
+    UserRolePlayer UserRole = "player"
+)
+
+type OrderStatus string
+
+const (
+    OrderStatusPending    OrderStatus = "pending"
+    OrderStatusConfirmed  OrderStatus = "confirmed"
+    OrderStatusInProgress OrderStatus = "in_progress"
+    OrderStatusCompleted  OrderStatus = "completed"
+    OrderStatusCancelled  OrderStatus = "cancelled"
+)
+```
+
+## 关联关系
+
+### 一对一
+
+```go
+// 用户和用户资料
+type User struct {
+    ID      uint64  `gorm:"primaryKey"`
+    Name    string
+    Profile Profile `gorm:"foreignKey:UserID"`
+}
+
+type Profile struct {
+    ID     uint64 `gorm:"primaryKey"`
+    UserID uint64 `gorm:"uniqueIndex"`
+    Bio    string
+    Avatar string
+}
+```
+
+### 一对多
+
+```go
+// 用户和订单
+type User struct {
+    ID     uint64  `gorm:"primaryKey"`
+    Name   string
+    Orders []Order `gorm:"foreignKey:UserID"`
+}
+
+type Order struct {
+    ID     uint64 `gorm:"primaryKey"`
+    UserID uint64 `gorm:"index"`
+    Amount int64
+}
+```
+
+### 多对多
+
+```go
+// 用户和角色
+type User struct {
+    ID    uint64 `gorm:"primaryKey"`
+    Name  string
+    Roles []Role `gorm:"many2many:user_roles"`
+}
+
+type Role struct {
+    ID          uint64 `gorm:"primaryKey"`
+    Name        string
+    Permissions []Permission `gorm:"many2many:role_permissions"`
+}
+```
+
+## Repository 层实现
+
+### 基础 CRUD
+
+```go
+type UserRepository interface {
+    Create(ctx context.Context, user *model.User) error
+    GetByID(ctx context.Context, id uint64) (*model.User, error)
+    Update(ctx context.Context, user *model.User) error
+    Delete(ctx context.Context, id uint64) error
+    List(ctx context.Context, offset, limit int) ([]model.User, error)
+}
+
+type userRepository struct {
+    db *gorm.DB
+}
+
+func NewUserRepository(db *gorm.DB) UserRepository {
+    return &userRepository{db: db}
+}
+
+// Create 创建用户
+func (r *userRepository) Create(ctx context.Context, user *model.User) error {
+    return r.db.WithContext(ctx).Create(user).Error
+}
+
+// GetByID 根据ID获取用户
+func (r *userRepository) GetByID(ctx context.Context, id uint64) (*model.User, error) {
+    var user model.User
+    err := r.db.WithContext(ctx).First(&user, id).Error
+    if err != nil {
+        if errors.Is(err, gorm.ErrRecordNotFound) {
+            return nil, ErrUserNotFound
+        }
+        return nil, err
+    }
+    return &user, nil
+}
+
+// Update 更新用户
+func (r *userRepository) Update(ctx context.Context, user *model.User) error {
+    return r.db.WithContext(ctx).Save(user).Error
+}
+
+// Delete 删除用户 (软删除)
+func (r *userRepository) Delete(ctx context.Context, id uint64) error {
+    return r.db.WithContext(ctx).Delete(&model.User{}, id).Error
+}
+
+// List 获取用户列表
+func (r *userRepository) List(ctx context.Context, offset, limit int) ([]model.User, error) {
+    var users []model.User
+    err := r.db.WithContext(ctx).
+        Offset(offset).
+        Limit(limit).
+        Find(&users).Error
+    return users, err
+}
+```
+
+### 复杂查询
+
+```go
+// 条件查询
+func (r *userRepository) FindByRole(ctx context.Context, role model.UserRole) ([]model.User, error) {
+    var users []model.User
+    err := r.db.WithContext(ctx).
+        Where("role = ?", role).
+        Find(&users).Error
+    return users, err
+}
+
+// 多条件查询
+func (r *userRepository) Search(ctx context.Context, params SearchParams) ([]model.User, int64, error) {
+    var users []model.User
+    var total int64
+
+    query := r.db.WithContext(ctx).Model(&model.User{})
+
+    // 添加搜索条件
+    if params.Keyword != "" {
+        query = query.Where("name LIKE ? OR phone LIKE ?", 
+            "%"+params.Keyword+"%", 
+            "%"+params.Keyword+"%")
+    }
+
+    if params.Role != "" {
+        query = query.Where("role = ?", params.Role)
+    }
+
+    // 计数
+    if err := query.Count(&total).Error; err != nil {
+        return nil, 0, err
+    }
+
+    // 分页查询
+    err := query.
+        Offset((params.Page - 1) * params.PageSize).
+        Limit(params.PageSize).
+        Order("created_at DESC").
+        Find(&users).Error
+
+    return users, total, err
+}
+
+// 预加载关联
+func (r *orderRepository) GetOrderWithUser(ctx context.Context, id uint64) (*model.Order, error) {
+    var order model.Order
+    err := r.db.WithContext(ctx).
+        Preload("User").
+        Preload("Player").
+        First(&order, id).Error
+    return &order, err
+}
+```
+
+### 事务处理
+
+```go
+// 使用事务
+func (r *orderRepository) CreateOrderWithPayment(
+    ctx context.Context,
+    order *model.Order,
+    payment *model.Payment,
+) error {
+    return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+        // 创建订单
+        if err := tx.Create(order).Error; err != nil {
+            return err
+        }
+
+        // 设置支付的订单ID
+        payment.OrderID = order.ID
+
+        // 创建支付记录
+        if err := tx.Create(payment).Error; err != nil {
+            return err
+        }
+
+        return nil
+    })
+}
+
+// 手动事务管理
+func (r *orderRepository) ProcessOrder(ctx context.Context, orderID uint64) error {
+    tx := r.db.WithContext(ctx).Begin()
+    defer func() {
+        if r := recover(); r != nil {
+            tx.Rollback()
+        }
+    }()
+
+    // 更新订单状态
+    if err := tx.Model(&model.Order{}).
+        Where("id = ?", orderID).
+        Update("status", model.OrderStatusProcessing).Error; err != nil {
+        tx.Rollback()
+        return err
+    }
+
+    // 其他操作...
+
+    return tx.Commit().Error
+}
+```
+
+## 数据库迁移
+
+### 自动迁移
+
+```go
+func AutoMigrate(db *gorm.DB) error {
+    return db.AutoMigrate(
+        &model.User{},
+        &model.Player{},
+        &model.Game{},
+        &model.Order{},
+        &model.Payment{},
+        &model.Review{},
+        &model.Role{},
+        &model.Permission{},
+    )
+}
+```
+
+### 创建索引
+
+```go
+func CreateIndexes(db *gorm.DB) error {
+    // 创建复合索引
+    if err := db.Exec(`
+        CREATE INDEX IF NOT EXISTS idx_orders_user_status 
+        ON orders(user_id, status)
+    `).Error; err != nil {
+        return err
+    }
+
+    // 创建唯一索引
+    if err := db.Exec(`
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_users_phone 
+        ON users(phone) WHERE deleted_at IS NULL
+    `).Error; err != nil {
+        return err
+    }
+
+    return nil
+}
+```
+
+## 性能优化
+
+### 查询优化
+
+```go
+// ✅ 使用 Select 选择特定字段
+func (r *userRepository) ListUserBasicInfo(ctx context.Context) ([]UserBasicInfo, error) {
+    var users []UserBasicInfo
+    err := r.db.WithContext(ctx).
+        Model(&model.User{}).
+        Select("id", "name", "phone").
+        Find(&users).Error
+    return users, err
+}
+
+// ✅ 使用 Pluck 获取单个字段
+func (r *userRepository) GetUserNames(ctx context.Context, ids []uint64) ([]string, error) {
+    var names []string
+    err := r.db.WithContext(ctx).
+        Model(&model.User{}).
+        Where("id IN ?", ids).
+        Pluck("name", &names).Error
+    return names, err
+}
+
+// ✅ 批量插入
+func (r *userRepository) CreateBatch(ctx context.Context, users []model.User) error {
+    return r.db.WithContext(ctx).CreateInBatches(users, 100).Error
+}
+
+// ✅ 批量更新
+func (r *userRepository) UpdateStatus(ctx context.Context, ids []uint64, status model.UserStatus) error {
+    return r.db.WithContext(ctx).
+        Model(&model.User{}).
+        Where("id IN ?", ids).
+        Update("status", status).Error
+}
+```
+
+### 避免 N+1 查询
+
+```go
+// ❌ N+1 问题
+func (r *orderRepository) GetOrdersWithUser_Bad(ctx context.Context) ([]model.Order, error) {
+    var orders []model.Order
+    if err := r.db.WithContext(ctx).Find(&orders).Error; err != nil {
+        return nil, err
+    }
+
+    // 这会导致 N+1 查询
+    for i := range orders {
+        r.db.WithContext(ctx).First(&orders[i].User, orders[i].UserID)
+    }
+
+    return orders, nil
+}
+
+// ✅ 使用 Preload
+func (r *orderRepository) GetOrdersWithUser_Good(ctx context.Context) ([]model.Order, error) {
+    var orders []model.Order
+    err := r.db.WithContext(ctx).
+        Preload("User").
+        Preload("Player").
+        Find(&orders).Error
+    return orders, err
+}
+```
+
+## 软删除
+
+```go
+// Model 中添加 DeletedAt
+type User struct {
+    ID        uint64         `gorm:"primaryKey"`
+    Name      string
+    DeletedAt gorm.DeletedAt `gorm:"index"`
+}
+
+// 软删除 (设置 deleted_at)
+db.Delete(&user)
+
+// 查询时自动排除软删除的记录
+db.Find(&users)
+
+// 包含软删除的记录
+db.Unscoped().Find(&users)
+
+// 永久删除
+db.Unscoped().Delete(&user)
+```
+
+## 钩子函数
+
+```go
+// BeforeCreate 创建前钩子
+func (u *User) BeforeCreate(tx *gorm.DB) error {
+    // 生成 ID
+    u.ID = generateID()
+    
+    // 加密密码
+    hashedPassword, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
+    if err != nil {
+        return err
+    }
+    u.Password = string(hashedPassword)
+    
+    return nil
+}
+
+// BeforeUpdate 更新前钩子
+func (u *User) BeforeUpdate(tx *gorm.DB) error {
+    // 验证逻辑
+    return nil
+}
+
+// AfterCreate 创建后钩子
+func (u *User) AfterCreate(tx *gorm.DB) error {
+    // 记录日志、发送通知等
+    return nil
+}
+```
+
+## 数据库配置
+
+### 连接池配置
+
+```go
+func SetupDatabase(config *DatabaseConfig) (*gorm.DB, error) {
+    db, err := gorm.Open(postgres.Open(config.DSN), &gorm.Config{
+        Logger: logger.Default.LogMode(logger.Info),
+    })
+    if err != nil {
+        return nil, err
+    }
+
+    sqlDB, err := db.DB()
+    if err != nil {
+        return nil, err
+    }
+
+    // 设置连接池
+    sqlDB.SetMaxIdleConns(10)           // 最大空闲连接数
+    sqlDB.SetMaxOpenConns(100)          // 最大打开连接数
+    sqlDB.SetConnMaxLifetime(time.Hour) // 连接最大生命周期
+
+    return db, nil
+}
+```
+
+## 最佳实践
+
+### ✅ 推荐
+
+```go
+// 1. 总是使用 Context
+✅ r.db.WithContext(ctx).Find(&users)
+
+// 2. 检查错误
+✅ if err := r.db.Create(&user).Error; err != nil { }
+
+// 3. 使用预加载避免 N+1
+✅ db.Preload("User").Find(&orders)
+
+// 4. 使用事务保证一致性
+✅ db.Transaction(func(tx *gorm.DB) error { })
+
+// 5. 使用软删除
+✅ DeletedAt gorm.DeletedAt `gorm:"index"`
+
+// 6. 定义明确的接口
+✅ type UserRepository interface { }
+```
+
+### ❌ 避免
+
+```go
+// 1. 不要忽略错误
+❌ db.Create(&user)
+✅ if err := db.Create(&user).Error; err != nil { }
+
+// 2. 不要在循环中查询
+❌ for _, order := range orders {
+       db.First(&order.User, order.UserID)
+   }
+✅ db.Preload("User").Find(&orders)
+
+// 3. 不要直接使用原始 SQL (除非必要)
+❌ db.Exec("DELETE FROM users WHERE id = ?", id)
+✅ db.Delete(&User{}, id)
+```
+
+## 检查清单
+
+编写数据库代码时，确保：
+
+- [ ] Model 定义了完整的 GORM 标签
+- [ ] Repository 方法使用 Context
+- [ ] 正确处理 GORM 错误
+- [ ] 使用 Preload 避免 N+1 查询
+- [ ] 复杂操作使用事务
+- [ ] 添加必要的索引
+- [ ] 使用软删除 (DeletedAt)
+- [ ] 配置连接池
+- [ ] 编写 Repository 测试

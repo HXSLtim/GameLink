@@ -1,0 +1,448 @@
+---
+globs: backend/internal/handler/**/*.go
+description: API 设计规范
+---
+
+# API 设计规范
+
+## 路由设计
+
+### 基础路径
+
+```
+/api/v1              - API 基础路径
+/api/v1/admin        - 管理端路径
+/api/v1/player       - 陪玩师端路径
+/api/v1/user         - 用户端路径
+```
+
+### RESTful 设计原则
+
+```
+GET     /api/v1/users           - 获取用户列表
+GET     /api/v1/users/:id       - 获取单个用户
+POST    /api/v1/users           - 创建用户
+PUT     /api/v1/users/:id       - 更新用户
+DELETE  /api/v1/users/:id       - 删除用户
+
+GET     /api/v1/orders          - 获取订单列表
+POST    /api/v1/orders          - 创建订单
+GET     /api/v1/orders/:id      - 获取订单详情
+PUT     /api/v1/orders/:id      - 更新订单
+```
+
+### 子资源路由
+
+```
+GET     /api/v1/users/:id/orders           - 获取用户的订单
+POST    /api/v1/orders/:id/payment         - 订单支付
+PUT     /api/v1/orders/:id/status          - 更新订单状态
+POST    /api/v1/orders/:id/review          - 订单评价
+```
+
+## 请求/响应格式
+
+### 统一的 JSON 命名
+
+**使用 camelCase** (与前端保持一致)：
+
+```json
+{
+  "userId": 123,
+  "userName": "张三",
+  "createdAt": "2024-01-01T00:00:00Z",
+  "orderStatus": "pending"
+}
+```
+
+### Request 结构定义
+
+```go
+// 创建请求
+type CreateUserRequest struct {
+    Phone    string `json:"phone" binding:"required"`
+    Password string `json:"password" binding:"required,min=6"`
+    Name     string `json:"name" binding:"required"`
+}
+
+// 更新请求 (使用指针允许可选字段)
+type UpdateUserRequest struct {
+    Name   *string `json:"name,omitempty"`
+    Avatar *string `json:"avatar,omitempty"`
+}
+
+// 列表查询请求
+type ListUsersRequest struct {
+    Page     int    `form:"page" binding:"min=1"`
+    PageSize int    `form:"pageSize" binding:"min=1,max=100"`
+    Keyword  string `form:"keyword"`
+    Role     string `form:"role"`
+}
+```
+
+### Response 结构定义
+
+```go
+// 单个资源响应
+type UserResponse struct {
+    ID        uint64    `json:"id"`
+    Phone     string    `json:"phone"`
+    Name      string    `json:"name"`
+    Role      string    `json:"role"`
+    Avatar    string    `json:"avatar,omitempty"`
+    CreatedAt time.Time `json:"createdAt"`
+}
+
+// 列表响应
+type ListUsersResponse struct {
+    Users    []UserResponse `json:"users"`
+    Total    int64          `json:"total"`
+    Page     int            `json:"page"`
+    PageSize int            `json:"pageSize"`
+}
+
+// 成功响应
+type SuccessResponse struct {
+    Message string      `json:"message"`
+    Data    interface{} `json:"data,omitempty"`
+}
+
+// 错误响应
+type ErrorResponse struct {
+    Error string `json:"error"`
+}
+```
+
+## Handler 实现模式
+
+### 标准 Handler 结构
+
+```go
+type UserHandler struct {
+    service *service.UserService
+}
+
+func NewUserHandler(service *service.UserService) *UserHandler {
+    return &UserHandler{
+        service: service,
+    }
+}
+```
+
+### Handler 方法模板
+
+```go
+// @Summary     创建用户
+// @Description 创建新用户账户
+// @Tags        users
+// @Accept      json
+// @Produce     json
+// @Param       request body     CreateUserRequest true "用户信息"
+// @Success     201     {object} SuccessResponse
+// @Failure     400     {object} ErrorResponse
+// @Failure     500     {object} ErrorResponse
+// @Router      /api/v1/users [post]
+func (h *UserHandler) CreateUser(c *gin.Context) {
+    // 1. 绑定请求参数
+    var req CreateUserRequest
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, ErrorResponse{
+            Error: "invalid request format",
+        })
+        return
+    }
+
+    // 2. 调用 Service 层
+    user, err := h.service.CreateUser(c.Request.Context(), &req)
+    if err != nil {
+        // 根据错误类型返回不同状态码
+        if errors.Is(err, service.ErrInvalidInput) {
+            c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+            return
+        }
+        c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+        return
+    }
+
+    // 3. 返回成功响应
+    c.JSON(http.StatusCreated, SuccessResponse{
+        Message: "user created successfully",
+        Data:    user,
+    })
+}
+```
+
+### GET 请求处理
+
+```go
+// @Summary     获取用户列表
+// @Description 分页获取用户列表
+// @Tags        users
+// @Accept      json
+// @Produce     json
+// @Param       page     query    int    false "页码"     default(1)
+// @Param       pageSize query    int    false "每页数量" default(20)
+// @Param       keyword  query    string false "搜索关键字"
+// @Success     200      {object} ListUsersResponse
+// @Failure     400      {object} ErrorResponse
+// @Router      /api/v1/users [get]
+func (h *UserHandler) ListUsers(c *gin.Context) {
+    var req ListUsersRequest
+    if err := c.ShouldBindQuery(&req); err != nil {
+        c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+        return
+    }
+
+    // 设置默认值
+    if req.Page == 0 {
+        req.Page = 1
+    }
+    if req.PageSize == 0 {
+        req.PageSize = 20
+    }
+
+    users, total, err := h.service.ListUsers(c.Request.Context(), &req)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+        return
+    }
+
+    c.JSON(http.StatusOK, ListUsersResponse{
+        Users:    users,
+        Total:    total,
+        Page:     req.Page,
+        PageSize: req.PageSize,
+    })
+}
+```
+
+### 路径参数处理
+
+```go
+// @Summary     获取用户详情
+// @Description 根据ID获取用户详情
+// @Tags        users
+// @Accept      json
+// @Produce     json
+// @Param       id  path     int true "用户ID"
+// @Success     200 {object} UserResponse
+// @Failure     400 {object} ErrorResponse
+// @Failure     404 {object} ErrorResponse
+// @Router      /api/v1/users/{id} [get]
+func (h *UserHandler) GetUser(c *gin.Context) {
+    // 解析路径参数
+    id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid user id"})
+        return
+    }
+
+    user, err := h.service.GetUser(c.Request.Context(), id)
+    if err != nil {
+        if errors.Is(err, service.ErrUserNotFound) {
+            c.JSON(http.StatusNotFound, ErrorResponse{Error: "user not found"})
+            return
+        }
+        c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+        return
+    }
+
+    c.JSON(http.StatusOK, user)
+}
+```
+
+## 路由注册
+
+### 分组路由
+
+```go
+func RegisterUserRoutes(r *gin.RouterGroup, handler *UserHandler, authMiddleware gin.HandlerFunc) {
+    users := r.Group("/users")
+    {
+        users.GET("", handler.ListUsers)           // 获取用户列表
+        users.POST("", handler.CreateUser)         // 创建用户
+        users.GET("/:id", handler.GetUser)         // 获取用户详情
+        
+        // 需要认证的路由
+        authenticated := users.Group("")
+        authenticated.Use(authMiddleware)
+        {
+            authenticated.PUT("/:id", handler.UpdateUser)       // 更新用户
+            authenticated.DELETE("/:id", handler.DeleteUser)    // 删除用户
+        }
+    }
+}
+```
+
+### 管理端路由
+
+```go
+func SetupAdminRoutes(r *gin.Engine, handlers *AdminHandlers, auth *middleware.AuthMiddleware) {
+    api := r.Group("/api/v1/admin")
+    api.Use(auth.RequireAuth())
+    api.Use(auth.RequireRole("admin"))
+    {
+        // 用户管理
+        users := api.Group("/users")
+        {
+            users.GET("", handlers.User.ListUsers)
+            users.GET("/:id", handlers.User.GetUser)
+            users.PUT("/:id", handlers.User.UpdateUser)
+            users.DELETE("/:id", handlers.User.DeleteUser)
+        }
+
+        // 订单管理
+        orders := api.Group("/orders")
+        {
+            orders.GET("", handlers.Order.ListOrders)
+            orders.GET("/:id", handlers.Order.GetOrder)
+            orders.PUT("/:id/status", handlers.Order.UpdateStatus)
+        }
+    }
+}
+```
+
+## HTTP 状态码使用
+
+### 常用状态码
+
+```go
+// 成功响应
+200 OK                  // 成功获取资源
+201 Created            // 成功创建资源
+204 No Content         // 成功删除资源
+
+// 客户端错误
+400 Bad Request        // 请求参数错误
+401 Unauthorized       // 未认证
+403 Forbidden          // 无权限
+404 Not Found          // 资源不存在
+409 Conflict           // 资源冲突 (如重复创建)
+422 Unprocessable Entity // 验证失败
+
+// 服务器错误
+500 Internal Server Error // 服务器内部错误
+503 Service Unavailable   // 服务不可用
+```
+
+### 状态码选择指南
+
+```go
+// 验证错误
+if err := validate(req); err != nil {
+    c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+    return
+}
+
+// 资源不存在
+if errors.Is(err, ErrNotFound) {
+    c.JSON(http.StatusNotFound, ErrorResponse{Error: "resource not found"})
+    return
+}
+
+// 权限不足
+if errors.Is(err, ErrPermissionDenied) {
+    c.JSON(http.StatusForbidden, ErrorResponse{Error: "permission denied"})
+    return
+}
+
+// 资源冲突
+if errors.Is(err, ErrAlreadyExists) {
+    c.JSON(http.StatusConflict, ErrorResponse{Error: "resource already exists"})
+    return
+}
+```
+
+## 参数验证
+
+### 使用 Gin 的绑定验证
+
+```go
+type CreateOrderRequest struct {
+    UserID    uint64  `json:"userId" binding:"required"`
+    GameID    uint64  `json:"gameId" binding:"required"`
+    Price     float64 `json:"price" binding:"required,gt=0"`
+    Duration  int     `json:"duration" binding:"required,min=1,max=480"`
+    StartTime string  `json:"startTime" binding:"required"`
+}
+
+// 在 Handler 中
+if err := c.ShouldBindJSON(&req); err != nil {
+    c.JSON(http.StatusBadRequest, ErrorResponse{
+        Error: fmt.Sprintf("validation failed: %v", err),
+    })
+    return
+}
+```
+
+### 自定义验证
+
+```go
+func (h *OrderHandler) CreateOrder(c *gin.Context) {
+    var req CreateOrderRequest
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+        return
+    }
+
+    // 自定义业务验证
+    if err := h.validateOrderRequest(&req); err != nil {
+        c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+        return
+    }
+
+    // 处理订单创建...
+}
+
+func (h *OrderHandler) validateOrderRequest(req *CreateOrderRequest) error {
+    // 验证开始时间
+    startTime, err := time.Parse(time.RFC3339, req.StartTime)
+    if err != nil {
+        return fmt.Errorf("invalid start time format")
+    }
+
+    if startTime.Before(time.Now()) {
+        return fmt.Errorf("start time cannot be in the past")
+    }
+
+    return nil
+}
+```
+
+## Swagger 文档
+
+### 添加 Swagger 注释
+
+```go
+// @Summary     创建订单
+// @Description 用户创建游戏陪玩订单
+// @Tags        orders
+// @Accept      json
+// @Produce     json
+// @Param       Authorization header   string           true "Bearer token"
+// @Param       request       body     CreateOrderRequest true "订单信息"
+// @Success     201           {object} OrderResponse
+// @Failure     400           {object} ErrorResponse "请求参数错误"
+// @Failure     401           {object} ErrorResponse "未认证"
+// @Failure     500           {object} ErrorResponse "服务器错误"
+// @Router      /api/v1/orders [post]
+// @Security    BearerAuth
+func (h *OrderHandler) CreateOrder(c *gin.Context) {
+    // 实现...
+}
+```
+
+## API 设计检查清单
+
+设计 API 时，确保：
+
+- [ ] 使用 RESTful 风格的路由
+- [ ] JSON 字段使用 camelCase 命名
+- [ ] 定义清晰的 Request 和 Response 结构
+- [ ] 使用合适的 HTTP 状态码
+- [ ] 实现参数验证
+- [ ] 添加 Swagger 文档注释
+- [ ] 统一的错误响应格式
+- [ ] 分页查询使用统一的参数 (page, pageSize)
+- [ ] 需要认证的接口添加认证中间件
+- [ ] 敏感操作添加权限检查

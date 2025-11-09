@@ -68,6 +68,7 @@ type PermissionRepository interface {
 	ListGroups(ctx context.Context) ([]string, error)
 	Get(ctx context.Context, id uint64) (*model.Permission, error)
 	GetByResource(ctx context.Context, resource, action string) (*model.Permission, error)
+	GetByCode(ctx context.Context, code string) (*model.Permission, error)
 	GetByMethodAndPath(ctx context.Context, method, path string) (*model.Permission, error)
 	Create(ctx context.Context, perm *model.Permission) error
 	Update(ctx context.Context, perm *model.Permission) error
@@ -214,4 +215,114 @@ type PlayerTop struct {
 	Nickname      string  `json:"nickname"`
 	RatingAverage float32 `json:"ratingAverage"`
 	RatingCount   uint32  `json:"ratingCount"`
+}
+
+// WithdrawRepository 提现记录仓储接口
+type WithdrawRepository interface {
+	Create(ctx context.Context, withdraw *model.Withdraw) error
+	Get(ctx context.Context, id uint64) (*model.Withdraw, error)
+	Update(ctx context.Context, withdraw *model.Withdraw) error
+	List(ctx context.Context, opts interface{}) ([]model.Withdraw, int64, error)
+	GetPlayerBalance(ctx context.Context, playerID uint64) (interface{}, error)
+}
+
+// ServiceItemRepository 服务项目仓储接口
+type ServiceItemRepository interface {
+	Create(ctx context.Context, item *model.ServiceItem) error
+	Get(ctx context.Context, id uint64) (*model.ServiceItem, error)
+	GetByCode(ctx context.Context, itemCode string) (*model.ServiceItem, error)
+	List(ctx context.Context, opts interface{}) ([]model.ServiceItem, int64, error)
+	Update(ctx context.Context, item *model.ServiceItem) error
+	Delete(ctx context.Context, id uint64) error
+	BatchUpdateStatus(ctx context.Context, ids []uint64, isActive bool) error
+	BatchUpdatePrice(ctx context.Context, ids []uint64, basePriceCents int64) error
+	GetGifts(ctx context.Context, page, pageSize int) ([]model.ServiceItem, int64, error)
+	GetGameServices(ctx context.Context, gameID uint64, subCategory *model.ServiceItemSubCategory) ([]model.ServiceItem, error)
+}
+
+// CommissionRepository 抽成记录仓储接口
+type CommissionRepository interface {
+	// 抽成规则
+	CreateRule(ctx context.Context, rule *model.CommissionRule) error
+	GetRule(ctx context.Context, id uint64) (*model.CommissionRule, error)
+	GetDefaultRule(ctx context.Context) (*model.CommissionRule, error)
+	GetRuleForOrder(ctx context.Context, gameID *uint64, playerID *uint64, serviceType *string) (*model.CommissionRule, error)
+	ListRules(ctx context.Context, opts interface{}) ([]model.CommissionRule, int64, error)
+	UpdateRule(ctx context.Context, rule *model.CommissionRule) error
+	DeleteRule(ctx context.Context, id uint64) error
+	// 抽成记录
+	CreateRecord(ctx context.Context, record *model.CommissionRecord) error
+	GetRecord(ctx context.Context, id uint64) (*model.CommissionRecord, error)
+	GetRecordByOrderID(ctx context.Context, orderID uint64) (*model.CommissionRecord, error)
+	ListRecords(ctx context.Context, opts interface{}) ([]model.CommissionRecord, int64, error)
+	UpdateRecord(ctx context.Context, record *model.CommissionRecord) error
+	// 月度结算
+	CreateSettlement(ctx context.Context, settlement *model.MonthlySettlement) error
+	GetSettlement(ctx context.Context, id uint64) (*model.MonthlySettlement, error)
+	GetSettlementByPlayerMonth(ctx context.Context, playerID uint64, month string) (*model.MonthlySettlement, error)
+	ListSettlements(ctx context.Context, opts interface{}) ([]model.MonthlySettlement, int64, error)
+	UpdateSettlement(ctx context.Context, settlement *model.MonthlySettlement) error
+	// 统计查询
+	GetMonthlyStats(ctx context.Context, month string) (interface{}, error)
+	GetPlayerMonthlyIncome(ctx context.Context, playerID uint64, month string) (int64, error)
+}
+
+// RankingCommissionRepository 排名抽成配置仓储
+type RankingCommissionRepository interface {
+	CreateConfig(ctx context.Context, config *model.RankingCommissionConfig) error
+	GetConfig(ctx context.Context, id uint64) (*model.RankingCommissionConfig, error)
+	GetActiveConfigForMonth(ctx context.Context, rankingType model.RankingType, month string) (*model.RankingCommissionConfig, error)
+	ListConfigs(ctx context.Context, opts interface{}) ([]model.RankingCommissionConfig, int64, error)
+	UpdateConfig(ctx context.Context, config *model.RankingCommissionConfig) error
+	DeleteConfig(ctx context.Context, id uint64) error
+}
+
+// ServiceItemListOptions 服务项列表查询选项
+type ServiceItemListOptions struct {
+	Page        int
+	PageSize    int
+	GameID      *uint64
+	PlayerID    *uint64
+	Category    string
+	SubCategory string
+	IsActive    *bool
+}
+
+// CommissionRuleListOptions 抽成规则列表选项
+type CommissionRuleListOptions struct {
+	GameID      *uint64
+	PlayerID    *uint64
+	ServiceType string
+	IsActive    *bool
+	Page        int
+	PageSize    int
+}
+
+// CommissionRecordListOptions 抽成记录列表选项
+type CommissionRecordListOptions struct {
+	PlayerID        *uint64
+	StartTime       *time.Time
+	EndTime         *time.Time
+	SettlementMonth *string
+	Status          string
+	Page            int
+	PageSize        int
+}
+
+// SettlementListOptions 结算列表选项
+type SettlementListOptions struct {
+	PlayerID        *uint64
+	SettlementMonth *string
+	Status          *string
+	Page            int
+	PageSize        int
+}
+
+// MonthlyStats 月度统计
+type MonthlyStats struct {
+	Month                  string
+	TotalOrders            int64
+	TotalRevenueCents      int64
+	TotalCommissionCents   int64
+	TotalPlayerIncomeCents int64
 }

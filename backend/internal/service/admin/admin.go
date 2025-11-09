@@ -711,20 +711,20 @@ func validatePlayerInput(userID uint64, verification model.VerificationStatus) e
 
 // CreateOrderInput 创建订单请求。
 type CreateOrderInput struct {
-	UserID         uint64
-	PlayerID       *uint64
-	GameID         uint64
-	Title          string
-	Description    string
-	PriceCents     int64
-	Currency       model.Currency
-	ScheduledStart *time.Time
-	ScheduledEnd   *time.Time
+	UserID          uint64
+	PlayerID        *uint64
+	GameID          uint64
+	Title           string
+	Description     string
+	TotalPriceCents int64
+	Currency        model.Currency
+	ScheduledStart  *time.Time
+	ScheduledEnd    *time.Time
 }
 
 // CreateOrder 新建订单，默认状态为 pending。
 func (s *AdminService) CreateOrder(ctx context.Context, in CreateOrderInput) (*model.Order, error) {
-	if in.UserID == 0 || in.GameID == 0 || in.PriceCents < 0 || !model.IsValidCurrency(in.Currency) {
+	if in.UserID == 0 || in.GameID == 0 || in.TotalPriceCents < 0 || !model.IsValidCurrency(in.Currency) {
 		return nil, ErrValidation
 	}
 	if in.ScheduledStart != nil && in.ScheduledEnd != nil && in.ScheduledEnd.Before(*in.ScheduledStart) {
@@ -742,8 +742,8 @@ func (s *AdminService) CreateOrder(ctx context.Context, in CreateOrderInput) (*m
 		ItemID:          1, // TODO: 需要从service_items选择
 		GameID:          &gameID,
 		Quantity:        1,
-		UnitPriceCents:  in.PriceCents,
-		TotalPriceCents: in.PriceCents,
+		UnitPriceCents:  in.TotalPriceCents,
+		TotalPriceCents: in.TotalPriceCents,
 		Currency:        in.Currency,
 		Status:          model.OrderStatusPending,
 		Title:           strings.TrimSpace(in.Title),
@@ -791,7 +791,7 @@ func (s *AdminService) AssignOrder(ctx context.Context, id uint64, playerID uint
 // UpdateOrderInput 用于更新订单状态。
 type UpdateOrderInput struct {
 	Status            model.OrderStatus
-	PriceCents        int64
+	TotalPriceCents   int64
 	Currency          model.Currency
 	ScheduledStart    *time.Time
 	ScheduledEnd      *time.Time
@@ -875,7 +875,7 @@ func (s *AdminService) UpdateOrder(ctx context.Context, id uint64, input UpdateO
 	if !model.IsValidCurrency(input.Currency) {
 		return nil, ErrValidation
 	}
-	if input.PriceCents < 0 {
+	if input.TotalPriceCents < 0 {
 		return nil, ErrValidation
 	}
 	if input.ScheduledStart != nil && input.ScheduledEnd != nil && input.ScheduledEnd.Before(*input.ScheduledStart) {
@@ -890,7 +890,7 @@ func (s *AdminService) UpdateOrder(ctx context.Context, id uint64, input UpdateO
 	prevStatus := order.Status
 
 	order.Status = input.Status
-	order.TotalPriceCents = input.PriceCents
+	order.TotalPriceCents = input.TotalPriceCents
 	order.Currency = input.Currency
 	order.ScheduledStart = input.ScheduledStart
 	order.ScheduledEnd = input.ScheduledEnd
@@ -973,17 +973,17 @@ func (s *AdminService) ConfirmOrder(ctx context.Context, id uint64, note string)
 	}
 	note = strings.TrimSpace(note)
 	return s.UpdateOrder(ctx, id, UpdateOrderInput{
-		Status:         model.OrderStatusConfirmed,
-		PriceCents:     order.TotalPriceCents,
-		Currency:       order.Currency,
-		ScheduledStart: order.ScheduledStart,
-		ScheduledEnd:   order.ScheduledEnd,
-		CancelReason:   order.CancelReason,
-		StartedAt:      order.StartedAt,
-		CompletedAt:    order.CompletedAt,
-		RefundReason:   order.RefundReason,
-		RefundedAt:     order.RefundedAt,
-		Note:           note,
+		Status:          model.OrderStatusConfirmed,
+		TotalPriceCents: order.TotalPriceCents,
+		Currency:        order.Currency,
+		ScheduledStart:  order.ScheduledStart,
+		ScheduledEnd:    order.ScheduledEnd,
+		CancelReason:    order.CancelReason,
+		StartedAt:       order.StartedAt,
+		CompletedAt:     order.CompletedAt,
+		RefundReason:    order.RefundReason,
+		RefundedAt:      order.RefundedAt,
+		Note:            note,
 	})
 }
 
@@ -996,17 +996,17 @@ func (s *AdminService) StartOrder(ctx context.Context, id uint64, note string) (
 	note = strings.TrimSpace(note)
 	startedAt := time.Now().UTC()
 	return s.UpdateOrder(ctx, id, UpdateOrderInput{
-		Status:         model.OrderStatusInProgress,
-		PriceCents:     order.TotalPriceCents,
-		Currency:       order.Currency,
-		ScheduledStart: order.ScheduledStart,
-		ScheduledEnd:   order.ScheduledEnd,
-		CancelReason:   order.CancelReason,
-		StartedAt:      &startedAt,
-		CompletedAt:    order.CompletedAt,
-		RefundReason:   order.RefundReason,
-		RefundedAt:     order.RefundedAt,
-		Note:           note,
+		Status:          model.OrderStatusInProgress,
+		TotalPriceCents: order.TotalPriceCents,
+		Currency:        order.Currency,
+		ScheduledStart:  order.ScheduledStart,
+		ScheduledEnd:    order.ScheduledEnd,
+		CancelReason:    order.CancelReason,
+		StartedAt:       &startedAt,
+		CompletedAt:     order.CompletedAt,
+		RefundReason:    order.RefundReason,
+		RefundedAt:      order.RefundedAt,
+		Note:            note,
 	})
 }
 
@@ -1019,17 +1019,17 @@ func (s *AdminService) CompleteOrder(ctx context.Context, id uint64, note string
 	note = strings.TrimSpace(note)
 	completedAt := time.Now().UTC()
 	return s.UpdateOrder(ctx, id, UpdateOrderInput{
-		Status:         model.OrderStatusCompleted,
-		PriceCents:     order.TotalPriceCents,
-		Currency:       order.Currency,
-		ScheduledStart: order.ScheduledStart,
-		ScheduledEnd:   order.ScheduledEnd,
-		CancelReason:   order.CancelReason,
-		StartedAt:      order.StartedAt,
-		CompletedAt:    &completedAt,
-		RefundReason:   order.RefundReason,
-		RefundedAt:     order.RefundedAt,
-		Note:           note,
+		Status:          model.OrderStatusCompleted,
+		TotalPriceCents: order.TotalPriceCents,
+		Currency:        order.Currency,
+		ScheduledStart:  order.ScheduledStart,
+		ScheduledEnd:    order.ScheduledEnd,
+		CancelReason:    order.CancelReason,
+		StartedAt:       order.StartedAt,
+		CompletedAt:     &completedAt,
+		RefundReason:    order.RefundReason,
+		RefundedAt:      order.RefundedAt,
+		Note:            note,
 	})
 }
 
@@ -1060,7 +1060,7 @@ func (s *AdminService) RefundOrder(ctx context.Context, id uint64, input RefundO
 	note := strings.TrimSpace(input.Note)
 	updatedOrder, err := s.UpdateOrder(ctx, id, UpdateOrderInput{
 		Status:            model.OrderStatusRefunded,
-		PriceCents:        order.TotalPriceCents,
+		TotalPriceCents:   order.TotalPriceCents,
 		Currency:          order.Currency,
 		ScheduledStart:    order.ScheduledStart,
 		ScheduledEnd:      order.ScheduledEnd,

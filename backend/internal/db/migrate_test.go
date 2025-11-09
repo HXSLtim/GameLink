@@ -26,8 +26,12 @@ func TestRunDataFixups_OrderStatusSpelling(t *testing.T) {
 	if err := db1.Exec("INSERT INTO games (id, key, name) VALUES (1,'g','game')").Error; err != nil {
 		t.Fatalf("seed game: %v", err)
 	}
+	// Create a service item first (needed for foreign key constraint)
+	if err := db1.Exec("INSERT INTO service_items (id, item_code, name, sub_category, base_price_cents, service_hours) VALUES (1, 'TEST', 'Test Item', 'solo', 10000, 1)").Error; err != nil {
+		t.Fatalf("seed service_item: %v", err)
+	}
 	// insert legacy value
-	if err := db1.Exec("INSERT INTO orders (id, user_id, game_id, title, status, price_cents) VALUES (1, ?, 1, 't', 'cancelled', 0)", adminID).Error; err != nil {
+	if err := db1.Exec("INSERT INTO orders (id, order_no, user_id, item_id, game_id, title, status, unit_price_cents, total_price_cents) VALUES (1, 'TEST001', ?, 1, 1, 't', 'cancelled', 0, 0)", adminID).Error; err != nil {
 		t.Fatalf("insert legacy: %v", err)
 	}
 	// open again to trigger fixups on same shared memory database

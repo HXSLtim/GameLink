@@ -8,16 +8,16 @@ import (
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
-	"gamelink/internal/service"
+	roleservice "gamelink/internal/service/role"
 )
 
 // RoleHandler 角色管理处理器
 type RoleHandler struct {
-	roleSvc *service.RoleService
+	roleSvc *roleservice.RoleService
 }
 
 // NewRoleHandler 创建角色处理器实例
-func NewRoleHandler(roleSvc *service.RoleService) *RoleHandler {
+func NewRoleHandler(roleSvc *roleservice.RoleService) *RoleHandler {
 	return &RoleHandler{roleSvc: roleSvc}
 }
 
@@ -107,7 +107,8 @@ func (h *RoleHandler) GetRole(c *gin.Context) {
 	})
 }
 
-// CreateRole 创建角色�?func (h *RoleHandler) CreateRole(c *gin.Context) {
+// CreateRole 创建角色
+func (h *RoleHandler) CreateRole(c *gin.Context) {
 	var req struct {
 		Slug        string `json:"slug" binding:"required,max=64"`
 		Name        string `json:"name" binding:"required,max=128"`
@@ -139,7 +140,8 @@ func (h *RoleHandler) GetRole(c *gin.Context) {
 	})
 }
 
-// UpdateRole 更新角色�?func (h *RoleHandler) UpdateRole(c *gin.Context) {
+// UpdateRole 更新角色
+func (h *RoleHandler) UpdateRole(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
 		writeJSONError(c, http.StatusBadRequest, "无效的角色ID")
@@ -181,7 +183,8 @@ func (h *RoleHandler) GetRole(c *gin.Context) {
 	})
 }
 
-// DeleteRole 删除角色�?func (h *RoleHandler) DeleteRole(c *gin.Context) {
+// DeleteRole 删除角色
+func (h *RoleHandler) DeleteRole(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
 		writeJSONError(c, http.StatusBadRequest, "无效的角色ID")
@@ -201,7 +204,8 @@ func (h *RoleHandler) GetRole(c *gin.Context) {
 	})
 }
 
-// AssignPermissions 为角色分配权限�?func (h *RoleHandler) AssignPermissions(c *gin.Context) {
+// AssignPermissions 为角色分配权限
+func (h *RoleHandler) AssignPermissions(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
 		writeJSONError(c, http.StatusBadRequest, "无效的角色ID")
@@ -230,7 +234,8 @@ func (h *RoleHandler) GetRole(c *gin.Context) {
 	})
 }
 
-// AssignRolesToUser 为用户分配角色�?func (h *RoleHandler) AssignRolesToUser(c *gin.Context) {
+// AssignRolesToUser 为用户分配角色
+func (h *RoleHandler) AssignRolesToUser(c *gin.Context) {
 	var req struct {
 		UserID  uint64   `json:"userId" binding:"required"`
 		RoleIDs []uint64 `json:"roleIds" binding:"required"`
@@ -254,7 +259,8 @@ func (h *RoleHandler) GetRole(c *gin.Context) {
 	})
 }
 
-// GetUserRoles 获取用户的角色列表�?func (h *RoleHandler) GetUserRoles(c *gin.Context) {
+// GetUserRoles 获取用户的角色列表
+func (h *RoleHandler) GetUserRoles(c *gin.Context) {
 	userID, err := parseUintParam(c, "user_id")
 	if err != nil {
 		writeJSONError(c, http.StatusBadRequest, "无效的用户ID")

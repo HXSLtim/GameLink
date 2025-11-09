@@ -58,8 +58,10 @@ func TestStatsRepository_Dashboard(t *testing.T) {
 
 	db.Create(&model.Game{Name: "Game1", IconURL: "http://example.com/icon.jpg"})
 
-	db.Create(&model.Order{UserID: 1, PlayerID: 1, GameID: 1, Title: "Order1", PriceCents: 20000, Status: model.OrderStatusPending})
-	db.Create(&model.Order{UserID: 2, PlayerID: 1, GameID: 1, Title: "Order2", PriceCents: 10000, Status: model.OrderStatusCompleted})
+	playerID := uint64(1)
+	gameID := uint64(1)
+	db.Create(&model.Order{OrderNo: "TEST_ORDER_001", UserID: 1, PlayerID: &playerID, GameID: &gameID, ItemID: 1, Title: "Order1", UnitPriceCents: 20000, TotalPriceCents: 20000, Status: model.OrderStatusPending})
+	db.Create(&model.Order{OrderNo: "TEST_ORDER_002", UserID: 2, PlayerID: &playerID, GameID: &gameID, ItemID: 1, Title: "Order2", UnitPriceCents: 10000, TotalPriceCents: 10000, Status: model.OrderStatusCompleted})
 
 	db.Create(&model.Payment{OrderID: 1, AmountCents: 20000, Status: "pending"})
 	paidAt := now
@@ -147,9 +149,11 @@ func TestStatsRepository_OrdersByStatus(t *testing.T) {
 	repo := NewStatsRepository(db)
 
 	// Create test orders
-	db.Create(&model.Order{UserID: 1, PlayerID: 1, GameID: 1, Title: "Order1", PriceCents: 20000, Status: model.OrderStatusPending})
-	db.Create(&model.Order{UserID: 1, PlayerID: 1, GameID: 1, Title: "Order2", PriceCents: 10000, Status: model.OrderStatusPending})
-	db.Create(&model.Order{UserID: 2, PlayerID: 1, GameID: 1, Title: "Order3", PriceCents: 10000, Status: model.OrderStatusCompleted})
+	playerID := uint64(1)
+	gameID := uint64(1)
+	db.Create(&model.Order{OrderNo: "TEST_ORDER_101", UserID: 1, PlayerID: &playerID, GameID: &gameID, ItemID: 1, Title: "Order1", UnitPriceCents: 20000, TotalPriceCents: 20000, Status: model.OrderStatusPending})
+	db.Create(&model.Order{OrderNo: "TEST_ORDER_102", UserID: 1, PlayerID: &playerID, GameID: &gameID, ItemID: 1, Title: "Order2", UnitPriceCents: 10000, TotalPriceCents: 10000, Status: model.OrderStatusPending})
+	db.Create(&model.Order{OrderNo: "TEST_ORDER_103", UserID: 2, PlayerID: &playerID, GameID: &gameID, ItemID: 1, Title: "Order3", UnitPriceCents: 10000, TotalPriceCents: 10000, Status: model.OrderStatusCompleted})
 
 	stats, err := repo.OrdersByStatus(testContext())
 	if err != nil {

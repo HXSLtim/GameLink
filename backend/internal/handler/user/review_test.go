@@ -87,8 +87,13 @@ func TestCreateReviewHandler_Success(t *testing.T) {
 	reviewRepo := newMockReviewRepoForUserReview()
 	orderRepo := newFakeOrderRepository()
 	// Create a completed order for user 100 with a different order ID (not 10 or 11 which already have reviews)
+	playerID := uint64(1)
 	order := &model.Order{
-		UserID: 100, PlayerID: 1, Status: model.OrderStatusCompleted,
+		UserID:   100,
+		PlayerID: &playerID,
+		Status:   model.OrderStatusCompleted,
+		ItemID:   1,
+		OrderNo:  "REVIEW-TEST-CREATE",
 	}
 	orderRepo.Create(context.Background(), order)
 	// order.ID will be set by Create method to 1 (first order in empty repo)
@@ -155,9 +160,14 @@ func TestCreateReviewHandler_AlreadyReviewed(t *testing.T) {
 	reviewRepo := newMockReviewRepoForUserReview()
 	orderRepo := newFakeOrderRepository()
 	// Create a completed order that matches the review mock data (OrderID 10)
+	playerID := uint64(1)
 	order := &model.Order{
-		Base:   model.Base{ID: 10},
-		UserID: 100, PlayerID: 1, Status: model.OrderStatusCompleted,
+		Base:     model.Base{ID: 10},
+		UserID:   100,
+		PlayerID: &playerID,
+		Status:   model.OrderStatusCompleted,
+		ItemID:   1,
+		OrderNo:  "REVIEW-TEST-DUPLICATE",
 	}
 	orderRepo.orders[10] = order // Manually add to match mock review data
 

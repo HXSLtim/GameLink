@@ -11,18 +11,110 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"gamelink/internal/model"
+	"gamelink/internal/repository"
+	withdrawrepo "gamelink/internal/repository/withdraw"
 	"gamelink/internal/service/earnings"
 )
 
 // ---- Fake Repositories for earnings tests ----
-// Note: We reuse the fake repositories from user_order_test.go for player and order repositories
+
+type fakePlayerRepositoryForEarnings struct{}
+
+func (m *fakePlayerRepositoryForEarnings) List(ctx context.Context) ([]model.Player, error) {
+	return []model.Player{{Base: model.Base{ID: 1}, UserID: 200, Nickname: "TestPlayer"}}, nil
+}
+func (m *fakePlayerRepositoryForEarnings) ListPaged(ctx context.Context, page, pageSize int) ([]model.Player, int64, error) {
+	return []model.Player{{Base: model.Base{ID: 1}, UserID: 200, Nickname: "TestPlayer"}}, 1, nil
+}
+func (m *fakePlayerRepositoryForEarnings) Get(ctx context.Context, id uint64) (*model.Player, error) {
+	return &model.Player{Base: model.Base{ID: id}, UserID: 200, Nickname: "TestPlayer"}, nil
+}
+func (m *fakePlayerRepositoryForEarnings) GetByUserID(ctx context.Context, userID uint64) (*model.Player, error) {
+	return &model.Player{Base: model.Base{ID: 1}, UserID: userID, Nickname: "TestPlayer"}, nil
+}
+func (m *fakePlayerRepositoryForEarnings) Create(ctx context.Context, player *model.Player) error {
+	return nil
+}
+func (m *fakePlayerRepositoryForEarnings) Update(ctx context.Context, player *model.Player) error {
+	return nil
+}
+func (m *fakePlayerRepositoryForEarnings) Delete(ctx context.Context, id uint64) error { return nil }
+func (m *fakePlayerRepositoryForEarnings) ListByGameID(ctx context.Context, gameID uint64) ([]model.Player, error) {
+	return []model.Player{}, nil
+}
+
+type fakeOrderRepositoryForEarnings struct {
+	orders map[uint64]*model.Order
+}
+
+func newFakeOrderRepositoryForEarnings() *fakeOrderRepositoryForEarnings {
+	return &fakeOrderRepositoryForEarnings{orders: make(map[uint64]*model.Order)}
+}
+
+func (m *fakeOrderRepositoryForEarnings) Create(ctx context.Context, o *model.Order) error {
+	o.ID = uint64(len(m.orders) + 1)
+	m.orders[o.ID] = o
+	return nil
+}
+
+func (m *fakeOrderRepositoryForEarnings) List(ctx context.Context, opts repository.OrderListOptions) ([]model.Order, int64, error) {
+	var res []model.Order
+	for _, o := range m.orders {
+		res = append(res, *o)
+	}
+	return res, int64(len(res)), nil
+}
+
+func (m *fakeOrderRepositoryForEarnings) Get(ctx context.Context, id uint64) (*model.Order, error) {
+	if o, ok := m.orders[id]; ok {
+		return o, nil
+	}
+	return nil, repository.ErrNotFound
+}
+
+func (m *fakeOrderRepositoryForEarnings) Update(ctx context.Context, o *model.Order) error {
+	m.orders[o.ID] = o
+	return nil
+}
+
+func (m *fakeOrderRepositoryForEarnings) Delete(ctx context.Context, id uint64) error {
+	delete(m.orders, id)
+	return nil
+}
+
+type fakeWithdrawRepositoryForEarnings struct{}
+
+func (m *fakeWithdrawRepositoryForEarnings) Create(ctx context.Context, withdraw *model.Withdraw) error {
+	return nil
+}
+func (m *fakeWithdrawRepositoryForEarnings) Get(ctx context.Context, id uint64) (*model.Withdraw, error) {
+	return &model.Withdraw{}, nil
+}
+func (m *fakeWithdrawRepositoryForEarnings) List(ctx context.Context, opts withdrawrepo.WithdrawListOptions) ([]model.Withdraw, int64, error) {
+	return []model.Withdraw{}, 0, nil
+}
+func (m *fakeWithdrawRepositoryForEarnings) Update(ctx context.Context, withdraw *model.Withdraw) error {
+	return nil
+}
+func (m *fakeWithdrawRepositoryForEarnings) Delete(ctx context.Context, id uint64) error {
+	return nil
+}
+func (m *fakeWithdrawRepositoryForEarnings) GetPlayerBalance(ctx context.Context, playerID uint64) (*withdrawrepo.PlayerBalance, error) {
+	return &withdrawrepo.PlayerBalance{
+		TotalEarnings:    15000,
+		WithdrawTotal:    0,
+		PendingWithdraw:  0,
+		AvailableBalance: 15000,
+		PendingBalance:   0,
+	}, nil
+}
 
 // ---- Tests for player_earnings.go ----
 
 func TestGetEarningsSummaryHandler_Success(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	earningsSvc := earnings.NewEarningsService(&fakePlayerRepository{}, newFakeOrderRepository())
+	earningsSvc := earnings.NewEarningsService(&fakePlayerRepositoryForEarnings{}, newFakeOrderRepositoryForEarnings(), &fakeWithdrawRepositoryForEarnings{})
 
 	router := gin.New()
 	router.GET("/player/earnings/summary", func(c *gin.Context) {
@@ -51,7 +143,7 @@ func TestGetEarningsSummaryHandler_Success(t *testing.T) {
 func TestGetEarningsTrendHandler_Success(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	earningsSvc := earnings.NewEarningsService(&fakePlayerRepository{}, newFakeOrderRepository())
+	earningsSvc := earnings.NewEarningsService(&fakePlayerRepositoryForEarnings{}, newFakeOrderRepositoryForEarnings(), &fakeWithdrawRepositoryForEarnings{})
 
 	router := gin.New()
 	router.GET("/player/earnings/trend", func(c *gin.Context) {
@@ -80,7 +172,7 @@ func TestGetEarningsTrendHandler_Success(t *testing.T) {
 func TestGetEarningsTrendHandler_InvalidDays(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	earningsSvc := earnings.NewEarningsService(&fakePlayerRepository{}, newFakeOrderRepository())
+	earningsSvc := earnings.NewEarningsService(&fakePlayerRepositoryForEarnings{}, newFakeOrderRepositoryForEarnings(), &fakeWithdrawRepositoryForEarnings{})
 
 	router := gin.New()
 	router.GET("/player/earnings/trend", func(c *gin.Context) {
@@ -119,20 +211,25 @@ func TestGetEarningsTrendHandler_InvalidDays(t *testing.T) {
 func TestRequestWithdrawHandler_Success(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	orderRepo := newFakeOrderRepository()
+	orderRepo := newFakeOrderRepositoryForEarnings()
 	// Create some completed orders to give the player earnings
 	for i := 0; i < 3; i++ {
+		playerID := uint64(1) // Player with UserID 200
+		gameID := uint64(1)
 		order := &model.Order{
-			UserID:     100 + uint64(i),
-			PlayerID:   1, // Player with UserID 200
-			Status:     model.OrderStatusCompleted,
-			PriceCents: 5000, // Total: 15000 cents
-			GameID:     1,
+			UserID:          100 + uint64(i),
+			PlayerID:        &playerID,
+			GameID:          &gameID,
+			ItemID:          1,
+			OrderNo:         "EARNINGS-TEST-" + string(rune('A'+i)),
+			Status:          model.OrderStatusCompleted,
+			TotalPriceCents: 5000, // Total: 15000 cents
+			UnitPriceCents:  5000,
 		}
 		orderRepo.Create(context.Background(), order)
 	}
 
-	earningsSvc := earnings.NewEarningsService(&fakePlayerRepository{}, orderRepo)
+	earningsSvc := earnings.NewEarningsService(&fakePlayerRepositoryForEarnings{}, orderRepo, &fakeWithdrawRepositoryForEarnings{})
 
 	router := gin.New()
 	router.POST("/player/earnings/withdraw", func(c *gin.Context) {
@@ -160,7 +257,7 @@ func TestRequestWithdrawHandler_Success(t *testing.T) {
 func TestRequestWithdrawHandler_InvalidJSON(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	earningsSvc := earnings.NewEarningsService(&fakePlayerRepository{}, newFakeOrderRepository())
+	earningsSvc := earnings.NewEarningsService(&fakePlayerRepositoryForEarnings{}, newFakeOrderRepositoryForEarnings(), &fakeWithdrawRepositoryForEarnings{})
 
 	router := gin.New()
 	router.POST("/player/earnings/withdraw", func(c *gin.Context) {
@@ -181,7 +278,7 @@ func TestRequestWithdrawHandler_InvalidJSON(t *testing.T) {
 func TestGetWithdrawHistoryHandler_Success(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	earningsSvc := earnings.NewEarningsService(&fakePlayerRepository{}, newFakeOrderRepository())
+	earningsSvc := earnings.NewEarningsService(&fakePlayerRepositoryForEarnings{}, newFakeOrderRepositoryForEarnings(), &fakeWithdrawRepositoryForEarnings{})
 
 	router := gin.New()
 	router.GET("/player/earnings/withdraw-history", func(c *gin.Context) {

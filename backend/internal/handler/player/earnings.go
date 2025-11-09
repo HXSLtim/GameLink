@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"gamelink/internal/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/service/earnings"
 )
@@ -64,7 +65,7 @@ func getEarningsTrendHandler(c *gin.Context, svc *earnings.EarningsService) {
 
 	days, err := strconv.Atoi(c.Query("days"))
 	if err != nil || days < 7 || days > 90 {
-		respondError(c, http.StatusBadRequest, ErrInvalidParameter)
+		respondError(c, http.StatusBadRequest, apierr.ErrMissingRequiredFields)
 		return
 	}
 
