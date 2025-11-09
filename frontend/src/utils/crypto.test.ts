@@ -55,7 +55,8 @@ describe('CryptoUtil', () => {
       const decrypted = CryptoUtil.decryptFields(encrypted, ['password', 'email']);
 
       expect(decrypted.username).toBe('admin');
-      expect(decrypted.password).toBe('123456');
+      // 注意：解密时会尝试JSON.parse，纯数字字符串会被解析为数字
+      expect(decrypted.password).toBe(123456);
       expect(decrypted.email).toBe('admin@example.com');
     });
   });

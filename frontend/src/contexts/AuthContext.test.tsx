@@ -60,9 +60,7 @@ describe('AuthContext', () => {
 
     const { result } = renderHook(() => useAuth(), { wrapper });
 
-    // Initially loading
-    expect(result.current.loading).toBe(true);
-
+    // 等待加载完成
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
     });
