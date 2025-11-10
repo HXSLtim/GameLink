@@ -1,15 +1,15 @@
 package middleware
 
 import (
-    "net/http"
-    "strings"
+	"net/http"
+	"strings"
 
-    "github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin"
 
-    "gamelink/internal/auth"
-    "gamelink/internal/model"
-    roleservice "gamelink/internal/service/role"
-    permissionservice "gamelink/internal/service/permission"
+	"gamelink/internal/auth"
+	"gamelink/internal/model"
+	permissionservice "gamelink/internal/service/permission"
+	roleservice "gamelink/internal/service/role"
 )
 
 const (
@@ -23,74 +23,75 @@ const (
 
 // PermissionMiddleware 权限中间件配置。
 type PermissionMiddleware struct {
-    jwtManager    *auth.JWTManager
-    permissionSvc *permissionservice.PermissionService
-    roleSvc       *roleservice.RoleService
+	jwtManager    *auth.JWTManager
+	permissionSvc *permissionservice.PermissionService
+	roleSvc       *roleservice.RoleService
 }
 
 // NewPermissionMiddleware 创建权限中间件实例。
 func NewPermissionMiddleware(
-    jwtManager *auth.JWTManager,
-    permissionSvc *permissionservice.PermissionService,
-    roleSvc *roleservice.RoleService,
+	jwtManager *auth.JWTManager,
+	permissionSvc *permissionservice.PermissionService,
+	roleSvc *roleservice.RoleService,
 ) *PermissionMiddleware {
-    return &PermissionMiddleware{
-        jwtManager:    jwtManager,
-        permissionSvc: permissionSvc,
-        roleSvc:       roleSvc,
-    }
+	return &PermissionMiddleware{
+		jwtManager:    jwtManager,
+		permissionSvc: permissionSvc,
+		roleSvc:       roleSvc,
+	}
 }
 
 // RequireAuth 要求用户已登录（验证 JWT）。
 func (m *PermissionMiddleware) RequireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 提取 Token
-		authHeader := c.GetHeader("Authorization")
-		token, err := auth.ExtractTokenFromHeader(authHeader)
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"success": false,
-				"code":    http.StatusUnauthorized,
-				"message": "未授权：" + err.Error(),
-			})
+		if !m.authenticateRequest(c) {
 			return
 		}
-
-		// 验证 Token
-		claims, err := m.jwtManager.VerifyToken(token)
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"success": false,
-				"code":    http.StatusUnauthorized,
-				"message": "Token 无效：" + err.Error(),
-			})
-			return
-		}
-
-		// 检查是否过期
-		if auth.IsTokenExpired(claims) {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"success": false,
-				"code":    http.StatusUnauthorized,
-				"message": "Token 已过期",
-			})
-			return
-		}
-
-		// 将用户信息存入上下文
-		c.Set(UserIDKey, claims.UserID)
-		c.Set(UserRoleKey, claims.Role)
-
 		c.Next()
 	}
+}
+
+// authenticateRequest 负责解析并验证 JWT，将用户信息写入 context，成功返回 true。
+func (m *PermissionMiddleware) authenticateRequest(c *gin.Context) bool {
+	authHeader := c.GetHeader("Authorization")
+	token, err := auth.ExtractTokenFromHeader(authHeader)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+			"success": false,
+			"code":    http.StatusUnauthorized,
+			"message": "未授权：" + err.Error(),
+		})
+		return false
+	}
+
+	claims, err := m.jwtManager.VerifyToken(token)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+			"success": false,
+			"code":    http.StatusUnauthorized,
+			"message": "Token 无效：" + err.Error(),
+		})
+		return false
+	}
+
+	if auth.IsTokenExpired(claims) {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+			"success": false,
+			"code":    http.StatusUnauthorized,
+			"message": "Token 已过期",
+		})
+		return false
+	}
+
+	c.Set(UserIDKey, claims.UserID)
+	c.Set(UserRoleKey, claims.Role)
+	return true
 }
 
 // RequireRole 要求用户拥有指定角色（向后兼容，使用旧的 role 字段）。
 func (m *PermissionMiddleware) RequireRole(requiredRole string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 先执行认证
-		m.RequireAuth()(c)
-		if c.IsAborted() {
+		if !m.authenticateRequest(c) {
 			return
 		}
 
@@ -178,9 +179,7 @@ func (m *PermissionMiddleware) RequirePermission(method model.HTTPMethod, path s
 // RequireAnyRole 要求用户拥有任一指定角色。
 func (m *PermissionMiddleware) RequireAnyRole(roles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 先执行认证
-		m.RequireAuth()(c)
-		if c.IsAborted() {
+		if !m.authenticateRequest(c) {
 			return
 		}
 

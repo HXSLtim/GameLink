@@ -1,6 +1,7 @@
 package user
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -337,5 +338,358 @@ func TestUserOrder_GetOrderDetail_InvalidID(t *testing.T) {
 	// Check that error message is reasonable for invalid ID
 	if resp.Message == "" {
 		t.Fatalf("expected non-empty error message")
+	}
+}
+
+// ---- Tests for createOrderHandler ----
+
+func TestUserOrder_CreateOrder_Success(t *testing.T) {
+	svc, _ := setupOrderTestService()
+	r := setupOrderTestRouter(svc, 100)
+
+	reqBody := `{"playerId":1,"gameId":1,"title":"Test Order","scheduledStart":"2025-01-15T10:00:00Z","durationHours":2.0}`
+	req, _ := http.NewRequest(http.MethodPost, "/user/orders", bytes.NewBufferString(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	var resp model.APIResponse[order.CreateOrderResponse]
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+
+	if !resp.Success || resp.Code != http.StatusOK {
+		t.Fatalf("unexpected response: success=%v code=%d", resp.Success, resp.Code)
+	}
+}
+
+func TestUserOrder_CreateOrder_InvalidJSON(t *testing.T) {
+	svc, _ := setupOrderTestService()
+	r := setupOrderTestRouter(svc, 100)
+
+	req, _ := http.NewRequest(http.MethodPost, "/user/orders", bytes.NewBufferString("invalid json"))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", rec.Code)
+	}
+}
+
+// ---- Tests for getMyOrdersHandler ----
+
+func TestUserOrder_GetMyOrders_Success(t *testing.T) {
+	svc, orders := setupOrderTestService()
+	gameID := uint64(1)
+	orders.orders[1] = &model.Order{
+		Base:            model.Base{ID: 1},
+		UserID:          100,
+		GameID:          &gameID,
+		ItemID:          1,
+		OrderNo:         "TEST-001",
+		Status:          model.OrderStatusPending,
+		TotalPriceCents: 2000,
+	}
+	orders.orders[2] = &model.Order{
+		Base:            model.Base{ID: 2},
+		UserID:          100,
+		GameID:          &gameID,
+		ItemID:          1,
+		OrderNo:         "TEST-002",
+		Status:          model.OrderStatusConfirmed,
+		TotalPriceCents: 3000,
+	}
+
+	r := setupOrderTestRouter(svc, 100)
+	req, _ := http.NewRequest(http.MethodGet, "/user/orders?page=1&pageSize=10", nil)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	var resp model.APIResponse[order.MyOrderListResponse]
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+
+	if !resp.Success {
+		t.Fatalf("expected success=true, got %v", resp.Success)
+	}
+}
+
+func TestUserOrder_GetMyOrders_WithStatusFilter(t *testing.T) {
+	svc, orders := setupOrderTestService()
+	gameID := uint64(1)
+	orders.orders[1] = &model.Order{
+		Base:   model.Base{ID: 1},
+		UserID: 100,
+		GameID: &gameID,
+		ItemID: 1,
+		Status: model.OrderStatusPending,
+	}
+
+	r := setupOrderTestRouter(svc, 100)
+	req, _ := http.NewRequest(http.MethodGet, "/user/orders?status=pending&page=1", nil)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", rec.Code)
+	}
+}
+
+func TestUserOrder_GetMyOrders_InvalidQuery(t *testing.T) {
+	svc, _ := setupOrderTestService()
+	r := setupOrderTestRouter(svc, 100)
+
+	// Invalid page parameter
+	req, _ := http.NewRequest(http.MethodGet, "/user/orders?page=invalid", nil)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", rec.Code)
+	}
+}
+
+// ---- Tests for cancelOrderHandler ----
+
+func TestUserOrder_CancelOrder_Success(t *testing.T) {
+	svc, orders := setupOrderTestService()
+	gameID := uint64(1)
+	orders.orders[1] = &model.Order{
+		Base:   model.Base{ID: 1},
+		UserID: 100,
+		GameID: &gameID,
+		ItemID: 1,
+		Status: model.OrderStatusPending,
+	}
+
+	r := setupOrderTestRouter(svc, 100)
+	reqBody := `{"reason":"不想要了"}`
+	req, _ := http.NewRequest(http.MethodPut, "/user/orders/1/cancel", bytes.NewBufferString(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	var resp model.APIResponse[any]
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+
+	if !resp.Success {
+		t.Fatalf("expected success=true, got %v", resp.Success)
+	}
+}
+
+func TestUserOrder_CancelOrder_InvalidID(t *testing.T) {
+	svc, _ := setupOrderTestService()
+	r := setupOrderTestRouter(svc, 100)
+
+	reqBody := `{"reason":"test"}`
+	req, _ := http.NewRequest(http.MethodPut, "/user/orders/invalid/cancel", bytes.NewBufferString(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", rec.Code)
+	}
+}
+
+func TestUserOrder_CancelOrder_InvalidJSON(t *testing.T) {
+	svc, orders := setupOrderTestService()
+	gameID := uint64(1)
+	orders.orders[1] = &model.Order{
+		Base:   model.Base{ID: 1},
+		UserID: 100,
+		GameID: &gameID,
+		Status: model.OrderStatusPending,
+	}
+
+	r := setupOrderTestRouter(svc, 100)
+	req, _ := http.NewRequest(http.MethodPut, "/user/orders/1/cancel", bytes.NewBufferString("invalid"))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", rec.Code)
+	}
+}
+
+func TestUserOrder_CancelOrder_Unauthorized(t *testing.T) {
+	svc, orders := setupOrderTestService()
+	gameID := uint64(1)
+	orders.orders[1] = &model.Order{
+		Base:   model.Base{ID: 1},
+		UserID: 100,
+		GameID: &gameID,
+		Status: model.OrderStatusPending,
+	}
+
+	// Different user trying to cancel
+	r := setupOrderTestRouter(svc, 999)
+	reqBody := `{"reason":"test"}`
+	req, _ := http.NewRequest(http.MethodPut, "/user/orders/1/cancel", bytes.NewBufferString(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("expected status 403, got %d", rec.Code)
+	}
+}
+
+func TestUserOrder_CancelOrder_InvalidTransition(t *testing.T) {
+	svc, orders := setupOrderTestService()
+	gameID := uint64(1)
+	orders.orders[1] = &model.Order{
+		Base:   model.Base{ID: 1},
+		UserID: 100,
+		GameID: &gameID,
+		Status: model.OrderStatusCompleted, // Already completed
+	}
+
+	r := setupOrderTestRouter(svc, 100)
+	reqBody := `{"reason":"test"}`
+	req, _ := http.NewRequest(http.MethodPut, "/user/orders/1/cancel", bytes.NewBufferString(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", rec.Code)
+	}
+}
+
+// ---- Tests for completeOrderHandler ----
+
+func TestUserOrder_CompleteOrder_Success(t *testing.T) {
+	svc, orders := setupOrderTestService()
+	gameID := uint64(1)
+	orders.orders[1] = &model.Order{
+		Base:   model.Base{ID: 1},
+		UserID: 100,
+		GameID: &gameID,
+		ItemID: 1,
+		Status: model.OrderStatusInProgress,
+	}
+
+	r := setupOrderTestRouter(svc, 100)
+	req, _ := http.NewRequest(http.MethodPut, "/user/orders/1/complete", nil)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	var resp model.APIResponse[any]
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+
+	if !resp.Success {
+		t.Fatalf("expected success=true, got %v", resp.Success)
+	}
+}
+
+func TestUserOrder_CompleteOrder_InvalidID(t *testing.T) {
+	svc, _ := setupOrderTestService()
+	r := setupOrderTestRouter(svc, 100)
+
+	req, _ := http.NewRequest(http.MethodPut, "/user/orders/invalid/complete", nil)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", rec.Code)
+	}
+}
+
+func TestUserOrder_CompleteOrder_Unauthorized(t *testing.T) {
+	svc, orders := setupOrderTestService()
+	gameID := uint64(1)
+	orders.orders[1] = &model.Order{
+		Base:   model.Base{ID: 1},
+		UserID: 100,
+		GameID: &gameID,
+		Status: model.OrderStatusInProgress,
+	}
+
+	// Different user trying to complete
+	r := setupOrderTestRouter(svc, 999)
+	req, _ := http.NewRequest(http.MethodPut, "/user/orders/1/complete", nil)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("expected status 403, got %d", rec.Code)
+	}
+}
+
+func TestUserOrder_CompleteOrder_InvalidTransition(t *testing.T) {
+	svc, orders := setupOrderTestService()
+	gameID := uint64(1)
+	orders.orders[1] = &model.Order{
+		Base:   model.Base{ID: 1},
+		UserID: 100,
+		GameID: &gameID,
+		Status: model.OrderStatusPending, // Wrong status
+	}
+
+	r := setupOrderTestRouter(svc, 100)
+	req, _ := http.NewRequest(http.MethodPut, "/user/orders/1/complete", nil)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", rec.Code)
+	}
+}
+
+// ---- Tests for getUserIDFromContext ----
+
+func TestGetUserIDFromContext_Success(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Set("user_id", uint64(123))
+
+	userID := getUserIDFromContext(c)
+	if userID != 123 {
+		t.Fatalf("expected userID 123, got %d", userID)
+	}
+}
+
+func TestGetUserIDFromContext_NotExists(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+
+	userID := getUserIDFromContext(c)
+	if userID != 0 {
+		t.Fatalf("expected userID 0, got %d", userID)
+	}
+}
+
+func TestGetUserIDFromContext_WrongType(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Set("user_id", "not a uint64")
+
+	userID := getUserIDFromContext(c)
+	if userID != 0 {
+		t.Fatalf("expected userID 0, got %d", userID)
 	}
 }

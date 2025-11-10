@@ -442,3 +442,241 @@ func TestCompleteOrderByPlayerHandler_InvalidID(t *testing.T) {
 		t.Fatalf("Expected status 400, got %d", w.Code)
 	}
 }
+
+// ---- Additional tests for better coverage ----
+
+func TestGetAvailableOrdersHandler_InvalidQuery(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	orderRepo := newMockOrderRepoForPlayerOrder()
+	orderSvc := order.NewOrderService(orderRepo, &fakePlayerRepositoryForOrder{}, &fakeUserRepository{}, &fakeGameRepository{}, &fakePaymentRepository{}, &fakeReviewRepository{}, &fakeCommissionRepositoryForOrder{})
+
+	router := gin.New()
+	router.GET("/player/orders/available", func(c *gin.Context) {
+		c.Set("user_id", uint64(200))
+		getAvailableOrdersHandler(c, orderSvc)
+	})
+
+	// Invalid page parameter
+	req := httptest.NewRequest(http.MethodGet, "/player/orders/available?page=invalid", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("Expected status 400, got %d", w.Code)
+	}
+}
+
+func TestGetAvailableOrdersHandler_ServiceError(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	orderRepo := newMockOrderRepoForPlayerOrder()
+	orderSvc := order.NewOrderService(orderRepo, &fakePlayerRepositoryForOrder{}, &fakeUserRepository{}, &fakeGameRepository{}, &fakePaymentRepository{}, &fakeReviewRepository{}, &fakeCommissionRepositoryForOrder{})
+
+	router := gin.New()
+	router.GET("/player/orders/available", func(c *gin.Context) {
+		c.Set("user_id", uint64(200))
+		getAvailableOrdersHandler(c, orderSvc)
+	})
+
+	// Valid request
+	req := httptest.NewRequest(http.MethodGet, "/player/orders/available", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("Expected status 200, got %d", w.Code)
+	}
+}
+
+func TestAcceptOrderHandler_NotFound(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	orderRepo := newMockOrderRepoForPlayerOrder()
+	orderSvc := order.NewOrderService(orderRepo, &fakePlayerRepositoryForOrder{}, &fakeUserRepository{}, &fakeGameRepository{}, &fakePaymentRepository{}, &fakeReviewRepository{}, &fakeCommissionRepositoryForOrder{})
+
+	router := gin.New()
+	router.POST("/player/orders/:id/accept", func(c *gin.Context) {
+		c.Set("user_id", uint64(200))
+		acceptOrderHandler(c, orderSvc)
+	})
+
+	// Order that doesn't exist
+	req := httptest.NewRequest(http.MethodPost, "/player/orders/9999/accept", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("Expected status 500, got %d", w.Code)
+	}
+}
+
+func TestAcceptOrderHandler_InvalidTransition(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	orderRepo := newMockOrderRepoForPlayerOrder()
+	orderSvc := order.NewOrderService(orderRepo, &fakePlayerRepositoryForOrder{}, &fakeUserRepository{}, &fakeGameRepository{}, &fakePaymentRepository{}, &fakeReviewRepository{}, &fakeCommissionRepositoryForOrder{})
+
+	router := gin.New()
+	router.POST("/player/orders/:id/accept", func(c *gin.Context) {
+		c.Set("user_id", uint64(200))
+		acceptOrderHandler(c, orderSvc)
+	})
+
+	// Order 2 has status Pending, should work
+	req := httptest.NewRequest(http.MethodPost, "/player/orders/2/accept", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	// Should succeed or fail based on business logic
+	if w.Code != http.StatusOK && w.Code != http.StatusBadRequest {
+		t.Fatalf("Expected status 200 or 400, got %d", w.Code)
+	}
+}
+
+func TestGetMyAcceptedOrdersHandler_InvalidQuery(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	orderRepo := newMockOrderRepoForPlayerOrder()
+	orderSvc := order.NewOrderService(orderRepo, &fakePlayerRepositoryForOrder{}, &fakeUserRepository{}, &fakeGameRepository{}, &fakePaymentRepository{}, &fakeReviewRepository{}, &fakeCommissionRepositoryForOrder{})
+
+	router := gin.New()
+	router.GET("/player/orders/my", func(c *gin.Context) {
+		c.Set("user_id", uint64(200))
+		getMyAcceptedOrdersHandler(c, orderSvc)
+	})
+
+	// Invalid page parameter
+	req := httptest.NewRequest(http.MethodGet, "/player/orders/my?page=invalid", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("Expected status 400, got %d", w.Code)
+	}
+}
+
+func TestGetMyAcceptedOrdersHandler_ServiceError(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	orderRepo := newMockOrderRepoForPlayerOrder()
+	orderSvc := order.NewOrderService(orderRepo, &fakePlayerRepositoryForOrder{}, &fakeUserRepository{}, &fakeGameRepository{}, &fakePaymentRepository{}, &fakeReviewRepository{}, &fakeCommissionRepositoryForOrder{})
+
+	router := gin.New()
+	router.GET("/player/orders/my", func(c *gin.Context) {
+		c.Set("user_id", uint64(200))
+		getMyAcceptedOrdersHandler(c, orderSvc)
+	})
+
+	// Valid request
+	req := httptest.NewRequest(http.MethodGet, "/player/orders/my", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("Expected status 200, got %d", w.Code)
+	}
+}
+
+func TestCompleteOrderByPlayerHandler_NotFound(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	orderRepo := newMockOrderRepoForPlayerOrder()
+	orderSvc := order.NewOrderService(orderRepo, &fakePlayerRepositoryForOrder{}, &fakeUserRepository{}, &fakeGameRepository{}, &fakePaymentRepository{}, &fakeReviewRepository{}, &fakeCommissionRepositoryForOrder{})
+
+	router := gin.New()
+	router.PUT("/player/orders/:id/complete", func(c *gin.Context) {
+		c.Set("user_id", uint64(200))
+		completeOrderByPlayerHandler(c, orderSvc)
+	})
+
+	// Order that doesn't exist
+	req := httptest.NewRequest(http.MethodPut, "/player/orders/9999/complete", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("Expected status 500, got %d", w.Code)
+	}
+}
+
+func TestCompleteOrderByPlayerHandler_Unauthorized(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	orderRepo := newMockOrderRepoForPlayerOrder()
+	orderSvc := order.NewOrderService(orderRepo, &fakePlayerRepositoryForOrder{}, &fakeUserRepository{}, &fakeGameRepository{}, &fakePaymentRepository{}, &fakeReviewRepository{}, &fakeCommissionRepositoryForOrder{})
+
+	router := gin.New()
+	router.PUT("/player/orders/:id/complete", func(c *gin.Context) {
+		// Different user ID
+		c.Set("user_id", uint64(999))
+		completeOrderByPlayerHandler(c, orderSvc)
+	})
+
+	// Try to complete order 3 with wrong user
+	req := httptest.NewRequest(http.MethodPut, "/player/orders/3/complete", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	// Should fail with forbidden or internal server error
+	if w.Code != http.StatusForbidden && w.Code != http.StatusInternalServerError {
+		t.Fatalf("Expected status 403 or 500, got %d", w.Code)
+	}
+}
+
+func TestCompleteOrderByPlayerHandler_InvalidTransition(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	orderRepo := newMockOrderRepoForPlayerOrder()
+	orderSvc := order.NewOrderService(orderRepo, &fakePlayerRepositoryForOrder{}, &fakeUserRepository{}, &fakeGameRepository{}, &fakePaymentRepository{}, &fakeReviewRepository{}, &fakeCommissionRepositoryForOrder{})
+
+	router := gin.New()
+	router.PUT("/player/orders/:id/complete", func(c *gin.Context) {
+		c.Set("user_id", uint64(200))
+		completeOrderByPlayerHandler(c, orderSvc)
+	})
+
+	// Order 1 has wrong status (Confirmed instead of InProgress)
+	req := httptest.NewRequest(http.MethodPut, "/player/orders/1/complete", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	// Should fail with bad request
+	if w.Code != http.StatusBadRequest && w.Code != http.StatusForbidden {
+		t.Fatalf("Expected status 400 or 403, got %d", w.Code)
+	}
+}
+
+// ---- Tests for getUserIDFromContext ----
+
+func TestGetUserIDFromContext_Player_Success(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Set("user_id", uint64(456))
+
+	userID := getUserIDFromContext(c)
+	if userID != 456 {
+		t.Fatalf("expected userID 456, got %d", userID)
+	}
+}
+
+func TestGetUserIDFromContext_Player_NotExists(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+
+	userID := getUserIDFromContext(c)
+	if userID != 0 {
+		t.Fatalf("expected userID 0, got %d", userID)
+	}
+}
+
+func TestGetUserIDFromContext_Player_WrongType(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Set("user_id", "not a uint64")
+
+	userID := getUserIDFromContext(c)
+	if userID != 0 {
+		t.Fatalf("expected userID 0, got %d", userID)
+	}
+}

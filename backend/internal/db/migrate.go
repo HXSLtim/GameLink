@@ -135,6 +135,8 @@ func autoMigrate(db *gorm.DB) error {
 		&model.RoleModel{},
 		&model.RolePermission{},
 		&model.UserRole{},
+		// Upload model
+		&model.Upload{},
 	)
 }
 

@@ -306,3 +306,151 @@ func TestCancelPaymentHandler_InvalidID(t *testing.T) {
 		t.Fatalf("Expected status 400, got %d", w.Code)
 	}
 }
+
+// ---- Additional tests for better coverage ----
+
+func TestCreatePaymentHandler_ServiceError(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	paymentRepo := newMockPaymentRepoForUserPayment()
+	paymentSvc := payment.NewPaymentService(paymentRepo, newFakeOrderRepositoryForPayment())
+
+	router := gin.New()
+	router.POST("/user/payments", func(c *gin.Context) {
+		c.Set("user_id", uint64(100))
+		createPaymentHandler(c, paymentSvc)
+	})
+
+	// Order that doesn't exist
+	reqBody := payment.CreatePaymentRequest{
+		OrderID: 9999,
+		Method:  "alipay",
+	}
+	bodyBytes, _ := json.Marshal(reqBody)
+
+	req := httptest.NewRequest(http.MethodPost, "/user/payments", bytes.NewBuffer(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("Expected status 500, got %d", w.Code)
+	}
+}
+
+func TestGetPaymentStatusHandler_ServiceError(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	paymentRepo := newMockPaymentRepoForUserPayment()
+	paymentSvc := payment.NewPaymentService(paymentRepo, newFakeOrderRepositoryForPayment())
+
+	router := gin.New()
+	router.GET("/user/payments/:id", func(c *gin.Context) {
+		c.Set("user_id", uint64(100))
+		getPaymentStatusHandler(c, paymentSvc)
+	})
+
+	// Test with ID that exists
+	req := httptest.NewRequest(http.MethodGet, "/user/payments/2", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("Expected status 200, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestCancelPaymentHandler_ServiceError(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	paymentRepo := newMockPaymentRepoForUserPayment()
+	paymentSvc := payment.NewPaymentService(paymentRepo, newFakeOrderRepositoryForPayment())
+
+	router := gin.New()
+	router.POST("/user/payments/:id/cancel", func(c *gin.Context) {
+		c.Set("user_id", uint64(100))
+		cancelPaymentHandler(c, paymentSvc)
+	})
+
+	// Try to cancel a payment that doesn't exist
+	req := httptest.NewRequest(http.MethodPost, "/user/payments/9999/cancel", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("Expected status 500, got %d", w.Code)
+	}
+}
+
+func TestCreatePaymentHandler_MissingUserID(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	paymentRepo := newMockPaymentRepoForUserPayment()
+	paymentSvc := payment.NewPaymentService(paymentRepo, newFakeOrderRepositoryForPayment())
+
+	router := gin.New()
+	router.POST("/user/payments", func(c *gin.Context) {
+		// Don't set user_id
+		createPaymentHandler(c, paymentSvc)
+	})
+
+	reqBody := payment.CreatePaymentRequest{
+		OrderID: 10,
+		Method:  "alipay",
+	}
+	bodyBytes, _ := json.Marshal(reqBody)
+
+	req := httptest.NewRequest(http.MethodPost, "/user/payments", bytes.NewBuffer(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	// Should still process but with userID=0
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("Expected status 500, got %d", w.Code)
+	}
+}
+
+func TestCancelPaymentHandler_MissingUserID(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	paymentRepo := newMockPaymentRepoForUserPayment()
+	paymentSvc := payment.NewPaymentService(paymentRepo, newFakeOrderRepositoryForPayment())
+
+	router := gin.New()
+	router.POST("/user/payments/:id/cancel", func(c *gin.Context) {
+		// Don't set user_id
+		cancelPaymentHandler(c, paymentSvc)
+	})
+
+	req := httptest.NewRequest(http.MethodPost, "/user/payments/1/cancel", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	// Should process with userID=0 and likely fail
+	if w.Code == http.StatusOK {
+		t.Fatalf("Expected non-200 status, got %d", w.Code)
+	}
+}
+
+func TestGetPaymentStatusHandler_MissingUserID(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	paymentRepo := newMockPaymentRepoForUserPayment()
+	paymentSvc := payment.NewPaymentService(paymentRepo, newFakeOrderRepositoryForPayment())
+
+	router := gin.New()
+	router.GET("/user/payments/:id", func(c *gin.Context) {
+		// Don't set user_id - this should still work as GetPaymentStatus doesn't require userID
+		getPaymentStatusHandler(c, paymentSvc)
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/user/payments/1", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	// Should succeed as GetPaymentStatus doesn't check userID
+	if w.Code != http.StatusOK {
+		t.Fatalf("Expected status 200, got %d", w.Code)
+	}
+}

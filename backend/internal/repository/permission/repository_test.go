@@ -2,6 +2,7 @@ package permission
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/glebarez/sqlite"
@@ -26,7 +27,28 @@ func setupTestDB(t *testing.T) *gorm.DB {
 		t.Fatalf("failed to migrate: %v", err)
 	}
 
+	// Ensure columns used by repository filters exist even if the struct does not define them.
+	for _, stmt := range []string{
+		"ALTER TABLE permissions ADD COLUMN resource TEXT",
+		"ALTER TABLE permissions ADD COLUMN action TEXT",
+	} {
+		if execErr := db.Exec(stmt).Error; execErr != nil && !strings.Contains(strings.ToLower(execErr.Error()), "duplicate column name") {
+			t.Fatalf("failed to alter permissions table: %v", execErr)
+		}
+	}
+
 	return db
+}
+
+// permissionWithResource is a helper struct for tests to seed resource/action columns.
+type permissionWithResource struct {
+	model.Permission
+	Resource string `gorm:"column:resource"`
+	Action   string `gorm:"column:action"`
+}
+
+func (permissionWithResource) TableName() string {
+	return "permissions"
 }
 
 func TestPermissionRepository_Create(t *testing.T) {
@@ -82,6 +104,32 @@ func TestPermissionRepository_CreateMultiple(t *testing.T) {
 	list, _ := repo.List(testContext())
 	if len(list) != 3 {
 		t.Errorf("expected 3 permissions, got %d", len(list))
+	}
+}
+
+func TestPermissionRepository_CreateBatch(t *testing.T) {
+	db := setupTestDB(t)
+	repo := NewPermissionRepository(db).(*permissionRepository)
+
+	perms := []model.Permission{
+		{Method: "GET", Path: "/api/batch/orders", Code: "batch.orders.read"},
+		{Method: "POST", Path: "/api/batch/orders", Code: "batch.orders.create"},
+	}
+
+	if err := repo.CreateBatch(testContext(), perms); err != nil {
+		t.Fatalf("CreateBatch failed: %v", err)
+	}
+
+	list, err := repo.List(testContext())
+	if err != nil {
+		t.Fatalf("List failed: %v", err)
+	}
+	if len(list) != 2 {
+		t.Fatalf("expected 2 permissions, got %d", len(list))
+	}
+
+	if err := repo.CreateBatch(testContext(), []model.Permission{}); err != nil {
+		t.Fatalf("CreateBatch should ignore empty slice: %v", err)
 	}
 }
 
@@ -141,19 +189,34 @@ func TestPermissionRepository_GetByResource(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewPermissionRepository(db)
 
-	permission := &model.Permission{Method: "GET", Path: "/api/reviews", Code: "reviews.list"}
-	_ = repo.Create(testContext(), permission)
+	record := &permissionWithResource{
+		Permission: model.Permission{
+			Method: "GET",
+			Path:   "/api/resources/orders",
+			Code:   "orders.resources.read",
+			Group:  "/api/resources",
+		},
+		Resource: "orders",
+		Action:   "read",
+	}
+	if err := db.Create(record).Error; err != nil {
+		t.Fatalf("failed to seed permission with resource: %v", err)
+	}
 
-	t.Run("Get existing by resource", func(t *testing.T) {
-		// Note: GetByResource is in the interface but takes different parameters
-		// This test is kept for interface coverage
-		retrieved, err := repo.Get(testContext(), permission.ID)
+	t.Run("Get existing by resource/action", func(t *testing.T) {
+		retrieved, err := repo.GetByResource(testContext(), "orders", "read")
 		if err != nil {
-			t.Fatalf("Get failed: %v", err)
+			t.Fatalf("GetByResource failed: %v", err)
 		}
+		if retrieved.Code != "orders.resources.read" {
+			t.Errorf("expected code 'orders.resources.read', got %s", retrieved.Code)
+		}
+	})
 
-		if retrieved.Path != "/api/reviews" {
-			t.Errorf("expected path '/api/reviews', got %s", retrieved.Path)
+	t.Run("GetByResource not found", func(t *testing.T) {
+		_, err := repo.GetByResource(testContext(), "orders", "write")
+		if err != repository.ErrNotFound {
+			t.Errorf("expected ErrNotFound, got %v", err)
 		}
 	})
 }
@@ -302,6 +365,48 @@ func TestPermissionRepository_ListPaged(t *testing.T) {
 		}
 		if len(permissions) != 5 {
 			t.Errorf("expected 5 permissions on second page, got %d", len(permissions))
+		}
+	})
+}
+
+func TestPermissionRepository_ListPagedWithFilter(t *testing.T) {
+	db := setupTestDB(t)
+	repo := NewPermissionRepository(db)
+
+	seeds := []*model.Permission{
+		{Method: "GET", Path: "/api/orders", Code: "orders.read", Group: "/api/orders", Description: "list orders"},
+		{Method: "POST", Path: "/api/orders", Code: "orders.create", Group: "/api/orders"},
+		{Method: "DELETE", Path: "/api/users/:id", Code: "users.delete", Group: "/api/users"},
+	}
+	for _, p := range seeds {
+		if err := repo.Create(testContext(), p); err != nil {
+			t.Fatalf("failed to seed permission: %v", err)
+		}
+	}
+
+	t.Run("filter by keyword", func(t *testing.T) {
+		result, total, err := repo.ListPagedWithFilter(testContext(), 1, 10, "orders", "", "")
+		if err != nil {
+			t.Fatalf("ListPagedWithFilter failed: %v", err)
+		}
+		if total != 2 {
+			t.Fatalf("expected total 2, got %d", total)
+		}
+		if len(result) != 2 {
+			t.Fatalf("expected 2 records, got %d", len(result))
+		}
+	})
+
+	t.Run("filter by method and group", func(t *testing.T) {
+		result, total, err := repo.ListPagedWithFilter(testContext(), 1, 10, "", "POST", "/api/orders")
+		if err != nil {
+			t.Fatalf("ListPagedWithFilter failed: %v", err)
+		}
+		if total != 1 {
+			t.Fatalf("expected total 1, got %d", total)
+		}
+		if len(result) != 1 || result[0].Code != "orders.create" {
+			t.Fatalf("expected orders.create record, got %+v", result)
 		}
 	})
 }

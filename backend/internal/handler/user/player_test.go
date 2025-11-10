@@ -243,3 +243,66 @@ func TestGetPlayerDetailHandler_NotFound(t *testing.T) {
 		t.Fatalf("Expected status 404, got %d", w.Code)
 	}
 }
+
+func TestListPlayersHandler_InvalidQuery(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	playerRepo := newMockPlayerRepoForUserPlayer()
+	playerSvc := player.NewPlayerService(playerRepo, &fakeUserRepository{}, &fakeGameRepository{}, newFakeOrderRepository(), &fakeReviewRepository{}, &fakePlayerTagRepository{}, &fakeCache{})
+
+	router := gin.New()
+	router.GET("/user/players", func(c *gin.Context) {
+		listPlayersHandler(c, playerSvc)
+	})
+
+	// Invalid page parameter
+	req := httptest.NewRequest(http.MethodGet, "/user/players?page=invalid", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("Expected status 400, got %d", w.Code)
+	}
+}
+
+func TestListPlayersHandler_EmptyResult(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	// Empty repository
+	emptyRepo := &mockPlayerRepoForUserPlayer{players: []model.Player{}}
+	playerSvc := player.NewPlayerService(emptyRepo, &fakeUserRepository{}, &fakeGameRepository{}, newFakeOrderRepository(), &fakeReviewRepository{}, &fakePlayerTagRepository{}, &fakeCache{})
+
+	router := gin.New()
+	router.GET("/user/players", func(c *gin.Context) {
+		listPlayersHandler(c, playerSvc)
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/user/players", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("Expected status 200, got %d", w.Code)
+	}
+}
+
+func TestGetPlayerDetailHandler_ServiceError(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	playerRepo := newMockPlayerRepoForUserPlayer()
+	playerSvc := player.NewPlayerService(playerRepo, &fakeUserRepository{}, &fakeGameRepository{}, newFakeOrderRepository(), &fakeReviewRepository{}, &fakePlayerTagRepository{}, &fakeCache{})
+
+	router := gin.New()
+	router.GET("/user/players/:id", func(c *gin.Context) {
+		getPlayerDetailHandler(c, playerSvc)
+	})
+
+	// Test with existing player
+	req := httptest.NewRequest(http.MethodGet, "/user/players/2", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("Expected status 200, got %d", w.Code)
+	}
+}

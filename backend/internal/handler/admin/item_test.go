@@ -11,7 +11,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestItemHandlerRoutes(t *testing.T) {
+// TestItemHandlerBasic 基础handler测试
+// 注意：完整的业务逻辑测试在Service层和集成测试中
+func TestItemHandlerBasic(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	tests := []struct {
@@ -24,14 +26,14 @@ func TestItemHandlerRoutes(t *testing.T) {
 		{
 			name:           "无效的请求体格式",
 			method:         http.MethodPost,
-			path:           "/admin/items",
+			path:           "/admin/service-items",
 			body:           "invalid json",
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
 			name:           "无效的ID参数",
 			method:         http.MethodGet,
-			path:           "/admin/items/invalid",
+			path:           "/admin/service-items/invalid",
 			body:           nil,
 			expectedStatus: http.StatusBadRequest,
 		},
@@ -57,7 +59,7 @@ func TestItemHandlerRoutes(t *testing.T) {
 			}
 
 			// 这里只测试路由和基本的请求处理
-			// 实际的业务逻辑测试应该在service层
+			// 实际的业务逻辑测试应该在service层和集成测试中
 			assert.NotNil(t, c.Request)
 		})
 	}
