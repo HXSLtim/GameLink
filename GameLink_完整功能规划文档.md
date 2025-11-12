@@ -1034,6 +1034,50 @@ npm run test:coverage
 
 ---
 
+## 🛠️ 质量与覆盖率整改计划
+
+> 数据来源：《测试覆盖率报告-最新版.md》《第一部分工作-测试修复与基础提升.md》《第二部分工作-全面覆盖率提升.md》
+
+### 当前基线（2025-11-11 最新覆盖率）
+- 后端整体覆盖率 **53.3%**，其中 Handler 子模块短板明显：Admin 40.7%、Player 46.4%、User 65.5%。
+- 核心基础设施覆盖率偏低：Ranking Repository 0.9%、Ranking Service 0.0%、Logging 29.2%、Metrics 19.2%、Scheduler 0.0%。
+- 前端整体语句覆盖率 **73.7%**，但函数覆盖率仅 **27.94%**；96 个测试中有 14 个失败（主要集中在 Storage、ErrorHandler、Crypto、Auth Context）。
+- 质量评级为 **B**（稳定但需整改），CI/CD 仅部分接入，需要补齐覆盖率阈值拦截与报告上报。
+
+### 阶段一 · 测试修复与基础提升（2025-11-11 → 2025-11-25）
+**目标**：前端测试 100% 通过、后端整体覆盖率 ≥60%、Admin/Player/User Handler 覆盖率分别 ≥65%/≥65%/≥75%。
+
+| 周期 | 关注领域 | 关键行动 | 交付 |
+|------|----------|----------|------|
+| Week 1（Days 1-5） | 前端失败测试清零 | Day1 修复 `src/utils/storage.test.ts` 5 个异常（mock 重建、配额模拟）；Day2 加密工具字段类型一致性；Day3 错误处理异步断言 & Promise 捕获；Day4 网络/axios mock、错误边界；Day5 认证流程与 token 过期测试 | 14 个失败测试全部通过、Vitest `--runInBand` 稳定；Storage/Context/Hook 辅助工具具备可靠 mock |
+| Week 2（Days 6-10） | 后端 Handler 覆盖率抬升 | Day6-7 Admin Handler 聚焦佣金、提现、举报流；Day8-9 Player Handler 覆盖接单、收益、礼物、订单；Day10 User Handler 针对订单创建/取消、支付、边界与并发 | 关键 Handler 覆盖率达标、错误码与审计路径测试齐备、覆盖率报告更新 |
+
+**配套动作**
+- 建立前端本地 `vitest.setup.ts` + axios mock 基线，消除 “Quota exceeded” 与 “Storage error”。
+- 增加 Handler 层 table-driven tests 与 gomock，确保权限/参数/异常路径均被验证。
+- 输出《阶段一完成报告》：涵盖通过率截图、覆盖率曲线、风险清单。
+
+### 阶段二 · 全面覆盖率提升（2025-11-25 → 2025-12-09）
+**目标**：后端整体覆盖率 ≥70%、前端函数覆盖率 ≥60%、Ranking/Logging 模块 ≥80%，CI/CD 自动阻断覆盖率回退。
+
+| 周期 | 关注领域 | 关键行动 | 交付 |
+|------|----------|----------|------|
+| Week 3（Days 11-15） | 前端函数覆盖率 | Day11 生成差距分析，列出 0% 函数组；Day12-13 登录/仪表盘/用户/订单/玩家列表页面编写交互测试；Day14 API Client & Hooks (`useAuth`/`usePagination`/`useDebounce`) 行为测试；Day15 复杂组件 + 工具函数补测，跑全量覆盖率 | 函数覆盖率 ≥45%，主页面具备重要路径测试；API client/Hook 出错分支被覆盖 |
+| Week 4（Days 16-20） | 后端高级模块 & CI/CD | Day16-17 Ranking Repository/Service 覆盖 TopN、缓存、重置、并发；Day18 Logging & Metrics 增强（等级、格式、轮转、计数/直方图）；Day19 GitHub Actions + Codecov + 覆盖率脚本；Day20 终检（全量测试、阈值核验、报告归档） | 后端覆盖率 ≥70%、Ranking/Logging ≥80%、CI/CD 工作流绿灯、`scripts/check-coverage.js` 生效 |
+
+**配套动作**
+- 前端新增 `frontend/scripts/check-coverage.js`，函数覆盖率低于 60% 即阻断。
+- GitHub Actions 拆分 backend/frontend job，引入 `npm ci`、`go test -coverprofile` 与 Codecov 上传。
+- `.husky/pre-commit` 同时跑前后端测试，保证提交质量。
+
+### 阶段性验收清单
+- 覆盖率：前端函数 ≥60%，后端整体 ≥70%，Ranking & Logging ≥80%，前端测试通过率 100%。
+- 测试资产：新增/修复用例记录在 `tests/README`（若存在），关键模块具备边界/错误场景。
+- 自动化：CI 具备覆盖率阈值拦截、报告上报、Artifacts 归档，Pre-commit 保证双端基础测试。
+- 文档：每阶段结束更新覆盖率报告与整改记录，并在主 Roadmap 中反映质量状态。
+
+---
+
 ## 📈 监控告警
 
 ### 应用监控

@@ -646,3 +646,4 @@ func ValidateRankingRules(rules []model.RankingCommissionRule) error {
 func rangesOverlap(start1, end1, start2, end2 int) bool {
 	return math.Max(float64(start1), float64(start2)) <= math.Min(float64(end1), float64(end2))
 }
+

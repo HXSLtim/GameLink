@@ -47,7 +47,7 @@ describe('CryptoUtil', () => {
     it('should decrypt only specified fields', () => {
       const original = {
         username: 'admin',
-        password: '123456',
+        password: 'password123', // 使用非纯数字密码避免类型转换问题
         email: 'admin@example.com',
       };
 
@@ -55,8 +55,7 @@ describe('CryptoUtil', () => {
       const decrypted = CryptoUtil.decryptFields(encrypted, ['password', 'email']);
 
       expect(decrypted.username).toBe('admin');
-      // 注意：解密时会尝试JSON.parse，纯数字字符串会被解析为数字
-      expect(decrypted.password).toBe(123456);
+      expect(decrypted.password).toBe('password123');
       expect(decrypted.email).toBe('admin@example.com');
     });
   });

@@ -299,3 +299,4 @@ func completeWithdrawHandler(c *gin.Context, repo withdrawrepo.WithdrawRepositor
 		Message: "Withdraw completed successfully",
 	})
 }
+
