@@ -120,6 +120,48 @@ type OperationLogRepository interface {
 	ListByEntity(ctx context.Context, entityType string, entityID uint64, opts OperationLogListOptions) ([]model.OperationLog, int64, error)
 }
 
+// ChatGroupRepository defines chat group data access operations.
+type ChatGroupRepository interface {
+	Create(ctx context.Context, group *model.ChatGroup) error
+	Get(ctx context.Context, id uint64) (*model.ChatGroup, error)
+	GetByRelatedOrderID(ctx context.Context, orderID uint64) (*model.ChatGroup, error)
+	ListByUser(ctx context.Context, userID uint64, opts ChatGroupListOptions) ([]model.ChatGroup, int64, error)
+	ListMembers(ctx context.Context, groupID uint64, opts ChatGroupMemberListOptions) ([]model.ChatGroupMember, int64, error)
+	Update(ctx context.Context, group *model.ChatGroup) error
+	Deactivate(ctx context.Context, id uint64) error
+	ListDeactivatedBefore(ctx context.Context, cutoff time.Time, limit int) ([]model.ChatGroup, error)
+	DeleteByIDs(ctx context.Context, ids []uint64) error
+}
+
+// ChatMemberRepository defines membership access operations.
+type ChatMemberRepository interface {
+	Add(ctx context.Context, member *model.ChatGroupMember) error
+	AddBatch(ctx context.Context, members []*model.ChatGroupMember) error
+	Update(ctx context.Context, member *model.ChatGroupMember) error
+	Remove(ctx context.Context, groupID, userID uint64) error
+	Get(ctx context.Context, groupID, userID uint64) (*model.ChatGroupMember, error)
+}
+
+// ChatMessageRepository defines chat message storage operations.
+type ChatMessageRepository interface {
+	Create(ctx context.Context, message *model.ChatMessage) error
+	CreateBatch(ctx context.Context, messages []*model.ChatMessage) error
+	ListByGroup(ctx context.Context, opts ChatMessageListOptions) ([]model.ChatMessage, int64, error)
+	Get(ctx context.Context, id uint64) (*model.ChatMessage, error)
+	MarkDeleted(ctx context.Context, id uint64, deletedBy uint64) error
+	ListForModeration(ctx context.Context, opts ChatMessageModerationListOptions) ([]model.ChatMessage, int64, error)
+	UpdateAuditStatus(ctx context.Context, id uint64, status model.ChatMessageAuditStatus, moderatorID *uint64, reason string) error
+	DeleteByGroupIDs(ctx context.Context, groupIDs []uint64) error
+}
+
+// ChatReportRepository defines access operations for chat reports.
+type ChatReportRepository interface {
+	Create(ctx context.Context, report *model.ChatReport) error
+	Get(ctx context.Context, id uint64) (*model.ChatReport, error)
+	Update(ctx context.Context, report *model.ChatReport) error
+	List(ctx context.Context, opts ChatReportListOptions) ([]model.ChatReport, int64, error)
+}
+
 // StatsRepository provides statistical query capabilities.
 type StatsRepository interface {
 	Dashboard(ctx context.Context) (Dashboard, error)
@@ -190,6 +232,59 @@ type OperationLogListOptions struct {
 	ActorUserID *uint64
 	DateFrom    *time.Time
 	DateTo      *time.Time
+}
+
+// ChatGroupListOptions defines filters for querying chat groups by user.
+type ChatGroupListOptions struct {
+	Page            int
+	PageSize        int
+	GroupType       *model.ChatGroupType
+	IncludeInactive bool
+	Keyword         string
+	RelatedOrderID  *uint64
+}
+
+// ChatGroupMemberListOptions defines pagination for group member listing.
+type ChatGroupMemberListOptions struct {
+	Page     int
+	PageSize int
+	Role     string
+	Keyword  string
+}
+
+// ChatMessageListOptions defines filters for listing chat messages.
+type ChatMessageListOptions struct {
+	Page          int
+	PageSize      int
+	GroupID       uint64
+	BeforeID      *uint64
+	AfterID       *uint64
+	DateFrom      *time.Time
+	DateTo        *time.Time
+	MessageType   *model.ChatMessageType
+	AuditStatuses []model.ChatMessageAuditStatus
+}
+
+// ChatMessageModerationListOptions defines filters for moderation queue.
+type ChatMessageModerationListOptions struct {
+	Page        int
+	PageSize    int
+	GroupID     *uint64
+	SenderID    *uint64
+	AuditStatus *model.ChatMessageAuditStatus
+	DateFrom    *time.Time
+	DateTo      *time.Time
+}
+
+// ChatReportListOptions defines filters for querying chat reports.
+type ChatReportListOptions struct {
+	Page       int
+	PageSize   int
+	Status     string
+	ReporterID *uint64
+	MessageID  *uint64
+	DateFrom   *time.Time
+	DateTo     *time.Time
 }
 
 // Dashboard aggregates summary data for the homepage.

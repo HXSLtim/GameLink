@@ -1,13 +1,14 @@
 package admin
 
 import (
-	"bytes"
-	"context"
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
-	"testing"
-	"time"
+    "bytes"
+    "context"
+    "encoding/json"
+    "net/http"
+    "net/http/httptest"
+    "strings"
+    "testing"
+    "time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -358,6 +359,124 @@ func TestPaymentHandler_DeletePayment(t *testing.T) {
 }
 
 func TestPaymentHandler_ListPaymentLogs(t *testing.T) {
-	t.Skip("ListPaymentLogs requires TxManager, skipping for now")
+    t.Skip("ListPaymentLogs requires TxManager, skipping for now")
+}
+
+func TestPaymentHandler_UpdatePayment_InvalidStatus(t *testing.T) {
+    paymentRepo := &fakePaymentRepoForHandler{items: []model.Payment{{Base: model.Base{ID: 1}, Status: model.PaymentStatusPending, OrderID: 1, UserID: 1}}}
+    r, _ := setupPaymentTestRouter(paymentRepo)
+    payload := UpdatePaymentPayload{Status: "invalid"}
+    body, _ := json.Marshal(payload)
+    w := httptest.NewRecorder()
+    req := httptest.NewRequest(http.MethodPut, "/admin/payments/1", bytes.NewReader(body))
+    req.Header.Set("Content-Type", "application/json")
+    r.ServeHTTP(w, req)
+    if w.Code != http.StatusBadRequest && w.Code != http.StatusInternalServerError { t.Fatalf("expected 400/500, got %d", w.Code) }
+}
+
+func TestPaymentHandler_UpdatePayment_InvalidTransition(t *testing.T) {
+    paymentRepo := &fakePaymentRepoForHandler{items: []model.Payment{{Base: model.Base{ID: 1}, Status: model.PaymentStatusRefunded, OrderID: 1, UserID: 1}}}
+    r, _ := setupPaymentTestRouter(paymentRepo)
+    payload := UpdatePaymentPayload{Status: "paid"}
+    body, _ := json.Marshal(payload)
+    w := httptest.NewRecorder()
+    req := httptest.NewRequest(http.MethodPut, "/admin/payments/1", bytes.NewReader(body))
+    req.Header.Set("Content-Type", "application/json")
+    r.ServeHTTP(w, req)
+    if w.Code != http.StatusBadRequest && w.Code != http.StatusInternalServerError { t.Fatalf("expected 400/500, got %d", w.Code) }
+}
+
+func TestPaymentHandler_CapturePayment_InvalidTransition(t *testing.T) {
+    paymentRepo := &fakePaymentRepoForHandler{items: []model.Payment{{Base: model.Base{ID: 1}, Status: model.PaymentStatusRefunded, OrderID: 1, UserID: 1}}}
+    r, _ := setupPaymentTestRouter(paymentRepo)
+    payload := CapturePaymentPayload{ProviderTradeNo: "X"}
+    body, _ := json.Marshal(payload)
+    w := httptest.NewRecorder()
+    req := httptest.NewRequest(http.MethodPost, "/admin/payments/1/capture", bytes.NewReader(body))
+    req.Header.Set("Content-Type", "application/json")
+    r.ServeHTTP(w, req)
+    if w.Code != http.StatusBadRequest && w.Code != http.StatusInternalServerError { t.Fatalf("expected 400/500, got %d", w.Code) }
+}
+
+func TestPaymentHandler_CapturePayment_InvalidPaidAt(t *testing.T) {
+    paymentRepo := &fakePaymentRepoForHandler{items: []model.Payment{{Base: model.Base{ID: 1}, Status: model.PaymentStatusPending, OrderID: 1, UserID: 1}}}
+    r, _ := setupPaymentTestRouter(paymentRepo)
+    s := "bad"
+    payload := CapturePaymentPayload{PaidAt: &s}
+    body, _ := json.Marshal(payload)
+    w := httptest.NewRecorder()
+    req := httptest.NewRequest(http.MethodPost, "/admin/payments/1/capture", bytes.NewReader(body))
+    req.Header.Set("Content-Type", "application/json")
+    r.ServeHTTP(w, req)
+    if w.Code != http.StatusBadRequest && w.Code != http.StatusInternalServerError { t.Fatalf("expected 400/500, got %d", w.Code) }
+}
+
+func TestPaymentHandler_ListPaymentLogs_InvalidDates(t *testing.T) {
+    r, _ := setupPaymentTestRouter(&fakePaymentRepoForHandler{})
+    w := httptest.NewRecorder()
+    req := httptest.NewRequest(http.MethodGet, "/admin/payments/1/logs?date_from=bad&date_to=bad", nil)
+    r.ServeHTTP(w, req)
+    if w.Code != http.StatusBadRequest { t.Fatalf("expected 400, got %d", w.Code) }
+}
+
+func TestPaymentHandler_Capture_InvalidJSON(t *testing.T) {
+    r, _ := setupPaymentTestRouter(&fakePaymentRepoForHandler{})
+    w := httptest.NewRecorder()
+    req := httptest.NewRequest(http.MethodPost, "/admin/payments/1/capture", bytes.NewBufferString("bad"))
+    req.Header.Set("Content-Type", "application/json")
+    r.ServeHTTP(w, req)
+    if w.Code != http.StatusBadRequest { t.Fatalf("expected 400, got %d", w.Code) }
+}
+
+func TestPaymentHandler_ListPaymentLogs_InvalidActorID(t *testing.T) {
+    r, _ := setupPaymentTestRouter(&fakePaymentRepoForHandler{})
+    w := httptest.NewRecorder()
+    url := "/admin/payments/1/logs?actor_user_id=abc&date_from=2025-01-01T00:00:00Z&date_to=2025-01-02T00:00:00Z"
+    req := httptest.NewRequest(http.MethodGet, url, nil)
+    r.ServeHTTP(w, req)
+    if w.Code != http.StatusBadRequest { t.Fatalf("expected 400, got %d", w.Code) }
+}
+
+func TestExportOperationLogsCSV_Payment(t *testing.T) {
+    r := newTestEngine()
+    r.GET("/export_pay", func(c *gin.Context) {
+        items := []model.OperationLog{
+            {Base: model.Base{ID: 1, CreatedAt: time.Date(2025, 1, 2, 3, 4, 5, 0, time.UTC)}, EntityType: "payment", EntityID: 7, Action: "capture", Reason: "", MetadataJSON: []byte("{\"ok\":true}")},
+            {Base: model.Base{ID: 2, CreatedAt: time.Date(2025, 1, 3, 3, 4, 5, 0, time.UTC)}, EntityType: "payment", EntityID: 7, Action: "refund", Reason: "dup", MetadataJSON: nil},
+        }
+        exportOperationLogsCSV(c, "payment", 7, items)
+    })
+    w := httptest.NewRecorder()
+    req := httptest.NewRequest(http.MethodGet, "/export_pay?fields=id,action,created_at&header_lang=zh&tz=Asia/Shanghai&bom=true", nil)
+    r.ServeHTTP(w, req)
+    if w.Code != http.StatusOK { t.Fatalf("expected 200, got %d", w.Code) }
+    if ct := w.Header().Get("Content-Type"); ct == "" || !strings.Contains(ct, "text/csv") { t.Fatalf("expected csv content type, got %q", ct) }
+    if cd := w.Header().Get("Content-Disposition"); !strings.Contains(cd, "attachment") || !strings.Contains(cd, "payment_7_logs.csv") { t.Fatalf("unexpected content disposition: %q", cd) }
+}
+
+func TestPaymentHandler_ListPayments_InvalidQueryIDs(t *testing.T) {
+    r, _ := setupPaymentTestRouter(&fakePaymentRepoForHandler{})
+    for _, url := range []string{
+        "/admin/payments?page=1&page_size=20&user_id=abc",
+        "/admin/payments?page=1&page_size=20&order_id=abc",
+    } {
+        w := httptest.NewRecorder()
+        req := httptest.NewRequest(http.MethodGet, url, nil)
+        r.ServeHTTP(w, req)
+        if w.Code != http.StatusBadRequest { t.Fatalf("expected 400, got %d", w.Code) }
+    }
+}
+
+func TestPaymentHandler_ListPayments_InvalidPagination(t *testing.T) {
+    r, _ := setupPaymentTestRouter(&fakePaymentRepoForHandler{})
+    for _, url := range []string{
+        "/admin/payments?page=abc",
+        "/admin/payments?page=1&page_size=abc",
+    } {
+        w := httptest.NewRecorder()
+        req := httptest.NewRequest(http.MethodGet, url, nil)
+        r.ServeHTTP(w, req)
+        if w.Code != http.StatusBadRequest { t.Fatalf("expected 400, got %d", w.Code) }
+    }
 }
 

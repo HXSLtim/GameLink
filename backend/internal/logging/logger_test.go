@@ -6,12 +6,21 @@ import (
 )
 
 func TestInitReturnsLogger(t *testing.T) {
-	t.Run("returns non-nil logger", func(t *testing.T) {
-		logger := Init("debug")
-		if logger == nil {
-			t.Fatal("expected logger instance")
-		}
-	})
+    t.Run("returns non-nil logger", func(t *testing.T) {
+        logger := Init("debug")
+        if logger == nil {
+            t.Fatal("expected logger instance")
+        }
+    })
+}
+
+func TestInitWithVariousLevels(t *testing.T) {
+    levels := []string{"info", "warn", "warning", "error", "DEBUG", "unknown"}
+    for _, lvl := range levels {
+        if Init(lvl) == nil {
+            t.Fatalf("Init(%q) returned nil", lvl)
+        }
+    }
 }
 
 func TestParseLevel(t *testing.T) {

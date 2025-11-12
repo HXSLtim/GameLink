@@ -1,13 +1,14 @@
 package admin
 
 import (
-	"bytes"
-	"context"
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
-	"testing"
-	"time"
+    "bytes"
+    "context"
+    "errors"
+    "encoding/json"
+    "net/http"
+    "net/http/httptest"
+    "testing"
+    "time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -20,11 +21,12 @@ import (
 
 // fakeCommissionRepo 实现CommissionRepository接口
 type fakeCommissionRepo struct {
-	rules       []model.CommissionRule
-	records     []model.CommissionRecord
-	settlements []model.MonthlySettlement
-	createError error
-	getError    error
+    rules       []model.CommissionRule
+    records     []model.CommissionRecord
+    settlements []model.MonthlySettlement
+    createError error
+    getError    error
+    statsErr    error
 }
 
 func (f *fakeCommissionRepo) CreateRule(ctx context.Context, rule *model.CommissionRule) error {
@@ -170,8 +172,11 @@ func (f *fakeCommissionRepo) UpdateSettlement(ctx context.Context, settlement *m
 }
 
 func (f *fakeCommissionRepo) GetMonthlyStats(ctx context.Context, month string) (*commissionrepo.MonthlyStats, error) {
-	var totalOrders, totalCommission, totalPlayerIncome int64
-	recordCount := 0
+    if f.statsErr != nil {
+        return nil, f.statsErr
+    }
+    var totalOrders, totalCommission, totalPlayerIncome int64
+    recordCount := 0
 	
 	for _, record := range f.records {
 		if record.SettlementMonth == month {
@@ -286,13 +291,47 @@ func (f *fakeCommissionPlayerRepo) Delete(ctx context.Context, id uint64) error 
 
 // fakeScheduler 模拟调度器
 type fakeScheduler struct {
-	triggerError error
-	lastMonth    string
+    triggerError error
+    lastMonth    string
 }
 
 func (f *fakeScheduler) TriggerSettlement(month string) error {
 	f.lastMonth = month
 	return f.triggerError
+}
+
+func TestTriggerSettlement_DefaultAndError(t *testing.T) {
+    gin.SetMode(gin.TestMode)
+    _ = commission.NewCommissionService(&fakeCommissionRepo{}, &fakeCommissionOrderRepo{}, &fakeCommissionPlayerRepo{})
+
+    w := httptest.NewRecorder()
+    c, _ := gin.CreateTestContext(w)
+    sch := &fakeScheduler{}
+    c.Request = httptest.NewRequest(http.MethodPost, "/admin/commission/settlements/trigger", nil)
+    triggerSettlementHandler(c, sch)
+    assert.Equal(t, http.StatusOK, w.Code)
+    if sch.lastMonth == "" { t.Fatal("expected non-empty month") }
+
+    w2 := httptest.NewRecorder()
+    c2, _ := gin.CreateTestContext(w2)
+    sch2 := &fakeScheduler{triggerError: errors.New("boom")}
+    c2.Request = httptest.NewRequest(http.MethodPost, "/admin/commission/settlements/trigger?month=2025-01", nil)
+    triggerSettlementHandler(c2, sch2)
+    assert.Equal(t, http.StatusInternalServerError, w2.Code)
+}
+
+func TestGetPlatformStats_ErrorPath(t *testing.T) {
+    gin.SetMode(gin.TestMode)
+    commRepo := &fakeCommissionRepo{statsErr: errors.New("db")}
+    orderRepo := &fakeCommissionOrderRepo{}
+    playerRepo := &fakeCommissionPlayerRepo{}
+    svc := commission.NewCommissionService(commRepo, orderRepo, playerRepo)
+
+    w := httptest.NewRecorder()
+    c, _ := gin.CreateTestContext(w)
+    c.Request = httptest.NewRequest(http.MethodGet, "/admin/commission/stats?month=2025-01", nil)
+    getPlatformStatsHandler(c, svc)
+    assert.Equal(t, http.StatusInternalServerError, w.Code)
 }
 
 // TestCreateCommissionRuleHandler_WithActualCall 测试实际调用createCommissionRuleHandler

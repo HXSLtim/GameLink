@@ -29,19 +29,24 @@ var (
 // 3. 取消支付
 // 4. 处理支付回调（Mock版本）
 type PaymentService struct {
-	payments repository.PaymentRepository
-	orders   repository.OrderRepository
+    payments repository.PaymentRepository
+    orders   repository.OrderRepository
+    providers map[model.PaymentMethod]ProviderClient
 }
 
 // NewPaymentService 创建支付服务
 func NewPaymentService(
-	payments repository.PaymentRepository,
-	orders repository.OrderRepository,
+    payments repository.PaymentRepository,
+    orders repository.OrderRepository,
 ) *PaymentService {
-	return &PaymentService{
-		payments: payments,
-		orders:   orders,
-	}
+    return &PaymentService{
+        payments: payments,
+        orders:   orders,
+        providers: map[model.PaymentMethod]ProviderClient{
+            model.PaymentMethodWeChat: wechatProvider{},
+            model.PaymentMethodAlipay: alipayProvider{},
+        },
+    }
 }
 
 // CreatePaymentRequest 创建支付请求
@@ -293,45 +298,45 @@ func (s *PaymentService) HandlePaymentCallback(ctx context.Context, provider str
 // 2. 处理部分退款
 // 3. 处理退款失败重试
 func (s *PaymentService) RefundPayment(ctx context.Context, paymentID uint64, reason string) error {
-	payment, err := s.payments.Get(ctx, paymentID)
-	if err != nil {
-		return err
-	}
+    payment, err := s.payments.Get(ctx, paymentID)
+    if err != nil {
+        return err
+    }
 
 	// 验证支付状态：只有已支付的订单可以退款
 	if payment.Status != model.PaymentStatusPaid {
 		return fmt.Errorf("payment status must be paid, current: %s", payment.Status)
 	}
 
-	// TODO: 调用支付提供商退款接口
-	// 这里简化处理，直接标记为已退款
-	// 生产环境需要根据支付方式调用不同的退款API：
-	// switch payment.Method {
-	// case model.PaymentMethodWeChat:
-	//     err = s.wechatClient.Refund(...)
-	// case model.PaymentMethodAlipay:
-	//     err = s.alipayClient.Refund(...)
-	// }
+    client, ok := s.providers[payment.Method]
+    if !ok {
+        client = genericProvider{}
+    }
+    tradeNo, raw, refundedAt, err := client.Refund(ctx, payment, reason)
+    if err != nil {
+        return err
+    }
 
 	// 更新支付状态
-	now := time.Now()
-	payment.Status = model.PaymentStatusRefunded
-	payment.RefundedAt = &now
+    payment.Status = model.PaymentStatusRefunded
+    payment.RefundedAt = &refundedAt
+    payment.ProviderTradeNo = tradeNo
+    payment.ProviderRaw = raw
 
 	if err := s.payments.Update(ctx, payment); err != nil {
 		return err
 	}
 
 	// 更新订单状态
-	order, err := s.orders.Get(ctx, payment.OrderID)
-	if err != nil {
-		return err
-	}
+    order, err := s.orders.Get(ctx, payment.OrderID)
+    if err != nil {
+        return err
+    }
 
 	order.Status = model.OrderStatusRefunded
 	order.RefundAmountCents = payment.AmountCents
 	order.RefundReason = reason
-	order.RefundedAt = &now
+    order.RefundedAt = &refundedAt
 
-	return s.orders.Update(ctx, order)
+    return s.orders.Update(ctx, order)
 }

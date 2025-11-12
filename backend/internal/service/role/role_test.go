@@ -1,17 +1,31 @@
 package role
 
 import (
-	"context"
-	"errors"
-	"testing"
+    "context"
+    "errors"
+    "testing"
+    "time"
 
-	"gamelink/internal/cache"
-	"gamelink/internal/model"
-	"gamelink/internal/repository"
-	"gamelink/internal/repository/mocks"
+    "gamelink/internal/cache"
+    "gamelink/internal/model"
+    "gamelink/internal/repository"
+    "gamelink/internal/repository/mocks"
 
-	"github.com/golang/mock/gomock"
+    "github.com/golang/mock/gomock"
 )
+
+type cacheStub struct{
+    data map[string]string
+    deletes []string
+    getValue string
+    getOk bool
+    getErr error
+}
+func newCacheStub() *cacheStub { return &cacheStub{data: map[string]string{}} }
+func (c *cacheStub) Get(_ context.Context, _ string) (string, bool, error) { return c.getValue, c.getOk, c.getErr }
+func (c *cacheStub) Set(_ context.Context, key, value string, ttl time.Duration) error { _ = ttl; c.data[key] = value; return nil }
+func (c *cacheStub) Delete(_ context.Context, key string) error { c.deletes = append(c.deletes, key); delete(c.data, key); return nil }
+func (c *cacheStub) Close(_ context.Context) error { return nil }
 
 // TestNewRoleService 测试构造函数。
 func TestNewRoleService(t *testing.T) {
@@ -575,6 +589,96 @@ func TestAssignPermissionsToRole(t *testing.T) {
 			t.Error("Expected error for role not found")
 		}
 	})
+}
+
+func TestAssignPermissionsToRole_InvalidateCaches(t *testing.T) {
+    ctrl := gomock.NewController(t)
+    defer ctrl.Finish()
+    repo := mocks.NewMockRoleRepository(ctrl)
+    cache := newCacheStub()
+    svc := NewRoleService(repo, cache)
+    rid := uint64(42)
+    repo.EXPECT().AssignPermissions(gomock.Any(), rid, []uint64{1,2}).Return(nil)
+    if err := svc.AssignPermissionsToRole(context.Background(), rid, []uint64{1,2}); err != nil { t.Fatalf("%v", err) }
+    foundRoles := false
+    foundPerm := false
+    for _, k := range cache.deletes {
+        if k == "admin:roles" { foundRoles = true }
+        if k == "rbac:role_permissions:42" { foundPerm = true }
+    }
+    if !foundRoles || !foundPerm { t.Fatalf("expected cache deletes, got %v", cache.deletes) }
+}
+
+func TestAssignRolesToUser_InvalidateCaches(t *testing.T) {
+    ctrl := gomock.NewController(t)
+    defer ctrl.Finish()
+    repo := mocks.NewMockRoleRepository(ctrl)
+    cache := newCacheStub()
+    svc := NewRoleService(repo, cache)
+    uid := uint64(77)
+    repo.EXPECT().AssignToUser(gomock.Any(), uid, []uint64{3}).Return(nil)
+    if err := svc.AssignRolesToUser(context.Background(), uid, []uint64{3}); err != nil { t.Fatalf("%v", err) }
+    hasUser := false; hasPerm := false
+    for _, k := range cache.deletes {
+        if k == "admin:roles:user:77" { hasUser = true }
+        if k == "rbac:user_permissions:77" { hasPerm = true }
+    }
+    if !hasUser || !hasPerm { t.Fatalf("expected user/perm cache deletes, got %v", cache.deletes) }
+}
+
+func TestListRolesByUserID_CacheCorruptedJSONFallsBackDB(t *testing.T) {
+    ctrl := gomock.NewController(t)
+    defer ctrl.Finish()
+    repo := mocks.NewMockRoleRepository(ctrl)
+    cache := newCacheStub()
+    cache.getValue = "{not-json]"
+    cache.getOk = true
+    svc := NewRoleService(repo, cache)
+    uid := uint64(4567)
+    expected := []model.RoleModel{{Base: model.Base{ID: 1}, Slug: "user", Name: "用户"}}
+    repo.EXPECT().ListByUserID(gomock.Any(), uid).Return(expected, nil)
+    roles, err := svc.ListRolesByUserID(context.Background(), uid)
+    if err != nil { t.Fatalf("%v", err) }
+    if len(roles) != 1 { t.Fatalf("expected 1 role, got %d", len(roles)) }
+}
+
+func TestCreateRole_CreateError(t *testing.T) {
+    ctrl := gomock.NewController(t)
+    defer ctrl.Finish()
+    repo := mocks.NewMockRoleRepository(ctrl)
+    svc := NewRoleService(repo, cache.NewMemory())
+    repo.EXPECT().GetBySlug(gomock.Any(), "dup").Return(nil, repository.ErrNotFound)
+    repo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(errors.New("db"))
+    err := svc.CreateRole(context.Background(), &model.RoleModel{Slug:"dup", Name:"n"})
+    if err == nil { t.Fatal("expected error") }
+}
+
+func TestUpdateRole_GetError(t *testing.T) {
+    ctrl := gomock.NewController(t)
+    defer ctrl.Finish()
+    repo := mocks.NewMockRoleRepository(ctrl)
+    svc := NewRoleService(repo, cache.NewMemory())
+    repo.EXPECT().Get(gomock.Any(), uint64(999)).Return(nil, repository.ErrNotFound)
+    err := svc.UpdateRole(context.Background(), &model.RoleModel{Base:model.Base{ID:999}, Slug:"x", Name:"y"})
+    if err == nil { t.Fatal("expected error") }
+}
+
+func TestDeleteRole_DeleteError(t *testing.T) {
+    ctrl := gomock.NewController(t)
+    defer ctrl.Finish()
+    repo := mocks.NewMockRoleRepository(ctrl)
+    svc := NewRoleService(repo, cache.NewMemory())
+    repo.EXPECT().Delete(gomock.Any(), uint64(888)).Return(errors.New("db"))
+    if err := svc.DeleteRole(context.Background(), 888); err == nil { t.Fatal("expected error") }
+}
+
+func TestCheckUserHasRole_ErrorPath(t *testing.T) {
+    ctrl := gomock.NewController(t)
+    defer ctrl.Finish()
+    repo := mocks.NewMockRoleRepository(ctrl)
+    svc := NewRoleService(repo, cache.NewMemory())
+    repo.EXPECT().CheckUserHasRole(gomock.Any(), uint64(1), "admin").Return(false, errors.New("db"))
+    if _, err := svc.CheckUserHasRole(context.Background(), 1, "admin"); err == nil { t.Fatal("expected error") }
 }
 
 // TestAddPermissionsToRole 测试添加权限到角色。

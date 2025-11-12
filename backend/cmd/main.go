@@ -40,6 +40,7 @@ import (
 	commissionrepo "gamelink/internal/repository/commission"
 	"gamelink/internal/repository/common"
 	gamerepo "gamelink/internal/repository/game"
+	chatrepo "gamelink/internal/repository/chat"
 	orderrepo "gamelink/internal/repository/order"
 	paymentrepo "gamelink/internal/repository/payment"
 	permissionrepo "gamelink/internal/repository/permission"
@@ -55,6 +56,7 @@ import (
 	"gamelink/internal/scheduler"
 	adminservice "gamelink/internal/service/admin"
 	authservice "gamelink/internal/service/auth"
+	chatservice "gamelink/internal/service/chat"
 	commissionservice "gamelink/internal/service/commission"
 	earningsservice "gamelink/internal/service/earnings"
 	giftservice "gamelink/internal/service/gift"
@@ -169,6 +171,10 @@ func main() {
 	playerRepo := playerrepo.NewPlayerRepository(orm)
 	gameRepo := gamerepo.NewGameRepository(orm)
 	orderRepo := orderrepo.NewOrderRepository(orm)
+	chatGroupRepo := chatrepo.NewChatGroupRepository(orm)
+	chatMemberRepo := chatrepo.NewChatMemberRepository(orm)
+	chatMessageRepo := chatrepo.NewChatMessageRepository(orm)
+	chatReportRepo := chatrepo.NewChatReportRepository(orm)
 	paymentRepo := paymentrepo.NewPaymentRepository(orm)
 	reviewRepo := reviewrepo.NewReviewRepository(orm)
 	playerTagRepo := playertagrepo.NewPlayerTagRepository(orm)
@@ -182,15 +188,23 @@ func main() {
 	serviceItemSvc := itemservice.NewServiceItemService(serviceItemRepo, gameRepo, playerRepo)
 	giftSvc := giftservice.NewGiftService(serviceItemRepo, orderRepo, playerRepo, commissionRepo)
 	orderSvc := orderservice.NewOrderService(orderRepo, playerRepo, userRepo, gameRepo, paymentRepo, reviewRepo, commissionRepo)
+	// Inject chat group repo for order chat auto-destroy
+	orderSvc.SetChatGroupRepository(chatGroupRepo)
 	paymentSvc := paymentservice.NewPaymentService(paymentRepo, orderRepo)
 	playerSvc := playerservice.NewPlayerService(playerRepo, userRepo, gameRepo, orderRepo, reviewRepo, playerTagRepo, cacheClient)
 	reviewSvc := reviewservice.NewReviewService(reviewRepo, orderRepo, playerRepo, userRepo)
 	earningsSvc := earningsservice.NewEarningsService(playerRepo, orderRepo, withdrawRepo)
+	chatSvc := chatservice.NewChatService(chatGroupRepo, chatMemberRepo, chatMessageRepo, chatReportRepo, cacheClient)
 
 	// Initialize settlement scheduler
 	settlementScheduler := scheduler.NewSettlementScheduler(commissionSvc)
 	settlementScheduler.Start()
 	defer settlementScheduler.Stop()
+
+	// Initialize chat retention scheduler (30 days retention)
+	chatRetention := scheduler.NewChatRetentionScheduler(chatGroupRepo, chatMessageRepo, 30)
+	chatRetention.Start()
+	defer chatRetention.Stop()
 
 	// Register user-side routes (require authentication)
 	authMiddleware := middleware.JWTAuth()
@@ -202,6 +216,7 @@ func main() {
 		userhandler.RegisterPlayerRoutes(userGroup, playerSvc, authMiddleware)
 		userhandler.RegisterReviewRoutes(userGroup, reviewSvc, authMiddleware)
 		userhandler.RegisterGiftRoutes(userGroup, giftSvc, serviceItemSvc, authMiddleware)
+		userhandler.RegisterChatRoutes(userGroup, chatSvc, authMiddleware)
 	}
 
 	// Register player-side routes (require authentication)

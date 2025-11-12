@@ -1,66 +1,107 @@
 package admin
 
 import (
-	"bytes"
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
-	"testing"
+    "bytes"
+    "encoding/json"
+    "net/http"
+    "net/http/httptest"
+    "testing"
 
-	"github.com/gin-gonic/gin"
-	"github.com/stretchr/testify/assert"
+    "github.com/gin-gonic/gin"
+    "github.com/stretchr/testify/assert"
+
+    serviceitem "gamelink/internal/service/item"
+    "gamelink/internal/model"
 )
 
-// TestItemHandlerBasic 基础handler测试
-// 注意：完整的业务逻辑测试在Service层和集成测试中
-func TestItemHandlerBasic(t *testing.T) {
-	gin.SetMode(gin.TestMode)
+type fakeItemService struct{}
+func (f *fakeItemService) CreateServiceItem(_ interface{}, _ serviceitem.CreateServiceItemRequest) (*model.ServiceItem, error) { return &model.ServiceItem{}, nil }
 
-	tests := []struct {
-		name           string
-		method         string
-		path           string
-		body           interface{}
-		expectedStatus int
-	}{
-		{
-			name:           "无效的请求体格式",
-			method:         http.MethodPost,
-			path:           "/admin/service-items",
-			body:           "invalid json",
-			expectedStatus: http.StatusBadRequest,
-		},
-		{
-			name:           "无效的ID参数",
-			method:         http.MethodGet,
-			path:           "/admin/service-items/invalid",
-			body:           nil,
-			expectedStatus: http.StatusBadRequest,
-		},
-	}
+func TestItemHandler_Create_InvalidJSON(t *testing.T) {
+    gin.SetMode(gin.TestMode)
+    w := httptest.NewRecorder()
+    c, _ := gin.CreateTestContext(w)
+    c.Request = httptest.NewRequest(http.MethodPost, "/admin/service-items", bytes.NewBufferString("invalid json"))
+    c.Request.Header.Set("Content-Type", "application/json")
+    createServiceItemHandler(c, (*serviceitem.ServiceItemService)(nil))
+    assert.Equal(t, http.StatusBadRequest, w.Code)
+}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
+func TestItemHandler_Get_InvalidID(t *testing.T) {
+    gin.SetMode(gin.TestMode)
+    w := httptest.NewRecorder()
+    c, _ := gin.CreateTestContext(w)
+    c.Params = gin.Params{{Key: "id", Value: "invalid"}}
+    getServiceItemHandler(c, (*serviceitem.ServiceItemService)(nil))
+    assert.Equal(t, http.StatusBadRequest, w.Code)
+}
 
-			var body []byte
-			if tt.body != nil {
-				if str, ok := tt.body.(string); ok {
-					body = []byte(str)
-				} else {
-					body, _ = json.Marshal(tt.body)
-				}
-			}
+func TestItemHandler_List_InvalidQuery(t *testing.T) {
+    gin.SetMode(gin.TestMode)
+    w := httptest.NewRecorder()
+    c, _ := gin.CreateTestContext(w)
+    c.Request = httptest.NewRequest(http.MethodGet, "/admin/service-items?page=abc", nil)
+    listServiceItemsHandler(c, (*serviceitem.ServiceItemService)(nil))
+    assert.Equal(t, http.StatusBadRequest, w.Code)
+}
 
-			c.Request = httptest.NewRequest(tt.method, tt.path, bytes.NewBuffer(body))
-			if tt.body != nil {
-				c.Request.Header.Set("Content-Type", "application/json")
-			}
+func TestItemHandler_Update_InvalidID(t *testing.T) {
+    gin.SetMode(gin.TestMode)
+    w := httptest.NewRecorder()
+    c, _ := gin.CreateTestContext(w)
+    c.Params = gin.Params{{Key: "id", Value: "invalid"}}
+    body, _ := json.Marshal(map[string]interface{}{"name": "x"})
+    c.Request = httptest.NewRequest(http.MethodPut, "/admin/service-items/invalid", bytes.NewBuffer(body))
+    c.Request.Header.Set("Content-Type", "application/json")
+    updateServiceItemHandler(c, (*serviceitem.ServiceItemService)(nil))
+    assert.Equal(t, http.StatusBadRequest, w.Code)
+}
 
-			// 这里只测试路由和基本的请求处理
-			// 实际的业务逻辑测试应该在service层和集成测试中
-			assert.NotNil(t, c.Request)
-		})
-	}
+func TestItemHandler_Delete_InvalidID(t *testing.T) {
+    gin.SetMode(gin.TestMode)
+    w := httptest.NewRecorder()
+    c, _ := gin.CreateTestContext(w)
+    c.Params = gin.Params{{Key: "id", Value: "invalid"}}
+    deleteServiceItemHandler(c, (*serviceitem.ServiceItemService)(nil))
+    assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestItemHandler_BatchUpdateStatus_InvalidJSON(t *testing.T) {
+    gin.SetMode(gin.TestMode)
+    w := httptest.NewRecorder()
+    c, _ := gin.CreateTestContext(w)
+    c.Request = httptest.NewRequest(http.MethodPost, "/admin/service-items/batch-update-status", bytes.NewBufferString("bad"))
+    c.Request.Header.Set("Content-Type", "application/json")
+    batchUpdateStatusHandler(c, (*serviceitem.ServiceItemService)(nil))
+    if w.Code != http.StatusBadRequest { t.Fatalf("%d", w.Code) }
+}
+
+func TestItemHandler_BatchUpdatePrice_InvalidJSON(t *testing.T) {
+    gin.SetMode(gin.TestMode)
+    w := httptest.NewRecorder()
+    c, _ := gin.CreateTestContext(w)
+    c.Request = httptest.NewRequest(http.MethodPost, "/admin/service-items/batch-update-price", bytes.NewBufferString("bad"))
+    c.Request.Header.Set("Content-Type", "application/json")
+    batchUpdatePriceHandler(c, (*serviceitem.ServiceItemService)(nil))
+    if w.Code != http.StatusBadRequest { t.Fatalf("%d", w.Code) }
+}
+
+func TestItemHandler_BatchUpdatePrice_NegativePrice(t *testing.T) {
+    gin.SetMode(gin.TestMode)
+    w := httptest.NewRecorder()
+    c, _ := gin.CreateTestContext(w)
+    body := []byte(`{"ids":[1,2],"basePriceCents":-100}`)
+    c.Request = httptest.NewRequest(http.MethodPost, "/admin/service-items/batch-update-price", bytes.NewBuffer(body))
+    c.Request.Header.Set("Content-Type", "application/json")
+    batchUpdatePriceHandler(c, (*serviceitem.ServiceItemService)(nil))
+    if w.Code == 0 { t.Fatalf("invalid status") }
+}
+
+func TestItemHandler_List_InvalidPagination(t *testing.T) {
+    repo := newFakeItemRepo()
+    r, _ := setupItemRouter(repo)
+    w := httptest.NewRecorder()
+    req := httptest.NewRequest(http.MethodGet, "/admin/service-items?page=-1&page_size=abc", nil)
+    r.ServeHTTP(w, req)
+    if w.Code == 0 { t.Fatalf("invalid status") }
 }

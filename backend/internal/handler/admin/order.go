@@ -1,12 +1,13 @@
 package admin
 
 import (
-	"encoding/csv"
-	"encoding/json"
-	"errors"
-	"net/http"
-	"strings"
-	"time"
+    "encoding/csv"
+    "encoding/json"
+    "errors"
+    "fmt"
+    "net/http"
+    "strings"
+    "time"
 
 	"github.com/gin-gonic/gin"
 
@@ -586,10 +587,13 @@ func (h *OrderHandler) ListOrderLogs(c *gin.Context) {
 	if !ok {
 		return
 	}
-	var actorID *uint64
-	if v, err := queryUint64Ptr(c, "actor_user_id"); err == nil {
-		actorID = v
-	}
+    var actorID *uint64
+    if v, err := queryUint64Ptr(c, "actor_user_id"); err == nil {
+        actorID = v
+    } else {
+        writeJSONError(c, 400, apierr.ErrInvalidUserID)
+        return
+    }
 	var dateFrom, dateTo *time.Time
 	if v, err := queryTimePtr(c, "date_from"); err == nil {
 		dateFrom = v
@@ -938,10 +942,13 @@ func (h *PaymentHandler) ListPaymentLogs(c *gin.Context) {
 	if !ok {
 		return
 	}
-	var actorID *uint64
-	if v, err := queryUint64Ptr(c, "actor_user_id"); err == nil {
-		actorID = v
-	}
+    var actorID *uint64
+    if v, err := queryUint64Ptr(c, "actor_user_id"); err == nil {
+        actorID = v
+    } else {
+        writeJSONError(c, 400, apierr.ErrInvalidUserID)
+        return
+    }
 	var dateFrom, dateTo *time.Time
 	if v, err := queryTimePtr(c, "date_from"); err == nil {
 		dateFrom = v
@@ -1050,8 +1057,8 @@ func exportOperationLogsCSV(c *gin.Context, entity string, entityID uint64, item
 				row = append(row, it.Action)
 			case "reason":
 				row = append(row, it.Reason)
-			case "metadata":
-				row = append(row, string(it.MetadataJSON))
+            case "metadata":
+                row = append(row, fmt.Sprintf("%q", string(it.MetadataJSON)))
 			case "created_at":
 				t := it.CreatedAt
 				if loc != nil {

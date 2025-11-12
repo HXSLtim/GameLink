@@ -13,13 +13,13 @@ import (
 
 // RegisterOrderRoutes 注册用户端订单路由
 func RegisterOrderRoutes(router gin.IRouter, svc *order.OrderService, authMiddleware gin.HandlerFunc) {
-    group := router.Group("/user/orders")
-    group.Use(authMiddleware) // 需要认证
-    group.POST("", func(c *gin.Context) { createOrderHandler(c, svc) })
-    group.GET("", func(c *gin.Context) { getMyOrdersHandler(c, svc) })
-    group.GET("/:id", func(c *gin.Context) { getOrderDetailHandler(c, svc) })
-    group.PUT("/:id/cancel", func(c *gin.Context) { cancelOrderHandler(c, svc) })
-    group.PUT("/:id/complete", func(c *gin.Context) { completeOrderHandler(c, svc) })
+	group := router.Group("/user/orders")
+	group.Use(authMiddleware) // 需要认证
+	group.POST("", func(c *gin.Context) { createOrderHandler(c, svc) })
+	group.GET("", func(c *gin.Context) { getMyOrdersHandler(c, svc) })
+	group.GET("/:id", func(c *gin.Context) { getOrderDetailHandler(c, svc) })
+	group.PUT("/:id/cancel", func(c *gin.Context) { cancelOrderHandler(c, svc) })
+	group.PUT("/:id/complete", func(c *gin.Context) { completeOrderHandler(c, svc) })
 }
 
 // createOrderHandler 创建订单
@@ -55,6 +55,14 @@ func createOrderHandler(c *gin.Context, svc *order.OrderService) {
 		Message: "订单创建成功",
 		Data:    *resp,
 	})
+}
+
+func getOrderMessagesHandler(c *gin.Context, svc *order.OrderService) {
+    respondJSON(c, http.StatusOK, model.APIResponse[any]{
+        Success: true,
+        Code:    http.StatusOK,
+        Message: "OK",
+    })
 }
 
 // getMyOrdersHandler 获取我的订单列表

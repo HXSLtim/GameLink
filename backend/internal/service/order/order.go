@@ -35,6 +35,8 @@ type OrderService struct {
 	payments    repository.PaymentRepository
 	reviews     repository.ReviewRepository
 	commissions commissionrepo.CommissionRepository
+	// optional: for order chat auto-destroy
+	chatGroups repository.ChatGroupRepository
 }
 
 // NewOrderService 创建订单服务
@@ -55,6 +57,25 @@ func NewOrderService(
 		payments:    payments,
 		reviews:     reviews,
 		commissions: commissions,
+	}
+}
+
+// SetChatGroupRepository injects chat group repository for auto-destroying order chat groups.
+func (s *OrderService) SetChatGroupRepository(chatGroups repository.ChatGroupRepository) {
+	s.chatGroups = chatGroups
+}
+
+// deactivateOrderChat best-effort deactivates the chat group bound to the order.
+func (s *OrderService) deactivateOrderChat(ctx context.Context, orderID uint64) {
+	if s.chatGroups == nil {
+		return
+	}
+	group, err := s.chatGroups.GetByRelatedOrderID(ctx, orderID)
+	if err != nil || group == nil {
+		return
+	}
+	if group.IsActive && group.GroupType == model.ChatGroupTypeOrder {
+		_ = s.chatGroups.Deactivate(ctx, group.ID)
 	}
 }
 
@@ -419,7 +440,13 @@ func (s *OrderService) CancelOrder(ctx context.Context, userID uint64, orderID u
 		}
 	}
 
-	return s.orders.Update(ctx, order)
+	if err := s.orders.Update(ctx, order); err != nil {
+		return err
+	}
+
+	// auto-destroy order chat group
+	s.deactivateOrderChat(ctx, orderID)
+	return nil
 }
 
 // CompleteOrder 确认完成订单（用户端）
@@ -456,6 +483,8 @@ func (s *OrderService) CompleteOrder(ctx context.Context, userID uint64, orderID
 		// log.Printf("Failed to record commission for order %d: %v", orderID, err)
 	}
 
+	// auto-destroy order chat group
+	s.deactivateOrderChat(ctx, orderID)
 	return nil
 }
 
