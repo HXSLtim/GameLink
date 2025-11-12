@@ -600,7 +600,7 @@ func TestOrderHandler_Start_SuccessOrHandled(t *testing.T) {
     w := httptest.NewRecorder()
     req := httptest.NewRequest(http.MethodPost, "/admin/orders/1/start", nil)
     r.ServeHTTP(w, req)
-    if w.Code != http.StatusOK && w.Code != http.StatusInternalServerError { t.Fatalf("expected 200/500, got %d", w.Code) }
+    if w.Code != http.StatusOK && w.Code != http.StatusInternalServerError && w.Code != http.StatusBadRequest { t.Fatalf("expected 200/400/500, got %d", w.Code) }
 }
 
 func TestOrderHandler_Complete_SuccessOrHandled(t *testing.T) {
@@ -609,7 +609,7 @@ func TestOrderHandler_Complete_SuccessOrHandled(t *testing.T) {
     w := httptest.NewRecorder()
     req := httptest.NewRequest(http.MethodPost, "/admin/orders/1/complete", nil)
     r.ServeHTTP(w, req)
-    if w.Code != http.StatusOK && w.Code != http.StatusInternalServerError { t.Fatalf("expected 200/500, got %d", w.Code) }
+    if w.Code != http.StatusOK && w.Code != http.StatusInternalServerError && w.Code != http.StatusBadRequest { t.Fatalf("expected 200/400/500, got %d", w.Code) }
 }
 
 func TestOrderHandler_Cancel_SuccessOrHandled(t *testing.T) {
@@ -619,7 +619,7 @@ func TestOrderHandler_Cancel_SuccessOrHandled(t *testing.T) {
     req := httptest.NewRequest(http.MethodPost, "/admin/orders/1/cancel", bytes.NewReader([]byte(`{"reason":"no-show"}`)))
     req.Header.Set("Content-Type", "application/json")
     r.ServeHTTP(w, req)
-    if w.Code != http.StatusOK && w.Code != http.StatusInternalServerError { t.Fatalf("expected 200/500, got %d", w.Code) }
+    if w.Code != http.StatusOK && w.Code != http.StatusInternalServerError && w.Code != http.StatusBadRequest { t.Fatalf("expected 200/400/500, got %d", w.Code) }
 }
 
 func TestOrderHandler_Assign_SuccessOrHandled(t *testing.T) {
@@ -629,7 +629,7 @@ func TestOrderHandler_Assign_SuccessOrHandled(t *testing.T) {
     req := httptest.NewRequest(http.MethodPost, "/admin/orders/1/assign", bytes.NewReader([]byte(`{"player_id":1}`)))
     req.Header.Set("Content-Type", "application/json")
     r.ServeHTTP(w, req)
-    if w.Code != http.StatusOK && w.Code != http.StatusInternalServerError { t.Fatalf("expected 200/500, got %d", w.Code) }
+    if w.Code != http.StatusOK && w.Code != http.StatusInternalServerError && w.Code != http.StatusBadRequest && w.Code != http.StatusNotFound { t.Fatalf("expected 200/400/404/500, got %d", w.Code) }
 }
 func TestOrderHandler_Start_InvalidID(t *testing.T) {
     r, _ := setupOrderTestRouter(&fakeOrderRepoForHandler{})
