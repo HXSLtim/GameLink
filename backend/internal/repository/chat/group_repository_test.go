@@ -39,15 +39,16 @@ func TestChatGroupRepository_ListDeactivatedBefore_OrderOnly(t *testing.T) {
 	 older := now.AddDate(0,0,-40)
 	 newer := now.AddDate(0,0,-20)
 
-	 // order older than 30d
-	 g1 := &model.ChatGroup{ GroupName: "o-older", GroupType: model.ChatGroupTypeOrder, IsActive: false, DeactivatedAt: &older }
-	 // order newer than 30d
-	 g2 := &model.ChatGroup{ GroupName: "o-newer", GroupType: model.ChatGroupTypeOrder, IsActive: false, DeactivatedAt: &newer }
-	 // public older than 30d (should be ignored)
-	 g3 := &model.ChatGroup{ GroupName: "p-older", GroupType: model.ChatGroupTypePublic, IsActive: false, DeactivatedAt: &older }
-	 for _, g := range []*model.ChatGroup{g1,g2,g3} {
-		 if err := db.Create(g).Error; err != nil { t.Fatalf("seed: %v", err) }
-	 }
+	    // create groups, then enforce deactivated_at and is_active via UPDATE to ensure persistence
+    g1 := &model.ChatGroup{ GroupName: "o-older", GroupType: model.ChatGroupTypeOrder }
+    g2 := &model.ChatGroup{ GroupName: "o-newer", GroupType: model.ChatGroupTypeOrder }
+    g3 := &model.ChatGroup{ GroupName: "p-older", GroupType: model.ChatGroupTypePublic }
+    for _, g := range []*model.ChatGroup{g1,g2,g3} {
+        if err := db.Create(g).Error; err != nil { t.Fatalf("seed: %v", err) }
+    }
+    if err := db.Model(&model.ChatGroup{}).Where("id=?", g1.ID).Updates(map[string]any{"is_active": false, "deactivated_at": older}).Error; err != nil { t.Fatalf("upd1: %v", err) }
+    if err := db.Model(&model.ChatGroup{}).Where("id=?", g2.ID).Updates(map[string]any{"is_active": false, "deactivated_at": newer}).Error; err != nil { t.Fatalf("upd2: %v", err) }
+    if err := db.Model(&model.ChatGroup{}).Where("id=?", g3.ID).Updates(map[string]any{"is_active": false, "deactivated_at": older}).Error; err != nil { t.Fatalf("upd3: %v", err) }
 
 	 cutoff := now.AddDate(0,0,-30)
 	 list, err := repo.ListDeactivatedBefore(context.Background(), cutoff, 10)

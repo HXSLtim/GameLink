@@ -1,0 +1,928 @@
+﻿
+> gamelink-admin@0.1.0 test:coverage
+> vitest run --coverage
+
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mC:/Users/a2778/Desktop/code/GameLink/frontend[39m
+      [2mCoverage enabled with [22m[33mv8[39m
+
+ [32m鉁?[39m src/utils/storage.test.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+[90mstdout[2m | src/utils/errorHandler.test.ts[2m > [22m[2merrorHandler[2m > [22m[2mshould handle Error instances
+[22m[39m[ERROR] Test error
+
+[90mstdout[2m | src/utils/errorHandler.test.ts[2m > [22m[2merrorHandler[2m > [22m[2mshould handle AppError instances
+[22m[39m[ERROR] Test error
+
+[90mstdout[2m | src/utils/errorHandler.test.ts[2m > [22m[2merrorHandler[2m > [22m[2mshould handle async errors with failure
+[22m[39m[ERROR] Failed
+
+[90mstdout[2m | src/utils/errorHandler.test.ts[2m > [22m[2merrorHandler[2m > [22m[2mshould handle async errors with custom message
+[22m[39m[ERROR] Unknown error
+
+[90mstdout[2m | src/utils/errorHandler.test.ts[2m > [22m[2merrorHandler[2m > [22m[2mshould use custom message when error is not string or Error
+[22m[39m[ERROR] Custom error
+
+[90mstdout[2m | src/utils/errorHandler.test.ts[2m > [22m[2mhandleApiError[2m > [22m[2mshould handle Error instances
+[22m[39m[ERROR] 鑾峰彇鏁版嵁澶辫触: API failed
+
+[90mstdout[2m | src/utils/errorHandler.test.ts[2m > [22m[2mhandleApiError[2m > [22m[2mshould handle string errors
+[22m[39m[ERROR] 鎿嶄綔澶辫触: 鎿嶄綔澶辫触
+
+[90mstdout[2m | src/utils/errorHandler.test.ts[2m > [22m[2mhandleApiError[2m > [22m[2mshould handle unknown errors
+[22m[39m[ERROR] 鏈煡鎿嶄綔澶辫触: 鎿嶄綔澶辫触
+
+ [32m鉁?[39m src/utils/errorHandler.test.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+ [32m鉁?[39m src/utils/crypto.test.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m鉁?[39m src/contexts/ThemeContext.test.tsx [2m([22m[2m10 tests[22m[2m)[22m[90m 83[2mms[22m[39m
+node.exe : [90mstderr[2m | src/hooks/useTable.test.ts[2
+m > [22m[2museTable[2m > [22m[2mshould handle paginat
+ion change
+所在位置 行:1 字符: 1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\n
+odejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([90mstderr 
+   [2m...gination change:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[22m[39mWarning: An update to TestComponent inside a tes
+t was not wrapped in act(...).
+
+When testing, code that causes React state updates should 
+be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user wou
+ld see in the browser. Learn more at https://reactjs.org/l
+ink/wrap-tests-with-act
+    at TestComponent (C:\Users\a2778\Desktop\code\GameLink
+\frontend\node_modules\@testing-library\react\dist\pure.js
+:329:5)
+
+[90mstderr[2m | src/hooks/useTable.test.ts[2m > [22m[
+2museTable[2m > [22m[2mshould provide refetch function
+[22m[39mWarning: An update to TestComponent inside a tes
+t was not wrapped in act(...).
+
+When testing, code that causes React state updates should 
+be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user wou
+ld see in the browser. Learn more at https://reactjs.org/l
+ink/wrap-tests-with-act
+    at TestComponent (C:\Users\a2778\Desktop\code\GameLink
+\frontend\node_modules\@testing-library\react\dist\pure.js
+:329:5)
+
+[90mstderr[2m | src/hooks/useTable.test.ts[2m > [22m[
+2museTable[2m > [22m[2mshould provide reset function
+[22m[39mWarning: An update to TestComponent inside a tes
+t was not wrapped in act(...).
+
+When testing, code that causes React state updates should 
+be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user wou
+ld see in the browser. Learn more at https://reactjs.org/l
+ink/wrap-tests-with-act
+    at TestComponent (C:\Users\a2778\Desktop\code\GameLink
+\frontend\node_modules\@testing-library\react\dist\pure.js
+:329:5)
+
+[90mstderr[2m | src/hooks/useTable.test.ts[2m > [22m[
+2museTable[2m > [22m[2mshould provide reset function
+[22m[39mWarning: An update to TestComponent inside a tes
+t was not wrapped in act(...).
+
+When testing, code that causes React state updates should 
+be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user wou
+ld see in the browser. Learn more at https://reactjs.org/l
+ink/wrap-tests-with-act
+    at TestComponent (C:\Users\a2778\Desktop\code\GameLink
+\frontend\node_modules\@testing-library\react\dist\pure.js
+:329:5)
+
+[90mstdout[2m | src/hooks/useTable.test.ts[2m > [22m[2museTable[2m > [22m[2mshould handle fetch errors gracefully
+[22m[39m[ERROR] 鑾峰彇鏁版嵁澶辫触: Network error
+
+[90mstderr[2m | src/hooks/useTable.test.ts[2m > [22m[
+2museTable[2m > [22m[2mshould handle fetch errors grace
+fully
+[22m[39m  Type: AppError
+  Message: 鑾峰彇鏁版嵁澶辫触: Network error
+  Code: API_ERROR
+  Severity: error
+  Timestamp: 2025-11-12T18:08:38.692Z
+  Context: {
+    operation: [32m'鑾峰彇鏁版嵁'[39m,
+    originalError: Error: Network error
+        at [90mC:\Users\a2778\Desktop\code\GameLink\front
+end\[39msrc\hooks\useTable.test.ts:141:53
+        at [90mfile:///C:/Users/a2778/Desktop/code/GameLi
+nk/frontend/[39mnode_modules/[4m@vitest/runner[24m/dist
+/index.js:146:14
+        at [90mfile:///C:/Users/a2778/Desktop/code/GameLi
+nk/frontend/[39mnode_modules/[4m@vitest/runner[24m/dist
+/index.js:533:11
+        at runWithTimeout [90m(file:///C:/Users/a2778/Des
+ktop/code/GameLink/frontend/[39mnode_modules/[4m@vitest/
+runner[24m/dist/index.js:39:7[90m)[39m
+        at runTest [90m(file:///C:/Users/a2778/Desktop/co
+de/GameLink/frontend/[39mnode_modules/[4m@vitest/runner
+[24m/dist/index.js:1056:17[90m)[39m
+    [90m    at runNextTicks (node:internal/process/task_q
+ueues:65:5)[39m
+    [90m    at processTimers (node:internal/timers:520:9)
+[39m
+        at runSuite [90m(file:///C:/Users/a2778/Desktop/c
+ode/GameLink/frontend/[39mnode_modules/[4m@vitest/runner
+[24m/dist/index.js:1205:15[90m)[39m
+        at runSuite [90m(file:///C:/Users/a2778/Desktop/c
+ode/GameLink/frontend/[39mnode_modules/[4m@vitest/runner
+[24m/dist/index.js:1205:15[90m)[39m
+        at runFiles [90m(file:///C:/Users/a2778/Desktop/c
+ode/GameLink/frontend/[39mnode_modules/[4m@vitest/runner
+[24m/dist/index.js:1262:5[90m)[39m
+  }
+  Stack: AppError: 鑾峰彇鏁版嵁澶辫触: Network error
+      at Module.handleApiError (C:\Users\a2778\Desktop\cod
+e\GameLink\frontend\src\utils\errorHandler.ts:195:20)
+      at C:\Users\a2778\Desktop\code\GameLink\frontend\src
+\hooks\useTable.ts:77:9
+      at runNextTicks (node:internal/process/task_queues:6
+5:5)
+      at processTimers (node:internal/timers:520:9)
+鑾峰彇鏁版嵁澶辫触: Network error
+
+[90mstdout[2m | src/contexts/AuthContext.test.tsx[2m > [22m[2mAuthContext[2m > [22m[2mshould login and store token
+[22m[39m鉁?鐧诲綍鎴愬姛: { username: [32m'testuser'[39m, role: [32m'admin'[39m, token: [32m'new-token...'[39m }
+
+[90mstdout[2m | src/contexts/AuthContext.test.tsx[2m > [22m[2mAuthContext[2m > [22m[2mshould logout and clear token
+[22m[39m鉁?閫€鍑虹櫥褰曟垚鍔?
+[90mstderr[2m | src/contexts/AuthContext.test.tsx[2m > 
+[22m[2mAuthContext[2m > [22m[2mshould handle login fa
+ilure gracefully
+[22m[39m鉂?鐧诲綍澶辫触: Error: Invalid credentials
+    at [90mC:\Users\a2778\Desktop\code\GameLink\frontend\
+[39msrc\contexts\AuthContext.test.tsx:160:48
+    at [90mfile:///C:/Users/a2778/Desktop/code/GameLink/f
+rontend/[39mnode_modules/[4m@vitest/runner[24m/dist/ind
+ex.js:146:14
+    at [90mfile:///C:/Users/a2778/Desktop/code/GameLink/f
+rontend/[39mnode_modules/[4m@vitest/runner[24m/dist/ind
+ex.js:533:11
+    at runWithTimeout [90m(file:///C:/Users/a2778/Desktop
+/code/GameLink/frontend/[39mnode_modules/[4m@vitest/runn
+er[24m/dist/index.js:39:7[90m)[39m
+    at runTest [90m(file:///C:/Users/a2778/Desktop/code/G
+ameLink/frontend/[39mnode_modules/[4m@vitest/runner[24m
+/dist/index.js:1056:17[90m)[39m
+    at runSuite [90m(file:///C:/Users/a2778/Desktop/code/
+GameLink/frontend/[39mnode_modules/[4m@vitest/runner[24
+m/dist/index.js:1205:15[90m)[39m
+    at runSuite [90m(file:///C:/Users/a2778/Desktop/code/
+GameLink/frontend/[39mnode_modules/[4m@vitest/runner[24
+m/dist/index.js:1205:15[90m)[39m
+    at runFiles [90m(file:///C:/Users/a2778/Desktop/code/
+GameLink/frontend/[39mnode_modules/[4m@vitest/runner[24
+m/dist/index.js:1262:5[90m)[39m
+    at startTests [90m(file:///C:/Users/a2778/Desktop/cod
+e/GameLink/frontend/[39mnode_modules/[4m@vitest/runner[
+24m/dist/index.js:1271:3[90m)[39m
+    at [90mfile:///C:/Users/a2778/Desktop/code/GameLink/f
+rontend/[39mnode_modules/[4mvitest[24m/dist/chunks/runB
+aseTests.3qpJUEJM.js:126:11
+
+ [32m鉁?[39m src/components/Button/Button.test.tsx [2m([22m[2m20 tests[22m[2m)[22m[90m 206[2mms[22m[39m
+ [32m鉁?[39m src/contexts/AuthContext.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[90m 117[2mms[22m[39m
+ [32m鉁?[39m src/components/Card/Card.test.tsx [2m([22m[2m14 tests[22m[2m)[22m[90m 111[2mms[22m[39m
+ [32m鉁?[39m src/hooks/useTable.test.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 370[2mms[22m[39m
+[90mstderr[2m | src/pages/Dashboard/Dashboard.test.tsx[
+2m > [22m[2mDashboard Page[2m > [22m[2mshould render 
+dashboard with overview stats
+[22m[39m鈿狅笍 React Router Future Flag Warning: React Rout
+er will begin wrapping state updates in `React.startTransi
+tion` in v7. You can use the `v7_startTransition` future f
+lag to opt-in early. For more information, see https://rea
+ctrouter.com/v6/upgrading/future#v7_starttransition.
+鈿狅笍 React Router Future Flag Warning: Relative route resol
+ution within Splat routes is changing in v7. You can use t
+he `v7_relativeSplatPath` future flag to opt-in early. For
+ more information, see https://reactrouter.com/v6/upgradin
+g/future#v7_relativesplatpath.
+
+[90mstderr[2m | src/pages/Login/Login.test.tsx[2m > [2
+2m[2mLogin Page[2m > [22m[2mshould render login form
+[22m[39m鈿狅笍 React Router Future Flag Warning: React Rout
+er will begin wrapping state updates in `React.startTransi
+tion` in v7. You can use the `v7_startTransition` future f
+lag to opt-in early. For more information, see https://rea
+ctrouter.com/v6/upgrading/future#v7_starttransition.
+鈿狅笍 React Router Future Flag Warning: Relative route resol
+ution within Splat routes is changing in v7. You can use t
+he `v7_relativeSplatPath` future flag to opt-in early. For
+ more information, see https://reactrouter.com/v6/upgradin
+g/future#v7_relativesplatpath.
+
+[90mstderr[2m | src/pages/Dashboard/Dashboard.test.tsx[
+2m > [22m[2mDashboard Page[2m > [22m[2mshould handle 
+API error gracefully
+[22m[39m鍔犺浇浠〃鐩樻暟鎹け璐? Error: Failed to fetch
+    at [90mC:\Users\a2778\Desktop\code\GameLink\frontend\
+[39msrc\pages\Dashboard\Dashboard.test.tsx:77:56
+    at [90mfile:///C:/Users/a2778/Desktop/code/GameLink/f
+rontend/[39mnode_modules/[4m@vitest/runner[24m/dist/ind
+ex.js:146:14
+    at [90mfile:///C:/Users/a2778/Desktop/code/GameLink/f
+rontend/[39mnode_modules/[4m@vitest/runner[24m/dist/ind
+ex.js:533:11
+    at runWithTimeout [90m(file:///C:/Users/a2778/Desktop
+/code/GameLink/frontend/[39mnode_modules/[4m@vitest/runn
+er[24m/dist/index.js:39:7[90m)[39m
+    at runTest [90m(file:///C:/Users/a2778/Desktop/code/G
+ameLink/frontend/[39mnode_modules/[4m@vitest/runner[24m
+/dist/index.js:1056:17[90m)[39m
+    at runSuite [90m(file:///C:/Users/a2778/Desktop/code/
+GameLink/frontend/[39mnode_modules/[4m@vitest/runner[24
+m/dist/index.js:1205:15[90m)[39m
+    at runSuite [90m(file:///C:/Users/a2778/Desktop/code/
+GameLink/frontend/[39mnode_modules/[4m@vitest/runner[24
+m/dist/index.js:1205:15[90m)[39m
+    at runFiles [90m(file:///C:/Users/a2778/Desktop/code/
+GameLink/frontend/[39mnode_modules/[4m@vitest/runner[24
+m/dist/index.js:1262:5[90m)[39m
+    at startTests [90m(file:///C:/Users/a2778/Desktop/cod
+e/GameLink/frontend/[39mnode_modules/[4m@vitest/runner[
+24m/dist/index.js:1271:3[90m)[39m
+    at [90mfile:///C:/Users/a2778/Desktop/code/GameLink/f
+rontend/[39mnode_modules/[4mvitest[24m/dist/chunks/runB
+aseTests.3qpJUEJM.js:126:11
+
+[90mstderr[2m | src/App.test.tsx[2m > [22m[2mApp[2m 
+> [22m[2mrenders without crashing
+[22m[39mError: Uncaught [Error: useAuth must be used wit
+hin AuthProvider]
+    at reportException (C:\Users\a2778\Desktop\code\GameLi
+nk\frontend\node_modules\jsdom\lib\jsdom\living\helpers\ru
+ntime-script-errors.js:66:24)
+    at innerInvokeEventListeners (C:\Users\a2778\Desktop\c
+ode\GameLink\frontend\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:353:9)
+    at invokeEventListeners (C:\Users\a2778\Desktop\code\G
+ameLink\frontend\node_modules\jsdom\lib\jsdom\living\event
+s\EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (C:\Users\a2778\De
+sktop\code\GameLink\frontend\node_modules\jsdom\lib\jsdom\
+living\events\EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (C:\Users\a277
+8\Desktop\code\GameLink\frontend\node_modules\jsdom\lib\js
+dom\living\events\EventTarget-impl.js:104:17)
+    at HTMLUnknownElement.dispatchEvent (C:\Users\a2778\De
+sktop\code\GameLink\frontend\node_modules\jsdom\lib\jsdom\
+living\generated\EventTarget.js:241:34)
+    at Object.invokeGuardedCallbackDev (C:\Users\a2778\Des
+ktop\code\GameLink\frontend\node_modules\react-dom\cjs\rea
+ct-dom.development.js:4213:16)
+    at invokeGuardedCallback (C:\Users\a2778\Desktop\code\
+GameLink\frontend\node_modules\react-dom\cjs\react-dom.dev
+elopment.js:4277:31)
+    at beginWork$1 (C:\Users\a2778\Desktop\code\GameLink\f
+rontend\node_modules\react-dom\cjs\react-dom.development.j
+s:27490:7)
+    at performUnitOfWork (C:\Users\a2778\Desktop\code\Game
+Link\frontend\node_modules\react-dom\cjs\react-dom.develop
+ment.js:26599:12) Error: useAuth must be used within AuthP
+rovider
+    at Module.useAuth [90m(C:\Users\a2778\Desktop\code\Ga
+meLink\frontend\[39msrc\contexts\AuthContext.tsx:129:19[
+90m)[39m
+    at ProtectedRoute [90m(C:\Users\a2778\Desktop\code\Ga
+meLink\frontend\[39msrc\router\ProtectedRoute.tsx:9:29[9
+0m)[39m
+    at renderWithHooks [90m(C:\Users\a2778\Desktop\code\G
+ameLink\frontend\[39mnode_modules\[4mreact-dom[24m\cjs\
+react-dom.development.js:15486:18[90m)[39m
+    at mountIndeterminateComponent [90m(C:\Users\a2778\De
+sktop\code\GameLink\frontend\[39mnode_modules\[4mreact-d
+om[24m\cjs\react-dom.development.js:20103:13[90m)[39m
+    at beginWork [90m(C:\Users\a2778\Desktop\code\GameLin
+k\frontend\[39mnode_modules\[4mreact-dom[24m\cjs\react-
+dom.development.js:21626:16[90m)[39m
+    at HTMLUnknownElement.callCallback [90m(C:\Users\a277
+8\Desktop\code\GameLink\frontend\[39mnode_modules\[4mrea
+ct-dom[24m\cjs\react-dom.development.js:4164:14[90m)[39
+m
+    at HTMLUnknownElement.callTheUserObjectsOperation [90
+m(C:\Users\a2778\Desktop\code\GameLink\frontend\[39mnode_
+modules\[4mjsdom[24m\lib\jsdom\living\generated\EventLis
+tener.js:26:30[90m)[39m
+    at innerInvokeEventListeners [90m(C:\Users\a2778\Desk
+top\code\GameLink\frontend\[39mnode_modules\[4mjsdom[24
+m\lib\jsdom\living\events\EventTarget-impl.js:350:25[90m)
+[39m
+    at invokeEventListeners [90m(C:\Users\a2778\Desktop\c
+ode\GameLink\frontend\[39mnode_modules\[4mjsdom[24m\lib
+\jsdom\living\events\EventTarget-impl.js:286:3[90m)[39m
+    at HTMLUnknownElementImpl._dispatch [90m(C:\Users\a27
+78\Desktop\code\GameLink\frontend\[39mnode_modules\[4mjs
+dom[24m\lib\jsdom\living\events\EventTarget-impl.js:233:9
+[90m)[39m
+Error handled by React Router default ErrorBoundary: Error
+: useAuth must be used within AuthProvider
+    at Module.useAuth [90m(C:\Users\a2778\Desktop\code\Ga
+meLink\frontend\[39msrc\contexts\AuthContext.tsx:129:19[
+90m)[39m
+    at ProtectedRoute [90m(C:\Users\a2778\Desktop\code\Ga
+meLink\frontend\[39msrc\router\ProtectedRoute.tsx:9:29[9
+0m)[39m
+    at renderWithHooks [90m(C:\Users\a2778\Desktop\code\G
+ameLink\frontend\[39mnode_modules\[4mreact-dom[24m\cjs\
+react-dom.development.js:15486:18[90m)[39m
+    at mountIndeterminateComponent [90m(C:\Users\a2778\De
+sktop\code\GameLink\frontend\[39mnode_modules\[4mreact-d
+om[24m\cjs\react-dom.development.js:20103:13[90m)[39m
+    at beginWork [90m(C:\Users\a2778\Desktop\code\GameLin
+k\frontend\[39mnode_modules\[4mreact-dom[24m\cjs\react-
+dom.development.js:21626:16[90m)[39m
+    at beginWork$1 [90m(C:\Users\a2778\Desktop\code\GameL
+ink\frontend\[39mnode_modules\[4mreact-dom[24m\cjs\reac
+t-dom.development.js:27465:14[90m)[39m
+    at performUnitOfWork [90m(C:\Users\a2778\Desktop\code
+\GameLink\frontend\[39mnode_modules\[4mreact-dom[24m\cj
+s\react-dom.development.js:26599:12[90m)[39m
+    at workLoopSync [90m(C:\Users\a2778\Desktop\code\Game
+Link\frontend\[39mnode_modules\[4mreact-dom[24m\cjs\rea
+ct-dom.development.js:26505:5[90m)[39m
+    at renderRootSync [90m(C:\Users\a2778\Desktop\code\Ga
+meLink\frontend\[39mnode_modules\[4mreact-dom[24m\cjs\r
+eact-dom.development.js:26473:7[90m)[39m
+    at performConcurrentWorkOnRoot [90m(C:\Users\a2778\De
+sktop\code\GameLink\frontend\[39mnode_modules\[4mreact-d
+om[24m\cjs\react-dom.development.js:25777:74[90m)[39m
+Error: Uncaught [Error: useAuth must be used within AuthPr
+ovider]
+    at reportException (C:\Users\a2778\Desktop\code\GameLi
+nk\frontend\node_modules\jsdom\lib\jsdom\living\helpers\ru
+ntime-script-errors.js:66:24)
+    at innerInvokeEventListeners (C:\Users\a2778\Desktop\c
+ode\GameLink\frontend\node_modules\jsdom\lib\jsdom\living\
+events\EventTarget-impl.js:353:9)
+    at invokeEventListeners (C:\Users\a2778\Desktop\code\G
+ameLink\frontend\node_modules\jsdom\lib\jsdom\living\event
+s\EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (C:\Users\a2778\De
+sktop\code\GameLink\frontend\node_modules\jsdom\lib\jsdom\
+living\events\EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (C:\Users\a277
+8\Desktop\code\GameLink\frontend\node_modules\jsdom\lib\js
+dom\living\events\EventTarget-impl.js:104:17)
+    at HTMLUnknownElement.dispatchEvent (C:\Users\a2778\De
+sktop\code\GameLink\frontend\node_modules\jsdom\lib\jsdom\
+living\generated\EventTarget.js:241:34)
+    at Object.invokeGuardedCallbackDev (C:\Users\a2778\Des
+ktop\code\GameLink\frontend\node_modules\react-dom\cjs\rea
+ct-dom.development.js:4213:16)
+    at invokeGuardedCallback (C:\Users\a2778\Desktop\code\
+GameLink\frontend\node_modules\react-dom\cjs\react-dom.dev
+elopment.js:4277:31)
+    at beginWork$1 (C:\Users\a2778\Desktop\code\GameLink\f
+rontend\node_modules\react-dom\cjs\react-dom.development.j
+s:27490:7)
+    at performUnitOfWork (C:\Users\a2778\Desktop\code\Game
+Link\frontend\node_modules\react-dom\cjs\react-dom.develop
+ment.js:26599:12) Error: useAuth must be used within AuthP
+rovider
+    at Module.useAuth [90m(C:\Users\a2778\Desktop\code\Ga
+meLink\frontend\[39msrc\contexts\AuthContext.tsx:129:19[
+90m)[39m
+    at ProtectedRoute [90m(C:\Users\a2778\Desktop\code\Ga
+meLink\frontend\[39msrc\router\ProtectedRoute.tsx:9:29[9
+0m)[39m
+    at renderWithHooks [90m(C:\Users\a2778\Desktop\code\G
+ameLink\frontend\[39mnode_modules\[4mreact-dom[24m\cjs\
+react-dom.development.js:15486:18[90m)[39m
+    at mountIndeterminateComponent [90m(C:\Users\a2778\De
+sktop\code\GameLink\frontend\[39mnode_modules\[4mreact-d
+om[24m\cjs\react-dom.development.js:20103:13[90m)[39m
+    at beginWork [90m(C:\Users\a2778\Desktop\code\GameLin
+k\frontend\[39mnode_modules\[4mreact-dom[24m\cjs\react-
+dom.development.js:21626:16[90m)[39m
+    at HTMLUnknownElement.callCallback [90m(C:\Users\a277
+8\Desktop\code\GameLink\frontend\[39mnode_modules\[4mrea
+ct-dom[24m\cjs\react-dom.development.js:4164:14[90m)[39
+m
+    at HTMLUnknownElement.callTheUserObjectsOperation [90
+m(C:\Users\a2778\Desktop\code\GameLink\frontend\[39mnode_
+modules\[4mjsdom[24m\lib\jsdom\living\generated\EventLis
+tener.js:26:30[90m)[39m
+    at innerInvokeEventListeners [90m(C:\Users\a2778\Desk
+top\code\GameLink\frontend\[39mnode_modules\[4mjsdom[24
+m\lib\jsdom\living\events\EventTarget-impl.js:350:25[90m)
+[39m
+    at invokeEventListeners [90m(C:\Users\a2778\Desktop\c
+ode\GameLink\frontend\[39mnode_modules\[4mjsdom[24m\lib
+\jsdom\living\events\EventTarget-impl.js:286:3[90m)[39m
+    at HTMLUnknownElementImpl._dispatch [90m(C:\Users\a27
+78\Desktop\code\GameLink\frontend\[39mnode_modules\[4mjs
+dom[24m\lib\jsdom\living\events\EventTarget-impl.js:233:9
+[90m)[39m
+Error handled by React Router default ErrorBoundary: Error
+: useAuth must be used within AuthProvider
+    at Module.useAuth [90m(C:\Users\a2778\Desktop\code\Ga
+meLink\frontend\[39msrc\contexts\AuthContext.tsx:129:19[
+90m)[39m
+    at ProtectedRoute [90m(C:\Users\a2778\Desktop\code\Ga
+meLink\frontend\[39msrc\router\ProtectedRoute.tsx:9:29[9
+0m)[39m
+    at renderWithHooks [90m(C:\Users\a2778\Desktop\code\G
+ameLink\frontend\[39mnode_modules\[4mreact-dom[24m\cjs\
+react-dom.development.js:15486:18[90m)[39m
+    at mountIndeterminateComponent [90m(C:\Users\a2778\De
+sktop\code\GameLink\frontend\[39mnode_modules\[4mreact-d
+om[24m\cjs\react-dom.development.js:20103:13[90m)[39m
+    at beginWork [90m(C:\Users\a2778\Desktop\code\GameLin
+k\frontend\[39mnode_modules\[4mreact-dom[24m\cjs\react-
+dom.development.js:21626:16[90m)[39m
+    at beginWork$1 [90m(C:\Users\a2778\Desktop\code\GameL
+ink\frontend\[39mnode_modules\[4mreact-dom[24m\cjs\reac
+t-dom.development.js:27465:14[90m)[39m
+    at performUnitOfWork [90m(C:\Users\a2778\Desktop\code
+\GameLink\frontend\[39mnode_modules\[4mreact-dom[24m\cj
+s\react-dom.development.js:26599:12[90m)[39m
+    at workLoopSync [90m(C:\Users\a2778\Desktop\code\Game
+Link\frontend\[39mnode_modules\[4mreact-dom[24m\cjs\rea
+ct-dom.development.js:26505:5[90m)[39m
+    at renderRootSync [90m(C:\Users\a2778\Desktop\code\Ga
+meLink\frontend\[39mnode_modules\[4mreact-dom[24m\cjs\r
+eact-dom.development.js:26473:7[90m)[39m
+    at recoverFromConcurrentError [90m(C:\Users\a2778\Des
+ktop\code\GameLink\frontend\[39mnode_modules\[4mreact-do
+m[24m\cjs\react-dom.development.js:25889:20[90m)[39m
+The above error occurred in the <ProtectedRoute> component
+:
+
+    at ProtectedRoute (C:\Users\a2778\Desktop\code\GameLin
+k\frontend\src\router\ProtectedRoute.tsx:8:51)
+    at RenderedRoute (C:\Users\a2778\Desktop\code\GameLink
+\frontend\node_modules\react-router\dist\umd\react-router.
+development.js:539:7)
+    at RenderErrorBoundary (C:\Users\a2778\Desktop\code\Ga
+meLink\frontend\node_modules\react-router\dist\umd\react-r
+outer.development.js:486:7)
+    at DataRoutes (C:\Users\a2778\Desktop\code\GameLink\fr
+ontend\node_modules\react-router-dom\dist\umd\react-router
+-dom.development.js:684:7)
+    at Router (C:\Users\a2778\Desktop\code\GameLink\fronte
+nd\node_modules\react-router\dist\umd\react-router.develop
+ment.js:1207:17)
+    at RouterProvider (C:\Users\a2778\Desktop\code\GameLin
+k\frontend\node_modules\react-router-dom\dist\umd\react-ro
+uter-dom.development.js:455:7)
+    at App
+
+React will try to recreate this component tree from scratc
+h using the error boundary you provided, RenderErrorBounda
+ry.
+React Router caught the following error during render Erro
+r: useAuth must be used within AuthProvider
+    at Module.useAuth [90m(C:\Users\a2778\Desktop\code\Ga
+meLink\frontend\[39msrc\contexts\AuthContext.tsx:129:19[
+90m)[39m
+    at ProtectedRoute [90m(C:\Users\a2778\Desktop\code\Ga
+meLink\frontend\[39msrc\router\ProtectedRoute.tsx:9:29[9
+0m)[39m
+    at renderWithHooks [90m(C:\Users\a2778\Desktop\code\G
+ameLink\frontend\[39mnode_modules\[4mreact-dom[24m\cjs\
+react-dom.development.js:15486:18[90m)[39m
+    at mountIndeterminateComponent [90m(C:\Users\a2778\De
+sktop\code\GameLink\frontend\[39mnode_modules\[4mreact-d
+om[24m\cjs\react-dom.development.js:20103:13[90m)[39m
+    at beginWork [90m(C:\Users\a2778\Desktop\code\GameLin
+k\frontend\[39mnode_modules\[4mreact-dom[24m\cjs\react-
+dom.development.js:21626:16[90m)[39m
+    at beginWork$1 [90m(C:\Users\a2778\Desktop\code\GameL
+ink\frontend\[39mnode_modules\[4mreact-dom[24m\cjs\reac
+t-dom.development.js:27465:14[90m)[39m
+    at performUnitOfWork [90m(C:\Users\a2778\Desktop\code
+\GameLink\frontend\[39mnode_modules\[4mreact-dom[24m\cj
+s\react-dom.development.js:26599:12[90m)[39m
+    at workLoopSync [90m(C:\Users\a2778\Desktop\code\Game
+Link\frontend\[39mnode_modules\[4mreact-dom[24m\cjs\rea
+ct-dom.development.js:26505:5[90m)[39m
+    at renderRootSync [90m(C:\Users\a2778\Desktop\code\Ga
+meLink\frontend\[39mnode_modules\[4mreact-dom[24m\cjs\r
+eact-dom.development.js:26473:7[90m)[39m
+    at recoverFromConcurrentError [90m(C:\Users\a2778\Des
+ktop\code\GameLink\frontend\[39mnode_modules\[4mreact-do
+m[24m\cjs\react-dom.development.js:25889:20[90m)[39m {
+  componentStack: [32m'\n'[39m +
+    [32m'    at ProtectedRoute (C:\\Users\\a2778\\Desktop
+\\code\\GameLink\\frontend\\src\\router\\ProtectedRoute.ts
+x:8:51)\n'[39m +
+    [32m'    at RenderedRoute (C:\\Users\\a2778\\Desktop\
+\code\\GameLink\\frontend\\node_modules\\react-router\\dis
+t\\umd\\react-router.development.js:539:7)\n'[39m +
+    [32m'    at RenderErrorBoundary (C:\\Users\\a2778\\De
+sktop\\code\\GameLink\\frontend\\node_modules\\react-route
+r\\dist\\umd\\react-router.development.js:486:7)\n'[39m +
+    [32m'    at DataRoutes (C:\\Users\\a2778\\Desktop\\co
+de\\GameLink\\frontend\\node_modules\\react-router-dom\\di
+st\\umd\\react-router-dom.development.js:684:7)\n'[39m +
+    [32m'    at Router (C:\\Users\\a2778\\Desktop\\code\\
+GameLink\\frontend\\node_modules\\react-router\\dist\\umd\
+\react-router.development.js:1207:17)\n'[39m +
+    [32m'    at RouterProvider (C:\\Users\\a2778\\Desktop
+\\code\\GameLink\\frontend\\node_modules\\react-router-dom
+\\dist\\umd\\react-router-dom.development.js:455:7)\n'[39
+m +
+    [32m'    at App'[39m
+}
+鈿狅笍 React Router Future Flag Warning: React Router will be
+gin wrapping state updates in `React.startTransition` in v
+7. You can use the `v7_startTransition` future flag to opt
+-in early. For more information, see https://reactrouter.c
+om/v6/upgrading/future#v7_starttransition.
+
+ [32m鉁?[39m src/App.test.tsx [2m([22m[2m1 test[22m[2m)[22m[90m 61[2mms[22m[39m
+ [32m鉁?[39m src/pages/Dashboard/Dashboard.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[90m 270[2mms[22m[39m
+ [32m鉁?[39m src/pages/Login/Login.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[33m 305[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m11 passed[39m[22m[90m (11)[39m
+[2m      Tests [22m [1m[32m112 passed[39m[22m[90m (112)[39m
+[2m   Start at [22m 02:08:35
+[2m   Duration [22m 5.11s[2m (transform 1.59s, setup 2.63s, collect 6.93s, tests 1.57s, environment 10.48s, prepare 2.90s)[22m
+
+[34m % [39m[2mCoverage report from [22m[33mv8[39m
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   75.34 |    81.61 |   31.92 |   75.34 |                   
+ frontend          |       0 |        0 |       0 |       0 |                   
+  .eslintrc.cjs    |       0 |        0 |       0 |       0 | 1-21              
+  ...wser-external |       0 |        0 |       0 |       0 | 1                 
+ ...un/router/dist |       0 |        0 |       0 |       0 |                   
+  router.js        |       0 |        0 |       0 |       0 | 1-5034            
+ ..._modules/axios |     100 |      100 |     100 |     100 |                   
+  index.js         |     100 |      100 |     100 |     100 |                   
+ ...ules/axios/lib |     100 |      100 |     100 |     100 |                   
+  axios.js         |     100 |      100 |     100 |     100 |                   
+  utils.js         |     100 |      100 |     100 |     100 |                   
+ ...s/lib/adapters |     100 |      100 |     100 |     100 |                   
+  adapters.js      |     100 |      100 |     100 |     100 |                   
+  fetch.js         |     100 |      100 |     100 |     100 |                   
+  xhr.js           |     100 |      100 |     100 |     100 |                   
+ ...ios/lib/cancel |     100 |      100 |     100 |     100 |                   
+  CancelToken.js   |     100 |      100 |     100 |     100 |                   
+  CanceledError.js |     100 |      100 |     100 |     100 |                   
+  isCancel.js      |     100 |      100 |     100 |     100 |                   
+ ...axios/lib/core |     100 |      100 |     100 |     100 |                   
+  Axios.js         |     100 |      100 |     100 |     100 |                   
+  AxiosError.js    |     100 |      100 |     100 |     100 |                   
+  AxiosHeaders.js  |     100 |      100 |     100 |     100 |                   
+  ...torManager.js |     100 |      100 |     100 |     100 |                   
+  buildFullPath.js |     100 |      100 |     100 |     100 |                   
+  ...tchRequest.js |     100 |      100 |     100 |     100 |                   
+  mergeConfig.js   |     100 |      100 |     100 |     100 |                   
+  settle.js        |     100 |      100 |     100 |     100 |                   
+  transformData.js |     100 |      100 |     100 |     100 |                   
+ ...s/lib/defaults |     100 |      100 |     100 |     100 |                   
+  index.js         |     100 |      100 |     100 |     100 |                   
+  transitional.js  |     100 |      100 |     100 |     100 |                   
+ .../axios/lib/env |     100 |      100 |     100 |     100 |                   
+  data.js          |     100 |      100 |     100 |     100 |                   
+ ...os/lib/helpers |   98.82 |        0 |       0 |   98.82 |                   
+  ...archParams.js |     100 |      100 |     100 |     100 |                   
+  ...StatusCode.js |     100 |      100 |     100 |     100 |                   
+  bind.js          |       0 |        0 |       0 |       0 | 1-14              
+  buildURL.js      |     100 |      100 |     100 |     100 |                   
+  combineURLs.js   |     100 |      100 |     100 |     100 |                   
+  ...oseSignals.js |     100 |      100 |     100 |     100 |                   
+  cookies.js       |     100 |      100 |     100 |     100 |                   
+  ...DataToJSON.js |     100 |      100 |     100 |     100 |                   
+  isAbsoluteURL.js |     100 |      100 |     100 |     100 |                   
+  isAxiosError.js  |     100 |      100 |     100 |     100 |                   
+  ...SameOrigin.js |     100 |      100 |     100 |     100 |                   
+  null.js          |     100 |      100 |     100 |     100 |                   
+  parseHeaders.js  |     100 |      100 |     100 |     100 |                   
+  parseProtocol.js |     100 |      100 |     100 |     100 |                   
+  ...entReducer.js |     100 |      100 |     100 |     100 |                   
+  resolveConfig.js |     100 |      100 |     100 |     100 |                   
+  speedometer.js   |     100 |      100 |     100 |     100 |                   
+  spread.js        |     100 |      100 |     100 |     100 |                   
+  throttle.js      |     100 |      100 |     100 |     100 |                   
+  toFormData.js    |     100 |      100 |     100 |     100 |                   
+  ...ncodedForm.js |     100 |      100 |     100 |     100 |                   
+  trackStream.js   |     100 |      100 |     100 |     100 |                   
+  validator.js     |     100 |      100 |     100 |     100 |                   
+ ...s/lib/platform |     100 |      100 |     100 |     100 |                   
+  index.js         |     100 |      100 |     100 |     100 |                   
+ ...atform/browser |     100 |      100 |     100 |     100 |                   
+  index.js         |     100 |      100 |     100 |     100 |                   
+ ...rowser/classes |     100 |      100 |     100 |     100 |                   
+  Blob.js          |     100 |      100 |     100 |     100 |                   
+  FormData.js      |     100 |      100 |     100 |     100 |                   
+  ...archParams.js |     100 |      100 |     100 |     100 |                   
+ ...latform/common |     100 |      100 |     100 |     100 |                   
+  utils.js         |     100 |      100 |     100 |     100 |                   
+ ...ules/crypto-js |     100 |      100 |     100 |     100 |                   
+  aes.js           |     100 |      100 |     100 |     100 |                   
+  blowfish.js      |     100 |      100 |     100 |     100 |                   
+  cipher-core.js   |     100 |      100 |     100 |     100 |                   
+  core.js          |     100 |      100 |     100 |     100 |                   
+  enc-base64.js    |     100 |      100 |     100 |     100 |                   
+  enc-base64url.js |     100 |      100 |     100 |     100 |                   
+  enc-utf16.js     |     100 |      100 |     100 |     100 |                   
+  evpkdf.js        |     100 |      100 |     100 |     100 |                   
+  format-hex.js    |     100 |      100 |     100 |     100 |                   
+  hmac.js          |     100 |      100 |     100 |     100 |                   
+  index.js         |     100 |      100 |     100 |     100 |                   
+  ...ypedarrays.js |     100 |      100 |     100 |     100 |                   
+  md5.js           |     100 |      100 |     100 |     100 |                   
+  mode-cfb.js      |     100 |      100 |     100 |     100 |                   
+  ...tr-gladman.js |     100 |      100 |     100 |     100 |                   
+  mode-ctr.js      |     100 |      100 |     100 |     100 |                   
+  mode-ecb.js      |     100 |      100 |     100 |     100 |                   
+  mode-ofb.js      |     100 |      100 |     100 |     100 |                   
+  pad-ansix923.js  |     100 |      100 |     100 |     100 |                   
+  pad-iso10126.js  |     100 |      100 |     100 |     100 |                   
+  pad-iso97971.js  |     100 |      100 |     100 |     100 |                   
+  pad-nopadding.js |     100 |      100 |     100 |     100 |                   
+  ...eropadding.js |     100 |      100 |     100 |     100 |                   
+  pbkdf2.js        |     100 |      100 |     100 |     100 |                   
+  rabbit-legacy.js |     100 |      100 |     100 |     100 |                   
+  rabbit.js        |     100 |      100 |     100 |     100 |                   
+  rc4.js           |     100 |      100 |     100 |     100 |                   
+  ripemd160.js     |     100 |      100 |     100 |     100 |                   
+  sha1.js          |     100 |      100 |     100 |     100 |                   
+  sha224.js        |     100 |      100 |     100 |     100 |                   
+  sha256.js        |     100 |      100 |     100 |     100 |                   
+  sha3.js          |     100 |      100 |     100 |     100 |                   
+  sha384.js        |     100 |      100 |     100 |     100 |                   
+  sha512.js        |     100 |      100 |     100 |     100 |                   
+  tripledes.js     |     100 |      100 |     100 |     100 |                   
+  x64-core.js      |     100 |      100 |     100 |     100 |                   
+ ..._modules/react |     100 |      100 |     100 |     100 |                   
+  index.js         |     100 |      100 |     100 |     100 |                   
+  jsx-runtime.js   |     100 |      100 |     100 |     100 |                   
+ ...ules/react-dom |     100 |      100 |     100 |     100 |                   
+  client.js        |     100 |      100 |     100 |     100 |                   
+  index.js         |     100 |      100 |     100 |     100 |                   
+ .../react-dom/cjs |     100 |      100 |     100 |     100 |                   
+  ...uction.min.js |     100 |      100 |     100 |     100 |                   
+ ...outer-dom/dist |     100 |      100 |     100 |     100 |                   
+  index.js         |     100 |      100 |     100 |     100 |                   
+ ...ct-router/dist |     100 |      100 |     100 |     100 |                   
+  index.js         |     100 |      100 |     100 |     100 |                   
+ ...ules/react/cjs |       0 |       50 |      50 |       0 |                   
+  ...uction.min.js |       0 |        0 |       0 |       0 | 1-11              
+  ...uction.min.js |       0 |      100 |     100 |       0 | 3-26              
+ ...ules/scheduler |     100 |      100 |     100 |     100 |                   
+  index.js         |     100 |      100 |     100 |     100 |                   
+ .../scheduler/cjs |     100 |      100 |     100 |     100 |                   
+  ...uction.min.js |     100 |      100 |     100 |     100 |                   
+ frontend/src      |     100 |      100 |     100 |     100 |                   
+  App.test.tsx     |     100 |      100 |     100 |     100 |                   
+  App.tsx          |     100 |      100 |     100 |     100 |                   
+  config.ts        |     100 |      100 |     100 |     100 |                   
+  main.tsx         |     100 |      100 |     100 |     100 |                   
+ frontend/src/api  |    6.51 |       50 |   33.33 |    6.51 |                   
+  client.ts        |      17 |      100 |       0 |      17 | ...4,53-90,93-153 
+  http.ts          |       0 |        0 |       0 |       0 | 1-97              
+  retry.ts         |       0 |      100 |     100 |       0 | 48-187            
+ ...src/components |     100 |      100 |     100 |     100 |                   
+  index.ts         |     100 |      100 |     100 |     100 |                   
+ .../ActionButtons |   11.11 |      100 |       0 |   11.11 |                   
+  ...onButtons.tsx |    7.69 |      100 |       0 |    7.69 | 20-47             
+  index.ts         |     100 |      100 |     100 |     100 |                   
+ ...mponents/Badge |   78.78 |    63.63 |     100 |   78.78 |                   
+  Badge.tsx        |   78.12 |    63.63 |     100 |   78.12 | 33,42,46-52       
+  index.ts         |     100 |      100 |     100 |     100 |                   
+ ...nts/Breadcrumb |    12.5 |      100 |       0 |    12.5 |                   
+  Breadcrumb.tsx   |    9.67 |      100 |       0 |    9.67 | 20-27,31-56       
+  index.ts         |     100 |      100 |     100 |     100 |                   
+ ...ts/BulkActions |    7.69 |      100 |       0 |    7.69 |                   
+  BulkActions.tsx  |    5.26 |      100 |       0 |    5.26 | 22-65             
+  index.ts         |     100 |      100 |     100 |     100 |                   
+ ...ponents/Button |     100 |      100 |     100 |     100 |                   
+  Button.test.tsx  |     100 |      100 |     100 |     100 |                   
+  Button.tsx       |     100 |      100 |     100 |     100 |                   
+  index.ts         |     100 |      100 |     100 |     100 |                   
+ ...omponents/Card |     100 |      100 |     100 |     100 |                   
+  Card.test.tsx    |     100 |      100 |     100 |     100 |                   
+  Card.tsx         |     100 |      100 |     100 |     100 |                   
+  index.ts         |     100 |      100 |     100 |     100 |                   
+ ...nents/Checkbox |    5.66 |      100 |       0 |    5.66 |                   
+  Checkbox.tsx     |    3.84 |      100 |       0 |    3.84 | 35-87             
+  index.ts         |     100 |      100 |     100 |     100 |                   
+ ...ents/DataTable |    6.25 |      100 |       0 |    6.25 |                   
+  DataTable.tsx    |    4.25 |      100 |       0 |    4.25 | 42-97             
+  index.ts         |     100 |      100 |     100 |     100 |                   
+ ...teConfirmModal |   13.04 |      100 |       0 |   13.04 |                   
+  ...firmModal.tsx |    9.09 |      100 |       0 |    9.09 | 17-38             
+  index.ts         |     100 |      100 |     100 |     100 |                   
+ ...omponents/Form |    91.3 |       75 |     100 |    91.3 |                   
+  Form.tsx         |   91.11 |       75 |     100 |   91.11 | 76-79             
+  index.ts         |     100 |      100 |     100 |     100 |                   
+ ...ents/FormField |   15.78 |      100 |       0 |   15.78 |                   
+  FormField.tsx    |   11.11 |      100 |       0 |   11.11 | 17-33             
+  index.ts         |     100 |      100 |     100 |     100 |                   
+ ...omponents/Grid |    7.14 |      100 |       0 |    7.14 |                   
+  Grid.tsx         |    7.14 |      100 |       0 |    7.14 | ...67-108,115-116 
+ ...mponents/Icons |   25.25 |      100 |       0 |   25.25 |                   
+  icons.tsx        |      25 |      100 |       0 |      25 | ...30-335,340-343 
+  index.ts         |     100 |      100 |     100 |     100 |                   
+ ...mponents/Input |   94.05 |    73.68 |   66.66 |   94.05 |                   
+  Input.tsx        |      94 |    73.68 |   66.66 |      94 | 46-51             
+  index.ts         |     100 |      100 |     100 |     100 |                   
+ ...ponents/Layout |    4.95 |      100 |       0 |    4.95 |                   
+  Header.tsx       |     3.8 |      100 |       0 |     3.8 | ...51-158,163-237 
+  Layout.tsx       |      10 |      100 |       0 |      10 | 18-38             
+  Sidebar.tsx      |     5.4 |      100 |       0 |     5.4 | 25-76             
+  index.ts         |     100 |      100 |     100 |     100 |                   
+ ...mponents/Modal |    4.76 |      100 |       0 |    4.76 |                   
+  Modal.tsx        |    3.61 |      100 |       0 |    3.61 | 22-116,119-121    
+  index.ts         |     100 |      100 |     100 |     100 |                   
+ ...s/Notification |    7.31 |      100 |       0 |    7.31 |                   
+  Notification.tsx |    7.31 |      100 |       0 |    7.31 | ...82-108,111-125 
+ ...nts/Pagination |    4.95 |      100 |       0 |    4.95 |                   
+  Pagination.tsx   |       4 |      100 |       0 |       4 | ...29-131,135-137 
+  index.ts         |     100 |      100 |     100 |     100 |                   
+ ...ponents/Rating |   20.28 |      100 |       0 |   20.28 |                   
+  Rating.tsx       |   19.11 |      100 |       0 |   19.11 | ...08-110,116-120 
+  index.ts         |     100 |      100 |     100 |     100 |                   
+ ...ts/ReviewModal |    2.29 |      100 |       0 |    2.29 |                   
+  ReviewModal.tsx  |    1.53 |      100 |       0 |    1.53 | 19-168            
+  index.ts         |     100 |      100 |     100 |     100 |                   
+ ...nts/RouteCache |    4.61 |      100 |       0 |    4.61 |                   
+  RouteCache.tsx   |    3.12 |      100 |       0 |    3.12 | 45-128            
+  index.ts         |     100 |      100 |     100 |     100 |                   
+ ...ponents/Select |    2.76 |      100 |       0 |    2.76 |                   
+  Select.tsx       |    2.22 |      100 |       0 |    2.22 | ...31-233,237-239 
+  index.ts         |     100 |      100 |     100 |     100 |                   
+ ...nents/Skeleton |    6.89 |      100 |       0 |    6.89 |                   
+  Skeleton.tsx     |    6.08 |      100 |       0 |    6.08 | ...37-156,166-190 
+  index.ts         |     100 |      100 |     100 |     100 |                   
+ ...mponents/Space |    5.26 |      100 |       0 |    5.26 |                   
+  Space.tsx        |    5.26 |      100 |       0 |    5.26 | 18-57             
+ ...mponents/Table |    3.26 |      100 |       0 |    3.26 |                   
+  Table.tsx        |    2.19 |      100 |       0 |    2.19 | 29-126            
+  index.ts         |     100 |      100 |     100 |     100 |                   
+ ...omponents/Tabs |    1.81 |      100 |       0 |    1.81 |                   
+  Tabs.tsx         |    1.81 |      100 |       0 |    1.81 | 21-143            
+ ...components/Tag |      70 |    33.33 |   33.33 |      70 |                   
+  Tag.tsx          |   68.96 |    33.33 |   33.33 |   68.96 | 45-47,56-58,65-67 
+  index.ts         |     100 |      100 |     100 |     100 |                   
+ ...omponents/Tree |     2.7 |      100 |       0 |     2.7 |                   
+  Tree.tsx         |     2.7 |      100 |       0 |     2.7 | 25-110            
+ ...d/src/contexts |   89.37 |     87.8 |      92 |   89.37 |                   
+  ...text.test.tsx |     100 |    96.55 |     100 |     100 | 170               
+  AuthContext.tsx  |   98.86 |    82.14 |     100 |   98.86 | 100               
+  I18nContext.tsx  |     100 |      100 |     100 |     100 |                   
+  ...text.test.tsx |     100 |      100 |     100 |     100 |                   
+  ThemeContext.tsx |   57.72 |    68.96 |   66.66 |   57.72 | ...68-173,187-198 
+ ...tend/src/hooks |   79.52 |    95.45 |   14.28 |   79.52 |                   
+  useBreadcrumb.ts |   28.81 |      100 |       0 |   28.81 | ...88-101,121-122 
+  useListPage.ts   |     100 |      100 |     100 |     100 |                   
+  useRouteCache.ts |    6.25 |      100 |       0 |    6.25 | 52-104,110-127    
+  useTable.test.ts |     100 |      100 |     100 |     100 |                   
+  useTable.ts      |     100 |    84.61 |     100 |     100 | 94-95             
+ frontend/src/i18n |       0 |      100 |     100 |       0 |                   
+  index.ts         |       0 |      100 |     100 |       0 | 8-58              
+ ...c/i18n/locales |     100 |      100 |     100 |     100 |                   
+  en-US.ts         |     100 |      100 |     100 |     100 |                   
+  zh-CN.ts         |     100 |      100 |     100 |     100 |                   
+ ...src/middleware |   28.07 |      100 |   11.11 |   28.07 |                   
+  crypto.ts        |   28.07 |      100 |   11.11 |   28.07 | ...88-189,195-196 
+ ...ages/CacheDemo |       0 |        0 |       0 |       0 |                   
+  index.tsx        |       0 |        0 |       0 |       0 | 1-84              
+ ...ComponentsDemo |   99.78 |        0 |       0 |   99.78 |                   
+  ...nentsDemo.tsx |     100 |      100 |     100 |     100 |                   
+  index.ts         |       0 |        0 |       0 |       0 | 1                 
+ ...ages/Dashboard |   98.13 |    93.22 |   38.88 |   98.13 |                   
+  ...oard.test.tsx |     100 |      100 |     100 |     100 |                   
+  Dashboard.tsx    |   97.42 |     92.3 |   41.17 |   97.42 | 355-358,361-364   
+  index.ts         |       0 |        0 |       0 |       0 | 1                 
+ ...rc/pages/Games |   99.84 |        0 |       0 |   99.84 |                   
+  GameDetail.tsx   |     100 |      100 |     100 |     100 |                   
+  ...FormModal.tsx |     100 |      100 |     100 |     100 |                   
+  GameList.tsx     |     100 |      100 |     100 |     100 |                   
+  index.ts         |       0 |        0 |       0 |       0 | 1                 
+ ...rc/pages/Login |   95.33 |       85 |   85.71 |   95.33 |                   
+  Login.test.tsx   |   99.02 |    94.73 |     100 |   99.02 | 129               
+  Login.tsx        |   93.18 |       80 |     100 |   93.18 | ...,75-76,111-115 
+  index.ts         |       0 |        0 |       0 |       0 | 1                 
+ ...c/pages/Orders |   85.05 |        0 |       0 |   85.05 |                   
+  OrderDetail.tsx  |     100 |      100 |     100 |     100 |                   
+  ...FormModal.tsx |       0 |        0 |       0 |       0 | 1-146             
+  OrderList.tsx    |     100 |      100 |     100 |     100 |                   
+  index.ts         |       0 |        0 |       0 |       0 | 1                 
+ ...pages/Payments |   99.83 |        0 |       0 |   99.83 |                   
+  ...entDetail.tsx |     100 |      100 |     100 |     100 |                   
+  PaymentList.tsx  |     100 |      100 |     100 |     100 |                   
+  index.ts         |       0 |        0 |       0 |       0 | 1                 
+ ...es/Permissions |   99.91 |        0 |       0 |   99.91 |                   
+  ...signModal.tsx |     100 |      100 |     100 |     100 |                   
+  ...FormModal.tsx |     100 |      100 |     100 |     100 |                   
+  ...ssionList.tsx |     100 |      100 |     100 |     100 |                   
+  ...anagement.tsx |     100 |      100 |     100 |     100 |                   
+  ...FormModal.tsx |     100 |      100 |     100 |     100 |                   
+  ...anagement.tsx |     100 |      100 |     100 |     100 |                   
+  index.ts         |       0 |        0 |       0 |       0 | 1                 
+ .../pages/Players |   68.65 |        0 |       0 |   68.65 |                   
+  ...FormModal.tsx |       0 |        0 |       0 |       0 | 1-158             
+  PlayerList.tsx   |     100 |      100 |     100 |     100 |                   
+  index.ts         |       0 |        0 |       0 |       0 | 1                 
+ ...pages/Register |       0 |        0 |       0 |       0 |                   
+  Register.tsx     |       0 |        0 |       0 |       0 | 1-285             
+  index.ts         |       0 |        0 |       0 |       0 | 1                 
+ .../pages/Reports |       0 |        0 |       0 |       0 |                   
+  ...Dashboard.tsx |       0 |        0 |       0 |       0 | 1-291             
+  index.ts         |       0 |        0 |       0 |       0 | 1                 
+ .../pages/Reviews |   99.66 |        0 |       0 |   99.66 |                   
+  ...FormModal.tsx |     100 |      100 |     100 |     100 |                   
+  ReviewList.tsx   |     100 |      100 |     100 |     100 |                   
+  index.ts         |       0 |        0 |       0 |       0 | 1                 
+ ...pages/Settings |   88.05 |        0 |       0 |   88.05 |                   
+  ...FormModal.tsx |     100 |      100 |     100 |     100 |                   
+  ...tSettings.tsx |     100 |      100 |     100 |     100 |                   
+  ...rSettings.tsx |     100 |      100 |     100 |     100 |                   
+  ...tSettings.tsx |     100 |      100 |     100 |     100 |                   
+  ...mSettings.tsx |       0 |        0 |       0 |       0 | 1-119             
+  ...Dashboard.tsx |     100 |      100 |     100 |     100 |                   
+  UserSettings.tsx |     100 |      100 |     100 |     100 |                   
+  index.ts         |       0 |        0 |       0 |       0 | 1                 
+ ...rc/pages/Users |   83.33 |        0 |       0 |   83.33 |                   
+  UserDetail.tsx   |     100 |      100 |     100 |     100 |                   
+  ...FormModal.tsx |       0 |        0 |       0 |       0 | 1-129             
+  UserList.tsx     |     100 |      100 |     100 |     100 |                   
+  index.ts         |       0 |        0 |       0 |       0 | 1                 
+ ...end/src/router |   78.12 |       20 |     100 |   78.12 |                   
+  ...ctedRoute.tsx |   18.18 |       50 |     100 |   18.18 | 13-36             
+  index.tsx        |   95.94 |        0 |     100 |   95.94 | 37,55,81          
+ ...router/layouts |    4.92 |        0 |       0 |    4.92 |                   
+  MainLayout.tsx   |    4.94 |      100 |       0 |    4.94 | ...67-182,189-316 
+  index.ts         |       0 |        0 |       0 |       0 | 1                 
+ ...end/src/routes |   44.44 |      100 |       0 |   44.44 |                   
+  LazyRoutes.tsx   |   44.44 |      100 |       0 |   44.44 | ...23,27-29,33-35 
+ ...d/src/services |       0 |        0 |       0 |       0 |                   
+  auth.ts          |       0 |        0 |       0 |       0 | 1-14              
+  order.ts         |       0 |        0 |       0 |       0 | 1-9               
+  permission.ts    |       0 |        0 |       0 |       0 | 1-14              
+  user.ts          |       0 |        0 |       0 |       0 | 1-9               
+ ...c/services/api |    1.53 |        0 |       0 |    1.53 |                   
+  auth.ts          |   46.66 |      100 |       0 |   46.66 | ...20,26-27,33-34 
+  game.ts          |       0 |        0 |       0 |       0 | 1-112             
+  index.ts         |       0 |        0 |       0 |       0 | 1-12              
+  order.ts         |       0 |        0 |       0 |       0 | 1-107             
+  payment.ts       |       0 |        0 |       0 |       0 | 1-76              
+  rbac.ts          |       0 |        0 |       0 |       0 | 1-147             
+  review.ts        |       0 |        0 |       0 |       0 | 1-79              
+  stats.ts         |       0 |        0 |       0 |       0 | 1-93              
+  user.ts          |       0 |        0 |       0 |       0 | 1-170             
+ ...tend/src/types |   82.92 |     90.9 |   83.33 |   82.92 |                   
+  api.ts           |       0 |      100 |     100 |       0 | 85-194            
+  auth.ts          |       0 |        0 |       0 |       0 |                   
+  game.ts          |     100 |      100 |     100 |     100 |                   
+  index.ts         |       0 |        0 |       0 |       0 | 1-27              
+  order.ts         |     100 |      100 |     100 |     100 |                   
+  payment.ts       |     100 |      100 |     100 |     100 |                   
+  rbac.ts          |     100 |      100 |     100 |     100 |                   
+  review.ts        |       0 |      100 |     100 |       0 | 87-103            
+  settings.ts      |       0 |        0 |       0 |       0 |                   
+  stats.ts         |       0 |        0 |       0 |       0 |                   
+  user.ts          |     100 |      100 |     100 |     100 |                   
+ ...tend/src/utils |   91.97 |     83.1 |   79.41 |   91.97 |                   
+  crypto.test.ts   |     100 |      100 |     100 |     100 |                   
+  crypto.ts        |   79.62 |    60.86 |     100 |   79.62 | ...27-128,138-139 
+  ...ndler.test.ts |     100 |      100 |     100 |     100 |                   
+  errorHandler.ts  |    81.1 |    74.07 |   72.72 |    81.1 | ...83-184,206-215 
+  formatters.ts    |   87.09 |    41.66 |   71.42 |   87.09 | ...,93,95,105-106 
+  selectOptions.ts |     100 |      100 |     100 |     100 |                   
+  statusHelpers.ts |     100 |      100 |     100 |     100 |                   
+  storage.test.ts  |     100 |      100 |     100 |     100 |                   
+  storage.ts       |      84 |    93.75 |   83.33 |      84 | 77-79,102-111     
+  urlParams.ts     |       0 |        0 |       0 |       0 | 1-36              
+  ...Formatters.ts |     100 |      100 |     100 |     100 |                   
+-------------------|---------|----------|---------|---------|-------------------
