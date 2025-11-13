@@ -73,8 +73,8 @@ type InitiateDisputeRequest struct {
 
 // InitiateDisputeResponse represents the response after initiating a dispute
 type InitiateDisputeResponse struct {
-	DisputeID  uint64
-	TraceID    string
+	DisputeID   uint64
+	TraceID     string
 	SLADeadline *time.Time
 }
 
@@ -146,7 +146,7 @@ func (s *AssignmentService) InitiateDispute(ctx context.Context, req InitiateDis
 	}
 
 	// Log operation
-	s.logOperation(ctx, model.OpEntityDispute, dispute.ID, model.OpActionInitiateDispute, "User initiated dispute", traceID)
+	s.logOperation(ctx, model.OpEntityDispute, dispute.ID, model.OpActionInitiateDispute, "User initiated dispute", traceID, &req.UserID)
 
 	return &InitiateDisputeResponse{
 		DisputeID:   dispute.ID,
@@ -203,10 +203,10 @@ func (s *AssignmentService) AssignDispute(ctx context.Context, req AssignDispute
 
 	// Log operation
 	metadata := fmt.Sprintf("Assigned to user %d via %s", req.AssignedToUserID, req.Source)
-	s.logOperation(ctx, model.OpEntityDispute, dispute.ID, model.OpActionAssignDispute, metadata, dispute.TraceID)
+	s.logOperation(ctx, model.OpEntityDispute, dispute.ID, model.OpActionAssignDispute, metadata, dispute.TraceID, &req.ActorUserID)
 
 	// Send notification to assigned user
-	s.sendNotification(ctx, req.AssignedToUserID, "New Dispute Assignment", 
+	s.sendNotification(ctx, req.AssignedToUserID, "New Dispute Assignment",
 		fmt.Sprintf("You have been assigned dispute #%d", dispute.ID), dispute.TraceID)
 
 	return nil
@@ -214,11 +214,11 @@ func (s *AssignmentService) AssignDispute(ctx context.Context, req AssignDispute
 
 // ResolveDisputeRequest represents a request to resolve a dispute
 type ResolveDisputeRequest struct {
-	DisputeID       uint64
-	Resolution      model.DisputeResolution
-	ResolutionAmount int64  // in cents
-	ResolutionNotes string
-	ActorUserID     uint64 // who is resolving this
+	DisputeID        uint64
+	Resolution       model.DisputeResolution
+	ResolutionAmount int64 // in cents
+	ResolutionNotes  string
+	ActorUserID      uint64 // who is resolving this
 }
 
 // ResolveDispute resolves a dispute with a decision
@@ -260,17 +260,17 @@ func (s *AssignmentService) ResolveDispute(ctx context.Context, req ResolveDispu
 
 	// Handle resolution based on decision
 	if req.Resolution == model.ResolutionRefund {
-		if err := s.processRefund(ctx, order, dispute, req.ResolutionAmount); err != nil {
+		if err := s.processRefund(ctx, order, dispute, req.ResolutionAmount, &req.ActorUserID); err != nil {
 			return err
 		}
 	}
 
 	// Log operation
-	s.logOperation(ctx, model.OpEntityDispute, dispute.ID, model.OpActionResolveDispute, 
-		fmt.Sprintf("Resolved with %s decision", req.Resolution), dispute.TraceID)
+	s.logOperation(ctx, model.OpEntityDispute, dispute.ID, model.OpActionResolveDispute,
+		fmt.Sprintf("Resolved with %s decision", req.Resolution), dispute.TraceID, &req.ActorUserID)
 
 	// Send notification to user
-	s.sendNotification(ctx, dispute.UserID, "Dispute Resolved", 
+	s.sendNotification(ctx, dispute.UserID, "Dispute Resolved",
 		fmt.Sprintf("Your dispute #%d has been resolved", dispute.ID), dispute.TraceID)
 
 	return nil
@@ -316,8 +316,8 @@ func (s *AssignmentService) RollbackAssignment(ctx context.Context, req Rollback
 	}
 
 	// Log operation
-	s.logOperation(ctx, model.OpEntityDispute, dispute.ID, model.OpActionRollbackDispute, 
-		fmt.Sprintf("Rolled back: %s", req.RollbackReason), dispute.TraceID)
+	s.logOperation(ctx, model.OpEntityDispute, dispute.ID, model.OpActionRollbackDispute,
+		fmt.Sprintf("Rolled back: %s", req.RollbackReason), dispute.TraceID, &req.ActorUserID)
 
 	return nil
 }
@@ -355,11 +355,11 @@ func (s *AssignmentService) CheckAndMarkSLABreaches(ctx context.Context) error {
 		}
 
 		// Log operation
-		s.logOperation(ctx, model.OpEntityDispute, dispute.ID, model.OpActionUpdateStatus, 
-			"SLA breached", dispute.TraceID)
+		s.logOperation(ctx, model.OpEntityDispute, dispute.ID, model.OpActionUpdateStatus,
+			"SLA breached", dispute.TraceID, dispute.AssignedToUserID)
 
 		// Send alert notification
-		s.sendNotification(ctx, *dispute.AssignedToUserID, "SLA Breached", 
+		s.sendNotification(ctx, *dispute.AssignedToUserID, "SLA Breached",
 			fmt.Sprintf("Dispute #%d has exceeded SLA deadline", dispute.ID), dispute.TraceID)
 	}
 
@@ -368,7 +368,7 @@ func (s *AssignmentService) CheckAndMarkSLABreaches(ctx context.Context) error {
 
 // Helper functions
 
-func (s *AssignmentService) processRefund(ctx context.Context, order *model.Order, dispute *model.OrderDispute, amount int64) error {
+func (s *AssignmentService) processRefund(ctx context.Context, order *model.Order, dispute *model.OrderDispute, amount int64, actorID *uint64) error {
 	// Update order status
 	order.Status = model.OrderStatusRefunded
 	order.RefundAmountCents = amount
@@ -381,18 +381,20 @@ func (s *AssignmentService) processRefund(ctx context.Context, order *model.Orde
 	}
 
 	// Log refund operation
-	s.logOperation(ctx, model.OpEntityOrder, order.ID, model.OpActionRefund, 
-		fmt.Sprintf("Refund processed: %d cents", amount), dispute.TraceID)
+	s.logOperation(ctx, model.OpEntityOrder, order.ID, model.OpActionRefund,
+		fmt.Sprintf("Refund processed: %d cents", amount), dispute.TraceID, actorID)
 
 	return nil
 }
 
-func (s *AssignmentService) logOperation(ctx context.Context, entityType model.OperationEntityType, entityID uint64, action model.OperationAction, reason string, traceID string) {
+func (s *AssignmentService) logOperation(ctx context.Context, entityType model.OperationEntityType, entityID uint64, action model.OperationAction, reason string, traceID string, actorID *uint64) {
 	log := &model.OperationLog{
-		EntityType: string(entityType),
-		EntityID:   entityID,
-		Action:     string(action),
-		Reason:     reason,
+		EntityType:  string(entityType),
+		EntityID:    entityID,
+		Action:      string(action),
+		Reason:      reason,
+		TraceID:     traceID,
+		ActorUserID: actorID,
 	}
 
 	// Try to add trace ID to metadata if possible
@@ -402,12 +404,12 @@ func (s *AssignmentService) logOperation(ctx context.Context, entityType model.O
 
 func (s *AssignmentService) sendNotification(ctx context.Context, userID uint64, title, message, traceID string) {
 	event := &model.NotificationEvent{
-		UserID:    userID,
-		Title:     title,
-		Message:   message,
-		Channel:   "web",
-		Priority:  model.NotificationPriorityHigh,
-		ReadAt:    nil,
+		UserID:   userID,
+		Title:    title,
+		Message:  message,
+		Channel:  "web",
+		Priority: model.NotificationPriorityHigh,
+		ReadAt:   nil,
 	}
 
 	_ = s.notifications.Create(ctx, event)

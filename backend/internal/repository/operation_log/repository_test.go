@@ -43,6 +43,7 @@ func TestOperationLogRepository_Append(t *testing.T) {
 		ActorUserID:  &actorID,
 		Action:       "create",
 		Reason:       "新建订单",
+		TraceID:      "trace-append-001",
 		MetadataJSON: metadata,
 	}
 
@@ -70,6 +71,9 @@ func TestOperationLogRepository_Append(t *testing.T) {
 	}
 	if retrieved.Action != "create" {
 		t.Errorf("expected action 'create', got %s", retrieved.Action)
+	}
+	if retrieved.TraceID != "trace-append-001" {
+		t.Errorf("expected trace id 'trace-append-001', got %s", retrieved.TraceID)
 	}
 }
 
