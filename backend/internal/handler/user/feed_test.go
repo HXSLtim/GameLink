@@ -1,6 +1,7 @@
 package user
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -9,25 +10,62 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 
 	"gamelink/internal/model"
-	feedrepo "gamelink/internal/repository/feed"
+	"gamelink/internal/repository"
 	feedservice "gamelink/internal/service/feed"
 )
 
-func setupFeedTest(t *testing.T) (*gin.Engine, *gorm.DB) {
+// mockFeedRepository for testing
+type mockFeedRepository struct {
+	feeds map[uint64]*model.Feed
+}
+
+func newMockFeedRepository() *mockFeedRepository {
+	return &mockFeedRepository{feeds: make(map[uint64]*model.Feed)}
+}
+
+func (m *mockFeedRepository) Create(ctx context.Context, feed *model.Feed) error {
+	if feed.ID == 0 {
+		feed.ID = uint64(len(m.feeds) + 1)
+	}
+	m.feeds[feed.ID] = feed
+	return nil
+}
+
+func (m *mockFeedRepository) Get(ctx context.Context, id uint64) (*model.Feed, error) {
+	if f, ok := m.feeds[id]; ok {
+		return f, nil
+	}
+	return nil, repository.ErrNotFound
+}
+
+func (m *mockFeedRepository) List(ctx context.Context, opts repository.FeedListOptions) ([]model.Feed, error) {
+	feeds := make([]model.Feed, 0)
+	for _, f := range m.feeds {
+		feeds = append(feeds, *f)
+	}
+	return feeds, nil
+}
+
+func (m *mockFeedRepository) UpdateModeration(ctx context.Context, feedID uint64, status model.FeedModerationStatus, note string, manual bool) error {
+	if f, ok := m.feeds[feedID]; ok {
+		f.ModerationStatus = status
+		f.ModerationNote = note
+		return nil
+	}
+	return repository.ErrNotFound
+}
+
+func (m *mockFeedRepository) CreateReport(ctx context.Context, report *model.FeedReport) error {
+	return nil
+}
+
+func setupFeedTest(t *testing.T) *gin.Engine {
 	t.Helper()
 	gin.SetMode(gin.TestMode)
-	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
-	if err != nil {
-		t.Fatalf("open db: %v", err)
-	}
-	if err := db.AutoMigrate(&model.Feed{}, &model.FeedImage{}, &model.FeedReport{}); err != nil {
-		t.Fatalf("migrate: %v", err)
-	}
-	repo := feedrepo.NewFeedRepository(db)
+	
+	repo := newMockFeedRepository()
 	svc := feedservice.NewService(repo, feedservice.NewDefaultModerationEngine())
 
 	engine := gin.New()
@@ -38,11 +76,11 @@ func setupFeedTest(t *testing.T) (*gin.Engine, *gorm.DB) {
 	})
 	auth := func(c *gin.Context) { c.Next() }
 	RegisterFeedRoutes(engine.Group("/user"), svc, auth)
-	return engine, db
+	return engine
 }
 
 func TestCreateFeed_Success(t *testing.T) {
-	router, _ := setupFeedTest(t)
+	router := setupFeedTest(t)
 	body := `{"content":"今天天气真好","visibility":"public","images":[{"url":"https://img/1.png","sizeBytes":1024}]}`
 	req := httptest.NewRequest(http.MethodPost, "/user/feeds", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
@@ -72,7 +110,7 @@ func TestCreateFeed_Success(t *testing.T) {
 }
 
 func TestCreateFeed_TooManyImages(t *testing.T) {
-	router, _ := setupFeedTest(t)
+	router := setupFeedTest(t)
 	images := make([]string, 0, 10)
 	for i := 0; i < 10; i++ {
 		images = append(images, fmt.Sprintf(`{"url":"https://img/%d.png","sizeBytes":1024}`, i))
@@ -90,7 +128,7 @@ func TestCreateFeed_TooManyImages(t *testing.T) {
 }
 
 func TestCreateFeed_SensitiveContent(t *testing.T) {
-	router, _ := setupFeedTest(t)
+	router := setupFeedTest(t)
 	body := `{"content":"这是违规内容","images":[]}`
 	req := httptest.NewRequest(http.MethodPost, "/user/feeds", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
