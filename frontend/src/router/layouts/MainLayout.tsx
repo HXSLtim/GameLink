@@ -127,6 +127,15 @@ const ComponentsIcon = () => (
   </svg>
 );
 
+// 社区图标
+const CommunityIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+    <path d="M5 20V9L12 4L19 9V20" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M9 21V14H15V21" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <circle cx="12" cy="10" r="1" fill="currentColor" />
+  </svg>
+);
+
 // 评价图标
 const ReviewsIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -232,6 +241,12 @@ export const MainLayout = () => {
       label: '评价管理',
       icon: <ReviewsIcon />,
       path: '/reviews',
+    },
+    {
+      key: 'community',
+      label: '社区动态',
+      icon: <CommunityIcon />,
+      path: '/community',
     },
     {
       key: 'reports',

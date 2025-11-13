@@ -25,3 +25,9 @@ export * from './review';
 
 // 统计类型
 export * from './stats';
+
+// 社区动态类型
+export * from './feed';
+
+// 通知类型
+export * from './notification';

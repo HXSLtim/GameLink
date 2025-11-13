@@ -60,6 +60,18 @@ func (r *gormPlayerRepository) Get(ctx context.Context, id uint64) (*model.Playe
 	return &player, nil
 }
 
+// GetByUserID returns player by bound user id.
+func (r *gormPlayerRepository) GetByUserID(ctx context.Context, userID uint64) (*model.Player, error) {
+	var player model.Player
+	if err := r.db.WithContext(ctx).Where("user_id = ?", userID).First(&player).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, repository.ErrNotFound
+		}
+		return nil, err
+	}
+	return &player, nil
+}
+
 // Create inserts a new player.
 func (r *gormPlayerRepository) Create(ctx context.Context, player *model.Player) error {
 	return r.db.WithContext(ctx).Create(player).Error
@@ -96,4 +108,3 @@ func (r *gormPlayerRepository) Delete(ctx context.Context, id uint64) error {
 	}
 	return nil
 }
-

@@ -3516,6 +3516,270 @@
                     }
                 }
             }
+        },
+        "/user/feeds": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User/Feeds"
+                ],
+                "summary": "获取社区动态列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "游标",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "单页数量",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.feedListResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User/Feeds"
+                ],
+                "summary": "发布社区动态",
+                "parameters": [
+                    {
+                        "description": "动态内容",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.feedCreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.feedResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/feeds/{id}/report": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User/Feeds"
+                ],
+                "summary": "举报动态",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "动态ID"
+                    },
+                    {
+                        "description": "举报原因",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.feedReportRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/player/reviews/{reviewId}/reply": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Player/Reviews"
+                ],
+                "summary": "陪玩师回复评价",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "name": "reviewId",
+                        "in": "path",
+                        "required": true,
+                        "description": "评价ID"
+                    },
+                    {
+                        "description": "回复内容",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.reviewReplyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/notifications": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "通知列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "name": "unread",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "priority",
+                        "in": "query",
+                        "description": "优先级过滤"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.notificationListResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/notifications/read": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "标记通知已读",
+                "parameters": [
+                    {
+                        "description": "通知ID集合",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.notificationReadRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/notifications/unread-count": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "未读通知数量",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.unreadCountResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -4045,6 +4309,115 @@
                 "token": {
                     "type": "string"
                 }
+            }
+        },
+        "internal_handler.feedImage": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string"
+                },
+                "sizeBytes": {
+                    "type": "integer"
+                },
+                "order": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler.feedResponse": {
+            "type": "object",
+            "properties": {
+                "id": { "type": "integer" },
+                "authorId": { "type": "integer" },
+                "content": { "type": "string" },
+                "visibility": { "type": "string" },
+                "moderationStatus": { "type": "string" },
+                "moderationNote": { "type": "string" },
+                "createdAt": { "type": "string" },
+                "images": {
+                    "type": "array",
+                    "items": { "$ref": "#/definitions/internal_handler.feedImage" }
+                }
+            }
+        },
+        "internal_handler.feedListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": { "$ref": "#/definitions/internal_handler.feedResponse" }
+                },
+                "nextCursor": { "type": "string" }
+            }
+        },
+        "internal_handler.feedCreateRequest": {
+            "type": "object",
+            "required": ["content"],
+            "properties": {
+                "content": { "type": "string" },
+                "visibility": { "type": "string" },
+                "images": {
+                    "type": "array",
+                    "items": { "$ref": "#/definitions/internal_handler.feedImage" }
+                }
+            }
+        },
+        "internal_handler.feedReportRequest": {
+            "type": "object",
+            "required": ["reason"],
+            "properties": {
+                "reason": { "type": "string" }
+            }
+        },
+        "internal_handler.notificationEvent": {
+            "type": "object",
+            "properties": {
+                "id": { "type": "integer" },
+                "title": { "type": "string" },
+                "message": { "type": "string" },
+                "priority": { "type": "string" },
+                "channel": { "type": "string" },
+                "referenceType": { "type": "string" },
+                "referenceId": { "type": "integer" },
+                "readAt": { "type": "string" },
+                "createdAt": { "type": "string" }
+            }
+        },
+        "internal_handler.notificationListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": { "$ref": "#/definitions/internal_handler.notificationEvent" }
+                },
+                "page": { "type": "integer" },
+                "pageSize": { "type": "integer" },
+                "total": { "type": "integer" },
+                "unreadCount": { "type": "integer" }
+            }
+        },
+        "internal_handler.notificationReadRequest": {
+            "type": "object",
+            "required": ["ids"],
+            "properties": {
+                "ids": {
+                    "type": "array",
+                    "items": { "type": "integer" }
+                }
+            }
+        },
+        "internal_handler.reviewReplyRequest": {
+            "type": "object",
+            "required": ["content"],
+            "properties": {
+                "content": { "type": "string" }
+            }
+        },
+        "internal_handler.unreadCountResponse": {
+            "type": "object",
+            "properties": {
+                "unread": { "type": "integer" }
             }
         }
     },
