@@ -32,43 +32,45 @@ func TestGetDashboardOverviewHandler(t *testing.T) {
 	}
 
 	now := time.Now()
-	yesterday := now.AddDate(0, 0, -1)
-	lastMonth := now.AddDate(0, -1, 0)
+	todayStart := now.Truncate(24 * time.Hour)
+	yesterday := todayStart.AddDate(0, 0, -1)
+	lastMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location()).AddDate(0, -1, 0)
+	
 	orders := []model.Order{
-		{Base: model.Base{ID: 1, CreatedAt: now.Add(-2 * time.Hour)}, Status: model.OrderStatusCompleted, TotalPriceCents: 1_000},
-		{Base: model.Base{ID: 2, CreatedAt: now.Add(-1 * time.Hour)}, Status: model.OrderStatusPending, TotalPriceCents: 500},
-		{Base: model.Base{ID: 3, CreatedAt: yesterday}, Status: model.OrderStatusCompleted, TotalPriceCents: 2_000},
-		{Base: model.Base{ID: 4, CreatedAt: lastMonth}, Status: model.OrderStatusCompleted, TotalPriceCents: 3_000},
+		// 今天的订单
+		{Base: model.Base{ID: 1, CreatedAt: todayStart.Add(2 * time.Hour)}, Status: model.OrderStatusCompleted, TotalPriceCents: 1_000},
+		{Base: model.Base{ID: 2, CreatedAt: todayStart.Add(3 * time.Hour)}, Status: model.OrderStatusPending, TotalPriceCents: 500},
+		// 昨天的订单
+		{Base: model.Base{ID: 3, CreatedAt: yesterday.Add(12 * time.Hour)}, Status: model.OrderStatusCompleted, TotalPriceCents: 2_000},
+		// 上个月的订单
+		{Base: model.Base{ID: 4, CreatedAt: lastMonth.Add(24 * time.Hour)}, Status: model.OrderStatusCompleted, TotalPriceCents: 3_000},
 	}
 	orderRepo := &fakeOrderRepoForHandler{
 		items: orders,
 	}
 	orderRepo.listFunc = func(opts repository.OrderListOptions) ([]model.Order, int64, error) {
-		switch {
-		case opts.DateFrom == nil:
-			return append([]model.Order(nil), orders...), int64(len(orders)), nil
-		default:
-			filtered := make([]model.Order, 0, len(orders))
-			for _, o := range orders {
-				if opts.DateFrom != nil && o.CreatedAt.Before(*opts.DateFrom) {
+		filtered := make([]model.Order, 0, len(orders))
+		for _, o := range orders {
+			// 日期过滤：如果DateFrom被设置，只返回在该日期或之后创建的订单
+			if opts.DateFrom != nil && o.CreatedAt.Before(*opts.DateFrom) {
+				continue
+			}
+			// 状态过滤：如果指定了状态，只返回匹配的订单
+			if len(opts.Statuses) > 0 {
+				match := false
+				for _, status := range opts.Statuses {
+					if o.Status == status {
+						match = true
+						break
+					}
+				}
+				if !match {
 					continue
 				}
-				if len(opts.Statuses) > 0 {
-					match := false
-					for _, status := range opts.Statuses {
-						if o.Status == status {
-							match = true
-							break
-						}
-					}
-					if !match {
-						continue
-					}
-				}
-				filtered = append(filtered, o)
 			}
-			return filtered, int64(len(filtered)), nil
+			filtered = append(filtered, o)
 		}
+		return filtered, int64(len(filtered)), nil
 	}
 
 	pendingWithdraw := model.Withdraw{ID: 1, Status: model.WithdrawStatusPending}
@@ -100,8 +102,11 @@ func TestGetDashboardOverviewHandler(t *testing.T) {
 	require.Equal(t, int64(3), resp.Data.TotalUsers)
 	require.Equal(t, int64(5), resp.Data.TotalPlayers)
 	require.Equal(t, int64(len(orders)), resp.Data.TotalOrders)
+	// TodayOrders: ID 1和ID 2都在今天
 	require.Equal(t, int64(2), resp.Data.TodayOrders)
+	// TodayRevenue: 只计算已完成的订单，今天只有ID 1是Completed (1000)
 	require.Equal(t, int64(1_000), resp.Data.TodayRevenue)
+	// MonthRevenue: ID 1 (1000) + ID 3 (2000) = 3000 (都是Completed且在本月)
 	require.Equal(t, int64(1_000+2_000), resp.Data.MonthRevenue)
 	require.Equal(t, int64(1), resp.Data.PendingWithdraws)
 	require.Equal(t, int64(2), resp.Data.ActiveServices)
