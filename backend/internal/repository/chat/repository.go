@@ -13,32 +13,32 @@ import (
 
 // NewChatGroupRepository creates a chat group repository implementation.
 func NewChatGroupRepository(db *gorm.DB) repository.ChatGroupRepository {
-    return &chatGroupRepository{db: db}
+	return &chatGroupRepository{db: db}
 
 }
 
 func (r *chatGroupRepository) ListDeactivatedBefore(ctx context.Context, cutoff time.Time, limit int) ([]model.ChatGroup, error) {
-    if limit <= 0 || limit > 1000 {
-        limit = 100
-    }
-    var groups []model.ChatGroup
-    if err := r.db.WithContext(ctx).Model(&model.ChatGroup{}).
-        Where("group_type = ? AND is_active = ? AND deactivated_at IS NOT NULL AND deactivated_at < ?", model.ChatGroupTypeOrder, false, cutoff).
-        Order("deactivated_at ASC").
-        Limit(limit).
-        Find(&groups).Error; err != nil {
-        return nil, err
-    }
-    return groups, nil
+	if limit <= 0 || limit > 1000 {
+		limit = 100
+	}
+	var groups []model.ChatGroup
+	if err := r.db.WithContext(ctx).Model(&model.ChatGroup{}).
+		Where("group_type = ? AND is_active = ? AND deactivated_at IS NOT NULL AND deactivated_at < ?", model.ChatGroupTypeOrder, false, cutoff).
+		Order("deactivated_at ASC").
+		Limit(limit).
+		Find(&groups).Error; err != nil {
+		return nil, err
+	}
+	return groups, nil
 }
 
 func (r *chatGroupRepository) DeleteByIDs(ctx context.Context, ids []uint64) error {
-    if len(ids) == 0 {
-        return nil
-    }
-    return r.db.WithContext(ctx).Unscoped().
-        Where("id IN ?", ids).
-        Delete(&model.ChatGroup{}).Error
+	if len(ids) == 0 {
+		return nil
+	}
+	return r.db.WithContext(ctx).Unscoped().
+		Where("id IN ?", ids).
+		Delete(&model.ChatGroup{}).Error
 }
 
 type chatGroupRepository struct {
@@ -96,7 +96,7 @@ func (r *chatGroupRepository) ListByUser(ctx context.Context, userID uint64, opt
 	if pageSize <= 0 || pageSize > 100 {
 		pageSize = 20
 	}
-	totalTx := tx.Session(&gorm.Session{NewDB: true})
+	totalTx := tx.Session(&gorm.Session{})
 	var total int64
 	if err := totalTx.Count(&total).Error; err != nil {
 		return nil, 0, err
@@ -135,7 +135,7 @@ func (r *chatGroupRepository) ListMembers(ctx context.Context, groupID uint64, o
 		pageSize = 20
 	}
 
-	totalTx := tx.Session(&gorm.Session{NewDB: true})
+	totalTx := tx.Session(&gorm.Session{})
 	var total int64
 	if err := totalTx.Count(&total).Error; err != nil {
 		return nil, 0, err
@@ -163,7 +163,7 @@ func (r *chatGroupRepository) Deactivate(ctx context.Context, id uint64) error {
 		Model(&model.ChatGroup{}).
 		Where("id = ?", id).
 		Updates(map[string]any{
-			"is_active":       false,
-			"deactivated_at":  now,
+			"is_active":      false,
+			"deactivated_at": now,
 		}).Error
 }

@@ -23,7 +23,7 @@ func setupRankingDB(t *testing.T) *gorm.DB {
 		t.Fatalf("open sqlite: %v", err)
 	}
 
-	if err := db.AutoMigrate(&model.PlayerRanking{}, &model.RankingReward{}); err != nil {
+	if err := db.AutoMigrate(&model.PlayerRanking{}, &model.RankingReward{}, &model.RankingCommissionConfig{}); err != nil {
 		t.Fatalf("auto migrate: %v", err)
 	}
 
@@ -122,52 +122,52 @@ func TestRankingRepository_ListRankingsWithFilters(t *testing.T) {
 }
 
 func TestRankingRepository_ListRankings_DefaultPaginationAndOrdering(t *testing.T) {
-    db := setupRankingDB(t)
-    repo := NewRankingRepository(db)
-    ctx := context.Background()
+	db := setupRankingDB(t)
+	repo := NewRankingRepository(db)
+	ctx := context.Background()
 
-    period := "monthly"
-    value := "2025-01"
-    rt := model.RankingTypeOrderCount
+	period := "monthly"
+	value := "2025-01"
+	rt := model.RankingTypeOrderCount
 
-    for i := 0; i < 25; i++ {
-        require.NoError(t, repo.CreateRanking(ctx, &model.PlayerRanking{
-            PlayerID:    uint64(i + 1),
-            RankingType: rt,
-            Period:      period,
-            PeriodValue: value,
-            Rank:        i + 1,
-            Score:       float64(i + 1),
-        }))
-    }
+	for i := 0; i < 25; i++ {
+		require.NoError(t, repo.CreateRanking(ctx, &model.PlayerRanking{
+			PlayerID:    uint64(i + 1),
+			RankingType: rt,
+			Period:      period,
+			PeriodValue: value,
+			Rank:        i + 1,
+			Score:       float64(i + 1),
+		}))
+	}
 
-    opts := RankingListOptions{RankingType: &rt, Period: &period, PeriodValue: &value, Page: -1, PageSize: -1}
-    rankings, total, err := repo.ListRankings(ctx, opts)
-    require.NoError(t, err)
-    assert.Equal(t, int64(25), total)
-    require.Len(t, rankings, 20)
-    assert.Equal(t, 1, rankings[0].Rank)
-    assert.Equal(t, 20, rankings[len(rankings)-1].Rank)
+	opts := RankingListOptions{RankingType: &rt, Period: &period, PeriodValue: &value, Page: -1, PageSize: -1}
+	rankings, total, err := repo.ListRankings(ctx, opts)
+	require.NoError(t, err)
+	assert.Equal(t, int64(25), total)
+	require.Len(t, rankings, 20)
+	assert.Equal(t, 1, rankings[0].Rank)
+	assert.Equal(t, 20, rankings[len(rankings)-1].Rank)
 }
 
 func TestRankingRepository_ListRewardsOrdering(t *testing.T) {
-    db := setupRankingDB(t)
-    repo := NewRankingRepository(db)
-    ctx := context.Background()
+	db := setupRankingDB(t)
+	repo := NewRankingRepository(db)
+	ctx := context.Background()
 
-    rt := model.RankingTypeIncome
-    require.NoError(t, repo.CreateReward(ctx, &model.RankingReward{RankingType: rt, Period: "monthly", RankStart: 5, RankEnd: 10, RewardType: "cash", RewardValue: 100}))
-    require.NoError(t, repo.CreateReward(ctx, &model.RankingReward{RankingType: rt, Period: "monthly", RankStart: 1, RankEnd: 3, RewardType: "cash", RewardValue: 200}))
-    require.NoError(t, repo.CreateReward(ctx, &model.RankingReward{RankingType: rt, Period: "monthly", RankStart: 4, RankEnd: 4, RewardType: "cash", RewardValue: 150}))
+	rt := model.RankingTypeIncome
+	require.NoError(t, repo.CreateReward(ctx, &model.RankingReward{RankingType: rt, Period: "monthly", RankStart: 5, RankEnd: 10, RewardType: "cash", RewardValue: 100}))
+	require.NoError(t, repo.CreateReward(ctx, &model.RankingReward{RankingType: rt, Period: "monthly", RankStart: 1, RankEnd: 3, RewardType: "cash", RewardValue: 200}))
+	require.NoError(t, repo.CreateReward(ctx, &model.RankingReward{RankingType: rt, Period: "monthly", RankStart: 4, RankEnd: 4, RewardType: "cash", RewardValue: 150}))
 
-    m := "monthly"
-    list, total, err := repo.ListRewards(ctx, RewardListOptions{RankingType: &rt, Period: &m, Page: 1, PageSize: 10})
-    require.NoError(t, err)
-    assert.Equal(t, int64(3), total)
-    require.Len(t, list, 3)
-    assert.Equal(t, 1, list[0].RankStart)
-    assert.Equal(t, 4, list[1].RankStart)
-    assert.Equal(t, 5, list[2].RankStart)
+	m := "monthly"
+	list, total, err := repo.ListRewards(ctx, RewardListOptions{RankingType: &rt, Period: &m, Page: 1, PageSize: 10})
+	require.NoError(t, err)
+	assert.Equal(t, int64(3), total)
+	require.Len(t, list, 3)
+	assert.Equal(t, 1, list[0].RankStart)
+	assert.Equal(t, 4, list[1].RankStart)
+	assert.Equal(t, 5, list[2].RankStart)
 }
 
 func TestRankingRepository_UpdateRanking(t *testing.T) {
@@ -262,11 +262,11 @@ func TestRankingRepository_RewardsLifecycle(t *testing.T) {
 }
 
 func TestRankingRepository_GetRewardForRank_NotFound(t *testing.T) {
-    db := setupRankingDB(t)
-    repo := NewRankingRepository(db)
-    ctx := context.Background()
-    rt := model.RankingTypeIncome
-    require.NoError(t, repo.CreateReward(ctx, &model.RankingReward{RankingType: rt, Period: "monthly", RankStart: 1, RankEnd: 3, RewardType: "cash", RewardValue: 1000, IsActive: true}))
-    _, err := repo.GetRewardForRank(ctx, rt, "monthly", 100)
-    require.ErrorIs(t, err, ErrNotFound)
+	db := setupRankingDB(t)
+	repo := NewRankingRepository(db)
+	ctx := context.Background()
+	rt := model.RankingTypeIncome
+	require.NoError(t, repo.CreateReward(ctx, &model.RankingReward{RankingType: rt, Period: "monthly", RankStart: 1, RankEnd: 3, RewardType: "cash", RewardValue: 1000, IsActive: true}))
+	_, err := repo.GetRewardForRank(ctx, rt, "monthly", 100)
+	require.ErrorIs(t, err, ErrNotFound)
 }
