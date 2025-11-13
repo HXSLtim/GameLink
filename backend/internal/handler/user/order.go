@@ -1,18 +1,21 @@
 package user
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
 	"gamelink/internal/apierr"
 	"gamelink/internal/model"
+	assignmentservice "gamelink/internal/service/assignment"
 	"gamelink/internal/service/order"
 )
 
 // RegisterOrderRoutes 注册用户端订单路由
-func RegisterOrderRoutes(router gin.IRouter, svc *order.OrderService, authMiddleware gin.HandlerFunc) {
+func RegisterOrderRoutes(router gin.IRouter, svc *order.OrderService, assignSvc *assignmentservice.Service, authMiddleware gin.HandlerFunc) {
 	group := router.Group("/user/orders")
 	group.Use(authMiddleware) // 需要认证
 	group.POST("", func(c *gin.Context) { createOrderHandler(c, svc) })
@@ -20,6 +23,7 @@ func RegisterOrderRoutes(router gin.IRouter, svc *order.OrderService, authMiddle
 	group.GET("/:id", func(c *gin.Context) { getOrderDetailHandler(c, svc) })
 	group.PUT("/:id/cancel", func(c *gin.Context) { cancelOrderHandler(c, svc) })
 	group.PUT("/:id/complete", func(c *gin.Context) { completeOrderHandler(c, svc) })
+	group.POST("/:id/dispute", func(c *gin.Context) { createDisputeHandler(c, assignSvc) })
 }
 
 // createOrderHandler 创建订单
@@ -55,14 +59,6 @@ func createOrderHandler(c *gin.Context, svc *order.OrderService) {
 		Message: "订单创建成功",
 		Data:    *resp,
 	})
-}
-
-func getOrderMessagesHandler(c *gin.Context, svc *order.OrderService) {
-    respondJSON(c, http.StatusOK, model.APIResponse[any]{
-        Success: true,
-        Code:    http.StatusOK,
-        Message: "OK",
-    })
 }
 
 // getMyOrdersHandler 获取我的订单列表
@@ -237,9 +233,71 @@ func completeOrderHandler(c *gin.Context, svc *order.OrderService) {
 	})
 }
 
+type disputeRequest struct {
+	Reason   string   `json:"reason" binding:"required"`
+	Evidence []string `json:"evidence"`
+}
+
+// createDisputeHandler 用户发起争议
+// @Summary      发起订单争议
+// @Tags         User - Orders
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        id       path  int             true  "订单ID"
+// @Param        request  body  disputeRequest  true  "争议信息"
+// @Success      201 {object} model.APIResponse[*model.OrderDispute]
+// @Failure      400 {object} model.APIResponse[any]
+// @Router       /user/orders/{id}/dispute [post]
+func createDisputeHandler(c *gin.Context, svc *assignmentservice.Service) {
+	if svc == nil {
+		respondError(c, http.StatusServiceUnavailable, "dispute service unavailable")
+		return
+	}
+	userID := getUserIDFromContext(c)
+	idStr := c.Param("id")
+	orderID, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		respondError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		return
+	}
+	var req disputeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+		return
+	}
+	traceID := assignmentservice.TraceIDFromContext(c.Request.Context())
+	actor := userID
+	dispute, err := svc.CreateDispute(c.Request.Context(), orderID, assignmentservice.DisputeRequest{
+		RaisedBy:       model.OrderDisputeRaisedByUser,
+		RaisedByUserID: &actor,
+		Reason:         strings.TrimSpace(req.Reason),
+		EvidenceURLs:   req.Evidence,
+		TraceID:        traceID,
+	})
+	if err != nil {
+		switch {
+		case errors.Is(err, assignmentservice.ErrValidation):
+			respondError(c, http.StatusBadRequest, err.Error())
+		case errors.Is(err, assignmentservice.ErrNotFound):
+			respondError(c, http.StatusNotFound, err.Error())
+		default:
+			respondError(c, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+	respondJSON(c, http.StatusCreated, model.APIResponse[*model.OrderDispute]{
+		Success: true,
+		Code:    http.StatusCreated,
+		Message: "争议已创建",
+		Data:    dispute,
+		TraceID: traceID,
+	})
+}
+
 // getUserIDFromContext 从上下文获取用户ID
 func getUserIDFromContext(c *gin.Context) uint64 {
-    // 从 JWT 中间件设置的上下文中获取用户ID
+	// 从 JWT 中间件设置的上下文中获取用户ID
 	userIDVal, exists := c.Get("user_id")
 	if !exists {
 		return 0

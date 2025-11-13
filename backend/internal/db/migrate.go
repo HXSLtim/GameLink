@@ -97,7 +97,29 @@ func prepareOrdersMigration(db *gorm.DB) error {
 		}
 	}
 
-	return nil
+        // assignment_source 字段
+        var assignmentSourceExists bool
+        if err := db.Raw("SELECT COUNT(*) > 0 FROM pragma_table_info('orders') WHERE name='assignment_source'").Scan(&assignmentSourceExists).Error; err != nil {
+                return err
+        }
+        if !assignmentSourceExists {
+                if err := db.Exec("ALTER TABLE orders ADD COLUMN assignment_source text DEFAULT 'unknown'").Error; err != nil {
+                        return err
+                }
+        }
+
+        // dispute_status 字段
+        var disputeStatusExists bool
+        if err := db.Raw("SELECT COUNT(*) > 0 FROM pragma_table_info('orders') WHERE name='dispute_status'").Scan(&disputeStatusExists).Error; err != nil {
+                return err
+        }
+        if !disputeStatusExists {
+                if err := db.Exec("ALTER TABLE orders ADD COLUMN dispute_status text DEFAULT 'none'").Error; err != nil {
+                        return err
+                }
+        }
+
+        return nil
 }
 
 func autoMigrate(db *gorm.DB) error {
@@ -118,8 +140,9 @@ func autoMigrate(db *gorm.DB) error {
 		&model.User{},
 		&model.Order{},
 		&model.Payment{},
-		&model.Review{},
-		&model.Withdraw{},
+                &model.Review{},
+                &model.OrderDispute{},
+                &model.Withdraw{},
 		&model.OperationLog{},
 		// Service Item (统一管理护航服务和礼物)
 		&model.ServiceItem{},

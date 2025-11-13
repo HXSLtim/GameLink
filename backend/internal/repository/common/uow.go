@@ -8,7 +8,8 @@ import (
 	"gamelink/internal/repository"
 	"gamelink/internal/repository/game"
 	operationlog "gamelink/internal/repository/operation_log"
-	"gamelink/internal/repository/order"
+        "gamelink/internal/repository/order"
+        orderdispute "gamelink/internal/repository/orderdispute"
 	"gamelink/internal/repository/payment"
 	"gamelink/internal/repository/player"
 	playertag "gamelink/internal/repository/player_tag"
@@ -25,7 +26,8 @@ type Repos struct {
 	Payments repository.PaymentRepository
 	Tags     repository.PlayerTagRepository
 	OpLogs   repository.OperationLogRepository
-	Reviews  repository.ReviewRepository
+        Reviews  repository.ReviewRepository
+        Disputes repository.OrderDisputeRepository
 }
 
 // UnitOfWork provides a simple transaction wrapper for GORM repositories.
@@ -48,8 +50,9 @@ func (u *UnitOfWork) WithTx(ctx context.Context, fn func(r *Repos) error) error 
 			Payments: payment.NewPaymentRepository(tx),
 			Tags:     playertag.NewPlayerTagRepository(tx),
 			OpLogs:   operationlog.NewOperationLogRepository(tx),
-			Reviews:  review.NewReviewRepository(tx),
-		}
+                        Reviews:  review.NewReviewRepository(tx),
+                        Disputes: orderdispute.NewRepository(tx),
+                }
 		return fn(r)
 	})
 }

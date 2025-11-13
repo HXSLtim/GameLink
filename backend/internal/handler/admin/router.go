@@ -1,27 +1,29 @@
 package admin
 
 import (
-	"os"
-	"strings"
+        "os"
+        "strings"
 
-	"github.com/gin-gonic/gin"
+        "github.com/gin-gonic/gin"
 
-	"gamelink/internal/config"
-	mw "gamelink/internal/handler/middleware"
-	"gamelink/internal/model"
-	adminservice "gamelink/internal/service/admin"
-	statsservice "gamelink/internal/service/stats"
+        "gamelink/internal/config"
+        mw "gamelink/internal/handler/middleware"
+        "gamelink/internal/model"
+        adminservice "gamelink/internal/service/admin"
+        assignmentservice "gamelink/internal/service/assignment"
+        statsservice "gamelink/internal/service/stats"
 )
 
 // RegisterRoutes 注册后台管理相关路由
 // 使用细粒度权限控制（method+path 级别）
-func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, pm *mw.PermissionMiddleware) {
-	gameHandler := NewGameHandler(svc)
-	userHandler := NewUserHandler(svc)
-	playerHandler := NewPlayerHandler(svc)
-	orderHandler := NewOrderHandler(svc)
-	paymentHandler := NewPaymentHandler(svc)
-	reviewHandler := NewReviewHandler(svc)
+func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, assignSvc *assignmentservice.Service, pm *mw.PermissionMiddleware) {
+        gameHandler := NewGameHandler(svc)
+        userHandler := NewUserHandler(svc)
+        playerHandler := NewPlayerHandler(svc)
+        orderHandler := NewOrderHandler(svc)
+        paymentHandler := NewPaymentHandler(svc)
+        reviewHandler := NewReviewHandler(svc)
+        assignmentHandler := NewAssignmentHandler(assignSvc)
 
 	group := router.Group("/admin")
 	// 所有管理接口均需要认�?+ 速率限制
@@ -78,8 +80,13 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, pm *mw.P
 		group.DELETE("/orders/:id", pm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/orders/:id"), orderHandler.DeleteOrder)
 		group.POST("/orders/:id/review", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/:id/review"), orderHandler.ReviewOrder)
 		group.POST("/orders/:id/cancel", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/:id/cancel"), orderHandler.CancelOrder)
-		group.POST("/orders/:id/assign", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/:id/assign"), orderHandler.AssignOrder)
-		group.POST("/orders/:id/confirm", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/:id/confirm"), orderHandler.ConfirmOrder)
+                group.GET("/orders/pending-assign", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/orders/pending-assign"), assignmentHandler.ListPendingAssignments)
+                group.GET("/orders/:id/candidates", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/orders/:id/candidates"), assignmentHandler.ListCandidates)
+                group.POST("/orders/:id/assign", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/:id/assign"), assignmentHandler.Assign)
+                group.POST("/orders/:id/assign/cancel", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/:id/assign/cancel"), assignmentHandler.CancelAssignment)
+                group.GET("/orders/:id/disputes", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/orders/:id/disputes"), assignmentHandler.ListDisputes)
+                group.POST("/orders/:id/mediate", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/:id/mediate"), assignmentHandler.MediateDispute)
+                group.POST("/orders/:id/confirm", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/:id/confirm"), orderHandler.ConfirmOrder)
 		group.POST("/orders/:id/start", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/:id/start"), orderHandler.StartOrder)
 		group.POST("/orders/:id/complete", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/:id/complete"), orderHandler.CompleteOrder)
 		group.POST("/orders/:id/refund", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/:id/refund"), orderHandler.RefundOrder)

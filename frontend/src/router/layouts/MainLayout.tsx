@@ -60,6 +60,24 @@ const OrdersIcon = () => (
   </svg>
 );
 
+const AssignmentsIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+    <path
+      d="M4 15.5C4 12.4624 6.46243 10 9.5 10C12.5376 10 15 12.4624 15 15.5V18H12"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M6 10C6 6.68629 8.68629 4 12 4C15.3137 4 18 6.68629 18 10V12"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path d="M18 15L21 18L18 21" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 // 游戏图标
 const GamesIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -213,6 +231,12 @@ export const MainLayout = () => {
       path: '/orders',
     },
     {
+      key: 'assignments',
+      label: '客服指派',
+      icon: <AssignmentsIcon />,
+      path: '/assignments',
+    },
+    {
       key: 'games',
       label: '游戏管理',
       icon: <GamesIcon />,
@@ -293,6 +317,7 @@ export const MainLayout = () => {
     cacheRoutes: [
       '/users',
       '/orders',
+      '/assignments',
       '/games',
       '/players',
       '/payments',

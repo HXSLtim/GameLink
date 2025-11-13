@@ -132,8 +132,11 @@ func (manager *JWTManager) RefreshToken(claims *Claims) (string, error) {
 	}
 
 	// 限制刷新窗口：签发时间距今不得超过 maxRefresh
-	if !claims.IssuedAt.Time.IsZero() && time.Since(claims.IssuedAt.Time) > manager.maxRefresh {
-		return "", errors.New("Token已超过可刷新窗口")
+	if claims.IssuedAt != nil {
+		issuedAt := claims.IssuedAt.Time
+		if !issuedAt.IsZero() && time.Since(issuedAt) > manager.maxRefresh {
+			return "", errors.New("Token已超过可刷新窗口")
+		}
 	}
 
 	// 生成新的Token

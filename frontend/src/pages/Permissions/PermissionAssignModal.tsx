@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Tag, Checkbox } from '../../components';
+import { Modal, Button, Checkbox } from '../../components';
 import { roleApi, permissionApi } from '../../services/api/rbac';
 import type { Role, Permission, PermissionGroup, HTTPMethod } from '../../types/rbac';
-import { getHTTPMethodColor } from '../../utils/statusHelpers';
 import styles from './PermissionAssignModal.module.less';
 
 interface PermissionAssignModalProps {

@@ -251,12 +251,21 @@ type fakeCommissionPlayerRepo struct {
 }
 
 func (f *fakeCommissionPlayerRepo) Get(ctx context.Context, id uint64) (*model.Player, error) {
-	for i := range f.players {
-		if f.players[i].ID == id {
-			return &f.players[i], nil
-		}
-	}
-	return nil, repository.ErrNotFound
+        for i := range f.players {
+                if f.players[i].ID == id {
+                        return &f.players[i], nil
+                }
+        }
+        return nil, repository.ErrNotFound
+}
+
+func (f *fakeCommissionPlayerRepo) GetByUserID(ctx context.Context, userID uint64) (*model.Player, error) {
+        for i := range f.players {
+                if f.players[i].UserID == userID {
+                        return &f.players[i], nil
+                }
+        }
+        return nil, repository.ErrNotFound
 }
 
 func (f *fakeCommissionPlayerRepo) List(ctx context.Context) ([]model.Player, error) {

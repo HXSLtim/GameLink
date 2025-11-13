@@ -35,6 +35,8 @@ export interface Order extends BaseEntity {
   scheduledStart?: string;
   scheduledEnd?: string;
   cancelReason?: string;
+  assignmentSource?: string;
+  disputeStatus?: string;
 
   // 关联信息（API 返回时可能包含）
   user?: {
@@ -138,6 +140,7 @@ export interface UpdateOrderRequest {
 export interface AssignOrderRequest {
   playerId: number;
   note?: string;
+  source?: string;
 }
 
 /**

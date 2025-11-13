@@ -149,7 +149,12 @@ func approveWithdrawHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository
 	adminUserID := adminID.(uint64)
 
 	var req ApproveWithdrawRequest
-	c.ShouldBindJSON(&req)
+	if c.Request.ContentLength > 0 || c.Request.Body != http.NoBody {
+		if err := c.ShouldBindJSON(&req); err != nil {
+			writeJSONError(c, http.StatusBadRequest, "invalid request payload")
+			return
+		}
+	}
 
 	withdraw, err := repo.Get(c.Request.Context(), id)
 	if err != nil {
@@ -299,4 +304,3 @@ func completeWithdrawHandler(c *gin.Context, repo withdrawrepo.WithdrawRepositor
 		Message: "Withdraw completed successfully",
 	})
 }
-

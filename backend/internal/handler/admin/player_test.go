@@ -43,6 +43,16 @@ func (f *fakePlayerRepoForHandler) Get(ctx context.Context, id uint64) (*model.P
 	return nil, repository.ErrNotFound
 }
 
+func (f *fakePlayerRepoForHandler) GetByUserID(ctx context.Context, userID uint64) (*model.Player, error) {
+	for i := range f.items {
+		if f.items[i].UserID == userID {
+			c := f.items[i]
+			return &c, nil
+		}
+	}
+	return nil, repository.ErrNotFound
+}
+
 func (f *fakePlayerRepoForHandler) Create(ctx context.Context, p *model.Player) error {
 	if p.ID == 0 {
 		p.ID = uint64(len(f.items) + 1)
@@ -382,4 +392,3 @@ func TestPlayerHandler_UpdatePlayerSkillTags(t *testing.T) {
 func TestPlayerHandler_ListPlayerLogs(t *testing.T) {
 	t.Skip("ListPlayerLogs requires TxManager, skipping for now")
 }
-

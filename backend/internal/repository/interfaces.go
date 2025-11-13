@@ -44,11 +44,19 @@ type PlayerRepository interface {
 
 // OrderRepository defines order data access operations.
 type OrderRepository interface {
-	Create(ctx context.Context, order *model.Order) error
-	List(ctx context.Context, opts OrderListOptions) ([]model.Order, int64, error)
-	Get(ctx context.Context, id uint64) (*model.Order, error)
-	Update(ctx context.Context, order *model.Order) error
-	Delete(ctx context.Context, id uint64) error
+        Create(ctx context.Context, order *model.Order) error
+        List(ctx context.Context, opts OrderListOptions) ([]model.Order, int64, error)
+        Get(ctx context.Context, id uint64) (*model.Order, error)
+        Update(ctx context.Context, order *model.Order) error
+        Delete(ctx context.Context, id uint64) error
+}
+
+// OrderDisputeRepository defines persistence for order disputes.
+type OrderDisputeRepository interface {
+        Create(ctx context.Context, dispute *model.OrderDispute) error
+        Update(ctx context.Context, dispute *model.OrderDispute) error
+        ListByOrder(ctx context.Context, orderID uint64) ([]model.OrderDispute, error)
+        GetLatestByOrder(ctx context.Context, orderID uint64) (*model.OrderDispute, error)
 }
 
 // PaymentRepository defines payment data access operations.

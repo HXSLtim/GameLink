@@ -21,6 +21,14 @@ type mockReviewRepoForUserReview struct {
 	reviews map[uint64]*model.Review
 }
 
+type fakeReviewReplyRepo struct{}
+
+func (fakeReviewReplyRepo) Create(context.Context, *model.ReviewReply) error { return nil }
+func (fakeReviewReplyRepo) ListByReview(context.Context, uint64) ([]model.ReviewReply, error) {
+	return nil, nil
+}
+func (fakeReviewReplyRepo) UpdateStatus(context.Context, uint64, string, string) error { return nil }
+
 func newMockReviewRepoForUserReview() *mockReviewRepoForUserReview {
 	return &mockReviewRepoForUserReview{
 		reviews: map[uint64]*model.Review{
@@ -98,7 +106,7 @@ func TestCreateReviewHandler_Success(t *testing.T) {
 	orderRepo.Create(context.Background(), order)
 	// order.ID will be set by Create method to 1 (first order in empty repo)
 
-	reviewSvc := review.NewReviewService(reviewRepo, orderRepo, &fakePlayerRepository{}, &fakeUserRepository{})
+	reviewSvc := review.NewReviewService(reviewRepo, orderRepo, &fakePlayerRepository{}, &fakeUserRepository{}, fakeReviewReplyRepo{})
 
 	router := gin.New()
 	router.POST("/user/reviews", func(c *gin.Context) {
@@ -136,7 +144,7 @@ func TestCreateReviewHandler_InvalidJSON(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	reviewRepo := newMockReviewRepoForUserReview()
-	reviewSvc := review.NewReviewService(reviewRepo, newFakeOrderRepository(), &fakePlayerRepository{}, &fakeUserRepository{})
+	reviewSvc := review.NewReviewService(reviewRepo, newFakeOrderRepository(), &fakePlayerRepository{}, &fakeUserRepository{}, fakeReviewReplyRepo{})
 
 	router := gin.New()
 	router.POST("/user/reviews", func(c *gin.Context) {
@@ -171,7 +179,7 @@ func TestCreateReviewHandler_AlreadyReviewed(t *testing.T) {
 	}
 	orderRepo.orders[10] = order // Manually add to match mock review data
 
-	reviewSvc := review.NewReviewService(reviewRepo, orderRepo, &fakePlayerRepository{}, &fakeUserRepository{})
+	reviewSvc := review.NewReviewService(reviewRepo, orderRepo, &fakePlayerRepository{}, &fakeUserRepository{}, fakeReviewReplyRepo{})
 
 	router := gin.New()
 	router.POST("/user/reviews", func(c *gin.Context) {
@@ -201,7 +209,7 @@ func TestGetMyReviewsHandler_Success(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	reviewRepo := newMockReviewRepoForUserReview()
-	reviewSvc := review.NewReviewService(reviewRepo, newFakeOrderRepository(), &fakePlayerRepository{}, &fakeUserRepository{})
+	reviewSvc := review.NewReviewService(reviewRepo, newFakeOrderRepository(), &fakePlayerRepository{}, &fakeUserRepository{}, fakeReviewReplyRepo{})
 
 	router := gin.New()
 	router.GET("/user/reviews/my", func(c *gin.Context) {
@@ -231,7 +239,7 @@ func TestGetMyReviewsHandler_WithPagination(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	reviewRepo := newMockReviewRepoForUserReview()
-	reviewSvc := review.NewReviewService(reviewRepo, newFakeOrderRepository(), &fakePlayerRepository{}, &fakeUserRepository{})
+	reviewSvc := review.NewReviewService(reviewRepo, newFakeOrderRepository(), &fakePlayerRepository{}, &fakeUserRepository{}, fakeReviewReplyRepo{})
 
 	router := gin.New()
 	router.GET("/user/reviews/my", func(c *gin.Context) {

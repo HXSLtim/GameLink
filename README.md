@@ -210,7 +210,7 @@ frontend/
 | 编号 | 缺口主题 | 目标 | 规划阶段 |
 | --- | --- | --- | --- |
 | G1 | 订单池 / 抢单大厅 | 陪玩师可实时浏览、筛选、抢占订单，成功后自动锁单 | 需求→设计 |
-| G2 | 客服指派工具链 | 后台能根据订单条件筛选陪玩师并一键指派，记录响应 | 方案评审 |
+| G2 | 客服指派工具链 | 后台能根据订单条件筛选陪玩师并一键指派，记录响应 | ✅ Implemented |
 | G3 | 实时订单推送 | 订单创建/指派/状态变更≤1s 推送到相关客户端 | 技术预研 |
 | G4 | 社区与维系 | 用户关系链 + 内容沉淀，支持评价互动与召回策略 | 产品探索 |
 | G5 | 车队/队长抢单机制 | 队长统一抢单并分配队内成员，支持队伍管理 | 原型设计 |
@@ -358,6 +358,7 @@ go test ./tests/integration/... -v
 
 ### 🛠️ 技术文档
 - **[三端架构指南](frontend/docs/COMPLETE_THREE_END_SYSTEM_GUIDE.md)** - 完整系统架构设计
+- **[指派 SLA 告警规则](ops/alerts/assignment-sla.yml)** - Prometheus/Loki 告警配置
 - **[数据库设计](backend/docs/database/)** - 数据库表结构和关系设计
 - **[部署指南](docs/deployment/)** - 生产环境部署和运维指南
 
@@ -551,10 +552,70 @@ go test ./tests/integration/... -v
 ### 客服指派 /admin/orders
 | Method & Path | 说明 | 主要参数 | 权限 | 状态 |
 | --- | --- | --- | --- | --- |
-| `GET /api/v1/admin/orders/pending-assign` | 待指派订单列表（支持 SLA 排序） | `gameId, priority, createdBefore` | `admin:orders:read` | 方案评审 (G2) |
-| `GET /api/v1/admin/orders/{orderId}/candidates` | 获取推荐陪玩师候选列表 | query: `limit` | `admin:orders:assign` | 方案评审 (G2, 依赖 G6) |
-| `POST /api/v1/admin/orders/{orderId}/assign` | 指派订单给指定陪玩师或车队 | Body: `playerId / teamId, note` | `admin:orders:assign` | 方案评审 (G2) |
-| `POST /api/v1/admin/orders/{orderId}/assign/cancel` | 取消/重置指派 | Body: `reason` | `admin:orders:assign` | 方案评审 (G2) |
+| `GET /api/v1/admin/orders/pending-assign` | 待指派订单列表（支持 SLA 排序） | `page, page_size` | `admin:orders:read` | ✅ Implemented |
+| `GET /api/v1/admin/orders/{orderId}/candidates` | 获取推荐陪玩师候选列表 | query: `limit` | `admin:orders:assign` | ✅ Implemented |
+| `GET /api/v1/admin/orders/{orderId}/disputes` | 查看订单争议详情 | — | `admin:orders:read` | ✅ Implemented |
+| `POST /api/v1/admin/orders/{orderId}/assign` | 指派订单给指定陪玩师或车队 | Body: `playerId, source` | `admin:orders:assign` | ✅ Implemented |
+| `POST /api/v1/admin/orders/{orderId}/assign/cancel` | 取消/重置指派 | Body: `reason` | `admin:orders:assign` | ✅ Implemented |
+| `POST /api/v1/admin/orders/{orderId}/mediate` | 调解争议并触发退款/重派 | Body: `resolution, note, refundAmountCents, reassignPlayerId` | `admin:orders:assign` | ✅ Implemented |
+
+> 示例响应 - `GET /api/v1/admin/orders/pending-assign`
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "OK",
+  "data": [
+    {
+      "orderId": 8721,
+      "userId": 5402,
+      "status": "pending",
+      "assignmentSource": "manual",
+      "createdAt": "2025-01-12T08:00:00Z",
+      "slaDeadline": "2025-01-12T08:30:00Z",
+      "slaRemainingSeconds": 920,
+      "isOverdue": false
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "page_size": 10,
+    "total": 4,
+    "total_pages": 1,
+    "has_next": false,
+    "has_prev": false
+  },
+  "traceId": "trace-admin-assign-demo"
+}
+```
+
+> 示例响应 - `POST /api/v1/admin/orders/{orderId}/mediate`
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "OK",
+  "data": {
+    "id": 33,
+    "orderId": 8721,
+    "raisedBy": "user",
+    "status": "resolved",
+    "resolution": "refund",
+    "resolutionNote": "体验不佳，退回 50%",
+    "refundAmountCents": 12000,
+    "handledAt": "2025-01-12T08:18:11Z",
+    "responseDeadline": "2025-01-12T08:30:00Z",
+    "traceId": "trace-admin-assign-demo"
+  },
+  "traceId": "trace-admin-assign-demo"
+}
+```
+
+### 订单争议 /user/orders
+
+| Method & Path | 说明 | 主要参数 | 权限 | 状态 |
+| --- | --- | --- | --- | --- |
+| `POST /api/v1/user/orders/{orderId}/dispute` | 用户上传截图发起争议（24h 内受理） | Body: `reason, evidence[]` | `user:orders:write` | ✅ Implemented |
 
 ### 实时订单推送 /ws/orders
 | 通道 | 说明 | 事件类型 | 可靠性 | 状态 |
@@ -598,7 +659,7 @@ go test ./tests/integration/... -v
 | Player (`player.go`) | `UserID`, `Nickname`, `Rank`, `HourlyRateCents`, `MainGameID`, `VerificationStatus` | 陪玩师档案，与 User 一对一，记录段位、价格、认证状态 | ✅ 已实现 |
 | Game (`game.go`) | `Name`, `IconURL`, `Genre`, `Status`, `SortOrder` | 游戏元信息，服务项和订单引用 | ✅ 已实现 |
 | ServiceItem (`service_item.go`) | `ItemCode`, `Category/SubCategory`, `GameID`, `PlayerID`, `BasePriceCents`, `CommissionRate`, `MinUsers/MaxPlayers` | 统一服务定义（护航/团队/礼物），内置抽成和成团参数 | ✅ 已实现 |
-| Order (`order.go`) | `OrderNo`, `UserID`, `PlayerID/RecipientPlayerID`, `Status`, `QueueType`, `RequiredMembers`, `AssignmentSource`, `AssignedTeamID`, `TotalPriceCents`, `CommissionCents`, `GameID`, `ScheduledStart/End`, `GiftMessage`, `RefundAmountCents`, `DisputeStatus` | 护航/礼物/团队订单，覆盖预约、指派、退款、扩展配置；`QueueType`/`RequiredMembers`/`AssignmentSource` 等字段需要在后续迁移中补充 | 🔄 需扩展 |
+| Order (`order.go`) | `OrderNo`, `UserID`, `PlayerID/RecipientPlayerID`, `Status`, `QueueType`, `RequiredMembers`, `AssignmentSource`, `AssignedTeamID`, `TotalPriceCents`, `CommissionCents`, `GameID`, `ScheduledStart/End`, `GiftMessage`, `RefundAmountCents`, `DisputeStatus` | 护航/礼物/团队订单，覆盖预约、指派、退款、扩展配置；新增 `AssignmentSource/DisputeStatus` 字段支持客服工作流 | ✅ 已扩展 |
 | Payment (`payment.go`) | `OrderID`, `UserID`, `Method`, `AmountCents`, `Status`, `ProviderTradeNo`, `ProviderRaw`, `PaidAt/RefundedAt` | 支付/退款流水与渠道回执 | ✅ 已实现 |
 | Review (`review.go`) | `OrderID`, `UserID`, `PlayerID`, `Score`, `Content` | 评价记录，支持后台审核/展示 | ✅ 已实现 |
 | ChatGroup & ChatMessage (`chat.go`) | `GroupType`, `RelatedOrderID`, `Members`, `MessageType`, `AuditStatus`, `Settings` | 公共/订单群聊、消息审核、成员既读管理 | ✅ 已实现 |
@@ -613,7 +674,7 @@ go test ./tests/integration/... -v
 | TeamOrderAssignment | `OrderID`, `TeamID`, `QueueType(single/team)`, `RequiredMembers`, `Status(pending/assigned/in_service/completed)` | 订单被队伍抢单后的绑定关系，记录还需多少成员 | 📝 设计中 |
 | TeamAssignmentMember | `AssignmentID`, `MemberID`, `State(assigned/accepted/completed/withdrawn)`, `StartedAt/CompletedAt` | 队内成员对任务的响应与执行进度 | 📝 设计中 |
 | TeamPayoutPlan | `AssignmentID`, `ProfitMode`, `Shares[{memberId,percent}]`, `ConfirmedBy[]`, `LockedAt` | 队长设置的分账方案（队员确认后生效），供收益结算读取 | 📝 设计中 |
-| OrderDispute | `OrderID`, `RaisedBy(user/player)`, `Reason`, `Evidence`, `AssignmentSource`, `Status(open/in_review/resolved)`, `Resolution`, `RefundAmount`, `HandledBy`, `HandledAt` | 售后/争议闭环，客服可介入、判责、触发退款或重派 | 💡 规划 |
+| OrderDispute | `OrderID`, `RaisedBy(user/player/system)`, `Reason`, `Evidence`, `Status(pending/in_mediation/resolved)`, `Resolution`, `RefundAmount`, `HandledBy`, `HandledAt`, `TraceID` | 售后/争议闭环，客服可介入、判责、触发退款或重派 | ✅ Implemented |
 | NotificationEvent | `UserID`, `Channel(web/push/sms)`, `Payload`, `Priority`, `ReferenceType/ReferenceID`, `ReadAt` | 统一通知中心实体，支撑站内信 + 外部消息 | ✅ Implemented |
 | Feed/Community | `FeedID`, `AuthorID`, `Images[]`, `Content`, `Visibility`, `ModerationStatus`, `Metrics`, `ReplyCount`, `ComplaintCount` | 图文动态及审核状态，为社区/维系模块提供数据 | ✅ Implemented |
 | PlayerStats | `PlayerID`, `CompletedOrders`, `CancelRate`, `ResponseTime`, `SkillTags`, `Languages` | 陪玩师数据指标，供匹配算法/抢单池使用 | 💡 规划 |
@@ -654,7 +715,7 @@ go test ./tests/integration/... -v
 | --- | --- | --- | --- |
 | 仪表盘 | `/admin/dashboard` | 全局指标、告警、快捷操作 | 开发中 |
 | 订单管理 | `/admin/orders` | 多维筛选、状态流转、异常处理 | 开发中 |
-| 指派工作台 | `/admin/assignments` | 待指派列表、陪玩师筛选、日志 | UI 开发 (G2) |
+| 指派工作台 | `/admin/assignments` | 待指派列表、陪玩师筛选、日志 | ✅ Implemented |
 | 用户管理 | `/admin/users` | 用户审核、黑名单、风控信息 | 已上线 |
 | 陪玩师管理 | `/admin/players` | 入驻审核、资质、技能标签 | 已上线 |
 | 财务/结算 | `/admin/finance` | 提现审核、账单对账、发票 | 开发中 |

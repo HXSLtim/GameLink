@@ -107,6 +107,10 @@ func (f *fakePlayerRepo) ListPaged(ctx context.Context, page, size int) ([]model
 func (f *fakePlayerRepo) Get(ctx context.Context, id uint64) (*model.Player, error) {
 	return nil, repository.ErrNotFound
 }
+
+func (f *fakePlayerRepo) GetByUserID(ctx context.Context, userID uint64) (*model.Player, error) {
+	return nil, repository.ErrNotFound
+}
 func (f *fakePlayerRepo) Create(ctx context.Context, p *model.Player) error { return nil }
 func (f *fakePlayerRepo) Update(ctx context.Context, p *model.Player) error { return nil }
 func (f *fakePlayerRepo) Delete(ctx context.Context, id uint64) error       { return nil }
@@ -851,20 +855,20 @@ func TestService_RegisterUserAndPlayer(t *testing.T) {
 func TestService_GetOrderPayments(t *testing.T) {
 	payments := []model.Payment{
 		{
-			Base:      model.Base{ID: 1, CreatedAt: time.Now()},
-			OrderID:   1,
-			UserID:    1,
+			Base:        model.Base{ID: 1, CreatedAt: time.Now()},
+			OrderID:     1,
+			UserID:      1,
 			AmountCents: 10000,
-			Status:    model.PaymentStatusPaid,
-			Method:    model.PaymentMethodWeChat,
+			Status:      model.PaymentStatusPaid,
+			Method:      model.PaymentMethodWeChat,
 		},
 		{
-			Base:      model.Base{ID: 2, CreatedAt: time.Now()},
-			OrderID:   1,
-			UserID:    1,
+			Base:        model.Base{ID: 2, CreatedAt: time.Now()},
+			OrderID:     1,
+			UserID:      1,
 			AmountCents: 5000,
-			Status:    model.PaymentStatusPending,
-			Method:    model.PaymentMethodAlipay,
+			Status:      model.PaymentStatusPending,
+			Method:      model.PaymentMethodAlipay,
 		},
 	}
 	pRepo := &fakePaymentRepo{items: payments}
@@ -899,28 +903,28 @@ func TestService_GetOrderRefunds(t *testing.T) {
 	now := time.Now()
 	refundedAt := now.Add(-1 * time.Hour)
 	order := &model.Order{
-		Base:            model.Base{ID: 1, UpdatedAt: now},
+		Base:              model.Base{ID: 1, UpdatedAt: now},
 		RefundAmountCents: 10000,
-		RefundReason:    "Customer request",
-		RefundedAt:      &refundedAt,
+		RefundReason:      "Customer request",
+		RefundedAt:        &refundedAt,
 	}
 	oRepo := &fakeOrderRepo{obj: order}
 
 	payments := []model.Payment{
 		{
-			Base:      model.Base{ID: 1, CreatedAt: now.Add(-2 * time.Hour)},
-			OrderID:   1,
-			Status:    model.PaymentStatusRefunded,
+			Base:        model.Base{ID: 1, CreatedAt: now.Add(-2 * time.Hour)},
+			OrderID:     1,
+			Status:      model.PaymentStatusRefunded,
 			AmountCents: 10000,
-			Method:    model.PaymentMethodWeChat,
-			RefundedAt: &refundedAt,
+			Method:      model.PaymentMethodWeChat,
+			RefundedAt:  &refundedAt,
 		},
 		{
-			Base:      model.Base{ID: 2, CreatedAt: now.Add(-1 * time.Hour)},
-			OrderID:   1,
-			Status:    model.PaymentStatusPaid,
+			Base:        model.Base{ID: 2, CreatedAt: now.Add(-1 * time.Hour)},
+			OrderID:     1,
+			Status:      model.PaymentStatusPaid,
 			AmountCents: 5000,
-			Method:    model.PaymentMethodAlipay,
+			Method:      model.PaymentMethodAlipay,
 		},
 	}
 	pRepo := &fakePaymentRepo{items: payments}
@@ -945,22 +949,22 @@ func TestService_GetOrderRefunds_WithOrderRefundAmount(t *testing.T) {
 	now := time.Now()
 	refundedAt := now.Add(-1 * time.Hour)
 	order := &model.Order{
-		Base:            model.Base{ID: 1, UpdatedAt: now},
+		Base:              model.Base{ID: 1, UpdatedAt: now},
 		RefundAmountCents: 15000,
-		RefundReason:    "Customer request",
-		RefundedAt:      &refundedAt,
+		RefundReason:      "Customer request",
+		RefundedAt:        &refundedAt,
 	}
 	oRepo := &fakeOrderRepo{obj: order}
 
 	// Payment refund amount doesn't match order refund amount, should add summary
 	payments := []model.Payment{
 		{
-			Base:      model.Base{ID: 1, CreatedAt: now.Add(-2 * time.Hour)},
-			OrderID:   1,
-			Status:    model.PaymentStatusRefunded,
+			Base:        model.Base{ID: 1, CreatedAt: now.Add(-2 * time.Hour)},
+			OrderID:     1,
+			Status:      model.PaymentStatusRefunded,
 			AmountCents: 10000,
-			Method:    model.PaymentMethodWeChat,
-			RefundedAt: &refundedAt,
+			Method:      model.PaymentMethodWeChat,
+			RefundedAt:  &refundedAt,
 		},
 	}
 	pRepo := &fakePaymentRepo{items: payments}
@@ -1168,19 +1172,19 @@ func TestService_GetOrderTimeline(t *testing.T) {
 	opLogRepo := &mockOperationLogRepository{
 		logs: []model.OperationLog{
 			{
-				Base:      model.Base{ID: 1, CreatedAt: now},
-				EntityType: string(model.OpEntityOrder),
-				EntityID:   1,
-				Action:    string(model.OpActionCreate),
+				Base:         model.Base{ID: 1, CreatedAt: now},
+				EntityType:   string(model.OpEntityOrder),
+				EntityID:     1,
+				Action:       string(model.OpActionCreate),
 				MetadataJSON: []byte(`{"note": "Order created"}`),
 			},
 			{
-				Base:      model.Base{ID: 2, CreatedAt: now.Add(1 * time.Hour)},
-				EntityType: string(model.OpEntityOrder),
-				EntityID:   1,
-				Action:    string(model.OpActionUpdate),
+				Base:         model.Base{ID: 2, CreatedAt: now.Add(1 * time.Hour)},
+				EntityType:   string(model.OpEntityOrder),
+				EntityID:     1,
+				Action:       string(model.OpActionUpdate),
 				MetadataJSON: []byte(`{"from_status": "pending", "status": "confirmed"}`),
-				ActorUserID: ptrUint64(1),
+				ActorUserID:  ptrUint64(1),
 			},
 		},
 	}
@@ -1239,16 +1243,16 @@ func TestService_ListOperationLogs(t *testing.T) {
 	opLogRepo := &mockOperationLogRepository{
 		logs: []model.OperationLog{
 			{
-				Base:      model.Base{ID: 1, CreatedAt: now},
+				Base:       model.Base{ID: 1, CreatedAt: now},
 				EntityType: "order",
 				EntityID:   1,
-				Action:    "create",
+				Action:     "create",
 			},
 			{
-				Base:      model.Base{ID: 2, CreatedAt: now.Add(1 * time.Hour)},
+				Base:       model.Base{ID: 2, CreatedAt: now.Add(1 * time.Hour)},
 				EntityType: "order",
 				EntityID:   1,
-				Action:    "update",
+				Action:     "update",
 			},
 		},
 	}
@@ -1296,10 +1300,10 @@ func TestService_ListOperationLogs(t *testing.T) {
 func TestService_UpdateOrder_EdgeCases(t *testing.T) {
 	now := time.Now()
 	order := &model.Order{
-		Base:          model.Base{ID: 1},
-		Status:        model.OrderStatusPending,
+		Base:            model.Base{ID: 1},
+		Status:          model.OrderStatusPending,
 		TotalPriceCents: 10000,
-		Currency:      model.CurrencyCNY,
+		Currency:        model.CurrencyCNY,
 	}
 	oRepo := &fakeOrderRepo{obj: order}
 	s := NewAdminService(&fakeGameRepo{}, &fakeUserRepo{}, &fakePlayerRepo{}, oRepo, &fakePaymentRepo{}, &fakeRoleRepo{}, cache.NewMemory())
@@ -1308,11 +1312,11 @@ func TestService_UpdateOrder_EdgeCases(t *testing.T) {
 	start := now.Add(2 * time.Hour)
 	end := now.Add(1 * time.Hour)
 	_, err := s.UpdateOrder(context.Background(), 1, UpdateOrderInput{
-		Status:        model.OrderStatusConfirmed,
+		Status:          model.OrderStatusConfirmed,
 		TotalPriceCents: 10000,
-		Currency:      model.CurrencyCNY,
-		ScheduledStart: &start,
-		ScheduledEnd:   &end,
+		Currency:        model.CurrencyCNY,
+		ScheduledStart:  &start,
+		ScheduledEnd:    &end,
 	})
 	if err == nil {
 		t.Error("expected validation error when ScheduledEnd is before ScheduledStart")
@@ -1320,9 +1324,9 @@ func TestService_UpdateOrder_EdgeCases(t *testing.T) {
 
 	// Test: Zero price should be allowed (for free orders)
 	_, err = s.UpdateOrder(context.Background(), 1, UpdateOrderInput{
-		Status:        model.OrderStatusConfirmed,
+		Status:          model.OrderStatusConfirmed,
 		TotalPriceCents: 0,
-		Currency:      model.CurrencyCNY,
+		Currency:        model.CurrencyCNY,
 	})
 	if err != nil {
 		t.Errorf("zero price should be allowed, got error: %v", err)
@@ -1332,12 +1336,12 @@ func TestService_UpdateOrder_EdgeCases(t *testing.T) {
 	refundAmount := int64(5000)
 	refundedAt := now
 	_, err = s.UpdateOrder(context.Background(), 1, UpdateOrderInput{
-		Status:        model.OrderStatusRefunded,
-		TotalPriceCents: 10000,
-		Currency:      model.CurrencyCNY,
+		Status:            model.OrderStatusRefunded,
+		TotalPriceCents:   10000,
+		Currency:          model.CurrencyCNY,
 		RefundAmountCents: &refundAmount,
-		RefundReason:   "Test refund",
-		RefundedAt:     &refundedAt,
+		RefundReason:      "Test refund",
+		RefundedAt:        &refundedAt,
 	})
 	if err != nil {
 		t.Errorf("update with refund info should succeed, got error: %v", err)

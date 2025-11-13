@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 
 	"gamelink/internal/model"
@@ -151,7 +152,7 @@ func (s *ReviewService) CreateReview(ctx context.Context, userID uint64, req Cre
 	// 更新陪玩师评分
 	if playerID > 0 {
 		if err := s.updatePlayerRating(ctx, playerID); err != nil {
-			// 更新评分失败不影响评价创建
+			log.Printf("failed to update player %d rating: %v", playerID, err)
 		}
 	}
 

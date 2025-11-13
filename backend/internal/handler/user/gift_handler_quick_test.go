@@ -41,6 +41,10 @@ type dummyPlayerRepoGift struct{}
 func (dummyPlayerRepoGift) List(ctx context.Context) ([]model.Player, error) { _=ctx; return nil, nil }
 func (dummyPlayerRepoGift) ListPaged(ctx context.Context, _ int, _ int) ([]model.Player, int64, error) { _=ctx; return nil, 0, nil }
 func (dummyPlayerRepoGift) Get(ctx context.Context, _ uint64) (*model.Player, error) { _=ctx; return &model.Player{Nickname:"p"}, nil }
+func (dummyPlayerRepoGift) GetByUserID(ctx context.Context, userID uint64) (*model.Player, error) {
+    _ = ctx
+    return &model.Player{Base: model.Base{ID: userID}, UserID: userID, Nickname:"p"}, nil
+}
 func (dummyPlayerRepoGift) Create(ctx context.Context, _ *model.Player) error { _=ctx; return nil }
 func (dummyPlayerRepoGift) Update(ctx context.Context, _ *model.Player) error { _=ctx; return nil }
 func (dummyPlayerRepoGift) Delete(ctx context.Context, _ uint64) error { _=ctx; return nil }

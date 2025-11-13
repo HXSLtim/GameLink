@@ -3,6 +3,7 @@ package order
 import (
 	"context"
 	"errors"
+	"log"
 	"time"
 
 	"gamelink/internal/model"
@@ -83,7 +84,7 @@ func (s *OrderService) deactivateOrderChat(ctx context.Context, orderID uint64) 
 type CreateOrderRequest struct {
 	PlayerID       uint64     `json:"playerId" binding:"required"`
 	GameID         uint64     `json:"gameId" binding:"required"`
-	ServiceID      *uint64    `json:"serviceId"`           // 可选：关联服务
+	ServiceID      *uint64    `json:"serviceId"` // 可选：关联服务
 	Title          string     `json:"title" binding:"required,max=128"`
 	Description    string     `json:"description"`
 	ScheduledStart *time.Time `json:"scheduledStart" binding:"required"`
@@ -478,9 +479,7 @@ func (s *OrderService) CompleteOrder(ctx context.Context, userID uint64, orderID
 
 	// 订单完成后，自动记录抽成
 	if err := s.recordCommissionAsync(ctx, orderID); err != nil {
-		// 记录日志但不影响订单完成
-		// TODO: 使用日志系统
-		// log.Printf("Failed to record commission for order %d: %v", orderID, err)
+		log.Printf("failed to record commission for order %d: %v", orderID, err)
 	}
 
 	// auto-destroy order chat group
@@ -524,16 +523,16 @@ func (s *OrderService) recordCommissionAsync(ctx context.Context, orderID uint64
 	if playerID == 0 {
 		return errors.New("order has no player assigned")
 	}
-	
+
 	record := &model.CommissionRecord{
-		OrderID:            orderID,
-		PlayerID:           playerID,
-		TotalAmountCents:   totalAmount,
-		CommissionRate:     commissionRate,
-		CommissionCents:    commissionAmount,
-		PlayerIncomeCents:  playerIncome,
-		SettlementStatus:   "pending",
-		SettlementMonth:    now.Format("2006-01"),
+		OrderID:           orderID,
+		PlayerID:          playerID,
+		TotalAmountCents:  totalAmount,
+		CommissionRate:    commissionRate,
+		CommissionCents:   commissionAmount,
+		PlayerIncomeCents: playerIncome,
+		SettlementStatus:  "pending",
+		SettlementMonth:   now.Format("2006-01"),
 	}
 
 	return s.commissions.CreateRecord(ctx, record)
@@ -608,7 +607,7 @@ func (s *OrderService) buildOrderTimeline(order *model.Order) []OrderTimelineDTO
 		{
 			Time:    order.CreatedAt,
 			Status:  string(model.OrderStatusPending),
-				Message: "订单已创建",
+			Message: "订单已创建",
 		},
 	}
 
@@ -845,9 +844,7 @@ func (s *OrderService) CompleteOrderByPlayer(ctx context.Context, playerUserID u
 
 	// 订单完成后，自动记录抽成
 	if err := s.recordCommissionAsync(ctx, orderID); err != nil {
-		// 记录日志但不影响订单完成
-		// TODO: 使用日志系统
-		// log.Printf("Failed to record commission for order %d: %v", orderID, err)
+		log.Printf("failed to record commission for order %d: %v", orderID, err)
 	}
 
 	return nil

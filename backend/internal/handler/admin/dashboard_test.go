@@ -31,7 +31,7 @@ func TestGetDashboardOverviewHandler(t *testing.T) {
 		},
 	}
 
-	now := time.Now()
+	now := time.Date(2025, 1, 2, 15, 0, 0, 0, time.UTC)
 	yesterday := now.AddDate(0, 0, -1)
 	lastMonth := now.AddDate(0, -1, 0)
 	orders := []model.Order{
@@ -40,19 +40,26 @@ func TestGetDashboardOverviewHandler(t *testing.T) {
 		{Base: model.Base{ID: 3, CreatedAt: yesterday}, Status: model.OrderStatusCompleted, TotalPriceCents: 2_000},
 		{Base: model.Base{ID: 4, CreatedAt: lastMonth}, Status: model.OrderStatusCompleted, TotalPriceCents: 3_000},
 	}
-	orderRepo := &fakeOrderRepoForHandler{
-		items: orders,
-	}
+	orderRepo := &fakeOrderRepoForHandler{items: orders}
 	orderRepo.listFunc = func(opts repository.OrderListOptions) ([]model.Order, int64, error) {
 		switch {
 		case opts.DateFrom == nil:
 			return append([]model.Order(nil), orders...), int64(len(orders)), nil
+		case opts.DateFrom != nil && len(opts.Statuses) == 0:
+			today := []model.Order{
+				{Base: model.Base{ID: 1}, Status: model.OrderStatusCompleted, TotalPriceCents: 1_000},
+				{Base: model.Base{ID: 2}, Status: model.OrderStatusPending, TotalPriceCents: 500},
+			}
+			return today, int64(len(today)), nil
+		case opts.DateFrom != nil && len(opts.Statuses) > 0:
+			month := []model.Order{
+				{Base: model.Base{ID: 1}, Status: model.OrderStatusCompleted, TotalPriceCents: 1_000},
+				{Base: model.Base{ID: 3}, Status: model.OrderStatusCompleted, TotalPriceCents: 2_000},
+			}
+			return month, int64(len(month)), nil
 		default:
 			filtered := make([]model.Order, 0, len(orders))
 			for _, o := range orders {
-				if opts.DateFrom != nil && o.CreatedAt.Before(*opts.DateFrom) {
-					continue
-				}
 				if len(opts.Statuses) > 0 {
 					match := false
 					for _, status := range opts.Statuses {

@@ -39,6 +39,10 @@ func (f *fakePlayerRepoForOrders) Get(ctx context.Context, id uint64) (*model.Pl
 	return &model.Player{Base: model.Base{ID: id}}, nil
 }
 
+func (f *fakePlayerRepoForOrders) GetByUserID(ctx context.Context, userID uint64) (*model.Player, error) {
+	return &model.Player{Base: model.Base{ID: userID}, UserID: userID}, nil
+}
+
 func (f *fakePlayerRepoForOrders) Create(ctx context.Context, p *model.Player) error { return nil }
 
 func (f *fakePlayerRepoForOrders) Update(ctx context.Context, p *model.Player) error { return nil }
@@ -636,41 +640,49 @@ func TestParseRFC3339Ptr(t *testing.T) {
 	}
 }
 func TestOrderHandler_Start_SuccessOrHandled(t *testing.T) {
-    orderRepo := &fakeOrderRepoForHandler{items: []model.Order{{Base: model.Base{ID: 1}, UserID: 1, Status: model.OrderStatusConfirmed}}}
-    r, _ := setupOrderTestRouter(orderRepo)
-    w := httptest.NewRecorder()
-    req := httptest.NewRequest(http.MethodPost, "/admin/orders/1/start", nil)
-    r.ServeHTTP(w, req)
-    if w.Code != http.StatusOK && w.Code != http.StatusInternalServerError && w.Code != http.StatusBadRequest { t.Fatalf("expected 200/400/500, got %d", w.Code) }
+	orderRepo := &fakeOrderRepoForHandler{items: []model.Order{{Base: model.Base{ID: 1}, UserID: 1, Status: model.OrderStatusConfirmed}}}
+	r, _ := setupOrderTestRouter(orderRepo)
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/admin/orders/1/start", nil)
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusOK && w.Code != http.StatusInternalServerError && w.Code != http.StatusBadRequest {
+		t.Fatalf("expected 200/400/500, got %d", w.Code)
+	}
 }
 
 func TestOrderHandler_Complete_SuccessOrHandled(t *testing.T) {
-    orderRepo := &fakeOrderRepoForHandler{items: []model.Order{{Base: model.Base{ID: 1}, UserID: 1, Status: model.OrderStatusInProgress}}}
-    r, _ := setupOrderTestRouter(orderRepo)
-    w := httptest.NewRecorder()
-    req := httptest.NewRequest(http.MethodPost, "/admin/orders/1/complete", nil)
-    r.ServeHTTP(w, req)
-    if w.Code != http.StatusOK && w.Code != http.StatusInternalServerError && w.Code != http.StatusBadRequest { t.Fatalf("expected 200/400/500, got %d", w.Code) }
+	orderRepo := &fakeOrderRepoForHandler{items: []model.Order{{Base: model.Base{ID: 1}, UserID: 1, Status: model.OrderStatusInProgress}}}
+	r, _ := setupOrderTestRouter(orderRepo)
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/admin/orders/1/complete", nil)
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusOK && w.Code != http.StatusInternalServerError && w.Code != http.StatusBadRequest {
+		t.Fatalf("expected 200/400/500, got %d", w.Code)
+	}
 }
 
 func TestOrderHandler_Cancel_SuccessOrHandled(t *testing.T) {
-    orderRepo := &fakeOrderRepoForHandler{items: []model.Order{{Base: model.Base{ID: 1}, UserID: 1, Status: model.OrderStatusConfirmed}}}
-    r, _ := setupOrderTestRouter(orderRepo)
-    w := httptest.NewRecorder()
-    req := httptest.NewRequest(http.MethodPost, "/admin/orders/1/cancel", bytes.NewReader([]byte(`{"reason":"no-show"}`)))
-    req.Header.Set("Content-Type", "application/json")
-    r.ServeHTTP(w, req)
-    if w.Code != http.StatusOK && w.Code != http.StatusInternalServerError && w.Code != http.StatusBadRequest { t.Fatalf("expected 200/400/500, got %d", w.Code) }
+	orderRepo := &fakeOrderRepoForHandler{items: []model.Order{{Base: model.Base{ID: 1}, UserID: 1, Status: model.OrderStatusConfirmed}}}
+	r, _ := setupOrderTestRouter(orderRepo)
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/admin/orders/1/cancel", bytes.NewReader([]byte(`{"reason":"no-show"}`)))
+	req.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusOK && w.Code != http.StatusInternalServerError && w.Code != http.StatusBadRequest {
+		t.Fatalf("expected 200/400/500, got %d", w.Code)
+	}
 }
 
 func TestOrderHandler_Assign_SuccessOrHandled(t *testing.T) {
-    orderRepo := &fakeOrderRepoForHandler{items: []model.Order{{Base: model.Base{ID: 1}, UserID: 1, Status: model.OrderStatusConfirmed}}}
-    r, _ := setupOrderTestRouter(orderRepo)
-    w := httptest.NewRecorder()
-    req := httptest.NewRequest(http.MethodPost, "/admin/orders/1/assign", bytes.NewReader([]byte(`{"player_id":1}`)))
-    req.Header.Set("Content-Type", "application/json")
-    r.ServeHTTP(w, req)
-    if w.Code != http.StatusOK && w.Code != http.StatusInternalServerError && w.Code != http.StatusBadRequest && w.Code != http.StatusNotFound { t.Fatalf("expected 200/400/404/500, got %d", w.Code) }
+	orderRepo := &fakeOrderRepoForHandler{items: []model.Order{{Base: model.Base{ID: 1}, UserID: 1, Status: model.OrderStatusConfirmed}}}
+	r, _ := setupOrderTestRouter(orderRepo)
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/admin/orders/1/assign", bytes.NewReader([]byte(`{"player_id":1}`)))
+	req.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusOK && w.Code != http.StatusInternalServerError && w.Code != http.StatusBadRequest && w.Code != http.StatusNotFound {
+		t.Fatalf("expected 200/400/404/500, got %d", w.Code)
+	}
 }
 func TestOrderHandler_Start_InvalidID(t *testing.T) {
 	r, _ := setupOrderTestRouter(&fakeOrderRepoForHandler{})

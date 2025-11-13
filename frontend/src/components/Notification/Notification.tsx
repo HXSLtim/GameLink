@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { ReactNode, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { createRoot } from 'react-dom/client';
 import styles from './Notification.module.less';
@@ -107,7 +107,7 @@ export const Message: React.FC<MessageOptions & { onClose?: () => void }> = ({
   return createPortal(node, container);
 };
 
-export const message = (options: MessageOptions) => {
+const baseMessage = (options: MessageOptions) => {
   const container = document.getElementById('gl-message-container') || document.body;
   const wrapper = document.createElement('div');
   (container as HTMLElement).appendChild(wrapper);
@@ -123,3 +123,12 @@ export const message = (options: MessageOptions) => {
 
   return { close };
 };
+
+type MessageShortcut = (content: ReactNode, duration?: number) => { close: () => void };
+
+export const message = Object.assign(baseMessage, {
+  success: ((content: ReactNode, duration?: number) => baseMessage({ type: 'success', content, duration })) as MessageShortcut,
+  error: ((content: ReactNode, duration?: number) => baseMessage({ type: 'error', content, duration })) as MessageShortcut,
+  info: ((content: ReactNode, duration?: number) => baseMessage({ type: 'info', content, duration })) as MessageShortcut,
+  warning: ((content: ReactNode, duration?: number) => baseMessage({ type: 'warning', content, duration })) as MessageShortcut,
+});

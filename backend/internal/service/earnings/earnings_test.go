@@ -33,6 +33,13 @@ func (m *mockPlayerRepository) Get(ctx context.Context, id uint64) (*model.Playe
 	}, nil
 }
 
+func (m *mockPlayerRepository) GetByUserID(ctx context.Context, userID uint64) (*model.Player, error) {
+	return &model.Player{
+		Base:   model.Base{ID: userID},
+		UserID: userID,
+	}, nil
+}
+
 func (m *mockPlayerRepository) Create(ctx context.Context, player *model.Player) error {
 	return nil
 }

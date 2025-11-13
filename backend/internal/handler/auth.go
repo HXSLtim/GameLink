@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -70,13 +71,11 @@ func loginHandler(c *gin.Context, svc *authservice.AuthService) {
 	resp, err := svc.Login(c.Request.Context(), authservice.LoginRequest{Username: req.Username, Password: req.Password})
 	if err != nil {
 		status := http.StatusUnauthorized
-		switch err {
-		case service.ErrInvalidCredentials:
-			status = http.StatusUnauthorized
-		case service.ErrUserDisabled:
+		switch {
+		case errors.Is(err, service.ErrUserDisabled):
 			status = http.StatusForbidden
-		default:
-			status = http.StatusUnauthorized
+		case errors.Is(err, service.ErrInvalidCredentials):
+			// keep unauthorized status
 		}
 		respondJSON(c, status, model.APIResponse[any]{Success: false, Code: status, Message: err.Error()})
 		return

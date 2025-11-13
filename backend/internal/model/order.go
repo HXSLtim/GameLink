@@ -5,14 +5,36 @@ import "time"
 // OrderStatus defines lifecycle states for an order.
 type OrderStatus string
 
+// OrderAssignmentSource 定义订单指派来源。
+type OrderAssignmentSource string
+
+// OrderDisputeStatus 表示订单争议状态。
+type OrderDisputeStatus string
+
 // OrderStatus values define the lifecycle of an order.
 const (
-	OrderStatusPending    OrderStatus = "pending"
-	OrderStatusConfirmed  OrderStatus = "confirmed"
-	OrderStatusInProgress OrderStatus = "in_progress"
-	OrderStatusCompleted  OrderStatus = "completed"
-	OrderStatusCanceled   OrderStatus = "canceled"
-	OrderStatusRefunded   OrderStatus = "refunded"
+        OrderStatusPending    OrderStatus = "pending"
+        OrderStatusConfirmed  OrderStatus = "confirmed"
+        OrderStatusInProgress OrderStatus = "in_progress"
+        OrderStatusCompleted  OrderStatus = "completed"
+        OrderStatusCanceled   OrderStatus = "canceled"
+        OrderStatusRefunded   OrderStatus = "refunded"
+)
+
+// OrderAssignmentSource 枚举
+const (
+        OrderAssignmentSourceUnknown OrderAssignmentSource = "unknown"
+        OrderAssignmentSourceSystem  OrderAssignmentSource = "system_recommendation"
+        OrderAssignmentSourceManual  OrderAssignmentSource = "manual"
+        OrderAssignmentSourceRollback OrderAssignmentSource = "rollback"
+)
+
+// OrderDisputeStatus 枚举
+const (
+        OrderDisputeStatusNone       OrderDisputeStatus = "none"
+        OrderDisputeStatusPending    OrderDisputeStatus = "pending"
+        OrderDisputeStatusInMediation OrderDisputeStatus = "in_mediation"
+        OrderDisputeStatusResolved   OrderDisputeStatus = "resolved"
 )
 
 // Order represents a unified order (护航服务 or 礼物)
@@ -32,10 +54,12 @@ type Order struct {
 	PlayerIncomeCents int64    `json:"playerIncomeCents" gorm:"column:player_income_cents;default:0"` // 陪玩师收入（分）
 	Currency          Currency `json:"currency,omitempty" gorm:"type:char(3);default:'CNY'"`          // 货币
 
-	// 订单信息
-	Status      OrderStatus `json:"status" gorm:"size:32;index;default:'pending'"` // 订单状态
-	Title       string      `json:"title,omitempty" gorm:"size:128"`               // 订单标题
-	Description string      `json:"description,omitempty" gorm:"type:text"`        // 订单描述
+        // 订单信息
+        Status           OrderStatus           `json:"status" gorm:"size:32;index;default:'pending'"`             // 订单状态
+        AssignmentSource OrderAssignmentSource `json:"assignmentSource" gorm:"column:assignment_source;size:32;index;default:'unknown'"`
+        DisputeStatus    OrderDisputeStatus    `json:"disputeStatus" gorm:"column:dispute_status;size:32;index;default:'none'"`
+        Title            string                `json:"title,omitempty" gorm:"size:128"`
+        Description      string                `json:"description,omitempty" gorm:"type:text"`
 
 	// 护航服务字段
 	GameID         *uint64    `json:"gameId,omitempty" gorm:"column:game_id;index"`           // 游戏ID

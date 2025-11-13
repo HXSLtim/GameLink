@@ -41,11 +41,13 @@ import (
 	chatrepo "gamelink/internal/repository/chat"
 	commissionrepo "gamelink/internal/repository/commission"
 	"gamelink/internal/repository/common"
-	feedrepo "gamelink/internal/repository/feed"
-	gamerepo "gamelink/internal/repository/game"
-	notificationrepo "gamelink/internal/repository/notification"
-	orderrepo "gamelink/internal/repository/order"
-	paymentrepo "gamelink/internal/repository/payment"
+        feedrepo "gamelink/internal/repository/feed"
+        gamerepo "gamelink/internal/repository/game"
+        notificationrepo "gamelink/internal/repository/notification"
+        operationlogrepo "gamelink/internal/repository/operation_log"
+        orderrepo "gamelink/internal/repository/order"
+        orderdisputerepo "gamelink/internal/repository/orderdispute"
+        paymentrepo "gamelink/internal/repository/payment"
 	permissionrepo "gamelink/internal/repository/permission"
 	playerrepo "gamelink/internal/repository/player"
 	playertagrepo "gamelink/internal/repository/player_tag"
@@ -58,7 +60,8 @@ import (
 	userrepo "gamelink/internal/repository/user"
 	withdrawrepo "gamelink/internal/repository/withdraw"
 	"gamelink/internal/scheduler"
-	adminservice "gamelink/internal/service/admin"
+        adminservice "gamelink/internal/service/admin"
+        assignmentservice "gamelink/internal/service/assignment"
 	authservice "gamelink/internal/service/auth"
 	chatservice "gamelink/internal/service/chat"
 	commissionservice "gamelink/internal/service/commission"
@@ -124,9 +127,9 @@ func main() {
 		cacheClient,
 	)
 
-	// Inject transaction manager for composite operations
-	uow := common.NewUnitOfWork(orm)
-	adminSvc.SetTxManager(uow)
+        // Inject transaction manager for composite operations
+        uow := common.NewUnitOfWork(orm)
+        adminSvc.SetTxManager(uow)
 
 	gin.SetMode(resolveGinMode())
 
@@ -188,9 +191,11 @@ func main() {
 	withdrawRepo := withdrawrepo.NewWithdrawRepository(orm)
 	commissionRepo := commissionrepo.NewCommissionRepository(orm)
 	serviceItemRepo := serviceitemrepo.NewServiceItemRepository(orm)
-	rankingCommissionRepo := rankingrepo.NewRankingCommissionRepository(orm)
-	feedRepo := feedrepo.NewFeedRepository(orm)
-	notificationRepo := notificationrepo.NewNotificationRepository(orm)
+        rankingCommissionRepo := rankingrepo.NewRankingCommissionRepository(orm)
+        feedRepo := feedrepo.NewFeedRepository(orm)
+        notificationRepo := notificationrepo.NewNotificationRepository(orm)
+        opLogRepo := operationlogrepo.NewOperationLogRepository(orm)
+        orderDisputeRepo := orderdisputerepo.NewRepository(orm)
 
 	// Initialize user-side services
 	commissionSvc := commissionservice.NewCommissionService(commissionRepo, orderRepo, playerRepo)
@@ -205,7 +210,10 @@ func main() {
 	earningsSvc := earningsservice.NewEarningsService(playerRepo, orderRepo, withdrawRepo)
 	chatSvc := chatservice.NewChatService(chatGroupRepo, chatMemberRepo, chatMessageRepo, chatReportRepo, cacheClient)
 	feedSvc := feedservice.NewService(feedRepo, nil)
-	notificationSvc := notificationservice.NewService(notificationRepo)
+        notificationSvc := notificationservice.NewService(notificationRepo)
+
+        assignmentSvc := assignmentservice.NewService(orderRepo, playerRepo, orderDisputeRepo, opLogRepo, notificationRepo)
+        assignmentSvc.SetTxManager(uow)
 
 	// Initialize settlement scheduler
 	settlementScheduler := scheduler.NewSettlementScheduler(commissionSvc)
@@ -222,7 +230,7 @@ func main() {
 	userGroup := api.Group("/user")
 	userGroup.Use(authMiddleware)
 	{
-		userhandler.RegisterOrderRoutes(userGroup, orderSvc, authMiddleware)
+                userhandler.RegisterOrderRoutes(userGroup, orderSvc, assignmentSvc, authMiddleware)
 		userhandler.RegisterPaymentRoutes(userGroup, paymentSvc, authMiddleware)
 		userhandler.RegisterPlayerRoutes(userGroup, playerSvc, authMiddleware)
 		userhandler.RegisterReviewRoutes(userGroup, reviewSvc, authMiddleware)
@@ -265,7 +273,7 @@ func main() {
 	notificationhandler.RegisterRoutes(api, notificationSvc, authMiddleware)
 
 	// Register admin routes under versioned prefix: /api/v1/admin（使用新的权限中间件）
-	adminhandler.RegisterRoutes(api, adminSvc, permMiddleware)
+        adminhandler.RegisterRoutes(api, adminSvc, assignmentSvc, permMiddleware)
 
 	// Stats routes（使用新的权限中间件）
 	statsSvc := statsservice.NewStatsService(statsrepo.NewStatsRepository(orm))

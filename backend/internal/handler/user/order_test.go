@@ -1,19 +1,20 @@
 package user
 
 import (
-	"bytes"
-	"context"
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
-	"testing"
+        "bytes"
+        "context"
+        "encoding/json"
+        "net/http"
+        "net/http/httptest"
+        "testing"
 
-	"github.com/gin-gonic/gin"
+        "github.com/gin-gonic/gin"
 
-	"gamelink/internal/model"
-	"gamelink/internal/repository"
-	commissionrepo "gamelink/internal/repository/commission"
-	"gamelink/internal/service/order"
+        "gamelink/internal/model"
+        "gamelink/internal/repository"
+        commissionrepo "gamelink/internal/repository/commission"
+        assignmentservice "gamelink/internal/service/assignment"
+        "gamelink/internal/service/order"
 )
 
 // ---- Fake repositories for handler tests ----
@@ -220,10 +221,11 @@ func (m *fakeCommissionRepository) GetPlayerMonthlyIncome(ctx context.Context, p
 
 // ---- Helpers ----
 
-func setupOrderTestService() (*order.OrderService, *fakeOrderRepository) {
-	orders := newFakeOrderRepository()
-	svc := order.NewOrderService(orders, &fakePlayerRepository{}, &fakeUserRepository{}, &fakeGameRepository{}, &fakePaymentRepository{}, &fakeReviewRepository{}, &fakeCommissionRepository{})
-	return svc, orders
+func setupOrderTestService() (*order.OrderService, *fakeOrderRepository, *assignmentservice.Service) {
+        orders := newFakeOrderRepository()
+        svc := order.NewOrderService(orders, &fakePlayerRepository{}, &fakeUserRepository{}, &fakeGameRepository{}, &fakePaymentRepository{}, &fakeReviewRepository{}, &fakeCommissionRepository{})
+        assignSvc := newAssignmentServiceStub(orders, &fakePlayerRepository{})
+        return svc, orders, assignSvc
 }
 
 func fakeAuthMiddleware(userID uint64) gin.HandlerFunc {
@@ -233,17 +235,17 @@ func fakeAuthMiddleware(userID uint64) gin.HandlerFunc {
 	}
 }
 
-func setupOrderTestRouter(svc *order.OrderService, userID uint64) *gin.Engine {
-	gin.SetMode(gin.TestMode)
-	r := gin.New()
-	RegisterOrderRoutes(r, svc, fakeAuthMiddleware(userID))
-	return r
+func setupOrderTestRouter(svc *order.OrderService, assignSvc *assignmentservice.Service, userID uint64) *gin.Engine {
+        gin.SetMode(gin.TestMode)
+        r := gin.New()
+        RegisterOrderRoutes(r, svc, assignSvc, fakeAuthMiddleware(userID))
+        return r
 }
 
 // ---- Tests ----
 
 func TestUserOrder_GetOrderDetail_Success(t *testing.T) {
-	svc, orders := setupOrderTestService()
+        svc, orders, assignSvc := setupOrderTestService()
 	gameID := uint64(1)
 	orders.orders[1] = &model.Order{
 		Base:            model.Base{ID: 1},
@@ -257,7 +259,7 @@ func TestUserOrder_GetOrderDetail_Success(t *testing.T) {
 		UnitPriceCents:  1000,
 	}
 
-	r := setupOrderTestRouter(svc, 100)
+        r := setupOrderTestRouter(svc, assignSvc, 100)
 	req, _ := http.NewRequest(http.MethodGet, "/user/orders/1", nil)
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
@@ -280,8 +282,8 @@ func TestUserOrder_GetOrderDetail_Success(t *testing.T) {
 }
 
 func TestUserOrder_GetOrderDetail_NotFound(t *testing.T) {
-	svc, _ := setupOrderTestService()
-	r := setupOrderTestRouter(svc, 123)
+        svc, _, assignSvc := setupOrderTestService()
+        r := setupOrderTestRouter(svc, assignSvc, 123)
 	req, _ := http.NewRequest(http.MethodGet, "/user/orders/9999", nil)
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
@@ -299,12 +301,12 @@ func TestUserOrder_GetOrderDetail_NotFound(t *testing.T) {
 }
 
 func TestUserOrder_GetOrderDetail_Forbidden(t *testing.T) {
-	svc, orders := setupOrderTestService()
+        svc, orders, assignSvc := setupOrderTestService()
 	gameID := uint64(1)
 	orders.orders[1] = &model.Order{Base: model.Base{ID: 1}, UserID: 100, GameID: &gameID, ItemID: 1, OrderNo: "USER-TEST-002", Title: "Test Order"}
 
 	// user_id 200 is neither the order's user nor player
-	r := setupOrderTestRouter(svc, 200)
+        r := setupOrderTestRouter(svc, assignSvc, 200)
 	req, _ := http.NewRequest(http.MethodGet, "/user/orders/1", nil)
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
@@ -322,8 +324,8 @@ func TestUserOrder_GetOrderDetail_Forbidden(t *testing.T) {
 }
 
 func TestUserOrder_GetOrderDetail_InvalidID(t *testing.T) {
-	svc, _ := setupOrderTestService()
-	r := setupOrderTestRouter(svc, 123)
+        svc, _, assignSvc := setupOrderTestService()
+        r := setupOrderTestRouter(svc, assignSvc, 123)
 	req, _ := http.NewRequest(http.MethodGet, "/user/orders/abc", nil)
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
@@ -344,8 +346,8 @@ func TestUserOrder_GetOrderDetail_InvalidID(t *testing.T) {
 // ---- Tests for createOrderHandler ----
 
 func TestUserOrder_CreateOrder_Success(t *testing.T) {
-	svc, _ := setupOrderTestService()
-	r := setupOrderTestRouter(svc, 100)
+        svc, _, assignSvc := setupOrderTestService()
+        r := setupOrderTestRouter(svc, assignSvc, 100)
 
 	reqBody := `{"playerId":1,"gameId":1,"title":"Test Order","scheduledStart":"2025-01-15T10:00:00Z","durationHours":2.0}`
 	req, _ := http.NewRequest(http.MethodPost, "/user/orders", bytes.NewBufferString(reqBody))
@@ -368,8 +370,8 @@ func TestUserOrder_CreateOrder_Success(t *testing.T) {
 }
 
 func TestUserOrder_CreateOrder_InvalidJSON(t *testing.T) {
-	svc, _ := setupOrderTestService()
-	r := setupOrderTestRouter(svc, 100)
+        svc, _, assignSvc := setupOrderTestService()
+        r := setupOrderTestRouter(svc, assignSvc, 100)
 
 	req, _ := http.NewRequest(http.MethodPost, "/user/orders", bytes.NewBufferString("invalid json"))
 	req.Header.Set("Content-Type", "application/json")
@@ -384,7 +386,7 @@ func TestUserOrder_CreateOrder_InvalidJSON(t *testing.T) {
 // ---- Tests for getMyOrdersHandler ----
 
 func TestUserOrder_GetMyOrders_Success(t *testing.T) {
-	svc, orders := setupOrderTestService()
+        svc, orders, assignSvc := setupOrderTestService()
 	gameID := uint64(1)
 	orders.orders[1] = &model.Order{
 		Base:            model.Base{ID: 1},
@@ -405,7 +407,7 @@ func TestUserOrder_GetMyOrders_Success(t *testing.T) {
 		TotalPriceCents: 3000,
 	}
 
-	r := setupOrderTestRouter(svc, 100)
+        r := setupOrderTestRouter(svc, assignSvc, 100)
 	req, _ := http.NewRequest(http.MethodGet, "/user/orders?page=1&pageSize=10", nil)
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
@@ -425,7 +427,7 @@ func TestUserOrder_GetMyOrders_Success(t *testing.T) {
 }
 
 func TestUserOrder_GetMyOrders_WithStatusFilter(t *testing.T) {
-	svc, orders := setupOrderTestService()
+        svc, orders, assignSvc := setupOrderTestService()
 	gameID := uint64(1)
 	orders.orders[1] = &model.Order{
 		Base:   model.Base{ID: 1},
@@ -435,7 +437,7 @@ func TestUserOrder_GetMyOrders_WithStatusFilter(t *testing.T) {
 		Status: model.OrderStatusPending,
 	}
 
-	r := setupOrderTestRouter(svc, 100)
+        r := setupOrderTestRouter(svc, assignSvc, 100)
 	req, _ := http.NewRequest(http.MethodGet, "/user/orders?status=pending&page=1", nil)
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
@@ -446,8 +448,8 @@ func TestUserOrder_GetMyOrders_WithStatusFilter(t *testing.T) {
 }
 
 func TestUserOrder_GetMyOrders_InvalidQuery(t *testing.T) {
-	svc, _ := setupOrderTestService()
-	r := setupOrderTestRouter(svc, 100)
+        svc, _, assignSvc := setupOrderTestService()
+        r := setupOrderTestRouter(svc, assignSvc, 100)
 
 	// Invalid page parameter
 	req, _ := http.NewRequest(http.MethodGet, "/user/orders?page=invalid", nil)
@@ -462,7 +464,7 @@ func TestUserOrder_GetMyOrders_InvalidQuery(t *testing.T) {
 // ---- Tests for cancelOrderHandler ----
 
 func TestUserOrder_CancelOrder_Success(t *testing.T) {
-	svc, orders := setupOrderTestService()
+        svc, orders, assignSvc := setupOrderTestService()
 	gameID := uint64(1)
 	orders.orders[1] = &model.Order{
 		Base:   model.Base{ID: 1},
@@ -472,7 +474,7 @@ func TestUserOrder_CancelOrder_Success(t *testing.T) {
 		Status: model.OrderStatusPending,
 	}
 
-	r := setupOrderTestRouter(svc, 100)
+        r := setupOrderTestRouter(svc, assignSvc, 100)
 	reqBody := `{"reason":"不想要了"}`
 	req, _ := http.NewRequest(http.MethodPut, "/user/orders/1/cancel", bytes.NewBufferString(reqBody))
 	req.Header.Set("Content-Type", "application/json")
@@ -494,8 +496,8 @@ func TestUserOrder_CancelOrder_Success(t *testing.T) {
 }
 
 func TestUserOrder_CancelOrder_InvalidID(t *testing.T) {
-	svc, _ := setupOrderTestService()
-	r := setupOrderTestRouter(svc, 100)
+        svc, _, assignSvc := setupOrderTestService()
+        r := setupOrderTestRouter(svc, assignSvc, 100)
 
 	reqBody := `{"reason":"test"}`
 	req, _ := http.NewRequest(http.MethodPut, "/user/orders/invalid/cancel", bytes.NewBufferString(reqBody))
@@ -509,7 +511,7 @@ func TestUserOrder_CancelOrder_InvalidID(t *testing.T) {
 }
 
 func TestUserOrder_CancelOrder_InvalidJSON(t *testing.T) {
-	svc, orders := setupOrderTestService()
+        svc, orders, assignSvc := setupOrderTestService()
 	gameID := uint64(1)
 	orders.orders[1] = &model.Order{
 		Base:   model.Base{ID: 1},
@@ -518,7 +520,7 @@ func TestUserOrder_CancelOrder_InvalidJSON(t *testing.T) {
 		Status: model.OrderStatusPending,
 	}
 
-	r := setupOrderTestRouter(svc, 100)
+        r := setupOrderTestRouter(svc, assignSvc, 100)
 	req, _ := http.NewRequest(http.MethodPut, "/user/orders/1/cancel", bytes.NewBufferString("invalid"))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
@@ -530,7 +532,7 @@ func TestUserOrder_CancelOrder_InvalidJSON(t *testing.T) {
 }
 
 func TestUserOrder_CancelOrder_Unauthorized(t *testing.T) {
-	svc, orders := setupOrderTestService()
+        svc, orders, assignSvc := setupOrderTestService()
 	gameID := uint64(1)
 	orders.orders[1] = &model.Order{
 		Base:   model.Base{ID: 1},
@@ -540,7 +542,7 @@ func TestUserOrder_CancelOrder_Unauthorized(t *testing.T) {
 	}
 
 	// Different user trying to cancel
-	r := setupOrderTestRouter(svc, 999)
+        r := setupOrderTestRouter(svc, assignSvc, 999)
 	reqBody := `{"reason":"test"}`
 	req, _ := http.NewRequest(http.MethodPut, "/user/orders/1/cancel", bytes.NewBufferString(reqBody))
 	req.Header.Set("Content-Type", "application/json")
@@ -553,7 +555,7 @@ func TestUserOrder_CancelOrder_Unauthorized(t *testing.T) {
 }
 
 func TestUserOrder_CancelOrder_InvalidTransition(t *testing.T) {
-	svc, orders := setupOrderTestService()
+        svc, orders, assignSvc := setupOrderTestService()
 	gameID := uint64(1)
 	orders.orders[1] = &model.Order{
 		Base:   model.Base{ID: 1},
@@ -562,7 +564,7 @@ func TestUserOrder_CancelOrder_InvalidTransition(t *testing.T) {
 		Status: model.OrderStatusCompleted, // Already completed
 	}
 
-	r := setupOrderTestRouter(svc, 100)
+        r := setupOrderTestRouter(svc, assignSvc, 100)
 	reqBody := `{"reason":"test"}`
 	req, _ := http.NewRequest(http.MethodPut, "/user/orders/1/cancel", bytes.NewBufferString(reqBody))
 	req.Header.Set("Content-Type", "application/json")
@@ -577,7 +579,7 @@ func TestUserOrder_CancelOrder_InvalidTransition(t *testing.T) {
 // ---- Tests for completeOrderHandler ----
 
 func TestUserOrder_CompleteOrder_Success(t *testing.T) {
-	svc, orders := setupOrderTestService()
+        svc, orders, assignSvc := setupOrderTestService()
 	gameID := uint64(1)
 	orders.orders[1] = &model.Order{
 		Base:   model.Base{ID: 1},
@@ -587,7 +589,7 @@ func TestUserOrder_CompleteOrder_Success(t *testing.T) {
 		Status: model.OrderStatusInProgress,
 	}
 
-	r := setupOrderTestRouter(svc, 100)
+        r := setupOrderTestRouter(svc, assignSvc, 100)
 	req, _ := http.NewRequest(http.MethodPut, "/user/orders/1/complete", nil)
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
@@ -607,8 +609,8 @@ func TestUserOrder_CompleteOrder_Success(t *testing.T) {
 }
 
 func TestUserOrder_CompleteOrder_InvalidID(t *testing.T) {
-	svc, _ := setupOrderTestService()
-	r := setupOrderTestRouter(svc, 100)
+        svc, _, assignSvc := setupOrderTestService()
+        r := setupOrderTestRouter(svc, assignSvc, 100)
 
 	req, _ := http.NewRequest(http.MethodPut, "/user/orders/invalid/complete", nil)
 	rec := httptest.NewRecorder()
@@ -620,7 +622,7 @@ func TestUserOrder_CompleteOrder_InvalidID(t *testing.T) {
 }
 
 func TestUserOrder_CompleteOrder_Unauthorized(t *testing.T) {
-	svc, orders := setupOrderTestService()
+        svc, orders, assignSvc := setupOrderTestService()
 	gameID := uint64(1)
 	orders.orders[1] = &model.Order{
 		Base:   model.Base{ID: 1},
@@ -630,7 +632,7 @@ func TestUserOrder_CompleteOrder_Unauthorized(t *testing.T) {
 	}
 
 	// Different user trying to complete
-	r := setupOrderTestRouter(svc, 999)
+        r := setupOrderTestRouter(svc, assignSvc, 999)
 	req, _ := http.NewRequest(http.MethodPut, "/user/orders/1/complete", nil)
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
@@ -641,7 +643,7 @@ func TestUserOrder_CompleteOrder_Unauthorized(t *testing.T) {
 }
 
 func TestUserOrder_CompleteOrder_InvalidTransition(t *testing.T) {
-	svc, orders := setupOrderTestService()
+        svc, orders, assignSvc := setupOrderTestService()
 	gameID := uint64(1)
 	orders.orders[1] = &model.Order{
 		Base:   model.Base{ID: 1},
@@ -650,7 +652,7 @@ func TestUserOrder_CompleteOrder_InvalidTransition(t *testing.T) {
 		Status: model.OrderStatusPending, // Wrong status
 	}
 
-	r := setupOrderTestRouter(svc, 100)
+        r := setupOrderTestRouter(svc, assignSvc, 100)
 	req, _ := http.NewRequest(http.MethodPut, "/user/orders/1/complete", nil)
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)

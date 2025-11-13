@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"gamelink/internal/cache"
@@ -355,7 +356,7 @@ func (s *PlayerService) ApplyAsPlayer(ctx context.Context, userID uint64, req Ap
 	// 保存标签
 	if len(req.Tags) > 0 {
 		if err := s.playerTags.ReplaceTags(ctx, player.ID, req.Tags); err != nil {
-			// 标签保存失败不影响申请
+			log.Printf("failed to persist player %d tags: %v", player.ID, err)
 		}
 	}
 
@@ -430,7 +431,7 @@ func (s *PlayerService) UpdatePlayerProfile(ctx context.Context, userID uint64, 
 	// 更新标签
 	if len(req.Tags) > 0 {
 		if err := s.playerTags.ReplaceTags(ctx, player.ID, req.Tags); err != nil {
-			// 标签更新失败不影响资料更新
+			log.Printf("failed to update player %d tags: %v", player.ID, err)
 		}
 	}
 

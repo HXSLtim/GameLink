@@ -251,6 +251,12 @@ func (m *mockPlayerRepo) Get(ctx context.Context, id uint64) (*model.Player, err
 	return &player, err
 }
 
+func (m *mockPlayerRepo) GetByUserID(ctx context.Context, userID uint64) (*model.Player, error) {
+	var player model.Player
+	err := m.db.WithContext(ctx).Where("user_id = ?", userID).First(&player).Error
+	return &player, err
+}
+
 func (m *mockPlayerRepo) Create(ctx context.Context, player *model.Player) error { return nil }
 func (m *mockPlayerRepo) Update(ctx context.Context, player *model.Player) error { return nil }
 func (m *mockPlayerRepo) Delete(ctx context.Context, id uint64) error            { return nil }

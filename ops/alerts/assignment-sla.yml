@@ -1,0 +1,43 @@
+# Prometheus alert rules for customer assignment SLA monitoring
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: gamelink-assignment-sla
+  labels:
+    role: alert-rules
+spec:
+  groups:
+    - name: assignment-sla
+      rules:
+        - alert: AssignmentSLABreach
+          expr: sum by (order_id) (gamelink_assignment_overdue{service="assignment"}) > 0
+          for: 5m
+          labels:
+            severity: critical
+            team: customer-success
+          annotations:
+            summary: "客服指派 SLA 超时"
+            description: |
+              订单 {{ $labels.order_id }} 已超过 30 分钟未响应，已进入自动升级流程。
+              请客服主管在 5 分钟内介入处理，traceId={{ $labels.trace_id }}。
+        - record: assignment:sla_overdue_ratio:5m
+          expr: |
+            sum(increase(gamelink_assignment_overdue_total{service="assignment"}[5m]))
+              /
+            clamp_max(sum(increase(gamelink_assignment_created_total{service="assignment"}[5m])), 1)
+        - record: assignment:sla_p95_latency_seconds
+          expr: histogram_quantile(0.95, sum by (le) (rate(gamelink_assignment_sla_duration_seconds_bucket{service="assignment"}[5m])))
+    - name: assignment-loki
+      rules:
+        - alert: AssignmentSLAAlarmEscalated
+          expr: |
+            sum by (trace_id) (count_over_time({app="gamelink-admin", level="warn"} |= "SLA_OVERDUE" [5m])) >= 3
+          for: 2m
+          labels:
+            severity: warning
+            team: sre
+          annotations:
+            summary: "客服指派 SLA 日志频繁告警"
+            description: |
+              5 分钟内同一 traceId={{ $labels.trace_id }} 触发 {{ $value }} 次 SLA_OVERDUE 告警日志。
+              请检查自动退款/重派流程是否正常触发。

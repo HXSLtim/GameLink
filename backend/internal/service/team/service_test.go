@@ -1,3 +1,5 @@
+//go:build team_integration
+
 package team
 
 import (

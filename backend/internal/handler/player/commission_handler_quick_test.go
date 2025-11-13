@@ -46,6 +46,9 @@ type dummyPlayerRepoPlayer struct{}
 func (dummyPlayerRepoPlayer) List(context.Context) ([]model.Player, error) { return nil, nil }
 func (dummyPlayerRepoPlayer) ListPaged(context.Context, int, int) ([]model.Player, int64, error) { return nil, 0, nil }
 func (dummyPlayerRepoPlayer) Get(context.Context, uint64) (*model.Player, error) { return &model.Player{Nickname:"p"}, nil }
+func (dummyPlayerRepoPlayer) GetByUserID(context.Context, uint64) (*model.Player, error) {
+    return nil, repository.ErrNotFound
+}
 func (dummyPlayerRepoPlayer) Create(context.Context, *model.Player) error { return nil }
 func (dummyPlayerRepoPlayer) Update(context.Context, *model.Player) error { return nil }
 func (dummyPlayerRepoPlayer) Delete(context.Context, uint64) error { return nil }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"gamelink/internal/model"
@@ -152,8 +153,7 @@ func (s *GiftService) deliverGift(ctx context.Context, order *model.Order) error
 	}
 
 	if err := s.commissions.CreateRecord(ctx, record); err != nil {
-		// 记录抽成失败不影响礼物送达
-		// TODO: 记录日志
+		log.Printf("failed to create commission record for gift order %d: %v", order.ID, err)
 	}
 
 	// TODO: 发送通知给陪玩师

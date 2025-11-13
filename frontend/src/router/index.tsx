@@ -12,6 +12,7 @@ const GameDetail = lazy(() => import('pages/Games').then((m) => ({ default: m.Ga
 const PlayerList = lazy(() => import('pages/Players').then((m) => ({ default: m.PlayerList })));
 const UserList = lazy(() => import('pages/Users').then((m) => ({ default: m.UserList })));
 const UserDetail = lazy(() => import('pages/Users').then((m) => ({ default: m.UserDetail })));
+const AssignmentsWorkbench = lazy(() => import('pages/Assignments').then((m) => ({ default: m.AssignmentsWorkbench })));
 const PaymentList = lazy(() => import('pages/Payments').then((m) => ({ default: m.PaymentList })));
 const PaymentDetailPage = lazy(() => import('pages/Payments').then((m) => ({ default: m.PaymentDetailPage })));
 const ReviewList = lazy(() => import('pages/Reviews').then((m) => ({ default: m.ReviewList })));
@@ -69,6 +70,7 @@ export const router = createBrowserRouter([
           { path: 'games', element: <Suspense fallback={<RouteLoading />}> <GameList /> </Suspense> },
           { path: 'games/:id', element: <Suspense fallback={<RouteLoading />}> <GameDetail /> </Suspense> },
           { path: 'players', element: <Suspense fallback={<RouteLoading />}> <PlayerList /> </Suspense> },
+          { path: 'assignments', element: <Suspense fallback={<RouteLoading />}> <AssignmentsWorkbench /> </Suspense> },
           { path: 'users', element: <Suspense fallback={<RouteLoading />}> <UserList /> </Suspense> },
           { path: 'users/:id', element: <Suspense fallback={<RouteLoading />}> <UserDetail /> </Suspense> },
           { path: 'payments', element: <Suspense fallback={<RouteLoading />}> <PaymentList /> </Suspense> },

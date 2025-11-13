@@ -21,6 +21,12 @@ type fakePlayerRepoEarn struct{}
 func (fakePlayerRepoEarn) List(ctx context.Context) ([]model.Player, error) { return nil, nil }
 func (fakePlayerRepoEarn) ListPaged(ctx context.Context, page int, pageSize int) ([]model.Player, int64, error) { return []model.Player{{Base: model.Base{ID:1}, UserID:1, Nickname:"p"}}, 1, nil }
 func (fakePlayerRepoEarn) Get(ctx context.Context, id uint64) (*model.Player, error) { return &model.Player{Base: model.Base{ID:1}, UserID:1, Nickname:"p"}, nil }
+func (fakePlayerRepoEarn) GetByUserID(ctx context.Context, userID uint64) (*model.Player, error) {
+    if userID == 1 {
+        return &model.Player{Base: model.Base{ID:1}, UserID:1, Nickname:"p"}, nil
+    }
+    return nil, repository.ErrNotFound
+}
 func (fakePlayerRepoEarn) Create(ctx context.Context, p *model.Player) error { return nil }
 func (fakePlayerRepoEarn) Update(ctx context.Context, p *model.Player) error { return nil }
 func (fakePlayerRepoEarn) Delete(ctx context.Context, id uint64) error { return nil }

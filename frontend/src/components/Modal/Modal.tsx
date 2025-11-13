@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import styles from './Modal.module.less';
 
@@ -35,10 +35,10 @@ export const Modal: React.FC<ModalProps> = ({
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     onClose?.();
     onCancel?.();
-  };
+  }, [onClose, onCancel]);
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -56,7 +56,7 @@ export const Modal: React.FC<ModalProps> = ({
       document.removeEventListener('keydown', handleEsc);
       document.body.style.overflow = '';
     };
-  }, [visible, onClose, onCancel]);
+  }, [visible, handleClose]);
 
   const handleMaskClick = (e: React.MouseEvent) => {
     if (maskClosable && e.target === e.currentTarget) {

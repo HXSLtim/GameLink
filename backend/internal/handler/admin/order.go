@@ -1,13 +1,14 @@
 package admin
 
 import (
-    "encoding/csv"
-    "encoding/json"
-    "errors"
-    "fmt"
-    "net/http"
-    "strings"
-    "time"
+	"encoding/csv"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -15,17 +16,15 @@ import (
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	adminservice "gamelink/internal/service/admin"
-	service "gamelink/internal/service/admin"
-	"strconv"
 )
 
 // OrderHandler 管理订单相关接口
 type OrderHandler struct {
-	svc *service.AdminService
+	svc *adminservice.AdminService
 }
 
 // NewOrderHandler 创建 Handler
-func NewOrderHandler(svc *service.AdminService) *OrderHandler {
+func NewOrderHandler(svc *adminservice.AdminService) *OrderHandler {
 	return &OrderHandler{svc: svc}
 }
 
@@ -59,7 +58,7 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 	if p.PlayerID != nil {
 		playerID = p.PlayerID
 	}
-	order, err := h.svc.CreateOrder(c.Request.Context(), service.CreateOrderInput{
+	order, err := h.svc.CreateOrder(c.Request.Context(), adminservice.CreateOrderInput{
 		UserID:          p.UserID,
 		PlayerID:        playerID,
 		GameID:          p.GameID,
@@ -330,7 +329,7 @@ func (h *OrderHandler) RefundOrder(c *gin.Context) {
 		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
 		return
 	}
-	order, err := h.svc.RefundOrder(c.Request.Context(), id, service.RefundOrderInput{
+	order, err := h.svc.RefundOrder(c.Request.Context(), id, adminservice.RefundOrderInput{
 		Reason:      payload.Reason,
 		AmountCents: payload.AmountCents,
 		Note:        payload.Note,
@@ -373,7 +372,7 @@ func (h *OrderHandler) GetOrderTimeline(c *gin.Context) {
 		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[[]service.OrderTimelineItem]{Success: true, Code: http.StatusOK, Message: "OK", Data: ensureSlice(items)})
+	writeJSON(c, http.StatusOK, model.APIResponse[[]adminservice.OrderTimelineItem]{Success: true, Code: http.StatusOK, Message: "OK", Data: ensureSlice(items)})
 }
 
 // ListOrderPayments 返回订单关联的支付记录�?// @Summary      获取订单支付记录
@@ -425,7 +424,7 @@ func (h *OrderHandler) ListOrderRefunds(c *gin.Context) {
 		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[[]service.OrderRefundItem]{Success: true, Code: http.StatusOK, Message: "OK", Data: ensureSlice(items)})
+	writeJSON(c, http.StatusOK, model.APIResponse[[]adminservice.OrderRefundItem]{Success: true, Code: http.StatusOK, Message: "OK", Data: ensureSlice(items)})
 }
 
 // ListOrderReviews 返回订单评价列表�?// @Summary      获取订单评价列表
@@ -491,7 +490,7 @@ func (h *OrderHandler) UpdateOrder(c *gin.Context) {
 		return
 	}
 
-	input := service.UpdateOrderInput{
+	input := adminservice.UpdateOrderInput{
 		Status:          normalizeOrderStatus(payload.Status),
 		TotalPriceCents: payload.TotalPriceCents,
 		Currency:        model.Currency(strings.ToUpper(strings.TrimSpace(payload.Currency))),
@@ -501,8 +500,8 @@ func (h *OrderHandler) UpdateOrder(c *gin.Context) {
 	}
 
 	order, err := h.svc.UpdateOrder(c.Request.Context(), id, input)
-	if errors.Is(err, service.ErrOrderInvalidTransition) {
-		_ = c.Error(service.ErrOrderInvalidTransition)
+	if errors.Is(err, adminservice.ErrOrderInvalidTransition) {
+		_ = c.Error(adminservice.ErrOrderInvalidTransition)
 		return
 	}
 	if errors.Is(err, adminservice.ErrValidation) {
@@ -587,13 +586,13 @@ func (h *OrderHandler) ListOrderLogs(c *gin.Context) {
 	if !ok {
 		return
 	}
-    var actorID *uint64
-    if v, err := queryUint64Ptr(c, "actor_user_id"); err == nil {
-        actorID = v
-    } else {
-        writeJSONError(c, 400, apierr.ErrInvalidUserID)
-        return
-    }
+	var actorID *uint64
+	if v, err := queryUint64Ptr(c, "actor_user_id"); err == nil {
+		actorID = v
+	} else {
+		writeJSONError(c, 400, apierr.ErrInvalidUserID)
+		return
+	}
 	var dateFrom, dateTo *time.Time
 	if v, err := queryTimePtr(c, "date_from"); err == nil {
 		dateFrom = v
@@ -651,11 +650,11 @@ type AssignOrderPayload struct {
 
 // PaymentHandler 管理支付记录
 type PaymentHandler struct {
-	svc *service.AdminService
+	svc *adminservice.AdminService
 }
 
 // NewPaymentHandler 创建 Handler
-func NewPaymentHandler(svc *service.AdminService) *PaymentHandler {
+func NewPaymentHandler(svc *adminservice.AdminService) *PaymentHandler {
 	return &PaymentHandler{svc: svc}
 }
 
@@ -675,7 +674,7 @@ func (h *PaymentHandler) CreatePayment(c *gin.Context) {
 		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
 		return
 	}
-	pay, err := h.svc.CreatePayment(c.Request.Context(), service.CreatePaymentInput{
+	pay, err := h.svc.CreatePayment(c.Request.Context(), adminservice.CreatePaymentInput{
 		OrderID:     p.OrderID,
 		UserID:      p.UserID,
 		Method:      model.PaymentMethod(strings.ToLower(strings.TrimSpace(p.Method))),
@@ -721,7 +720,7 @@ func (h *PaymentHandler) CapturePayment(c *gin.Context) {
 		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidPaidAt)
 		return
 	}
-	pay, err := h.svc.CapturePayment(c.Request.Context(), id, service.CapturePaymentInput{
+	pay, err := h.svc.CapturePayment(c.Request.Context(), id, adminservice.CapturePaymentInput{
 		ProviderTradeNo: p.ProviderTradeNo,
 		ProviderRaw:     p.ProviderRaw,
 		PaidAt:          paidAt,
@@ -851,7 +850,7 @@ func (h *PaymentHandler) UpdatePayment(c *gin.Context) {
 		return
 	}
 
-	input := service.UpdatePaymentInput{
+	input := adminservice.UpdatePaymentInput{
 		Status:          model.PaymentStatus(strings.TrimSpace(payload.Status)),
 		ProviderTradeNo: payload.ProviderTradeNo,
 		ProviderRaw:     payload.ProviderRaw,
@@ -942,13 +941,13 @@ func (h *PaymentHandler) ListPaymentLogs(c *gin.Context) {
 	if !ok {
 		return
 	}
-    var actorID *uint64
-    if v, err := queryUint64Ptr(c, "actor_user_id"); err == nil {
-        actorID = v
-    } else {
-        writeJSONError(c, 400, apierr.ErrInvalidUserID)
-        return
-    }
+	var actorID *uint64
+	if v, err := queryUint64Ptr(c, "actor_user_id"); err == nil {
+		actorID = v
+	} else {
+		writeJSONError(c, 400, apierr.ErrInvalidUserID)
+		return
+	}
 	var dateFrom, dateTo *time.Time
 	if v, err := queryTimePtr(c, "date_from"); err == nil {
 		dateFrom = v
@@ -1057,8 +1056,8 @@ func exportOperationLogsCSV(c *gin.Context, entity string, entityID uint64, item
 				row = append(row, it.Action)
 			case "reason":
 				row = append(row, it.Reason)
-            case "metadata":
-                row = append(row, fmt.Sprintf("%q", string(it.MetadataJSON)))
+			case "metadata":
+				row = append(row, fmt.Sprintf("%q", string(it.MetadataJSON)))
 			case "created_at":
 				t := it.CreatedAt
 				if loc != nil {
@@ -1142,7 +1141,7 @@ func (h *PaymentHandler) RefundPayment(c *gin.Context) {
 	}
 
 	// Only allow refund from paid
-	input := service.UpdatePaymentInput{
+	input := adminservice.UpdatePaymentInput{
 		Status:          model.PaymentStatusRefunded,
 		ProviderTradeNo: payload.ProviderTradeNo,
 		ProviderRaw:     payload.ProviderRaw,
@@ -1222,7 +1221,7 @@ func (h *OrderHandler) ReviewOrder(c *gin.Context) {
 		cancelReason = strings.TrimSpace(payload.Reason)
 	}
 
-	input := service.UpdateOrderInput{
+	input := adminservice.UpdateOrderInput{
 		Status:          next,
 		TotalPriceCents: order.TotalPriceCents,
 		Currency:        order.Currency,
@@ -1231,8 +1230,8 @@ func (h *OrderHandler) ReviewOrder(c *gin.Context) {
 		CancelReason:    cancelReason,
 	}
 	updated, err := h.svc.UpdateOrder(c.Request.Context(), id, input)
-	if errors.Is(err, service.ErrOrderInvalidTransition) {
-		_ = c.Error(service.ErrOrderInvalidTransition)
+	if errors.Is(err, adminservice.ErrOrderInvalidTransition) {
+		_ = c.Error(adminservice.ErrOrderInvalidTransition)
 		return
 	}
 	if errors.Is(err, adminservice.ErrValidation) {
@@ -1284,7 +1283,7 @@ func (h *OrderHandler) CancelOrder(c *gin.Context) {
 		return
 	}
 
-	input := service.UpdateOrderInput{
+	input := adminservice.UpdateOrderInput{
 		Status:          model.OrderStatusCanceled,
 		TotalPriceCents: order.TotalPriceCents,
 		Currency:        order.Currency,
@@ -1293,8 +1292,8 @@ func (h *OrderHandler) CancelOrder(c *gin.Context) {
 		CancelReason:    strings.TrimSpace(payload.Reason),
 	}
 	updated, err := h.svc.UpdateOrder(c.Request.Context(), id, input)
-	if errors.Is(err, service.ErrOrderInvalidTransition) {
-		_ = c.Error(service.ErrOrderInvalidTransition)
+	if errors.Is(err, adminservice.ErrOrderInvalidTransition) {
+		_ = c.Error(adminservice.ErrOrderInvalidTransition)
 		return
 	}
 	if errors.Is(err, adminservice.ErrValidation) {

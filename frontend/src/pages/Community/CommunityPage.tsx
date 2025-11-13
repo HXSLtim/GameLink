@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { feedApi, notificationApi } from '../../services/api';
 import type { Feed, CreateFeedPayload } from '../../types/feed';
@@ -19,7 +19,7 @@ const formatDateTime = (value?: string) => {
   if (!value) return '';
   try {
     return new Date(value).toLocaleString('zh-CN', { hour12: false });
-  } catch (error) {
+  } catch {
     return value;
   }
 };
@@ -42,7 +42,7 @@ export const CommunityPage = () => {
 
   const hasMore = useMemo(() => Boolean(nextCursor), [nextCursor]);
 
-  const loadFeeds = async (cursor?: string, append = false) => {
+  const loadFeeds = useCallback(async (cursor?: string, append = false) => {
     setLoading(true);
     try {
       const result = await feedApi.list({ cursor, limit: 10 });
@@ -53,16 +53,16 @@ export const CommunityPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const refreshUnread = async () => {
+  const refreshUnread = useCallback(async () => {
     try {
       const data = await notificationApi.unreadCount();
       setUnreadCount(data.unread ?? 0);
-    } catch (error) {
+    } catch {
       // 静默处理，避免干扰用户
     }
-  };
+  }, []);
 
   const openNotifications = async () => {
     setNotificationOpen(true);
@@ -149,8 +149,7 @@ export const CommunityPage = () => {
     refreshUnread();
     const timer = window.setInterval(refreshUnread, 15000);
     return () => window.clearInterval(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadFeeds, refreshUnread]);
 
   return (
     <div className="community-page" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%' }}>

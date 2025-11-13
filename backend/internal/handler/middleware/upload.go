@@ -107,7 +107,9 @@ func ValidateFile(file *multipart.FileHeader, config UploadConfig) error {
 		if err != nil {
 			return fmt.Errorf("failed to open file: %w", err)
 		}
-		defer src.Close()
+		defer func() {
+			_ = src.Close()
+		}()
 
 		// 读取文件头512字节用于MIME类型检测
 		buffer := make([]byte, 512)
@@ -146,7 +148,7 @@ func SaveFile(c *gin.Context, file *multipart.FileHeader, config UploadConfig) (
 	// 生成文件名
 	var savedName string
 	ext := filepath.Ext(file.Filename)
-	
+
 	if config.RandomizeFilename {
 		// 使用UUID生成随机文件名
 		savedName = uuid.New().String()
@@ -174,7 +176,9 @@ func SaveFile(c *gin.Context, file *multipart.FileHeader, config UploadConfig) (
 		if err != nil {
 			return nil, fmt.Errorf("failed to open file for hashing: %w", err)
 		}
-		defer src.Close()
+		defer func() {
+			_ = src.Close()
+		}()
 
 		h := sha256.New()
 		if _, err := io.Copy(h, src); err != nil {
@@ -188,7 +192,9 @@ func SaveFile(c *gin.Context, file *multipart.FileHeader, config UploadConfig) (
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file: %w", err)
 	}
-	defer src.Close()
+	defer func() {
+		_ = src.Close()
+	}()
 
 	buffer := make([]byte, 512)
 	_, err = src.Read(buffer)

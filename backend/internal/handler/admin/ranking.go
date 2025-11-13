@@ -137,7 +137,10 @@ func listRankingCommissionConfigsHandler(c *gin.Context, repo rankingrepo.Rankin
 	configDTOs := make([]ConfigDTO, 0, len(configs))
 	for _, config := range configs {
 		var rules []model.RankingCommissionRule
-		json.Unmarshal([]byte(config.RulesJSON), &rules)
+		if err := json.Unmarshal([]byte(config.RulesJSON), &rules); err != nil {
+			writeJSONError(c, http.StatusInternalServerError, "failed to parse ranking rules")
+			return
+		}
 
 		configDTOs = append(configDTOs, ConfigDTO{
 			RankingCommissionConfig: config,
@@ -184,7 +187,10 @@ func getRankingCommissionConfigHandler(c *gin.Context, repo rankingrepo.RankingC
 
 	// 解析规则
 	var rules []model.RankingCommissionRule
-	json.Unmarshal([]byte(config.RulesJSON), &rules)
+	if err := json.Unmarshal([]byte(config.RulesJSON), &rules); err != nil {
+		writeJSONError(c, http.StatusInternalServerError, "failed to parse ranking rules")
+		return
+	}
 
 	writeJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,

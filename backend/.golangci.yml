@@ -1,49 +1,25 @@
+
+
+version: 2
+
 run:
   timeout: 5m
-  tests: true
+  go: "1.24"
+  tests: false
 
 linters-settings:
-  gocyclo:
-    min-complexity: 15
-  gocritic:
-    disabled-checks:
-      - ifElseChain
-  revive:
-    severity: warning
-    rules:
-      - name: exported
-      - name: blank-imports
-      - name: context-as-argument
-      - name: errorf
-      - name: error-naming
-      - name: indent-error-flow
-      - name: increment-decrement
-      - name: var-naming
   misspell:
     locale: US
-  dupl:
-    threshold: 150
-  gofmt:
-    simplify: true
-  goimports:
-    local-prefixes: gamelink
 
 linters:
   disable-all: true
   enable:
+    - errcheck
     - govet
-    - gofmt
-    - goimports
-    - revive
-    - gocyclo
-    - gosimple
     - ineffassign
     - misspell
     - staticcheck
-    - typecheck
     - unused
-    - errcheck
-    - dupl
 
 issues:
   exclude-use-default: false

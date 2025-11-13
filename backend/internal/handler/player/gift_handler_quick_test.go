@@ -38,6 +38,9 @@ type fakePlayerRepoPG struct{}
 func (fakePlayerRepoPG) List(ctx context.Context) ([]model.Player, error) { return nil, nil }
 func (fakePlayerRepoPG) ListPaged(ctx context.Context, page, pageSize int) ([]model.Player, int64, error) { return nil, 0, nil }
 func (fakePlayerRepoPG) Get(ctx context.Context, id uint64) (*model.Player, error) { return &model.Player{Base: model.Base{ID: id}, UserID:id, Nickname:"p"}, nil }
+func (fakePlayerRepoPG) GetByUserID(ctx context.Context, userID uint64) (*model.Player, error) {
+    return &model.Player{Base: model.Base{ID: userID}, UserID: userID, Nickname:"p"}, nil
+}
 func (fakePlayerRepoPG) Create(ctx context.Context, p *model.Player) error { return nil }
 func (fakePlayerRepoPG) Update(ctx context.Context, p *model.Player) error { return nil }
 func (fakePlayerRepoPG) Delete(ctx context.Context, id uint64) error { return nil }
