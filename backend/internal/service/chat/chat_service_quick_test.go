@@ -124,3 +124,39 @@ func TestSendMessage_TooLargeAndInactive(t *testing.T) {
     // inactive group
     if _, err := s.SendMessage(context.Background(), SendMessageInput{GroupID:8, SenderID:200, Content:"ok"}); err == nil { t.Fatalf("expected error") }
 }
+
+func TestListUserGroups(t *testing.T) {
+    grp := gRepo{g: model.ChatGroup{Base: model.Base{ID: 1}, IsActive: true}}
+    s := NewChatService(grp, mRepo{active: true}, msgRepo{}, &repRepo{}, cache.NewMemory())
+    groups, total, err := s.ListUserGroups(context.Background(), 1, 1, 20)
+    if err != nil { t.Fatalf("%v", err) }
+    if total != 1 { t.Fatalf("expected total 1, got %d", total) }
+    if len(groups) != 1 { t.Fatalf("expected 1 group, got %d", len(groups)) }
+}
+
+func TestReportMessage_NoRepository(t *testing.T) {
+    s := NewChatService(gRepo{g: model.ChatGroup{Base: model.Base{ID: 1}, IsActive: true}}, mRepo{active: true}, msgRepo{}, nil, cache.NewMemory())
+    if err := s.ReportMessage(context.Background(), 1, 2, "x", "y"); err == nil { t.Fatalf("expected error") }
+}
+
+func TestSendMessage_WithImage(t *testing.T) {
+    grp := gRepo{g: model.ChatGroup{Base: model.Base{ID: 1}, IsActive: true}}
+    mem := newMemMembers()
+    _ = mem.Add(context.Background(), &model.ChatGroupMember{GroupID:1, UserID:1, IsActive:true})
+    msg := msgRepo{}
+    s := NewChatService(grp, mem, msg, &repRepo{}, cache.NewMemory())
+    // send message with image but no content
+    m, err := s.SendMessage(context.Background(), SendMessageInput{GroupID:1, SenderID:1, Content:"", ImageURL:"http://example.com/img.jpg"})
+    if err != nil { t.Fatalf("%v", err) }
+    if m == nil { t.Fatalf("expected message") }
+}
+
+func TestLeaveGroup_NotMember(t *testing.T) {
+    s := NewChatService(gRepo{g: model.ChatGroup{Base: model.Base{ID: 1}, IsActive: true}}, mRepo{active: false}, msgRepo{}, &repRepo{}, cache.NewMemory())
+    if err := s.LeaveGroup(context.Background(), 1, 1); err == nil { t.Fatalf("expected error") }
+}
+
+func TestMarkRead_NotMember(t *testing.T) {
+    s := NewChatService(gRepo{g: model.ChatGroup{Base: model.Base{ID: 1}, IsActive: true}}, mRepo{active: false}, msgRepo{}, &repRepo{}, cache.NewMemory())
+    if err := s.MarkRead(context.Background(), 1, 1, 5); err == nil { t.Fatalf("expected error") }
+}
