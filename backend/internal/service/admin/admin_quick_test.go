@@ -127,4 +127,3 @@ func TestAdminService_UpdatePlayerSkillTags_WithTx(t *testing.T) {
     svc.SetTxManager(txStub{r:&common.Repos{Players: fplRepo{}, Tags: tagsStub{}, OpLogs: opLogsStub{}}})
     if err := svc.UpdatePlayerSkillTags(context.Background(), 1, []string{"a","b"}); err != nil { t.Fatalf("%v", err) }
 }
-

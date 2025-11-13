@@ -112,4 +112,3 @@ func TestUserOrder_Complete_InvalidTransition(t *testing.T) {
     r.ServeHTTP(w, req)
     if w.Code != http.StatusBadRequest { t.Fatalf("%d", w.Code) }
 }
-

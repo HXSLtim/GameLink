@@ -19,4 +19,3 @@ func TestGenerateGiftOrderNo(t *testing.T) {
     s := GenerateGiftOrderNo()
     if s[:4] != "GIFT" { t.Fatalf("unexpected prefix") }
 }
-

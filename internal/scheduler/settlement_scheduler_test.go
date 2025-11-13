@@ -121,4 +121,3 @@ func TestGetNextRunTime_AfterStart(t *testing.T) {
     next := s.GetNextRunTime()
     assert.False(t, next.IsZero())
 }
-

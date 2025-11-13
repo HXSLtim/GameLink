@@ -147,3 +147,4 @@ func TestUserOrder_DetailCancelComplete(t *testing.T) {
     r.ServeHTTP(w4, req4)
     if w4.Code != http.StatusOK { t.Fatalf("%d", w4.Code) }
 }
+
