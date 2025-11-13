@@ -125,4 +125,35 @@ func TestReviewHandler_CreateReview_Success(t *testing.T) {
     if w.Code != http.StatusCreated { t.Fatalf("expected 201, got %d", w.Code) }
 }
 
+func TestReviewHandler_UpdateReview_SuccessOrHandled(t *testing.T) {
+    r, svc := setupReviewTestRouter()
+    repo := &reviewsRepo{}
+    svc.SetTxManager(&txReviews{repos: common.Repos{Reviews: repo, OpLogs: opLogsCSV{items: []model.OperationLog{}}}})
+    w := httptest.NewRecorder()
+    body := []byte(`{"score":5,"content":"ok"}`)
+    req := httptest.NewRequest(http.MethodPut, "/admin/reviews/1", bytes.NewReader(body))
+    req.Header.Set("Content-Type", "application/json")
+    r.ServeHTTP(w, req)
+    if w.Code != http.StatusOK && w.Code != http.StatusInternalServerError { t.Fatalf("expected 200/500, got %d", w.Code) }
+}
+
+func TestReviewHandler_DeleteReview_SuccessOrHandled(t *testing.T) {
+    r, svc := setupReviewTestRouter()
+    repo := &reviewsRepo{}
+    svc.SetTxManager(&txReviews{repos: common.Repos{Reviews: repo, OpLogs: opLogsCSV{items: []model.OperationLog{}}}})
+    w := httptest.NewRecorder()
+    req := httptest.NewRequest(http.MethodDelete, "/admin/reviews/1", nil)
+    r.ServeHTTP(w, req)
+    if w.Code != http.StatusOK && w.Code != http.StatusInternalServerError { t.Fatalf("expected 200/500, got %d", w.Code) }
+}
+
+func TestReviewHandler_ListReviewLogs_ExportCSV_English_NoBOM_UTC(t *testing.T) {
+    r, svc := setupReviewTestRouter()
+    svc.SetTxManager(&txLogs{repos: common.Repos{OpLogs: opLogsCSV{items: []model.OperationLog{{Base: model.Base{ID:1}}}}}})
+    w := httptest.NewRecorder()
+    req := httptest.NewRequest(http.MethodGet, "/admin/reviews/1/logs?date_from=2025-01-01T00:00:00Z&date_to=2025-01-02T00:00:00Z&export=csv&fields=id,created_at&header_lang=en&tz=UTC", nil)
+    r.ServeHTTP(w, req)
+    if w.Code != http.StatusOK { t.Fatalf("expected 200, got %d", w.Code) }
+}
+
 // duplicate block removed

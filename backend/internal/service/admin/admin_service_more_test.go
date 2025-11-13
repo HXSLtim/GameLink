@@ -111,6 +111,23 @@ func TestUpdatePayment_AuditNoRequestID(t *testing.T) {
     if !bytes.Contains(rec.last.MetadataJSON, []byte("status")) { t.Fatal("expected status in metadata") }
 }
 
+type reviewsRepoTxErr struct{}
+func (reviewsRepoTxErr) List(context.Context, repository.ReviewListOptions) ([]model.Review, int64, error) { return nil, 0, nil }
+func (reviewsRepoTxErr) Get(context.Context, uint64) (*model.Review, error) { return &model.Review{Base: model.Base{ID:1}}, nil }
+func (reviewsRepoTxErr) Create(context.Context, *model.Review) error { return nil }
+func (reviewsRepoTxErr) Update(context.Context, *model.Review) error { return nil }
+func (reviewsRepoTxErr) Delete(context.Context, uint64) error { return nil }
+
+type txRejectReviews struct{}
+func (txRejectReviews) WithTx(context.Context, func(r *common.Repos) error) error { return repository.ErrNotFound }
+
+func TestAdminService_CreateReview_TxRollback(t *testing.T) {
+    svc := NewAdminService(nil, nil, nil, nil, nil, nil, cache.NewMemory())
+    svc.SetTxManager(txRejectReviews{})
+    _, err := svc.CreateReview(context.Background(), model.Review{OrderID:1, UserID:1, PlayerID:1, Score:5})
+    if err == nil { t.Fatal("expected tx error") }
+}
+
 type paymentsRepo struct{}
 func (p paymentsRepo) Create(context.Context, *model.Payment) error { return nil }
 func (p paymentsRepo) List(ctx context.Context, opts repository.PaymentListOptions) ([]model.Payment, int64, error) {
