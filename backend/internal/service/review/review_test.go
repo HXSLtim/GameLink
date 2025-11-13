@@ -13,9 +13,19 @@ type mockReviewRepository struct {
 	reviews map[uint64]*model.Review
 }
 
-type mockReviewReplyRepository struct{}
+type mockReviewReplyRepository struct {
+	replies map[uint64]*model.ReviewReply
+}
+
+func newMockReviewReplyRepository() *mockReviewReplyRepository {
+	return &mockReviewReplyRepository{
+		replies: make(map[uint64]*model.ReviewReply),
+	}
+}
 
 func (m *mockReviewReplyRepository) Create(ctx context.Context, reply *model.ReviewReply) error {
+	reply.ID = uint64(len(m.replies) + 1)
+	m.replies[reply.ID] = reply
 	return nil
 }
 
@@ -425,5 +435,75 @@ func TestGetPlayerReviews(t *testing.T) {
 
 	if len(reviews) != 3 {
 		t.Errorf("expected 3 reviews in list, got %d", len(reviews))
+	}
+}
+
+func TestReplyReview(t *testing.T) {
+	reviewRepo := newMockReviewRepository()
+	orderRepo := newMockOrderRepository()
+	playerRepo := &mockPlayerRepository{}
+	svc := NewReviewService(reviewRepo, orderRepo, playerRepo, &mockUserRepository{}, newMockReviewReplyRepository())
+
+	// 创建评价
+	playerID := uint64(1)
+	review := &model.Review{
+		OrderID:  1,
+		UserID:   1,
+		PlayerID: playerID,
+		Score:    5,
+		Content:  "Great!",
+	}
+	_ = reviewRepo.Create(context.Background(), review)
+
+	// 测试陪玩师回复评价
+	resp, err := svc.ReplyReview(context.Background(), 1, review.ID, ReplyReviewRequest{
+		Content: "Thank you!",
+	})
+
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if resp == nil {
+		t.Fatal("expected response, got nil")
+	}
+
+	if resp.ReplyID == 0 {
+		t.Error("expected reply ID, got 0")
+	}
+}
+
+func TestUpdatePlayerRating(t *testing.T) {
+	reviewRepo := newMockReviewRepository()
+	orderRepo := newMockOrderRepository()
+	playerRepo := &mockPlayerRepository{}
+	svc := NewReviewService(reviewRepo, orderRepo, playerRepo, &mockUserRepository{}, newMockReviewReplyRepository())
+
+	// 测试更新陪玩师评分（通过创建评价触发）
+	playerID := uint64(1)
+	order := &model.Order{
+		UserID:   1,
+		PlayerID: &playerID,
+		Status:   model.OrderStatusCompleted,
+		ItemID:   1,
+	}
+	_ = orderRepo.Create(context.Background(), order)
+
+	resp, err := svc.CreateReview(context.Background(), 1, CreateReviewRequest{
+		OrderID: order.ID,
+		Rating:  4,
+		Comment: "Good",
+	})
+
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if resp == nil {
+		t.Fatal("expected response, got nil")
+	}
+
+	if resp.ReviewID == 0 {
+		t.Error("expected review ID, got 0")
 	}
 }
