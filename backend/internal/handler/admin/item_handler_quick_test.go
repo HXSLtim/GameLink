@@ -45,6 +45,7 @@ func (fakePlayerRepoItem) Get(context.Context, uint64) (*model.Player, error) { 
 func (fakePlayerRepoItem) Create(context.Context, *model.Player) error { return nil }
 func (fakePlayerRepoItem) Update(context.Context, *model.Player) error { return nil }
 func (fakePlayerRepoItem) Delete(context.Context, uint64) error { return nil }
+func (fakePlayerRepoItem) GetByUserID(context.Context, uint64) (*model.Player, error) { return &model.Player{Nickname:"P"}, nil }
 
 func setupItemRouter(repo *fakeItemRepo) (*gin.Engine, *itemservice.ServiceItemService) {
     r := newTestEngine()

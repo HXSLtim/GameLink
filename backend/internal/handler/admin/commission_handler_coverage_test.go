@@ -289,6 +289,15 @@ func (f *fakeCommissionPlayerRepo) Delete(ctx context.Context, id uint64) error 
 	return nil
 }
 
+func (f *fakeCommissionPlayerRepo) GetByUserID(ctx context.Context, userID uint64) (*model.Player, error) {
+	for i := range f.players {
+		if f.players[i].UserID == userID {
+			return &f.players[i], nil
+		}
+	}
+	return nil, repository.ErrNotFound
+}
+
 // fakeScheduler 模拟调度器
 type fakeScheduler struct {
     triggerError error

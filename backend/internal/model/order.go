@@ -59,12 +59,17 @@ type Order struct {
 	OrderConfig string `json:"orderConfig,omitempty" gorm:"column:order_config;type:json"` // 订单配置（JSON）
 	UserNotes   string `json:"userNotes,omitempty" gorm:"column:user_notes;type:text"`     // 用户备注
 
+	// 争议相关字段
+	HasDispute  bool   `json:"hasDispute" gorm:"column:has_dispute;default:false;index"`   // 是否有争议
+	DisputeID   *uint64 `json:"disputeId,omitempty" gorm:"column:dispute_id;index"`        // 关联的争议ID
+
 	// Relations
 	User            User         `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;foreignKey:UserID;references:ID"`
 	Player          *Player      `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;foreignKey:PlayerID;references:ID"`
 	RecipientPlayer *Player      `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;foreignKey:RecipientPlayerID;references:ID"`
 	Game            *Game        `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;foreignKey:GameID;references:ID"`
 	ServiceItem     *ServiceItem `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;foreignKey:ItemID;references:ID"`
+	Dispute         *OrderDispute `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;foreignKey:DisputeID;references:ID"`
 }
 
 // IsGiftOrder 判断是否为礼物订单

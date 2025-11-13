@@ -213,6 +213,7 @@ func (playersRepoAssign) Get(context.Context, uint64) (*model.Player, error) { r
 func (playersRepoAssign) Create(context.Context, *model.Player) error { return nil }
 func (playersRepoAssign) Update(context.Context, *model.Player) error { return nil }
 func (playersRepoAssign) Delete(context.Context, uint64) error { return nil }
+func (playersRepoAssign) GetByUserID(context.Context, uint64) (*model.Player, error) { return &model.Player{Nickname:"p"}, nil }
 
 type ordersRepoAssign struct{ status model.OrderStatus }
 func (o ordersRepoAssign) Create(context.Context, *model.Order) error { return nil }

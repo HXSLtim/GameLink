@@ -118,6 +118,14 @@ func (m *MockPlayerRepo) ListPaged(ctx context.Context, page, pageSize int) ([]m
 	return nil, 0, nil
 }
 
+func (m *MockPlayerRepo) GetByUserID(ctx context.Context, userID uint64) (*model.Player, error) {
+	args := m.Called(ctx, userID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.Player), args.Error(1)
+}
+
 func TestServiceItemService_CreateServiceItem(t *testing.T) {
 	ctx := context.Background()
 

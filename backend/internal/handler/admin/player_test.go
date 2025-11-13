@@ -71,6 +71,16 @@ func (f *fakePlayerRepoForHandler) Delete(ctx context.Context, id uint64) error 
 	return repository.ErrNotFound
 }
 
+func (f *fakePlayerRepoForHandler) GetByUserID(ctx context.Context, userID uint64) (*model.Player, error) {
+	for i := range f.items {
+		if f.items[i].UserID == userID {
+			c := f.items[i]
+			return &c, nil
+		}
+	}
+	return nil, repository.ErrNotFound
+}
+
 func setupPlayerTestRouter(playerRepo *fakePlayerRepoForHandler) (*gin.Engine, *adminservice.AdminService) {
 	r := newTestEngine()
 

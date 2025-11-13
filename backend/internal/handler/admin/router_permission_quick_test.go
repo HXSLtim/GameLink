@@ -83,6 +83,7 @@ func (routerPlayers) Get(_ context.Context, _ uint64) (*model.Player, error) { r
 func (routerPlayers) Create(_ context.Context, _ *model.Player) error { return nil }
 func (routerPlayers) Update(_ context.Context, _ *model.Player) error { return nil }
 func (routerPlayers) Delete(_ context.Context, _ uint64) error { return nil }
+func (routerPlayers) GetByUserID(_ context.Context, _ uint64) (*model.Player, error) { return nil, repository.ErrNotFound }
 
 type routerOrders struct{}
 func (routerOrders) Create(_ context.Context, _ *model.Order) error { return nil }

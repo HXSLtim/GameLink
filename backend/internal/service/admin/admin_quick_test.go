@@ -43,6 +43,7 @@ type fplRepo struct{}
 func (fplRepo) List(context.Context) ([]model.Player, error) { return nil, nil }
 func (fplRepo) ListPaged(context.Context, int, int) ([]model.Player, int64, error) { return []model.Player{{Base: model.Base{ID:1}, UserID:1, Nickname:"p"}}, 1, nil }
 func (fplRepo) Get(context.Context, uint64) (*model.Player, error) { return &model.Player{Base: model.Base{ID:1}, UserID:1, Nickname:"p"}, nil }
+func (fplRepo) GetByUserID(context.Context, uint64) (*model.Player, error) { return &model.Player{Base: model.Base{ID:1}, UserID:1, Nickname:"p"}, nil }
 func (fplRepo) Create(context.Context, *model.Player) error { return nil }
 func (fplRepo) Update(context.Context, *model.Player) error { return nil }
 func (fplRepo) Delete(context.Context, uint64) error { return nil }

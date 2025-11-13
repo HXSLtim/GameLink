@@ -24,6 +24,7 @@ func (fakePlayerRepoEarn) Get(ctx context.Context, id uint64) (*model.Player, er
 func (fakePlayerRepoEarn) Create(ctx context.Context, p *model.Player) error { return nil }
 func (fakePlayerRepoEarn) Update(ctx context.Context, p *model.Player) error { return nil }
 func (fakePlayerRepoEarn) Delete(ctx context.Context, id uint64) error { return nil }
+func (fakePlayerRepoEarn) GetByUserID(ctx context.Context, userID uint64) (*model.Player, error) { return &model.Player{Base: model.Base{ID:1}, UserID:userID, Nickname:"p"}, nil }
 
 type fakeOrderRepoEarn struct{}
 func (fakeOrderRepoEarn) Create(ctx context.Context, o *model.Order) error { return nil }

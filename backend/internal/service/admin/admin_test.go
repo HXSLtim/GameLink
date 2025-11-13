@@ -111,6 +111,10 @@ func (f *fakePlayerRepo) Create(ctx context.Context, p *model.Player) error { re
 func (f *fakePlayerRepo) Update(ctx context.Context, p *model.Player) error { return nil }
 func (f *fakePlayerRepo) Delete(ctx context.Context, id uint64) error       { return nil }
 
+func (f *fakePlayerRepo) GetByUserID(ctx context.Context, userID uint64) (*model.Player, error) {
+	return nil, repository.ErrNotFound
+}
+
 type fakeOrderRepo struct{ obj *model.Order }
 
 func (f *fakeOrderRepo) List(ctx context.Context, _ repository.OrderListOptions) ([]model.Order, int64, error) {

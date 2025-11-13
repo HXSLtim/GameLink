@@ -198,6 +198,21 @@ type ReviewReplyRepository interface {
 	UpdateStatus(ctx context.Context, replyID uint64, status string, note string) error
 }
 
+// DisputeRepository defines data access operations for order disputes.
+type DisputeRepository interface {
+	Create(ctx context.Context, dispute *model.OrderDispute) error
+	Get(ctx context.Context, id uint64) (*model.OrderDispute, error)
+	GetByOrderID(ctx context.Context, orderID uint64) (*model.OrderDispute, error)
+	Update(ctx context.Context, dispute *model.OrderDispute) error
+	List(ctx context.Context, opts DisputeListOptions) ([]model.OrderDispute, int64, error)
+	ListPendingAssignment(ctx context.Context, page, pageSize int) ([]model.OrderDispute, int64, error)
+	ListSLABreached(ctx context.Context) ([]model.OrderDispute, error)
+	MarkSLABreached(ctx context.Context, disputeID uint64) error
+	Delete(ctx context.Context, id uint64) error
+	CountByStatus(ctx context.Context, status model.DisputeStatus) (int64, error)
+	GetPendingCount(ctx context.Context) (int64, error)
+}
+
 // UserListOptions contains filtering options for user queries.
 type UserListOptions struct {
 	Page     int
@@ -265,6 +280,20 @@ type ReviewListOptions struct {
 	PlayerID *uint64
 	DateFrom *time.Time
 	DateTo   *time.Time
+}
+
+// DisputeListOptions contains filtering options for dispute queries.
+type DisputeListOptions struct {
+	Page               int
+	PageSize           int
+	UserID             *uint64
+	OrderID            *uint64
+	AssignedToUserID   *uint64
+	Statuses           []model.DisputeStatus
+	SLABreached        *bool
+	Keyword            string
+	DateFrom           *time.Time
+	DateTo             *time.Time
 }
 
 // OperationLogListOptions contains filtering options for operation log queries.

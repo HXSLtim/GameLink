@@ -13,6 +13,20 @@ type mockReviewRepository struct {
 	reviews map[uint64]*model.Review
 }
 
+type mockReviewReplyRepository struct{}
+
+func (m *mockReviewReplyRepository) Create(ctx context.Context, reply *model.ReviewReply) error {
+	return nil
+}
+
+func (m *mockReviewReplyRepository) ListByReview(ctx context.Context, reviewID uint64) ([]model.ReviewReply, error) {
+	return []model.ReviewReply{}, nil
+}
+
+func (m *mockReviewReplyRepository) UpdateStatus(ctx context.Context, replyID uint64, status string, note string) error {
+	return nil
+}
+
 func newMockReviewRepository() *mockReviewRepository {
 	return &mockReviewRepository{
 		reviews: make(map[uint64]*model.Review),
@@ -133,6 +147,16 @@ func (m *mockPlayerRepository) Delete(ctx context.Context, id uint64) error {
 	return nil
 }
 
+func (m *mockPlayerRepository) GetByUserID(ctx context.Context, userID uint64) (*model.Player, error) {
+	return &model.Player{
+		Base:          model.Base{ID: 1},
+		UserID:        userID,
+		Nickname:      "TestPlayer",
+		RatingAverage: 4.5,
+		RatingCount:   10,
+	}, nil
+}
+
 type mockUserRepository struct{}
 
 func (m *mockUserRepository) List(ctx context.Context) ([]model.User, error) {
@@ -182,7 +206,7 @@ func (m *mockUserRepository) Delete(ctx context.Context, id uint64) error {
 func TestCreateReview(t *testing.T) {
 	reviewRepo := newMockReviewRepository()
 	orderRepo := newMockOrderRepository()
-	svc := NewReviewService(reviewRepo, orderRepo, &mockPlayerRepository{}, &mockUserRepository{})
+	svc := NewReviewService(reviewRepo, orderRepo, &mockPlayerRepository{}, &mockUserRepository{}, &mockReviewReplyRepository{})
 
 	// 创建已完成的订单
 	playerID := uint64(1)
@@ -232,7 +256,7 @@ func TestCreateReview(t *testing.T) {
 func TestCreateReviewOrderNotCompleted(t *testing.T) {
 	reviewRepo := newMockReviewRepository()
 	orderRepo := newMockOrderRepository()
-	svc := NewReviewService(reviewRepo, orderRepo, &mockPlayerRepository{}, &mockUserRepository{})
+	svc := NewReviewService(reviewRepo, orderRepo, &mockPlayerRepository{}, &mockUserRepository{}, &mockReviewReplyRepository{})
 
 	// 创建进行中的订单
 	playerID := uint64(1)
@@ -259,7 +283,7 @@ func TestCreateReviewOrderNotCompleted(t *testing.T) {
 func TestCreateReviewUnauthorized(t *testing.T) {
 	reviewRepo := newMockReviewRepository()
 	orderRepo := newMockOrderRepository()
-	svc := NewReviewService(reviewRepo, orderRepo, &mockPlayerRepository{}, &mockUserRepository{})
+	svc := NewReviewService(reviewRepo, orderRepo, &mockPlayerRepository{}, &mockUserRepository{}, &mockReviewReplyRepository{})
 
 	// 创建其他用户的订单
 	playerID := uint64(1)
@@ -286,7 +310,7 @@ func TestCreateReviewUnauthorized(t *testing.T) {
 func TestCreateReviewAlreadyReviewed(t *testing.T) {
 	reviewRepo := newMockReviewRepository()
 	orderRepo := newMockOrderRepository()
-	svc := NewReviewService(reviewRepo, orderRepo, &mockPlayerRepository{}, &mockUserRepository{})
+	svc := NewReviewService(reviewRepo, orderRepo, &mockPlayerRepository{}, &mockUserRepository{}, &mockReviewReplyRepository{})
 
 	// 创建已完成的订单
 	playerID := uint64(1)
@@ -324,7 +348,7 @@ func TestCreateReviewAlreadyReviewed(t *testing.T) {
 func TestGetMyReviews(t *testing.T) {
 	reviewRepo := newMockReviewRepository()
 	orderRepo := newMockOrderRepository()
-	svc := NewReviewService(reviewRepo, orderRepo, &mockPlayerRepository{}, &mockUserRepository{})
+	svc := NewReviewService(reviewRepo, orderRepo, &mockPlayerRepository{}, &mockUserRepository{}, &mockReviewReplyRepository{})
 
 	// 创建订单和评价
 	playerID := uint64(1)
@@ -373,7 +397,7 @@ func TestGetMyReviews(t *testing.T) {
 func TestGetPlayerReviews(t *testing.T) {
 	reviewRepo := newMockReviewRepository()
 	orderRepo := newMockOrderRepository()
-	svc := NewReviewService(reviewRepo, orderRepo, &mockPlayerRepository{}, &mockUserRepository{})
+	svc := NewReviewService(reviewRepo, orderRepo, &mockPlayerRepository{}, &mockUserRepository{}, &mockReviewReplyRepository{})
 
 	// 创建多个评价
 	playerID := uint64(1)

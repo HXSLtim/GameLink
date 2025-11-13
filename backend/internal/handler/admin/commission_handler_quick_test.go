@@ -61,6 +61,7 @@ func (dummyPlayerRepo) Update(context.Context, *model.Player) error { return nil
 func (dummyPlayerRepo) Delete(context.Context, uint64) error { return nil }
 func (dummyPlayerRepo) List(context.Context) ([]model.Player, error) { return nil, nil }
 func (dummyPlayerRepo) ListPaged(context.Context, int, int) ([]model.Player, int64, error) { return nil, 0, nil }
+func (dummyPlayerRepo) GetByUserID(context.Context, uint64) (*model.Player, error) { return nil, repository.ErrNotFound }
 
 func setupCommissionRouter(repo *fakeCommissionRepoAdmin) (*gin.Engine, *commissionservice.CommissionService, *quickFakeScheduler) {
     r := newTestEngine()

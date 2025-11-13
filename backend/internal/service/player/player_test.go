@@ -61,6 +61,21 @@ func (m *mockPlayerRepository) Delete(ctx context.Context, id uint64) error {
 	return nil
 }
 
+func (m *mockPlayerRepository) GetByUserID(ctx context.Context, userID uint64) (*model.Player, error) {
+	return &model.Player{
+		Base:               model.Base{ID: 1},
+		UserID:             userID,
+		Nickname:           "TestPlayer",
+		Bio:                "Test bio",
+		Rank:               "Diamond",
+		RatingAverage:      4.5,
+		RatingCount:        10,
+		HourlyRateCents:    10000,
+		MainGameID:         1,
+		VerificationStatus: model.VerificationVerified,
+	}, nil
+}
+
 type mockUserRepository struct{}
 
 func (m *mockUserRepository) List(ctx context.Context) ([]model.User, error) {

@@ -259,6 +259,12 @@ func (m *mockPlayerRepo) ListPaged(ctx context.Context, page, pageSize int) ([]m
 	return nil, 0, nil
 }
 
+func (m *mockPlayerRepo) GetByUserID(ctx context.Context, userID uint64) (*model.Player, error) {
+	var player model.Player
+	err := m.db.WithContext(ctx).Where("user_id = ?", userID).First(&player).Error
+	return &player, err
+}
+
 type mockOrderRepo struct {
 	db *gorm.DB
 }

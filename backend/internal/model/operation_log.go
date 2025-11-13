@@ -34,16 +34,25 @@ const (
 	OpActionRefund     OperationAction = "refund"
 	OpActionUpdate     OperationAction = "update"
 	OpActionUpdateRole OperationAction = "update_role"
+
+	// 争议处理
+	OpActionInitiateDispute  OperationAction = "initiate_dispute"
+	OpActionAssignDispute    OperationAction = "assign_dispute"
+	OpActionMediateDispute   OperationAction = "mediate_dispute"
+	OpActionResolveDispute   OperationAction = "resolve_dispute"
+	OpActionRollbackDispute  OperationAction = "rollback_dispute"
+	OpActionRejectDispute    OperationAction = "reject_dispute"
 )
 
 // OperationEntityType 枚举被审计的实体类型。
 type OperationEntityType string
 
 const (
-	OpEntityOrder   OperationEntityType = "order"
-	OpEntityPayment OperationEntityType = "payment"
-	OpEntityPlayer  OperationEntityType = "player"
-	OpEntityGame    OperationEntityType = "game"
-	OpEntityReview  OperationEntityType = "review"
-	OpEntityUser    OperationEntityType = "user"
+	OpEntityOrder    OperationEntityType = "order"
+	OpEntityPayment  OperationEntityType = "payment"
+	OpEntityPlayer   OperationEntityType = "player"
+	OpEntityGame     OperationEntityType = "game"
+	OpEntityReview   OperationEntityType = "review"
+	OpEntityUser     OperationEntityType = "user"
+	OpEntityDispute  OperationEntityType = "dispute"
 )

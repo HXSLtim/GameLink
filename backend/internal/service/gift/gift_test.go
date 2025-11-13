@@ -154,6 +154,14 @@ func (m *MockPlayerRepo) Delete(ctx context.Context, id uint64) error {
 	return args.Error(0)
 }
 
+func (m *MockPlayerRepo) GetByUserID(ctx context.Context, userID uint64) (*model.Player, error) {
+	args := m.Called(ctx, userID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.Player), args.Error(1)
+}
+
 type MockCommissionRepo struct {
 	mock.Mock
 }

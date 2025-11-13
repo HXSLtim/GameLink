@@ -48,6 +48,7 @@ type fakePlayerRepo3 struct{}
 func (fakePlayerRepo3) List(context.Context) ([]model.Player, error) { return nil, nil }
 func (fakePlayerRepo3) ListPaged(context.Context, int, int) ([]model.Player, int64, error) { return nil, 0, nil }
 func (fakePlayerRepo3) Get(context.Context, uint64) (*model.Player, error) { return &model.Player{Base: model.Base{ID:1}, UserID:1, Nickname:"p"}, nil }
+func (fakePlayerRepo3) GetByUserID(context.Context, uint64) (*model.Player, error) { return &model.Player{Base: model.Base{ID:1}, UserID:1, Nickname:"p"}, nil }
 func (fakePlayerRepo3) Create(context.Context, *model.Player) error { return nil }
 func (fakePlayerRepo3) Update(context.Context, *model.Player) error { return nil }
 func (fakePlayerRepo3) Delete(context.Context, uint64) error { return nil }

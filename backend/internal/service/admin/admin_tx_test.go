@@ -16,6 +16,7 @@ func (p *txPlayers) Get(ctx context.Context, id uint64) (*model.Player, error) {
 func (p *txPlayers) Create(ctx context.Context, pl *model.Player) error { _ = ctx; pl.ID = 2; return nil }
 func (p *txPlayers) Update(ctx context.Context, _ *model.Player) error { _ = ctx; return nil }
 func (p *txPlayers) Delete(ctx context.Context, _ uint64) error { _ = ctx; return nil }
+func (p *txPlayers) GetByUserID(ctx context.Context, userID uint64) (*model.Player, error) { _ = ctx; return &model.Player{UserID: userID, Nickname: "p"}, nil }
 
 type txUsers struct{}
 func (u *txUsers) List(ctx context.Context) ([]model.User, error) { _ = ctx; return nil, nil }

@@ -1,3 +1,6 @@
+//go:build team_service
+// +build team_service
+
 package team
 
 import (

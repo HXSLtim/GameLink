@@ -43,7 +43,13 @@ func (f *fakePlayerRepoForOrders) Create(ctx context.Context, p *model.Player) e
 
 func (f *fakePlayerRepoForOrders) Update(ctx context.Context, p *model.Player) error { return nil }
 
-func (f *fakePlayerRepoForOrders) Delete(ctx context.Context, id uint64) error { return nil }
+func (f *fakePlayerRepoForOrders) Delete(ctx context.Context, id uint64) error {
+	return nil
+}
+
+func (f *fakePlayerRepoForOrders) GetByUserID(ctx context.Context, userID uint64) (*model.Player, error) {
+	return nil, repository.ErrNotFound
+}
 
 func (f *fakeOrderRepoForHandler) List(ctx context.Context, opts repository.OrderListOptions) ([]model.Order, int64, error) {
 	if f.listFunc != nil {

@@ -41,6 +41,7 @@ func (fakePlayerRepoPG) Get(ctx context.Context, id uint64) (*model.Player, erro
 func (fakePlayerRepoPG) Create(ctx context.Context, p *model.Player) error { return nil }
 func (fakePlayerRepoPG) Update(ctx context.Context, p *model.Player) error { return nil }
 func (fakePlayerRepoPG) Delete(ctx context.Context, id uint64) error { return nil }
+func (fakePlayerRepoPG) GetByUserID(ctx context.Context, userID uint64) (*model.Player, error) { return &model.Player{Base: model.Base{ID: userID}, UserID:userID, Nickname:"p"}, nil }
 
 type fakeCommissionRepoPG struct{}
 func (fakeCommissionRepoPG) CreateRule(ctx context.Context, rule *model.CommissionRule) error { return nil }

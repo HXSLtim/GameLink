@@ -63,6 +63,7 @@ func (dummyPlayerRepo2) Get(ctx context.Context, id uint64) (*model.Player, erro
 func (dummyPlayerRepo2) Create(ctx context.Context, player *model.Player) error { return nil }
 func (dummyPlayerRepo2) Update(ctx context.Context, player *model.Player) error { return nil }
 func (dummyPlayerRepo2) Delete(ctx context.Context, id uint64) error { return nil }
+func (dummyPlayerRepo2) GetByUserID(ctx context.Context, userID uint64) (*model.Player, error) { return &model.Player{Nickname:"p"}, nil }
 
 type dummyOrderRepo2 struct{}
 func (dummyOrderRepo2) Create(ctx context.Context, order *model.Order) error { return nil }

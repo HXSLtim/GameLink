@@ -45,6 +45,13 @@ func (m *mockPlayerRepository) Delete(ctx context.Context, id uint64) error {
 	return nil
 }
 
+func (m *mockPlayerRepository) GetByUserID(ctx context.Context, userID uint64) (*model.Player, error) {
+	return &model.Player{
+		Base:   model.Base{ID: 1},
+		UserID: userID,
+	}, nil
+}
+
 type mockOrderRepository struct {
 	orders []model.Order
 }
