@@ -22,6 +22,7 @@ const ComponentsDemo = lazy(() => import('pages/ComponentsDemo').then((m) => ({ 
 const CacheDemo = lazy(() => import('pages/CacheDemo').then((m) => ({ default: m.CacheDemo })));
 const CachePageA = lazy(() => import('pages/CacheDemo').then((m) => ({ default: m.CachePageA })));
 const CachePageB = lazy(() => import('pages/CacheDemo').then((m) => ({ default: m.CachePageB })));
+const CommunityPage = lazy(() => import('pages/Community').then((m) => ({ default: m.CommunityPage })));
 import { ProtectedRoute } from './ProtectedRoute';
 import { MainLayout } from './layouts/MainLayout';
 import { FEATURE_FLAGS } from '../config';
@@ -76,6 +77,7 @@ export const router = createBrowserRouter([
           { path: 'reports', element: <Suspense fallback={<RouteLoading />}> <ReportDashboard /> </Suspense> },
           { path: 'permissions', element: <Suspense fallback={<RouteLoading />}> <PermissionList /> </Suspense> },
           { path: 'settings', element: <Suspense fallback={<RouteLoading />}> <SettingsDashboard /> </Suspense> },
+          { path: 'community', element: <Suspense fallback={<RouteLoading />}> <CommunityPage /> </Suspense> },
           ...(FEATURE_FLAGS.showcase.enableComponentsRoute
             ? [{ path: 'components', element: <Suspense fallback={<RouteLoading />}> <ComponentsDemo /> </Suspense> }]
             : []),

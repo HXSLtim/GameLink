@@ -564,9 +564,11 @@ go test ./tests/integration/... -v
 ### 社区/维系
 | Method & Path | 说明 | 主要参数 | 权限 | 状态 |
 | --- | --- | --- | --- | --- |
-| `POST /api/v1/user/feeds` | 发布图文动态（仅图片/文本） | Body: `images[], content, visibility` | `user:feeds:write` | PRD 评估 (G4) |
-| `GET /api/v1/user/feeds` | 社区动态流 | `cursor, followOnly` | `user:feeds:read` | PRD 评估 (G4) |
-| `POST /api/v1/player/reviews/{reviewId}/reply` | 陪玩师回复评价 | Body: `content` | `player:reviews:reply` | PRD 评估 (G4) |
+| `POST /api/v1/user/feeds` | 发布图文动态（仅图片/文本） | Body: `images[], content, visibility` | `user:feeds:write` | ✅ Implemented |
+| `GET /api/v1/user/feeds` | 社区动态流 | `cursor, followOnly` | `user:feeds:read` | ✅ Implemented |
+| `POST /api/v1/player/reviews/{reviewId}/reply` | 陪玩师回复评价 | Body: `content` | `player:reviews:reply` | ✅ Implemented |
+| `GET /api/v1/notifications` | 获取通知列表 | `page, pageSize, unread, priority[]` | `user:notifications:read` | ✅ Implemented |
+| `POST /api/v1/notifications/read` | 批量标记通知已读 | Body: `ids[]` | `user:notifications:write` | ✅ Implemented |
 
 ### 车队管理 /player/teams
 | Method & Path | 说明 | 主要参数 | 权限 | 状态 |
@@ -612,8 +614,8 @@ go test ./tests/integration/... -v
 | TeamAssignmentMember | `AssignmentID`, `MemberID`, `State(assigned/accepted/completed/withdrawn)`, `StartedAt/CompletedAt` | 队内成员对任务的响应与执行进度 | 📝 设计中 |
 | TeamPayoutPlan | `AssignmentID`, `ProfitMode`, `Shares[{memberId,percent}]`, `ConfirmedBy[]`, `LockedAt` | 队长设置的分账方案（队员确认后生效），供收益结算读取 | 📝 设计中 |
 | OrderDispute | `OrderID`, `RaisedBy(user/player)`, `Reason`, `Evidence`, `AssignmentSource`, `Status(open/in_review/resolved)`, `Resolution`, `RefundAmount`, `HandledBy`, `HandledAt` | 售后/争议闭环，客服可介入、判责、触发退款或重派 | 💡 规划 |
-| NotificationEvent | `UserID`, `Channel(web/push/sms)`, `Payload`, `Priority`, `ReferenceType/ReferenceID`, `ReadAt` | 统一通知中心实体，支撑站内信 + 外部消息 | 💡 规划 |
-| Feed/Community | `FeedID`, `AuthorID`, `Images[]`, `Content`, `Visibility`, `ModerationStatus`, `Metrics`, `ReplyCount`, `ComplaintCount` | 图文动态及审核状态，为社区/维系模块提供数据 | 💡 规划 |
+| NotificationEvent | `UserID`, `Channel(web/push/sms)`, `Payload`, `Priority`, `ReferenceType/ReferenceID`, `ReadAt` | 统一通知中心实体，支撑站内信 + 外部消息 | ✅ Implemented |
+| Feed/Community | `FeedID`, `AuthorID`, `Images[]`, `Content`, `Visibility`, `ModerationStatus`, `Metrics`, `ReplyCount`, `ComplaintCount` | 图文动态及审核状态，为社区/维系模块提供数据 | ✅ Implemented |
 | PlayerStats | `PlayerID`, `CompletedOrders`, `CancelRate`, `ResponseTime`, `SkillTags`, `Languages` | 陪玩师数据指标，供匹配算法/抢单池使用 | 💡 规划 |
 
 > 规划模型将在 G5/G6 阶段逐步落地，届时会同步数据库迁移、OpenAPI Schema 与测试用例。
@@ -633,7 +635,7 @@ go test ./tests/integration/... -v
 | 支付页面 | `/order/:id/pay` | 多支付方式、倒计时、回调状态 | 已上线 |
 | 我的订单 | `/orders` | 状态筛选、取消/确认/评价入口 | 已上线 |
 | 个人中心（Phase 2） | `/profile` | 账号安全、通知偏好、钱包 | 设计完成 |
-| 动态广场（Phase 2） | `/community` | 图文动态、关注、举报 | PRD 撰写 (G4) |
+| 动态广场（Phase 2） | `/community` | 图文动态、关注、举报 | ✅ Implemented |
 
 ### 陪玩师端 (Player)
 | 页面 | 路径 | 核心功能 | 状态 |

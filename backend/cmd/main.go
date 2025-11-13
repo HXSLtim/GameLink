@@ -33,14 +33,17 @@ import (
 	"gamelink/internal/handler"
 	adminhandler "gamelink/internal/handler/admin"
 	"gamelink/internal/handler/middleware"
+	notificationhandler "gamelink/internal/handler/notification"
 	playerhandler "gamelink/internal/handler/player"
 	userhandler "gamelink/internal/handler/user"
 	"gamelink/internal/logging"
 	"gamelink/internal/model"
+	chatrepo "gamelink/internal/repository/chat"
 	commissionrepo "gamelink/internal/repository/commission"
 	"gamelink/internal/repository/common"
+	feedrepo "gamelink/internal/repository/feed"
 	gamerepo "gamelink/internal/repository/game"
-	chatrepo "gamelink/internal/repository/chat"
+	notificationrepo "gamelink/internal/repository/notification"
 	orderrepo "gamelink/internal/repository/order"
 	paymentrepo "gamelink/internal/repository/payment"
 	permissionrepo "gamelink/internal/repository/permission"
@@ -48,6 +51,7 @@ import (
 	playertagrepo "gamelink/internal/repository/player_tag"
 	rankingrepo "gamelink/internal/repository/ranking"
 	reviewrepo "gamelink/internal/repository/review"
+	reviewreplyrepo "gamelink/internal/repository/reviewreply"
 	rolerepo "gamelink/internal/repository/role"
 	serviceitemrepo "gamelink/internal/repository/serviceitem"
 	statsrepo "gamelink/internal/repository/stats"
@@ -59,8 +63,10 @@ import (
 	chatservice "gamelink/internal/service/chat"
 	commissionservice "gamelink/internal/service/commission"
 	earningsservice "gamelink/internal/service/earnings"
+	feedservice "gamelink/internal/service/feed"
 	giftservice "gamelink/internal/service/gift"
 	itemservice "gamelink/internal/service/item"
+	notificationservice "gamelink/internal/service/notification"
 	orderservice "gamelink/internal/service/order"
 	paymentservice "gamelink/internal/service/payment"
 	permissionservice "gamelink/internal/service/permission"
@@ -177,11 +183,14 @@ func main() {
 	chatReportRepo := chatrepo.NewChatReportRepository(orm)
 	paymentRepo := paymentrepo.NewPaymentRepository(orm)
 	reviewRepo := reviewrepo.NewReviewRepository(orm)
+	reviewReplyRepo := reviewreplyrepo.NewReviewReplyRepository(orm)
 	playerTagRepo := playertagrepo.NewPlayerTagRepository(orm)
 	withdrawRepo := withdrawrepo.NewWithdrawRepository(orm)
 	commissionRepo := commissionrepo.NewCommissionRepository(orm)
 	serviceItemRepo := serviceitemrepo.NewServiceItemRepository(orm)
 	rankingCommissionRepo := rankingrepo.NewRankingCommissionRepository(orm)
+	feedRepo := feedrepo.NewFeedRepository(orm)
+	notificationRepo := notificationrepo.NewNotificationRepository(orm)
 
 	// Initialize user-side services
 	commissionSvc := commissionservice.NewCommissionService(commissionRepo, orderRepo, playerRepo)
@@ -192,9 +201,11 @@ func main() {
 	orderSvc.SetChatGroupRepository(chatGroupRepo)
 	paymentSvc := paymentservice.NewPaymentService(paymentRepo, orderRepo)
 	playerSvc := playerservice.NewPlayerService(playerRepo, userRepo, gameRepo, orderRepo, reviewRepo, playerTagRepo, cacheClient)
-	reviewSvc := reviewservice.NewReviewService(reviewRepo, orderRepo, playerRepo, userRepo)
+	reviewSvc := reviewservice.NewReviewService(reviewRepo, orderRepo, playerRepo, userRepo, reviewReplyRepo)
 	earningsSvc := earningsservice.NewEarningsService(playerRepo, orderRepo, withdrawRepo)
 	chatSvc := chatservice.NewChatService(chatGroupRepo, chatMemberRepo, chatMessageRepo, chatReportRepo, cacheClient)
+	feedSvc := feedservice.NewService(feedRepo, nil)
+	notificationSvc := notificationservice.NewService(notificationRepo)
 
 	// Initialize settlement scheduler
 	settlementScheduler := scheduler.NewSettlementScheduler(commissionSvc)
@@ -217,6 +228,7 @@ func main() {
 		userhandler.RegisterReviewRoutes(userGroup, reviewSvc, authMiddleware)
 		userhandler.RegisterGiftRoutes(userGroup, giftSvc, serviceItemSvc, authMiddleware)
 		userhandler.RegisterChatRoutes(userGroup, chatSvc, authMiddleware)
+		userhandler.RegisterFeedRoutes(userGroup, feedSvc, authMiddleware)
 	}
 
 	// Register player-side routes (require authentication)
@@ -228,6 +240,7 @@ func main() {
 		playerhandler.RegisterEarningsRoutes(playerGroup, earningsSvc, authMiddleware)
 		playerhandler.RegisterCommissionRoutes(playerGroup, commissionSvc, authMiddleware)
 		playerhandler.RegisterGiftRoutes(playerGroup, giftSvc, authMiddleware)
+		playerhandler.RegisterReviewRoutes(playerGroup, reviewSvc, authMiddleware)
 	}
 
 	if cfg.EnableSwagger {
@@ -247,6 +260,9 @@ func main() {
 
 	// 权限中间件
 	permMiddleware := middleware.NewPermissionMiddleware(jwtMgr, permService, roleSvc)
+
+	// Notification center routes
+	notificationhandler.RegisterRoutes(api, notificationSvc, authMiddleware)
 
 	// Register admin routes under versioned prefix: /api/v1/admin（使用新的权限中间件）
 	adminhandler.RegisterRoutes(api, adminSvc, permMiddleware)

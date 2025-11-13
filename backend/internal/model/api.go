@@ -9,6 +9,7 @@ type APIResponse[T any] struct {
 	Data       T           `json:"data,omitempty"`
 	Pagination *Pagination `json:"pagination,omitempty"`
 	Meta       any         `json:"meta,omitempty"`
+	TraceID    string      `json:"traceId,omitempty"`
 }
 
 // Pagination describes list pagination metadata.

@@ -10,3 +10,5 @@ export * from './payment';
 export * from './review';
 export * from './stats';
 export * from './rbac';
+export * from './feed';
+export * from './notification';

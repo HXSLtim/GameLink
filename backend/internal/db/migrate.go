@@ -142,6 +142,11 @@ func autoMigrate(db *gorm.DB) error {
 		&model.ChatGroupMember{},
 		&model.ChatMessage{},
 		&model.ChatReport{},
+		&model.Feed{},
+		&model.FeedImage{},
+		&model.FeedReport{},
+		&model.NotificationEvent{},
+		&model.ReviewReply{},
 	)
 }
 

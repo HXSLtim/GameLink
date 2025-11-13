@@ -36,6 +36,7 @@ type PlayerRepository interface {
 	List(ctx context.Context) ([]model.Player, error)
 	ListPaged(ctx context.Context, page, pageSize int) ([]model.Player, int64, error)
 	Get(ctx context.Context, id uint64) (*model.Player, error)
+	GetByUserID(ctx context.Context, userID uint64) (*model.Player, error)
 	Create(ctx context.Context, player *model.Player) error
 	Update(ctx context.Context, player *model.Player) error
 	Delete(ctx context.Context, id uint64) error
@@ -173,6 +174,30 @@ type StatsRepository interface {
 	AuditTrend(ctx context.Context, from, to *time.Time, entity, action string) ([]DateValue, error)
 }
 
+// FeedRepository defines persistence methods for community feeds.
+type FeedRepository interface {
+	Create(ctx context.Context, feed *model.Feed) error
+	Get(ctx context.Context, id uint64) (*model.Feed, error)
+	List(ctx context.Context, opts FeedListOptions) ([]model.Feed, error)
+	UpdateModeration(ctx context.Context, feedID uint64, status model.FeedModerationStatus, note string, manual bool) error
+	CreateReport(ctx context.Context, report *model.FeedReport) error
+}
+
+// NotificationRepository defines persistence for notification events.
+type NotificationRepository interface {
+	ListByUser(ctx context.Context, opts NotificationListOptions) ([]model.NotificationEvent, int64, error)
+	MarkRead(ctx context.Context, userID uint64, ids []uint64) error
+	CountUnread(ctx context.Context, userID uint64) (int64, error)
+	Create(ctx context.Context, event *model.NotificationEvent) error
+}
+
+// ReviewReplyRepository defines data access for review replies.
+type ReviewReplyRepository interface {
+	Create(ctx context.Context, reply *model.ReviewReply) error
+	ListByReview(ctx context.Context, reviewID uint64) ([]model.ReviewReply, error)
+	UpdateStatus(ctx context.Context, replyID uint64, status string, note string) error
+}
+
 // UserListOptions contains filtering options for user queries.
 type UserListOptions struct {
 	Page     int
@@ -197,6 +222,24 @@ type OrderListOptions struct {
 	Keyword  string
 	DateFrom *time.Time
 	DateTo   *time.Time
+}
+
+// FeedListOptions describes feed query filters.
+type FeedListOptions struct {
+	Limit        int
+	CursorBefore *uint64
+	AuthorID     *uint64
+	Visibility   []model.FeedVisibility
+	OnlyApproved bool
+}
+
+// NotificationListOptions describes notification queries.
+type NotificationListOptions struct {
+	Page     int
+	PageSize int
+	UserID   uint64
+	Unread   *bool
+	Priority []model.NotificationPriority
 }
 
 // PaymentListOptions contains filtering options for payment queries.
