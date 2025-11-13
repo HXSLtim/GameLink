@@ -40,6 +40,7 @@ func (dummyPlayers) Get(context.Context, uint64) (*model.Player, error) { return
 func (dummyPlayers) Create(context.Context, *model.Player) error { return nil }
 func (dummyPlayers) Update(context.Context, *model.Player) error { return nil }
 func (dummyPlayers) Delete(context.Context, uint64) error { return nil }
+func (dummyPlayers) GetByUserID(context.Context, uint64) (*model.Player, error) { return nil, repository.ErrNotFound }
 
 type dummyUsers struct{}
 func (dummyUsers) List(context.Context) ([]model.User, error) { return nil, nil }

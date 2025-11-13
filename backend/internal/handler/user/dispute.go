@@ -45,26 +45,26 @@ func (h *DisputeHandler) InitiateDispute(c *gin.Context) {
 	// Get user ID from context (set by auth middleware)
 	userID, exists := c.Get("userID")
 	if !exists {
-		writeJSONError(c, http.StatusUnauthorized, "User ID not found in context")
+		respondError(c, http.StatusUnauthorized, "User ID not found in context")
 		return
 	}
 
 	var payload InitiateDisputePayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+		respondError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
 		return
 	}
 
 	// Validate evidence URLs count
 	if len(payload.EvidenceURLs) > 9 {
-		writeJSONError(c, http.StatusBadRequest, "Maximum 9 evidence URLs allowed")
+		respondError(c, http.StatusBadRequest, "Maximum 9 evidence URLs allowed")
 		return
 	}
 
 	// Validate evidence URLs are not empty
 	for _, url := range payload.EvidenceURLs {
 		if url == "" {
-			writeJSONError(c, http.StatusBadRequest, "Evidence URLs cannot be empty")
+			respondError(c, http.StatusBadRequest, "Evidence URLs cannot be empty")
 			return
 		}
 	}
@@ -79,26 +79,26 @@ func (h *DisputeHandler) InitiateDispute(c *gin.Context) {
 
 	if err != nil {
 		if errors.Is(err, assignment.ErrValidation) {
-			writeJSONError(c, http.StatusBadRequest, err.Error())
+			respondError(c, http.StatusBadRequest, err.Error())
 			return
 		}
 		if errors.Is(err, assignment.ErrUnauthorized) {
-			writeJSONError(c, http.StatusForbidden, "You can only initiate disputes for your own orders")
+			respondError(c, http.StatusForbidden, "You can only initiate disputes for your own orders")
 			return
 		}
 		if errors.Is(err, assignment.ErrCannotInitiateDispute) {
-			writeJSONError(c, http.StatusConflict, "Cannot initiate dispute for this order")
+			respondError(c, http.StatusConflict, "Cannot initiate dispute for this order")
 			return
 		}
 		if errors.Is(err, assignment.ErrDisputeExists) {
-			writeJSONError(c, http.StatusConflict, "A dispute already exists for this order")
+			respondError(c, http.StatusConflict, "A dispute already exists for this order")
 			return
 		}
 		if errors.Is(err, assignment.ErrOrderNotFound) {
-			writeJSONError(c, http.StatusNotFound, "Order not found")
+			respondError(c, http.StatusNotFound, "Order not found")
 			return
 		}
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -108,7 +108,7 @@ func (h *DisputeHandler) InitiateDispute(c *gin.Context) {
 		SLADeadline string `json:"slaDeadline"`
 	}
 
-	writeJSON(c, http.StatusCreated, model.APIResponse[InitiateDisputeResponse]{
+	respondJSON(c, http.StatusCreated, model.APIResponse[InitiateDisputeResponse]{
 		Success: true,
 		Code:    http.StatusCreated,
 		Data: InitiateDisputeResponse{
@@ -133,33 +133,33 @@ func (h *DisputeHandler) GetDisputeDetail(c *gin.Context) {
 	// Get user ID from context
 	userID, exists := c.Get("userID")
 	if !exists {
-		writeJSONError(c, http.StatusUnauthorized, "User ID not found in context")
+		respondError(c, http.StatusUnauthorized, "User ID not found in context")
 		return
 	}
 
 	disputeID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "Invalid dispute ID")
+		respondError(c, http.StatusBadRequest, "Invalid dispute ID")
 		return
 	}
 
 	dispute, err := h.svc.GetDisputeDetail(c.Request.Context(), disputeID)
 	if err != nil {
 		if errors.Is(err, assignment.ErrNotFound) {
-			writeJSONError(c, http.StatusNotFound, "Dispute not found")
+			respondError(c, http.StatusNotFound, "Dispute not found")
 			return
 		}
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	// Verify user owns this dispute
 	if dispute.UserID != userID.(uint64) {
-		writeJSONError(c, http.StatusForbidden, "You can only view your own disputes")
+		respondError(c, http.StatusForbidden, "You can only view your own disputes")
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[*model.OrderDispute]{
+	respondJSON(c, http.StatusOK, model.APIResponse[*model.OrderDispute]{
 		Success: true,
 		Code:    http.StatusOK,
 		Data:    dispute,

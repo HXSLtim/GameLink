@@ -32,6 +32,7 @@ func (fakePlayerRepoOrd) Get(context.Context, uint64) (*model.Player, error) { r
 func (fakePlayerRepoOrd) Create(context.Context, *model.Player) error { return nil }
 func (fakePlayerRepoOrd) Update(context.Context, *model.Player) error { return nil }
 func (fakePlayerRepoOrd) Delete(context.Context, uint64) error { return nil }
+func (fakePlayerRepoOrd) GetByUserID(context.Context, uint64) (*model.Player, error) { return nil, repository.ErrNotFound }
 
 type fakeUserRepoOrd struct{}
 func (fakeUserRepoOrd) List(context.Context) ([]model.User, error) { return nil, nil }

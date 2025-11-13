@@ -29,6 +29,7 @@ func (invalidPlayers) Get(context.Context, uint64) (*model.Player, error) { retu
 func (invalidPlayers) Create(context.Context, *model.Player) error { return nil }
 func (invalidPlayers) Update(context.Context, *model.Player) error { return nil }
 func (invalidPlayers) Delete(context.Context, uint64) error { return nil }
+func (invalidPlayers) GetByUserID(context.Context, uint64) (*model.Player, error) { return nil, repository.ErrNotFound }
 
 type invalidUsers struct{}
 func (invalidUsers) List(context.Context) ([]model.User, error) { return nil, nil }

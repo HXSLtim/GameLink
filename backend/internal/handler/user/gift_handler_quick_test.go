@@ -44,6 +44,7 @@ func (dummyPlayerRepoGift) Get(ctx context.Context, _ uint64) (*model.Player, er
 func (dummyPlayerRepoGift) Create(ctx context.Context, _ *model.Player) error { _=ctx; return nil }
 func (dummyPlayerRepoGift) Update(ctx context.Context, _ *model.Player) error { _=ctx; return nil }
 func (dummyPlayerRepoGift) Delete(ctx context.Context, _ uint64) error { _=ctx; return nil }
+func (dummyPlayerRepoGift) GetByUserID(ctx context.Context, _ uint64) (*model.Player, error) { _=ctx; return &model.Player{Nickname:"p"}, nil }
 
 type dummyCommissionRepoGift struct{}
 func (dummyCommissionRepoGift) CreateRule(ctx context.Context, _ *model.CommissionRule) error { _=ctx; return nil }

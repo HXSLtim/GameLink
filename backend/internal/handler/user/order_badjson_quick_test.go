@@ -29,7 +29,8 @@ func (obPlayers) ListPaged(context.Context, int, int) ([]model.Player, int64, er
 func (obPlayers) Get(context.Context, uint64) (*model.Player, error) { return &model.Player{Base: model.Base{ID:1}, UserID:1, Nickname:"p", HourlyRateCents: 1000}, nil }
 func (obPlayers) Create(context.Context, *model.Player) error { return nil }
 func (obPlayers) Update(context.Context, *model.Player) error { return nil }
-func (obPlayers) Delete(context.Context, uint64) error { return nil }
+func (obPlayers) Delete(ctx context.Context, _ uint64) error { _=ctx; return nil }
+func (obPlayers) GetByUserID(ctx context.Context, _ uint64) (*model.Player, error) { _=ctx; return nil, repository.ErrNotFound }
 
 type obUsers struct{}
 func (obUsers) List(context.Context) ([]model.User, error) { return nil, nil }
