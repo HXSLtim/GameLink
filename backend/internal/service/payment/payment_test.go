@@ -11,7 +11,12 @@ import (
 
 // Mock repositories
 type mockPaymentRepository struct {
-	payments map[uint64]*model.Payment
+	payments   map[uint64]*model.Payment
+	createHook func(ctx context.Context, payment *model.Payment) error
+	listHook   func(ctx context.Context, opts repository.PaymentListOptions) ([]model.Payment, int64, error)
+	getHook    func(ctx context.Context, id uint64) (*model.Payment, error)
+	updateHook func(ctx context.Context, payment *model.Payment) error
+	deleteHook func(ctx context.Context, id uint64) error
 }
 
 func newMockPaymentRepository() *mockPaymentRepository {
@@ -21,12 +26,18 @@ func newMockPaymentRepository() *mockPaymentRepository {
 }
 
 func (m *mockPaymentRepository) Create(ctx context.Context, payment *model.Payment) error {
+	if m.createHook != nil {
+		return m.createHook(ctx, payment)
+	}
 	payment.ID = uint64(len(m.payments) + 1)
 	m.payments[payment.ID] = payment
 	return nil
 }
 
 func (m *mockPaymentRepository) List(ctx context.Context, opts repository.PaymentListOptions) ([]model.Payment, int64, error) {
+	if m.listHook != nil {
+		return m.listHook(ctx, opts)
+	}
 	var result []model.Payment
 	for _, p := range m.payments {
 		if opts.OrderID != nil && p.OrderID != *opts.OrderID {
@@ -38,6 +49,9 @@ func (m *mockPaymentRepository) List(ctx context.Context, opts repository.Paymen
 }
 
 func (m *mockPaymentRepository) Get(ctx context.Context, id uint64) (*model.Payment, error) {
+	if m.getHook != nil {
+		return m.getHook(ctx, id)
+	}
 	if payment, ok := m.payments[id]; ok {
 		return payment, nil
 	}
@@ -45,6 +59,9 @@ func (m *mockPaymentRepository) Get(ctx context.Context, id uint64) (*model.Paym
 }
 
 func (m *mockPaymentRepository) Update(ctx context.Context, payment *model.Payment) error {
+	if m.updateHook != nil {
+		return m.updateHook(ctx, payment)
+	}
 	if _, ok := m.payments[payment.ID]; !ok {
 		return repository.ErrNotFound
 	}
@@ -53,12 +70,20 @@ func (m *mockPaymentRepository) Update(ctx context.Context, payment *model.Payme
 }
 
 func (m *mockPaymentRepository) Delete(ctx context.Context, id uint64) error {
+	if m.deleteHook != nil {
+		return m.deleteHook(ctx, id)
+	}
 	delete(m.payments, id)
 	return nil
 }
 
 type mockOrderRepository struct {
-	orders map[uint64]*model.Order
+	orders     map[uint64]*model.Order
+	createHook func(ctx context.Context, order *model.Order) error
+	listHook   func(ctx context.Context, opts repository.OrderListOptions) ([]model.Order, int64, error)
+	getHook    func(ctx context.Context, id uint64) (*model.Order, error)
+	updateHook func(ctx context.Context, order *model.Order) error
+	deleteHook func(ctx context.Context, id uint64) error
 }
 
 func newMockOrderRepository() *mockOrderRepository {
@@ -68,16 +93,25 @@ func newMockOrderRepository() *mockOrderRepository {
 }
 
 func (m *mockOrderRepository) Create(ctx context.Context, order *model.Order) error {
+	if m.createHook != nil {
+		return m.createHook(ctx, order)
+	}
 	order.ID = uint64(len(m.orders) + 1)
 	m.orders[order.ID] = order
 	return nil
 }
 
 func (m *mockOrderRepository) List(ctx context.Context, opts repository.OrderListOptions) ([]model.Order, int64, error) {
+	if m.listHook != nil {
+		return m.listHook(ctx, opts)
+	}
 	return []model.Order{}, 0, nil
 }
 
 func (m *mockOrderRepository) Get(ctx context.Context, id uint64) (*model.Order, error) {
+	if m.getHook != nil {
+		return m.getHook(ctx, id)
+	}
 	if order, ok := m.orders[id]; ok {
 		return order, nil
 	}
@@ -85,6 +119,9 @@ func (m *mockOrderRepository) Get(ctx context.Context, id uint64) (*model.Order,
 }
 
 func (m *mockOrderRepository) Update(ctx context.Context, order *model.Order) error {
+	if m.updateHook != nil {
+		return m.updateHook(ctx, order)
+	}
 	if _, ok := m.orders[order.ID]; !ok {
 		return repository.ErrNotFound
 	}
@@ -93,6 +130,9 @@ func (m *mockOrderRepository) Update(ctx context.Context, order *model.Order) er
 }
 
 func (m *mockOrderRepository) Delete(ctx context.Context, id uint64) error {
+	if m.deleteHook != nil {
+		return m.deleteHook(ctx, id)
+	}
 	delete(m.orders, id)
 	return nil
 }
@@ -310,7 +350,7 @@ func TestRefundPayment(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to get refunded payment: %v", err)
 	}
-	
+
 	if refunded.Status != model.PaymentStatusRefunded {
 		t.Errorf("expected status refunded, got %s", refunded.Status)
 	}
@@ -362,7 +402,7 @@ func TestHandlePaymentCallback(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to get updated payment: %v", err)
 	}
-	
+
 	if updated.Status != model.PaymentStatusPaid {
 		t.Errorf("expected status paid, got %s", updated.Status)
 	}
@@ -372,7 +412,7 @@ func TestHandlePaymentCallback(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to get updated order: %v", err)
 	}
-	
+
 	if updatedOrder.Status != model.OrderStatusConfirmed {
 		t.Errorf("expected order status confirmed, got %s", updatedOrder.Status)
 	}
