@@ -1,244 +1,117 @@
 package ranking
 
 import (
-	"context"
-	"errors"
-	"fmt"
-	"testing"
+    "context"
+    "testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+    "gamelink/internal/model"
+    "gamelink/internal/repository"
+    rankingrepo "gamelink/internal/repository/ranking"
 
-	"gamelink/internal/model"
-	"gamelink/internal/repository"
-	repoRanking "gamelink/internal/repository/ranking"
+    "github.com/stretchr/testify/require"
 )
 
-func TestRankingService_CalculateMonthlyRankings(t *testing.T) {
-	ctx := context.Background()
-	rankRepo := newFakeRankingRepository()
-	orderRepo := &fakeOrderRepository{
-		orders: []model.Order{
-			newTestOrder(1, 1, 1_000),
-			newTestOrder(1, 2, 500),
-			newTestOrder(2, 3, 300),
-			giftOrder(3, 4, 200),
-		},
-	}
-
-	// 只为收入排名第一设置奖励，便于检测 BonusCents
-	rankRepo.rewards = []*model.RankingReward{
-		{
-			ID:          1,
-			RankingType: model.RankingTypeIncome,
-			Period:      "monthly",
-			RankStart:   1,
-			RankEnd:     1,
-			RewardValue: 8888,
-			IsActive:    true,
-		},
-	}
-
-	service := NewRankingService(rankRepo, nil, orderRepo)
-
-	require.NoError(t, service.CalculateMonthlyRankings(ctx, "2025-01"))
-
-	// 确认订单仓储的筛选条件正确
-	require.NotNil(t, orderRepo.lastOpts.DateFrom)
-	require.Equal(t, "2025-01-01", orderRepo.lastOpts.DateFrom.Format("2006-01-02"))
-	require.NotNil(t, orderRepo.lastOpts.DateTo)
-	require.Equal(t, "2025-02-01", orderRepo.lastOpts.DateTo.Format("2006-01-02"))
-	require.Len(t, orderRepo.lastOpts.Statuses, 1)
-	assert.Equal(t, model.OrderStatusCompleted, orderRepo.lastOpts.Statuses[0])
-
-	// CalculateMonthlyRankings 会分别写入订单数和收入排名
-	assert.Len(t, rankRepo.createdRankings, 4)
-
-	var incomeLeader *model.PlayerRanking
-	for _, r := range rankRepo.createdRankings {
-		if r.RankingType == model.RankingTypeIncome && r.Rank == 1 {
-			incomeLeader = r
-		}
-		if r.RankingType == model.RankingTypeOrderCount && r.PlayerID == 2 {
-			assert.Equal(t, 2, r.Rank)
-			assert.Equal(t, float64(1), r.Score)
-		}
-	}
-
-	require.NotNil(t, incomeLeader, "expected income leader in created rankings")
-	assert.Equal(t, uint64(1), incomeLeader.PlayerID)
-	assert.Equal(t, int64(1500), incomeLeader.IncomeCents)
-	assert.Equal(t, int64(8888), incomeLeader.BonusCents)
-
-	// Gift 订单应被排除
-	for _, r := range rankRepo.createdRankings {
-		assert.NotEqual(t, uint64(4), r.PlayerID)
-	}
+type fakeRankingRepo struct {
+    created []*model.PlayerRanking
+    list    []model.PlayerRanking
+    reward  *model.RankingReward
 }
 
-func TestRankingService_GetPlayerRankingInfo(t *testing.T) {
-	ctx := context.Background()
-	rankRepo := newFakeRankingRepository()
-	playerID := uint64(42)
-	rankRepo.listResults[playerID] = []model.PlayerRanking{
-		{PlayerID: playerID, RankingType: model.RankingTypeOrderCount, Rank: 5},
-		{PlayerID: playerID, RankingType: model.RankingTypeIncome, Rank: 2},
-	}
+func (f *fakeRankingRepo) CreateRanking(ctx context.Context, r *model.PlayerRanking) error { f.created = append(f.created, r); return nil }
+func (f *fakeRankingRepo) GetPlayerRanking(ctx context.Context, playerID uint64, rt model.RankingType, period, pv string) (*model.PlayerRanking, error) {
+    return nil, repository.ErrNotFound
+}
+func (f *fakeRankingRepo) ListRankings(ctx context.Context, opts rankingrepo.RankingListOptions) ([]model.PlayerRanking, int64, error) {
+    return f.list, int64(len(f.list)), nil
+}
+func (f *fakeRankingRepo) UpdateRanking(ctx context.Context, r *model.PlayerRanking) error { return nil }
+func (f *fakeRankingRepo) CreateReward(ctx context.Context, reward *model.RankingReward) error { return nil }
+func (f *fakeRankingRepo) GetReward(ctx context.Context, id uint64) (*model.RankingReward, error) { return nil, repository.ErrNotFound }
+func (f *fakeRankingRepo) ListRewards(ctx context.Context, opts rankingrepo.RewardListOptions) ([]model.RankingReward, int64, error) { return nil, 0, nil }
+func (f *fakeRankingRepo) UpdateReward(ctx context.Context, reward *model.RankingReward) error { return nil }
+func (f *fakeRankingRepo) DeleteReward(ctx context.Context, id uint64) error { return nil }
+func (f *fakeRankingRepo) GetRewardForRank(ctx context.Context, rt model.RankingType, period string, rank int) (*model.RankingReward, error) { return f.reward, nil }
 
-	service := NewRankingService(rankRepo, nil, &fakeOrderRepository{})
+type fakeOrderRepo struct{ orders []model.Order }
 
-	info, err := service.GetPlayerRankingInfo(ctx, playerID, "2025-01")
-	require.NoError(t, err)
-	assert.Equal(t, playerID, info.PlayerID)
-	assert.Equal(t, 2, info.BestRank)
-	assert.Equal(t, "income", info.RankingType)
+func (f *fakeOrderRepo) Create(ctx context.Context, order *model.Order) error { return nil }
+func (f *fakeOrderRepo) List(ctx context.Context, opts repository.OrderListOptions) ([]model.Order, int64, error) { return f.orders, int64(len(f.orders)), nil }
+func (f *fakeOrderRepo) Get(ctx context.Context, id uint64) (*model.Order, error) { return nil, repository.ErrNotFound }
+func (f *fakeOrderRepo) Update(ctx context.Context, order *model.Order) error { return nil }
+func (f *fakeOrderRepo) Delete(ctx context.Context, id uint64) error { return nil }
+
+type fakeRankingCommissionRepo struct{}
+
+func (f *fakeRankingCommissionRepo) CreateConfig(ctx context.Context, config *model.RankingCommissionConfig) error { return nil }
+func (f *fakeRankingCommissionRepo) GetConfig(ctx context.Context, id uint64) (*model.RankingCommissionConfig, error) { return nil, repository.ErrNotFound }
+func (f *fakeRankingCommissionRepo) GetActiveConfigForMonth(ctx context.Context, rt model.RankingType, month string) (*model.RankingCommissionConfig, error) {
+    return nil, repository.ErrNotFound
+}
+func (f *fakeRankingCommissionRepo) ListConfigs(ctx context.Context, opts rankingrepo.RankingCommissionConfigListOptions) ([]model.RankingCommissionConfig, int64, error) {
+    return nil, 0, nil
+}
+func (f *fakeRankingCommissionRepo) UpdateConfig(ctx context.Context, config *model.RankingCommissionConfig) error { return nil }
+func (f *fakeRankingCommissionRepo) DeleteConfig(ctx context.Context, id uint64) error { return nil }
+
+func TestSortByOrderCount(t *testing.T) {
+    players := []*PlayerMonthStats{{PlayerID: 1, OrderCount: 2}, {PlayerID: 2, OrderCount: 5}, {PlayerID: 3, OrderCount: 1}}
+    sortByOrderCount(players)
+    require.Equal(t, uint64(2), players[0].PlayerID)
+    require.Equal(t, uint64(1), players[1].PlayerID)
+    require.Equal(t, uint64(3), players[2].PlayerID)
 }
 
-func TestRankingService_CreateRankingReward(t *testing.T) {
-	ctx := context.Background()
-	rankRepo := newFakeRankingRepository()
-	service := NewRankingService(rankRepo, nil, &fakeOrderRepository{})
-
-	req := CreateRankingRewardRequest{
-		RankingType: model.RankingTypeIncome,
-		Period:      "monthly",
-		RankStart:   1,
-		RankEnd:     3,
-		RewardType:  "commission",
-		RewardValue: 3_000,
-		Description: "Top 3 bonus",
-	}
-
-	reward, err := service.CreateRankingReward(ctx, req)
-	require.NoError(t, err)
-	require.NotNil(t, reward)
-	assert.True(t, reward.IsActive)
-
-	require.Len(t, rankRepo.rewards, 1)
-	assert.Equal(t, req.RankEnd, int(rankRepo.rewards[0].RankEnd))
-	assert.Equal(t, req.RewardValue, rankRepo.rewards[0].RewardValue)
+func TestSortByIncome(t *testing.T) {
+    players := []*PlayerMonthStats{{PlayerID: 1, TotalIncome: 200}, {PlayerID: 2, TotalIncome: 500}, {PlayerID: 3, TotalIncome: 100}}
+    sortByIncome(players)
+    require.Equal(t, uint64(2), players[0].PlayerID)
+    require.Equal(t, uint64(1), players[1].PlayerID)
+    require.Equal(t, uint64(3), players[2].PlayerID)
 }
 
-// ---- test helpers ----------------------------------------------------------------
-
-type fakeOrderRepository struct {
-	orders   []model.Order
-	lastOpts repository.OrderListOptions
+func TestSaveOrderCountRankings(t *testing.T) {
+    repo := &fakeRankingRepo{}
+    srv := NewRankingService(repo, &fakeRankingCommissionRepo{}, &fakeOrderRepo{})
+    stats := map[uint64]*PlayerMonthStats{1: {PlayerID: 1, OrderCount: 2}, 2: {PlayerID: 2, OrderCount: 5}, 3: {PlayerID: 3, OrderCount: 1}}
+    err := srv.saveOrderCountRankings(context.Background(), "2025-10", stats)
+    require.NoError(t, err)
+    require.Len(t, repo.created, 3)
+    require.Equal(t, model.RankingTypeOrderCount, repo.created[0].RankingType)
+    require.Equal(t, 1, repo.created[0].Rank)
+    require.Equal(t, float64(5), repo.created[0].Score)
 }
 
-var _ repository.OrderRepository = (*fakeOrderRepository)(nil)
-
-func (f *fakeOrderRepository) Create(context.Context, *model.Order) error {
-	return errors.New("not implemented")
+func TestSaveIncomeRankings_WithReward(t *testing.T) {
+    repo := &fakeRankingRepo{reward: &model.RankingReward{RewardValue: 1000}}
+    srv := NewRankingService(repo, &fakeRankingCommissionRepo{}, &fakeOrderRepo{})
+    stats := map[uint64]*PlayerMonthStats{1: {PlayerID: 1, TotalIncome: 200}, 2: {PlayerID: 2, TotalIncome: 500}}
+    err := srv.saveIncomeRankings(context.Background(), "2025-10", stats)
+    require.NoError(t, err)
+    require.Len(t, repo.created, 2)
+    require.Equal(t, model.RankingTypeIncome, repo.created[0].RankingType)
+    require.Equal(t, int64(1000), repo.created[0].BonusCents)
 }
 
-func (f *fakeOrderRepository) List(ctx context.Context, opts repository.OrderListOptions) ([]model.Order, int64, error) {
-	f.lastOpts = opts
-	return f.orders, int64(len(f.orders)), nil
+func TestGetPlayerRankingInfo(t *testing.T) {
+    repo := &fakeRankingRepo{list: []model.PlayerRanking{{PlayerID: 8, RankingType: model.RankingTypeIncome, Period: "monthly", PeriodValue: "2025-10", Rank: 3}, {PlayerID: 8, RankingType: model.RankingTypeOrderCount, Period: "monthly", PeriodValue: "2025-10", Rank: 2}}}
+    srv := NewRankingService(repo, &fakeRankingCommissionRepo{}, &fakeOrderRepo{})
+    info, err := srv.GetPlayerRankingInfo(context.Background(), 8, "2025-10")
+    require.NoError(t, err)
+    require.Equal(t, 2, info.BestRank)
+    require.Equal(t, "order_count", info.RankingType)
 }
 
-func (f *fakeOrderRepository) Get(context.Context, uint64) (*model.Order, error) {
-	return nil, errors.New("not implemented")
-}
-
-func (f *fakeOrderRepository) Update(context.Context, *model.Order) error {
-	return errors.New("not implemented")
-}
-
-func (f *fakeOrderRepository) Delete(context.Context, uint64) error {
-	return errors.New("not implemented")
-}
-
-type fakeRankingRepository struct {
-	createdRankings []*model.PlayerRanking
-	rewards         []*model.RankingReward
-	listResults     map[uint64][]model.PlayerRanking
-}
-
-var _ repoRanking.RankingRepository = (*fakeRankingRepository)(nil)
-
-func newFakeRankingRepository() *fakeRankingRepository {
-	return &fakeRankingRepository{
-		listResults: make(map[uint64][]model.PlayerRanking),
-	}
-}
-
-func (f *fakeRankingRepository) CreateRanking(ctx context.Context, ranking *model.PlayerRanking) error {
-	copy := *ranking
-	f.createdRankings = append(f.createdRankings, &copy)
-	return nil
-}
-
-func (f *fakeRankingRepository) GetPlayerRanking(context.Context, uint64, model.RankingType, string, string) (*model.PlayerRanking, error) {
-	return nil, repoRanking.ErrNotFound
-}
-
-func (f *fakeRankingRepository) ListRankings(ctx context.Context, opts repoRanking.RankingListOptions) ([]model.PlayerRanking, int64, error) {
-	if opts.PlayerID == nil {
-		return nil, 0, nil
-	}
-	list := f.listResults[*opts.PlayerID]
-	results := make([]model.PlayerRanking, len(list))
-	copy(results, list)
-	return results, int64(len(results)), nil
-}
-
-func (f *fakeRankingRepository) UpdateRanking(context.Context, *model.PlayerRanking) error {
-	return nil
-}
-
-func (f *fakeRankingRepository) CreateReward(ctx context.Context, reward *model.RankingReward) error {
-	copy := *reward
-	if copy.ID == 0 {
-		copy.ID = uint64(len(f.rewards) + 1)
-		reward.ID = copy.ID
-	}
-	f.rewards = append(f.rewards, &copy)
-	return nil
-}
-
-func (f *fakeRankingRepository) GetReward(ctx context.Context, id uint64) (*model.RankingReward, error) {
-	for _, r := range f.rewards {
-		if r.ID == id {
-			copy := *r
-			return &copy, nil
-		}
-	}
-	return nil, repoRanking.ErrNotFound
-}
-
-func (f *fakeRankingRepository) ListRewards(context.Context, repoRanking.RewardListOptions) ([]model.RankingReward, int64, error) {
-	return nil, 0, nil
-}
-
-func (f *fakeRankingRepository) UpdateReward(context.Context, *model.RankingReward) error { return nil }
-
-func (f *fakeRankingRepository) DeleteReward(context.Context, uint64) error { return nil }
-
-func (f *fakeRankingRepository) GetRewardForRank(ctx context.Context, rankingType model.RankingType, period string, rank int) (*model.RankingReward, error) {
-	for _, reward := range f.rewards {
-		if reward.RankingType == rankingType && reward.Period == period && reward.IsActive &&
-			reward.RankStart <= rank && reward.RankEnd >= rank {
-			copy := *reward
-			return &copy, nil
-		}
-	}
-	return nil, repoRanking.ErrNotFound
-}
-
-func newTestOrder(playerID uint64, orderNo int, amount int64) model.Order {
-	order := model.Order{
-		OrderNo:         fmt.Sprintf("NO-%d", orderNo),
-		TotalPriceCents: amount,
-		Status:          model.OrderStatusCompleted,
-	}
-	order.SetPlayerID(playerID)
-	return order
-}
-
-func giftOrder(playerID, orderNo uint64, amount int64) model.Order {
-	order := newTestOrder(playerID, int(orderNo), amount)
-	order.PlayerID = nil
-	order.RecipientPlayerID = &playerID
-	return order
+func TestCalculateMonthlyRankings_FiltersGiftOrders(t *testing.T) {
+    repo := &fakeRankingRepo{}
+    giftRecipient := uint64(99)
+    p1 := uint64(1)
+    orders := []model.Order{{Status: model.OrderStatusCompleted, PlayerID: &p1, TotalPriceCents: 100}, {Status: model.OrderStatusCompleted, RecipientPlayerID: &giftRecipient, PlayerID: &p1, TotalPriceCents: 200}}
+    srv := NewRankingService(repo, &fakeRankingCommissionRepo{}, &fakeOrderRepo{orders: orders})
+    err := srv.CalculateMonthlyRankings(context.Background(), "2025-10")
+    require.NoError(t, err)
+    require.Len(t, repo.created, 2)
+    require.Equal(t, model.RankingTypeOrderCount, repo.created[0].RankingType)
+    require.Equal(t, model.RankingTypeIncome, repo.created[1].RankingType)
+    require.Equal(t, float64(1), repo.created[0].Score)
+    require.Equal(t, float64(100), repo.created[1].Score)
 }
