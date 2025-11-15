@@ -212,3 +212,128 @@ func TestNotificationService_MarkRead_MultipleIDs(t *testing.T) {
 	err := svc.MarkRead(ctx, 1, []uint64{1, 2, 3, 4, 5})
 	assert.NoError(t, err)
 }
+
+// TestNotificationService_List_WithMultiplePriorities tests filtering by multiple priorities
+func TestNotificationService_List_WithMultiplePriorities(t *testing.T) {
+	svc := setupNotificationService(t)
+	ctx := context.Background()
+
+	req := ListRequest{
+		Page:     1,
+		PageSize: 10,
+		Priorities: []model.NotificationPriority{
+			model.NotificationPriorityHigh,
+			model.NotificationPriorityNormal,
+		},
+	}
+
+	resp, err := svc.List(ctx, 1, req)
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.Equal(t, 1, resp.Page)
+}
+
+// TestNotificationService_List_EmptyPriorities tests with empty priority filter
+func TestNotificationService_List_EmptyPriorities(t *testing.T) {
+	svc := setupNotificationService(t)
+	ctx := context.Background()
+
+	req := ListRequest{
+		Page:       1,
+		PageSize:   10,
+		Priorities: []model.NotificationPriority{},
+	}
+
+	resp, err := svc.List(ctx, 1, req)
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+}
+
+// TestNotificationService_List_LargePage tests large page number
+func TestNotificationService_List_LargePage(t *testing.T) {
+	svc := setupNotificationService(t)
+	ctx := context.Background()
+
+	req := ListRequest{
+		Page:     100,
+		PageSize: 20,
+	}
+
+	resp, err := svc.List(ctx, 1, req)
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.Equal(t, 100, resp.Page)
+	assert.Equal(t, 20, resp.PageSize)
+}
+
+// TestNotificationService_List_SmallPageSize tests small page size
+func TestNotificationService_List_SmallPageSize(t *testing.T) {
+	svc := setupNotificationService(t)
+	ctx := context.Background()
+
+	req := ListRequest{
+		Page:     1,
+		PageSize: 1,
+	}
+
+	resp, err := svc.List(ctx, 1, req)
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.Equal(t, 1, resp.PageSize)
+}
+
+// TestNotificationService_GetUnreadCount_DifferentUser tests unread count for different users
+func TestNotificationService_GetUnreadCount_DifferentUser(t *testing.T) {
+	svc := setupNotificationService(t)
+	ctx := context.Background()
+
+	// Get unread count for user 999
+	count, err := svc.GetUnreadCount(ctx, 999)
+	assert.NoError(t, err)
+	assert.Equal(t, int64(0), count)
+}
+
+// TestNotificationService_MarkRead_SingleID tests marking single notification as read
+func TestNotificationService_MarkRead_SingleID(t *testing.T) {
+	svc := setupNotificationService(t)
+	ctx := context.Background()
+
+	err := svc.MarkRead(ctx, 1, []uint64{1})
+	assert.NoError(t, err)
+}
+
+// TestNotificationService_List_UnreadOnlyWithNoUnread tests unread filter with no unread notifications
+func TestNotificationService_List_UnreadOnlyWithNoUnread(t *testing.T) {
+	svc := setupNotificationService(t)
+	ctx := context.Background()
+
+	req := ListRequest{
+		Page:       1,
+		PageSize:   10,
+		UnreadOnly: true,
+	}
+
+	resp, err := svc.List(ctx, 1, req)
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.Equal(t, int64(0), resp.UnreadCount)
+	assert.Len(t, resp.Items, 0)
+}
+
+// TestNotificationService_List_VerifyResponseStructure tests response structure
+func TestNotificationService_List_VerifyResponseStructure(t *testing.T) {
+	svc := setupNotificationService(t)
+	ctx := context.Background()
+
+	req := ListRequest{
+		Page:     1,
+		PageSize: 20,
+	}
+
+	resp, err := svc.List(ctx, 1, req)
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.NotNil(t, resp.Items)
+	assert.GreaterOrEqual(t, resp.Total, int64(0))
+	assert.GreaterOrEqual(t, resp.UnreadCount, int64(0))
+}

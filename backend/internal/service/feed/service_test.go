@@ -226,3 +226,154 @@ func TestFeedService_ReportFeed_EmptyReason(t *testing.T) {
 	err = svc.ReportFeed(ctx, created.ID, 2, "")
 	assert.Error(t, err)
 }
+
+// TestFeedService_CreateFeed_InvalidVisibility tests invalid visibility values
+func TestFeedService_CreateFeed_InvalidVisibility(t *testing.T) {
+	svc := setupFeedService(t)
+	ctx := context.Background()
+
+	req := CreateFeedRequest{
+		Content:    "Hello world",
+		Visibility: "invalid_visibility",
+		Images:     []FeedImageInput{},
+	}
+
+	feed, err := svc.CreateFeed(ctx, 1, req)
+	assert.Error(t, err)
+	assert.Nil(t, feed)
+}
+
+// TestFeedService_CreateFeed_AllVisibilityTypes tests all valid visibility types
+func TestFeedService_CreateFeed_AllVisibilityTypes(t *testing.T) {
+	svc := setupFeedService(t)
+	ctx := context.Background()
+
+	visibilities := []model.FeedVisibility{
+		model.FeedVisibilityPublic,
+		model.FeedVisibilityFollowers,
+		model.FeedVisibilityPrivate,
+	}
+
+	for _, vis := range visibilities {
+		req := CreateFeedRequest{
+			Content:    "Test content",
+			Visibility: vis,
+			Images:     []FeedImageInput{},
+		}
+
+		feed, err := svc.CreateFeed(ctx, 1, req)
+		assert.NoError(t, err)
+		assert.NotNil(t, feed)
+		assert.Equal(t, vis, feed.Visibility)
+	}
+}
+
+// TestFeedService_CreateFeed_ImageTooLarge tests image size validation
+func TestFeedService_CreateFeed_ImageTooLarge(t *testing.T) {
+	svc := setupFeedService(t)
+	ctx := context.Background()
+
+	req := CreateFeedRequest{
+		Content:    "Hello world",
+		Visibility: model.FeedVisibilityPublic,
+		Images: []FeedImageInput{
+			{
+				URL:       "https://example.com/large.jpg",
+				Width:     4000,
+				Height:    3000,
+				SizeBytes: 11 * 1024 * 1024, // 11MB - exceeds 10MB limit
+			},
+		},
+	}
+
+	feed, err := svc.CreateFeed(ctx, 1, req)
+	assert.Error(t, err)
+	assert.Nil(t, feed)
+}
+
+// TestFeedService_CreateFeed_EmptyImageURL tests empty image URL validation
+func TestFeedService_CreateFeed_EmptyImageURL(t *testing.T) {
+	svc := setupFeedService(t)
+	ctx := context.Background()
+
+	req := CreateFeedRequest{
+		Content:    "Hello world",
+		Visibility: model.FeedVisibilityPublic,
+		Images: []FeedImageInput{
+			{
+				URL:       "  ", // Empty after trim
+				Width:     800,
+				Height:    600,
+				SizeBytes: 102400,
+			},
+		},
+	}
+
+	feed, err := svc.CreateFeed(ctx, 1, req)
+	assert.Error(t, err)
+	assert.Nil(t, feed)
+}
+
+// TestFeedService_ListFeeds_WithInvalidCursor tests invalid cursor handling
+func TestFeedService_ListFeeds_WithInvalidCursor(t *testing.T) {
+	svc := setupFeedService(t)
+	ctx := context.Background()
+
+	req := ListFeedsRequest{
+		Cursor: "invalid_cursor",
+		Limit:  10,
+	}
+
+	resp, err := svc.ListFeeds(ctx, 1, req)
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+}
+
+// TestFeedService_ListFeeds_EmptyCursor tests empty cursor handling
+func TestFeedService_ListFeeds_EmptyCursor(t *testing.T) {
+	svc := setupFeedService(t)
+	ctx := context.Background()
+
+	req := ListFeedsRequest{
+		Cursor: "",
+		Limit:  10,
+	}
+
+	resp, err := svc.ListFeeds(ctx, 1, req)
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+}
+
+// TestFeedService_ReportFeed_LongReason tests reason length validation
+func TestFeedService_ReportFeed_LongReason(t *testing.T) {
+	svc := setupFeedService(t)
+	ctx := context.Background()
+
+	// Create a feed first
+	req := CreateFeedRequest{
+		Content:    "Hello world",
+		Visibility: model.FeedVisibilityPublic,
+		Images:     []FeedImageInput{},
+	}
+
+	created, err := svc.CreateFeed(ctx, 1, req)
+	assert.NoError(t, err)
+
+	// Report with very long reason (> 500 chars)
+	longReason := ""
+	for i := 0; i < 501; i++ {
+		longReason += "a"
+	}
+
+	err = svc.ReportFeed(ctx, created.ID, 2, longReason)
+	assert.Error(t, err)
+}
+
+// TestFeedService_ReportFeed_NonExistentFeed tests reporting non-existent feed
+func TestFeedService_ReportFeed_NonExistentFeed(t *testing.T) {
+	svc := setupFeedService(t)
+	ctx := context.Background()
+
+	err := svc.ReportFeed(ctx, 1, 99999, "This feed doesn't exist")
+	assert.Error(t, err)
+}
