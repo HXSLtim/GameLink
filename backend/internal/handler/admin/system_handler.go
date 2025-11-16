@@ -35,8 +35,8 @@ func NewSystemInfoHandler(cfg config.AppConfig, sqlDB *sql.DB, cacheClient cache
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
-// @Success      200            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/system/config [get]
 func (h *SystemInfoHandler) Config(c *gin.Context) {
 	configInfo := gin.H{
@@ -60,9 +60,9 @@ func (h *SystemInfoHandler) Config(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
-// @Success      200            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
-// @Failure      500            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
 // @Router       /admin/system/db [get]
 func (h *SystemInfoHandler) DBStatus(c *gin.Context) {
 	stats := h.sqlDB.Stats()
@@ -89,9 +89,9 @@ func (h *SystemInfoHandler) DBStatus(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
-// @Success      200            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
-// @Failure      500            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
 // @Router       /admin/system/cache [get]
 func (h *SystemInfoHandler) CacheStatus(c *gin.Context) {
 	// 简单测试缓存连接
@@ -118,8 +118,8 @@ func (h *SystemInfoHandler) CacheStatus(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
-// @Success      200            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/system/resources [get]
 func (h *SystemInfoHandler) Resources(c *gin.Context) {
 	var m runtime.MemStats
@@ -149,8 +149,8 @@ func (h *SystemInfoHandler) Resources(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
-// @Success      200            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/system/version [get]
 func (h *SystemInfoHandler) Version(c *gin.Context) {
 	version := gin.H{

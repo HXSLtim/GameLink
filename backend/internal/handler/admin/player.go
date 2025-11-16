@@ -31,7 +31,7 @@ func NewPlayerHandler(svc *adminservice.AdminService) *PlayerHandler {
 // @Param        page       query  int  false  "页码"
 // @Param        pageSize   query     int       false  "每页数量"
 // @Produce      json
-// @Success      200  {object}  map[string]any
+// @Success      200  {object}  model.SuccessResponse
 // @Router       /admin/players [get]
 //
 // ListPlayers returns a paginated list of players.
@@ -68,8 +68,8 @@ func (h *PlayerHandler) ListPlayers(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "玩家ID"
 // @Produce      json
-// @Success      200  {object}  map[string]any
-// @Failure      404  {object}  map[string]any
+// @Success      200  {object}  model.SuccessResponse
+// @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/players/{id} [get]
 //
 // GetPlayer returns a single player by id.
@@ -103,8 +103,8 @@ func (h *PlayerHandler) GetPlayer(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  CreatePlayerPayload  true  "玩家信息"
-// @Success      201  {object}  map[string]any
-// @Failure      400  {object}  map[string]any
+// @Success      201  {object}  model.SuccessResponse
+// @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/players [post]
 //
 // CreatePlayer creates a new player profile.
@@ -149,8 +149,8 @@ func (h *PlayerHandler) CreatePlayer(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int                   true  "玩家ID"
 // @Param        request  body  UpdatePlayerPayload   true  "玩家信息"
-// @Success      200  {object}  map[string]any
-// @Failure      404  {object}  map[string]any
+// @Success      200  {object}  model.SuccessResponse
+// @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/players/{id} [put]
 //
 // UpdatePlayer updates player profile.
@@ -202,8 +202,8 @@ func (h *PlayerHandler) UpdatePlayer(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "玩家ID"
 // @Produce      json
-// @Success      200  {object}  map[string]any
-// @Failure      404  {object}  map[string]any
+// @Success      200  {object}  model.SuccessResponse
+// @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/players/{id} [delete]
 //
 // DeletePlayer deletes a player profile by id.
@@ -241,7 +241,7 @@ func (h *PlayerHandler) DeletePlayer(c *gin.Context) {
 // @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
 // @Param        export       query  string false "导出格式" Enums(csv)
 // @Param        fields         query    string       false  "Export fields (comma separated)"// @Param        header_lang  query  string false "列头语言" Enums(en,zh)
-// @Success      200  {object}  map[string]any
+// @Success      200  {object}  model.SuccessResponse
 // @Router       /admin/players/{id}/logs [get]
 func (h *PlayerHandler) ListPlayerLogs(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
@@ -292,8 +292,8 @@ func (h *PlayerHandler) ListPlayerLogs(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int  true  "玩家ID"
 // @Param        request  body  map[string]string  true  "{verification_status}"
-// @Success      200  {object}  map[string]any
-// @Failure      404  {object}  map[string]any
+// @Success      200  {object}  model.SuccessResponse
+// @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/players/{id}/verification [put]
 func (h *PlayerHandler) UpdatePlayerVerification(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
@@ -345,8 +345,8 @@ func (h *PlayerHandler) UpdatePlayerVerification(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int  true  "玩家ID"
 // @Param        request  body  map[string]uint64  true  "{main_game_id}"
-// @Success      200  {object}  map[string]any
-// @Failure      404  {object}  map[string]any
+// @Success      200  {object}  model.SuccessResponse
+// @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/players/{id}/games [put]
 func (h *PlayerHandler) UpdatePlayerGames(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
@@ -398,8 +398,8 @@ func (h *PlayerHandler) UpdatePlayerGames(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int            true  "玩家ID"
 // @Param        request  body  SkillTagsBody  true  "标签集合"
-// @Success      200  {object}  map[string]any
-// @Failure      404  {object}  map[string]any
+// @Success      200  {object}  model.SuccessResponse
+// @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/players/{id}/skill-tags [put]
 func (h *PlayerHandler) UpdatePlayerSkillTags(c *gin.Context) {
 	id, err := parseUintParam(c, "id")

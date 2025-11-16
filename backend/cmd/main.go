@@ -13,6 +13,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -25,6 +26,7 @@ import (
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"gorm.io/gorm"
 
 	_ "gamelink/docs" // swagger docs
 	"gamelink/internal/auth"
@@ -145,35 +147,55 @@ func main() {
 	router.Use(middleware.Recovery())          // 统一JSON恢复中间件
 	router.Use(middleware.CORS())              // CORS中间件（跨域处理）
 
-	// Register root and health on both base and versioned API for compatibility
-	handler.RegisterRoot(router)
-	handler.RegisterHealth(router)
+	registerRoutes(router, cfg, orm, sqlDB, cacheClient, adminSvc)
 
-	// Versioned API group
-	api := router.Group("/api/v1")
-	handler.RegisterRoot(api)
-	handler.RegisterHealth(api)
+	addr := fmt.Sprintf(":%s", cfg.Port)
 
-	// Metrics endpoint
-	router.GET("/metrics", middleware.MetricsHandler())
+	server := &http.Server{
+		Addr:              addr,
+		Handler:           router,
+		ReadHeaderTimeout: 5 * time.Second,
+	}
 
-	// Auth service and routes
-	jwtSecret := strings.TrimSpace(cfg.Auth.JWTSecret)
-	if jwtSecret == "" {
-		if os.Getenv("APP_ENV") == "production" {
-			log.Fatal("JWT secret must be provided via configs.auth.jwt_secret or JWT_SECRET_KEY")
+	go func() {
+		log.Printf("user-service listening on %s", server.Addr)
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("server error: %v", err)
 		}
-		jwtSecret = config.DefaultDevJWTSecret
-	}
-	tokenTTL := time.Duration(cfg.Auth.TokenTTLHours) * time.Hour
-	if tokenTTL <= 0 {
-		tokenTTL = 24 * time.Hour
-	}
-	jwtMgr := auth.NewJWTManager(jwtSecret, tokenTTL)
-	authSvc := authservice.NewAuthService(userrepo.NewUserRepository(orm), jwtMgr)
-	handler.RegisterAuthRoutes(api, authSvc)
+	}()
 
-	// Initialize repositories (reuse where possible)
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+	<-stop
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		log.Fatalf("shutdown error: %v", err)
+	}
+	log.Println("server stopped gracefully")
+}
+
+type appServices struct {
+	commissionSvc       *commissionservice.CommissionService
+	serviceItemSvc      *itemservice.ServiceItemService
+	giftSvc             *giftservice.GiftService
+	orderSvc            *orderservice.OrderService
+	paymentSvc          *paymentservice.PaymentService
+	playerSvc           *playerservice.PlayerService
+	reviewSvc           *reviewservice.ReviewService
+	earningsSvc         *earningsservice.EarningsService
+	chatSvc             *chatservice.ChatService
+	feedSvc             *feedservice.Service
+	notificationSvc     *notificationservice.Service
+	settlementScheduler *scheduler.SettlementScheduler
+	chatRetention       *scheduler.ChatRetentionScheduler
+}
+
+// initServices 初始化领域服务和调度任务（但不启动调度器）。
+func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
+	// 仓库实例（仅在此函数内部复用）
 	userRepo := userrepo.NewUserRepository(orm)
 	playerRepo := playerrepo.NewPlayerRepository(orm)
 	gameRepo := gamerepo.NewGameRepository(orm)
@@ -189,16 +211,15 @@ func main() {
 	withdrawRepo := withdrawrepo.NewWithdrawRepository(orm)
 	commissionRepo := commissionrepo.NewCommissionRepository(orm)
 	serviceItemRepo := serviceitemrepo.NewServiceItemRepository(orm)
-	rankingCommissionRepo := rankingrepo.NewRankingCommissionRepository(orm)
 	feedRepo := feedrepo.NewFeedRepository(orm)
 	notificationRepo := notificationrepo.NewNotificationRepository(orm)
 
-	// Initialize user-side services
+	// 领域服务
 	commissionSvc := commissionservice.NewCommissionService(commissionRepo, orderRepo, playerRepo)
 	serviceItemSvc := itemservice.NewServiceItemService(serviceItemRepo, gameRepo, playerRepo)
 	giftSvc := giftservice.NewGiftService(serviceItemRepo, orderRepo, playerRepo, commissionRepo)
 	orderSvc := orderservice.NewOrderService(orderRepo, playerRepo, userRepo, gameRepo, paymentRepo, reviewRepo, commissionRepo)
-	// Inject chat group repo for order chat auto-destroy
+	// 注入聊天群仓库用于订单聊天自动销毁
 	orderSvc.SetChatGroupRepository(chatGroupRepo)
 	paymentSvc := paymentservice.NewPaymentService(paymentRepo, orderRepo)
 	playerSvc := playerservice.NewPlayerService(playerRepo, userRepo, gameRepo, orderRepo, reviewRepo, playerTagRepo, cacheClient)
@@ -208,42 +229,104 @@ func main() {
 	feedSvc := feedservice.NewService(feedRepo, nil)
 	notificationSvc := notificationservice.NewService(notificationRepo)
 
-	// Initialize settlement scheduler
+	// 调度器（先构造，调用方负责 Start/Stop）
 	settlementScheduler := scheduler.NewSettlementScheduler(commissionSvc)
-	settlementScheduler.Start()
-	defer settlementScheduler.Stop()
-
-	// Initialize chat retention scheduler (30 days retention)
 	chatRetention := scheduler.NewChatRetentionScheduler(chatGroupRepo, chatMessageRepo, 30)
-	chatRetention.Start()
-	defer chatRetention.Stop()
 
-	// Register user-side routes (require authentication)
+	return &appServices{
+		commissionSvc:       commissionSvc,
+		serviceItemSvc:      serviceItemSvc,
+		giftSvc:             giftSvc,
+		orderSvc:            orderSvc,
+		paymentSvc:          paymentSvc,
+		playerSvc:           playerSvc,
+		reviewSvc:           reviewSvc,
+		earningsSvc:         earningsSvc,
+		chatSvc:             chatSvc,
+		feedSvc:             feedSvc,
+		notificationSvc:     notificationSvc,
+		settlementScheduler: settlementScheduler,
+		chatRetention:       chatRetention,
+	}
+}
+
+// registerRoutes 按原有顺序注册根路由、健康检查、用户端、陪玩端及管理端的所有路由和相关服务。
+func registerRoutes(router *gin.Engine, cfg config.AppConfig, orm *gorm.DB, sqlDB *sql.DB, cacheClient cache.Cache, adminSvc *adminservice.AdminService) {
+	// 根路由与健康检查
+	handler.RegisterRoot(router)
+	handler.RegisterHealth(router)
+
+	// 版本化 API 分组
+	api := router.Group("/api/v1")
+	handler.RegisterRoot(api)
+	handler.RegisterHealth(api)
+
+	// 指标路由
+	router.GET("/metrics", middleware.MetricsHandler())
+
+	// 认证服务与路由
+	// 注意：JWT secret 已在 config.Validate() 中验证
+	jwtSecret := strings.TrimSpace(cfg.Auth.JWTSecret)
+	tokenTTL := time.Duration(cfg.Auth.TokenTTLHours) * time.Hour
+	if tokenTTL <= 0 {
+		tokenTTL = 24 * time.Hour
+	}
+	jwtMgr := auth.NewJWTManager(jwtSecret, tokenTTL)
+	authSvc := authservice.NewAuthService(userrepo.NewUserRepository(orm), jwtMgr)
+	handler.RegisterAuthRoutes(api, authSvc)
+
+	// 初始化领域服务
+	services := initServices(orm, cacheClient)
+
+	// 启动调度任务（保持原有生命周期）
+	services.settlementScheduler.Start()
+	defer services.settlementScheduler.Stop()
+	services.chatRetention.Start()
+	defer services.chatRetention.Stop()
+
+	// 用户与陪玩端路由
 	authMiddleware := middleware.JWTAuth()
+	registerUserRoutes(api, authMiddleware, services)
+	registerPlayerRoutes(api, authMiddleware, services)
+
+	// Swagger 文档路由
+	registerSwaggerRoutes(router, cfg)
+
+	// 管理端与权限相关路由
+	registerAdminRoutes(router, api, cfg, orm, sqlDB, cacheClient, adminSvc, services, jwtMgr, authMiddleware)
+}
+
+// 注册用户端路由
+func registerUserRoutes(api *gin.RouterGroup, authMiddleware gin.HandlerFunc, services *appServices) {
 	userGroup := api.Group("/user")
 	userGroup.Use(authMiddleware)
 	{
-		userhandler.RegisterOrderRoutes(userGroup, orderSvc, authMiddleware)
-		userhandler.RegisterPaymentRoutes(userGroup, paymentSvc, authMiddleware)
-		userhandler.RegisterPlayerRoutes(userGroup, playerSvc, authMiddleware)
-		userhandler.RegisterReviewRoutes(userGroup, reviewSvc, authMiddleware)
-		userhandler.RegisterGiftRoutes(userGroup, giftSvc, serviceItemSvc, authMiddleware)
-		userhandler.RegisterChatRoutes(userGroup, chatSvc, authMiddleware)
-		userhandler.RegisterFeedRoutes(userGroup, feedSvc, authMiddleware)
+		userhandler.RegisterOrderRoutes(userGroup, services.orderSvc, authMiddleware)
+		userhandler.RegisterPaymentRoutes(userGroup, services.paymentSvc, authMiddleware)
+		userhandler.RegisterPlayerRoutes(userGroup, services.playerSvc, authMiddleware)
+		userhandler.RegisterReviewRoutes(userGroup, services.reviewSvc, authMiddleware)
+		userhandler.RegisterGiftRoutes(userGroup, services.giftSvc, services.serviceItemSvc, authMiddleware)
+		userhandler.RegisterChatRoutes(userGroup, services.chatSvc, authMiddleware)
+		userhandler.RegisterFeedRoutes(userGroup, services.feedSvc, authMiddleware)
 	}
+}
 
-	// Register player-side routes (require authentication)
+// 注册陪玩端路由
+func registerPlayerRoutes(api *gin.RouterGroup, authMiddleware gin.HandlerFunc, services *appServices) {
 	playerGroup := api.Group("/player")
 	playerGroup.Use(authMiddleware)
 	{
-		playerhandler.RegisterProfileRoutes(playerGroup, playerSvc, authMiddleware)
-		playerhandler.RegisterOrderRoutes(playerGroup, orderSvc, authMiddleware)
-		playerhandler.RegisterEarningsRoutes(playerGroup, earningsSvc, authMiddleware)
-		playerhandler.RegisterCommissionRoutes(playerGroup, commissionSvc, authMiddleware)
-		playerhandler.RegisterGiftRoutes(playerGroup, giftSvc, authMiddleware)
-		playerhandler.RegisterReviewRoutes(playerGroup, reviewSvc, authMiddleware)
+		playerhandler.RegisterProfileRoutes(playerGroup, services.playerSvc, authMiddleware)
+		playerhandler.RegisterOrderRoutes(playerGroup, services.orderSvc, authMiddleware)
+		playerhandler.RegisterEarningsRoutes(playerGroup, services.earningsSvc, authMiddleware)
+		playerhandler.RegisterCommissionRoutes(playerGroup, services.commissionSvc, authMiddleware)
+		playerhandler.RegisterGiftRoutes(playerGroup, services.giftSvc, authMiddleware)
+		playerhandler.RegisterReviewRoutes(playerGroup, services.reviewSvc, authMiddleware)
 	}
+}
 
+// 注册 Swagger 相关路由
+func registerSwaggerRoutes(router *gin.Engine, cfg config.AppConfig) {
 	if cfg.EnableSwagger {
 		log.Println("swagger endpoint enabled at /swagger")
 		// Serve embedded OpenAPI v3 at /swagger and /swagger.json
@@ -253,20 +336,31 @@ func main() {
 	} else {
 		log.Println("swagger endpoint disabled by configuration")
 	}
+}
 
-	// RBAC - 权限服务（RoleRepository 已在 AdminService 创建时初始化）
+// 注册管理端及 RBAC 相关路由
+func registerAdminRoutes(
+	router *gin.Engine,
+	api *gin.RouterGroup,
+	cfg config.AppConfig,
+	orm *gorm.DB,
+	sqlDB *sql.DB,
+	cacheClient cache.Cache,
+	adminSvc *adminservice.AdminService,
+	services *appServices,
+	jwtMgr *auth.JWTManager,
+	authMiddleware gin.HandlerFunc,
+) {
+	// RBAC - 权限服务
 	permRepo := permissionrepo.NewPermissionRepository(orm)
 	permService := permissionservice.NewPermissionService(permRepo, cacheClient)
-	roleSvc := roleservice.NewRoleService(roleRepo, cacheClient)
-
-	// 权限中间件
+	roleSvc := roleservice.NewRoleService(rolerepo.NewRoleRepository(orm), cacheClient)
 	permMiddleware := middleware.NewPermissionMiddleware(jwtMgr, permService, roleSvc)
 
 	// Notification center routes
-	notificationhandler.RegisterRoutes(api, notificationSvc, authMiddleware)
+	notificationhandler.RegisterRoutes(api, services.notificationSvc, authMiddleware)
 
 	// Register admin routes under versioned prefix: /api/v1/admin（使用新的权限中间件）
-	// RBAC routes
 	rbacGroup := api.Group("/admin")
 	adminhandler.RegisterRoutes(rbacGroup, adminSvc, permMiddleware)
 
@@ -303,22 +397,30 @@ func main() {
 		rbacGroup.GET("/users/:id/permissions", permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/:id/permissions"), permHandler.GetUserPermissions)
 	}
 
+	// Admin 端业务路由
 	// Commission management routes (admin)
-	adminhandler.RegisterCommissionRoutes(rbacGroup, commissionSvc, settlementScheduler)
+	adminhandler.RegisterCommissionRoutes(rbacGroup, services.commissionSvc, services.settlementScheduler)
 
 	// Service Item management routes (admin) - 统一管理护航服务和礼物
-	adminhandler.RegisterServiceItemRoutes(rbacGroup, serviceItemSvc)
+	serviceItemRepo := serviceitemrepo.NewServiceItemRepository(orm)
+	adminhandler.RegisterServiceItemRoutes(rbacGroup, services.serviceItemSvc)
 
 	// Withdraw management routes (admin) - 提现审核管理
+	withdrawRepo := withdrawrepo.NewWithdrawRepository(orm)
 	adminhandler.RegisterWithdrawRoutes(rbacGroup, withdrawRepo)
 
 	// Dashboard routes (admin) - 数据统计和Dashboard
+	userRepo := userrepo.NewUserRepository(orm)
+	playerRepo := playerrepo.NewPlayerRepository(orm)
+	orderRepo := orderrepo.NewOrderRepository(orm)
+	commissionRepo := commissionrepo.NewCommissionRepository(orm)
 	adminhandler.RegisterDashboardRoutes(rbacGroup, userRepo, playerRepo, orderRepo, withdrawRepo, serviceItemRepo, commissionRepo)
 
 	// Stats routes (admin) - 统计分析
 	adminhandler.RegisterStatsAnalysisRoutes(rbacGroup, orderRepo, commissionRepo, serviceItemRepo)
 
 	// Ranking Commission routes (admin) - 排名抽成配置
+	rankingCommissionRepo := rankingrepo.NewRankingCommissionRepository(orm)
 	adminhandler.RegisterRankingCommissionRoutes(rbacGroup, rankingCommissionRepo)
 
 	// 同步 API 路由到权限表（开发环境自动同步）
@@ -343,33 +445,6 @@ func main() {
 			log.Printf("分配默认权限失败: %v", err)
 		}
 	}
-
-	addr := fmt.Sprintf(":%s", cfg.Port)
-
-	server := &http.Server{
-		Addr:              addr,
-		Handler:           router,
-		ReadHeaderTimeout: 5 * time.Second,
-	}
-
-	go func() {
-		log.Printf("user-service listening on %s", server.Addr)
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("server error: %v", err)
-		}
-	}()
-
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
-	<-stop
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	if err := server.Shutdown(ctx); err != nil {
-		log.Fatalf("shutdown error: %v", err)
-	}
-	log.Println("server stopped gracefully")
 }
 
 // assignDefaultRolePermissions 为默认角色（admin 和 super_admin）分配所有管理权限。

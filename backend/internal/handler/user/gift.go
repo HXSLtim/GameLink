@@ -32,8 +32,8 @@ func RegisterGiftRoutes(router gin.IRouter, giftSvc *gift.GiftService, itemSvc *
 // @Param        page           query     int     false  "页码"
 // @Param        pageSize       query     int     false  "每页数量"
 // @Success      200            {object}  model.APIResponse[item.ServiceItemListResponse]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /user/gifts [get]
 func listGiftsHandler(c *gin.Context, svc *item.ServiceItemService) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
@@ -61,8 +61,8 @@ func listGiftsHandler(c *gin.Context, svc *item.ServiceItemService) {
 // @Param        Authorization  header    string                  true  "Bearer {token}"
 // @Param        request        body      gift.SendGiftRequest  true  "Send gift request"
 // @Success      200            {object}  model.APIResponse[gift.GiftOrderResponse]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /user/gifts/send [post]
 func sendGiftHandler(c *gin.Context, svc *gift.GiftService) {
 	userID := getUserIDFromContext(c)
@@ -96,9 +96,9 @@ func sendGiftHandler(c *gin.Context, svc *gift.GiftService) {
 // @Param        Authorization  header    string  true   "Bearer {token}"
 // @Param        page           query     int     false  "页码"
 // @Param        pageSize       query     int     false  "每页数量"
-// @Success      200            {object}  model.APIResponse[any]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /user/gifts/sent [get]
 func getSentGiftsHandler(c *gin.Context, svc *gift.GiftService) {
 	userID := getUserIDFromContext(c)

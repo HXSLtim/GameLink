@@ -24,8 +24,8 @@ func RegisterProfileRoutes(router gin.IRouter, svc *player.PlayerService, authMi
 // @Param        Authorization  header    string                       true  "Bearer {token}"
 // @Param        request        body      player.ApplyPlayerRequest    true  "申请信息"
 // @Success      200            {object}  model.APIResponse[player.ApplyPlayerResponse]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /player/apply [post]
 func applyAsPlayerHandler(c *gin.Context, svc *player.PlayerService) {
 	userID := getUserIDFromContext(c)
@@ -59,9 +59,9 @@ func applyAsPlayerHandler(c *gin.Context, svc *player.PlayerService) {
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
 // @Success      200            {object}  model.APIResponse[player.PlayerDetailResponse]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
-// @Failure      404            {object}  model.APIResponse[any]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      404            {object}  model.ErrorResponse
 // @Router       /player/profile [get]
 func getPlayerProfileHandler(c *gin.Context, svc *player.PlayerService) {
 	userID := getUserIDFromContext(c)
@@ -88,9 +88,9 @@ func getPlayerProfileHandler(c *gin.Context, svc *player.PlayerService) {
 // @Produce      json
 // @Param        Authorization  header    string                              true  "Bearer {token}"
 // @Param        request        body      player.UpdatePlayerProfileRequest   true  "更新信息"
-// @Success      200            {object}  model.APIResponse[any]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /player/profile [put]
 func updatePlayerProfileHandler(c *gin.Context, svc *player.PlayerService) {
 	userID := getUserIDFromContext(c)
@@ -121,9 +121,9 @@ func updatePlayerProfileHandler(c *gin.Context, svc *player.PlayerService) {
 // @Produce      json
 // @Param        Authorization  header    string                          true  "Bearer {token}"
 // @Param        request        body      player.SetPlayerStatusRequest   true  "Player status request"
-// @Success      200            {object}  model.APIResponse[any]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /player/status [put]
 func setPlayerStatusHandler(c *gin.Context, svc *player.PlayerService) {
 	userID := getUserIDFromContext(c)

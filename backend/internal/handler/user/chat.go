@@ -36,14 +36,14 @@ type reportMessageRequest struct {
 // @Param        Authorization  header    string                   true  "Bearer {token}"
 // @Param        id             path      int                      true  "Message ID"
 // @Param        request        body      reportMessageRequest     true  "Report reason and evidence"
-// @Success      200            {object}  model.APIResponse[any]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
-// @Failure      500            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
 // @Router       /user/chat/messages/{id}/report [post]
 func reportChatMessageHandler(c *gin.Context, svc *chatservice.ChatService) {
 	userID := getUserIDFromContext(c)
-	messageID, err := parseUintFromParam(c, "id")
+	messageID, err := parseUintParam(c, "id")
 	if err != nil {
 		respondError(c, http.StatusBadRequest, apierr.ErrInvalidID)
 		return
@@ -73,9 +73,9 @@ func reportChatMessageHandler(c *gin.Context, svc *chatservice.ChatService) {
 // @Param        Authorization  header    string  true   "Bearer {token}"
 // @Param        page           query     int     false  "Page number"
 // @Param        pageSize       query     int     false  "Page size"
-// @Success      200            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
-// @Failure      500            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
 // @Router       /user/chat/groups [get]
 func listChatGroupsHandler(c *gin.Context, svc *chatservice.ChatService) {
 	userID := getUserIDFromContext(c)
@@ -111,16 +111,16 @@ func listChatGroupsHandler(c *gin.Context, svc *chatservice.ChatService) {
 // @Param        pageSize       query     int     false  "Page size"
 // @Param        beforeId       query     int     false  "Load messages before this ID"
 // @Param        afterId        query     int     false  "Load messages after this ID"
-// @Success      200            {object}  model.APIResponse[any]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
-// @Failure      403            {object}  model.APIResponse[any]
-// @Failure      410            {object}  model.APIResponse[any]
-// @Failure      500            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      403            {object}  model.ErrorResponse
+// @Failure      410            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
 // @Router       /user/chat/groups/{id}/messages [get]
 func listChatMessagesHandler(c *gin.Context, svc *chatservice.ChatService) {
 	userID := getUserIDFromContext(c)
-	groupID, err := parseUintFromParam(c, "id")
+	groupID, err := parseUintParam(c, "id")
 	if err != nil {
 		respondError(c, http.StatusBadRequest, apierr.ErrInvalidID)
 		return
@@ -189,16 +189,16 @@ type sendMessageRequest struct {
 // @Param        id             path      int                  true  "Group ID"
 // @Param        request        body      sendMessageRequest   true  "Message content"
 // @Success      201            {object}  model.APIResponse[model.ChatMessage]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
-// @Failure      403            {object}  model.APIResponse[any]
-// @Failure      410            {object}  model.APIResponse[any]
-// @Failure      429            {object}  model.APIResponse[any]
-// @Failure      500            {object}  model.APIResponse[any]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      403            {object}  model.ErrorResponse
+// @Failure      410            {object}  model.ErrorResponse
+// @Failure      429            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
 // @Router       /user/chat/groups/{id}/messages [post]
 func sendChatMessageHandler(c *gin.Context, svc *chatservice.ChatService) {
 	userID := getUserIDFromContext(c)
-	groupID, err := parseUintFromParam(c, "id")
+	groupID, err := parseUintParam(c, "id")
 	if err != nil {
 		respondError(c, http.StatusBadRequest, apierr.ErrInvalidID)
 		return
@@ -257,9 +257,4 @@ func sendChatMessageHandler(c *gin.Context, svc *chatservice.ChatService) {
 		Message: "created",
 		Data:    msg,
 	})
-}
-
-func parseUintFromParam(c *gin.Context, name string) (uint64, error) {
-	value := c.Param(name)
-	return strconv.ParseUint(value, 10, 64)
 }

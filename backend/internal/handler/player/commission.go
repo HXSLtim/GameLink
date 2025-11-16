@@ -24,14 +24,15 @@ func RegisterCommissionRoutes(router gin.IRouter, svc *commission.CommissionServ
 
 // getCommissionSummaryHandler 获取抽成汇�?
 // @Summary      获取抽成汇�?
-// @Description  API endpoint// @Tags         Player - Commission
+// @Description  获取指定月份的抽成总览，包括总收入、总抽成等
+// @Tags         Player - Commission
 // @Accept       json
 // @Produce      json
-// @Param        Authorization  header    string  true  "Bearer {token}"
+// @Security     BearerAuth
 // @Param        month          query     string  true  "月份 (YYYY-MM)"
 // @Success      200            {object}  model.APIResponse[commission.CommissionSummaryResponse]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Failure      400            {object}  apierr.ErrorResponse
+// @Failure      401            {object}  apierr.ErrorResponse
 // @Router       /player/commission/summary [get]
 func getCommissionSummaryHandler(c *gin.Context, svc *commission.CommissionService) {
 	userID := getUserIDFromContext(c)
@@ -62,15 +63,16 @@ func getCommissionSummaryHandler(c *gin.Context, svc *commission.CommissionServi
 
 // getCommissionRecordsHandler 获取抽成记录
 // @Summary      获取抽成记录
-// @Description  API endpoint// @Tags         Player - Commission
+// @Description  获取抽成记录列表，支持分页
+// @Tags         Player - Commission
 // @Accept       json
 // @Produce      json
-// @Param        Authorization  header    string  true   "Bearer {token}"
+// @Security     BearerAuth
 // @Param        page           query     int     false  "页码"
 // @Param        pageSize       query     int     false  "每页数量"
 // @Success      200            {object}  model.APIResponse[commission.CommissionRecordListResponse]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Failure      400            {object}  apierr.ErrorResponse
+// @Failure      401            {object}  apierr.ErrorResponse
 // @Router       /player/commission/records [get]
 func getCommissionRecordsHandler(c *gin.Context, svc *commission.CommissionService) {
 	userID := getUserIDFromContext(c)
@@ -101,15 +103,16 @@ func getCommissionRecordsHandler(c *gin.Context, svc *commission.CommissionServi
 
 // getMonthlySettlementsHandler 获取月度结算记录
 // @Summary      获取月度结算记录
-// @Description  API endpoint// @Tags         Player - Commission
+// @Description  获取月度结算记录列表，支持分页
+// @Tags         Player - Commission
 // @Accept       json
 // @Produce      json
-// @Param        Authorization  header    string  true   "Bearer {token}"
+// @Security     BearerAuth
 // @Param        page           query     int     false  "页码"
 // @Param        pageSize       query     int     false  "每页数量"
 // @Success      200            {object}  model.APIResponse[commission.SettlementListResponse]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Failure      400            {object}  apierr.ErrorResponse
+// @Failure      401            {object}  apierr.ErrorResponse
 // @Router       /player/commission/settlements [get]
 func getMonthlySettlementsHandler(c *gin.Context, svc *commission.CommissionService) {
 	userID := getUserIDFromContext(c)

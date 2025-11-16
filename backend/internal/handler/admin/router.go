@@ -84,7 +84,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, pm *mw.P
 		// @Security     BearerAuth
 		// @Param        id   path  int  true  "游戏ID"
 		// @Produce      json
-		// @Success      200  {object}  model.APIResponse[any]
+		// @Success      200  {object}  model.SuccessResponse
 		// @Failure      404  {object}  apierr.ErrorResponse
 		// @Router       /admin/games/{id} [delete]
 		group.DELETE("/games/:id", pm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/games/:id"), gameHandler.DeleteGame)
@@ -166,7 +166,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, pm *mw.P
 		// @Security     BearerAuth
 		// @Param        id   path  int  true  "用户ID"
 		// @Produce      json
-		// @Success      200  {object}  model.APIResponse[any]
+		// @Success      200  {object}  model.SuccessResponse
 		// @Failure      404  {object}  apierr.ErrorResponse
 		// @Router       /admin/users/{id} [delete]
 		group.DELETE("/users/:id", pm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/users/:id"), userHandler.DeleteUser)
@@ -269,7 +269,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, pm *mw.P
 		// @Security     BearerAuth
 		// @Param        id   path  int  true  "玩家ID"
 		// @Produce      json
-		// @Success      200  {object}  model.APIResponse[any]
+		// @Success      200  {object}  model.SuccessResponse
 		// @Failure      404  {object}  apierr.ErrorResponse
 		// @Router       /admin/players/{id} [delete]
 		group.DELETE("/players/:id", pm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/players/:id"), playerHandler.DeletePlayer)
@@ -302,7 +302,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, pm *mw.P
 		// @Produce      json
 		// @Param        id       path  int            true  "玩家ID"
 		// @Param        request  body  SkillTagsBody  true  "标签集合"
-		// @Success      200  {object}  model.APIResponse[any]
+		// @Success      200  {object}  model.SuccessResponse
 		// @Failure      404  {object}  apierr.ErrorResponse
 		// @Router       /admin/players/{id}/skill-tags [put]
 		group.PUT("/players/:id/skill-tags", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/players/:id/skill-tags"), playerHandler.UpdatePlayerSkillTags)
@@ -375,7 +375,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, pm *mw.P
 		// @Security     BearerAuth
 		// @Param        id   path  int  true  "订单ID"
 		// @Produce      json
-		// @Success      200  {object}  model.APIResponse[any]
+		// @Success      200  {object}  model.SuccessResponse
 		// @Failure      404  {object}  apierr.ErrorResponse
 		// @Router       /admin/orders/{id} [delete]
 		group.DELETE("/orders/:id", pm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/orders/:id"), orderHandler.DeleteOrder)
@@ -564,7 +564,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, pm *mw.P
 		// @Security     BearerAuth
 		// @Param        id   path  int  true  "支付ID"
 		// @Produce      json
-		// @Success      200  {object}  model.APIResponse[any]
+		// @Success      200  {object}  model.SuccessResponse
 		// @Failure      404  {object}  apierr.ErrorResponse
 		// @Router       /admin/payments/{id} [delete]
 		group.DELETE("/payments/:id", pm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/payments/:id"), paymentHandler.DeletePayment)
@@ -658,7 +658,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, pm *mw.P
 		// @Security     BearerAuth
 		// @Produce      json
 		// @Param        id   path  int  true  "评价ID"
-		// @Success      200  {object}  model.APIResponse[any]
+		// @Success      200  {object}  model.SuccessResponse
 		// @Failure      404  {object}  apierr.ErrorResponse
 		// @Router       /admin/reviews/{id} [delete]
 		group.DELETE("/reviews/:id", pm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/reviews/:id"), reviewHandler.DeleteReview)

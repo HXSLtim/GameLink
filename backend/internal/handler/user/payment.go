@@ -2,7 +2,6 @@ package user
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 
@@ -29,8 +28,8 @@ func RegisterPaymentRoutes(router gin.IRouter, svc *payment.PaymentService, auth
 // @Param        Authorization  header    string                          true  "Bearer {token}"
 // @Param        request        body      payment.CreatePaymentRequest    true  "创建支付请求"
 // @Success      200            {object}  model.APIResponse[payment.CreatePaymentResponse]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /user/payments [post]
 func createPaymentHandler(c *gin.Context, svc *payment.PaymentService) {
 	userID := getUserIDFromContext(c)
@@ -60,13 +59,12 @@ func createPaymentHandler(c *gin.Context, svc *payment.PaymentService) {
 // @Param        Authorization  header    string  true  "Bearer {token}"
 // @Param        id             path      int     true  "支付ID"
 // @Success      200            {object}  model.APIResponse[payment.PaymentStatusResponse]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
-// @Failure      404            {object}  model.APIResponse[any]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      404            {object}  model.ErrorResponse
 // @Router       /user/payments/{id} [get]
 func getPaymentStatusHandler(c *gin.Context, svc *payment.PaymentService) {
-	idStr := c.Param("id")
-	paymentID, err := strconv.ParseUint(idStr, 10, 64)
+	paymentID, err := parseUintParam(c, "id")
 	if err != nil {
 		respondError(c, http.StatusBadRequest, apierr.ErrInvalidID)
 		return
@@ -98,15 +96,14 @@ func getPaymentStatusHandler(c *gin.Context, svc *payment.PaymentService) {
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
 // @Param        id             path      int     true  "支付ID"
-// @Success      200            {object}  model.APIResponse[any]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /user/payments/{id}/cancel [post]
 func cancelPaymentHandler(c *gin.Context, svc *payment.PaymentService) {
 	userID := getUserIDFromContext(c)
 
-	idStr := c.Param("id")
-	paymentID, err := strconv.ParseUint(idStr, 10, 64)
+	paymentID, err := parseUintParam(c, "id")
 	if err != nil {
 		respondError(c, http.StatusBadRequest, apierr.ErrInvalidID)
 		return

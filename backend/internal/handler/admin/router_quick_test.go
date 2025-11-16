@@ -128,7 +128,9 @@ func TestAdminRegisterStatsRoutes_WithJWT(t *testing.T) {
 	pm := mw.NewPermissionMiddleware(jwt, permSvc, roleSvc)
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	RegisterStatsRoutes(r, stats.NewStatsService(statsRepoStub{}), pm)
+	// 实际运行时，统计路由是挂在 /admin 分组下面的，这里保持一致
+	adminGroup := r.Group("/admin")
+	RegisterStatsRoutes(adminGroup, stats.NewStatsService(statsRepoStub{}), pm)
 
 	authHeader := "Bearer " + token
 	for _, path := range []string{

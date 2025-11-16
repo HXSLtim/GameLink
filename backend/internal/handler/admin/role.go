@@ -22,6 +22,22 @@ func NewRoleHandler(roleSvc *roleservice.RoleService) *RoleHandler {
 }
 
 // ListRoles 获取角色列表
+// @Summary      获取角色列表
+// @Description  管理员获取系统角色列表，支持分页和过滤
+// @Tags         Admin - Roles
+// @Accept       json
+// @Produce      json
+// @Param        Authorization     header    string  true  "Bearer {token}"
+// @Param        page              query     int     false  "页码" default(1)
+// @Param        pageSize          query     int     false  "每页数量" default(10)
+// @Param        with_permissions  query     bool    false  "是否包含权限信息"
+// @Param        keyword           query     string  false  "关键词搜索"
+// @Param        isSystem          query     bool    false  "是否为系统角色"
+// @Success      200               {object}  RoleListResponse
+// @Failure      400               {object}  model.ErrorResponse
+// @Failure      401               {object}  model.ErrorResponse
+// @Failure      500               {object}  model.ErrorResponse
+// @Router       /admin/roles [get]
 func (h *RoleHandler) ListRoles(c *gin.Context) {
 	withPermissions := c.Query("with_permissions") == "true"
 	keyword := c.Query("keyword")
@@ -74,6 +90,20 @@ func (h *RoleHandler) ListRoles(c *gin.Context) {
 }
 
 // GetRole 获取角色详情
+// @Summary      获取角色详情
+// @Description  管理员根据ID获取指定角色的详细信息
+// @Tags         Admin - Roles
+// @Accept       json
+// @Produce      json
+// @Param        Authorization     header    string  true  "Bearer {token}"
+// @Param        id                path      uint    true  "角色ID"
+// @Param        with_permissions  query     bool    false  "是否包含权限信息"
+// @Success      200               {object}  RoleDetailResponse
+// @Failure      400               {object}  model.ErrorResponse
+// @Failure      401               {object}  model.ErrorResponse
+// @Failure      404               {object}  model.ErrorResponse
+// @Failure      500               {object}  model.ErrorResponse
+// @Router       /admin/roles/{id} [get]
 func (h *RoleHandler) GetRole(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
@@ -108,6 +138,18 @@ func (h *RoleHandler) GetRole(c *gin.Context) {
 }
 
 // CreateRole 创建角色
+// @Summary      创建角色
+// @Description  管理员创建新的系统角色
+// @Tags         Admin - Roles
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string                true  "Bearer {token}"
+// @Param        request        body      CreateRoleRequest      true  "创建角色请求"
+// @Success      201            {object}  RoleDetailResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /admin/roles [post]
 func (h *RoleHandler) CreateRole(c *gin.Context) {
 	var req struct {
 		Slug        string `json:"slug" binding:"required,max=64"`
@@ -141,6 +183,20 @@ func (h *RoleHandler) CreateRole(c *gin.Context) {
 }
 
 // UpdateRole 更新角色
+// @Summary      更新角色
+// @Description  管理员更新指定角色的信息
+// @Tags         Admin - Roles
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string                true  "Bearer {token}"
+// @Param        id             path      uint                  true  "角色ID"
+// @Param        request        body      UpdateRoleRequest      true  "更新角色请求"
+// @Success      200            {object}  RoleDetailResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      404            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /admin/roles/{id} [put]
 func (h *RoleHandler) UpdateRole(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
@@ -184,6 +240,18 @@ func (h *RoleHandler) UpdateRole(c *gin.Context) {
 }
 
 // DeleteRole 删除角色
+// @Summary      删除角色
+// @Description  管理员删除指定的系统角色
+// @Tags         Admin - Roles
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string  true  "Bearer {token}"
+// @Param        id             path      uint    true  "角色ID"
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /admin/roles/{id} [delete]
 func (h *RoleHandler) DeleteRole(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
@@ -205,6 +273,19 @@ func (h *RoleHandler) DeleteRole(c *gin.Context) {
 }
 
 // AssignPermissions 为角色分配权限
+// @Summary      为角色分配权限
+// @Description  管理员为指定角色分配多个权限
+// @Tags         Admin - Roles
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string                      true  "Bearer {token}"
+// @Param        id             path      uint                        true  "角色ID"
+// @Param        request        body      AssignPermissionsRequest     true  "分配权限请求"
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /admin/roles/{id}/permissions [post]
 func (h *RoleHandler) AssignPermissions(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
@@ -235,6 +316,18 @@ func (h *RoleHandler) AssignPermissions(c *gin.Context) {
 }
 
 // AssignRolesToUser 为用户分配角色
+// @Summary      为用户分配角色
+// @Description  管理员为指定用户分配多个角色
+// @Tags         Admin - Roles
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string                    true  "Bearer {token}"
+// @Param        request        body      AssignRolesToUserRequest    true  "分配角色请求"
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /admin/users/roles [post]
 func (h *RoleHandler) AssignRolesToUser(c *gin.Context) {
 	var req struct {
 		UserID  uint64   `json:"userId" binding:"required"`
@@ -260,6 +353,18 @@ func (h *RoleHandler) AssignRolesToUser(c *gin.Context) {
 }
 
 // GetUserRoles 获取用户的角色列表
+// @Summary      获取用户的角色列表
+// @Description  管理员获取指定用户的角色列表
+// @Tags         Admin - Roles
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string  true  "Bearer {token}"
+// @Param        user_id         path      uint    true  "用户ID"
+// @Success      200            {object}  UserRolesResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /admin/users/{user_id}/roles [get]
 func (h *RoleHandler) GetUserRoles(c *gin.Context) {
 	userID, err := parseUintParam(c, "user_id")
 	if err != nil {

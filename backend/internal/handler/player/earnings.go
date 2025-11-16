@@ -29,8 +29,8 @@ func RegisterEarningsRoutes(router gin.IRouter, svc *earnings.EarningsService, a
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
 // @Success      200            {object}  model.APIResponse[earnings.EarningsSummaryResponse]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /player/earnings/summary [get]
 func getEarningsSummaryHandler(c *gin.Context, svc *earnings.EarningsService) {
 	userID := getUserIDFromContext(c)
@@ -55,8 +55,8 @@ func getEarningsSummaryHandler(c *gin.Context, svc *earnings.EarningsService) {
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
 // @Param        days           query    int          true   "Parameter: days"// @Success      200            {object}  model.APIResponse[earnings.EarningsTrendResponse]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /player/earnings/trend [get]
 func getEarningsTrendHandler(c *gin.Context, svc *earnings.EarningsService) {
 	userID := getUserIDFromContext(c)
@@ -90,8 +90,8 @@ func getEarningsTrendHandler(c *gin.Context, svc *earnings.EarningsService) {
 // @Param        Authorization  header    string                     true  "Bearer {token}"
 // @Param        request        body      earnings.WithdrawRequest   true  "提现信息"
 // @Success      200            {object}  model.APIResponse[earnings.WithdrawResponse]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /player/earnings/withdraw [post]
 func requestWithdrawHandler(c *gin.Context, svc *earnings.EarningsService) {
 	userID := getUserIDFromContext(c)
@@ -130,8 +130,8 @@ func requestWithdrawHandler(c *gin.Context, svc *earnings.EarningsService) {
 // @Param        page           query     int     false  "页码"
 // @Param        pageSize       query     int     false  "每页数量"
 // @Success      200            {object}  model.APIResponse[earnings.WithdrawHistoryResponse]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /player/earnings/withdraw-history [get]
 func getWithdrawHistoryHandler(c *gin.Context, svc *earnings.EarningsService) {
 	userID := getUserIDFromContext(c)

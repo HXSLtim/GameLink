@@ -27,8 +27,8 @@ func RegisterReviewRoutes(router gin.IRouter, svc *review.ReviewService, authMid
 // @Param        Authorization  header    string                        true  "Bearer {token}"
 // @Param        request        body      review.CreateReviewRequest    true  "创建评价请求"
 // @Success      200            {object}  model.APIResponse[review.CreateReviewResponse]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /user/reviews [post]
 func createReviewHandler(c *gin.Context, svc *review.ReviewService) {
 	userID := getUserIDFromContext(c)
@@ -73,8 +73,8 @@ func createReviewHandler(c *gin.Context, svc *review.ReviewService) {
 // @Param        page           query     int     false  "页码"
 // @Param        pageSize       query     int     false  "每页数量"
 // @Success      200            {object}  model.APIResponse[review.MyReviewListResponse]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /user/reviews/my [get]
 func getMyReviewsHandler(c *gin.Context, svc *review.ReviewService) {
 	userID := getUserIDFromContext(c)

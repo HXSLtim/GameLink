@@ -2,11 +2,11 @@ package admin
 
 import (
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
 
+	apierr "gamelink/internal/handler"
 	"gamelink/internal/model"
 	"gamelink/internal/service/commission"
 )
@@ -27,14 +27,15 @@ func RegisterCommissionRoutes(router gin.IRouter, svc *commission.CommissionServ
 
 // createCommissionRuleHandler 创建抽成规则
 // @Summary      创建抽成规则
-// @Description  API endpoint// @Tags         Admin - Commission
+// @Description  创建一个新的抽成规则
+// @Tags         Admin - Commission
 // @Accept       json
 // @Produce      json
-// @Param        Authorization  header    string                                    true  "Bearer {token}"
+// @Security     BearerAuth
 // @Param        request        body      commission.CreateCommissionRuleRequest  true  "抽成规则信息"
 // @Success      200            {object}  model.APIResponse[model.CommissionRule]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/commission/rules [post]
 func createCommissionRuleHandler(c *gin.Context, svc *commission.CommissionService) {
 	var req commission.CreateCommissionRuleRequest
@@ -59,21 +60,21 @@ func createCommissionRuleHandler(c *gin.Context, svc *commission.CommissionServi
 
 // updateCommissionRuleHandler 更新抽成规则
 // @Summary      更新抽成规则
-// @Description  API endpoint// @Tags         Admin - Commission
+// @Description  更新一个已存在的抽成规则
+// @Tags         Admin - Commission
 // @Accept       json
 // @Produce      json
-// @Param        Authorization  header    string                                    true  "Bearer {token}"
+// @Security     BearerAuth
 // @Param        id             path      int                                       true  "规则ID"
 // @Param        request        body      commission.UpdateCommissionRuleRequest  true  "更新信息"
-// @Success      200            {object}  model.APIResponse[any]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/commission/rules/{id} [put]
 func updateCommissionRuleHandler(c *gin.Context, svc *commission.CommissionService) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseUint(idStr, 10, 64)
+	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "Invalid rule ID")
+		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
 		return
 	}
 
@@ -102,11 +103,11 @@ func updateCommissionRuleHandler(c *gin.Context, svc *commission.CommissionServi
 // @Tags         Admin - Commission
 // @Accept       json
 // @Produce      json
-// @Param        Authorization  header    string  true  "Bearer {token}"
+// @Security     BearerAuth
 // @Param        month          query     string  true  "月份 (YYYY-MM)"
-// @Success      200            {object}  model.APIResponse[any]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/commission/settlements/trigger [post]
 func triggerSettlementHandler(c *gin.Context, scheduler interface{ TriggerSettlement(string) error }) {
 	month := c.Query("month")
@@ -131,14 +132,15 @@ func triggerSettlementHandler(c *gin.Context, scheduler interface{ TriggerSettle
 
 // getPlatformStatsHandler 获取平台统计
 // @Summary      获取平台统计
-// @Description  API endpoint// @Tags         Admin - Commission
+// @Description  获取指定月份的平台统计数据，包括总收入、总抽成等
+// @Tags         Admin - Commission
 // @Accept       json
 // @Produce      json
-// @Param        Authorization  header    string  true  "Bearer {token}"
+// @Security     BearerAuth
 // @Param        month          query     string  true  "月份 (YYYY-MM)"
 // @Success      200            {object}  model.APIResponse[commission.PlatformStatsResponse]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/commission/stats [get]
 func getPlatformStatsHandler(c *gin.Context, svc *commission.CommissionService) {
 	month := c.DefaultQuery("month", time.Now().Format("2006-01"))

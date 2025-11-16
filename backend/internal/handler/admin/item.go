@@ -2,10 +2,10 @@ package admin
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 
+	apierr "gamelink/internal/handler"
 	"gamelink/internal/model"
 	"gamelink/internal/service/item"
 )
@@ -33,8 +33,8 @@ func RegisterServiceItemRoutes(router gin.IRouter, svc *item.ServiceItemService)
 // @Param        Authorization  header    string                                true  "Bearer {token}"
 // @Param        request        body      item.CreateServiceItemRequest  true  "服务项目信息"
 // @Success      200            {object}  model.APIResponse[model.ServiceItem]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/service-items [post]
 func createServiceItemHandler(c *gin.Context, svc *item.ServiceItemService) {
 	var req item.CreateServiceItemRequest
@@ -69,8 +69,8 @@ func createServiceItemHandler(c *gin.Context, svc *item.ServiceItemService) {
 // @Param        isActive       query    bool         false  "Is active"// @Param        page           query     int     false  "页码"
 // @Param        pageSize       query     int     false  "每页数量"
 // @Success      200            {object}  model.APIResponse[item.ServiceItemListResponse]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/service-items [get]
 func listServiceItemsHandler(c *gin.Context, svc *item.ServiceItemService) {
 	var req item.ListServiceItemsRequest
@@ -101,21 +101,20 @@ func listServiceItemsHandler(c *gin.Context, svc *item.ServiceItemService) {
 // @Param        Authorization  header    string  true  "Bearer {token}"
 // @Param        id             path      int     true  "服务项目ID"
 // @Success      200            {object}  model.APIResponse[item.ServiceItemDTO]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/service-items/{id} [get]
 func getServiceItemHandler(c *gin.Context, svc *item.ServiceItemService) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseUint(idStr, 10, 64)
+	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "Invalid service item ID")
+		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
 		return
 	}
 
 	resp, err := svc.GetServiceItem(c.Request.Context(), id)
 	if err != nil {
 		if err == item.ErrNotFound {
-			writeJSONError(c, http.StatusNotFound, "Service item not found")
+			writeJSONError(c, http.StatusNotFound, apierr.ErrServiceItemNotFound)
 			return
 		}
 		writeJSONError(c, http.StatusInternalServerError, err.Error())
@@ -138,15 +137,14 @@ func getServiceItemHandler(c *gin.Context, svc *item.ServiceItemService) {
 // @Param        Authorization  header    string                                 true  "Bearer {token}"
 // @Param        id             path      int                                    true  "服务项目ID"
 // @Param        request        body      item.UpdateServiceItemRequest  true  "更新信息"
-// @Success      200            {object}  model.APIResponse[any]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/service-items/{id} [put]
 func updateServiceItemHandler(c *gin.Context, svc *item.ServiceItemService) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseUint(idStr, 10, 64)
+	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "Invalid service item ID")
+		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
 		return
 	}
 
@@ -176,15 +174,14 @@ func updateServiceItemHandler(c *gin.Context, svc *item.ServiceItemService) {
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
 // @Param        id             path      int     true  "服务项目ID"
-// @Success      200            {object}  model.APIResponse[any]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/service-items/{id} [delete]
 func deleteServiceItemHandler(c *gin.Context, svc *item.ServiceItemService) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseUint(idStr, 10, 64)
+	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "Invalid service item ID")
+		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
 		return
 	}
 
@@ -208,9 +205,9 @@ func deleteServiceItemHandler(c *gin.Context, svc *item.ServiceItemService) {
 // @Produce      json
 // @Param        Authorization  header    string                                  true  "Bearer {token}"
 // @Param        request        body      item.BatchUpdateStatusRequest  true  "批量更新请求"
-// @Success      200            {object}  model.APIResponse[any]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/service-items/batch-update-status [post]
 func batchUpdateStatusHandler(c *gin.Context, svc *item.ServiceItemService) {
 	var req item.BatchUpdateStatusRequest
@@ -239,9 +236,9 @@ func batchUpdateStatusHandler(c *gin.Context, svc *item.ServiceItemService) {
 // @Produce      json
 // @Param        Authorization  header    string                                 true  "Bearer {token}"
 // @Param        request        body      item.BatchUpdatePriceRequest  true  "批量更新请求"
-// @Success      200            {object}  model.APIResponse[any]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/service-items/batch-update-price [post]
 func batchUpdatePriceHandler(c *gin.Context, svc *item.ServiceItemService) {
 	var req item.BatchUpdatePriceRequest

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -15,17 +16,15 @@ import (
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	adminservice "gamelink/internal/service/admin"
-	service "gamelink/internal/service/admin"
-	"strconv"
 )
 
 // OrderHandler 管理订单相关接口
 type OrderHandler struct {
-	svc *service.AdminService
+	svc *adminservice.AdminService
 }
 
 // NewOrderHandler 创建 Handler
-func NewOrderHandler(svc *service.AdminService) *OrderHandler {
+func NewOrderHandler(svc *adminservice.AdminService) *OrderHandler {
 	return &OrderHandler{svc: svc}
 }
 
@@ -36,8 +35,8 @@ func NewOrderHandler(svc *service.AdminService) *OrderHandler {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  CreateOrderPayload  true  "订单信息"
-// @Success      201  {object}  map[string]any
-// @Failure      400  {object}  map[string]any
+// @Success      201  {object}  model.SuccessResponse
+// @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/orders [post]
 func (h *OrderHandler) CreateOrder(c *gin.Context) {
 	var p CreateOrderPayload
@@ -59,7 +58,7 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 	if p.PlayerID != nil {
 		playerID = p.PlayerID
 	}
-	order, err := h.svc.CreateOrder(c.Request.Context(), service.CreateOrderInput{
+	order, err := h.svc.CreateOrder(c.Request.Context(), adminservice.CreateOrderInput{
 		UserID:          p.UserID,
 		PlayerID:        playerID,
 		GameID:          p.GameID,
@@ -70,12 +69,7 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		ScheduledStart:  start,
 		ScheduledEnd:    end,
 	})
-	if errors.Is(err, adminservice.ErrValidation) {
-		_ = c.Error(adminservice.ErrValidation)
-		return
-	}
-	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+	if !handleValidationError(c, err) {
 		return
 	}
 	writeJSON(c, http.StatusCreated, model.APIResponse[*model.Order]{Success: true, Code: http.StatusCreated, Message: "created", Data: order})
@@ -89,8 +83,8 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int                 true  "订单ID"
 // @Param        request  body  AssignOrderPayload  true  "指派信息"
-// @Success      200  {object}  map[string]any
-// @Failure      404  {object}  map[string]any
+// @Success      200  {object}  model.SuccessResponse
+// @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/orders/{id}/assign [post]
 func (h *OrderHandler) AssignOrder(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
@@ -104,16 +98,7 @@ func (h *OrderHandler) AssignOrder(c *gin.Context) {
 		return
 	}
 	order, err := h.svc.AssignOrder(c.Request.Context(), id, p.PlayerID)
-	if errors.Is(err, adminservice.ErrValidation) {
-		_ = c.Error(adminservice.ErrValidation)
-		return
-	}
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	}
-	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+	if !handleValidationAndNotFoundError(c, err) {
 		return
 	}
 	writeJSON(c, http.StatusOK, model.APIResponse[*model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: order})
@@ -127,8 +112,8 @@ func (h *OrderHandler) AssignOrder(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int               true  "订单ID"
 // @Param        request  body  orderNotePayload  false "备注（可选）"
-// @Success      200  {object}  map[string]any
-// @Failure      404  {object}  map[string]any
+// @Success      200  {object}  model.SuccessResponse
+// @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/orders/{id}/confirm [post]
 func (h *OrderHandler) ConfirmOrder(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
@@ -144,16 +129,7 @@ func (h *OrderHandler) ConfirmOrder(c *gin.Context) {
 		}
 	}
 	order, err := h.svc.ConfirmOrder(c.Request.Context(), id, payload.Note)
-	if errors.Is(err, adminservice.ErrValidation) {
-		_ = c.Error(adminservice.ErrValidation)
-		return
-	}
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	}
-	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+	if !handleValidationAndNotFoundError(c, err) {
 		return
 	}
 	writeJSON(c, http.StatusOK, model.APIResponse[*model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: order})
@@ -164,8 +140,8 @@ func (h *OrderHandler) ConfirmOrder(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int               true  "订单ID"
 // @Param        request  body  orderNotePayload  false "备注（可选）"
-// @Success      200  {object}  map[string]any
-// @Failure      404  {object}  map[string]any
+// @Success      200  {object}  model.SuccessResponse
+// @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/orders/{id}/start [post]
 func (h *OrderHandler) StartOrder(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
@@ -181,16 +157,7 @@ func (h *OrderHandler) StartOrder(c *gin.Context) {
 		}
 	}
 	order, err := h.svc.StartOrder(c.Request.Context(), id, payload.Note)
-	if errors.Is(err, adminservice.ErrValidation) {
-		_ = c.Error(adminservice.ErrValidation)
-		return
-	}
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	}
-	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+	if !handleValidationAndNotFoundError(c, err) {
 		return
 	}
 	writeJSON(c, http.StatusOK, model.APIResponse[*model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: order})
@@ -204,8 +171,8 @@ func (h *OrderHandler) StartOrder(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int               true  "订单ID"
 // @Param        request  body  orderNotePayload  false "备注（可选）"
-// @Success      200  {object}  map[string]any
-// @Failure      404  {object}  map[string]any
+// @Success      200  {object}  model.SuccessResponse
+// @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/orders/{id}/complete [post]
 func (h *OrderHandler) CompleteOrder(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
@@ -221,16 +188,7 @@ func (h *OrderHandler) CompleteOrder(c *gin.Context) {
 		}
 	}
 	order, err := h.svc.CompleteOrder(c.Request.Context(), id, payload.Note)
-	if errors.Is(err, adminservice.ErrValidation) {
-		_ = c.Error(adminservice.ErrValidation)
-		return
-	}
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	}
-	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+	if !handleValidationAndNotFoundError(c, err) {
 		return
 	}
 	writeJSON(c, http.StatusOK, model.APIResponse[*model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: order})
@@ -247,7 +205,7 @@ func (h *OrderHandler) CompleteOrder(c *gin.Context) {
 // @Param        gameId     query     int       false  "游戏ID"
 // @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
 // @Produce      json
-// @Success      200  {object}  map[string]any
+// @Success      200  {object}  model.SuccessResponse
 // @Router       /admin/orders [get]
 //
 // ListOrders returns a paginated list of orders with filters.
@@ -278,8 +236,8 @@ func (h *OrderHandler) ListOrders(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "订单ID"
 // @Produce      json
-// @Success      200  {object}  map[string]any
-// @Failure      404  {object}  map[string]any
+// @Success      200  {object}  model.SuccessResponse
+// @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/orders/{id} [get]
 //
 // GetOrder returns a single order by id.
@@ -310,8 +268,8 @@ func (h *OrderHandler) GetOrder(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        id       path  int                  true  "订单ID"
-// @Param        request        body     orderRefundPayload true   "Request body"// @Success      200  {object}  map[string]any
-// @Failure      404  {object}  map[string]any
+// @Param        request        body     orderRefundPayload true   "Request body"// @Success      200  {object}  model.SuccessResponse
+// @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/orders/{id}/refund [post]
 func (h *OrderHandler) RefundOrder(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
@@ -324,21 +282,12 @@ func (h *OrderHandler) RefundOrder(c *gin.Context) {
 		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
 		return
 	}
-	order, err := h.svc.RefundOrder(c.Request.Context(), id, service.RefundOrderInput{
+	order, err := h.svc.RefundOrder(c.Request.Context(), id, adminservice.RefundOrderInput{
 		Reason:      payload.Reason,
 		AmountCents: payload.AmountCents,
 		Note:        payload.Note,
 	})
-	if errors.Is(err, adminservice.ErrValidation) {
-		_ = c.Error(adminservice.ErrValidation)
-		return
-	}
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	}
-	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+	if !handleValidationAndNotFoundError(c, err) {
 		return
 	}
 	writeJSON(c, http.StatusOK, model.APIResponse[*model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: order})
@@ -348,8 +297,8 @@ func (h *OrderHandler) RefundOrder(c *gin.Context) {
 // @Security     BearerAuth
 // @Produce      json
 // @Param        id   path  int  true  "订单ID"
-// @Success      200  {object}  map[string]any
-// @Failure      404  {object}  map[string]any
+// @Success      200  {object}  model.SuccessResponse
+// @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/orders/{id}/timeline [get]
 func (h *OrderHandler) GetOrderTimeline(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
@@ -358,15 +307,10 @@ func (h *OrderHandler) GetOrderTimeline(c *gin.Context) {
 		return
 	}
 	items, err := h.svc.GetOrderTimeline(c.Request.Context(), id)
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
+	if !handleNotFoundError(c, err) {
 		return
 	}
-	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	writeJSON(c, http.StatusOK, model.APIResponse[[]service.OrderTimelineItem]{Success: true, Code: http.StatusOK, Message: "OK", Data: ensureSlice(items)})
+	writeJSON(c, http.StatusOK, model.APIResponse[[]adminservice.OrderTimelineItem]{Success: true, Code: http.StatusOK, Message: "OK", Data: ensureSlice(items)})
 }
 
 // ListOrderPayments 返回订单关联的支付记录�?// @Summary      获取订单支付记录
@@ -374,8 +318,8 @@ func (h *OrderHandler) GetOrderTimeline(c *gin.Context) {
 // @Security     BearerAuth
 // @Produce      json
 // @Param        id   path  int  true  "订单ID"
-// @Success      200  {object}  map[string]any
-// @Failure      404  {object}  map[string]any
+// @Success      200  {object}  model.SuccessResponse
+// @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/orders/{id}/payments [get]
 func (h *OrderHandler) ListOrderPayments(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
@@ -384,12 +328,7 @@ func (h *OrderHandler) ListOrderPayments(c *gin.Context) {
 		return
 	}
 	items, err := h.svc.GetOrderPayments(c.Request.Context(), id)
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	}
-	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+	if !handleNotFoundError(c, err) {
 		return
 	}
 	payments := ensureSlice(items)
@@ -400,8 +339,8 @@ func (h *OrderHandler) ListOrderPayments(c *gin.Context) {
 // @Security     BearerAuth
 // @Produce      json
 // @Param        id   path  int  true  "订单ID"
-// @Success      200  {object}  map[string]any
-// @Failure      404  {object}  map[string]any
+// @Success      200  {object}  model.SuccessResponse
+// @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/orders/{id}/refunds [get]
 func (h *OrderHandler) ListOrderRefunds(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
@@ -410,15 +349,10 @@ func (h *OrderHandler) ListOrderRefunds(c *gin.Context) {
 		return
 	}
 	items, err := h.svc.GetOrderRefunds(c.Request.Context(), id)
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
+	if !handleNotFoundError(c, err) {
 		return
 	}
-	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	writeJSON(c, http.StatusOK, model.APIResponse[[]service.OrderRefundItem]{Success: true, Code: http.StatusOK, Message: "OK", Data: ensureSlice(items)})
+	writeJSON(c, http.StatusOK, model.APIResponse[[]adminservice.OrderRefundItem]{Success: true, Code: http.StatusOK, Message: "OK", Data: ensureSlice(items)})
 }
 
 // ListOrderReviews 返回订单评价列表�?// @Summary      获取订单评价列表
@@ -426,8 +360,8 @@ func (h *OrderHandler) ListOrderRefunds(c *gin.Context) {
 // @Security     BearerAuth
 // @Produce      json
 // @Param        id   path  int  true  "订单ID"
-// @Success      200  {object}  map[string]any
-// @Failure      404  {object}  map[string]any
+// @Success      200  {object}  model.SuccessResponse
+// @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/orders/{id}/reviews [get]
 func (h *OrderHandler) ListOrderReviews(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
@@ -436,12 +370,7 @@ func (h *OrderHandler) ListOrderReviews(c *gin.Context) {
 		return
 	}
 	items, err := h.svc.GetOrderReviews(c.Request.Context(), id)
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	}
-	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+	if !handleNotFoundError(c, err) {
 		return
 	}
 	writeJSON(c, http.StatusOK, model.APIResponse[[]model.Review]{Success: true, Code: http.StatusOK, Message: "OK", Data: ensureSlice(items)})
@@ -455,8 +384,8 @@ func (h *OrderHandler) ListOrderReviews(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int                true  "订单ID"
 // @Param        request  body  UpdateOrderPayload true  "订单信息"
-// @Success      200  {object}  map[string]any
-// @Failure      404  {object}  map[string]any
+// @Success      200  {object}  model.SuccessResponse
+// @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/orders/{id} [put]
 //
 // UpdateOrder updates order fields such as status and schedule.
@@ -484,7 +413,7 @@ func (h *OrderHandler) UpdateOrder(c *gin.Context) {
 		return
 	}
 
-	input := service.UpdateOrderInput{
+	input := adminservice.UpdateOrderInput{
 		Status:          normalizeOrderStatus(payload.Status),
 		TotalPriceCents: payload.TotalPriceCents,
 		Currency:        model.Currency(strings.ToUpper(strings.TrimSpace(payload.Currency))),
@@ -494,20 +423,11 @@ func (h *OrderHandler) UpdateOrder(c *gin.Context) {
 	}
 
 	order, err := h.svc.UpdateOrder(c.Request.Context(), id, input)
-	if errors.Is(err, service.ErrOrderInvalidTransition) {
-		_ = c.Error(service.ErrOrderInvalidTransition)
+	if errors.Is(err, adminservice.ErrOrderInvalidTransition) {
+		_ = c.Error(adminservice.ErrOrderInvalidTransition)
 		return
 	}
-	if errors.Is(err, adminservice.ErrValidation) {
-		_ = c.Error(adminservice.ErrValidation)
-		return
-	}
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	}
-	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+	if !handleValidationAndNotFoundError(c, err) {
 		return
 	}
 
@@ -525,8 +445,8 @@ func (h *OrderHandler) UpdateOrder(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "订单ID"
 // @Produce      json
-// @Success      200  {object}  map[string]any
-// @Failure      404  {object}  map[string]any
+// @Success      200  {object}  model.SuccessResponse
+// @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/orders/{id} [delete]
 //
 // DeleteOrder deletes an order by id.
@@ -537,12 +457,7 @@ func (h *OrderHandler) DeleteOrder(c *gin.Context) {
 		return
 	}
 	err = h.svc.DeleteOrder(c.Request.Context(), id)
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	}
-	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+	if !handleNotFoundError(c, err) {
 		return
 	}
 
@@ -567,7 +482,7 @@ func (h *OrderHandler) DeleteOrder(c *gin.Context) {
 // @Param        export     query  string false "导出格式" Enums(csv)
 // @Param        fields     query  string false "Export columns (comma separated)"
 // @Param        header_lang query string false "列头语言" Enums(en,zh)
-// @Success      200  {object}  map[string]any
+// @Success      200  {object}  model.SuccessResponse
 // @Router       /admin/orders/{id}/logs [get]
 func (h *OrderHandler) ListOrderLogs(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
@@ -643,11 +558,11 @@ type AssignOrderPayload struct {
 
 // PaymentHandler 管理支付记录
 type PaymentHandler struct {
-	svc *service.AdminService
+	svc *adminservice.AdminService
 }
 
 // NewPaymentHandler 创建 Handler
-func NewPaymentHandler(svc *service.AdminService) *PaymentHandler {
+func NewPaymentHandler(svc *adminservice.AdminService) *PaymentHandler {
 	return &PaymentHandler{svc: svc}
 }
 
@@ -658,8 +573,8 @@ func NewPaymentHandler(svc *service.AdminService) *PaymentHandler {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  CreatePaymentPayload  true  "支付信息"
-// @Success      201  {object}  map[string]any
-// @Failure      400  {object}  map[string]any
+// @Success      201  {object}  model.SuccessResponse
+// @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/payments [post]
 func (h *PaymentHandler) CreatePayment(c *gin.Context) {
 	var p CreatePaymentPayload
@@ -667,7 +582,7 @@ func (h *PaymentHandler) CreatePayment(c *gin.Context) {
 		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
 		return
 	}
-	pay, err := h.svc.CreatePayment(c.Request.Context(), service.CreatePaymentInput{
+	pay, err := h.svc.CreatePayment(c.Request.Context(), adminservice.CreatePaymentInput{
 		OrderID:     p.OrderID,
 		UserID:      p.UserID,
 		Method:      model.PaymentMethod(strings.ToLower(strings.TrimSpace(p.Method))),
@@ -675,12 +590,7 @@ func (h *PaymentHandler) CreatePayment(c *gin.Context) {
 		Currency:    model.Currency(strings.ToUpper(strings.TrimSpace(p.Currency))),
 		ProviderRaw: p.ProviderRaw,
 	})
-	if errors.Is(err, adminservice.ErrValidation) {
-		_ = c.Error(adminservice.ErrValidation)
-		return
-	}
-	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+	if !handleValidationError(c, err) {
 		return
 	}
 	writeJSON(c, http.StatusCreated, model.APIResponse[*model.Payment]{Success: true, Code: http.StatusCreated, Message: "created", Data: pay})
@@ -694,8 +604,8 @@ func (h *PaymentHandler) CreatePayment(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int                     true  "支付ID"
 // @Param        request  body  CapturePaymentPayload   true  "入账信息"
-// @Success      200  {object}  map[string]any
-// @Failure      404  {object}  map[string]any
+// @Success      200  {object}  model.SuccessResponse
+// @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/payments/{id}/capture [post]
 func (h *PaymentHandler) CapturePayment(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
@@ -713,21 +623,12 @@ func (h *PaymentHandler) CapturePayment(c *gin.Context) {
 		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidPaidAt)
 		return
 	}
-	pay, err := h.svc.CapturePayment(c.Request.Context(), id, service.CapturePaymentInput{
+	pay, err := h.svc.CapturePayment(c.Request.Context(), id, adminservice.CapturePaymentInput{
 		ProviderTradeNo: p.ProviderTradeNo,
 		ProviderRaw:     p.ProviderRaw,
 		PaidAt:          paidAt,
 	})
-	if errors.Is(err, adminservice.ErrValidation) {
-		_ = c.Error(adminservice.ErrValidation)
-		return
-	}
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	}
-	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+	if !handleValidationAndNotFoundError(c, err) {
 		return
 	}
 	writeJSON(c, http.StatusOK, model.APIResponse[*model.Payment]{Success: true, Code: http.StatusOK, Message: "updated", Data: pay})
@@ -744,7 +645,7 @@ func (h *PaymentHandler) CapturePayment(c *gin.Context) {
 // @Param        orderId     query     int       false  "订单ID"
 // @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
 // @Produce      json
-// @Success      200  {object}  map[string]any
+// @Success      200  {object}  model.SuccessResponse
 // @Router       /admin/payments [get]
 //
 // ListPayments returns a paginated list of payments with filters.
@@ -775,8 +676,8 @@ func (h *PaymentHandler) ListPayments(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "支付ID"
 // @Produce      json
-// @Success      200  {object}  map[string]any
-// @Failure      404  {object}  map[string]any
+// @Success      200  {object}  model.SuccessResponse
+// @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/payments/{id} [get]
 //
 // GetPayment returns a single payment by id.
@@ -811,8 +712,8 @@ func (h *PaymentHandler) GetPayment(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int                  true  "支付ID"
 // @Param        request  body  UpdatePaymentPayload true  "支付信息"
-// @Success      200  {object}  map[string]any
-// @Failure      404  {object}  map[string]any
+// @Success      200  {object}  model.SuccessResponse
+// @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/payments/{id} [put]
 //
 // UpdatePayment updates payment fields such as status and provider info.
@@ -840,25 +741,15 @@ func (h *PaymentHandler) UpdatePayment(c *gin.Context) {
 		return
 	}
 
-	input := service.UpdatePaymentInput{
+	input := adminservice.UpdatePaymentInput{
 		Status:          model.PaymentStatus(strings.TrimSpace(payload.Status)),
 		ProviderTradeNo: payload.ProviderTradeNo,
 		ProviderRaw:     payload.ProviderRaw,
 		PaidAt:          paidAt,
 		RefundedAt:      refundedAt,
 	}
-
 	payment, err := h.svc.UpdatePayment(c.Request.Context(), id, input)
-	if errors.Is(err, adminservice.ErrValidation) {
-		_ = c.Error(adminservice.ErrValidation)
-		return
-	}
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	}
-	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+	if !handleValidationAndNotFoundError(c, err) {
 		return
 	}
 
@@ -876,8 +767,8 @@ func (h *PaymentHandler) UpdatePayment(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "支付ID"
 // @Produce      json
-// @Success      200  {object}  map[string]any
-// @Failure      404  {object}  map[string]any
+// @Success      200  {object}  model.SuccessResponse
+// @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/payments/{id} [delete]
 //
 // DeletePayment deletes a payment record by id.
@@ -888,12 +779,7 @@ func (h *PaymentHandler) DeletePayment(c *gin.Context) {
 		return
 	}
 	err = h.svc.DeletePayment(c.Request.Context(), id)
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	}
-	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+	if !handleNotFoundError(c, err) {
 		return
 	}
 
@@ -918,7 +804,7 @@ func (h *PaymentHandler) DeletePayment(c *gin.Context) {
 // @Param        export     query  string false "导出格式" Enums(csv)
 // @Param        fields     query  string false "Export columns (comma separated)"
 // @Param        header_lang query string false "列头语言" Enums(en,zh)
-// @Success      200  {object}  map[string]any
+// @Success      200  {object}  model.SuccessResponse
 // @Router       /admin/payments/{id}/logs [get]
 func (h *PaymentHandler) ListPaymentLogs(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
@@ -1094,8 +980,8 @@ type CapturePaymentPayload struct {
 // @Accept       json
 // @Produce      json
 // @Param        id       path  int                    true  "支付ID"
-// @Param        request        body     RefundPaymentPayload false  "Request body"// @Success      200  {object}  map[string]any
-// @Failure      404  {object}  map[string]any
+// @Param        request        body     RefundPaymentPayload false  "Request body"// @Success      200  {object}  model.SuccessResponse
+// @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/payments/{id}/refund [post]
 func (h *PaymentHandler) RefundPayment(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
@@ -1129,7 +1015,7 @@ func (h *PaymentHandler) RefundPayment(c *gin.Context) {
 	}
 
 	// Only allow refund from paid
-	input := service.UpdatePaymentInput{
+	input := adminservice.UpdatePaymentInput{
 		Status:          model.PaymentStatusRefunded,
 		ProviderTradeNo: payload.ProviderTradeNo,
 		ProviderRaw:     payload.ProviderRaw,
@@ -1159,6 +1045,50 @@ type RefundPaymentPayload struct {
 	ProviderRaw     json.RawMessage `json:"provider_raw,omitempty" swaggertype:"string" example:"{\"result\":\"refunded\"}"`
 }
 
+// handleValidationError 处理仅关心 ErrValidation + 500 的错误分支。
+// 返回值 false 表示已经写入响应，调用方应立即 return。
+func handleValidationError(c *gin.Context, err error) bool {
+	if err == nil {
+		return true
+	}
+	if errors.Is(err, adminservice.ErrValidation) {
+		_ = c.Error(adminservice.ErrValidation)
+		return false
+	}
+	writeJSONError(c, http.StatusInternalServerError, err.Error())
+	return false
+}
+
+// handleValidationAndNotFoundError 统一处理 ErrValidation、ErrNotFound 与 500。
+func handleValidationAndNotFoundError(c *gin.Context, err error) bool {
+	if err == nil {
+		return true
+	}
+	if errors.Is(err, adminservice.ErrValidation) {
+		_ = c.Error(adminservice.ErrValidation)
+		return false
+	}
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
+		return false
+	}
+	writeJSONError(c, http.StatusInternalServerError, err.Error())
+	return false
+}
+
+// handleNotFoundError 统一处理 ErrNotFound 与 500。
+func handleNotFoundError(c *gin.Context, err error) bool {
+	if err == nil {
+		return true
+	}
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
+		return false
+	}
+	writeJSONError(c, http.StatusInternalServerError, err.Error())
+	return false
+}
+
 func parseRFC3339Ptr(value *string) (*time.Time, error) {
 	if value == nil || strings.TrimSpace(*value) == "" {
 		return nil, nil
@@ -1177,8 +1107,8 @@ func parseRFC3339Ptr(value *string) (*time.Time, error) {
 // @Produce      json
 // @Param        id       path  int                    true  "订单ID"
 // @Param        request  body  ReviewOrderPayload     true  "审核信息"
-// @Success      200  {object}  map[string]any
-// @Failure      404  {object}  map[string]any
+// @Success      200  {object}  model.SuccessResponse
+// @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/orders/{id}/review [post]
 func (h *OrderHandler) ReviewOrder(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
@@ -1209,7 +1139,7 @@ func (h *OrderHandler) ReviewOrder(c *gin.Context) {
 		cancelReason = strings.TrimSpace(payload.Reason)
 	}
 
-	input := service.UpdateOrderInput{
+	input := adminservice.UpdateOrderInput{
 		Status:          next,
 		TotalPriceCents: order.TotalPriceCents,
 		Currency:        order.Currency,
@@ -1218,8 +1148,8 @@ func (h *OrderHandler) ReviewOrder(c *gin.Context) {
 		CancelReason:    cancelReason,
 	}
 	updated, err := h.svc.UpdateOrder(c.Request.Context(), id, input)
-	if errors.Is(err, service.ErrOrderInvalidTransition) {
-		_ = c.Error(service.ErrOrderInvalidTransition)
+	if errors.Is(err, adminservice.ErrOrderInvalidTransition) {
+		_ = c.Error(adminservice.ErrOrderInvalidTransition)
 		return
 	}
 	if errors.Is(err, adminservice.ErrValidation) {
@@ -1246,8 +1176,8 @@ func (h *OrderHandler) ReviewOrder(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int                  true  "订单ID"
 // @Param        request  body  CancelOrderPayload   true  "取消原因"
-// @Success      200  {object}  map[string]any
-// @Failure      404  {object}  map[string]any
+// @Success      200  {object}  model.SuccessResponse
+// @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/orders/{id}/cancel [post]
 func (h *OrderHandler) CancelOrder(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
@@ -1271,7 +1201,7 @@ func (h *OrderHandler) CancelOrder(c *gin.Context) {
 		return
 	}
 
-	input := service.UpdateOrderInput{
+	input := adminservice.UpdateOrderInput{
 		Status:          model.OrderStatusCanceled,
 		TotalPriceCents: order.TotalPriceCents,
 		Currency:        order.Currency,
@@ -1280,8 +1210,8 @@ func (h *OrderHandler) CancelOrder(c *gin.Context) {
 		CancelReason:    strings.TrimSpace(payload.Reason),
 	}
 	updated, err := h.svc.UpdateOrder(c.Request.Context(), id, input)
-	if errors.Is(err, service.ErrOrderInvalidTransition) {
-		_ = c.Error(service.ErrOrderInvalidTransition)
+	if errors.Is(err, adminservice.ErrOrderInvalidTransition) {
+		_ = c.Error(adminservice.ErrOrderInvalidTransition)
 		return
 	}
 	if errors.Is(err, adminservice.ErrValidation) {

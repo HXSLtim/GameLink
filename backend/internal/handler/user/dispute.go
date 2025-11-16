@@ -3,7 +3,6 @@ package user
 import (
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 
@@ -37,15 +36,15 @@ type InitiateDisputePayload struct {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  InitiateDisputePayload  true  "Dispute info"
-// @Success      201  {object}  map[string]any
-// @Failure      400  {object}  map[string]any
-// @Failure      404  {object}  map[string]any
+// @Success      201  {object}  model.SuccessResponse
+// @Failure      400  {object}  model.ErrorResponse
+// @Failure      404  {object}  model.ErrorResponse
 // @Router       /user/orders/{id}/dispute [post]
 func (h *DisputeHandler) InitiateDispute(c *gin.Context) {
 	// Get user ID from context (set by auth middleware)
 	userID, exists := c.Get("userID")
 	if !exists {
-		respondError(c, http.StatusUnauthorized, "User ID not found in context")
+		respondError(c, http.StatusUnauthorized, apierr.ErrUserIDNotInContext)
 		return
 	}
 
@@ -82,10 +81,6 @@ func (h *DisputeHandler) InitiateDispute(c *gin.Context) {
 			respondError(c, http.StatusBadRequest, err.Error())
 			return
 		}
-		if errors.Is(err, assignment.ErrUnauthorized) {
-			respondError(c, http.StatusForbidden, "You can only initiate disputes for your own orders")
-			return
-		}
 		if errors.Is(err, assignment.ErrCannotInitiateDispute) {
 			respondError(c, http.StatusConflict, "Cannot initiate dispute for this order")
 			return
@@ -95,7 +90,7 @@ func (h *DisputeHandler) InitiateDispute(c *gin.Context) {
 			return
 		}
 		if errors.Is(err, assignment.ErrOrderNotFound) {
-			respondError(c, http.StatusNotFound, "Order not found")
+			respondError(c, http.StatusNotFound, apierr.ErrOrderNotFound)
 			return
 		}
 		respondError(c, http.StatusInternalServerError, err.Error())
@@ -126,27 +121,27 @@ func (h *DisputeHandler) InitiateDispute(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        id  path  uint64  true  "Dispute ID"
-// @Success      200  {object}  map[string]any
-// @Failure      404  {object}  map[string]any
+// @Success      200  {object}  model.SuccessResponse
+// @Failure      404  {object}  model.ErrorResponse
 // @Router       /user/orders/{id}/disputes [get]
 func (h *DisputeHandler) GetDisputeDetail(c *gin.Context) {
 	// Get user ID from context
 	userID, exists := c.Get("userID")
 	if !exists {
-		respondError(c, http.StatusUnauthorized, "User ID not found in context")
+		respondError(c, http.StatusUnauthorized, apierr.ErrUserIDNotInContext)
 		return
 	}
 
-	disputeID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	disputeID, err := parseUintParam(c, "id")
 	if err != nil {
-		respondError(c, http.StatusBadRequest, "Invalid dispute ID")
+		respondError(c, http.StatusBadRequest, apierr.ErrInvalidID)
 		return
 	}
 
 	dispute, err := h.svc.GetDisputeDetail(c.Request.Context(), disputeID)
 	if err != nil {
 		if errors.Is(err, assignment.ErrNotFound) {
-			respondError(c, http.StatusNotFound, "Dispute not found")
+			respondError(c, http.StatusNotFound, apierr.ErrDisputeNotFound)
 			return
 		}
 		respondError(c, http.StatusInternalServerError, err.Error())

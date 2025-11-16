@@ -22,6 +22,22 @@ func NewPermissionHandler(permissionSvc *permissionservice.PermissionService) *P
 }
 
 // ListPermissions 获取权限列表
+// @Summary      获取权限列表
+// @Description  管理员获取系统权限列表，支持分页和过滤
+// @Tags         Admin - Permissions
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string  true  "Bearer {token}"
+// @Param        page           query     int     false  "页码" default(1)
+// @Param        pageSize       query     int     false  "每页数量" default(10)
+// @Param        keyword        query     string  false  "关键词搜索"
+// @Param        method         query     string  false  "HTTP方法过滤"
+// @Param        group          query     string  false  "权限分组过滤"
+// @Success      200            {object}  PermissionListResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /admin/permissions [get]
 func (h *PermissionHandler) ListPermissions(c *gin.Context) {
 	// TODO: 实现keyword, method, group过滤功能
 	_ = c.Query("keyword")
@@ -59,6 +75,19 @@ func (h *PermissionHandler) ListPermissions(c *gin.Context) {
 }
 
 // GetPermission 获取权限详情
+// @Summary      获取权限详情
+// @Description  管理员根据ID获取指定权限的详细信息
+// @Tags         Admin - Permissions
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string  true  "Bearer {token}"
+// @Param        id             path      uint    true  "权限ID"
+// @Success      200            {object}  PermissionDetailResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      404            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /admin/permissions/{id} [get]
 func (h *PermissionHandler) GetPermission(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
@@ -85,6 +114,18 @@ func (h *PermissionHandler) GetPermission(c *gin.Context) {
 }
 
 // CreatePermission 创建权限
+// @Summary      创建权限
+// @Description  管理员创建新的系统权限
+// @Tags         Admin - Permissions
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string                      true  "Bearer {token}"
+// @Param        request        body      CreatePermissionRequest      true  "创建权限请求"
+// @Success      201            {object}  PermissionDetailResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /admin/permissions [post]
 func (h *PermissionHandler) CreatePermission(c *gin.Context) {
 	var req struct {
 		Method      model.HTTPMethod `json:"method" binding:"required"`
@@ -121,6 +162,20 @@ func (h *PermissionHandler) CreatePermission(c *gin.Context) {
 }
 
 // UpdatePermission 更新权限
+// @Summary      更新权限
+// @Description  管理员更新指定权限的信息
+// @Tags         Admin - Permissions
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string                      true  "Bearer {token}"
+// @Param        id             path      uint                        true  "权限ID"
+// @Param        request        body      UpdatePermissionRequest      true  "更新权限请求"
+// @Success      200            {object}  PermissionDetailResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      404            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /admin/permissions/{id} [put]
 func (h *PermissionHandler) UpdatePermission(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
@@ -166,6 +221,18 @@ func (h *PermissionHandler) UpdatePermission(c *gin.Context) {
 }
 
 // DeletePermission 删除权限
+// @Summary      删除权限
+// @Description  管理员删除指定的系统权限
+// @Tags         Admin - Permissions
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string  true  "Bearer {token}"
+// @Param        id             path      uint    true  "权限ID"
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /admin/permissions/{id} [delete]
 func (h *PermissionHandler) DeletePermission(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
@@ -187,6 +254,18 @@ func (h *PermissionHandler) DeletePermission(c *gin.Context) {
 }
 
 // GetRolePermissions 获取角色的权限列表
+// @Summary      获取角色的权限列表
+// @Description  管理员获取指定角色的所有权限列表
+// @Tags         Admin - Permissions
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string  true  "Bearer {token}"
+// @Param        id             path      uint    true  "角色ID"
+// @Success      200            {object}  RolePermissionsResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /admin/roles/{id}/permissions [get]
 func (h *PermissionHandler) GetRolePermissions(c *gin.Context) {
 	roleID, err := parseUintParam(c, "id")
 	if err != nil {
@@ -209,6 +288,18 @@ func (h *PermissionHandler) GetRolePermissions(c *gin.Context) {
 }
 
 // GetUserPermissions 获取用户的权限列表
+// @Summary      获取用户的权限列表
+// @Description  管理员获取指定用户的所有权限列表
+// @Tags         Admin - Permissions
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string  true  "Bearer {token}"
+// @Param        id             path      uint    true  "用户ID"
+// @Success      200            {object}  UserPermissionsResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /admin/users/{id}/permissions [get]
 func (h *PermissionHandler) GetUserPermissions(c *gin.Context) {
 	userID, err := parseUintParam(c, "id")
 	if err != nil {
@@ -231,6 +322,16 @@ func (h *PermissionHandler) GetUserPermissions(c *gin.Context) {
 }
 
 // GetPermissionGroups 获取所有权限分组列表
+// @Summary      获取权限分组列表
+// @Description  管理员获取系统中所有权限分组的列表
+// @Tags         Admin - Permissions
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string  true  "Bearer {token}"
+// @Success      200            {object}  PermissionGroupsResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /admin/permission-groups [get]
 func (h *PermissionHandler) GetPermissionGroups(c *gin.Context) {
 	groups, err := h.permissionSvc.ListPermissionGroups(c.Request.Context())
 	if err != nil {

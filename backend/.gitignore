@@ -7,6 +7,7 @@
 user-service
 *.exe
 *.out
+bin/
 
 # Local environment
 .env
@@ -40,3 +41,31 @@ docs/docs_test.go
 .vscode/
 *.swp
 *.swo
+
+# Temporary files
+*.tmp
+*.log
+nul
+
+# Database backups
+*.db.backup-*
+
+# Fix scripts (temporary)
+fix_*.py
+fix_*.sh
+fix_*.ps1
+
+# Session reports (temporary)
+SESSION_*.md
+
+# Coverage reports (temporary)
+*COVERAGE*.md
+*coverage*.md
+
+# Status reports (temporary)
+FINAL_*.md
+EXECUTION_*.md
+SYSTEM_*.md
+TEAM_*.md
+SWAGGER_*.md
+ROUTE_*.md

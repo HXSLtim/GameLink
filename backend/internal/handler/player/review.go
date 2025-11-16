@@ -3,10 +3,10 @@ package player
 import (
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 
+	"gamelink/internal/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/service"
 	reviewservice "gamelink/internal/service/review"
@@ -29,16 +29,16 @@ func RegisterReviewRoutes(router gin.IRouter, svc *reviewservice.ReviewService, 
 // @Param        id             path      int                                true  "Review ID"
 // @Param        request        body      reviewservice.ReplyReviewRequest   true  "Reply content"
 // @Success      200            {object}  model.APIResponse[reviewservice.ReplyReviewResponse]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
-// @Failure      403            {object}  model.APIResponse[any]
-// @Failure      500            {object}  model.APIResponse[any]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      403            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
 // @Router       /player/reviews/{id}/reply [post]
 func replyReviewHandler(c *gin.Context, svc *reviewservice.ReviewService) {
 	userID := getUserIDFromContext(c)
-	reviewID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	reviewID, err := parseUintParam(c, "id")
 	if err != nil {
-		respondError(c, http.StatusBadRequest, "reviewId 无效")
+		respondError(c, http.StatusBadRequest, apierr.ErrInvalidID)
 		return
 	}
 	var req reviewservice.ReplyReviewRequest

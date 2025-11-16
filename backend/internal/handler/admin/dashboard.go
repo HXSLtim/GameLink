@@ -78,8 +78,8 @@ func RegisterDashboardRoutes(
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
 // @Success      200            {object}  model.APIResponse[DashboardOverviewStats]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/dashboard/overview [get]
 func getDashboardOverviewHandler(
 	c *gin.Context,
@@ -167,9 +167,9 @@ func getDashboardOverviewHandler(
 // @Produce      json
 // @Param        Authorization  header    string  true   "Bearer {token}"
 // @Param        limit          query     int     false  "数量限制"
-// @Success      200            {object}  model.APIResponse[any]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/dashboard/recent-orders [get]
 func getRecentOrdersHandler(c *gin.Context, orderRepo repository.OrderRepository) {
 	limit := 10
@@ -202,9 +202,9 @@ func getRecentOrdersHandler(c *gin.Context, orderRepo repository.OrderRepository
 // @Produce      json
 // @Param        Authorization  header    string  true   "Bearer {token}"
 // @Param        limit          query     int     false  "数量限制"
-// @Success      200            {object}  model.APIResponse[any]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/dashboard/recent-withdraws [get]
 func getRecentWithdrawsHandler(c *gin.Context, withdrawRepo withdrawrepo.WithdrawRepository) {
 	limit := 10
@@ -239,9 +239,9 @@ func getRecentWithdrawsHandler(c *gin.Context, withdrawRepo withdrawrepo.Withdra
 // @Produce      json
 // @Param        Authorization  header    string  true   "Bearer {token}"
 // @Param        months         query     int     false  "Number of months (default 12)"
-// @Success      200            {object}  model.APIResponse[any]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/dashboard/monthly-revenue [get]
 func getMonthlyRevenueHandler(c *gin.Context, commissionRepo commissionrepo.CommissionRepository) {
 	months := 12

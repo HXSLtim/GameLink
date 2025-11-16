@@ -58,8 +58,8 @@ type registerRequest struct {
 // @Produce      json
 // @Param        request  body      loginRequest  true  "登录凭据"
 // @Success      200      {object}  loginResponse
-// @Failure      400      {object}  map[string]any
-// @Failure      401      {object}  map[string]any
+// @Failure      400      {object}  model.ErrorResponse
+// @Failure      401      {object}  model.ErrorResponse
 // @Router       /auth/login [post]
 func loginHandler(c *gin.Context, svc *authservice.AuthService) {
 	var req loginRequest
@@ -97,7 +97,7 @@ func loginHandler(c *gin.Context, svc *authservice.AuthService) {
 // @Produce      json
 // @Param        request  body      registerRequest  true  "注册信息"
 // @Success      200      {object}  loginResponse
-// @Failure      400      {object}  map[string]any
+// @Failure      400      {object}  model.ErrorResponse
 // @Router       /auth/register [post]
 func registerHandler(c *gin.Context, svc *authservice.AuthService) {
 	var req registerRequest
@@ -130,7 +130,7 @@ func registerHandler(c *gin.Context, svc *authservice.AuthService) {
 // @Security     BearerAuth
 // @Produce      json
 // @Success      200  {object}  loginResponse
-// @Failure      401  {object}  map[string]any
+// @Failure      401  {object}  model.ErrorResponse
 // @Router       /auth/me [get]
 func meHandler(c *gin.Context, svc *authservice.AuthService) {
 	user, err := svc.Me(c.Request.Context(), c.GetHeader("Authorization"))
@@ -157,7 +157,7 @@ func meHandler(c *gin.Context, svc *authservice.AuthService) {
 // @Produce      json
 // @Security     BearerAuth
 // @Success      200  {object}  tokenPayload
-// @Failure      401  {object}  map[string]any
+// @Failure      401  {object}  model.ErrorResponse
 // @Router       /auth/refresh [post]
 func refreshHandler(c *gin.Context, svc *authservice.AuthService) {
 	token, err := auth.ExtractTokenFromHeader(c.GetHeader("Authorization"))
@@ -187,7 +187,7 @@ func refreshHandler(c *gin.Context, svc *authservice.AuthService) {
 // @Summary      登出（前端丢弃 Token）
 // @Tags         Auth
 // @Security     BearerAuth
-// @Success      200  {object}  map[string]any
+// @Success      200  {object}  model.SuccessResponse
 // @Router       /auth/logout [post]
 func logoutHandler(c *gin.Context) {
 	respondJSON(c, http.StatusOK, model.APIResponse[any]{

@@ -24,26 +24,27 @@ func NewDisputeHandler(svc *assignment.AssignmentService) *DisputeHandler {
 }
 
 // GetDisputeDetail retrieves dispute details
-// @Summary      Get Dispute Detail
+// @Summary      获取纠纷详情
+// @Description  根据 ID 获取单个订单纠纷的详细信息
 // @Tags         Admin/Disputes
 // @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Param        id  path  uint64  true  "Dispute ID"
-// @Success      200  {object}  map[string]any
-// @Failure      404  {object}  map[string]any
-// @Router       /admin/orders/{id}/disputes [get]
+// @Param        id  path  int  true  "纠纷ID"
+// @Success      200  {object}  model.APIResponse[model.OrderDispute]
+// @Failure      404  {object}  apierr.ErrorResponse
+// @Router       /admin/disputes/{id} [get]
 func (h *DisputeHandler) GetDisputeDetail(c *gin.Context) {
-	disputeID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	disputeID, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "Invalid dispute ID")
+		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
 		return
 	}
 
 	dispute, err := h.svc.GetDisputeDetail(c.Request.Context(), disputeID)
 	if err != nil {
 		if errors.Is(err, assignment.ErrNotFound) {
-			writeJSONError(c, http.StatusNotFound, "Dispute not found")
+			writeJSONError(c, http.StatusNotFound, apierr.ErrDisputeNotFound)
 			return
 		}
 		writeJSONError(c, http.StatusInternalServerError, err.Error())
@@ -58,16 +59,17 @@ func (h *DisputeHandler) GetDisputeDetail(c *gin.Context) {
 }
 
 // ListPendingDisputes lists disputes pending assignment
-// @Summary      List Pending Disputes
+// @Summary      列出待处理纠纷
+// @Description  获取状态为待处理的订单纠纷列表，支持分页
 // @Tags         Admin/Disputes
 // @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Param        page      query  int  false  "Page number"  default(1)
-// @Param        pageSize  query  int  false  "Page size"    default(20)
-// @Success      200  {object}  map[string]any
-// @Failure      400  {object}  map[string]any
-// @Router       /admin/orders/pending-assign [get]
+// @Param        page      query  int  false  "页码"  default(1)
+// @Param        pageSize  query  int  false  "每页数量"    default(20)
+// @Success      200  {object}  model.APIResponse[[]model.OrderDispute]
+// @Failure      500  {object}  apierr.ErrorResponse
+// @Router       /admin/disputes/pending [get]
 func (h *DisputeHandler) ListPendingDisputes(c *gin.Context) {
 	page := 1
 	pageSize := 20
@@ -115,21 +117,22 @@ type AssignDisputePayload struct {
 }
 
 // AssignDispute assigns a dispute to a customer service representative
-// @Summary      Assign Dispute
+// @Summary      分配纠纷
+// @Description  将一个订单纠纷分配给指定的客服人员处理
 // @Tags         Admin/Disputes
 // @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Param        id       path  uint64                 true  "Dispute ID"
-// @Param        request  body  AssignDisputePayload   true  "Assignment info"
-// @Success      200  {object}  map[string]any
-// @Failure      400  {object}  map[string]any
-// @Failure      404  {object}  map[string]any
-// @Router       /admin/orders/{id}/assign [post]
+// @Param        id       path  int                 true  "纠纷ID"
+// @Param        request  body  AssignDisputePayload   true  "分配信息"
+// @Success      200  {object}  model.APIResponse[string]
+// @Failure      400  {object}  apierr.ErrorResponse
+// @Failure      404  {object}  apierr.ErrorResponse
+// @Router       /admin/disputes/{id}/assign [post]
 func (h *DisputeHandler) AssignDispute(c *gin.Context) {
-	disputeID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	disputeID, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "Invalid dispute ID")
+		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
 		return
 	}
 
@@ -142,13 +145,13 @@ func (h *DisputeHandler) AssignDispute(c *gin.Context) {
 	// Get actor user ID from context (set by auth middleware)
 	actorUserID, exists := c.Get("userID")
 	if !exists {
-		writeJSONError(c, http.StatusUnauthorized, "User ID not found in context")
+		writeJSONError(c, http.StatusUnauthorized, apierr.ErrUserIDNotInContext)
 		return
 	}
 
 	source := model.AssignmentSource(payload.Source)
 	if source != model.AssignmentSourceSystem && source != model.AssignmentSourceManual {
-		writeJSONError(c, http.StatusBadRequest, "Invalid assignment source")
+		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidAssignmentSource)
 		return
 	}
 
@@ -187,21 +190,22 @@ type RollbackAssignmentPayload struct {
 }
 
 // RollbackAssignment rolls back a dispute assignment
-// @Summary      Rollback Assignment
+// @Summary      回滚分配
+// @Description  撤销一个订单纠纷的分配，使其回到待处理状态
 // @Tags         Admin/Disputes
 // @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Param        id       path  uint64                      true  "Dispute ID"
-// @Param        request  body  RollbackAssignmentPayload   true  "Rollback info"
-// @Success      200  {object}  map[string]any
-// @Failure      400  {object}  map[string]any
-// @Failure      404  {object}  map[string]any
-// @Router       /admin/orders/{id}/assign/cancel [post]
+// @Param        id       path  int                      true  "纠纷ID"
+// @Param        request  body  RollbackAssignmentPayload   true  "回滚信息"
+// @Success      200  {object}  model.APIResponse[string]
+// @Failure      400  {object}  apierr.ErrorResponse
+// @Failure      404  {object}  apierr.ErrorResponse
+// @Router       /admin/disputes/{id}/rollback [post]
 func (h *DisputeHandler) RollbackAssignment(c *gin.Context) {
-	disputeID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	disputeID, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "Invalid dispute ID")
+		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
 		return
 	}
 
@@ -214,7 +218,7 @@ func (h *DisputeHandler) RollbackAssignment(c *gin.Context) {
 	// Get actor user ID from context
 	actorUserID, exists := c.Get("userID")
 	if !exists {
-		writeJSONError(c, http.StatusUnauthorized, "User ID not found in context")
+		writeJSONError(c, http.StatusUnauthorized, apierr.ErrUserIDNotInContext)
 		return
 	}
 
@@ -254,21 +258,22 @@ type ResolveDisputePayload struct {
 }
 
 // ResolveDispute resolves a dispute with a decision
-// @Summary      Resolve Dispute
+// @Summary      解决纠纷
+// @Description  对一个订单纠纷做出最终处理决定，例如退款、重新分配等
 // @Tags         Admin/Disputes
 // @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Param        id       path  uint64                  true  "Dispute ID"
-// @Param        request  body  ResolveDisputePayload   true  "Resolution info"
-// @Success      200  {object}  map[string]any
-// @Failure      400  {object}  map[string]any
-// @Failure      404  {object}  map[string]any
-// @Router       /admin/orders/{id}/mediate [post]
+// @Param        id       path  int                  true  "纠纷ID"
+// @Param        request  body  ResolveDisputePayload   true  "处理结果信息"
+// @Success      200  {object}  model.APIResponse[string]
+// @Failure      400  {object}  apierr.ErrorResponse
+// @Failure      404  {object}  apierr.ErrorResponse
+// @Router       /admin/disputes/{id}/resolve [post]
 func (h *DisputeHandler) ResolveDispute(c *gin.Context) {
-	disputeID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	disputeID, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "Invalid dispute ID")
+		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
 		return
 	}
 
@@ -281,7 +286,7 @@ func (h *DisputeHandler) ResolveDispute(c *gin.Context) {
 	// Get actor user ID from context
 	actorUserID, exists := c.Get("userID")
 	if !exists {
-		writeJSONError(c, http.StatusUnauthorized, "User ID not found in context")
+		writeJSONError(c, http.StatusUnauthorized, apierr.ErrUserIDNotInContext)
 		return
 	}
 

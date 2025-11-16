@@ -31,10 +31,10 @@ func RegisterRoutes(router gin.IRouter, svc *notificationservice.Service, authMi
 // @Param        pageSize       query     int     false  "Page size"
 // @Param        unread         query     bool    false  "Filter unread only"
 // @Param        priority       query     array   false  "Filter by priority"
-// @Success      200            {object}  model.APIResponse[notificationservice.ListResponse]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
-// @Failure      500            {object}  model.APIResponse[any]
+// @Success      200            {object}  NotificationListResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
 // @Router       /notifications [get]
 func listNotificationsHandler(c *gin.Context, svc *notificationservice.Service) {
 	userID := getUserIDFromContext(c)
@@ -82,10 +82,10 @@ func listNotificationsHandler(c *gin.Context, svc *notificationservice.Service) 
 // @Produce      json
 // @Param        Authorization  header    string              true  "Bearer {token}"
 // @Param        request        body      object{ids=[]int}   true  "Notification IDs to mark as read"
-// @Success      200            {object}  model.APIResponse[any]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
-// @Failure      500            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
 // @Router       /notifications/read [post]
 func markNotificationsReadHandler(c *gin.Context, svc *notificationservice.Service) {
 	userID := getUserIDFromContext(c)
@@ -114,9 +114,9 @@ func markNotificationsReadHandler(c *gin.Context, svc *notificationservice.Servi
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
-// @Success      200            {object}  model.APIResponse[map[string]int64]
-// @Failure      401            {object}  model.APIResponse[any]
-// @Failure      500            {object}  model.APIResponse[any]
+// @Success      200            {object}  UnreadCountResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
 // @Router       /notifications/unread-count [get]
 func unreadCountHandler(c *gin.Context, svc *notificationservice.Service) {
 	userID := getUserIDFromContext(c)

@@ -43,9 +43,9 @@ func RegisterStatsAnalysisRoutes(
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
-// @Success      200            {object}  model.APIResponse[any]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/stats/service-items [get]
 func getServiceItemStatsHandler(
 	c *gin.Context,
@@ -118,9 +118,9 @@ func getServiceItemStatsHandler(
 // @Param        Authorization  header    string  true   "Bearer {token}"
 // @Param        month          query     string  false  "月份(YYYY-MM)"
 // @Param        limit          query     int     false  "数量"
-// @Success      200            {object}  model.APIResponse[any]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/stats/top-players [get]
 func getTopPlayersHandler(c *gin.Context, commissionRepo commissionrepo.CommissionRepository) {
 	month := c.DefaultQuery("month", time.Now().Format("2006-01"))
@@ -147,9 +147,9 @@ func getTopPlayersHandler(c *gin.Context, commissionRepo commissionrepo.Commissi
 // @Description  API endpoint// @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
-// @Success      200            {object}  model.APIResponse[any]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/stats/gift-stats [get]
 func getAdminGiftStatsHandler(
 	c *gin.Context,
@@ -211,9 +211,9 @@ func getAdminGiftStatsHandler(
 // @Description  API endpoint// @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
-// @Success      200            {object}  model.APIResponse[any]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/stats/revenue-by-game [get]
 func getRevenueByGameHandler(c *gin.Context, orderRepo repository.OrderRepository) {
 	ctx := c.Request.Context()

@@ -437,7 +437,9 @@ func TestRegisterRankingCommissionRoutes_Coverage(t *testing.T) {
 	router := gin.New()
 	repo := &fakeRankingCommissionRepo{}
 
-	RegisterRankingCommissionRoutes(router, repo)
+	// 实际运行时，这些路由都挂在 /admin 分组下，这里保持一致
+	adminGroup := router.Group("/admin")
+	RegisterRankingCommissionRoutes(adminGroup, repo)
 
 	routes := router.Routes()
 	assert.NotEmpty(t, routes)

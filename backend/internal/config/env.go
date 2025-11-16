@@ -12,10 +12,12 @@ import (
 )
 
 const (
-	// DefaultDevJWTSecret 为开发环境提供兜底的 JWT 密钥（仅限本地调试）。
-	DefaultDevJWTSecret = "gamelink-default-secret-key-change-in-development"
-	defaultTokenTTL     = 24
+	// 默认Token有效期（小时）
+	defaultTokenTTL = 24
 )
+
+// deprecatedDefaultJWTSecret 用于检测是否在使用已废弃的默认密钥
+const deprecatedDefaultJWTSecret = "gamelink-default-secret-key-change-in-development"
 
 // AppConfig 汇总服务运行所需的核心配置。
 type AppConfig struct {
@@ -146,8 +148,8 @@ func Load() AppConfig {
 		},
 		Crypto: CryptoConfig{
 			Enabled:      false,
-			SecretKey:    "GameLink2025SecretKey!@#",
-			IV:           "GameLink2025IV!!!",
+			SecretKey:    "", // 必须显式配置，无默认值
+			IV:           "", // 必须显式配置，无默认值
 			Methods:      []string{"POST", "PUT", "PATCH"},
 			ExcludePaths: []string{"/api/v1/health", "/api/v1/ping", "/api/v1/auth/refresh"},
 			UseSignature: true,
@@ -158,8 +160,8 @@ func Load() AppConfig {
 		},
 		Seed: SeedConfig{Enabled: false},
 		SuperAdmin: SuperAdminConfig{
-			Email:    "admin@gamelink.local",
-			Password: "Admin@123456",
+			Email:    "", // 必须显式配置，无默认值
+			Password: "", // 必须显式配置，无默认值
 			Name:     "Super Admin",
 			Phone:    "",
 		},
@@ -185,12 +187,12 @@ func Load() AppConfig {
 	if cfg.Auth.TokenTTLHours <= 0 {
 		cfg.Auth.TokenTTLHours = defaultTokenTTL
 	}
-	if strings.TrimSpace(cfg.Auth.JWTSecret) == "" {
-		if env == "production" {
-			log.Printf("JWT_SECRET_KEY 未配置，生产环境请通过配置或环境变量提供")
-		} else {
-			cfg.Auth.JWTSecret = DefaultDevJWTSecret
-		}
+
+	// 检查是否在使用已废弃的默认 JWT secret
+	if strings.TrimSpace(cfg.Auth.JWTSecret) == deprecatedDefaultJWTSecret {
+		log.Printf("⚠️  警告：正在使用已废弃的默认 JWT secret '%s'", deprecatedDefaultJWTSecret)
+		log.Printf("   请立即通过配置文件或 JWT_SECRET_KEY 环境变量设置安全的密钥！")
+		log.Printf("   建议密钥长度至少 32 个字符，包含大小写字母、数字和特殊符号")
 	}
 
 	return cfg

@@ -2,7 +2,6 @@ package user
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 
@@ -31,8 +30,8 @@ func RegisterOrderRoutes(router gin.IRouter, svc *order.OrderService, authMiddle
 // @Param        Authorization  header    string                       true  "Bearer {token}"
 // @Param        request        body      order.CreateOrderRequest     true  "创建订单请求"
 // @Success      200            {object}  model.APIResponse[order.CreateOrderResponse]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /user/orders [post]
 func createOrderHandler(c *gin.Context, svc *order.OrderService) {
 	userID := getUserIDFromContext(c)
@@ -67,14 +66,17 @@ func getOrderMessagesHandler(c *gin.Context, svc *order.OrderService) {
 
 // getMyOrdersHandler 获取我的订单列表
 // @Summary      获取我的订单列表
-// @Description  API endpoint// @Accept       json
+// @Description  获取当前用户的订单列表，支持状态过滤和分页
+// @Tags         User - Orders
+// @Security     BearerAuth
+// @Accept       json
 // @Produce      json
-// @Param        Authorization  header    string  true   "Bearer {token}"
-// @Param        status         query    string       false  "Status filter"// @Param        page           query     int     false  "页码"
-// @Param        pageSize       query     int     false  "每页数量"
-// @Success      200            {object}  model.APIResponse[order.MyOrderListResponse]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Param        status    query     string     false  "Status filter" Enums(pending,confirmed,in_progress,completed,canceled,refunded)
+// @Param        page      query     int        false  "Page number" default(1)
+// @Param        pageSize  query     int        false  "Page size" default(20)
+// @Success      200       {object}  model.APIResponse[order.MyOrderListResponse]
+// @Failure      400       {object}  model.ErrorResponse
+// @Failure      401       {object}  model.ErrorResponse
 // @Router       /user/orders [get]
 func getMyOrdersHandler(c *gin.Context, svc *order.OrderService) {
 	userID := getUserIDFromContext(c)
@@ -101,22 +103,21 @@ func getMyOrdersHandler(c *gin.Context, svc *order.OrderService) {
 
 // getOrderDetailHandler 获取订单详情
 // @Summary      获取订单详情
-// @Description  获取订单详细信息
+// @Description  获取指定订单的详细信息
 // @Tags         User - Orders
+// @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Param        Authorization  header    string  true  "Bearer {token}"
-// @Param        id             path      int     true  "订单ID"
-// @Success      200            {object}  model.APIResponse[order.OrderDetailResponse]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
-// @Failure      404            {object}  model.APIResponse[any]
+// @Param        id    path      uint64  true  "订单ID"
+// @Success      200   {object}  model.APIResponse[order.OrderDetailResponse]
+// @Failure      400   {object}  model.ErrorResponse
+// @Failure      401   {object}  model.ErrorResponse
+// @Failure      404   {object}  model.ErrorResponse
 // @Router       /user/orders/{id} [get]
 func getOrderDetailHandler(c *gin.Context, svc *order.OrderService) {
 	userID := getUserIDFromContext(c)
 
-	idStr := c.Param("id")
-	orderID, err := strconv.ParseUint(idStr, 10, 64)
+	orderID, err := parseUintParam(c, "id")
 	if err != nil {
 		respondError(c, http.StatusBadRequest, apierr.ErrInvalidID)
 		return
@@ -146,22 +147,22 @@ func getOrderDetailHandler(c *gin.Context, svc *order.OrderService) {
 
 // cancelOrderHandler 取消订单
 // @Summary      取消订单
-// @Description  用户取消订单
+// @Description  用户取消指定订单
 // @Tags         User - Orders
+// @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Param        Authorization  header    string                     true  "Bearer {token}"
-// @Param        id             path      int                        true  "订单ID"
-// @Param        request        body      order.CancelOrderRequest   true  "取消原因"
-// @Success      200            {object}  model.APIResponse[any]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Param        id       path      uint64                     true  "订单ID"
+// @Param        request  body      order.CancelOrderRequest   true  "取消原因"
+// @Success      200      {object}  model.SuccessResponse
+// @Failure      400      {object}  model.ErrorResponse
+// @Failure      401      {object}  model.ErrorResponse
+// @Failure      404      {object}  model.ErrorResponse
 // @Router       /user/orders/{id}/cancel [put]
 func cancelOrderHandler(c *gin.Context, svc *order.OrderService) {
 	userID := getUserIDFromContext(c)
 
-	idStr := c.Param("id")
-	orderID, err := strconv.ParseUint(idStr, 10, 64)
+	orderID, err := parseUintParam(c, "id")
 	if err != nil {
 		respondError(c, http.StatusBadRequest, apierr.ErrInvalidID)
 		return
@@ -197,19 +198,19 @@ func cancelOrderHandler(c *gin.Context, svc *order.OrderService) {
 // @Summary      完成订单
 // @Description  用户确认订单完成
 // @Tags         User - Orders
+// @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Param        Authorization  header    string  true  "Bearer {token}"
-// @Param        id             path      int     true  "订单ID"
-// @Success      200            {object}  model.APIResponse[any]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Param        id    path      uint64  true  "订单ID"
+// @Success      200   {object}  model.SuccessResponse
+// @Failure      400   {object}  model.ErrorResponse
+// @Failure      401   {object}  model.ErrorResponse
+// @Failure      404   {object}  model.ErrorResponse
 // @Router       /user/orders/{id}/complete [put]
 func completeOrderHandler(c *gin.Context, svc *order.OrderService) {
 	userID := getUserIDFromContext(c)
 
-	idStr := c.Param("id")
-	orderID, err := strconv.ParseUint(idStr, 10, 64)
+	orderID, err := parseUintParam(c, "id")
 	if err != nil {
 		respondError(c, http.StatusBadRequest, apierr.ErrInvalidID)
 		return

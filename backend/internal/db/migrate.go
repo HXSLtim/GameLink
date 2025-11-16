@@ -290,6 +290,9 @@ func ensureSuperAdmin(db *gorm.DB) error {
 		if env == "production" {
 			return errors.New("SUPER_ADMIN_EMAIL or SUPER_ADMIN_PHONE must be set in production")
 		}
+		log.Printf("⚠️  警告：未配置超级管理员邮箱或手机号，使用示例邮箱 'admin@gamelink.local'")
+		log.Printf("   开发环境可以在配置文件中设置 super_admin.email 和 super_admin.password")
+		log.Printf("   生产环境必须设置 SUPER_ADMIN_EMAIL、SUPER_ADMIN_PASSWORD 环境变量")
 		email = "admin@gamelink.local"
 	}
 
@@ -297,7 +300,12 @@ func ensureSuperAdmin(db *gorm.DB) error {
 		if env == "production" {
 			return errors.New("SUPER_ADMIN_PASSWORD must be set in production")
 		}
+		log.Printf("⚠️  警告：未配置超级管理员密码，使用示例密码")
+		log.Printf("   请务必在开发完成后修改默认密码！")
 		password = "Admin@123456"
+	} else if password == "Admin@123456" || password == "123456" {
+		log.Printf("⚠️  警告：超级管理员正在使用弱密码 '%s'", password)
+		log.Printf("   建议修改为包含大小写字母、数字和特殊符号的强密码")
 	}
 
 	// Avoid unique constraint conflicts when phone 为空且已有空手机号行

@@ -10,12 +10,12 @@ import (
 	"gamelink/internal/repository"
 )
 
-// UserRepository å®ç°ç¨æ·ç®¡çä»å¨ã?
+// gormUserRepository implements user management repository
 type gormUserRepository struct {
 	db *gorm.DB
 }
 
-// NewUserRepository åå»ºç¨æ·ä»å¨ã?
+// NewUserRepository creates a new user repository instance
 func NewUserRepository(db *gorm.DB) repository.UserRepository {
 	return &gormUserRepository{db: db}
 }
@@ -29,7 +29,7 @@ func (r *gormUserRepository) List(ctx context.Context) ([]model.User, error) {
 	return users, nil
 }
 
-// ListPaged è¿ååé¡µç¨æ·åè¡¨ä¸æ»æ°ã?
+// ListPaged returns paginated user list and total count
 // ListPaged returns a page of users and the total count.
 func (r *gormUserRepository) ListPaged(ctx context.Context, page, pageSize int) ([]model.User, int64, error) {
 	page = repository.NormalizePage(page)

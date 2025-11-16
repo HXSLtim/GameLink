@@ -30,8 +30,8 @@ func RegisterGiftRoutes(router gin.IRouter, svc *gift.GiftService, authMiddlewar
 // @Param        page           query     int     false  "页码"
 // @Param        pageSize       query     int     false  "每页数量"
 // @Success      200            {object}  model.APIResponse[gift.ReceivedGiftsResponse]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /player/gifts/received [get]
 func getReceivedGiftsHandler(c *gin.Context, svc *gift.GiftService) {
 	userID := getUserIDFromContext(c)
@@ -63,8 +63,8 @@ func getReceivedGiftsHandler(c *gin.Context, svc *gift.GiftService) {
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
 // @Success      200            {object}  model.APIResponse[gift.GiftStatsResponse]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /player/gifts/stats [get]
 func getGiftStatsHandler(c *gin.Context, svc *gift.GiftService) {
 	userID := getUserIDFromContext(c)

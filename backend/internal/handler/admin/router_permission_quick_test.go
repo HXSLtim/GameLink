@@ -173,7 +173,9 @@ func (routerPayments) Delete(_ context.Context, _ uint64) error         { return
 func setupAdminRouterForAuth(pm *mw.PermissionMiddleware) *gin.Engine {
 	r := newTestEngine()
 	svc := adminservice.NewAdminService(routerGameRepo{}, routerUsers{}, routerPlayers{}, routerOrders{}, routerPayments{}, routerRoleRepo{}, cache.NewMemory())
-	RegisterRoutes(r, svc, pm)
+	// 实际运行时，所有后台路由都挂载在 /admin 分组下，这里保持一致
+	adminGroup := r.Group("/admin")
+	RegisterRoutes(adminGroup, svc, pm)
 	return r
 }
 

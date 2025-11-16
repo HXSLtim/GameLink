@@ -648,30 +648,30 @@ func TestReportChatMessageHandler_InvalidJSON(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
-func TestParseUintFromParam_Success(t *testing.T) {
+func TestParseUintParam_Success(t *testing.T) {
 	c, _ := createTestContext()
 	c.Params = []gin.Param{{Key: "id", Value: "123"}}
 
-	result, err := parseUintFromParam(c, "id")
+	result, err := parseUintParam(c, "id")
 
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(123), result)
 }
 
-func TestParseUintFromParam_InvalidValue(t *testing.T) {
+func TestParseUintParam_InvalidValue(t *testing.T) {
 	c, _ := createTestContext()
 	c.Params = []gin.Param{{Key: "id", Value: "invalid"}}
 
-	_, err := parseUintFromParam(c, "id")
+	_, err := parseUintParam(c, "id")
 
 	assert.Error(t, err)
 }
 
-func TestParseUintFromParam_NegativeValue(t *testing.T) {
+func TestParseUintParam_NegativeValue(t *testing.T) {
 	c, _ := createTestContext()
 	c.Params = []gin.Param{{Key: "id", Value: "-1"}}
 
-	_, err := parseUintFromParam(c, "id")
+	_, err := parseUintParam(c, "id")
 
 	assert.Error(t, err)
 }

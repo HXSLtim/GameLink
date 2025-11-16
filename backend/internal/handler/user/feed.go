@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"gamelink/internal/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/service"
 	feedservice "gamelink/internal/service/feed"
@@ -29,10 +30,10 @@ func RegisterFeedRoutes(router gin.IRouter, svc *feedservice.Service, authMiddle
 // @Produce      json
 // @Param        Authorization  header    string                          true  "Bearer {token}"
 // @Param        request        body      feedservice.CreateFeedRequest   true  "Feed content"
-// @Success      200            {object}  model.APIResponse[any]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
-// @Failure      500            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
 // @Router       /user/feeds [post]
 func createFeedHandler(c *gin.Context, svc *feedservice.Service) {
 	userID := getUserIDFromContext(c)
@@ -67,10 +68,10 @@ func createFeedHandler(c *gin.Context, svc *feedservice.Service) {
 // @Param        Authorization  header    string  true   "Bearer {token}"
 // @Param        limit          query     int     false  "Limit (default 20)"
 // @Param        cursor         query     string  false  "Cursor for pagination"
-// @Success      200            {object}  model.APIResponse[any]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
-// @Failure      500            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
 // @Router       /user/feeds [get]
 func listFeedsHandler(c *gin.Context, svc *feedservice.Service) {
 	userID := getUserIDFromContext(c)
@@ -105,17 +106,16 @@ func listFeedsHandler(c *gin.Context, svc *feedservice.Service) {
 // @Param        Authorization  header    string              true  "Bearer {token}"
 // @Param        id             path      int                 true  "Feed ID"
 // @Param        request        body      object{reason=string}  true  "Report reason"
-// @Success      200            {object}  model.APIResponse[any]
-// @Failure      400            {object}  model.APIResponse[any]
-// @Failure      401            {object}  model.APIResponse[any]
-// @Failure      500            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
 // @Router       /user/feeds/{id}/report [post]
 func reportFeedHandler(c *gin.Context, svc *feedservice.Service) {
 	userID := getUserIDFromContext(c)
-	idParam := c.Param("id")
-	feedID, err := strconv.ParseUint(idParam, 10, 64)
+	feedID, err := parseUintParam(c, "id")
 	if err != nil {
-		respondError(c, http.StatusBadRequest, "feedId 无效")
+		respondError(c, http.StatusBadRequest, apierr.ErrInvalidID)
 		return
 	}
 	var body struct {
