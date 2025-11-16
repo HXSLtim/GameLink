@@ -3,7 +3,7 @@
 [![Go Version](https://img.shields.io/badge/Go-1.25.3+-00ADD8?style=flat&logo=go)](https://golang.org/)
 [![React Version](https://img.shields.io/badge/React-18+-61DAFB?style=flat&logo=react)](https://reactjs.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen)](https://github.com/your-org/GameLink/actions)
+[![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen)](https://github.com/HXSLtim/GameLink/actions)
 [![Coverage](https://img.shields.io/badge/Coverage-76.4%25-yellow)](backend/LATEST_COVERAGE_REPORT.md)
 
 **Go + React 全栈项目 | 智能订单分发 | 多角色管理 | 实时通讯**
@@ -35,7 +35,7 @@ GameLink 是一个现代化的游戏陪玩管理平台，采用 Go 后端 + Reac
 ### 一键启动
 ```bash
 # 克隆项目
-git clone https://github.com/your-org/GameLink.git
+git clone https://github.com/HXSLtim/GameLink.git
 cd GameLink
 
 # 使用快速启动脚本
@@ -210,9 +210,9 @@ docker-compose ps
 - 通过所有 CI 检查
 
 ### 问题反馈
-- 📋 **功能建议**: [Issues](https://github.com/your-org/GameLink/issues)
-- 🐛 **Bug报告**: [Issues](https://github.com/your-org/GameLink/issues)
-- 💬 **技术讨论**: [Discussions](https://github.com/your-org/GameLink/discussions)
+- 📋 **功能建议**: [Issues](https://github.com/HXSLtim/GameLink/issues)
+- 🐛 **Bug报告**: [Issues](https://github.com/HXSLtim/GameLink/issues)
+- 💬 **技术讨论**: [Discussions](https://github.com/HXSLtim/GameLink/discussions)
 
 ---
 
@@ -220,11 +220,11 @@ docker-compose ps
 
 ### 🏢 团队信息
 - **项目负责人**: GameLink开发团队
-- **技术支持**: dev-team@gamelink.com
+- **技术支持**: a2778978136@63.com
 - **商务合作**: business@gamelink.com
 
 ### 📱 更多资源
-- **官方网站**: https://gamelink.com
+- **项目仓库**: https://github.com/HXSLtim/GameLink.git
 - **技术博客**: https://blog.gamelink.com
 - **在线演示**: https://demo.gamelink.com
 

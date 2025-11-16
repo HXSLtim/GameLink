@@ -1,5 +1,10 @@
 module gamelink
 
+// GameLink - 现代化游戏陪玩管理平台
+// 采用 Go 后端 + React 前端的架构，为游戏陪玩服务提供高效的订单分发、用户管理和陪玩师管理功能
+// 核心功能：智能订单分发、多角色管理、实时通讯、完整支付、数据监控、安全认证
+// 仓库地址：https://github.com/HXSLtim/GameLink.git
+
 go 1.25.3
 
 require (
@@ -25,6 +30,7 @@ require (
 require (
 	github.com/alicebob/gopher-json v0.0.0-20230218143504-906a9b012302 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/google/wire v0.7.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/yuin/gopher-lua v1.1.1 // indirect

@@ -2,8 +2,29 @@
   "name": "gamelink-admin",
   "version": "0.1.0",
   "private": true,
-  "description": "GameLink 管理端（React + Vite + Arco Design）",
+  "description": "GameLink 是一个现代化的游戏陪玩管理平台，采用 Go 后端 + React 前端的架构，为游戏陪玩服务提供高效的订单分发、用户管理和陪玩师管理功能。核心功能 🎯 智能订单分发 - 自动匹配用户与陪玩师，支持抢单池和客服指派 👥 多角色管理 - 用户/陪玩师/管理员权限体系 💬 实时通讯 - WebSocket 即时通讯，支持群聊和私聊 💳 完整支付 - 订单支付、退款、收益结算一体化 📊 数据监控 - 实时订单状态、收益统计、系统指标 🔐 安全认证 - JWT + RBAC 权限控制",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HXSLtim/GameLink.git"
+  },
+  "homepage": "https://github.com/HXSLtim/GameLink#readme",
+  "bugs": {
+    "url": "https://github.com/HXSLtim/GameLink/issues"
+  },
+  "author": "GameLink开发团队",
+  "license": "MIT",
+  "keywords": [
+    "game-link",
+    "gaming",
+    "escort",
+    "陪玩",
+    "订单管理",
+    "react",
+    "typescript",
+    "vite",
+    "arco-design"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "vite build",
