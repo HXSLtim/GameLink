@@ -7,6 +7,7 @@ import (
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
+	repoiface "gamelink/internal/repository/interfaces"
 	"gamelink/internal/repository/ranking"
 )
 
@@ -21,14 +22,14 @@ var (
 type RankingService struct {
 	rankings    ranking.RankingRepository
 	commissions ranking.RankingCommissionRepository
-	orders      repository.OrderRepository
+	orders      repoiface.OrderQuery
 }
 
 // NewRankingService 创建排名服务
 func NewRankingService(
 	rankings ranking.RankingRepository,
 	commissions ranking.RankingCommissionRepository,
-	orders repository.OrderRepository,
+	orders repoiface.OrderQuery,
 ) *RankingService {
 	return &RankingService{
 		rankings:    rankings,
@@ -44,7 +45,7 @@ func (s *RankingService) CalculateMonthlyRankings(ctx context.Context, month str
 	monthStart, _ := time.Parse("2006-01", month)
 	monthEnd := monthStart.AddDate(0, 1, 0)
 
-	orders, _, err := s.orders.List(ctx, repository.OrderListOptions{
+	orders, _, err := s.orders.List(ctx, repoiface.OrderListOptions{
 		DateFrom: &monthStart,
 		DateTo:   &monthEnd,
 		Statuses: []model.OrderStatus{model.OrderStatusCompleted},

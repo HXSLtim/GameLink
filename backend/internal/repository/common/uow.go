@@ -6,11 +6,12 @@ import (
 	"gorm.io/gorm"
 
 	"gamelink/internal/repository"
-	"gamelink/internal/repository/game"
+	gameRepo "gamelink/internal/repository/game"
+	orderrepo "gamelink/internal/repository/implementations"
+	repoiface "gamelink/internal/repository/interfaces"
 	operationlog "gamelink/internal/repository/operation_log"
-	"gamelink/internal/repository/order"
 	"gamelink/internal/repository/payment"
-	"gamelink/internal/repository/player"
+	playerrepo "gamelink/internal/repository/player"
 	playertag "gamelink/internal/repository/player_tag"
 	"gamelink/internal/repository/review"
 	"gamelink/internal/repository/user"
@@ -21,7 +22,7 @@ type Repos struct {
 	Games    repository.GameRepository
 	Users    repository.UserRepository
 	Players  repository.PlayerRepository
-	Orders   repository.OrderRepository
+	Orders   repoiface.OrderRepository
 	Payments repository.PaymentRepository
 	Tags     repository.PlayerTagRepository
 	OpLogs   repository.OperationLogRepository
@@ -41,10 +42,10 @@ func NewUnitOfWork(db *gorm.DB) *UnitOfWork { return &UnitOfWork{db: db} }
 func (u *UnitOfWork) WithTx(ctx context.Context, fn func(r *Repos) error) error {
 	return u.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		r := &Repos{
-			Games:    game.NewGameRepository(tx),
+			Games:    gameRepo.NewGameRepository(tx),
 			Users:    user.NewUserRepository(tx),
-			Players:  player.NewPlayerRepository(tx),
-			Orders:   order.NewOrderRepository(tx),
+			Players:  playerrepo.NewPlayerRepository(tx),
+			Orders:   orderrepo.NewOrderRepository(tx),
 			Payments: payment.NewPaymentRepository(tx),
 			Tags:     playertag.NewPlayerTagRepository(tx),
 			OpLogs:   operationlog.NewOperationLogRepository(tx),

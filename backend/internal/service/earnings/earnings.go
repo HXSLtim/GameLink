@@ -7,6 +7,7 @@ import (
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
+	repoiface "gamelink/internal/repository/interfaces"
 	withdrawrepo "gamelink/internal/repository/withdraw"
 )
 
@@ -43,14 +44,14 @@ const (
 // 3. 提现管理
 type EarningsService struct {
 	players   repository.PlayerRepository
-	orders    repository.OrderRepository
+	orders    repoiface.OrderQuery
 	withdraws withdrawrepo.WithdrawRepository
 }
 
 // NewEarningsService 创建收益服务
 func NewEarningsService(
 	players repository.PlayerRepository,
-	orders repository.OrderRepository,
+	orders repoiface.OrderQuery,
 	withdraws withdrawrepo.WithdrawRepository,
 ) *EarningsService {
 	return &EarningsService{
@@ -307,7 +308,7 @@ func (s *EarningsService) GetWithdrawHistory(ctx context.Context, userID uint64,
 // calculateEarnings 计算收益
 func (s *EarningsService) calculateEarnings(ctx context.Context, playerID *uint64, dateFrom, dateTo *time.Time) (int64, error) {
 	// 查询已完成的订单
-	orders, _, err := s.orders.List(ctx, repository.OrderListOptions{
+	orders, _, err := s.orders.List(ctx, repoiface.OrderListOptions{
 		PlayerID: playerID,
 		Statuses: []model.OrderStatus{model.OrderStatusCompleted},
 		DateFrom: dateFrom,
@@ -329,7 +330,7 @@ func (s *EarningsService) calculateEarnings(ctx context.Context, playerID *uint6
 
 // countOrders 统计订单数
 func (s *EarningsService) countOrders(ctx context.Context, playerID *uint64, dateFrom, dateTo *time.Time) (int64, error) {
-	_, total, err := s.orders.List(ctx, repository.OrderListOptions{
+	_, total, err := s.orders.List(ctx, repoiface.OrderListOptions{
 		PlayerID: playerID,
 		Statuses: []model.OrderStatus{model.OrderStatusCompleted},
 		DateFrom: dateFrom,

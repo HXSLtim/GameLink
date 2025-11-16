@@ -11,6 +11,7 @@ import (
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	commissionrepo "gamelink/internal/repository/commission"
+	repoiface "gamelink/internal/repository/interfaces"
 )
 
 var (
@@ -27,14 +28,14 @@ var (
 // CommissionService 抽成服务
 type CommissionService struct {
 	commissions commissionrepo.CommissionRepository
-	orders      repository.OrderRepository
+	orders      repoiface.OrderReader
 	players     repository.PlayerRepository
 }
 
 // NewCommissionService 创建抽成服务
 func NewCommissionService(
 	commissions commissionrepo.CommissionRepository,
-	orders repository.OrderRepository,
+	orders repoiface.OrderReader,
 	players repository.PlayerRepository,
 ) *CommissionService {
 	return &CommissionService{

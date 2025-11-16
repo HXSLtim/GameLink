@@ -9,6 +9,7 @@ import (
 	"gamelink/internal/cache"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
+	repoiface "gamelink/internal/repository/interfaces"
 )
 
 var (
@@ -32,7 +33,7 @@ type PlayerService struct {
 	players    repository.PlayerRepository
 	users      repository.UserRepository
 	games      repository.GameRepository
-	orders     repository.OrderRepository
+	orders     repoiface.OrderQuery
 	reviews    repository.ReviewRepository
 	playerTags repository.PlayerTagRepository
 	cache      cache.Cache
@@ -43,7 +44,7 @@ func NewPlayerService(
 	players repository.PlayerRepository,
 	users repository.UserRepository,
 	games repository.GameRepository,
-	orders repository.OrderRepository,
+	orders repoiface.OrderQuery,
 	reviews repository.ReviewRepository,
 	playerTags repository.PlayerTagRepository,
 	cache cache.Cache,
@@ -482,7 +483,7 @@ func (s *PlayerService) getOnlineStatusKey(playerID uint64) string {
 // getPlayerOrderCount 获取陪玩师的订单数量
 func (s *PlayerService) getPlayerOrderCount(ctx context.Context, playerID uint64) (int64, error) {
 	playerIDPtr := &playerID
-	orders, total, err := s.orders.List(ctx, repository.OrderListOptions{
+	orders, total, err := s.orders.List(ctx, repoiface.OrderListOptions{
 		PlayerID: playerIDPtr,
 		Page:     1,
 		PageSize: 1,
@@ -499,7 +500,7 @@ func (s *PlayerService) getPlayerStats(ctx context.Context, playerID uint64) (Pl
 	playerIDPtr := &playerID
 
 	// 总订单数
-	_, total, err := s.orders.List(ctx, repository.OrderListOptions{
+	_, total, err := s.orders.List(ctx, repoiface.OrderListOptions{
 		PlayerID: playerIDPtr,
 		Page:     1,
 		PageSize: 1,
@@ -509,7 +510,7 @@ func (s *PlayerService) getPlayerStats(ctx context.Context, playerID uint64) (Pl
 	}
 
 	// 已完成订单数
-	_, completed, err := s.orders.List(ctx, repository.OrderListOptions{
+	_, completed, err := s.orders.List(ctx, repoiface.OrderListOptions{
 		PlayerID: playerIDPtr,
 		Statuses: []model.OrderStatus{model.OrderStatusCompleted},
 		Page:     1,
@@ -584,7 +585,7 @@ func (s *PlayerService) calculateGoodRatio(ctx context.Context, playerID uint64)
 // 响应时间 = 订单开始时间 - 订单创建时间
 func (s *PlayerService) calculateAvgResponseTime(ctx context.Context, playerID uint64) int {
 	playerIDPtr := &playerID
-	orders, _, err := s.orders.List(ctx, repository.OrderListOptions{
+	orders, _, err := s.orders.List(ctx, repoiface.OrderListOptions{
 		PlayerID: playerIDPtr,
 		Statuses: []model.OrderStatus{
 			model.OrderStatusInProgress,
@@ -619,7 +620,7 @@ func (s *PlayerService) calculateAvgResponseTime(ctx context.Context, playerID u
 // 复购率 = 有过多次下单的用户数 / 总用户数
 func (s *PlayerService) calculateRepeatRate(ctx context.Context, playerID uint64) float32 {
 	playerIDPtr := &playerID
-	orders, _, err := s.orders.List(ctx, repository.OrderListOptions{
+	orders, _, err := s.orders.List(ctx, repoiface.OrderListOptions{
 		PlayerID: playerIDPtr,
 		Statuses: []model.OrderStatus{model.OrderStatusCompleted},
 		Page:     1,

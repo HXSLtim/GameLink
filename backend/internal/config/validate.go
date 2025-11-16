@@ -8,6 +8,7 @@ import (
 )
 
 // Validate checks configuration for required values in production.
+// This function is deprecated, use ValidateAllConfig instead for comprehensive validation.
 func Validate(env string, cfg AppConfig) error {
 	// 生产环境验证
 	if env == "production" {

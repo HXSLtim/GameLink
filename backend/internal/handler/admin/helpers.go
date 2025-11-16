@@ -11,6 +11,7 @@ import (
 	apierr "gamelink/internal/handler"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
+	repoiface "gamelink/internal/repository/interfaces"
 )
 
 func parseUintParam(c *gin.Context, key string) (uint64, error) {
@@ -141,10 +142,10 @@ func parsePagination(c *gin.Context) (int, int, bool) {
 }
 
 // buildOrderListOptions parses query parameters into OrderListOptions; on error responds and returns false.
-func buildOrderListOptions(c *gin.Context) (repository.OrderListOptions, bool) {
+func buildOrderListOptions(c *gin.Context) (repoiface.OrderListOptions, bool) {
 	page, pageSize, ok := parsePagination(c)
 	if !ok {
-		return repository.OrderListOptions{}, false
+		return repoiface.OrderListOptions{}, false
 	}
 
 	statusTokens := parseCSVParams(c.QueryArray("status"))
@@ -156,30 +157,30 @@ func buildOrderListOptions(c *gin.Context) (repository.OrderListOptions, bool) {
 	userID, err := queryUint64Ptr(c, "user_id")
 	if err != nil {
 		writeJSONError(c, 400, apierr.ErrInvalidUserID)
-		return repository.OrderListOptions{}, false
+		return repoiface.OrderListOptions{}, false
 	}
 	playerID, err := queryUint64Ptr(c, "player_id")
 	if err != nil {
 		writeJSONError(c, 400, apierr.ErrInvalidPlayerID)
-		return repository.OrderListOptions{}, false
+		return repoiface.OrderListOptions{}, false
 	}
 	gameID, err := queryUint64Ptr(c, "game_id")
 	if err != nil {
 		writeJSONError(c, 400, apierr.ErrInvalidGameID)
-		return repository.OrderListOptions{}, false
+		return repoiface.OrderListOptions{}, false
 	}
 	dateFrom, err := queryTimePtr(c, "date_from")
 	if err != nil {
 		writeJSONError(c, 400, apierr.ErrInvalidDateFrom)
-		return repository.OrderListOptions{}, false
+		return repoiface.OrderListOptions{}, false
 	}
 	dateTo, err := queryTimePtr(c, "date_to")
 	if err != nil {
 		writeJSONError(c, 400, apierr.ErrInvalidDateTo)
-		return repository.OrderListOptions{}, false
+		return repoiface.OrderListOptions{}, false
 	}
 
-	return repository.OrderListOptions{
+	return repoiface.OrderListOptions{
 		Page:     page,
 		PageSize: pageSize,
 		Statuses: statuses,

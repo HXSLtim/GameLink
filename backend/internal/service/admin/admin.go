@@ -18,6 +18,7 @@ import (
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	"gamelink/internal/repository/common"
+	repoiface "gamelink/internal/repository/interfaces"
 )
 
 var (
@@ -37,7 +38,7 @@ type AdminService struct {
 	games    repository.GameRepository
 	users    repository.UserRepository
 	players  repository.PlayerRepository
-	orders   repository.OrderRepository
+	orders   repoiface.OrderRepository
 	payments repository.PaymentRepository
 	roles    repository.RoleRepository
 	cache    cache.Cache
@@ -68,7 +69,7 @@ func NewAdminService(
 	games repository.GameRepository,
 	users repository.UserRepository,
 	players repository.PlayerRepository,
-	orders repository.OrderRepository,
+	orders repoiface.OrderRepository,
 	payments repository.PaymentRepository,
 	roles repository.RoleRepository,
 	cache cache.Cache,
@@ -843,7 +844,7 @@ type OrderRefundItem struct {
 }
 
 // ListOrders 列出订单。
-func (s *AdminService) ListOrders(ctx context.Context, opts repository.OrderListOptions) ([]model.Order, *model.Pagination, error) {
+func (s *AdminService) ListOrders(ctx context.Context, opts repoiface.OrderListOptions) ([]model.Order, *model.Pagination, error) {
 	normalized := opts
 	normalized.Page = repository.NormalizePage(opts.Page)
 	normalized.PageSize = repository.NormalizePageSize(opts.PageSize)

@@ -1,91 +1,133 @@
 # GameLink 项目文档索引
 
-## 📁 文档结构
+## 📚 文档概览
 
-### 核心文档 (/)
-- **[README.md](README.md)** - 项目总体说明
-- **[CLAUDE.md](CLAUDE.md)** - 开发指南和最佳实践
+本文档索引提供了 GameLink 项目的所有重要文档的快速导航。
 
-### 📊 报告文档 (reports/)
-- **[DOCUMENT_ORGANIZATION_REPORT.md](reports/DOCUMENT_ORGANIZATION_REPORT.md)** - 文档整理完成报告
-- **[PROJECT_CLEANUP_REPORT.md](reports/PROJECT_CLEANUP_REPORT.md)** - 项目清理报告
-- **[PROJECT_STATUS_REPORT.md](reports/PROJECT_STATUS_REPORT.md)** - 项目状态报告
-- **[RBAC_AND_TEST_COVERAGE_REPORT.md](reports/RBAC_AND_TEST_COVERAGE_REPORT.md)** - RBAC权限系统与测试覆盖率报告
-- **[RBAC_FINE_GRAINED_UPGRADE_COMPLETE.md](reports/RBAC_FINE_GRAINED_UPGRADE_COMPLETE.md)** - RBAC细粒度权限升级完成报告
-- **[RBAC_IMPLEMENTATION_COMPLETE.md](reports/RBAC_IMPLEMENTATION_COMPLETE.md)** - RBAC实现完成报告
-- **[RBAC_INVESTIGATION_COMPLETE.md](reports/RBAC_INVESTIGATION_COMPLETE.md)** - RBAC调查完成报告
-- **[TEST_FIXES_AND_RBAC_ENHANCEMENT_REPORT.md](reports/TEST_FIXES_AND_RBAC_ENHANCEMENT_REPORT.md)** - 测试修复与RBAC增强报告
-- **[前后端接口整理报告.md](reports/前后端接口整理报告.md)** - 前后端API接口整理报告
+## 🏗️ 架构文档
 
-### 📚 指南文档 (guides/)
-- **[AGENTS.md](guides/AGENTS.md)** - AI开发指南
-- **[BACKEND_NAMING_REVIEW.md](guides/BACKEND_NAMING_REVIEW.md)** - 后端命名规范审查
-- **[CAMELCASE_NAMING_UNIFICATION.md](guides/CAMELCASE_NAMING_UNIFICATION.md)** - 驼峰命名统一指南
-- **[CONTRIBUTING.md](guides/CONTRIBUTING.md)** - 贡献指南
-- **[NAMING_CONVENTION_UPDATE.md](guides/NAMING_CONVENTION_UPDATE.md)** - 命名规范更新
-- **[optimization_guide.md](guides/optimization_guide.md)** - 性能优化指南
-- **[project-structure.md](guides/project-structure.md)** - 项目结构说明
+### 核心架构
+- [**后端架构重构计划**](BACKEND_ARCHITECTURE_REFACTOR_PLAN.md) - 后端架构分析与系统性重构方案
+- [**架构设计**](../ARCHITECTURE.md) - 项目整体架构设计文档
+- [**设计概览**](../DESIGN_OVERVIEW.md) - 系统设计概览
+- [**API 文档**](../API.md) - API 接口文档
 
-### 🔧 API标准 (api/)
-- **[api-design-standards.md](api/api-design-standards.md)** - API设计标准
-- **[go-coding-standards.md](api/go-coding-standards.md)** - Go编码规范
+### 数据库设计
+- [**数据库设计**](database-design.mdc) - 数据库设计和 GORM 使用规范
 
-### 📦 历史归档 (archive/)
-包含项目的历史文档、开发记录、迁移文档等：
-- CamelCase迁移文档
-- RBAC相关文档
-- 功能增强文档
-- 修复报告
-- 测试文档
-
----
-
-## 📋 快速导航
-
-### 新开发者
-1. 阅读 **[README.md](README.md)** 了解项目概况
-2. 查看 **[project-structure.md](guides/project-structure.md)** 熟悉项目结构
-3. 阅读 **[CONTRIBUTING.md](guides/CONTRIBUTING.md)** 学习贡献流程
-
-### 架构师/技术负责人
-1. **[api-design-standards.md](api/api-design-standards.md)** - API设计标准
-2. **[go-coding-standards.md](api/go-coding-standards.md)** - Go编码规范
-3. **[optimization_guide.md](guides/optimization_guide.md)** - 性能优化指南
+## 🔧 开发文档
 
 ### 后端开发
-1. **[BACKEND_NAMING_REVIEW.md](guides/BACKEND_NAMING_REVIEW.md)** - 后端命名规范
-2. **[CAMELCASE_NAMING_UNIFICATION.md](guides/CAMELCASE_NAMING_UNIFICATION.md)** - 命名统一指南
-3. **测试报告** - 查看reports/目录了解测试状态
+- [**后端编码规范**](../backend/CODING_STANDARDS.md) - Go 后端编码标准
+- [**后端项目指南**](../backend/PROJECT_GUIDELINES.md) - 后端开发指导
+- [**Go 编码标准**](api/go-coding-standards.md) - Go 语言编码规范
 
 ### 前端开发
-1. **项目结构** - 查看 **[project-structure.md](guides/project-structure.md)**
-2. **API接口** - 查看 **[前后端接口整理报告.md](reports/前后端接口整理报告.md)**
+- [**前端开发指南**](USER_SIDE_IMPLEMENTATION.md) - 前端开发实现指南
+- [**用户侧规划**](USER_SIDE_PLANNING.md) - 用户端功能规划
+- [**用户侧快速开始**](USER_SIDE_QUICKSTART.md) - 前端开发快速入门
 
-### 运维/部署
-1. **[optimization_guide.md](guides/optimization_guide.md)** - 性能优化
-2. **[PROJECT_CLEANUP_REPORT.md](reports/PROJECT_CLEANUP_REPORT.md)** - 项目清理报告
+## 📋 业务文档
+
+### 需求分析
+- [**业务需求分析**](BUSINESS_REQUIREMENTS_ANALYSIS.md) - 业务需求详细分析
+- [**工作流程 C**](WORKFLOW_C_IMPLEMENTATION_GUIDE.md) - 工作流程 C 实现指南
+- [**工作流程 C 总结**](WORKFLOW_C_IMPLEMENTATION_SUMMARY.md) - 工作流程 C 实现总结
+
+### 功能设计
+- [**用户流程原型**](USER_FLOW_PROTOTYPE.md) - 用户交互流程设计
+- [**UI 设计规范**](UI_DESIGN_SPEC.md) - 用户界面设计规范
+- [**组件库文档**](COMPONENT_LIBRARY.md) - 前端组件库
+
+## 💰 财务管理
+
+### 设计与实现
+- [**财务管理需求**](FINANCIAL_MANAGEMENT_REQUIREMENTS.md) - 财务功能需求
+- [**财务管理设计**](FINANCIAL_MANAGEMENT_DESIGN.md) - 财务系统设计
+- [**财务管理实现**](FINANCIAL_MANAGEMENT_IMPLEMENTATION.md) - 财务功能实现
+- [**财务管理总结**](FINANCIAL_MANAGEMENT_SUMMARY.md) - 财务系统总结
+
+## 🚀 部署与运维
+
+### 部署指南
+- [**部署文档**](../DEPLOYMENT.md) - 系统部署指南
+- [**CI/CD 配置**](CI-CD.md) - 持续集成与部署
+- [**开发环境**](../DEVELOPMENT.md) - 开发环境搭建
+
+### 运维管理
+- [**故障排除**](../TROUBLESHOOTING.md) - 常见问题解决方案
+- [**即时通讯系统**](即时通讯系统设计文档.md) - 即时通讯系统设计
+
+## 📊 项目管理
+
+### 工作计划
+- [**工作分配计划**](WORK_DISTRIBUTION_PLAN.md) - 项目工作分配
+- [**快速参考**](WORKFLOW_C_QUICK_REFERENCE.md) - 工作流程快速参考
+
+### 归档文档
+- [**文档索引**](ARCHIVE_INDEX.md) - 归档文档索引
+- [**文档清理报告**](DOCUMENT_CLEANUP_REPORT.md) - 文档整理报告
+
+## 🔍 API 文档
+
+### 后端 API
+- [**管理端 API**](../backend/docs/ADMIN_API_COMPLETE.md) - 管理端完整 API
+- [**API 响应格式审计**](../backend/docs/API_RESPONSE_FORMAT_AUDIT_REPORT.md) - API 响应格式审计
+- [**API 响应格式修复**](../backend/docs/API_RESPONSE_FORMAT_FIX_GUIDE.md) - API 响应格式修复指南
+- [**架构总结**](../backend/docs/ARCHITECTURE_SUMMARY.md) - 后端架构总结
+
+## 📖 标准规范
+
+### 编码规范
+- [**Go 编码标准**](api/go-coding-standards.md) - Go 语言编码规范
+- [**Git 工作流程**](git-workflow.mdc) - Git 使用规范
+- [**日志记录**](logging.mdc) - 日志记录规范
+
+### 架构规范
+- [**后端架构**](backend-architecture.mdc) - 后端架构规范
+- [**数据库设计**](database-design.mdc) - 数据库设计规范
+- [**前端 API 模式**](frontend-api-patterns.mdc) - 前端 API 调用规范
+- [**前端 TypeScript React**](frontend-typescript-react.mdc) - 前端开发规范
+
+### 质量保证
+- [**后端测试**](backend-testing.mdc) - 后端测试规范
+- [**前端测试**](frontend-testing.mdc) - 前端测试规范
+- [**性能优化**](performance.mdc) - 性能优化指南
+- [**安全性**](security.mdc) - 安全性规范
+
+## 🌍 国际化文档
+
+- [**国际化指南**](INTERNATIONALIZATION.md) - 多语言国际化实现方案
+
+## 📊 文档管理
+
+- [**文档总结报告**](DOCUMENTATION_SUMMARY.md) - 项目文档全面梳理与总结
+
+## 🏷️ 标签说明
+
+- 🏗️ 架构设计相关文档
+- 🔧 开发实施相关文档  
+- 📋 业务需求相关文档
+- 💰 财务管理相关文档
+- 🚀 部署运维相关文档
+- 📊 项目管理相关文档
+- 🔍 API 接口相关文档
+- 📖 标准规范相关文档
+- 🌍 国际化相关文档
+- 📊 文档管理相关文档
+
+## 📝 文档维护
+
+### 更新记录
+- 文档由架构师和开发团队共同维护
+- 定期更新确保文档与代码同步
+- 重大变更需要更新相关文档
+
+### 贡献指南
+- 新增文档请遵循现有格式
+- 更新文档请在相应部分记录变更
+- 文档质量问题请提交 Issue 或 PR
 
 ---
 
-## 📈 文档更新说明
-
-- **定期维护**：建议每月检查文档有效性
-- **版本管理**：重要文档更新时保持版本记录
-- **新增文档**：新功能开发时及时添加文档
-
----
-
-## 🤝 文档贡献
-
-如需更新文档，请：
-1. 按照 **[CONTRIBUTING.md](guides/CONTRIBUTING.md)** 规范操作
-2. 更新本索引文件以保持导航完整
-3. 提交前检查文档格式和链接有效性
-
----
-
-**最后更新：** 2025-10-30
-
----
-
-**Generated by Claude Code** 🤖
+**注意**: 本文档索引会随项目发展持续更新。如需查找特定文档，请使用浏览器的搜索功能或按分类浏览。

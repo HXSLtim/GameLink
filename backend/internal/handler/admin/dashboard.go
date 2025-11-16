@@ -11,6 +11,7 @@ import (
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	commissionrepo "gamelink/internal/repository/commission"
+	repoiface "gamelink/internal/repository/interfaces"
 	serviceitemrepo "gamelink/internal/repository/serviceitem"
 	withdrawrepo "gamelink/internal/repository/withdraw"
 )
@@ -48,7 +49,7 @@ func RegisterDashboardRoutes(
 	router gin.IRouter,
 	userRepo repository.UserRepository,
 	playerRepo repository.PlayerRepository,
-	orderRepo repository.OrderRepository,
+	orderRepo repoiface.OrderQuery,
 	withdrawRepo withdrawrepo.WithdrawRepository,
 	serviceItemRepo serviceitemrepo.ServiceItemRepository,
 	commissionRepo commissionrepo.CommissionRepository,
@@ -85,7 +86,7 @@ func getDashboardOverviewHandler(
 	c *gin.Context,
 	userRepo repository.UserRepository,
 	playerRepo repository.PlayerRepository,
-	orderRepo repository.OrderRepository,
+	orderRepo repoiface.OrderQuery,
 	withdrawRepo withdrawrepo.WithdrawRepository,
 	serviceItemRepo serviceitemrepo.ServiceItemRepository,
 ) {
@@ -101,13 +102,13 @@ func getDashboardOverviewHandler(
 	stats.TotalPlayers = totalPlayers
 
 	// 总订单数
-	orders, total, _ := orderRepo.List(ctx, repository.OrderListOptions{Page: 1, PageSize: 1})
+	orders, total, _ := orderRepo.List(ctx, repoiface.OrderListOptions{Page: 1, PageSize: 1})
 	_ = orders
 	stats.TotalOrders = total
 
 	// 今日订单数
 	todayStart := time.Now().Truncate(24 * time.Hour)
-	todayOrders, todayTotal, _ := orderRepo.List(ctx, repository.OrderListOptions{
+	todayOrders, todayTotal, _ := orderRepo.List(ctx, repoiface.OrderListOptions{
 		DateFrom: &todayStart,
 		Page:     1,
 		PageSize: 10000,
@@ -125,7 +126,7 @@ func getDashboardOverviewHandler(
 
 	// 本月收入
 	monthStart := time.Date(time.Now().Year(), time.Now().Month(), 1, 0, 0, 0, 0, time.Now().Location())
-	monthOrders, _, _ := orderRepo.List(ctx, repository.OrderListOptions{
+	monthOrders, _, _ := orderRepo.List(ctx, repoiface.OrderListOptions{
 		DateFrom: &monthStart,
 		Statuses: []model.OrderStatus{model.OrderStatusCompleted},
 		Page:     1,
@@ -171,7 +172,7 @@ func getDashboardOverviewHandler(
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/dashboard/recent-orders [get]
-func getRecentOrdersHandler(c *gin.Context, orderRepo repository.OrderRepository) {
+func getRecentOrdersHandler(c *gin.Context, orderRepo repoiface.OrderQuery) {
 	limit := 10
 	if limitStr := c.Query("limit"); limitStr != "" {
 		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 && l <= 100 {
@@ -179,7 +180,7 @@ func getRecentOrdersHandler(c *gin.Context, orderRepo repository.OrderRepository
 		}
 	}
 
-	orders, _, err := orderRepo.List(c.Request.Context(), repository.OrderListOptions{
+	orders, _, err := orderRepo.List(c.Request.Context(), repoiface.OrderListOptions{
 		Page:     1,
 		PageSize: limit,
 	})

@@ -1,4 +1,4 @@
-package order
+package implementations
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
+	repoiface "gamelink/internal/repository/interfaces"
 )
 
 // gormOrderRepository 使用 GORM 管理订单。
@@ -16,7 +17,7 @@ type gormOrderRepository struct {
 }
 
 // NewOrderRepository 创建实例。
-func NewOrderRepository(db *gorm.DB) repository.OrderRepository {
+func NewOrderRepository(db *gorm.DB) repoiface.OrderRepository {
 	return &gormOrderRepository{db: db}
 }
 
@@ -26,7 +27,7 @@ func (r *gormOrderRepository) Create(ctx context.Context, order *model.Order) er
 }
 
 // List returns a page of orders and the total count with filters applied.
-func (r *gormOrderRepository) List(ctx context.Context, opts repository.OrderListOptions) ([]model.Order, int64, error) {
+func (r *gormOrderRepository) List(ctx context.Context, opts repoiface.OrderListOptions) ([]model.Order, int64, error) {
 	query := r.db.WithContext(ctx).Model(&model.Order{})
 
 	if len(opts.Statuses) > 0 {

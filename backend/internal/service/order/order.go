@@ -8,6 +8,7 @@ import (
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	commissionrepo "gamelink/internal/repository/commission"
+	repoiface "gamelink/internal/repository/interfaces"
 )
 
 var (
@@ -28,7 +29,7 @@ var (
 // 2. 陪玩师端订单管理（接单、开始、完成）
 // 3. 订单状态流转管理
 type OrderService struct {
-	orders      repository.OrderRepository
+	orders      repoiface.OrderRepository
 	players     repository.PlayerRepository
 	users       repository.UserRepository
 	games       repository.GameRepository
@@ -41,7 +42,7 @@ type OrderService struct {
 
 // NewOrderService 创建订单服务
 func NewOrderService(
-	orders repository.OrderRepository,
+	orders repoiface.OrderRepository,
 	players repository.PlayerRepository,
 	users repository.UserRepository,
 	games repository.GameRepository,
@@ -194,51 +195,24 @@ type CompleteOrderRequest struct {
 // CreateOrder 创建订单（用户端）
 func (s *OrderService) CreateOrder(ctx context.Context, userID uint64, req CreateOrderRequest) (*CreateOrderResponse, error) {
 	// 验证陪玩师
-	player, err := s.players.Get(ctx, req.PlayerID)
+	player, err := s.validateCreateOrder(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 
 	// 验证游戏
-	_, err = s.games.Get(ctx, req.GameID)
-	if err != nil {
-		return nil, err
-	}
+	// 已在 validateCreateOrder 中完成
 
 	// 从陪玩师时薪计算价格（简化版本）
 	// TODO: 后续集成 ServiceItem，从 service_items 表获取价格
-	hourlyRate := player.HourlyRateCents
-	totalPrice := int64(float32(hourlyRate) * req.DurationHours)
+	totalPrice, commissionCents, playerIncomeCents := s.calculateOrderPricing(player, req)
 
 	// 默认抽成20%
-	commissionRate := 20
-	commissionCents := totalPrice * int64(commissionRate) / 100
-	playerIncomeCents := totalPrice - commissionCents
+	// 已在 calculateOrderPricing 中体现
 
 	// 计算结束时间
-	scheduledEnd := req.ScheduledStart.Add(time.Duration(req.DurationHours * float32(time.Hour)))
-
 	// 创建订单（使用新的 Order 结构）
-	playerID := req.PlayerID
-	gameID := req.GameID
-	order := &model.Order{
-		OrderNo:           model.GenerateEscortOrderNo(),
-		UserID:            userID,
-		ItemID:            1, // TODO: 需要从 service_items 选择对应的服务项
-		PlayerID:          &playerID,
-		GameID:            &gameID,
-		Quantity:          1,
-		UnitPriceCents:    totalPrice,
-		TotalPriceCents:   totalPrice,
-		CommissionCents:   commissionCents,
-		PlayerIncomeCents: playerIncomeCents,
-		Currency:          model.CurrencyCNY,
-		Status:            model.OrderStatusPending,
-		Title:             req.Title,
-		Description:       req.Description,
-		ScheduledStart:    req.ScheduledStart,
-		ScheduledEnd:      &scheduledEnd,
-	}
+	order := s.buildOrderForCreation(userID, req, totalPrice, commissionCents, playerIncomeCents)
 
 	if err := s.orders.Create(ctx, order); err != nil {
 		return nil, err
@@ -262,7 +236,7 @@ func (s *OrderService) GetMyOrders(ctx context.Context, userID uint64, req MyOrd
 	}
 
 	// 构建查询条件
-	opts := repository.OrderListOptions{
+	opts := repoiface.OrderListOptions{
 		UserID:   &userID,
 		Page:     req.Page,
 		PageSize: req.PageSize,
@@ -701,7 +675,7 @@ func (s *OrderService) GetAvailableOrders(ctx context.Context, req AvailableOrde
 	}
 
 	// 构建查询条件：查询已支付但未接单的订单
-	opts := repository.OrderListOptions{
+	opts := repoiface.OrderListOptions{
 		Statuses: []model.OrderStatus{model.OrderStatusConfirmed},
 		GameID:   req.GameID,
 		Page:     req.Page,

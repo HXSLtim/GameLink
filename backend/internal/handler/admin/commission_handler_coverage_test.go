@@ -645,7 +645,9 @@ func TestRegisterCommissionRoutes_Coverage(t *testing.T) {
 	svc := commission.NewCommissionService(commRepo, orderRepo, playerRepo)
 	scheduler := &fakeScheduler{}
 
-	RegisterCommissionRoutes(router, svc, scheduler)
+	// 实际运行时，这些路由都挂载在 /admin 分组下，这里保持一致
+	adminGroup := router.Group("/admin")
+	RegisterCommissionRoutes(adminGroup, svc, scheduler)
 
 	routes := router.Routes()
 	assert.NotEmpty(t, routes)

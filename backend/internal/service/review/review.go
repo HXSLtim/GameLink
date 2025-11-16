@@ -9,6 +9,7 @@ import (
 	"gamelink/internal/model"
 	"gamelink/internal/pkg/safety"
 	"gamelink/internal/repository"
+	repoiface "gamelink/internal/repository/interfaces"
 	feedservice "gamelink/internal/service/feed"
 )
 
@@ -33,7 +34,7 @@ var (
 // 3. 更新陪玩师评分
 type ReviewService struct {
 	reviews repository.ReviewRepository
-	orders  repository.OrderRepository
+	orders  repoiface.OrderReader
 	players repository.PlayerRepository
 	users   repository.UserRepository
 	replies repository.ReviewReplyRepository
@@ -42,7 +43,7 @@ type ReviewService struct {
 // NewReviewService 创建评价服务
 func NewReviewService(
 	reviews repository.ReviewRepository,
-	orders repository.OrderRepository,
+	orders repoiface.OrderReader,
 	players repository.PlayerRepository,
 	users repository.UserRepository,
 	replies repository.ReviewReplyRepository,

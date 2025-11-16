@@ -457,7 +457,7 @@ func TestGiftService_GetPlayerReceivedGifts(t *testing.T) {
 
 	orders := []model.Order{giftOrder, escortOrder}
 
-	orderRepo.On("List", ctx, mock.AnythingOfType("repository.OrderListOptions")).
+	orderRepo.On("List", ctx, mock.Anything).
 		Return(orders, int64(2), nil)
 
 	// Mock礼物项目
@@ -528,7 +528,7 @@ func TestGiftService_GetGiftStats(t *testing.T) {
 		},
 	}
 
-	orderRepo.On("List", ctx, mock.AnythingOfType("repository.OrderListOptions")).
+	orderRepo.On("List", ctx, mock.Anything).
 		Return(orders, int64(3), nil)
 
 	// 获取礼物统计

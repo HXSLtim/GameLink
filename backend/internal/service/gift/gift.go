@@ -9,6 +9,7 @@ import (
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	commissionrepo "gamelink/internal/repository/commission"
+	repoiface "gamelink/internal/repository/interfaces"
 	serviceitemrepo "gamelink/internal/repository/serviceitem"
 )
 
@@ -24,7 +25,7 @@ var (
 // GiftService 礼物服务（基于统一订单系统�?
 type GiftService struct {
 	items       serviceitemrepo.ServiceItemRepository
-	orders      repository.OrderRepository
+	orders      repoiface.OrderRepository
 	players     repository.PlayerRepository
 	commissions commissionrepo.CommissionRepository
 }
@@ -32,7 +33,7 @@ type GiftService struct {
 // NewGiftService 创建礼物服务
 func NewGiftService(
 	items serviceitemrepo.ServiceItemRepository,
-	orders repository.OrderRepository,
+	orders repoiface.OrderRepository,
 	players repository.PlayerRepository,
 	commissions commissionrepo.CommissionRepository,
 ) *GiftService {
@@ -176,7 +177,7 @@ type GiftOrderResponse struct {
 // GetPlayerReceivedGifts 获取陪玩师收到的礼物
 func (s *GiftService) GetPlayerReceivedGifts(ctx context.Context, playerID uint64, page, pageSize int) (*ReceivedGiftsResponse, error) {
 	// 查询该陪玩师收到的礼物订�?
-	orders, _, err := s.orders.List(ctx, repository.OrderListOptions{
+	orders, _, err := s.orders.List(ctx, repoiface.OrderListOptions{
 		PlayerID: &playerID,
 		Page:     page,
 		PageSize: pageSize,
@@ -244,7 +245,7 @@ type ReceivedGiftsResponse struct {
 func (s *GiftService) GetGiftStats(ctx context.Context, playerID uint64) (*GiftStatsResponse, error) {
 	// 查询所有礼物订�?
 	playerIDPtr := &playerID
-	orders, _, err := s.orders.List(ctx, repository.OrderListOptions{
+	orders, _, err := s.orders.List(ctx, repoiface.OrderListOptions{
 		PlayerID: playerIDPtr,
 		Statuses: []model.OrderStatus{model.OrderStatusCompleted},
 		Page:     1,

@@ -7,15 +7,15 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"gamelink/internal/model"
-	"gamelink/internal/repository"
 	commissionrepo "gamelink/internal/repository/commission"
+	repoiface "gamelink/internal/repository/interfaces"
 	serviceitemrepo "gamelink/internal/repository/serviceitem"
 )
 
 // RegisterStatsAnalysisRoutes 注册管理端统计分析路由
 func RegisterStatsAnalysisRoutes(
 	router gin.IRouter,
-	orderRepo repository.OrderRepository,
+	orderRepo repoiface.OrderQuery,
 	commissionRepo commissionrepo.CommissionRepository,
 	serviceItemRepo serviceitemrepo.ServiceItemRepository,
 ) {
@@ -49,7 +49,7 @@ func RegisterStatsAnalysisRoutes(
 // @Router       /admin/stats/service-items [get]
 func getServiceItemStatsHandler(
 	c *gin.Context,
-	orderRepo repository.OrderRepository,
+	orderRepo repoiface.OrderQuery,
 	serviceItemRepo serviceitemrepo.ServiceItemRepository,
 ) {
 	ctx := c.Request.Context()
@@ -77,7 +77,7 @@ func getServiceItemStatsHandler(
 	stats := make([]ItemStats, 0, len(items))
 	for _, item := range items {
 		// 查询该服务项目的所有订单
-		orders, _, _ := orderRepo.List(ctx, repository.OrderListOptions{
+		orders, _, _ := orderRepo.List(ctx, repoiface.OrderListOptions{
 			// TODO: 需要添加 ItemID 过滤
 			Statuses: []model.OrderStatus{model.OrderStatusCompleted},
 			Page:     1,
@@ -153,7 +153,7 @@ func getTopPlayersHandler(c *gin.Context, commissionRepo commissionrepo.Commissi
 // @Router       /admin/stats/gift-stats [get]
 func getAdminGiftStatsHandler(
 	c *gin.Context,
-	orderRepo repository.OrderRepository,
+	orderRepo repoiface.OrderQuery,
 	serviceItemRepo serviceitemrepo.ServiceItemRepository,
 ) {
 	ctx := c.Request.Context()
@@ -175,7 +175,7 @@ func getAdminGiftStatsHandler(
 	giftStats := make([]GiftStat, 0, len(gifts))
 	for _, gift := range gifts {
 		// 统计该礼物的销量
-		orders, _, _ := orderRepo.List(ctx, repository.OrderListOptions{
+		orders, _, _ := orderRepo.List(ctx, repoiface.OrderListOptions{
 			Statuses: []model.OrderStatus{model.OrderStatusCompleted},
 			Page:     1,
 			PageSize: 10000,
@@ -215,11 +215,11 @@ func getAdminGiftStatsHandler(
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/stats/revenue-by-game [get]
-func getRevenueByGameHandler(c *gin.Context, orderRepo repository.OrderRepository) {
+func getRevenueByGameHandler(c *gin.Context, orderRepo repoiface.OrderQuery) {
 	ctx := c.Request.Context()
 
 	// 获取所有已完成订单
-	orders, _, err := orderRepo.List(ctx, repository.OrderListOptions{
+	orders, _, err := orderRepo.List(ctx, repoiface.OrderListOptions{
 		Statuses: []model.OrderStatus{model.OrderStatusCompleted},
 		Page:     1,
 		PageSize: 10000,

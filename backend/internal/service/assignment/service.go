@@ -10,6 +10,7 @@ import (
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
+	repoiface "gamelink/internal/repository/interfaces"
 )
 
 var (
@@ -34,7 +35,7 @@ var (
 // AssignmentService handles dispute and assignment operations
 type AssignmentService struct {
 	disputes       repository.DisputeRepository
-	orders         repository.OrderRepository
+	orders         repoiface.OrderReadWriter
 	users          repository.UserRepository
 	operationLogs  repository.OperationLogRepository
 	notifications  repository.NotificationRepository
@@ -45,7 +46,7 @@ type AssignmentService struct {
 // NewAssignmentService creates a new assignment service
 func NewAssignmentService(
 	disputes repository.DisputeRepository,
-	orders repository.OrderRepository,
+	orders repoiface.OrderReadWriter,
 	users repository.UserRepository,
 	operationLogs repository.OperationLogRepository,
 	notifications repository.NotificationRepository,
@@ -276,6 +277,13 @@ func (s *AssignmentService) ResolveDispute(ctx context.Context, req ResolveDispu
 	return nil
 }
 
+// RollbackAssignmentRequest represents a request to rollback an assignment
+type RollbackAssignmentRequest struct {
+	DisputeID      uint64
+	RollbackReason string
+	ActorUserID    uint64
+}
+
 // RollbackAssignment rolls back a dispute assignment
 func (s *AssignmentService) RollbackAssignment(ctx context.Context, req RollbackAssignmentRequest) error {
 	// Validate request
@@ -337,6 +345,26 @@ func (s *AssignmentService) CheckAndMarkSLABreaches(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// GetDisputeDetail retrieves detailed information about a dispute
+func (s *AssignmentService) GetDisputeDetail(ctx context.Context, disputeID uint64) (*model.OrderDispute, error) {
+	return s.disputes.Get(ctx, disputeID)
+}
+
+// ListPendingDisputes lists disputes pending assignment
+func (s *AssignmentService) ListPendingDisputes(ctx context.Context, page, pageSize int) ([]model.OrderDispute, int64, error) {
+	return s.disputes.ListPendingAssignment(ctx, page, pageSize)
+}
+
+// ListDisputesByStatus lists disputes filtered by status
+func (s *AssignmentService) ListDisputesByStatus(ctx context.Context, statuses []model.DisputeStatus, page, pageSize int) ([]model.OrderDispute, int64, error) {
+	opts := repository.DisputeListOptions{
+		Page:     page,
+		PageSize: pageSize,
+		Statuses: statuses,
+	}
+	return s.disputes.List(ctx, opts)
 }
 
 // Helper functions

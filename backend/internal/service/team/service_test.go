@@ -15,7 +15,6 @@ import (
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
-	orderrepo "gamelink/internal/repository/order"
 )
 
 func TestServiceSnatchOrderConcurrent(t *testing.T) {
@@ -430,7 +429,7 @@ func newFakeOrderRepo() *fakeOrderRepo {
 	return &fakeOrderRepo{orders: make(map[uint64]*model.Order)}
 }
 
-func (r *fakeOrderRepo) ListPool(ctx context.Context, opts orderrepo.PoolListOptions) ([]model.Order, *uint64, error) {
+func (r *fakeOrderRepo) ListPool(ctx context.Context, _ interface{}) ([]model.Order, *uint64, error) {
 	return nil, nil, nil
 }
 

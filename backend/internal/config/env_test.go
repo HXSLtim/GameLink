@@ -22,6 +22,9 @@ func TestValidateProductionRequiresDSN(t *testing.T) {
 		t.Fatal("expected validation error when DSN missing")
 	}
 	cfg.Database.DSN = "postgres://example"
+	cfg.Auth.JWTSecret = "StrongJWTSecret#1234"
+	cfg.SuperAdmin.Email = "admin@example.com"
+	cfg.SuperAdmin.Password = "Admin#1234"
 	if err := Validate("production", cfg); err != nil {
 		t.Fatalf("unexpected validation error: %v", err)
 	}

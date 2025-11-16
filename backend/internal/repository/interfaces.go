@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"gamelink/internal/model"
+	repoiface "gamelink/internal/repository/interfaces"
 )
 
 // GameRepository defines game data access operations.
@@ -42,14 +43,16 @@ type PlayerRepository interface {
 	Delete(ctx context.Context, id uint64) error
 }
 
-// OrderRepository defines order data access operations.
-type OrderRepository interface {
-	Create(ctx context.Context, order *model.Order) error
-	List(ctx context.Context, opts OrderListOptions) ([]model.Order, int64, error)
-	Get(ctx context.Context, id uint64) (*model.Order, error)
-	Update(ctx context.Context, order *model.Order) error
-	Delete(ctx context.Context, id uint64) error
-}
+// Order repository interfaces now live in the interfaces subpackage. Keep
+// aliases here to avoid forcing callers to update immediately.
+type (
+	OrderReader      = repoiface.OrderReader
+	OrderWriter      = repoiface.OrderWriter
+	OrderQuery       = repoiface.OrderQuery
+	OrderReadWriter  = repoiface.OrderReadWriter
+	OrderRepository  = repoiface.OrderRepository
+	OrderListOptions = repoiface.OrderListOptions
+)
 
 // PaymentRepository defines payment data access operations.
 type PaymentRepository interface {
@@ -226,19 +229,6 @@ type UserListOptions struct {
 	DateTo   *time.Time
 }
 
-// OrderListOptions contains filtering options for order queries.
-type OrderListOptions struct {
-	Page     int
-	PageSize int
-	UserID   *uint64
-	PlayerID *uint64
-	GameID   *uint64
-	Statuses []model.OrderStatus
-	Keyword  string
-	DateFrom *time.Time
-	DateTo   *time.Time
-}
-
 // FeedListOptions describes feed query filters.
 type FeedListOptions struct {
 	Limit        int
@@ -284,16 +274,16 @@ type ReviewListOptions struct {
 
 // DisputeListOptions contains filtering options for dispute queries.
 type DisputeListOptions struct {
-	Page               int
-	PageSize           int
-	UserID             *uint64
-	OrderID            *uint64
-	AssignedToUserID   *uint64
-	Statuses           []model.DisputeStatus
-	SLABreached        *bool
-	Keyword            string
-	DateFrom           *time.Time
-	DateTo             *time.Time
+	Page             int
+	PageSize         int
+	UserID           *uint64
+	OrderID          *uint64
+	AssignedToUserID *uint64
+	Statuses         []model.DisputeStatus
+	SLABreached      *bool
+	Keyword          string
+	DateFrom         *time.Time
+	DateTo           *time.Time
 }
 
 // OperationLogListOptions contains filtering options for operation log queries.

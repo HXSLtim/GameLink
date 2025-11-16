@@ -1,4 +1,4 @@
-package order
+package implementations
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
+	repoiface "gamelink/internal/repository/interfaces"
 )
 
 func testContext() context.Context {
@@ -234,7 +235,7 @@ func TestOrderRepository_List(t *testing.T) {
 	}
 
 	t.Run("List with pagination", func(t *testing.T) {
-		opts := repository.OrderListOptions{
+		opts := repoiface.OrderListOptions{
 			Page:     1,
 			PageSize: 10,
 		}
@@ -251,7 +252,7 @@ func TestOrderRepository_List(t *testing.T) {
 	})
 
 	t.Run("List with status filter", func(t *testing.T) {
-		opts := repository.OrderListOptions{
+		opts := repoiface.OrderListOptions{
 			Page:     1,
 			PageSize: 20,
 			Statuses: []model.OrderStatus{model.OrderStatusPending},
@@ -272,7 +273,7 @@ func TestOrderRepository_List(t *testing.T) {
 
 	t.Run("List with user filter", func(t *testing.T) {
 		userID := uint64(10)
-		opts := repository.OrderListOptions{
+		opts := repoiface.OrderListOptions{
 			Page:     1,
 			PageSize: 20,
 			UserID:   &userID,
@@ -288,7 +289,7 @@ func TestOrderRepository_List(t *testing.T) {
 
 	t.Run("List with player filter", func(t *testing.T) {
 		playerID := uint64(20)
-		opts := repository.OrderListOptions{
+		opts := repoiface.OrderListOptions{
 			Page:     1,
 			PageSize: 20,
 			PlayerID: &playerID,
@@ -304,7 +305,7 @@ func TestOrderRepository_List(t *testing.T) {
 
 	t.Run("List with game filter", func(t *testing.T) {
 		gameID := uint64(1)
-		opts := repository.OrderListOptions{
+		opts := repoiface.OrderListOptions{
 			Page:     1,
 			PageSize: 20,
 			GameID:   &gameID,
@@ -319,7 +320,7 @@ func TestOrderRepository_List(t *testing.T) {
 	})
 
 	t.Run("List with keyword filter", func(t *testing.T) {
-		opts := repository.OrderListOptions{
+		opts := repoiface.OrderListOptions{
 			Page:     1,
 			PageSize: 20,
 			Keyword:  "Order",
@@ -341,7 +342,7 @@ func TestOrderRepository_List(t *testing.T) {
 		yesterday := now.Add(-24 * time.Hour)
 		tomorrow := now.Add(24 * time.Hour)
 
-		opts := repository.OrderListOptions{
+		opts := repoiface.OrderListOptions{
 			Page:     1,
 			PageSize: 20,
 			DateFrom: &yesterday,
@@ -358,7 +359,7 @@ func TestOrderRepository_List(t *testing.T) {
 
 	t.Run("List with combined filters", func(t *testing.T) {
 		userID := uint64(10)
-		opts := repository.OrderListOptions{
+		opts := repoiface.OrderListOptions{
 			Page:     1,
 			PageSize: 20,
 			UserID:   &userID,

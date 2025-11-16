@@ -8,6 +8,7 @@ import (
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
+	repoiface "gamelink/internal/repository/interfaces"
 )
 
 var (
@@ -30,14 +31,14 @@ var (
 // 4. 处理支付回调（Mock版本）
 type PaymentService struct {
 	payments  repository.PaymentRepository
-	orders    repository.OrderRepository
+	orders    repoiface.OrderReadWriter
 	providers map[model.PaymentMethod]ProviderClient
 }
 
 // NewPaymentService 创建支付服务
 func NewPaymentService(
 	payments repository.PaymentRepository,
-	orders repository.OrderRepository,
+	orders repoiface.OrderReadWriter,
 ) *PaymentService {
 	return &PaymentService{
 		payments: payments,
