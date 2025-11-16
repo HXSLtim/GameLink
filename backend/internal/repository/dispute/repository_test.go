@@ -48,10 +48,10 @@ func TestDisputeRepository_Get(t *testing.T) {
 
 	// Create a dispute
 	dispute := &model.OrderDispute{
-		OrderID:     1,
-		UserID:      100,
-		Reason:      "Product defective",
-		Status:      model.DisputeStatusPending,
+		OrderID: 1,
+		UserID:  100,
+		Reason:  "Product defective",
+		Status:  model.DisputeStatusPending,
 	}
 	err := repo.Create(ctx, dispute)
 	assert.NoError(t, err)
@@ -73,10 +73,10 @@ func TestDisputeRepository_GetByOrderID(t *testing.T) {
 
 	// Create a dispute
 	dispute := &model.OrderDispute{
-		OrderID:     42,
-		UserID:      100,
-		Reason:      "Product defective",
-		Status:      model.DisputeStatusPending,
+		OrderID: 42,
+		UserID:  100,
+		Reason:  "Product defective",
+		Status:  model.DisputeStatusPending,
 	}
 	err := repo.Create(ctx, dispute)
 	assert.NoError(t, err)
@@ -98,10 +98,10 @@ func TestDisputeRepository_Update(t *testing.T) {
 
 	// Create a dispute
 	dispute := &model.OrderDispute{
-		OrderID:     1,
-		UserID:      100,
-		Reason:      "Product defective",
-		Status:      model.DisputeStatusPending,
+		OrderID: 1,
+		UserID:  100,
+		Reason:  "Product defective",
+		Status:  model.DisputeStatusPending,
 	}
 	err := repo.Create(ctx, dispute)
 	assert.NoError(t, err)
@@ -126,10 +126,10 @@ func TestDisputeRepository_List(t *testing.T) {
 	// Create multiple disputes
 	for i := 0; i < 5; i++ {
 		dispute := &model.OrderDispute{
-			OrderID:     uint64(i + 1),
-			UserID:      100,
-			Reason:      "Reason " + string(rune(i)),
-			Status:      model.DisputeStatusPending,
+			OrderID: uint64(i + 1),
+			UserID:  100,
+			Reason:  "Reason " + string(rune(i)),
+			Status:  model.DisputeStatusPending,
 		}
 		err := repo.Create(ctx, dispute)
 		assert.NoError(t, err)
@@ -219,10 +219,10 @@ func TestDisputeRepository_Delete(t *testing.T) {
 
 	// Create a dispute
 	dispute := &model.OrderDispute{
-		OrderID:     1,
-		UserID:      100,
-		Reason:      "Reason",
-		Status:      model.DisputeStatusPending,
+		OrderID: 1,
+		UserID:  100,
+		Reason:  "Reason",
+		Status:  model.DisputeStatusPending,
 	}
 	err := repo.Create(ctx, dispute)
 	assert.NoError(t, err)
@@ -243,10 +243,10 @@ func TestDisputeRepository_CountByStatus(t *testing.T) {
 	// Create disputes with different statuses
 	for i := 0; i < 3; i++ {
 		dispute := &model.OrderDispute{
-			OrderID:     uint64(i + 1),
-			UserID:      100,
-			Reason:      "Reason",
-			Status:      model.DisputeStatusPending,
+			OrderID: uint64(i + 1),
+			UserID:  100,
+			Reason:  "Reason",
+			Status:  model.DisputeStatusPending,
 		}
 		err := repo.Create(ctx, dispute)
 		assert.NoError(t, err)
@@ -265,10 +265,10 @@ func TestDisputeRepository_GetPendingCount(t *testing.T) {
 	// Create pending disputes
 	for i := 0; i < 2; i++ {
 		dispute := &model.OrderDispute{
-			OrderID:     uint64(i + 1),
-			UserID:      100,
-			Reason:      "Reason",
-			Status:      model.DisputeStatusPending,
+			OrderID: uint64(i + 1),
+			UserID:  100,
+			Reason:  "Reason",
+			Status:  model.DisputeStatusPending,
 		}
 		err := repo.Create(ctx, dispute)
 		assert.NoError(t, err)

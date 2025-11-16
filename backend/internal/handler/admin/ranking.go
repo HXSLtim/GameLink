@@ -14,7 +14,7 @@ import (
 
 // RegisterRankingCommissionRoutes 注册管理端排名抽成配置路由
 func RegisterRankingCommissionRoutes(router gin.IRouter, repo rankingrepo.RankingCommissionRepository) {
-	group := router.Group("/admin/ranking-commission")
+	group := router.Group("/ranking-commission")
 	{
 		group.POST("/configs", func(c *gin.Context) { createRankingCommissionConfigHandler(c, repo) })
 		group.GET("/configs", func(c *gin.Context) { listRankingCommissionConfigsHandler(c, repo) })
@@ -35,8 +35,7 @@ type CreateRankingCommissionConfigRequest struct {
 
 // createRankingCommissionConfigHandler 创建排名抽成配置
 // @Summary      创建排名抽成配置
-// @Description  管理员配置排名抽成规则（支持阶梯抽成�?
-// @Tags         Admin - RankingCommission
+// @Description  API endpoint// @Tags         Admin - RankingCommission
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string                                   true  "Bearer {token}"
@@ -91,13 +90,11 @@ func createRankingCommissionConfigHandler(c *gin.Context, repo rankingrepo.Ranki
 
 // listRankingCommissionConfigsHandler 获取排名抽成配置列表
 // @Summary      获取排名抽成配置列表
-// @Description  管理员查看所有排名抽成配�?
-// @Tags         Admin - RankingCommission
+// @Description  API endpoint// @Tags         Admin - RankingCommission
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true   "Bearer {token}"
-// @Param        month          query     string  false  "月份筛�?
-// @Param        rankingType    query     string  false  "排名类型"
+// @Param        month          query    string       false  "Month filter (YYYY-MM)"// @Param        rankingType    query     string  false  "排名类型"
 // @Param        page           query     int     false  "页码"
 // @Param        pageSize       query     int     false  "每页数量"
 // @Success      200            {object}  model.APIResponse[any]
@@ -158,8 +155,7 @@ func listRankingCommissionConfigsHandler(c *gin.Context, repo rankingrepo.Rankin
 
 // getRankingCommissionConfigHandler 获取排名抽成配置详情
 // @Summary      获取排名抽成配置详情
-// @Description  管理员查看排名抽成配置详�?
-// @Tags         Admin - RankingCommission
+// @Description  API endpoint// @Tags         Admin - RankingCommission
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
@@ -207,8 +203,7 @@ type UpdateRankingCommissionConfigRequest struct {
 
 // updateRankingCommissionConfigHandler 更新排名抽成配置
 // @Summary      更新排名抽成配置
-// @Description  管理员更新排名抽成配�?
-// @Tags         Admin - RankingCommission
+// @Description  API endpoint// @Tags         Admin - RankingCommission
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string                                   true  "Bearer {token}"
@@ -278,8 +273,7 @@ func updateRankingCommissionConfigHandler(c *gin.Context, repo rankingrepo.Ranki
 
 // deleteRankingCommissionConfigHandler 删除排名抽成配置
 // @Summary      删除排名抽成配置
-// @Description  管理员删除排名抽成配�?
-// @Tags         Admin - RankingCommission
+// @Description  API endpoint// @Tags         Admin - RankingCommission
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"

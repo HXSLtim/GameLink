@@ -1,13 +1,13 @@
 package ranking
 
 import (
-    "context"
-    "errors"
-    "time"
+	"context"
+	"errors"
+	"time"
 
-    "gamelink/internal/model"
-    "gamelink/internal/repository"
-    "gamelink/internal/repository/ranking"
+	"gamelink/internal/model"
+	"gamelink/internal/repository"
+	"gamelink/internal/repository/ranking"
 )
 
 var (
@@ -19,22 +19,22 @@ var (
 
 // RankingService 排名服务
 type RankingService struct {
-    rankings    ranking.RankingRepository
-    commissions ranking.RankingCommissionRepository
-    orders      repository.OrderRepository
+	rankings    ranking.RankingRepository
+	commissions ranking.RankingCommissionRepository
+	orders      repository.OrderRepository
 }
 
 // NewRankingService 创建排名服务
 func NewRankingService(
-    rankings ranking.RankingRepository,
-    commissions ranking.RankingCommissionRepository,
-    orders repository.OrderRepository,
+	rankings ranking.RankingRepository,
+	commissions ranking.RankingCommissionRepository,
+	orders repository.OrderRepository,
 ) *RankingService {
-    return &RankingService{
-        rankings:    rankings,
-        commissions: commissions,
-        orders:      orders,
-    }
+	return &RankingService{
+		rankings:    rankings,
+		commissions: commissions,
+		orders:      orders,
+	}
 }
 
 // CalculateMonthlyRankings 计算月度排名
@@ -249,12 +249,12 @@ func sortByIncome(players []*PlayerMonthStats) {
 // CreateRankingRewardRequest 创建排名奖励规则请求
 type CreateRankingRewardRequest struct {
 	RankingType model.RankingType `json:"rankingType" binding:"required"`
-	Period      string             `json:"period" binding:"required"`
-	RankStart   int                `json:"rankStart" binding:"required,min=1"`
-	RankEnd     int                `json:"rankEnd" binding:"required,min=1"`
-	RewardType  string             `json:"rewardType" binding:"required,oneof=commission"`
-	RewardValue int64              `json:"rewardValue" binding:"required"`
-	Description string             `json:"description"`
+	Period      string            `json:"period" binding:"required"`
+	RankStart   int               `json:"rankStart" binding:"required,min=1"`
+	RankEnd     int               `json:"rankEnd" binding:"required,min=1"`
+	RewardType  string            `json:"rewardType" binding:"required,oneof=commission"`
+	RewardValue int64             `json:"rewardValue" binding:"required"`
+	Description string            `json:"description"`
 }
 
 // CreateRankingReward 创建排名奖励规则（管理员）
@@ -276,4 +276,3 @@ func (s *RankingService) CreateRankingReward(ctx context.Context, req CreateRank
 
 	return reward, nil
 }
-

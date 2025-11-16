@@ -69,17 +69,17 @@ type ChatGroupMember struct {
 // ChatMessage represents persisted chat messages.
 type ChatMessage struct {
 	Base
-	GroupID     uint64          `json:"groupId" gorm:"column:group_id;not null;index"`
-	SenderID    uint64          `json:"senderId" gorm:"column:sender_id;not null;index"`
-	Content     string          `json:"content" gorm:"type:text;not null"`
-	MessageType ChatMessageType `json:"messageType" gorm:"column:message_type;type:varchar(16);default:'text'"`
-	ReplyToID   *uint64         `json:"replyToId" gorm:"column:reply_to_id"`
-	ImageURL    string          `json:"imageUrl" gorm:"column:image_url;size:255"`
-	Metadata    string          `json:"metadata" gorm:"type:json"`
-	IsDeleted   bool            `json:"isDeleted" gorm:"column:is_deleted;default:false"`
-	AuditStatus ChatMessageAuditStatus `json:"auditStatus" gorm:"column:audit_status;type:varchar(16);default:'pending';index"`
-	ModeratedBy *uint64                 `json:"moderatedBy" gorm:"column:moderated_by"`
-	ModeratedAt *time.Time              `json:"moderatedAt" gorm:"column:moderated_at"`
+	GroupID      uint64                 `json:"groupId" gorm:"column:group_id;not null;index"`
+	SenderID     uint64                 `json:"senderId" gorm:"column:sender_id;not null;index"`
+	Content      string                 `json:"content" gorm:"type:text;not null"`
+	MessageType  ChatMessageType        `json:"messageType" gorm:"column:message_type;type:varchar(16);default:'text'"`
+	ReplyToID    *uint64                `json:"replyToId" gorm:"column:reply_to_id"`
+	ImageURL     string                 `json:"imageUrl" gorm:"column:image_url;size:255"`
+	Metadata     string                 `json:"metadata" gorm:"type:json"`
+	IsDeleted    bool                   `json:"isDeleted" gorm:"column:is_deleted;default:false"`
+	AuditStatus  ChatMessageAuditStatus `json:"auditStatus" gorm:"column:audit_status;type:varchar(16);default:'pending';index"`
+	ModeratedBy  *uint64                `json:"moderatedBy" gorm:"column:moderated_by"`
+	ModeratedAt  *time.Time             `json:"moderatedAt" gorm:"column:moderated_at"`
 	RejectReason string                 `json:"rejectReason" gorm:"column:reject_reason;type:text"`
 
 	Group ChatGroup `json:"-" gorm:"foreignKey:GroupID;references:ID"`

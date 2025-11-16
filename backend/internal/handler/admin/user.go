@@ -28,17 +28,12 @@ func NewUserHandler(svc *adminservice.AdminService) *UserHandler {
 
 // ListUsers
 // @Summary      列出用户
-// @Description  分页列出用户，支持按角色/状�?时间范围/关键字筛�?
-// @Tags         Admin/Users
+// @Description  API endpoint// @Tags         Admin/Users
 // @Security     BearerAuth
 // @Param        page       query     int       false  "页码"
 // @Param        pageSize   query     int       false  "每页数量"
-// @Param        role       query     []string  false  "角色过滤，可多�?
-// @Param        status     query     []string  false  "状态过滤，可多�?
-// @Param        dateFrom   query     string    false  "开始时�?
-// @Param        dateTo     query     string    false  "结束时间"
-// @Param        keyword    query     string    false  "关键字（匹配 name/email/phone�?
-// @Produce      json
+// @Param        role           query    []string     false  "Role filter"// @Param        status         query    []string     false  "Status filter"// @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
+// @Param        keyword        query    string       false  "Parameter: keyword"// @Produce      json
 // @Success      200  {object}  map[string]any
 // @Router       /admin/users [get]
 //
@@ -269,11 +264,9 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 // @Param        pageSize   query     int       false  "每页数量"
 // @Param        action       query  string false "动作过滤" Enums(create,update,delete)
 // @Param        actor_user_id query int   false "操作者用户ID"
-// @Param        dateFrom   query     string    false  "开始时�?
-// @Param        dateTo     query     string    false  "结束时间"
+// @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
 // @Param        export       query  string false "导出格式" Enums(csv)
-// @Param        fields       query  string false "导出列（逗号分隔�?
-// @Param        header_lang  query  string false "列头语言" Enums(en,zh)
+// @Param        fields         query    string       false  "Export fields (comma separated)"// @Param        header_lang  query  string false "列头语言" Enums(en,zh)
 // @Success      200  {object}  map[string]any
 // @Router       /admin/users/{id}/logs [get]
 func (h *UserHandler) ListUserLogs(c *gin.Context) {
@@ -413,9 +406,7 @@ func (h *UserHandler) UpdateUserRole(c *gin.Context) {
 // @Param        id         path   int      true   "用户ID"
 // @Param        page       query  int      false  "页码"
 // @Param        pageSize   query     int       false  "每页数量"
-// @Param        status     query  []string false  "订单状�?
-// @Param        dateFrom   query     string    false  "开始时�?
-// @Param        dateTo     query     string    false  "结束时间"
+// @Param        status         query    []string     false  "Status filter"// @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
 // @Success      200  {object}  map[string]any
 // @Failure      404  {object}  map[string]any
 // @Router       /admin/users/{id}/orders [get]

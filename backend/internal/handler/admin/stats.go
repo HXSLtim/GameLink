@@ -113,8 +113,7 @@ func getServiceItemStatsHandler(
 	})
 }
 
-// getTopPlayersHandler 获取Top陪玩�?// @Summary      获取Top陪玩�?// @Description  按收入排名获取Top陪玩�?// @Tags         Admin - Stats
-// @Accept       json
+// @Description  API endpoint// @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true   "Bearer {token}"
 // @Param        month          query     string  false  "月份(YYYY-MM)"
@@ -145,8 +144,7 @@ func getTopPlayersHandler(c *gin.Context, commissionRepo commissionrepo.Commissi
 
 // getAdminGiftStatsHandler 获取礼物统计
 // @Summary      获取礼物统计
-// @Description  统计礼物的销售情�?// @Tags         Admin - Stats
-// @Accept       json
+// @Description  API endpoint// @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
 // @Success      200            {object}  model.APIResponse[any]
@@ -210,8 +208,7 @@ func getAdminGiftStatsHandler(
 	})
 }
 
-// getRevenueByGameHandler 按游戏统计收�?// @Summary      按游戏统计收�?// @Description  统计各游戏的订单和收入情�?// @Tags         Admin - Stats
-// @Accept       json
+// @Description  API endpoint// @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
 // @Success      200            {object}  model.APIResponse[any]
@@ -273,4 +270,3 @@ func getRevenueByGameHandler(c *gin.Context, orderRepo repository.OrderRepositor
 		},
 	})
 }
-

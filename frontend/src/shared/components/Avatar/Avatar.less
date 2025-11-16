@@ -1,0 +1,143 @@
+/**
+ * Discord风格头像样式
+ */
+
+.discord-avatar {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+
+  &__image {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--tertiary-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  &__fallback {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--brand-primary);
+    color: #ffffff;
+    font-weight: 600;
+    font-family: var(--font-display);
+  }
+
+  &__status {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 30%;
+    height: 30%;
+    border-radius: 50%;
+    border: 2px solid var(--primary-bg);
+    box-shadow: var(--shadow-sm);
+
+    &--online {
+      background: #23a559; /* Discord绿色 */
+    }
+
+    &--idle {
+      background: #f0b232; /* Discord黄色 */
+    }
+
+    &--busy {
+      background: #f23f43; /* Discord红色 */
+    }
+
+    &--offline {
+      background: #80848e; /* Discord灰色 */
+    }
+  }
+
+  /* Small - 24px */
+  &--small {
+    width: 24px;
+    height: 24px;
+
+    .discord-avatar__fallback {
+      font-size: 10px;
+    }
+
+    .discord-avatar__status {
+      width: 8px;
+      height: 8px;
+      border-width: 1.5px;
+    }
+  }
+
+  /* Medium - 40px */
+  &--medium {
+    width: 40px;
+    height: 40px;
+
+    .discord-avatar__fallback {
+      font-size: 14px;
+    }
+
+    .discord-avatar__status {
+      width: 12px;
+      height: 12px;
+      border-width: 2px;
+    }
+  }
+
+  /* Large - 64px */
+  &--large {
+    width: 64px;
+    height: 64px;
+
+    .discord-avatar__fallback {
+      font-size: 20px;
+    }
+
+    .discord-avatar__status {
+      width: 18px;
+      height: 18px;
+      border-width: 3px;
+    }
+  }
+
+  /* XLarge - 96px */
+  &--xlarge {
+    width: 96px;
+    height: 96px;
+
+    .discord-avatar__fallback {
+      font-size: 32px;
+    }
+
+    .discord-avatar__status {
+      width: 24px;
+      height: 24px;
+      border-width: 4px;
+    }
+  }
+
+  /* 可点击状态 */
+  &--clickable {
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &:hover {
+      transform: scale(1.05);
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+  }
+}

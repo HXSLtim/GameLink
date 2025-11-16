@@ -427,4 +427,3 @@ func (r *commissionRepository) GetPlayerMonthlyIncome(ctx context.Context, playe
 	}
 	return income, nil
 }
-

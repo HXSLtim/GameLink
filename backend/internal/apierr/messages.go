@@ -29,4 +29,3 @@ const (
 	ErrInvalidPaymentPayload        = "invalid payment payload"
 	ErrInvalidOrderPayload          = "invalid order payload"
 )
-

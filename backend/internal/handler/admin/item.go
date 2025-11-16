@@ -12,7 +12,7 @@ import (
 
 // RegisterServiceItemRoutes 注册管理端服务项目管理路�?
 func RegisterServiceItemRoutes(router gin.IRouter, svc *item.ServiceItemService) {
-	group := router.Group("/admin/service-items")
+	group := router.Group("/service-items")
 	{
 		group.POST("", func(c *gin.Context) { createServiceItemHandler(c, svc) })
 		group.GET("", func(c *gin.Context) { listServiceItemsHandler(c, svc) })
@@ -31,7 +31,7 @@ func RegisterServiceItemRoutes(router gin.IRouter, svc *item.ServiceItemService)
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string                                true  "Bearer {token}"
-// @Param        request        body      serviceitem.CreateServiceItemRequest  true  "服务项目信息"
+// @Param        request        body      item.CreateServiceItemRequest  true  "服务项目信息"
 // @Success      200            {object}  model.APIResponse[model.ServiceItem]
 // @Failure      400            {object}  model.APIResponse[any]
 // @Failure      401            {object}  model.APIResponse[any]
@@ -59,18 +59,16 @@ func createServiceItemHandler(c *gin.Context, svc *item.ServiceItemService) {
 
 // listServiceItemsHandler 获取服务项目列表
 // @Summary      获取服务项目列表
-// @Description  管理员查看所有服务项�?
-// @Tags         Admin - ServiceItem
+// @Description  API endpoint// @Tags         Admin - ServiceItem
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true   "Bearer {token}"
 // @Param        category       query     string  false  "分类"
-// @Param        subCategory    query     string  false  "子分�?solo/team/gift)"
+// @Param        subCategory    query     string  false  "Sub category (solo/team/gift)"
 // @Param        gameId         query     int     false  "游戏ID"
-// @Param        isActive       query     bool    false  "是否激�?
-// @Param        page           query     int     false  "页码"
+// @Param        isActive       query    bool         false  "Is active"// @Param        page           query     int     false  "页码"
 // @Param        pageSize       query     int     false  "每页数量"
-// @Success      200            {object}  model.APIResponse[serviceitem.ServiceItemListResponse]
+// @Success      200            {object}  model.APIResponse[item.ServiceItemListResponse]
 // @Failure      400            {object}  model.APIResponse[any]
 // @Failure      401            {object}  model.APIResponse[any]
 // @Router       /admin/service-items [get]
@@ -97,13 +95,12 @@ func listServiceItemsHandler(c *gin.Context, svc *item.ServiceItemService) {
 
 // getServiceItemHandler 获取服务项目详情
 // @Summary      获取服务项目详情
-// @Description  管理员查看服务项目详�?
-// @Tags         Admin - ServiceItem
+// @Description  API endpoint// @Tags         Admin - ServiceItem
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
 // @Param        id             path      int     true  "服务项目ID"
-// @Success      200            {object}  model.APIResponse[serviceitem.ServiceItemDTO]
+// @Success      200            {object}  model.APIResponse[item.ServiceItemDTO]
 // @Failure      400            {object}  model.APIResponse[any]
 // @Failure      401            {object}  model.APIResponse[any]
 // @Router       /admin/service-items/{id} [get]
@@ -135,13 +132,12 @@ func getServiceItemHandler(c *gin.Context, svc *item.ServiceItemService) {
 
 // updateServiceItemHandler 更新服务项目
 // @Summary      更新服务项目
-// @Description  管理员更新服务项�?
-// @Tags         Admin - ServiceItem
+// @Description  API endpoint// @Tags         Admin - ServiceItem
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string                                 true  "Bearer {token}"
 // @Param        id             path      int                                    true  "服务项目ID"
-// @Param        request        body      serviceitem.UpdateServiceItemRequest  true  "更新信息"
+// @Param        request        body      item.UpdateServiceItemRequest  true  "更新信息"
 // @Success      200            {object}  model.APIResponse[any]
 // @Failure      400            {object}  model.APIResponse[any]
 // @Failure      401            {object}  model.APIResponse[any]
@@ -175,8 +171,7 @@ func updateServiceItemHandler(c *gin.Context, svc *item.ServiceItemService) {
 
 // deleteServiceItemHandler 删除服务项目
 // @Summary      删除服务项目
-// @Description  管理员删除服务项�?
-// @Tags         Admin - ServiceItem
+// @Description  API endpoint// @Tags         Admin - ServiceItem
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
@@ -208,12 +203,11 @@ func deleteServiceItemHandler(c *gin.Context, svc *item.ServiceItemService) {
 
 // batchUpdateStatusHandler 批量更新状�?
 // @Summary      批量更新状�?
-// @Description  管理员批量启�?禁用服务项目
-// @Tags         Admin - ServiceItem
+// @Description  API endpoint// @Tags         Admin - ServiceItem
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string                                  true  "Bearer {token}"
-// @Param        request        body      serviceitem.BatchUpdateStatusRequest  true  "批量更新请求"
+// @Param        request        body      item.BatchUpdateStatusRequest  true  "批量更新请求"
 // @Success      200            {object}  model.APIResponse[any]
 // @Failure      400            {object}  model.APIResponse[any]
 // @Failure      401            {object}  model.APIResponse[any]
@@ -240,12 +234,11 @@ func batchUpdateStatusHandler(c *gin.Context, svc *item.ServiceItemService) {
 
 // batchUpdatePriceHandler 批量更新价格
 // @Summary      批量更新价格
-// @Description  管理员批量调整服务项目价�?
-// @Tags         Admin - ServiceItem
+// @Description  API endpoint// @Tags         Admin - ServiceItem
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string                                 true  "Bearer {token}"
-// @Param        request        body      serviceitem.BatchUpdatePriceRequest  true  "批量更新请求"
+// @Param        request        body      item.BatchUpdatePriceRequest  true  "批量更新请求"
 // @Success      200            {object}  model.APIResponse[any]
 // @Failure      400            {object}  model.APIResponse[any]
 // @Failure      401            {object}  model.APIResponse[any]

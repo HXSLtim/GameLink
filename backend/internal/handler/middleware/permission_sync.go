@@ -1,15 +1,15 @@
 package middleware
 
 import (
-    "context"
-    "fmt"
-    "log"
-    "strings"
+	"context"
+	"fmt"
+	"log"
+	"strings"
 
-    "github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin"
 
-    "gamelink/internal/model"
-    permissionservice "gamelink/internal/service/permission"
+	"gamelink/internal/model"
+	permissionservice "gamelink/internal/service/permission"
 )
 
 // APISyncConfig API 同步配置。

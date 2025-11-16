@@ -58,8 +58,7 @@ func getReceivedGiftsHandler(c *gin.Context, svc *gift.GiftService) {
 
 // getGiftStatsHandler 获取礼物统计
 // @Summary      获取礼物统计
-// @Description  陪玩师查看礼物收入统�?
-// @Tags         Player - Gift
+// @Description  API endpoint// @Tags         Player - Gift
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"

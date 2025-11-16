@@ -1,0 +1,225 @@
+/**
+ * KOOK 风格两栏布局样式
+ */
+
+.kookLayout {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100vh;
+  background-color: var(--color-bg-primary);
+  overflow: hidden;
+}
+
+/* ==================== 顶部导航栏 ==================== */
+.topNav {
+  flex-shrink: 0;
+  width: 100%;
+  height: var(--layout-kook-topnav-height);
+  background-color: var(--color-bg-elevated);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--spacing-md);
+  z-index: var(--z-index-sticky);
+}
+
+/* ==================== 内容容器 ==================== */
+.contentWrapper {
+  display: flex;
+  flex: 1;
+  width: 100%;
+  height: calc(100vh - var(--layout-kook-topnav-height));
+  overflow: hidden;
+  position: relative;
+}
+
+/* ==================== 左侧频道列表 ==================== */
+.channelList {
+  flex-shrink: 0;
+  height: 100%;
+  background-color: var(--color-bg-secondary);
+  border-right: 1px solid var(--color-border);
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: width var(--transition-base),
+              transform var(--transition-base);
+
+  /* 自定义滚动条 */
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--color-bg-hover);
+    border-radius: var(--radius-full);
+  }
+
+  /* 折叠状态 */
+  &.collapsed {
+    border-right: none;
+    overflow: hidden;
+  }
+}
+
+/* ==================== 主内容区 ==================== */
+.mainContent {
+  flex: 1;
+  min-width: var(--layout-kook-content-min-width);
+  height: 100%;
+  background-color: var(--color-bg-primary);
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+
+  /* 平滑滚动 */
+  scroll-behavior: smooth;
+
+  /* 内容内边距 */
+  padding: var(--spacing-lg);
+}
+
+/* ==================== 折叠按钮 ==================== */
+.toggleButton {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 48px;
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-left: none;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-base);
+  z-index: var(--z-index-sticky);
+
+  &:hover {
+    background-color: var(--color-bg-hover);
+    color: var(--color-text-primary);
+  }
+
+  &:active {
+    background-color: var(--color-bg-tertiary);
+  }
+
+  /* 图标旋转 */
+  svg {
+    transition: transform var(--transition-base);
+
+    &.rotated {
+      transform: rotate(180deg);
+    }
+  }
+
+  /* 频道列表折叠时调整按钮样式 */
+  .channelList.collapsed ~ & {
+    border-left: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+}
+
+/* ==================== 响应式设计 ==================== */
+
+/* 平板 */
+@media (max-width: 992px) {
+  .channelList {
+    position: fixed;
+    left: 0;
+    top: var(--layout-kook-topnav-height);
+    z-index: var(--z-index-fixed);
+    box-shadow: var(--shadow-xl);
+    height: calc(100vh - var(--layout-kook-topnav-height));
+
+    &.collapsed {
+      transform: translateX(-100%);
+    }
+  }
+
+  .toggleButton {
+    display: flex;
+    top: calc(var(--layout-kook-topnav-height) + 50%);
+  }
+
+  .mainContent {
+    width: 100%;
+    min-width: auto;
+  }
+}
+
+/* 手机 */
+@media (max-width: 768px) {
+  .topNav {
+    height: 56px;
+    padding: 0 var(--spacing-sm);
+  }
+
+  .contentWrapper {
+    height: calc(100vh - 56px);
+  }
+
+  .channelList {
+    width: 80% !important;
+    max-width: 280px;
+    top: 56px;
+    height: calc(100vh - 56px);
+
+    &.collapsed {
+      transform: translateX(-100%);
+    }
+  }
+
+  .toggleButton {
+    top: calc(56px + var(--spacing-md));
+    left: auto !important;
+    right: var(--spacing-md);
+    border-radius: var(--radius-full);
+    width: 40px;
+    height: 40px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--color-border);
+
+    /* 频道列表打开时隐藏按钮 */
+    .channelList:not(.collapsed) ~ & {
+      opacity: 0;
+      pointer-events: none;
+    }
+  }
+
+  .mainContent {
+    padding: var(--spacing-md);
+  }
+}
+
+/* ==================== 遮罩层（移动端） ==================== */
+@media (max-width: 992px) {
+  .kookLayout::before {
+    content: '';
+    position: fixed;
+    top: var(--layout-kook-topnav-height);
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-base);
+    z-index: calc(var(--z-index-fixed) - 1);
+  }
+
+  /* 频道列表打开时显示遮罩 */
+  .kookLayout:has(.channelList:not(.collapsed))::before {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .kookLayout::before {
+    top: 56px;
+  }
+}

@@ -1,7 +1,6 @@
 package admin
 
 import (
-	"context"
 	"net/http"
 	"strconv"
 	"time"
@@ -12,18 +11,9 @@ import (
 	withdrawrepo "gamelink/internal/repository/withdraw"
 )
 
-// WithdrawAdminService 提现管理服务接口
-type WithdrawAdminService interface {
-	GetWithdraws(ctx context.Context, opts withdrawrepo.WithdrawListOptions) ([]model.Withdraw, int64, error)
-	GetWithdraw(ctx context.Context, id uint64) (*model.Withdraw, error)
-	ApproveWithdraw(ctx context.Context, id uint64, adminID uint64, remark string) error
-	RejectWithdraw(ctx context.Context, id uint64, adminID uint64, reason string) error
-	CompleteWithdraw(ctx context.Context, id uint64, adminID uint64) error
-}
-
 // RegisterWithdrawRoutes 注册管理端提现管理路由
 func RegisterWithdrawRoutes(router gin.IRouter, withdrawRepo withdrawrepo.WithdrawRepository) {
-	group := router.Group("/admin/withdraws")
+	group := router.Group("/withdraws")
 	{
 		group.GET("", func(c *gin.Context) { listWithdrawsHandler(c, withdrawRepo) })
 		group.GET("/:id", func(c *gin.Context) { getWithdrawHandler(c, withdrawRepo) })
@@ -40,7 +30,7 @@ func RegisterWithdrawRoutes(router gin.IRouter, withdrawRepo withdrawrepo.Withdr
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true   "Bearer {token}"
-// @Param        status         query     string  false  "状态筛�?
+// @Param        status         query     string  false  "Status filter"
 // @Param        playerId       query     int     false  "陪玩师ID"
 // @Param        page           query     int     false  "页码"
 // @Param        pageSize       query     int     false  "每页数量"
@@ -49,8 +39,16 @@ func RegisterWithdrawRoutes(router gin.IRouter, withdrawRepo withdrawrepo.Withdr
 // @Failure      401            {object}  model.APIResponse[any]
 // @Router       /admin/withdraws [get]
 func listWithdrawsHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "20"))
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+	pageSize, err := strconv.Atoi(c.DefaultQuery("pageSize", "20"))
+	if err != nil || pageSize <= 0 {
+		pageSize = 20
+	} else if pageSize > 100 {
+		pageSize = 100
+	}
 
 	opts := withdrawrepo.WithdrawListOptions{
 		Page:     page,
@@ -89,7 +87,7 @@ func listWithdrawsHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository) 
 
 // getWithdrawHandler 获取提现详情
 // @Summary      获取提现详情
-// @Description  管理员查看提现详�?// @Tags         Admin - Withdraw
+// @Description  API endpoint
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
@@ -127,7 +125,7 @@ type ApproveWithdrawRequest struct {
 
 // approveWithdrawHandler 批准提现
 // @Summary      批准提现
-// @Description  管理员批准提现申�?// @Tags         Admin - Withdraw
+// @Description  API endpoint
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string                   true  "Bearer {token}"
@@ -145,8 +143,16 @@ func approveWithdrawHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository
 		return
 	}
 
-	adminID, _ := c.Get("user_id")
-	adminUserID := adminID.(uint64)
+	adminVal, ok := c.Get("user_id")
+	if !ok {
+		writeJSONError(c, http.StatusUnauthorized, "missing admin user")
+		return
+	}
+	adminUserID, ok := adminVal.(uint64)
+	if !ok {
+		writeJSONError(c, http.StatusInternalServerError, "invalid admin user id type")
+		return
+	}
 
 	var req ApproveWithdrawRequest
 	c.ShouldBindJSON(&req)
@@ -189,7 +195,7 @@ type RejectWithdrawRequest struct {
 
 // rejectWithdrawHandler 拒绝提现
 // @Summary      拒绝提现
-// @Description  管理员拒绝提现申�?// @Tags         Admin - Withdraw
+// @Description  API endpoint
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string                  true  "Bearer {token}"
@@ -207,8 +213,16 @@ func rejectWithdrawHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository)
 		return
 	}
 
-	adminID, _ := c.Get("user_id")
-	adminUserID := adminID.(uint64)
+	adminVal, ok := c.Get("user_id")
+	if !ok {
+		writeJSONError(c, http.StatusUnauthorized, "missing admin user")
+		return
+	}
+	adminUserID, ok := adminVal.(uint64)
+	if !ok {
+		writeJSONError(c, http.StatusInternalServerError, "invalid admin user id type")
+		return
+	}
 
 	var req RejectWithdrawRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -247,8 +261,9 @@ func rejectWithdrawHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository)
 	})
 }
 
-// completeWithdrawHandler 完成提现（已打款�?// @Summary      完成提现
-// @Description  管理员标记提现已完成（已打款�?// @Tags         Admin - Withdraw
+// completeWithdrawHandler 完成提现（已打款）
+// @Summary      完成提现
+// @Description  API endpoint
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
@@ -265,8 +280,16 @@ func completeWithdrawHandler(c *gin.Context, repo withdrawrepo.WithdrawRepositor
 		return
 	}
 
-	adminID, _ := c.Get("user_id")
-	adminUserID := adminID.(uint64)
+	adminVal, ok := c.Get("user_id")
+	if !ok {
+		writeJSONError(c, http.StatusUnauthorized, "missing admin user")
+		return
+	}
+	adminUserID, ok := adminVal.(uint64)
+	if !ok {
+		writeJSONError(c, http.StatusInternalServerError, "invalid admin user id type")
+		return
+	}
 
 	withdraw, err := repo.Get(c.Request.Context(), id)
 	if err != nil {
@@ -299,4 +322,3 @@ func completeWithdrawHandler(c *gin.Context, repo withdrawrepo.WithdrawRepositor
 		Message: "Withdraw completed successfully",
 	})
 }
-

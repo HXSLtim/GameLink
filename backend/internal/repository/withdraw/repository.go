@@ -185,4 +185,3 @@ func (r *withdrawRepository) GetPlayerBalance(ctx context.Context, playerID uint
 
 	return balance, nil
 }
-

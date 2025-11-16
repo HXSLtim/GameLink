@@ -119,11 +119,13 @@ func (m *mockOrderRepoForAdminDispute) Get(ctx context.Context, id uint64) (*mod
 	return &model.Order{Base: model.Base{ID: id}, UserID: 1}, nil
 }
 func (m *mockOrderRepoForAdminDispute) Update(ctx context.Context, o *model.Order) error { return nil }
-func (m *mockOrderRepoForAdminDispute) Delete(ctx context.Context, id uint64) error { return nil }
+func (m *mockOrderRepoForAdminDispute) Delete(ctx context.Context, id uint64) error      { return nil }
 
 type mockUserRepoForAdminDispute struct{}
 
-func (m *mockUserRepoForAdminDispute) List(ctx context.Context) ([]model.User, error) { return nil, nil }
+func (m *mockUserRepoForAdminDispute) List(ctx context.Context) ([]model.User, error) {
+	return nil, nil
+}
 func (m *mockUserRepoForAdminDispute) ListPaged(ctx context.Context, page, pageSize int) ([]model.User, int64, error) {
 	return nil, 0, nil
 }
@@ -144,15 +146,19 @@ func (m *mockUserRepoForAdminDispute) FindByPhone(ctx context.Context, phone str
 }
 func (m *mockUserRepoForAdminDispute) Create(ctx context.Context, user *model.User) error { return nil }
 func (m *mockUserRepoForAdminDispute) Update(ctx context.Context, user *model.User) error { return nil }
-func (m *mockUserRepoForAdminDispute) Delete(ctx context.Context, id uint64) error { return nil }
+func (m *mockUserRepoForAdminDispute) Delete(ctx context.Context, id uint64) error        { return nil }
 
 type mockOperationLogRepoForAdminDispute struct{}
 
-func (m *mockOperationLogRepoForAdminDispute) Create(ctx context.Context, log *model.OperationLog) error { return nil }
+func (m *mockOperationLogRepoForAdminDispute) Create(ctx context.Context, log *model.OperationLog) error {
+	return nil
+}
 func (m *mockOperationLogRepoForAdminDispute) List(ctx context.Context, opts repository.OperationLogListOptions) ([]model.OperationLog, int64, error) {
 	return nil, 0, nil
 }
-func (m *mockOperationLogRepoForAdminDispute) Append(ctx context.Context, log *model.OperationLog) error { return nil }
+func (m *mockOperationLogRepoForAdminDispute) Append(ctx context.Context, log *model.OperationLog) error {
+	return nil
+}
 func (m *mockOperationLogRepoForAdminDispute) ListByEntity(ctx context.Context, entityType string, entityID uint64, opts repository.OperationLogListOptions) ([]model.OperationLog, int64, error) {
 	return nil, 0, nil
 }
@@ -162,20 +168,30 @@ type mockNotificationRepoForAdminDispute struct{}
 func (m *mockNotificationRepoForAdminDispute) ListByUser(ctx context.Context, opts repository.NotificationListOptions) ([]model.NotificationEvent, int64, error) {
 	return nil, 0, nil
 }
-func (m *mockNotificationRepoForAdminDispute) MarkRead(ctx context.Context, userID uint64, ids []uint64) error { return nil }
-func (m *mockNotificationRepoForAdminDispute) CountUnread(ctx context.Context, userID uint64) (int64, error) { return 0, nil }
-func (m *mockNotificationRepoForAdminDispute) Create(ctx context.Context, event *model.NotificationEvent) error { return nil }
+func (m *mockNotificationRepoForAdminDispute) MarkRead(ctx context.Context, userID uint64, ids []uint64) error {
+	return nil
+}
+func (m *mockNotificationRepoForAdminDispute) CountUnread(ctx context.Context, userID uint64) (int64, error) {
+	return 0, nil
+}
+func (m *mockNotificationRepoForAdminDispute) Create(ctx context.Context, event *model.NotificationEvent) error {
+	return nil
+}
 
 type mockPaymentRepoForAdminDispute struct{}
 
-func (m *mockPaymentRepoForAdminDispute) Create(ctx context.Context, p *model.Payment) error { return nil }
+func (m *mockPaymentRepoForAdminDispute) Create(ctx context.Context, p *model.Payment) error {
+	return nil
+}
 func (m *mockPaymentRepoForAdminDispute) List(ctx context.Context, opts repository.PaymentListOptions) ([]model.Payment, int64, error) {
 	return nil, 0, nil
 }
 func (m *mockPaymentRepoForAdminDispute) Get(ctx context.Context, id uint64) (*model.Payment, error) {
 	return nil, repository.ErrNotFound
 }
-func (m *mockPaymentRepoForAdminDispute) Update(ctx context.Context, p *model.Payment) error { return nil }
+func (m *mockPaymentRepoForAdminDispute) Update(ctx context.Context, p *model.Payment) error {
+	return nil
+}
 func (m *mockPaymentRepoForAdminDispute) Delete(ctx context.Context, id uint64) error { return nil }
 
 func setupAdminDisputeHandler(t *testing.T) *DisputeHandler {

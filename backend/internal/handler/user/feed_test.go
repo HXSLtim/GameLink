@@ -64,7 +64,7 @@ func (m *mockFeedRepository) CreateReport(ctx context.Context, report *model.Fee
 func setupFeedTest(t *testing.T) *gin.Engine {
 	t.Helper()
 	gin.SetMode(gin.TestMode)
-	
+
 	repo := newMockFeedRepository()
 	svc := feedservice.NewService(repo, feedservice.NewDefaultModerationEngine())
 

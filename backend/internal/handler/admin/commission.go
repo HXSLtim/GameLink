@@ -13,7 +13,7 @@ import (
 
 // RegisterCommissionRoutes Register admin commission management routes
 func RegisterCommissionRoutes(router gin.IRouter, svc *commission.CommissionService, scheduler interface{ TriggerSettlement(string) error }) {
-	group := router.Group("/admin/commission")
+	group := router.Group("/commission")
 	{
 		// 抽成规则管理
 		group.POST("/rules", func(c *gin.Context) { createCommissionRuleHandler(c, svc) })
@@ -27,8 +27,7 @@ func RegisterCommissionRoutes(router gin.IRouter, svc *commission.CommissionServ
 
 // createCommissionRuleHandler 创建抽成规则
 // @Summary      创建抽成规则
-// @Description  管理员创建抽成规�?
-// @Tags         Admin - Commission
+// @Description  API endpoint// @Tags         Admin - Commission
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string                                    true  "Bearer {token}"
@@ -60,8 +59,7 @@ func createCommissionRuleHandler(c *gin.Context, svc *commission.CommissionServi
 
 // updateCommissionRuleHandler 更新抽成规则
 // @Summary      更新抽成规则
-// @Description  管理员更新抽成规�?
-// @Tags         Admin - Commission
+// @Description  API endpoint// @Tags         Admin - Commission
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string                                    true  "Bearer {token}"
@@ -133,8 +131,7 @@ func triggerSettlementHandler(c *gin.Context, scheduler interface{ TriggerSettle
 
 // getPlatformStatsHandler 获取平台统计
 // @Summary      获取平台统计
-// @Description  管理员查看平台月度统计数�?
-// @Tags         Admin - Commission
+// @Description  API endpoint// @Tags         Admin - Commission
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"

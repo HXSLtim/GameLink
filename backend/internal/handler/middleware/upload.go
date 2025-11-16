@@ -146,7 +146,7 @@ func SaveFile(c *gin.Context, file *multipart.FileHeader, config UploadConfig) (
 	// 生成文件名
 	var savedName string
 	ext := filepath.Ext(file.Filename)
-	
+
 	if config.RandomizeFilename {
 		// 使用UUID生成随机文件名
 		savedName = uuid.New().String()

@@ -369,4 +369,3 @@ func TestWriteJSONError(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	assert.Contains(t, w.Body.String(), "test error")
 }
-

@@ -25,10 +25,10 @@ func TestSystem_Config(t *testing.T) {
 				Code:    http.StatusOK,
 				Message: "OK",
 				Data: map[string]interface{}{
-					"appName":    "GameLink",
-					"version":    "1.0.0",
-					"env":        "production",
-					"maxUpload":  10485760,
+					"appName":   "GameLink",
+					"version":   "1.0.0",
+					"env":       "production",
+					"maxUpload": 10485760,
 				},
 			})
 		})
@@ -38,7 +38,7 @@ func TestSystem_Config(t *testing.T) {
 		r.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var resp model.APIResponse[map[string]interface{}]
 		json.Unmarshal(w.Body.Bytes(), &resp)
 		assert.True(t, resp.Success)
@@ -96,9 +96,9 @@ func TestSystem_CacheStatus(t *testing.T) {
 				Code:    http.StatusOK,
 				Message: "OK",
 				Data: map[string]interface{}{
-					"status":   "connected",
-					"hitRate":  0.85,
-					"keys":     1000,
+					"status":  "connected",
+					"hitRate": 0.85,
+					"keys":    1000,
 				},
 			})
 		})
@@ -134,7 +134,7 @@ func TestSystem_Resources(t *testing.T) {
 		r.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var resp model.APIResponse[map[string]interface{}]
 		json.Unmarshal(w.Body.Bytes(), &resp)
 		assert.True(t, resp.Success)

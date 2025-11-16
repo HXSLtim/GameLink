@@ -33,7 +33,7 @@ func TestRanking_EdgeCases(t *testing.T) {
 		r.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var resp model.APIResponse[any]
 		json.Unmarshal(w.Body.Bytes(), &resp)
 		assert.True(t, resp.Success)

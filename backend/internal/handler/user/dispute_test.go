@@ -105,7 +105,7 @@ func (m *mockOrderRepoForDispute) Get(ctx context.Context, id uint64) (*model.Or
 	return &model.Order{Base: model.Base{ID: id}, UserID: 1}, nil
 }
 func (m *mockOrderRepoForDispute) Update(ctx context.Context, o *model.Order) error { return nil }
-func (m *mockOrderRepoForDispute) Delete(ctx context.Context, id uint64) error { return nil }
+func (m *mockOrderRepoForDispute) Delete(ctx context.Context, id uint64) error      { return nil }
 
 type mockUserRepoForDispute struct{}
 
@@ -130,15 +130,19 @@ func (m *mockUserRepoForDispute) FindByPhone(ctx context.Context, phone string) 
 }
 func (m *mockUserRepoForDispute) Create(ctx context.Context, user *model.User) error { return nil }
 func (m *mockUserRepoForDispute) Update(ctx context.Context, user *model.User) error { return nil }
-func (m *mockUserRepoForDispute) Delete(ctx context.Context, id uint64) error { return nil }
+func (m *mockUserRepoForDispute) Delete(ctx context.Context, id uint64) error        { return nil }
 
 type mockOperationLogRepoForDispute struct{}
 
-func (m *mockOperationLogRepoForDispute) Create(ctx context.Context, log *model.OperationLog) error { return nil }
+func (m *mockOperationLogRepoForDispute) Create(ctx context.Context, log *model.OperationLog) error {
+	return nil
+}
 func (m *mockOperationLogRepoForDispute) List(ctx context.Context, opts repository.OperationLogListOptions) ([]model.OperationLog, int64, error) {
 	return nil, 0, nil
 }
-func (m *mockOperationLogRepoForDispute) Append(ctx context.Context, log *model.OperationLog) error { return nil }
+func (m *mockOperationLogRepoForDispute) Append(ctx context.Context, log *model.OperationLog) error {
+	return nil
+}
 func (m *mockOperationLogRepoForDispute) ListByEntity(ctx context.Context, entityType string, entityID uint64, opts repository.OperationLogListOptions) ([]model.OperationLog, int64, error) {
 	return nil, 0, nil
 }
@@ -148,9 +152,15 @@ type mockNotificationRepoForDispute struct{}
 func (m *mockNotificationRepoForDispute) ListByUser(ctx context.Context, opts repository.NotificationListOptions) ([]model.NotificationEvent, int64, error) {
 	return nil, 0, nil
 }
-func (m *mockNotificationRepoForDispute) MarkRead(ctx context.Context, userID uint64, ids []uint64) error { return nil }
-func (m *mockNotificationRepoForDispute) CountUnread(ctx context.Context, userID uint64) (int64, error) { return 0, nil }
-func (m *mockNotificationRepoForDispute) Create(ctx context.Context, event *model.NotificationEvent) error { return nil }
+func (m *mockNotificationRepoForDispute) MarkRead(ctx context.Context, userID uint64, ids []uint64) error {
+	return nil
+}
+func (m *mockNotificationRepoForDispute) CountUnread(ctx context.Context, userID uint64) (int64, error) {
+	return 0, nil
+}
+func (m *mockNotificationRepoForDispute) Create(ctx context.Context, event *model.NotificationEvent) error {
+	return nil
+}
 
 type mockPaymentRepoForDispute struct{}
 
@@ -162,7 +172,7 @@ func (m *mockPaymentRepoForDispute) Get(ctx context.Context, id uint64) (*model.
 	return nil, repository.ErrNotFound
 }
 func (m *mockPaymentRepoForDispute) Update(ctx context.Context, p *model.Payment) error { return nil }
-func (m *mockPaymentRepoForDispute) Delete(ctx context.Context, id uint64) error { return nil }
+func (m *mockPaymentRepoForDispute) Delete(ctx context.Context, id uint64) error        { return nil }
 
 func setupDisputeHandler(t *testing.T) *DisputeHandler {
 	t.Helper()

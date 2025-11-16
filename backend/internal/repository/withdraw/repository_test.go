@@ -177,4 +177,3 @@ func TestWithdrawRepository_GetPlayerBalance(t *testing.T) {
 	assert.Equal(t, int64(5000), balance.PendingBalance)    // 进行中的订单
 	assert.Equal(t, int64(17000), balance.AvailableBalance) // 30000 - 5000 - 3000 - 5000
 }
-

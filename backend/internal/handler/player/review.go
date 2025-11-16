@@ -19,6 +19,21 @@ func RegisterReviewRoutes(router gin.IRouter, svc *reviewservice.ReviewService, 
 	group.POST(":id/reply", func(c *gin.Context) { replyReviewHandler(c, svc) })
 }
 
+// replyReviewHandler 回复评价
+// @Summary      回复评价
+// @Description  陪玩师回复用户对自己的评价
+// @Tags         Player - Review
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string                             true  "Bearer {token}"
+// @Param        id             path      int                                true  "Review ID"
+// @Param        request        body      reviewservice.ReplyReviewRequest   true  "Reply content"
+// @Success      200            {object}  model.APIResponse[reviewservice.ReplyReviewResponse]
+// @Failure      400            {object}  model.APIResponse[any]
+// @Failure      401            {object}  model.APIResponse[any]
+// @Failure      403            {object}  model.APIResponse[any]
+// @Failure      500            {object}  model.APIResponse[any]
+// @Router       /player/reviews/{id}/reply [post]
 func replyReviewHandler(c *gin.Context, svc *reviewservice.ReviewService) {
 	userID := getUserIDFromContext(c)
 	reviewID, err := strconv.ParseUint(c.Param("id"), 10, 64)

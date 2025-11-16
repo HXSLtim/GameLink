@@ -113,12 +113,12 @@ type fileConfig struct {
 		Port          string `yaml:"port"`
 		EnableSwagger *bool  `yaml:"enable_swagger"`
 	} `yaml:"server"`
-	Database  DatabaseConfig   `yaml:"database"`
-	Cache     CacheConfig      `yaml:"cache"`
-	Crypto    cryptoFileConfig `yaml:"crypto"`
-	Auth      authFileConfig   `yaml:"auth"`
-	Seed      SeedConfig       `yaml:"seed"`
-	SuperAdmin superAdminFileConfig  `yaml:"super_admin"`
+	Database   DatabaseConfig       `yaml:"database"`
+	Cache      CacheConfig          `yaml:"cache"`
+	Crypto     cryptoFileConfig     `yaml:"crypto"`
+	Auth       authFileConfig       `yaml:"auth"`
+	Seed       SeedConfig           `yaml:"seed"`
+	SuperAdmin superAdminFileConfig `yaml:"super_admin"`
 	AdminAuth  adminAuthFileConfig  `yaml:"admin_auth"`
 }
 

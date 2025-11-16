@@ -21,6 +21,19 @@ func RegisterFeedRoutes(router gin.IRouter, svc *feedservice.Service, authMiddle
 	group.POST(":id/report", func(c *gin.Context) { reportFeedHandler(c, svc) })
 }
 
+// createFeedHandler 发布动态
+// @Summary      发布动态
+// @Description  用户发布社区动态，包括文字、图片等内容
+// @Tags         User - Feed
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string                          true  "Bearer {token}"
+// @Param        request        body      feedservice.CreateFeedRequest   true  "Feed content"
+// @Success      200            {object}  model.APIResponse[any]
+// @Failure      400            {object}  model.APIResponse[any]
+// @Failure      401            {object}  model.APIResponse[any]
+// @Failure      500            {object}  model.APIResponse[any]
+// @Router       /user/feeds [post]
 func createFeedHandler(c *gin.Context, svc *feedservice.Service) {
 	userID := getUserIDFromContext(c)
 	var req feedservice.CreateFeedRequest
@@ -45,6 +58,20 @@ func createFeedHandler(c *gin.Context, svc *feedservice.Service) {
 	})
 }
 
+// listFeedsHandler 获取动态列表
+// @Summary      获取动态列表
+// @Description  获取社区动态列表，支持游标分页
+// @Tags         User - Feed
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string  true   "Bearer {token}"
+// @Param        limit          query     int     false  "Limit (default 20)"
+// @Param        cursor         query     string  false  "Cursor for pagination"
+// @Success      200            {object}  model.APIResponse[any]
+// @Failure      400            {object}  model.APIResponse[any]
+// @Failure      401            {object}  model.APIResponse[any]
+// @Failure      500            {object}  model.APIResponse[any]
+// @Router       /user/feeds [get]
 func listFeedsHandler(c *gin.Context, svc *feedservice.Service) {
 	userID := getUserIDFromContext(c)
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
@@ -69,6 +96,20 @@ func listFeedsHandler(c *gin.Context, svc *feedservice.Service) {
 	})
 }
 
+// reportFeedHandler 举报动态
+// @Summary      举报动态
+// @Description  举报不当社区动态内容
+// @Tags         User - Feed
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string              true  "Bearer {token}"
+// @Param        id             path      int                 true  "Feed ID"
+// @Param        request        body      object{reason=string}  true  "Report reason"
+// @Success      200            {object}  model.APIResponse[any]
+// @Failure      400            {object}  model.APIResponse[any]
+// @Failure      401            {object}  model.APIResponse[any]
+// @Failure      500            {object}  model.APIResponse[any]
+// @Router       /user/feeds/{id}/report [post]
 func reportFeedHandler(c *gin.Context, svc *feedservice.Service) {
 	userID := getUserIDFromContext(c)
 	idParam := c.Param("id")

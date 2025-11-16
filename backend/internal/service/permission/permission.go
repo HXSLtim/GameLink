@@ -205,4 +205,3 @@ func (s *PermissionService) invalidatePermissionCache() {
 	_ = s.cache.Delete(ctx, cacheKeyPermissions)
 	// 注意：用户和角色的权限缓存需要在分配权限时清除
 }
-

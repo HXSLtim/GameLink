@@ -26,6 +26,7 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
+	_ "gamelink/docs" // swagger docs
 	"gamelink/internal/auth"
 	"gamelink/internal/cache"
 	"gamelink/internal/config"
@@ -265,11 +266,13 @@ func main() {
 	notificationhandler.RegisterRoutes(api, notificationSvc, authMiddleware)
 
 	// Register admin routes under versioned prefix: /api/v1/admin（使用新的权限中间件）
-	adminhandler.RegisterRoutes(api, adminSvc, permMiddleware)
+	// RBAC routes
+	rbacGroup := api.Group("/admin")
+	adminhandler.RegisterRoutes(rbacGroup, adminSvc, permMiddleware)
 
 	// Stats routes（使用新的权限中间件）
 	statsSvc := statsservice.NewStatsService(statsrepo.NewStatsRepository(orm))
-	adminhandler.RegisterStatsRoutes(api, statsSvc, permMiddleware)
+	adminhandler.RegisterStatsRoutes(rbacGroup, statsSvc, permMiddleware)
 
 	// System info routes（使用新的权限中间件）
 	adminhandler.RegisterSystemRoutes(api, cfg, sqlDB, cacheClient, permMiddleware)
@@ -277,9 +280,6 @@ func main() {
 	// 注册角色和权限管理路由（使用细粒度权限控制）
 	roleHandler := adminhandler.NewRoleHandler(roleSvc)
 	permHandler := adminhandler.NewPermissionHandler(permService)
-
-	// RBAC routes
-	rbacGroup := api.Group("/admin")
 	rbacGroup.Use(permMiddleware.RequireAuth()) // 所有 RBAC 接口需要认证
 	{
 		// 角色管理 - 使用细粒度权限

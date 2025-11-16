@@ -232,11 +232,10 @@ func (h *GameHandler) DeleteGame(c *gin.Context) {
 // @Param        pageSize   query     int       false  "每页数量"
 // @Param        action       query  string false "动作过滤" Enums(create,update,delete)
 // @Param        actor_user_id query int   false "操作者用户ID"
-// @Param        dateFrom   query     string    false  "开始时�?
-// @Param        dateTo     query     string    false  "结束时间"
+// @Param        dateFrom   query     string    false  "Start date (YYYY-MM-DD)"
+// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
 // @Param        export       query  string false "导出格式" Enums(csv)
-// @Param        fields       query  string false "导出列（逗号分隔�?
-// @Param        header_lang  query  string false "列头语言" Enums(en,zh)
+// @Param        fields         query    string       false  "Export fields (comma separated)"// @Param        header_lang  query  string false "列头语言" Enums(en,zh)
 // @Success      200  {object}  map[string]any
 // @Router       /admin/games/{id}/logs [get]
 func (h *GameHandler) ListGameLogs(c *gin.Context) {

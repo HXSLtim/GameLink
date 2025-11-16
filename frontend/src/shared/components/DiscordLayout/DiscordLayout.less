@@ -1,0 +1,139 @@
+/**
+ * Discord风格布局样式
+ */
+
+.discord-layout {
+  display: flex;
+  height: 100vh;
+  background: var(--primary-bg);
+  overflow: hidden;
+
+  /* 左侧导航栏 */
+  &__sidebar {
+    width: 72px;
+    background: var(--tertiary-bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--space-3) 0;
+    gap: var(--space-2);
+    overflow-y: auto;
+    flex-shrink: 0;
+
+    /* 隐藏滚动条但保持功能 */
+    &::-webkit-scrollbar {
+      width: 0;
+    }
+
+    scrollbar-width: none;
+  }
+
+  /* 主要内容区域 */
+  &__main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0; /* 防止flex子元素溢出 */
+  }
+
+  /* 头部 */
+  &__header {
+    height: 64px;
+    background: var(--secondary-bg);
+    border-bottom: 1px solid var(--divider);
+    display: flex;
+    align-items: center;
+    padding: 0 var(--space-4);
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  /* 内容区域 */
+  &__content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: var(--space-6);
+
+    /* 自定义滚动条 */
+    &::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: var(--text-muted);
+      border-radius: 4px;
+
+      &:hover {
+        background: var(--text-secondary);
+      }
+    }
+  }
+
+  /* 右侧面板 */
+  &__panel {
+    width: 280px;
+    background: var(--secondary-bg);
+    border-left: 1px solid var(--divider);
+    padding: var(--space-4);
+    overflow-y: auto;
+    flex-shrink: 0;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: var(--text-muted);
+      border-radius: 3px;
+
+      &:hover {
+        background: var(--text-secondary);
+      }
+    }
+  }
+}
+
+/* 响应式布局 */
+@media (max-width: 768px) {
+  .discord-layout {
+    &__sidebar {
+      display: none;
+    }
+
+    &__panel {
+      position: fixed;
+      top: 0;
+      right: -280px;
+      height: 100vh;
+      transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 1000;
+      box-shadow: var(--shadow-2xl);
+
+      &.visible {
+        right: 0;
+      }
+    }
+
+    &__content {
+      padding: var(--space-4);
+    }
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  .discord-layout {
+    &__panel {
+      width: 240px;
+    }
+  }
+}

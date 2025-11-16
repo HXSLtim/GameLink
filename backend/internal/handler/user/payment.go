@@ -13,11 +13,11 @@ import (
 
 // RegisterPaymentRoutes 注册用户端支付路由
 func RegisterPaymentRoutes(router gin.IRouter, svc *payment.PaymentService, authMiddleware gin.HandlerFunc) {
-    group := router.Group("/user/payments")
-    group.Use(authMiddleware) // 需要认证
-    group.POST("", func(c *gin.Context) { createPaymentHandler(c, svc) })
-    group.GET("/:id", func(c *gin.Context) { getPaymentStatusHandler(c, svc) })
-    group.POST("/:id/cancel", func(c *gin.Context) { cancelPaymentHandler(c, svc) })
+	group := router.Group("/user/payments")
+	group.Use(authMiddleware) // 需要认证
+	group.POST("", func(c *gin.Context) { createPaymentHandler(c, svc) })
+	group.GET("/:id", func(c *gin.Context) { getPaymentStatusHandler(c, svc) })
+	group.POST("/:id/cancel", func(c *gin.Context) { cancelPaymentHandler(c, svc) })
 }
 
 // createPaymentHandler 创建支付
@@ -55,8 +55,7 @@ func createPaymentHandler(c *gin.Context, svc *payment.PaymentService) {
 	})
 }
 
-// getPaymentStatusHandler 查询支付状�?// @Summary      查询支付状�?// @Description  查询支付状�?// @Tags         User - Payments
-// @Accept       json
+// @Description  API endpoint// @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
 // @Param        id             path      int     true  "支付ID"

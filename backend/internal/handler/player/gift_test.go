@@ -95,7 +95,7 @@ func TestGiftHelpers(t *testing.T) {
 		respondJSON(c, http.StatusOK, resp)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var result model.APIResponse[map[string]interface{}]
 		json.Unmarshal(w.Body.Bytes(), &result)
 		assert.True(t, result.Success)
@@ -108,7 +108,7 @@ func TestGiftHelpers(t *testing.T) {
 		respondError(c, http.StatusInternalServerError, "Internal server error")
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
-		
+
 		var result model.APIResponse[interface{}]
 		json.Unmarshal(w.Body.Bytes(), &result)
 		assert.False(t, result.Success)

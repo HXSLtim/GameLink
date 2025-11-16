@@ -392,4 +392,3 @@ func TestPlayerHandler_UpdatePlayerSkillTags(t *testing.T) {
 func TestPlayerHandler_ListPlayerLogs(t *testing.T) {
 	t.Skip("ListPlayerLogs requires TxManager, skipping for now")
 }
-

@@ -196,4 +196,3 @@ func (r *serviceItemRepository) GetGameServices(ctx context.Context, gameID uint
 func boolPtr(b bool) *bool {
 	return &b
 }
-

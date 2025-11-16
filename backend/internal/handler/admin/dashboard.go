@@ -53,7 +53,7 @@ func RegisterDashboardRoutes(
 	serviceItemRepo serviceitemrepo.ServiceItemRepository,
 	commissionRepo commissionrepo.CommissionRepository,
 ) {
-	group := router.Group("/admin/dashboard")
+	group := router.Group("/dashboard")
 	{
 		group.GET("/overview", func(c *gin.Context) {
 			getDashboardOverviewHandler(c, userRepo, playerRepo, orderRepo, withdrawRepo, serviceItemRepo)
@@ -163,8 +163,7 @@ func getDashboardOverviewHandler(
 	})
 }
 
-// getRecentOrdersHandler 获取最近订�?// @Summary      获取最近订�?// @Description  管理员查看最近订�?// @Tags         Admin - Dashboard
-// @Accept       json
+// @Description  API endpoint// @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true   "Bearer {token}"
 // @Param        limit          query     int     false  "数量限制"
@@ -199,8 +198,7 @@ func getRecentOrdersHandler(c *gin.Context, orderRepo repository.OrderRepository
 	})
 }
 
-// getRecentWithdrawsHandler 获取最近提�?// @Summary      获取最近提�?// @Description  管理员查看最近提现申�?// @Tags         Admin - Dashboard
-// @Accept       json
+// @Description  API endpoint// @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true   "Bearer {token}"
 // @Param        limit          query     int     false  "数量限制"
@@ -237,11 +235,10 @@ func getRecentWithdrawsHandler(c *gin.Context, withdrawRepo withdrawrepo.Withdra
 
 // getMonthlyRevenueHandler 获取月度收入趋势
 // @Summary      获取月度收入趋势
-// @Description  管理员查看最近几个月的收入趋�?// @Tags         Admin - Dashboard
-// @Accept       json
+// @Description  API endpoint// @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true   "Bearer {token}"
-// @Param        months         query     int     false  "月数（默�?2�?
+// @Param        months         query     int     false  "Number of months (default 12)"
 // @Success      200            {object}  model.APIResponse[any]
 // @Failure      400            {object}  model.APIResponse[any]
 // @Failure      401            {object}  model.APIResponse[any]

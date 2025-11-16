@@ -592,27 +592,27 @@ func (m *mockReviewRepositoryWithData) Delete(ctx context.Context, id uint64) er
 func TestGetPlayerDetail_CalculateRepeatRate(t *testing.T) {
 	now := time.Now()
 	playerID := uint64(1)
-	
+
 	// 创建有复购的订单数据（用户1有2个订单，用户2有1个订单）
 	orderRepo := &mockOrderRepositoryWithData{
 		orders: []model.Order{
 			{
-				Base:    model.Base{ID: 1, CreatedAt: now},
-				UserID:  1,
+				Base:     model.Base{ID: 1, CreatedAt: now},
+				UserID:   1,
 				PlayerID: &playerID,
-				Status:  model.OrderStatusCompleted,
+				Status:   model.OrderStatusCompleted,
 			},
 			{
-				Base:    model.Base{ID: 2, CreatedAt: now},
-				UserID:  1,
+				Base:     model.Base{ID: 2, CreatedAt: now},
+				UserID:   1,
 				PlayerID: &playerID,
-				Status:  model.OrderStatusCompleted,
+				Status:   model.OrderStatusCompleted,
 			},
 			{
-				Base:    model.Base{ID: 3, CreatedAt: now},
-				UserID:  2,
+				Base:     model.Base{ID: 3, CreatedAt: now},
+				UserID:   2,
 				PlayerID: &playerID,
-				Status:  model.OrderStatusCompleted,
+				Status:   model.OrderStatusCompleted,
 			},
 		},
 	}
@@ -649,17 +649,17 @@ func TestGetPlayerDetail_CalculateAvgResponseTime(t *testing.T) {
 	orderRepo := &mockOrderRepositoryWithData{
 		orders: []model.Order{
 			{
-				Base:     model.Base{ID: 1, CreatedAt: now},
-				UserID:   1,
-				PlayerID: &playerID,
-				Status:   model.OrderStatusCompleted,
+				Base:      model.Base{ID: 1, CreatedAt: now},
+				UserID:    1,
+				PlayerID:  &playerID,
+				Status:    model.OrderStatusCompleted,
 				StartedAt: &startedAt1,
 			},
 			{
-				Base:     model.Base{ID: 2, CreatedAt: now},
-				UserID:   1,
-				PlayerID: &playerID,
-				Status:   model.OrderStatusCompleted,
+				Base:      model.Base{ID: 2, CreatedAt: now},
+				UserID:    1,
+				PlayerID:  &playerID,
+				Status:    model.OrderStatusCompleted,
 				StartedAt: &startedAt2,
 			},
 		},

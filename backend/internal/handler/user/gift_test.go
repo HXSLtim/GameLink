@@ -131,7 +131,7 @@ func TestGiftHelpers(t *testing.T) {
 		respondJSON(c, http.StatusOK, resp)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var result model.APIResponse[string]
 		json.Unmarshal(w.Body.Bytes(), &result)
 		assert.True(t, result.Success)
@@ -145,7 +145,7 @@ func TestGiftHelpers(t *testing.T) {
 		respondError(c, http.StatusBadRequest, "error message")
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		
+
 		var result model.APIResponse[interface{}]
 		json.Unmarshal(w.Body.Bytes(), &result)
 		assert.False(t, result.Success)

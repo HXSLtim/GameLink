@@ -35,7 +35,7 @@ func TestGetDashboardOverviewHandler(t *testing.T) {
 	todayStart := now.Truncate(24 * time.Hour)
 	yesterday := todayStart.AddDate(0, 0, -1)
 	lastMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location()).AddDate(0, -1, 0)
-	
+
 	orders := []model.Order{
 		// 今天的订单
 		{Base: model.Base{ID: 1, CreatedAt: todayStart.Add(2 * time.Hour)}, Status: model.OrderStatusCompleted, TotalPriceCents: 1_000},

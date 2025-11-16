@@ -11,17 +11,17 @@ import (
 
 // PaymentRepository ä½¿ç¨ GORM ç®¡çæ¯ä»è®°å½ã?
 type gormPaymentRepository struct {
-    db *gorm.DB
+	db *gorm.DB
 }
 
 // NewPaymentRepository åå»ºå®ä¾ã?
 func NewPaymentRepository(db *gorm.DB) repository.PaymentRepository {
-    return &gormPaymentRepository{db: db}
+	return &gormPaymentRepository{db: db}
 }
 
 // Create inserts a new payment row.
 func (r *gormPaymentRepository) Create(ctx context.Context, payment *model.Payment) error {
-    return r.db.WithContext(ctx).Create(payment).Error
+	return r.db.WithContext(ctx).Create(payment).Error
 }
 
 // List returns a page of payments and the total count with filters applied.
@@ -105,4 +105,3 @@ func (r *gormPaymentRepository) Delete(ctx context.Context, id uint64) error {
 	}
 	return nil
 }
-

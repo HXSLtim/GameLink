@@ -124,4 +124,3 @@ func (m *MockRoleRepository) CheckUserHasRole(ctx context.Context, userID uint64
 }
 
 var _ repository.RoleRepository = (*MockRoleRepository)(nil)
-

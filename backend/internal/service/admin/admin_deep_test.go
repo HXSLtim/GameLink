@@ -30,7 +30,7 @@ func TestPasswordValidation(t *testing.T) {
 		{"无效-空字符串", "", false},
 		{"有效-长密码", "password123456", true},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := validPassword(tt.password)
@@ -43,27 +43,27 @@ func TestHashPassword(t *testing.T) {
 	t.Run("成功加密密码", func(t *testing.T) {
 		password := "testpass123"
 		hashed, err := hashPassword(password)
-		
+
 		assert.NoError(t, err)
 		assert.NotEmpty(t, hashed)
 		assert.NotEqual(t, password, hashed)
-		
+
 		// 验证可以解密
 		err = bcrypt.CompareHashAndPassword([]byte(hashed), []byte(password))
 		assert.NoError(t, err)
 	})
-	
+
 	t.Run("空密码失败", func(t *testing.T) {
 		hashed, err := hashPassword("")
-		
+
 		assert.Error(t, err)
 		assert.Empty(t, hashed)
 		assert.Equal(t, ErrValidation, err)
 	})
-	
+
 	t.Run("空格密码失败", func(t *testing.T) {
 		hashed, err := hashPassword("   ")
-		
+
 		assert.Error(t, err)
 		assert.Empty(t, hashed)
 		assert.Equal(t, ErrValidation, err)
@@ -74,7 +74,7 @@ func TestHashPassword(t *testing.T) {
 
 func TestConfirmOrder(t *testing.T) {
 	ctx := context.Background()
-	
+
 	t.Run("成功确认订单", func(t *testing.T) {
 		orderRepo := &fakeOrderRepo{
 			obj: &model.Order{
@@ -84,7 +84,7 @@ func TestConfirmOrder(t *testing.T) {
 				Currency:        model.CurrencyCNY,
 			},
 		}
-		
+
 		svc := NewAdminService(
 			&fakeGameRepo{},
 			&fakeUserRepo{},
@@ -94,9 +94,9 @@ func TestConfirmOrder(t *testing.T) {
 			&fakeRoleRepo{},
 			cache.NewMemory(),
 		)
-		
+
 		order, err := svc.ConfirmOrder(ctx, 1, "确认订单")
-		
+
 		assert.NoError(t, err)
 		assert.NotNil(t, order)
 		assert.Equal(t, model.OrderStatusConfirmed, order.Status)
@@ -105,7 +105,7 @@ func TestConfirmOrder(t *testing.T) {
 
 func TestStartOrder(t *testing.T) {
 	ctx := context.Background()
-	
+
 	t.Run("成功开始订单", func(t *testing.T) {
 		orderRepo := &fakeOrderRepo{
 			obj: &model.Order{
@@ -115,7 +115,7 @@ func TestStartOrder(t *testing.T) {
 				Currency:        model.CurrencyCNY,
 			},
 		}
-		
+
 		svc := NewAdminService(
 			&fakeGameRepo{},
 			&fakeUserRepo{},
@@ -125,9 +125,9 @@ func TestStartOrder(t *testing.T) {
 			&fakeRoleRepo{},
 			cache.NewMemory(),
 		)
-		
+
 		order, err := svc.StartOrder(ctx, 1, "开始服务")
-		
+
 		assert.NoError(t, err)
 		assert.NotNil(t, order)
 		assert.Equal(t, model.OrderStatusInProgress, order.Status)
@@ -137,7 +137,7 @@ func TestStartOrder(t *testing.T) {
 
 func TestCreateOrder_Validation(t *testing.T) {
 	ctx := context.Background()
-	
+
 	tests := []struct {
 		name    string
 		input   CreateOrderInput
@@ -207,7 +207,7 @@ func TestCreateOrder_Validation(t *testing.T) {
 			wantErr: true,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			svc := NewAdminService(
@@ -219,9 +219,9 @@ func TestCreateOrder_Validation(t *testing.T) {
 				&fakeRoleRepo{},
 				cache.NewMemory(),
 			)
-			
+
 			order, err := svc.CreateOrder(ctx, tt.input)
-			
+
 			if tt.wantErr {
 				assert.Error(t, err)
 				assert.Nil(t, order)

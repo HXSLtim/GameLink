@@ -17,7 +17,7 @@ func TestRankingListOptions_Defaults(t *testing.T) {
 			Page:     0,
 			PageSize: 0,
 		}
-		
+
 		// 测试参数规范化逻辑
 		if opts.Page < 1 {
 			opts.Page = 1
@@ -25,17 +25,17 @@ func TestRankingListOptions_Defaults(t *testing.T) {
 		if opts.PageSize < 1 {
 			opts.PageSize = 20
 		}
-		
+
 		assert.Equal(t, 1, opts.Page)
 		assert.Equal(t, 20, opts.PageSize)
 	})
-	
+
 	t.Run("有效分页参数", func(t *testing.T) {
 		opts := RankingListOptions{
 			Page:     5,
 			PageSize: 50,
 		}
-		
+
 		assert.Equal(t, 5, opts.Page)
 		assert.Equal(t, 50, opts.PageSize)
 	})
@@ -47,7 +47,7 @@ func TestRewardListOptions_Defaults(t *testing.T) {
 			Page:     0,
 			PageSize: 0,
 		}
-		
+
 		// 测试参数规范化逻辑
 		if opts.Page < 1 {
 			opts.Page = 1
@@ -55,7 +55,7 @@ func TestRewardListOptions_Defaults(t *testing.T) {
 		if opts.PageSize < 1 {
 			opts.PageSize = 20
 		}
-		
+
 		assert.Equal(t, 1, opts.Page)
 		assert.Equal(t, 20, opts.PageSize)
 	})
@@ -80,7 +80,7 @@ func TestPlayerRanking_Structure(t *testing.T) {
 			Rank:        1,
 			Score:       1000,
 		}
-		
+
 		assert.Equal(t, uint64(1), ranking.PlayerID)
 		assert.Equal(t, model.RankingTypeIncome, ranking.RankingType)
 		assert.Equal(t, "month", ranking.Period)
@@ -101,7 +101,7 @@ func TestRankingReward_Structure(t *testing.T) {
 			RewardValue: 10000,
 			IsActive:    true,
 		}
-		
+
 		assert.Equal(t, model.RankingTypeIncome, reward.RankingType)
 		assert.Equal(t, "month", reward.Period)
 		assert.Equal(t, 1, reward.RankStart)
@@ -110,13 +110,13 @@ func TestRankingReward_Structure(t *testing.T) {
 		assert.Equal(t, int64(10000), reward.RewardValue)
 		assert.True(t, reward.IsActive)
 	})
-	
+
 	t.Run("奖励范围验证", func(t *testing.T) {
 		reward := &model.RankingReward{
 			RankStart: 1,
 			RankEnd:   10,
 		}
-		
+
 		// 验证排名范围
 		assert.True(t, reward.RankStart <= reward.RankEnd)
 		assert.True(t, reward.RankStart > 0)
@@ -129,21 +129,21 @@ func TestRankingListOptions_Filtering(t *testing.T) {
 		opts := RankingListOptions{
 			PlayerID: &playerID,
 		}
-		
+
 		assert.NotNil(t, opts.PlayerID)
 		assert.Equal(t, uint64(1), *opts.PlayerID)
 	})
-	
+
 	t.Run("按排名类型筛选", func(t *testing.T) {
 		rankingType := model.RankingTypeIncome
 		opts := RankingListOptions{
 			RankingType: &rankingType,
 		}
-		
+
 		assert.NotNil(t, opts.RankingType)
 		assert.Equal(t, model.RankingTypeIncome, *opts.RankingType)
 	})
-	
+
 	t.Run("按周期筛选", func(t *testing.T) {
 		period := "month"
 		periodValue := "2024-01"
@@ -151,7 +151,7 @@ func TestRankingListOptions_Filtering(t *testing.T) {
 			Period:      &period,
 			PeriodValue: &periodValue,
 		}
-		
+
 		assert.NotNil(t, opts.Period)
 		assert.Equal(t, "month", *opts.Period)
 		assert.NotNil(t, opts.PeriodValue)
@@ -165,27 +165,27 @@ func TestRewardListOptions_Filtering(t *testing.T) {
 		opts := RewardListOptions{
 			RankingType: &rankingType,
 		}
-		
+
 		assert.NotNil(t, opts.RankingType)
 		assert.Equal(t, model.RankingTypeIncome, *opts.RankingType)
 	})
-	
+
 	t.Run("按周期筛选", func(t *testing.T) {
 		period := "month"
 		opts := RewardListOptions{
 			Period: &period,
 		}
-		
+
 		assert.NotNil(t, opts.Period)
 		assert.Equal(t, "month", *opts.Period)
 	})
-	
+
 	t.Run("按激活状态筛选", func(t *testing.T) {
 		isActive := true
 		opts := RewardListOptions{
 			IsActive: &isActive,
 		}
-		
+
 		assert.NotNil(t, opts.IsActive)
 		assert.True(t, *opts.IsActive)
 	})
@@ -318,7 +318,7 @@ func (m *mockRankingRepository) GetRewardForRank(ctx context.Context, rankingTyp
 func TestMockRankingRepository_CRUD(t *testing.T) {
 	ctx := context.Background()
 	repo := newMockRankingRepository()
-	
+
 	t.Run("创建并获取排名", func(t *testing.T) {
 		ranking := &model.PlayerRanking{
 			PlayerID:    1,
@@ -328,17 +328,17 @@ func TestMockRankingRepository_CRUD(t *testing.T) {
 			Rank:        1,
 			Score:       1000,
 		}
-		
+
 		err := repo.CreateRanking(ctx, ranking)
 		assert.NoError(t, err)
 		assert.NotZero(t, ranking.ID)
-		
+
 		got, err := repo.GetPlayerRanking(ctx, 1, model.RankingTypeIncome, "month", "2024-01")
 		assert.NoError(t, err)
 		assert.Equal(t, ranking.PlayerID, got.PlayerID)
 		assert.Equal(t, ranking.Score, got.Score)
 	})
-	
+
 	t.Run("更新排名", func(t *testing.T) {
 		ranking := &model.PlayerRanking{
 			PlayerID:    2,
@@ -348,19 +348,19 @@ func TestMockRankingRepository_CRUD(t *testing.T) {
 			Rank:        2,
 			Score:       900,
 		}
-		
+
 		err := repo.CreateRanking(ctx, ranking)
 		assert.NoError(t, err)
-		
+
 		ranking.Score = 950
 		err = repo.UpdateRanking(ctx, ranking)
 		assert.NoError(t, err)
-		
+
 		got, err := repo.GetPlayerRanking(ctx, 2, model.RankingTypeIncome, "month", "2024-01")
 		assert.NoError(t, err)
 		assert.Equal(t, float64(950), got.Score)
 	})
-	
+
 	t.Run("查询排名列表", func(t *testing.T) {
 		rankings, total, err := repo.ListRankings(ctx, RankingListOptions{})
 		assert.NoError(t, err)
@@ -372,7 +372,7 @@ func TestMockRankingRepository_CRUD(t *testing.T) {
 func TestMockRankingRepository_Rewards(t *testing.T) {
 	ctx := context.Background()
 	repo := newMockRankingRepository() // 每个测试使用新的repo实例
-	
+
 	t.Run("创建并获取奖励", func(t *testing.T) {
 		reward := &model.RankingReward{
 			RankingType: model.RankingTypeIncome,
@@ -382,16 +382,16 @@ func TestMockRankingRepository_Rewards(t *testing.T) {
 			RewardValue: 10000,
 			IsActive:    true,
 		}
-		
+
 		err := repo.CreateReward(ctx, reward)
 		assert.NoError(t, err)
 		assert.NotZero(t, reward.ID)
-		
+
 		got, err := repo.GetReward(ctx, reward.ID)
 		assert.NoError(t, err)
 		assert.Equal(t, reward.RewardValue, got.RewardValue)
 	})
-	
+
 	t.Run("删除奖励", func(t *testing.T) {
 		reward := &model.RankingReward{
 			RankingType: model.RankingTypeIncome,
@@ -401,22 +401,22 @@ func TestMockRankingRepository_Rewards(t *testing.T) {
 			RewardValue: 5000,
 			IsActive:    true,
 		}
-		
+
 		err := repo.CreateReward(ctx, reward)
 		assert.NoError(t, err)
-		
+
 		err = repo.DeleteReward(ctx, reward.ID)
 		assert.NoError(t, err)
-		
+
 		_, err = repo.GetReward(ctx, reward.ID)
 		assert.Error(t, err)
 		assert.Equal(t, ErrNotFound, err)
 	})
-	
+
 	t.Run("获取排名对应的奖励", func(t *testing.T) {
 		// 使用新的repo避免之前测试的数据干扰
 		freshRepo := newMockRankingRepository()
-		
+
 		reward := &model.RankingReward{
 			RankingType: model.RankingTypeIncome,
 			Period:      "month",
@@ -425,10 +425,10 @@ func TestMockRankingRepository_Rewards(t *testing.T) {
 			RewardValue: 8000,
 			IsActive:    true,
 		}
-		
+
 		err := freshRepo.CreateReward(ctx, reward)
 		assert.NoError(t, err)
-		
+
 		got, err := freshRepo.GetRewardForRank(ctx, model.RankingTypeIncome, "month", 3)
 		assert.NoError(t, err)
 		assert.Equal(t, int64(8000), got.RewardValue)

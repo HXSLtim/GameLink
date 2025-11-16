@@ -150,14 +150,14 @@ func TestCommissionRepository_CreateRecord(t *testing.T) {
 	ctx := context.Background()
 
 	record := &model.CommissionRecord{
-		OrderID:            1,
-		PlayerID:           1,
-		TotalAmountCents:   10000,
-		CommissionRate:     20,
-		CommissionCents:    2000,
-		PlayerIncomeCents:  8000,
-		SettlementStatus:   "pending",
-		SettlementMonth:    "2025-01",
+		OrderID:           1,
+		PlayerID:          1,
+		TotalAmountCents:  10000,
+		CommissionRate:    20,
+		CommissionCents:   2000,
+		PlayerIncomeCents: 8000,
+		SettlementStatus:  "pending",
+		SettlementMonth:   "2025-01",
 	}
 
 	err := repo.CreateRecord(ctx, record)
@@ -611,8 +611,8 @@ func TestCommissionRepository_UpdateRecord_EdgeCases(t *testing.T) {
 
 	t.Run("更新不存在的记录", func(t *testing.T) {
 		nonExistentRecord := &model.CommissionRecord{
-			ID:      99999,
-			OrderID: 999,
+			ID:       99999,
+			OrderID:  999,
 			PlayerID: 999,
 		}
 		err := repo.UpdateRecord(ctx, nonExistentRecord)

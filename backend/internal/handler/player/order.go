@@ -13,12 +13,12 @@ import (
 
 // RegisterOrderRoutes 注册陪玩师端订单管理路由
 func RegisterOrderRoutes(router gin.IRouter, svc *order.OrderService, authMiddleware gin.HandlerFunc) {
-    group := router.Group("/player/orders")
-    group.Use(authMiddleware) // 需要认证
-    group.GET("/available", func(c *gin.Context) { getAvailableOrdersHandler(c, svc) })
-    group.POST("/:id/accept", func(c *gin.Context) { acceptOrderHandler(c, svc) })
-    group.GET("/my", func(c *gin.Context) { getMyAcceptedOrdersHandler(c, svc) })
-    group.PUT("/:id/complete", func(c *gin.Context) { completeOrderByPlayerHandler(c, svc) })
+	group := router.Group("/player/orders")
+	group.Use(authMiddleware) // 需要认证
+	group.GET("/available", func(c *gin.Context) { getAvailableOrdersHandler(c, svc) })
+	group.POST("/:id/accept", func(c *gin.Context) { acceptOrderHandler(c, svc) })
+	group.GET("/my", func(c *gin.Context) { getMyAcceptedOrdersHandler(c, svc) })
+	group.PUT("/:id/complete", func(c *gin.Context) { completeOrderByPlayerHandler(c, svc) })
 }
 
 // getAvailableOrdersHandler 获取可接订单列表
@@ -31,7 +31,7 @@ func RegisterOrderRoutes(router gin.IRouter, svc *order.OrderService, authMiddle
 // @Param        gameId         query     int     false  "游戏ID"
 // @Param        page           query     int     false  "页码"
 // @Param        pageSize       query     int     false  "每页数量"
-// @Success      200            {object}  model.APIResponse[map[string]any]
+// @Success      200            {object}  model.SuccessResponse
 // @Failure      400            {object}  model.APIResponse[any]
 // @Failure      401            {object}  model.APIResponse[any]
 // @Router       /player/orders/available [get]
@@ -48,7 +48,7 @@ func getAvailableOrdersHandler(c *gin.Context, svc *order.OrderService) {
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[map[string]any]{
+	respondJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
@@ -61,8 +61,7 @@ func getAvailableOrdersHandler(c *gin.Context, svc *order.OrderService) {
 
 // acceptOrderHandler 接单
 // @Summary      接单
-// @Description  陪玩师接�?// @Tags         Player - Orders
-// @Accept       json
+// @Description  API endpoint// @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
 // @Param        id             path      int     true  "订单ID"
@@ -96,12 +95,10 @@ func acceptOrderHandler(c *gin.Context, svc *order.OrderService) {
 	})
 }
 
-// getMyAcceptedOrdersHandler 获取我接的订�?// @Summary      获取我接的订�?// @Description  获取陪玩师接的订单列�?// @Tags         Player - Orders
-// @Accept       json
+// @Description  API endpoint// @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true   "Bearer {token}"
-// @Param        status         query     string  false  "订单状�?
-// @Param        page           query     int     false  "页码"
+// @Param        status         query    string       false  "Status filter"// @Param        page           query     int     false  "页码"
 // @Param        pageSize       query     int     false  "每页数量"
 // @Success      200            {object}  model.APIResponse[order.MyOrderListResponse]
 // @Failure      400            {object}  model.APIResponse[any]
@@ -132,8 +129,7 @@ func getMyAcceptedOrdersHandler(c *gin.Context, svc *order.OrderService) {
 
 // completeOrderByPlayerHandler 完成订单（陪玩师端）
 // @Summary      完成订单
-// @Description  陪玩师完成订�?// @Tags         Player - Orders
-// @Accept       json
+// @Description  API endpoint// @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
 // @Param        id             path      int     true  "订单ID"

@@ -87,7 +87,9 @@ func (m *mockReviewReplyRepoForPlayerHandler) UpdateStatus(ctx context.Context, 
 
 type mockPlayerRepoForReviewHandler struct{}
 
-func (m *mockPlayerRepoForReviewHandler) List(ctx context.Context) ([]model.Player, error) { return nil, nil }
+func (m *mockPlayerRepoForReviewHandler) List(ctx context.Context) ([]model.Player, error) {
+	return nil, nil
+}
 func (m *mockPlayerRepoForReviewHandler) ListPaged(ctx context.Context, page, pageSize int) ([]model.Player, int64, error) {
 	return nil, 0, nil
 }
@@ -97,8 +99,12 @@ func (m *mockPlayerRepoForReviewHandler) Get(ctx context.Context, id uint64) (*m
 func (m *mockPlayerRepoForReviewHandler) GetByUserID(ctx context.Context, userID uint64) (*model.Player, error) {
 	return &model.Player{Base: model.Base{ID: 1}, UserID: userID}, nil
 }
-func (m *mockPlayerRepoForReviewHandler) Create(ctx context.Context, player *model.Player) error { return nil }
-func (m *mockPlayerRepoForReviewHandler) Update(ctx context.Context, player *model.Player) error { return nil }
+func (m *mockPlayerRepoForReviewHandler) Create(ctx context.Context, player *model.Player) error {
+	return nil
+}
+func (m *mockPlayerRepoForReviewHandler) Update(ctx context.Context, player *model.Player) error {
+	return nil
+}
 func (m *mockPlayerRepoForReviewHandler) Delete(ctx context.Context, id uint64) error { return nil }
 func (m *mockPlayerRepoForReviewHandler) ListByGameID(ctx context.Context, gameID uint64) ([]model.Player, error) {
 	return nil, nil
@@ -115,11 +121,13 @@ func (m *mockOrderRepoForReviewHandler) Get(ctx context.Context, id uint64) (*mo
 	return &model.Order{Base: model.Base{ID: id}, PlayerID: &playerID}, nil
 }
 func (m *mockOrderRepoForReviewHandler) Update(ctx context.Context, o *model.Order) error { return nil }
-func (m *mockOrderRepoForReviewHandler) Delete(ctx context.Context, id uint64) error { return nil }
+func (m *mockOrderRepoForReviewHandler) Delete(ctx context.Context, id uint64) error      { return nil }
 
 type mockUserRepoForReviewHandler struct{}
 
-func (m *mockUserRepoForReviewHandler) List(ctx context.Context) ([]model.User, error) { return nil, nil }
+func (m *mockUserRepoForReviewHandler) List(ctx context.Context) ([]model.User, error) {
+	return nil, nil
+}
 func (m *mockUserRepoForReviewHandler) ListPaged(ctx context.Context, page, pageSize int) ([]model.User, int64, error) {
 	return nil, 0, nil
 }
@@ -138,8 +146,12 @@ func (m *mockUserRepoForReviewHandler) FindByEmail(ctx context.Context, email st
 func (m *mockUserRepoForReviewHandler) FindByPhone(ctx context.Context, phone string) (*model.User, error) {
 	return nil, repository.ErrNotFound
 }
-func (m *mockUserRepoForReviewHandler) Create(ctx context.Context, user *model.User) error { return nil }
-func (m *mockUserRepoForReviewHandler) Update(ctx context.Context, user *model.User) error { return nil }
+func (m *mockUserRepoForReviewHandler) Create(ctx context.Context, user *model.User) error {
+	return nil
+}
+func (m *mockUserRepoForReviewHandler) Update(ctx context.Context, user *model.User) error {
+	return nil
+}
 func (m *mockUserRepoForReviewHandler) Delete(ctx context.Context, id uint64) error { return nil }
 
 func setupPlayerReviewService(t *testing.T) *reviewsvc.ReviewService {

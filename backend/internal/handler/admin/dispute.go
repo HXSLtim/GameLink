@@ -92,9 +92,9 @@ func (h *DisputeHandler) ListPendingDisputes(c *gin.Context) {
 
 	type ListResponse struct {
 		Disputes []model.OrderDispute `json:"disputes"`
-		Total    int64               `json:"total"`
-		Page     int                 `json:"page"`
-		PageSize int                 `json:"pageSize"`
+		Total    int64                `json:"total"`
+		Page     int                  `json:"page"`
+		PageSize int                  `json:"pageSize"`
 	}
 	writeJSON(c, http.StatusOK, model.APIResponse[ListResponse]{
 		Success: true,

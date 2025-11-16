@@ -82,16 +82,16 @@ func (s *CommissionService) RecordCommission(ctx context.Context, orderID uint64
 	if playerID == 0 {
 		return errors.New("order has no player assigned")
 	}
-	
+
 	record := &model.CommissionRecord{
-		OrderID:            orderID,
-		PlayerID:           playerID,
-		TotalAmountCents:   calc.TotalAmountCents,
-		CommissionRate:     calc.CommissionRate,
-		CommissionCents:    calc.CommissionCents,
-		PlayerIncomeCents:  calc.PlayerIncomeCents,
-		SettlementStatus:   "pending",
-		SettlementMonth:    now.Format("2006-01"),
+		OrderID:           orderID,
+		PlayerID:          playerID,
+		TotalAmountCents:  calc.TotalAmountCents,
+		CommissionRate:    calc.CommissionRate,
+		CommissionCents:   calc.CommissionCents,
+		PlayerIncomeCents: calc.PlayerIncomeCents,
+		SettlementStatus:  "pending",
+		SettlementMonth:   now.Format("2006-01"),
 	}
 
 	return s.commissions.CreateRecord(ctx, record)
@@ -206,7 +206,7 @@ func (s *CommissionService) GetPlayerCommissionSummary(ctx context.Context, play
 	var totalIncome int64
 	if len(records) > 0 {
 		// 统计所有抽成记录
-	allRecords, _, _ := s.commissions.ListRecords(ctx, commissionrepo.CommissionRecordListOptions{
+		allRecords, _, _ := s.commissions.ListRecords(ctx, commissionrepo.CommissionRecordListOptions{
 			PlayerID: &playerID,
 			Page:     1,
 			PageSize: 10000,
@@ -248,15 +248,15 @@ func (s *CommissionService) GetCommissionRecords(ctx context.Context, playerID u
 	recordDTOs := make([]CommissionRecordDTO, 0, len(records))
 	for _, r := range records {
 		recordDTOs = append(recordDTOs, CommissionRecordDTO{
-			ID:                 r.ID,
-			OrderID:            r.OrderID,
-			TotalAmountCents:   r.TotalAmountCents,
-			CommissionRate:     r.CommissionRate,
-			CommissionCents:    r.CommissionCents,
-			PlayerIncomeCents:  r.PlayerIncomeCents,
-			SettlementStatus:   r.SettlementStatus,
-			SettlementMonth:    r.SettlementMonth,
-			CreatedAt:          r.CreatedAt,
+			ID:                r.ID,
+			OrderID:           r.OrderID,
+			TotalAmountCents:  r.TotalAmountCents,
+			CommissionRate:    r.CommissionRate,
+			CommissionCents:   r.CommissionCents,
+			PlayerIncomeCents: r.PlayerIncomeCents,
+			SettlementStatus:  r.SettlementStatus,
+			SettlementMonth:   r.SettlementMonth,
+			CreatedAt:         r.CreatedAt,
 		})
 	}
 
@@ -268,15 +268,15 @@ func (s *CommissionService) GetCommissionRecords(ctx context.Context, playerID u
 
 // CommissionRecordDTO 抽成记录DTO
 type CommissionRecordDTO struct {
-	ID                 uint64    `json:"id"`
-	OrderID            uint64    `json:"orderId"`
-	TotalAmountCents   int64     `json:"totalAmountCents"`
-	CommissionRate     int       `json:"commissionRate"`
-	CommissionCents    int64     `json:"commissionCents"`
-	PlayerIncomeCents  int64     `json:"playerIncomeCents"`
-	SettlementStatus   string    `json:"settlementStatus"`
-	SettlementMonth    string    `json:"settlementMonth"`
-	CreatedAt          time.Time `json:"createdAt"`
+	ID                uint64    `json:"id"`
+	OrderID           uint64    `json:"orderId"`
+	TotalAmountCents  int64     `json:"totalAmountCents"`
+	CommissionRate    int       `json:"commissionRate"`
+	CommissionCents   int64     `json:"commissionCents"`
+	PlayerIncomeCents int64     `json:"playerIncomeCents"`
+	SettlementStatus  string    `json:"settlementStatus"`
+	SettlementMonth   string    `json:"settlementMonth"`
+	CreatedAt         time.Time `json:"createdAt"`
 }
 
 // CommissionRecordListResponse 抽成记录列表响应
@@ -494,12 +494,12 @@ func (s *CommissionService) CalculateOrderCommission(ctx context.Context, order 
 		defaultRule, err := s.commissions.GetDefaultRule(ctx)
 		defaultRate := 20 // 默认20%
 		defaultDetail := "平台默认20%抽成"
-		
+
 		if err == nil && defaultRule != nil {
 			defaultRate = defaultRule.Rate
 			defaultDetail = defaultRule.Name
 		}
-		
+
 		candidateRates = append(candidateRates, CommissionCandidate{
 			Source: "默认规则",
 			Rate:   defaultRate,
@@ -570,7 +570,7 @@ func (s *CommissionService) getRankingCommissionRate(ctx context.Context, player
 	//     }
 	// }
 
-    return 0, "" // 暂时返回0，等待排名系统完整实现
+	return 0, "" // 暂时返回0，等待排名系统完整实现
 }
 
 // getServiceItemForOrder 获取订单的服务项
@@ -616,7 +616,7 @@ func FindCommissionRateForRank(rules []model.RankingCommissionRule, rank int) in
 			return rule.CommissionRate
 		}
 	}
-    return 0 // 不在任何规则范围内
+	return 0 // 不在任何规则范围内
 }
 
 // ValidateRankingRules 验证排名规则的合法性
@@ -646,4 +646,3 @@ func ValidateRankingRules(rules []model.RankingCommissionRule) error {
 func rangesOverlap(start1, end1, start2, end2 int) bool {
 	return math.Max(float64(start1), float64(start2)) <= math.Min(float64(end1), float64(end2))
 }
-

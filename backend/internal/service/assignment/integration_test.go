@@ -270,17 +270,17 @@ func TestInitiateDisputeFullFlow(t *testing.T) {
 	// Create test order
 	now := time.Now()
 	order := &model.Order{
-		Base:     model.Base{ID: 1, CreatedAt: now},
-		OrderNo:  "ORD001",
-		UserID:   1,
-		Status:   model.OrderStatusCompleted,
+		Base:        model.Base{ID: 1, CreatedAt: now},
+		OrderNo:     "ORD001",
+		UserID:      1,
+		Status:      model.OrderStatusCompleted,
 		CompletedAt: &now,
 	}
 	orderRepo.Create(ctx, order)
 
 	// Create test user
 	user := &model.User{
-		Base: model.Base{ID: 1},
+		Base:  model.Base{ID: 1},
 		Phone: "13800000001",
 	}
 	userRepo.users[1] = user
@@ -349,11 +349,11 @@ func TestAssignAndResolveDispute(t *testing.T) {
 	// Create test data
 	now := time.Now()
 	order := &model.Order{
-		Base:        model.Base{ID: 1, CreatedAt: now},
-		OrderNo:     "ORD001",
-		UserID:      1,
-		Status:      model.OrderStatusCompleted,
-		CompletedAt: &now,
+		Base:            model.Base{ID: 1, CreatedAt: now},
+		OrderNo:         "ORD001",
+		UserID:          1,
+		Status:          model.OrderStatusCompleted,
+		CompletedAt:     &now,
 		TotalPriceCents: 10000,
 	}
 	orderRepo.Create(ctx, order)

@@ -1,0 +1,263 @@
+/**
+ * 订单卡片样式
+ */
+
+.orderCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  cursor: pointer;
+  transition: all var(--transition-base);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--card-hover-shadow);
+    border-color: var(--color-accent);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
+
+/* ==================== 头部 ==================== */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.orderInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.orderNo {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-mono);
+}
+
+.createdAt {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* ==================== 状态标签 ==================== */
+.status {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  padding: 4px 12px;
+  border-radius: var(--tag-radius);
+  white-space: nowrap;
+}
+
+.statusPending {
+  color: var(--color-warning);
+  background-color: rgba(250, 168, 26, 0.1);
+}
+
+.statusConfirmed {
+  color: var(--color-info);
+  background-color: rgba(0, 175, 244, 0.1);
+}
+
+.statusInProgress {
+  color: var(--color-accent);
+  background-color: rgba(88, 101, 242, 0.1);
+}
+
+.statusCompleted {
+  color: var(--color-success);
+  background-color: rgba(59, 165, 93, 0.1);
+}
+
+.statusCanceled {
+  color: var(--color-text-muted);
+  background-color: var(--color-bg-tertiary);
+}
+
+/* ==================== 内容区 ==================== */
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.serviceInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gameName {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.serviceName {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* ==================== 陪玩师信息 ==================== */
+.playerInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background-color: var(--color-bg-tertiary);
+  border-radius: var(--radius-md);
+}
+
+.playerAvatar {
+  width: var(--avatar-size-sm);
+  height: var(--avatar-size-sm);
+  border-radius: var(--radius-md);
+  object-fit: cover;
+}
+
+.playerNickname {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+/* ==================== 订单详情 ==================== */
+.details {
+  display: flex;
+  gap: var(--spacing-lg);
+}
+
+.detailItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detailLabel {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.detailValue {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.priceValue {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-kook-primary);
+}
+
+/* ==================== 操作按钮 ==================== */
+.actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  padding-top: var(--spacing-sm);
+  border-top: 1px solid var(--color-divider);
+}
+
+.actionButton {
+  flex: 1;
+  height: var(--button-height-md);
+  padding: 0 var(--spacing-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  border: none;
+  border-radius: var(--button-radius);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  white-space: nowrap;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.buttonPrimary {
+  color: #ffffff;
+  background-color: var(--color-accent);
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-accent-hover);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+}
+
+.buttonSecondary {
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-tertiary);
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-bg-hover);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+}
+
+.buttonDanger {
+  color: #ffffff;
+  background-color: var(--color-danger);
+
+  &:hover:not(:disabled) {
+    background-color: #c73a3d;
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+}
+
+/* ==================== 响应式设计 ==================== */
+
+/* 手机 */
+@media (max-width: 480px) {
+  .orderCard {
+    padding: var(--spacing-sm);
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+  }
+
+  .details {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .actionButton {
+    width: 100%;
+  }
+}

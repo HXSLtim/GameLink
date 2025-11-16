@@ -58,21 +58,19 @@ func createOrderHandler(c *gin.Context, svc *order.OrderService) {
 }
 
 func getOrderMessagesHandler(c *gin.Context, svc *order.OrderService) {
-    respondJSON(c, http.StatusOK, model.APIResponse[any]{
-        Success: true,
-        Code:    http.StatusOK,
-        Message: "OK",
-    })
+	respondJSON(c, http.StatusOK, model.APIResponse[any]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: "OK",
+	})
 }
 
 // getMyOrdersHandler 获取我的订单列表
 // @Summary      获取我的订单列表
-// @Description  获取当前用户的订单列�?// @Tags         User - Orders
-// @Accept       json
+// @Description  API endpoint// @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true   "Bearer {token}"
-// @Param        status         query     string  false  "订单状�?
-// @Param        page           query     int     false  "页码"
+// @Param        status         query    string       false  "Status filter"// @Param        page           query     int     false  "页码"
 // @Param        pageSize       query     int     false  "每页数量"
 // @Success      200            {object}  model.APIResponse[order.MyOrderListResponse]
 // @Failure      400            {object}  model.APIResponse[any]
@@ -239,7 +237,7 @@ func completeOrderHandler(c *gin.Context, svc *order.OrderService) {
 
 // getUserIDFromContext 从上下文获取用户ID
 func getUserIDFromContext(c *gin.Context) uint64 {
-    // 从 JWT 中间件设置的上下文中获取用户ID
+	// 从 JWT 中间件设置的上下文中获取用户ID
 	userIDVal, exists := c.Get("user_id")
 	if !exists {
 		return 0

@@ -1,13 +1,13 @@
 package admin
 
 import (
-    "encoding/csv"
-    "encoding/json"
-    "errors"
-    "fmt"
-    "net/http"
-    "strings"
-    "time"
+	"encoding/csv"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -159,8 +159,7 @@ func (h *OrderHandler) ConfirmOrder(c *gin.Context) {
 	writeJSON(c, http.StatusOK, model.APIResponse[*model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: order})
 }
 
-// StartOrder 开始服务�?// @Summary      开始服�?// @Description  将订单状态从 confirmed 置为 in_progress，并记录开始时�?// @Tags         Admin/Orders
-// @Security     BearerAuth
+// @Description  API endpoint// @Security     BearerAuth
 // @Accept       json
 // @Produce      json
 // @Param        id       path  int               true  "订单ID"
@@ -239,17 +238,14 @@ func (h *OrderHandler) CompleteOrder(c *gin.Context) {
 
 // ListOrders
 // @Summary      列出订单
-// @Description  根据状�?用户/玩家/游戏和时间范围筛选，支持分页
-// @Tags         Admin/Orders
+// @Description  API endpoint// @Tags         Admin/Orders
 // @Security     BearerAuth
 // @Param        page        query  int     false  "页码"
 // @Param        pageSize   query     int       false  "每页数量"
-// @Param        status      query  []string  false  "订单状态，可多�?
-// @Param        userId     query     int       false  "用户ID"
+// @Param        status         query    []string     false  "Status filter"// @Param        userId     query     int       false  "用户ID"
 // @Param        player_id   query  int     false  "玩家ID"
 // @Param        gameId     query     int       false  "游戏ID"
-// @Param        dateFrom   query     string    false  "开始时�?
-// @Param        dateTo     query     string    false  "结束时间"
+// @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
 // @Produce      json
 // @Success      200  {object}  map[string]any
 // @Router       /admin/orders [get]
@@ -310,13 +306,11 @@ func (h *OrderHandler) GetOrder(c *gin.Context) {
 	})
 }
 
-// RefundOrder 处理订单退款�?// @Summary      订单退�?// @Description  将订单状态标记为 refunded，并记录退款金额与原因，同时关联支付退�?// @Tags         Admin/Orders
-// @Security     BearerAuth
+// @Description  API endpoint// @Security     BearerAuth
 // @Accept       json
 // @Produce      json
 // @Param        id       path  int                  true  "订单ID"
-// @Param        request  body  orderRefundPayload   true  "退款信�?
-// @Success      200  {object}  map[string]any
+// @Param        request        body     orderRefundPayload true   "Request body"// @Success      200  {object}  map[string]any
 // @Failure      404  {object}  map[string]any
 // @Router       /admin/orders/{id}/refund [post]
 func (h *OrderHandler) RefundOrder(c *gin.Context) {
@@ -350,8 +344,7 @@ func (h *OrderHandler) RefundOrder(c *gin.Context) {
 	writeJSON(c, http.StatusOK, model.APIResponse[*model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: order})
 }
 
-// GetOrderTimeline 返回订单时间线�?// @Summary      获取订单时间�?// @Description  汇总订单的状态变更、操作日志、支付事件等信息
-// @Tags         Admin/Orders
+// @Description  API endpoint// @Tags         Admin/Orders
 // @Security     BearerAuth
 // @Produce      json
 // @Param        id   path  int  true  "订单ID"
@@ -570,10 +563,9 @@ func (h *OrderHandler) DeleteOrder(c *gin.Context) {
 // @Param        pageSize   query     int       false  "每页数量"
 // @Param        action     query  string false "动作过滤" Enums(create,assign_player,update_status,cancel,delete)
 // @Param        actor_user_id query int false "操作者用户ID"
-// @Param        dateFrom   query     string    false  "开始时�?
-// @Param        dateTo     query     string    false  "结束时间"
+// @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
 // @Param        export     query  string false "导出格式" Enums(csv)
-// @Param        fields     query  string false "导出列（逗号分隔），默认：id,entity_type,entity_id,actor_user_id,action,reason,metadata,created_at"
+// @Param        fields     query  string false "Export columns (comma separated)"
 // @Param        header_lang query string false "列头语言" Enums(en,zh)
 // @Success      200  {object}  map[string]any
 // @Router       /admin/orders/{id}/logs [get]
@@ -587,13 +579,13 @@ func (h *OrderHandler) ListOrderLogs(c *gin.Context) {
 	if !ok {
 		return
 	}
-    var actorID *uint64
-    if v, err := queryUint64Ptr(c, "actor_user_id"); err == nil {
-        actorID = v
-    } else {
-        writeJSONError(c, 400, apierr.ErrInvalidUserID)
-        return
-    }
+	var actorID *uint64
+	if v, err := queryUint64Ptr(c, "actor_user_id"); err == nil {
+		actorID = v
+	} else {
+		writeJSONError(c, 400, apierr.ErrInvalidUserID)
+		return
+	}
 	var dateFrom, dateTo *time.Time
 	if v, err := queryTimePtr(c, "date_from"); err == nil {
 		dateFrom = v
@@ -743,17 +735,14 @@ func (h *PaymentHandler) CapturePayment(c *gin.Context) {
 
 // ListPayments
 // @Summary      列出支付
-// @Description  根据状�?方法/用户/订单和时间范围筛选，支持分页
-// @Tags         Admin/Payments
+// @Description  API endpoint// @Tags         Admin/Payments
 // @Security     BearerAuth
 // @Param        page        query  int       false  "页码"
 // @Param        pageSize   query     int       false  "每页数量"
-// @Param        status      query  []string  false  "支付状�?
-// @Param        method      query  []string  false  "支付方式"
+// @Param        status         query    []string     false  "Status filter"// @Param        method      query  []string  false  "支付方式"
 // @Param        userId     query     int       false  "用户ID"
 // @Param        orderId     query     int       false  "订单ID"
-// @Param        dateFrom   query     string    false  "开始时�?
-// @Param        dateTo     query     string    false  "结束时间"
+// @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
 // @Produce      json
 // @Success      200  {object}  map[string]any
 // @Router       /admin/payments [get]
@@ -925,10 +914,9 @@ func (h *PaymentHandler) DeletePayment(c *gin.Context) {
 // @Param        pageSize   query     int       false  "每页数量"
 // @Param        action     query  string false "动作过滤" Enums(create,capture,update_status,refund,delete)
 // @Param        actor_user_id query int false "操作者用户ID"
-// @Param        dateFrom   query     string    false  "开始时�?
-// @Param        dateTo     query     string    false  "结束时间"
+// @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
 // @Param        export     query  string false "导出格式" Enums(csv)
-// @Param        fields     query  string false "导出列（逗号分隔），默认：id,entity_type,entity_id,actor_user_id,action,reason,metadata,created_at"
+// @Param        fields     query  string false "Export columns (comma separated)"
 // @Param        header_lang query string false "列头语言" Enums(en,zh)
 // @Success      200  {object}  map[string]any
 // @Router       /admin/payments/{id}/logs [get]
@@ -942,13 +930,13 @@ func (h *PaymentHandler) ListPaymentLogs(c *gin.Context) {
 	if !ok {
 		return
 	}
-    var actorID *uint64
-    if v, err := queryUint64Ptr(c, "actor_user_id"); err == nil {
-        actorID = v
-    } else {
-        writeJSONError(c, 400, apierr.ErrInvalidUserID)
-        return
-    }
+	var actorID *uint64
+	if v, err := queryUint64Ptr(c, "actor_user_id"); err == nil {
+		actorID = v
+	} else {
+		writeJSONError(c, 400, apierr.ErrInvalidUserID)
+		return
+	}
 	var dateFrom, dateTo *time.Time
 	if v, err := queryTimePtr(c, "date_from"); err == nil {
 		dateFrom = v
@@ -1057,8 +1045,8 @@ func exportOperationLogsCSV(c *gin.Context, entity string, entityID uint64, item
 				row = append(row, it.Action)
 			case "reason":
 				row = append(row, it.Reason)
-            case "metadata":
-                row = append(row, fmt.Sprintf("%q", string(it.MetadataJSON)))
+			case "metadata":
+				row = append(row, fmt.Sprintf("%q", string(it.MetadataJSON)))
 			case "created_at":
 				t := it.CreatedAt
 				if loc != nil {
@@ -1106,8 +1094,7 @@ type CapturePaymentPayload struct {
 // @Accept       json
 // @Produce      json
 // @Param        id       path  int                    true  "支付ID"
-// @Param        request  body  RefundPaymentPayload   false "退款信�?
-// @Success      200  {object}  map[string]any
+// @Param        request        body     RefundPaymentPayload false  "Request body"// @Success      200  {object}  map[string]any
 // @Failure      404  {object}  map[string]any
 // @Router       /admin/payments/{id}/refund [post]
 func (h *PaymentHandler) RefundPayment(c *gin.Context) {

@@ -62,7 +62,7 @@ func (r *chatReportRepository) List(ctx context.Context, opts repository.ChatRep
 	}
 	var items []model.ChatReport
 	if err := tx.Order("id DESC").
-		Offset((page-1)*pageSize).
+		Offset((page - 1) * pageSize).
 		Limit(pageSize).
 		Find(&items).Error; err != nil {
 		return nil, 0, err

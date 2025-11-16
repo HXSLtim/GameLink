@@ -12,7 +12,7 @@ import (
 
 // NewChatMessageRepository creates chat message repository implementation.
 func NewChatMessageRepository(db *gorm.DB) repository.ChatMessageRepository {
-    return &chatMessageRepository{db: db}
+	return &chatMessageRepository{db: db}
 }
 
 type chatMessageRepository struct {
@@ -171,8 +171,10 @@ func (r *chatMessageRepository) UpdateAuditStatus(ctx context.Context, id uint64
 }
 
 func (r *chatMessageRepository) DeleteByGroupIDs(ctx context.Context, groupIDs []uint64) error {
-    if len(groupIDs) == 0 { return nil }
-    return r.db.WithContext(ctx).Unscoped().
-        Where("group_id IN ?", groupIDs).
-        Delete(&model.ChatMessage{}).Error
+	if len(groupIDs) == 0 {
+		return nil
+	}
+	return r.db.WithContext(ctx).Unscoped().
+		Where("group_id IN ?", groupIDs).
+		Delete(&model.ChatMessage{}).Error
 }

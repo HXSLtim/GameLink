@@ -133,7 +133,7 @@ func TestCommissionHelpers(t *testing.T) {
 		respondJSON(c, http.StatusOK, resp)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var result model.APIResponse[map[string]int64]
 		json.Unmarshal(w.Body.Bytes(), &result)
 		assert.True(t, result.Success)
@@ -147,7 +147,7 @@ func TestCommissionHelpers(t *testing.T) {
 		respondError(c, http.StatusNotFound, "Player not found")
 
 		assert.Equal(t, http.StatusNotFound, w.Code)
-		
+
 		var result model.APIResponse[interface{}]
 		json.Unmarshal(w.Body.Bytes(), &result)
 		assert.False(t, result.Success)

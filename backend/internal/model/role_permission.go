@@ -17,9 +17,3 @@ type RolePermission struct {
 func (RolePermission) TableName() string {
 	return "role_permissions"
 }
-
-
-
-
-
-

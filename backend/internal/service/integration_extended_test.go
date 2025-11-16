@@ -18,7 +18,7 @@ func TestIntegration_OrderFlow(t *testing.T) {
 		// 2. 创建订单
 		// 3. 支付订单
 		// 4. 完成订单
-		
+
 		assert.NotNil(t, ctx)
 		// 简化测试：验证流程不会panic
 	})
@@ -37,7 +37,7 @@ func TestIntegration_PaymentFlow(t *testing.T) {
 		// 1. 创建支付
 		// 2. 支付回调
 		// 3. 更新订单状态
-		
+
 		assert.NotNil(t, ctx)
 	})
 
@@ -55,7 +55,7 @@ func TestIntegration_ReviewFlow(t *testing.T) {
 		// 1. 订单完成
 		// 2. 用户评价
 		// 3. 更新玩家评分
-		
+
 		assert.NotNil(t, ctx)
 	})
 }
@@ -68,7 +68,7 @@ func TestIntegration_WithdrawFlow(t *testing.T) {
 		// 1. 玩家申请提现
 		// 2. 管理员审核
 		// 3. 更新余额
-		
+
 		assert.NotNil(t, ctx)
 	})
 

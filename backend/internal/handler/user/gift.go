@@ -6,9 +6,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-    "gamelink/internal/model"
-    "gamelink/internal/service/gift"
-    "gamelink/internal/service/item"
+	"gamelink/internal/model"
+	"gamelink/internal/service/gift"
+	"gamelink/internal/service/item"
 )
 
 // RegisterGiftRoutes Register user gift routes
@@ -31,7 +31,7 @@ func RegisterGiftRoutes(router gin.IRouter, giftSvc *gift.GiftService, itemSvc *
 // @Param        Authorization  header    string  true   "Bearer {token}"
 // @Param        page           query     int     false  "页码"
 // @Param        pageSize       query     int     false  "每页数量"
-// @Success      200            {object}  model.APIResponse[serviceitem.ServiceItemListResponse]
+// @Success      200            {object}  model.APIResponse[item.ServiceItemListResponse]
 // @Failure      400            {object}  model.APIResponse[any]
 // @Failure      401            {object}  model.APIResponse[any]
 // @Router       /user/gifts [get]
@@ -45,7 +45,7 @@ func listGiftsHandler(c *gin.Context, svc *item.ServiceItemService) {
 		return
 	}
 
-    respondJSON(c, http.StatusOK, model.APIResponse[item.ServiceItemListResponse]{
+	respondJSON(c, http.StatusOK, model.APIResponse[item.ServiceItemListResponse]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
@@ -55,12 +55,11 @@ func listGiftsHandler(c *gin.Context, svc *item.ServiceItemService) {
 
 // sendGiftHandler 赠送礼�?
 // @Summary      赠送礼�?
-// @Description  用户给陪玩师赠送礼�?
-// @Tags         User - Gift
+// @Description  API endpoint// @Tags         User - Gift
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string                  true  "Bearer {token}"
-// @Param        request        body      gift.SendGiftRequest  true  "赠送礼物请�?
+// @Param        request        body      gift.SendGiftRequest  true  "Send gift request"
 // @Success      200            {object}  model.APIResponse[gift.GiftOrderResponse]
 // @Failure      400            {object}  model.APIResponse[any]
 // @Failure      401            {object}  model.APIResponse[any]

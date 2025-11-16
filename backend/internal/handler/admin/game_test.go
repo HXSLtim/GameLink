@@ -103,9 +103,15 @@ func (f *fakeUserRepo) Get(ctx context.Context, id uint64) (*model.User, error) 
 	return nil, repository.ErrNotFound
 }
 
-func (f *fakeUserRepo) FindByEmail(ctx context.Context, email string) (*model.User, error) { return f.last, nil }
-func (f *fakeUserRepo) FindByPhone(ctx context.Context, phone string) (*model.User, error) { return f.last, nil }
-func (f *fakeUserRepo) GetByPhone(ctx context.Context, phone string) (*model.User, error) { return f.last, nil }
+func (f *fakeUserRepo) FindByEmail(ctx context.Context, email string) (*model.User, error) {
+	return f.last, nil
+}
+func (f *fakeUserRepo) FindByPhone(ctx context.Context, phone string) (*model.User, error) {
+	return f.last, nil
+}
+func (f *fakeUserRepo) GetByPhone(ctx context.Context, phone string) (*model.User, error) {
+	return f.last, nil
+}
 func (f *fakeUserRepo) Create(ctx context.Context, u *model.User) error {
 	if u.ID == 0 {
 		u.ID = 1
@@ -118,7 +124,9 @@ func (f *fakeUserRepo) Delete(ctx context.Context, id uint64) error     { return
 
 type fakePlayerRepo struct{}
 
-func (f *fakePlayerRepo) List(ctx context.Context) ([]model.Player, error) { return []model.Player{}, nil }
+func (f *fakePlayerRepo) List(ctx context.Context) ([]model.Player, error) {
+	return []model.Player{}, nil
+}
 func (f *fakePlayerRepo) ListPaged(ctx context.Context, page, size int) ([]model.Player, int64, error) {
 	return nil, 0, nil
 }
@@ -128,7 +136,9 @@ func (f *fakePlayerRepo) Get(ctx context.Context, id uint64) (*model.Player, err
 func (f *fakePlayerRepo) Create(ctx context.Context, p *model.Player) error { return nil }
 func (f *fakePlayerRepo) Update(ctx context.Context, p *model.Player) error { return nil }
 func (f *fakePlayerRepo) Delete(ctx context.Context, id uint64) error       { return nil }
-func (f *fakePlayerRepo) GetByUserID(ctx context.Context, userID uint64) (*model.Player, error) { return nil, repository.ErrNotFound }
+func (f *fakePlayerRepo) GetByUserID(ctx context.Context, userID uint64) (*model.Player, error) {
+	return nil, repository.ErrNotFound
+}
 
 type fakeOrderRepo struct{ obj *model.Order }
 
@@ -181,7 +191,9 @@ func (f *fakeRoleRepo) ListPaged(ctx context.Context, page, pageSize int) ([]mod
 func (f *fakeRoleRepo) ListPagedWithFilter(ctx context.Context, page, pageSize int, keyword string, isSystem *bool) ([]model.RoleModel, int64, error) {
 	return nil, 0, nil
 }
-func (f *fakeRoleRepo) ListWithPermissions(ctx context.Context) ([]model.RoleModel, error) { return nil, nil }
+func (f *fakeRoleRepo) ListWithPermissions(ctx context.Context) ([]model.RoleModel, error) {
+	return nil, nil
+}
 func (f *fakeRoleRepo) Get(ctx context.Context, id uint64) (*model.RoleModel, error) {
 	return nil, repository.ErrNotFound
 }

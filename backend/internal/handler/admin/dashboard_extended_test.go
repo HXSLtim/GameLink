@@ -17,7 +17,7 @@ func TestGetDashboardOverview_EdgeCases(t *testing.T) {
 
 	t.Run("空数据库", func(t *testing.T) {
 		router := gin.New()
-		
+
 		userRepo := &dashboardUserRepo{users: []model.User{}}
 		playerRepo := &fakePlayerRepoForHandler{
 			listPaged: func(page, size int) ([]model.Player, int64, error) {
@@ -27,7 +27,7 @@ func TestGetDashboardOverview_EdgeCases(t *testing.T) {
 		orderRepo := &fakeOrderRepoForHandler{items: []model.Order{}}
 		withdrawRepo := &dashboardWithdrawRepo{}
 		serviceItemRepo := &dashboardServiceItemRepo{}
-		
+
 		router.GET("/dashboard", func(c *gin.Context) {
 			getDashboardOverviewHandler(c, userRepo, playerRepo, orderRepo, withdrawRepo, serviceItemRepo)
 		})
@@ -37,7 +37,7 @@ func TestGetDashboardOverview_EdgeCases(t *testing.T) {
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var resp model.APIResponse[DashboardOverviewStats]
 		err := json.Unmarshal(w.Body.Bytes(), &resp)
 		assert.NoError(t, err)
@@ -48,13 +48,13 @@ func TestGetDashboardOverview_EdgeCases(t *testing.T) {
 
 	t.Run("大量数据", func(t *testing.T) {
 		router := gin.New()
-		
+
 		// 创建1000个用户
 		users := make([]model.User, 1000)
 		for i := 0; i < 1000; i++ {
 			users[i] = model.User{Base: model.Base{ID: uint64(i + 1)}}
 		}
-		
+
 		userRepo := &dashboardUserRepo{users: users}
 		playerRepo := &fakePlayerRepoForHandler{
 			listPaged: func(page, size int) ([]model.Player, int64, error) {
@@ -64,7 +64,7 @@ func TestGetDashboardOverview_EdgeCases(t *testing.T) {
 		orderRepo := &fakeOrderRepoForHandler{items: []model.Order{}}
 		withdrawRepo := &dashboardWithdrawRepo{}
 		serviceItemRepo := &dashboardServiceItemRepo{}
-		
+
 		router.GET("/dashboard", func(c *gin.Context) {
 			getDashboardOverviewHandler(c, userRepo, playerRepo, orderRepo, withdrawRepo, serviceItemRepo)
 		})
@@ -74,7 +74,7 @@ func TestGetDashboardOverview_EdgeCases(t *testing.T) {
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var resp model.APIResponse[DashboardOverviewStats]
 		err := json.Unmarshal(w.Body.Bytes(), &resp)
 		assert.NoError(t, err)
@@ -89,7 +89,7 @@ func TestGetRecentOrders_EdgeCases(t *testing.T) {
 	t.Run("limit=0", func(t *testing.T) {
 		router := gin.New()
 		orderRepo := &fakeOrderRepoForHandler{items: []model.Order{}}
-		
+
 		router.GET("/orders", func(c *gin.Context) {
 			getRecentOrdersHandler(c, orderRepo)
 		})
@@ -104,7 +104,7 @@ func TestGetRecentOrders_EdgeCases(t *testing.T) {
 	t.Run("limit=负数", func(t *testing.T) {
 		router := gin.New()
 		orderRepo := &fakeOrderRepoForHandler{items: []model.Order{}}
-		
+
 		router.GET("/orders", func(c *gin.Context) {
 			getRecentOrdersHandler(c, orderRepo)
 		})
@@ -119,7 +119,7 @@ func TestGetRecentOrders_EdgeCases(t *testing.T) {
 	t.Run("limit=101超过最大值", func(t *testing.T) {
 		router := gin.New()
 		orderRepo := &fakeOrderRepoForHandler{items: []model.Order{}}
-		
+
 		router.GET("/orders", func(c *gin.Context) {
 			getRecentOrdersHandler(c, orderRepo)
 		})
@@ -134,7 +134,7 @@ func TestGetRecentOrders_EdgeCases(t *testing.T) {
 	t.Run("limit=非数字", func(t *testing.T) {
 		router := gin.New()
 		orderRepo := &fakeOrderRepoForHandler{items: []model.Order{}}
-		
+
 		router.GET("/orders", func(c *gin.Context) {
 			getRecentOrdersHandler(c, orderRepo)
 		})
@@ -168,7 +168,7 @@ func TestGetRecentWithdraws_EdgeCases(t *testing.T) {
 			t.Run(tt.name, func(t *testing.T) {
 				router := gin.New()
 				withdrawRepo := &dashboardWithdrawRepo{}
-				
+
 				router.GET("/withdraws", func(c *gin.Context) {
 					getRecentWithdrawsHandler(c, withdrawRepo)
 				})
@@ -177,7 +177,7 @@ func TestGetRecentWithdraws_EdgeCases(t *testing.T) {
 				if tt.limit != "" {
 					url += "?limit=" + tt.limit
 				}
-				
+
 				req := httptest.NewRequest(http.MethodGet, url, nil)
 				w := httptest.NewRecorder()
 				router.ServeHTTP(w, req)
@@ -210,7 +210,7 @@ func TestGetMonthlyRevenue_EdgeCases(t *testing.T) {
 			t.Run(tt.name, func(t *testing.T) {
 				router := gin.New()
 				commissionRepo := &dashboardCommissionRepo{}
-				
+
 				router.GET("/revenue", func(c *gin.Context) {
 					getMonthlyRevenueHandler(c, commissionRepo)
 				})
@@ -219,13 +219,13 @@ func TestGetMonthlyRevenue_EdgeCases(t *testing.T) {
 				if tt.months != "" {
 					url += "?months=" + tt.months
 				}
-				
+
 				req := httptest.NewRequest(http.MethodGet, url, nil)
 				w := httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 
 				assert.Equal(t, http.StatusOK, w.Code)
-				
+
 				var resp model.APIResponse[map[string]interface{}]
 				err := json.Unmarshal(w.Body.Bytes(), &resp)
 				assert.NoError(t, err)

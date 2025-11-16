@@ -1070,7 +1070,7 @@ func TestGetOrderDetail_WithPayment(t *testing.T) {
 	playerID := uint64(1)
 	gameID := uint64(1)
 	paidAt := now.Add(1 * time.Hour)
-	
+
 	order := &model.Order{
 		Base:            model.Base{ID: 1, CreatedAt: now},
 		UserID:          1,
@@ -1128,7 +1128,7 @@ func TestGetOrderDetail_WithReview(t *testing.T) {
 	now := time.Now()
 	playerID := uint64(1)
 	gameID := uint64(1)
-	
+
 	order := &model.Order{
 		Base:            model.Base{ID: 1, CreatedAt: now},
 		UserID:          1,
@@ -1187,7 +1187,7 @@ func TestGetOrderDetail_WithTimeline(t *testing.T) {
 	gameID := uint64(1)
 	startedAt := now.Add(1 * time.Hour)
 	completedAt := now.Add(2 * time.Hour)
-	
+
 	order := &model.Order{
 		Base:            model.Base{ID: 1, CreatedAt: now},
 		UserID:          1,

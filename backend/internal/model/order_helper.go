@@ -24,4 +24,3 @@ func GenerateEscortOrderNo() string {
 func GenerateGiftOrderNo() string {
 	return GenerateOrderNo("GIFT")
 }
-

@@ -21,18 +21,17 @@ func RegisterPlayerRoutes(router gin.IRouter, svc *player.PlayerService, authMid
 	}
 }
 
-// listPlayersHandler 获取陪玩师列�?// @Summary      获取陪玩师列�?// @Description  获取陪玩师列表，支持筛选和排序
-// @Tags         User - Players
+// @Description  API endpoint// @Tags         User - Players
 // @Accept       json
 // @Produce      json
-// @Param        gameId      query     int     false  "游戏ID"
-// @Param        minPrice    query     int     false  "最低价格（分）"
-// @Param        maxPrice    query     int     false  "最高价格（分）"
-// @Param        minRating   query     number  false  "最低评�?
-// @Param        onlineOnly  query     bool    false  "仅在�?
-// @Param        sortBy      query     string  false  "排序方式" Enums(price, rating, orders)
-// @Param        page        query     int     false  "页码"
-// @Param        pageSize    query     int     false  "每页数量"
+// @Param        gameId      query     int     false  "Game ID"
+// @Param        minPrice    query     int     false  "Min price (cents)"
+// @Param        maxPrice    query     int     false  "Max price (cents)"
+// @Param        minRating   query     number  false  "Min rating"
+// @Param        onlineOnly  query     bool    false  "Online only"
+// @Param        sortBy      query     string  false  "Sort by" Enums(price, rating, orders)
+// @Param        page        query     int     false  "Page number"
+// @Param        pageSize    query     int     false  "Page size"
 // @Success      200         {object}  model.APIResponse[player.PlayerListResponse]
 // @Failure      400         {object}  model.APIResponse[any]
 // @Router       /user/players [get]
@@ -57,8 +56,7 @@ func listPlayersHandler(c *gin.Context, svc *player.PlayerService) {
 	})
 }
 
-// getPlayerDetailHandler 获取陪玩师详�?// @Summary      获取陪玩师详�?// @Description  获取陪玩师详细信息，包括评价和统�?// @Tags         User - Players
-// @Accept       json
+// @Description  API endpoint// @Accept       json
 // @Produce      json
 // @Param        id   path      int  true  "陪玩师ID"
 // @Success      200  {object}  model.APIResponse[player.PlayerDetailResponse]

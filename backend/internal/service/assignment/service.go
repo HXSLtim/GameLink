@@ -276,13 +276,6 @@ func (s *AssignmentService) ResolveDispute(ctx context.Context, req ResolveDispu
 	return nil
 }
 
-// RollbackAssignmentRequest represents a request to rollback an assignment
-type RollbackAssignmentRequest struct {
-	DisputeID      uint64
-	RollbackReason string
-	ActorUserID    uint64
-}
-
 // RollbackAssignment rolls back a dispute assignment
 func (s *AssignmentService) RollbackAssignment(ctx context.Context, req RollbackAssignmentRequest) error {
 	// Validate request
@@ -320,26 +313,6 @@ func (s *AssignmentService) RollbackAssignment(ctx context.Context, req Rollback
 		fmt.Sprintf("Rolled back: %s", req.RollbackReason), dispute.TraceID, &req.ActorUserID)
 
 	return nil
-}
-
-// GetDisputeDetail retrieves detailed information about a dispute
-func (s *AssignmentService) GetDisputeDetail(ctx context.Context, disputeID uint64) (*model.OrderDispute, error) {
-	return s.disputes.Get(ctx, disputeID)
-}
-
-// ListPendingDisputes lists disputes pending assignment
-func (s *AssignmentService) ListPendingDisputes(ctx context.Context, page, pageSize int) ([]model.OrderDispute, int64, error) {
-	return s.disputes.ListPendingAssignment(ctx, page, pageSize)
-}
-
-// ListDisputesByStatus lists disputes filtered by status
-func (s *AssignmentService) ListDisputesByStatus(ctx context.Context, statuses []model.DisputeStatus, page, pageSize int) ([]model.OrderDispute, int64, error) {
-	opts := repository.DisputeListOptions{
-		Page:     page,
-		PageSize: pageSize,
-		Statuses: statuses,
-	}
-	return s.disputes.List(ctx, opts)
 }
 
 // CheckAndMarkSLABreaches checks for disputes that have breached SLA and marks them

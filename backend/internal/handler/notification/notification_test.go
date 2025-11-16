@@ -380,18 +380,18 @@ func TestUnreadCountHandler_WithData(t *testing.T) {
 	repo := newMockNotificationRepoForHandler()
 	// Add some notifications
 	repo.Create(context.Background(), &model.NotificationEvent{
-		UserID:    100,
-		Title:     "Test 1",
-		Message:   "Message 1",
-		Priority:  model.NotificationPriorityHigh,
-		ReadAt:    nil,
+		UserID:   100,
+		Title:    "Test 1",
+		Message:  "Message 1",
+		Priority: model.NotificationPriorityHigh,
+		ReadAt:   nil,
 	})
 	repo.Create(context.Background(), &model.NotificationEvent{
-		UserID:    100,
-		Title:     "Test 2",
-		Message:   "Message 2",
-		Priority:  model.NotificationPriorityNormal,
-		ReadAt:    nil,
+		UserID:   100,
+		Title:    "Test 2",
+		Message:  "Message 2",
+		Priority: model.NotificationPriorityNormal,
+		ReadAt:   nil,
 	})
 
 	svc := notificationservice.NewService(repo)
@@ -455,7 +455,7 @@ func TestRespondJSON(t *testing.T) {
 	respondJSON(c, http.StatusOK, payload)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	
+
 	var resp model.APIResponse[string]
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	assert.NoError(t, err)

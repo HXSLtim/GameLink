@@ -20,6 +20,22 @@ func RegisterRoutes(router gin.IRouter, svc *notificationservice.Service, authMi
 	group.GET("/unread-count", func(c *gin.Context) { unreadCountHandler(c, svc) })
 }
 
+// listNotificationsHandler 获取通知列表
+// @Summary      获取通知列表
+// @Description  获取当前用户的通知列表，支持分页和过滤
+// @Tags         Notifications
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string  true   "Bearer {token}"
+// @Param        page           query     int     false  "Page number"
+// @Param        pageSize       query     int     false  "Page size"
+// @Param        unread         query     bool    false  "Filter unread only"
+// @Param        priority       query     array   false  "Filter by priority"
+// @Success      200            {object}  model.APIResponse[notificationservice.ListResponse]
+// @Failure      400            {object}  model.APIResponse[any]
+// @Failure      401            {object}  model.APIResponse[any]
+// @Failure      500            {object}  model.APIResponse[any]
+// @Router       /notifications [get]
 func listNotificationsHandler(c *gin.Context, svc *notificationservice.Service) {
 	userID := getUserIDFromContext(c)
 	var req struct {
@@ -58,6 +74,19 @@ func listNotificationsHandler(c *gin.Context, svc *notificationservice.Service) 
 	})
 }
 
+// markNotificationsReadHandler 标记通知为已读
+// @Summary      标记通知为已读
+// @Description  批量标记指定通知为已读状态
+// @Tags         Notifications
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string              true  "Bearer {token}"
+// @Param        request        body      object{ids=[]int}   true  "Notification IDs to mark as read"
+// @Success      200            {object}  model.APIResponse[any]
+// @Failure      400            {object}  model.APIResponse[any]
+// @Failure      401            {object}  model.APIResponse[any]
+// @Failure      500            {object}  model.APIResponse[any]
+// @Router       /notifications/read [post]
 func markNotificationsReadHandler(c *gin.Context, svc *notificationservice.Service) {
 	userID := getUserIDFromContext(c)
 	var body struct {
@@ -78,6 +107,17 @@ func markNotificationsReadHandler(c *gin.Context, svc *notificationservice.Servi
 	})
 }
 
+// unreadCountHandler 获取未读通知数量
+// @Summary      获取未读通知数量
+// @Description  获取当前用户的未读通知总数
+// @Tags         Notifications
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string  true  "Bearer {token}"
+// @Success      200            {object}  model.APIResponse[map[string]int64]
+// @Failure      401            {object}  model.APIResponse[any]
+// @Failure      500            {object}  model.APIResponse[any]
+// @Router       /notifications/unread-count [get]
 func unreadCountHandler(c *gin.Context, svc *notificationservice.Service) {
 	userID := getUserIDFromContext(c)
 	count, err := svc.GetUnreadCount(c.Request.Context(), userID)

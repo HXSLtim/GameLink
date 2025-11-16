@@ -17,7 +17,7 @@ func TestOrderStatusTransitions(t *testing.T) {
 
 	t.Run("正常状态流转_pending到confirmed", func(t *testing.T) {
 		orderRepo := newMockOrderRepository()
-		
+
 		// 创建pending状态的订单
 		order := &model.Order{
 			UserID:          1,
@@ -31,7 +31,7 @@ func TestOrderStatusTransitions(t *testing.T) {
 		err := orderRepo.Update(ctx, order)
 
 		assert.NoError(t, err)
-		
+
 		// 验证状态已更新
 		updated, _ := orderRepo.Get(ctx, order.ID)
 		assert.Equal(t, model.OrderStatusConfirmed, updated.Status)
@@ -39,7 +39,7 @@ func TestOrderStatusTransitions(t *testing.T) {
 
 	t.Run("正常状态流转_confirmed到in_progress", func(t *testing.T) {
 		orderRepo := newMockOrderRepository()
-		
+
 		order := &model.Order{
 			UserID:          1,
 			Status:          model.OrderStatusConfirmed,
@@ -57,7 +57,7 @@ func TestOrderStatusTransitions(t *testing.T) {
 
 	t.Run("正常状态流转_in_progress到completed", func(t *testing.T) {
 		orderRepo := newMockOrderRepository()
-		
+
 		order := &model.Order{
 			UserID:          1,
 			Status:          model.OrderStatusInProgress,
@@ -78,7 +78,7 @@ func TestOrderStatusTransitions(t *testing.T) {
 
 	t.Run("取消流转_pending到canceled", func(t *testing.T) {
 		orderRepo := newMockOrderRepository()
-		
+
 		order := &model.Order{
 			UserID:          1,
 			Status:          model.OrderStatusPending,
@@ -98,7 +98,7 @@ func TestOrderStatusTransitions(t *testing.T) {
 
 	t.Run("已完成订单状态不应该再改变", func(t *testing.T) {
 		orderRepo := newMockOrderRepository()
-		
+
 		completedAt := time.Now()
 		order := &model.Order{
 			UserID:          1,
@@ -111,12 +111,12 @@ func TestOrderStatusTransitions(t *testing.T) {
 		// 尝试修改已完成的订单（业务层应该阻止）
 		originalStatus := order.Status
 		order.Status = model.OrderStatusCanceled
-		
+
 		// Repository层会允许更新，但Service层应该阻止
 		// 这里测试的是数据一致性
 		err := orderRepo.Update(ctx, order)
 		assert.NoError(t, err) // Repository层允许
-		
+
 		// 但在实际业务中，Service层应该检查并拒绝这种操作
 		updated, _ := orderRepo.Get(ctx, order.ID)
 		assert.NotEqual(t, originalStatus, updated.Status) // Repository已更新
@@ -125,7 +125,7 @@ func TestOrderStatusTransitions(t *testing.T) {
 
 	t.Run("已取消订单状态不应该再改变", func(t *testing.T) {
 		orderRepo := newMockOrderRepository()
-		
+
 		order := &model.Order{
 			UserID:          1,
 			Status:          model.OrderStatusCanceled,
@@ -137,7 +137,7 @@ func TestOrderStatusTransitions(t *testing.T) {
 		// 尝试修改已取消的订单
 		order.Status = model.OrderStatusConfirmed
 		err := orderRepo.Update(ctx, order)
-		
+
 		assert.NoError(t, err) // Repository层允许
 		// 注意：Service层应该添加检查防止这种情况
 	})
@@ -149,7 +149,7 @@ func TestOrderCreation_EdgeCases(t *testing.T) {
 
 	t.Run("创建订单时价格为0", func(t *testing.T) {
 		orderRepo := newMockOrderRepository()
-		
+
 		order := &model.Order{
 			UserID:          1,
 			Status:          model.OrderStatusPending,
@@ -163,7 +163,7 @@ func TestOrderCreation_EdgeCases(t *testing.T) {
 
 	t.Run("创建订单时价格为极大值", func(t *testing.T) {
 		orderRepo := newMockOrderRepository()
-		
+
 		order := &model.Order{
 			UserID:          1,
 			Status:          model.OrderStatusPending,
@@ -177,7 +177,7 @@ func TestOrderCreation_EdgeCases(t *testing.T) {
 
 	t.Run("创建订单时必须有用户ID", func(t *testing.T) {
 		orderRepo := newMockOrderRepository()
-		
+
 		order := &model.Order{
 			UserID:          0, // 无效的用户ID
 			Status:          model.OrderStatusPending,
@@ -192,7 +192,7 @@ func TestOrderCreation_EdgeCases(t *testing.T) {
 
 	t.Run("创建订单时默认状态应该是pending", func(t *testing.T) {
 		orderRepo := newMockOrderRepository()
-		
+
 		order := &model.Order{
 			UserID:          1,
 			Status:          model.OrderStatusPending,
@@ -211,7 +211,7 @@ func TestOrderCancellation_EdgeCases(t *testing.T) {
 
 	t.Run("取消pending状态的订单", func(t *testing.T) {
 		orderRepo := newMockOrderRepository()
-		
+
 		order := &model.Order{
 			UserID:          1,
 			Status:          model.OrderStatusPending,
@@ -232,7 +232,7 @@ func TestOrderCancellation_EdgeCases(t *testing.T) {
 
 	t.Run("取消confirmed状态的订单_需要退款", func(t *testing.T) {
 		orderRepo := newMockOrderRepository()
-		
+
 		order := &model.Order{
 			UserID:          1,
 			Status:          model.OrderStatusConfirmed,
@@ -253,7 +253,7 @@ func TestOrderCancellation_EdgeCases(t *testing.T) {
 
 	t.Run("不能取消in_progress状态的订单", func(t *testing.T) {
 		orderRepo := newMockOrderRepository()
-		
+
 		order := &model.Order{
 			UserID:          1,
 			Status:          model.OrderStatusInProgress,
@@ -272,7 +272,7 @@ func TestOrderCancellation_EdgeCases(t *testing.T) {
 
 	t.Run("不能取消completed状态的订单", func(t *testing.T) {
 		orderRepo := newMockOrderRepository()
-		
+
 		completedAt := time.Now()
 		order := &model.Order{
 			UserID:          1,
@@ -298,7 +298,7 @@ func TestOrderCompletion_EdgeCases(t *testing.T) {
 
 	t.Run("正常完成订单", func(t *testing.T) {
 		orderRepo := newMockOrderRepository()
-		
+
 		order := &model.Order{
 			UserID:          1,
 			Status:          model.OrderStatusInProgress,
@@ -320,7 +320,7 @@ func TestOrderCompletion_EdgeCases(t *testing.T) {
 
 	t.Run("完成订单时应该记录完成时间", func(t *testing.T) {
 		orderRepo := newMockOrderRepository()
-		
+
 		order := &model.Order{
 			UserID:          1,
 			Status:          model.OrderStatusInProgress,
@@ -349,7 +349,7 @@ func TestOrderQuery_EdgeCases(t *testing.T) {
 
 	t.Run("查询不存在的订单", func(t *testing.T) {
 		orderRepo := newMockOrderRepository()
-		
+
 		order, err := orderRepo.Get(ctx, 999)
 
 		assert.Error(t, err)
@@ -359,7 +359,7 @@ func TestOrderQuery_EdgeCases(t *testing.T) {
 
 	t.Run("查询用户的所有订单", func(t *testing.T) {
 		orderRepo := newMockOrderRepository()
-		
+
 		// 创建多个订单
 		for i := 0; i < 5; i++ {
 			order := &model.Order{
@@ -383,7 +383,7 @@ func TestOrderQuery_EdgeCases(t *testing.T) {
 
 	t.Run("按状态过滤订单", func(t *testing.T) {
 		orderRepo := newMockOrderRepository()
-		
+
 		// 创建不同状态的订单
 		statuses := []model.OrderStatus{
 			model.OrderStatusPending,
@@ -392,7 +392,7 @@ func TestOrderQuery_EdgeCases(t *testing.T) {
 			model.OrderStatusCompleted,
 			model.OrderStatusCanceled,
 		}
-		
+
 		for _, status := range statuses {
 			order := &model.Order{
 				UserID:          1,
@@ -415,7 +415,7 @@ func TestOrderQuery_EdgeCases(t *testing.T) {
 
 	t.Run("查询空结果集", func(t *testing.T) {
 		orderRepo := newMockOrderRepository()
-		
+
 		userID := uint64(999)
 		orders, total, err := orderRepo.List(ctx, repository.OrderListOptions{
 			UserID: &userID,
@@ -433,7 +433,7 @@ func TestOrderAuthorization(t *testing.T) {
 
 	t.Run("用户只能查看自己的订单", func(t *testing.T) {
 		orderRepo := newMockOrderRepository()
-		
+
 		// 创建用户1的订单
 		order1 := &model.Order{
 			UserID:          1,
@@ -464,7 +464,7 @@ func TestOrderAuthorization(t *testing.T) {
 
 	t.Run("用户不能操作他人的订单", func(t *testing.T) {
 		orderRepo := newMockOrderRepository()
-		
+
 		// 创建用户1的订单
 		order := &model.Order{
 			UserID:          1,
@@ -490,7 +490,7 @@ func TestOrderConcurrency(t *testing.T) {
 
 	t.Run("并发更新同一订单", func(t *testing.T) {
 		orderRepo := newMockOrderRepository()
-		
+
 		order := &model.Order{
 			UserID:          1,
 			Status:          model.OrderStatusPending,

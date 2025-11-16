@@ -12,10 +12,10 @@ import (
 
 // RegisterReviewRoutes 注册用户端评价路由
 func RegisterReviewRoutes(router gin.IRouter, svc *review.ReviewService, authMiddleware gin.HandlerFunc) {
-    group := router.Group("/user/reviews")
-    group.Use(authMiddleware) // 需要认证
-    group.POST("", func(c *gin.Context) { createReviewHandler(c, svc) })
-    group.GET("/my", func(c *gin.Context) { getMyReviewsHandler(c, svc) })
+	group := router.Group("/user/reviews")
+	group.Use(authMiddleware) // 需要认证
+	group.POST("", func(c *gin.Context) { createReviewHandler(c, svc) })
+	group.GET("/my", func(c *gin.Context) { getMyReviewsHandler(c, svc) })
 }
 
 // createReviewHandler 创建评价
@@ -67,8 +67,7 @@ func createReviewHandler(c *gin.Context, svc *review.ReviewService) {
 
 // getMyReviewsHandler 获取我的评价列表
 // @Summary      获取我的评价列表
-// @Description  获取当前用户的评价列�?// @Tags         User - Reviews
-// @Accept       json
+// @Description  API endpoint// @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true   "Bearer {token}"
 // @Param        page           query     int     false  "页码"

@@ -20,8 +20,8 @@ var (
 
 // ServiceItemService 服务项目服务（统一管理护航服务和礼物）
 type ServiceItemService struct {
-	items  serviceitemrepo.ServiceItemRepository
-	games  repository.GameRepository
+	items   serviceitemrepo.ServiceItemRepository
+	games   repository.GameRepository
 	players repository.PlayerRepository
 }
 
@@ -32,29 +32,29 @@ func NewServiceItemService(
 	players repository.PlayerRepository,
 ) *ServiceItemService {
 	return &ServiceItemService{
-		items:  items,
-		games:  games,
+		items:   items,
+		games:   games,
 		players: players,
 	}
 }
 
 // CreateServiceItemRequest 创建服务项目请求
 type CreateServiceItemRequest struct {
-	ItemCode        string                         `json:"itemCode" binding:"required,max=32"`
-	Name            string                         `json:"name" binding:"required,max=128"`
-	Description     string                         `json:"description"`
-	SubCategory     model.ServiceItemSubCategory   `json:"subCategory" binding:"required,oneof=solo team gift"`
-	GameID          *uint64                        `json:"gameId"`
-	PlayerID        *uint64                        `json:"playerId"`
-	RankLevel       string                         `json:"rankLevel"`
-	BasePriceCents  int64                          `json:"basePriceCents" binding:"required,min=0"`
-	ServiceHours    int                            `json:"serviceHours" binding:"min=0"`
-	CommissionRate  float64                        `json:"commissionRate" binding:"required,min=0,max=1"`
-	MinUsers        int                            `json:"minUsers" binding:"min=1"`
-	MaxPlayers      int                            `json:"maxPlayers" binding:"min=1"`
-	Tags            string                         `json:"tags"`
-	IconURL         string                         `json:"iconUrl"`
-	SortOrder       int                            `json:"sortOrder"`
+	ItemCode       string                       `json:"itemCode" binding:"required,max=32"`
+	Name           string                       `json:"name" binding:"required,max=128"`
+	Description    string                       `json:"description"`
+	SubCategory    model.ServiceItemSubCategory `json:"subCategory" binding:"required,oneof=solo team gift"`
+	GameID         *uint64                      `json:"gameId"`
+	PlayerID       *uint64                      `json:"playerId"`
+	RankLevel      string                       `json:"rankLevel"`
+	BasePriceCents int64                        `json:"basePriceCents" binding:"required,min=0"`
+	ServiceHours   int                          `json:"serviceHours" binding:"min=0"`
+	CommissionRate float64                      `json:"commissionRate" binding:"required,min=0,max=1"`
+	MinUsers       int                          `json:"minUsers" binding:"min=1"`
+	MaxPlayers     int                          `json:"maxPlayers" binding:"min=1"`
+	Tags           string                       `json:"tags"`
+	IconURL        string                       `json:"iconUrl"`
+	SortOrder      int                          `json:"sortOrder"`
 }
 
 // CreateServiceItem 创建服务项目
@@ -248,13 +248,13 @@ func (s *ServiceItemService) ListServiceItems(ctx context.Context, req ListServi
 
 // ListServiceItemsRequest 服务项目列表请求
 type ListServiceItemsRequest struct {
-	Category    *string                        `form:"category"`
-	SubCategory *model.ServiceItemSubCategory  `form:"subCategory"`
-	GameID      *uint64                        `form:"gameId"`
-	PlayerID    *uint64                        `form:"playerId"`
-	IsActive    *bool                          `form:"isActive"`
-	Page        int                            `form:"page"`
-	PageSize    int                            `form:"pageSize"`
+	Category    *string                       `form:"category"`
+	SubCategory *model.ServiceItemSubCategory `form:"subCategory"`
+	GameID      *uint64                       `form:"gameId"`
+	PlayerID    *uint64                       `form:"playerId"`
+	IsActive    *bool                         `form:"isActive"`
+	Page        int                           `form:"page"`
+	PageSize    int                           `form:"pageSize"`
 }
 
 // ServiceItemListResponse 服务项目列表响应
@@ -353,4 +353,3 @@ func (s *ServiceItemService) BatchUpdatePrice(ctx context.Context, req BatchUpda
 	}
 	return s.items.BatchUpdatePrice(ctx, req.IDs, req.BasePriceCents)
 }
-

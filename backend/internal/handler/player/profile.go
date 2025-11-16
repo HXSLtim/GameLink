@@ -11,16 +11,15 @@ import (
 
 // RegisterProfileRoutes 注册陪玩师端资料管理路由
 func RegisterProfileRoutes(router gin.IRouter, svc *player.PlayerService, authMiddleware gin.HandlerFunc) {
-    group := router.Group("/player")
-    group.Use(authMiddleware) // 需要认证
-    group.POST("/apply", func(c *gin.Context) { applyAsPlayerHandler(c, svc) })
-    group.GET("/profile", func(c *gin.Context) { getPlayerProfileHandler(c, svc) })
-    group.PUT("/profile", func(c *gin.Context) { updatePlayerProfileHandler(c, svc) })
-    group.PUT("/status", func(c *gin.Context) { setPlayerStatusHandler(c, svc) })
+	group := router.Group("/player")
+	group.Use(authMiddleware) // 需要认证
+	group.POST("/apply", func(c *gin.Context) { applyAsPlayerHandler(c, svc) })
+	group.GET("/profile", func(c *gin.Context) { getPlayerProfileHandler(c, svc) })
+	group.PUT("/profile", func(c *gin.Context) { updatePlayerProfileHandler(c, svc) })
+	group.PUT("/status", func(c *gin.Context) { setPlayerStatusHandler(c, svc) })
 }
 
-// applyAsPlayerHandler 申请成为陪玩�?// @Summary      申请成为陪玩�?// @Description  用户申请成为陪玩�?// @Tags         Player - Profile
-// @Accept       json
+// @Description  API endpoint// @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string                       true  "Bearer {token}"
 // @Param        request        body      player.ApplyPlayerRequest    true  "申请信息"
@@ -55,8 +54,7 @@ func applyAsPlayerHandler(c *gin.Context, svc *player.PlayerService) {
 	})
 }
 
-// getPlayerProfileHandler 获取陪玩师资�?// @Summary      获取陪玩师资�?// @Description  获取当前用户的陪玩师资料
-// @Tags         Player - Profile
+// @Description  API endpoint// @Tags         Player - Profile
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
@@ -86,8 +84,7 @@ func getPlayerProfileHandler(c *gin.Context, svc *player.PlayerService) {
 	})
 }
 
-// updatePlayerProfileHandler 更新陪玩师资�?// @Summary      更新陪玩师资�?// @Description  更新陪玩师资�?// @Tags         Player - Profile
-// @Accept       json
+// @Description  API endpoint// @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string                              true  "Bearer {token}"
 // @Param        request        body      player.UpdatePlayerProfileRequest   true  "更新信息"
@@ -120,11 +117,10 @@ func updatePlayerProfileHandler(c *gin.Context, svc *player.PlayerService) {
 	})
 }
 
-// setPlayerStatusHandler 设置在线状�?// @Summary      设置在线状�?// @Description  设置陪玩师在�?离线状�?// @Tags         Player - Profile
-// @Accept       json
+// @Description  API endpoint// @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string                          true  "Bearer {token}"
-// @Param        request        body      player.SetPlayerStatusRequest   true  "在线状�?
+// @Param        request        body      player.SetPlayerStatusRequest   true  "Player status request"
 // @Success      200            {object}  model.APIResponse[any]
 // @Failure      400            {object}  model.APIResponse[any]
 // @Failure      401            {object}  model.APIResponse[any]

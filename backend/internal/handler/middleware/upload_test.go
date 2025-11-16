@@ -141,7 +141,7 @@ func TestSaveFile(t *testing.T) {
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code, "Response body: %s", w.Body.String())
-		
+
 		// 验证返回的结果
 		if w.Code == http.StatusOK {
 			var result UploadResult
@@ -196,7 +196,7 @@ func TestSaveFile(t *testing.T) {
 
 func TestGetImageConfig(t *testing.T) {
 	config := GetImageConfig()
-	
+
 	assert.Equal(t, int64(5*1024*1024), config.MaxFileSize)
 	assert.Contains(t, config.AllowedMimeTypes, "image/jpeg")
 	assert.Contains(t, config.AllowedExtensions, ".jpg")
@@ -207,7 +207,7 @@ func TestGetImageConfig(t *testing.T) {
 
 func TestGetVideoConfig(t *testing.T) {
 	config := GetVideoConfig()
-	
+
 	assert.Equal(t, int64(100*1024*1024), config.MaxFileSize)
 	assert.Contains(t, config.AllowedMimeTypes, "video/mp4")
 	assert.Contains(t, config.AllowedExtensions, ".mp4")
@@ -215,7 +215,7 @@ func TestGetVideoConfig(t *testing.T) {
 
 func TestGetAudioConfig(t *testing.T) {
 	config := GetAudioConfig()
-	
+
 	assert.Equal(t, int64(20*1024*1024), config.MaxFileSize)
 	assert.Contains(t, config.AllowedMimeTypes, "audio/mpeg")
 	assert.Contains(t, config.AllowedExtensions, ".mp3")
@@ -223,7 +223,7 @@ func TestGetAudioConfig(t *testing.T) {
 
 func TestGetDocumentConfig(t *testing.T) {
 	config := GetDocumentConfig()
-	
+
 	assert.Equal(t, int64(10*1024*1024), config.MaxFileSize)
 	assert.Contains(t, config.AllowedMimeTypes, "application/pdf")
 	assert.Contains(t, config.AllowedExtensions, ".pdf")

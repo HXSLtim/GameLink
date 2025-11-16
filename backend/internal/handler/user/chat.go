@@ -23,33 +23,60 @@ func RegisterChatRoutes(router gin.IRouter, svc *chatservice.ChatService, authMi
 }
 
 type reportMessageRequest struct {
-    Reason   string `json:"reason"`
-    Evidence string `json:"evidence"`
+	Reason   string `json:"reason"`
+	Evidence string `json:"evidence"`
 }
 
+// reportChatMessageHandler 举报聊天消息
+// @Summary      举报聊天消息
+// @Description  举报不当聊天消息，包括违规内容、骚扰等
+// @Tags         User - Chat
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string                   true  "Bearer {token}"
+// @Param        id             path      int                      true  "Message ID"
+// @Param        request        body      reportMessageRequest     true  "Report reason and evidence"
+// @Success      200            {object}  model.APIResponse[any]
+// @Failure      400            {object}  model.APIResponse[any]
+// @Failure      401            {object}  model.APIResponse[any]
+// @Failure      500            {object}  model.APIResponse[any]
+// @Router       /user/chat/messages/{id}/report [post]
 func reportChatMessageHandler(c *gin.Context, svc *chatservice.ChatService) {
-    userID := getUserIDFromContext(c)
-    messageID, err := parseUintFromParam(c, "id")
-    if err != nil {
-        respondError(c, http.StatusBadRequest, apierr.ErrInvalidID)
-        return
-    }
-    var req reportMessageRequest
-    if err := c.ShouldBindJSON(&req); err != nil {
-        respondError(c, http.StatusBadRequest, err.Error())
-        return
-    }
-    if err := svc.ReportMessage(c.Request.Context(), userID, messageID, req.Reason, req.Evidence); err != nil {
-        respondError(c, http.StatusInternalServerError, err.Error())
-        return
-    }
-    respondJSON(c, http.StatusOK, model.APIResponse[any]{
-        Success: true,
-        Code:    http.StatusOK,
-        Message: "reported",
-    })
+	userID := getUserIDFromContext(c)
+	messageID, err := parseUintFromParam(c, "id")
+	if err != nil {
+		respondError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		return
+	}
+	var req reportMessageRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := svc.ReportMessage(c.Request.Context(), userID, messageID, req.Reason, req.Evidence); err != nil {
+		respondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondJSON(c, http.StatusOK, model.APIResponse[any]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: "reported",
+	})
 }
 
+// listChatGroupsHandler 获取聊天群组列表
+// @Summary      获取聊天群组列表
+// @Description  获取当前用户的所有聊天群组
+// @Tags         User - Chat
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string  true   "Bearer {token}"
+// @Param        page           query     int     false  "Page number"
+// @Param        pageSize       query     int     false  "Page size"
+// @Success      200            {object}  model.APIResponse[any]
+// @Failure      401            {object}  model.APIResponse[any]
+// @Failure      500            {object}  model.APIResponse[any]
+// @Router       /user/chat/groups [get]
 func listChatGroupsHandler(c *gin.Context, svc *chatservice.ChatService) {
 	userID := getUserIDFromContext(c)
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
@@ -72,6 +99,25 @@ func listChatGroupsHandler(c *gin.Context, svc *chatservice.ChatService) {
 	})
 }
 
+// listChatMessagesHandler 获取聊天消息列表
+// @Summary      获取聊天消息列表
+// @Description  获取指定聊天群组的消息列表，支持分页和前后翻页
+// @Tags         User - Chat
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string  true   "Bearer {token}"
+// @Param        id             path      int     true   "Group ID"
+// @Param        page           query     int     false  "Page number"
+// @Param        pageSize       query     int     false  "Page size"
+// @Param        beforeId       query     int     false  "Load messages before this ID"
+// @Param        afterId        query     int     false  "Load messages after this ID"
+// @Success      200            {object}  model.APIResponse[any]
+// @Failure      400            {object}  model.APIResponse[any]
+// @Failure      401            {object}  model.APIResponse[any]
+// @Failure      403            {object}  model.APIResponse[any]
+// @Failure      410            {object}  model.APIResponse[any]
+// @Failure      500            {object}  model.APIResponse[any]
+// @Router       /user/chat/groups/{id}/messages [get]
 func listChatMessagesHandler(c *gin.Context, svc *chatservice.ChatService) {
 	userID := getUserIDFromContext(c)
 	groupID, err := parseUintFromParam(c, "id")
@@ -127,12 +173,29 @@ func listChatMessagesHandler(c *gin.Context, svc *chatservice.ChatService) {
 }
 
 type sendMessageRequest struct {
-	Content     string `json:"content"`
-	MessageType string `json:"messageType"`
-	ImageURL    string `json:"imageUrl"`
+	Content     string  `json:"content"`
+	MessageType string  `json:"messageType"`
+	ImageURL    string  `json:"imageUrl"`
 	ReplyToID   *uint64 `json:"replyToId"`
 }
 
+// sendChatMessageHandler 发送聊天消息
+// @Summary      发送聊天消息
+// @Description  在指定聊天群组中发送消息，支持文本、图片、文件等类型
+// @Tags         User - Chat
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string               true  "Bearer {token}"
+// @Param        id             path      int                  true  "Group ID"
+// @Param        request        body      sendMessageRequest   true  "Message content"
+// @Success      201            {object}  model.APIResponse[model.ChatMessage]
+// @Failure      400            {object}  model.APIResponse[any]
+// @Failure      401            {object}  model.APIResponse[any]
+// @Failure      403            {object}  model.APIResponse[any]
+// @Failure      410            {object}  model.APIResponse[any]
+// @Failure      429            {object}  model.APIResponse[any]
+// @Failure      500            {object}  model.APIResponse[any]
+// @Router       /user/chat/groups/{id}/messages [post]
 func sendChatMessageHandler(c *gin.Context, svc *chatservice.ChatService) {
 	userID := getUserIDFromContext(c)
 	groupID, err := parseUintFromParam(c, "id")

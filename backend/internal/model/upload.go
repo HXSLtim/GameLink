@@ -52,9 +52,9 @@ type Upload struct {
 	UploadType UploadType   `gorm:"size:50;not null;index:idx_uploads_type" json:"uploadType"`
 	Status     UploadStatus `gorm:"size:20;default:'pending';index:idx_uploads_status" json:"status"`
 	Hash       string       `gorm:"size:64;index:idx_uploads_hash" json:"hash"` // 文件哈希，用于去重
-	Width      int          `gorm:"default:0" json:"width,omitempty"`            // 图片宽度
-	Height     int          `gorm:"default:0" json:"height,omitempty"`           // 图片高度
-	ErrorMsg   string       `gorm:"size:500" json:"errorMsg,omitempty"`          // 错误信息
+	Width      int          `gorm:"default:0" json:"width,omitempty"`           // 图片宽度
+	Height     int          `gorm:"default:0" json:"height,omitempty"`          // 图片高度
+	ErrorMsg   string       `gorm:"size:500" json:"errorMsg,omitempty"`         // 错误信息
 	CreatedAt  time.Time    `gorm:"autoCreateTime" json:"createdAt"`
 	UpdatedAt  time.Time    `gorm:"autoUpdateTime" json:"updatedAt"`
 

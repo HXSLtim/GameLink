@@ -88,4 +88,3 @@ func (s *SettlementScheduler) GetNextRunTime() time.Time {
 	}
 	return time.Time{}
 }
-

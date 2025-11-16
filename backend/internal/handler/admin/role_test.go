@@ -368,4 +368,3 @@ func TestRoleHandler_GetUserRoles(t *testing.T) {
 		assert.True(t, resp.Success)
 	}
 }
-

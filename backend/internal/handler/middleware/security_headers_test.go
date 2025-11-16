@@ -24,7 +24,7 @@ func TestSecurityHeaders(t *testing.T) {
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		// 验证所有安全头
 		assert.Equal(t, "DENY", w.Header().Get("X-Frame-Options"))
 		assert.Equal(t, "nosniff", w.Header().Get("X-Content-Type-Options"))
@@ -112,7 +112,7 @@ func TestSecurityHeaders(t *testing.T) {
 	t.Run("安全头应该在所有请求中设置", func(t *testing.T) {
 		router := gin.New()
 		router.Use(SecurityHeaders())
-		
+
 		router.GET("/get", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"message": "get"})
 		})

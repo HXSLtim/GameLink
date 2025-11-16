@@ -23,8 +23,8 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, pm *mw.P
 	paymentHandler := NewPaymentHandler(svc)
 	reviewHandler := NewReviewHandler(svc)
 
-	group := router.Group("/admin")
-	// 所有管理接口均需要认�?+ 速率限制
+	group := router
+	// 所有管理接口均需要认证 + 速率限制
 	cfg := config.Load()
 	if os.Getenv("APP_ENV") == "production" {
 		group.Use(pm.RequireAuth(), mw.RateLimitAdmin())
@@ -34,88 +34,670 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, pm *mw.P
 		case "jwt":
 			group.Use(pm.RequireAuth(), mw.RateLimitAdmin())
 		default:
-			// 开发模式：保留旧的 AdminAuth（Bearer Token�?
+			// 开发模式：保留旧的 AdminAuth（Bearer Token）
 			group.Use(mw.AdminAuth(), mw.RateLimitAdmin())
 		}
 	}
 	{
-		// 游戏管理 - 使用细粒度权�?
+		// 游戏管理 - 使用细粒度权限
+		// @Summary      列出游戏
+		// @Tags         Admin/Games
+		// @Security     BearerAuth
+		// @Param        page       query  int  false  "页码"
+		// @Param        pageSize   query     int       false  "每页数量"
+		// @Produce      json
+		// @Success      200  {object}  model.APIResponse[[]model.Game]
+		// @Router       /admin/games [get]
 		group.GET("/games", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/games"), gameHandler.ListGames)
+		// @Summary      创建游戏
+		// @Tags         Admin/Games
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  GamePayload  true  "游戏信息"
+		// @Success      201  {object}  model.APIResponse[model.Game]
+		// @Failure      400  {object}  apierr.ErrorResponse
+		// @Router       /admin/games [post]
 		group.POST("/games", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/games"), gameHandler.CreateGame)
+		// @Summary      获取游戏
+		// @Tags         Admin/Games
+		// @Security     BearerAuth
+		// @Param        id   path  int  true  "游戏ID"
+		// @Produce      json
+		// @Success      200  {object}  model.APIResponse[model.Game]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/games/{id} [get]
 		group.GET("/games/:id", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/games/:id"), gameHandler.GetGame)
+		// @Summary      更新游戏
+		// @Tags         Admin/Games
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        id       path  int         true  "游戏ID"
+		// @Param        request  body  GamePayload true  "游戏信息"
+		// @Success      200  {object}  model.APIResponse[model.Game]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/games/{id} [put]
 		group.PUT("/games/:id", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/games/:id"), gameHandler.UpdateGame)
+		// @Summary      删除游戏
+		// @Tags         Admin/Games
+		// @Security     BearerAuth
+		// @Param        id   path  int  true  "游戏ID"
+		// @Produce      json
+		// @Success      200  {object}  model.APIResponse[any]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/games/{id} [delete]
 		group.DELETE("/games/:id", pm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/games/:id"), gameHandler.DeleteGame)
+		// @Summary      获取游戏操作日志
+		// @Tags         Admin/Games
+		// @Security     BearerAuth
+		// @Produce      json
+		// @Param        id           path   int  true  "游戏ID"
+		// @Param        page         query  int  false "页码"
+		// @Param        pageSize   query     int       false  "每页数量"
+		// @Param        action       query  string false "动作过滤" Enums(create,update,delete)
+		// @Param        actor_user_id query int   false "操作者用户ID"
+		// @Param        dateFrom   query     string    false  "Start date (YYYY-MM-DD)"
+		// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
+		// @Param        export       query  string false "导出格式" Enums(csv)
+		// @Param        fields         query    string       false  "Export fields (comma separated)"
+		// @Param        header_lang  query  string false "列头语言" Enums(en,zh)
+		// @Success      200  {object}  model.APIResponse[[]model.OperationLog]
+		// @Router       /admin/games/{id}/logs [get]
 		group.GET("/games/:id/logs", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/games/:id/logs"), gameHandler.ListGameLogs)
 
-		// 用户管理 - 使用细粒度权�?
+		// 用户管理 - 使用细粒度权限
+		// @Summary      列出用户
+		// @Tags         Admin/Users
+		// @Security     BearerAuth
+		// @Param        page       query     int       false  "页码"
+		// @Param        pageSize   query     int       false  "每页数量"
+		// @Param        role           query    []string     false  "Role filter"
+		// @Param        status         query    []string     false  "Status filter"
+		// @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"
+		// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
+		// @Param        keyword        query    string       false  "Parameter: keyword"
+		// @Produce      json
+		// @Success      200  {object}  model.APIResponse[[]model.User]
+		// @Router       /admin/users [get]
 		group.GET("/users", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users"), userHandler.ListUsers)
+		// @Summary      创建用户
+		// @Tags         Admin/Users
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  CreateUserPayload  true  "用户信息"
+		// @Success      201  {object}  model.APIResponse[model.User]
+		// @Failure      400  {object}  apierr.ErrorResponse
+		// @Router       /admin/users [post]
 		group.POST("/users", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/users"), userHandler.CreateUser)
+		// @Summary      创建用户和陪玩师
+		// @Tags         Admin/Users
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  CreateUserWithPlayerPayload  true  "用户信息和陪玩师信息"
+		// @Success      201  {object}  model.APIResponse[map[string]any]
+		// @Failure      400  {object}  apierr.ErrorResponse
+		// @Router       /admin/users/with-player [post]
 		group.POST("/users/with-player", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/users/with-player"), userHandler.CreateUserWithPlayer)
+		// @Summary      获取用户
+		// @Tags         Admin/Users
+		// @Security     BearerAuth
+		// @Param        id   path      int  true  "用户ID"
+		// @Produce      json
+		// @Success      200  {object}  model.APIResponse[model.User]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/users/{id} [get]
 		group.GET("/users/:id", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/:id"), userHandler.GetUser)
+		// @Summary      更新用户
+		// @Tags         Admin/Users
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        id       path  int                  true  "用户ID"
+		// @Param        request  body  UpdateUserPayload    true  "用户信息"
+		// @Success      200  {object}  model.APIResponse[model.User]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/users/{id} [put]
 		group.PUT("/users/:id", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/users/:id"), userHandler.UpdateUser)
+		// @Summary      删除用户
+		// @Tags         Admin/Users
+		// @Security     BearerAuth
+		// @Param        id   path  int  true  "用户ID"
+		// @Produce      json
+		// @Success      200  {object}  model.APIResponse[any]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/users/{id} [delete]
 		group.DELETE("/users/:id", pm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/users/:id"), userHandler.DeleteUser)
+		// @Summary      更新用户状态
+		// @Tags         Admin/Users
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        id       path  int  true  "用户ID"
+		// @Param        request  body  map[string]string  true  "{status}"
+		// @Success      200  {object}  model.APIResponse[model.User]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/users/{id}/status [put]
 		group.PUT("/users/:id/status", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/users/:id/status"), userHandler.UpdateUserStatus)
+		// @Summary      更新用户角色
+		// @Tags         Admin/Users
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        id       path  int  true  "用户ID"
+		// @Param        request  body  map[string]string  true  "{role}"
+		// @Success      200  {object}  model.APIResponse[model.User]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/users/{id}/role [put]
 		group.PUT("/users/:id/role", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/users/:id/role"), userHandler.UpdateUserRole)
+		// @Summary      获取用户的订单
+		// @Tags         Admin/Users
+		// @Security     BearerAuth
+		// @Produce      json
+		// @Param        id         path   int      true   "用户ID"
+		// @Param        page       query  int      false  "页码"
+		// @Param        pageSize   query     int       false  "每页数量"
+		// @Param        status         query    []string     false  "Status filter"
+		// @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"
+		// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
+		// @Success      200  {object}  model.APIResponse[[]model.Order]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/users/{id}/orders [get]
 		group.GET("/users/:id/orders", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/:id/orders"), userHandler.ListUserOrders)
+		// @Summary      获取用户操作日志
+		// @Tags         Admin/Users
+		// @Security     BearerAuth
+		// @Produce      json
+		// @Param        id           path   int  true  "用户ID"
+		// @Param        page         query  int  false "页码"
+		// @Param        pageSize   query     int       false  "每页数量"
+		// @Param        action       query  string false "动作过滤" Enums(create,update,delete)
+		// @Param        actor_user_id query int   false "操作者用户ID"
+		// @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"
+		// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
+		// @Param        export       query  string false "导出格式" Enums(csv)
+		// @Param        fields         query    string       false  "Export fields (comma separated)"
+		// @Param        header_lang  query  string false "列头语言" Enums(en,zh)
+		// @Success      200  {object}  model.APIResponse[[]model.OperationLog]
+		// @Router       /admin/users/{id}/logs [get]
 		group.GET("/users/:id/logs", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/:id/logs"), userHandler.ListUserLogs)
 
-		// 陪玩师管�?- 使用细粒度权�?
+		// 陪玩师管理 - 使用细粒度权限
+		// @Summary      列出玩家资料
+		// @Tags         Admin/Players
+		// @Security     BearerAuth
+		// @Param        page       query  int  false  "页码"
+		// @Param        pageSize   query     int       false  "每页数量"
+		// @Produce      json
+		// @Success      200  {object}  model.APIResponse[[]model.Player]
+		// @Router       /admin/players [get]
 		group.GET("/players", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/players"), playerHandler.ListPlayers)
+		// @Summary      新建玩家资料
+		// @Tags         Admin/Players
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  CreatePlayerPayload  true  "玩家信息"
+		// @Success      201  {object}  model.APIResponse[model.Player]
+		// @Failure      400  {object}  apierr.ErrorResponse
+		// @Router       /admin/players [post]
 		group.POST("/players", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/players"), playerHandler.CreatePlayer)
+		// @Summary      获取玩家资料
+		// @Tags         Admin/Players
+		// @Security     BearerAuth
+		// @Param        id   path  int  true  "玩家ID"
+		// @Produce      json
+		// @Success      200  {object}  model.APIResponse[model.Player]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/players/{id} [get]
 		group.GET("/players/:id", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/players/:id"), playerHandler.GetPlayer)
+		// @Summary      更新玩家资料
+		// @Tags         Admin/Players
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        id       path  int                   true  "玩家ID"
+		// @Param        request  body  UpdatePlayerPayload   true  "玩家信息"
+		// @Success      200  {object}  model.APIResponse[model.Player]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/players/{id} [put]
 		group.PUT("/players/:id", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/players/:id"), playerHandler.UpdatePlayer)
+		// @Summary      删除玩家资料
+		// @Tags         Admin/Players
+		// @Security     BearerAuth
+		// @Param        id   path  int  true  "玩家ID"
+		// @Produce      json
+		// @Success      200  {object}  model.APIResponse[any]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/players/{id} [delete]
 		group.DELETE("/players/:id", pm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/players/:id"), playerHandler.DeletePlayer)
+		// @Summary      更新玩家认证状态
+		// @Tags         Admin/Players
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        id       path  int  true  "玩家ID"
+		// @Param        request  body  map[string]string  true  "{verification_status}"
+		// @Success      200  {object}  model.APIResponse[model.Player]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/players/{id}/verification [put]
 		group.PUT("/players/:id/verification", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/players/:id/verification"), playerHandler.UpdatePlayerVerification)
+		// @Summary      更新玩家主游戏
+		// @Tags         Admin/Players
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        id       path  int  true  "玩家ID"
+		// @Param        request  body  map[string]uint64  true  "{main_game_id}"
+		// @Success      200  {object}  model.APIResponse[model.Player]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/players/{id}/games [put]
 		group.PUT("/players/:id/games", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/players/:id/games"), playerHandler.UpdatePlayerGames)
+		// @Summary      更新玩家技能标签
+		// @Tags         Admin/Players
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        id       path  int            true  "玩家ID"
+		// @Param        request  body  SkillTagsBody  true  "标签集合"
+		// @Success      200  {object}  model.APIResponse[any]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/players/{id}/skill-tags [put]
 		group.PUT("/players/:id/skill-tags", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/players/:id/skill-tags"), playerHandler.UpdatePlayerSkillTags)
+		// @Summary      获取玩家操作日志
+		// @Tags         Admin/Players
+		// @Security     BearerAuth
+		// @Produce      json
+		// @Param        id           path   int  true  "玩家ID"
+		// @Param        page         query  int  false "页码"
+		// @Param        pageSize   query     int       false  "每页数量"
+		// @Param        action       query  string false "动作过滤" Enums(create,update,delete)
+		// @Param        actor_user_id query int   false "操作者用户ID"
+		// @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"
+		// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
+		// @Param        export       query  string false "导出格式" Enums(csv)
+		// @Param        fields         query    string       false  "Export fields (comma separated)"
+		// @Param        header_lang  query  string false "列头语言" Enums(en,zh)
+		// @Success      200  {object}  model.APIResponse[[]model.OperationLog]
+		// @Router       /admin/players/{id}/logs [get]
 		group.GET("/players/:id/logs", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/players/:id/logs"), playerHandler.ListPlayerLogs)
 
-		// 订单管理 - 使用细粒度权�?
+		// 订单管理 - 使用细粒度权限
+		// @Summary      列出订单
+		// @Tags         Admin/Orders
+		// @Security     BearerAuth
+		// @Param        page        query  int     false  "页码"
+		// @Param        pageSize   query     int       false  "每页数量"
+		// @Param        status         query    []string     false  "Status filter"
+		// @Param        userId     query     int       false  "用户ID"
+		// @Param        player_id   query  int     false  "玩家ID"
+		// @Param        gameId     query     int       false  "游戏ID"
+		// @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"
+		// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
+		// @Produce      json
+		// @Success      200  {object}  model.APIResponse[[]model.Order]
+		// @Router       /admin/orders [get]
 		group.GET("/orders", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/orders"), orderHandler.ListOrders)
+		// @Summary      创建订单
+		// @Tags         Admin/Orders
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  CreateOrderPayload  true  "订单信息"
+		// @Success      201  {object}  model.APIResponse[model.Order]
+		// @Failure      400  {object}  apierr.ErrorResponse
+		// @Router       /admin/orders [post]
 		group.POST("/orders", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders"), orderHandler.CreateOrder)
+		// @Summary      获取订单
+		// @Tags         Admin/Orders
+		// @Security     BearerAuth
+		// @Param        id   path  int  true  "订单ID"
+		// @Produce      json
+		// @Success      200  {object}  model.APIResponse[model.Order]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/orders/{id} [get]
 		group.GET("/orders/:id", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/orders/:id"), orderHandler.GetOrder)
+		// @Summary      更新订单
+		// @Tags         Admin/Orders
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        id       path  int                true  "订单ID"
+		// @Param        request  body  UpdateOrderPayload true  "订单信息"
+		// @Success      200  {object}  model.APIResponse[model.Order]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/orders/{id} [put]
 		group.PUT("/orders/:id", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/orders/:id"), orderHandler.UpdateOrder)
+		// @Summary      删除订单
+		// @Tags         Admin/Orders
+		// @Security     BearerAuth
+		// @Param        id   path  int  true  "订单ID"
+		// @Produce      json
+		// @Success      200  {object}  model.APIResponse[any]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/orders/{id} [delete]
 		group.DELETE("/orders/:id", pm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/orders/:id"), orderHandler.DeleteOrder)
+		// @Summary      评价订单
+		// @Tags         Admin/Orders
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        id       path  int                true  "订单ID"
+		// @Param        request  body  ReviewOrderPayload true  "评价信息"
+		// @Success      200  {object}  model.APIResponse[model.Review]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/orders/{id}/review [post]
 		group.POST("/orders/:id/review", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/:id/review"), orderHandler.ReviewOrder)
+		// @Summary      取消订单
+		// @Tags         Admin/Orders
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        id       path  int                true  "订单ID"
+		// @Param        request  body  CancelOrderPayload true  "取消信息"
+		// @Success      200  {object}  model.APIResponse[model.Order]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/orders/{id}/cancel [post]
 		group.POST("/orders/:id/cancel", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/:id/cancel"), orderHandler.CancelOrder)
+		// @Summary      指派订单的陪玩师
+		// @Tags         Admin/Orders
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        id       path  int                 true  "订单ID"
+		// @Param        request  body  AssignOrderPayload  true  "指派信息"
+		// @Success      200  {object}  model.APIResponse[model.Order]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/orders/{id}/assign [post]
 		group.POST("/orders/:id/assign", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/:id/assign"), orderHandler.AssignOrder)
+		// @Summary      确认订单
+		// @Description  将订单状态从 pending 置为 confirmed
+		// @Tags         Admin/Orders
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        id       path  int               true  "订单ID"
+		// @Param        request  body  orderNotePayload  false "备注（可选）"
+		// @Success      200  {object}  model.APIResponse[model.Order]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/orders/{id}/confirm [post]
 		group.POST("/orders/:id/confirm", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/:id/confirm"), orderHandler.ConfirmOrder)
+		// @Summary      开始订单
+		// @Description  将订单状态从 confirmed 置为 in_progress
+		// @Tags         Admin/Orders
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        id       path  int               true  "订单ID"
+		// @Param        request  body  orderNotePayload  false "备注（可选）"
+		// @Success      200  {object}  model.APIResponse[model.Order]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/orders/{id}/start [post]
 		group.POST("/orders/:id/start", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/:id/start"), orderHandler.StartOrder)
+		// @Summary      完成订单
+		// @Description  将订单状态从 in_progress 置为 completed，并记录完成时间
+		// @Tags         Admin/Orders
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        id       path  int               true  "订单ID"
+		// @Param        request  body  orderNotePayload  false "备注（可选）"
+		// @Success      200  {object}  model.APIResponse[model.Order]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/orders/{id}/complete [post]
 		group.POST("/orders/:id/complete", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/:id/complete"), orderHandler.CompleteOrder)
+		// @Summary      退款订单
+		// @Tags         Admin/Orders
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        id       path  int                  true  "订单ID"
+		// @Param        request        body     orderRefundPayload true   "Request body"
+		// @Success      200  {object}  model.APIResponse[model.Order]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/orders/{id}/refund [post]
 		group.POST("/orders/:id/refund", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/:id/refund"), orderHandler.RefundOrder)
+		// @Summary      获取订单操作日志
+		// @Tags         Admin/Orders
+		// @Security     BearerAuth
+		// @Produce      json
+		// @Param        id         path   int  true  "订单ID"
+		// @Param        page       query  int  false "页码"
+		// @Param        pageSize   query     int       false  "每页数量"
+		// @Param        action     query  string false "动作过滤" Enums(create,assign_player,update_status,cancel,delete)
+		// @Param        actor_user_id query int false "操作者用户ID"
+		// @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"
+		// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
+		// @Param        export     query  string false "导出格式" Enums(csv)
+		// @Param        fields     query  string false "Export columns (comma separated)"
+		// @Param        header_lang query string false "列头语言" Enums(en,zh)
+		// @Success      200  {object}  model.APIResponse[[]model.OperationLog]
+		// @Router       /admin/orders/{id}/logs [get]
 		group.GET("/orders/:id/logs", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/orders/:id/logs"), orderHandler.ListOrderLogs)
+		// @Summary      获取订单时间线
+		// @Tags         Admin/Orders
+		// @Security     BearerAuth
+		// @Produce      json
+		// @Param        id   path  int  true  "订单ID"
+		// @Success      200  {object}  model.APIResponse[[]service.OrderTimelineItem]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/orders/{id}/timeline [get]
 		group.GET("/orders/:id/timeline", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/orders/:id/timeline"), orderHandler.GetOrderTimeline)
+		// @Summary      获取订单支付记录
+		// @Tags         Admin/Orders
+		// @Security     BearerAuth
+		// @Produce      json
+		// @Param        id   path  int  true  "订单ID"
+		// @Success      200  {object}  model.APIResponse[[]model.Payment]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/orders/{id}/payments [get]
 		group.GET("/orders/:id/payments", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/orders/:id/payments"), orderHandler.ListOrderPayments)
+		// @Summary      获取订单退款记录
+		// @Tags         Admin/Orders
+		// @Security     BearerAuth
+		// @Produce      json
+		// @Param        id   path  int  true  "订单ID"
+		// @Success      200  {object}  model.APIResponse[[]service.OrderRefundItem]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/orders/{id}/refunds [get]
 		group.GET("/orders/:id/refunds", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/orders/:id/refunds"), orderHandler.ListOrderRefunds)
+		// @Summary      获取订单评价列表
+		// @Tags         Admin/Orders
+		// @Security     BearerAuth
+		// @Produce      json
+		// @Param        id   path  int  true  "订单ID"
+		// @Success      200  {object}  model.APIResponse[[]model.Review]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/orders/{id}/reviews [get]
 		group.GET("/orders/:id/reviews", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/orders/:id/reviews"), orderHandler.ListOrderReviews)
 
-		// 支付管理 - 使用细粒度权�?
+		// 支付管理 - 使用细粒度权限
+		// @Summary      列出支付
+		// @Tags         Admin/Payments
+		// @Security     BearerAuth
+		// @Param        page        query  int       false  "页码"
+		// @Param        pageSize   query     int       false  "每页数量"
+		// @Param        status         query    []string     false  "Status filter"
+		// @Param        method      query  []string  false  "支付方式"
+		// @Param        userId     query     int       false  "用户ID"
+		// @Param        orderId     query     int       false  "订单ID"
+		// @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"
+		// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
+		// @Produce      json
+		// @Success      200  {object}  model.APIResponse[[]model.Payment]
+		// @Router       /admin/payments [get]
 		group.GET("/payments", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/payments"), paymentHandler.ListPayments)
+		// @Summary      创建支付记录
+		// @Tags         Admin/Payments
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  CreatePaymentPayload  true  "支付信息"
+		// @Success      201  {object}  model.APIResponse[model.Payment]
+		// @Failure      400  {object}  apierr.ErrorResponse
+		// @Router       /admin/payments [post]
 		group.POST("/payments", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/payments"), paymentHandler.CreatePayment)
+		// @Summary      获取支付
+		// @Tags         Admin/Payments
+		// @Security     BearerAuth
+		// @Param        id   path  int  true  "支付ID"
+		// @Produce      json
+		// @Success      200  {object}  model.APIResponse[model.Payment]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/payments/{id} [get]
 		group.GET("/payments/:id", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/payments/:id"), paymentHandler.GetPayment)
+		// @Summary      更新支付
+		// @Tags         Admin/Payments
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        id       path  int                  true  "支付ID"
+		// @Param        request  body  UpdatePaymentPayload true  "支付信息"
+		// @Success      200  {object}  model.APIResponse[model.Payment]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/payments/{id} [put]
 		group.PUT("/payments/:id", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/payments/:id"), paymentHandler.UpdatePayment)
+		// @Summary      删除支付
+		// @Tags         Admin/Payments
+		// @Security     BearerAuth
+		// @Param        id   path  int  true  "支付ID"
+		// @Produce      json
+		// @Success      200  {object}  model.APIResponse[any]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/payments/{id} [delete]
 		group.DELETE("/payments/:id", pm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/payments/:id"), paymentHandler.DeletePayment)
+		// @Summary      退款支付
+		// @Tags         Admin/Payments
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        id       path  int                  true  "支付ID"
+		// @Param        request  body  RefundPaymentPayload true  "退款信息"
+		// @Success      200  {object}  model.APIResponse[model.Payment]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/payments/{id}/refund [post]
 		group.POST("/payments/:id/refund", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/payments/:id/refund"), paymentHandler.RefundPayment)
+		// @Summary      确认支付入账
+		// @Tags         Admin/Payments
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        id       path  int                     true  "支付ID"
+		// @Param        request  body  CapturePaymentPayload   true  "入账信息"
+		// @Success      200  {object}  model.APIResponse[model.Payment]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/payments/{id}/capture [post]
 		group.POST("/payments/:id/capture", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/payments/:id/capture"), paymentHandler.CapturePayment)
+		// @Summary      获取支付操作日志
+		// @Tags         Admin/Payments
+		// @Security     BearerAuth
+		// @Produce      json
+		// @Param        id         path   int  true  "支付ID"
+		// @Param        page       query  int  false "页码"
+		// @Param        pageSize   query     int       false  "每页数量"
+		// @Param        action     query  string false "动作过滤" Enums(create,capture,update_status,refund,delete)
+		// @Param        actor_user_id query int false "操作者用户ID"
+		// @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"
+		// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
+		// @Param        export     query  string false "导出格式" Enums(csv)
+		// @Param        fields     query  string false "Export columns (comma separated)"
+		// @Param        header_lang query string false "列头语言" Enums(en,zh)
+		// @Success      200  {object}  model.APIResponse[[]model.OperationLog]
+		// @Router       /admin/payments/{id}/logs [get]
 		group.GET("/payments/:id/logs", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/payments/:id/logs"), paymentHandler.ListPaymentLogs)
 
-		// 评价管理 - 使用细粒度权�?
+		// 评价管理 - 使用细粒度权限
+		// @Summary      评价列表
+		// @Tags         Admin/Reviews
+		// @Security     BearerAuth
+		// @Produce      json
+		// @Param        page       query  int  false  "页码"
+		// @Param        pageSize   query     int       false  "每页数量"
+		// @Param        orderId     query     int       false  "订单ID"
+		// @Param        userId     query     int       false  "用户ID"
+		// @Param        playerId   query     int       false  "陪玩师ID"
+		// @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"
+		// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
+		// @Success      200  {object}  model.APIResponse[[]model.Review]
+		// @Router       /admin/reviews [get]
 		group.GET("/reviews", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/reviews"), reviewHandler.ListReviews)
+		// @Summary      创建评价
+		// @Tags         Admin/Reviews
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  CreateReviewPayload  true  "评价"
+		// @Success      201  {object}  model.APIResponse[model.Review]
+		// @Failure      400  {object}  apierr.ErrorResponse
+		// @Router       /admin/reviews [post]
 		group.POST("/reviews", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/reviews"), reviewHandler.CreateReview)
+		// @Summary      获取评价
+		// @Tags         Admin/Reviews
+		// @Security     BearerAuth
+		// @Produce      json
+		// @Param        id   path  int  true  "评价ID"
+		// @Success      200  {object}  model.APIResponse[model.Review]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/reviews/{id} [get]
 		group.GET("/reviews/:id", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/reviews/:id"), reviewHandler.GetReview)
+		// @Summary      更新评价
+		// @Tags         Admin/Reviews
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        id       path  int                    true  "评价ID"
+		// @Param        request  body  UpdateReviewPayload    true  "评价"
+		// @Success      200  {object}  model.APIResponse[model.Review]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/reviews/{id} [put]
 		group.PUT("/reviews/:id", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/reviews/:id"), reviewHandler.UpdateReview)
+		// @Summary      删除评价
+		// @Tags         Admin/Reviews
+		// @Security     BearerAuth
+		// @Produce      json
+		// @Param        id   path  int  true  "评价ID"
+		// @Success      200  {object}  model.APIResponse[any]
+		// @Failure      404  {object}  apierr.ErrorResponse
+		// @Router       /admin/reviews/{id} [delete]
 		group.DELETE("/reviews/:id", pm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/reviews/:id"), reviewHandler.DeleteReview)
+		// @Summary      获取陪玩师的评价
+		// @Tags         Admin/Players
+		// @Security     BearerAuth
+		// @Produce      json
+		// @Param        id         path   int  true  "陪玩师ID"
+		// @Param        page       query  int  false  "页码"
+		// @Param        pageSize   query     int       false  "每页数量"
+		// @Success      200  {object}  model.APIResponse[[]model.Review]
+		// @Router       /admin/players/{id}/reviews [get]
 		group.GET("/players/:id/reviews", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/players/:id/reviews"), reviewHandler.ListPlayerReviews)
+		// @Summary      获取评价操作日志
+		// @Tags         Admin/Reviews
+		// @Security     BearerAuth
+		// @Produce      json
+		// @Param        id           path   int  true  "评价ID"
+		// @Param        page         query  int  false "页码"
+		// @Param        pageSize   query     int       false  "每页数量"
+		// @Param        action       query  string false "动作过滤" Enums(create,update,delete)
+		// @Param        actor_user_id query int   false "操作者用户ID"
+		// @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"
+		// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
+		// @Param        export       query  string false "导出格式" Enums(csv)
+		// @Param        fields         query    string       false  "Export fields (comma separated)"
+		// @Param        header_lang  query  string false "列头语言" Enums(en,zh)
+		// @Success      200  {object}  model.APIResponse[[]model.OperationLog]
+		// @Router       /admin/reviews/{id}/logs [get]
 		group.GET("/reviews/:id/logs", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/reviews/:id/logs"), reviewHandler.ListReviewLogs)
 	}
 }
 
-// RegisterStatsRoutes 注册统计相关路由�?
-// 使用细粒度权限控制（method+path 级别）�?
+// RegisterStatsRoutes 注册统计相关路由
+// 使用细粒度权限控制（method+path 级别）
 func RegisterStatsRoutes(router gin.IRouter, stats *statsservice.StatsService, pm *mw.PermissionMiddleware) {
 	h := NewStatsHandler(stats)
-	group := router.Group("/admin")
-	// 统计接口均需要认�?+ 速率限制
+	group := router
+	// 统计接口均需要认证 + 速率限制
 	cfg := config.Load()
 	if os.Getenv("APP_ENV") == "production" {
 		group.Use(pm.RequireAuth(), mw.RateLimitAdmin())
@@ -128,12 +710,70 @@ func RegisterStatsRoutes(router gin.IRouter, stats *statsservice.StatsService, p
 			group.Use(mw.AdminAuth(), mw.RateLimitAdmin())
 		}
 	}
-	// 统计接口 - 使用细粒度权�?
+	// 统计接口 - 使用细粒度权限
+	// @Summary      仪表板数据
+	// @Description  获取平台统计数据总览
+	// @Tags         Admin - Stats
+	// @Accept       json
+	// @Produce      json
+	// @Success      200            {object}  model.APIResponse[stats.DashboardData]
+	// @Router       /admin/stats/dashboard [get]
 	group.GET("/stats/dashboard", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/stats/dashboard"), h.Dashboard)
+	// @Summary      收入趋势
+	// @Description  获取指定天数的收入趋势
+	// @Tags         Admin - Stats
+	// @Accept       json
+	// @Produce      json
+	// @Param        days           query     int     false  "天数" default(7)
+	// @Success      200            {object}  model.APIResponse[[]stats.DateValue]
+	// @Router       /admin/stats/revenue-trend [get]
 	group.GET("/stats/revenue-trend", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/stats/revenue-trend"), h.RevenueTrend)
+	// @Summary      用户增长趋势
+	// @Description  获取指定天数的用户增长趋势
+	// @Tags         Admin - Stats
+	// @Accept       json
+	// @Produce      json
+	// @Param        days           query     int     false  "天数" default(7)
+	// @Success      200            {object}  model.APIResponse[[]stats.DateValue]
+	// @Router       /admin/stats/user-growth [get]
 	group.GET("/stats/user-growth", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/stats/user-growth"), h.UserGrowth)
+	// @Summary      订单状态汇总
+	// @Description  获取各状态订单数量统计
+	// @Tags         Admin - Stats
+	// @Accept       json
+	// @Produce      json
+	// @Success      200            {object}  model.APIResponse[map[string]int64]
+	// @Router       /admin/stats/orders [get]
 	group.GET("/stats/orders", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/stats/orders"), h.OrdersSummary)
+	// @Summary      顶级陪玩师
+	// @Description  获取收入最高的陪玩师列表
+	// @Tags         Admin - Stats
+	// @Accept       json
+	// @Produce      json
+	// @Param        limit          query     int     false  "数量限制" default(10)
+	// @Success      200            {object}  model.APIResponse[[]stats.PlayerValue]
+	// @Router       /admin/stats/top-players [get]
 	group.GET("/stats/top-players", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/stats/top-players"), h.TopPlayers)
+	// @Summary      审计概览
+	// @Description  获取审计日志统计概览
+	// @Tags         Admin - Stats
+	// @Accept       json
+	// @Produce      json
+	// @Param        from           query     string  false  "开始日期"
+	// @Param        to             query     string  false  "结束日期"
+	// @Success      200            {object}  model.APIResponse[map[string]any]
+	// @Router       /admin/stats/audit/overview [get]
 	group.GET("/stats/audit/overview", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/stats/audit/overview"), h.AuditOverview)
+	// @Summary      审计趋势
+	// @Description  获取审计日志时间趋势
+	// @Tags         Admin - Stats
+	// @Accept       json
+	// @Produce      json
+	// @Param        from           query     string  false  "开始日期"
+	// @Param        to             query     string  false  "结束日期"
+	// @Param        entity         query     string  false  "实体类型"
+	// @Param        action         query     string  false  "操作类型"
+	// @Success      200            {object}  model.APIResponse[[]stats.DateValue]
+	// @Router       /admin/stats/audit/trend [get]
 	group.GET("/stats/audit/trend", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/stats/audit/trend"), h.AuditTrend)
 }

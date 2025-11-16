@@ -359,4 +359,3 @@ func TestPermissionHandler_GetPermissionGroups(t *testing.T) {
 		assert.True(t, resp.Success)
 	}
 }
-

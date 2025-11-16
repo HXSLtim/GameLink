@@ -29,10 +29,10 @@ func TestFeedRepository_Create(t *testing.T) {
 	ctx := context.Background()
 
 	feed := &model.Feed{
-		AuthorID:           1,
-		Content:            "Hello world",
-		Visibility:         model.FeedVisibilityPublic,
-		ModerationStatus:   model.FeedModerationPending,
+		AuthorID:         1,
+		Content:          "Hello world",
+		Visibility:       model.FeedVisibilityPublic,
+		ModerationStatus: model.FeedModerationPending,
 	}
 
 	err := repo.Create(ctx, feed)
@@ -46,10 +46,10 @@ func TestFeedRepository_Get(t *testing.T) {
 
 	// Create a feed
 	feed := &model.Feed{
-		AuthorID:           1,
-		Content:            "Hello world",
-		Visibility:         model.FeedVisibilityPublic,
-		ModerationStatus:   model.FeedModerationPending,
+		AuthorID:         1,
+		Content:          "Hello world",
+		Visibility:       model.FeedVisibilityPublic,
+		ModerationStatus: model.FeedModerationPending,
 	}
 	err := repo.Create(ctx, feed)
 	assert.NoError(t, err)
@@ -73,10 +73,10 @@ func TestFeedRepository_List(t *testing.T) {
 	// Create multiple feeds
 	for i := 0; i < 5; i++ {
 		feed := &model.Feed{
-			AuthorID:           uint64(i + 1),
-			Content:            "Content " + string(rune(i)),
-			Visibility:         model.FeedVisibilityPublic,
-			ModerationStatus:   model.FeedModerationPending,
+			AuthorID:         uint64(i + 1),
+			Content:          "Content " + string(rune(i)),
+			Visibility:       model.FeedVisibilityPublic,
+			ModerationStatus: model.FeedModerationPending,
 		}
 		err := repo.Create(ctx, feed)
 		assert.NoError(t, err)
@@ -127,10 +127,10 @@ func TestFeedRepository_UpdateModeration(t *testing.T) {
 
 	// Create a feed
 	feed := &model.Feed{
-		AuthorID:           1,
-		Content:            "Hello world",
-		Visibility:         model.FeedVisibilityPublic,
-		ModerationStatus:   model.FeedModerationPending,
+		AuthorID:         1,
+		Content:          "Hello world",
+		Visibility:       model.FeedVisibilityPublic,
+		ModerationStatus: model.FeedModerationPending,
 	}
 	err := repo.Create(ctx, feed)
 	assert.NoError(t, err)
@@ -164,10 +164,10 @@ func TestFeedRepository_CreateReport(t *testing.T) {
 
 	// Create a feed first
 	feed := &model.Feed{
-		AuthorID:           1,
-		Content:            "Hello world",
-		Visibility:         model.FeedVisibilityPublic,
-		ModerationStatus:   model.FeedModerationPending,
+		AuthorID:         1,
+		Content:          "Hello world",
+		Visibility:       model.FeedVisibilityPublic,
+		ModerationStatus: model.FeedModerationPending,
 	}
 	err := repo.Create(ctx, feed)
 	assert.NoError(t, err)
@@ -192,10 +192,10 @@ func TestFeedRepository_ListDefaultPageSize(t *testing.T) {
 	// Create more feeds than default page size
 	for i := 0; i < 25; i++ {
 		feed := &model.Feed{
-			AuthorID:           1,
-			Content:            "Content",
-			Visibility:         model.FeedVisibilityPublic,
-			ModerationStatus:   model.FeedModerationPending,
+			AuthorID:         1,
+			Content:          "Content",
+			Visibility:       model.FeedVisibilityPublic,
+			ModerationStatus: model.FeedModerationPending,
 		}
 		err := repo.Create(ctx, feed)
 		assert.NoError(t, err)
@@ -214,10 +214,10 @@ func TestFeedRepository_ListMaxPageSize(t *testing.T) {
 	// Create more feeds than max page size
 	for i := 0; i < 60; i++ {
 		feed := &model.Feed{
-			AuthorID:           1,
-			Content:            "Content",
-			Visibility:         model.FeedVisibilityPublic,
-			ModerationStatus:   model.FeedModerationPending,
+			AuthorID:         1,
+			Content:          "Content",
+			Visibility:       model.FeedVisibilityPublic,
+			ModerationStatus: model.FeedModerationPending,
 		}
 		err := repo.Create(ctx, feed)
 		assert.NoError(t, err)
@@ -239,10 +239,10 @@ func TestFeedRepository_ListCursorPagination(t *testing.T) {
 	var feedIDs []uint64
 	for i := 0; i < 5; i++ {
 		feed := &model.Feed{
-			AuthorID:           1,
-			Content:            "Content",
-			Visibility:         model.FeedVisibilityPublic,
-			ModerationStatus:   model.FeedModerationPending,
+			AuthorID:         1,
+			Content:          "Content",
+			Visibility:       model.FeedVisibilityPublic,
+			ModerationStatus: model.FeedModerationPending,
 		}
 		err := repo.Create(ctx, feed)
 		assert.NoError(t, err)

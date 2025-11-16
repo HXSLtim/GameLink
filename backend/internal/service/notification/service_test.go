@@ -137,11 +137,11 @@ func TestNotificationService_MarkRead_Success(t *testing.T) {
 	repo := &mockNotificationRepoForService{events: make(map[uint64]*model.NotificationEvent)}
 	for i := 1; i <= 3; i++ {
 		event := &model.NotificationEvent{
-			UserID:    1,
-			Title:     "Test",
-			Message:   "Test message",
-			Priority:  model.NotificationPriorityNormal,
-			Channel:   "system",
+			UserID:   1,
+			Title:    "Test",
+			Message:  "Test message",
+			Priority: model.NotificationPriorityNormal,
+			Channel:  "system",
 		}
 		repo.Create(ctx, event)
 	}

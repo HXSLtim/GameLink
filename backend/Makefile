@@ -25,6 +25,6 @@ swagger:
 	@which swag >/dev/null 2>&1 || (echo "Installing swag" && GOFLAGS= go install github.com/swaggo/swag/cmd/swag@latest)
 	@echo "Generating Swagger docs from annotations..."
 	$(GOCMD) env GOPATH >/dev/null 2>&1
-	swag init -g cmd/user-service/main.go -o docs/swagger -q
+	swag init -g cmd/main.go -o docs/swagger -q
 	@# Keep embedded swagger json in sync for /swagger.json endpoint
 	cp docs/swagger/swagger.json internal/handler/swagger/openapi.json

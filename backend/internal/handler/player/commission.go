@@ -24,8 +24,7 @@ func RegisterCommissionRoutes(router gin.IRouter, svc *commission.CommissionServ
 
 // getCommissionSummaryHandler 获取抽成汇�?
 // @Summary      获取抽成汇�?
-// @Description  获取陪玩师抽成收入汇�?
-// @Tags         Player - Commission
+// @Description  API endpoint// @Tags         Player - Commission
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
@@ -63,8 +62,7 @@ func getCommissionSummaryHandler(c *gin.Context, svc *commission.CommissionServi
 
 // getCommissionRecordsHandler 获取抽成记录
 // @Summary      获取抽成记录
-// @Description  获取陪玩师抽成记录列�?
-// @Tags         Player - Commission
+// @Description  API endpoint// @Tags         Player - Commission
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true   "Bearer {token}"
@@ -103,8 +101,7 @@ func getCommissionRecordsHandler(c *gin.Context, svc *commission.CommissionServi
 
 // getMonthlySettlementsHandler 获取月度结算记录
 // @Summary      获取月度结算记录
-// @Description  获取陪玩师月度结算记�?
-// @Tags         Player - Commission
+// @Description  API endpoint// @Tags         Player - Commission
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true   "Bearer {token}"
@@ -148,4 +145,3 @@ func getPlayerIDByUserID(c *gin.Context, userID uint64) (uint64, error) {
 	// 暂时返回userID作为playerID（需要后续完善）
 	return userID, nil
 }
-
