@@ -1,4 +1,13 @@
-dist
 node_modules
+dist
+build
 coverage
-
+*.lock
+*.log
+.env*
+!.env.example
+.DS_Store
+.idea
+.vscode
+*.min.js
+*.min.css

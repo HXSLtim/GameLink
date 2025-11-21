@@ -4,8 +4,8 @@
 import React, { useState } from 'react';
 import { DiscordLayout } from '@/shared/components/DiscordLayout';
 import { Button } from '@/shared/components/Button';
-import { PlayerCard, type PlayerCardProps } from '../../components/PlayerCard';
-import { usePlayerList } from '../../hooks/usePlayerList';
+import { PlayerCard, type PlayerCardProps } from '@/apps/user/components/PlayerCard';
+import { usePlayerList } from '@/apps/user/hooks/usePlayerList';
 import type { Player } from '@/api/player';
 import './Players.less';
 

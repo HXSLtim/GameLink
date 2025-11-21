@@ -1,1 +1,0 @@
-export { ReviewList } from './ReviewList';

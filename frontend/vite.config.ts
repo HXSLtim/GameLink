@@ -101,14 +101,11 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      components: path.resolve(__dirname, './src/components'),
-      pages: path.resolve(__dirname, './src/pages'),
-      utils: path.resolve(__dirname, './src/utils'),
-      hooks: path.resolve(__dirname, './src/hooks'),
-      services: path.resolve(__dirname, './src/services'),
-      types: path.resolve(__dirname, './src/types'),
-      contexts: path.resolve(__dirname, './src/contexts'),
-      styles: path.resolve(__dirname, './src/styles'),
+      '@api': path.resolve(__dirname, './src/api'),
+      '@apps': path.resolve(__dirname, './src/apps'),
+      '@router': path.resolve(__dirname, './src/router'),
+      '@shared': path.resolve(__dirname, './src/shared'),
+      '@stores': path.resolve(__dirname, './src/stores'),
     },
   },
   css: {

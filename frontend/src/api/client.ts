@@ -1,5 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { storage } from '../utils/storage';
+import { storage } from '@/shared/utils/storage';
 import { STORAGE_KEYS } from '../config';
 import { cryptoMiddleware } from '../middleware/crypto';
 

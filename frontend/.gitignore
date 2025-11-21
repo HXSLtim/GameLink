@@ -1,16 +1,74 @@
-node_modules
-dist
-.DS_Store
+# Logs
+logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
 coverage
+*.lcov
+.nyc_output
 
+# Dependency directories
+node_modules/
+jspm_packages/
 
-# 环境变量配置（敏感信息）
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Environment variables
+.env
 .env.local
 .env.*.local
-.env.production.local
+!.env.example
 
-# 密钥文件
-*.key
-*.pem
-*.p12
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# Testing
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+.parcel-cache/
+
+# OS generated files
+Thumbs.db
+Desktop.ini
+
+# Husky
+.husky/_
+
+# Vite
+.vite/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache

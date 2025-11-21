@@ -10,15 +10,11 @@
     "baseUrl": "./src",
     "paths": {
       "@/*": ["./*"],
-      "components": ["components/index.ts"],
-      "components/*": ["components/*"],
-      "pages/*": ["pages/*"],
-      "utils/*": ["utils/*"],
-      "hooks/*": ["hooks/*"],
-      "services/*": ["services/*"],
-      "types/*": ["types/*"],
-      "contexts/*": ["contexts/*"],
-      "styles/*": ["styles/*"]
+      "@api/*": ["api/*"],
+      "@apps/*": ["apps/*"],
+      "@router/*": ["router/*"],
+      "@shared/*": ["shared/*"],
+      "@stores/*": ["stores/*"]
     },
     "jsx": "react-jsx",
     "resolveJsonModule": true,
