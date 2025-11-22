@@ -66,22 +66,8 @@ func RespondCreated(c *gin.Context, data interface{}) {
 
 // RespondAPIError sends an error JSON response
 func RespondAPIError(c *gin.Context, err error) {
-	// Try to cast to apierr.APIError
-	if apiErr, ok := err.(*apierr.APIError); ok {
-		// Add request ID if available
-		if requestID := c.GetString("request_id"); requestID != "" && apiErr.RequestID == "" {
-			apiErr = apiErr.WithRequestID(requestID)
-		}
-		c.JSON(apiErr.Code, apiErr)
-		return
-	}
-	
-	// Fallback for other error types
-	c.JSON(http.StatusInternalServerError, model.APIResponse[any]{
-		Success: false,
-		Code:    http.StatusInternalServerError,
-		Message: err.Error(),
-	})
+	// 使用统一的错误映射
+	RespondWithServiceError(c, err)
 }
 
 // RespondError sends an error JSON response with the given status code and message

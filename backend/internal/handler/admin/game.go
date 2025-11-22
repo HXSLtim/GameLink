@@ -8,7 +8,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	apierr "gamelink/internal/handler"
+	"gamelink/internal/handler"
+	apierr "gamelink/internal/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	adminservice "gamelink/internal/service/admin"
@@ -68,26 +69,22 @@ func (h *GameHandler) ListGames(c *gin.Context) {
 //
 // GetGame 获取单个游戏�?
 func (h *GameHandler) GetGame(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
+	
 	game, err := h.svc.GetGame(c.Request.Context(), id)
-	if errors.Is(err, repository.ErrNotFound) {
-		writeJSONError(c, http.StatusNotFound, apierr.ErrGameNotFound)
-		return
-	}
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		if errors.Is(err, repository.ErrNotFound) {
+			handler.RespondWithServiceError(c, apierr.NotFound(apierr.ErrGameNotFound))
+			return
+		}
+		handler.RespondWithServiceError(c, err)
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[*model.Game]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    game,
-	})
+	
+	handler.RespondSuccess(c, "OK", game)
 }
 
 // CreateGame
@@ -104,8 +101,7 @@ func (h *GameHandler) GetGame(c *gin.Context) {
 // CreateGame 创建新游戏�?
 func (h *GameHandler) CreateGame(c *gin.Context) {
 	var payload GamePayload
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+	if !ValidateAndRespond(c, &payload) {
 		return
 	}
 
@@ -116,21 +112,16 @@ func (h *GameHandler) CreateGame(c *gin.Context) {
 		IconURL:     payload.IconURL,
 		Description: payload.Description,
 	})
-	if errors.Is(err, adminservice.ErrValidation) {
-		writeJSONError(c, http.StatusBadRequest, "Validation failed")
-		return
-	}
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		if errors.Is(err, adminservice.ErrValidation) {
+			handler.RespondWithServiceError(c, apierr.BadRequest("validation failed"))
+			return
+		}
+		handler.RespondWithServiceError(c, err)
 		return
 	}
 
-	writeJSON(c, http.StatusCreated, model.APIResponse[*model.Game]{
-		Success: true,
-		Code:    http.StatusCreated,
-		Message: "created",
-		Data:    game,
-	})
+	handler.RespondCreated(c, game)
 }
 
 // UpdateGame
@@ -147,15 +138,13 @@ func (h *GameHandler) CreateGame(c *gin.Context) {
 //
 // UpdateGame 更新游戏信息�?
 func (h *GameHandler) UpdateGame(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
 	var payload GamePayload
-	if bindErr := c.ShouldBindJSON(&payload); bindErr != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+	if !ValidateAndRespond(c, &payload) {
 		return
 	}
 
@@ -166,25 +155,20 @@ func (h *GameHandler) UpdateGame(c *gin.Context) {
 		IconURL:     payload.IconURL,
 		Description: payload.Description,
 	})
-	if errors.Is(err, adminservice.ErrValidation) {
-		writeJSONError(c, http.StatusBadRequest, "Validation failed")
-		return
-	}
-	if errors.Is(err, repository.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	}
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		if errors.Is(err, adminservice.ErrValidation) {
+			handler.RespondWithServiceError(c, apierr.BadRequest("validation failed"))
+			return
+		}
+		if errors.Is(err, repository.ErrNotFound) {
+			handler.RespondWithServiceError(c, apierr.NotFound("game not found"))
+			return
+		}
+		handler.RespondWithServiceError(c, err)
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[*model.Game]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "updated",
-		Data:    game,
-	})
+	handler.RespondSuccess(c, "updated", game)
 }
 
 // DeleteGame

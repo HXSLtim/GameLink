@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"gamelink/internal/handler"
 	"gamelink/internal/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
@@ -121,6 +122,25 @@ func respondAPIError(c *gin.Context, err error) {
 	}
 	// fallback
 	writeJSONError(c, http.StatusInternalServerError, err.Error())
+}
+
+// ParseIDAndRespond 解析ID参数并响应错误（如果需要）
+func ParseIDAndRespond(c *gin.Context, paramName string) (uint64, bool) {
+	id, err := handler.ParseIDParam(c, paramName)
+	if err != nil {
+		respondAPIError(c, err)
+		return 0, false
+	}
+	return id, true
+}
+
+// ValidateAndRespond 验证请求并响应错误（如果需要）
+func ValidateAndRespond(c *gin.Context, obj interface{}) bool {
+	if err := c.ShouldBindJSON(obj); err != nil {
+		respondAPIError(c, apierr.BadRequest(apierr.ErrInvalidJSONPayload).WithDetails(err.Error()))
+		return false
+	}
+	return true
 }
 
 func ensureSlice[T any](items []T) []T {
