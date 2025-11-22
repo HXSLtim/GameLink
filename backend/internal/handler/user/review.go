@@ -10,6 +10,12 @@ import (
 	"gamelink/internal/service/review"
 )
 
+// CreateReviewResponse 创建评价响应（类型别名）
+type CreateReviewResponse = review.CreateReviewResponse
+
+// MyReviewListResponse 我的评价列表响应（类型别名）
+type MyReviewListResponse = review.MyReviewListResponse
+
 // RegisterReviewRoutes 注册用户端评价路由
 func RegisterReviewRoutes(router gin.IRouter, svc *review.ReviewService, authMiddleware gin.HandlerFunc) {
 	group := router.Group("/user/reviews")
@@ -26,7 +32,7 @@ func RegisterReviewRoutes(router gin.IRouter, svc *review.ReviewService, authMid
 // @Produce      json
 // @Param        Authorization  header    string                        true  "Bearer {token}"
 // @Param        request        body      review.CreateReviewRequest    true  "创建评价请求"
-// @Success      200            {object}  model.APIResponse[review.CreateReviewResponse]
+// @Success      200            {object}  model.APIResponse[CreateReviewResponse]
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /user/reviews [post]
@@ -72,7 +78,7 @@ func createReviewHandler(c *gin.Context, svc *review.ReviewService) {
 // @Param        Authorization  header    string  true   "Bearer {token}"
 // @Param        page           query     int     false  "页码"
 // @Param        pageSize       query     int     false  "每页数量"
-// @Success      200            {object}  model.APIResponse[review.MyReviewListResponse]
+// @Success      200            {object}  model.APIResponse[MyReviewListResponse]
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /user/reviews/my [get]

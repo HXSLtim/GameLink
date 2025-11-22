@@ -25,14 +25,14 @@ func NewDisputeHandler(svc *assignment.AssignmentService) *DisputeHandler {
 
 // GetDisputeDetail retrieves dispute details
 // @Summary      获取纠纷详情
-// @Description  根据 ID 获取单个订单纠纷的详细信息
+// @Description  根据 ID 获取单个订单纠纷的详细信
 // @Tags         Admin/Disputes
 // @Security     BearerAuth
 // @Accept       json
 // @Produce      json
 // @Param        id  path  int  true  "纠纷ID"
 // @Success      200  {object}  model.APIResponse[model.OrderDispute]
-// @Failure      404  {object}  apierr.ErrorResponse
+// @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/disputes/{id} [get]
 func (h *DisputeHandler) GetDisputeDetail(c *gin.Context) {
 	disputeID, err := parseUintParam(c, "id")
@@ -51,7 +51,7 @@ func (h *DisputeHandler) GetDisputeDetail(c *gin.Context) {
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[*model.OrderDispute]{
+	writeJSON(c, http.StatusOK, model.APIResponse[model.OrderDispute]{
 		Success: true,
 		Code:    http.StatusOK,
 		Data:    dispute,
@@ -59,8 +59,8 @@ func (h *DisputeHandler) GetDisputeDetail(c *gin.Context) {
 }
 
 // ListPendingDisputes lists disputes pending assignment
-// @Summary      列出待处理纠纷
-// @Description  获取状态为待处理的订单纠纷列表，支持分页
+// @Summary      列出待处理纠
+// @Description  获取状态为待处理的订单纠纷列表，支持分
 // @Tags         Admin/Disputes
 // @Security     BearerAuth
 // @Accept       json
@@ -68,7 +68,7 @@ func (h *DisputeHandler) GetDisputeDetail(c *gin.Context) {
 // @Param        page      query  int  false  "页码"  default(1)
 // @Param        pageSize  query  int  false  "每页数量"    default(20)
 // @Success      200  {object}  model.APIResponse[[]model.OrderDispute]
-// @Failure      500  {object}  apierr.ErrorResponse
+// @Failure      500  {object}  model.ErrorResponse
 // @Router       /admin/disputes/pending [get]
 func (h *DisputeHandler) ListPendingDisputes(c *gin.Context) {
 	page := 1
@@ -118,7 +118,7 @@ type AssignDisputePayload struct {
 
 // AssignDispute assigns a dispute to a customer service representative
 // @Summary      分配纠纷
-// @Description  将一个订单纠纷分配给指定的客服人员处理
+// @Description  将一个订单纠纷分配给指定的客服人员处
 // @Tags         Admin/Disputes
 // @Security     BearerAuth
 // @Accept       json
@@ -126,8 +126,8 @@ type AssignDisputePayload struct {
 // @Param        id       path  int                 true  "纠纷ID"
 // @Param        request  body  AssignDisputePayload   true  "分配信息"
 // @Success      200  {object}  model.APIResponse[string]
-// @Failure      400  {object}  apierr.ErrorResponse
-// @Failure      404  {object}  apierr.ErrorResponse
+// @Failure      400  {object}  model.ErrorResponse
+// @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/disputes/{id}/assign [post]
 func (h *DisputeHandler) AssignDispute(c *gin.Context) {
 	disputeID, err := parseUintParam(c, "id")
@@ -191,7 +191,7 @@ type RollbackAssignmentPayload struct {
 
 // RollbackAssignment rolls back a dispute assignment
 // @Summary      回滚分配
-// @Description  撤销一个订单纠纷的分配，使其回到待处理状态
+// @Description  撤销一个订单纠纷的分配，使其回到待处理状
 // @Tags         Admin/Disputes
 // @Security     BearerAuth
 // @Accept       json
@@ -199,8 +199,8 @@ type RollbackAssignmentPayload struct {
 // @Param        id       path  int                      true  "纠纷ID"
 // @Param        request  body  RollbackAssignmentPayload   true  "回滚信息"
 // @Success      200  {object}  model.APIResponse[string]
-// @Failure      400  {object}  apierr.ErrorResponse
-// @Failure      404  {object}  apierr.ErrorResponse
+// @Failure      400  {object}  model.ErrorResponse
+// @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/disputes/{id}/rollback [post]
 func (h *DisputeHandler) RollbackAssignment(c *gin.Context) {
 	disputeID, err := parseUintParam(c, "id")
@@ -267,8 +267,8 @@ type ResolveDisputePayload struct {
 // @Param        id       path  int                  true  "纠纷ID"
 // @Param        request  body  ResolveDisputePayload   true  "处理结果信息"
 // @Success      200  {object}  model.APIResponse[string]
-// @Failure      400  {object}  apierr.ErrorResponse
-// @Failure      404  {object}  apierr.ErrorResponse
+// @Failure      400  {object}  model.ErrorResponse
+// @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/disputes/{id}/resolve [post]
 func (h *DisputeHandler) ResolveDispute(c *gin.Context) {
 	disputeID, err := parseUintParam(c, "id")

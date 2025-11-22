@@ -27,6 +27,9 @@ type InitiateDisputePayload struct {
 	EvidenceURLs []string `json:"evidenceUrls" binding:"max=9"`
 }
 
+// InitiateDisputeResponse represents the response for initiating a dispute
+type InitiateDisputeResponse = assignment.InitiateDisputeResponse
+
 // InitiateDispute creates a new dispute for an order
 // @Summary      Initiate Dispute
 // @Description  发起订单纠纷
@@ -35,7 +38,7 @@ type InitiateDisputePayload struct {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  InitiateDisputePayload  true  "纠纷信息"
-// @Success      201      {object}  model.APIResponse[InitiateDisputeResponse]
+// @Success      201      {object}  object
 // @Failure      400      {object}  apierr.APIError
 // @Failure      401      {object}  apierr.APIError
 // @Failure      403      {object}  apierr.APIError
@@ -121,7 +124,7 @@ func (h *DisputeHandler) InitiateDispute(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        id  path  uint64  true  "纠纷ID"
-// @Success      200  {object}  model.APIResponse[*model.OrderDispute]
+// @Success      200  {object}  object
 // @Failure      400  {object}  apierr.APIError
 // @Failure      401  {object}  apierr.APIError
 // @Failure      403  {object}  apierr.APIError

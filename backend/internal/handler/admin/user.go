@@ -16,7 +16,7 @@ import (
 	adminservice "gamelink/internal/service/admin"
 )
 
-// UserHandler 处理后台用户管理接口�?
+// UserHandler 处理后台用户管理接口
 type UserHandler struct {
 	svc *adminservice.AdminService
 }
@@ -34,7 +34,7 @@ func NewUserHandler(svc *adminservice.AdminService) *UserHandler {
 // @Param        pageSize   query     int       false  "每页数量"
 // @Param        role           query    []string     false  "Role filter"// @Param        status         query    []string     false  "Status filter"// @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
 // @Param        keyword        query    string       false  "Parameter: keyword"// @Produce      json
-// @Success      200  {object}  model.SuccessResponse
+// @Success      200  {object}  model.APIResponse[[]model.User]
 // @Router       /admin/users [get]
 //
 // ListUsers returns a paginated list of users.
@@ -64,7 +64,7 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path      int  true  "用户ID"
 // @Produce      json
-// @Success      200  {object}  model.SuccessResponse
+// @Success      200  {object}  model.APIResponse[model.User]
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/users/{id} [get]
 //
@@ -84,7 +84,7 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("获取用户信息失败").WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[*model.User]{
+	writeJSON(c, http.StatusOK, model.APIResponse[model.User]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
@@ -99,7 +99,7 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  CreateUserPayload  true  "用户信息"
-// @Success      201  {object}  model.SuccessResponse
+// @Success      201  {object}  model.APIResponse[model.User]
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/users [post]
 //
@@ -138,7 +138,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		return
 	}
 
-	writeJSON(c, http.StatusCreated, model.APIResponse[*model.User]{
+	writeJSON(c, http.StatusCreated, model.APIResponse[model.User]{
 		Success: true,
 		Code:    http.StatusCreated,
 		Message: "created",
@@ -154,7 +154,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int                  true  "用户ID"
 // @Param        request  body  UpdateUserPayload    true  "用户信息"
-// @Success      200  {object}  model.SuccessResponse
+// @Success      200  {object}  model.APIResponse[model.User]
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/users/{id} [put]
 //
@@ -212,7 +212,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[*model.User]{
+	writeJSON(c, http.StatusOK, model.APIResponse[model.User]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "updated",
@@ -226,7 +226,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "用户ID"
 // @Produce      json
-// @Success      200  {object}  model.SuccessResponse
+// @Success      200  {object}  model.APIResponse[any]
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/users/{id} [delete]
 //
@@ -267,7 +267,7 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 // @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
 // @Param        export       query  string false "导出格式" Enums(csv)
 // @Param        fields         query    string       false  "Export fields (comma separated)"// @Param        header_lang  query  string false "列头语言" Enums(en,zh)
-// @Success      200  {object}  model.SuccessResponse
+// @Success      200  {object}  model.APIResponse[[]model.OperationLog]
 // @Router       /admin/users/{id}/logs [get]
 func (h *UserHandler) ListUserLogs(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
@@ -311,14 +311,14 @@ func (h *UserHandler) ListUserLogs(c *gin.Context) {
 }
 
 // UpdateUserStatus
-// @Summary      更新用户状�?
+// @Summary      更新用户状
 // @Tags         Admin/Users
 // @Security     BearerAuth
 // @Accept       json
 // @Produce      json
 // @Param        id       path  int  true  "用户ID"
 // @Param        request  body  map[string]string  true  "{status}"
-// @Success      200  {object}  model.SuccessResponse
+// @Success      200  {object}  model.APIResponse[model.User]
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/users/{id}/status [put]
 func (h *UserHandler) UpdateUserStatus(c *gin.Context) {
@@ -344,10 +344,10 @@ func (h *UserHandler) UpdateUserStatus(c *gin.Context) {
 			respondAPIError(c, err)
 			return
 		}
-		respondAPIError(c, apierr.InternalError("更新用户状态失败").WithDetails(err.Error()))
+		respondAPIError(c, apierr.InternalError("更新用户状态失).WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[*model.User]{Success: true, Code: http.StatusOK, Message: "updated", Data: out})
+	writeJSON(c, http.StatusOK, model.APIResponse[model.User]{Success: true, Code: http.StatusOK, Message: "updated", Data: out})
 }
 
 // UpdateUserRole
@@ -358,7 +358,7 @@ func (h *UserHandler) UpdateUserStatus(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int  true  "用户ID"
 // @Param        request  body  map[string]string  true  "{role}"
-// @Success      200  {object}  model.SuccessResponse
+// @Success      200  {object}  model.APIResponse[model.User]
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/users/{id}/role [put]
 func (h *UserHandler) UpdateUserRole(c *gin.Context) {
@@ -387,11 +387,11 @@ func (h *UserHandler) UpdateUserRole(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("更新用户角色失败").WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[*model.User]{Success: true, Code: http.StatusOK, Message: "updated", Data: out})
+	writeJSON(c, http.StatusOK, model.APIResponse[model.User]{Success: true, Code: http.StatusOK, Message: "updated", Data: out})
 }
 
 // ListUserOrders
-// @Summary      获取用户的订�?
+// @Summary      获取用户的订
 // @Tags         Admin/Users
 // @Security     BearerAuth
 // @Produce      json
@@ -399,7 +399,7 @@ func (h *UserHandler) UpdateUserRole(c *gin.Context) {
 // @Param        page       query  int      false  "页码"
 // @Param        pageSize   query     int       false  "每页数量"
 // @Param        status         query    []string     false  "Status filter"// @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
-// @Success      200  {object}  model.SuccessResponse
+// @Success      200  {object}  model.APIResponse[[]model.Order]
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/users/{id}/orders [get]
 func (h *UserHandler) ListUserOrders(c *gin.Context) {

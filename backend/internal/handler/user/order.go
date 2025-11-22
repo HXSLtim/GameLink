@@ -10,10 +10,19 @@ import (
 	"gamelink/internal/service/order"
 )
 
-// RegisterOrderRoutes 注册用户端订单路�?
+// CreateOrderResponse 创建订单响应（类型别名）
+type CreateOrderResponse = order.CreateOrderResponse
+
+// MyOrderListResponse 我的订单列表响应（类型别名）
+type MyOrderListResponse = order.MyOrderListResponse
+
+// OrderDetailResponse 订单详情响应（类型别名）
+type OrderDetailResponse = order.OrderDetailResponse
+
+// RegisterOrderRoutes 注册用户端订单路
 func RegisterOrderRoutes(router gin.IRouter, svc *order.OrderService, authMiddleware gin.HandlerFunc) {
 	group := router.Group("/user/orders")
-	group.Use(authMiddleware) // 需要认�?
+	group.Use(authMiddleware) // 需要认
 	group.POST("", func(c *gin.Context) { createOrderHandler(c, svc) })
 	group.GET("", func(c *gin.Context) { getMyOrdersHandler(c, svc) })
 	group.GET("/:id", func(c *gin.Context) { getOrderDetailHandler(c, svc) })
@@ -29,7 +38,7 @@ func RegisterOrderRoutes(router gin.IRouter, svc *order.OrderService, authMiddle
 // @Produce      json
 // @Param        Authorization  header    string                       true  "Bearer {token}"
 // @Param        request        body      order.CreateOrderRequest     true  "创建订单请求"
-// @Success      200            {object}  model.APIResponse[order.CreateOrderResponse]
+// @Success      200            {object}  model.APIResponse[CreateOrderResponse]
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /user/orders [post]
@@ -73,7 +82,7 @@ func getOrderMessagesHandler(c *gin.Context, svc *order.OrderService) {
 // @Param        status    query     string     false  "Status filter" Enums(pending,confirmed,in_progress,completed,canceled,refunded)
 // @Param        page      query     int        false  "Page number" default(1)
 // @Param        pageSize  query     int        false  "Page size" default(20)
-// @Success      200       {object}  model.APIResponse[order.MyOrderListResponse]
+// @Success      200       {object}  model.APIResponse[MyOrderListResponse]
 // @Failure      400       {object}  model.ErrorResponse
 // @Failure      401       {object}  model.ErrorResponse
 // @Router       /user/orders [get]
@@ -82,7 +91,7 @@ func getMyOrdersHandler(c *gin.Context, svc *order.OrderService) {
 
 	var req order.MyOrderListRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
-		respondError(c, http.StatusBadRequest, "无效的查询参�? "+err.Error())
+		respondError(c, http.StatusBadRequest, "无效的查询参 "+err.Error())
 		return
 	}
 
@@ -97,13 +106,13 @@ func getMyOrdersHandler(c *gin.Context, svc *order.OrderService) {
 
 // getOrderDetailHandler 获取订单详情
 // @Summary      获取订单详情
-// @Description  获取指定订单的详细信�?
+// @Description  获取指定订单的详细信
 // @Tags         User - Orders
 // @Security     BearerAuth
 // @Accept       json
 // @Produce      json
 // @Param        id    path      uint64  true  "订单ID"
-// @Success      200   {object}  model.APIResponse[order.OrderDetailResponse]
+// @Success      200   {object}  model.APIResponse[OrderDetailResponse]
 // @Failure      400   {object}  model.ErrorResponse
 // @Failure      401   {object}  model.ErrorResponse
 // @Failure      404   {object}  model.ErrorResponse
@@ -215,7 +224,7 @@ func completeOrderHandler(c *gin.Context, svc *order.OrderService) {
 
 // getUserIDFromContext 从上下文获取用户ID
 func getUserIDFromContext(c *gin.Context) uint64 {
-	// �?JWT 中间件设置的上下文中获取用户ID
+	// JWT 中间件设置的上下文中获取用户ID
 	userIDVal, exists := c.Get("user_id")
 	if !exists {
 		return 0

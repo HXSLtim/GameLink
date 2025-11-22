@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"gamelink/internal/apierr"
+	"gamelink/internal/cache"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	repoiface "gamelink/internal/repository/interfaces"
@@ -31,9 +32,10 @@ var (
 // 3. 取消支付
 // 4. 处理支付回调（Mock版本）
 type PaymentService struct {
-	payments  repository.PaymentRepository
-	orders    repoiface.OrderReadWriter
-	providers map[model.PaymentMethod]ProviderClient
+	payments        repository.PaymentRepository
+	orders          repoiface.OrderReadWriter
+	providers       map[model.PaymentMethod]ProviderClient
+	distributedLock cache.DistributedLock // 分布式锁，用于并发控制
 }
 
 // NewPaymentService 创建支付服务
@@ -49,6 +51,11 @@ func NewPaymentService(
 			model.PaymentMethodAlipay: alipayProvider{},
 		},
 	}
+}
+
+// SetDistributedLock injects distributed lock for concurrency control
+func (s *PaymentService) SetDistributedLock(lock cache.DistributedLock) {
+	s.distributedLock = lock
 }
 
 // CreatePaymentRequest 创建支付请求
@@ -73,6 +80,21 @@ type PaymentStatusResponse struct {
 
 // CreatePayment 创建支付
 func (s *PaymentService) CreatePayment(ctx context.Context, userID uint64, req CreatePaymentRequest) (*CreatePaymentResponse, error) {
+	// 使用分布式锁确保幂等性
+	lockKey := fmt.Sprintf("payment:create:order:%d:user:%d", req.OrderID, userID)
+	
+	// 如果分布式锁可用，使用它
+	if s.distributedLock != nil {
+		locked, err := s.distributedLock.TryLock(ctx, lockKey, time.Second*10, 3, time.Millisecond*50)
+		if err != nil {
+			return nil, apierr.InternalError("failed to acquire lock").WithDetails(err.Error())
+		}
+		if !locked {
+			return nil, apierr.Conflict("payment creation in progress, please try again")
+		}
+		defer s.distributedLock.Unlock(ctx, lockKey)
+	}
+	
 	// 验证订单
 	order, err := s.orders.Get(ctx, req.OrderID)
 	if err != nil {
@@ -89,17 +111,23 @@ func (s *PaymentService) CreatePayment(ctx context.Context, userID uint64, req C
 		return nil, ErrInvalidOrderStatus
 	}
 
-	// 检查是否已有支付记录
+	// 检查是否已有支付记录（幂等性检查）
 	orderIDPtr := &req.OrderID
 	existingPayments, _, err := s.payments.List(ctx, repository.PaymentListOptions{
 		OrderID:  orderIDPtr,
 		Page:     1,
-		PageSize: 1,
+		PageSize: 10, // 检查更多记录以确保找到pending状态的支付
 	})
 	if err == nil && len(existingPayments) > 0 {
 		// 检查是否已支付
-		if existingPayments[0].Status == model.PaymentStatusPaid {
-			return nil, ErrOrderAlreadyPaid
+		for _, existingPayment := range existingPayments {
+			if existingPayment.Status == model.PaymentStatusPaid {
+				return nil, ErrOrderAlreadyPaid
+			}
+			// 如果存在pending状态的支付，返回已存在
+			if existingPayment.Status == model.PaymentStatusPending {
+				return nil, apierr.Conflict("payment already exists for this order").WithDetails("Please check your payment status")
+			}
 		}
 	}
 
@@ -137,7 +165,7 @@ func (s *PaymentService) GetPaymentStatus(ctx context.Context, paymentID uint64)
 	payment, err := s.payments.Get(ctx, paymentID)
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
-			return nil, repository.ErrNotFound
+			return nil, ErrNotFound
 		}
 		return nil, err
 	}

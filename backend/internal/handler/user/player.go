@@ -7,6 +7,12 @@ import (
 	"gamelink/internal/service/player"
 )
 
+// PlayerListResponse 陪玩师列表响应（类型别名）
+type PlayerListResponse = player.PlayerListResponse
+
+// PlayerDetailResponse 陪玩师详情响应（类型别名）
+type PlayerDetailResponse = player.PlayerDetailResponse
+
 // RegisterPlayerRoutes 注册用户端陪玩师路由
 func RegisterPlayerRoutes(router gin.IRouter, svc *player.PlayerService, authMiddleware gin.HandlerFunc) {
 	group := router.Group("/user/players")
@@ -31,7 +37,7 @@ func RegisterPlayerRoutes(router gin.IRouter, svc *player.PlayerService, authMid
 // @Param        sortBy      query     string    false  "Sort by" Enums(price,rating,orders)
 // @Param        page        query     int       false  "Page number" default(1)
 // @Param        pageSize    query     int       false  "Page size" default(20)
-// @Success      200         {object}  model.APIResponse[player.PlayerListResponse]
+// @Success      200         {object}  model.APIResponse[PlayerListResponse]
 // @Failure      400         {object}  apierr.APIError
 // @Failure      500         {object}  apierr.APIError
 // @Router       /user/players [get]
@@ -54,7 +60,7 @@ func listPlayersHandler(c *gin.Context, svc *player.PlayerService) {
 // @Description  API endpoint// @Accept       json
 // @Produce      json
 // @Param        id   path      int  true  "陪玩师ID"
-// @Success      200  {object}  model.APIResponse[player.PlayerDetailResponse]
+// @Success      200  {object}  model.APIResponse[PlayerDetailResponse]
 // @Failure      400  {object}  model.ErrorResponse
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /user/players/{id} [get]

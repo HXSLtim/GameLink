@@ -1,6 +1,8 @@
 package handler
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+)
 
 // RegisterRoot 注册根路径路由。
 func RegisterRoot(router gin.IRoutes) {
@@ -8,8 +10,7 @@ func RegisterRoot(router gin.IRoutes) {
 }
 
 func rootIndex(c *gin.Context) {
-	c.JSON(200, gin.H{
-		"message": "GameLink API",
+	RespondSuccess(c, "GameLink API", gin.H{
 		"endpoints": []string{
 			"/swagger",
 			"/swagger.json",

@@ -7,13 +7,23 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"gamelink/internal/apierr"
+	"gamelink/internal/model"
 	"gamelink/internal/service/commission"
 )
+
+// CommissionSummaryResponse 抽成汇总响应（类型别名）
+type CommissionSummaryResponse = commission.CommissionSummaryResponse
+
+// CommissionRecordListResponse 抽成记录列表响应（类型别名）
+type CommissionRecordListResponse = commission.CommissionRecordListResponse
+
+// SettlementListResponse 结算列表响应（类型别名）
+type SettlementListResponse = commission.SettlementListResponse
 
 // RegisterCommissionRoutes 注册陪玩师端抽成管理路由
 func RegisterCommissionRoutes(router gin.IRouter, svc *commission.CommissionService, authMiddleware gin.HandlerFunc) {
 	group := router.Group("/player/commission")
-	group.Use(authMiddleware) // 需要认�?
+	group.Use(authMiddleware) // 需要认
 	{
 		group.GET("/summary", func(c *gin.Context) { getCommissionSummaryHandler(c, svc) })
 		group.GET("/records", func(c *gin.Context) { getCommissionRecordsHandler(c, svc) })
@@ -29,9 +39,9 @@ func RegisterCommissionRoutes(router gin.IRouter, svc *commission.CommissionServ
 // @Produce      json
 // @Security     BearerAuth
 // @Param        month          query     string  true  "月份 (YYYY-MM)"
-// @Success      200            {object}  model.APIResponse[commission.CommissionSummaryResponse]
+// @Success      200            {object}  model.APIResponse[CommissionSummaryResponse]
 // @Failure      401            {object}  apierr.APIError
-// @Failure      404            {object}  未找到陪玩师信息
+// @Failure      404            {object}  apierr.APIError
 // @Failure      500            {object}  apierr.APIError
 // @Router       /player/commission/summary [get]
 func getCommissionSummaryHandler(c *gin.Context, svc *commission.CommissionService) {
@@ -65,7 +75,7 @@ func getCommissionSummaryHandler(c *gin.Context, svc *commission.CommissionServi
 // @Security     BearerAuth
 // @Param        page           query     int     false  "页码" default(1)
 // @Param        pageSize       query     int     false  "每页数量" default(20)
-// @Success      200            {object}  model.APIResponse[commission.CommissionRecordListResponse]
+// @Success      200            {object}  model.APIResponse[CommissionRecordListResponse]
 // @Failure      401            {object}  apierr.APIError
 // @Failure      404            {object}  apierr.APIError
 // @Failure      500            {object}  apierr.APIError
@@ -101,7 +111,7 @@ func getCommissionRecordsHandler(c *gin.Context, svc *commission.CommissionServi
 // @Security     BearerAuth
 // @Param        page           query     int     false  "页码" default(1)
 // @Param        pageSize       query     int     false  "每页数量" default(20)
-// @Success      200            {object}  model.APIResponse[commission.SettlementListResponse]
+// @Success      200            {object}  model.APIResponse[SettlementListResponse]
 // @Failure      401            {object}  apierr.APIError
 // @Failure      404            {object}  apierr.APIError
 // @Failure      500            {object}  apierr.APIError
@@ -131,7 +141,7 @@ func getMonthlySettlementsHandler(c *gin.Context, svc *commission.CommissionServ
 // getPlayerIDByUserID 根据用户ID获取陪玩师ID
 func getPlayerIDByUserID(c *gin.Context, userID uint64) (uint64, error) {
 	// TODO: 优化这个查询，可以在用户上下文中缓存playerID
-	// 这里简化处理，实际应该从service层获�?
+	// 这里简化处理，实际应该从service层获
 	// 暂时返回userID作为playerID（需要后续完善）
 	return userID, nil
 }

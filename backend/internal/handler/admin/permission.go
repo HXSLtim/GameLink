@@ -11,29 +11,26 @@ import (
 	permissionservice "gamelink/internal/service/permission"
 )
 
-// PermissionHandler 权限管理处理器
-type PermissionHandler struct {
+// PermissionHandler 权限管理处理 type PermissionHandler struct {
 	permissionSvc *permissionservice.PermissionService
 }
 
-// NewPermissionHandler 创建权限处理器实例
-func NewPermissionHandler(permissionSvc *permissionservice.PermissionService) *PermissionHandler {
+// NewPermissionHandler 创建权限处理器实func NewPermissionHandler(permissionSvc *permissionservice.PermissionService) *PermissionHandler {
 	return &PermissionHandler{permissionSvc: permissionSvc}
 }
 
 // ListPermissions 获取权限列表
 // @Summary      获取权限列表
-// @Description  管理员获取系统权限列表，支持分页和过滤
-// @Tags         Admin - Permissions
+// @Description  管理员获取系统权限列表，支持分页和过// @Tags         Admin - Permissions
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
 // @Param        page           query     int     false  "页码" default(1)
 // @Param        pageSize       query     int     false  "每页数量" default(10)
-// @Param        keyword        query     string  false  "关键词搜索"
+// @Param        keyword        query     string  false  "关键词搜
 // @Param        method         query     string  false  "HTTP方法过滤"
 // @Param        group          query     string  false  "权限分组过滤"
-// @Success      200            {object}  PermissionListResponse
+// @Success      200            {object}  model.APIResponse[gin.H]
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
@@ -76,13 +73,12 @@ func (h *PermissionHandler) ListPermissions(c *gin.Context) {
 
 // GetPermission 获取权限详情
 // @Summary      获取权限详情
-// @Description  管理员根据ID获取指定权限的详细信息
-// @Tags         Admin - Permissions
+// @Description  管理员根据ID获取指定权限的详细信// @Tags         Admin - Permissions
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
 // @Param        id             path      uint    true  "权限ID"
-// @Success      200            {object}  PermissionDetailResponse
+// @Success      200            {object}  model.APIResponse[model.Permission]
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      404            {object}  model.ErrorResponse
@@ -98,14 +94,14 @@ func (h *PermissionHandler) GetPermission(c *gin.Context) {
 	permission, err := h.permissionSvc.GetPermission(c.Request.Context(), id)
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
-			writeJSONError(c, http.StatusNotFound, "权限不存在")
+			writeJSONError(c, http.StatusNotFound, "权限不存)
 		} else {
 			writeJSONError(c, http.StatusInternalServerError, err.Error())
 		}
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[*model.Permission]{
+	writeJSON(c, http.StatusOK, model.APIResponse[model.Permission]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "成功",
@@ -115,25 +111,34 @@ func (h *PermissionHandler) GetPermission(c *gin.Context) {
 
 // CreatePermission 创建权限
 // @Summary      创建权限
-// @Description  管理员创建新的系统权限
-// @Tags         Admin - Permissions
+// @Description  管理员创建新的系统权// @Tags         Admin - Permissions
+// CreatePermissionRequest 创建权限请求
+type CreatePermissionRequest struct {
+	Method      model.HTTPMethod `json:"method" binding:"required"`
+	Path        string           `json:"path" binding:"required,max=255"`
+	Code        string           `json:"code" binding:"max=128"`
+	Group       string           `json:"group" binding:"max=64"`
+	Description string           `json:"description" binding:"max=255"`
+}
+
+// UpdatePermissionRequest 更新权限请求
+type UpdatePermissionRequest struct {
+	Code        string `json:"code" binding:"max=128"`
+	Group       string `json:"group" binding:"max=64"`
+	Description string `json:"description" binding:"max=255"`
+}
+
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string                      true  "Bearer {token}"
 // @Param        request        body      CreatePermissionRequest      true  "创建权限请求"
-// @Success      201            {object}  PermissionDetailResponse
+// @Success      201            {object}  model.APIResponse[model.Permission]
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
 // @Router       /admin/permissions [post]
 func (h *PermissionHandler) CreatePermission(c *gin.Context) {
-	var req struct {
-		Method      model.HTTPMethod `json:"method" binding:"required"`
-		Path        string           `json:"path" binding:"required,max=255"`
-		Code        string           `json:"code" binding:"max=128"`
-		Group       string           `json:"group" binding:"max=64"`
-		Description string           `json:"description" binding:"max=255"`
-	}
+	var req CreatePermissionRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		writeJSONError(c, http.StatusBadRequest, "参数验证失败")
@@ -153,7 +158,7 @@ func (h *PermissionHandler) CreatePermission(c *gin.Context) {
 		return
 	}
 
-	writeJSON(c, http.StatusCreated, model.APIResponse[*model.Permission]{
+	writeJSON(c, http.StatusCreated, model.APIResponse[model.Permission]{
 		Success: true,
 		Code:    http.StatusCreated,
 		Message: "权限创建成功",
@@ -170,7 +175,7 @@ func (h *PermissionHandler) CreatePermission(c *gin.Context) {
 // @Param        Authorization  header    string                      true  "Bearer {token}"
 // @Param        id             path      uint                        true  "权限ID"
 // @Param        request        body      UpdatePermissionRequest      true  "更新权限请求"
-// @Success      200            {object}  PermissionDetailResponse
+// @Success      200            {object}  model.APIResponse[model.Permission]
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      404            {object}  model.ErrorResponse
@@ -212,7 +217,7 @@ func (h *PermissionHandler) UpdatePermission(c *gin.Context) {
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[*model.Permission]{
+	writeJSON(c, http.StatusOK, model.APIResponse[model.Permission]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "权限更新成功",
@@ -228,7 +233,7 @@ func (h *PermissionHandler) UpdatePermission(c *gin.Context) {
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
 // @Param        id             path      uint    true  "权限ID"
-// @Success      200            {object}  model.SuccessResponse
+// @Success      200            {object}  model.APIResponse[any]
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
@@ -253,15 +258,12 @@ func (h *PermissionHandler) DeletePermission(c *gin.Context) {
 	})
 }
 
-// GetRolePermissions 获取角色的权限列表
-// @Summary      获取角色的权限列表
-// @Description  管理员获取指定角色的所有权限列表
-// @Tags         Admin - Permissions
+// GetRolePermissions 获取角色的权限列// @Summary      获取角色的权限列// @Description  管理员获取指定角色的所有权限列// @Tags         Admin - Permissions
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
 // @Param        id             path      uint    true  "角色ID"
-// @Success      200            {object}  RolePermissionsResponse
+// @Success      200            {object}  model.APIResponse[[]model.Permission]
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
@@ -287,15 +289,12 @@ func (h *PermissionHandler) GetRolePermissions(c *gin.Context) {
 	})
 }
 
-// GetUserPermissions 获取用户的权限列表
-// @Summary      获取用户的权限列表
-// @Description  管理员获取指定用户的所有权限列表
-// @Tags         Admin - Permissions
+// GetUserPermissions 获取用户的权限列// @Summary      获取用户的权限列// @Description  管理员获取指定用户的所有权限列// @Tags         Admin - Permissions
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
 // @Param        id             path      uint    true  "用户ID"
-// @Success      200            {object}  UserPermissionsResponse
+// @Success      200            {object}  model.APIResponse[[]model.Permission]
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
@@ -321,14 +320,13 @@ func (h *PermissionHandler) GetUserPermissions(c *gin.Context) {
 	})
 }
 
-// GetPermissionGroups 获取所有权限分组列表
-// @Summary      获取权限分组列表
+// GetPermissionGroups 获取所有权限分组列// @Summary      获取权限分组列表
 // @Description  管理员获取系统中所有权限分组的列表
 // @Tags         Admin - Permissions
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
-// @Success      200            {object}  PermissionGroupsResponse
+// @Success      200            {object}  model.APIResponse[[]string]
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
 // @Router       /admin/permission-groups [get]

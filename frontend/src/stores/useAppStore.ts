@@ -3,7 +3,7 @@
  * 使用 Zustand 实现轻量级状态管理
  */
 import { create } from 'zustand';
-import type { OrderStatus } from '@/api';
+import type { OrderStatus } from '@/shared/types/order';
 
 /**
  * 通知类型
@@ -37,9 +37,35 @@ export interface NotificationItem {
 }
 
 /**
+ * 通知项
+ */
+export interface NotificationItem {
+  /**
+   * 唯一 ID
+   */
+  id: string;
+  /**
+   * 通知类型
+   */
+  type: NotificationType;
+  /**
+   * 标题
+   */
+  title: string;
+  /**
+   * 内容
+   */
+  message: string;
+  /**
+   * 持续时间（毫秒）
+   */
+  duration?: number;
+}
+
+/**
  * 应用状态
  */
-interface AppState {
+export interface AppState {
   // UI 状态
   isSidebarCollapsed: boolean;
   activeMenuKey: string;

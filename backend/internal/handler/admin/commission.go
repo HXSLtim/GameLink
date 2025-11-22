@@ -11,6 +11,9 @@ import (
 	"gamelink/internal/service/commission"
 )
 
+// PlatformStatsResponse 平台统计响应（类型别名）
+type PlatformStatsResponse = commission.PlatformStatsResponse
+
 // RegisterCommissionRoutes Register admin commission management routes
 func RegisterCommissionRoutes(router gin.IRouter, svc *commission.CommissionService, scheduler interface{ TriggerSettlement(string) error }) {
 	group := router.Group("/commission")
@@ -67,7 +70,7 @@ func createCommissionRuleHandler(c *gin.Context, svc *commission.CommissionServi
 // @Security     BearerAuth
 // @Param        id             path      int                                       true  "规则ID"
 // @Param        request        body      commission.UpdateCommissionRuleRequest  true  "更新信息"
-// @Success      200            {object}  model.SuccessResponse
+// @Success      200            {object}  model.APIResponse[any]
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/commission/rules/{id} [put]
@@ -105,14 +108,14 @@ func updateCommissionRuleHandler(c *gin.Context, svc *commission.CommissionServi
 // @Produce      json
 // @Security     BearerAuth
 // @Param        month          query     string  true  "月份 (YYYY-MM)"
-// @Success      200            {object}  model.SuccessResponse
+// @Success      200            {object}  model.APIResponse[any]
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/commission/settlements/trigger [post]
 func triggerSettlementHandler(c *gin.Context, scheduler interface{ TriggerSettlement(string) error }) {
 	month := c.Query("month")
 	if month == "" {
-		// 默认结算上个�?
+		// 默认结算上个月
 		lastMonth := time.Now().AddDate(0, -1, 0)
 		month = lastMonth.Format("2006-01")
 	}
@@ -138,7 +141,7 @@ func triggerSettlementHandler(c *gin.Context, scheduler interface{ TriggerSettle
 // @Produce      json
 // @Security     BearerAuth
 // @Param        month          query     string  true  "月份 (YYYY-MM)"
-// @Success      200            {object}  model.APIResponse[commission.PlatformStatsResponse]
+// @Success      200            {object}  model.APIResponse[PlatformStatsResponse]
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/commission/stats [get]
@@ -151,7 +154,7 @@ func getPlatformStatsHandler(c *gin.Context, svc *commission.CommissionService) 
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[commission.PlatformStatsResponse]{
+	writeJSON(c, http.StatusOK, model.APIResponse[PlatformStatsResponse]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",

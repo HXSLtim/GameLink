@@ -1,4 +1,13 @@
 /**
+ * 基础实体接口
+ */
+export interface BaseEntity {
+  id: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
+}
+
+/**
  * API 成功响应格式 - 与后端统一
  */
 export interface ApiSuccessResponse<T> {

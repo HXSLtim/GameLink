@@ -7,6 +7,12 @@ import (
 	"gamelink/internal/service/payment"
 )
 
+// CreatePaymentResponse 创建支付响应（类型别名）
+type CreatePaymentResponse = payment.CreatePaymentResponse
+
+// PaymentStatusResponse 支付状态响应（类型别名）
+type PaymentStatusResponse = payment.PaymentStatusResponse
+
 // RegisterPaymentRoutes 注册用户端支付路由
 func RegisterPaymentRoutes(router gin.IRouter, svc *payment.PaymentService, authMiddleware gin.HandlerFunc) {
 	group := router.Group("/user/payments")
@@ -24,7 +30,7 @@ func RegisterPaymentRoutes(router gin.IRouter, svc *payment.PaymentService, auth
 // @Produce      json
 // @Param        Authorization  header    string                          true  "Bearer {token}"
 // @Param        request        body      payment.CreatePaymentRequest    true  "创建支付请求"
-// @Success      200            {object}  model.APIResponse[payment.CreatePaymentResponse]
+// @Success      200            {object}  model.APIResponse[model.Payment]
 // @Failure      400            {object}  apierr.APIError
 // @Failure      401            {object}  apierr.APIError
 // @Failure      404            {object}  apierr.APIError
@@ -65,7 +71,7 @@ func createPaymentHandler(c *gin.Context, svc *payment.PaymentService) {
 // @Accept       json
 // @Produce      json
 // @Param        id    path      uint64  true  "支付ID"
-// @Success      200   {object}  model.APIResponse[payment.PaymentStatusResponse]
+// @Success      200   {object}  model.APIResponse[model.Payment]
 // @Failure      400   {object}  apierr.APIError
 // @Failure      401   {object}  apierr.APIError
 // @Failure      404   {object}  apierr.APIError

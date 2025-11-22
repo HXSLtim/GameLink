@@ -1,7 +1,15 @@
 import type { BaseEntity } from './user';
 import type { Currency } from './order';
-import type { IconProps } from '@/shared/components/Icons/icons';
-import { WechatPayIcon, AlipayIcon, BalanceIcon } from '@/shared/components/Icons/icons';
+import React from 'react';
+
+/**
+ * 图标属性接口 (临时定义，稍后替换为实际图标组件)
+ */
+export interface IconProps {
+  size?: number;
+  color?: string;
+  className?: string;
+}
 
 /**
  * 支付方式枚举
@@ -27,6 +35,37 @@ export interface Payment extends BaseEntity {
   providerRaw?: any; // 第三方支付返回的原始数据
   paidAt?: string;
   refundedAt?: string;
+}
+
+/**
+ * 创建支付响应
+ */
+export interface CreatePaymentResponse {
+  id: number;
+  orderId: number;
+  method: PaymentMethod;
+  amountCents: number;
+  currency: Currency;
+  status: PaymentStatus;
+  providerTradeNo?: string;
+  paidAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * 支付查询参数
+ */
+export interface GetPaymentsParams {
+  page?: number;
+  page_size?: number;
+  orderId?: number;
+  userId?: number;
+  method?: PaymentMethod;
+  status?: PaymentStatus;
+  keyword?: string;
+  dateFrom?: string;
+  dateTo?: string;
 }
 
 /**
@@ -93,11 +132,40 @@ export interface UpdatePaymentRequest {
 }
 
 /**
+ * 查询支付响应
+ */
+export interface GetPaymentsResponse {
+  list: Payment[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+/**
  * 退款请求
  */
 export interface RefundPaymentRequest {
   reason: string;
   amountCents?: number; // 部分退款金额，不传则全额退款
+}
+
+/**
+ * 退款请求（API使用）
+ */
+export interface RefundRequest extends RefundPaymentRequest {
+  paymentId: number;
+}
+
+/**
+ * 退款响应
+ */
+export interface RefundResponse {
+  id: number;
+  paymentId: number;
+  amountCents: number;
+  reason: string;
+  status: 'pending' | 'completed' | 'failed';
+  createdAt: string;
 }
 
 /**
@@ -135,13 +203,31 @@ export const PAYMENT_METHOD_TEXT: Record<PaymentMethod, string> = {
 };
 
 /**
- * 支付方式图标（SVG 组件）
+ * 支付方式图标（SVG 组件）- 占位符实现
  */
 export const PAYMENT_METHOD_ICON: Record<PaymentMethod, React.FC<IconProps>> = {
-  wechat: WechatPayIcon,
-  alipay: AlipayIcon,
-  balance: BalanceIcon,
+  wechat: ({ size = 24, color = '#07C160' }) =>
+    React.createElement('div', {
+      style: { width: size, height: size, backgroundColor: color, borderRadius: '50%' },
+      title: '微信支付',
+    }),
+  alipay: ({ size = 24, color = '#1677FF' }) =>
+    React.createElement('div', {
+      style: { width: size, height: size, backgroundColor: color, borderRadius: '50%' },
+      title: '支付宝',
+    }),
+  balance: ({ size = 24, color = '#FFC107' }) =>
+    React.createElement('div', {
+      style: { width: size, height: size, backgroundColor: color, borderRadius: '50%' },
+      title: '余额支付',
+    }),
 };
+
+// 为了兼容性，导出空组件对象
+export const WechatPayIcon = PAYMENT_METHOD_ICON.wechat;
+export const AlipayIcon = PAYMENT_METHOD_ICON.alipay;
+export const BalanceIcon = PAYMENT_METHOD_ICON.balance;
+
 
 /**
  * 金额格式化（分转元）

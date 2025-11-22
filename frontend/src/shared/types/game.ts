@@ -134,6 +134,45 @@ export const GAME_STATUS_TEXT: Record<GameStatus, string> = {
 };
 
 /**
+ * 游戏服务/技能
+ */
+export interface GameService {
+  id: number;
+  gameId: number;
+  name: string;
+  description?: string;
+  minPrice: number;
+  maxPrice: number;
+  duration: number;
+  icon?: string;
+  sortOrder?: number;
+  status: 'active' | 'inactive';
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/**
+ * 获取游戏列表参数
+ */
+export interface GetGamesParams {
+  page?: number;
+  page_size?: number;
+  category?: GameCategory;
+  status?: GameStatus;
+  keyword?: string;
+}
+
+/**
+ * 获取游戏列表响应
+ */
+export interface GetGamesResponse {
+  list: Game[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+/**
  * 游戏状态颜色
  */
 export const GAME_STATUS_COLOR: Record<GameStatus, string> = {

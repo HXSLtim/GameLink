@@ -150,8 +150,8 @@ func ensureSlice[T any](items []T) []T {
 	return items
 }
 
-// getAdminUserID 从上下文中读取管理端用户 ID，并在缺失或类型不匹配时写入统一错误响应。
-// 返回值中的 bool 表示是否读取成功，调用方应在返回 false 时直接中断处理。
+// getAdminUserID 从上下文中读取管理端用户 ID，并在缺失或类型不匹配时写入统一错误响应�?
+// 返回值中�?bool 表示是否读取成功，调用方应在返回 false 时直接中断处理�?
 func getAdminUserID(c *gin.Context) (uint64, bool) {
 	val, ok := c.Get("user_id")
 	if !ok {
@@ -168,8 +168,8 @@ func getAdminUserID(c *gin.Context) (uint64, bool) {
 	return id, true
 }
 
-// parsePagination 解析分页参数，支持 page/page_size 以及向后兼容的 pageSize。
-// 出错时会写入统一的 JSON 错误响应并返回 false。
+// parsePagination 解析分页参数，支�?page/page_size 以及向后兼容�?pageSize�?
+// 出错时会写入统一�?JSON 错误响应并返�?false�?
 func parsePagination(c *gin.Context) (int, int, bool) {
 	page, err := queryIntDefault(c, "page", 1)
 	if err != nil {
@@ -177,7 +177,7 @@ func parsePagination(c *gin.Context) (int, int, bool) {
 		return 0, 0, false
 	}
 
-	// pageSize 同时兼容 page_size 和 pageSize，优先读取蛇形命名以保持与大部分接口一致
+	// pageSize 同时兼容 page_size �?pageSize，优先读取蛇形命名以保持与大部分接口一�?
 	pageSizeStr := strings.TrimSpace(c.Query("page_size"))
 	if pageSizeStr == "" {
 		pageSizeStr = strings.TrimSpace(c.Query("pageSize"))

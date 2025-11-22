@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// ServiceItemRepository 服务项目仓储接口（统一管理所有服务类型，包括礼物�?
+// ServiceItemRepository 服务项目仓储接口（统一管理所有服务类型，包括礼物
 type ServiceItemRepository interface {
 	// 基础CRUD
 	Create(ctx context.Context, item *model.ServiceItem) error
@@ -148,7 +148,7 @@ func (r *serviceItemRepository) Delete(ctx context.Context, id uint64) error {
 	return r.db.WithContext(ctx).Delete(&model.ServiceItem{}, id).Error
 }
 
-// BatchUpdateStatus 批量更新状�?
+// BatchUpdateStatus 批量更新状
 func (r *serviceItemRepository) BatchUpdateStatus(ctx context.Context, ids []uint64, isActive bool) error {
 	return r.db.WithContext(ctx).
 		Model(&model.ServiceItem{}).
@@ -175,7 +175,7 @@ func (r *serviceItemRepository) GetGifts(ctx context.Context, page, pageSize int
 	})
 }
 
-// GetGameServices 获取指定游戏的服�?
+// GetGameServices 获取指定游戏的服
 func (r *serviceItemRepository) GetGameServices(ctx context.Context, gameID uint64, subCategory *model.ServiceItemSubCategory) ([]model.ServiceItem, error) {
 	query := r.db.WithContext(ctx).
 		Where("game_id = ? AND is_active = ?", gameID, true)

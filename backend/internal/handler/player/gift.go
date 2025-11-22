@@ -20,8 +20,8 @@ func RegisterGiftRoutes(router gin.IRouter, svc *gift.GiftService, authMiddlewar
 	}
 }
 
-// getReceivedGiftsHandler 获取收到的礼�?
-// @Summary      获取收到的礼�?
+// getReceivedGiftsHandler 获取收到的礼
+// @Summary      获取收到的礼
 // @Description  陪玩师查看收到的礼物列表
 // @Tags         Player - Gift
 // @Accept       json

@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	// ErrNotFound 服务项目不存�?
+	// ErrNotFound 服务项目不存
 	ErrNotFound = repository.ErrNotFound
 	// ErrValidation 表示输入校验失败
 	ErrValidation = errors.New("validation failed")
@@ -75,7 +75,7 @@ func (s *ServiceItemService) CreateServiceItem(ctx context.Context, req CreateSe
 		}
 	}
 
-	// 验证礼物的service_hours必须�?
+	// 验证礼物的service_hours必须
 	if req.SubCategory == model.SubCategoryGift && req.ServiceHours != 0 {
 		return nil, errors.New("gift items must have service_hours = 0")
 	}
@@ -84,7 +84,7 @@ func (s *ServiceItemService) CreateServiceItem(ctx context.Context, req CreateSe
 		ItemCode:       req.ItemCode,
 		Name:           req.Name,
 		Description:    req.Description,
-		Category:       "escort", // 统一�?escort
+		Category:       "escort", // 统一escort
 		SubCategory:    req.SubCategory,
 		GameID:         req.GameID,
 		PlayerID:       req.PlayerID,
@@ -142,7 +142,7 @@ func (s *ServiceItemService) UpdateServiceItem(ctx context.Context, id uint64, r
 		item.BasePriceCents = *req.BasePriceCents
 	}
 	if req.ServiceHours != nil {
-		// 礼物的service_hours必须�?
+		// 礼物的service_hours必须
 		if item.IsGift() && *req.ServiceHours != 0 {
 			return errors.New("gift items must have service_hours = 0")
 		}
@@ -263,7 +263,7 @@ type ServiceItemListResponse struct {
 	Total int64            `json:"total"`
 }
 
-// GetGiftList 获取礼物列表（用户端�?
+// GetGiftList 获取礼物列表（用户端
 func (s *ServiceItemService) GetGiftList(ctx context.Context, page, pageSize int) (*ServiceItemListResponse, error) {
 	items, total, err := s.items.GetGifts(ctx, page, pageSize)
 	if err != nil {
@@ -315,7 +315,7 @@ func (s *ServiceItemService) toDTO(ctx context.Context, item *model.ServiceItem)
 		}
 	}
 
-	// 获取陪玩师昵�?
+	// 获取陪玩师昵
 	if item.PlayerID != nil {
 		player, err := s.players.Get(ctx, *item.PlayerID)
 		if err == nil {
@@ -326,13 +326,13 @@ func (s *ServiceItemService) toDTO(ctx context.Context, item *model.ServiceItem)
 	return dto
 }
 
-// BatchUpdateStatusRequest 批量更新状态请�?
+// BatchUpdateStatusRequest 批量更新状态请
 type BatchUpdateStatusRequest struct {
 	IDs      []uint64 `json:"ids" binding:"required"`
 	IsActive bool     `json:"isActive"`
 }
 
-// BatchUpdateStatus 批量更新状�?
+// BatchUpdateStatus 批量更新状
 func (s *ServiceItemService) BatchUpdateStatus(ctx context.Context, req BatchUpdateStatusRequest) error {
 	if len(req.IDs) == 0 {
 		return errors.New("no item ids provided")

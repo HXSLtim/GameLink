@@ -122,7 +122,7 @@ func (r *commissionRepository) GetDefaultRule(ctx context.Context) (*model.Commi
 	return &rule, nil
 }
 
-// GetRuleForOrder 获取订单适用的抽成规则（优先级：特定玩家 > 特定游戏 > 特定服务类型 > 默认�?
+// GetRuleForOrder 获取订单适用的抽成规则（优先级：特定玩家 > 特定游戏 > 特定服务类型 > 默认
 func (r *commissionRepository) GetRuleForOrder(ctx context.Context, gameID *uint64, playerID *uint64, serviceType *string) (*model.CommissionRule, error) {
 	var rule model.CommissionRule
 
@@ -318,7 +318,7 @@ func (r *commissionRepository) GetSettlement(ctx context.Context, id uint64) (*m
 	return &settlement, nil
 }
 
-// GetSettlementByPlayerMonth 根据玩家和月份获取结�?
+// GetSettlementByPlayerMonth 根据玩家和月份获取结
 func (r *commissionRepository) GetSettlementByPlayerMonth(ctx context.Context, playerID uint64, month string) (*model.MonthlySettlement, error) {
 	var settlement model.MonthlySettlement
 	err := r.db.WithContext(ctx).

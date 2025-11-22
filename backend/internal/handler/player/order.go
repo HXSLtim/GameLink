@@ -4,13 +4,14 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"gamelink/internal/apierr"
+	"gamelink/internal/model"
 	"gamelink/internal/service/order"
 )
 
 // RegisterOrderRoutes 注册陪玩师端订单管理路由
 func RegisterOrderRoutes(router gin.IRouter, svc *order.OrderService, authMiddleware gin.HandlerFunc) {
 	group := router.Group("/player/orders")
-	group.Use(authMiddleware) // 需要认�?
+	group.Use(authMiddleware) // 需要认
 	group.GET("/available", func(c *gin.Context) { getAvailableOrdersHandler(c, svc) })
 	group.POST("/:id/accept", func(c *gin.Context) { acceptOrderHandler(c, svc) })
 	group.GET("/my", func(c *gin.Context) { getMyAcceptedOrdersHandler(c, svc) })
@@ -19,7 +20,7 @@ func RegisterOrderRoutes(router gin.IRouter, svc *order.OrderService, authMiddle
 
 // getAvailableOrdersHandler 获取可接订单列表
 // @Summary      获取可接订单列表
-// @Description  获取订单大厅的可接订单列�?
+// @Description  获取订单大厅的可接订单列
 // @Tags         Player - Orders
 // @Security     BearerAuth
 // @Accept       json
@@ -27,7 +28,7 @@ func RegisterOrderRoutes(router gin.IRouter, svc *order.OrderService, authMiddle
 // @Param        gameId   query     uint64  false  "游戏ID"
 // @Param        page     query     int     false  "页码" default(1)
 // @Param        pageSize query     int     false  "每页数量" default(20)
-// @Success      200      {object}  model.APIResponse[order.AvailableOrderListResponse]
+// @Success      200      {object}  model.SuccessResponse
 // @Failure      400      {object}  apierr.APIError
 // @Failure      401      {object}  apierr.APIError
 // @Failure      500      {object}  apierr.APIError
@@ -53,13 +54,13 @@ func getAvailableOrdersHandler(c *gin.Context, svc *order.OrderService) {
 
 // acceptOrderHandler 接单
 // @Summary      接单
-// @Description  陪玩师接�?
+// @Description  陪玩师接
 // @Tags         Player - Orders
 // @Security     BearerAuth
 // @Accept       json
 // @Produce      json
 // @Param        id  path  uint64  true  "订单ID"
-// @Success      200  {object}  model.APIResponse[any]
+// @Success      200  {object}  model.SuccessResponse
 // @Failure      400  {object}  apierr.APIError
 // @Failure      401  {object}  apierr.APIError
 // @Failure      403  {object}  apierr.APIError
@@ -103,10 +104,10 @@ func acceptOrderHandler(c *gin.Context, svc *order.OrderService) {
 // @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Param        status    query     string  false  "状态过�? Enums(pending,confirmed,in_progress,completed,canceled)
+// @Param        status    query     string  false  "状态过滤" Enums(pending,confirmed,in_progress,completed,canceled)
 // @Param        page      query     int     false  "页码" default(1)
 // @Param        pageSize  query     int     false  "每页数量" default(20)
-// @Success      200       {object}  model.APIResponse[order.MyOrderListResponse]
+// @Success      200       {object}  model.SuccessResponse
 // @Failure      400       {object}  apierr.APIError
 // @Failure      401       {object}  apierr.APIError
 // @Failure      500       {object}  apierr.APIError
@@ -137,7 +138,7 @@ func getMyAcceptedOrdersHandler(c *gin.Context, svc *order.OrderService) {
 // @Accept       json
 // @Produce      json
 // @Param        id  path  uint64  true  "订单ID"
-// @Success      200  {object}  model.APIResponse[any]
+// @Success      200  {object}  model.SuccessResponse
 // @Failure      400  {object}  apierr.APIError
 // @Failure      401  {object}  apierr.APIError
 // @Failure      403  {object}  apierr.APIError

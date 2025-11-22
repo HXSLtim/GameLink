@@ -4,12 +4,12 @@
  */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { User } from '@/api';
+import type { User } from '@/shared/types/auth';
 
 /**
  * 认证状态
  */
-interface AuthState {
+export interface AuthState {
   // 状态
   token: string | null;
   user: User | null;

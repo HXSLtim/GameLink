@@ -97,8 +97,7 @@ func getDashboardOverviewHandler(
 	users, _ := userRepo.List(ctx)
 	stats.TotalUsers = int64(len(users))
 
-	// 总陪玩师数
-	_, totalPlayers, _ := playerRepo.ListPaged(ctx, 1, 1)
+	// 总陪玩师	_, totalPlayers, _ := playerRepo.ListPaged(ctx, 1, 1)
 	stats.TotalPlayers = totalPlayers
 
 	// 总订单数
@@ -106,8 +105,7 @@ func getDashboardOverviewHandler(
 	_ = orders
 	stats.TotalOrders = total
 
-	// 今日订单数
-	todayStart := time.Now().Truncate(24 * time.Hour)
+	// 今日订单	todayStart := time.Now().Truncate(24 * time.Hour)
 	todayOrders, todayTotal, _ := orderRepo.List(ctx, repoiface.OrderListOptions{
 		DateFrom: &todayStart,
 		Page:     1,
@@ -138,8 +136,7 @@ func getDashboardOverviewHandler(
 	}
 	stats.MonthRevenue = monthRevenue
 
-	// 待审批提现
-	pendingStatus := model.WithdrawStatusPending
+	// 待审批提	pendingStatus := model.WithdrawStatusPending
 	_, pendingTotal, _ := withdrawRepo.List(ctx, withdrawrepo.WithdrawListOptions{
 		Status:   &pendingStatus,
 		Page:     1,
@@ -147,8 +144,7 @@ func getDashboardOverviewHandler(
 	})
 	stats.PendingWithdraws = pendingTotal
 
-	// 活跃服务数
-	isActive := true
+	// 活跃服务	isActive := true
 	_, activeTotal, _ := serviceItemRepo.List(ctx, serviceitemrepo.ServiceItemListOptions{
 		IsActive: &isActive,
 		Page:     1,
@@ -168,7 +164,7 @@ func getDashboardOverviewHandler(
 // @Produce      json
 // @Param        Authorization  header    string  true   "Bearer {token}"
 // @Param        limit          query     int     false  "数量限制"
-// @Success      200            {object}  model.SuccessResponse
+// @Success      200            {object}  model.APIResponse[any]
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/dashboard/recent-orders [get]
@@ -203,7 +199,7 @@ func getRecentOrdersHandler(c *gin.Context, orderRepo repoiface.OrderQuery) {
 // @Produce      json
 // @Param        Authorization  header    string  true   "Bearer {token}"
 // @Param        limit          query     int     false  "数量限制"
-// @Success      200            {object}  model.SuccessResponse
+// @Success      200            {object}  model.APIResponse[any]
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/dashboard/recent-withdraws [get]
@@ -240,7 +236,7 @@ func getRecentWithdrawsHandler(c *gin.Context, withdrawRepo withdrawrepo.Withdra
 // @Produce      json
 // @Param        Authorization  header    string  true   "Bearer {token}"
 // @Param        months         query     int     false  "Number of months (default 12)"
-// @Success      200            {object}  model.SuccessResponse
+// @Success      200            {object}  model.APIResponse[any]
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/dashboard/monthly-revenue [get]

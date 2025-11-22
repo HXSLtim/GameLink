@@ -14,15 +14,15 @@ import (
 )
 
 var (
-	// ErrNotFound 记录不存�?
+	// ErrNotFound 记录不存
 	ErrNotFound = repository.ErrNotFound
 	// ErrValidation 表示输入校验失败
 	ErrValidation = errors.New("validation failed")
-	// ErrInvalidGiftItem 无效的礼物项�?
+	// ErrInvalidGiftItem 无效的礼物项
 	ErrInvalidGiftItem = errors.New("invalid gift item")
 )
 
-// GiftService 礼物服务（基于统一订单系统�?
+// GiftService 礼物服务（基于统一订单系统
 type GiftService struct {
 	items       serviceitemrepo.ServiceItemRepository
 	orders      repoiface.OrderRepository
@@ -45,7 +45,7 @@ func NewGiftService(
 	}
 }
 
-// SendGiftRequest 赠送礼物请�?
+// SendGiftRequest 赠送礼物请
 type SendGiftRequest struct {
 	PlayerID    uint64  `json:"playerId" binding:"required"`              // 接收礼物的陪玩师
 	GiftItemID  uint64  `json:"giftItemId" binding:"required"`            // 礼物项目ID
@@ -55,7 +55,7 @@ type SendGiftRequest struct {
 	OrderID     *uint64 `json:"orderId"`                                  // 关联的护航订单（可选）
 }
 
-// SendGift 赠送礼�?
+// SendGift 赠送礼
 func (s *GiftService) SendGift(ctx context.Context, userID uint64, req SendGiftRequest) (*GiftOrderResponse, error) {
 	// 1. 验证礼物项目
 	giftItem, err := s.items.Get(ctx, req.GiftItemID)
@@ -63,27 +63,27 @@ func (s *GiftService) SendGift(ctx context.Context, userID uint64, req SendGiftR
 		return nil, err
 	}
 
-	// 确保是礼物类�?
+	// 确保是礼物类
 	if !giftItem.IsGift() {
 		return nil, ErrInvalidGiftItem
 	}
 
-	// 确保礼物是激活状�?
+	// 确保礼物是激活状
 	if !giftItem.IsActive {
 		return nil, errors.New("gift item is not active")
 	}
 
-	// 2. 验证陪玩�?
+	// 2. 验证陪玩
 	player, err := s.players.Get(ctx, req.PlayerID)
 	if err != nil {
 		return nil, fmt.Errorf("player not found: %w", err)
 	}
 
-	// 3. 计算价格和抽�?
+	// 3. 计算价格和抽
 	platformCommission, playerIncome := giftItem.CalculateCommission(req.Quantity)
 	totalPrice := giftItem.BasePriceCents * int64(req.Quantity)
 
-	// 4. 生成订单�?
+	// 4. 生成订单
 	orderNo := generateOrderNo("GIFT")
 
 	// 5. 创建礼物订单
@@ -91,8 +91,8 @@ func (s *GiftService) SendGift(ctx context.Context, userID uint64, req SendGiftR
 		OrderNo:           orderNo,
 		UserID:            userID,
 		ItemID:            req.GiftItemID,
-		PlayerID:          &req.PlayerID, // 礼物订单的PlayerID就是接收�?
-		RecipientPlayerID: &req.PlayerID, // 明确标识接收�?
+		PlayerID:          &req.PlayerID, // 礼物订单的PlayerID就是接收
+		RecipientPlayerID: &req.PlayerID, // 明确标识接收
 		Quantity:          req.Quantity,
 		UnitPriceCents:    giftItem.BasePriceCents,
 		TotalPriceCents:   totalPrice,
@@ -100,7 +100,7 @@ func (s *GiftService) SendGift(ctx context.Context, userID uint64, req SendGiftR
 		PlayerIncomeCents: playerIncome,
 		Status:            model.OrderStatusPending,
 		Title:             fmt.Sprintf("赠送礼物：%s", giftItem.Name),
-		Description:       fmt.Sprintf("�?%s 赠�?%s x%d", player.Nickname, giftItem.Name, req.Quantity),
+		Description:       fmt.Sprintf("%s 赠%s x%d", player.Nickname, giftItem.Name, req.Quantity),
 		GiftMessage:       req.Message,
 		IsAnonymous:       req.IsAnonymous,
 	}
@@ -130,7 +130,7 @@ func (s *GiftService) SendGift(ctx context.Context, userID uint64, req SendGiftR
 
 // deliverGift 送达礼物
 func (s *GiftService) deliverGift(ctx context.Context, order *model.Order) error {
-	// 更新订单状态为已完�?
+	// 更新订单状态为已完
 	now := time.Now()
 	order.Status = model.OrderStatusCompleted
 	order.DeliveredAt = &now
@@ -176,7 +176,7 @@ type GiftOrderResponse struct {
 
 // GetPlayerReceivedGifts 获取陪玩师收到的礼物
 func (s *GiftService) GetPlayerReceivedGifts(ctx context.Context, playerID uint64, page, pageSize int) (*ReceivedGiftsResponse, error) {
-	// 查询该陪玩师收到的礼物订�?
+	// 查询该陪玩师收到的礼物订
 	orders, _, err := s.orders.List(ctx, repoiface.OrderListOptions{
 		PlayerID: &playerID,
 		Page:     page,
@@ -186,7 +186,7 @@ func (s *GiftService) GetPlayerReceivedGifts(ctx context.Context, playerID uint6
 		return nil, err
 	}
 
-	// 只返回礼物订�?
+	// 只返回礼物订
 	gifts := make([]ReceivedGiftDTO, 0)
 	for _, order := range orders {
 		if order.IsGiftOrder() {
@@ -206,7 +206,7 @@ func (s *GiftService) GetPlayerReceivedGifts(ctx context.Context, playerID uint6
 				Income:      order.PlayerIncomeCents,
 				Message:     order.GiftMessage,
 				IsAnonymous: order.IsAnonymous,
-				SenderName:  "", // TODO: 如果不匿名，获取发送者信�?
+				SenderName:  "", // TODO: 如果不匿名，获取发送者信
 				DeliveredAt: order.DeliveredAt,
 				CreatedAt:   order.CreatedAt,
 			})
@@ -235,15 +235,15 @@ type ReceivedGiftDTO struct {
 	CreatedAt   time.Time  `json:"createdAt"`
 }
 
-// ReceivedGiftsResponse 收到的礼物列表响�?
+// ReceivedGiftsResponse 收到的礼物列表响
 type ReceivedGiftsResponse struct {
 	Gifts []ReceivedGiftDTO `json:"gifts"`
 	Total int64             `json:"total"`
 }
 
-// GetGiftStats 获取陪玩师礼物统�?
+// GetGiftStats 获取陪玩师礼物统
 func (s *GiftService) GetGiftStats(ctx context.Context, playerID uint64) (*GiftStatsResponse, error) {
-	// 查询所有礼物订�?
+	// 查询所有礼物订
 	playerIDPtr := &playerID
 	orders, _, err := s.orders.List(ctx, repoiface.OrderListOptions{
 		PlayerID: playerIDPtr,
@@ -278,10 +278,10 @@ func (s *GiftService) GetGiftStats(ctx context.Context, playerID uint64) (*GiftS
 type GiftStatsResponse struct {
 	TotalGiftsReceived int64 `json:"totalGiftsReceived"` // 收到的礼物总数
 	TotalGiftIncome    int64 `json:"totalGiftIncome"`    // 礼物总收入（分）
-	TotalGiftOrders    int64 `json:"totalGiftOrders"`    // 礼物订单�?
+	TotalGiftOrders    int64 `json:"totalGiftOrders"`    // 礼物订单
 }
 
-// generateOrderNo 生成订单�?
+// generateOrderNo 生成订单
 func generateOrderNo(prefix string) string {
 	return fmt.Sprintf("%s%d", prefix, time.Now().UnixNano())
 }

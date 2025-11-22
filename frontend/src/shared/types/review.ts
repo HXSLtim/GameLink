@@ -67,6 +67,36 @@ export interface UpdateReviewRequest {
 }
 
 /**
+ * 获取评价列表参数
+ */
+export interface GetReviewsParams {
+  page?: number;
+  page_size?: number;
+  orderId?: number;
+  reviewerId?: number;
+  playerId?: number;
+  userId?: number;
+  revieweeId?: number;
+  minRating?: number;
+  maxRating?: number;
+  keyword?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  sortBy?: 'createdAt' | 'updatedAt' | 'rating';
+  sortOrder?: 'asc' | 'desc';
+}
+
+/**
+ * 获取评价列表响应
+ */
+export interface GetReviewsResponse {
+  list: Review[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+/**
  * 评价统计
  */
 export interface ReviewStatistics {
@@ -78,6 +108,17 @@ export interface ReviewStatistics {
     '3': number;
     '4': number;
     '5': number;
+  };
+}
+
+/**
+ * 评价统计（API使用）
+ */
+export interface ReviewStats {
+  total: number;
+  averageRating: number;
+  ratingDistribution: {
+    [key: number]: number;
   };
 }
 

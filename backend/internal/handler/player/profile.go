@@ -4,8 +4,24 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"gamelink/internal/apierr"
-	"gamelink/internal/service/player"
+	"gamelink/internal/model"
+	serviceplayer "gamelink/internal/service/player"
 )
+
+// ApplyPlayerRequest 申请成为陪玩师请求（类型别名）
+type ApplyPlayerRequest = serviceplayer.ApplyPlayerRequest
+
+// ApplyPlayerResponse 申请陪玩师响应（类型别名）
+type ApplyPlayerResponse = serviceplayer.ApplyPlayerResponse
+
+// PlayerDetailResponse 陪玩师详情响应（类型别名）
+type PlayerDetailResponse = serviceplayer.PlayerDetailResponse
+
+// UpdatePlayerProfileRequest 更新陪玩师资料请求（类型别名）
+type UpdatePlayerProfileRequest = serviceplayer.UpdatePlayerProfileRequest
+
+// SetPlayerStatusRequest 设置在线状态请求（类型别名）
+type SetPlayerStatusRequest = serviceplayer.SetPlayerStatusRequest
 
 // RegisterProfileRoutes 注册陪玩师端资料管理路由
 func RegisterProfileRoutes(router gin.IRouter, svc *player.PlayerService, authMiddleware gin.HandlerFunc) {
@@ -24,8 +40,8 @@ func RegisterProfileRoutes(router gin.IRouter, svc *player.PlayerService, authMi
 // @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Param        request  body  player.ApplyPlayerRequest  true  "申请信息"
-// @Success      200      {object}  model.APIResponse[player.ApplyPlayerResponse]
+// @Param        request  body  ApplyPlayerRequest  true  "申请信息"
+// @Success      200      {object}  model.APIResponse[ApplyPlayerResponse]
 // @Failure      400      {object}  apierr.APIError
 // @Failure      401      {object}  apierr.APIError
 // @Failure      409      {object}  apierr.APIError
@@ -60,7 +76,7 @@ func applyAsPlayerHandler(c *gin.Context, svc *player.PlayerService) {
 // @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[player.PlayerDetailResponse]
+// @Success      200  {object}  model.APIResponse[PlayerDetailResponse]
 // @Failure      400  {object}  apierr.APIError
 // @Failure      401  {object}  apierr.APIError
 // @Failure      404  {object}  apierr.APIError
@@ -89,8 +105,8 @@ func getPlayerProfileHandler(c *gin.Context, svc *player.PlayerService) {
 // @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Param        request  body  player.UpdatePlayerProfileRequest  true  "更新信息"
-// @Success      200      {object}  model.APIResponse[any]
+// @Param        request  body  UpdatePlayerProfileRequest  true  "更新信息"
+// @Success      200      {object}  model.SuccessResponse
 // @Failure      400      {object}  apierr.APIError
 // @Failure      401      {object}  apierr.APIError
 // @Failure      404      {object}  apierr.APIError
@@ -130,7 +146,7 @@ func updatePlayerProfileHandler(c *gin.Context, svc *player.PlayerService) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  player.SetPlayerStatusRequest  true  "状态请求"
-// @Success      200      {object}  model.APIResponse[any]
+// @Success      200      {object}  model.SuccessResponse
 // @Failure      400      {object}  apierr.APIError
 // @Failure      401      {object}  apierr.APIError
 // @Failure      500      {object}  apierr.APIError

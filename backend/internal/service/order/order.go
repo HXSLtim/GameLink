@@ -3,9 +3,11 @@ package order
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"gamelink/internal/apierr"
+	"gamelink/internal/cache"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	commissionrepo "gamelink/internal/repository/commission"
@@ -30,15 +32,15 @@ var (
 // 2. 陪玩师端订单管理（接单、开始、完成）
 // 3. 订单状态流转管理
 type OrderService struct {
-	orders      repoiface.OrderRepository
-	players     repository.PlayerRepository
-	users       repository.UserRepository
-	games       repository.GameRepository
-	payments    repository.PaymentRepository
-	reviews     repository.ReviewRepository
-	commissions commissionrepo.CommissionRepository
-	// optional: for order chat auto-destroy
-	chatGroups repository.ChatGroupRepository
+	orders          repoiface.OrderRepository
+	players         repository.PlayerRepository
+	users           repository.UserRepository
+	games           repository.GameRepository
+	payments        repository.PaymentRepository
+	reviews         repository.ReviewRepository
+	commissions     commissionrepo.CommissionRepository
+	chatGroups      repository.ChatGroupRepository // optional: for order chat auto-destroy
+	distributedLock cache.DistributedLock          // 分布式锁，用于并发控制
 }
 
 // NewOrderService 创建订单服务
@@ -60,6 +62,11 @@ func NewOrderService(
 		reviews:     reviews,
 		commissions: commissions,
 	}
+}
+
+// SetDistributedLock injects distributed lock for concurrency control
+func (s *OrderService) SetDistributedLock(lock cache.DistributedLock) {
+	s.distributedLock = lock
 }
 
 // SetChatGroupRepository injects chat group repository for auto-destroying order chat groups.
@@ -195,6 +202,21 @@ type CompleteOrderRequest struct {
 
 // CreateOrder 创建订单（用户端）
 func (s *OrderService) CreateOrder(ctx context.Context, userID uint64, req CreateOrderRequest) (*CreateOrderResponse, error) {
+	// 使用分布式锁防止并发问题
+	lockKey := fmt.Sprintf("order:create:user:%d:player:%d", userID, req.PlayerID)
+	
+	// 如果分布式锁可用，使用它
+	if s.distributedLock != nil {
+		locked, err := s.distributedLock.TryLock(ctx, lockKey, time.Second*5, 3, time.Millisecond*100)
+		if err != nil {
+			return nil, apierr.InternalError("failed to acquire lock").WithDetails(err.Error())
+		}
+		if !locked {
+			return nil, apierr.Conflict("concurrent order creation in progress, please try again")
+		}
+		defer s.distributedLock.Unlock(ctx, lockKey)
+	}
+
 	// 验证陪玩师
 	player, err := s.validateCreateOrder(ctx, req)
 	if err != nil {
@@ -517,7 +539,7 @@ func (s *OrderService) recordCommissionAsync(ctx context.Context, orderID uint64
 	return s.commissions.CreateRecord(ctx, record)
 }
 
-// toOrderCardDTO 转换为订单卡�?DTO
+// toOrderCardDTO 转换为订单卡DTO
 func (s *OrderService) toOrderCardDTO(ctx context.Context, order *model.Order, userID uint64) (*OrderCardDTO, error) {
 	// 获取陪玩师信息
 	var playerNickname, playerAvatar string
@@ -691,7 +713,7 @@ func (s *OrderService) GetAvailableOrders(ctx context.Context, req AvailableOrde
 		return nil, 0, err
 	}
 
-	// 转换�?DTO
+	// 转换DTO
 	availableOrders := make([]AvailableOrderDTO, 0, len(orders))
 	for _, o := range orders {
 		// 获取游戏信息

@@ -36,7 +36,7 @@ type reportMessageRequest struct {
 // @Param        Authorization  header    string                   true  "Bearer {token}"
 // @Param        id             path      int                      true  "Message ID"
 // @Param        request        body      reportMessageRequest     true  "Report reason and evidence"
-// @Success      200            {object}  model.SuccessResponse
+// @Success      200            {object}  model.APIResponse[any]
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
@@ -73,7 +73,7 @@ func reportChatMessageHandler(c *gin.Context, svc *chatservice.ChatService) {
 // @Param        Authorization  header    string  true   "Bearer {token}"
 // @Param        page           query     int     false  "Page number"
 // @Param        pageSize       query     int     false  "Page size"
-// @Success      200            {object}  model.SuccessResponse
+// @Success      200            {object}  model.APIResponse[gin.H]
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
 // @Router       /user/chat/groups [get]
@@ -111,7 +111,7 @@ func listChatGroupsHandler(c *gin.Context, svc *chatservice.ChatService) {
 // @Param        pageSize       query     int     false  "Page size"
 // @Param        beforeId       query     int     false  "Load messages before this ID"
 // @Param        afterId        query     int     false  "Load messages after this ID"
-// @Success      200            {object}  model.SuccessResponse
+// @Success      200            {object}  model.APIResponse[gin.H]
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      403            {object}  model.ErrorResponse

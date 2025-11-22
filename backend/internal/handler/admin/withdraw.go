@@ -12,7 +12,7 @@ import (
 	withdrawrepo "gamelink/internal/repository/withdraw"
 )
 
-// RegisterWithdrawRoutes 注册管理端提现管理路由
+// RegisterWithdrawRoutes 注册管理端提现管理路
 func RegisterWithdrawRoutes(router gin.IRouter, withdrawRepo withdrawrepo.WithdrawRepository) {
 	group := router.Group("/withdraws")
 	{
@@ -26,7 +26,7 @@ func RegisterWithdrawRoutes(router gin.IRouter, withdrawRepo withdrawrepo.Withdr
 
 // listWithdrawsHandler 获取提现申请列表
 // @Summary      获取提现申请列表
-// @Description  管理员查看所有提现申请，支持状态筛选、陪玩师筛选、分页
+// @Description  管理员查看所有提现申请，支持状态筛选、陪玩师筛选、分
 // @Tags         Admin - Withdraw
 // @Accept       json
 // @Produce      json
@@ -36,8 +36,8 @@ func RegisterWithdrawRoutes(router gin.IRouter, withdrawRepo withdrawrepo.Withdr
 // @Param        page           query     int     false  "页码"
 // @Param        pageSize       query     int     false  "每页数量"
 // @Success      200            {object}  model.APIResponse[[]model.Withdraw]
-// @Failure      400            {object}  apierr.ErrorResponse
-// @Failure      401            {object}  apierr.ErrorResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/withdraws [get]
 func listWithdrawsHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository) {
 	page, pageSize, ok := parsePagination(c)
@@ -56,13 +56,13 @@ func listWithdrawsHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository) 
 		PageSize: pageSize,
 	}
 
-	// 状态筛选
+	// 状态筛
 	if status := c.Query("status"); status != "" {
 		s := model.WithdrawStatus(status)
 		opts.Status = &s
 	}
 
-	// 陪玩师筛选
+	// 陪玩师筛
 	if playerIDStr := c.Query("playerId"); playerIDStr != "" {
 		if playerID, err := strconv.ParseUint(playerIDStr, 10, 64); err == nil {
 			opts.PlayerID = &playerID
@@ -88,15 +88,15 @@ func listWithdrawsHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository) 
 
 // getWithdrawHandler 获取提现详情
 // @Summary      获取提现详情
-// @Description  根据 ID 获取单个提现申请的详细信息
+// @Description  根据 ID 获取单个提现申请的详细信
 // @Tags         Admin - Withdraw
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
 // @Param        id             path      int     true  "提现ID"
 // @Success      200            {object}  model.APIResponse[model.Withdraw]
-// @Failure      400            {object}  apierr.ErrorResponse
-// @Failure      401            {object}  apierr.ErrorResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/withdraws/{id} [get]
 func getWithdrawHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository) {
 	id, err := parseUintParam(c, "id")
@@ -126,7 +126,7 @@ type ApproveWithdrawRequest struct {
 
 // approveWithdrawHandler 批准提现
 // @Summary      批准提现
-// @Description  批准一个待处理的提现申请
+// @Description  批准一个待处理的提现申
 // @Tags         Admin - Withdraw
 // @Accept       json
 // @Produce      json
@@ -134,8 +134,8 @@ type ApproveWithdrawRequest struct {
 // @Param        id             path      int                      true  "提现ID"
 // @Param        request        body      ApproveWithdrawRequest  false  "审核备注"
 // @Success      200            {object}  model.APIResponse[string]
-// @Failure      400            {object}  apierr.ErrorResponse
-// @Failure      401            {object}  apierr.ErrorResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/withdraws/{id}/approve [post]
 func approveWithdrawHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository) {
 	id, err := parseUintParam(c, "id")
@@ -164,7 +164,7 @@ func approveWithdrawHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository
 		return
 	}
 
-	// 更新状态
+	// 更新状
 	now := time.Now()
 	withdraw.Status = model.WithdrawStatusApproved
 	withdraw.ProcessedBy = &adminUserID
@@ -190,7 +190,7 @@ type RejectWithdrawRequest struct {
 
 // rejectWithdrawHandler 拒绝提现
 // @Summary      拒绝提现
-// @Description  拒绝一个待处理的提现申请
+// @Description  拒绝一个待处理的提现申
 // @Tags         Admin - Withdraw
 // @Accept       json
 // @Produce      json
@@ -198,8 +198,8 @@ type RejectWithdrawRequest struct {
 // @Param        id             path      int                     true  "提现ID"
 // @Param        request        body      RejectWithdrawRequest  true  "拒绝原因"
 // @Success      200            {object}  model.APIResponse[string]
-// @Failure      400            {object}  apierr.ErrorResponse
-// @Failure      401            {object}  apierr.ErrorResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/withdraws/{id}/reject [post]
 func rejectWithdrawHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository) {
 	id, err := parseUintParam(c, "id")
@@ -231,7 +231,7 @@ func rejectWithdrawHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository)
 		return
 	}
 
-	// 更新状态
+	// 更新状
 	now := time.Now()
 	withdraw.Status = model.WithdrawStatusRejected
 	withdraw.ProcessedBy = &adminUserID
@@ -250,7 +250,7 @@ func rejectWithdrawHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository)
 	})
 }
 
-// completeWithdrawHandler 完成提现（已打款）
+// completeWithdrawHandler 完成提现（已打款
 // @Summary      完成提现
 // @Description  将一个已批准的提现申请标记为已完成（已打款）
 // @Tags         Admin - Withdraw
@@ -259,8 +259,8 @@ func rejectWithdrawHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository)
 // @Security     BearerAuth
 // @Param        id             path      int     true  "提现ID"
 // @Success      200            {object}  model.APIResponse[string]
-// @Failure      400            {object}  apierr.ErrorResponse
-// @Failure      401            {object}  apierr.ErrorResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/withdraws/{id}/complete [post]
 func completeWithdrawHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository) {
 	id, err := parseUintParam(c, "id")
@@ -286,7 +286,7 @@ func completeWithdrawHandler(c *gin.Context, repo withdrawrepo.WithdrawRepositor
 		return
 	}
 
-	// 更新状态
+	// 更新状
 	now := time.Now()
 	withdraw.Status = model.WithdrawStatusCompleted
 	withdraw.CompletedAt = &now

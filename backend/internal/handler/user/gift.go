@@ -10,6 +10,12 @@ import (
 	"gamelink/internal/service/item"
 )
 
+// ServiceItemListResponse 服务列表响应（类型别名）
+type ServiceItemListResponse = item.ServiceItemListResponse
+
+// GiftOrderResponse 礼物订单响应（类型别名）
+type GiftOrderResponse = gift.GiftOrderResponse
+
 // RegisterGiftRoutes Register user gift routes
 func RegisterGiftRoutes(router gin.IRouter, giftSvc *gift.GiftService, itemSvc *item.ServiceItemService, authMiddleware gin.HandlerFunc) {
 	group := router.Group("/user/gifts")
@@ -30,7 +36,7 @@ func RegisterGiftRoutes(router gin.IRouter, giftSvc *gift.GiftService, itemSvc *
 // @Produce      json
 // @Param        page      query     int  false  "页码" default(1)
 // @Param        pageSize  query     int  false  "每页数量" default(20)
-// @Success      200       {object}  model.APIResponse[item.ServiceItemListResponse]
+// @Success      200       {object}  ServiceItemListResponse
 // @Failure      400       {object}  apierr.APIError
 // @Failure      401       {object}  apierr.APIError
 // @Failure      500       {object}  apierr.APIError
@@ -48,15 +54,15 @@ func listGiftsHandler(c *gin.Context, svc *item.ServiceItemService) {
 	respondSuccess(c, "OK", *resp)
 }
 
-// sendGiftHandler 赠送礼�?
-// @Summary      赠送礼�?
+// sendGiftHandler 赠送礼
+// @Summary      赠送礼
 // @Description  赠送礼物给陪玩师
 // @Tags         User - Gift
 // @Security     BearerAuth
 // @Accept       json
 // @Produce      json
 // @Param        request  body      gift.SendGiftRequest  true  "赠送礼物请求"
-// @Success      200      {object}  model.APIResponse[gift.GiftOrderResponse]
+// @Success      200      {object}  GiftOrderResponse
 // @Failure      400      {object}  apierr.APIError
 // @Failure      401      {object}  apierr.APIError
 // @Failure      404      {object}  apierr.APIError
@@ -102,7 +108,7 @@ func sendGiftHandler(c *gin.Context, svc *gift.GiftService) {
 // @Produce      json
 // @Param        page      query     int  false  "页码" default(1)
 // @Param        pageSize  query     int  false  "每页数量" default(20)
-// @Success      200       {object}  model.APIResponse[any]
+// @Success      200       {object}  object
 // @Failure      400       {object}  apierr.APIError
 // @Failure      401       {object}  apierr.APIError
 // @Failure      500       {object}  apierr.APIError

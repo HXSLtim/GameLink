@@ -60,7 +60,7 @@ func (r *rankingRepository) CreateRanking(ctx context.Context, ranking *model.Pl
 	return r.db.WithContext(ctx).Create(ranking).Error
 }
 
-// GetPlayerRanking 获取陪玩师排�?
+// GetPlayerRanking 获取陪玩师排
 func (r *rankingRepository) GetPlayerRanking(ctx context.Context, playerID uint64, rankingType model.RankingType, period, periodValue string) (*model.PlayerRanking, error) {
 	var ranking model.PlayerRanking
 	err := r.db.WithContext(ctx).
@@ -184,7 +184,7 @@ func (r *rankingRepository) DeleteReward(ctx context.Context, id uint64) error {
 	return r.db.WithContext(ctx).Delete(&model.RankingReward{}, id).Error
 }
 
-// GetRewardForRank 获取指定排名对应的奖�?
+// GetRewardForRank 获取指定排名对应的奖
 func (r *rankingRepository) GetRewardForRank(ctx context.Context, rankingType model.RankingType, period string, rank int) (*model.RankingReward, error) {
 	var reward model.RankingReward
 	err := r.db.WithContext(ctx).

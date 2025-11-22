@@ -18,6 +18,36 @@ export interface LoginResult {
 }
 
 /**
+ * 登录响应
+ */
+export type LoginResponse = LoginResult;
+
+/**
+ * 注册请求
+ */
+export interface RegisterRequest {
+  username: string;
+  password: string;
+  email?: string;
+  phone?: string;
+  role?: UserRole;
+  invitationCode?: string;
+}
+
+/**
+ * 注册响应
+ */
+export type RegisterResponse = {
+  message?: string;
+  success?: boolean;
+};
+
+/**
+ * 用户接口
+ */
+export type User = CurrentUser;
+
+/**
  * 刷新令牌请求
  */
 export interface RefreshTokenRequest {

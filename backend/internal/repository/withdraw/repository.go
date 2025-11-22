@@ -20,7 +20,7 @@ type WithdrawRepository interface {
 	Update(ctx context.Context, withdraw *model.Withdraw) error
 	// List 查询提现记录列表
 	List(ctx context.Context, opts WithdrawListOptions) ([]model.Withdraw, int64, error)
-	// GetPlayerBalance 获取陪玩师余额信�?
+	// GetPlayerBalance 获取陪玩师余额信
 	GetPlayerBalance(ctx context.Context, playerID uint64) (*PlayerBalance, error)
 }
 
@@ -35,13 +35,13 @@ type WithdrawListOptions struct {
 	PageSize int
 }
 
-// PlayerBalance 陪玩师余额信�?
+// PlayerBalance 陪玩师余额信
 type PlayerBalance struct {
 	TotalEarnings    int64 // 累计收益
 	WithdrawTotal    int64 // 累计提现
-	PendingWithdraw  int64 // 待处理提�?
-	AvailableBalance int64 // 可提现余�?
-	PendingBalance   int64 // 待结算余�?
+	PendingWithdraw  int64 // 待处理提
+	AvailableBalance int64 // 可提现余
+	PendingBalance   int64 // 待结算余
 }
 
 type withdrawRepository struct {
@@ -122,7 +122,7 @@ func (r *withdrawRepository) List(ctx context.Context, opts WithdrawListOptions)
 	return withdraws, total, nil
 }
 
-// GetPlayerBalance 获取陪玩师余额信�?
+// GetPlayerBalance 获取陪玩师余额信
 func (r *withdrawRepository) GetPlayerBalance(ctx context.Context, playerID uint64) (*PlayerBalance, error) {
 	balance := &PlayerBalance{}
 
@@ -150,7 +150,7 @@ func (r *withdrawRepository) GetPlayerBalance(ctx context.Context, playerID uint
 	}
 	balance.WithdrawTotal = withdrawTotal
 
-	// 计算待处理提现（pending �?approved 状态）
+	// 计算待处理提现（pending approved 状态）
 	var pendingWithdraw int64
 	err = r.db.WithContext(ctx).
 		Model(&model.Withdraw{}).
@@ -165,7 +165,7 @@ func (r *withdrawRepository) GetPlayerBalance(ctx context.Context, playerID uint
 	}
 	balance.PendingWithdraw = pendingWithdraw
 
-	// 计算待结算余额（进行中的订单�?
+	// 计算待结算余额（进行中的订单
 	var pendingBalance int64
 	err = r.db.WithContext(ctx).
 		Model(&model.Order{}).
@@ -177,7 +177,7 @@ func (r *withdrawRepository) GetPlayerBalance(ctx context.Context, playerID uint
 	}
 	balance.PendingBalance = pendingBalance
 
-	// 计算可提现余�?= 累计收益 - 累计提现 - 待处理提�?- 待结算余�?
+	// 计算可提现余= 累计收益 - 累计提现 - 待处理提- 待结算余
 	balance.AvailableBalance = totalEarnings - withdrawTotal - pendingWithdraw - pendingBalance
 	if balance.AvailableBalance < 0 {
 		balance.AvailableBalance = 0

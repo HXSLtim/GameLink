@@ -11,6 +11,22 @@ import (
 	notificationservice "gamelink/internal/service/notification"
 )
 
+// ListNotificationsRequest 获取通知列表请求
+type ListNotificationsRequest struct {
+	Page     int      `form:"page"`
+	PageSize int      `form:"pageSize"`
+	Unread   bool     `form:"unread"`
+	Priority []string `form:"priority"`
+}
+
+// MarkNotificationsReadRequest 标记通知为已读请求
+type MarkNotificationsReadRequest struct {
+	IDs []uint64 `json:"ids"`
+}
+
+// NotificationListResponse 通知列表响应（类型别名）
+type NotificationListResponse = notificationservice.ListResponse
+
 // RegisterRoutes 注册通知中心路由。
 func RegisterRoutes(router gin.IRouter, svc *notificationservice.Service, authMiddleware gin.HandlerFunc) {
 	group := router.Group("/notifications")
@@ -31,19 +47,14 @@ func RegisterRoutes(router gin.IRouter, svc *notificationservice.Service, authMi
 // @Param        pageSize       query     int     false  "Page size"
 // @Param        unread         query     bool    false  "Filter unread only"
 // @Param        priority       query     array   false  "Filter by priority"
-// @Success      200            {object}  NotificationListResponse
+// @Success      200            {object}  model.APIResponse[NotificationListResponse]
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
 // @Router       /notifications [get]
 func listNotificationsHandler(c *gin.Context, svc *notificationservice.Service) {
 	userID := getUserIDFromContext(c)
-	var req struct {
-		Page     int      `form:"page"`
-		PageSize int      `form:"pageSize"`
-		Unread   bool     `form:"unread"`
-		Priority []string `form:"priority"`
-	}
+	var req ListNotificationsRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -80,8 +91,8 @@ func listNotificationsHandler(c *gin.Context, svc *notificationservice.Service) 
 // @Tags         Notifications
 // @Accept       json
 // @Produce      json
-// @Param        Authorization  header    string              true  "Bearer {token}"
-// @Param        request        body      object{ids=[]int}   true  "Notification IDs to mark as read"
+// @Param        Authorization  header    string                          true  "Bearer {token}"
+// @Param        request        body      MarkNotificationsReadRequest   true  "Notification IDs to mark as read"
 // @Success      200            {object}  model.SuccessResponse
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
@@ -89,9 +100,7 @@ func listNotificationsHandler(c *gin.Context, svc *notificationservice.Service) 
 // @Router       /notifications/read [post]
 func markNotificationsReadHandler(c *gin.Context, svc *notificationservice.Service) {
 	userID := getUserIDFromContext(c)
-	var body struct {
-		IDs []uint64 `json:"ids"`
-	}
+	var body MarkNotificationsReadRequest
 	if err := c.ShouldBindJSON(&body); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -114,7 +123,7 @@ func markNotificationsReadHandler(c *gin.Context, svc *notificationservice.Servi
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
-// @Success      200            {object}  UnreadCountResponse
+// @Success      200            {object}  model.APIResponse[map[string]int64]
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
 // @Router       /notifications/unread-count [get]

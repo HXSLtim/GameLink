@@ -5,7 +5,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/internal/apierr"
 	"gamelink/internal/handler"
 	"gamelink/internal/model"
 )
@@ -36,7 +35,7 @@ func respondSuccess[T any](c *gin.Context, message string, data T) {
 }
 
 // respondAPIError sends an API error response
-func respondAPIError(c *gin.Context, err *apierr.APIError) {
+func respondAPIError(c *gin.Context, err error) {
 	handler.RespondAPIError(c, err)
 }
 

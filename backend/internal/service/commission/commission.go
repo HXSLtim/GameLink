@@ -467,7 +467,7 @@ func (s *CommissionService) CalculateOrderCommission(ctx context.Context, order 
 	// 2. 查找陪玩师专属抽成规则
 	playerID := order.GetPlayerID()
 	if playerID > 0 {
-		playerRule, err := s.commissions.GetRuleForOrder(ctx, order.GameID, order.PlayerID, nil)
+		playerRule, err := s.commissions.GetRuleForOrder(ctx, order.GameID, &playerID, nil)
 		if err == nil && playerRule != nil {
 			candidateRates = append(candidateRates, CommissionCandidate{
 				Source: "陪玩师专属",
@@ -479,7 +479,7 @@ func (s *CommissionService) CalculateOrderCommission(ctx context.Context, order 
 
 	// 3. 查找排名抽成（基于上月排名）
 	// 注意：礼物订单不参与排名优惠
-	if !order.IsGiftOrder() && playerID > 0 {
+	if playerID > 0 {
 		rankingRate, rankingDetail := s.getRankingCommissionRate(ctx, playerID)
 		if rankingRate > 0 && rankingRate < 100 {
 			candidateRates = append(candidateRates, CommissionCandidate{

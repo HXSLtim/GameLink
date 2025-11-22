@@ -198,6 +198,46 @@ export const ORDER_STATUS_BADGE: Record<
 };
 
 /**
+ * 获取订单列表参数
+ */
+export interface GetOrdersParams {
+  page?: number;
+  page_size?: number;
+  userId?: number;
+  playerId?: number;
+  gameId?: number;
+  status?: OrderStatus;
+  keyword?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+/**
+ * 获取订单列表响应
+ */
+export interface GetOrdersResponse {
+  list: Order[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+/**
+ * 订单统计信息
+ */
+export interface OrderStats {
+  total: number;
+  pending: number;
+  confirmed: number;
+  in_progress: number;
+  completed: number;
+  canceled: number;
+  refunded: number;
+  today_orders: number;
+  today_revenue: number;
+}
+
+/**
  * 货币符号
  */
 export const CURRENCY_SYMBOL: Record<Currency, string> = {

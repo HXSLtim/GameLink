@@ -6,8 +6,21 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"gamelink/internal/apierr"
+	"gamelink/internal/model"
 	"gamelink/internal/service/earnings"
 )
+
+// EarningsSummaryResponse 收益概览响应（类型别名）
+type EarningsSummaryResponse = earnings.EarningsSummaryResponse
+
+// EarningsTrendResponse 收益趋势响应（类型别名）
+type EarningsTrendResponse = earnings.EarningsTrendResponse
+
+// WithdrawResponse 提现响应（类型别名）
+type WithdrawResponse = earnings.WithdrawResponse
+
+// WithdrawHistoryResponse 提现历史响应（类型别名）
+type WithdrawHistoryResponse = earnings.WithdrawHistoryResponse
 
 // RegisterEarningsRoutes 注册陪玩师端收益管理路由
 func RegisterEarningsRoutes(router gin.IRouter, svc *earnings.EarningsService, authMiddleware gin.HandlerFunc) {
@@ -26,7 +39,7 @@ func RegisterEarningsRoutes(router gin.IRouter, svc *earnings.EarningsService, a
 // @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[earnings.EarningsSummaryResponse]
+// @Success      200  {object}  model.APIResponse[EarningsSummaryResponse]
 // @Failure      401  {object}  apierr.APIError
 // @Failure      403  {object}  apierr.APIError
 // @Failure      500  {object}  apierr.APIError
@@ -51,7 +64,7 @@ func getEarningsSummaryHandler(c *gin.Context, svc *earnings.EarningsService) {
 // @Accept       json
 // @Produce      json
 // @Param        days  query  int  true  "天数范围(7-90)"
-// @Success      200   {object}  model.APIResponse[earnings.EarningsTrendResponse]
+// @Success      200   {object}  model.APIResponse[EarningsTrendResponse]
 // @Failure      400   {object}  apierr.APIError
 // @Failure      401   {object}  apierr.APIError
 // @Failure      500   {object}  apierr.APIError
@@ -82,7 +95,7 @@ func getEarningsTrendHandler(c *gin.Context, svc *earnings.EarningsService) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  earnings.WithdrawRequest  true  "提现信息"
-// @Success      200      {object}  model.APIResponse[earnings.WithdrawResponse]
+// @Success      200      {object}  model.APIResponse[WithdrawResponse]
 // @Failure      400      {object}  apierr.APIError
 // @Failure      401      {object}  apierr.APIError
 // @Failure      403      {object}  apierr.APIError
@@ -124,7 +137,7 @@ func requestWithdrawHandler(c *gin.Context, svc *earnings.EarningsService) {
 // @Produce      json
 // @Param        page      query     int  false  "页码" default(1)
 // @Param        pageSize  query     int  false  "每页数量" default(20)
-// @Success      200       {object}  model.APIResponse[earnings.WithdrawHistoryResponse]
+// @Success      200       {object}  model.APIResponse[WithdrawHistoryResponse]
 // @Failure      400       {object}  apierr.APIError
 // @Failure      401       {object}  apierr.APIError
 // @Failure      500       {object}  apierr.APIError

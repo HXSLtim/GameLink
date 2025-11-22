@@ -2,271 +2,288 @@ package admin
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	"gamelink/internal/model"
 	commissionrepo "gamelink/internal/repository/commission"
 	repoiface "gamelink/internal/repository/interfaces"
+	statsrepo "gamelink/internal/repository/stats"
 	serviceitemrepo "gamelink/internal/repository/serviceitem"
+	"gamelink/internal/service/stats"
+	statsservice "gamelink/internal/service/stats"
 )
 
-// RegisterStatsAnalysisRoutes 注册管理端统计分析路由
-func RegisterStatsAnalysisRoutes(
-	router gin.IRouter,
-	orderRepo repoiface.OrderQuery,
-	commissionRepo commissionrepo.CommissionRepository,
-	serviceItemRepo serviceitemrepo.ServiceItemRepository,
-) {
-	group := router.Group("/admin/stats")
-	{
-		group.GET("/service-items", func(c *gin.Context) {
-			getServiceItemStatsHandler(c, orderRepo, serviceItemRepo)
-		})
-		group.GET("/top-players", func(c *gin.Context) {
-			getTopPlayersHandler(c, commissionRepo)
-		})
-		group.GET("/gift-stats", func(c *gin.Context) {
-			getAdminGiftStatsHandler(c, orderRepo, serviceItemRepo)
-		})
-		group.GET("/revenue-by-game", func(c *gin.Context) {
-			getRevenueByGameHandler(c, orderRepo)
-		})
-	}
+// StatsHandler 统计数据Handler
+type StatsHandler struct {
+	svc *stats.StatsService
 }
 
-// getServiceItemStatsHandler 服务项目统计
-// @Summary      服务项目统计
-// @Description  统计各服务项目的销售情况
+// NewStatsHandler 创建统计Handler
+func NewStatsHandler(svc *stats.StatsService) *StatsHandler {
+	return &StatsHandler{svc: svc}
+}
+
+// RegisterStatsAnalysisRoutes 注册统计分析和仪表板路由
+func RegisterStatsAnalysisRoutes(router gin.IRouter, orderRepo repoiface.OrderReadWriter, commissionRepo commissionrepo.CommissionRepository, serviceItemRepo serviceitemrepo.ServiceItemRepository) {
+	statsRepo := statsrepo.NewStatsRepository(orderRepo.(interface{ DB() *gorm.DB }).DB())
+	h := NewStatsHandler(statsservice.NewStatsService(statsRepo))
+	
+	group := router
+	// 仪表板概�?	group.GET("/stats/dashboard", h.Dashboard)
+	// 收入趋势
+	group.GET("/stats/revenue-trend", h.RevenueTrend)
+	// 用户增长
+	group.GET("/stats/user-growth", h.UserGrowth)
+	// 订单统计
+	group.GET("/stats/orders", h.OrdersSummary)
+	// 顶级陪玩�?	group.GET("/stats/top-players", h.TopPlayers)
+	// 审计概览
+	group.GET("/stats/audit/overview", h.AuditOverview)
+	// 审计趋势
+	group.GET("/stats/audit/trend", h.AuditTrend)
+}
+
+// Dashboard 获取仪表板数�?// @Summary      仪表板数�?// @Description  获取平台统计数据总览
 // @Tags         Admin - Stats
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
-// @Success      200            {object}  model.SuccessResponse
-// @Failure      400            {object}  model.ErrorResponse
+// @Success      200            {object}  model.APIResponse[any]
 // @Failure      401            {object}  model.ErrorResponse
-// @Router       /admin/stats/service-items [get]
-func getServiceItemStatsHandler(
-	c *gin.Context,
-	orderRepo repoiface.OrderQuery,
-	serviceItemRepo serviceitemrepo.ServiceItemRepository,
-) {
-	ctx := c.Request.Context()
-
-	// 获取所有服务项
-	items, _, err := serviceItemRepo.List(ctx, serviceitemrepo.ServiceItemListOptions{
-		Page:     1,
-		PageSize: 1000,
-	})
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /admin/stats/dashboard [get]
+func (h *StatsHandler) Dashboard(c *gin.Context) {
+	dashboard, err := h.svc.Dashboard(c.Request.Context())
 	if err != nil {
 		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
-	}
-
-	// 统计每个服务项目的订单数和收益
-	type ItemStats struct {
-		ItemID       uint64 `json:"itemId"`
-		ItemCode     string `json:"itemCode"`
-		ItemName     string `json:"itemName"`
-		SubCategory  string `json:"subCategory"`
-		OrderCount   int64  `json:"orderCount"`
-		TotalRevenue int64  `json:"totalRevenue"`
-	}
-
-	stats := make([]ItemStats, 0, len(items))
-	for _, item := range items {
-		// 查询该服务项目的所有订单
-		orders, _, _ := orderRepo.List(ctx, repoiface.OrderListOptions{
-			// TODO: 需要添加 ItemID 过滤
-			Statuses: []model.OrderStatus{model.OrderStatusCompleted},
-			Page:     1,
-			PageSize: 10000,
-		})
-
-		var orderCount int64
-		var totalRevenue int64
-		for _, order := range orders {
-			if order.ItemID == item.ID {
-				orderCount++
-				totalRevenue += order.TotalPriceCents
-			}
-		}
-
-		stats = append(stats, ItemStats{
-			ItemID:       item.ID,
-			ItemCode:     item.ItemCode,
-			ItemName:     item.Name,
-			SubCategory:  string(item.SubCategory),
-			OrderCount:   orderCount,
-			TotalRevenue: totalRevenue,
-		})
 	}
 
 	writeJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
-		Data: map[string]interface{}{
-			"items": stats,
-		},
+		Data:    dashboard,
 	})
 }
 
-// @Description  API endpoint// @Accept       json
+// RevenueTrend 获取收入趋势
+// @Summary      收入趋势
+// @Description  获取指定天数的收入趋�?// @Tags         Admin - Stats
+// @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true   "Bearer {token}"
-// @Param        month          query     string  false  "月份(YYYY-MM)"
-// @Param        limit          query     int     false  "数量"
-// @Success      200            {object}  model.SuccessResponse
+// @Param        days           query     int     false  "天数" default(7)
+// @Success      200            {object}  model.APIResponse[any]
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /admin/stats/revenue-trend [get]
+func (h *StatsHandler) RevenueTrend(c *gin.Context) {
+	days := 7
+	if daysStr := c.Query("days"); daysStr != "" {
+		if val, err := strconv.Atoi(daysStr); err == nil && val > 0 {
+			days = val
+		}
+	}
+
+	trend, err := h.svc.RevenueTrend(c.Request.Context(), days)
+	if err != nil {
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	writeJSON(c, http.StatusOK, model.APIResponse[any]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: "OK",
+		Data:    trend,
+	})
+}
+
+// UserGrowth 获取用户增长趋势
+// @Summary      用户增长趋势
+// @Description  获取指定天数的用户增长趋�?// @Tags         Admin - Stats
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string  true   "Bearer {token}"
+// @Param        days           query     int     false  "天数" default(7)
+// @Success      200            {object}  model.APIResponse[any]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /admin/stats/user-growth [get]
+func (h *StatsHandler) UserGrowth(c *gin.Context) {
+	days := 7
+	if daysStr := c.Query("days"); daysStr != "" {
+		if val, err := strconv.Atoi(daysStr); err == nil && val > 0 {
+			days = val
+		}
+	}
+
+	trend, err := h.svc.UserGrowth(c.Request.Context(), days)
+	if err != nil {
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	writeJSON(c, http.StatusOK, model.APIResponse[any]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: "OK",
+		Data:    trend,
+	})
+}
+
+// OrdersSummary 获取订单状态汇�?// @Summary      订单状态汇�?// @Description  获取各状态订单数量统�?// @Tags         Admin - Stats
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string  true  "Bearer {token}"
+// @Success      200            {object}  model.APIResponse[any]
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /admin/stats/orders [get]
+func (h *StatsHandler) OrdersSummary(c *gin.Context) {
+	stats, err := h.svc.OrdersByStatus(c.Request.Context())
+	if err != nil {
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	writeJSON(c, http.StatusOK, model.APIResponse[any]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: "OK",
+		Data:    stats,
+	})
+}
+
+// TopPlayers 获取顶级陪玩�?// @Summary      顶级陪玩�?// @Description  获取收入最高的陪玩师列�?// @Tags         Admin - Stats
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string  true   "Bearer {token}"
+// @Param        limit          query     int     false  "数量限制" default(10)
+// @Success      200            {object}  model.APIResponse[any]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
 // @Router       /admin/stats/top-players [get]
-func getTopPlayersHandler(c *gin.Context, commissionRepo commissionrepo.CommissionRepository) {
-	month := c.DefaultQuery("month", time.Now().Format("2006-01"))
+func (h *StatsHandler) TopPlayers(c *gin.Context) {
 	limit := 10
+	if limitStr := c.Query("limit"); limitStr != "" {
+		if val, err := strconv.Atoi(limitStr); err == nil && val > 0 {
+			limit = val
+		}
+	}
 
-	// TODO: 实现Top陪玩师查询
-	// 暂时返回空数据
-	_ = month
-
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data: map[string]interface{}{
-			"players": []interface{}{},
-			"month":   month,
-			"limit":   limit,
-		},
-	})
-}
-
-// getAdminGiftStatsHandler 获取礼物统计
-// @Summary      获取礼物统计
-// @Description  API endpoint// @Accept       json
-// @Produce      json
-// @Param        Authorization  header    string  true  "Bearer {token}"
-// @Success      200            {object}  model.SuccessResponse
-// @Failure      400            {object}  model.ErrorResponse
-// @Failure      401            {object}  model.ErrorResponse
-// @Router       /admin/stats/gift-stats [get]
-func getAdminGiftStatsHandler(
-	c *gin.Context,
-	orderRepo repoiface.OrderQuery,
-	serviceItemRepo serviceitemrepo.ServiceItemRepository,
-) {
-	ctx := c.Request.Context()
-
-	// 获取所有礼物
-	gifts, _, err := serviceItemRepo.GetGifts(ctx, 1, 1000)
+	players, err := h.svc.TopPlayers(c.Request.Context(), limit)
 	if err != nil {
 		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	type GiftStat struct {
-		GiftID       uint64 `json:"giftId"`
-		GiftName     string `json:"giftName"`
-		TotalSent    int64  `json:"totalSent"`
-		TotalRevenue int64  `json:"totalRevenue"`
-	}
-
-	giftStats := make([]GiftStat, 0, len(gifts))
-	for _, gift := range gifts {
-		// 统计该礼物的销量
-		orders, _, _ := orderRepo.List(ctx, repoiface.OrderListOptions{
-			Statuses: []model.OrderStatus{model.OrderStatusCompleted},
-			Page:     1,
-			PageSize: 10000,
-		})
-
-		var totalSent int64
-		var totalRevenue int64
-		for _, order := range orders {
-			if order.ItemID == gift.ID && order.IsGiftOrder() {
-				totalSent += int64(order.Quantity)
-				totalRevenue += order.TotalPriceCents
-			}
-		}
-
-		giftStats = append(giftStats, GiftStat{
-			GiftID:       gift.ID,
-			GiftName:     gift.Name,
-			TotalSent:    totalSent,
-			TotalRevenue: totalRevenue,
-		})
-	}
-
 	writeJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
-		Data: map[string]interface{}{
-			"gifts": giftStats,
-		},
+		Data:    players,
 	})
 }
 
-// @Description  API endpoint// @Accept       json
+// AuditOverview 获取审计概览
+// @Summary      审计概览
+// @Description  获取审计日志统计概览
+// @Tags         Admin - Stats
+// @Accept       json
 // @Produce      json
-// @Param        Authorization  header    string  true  "Bearer {token}"
-// @Success      200            {object}  model.SuccessResponse
+// @Param        Authorization  header    string  true   "Bearer {token}"
+// @Param        from           query     string  false  "开始日�?
+// @Param        to             query     string  false  "结束日期"
+// @Success      200            {object}  model.APIResponse[any]
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
-// @Router       /admin/stats/revenue-by-game [get]
-func getRevenueByGameHandler(c *gin.Context, orderRepo repoiface.OrderQuery) {
-	ctx := c.Request.Context()
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /admin/stats/audit/overview [get]
+func (h *StatsHandler) AuditOverview(c *gin.Context) {
+	var from, to *time.Time
 
-	// 获取所有已完成订单
-	orders, _, err := orderRepo.List(ctx, repoiface.OrderListOptions{
-		Statuses: []model.OrderStatus{model.OrderStatusCompleted},
-		Page:     1,
-		PageSize: 10000,
-	})
+	if fromStr := c.Query("from"); fromStr != "" {
+		if t, err := time.Parse(time.RFC3339, fromStr); err == nil {
+			from = &t
+		}
+	}
+
+	if toStr := c.Query("to"); toStr != "" {
+		if t, err := time.Parse(time.RFC3339, toStr); err == nil {
+			to = &t
+		}
+	}
+
+	entityStats, actionStats, err := h.svc.AuditOverview(c.Request.Context(), from, to)
 	if err != nil {
 		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	// 按游戏ID分组统计
-	gameStats := make(map[uint64]struct {
-		OrderCount int64
-		Revenue    int64
+	writeJSON(c, http.StatusOK, model.APIResponse[any]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: "OK",
+		Data: gin.H{
+			"entityStats": entityStats,
+			"actionStats": actionStats,
+		},
 	})
+}
 
-	for _, order := range orders {
-		gameID := order.GetGameID()
-		if gameID > 0 {
-			stats := gameStats[gameID]
-			stats.OrderCount++
-			stats.Revenue += order.TotalPriceCents
-			gameStats[gameID] = stats
+// AuditTrend 获取审计趋势
+// @Summary      审计趋势
+// @Description  获取审计日志时间趋势
+// @Tags         Admin - Stats
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string  true   "Bearer {token}"
+// @Param        from           query     string  false  "开始日�?
+// @Param        to             query     string  false  "结束日期"
+// @Param        entity         query     string  false  "实体类型"
+// @Param        action         query     string  false  "操作类型"
+// @Success      200            {object}  model.APIResponse[any]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /admin/stats/audit/trend [get]
+func (h *StatsHandler) AuditTrend(c *gin.Context) {
+	var from, to *time.Time
+
+	if fromStr := c.Query("from"); fromStr != "" {
+		if t, err := time.Parse(time.RFC3339, fromStr); err == nil {
+			from = &t
 		}
 	}
 
-	// 转换为数组
-	type GameRevenue struct {
-		GameID       uint64 `json:"gameId"`
-		OrderCount   int64  `json:"orderCount"`
-		TotalRevenue int64  `json:"totalRevenue"`
+	if toStr := c.Query("to"); toStr != "" {
+		if t, err := time.Parse(time.RFC3339, toStr); err == nil {
+			to = &t
+		}
 	}
 
-	result := make([]GameRevenue, 0, len(gameStats))
-	for gameID, stats := range gameStats {
-		result = append(result, GameRevenue{
-			GameID:       gameID,
-			OrderCount:   stats.OrderCount,
-			TotalRevenue: stats.Revenue,
-		})
+	entity := c.Query("entity")
+	action := c.Query("action")
+
+	trend, err := h.svc.AuditTrend(c.Request.Context(), from, to, entity, action)
+	if err != nil {
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		return
 	}
 
 	writeJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
-		Data: map[string]interface{}{
-			"games": result,
-		},
+		Data:    trend,
 	})
 }
