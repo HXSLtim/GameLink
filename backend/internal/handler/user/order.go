@@ -10,10 +10,10 @@ import (
 	"gamelink/internal/service/order"
 )
 
-// RegisterOrderRoutes 注册用户端订单路由
+// RegisterOrderRoutes 注册用户端订单路�?
 func RegisterOrderRoutes(router gin.IRouter, svc *order.OrderService, authMiddleware gin.HandlerFunc) {
 	group := router.Group("/user/orders")
-	group.Use(authMiddleware) // 需要认证
+	group.Use(authMiddleware) // 需要认�?
 	group.POST("", func(c *gin.Context) { createOrderHandler(c, svc) })
 	group.GET("", func(c *gin.Context) { getMyOrdersHandler(c, svc) })
 	group.GET("/:id", func(c *gin.Context) { getOrderDetailHandler(c, svc) })
@@ -38,22 +38,21 @@ func createOrderHandler(c *gin.Context, svc *order.OrderService) {
 
 	var req order.CreateOrderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, err.Error())
+		respondError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
 		return
 	}
 
 	resp, err := svc.CreateOrder(c.Request.Context(), userID, req)
 	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
+		if apierr.IsValidationError(err) {
+			respondAPIError(c, err.(*apierr.APIError))
+			return
+		}
+		respondAPIError(c, apierr.InternalError("创建订单失败").WithDetails(err.Error()))
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[order.CreateOrderResponse]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "订单创建成功",
-		Data:    *resp,
-	})
+	respondSuccess(c, "订单创建成功", *resp)
 }
 
 func getOrderMessagesHandler(c *gin.Context, svc *order.OrderService) {
@@ -83,27 +82,22 @@ func getMyOrdersHandler(c *gin.Context, svc *order.OrderService) {
 
 	var req order.MyOrderListRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
-		respondError(c, http.StatusBadRequest, err.Error())
+		respondError(c, http.StatusBadRequest, "无效的查询参�? "+err.Error())
 		return
 	}
 
 	resp, err := svc.GetMyOrders(c.Request.Context(), userID, req)
 	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
+		respondAPIError(c, apierr.InternalError("获取订单列表失败").WithDetails(err.Error()))
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[order.MyOrderListResponse]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    *resp,
-	})
+	respondSuccess(c, "OK", *resp)
 }
 
 // getOrderDetailHandler 获取订单详情
 // @Summary      获取订单详情
-// @Description  获取指定订单的详细信息
+// @Description  获取指定订单的详细信�?
 // @Tags         User - Orders
 // @Security     BearerAuth
 // @Accept       json
@@ -125,24 +119,11 @@ func getOrderDetailHandler(c *gin.Context, svc *order.OrderService) {
 
 	resp, err := svc.GetOrderDetail(c.Request.Context(), userID, orderID)
 	if err != nil {
-		if err == order.ErrNotFound {
-			respondError(c, http.StatusNotFound, err.Error())
-			return
-		}
-		if err == order.ErrUnauthorized {
-			respondError(c, http.StatusForbidden, err.Error())
-			return
-		}
-		respondError(c, http.StatusInternalServerError, err.Error())
+		respondAPIError(c, err)
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[order.OrderDetailResponse]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    *resp,
-	})
+	respondSuccess(c, "OK", *resp)
 }
 
 // cancelOrderHandler 取消订单
@@ -154,44 +135,42 @@ func getOrderDetailHandler(c *gin.Context, svc *order.OrderService) {
 // @Produce      json
 // @Param        id       path      uint64                     true  "订单ID"
 // @Param        request  body      order.CancelOrderRequest   true  "取消原因"
-// @Success      200      {object}  model.SuccessResponse
-// @Failure      400      {object}  model.ErrorResponse
-// @Failure      401      {object}  model.ErrorResponse
-// @Failure      404      {object}  model.ErrorResponse
+// @Success      200      {object}  model.APIResponse[any]
+// @Failure      400      {object}  apierr.APIError
+// @Failure      401      {object}  apierr.APIError
+// @Failure      403      {object}  apierr.APIError
+// @Failure      404      {object}  apierr.APIError
+// @Failure      500      {object}  apierr.APIError
 // @Router       /user/orders/{id}/cancel [put]
 func cancelOrderHandler(c *gin.Context, svc *order.OrderService) {
 	userID := getUserIDFromContext(c)
 
 	orderID, err := parseUintParam(c, "id")
 	if err != nil {
-		respondError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		respondAPIError(c, apierr.BadRequest(apierr.ErrInvalidID))
 		return
 	}
 
 	var req order.CancelOrderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, err.Error())
+		respondAPIError(c, apierr.BadRequest(apierr.ErrInvalidJSONPayload).WithDetails(err.Error()))
 		return
 	}
 
 	if err := svc.CancelOrder(c.Request.Context(), userID, orderID, req); err != nil {
 		if err == order.ErrUnauthorized {
-			respondError(c, http.StatusForbidden, err.Error())
+			respondAPIError(c, apierr.Forbidden("无权限取消此订单"))
 			return
 		}
 		if err == order.ErrInvalidTransition {
-			respondError(c, http.StatusBadRequest, err.Error())
+			respondAPIError(c, apierr.BadRequest(err.Error()))
 			return
 		}
-		respondError(c, http.StatusInternalServerError, err.Error())
+		respondAPIError(c, apierr.InternalError("取消订单失败").WithDetails(err.Error()))
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "订单已取消",
-	})
+	respondSuccess(c, "订单已取消", struct{}{})
 }
 
 // completeOrderHandler 完成订单
@@ -202,43 +181,41 @@ func cancelOrderHandler(c *gin.Context, svc *order.OrderService) {
 // @Accept       json
 // @Produce      json
 // @Param        id    path      uint64  true  "订单ID"
-// @Success      200   {object}  model.SuccessResponse
-// @Failure      400   {object}  model.ErrorResponse
-// @Failure      401   {object}  model.ErrorResponse
-// @Failure      404   {object}  model.ErrorResponse
+// @Success      200   {object}  model.APIResponse[any]
+// @Failure      400   {object}  apierr.APIError
+// @Failure      401   {object}  apierr.APIError
+// @Failure      403   {object}  apierr.APIError
+// @Failure      404   {object}  apierr.APIError
+// @Failure      500   {object}  apierr.APIError
 // @Router       /user/orders/{id}/complete [put]
 func completeOrderHandler(c *gin.Context, svc *order.OrderService) {
 	userID := getUserIDFromContext(c)
 
 	orderID, err := parseUintParam(c, "id")
 	if err != nil {
-		respondError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		respondAPIError(c, apierr.BadRequest(apierr.ErrInvalidID))
 		return
 	}
 
 	if err := svc.CompleteOrder(c.Request.Context(), userID, orderID); err != nil {
 		if err == order.ErrUnauthorized {
-			respondError(c, http.StatusForbidden, err.Error())
+			respondAPIError(c, apierr.Forbidden("无权限完成此订单"))
 			return
 		}
 		if err == order.ErrInvalidTransition {
-			respondError(c, http.StatusBadRequest, err.Error())
+			respondAPIError(c, apierr.BadRequest(err.Error()))
 			return
 		}
-		respondError(c, http.StatusInternalServerError, err.Error())
+		respondAPIError(c, apierr.InternalError("完成订单失败").WithDetails(err.Error()))
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "订单已完成",
-	})
+	respondSuccess(c, "订单已完成", struct{}{})
 }
 
 // getUserIDFromContext 从上下文获取用户ID
 func getUserIDFromContext(c *gin.Context) uint64 {
-	// 从 JWT 中间件设置的上下文中获取用户ID
+	// �?JWT 中间件设置的上下文中获取用户ID
 	userIDVal, exists := c.Get("user_id")
 	if !exists {
 		return 0

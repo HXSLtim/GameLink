@@ -19,9 +19,9 @@ const (
 type Order struct {
 	Base
 	OrderNo           string  `json:"orderNo" gorm:"column:order_no;size:64;uniqueIndex:idx_order_no,where:order_no != ''"` // 订单号
-	UserID            uint64  `json:"userId" gorm:"column:user_id;not null;index"`                                          // 下单用户
+	UserID            uint64  `json:"userId" gorm:"column:user_id;not null;index;index:idx_user_status_created,priority:1"` // 下单用户 + 复合索引第一部分
 	ItemID            uint64  `json:"itemId" gorm:"column:item_id;not null;index"`                                          // 服务项目ID
-	PlayerID          *uint64 `json:"playerId,omitempty" gorm:"column:player_id;index"`                                     // 服务陪玩师（礼物订单也可选）
+	PlayerID          *uint64 `json:"playerId,omitempty" gorm:"column:player_id;index;index:idx_player_status,priority:2"`   // 服务陪玩师 + 复合索引第二部分
 	RecipientPlayerID *uint64 `json:"recipientPlayerId,omitempty" gorm:"column:recipient_player_id;index"`                  // 接收礼物的陪玩师
 
 	// 价格相关
@@ -33,7 +33,7 @@ type Order struct {
 	Currency          Currency `json:"currency,omitempty" gorm:"type:char(3);default:'CNY'"`          // 货币
 
 	// 订单信息
-	Status      OrderStatus `json:"status" gorm:"size:32;index;default:'pending'"` // 订单状态
+	Status      OrderStatus `json:"status" gorm:"size:32;index;default:'pending';index:idx_user_status_created,priority:2;index:idx_player_status,priority:1"` // 订单状态 + 两个复合索引的中间部分
 	Title       string      `json:"title,omitempty" gorm:"size:128"`               // 订单标题
 	Description string      `json:"description,omitempty" gorm:"type:text"`        // 订单描述
 

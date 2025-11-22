@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"gamelink/internal/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	repoiface "gamelink/internal/repository/interfaces"
@@ -13,13 +14,13 @@ import (
 
 var (
 	// ErrNotFound 支付记录不存在
-	ErrNotFound = repository.ErrNotFound
+	ErrNotFound = apierr.NotFound("payment not found")
 	// ErrValidation 表示输入校验失败
-	ErrValidation = errors.New("validation failed")
+	ErrValidation = apierr.BadRequest("validation failed")
 	// ErrOrderAlreadyPaid 订单已支付
-	ErrOrderAlreadyPaid = errors.New("order already paid")
+	ErrOrderAlreadyPaid = apierr.BadRequest("order already paid")
 	// ErrInvalidOrderStatus 订单状态不正确
-	ErrInvalidOrderStatus = errors.New("invalid order status")
+	ErrInvalidOrderStatus = apierr.BadRequest("invalid order status")
 )
 
 // PaymentService 支付服务
@@ -135,6 +136,9 @@ func (s *PaymentService) CreatePayment(ctx context.Context, userID uint64, req C
 func (s *PaymentService) GetPaymentStatus(ctx context.Context, paymentID uint64) (*PaymentStatusResponse, error) {
 	payment, err := s.payments.Get(ctx, paymentID)
 	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return nil, repository.ErrNotFound
+		}
 		return nil, err
 	}
 
@@ -150,23 +154,31 @@ func (s *PaymentService) GetPaymentStatus(ctx context.Context, paymentID uint64)
 func (s *PaymentService) CancelPayment(ctx context.Context, userID uint64, paymentID uint64) error {
 	payment, err := s.payments.Get(ctx, paymentID)
 	if err != nil {
-		return err
+		if errors.Is(err, repository.ErrNotFound) {
+			return repository.ErrNotFound
+		}
+		// 对于取消支付操作，其他获取失败视为内部错误（500）
+		return apierr.InternalError("failed to get payment").WithDetails(err.Error())
 	}
 
 	// 权限检查
 	if payment.UserID != userID {
-		return errors.New("unauthorized")
+		return apierr.Forbidden("unauthorized")
 	}
 
 	// 状态检查：只有 pending 状态可以取消
 	if payment.Status != model.PaymentStatusPending {
-		return errors.New("cannot cancel payment")
+		return apierr.BadRequest("cannot cancel payment")
 	}
 
 	// 更新支付状态
 	payment.Status = model.PaymentStatusFailed
 
-	return s.payments.Update(ctx, payment)
+	if err := s.payments.Update(ctx, payment); err != nil {
+		return WrapError(err, "update payment")
+	}
+	
+	return nil
 }
 
 // generateMockPayInfo 生成 Mock 支付参数

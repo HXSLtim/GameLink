@@ -1,7 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { storage } from '@/shared/utils/storage';
-import { STORAGE_KEYS } from '../config';
-import { cryptoMiddleware } from '../middleware/crypto';
+import { STORAGE_KEYS } from '@/config';
+import { cryptoMiddleware } from '@/middleware/crypto';
 
 /**
  * 后端统一响应格式

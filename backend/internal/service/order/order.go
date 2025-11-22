@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"gamelink/internal/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	commissionrepo "gamelink/internal/repository/commission"
@@ -15,11 +16,11 @@ var (
 	// ErrNotFound 订单不存在
 	ErrNotFound = repository.ErrNotFound
 	// ErrValidation 表示输入校验失败
-	ErrValidation = errors.New("validation failed")
+	ErrValidation = apierr.BadRequest("validation failed")
 	// ErrInvalidTransition 订单状态流转不合法
-	ErrInvalidTransition = errors.New("invalid order status transition")
+	ErrInvalidTransition = apierr.BadRequest("invalid order status transition")
 	// ErrUnauthorized 无权操作
-	ErrUnauthorized = errors.New("unauthorized")
+	ErrUnauthorized = apierr.Forbidden("unauthorized")
 )
 
 // OrderService 订单服务
@@ -274,6 +275,9 @@ func (s *OrderService) GetOrderDetail(ctx context.Context, userID uint64, orderI
 	// 获取订单
 	order, err := s.orders.Get(ctx, orderID)
 	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return nil, ErrNotFound
+		}
 		return nil, err
 	}
 

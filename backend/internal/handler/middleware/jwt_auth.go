@@ -21,17 +21,26 @@ func JWTAuth() gin.HandlerFunc {
 	// 从环境变量获取JWT密钥
 	secretKey := os.Getenv("JWT_SECRET_KEY")
 	if secretKey == "" {
-		if os.Getenv("APP_ENV") == "production" {
-			return func(c *gin.Context) {
-				c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{
-					"success": false,
-					"code":    http.StatusServiceUnavailable,
-					"message": "jwt not configured",
-				})
-			}
+		logging.Error("JWT_SECRET_KEY not configured")
+		return func(c *gin.Context) {
+			c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{
+				"success": false,
+				"code":    http.StatusServiceUnavailable,
+				"message": "认证服务配置错误，请联系管理员",
+			})
 		}
-		// 开发环境使用默认值
-		secretKey = "gamelink-default-secret-key-change-in-production"
+	}
+
+	// 验证密钥长度
+	if len(secretKey) < 32 {
+		logging.Error("JWT_SECRET_KEY too short, must be at least 32 characters")
+		return func(c *gin.Context) {
+			c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{
+				"success": false,
+				"code":    http.StatusServiceUnavailable,
+				"message": "认证服务配置错误，请联系管理员",
+			})
+		}
 	}
 
 	// Token有效期（24小时）
@@ -95,10 +104,31 @@ func JWTAuth() gin.HandlerFunc {
 		// 注入 actor 到 request context，便于服务层审计日志使用
 		c.Request = c.Request.WithContext(logging.WithActorUserID(c.Request.Context(), claims.UserID))
 
-		// 检查Token剩余时间，如果快要过期，在响应头中提示前端刷新Token
+		// 检查Token剩余时间，如果快要过期，自动刷新Token
 		remainingTime := auth.GetTokenRemainingTime(claims)
-		if remainingTime < 1*time.Hour {
-			c.Header("X-Token-Refresh", "true")
+
+		// 如果Token即将过期（15分钟内），自动刷新
+		if remainingTime < 15*time.Minute {
+			newToken, err := jwtManager.RefreshToken(claims)
+			if err == nil {
+				// 在响应头中返回新Token
+				c.Header("X-Refreshed-Token", newToken)
+
+				// 更新Context中的Token信息
+				newClaims, _ := jwtManager.VerifyToken(newToken)
+				if newClaims != nil {
+					c.Set("jwt_claims", newClaims)
+					c.Set("user_id", newClaims.UserID)
+					c.Set("user_role", newClaims.Role)
+				}
+
+				logging.Debug("Token auto-refreshed", "user_id", claims.UserID)
+			} else {
+				logging.Warn("Failed to refresh token", "error", err, "user_id", claims.UserID)
+			}
+		} else if remainingTime < 1*time.Hour {
+			// 仍然保留提示，让前端可以主动刷新
+			c.Header("X-Token-Refresh-Recommendation", "true")
 			c.Header("X-Token-Remaining", remainingTime.String())
 		}
 
@@ -169,11 +199,15 @@ func OptionalAuth() gin.HandlerFunc {
 	// 从环境变量获取JWT密钥
 	secretKey := os.Getenv("JWT_SECRET_KEY")
 	if secretKey == "" {
-		if os.Getenv("APP_ENV") == "production" {
-			// 生产环境未配置则视为未认证通过（但 optional 允许继续）
-			return func(c *gin.Context) { c.Next() }
-		}
-		secretKey = "gamelink-default-secret-key-change-in-production"
+		logging.Error("JWT_SECRET_KEY not configured")
+		// 未配置时允许匿名访问
+		return func(c *gin.Context) { c.Next() }
+	}
+
+	// 验证密钥长度
+	if len(secretKey) < 32 {
+		logging.Error("JWT_SECRET_KEY too short")
+		return func(c *gin.Context) { c.Next() }
 	}
 
 	tokenDuration := 24 * time.Hour

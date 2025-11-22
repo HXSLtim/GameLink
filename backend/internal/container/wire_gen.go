@@ -7,7 +7,9 @@
 package container
 
 import (
+	"github.com/prometheus/client_golang/prometheus"
 	"gamelink/internal/lifecycle"
+	"gamelink/internal/metrics"
 )
 
 // Injectors from wire.go:
@@ -34,10 +36,14 @@ func initializeApplication() (*Application, error) {
 	router := ProvideRouter(appConfig, db, sqlDB, cache, adminService, registry)
 	engine := ProvideEngine(router)
 	manager := lifecycle.NewManager(registry)
+	prometheusRegistry := prometheus.NewRegistry()
+	metrics.Init(prometheusRegistry)
+	metrics.InitBusinessMetrics(prometheusRegistry)
 	application := &Application{
-		Engine:    engine,
-		Config:    appConfig,
-		Lifecycle: manager,
+		Engine:             engine,
+		Config:             appConfig,
+		Lifecycle:          manager,
+		PrometheusRegistry: prometheusRegistry,
 	}
 	return application, nil
 }

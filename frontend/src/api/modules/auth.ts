@@ -1,51 +1,65 @@
 /**
- * 认证API服务
+ * 认证API模块
  */
-import { request } from '../client';
-import type { LoginRequest, LoginResponse, RegisterRequest, RegisterResponse, User } from '@/shared/types/auth';
+
+import { apiClient } from '@/api/client';
+import type {
+  LoginRequest,
+  LoginResponse,
+  RegisterRequest,
+  RegisterResponse,
+  User,
+} from '@/shared/types/auth';
 
 /**
- * 认证服务
+ * 用户登录
  */
-export const authService = {
-  /**
-   * 用户登录
-   * @param data 登录信息
-   * @returns 登录结果
-   */
-  login: (data: LoginRequest): Promise<LoginResponse> => {
-    return request.post<LoginResponse>('/auth/login', data);
-  },
+export const login = async (data: LoginRequest): Promise<LoginResponse> => {
+  const response = await apiClient.post<{ data: LoginResponse }>('/auth/login', data);
+  return response.data;
+};
 
-  /**
-   * 用户注册
-   * @param data 注册信息
-   * @returns 注册结果
-   */
-  register: (data: RegisterRequest): Promise<RegisterResponse> => {
-    return request.post<RegisterResponse>('/auth/register', data);
-  },
+/**
+ * 用户注册
+ */
+export const register = async (data: RegisterRequest): Promise<RegisterResponse> => {
+  const response = await apiClient.post<{ data: RegisterResponse }>('/auth/register', data);
+  return response.data;
+};
 
-  /**
-   * 用户登出
-   */
-  logout: (): Promise<void> => {
-    return request.post<void>('/auth/logout');
-  },
+/**
+ * 用户登出
+ */
+export const logout = async (): Promise<void> => {
+  await apiClient.post('/auth/logout');
+};
 
-  /**
-   * 获取当前用户信息
-   * @returns 用户信息
-   */
-  getCurrentUser: (): Promise<User> => {
-    return request.get<User>('/auth/me');
-  },
+/**
+ * 获取当前用户信息
+ */
+export const getCurrentUser = async (): Promise<User> => {
+  const response = await apiClient.get<{ data: User }>('/auth/me');
+  return response.data;
+};
 
-  /**
-   * 刷新Token
-   * @returns 新Token
-   */
-  refreshToken: (): Promise<{ token: string }> => {
-    return request.post<{ token: string }>('/auth/refresh');
-  },
+/**
+ * 刷新Token
+ */
+export const refreshToken = async (): Promise<{ token: string }> => {
+  const response = await apiClient.post<{ data: { token: string } }>('/auth/refresh');
+  return response.data;
+};
+
+/**
+ * 忘记密码
+ */
+export const forgotPassword = async (email: string): Promise<void> => {
+  await apiClient.post('/auth/forgot-password', { email });
+};
+
+/**
+ * 重置密码
+ */
+export const resetPassword = async (token: string, newPassword: string): Promise<void> => {
+  await apiClient.post('/auth/reset-password', { token, newPassword });
 };

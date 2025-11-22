@@ -1,5 +1,6 @@
 import { defineConfig, Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 import FullReload from 'vite-plugin-full-reload';
 import { visualizer } from 'rollup-plugin-visualizer';
 import path from 'path';
@@ -86,11 +87,12 @@ function devAuthMock(): Plugin {
 export default defineConfig({
   plugins: [
     react(),
+    tailwindcss(),
     devAuthMock(),
     // 当后端或配置文件变更时，触发浏览器整页刷新
     FullReload(['backend/**', 'configs/**', 'frontend/index.html']),
-    // Bundle 分析器（仅在需要时启用）
-    process.env.ANALYZE === 'true' &&
+    // Bundle 分析器（通过环境变量控制）
+    process.env.VITE_ENABLE_ANALYZER === 'true' &&
       visualizer({
         filename: 'dist/stats.html',
         open: true,

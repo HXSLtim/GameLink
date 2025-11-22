@@ -293,8 +293,11 @@ func TestUserOrder_GetOrderDetail_NotFound(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("failed to unmarshal response: %v", err)
 	}
-	if resp.Message != repository.ErrNotFound.Error() {
-		t.Fatalf("expected message '%s', got '%s'", repository.ErrNotFound.Error(), resp.Message)
+	if resp.Code != http.StatusNotFound {
+		t.Fatalf("expected code %d, got %d", http.StatusNotFound, resp.Code)
+	}
+	if resp.Success {
+		t.Fatalf("expected success=false, got true")
 	}
 }
 
@@ -316,8 +319,11 @@ func TestUserOrder_GetOrderDetail_Forbidden(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("failed to unmarshal response: %v", err)
 	}
-	if resp.Message != order.ErrUnauthorized.Error() {
-		t.Fatalf("expected message '%s', got '%s'", order.ErrUnauthorized.Error(), resp.Message)
+	if resp.Code != http.StatusForbidden {
+		t.Fatalf("expected code %d, got %d", http.StatusForbidden, resp.Code)
+	}
+	if resp.Success {
+		t.Fatalf("expected success=false, got true")
 	}
 }
 

@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { DiscordLayout } from '@/components/Layout';
+import { DiscordLayout } from '@/shared/components/DiscordLayout';
 import styles from './PlayerDetail.module.less';
 
 /**

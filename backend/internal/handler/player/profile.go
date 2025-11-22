@@ -1,11 +1,9 @@
 package player
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 
-	"gamelink/internal/model"
+	"gamelink/internal/apierr"
 	"gamelink/internal/service/player"
 )
 
@@ -19,49 +17,54 @@ func RegisterProfileRoutes(router gin.IRouter, svc *player.PlayerService, authMi
 	group.PUT("/status", func(c *gin.Context) { setPlayerStatusHandler(c, svc) })
 }
 
-// @Description  API endpoint// @Accept       json
+// applyAsPlayerHandler 申请成为陪玩师
+// @Summary      申请成为陪玩师
+// @Description  用户申请成为陪玩师
+// @Tags         Player - Profile
+// @Security     BearerAuth
+// @Accept       json
 // @Produce      json
-// @Param        Authorization  header    string                       true  "Bearer {token}"
-// @Param        request        body      player.ApplyPlayerRequest    true  "申请信息"
-// @Success      200            {object}  model.APIResponse[player.ApplyPlayerResponse]
-// @Failure      400            {object}  model.ErrorResponse
-// @Failure      401            {object}  model.ErrorResponse
+// @Param        request  body  player.ApplyPlayerRequest  true  "申请信息"
+// @Success      200      {object}  model.APIResponse[player.ApplyPlayerResponse]
+// @Failure      400      {object}  apierr.APIError
+// @Failure      401      {object}  apierr.APIError
+// @Failure      409      {object}  apierr.APIError
+// @Failure      500      {object}  apierr.APIError
 // @Router       /player/apply [post]
 func applyAsPlayerHandler(c *gin.Context, svc *player.PlayerService) {
 	userID := getUserIDFromContext(c)
 
 	var req player.ApplyPlayerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, err.Error())
+		respondAPIError(c, apierr.BadRequest(apierr.ErrInvalidJSONPayload).WithDetails(err.Error()))
 		return
 	}
 
 	resp, err := svc.ApplyAsPlayer(c.Request.Context(), userID, req)
 	if err != nil {
 		if err == player.ErrAlreadyPlayer {
-			respondError(c, http.StatusBadRequest, err.Error())
+			respondAPIError(c, apierr.BadRequest(err.Error()))
 			return
 		}
-		respondError(c, http.StatusInternalServerError, err.Error())
+		respondAPIError(c, apierr.InternalError("申请提交失败").WithDetails(err.Error()))
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[player.ApplyPlayerResponse]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "申请提交成功",
-		Data:    *resp,
-	})
+	respondSuccess(c, "申请提交成功", *resp)
 }
 
-// @Description  API endpoint// @Tags         Player - Profile
+// getPlayerProfileHandler 获取陪玩师资料
+// @Summary      获取陪玩师资料
+// @Description  获取陪玩师个人资料
+// @Tags         Player - Profile
+// @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Param        Authorization  header    string  true  "Bearer {token}"
-// @Success      200            {object}  model.APIResponse[player.PlayerDetailResponse]
-// @Failure      400            {object}  model.ErrorResponse
-// @Failure      401            {object}  model.ErrorResponse
-// @Failure      404            {object}  model.ErrorResponse
+// @Success      200  {object}  model.APIResponse[player.PlayerDetailResponse]
+// @Failure      400  {object}  apierr.APIError
+// @Failure      401  {object}  apierr.APIError
+// @Failure      404  {object}  apierr.APIError
+// @Failure      500  {object}  apierr.APIError
 // @Router       /player/profile [get]
 func getPlayerProfileHandler(c *gin.Context, svc *player.PlayerService) {
 	userID := getUserIDFromContext(c)
@@ -69,79 +72,82 @@ func getPlayerProfileHandler(c *gin.Context, svc *player.PlayerService) {
 	resp, err := svc.GetPlayerProfile(c.Request.Context(), userID)
 	if err != nil {
 		if err == player.ErrNotFound {
-			respondError(c, http.StatusNotFound, err.Error())
+			respondAPIError(c, apierr.NotFound(err.Error()))
 			return
 		}
-		respondError(c, http.StatusInternalServerError, err.Error())
+		respondAPIError(c, apierr.InternalError("获取陪玩师资料失败").WithDetails(err.Error()))
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[player.PlayerDetailResponse]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    *resp,
-	})
+	respondSuccess(c, "OK", *resp)
 }
 
-// @Description  API endpoint// @Accept       json
+// updatePlayerProfileHandler 更新陪玩师资料
+// @Summary      更新陪玩师资料
+// @Description  更新陪玩师个人资料
+// @Tags         Player - Profile
+// @Security     BearerAuth
+// @Accept       json
 // @Produce      json
-// @Param        Authorization  header    string                              true  "Bearer {token}"
-// @Param        request        body      player.UpdatePlayerProfileRequest   true  "更新信息"
-// @Success      200            {object}  model.SuccessResponse
-// @Failure      400            {object}  model.ErrorResponse
-// @Failure      401            {object}  model.ErrorResponse
+// @Param        request  body  player.UpdatePlayerProfileRequest  true  "更新信息"
+// @Success      200      {object}  model.APIResponse[any]
+// @Failure      400      {object}  apierr.APIError
+// @Failure      401      {object}  apierr.APIError
+// @Failure      404      {object}  apierr.APIError
+// @Failure      422      {object}  apierr.APIError
+// @Failure      500      {object}  apierr.APIError
 // @Router       /player/profile [put]
 func updatePlayerProfileHandler(c *gin.Context, svc *player.PlayerService) {
 	userID := getUserIDFromContext(c)
 
 	var req player.UpdatePlayerProfileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, err.Error())
+		respondAPIError(c, apierr.BadRequest(apierr.ErrInvalidJSONPayload).WithDetails(err.Error()))
 		return
 	}
 
 	if err := svc.UpdatePlayerProfile(c.Request.Context(), userID, req); err != nil {
 		if err == player.ErrNotFound {
-			respondError(c, http.StatusNotFound, err.Error())
+			respondAPIError(c, apierr.NotFound(err.Error()))
 			return
 		}
-		respondError(c, http.StatusInternalServerError, err.Error())
+		if err == player.ErrValidation {
+			respondAPIError(c, apierr.BadRequest(err.Error()))
+			return
+		}
+		respondAPIError(c, apierr.InternalError("更新资料失败").WithDetails(err.Error()))
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "资料更新成功",
-	})
+	respondSuccess(c, "资料更新成功", struct{}{})
 }
 
-// @Description  API endpoint// @Accept       json
+// setPlayerStatusHandler 设置陪玩师在线状态
+// @Summary      设置陪玩师在线状态
+// @Description  设置陪玩师在线/离线状态
+// @Tags         Player - Profile
+// @Security     BearerAuth
+// @Accept       json
 // @Produce      json
-// @Param        Authorization  header    string                          true  "Bearer {token}"
-// @Param        request        body      player.SetPlayerStatusRequest   true  "Player status request"
-// @Success      200            {object}  model.SuccessResponse
-// @Failure      400            {object}  model.ErrorResponse
-// @Failure      401            {object}  model.ErrorResponse
+// @Param        request  body  player.SetPlayerStatusRequest  true  "状态请求"
+// @Success      200      {object}  model.APIResponse[any]
+// @Failure      400      {object}  apierr.APIError
+// @Failure      401      {object}  apierr.APIError
+// @Failure      500      {object}  apierr.APIError
 // @Router       /player/status [put]
 func setPlayerStatusHandler(c *gin.Context, svc *player.PlayerService) {
 	userID := getUserIDFromContext(c)
 
 	var req player.SetPlayerStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, err.Error())
+		respondAPIError(c, apierr.BadRequest(apierr.ErrInvalidJSONPayload).WithDetails(err.Error()))
 		return
 	}
 
 	if err := svc.SetPlayerOnlineStatus(c.Request.Context(), userID, req.Online); err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
+		respondAPIError(c, apierr.InternalError("状态更新失败").WithDetails(err.Error()))
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "状态更新成功",
-	})
+	respondSuccess(c, "状态更新成功", struct{}{})
 }

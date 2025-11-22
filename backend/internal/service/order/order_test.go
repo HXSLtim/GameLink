@@ -304,6 +304,19 @@ func (m *mockCommissionRepository) GetPlayerMonthlyIncome(ctx context.Context, p
 	return 0, nil
 }
 
+// 定义其他需要的mock类型
+type mockPlayerRepository struct{}
+
+type mockUserRepository struct{}
+
+type mockGameRepository struct{}
+
+type mockPaymentRepository struct{}
+
+type mockReviewRepository struct{}
+
+type mockCommissionRepository struct{}
+
 func TestCreateOrder(t *testing.T) {
 	svc := NewOrderService(
 		newMockOrderRepository(),

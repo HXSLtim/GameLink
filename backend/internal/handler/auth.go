@@ -1,11 +1,11 @@
 package handler
 
 import (
-	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 
+	"gamelink/internal/apierr"
 	"gamelink/internal/auth"
 	"gamelink/internal/model"
 	"gamelink/internal/service"
@@ -15,6 +15,7 @@ import (
 // RegisterAuthRoutes registers authentication endpoints under the given router group.
 // Routes:
 // POST /auth/login    -> body {username, password}
+// POST /auth/register  -> body {phone, email, password, name}
 // POST /auth/refresh  -> Authorization: Bearer <token>
 // POST /auth/logout   -> stateless logout, client discards token
 // GET  /auth/me       -> return current user info (JWT required)
@@ -50,7 +51,7 @@ type registerRequest struct {
 	Name     string `json:"name" binding:"required"`
 }
 
-// Login
+// Login handles user login
 // @Summary      登录
 // @Description  用户名（邮箱或手机号）+ 密码登录，返回 JWT
 // @Tags         Auth
@@ -58,38 +59,40 @@ type registerRequest struct {
 // @Produce      json
 // @Param        request  body      loginRequest  true  "登录凭据"
 // @Success      200      {object}  loginResponse
-// @Failure      400      {object}  model.ErrorResponse
-// @Failure      401      {object}  model.ErrorResponse
+// @Failure      400      {object}  apierr.APIError
+// @Failure      401      {object}  apierr.APIError
 // @Router       /auth/login [post]
 func loginHandler(c *gin.Context, svc *authservice.AuthService) {
 	var req loginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, ErrInvalidJSONPayload)
+		RespondBadRequest(c, "无效的请求格式: "+err.Error())
 		return
 	}
-	resp, err := svc.Login(c.Request.Context(), authservice.LoginRequest{Username: req.Username, Password: req.Password})
+
+	resp, err := svc.Login(c.Request.Context(), authservice.LoginRequest{
+		Username: req.Username,
+		Password: req.Password,
+	})
 	if err != nil {
-		status := http.StatusUnauthorized
 		switch err {
 		case service.ErrInvalidCredentials:
-			status = http.StatusUnauthorized
+			RespondAPIError(c, apierr.Unauthorized("用户名或密码错误"))
 		case service.ErrUserDisabled:
-			status = http.StatusForbidden
+			RespondAPIError(c, apierr.Forbidden("账号已被禁用"))
 		default:
-			status = http.StatusUnauthorized
+			RespondAPIError(c, apierr.Unauthorized("登录失败: "+err.Error()))
 		}
-		respondJSON(c, status, model.APIResponse[any]{Success: false, Code: status, Message: err.Error()})
 		return
 	}
-	respondJSON(c, http.StatusOK, model.APIResponse[loginResponse]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    loginResponse{Token: resp.Token, ExpiresAt: resp.ExpiresAt, User: resp.User},
+
+	RespondSuccess(c, "登录成功", loginResponse{
+		Token:     resp.Token,
+		ExpiresAt: resp.ExpiresAt,
+		User:      resp.User,
 	})
 }
 
-// Register
+// Register handles user registration
 // @Summary      注册
 // @Description  邮箱或手机号 + 密码注册，默认角色为 user
 // @Tags         Auth
@@ -97,14 +100,15 @@ func loginHandler(c *gin.Context, svc *authservice.AuthService) {
 // @Produce      json
 // @Param        request  body      registerRequest  true  "注册信息"
 // @Success      200      {object}  loginResponse
-// @Failure      400      {object}  model.ErrorResponse
+// @Failure      400      {object}  apierr.APIError
 // @Router       /auth/register [post]
 func registerHandler(c *gin.Context, svc *authservice.AuthService) {
 	var req registerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, ErrInvalidJSONPayload)
+		RespondBadRequest(c, "无效的请求格式: "+err.Error())
 		return
 	}
+
 	resp, err := svc.Register(c.Request.Context(), authservice.RegisterRequest{
 		Phone:    req.Phone,
 		Email:    req.Email,
@@ -113,94 +117,80 @@ func registerHandler(c *gin.Context, svc *authservice.AuthService) {
 		Role:     model.RoleUser,
 	})
 	if err != nil {
-		respondError(c, http.StatusBadRequest, err.Error())
+		RespondAPIError(c, apierr.BadRequest("注册失败: "+err.Error()))
 		return
 	}
-	respondJSON(c, http.StatusOK, model.APIResponse[loginResponse]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    loginResponse{Token: resp.Token, ExpiresAt: resp.ExpiresAt, User: resp.User},
+
+	RespondSuccess(c, "登录成功", loginResponse{
+		Token:     resp.Token,
+		ExpiresAt: resp.ExpiresAt,
+		User:      resp.User,
 	})
 }
 
-// Me
+// Me returns current user info
 // @Summary      获取当前用户信息
 // @Tags         Auth
 // @Security     BearerAuth
 // @Produce      json
 // @Success      200  {object}  loginResponse
-// @Failure      401  {object}  model.ErrorResponse
+// @Failure      401  {object}  apierr.APIError
 // @Router       /auth/me [get]
 func meHandler(c *gin.Context, svc *authservice.AuthService) {
 	user, err := svc.Me(c.Request.Context(), c.GetHeader("Authorization"))
 	if err != nil {
-		status := http.StatusUnauthorized
-		if err == service.ErrUserDisabled {
-			status = http.StatusForbidden
+		switch err {
+		case service.ErrUserDisabled:
+			RespondAPIError(c, apierr.Forbidden("账号已被禁用"))
+		default:
+			RespondAPIError(c, apierr.Unauthorized("认证失败: "+err.Error()))
 		}
-		respondError(c, status, err.Error())
 		return
 	}
-	respondJSON(c, http.StatusOK, model.APIResponse[loginResponse]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    loginResponse{Token: "", ExpiresAt: time.Time{}, User: *user},
+
+	RespondSuccess(c, "登录成功", loginResponse{
+		Token:     "",
+		ExpiresAt: time.Time{},
+		User:      *user,
 	})
 }
 
-// Refresh
+// Refresh refreshes JWT token
 // @Summary      刷新 Token
 // @Description  使用 Authorization: Bearer <token> 刷新 JWT
 // @Tags         Auth
 // @Produce      json
 // @Security     BearerAuth
 // @Success      200  {object}  tokenPayload
-// @Failure      401  {object}  model.ErrorResponse
+// @Failure      401  {object}  apierr.APIError
 // @Router       /auth/refresh [post]
 func refreshHandler(c *gin.Context, svc *authservice.AuthService) {
 	token, err := auth.ExtractTokenFromHeader(c.GetHeader("Authorization"))
 	if err != nil {
-		respondError(c, http.StatusUnauthorized, err.Error())
+		RespondAPIError(c, apierr.Unauthorized("无效的Token格式: "+err.Error()))
 		return
 	}
+
 	newToken, err := svc.RefreshToken(c.Request.Context(), token)
 	if err != nil {
-		status := http.StatusUnauthorized
-		if err == service.ErrUserDisabled {
-			status = http.StatusForbidden
+		switch err {
+		case service.ErrUserDisabled:
+			RespondAPIError(c, apierr.Forbidden("账号已被禁用"))
+		default:
+			RespondAPIError(c, apierr.Unauthorized("刷新Token失败: "+err.Error()))
 		}
-		respondError(c, status, err.Error())
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[tokenPayload]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    tokenPayload{Token: newToken},
-	})
+	RespondSuccess(c, "刷新成功", tokenPayload{Token: newToken})
 }
 
-// Logout
+// Logout handles user logout (stateless, client discards token)
 // @Summary      登出（前端丢弃 Token）
 // @Tags         Auth
 // @Security     BearerAuth
-// @Success      200  {object}  model.SuccessResponse
+// @Success      200  {object}  apierr.APIError
 // @Router       /auth/logout [post]
 func logoutHandler(c *gin.Context) {
-	respondJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "logged out",
-	})
-}
-
-// local helpers for uniform envelope
-func respondJSON[T any](c *gin.Context, status int, payload model.APIResponse[T]) {
-	c.JSON(status, payload)
-}
-func respondError(c *gin.Context, status int, msg string) {
-	respondJSON(c, status, model.APIResponse[any]{Success: false, Code: status, Message: msg})
+	RespondSuccess(c, "登出成功", gin.H{"message": "logged out"})
 }

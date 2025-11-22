@@ -5,9 +5,9 @@
 import { useState } from 'react';
 import { Message } from '@arco-design/web-react';
 import { useNavigate } from 'react-router-dom';
-import { authService } from '../api/services/auth';
+import { authApi } from '@/api';
 import { useAuthStore } from '../stores/useAuthStore';
-import type { LoginRequest, RegisterRequest } from '../api/types/auth';
+import type { LoginRequest, RegisterRequest } from '@/api';
 
 /**
  * 认证Hook
@@ -23,7 +23,7 @@ export const useAuth = () => {
   const login = async (data: LoginRequest) => {
     try {
       setLoading(true);
-      const response = await authService.login(data);
+      const response = await authApi.login(data);
       setAuth(response.token, response.user);
       Message.success('登录成功');
       navigate('/');
@@ -41,7 +41,7 @@ export const useAuth = () => {
   const register = async (data: RegisterRequest) => {
     try {
       setLoading(true);
-      await authService.register(data);
+      await authApi.register(data);
       Message.success('注册成功，请登录');
       navigate('/login');
     } catch (error) {
@@ -57,7 +57,7 @@ export const useAuth = () => {
    */
   const logout = async () => {
     try {
-      await authService.logout();
+      await authApi.logout();
       clearAuth();
       Message.success('已退出登录');
       navigate('/login');

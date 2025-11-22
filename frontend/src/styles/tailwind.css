@@ -1,0 +1,131 @@
+/**
+ * 全局 Tailwind CSS 样式
+ *
+ * @description
+ * 该文件引入了 Tailwind 的核心层、组件层和工具类层，作为全局样式的基础
+ */
+
+/* Tailwind 基础层 - 包含 CSS 重置和基础样式 */
+@tailwind base;
+
+/* Tailwind 组件层 - 包含组件级别的类 */
+@tailwind components;
+
+/* Tailwind 工具类层 - 包含实用工具类 */
+@tailwind utilities;
+
+/**
+ * 自定义全局样式
+ * 在这里可以添加项目中通用的样式，不会被 Tailwind 覆盖
+ */
+@layer base {
+  /**
+   * 自定义滚动条样式
+   */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+  }
+
+  /**
+   * 全局字体设置
+   */
+  body {
+    @apply font-sans text-gray-900 bg-gray-50;
+  }
+
+  /**
+   * 禁用长按选择文本（移动端优化）
+   */
+  * {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  /* 输入框和文本区域允许选择 */
+  input,
+  textarea {
+    -webkit-user-select: auto;
+    -moz-user-select: auto;
+    -ms-user-select: auto;
+    user-select: auto;
+  }
+}
+
+/**
+ * 自定义组件层
+ * 在这里定义可复用的组件样式
+ */
+@layer components {
+  /**
+   * 卡片组件基础样式
+   */
+  .card {
+    @apply bg-white rounded-lg shadow-sm border border-gray-200;
+  }
+
+  /**
+   * 按钮基础样式
+   */
+  .btn {
+    @apply px-4 py-2 rounded-md font-medium transition-colors duration-200;
+  }
+
+  .btn-primary {
+    @apply btn bg-primary-600 text-white hover:bg-primary-700;
+  }
+
+  .btn-secondary {
+    @apply btn bg-gray-200 text-gray-800 hover:bg-gray-300;
+  }
+
+  /**
+   * 表单输入基础样式
+   */
+  .input {
+    @apply px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+  }
+}
+
+/**
+ * 自定义工具类层
+ * 在这里扩展 Tailwind 的工具类
+ */
+@layer utilities {
+  /**
+   * 文本截断（多行）
+   * @example line-clamp-2, line-clamp-3
+   */
+  @for $i from 1 through 5 {
+    .line-clamp-#{$i} {
+      display: -webkit-box;
+      -webkit-line-clamp: $i;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  }
+
+  /**
+   * 平滑滚动
+   */
+  .smooth-scroll {
+    scroll-behavior: smooth;
+  }
+}

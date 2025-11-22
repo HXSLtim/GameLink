@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { DiscordLayout } from '@/components/Layout';
+import { DiscordLayout } from '@/shared/components/DiscordLayout';
 import styles from './CreateOrder.module.less';
 
 /**

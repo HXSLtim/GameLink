@@ -1,12 +1,9 @@
 package user
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 
 	"gamelink/internal/apierr"
-	"gamelink/internal/model"
 	"gamelink/internal/service/payment"
 )
 
@@ -28,95 +25,104 @@ func RegisterPaymentRoutes(router gin.IRouter, svc *payment.PaymentService, auth
 // @Param        Authorization  header    string                          true  "Bearer {token}"
 // @Param        request        body      payment.CreatePaymentRequest    true  "创建支付请求"
 // @Success      200            {object}  model.APIResponse[payment.CreatePaymentResponse]
-// @Failure      400            {object}  model.ErrorResponse
-// @Failure      401            {object}  model.ErrorResponse
+// @Failure      400            {object}  apierr.APIError
+// @Failure      401            {object}  apierr.APIError
+// @Failure      404            {object}  apierr.APIError
+// @Failure      409            {object}  apierr.APIError
+// @Failure      500            {object}  apierr.APIError
 // @Router       /user/payments [post]
 func createPaymentHandler(c *gin.Context, svc *payment.PaymentService) {
 	userID := getUserIDFromContext(c)
 
 	var req payment.CreatePaymentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, err.Error())
+		respondAPIError(c, apierr.BadRequest(apierr.ErrInvalidJSONPayload).WithDetails(err.Error()))
 		return
 	}
 
 	resp, err := svc.CreatePayment(c.Request.Context(), userID, req)
 	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
+		if err == payment.ErrOrderAlreadyPaid {
+			respondAPIError(c, apierr.Conflict(err.Error()))
+			return
+		}
+		if err == payment.ErrValidation {
+			respondAPIError(c, apierr.BadRequest(err.Error()))
+			return
+		}
+		respondAPIError(c, apierr.InternalError("创建支付失败").WithDetails(err.Error()))
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[payment.CreatePaymentResponse]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "支付创建成功",
-		Data:    *resp,
-	})
+	respondSuccess(c, "支付创建成功", *resp)
 }
 
-// @Description  API endpoint// @Accept       json
+// getPaymentStatusHandler 获取支付状态
+// @Summary      获取支付状态
+// @Description  获取支付状态
+// @Tags         User - Payments
+// @Security     BearerAuth
+// @Accept       json
 // @Produce      json
-// @Param        Authorization  header    string  true  "Bearer {token}"
-// @Param        id             path      int     true  "支付ID"
-// @Success      200            {object}  model.APIResponse[payment.PaymentStatusResponse]
-// @Failure      400            {object}  model.ErrorResponse
-// @Failure      401            {object}  model.ErrorResponse
-// @Failure      404            {object}  model.ErrorResponse
+// @Param        id    path      uint64  true  "支付ID"
+// @Success      200   {object}  model.APIResponse[payment.PaymentStatusResponse]
+// @Failure      400   {object}  apierr.APIError
+// @Failure      401   {object}  apierr.APIError
+// @Failure      404   {object}  apierr.APIError
+// @Failure      500   {object}  apierr.APIError
 // @Router       /user/payments/{id} [get]
 func getPaymentStatusHandler(c *gin.Context, svc *payment.PaymentService) {
 	paymentID, err := parseUintParam(c, "id")
 	if err != nil {
-		respondError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		respondAPIError(c, apierr.BadRequest(apierr.ErrInvalidID))
 		return
 	}
 
 	resp, err := svc.GetPaymentStatus(c.Request.Context(), paymentID)
 	if err != nil {
 		if err == payment.ErrNotFound {
-			respondError(c, http.StatusNotFound, err.Error())
+			respondAPIError(c, apierr.NotFound(err.Error()))
 			return
 		}
-		respondError(c, http.StatusInternalServerError, err.Error())
+		respondAPIError(c, apierr.InternalError("获取支付状态失败").WithDetails(err.Error()))
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[payment.PaymentStatusResponse]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    *resp,
-	})
+	respondSuccess(c, "OK", *resp)
 }
 
 // cancelPaymentHandler 取消支付
 // @Summary      取消支付
 // @Description  取消支付
 // @Tags         User - Payments
+// @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Param        Authorization  header    string  true  "Bearer {token}"
-// @Param        id             path      int     true  "支付ID"
-// @Success      200            {object}  model.SuccessResponse
-// @Failure      400            {object}  model.ErrorResponse
-// @Failure      401            {object}  model.ErrorResponse
+// @Param        id    path      uint64  true  "支付ID"
+// @Success      200   {object}  model.APIResponse[any]
+// @Failure      400   {object}  apierr.APIError
+// @Failure      401   {object}  apierr.APIError
+// @Failure      403   {object}  apierr.APIError
+// @Failure      404   {object}  apierr.APIError
+// @Failure      500   {object}  apierr.APIError
 // @Router       /user/payments/{id}/cancel [post]
 func cancelPaymentHandler(c *gin.Context, svc *payment.PaymentService) {
 	userID := getUserIDFromContext(c)
 
 	paymentID, err := parseUintParam(c, "id")
 	if err != nil {
-		respondError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		respondAPIError(c, apierr.BadRequest(apierr.ErrInvalidID))
 		return
 	}
 
 	if err := svc.CancelPayment(c.Request.Context(), userID, paymentID); err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
+		if err == payment.ErrNotFound {
+			respondAPIError(c, apierr.NotFound(err.Error()))
+			return
+		}
+		respondAPIError(c, apierr.InternalError("取消支付失败").WithDetails(err.Error()))
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "支付已取消",
-	})
+	respondSuccess(c, "支付已取消", struct{}{})
 }

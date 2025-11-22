@@ -1,12 +1,11 @@
 package user
 
 import (
-	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/internal/model"
+	"gamelink/internal/apierr"
 	"gamelink/internal/service/gift"
 	"gamelink/internal/service/item"
 )
@@ -26,14 +25,15 @@ func RegisterGiftRoutes(router gin.IRouter, giftSvc *gift.GiftService, itemSvc *
 // @Summary      获取礼物列表
 // @Description  用户浏览可赠送的礼物
 // @Tags         User - Gift
+// @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Param        Authorization  header    string  true   "Bearer {token}"
-// @Param        page           query     int     false  "页码"
-// @Param        pageSize       query     int     false  "每页数量"
-// @Success      200            {object}  model.APIResponse[item.ServiceItemListResponse]
-// @Failure      400            {object}  model.ErrorResponse
-// @Failure      401            {object}  model.ErrorResponse
+// @Param        page      query     int  false  "页码" default(1)
+// @Param        pageSize  query     int  false  "每页数量" default(20)
+// @Success      200       {object}  model.APIResponse[item.ServiceItemListResponse]
+// @Failure      400       {object}  apierr.APIError
+// @Failure      401       {object}  apierr.APIError
+// @Failure      500       {object}  apierr.APIError
 // @Router       /user/gifts [get]
 func listGiftsHandler(c *gin.Context, svc *item.ServiceItemService) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
@@ -41,64 +41,71 @@ func listGiftsHandler(c *gin.Context, svc *item.ServiceItemService) {
 
 	resp, err := svc.GetGiftList(c.Request.Context(), page, pageSize)
 	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
+		respondAPIError(c, apierr.InternalError("获取礼物列表失败").WithDetails(err.Error()))
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[item.ServiceItemListResponse]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    *resp,
-	})
+	respondSuccess(c, "OK", *resp)
 }
 
 // sendGiftHandler 赠送礼�?
 // @Summary      赠送礼�?
-// @Description  API endpoint// @Tags         User - Gift
+// @Description  赠送礼物给陪玩师
+// @Tags         User - Gift
+// @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Param        Authorization  header    string                  true  "Bearer {token}"
-// @Param        request        body      gift.SendGiftRequest  true  "Send gift request"
-// @Success      200            {object}  model.APIResponse[gift.GiftOrderResponse]
-// @Failure      400            {object}  model.ErrorResponse
-// @Failure      401            {object}  model.ErrorResponse
+// @Param        request  body      gift.SendGiftRequest  true  "赠送礼物请求"
+// @Success      200      {object}  model.APIResponse[gift.GiftOrderResponse]
+// @Failure      400      {object}  apierr.APIError
+// @Failure      401      {object}  apierr.APIError
+// @Failure      404      {object}  apierr.APIError
+// @Failure      409      {object}  apierr.APIError
+// @Failure      500      {object}  apierr.APIError
 // @Router       /user/gifts/send [post]
 func sendGiftHandler(c *gin.Context, svc *gift.GiftService) {
 	userID := getUserIDFromContext(c)
 
 	var req gift.SendGiftRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, http.StatusBadRequest, err.Error())
+		respondAPIError(c, apierr.BadRequest(apierr.ErrInvalidJSONPayload).WithDetails(err.Error()))
 		return
 	}
 
 	resp, err := svc.SendGift(c.Request.Context(), userID, req)
 	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
+		if err == gift.ErrNotFound {
+			respondAPIError(c, apierr.NotFound(err.Error()))
+			return
+		}
+		if err == gift.ErrValidation {
+			respondAPIError(c, apierr.BadRequest(err.Error()))
+			return
+		}
+		if err == gift.ErrInvalidGiftItem {
+			respondAPIError(c, apierr.BadRequest(err.Error()))
+			return
+		}
+		respondAPIError(c, apierr.InternalError("赠送礼物失败").WithDetails(err.Error()))
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[gift.GiftOrderResponse]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "Gift sent successfully",
-		Data:    *resp,
-	})
+	respondSuccess(c, "礼物赠送成功", *resp)
 }
 
 // getSentGiftsHandler 获取已赠送的礼物记录
 // @Summary      获取已赠送的礼物记录
 // @Description  用户查看自己赠送的礼物记录
 // @Tags         User - Gift
+// @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Param        Authorization  header    string  true   "Bearer {token}"
-// @Param        page           query     int     false  "页码"
-// @Param        pageSize       query     int     false  "每页数量"
-// @Success      200            {object}  model.SuccessResponse
-// @Failure      400            {object}  model.ErrorResponse
-// @Failure      401            {object}  model.ErrorResponse
+// @Param        page      query     int  false  "页码" default(1)
+// @Param        pageSize  query     int  false  "每页数量" default(20)
+// @Success      200       {object}  model.APIResponse[any]
+// @Failure      400       {object}  apierr.APIError
+// @Failure      401       {object}  apierr.APIError
+// @Failure      500       {object}  apierr.APIError
 // @Router       /user/gifts/sent [get]
 func getSentGiftsHandler(c *gin.Context, svc *gift.GiftService) {
 	userID := getUserIDFromContext(c)
@@ -110,10 +117,5 @@ func getSentGiftsHandler(c *gin.Context, svc *gift.GiftService) {
 	_ = page
 	_ = pageSize
 
-	respondJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    map[string]interface{}{"gifts": []interface{}{}, "total": 0},
-	})
+	respondSuccess(c, "OK", map[string]interface{}{"gifts": []interface{}{}, "total": 0})
 }

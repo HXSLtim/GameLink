@@ -2,12 +2,10 @@ package user
 
 import (
 	"errors"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 
-	apierr "gamelink/internal/handler"
-	"gamelink/internal/model"
+	"gamelink/internal/apierr"
 	"gamelink/internal/service/assignment"
 )
 
@@ -31,39 +29,44 @@ type InitiateDisputePayload struct {
 
 // InitiateDispute creates a new dispute for an order
 // @Summary      Initiate Dispute
-// @Tags         User/Orders
+// @Description  发起订单纠纷
+// @Tags         User - Orders
 // @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Param        request  body  InitiateDisputePayload  true  "Dispute info"
-// @Success      201  {object}  model.SuccessResponse
-// @Failure      400  {object}  model.ErrorResponse
-// @Failure      404  {object}  model.ErrorResponse
+// @Param        request  body  InitiateDisputePayload  true  "纠纷信息"
+// @Success      201      {object}  model.APIResponse[InitiateDisputeResponse]
+// @Failure      400      {object}  apierr.APIError
+// @Failure      401      {object}  apierr.APIError
+// @Failure      403      {object}  apierr.APIError
+// @Failure      404      {object}  apierr.APIError
+// @Failure      409      {object}  apierr.APIError
+// @Failure      500      {object}  apierr.APIError
 // @Router       /user/orders/{id}/dispute [post]
 func (h *DisputeHandler) InitiateDispute(c *gin.Context) {
 	// Get user ID from context (set by auth middleware)
 	userID, exists := c.Get("userID")
 	if !exists {
-		respondError(c, http.StatusUnauthorized, apierr.ErrUserIDNotInContext)
+		respondAPIError(c, apierr.Unauthorized("用户ID不在上下文中"))
 		return
 	}
 
 	var payload InitiateDisputePayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
-		respondError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+		respondAPIError(c, apierr.BadRequest(apierr.ErrInvalidJSONPayload).WithDetails(err.Error()))
 		return
 	}
 
 	// Validate evidence URLs count
 	if len(payload.EvidenceURLs) > 9 {
-		respondError(c, http.StatusBadRequest, "Maximum 9 evidence URLs allowed")
+		respondAPIError(c, apierr.BadRequest("最多允许上传9个证据链接"))
 		return
 	}
 
 	// Validate evidence URLs are not empty
 	for _, url := range payload.EvidenceURLs {
 		if url == "" {
-			respondError(c, http.StatusBadRequest, "Evidence URLs cannot be empty")
+			respondAPIError(c, apierr.BadRequest("证据链接不能为空"))
 			return
 		}
 	}
@@ -78,22 +81,22 @@ func (h *DisputeHandler) InitiateDispute(c *gin.Context) {
 
 	if err != nil {
 		if errors.Is(err, assignment.ErrValidation) {
-			respondError(c, http.StatusBadRequest, err.Error())
+			respondAPIError(c, apierr.BadRequest(err.Error()))
 			return
 		}
 		if errors.Is(err, assignment.ErrCannotInitiateDispute) {
-			respondError(c, http.StatusConflict, "Cannot initiate dispute for this order")
+			respondAPIError(c, apierr.Conflict("当前订单状态不能发起纠纷"))
 			return
 		}
 		if errors.Is(err, assignment.ErrDisputeExists) {
-			respondError(c, http.StatusConflict, "A dispute already exists for this order")
+			respondAPIError(c, apierr.Conflict("该订单已存在纠纷"))
 			return
 		}
 		if errors.Is(err, assignment.ErrOrderNotFound) {
-			respondError(c, http.StatusNotFound, apierr.ErrOrderNotFound)
+			respondAPIError(c, apierr.NotFound("订单不存在"))
 			return
 		}
-		respondError(c, http.StatusInternalServerError, err.Error())
+		respondAPIError(c, apierr.InternalError("发起纠纷失败").WithDetails(err.Error()))
 		return
 	}
 
@@ -103,60 +106,57 @@ func (h *DisputeHandler) InitiateDispute(c *gin.Context) {
 		SLADeadline string `json:"slaDeadline"`
 	}
 
-	respondJSON(c, http.StatusCreated, model.APIResponse[InitiateDisputeResponse]{
-		Success: true,
-		Code:    http.StatusCreated,
-		Data: InitiateDisputeResponse{
-			DisputeID:   resp.DisputeID,
-			TraceID:     resp.TraceID,
-			SLADeadline: resp.SLADeadline.Format("2006-01-02T15:04:05Z07:00"),
-		},
+	respondSuccess(c, "纠纷发起成功", InitiateDisputeResponse{
+		DisputeID:   resp.DisputeID,
+		TraceID:     resp.TraceID,
+		SLADeadline: resp.SLADeadline.Format("2006-01-02T15:04:05Z07:00"),
 	})
 }
 
 // GetDisputeDetail retrieves dispute details for a user
 // @Summary      Get Dispute Detail
-// @Tags         User/Orders
+// @Description  获取订单纠纷详情
+// @Tags         User - Orders
 // @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Param        id  path  uint64  true  "Dispute ID"
-// @Success      200  {object}  model.SuccessResponse
-// @Failure      404  {object}  model.ErrorResponse
+// @Param        id  path  uint64  true  "纠纷ID"
+// @Success      200  {object}  model.APIResponse[*model.OrderDispute]
+// @Failure      400  {object}  apierr.APIError
+// @Failure      401  {object}  apierr.APIError
+// @Failure      403  {object}  apierr.APIError
+// @Failure      404  {object}  apierr.APIError
+// @Failure      500  {object}  apierr.APIError
 // @Router       /user/orders/{id}/disputes [get]
 func (h *DisputeHandler) GetDisputeDetail(c *gin.Context) {
 	// Get user ID from context
 	userID, exists := c.Get("userID")
 	if !exists {
-		respondError(c, http.StatusUnauthorized, apierr.ErrUserIDNotInContext)
+		respondAPIError(c, apierr.Unauthorized("用户ID不在上下文中"))
 		return
 	}
 
 	disputeID, err := parseUintParam(c, "id")
 	if err != nil {
-		respondError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		respondAPIError(c, apierr.BadRequest(apierr.ErrInvalidID))
 		return
 	}
 
 	dispute, err := h.svc.GetDisputeDetail(c.Request.Context(), disputeID)
 	if err != nil {
 		if errors.Is(err, assignment.ErrNotFound) {
-			respondError(c, http.StatusNotFound, apierr.ErrDisputeNotFound)
+			respondAPIError(c, apierr.NotFound("纠纷不存在"))
 			return
 		}
-		respondError(c, http.StatusInternalServerError, err.Error())
+		respondAPIError(c, apierr.InternalError("获取纠纷详情失败").WithDetails(err.Error()))
 		return
 	}
 
 	// Verify user owns this dispute
 	if dispute.UserID != userID.(uint64) {
-		respondError(c, http.StatusForbidden, "You can only view your own disputes")
+		respondAPIError(c, apierr.Forbidden("您只能查看自己的纠纷"))
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[*model.OrderDispute]{
-		Success: true,
-		Code:    http.StatusOK,
-		Data:    dispute,
-	})
+	respondSuccess(c, "OK", dispute)
 }

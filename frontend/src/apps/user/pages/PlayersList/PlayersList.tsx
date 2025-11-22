@@ -5,8 +5,8 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DiscordLayout } from '@/components/Layout';
-import { PlayerCard, PlayerCardProps } from '@/components/PlayerCard';
+import { DiscordLayout } from '@/shared/components/DiscordLayout';
+import { PlayerCard, PlayerCardProps } from '@/apps/user/components/PlayerCard';
 import styles from './PlayersList.module.less';
 
 /**

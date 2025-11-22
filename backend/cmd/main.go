@@ -22,10 +22,12 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"gamelink/internal/config"
 	"gamelink/internal/container"
 	"gamelink/internal/lifecycle"
+	"gamelink/internal/metrics"
 )
 
 func main() {
@@ -35,6 +37,15 @@ func main() {
 	}
 
 	logCryptoStatus(app.Config)
+
+	// Initialize metrics
+	metrics.Init(app.PrometheusRegistry)
+	metrics.InitBusinessMetrics(app.PrometheusRegistry)
+
+	// Expose metrics endpoint
+	app.Engine.GET("/metrics", gin.WrapH(promhttp.HandlerFor(app.PrometheusRegistry, promhttp.HandlerOpts{
+		EnableOpenMetrics: true,
+	})))
 
 	if err := app.Lifecycle.Start(context.Background()); err != nil {
 		log.Fatalf("failed to start services: %v", err)

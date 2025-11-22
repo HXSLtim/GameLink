@@ -12,7 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	apierr "gamelink/internal/handler"
+	"gamelink/internal/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	adminservice "gamelink/internal/service/admin"
@@ -41,17 +41,17 @@ func NewOrderHandler(svc *adminservice.AdminService) *OrderHandler {
 func (h *OrderHandler) CreateOrder(c *gin.Context) {
 	var p CreateOrderPayload
 	if err := c.ShouldBindJSON(&p); err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+		respondAPIError(c, apierr.BadRequest("invalid request payload").WithDetails(err.Error()))
 		return
 	}
 	start, err := parseRFC3339Ptr(p.ScheduledStart)
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidScheduledStart)
+		respondAPIError(c, apierr.BadRequest("invalid scheduled start time"))
 		return
 	}
 	end, err := parseRFC3339Ptr(p.ScheduledEnd)
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidScheduledEnd)
+		respondAPIError(c, apierr.BadRequest("invalid scheduled end time"))
 		return
 	}
 	var playerID *uint64
@@ -69,7 +69,12 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		ScheduledStart:  start,
 		ScheduledEnd:    end,
 	})
-	if !handleValidationError(c, err) {
+	if err != nil {
+		if apierr.IsValidationError(err) {
+			respondAPIError(c, err)
+			return
+		}
+		respondAPIError(c, apierr.InternalError("create order failed").WithDetails(err.Error()))
 		return
 	}
 	writeJSON(c, http.StatusCreated, model.APIResponse[*model.Order]{Success: true, Code: http.StatusCreated, Message: "created", Data: order})
@@ -89,16 +94,25 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 func (h *OrderHandler) AssignOrder(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		respondAPIError(c, apierr.BadRequest("invalid order ID"))
 		return
 	}
 	var p AssignOrderPayload
 	if err := c.ShouldBindJSON(&p); err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+		respondAPIError(c, apierr.BadRequest("invalid request payload").WithDetails(err.Error()))
 		return
 	}
 	order, err := h.svc.AssignOrder(c.Request.Context(), id, p.PlayerID)
-	if !handleValidationAndNotFoundError(c, err) {
+	if err != nil {
+		if apierr.IsValidationError(err) {
+			respondAPIError(c, apierr.BadRequest("validation failed").WithDetails(err.Error()))
+			return
+		}
+		if apierr.IsNotFound(err) {
+			respondAPIError(c, apierr.NotFound("order or player not found"))
+			return
+		}
+		respondAPIError(c, apierr.InternalError("assign order failed").WithDetails(err.Error()))
 		return
 	}
 	writeJSON(c, http.StatusOK, model.APIResponse[*model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: order})
@@ -118,18 +132,27 @@ func (h *OrderHandler) AssignOrder(c *gin.Context) {
 func (h *OrderHandler) ConfirmOrder(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		respondAPIError(c, apierr.BadRequest("invalid order ID"))
 		return
 	}
 	var payload orderNotePayload
 	if c.Request.ContentLength > 0 {
 		if bindErr := c.ShouldBindJSON(&payload); bindErr != nil {
-			writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+			respondAPIError(c, apierr.BadRequest("invalid request payload").WithDetails(bindErr.Error()))
 			return
 		}
 	}
 	order, err := h.svc.ConfirmOrder(c.Request.Context(), id, payload.Note)
-	if !handleValidationAndNotFoundError(c, err) {
+	if err != nil {
+		if apierr.IsValidationError(err) {
+			respondAPIError(c, err)
+			return
+		}
+		if apierr.IsNotFound(err) {
+			respondAPIError(c, err)
+			return
+		}
+		respondAPIError(c, apierr.InternalError("confirm order failed").WithDetails(err.Error()))
 		return
 	}
 	writeJSON(c, http.StatusOK, model.APIResponse[*model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: order})
@@ -146,18 +169,27 @@ func (h *OrderHandler) ConfirmOrder(c *gin.Context) {
 func (h *OrderHandler) StartOrder(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		respondAPIError(c, apierr.BadRequest("invalid order ID"))
 		return
 	}
 	var payload orderNotePayload
 	if c.Request.ContentLength > 0 {
 		if bindErr := c.ShouldBindJSON(&payload); bindErr != nil {
-			writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+			respondAPIError(c, apierr.BadRequest("invalid request payload").WithDetails(bindErr.Error()))
 			return
 		}
 	}
 	order, err := h.svc.StartOrder(c.Request.Context(), id, payload.Note)
-	if !handleValidationAndNotFoundError(c, err) {
+	if err != nil {
+		if apierr.IsValidationError(err) {
+			respondAPIError(c, err)
+			return
+		}
+		if apierr.IsNotFound(err) {
+			respondAPIError(c, err)
+			return
+		}
+		respondAPIError(c, apierr.InternalError("start order failed").WithDetails(err.Error()))
 		return
 	}
 	writeJSON(c, http.StatusOK, model.APIResponse[*model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: order})
@@ -177,18 +209,27 @@ func (h *OrderHandler) StartOrder(c *gin.Context) {
 func (h *OrderHandler) CompleteOrder(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		respondAPIError(c, apierr.BadRequest("invalid order ID"))
 		return
 	}
 	var payload orderNotePayload
 	if c.Request.ContentLength > 0 {
 		if bindErr := c.ShouldBindJSON(&payload); bindErr != nil {
-			writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+			respondAPIError(c, apierr.BadRequest("invalid request payload").WithDetails(bindErr.Error()))
 			return
 		}
 	}
 	order, err := h.svc.CompleteOrder(c.Request.Context(), id, payload.Note)
-	if !handleValidationAndNotFoundError(c, err) {
+	if err != nil {
+		if apierr.IsValidationError(err) {
+			respondAPIError(c, err)
+			return
+		}
+		if apierr.IsNotFound(err) {
+			respondAPIError(c, err)
+			return
+		}
+		respondAPIError(c, apierr.InternalError("complete order failed").WithDetails(err.Error()))
 		return
 	}
 	writeJSON(c, http.StatusOK, model.APIResponse[*model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: order})
@@ -217,7 +258,7 @@ func (h *OrderHandler) ListOrders(c *gin.Context) {
 
 	orders, pagination, err := h.svc.ListOrders(c.Request.Context(), opts)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondAPIError(c, apierr.InternalError("list orders failed").WithDetails(err.Error()))
 		return
 	}
 	orders = ensureSlice(orders)
@@ -244,16 +285,16 @@ func (h *OrderHandler) ListOrders(c *gin.Context) {
 func (h *OrderHandler) GetOrder(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		respondAPIError(c, apierr.BadRequest("invalid order ID"))
 		return
 	}
 	order, err := h.svc.GetOrder(c.Request.Context(), id)
-	if errors.Is(err, adminservice.ErrNotFound) {
-		writeJSONError(c, http.StatusNotFound, apierr.ErrOrderNotFound)
-		return
-	}
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		if apierr.IsNotFound(err) {
+			respondAPIError(c, apierr.NotFound("order not found"))
+			return
+		}
+		respondAPIError(c, apierr.InternalError("get order failed").WithDetails(err.Error()))
 		return
 	}
 	writeJSON(c, http.StatusOK, model.APIResponse[*model.Order]{
@@ -274,12 +315,12 @@ func (h *OrderHandler) GetOrder(c *gin.Context) {
 func (h *OrderHandler) RefundOrder(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		respondAPIError(c, apierr.BadRequest("invalid order ID"))
 		return
 	}
 	var payload orderRefundPayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+		respondAPIError(c, apierr.BadRequest("invalid request payload").WithDetails(err.Error()))
 		return
 	}
 	order, err := h.svc.RefundOrder(c.Request.Context(), id, adminservice.RefundOrderInput{
@@ -287,7 +328,16 @@ func (h *OrderHandler) RefundOrder(c *gin.Context) {
 		AmountCents: payload.AmountCents,
 		Note:        payload.Note,
 	})
-	if !handleValidationAndNotFoundError(c, err) {
+	if err != nil {
+		if apierr.IsValidationError(err) {
+			respondAPIError(c, err)
+			return
+		}
+		if apierr.IsNotFound(err) {
+			respondAPIError(c, err)
+			return
+		}
+		respondAPIError(c, apierr.InternalError("refund order failed").WithDetails(err.Error()))
 		return
 	}
 	writeJSON(c, http.StatusOK, model.APIResponse[*model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: order})
@@ -303,11 +353,16 @@ func (h *OrderHandler) RefundOrder(c *gin.Context) {
 func (h *OrderHandler) GetOrderTimeline(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		respondAPIError(c, apierr.BadRequest("invalid order ID"))
 		return
 	}
 	items, err := h.svc.GetOrderTimeline(c.Request.Context(), id)
-	if !handleNotFoundError(c, err) {
+	if err != nil {
+		if apierr.IsNotFound(err) {
+			respondAPIError(c, apierr.NotFound("order not found"))
+			return
+		}
+		respondAPIError(c, apierr.InternalError("get order timeline failed").WithDetails(err.Error()))
 		return
 	}
 	writeJSON(c, http.StatusOK, model.APIResponse[[]adminservice.OrderTimelineItem]{Success: true, Code: http.StatusOK, Message: "OK", Data: ensureSlice(items)})
@@ -324,11 +379,16 @@ func (h *OrderHandler) GetOrderTimeline(c *gin.Context) {
 func (h *OrderHandler) ListOrderPayments(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		respondAPIError(c, apierr.BadRequest("invalid order ID"))
 		return
 	}
 	items, err := h.svc.GetOrderPayments(c.Request.Context(), id)
-	if !handleNotFoundError(c, err) {
+	if err != nil {
+		if apierr.IsNotFound(err) {
+			respondAPIError(c, apierr.NotFound("order not found"))
+			return
+		}
+		respondAPIError(c, apierr.InternalError("get order payments failed").WithDetails(err.Error()))
 		return
 	}
 	payments := ensureSlice(items)
@@ -345,11 +405,16 @@ func (h *OrderHandler) ListOrderPayments(c *gin.Context) {
 func (h *OrderHandler) ListOrderRefunds(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		respondAPIError(c, apierr.BadRequest("invalid order ID"))
 		return
 	}
 	items, err := h.svc.GetOrderRefunds(c.Request.Context(), id)
-	if !handleNotFoundError(c, err) {
+	if err != nil {
+		if apierr.IsNotFound(err) {
+			respondAPIError(c, apierr.NotFound("order not found"))
+			return
+		}
+		respondAPIError(c, apierr.InternalError("get order refunds failed").WithDetails(err.Error()))
 		return
 	}
 	writeJSON(c, http.StatusOK, model.APIResponse[[]adminservice.OrderRefundItem]{Success: true, Code: http.StatusOK, Message: "OK", Data: ensureSlice(items)})
@@ -366,11 +431,16 @@ func (h *OrderHandler) ListOrderRefunds(c *gin.Context) {
 func (h *OrderHandler) ListOrderReviews(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		respondAPIError(c, apierr.BadRequest("invalid order ID"))
 		return
 	}
 	items, err := h.svc.GetOrderReviews(c.Request.Context(), id)
-	if !handleNotFoundError(c, err) {
+	if err != nil {
+		if apierr.IsNotFound(err) {
+			respondAPIError(c, apierr.NotFound("order not found"))
+			return
+		}
+		respondAPIError(c, apierr.InternalError("get order reviews failed").WithDetails(err.Error()))
 		return
 	}
 	writeJSON(c, http.StatusOK, model.APIResponse[[]model.Review]{Success: true, Code: http.StatusOK, Message: "OK", Data: ensureSlice(items)})
@@ -392,24 +462,24 @@ func (h *OrderHandler) ListOrderReviews(c *gin.Context) {
 func (h *OrderHandler) UpdateOrder(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		respondAPIError(c, apierr.BadRequest("invalid order ID"))
 		return
 	}
 
 	var payload UpdateOrderPayload
 	if bindErr := c.ShouldBindJSON(&payload); bindErr != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+		respondAPIError(c, apierr.BadRequest("invalid request payload").WithDetails(bindErr.Error()))
 		return
 	}
 
 	scheduledStart, err := parseRFC3339Ptr(payload.ScheduledStart)
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidScheduledStart)
+		respondAPIError(c, apierr.BadRequest("invalid scheduled start time"))
 		return
 	}
 	scheduledEnd, err := parseRFC3339Ptr(payload.ScheduledEnd)
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidScheduledEnd)
+		respondAPIError(c, apierr.BadRequest("invalid scheduled end time"))
 		return
 	}
 
@@ -423,11 +493,20 @@ func (h *OrderHandler) UpdateOrder(c *gin.Context) {
 	}
 
 	order, err := h.svc.UpdateOrder(c.Request.Context(), id, input)
-	if errors.Is(err, adminservice.ErrOrderInvalidTransition) {
-		_ = c.Error(adminservice.ErrOrderInvalidTransition)
-		return
-	}
-	if !handleValidationAndNotFoundError(c, err) {
+	if err != nil {
+		if apierr.IsValidationError(err) {
+			respondAPIError(c, apierr.BadRequest("validation failed").WithDetails(err.Error()))
+			return
+		}
+		if apierr.IsNotFound(err) {
+			respondAPIError(c, apierr.NotFound("order not found"))
+			return
+		}
+		if errors.Is(err, adminservice.ErrOrderInvalidTransition) {
+			respondAPIError(c, apierr.BadRequest("invalid order status transition").WithDetails(err.Error()))
+			return
+		}
+		respondAPIError(c, apierr.InternalError("update order failed").WithDetails(err.Error()))
 		return
 	}
 
@@ -453,11 +532,16 @@ func (h *OrderHandler) UpdateOrder(c *gin.Context) {
 func (h *OrderHandler) DeleteOrder(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		respondAPIError(c, apierr.BadRequest("invalid order ID"))
 		return
 	}
 	err = h.svc.DeleteOrder(c.Request.Context(), id)
-	if !handleNotFoundError(c, err) {
+	if err != nil {
+		if apierr.IsNotFound(err) {
+			respondAPIError(c, apierr.NotFound("order not found"))
+			return
+		}
+		respondAPIError(c, apierr.InternalError("delete order failed").WithDetails(err.Error()))
 		return
 	}
 
@@ -487,7 +571,7 @@ func (h *OrderHandler) DeleteOrder(c *gin.Context) {
 func (h *OrderHandler) ListOrderLogs(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		respondAPIError(c, apierr.BadRequest("invalid order ID"))
 		return
 	}
 	page, pageSize, ok := parsePagination(c)
@@ -498,26 +582,26 @@ func (h *OrderHandler) ListOrderLogs(c *gin.Context) {
 	if v, err := queryUint64Ptr(c, "actor_user_id"); err == nil {
 		actorID = v
 	} else {
-		writeJSONError(c, 400, apierr.ErrInvalidUserID)
+		respondAPIError(c, apierr.BadRequest("invalid user ID"))
 		return
 	}
 	var dateFrom, dateTo *time.Time
 	if v, err := queryTimePtr(c, "date_from"); err == nil {
 		dateFrom = v
 	} else {
-		writeJSONError(c, 400, apierr.ErrInvalidDateFrom)
+		respondAPIError(c, apierr.BadRequest("invalid date from"))
 		return
 	}
 	if v, err := queryTimePtr(c, "date_to"); err == nil {
 		dateTo = v
 	} else {
-		writeJSONError(c, 400, apierr.ErrInvalidDateTo)
+		respondAPIError(c, apierr.BadRequest("invalid date to"))
 		return
 	}
 	opts := repository.OperationLogListOptions{Page: page, PageSize: pageSize, Action: strings.TrimSpace(c.Query("action")), ActorUserID: actorID, DateFrom: dateFrom, DateTo: dateTo}
 	items, p, err := h.svc.ListOperationLogs(c.Request.Context(), "order", id, opts)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondAPIError(c, apierr.InternalError("list order logs failed").WithDetails(err.Error()))
 		return
 	}
 	if strings.EqualFold(strings.TrimSpace(c.Query("export")), "csv") {
@@ -579,7 +663,7 @@ func NewPaymentHandler(svc *adminservice.AdminService) *PaymentHandler {
 func (h *PaymentHandler) CreatePayment(c *gin.Context) {
 	var p CreatePaymentPayload
 	if err := c.ShouldBindJSON(&p); err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+		respondAPIError(c, apierr.BadRequest("invalid request payload").WithDetails(err.Error()))
 		return
 	}
 	pay, err := h.svc.CreatePayment(c.Request.Context(), adminservice.CreatePaymentInput{
@@ -590,7 +674,12 @@ func (h *PaymentHandler) CreatePayment(c *gin.Context) {
 		Currency:    model.Currency(strings.ToUpper(strings.TrimSpace(p.Currency))),
 		ProviderRaw: p.ProviderRaw,
 	})
-	if !handleValidationError(c, err) {
+	if err != nil {
+		if apierr.IsValidationError(err) {
+			respondAPIError(c, err)
+			return
+		}
+		respondAPIError(c, apierr.InternalError("create payment failed").WithDetails(err.Error()))
 		return
 	}
 	writeJSON(c, http.StatusCreated, model.APIResponse[*model.Payment]{Success: true, Code: http.StatusCreated, Message: "created", Data: pay})
@@ -610,17 +699,17 @@ func (h *PaymentHandler) CreatePayment(c *gin.Context) {
 func (h *PaymentHandler) CapturePayment(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		respondAPIError(c, apierr.BadRequest("invalid order ID"))
 		return
 	}
 	var p CapturePaymentPayload
 	if err := c.ShouldBindJSON(&p); err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+		respondAPIError(c, apierr.BadRequest("invalid request payload").WithDetails(err.Error()))
 		return
 	}
 	paidAt, err := parseRFC3339Ptr(p.PaidAt)
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidPaidAt)
+		respondAPIError(c, apierr.BadRequest("invalid paid at time"))
 		return
 	}
 	pay, err := h.svc.CapturePayment(c.Request.Context(), id, adminservice.CapturePaymentInput{
@@ -628,7 +717,16 @@ func (h *PaymentHandler) CapturePayment(c *gin.Context) {
 		ProviderRaw:     p.ProviderRaw,
 		PaidAt:          paidAt,
 	})
-	if !handleValidationAndNotFoundError(c, err) {
+	if err != nil {
+		if apierr.IsValidationError(err) {
+			respondAPIError(c, err)
+			return
+		}
+		if apierr.IsNotFound(err) {
+			respondAPIError(c, err)
+			return
+		}
+		respondAPIError(c, apierr.InternalError("capture payment failed").WithDetails(err.Error()))
 		return
 	}
 	writeJSON(c, http.StatusOK, model.APIResponse[*model.Payment]{Success: true, Code: http.StatusOK, Message: "updated", Data: pay})
@@ -657,7 +755,7 @@ func (h *PaymentHandler) ListPayments(c *gin.Context) {
 
 	payments, pagination, err := h.svc.ListPayments(c.Request.Context(), opts)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondAPIError(c, apierr.InternalError("list payments failed").WithDetails(err.Error()))
 		return
 	}
 	payments = ensureSlice(payments)
@@ -684,16 +782,16 @@ func (h *PaymentHandler) ListPayments(c *gin.Context) {
 func (h *PaymentHandler) GetPayment(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		respondAPIError(c, apierr.BadRequest("invalid order ID"))
 		return
 	}
 	payment, err := h.svc.GetPayment(c.Request.Context(), id)
-	if errors.Is(err, adminservice.ErrNotFound) {
-		writeJSONError(c, http.StatusNotFound, apierr.ErrPaymentNotFound)
-		return
-	}
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		if apierr.IsNotFound(err) {
+			respondAPIError(c, err)
+			return
+		}
+		respondAPIError(c, apierr.InternalError("get payment failed").WithDetails(err.Error()))
 		return
 	}
 	writeJSON(c, http.StatusOK, model.APIResponse[*model.Payment]{
@@ -720,24 +818,24 @@ func (h *PaymentHandler) GetPayment(c *gin.Context) {
 func (h *PaymentHandler) UpdatePayment(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		respondAPIError(c, apierr.BadRequest("invalid order ID"))
 		return
 	}
 
 	var payload UpdatePaymentPayload
 	if bindErr := c.ShouldBindJSON(&payload); bindErr != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+		respondAPIError(c, apierr.BadRequest("invalid request payload").WithDetails(bindErr.Error()))
 		return
 	}
 
 	paidAt, err := parseRFC3339Ptr(payload.PaidAt)
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidPaidAt)
+		respondAPIError(c, apierr.BadRequest("invalid paid at time"))
 		return
 	}
 	refundedAt, err := parseRFC3339Ptr(payload.RefundedAt)
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidRefundedAt)
+		respondAPIError(c, apierr.BadRequest("invalid refunded at time"))
 		return
 	}
 
@@ -749,7 +847,16 @@ func (h *PaymentHandler) UpdatePayment(c *gin.Context) {
 		RefundedAt:      refundedAt,
 	}
 	payment, err := h.svc.UpdatePayment(c.Request.Context(), id, input)
-	if !handleValidationAndNotFoundError(c, err) {
+	if err != nil {
+		if apierr.IsValidationError(err) {
+			respondAPIError(c, err)
+			return
+		}
+		if apierr.IsNotFound(err) {
+			respondAPIError(c, err)
+			return
+		}
+		respondAPIError(c, apierr.InternalError("update payment failed").WithDetails(err.Error()))
 		return
 	}
 
@@ -775,11 +882,16 @@ func (h *PaymentHandler) UpdatePayment(c *gin.Context) {
 func (h *PaymentHandler) DeletePayment(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		respondAPIError(c, apierr.BadRequest("invalid order ID"))
 		return
 	}
 	err = h.svc.DeletePayment(c.Request.Context(), id)
-	if !handleNotFoundError(c, err) {
+	if err != nil {
+		if apierr.IsNotFound(err) {
+			respondAPIError(c, err)
+			return
+		}
+		respondAPIError(c, apierr.InternalError("delete payment failed").WithDetails(err.Error()))
 		return
 	}
 
@@ -809,7 +921,7 @@ func (h *PaymentHandler) DeletePayment(c *gin.Context) {
 func (h *PaymentHandler) ListPaymentLogs(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		respondAPIError(c, apierr.BadRequest("invalid order ID"))
 		return
 	}
 	page, pageSize, ok := parsePagination(c)
@@ -820,26 +932,26 @@ func (h *PaymentHandler) ListPaymentLogs(c *gin.Context) {
 	if v, err := queryUint64Ptr(c, "actor_user_id"); err == nil {
 		actorID = v
 	} else {
-		writeJSONError(c, 400, apierr.ErrInvalidUserID)
+		respondAPIError(c, apierr.BadRequest("invalid user ID"))
 		return
 	}
 	var dateFrom, dateTo *time.Time
 	if v, err := queryTimePtr(c, "date_from"); err == nil {
 		dateFrom = v
 	} else {
-		writeJSONError(c, 400, apierr.ErrInvalidDateFrom)
+		respondAPIError(c, apierr.BadRequest("invalid date from"))
 		return
 	}
 	if v, err := queryTimePtr(c, "date_to"); err == nil {
 		dateTo = v
 	} else {
-		writeJSONError(c, 400, apierr.ErrInvalidDateTo)
+		respondAPIError(c, apierr.BadRequest("invalid date to"))
 		return
 	}
 	opts := repository.OperationLogListOptions{Page: page, PageSize: pageSize, Action: strings.TrimSpace(c.Query("action")), ActorUserID: actorID, DateFrom: dateFrom, DateTo: dateTo}
 	items, p, err := h.svc.ListOperationLogs(c.Request.Context(), "payment", id, opts)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondAPIError(c, apierr.InternalError("list payment logs failed").WithDetails(err.Error()))
 		return
 	}
 	if strings.EqualFold(strings.TrimSpace(c.Query("export")), "csv") {
@@ -986,7 +1098,7 @@ type CapturePaymentPayload struct {
 func (h *PaymentHandler) RefundPayment(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		respondAPIError(c, apierr.BadRequest("invalid order ID"))
 		return
 	}
 	var payload RefundPaymentPayload
@@ -996,7 +1108,7 @@ func (h *PaymentHandler) RefundPayment(c *gin.Context) {
 	}
 	refundedAt, err := parseRFC3339Ptr(payload.RefundedAt)
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidRefundedAt)
+		respondAPIError(c, apierr.BadRequest("invalid refunded at time"))
 		return
 	}
 	if refundedAt == nil {
@@ -1005,12 +1117,12 @@ func (h *PaymentHandler) RefundPayment(c *gin.Context) {
 	}
 
 	payment, err := h.svc.GetPayment(c.Request.Context(), id)
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	}
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		if apierr.IsNotFound(err) {
+			respondAPIError(c, err)
+			return
+		}
+		respondAPIError(c, apierr.InternalError("get payment failed").WithDetails(err.Error()))
 		return
 	}
 
@@ -1023,16 +1135,16 @@ func (h *PaymentHandler) RefundPayment(c *gin.Context) {
 		RefundedAt:      refundedAt,
 	}
 	updated, err := h.svc.UpdatePayment(c.Request.Context(), id, input)
-	if errors.Is(err, adminservice.ErrValidation) {
-		_ = c.Error(adminservice.ErrValidation)
-		return
-	}
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	}
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		if apierr.IsValidationError(err) {
+			respondAPIError(c, err)
+			return
+		}
+		if apierr.IsNotFound(err) {
+			respondAPIError(c, err)
+			return
+		}
+		respondAPIError(c, apierr.InternalError("update payment failed").WithDetails(err.Error()))
 		return
 	}
 	writeJSON(c, http.StatusOK, model.APIResponse[*model.Payment]{Success: true, Code: http.StatusOK, Message: "updated", Data: updated})
@@ -1045,49 +1157,7 @@ type RefundPaymentPayload struct {
 	ProviderRaw     json.RawMessage `json:"provider_raw,omitempty" swaggertype:"string" example:"{\"result\":\"refunded\"}"`
 }
 
-// handleValidationError 处理仅关心 ErrValidation + 500 的错误分支。
-// 返回值 false 表示已经写入响应，调用方应立即 return。
-func handleValidationError(c *gin.Context, err error) bool {
-	if err == nil {
-		return true
-	}
-	if errors.Is(err, adminservice.ErrValidation) {
-		_ = c.Error(adminservice.ErrValidation)
-		return false
-	}
-	writeJSONError(c, http.StatusInternalServerError, err.Error())
-	return false
-}
 
-// handleValidationAndNotFoundError 统一处理 ErrValidation、ErrNotFound 与 500。
-func handleValidationAndNotFoundError(c *gin.Context, err error) bool {
-	if err == nil {
-		return true
-	}
-	if errors.Is(err, adminservice.ErrValidation) {
-		_ = c.Error(adminservice.ErrValidation)
-		return false
-	}
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return false
-	}
-	writeJSONError(c, http.StatusInternalServerError, err.Error())
-	return false
-}
-
-// handleNotFoundError 统一处理 ErrNotFound 与 500。
-func handleNotFoundError(c *gin.Context, err error) bool {
-	if err == nil {
-		return true
-	}
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return false
-	}
-	writeJSONError(c, http.StatusInternalServerError, err.Error())
-	return false
-}
 
 func parseRFC3339Ptr(value *string) (*time.Time, error) {
 	if value == nil || strings.TrimSpace(*value) == "" {
@@ -1113,22 +1183,22 @@ func parseRFC3339Ptr(value *string) (*time.Time, error) {
 func (h *OrderHandler) ReviewOrder(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		respondAPIError(c, apierr.BadRequest("invalid order ID"))
 		return
 	}
 	var payload ReviewOrderPayload
 	if bindErr := c.ShouldBindJSON(&payload); bindErr != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+		respondAPIError(c, apierr.BadRequest("invalid request payload").WithDetails(bindErr.Error()))
 		return
 	}
 
 	order, err := h.svc.GetOrder(c.Request.Context(), id)
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	}
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		if apierr.IsNotFound(err) {
+			respondAPIError(c, err)
+			return
+		}
+		respondAPIError(c, apierr.InternalError("get order failed").WithDetails(err.Error()))
 		return
 	}
 
@@ -1148,20 +1218,16 @@ func (h *OrderHandler) ReviewOrder(c *gin.Context) {
 		CancelReason:    cancelReason,
 	}
 	updated, err := h.svc.UpdateOrder(c.Request.Context(), id, input)
-	if errors.Is(err, adminservice.ErrOrderInvalidTransition) {
-		_ = c.Error(adminservice.ErrOrderInvalidTransition)
-		return
-	}
-	if errors.Is(err, adminservice.ErrValidation) {
-		_ = c.Error(adminservice.ErrValidation)
-		return
-	}
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	}
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		if apierr.IsValidationError(err) {
+			respondAPIError(c, err)
+			return
+		}
+		if apierr.IsNotFound(err) {
+			respondAPIError(c, err)
+			return
+		}
+		respondAPIError(c, apierr.InternalError("review order failed").WithDetails(err.Error()))
 		return
 	}
 
@@ -1182,22 +1248,22 @@ func (h *OrderHandler) ReviewOrder(c *gin.Context) {
 func (h *OrderHandler) CancelOrder(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		respondAPIError(c, apierr.BadRequest("invalid order ID"))
 		return
 	}
 	var payload CancelOrderPayload
 	if bindErr := c.ShouldBindJSON(&payload); bindErr != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+		respondAPIError(c, apierr.BadRequest("invalid request payload").WithDetails(bindErr.Error()))
 		return
 	}
 
 	order, err := h.svc.GetOrder(c.Request.Context(), id)
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	}
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		if apierr.IsNotFound(err) {
+			respondAPIError(c, err)
+			return
+		}
+		respondAPIError(c, apierr.InternalError("get order failed").WithDetails(err.Error()))
 		return
 	}
 
@@ -1210,20 +1276,16 @@ func (h *OrderHandler) CancelOrder(c *gin.Context) {
 		CancelReason:    strings.TrimSpace(payload.Reason),
 	}
 	updated, err := h.svc.UpdateOrder(c.Request.Context(), id, input)
-	if errors.Is(err, adminservice.ErrOrderInvalidTransition) {
-		_ = c.Error(adminservice.ErrOrderInvalidTransition)
-		return
-	}
-	if errors.Is(err, adminservice.ErrValidation) {
-		_ = c.Error(adminservice.ErrValidation)
-		return
-	}
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	}
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		if apierr.IsValidationError(err) {
+			respondAPIError(c, err)
+			return
+		}
+		if apierr.IsNotFound(err) {
+			respondAPIError(c, err)
+			return
+		}
+		respondAPIError(c, apierr.InternalError("cancel order failed").WithDetails(err.Error()))
 		return
 	}
 

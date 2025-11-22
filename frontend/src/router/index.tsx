@@ -3,15 +3,25 @@ import { lazy, Suspense } from 'react';
 import { RouteLoading } from './LazyRoutes';
 import { appRoutes } from './routes';
 import { ProtectedRoute } from './ProtectedRoute';
-import { FEATURE_FLAGS } from '../config';
+import { FEATURE_FLAGS } from '@/config';
 
 // 懒加载公共页面组件
-const Login = lazy(() => import('pages/Login').then((m) => ({ default: m.Login })));
-const Register = lazy(() => import('pages/Register').then((m) => ({ default: m.Register })));
-const ComponentsDemo = lazy(() => import('pages/ComponentsDemo').then((m) => ({ default: m.ComponentsDemo })));
-const CacheDemo = lazy(() => import('pages/CacheDemo').then((m) => ({ default: m.CacheDemo })));
-const CachePageA = lazy(() => import('pages/CacheDemo').then((m) => ({ default: m.CachePageA })));
-const CachePageB = lazy(() => import('pages/CacheDemo').then((m) => ({ default: m.CachePageB })));
+// TODO: 创建这些页面组件
+// const Login = lazy(() => import('@/apps/user/pages/Login').then((m) => ({ default: m.Login })));
+// const Register = lazy(() => import('@/apps/user/pages/Register').then((m) => ({ default: m.Register })));
+// const ComponentsDemo = lazy(() => import('@/pages/ComponentsDemo').then((m) => ({ default: m.ComponentsDemo })));
+// const CacheDemo = lazy(() => import('@/pages/CacheDemo').then((m) => ({ default: m.CacheDemo })));
+// const CachePageA = lazy(() => import('@/pages/CacheDemo').then((m) => ({ default: m.CachePageA })));
+// const CachePageB = lazy(() => import('@/pages/CacheDemo').then((m) => ({ default: m.CachePageB })));
+
+// 临时：使用空组件
+const PlaceholderPage = () => <div>页面开发中...</div>;
+const Login = PlaceholderPage;
+const Register = PlaceholderPage;
+const ComponentsDemo = PlaceholderPage;
+const CacheDemo = PlaceholderPage;
+const CachePageA = PlaceholderPage;
+const CachePageB = PlaceholderPage;
 
 export const router = createBrowserRouter([
   // 公开路由（无需认证）

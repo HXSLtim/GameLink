@@ -4,8 +4,8 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { DiscordLayout } from '@/components/Layout';
-import { OrderStatus } from '@/components/OrderCard';
+import { DiscordLayout } from '@/shared/components/DiscordLayout';
+import { OrderStatus } from '@/shared/types/order';
 import styles from './OrderDetail.module.less';
 
 /**

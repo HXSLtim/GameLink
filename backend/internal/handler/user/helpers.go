@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"gamelink/internal/handler"
 	"gamelink/internal/model"
 )
 
@@ -26,6 +27,16 @@ func respondError(c *gin.Context, status int, msg string) {
 		Code:    status,
 		Message: msg,
 	})
+}
+
+// respondSuccess sends a successful response with message and optional data
+func respondSuccess[T any](c *gin.Context, message string, data T) {
+	handler.RespondSuccess(c, message, data)
+}
+
+// respondAPIError sends an API error response
+func respondAPIError(c *gin.Context, err error) {
+	handler.RespondAPIError(c, err)
 }
 
 // parseUintParam 从路径参数中解析无符号整型 ID，调用方负责根据返回的 error 决定如何写入错误响应。

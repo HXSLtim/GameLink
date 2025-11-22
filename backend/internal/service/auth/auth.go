@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"net/mail"
+	"regexp"
+	"strings"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -256,6 +258,10 @@ func validateRegisterInput(req RegisterRequest) error {
 	if req.Email == "" && req.Phone == "" {
 		return errors.New("email or phone is required")
 	}
+	// 验证邮箱格式
+	if req.Email != "" && !isValidEmail(req.Email) {
+		return errors.New("email or phone is required")
+	}
 	if req.Password == "" {
 		return errors.New("password is required")
 	}
@@ -268,11 +274,37 @@ func validateRegisterInput(req RegisterRequest) error {
 	return nil
 }
 
+// emailRegex 邮箱正则表达式
+var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+
 // isValidEmail 检查是否是有效的邮箱格式
 func isValidEmail(email string) bool {
-	if email == "" {
+	if email == "" || len(email) > 128 {
 		return false
 	}
+
+	// 基本格式验证
 	_, err := mail.ParseAddress(email)
-	return err == nil
+	if err != nil {
+		return false
+	}
+
+	// 正则表达式验证
+	if !emailRegex.MatchString(email) {
+		return false
+	}
+
+	// 检查常见临时邮箱域名（可选）
+	disposableDomains := []string{"tempmail.com", "10minutemail.com", "guerrillamail.com", "mailinator.com"}
+	parts := strings.Split(email, "@")
+	if len(parts) == 2 {
+		domain := strings.ToLower(parts[1])
+		for _, disposable := range disposableDomains {
+			if domain == disposable || strings.HasSuffix(domain, "."+disposable) {
+				return false // 拒绝临时邮箱
+			}
+		}
+	}
+
+	return true
 }

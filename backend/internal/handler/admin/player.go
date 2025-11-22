@@ -1,14 +1,13 @@
 package admin
 
 import (
-	"errors"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 
-	apierr "gamelink/internal/handler"
+	"gamelink/internal/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	adminservice "gamelink/internal/service/admin"
@@ -38,18 +37,18 @@ func NewPlayerHandler(svc *adminservice.AdminService) *PlayerHandler {
 func (h *PlayerHandler) ListPlayers(c *gin.Context) {
 	page, err := queryIntDefault(c, "page", 1)
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidPage)
+		respondAPIError(c, apierr.BadRequest("invalid page parameter"))
 		return
 	}
 	pageSize, err := queryIntDefault(c, "page_size", 20)
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidPageSize)
+		respondAPIError(c, apierr.BadRequest("invalid page size parameter"))
 		return
 	}
 
 	players, pagination, err := h.svc.ListPlayersPaged(c.Request.Context(), page, pageSize)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondAPIError(c, apierr.InternalError("list players failed").WithDetails(err.Error()))
 		return
 	}
 	players = ensureSlice(players)
@@ -76,16 +75,16 @@ func (h *PlayerHandler) ListPlayers(c *gin.Context) {
 func (h *PlayerHandler) GetPlayer(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		respondAPIError(c, apierr.BadRequest("invalid player ID"))
 		return
 	}
 	player, err := h.svc.GetPlayer(c.Request.Context(), id)
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	}
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		if apierr.IsNotFound(err) {
+			respondAPIError(c, err)
+			return
+		}
+		respondAPIError(c, apierr.InternalError("get player failed").WithDetails(err.Error()))
 		return
 	}
 	writeJSON(c, http.StatusOK, model.APIResponse[*model.Player]{
@@ -111,7 +110,7 @@ func (h *PlayerHandler) GetPlayer(c *gin.Context) {
 func (h *PlayerHandler) CreatePlayer(c *gin.Context) {
 	var payload CreatePlayerPayload
 	if bindErr := c.ShouldBindJSON(&payload); bindErr != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+		respondAPIError(c, apierr.BadRequest("invalid JSON payload"))
 		return
 	}
 
@@ -124,12 +123,12 @@ func (h *PlayerHandler) CreatePlayer(c *gin.Context) {
 		MainGameID:         payload.MainGameID,
 		VerificationStatus: model.VerificationStatus(payload.VerificationStatus),
 	})
-	if errors.Is(err, adminservice.ErrValidation) {
-		_ = c.Error(adminservice.ErrValidation)
-		return
-	}
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		if apierr.IsValidationError(err) {
+			respondAPIError(c, err)
+			return
+		}
+		respondAPIError(c, apierr.InternalError("create player failed").WithDetails(err.Error()))
 		return
 	}
 
@@ -157,13 +156,13 @@ func (h *PlayerHandler) CreatePlayer(c *gin.Context) {
 func (h *PlayerHandler) UpdatePlayer(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		respondAPIError(c, apierr.BadRequest("invalid player ID"))
 		return
 	}
 
 	var payload UpdatePlayerPayload
 	if bindErr := c.ShouldBindJSON(&payload); bindErr != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+		respondAPIError(c, apierr.BadRequest("invalid JSON payload"))
 		return
 	}
 
@@ -175,16 +174,16 @@ func (h *PlayerHandler) UpdatePlayer(c *gin.Context) {
 		MainGameID:         payload.MainGameID,
 		VerificationStatus: model.VerificationStatus(payload.VerificationStatus),
 	})
-	if errors.Is(err, adminservice.ErrValidation) {
-		_ = c.Error(adminservice.ErrValidation)
-		return
-	}
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	}
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		if apierr.IsValidationError(err) {
+			respondAPIError(c, err)
+			return
+		}
+		if apierr.IsNotFound(err) {
+			respondAPIError(c, err)
+			return
+		}
+		respondAPIError(c, apierr.InternalError("update player failed").WithDetails(err.Error()))
 		return
 	}
 
@@ -210,14 +209,15 @@ func (h *PlayerHandler) UpdatePlayer(c *gin.Context) {
 func (h *PlayerHandler) DeletePlayer(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		respondAPIError(c, apierr.BadRequest("invalid player ID"))
 		return
 	}
-	if err := h.svc.DeletePlayer(c.Request.Context(), id); errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	} else if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+	if err := h.svc.DeletePlayer(c.Request.Context(), id); err != nil {
+		if apierr.IsNotFound(err) {
+			respondAPIError(c, err)
+			return
+		}
+		respondAPIError(c, apierr.InternalError("delete player failed").WithDetails(err.Error()))
 		return
 	}
 
@@ -246,7 +246,7 @@ func (h *PlayerHandler) DeletePlayer(c *gin.Context) {
 func (h *PlayerHandler) ListPlayerLogs(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidID)
+		respondAPIError(c, apierr.BadRequest("invalid player ID"))
 		return
 	}
 	page, pageSize, ok := parsePagination(c)
@@ -273,7 +273,7 @@ func (h *PlayerHandler) ListPlayerLogs(c *gin.Context) {
 	opts := repository.OperationLogListOptions{Page: page, PageSize: pageSize, Action: strings.TrimSpace(c.Query("action")), ActorUserID: actorID, DateFrom: dateFrom, DateTo: dateTo}
 	items, p, err := h.svc.ListOperationLogs(c.Request.Context(), "player", id, opts)
 	if err != nil {
-		writeJSONError(c, 500, err.Error())
+		respondAPIError(c, apierr.InternalError("list player logs failed").WithDetails(err.Error()))
 		return
 	}
 	if strings.EqualFold(strings.TrimSpace(c.Query("export")), "csv") {
@@ -298,24 +298,24 @@ func (h *PlayerHandler) ListPlayerLogs(c *gin.Context) {
 func (h *PlayerHandler) UpdatePlayerVerification(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		respondAPIError(c, apierr.BadRequest("invalid player ID"))
 		return
 	}
 	var payload struct {
 		VerificationStatus string `json:"verification_status" binding:"required"`
 	}
 	if bindErr := c.ShouldBindJSON(&payload); bindErr != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+		respondAPIError(c, apierr.BadRequest("invalid JSON payload"))
 		return
 	}
 
 	player, err := h.svc.GetPlayer(c.Request.Context(), id)
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	}
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		if apierr.IsNotFound(err) {
+			respondAPIError(c, err)
+			return
+		}
+		respondAPIError(c, apierr.InternalError("get player failed").WithDetails(err.Error()))
 		return
 	}
 
@@ -326,12 +326,12 @@ func (h *PlayerHandler) UpdatePlayerVerification(c *gin.Context) {
 		MainGameID:         player.MainGameID,
 		VerificationStatus: model.VerificationStatus(payload.VerificationStatus),
 	})
-	if errors.Is(err, adminservice.ErrValidation) {
-		_ = c.Error(adminservice.ErrValidation)
-		return
-	}
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		if apierr.IsValidationError(err) {
+			respondAPIError(c, err)
+			return
+		}
+		respondAPIError(c, apierr.InternalError("update player verification failed").WithDetails(err.Error()))
 		return
 	}
 	writeJSON(c, http.StatusOK, model.APIResponse[*model.Player]{Success: true, Code: http.StatusOK, Message: "updated", Data: out})
@@ -351,24 +351,24 @@ func (h *PlayerHandler) UpdatePlayerVerification(c *gin.Context) {
 func (h *PlayerHandler) UpdatePlayerGames(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		respondAPIError(c, apierr.BadRequest("invalid player ID"))
 		return
 	}
 	var payload struct {
 		MainGameID uint64 `json:"main_game_id" binding:"required"`
 	}
 	if bindErr := c.ShouldBindJSON(&payload); bindErr != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+		respondAPIError(c, apierr.BadRequest("invalid JSON payload"))
 		return
 	}
 
 	player, err := h.svc.GetPlayer(c.Request.Context(), id)
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	}
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		if apierr.IsNotFound(err) {
+			respondAPIError(c, err)
+			return
+		}
+		respondAPIError(c, apierr.InternalError("get player failed").WithDetails(err.Error()))
 		return
 	}
 
@@ -379,12 +379,12 @@ func (h *PlayerHandler) UpdatePlayerGames(c *gin.Context) {
 		MainGameID:         payload.MainGameID,
 		VerificationStatus: player.VerificationStatus,
 	})
-	if errors.Is(err, adminservice.ErrValidation) {
-		_ = c.Error(adminservice.ErrValidation)
-		return
-	}
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		if apierr.IsValidationError(err) {
+			respondAPIError(c, err)
+			return
+		}
+		respondAPIError(c, apierr.InternalError("update player games failed").WithDetails(err.Error()))
 		return
 	}
 	writeJSON(c, http.StatusOK, model.APIResponse[*model.Player]{Success: true, Code: http.StatusOK, Message: "updated", Data: out})
@@ -404,24 +404,25 @@ func (h *PlayerHandler) UpdatePlayerGames(c *gin.Context) {
 func (h *PlayerHandler) UpdatePlayerSkillTags(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		respondAPIError(c, apierr.BadRequest("invalid player ID"))
 		return
 	}
 	var body SkillTagsBody
 	if bindErr := c.ShouldBindJSON(&body); bindErr != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+		respondAPIError(c, apierr.BadRequest("invalid JSON payload"))
 		return
 	}
 	// Ensure player exists first
-	if _, err := h.svc.GetPlayer(c.Request.Context(), id); errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	} else if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+	if _, err := h.svc.GetPlayer(c.Request.Context(), id); err != nil {
+		if apierr.IsNotFound(err) {
+			respondAPIError(c, err)
+			return
+		}
+		respondAPIError(c, apierr.InternalError("get player failed").WithDetails(err.Error()))
 		return
 	}
 	if err := h.svc.UpdatePlayerSkillTags(c.Request.Context(), id, body.Tags); err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondAPIError(c, apierr.InternalError("update player skill tags failed").WithDetails(err.Error()))
 		return
 	}
 	writeJSON(c, http.StatusOK, model.APIResponse[any]{Success: true, Code: http.StatusOK, Message: "updated"})

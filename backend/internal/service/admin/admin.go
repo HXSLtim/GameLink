@@ -13,6 +13,7 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
+	"gamelink/internal/apierr"
 	"gamelink/internal/cache"
 	"gamelink/internal/logging"
 	"gamelink/internal/model"
@@ -23,11 +24,11 @@ import (
 
 var (
 	// ErrValidation 表示输入校验失败。
-	ErrValidation = errors.New("validation failed")
+	ErrValidation = apierr.BadRequest("validation failed")
 	// ErrUserNotFound 用于统一标识用户不存在的场景。
-	ErrUserNotFound = errors.New("user not found")
+	ErrUserNotFound = apierr.NotFound("user not found")
 	// ErrOrderInvalidTransition 代表订单状态流转不合法。
-	ErrOrderInvalidTransition = errors.New("invalid order status transition")
+	ErrOrderInvalidTransition = apierr.BadRequest("invalid order status transition")
 
 	// ErrNotFound 暴露仓储的未找到错误，便于 handler 判定。
 	ErrNotFound = repository.ErrNotFound
@@ -211,7 +212,11 @@ func (s *AdminService) ListGamesPaged(ctx context.Context, page, pageSize int) (
 
 // GetGame 获取单个游戏详情。
 func (s *AdminService) GetGame(ctx context.Context, id uint64) (*model.Game, error) {
-	return s.games.Get(ctx, id)
+	game, err := s.games.Get(ctx, id)
+	if err != nil {
+		return nil, WrapError(err, "get game")
+	}
+	return game, nil
 }
 
 // CreateGame 创建游戏。
@@ -229,7 +234,7 @@ func (s *AdminService) CreateGame(ctx context.Context, input CreateGameInput) (*
 	}
 
 	if err := s.games.Create(ctx, game); err != nil {
-		return nil, err
+		return nil, WrapError(err, "create game")
 	}
 
 	s.invalidateCache(ctx, cacheKeyGames)
@@ -247,7 +252,7 @@ func (s *AdminService) UpdateGame(ctx context.Context, id uint64, input UpdateGa
 
 	game, err := s.games.Get(ctx, id)
 	if err != nil {
-		return nil, err
+		return nil, WrapError(err, "get game")
 	}
 
 	game.Key = strings.TrimSpace(input.Key)
@@ -257,7 +262,7 @@ func (s *AdminService) UpdateGame(ctx context.Context, id uint64, input UpdateGa
 	game.Description = strings.TrimSpace(input.Description)
 
 	if err := s.games.Update(ctx, game); err != nil {
-		return nil, err
+		return nil, WrapError(err, "update game")
 	}
 
 	s.invalidateCache(ctx, cacheKeyGames)
@@ -270,7 +275,7 @@ func (s *AdminService) UpdateGame(ctx context.Context, id uint64, input UpdateGa
 // DeleteGame 删除游戏。
 func (s *AdminService) DeleteGame(ctx context.Context, id uint64) error {
 	if err := s.games.Delete(ctx, id); err != nil {
-		return err
+		return WrapError(err, "delete game")
 	}
 	s.invalidateCache(ctx, cacheKeyGames)
 	// audit
@@ -424,7 +429,7 @@ func (s *AdminService) UpdateUser(ctx context.Context, id uint64, input UpdateUs
 	}
 
 	if err := s.users.Update(ctx, user); err != nil {
-		return nil, err
+		return nil, WrapError(err, "update user")
 	}
 
 	// 同步 user.Role 到 user_roles 表
@@ -634,7 +639,11 @@ func (s *AdminService) ListPlayersPaged(ctx context.Context, page, pageSize int)
 
 // GetPlayer 返回陪玩详情。
 func (s *AdminService) GetPlayer(ctx context.Context, id uint64) (*model.Player, error) {
-	return s.players.Get(ctx, id)
+	player, err := s.players.Get(ctx, id)
+	if err != nil {
+		return nil, WrapError(err, "get player")
+	}
+	return player, nil
 }
 
 // CreatePlayer 新建陪玩档案。
@@ -782,7 +791,7 @@ func (s *AdminService) AssignOrder(ctx context.Context, id uint64, playerID uint
 	}
 	order.SetPlayerID(playerID)
 	if err := s.orders.Update(ctx, order); err != nil {
-		return nil, err
+		return nil, WrapError(err, "update order")
 	}
 	s.invalidateCache(ctx, cacheKeyOrders)
 	s.appendLogAsync(ctx, string(model.OpEntityOrder), order.ID, string(model.OpActionAssignPlayer), map[string]any{"player_id": playerID})
@@ -860,14 +869,18 @@ func (s *AdminService) ListOrders(ctx context.Context, opts repoiface.OrderListO
 
 // GetOrder 获取订单详情。
 func (s *AdminService) GetOrder(ctx context.Context, id uint64) (*model.Order, error) {
-	return s.orders.Get(ctx, id)
+	order, err := s.orders.Get(ctx, id)
+	if err != nil {
+		return nil, WrapError(err, "get order")
+	}
+	return order, nil
 }
 
 // UpdateOrder 更新订单信息。
 func (s *AdminService) UpdateOrder(ctx context.Context, id uint64, input UpdateOrderInput) (*model.Order, error) {
 	order, err := s.orders.Get(ctx, id)
 	if err != nil {
-		return nil, err
+		return nil, WrapError(err, "get order")
 	}
 
 	if !isValidOrderStatus(input.Status) {
@@ -1038,22 +1051,22 @@ func (s *AdminService) CompleteOrder(ctx context.Context, id uint64, note string
 func (s *AdminService) RefundOrder(ctx context.Context, id uint64, input RefundOrderInput) (*model.Order, error) {
 	order, err := s.orders.Get(ctx, id)
 	if err != nil {
-		return nil, err
+		return nil, WrapError(err, "get order")
 	}
 	reason := strings.TrimSpace(input.Reason)
 	if reason == "" {
-		return nil, ErrValidation
+		return nil, apierr.BadRequest("reason is required")
 	}
 	switch order.Status {
 	case model.OrderStatusCompleted, model.OrderStatusInProgress, model.OrderStatusConfirmed:
 		// allowed
 	default:
-		return nil, ErrValidation
+		return nil, apierr.BadRequest("invalid order status for refund")
 	}
 	amount := order.TotalPriceCents
 	if input.AmountCents != nil {
 		if *input.AmountCents <= 0 || *input.AmountCents > order.TotalPriceCents {
-			return nil, ErrValidation
+			return nil, apierr.BadRequest("invalid refund amount")
 		}
 		amount = *input.AmountCents
 	}
@@ -1074,13 +1087,13 @@ func (s *AdminService) RefundOrder(ctx context.Context, id uint64, input RefundO
 		Note:              note,
 	})
 	if err != nil {
-		return nil, err
+		return nil, WrapError(err, "update order")
 	}
 
 	// 更新相关支付为已退款状态（若存在）
 	payments, err := s.listPaymentsByOrder(ctx, id)
 	if err != nil {
-		return nil, err
+		return nil, WrapError(err, "list payments by order")
 	}
 	for _, pay := range payments {
 		if pay.Status == model.PaymentStatusRefunded {
@@ -1095,7 +1108,7 @@ func (s *AdminService) RefundOrder(ctx context.Context, id uint64, input RefundO
 				RefundedAt:      &refundedAt,
 			})
 			if updErr != nil && !errors.Is(updErr, ErrValidation) {
-				return nil, updErr
+				return nil, WrapError(updErr, "update payment")
 			}
 		}
 	}
@@ -1298,7 +1311,7 @@ func (s *AdminService) GetOrderTimeline(ctx context.Context, orderID uint64) ([]
 // DeleteOrder 删除订单（软删）。
 func (s *AdminService) DeleteOrder(ctx context.Context, id uint64) error {
 	if err := s.orders.Delete(ctx, id); err != nil {
-		return err
+		return WrapError(err, "delete order")
 	}
 	s.invalidateCache(ctx, cacheKeyOrders)
 	s.appendLogAsync(ctx, string(model.OpEntityOrder), id, string(model.OpActionDelete), nil)
@@ -1335,7 +1348,7 @@ func (s *AdminService) CreatePayment(ctx context.Context, in CreatePaymentInput)
 		return nil, ErrValidation
 	}
 	if _, err := s.orders.Get(ctx, in.OrderID); err != nil {
-		return nil, err
+		return nil, WrapError(err, "get order")
 	}
 	if _, err := s.users.Get(ctx, in.UserID); err != nil {
 		return nil, mapUserError(err)
@@ -1350,7 +1363,7 @@ func (s *AdminService) CreatePayment(ctx context.Context, in CreatePaymentInput)
 		ProviderRaw: in.ProviderRaw,
 	}
 	if err := s.payments.Create(ctx, pay); err != nil {
-		return nil, err
+		return nil, WrapError(err, "create payment")
 	}
 	s.invalidateCache(ctx, cacheKeyPayments)
 	s.appendLogAsync(ctx, string(model.OpEntityPayment), pay.ID, string(model.OpActionCreate), map[string]any{"status": pay.Status, "method": pay.Method})
@@ -1368,7 +1381,7 @@ type CapturePaymentInput struct {
 func (s *AdminService) CapturePayment(ctx context.Context, id uint64, in CapturePaymentInput) (*model.Payment, error) {
 	pay, err := s.payments.Get(ctx, id)
 	if err != nil {
-		return nil, err
+		return nil, WrapError(err, "get payment")
 	}
 	if !isAllowedPaymentTransition(pay.Status, model.PaymentStatusPaid) {
 		return nil, ErrValidation
@@ -1407,22 +1420,26 @@ func (s *AdminService) ListPayments(ctx context.Context, opts repository.Payment
 
 // GetPayment 获取支付详情。
 func (s *AdminService) GetPayment(ctx context.Context, id uint64) (*model.Payment, error) {
-	return s.payments.Get(ctx, id)
+	payment, err := s.payments.Get(ctx, id)
+	if err != nil {
+		return nil, WrapError(err, "get payment")
+	}
+	return payment, nil
 }
 
 // UpdatePayment 更新支付状态。
 func (s *AdminService) UpdatePayment(ctx context.Context, id uint64, input UpdatePaymentInput) (*model.Payment, error) {
 	payment, err := s.payments.Get(ctx, id)
 	if err != nil {
-		return nil, err
+		return nil, WrapError(err, "get payment")
 	}
 
 	if !isValidPaymentStatus(input.Status) {
-		return nil, ErrValidation
+		return nil, apierr.BadRequest("invalid payment status")
 	}
 
 	if !isAllowedPaymentTransition(payment.Status, input.Status) {
-		return nil, ErrValidation
+		return nil, apierr.BadRequest("invalid payment status transition")
 	}
 
 	payment.Status = input.Status
@@ -1432,7 +1449,7 @@ func (s *AdminService) UpdatePayment(ctx context.Context, id uint64, input Updat
 	payment.RefundedAt = input.RefundedAt
 
 	if err := s.payments.Update(ctx, payment); err != nil {
-		return nil, err
+		return nil, WrapError(err, "update payment")
 	}
 	s.invalidateCache(ctx, cacheKeyPayments)
 	payAction := model.OpActionUpdateStatus
@@ -1451,7 +1468,7 @@ func (s *AdminService) UpdatePayment(ctx context.Context, id uint64, input Updat
 // DeletePayment 删除支付记录。
 func (s *AdminService) DeletePayment(ctx context.Context, id uint64) error {
 	if err := s.payments.Delete(ctx, id); err != nil {
-		return err
+		return WrapError(err, "delete payment")
 	}
 	s.invalidateCache(ctx, cacheKeyPayments)
 	s.appendLogAsync(ctx, string(model.OpEntityPayment), id, string(model.OpActionDelete), nil)
@@ -1750,7 +1767,10 @@ func (s *AdminService) GetReview(ctx context.Context, id uint64) (*model.Review,
 		item, err = r.Reviews.Get(ctx, id)
 		return err
 	})
-	return item, err
+	if err != nil {
+		return nil, WrapError(err, "get review")
+	}
+	return item, nil
 }
 
 // CreateReview 新建评价。
@@ -1763,7 +1783,7 @@ func (s *AdminService) CreateReview(ctx context.Context, r model.Review) (*model
 	}
 	err := s.tx.WithTx(ctx, func(txr *common.Repos) error { return txr.Reviews.Create(ctx, &r) })
 	if err != nil {
-		return nil, err
+		return nil, WrapError(err, "create review")
 	}
 	s.appendLogAsync(ctx, string(model.OpEntityReview), r.ID, string(model.OpActionCreate), map[string]any{"order_id": r.OrderID, "player_id": r.PlayerID})
 	return &r, nil
@@ -1781,18 +1801,18 @@ func (s *AdminService) UpdateReview(ctx context.Context, id uint64, score model.
 	err := s.tx.WithTx(ctx, func(r *common.Repos) error {
 		obj, err := r.Reviews.Get(ctx, id)
 		if err != nil {
-			return err
+			return WrapError(err, "get review")
 		}
 		obj.Score = score
 		obj.Content = strings.TrimSpace(content)
 		if err := r.Reviews.Update(ctx, obj); err != nil {
-			return err
+			return WrapError(err, "update review")
 		}
 		item = obj
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, WrapError(err, "update review transaction")
 	}
 	s.appendLogAsync(ctx, string(model.OpEntityReview), id, string(model.OpActionUpdate), nil)
 	return item, nil
@@ -1803,7 +1823,8 @@ func (s *AdminService) DeleteReview(ctx context.Context, id uint64) error {
 	if s.tx == nil {
 		return errors.New("transaction manager not configured")
 	}
-	return s.tx.WithTx(ctx, func(r *common.Repos) error { return r.Reviews.Delete(ctx, id) })
+	err := s.tx.WithTx(ctx, func(r *common.Repos) error { return r.Reviews.Delete(ctx, id) })
+	return WrapError(err, "delete review")
 }
 
 func getCachedList[T any](ctx context.Context, c cache.Cache, key string, ttl time.Duration, fetch func() ([]T, error)) ([]T, error) {

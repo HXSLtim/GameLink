@@ -1,13 +1,12 @@
 package player
 
 import (
-	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/internal/model"
+	"gamelink/internal/apierr"
 	"gamelink/internal/service/commission"
 )
 
@@ -22,8 +21,8 @@ func RegisterCommissionRoutes(router gin.IRouter, svc *commission.CommissionServ
 	}
 }
 
-// getCommissionSummaryHandler 获取抽成汇�?
-// @Summary      获取抽成汇�?
+// getCommissionSummaryHandler 获取抽成汇总
+// @Summary      获取抽成汇总
 // @Description  获取指定月份的抽成总览，包括总收入、总抽成等
 // @Tags         Player - Commission
 // @Accept       json
@@ -31,8 +30,9 @@ func RegisterCommissionRoutes(router gin.IRouter, svc *commission.CommissionServ
 // @Security     BearerAuth
 // @Param        month          query     string  true  "月份 (YYYY-MM)"
 // @Success      200            {object}  model.APIResponse[commission.CommissionSummaryResponse]
-// @Failure      400            {object}  apierr.ErrorResponse
-// @Failure      401            {object}  apierr.ErrorResponse
+// @Failure      401            {object}  apierr.APIError
+// @Failure      404            {object}  未找到陪玩师信息
+// @Failure      500            {object}  apierr.APIError
 // @Router       /player/commission/summary [get]
 func getCommissionSummaryHandler(c *gin.Context, svc *commission.CommissionService) {
 	userID := getUserIDFromContext(c)
@@ -43,22 +43,17 @@ func getCommissionSummaryHandler(c *gin.Context, svc *commission.CommissionServi
 	// 查找该用户的陪玩师ID
 	playerID, err := getPlayerIDByUserID(c, userID)
 	if err != nil {
-		respondError(c, http.StatusNotFound, "Player not found")
+		respondAPIError(c, apierr.NotFound("陪玩师信息未找到").WithDetails(err.Error()))
 		return
 	}
 
 	resp, err := svc.GetPlayerCommissionSummary(c.Request.Context(), playerID, month)
 	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
+		respondAPIError(c, apierr.InternalError("获取抽成汇总失败").WithDetails(err.Error()))
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[commission.CommissionSummaryResponse]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    *resp,
-	})
+	respondSuccess(c, "OK", *resp)
 }
 
 // getCommissionRecordsHandler 获取抽成记录
@@ -68,11 +63,12 @@ func getCommissionSummaryHandler(c *gin.Context, svc *commission.CommissionServi
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        page           query     int     false  "页码"
-// @Param        pageSize       query     int     false  "每页数量"
+// @Param        page           query     int     false  "页码" default(1)
+// @Param        pageSize       query     int     false  "每页数量" default(20)
 // @Success      200            {object}  model.APIResponse[commission.CommissionRecordListResponse]
-// @Failure      400            {object}  apierr.ErrorResponse
-// @Failure      401            {object}  apierr.ErrorResponse
+// @Failure      401            {object}  apierr.APIError
+// @Failure      404            {object}  apierr.APIError
+// @Failure      500            {object}  apierr.APIError
 // @Router       /player/commission/records [get]
 func getCommissionRecordsHandler(c *gin.Context, svc *commission.CommissionService) {
 	userID := getUserIDFromContext(c)
@@ -83,22 +79,17 @@ func getCommissionRecordsHandler(c *gin.Context, svc *commission.CommissionServi
 	// 查找该用户的陪玩师ID
 	playerID, err := getPlayerIDByUserID(c, userID)
 	if err != nil {
-		respondError(c, http.StatusNotFound, "Player not found")
+		respondAPIError(c, apierr.NotFound("陪玩师信息未找到").WithDetails(err.Error()))
 		return
 	}
 
 	resp, err := svc.GetCommissionRecords(c.Request.Context(), playerID, page, pageSize)
 	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
+		respondAPIError(c, apierr.InternalError("获取抽成记录失败").WithDetails(err.Error()))
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[commission.CommissionRecordListResponse]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    *resp,
-	})
+	respondSuccess(c, "OK", *resp)
 }
 
 // getMonthlySettlementsHandler 获取月度结算记录
@@ -108,11 +99,12 @@ func getCommissionRecordsHandler(c *gin.Context, svc *commission.CommissionServi
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        page           query     int     false  "页码"
-// @Param        pageSize       query     int     false  "每页数量"
+// @Param        page           query     int     false  "页码" default(1)
+// @Param        pageSize       query     int     false  "每页数量" default(20)
 // @Success      200            {object}  model.APIResponse[commission.SettlementListResponse]
-// @Failure      400            {object}  apierr.ErrorResponse
-// @Failure      401            {object}  apierr.ErrorResponse
+// @Failure      401            {object}  apierr.APIError
+// @Failure      404            {object}  apierr.APIError
+// @Failure      500            {object}  apierr.APIError
 // @Router       /player/commission/settlements [get]
 func getMonthlySettlementsHandler(c *gin.Context, svc *commission.CommissionService) {
 	userID := getUserIDFromContext(c)
@@ -123,22 +115,17 @@ func getMonthlySettlementsHandler(c *gin.Context, svc *commission.CommissionServ
 	// 查找该用户的陪玩师ID
 	playerID, err := getPlayerIDByUserID(c, userID)
 	if err != nil {
-		respondError(c, http.StatusNotFound, "Player not found")
+		respondAPIError(c, apierr.NotFound("陪玩师信息未找到").WithDetails(err.Error()))
 		return
 	}
 
 	resp, err := svc.GetMonthlySettlements(c.Request.Context(), playerID, page, pageSize)
 	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
+		respondAPIError(c, apierr.InternalError("获取月度结算记录失败").WithDetails(err.Error()))
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[commission.SettlementListResponse]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    *resp,
-	})
+	respondSuccess(c, "OK", *resp)
 }
 
 // getPlayerIDByUserID 根据用户ID获取陪玩师ID

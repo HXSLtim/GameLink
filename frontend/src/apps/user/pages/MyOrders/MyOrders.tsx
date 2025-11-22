@@ -5,8 +5,10 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DiscordLayout } from '@/components/Layout';
-import { OrderCard, OrderCardProps, OrderStatus } from '@/components/OrderCard';
+import { DiscordLayout } from '@/shared/components/DiscordLayout';
+import { OrderCard } from '@/apps/user/components/PlayerCard';
+import type { OrderCardProps } from '@/apps/user/components/PlayerCard';
+import { OrderStatus } from '@/shared/types/order';
 import styles from './MyOrders.module.less';
 
 /**

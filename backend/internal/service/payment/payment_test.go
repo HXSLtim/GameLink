@@ -1506,6 +1506,9 @@ func TestPaymentService_RefundPayment_FullCoverage(t *testing.T) {
 	})
 }
 
+// failingProvider 是一个模拟的失败支付提供商
+type failingProvider struct{}
+
 func (failingProvider) Refund(ctx context.Context, p *model.Payment, reason string) (string, json.RawMessage, time.Time, error) {
 	return "", nil, time.Time{}, errors.New("provider failure")
 }

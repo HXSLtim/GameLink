@@ -2,13 +2,14 @@ package admin
 
 import (
 	"errors"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 
-	apierr "gamelink/internal/handler"
+	"gamelink/internal/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	repoiface "gamelink/internal/repository/interfaces"
@@ -78,6 +79,14 @@ func parseCSVParams(values []string) []string {
 }
 
 func writeJSON[T any](c *gin.Context, status int, payload model.APIResponse[T]) {
+	// 从上下文中获取TraceID
+	if payload.TraceID == "" {
+		if rid, ok := c.Get("request_id"); ok {
+			if ridStr, ok := rid.(string); ok {
+				payload.TraceID = ridStr
+			}
+		}
+	}
 	c.JSON(status, payload)
 }
 
@@ -87,6 +96,31 @@ func writeJSONError(c *gin.Context, status int, message string) {
 		Code:    status,
 		Message: message,
 	})
+}
+
+// respondSuccess 是writeJSON的简化版本，用于成功响应
+func respondSuccess(c *gin.Context, message string, data any) {
+	writeJSON(c, http.StatusOK, model.APIResponse[any]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: message,
+		Data:    data,
+	})
+}
+
+// respondAPIError 使用apierr包的错误响应
+func respondAPIError(c *gin.Context, err error) {
+	if apiErr, ok := err.(*apierr.APIError); ok {
+		writeJSON(c, apiErr.Code, model.APIResponse[any]{
+			Success: false,
+			Code:    apiErr.Code,
+			Message: apiErr.Message,
+			TraceID: apiErr.RequestID,
+		})
+		return
+	}
+	// fallback
+	writeJSONError(c, http.StatusInternalServerError, err.Error())
 }
 
 func ensureSlice[T any](items []T) []T {

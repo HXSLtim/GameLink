@@ -56,28 +56,4 @@ func TestMetricsMiddleware(t *testing.T) {
 	})
 }
 
-func TestMetricsHandler(t *testing.T) {
-	t.Run("返回Prometheus指标", func(t *testing.T) {
-		// 重置注册表
-		registry := prometheus.NewRegistry()
-		prometheus.DefaultRegisterer = registry
-		prometheus.DefaultGatherer = registry
-
-		router := gin.New()
-		router.GET("/metrics", MetricsHandler())
-
-		req := httptest.NewRequest(http.MethodGet, "/metrics", nil)
-		w := httptest.NewRecorder()
-
-		router.ServeHTTP(w, req)
-
-		if w.Code != http.StatusOK {
-			t.Errorf("Expected status 200, got %d", w.Code)
-		}
-
-		contentType := w.Header().Get("Content-Type")
-		if contentType != "text/plain; version=0.0.4; charset=utf-8" {
-			t.Errorf("Expected content type %s, got %s", "text/plain; version=0.0.4; charset=utf-8", contentType)
-		}
-	})
-}
+// Note: MetricsHandler is not used anymore, metrics endpoint is registered in main.go

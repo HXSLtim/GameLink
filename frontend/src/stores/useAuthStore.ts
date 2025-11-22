@@ -4,7 +4,7 @@
  */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { User } from '../api/types/auth';
+import type { User } from '@/api';
 
 /**
  * 认证状态

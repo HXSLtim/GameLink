@@ -1,12 +1,9 @@
 package user
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 
 	"gamelink/internal/apierr"
-	"gamelink/internal/model"
 	"gamelink/internal/service/player"
 )
 
@@ -35,27 +32,23 @@ func RegisterPlayerRoutes(router gin.IRouter, svc *player.PlayerService, authMid
 // @Param        page        query     int       false  "Page number" default(1)
 // @Param        pageSize    query     int       false  "Page size" default(20)
 // @Success      200         {object}  model.APIResponse[player.PlayerListResponse]
-// @Failure      400         {object}  model.ErrorResponse
+// @Failure      400         {object}  apierr.APIError
+// @Failure      500         {object}  apierr.APIError
 // @Router       /user/players [get]
 func listPlayersHandler(c *gin.Context, svc *player.PlayerService) {
 	var req player.PlayerListRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
-		respondError(c, http.StatusBadRequest, err.Error())
+		respondAPIError(c, apierr.BadRequest("无效的查询参数").WithDetails(err.Error()))
 		return
 	}
 
 	resp, err := svc.ListPlayers(c.Request.Context(), req)
 	if err != nil {
-		respondError(c, http.StatusInternalServerError, err.Error())
+		respondAPIError(c, apierr.InternalError("获取陪玩师列表失败").WithDetails(err.Error()))
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[player.PlayerListResponse]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    *resp,
-	})
+	respondSuccess(c, "OK", *resp)
 }
 
 // @Description  API endpoint// @Accept       json
@@ -68,24 +61,19 @@ func listPlayersHandler(c *gin.Context, svc *player.PlayerService) {
 func getPlayerDetailHandler(c *gin.Context, svc *player.PlayerService) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		respondError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		respondAPIError(c, apierr.BadRequest(apierr.ErrInvalidID))
 		return
 	}
 
 	resp, err := svc.GetPlayerDetail(c.Request.Context(), id)
 	if err != nil {
 		if err == player.ErrNotFound {
-			respondError(c, http.StatusNotFound, err.Error())
+			respondAPIError(c, apierr.NotFound(err.Error()))
 			return
 		}
-		respondError(c, http.StatusInternalServerError, err.Error())
+		respondAPIError(c, apierr.InternalError("获取陪玩师详情失败").WithDetails(err.Error()))
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[player.PlayerDetailResponse]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    *resp,
-	})
+	respondSuccess(c, "OK", *resp)
 }
