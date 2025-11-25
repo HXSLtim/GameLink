@@ -8,12 +8,15 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/internal/handler"
 	apierr "gamelink/internal/apierr"
+	"gamelink/internal/handler"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	adminservice "gamelink/internal/service/admin"
 )
+
+// Game 游戏模型（类型别名）
+type Game = model.Game
 
 // GameHandler 处理后台游戏管理接口
 type GameHandler struct {
@@ -32,7 +35,7 @@ func NewGameHandler(svc *adminservice.AdminService) *GameHandler {
 // @Param        page       query  int  false  "页码"
 // @Param        pageSize   query     int       false  "每页数量"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[[]model.Game]
+// @Success      200  {object}  model.APIResponse[[]Game]
 // @Router       /admin/games [get]
 //
 // ListGames 返回全部游戏
@@ -63,7 +66,7 @@ func (h *GameHandler) ListGames(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "游戏ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[model.Game]
+// @Success      200  {object}  model.APIResponse[Game]
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/games/{id} [get]
 //
@@ -73,7 +76,7 @@ func (h *GameHandler) GetGame(c *gin.Context) {
 	if !ok {
 		return
 	}
-	
+
 	game, err := h.svc.GetGame(c.Request.Context(), id)
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
@@ -83,7 +86,7 @@ func (h *GameHandler) GetGame(c *gin.Context) {
 		handler.RespondWithServiceError(c, err)
 		return
 	}
-	
+
 	handler.RespondSuccess(c, "OK", game)
 }
 
@@ -94,7 +97,7 @@ func (h *GameHandler) GetGame(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  GamePayload  true  "游戏信息"
-// @Success      201  {object}  model.APIResponse[model.Game]
+// @Success      201  {object}  model.APIResponse[Game]
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/games [post]
 //
@@ -132,7 +135,7 @@ func (h *GameHandler) CreateGame(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int         true  "游戏ID"
 // @Param        request  body  GamePayload true  "游戏信息"
-// @Success      200  {object}  model.APIResponse[model.Game]
+// @Success      200  {object}  model.APIResponse[Game]
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/games/{id} [put]
 //
@@ -177,7 +180,7 @@ func (h *GameHandler) UpdateGame(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "游戏ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[any]
+// @Success      200  {object}  model.SuccessResponse
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/games/{id} [delete]
 //

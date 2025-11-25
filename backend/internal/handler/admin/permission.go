@@ -11,11 +11,16 @@ import (
 	permissionservice "gamelink/internal/service/permission"
 )
 
-// PermissionHandler 权限管理处理 type PermissionHandler struct {
+// Permission 权限模型（类型别名）
+type Permission = model.Permission
+
+// PermissionHandler 权限管理处理器
+type PermissionHandler struct {
 	permissionSvc *permissionservice.PermissionService
 }
 
-// NewPermissionHandler 创建权限处理器实func NewPermissionHandler(permissionSvc *permissionservice.PermissionService) *PermissionHandler {
+// NewPermissionHandler 创建权限处理器实例
+func NewPermissionHandler(permissionSvc *permissionservice.PermissionService) *PermissionHandler {
 	return &PermissionHandler{permissionSvc: permissionSvc}
 }
 
@@ -27,7 +32,7 @@ import (
 // @Param        Authorization  header    string  true  "Bearer {token}"
 // @Param        page           query     int     false  "页码" default(1)
 // @Param        pageSize       query     int     false  "每页数量" default(10)
-// @Param        keyword        query     string  false  "关键词搜
+// @Param        keyword        query     string  false  "关键词搜索"
 // @Param        method         query     string  false  "HTTP方法过滤"
 // @Param        group          query     string  false  "权限分组过滤"
 // @Success      200            {object}  model.APIResponse[gin.H]
@@ -78,7 +83,7 @@ func (h *PermissionHandler) ListPermissions(c *gin.Context) {
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
 // @Param        id             path      uint    true  "权限ID"
-// @Success      200            {object}  model.APIResponse[model.Permission]
+// @Success      200            {object}  model.APIResponse[Permission]
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      404            {object}  model.ErrorResponse
@@ -94,14 +99,14 @@ func (h *PermissionHandler) GetPermission(c *gin.Context) {
 	permission, err := h.permissionSvc.GetPermission(c.Request.Context(), id)
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
-			writeJSONError(c, http.StatusNotFound, "权限不存)
+			writeJSONError(c, http.StatusNotFound, "权限不存在")
 		} else {
 			writeJSONError(c, http.StatusInternalServerError, err.Error())
 		}
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[model.Permission]{
+	writeJSON(c, http.StatusOK, model.APIResponse[*model.Permission]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "成功",
@@ -132,7 +137,7 @@ type UpdatePermissionRequest struct {
 // @Produce      json
 // @Param        Authorization  header    string                      true  "Bearer {token}"
 // @Param        request        body      CreatePermissionRequest      true  "创建权限请求"
-// @Success      201            {object}  model.APIResponse[model.Permission]
+// @Success      201            {object}  model.APIResponse[Permission]
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
@@ -158,7 +163,7 @@ func (h *PermissionHandler) CreatePermission(c *gin.Context) {
 		return
 	}
 
-	writeJSON(c, http.StatusCreated, model.APIResponse[model.Permission]{
+	writeJSON(c, http.StatusCreated, model.APIResponse[*model.Permission]{
 		Success: true,
 		Code:    http.StatusCreated,
 		Message: "权限创建成功",
@@ -175,7 +180,7 @@ func (h *PermissionHandler) CreatePermission(c *gin.Context) {
 // @Param        Authorization  header    string                      true  "Bearer {token}"
 // @Param        id             path      uint                        true  "权限ID"
 // @Param        request        body      UpdatePermissionRequest      true  "更新权限请求"
-// @Success      200            {object}  model.APIResponse[model.Permission]
+// @Success      200            {object}  model.APIResponse[Permission]
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      404            {object}  model.ErrorResponse
@@ -217,7 +222,7 @@ func (h *PermissionHandler) UpdatePermission(c *gin.Context) {
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[model.Permission]{
+	writeJSON(c, http.StatusOK, model.APIResponse[*model.Permission]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "权限更新成功",
@@ -233,7 +238,7 @@ func (h *PermissionHandler) UpdatePermission(c *gin.Context) {
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
 // @Param        id             path      uint    true  "权限ID"
-// @Success      200            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse

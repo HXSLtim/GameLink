@@ -20,6 +20,84 @@ type CommissionRecordListResponse = commission.CommissionRecordListResponse
 // SettlementListResponse 结算列表响应（类型别名）
 type SettlementListResponse = commission.SettlementListResponse
 
+// Local type definitions for Swagger generation (these mirror the commission service types)
+type CommissionSummaryResponseSwagger struct {
+	Month           string  `json:"month" example:"2024-01"`
+	TotalIncome     float64 `json:"total_income" example:"10000.00"`
+	TotalCommission float64 `json:"total_commission" example:"2000.00"`
+	NetIncome       float64 `json:"net_income" example:"8000.00"`
+	OrderCount      int     `json:"order_count" example:"25"`
+}
+
+// CommissionRecordListResponseSwagger 抽成记录列表响应
+type CommissionRecordListResponseSwagger struct {
+	Items      []CommissionRecordSwagger `json:"items"`
+	Total      int64                     `json:"total" example:"100"`
+	Page       int                       `json:"page" example:"1"`
+	PageSize   int                       `json:"page_size" example:"20"`
+	TotalPages int                       `json:"total_pages" example:"5"`
+}
+
+// CommissionRecordSwagger 抽成记录
+type CommissionRecordSwagger struct {
+	ID              uint64  `json:"id" example:"1"`
+	OrderID         uint64  `json:"order_id" example:"1001"`
+	PlayerID        uint64  `json:"player_id" example:"2001"`
+	CommissionRate  float64 `json:"commission_rate" example:"0.2"`
+	CommissionAmount float64 `json:"commission_amount" example:"100.00"`
+	TotalPrice      float64 `json:"total_price" example:"500.00"`
+	NetIncome       float64 `json:"net_income" example:"400.00"`
+	CreatedAt       string  `json:"created_at" example:"2024-01-15T10:30:00Z"`
+}
+
+// SettlementListResponseSwagger 结算列表响应
+type SettlementListResponseSwagger struct {
+	Items      []SettlementSwagger `json:"items"`
+	Total      int64               `json:"total" example:"50"`
+	Page       int                 `json:"page" example:"1"`
+	PageSize   int                 `json:"page_size" example:"20"`
+	TotalPages int                 `json:"total_pages" example:"3"`
+}
+
+// SettlementSwagger 结算记录
+type SettlementSwagger struct {
+	ID            uint64  `json:"id" example:"1"`
+	PlayerID      uint64  `json:"player_id" example:"2001"`
+	Month         string  `json:"month" example:"2024-01"`
+	TotalAmount   float64 `json:"total_amount" example:"8000.00"`
+	Status        string  `json:"status" example:"completed"`
+	SettledAt     string  `json:"settled_at,omitempty" example:"2024-02-01T00:00:00Z"`
+	CreatedAt     string  `json:"created_at" example:"2024-01-31T23:59:59Z"`
+}
+
+// Swagger-friendly envelopes to avoid generics in swag annotations
+type CommissionSummaryAPIResponseSwagger struct {
+	Success    bool                          `json:"success"`
+	Code       int                           `json:"code"`
+	Message    string                        `json:"message"`
+	Data       CommissionSummaryResponseSwagger `json:"data"`
+	Pagination *model.Pagination             `json:"pagination,omitempty"`
+	TraceID    string                        `json:"traceId,omitempty"`
+}
+
+type CommissionRecordListAPIResponseSwagger struct {
+	Success    bool                               `json:"success"`
+	Code       int                                `json:"code"`
+	Message    string                             `json:"message"`
+	Data       CommissionRecordListResponseSwagger `json:"data"`
+	Pagination *model.Pagination                  `json:"pagination,omitempty"`
+	TraceID    string                             `json:"traceId,omitempty"`
+}
+
+type SettlementListAPIResponseSwagger struct {
+	Success    bool                          `json:"success"`
+	Code       int                           `json:"code"`
+	Message    string                        `json:"message"`
+	Data       SettlementListResponseSwagger `json:"data"`
+	Pagination *model.Pagination             `json:"pagination,omitempty"`
+	TraceID    string                        `json:"traceId,omitempty"`
+}
+
 // RegisterCommissionRoutes 注册陪玩师端抽成管理路由
 func RegisterCommissionRoutes(router gin.IRouter, svc *commission.CommissionService, authMiddleware gin.HandlerFunc) {
 	group := router.Group("/player/commission")
@@ -39,7 +117,7 @@ func RegisterCommissionRoutes(router gin.IRouter, svc *commission.CommissionServ
 // @Produce      json
 // @Security     BearerAuth
 // @Param        month          query     string  true  "月份 (YYYY-MM)"
-// @Success      200            {object}  model.APIResponse[CommissionSummaryResponse]
+// @Success      200            {object}  CommissionSummaryAPIResponseSwagger
 // @Failure      401            {object}  apierr.APIError
 // @Failure      404            {object}  apierr.APIError
 // @Failure      500            {object}  apierr.APIError
@@ -75,7 +153,7 @@ func getCommissionSummaryHandler(c *gin.Context, svc *commission.CommissionServi
 // @Security     BearerAuth
 // @Param        page           query     int     false  "页码" default(1)
 // @Param        pageSize       query     int     false  "每页数量" default(20)
-// @Success      200            {object}  model.APIResponse[CommissionRecordListResponse]
+// @Success      200            {object}  CommissionRecordListAPIResponseSwagger
 // @Failure      401            {object}  apierr.APIError
 // @Failure      404            {object}  apierr.APIError
 // @Failure      500            {object}  apierr.APIError
@@ -111,7 +189,7 @@ func getCommissionRecordsHandler(c *gin.Context, svc *commission.CommissionServi
 // @Security     BearerAuth
 // @Param        page           query     int     false  "页码" default(1)
 // @Param        pageSize       query     int     false  "每页数量" default(20)
-// @Success      200            {object}  model.APIResponse[SettlementListResponse]
+// @Success      200            {object}  SettlementListAPIResponseSwagger
 // @Failure      401            {object}  apierr.APIError
 // @Failure      404            {object}  apierr.APIError
 // @Failure      500            {object}  apierr.APIError

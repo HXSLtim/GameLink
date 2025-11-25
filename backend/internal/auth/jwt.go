@@ -3,6 +3,7 @@ package auth
 import (
 	"errors"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -154,8 +155,9 @@ func ExtractTokenFromHeader(authHeader string) (string, error) {
 		return "", errors.New("Authorization头格式错误，应为'Bearer <token>'")
 	}
 
-	// 提取Token
+	// 提取Token并去除首尾空格
 	token := authHeader[len(bearerPrefix):]
+	token = strings.TrimSpace(token)
 	if token == "" {
 		return "", errors.New("Token为空")
 	}

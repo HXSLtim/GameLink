@@ -8,10 +8,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	apierr "gamelink/internal/handler"
+	apierr "gamelink/internal/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/service/assignment"
 )
+
+// OrderDispute 订单纠纷模型（类型别名）
+type OrderDispute = model.OrderDispute
 
 // DisputeHandler handles order dispute related endpoints
 type DisputeHandler struct {
@@ -31,7 +34,7 @@ func NewDisputeHandler(svc *assignment.AssignmentService) *DisputeHandler {
 // @Accept       json
 // @Produce      json
 // @Param        id  path  int  true  "纠纷ID"
-// @Success      200  {object}  model.APIResponse[model.OrderDispute]
+// @Success      200  {object}  model.APIResponse[OrderDispute]
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/disputes/{id} [get]
 func (h *DisputeHandler) GetDisputeDetail(c *gin.Context) {
@@ -51,7 +54,7 @@ func (h *DisputeHandler) GetDisputeDetail(c *gin.Context) {
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[model.OrderDispute]{
+	writeJSON(c, http.StatusOK, model.APIResponse[*model.OrderDispute]{
 		Success: true,
 		Code:    http.StatusOK,
 		Data:    dispute,
@@ -67,7 +70,7 @@ func (h *DisputeHandler) GetDisputeDetail(c *gin.Context) {
 // @Produce      json
 // @Param        page      query  int  false  "页码"  default(1)
 // @Param        pageSize  query  int  false  "每页数量"    default(20)
-// @Success      200  {object}  model.APIResponse[[]model.OrderDispute]
+// @Success      200  {object}  model.APIResponse[[]OrderDispute]
 // @Failure      500  {object}  model.ErrorResponse
 // @Router       /admin/disputes/pending [get]
 func (h *DisputeHandler) ListPendingDisputes(c *gin.Context) {

@@ -14,7 +14,8 @@ import (
 )
 
 // RegisterRoutes 注册后台管理相关路由
-// 使用细粒度权限控制（method+path 级别func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, pm *mw.PermissionMiddleware) {
+// 使用细粒度权限控制（method+path 级别）
+func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, pm *mw.PermissionMiddleware) {
 	gameHandler := NewGameHandler(svc)
 	userHandler := NewUserHandler(svc)
 	playerHandler := NewPlayerHandler(svc)
@@ -81,7 +82,7 @@ import (
 		// @Security     BearerAuth
 		// @Param        id   path  int  true  "游戏ID"
 		// @Produce      json
-		// @Success      200  {object}  model.APIResponse[any]
+		// @Success      200  {object}  model.SuccessResponse
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/games/{id} [delete]
 		group.DELETE("/games/:id", pm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/games/:id"), gameHandler.DeleteGame)
@@ -133,7 +134,7 @@ import (
 		// @Accept       json
 		// @Produce      json
 		// @Param        request  body  CreateUserWithPlayerPayload  true  "用户信息和陪玩师信息"
-		// @Success      201  {object}  model.APIResponse[map[string]any]
+		// @Success      201  {object}  model.SuccessResponse
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/users/with-player [post]
 		group.POST("/users/with-player", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/users/with-player"), userHandler.CreateUserWithPlayer)
@@ -162,7 +163,7 @@ import (
 		// @Security     BearerAuth
 		// @Param        id   path  int  true  "用户ID"
 		// @Produce      json
-		// @Success      200  {object}  model.APIResponse[any]
+		// @Success      200  {object}  model.SuccessResponse
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/users/{id} [delete]
 		group.DELETE("/users/:id", pm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/users/:id"), userHandler.DeleteUser)
@@ -262,7 +263,7 @@ import (
 		// @Security     BearerAuth
 		// @Param        id   path  int  true  "玩家ID"
 		// @Produce      json
-		// @Success      200  {object}  model.APIResponse[any]
+		// @Success      200  {object}  model.SuccessResponse
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/players/{id} [delete]
 		group.DELETE("/players/:id", pm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/players/:id"), playerHandler.DeletePlayer)
@@ -292,7 +293,7 @@ import (
 		// @Produce      json
 		// @Param        id       path  int            true  "玩家ID"
 		// @Param        request  body  SkillTagsBody  true  "标签集合"
-		// @Success      200  {object}  model.APIResponse[any]
+		// @Success      200  {object}  model.SuccessResponse
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/players/{id}/skill-tags [put]
 		group.PUT("/players/:id/skill-tags", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/players/:id/skill-tags"), playerHandler.UpdatePlayerSkillTags)
@@ -364,7 +365,7 @@ import (
 		// @Security     BearerAuth
 		// @Param        id   path  int  true  "订单ID"
 		// @Produce      json
-		// @Success      200  {object}  model.APIResponse[any]
+		// @Success      200  {object}  model.SuccessResponse
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/orders/{id} [delete]
 		group.DELETE("/orders/:id", pm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/orders/:id"), orderHandler.DeleteOrder)
@@ -548,7 +549,7 @@ import (
 		// @Security     BearerAuth
 		// @Param        id   path  int  true  "支付ID"
 		// @Produce      json
-		// @Success      200  {object}  model.APIResponse[any]
+		// @Success      200  {object}  model.SuccessResponse
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/payments/{id} [delete]
 		group.DELETE("/payments/:id", pm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/payments/:id"), paymentHandler.DeletePayment)
@@ -557,7 +558,7 @@ import (
 		// @Accept       json
 		// @Produce      json
 		// @Param        id       path  int                  true  "支付ID"
-		// @Param        request  body  RefundPaymentPayload true  "退款信
+		// @Param        request  body  RefundPaymentPayload true  "退款信息"
 		// @Success      200  {object}  model.APIResponse[model.Payment]
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/payments/{id}/refund [post]
@@ -640,7 +641,7 @@ import (
 		// @Security     BearerAuth
 		// @Produce      json
 		// @Param        id   path  int  true  "评价ID"
-		// @Success      200  {object}  model.APIResponse[any]
+		// @Success      200  {object}  model.SuccessResponse
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/reviews/{id} [delete]
 		group.DELETE("/reviews/:id", pm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/reviews/:id"), reviewHandler.DeleteReview)
@@ -675,7 +676,8 @@ import (
 }
 
 // RegisterStatsRoutes 注册统计相关路由
-// 使用细粒度权限控制（method+path 级别func RegisterStatsRoutes(router gin.IRouter, stats *statsservice.StatsService, pm *mw.PermissionMiddleware) {
+// 使用细粒度权限控制（method+path 级别）
+func RegisterStatsRoutes(router gin.IRouter, stats *statsservice.StatsService, pm *mw.PermissionMiddleware) {
 	h := NewStatsHandler(stats)
 	group := router
 	// 统计接口均需要认+ 速率限制
@@ -732,9 +734,9 @@ import (
 	// @Tags         Admin - Stats
 	// @Accept       json
 	// @Produce      json
-	// @Param        from           query     string  false  "开始日
+	// @Param        from           query     string  false  "开始日期"
 	// @Param        to             query     string  false  "结束日期"
-	// @Success      200            {object}  model.APIResponse[map[string]any]
+	// @Success      200            {object}  model.SuccessResponse
 	// @Router       /admin/stats/audit/overview [get]
 	group.GET("/stats/audit/overview", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/stats/audit/overview"), h.AuditOverview)
 	// @Summary      审计趋势
@@ -742,7 +744,7 @@ import (
 	// @Tags         Admin - Stats
 	// @Accept       json
 	// @Produce      json
-	// @Param        from           query     string  false  "开始日
+	// @Param        from           query     string  false  "开始日期"
 	// @Param        to             query     string  false  "结束日期"
 	// @Param        entity         query     string  false  "实体类型"
 	// @Param        action         query     string  false  "操作类型"

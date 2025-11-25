@@ -21,6 +21,10 @@ var (
 
 // Init registers metrics. Safe to call multiple times.
 func Init(reg prometheus.Registerer) {
+	if reg == nil {
+		reg = prometheus.DefaultRegisterer
+	}
+
 	once.Do(func() {
 		HTTPRequestsTotal = prometheus.NewCounterVec(
 			prometheus.CounterOpts{
@@ -45,6 +49,20 @@ func Init(reg prometheus.Registerer) {
 			},
 			[]string{"op", "table"},
 		)
-		reg.MustRegister(HTTPRequestsTotal, HTTPRequestDuration, DBQueryDuration)
 	})
+
+	registerCollector := func(c prometheus.Collector) {
+		if c == nil {
+			return
+		}
+		if err := reg.Register(c); err != nil {
+			if _, ok := err.(prometheus.AlreadyRegisteredError); !ok {
+				panic(err)
+			}
+		}
+	}
+
+	registerCollector(HTTPRequestsTotal)
+	registerCollector(HTTPRequestDuration)
+	registerCollector(DBQueryDuration)
 }

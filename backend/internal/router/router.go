@@ -13,7 +13,6 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"gorm.io/gorm"
 
-	_ "gamelink/docs"
 	"gamelink/internal/auth"
 	"gamelink/internal/cache"
 	"gamelink/internal/config"
@@ -257,9 +256,6 @@ func (r *Router) registerAdminBusinessRoutes(rbacGroup *gin.RouterGroup) {
 	commissionRepo := commissionrepo.NewCommissionRepository(r.orm)
 	serviceItemRepo := serviceitemrepo.NewServiceItemRepository(r.orm)
 	adminhandler.RegisterDashboardRoutes(rbacGroup, userRepo, playerRepo, orderRepo, withdrawRepo, serviceItemRepo, commissionRepo)
-
-	// Stats routes
-	adminhandler.RegisterStatsAnalysisRoutes(rbacGroup, orderRepo, commissionRepo, serviceItemRepo)
 
 	// Ranking Commission routes
 	rankingCommissionRepo := rankingrepo.NewRankingCommissionRepository(r.orm)

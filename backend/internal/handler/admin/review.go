@@ -7,11 +7,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	apierr "gamelink/internal/handler"
+	apierr "gamelink/internal/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	adminservice "gamelink/internal/service/admin"
 )
+
+// Review 评价模型（类型别名）
+type Review = model.Review
 
 // ReviewHandler 管理评价接口
 type ReviewHandler struct{ svc *adminservice.AdminService }
@@ -29,7 +32,7 @@ func NewReviewHandler(s *adminservice.AdminService) *ReviewHandler { return &Rev
 // @Param        userId     query     int       false  "用户ID"
 // @Param        playerId   query     int       false  "陪玩师ID"
 // @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
-// @Success      200  {object}  model.APIResponse[[]model.Review]
+// @Success      200  {object}  model.APIResponse[[]Review]
 // @Router       /admin/reviews [get]
 func (h *ReviewHandler) ListReviews(c *gin.Context) {
 	page, pageSize, ok := parsePagination(c)
@@ -80,7 +83,7 @@ func (h *ReviewHandler) ListReviews(c *gin.Context) {
 // @Security     BearerAuth
 // @Produce      json
 // @Param        id   path  int  true  "评价ID"
-// @Success      200  {object}  model.APIResponse[model.Review]
+// @Success      200  {object}  model.APIResponse[Review]
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/reviews/{id} [get]
 func (h *ReviewHandler) GetReview(c *gin.Context) {
@@ -98,7 +101,7 @@ func (h *ReviewHandler) GetReview(c *gin.Context) {
 		writeJSONError(c, 500, err.Error())
 		return
 	}
-	writeJSON(c, 200, model.APIResponse[model.Review]{Success: true, Code: 200, Message: "OK", Data: item})
+	writeJSON(c, 200, model.APIResponse[*model.Review]{Success: true, Code: 200, Message: "OK", Data: item})
 }
 
 // CreateReview
@@ -108,7 +111,7 @@ func (h *ReviewHandler) GetReview(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  CreateReviewPayload  true  "评价"
-// @Success      201  {object}  model.APIResponse[model.Review]
+// @Success      201  {object}  model.APIResponse[Review]
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/reviews [post]
 func (h *ReviewHandler) CreateReview(c *gin.Context) {
@@ -127,7 +130,7 @@ func (h *ReviewHandler) CreateReview(c *gin.Context) {
 		writeJSONError(c, 500, err.Error())
 		return
 	}
-	writeJSON(c, 201, model.APIResponse[model.Review]{Success: true, Code: 201, Message: "created", Data: out})
+	writeJSON(c, 201, model.APIResponse[*model.Review]{Success: true, Code: 201, Message: "created", Data: out})
 }
 
 // UpdateReview
@@ -138,7 +141,7 @@ func (h *ReviewHandler) CreateReview(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int                    true  "评价ID"
 // @Param        request  body  UpdateReviewPayload    true  "评价"
-// @Success      200  {object}  model.APIResponse[model.Review]
+// @Success      200  {object}  model.APIResponse[Review]
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/reviews/{id} [put]
 func (h *ReviewHandler) UpdateReview(c *gin.Context) {
@@ -165,7 +168,7 @@ func (h *ReviewHandler) UpdateReview(c *gin.Context) {
 		writeJSONError(c, 500, err.Error())
 		return
 	}
-	writeJSON(c, 200, model.APIResponse[model.Review]{Success: true, Code: 200, Message: "updated", Data: out})
+	writeJSON(c, 200, model.APIResponse[*model.Review]{Success: true, Code: 200, Message: "updated", Data: out})
 }
 
 // DeleteReview
@@ -174,7 +177,7 @@ func (h *ReviewHandler) UpdateReview(c *gin.Context) {
 // @Security     BearerAuth
 // @Produce      json
 // @Param        id   path  int  true  "评价ID"
-// @Success      200  {object}  model.APIResponse[any]
+// @Success      200  {object}  model.SuccessResponse
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/reviews/{id} [delete]
 func (h *ReviewHandler) DeleteReview(c *gin.Context) {
@@ -259,7 +262,7 @@ func (h *ReviewHandler) ListReviewLogs(c *gin.Context) {
 // @Param        id         path   int  true  "陪玩师ID"
 // @Param        page       query  int  false  "页码"
 // @Param        pageSize   query     int       false  "每页数量"
-// @Success      200  {object}  model.APIResponse[[]model.Review]
+// @Success      200  {object}  model.APIResponse[[]Review]
 // @Router       /admin/players/{id}/reviews [get]
 func (h *ReviewHandler) ListPlayerReviews(c *gin.Context) {
 	id, err := parseUintParam(c, "id")

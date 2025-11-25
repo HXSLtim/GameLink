@@ -90,11 +90,19 @@ type EvidenceURLArray []string
 
 // Scan implements the sql.Scanner interface.
 func (e *EvidenceURLArray) Scan(value interface{}) error {
-	bytes, ok := value.([]byte)
-	if !ok {
-		return errors.New("type assertion failed")
+	if value == nil {
+		*e = EvidenceURLArray{}
+		return nil
 	}
-	return json.Unmarshal(bytes, &e)
+
+	switch v := value.(type) {
+	case []byte:
+		return json.Unmarshal(v, e)
+	case string:
+		return json.Unmarshal([]byte(v), e)
+	default:
+		return errors.New("unsupported type for EvidenceURLArray")
+	}
 }
 
 // Value implements the driver.Valuer interface.

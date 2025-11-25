@@ -1,22 +1,25 @@
 package user
 
 import (
+	"strconv"
+	"time"
+
 	"github.com/gin-gonic/gin"
 
 	"gamelink/internal/apierr"
+	"gamelink/internal/model"
+	"gamelink/internal/repository"
 	"gamelink/internal/service/payment"
 )
 
-// CreatePaymentResponse 创建支付响应（类型别名）
 type CreatePaymentResponse = payment.CreatePaymentResponse
-
-// PaymentStatusResponse 支付状态响应（类型别名）
+type Payment = model.Payment
 type PaymentStatusResponse = payment.PaymentStatusResponse
 
-// RegisterPaymentRoutes 注册用户端支付路由
 func RegisterPaymentRoutes(router gin.IRouter, svc *payment.PaymentService, authMiddleware gin.HandlerFunc) {
 	group := router.Group("/user/payments")
-	group.Use(authMiddleware) // 需要认证
+	group.Use(authMiddleware)
+	group.GET("", func(c *gin.Context) { listPaymentsHandler(c, svc) })
 	group.POST("", func(c *gin.Context) { createPaymentHandler(c, svc) })
 	group.GET("/:id", func(c *gin.Context) { getPaymentStatusHandler(c, svc) })
 	group.POST("/:id/cancel", func(c *gin.Context) { cancelPaymentHandler(c, svc) })
@@ -30,12 +33,7 @@ func RegisterPaymentRoutes(router gin.IRouter, svc *payment.PaymentService, auth
 // @Produce      json
 // @Param        Authorization  header    string                          true  "Bearer {token}"
 // @Param        request        body      payment.CreatePaymentRequest    true  "创建支付请求"
-// @Success      200            {object}  model.APIResponse[model.Payment]
-// @Failure      400            {object}  apierr.APIError
-// @Failure      401            {object}  apierr.APIError
-// @Failure      404            {object}  apierr.APIError
-// @Failure      409            {object}  apierr.APIError
-// @Failure      500            {object}  apierr.APIError
+// @Success      200            {object}  model.APIResponse[Payment]
 // @Router       /user/payments [post]
 func createPaymentHandler(c *gin.Context, svc *payment.PaymentService) {
 	userID := getUserIDFromContext(c)
@@ -65,17 +63,10 @@ func createPaymentHandler(c *gin.Context, svc *payment.PaymentService) {
 
 // getPaymentStatusHandler 获取支付状态
 // @Summary      获取支付状态
-// @Description  获取支付状态
 // @Tags         User - Payments
 // @Security     BearerAuth
-// @Accept       json
-// @Produce      json
 // @Param        id    path      uint64  true  "支付ID"
-// @Success      200   {object}  model.APIResponse[model.Payment]
-// @Failure      400   {object}  apierr.APIError
-// @Failure      401   {object}  apierr.APIError
-// @Failure      404   {object}  apierr.APIError
-// @Failure      500   {object}  apierr.APIError
+// @Success      200   {object}  model.APIResponse[Payment]
 // @Router       /user/payments/{id} [get]
 func getPaymentStatusHandler(c *gin.Context, svc *payment.PaymentService) {
 	paymentID, err := parseUintParam(c, "id")
@@ -99,18 +90,10 @@ func getPaymentStatusHandler(c *gin.Context, svc *payment.PaymentService) {
 
 // cancelPaymentHandler 取消支付
 // @Summary      取消支付
-// @Description  取消支付
 // @Tags         User - Payments
 // @Security     BearerAuth
-// @Accept       json
-// @Produce      json
 // @Param        id    path      uint64  true  "支付ID"
-// @Success      200   {object}  model.APIResponse[any]
-// @Failure      400   {object}  apierr.APIError
-// @Failure      401   {object}  apierr.APIError
-// @Failure      403   {object}  apierr.APIError
-// @Failure      404   {object}  apierr.APIError
-// @Failure      500   {object}  apierr.APIError
+// @Success      200   {object}  model.SuccessResponse
 // @Router       /user/payments/{id}/cancel [post]
 func cancelPaymentHandler(c *gin.Context, svc *payment.PaymentService) {
 	userID := getUserIDFromContext(c)
@@ -131,4 +114,68 @@ func cancelPaymentHandler(c *gin.Context, svc *payment.PaymentService) {
 	}
 
 	respondSuccess(c, "支付已取消", struct{}{})
+}
+
+// listPaymentsHandler 获取当前用户的支付列表
+// @Summary      获取支付列表
+// @Tags         User - Payments
+// @Security     BearerAuth
+// @Produce      json
+// @Param        page       query  int     false  "页码"
+// @Param        pageSize   query  int     false  "每页数量"
+// @Param        status     query  string  false  "状态过滤"
+// @Param        method     query  string  false  "支付方式"
+// @Param        dateFrom   query  string  false  "开始时间 RFC3339"
+// @Param        dateTo     query  string  false  "结束时间 RFC3339"
+// @Success      200        {object}  model.SuccessResponse
+// @Router       /user/payments [get]
+func listPaymentsHandler(c *gin.Context, svc *payment.PaymentService) {
+	userID := getUserIDFromContext(c)
+	opts := buildPaymentListOptionsFromQuery(c)
+	opts.UserID = &userID
+	payments, total, err := svc.List(c.Request.Context(), opts)
+	if err != nil {
+		respondAPIError(c, apierr.InternalError("获取支付列表失败").WithDetails(err.Error()))
+		return
+	}
+	respondSuccess(c, "OK", struct {
+		Items []model.Payment `json:"items"`
+		Total int64           `json:"total"`
+	}{Items: payments, Total: total})
+}
+
+func buildPaymentListOptionsFromQuery(c *gin.Context) repository.PaymentListOptions {
+	opts := repository.PaymentListOptions{
+		Page:     parseIntWithDefault(c.Query("page"), 1),
+		PageSize: parseIntWithDefault(c.Query("pageSize"), 20),
+	}
+	if status := c.Query("status"); status != "" {
+		s := model.PaymentStatus(status)
+		opts.Status = &s
+	}
+	if method := c.Query("method"); method != "" {
+		m := model.PaymentMethod(method)
+		opts.Method = &m
+	}
+	if df := c.Query("dateFrom"); df != "" {
+		if t, err := time.Parse(time.RFC3339, df); err == nil {
+			opts.DateFrom = &t
+		}
+	}
+	if dt := c.Query("dateTo"); dt != "" {
+		if t, err := time.Parse(time.RFC3339, dt); err == nil {
+			opts.DateTo = &t
+		}
+	}
+	return opts
+}
+
+func parseIntWithDefault(val string, def int) int {
+	if val == "" {
+		return def
+	}
+	if v, err := strconv.Atoi(val); err == nil && v > 0 {
+		return v
+	}
+	return def
 }

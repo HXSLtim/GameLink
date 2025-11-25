@@ -12,6 +12,9 @@ import (
 	chatservice "gamelink/internal/service/chat"
 )
 
+// ChatMessage 聊天消息模型（类型别名）
+type ChatMessage = model.ChatMessage
+
 // RegisterChatRoutes 注册用户端聊天相关路由。
 func RegisterChatRoutes(router gin.IRouter, svc *chatservice.ChatService, authMiddleware gin.HandlerFunc) {
 	group := router.Group("/chat")
@@ -36,7 +39,7 @@ type reportMessageRequest struct {
 // @Param        Authorization  header    string                   true  "Bearer {token}"
 // @Param        id             path      int                      true  "Message ID"
 // @Param        request        body      reportMessageRequest     true  "Report reason and evidence"
-// @Success      200            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
@@ -73,7 +76,7 @@ func reportChatMessageHandler(c *gin.Context, svc *chatservice.ChatService) {
 // @Param        Authorization  header    string  true   "Bearer {token}"
 // @Param        page           query     int     false  "Page number"
 // @Param        pageSize       query     int     false  "Page size"
-// @Success      200            {object}  model.APIResponse[gin.H]
+// @Success      200            {object}  model.SuccessResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
 // @Router       /user/chat/groups [get]
@@ -111,7 +114,7 @@ func listChatGroupsHandler(c *gin.Context, svc *chatservice.ChatService) {
 // @Param        pageSize       query     int     false  "Page size"
 // @Param        beforeId       query     int     false  "Load messages before this ID"
 // @Param        afterId        query     int     false  "Load messages after this ID"
-// @Success      200            {object}  model.APIResponse[gin.H]
+// @Success      200            {object}  model.SuccessResponse
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      403            {object}  model.ErrorResponse
@@ -188,7 +191,7 @@ type sendMessageRequest struct {
 // @Param        Authorization  header    string               true  "Bearer {token}"
 // @Param        id             path      int                  true  "Group ID"
 // @Param        request        body      sendMessageRequest   true  "Message content"
-// @Success      201            {object}  model.APIResponse[model.ChatMessage]
+// @Success      201            {object}  model.APIResponse[ChatMessage]
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      403            {object}  model.ErrorResponse

@@ -15,6 +15,654 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/admin/commission/rules": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "创建一个新的抽成规则",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Commission"
+                ],
+                "summary": "创建抽成规则",
+                "parameters": [
+                    {
+                        "description": "抽成规则信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_service_commission.CreateCommissionRuleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/commission/rules/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "更新一个已存在的抽成规则",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Commission"
+                ],
+                "summary": "更新抽成规则",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "规则ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_service_commission.UpdateCommissionRuleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/commission/settlements/trigger": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "管理员手动触发指定月份的结算",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Commission"
+                ],
+                "summary": "手动触发月度结算",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "月份 (YYYY-MM)",
+                        "name": "month",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/commission/stats": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取指定月份的平台统计数据，包括总收入、总抽成等",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Commission"
+                ],
+                "summary": "获取平台统计",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "月份 (YYYY-MM)",
+                        "name": "month",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.PlatformStatsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/dashboard/monthly-revenue": {
+            "get": {
+                "description": "API endpoint// @Accept       json",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "获取月度收入趋势",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of months (default 12)",
+                        "name": "months",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/dashboard/overview": {
+            "get": {
+                "description": "管理员Dashboard总览数据",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Dashboard"
+                ],
+                "summary": "获取Dashboard总览",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.DashboardOverviewStats"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/dashboard/recent-orders": {
+            "get": {
+                "description": "API endpoint// @Accept       json",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "数量限制",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/dashboard/recent-withdraws": {
+            "get": {
+                "description": "API endpoint// @Accept       json",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "数量限制",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/disputes/pending": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取状态为待处理的订单纠纷列表，支持分",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin/Disputes"
+                ],
+                "summary": "列出待处理纠",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_internal_handler_admin_OrderDispute"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/disputes/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "根据 ID 获取单个订单纠纷的详细信",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin/Disputes"
+                ],
+                "summary": "获取纠纷详情",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "纠纷ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_OrderDispute"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/disputes/{id}/assign": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "将一个订单纠纷分配给指定的客服人员处",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin/Disputes"
+                ],
+                "summary": "分配纠纷",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "纠纷ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "分配信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_admin.AssignDisputePayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/disputes/{id}/resolve": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "对一个订单纠纷做出最终处理决定，例如退款、重新分配等",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin/Disputes"
+                ],
+                "summary": "解决纠纷",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "纠纷ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "处理结果信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_admin.ResolveDisputePayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/disputes/{id}/rollback": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "撤销一个订单纠纷的分配，使其回到待处理状",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin/Disputes"
+                ],
+                "summary": "回滚分配",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "纠纷ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "回滚信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_admin.RollbackAssignmentPayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/games": {
             "get": {
                 "security": [
@@ -39,7 +687,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "每页数量",
-                        "name": "page_size",
+                        "name": "pageSize",
                         "in": "query"
                     }
                 ],
@@ -47,8 +695,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_internal_handler_admin_Game"
                         }
                     }
                 }
@@ -76,7 +723,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_admin.GamePayload"
+                            "$ref": "#/definitions/internal_handler_admin.GamePayload"
                         }
                     }
                 ],
@@ -84,15 +731,13 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Game"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -125,15 +770,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Game"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -168,7 +811,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_admin.GamePayload"
+                            "$ref": "#/definitions/internal_handler_admin.GamePayload"
                         }
                     }
                 ],
@@ -176,15 +819,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Game"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -215,15 +856,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -260,7 +899,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "每页数量",
-                        "name": "page_size",
+                        "name": "pageSize",
                         "in": "query"
                     },
                     {
@@ -282,14 +921,14 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "开始时间",
-                        "name": "date_from",
+                        "description": "Start date (YYYY-MM-DD)",
+                        "name": "dateFrom",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "结束时间",
-                        "name": "date_to",
+                        "description": "End date (YYYY-MM-DD)",
+                        "name": "dateTo",
                         "in": "query"
                     },
                     {
@@ -302,19 +941,13 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "string",
-                        "description": "导出列（逗号分隔）",
-                        "name": "fields",
-                        "in": "query"
-                    },
-                    {
                         "enum": [
                             "en",
                             "zh"
                         ],
                         "type": "string",
-                        "description": "列头语言",
-                        "name": "header_lang",
+                        "description": "Export fields (comma separated)",
+                        "name": "fields",
                         "in": "query"
                     }
                 ],
@@ -322,8 +955,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_gamelink_internal_model_OperationLog"
                         }
                     }
                 }
@@ -336,12 +968,9 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "根据状态/用户/玩家/游戏和时间范围筛选，支持分页",
+                "description": "API endpoint// @Tags         Admin/Orders",
                 "produces": [
                     "application/json"
-                ],
-                "tags": [
-                    "Admin/Orders"
                 ],
                 "summary": "列出订单",
                 "parameters": [
@@ -354,7 +983,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "每页数量",
-                        "name": "page_size",
+                        "name": "pageSize",
                         "in": "query"
                     },
                     {
@@ -363,14 +992,8 @@ const docTemplate = `{
                             "type": "string"
                         },
                         "collectionFormat": "csv",
-                        "description": "订单状态，可多值",
+                        "description": "Status filter",
                         "name": "status",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "用户ID",
-                        "name": "user_id",
                         "in": "query"
                     },
                     {
@@ -382,19 +1005,13 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "游戏ID",
-                        "name": "game_id",
+                        "name": "gameId",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "开始时间",
-                        "name": "date_from",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "结束时间",
-                        "name": "date_to",
+                        "description": "Start date (YYYY-MM-DD)",
+                        "name": "dateFrom",
                         "in": "query"
                     }
                 ],
@@ -402,8 +1019,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_model_Order"
                         }
                     }
                 }
@@ -431,7 +1047,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_admin.CreateOrderPayload"
+                            "$ref": "#/definitions/internal_handler_admin.CreateOrderPayload"
                         }
                     }
                 ],
@@ -439,15 +1055,13 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Order"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -480,15 +1094,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_gamelink_internal_service_admin_OrderTimelineItem"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -523,7 +1135,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_admin.UpdateOrderPayload"
+                            "$ref": "#/definitions/internal_handler_admin.UpdateOrderPayload"
                         }
                     }
                 ],
@@ -531,15 +1143,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_gamelink_internal_model_OperationLog"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -570,15 +1180,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Payment"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -615,7 +1223,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_admin.AssignOrderPayload"
+                            "$ref": "#/definitions/internal_handler_admin.AssignOrderPayload"
                         }
                     }
                 ],
@@ -623,15 +1231,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Order"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -668,7 +1274,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_admin.CancelOrderPayload"
+                            "$ref": "#/definitions/internal_handler_admin.CancelOrderPayload"
                         }
                     }
                 ],
@@ -676,15 +1282,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_model_Order"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -707,7 +1311,6 @@ const docTemplate = `{
                 "tags": [
                     "Admin/Orders"
                 ],
-                "summary": "完成订单",
                 "parameters": [
                     {
                         "type": "integer",
@@ -721,7 +1324,7 @@ const docTemplate = `{
                         "name": "request",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/internal_admin.orderNotePayload"
+                            "$ref": "#/definitions/internal_handler_admin.orderNotePayload"
                         }
                     }
                 ],
@@ -729,15 +1332,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_model_Order"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -760,7 +1361,6 @@ const docTemplate = `{
                 "tags": [
                     "Admin/Orders"
                 ],
-                "summary": "确认订单",
                 "parameters": [
                     {
                         "type": "integer",
@@ -774,7 +1374,7 @@ const docTemplate = `{
                         "name": "request",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/internal_admin.orderNotePayload"
+                            "$ref": "#/definitions/internal_handler_admin.orderNotePayload"
                         }
                     }
                 ],
@@ -782,15 +1382,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_internal_handler_admin_Order"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -827,7 +1425,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "每页数量",
-                        "name": "page_size",
+                        "name": "pageSize",
                         "in": "query"
                     },
                     {
@@ -851,14 +1449,8 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "开始时间",
-                        "name": "date_from",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "结束时间",
-                        "name": "date_to",
+                        "description": "Start date (YYYY-MM-DD)",
+                        "name": "dateFrom",
                         "in": "query"
                     },
                     {
@@ -872,7 +1464,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "导出列（逗号分隔），默认：id,entity_type,entity_id,actor_user_id,action,reason,metadata,created_at",
+                        "description": "Export columns (comma separated)",
                         "name": "fields",
                         "in": "query"
                     },
@@ -891,8 +1483,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_gamelink_internal_model_Payment"
                         }
                     }
                 }
@@ -911,7 +1502,6 @@ const docTemplate = `{
                 "tags": [
                     "Admin/Orders"
                 ],
-                "summary": "获取订单支付记录",
                 "parameters": [
                     {
                         "type": "integer",
@@ -925,15 +1515,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_internal_handler_admin_Review"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -941,22 +1529,13 @@ const docTemplate = `{
         },
         "/admin/orders/{id}/refund": {
             "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "将订单状态标记为 refunded，并记录退款金额与原因，同时关联支付退款",
+                "description": "API endpoint// @Security     BearerAuth",
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
                     "application/json"
                 ],
-                "tags": [
-                    "Admin/Orders"
-                ],
-                "summary": "订单退款",
                 "parameters": [
                     {
                         "type": "integer",
@@ -966,28 +1545,20 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "退款信息",
+                        "description": "Request body",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_admin.orderRefundPayload"
+                            "$ref": "#/definitions/internal_handler_admin.orderRefundPayload"
                         }
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -1003,10 +1574,6 @@ const docTemplate = `{
                 "produces": [
                     "application/json"
                 ],
-                "tags": [
-                    "Admin/Orders"
-                ],
-                "summary": "获取订单退款记录",
                 "parameters": [
                     {
                         "type": "integer",
@@ -1020,15 +1587,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_model_Order"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -1047,10 +1612,7 @@ const docTemplate = `{
                 "produces": [
                     "application/json"
                 ],
-                "tags": [
-                    "Admin/Orders"
-                ],
-                "summary": "审核订单（通过/拒绝）",
+                "summary": "审核订单（通过/拒绝// @Tags         Admin/Orders",
                 "parameters": [
                     {
                         "type": "integer",
@@ -1065,7 +1627,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_admin.ReviewOrderPayload"
+                            "$ref": "#/definitions/internal_handler_admin.ReviewOrderPayload"
                         }
                     }
                 ],
@@ -1073,15 +1635,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_model_Order"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -1100,7 +1660,6 @@ const docTemplate = `{
                 "tags": [
                     "Admin/Orders"
                 ],
-                "summary": "获取订单评价列表",
                 "parameters": [
                     {
                         "type": "integer",
@@ -1114,15 +1673,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -1130,22 +1687,13 @@ const docTemplate = `{
         },
         "/admin/orders/{id}/start": {
             "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "将订单状态从 confirmed 置为 in_progress，并记录开始时间",
+                "description": "API endpoint// @Security     BearerAuth",
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
                     "application/json"
                 ],
-                "tags": [
-                    "Admin/Orders"
-                ],
-                "summary": "开始服务",
                 "parameters": [
                     {
                         "type": "integer",
@@ -1159,7 +1707,7 @@ const docTemplate = `{
                         "name": "request",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/internal_admin.orderNotePayload"
+                            "$ref": "#/definitions/internal_handler_admin.orderNotePayload"
                         }
                     }
                 ],
@@ -1167,15 +1715,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_model_Order"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -1188,14 +1734,10 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "汇总订单的状态变更、操作日志、支付事件等信息",
+                "description": "API endpoint// @Tags         Admin/Orders",
                 "produces": [
                     "application/json"
                 ],
-                "tags": [
-                    "Admin/Orders"
-                ],
-                "summary": "获取订单时间线",
                 "parameters": [
                     {
                         "type": "integer",
@@ -1209,15 +1751,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_gamelink_internal_service_admin_OrderRefundItem"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -1230,12 +1770,9 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "根据状态/方法/用户/订单和时间范围筛选，支持分页",
+                "description": "API endpoint// @Tags         Admin/Payments",
                 "produces": [
                     "application/json"
-                ],
-                "tags": [
-                    "Admin/Payments"
                 ],
                 "summary": "列出支付",
                 "parameters": [
@@ -1248,7 +1785,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "每页数量",
-                        "name": "page_size",
+                        "name": "pageSize",
                         "in": "query"
                     },
                     {
@@ -1257,42 +1794,26 @@ const docTemplate = `{
                             "type": "string"
                         },
                         "collectionFormat": "csv",
-                        "description": "支付状态",
+                        "description": "Status filter",
                         "name": "status",
-                        "in": "query"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "支付方式",
-                        "name": "method",
                         "in": "query"
                     },
                     {
                         "type": "integer",
                         "description": "用户ID",
-                        "name": "user_id",
+                        "name": "userId",
                         "in": "query"
                     },
                     {
                         "type": "integer",
                         "description": "订单ID",
-                        "name": "order_id",
+                        "name": "orderId",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "开始时间",
-                        "name": "date_from",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "结束时间",
-                        "name": "date_to",
+                        "description": "Start date (YYYY-MM-DD)",
+                        "name": "dateFrom",
                         "in": "query"
                     }
                 ],
@@ -1300,8 +1821,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_model_Payment"
                         }
                     }
                 }
@@ -1329,7 +1849,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_admin.CreatePaymentPayload"
+                            "$ref": "#/definitions/internal_handler_admin.CreatePaymentPayload"
                         }
                     }
                 ],
@@ -1337,15 +1857,13 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Payment"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -1378,15 +1896,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -1421,7 +1937,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_admin.UpdatePaymentPayload"
+                            "$ref": "#/definitions/internal_handler_admin.UpdatePaymentPayload"
                         }
                     }
                 ],
@@ -1429,15 +1945,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_gamelink_internal_model_OperationLog"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -1468,15 +1982,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_model_Order"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -1513,7 +2025,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_admin.CapturePaymentPayload"
+                            "$ref": "#/definitions/internal_handler_admin.CapturePaymentPayload"
                         }
                     }
                 ],
@@ -1521,15 +2033,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_model_Payment"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -1566,7 +2076,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "每页数量",
-                        "name": "page_size",
+                        "name": "pageSize",
                         "in": "query"
                     },
                     {
@@ -1590,14 +2100,8 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "开始时间",
-                        "name": "date_from",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "结束时间",
-                        "name": "date_to",
+                        "description": "Start date (YYYY-MM-DD)",
+                        "name": "dateFrom",
                         "in": "query"
                     },
                     {
@@ -1611,7 +2115,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "导出列（逗号分隔），默认：id,entity_type,entity_id,actor_user_id,action,reason,metadata,created_at",
+                        "description": "Export columns (comma separated)",
                         "name": "fields",
                         "in": "query"
                     },
@@ -1630,8 +2134,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_model_Order"
                         }
                     }
                 }
@@ -1650,10 +2153,7 @@ const docTemplate = `{
                 "produces": [
                     "application/json"
                 ],
-                "tags": [
-                    "Admin/Payments"
-                ],
-                "summary": "退款处理",
+                "summary": "退款处// @Tags         Admin/Payments",
                 "parameters": [
                     {
                         "type": "integer",
@@ -1663,11 +2163,11 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "退款信息",
+                        "description": "Request body",
                         "name": "request",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/internal_admin.RefundPaymentPayload"
+                            "$ref": "#/definitions/internal_handler_admin.RefundPaymentPayload"
                         }
                     }
                 ],
@@ -1675,15 +2175,372 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_model_Payment"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/permission-groups": {
+            "get": {
+                "description": "管理员获取系统中所有权限分组的列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Permissions"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/permissions": {
+            "get": {
+                "description": "管理员获取系统权限列表，支持分页和过// @Tags         Admin - Permissions",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "获取权限列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "每页数量",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "关键词搜索",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "HTTP方法过滤",
+                        "name": "method",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "权限分组过滤",
+                        "name": "group",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gin_H"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "创建权限请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_admin.CreatePermissionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Permission"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/permissions/{id}": {
+            "get": {
+                "description": "管理员根据ID获取指定权限的详细信// @Tags         Admin - Permissions",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "获取权限详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "权限ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Permission"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "管理员更新指定权限的信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Permissions"
+                ],
+                "summary": "更新权限",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "权限ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新权限请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_admin.UpdatePermissionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Permission"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "管理员删除指定的系统权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Permissions"
+                ],
+                "summary": "删除权限",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "权限ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -1713,7 +2570,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "每页数量",
-                        "name": "page_size",
+                        "name": "pageSize",
                         "in": "query"
                     }
                 ],
@@ -1721,8 +2578,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_gamelink_internal_model_Player"
                         }
                     }
                 }
@@ -1750,7 +2606,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_admin.CreatePlayerPayload"
+                            "$ref": "#/definitions/internal_handler_admin.CreatePlayerPayload"
                         }
                     }
                 ],
@@ -1758,15 +2614,13 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Player"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -1799,15 +2653,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Player"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -1842,7 +2694,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_admin.UpdatePlayerPayload"
+                            "$ref": "#/definitions/internal_handler_admin.UpdatePlayerPayload"
                         }
                     }
                 ],
@@ -1850,15 +2702,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Player"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -1889,15 +2739,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -1919,7 +2767,7 @@ const docTemplate = `{
                 "tags": [
                     "Admin/Players"
                 ],
-                "summary": "更新玩家主游戏",
+                "summary": "更新玩家主游",
                 "parameters": [
                     {
                         "type": "integer",
@@ -1946,15 +2794,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Player"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -1991,7 +2837,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "每页数量",
-                        "name": "page_size",
+                        "name": "pageSize",
                         "in": "query"
                     },
                     {
@@ -2013,14 +2859,8 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "开始时间",
-                        "name": "date_from",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "结束时间",
-                        "name": "date_to",
+                        "description": "Start date (YYYY-MM-DD)",
+                        "name": "dateFrom",
                         "in": "query"
                     },
                     {
@@ -2033,19 +2873,13 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "string",
-                        "description": "导出列（逗号分隔）",
-                        "name": "fields",
-                        "in": "query"
-                    },
-                    {
                         "enum": [
                             "en",
                             "zh"
                         ],
                         "type": "string",
-                        "description": "列头语言",
-                        "name": "header_lang",
+                        "description": "Export fields (comma separated)",
+                        "name": "fields",
                         "in": "query"
                     }
                 ],
@@ -2053,8 +2887,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_gamelink_internal_model_OperationLog"
                         }
                     }
                 }
@@ -2091,7 +2924,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "每页数量",
-                        "name": "page_size",
+                        "name": "pageSize",
                         "in": "query"
                     }
                 ],
@@ -2099,8 +2932,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_internal_handler_admin_Review"
                         }
                     }
                 }
@@ -2122,7 +2954,7 @@ const docTemplate = `{
                 "tags": [
                     "Admin/Players"
                 ],
-                "summary": "更新玩家技能标签",
+                "summary": "更新玩家技能标",
                 "parameters": [
                     {
                         "type": "integer",
@@ -2137,7 +2969,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_admin.SkillTagsBody"
+                            "$ref": "#/definitions/internal_handler_admin.SkillTagsBody"
                         }
                     }
                 ],
@@ -2145,15 +2977,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -2175,7 +3005,7 @@ const docTemplate = `{
                 "tags": [
                     "Admin/Players"
                 ],
-                "summary": "更新玩家认证状态",
+                "summary": "更新玩家认证状",
                 "parameters": [
                     {
                         "type": "integer",
@@ -2201,15 +3031,269 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Player"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/ranking-commission/configs": {
+            "get": {
+                "description": "API endpoint// @Tags         Admin - RankingCommission",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "获取排名抽成配置列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Month filter (YYYY-MM)",
+                        "name": "month",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "API endpoint// @Tags         Admin - RankingCommission",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "创建排名抽成配置",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "配置信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_admin.CreateRankingCommissionConfigRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_RankingCommissionConfig"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/ranking-commission/configs/{id}": {
+            "get": {
+                "description": "API endpoint// @Tags         Admin - RankingCommission",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "获取排名抽成配置详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "配置ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "API endpoint// @Tags         Admin - RankingCommission",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "更新排名抽成配置",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "配置ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_admin.UpdateRankingCommissionConfigRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "API endpoint// @Tags         Admin - RankingCommission",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "删除排名抽成配置",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "配置ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -2239,37 +3323,31 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "每页数量",
-                        "name": "page_size",
+                        "name": "pageSize",
                         "in": "query"
                     },
                     {
                         "type": "integer",
                         "description": "订单ID",
-                        "name": "order_id",
+                        "name": "orderId",
                         "in": "query"
                     },
                     {
                         "type": "integer",
                         "description": "用户ID",
-                        "name": "user_id",
+                        "name": "userId",
                         "in": "query"
                     },
                     {
                         "type": "integer",
                         "description": "陪玩师ID",
-                        "name": "player_id",
+                        "name": "playerId",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "开始时间",
-                        "name": "date_from",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "结束时间",
-                        "name": "date_to",
+                        "description": "Start date (YYYY-MM-DD)",
+                        "name": "dateFrom",
                         "in": "query"
                     }
                 ],
@@ -2277,8 +3355,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_internal_handler_admin_Review"
                         }
                     }
                 }
@@ -2306,7 +3383,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_admin.CreateReviewPayload"
+                            "$ref": "#/definitions/internal_handler_admin.CreateReviewPayload"
                         }
                     }
                 ],
@@ -2314,15 +3391,13 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Review"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -2355,15 +3430,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Review"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -2398,7 +3471,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_admin.UpdateReviewPayload"
+                            "$ref": "#/definitions/internal_handler_admin.UpdateReviewPayload"
                         }
                     }
                 ],
@@ -2406,15 +3479,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Review"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -2445,15 +3516,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -2490,7 +3559,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "每页数量",
-                        "name": "page_size",
+                        "name": "pageSize",
                         "in": "query"
                     },
                     {
@@ -2512,14 +3581,8 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "开始时间",
-                        "name": "date_from",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "结束时间",
-                        "name": "date_to",
+                        "description": "Start date (YYYY-MM-DD)",
+                        "name": "dateFrom",
                         "in": "query"
                     },
                     {
@@ -2532,19 +3595,13 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "string",
-                        "description": "导出列（逗号分隔）",
-                        "name": "fields",
-                        "in": "query"
-                    },
-                    {
                         "enum": [
                             "en",
                             "zh"
                         ],
                         "type": "string",
-                        "description": "列头语言",
-                        "name": "header_lang",
+                        "description": "Export fields (comma separated)",
+                        "name": "fields",
                         "in": "query"
                     }
                 ],
@@ -2552,8 +3609,816 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_gamelink_internal_model_OperationLog"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/roles": {
+            "get": {
+                "description": "管理员获取系统角色列表，支持分页和过// @Tags         Admin - Roles",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "获取角色列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "每页数量",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否包含权限信息",
+                        "name": "with_permissions",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "关键词搜索",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否为系统角色",
+                        "name": "isSystem",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gin_H"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "管理员创建新的系统角// @Tags         Admin - Roles",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "创建角色",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "创建角色请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_admin.CreateRoleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gin_H"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/roles/{id}": {
+            "get": {
+                "description": "管理员根据ID获取指定角色的详细信// @Tags         Admin - Roles",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "获取角色详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "角色ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否包含权限信息",
+                        "name": "with_permissions",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gin_H"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "管理员更新指定角色的信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Roles"
+                ],
+                "summary": "更新角色",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "角色ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新角色请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_admin.UpdateRoleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gin_H"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "管理员删除指定的系统角色",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Roles"
+                ],
+                "summary": "删除角色",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "角色ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/roles/{id}/permissions": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "角色ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_gamelink_internal_model_Permission"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Roles"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "角色ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "分配权限请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_admin.AssignPermissionsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/service-items": {
+            "get": {
+                "description": "API endpoint// @Tags         Admin - ServiceItem",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "获取服务项目列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "分类",
+                        "name": "category",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sub category (solo/team/gift)",
+                        "name": "subCategory",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "游戏ID",
+                        "name": "gameId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Is active",
+                        "name": "isActive",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_service_item_ServiceItemListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "管理员创建服务项目（护航服务或礼物）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - ServiceItem"
+                ],
+                "summary": "创建服务项目",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "服务项目信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_service_item.CreateServiceItemRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_ServiceItem"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/service-items/batch-update-price": {
+            "post": {
+                "description": "API endpoint// @Tags         Admin - ServiceItem",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "批量更新价格",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "批量更新请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_service_item.BatchUpdatePriceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/service-items/batch-update-status": {
+            "post": {
+                "description": "API endpoint// @Tags         Admin - ServiceItem",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "批量更新状",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "批量更新请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_service_item.BatchUpdateStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/service-items/{id}": {
+            "get": {
+                "description": "API endpoint// @Tags         Admin - ServiceItem",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "获取服务项目详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "服务项目ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_service_item_ServiceItemDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "API endpoint// @Tags         Admin - ServiceItem",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "更新服务项目",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "服务项目ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_service_item.UpdateServiceItemRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "API endpoint// @Tags         Admin - ServiceItem",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "删除服务项目",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "服务项目ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -2561,29 +4426,35 @@ const docTemplate = `{
         },
         "/admin/stats/audit/overview": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
+                "description": "获取审计日志统计概览",
+                "consumes": [
+                    "application/json"
                 ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "Admin/Stats"
+                    "Admin - Stats"
                 ],
-                "summary": "审计总览（按实体/动作汇总）",
+                "summary": "审计概览",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "开始时间",
-                        "name": "date_from",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "开始日期",
+                        "name": "from",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "结束时间",
-                        "name": "date_to",
+                        "description": "结束日期",
+                        "name": "to",
                         "in": "query"
                     }
                 ],
@@ -2591,8 +4462,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -2600,40 +4488,38 @@ const docTemplate = `{
         },
         "/admin/stats/audit/trend": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
+                "description": "获取审计日志时间趋势",
+                "consumes": [
+                    "application/json"
                 ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "Admin/Stats"
+                    "Admin - Stats"
                 ],
-                "summary": "审计趋势（日）",
+                "summary": "审计趋势",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "开始时间",
-                        "name": "date_from",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "开始日期",
+                        "name": "from",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "结束时间",
-                        "name": "date_to",
+                        "description": "结束日期",
+                        "name": "to",
                         "in": "query"
                     },
                     {
-                        "enum": [
-                            "order",
-                            "payment",
-                            "player",
-                            "game",
-                            "review",
-                            "user"
-                        ],
                         "type": "string",
                         "description": "实体类型",
                         "name": "entity",
@@ -2641,7 +4527,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "动作",
+                        "description": "操作类型",
                         "name": "action",
                         "in": "query"
                     }
@@ -2650,8 +4536,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -2659,24 +4562,41 @@ const docTemplate = `{
         },
         "/admin/stats/dashboard": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
+                "consumes": [
+                    "application/json"
                 ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "Admin/Stats"
+                    "Admin - Stats"
                 ],
-                "summary": "Dashboard 概览",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -2684,24 +4604,38 @@ const docTemplate = `{
         },
         "/admin/stats/orders": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
+                "consumes": [
+                    "application/json"
                 ],
                 "produces": [
                     "application/json"
                 ],
-                "tags": [
-                    "Admin/Stats"
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
                 ],
-                "summary": "订单状态统计",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -2709,22 +4643,26 @@ const docTemplate = `{
         },
         "/admin/stats/revenue-trend": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
+                "description": "获取指定天数的收入趋�?// @Tags         Admin - Stats",
+                "consumes": [
+                    "application/json"
                 ],
                 "produces": [
                     "application/json"
                 ],
-                "tags": [
-                    "Admin/Stats"
-                ],
-                "summary": "收入趋势（日）",
+                "summary": "收入趋势",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
                         "type": "integer",
-                        "description": "天数，默认7",
+                        "default": 7,
+                        "description": "天数",
                         "name": "days",
                         "in": "query"
                     }
@@ -2733,8 +4671,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -2742,22 +4697,24 @@ const docTemplate = `{
         },
         "/admin/stats/top-players": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
+                "consumes": [
+                    "application/json"
                 ],
                 "produces": [
                     "application/json"
                 ],
-                "tags": [
-                    "Admin/Stats"
-                ],
-                "summary": "Top 陪玩师排行",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
                         "type": "integer",
-                        "description": "数量，默认10",
+                        "default": 10,
+                        "description": "数量限制",
                         "name": "limit",
                         "in": "query"
                     }
@@ -2766,8 +4723,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -2775,22 +4749,26 @@ const docTemplate = `{
         },
         "/admin/stats/user-growth": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
+                "description": "获取指定天数的用户增长趋�?// @Tags         Admin - Stats",
+                "consumes": [
+                    "application/json"
                 ],
                 "produces": [
                     "application/json"
                 ],
-                "tags": [
-                    "Admin/Stats"
-                ],
-                "summary": "用户增长（日）",
+                "summary": "用户增长趋势",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
                         "type": "integer",
-                        "description": "天数，默认7",
+                        "default": 7,
+                        "description": "天数",
                         "name": "days",
                         "in": "query"
                     }
@@ -2799,8 +4777,217 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/system/cache": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/system/config": {
+            "get": {
+                "description": "获取系统配置信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - System"
+                ],
+                "summary": "系统配置",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/system/db": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/system/resources": {
+            "get": {
+                "description": "获取系统资源使用情况",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - System"
+                ],
+                "summary": "系统资源",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/system/version": {
+            "get": {
+                "description": "获取系统版本信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - System"
+                ],
+                "summary": "系统版本",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -2813,13 +5000,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "分页列出用户，支持按角色/状态/时间范围/关键字筛选",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Admin/Users"
-                ],
+                "description": "API endpoint// @Tags         Admin/Users",
                 "summary": "列出用户",
                 "parameters": [
                     {
@@ -2831,7 +5012,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "每页数量",
-                        "name": "page_size",
+                        "name": "pageSize",
                         "in": "query"
                     },
                     {
@@ -2840,35 +5021,13 @@ const docTemplate = `{
                             "type": "string"
                         },
                         "collectionFormat": "csv",
-                        "description": "角色过滤，可多值",
+                        "description": "Role filter",
                         "name": "role",
                         "in": "query"
                     },
                     {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "状态过滤，可多值",
-                        "name": "status",
-                        "in": "query"
-                    },
-                    {
                         "type": "string",
-                        "description": "开始时间",
-                        "name": "date_from",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "结束时间",
-                        "name": "date_to",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "关键字（匹配 name/email/phone）",
+                        "description": "Parameter: keyword",
                         "name": "keyword",
                         "in": "query"
                     }
@@ -2877,8 +5036,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_internal_handler_admin_User"
                         }
                     }
                 }
@@ -2906,7 +5064,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_admin.CreateUserPayload"
+                            "$ref": "#/definitions/internal_handler_admin.CreateUserPayload"
                         }
                     }
                 ],
@@ -2914,15 +5072,70 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_User"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/users/roles": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Roles"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "分配角色请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_admin.AssignRolesToUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -2955,15 +5168,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_User"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -2998,7 +5209,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_admin.UpdateUserPayload"
+                            "$ref": "#/definitions/internal_handler_admin.UpdateUserPayload"
                         }
                     }
                 ],
@@ -3006,15 +5217,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_User"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -3045,15 +5254,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -3090,7 +5297,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "每页数量",
-                        "name": "page_size",
+                        "name": "pageSize",
                         "in": "query"
                     },
                     {
@@ -3112,14 +5319,8 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "开始时间",
-                        "name": "date_from",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "结束时间",
-                        "name": "date_to",
+                        "description": "Start date (YYYY-MM-DD)",
+                        "name": "dateFrom",
                         "in": "query"
                     },
                     {
@@ -3132,19 +5333,13 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "string",
-                        "description": "导出列（逗号分隔）",
-                        "name": "fields",
-                        "in": "query"
-                    },
-                    {
                         "enum": [
                             "en",
                             "zh"
                         ],
                         "type": "string",
-                        "description": "列头语言",
-                        "name": "header_lang",
+                        "description": "Export fields (comma separated)",
+                        "name": "fields",
                         "in": "query"
                     }
                 ],
@@ -3152,8 +5347,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_gamelink_internal_model_OperationLog"
                         }
                     }
                 }
@@ -3172,7 +5366,7 @@ const docTemplate = `{
                 "tags": [
                     "Admin/Users"
                 ],
-                "summary": "获取用户的订单",
+                "summary": "获取用户的订",
                 "parameters": [
                     {
                         "type": "integer",
@@ -3190,7 +5384,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "每页数量",
-                        "name": "page_size",
+                        "name": "pageSize",
                         "in": "query"
                     },
                     {
@@ -3199,20 +5393,8 @@ const docTemplate = `{
                             "type": "string"
                         },
                         "collectionFormat": "csv",
-                        "description": "订单状态",
+                        "description": "Status filter",
                         "name": "status",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "开始时间",
-                        "name": "date_from",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "结束时间",
-                        "name": "date_to",
                         "in": "query"
                     }
                 ],
@@ -3220,15 +5402,65 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_gamelink_internal_model_Order"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/users/{id}/permissions": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "用户ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_gamelink_internal_model_Permission"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -3276,15 +5508,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_User"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -3306,7 +5536,7 @@ const docTemplate = `{
                 "tags": [
                     "Admin/Users"
                 ],
-                "summary": "更新用户状态",
+                "summary": "更新用户状",
                 "parameters": [
                     {
                         "type": "integer",
@@ -3332,15 +5562,347 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_User"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/users/{user_id}/roles": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Roles"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "用户ID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_gamelink_internal_model_RoleModel"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/withdraws": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "管理员查看所有提现申请，支持状态筛选、陪玩师筛选、分",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Withdraw"
+                ],
+                "summary": "获取提现申请列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Status filter",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "陪玩师ID",
+                        "name": "playerId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_gamelink_internal_model_Withdraw"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/withdraws/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "根据 ID 获取单个提现申请的详细信",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Withdraw"
+                ],
+                "summary": "获取提现详情",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "提现ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Withdraw"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/withdraws/{id}/approve": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "批准一个待处理的提现申",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Withdraw"
+                ],
+                "summary": "批准提现",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "提现ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "审核备注",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_admin.ApproveWithdrawRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/withdraws/{id}/complete": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "将一个已批准的提现申请标记为已完成（已打款）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Withdraw"
+                ],
+                "summary": "完成提现",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "提现ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/withdraws/{id}/reject": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "拒绝一个待处理的提现申",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Withdraw"
+                ],
+                "summary": "拒绝提现",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "提现ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "拒绝原因",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_admin.RejectWithdrawRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -3374,21 +5936,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.loginResponse"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_loginResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
                         }
                     }
                 }
@@ -3409,8 +5969,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
                         }
                     }
                 }
@@ -3434,14 +5993,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.loginResponse"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_loginResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
                         }
                     }
                 }
@@ -3466,14 +6024,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.tokenPayload"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_tokenPayload"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
                         }
                     }
                 }
@@ -3507,14 +6064,2891 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.loginResponse"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_loginResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/notifications": {
+            "get": {
+                "description": "获取当前用户的通知列表，支持分页和过滤",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "获取通知列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Filter unread only",
+                        "name": "unread",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "description": "Filter by priority",
+                        "name": "priority",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_notification_NotificationListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/notifications/read": {
+            "post": {
+                "description": "批量标记指定通知为已读状态",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "标记通知为已读",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Notification IDs to mark as read",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_notification.MarkNotificationsReadRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/notifications/unread-count": {
+            "get": {
+                "description": "获取当前用户的未读通知总数",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "获取未读通知数量",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-map_string_int64"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/player/apply": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "用户申请成为陪玩师",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Player - Profile"
+                ],
+                "summary": "申请成为陪玩师",
+                "parameters": [
+                    {
+                        "description": "申请信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_player.ApplyPlayerRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_player_ApplyPlayerResponseSwagger"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/player/commission/records": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取抽成记录列表，支持分页",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Player - Commission"
+                ],
+                "summary": "获取抽成记录",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_player.CommissionRecordListAPIResponseSwagger"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/player/commission/settlements": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取月度结算记录列表，支持分页",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Player - Commission"
+                ],
+                "summary": "获取月度结算记录",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_player.SettlementListAPIResponseSwagger"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/player/commission/summary": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取指定月份的抽成总览，包括总收入、总抽成等",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Player - Commission"
+                ],
+                "summary": "获取抽成汇总",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "月份 (YYYY-MM)",
+                        "name": "month",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_player.CommissionSummaryAPIResponseSwagger"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/player/earnings/summary": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取陪玩师收益概览",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Player - Earnings"
+                ],
+                "summary": "获取收益概览",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_player.EarningsSummaryAPIResponseSwagger"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/player/earnings/trend": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取陪玩师收益趋势数据",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Player - Earnings"
+                ],
+                "summary": "获取收益趋势",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "天数范围(7-90)",
+                        "name": "days",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_player.EarningsTrendAPIResponseSwagger"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/player/earnings/withdraw": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "申请提现",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Player - Earnings"
+                ],
+                "summary": "申请提现",
+                "parameters": [
+                    {
+                        "description": "提现信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_service_earnings.WithdrawRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_player.WithdrawAPIResponseSwagger"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/player/earnings/withdraw-history": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取提现记录",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Player - Earnings"
+                ],
+                "summary": "获取提现记录",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_player.WithdrawHistoryAPIResponseSwagger"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/player/gifts/received": {
+            "get": {
+                "description": "陪玩师查看收到的礼物列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Player - Gift"
+                ],
+                "summary": "获取收到的礼",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_service_gift_ReceivedGiftsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/player/gifts/stats": {
+            "get": {
+                "description": "API endpoint// @Tags         Player - Gift",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "获取礼物统计",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_service_gift_GiftStatsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/player/orders/available": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取订单大厅的可接订单列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Player - Orders"
+                ],
+                "summary": "获取可接订单列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "游戏ID",
+                        "name": "gameId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_player.SuccessResponseSwagger"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/player/orders/my": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取陪玩师已接的订单列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Player - Orders"
+                ],
+                "summary": "获取我的已接订单",
+                "parameters": [
+                    {
+                        "enum": [
+                            "pending",
+                            "confirmed",
+                            "in_progress",
+                            "completed",
+                            "canceled"
+                        ],
+                        "type": "string",
+                        "description": "状态过滤",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_player.SuccessResponseSwagger"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/player/orders/{id}/accept": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "陪玩师接单",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Player - Orders"
+                ],
+                "summary": "接单",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "订单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_player.SuccessResponseSwagger"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/player/orders/{id}/complete": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "陪玩师完成订单",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Player - Orders"
+                ],
+                "summary": "完成订单",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "订单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_player.SuccessResponseSwagger"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/player/profile": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取陪玩师个人资料",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Player - Profile"
+                ],
+                "summary": "获取陪玩师资料",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_player_PlayerDetailResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "更新陪玩师个人资料",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Player - Profile"
+                ],
+                "summary": "更新陪玩师资料",
+                "parameters": [
+                    {
+                        "description": "更新信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_player.UpdatePlayerProfileRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/player/reviews/{id}/reply": {
+            "post": {
+                "description": "陪玩师回复用户对自己的评价",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Player - Review"
+                ],
+                "summary": "回复评价",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Review ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Reply content",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_service_review.ReplyReviewRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_service_review_ReplyReviewResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/player/status": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "设置陪玩师在线/离线状态",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Player - Profile"
+                ],
+                "summary": "设置陪玩师在线状态",
+                "parameters": [
+                    {
+                        "description": "状态请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_service_player.SetPlayerStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/chat/groups": {
+            "get": {
+                "description": "获取当前用户的所有聊天群组",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User - Chat"
+                ],
+                "summary": "获取聊天群组列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/chat/groups/{id}/messages": {
+            "get": {
+                "description": "获取指定聊天群组的消息列表，支持分页和前后翻页",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User - Chat"
+                ],
+                "summary": "获取聊天消息列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Group ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Load messages before this ID",
+                        "name": "beforeId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Load messages after this ID",
+                        "name": "afterId",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "410": {
+                        "description": "Gone",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "在指定聊天群组中发送消息，支持文本、图片、文件等类型",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User - Chat"
+                ],
+                "summary": "发送聊天消息",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Group ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Message content",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_user.sendMessageRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_user_ChatMessage"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "410": {
+                        "description": "Gone",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/chat/messages/{id}/report": {
+            "post": {
+                "description": "举报不当聊天消息，包括违规内容、骚扰等",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User - Chat"
+                ],
+                "summary": "举报聊天消息",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Message ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Report reason and evidence",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_user.reportMessageRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/feeds": {
+            "get": {
+                "description": "获取社区动态列表，支持游标分页",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User - Feed"
+                ],
+                "summary": "获取动态列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit (default 20)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Cursor for pagination",
+                        "name": "cursor",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_service_feed.ListFeedsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "用户发布社区动态，包括文字、图片等内容",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User - Feed"
+                ],
+                "summary": "发布动态",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Feed content",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_service_feed.CreateFeedRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_service_feed.FeedView"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/feeds/{id}/report": {
+            "post": {
+                "description": "举报不当社区动态内容",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User - Feed"
+                ],
+                "summary": "举报动态",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Feed ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Report reason",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "reason": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/gifts": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "用户浏览可赠送的礼物",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User - Gift"
+                ],
+                "summary": "获取礼物列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_user.ServiceItemListAPIResponseSwagger"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/gifts/send": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "赠送礼物给陪玩师",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User - Gift"
+                ],
+                "summary": "赠送礼物",
+                "parameters": [
+                    {
+                        "description": "赠送礼物请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_service_gift.SendGiftRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_user.GiftOrderAPIResponseSwagger"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/gifts/sent": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "用户查看自己赠送的礼物记录",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User - Gift"
+                ],
+                "summary": "获取已赠送的礼物记录",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_user.SentGiftsAPIResponseSwagger"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/orders": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取当前用户的订单列表，支持状态过滤和分页",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User - Orders"
+                ],
+                "summary": "获取我的订单列表",
+                "parameters": [
+                    {
+                        "enum": [
+                            "pending",
+                            "confirmed",
+                            "in_progress",
+                            "completed",
+                            "canceled",
+                            "refunded"
+                        ],
+                        "type": "string",
+                        "description": "Status filter",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Page size",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_user_MyOrderListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "用户创建陪玩订单",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User - Orders"
+                ],
+                "summary": "创建订单",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "创建订单请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_service_order.CreateOrderRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_user_CreateOrderResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/orders/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取指定订单的详细信",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User - Orders"
+                ],
+                "summary": "获取订单详情",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "订单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_user_OrderDetailResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/orders/{id}/cancel": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "用户取消指定订单",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User - Orders"
+                ],
+                "summary": "取消订单",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "订单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "取消原因",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_service_order.CancelOrderRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/orders/{id}/complete": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "用户确认订单完成",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User - Orders"
+                ],
+                "summary": "完成订单",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "订单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/orders/{id}/dispute": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "发起订单纠纷",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User - Orders"
+                ],
+                "summary": "Initiate Dispute",
+                "parameters": [
+                    {
+                        "description": "纠纷信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_user.InitiateDisputePayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
                             "type": "object",
                             "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/orders/{id}/disputes": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取订单纠纷详情",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User - Orders"
+                ],
+                "summary": "Get Dispute Detail",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "纠纷ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/payments": {
+            "post": {
+                "description": "为订单创建支付",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User - Payments"
+                ],
+                "summary": "创建支付",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "创建支付请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_service_payment.CreatePaymentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_user_Payment"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/payments/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取支付状态",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User - Payments"
+                ],
+                "summary": "获取支付状态",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "支付ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_user_Payment"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/payments/{id}/cancel": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "取消支付",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User - Payments"
+                ],
+                "summary": "取消支付",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "支付ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/players": {
+            "get": {
+                "description": "获取陪玩师列表，支持过滤和排序",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User - Players"
+                ],
+                "summary": "获取陪玩师列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Game ID",
+                        "name": "gameId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Min price (cents)",
+                        "name": "minPrice",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Max price (cents)",
+                        "name": "maxPrice",
+                        "in": "query"
+                    },
+                    {
+                        "type": "number",
+                        "format": "float32",
+                        "description": "Min rating",
+                        "name": "minRating",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Online only",
+                        "name": "onlineOnly",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "price",
+                            "rating",
+                            "orders"
+                        ],
+                        "type": "string",
+                        "description": "Sort by",
+                        "name": "sortBy",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Page size",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_user.PlayerListAPIResponseSwagger"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/players/{id}": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User - Players"
+                ],
+                "summary": "获取陪玩师详情",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "陪玩师ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_user.PlayerDetailAPIResponseSwagger"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_apierr.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/reviews": {
+            "post": {
+                "description": "为已完成订单创建评价",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User - Reviews"
+                ],
+                "summary": "创建评价",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "创建评价请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_service_review.CreateReviewRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_user_CreateReviewResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/reviews/my": {
+            "get": {
+                "description": "API endpoint// @Accept       json",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "获取我的评价列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_user_MyReviewListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     }
                 }
@@ -3522,6 +8956,1881 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "gamelink_internal_apierr.APIError": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "details": {
+                    "type": "string"
+                },
+                "extensions": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "field": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "requestId": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "integer"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-array_gamelink_internal_model_OperationLog": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/gamelink_internal_model.OperationLog"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-array_gamelink_internal_model_Order": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/gamelink_internal_model.Order"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-array_gamelink_internal_model_Payment": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/gamelink_internal_model.Payment"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-array_gamelink_internal_model_Permission": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/gamelink_internal_model.Permission"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-array_gamelink_internal_model_Player": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/gamelink_internal_model.Player"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-array_gamelink_internal_model_RoleModel": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/gamelink_internal_model.RoleModel"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-array_gamelink_internal_model_Withdraw": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/gamelink_internal_model.Withdraw"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-array_gamelink_internal_service_admin_OrderRefundItem": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/gamelink_internal_service_admin.OrderRefundItem"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-array_gamelink_internal_service_admin_OrderTimelineItem": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/gamelink_internal_service_admin.OrderTimelineItem"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-array_internal_handler_admin_Game": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_handler_admin.Game"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-array_internal_handler_admin_Order": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_handler_admin.Order"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-array_internal_handler_admin_OrderDispute": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_handler_admin.OrderDispute"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-array_internal_handler_admin_Review": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_handler_admin.Review"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-array_internal_handler_admin_User": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_handler_admin.User"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-array_string": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-gamelink_internal_model_Order": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/gamelink_internal_model.Order"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-gamelink_internal_model_Payment": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/gamelink_internal_model.Payment"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-gamelink_internal_service_gift_GiftStatsResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/gamelink_internal_service_gift.GiftStatsResponse"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-gamelink_internal_service_gift_ReceivedGiftsResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/gamelink_internal_service_gift.ReceivedGiftsResponse"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-gamelink_internal_service_item_ServiceItemDTO": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/gamelink_internal_service_item.ServiceItemDTO"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-gamelink_internal_service_item_ServiceItemListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/gamelink_internal_service_item.ServiceItemListResponse"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-gamelink_internal_service_review_ReplyReviewResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/gamelink_internal_service_review.ReplyReviewResponse"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-gin_H": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/gin.H"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-internal_handler_admin_Game": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_admin.Game"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-internal_handler_admin_Order": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_admin.Order"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-internal_handler_admin_OrderDispute": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_admin.OrderDispute"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-internal_handler_admin_Payment": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_admin.Payment"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-internal_handler_admin_Permission": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_admin.Permission"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-internal_handler_admin_Player": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_admin.Player"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-internal_handler_admin_RankingCommissionConfig": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_admin.RankingCommissionConfig"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-internal_handler_admin_Review": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_admin.Review"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-internal_handler_admin_ServiceItem": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_admin.ServiceItem"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-internal_handler_admin_User": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_admin.User"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-internal_handler_admin_Withdraw": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_admin.Withdraw"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-internal_handler_loginResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler.loginResponse"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-internal_handler_notification_NotificationListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_notification.NotificationListResponse"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-internal_handler_player_ApplyPlayerResponseSwagger": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_player.ApplyPlayerResponseSwagger"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-internal_handler_player_PlayerDetailResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_player.PlayerDetailResponse"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-internal_handler_tokenPayload": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler.tokenPayload"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-internal_handler_user_ChatMessage": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_user.ChatMessage"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-internal_handler_user_CreateOrderResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_user.CreateOrderResponse"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-internal_handler_user_CreateReviewResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_user.CreateReviewResponse"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-internal_handler_user_MyOrderListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_user.MyOrderListResponse"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-internal_handler_user_MyReviewListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_user.MyReviewListResponse"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-internal_handler_user_OrderDetailResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_user.OrderDetailResponse"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-internal_handler_user_Payment": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_user.Payment"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-map_string_int64": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/map_string_int64"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-string": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.AssignmentSource": {
+            "type": "string",
+            "enum": [
+                "system",
+                "manual",
+                "team"
+            ],
+            "x-enum-comments": {
+                "AssignmentSourceManual": "人工指定",
+                "AssignmentSourceSystem": "系统推荐",
+                "AssignmentSourceTeam": "车队分配"
+            },
+            "x-enum-descriptions": [
+                "系统推荐",
+                "人工指定",
+                "车队分配"
+            ],
+            "x-enum-varnames": [
+                "AssignmentSourceSystem",
+                "AssignmentSourceManual",
+                "AssignmentSourceTeam"
+            ]
+        },
+        "gamelink_internal_model.ChatMessageAuditStatus": {
+            "type": "string",
+            "enum": [
+                "pending",
+                "approved",
+                "rejected"
+            ],
+            "x-enum-varnames": [
+                "ChatMessageAuditPending",
+                "ChatMessageAuditApproved",
+                "ChatMessageAuditRejected"
+            ]
+        },
+        "gamelink_internal_model.ChatMessageType": {
+            "type": "string",
+            "enum": [
+                "text",
+                "image",
+                "file",
+                "system"
+            ],
+            "x-enum-varnames": [
+                "ChatMessageTypeText",
+                "ChatMessageTypeImage",
+                "ChatMessageTypeFile",
+                "ChatMessageTypeSystem"
+            ]
+        },
+        "gamelink_internal_model.Currency": {
+            "type": "string",
+            "enum": [
+                "CNY",
+                "USD",
+                "EUR"
+            ],
+            "x-enum-varnames": [
+                "CurrencyCNY",
+                "CurrencyUSD",
+                "CurrencyEUR"
+            ]
+        },
+        "gamelink_internal_model.DashboardOverviewStats": {
+            "type": "object",
+            "properties": {
+                "activeServices": {
+                    "type": "integer"
+                },
+                "pendingOrders": {
+                    "type": "integer"
+                },
+                "pendingWithdraws": {
+                    "type": "integer"
+                },
+                "todayOrders": {
+                    "type": "integer"
+                },
+                "todayRevenue": {
+                    "type": "integer"
+                },
+                "totalOrders": {
+                    "type": "integer"
+                },
+                "totalPlayers": {
+                    "type": "integer"
+                },
+                "totalUsers": {
+                    "type": "integer"
+                }
+            }
+        },
+        "gamelink_internal_model.DisputeResolution": {
+            "type": "string",
+            "enum": [
+                "refund",
+                "partial",
+                "reassign",
+                "reject",
+                "pending"
+            ],
+            "x-enum-comments": {
+                "ResolutionPartial": "部分退款",
+                "ResolutionPending": "待决定",
+                "ResolutionReassign": "重新指派",
+                "ResolutionRefund": "全额退款",
+                "ResolutionReject": "驳回"
+            },
+            "x-enum-descriptions": [
+                "全额退款",
+                "部分退款",
+                "重新指派",
+                "驳回",
+                "待决定"
+            ],
+            "x-enum-varnames": [
+                "ResolutionRefund",
+                "ResolutionPartial",
+                "ResolutionReassign",
+                "ResolutionReject",
+                "ResolutionPending"
+            ]
+        },
+        "gamelink_internal_model.DisputeStatus": {
+            "type": "string",
+            "enum": [
+                "pending",
+                "assigned",
+                "mediating",
+                "resolved",
+                "rejected",
+                "canceled"
+            ],
+            "x-enum-comments": {
+                "DisputeStatusAssigned": "已指派",
+                "DisputeStatusCanceled": "已取消",
+                "DisputeStatusMediating": "调解中",
+                "DisputeStatusPending": "待处理",
+                "DisputeStatusRejected": "已驳回",
+                "DisputeStatusResolved": "已解决"
+            },
+            "x-enum-descriptions": [
+                "待处理",
+                "已指派",
+                "调解中",
+                "已解决",
+                "已驳回",
+                "已取消"
+            ],
+            "x-enum-varnames": [
+                "DisputeStatusPending",
+                "DisputeStatusAssigned",
+                "DisputeStatusMediating",
+                "DisputeStatusResolved",
+                "DisputeStatusRejected",
+                "DisputeStatusCanceled"
+            ]
+        },
+        "gamelink_internal_model.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.FeedVisibility": {
+            "type": "string",
+            "enum": [
+                "public",
+                "followers",
+                "private"
+            ],
+            "x-enum-varnames": [
+                "FeedVisibilityPublic",
+                "FeedVisibilityFollowers",
+                "FeedVisibilityPrivate"
+            ]
+        },
+        "gamelink_internal_model.HTTPMethod": {
+            "type": "string",
+            "enum": [
+                "GET",
+                "POST",
+                "PUT",
+                "PATCH",
+                "DELETE"
+            ],
+            "x-enum-varnames": [
+                "HTTPMethodGET",
+                "HTTPMethodPOST",
+                "HTTPMethodPUT",
+                "HTTPMethodPATCH",
+                "HTTPMethodDELETE"
+            ]
+        },
+        "gamelink_internal_model.NotificationPriority": {
+            "type": "string",
+            "enum": [
+                "low",
+                "normal",
+                "high"
+            ],
+            "x-enum-varnames": [
+                "NotificationPriorityLow",
+                "NotificationPriorityNormal",
+                "NotificationPriorityHigh"
+            ]
+        },
+        "gamelink_internal_model.OperationLog": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string"
+                },
+                "actorUserId": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "entityId": {
+                    "type": "integer"
+                },
+                "entityType": {
+                    "description": "order | payment",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "metadata": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "traceId": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.Order": {
+            "type": "object",
+            "properties": {
+                "cancelReason": {
+                    "description": "取消/退款信息",
+                    "type": "string"
+                },
+                "commissionCents": {
+                    "description": "平台抽成（分）",
+                    "type": "integer"
+                },
+                "completedAt": {
+                    "description": "完成时间",
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "currency": {
+                    "description": "货币",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/gamelink_internal_model.Currency"
+                        }
+                    ]
+                },
+                "deliveredAt": {
+                    "description": "礼物送达时间",
+                    "type": "string"
+                },
+                "description": {
+                    "description": "订单描述",
+                    "type": "string"
+                },
+                "disputeId": {
+                    "description": "关联的争议ID",
+                    "type": "integer"
+                },
+                "gameId": {
+                    "description": "护航服务字段",
+                    "type": "integer"
+                },
+                "giftMessage": {
+                    "description": "礼物订单字段",
+                    "type": "string"
+                },
+                "hasDispute": {
+                    "description": "争议相关字段",
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "isAnonymous": {
+                    "description": "是否匿名",
+                    "type": "boolean"
+                },
+                "itemId": {
+                    "description": "服务项目ID",
+                    "type": "integer"
+                },
+                "orderConfig": {
+                    "description": "扩展字段",
+                    "type": "string"
+                },
+                "orderNo": {
+                    "description": "订单号",
+                    "type": "string"
+                },
+                "playerId": {
+                    "description": "服务陪玩师 + 复合索引第二部分",
+                    "type": "integer"
+                },
+                "playerIncomeCents": {
+                    "description": "陪玩师收入（分）",
+                    "type": "integer"
+                },
+                "quantity": {
+                    "description": "价格相关",
+                    "type": "integer"
+                },
+                "recipientPlayerId": {
+                    "description": "接收礼物的陪玩师",
+                    "type": "integer"
+                },
+                "refundAmountCents": {
+                    "type": "integer"
+                },
+                "refundReason": {
+                    "type": "string"
+                },
+                "refundedAt": {
+                    "type": "string"
+                },
+                "scheduledEnd": {
+                    "description": "预约结束时间",
+                    "type": "string"
+                },
+                "scheduledStart": {
+                    "description": "预约开始时间",
+                    "type": "string"
+                },
+                "startedAt": {
+                    "description": "实际开始时间",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "订单信息",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/gamelink_internal_model.OrderStatus"
+                        }
+                    ]
+                },
+                "title": {
+                    "description": "订单标题",
+                    "type": "string"
+                },
+                "totalPriceCents": {
+                    "description": "总价（分）",
+                    "type": "integer"
+                },
+                "unitPriceCents": {
+                    "description": "单价（分）",
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "userId": {
+                    "description": "下单用户 + 复合索引第一部分",
+                    "type": "integer"
+                },
+                "userNotes": {
+                    "description": "用户备注",
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.OrderStatus": {
+            "type": "string",
+            "enum": [
+                "pending",
+                "confirmed",
+                "in_progress",
+                "completed",
+                "canceled",
+                "refunded"
+            ],
+            "x-enum-varnames": [
+                "OrderStatusPending",
+                "OrderStatusConfirmed",
+                "OrderStatusInProgress",
+                "OrderStatusCompleted",
+                "OrderStatusCanceled",
+                "OrderStatusRefunded"
+            ]
+        },
+        "gamelink_internal_model.Pagination": {
+            "type": "object",
+            "properties": {
+                "has_next": {
+                    "type": "boolean"
+                },
+                "has_prev": {
+                    "type": "boolean"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "total_pages": {
+                    "type": "integer"
+                }
+            }
+        },
+        "gamelink_internal_model.Payment": {
+            "type": "object",
+            "properties": {
+                "amountCents": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "currency": {
+                    "description": "default CNY",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/gamelink_internal_model.Currency"
+                        }
+                    ]
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "method": {
+                    "$ref": "#/definitions/gamelink_internal_model.PaymentMethod"
+                },
+                "orderId": {
+                    "type": "integer"
+                },
+                "paidAt": {
+                    "type": "string"
+                },
+                "providerRaw": {
+                    "description": "provider response payload",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "providerTradeNo": {
+                    "type": "string"
+                },
+                "refundedAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/gamelink_internal_model.PaymentStatus"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "userId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "gamelink_internal_model.PaymentMethod": {
+            "type": "string",
+            "enum": [
+                "wechat",
+                "alipay"
+            ],
+            "x-enum-varnames": [
+                "PaymentMethodWeChat",
+                "PaymentMethodAlipay"
+            ]
+        },
+        "gamelink_internal_model.PaymentStatus": {
+            "type": "string",
+            "enum": [
+                "pending",
+                "paid",
+                "failed",
+                "refunded"
+            ],
+            "x-enum-varnames": [
+                "PaymentStatusPending",
+                "PaymentStatusPaid",
+                "PaymentStatusFailed",
+                "PaymentStatusRefunded"
+            ]
+        },
+        "gamelink_internal_model.Permission": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "group": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "method": {
+                    "$ref": "#/definitions/gamelink_internal_model.HTTPMethod"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.PlatformStatsResponse": {
+            "type": "object",
+            "properties": {
+                "month": {
+                    "type": "string"
+                },
+                "total_commission": {
+                    "type": "number"
+                },
+                "total_orders": {
+                    "type": "integer"
+                },
+                "total_settlement": {
+                    "type": "number"
+                }
+            }
+        },
+        "gamelink_internal_model.Player": {
+            "type": "object",
+            "properties": {
+                "bio": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "hourlyRateCents": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "mainGameId": {
+                    "type": "integer"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "rank": {
+                    "type": "string"
+                },
+                "ratingAverage": {
+                    "type": "number",
+                    "maximum": 5,
+                    "minimum": 0
+                },
+                "ratingCount": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "userId": {
+                    "type": "integer"
+                },
+                "verificationStatus": {
+                    "$ref": "#/definitions/gamelink_internal_model.VerificationStatus"
+                }
+            }
+        },
+        "gamelink_internal_model.RankingCommissionRule": {
+            "type": "object",
+            "properties": {
+                "commissionRate": {
+                    "description": "抽成比例（%）",
+                    "type": "integer"
+                },
+                "rankEnd": {
+                    "description": "排名结束",
+                    "type": "integer"
+                },
+                "rankStart": {
+                    "description": "排名开始",
+                    "type": "integer"
+                }
+            }
+        },
+        "gamelink_internal_model.RankingType": {
+            "type": "string",
+            "enum": [
+                "income",
+                "order_count",
+                "quality",
+                "popularity"
+            ],
+            "x-enum-varnames": [
+                "RankingTypeIncome",
+                "RankingTypeOrderCount",
+                "RankingTypeQuality",
+                "RankingTypePopularity"
+            ]
+        },
+        "gamelink_internal_model.Rating": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                1,
+                5
+            ],
+            "x-enum-varnames": [
+                "RatingMin",
+                "RatingMax"
+            ]
+        },
         "gamelink_internal_model.Role": {
             "type": "string",
             "enum": [
@@ -3535,13 +10844,87 @@ const docTemplate = `{
                 "RoleAdmin"
             ]
         },
+        "gamelink_internal_model.RoleModel": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "isSystem": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "permissions": {
+                    "description": "关联关系",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/gamelink_internal_model.Permission"
+                    }
+                },
+                "slug": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "users": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/gamelink_internal_model.User"
+                    }
+                }
+            }
+        },
+        "gamelink_internal_model.ServiceItemSubCategory": {
+            "type": "string",
+            "enum": [
+                "solo",
+                "team",
+                "gift"
+            ],
+            "x-enum-varnames": [
+                "SubCategorySolo",
+                "SubCategoryTeam",
+                "SubCategoryGift"
+            ]
+        },
+        "gamelink_internal_model.SuccessResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {},
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
         "gamelink_internal_model.User": {
             "type": "object",
             "properties": {
-                "avatar_url": {
+                "avatarUrl": {
                     "type": "string"
                 },
-                "created_at": {
+                "createdAt": {
                     "type": "string"
                 },
                 "email": {
@@ -3550,10 +10933,12 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
-                "last_login_at": {
+                "lastLoginAt": {
+                    "description": "复合索引第二部分",
                     "type": "string"
                 },
                 "name": {
+                    "description": "添加索引，用于搜索",
                     "type": "string"
                 },
                 "phone": {
@@ -3562,10 +10947,22 @@ const docTemplate = `{
                 "role": {
                     "$ref": "#/definitions/gamelink_internal_model.Role"
                 },
-                "status": {
-                    "$ref": "#/definitions/gamelink_internal_model.UserStatus"
+                "roles": {
+                    "description": "多角色支持（新增）",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/gamelink_internal_model.RoleModel"
+                    }
                 },
-                "updated_at": {
+                "status": {
+                    "description": "复合索引第一部分",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/gamelink_internal_model.UserStatus"
+                        }
+                    ]
+                },
+                "updatedAt": {
                     "type": "string"
                 }
             }
@@ -3583,192 +10980,132 @@ const docTemplate = `{
                 "UserStatusBanned"
             ]
         },
-        "internal_admin.AssignOrderPayload": {
-            "type": "object",
-            "required": [
-                "player_id"
+        "gamelink_internal_model.VerificationStatus": {
+            "type": "string",
+            "enum": [
+                "pending",
+                "verified",
+                "rejected"
             ],
+            "x-enum-varnames": [
+                "VerificationPending",
+                "VerificationVerified",
+                "VerificationRejected"
+            ]
+        },
+        "gamelink_internal_model.Withdraw": {
+            "type": "object",
             "properties": {
-                "player_id": {
+                "accountInfo": {
+                    "description": "account info (encrypted storage)",
+                    "type": "string"
+                },
+                "adminRemark": {
+                    "description": "admin remarks",
+                    "type": "string"
+                },
+                "amountCents": {
+                    "description": "withdrawal amount in cents",
+                    "type": "integer"
+                },
+                "completedAt": {
+                    "description": "completion time",
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "method": {
+                    "$ref": "#/definitions/gamelink_internal_model.WithdrawMethod"
+                },
+                "playerId": {
+                    "type": "integer"
+                },
+                "processedAt": {
+                    "description": "processing time",
+                    "type": "string"
+                },
+                "processedBy": {
+                    "description": "processor ID",
+                    "type": "integer"
+                },
+                "rejectReason": {
+                    "description": "reason for rejection",
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/gamelink_internal_model.WithdrawStatus"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "userId": {
+                    "description": "redundant field for convenient queries",
                     "type": "integer"
                 }
             }
         },
-        "internal_admin.CancelOrderPayload": {
-            "type": "object",
-            "properties": {
-                "reason": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_admin.CapturePaymentPayload": {
-            "type": "object",
-            "properties": {
-                "paid_at": {
-                    "type": "string",
-                    "example": "2025-10-28T10:00:00Z"
-                },
-                "provider_raw": {
-                    "type": "string",
-                    "example": "{\"result\":\"captured\"}"
-                },
-                "provider_trade_no": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_admin.CreateOrderPayload": {
-            "type": "object",
-            "required": [
-                "currency",
-                "game_id",
-                "price_cents",
-                "user_id"
+        "gamelink_internal_model.WithdrawMethod": {
+            "type": "string",
+            "enum": [
+                "alipay",
+                "wechat",
+                "bank"
             ],
-            "properties": {
-                "currency": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "game_id": {
-                    "type": "integer"
-                },
-                "player_id": {
-                    "type": "integer"
-                },
-                "price_cents": {
-                    "type": "integer"
-                },
-                "scheduled_end": {
-                    "type": "string"
-                },
-                "scheduled_start": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "integer"
-                }
-            }
+            "x-enum-varnames": [
+                "WithdrawMethodAlipay",
+                "WithdrawMethodWeChat",
+                "WithdrawMethodBank"
+            ]
         },
-        "internal_admin.CreatePaymentPayload": {
-            "type": "object",
-            "required": [
-                "amount_cents",
-                "currency",
-                "method",
-                "order_id",
-                "user_id"
+        "gamelink_internal_model.WithdrawStatus": {
+            "type": "string",
+            "enum": [
+                "pending",
+                "approved",
+                "rejected",
+                "completed",
+                "failed"
             ],
+            "x-enum-varnames": [
+                "WithdrawStatusPending",
+                "WithdrawStatusApproved",
+                "WithdrawStatusRejected",
+                "WithdrawStatusCompleted",
+                "WithdrawStatusFailed"
+            ]
+        },
+        "gamelink_internal_service_admin.OrderRefundItem": {
+            "type": "object",
             "properties": {
                 "amount_cents": {
                     "type": "integer"
                 },
-                "currency": {
+                "created_at": {
                     "type": "string"
                 },
-                "method": {
+                "id": {
+                    "type": "integer"
+                },
+                "note": {
                     "type": "string"
                 },
                 "order_id": {
                     "type": "integer"
                 },
-                "provider_raw": {
-                    "type": "string",
-                    "example": "{\"result\":\"success\"}"
-                },
-                "user_id": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_admin.CreatePlayerPayload": {
-            "type": "object",
-            "required": [
-                "user_id",
-                "verification_status"
-            ],
-            "properties": {
-                "bio": {
-                    "type": "string"
-                },
-                "hourly_rate_cents": {
+                "payment_id": {
                     "type": "integer"
                 },
-                "main_game_id": {
-                    "type": "integer"
-                },
-                "nickname": {
+                "reason": {
                     "type": "string"
                 },
-                "rank": {
+                "refund_method": {
                     "type": "string"
                 },
-                "user_id": {
-                    "type": "integer"
-                },
-                "verification_status": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_admin.CreateReviewPayload": {
-            "type": "object",
-            "required": [
-                "order_id",
-                "player_id",
-                "score",
-                "user_id"
-            ],
-            "properties": {
-                "content": {
-                    "type": "string"
-                },
-                "order_id": {
-                    "type": "integer"
-                },
-                "player_id": {
-                    "type": "integer"
-                },
-                "score": {
-                    "type": "integer"
-                },
-                "user_id": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_admin.CreateUserPayload": {
-            "type": "object",
-            "required": [
-                "name",
-                "password",
-                "role",
-                "status"
-            ],
-            "properties": {
-                "avatar_url": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string",
-                    "minLength": 6
-                },
-                "phone": {
-                    "type": "string"
-                },
-                "role": {
+                "refunded_at": {
                     "type": "string"
                 },
                 "status": {
@@ -3776,64 +11113,1063 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_admin.GamePayload": {
+        "gamelink_internal_service_admin.OrderTimelineItem": {
             "type": "object",
-            "required": [
-                "key",
-                "name"
-            ],
             "properties": {
-                "category": {
+                "created_at": {
                     "type": "string"
                 },
                 "description": {
                     "type": "string"
                 },
-                "icon_url": {
+                "event_type": {
                     "type": "string"
                 },
-                "key": {
+                "id": {
+                    "type": "integer"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "operator": {
                     "type": "string"
+                },
+                "operator_id": {
+                    "type": "integer"
+                },
+                "operator_role": {
+                    "type": "string"
+                },
+                "order_id": {
+                    "type": "integer"
+                },
+                "payment_id": {
+                    "type": "integer"
+                },
+                "status_after": {
+                    "type": "string"
+                },
+                "status_before": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_service_commission.CreateCommissionRuleRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "rate",
+                "type"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "gameId": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 128
+                },
+                "playerId": {
+                    "type": "integer"
+                },
+                "rate": {
+                    "type": "integer",
+                    "maximum": 100,
+                    "minimum": 0
+                },
+                "serviceType": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "default",
+                        "special",
+                        "gift"
+                    ]
+                }
+            }
+        },
+        "gamelink_internal_service_commission.UpdateCommissionRuleRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "isActive": {
+                    "type": "boolean"
                 },
                 "name": {
                     "type": "string"
+                },
+                "rate": {
+                    "type": "integer"
                 }
             }
         },
-        "internal_admin.RefundPaymentPayload": {
-            "type": "object",
-            "properties": {
-                "provider_raw": {
-                    "type": "string",
-                    "example": "{\"result\":\"refunded\"}"
-                },
-                "provider_trade_no": {
-                    "type": "string"
-                },
-                "refunded_at": {
-                    "type": "string",
-                    "example": "2025-10-28T12:00:00Z"
-                }
-            }
-        },
-        "internal_admin.ReviewOrderPayload": {
-            "type": "object",
-            "properties": {
-                "approved": {
-                    "type": "boolean"
-                },
-                "reason": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_admin.SkillTagsBody": {
+        "gamelink_internal_service_earnings.WithdrawRequest": {
             "type": "object",
             "required": [
-                "tags"
+                "accountInfo",
+                "amountCents",
+                "method"
             ],
             "properties": {
+                "accountInfo": {
+                    "description": "账号信息",
+                    "type": "string"
+                },
+                "amountCents": {
+                    "description": "最低100元",
+                    "type": "integer",
+                    "minimum": 10000
+                },
+                "method": {
+                    "type": "string",
+                    "enum": [
+                        "alipay",
+                        "wechat",
+                        "bank"
+                    ]
+                }
+            }
+        },
+        "gamelink_internal_service_feed.CreateFeedRequest": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/gamelink_internal_service_feed.FeedImageInput"
+                    }
+                },
+                "visibility": {
+                    "$ref": "#/definitions/gamelink_internal_model.FeedVisibility"
+                }
+            }
+        },
+        "gamelink_internal_service_feed.FeedImageInput": {
+            "type": "object",
+            "properties": {
+                "height": {
+                    "type": "integer"
+                },
+                "sizeBytes": {
+                    "type": "integer"
+                },
+                "url": {
+                    "type": "string"
+                },
+                "width": {
+                    "type": "integer"
+                }
+            }
+        },
+        "gamelink_internal_service_feed.FeedImageView": {
+            "type": "object",
+            "properties": {
+                "height": {
+                    "type": "integer"
+                },
+                "order": {
+                    "type": "integer"
+                },
+                "sizeBytes": {
+                    "type": "integer"
+                },
+                "url": {
+                    "type": "string"
+                },
+                "width": {
+                    "type": "integer"
+                }
+            }
+        },
+        "gamelink_internal_service_feed.FeedView": {
+            "type": "object",
+            "properties": {
+                "authorId": {
+                    "type": "integer"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/gamelink_internal_service_feed.FeedImageView"
+                    }
+                },
+                "moderationNote": {
+                    "type": "string"
+                },
+                "moderationStatus": {
+                    "type": "string"
+                },
+                "visibility": {
+                    "$ref": "#/definitions/gamelink_internal_model.FeedVisibility"
+                }
+            }
+        },
+        "gamelink_internal_service_feed.ListFeedsResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/gamelink_internal_service_feed.FeedView"
+                    }
+                },
+                "nextCursor": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_service_gift.GiftStatsResponse": {
+            "type": "object",
+            "properties": {
+                "totalGiftIncome": {
+                    "description": "礼物总收入（分）",
+                    "type": "integer"
+                },
+                "totalGiftOrders": {
+                    "description": "礼物订单",
+                    "type": "integer"
+                },
+                "totalGiftsReceived": {
+                    "description": "收到的礼物总数",
+                    "type": "integer"
+                }
+            }
+        },
+        "gamelink_internal_service_gift.ReceivedGiftDTO": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "deliveredAt": {
+                    "type": "string"
+                },
+                "giftIcon": {
+                    "type": "string"
+                },
+                "giftName": {
+                    "type": "string"
+                },
+                "income": {
+                    "type": "integer"
+                },
+                "isAnonymous": {
+                    "type": "boolean"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "orderId": {
+                    "type": "integer"
+                },
+                "orderNo": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "senderName": {
+                    "type": "string"
+                },
+                "totalPrice": {
+                    "type": "integer"
+                }
+            }
+        },
+        "gamelink_internal_service_gift.ReceivedGiftsResponse": {
+            "type": "object",
+            "properties": {
+                "gifts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/gamelink_internal_service_gift.ReceivedGiftDTO"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "gamelink_internal_service_gift.SendGiftRequest": {
+            "type": "object",
+            "required": [
+                "giftItemId",
+                "playerId",
+                "quantity"
+            ],
+            "properties": {
+                "giftItemId": {
+                    "description": "礼物项目ID",
+                    "type": "integer"
+                },
+                "isAnonymous": {
+                    "description": "是否匿名",
+                    "type": "boolean"
+                },
+                "message": {
+                    "description": "留言",
+                    "type": "string",
+                    "maxLength": 200
+                },
+                "orderId": {
+                    "description": "关联的护航订单（可选）",
+                    "type": "integer"
+                },
+                "playerId": {
+                    "description": "接收礼物的陪玩师",
+                    "type": "integer"
+                },
+                "quantity": {
+                    "description": "数量",
+                    "type": "integer",
+                    "maximum": 99,
+                    "minimum": 1
+                }
+            }
+        },
+        "gamelink_internal_service_item.BatchUpdatePriceRequest": {
+            "type": "object",
+            "required": [
+                "basePriceCents",
+                "ids"
+            ],
+            "properties": {
+                "basePriceCents": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "gamelink_internal_service_item.BatchUpdateStatusRequest": {
+            "type": "object",
+            "required": [
+                "ids"
+            ],
+            "properties": {
+                "ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "isActive": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "gamelink_internal_service_item.CreateServiceItemRequest": {
+            "type": "object",
+            "required": [
+                "basePriceCents",
+                "commissionRate",
+                "itemCode",
+                "name",
+                "subCategory"
+            ],
+            "properties": {
+                "basePriceCents": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "commissionRate": {
+                    "type": "number",
+                    "maximum": 1,
+                    "minimum": 0
+                },
+                "description": {
+                    "type": "string"
+                },
+                "gameId": {
+                    "type": "integer"
+                },
+                "iconUrl": {
+                    "type": "string"
+                },
+                "itemCode": {
+                    "type": "string",
+                    "maxLength": 32
+                },
+                "maxPlayers": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "minUsers": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 128
+                },
+                "playerId": {
+                    "type": "integer"
+                },
+                "rankLevel": {
+                    "type": "string"
+                },
+                "serviceHours": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "sortOrder": {
+                    "type": "integer"
+                },
+                "subCategory": {
+                    "enum": [
+                        "solo",
+                        "team",
+                        "gift"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/gamelink_internal_model.ServiceItemSubCategory"
+                        }
+                    ]
+                },
                 "tags": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_service_item.ServiceItemDTO": {
+            "type": "object",
+            "properties": {
+                "basePriceCents": {
+                    "type": "integer"
+                },
+                "category": {
+                    "type": "string"
+                },
+                "commissionRate": {
+                    "type": "number"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "gameId": {
+                    "type": "integer"
+                },
+                "gameName": {
+                    "type": "string"
+                },
+                "iconUrl": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "isActive": {
+                    "type": "boolean"
+                },
+                "itemCode": {
+                    "type": "string"
+                },
+                "maxPlayers": {
+                    "type": "integer"
+                },
+                "minUsers": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "playerId": {
+                    "type": "integer"
+                },
+                "playerNickname": {
+                    "type": "string"
+                },
+                "rankLevel": {
+                    "type": "string"
+                },
+                "serviceHours": {
+                    "type": "integer"
+                },
+                "sortOrder": {
+                    "type": "integer"
+                },
+                "subCategory": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_service_item.ServiceItemListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/gamelink_internal_service_item.ServiceItemDTO"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "gamelink_internal_service_item.UpdateServiceItemRequest": {
+            "type": "object",
+            "properties": {
+                "basePriceCents": {
+                    "type": "integer"
+                },
+                "commissionRate": {
+                    "type": "number"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "iconUrl": {
+                    "type": "string"
+                },
+                "isActive": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "rankLevel": {
+                    "type": "string"
+                },
+                "serviceHours": {
+                    "type": "integer"
+                },
+                "sortOrder": {
+                    "type": "integer"
+                },
+                "tags": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_service_notification.NotificationView": {
+            "type": "object",
+            "properties": {
+                "channel": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "priority": {
+                    "$ref": "#/definitions/gamelink_internal_model.NotificationPriority"
+                },
+                "readAt": {
+                    "type": "string"
+                },
+                "referenceId": {
+                    "type": "integer"
+                },
+                "referenceType": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_service_order.CancelOrderRequest": {
+            "type": "object",
+            "required": [
+                "reason"
+            ],
+            "properties": {
+                "reason": {
+                    "type": "string",
+                    "maxLength": 500
+                }
+            }
+        },
+        "gamelink_internal_service_order.CreateOrderRequest": {
+            "type": "object",
+            "required": [
+                "durationHours",
+                "gameId",
+                "playerId",
+                "scheduledStart",
+                "title"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "durationHours": {
+                    "type": "number",
+                    "maximum": 24,
+                    "minimum": 0.5
+                },
+                "gameId": {
+                    "type": "integer"
+                },
+                "playerId": {
+                    "type": "integer"
+                },
+                "scheduledStart": {
+                    "type": "string"
+                },
+                "serviceId": {
+                    "description": "可选：关联服务",
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 128
+                }
+            }
+        },
+        "gamelink_internal_service_order.OrderCardDTO": {
+            "type": "object",
+            "properties": {
+                "canCancel": {
+                    "type": "boolean"
+                },
+                "canComplete": {
+                    "type": "boolean"
+                },
+                "canPay": {
+                    "type": "boolean"
+                },
+                "canReview": {
+                    "type": "boolean"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "gameName": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "playerAvatar": {
+                    "type": "string"
+                },
+                "playerNickname": {
+                    "type": "string"
+                },
+                "priceCents": {
+                    "type": "integer"
+                },
+                "scheduledStart": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/gamelink_internal_model.OrderStatus"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_service_order.OrderDetailDTO": {
+            "type": "object",
+            "properties": {
+                "canCancel": {
+                    "type": "boolean"
+                },
+                "canComplete": {
+                    "type": "boolean"
+                },
+                "canPay": {
+                    "type": "boolean"
+                },
+                "canReview": {
+                    "type": "boolean"
+                },
+                "cancelReason": {
+                    "type": "string"
+                },
+                "completedAt": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "gameName": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "playerAvatar": {
+                    "type": "string"
+                },
+                "playerNickname": {
+                    "type": "string"
+                },
+                "priceCents": {
+                    "type": "integer"
+                },
+                "refundAmount": {
+                    "type": "integer"
+                },
+                "refundReason": {
+                    "type": "string"
+                },
+                "scheduledEnd": {
+                    "type": "string"
+                },
+                "scheduledStart": {
+                    "type": "string"
+                },
+                "startedAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/gamelink_internal_model.OrderStatus"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_service_order.OrderTimelineDTO": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "time": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_service_order.PaymentDTO": {
+            "type": "object",
+            "properties": {
+                "amountCents": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "method": {
+                    "$ref": "#/definitions/gamelink_internal_model.PaymentMethod"
+                },
+                "paidAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/gamelink_internal_model.PaymentStatus"
+                }
+            }
+        },
+        "gamelink_internal_service_order.PlayerCardDTO": {
+            "type": "object",
+            "properties": {
+                "avatarUrl": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "rank": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_service_order.ReviewDTO": {
+            "type": "object",
+            "properties": {
+                "comment": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "rating": {
+                    "type": "integer"
+                }
+            }
+        },
+        "gamelink_internal_service_payment.CreatePaymentRequest": {
+            "type": "object",
+            "required": [
+                "method",
+                "orderId"
+            ],
+            "properties": {
+                "method": {
+                    "enum": [
+                        "wechat",
+                        "alipay"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/gamelink_internal_model.PaymentMethod"
+                        }
+                    ]
+                },
+                "orderId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "gamelink_internal_service_player.PlayerCardDTO": {
+            "type": "object",
+            "properties": {
+                "avatarUrl": {
+                    "type": "string"
+                },
+                "bio": {
+                    "type": "string"
+                },
+                "hourlyRateCents": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "isOnline": {
+                    "description": "在线状态",
+                    "type": "boolean"
+                },
+                "mainGame": {
+                    "description": "游戏名称",
+                    "type": "string"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "orderCount": {
+                    "description": "历史订单数",
+                    "type": "integer"
+                },
+                "rank": {
+                    "type": "string"
+                },
+                "ratingAverage": {
+                    "type": "number"
+                },
+                "ratingCount": {
+                    "type": "integer"
+                },
+                "userId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "gamelink_internal_service_player.PlayerDetailDTO": {
+            "type": "object",
+            "properties": {
+                "avatarUrl": {
+                    "type": "string"
+                },
+                "avgResponseMin": {
+                    "description": "平均响应时间（分钟）",
+                    "type": "integer"
+                },
+                "bio": {
+                    "type": "string"
+                },
+                "goodRatio": {
+                    "description": "好评率",
+                    "type": "number"
+                },
+                "hourlyRateCents": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "isOnline": {
+                    "description": "在线状态",
+                    "type": "boolean"
+                },
+                "mainGame": {
+                    "description": "游戏名称",
+                    "type": "string"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "orderCount": {
+                    "description": "历史订单数",
+                    "type": "integer"
+                },
+                "rank": {
+                    "type": "string"
+                },
+                "ratingAverage": {
+                    "type": "number"
+                },
+                "ratingCount": {
+                    "type": "integer"
+                },
+                "tags": {
+                    "description": "服务标签",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "userId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "gamelink_internal_service_player.PlayerDetailResponse": {
+            "type": "object",
+            "properties": {
+                "player": {
+                    "$ref": "#/definitions/gamelink_internal_service_player.PlayerDetailDTO"
+                },
+                "reviews": {
+                    "description": "最新评价",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/gamelink_internal_service_player.ReviewDTO"
+                    }
+                },
+                "stats": {
+                    "$ref": "#/definitions/gamelink_internal_service_player.PlayerStatsDTO"
+                }
+            }
+        },
+        "gamelink_internal_service_player.PlayerListResponse": {
+            "type": "object",
+            "properties": {
+                "players": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/gamelink_internal_service_player.PlayerCardDTO"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "gamelink_internal_service_player.PlayerStatsDTO": {
+            "type": "object",
+            "properties": {
+                "completedOrders": {
+                    "type": "integer"
+                },
+                "repeatRate": {
+                    "description": "复购率",
+                    "type": "number"
+                },
+                "totalOrders": {
+                    "type": "integer"
+                }
+            }
+        },
+        "gamelink_internal_service_player.ReviewDTO": {
+            "type": "object",
+            "properties": {
+                "comment": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "rating": {
+                    "type": "integer"
+                },
+                "userAvatarUrl": {
+                    "type": "string"
+                },
+                "userNickname": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_service_player.SetPlayerStatusRequest": {
+            "type": "object",
+            "properties": {
+                "online": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "gamelink_internal_service_review.CreateReviewRequest": {
+            "type": "object",
+            "required": [
+                "orderId",
+                "rating"
+            ],
+            "properties": {
+                "anonymous": {
+                    "description": "是否匿名",
+                    "type": "boolean"
+                },
+                "comment": {
+                    "type": "string",
+                    "maxLength": 500
+                },
+                "orderId": {
+                    "type": "integer"
+                },
+                "rating": {
+                    "type": "integer",
+                    "maximum": 5,
+                    "minimum": 1
+                },
+                "tags": {
+                    "description": "评价标签",
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -3841,155 +12177,60 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_admin.UpdateOrderPayload": {
+        "gamelink_internal_service_review.MyReviewDTO": {
             "type": "object",
-            "required": [
-                "currency",
-                "price_cents",
-                "status"
-            ],
             "properties": {
-                "cancel_reason": {
+                "comment": {
                     "type": "string"
                 },
-                "currency": {
+                "createdAt": {
                     "type": "string"
                 },
-                "price_cents": {
+                "id": {
                     "type": "integer"
                 },
-                "scheduled_end": {
+                "orderId": {
+                    "type": "integer"
+                },
+                "orderTitle": {
                     "type": "string"
                 },
-                "scheduled_start": {
+                "playerNickname": {
                     "type": "string"
                 },
-                "status": {
+                "rating": {
+                    "type": "integer"
+                },
+                "userAvatarUrl": {
+                    "type": "string"
+                },
+                "userNickname": {
                     "type": "string"
                 }
             }
         },
-        "internal_admin.UpdatePaymentPayload": {
+        "gamelink_internal_service_review.ReplyReviewRequest": {
             "type": "object",
-            "required": [
-                "status"
-            ],
-            "properties": {
-                "paid_at": {
-                    "type": "string",
-                    "example": "2025-10-28T10:00:00Z"
-                },
-                "provider_raw": {
-                    "type": "string",
-                    "example": "{\"result\":\"update\"}"
-                },
-                "provider_trade_no": {
-                    "type": "string"
-                },
-                "refunded_at": {
-                    "type": "string",
-                    "example": "2025-10-28T12:00:00Z"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_admin.UpdatePlayerPayload": {
-            "type": "object",
-            "required": [
-                "verification_status"
-            ],
-            "properties": {
-                "bio": {
-                    "type": "string"
-                },
-                "hourly_rate_cents": {
-                    "type": "integer"
-                },
-                "main_game_id": {
-                    "type": "integer"
-                },
-                "nickname": {
-                    "type": "string"
-                },
-                "rank": {
-                    "type": "string"
-                },
-                "verification_status": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_admin.UpdateReviewPayload": {
-            "type": "object",
-            "required": [
-                "score"
-            ],
             "properties": {
                 "content": {
                     "type": "string"
-                },
-                "score": {
-                    "type": "integer"
                 }
             }
         },
-        "internal_admin.UpdateUserPayload": {
+        "gamelink_internal_service_review.ReplyReviewResponse": {
             "type": "object",
-            "required": [
-                "name",
-                "role",
-                "status"
-            ],
             "properties": {
-                "avatar_url": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                },
-                "phone": {
-                    "type": "string"
-                },
-                "role": {
-                    "type": "string"
+                "replyId": {
+                    "type": "integer"
                 },
                 "status": {
                     "type": "string"
                 }
             }
         },
-        "internal_admin.orderNotePayload": {
+        "gin.H": {
             "type": "object",
-            "properties": {
-                "note": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_admin.orderRefundPayload": {
-            "type": "object",
-            "required": [
-                "reason"
-            ],
-            "properties": {
-                "amount_cents": {
-                    "type": "integer"
-                },
-                "note": {
-                    "type": "string"
-                },
-                "reason": {
-                    "type": "string"
-                }
-            }
+            "additionalProperties": {}
         },
         "internal_handler.loginRequest": {
             "type": "object",
@@ -4049,6 +12290,2300 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "internal_handler_admin.ApproveWithdrawRequest": {
+            "type": "object",
+            "properties": {
+                "remark": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_admin.AssignDisputePayload": {
+            "type": "object",
+            "required": [
+                "assignedToUserId",
+                "source"
+            ],
+            "properties": {
+                "assignedToUserId": {
+                    "type": "integer"
+                },
+                "source": {
+                    "type": "string",
+                    "enum": [
+                        "system",
+                        "manual"
+                    ]
+                }
+            }
+        },
+        "internal_handler_admin.AssignOrderPayload": {
+            "type": "object",
+            "required": [
+                "player_id"
+            ],
+            "properties": {
+                "player_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler_admin.AssignPermissionsRequest": {
+            "type": "object",
+            "required": [
+                "permissionIds"
+            ],
+            "properties": {
+                "permissionIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "internal_handler_admin.AssignRolesToUserRequest": {
+            "type": "object",
+            "required": [
+                "roleIds",
+                "userId"
+            ],
+            "properties": {
+                "roleIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "userId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler_admin.CancelOrderPayload": {
+            "type": "object",
+            "properties": {
+                "reason": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_admin.CapturePaymentPayload": {
+            "type": "object",
+            "properties": {
+                "paid_at": {
+                    "type": "string",
+                    "example": "2025-10-28T10:00:00Z"
+                },
+                "provider_raw": {
+                    "type": "string",
+                    "example": "{\"result\":\"captured\"}"
+                },
+                "provider_trade_no": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_admin.CreateOrderPayload": {
+            "type": "object",
+            "required": [
+                "currency",
+                "game_id",
+                "total_price_cents",
+                "user_id"
+            ],
+            "properties": {
+                "currency": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "game_id": {
+                    "type": "integer"
+                },
+                "player_id": {
+                    "type": "integer"
+                },
+                "scheduled_end": {
+                    "type": "string"
+                },
+                "scheduled_start": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "total_price_cents": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler_admin.CreatePaymentPayload": {
+            "type": "object",
+            "required": [
+                "amount_cents",
+                "currency",
+                "method",
+                "order_id",
+                "user_id"
+            ],
+            "properties": {
+                "amount_cents": {
+                    "type": "integer"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "method": {
+                    "type": "string"
+                },
+                "order_id": {
+                    "type": "integer"
+                },
+                "provider_raw": {
+                    "type": "string",
+                    "example": "{\"result\":\"success\"}"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler_admin.CreatePermissionRequest": {
+            "description": "管理员创建新的系统权// @Tags         Admin - Permissions",
+            "type": "object",
+            "required": [
+                "method",
+                "path"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "maxLength": 128
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "group": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "method": {
+                    "$ref": "#/definitions/gamelink_internal_model.HTTPMethod"
+                },
+                "path": {
+                    "type": "string",
+                    "maxLength": 255
+                }
+            }
+        },
+        "internal_handler_admin.CreatePlayerPayload": {
+            "type": "object",
+            "required": [
+                "user_id",
+                "verification_status"
+            ],
+            "properties": {
+                "bio": {
+                    "type": "string"
+                },
+                "hourly_rate_cents": {
+                    "type": "integer"
+                },
+                "main_game_id": {
+                    "type": "integer"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "rank": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
+                },
+                "verification_status": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_admin.CreateRankingCommissionConfigRequest": {
+            "type": "object",
+            "required": [
+                "month",
+                "name",
+                "rankingType",
+                "rules"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "month": {
+                    "description": "YYYY-MM",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "rankingType": {
+                    "enum": [
+                        "income",
+                        "order_count"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/gamelink_internal_model.RankingType"
+                        }
+                    ]
+                },
+                "rules": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/gamelink_internal_model.RankingCommissionRule"
+                    }
+                }
+            }
+        },
+        "internal_handler_admin.CreateReviewPayload": {
+            "type": "object",
+            "required": [
+                "order_id",
+                "player_id",
+                "score",
+                "user_id"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "order_id": {
+                    "type": "integer"
+                },
+                "player_id": {
+                    "type": "integer"
+                },
+                "score": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler_admin.CreateRoleRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "slug"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 128
+                },
+                "slug": {
+                    "type": "string",
+                    "maxLength": 64
+                }
+            }
+        },
+        "internal_handler_admin.CreateUserPayload": {
+            "type": "object",
+            "required": [
+                "name",
+                "password",
+                "role",
+                "status"
+            ],
+            "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 6
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_admin.Game": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "description": "e.g. moba/fps",
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "iconUrl": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "key": {
+                    "description": "unique slug/key, e.g. \"lol\", \"dota2\"",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_admin.GamePayload": {
+            "type": "object",
+            "required": [
+                "key",
+                "name"
+            ],
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "icon_url": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_admin.Order": {
+            "type": "object",
+            "properties": {
+                "cancelReason": {
+                    "description": "取消/退款信息",
+                    "type": "string"
+                },
+                "commissionCents": {
+                    "description": "平台抽成（分）",
+                    "type": "integer"
+                },
+                "completedAt": {
+                    "description": "完成时间",
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "currency": {
+                    "description": "货币",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/gamelink_internal_model.Currency"
+                        }
+                    ]
+                },
+                "deliveredAt": {
+                    "description": "礼物送达时间",
+                    "type": "string"
+                },
+                "description": {
+                    "description": "订单描述",
+                    "type": "string"
+                },
+                "disputeId": {
+                    "description": "关联的争议ID",
+                    "type": "integer"
+                },
+                "gameId": {
+                    "description": "护航服务字段",
+                    "type": "integer"
+                },
+                "giftMessage": {
+                    "description": "礼物订单字段",
+                    "type": "string"
+                },
+                "hasDispute": {
+                    "description": "争议相关字段",
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "isAnonymous": {
+                    "description": "是否匿名",
+                    "type": "boolean"
+                },
+                "itemId": {
+                    "description": "服务项目ID",
+                    "type": "integer"
+                },
+                "orderConfig": {
+                    "description": "扩展字段",
+                    "type": "string"
+                },
+                "orderNo": {
+                    "description": "订单号",
+                    "type": "string"
+                },
+                "playerId": {
+                    "description": "服务陪玩师 + 复合索引第二部分",
+                    "type": "integer"
+                },
+                "playerIncomeCents": {
+                    "description": "陪玩师收入（分）",
+                    "type": "integer"
+                },
+                "quantity": {
+                    "description": "价格相关",
+                    "type": "integer"
+                },
+                "recipientPlayerId": {
+                    "description": "接收礼物的陪玩师",
+                    "type": "integer"
+                },
+                "refundAmountCents": {
+                    "type": "integer"
+                },
+                "refundReason": {
+                    "type": "string"
+                },
+                "refundedAt": {
+                    "type": "string"
+                },
+                "scheduledEnd": {
+                    "description": "预约结束时间",
+                    "type": "string"
+                },
+                "scheduledStart": {
+                    "description": "预约开始时间",
+                    "type": "string"
+                },
+                "startedAt": {
+                    "description": "实际开始时间",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "订单信息",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/gamelink_internal_model.OrderStatus"
+                        }
+                    ]
+                },
+                "title": {
+                    "description": "订单标题",
+                    "type": "string"
+                },
+                "totalPriceCents": {
+                    "description": "总价（分）",
+                    "type": "integer"
+                },
+                "unitPriceCents": {
+                    "description": "单价（分）",
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "userId": {
+                    "description": "下单用户 + 复合索引第一部分",
+                    "type": "integer"
+                },
+                "userNotes": {
+                    "description": "用户备注",
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_admin.OrderDispute": {
+            "type": "object",
+            "properties": {
+                "assignedAt": {
+                    "description": "指派时间",
+                    "type": "string"
+                },
+                "assignedToUserId": {
+                    "description": "指派信息",
+                    "type": "integer"
+                },
+                "assignmentSource": {
+                    "description": "指派来源",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/gamelink_internal_model.AssignmentSource"
+                        }
+                    ]
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "description": "详细描述",
+                    "type": "string"
+                },
+                "evidenceUrls": {
+                    "description": "证据截图URL列表",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "orderId": {
+                    "description": "订单ID",
+                    "type": "integer"
+                },
+                "reason": {
+                    "description": "争议原因",
+                    "type": "string"
+                },
+                "resolution": {
+                    "description": "处理信息",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/gamelink_internal_model.DisputeResolution"
+                        }
+                    ]
+                },
+                "resolutionAmount": {
+                    "description": "退款金额（分）",
+                    "type": "integer"
+                },
+                "resolutionNotes": {
+                    "description": "处理备注",
+                    "type": "string"
+                },
+                "resolvedAt": {
+                    "description": "解决时间",
+                    "type": "string"
+                },
+                "resolvedByUserId": {
+                    "description": "处理人ID",
+                    "type": "integer"
+                },
+                "rollbackReason": {
+                    "description": "回退原因",
+                    "type": "string"
+                },
+                "rolledBackAt": {
+                    "description": "回退信息",
+                    "type": "string"
+                },
+                "rolledBackByUserId": {
+                    "description": "回退人ID",
+                    "type": "integer"
+                },
+                "slaBreached": {
+                    "description": "是否超过SLA",
+                    "type": "boolean"
+                },
+                "slaBreachedAt": {
+                    "description": "超过SLA的时间",
+                    "type": "string"
+                },
+                "slaDeadline": {
+                    "description": "SLA 信息",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "争议状态",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/gamelink_internal_model.DisputeStatus"
+                        }
+                    ]
+                },
+                "traceId": {
+                    "description": "追踪信息",
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "userId": {
+                    "description": "发起用户ID",
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler_admin.Payment": {
+            "type": "object",
+            "properties": {
+                "amountCents": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "currency": {
+                    "description": "default CNY",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/gamelink_internal_model.Currency"
+                        }
+                    ]
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "method": {
+                    "$ref": "#/definitions/gamelink_internal_model.PaymentMethod"
+                },
+                "orderId": {
+                    "type": "integer"
+                },
+                "paidAt": {
+                    "type": "string"
+                },
+                "providerRaw": {
+                    "description": "provider response payload",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "providerTradeNo": {
+                    "type": "string"
+                },
+                "refundedAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/gamelink_internal_model.PaymentStatus"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "userId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler_admin.Permission": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "group": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "method": {
+                    "$ref": "#/definitions/gamelink_internal_model.HTTPMethod"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_admin.Player": {
+            "type": "object",
+            "properties": {
+                "bio": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "hourlyRateCents": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "mainGameId": {
+                    "type": "integer"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "rank": {
+                    "type": "string"
+                },
+                "ratingAverage": {
+                    "type": "number",
+                    "maximum": 5,
+                    "minimum": 0
+                },
+                "ratingCount": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "userId": {
+                    "type": "integer"
+                },
+                "verificationStatus": {
+                    "$ref": "#/definitions/gamelink_internal_model.VerificationStatus"
+                }
+            }
+        },
+        "internal_handler_admin.RankingCommissionConfig": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "isActive": {
+                    "type": "boolean"
+                },
+                "month": {
+                    "description": "YYYY-MM",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "period": {
+                    "description": "monthly",
+                    "type": "string"
+                },
+                "rankingType": {
+                    "description": "income/order_count",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/gamelink_internal_model.RankingType"
+                        }
+                    ]
+                },
+                "rulesJson": {
+                    "description": "JSON序列化的阶梯规则",
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_admin.RefundPaymentPayload": {
+            "type": "object",
+            "properties": {
+                "provider_raw": {
+                    "type": "string",
+                    "example": "{\"result\":\"refunded\"}"
+                },
+                "provider_trade_no": {
+                    "type": "string"
+                },
+                "refunded_at": {
+                    "type": "string",
+                    "example": "2025-10-28T12:00:00Z"
+                }
+            }
+        },
+        "internal_handler_admin.RejectWithdrawRequest": {
+            "type": "object",
+            "required": [
+                "reason"
+            ],
+            "properties": {
+                "reason": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_admin.ResolveDisputePayload": {
+            "type": "object",
+            "required": [
+                "resolution",
+                "resolutionNotes"
+            ],
+            "properties": {
+                "resolution": {
+                    "type": "string",
+                    "enum": [
+                        "refund",
+                        "partial",
+                        "reassign",
+                        "reject"
+                    ]
+                },
+                "resolutionAmount": {
+                    "type": "integer"
+                },
+                "resolutionNotes": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_admin.Review": {
+            "type": "object",
+            "properties": {
+                "comment": {
+                    "description": "optional comment",
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "orderId": {
+                    "type": "integer"
+                },
+                "playerId": {
+                    "type": "integer"
+                },
+                "rating": {
+                    "description": "1-5",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/gamelink_internal_model.Rating"
+                        }
+                    ]
+                },
+                "reviewerId": {
+                    "description": "camelCase: reviewerId",
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_admin.ReviewOrderPayload": {
+            "type": "object",
+            "properties": {
+                "approved": {
+                    "type": "boolean"
+                },
+                "reason": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_admin.RollbackAssignmentPayload": {
+            "type": "object",
+            "required": [
+                "rollbackReason"
+            ],
+            "properties": {
+                "rollbackReason": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_admin.ServiceItem": {
+            "type": "object",
+            "properties": {
+                "basePriceCents": {
+                    "type": "integer"
+                },
+                "category": {
+                    "description": "统一为 'escort'",
+                    "type": "string"
+                },
+                "commissionRate": {
+                    "description": "抽成比例",
+                    "type": "number"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "gameId": {
+                    "type": "integer"
+                },
+                "iconUrl": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "isActive": {
+                    "type": "boolean"
+                },
+                "itemCode": {
+                    "type": "string"
+                },
+                "maxPlayers": {
+                    "type": "integer"
+                },
+                "minUsers": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "playerId": {
+                    "type": "integer"
+                },
+                "rankLevel": {
+                    "type": "string"
+                },
+                "serviceHours": {
+                    "description": "服务时长（小时），礼物为0",
+                    "type": "integer"
+                },
+                "sortOrder": {
+                    "type": "integer"
+                },
+                "subCategory": {
+                    "description": "solo/team/gift",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/gamelink_internal_model.ServiceItemSubCategory"
+                        }
+                    ]
+                },
+                "tags": {
+                    "description": "JSON数组",
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_admin.SkillTagsBody": {
+            "type": "object",
+            "required": [
+                "tags"
+            ],
+            "properties": {
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "internal_handler_admin.UpdateOrderPayload": {
+            "type": "object",
+            "required": [
+                "currency",
+                "status",
+                "total_price_cents"
+            ],
+            "properties": {
+                "cancel_reason": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "scheduled_end": {
+                    "type": "string"
+                },
+                "scheduled_start": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "total_price_cents": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler_admin.UpdatePaymentPayload": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "paid_at": {
+                    "type": "string",
+                    "example": "2025-10-28T10:00:00Z"
+                },
+                "provider_raw": {
+                    "type": "string",
+                    "example": "{\"result\":\"update\"}"
+                },
+                "provider_trade_no": {
+                    "type": "string"
+                },
+                "refunded_at": {
+                    "type": "string",
+                    "example": "2025-10-28T12:00:00Z"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_admin.UpdatePermissionRequest": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "maxLength": 128
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "group": {
+                    "type": "string",
+                    "maxLength": 64
+                }
+            }
+        },
+        "internal_handler_admin.UpdatePlayerPayload": {
+            "type": "object",
+            "required": [
+                "verification_status"
+            ],
+            "properties": {
+                "bio": {
+                    "type": "string"
+                },
+                "hourly_rate_cents": {
+                    "type": "integer"
+                },
+                "main_game_id": {
+                    "type": "integer"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "rank": {
+                    "type": "string"
+                },
+                "verification_status": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_admin.UpdateRankingCommissionConfigRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "isActive": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "rules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/gamelink_internal_model.RankingCommissionRule"
+                    }
+                }
+            }
+        },
+        "internal_handler_admin.UpdateReviewPayload": {
+            "type": "object",
+            "required": [
+                "score"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler_admin.UpdateRoleRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 128
+                }
+            }
+        },
+        "internal_handler_admin.UpdateUserPayload": {
+            "type": "object",
+            "required": [
+                "name",
+                "role",
+                "status"
+            ],
+            "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_admin.User": {
+            "type": "object",
+            "properties": {
+                "avatarUrl": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "lastLoginAt": {
+                    "description": "复合索引第二部分",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "添加索引，用于搜索",
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "role": {
+                    "$ref": "#/definitions/gamelink_internal_model.Role"
+                },
+                "roles": {
+                    "description": "多角色支持（新增）",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/gamelink_internal_model.RoleModel"
+                    }
+                },
+                "status": {
+                    "description": "复合索引第一部分",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/gamelink_internal_model.UserStatus"
+                        }
+                    ]
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_admin.Withdraw": {
+            "type": "object",
+            "properties": {
+                "accountInfo": {
+                    "description": "account info (encrypted storage)",
+                    "type": "string"
+                },
+                "adminRemark": {
+                    "description": "admin remarks",
+                    "type": "string"
+                },
+                "amountCents": {
+                    "description": "withdrawal amount in cents",
+                    "type": "integer"
+                },
+                "completedAt": {
+                    "description": "completion time",
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "method": {
+                    "$ref": "#/definitions/gamelink_internal_model.WithdrawMethod"
+                },
+                "playerId": {
+                    "type": "integer"
+                },
+                "processedAt": {
+                    "description": "processing time",
+                    "type": "string"
+                },
+                "processedBy": {
+                    "description": "processor ID",
+                    "type": "integer"
+                },
+                "rejectReason": {
+                    "description": "reason for rejection",
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/gamelink_internal_model.WithdrawStatus"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "userId": {
+                    "description": "redundant field for convenient queries",
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler_admin.orderNotePayload": {
+            "type": "object",
+            "properties": {
+                "note": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_admin.orderRefundPayload": {
+            "type": "object",
+            "required": [
+                "reason"
+            ],
+            "properties": {
+                "amount_cents": {
+                    "type": "integer"
+                },
+                "note": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_notification.MarkNotificationsReadRequest": {
+            "type": "object",
+            "properties": {
+                "ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "internal_handler_notification.NotificationListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/gamelink_internal_service_notification.NotificationView"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "pageSize": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "unreadCount": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler_player.ApplyPlayerRequest": {
+            "type": "object",
+            "required": [
+                "hourlyRateCents",
+                "mainGameId",
+                "nickname",
+                "rank"
+            ],
+            "properties": {
+                "bio": {
+                    "type": "string",
+                    "maxLength": 500
+                },
+                "hourlyRateCents": {
+                    "type": "integer",
+                    "minimum": 1000
+                },
+                "mainGameId": {
+                    "type": "integer"
+                },
+                "nickname": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "proofImages": {
+                    "description": "段位证明图片",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "rank": {
+                    "type": "string",
+                    "maxLength": 32
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "internal_handler_player.ApplyPlayerResponseSwagger": {
+            "type": "object",
+            "properties": {
+                "playerId": {
+                    "type": "integer"
+                },
+                "verificationStatus": {
+                    "$ref": "#/definitions/gamelink_internal_model.VerificationStatus"
+                }
+            }
+        },
+        "internal_handler_player.CommissionRecordListAPIResponseSwagger": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_player.CommissionRecordListResponseSwagger"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_player.CommissionRecordListResponseSwagger": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_handler_player.CommissionRecordSwagger"
+                    }
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "page_size": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "total_pages": {
+                    "type": "integer",
+                    "example": 5
+                }
+            }
+        },
+        "internal_handler_player.CommissionRecordSwagger": {
+            "type": "object",
+            "properties": {
+                "commission_amount": {
+                    "type": "number",
+                    "example": 100
+                },
+                "commission_rate": {
+                    "type": "number",
+                    "example": 0.2
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2024-01-15T10:30:00Z"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "net_income": {
+                    "type": "number",
+                    "example": 400
+                },
+                "order_id": {
+                    "type": "integer",
+                    "example": 1001
+                },
+                "player_id": {
+                    "type": "integer",
+                    "example": 2001
+                },
+                "total_price": {
+                    "type": "number",
+                    "example": 500
+                }
+            }
+        },
+        "internal_handler_player.CommissionSummaryAPIResponseSwagger": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_player.CommissionSummaryResponseSwagger"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_player.CommissionSummaryResponseSwagger": {
+            "type": "object",
+            "properties": {
+                "month": {
+                    "type": "string",
+                    "example": "2024-01"
+                },
+                "net_income": {
+                    "type": "number",
+                    "example": 8000
+                },
+                "order_count": {
+                    "type": "integer",
+                    "example": 25
+                },
+                "total_commission": {
+                    "type": "number",
+                    "example": 2000
+                },
+                "total_income": {
+                    "type": "number",
+                    "example": 10000
+                }
+            }
+        },
+        "internal_handler_player.DailyEarningSwagger": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string",
+                    "example": "2024-01-15"
+                },
+                "earnings": {
+                    "type": "integer",
+                    "example": 5000
+                },
+                "orderCount": {
+                    "type": "integer",
+                    "example": 3
+                }
+            }
+        },
+        "internal_handler_player.EarningsSummaryAPIResponseSwagger": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_player.EarningsSummaryResponseSwagger"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_player.EarningsSummaryResponseSwagger": {
+            "type": "object",
+            "properties": {
+                "availableBalance": {
+                    "type": "integer",
+                    "example": 20000
+                },
+                "monthEarnings": {
+                    "type": "integer",
+                    "example": 150000
+                },
+                "pendingBalance": {
+                    "type": "integer",
+                    "example": 5000
+                },
+                "todayEarnings": {
+                    "type": "integer",
+                    "example": 10000
+                },
+                "totalEarnings": {
+                    "type": "integer",
+                    "example": 500000
+                },
+                "withdrawTotal": {
+                    "type": "integer",
+                    "example": 300000
+                }
+            }
+        },
+        "internal_handler_player.EarningsTrendAPIResponseSwagger": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_player.EarningsTrendResponseSwagger"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_player.EarningsTrendResponseSwagger": {
+            "type": "object",
+            "properties": {
+                "trend": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_handler_player.DailyEarningSwagger"
+                    }
+                }
+            }
+        },
+        "internal_handler_player.PlayerDetailResponse": {
+            "type": "object",
+            "properties": {
+                "player": {
+                    "$ref": "#/definitions/gamelink_internal_service_player.PlayerDetailDTO"
+                },
+                "reviews": {
+                    "description": "最新评价",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/gamelink_internal_service_player.ReviewDTO"
+                    }
+                },
+                "stats": {
+                    "$ref": "#/definitions/gamelink_internal_service_player.PlayerStatsDTO"
+                }
+            }
+        },
+        "internal_handler_player.SettlementListAPIResponseSwagger": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_player.SettlementListResponseSwagger"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_player.SettlementListResponseSwagger": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_handler_player.SettlementSwagger"
+                    }
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "page_size": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 50
+                },
+                "total_pages": {
+                    "type": "integer",
+                    "example": 3
+                }
+            }
+        },
+        "internal_handler_player.SettlementSwagger": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2024-01-31T23:59:59Z"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "month": {
+                    "type": "string",
+                    "example": "2024-01"
+                },
+                "player_id": {
+                    "type": "integer",
+                    "example": 2001
+                },
+                "settled_at": {
+                    "type": "string",
+                    "example": "2024-02-01T00:00:00Z"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "completed"
+                },
+                "total_amount": {
+                    "type": "number",
+                    "example": 8000
+                }
+            }
+        },
+        "internal_handler_player.SuccessResponseSwagger": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {},
+                "message": {
+                    "type": "string"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_player.UpdatePlayerProfileRequest": {
+            "type": "object",
+            "required": [
+                "nickname"
+            ],
+            "properties": {
+                "bio": {
+                    "type": "string",
+                    "maxLength": 500
+                },
+                "hourlyRateCents": {
+                    "type": "integer",
+                    "minimum": 1000
+                },
+                "nickname": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "rank": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "internal_handler_player.WithdrawAPIResponseSwagger": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_player.WithdrawResponseSwagger"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_player.WithdrawHistoryAPIResponseSwagger": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_player.WithdrawHistoryResponseSwagger"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_player.WithdrawHistoryResponseSwagger": {
+            "type": "object",
+            "properties": {
+                "records": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_handler_player.WithdrawRecordSwagger"
+                    }
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 100
+                }
+            }
+        },
+        "internal_handler_player.WithdrawRecordSwagger": {
+            "type": "object",
+            "properties": {
+                "amountCents": {
+                    "type": "integer",
+                    "example": 10000
+                },
+                "createdAt": {
+                    "type": "string",
+                    "example": "2024-01-15T10:30:00Z"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 12345
+                },
+                "method": {
+                    "type": "string",
+                    "example": "alipay"
+                },
+                "processedAt": {
+                    "type": "string",
+                    "example": "2024-01-16T14:20:00Z"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "completed"
+                }
+            }
+        },
+        "internal_handler_player.WithdrawResponseSwagger": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "example": "pending"
+                },
+                "withdrawId": {
+                    "type": "integer",
+                    "example": 12345
+                }
+            }
+        },
+        "internal_handler_user.ChatMessage": {
+            "type": "object",
+            "properties": {
+                "auditStatus": {
+                    "$ref": "#/definitions/gamelink_internal_model.ChatMessageAuditStatus"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "groupId": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "imageUrl": {
+                    "type": "string"
+                },
+                "isDeleted": {
+                    "type": "boolean"
+                },
+                "messageType": {
+                    "$ref": "#/definitions/gamelink_internal_model.ChatMessageType"
+                },
+                "metadata": {
+                    "type": "string"
+                },
+                "moderatedAt": {
+                    "type": "string"
+                },
+                "moderatedBy": {
+                    "type": "integer"
+                },
+                "rejectReason": {
+                    "type": "string"
+                },
+                "replyToId": {
+                    "type": "integer"
+                },
+                "senderId": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_user.CreateOrderResponse": {
+            "type": "object",
+            "properties": {
+                "needPayment": {
+                    "type": "boolean"
+                },
+                "orderId": {
+                    "type": "integer"
+                },
+                "priceCents": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler_user.CreateReviewResponse": {
+            "type": "object",
+            "properties": {
+                "reviewId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler_user.GiftOrderAPIResponseSwagger": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_user.GiftOrderResponse"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_user.GiftOrderResponse": {
+            "type": "object",
+            "properties": {
+                "deliveredAt": {
+                    "type": "string"
+                },
+                "giftName": {
+                    "type": "string"
+                },
+                "orderId": {
+                    "type": "integer"
+                },
+                "orderNo": {
+                    "type": "string"
+                },
+                "playerId": {
+                    "type": "integer"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "totalPrice": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler_user.InitiateDisputePayload": {
+            "type": "object",
+            "required": [
+                "orderId",
+                "reason"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 2000
+                },
+                "evidenceUrls": {
+                    "type": "array",
+                    "maxItems": 9,
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "orderId": {
+                    "type": "integer"
+                },
+                "reason": {
+                    "type": "string",
+                    "maxLength": 255
+                }
+            }
+        },
+        "internal_handler_user.MyOrderListResponse": {
+            "type": "object",
+            "properties": {
+                "orders": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/gamelink_internal_service_order.OrderCardDTO"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler_user.MyReviewListResponse": {
+            "type": "object",
+            "properties": {
+                "reviews": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/gamelink_internal_service_review.MyReviewDTO"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler_user.OrderDetailResponse": {
+            "type": "object",
+            "properties": {
+                "order": {
+                    "$ref": "#/definitions/gamelink_internal_service_order.OrderDetailDTO"
+                },
+                "payment": {
+                    "$ref": "#/definitions/gamelink_internal_service_order.PaymentDTO"
+                },
+                "player": {
+                    "$ref": "#/definitions/gamelink_internal_service_order.PlayerCardDTO"
+                },
+                "review": {
+                    "$ref": "#/definitions/gamelink_internal_service_order.ReviewDTO"
+                },
+                "timeline": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/gamelink_internal_service_order.OrderTimelineDTO"
+                    }
+                }
+            }
+        },
+        "internal_handler_user.Payment": {
+            "type": "object",
+            "properties": {
+                "amountCents": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "currency": {
+                    "description": "default CNY",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/gamelink_internal_model.Currency"
+                        }
+                    ]
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "method": {
+                    "$ref": "#/definitions/gamelink_internal_model.PaymentMethod"
+                },
+                "orderId": {
+                    "type": "integer"
+                },
+                "paidAt": {
+                    "type": "string"
+                },
+                "providerRaw": {
+                    "description": "provider response payload",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "providerTradeNo": {
+                    "type": "string"
+                },
+                "refundedAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/gamelink_internal_model.PaymentStatus"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "userId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler_user.PlayerDetailAPIResponseSwagger": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/gamelink_internal_service_player.PlayerDetailResponse"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_user.PlayerListAPIResponseSwagger": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/gamelink_internal_service_player.PlayerListResponse"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_user.SentGiftsAPIResponseSwagger": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "message": {
+                    "type": "string"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_user.ServiceItemListAPIResponseSwagger": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_user.ServiceItemListResponse"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_user.ServiceItemListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/gamelink_internal_service_item.ServiceItemDTO"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler_user.reportMessageRequest": {
+            "type": "object",
+            "properties": {
+                "evidence": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_user.sendMessageRequest": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "imageUrl": {
+                    "type": "string"
+                },
+                "messageType": {
+                    "type": "string"
+                },
+                "replyToId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "map_string_int64": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "integer",
+                "format": "int64"
+            }
         }
     },
     "securityDefinitions": {
@@ -4067,7 +14602,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/api/v1",
 	Schemes:          []string{"http", "https"},
 	Title:            "GameLink API",
-	Description:      "GameLink 平台 API，包含健康检查、认证与管理端能力。",
+	Description:      "GameLink 平台 API，包含健康检查、认证与管理端能力",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

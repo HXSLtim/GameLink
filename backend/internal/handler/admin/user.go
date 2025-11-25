@@ -16,6 +16,9 @@ import (
 	adminservice "gamelink/internal/service/admin"
 )
 
+// User 用户模型（类型别名）
+type User = model.User
+
 // UserHandler 处理后台用户管理接口
 type UserHandler struct {
 	svc *adminservice.AdminService
@@ -34,7 +37,7 @@ func NewUserHandler(svc *adminservice.AdminService) *UserHandler {
 // @Param        pageSize   query     int       false  "每页数量"
 // @Param        role           query    []string     false  "Role filter"// @Param        status         query    []string     false  "Status filter"// @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
 // @Param        keyword        query    string       false  "Parameter: keyword"// @Produce      json
-// @Success      200  {object}  model.APIResponse[[]model.User]
+// @Success      200  {object}  model.APIResponse[[]User]
 // @Router       /admin/users [get]
 //
 // ListUsers returns a paginated list of users.
@@ -64,7 +67,7 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path      int  true  "用户ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[model.User]
+// @Success      200  {object}  model.APIResponse[User]
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/users/{id} [get]
 //
@@ -84,7 +87,7 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("获取用户信息失败").WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[model.User]{
+	writeJSON(c, http.StatusOK, model.APIResponse[*model.User]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
@@ -99,7 +102,7 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  CreateUserPayload  true  "用户信息"
-// @Success      201  {object}  model.APIResponse[model.User]
+// @Success      201  {object}  model.APIResponse[User]
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/users [post]
 //
@@ -138,7 +141,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		return
 	}
 
-	writeJSON(c, http.StatusCreated, model.APIResponse[model.User]{
+	writeJSON(c, http.StatusCreated, model.APIResponse[*model.User]{
 		Success: true,
 		Code:    http.StatusCreated,
 		Message: "created",
@@ -154,7 +157,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int                  true  "用户ID"
 // @Param        request  body  UpdateUserPayload    true  "用户信息"
-// @Success      200  {object}  model.APIResponse[model.User]
+// @Success      200  {object}  model.APIResponse[User]
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/users/{id} [put]
 //
@@ -212,7 +215,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[model.User]{
+	writeJSON(c, http.StatusOK, model.APIResponse[*model.User]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "updated",
@@ -226,7 +229,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "用户ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[any]
+// @Success      200  {object}  model.SuccessResponse
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/users/{id} [delete]
 //
@@ -318,7 +321,7 @@ func (h *UserHandler) ListUserLogs(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int  true  "用户ID"
 // @Param        request  body  map[string]string  true  "{status}"
-// @Success      200  {object}  model.APIResponse[model.User]
+// @Success      200  {object}  model.APIResponse[User]
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/users/{id}/status [put]
 func (h *UserHandler) UpdateUserStatus(c *gin.Context) {
@@ -344,10 +347,10 @@ func (h *UserHandler) UpdateUserStatus(c *gin.Context) {
 			respondAPIError(c, err)
 			return
 		}
-		respondAPIError(c, apierr.InternalError("更新用户状态失).WithDetails(err.Error()))
+		respondAPIError(c, apierr.InternalError("更新用户状态失败").WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[model.User]{Success: true, Code: http.StatusOK, Message: "updated", Data: out})
+	writeJSON(c, http.StatusOK, model.APIResponse[*model.User]{Success: true, Code: http.StatusOK, Message: "updated", Data: out})
 }
 
 // UpdateUserRole
@@ -358,7 +361,7 @@ func (h *UserHandler) UpdateUserStatus(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int  true  "用户ID"
 // @Param        request  body  map[string]string  true  "{role}"
-// @Success      200  {object}  model.APIResponse[model.User]
+// @Success      200  {object}  model.APIResponse[User]
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/users/{id}/role [put]
 func (h *UserHandler) UpdateUserRole(c *gin.Context) {
@@ -387,7 +390,7 @@ func (h *UserHandler) UpdateUserRole(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("更新用户角色失败").WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[model.User]{Success: true, Code: http.StatusOK, Message: "updated", Data: out})
+	writeJSON(c, http.StatusOK, model.APIResponse[*model.User]{Success: true, Code: http.StatusOK, Message: "updated", Data: out})
 }
 
 // ListUserOrders
@@ -518,7 +521,7 @@ func (h *UserHandler) CreateUserWithPlayer(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("创建用户和陪玩师失败").WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusCreated, model.APIResponse[map[string]any]{
+	writeJSON(c, http.StatusCreated, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusCreated,
 		Message: "created",

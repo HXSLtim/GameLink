@@ -58,7 +58,7 @@ type registerRequest struct {
 // @Accept       json
 // @Produce      json
 // @Param        request  body      loginRequest  true  "登录凭据"
-// @Success      200      {object}  loginResponse
+// @Success      200      {object}  model.APIResponse[loginResponse]
 // @Failure      400      {object}  apierr.APIError
 // @Failure      401      {object}  apierr.APIError
 // @Router       /auth/login [post]
@@ -99,7 +99,7 @@ func loginHandler(c *gin.Context, svc *authservice.AuthService) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body      registerRequest  true  "注册信息"
-// @Success      200      {object}  loginResponse
+// @Success      200      {object}  model.APIResponse[loginResponse]
 // @Failure      400      {object}  apierr.APIError
 // @Router       /auth/register [post]
 func registerHandler(c *gin.Context, svc *authservice.AuthService) {
@@ -133,7 +133,7 @@ func registerHandler(c *gin.Context, svc *authservice.AuthService) {
 // @Tags         Auth
 // @Security     BearerAuth
 // @Produce      json
-// @Success      200  {object}  loginResponse
+// @Success      200  {object}  model.APIResponse[loginResponse]
 // @Failure      401  {object}  apierr.APIError
 // @Router       /auth/me [get]
 func meHandler(c *gin.Context, svc *authservice.AuthService) {
@@ -161,7 +161,7 @@ func meHandler(c *gin.Context, svc *authservice.AuthService) {
 // @Tags         Auth
 // @Produce      json
 // @Security     BearerAuth
-// @Success      200  {object}  tokenPayload
+// @Success      200  {object}  model.APIResponse[tokenPayload]
 // @Failure      401  {object}  apierr.APIError
 // @Router       /auth/refresh [post]
 func refreshHandler(c *gin.Context, svc *authservice.AuthService) {
@@ -189,7 +189,7 @@ func refreshHandler(c *gin.Context, svc *authservice.AuthService) {
 // @Summary      登出（前端丢弃 Token）
 // @Tags         Auth
 // @Security     BearerAuth
-// @Success      200  {object}  apierr.APIError
+// @Success      200  {object}  model.SuccessResponse
 // @Router       /auth/logout [post]
 func logoutHandler(c *gin.Context) {
 	RespondSuccess(c, "登出成功", gin.H{"message": "logged out"})

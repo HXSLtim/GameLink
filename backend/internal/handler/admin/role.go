@@ -11,11 +11,13 @@ import (
 	roleservice "gamelink/internal/service/role"
 )
 
-// RoleHandler 角色管理处理type RoleHandler struct {
+// RoleHandler 角色管理处理器
+type RoleHandler struct {
 	roleSvc *roleservice.RoleService
 }
 
-// NewRoleHandler 创建角色处理器实func NewRoleHandler(roleSvc *roleservice.RoleService) *RoleHandler {
+// NewRoleHandler 创建角色处理器实例
+func NewRoleHandler(roleSvc *roleservice.RoleService) *RoleHandler {
 	return &RoleHandler{roleSvc: roleSvc}
 }
 
@@ -52,8 +54,8 @@ type AssignRolesToUserRequest struct {
 // @Param        page              query     int     false  "页码" default(1)
 // @Param        pageSize          query     int     false  "每页数量" default(10)
 // @Param        with_permissions  query     bool    false  "是否包含权限信息"
-// @Param        keyword           query     string  false  "关键词搜
-// @Param        isSystem          query     bool    false  "是否为系统角
+// @Param        keyword           query     string  false  "关键词搜索"
+// @Param        isSystem          query     bool    false  "是否为系统角色"
 // @Success      200               {object}  model.APIResponse[gin.H]
 // @Failure      400               {object}  model.ErrorResponse
 // @Failure      401               {object}  model.ErrorResponse
@@ -142,14 +144,14 @@ func (h *RoleHandler) GetRole(c *gin.Context) {
 
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
-			writeJSONError(c, http.StatusNotFound, "角色不存)
+			writeJSONError(c, http.StatusNotFound, "角色不存在")
 		} else {
 			writeJSONError(c, http.StatusInternalServerError, err.Error())
 		}
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[model.RoleModel]{
+	writeJSON(c, http.StatusOK, model.APIResponse[*model.RoleModel]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "成功",
@@ -189,7 +191,7 @@ func (h *RoleHandler) CreateRole(c *gin.Context) {
 		return
 	}
 
-	writeJSON(c, http.StatusCreated, model.APIResponse[model.RoleModel]{
+	writeJSON(c, http.StatusCreated, model.APIResponse[*model.RoleModel]{
 		Success: true,
 		Code:    http.StatusCreated,
 		Message: "角色创建成功",
@@ -243,7 +245,7 @@ func (h *RoleHandler) UpdateRole(c *gin.Context) {
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[model.RoleModel]{
+	writeJSON(c, http.StatusOK, model.APIResponse[*model.RoleModel]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "角色更新成功",
@@ -259,7 +261,7 @@ func (h *RoleHandler) UpdateRole(c *gin.Context) {
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
 // @Param        id             path      uint    true  "角色ID"
-// @Success      200            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
@@ -291,7 +293,7 @@ func (h *RoleHandler) DeleteRole(c *gin.Context) {
 // @Param        Authorization  header    string                      true  "Bearer {token}"
 // @Param        id             path      uint                        true  "角色ID"
 // @Param        request        body      AssignPermissionsRequest     true  "分配权限请求"
-// @Success      200            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
@@ -329,7 +331,7 @@ func (h *RoleHandler) AssignPermissions(c *gin.Context) {
 // @Produce      json
 // @Param        Authorization  header    string                    true  "Bearer {token}"
 // @Param        request        body      AssignRolesToUserRequest    true  "分配角色请求"
-// @Success      200            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse

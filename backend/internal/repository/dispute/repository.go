@@ -108,7 +108,7 @@ func (r *gormDisputeRepository) List(ctx context.Context, opts repository.Disput
 
 // ListPendingAssignment returns disputes pending assignment (status = pending and not assigned).
 func (r *gormDisputeRepository) ListPendingAssignment(ctx context.Context, page, pageSize int) ([]model.OrderDispute, int64, error) {
-	query := r.db.WithContext(ctx).
+	query := r.db.WithContext(ctx).Model(&model.OrderDispute{}).
 		Where("status = ?", model.DisputeStatusPending).
 		Where("assigned_to_user_id IS NULL")
 

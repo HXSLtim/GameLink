@@ -38,7 +38,7 @@ type InitiateDisputeResponse = assignment.InitiateDisputeResponse
 // @Accept       json
 // @Produce      json
 // @Param        request  body  InitiateDisputePayload  true  "纠纷信息"
-// @Success      201      {object}  object
+// @Success      201      {object}  map[string]interface{}
 // @Failure      400      {object}  apierr.APIError
 // @Failure      401      {object}  apierr.APIError
 // @Failure      403      {object}  apierr.APIError
@@ -103,16 +103,10 @@ func (h *DisputeHandler) InitiateDispute(c *gin.Context) {
 		return
 	}
 
-	type InitiateDisputeResponse struct {
-		DisputeID   uint64 `json:"disputeId"`
-		TraceID     string `json:"traceId"`
-		SLADeadline string `json:"slaDeadline"`
-	}
-
-	respondSuccess(c, "纠纷发起成功", InitiateDisputeResponse{
+	respondSuccess(c, "纠纷发起成功", assignment.InitiateDisputeResponse{
 		DisputeID:   resp.DisputeID,
 		TraceID:     resp.TraceID,
-		SLADeadline: resp.SLADeadline.Format("2006-01-02T15:04:05Z07:00"),
+		SLADeadline: resp.SLADeadline,
 	})
 }
 
@@ -124,7 +118,7 @@ func (h *DisputeHandler) InitiateDispute(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        id  path  uint64  true  "纠纷ID"
-// @Success      200  {object}  object
+// @Success      200  {object}  map[string]interface{}
 // @Failure      400  {object}  apierr.APIError
 // @Failure      401  {object}  apierr.APIError
 // @Failure      403  {object}  apierr.APIError

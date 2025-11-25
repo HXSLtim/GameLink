@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	apierr "gamelink/internal/handler"
+	apierr "gamelink/internal/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/service/commission"
 )
@@ -36,7 +36,7 @@ func RegisterCommissionRoutes(router gin.IRouter, svc *commission.CommissionServ
 // @Produce      json
 // @Security     BearerAuth
 // @Param        request        body      commission.CreateCommissionRuleRequest  true  "抽成规则信息"
-// @Success      200            {object}  model.APIResponse[model.CommissionRule]
+// @Success      200            {object}  model.SuccessResponse
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/commission/rules [post]
@@ -53,7 +53,7 @@ func createCommissionRuleHandler(c *gin.Context, svc *commission.CommissionServi
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[model.CommissionRule]{
+	writeJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "Commission rule created successfully",
@@ -70,7 +70,7 @@ func createCommissionRuleHandler(c *gin.Context, svc *commission.CommissionServi
 // @Security     BearerAuth
 // @Param        id             path      int                                       true  "规则ID"
 // @Param        request        body      commission.UpdateCommissionRuleRequest  true  "更新信息"
-// @Success      200            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/commission/rules/{id} [put]
@@ -108,7 +108,7 @@ func updateCommissionRuleHandler(c *gin.Context, svc *commission.CommissionServi
 // @Produce      json
 // @Security     BearerAuth
 // @Param        month          query     string  true  "月份 (YYYY-MM)"
-// @Success      200            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/commission/settlements/trigger [post]
@@ -141,7 +141,7 @@ func triggerSettlementHandler(c *gin.Context, scheduler interface{ TriggerSettle
 // @Produce      json
 // @Security     BearerAuth
 // @Param        month          query     string  true  "月份 (YYYY-MM)"
-// @Success      200            {object}  model.APIResponse[PlatformStatsResponse]
+// @Success      200            {object}  model.PlatformStatsResponse
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/commission/stats [get]

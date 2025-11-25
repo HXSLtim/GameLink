@@ -18,6 +18,12 @@ import (
 	adminservice "gamelink/internal/service/admin"
 )
 
+// Order 订单模型（类型别名）
+type Order = model.Order
+
+// Payment 支付模型（类型别名）
+type Payment = model.Payment
+
 // OrderHandler 管理订单相关接口
 type OrderHandler struct {
 	svc *adminservice.AdminService
@@ -35,7 +41,7 @@ func NewOrderHandler(svc *adminservice.AdminService) *OrderHandler {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  CreateOrderPayload  true  "订单信息"
-// @Success      201  {object}  model.APIResponse[model.Order]
+// @Success      201  {object}  model.APIResponse[Order]
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/orders [post]
 func (h *OrderHandler) CreateOrder(c *gin.Context) {
@@ -77,7 +83,7 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("create order failed").WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusCreated, model.APIResponse[model.Order]{Success: true, Code: http.StatusCreated, Message: "created", Data: order})
+	writeJSON(c, http.StatusCreated, model.APIResponse[model.Order]{Success: true, Code: http.StatusCreated, Message: "created", Data: *order})
 }
 
 // AssignOrder
@@ -88,7 +94,7 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int                 true  "订单ID"
 // @Param        request  body  AssignOrderPayload  true  "指派信息"
-// @Success      200  {object}  model.APIResponse[model.Order]
+// @Success      200  {object}  model.APIResponse[Order]
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/orders/{id}/assign [post]
 func (h *OrderHandler) AssignOrder(c *gin.Context) {
@@ -115,7 +121,7 @@ func (h *OrderHandler) AssignOrder(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("assign order failed").WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: order})
+	writeJSON(c, http.StatusOK, model.APIResponse[model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: *order})
 }
 
 // ConfirmOrder 确认订单// @Summary      确认订单
@@ -126,7 +132,7 @@ func (h *OrderHandler) AssignOrder(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int               true  "订单ID"
 // @Param        request  body  orderNotePayload  false "备注（可选）"
-// @Success      200  {object}  model.APIResponse[[]model.Order]
+// @Success      200  {object}  model.APIResponse[[]Order]
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/orders/{id}/confirm [post]
 func (h *OrderHandler) ConfirmOrder(c *gin.Context) {
@@ -155,7 +161,7 @@ func (h *OrderHandler) ConfirmOrder(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("confirm order failed").WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: order})
+	writeJSON(c, http.StatusOK, model.APIResponse[model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: *order})
 }
 
 // @Description  API endpoint// @Security     BearerAuth
@@ -192,7 +198,7 @@ func (h *OrderHandler) StartOrder(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("start order failed").WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: order})
+	writeJSON(c, http.StatusOK, model.APIResponse[model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: *order})
 }
 
 // CompleteOrder 完成订单// @Summary      完成订单
@@ -232,7 +238,7 @@ func (h *OrderHandler) CompleteOrder(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("complete order failed").WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: order})
+	writeJSON(c, http.StatusOK, model.APIResponse[model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: *order})
 }
 
 // ListOrders
@@ -301,7 +307,7 @@ func (h *OrderHandler) GetOrder(c *gin.Context) {
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
-		Data:    order,
+		Data:    *order,
 	})
 }
 
@@ -309,7 +315,7 @@ func (h *OrderHandler) GetOrder(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        id       path  int                  true  "订单ID"
-// @Param        request        body     orderRefundPayload true   "Request body"// @Success      200  {object}  model.APIResponse[[]model.Payment]
+// @Param        request        body     orderRefundPayload true   "Request body"// @Success      200  {object}  model.APIResponse[[]Payment]
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/orders/{id}/refund [post]
 func (h *OrderHandler) RefundOrder(c *gin.Context) {
@@ -340,7 +346,7 @@ func (h *OrderHandler) RefundOrder(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("refund order failed").WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: order})
+	writeJSON(c, http.StatusOK, model.APIResponse[model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: *order})
 }
 
 // @Description  API endpoint// @Tags         Admin/Orders
@@ -373,7 +379,7 @@ func (h *OrderHandler) GetOrderTimeline(c *gin.Context) {
 // @Security     BearerAuth
 // @Produce      json
 // @Param        id   path  int  true  "订单ID"
-// @Success      200  {object}  model.APIResponse[[]model.Review]
+// @Success      200  {object}  model.APIResponse[[]Review]
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/orders/{id}/payments [get]
 func (h *OrderHandler) ListOrderPayments(c *gin.Context) {
@@ -425,7 +431,7 @@ func (h *OrderHandler) ListOrderRefunds(c *gin.Context) {
 // @Security     BearerAuth
 // @Produce      json
 // @Param        id   path  int  true  "订单ID"
-// @Success      200  {object}  model.APIResponse[any]
+// @Success      200  {object}  model.SuccessResponse
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/orders/{id}/reviews [get]
 func (h *OrderHandler) ListOrderReviews(c *gin.Context) {
@@ -514,7 +520,7 @@ func (h *OrderHandler) UpdateOrder(c *gin.Context) {
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "updated",
-		Data:    order,
+		Data:    *order,
 	})
 }
 
@@ -524,7 +530,7 @@ func (h *OrderHandler) UpdateOrder(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "订单ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[model.Payment]
+// @Success      200  {object}  model.APIResponse[Payment]
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/orders/{id} [delete]
 //
@@ -657,7 +663,7 @@ func NewPaymentHandler(svc *adminservice.AdminService) *PaymentHandler {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  CreatePaymentPayload  true  "支付信息"
-// @Success      201  {object}  model.APIResponse[model.Payment]
+// @Success      201  {object}  model.APIResponse[Payment]
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/payments [post]
 func (h *PaymentHandler) CreatePayment(c *gin.Context) {
@@ -682,7 +688,7 @@ func (h *PaymentHandler) CreatePayment(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("create payment failed").WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusCreated, model.APIResponse[model.Payment]{Success: true, Code: http.StatusCreated, Message: "created", Data: pay})
+	writeJSON(c, http.StatusCreated, model.APIResponse[*model.Payment]{Success: true, Code: http.StatusCreated, Message: "created", Data: pay})
 }
 
 // CapturePayment
@@ -729,7 +735,7 @@ func (h *PaymentHandler) CapturePayment(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("capture payment failed").WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[model.Payment]{Success: true, Code: http.StatusOK, Message: "updated", Data: pay})
+	writeJSON(c, http.StatusOK, model.APIResponse[*model.Payment]{Success: true, Code: http.StatusOK, Message: "updated", Data: pay})
 }
 
 // ListPayments
@@ -774,7 +780,7 @@ func (h *PaymentHandler) ListPayments(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "支付ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[any]
+// @Success      200  {object}  model.SuccessResponse
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/payments/{id} [get]
 //
@@ -794,7 +800,7 @@ func (h *PaymentHandler) GetPayment(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("get payment failed").WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[model.Payment]{
+	writeJSON(c, http.StatusOK, model.APIResponse[*model.Payment]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
@@ -860,7 +866,7 @@ func (h *PaymentHandler) UpdatePayment(c *gin.Context) {
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[model.Payment]{
+	writeJSON(c, http.StatusOK, model.APIResponse[*model.Payment]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "updated",
@@ -994,7 +1000,7 @@ func exportOperationLogsCSV(c *gin.Context, entity string, entityID uint64, item
 	}
 	headerMapZh := map[string]string{
 		"id": "编号", "entity_type": "实体", "entity_id": "实体ID", "actor_user_id": "操作人ID",
-		"action": "动作", "reason": "原因", "metadata": "元数, "created_at": "创建时间",
+		"action": "动作", "reason": "原因", "metadata": "元数据", "created_at": "创建时间",
 	}
 	var header []string
 	for _, f := range fields {
@@ -1148,7 +1154,7 @@ func (h *PaymentHandler) RefundPayment(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("update payment failed").WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[model.Payment]{Success: true, Code: http.StatusOK, Message: "updated", Data: updated})
+	writeJSON(c, http.StatusOK, model.APIResponse[*model.Payment]{Success: true, Code: http.StatusOK, Message: "updated", Data: updated})
 }
 
 // RefundPaymentPayload defines optional refund fields.
@@ -1157,8 +1163,6 @@ type RefundPaymentPayload struct {
 	ProviderTradeNo string          `json:"provider_trade_no,omitempty"`
 	ProviderRaw     json.RawMessage `json:"provider_raw,omitempty" swaggertype:"string" example:"{\"result\":\"refunded\"}"`
 }
-
-
 
 func parseRFC3339Ptr(value *string) (*time.Time, error) {
 	if value == nil || strings.TrimSpace(*value) == "" {
@@ -1232,7 +1236,7 @@ func (h *OrderHandler) ReviewOrder(c *gin.Context) {
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: updated})
+	writeJSON(c, http.StatusOK, model.APIResponse[model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: *updated})
 }
 
 // CancelOrder
@@ -1290,7 +1294,7 @@ func (h *OrderHandler) CancelOrder(c *gin.Context) {
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: updated})
+	writeJSON(c, http.StatusOK, model.APIResponse[model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: *updated})
 }
 
 // ReviewOrderPayload defines approval decision.

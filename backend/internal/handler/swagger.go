@@ -6,6 +6,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+//go:generate swag init -g cmd/main.go -o internal/handler/swagger --parseDependency --parseInternal
+
 //go:embed swagger/index.html
 var swaggerHTML []byte
 
@@ -13,12 +15,13 @@ var swaggerHTML []byte
 var swaggerJSON []byte
 
 // RegisterSwagger 注册 Swagger UI 与文档路由。
+// /swagger 返回内嵌 UI，/swagger.json 返回由 swag 自动生成的 OpenAPI。
 func RegisterSwagger(router gin.IRoutes) {
 	router.GET("/swagger", SwaggerUI)
 	router.GET("/swagger.json", SwaggerSpec)
 }
 
-// SwaggerUI 提供内嵌的 Swagger UI 页面。
+// SwaggerUI 提供内嵌 Swagger UI 页面。
 func SwaggerUI(c *gin.Context) {
 	c.Data(200, "text/html; charset=utf-8", swaggerHTML)
 }

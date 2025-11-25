@@ -7,13 +7,17 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	apierr "gamelink/internal/handler"
+	apierr "gamelink/internal/apierr"
 	"gamelink/internal/model"
 	rankingrepo "gamelink/internal/repository/ranking"
 	commissionservice "gamelink/internal/service/commission"
 )
 
-// RegisterRankingCommissionRoutes 注册管理端排名抽成配置路func RegisterRankingCommissionRoutes(router gin.IRouter, repo rankingrepo.RankingCommissionRepository) {
+// RankingCommissionConfig 排名抽成配置模型（类型别名）
+type RankingCommissionConfig = model.RankingCommissionConfig
+
+// RegisterRankingCommissionRoutes 注册管理端排名抽成配置路由
+func RegisterRankingCommissionRoutes(router gin.IRouter, repo rankingrepo.RankingCommissionRepository) {
 	group := router.Group("/ranking-commission")
 	{
 		group.POST("/configs", func(c *gin.Context) { createRankingCommissionConfigHandler(c, repo) })
@@ -40,7 +44,7 @@ type CreateRankingCommissionConfigRequest struct {
 // @Produce      json
 // @Param        Authorization  header    string                                   true  "Bearer {token}"
 // @Param        request        body      CreateRankingCommissionConfigRequest  true  "配置信息"
-// @Success      200            {object}  model.APIResponse[model.RankingCommissionConfig]
+// @Success      200            {object}  model.APIResponse[RankingCommissionConfig]
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/ranking-commission/configs [post]
@@ -97,7 +101,7 @@ func createRankingCommissionConfigHandler(c *gin.Context, repo rankingrepo.Ranki
 // @Param        month          query    string       false  "Month filter (YYYY-MM)"// @Param        rankingType    query     string  false  "排名类型"
 // @Param        page           query     int     false  "页码"
 // @Param        pageSize       query     int     false  "每页数量"
-// @Success      200            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/ranking-commission/configs [get]
@@ -160,7 +164,7 @@ func listRankingCommissionConfigsHandler(c *gin.Context, repo rankingrepo.Rankin
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
 // @Param        id             path      int     true  "配置ID"
-// @Success      200            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/ranking-commission/configs/{id} [get]
@@ -208,7 +212,7 @@ type UpdateRankingCommissionConfigRequest struct {
 // @Param        Authorization  header    string                                   true  "Bearer {token}"
 // @Param        id             path      int                                      true  "配置ID"
 // @Param        request        body      UpdateRankingCommissionConfigRequest  true  "更新信息"
-// @Success      200            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/ranking-commission/configs/{id} [put]
@@ -276,7 +280,7 @@ func updateRankingCommissionConfigHandler(c *gin.Context, repo rankingrepo.Ranki
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
 // @Param        id             path      int     true  "配置ID"
-// @Success      200            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/ranking-commission/configs/{id} [delete]

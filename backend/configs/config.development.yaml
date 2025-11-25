@@ -31,7 +31,7 @@ crypto:
   use_signature: true
 
 auth:
-  jwt_secret: "gamelink-default-secret-key-change-in-development"
+  jwt_secret: "MiBSQJJKEW2euVXKpvxRzjS1C5TCFlXx4RXGUXSdWpJ"
   token_ttl_hours: 24
 
 seed:

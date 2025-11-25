@@ -30,7 +30,7 @@ func RegisterFeedRoutes(router gin.IRouter, svc *feedservice.Service, authMiddle
 // @Produce      json
 // @Param        Authorization  header    string                          true  "Bearer {token}"
 // @Param        request        body      feedservice.CreateFeedRequest   true  "Feed content"
-// @Success      200            {object}  model.APIResponse[*feedservice.FeedView]
+// @Success      200            {object}  feedservice.FeedView
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
@@ -68,7 +68,7 @@ func createFeedHandler(c *gin.Context, svc *feedservice.Service) {
 // @Param        Authorization  header    string  true   "Bearer {token}"
 // @Param        limit          query     int     false  "Limit (default 20)"
 // @Param        cursor         query     string  false  "Cursor for pagination"
-// @Success      200            {object}  model.APIResponse[*feedservice.ListFeedsResponse]
+// @Success      200            {object}  feedservice.ListFeedsResponse
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
@@ -106,7 +106,7 @@ func listFeedsHandler(c *gin.Context, svc *feedservice.Service) {
 // @Param        Authorization  header    string              true  "Bearer {token}"
 // @Param        id             path      int                 true  "Feed ID"
 // @Param        request        body      object{reason=string}  true  "Report reason"
-// @Success      200            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse

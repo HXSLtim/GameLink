@@ -10,22 +10,86 @@ import (
 	"gamelink/internal/service/earnings"
 )
 
-// EarningsSummaryResponse 收益概览响应（类型别名）
-type EarningsSummaryResponse = earnings.EarningsSummaryResponse
+// Swagger DTOs
+type EarningsSummaryResponseSwagger struct {
+	TodayEarnings    int64 `json:"todayEarnings" example:"10000" description:"today's earnings (cents)"`
+	MonthEarnings    int64 `json:"monthEarnings" example:"150000" description:"current month earnings (cents)"`
+	TotalEarnings    int64 `json:"totalEarnings" example:"500000" description:"total earnings (cents)"`
+	AvailableBalance int64 `json:"availableBalance" example:"20000" description:"available balance (cents)"`
+	PendingBalance   int64 `json:"pendingBalance" example:"5000" description:"pending settlement (cents)"`
+	WithdrawTotal    int64 `json:"withdrawTotal" example:"300000" description:"total withdrawn (cents)"`
+}
 
-// EarningsTrendResponse 收益趋势响应（类型别名）
-type EarningsTrendResponse = earnings.EarningsTrendResponse
+type DailyEarningSwagger struct {
+	Date       string `json:"date" example:"2024-01-15" description:"YYYY-MM-DD"`
+	Earnings   int64  `json:"earnings" example:"5000" description:"earnings of the day (cents)"`
+	OrderCount int    `json:"orderCount" example:"3" description:"orders completed"`
+}
 
-// WithdrawResponse 提现响应（类型别名）
-type WithdrawResponse = earnings.WithdrawResponse
+type EarningsTrendResponseSwagger struct {
+	Trend []DailyEarningSwagger `json:"trend" description:"daily earning trend"`
+}
 
-// WithdrawHistoryResponse 提现历史响应（类型别名）
-type WithdrawHistoryResponse = earnings.WithdrawHistoryResponse
+type WithdrawResponseSwagger struct {
+	WithdrawID uint64 `json:"withdrawId" example:"12345" description:"withdrawal ID"`
+	Status     string `json:"status" example:"pending" description:"pending/processing/completed/failed"`
+}
+
+type WithdrawRecordSwagger struct {
+	ID          uint64  `json:"id" example:"12345" description:"record ID"`
+	AmountCents int64   `json:"amountCents" example:"10000" description:"amount in cents"`
+	Method      string  `json:"method" example:"alipay" description:"alipay/wechat/bank"`
+	Status      string  `json:"status" example:"completed" description:"pending/processing/completed/failed"`
+	CreatedAt   string  `json:"createdAt" example:"2024-01-15T10:30:00Z" description:"created at"`
+	ProcessedAt *string `json:"processedAt,omitempty" example:"2024-01-16T14:20:00Z" description:"processed at"`
+}
+
+type WithdrawHistoryResponseSwagger struct {
+	Records []WithdrawRecordSwagger `json:"records" description:"withdrawal records"`
+	Total   int64                   `json:"total" example:"100" description:"total records"`
+}
+
+// Swagger envelopes (avoid generics in annotations)
+type EarningsSummaryAPIResponseSwagger struct {
+	Success    bool                           `json:"success"`
+	Code       int                            `json:"code"`
+	Message    string                         `json:"message"`
+	Data       EarningsSummaryResponseSwagger `json:"data"`
+	Pagination *model.Pagination              `json:"pagination,omitempty"`
+	TraceID    string                         `json:"traceId,omitempty"`
+}
+
+type EarningsTrendAPIResponseSwagger struct {
+	Success    bool                         `json:"success"`
+	Code       int                          `json:"code"`
+	Message    string                       `json:"message"`
+	Data       EarningsTrendResponseSwagger `json:"data"`
+	Pagination *model.Pagination            `json:"pagination,omitempty"`
+	TraceID    string                       `json:"traceId,omitempty"`
+}
+
+type WithdrawAPIResponseSwagger struct {
+	Success    bool                    `json:"success"`
+	Code       int                     `json:"code"`
+	Message    string                  `json:"message"`
+	Data       WithdrawResponseSwagger `json:"data"`
+	Pagination *model.Pagination       `json:"pagination,omitempty"`
+	TraceID    string                  `json:"traceId,omitempty"`
+}
+
+type WithdrawHistoryAPIResponseSwagger struct {
+	Success    bool                           `json:"success"`
+	Code       int                            `json:"code"`
+	Message    string                         `json:"message"`
+	Data       WithdrawHistoryResponseSwagger `json:"data"`
+	Pagination *model.Pagination              `json:"pagination,omitempty"`
+	TraceID    string                         `json:"traceId,omitempty"`
+}
 
 // RegisterEarningsRoutes 注册陪玩师端收益管理路由
 func RegisterEarningsRoutes(router gin.IRouter, svc *earnings.EarningsService, authMiddleware gin.HandlerFunc) {
 	group := router.Group("/player/earnings")
-	group.Use(authMiddleware) // 需要认证
+	group.Use(authMiddleware)
 	group.GET("/summary", func(c *gin.Context) { getEarningsSummaryHandler(c, svc) })
 	group.GET("/trend", func(c *gin.Context) { getEarningsTrendHandler(c, svc) })
 	group.POST("/withdraw", func(c *gin.Context) { requestWithdrawHandler(c, svc) })
@@ -39,7 +103,7 @@ func RegisterEarningsRoutes(router gin.IRouter, svc *earnings.EarningsService, a
 // @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[EarningsSummaryResponse]
+// @Success      200  {object}  EarningsSummaryAPIResponseSwagger
 // @Failure      401  {object}  apierr.APIError
 // @Failure      403  {object}  apierr.APIError
 // @Failure      500  {object}  apierr.APIError
@@ -64,7 +128,7 @@ func getEarningsSummaryHandler(c *gin.Context, svc *earnings.EarningsService) {
 // @Accept       json
 // @Produce      json
 // @Param        days  query  int  true  "天数范围(7-90)"
-// @Success      200   {object}  model.APIResponse[EarningsTrendResponse]
+// @Success      200   {object}  EarningsTrendAPIResponseSwagger
 // @Failure      400   {object}  apierr.APIError
 // @Failure      401   {object}  apierr.APIError
 // @Failure      500   {object}  apierr.APIError
@@ -95,7 +159,7 @@ func getEarningsTrendHandler(c *gin.Context, svc *earnings.EarningsService) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  earnings.WithdrawRequest  true  "提现信息"
-// @Success      200      {object}  model.APIResponse[WithdrawResponse]
+// @Success      200      {object}  WithdrawAPIResponseSwagger
 // @Failure      400      {object}  apierr.APIError
 // @Failure      401      {object}  apierr.APIError
 // @Failure      403      {object}  apierr.APIError
@@ -137,7 +201,7 @@ func requestWithdrawHandler(c *gin.Context, svc *earnings.EarningsService) {
 // @Produce      json
 // @Param        page      query     int  false  "页码" default(1)
 // @Param        pageSize  query     int  false  "每页数量" default(20)
-// @Success      200       {object}  model.APIResponse[WithdrawHistoryResponse]
+// @Success      200       {object}  WithdrawHistoryAPIResponseSwagger
 // @Failure      400       {object}  apierr.APIError
 // @Failure      401       {object}  apierr.APIError
 // @Failure      500       {object}  apierr.APIError

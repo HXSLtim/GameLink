@@ -381,3 +381,14 @@ func (s *PaymentService) RefundPayment(ctx context.Context, paymentID uint64, re
 
 	return s.orders.Update(ctx, order)
 }
+
+// List 返回支付列表
+func (s *PaymentService) List(ctx context.Context, opts repository.PaymentListOptions) ([]model.Payment, int64, error) {
+	if opts.Page < 1 {
+		opts.Page = 1
+	}
+	if opts.PageSize <= 0 || opts.PageSize > 100 {
+		opts.PageSize = 20
+	}
+	return s.payments.List(ctx, opts)
+}

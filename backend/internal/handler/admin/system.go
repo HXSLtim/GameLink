@@ -49,7 +49,7 @@ func RegisterSystemRoutes(router gin.IRouter, cfg config.AppConfig, sqlDB *sql.D
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
-// @Success      200            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/system/config [get]
 func (h *SystemInfoHandler) Config(c *gin.Context) {
@@ -67,11 +67,11 @@ func (h *SystemInfoHandler) Config(c *gin.Context) {
 	})
 }
 
-// DBStatus 获取数据库状�?// @Summary      数据库状�?// @Description  获取数据库连接状�?// @Tags         Admin - System
+// DBStatus 获取数据库状�?// @Summary      数据库状�?// @Description  获取数据库连接状�?// @Tags         Admin - System
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
-// @Success      200            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
 // @Router       /admin/system/db [get]
@@ -93,16 +93,17 @@ func (h *SystemInfoHandler) DBStatus(c *gin.Context) {
 	})
 }
 
-// CacheStatus 获取缓存状�?// @Summary      缓存状�?// @Description  获取缓存连接状�?// @Tags         Admin - System
+// CacheStatus 获取缓存状�?// @Summary      缓存状�?// @Description  获取缓存连接状�?// @Tags         Admin - System
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
-// @Success      200            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
 // @Router       /admin/system/cache [get]
 func (h *SystemInfoHandler) CacheStatus(c *gin.Context) {
-	// 简单测试缓存连�?	testKey := "system:health:check"
+	// 简单测试缓存连�?
+	testKey := "system:health:check"
 	_, _, err := h.cacheClient.Get(c.Request.Context(), testKey)
 
 	cacheStatus := gin.H{
@@ -125,7 +126,7 @@ func (h *SystemInfoHandler) CacheStatus(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
-// @Success      200            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/system/resources [get]
 func (h *SystemInfoHandler) Resources(c *gin.Context) {
@@ -156,7 +157,7 @@ func (h *SystemInfoHandler) Resources(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
-// @Success      200            {object}  model.APIResponse[any]
+// @Success      200            {object}  model.SuccessResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/system/version [get]
 func (h *SystemInfoHandler) Version(c *gin.Context) {

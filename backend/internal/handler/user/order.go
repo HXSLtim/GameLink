@@ -144,7 +144,7 @@ func getOrderDetailHandler(c *gin.Context, svc *order.OrderService) {
 // @Produce      json
 // @Param        id       path      uint64                     true  "订单ID"
 // @Param        request  body      order.CancelOrderRequest   true  "取消原因"
-// @Success      200      {object}  model.APIResponse[any]
+// @Success      200      {object}  model.SuccessResponse
 // @Failure      400      {object}  apierr.APIError
 // @Failure      401      {object}  apierr.APIError
 // @Failure      403      {object}  apierr.APIError
@@ -190,7 +190,7 @@ func cancelOrderHandler(c *gin.Context, svc *order.OrderService) {
 // @Accept       json
 // @Produce      json
 // @Param        id    path      uint64  true  "订单ID"
-// @Success      200   {object}  model.APIResponse[any]
+// @Success      200   {object}  model.SuccessResponse
 // @Failure      400   {object}  apierr.APIError
 // @Failure      401   {object}  apierr.APIError
 // @Failure      403   {object}  apierr.APIError

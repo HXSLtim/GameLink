@@ -63,6 +63,12 @@ type PaymentRepository interface {
 	Delete(ctx context.Context, id uint64) error
 }
 
+// WalletRepository defines wallet data access operations.
+type WalletRepository interface {
+	GetByUserID(ctx context.Context, userID uint64) (*model.Wallet, error)
+	Save(ctx context.Context, wallet *model.Wallet) error
+}
+
 // PermissionRepository defines permission data access operations.
 type PermissionRepository interface {
 	List(ctx context.Context) ([]model.Permission, error)

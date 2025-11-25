@@ -13,6 +13,7 @@ func registerUserRoutes(api *gin.RouterGroup, authMiddleware gin.HandlerFunc, se
 	{
 		userhandler.RegisterOrderRoutes(userGroup, services.orderSvc, authMiddleware)
 		userhandler.RegisterPaymentRoutes(userGroup, services.paymentSvc, authMiddleware)
+		userhandler.RegisterWalletRoutes(userGroup, services.walletSvc, authMiddleware)
 		userhandler.RegisterPlayerRoutes(userGroup, services.playerSvc, authMiddleware)
 		userhandler.RegisterReviewRoutes(userGroup, services.reviewSvc, authMiddleware)
 		userhandler.RegisterGiftRoutes(userGroup, services.giftSvc, services.serviceItemSvc, authMiddleware)

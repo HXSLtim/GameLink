@@ -13,6 +13,9 @@ import (
 	adminservice "gamelink/internal/service/admin"
 )
 
+// Player 陪玩师模型（类型别名）
+type Player = model.Player
+
 // PlayerHandler 处理陪玩资料管理接口
 type PlayerHandler struct {
 	svc *adminservice.AdminService
@@ -67,7 +70,7 @@ func (h *PlayerHandler) ListPlayers(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "玩家ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[model.Player]
+// @Success      200  {object}  model.APIResponse[Player]
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/players/{id} [get]
 //
@@ -87,7 +90,7 @@ func (h *PlayerHandler) GetPlayer(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("get player failed").WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[model.Player]{
+	writeJSON(c, http.StatusOK, model.APIResponse[*model.Player]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
@@ -102,7 +105,7 @@ func (h *PlayerHandler) GetPlayer(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  CreatePlayerPayload  true  "玩家信息"
-// @Success      201  {object}  model.APIResponse[model.Player]
+// @Success      201  {object}  model.APIResponse[Player]
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/players [post]
 //
@@ -132,7 +135,7 @@ func (h *PlayerHandler) CreatePlayer(c *gin.Context) {
 		return
 	}
 
-	writeJSON(c, http.StatusCreated, model.APIResponse[model.Player]{
+	writeJSON(c, http.StatusCreated, model.APIResponse[*model.Player]{
 		Success: true,
 		Code:    http.StatusCreated,
 		Message: "created",
@@ -148,7 +151,7 @@ func (h *PlayerHandler) CreatePlayer(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int                   true  "玩家ID"
 // @Param        request  body  UpdatePlayerPayload   true  "玩家信息"
-// @Success      200  {object}  model.APIResponse[model.Player]
+// @Success      200  {object}  model.APIResponse[Player]
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/players/{id} [put]
 //
@@ -187,7 +190,7 @@ func (h *PlayerHandler) UpdatePlayer(c *gin.Context) {
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[model.Player]{
+	writeJSON(c, http.StatusOK, model.APIResponse[*model.Player]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "updated",
@@ -201,7 +204,7 @@ func (h *PlayerHandler) UpdatePlayer(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "玩家ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[any]
+// @Success      200  {object}  model.SuccessResponse
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/players/{id} [delete]
 //
@@ -292,7 +295,7 @@ func (h *PlayerHandler) ListPlayerLogs(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int  true  "玩家ID"
 // @Param        request  body  map[string]string  true  "{verification_status}"
-// @Success      200  {object}  model.APIResponse[model.Player]
+// @Success      200  {object}  model.APIResponse[Player]
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/players/{id}/verification [put]
 func (h *PlayerHandler) UpdatePlayerVerification(c *gin.Context) {
@@ -334,7 +337,7 @@ func (h *PlayerHandler) UpdatePlayerVerification(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("update player verification failed").WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[model.Player]{Success: true, Code: http.StatusOK, Message: "updated", Data: out})
+	writeJSON(c, http.StatusOK, model.APIResponse[*model.Player]{Success: true, Code: http.StatusOK, Message: "updated", Data: out})
 }
 
 // UpdatePlayerGames
@@ -345,7 +348,7 @@ func (h *PlayerHandler) UpdatePlayerVerification(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int  true  "玩家ID"
 // @Param        request  body  map[string]uint64  true  "{main_game_id}"
-// @Success      200  {object}  model.APIResponse[model.Player]
+// @Success      200  {object}  model.APIResponse[Player]
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/players/{id}/games [put]
 func (h *PlayerHandler) UpdatePlayerGames(c *gin.Context) {
@@ -387,7 +390,7 @@ func (h *PlayerHandler) UpdatePlayerGames(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("update player games failed").WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[model.Player]{Success: true, Code: http.StatusOK, Message: "updated", Data: out})
+	writeJSON(c, http.StatusOK, model.APIResponse[*model.Player]{Success: true, Code: http.StatusOK, Message: "updated", Data: out})
 }
 
 // UpdatePlayerSkillTags
@@ -398,7 +401,7 @@ func (h *PlayerHandler) UpdatePlayerGames(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int            true  "玩家ID"
 // @Param        request  body  SkillTagsBody  true  "标签集合"
-// @Success      200  {object}  model.APIResponse[any]
+// @Success      200  {object}  model.SuccessResponse
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/players/{id}/skill-tags [put]
 func (h *PlayerHandler) UpdatePlayerSkillTags(c *gin.Context) {

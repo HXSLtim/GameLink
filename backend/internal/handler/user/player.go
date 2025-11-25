@@ -4,20 +4,33 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"gamelink/internal/apierr"
+	"gamelink/internal/model"
 	"gamelink/internal/service/player"
 )
 
-// PlayerListResponse 陪玩师列表响应（类型别名）
-type PlayerListResponse = player.PlayerListResponse
+// Swagger envelopes to avoid generics in annotations
+type PlayerListAPIResponseSwagger struct {
+	Success    bool                    `json:"success"`
+	Code       int                     `json:"code"`
+	Message    string                  `json:"message"`
+	Data       player.PlayerListResponse `json:"data"`
+	Pagination *model.Pagination       `json:"pagination,omitempty"`
+	TraceID    string                  `json:"traceId,omitempty"`
+}
 
-// PlayerDetailResponse 陪玩师详情响应（类型别名）
-type PlayerDetailResponse = player.PlayerDetailResponse
+type PlayerDetailAPIResponseSwagger struct {
+	Success    bool                       `json:"success"`
+	Code       int                        `json:"code"`
+	Message    string                     `json:"message"`
+	Data       player.PlayerDetailResponse `json:"data"`
+	Pagination *model.Pagination          `json:"pagination,omitempty"`
+	TraceID    string                     `json:"traceId,omitempty"`
+}
 
 // RegisterPlayerRoutes 注册用户端陪玩师路由
 func RegisterPlayerRoutes(router gin.IRouter, svc *player.PlayerService, authMiddleware gin.HandlerFunc) {
 	group := router.Group("/user/players")
 	{
-		// 公开接口（不需要认证）
 		group.GET("", func(c *gin.Context) { listPlayersHandler(c, svc) })
 		group.GET("/:id", func(c *gin.Context) { getPlayerDetailHandler(c, svc) })
 	}
@@ -37,7 +50,7 @@ func RegisterPlayerRoutes(router gin.IRouter, svc *player.PlayerService, authMid
 // @Param        sortBy      query     string    false  "Sort by" Enums(price,rating,orders)
 // @Param        page        query     int       false  "Page number" default(1)
 // @Param        pageSize    query     int       false  "Page size" default(20)
-// @Success      200         {object}  model.APIResponse[PlayerListResponse]
+// @Success      200         {object}  PlayerListAPIResponseSwagger
 // @Failure      400         {object}  apierr.APIError
 // @Failure      500         {object}  apierr.APIError
 // @Router       /user/players [get]
@@ -57,12 +70,15 @@ func listPlayersHandler(c *gin.Context, svc *player.PlayerService) {
 	respondSuccess(c, "OK", *resp)
 }
 
-// @Description  API endpoint// @Accept       json
+// getPlayerDetailHandler 获取陪玩师详情
+// @Summary      获取陪玩师详情
+// @Tags         User - Players
+// @Accept       json
 // @Produce      json
 // @Param        id   path      int  true  "陪玩师ID"
-// @Success      200  {object}  model.APIResponse[PlayerDetailResponse]
-// @Failure      400  {object}  model.ErrorResponse
-// @Failure      404  {object}  model.ErrorResponse
+// @Success      200  {object}  PlayerDetailAPIResponseSwagger
+// @Failure      400  {object}  apierr.APIError
+// @Failure      404  {object}  apierr.APIError
 // @Router       /user/players/{id} [get]
 func getPlayerDetailHandler(c *gin.Context, svc *player.PlayerService) {
 	id, err := parseUintParam(c, "id")

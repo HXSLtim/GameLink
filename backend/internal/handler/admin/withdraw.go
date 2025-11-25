@@ -7,10 +7,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	apierr "gamelink/internal/handler"
+	apierr "gamelink/internal/apierr"
 	"gamelink/internal/model"
 	withdrawrepo "gamelink/internal/repository/withdraw"
 )
+
+// Withdraw 提现模型（类型别名）
+type Withdraw = model.Withdraw
 
 // RegisterWithdrawRoutes 注册管理端提现管理路
 func RegisterWithdrawRoutes(router gin.IRouter, withdrawRepo withdrawrepo.WithdrawRepository) {
@@ -94,7 +97,7 @@ func listWithdrawsHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository) 
 // @Produce      json
 // @Security     BearerAuth
 // @Param        id             path      int     true  "提现ID"
-// @Success      200            {object}  model.APIResponse[model.Withdraw]
+// @Success      200            {object}  model.APIResponse[Withdraw]
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/withdraws/{id} [get]

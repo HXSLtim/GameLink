@@ -14,6 +14,7 @@ import (
 	reviewrepo "gamelink/internal/repository/review"
 	reviewreplyrepo "gamelink/internal/repository/reviewreply"
 	serviceitemrepo "gamelink/internal/repository/serviceitem"
+	walletrepo "gamelink/internal/repository/wallet"
 	userrepo "gamelink/internal/repository/user"
 	withdrawrepo "gamelink/internal/repository/withdraw"
 	"gamelink/internal/scheduler"
@@ -28,6 +29,7 @@ import (
 	paymentservice "gamelink/internal/service/payment"
 	playerservice "gamelink/internal/service/player"
 	reviewservice "gamelink/internal/service/review"
+	walletservice "gamelink/internal/service/wallet"
 
 	"gorm.io/gorm"
 )
@@ -45,6 +47,7 @@ type appServices struct {
 	chatSvc             *chatservice.ChatService
 	feedSvc             *feedservice.Service
 	notificationSvc     *notificationservice.Service
+	walletSvc           *walletservice.Service
 	settlementScheduler *scheduler.SettlementScheduler
 	chatRetention       *scheduler.ChatRetentionScheduler
 }
@@ -69,6 +72,7 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 	serviceItemRepo := serviceitemrepo.NewServiceItemRepository(orm)
 	feedRepo := feedrepo.NewFeedRepository(orm)
 	notificationRepo := notificationrepo.NewNotificationRepository(orm)
+	walletRepo := walletrepo.NewWalletRepository(orm)
 
 	// 领域服务
 	commissionSvc := commissionservice.NewCommissionService(commissionRepo, orderRepo, playerRepo)
@@ -84,6 +88,7 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 	chatSvc := chatservice.NewChatService(chatGroupRepo, chatMemberRepo, chatMessageRepo, chatReportRepo, cacheClient)
 	feedSvc := feedservice.NewService(feedRepo, nil)
 	notificationSvc := notificationservice.NewService(notificationRepo)
+	walletSvc := walletservice.NewService(walletRepo, paymentRepo, orderRepo)
 
 	// 调度器（先构造，调用方负责 Start/Stop）
 	settlementScheduler := scheduler.NewSettlementScheduler(commissionSvc)
@@ -101,6 +106,7 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 		chatSvc:             chatSvc,
 		feedSvc:             feedSvc,
 		notificationSvc:     notificationSvc,
+		walletSvc:           walletSvc,
 		settlementScheduler: settlementScheduler,
 		chatRetention:       chatRetention,
 	}
