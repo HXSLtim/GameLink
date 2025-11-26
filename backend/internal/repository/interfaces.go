@@ -88,6 +88,16 @@ type PermissionRepository interface {
 	ListByUserID(ctx context.Context, userID uint64) ([]model.Permission, error)
 }
 
+// MenuRepository defines admin menu / front-end route persistence.
+type MenuRepository interface {
+	Create(ctx context.Context, menu *model.Menu) error
+	Update(ctx context.Context, menu *model.Menu) error
+	Delete(ctx context.Context, id uint64) error
+	Get(ctx context.Context, id uint64) (*model.Menu, error)
+	List(ctx context.Context, parentID *uint64) ([]model.Menu, error)
+	ListByPermission(ctx context.Context, codes []string) ([]model.Menu, error)
+}
+
 // RoleRepository defines role data access operations.
 type RoleRepository interface {
 	List(ctx context.Context) ([]model.RoleModel, error)

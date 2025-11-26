@@ -35,7 +35,8 @@ type PaymentService struct {
 	payments        repository.PaymentRepository
 	orders          repoiface.OrderReadWriter
 	providers       map[model.PaymentMethod]ProviderClient
-	distributedLock cache.DistributedLock // 分布式锁，用于并发控制
+	distributedLock cache.DistributedLock
+	wallets         repository.WalletRepository // 分布式锁，用于并发控制
 }
 
 // NewPaymentService 创建支付服务
@@ -56,6 +57,11 @@ func NewPaymentService(
 // SetDistributedLock injects distributed lock for concurrency control
 func (s *PaymentService) SetDistributedLock(lock cache.DistributedLock) {
 	s.distributedLock = lock
+}
+
+// SetWalletRepository injects wallet repository for refund credit.
+func (s *PaymentService) SetWalletRepository(repo repository.WalletRepository) {
+	s.wallets = repo
 }
 
 // CreatePaymentRequest 创建支付请求
@@ -82,7 +88,7 @@ type PaymentStatusResponse struct {
 func (s *PaymentService) CreatePayment(ctx context.Context, userID uint64, req CreatePaymentRequest) (*CreatePaymentResponse, error) {
 	// 使用分布式锁确保幂等性
 	lockKey := fmt.Sprintf("payment:create:order:%d:user:%d", req.OrderID, userID)
-	
+
 	// 如果分布式锁可用，使用它
 	if s.distributedLock != nil {
 		locked, err := s.distributedLock.TryLock(ctx, lockKey, time.Second*10, 3, time.Millisecond*50)
@@ -94,7 +100,7 @@ func (s *PaymentService) CreatePayment(ctx context.Context, userID uint64, req C
 		}
 		defer s.distributedLock.Unlock(ctx, lockKey)
 	}
-	
+
 	// 验证订单
 	order, err := s.orders.Get(ctx, req.OrderID)
 	if err != nil {
@@ -205,7 +211,7 @@ func (s *PaymentService) CancelPayment(ctx context.Context, userID uint64, payme
 	if err := s.payments.Update(ctx, payment); err != nil {
 		return WrapError(err, "update payment")
 	}
-	
+
 	return nil
 }
 
@@ -379,7 +385,18 @@ func (s *PaymentService) RefundPayment(ctx context.Context, paymentID uint64, re
 	order.RefundReason = reason
 	order.RefundedAt = &refundedAt
 
-	return s.orders.Update(ctx, order)
+	if err := s.orders.Update(ctx, order); err != nil {
+		return err
+	}
+
+	// 钱包回滚：如配置了钱包仓储，将退款金额计入余额
+	if s.wallets != nil {
+		if err := s.creditWallet(ctx, payment.UserID, payment.AmountCents); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // List 返回支付列表
@@ -391,4 +408,16 @@ func (s *PaymentService) List(ctx context.Context, opts repository.PaymentListOp
 		opts.PageSize = 20
 	}
 	return s.payments.List(ctx, opts)
+}
+
+func (s *PaymentService) creditWallet(ctx context.Context, userID uint64, amount int64) error {
+	w, err := s.wallets.GetByUserID(ctx, userID)
+	if err != nil {
+		if !errors.Is(err, repository.ErrNotFound) {
+			return err
+		}
+		w = &model.Wallet{UserID: userID}
+	}
+	w.BalanceCents += amount
+	return s.wallets.Save(ctx, w)
 }

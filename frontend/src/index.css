@@ -1,0 +1,82 @@
+:root {
+  /* 基础色板 - 参考 Discord/KOOK 的深色模式 */
+  --bg-tertiary: #1e2124;
+  /* 最左侧服务器列表 */
+  --bg-secondary: #282b30;
+  /* 频道列表 */
+  --bg-primary: #36393e;
+  /* 主聊天区域 */
+  --bg-header: #36393e;
+  /* 顶部标题栏 */
+  --bg-modifier-hover: rgba(79, 84, 92, 0.32);
+  --bg-modifier-selected: rgba(79, 84, 92, 0.6);
+
+  /* 文字颜色 */
+  --text-normal: #dcddde;
+  --text-muted: #72767d;
+  --text-header: #ffffff;
+  --interactive-normal: #b9bbbe;
+  --interactive-hover: #dcddde;
+  --interactive-active: #ffffff;
+
+  /* 品牌色 - GameLink 蓝紫色调 */
+  --brand-experiment: #5865f2;
+  --brand-experiment-hover: #4752c4;
+
+  /* 功能色 */
+  --red: #ed4245;
+  --green: #3ba55c;
+  --yellow: #faa61a;
+
+  /* 布局尺寸 */
+  --server-sidebar-width: 72px;
+  --channel-sidebar-width: 240px;
+  --header-height: 48px;
+
+  --font-primary: 'Inter', 'Microsoft YaHei', system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-primary);
+  background-color: var(--bg-primary);
+  color: var(--text-normal);
+  line-height: 1.5;
+  overflow: hidden;
+  /* 应用类应用通常隐藏 body 滚动条 */
+  user-select: none;
+  /* 防止意外选中文本，像原生应用一样 */
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+  background-color: #2b2d31;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #1a1b1e;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: #2b2d31;
+}
+
+a {
+  color: var(--brand-experiment);
+  text-decoration: none;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  outline: none;
+  font-family: inherit;
+}

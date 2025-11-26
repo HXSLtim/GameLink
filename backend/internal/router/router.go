@@ -24,6 +24,7 @@ import (
 	"gamelink/internal/model"
 	commissionrepo "gamelink/internal/repository/commission"
 	orderrepo "gamelink/internal/repository/implementations"
+	menurepo "gamelink/internal/repository/menu"
 	permissionrepo "gamelink/internal/repository/permission"
 	playerrepo "gamelink/internal/repository/player"
 	rankingrepo "gamelink/internal/repository/ranking"
@@ -34,6 +35,7 @@ import (
 	withdrawrepo "gamelink/internal/repository/withdraw"
 	adminservice "gamelink/internal/service/admin"
 	authservice "gamelink/internal/service/auth"
+	menuservice "gamelink/internal/service/menu"
 	permissionservice "gamelink/internal/service/permission"
 	roleservice "gamelink/internal/service/role"
 	statsservice "gamelink/internal/service/stats"
@@ -76,13 +78,13 @@ func (r *Router) Setup() *gin.Engine {
 
 	// 注册全局中间件（按顺序执行）
 	r.engine.Use(middleware.RequestID())
-	r.engine.Use(middleware.SlogLogger())         // 结构化访问日志
-	r.engine.Use(middleware.MetricsMiddleware())  // HTTP 指标
+	r.engine.Use(middleware.SlogLogger())                                   // 结构化访问日志
+	r.engine.Use(middleware.MetricsMiddleware())                            // HTTP 指标
 	r.engine.Use(middleware.RateLimit(middleware.DefaultRateLimitConfig())) // 限流中间件
-	r.engine.Use(middleware.Crypto(r.cfg.Crypto)) // 请求解密
-	r.engine.Use(middleware.ErrorMap())           // 统一错误映射
-	r.engine.Use(middleware.Recovery())           // 统一JSON恢复中间件
-	r.engine.Use(middleware.CORS())               // CORS中间件
+	r.engine.Use(middleware.Crypto(r.cfg.Crypto))                           // 请求解密
+	r.engine.Use(middleware.ErrorMap())                                     // 统一错误映射
+	r.engine.Use(middleware.Recovery())                                     // 统一JSON恢复中间件
+	r.engine.Use(middleware.CORS())                                         // CORS中间件
 
 	// 初始化认证服务
 	r.setupAuth()
@@ -213,6 +215,8 @@ func (r *Router) registerAdminRoutes(api *gin.RouterGroup) {
 func (r *Router) registerRBACRoutes(rbacGroup *gin.RouterGroup, roleSvc *roleservice.RoleService, permService *permissionservice.PermissionService) {
 	roleHandler := adminhandler.NewRoleHandler(roleSvc)
 	permHandler := adminhandler.NewPermissionHandler(permService)
+	menuSvc := menuservice.NewService(menurepo.NewMenuRepository(r.orm))
+	menuHandler := adminhandler.NewMenuHandler(menuSvc)
 	rbacGroup.Use(r.permMiddleware.RequireAuth()) // 所有 RBAC 接口需要认证
 	{
 		// 角色管理
@@ -234,6 +238,13 @@ func (r *Router) registerRBACRoutes(rbacGroup *gin.RouterGroup, roleSvc *roleser
 		rbacGroup.DELETE("/permissions/:id", r.permMiddleware.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/permissions/:id"), permHandler.DeletePermission)
 		rbacGroup.GET("/roles/:id/permissions", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/roles/:id/permissions"), permHandler.GetRolePermissions)
 		rbacGroup.GET("/users/:id/permissions", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/:id/permissions"), permHandler.GetUserPermissions)
+
+		// 菜单管理（动态路由配置）
+		rbacGroup.GET("/menus", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/menus"), menuHandler.List)
+		rbacGroup.POST("/menus", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/menus"), menuHandler.Create)
+		rbacGroup.GET("/menus/:id", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/menus/:id"), menuHandler.Get)
+		rbacGroup.PUT("/menus/:id", r.permMiddleware.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/menus/:id"), menuHandler.Update)
+		rbacGroup.DELETE("/menus/:id", r.permMiddleware.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/menus/:id"), menuHandler.Delete)
 	}
 }
 

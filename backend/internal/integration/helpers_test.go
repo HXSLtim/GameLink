@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -80,3 +81,20 @@ func migrateWithdrawModels(t *testing.T, db *gorm.DB) {
 		t.Fatalf("migrate withdraw models: %v", err)
 	}
 }
+
+func migrateChatModels(t *testing.T, db *gorm.DB) {
+	t.Helper()
+	if err := db.AutoMigrate(
+		&model.User{},
+		&model.ChatGroup{},
+		&model.ChatGroupMember{},
+		&model.ChatMessage{},
+		&model.ChatReport{},
+	); err != nil {
+		t.Fatalf("migrate chat models: %v", err)
+	}
+}
+
+func u64ptr(v uint64) *uint64 { return &v }
+
+func timePtr(t time.Time) *time.Time { return &t }

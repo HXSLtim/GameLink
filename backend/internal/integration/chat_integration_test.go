@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 
 	"gamelink/internal/cache"
 	userchat "gamelink/internal/handler/user"
@@ -103,18 +102,5 @@ func TestChatFlow(t *testing.T) {
 	reportResp := doJSON(router, http.MethodPost, "/api/v1/chat/messages/"+uintToStr(messageID)+"/report", reportPayload, "")
 	if reportResp.Code != http.StatusOK {
 		t.Fatalf("report message status=%d body=%s", reportResp.Code, reportResp.Body.String())
-	}
-}
-
-func migrateChatModels(t *testing.T, db *gorm.DB) {
-	t.Helper()
-	if err := db.AutoMigrate(
-		&model.User{},
-		&model.ChatGroup{},
-		&model.ChatGroupMember{},
-		&model.ChatMessage{},
-		&model.ChatReport{},
-	); err != nil {
-		t.Fatalf("migrate chat models: %v", err)
 	}
 }

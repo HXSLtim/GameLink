@@ -93,6 +93,41 @@ func TestGiftFlow(t *testing.T) {
 	}
 }
 
+// 下架的礼物不应出现在用户礼物列表
+func TestGiftListExcludeInactive(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	db := testutil.NewMemoryDB(t)
+	defer testutil.CleanDB(t, db)
+	migrateGiftModels(t, db)
+
+	seed := seedGiftData(t, db)
+	itemRepo := serviceitem.NewServiceItemRepository(db)
+
+	// 下架礼物
+	_ = itemRepo.BatchUpdateStatus(ctx(), []uint64{seed.giftItemID}, false)
+
+	// 路由
+	orderRepo := orderimpl.NewOrderRepository(db)
+	playerRepo := player.NewPlayerRepository(db)
+	itemRepo = serviceitem.NewServiceItemRepository(db)
+	commissionRepo := commission.NewCommissionRepository(db)
+	itemService := itemsvc.NewServiceItemService(itemRepo, nil, playerRepo)
+	giftService := giftsvc.NewGiftService(itemRepo, orderRepo, playerRepo, commissionRepo)
+
+	router := gin.New()
+	api := router.Group("/api/v1")
+	userAuth := fakeAuthMiddleware(seed.userID)
+	userhandler.RegisterGiftRoutes(api, giftService, itemService, userAuth)
+
+	// 列出礼物应为空
+	listResp := doJSON(router, http.MethodGet, "/api/v1/user/gifts", nil, "")
+	var listParsed apiResp[itemsvc.ServiceItemListResponse]
+	_ = json.Unmarshal(listResp.Body.Bytes(), &listParsed)
+	if listParsed.Data.Total != 0 || len(listParsed.Data.Items) != 0 {
+		t.Fatalf("expected no active gifts, got %+v", listParsed.Data)
+	}
+}
+
 func migrateGiftModels(t *testing.T, db *gorm.DB) {
 	t.Helper()
 	if err := db.AutoMigrate(
