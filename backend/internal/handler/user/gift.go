@@ -1,14 +1,14 @@
-﻿package user
+package user
 
 import (
-    "strconv"
+	"strconv"
 
-    "github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin"
 
-    "gamelink/internal/apierr"
-    "gamelink/internal/model"
-    "gamelink/internal/service/gift"
-    "gamelink/internal/service/item"
+	"gamelink/internal/apierr"
+	"gamelink/internal/model"
+	"gamelink/internal/service/gift"
+	"gamelink/internal/service/item"
 )
 
 // ServiceItemListResponse 服务列表响应（类型别名）
@@ -19,41 +19,41 @@ type GiftOrderResponse = gift.GiftOrderResponse
 
 // Swagger-friendly envelopes to avoid generics in swag annotations
 type ServiceItemListAPIResponseSwagger struct {
-    Success    bool                    `json:"success"`
-    Code       int                     `json:"code"`
-    Message    string                  `json:"message"`
-    Data       ServiceItemListResponse `json:"data"`
-    Pagination *model.Pagination       `json:"pagination,omitempty"`
-    TraceID    string                  `json:"traceId,omitempty"`
+	Success    bool                    `json:"success"`
+	Code       int                     `json:"code"`
+	Message    string                  `json:"message"`
+	Data       ServiceItemListResponse `json:"data"`
+	Pagination *model.Pagination       `json:"pagination,omitempty"`
+	TraceID    string                  `json:"traceId,omitempty"`
 }
 
 type GiftOrderAPIResponseSwagger struct {
-    Success    bool              `json:"success"`
-    Code       int               `json:"code"`
-    Message    string            `json:"message"`
-    Data       GiftOrderResponse `json:"data"`
-    Pagination *model.Pagination `json:"pagination,omitempty"`
-    TraceID    string            `json:"traceId,omitempty"`
+	Success    bool              `json:"success"`
+	Code       int               `json:"code"`
+	Message    string            `json:"message"`
+	Data       GiftOrderResponse `json:"data"`
+	Pagination *model.Pagination `json:"pagination,omitempty"`
+	TraceID    string            `json:"traceId,omitempty"`
 }
 
 type SentGiftsAPIResponseSwagger struct {
-    Success    bool              `json:"success"`
-    Code       int               `json:"code"`
-    Message    string            `json:"message"`
-    Data       map[string]any    `json:"data"`
-    Pagination *model.Pagination `json:"pagination,omitempty"`
-    TraceID    string            `json:"traceId,omitempty"`
+	Success    bool              `json:"success"`
+	Code       int               `json:"code"`
+	Message    string            `json:"message"`
+	Data       map[string]any    `json:"data"`
+	Pagination *model.Pagination `json:"pagination,omitempty"`
+	TraceID    string            `json:"traceId,omitempty"`
 }
 
 // RegisterGiftRoutes Register user gift routes
 func RegisterGiftRoutes(router gin.IRouter, giftSvc *gift.GiftService, itemSvc *item.ServiceItemService, authMiddleware gin.HandlerFunc) {
-    group := router.Group("/user/gifts")
-    group.Use(authMiddleware)
-    {
-        group.GET("", func(c *gin.Context) { listGiftsHandler(c, itemSvc) })
-        group.POST("/send", func(c *gin.Context) { sendGiftHandler(c, giftSvc) })
-        group.GET("/sent", func(c *gin.Context) { getSentGiftsHandler(c, giftSvc) })
-    }
+	group := router.Group("/gifts")
+	group.Use(authMiddleware)
+	{
+		group.GET("", func(c *gin.Context) { listGiftsHandler(c, itemSvc) })
+		group.POST("/send", func(c *gin.Context) { sendGiftHandler(c, giftSvc) })
+		group.GET("/sent", func(c *gin.Context) { getSentGiftsHandler(c, giftSvc) })
+	}
 }
 
 // listGiftsHandler 获取礼物列表
@@ -71,16 +71,16 @@ func RegisterGiftRoutes(router gin.IRouter, giftSvc *gift.GiftService, itemSvc *
 // @Failure      500       {object}  apierr.APIError
 // @Router       /user/gifts [get]
 func listGiftsHandler(c *gin.Context, svc *item.ServiceItemService) {
-    page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-    pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "20"))
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "20"))
 
-    resp, err := svc.GetGiftList(c.Request.Context(), page, pageSize)
-    if err != nil {
-        respondAPIError(c, apierr.InternalError("获取礼物列表失败").WithDetails(err.Error()))
-        return
-    }
+	resp, err := svc.GetGiftList(c.Request.Context(), page, pageSize)
+	if err != nil {
+		respondAPIError(c, apierr.InternalError("获取礼物列表失败").WithDetails(err.Error()))
+		return
+	}
 
-    respondSuccess(c, "OK", *resp)
+	respondSuccess(c, "OK", *resp)
 }
 
 // sendGiftHandler 赠送礼物
@@ -99,29 +99,29 @@ func listGiftsHandler(c *gin.Context, svc *item.ServiceItemService) {
 // @Failure      500      {object}  apierr.APIError
 // @Router       /user/gifts/send [post]
 func sendGiftHandler(c *gin.Context, svc *gift.GiftService) {
-    userID := getUserIDFromContext(c)
+	userID := getUserIDFromContext(c)
 
-    var req gift.SendGiftRequest
-    if err := c.ShouldBindJSON(&req); err != nil {
-        respondAPIError(c, apierr.BadRequest(apierr.ErrInvalidJSONPayload).WithDetails(err.Error()))
-        return
-    }
+	var req gift.SendGiftRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondAPIError(c, apierr.BadRequest(apierr.ErrInvalidJSONPayload).WithDetails(err.Error()))
+		return
+	}
 
-    resp, err := svc.SendGift(c.Request.Context(), userID, req)
-    if err != nil {
-        if err == gift.ErrNotFound {
-            respondAPIError(c, apierr.NotFound(err.Error()))
-            return
-        }
-        if err == gift.ErrValidation || err == gift.ErrInvalidGiftItem {
-            respondAPIError(c, apierr.BadRequest(err.Error()))
-            return
-        }
-        respondAPIError(c, apierr.InternalError("赠送礼物失败").WithDetails(err.Error()))
-        return
-    }
+	resp, err := svc.SendGift(c.Request.Context(), userID, req)
+	if err != nil {
+		if err == gift.ErrNotFound {
+			respondAPIError(c, apierr.NotFound(err.Error()))
+			return
+		}
+		if err == gift.ErrValidation || err == gift.ErrInvalidGiftItem {
+			respondAPIError(c, apierr.BadRequest(err.Error()))
+			return
+		}
+		respondAPIError(c, apierr.InternalError("赠送礼物失败").WithDetails(err.Error()))
+		return
+	}
 
-    respondSuccess(c, "礼物赠送成功", *resp)
+	respondSuccess(c, "礼物赠送成功", *resp)
 }
 
 // getSentGiftsHandler 获取已赠送的礼物记录
@@ -139,14 +139,14 @@ func sendGiftHandler(c *gin.Context, svc *gift.GiftService) {
 // @Failure      500       {object}  apierr.APIError
 // @Router       /user/gifts/sent [get]
 func getSentGiftsHandler(c *gin.Context, svc *gift.GiftService) {
-    userID := getUserIDFromContext(c)
-    page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-    pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "20"))
+	userID := getUserIDFromContext(c)
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "20"))
 
-    // TODO: 实现真实的赠送记录查询
-    _ = userID
-    _ = page
-    _ = pageSize
+	// TODO: 实现真实的赠送记录查询
+	_ = userID
+	_ = page
+	_ = pageSize
 
-    respondSuccess(c, "OK", map[string]interface{}{"gifts": []interface{}{}, "total": 0})
+	respondSuccess(c, "OK", map[string]interface{}{"gifts": []interface{}{}, "total": 0})
 }

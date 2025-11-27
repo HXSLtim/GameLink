@@ -40,6 +40,7 @@ type seedOrderSpec struct {
 	UserKey      string
 	PlayerKey    string
 	GameKey      string
+	ItemCode     string
 	Title        string
 	Description  string
 	Status       model.OrderStatus
@@ -222,6 +223,13 @@ func applySeeds(db *gorm.DB) error {
 				return err
 			}
 			players[spec.Key] = player
+		}
+
+		// 确保有一个默认护航服务项，供订单外键引用
+		defaultGame := games["lol"]
+		serviceItem, err := ensureServiceItem(tx, "escort-default", "默认护航服务", defaultGame.ID)
+		if err != nil {
+			return err
 		}
 
 		hour := time.Hour
@@ -413,6 +421,7 @@ func applySeeds(db *gorm.DB) error {
 				Description:    spec.Description,
 				UserID:         user.ID,
 				PlayerID:       playerID,
+				ItemID:         serviceItem.ID,
 				GameID:         game.ID,
 				Status:         spec.Status,
 				PriceCents:     spec.PriceCents,
@@ -645,6 +654,7 @@ type seedOrderParams struct {
 	Description       string
 	UserID            uint64
 	PlayerID          *uint64
+	ItemID            uint64
 	GameID            uint64
 	Status            model.OrderStatus
 	PriceCents        int64
@@ -774,6 +784,32 @@ func seedPlayer(tx *gorm.DB, input seedPlayerParams) (*model.Player, error) {
 	return player, nil
 }
 
+func ensureServiceItem(tx *gorm.DB, code, name string, gameID uint64) (*model.ServiceItem, error) {
+	var item model.ServiceItem
+	if err := tx.Where("item_code = ?", code).First(&item).Error; err == nil {
+		return &item, nil
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+
+	item = model.ServiceItem{
+		ItemCode:       code,
+		Name:           name,
+		Description:    "系统默认护航服务项",
+		Category:       "escort",
+		SubCategory:    model.SubCategorySolo,
+		GameID:         &gameID,
+		BasePriceCents: 9900,
+		ServiceHours:   1,
+		CommissionRate: 0.20,
+		IsActive:       true,
+	}
+	if err := tx.Create(&item).Error; err != nil {
+		return nil, err
+	}
+	return &item, nil
+}
+
 func seedOrder(tx *gorm.DB, input seedOrderParams) (*model.Order, error) {
 	var existing model.Order
 	if err := tx.Where("title = ? AND user_id = ?", input.Title, input.UserID).First(&existing).Error; err == nil {
@@ -784,7 +820,7 @@ func seedOrder(tx *gorm.DB, input seedOrderParams) (*model.Order, error) {
 	order := &model.Order{
 		OrderNo:         model.GenerateEscortOrderNo(),
 		UserID:          input.UserID,
-		ItemID:          1, // TODO: 需要从service_items获取
+		ItemID:          input.ItemID,
 		GameID:          &input.GameID,
 		Quantity:        1,
 		UnitPriceCents:  input.PriceCents,

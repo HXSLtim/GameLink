@@ -17,7 +17,7 @@ type Payment = model.Payment
 type PaymentStatusResponse = payment.PaymentStatusResponse
 
 func RegisterPaymentRoutes(router gin.IRouter, svc *payment.PaymentService, authMiddleware gin.HandlerFunc) {
-	group := router.Group("/user/payments")
+	group := router.Group("/payments")
 	group.Use(authMiddleware)
 	group.GET("", func(c *gin.Context) { listPaymentsHandler(c, svc) })
 	group.POST("", func(c *gin.Context) { createPaymentHandler(c, svc) })

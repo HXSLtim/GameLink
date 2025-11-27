@@ -1,0 +1,58 @@
+/**
+ * PageContainer样式
+ */
+
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* 头部 */
+.header {
+    margin-bottom: 8px;
+}
+
+.headerMain {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.headerTitle {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.subTitle {
+    font-size: 14px;
+}
+
+.headerExtra {
+    display: flex;
+    align-items: center;
+}
+
+/* 标签页 */
+.tabs {
+    margin-top: 16px;
+}
+
+.tabs :global(.ant-tabs-nav) {
+    margin-bottom: 0;
+}
+
+/* 内容区 */
+.content {
+    flex: 1;
+}

@@ -12,7 +12,7 @@ import (
 
 // RegisterGiftRoutes 注册陪玩师端礼物路由
 func RegisterGiftRoutes(router gin.IRouter, svc *gift.GiftService, authMiddleware gin.HandlerFunc) {
-	group := router.Group("/player/gifts")
+	group := router.Group("/gifts")
 	group.Use(authMiddleware)
 	{
 		group.GET("/received", func(c *gin.Context) { getReceivedGiftsHandler(c, svc) })

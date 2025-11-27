@@ -10,26 +10,26 @@ import (
 
 // Swagger envelopes to avoid generics in annotations
 type PlayerListAPIResponseSwagger struct {
-	Success    bool                    `json:"success"`
-	Code       int                     `json:"code"`
-	Message    string                  `json:"message"`
+	Success    bool                      `json:"success"`
+	Code       int                       `json:"code"`
+	Message    string                    `json:"message"`
 	Data       player.PlayerListResponse `json:"data"`
-	Pagination *model.Pagination       `json:"pagination,omitempty"`
-	TraceID    string                  `json:"traceId,omitempty"`
+	Pagination *model.Pagination         `json:"pagination,omitempty"`
+	TraceID    string                    `json:"traceId,omitempty"`
 }
 
 type PlayerDetailAPIResponseSwagger struct {
-	Success    bool                       `json:"success"`
-	Code       int                        `json:"code"`
-	Message    string                     `json:"message"`
+	Success    bool                        `json:"success"`
+	Code       int                         `json:"code"`
+	Message    string                      `json:"message"`
 	Data       player.PlayerDetailResponse `json:"data"`
-	Pagination *model.Pagination          `json:"pagination,omitempty"`
-	TraceID    string                     `json:"traceId,omitempty"`
+	Pagination *model.Pagination           `json:"pagination,omitempty"`
+	TraceID    string                      `json:"traceId,omitempty"`
 }
 
 // RegisterPlayerRoutes 注册用户端陪玩师路由
 func RegisterPlayerRoutes(router gin.IRouter, svc *player.PlayerService, authMiddleware gin.HandlerFunc) {
-	group := router.Group("/user/players")
+	group := router.Group("/players")
 	{
 		group.GET("", func(c *gin.Context) { listPlayersHandler(c, svc) })
 		group.GET("/:id", func(c *gin.Context) { getPlayerDetailHandler(c, svc) })

@@ -18,7 +18,7 @@ type MyReviewListResponse = review.MyReviewListResponse
 
 // RegisterReviewRoutes 注册用户端评价路由
 func RegisterReviewRoutes(router gin.IRouter, svc *review.ReviewService, authMiddleware gin.HandlerFunc) {
-	group := router.Group("/user/reviews")
+	group := router.Group("/reviews")
 	group.Use(authMiddleware) // 需要认证
 	group.POST("", func(c *gin.Context) { createReviewHandler(c, svc) })
 	group.GET("/my", func(c *gin.Context) { getMyReviewsHandler(c, svc) })

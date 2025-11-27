@@ -13,6 +13,7 @@ import (
 	playerhandler "gamelink/internal/handler/player"
 	userhandler "gamelink/internal/handler/user"
 	"gamelink/internal/model"
+	"gamelink/internal/repository"
 	"gamelink/internal/repository/commission"
 	"gamelink/internal/repository/game"
 	orderimpl "gamelink/internal/repository/implementations"
@@ -20,7 +21,6 @@ import (
 	"gamelink/internal/repository/player"
 	"gamelink/internal/repository/review"
 	"gamelink/internal/repository/user"
-	"gamelink/internal/repository"
 	ordersvc "gamelink/internal/service/order"
 	paymentsvc "gamelink/internal/service/payment"
 	"gamelink/internal/testutil"
@@ -49,9 +49,11 @@ func TestOrderPaymentEdgeCases(t *testing.T) {
 	api := router.Group("/api/v1")
 	userAuth := fakeAuthMiddleware(seed.userID)
 	playerAuth := fakeAuthMiddleware(seed.playerUserID)
-	userhandler.RegisterOrderRoutes(api, orderService, userAuth)
-	userhandler.RegisterPaymentRoutes(api, paymentService, userAuth)
-	playerhandler.RegisterOrderRoutes(api, orderService, playerAuth)
+	userGroup := api.Group("/user")
+	playerGroup := api.Group("/player")
+	userhandler.RegisterOrderRoutes(userGroup, orderService, userAuth)
+	userhandler.RegisterPaymentRoutes(userGroup, paymentService, userAuth)
+	playerhandler.RegisterOrderRoutes(playerGroup, orderService, playerAuth)
 
 	// 创建订单
 	scheduledStart := time.Now().Add(30 * time.Minute).UTC()

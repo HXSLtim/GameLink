@@ -40,14 +40,14 @@ type CommissionRecordListResponseSwagger struct {
 
 // CommissionRecordSwagger 抽成记录
 type CommissionRecordSwagger struct {
-	ID              uint64  `json:"id" example:"1"`
-	OrderID         uint64  `json:"order_id" example:"1001"`
-	PlayerID        uint64  `json:"player_id" example:"2001"`
-	CommissionRate  float64 `json:"commission_rate" example:"0.2"`
+	ID               uint64  `json:"id" example:"1"`
+	OrderID          uint64  `json:"order_id" example:"1001"`
+	PlayerID         uint64  `json:"player_id" example:"2001"`
+	CommissionRate   float64 `json:"commission_rate" example:"0.2"`
 	CommissionAmount float64 `json:"commission_amount" example:"100.00"`
-	TotalPrice      float64 `json:"total_price" example:"500.00"`
-	NetIncome       float64 `json:"net_income" example:"400.00"`
-	CreatedAt       string  `json:"created_at" example:"2024-01-15T10:30:00Z"`
+	TotalPrice       float64 `json:"total_price" example:"500.00"`
+	NetIncome        float64 `json:"net_income" example:"400.00"`
+	CreatedAt        string  `json:"created_at" example:"2024-01-15T10:30:00Z"`
 }
 
 // SettlementListResponseSwagger 结算列表响应
@@ -61,32 +61,32 @@ type SettlementListResponseSwagger struct {
 
 // SettlementSwagger 结算记录
 type SettlementSwagger struct {
-	ID            uint64  `json:"id" example:"1"`
-	PlayerID      uint64  `json:"player_id" example:"2001"`
-	Month         string  `json:"month" example:"2024-01"`
-	TotalAmount   float64 `json:"total_amount" example:"8000.00"`
-	Status        string  `json:"status" example:"completed"`
-	SettledAt     string  `json:"settled_at,omitempty" example:"2024-02-01T00:00:00Z"`
-	CreatedAt     string  `json:"created_at" example:"2024-01-31T23:59:59Z"`
+	ID          uint64  `json:"id" example:"1"`
+	PlayerID    uint64  `json:"player_id" example:"2001"`
+	Month       string  `json:"month" example:"2024-01"`
+	TotalAmount float64 `json:"total_amount" example:"8000.00"`
+	Status      string  `json:"status" example:"completed"`
+	SettledAt   string  `json:"settled_at,omitempty" example:"2024-02-01T00:00:00Z"`
+	CreatedAt   string  `json:"created_at" example:"2024-01-31T23:59:59Z"`
 }
 
 // Swagger-friendly envelopes to avoid generics in swag annotations
 type CommissionSummaryAPIResponseSwagger struct {
-	Success    bool                          `json:"success"`
-	Code       int                           `json:"code"`
-	Message    string                        `json:"message"`
+	Success    bool                             `json:"success"`
+	Code       int                              `json:"code"`
+	Message    string                           `json:"message"`
 	Data       CommissionSummaryResponseSwagger `json:"data"`
-	Pagination *model.Pagination             `json:"pagination,omitempty"`
-	TraceID    string                        `json:"traceId,omitempty"`
+	Pagination *model.Pagination                `json:"pagination,omitempty"`
+	TraceID    string                           `json:"traceId,omitempty"`
 }
 
 type CommissionRecordListAPIResponseSwagger struct {
-	Success    bool                               `json:"success"`
-	Code       int                                `json:"code"`
-	Message    string                             `json:"message"`
+	Success    bool                                `json:"success"`
+	Code       int                                 `json:"code"`
+	Message    string                              `json:"message"`
 	Data       CommissionRecordListResponseSwagger `json:"data"`
-	Pagination *model.Pagination                  `json:"pagination,omitempty"`
-	TraceID    string                             `json:"traceId,omitempty"`
+	Pagination *model.Pagination                   `json:"pagination,omitempty"`
+	TraceID    string                              `json:"traceId,omitempty"`
 }
 
 type SettlementListAPIResponseSwagger struct {
@@ -100,7 +100,7 @@ type SettlementListAPIResponseSwagger struct {
 
 // RegisterCommissionRoutes 注册陪玩师端抽成管理路由
 func RegisterCommissionRoutes(router gin.IRouter, svc *commission.CommissionService, authMiddleware gin.HandlerFunc) {
-	group := router.Group("/player/commission")
+	group := router.Group("/commission")
 	group.Use(authMiddleware) // 需要认
 	{
 		group.GET("/summary", func(c *gin.Context) { getCommissionSummaryHandler(c, svc) })

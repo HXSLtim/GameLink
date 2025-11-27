@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"gamelink/internal/cache"
 	adminhandler "gamelink/internal/handler/admin"
 	"gamelink/internal/model"
 	"gamelink/internal/repository/game"
@@ -16,7 +17,6 @@ import (
 	"gamelink/internal/repository/user"
 	adminservice "gamelink/internal/service/admin"
 	"gamelink/internal/testutil"
-	"gamelink/internal/cache"
 )
 
 // 管理端用户管理：创建用户 -> 查询 -> 更新状态/角色 -> 删除

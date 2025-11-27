@@ -53,10 +53,12 @@ func TestEarningsWithdrawFlow(t *testing.T) {
 	api := router.Group("/api/v1")
 	userAuth := fakeAuthMiddleware(seed.userID)
 	playerAuth := fakeAuthMiddleware(seed.playerUserID)
-	userhandler.RegisterOrderRoutes(api, orderService, userAuth)
-	userhandler.RegisterPaymentRoutes(api, paymentService, userAuth)
-	playerhandler.RegisterOrderRoutes(api, orderService, playerAuth)
-	playerhandler.RegisterEarningsRoutes(api, earningsService, playerAuth)
+	userGroup := api.Group("/user")
+	playerGroup := api.Group("/player")
+	userhandler.RegisterOrderRoutes(userGroup, orderService, userAuth)
+	userhandler.RegisterPaymentRoutes(userGroup, paymentService, userAuth)
+	playerhandler.RegisterOrderRoutes(playerGroup, orderService, playerAuth)
+	playerhandler.RegisterEarningsRoutes(playerGroup, earningsService, playerAuth)
 
 	// 创建订单并完成
 	orderID := createAndCompleteOrder(t, router, seed, 3.0)

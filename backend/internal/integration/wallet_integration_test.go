@@ -43,15 +43,16 @@ func TestWalletRechargeAndBalance(t *testing.T) {
 	router := gin.New()
 	api := router.Group("/api/v1")
 	auth := fakeAuthMiddleware(u.ID)
-	userhandler.RegisterWalletRoutes(api, walletSvc, auth)
-	userhandler.RegisterPaymentRoutes(api, paymentSvc, auth)
+	userGroup := api.Group("/user")
+	userhandler.RegisterWalletRoutes(userGroup, walletSvc, auth)
+	userhandler.RegisterPaymentRoutes(userGroup, paymentSvc, auth)
 
 	// 充值
 	rechargePayload := map[string]interface{}{
 		"amountCents": 5000,
 		"method":      "alipay",
 	}
-	rechargeResp := doJSON(router, http.MethodPost, "/api/v1/wallet/recharge", rechargePayload, "")
+	rechargeResp := doJSON(router, http.MethodPost, "/api/v1/user/wallet/recharge", rechargePayload, "")
 	if rechargeResp.Code != http.StatusOK {
 		t.Fatalf("recharge status=%d body=%s", rechargeResp.Code, rechargeResp.Body.String())
 	}
@@ -64,7 +65,7 @@ func TestWalletRechargeAndBalance(t *testing.T) {
 	}
 
 	// 查询余额
-	balanceResp := doJSON(router, http.MethodGet, "/api/v1/wallet/balance", nil, "")
+	balanceResp := doJSON(router, http.MethodGet, "/api/v1/user/wallet/balance", nil, "")
 	if balanceResp.Code != http.StatusOK {
 		t.Fatalf("balance status=%d body=%s", balanceResp.Code, balanceResp.Body.String())
 	}
@@ -109,14 +110,15 @@ func TestWalletRechargeInvalidAmount(t *testing.T) {
 	router := gin.New()
 	api := router.Group("/api/v1")
 	auth := fakeAuthMiddleware(u.ID)
-	userhandler.RegisterWalletRoutes(api, walletSvc, auth)
-	userhandler.RegisterPaymentRoutes(api, paymentSvc, auth)
+	userGroup := api.Group("/user")
+	userhandler.RegisterWalletRoutes(userGroup, walletSvc, auth)
+	userhandler.RegisterPaymentRoutes(userGroup, paymentSvc, auth)
 
 	rechargePayload := map[string]interface{}{
 		"amountCents": 0, // invalid
 		"method":      "alipay",
 	}
-	resp := doJSON(router, http.MethodPost, "/api/v1/wallet/recharge", rechargePayload, "")
+	resp := doJSON(router, http.MethodPost, "/api/v1/user/wallet/recharge", rechargePayload, "")
 	if resp.Code != http.StatusBadRequest {
 		t.Fatalf("expected 400 for invalid amount, got %d body=%s", resp.Code, resp.Body.String())
 	}
@@ -142,11 +144,12 @@ func TestWalletBalanceZeroForNewUser(t *testing.T) {
 	router := gin.New()
 	api := router.Group("/api/v1")
 	auth := fakeAuthMiddleware(u.ID)
-	userhandler.RegisterWalletRoutes(api, walletSvc, auth)
-	userhandler.RegisterPaymentRoutes(api, paymentSvc, auth)
+	userGroup := api.Group("/user")
+	userhandler.RegisterWalletRoutes(userGroup, walletSvc, auth)
+	userhandler.RegisterPaymentRoutes(userGroup, paymentSvc, auth)
 
 	// 余额为0
-	balanceResp := doJSON(router, http.MethodGet, "/api/v1/wallet/balance", nil, "")
+	balanceResp := doJSON(router, http.MethodGet, "/api/v1/user/wallet/balance", nil, "")
 	var balanceParsed apiResp[model.Wallet]
 	_ = json.Unmarshal(balanceResp.Body.Bytes(), &balanceParsed)
 	if balanceParsed.Data.BalanceCents != 0 {
@@ -185,13 +188,14 @@ func TestWalletRechargeAccumulationAndPaymentOrder(t *testing.T) {
 	router := gin.New()
 	api := router.Group("/api/v1")
 	auth := fakeAuthMiddleware(u.ID)
-	userhandler.RegisterWalletRoutes(api, walletSvc, auth)
-	userhandler.RegisterPaymentRoutes(api, paymentSvc, auth)
+	userGroup := api.Group("/user")
+	userhandler.RegisterWalletRoutes(userGroup, walletSvc, auth)
+	userhandler.RegisterPaymentRoutes(userGroup, paymentSvc, auth)
 
 	// 充值两次
 	doRecharge := func(amount int64) {
 		payload := map[string]interface{}{"amountCents": amount, "method": "wechat"}
-		resp := doJSON(router, http.MethodPost, "/api/v1/wallet/recharge", payload, "")
+		resp := doJSON(router, http.MethodPost, "/api/v1/user/wallet/recharge", payload, "")
 		if resp.Code != http.StatusOK {
 			t.Fatalf("recharge %d status=%d body=%s", amount, resp.Code, resp.Body.String())
 		}
@@ -200,7 +204,7 @@ func TestWalletRechargeAccumulationAndPaymentOrder(t *testing.T) {
 	doRecharge(2000)
 
 	// 余额应为 5000
-	balanceResp := doJSON(router, http.MethodGet, "/api/v1/wallet/balance", nil, "")
+	balanceResp := doJSON(router, http.MethodGet, "/api/v1/user/wallet/balance", nil, "")
 	var balanceParsed apiResp[model.Wallet]
 	_ = json.Unmarshal(balanceResp.Body.Bytes(), &balanceParsed)
 	if balanceParsed.Data.BalanceCents != 5000 {

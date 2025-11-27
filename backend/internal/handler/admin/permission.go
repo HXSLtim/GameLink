@@ -9,6 +9,7 @@ import (
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	permissionservice "gamelink/internal/service/permission"
+	"gamelink/internal/handler/middleware"
 )
 
 // Permission 权限模型（类型别名）
@@ -347,5 +348,41 @@ func (h *PermissionHandler) GetPermissionGroups(c *gin.Context) {
 		Code:    http.StatusOK,
 		Message: "成功",
 		Data:    ensureSlice(groups),
+	})
+}
+
+// GetCurrentUserPermissions 获取当前管理员的权限列表
+// @Summary      获取当前用户权限
+// @Description  返回当前登录管理员拥有的权限码列表
+// @Tags         Admin - Permissions
+// @Security     BearerAuth
+// @Success      200  {object}  model.APIResponse[[]model.Permission]
+// @Router       /admin/permissions/me [get]
+func (h *PermissionHandler) GetCurrentUserPermissions(c *gin.Context) {
+	userIDVal, ok := c.Get(middleware.UserIDKey)
+	if !ok {
+		writeJSONError(c, http.StatusUnauthorized, "未登录")
+		return
+	}
+	userID, _ := userIDVal.(uint64)
+	perms, err := h.permissionSvc.ListPermissionsByUserID(c.Request.Context(), userID)
+	if err != nil {
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Extract codes
+	var codes []string
+	for _, p := range perms {
+		if p.Code != "" {
+			codes = append(codes, p.Code)
+		}
+	}
+
+	writeJSON(c, http.StatusOK, model.APIResponse[[]string]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: "OK",
+		Data:    ensureSlice(codes),
 	})
 }

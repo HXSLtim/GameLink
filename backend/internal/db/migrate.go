@@ -135,6 +135,8 @@ func autoMigrate(db *gorm.DB) error {
 		&model.RoleModel{},
 		&model.RolePermission{},
 		&model.UserRole{},
+		// Menu models (动态路由/前端菜单)
+		&model.Menu{},
 		// Upload model
 		&model.Upload{},
 		// Chat models

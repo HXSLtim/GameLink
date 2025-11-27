@@ -45,8 +45,10 @@ func TestGiftFlow(t *testing.T) {
 	userAuth := fakeAuthMiddleware(seed.userID)
 	// player gift 路由假设 user_id == playerID，因此这里用 playerID
 	playerGiftAuth := fakeAuthMiddleware(seed.playerID)
-	userhandler.RegisterGiftRoutes(api, giftService, itemService, userAuth)
-	playerhandler.RegisterGiftRoutes(api, giftService, playerGiftAuth)
+	userGroup := api.Group("/user")
+	playerGroup := api.Group("/player")
+	userhandler.RegisterGiftRoutes(userGroup, giftService, itemService, userAuth)
+	playerhandler.RegisterGiftRoutes(playerGroup, giftService, playerGiftAuth)
 
 	// 1) 列出礼物
 	listResp := doJSON(router, http.MethodGet, "/api/v1/user/gifts", nil, "")
@@ -117,7 +119,8 @@ func TestGiftListExcludeInactive(t *testing.T) {
 	router := gin.New()
 	api := router.Group("/api/v1")
 	userAuth := fakeAuthMiddleware(seed.userID)
-	userhandler.RegisterGiftRoutes(api, giftService, itemService, userAuth)
+	userGroup := api.Group("/user")
+	userhandler.RegisterGiftRoutes(userGroup, giftService, itemService, userAuth)
 
 	// 列出礼物应为空
 	listResp := doJSON(router, http.MethodGet, "/api/v1/user/gifts", nil, "")

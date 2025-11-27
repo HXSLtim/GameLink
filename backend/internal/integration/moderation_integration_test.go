@@ -12,8 +12,8 @@ import (
 
 	"gamelink/internal/auth"
 	"gamelink/internal/cache"
-	adminhandler "gamelink/internal/handler/admin"
 	"gamelink/internal/handler"
+	adminhandler "gamelink/internal/handler/admin"
 	userhandler "gamelink/internal/handler/user"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
@@ -24,8 +24,8 @@ import (
 	"gamelink/internal/repository/player"
 	"gamelink/internal/repository/role"
 	"gamelink/internal/repository/user"
-	authservice "gamelink/internal/service/auth"
 	adminservice "gamelink/internal/service/admin"
+	authservice "gamelink/internal/service/auth"
 	chatservice "gamelink/internal/service/chat"
 	"gamelink/internal/testutil"
 )
@@ -98,10 +98,11 @@ func TestChatMessageReport(t *testing.T) {
 	router := gin.New()
 	api := router.Group("/api/v1")
 	auth := fakeAuthMiddleware(u.ID)
-	userhandler.RegisterChatRoutes(api, chatSvc, auth)
+	userGroup := api.Group("/user")
+	userhandler.RegisterChatRoutes(userGroup, chatSvc, auth)
 
 	payload := map[string]string{"reason": "spam", "evidence": "screenshot"}
-	resp := doJSON(router, http.MethodPost, "/api/v1/chat/messages/1/report", payload, "")
+	resp := doJSON(router, http.MethodPost, "/api/v1/user/chat/messages/1/report", payload, "")
 	if resp.Code != http.StatusOK {
 		t.Fatalf("report status=%d body=%s", resp.Code, resp.Body.String())
 	}

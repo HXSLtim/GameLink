@@ -1,9 +1,10 @@
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 export type Role = 'USER' | 'COMPANION' | 'ADMIN' | 'CS' | 'FINANCE';
 
 export interface RouteConfig {
-    path: string;
+    path?: string;
+    index?: boolean;
     element?: ReactNode;
     children?: RouteConfig[];
     meta?: {

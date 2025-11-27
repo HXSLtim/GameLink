@@ -21,8 +21,8 @@ type OrderDetailResponse = order.OrderDetailResponse
 
 // RegisterOrderRoutes 注册用户端订单路
 func RegisterOrderRoutes(router gin.IRouter, svc *order.OrderService, authMiddleware gin.HandlerFunc) {
-	group := router.Group("/user/orders")
-	group.Use(authMiddleware) // 需要认
+	group := router.Group("/orders")
+	group.Use(authMiddleware) // 需要认证
 	group.POST("", func(c *gin.Context) { createOrderHandler(c, svc) })
 	group.GET("", func(c *gin.Context) { getMyOrdersHandler(c, svc) })
 	group.GET("/:id", func(c *gin.Context) { getOrderDetailHandler(c, svc) })

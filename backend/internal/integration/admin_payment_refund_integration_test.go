@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"gamelink/internal/cache"
 	adminhandler "gamelink/internal/handler/admin"
 	"gamelink/internal/model"
 	"gamelink/internal/repository/game"
@@ -19,7 +20,6 @@ import (
 	"gamelink/internal/repository/user"
 	adminservice "gamelink/internal/service/admin"
 	"gamelink/internal/testutil"
-	"gamelink/internal/cache"
 )
 
 // 管理端支付退款：管理员对已支付记录执行退款
@@ -64,7 +64,7 @@ func TestAdminPaymentRefund(t *testing.T) {
 
 	refundAt := time.Now().UTC().Format(time.RFC3339)
 	payload := map[string]interface{}{
-		"refunded_at":      refundAt,
+		"refunded_at":       refundAt,
 		"provider_trade_no": "trade-no-1",
 		"provider_raw":      `{"state":"refunded"}`,
 	}

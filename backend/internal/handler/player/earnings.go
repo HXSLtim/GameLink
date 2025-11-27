@@ -88,7 +88,7 @@ type WithdrawHistoryAPIResponseSwagger struct {
 
 // RegisterEarningsRoutes 注册陪玩师端收益管理路由
 func RegisterEarningsRoutes(router gin.IRouter, svc *earnings.EarningsService, authMiddleware gin.HandlerFunc) {
-	group := router.Group("/player/earnings")
+	group := router.Group("/earnings")
 	group.Use(authMiddleware)
 	group.GET("/summary", func(c *gin.Context) { getEarningsSummaryHandler(c, svc) })
 	group.GET("/trend", func(c *gin.Context) { getEarningsTrendHandler(c, svc) })

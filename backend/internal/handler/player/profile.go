@@ -31,7 +31,7 @@ type ApplyPlayerResponseSwagger struct {
 
 // RegisterProfileRoutes 注册陪玩师端资料管理路由
 func RegisterProfileRoutes(router gin.IRouter, svc *serviceplayer.PlayerService, authMiddleware gin.HandlerFunc) {
-	group := router.Group("/player")
+	group := router.Group("")
 	group.Use(authMiddleware) // 需要认证
 	group.POST("/apply", func(c *gin.Context) { applyAsPlayerHandler(c, svc) })
 	group.GET("/profile", func(c *gin.Context) { getPlayerProfileHandler(c, svc) })

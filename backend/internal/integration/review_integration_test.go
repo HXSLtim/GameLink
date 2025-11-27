@@ -53,12 +53,13 @@ func TestReviewFlow(t *testing.T) {
 	api := router.Group("/api/v1")
 	userAuth := fakeAuthMiddleware(seed.userID)
 	playerAuth := fakeAuthMiddleware(seed.playerUserID)
-	userhandler.RegisterOrderRoutes(api, orderService, userAuth)
-	userhandler.RegisterPaymentRoutes(api, paymentService, userAuth)
-	userhandler.RegisterReviewRoutes(api, reviewService, userAuth)
+	userGroup := api.Group("/user")
+	userhandler.RegisterOrderRoutes(userGroup, orderService, userAuth)
+	userhandler.RegisterPaymentRoutes(userGroup, paymentService, userAuth)
+	userhandler.RegisterReviewRoutes(userGroup, reviewService, userAuth)
 	playerGroup := api.Group("/player")
 	playerhandler.RegisterReviewRoutes(playerGroup, reviewService, playerAuth)
-	playerhandler.RegisterOrderRoutes(api, orderService, playerAuth)
+	playerhandler.RegisterOrderRoutes(playerGroup, orderService, playerAuth)
 
 	// 1) 用户创建并支付订单（自动确认）
 	orderID := createAndPayOrder(t, router, seed, time.Now().Add(1*time.Hour))

@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"gamelink/internal/cache"
 	adminhandler "gamelink/internal/handler/admin"
 	"gamelink/internal/model"
 	"gamelink/internal/repository/common"
@@ -22,7 +23,6 @@ import (
 	"gamelink/internal/repository/user"
 	adminservice "gamelink/internal/service/admin"
 	"gamelink/internal/testutil"
-	"gamelink/internal/cache"
 )
 
 // 管理端订单时间线：操作日志+支付事件汇总
@@ -73,9 +73,9 @@ func TestAdminOrderTimeline(t *testing.T) {
 		"status":      string(model.OrderStatusConfirmed),
 	})
 	if err := opRepo.Append(ctx, &model.OperationLog{
-		EntityType: string(model.OpEntityOrder),
-		EntityID:   order.ID,
-		Action:     string(model.OpActionUpdateStatus),
+		EntityType:   string(model.OpEntityOrder),
+		EntityID:     order.ID,
+		Action:       string(model.OpActionUpdateStatus),
 		MetadataJSON: meta,
 	}); err != nil {
 		t.Fatalf("seed op log: %v", err)

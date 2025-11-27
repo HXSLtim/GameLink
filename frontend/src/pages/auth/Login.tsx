@@ -1,34 +1,128 @@
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Form, Input, Button, Card, message, Tabs, theme } from 'antd';
+import { LockOutlined, UserOutlined } from '@ant-design/icons';
+import { authApi } from '@/api/auth';
+import { ENABLE_QUICK_LOGIN, DEBUG_USERS } from '@/config/debug';
 
-const Login = () => {
+const Login: React.FC = () => {
+    const { token } = theme.useToken();
     const navigate = useNavigate();
-    const location = useLocation();
-    const from = location.state?.from?.pathname || '/';
+    const [loading, setLoading] = useState(false);
 
-    const handleLogin = (role: string) => {
-        // Mock login logic - in real app, this would set auth token and user info
-        localStorage.setItem('user_role', role);
+    const onFinish = async (values: any) => {
+        // ... (keep existing logic)
+        setLoading(true);
+        try {
+            // @ts-ignore
+            const res = await authApi.login({
+                username: values.username,
+                password: values.password
+            });
 
-        if (role === 'ADMIN') navigate('/admin');
-        else if (role === 'COMPANION') navigate('/companion');
-        else navigate('/');
+            // @ts-ignore
+            const { token, user } = res.data;
+
+            localStorage.setItem('token', token);
+            localStorage.setItem('user_role', user.role);
+            localStorage.setItem('user_info', JSON.stringify(user));
+
+            message.success('登录成功');
+
+            const role = user.role.toUpperCase();
+            if (role === 'ADMIN') {
+                navigate('/admin');
+            } else if (role === 'COMPANION') {
+                navigate('/companion');
+            } else {
+                navigate('/');
+            }
+        } catch (error) {
+            console.error(error);
+            message.error('登录失败，请检查用户名和密码');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
         <div style={{
             display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
             justifyContent: 'center',
+            alignItems: 'center',
             height: '100vh',
-            gap: '20px'
+            background: token.colorBgLayout
         }}>
-            <h1>Login</h1>
-            <div style={{ display: 'flex', gap: '10px' }}>
-                <button onClick={() => handleLogin('USER')} className="cta-button">Login as User</button>
-                <button onClick={() => handleLogin('COMPANION')} className="cta-button">Login as Companion</button>
-                <button onClick={() => handleLogin('ADMIN')} className="cta-button">Login as Admin</button>
-            </div>
+            <Card style={{ width: 400, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                    <h1 style={{ margin: 0, color: token.colorTextHeading }}>GameLink</h1>
+                    <p style={{ color: token.colorTextSecondary }}>游戏陪玩平台</p>
+                </div>
+
+                <Tabs defaultActiveKey="account" items={[
+                    {
+                        key: 'account',
+                        label: '账号登录',
+                        children: (
+                            <Form
+                                name="login"
+                                onFinish={onFinish}
+                                layout="vertical"
+                                initialValues={{ username: 'admin@gameLink.com', password: '123456' }}
+                            >
+                                <Form.Item
+                                    name="username"
+                                    rules={[{ required: true, message: '请输入用户名！' }]}
+                                >
+                                    <Input prefix={<UserOutlined />} placeholder="用户名" size="large" />
+                                </Form.Item>
+
+                                <Form.Item
+                                    name="password"
+                                    rules={[{ required: true, message: '请输入密码！' }]}
+                                >
+                                    <Input.Password prefix={<LockOutlined />} placeholder="密码" size="large" />
+                                </Form.Item>
+
+                                <Form.Item>
+                                    <Button type="primary" htmlType="submit" block size="large" loading={loading}>
+                                        登录
+                                    </Button>
+                                </Form.Item>
+
+                                <div style={{ textAlign: 'center' }}>
+                                    没有账号？ <Link to="/register">立即注册</Link>
+                                </div>
+                            </Form>
+                        )
+                    }
+                ]} />
+
+                {/* Quick Login for Development */}
+                {ENABLE_QUICK_LOGIN && (
+                    <div style={{ marginTop: 24, borderTop: `1px solid ${token.colorBorderSecondary}`, paddingTop: 16 }}>
+                        <div style={{ marginBottom: 8, color: token.colorTextSecondary, fontSize: 12, textAlign: 'center' }}>
+                            开发环境快速登录
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
+                            {DEBUG_USERS.map(user => (
+                                <Button
+                                    key={user.email}
+                                    size="small"
+                                    onClick={() => onFinish({ username: user.email, password: user.password })}
+                                    style={{
+                                        borderColor: user.color,
+                                        color: user.color,
+                                        fontSize: 12
+                                    }}
+                                >
+                                    {user.label}
+                                </Button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </Card>
         </div>
     );
 };

@@ -10,7 +10,7 @@ import (
 	roleservice "gamelink/internal/service/role"
 )
 
-// AssignDefaultRolePermissions 为默认角色（admin 和 super_admin）分配所有管理权限。
+// AssignDefaultRolePermissions 为默认角色分配管理权限（默认仅 super_admin 拥有全部权限）。
 func AssignDefaultRolePermissions(ctx context.Context, roleSvc *roleservice.RoleService, permService *permissionservice.PermissionService) error {
 	// 获取所有权限
 	allPermissions, err := permService.ListPermissions(ctx)
@@ -29,10 +29,9 @@ func AssignDefaultRolePermissions(ctx context.Context, roleSvc *roleservice.Role
 		permissionIDs = append(permissionIDs, perm.ID)
 	}
 
-	// 为 admin 和 super_admin 角色分配所有权限
+	// 为 super_admin 分配所有权限；admin 不再自动获得全部权限，避免与超管等价
 	roleSlugs := []string{
 		string(model.RoleSlugSuperAdmin),
-		string(model.RoleSlugAdmin),
 	}
 
 	for _, roleSlug := range roleSlugs {

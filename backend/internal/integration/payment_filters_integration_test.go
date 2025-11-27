@@ -45,8 +45,9 @@ func TestPaymentListFilters(t *testing.T) {
 	router := gin.New()
 	api := router.Group("/api/v1")
 	userAuth := fakeAuthMiddleware(seed.userID)
-	userhandler.RegisterOrderRoutes(api, orderService, userAuth)
-	userhandler.RegisterPaymentRoutes(api, paymentService, userAuth)
+	userGroup := api.Group("/user")
+	userhandler.RegisterOrderRoutes(userGroup, orderService, userAuth)
+	userhandler.RegisterPaymentRoutes(userGroup, paymentService, userAuth)
 
 	// create two paid payments via handler
 	makePayment := func(title string) {

@@ -11,23 +11,23 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"gamelink/internal/cache"
 	adminhandler "gamelink/internal/handler/admin"
 	userhandler "gamelink/internal/handler/user"
 	"gamelink/internal/model"
 	"gamelink/internal/repository/dispute"
 	"gamelink/internal/repository/game"
 	orderimpl "gamelink/internal/repository/implementations"
+	repoiface "gamelink/internal/repository/interfaces"
 	"gamelink/internal/repository/notification"
 	operationlog "gamelink/internal/repository/operation_log"
 	"gamelink/internal/repository/payment"
 	"gamelink/internal/repository/player"
 	"gamelink/internal/repository/role"
-	repoiface "gamelink/internal/repository/interfaces"
 	"gamelink/internal/repository/user"
-	"gamelink/internal/service/assignment"
 	adminservice "gamelink/internal/service/admin"
+	"gamelink/internal/service/assignment"
 	"gamelink/internal/testutil"
-	"gamelink/internal/cache"
 )
 
 // 纠纷全链路：用户发起 -> 管理端列表/分配 -> 管理端解决（部分退款）

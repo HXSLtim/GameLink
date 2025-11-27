@@ -1,8 +1,12 @@
 import { useRoutes } from 'react-router-dom';
 import { routes } from './routes';
 import RouteGuard from './Guard';
-import { RouteConfig } from './types';
-import { ReactNode } from 'react';
+import type { RouteConfig } from './types';
+
+
+import { useAdmin } from '@/context/AdminContext';
+import { generateRoutesFromMenus } from '@/utils/dynamicRoutes';
+import { useMemo } from 'react';
 
 const renderRoutes = (routes: RouteConfig[]): any[] => {
     return routes.map((route) => {
@@ -21,13 +25,37 @@ const renderRoutes = (routes: RouteConfig[]): any[] => {
         return {
             path: route.path,
             element: guardedElement,
-            children: route.children ? renderRoutes(route.children) : undefined
+            children: route.children ? renderRoutes(route.children) : undefined,
+            index: route.index
         };
     });
 };
 
 const AppRouter = () => {
-    const element = useRoutes(renderRoutes(routes));
+    const { menus } = useAdmin();
+
+    const finalRoutes = useMemo(() => {
+        // Clone static routes
+        const allRoutes = [...routes];
+
+        // Find admin route
+        const adminRouteIndex = allRoutes.findIndex(r => r.path === '/admin');
+        if (adminRouteIndex !== -1 && menus.length > 0) {
+            const dynamicRoutes = generateRoutesFromMenus(menus);
+
+            // Merge dynamic routes into admin children
+            const adminRoute = { ...allRoutes[adminRouteIndex] };
+            adminRoute.children = [
+                ...(adminRoute.children || []),
+                ...dynamicRoutes
+            ];
+            allRoutes[adminRouteIndex] = adminRoute;
+        }
+
+        return allRoutes;
+    }, [menus]);
+
+    const element = useRoutes(renderRoutes(finalRoutes));
     return element;
 };
 

@@ -61,9 +61,11 @@ func TestCommissionRuleFlow(t *testing.T) {
 
 	userAuth := fakeAuthMiddleware(seed.userID)
 	playerAuth := fakeAuthMiddleware(seed.playerUserID)
-	userhandler.RegisterOrderRoutes(api, orderService, userAuth)
-	userhandler.RegisterPaymentRoutes(api, paymentService, userAuth)
-	playerhandler.RegisterOrderRoutes(api, orderService, playerAuth)
+	userGroup := api.Group("/user")
+	playerGroup := api.Group("/player")
+	userhandler.RegisterOrderRoutes(userGroup, orderService, userAuth)
+	userhandler.RegisterPaymentRoutes(userGroup, paymentService, userAuth)
+	playerhandler.RegisterOrderRoutes(playerGroup, orderService, playerAuth)
 
 	// 直接插入抽成规则：game-specific 30%
 	if err := commissionRepo.CreateRule(ctx, &model.CommissionRule{

@@ -1,6 +1,7 @@
-import { ReactNode, useEffect } from 'react';
+import { useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Role } from './types';
+import type { Role } from './types';
 
 interface RouteGuardProps {
     children: ReactNode;
@@ -13,7 +14,8 @@ const RouteGuard = ({ children, roles, requiresAuth }: RouteGuardProps) => {
     const location = useLocation();
 
     // In a real app, this would come from a context or store
-    const userRole = localStorage.getItem('user_role') as Role | null;
+    const rawRole = localStorage.getItem('user_role');
+    const userRole = rawRole ? (rawRole.toUpperCase() as Role) : null;
     const isAuthenticated = !!userRole;
 
     useEffect(() => {

@@ -230,6 +230,7 @@ func (r *Router) registerRBACRoutes(rbacGroup *gin.RouterGroup, roleSvc *roleser
 		rbacGroup.GET("/users/:id/roles", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/:id/roles"), roleHandler.GetUserRoles)
 
 		// 权限管理
+		rbacGroup.GET("/permissions/me", permHandler.GetCurrentUserPermissions)
 		rbacGroup.GET("/permissions", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/permissions"), permHandler.ListPermissions)
 		rbacGroup.GET("/permissions/groups", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/permissions/groups"), permHandler.GetPermissionGroups)
 		rbacGroup.GET("/permissions/:id", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/permissions/:id"), permHandler.GetPermission)
