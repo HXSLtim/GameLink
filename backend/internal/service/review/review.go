@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"gamelink/internal/model"
-	"gamelink/internal/pkg/safety"
+	"gamelink/pkg/safety"
 	"gamelink/internal/repository"
 	repoiface "gamelink/internal/repository/interfaces"
 	feedservice "gamelink/internal/service/feed"

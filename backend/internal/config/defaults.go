@@ -35,14 +35,14 @@ const (
 	DefaultCryptoExcludePaths = "/api/v1/health,/api/v1/ping,/api/v1/auth/refresh"
 
 	// Admin defaults
-	DefaultAdminName = "Super Admin"
+	DefaultAdminName     = "Super Admin"
 	DefaultAdminAuthMode = "admin"
 
 	// Security constants
-	MinJWTSecretLength = 16
-	MinAdminPasswordLength = 6
+	MinJWTSecretLength               = 16
+	MinAdminPasswordLength           = 6
 	ProductionMinAdminPasswordLength = 8
-	MinCryptoIVLength = 16
+	MinCryptoIVLength                = 16
 
 	// Allowed crypto key lengths
 	CryptoKeyLength16 = 16
@@ -547,14 +547,14 @@ func GetConfigValidationRules() map[string]interface{} {
 		},
 		"auth": map[string]interface{}{
 			"jwt_secret": map[string]interface{}{
-				"required":     true,
-				"min_length":   MinJWTSecretLength,
-				"not_allowed":  []string{GetDeprecatedDefaultJWTSecret()},
+				"required":    true,
+				"min_length":  MinJWTSecretLength,
+				"not_allowed": []string{GetDeprecatedDefaultJWTSecret()},
 			},
 			"token_ttl_hours": map[string]interface{}{
-				"default":   DefaultTokenTTL,
-				"min":       1,
-				"max":       8760,
+				"default": DefaultTokenTTL,
+				"min":     1,
+				"max":     8760,
 			},
 		},
 		"crypto": map[string]interface{}{
@@ -562,7 +562,7 @@ func GetConfigValidationRules() map[string]interface{} {
 				"default": DefaultCryptoEnabled,
 			},
 			"secret_key": map[string]interface{}{
-				"when_enabled": true,
+				"when_enabled":    true,
 				"allowed_lengths": []int{CryptoKeyLength16, CryptoKeyLength24, CryptoKeyLength32},
 				"not_allowed":     []string{"GameLink2025SecretKey!@#"},
 			},
@@ -583,7 +583,7 @@ func GetConfigValidationRules() map[string]interface{} {
 				"format":   "email",
 			},
 			"password": map[string]interface{}{
-				"required":   true,
+				"required": true,
 				"min_length": map[string]interface{}{
 					"development": MinAdminPasswordLength,
 					"production":  ProductionMinAdminPasswordLength,
@@ -708,15 +708,15 @@ func GetValidationSummary(cfg AppConfig, env string) map[string]interface{} {
 	summary := map[string]interface{}{
 		"environment": env,
 		"validation": map[string]interface{}{
-			"database":  ValidateDatabaseConfig(cfg.Database) == nil,
-			"cache":     ValidateCacheConfig(cfg.Cache) == nil,
-			"auth":      ValidateAuthConfig(cfg.Auth) == nil,
-			"crypto":    ValidateCryptoConfig(cfg.Crypto) == nil,
+			"database":    ValidateDatabaseConfig(cfg.Database) == nil,
+			"cache":       ValidateCacheConfig(cfg.Cache) == nil,
+			"auth":        ValidateAuthConfig(cfg.Auth) == nil,
+			"crypto":      ValidateCryptoConfig(cfg.Crypto) == nil,
 			"super_admin": ValidateSuperAdminConfig(cfg.SuperAdmin, env) == nil,
-			"admin_auth": ValidateAdminAuthConfig(cfg.AdminAuth) == nil,
-			"port":      ValidatePortConfig(cfg.Port) == nil,
-			"swagger":   ValidateSwaggerConfig(cfg.EnableSwagger) == nil,
-			"seed":      ValidateSeedConfig(cfg.Seed.Enabled) == nil,
+			"admin_auth":  ValidateAdminAuthConfig(cfg.AdminAuth) == nil,
+			"port":        ValidatePortConfig(cfg.Port) == nil,
+			"swagger":     ValidateSwaggerConfig(cfg.EnableSwagger) == nil,
+			"seed":        ValidateSeedConfig(cfg.Seed.Enabled) == nil,
 		},
 	}
 

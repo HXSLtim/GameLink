@@ -144,7 +144,7 @@ internal/repository/
 ```go
 // RegisterStatsAnalysisRoutes 注册统计分析和仪表板路由
 func RegisterStatsAnalysisRoutes(router gin.IRouter, orderRepo repoiface.OrderReadWriter, 
-    commissionRepo commissionrepo.CommissionRepository, serviceItemRepo serviceitemrepo.ServiceItemRepository) {
+    commissionRepo commissionrepo.CommissionRepository, serviceItemRepo repository.ServiceItemRepository) {
     statsRepo := statsrepo.NewStatsRepository(orderRepo.(interface{ DB() *gorm.DB }).DB())
     h := NewStatsHandler(statsservice.NewStatsService(statsRepo))
     

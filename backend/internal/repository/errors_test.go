@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"gamelink/internal/repository"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestErrNotFound(t *testing.T) {

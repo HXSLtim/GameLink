@@ -33,17 +33,15 @@ type ErrorResponse struct {
 // SuccessResponse 通用成功响应（用于Swagger文档，避免泛型语法）
 type SuccessResponse APIResponse[any]
 
-
-
 // FeedView 动态视图（用于Swagger文档）
 type FeedView struct {
-	ID               uint64 `json:"id"`
-	AuthorID         uint64 `json:"authorId"`
-	Content          string `json:"content"`
-	Visibility       string `json:"visibility"`
-	ModerationStatus string `json:"moderationStatus"`
-	ModerationNote   string `json:"moderationNote,omitempty"`
-	CreatedAt        string `json:"createdAt"`
+	ID               uint64          `json:"id"`
+	AuthorID         uint64          `json:"authorId"`
+	Content          string          `json:"content"`
+	Visibility       string          `json:"visibility"`
+	ModerationStatus string          `json:"moderationStatus"`
+	ModerationNote   string          `json:"moderationNote,omitempty"`
+	CreatedAt        string          `json:"createdAt"`
 	Images           []FeedImageView `json:"images"`
 }
 
@@ -61,8 +59,6 @@ type ListFeedsData struct {
 	Items      []FeedView `json:"items"`
 	NextCursor string     `json:"nextCursor,omitempty"`
 }
-
-
 
 // PlatformStatsResponse 平台统计响应（用于Swagger文档，避免泛型语法）
 type PlatformStatsResponse struct {

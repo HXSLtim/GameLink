@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"gamelink/internal/model"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestOrderDisputeModel(t *testing.T) {
@@ -22,27 +22,27 @@ func TestOrderDisputeModel(t *testing.T) {
 			CreatedAt: now,
 			UpdatedAt: now,
 		},
-		OrderID:          100,
-		UserID:           200,
-		Status:           model.DisputeStatusPending,
-		Reason:           "服务质量问题",
-		Description:      "陪玩师没有按照约定时间到达，服务态度也不好",
-		EvidenceURLs:     evidenceURLs,
-		AssignedToUserID: &assignedUserID,
-		AssignmentSource: model.AssignmentSourceManual,
-		AssignedAt:       &now,
-		SLADeadline:      &deadline,
-		SLABreached:      false,
-		SLABreachedAt:    nil,
-		Resolution:       model.ResolutionPending,
-		ResolutionAmount: 5000, // 50元
-		ResolutionNotes:  "经过调查，情况属实，部分退款",
-		ResolvedAt:       &now,
-		ResolvedByUserID: &resolvedUserID,
-		RolledBackAt:     nil,
+		OrderID:            100,
+		UserID:             200,
+		Status:             model.DisputeStatusPending,
+		Reason:             "服务质量问题",
+		Description:        "陪玩师没有按照约定时间到达，服务态度也不好",
+		EvidenceURLs:       evidenceURLs,
+		AssignedToUserID:   &assignedUserID,
+		AssignmentSource:   model.AssignmentSourceManual,
+		AssignedAt:         &now,
+		SLADeadline:        &deadline,
+		SLABreached:        false,
+		SLABreachedAt:      nil,
+		Resolution:         model.ResolutionPending,
+		ResolutionAmount:   5000, // 50元
+		ResolutionNotes:    "经过调查，情况属实，部分退款",
+		ResolvedAt:         &now,
+		ResolvedByUserID:   &resolvedUserID,
+		RolledBackAt:       nil,
 		RolledBackByUserID: nil,
-		RollbackReason:   "",
-		TraceID:          "TRACE123456",
+		RollbackReason:     "",
+		TraceID:            "TRACE123456",
 	}
 
 	assert.Equal(t, uint64(1), dispute.ID)
@@ -294,27 +294,27 @@ func TestCanInitiateDispute(t *testing.T) {
 
 func TestOrderDisputeZeroValues(t *testing.T) {
 	dispute := &model.OrderDispute{
-		OrderID:          0,
-		UserID:           0,
-		Status:           "",
-		Reason:           "",
-		Description:      "",
-		EvidenceURLs:     nil,
-		AssignedToUserID: nil,
-		AssignmentSource: "",
-		AssignedAt:       nil,
-		SLADeadline:      nil,
-		SLABreached:      false,
-		SLABreachedAt:    nil,
-		Resolution:       "",
-		ResolutionAmount: 0,
-		ResolutionNotes:  "",
-		ResolvedAt:       nil,
-		ResolvedByUserID: nil,
-		RolledBackAt:     nil,
+		OrderID:            0,
+		UserID:             0,
+		Status:             "",
+		Reason:             "",
+		Description:        "",
+		EvidenceURLs:       nil,
+		AssignedToUserID:   nil,
+		AssignmentSource:   "",
+		AssignedAt:         nil,
+		SLADeadline:        nil,
+		SLABreached:        false,
+		SLABreachedAt:      nil,
+		Resolution:         "",
+		ResolutionAmount:   0,
+		ResolutionNotes:    "",
+		ResolvedAt:         nil,
+		ResolvedByUserID:   nil,
+		RolledBackAt:       nil,
 		RolledBackByUserID: nil,
-		RollbackReason:   "",
-		TraceID:          "",
+		RollbackReason:     "",
+		TraceID:            "",
 	}
 
 	assert.Equal(t, uint64(0), dispute.OrderID)
@@ -354,10 +354,10 @@ func TestOrderDisputeEdgeCases(t *testing.T) {
 	longRollbackReason := "这是一个非常长的回退原因，管理员会在这里详细说明为什么要回退之前的处理决定。"
 
 	dispute2 := &model.OrderDispute{
-		Reason:           longReason,
-		Description:      longDescription,
-		ResolutionNotes:  longResolutionNotes,
-		RollbackReason:   longRollbackReason,
+		Reason:          longReason,
+		Description:     longDescription,
+		ResolutionNotes: longResolutionNotes,
+		RollbackReason:  longRollbackReason,
 	}
 	assert.Equal(t, longReason, dispute2.Reason)
 	assert.Equal(t, longDescription, dispute2.Description)
@@ -366,10 +366,10 @@ func TestOrderDisputeEdgeCases(t *testing.T) {
 
 	// 测试特殊字符
 	dispute3 := &model.OrderDispute{
-		Reason:           "服务质量问题@#$%^&*()",
-		Description:      "描述包含特殊字符：<>{}[]|\\",
-		ResolutionNotes:  "处理备注：\"引号\"和'单引号'",
-		TraceID:          "TRACE_123#456@789",
+		Reason:          "服务质量问题@#$%^&*()",
+		Description:     "描述包含特殊字符：<>{}[]|\\",
+		ResolutionNotes: "处理备注：\"引号\"和'单引号'",
+		TraceID:         "TRACE_123#456@789",
 	}
 	assert.Equal(t, "服务质量问题@#$%^&*()", dispute3.Reason)
 	assert.Equal(t, "描述包含特殊字符：<>{}[]|\\", dispute3.Description)

@@ -53,6 +53,29 @@ func (r *repositoryImpl) List(ctx context.Context, parentID *uint64) ([]model.Me
 	return menus, nil
 }
 
+func (r *repositoryImpl) ListPaged(ctx context.Context, page, pageSize int, parentID *uint64) ([]model.Menu, int64, error) {
+	tx := r.db.WithContext(ctx).Model(&model.Menu{})
+	if parentID != nil {
+		tx = tx.Where("parent_id = ?", *parentID)
+	}
+
+	var total int64
+	if err := tx.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	if page > 0 && pageSize > 0 {
+		offset := (page - 1) * pageSize
+		tx = tx.Offset(offset).Limit(pageSize)
+	}
+
+	var menus []model.Menu
+	if err := tx.Order("`order` ASC, id ASC").Find(&menus).Error; err != nil {
+		return nil, 0, err
+	}
+	return menus, total, nil
+}
+
 func (r *repositoryImpl) ListByPermission(ctx context.Context, codes []string) ([]model.Menu, error) {
 	if len(codes) == 0 {
 		return []model.Menu{}, nil

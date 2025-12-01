@@ -9,42 +9,15 @@ import (
 	"gorm.io/gorm"
 )
 
-// ServiceItemRepository 服务项目仓储接口（统一管理所有服务类型，包括礼物
-type ServiceItemRepository interface {
-	// 基础CRUD
-	Create(ctx context.Context, item *model.ServiceItem) error
-	Get(ctx context.Context, id uint64) (*model.ServiceItem, error)
-	GetByCode(ctx context.Context, itemCode string) (*model.ServiceItem, error)
-	List(ctx context.Context, opts ServiceItemListOptions) ([]model.ServiceItem, int64, error)
-	Update(ctx context.Context, item *model.ServiceItem) error
-	Delete(ctx context.Context, id uint64) error
-
-	// 批量操作
-	BatchUpdateStatus(ctx context.Context, ids []uint64, isActive bool) error
-	BatchUpdatePrice(ctx context.Context, ids []uint64, basePriceCents int64) error
-
-	// 特殊查询
-	GetGifts(ctx context.Context, page, pageSize int) ([]model.ServiceItem, int64, error)
-	GetGameServices(ctx context.Context, gameID uint64, subCategory *model.ServiceItemSubCategory) ([]model.ServiceItem, error)
-}
-
-// ServiceItemListOptions 服务项目查询选项
-type ServiceItemListOptions struct {
-	Category    *string
-	SubCategory *model.ServiceItemSubCategory
-	GameID      *uint64
-	PlayerID    *uint64
-	IsActive    *bool
-	Page        int
-	PageSize    int
-}
+// 注意: ServiceItemRepository接口定义已移至 internal/repository/interfaces.go
+// 此包实现该接口,ServiceItemListOptions也使用repository包中的定义
 
 type serviceItemRepository struct {
 	db *gorm.DB
 }
 
 // NewServiceItemRepository 创建服务项目仓储
-func NewServiceItemRepository(db *gorm.DB) ServiceItemRepository {
+func NewServiceItemRepository(db *gorm.DB) repository.ServiceItemRepository {
 	return &serviceItemRepository{db: db}
 }
 
@@ -92,7 +65,7 @@ func (r *serviceItemRepository) GetByCode(ctx context.Context, itemCode string) 
 }
 
 // List 查询服务项目列表
-func (r *serviceItemRepository) List(ctx context.Context, opts ServiceItemListOptions) ([]model.ServiceItem, int64, error) {
+func (r *serviceItemRepository) List(ctx context.Context, opts repository.ServiceItemListOptions) ([]model.ServiceItem, int64, error) {
 	query := r.db.WithContext(ctx).Model(&model.ServiceItem{})
 
 	// 过滤条件
@@ -167,7 +140,7 @@ func (r *serviceItemRepository) BatchUpdatePrice(ctx context.Context, ids []uint
 // GetGifts 获取礼物列表
 func (r *serviceItemRepository) GetGifts(ctx context.Context, page, pageSize int) ([]model.ServiceItem, int64, error) {
 	subCat := model.SubCategoryGift
-	return r.List(ctx, ServiceItemListOptions{
+	return r.List(ctx, repository.ServiceItemListOptions{
 		SubCategory: &subCat,
 		IsActive:    boolPtr(true),
 		Page:        page,

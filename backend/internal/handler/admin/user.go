@@ -257,6 +257,62 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 	})
 }
 
+// BatchDeleteUsers
+// @Summary      批量删除用户
+// @Tags         Admin/Users
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body  map[string][]int  true  "{ids: [1,2,3]}"
+// @Success      200  {object}  model.SuccessResponse
+// @Failure      400  {object}  model.ErrorResponse
+// @Router       /admin/users/batch-delete [post]
+//
+// BatchDeleteUsers deletes multiple users by ids.
+func (h *UserHandler) BatchDeleteUsers(c *gin.Context) {
+	var payload struct {
+		IDs []uint64 `json:"ids" binding:"required,min=1"`
+	}
+	if bindErr := c.ShouldBindJSON(&payload); bindErr != nil {
+		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+		return
+	}
+
+	// 删除每个用户
+	var deletedCount int
+	var failedCount int
+	for _, id := range payload.IDs {
+		err := h.svc.DeleteUser(c.Request.Context(), id)
+		if err != nil {
+			failedCount++
+			continue
+		}
+		deletedCount++
+	}
+
+	if failedCount > 0 {
+		writeJSON(c, http.StatusOK, model.APIResponse[any]{
+			Success: true,
+			Code:    http.StatusOK,
+			Message: "部分删除成功",
+			Data: map[string]int{
+				"deleted": deletedCount,
+				"failed":  failedCount,
+			},
+		})
+		return
+	}
+
+	writeJSON(c, http.StatusOK, model.APIResponse[any]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: "批量删除成功",
+		Data: map[string]int{
+			"deleted": deletedCount,
+		},
+	})
+}
+
 // ListUserLogs
 // @Summary      获取用户操作日志
 // @Tags         Admin/Users

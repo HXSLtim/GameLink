@@ -7,9 +7,9 @@
 package container
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
 	"gamelink/internal/lifecycle"
 	"gamelink/internal/metrics"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 // Injectors from wire.go:

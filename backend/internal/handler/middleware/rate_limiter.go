@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"gamelink/internal/apierr"
+	"github.com/gin-gonic/gin"
 )
 
 // RateLimiterConfig 限流配置
@@ -308,11 +308,11 @@ func RateLimit(config RateLimiterConfig) gin.HandlerFunc {
 // DefaultRateLimitConfig 返回默认限流配置
 func DefaultRateLimitConfig() RateLimiterConfig {
 	return RateLimiterConfig{
-		Enabled:                 true,
-		IPRequestsPerSecond:     10,  // 每秒10个请求
-		UserRequestsPerMinute:   60,  // 每分钟60个请求
-		WhitelistIPs:            []string{"127.0.0.1", "::1"},
-		WhitelistRoles:          []string{"super_admin"},
+		Enabled:               true,
+		IPRequestsPerSecond:   10, // 每秒10个请求
+		UserRequestsPerMinute: 60, // 每分钟60个请求
+		WhitelistIPs:          []string{"127.0.0.1", "::1"},
+		WhitelistRoles:        []string{"super_admin"},
 		RouteLimits: map[string]RouteLimit{
 			// 登录接口限流：每分钟5次
 			"/api/v1/auth/login": {
@@ -366,19 +366,19 @@ func getUserRoleFromContext(c *gin.Context) (string, bool) {
 func respondAPIError(c *gin.Context, err error) {
 	if apiErr, ok := err.(*apierr.APIError); ok {
 		c.JSON(apiErr.Code, gin.H{
-			"success": false,
-			"code":    apiErr.Code,
-			"message": apiErr.Message,
-			"details": apiErr.Details,
+			"success":   false,
+			"code":      apiErr.Code,
+			"message":   apiErr.Message,
+			"details":   apiErr.Details,
 			"requestId": c.GetString("request_id"),
 		})
 		return
 	}
 	// fallback
 	c.JSON(http.StatusInternalServerError, gin.H{
-		"success": false,
-		"code":    http.StatusInternalServerError,
-		"message": err.Error(),
+		"success":   false,
+		"code":      http.StatusInternalServerError,
+		"message":   err.Error(),
 		"requestId": c.GetString("request_id"),
 	})
 }

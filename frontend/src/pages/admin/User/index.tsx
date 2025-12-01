@@ -1,7 +1,7 @@
 /**
  * 用户管理页面
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
     Tag,
     Space,
@@ -31,23 +31,8 @@ import { PageContainer, SearchTable } from '@/components';
 import type { SearchField } from '@/components';
 import { USER_PERMISSIONS } from '@/constants/permissions';
 import { PermissionGuard } from '@/components/PermissionGuard';
+import { adminApi, type User, type CreateUserDto, type UpdateUserDto, type UserQueryParams } from '@/api/admin';
 import dayjs from 'dayjs';
-
-/**
- * 用户数据接口
- */
-interface User {
-    id: number;
-    username: string;
-    email: string;
-    phone: string;
-    avatar: string;
-    role: 'user' | 'player' | 'admin';
-    status: 'active' | 'banned' | 'pending';
-    balance: number;
-    createdAt: string;
-    lastLoginAt: string;
-}
 
 /**
  * 角色映射
@@ -64,7 +49,7 @@ const roleMap = {
 const statusMap = {
     active: { color: 'success', text: '正常' },
     banned: { color: 'error', text: '已封禁' },
-    pending: { color: 'warning', text: '待审核' },
+    suspended: { color: 'warning', text: '已停用' },
 };
 
 /**
@@ -77,7 +62,9 @@ const UserPage: React.FC = () => {
     const [total, setTotal] = useState(0);
     const [current, setCurrent] = useState(1);
     const [pageSize, setPageSize] = useState(10);
-    const [searchParams, setSearchParams] = useState<Record<string, unknown>>({});
+
+    // 搜索参数
+    const [searchParams, setSearchParams] = useState<UserQueryParams>({});
 
     // 弹窗状态
     const [editModalVisible, setEditModalVisible] = useState(false);
@@ -89,98 +76,211 @@ const UserPage: React.FC = () => {
      * 加载用户数据
      */
     const loadData = useCallback(async () => {
-        // ... (keep existing loadData)
-        setLoading(true);
-        // 模拟API调用
-        await new Promise(resolve => setTimeout(resolve, 500));
+        try {
+            setLoading(true);
+            const params: UserQueryParams = {
+                page: current,
+                page_size: pageSize,
+                ...searchParams,
+            };
 
-        const mockUsers: User[] = Array.from({ length: 50 }, (_, i) => ({
-            id: i + 1,
-            username: `user${i + 1}`,
-            email: `user${i + 1}@example.com`,
-            phone: `138${String(i).padStart(8, '0')}`,
-            avatar: '',
-            role: ['user', 'player', 'admin'][i % 3] as User['role'],
-            status: ['active', 'banned', 'pending'][i % 3] as User['status'],
-            balance: Math.floor(Math.random() * 10000),
-            createdAt: dayjs().subtract(i, 'day').format('YYYY-MM-DD HH:mm:ss'),
-            lastLoginAt: dayjs().subtract(Math.floor(Math.random() * 24), 'hour').format('YYYY-MM-DD HH:mm:ss'),
-        }));
+            const response = await adminApi.getUsers(params);
 
-        // 模拟分页
-        const start = (current - 1) * pageSize;
-        const end = start + pageSize;
-        setUsers(mockUsers.slice(start, end));
-        setTotal(mockUsers.length);
-        setLoading(false);
-    }, [current, pageSize]);
+            if (response.data.success) {
+                setUsers(response.data.data || []);
+                setTotal(response.data.pagination?.total || 0);
+            } else {
+                message.error(response.data.message || '获取用户列表失败');
+            }
+        } catch (error: any) {
+            console.error('加载用户列表失败:', error);
+            message.error(error.response?.data?.message || '获取用户列表失败');
+        } finally {
+            setLoading(false);
+        }
+    }, [current, pageSize, searchParams]);
 
     useEffect(() => {
         loadData();
     }, [loadData]);
 
     /**
-     * 搜索
+     * 搜索处理
      */
-    const handleSearch = (values: Record<string, unknown>) => {
-        setSearchParams(values);
-        setCurrent(1);
-        loadData();
-    };
+    const handleSearch = useCallback((values: any) => {
+        const params: UserQueryParams = {};
+
+        if (values.keyword) {
+            params.keyword = values.keyword;
+        }
+        if (values.role) {
+            params.role = Array.isArray(values.role) ? values.role : [values.role];
+        }
+        if (values.status) {
+            params.status = Array.isArray(values.status) ? values.status : [values.status];
+        }
+        if (values.dateRange && values.dateRange.length === 2) {
+            params.date_from = values.dateRange[0].format('YYYY-MM-DD');
+            params.date_to = values.dateRange[1].format('YYYY-MM-DD');
+        }
+
+        setSearchParams(params);
+        setCurrent(1); // 重置到第一页
+    }, []);
 
     /**
      * 编辑用户
      */
-    const handleEdit = (user: User) => {
+    const handleEdit = useCallback((user: User) => {
         setCurrentUser(user);
-        form.setFieldsValue(user);
+        form.setFieldsValue({
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+            avatarUrl: user.avatarUrl,
+            role: user.role,
+            status: user.status,
+        });
         setEditModalVisible(true);
-    };
+    }, [form]);
 
     /**
      * 查看详情
      */
-    const handleViewDetail = (user: User) => {
+    const handleViewDetail = useCallback((user: User) => {
         setCurrentUser(user);
         setDetailDrawerVisible(true);
-    };
+    }, []);
 
     /**
      * 保存编辑
      */
-    const handleSaveEdit = async () => {
+    const handleSaveEdit = useCallback(async () => {
         try {
             const values = await form.validateFields();
-            console.log('Save:', values);
-            message.success('保存成功');
-            setEditModalVisible(false);
-            loadData();
-        } catch {
-            // 验证失败
+
+            if (currentUser) {
+                // 更新用户
+                const updateData: UpdateUserDto = {
+                    name: values.name,
+                    email: values.email,
+                    phone: values.phone,
+                    avatarUrl: values.avatarUrl,
+                    role: values.role,
+                    status: values.status,
+                };
+
+                // 如果输入了新密码,则包含密码
+                if (values.password && values.password.trim()) {
+                    updateData.password = values.password.trim();
+                }
+
+                const response = await adminApi.updateUser(currentUser.id, updateData);
+
+                if (response.data.success) {
+                    message.success('更新用户成功');
+                    setEditModalVisible(false);
+                    loadData();
+                } else {
+                    message.error(response.data.message || '更新用户失败');
+                }
+            } else {
+                // 创建用户
+                const createData: CreateUserDto = {
+                    name: values.name,
+                    email: values.email,
+                    phone: values.phone,
+                    password: values.password,
+                    avatarUrl: values.avatarUrl,
+                    role: values.role,
+                    status: values.status,
+                };
+
+                const response = await adminApi.createUser(createData);
+
+                if (response.data.success) {
+                    message.success('创建用户成功');
+                    setEditModalVisible(false);
+                    loadData();
+                } else {
+                    message.error(response.data.message || '创建用户失败');
+                }
+            }
+        } catch (error: any) {
+            console.error('保存用户失败:', error);
+            if (error.errorFields) {
+                // 表单验证失败
+                return;
+            }
+            message.error(error.response?.data?.message || '保存用户失败');
         }
-    };
+    }, [form, currentUser, loadData]);
 
     /**
      * 封禁/解封用户
      */
-    const handleToggleBan = async (user: User) => {
-        const action = user.status === 'banned' ? '解封' : '封禁';
-        message.success(`${action}成功`);
-        loadData();
-    };
+    const handleToggleBan = useCallback(async (user: User) => {
+        try {
+            const newStatus = user.status === 'banned' ? 'active' : 'banned';
+            const action = newStatus === 'banned' ? '封禁' : '解封';
+
+            const response = await adminApi.updateUserStatus(user.id, newStatus);
+
+            if (response.data.success) {
+                message.success(`${action}用户成功`);
+                loadData();
+            } else {
+                message.error(response.data.message || `${action}用户失败`);
+            }
+        } catch (error: any) {
+            console.error('更新用户状态失败:', error);
+            message.error(error.response?.data?.message || '更新用户状态失败');
+        }
+    }, [loadData]);
 
     /**
      * 删除用户
      */
-    const handleDelete = async (user: User) => {
-        message.success(`删除用户 ${user.username} 成功`);
-        loadData();
-    };
+    const handleDelete = useCallback(async (user: User) => {
+        try {
+            const response = await adminApi.deleteUser(user.id);
+
+            if (response.data.success) {
+                message.success(`删除用户 ${user.name} 成功`);
+                loadData();
+            } else {
+                message.error(response.data.message || '删除用户失败');
+            }
+        } catch (error: any) {
+            console.error('删除用户失败:', error);
+            message.error(error.response?.data?.message || '删除用户失败');
+        }
+    }, [loadData]);
+
+    /**
+     * 批量删除
+     */
+    const handleBatchDelete = useCallback(async (selectedRowKeys: React.Key[]) => {
+        try {
+            const ids = selectedRowKeys.map(key => Number(key));
+            const response = await adminApi.batchDeleteUsers(ids);
+
+            if (response.data.success) {
+                message.success(`成功删除 ${ids.length} 个用户`);
+                loadData();
+            } else {
+                message.error(response.data.message || '批量删除失败');
+            }
+        } catch (error: any) {
+            console.error('批量删除用户失败:', error);
+            message.error(error.response?.data?.message || '批量删除失败');
+        }
+    }, [loadData]);
 
     /**
      * 搜索字段配置
      */
-    const searchFields: SearchField[] = [
+    const searchFields: SearchField[] = useMemo(() => [
         { name: 'keyword', label: '关键词', type: 'input', placeholder: '用户名/邮箱/手机号' },
         {
             name: 'role',
@@ -199,16 +299,16 @@ const UserPage: React.FC = () => {
             options: [
                 { label: '正常', value: 'active' },
                 { label: '已封禁', value: 'banned' },
-                { label: '待审核', value: 'pending' },
+                { label: '已停用', value: 'suspended' },
             ],
         },
         { name: 'dateRange', label: '注册时间', type: 'dateRange' },
-    ];
+    ], []);
 
     /**
      * 表格列配置
      */
-    const columns: ColumnsType<User> = [
+    const columns: ColumnsType<User> = useMemo(() => [
         {
             title: 'ID',
             dataIndex: 'id',
@@ -222,12 +322,12 @@ const UserPage: React.FC = () => {
             render: (_, record) => (
                 <Space>
                     <Avatar
-                        src={record.avatar}
+                        src={record.avatarUrl}
                         icon={<UserOutlined />}
                         style={{ backgroundColor: token.colorPrimary }}
                     />
                     <div>
-                        <div style={{ fontWeight: 500 }}>{record.username}</div>
+                        <div style={{ fontWeight: 500 }}>{record.name}</div>
                         <div style={{ fontSize: 12, color: token.colorTextSecondary }}>{record.email}</div>
                     </div>
                 </Space>
@@ -244,32 +344,33 @@ const UserPage: React.FC = () => {
             dataIndex: 'role',
             key: 'role',
             width: 100,
-            render: role => <Tag color={roleMap[role].color}>{roleMap[role].text}</Tag>,
+            render: (role: User['role']) => <Tag color={roleMap[role].color}>{roleMap[role].text}</Tag>,
         },
         {
             title: '状态',
             dataIndex: 'status',
             key: 'status',
             width: 100,
-            render: status => <Tag color={statusMap[status].color}>{statusMap[status].text}</Tag>,
-        },
-        {
-            title: '余额',
-            dataIndex: 'balance',
-            key: 'balance',
-            width: 100,
-            render: balance => <span>¥{balance.toFixed(2)}</span>,
+            render: (status: User['status']) => <Tag color={statusMap[status].color}>{statusMap[status].text}</Tag>,
         },
         {
             title: '注册时间',
             dataIndex: 'createdAt',
             key: 'createdAt',
             width: 180,
+            render: (createdAt: string) => dayjs(createdAt).format('YYYY-MM-DD HH:mm:ss'),
+        },
+        {
+            title: '最后登录',
+            dataIndex: 'lastLoginAt',
+            key: 'lastLoginAt',
+            width: 180,
+            render: (lastLoginAt?: string) => lastLoginAt ? dayjs(lastLoginAt).format('YYYY-MM-DD HH:mm:ss') : '-',
         },
         {
             title: '操作',
             key: 'action',
-            width: 200,
+            width: 250,
             fixed: 'right',
             render: (_, record) => (
                 <Space size="small">
@@ -308,7 +409,7 @@ const UserPage: React.FC = () => {
                     </PermissionGuard>
                     <PermissionGuard permission={USER_PERMISSIONS.DELETE}>
                         <Popconfirm
-                            title="确定要删除该用户吗？此操作不可恢复。"
+                            title="确定要删除该用户吗?此操作不可恢复。"
                             onConfirm={() => handleDelete(record)}
                         >
                             <Button type="link" size="small" danger icon={<DeleteOutlined />}>
@@ -319,7 +420,7 @@ const UserPage: React.FC = () => {
                 </Space>
             ),
         },
-    ];
+    ], [token, handleViewDetail, handleEdit, handleToggleBan, handleDelete]);
 
     return (
         <PageContainer title="用户管理" subTitle="管理平台所有注册用户">
@@ -341,11 +442,7 @@ const UserPage: React.FC = () => {
                 }}
                 showBatchDelete={true}
                 batchDeletePermission={USER_PERMISSIONS.DELETE}
-                onBatchDelete={async (keys) => {
-                    console.log('批量删除:', keys);
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                    loadData();
-                }}
+                onBatchDelete={handleBatchDelete}
                 pagination={{
                     current,
                     pageSize,
@@ -358,7 +455,7 @@ const UserPage: React.FC = () => {
                         setPageSize(size);
                     },
                 }}
-                scroll={{ x: 1200 }}
+                scroll={{ x: 1400 }}
             />
 
             {/* 编辑弹窗 */}
@@ -368,10 +465,12 @@ const UserPage: React.FC = () => {
                 onOk={handleSaveEdit}
                 onCancel={() => setEditModalVisible(false)}
                 width={600}
+                okText="保存"
+                cancelText="取消"
             >
                 <Form form={form} layout="vertical">
                     <Form.Item
-                        name="username"
+                        name="name"
                         label="用户名"
                         rules={[{ required: true, message: '请输入用户名' }]}
                     >
@@ -390,9 +489,25 @@ const UserPage: React.FC = () => {
                     <Form.Item
                         name="phone"
                         label="手机号"
-                        rules={[{ pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号' }]}
+                        rules={[
+                            { required: true, message: '请输入手机号' },
+                            { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号' },
+                        ]}
                     >
                         <Input placeholder="请输入手机号" />
+                    </Form.Item>
+                    <Form.Item
+                        name="password"
+                        label={currentUser ? '新密码(留空则不修改)' : '密码'}
+                        rules={currentUser ? [] : [
+                            { required: true, message: '请输入密码' },
+                            { min: 6, message: '密码至少6位' },
+                        ]}
+                    >
+                        <Input.Password placeholder={currentUser ? '留空则不修改密码' : '请输入密码(至少6位)'} />
+                    </Form.Item>
+                    <Form.Item name="avatarUrl" label="头像URL">
+                        <Input placeholder="请输入头像URL(可选)" />
                     </Form.Item>
                     <Form.Item name="role" label="角色" rules={[{ required: true, message: '请选择角色' }]}>
                         <Select
@@ -410,7 +525,7 @@ const UserPage: React.FC = () => {
                             options={[
                                 { label: '正常', value: 'active' },
                                 { label: '已封禁', value: 'banned' },
-                                { label: '待审核', value: 'pending' },
+                                { label: '已停用', value: 'suspended' },
                             ]}
                         />
                     </Form.Item>
@@ -429,15 +544,14 @@ const UserPage: React.FC = () => {
                         <div style={{ textAlign: 'center', marginBottom: 24 }}>
                             <Avatar
                                 size={80}
-                                src={currentUser.avatar}
+                                src={currentUser.avatarUrl}
                                 icon={<UserOutlined />}
                                 style={{ backgroundColor: token.colorPrimary }}
                             />
-                            <h2 style={{ marginTop: 16, marginBottom: 4 }}>{currentUser.username}</h2>
+                            <h2 style={{ marginTop: 16, marginBottom: 4 }}>{currentUser.name}</h2>
                             <Tag color={roleMap[currentUser.role].color}>{roleMap[currentUser.role].text}</Tag>
                             <Tag color={statusMap[currentUser.status].color}>{statusMap[currentUser.status].text}</Tag>
                         </div>
-
 
                         <Divider />
 
@@ -445,9 +559,12 @@ const UserPage: React.FC = () => {
                             <Descriptions.Item label="用户ID">{currentUser.id}</Descriptions.Item>
                             <Descriptions.Item label="邮箱">{currentUser.email}</Descriptions.Item>
                             <Descriptions.Item label="手机号">{currentUser.phone}</Descriptions.Item>
-                            <Descriptions.Item label="余额">¥{currentUser.balance.toFixed(2)}</Descriptions.Item>
-                            <Descriptions.Item label="注册时间">{currentUser.createdAt}</Descriptions.Item>
-                            <Descriptions.Item label="最后登录">{currentUser.lastLoginAt}</Descriptions.Item>
+                            <Descriptions.Item label="注册时间">
+                                {dayjs(currentUser.createdAt).format('YYYY-MM-DD HH:mm:ss')}
+                            </Descriptions.Item>
+                            <Descriptions.Item label="最后登录">
+                                {currentUser.lastLoginAt ? dayjs(currentUser.lastLoginAt).format('YYYY-MM-DD HH:mm:ss') : '从未登录'}
+                            </Descriptions.Item>
                         </Descriptions>
                     </>
                 )}

@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"gamelink/internal/model"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCommissionRuleModel(t *testing.T) {

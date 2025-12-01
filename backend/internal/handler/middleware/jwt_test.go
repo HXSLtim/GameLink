@@ -35,7 +35,7 @@ func TestJWTAuth(t *testing.T) {
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
-		
+
 		var response map[string]interface{}
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		require.NoError(t, err)
@@ -108,7 +108,7 @@ func TestJWTAuth(t *testing.T) {
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
-		
+
 		var response map[string]interface{}
 		err = json.Unmarshal(w.Body.Bytes(), &response)
 		require.NoError(t, err)
@@ -171,7 +171,7 @@ func TestJWTAuth(t *testing.T) {
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		// 验证没有返回新Token(因为时间还很长)
 		newToken := w.Header().Get("X-Refreshed-Token")
 		assert.Empty(t, newToken)
@@ -196,7 +196,7 @@ func TestJWTAuth(t *testing.T) {
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		// 验证是否提示刷新
 		refreshRec := w.Header().Get("X-Token-Refresh-Recommendation")
 		assert.Equal(t, "true", refreshRec)
@@ -340,6 +340,56 @@ func TestOptionalAuth(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
+
+	t.Run("MissingSecretKey_ShouldFail", func(t *testing.T) {
+		os.Unsetenv("JWT_SECRET_KEY")
+		defer os.Setenv("JWT_SECRET_KEY", "test-secret-key-that-is-32-characters-long")
+
+		router := gin.New()
+		router.Use(OptionalAuth())
+		router.GET("/public", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{"message": "should not reach here"})
+		})
+
+		req := httptest.NewRequest(http.MethodGet, "/public", nil)
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		// 验证返回503错误,而不是允许访问
+		assert.Equal(t, http.StatusServiceUnavailable, w.Code)
+
+		var response map[string]interface{}
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		require.NoError(t, err)
+		assert.False(t, response["success"].(bool))
+		assert.Contains(t, response["message"].(string), "认证服务配置错误")
+	})
+
+	t.Run("ShortSecretKey_ShouldFail", func(t *testing.T) {
+		os.Setenv("JWT_SECRET_KEY", "short")
+		defer os.Setenv("JWT_SECRET_KEY", "test-secret-key-that-is-32-characters-long")
+
+		router := gin.New()
+		router.Use(OptionalAuth())
+		router.GET("/public", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{"message": "should not reach here"})
+		})
+
+		req := httptest.NewRequest(http.MethodGet, "/public", nil)
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		// 验证返回503错误,而不是允许访问
+		assert.Equal(t, http.StatusServiceUnavailable, w.Code)
+
+		var response map[string]interface{}
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		require.NoError(t, err)
+		assert.False(t, response["success"].(bool))
+		assert.Contains(t, response["message"].(string), "认证服务配置错误")
+	})
 }
 
 func TestGetUserIDAndRole(t *testing.T) {
@@ -393,5 +443,3 @@ func TestGetUserIDAndRole(t *testing.T) {
 		assert.False(t, IsAuthenticated(c))
 	})
 }
-
-

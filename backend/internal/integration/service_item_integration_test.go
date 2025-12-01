@@ -11,7 +11,7 @@ import (
 	"gamelink/internal/model"
 	"gamelink/internal/repository/game"
 	"gamelink/internal/repository/player"
-	serviceitemrepo "gamelink/internal/repository/serviceitem"
+	"gamelink/internal/repository/serviceitem"
 	"gamelink/internal/service/item"
 	"gamelink/internal/testutil"
 )
@@ -25,7 +25,7 @@ func TestAdminServiceItemCRUDAndBatch(t *testing.T) {
 
 	gameRepo := game.NewGameRepository(db)
 	playerRepo := player.NewPlayerRepository(db)
-	itemRepo := serviceitemrepo.NewServiceItemRepository(db)
+	itemRepo := serviceitem.NewServiceItemRepository(db)
 	svc := item.NewServiceItemService(itemRepo, gameRepo, playerRepo)
 
 	// seed game
@@ -146,7 +146,7 @@ func TestServiceItemGiftInvalidServiceHours(t *testing.T) {
 
 	gameRepo := game.NewGameRepository(db)
 	playerRepo := player.NewPlayerRepository(db)
-	itemRepo := serviceitemrepo.NewServiceItemRepository(db)
+	itemRepo := serviceitem.NewServiceItemRepository(db)
 	svc := item.NewServiceItemService(itemRepo, gameRepo, playerRepo)
 
 	router := gin.New()

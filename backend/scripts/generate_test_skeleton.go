@@ -39,8 +39,8 @@ func main() {
 	for _, file := range files {
 		// 跳过测试文件和生成的文件
 		if strings.HasSuffix(file, "_test.go") ||
-		   strings.HasSuffix(file, "_gen.go") ||
-		   strings.Contains(file, "doc.go") {
+			strings.HasSuffix(file, "_gen.go") ||
+			strings.Contains(file, "doc.go") {
 			continue
 		}
 

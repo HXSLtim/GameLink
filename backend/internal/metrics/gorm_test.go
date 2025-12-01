@@ -109,4 +109,3 @@ func Test_InstrumentGorm_CallbackLogic(t *testing.T) {
 		})
 	})
 }
-

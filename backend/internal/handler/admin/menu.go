@@ -32,16 +32,62 @@ func RegisterMenuRoutes(router gin.IRouter, svc *menusvc.Service) {
 // List 菜单列表（可选 parentId）
 func (h *MenuHandler) List(c *gin.Context) {
 	parentID, _ := queryUint64Ptr(c, "parentId")
-	menus, err := h.svc.List(c.Request.Context(), parentID)
+
+	// Check if pagination is requested
+	pageStr := c.Query("page")
+	pageSizeStr := c.Query("pageSize")
+	if pageSizeStr == "" {
+		pageSizeStr = c.Query("page_size")
+	}
+
+	if pageStr == "" && pageSizeStr == "" {
+		// No pagination params, return all (backward compatibility)
+		menus, err := h.svc.List(c.Request.Context(), parentID)
+		if err != nil {
+			writeJSONError(c, http.StatusInternalServerError, err.Error())
+			return
+		}
+		writeJSON(c, http.StatusOK, model.APIResponse[[]model.Menu]{
+			Success: true,
+			Code:    http.StatusOK,
+			Message: "OK",
+			Data:    ensureSlice(menus),
+		})
+		return
+	}
+
+	// Pagination requested
+	page, pageSize, ok := parsePagination(c)
+	if !ok {
+		return
+	}
+
+	menus, total, err := h.svc.ListPaged(c.Request.Context(), page, pageSize, parentID)
 	if err != nil {
 		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
+
+	totalPages := 0
+	if pageSize > 0 {
+		totalPages = int((total + int64(pageSize) - 1) / int64(pageSize))
+	}
+
+	pagination := &model.Pagination{
+		Page:       page,
+		PageSize:   pageSize,
+		Total:      int(total),
+		TotalPages: totalPages,
+		HasNext:    page < totalPages,
+		HasPrev:    page > 1,
+	}
+
 	writeJSON(c, http.StatusOK, model.APIResponse[[]model.Menu]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    ensureSlice(menus),
+		Success:    true,
+		Code:       http.StatusOK,
+		Message:    "OK",
+		Data:       ensureSlice(menus),
+		Pagination: pagination,
 	})
 }
 

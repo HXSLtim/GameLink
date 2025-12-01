@@ -204,7 +204,7 @@ type CompleteOrderRequest struct {
 func (s *OrderService) CreateOrder(ctx context.Context, userID uint64, req CreateOrderRequest) (*CreateOrderResponse, error) {
 	// 使用分布式锁防止并发问题
 	lockKey := fmt.Sprintf("order:create:user:%d:player:%d", userID, req.PlayerID)
-	
+
 	// 如果分布式锁可用，使用它
 	if s.distributedLock != nil {
 		locked, err := s.distributedLock.TryLock(ctx, lockKey, time.Second*5, 3, time.Millisecond*100)
@@ -759,64 +759,46 @@ func (s *OrderService) GetAvailableOrders(ctx context.Context, req AvailableOrde
 }
 
 // AcceptOrder 接单（陪玩师端）
+// 使用原子性更新避免并发竞态条件,确保一个订单只能被一个陪玩师接单
 func (s *OrderService) AcceptOrder(ctx context.Context, playerUserID uint64, orderID uint64) error {
-	// 查找陪玩师
-	players, _, err := s.players.ListPaged(ctx, 1, 100)
+	// 直接根据UserID查找陪玩师 (性能优化: 避免全表扫描)
+	player, err := s.players.GetByUserID(ctx, playerUserID)
 	if err != nil {
-		return err
-	}
-
-	var playerID uint64
-	for _, p := range players {
-		if p.UserID == playerUserID {
-			playerID = p.ID
-			break
-		}
-	}
-
-	if playerID == 0 {
 		return errors.New("player not found")
 	}
 
-	// 获取订单
-	order, err := s.orders.Get(ctx, orderID)
+	playerID := player.ID
+
+	// 使用原子性更新: 仅当订单状态为confirmed时才更新
+	// 这样可以避免多个陪玩师同时接单的竞态条件
+	now := time.Now()
+	updated, err := s.orders.UpdateWithCondition(ctx, orderID, model.OrderStatusConfirmed, map[string]any{
+		"player_id":  playerID,
+		"status":     model.OrderStatusInProgress,
+		"started_at": &now,
+	})
+
 	if err != nil {
 		return err
 	}
 
-	// 状态检查：只有 confirmed 状态可以接单
-	if order.Status != model.OrderStatusConfirmed {
+	// 如果未更新成功,说明订单状态已变更(可能已被其他陪玩师接单)
+	if !updated {
 		return ErrInvalidTransition
 	}
 
-	// 接单
-	order.SetPlayerID(playerID)
-	order.Status = model.OrderStatusInProgress
-	now := time.Now()
-	order.StartedAt = &now
-
-	return s.orders.Update(ctx, order)
+	return nil
 }
 
 // CompleteOrderByPlayer 完成订单（陪玩师端）
 func (s *OrderService) CompleteOrderByPlayer(ctx context.Context, playerUserID uint64, orderID uint64) error {
-	// 查找陪玩师
-	players, _, err := s.players.ListPaged(ctx, 1, 100)
+	// 直接根据UserID查找陪玩师 (性能优化: 避免全表扫描)
+	player, err := s.players.GetByUserID(ctx, playerUserID)
 	if err != nil {
-		return err
-	}
-
-	var playerID uint64
-	for _, p := range players {
-		if p.UserID == playerUserID {
-			playerID = p.ID
-			break
-		}
-	}
-
-	if playerID == 0 {
 		return errors.New("player not found")
 	}
+
+	playerID := player.ID
 
 	// 获取订单
 	order, err := s.orders.Get(ctx, orderID)

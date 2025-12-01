@@ -166,6 +166,8 @@ func getEarningsTrendHandler(c *gin.Context, svc *earnings.EarningsService) {
 // @Failure      422      {object}  apierr.APIError
 // @Failure      500      {object}  apierr.APIError
 // @Router       /player/earnings/withdraw [post]
+//
+// ✅ 资金安全修复: 增强错误处理,支持新的验证错误类型
 func requestWithdrawHandler(c *gin.Context, svc *earnings.EarningsService) {
 	userID := getUserIDFromContext(c)
 
@@ -177,14 +179,32 @@ func requestWithdrawHandler(c *gin.Context, svc *earnings.EarningsService) {
 
 	resp, err := svc.RequestWithdraw(c.Request.Context(), userID, req)
 	if err != nil {
-		if err == earnings.ErrInsufficientBalance {
+		// ✅ 处理各种验证错误
+		switch err {
+		case earnings.ErrInsufficientBalance:
 			respondAPIError(c, apierr.BadRequest("余额不足"))
 			return
-		}
-		if err == earnings.ErrValidation {
+		case earnings.ErrDailyLimitExceeded:
+			respondAPIError(c, apierr.BadRequest("超过每日提现限额"))
+			return
+		case earnings.ErrMonthlyLimitExceeded:
+			respondAPIError(c, apierr.BadRequest("超过每月提现限额"))
+			return
+		case earnings.ErrPendingWithdrawExists:
+			respondAPIError(c, apierr.BadRequest("存在待处理的提现申请,请等待处理完成后再试"))
+			return
+		case earnings.ErrValidation:
 			respondAPIError(c, apierr.BadRequest(err.Error()))
 			return
 		}
+
+		// 处理其他包含详细信息的错误
+		errMsg := err.Error()
+		if len(errMsg) > 0 && (err != earnings.ErrNotFound && err != earnings.ErrUnauthorized) {
+			respondAPIError(c, apierr.BadRequest(errMsg))
+			return
+		}
+
 		respondAPIError(c, apierr.InternalError("申请提现失败").WithDetails(err.Error()))
 		return
 	}

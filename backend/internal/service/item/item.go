@@ -8,7 +8,6 @@ import (
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
-	serviceitemrepo "gamelink/internal/repository/serviceitem"
 )
 
 var (
@@ -18,16 +17,16 @@ var (
 	ErrValidation = errors.New("validation failed")
 )
 
-// ServiceItemService 服务项目服务（统一管理护航服务和礼物）
+// ServiceItemService 服务项目服务(统一管理护航服务和礼物)
 type ServiceItemService struct {
-	items   serviceitemrepo.ServiceItemRepository
+	items   repository.ServiceItemRepository
 	games   repository.GameRepository
 	players repository.PlayerRepository
 }
 
 // NewServiceItemService 创建服务项目服务
 func NewServiceItemService(
-	items serviceitemrepo.ServiceItemRepository,
+	items repository.ServiceItemRepository,
 	games repository.GameRepository,
 	players repository.PlayerRepository,
 ) *ServiceItemService {
@@ -221,7 +220,7 @@ func (s *ServiceItemService) GetServiceItem(ctx context.Context, id uint64) (*Se
 
 // ListServiceItems 获取服务项目列表
 func (s *ServiceItemService) ListServiceItems(ctx context.Context, req ListServiceItemsRequest) (*ServiceItemListResponse, error) {
-	items, total, err := s.items.List(ctx, serviceitemrepo.ServiceItemListOptions{
+	items, total, err := s.items.List(ctx, repository.ServiceItemListOptions{
 		Category:    req.Category,
 		SubCategory: req.SubCategory,
 		GameID:      req.GameID,

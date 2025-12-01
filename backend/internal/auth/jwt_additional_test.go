@@ -103,21 +103,21 @@ func (s *JWTManagerAdditionalTestSuite) TestRefreshToken_BeyondRefreshWindow() {
 	// 此时Token已过期，验证会失败
 	_, err = originalManager.VerifyToken(token)
 	assert.Error(s.T(), err) // 先验证Token已过期
-	
+
 	// 为了测试超过刷新窗口，我们需要先生成一个有效的claims
 	// 重新生成一个token
 	newToken, err := originalManager.GenerateToken(1, "user")
 	assert.NoError(s.T(), err)
-	
+
 	// 修改manager的maxRefresh为更小的值，模拟超过刷新窗口
 	originalManager.maxRefresh = 500 * time.Millisecond // 0.5秒刷新窗口
-	
+
 	// 等待超过刷新窗口但Token还未过期
 	time.Sleep(600 * time.Millisecond)
-	
+
 	claims, err := originalManager.VerifyToken(newToken)
 	assert.NoError(s.T(), err)
-	
+
 	// 尝试刷新（应该失败，因为已超过刷新窗口）
 	_, err = originalManager.RefreshToken(claims)
 	assert.Error(s.T(), err)
@@ -216,7 +216,7 @@ func (s *JWTManagerAdditionalTestSuite) TestExtractTokenFromHeader_EdgeCases() {
 		{
 			name:        "case sensitive bearer",
 			authHeader:  "bearer lowercase-token", // 小写的bearer
-			expectError: true,                   // 应该失败，因为要求是"Bearer"
+			expectError: true,                     // 应该失败，因为要求是"Bearer"
 		},
 		{
 			name:        "only bearer prefix",
@@ -267,7 +267,7 @@ func (s *JWTManagerAdditionalTestSuite) TestRefreshTokenWithNilClaims() {
 			s.T().Log("Expected panic with nil claims:", r)
 		}
 	}()
-	
+
 	_, err := s.manager.RefreshToken(nil)
 	if err != nil {
 		assert.Error(s.T(), err)

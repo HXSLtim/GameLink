@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"gamelink/internal/model"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRatingValid(t *testing.T) {
@@ -102,7 +102,7 @@ func TestRatingMaxValue(t *testing.T) {
 func TestRatingInStructs(t *testing.T) {
 	// 测试在结构体中的使用
 	type TestStruct struct {
-		ID     uint64      `json:"id"`
+		ID     uint64       `json:"id"`
 		Rating model.Rating `json:"rating"`
 	}
 

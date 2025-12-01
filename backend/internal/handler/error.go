@@ -47,18 +47,18 @@ func MapServiceErrorWithPath(err error, path string) (int, *model.APIResponse[an
 				meta[k] = v
 			}
 		}
-		
+
 		resp := &model.APIResponse[any]{
 			Success: false,
 			Code:    apiErr.Code,
 			Message: apiErr.Message,
 		}
-		
+
 		// 如果有meta数据，添加到响应中
 		if len(meta) > 0 {
 			resp.Meta = meta
 		}
-		
+
 		return apiErr.Code, resp
 	}
 
@@ -142,12 +142,12 @@ func RespondWithServiceError(c *gin.Context, err error) {
 // RespondWithServiceErrorAndPath 使用标准格式响应服务层错误，支持基于路径的特定消息
 func RespondWithServiceErrorAndPath(c *gin.Context, err error, path string) {
 	statusCode, response := MapServiceErrorWithPath(err, path)
-	
+
 	// 添加请求ID到响应中
 	if requestID := GetRequestID(c); requestID != "" {
 		response.TraceID = requestID
 	}
-	
+
 	c.JSON(statusCode, response)
 }
 

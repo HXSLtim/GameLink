@@ -138,6 +138,16 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, pm *mw.P
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/users/with-player [post]
 		group.POST("/users/with-player", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/users/with-player"), userHandler.CreateUserWithPlayer)
+		// @Summary      批量删除用户
+		// @Tags         Admin/Users
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  map[string][]int  true  "{ids: [1,2,3]}"
+		// @Success      200  {object}  model.SuccessResponse
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Router       /admin/users/batch-delete [post]
+		group.POST("/users/batch-delete", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/users/batch-delete"), userHandler.BatchDeleteUsers)
 		// @Summary      获取用户
 		// @Tags         Admin/Users
 		// @Security     BearerAuth

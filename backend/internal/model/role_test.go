@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"gamelink/internal/model"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRoleModel(t *testing.T) {
@@ -277,7 +277,7 @@ func TestRoleEmptyRelations(t *testing.T) {
 
 	assert.Contains(t, result, "permissions")
 	assert.Contains(t, result, "users")
-	
+
 	permissions := result["permissions"].([]interface{})
 	users := result["users"].([]interface{})
 	assert.Len(t, permissions, 0)

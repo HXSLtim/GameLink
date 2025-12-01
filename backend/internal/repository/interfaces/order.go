@@ -17,6 +17,9 @@ type OrderWriter interface {
 	Create(ctx context.Context, order *model.Order) error
 	Update(ctx context.Context, order *model.Order) error
 	Delete(ctx context.Context, id uint64) error
+	// UpdateWithCondition 原子性更新订单,仅当满足条件时才更新
+	// 返回是否成功更新(如果条件不满足则返回false,nil)
+	UpdateWithCondition(ctx context.Context, orderID uint64, expectedStatus model.OrderStatus, updates map[string]any) (bool, error)
 }
 
 // OrderQuery 只负责按条件查询订单列表

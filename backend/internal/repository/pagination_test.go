@@ -3,8 +3,8 @@ package repository_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"gamelink/internal/repository"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNormalizePage(t *testing.T) {
@@ -93,7 +93,7 @@ func TestPaginationConstants(t *testing.T) {
 	// Test that constants have expected values
 	assert.Equal(t, 1, repository.NormalizePage(1))
 	assert.Equal(t, 20, repository.NormalizePageSize(20))
-	
+
 	// Test edge cases around max page size
 	assert.Equal(t, 100, repository.NormalizePageSize(100))
 	assert.Equal(t, 100, repository.NormalizePageSize(101))

@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"gamelink/internal/model"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestChatReportModel(t *testing.T) {
@@ -112,9 +112,9 @@ func TestChatReportEdgeCases(t *testing.T) {
 	longNotes := "这是一个非常长的处理备注，审核人员会在这里记录他们的审核过程、分析结果、处理依据、最终决定等等详细信息。"
 
 	chatReport1 := &model.ChatReport{
-		Reason:     longReason,
-		Evidence:   longEvidence,
-		Notes:      longNotes,
+		Reason:   longReason,
+		Evidence: longEvidence,
+		Notes:    longNotes,
 	}
 	assert.Equal(t, longReason, chatReport1.Reason)
 	assert.Equal(t, longEvidence, chatReport1.Evidence)
@@ -122,9 +122,9 @@ func TestChatReportEdgeCases(t *testing.T) {
 
 	// 测试特殊字符
 	chatReport2 := &model.ChatReport{
-		Reason:     "举报@#$%^&*()_+-=[]{}|\\",
-		Evidence:   "证据包含特殊字符：<>{}[]|\\\"quotes\" and 'apostrophes' and @#$%^&*()_+-=[]{}|;':\",./<>?",
-		Notes:      "备注：\"引号\"和'单引号'和@#$%^&*()",
+		Reason:   "举报@#$%^&*()_+-=[]{}|\\",
+		Evidence: "证据包含特殊字符：<>{}[]|\\\"quotes\" and 'apostrophes' and @#$%^&*()_+-=[]{}|;':\",./<>?",
+		Notes:    "备注：\"引号\"和'单引号'和@#$%^&*()",
 	}
 	assert.Equal(t, "举报@#$%^&*()_+-=[]{}|\\", chatReport2.Reason)
 	assert.Contains(t, chatReport2.Evidence, "特殊字符")
@@ -271,9 +271,9 @@ func TestChatReportMultilingualContent(t *testing.T) {
 func TestChatReportSpecialCharacters(t *testing.T) {
 	// 测试包含特殊字符的内容
 	chatReport := &model.ChatReport{
-		Reason:     "举报@#$%^&*()_+-=[]{}|\\",
-		Evidence:   "证据包含特殊字符：<>{}[]|\\\"quotes\" and 'apostrophes' and @#$%^&*()_+-=[]{}|;':\",./<>?",
-		Notes:      "备注：\"引号\"和'单引号'和@#$%^&*()😊🚀",
+		Reason:   "举报@#$%^&*()_+-=[]{}|\\",
+		Evidence: "证据包含特殊字符：<>{}[]|\\\"quotes\" and 'apostrophes' and @#$%^&*()_+-=[]{}|;':\",./<>?",
+		Notes:    "备注：\"引号\"和'单引号'和@#$%^&*()😊🚀",
 	}
 
 	assert.Equal(t, "举报@#$%^&*()_+-=[]{}|\\", chatReport.Reason)

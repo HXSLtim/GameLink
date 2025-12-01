@@ -23,6 +23,7 @@ import (
 	"gamelink/internal/repository/payment"
 	"gamelink/internal/repository/player"
 	"gamelink/internal/repository/role"
+	"gamelink/internal/repository/serviceitem"
 	"gamelink/internal/repository/user"
 	adminservice "gamelink/internal/service/admin"
 	authservice "gamelink/internal/service/auth"
@@ -52,7 +53,8 @@ func TestUserBanAfterAdminUpdate(t *testing.T) {
 
 	jwtMgr := auth.NewJWTManager("secret", time.Hour)
 	authSvc := authservice.NewAuthService(userRepo, jwtMgr)
-	adminSvc := adminservice.NewAdminService(gameRepo, userRepo, playerRepo, orderRepo, paymentRepo, roleRepo, cache.NewMemory())
+	serviceItemRepo := serviceitem.NewServiceItemRepository(db)
+	adminSvc := adminservice.NewAdminService(gameRepo, userRepo, playerRepo, orderRepo, paymentRepo, roleRepo, serviceItemRepo, cache.NewMemory())
 
 	authRouter := gin.New()
 	api := authRouter.Group("/api/v1")

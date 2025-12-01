@@ -1,18 +1,63 @@
 import apiClient from './client';
 
+export interface Pagination {
+    page: number;
+    page_size: number;
+    total: number;
+    total_pages: number;
+    has_next: boolean;
+    has_prev: boolean;
+}
+
 export interface ApiResponse<T> {
+    success: boolean;
     code: number;
     message: string;
     data: T;
+    pagination?: Pagination;
 }
 
 export interface User {
-    id: string;
-    username: string;
+    id: number;
+    name: string;
     email: string;
-    role: string;
-    status: 'active' | 'banned' | 'pending';
+    phone: string;
+    avatarUrl?: string;
+    role: 'user' | 'player' | 'admin';
+    status: 'active' | 'banned' | 'suspended';
+    lastLoginAt?: string;
     createdAt: string;
+    updatedAt?: string;
+}
+
+export interface CreateUserDto {
+    name: string;
+    email: string;
+    phone: string;
+    password: string;
+    avatarUrl?: string;
+    role: 'user' | 'player' | 'admin';
+    status: 'active' | 'banned' | 'suspended';
+}
+
+export interface UpdateUserDto {
+    name: string;
+    email: string;
+    phone: string;
+    avatarUrl?: string;
+    role: 'user' | 'player' | 'admin';
+    status: 'active' | 'banned' | 'suspended';
+    password?: string;
+}
+
+export interface UserQueryParams {
+    page?: number;
+    page_size?: number;
+    keyword?: string;
+    role?: string[];
+    status?: string[];
+    date_from?: string;
+    date_to?: string;
 }
 
 export interface Game {
@@ -116,9 +161,16 @@ export interface Permission {
 
 export const adminApi = {
     // User Management
-    getUsers: () => apiClient.get('/admin/users'),
-    getUser: (id: string) => apiClient.get(`/admin/users/${id}`),
-    updateUserStatus: (id: string, status: string) => apiClient.patch(`/admin/users/${id}/status`, { status }),
+    getUsers: (params?: UserQueryParams) => apiClient.get<ApiResponse<User[]>>('/admin/users', { params }),
+    getUser: (id: number) => apiClient.get<ApiResponse<User>>(`/admin/users/${id}`),
+    createUser: (data: CreateUserDto) => apiClient.post<ApiResponse<User>>('/admin/users', data),
+    updateUser: (id: number, data: UpdateUserDto) => apiClient.put<ApiResponse<User>>(`/admin/users/${id}`, data),
+    deleteUser: (id: number) => apiClient.delete<ApiResponse<void>>(`/admin/users/${id}`),
+    batchDeleteUsers: (ids: number[]) => apiClient.post<ApiResponse<void>>('/admin/users/batch-delete', { ids }),
+    updateUserStatus: (id: number, status: string) => apiClient.put<ApiResponse<User>>(`/admin/users/${id}/status`, { status }),
+    updateUserRole: (id: number, role: string) => apiClient.put<ApiResponse<User>>(`/admin/users/${id}/role`, { role }),
+    getUserOrders: (id: number, params?: any) => apiClient.get<ApiResponse<any[]>>(`/admin/users/${id}/orders`, { params }),
+    getUserLogs: (id: number, params?: any) => apiClient.get<ApiResponse<any[]>>(`/admin/users/${id}/logs`, { params }),
 
     // Game Management
     getGames: (params?: { status?: string; page_size?: number }) => apiClient.get('/admin/games', { params }),
@@ -135,7 +187,7 @@ export const adminApi = {
     batchUpdateServiceItemStatus: (ids: number[], status: 'active' | 'inactive') => apiClient.put<ApiResponse<void>>('/admin/service-items/batch-status', { ids, status }),
 
     // Menu Management
-    getMenus: (params?: { parentId?: number }) => apiClient.get<ApiResponse<Menu[]>>('/admin/menus', { params }),
+    getMenus: (params?: { parentId?: number; page?: number; page_size?: number }) => apiClient.get<ApiResponse<Menu[]>>('/admin/menus', { params }),
     getMenu: (id: number) => apiClient.get<ApiResponse<Menu>>(`/admin/menus/${id}`),
     createMenu: (data: CreateMenuDto) => apiClient.post<ApiResponse<Menu>>('/admin/menus', data),
     updateMenu: (id: number, data: UpdateMenuDto) => apiClient.put<ApiResponse<Menu>>(`/admin/menus/${id}`, data),

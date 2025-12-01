@@ -20,6 +20,6 @@ export const authApi = {
     login: (data: LoginDto) => apiClient.post<ApiResponse<LoginResponse>>('/auth/login', data),
     register: (data: any) => apiClient.post('/auth/register', data),
     logout: () => apiClient.post('/auth/logout'),
-    getMe: () => apiClient.get('/auth/me'),
+    getMe: () => apiClient.get<ApiResponse<LoginResponse>>('/auth/me'),
     refresh: () => apiClient.post('/auth/refresh'),
 };

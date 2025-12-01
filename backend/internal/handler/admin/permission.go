@@ -6,10 +6,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"gamelink/internal/handler/middleware"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	permissionservice "gamelink/internal/service/permission"
-	"gamelink/internal/handler/middleware"
 )
 
 // Permission 权限模型（类型别名）

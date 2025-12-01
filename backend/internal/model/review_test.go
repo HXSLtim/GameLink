@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"gamelink/internal/model"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestReviewModel(t *testing.T) {
@@ -100,7 +100,7 @@ func TestReviewEmptyContent(t *testing.T) {
 
 func TestReviewLongContent(t *testing.T) {
 	longContent := "这是一段非常长的评价内容，可以包含很多详细信息。用户可能会在这里写下他们对服务的完整体验，包括优点、缺点、建议等等。这种长内容测试可以确保我们的模型能够处理各种长度的文本输入。"
-	
+
 	review := &model.Review{
 		OrderID:  100,
 		UserID:   200,

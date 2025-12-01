@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"gamelink/internal/model"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestServiceItemModel(t *testing.T) {
@@ -253,7 +253,7 @@ func TestServiceItemEdgeCases(t *testing.T) {
 
 	// 测试大数值
 	serviceItem3 := &model.ServiceItem{
-		BasePriceCents: ^int64(0), // 最大int64值
+		BasePriceCents: ^int64(0),    // 最大int64值
 		ServiceHours:   ^int(0) >> 1, // 最大int值
 		MinUsers:       ^int(0) >> 1,
 		MaxPlayers:     ^int(0) >> 1,

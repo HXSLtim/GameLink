@@ -409,9 +409,9 @@ func (s *UserRepositoryTestSuite) TestListWithFilters() {
 
 	// 按多个角色过滤
 	opts = repository.UserListOptions{
-		Page:  1,
+		Page:     1,
 		PageSize: 10,
-		Roles: []model.Role{model.RoleUser, model.RolePlayer},
+		Roles:    []model.Role{model.RoleUser, model.RolePlayer},
 	}
 	filtered, total, err = s.repo.ListWithFilters(s.ctx, opts)
 	s.NoError(err)

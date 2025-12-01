@@ -181,15 +181,26 @@ func OptionalAuth() gin.HandlerFunc {
 	// 从环境变量获取JWT密钥
 	secretKey := os.Getenv("JWT_SECRET_KEY")
 	if secretKey == "" {
-		logging.Error("JWT_SECRET_KEY not configured")
-		// 未配置时允许匿名访问
-		return func(c *gin.Context) { c.Next() }
+		logging.Error("JWT_SECRET_KEY not configured - authentication service unavailable")
+		return func(c *gin.Context) {
+			c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{
+				"success": false,
+				"code":    http.StatusServiceUnavailable,
+				"message": "认证服务配置错误，请联系管理员",
+			})
+		}
 	}
 
 	// 验证密钥长度
 	if len(secretKey) < 32 {
-		logging.Error("JWT_SECRET_KEY too short")
-		return func(c *gin.Context) { c.Next() }
+		logging.Error("JWT_SECRET_KEY too short, must be at least 32 characters")
+		return func(c *gin.Context) {
+			c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{
+				"success": false,
+				"code":    http.StatusServiceUnavailable,
+				"message": "认证服务配置错误，请联系管理员",
+			})
+		}
 	}
 
 	tokenDuration := 24 * time.Hour

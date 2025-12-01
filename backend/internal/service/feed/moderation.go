@@ -3,7 +3,7 @@ package feed
 import (
 	"context"
 
-	"gamelink/internal/pkg/safety"
+	"gamelink/pkg/safety"
 )
 
 // ModerationDecision enumerates automatic moderation outcomes.

@@ -542,10 +542,10 @@ func Test_Forbidden_SendsForbiddenWithResource(t *testing.T) {
  */
 func Test_FieldErrors_DifferentScenarios(t *testing.T) {
 	tests := []struct {
-		name          string
-		fn            func(*gin.Context, string)
-		field         string
-		expectedMsg   string
+		name        string
+		fn          func(*gin.Context, string)
+		field       string
+		expectedMsg string
 	}{
 		{"Required", RequiredFieldError, "username", "This field is required"},
 		{"Invalid", InvalidFieldError, "email", "This field is invalid"},

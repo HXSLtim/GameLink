@@ -114,9 +114,9 @@ func TooManyRequests(message string) *APIError {
 // ValidationError represents a validation error
 type ValidationError struct {
 	APIError
-	Field   string `json:"field"`
-	Value   string `json:"value,omitempty"`
-	Tag     string `json:"tag,omitempty"`
+	Field string `json:"field"`
+	Value string `json:"value,omitempty"`
+	Tag   string `json:"tag,omitempty"`
 }
 
 // NewValidationError creates a new validation error

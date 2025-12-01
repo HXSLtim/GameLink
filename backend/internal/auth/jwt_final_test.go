@@ -14,13 +14,13 @@ import (
 // TestGenerateToken_100percent 覆盖GenerateToken的所有分支
 func TestGenerateToken_100percent(t *testing.T) {
 	manager := NewJWTManager("test-secret-key-for-100-percent-coverage-testing", 1*time.Hour)
-	
+
 	t.Run("Success path", func(t *testing.T) {
 		token, err := manager.GenerateToken(1, "user")
 		assert.NoError(t, err)
 		assert.NotEmpty(t, token)
 	})
-	
+
 	t.Run("Generate with different user types", func(t *testing.T) {
 		tests := []struct {
 			name   string
@@ -33,13 +33,13 @@ func TestGenerateToken_100percent(t *testing.T) {
 			{"Zero ID user", 0, "guest"},
 			{"Large ID user", 999999999, "user"},
 		}
-		
+
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				token, err := manager.GenerateToken(tt.userID, tt.role)
 				assert.NoError(t, err)
 				assert.NotEmpty(t, token)
-				
+
 				// Verify the claims
 				claims, err := manager.VerifyToken(token)
 				assert.NoError(t, err)
@@ -53,30 +53,30 @@ func TestGenerateToken_100percent(t *testing.T) {
 // TestVerifyToken_100percent 覆盖VerifyToken的所有分支
 func TestVerifyToken_100percent(t *testing.T) {
 	manager := NewJWTManager("test-secret-for-verify-token-coverage", 1*time.Hour)
-	
+
 	t.Run("Valid token verification", func(t *testing.T) {
 		token, err := manager.GenerateToken(1, "user")
 		require.NoError(t, err)
-		
+
 		claims, err := manager.VerifyToken(token)
 		assert.NoError(t, err)
 		assert.NotNil(t, claims)
 		assert.Equal(t, uint64(1), claims.UserID)
 		assert.Equal(t, "user", claims.Role)
 	})
-	
+
 	t.Run("Expired token", func(t *testing.T) {
 		shortManager := NewJWTManager("test-secret", 1*time.Millisecond)
 		token, err := shortManager.GenerateToken(1, "user")
 		require.NoError(t, err)
-		
+
 		time.Sleep(10 * time.Millisecond)
-		
+
 		_, err = shortManager.VerifyToken(token)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "expired")
 	})
-	
+
 	t.Run("Malformed token - invalid format", func(t *testing.T) {
 		tests := []string{
 			"",
@@ -86,13 +86,13 @@ func TestVerifyToken_100percent(t *testing.T) {
 			"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9", // Only header
 			"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0", // No signature
 		}
-		
+
 		for _, invalidToken := range tests {
 			_, err := manager.VerifyToken(invalidToken)
 			assert.Error(t, err, "Should error for invalid token: %s", invalidToken)
 		}
 	})
-	
+
 	t.Run("Wrong signing method", func(t *testing.T) {
 		// We can't easily mock JWKS, but we can test the algorithm check
 		// by creating a token with different method
@@ -100,53 +100,53 @@ func TestVerifyToken_100percent(t *testing.T) {
 			UserID: 1,
 			Role:   "user",
 		})
-		
+
 		tokenString, _ := token.SigningString()
-		
+
 		_, err := manager.VerifyToken(tokenString + ".invalid-signature")
 		assert.Error(t, err)
 	})
-	
+
 	t.Run("Wrong secret key", func(t *testing.T) {
 		token, err := manager.GenerateToken(1, "user")
 		require.NoError(t, err)
-		
+
 		// Try to verify with different manager (different secret)
 		wrongManager := NewJWTManager("different-secret-key", 1*time.Hour)
 		_, err = wrongManager.VerifyToken(token)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "signature is invalid")
 	})
-	
+
 	t.Run("Token with valid structure but invalid signature", func(t *testing.T) {
 		// Create a valid token structure
 		token, err := manager.GenerateToken(1, "user")
 		require.NoError(t, err)
-		
+
 		// Tamper with the signature part
 		parts := strings.Split(token, ".")
 		require.Len(t, parts, 3)
-		
+
 		// Change the last part (signature)
 		parts[2] = "tamperedsignature123"
 		tamperedToken := parts[0] + "." + parts[1] + "." + parts[2]
-		
+
 		_, err = manager.VerifyToken(tamperedToken)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "signature is invalid")
 	})
-	
+
 	t.Run("Token with modified payload", func(t *testing.T) {
 		token, err := manager.GenerateToken(1, "user")
 		require.NoError(t, err)
-		
+
 		// Decode and modify the payload
 		parts := strings.Split(token, ".")
 		require.Len(t, parts, 3)
-		
+
 		// Create token with modified claims but valid signature of original
 		modifiedToken := parts[0] + "." + parts[1] + "." + parts[2] + "modified"
-		
+
 		_, err = manager.VerifyToken(modifiedToken)
 		assert.Error(t, err)
 	})
@@ -218,11 +218,11 @@ func TestExtractTokenFromHeader_Coverage(t *testing.T) {
 			expectError: false,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			token, err := ExtractTokenFromHeader(tt.authHeader)
-			
+
 			if tt.expectError {
 				assert.Error(t, err)
 				if tt.errorMsg != "" {
@@ -242,32 +242,32 @@ func TestReadMaxRefreshWindow_AllBranches(t *testing.T) {
 		duration := readMaxRefreshWindow()
 		assert.Equal(t, 7*24*time.Hour, duration)
 	})
-	
+
 	t.Run("Custom value from env", func(t *testing.T) {
 		// Save original
 		original := os.Getenv("JWT_MAX_REFRESH")
 		defer os.Setenv("JWT_MAX_REFRESH", original)
-		
+
 		os.Setenv("JWT_MAX_REFRESH", "48h")
 		duration := readMaxRefreshWindow()
 		assert.Equal(t, 48*time.Hour, duration)
 	})
-	
+
 	t.Run("Invalid env value falls back to default", func(t *testing.T) {
 		// Save original
 		original := os.Getenv("JWT_MAX_REFRESH")
 		defer os.Setenv("JWT_MAX_REFRESH", original)
-		
+
 		os.Setenv("JWT_MAX_REFRESH", "invalid-duration")
 		duration := readMaxRefreshWindow()
 		assert.Equal(t, 7*24*time.Hour, duration)
 	})
-	
+
 	t.Run("Various valid durations", func(t *testing.T) {
 		// Save original
 		original := os.Getenv("JWT_MAX_REFRESH")
 		defer os.Setenv("JWT_MAX_REFRESH", original)
-		
+
 		tests := []struct {
 			durationStr string
 			expected    time.Duration
@@ -278,7 +278,7 @@ func TestReadMaxRefreshWindow_AllBranches(t *testing.T) {
 			{"168h", 168 * time.Hour},
 			{"30m", 30 * time.Minute},
 		}
-		
+
 		for _, tt := range tests {
 			t.Run(tt.durationStr, func(t *testing.T) {
 				os.Setenv("JWT_MAX_REFRESH", tt.durationStr)
@@ -292,14 +292,14 @@ func TestReadMaxRefreshWindow_AllBranches(t *testing.T) {
 // TestVerifyToken_StructCoverage - make sure all struct fields are used
 func TestVerifyToken_StructCoverage(t *testing.T) {
 	manager := NewJWTManager("test-secret", 1*time.Hour)
-	
+
 	t.Run("All claims fields populated", func(t *testing.T) {
 		token, err := manager.GenerateToken(12345, "admin")
 		require.NoError(t, err)
-		
+
 		claims, err := manager.VerifyToken(token)
 		require.NoError(t, err)
-		
+
 		// Verify all Claims fields are accessible and correct
 		assert.Equal(t, uint64(12345), claims.UserID)
 		assert.Equal(t, "admin", claims.Role)

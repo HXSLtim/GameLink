@@ -44,6 +44,11 @@ func (s *Service) List(ctx context.Context, parentID *uint64) ([]model.Menu, err
 	return s.menus.List(ctx, parentID)
 }
 
+// ListPaged 分页列表
+func (s *Service) ListPaged(ctx context.Context, page, pageSize int, parentID *uint64) ([]model.Menu, int64, error) {
+	return s.menus.ListPaged(ctx, page, pageSize, parentID)
+}
+
 // ListAccessible 根据权限码筛选可见菜单
 func (s *Service) ListAccessible(ctx context.Context, codes []string) ([]model.Menu, error) {
 	if len(codes) == 0 {

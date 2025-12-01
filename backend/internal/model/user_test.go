@@ -50,13 +50,13 @@ func TestUserStatusConstants(t *testing.T) {
 // TestUserCreation 测试创建用户结构体
 func TestUserCreation(t *testing.T) {
 	now := time.Now()
-	
+
 	t.Run("Create minimal user", func(t *testing.T) {
 		user := &User{
-			Phone: "13800138000",
-			Email: "test@example.com",
-			Name:  "Test User",
-			Role:  RoleUser,
+			Phone:  "13800138000",
+			Email:  "test@example.com",
+			Name:   "Test User",
+			Role:   RoleUser,
 			Status: UserStatusActive,
 		}
 
@@ -103,12 +103,12 @@ func TestUserCreation(t *testing.T) {
 
 	t.Run("Create user with different roles", func(t *testing.T) {
 		roles := []Role{RoleUser, RolePlayer, RoleAdmin}
-		
+
 		for _, role := range roles {
 			user := &User{
-				Email: "role@example.com",
-				Name:  "Role Test User",
-				Role:  role,
+				Email:  "role@example.com",
+				Name:   "Role Test User",
+				Role:   role,
 				Status: UserStatusActive,
 			}
 			assert.Equal(t, role, user.Role)
@@ -117,12 +117,12 @@ func TestUserCreation(t *testing.T) {
 
 	t.Run("Create user with different statuses", func(t *testing.T) {
 		statuses := []UserStatus{UserStatusActive, UserStatusSuspended, UserStatusBanned}
-		
+
 		for _, status := range statuses {
 			user := &User{
-				Email: "status@example.com",
-				Name:  "Status Test User",
-				Role:  RoleUser,
+				Email:  "status@example.com",
+				Name:   "Status Test User",
+				Role:   RoleUser,
 				Status: status,
 			}
 			assert.Equal(t, status, user.Status)
@@ -133,7 +133,7 @@ func TestUserCreation(t *testing.T) {
 // TestUserJSONSerialization 测试 JSON 序列化和反序列化
 func TestUserJSONSerialization(t *testing.T) {
 	lastLogin := time.Now()
-	
+
 	t.Run("Marshal full user to JSON", func(t *testing.T) {
 		user := &User{
 			Base: Base{
@@ -162,7 +162,7 @@ func TestUserJSONSerialization(t *testing.T) {
 		assert.Contains(t, jsonStr, "https://cdn.example.com/avatar.png")
 		assert.Contains(t, jsonStr, "player")
 		assert.Contains(t, jsonStr, "active")
-		
+
 		// PasswordHash should not be in JSON (json:"-")
 		assert.NotContains(t, jsonStr, "hashed_secret_67890")
 		assert.NotContains(t, jsonStr, "PasswordHash")
@@ -171,9 +171,9 @@ func TestUserJSONSerialization(t *testing.T) {
 
 	t.Run("Marshal minimal user", func(t *testing.T) {
 		user := &User{
-			Email: "minimal@example.com",
-			Name:  "Minimal User",
-			Role:  RoleUser,
+			Email:  "minimal@example.com",
+			Name:   "Minimal User",
+			Role:   RoleUser,
 			Status: UserStatusSuspended,
 		}
 
@@ -265,7 +265,7 @@ func TestUserFieldAccess(t *testing.T) {
 // TestUserFieldInitialization 测试所有字段的初始化
 func TestUserFieldInitialization(t *testing.T) {
 	now := time.Now()
-	
+
 	t.Run("Initialize with all pointer fields", func(t *testing.T) {
 		user := &User{
 			Base: Base{
@@ -314,8 +314,8 @@ func TestUserRoleValidation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			user := &User{
-				Email: "role@example.com",
-				Role:  tt.role,
+				Email:  "role@example.com",
+				Role:   tt.role,
 				Status: UserStatusActive,
 			}
 			assert.Equal(t, tt.role, user.Role)

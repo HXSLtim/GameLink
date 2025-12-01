@@ -3,6 +3,7 @@ package earnings
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"gamelink/internal/model"
@@ -20,6 +21,19 @@ var (
 	ErrInsufficientBalance = errors.New("insufficient balance")
 	// ErrUnauthorized 无权操作
 	ErrUnauthorized = errors.New("unauthorized")
+	// ErrDailyLimitExceeded 超过每日提现限额
+	ErrDailyLimitExceeded = errors.New("daily withdrawal limit exceeded")
+	// ErrMonthlyLimitExceeded 超过每月提现限额
+	ErrMonthlyLimitExceeded = errors.New("monthly withdrawal limit exceeded")
+	// ErrPendingWithdrawExists 存在待处理的提现申请
+	ErrPendingWithdrawExists = errors.New("pending withdrawal exists")
+)
+
+const (
+	// 提现限额配置
+	maxWithdrawAmountCents  = 1000000000 // 单笔最高1000万元
+	dailyWithdrawLimitCents = 5000000    // 每日限额5万元
+	monthlyWithdrawLimit    = 20000000   // 每月限额20万元
 )
 
 // WithdrawStatus 提现状态
@@ -85,7 +99,7 @@ type EarningsTrendResponse struct {
 
 // WithdrawRequest 提现请求
 type WithdrawRequest struct {
-	AmountCents int64  `json:"amountCents" binding:"required,min=10000"` // 最低100元
+	AmountCents int64  `json:"amountCents" binding:"required,min=10000,max=1000000000"` // 最低100元,最高1000万元
 	Method      string `json:"method" binding:"required,oneof=alipay wechat bank"`
 	AccountInfo string `json:"accountInfo" binding:"required"` // 账号信息
 }
@@ -221,6 +235,13 @@ func (s *EarningsService) GetEarningsTrend(ctx context.Context, userID uint64, d
 }
 
 // RequestWithdraw 申请提现
+//
+// ✅ 资金安全修复: 完善提现金额验证
+//   - 检查单笔金额限制(100元-1000万元)
+//   - 检查每日提现限额(5万元)
+//   - 检查每月提现限额(20万元)
+//   - 检查是否有待处理的提现
+//   - 检查余额是否足够
 func (s *EarningsService) RequestWithdraw(ctx context.Context, userID uint64, req WithdrawRequest) (*WithdrawResponse, error) {
 	// 查找陪玩师
 	player, err := s.findPlayerByUserID(ctx, userID)
@@ -228,7 +249,50 @@ func (s *EarningsService) RequestWithdraw(ctx context.Context, userID uint64, re
 		return nil, err
 	}
 
-	// 获取可提现余额
+	// ✅ 验证1: 单笔金额限制
+	if req.AmountCents < 10000 {
+		return nil, errors.New("提现金额不能少于100元")
+	}
+	if req.AmountCents > maxWithdrawAmountCents {
+		return nil, errors.New("单笔提现金额不能超过1000万元")
+	}
+
+	// ✅ 验证2: 检查是否有待处理的提现
+	hasPending, err := s.hasPendingWithdraw(ctx, player.ID)
+	if err != nil {
+		return nil, err
+	}
+	if hasPending {
+		return nil, ErrPendingWithdrawExists
+	}
+
+	// ✅ 验证3: 检查每日提现限额
+	dailyTotal, err := s.calculateDailyWithdrawTotal(ctx, player.ID)
+	if err != nil {
+		return nil, err
+	}
+	if dailyTotal+req.AmountCents > dailyWithdrawLimitCents {
+		remaining := dailyWithdrawLimitCents - dailyTotal
+		if remaining <= 0 {
+			return nil, ErrDailyLimitExceeded
+		}
+		return nil, errors.New("超过每日提现限额,今日剩余额度: " + formatCents(remaining))
+	}
+
+	// ✅ 验证4: 检查每月提现限额
+	monthlyTotal, err := s.calculateMonthlyWithdrawTotal(ctx, player.ID)
+	if err != nil {
+		return nil, err
+	}
+	if monthlyTotal+req.AmountCents > monthlyWithdrawLimit {
+		remaining := monthlyWithdrawLimit - monthlyTotal
+		if remaining <= 0 {
+			return nil, ErrMonthlyLimitExceeded
+		}
+		return nil, errors.New("超过每月提现限额,本月剩余额度: " + formatCents(remaining))
+	}
+
+	// ✅ 验证5: 获取可提现余额
 	summary, err := s.GetEarningsSummary(ctx, userID)
 	if err != nil {
 		return nil, err
@@ -359,4 +423,91 @@ func (s *EarningsService) findPlayerByUserID(ctx context.Context, userID uint64)
 	}
 
 	return nil, ErrNotFound
+}
+
+// hasPendingWithdraw 检查是否有待处理的提现
+func (s *EarningsService) hasPendingWithdraw(ctx context.Context, playerID uint64) (bool, error) {
+	// 查询待处理状态的提现记录
+	withdraws, _, err := s.withdraws.List(ctx, withdrawrepo.WithdrawListOptions{
+		PlayerID: &playerID,
+		Status:   (*model.WithdrawStatus)(strPtr(string(model.WithdrawStatusPending))),
+		Page:     1,
+		PageSize: 1,
+	})
+	if err != nil {
+		return false, err
+	}
+
+	return len(withdraws) > 0, nil
+}
+
+// calculateDailyWithdrawTotal 计算今日提现总额
+func (s *EarningsService) calculateDailyWithdrawTotal(ctx context.Context, playerID uint64) (int64, error) {
+	// 今日起始时间
+	todayStart := time.Now().Truncate(24 * time.Hour)
+	todayEnd := todayStart.Add(24 * time.Hour)
+
+	// 查询今日所有非拒绝状态的提现记录
+	withdraws, _, err := s.withdraws.List(ctx, withdrawrepo.WithdrawListOptions{
+		PlayerID: &playerID,
+		DateFrom: &todayStart,
+		DateTo:   &todayEnd,
+		Page:     1,
+		PageSize: 1000, // 假设单日提现次数不超过1000次
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	var total int64
+	for _, w := range withdraws {
+		// 排除已拒绝的提现
+		if w.Status != model.WithdrawStatusRejected {
+			total += w.AmountCents
+		}
+	}
+
+	return total, nil
+}
+
+// calculateMonthlyWithdrawTotal 计算本月提现总额
+func (s *EarningsService) calculateMonthlyWithdrawTotal(ctx context.Context, playerID uint64) (int64, error) {
+	// 本月起始时间
+	now := time.Now()
+	monthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+	monthEnd := monthStart.AddDate(0, 1, 0)
+
+	// 查询本月所有非拒绝状态的提现记录
+	withdraws, _, err := s.withdraws.List(ctx, withdrawrepo.WithdrawListOptions{
+		PlayerID: &playerID,
+		DateFrom: &monthStart,
+		DateTo:   &monthEnd,
+		Page:     1,
+		PageSize: 10000, // 假设单月提现次数不超过10000次
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	var total int64
+	for _, w := range withdraws {
+		// 排除已拒绝的提现
+		if w.Status != model.WithdrawStatusRejected {
+			total += w.AmountCents
+		}
+	}
+
+	return total, nil
+}
+
+// formatCents 格式化分为元
+func formatCents(cents int64) string {
+	yuan := float64(cents) / 100.0
+	// 使用Sprintf格式化为字符串
+	return fmt.Sprintf("%.2f元", yuan)
+}
+
+// strPtr 字符串指针辅助函数
+func strPtr(s string) *string {
+	return &s
 }

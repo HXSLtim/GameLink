@@ -17,6 +17,7 @@ import (
 	"gamelink/internal/repository/payment"
 	"gamelink/internal/repository/player"
 	"gamelink/internal/repository/role"
+	"gamelink/internal/repository/serviceitem"
 	"gamelink/internal/repository/user"
 	adminservice "gamelink/internal/service/admin"
 	"gamelink/internal/testutil"
@@ -39,8 +40,9 @@ func TestAdminPaymentRefund(t *testing.T) {
 	paymentRepo := payment.NewPaymentRepository(db)
 	roleRepo := role.NewRoleRepository(db)
 	memCache := cache.NewMemory()
+	serviceItemRepo := serviceitem.NewServiceItemRepository(db)
 
-	adminSvc := adminservice.NewAdminService(gameRepo, userRepo, playerRepo, orderRepo, paymentRepo, roleRepo, memCache)
+	adminSvc := adminservice.NewAdminService(gameRepo, userRepo, playerRepo, orderRepo, paymentRepo, roleRepo, serviceItemRepo, memCache)
 	paymentHandler := adminhandler.NewPaymentHandler(adminSvc)
 
 	router := gin.New()

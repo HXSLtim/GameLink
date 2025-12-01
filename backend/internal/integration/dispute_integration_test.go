@@ -24,6 +24,7 @@ import (
 	"gamelink/internal/repository/payment"
 	"gamelink/internal/repository/player"
 	"gamelink/internal/repository/role"
+	"gamelink/internal/repository/serviceitem"
 	"gamelink/internal/repository/user"
 	adminservice "gamelink/internal/service/admin"
 	"gamelink/internal/service/assignment"
@@ -52,7 +53,8 @@ func TestDisputeFlow(t *testing.T) {
 	memCache := cache.NewMemory()
 
 	assignSvc := assignment.NewAssignmentService(disputeRepo, orderRepo, userRepo, opLogRepo, notificationRepo, paymentRepo)
-	_ = adminservice.NewAdminService(gameRepo, userRepo, playerRepo, orderRepo, paymentRepo, roleRepo, memCache) // retain parity with admin handler deps
+	serviceItemRepo := serviceitem.NewServiceItemRepository(db)
+	_ = adminservice.NewAdminService(gameRepo, userRepo, playerRepo, orderRepo, paymentRepo, roleRepo, serviceItemRepo, memCache) // retain parity with admin handler deps
 	adminDisputeHandler := adminhandler.NewDisputeHandler(assignSvc)
 	userDisputeHandler := userhandler.NewDisputeHandler(assignSvc)
 

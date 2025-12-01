@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"gamelink/internal/model"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestChatGroupModel(t *testing.T) {
@@ -167,7 +167,7 @@ func TestChatGroupEdgeCases(t *testing.T) {
 
 	// 测试大数值
 	chatGroup3 := &model.ChatGroup{
-		CreatedBy:  ^uint64(0), // 最大uint64值
+		CreatedBy:  ^uint64(0),   // 最大uint64值
 		MaxMembers: ^int(0) >> 1, // 最大int值
 	}
 	assert.Equal(t, ^uint64(0), chatGroup3.CreatedBy)
@@ -414,18 +414,18 @@ func TestChatMessageModel(t *testing.T) {
 		Base: model.Base{
 			ID: 1,
 		},
-		GroupID:       100,
-		SenderID:      200,
-		Content:       "这是一条测试消息",
-		MessageType:   model.ChatMessageTypeText,
-		ReplyToID:     &replyToID,
-		ImageURL:      "https://example.com/image.jpg",
-		Metadata:      `{"fontSize": 14, "color": "#000000"}`,
-		IsDeleted:     false,
-		AuditStatus:   model.ChatMessageAuditApproved,
-		ModeratedBy:   &moderatedBy,
-		ModeratedAt:   &moderatedAt,
-		RejectReason:  "",
+		GroupID:      100,
+		SenderID:     200,
+		Content:      "这是一条测试消息",
+		MessageType:  model.ChatMessageTypeText,
+		ReplyToID:    &replyToID,
+		ImageURL:     "https://example.com/image.jpg",
+		Metadata:     `{"fontSize": 14, "color": "#000000"}`,
+		IsDeleted:    false,
+		AuditStatus:  model.ChatMessageAuditApproved,
+		ModeratedBy:  &moderatedBy,
+		ModeratedAt:  &moderatedAt,
+		RejectReason: "",
 	}
 
 	assert.Equal(t, uint64(1), message.ID)
@@ -485,18 +485,18 @@ func TestChatMessageTableName(t *testing.T) {
 
 func TestChatMessageZeroValues(t *testing.T) {
 	message := &model.ChatMessage{
-		GroupID:       0,
-		SenderID:      0,
-		Content:       "",
-		MessageType:   "",
-		ReplyToID:     nil,
-		ImageURL:      "",
-		Metadata:      "",
-		IsDeleted:     false,
-		AuditStatus:   "",
-		ModeratedBy:   nil,
-		ModeratedAt:   nil,
-		RejectReason:  "",
+		GroupID:      0,
+		SenderID:     0,
+		Content:      "",
+		MessageType:  "",
+		ReplyToID:    nil,
+		ImageURL:     "",
+		Metadata:     "",
+		IsDeleted:    false,
+		AuditStatus:  "",
+		ModeratedBy:  nil,
+		ModeratedAt:  nil,
+		RejectReason: "",
 	}
 
 	assert.Equal(t, uint64(0), message.GroupID)
@@ -536,10 +536,10 @@ func TestChatMessageEdgeCases(t *testing.T) {
 
 	// 测试大数值
 	message3 := &model.ChatMessage{
-		GroupID:       ^uint64(0),
-		SenderID:      ^uint64(0),
-		ReplyToID:     &[]uint64{^uint64(0)}[0],
-		ModeratedBy:   &[]uint64{^uint64(0)}[0],
+		GroupID:     ^uint64(0),
+		SenderID:    ^uint64(0),
+		ReplyToID:   &[]uint64{^uint64(0)}[0],
+		ModeratedBy: &[]uint64{^uint64(0)}[0],
 	}
 	assert.Equal(t, ^uint64(0), message3.GroupID)
 	assert.Equal(t, ^uint64(0), message3.SenderID)

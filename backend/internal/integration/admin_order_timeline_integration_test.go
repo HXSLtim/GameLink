@@ -20,6 +20,7 @@ import (
 	"gamelink/internal/repository/payment"
 	"gamelink/internal/repository/player"
 	"gamelink/internal/repository/role"
+	"gamelink/internal/repository/serviceitem"
 	"gamelink/internal/repository/user"
 	adminservice "gamelink/internal/service/admin"
 	"gamelink/internal/testutil"
@@ -43,8 +44,9 @@ func TestAdminOrderTimeline(t *testing.T) {
 	roleRepo := role.NewRoleRepository(db)
 	opRepo := operationlog.NewOperationLogRepository(db)
 	memCache := cache.NewMemory()
+	serviceItemRepo := serviceitem.NewServiceItemRepository(db)
 
-	adminSvc := adminservice.NewAdminService(gameRepo, userRepo, playerRepo, orderRepo, paymentRepo, roleRepo, memCache)
+	adminSvc := adminservice.NewAdminService(gameRepo, userRepo, playerRepo, orderRepo, paymentRepo, roleRepo, serviceItemRepo, memCache)
 	adminSvc.SetTxManager(common.NewUnitOfWork(db))
 	orderHandler := adminhandler.NewOrderHandler(adminSvc)
 

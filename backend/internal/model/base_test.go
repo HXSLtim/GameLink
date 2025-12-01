@@ -5,15 +5,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"gamelink/internal/model"
+	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 )
 
 func TestBaseModel(t *testing.T) {
 	now := time.Now()
 	deletedAt := gorm.DeletedAt{Time: now, Valid: true}
-	
+
 	base := &model.Base{
 		ID:        1,
 		CreatedAt: now,
@@ -52,7 +52,7 @@ func TestBaseJSONSerialization(t *testing.T) {
 func TestBaseWithDeletedAt(t *testing.T) {
 	now := time.Now()
 	deletedAt := gorm.DeletedAt{Time: now, Valid: true}
-	
+
 	base := &model.Base{
 		ID:        1,
 		CreatedAt: now,

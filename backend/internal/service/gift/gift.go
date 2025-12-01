@@ -10,7 +10,6 @@ import (
 	"gamelink/internal/repository"
 	commissionrepo "gamelink/internal/repository/commission"
 	repoiface "gamelink/internal/repository/interfaces"
-	serviceitemrepo "gamelink/internal/repository/serviceitem"
 )
 
 var (
@@ -22,9 +21,9 @@ var (
 	ErrInvalidGiftItem = errors.New("invalid gift item")
 )
 
-// GiftService 礼物服务（基于统一订单系统
+// GiftService 礼物服务(基于统一订单系统
 type GiftService struct {
-	items       serviceitemrepo.ServiceItemRepository
+	items       repository.ServiceItemRepository
 	orders      repoiface.OrderRepository
 	players     repository.PlayerRepository
 	commissions commissionrepo.CommissionRepository
@@ -32,7 +31,7 @@ type GiftService struct {
 
 // NewGiftService 创建礼物服务
 func NewGiftService(
-	items serviceitemrepo.ServiceItemRepository,
+	items repository.ServiceItemRepository,
 	orders repoiface.OrderRepository,
 	players repository.PlayerRepository,
 	commissions commissionrepo.CommissionRepository,

@@ -3,8 +3,8 @@ package cache
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"gamelink/internal/config"
+	"github.com/stretchr/testify/assert"
 )
 
 /**

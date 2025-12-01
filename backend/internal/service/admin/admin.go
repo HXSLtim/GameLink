@@ -36,14 +36,15 @@ var (
 
 // AdminService 聚合后台管理所需的业务逻辑。
 type AdminService struct {
-	games    repository.GameRepository
-	users    repository.UserRepository
-	players  repository.PlayerRepository
-	orders   repoiface.OrderRepository
-	payments repository.PaymentRepository
-	roles    repository.RoleRepository
-	cache    cache.Cache
-	tx       TxManager
+	games        repository.GameRepository
+	users        repository.UserRepository
+	players      repository.PlayerRepository
+	orders       repoiface.OrderRepository
+	payments     repository.PaymentRepository
+	roles        repository.RoleRepository
+	serviceItems repository.ServiceItemRepository // 服务项目仓库
+	cache        cache.Cache
+	tx           TxManager
 }
 
 const (
@@ -73,15 +74,17 @@ func NewAdminService(
 	orders repoiface.OrderRepository,
 	payments repository.PaymentRepository,
 	roles repository.RoleRepository,
+	serviceItems repository.ServiceItemRepository,
 	cache cache.Cache,
 ) *AdminService {
 	return &AdminService{
-		games:    games,
-		users:    users,
-		players:  players,
-		orders:   orders,
-		payments: payments,
-		roles:    roles,
+		games:        games,
+		users:        users,
+		players:      players,
+		orders:       orders,
+		payments:     payments,
+		roles:        roles,
+		serviceItems: serviceItems,
 		cache:    cache,
 	}
 }
@@ -557,20 +560,57 @@ func (s *AdminService) syncUserRoleToTable(ctx context.Context, userID uint64, r
 	return nil
 }
 
+// validPassword 验证密码强度
+// ✅ 密码安全修复: 增强密码复杂度要求
+// 要求:
+// - 最小长度8位 (原来6位)
+// - 必须包含大写字母
+// - 必须包含小写字母
+// - 必须包含数字
+// - 必须包含特殊字符 (!@#$%^&*()_+-=[]{}|;:,.<>?)
 func validPassword(pw string) bool {
-	if len(pw) < 6 {
+	// 最小长度检查: 8位
+	if len(pw) < 8 {
 		return false
 	}
-	hasLetter := false
-	hasDigit := false
+
+	// 最大长度检查: 防止DoS攻击
+	if len(pw) > 128 {
+		return false
+	}
+
+	// 字符类型计数
+	var (
+		hasUppercase = false
+		hasLowercase = false
+		hasDigit     = false
+		hasSpecial   = false
+	)
+
+	// 允许的特殊字符
+	specialChars := "!@#$%^&*()_+-=[]{}|;:,.<>?"
+
 	for _, r := range pw {
-		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') {
-			hasLetter = true
-		}
-		if r >= '0' && r <= '9' {
+		switch {
+		case r >= 'A' && r <= 'Z':
+			hasUppercase = true
+		case r >= 'a' && r <= 'z':
+			hasLowercase = true
+		case r >= '0' && r <= '9':
 			hasDigit = true
+		case containsRune(specialChars, r):
+			hasSpecial = true
 		}
-		if hasLetter && hasDigit {
+	}
+
+	// 必须同时满足所有条件
+	return hasUppercase && hasLowercase && hasDigit && hasSpecial
+}
+
+// containsRune 检查字符串是否包含指定字符
+func containsRune(s string, r rune) bool {
+	for _, c := range s {
+		if c == r {
 			return true
 		}
 	}
@@ -724,6 +764,7 @@ type CreateOrderInput struct {
 	UserID          uint64
 	PlayerID        *uint64
 	GameID          uint64
+	ItemID          uint64 // 服务项目ID (必填)
 	Title           string
 	Description     string
 	TotalPriceCents int64
@@ -734,22 +775,42 @@ type CreateOrderInput struct {
 
 // CreateOrder 新建订单，默认状态为 pending。
 func (s *AdminService) CreateOrder(ctx context.Context, in CreateOrderInput) (*model.Order, error) {
-	if in.UserID == 0 || in.GameID == 0 || in.TotalPriceCents < 0 || !model.IsValidCurrency(in.Currency) {
+	// ✅ 数据安全修复: 验证所有必填字段，包括ItemID
+	if in.UserID == 0 || in.GameID == 0 || in.ItemID == 0 || in.TotalPriceCents < 0 || !model.IsValidCurrency(in.Currency) {
 		return nil, ErrValidation
 	}
 	if in.ScheduledStart != nil && in.ScheduledEnd != nil && in.ScheduledEnd.Before(*in.ScheduledStart) {
 		return nil, ErrValidation
 	}
+
+	// 验证服务项目是否存在
+	serviceItem, err := s.serviceItems.Get(ctx, in.ItemID)
+	if err != nil {
+		return nil, errors.New("服务项目不存在")
+	}
+
+	// 验证服务项目是否激活
+	if !serviceItem.IsActive {
+		return nil, errors.New("服务项目已停用")
+	}
+
+	// 可选: 验证服务项目与游戏的关联性
+	if serviceItem.GameID != nil && *serviceItem.GameID != in.GameID {
+		return nil, errors.New("服务项目与游戏不匹配")
+	}
+
+	// 验证陪玩师是否存在
 	if in.PlayerID != nil && *in.PlayerID != 0 {
 		if _, err := s.players.Get(ctx, *in.PlayerID); err != nil {
 			return nil, err
 		}
 	}
+
 	gameID := in.GameID
 	order := &model.Order{
 		OrderNo:         model.GenerateEscortOrderNo(),
 		UserID:          in.UserID,
-		ItemID:          1, // TODO: 需要从service_items选择
+		ItemID:          in.ItemID, // ✅ 修复: 使用传入的ItemID而不是硬编码
 		GameID:          &gameID,
 		Quantity:        1,
 		UnitPriceCents:  in.TotalPriceCents,

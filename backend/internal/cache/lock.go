@@ -34,22 +34,22 @@ func (l *distributedLockImpl) Lock(ctx context.Context, key string, ttl time.Dur
 	// Try to set the key with NX semantics (only if not exists)
 	// For Redis, this would be SETNX command
 	// For memory cache, we simulate this by checking existence first
-	
+
 	_, exists, err := l.cache.Get(ctx, lockKey)
 	if err != nil {
 		return false, err
 	}
-	
+
 	if exists {
 		return false, nil // Lock already held
 	}
-	
+
 	// Set the lock
 	err = l.cache.Set(ctx, lockKey, "1", ttl)
 	if err != nil {
 		return false, err
 	}
-	
+
 	return true, nil
 }
 
@@ -66,17 +66,17 @@ func (l *distributedLockImpl) TryLock(ctx context.Context, key string, ttl time.
 		if err != nil {
 			return false, err
 		}
-		
+
 		if locked {
 			return true, nil
 		}
-		
+
 		if i < retry-1 {
 			// Add jitter to avoid thundering herd
 			jitter := time.Duration(rand.Int63n(int64(interval)))
 			time.Sleep(interval + jitter)
 		}
 	}
-	
+
 	return false, nil
 }

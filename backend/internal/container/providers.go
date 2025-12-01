@@ -19,6 +19,7 @@ import (
 	paymentrepo "gamelink/internal/repository/payment"
 	playerrepo "gamelink/internal/repository/player"
 	rolerepo "gamelink/internal/repository/role"
+	serviceitemrepo "gamelink/internal/repository/serviceitem"
 	userrepo "gamelink/internal/repository/user"
 	"gamelink/internal/router"
 	adminservice "gamelink/internal/service/admin"
@@ -89,6 +90,7 @@ func ProvideAdminService(orm *gorm.DB, cacheClient cache.Cache) *adminservice.Ad
 		orderrepo.NewOrderRepository(orm),
 		paymentrepo.NewPaymentRepository(orm),
 		rolerepo.NewRoleRepository(orm),
+		serviceitemrepo.NewServiceItemRepository(orm),
 		cacheClient,
 	)
 	svc.SetTxManager(common.NewUnitOfWork(orm))

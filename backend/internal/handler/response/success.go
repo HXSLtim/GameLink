@@ -75,8 +75,8 @@ func MessageWithData(c *gin.Context, message string, data interface{}) {
 // Token 发送认证令牌响应
 func Token(c *gin.Context, token string, expiresAt interface{}) {
 	JSON(c, map[string]interface{}{
-		"token":      token,
-		"expiresAt":  expiresAt,
+		"token":     token,
+		"expiresAt": expiresAt,
 	})
 }
 

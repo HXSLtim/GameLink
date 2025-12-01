@@ -5,24 +5,24 @@ import "github.com/prometheus/client_golang/prometheus"
 var BusinessMetrics *BusinessMetricsCollector
 
 type BusinessMetricsCollector struct {
-	OrdersCreatedTotal    *prometheus.CounterVec
-	OrdersCompletedTotal  *prometheus.CounterVec
-	OrdersCancelledTotal  *prometheus.CounterVec
-	OrdersRefundedTotal   *prometheus.CounterVec
-	OrderDurationHours    *prometheus.HistogramVec
-	PaymentsCreatedTotal  *prometheus.CounterVec
+	OrdersCreatedTotal     *prometheus.CounterVec
+	OrdersCompletedTotal   *prometheus.CounterVec
+	OrdersCancelledTotal   *prometheus.CounterVec
+	OrdersRefundedTotal    *prometheus.CounterVec
+	OrderDurationHours     *prometheus.HistogramVec
+	PaymentsCreatedTotal   *prometheus.CounterVec
 	PaymentsSucceededTotal *prometheus.CounterVec
-	PaymentsFailedTotal   *prometheus.CounterVec
-	PaymentsRefundedTotal *prometheus.CounterVec
-	PaymentAmountCents    *prometheus.HistogramVec
-	UsersRegisteredTotal  *prometheus.CounterVec
-	UsersLoggedInTotal    *prometheus.CounterVec
-	UsersActive           *prometheus.GaugeVec
+	PaymentsFailedTotal    *prometheus.CounterVec
+	PaymentsRefundedTotal  *prometheus.CounterVec
+	PaymentAmountCents     *prometheus.HistogramVec
+	UsersRegisteredTotal   *prometheus.CounterVec
+	UsersLoggedInTotal     *prometheus.CounterVec
+	UsersActive            *prometheus.GaugeVec
 	PlayersRegisteredTotal *prometheus.CounterVec
-	PlayersVerifiedTotal  *prometheus.CounterVec
-	CommissionTotalCents  *prometheus.CounterVec
-	CommissionRate        *prometheus.GaugeVec
-	ErrorsTotal           *prometheus.CounterVec
+	PlayersVerifiedTotal   *prometheus.CounterVec
+	CommissionTotalCents   *prometheus.CounterVec
+	CommissionRate         *prometheus.GaugeVec
+	ErrorsTotal            *prometheus.CounterVec
 }
 
 // InitBusinessMetrics initializes business metrics, safe to call multiple times.

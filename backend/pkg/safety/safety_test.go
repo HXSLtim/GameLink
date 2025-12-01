@@ -228,11 +228,11 @@ func Test_ContainsSensitiveWord_EmptyText(t *testing.T) {
 func Test_ContainsSensitiveWord_PartialMatch(t *testing.T) {
 	// Arrange
 	tests := []string{
-		"这是一个违法行为",     // 包含"违法"
-		"spam邮件",         // 包含"spam"
-		"fake消息",         // 包含"fake"
-		"内容违规处理",        // 包含"违规"
-		"不涉黄内容",         // 包含"涉黄"
+		"这是一个违法行为", // 包含"违法"
+		"spam邮件",   // 包含"spam"
+		"fake消息",   // 包含"fake"
+		"内容违规处理",   // 包含"违规"
+		"不涉黄内容",    // 包含"涉黄"
 	}
 
 	for _, text := range tests {

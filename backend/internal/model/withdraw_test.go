@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"gamelink/internal/model"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestWithdrawModel(t *testing.T) {
@@ -269,18 +269,18 @@ func TestWithdrawJSONFields(t *testing.T) {
 	processedAt := now.Add(30 * time.Minute)
 
 	withdraw := &model.Withdraw{
-		ID:           1,
-		PlayerID:     100,
-		UserID:       200,
-		AmountCents:  15000,
-		Method:       model.WithdrawMethodBank,
-		AccountInfo:  "bank_account_123456",
-		Status:       model.WithdrawStatusApproved,
-		AdminRemark:  "审核通过",
-		ProcessedBy:  &processorID,
-		ProcessedAt:  &processedAt,
-		CreatedAt:    now,
-		UpdatedAt:    now,
+		ID:          1,
+		PlayerID:    100,
+		UserID:      200,
+		AmountCents: 15000,
+		Method:      model.WithdrawMethodBank,
+		AccountInfo: "bank_account_123456",
+		Status:      model.WithdrawStatusApproved,
+		AdminRemark: "审核通过",
+		ProcessedBy: &processorID,
+		ProcessedAt: &processedAt,
+		CreatedAt:   now,
+		UpdatedAt:   now,
 	}
 
 	data, err := json.Marshal(withdraw)

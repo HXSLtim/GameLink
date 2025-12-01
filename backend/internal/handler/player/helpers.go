@@ -58,4 +58,3 @@ func getUserIDFromContext(c *gin.Context) uint64 {
 	}
 	return userID
 }
-

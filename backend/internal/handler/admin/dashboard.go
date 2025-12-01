@@ -12,7 +12,6 @@ import (
 	"gamelink/internal/repository"
 	commissionrepo "gamelink/internal/repository/commission"
 	repoiface "gamelink/internal/repository/interfaces"
-	serviceitemrepo "gamelink/internal/repository/serviceitem"
 	withdrawrepo "gamelink/internal/repository/withdraw"
 )
 
@@ -51,7 +50,7 @@ func RegisterDashboardRoutes(
 	playerRepo repository.PlayerRepository,
 	orderRepo repoiface.OrderQuery,
 	withdrawRepo withdrawrepo.WithdrawRepository,
-	serviceItemRepo serviceitemrepo.ServiceItemRepository,
+	serviceItemRepo repository.ServiceItemRepository,
 	commissionRepo commissionrepo.CommissionRepository,
 ) {
 	group := router.Group("/dashboard")
@@ -88,7 +87,7 @@ func getDashboardOverviewHandler(
 	playerRepo repository.PlayerRepository,
 	orderRepo repoiface.OrderQuery,
 	withdrawRepo withdrawrepo.WithdrawRepository,
-	serviceItemRepo serviceitemrepo.ServiceItemRepository,
+	serviceItemRepo repository.ServiceItemRepository,
 ) {
 	ctx := c.Request.Context()
 	stats := &DashboardOverviewStats{}
@@ -149,7 +148,7 @@ func getDashboardOverviewHandler(
 
 	// 活跃服务
 	isActive := true
-	_, activeTotal, _ := serviceItemRepo.List(ctx, serviceitemrepo.ServiceItemListOptions{
+	_, activeTotal, _ := serviceItemRepo.List(ctx, repository.ServiceItemListOptions{
 		IsActive: &isActive,
 		Page:     1,
 		PageSize: 1,

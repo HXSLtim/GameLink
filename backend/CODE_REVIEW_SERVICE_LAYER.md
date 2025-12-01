@@ -42,7 +42,7 @@ type OrderService struct {
     payments    repository.PaymentRepository
     reviews     repository.ReviewRepository
     commissions commissionrepo.CommissionRepository
-    items       serviceitemrepo.ServiceItemRepository
+    items       repository.ServiceItemRepository
 }
 ```
 

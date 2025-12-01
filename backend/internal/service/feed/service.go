@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"gamelink/internal/model"
-	"gamelink/internal/pkg/safety"
+	"gamelink/pkg/safety"
 	"gamelink/internal/repository"
 	"gamelink/internal/service"
 )

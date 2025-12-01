@@ -95,6 +95,7 @@ type MenuRepository interface {
 	Delete(ctx context.Context, id uint64) error
 	Get(ctx context.Context, id uint64) (*model.Menu, error)
 	List(ctx context.Context, parentID *uint64) ([]model.Menu, error)
+	ListPaged(ctx context.Context, page, pageSize int, parentID *uint64) ([]model.Menu, int64, error)
 	ListByPermission(ctx context.Context, codes []string) ([]model.Menu, error)
 }
 
@@ -404,7 +405,7 @@ type ServiceItemRepository interface {
 	Create(ctx context.Context, item *model.ServiceItem) error
 	Get(ctx context.Context, id uint64) (*model.ServiceItem, error)
 	GetByCode(ctx context.Context, itemCode string) (*model.ServiceItem, error)
-	List(ctx context.Context, opts interface{}) ([]model.ServiceItem, int64, error)
+	List(ctx context.Context, opts ServiceItemListOptions) ([]model.ServiceItem, int64, error)
 	Update(ctx context.Context, item *model.ServiceItem) error
 	Delete(ctx context.Context, id uint64) error
 	BatchUpdateStatus(ctx context.Context, ids []uint64, isActive bool) error
@@ -456,8 +457,8 @@ type ServiceItemListOptions struct {
 	PageSize    int
 	GameID      *uint64
 	PlayerID    *uint64
-	Category    string
-	SubCategory string
+	Category    *string                         // 使用指针表示可选
+	SubCategory *model.ServiceItemSubCategory   // 使用指针表示可选
 	IsActive    *bool
 }
 

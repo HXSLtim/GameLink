@@ -46,17 +46,28 @@ const defaultConfig: InitConfig = {
 
 /**
  * 检查是否有管理员权限（已登录且是管理员）
+ * 通过调用后端API验证，避免客户端JWT解析安全漏洞
  */
-const hasAdminAccess = (): boolean => {
+const hasAdminAccess = async (): Promise<boolean> => {
     const token = localStorage.getItem('token');
     if (!token) return false;
 
     try {
-        // 简单解析JWT获取角色信息
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        const role = payload.role || payload.roles?.[0] || '';
+        // ✅ 安全修复: 通过后端API验证用户角色，不在客户端解析JWT
+        // 避免了JWT伪造导致的权限绕过漏洞
+        const { authApi } = await import('@/api/auth');
+        const response = await authApi.getMe();
+
+        // 检查API响应
+        if (!response.data || response.data.code !== 200 || !response.data.data) {
+            return false;
+        }
+
+        const loginResponse = response.data.data;
+        const role = loginResponse.user?.role || '';
         return ['admin', 'super_admin', 'ADMIN', 'CS', 'FINANCE'].includes(role);
     } catch {
+        // API调用失败（网络错误、认证失败等）
         return false;
     }
 };
@@ -93,7 +104,8 @@ export const initApp = async (config: InitConfig = {}): Promise<InitResult> => {
     }
 
     // 检查管理员权限
-    if (!hasAdminAccess()) {
+    const isAdmin = await hasAdminAccess();
+    if (!isAdmin) {
         log(cfg.verbose!, '非管理员用户，跳过同步');
         result.duration = Date.now() - startTime;
         return result;

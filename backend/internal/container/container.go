@@ -13,10 +13,10 @@ import (
 
 // Application aggregates the top-level dependencies used by the entrypoint.
 type Application struct {
-	Engine              *gin.Engine
-	Config              config.AppConfig
-	Lifecycle           *lifecycle.Manager
-	PrometheusRegistry  *prometheus.Registry
+	Engine             *gin.Engine
+	Config             config.AppConfig
+	Lifecycle          *lifecycle.Manager
+	PrometheusRegistry *prometheus.Registry
 }
 
 // NewApplication builds the dependency graph using the generated wire factory.

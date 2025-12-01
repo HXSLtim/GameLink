@@ -129,3 +129,30 @@ func (r *gormOrderRepository) Delete(ctx context.Context, id uint64) error {
 	}
 	return nil
 }
+
+// UpdateWithCondition 原子性更新订单,仅当状态匹配时才更新
+// 使用数据库层面的WHERE条件确保原子性,避免并发竞态条件
+//
+// 参数:
+//   - orderID: 订单ID
+//   - expectedStatus: 期望的当前状态(仅当订单处于此状态时才更新)
+//   - updates: 要更新的字段map
+//
+// 返回:
+//   - bool: 是否成功更新(false表示状态不匹配,true表示更新成功)
+//   - error: 数据库错误
+func (r *gormOrderRepository) UpdateWithCondition(ctx context.Context, orderID uint64, expectedStatus model.OrderStatus, updates map[string]any) (bool, error) {
+	// 使用WHERE子句确保原子性: UPDATE ... WHERE id = ? AND status = ?
+	// 这样即使多个goroutine同时执行,也只有一个能成功更新
+	tx := r.db.WithContext(ctx).
+		Model(&model.Order{}).
+		Where("id = ? AND status = ?", orderID, expectedStatus).
+		Updates(updates)
+
+	if tx.Error != nil {
+		return false, tx.Error
+	}
+
+	// RowsAffected = 0 表示条件不满足(状态已变更或订单不存在)
+	return tx.RowsAffected > 0, nil
+}

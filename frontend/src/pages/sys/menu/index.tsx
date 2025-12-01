@@ -8,13 +8,24 @@ import { getIcon } from '@/utils/iconMap';
 const MenuList: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState<Menu[]>([]);
+    const [pagination, setPagination] = useState({
+        current: 1,
+        pageSize: 10,
+        total: 0,
+    });
 
-    const fetchData = async () => {
+    const fetchData = async (page = pagination.current, pageSize = pagination.pageSize) => {
         setLoading(true);
         try {
-            const res = await adminApi.getMenus();
-            // @ts-ignore
+            const res = await adminApi.getMenus({ page, page_size: pageSize }) as any;
             setData(res.data);
+            if (res.pagination) {
+                setPagination({
+                    current: res.pagination.page,
+                    pageSize: res.pagination.page_size,
+                    total: res.pagination.total,
+                });
+            }
         } catch (error) {
             message.error('Failed to fetch menus');
         } finally {
@@ -34,6 +45,10 @@ const MenuList: React.FC = () => {
         } catch (error) {
             message.error('Delete failed');
         }
+    };
+
+    const handleTableChange = (newPagination: any) => {
+        fetchData(newPagination.current, newPagination.pageSize);
     };
 
     const columns = [
@@ -111,7 +126,7 @@ const MenuList: React.FC = () => {
             <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
                 <h2>Menu Management</h2>
                 <Space>
-                    <Button icon={<ReloadOutlined />} onClick={fetchData}>Refresh</Button>
+                    <Button icon={<ReloadOutlined />} onClick={() => fetchData()}>Refresh</Button>
                     <Button type="primary" icon={<PlusOutlined />} onClick={() => message.info('Create not implemented yet')}>
                         Add Menu
                     </Button>
@@ -122,7 +137,8 @@ const MenuList: React.FC = () => {
                 dataSource={data}
                 rowKey="id"
                 loading={loading}
-                pagination={false}
+                pagination={pagination}
+                onChange={handleTableChange}
                 expandable={{
                     childrenColumnName: 'children', // Assuming backend returns nested 'children'
                 }}

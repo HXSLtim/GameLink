@@ -77,11 +77,10 @@ const RolePage: React.FC = () => {
                 page: current,
                 page_size: pageSize,
                 ...params
-            });
-            // @ts-ignore
-            const { list, total } = res.data.data || { list: [], total: 0 };
-            setRoles(list);
-            setTotal(total);
+            }) as any;
+            const { items, totalCount } = res.data || { items: [], totalCount: 0 };
+            setRoles(items);
+            setTotal(totalCount);
         } catch (error) {
             console.error(error);
             message.error('加载角色列表失败');
@@ -99,9 +98,9 @@ const RolePage: React.FC = () => {
             // 这里假设有一个获取所有权限树的接口，如果没有，可能需要从菜单接口转换
             // 暂时使用模拟数据，或者调用 getMenus 获取菜单作为权限树
             // 实际项目中应该有 adminApi.getPermissionTree()
-            const res = await adminApi.getMenus();
-            // @ts-ignore
-            const menus = res.data.data || [];
+            // 实际项目中应该有 adminApi.getPermissionTree()
+            const res = await adminApi.getMenus() as any;
+            const menus = res.data || [];
 
             const convertToTree = (items: any[]): TreeDataNode[] => {
                 return items.map(item => ({

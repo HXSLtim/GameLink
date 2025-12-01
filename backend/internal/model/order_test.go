@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"gamelink/internal/model"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestOrderModel(t *testing.T) {
@@ -17,9 +17,9 @@ func TestOrderModel(t *testing.T) {
 	playerID := uint64(20)
 	gameID := uint64(30)
 	quantity := 2
-	unitPriceCents := int64(5000) // 50元
-	totalPriceCents := int64(10000) // 100元
-	commissionCents := int64(2000) // 20元
+	unitPriceCents := int64(5000)    // 50元
+	totalPriceCents := int64(10000)  // 100元
+	commissionCents := int64(2000)   // 20元
 	playerIncomeCents := int64(8000) // 80元
 
 	order := &model.Order{

@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"gamelink/internal/model"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCurrencyConstants(t *testing.T) {
@@ -17,7 +17,7 @@ func TestCurrencyConstants(t *testing.T) {
 
 func TestSupportedCurrencies(t *testing.T) {
 	currencies := model.SupportedCurrencies()
-	
+
 	assert.Len(t, currencies, 3)
 	assert.Contains(t, currencies, model.CurrencyCNY)
 	assert.Contains(t, currencies, model.CurrencyUSD)
@@ -38,11 +38,11 @@ func TestIsValidCurrency(t *testing.T) {
 
 	// 测试无效的货币
 	invalidCurrencies := []model.Currency{
-		"JPY", // 日元（不支持）
-		"GBP", // 英镑（不支持）
-		"AUD", // 澳元（不支持）
-		"CAD", // 加元（不支持）
-		"",    // 空字符串
+		"JPY",     // 日元（不支持）
+		"GBP",     // 英镑（不支持）
+		"AUD",     // 澳元（不支持）
+		"CAD",     // 加元（不支持）
+		"",        // 空字符串
 		"INVALID", // 无效货币
 	}
 
@@ -79,8 +79,8 @@ func TestCurrencyGormDataType(t *testing.T) {
 func TestCurrencyInStructs(t *testing.T) {
 	// 测试在结构体中的使用
 	type TestStruct struct {
-		ID       uint64       `json:"id"`
-		Amount int64        `json:"amount"`
+		ID       uint64         `json:"id"`
+		Amount   int64          `json:"amount"`
 		Currency model.Currency `json:"currency"`
 	}
 
@@ -166,10 +166,10 @@ func TestCurrencyEdgeCases(t *testing.T) {
 func TestCurrencyInFinancialContext(t *testing.T) {
 	// 测试在金融场景中的使用
 	type Transaction struct {
-		ID          uint64       `json:"id"`
-		Amount      int64        `json:"amount"`      // 金额（分）
-		Currency    model.Currency `json:"currency"`    // 货币
-		Description string       `json:"description"`
+		ID          uint64         `json:"id"`
+		Amount      int64          `json:"amount"`   // 金额（分）
+		Currency    model.Currency `json:"currency"` // 货币
+		Description string         `json:"description"`
 	}
 
 	transactions := []Transaction{
@@ -188,16 +188,16 @@ func TestCurrencyInFinancialContext(t *testing.T) {
 func TestCurrencyJSONWithDifferentFormats(t *testing.T) {
 	// 测试在复杂结构中的JSON序列化
 	type PriceInfo struct {
-		Amount   int64        `json:"amount"`
+		Amount   int64          `json:"amount"`
 		Currency model.Currency `json:"currency"`
-		Symbol   string       `json:"symbol"`
+		Symbol   string         `json:"symbol"`
 	}
 
 	type Product struct {
-		ID          uint64     `json:"id"`
-		Name        string     `json:"name"`
-		Price       PriceInfo  `json:"price"`
-		Currencies  []model.Currency `json:"currencies"`
+		ID         uint64           `json:"id"`
+		Name       string           `json:"name"`
+		Price      PriceInfo        `json:"price"`
+		Currencies []model.Currency `json:"currencies"`
 	}
 
 	product := Product{

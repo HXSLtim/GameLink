@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"gamelink/internal/metrics"
+	"github.com/gin-gonic/gin"
 )
 
 // MetricsMiddleware returns a gin middleware that records HTTP metrics
@@ -16,15 +16,15 @@ func MetricsMiddleware() gin.HandlerFunc {
 		if path == "" {
 			path = "unknown"
 		}
-		
+
 		// Process request
 		c.Next()
-		
+
 		// Record metrics after request
 		duration := time.Since(start).Seconds()
 		status := strconv.Itoa(c.Writer.Status())
 		method := c.Request.Method
-		
+
 		// Record HTTP request metrics
 		if metrics.HTTPRequestsTotal != nil {
 			metrics.HTTPRequestsTotal.WithLabelValues(method, path, status).Inc()
@@ -32,7 +32,7 @@ func MetricsMiddleware() gin.HandlerFunc {
 		if metrics.HTTPRequestDuration != nil {
 			metrics.HTTPRequestDuration.WithLabelValues(method, path).Observe(duration)
 		}
-		
+
 		// Record error metrics for 4xx and 5xx status codes
 		if c.Writer.Status() >= 400 && metrics.BusinessMetrics != nil {
 			errorType := "client_error"
@@ -53,7 +53,7 @@ func RecordOrderMetrics(status, gameType string, durationHours float64) {
 	if metrics.BusinessMetrics == nil {
 		return
 	}
-	
+
 	switch status {
 	case "created":
 		metrics.BusinessMetrics.OrdersCreatedTotal.WithLabelValues(status, gameType).Inc()
@@ -74,7 +74,7 @@ func RecordPaymentMetrics(method, currency string, amountCents int64, status str
 	if metrics.BusinessMetrics == nil {
 		return
 	}
-	
+
 	switch status {
 	case "created":
 		metrics.BusinessMetrics.PaymentsCreatedTotal.WithLabelValues(method, currency).Inc()
@@ -93,7 +93,7 @@ func RecordUserMetrics(role, method, action string) {
 	if metrics.BusinessMetrics == nil {
 		return
 	}
-	
+
 	switch action {
 	case "registered":
 		metrics.BusinessMetrics.UsersRegisteredTotal.WithLabelValues(role, method).Inc()
@@ -107,7 +107,7 @@ func RecordPlayerMetrics(verificationStatus, action string) {
 	if metrics.BusinessMetrics == nil {
 		return
 	}
-	
+
 	switch action {
 	case "registered":
 		metrics.BusinessMetrics.PlayersRegisteredTotal.WithLabelValues(verificationStatus).Inc()
@@ -121,7 +121,7 @@ func RecordCommissionMetrics(amountCents int64, commissionType string) {
 	if metrics.BusinessMetrics == nil {
 		return
 	}
-	
+
 	metrics.BusinessMetrics.CommissionTotalCents.WithLabelValues(commissionType).Add(float64(amountCents))
 }
 
@@ -130,6 +130,6 @@ func RecordErrorMetrics(errorType, handler, method string) {
 	if metrics.BusinessMetrics == nil {
 		return
 	}
-	
+
 	metrics.BusinessMetrics.ErrorsTotal.WithLabelValues(errorType, handler, method).Inc()
 }

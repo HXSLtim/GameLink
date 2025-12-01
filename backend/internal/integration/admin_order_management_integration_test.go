@@ -18,6 +18,7 @@ import (
 	"gamelink/internal/repository/payment"
 	"gamelink/internal/repository/player"
 	"gamelink/internal/repository/role"
+	"gamelink/internal/repository/serviceitem"
 	"gamelink/internal/repository/user"
 	adminservice "gamelink/internal/service/admin"
 	"gamelink/internal/testutil"
@@ -41,7 +42,8 @@ func TestAdminOrderCancelAndRefund(t *testing.T) {
 	roleRepo := role.NewRoleRepository(db)
 	memCache := cache.NewMemory()
 
-	adminSvc := adminservice.NewAdminService(gameRepo, userRepo, playerRepo, orderRepo, paymentRepo, roleRepo, memCache)
+	serviceItemRepo := serviceitem.NewServiceItemRepository(db)
+	adminSvc := adminservice.NewAdminService(gameRepo, userRepo, playerRepo, orderRepo, paymentRepo, roleRepo, serviceItemRepo, memCache)
 	orderHandler := adminhandler.NewOrderHandler(adminSvc)
 
 	router := gin.New()

@@ -14,6 +14,7 @@ import (
 	"gamelink/internal/repository/game"
 	"gamelink/internal/repository/player"
 	"gamelink/internal/repository/role"
+	"gamelink/internal/repository/serviceitem"
 	"gamelink/internal/repository/user"
 	adminservice "gamelink/internal/service/admin"
 	"gamelink/internal/testutil"
@@ -32,7 +33,8 @@ func TestAdminUserManagement(t *testing.T) {
 	gameRepo := game.NewGameRepository(db)
 	roleRepo := role.NewRoleRepository(db)
 	memCache := cache.NewMemory()
-	adminSvc := adminservice.NewAdminService(gameRepo, userRepo, playerRepo, nil, nil, roleRepo, memCache)
+	serviceItemRepo := serviceitem.NewServiceItemRepository(db)
+	adminSvc := adminservice.NewAdminService(gameRepo, userRepo, playerRepo, nil, nil, roleRepo, serviceItemRepo, memCache)
 	userHandler := adminhandler.NewUserHandler(adminSvc)
 
 	router := gin.New()
