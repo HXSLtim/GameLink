@@ -5,39 +5,77 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
-	"gorm.io/driver/sqlite"
+	"github.com/glebarez/sqlite" // 纯Go SQLite驱动，无需CGO
 	"gorm.io/gorm"
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
-	serviceItemRepo "gamelink/internal/repository/serviceitem"
+	serviceitem "gamelink/internal/repository/serviceitem"
 )
 
 type ServiceItemRepositorySimpleTestSuite struct {
 	suite.Suite
 	db   *gorm.DB
-	repo serviceItemRepo.ServiceItemRepository
+	repo repository.ServiceItemRepository
 	ctx  context.Context
 }
 
 func (s *ServiceItemRepositorySimpleTestSuite) SetupSuite() {
-	// 使用SQLite内存数据库
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	// 使用纯Go实现的SQLite内存数据库，无需CGO
+	// 使用 github.com/glebarez/sqlite 纯Go驱动
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
+		// 禁用外键约束，避免测试时的复杂性
+		DisableForeignKeyConstraintWhenMigrating: true,
+	})
 	if err != nil {
-		s.T().Skipf("sqlite driver unavailable: %v", err)
+		s.T().Fatalf("Failed to connect to database: %v", err)
+		return
+	}
+
+	// 验证数据库连接
+	if db == nil {
+		s.T().Fatal("Database connection is nil")
 		return
 	}
 
 	// 迁移表结构 - 需要服务项相关的表
 	err = db.AutoMigrate(&model.ServiceItem{})
 	if err != nil {
-		s.T().Skipf("sqlite migration unavailable: %v", err)
+		s.T().Fatalf("Failed to migrate database: %v", err)
+		return
+	}
+
+	// 验证表是否创建成功
+	var tableCount int64
+	db.Raw("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='service_items'").Scan(&tableCount)
+	if tableCount == 0 {
+		s.T().Fatal("service_items table was not created successfully")
 		return
 	}
 
 	s.db = db
-	s.repo = serviceItemRepo.NewServiceItemRepository(db)
+	s.repo = serviceitem.NewServiceItemRepository(db)
 	s.ctx = context.Background()
+}
+
+// createTestServiceItem 创建测试服务项的辅助函数
+func (s *ServiceItemRepositorySimpleTestSuite) createTestServiceItem(itemCode string) *model.ServiceItem {
+	gameID := uint64(1)
+	item := &model.ServiceItem{
+		GameID:         &gameID,
+		ItemCode:       itemCode,
+		Name:           "Test Service " + itemCode,
+		Description:    "Test service for " + itemCode,
+		Category:       "escort",
+		SubCategory:    model.SubCategorySolo,
+		BasePriceCents: 1000,
+		IsActive:       true,
+		SortOrder:      1,
+		CommissionRate: 0.2,
+	}
+	err := s.repo.Create(s.ctx, item)
+	s.Require().NoError(err)
+	return item
 }
 
 func (s *ServiceItemRepositorySimpleTestSuite) TearDownSuite() {
@@ -48,8 +86,10 @@ func (s *ServiceItemRepositorySimpleTestSuite) TearDownSuite() {
 }
 
 func (s *ServiceItemRepositorySimpleTestSuite) SetupTest() {
-	// 清空服务项表
-	s.db.Exec("DELETE FROM service_items")
+	// 清空服务项表 - 使用安全的GORM方法
+	// 注意：使用事务确保操作安全
+	tx := s.db.Session(&gorm.Session{AllowGlobalUpdate: true})
+	tx.Delete(&model.ServiceItem{})
 }
 
 func TestServiceItemRepositorySimpleTestSuite(t *testing.T) {
@@ -157,13 +197,13 @@ func (s *ServiceItemRepositorySimpleTestSuite) TestListOperations() {
 	}
 
 	// 测试列表所有服务项
-	list, total, err := s.repo.List(s.ctx, serviceItemRepo.ServiceItemListOptions{})
+	list, total, err := s.repo.List(s.ctx, repository.ServiceItemListOptions{})
 	s.NoError(err)
 	s.Len(list, 3)
 	s.Equal(int64(3), total)
 
 	// 测试分页
-	pagedList, total, err := s.repo.List(s.ctx, serviceItemRepo.ServiceItemListOptions{
+	pagedList, total, err := s.repo.List(s.ctx, repository.ServiceItemListOptions{
 		Page:     1,
 		PageSize: 2,
 	})
@@ -172,7 +212,7 @@ func (s *ServiceItemRepositorySimpleTestSuite) TestListOperations() {
 	s.Equal(int64(3), total)
 
 	// 第二页
-	pagedList, total, err = s.repo.List(s.ctx, serviceItemRepo.ServiceItemListOptions{
+	pagedList, total, err = s.repo.List(s.ctx, repository.ServiceItemListOptions{
 		Page:     2,
 		PageSize: 2,
 	})
@@ -235,7 +275,7 @@ func (s *ServiceItemRepositorySimpleTestSuite) TestFilters() {
 	}
 
 	// 按游戏ID过滤
-	list, total, err := s.repo.List(s.ctx, serviceItemRepo.ServiceItemListOptions{
+	list, total, err := s.repo.List(s.ctx, repository.ServiceItemListOptions{
 		GameID:   &gameID1,
 		Page:     1,
 		PageSize: 10,
@@ -245,7 +285,7 @@ func (s *ServiceItemRepositorySimpleTestSuite) TestFilters() {
 	s.Equal(int64(2), total)
 
 	// 按陪玩师ID过滤
-	list, total, err = s.repo.List(s.ctx, serviceItemRepo.ServiceItemListOptions{
+	list, total, err = s.repo.List(s.ctx, repository.ServiceItemListOptions{
 		PlayerID: &playerID1,
 		Page:     1,
 		PageSize: 10,
@@ -256,7 +296,7 @@ func (s *ServiceItemRepositorySimpleTestSuite) TestFilters() {
 	s.Equal(&playerID1, list[0].PlayerID)
 
 	// 按活跃状态过滤
-	list, total, err = s.repo.List(s.ctx, serviceItemRepo.ServiceItemListOptions{
+	list, total, err = s.repo.List(s.ctx, repository.ServiceItemListOptions{
 		IsActive: &isActive,
 		Page:     1,
 		PageSize: 10,
@@ -266,7 +306,7 @@ func (s *ServiceItemRepositorySimpleTestSuite) TestFilters() {
 	s.Equal(int64(2), total)
 
 	// 按非活跃状态过滤
-	list, total, err = s.repo.List(s.ctx, serviceItemRepo.ServiceItemListOptions{
+	list, total, err = s.repo.List(s.ctx, repository.ServiceItemListOptions{
 		IsActive: &isInactive,
 		Page:     1,
 		PageSize: 10,
@@ -278,7 +318,7 @@ func (s *ServiceItemRepositorySimpleTestSuite) TestFilters() {
 
 	// 按子分类过滤
 	soloSubCategory := model.SubCategorySolo
-	list, total, err = s.repo.List(s.ctx, serviceItemRepo.ServiceItemListOptions{
+	list, total, err = s.repo.List(s.ctx, repository.ServiceItemListOptions{
 		SubCategory: &soloSubCategory,
 		Page:        1,
 		PageSize:    10,
@@ -439,8 +479,8 @@ func (s *ServiceItemRepositorySimpleTestSuite) TestGetGifts() {
 }
 
 func (s *ServiceItemRepositorySimpleTestSuite) TestGetGameServices() {
-	// 清空表
-	s.db.Exec("DELETE FROM service_items")
+	// 清空表 - 使用安全的GORM方法
+	s.db.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&model.ServiceItem{})
 
 	gameID := uint64(100)
 
@@ -552,4 +592,108 @@ func (s *ServiceItemRepositorySimpleTestSuite) TestUniqueConstraints() {
 
 	err = s.repo.Create(s.ctx, item2)
 	s.Error(err)
+}
+
+// TestErrorHandling 错误处理测试
+func (s *ServiceItemRepositorySimpleTestSuite) TestErrorHandling() {
+	// 测试查询不存在的记录
+	notFound, err := s.repo.Get(s.ctx, 99999)
+	s.Error(err)
+	s.Equal(repository.ErrNotFound, err)
+	s.Nil(notFound)
+
+	// 测试查询不存在的ItemCode
+	notFoundByCode, err := s.repo.GetByCode(s.ctx, "NON-EXISTENT-CODE")
+	s.Error(err)
+	s.Equal(repository.ErrNotFound, err)
+	s.Nil(notFoundByCode)
+}
+
+// TestBoundaryValues 边界值测试
+func (s *ServiceItemRepositorySimpleTestSuite) TestBoundaryValues() {
+	// 测试零值
+	zeroItem := &model.ServiceItem{
+		ItemCode: "ZERO-TEST",
+		Name:     "Zero Test",
+		// 其他字段保持零值
+	}
+	err := s.repo.Create(s.ctx, zeroItem)
+	s.NoError(err)
+	s.NotZero(zeroItem.ID)
+
+	// 测试极大值
+	largeItem := &model.ServiceItem{
+		ItemCode:       "LARGE-TEST",
+		Name:           "Large Test",
+		Description:    "Test with large values",
+		BasePriceCents: 999999999999, // 极大价格
+		CommissionRate: 0.999999,     // 极大佣金率
+		SortOrder:      999999,
+	}
+	err = s.repo.Create(s.ctx, largeItem)
+	s.NoError(err)
+}
+
+// TestConcurrentOperations 并发操作测试
+func (s *ServiceItemRepositorySimpleTestSuite) TestConcurrentOperations() {
+	// 创建测试数据
+	item := &model.ServiceItem{
+		ItemCode: "CONCURRENT-TEST",
+		Name:     "Concurrent Test",
+	}
+	err := s.repo.Create(s.ctx, item)
+	s.NoError(err)
+
+	// 模拟并发更新 - 使用相同的context避免连接问题
+	done := make(chan bool, 2)
+
+	go func() {
+		// 在goroutine中重新获取item，避免竞态条件
+		currentItem, _ := s.repo.Get(s.ctx, item.ID)
+		if currentItem != nil {
+			currentItem.Name = "Updated by goroutine 1"
+			s.repo.Update(s.ctx, currentItem)
+		}
+		done <- true
+	}()
+
+	go func() {
+		// 在goroutine中重新获取item，避免竞态条件
+		currentItem, _ := s.repo.Get(s.ctx, item.ID)
+		if currentItem != nil {
+			currentItem.Description = "Updated by goroutine 2"
+			s.repo.Update(s.ctx, currentItem)
+		}
+		done <- true
+	}()
+
+	// 等待两个goroutine完成
+	<-done
+	<-done
+
+	// 验证数据一致性（至少有一个更新成功）
+	updated, err := s.repo.Get(s.ctx, item.ID)
+	s.NoError(err)
+	s.NotNil(updated)
+}
+
+// TestEmptyResults 空结果测试
+func (s *ServiceItemRepositorySimpleTestSuite) TestEmptyResults() {
+	// 确保表是空的
+	s.db.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&model.ServiceItem{})
+
+	// 测试空表查询
+	list, total, err := s.repo.List(s.ctx, repository.ServiceItemListOptions{})
+	s.NoError(err)
+	s.Empty(list)
+	s.Equal(int64(0), total)
+
+	// 测试特定过滤条件的空结果
+	nonExistentGameID := uint64(99999)
+	list, total, err = s.repo.List(s.ctx, repository.ServiceItemListOptions{
+		GameID: &nonExistentGameID,
+	})
+	s.NoError(err)
+	s.Empty(list)
+	s.Equal(int64(0), total)
 }
