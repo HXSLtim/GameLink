@@ -8,6 +8,7 @@ import (
 )
 
 // DisputeStatus defines the lifecycle states for a dispute.
+// @Enum pending, assigned, mediating, resolved, rejected, canceled
 type DisputeStatus string
 
 // DisputeStatus values define the lifecycle of a dispute.

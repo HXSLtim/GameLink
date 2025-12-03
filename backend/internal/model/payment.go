@@ -6,6 +6,7 @@ import (
 )
 
 // PaymentMethod enumerates supported payment channels.
+// @Enum wechat, alipay
 type PaymentMethod string
 
 // PaymentMethod values enumerate supported channels.
@@ -15,6 +16,7 @@ const (
 )
 
 // PaymentStatus enumerates payment states.
+// @Enum pending, paid, failed, refunded
 type PaymentStatus string
 
 // PaymentStatus values enumerate payment states.

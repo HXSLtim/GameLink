@@ -3,6 +3,7 @@ package model
 import "time"
 
 // OrderStatus defines lifecycle states for an order.
+// @Enum pending, confirmed, in_progress, completed, canceled, refunded
 type OrderStatus string
 
 // OrderStatus values define the lifecycle of an order.

@@ -1,6 +1,7 @@
 package model
 
 // VerificationStatus indicates identity/skill verification flow.
+// @Enum pending, verified, rejected
 type VerificationStatus string
 
 // VerificationStatus values indicate the verification flow state.

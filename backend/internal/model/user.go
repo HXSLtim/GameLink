@@ -3,6 +3,7 @@ package model
 import "time"
 
 // Role defines platform roles for access control.
+// @Enum user, player, admin
 type Role string
 
 // Role values define platform roles for access control.
@@ -13,6 +14,7 @@ const (
 )
 
 // UserStatus indicates account state.
+// @Enum active, suspended, banned
 type UserStatus string
 
 // UserStatus values indicate account state.

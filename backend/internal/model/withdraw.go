@@ -5,6 +5,7 @@ import (
 )
 
 // WithdrawStatus defines withdrawal status
+// @Enum pending, approved, rejected, completed, failed
 type WithdrawStatus string
 
 const (
@@ -21,6 +22,7 @@ const (
 )
 
 // WithdrawMethod defines withdrawal methods
+// @Enum alipay, wechat, bank
 type WithdrawMethod string
 
 const (
