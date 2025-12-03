@@ -2,10 +2,10 @@ package gift
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
+	"gamelink/pkg/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	commissionrepo "gamelink/internal/repository/commission"
@@ -16,9 +16,9 @@ var (
 	// ErrNotFound 记录不存
 	ErrNotFound = repository.ErrNotFound
 	// ErrValidation 表示输入校验失败
-	ErrValidation = errors.New("validation failed")
+	ErrValidation = apierr.BadRequest("验证失败")
 	// ErrInvalidGiftItem 无效的礼物项
-	ErrInvalidGiftItem = errors.New("invalid gift item")
+	ErrInvalidGiftItem = apierr.BadRequest("无效的礼物项")
 )
 
 // GiftService 礼物服务(基于统一订单系统
@@ -69,13 +69,13 @@ func (s *GiftService) SendGift(ctx context.Context, userID uint64, req SendGiftR
 
 	// 确保礼物是激活状
 	if !giftItem.IsActive {
-		return nil, errors.New("gift item is not active")
+		return nil, apierr.BadRequest("礼物项未激活")
 	}
 
 	// 2. 验证陪玩
 	player, err := s.players.Get(ctx, req.PlayerID)
 	if err != nil {
-		return nil, fmt.Errorf("player not found: %w", err)
+		return nil, apierr.NotFound("陪玩师不存在").WithDetails(err.Error())
 	}
 
 	// 3. 计算价格和抽

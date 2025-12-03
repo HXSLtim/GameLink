@@ -10,10 +10,10 @@ import (
 	adminhandler "gamelink/internal/handler/admin"
 	"gamelink/internal/model"
 	"gamelink/internal/repository/game"
-	"gamelink/internal/repository/player"
+	"gamelink/internal/repository/user"
 	"gamelink/internal/repository/serviceitem"
 	"gamelink/internal/service/item"
-	"gamelink/internal/testutil"
+	"gamelink/pkg/testutil"
 )
 
 // 服务项管理：创建礼物与陪玩服务、查询过滤、更新/批量上下架与调价、删除后数量减少
@@ -24,7 +24,7 @@ func TestAdminServiceItemCRUDAndBatch(t *testing.T) {
 	migrateServiceItemModels(t, db)
 
 	gameRepo := game.NewGameRepository(db)
-	playerRepo := player.NewPlayerRepository(db)
+	playerRepo := user.NewPlayerRepository(db)
 	itemRepo := serviceitem.NewServiceItemRepository(db)
 	svc := item.NewServiceItemService(itemRepo, gameRepo, playerRepo)
 
@@ -145,7 +145,7 @@ func TestServiceItemGiftInvalidServiceHours(t *testing.T) {
 	migrateServiceItemModels(t, db)
 
 	gameRepo := game.NewGameRepository(db)
-	playerRepo := player.NewPlayerRepository(db)
+	playerRepo := user.NewPlayerRepository(db)
 	itemRepo := serviceitem.NewServiceItemRepository(db)
 	svc := item.NewServiceItemService(itemRepo, gameRepo, playerRepo)
 

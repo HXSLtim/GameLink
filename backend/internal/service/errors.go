@@ -1,27 +1,27 @@
 package service
 
 import (
-	"errors"
+	"gamelink/pkg/apierr"
 	"gamelink/internal/repository"
 )
 
 // Common service-level sentinel errors for cross-layer mapping.
 var (
 	// ErrInvalidCredentials indicates bad username or password.
-	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrInvalidCredentials = apierr.Unauthorized("用户名或密码错误")
 
 	// ErrUserDisabled indicates the user exists but is disabled/banned.
-	ErrUserDisabled = errors.New("user account is disabled")
+	ErrUserDisabled = apierr.Forbidden("用户账户已禁用")
 
 	// ErrValidation indicates request/domain validation failed.
-	ErrValidation = errors.New("validation failed")
+	ErrValidation = apierr.BadRequest("验证失败")
 
 	// ErrNotFound is a shared alias to repository not found.
 	ErrNotFound = repository.ErrNotFound
 
 	// ErrUserNotFound indicates the requested user does not exist.
-	ErrUserNotFound = errors.New("user not found")
+	ErrUserNotFound = apierr.NotFound("用户不存在")
 
 	// ErrOrderInvalidTransition indicates an invalid status change on order.
-	ErrOrderInvalidTransition = errors.New("order invalid transition")
+	ErrOrderInvalidTransition = apierr.BadRequest("订单状态转换无效")
 )

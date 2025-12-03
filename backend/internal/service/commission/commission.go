@@ -3,11 +3,11 @@ package commission
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math"
 	"time"
 
+	"gamelink/pkg/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	commissionrepo "gamelink/internal/repository/commission"
@@ -18,11 +18,11 @@ var (
 	// ErrNotFound 记录不存在
 	ErrNotFound = repository.ErrNotFound
 	// ErrValidation 表示输入校验失败
-	ErrValidation = errors.New("validation failed")
+	ErrValidation = apierr.BadRequest("验证失败")
 	// ErrAlreadyRecorded 抽成已记录
-	ErrAlreadyRecorded = errors.New("commission already recorded")
+	ErrAlreadyRecorded = apierr.Conflict("抽成已记录")
 	// ErrAlreadySettled 已经结算
-	ErrAlreadySettled = errors.New("already settled")
+	ErrAlreadySettled = apierr.Conflict("已经结算")
 )
 
 // CommissionService 抽成服务
@@ -81,7 +81,7 @@ func (s *CommissionService) RecordCommission(ctx context.Context, orderID uint64
 	now := time.Now()
 	playerID := order.GetPlayerID()
 	if playerID == 0 {
-		return errors.New("order has no player assigned")
+		return apierr.BadRequest("订单未分配打手")
 	}
 
 	record := &model.CommissionRecord{
@@ -135,7 +135,7 @@ func (s *CommissionService) SettleMonth(ctx context.Context, month string) error
 	}
 
 	if len(records) == 0 {
-		return fmt.Errorf("no records to settle for month %s", month)
+		return apierr.BadRequest("该月无待结算记录")
 	}
 
 	// 3. 按陪玩师分组统计
@@ -168,7 +168,7 @@ func (s *CommissionService) SettleMonth(ctx context.Context, month string) error
 
 		err := s.commissions.CreateSettlement(ctx, settlement)
 		if err != nil {
-			return fmt.Errorf("failed to create settlement for player %d: %w", stats.PlayerID, err)
+			return apierr.InternalError(fmt.Sprintf("创建玩家%d结算失败", stats.PlayerID)).WithDetails(err.Error())
 		}
 	}
 
@@ -178,7 +178,7 @@ func (s *CommissionService) SettleMonth(ctx context.Context, month string) error
 		record.SettlementStatus = "settled"
 		record.SettledAt = &now
 		if err := s.commissions.UpdateRecord(ctx, &record); err != nil {
-			return fmt.Errorf("failed to update record %d: %w", record.ID, err)
+			return apierr.InternalError(fmt.Sprintf("更新记录%d失败", record.ID)).WithDetails(err.Error())
 		}
 	}
 
@@ -346,7 +346,7 @@ type SettlementListResponse struct {
 func (s *CommissionService) CreateCommissionRule(ctx context.Context, req CreateCommissionRuleRequest) (*model.CommissionRule, error) {
 	// 验证抽成比例
 	if req.Rate < 0 || req.Rate > 100 {
-		return nil, fmt.Errorf("commission rate must be between 0 and 100")
+		return nil, apierr.BadRequest("抽成比例必须在0-100之间")
 	}
 
 	rule := &model.CommissionRule{
@@ -393,7 +393,7 @@ func (s *CommissionService) UpdateCommissionRule(ctx context.Context, id uint64,
 	}
 	if req.Rate != nil {
 		if *req.Rate < 0 || *req.Rate > 100 {
-			return fmt.Errorf("commission rate must be between 0 and 100")
+			return apierr.BadRequest("抽成比例必须在0-100之间")
 		}
 		rule.Rate = *req.Rate
 	}

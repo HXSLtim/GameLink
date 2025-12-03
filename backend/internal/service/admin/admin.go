@@ -13,9 +13,9 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"gamelink/internal/apierr"
-	"gamelink/internal/cache"
-	"gamelink/internal/logging"
+	"gamelink/pkg/apierr"
+	"gamelink/pkg/cache"
+	"gamelink/pkg/logging"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	"gamelink/internal/repository/common"
@@ -43,6 +43,9 @@ type AdminService struct {
 	payments     repository.PaymentRepository
 	roles        repository.RoleRepository
 	serviceItems repository.ServiceItemRepository // 服务项目仓库
+	permissions  repository.PermissionRepository
+	menus        repository.MenuRepository
+	stats        repository.StatsRepository
 	cache        cache.Cache
 	tx           TxManager
 }
@@ -75,6 +78,9 @@ func NewAdminService(
 	payments repository.PaymentRepository,
 	roles repository.RoleRepository,
 	serviceItems repository.ServiceItemRepository,
+	permissions repository.PermissionRepository,
+	menus repository.MenuRepository,
+	stats repository.StatsRepository,
 	cache cache.Cache,
 ) *AdminService {
 	return &AdminService{
@@ -85,7 +91,10 @@ func NewAdminService(
 		payments:     payments,
 		roles:        roles,
 		serviceItems: serviceItems,
-		cache:    cache,
+		permissions:  permissions,
+		menus:        menus,
+		stats:        stats,
+		cache:        cache,
 	}
 }
 
@@ -94,13 +103,33 @@ type TxManager interface {
 	WithTx(ctx context.Context, fn func(r *common.Repos) error) error
 }
 
+// PermissionService 获取权限服务
+func (s *AdminService) PermissionService() *PermissionService {
+	return NewPermissionService(s.permissions, s.cache)
+}
+
+// RoleService 获取角色服务
+func (s *AdminService) RoleService() *RoleService {
+	return NewRoleService(s.roles, s.cache)
+}
+
+// MenuService 获取菜单服务
+func (s *AdminService) MenuService() *MenuService {
+	return NewMenuService(s.menus)
+}
+
+// StatsService 获取统计服务
+func (s *AdminService) StatsService() *StatsService {
+	return NewStatsService(s.stats)
+}
+
 // SetTxManager injects a transaction manager.
 func (s *AdminService) SetTxManager(tx TxManager) { s.tx = tx }
 
 // UpdatePlayerSkillTags 替换玩家技能标签集合（需要 TxManager）。
 func (s *AdminService) UpdatePlayerSkillTags(ctx context.Context, playerID uint64, tags []string) error {
 	if s.tx == nil {
-		return errors.New("transaction manager not configured")
+		return apierr.InternalError("事务管理器未配置")
 	}
 	err := s.tx.WithTx(ctx, func(r *common.Repos) error {
 		// ensure player exists
@@ -118,7 +147,7 @@ func (s *AdminService) UpdatePlayerSkillTags(ctx context.Context, playerID uint6
 // RegisterUserAndPlayer creates a user and a player profile in a single transaction.
 func (s *AdminService) RegisterUserAndPlayer(ctx context.Context, u CreateUserInput, p CreatePlayerInput) (*model.User, *model.Player, error) {
 	if s.tx == nil {
-		return nil, nil, errors.New("transaction manager not configured")
+		return nil, nil, apierr.InternalError("事务管理器未配置")
 	}
 	// basic validations reuse existing ones
 	if err := validateUserInput(u.Name, u.Role, u.Status, u.Password); err != nil {
@@ -786,17 +815,17 @@ func (s *AdminService) CreateOrder(ctx context.Context, in CreateOrderInput) (*m
 	// 验证服务项目是否存在
 	serviceItem, err := s.serviceItems.Get(ctx, in.ItemID)
 	if err != nil {
-		return nil, errors.New("服务项目不存在")
+		return nil, apierr.BadRequest("服务项目不存在")
 	}
 
 	// 验证服务项目是否激活
 	if !serviceItem.IsActive {
-		return nil, errors.New("服务项目已停用")
+		return nil, apierr.BadRequest("服务项目已停用")
 	}
 
 	// 可选: 验证服务项目与游戏的关联性
 	if serviceItem.GameID != nil && *serviceItem.GameID != in.GameID {
-		return nil, errors.New("服务项目与游戏不匹配")
+		return nil, apierr.BadRequest("服务项目与游戏不匹配")
 	}
 
 	// 验证陪玩师是否存在
@@ -1677,7 +1706,7 @@ func mapUserError(err error) error {
 	if errors.Is(err, repository.ErrNotFound) {
 		return ErrUserNotFound
 	}
-	return err
+	return WrapError(err, "操作用户数据失败")
 }
 
 func mapRefundStatus(status model.PaymentStatus) string {
@@ -1762,7 +1791,7 @@ func buildPagination(page, pageSize int, total int64) model.Pagination {
 // ListOperationLogs 返回实体的操作日志。
 func (s *AdminService) ListOperationLogs(ctx context.Context, entityType string, entityID uint64, opts repository.OperationLogListOptions) ([]model.OperationLog, *model.Pagination, error) {
 	if s.tx == nil {
-		return nil, nil, errors.New("transaction manager not configured")
+		return nil, nil, apierr.InternalError("事务管理器未配置")
 	}
 	var logs []model.OperationLog
 	var total int64
@@ -1794,7 +1823,7 @@ func (s *AdminService) ListOperationLogs(ctx context.Context, entityType string,
 // ListReviews 列出评价。
 func (s *AdminService) ListReviews(ctx context.Context, opts repository.ReviewListOptions) ([]model.Review, *model.Pagination, error) {
 	if s.tx == nil {
-		return nil, nil, errors.New("transaction manager not configured")
+		return nil, nil, apierr.InternalError("事务管理器未配置")
 	}
 	var items []model.Review
 	var total int64
@@ -1820,7 +1849,7 @@ func (s *AdminService) ListReviews(ctx context.Context, opts repository.ReviewLi
 // GetReview 返回评价详情。
 func (s *AdminService) GetReview(ctx context.Context, id uint64) (*model.Review, error) {
 	if s.tx == nil {
-		return nil, errors.New("transaction manager not configured")
+		return nil, apierr.InternalError("事务管理器未配置")
 	}
 	var item *model.Review
 	err := s.tx.WithTx(ctx, func(r *common.Repos) error {
@@ -1840,7 +1869,7 @@ func (s *AdminService) CreateReview(ctx context.Context, r model.Review) (*model
 		return nil, ErrValidation
 	}
 	if s.tx == nil {
-		return nil, errors.New("transaction manager not configured")
+		return nil, apierr.InternalError("事务管理器未配置")
 	}
 	err := s.tx.WithTx(ctx, func(txr *common.Repos) error { return txr.Reviews.Create(ctx, &r) })
 	if err != nil {
@@ -1856,7 +1885,7 @@ func (s *AdminService) UpdateReview(ctx context.Context, id uint64, score model.
 		return nil, ErrValidation
 	}
 	if s.tx == nil {
-		return nil, errors.New("transaction manager not configured")
+		return nil, apierr.InternalError("事务管理器未配置")
 	}
 	var item *model.Review
 	err := s.tx.WithTx(ctx, func(r *common.Repos) error {

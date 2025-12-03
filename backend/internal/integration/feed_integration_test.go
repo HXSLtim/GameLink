@@ -11,10 +11,10 @@ import (
 
 	userfeed "gamelink/internal/handler/user"
 	"gamelink/internal/model"
-	feedrepo "gamelink/internal/repository/feed"
+	feedrepo "gamelink/internal/repository/content"
 	userrepo "gamelink/internal/repository/user"
 	feedservice "gamelink/internal/service/feed"
-	"gamelink/internal/testutil"
+	"gamelink/pkg/testutil"
 )
 
 // 动态：发布 -> 列表 -> 举报

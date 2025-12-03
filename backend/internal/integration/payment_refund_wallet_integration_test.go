@@ -5,10 +5,10 @@ import (
 
 	"gamelink/internal/model"
 	orderimpl "gamelink/internal/repository/implementations"
-	"gamelink/internal/repository/payment"
-	"gamelink/internal/repository/wallet"
+	"gamelink/internal/repository/order"
+	userrepo "gamelink/internal/repository/user"
 	paymentsvc "gamelink/internal/service/payment"
-	"gamelink/internal/testutil"
+	"gamelink/pkg/testutil"
 )
 
 // 退款回滚到钱包余额
@@ -18,8 +18,8 @@ func TestRefundCreditsWalletBalance(t *testing.T) {
 	migrateWalletModels(t, db)
 
 	orderRepo := orderimpl.NewOrderRepository(db)
-	paymentRepo := payment.NewPaymentRepository(db)
-	walletRepo := wallet.NewWalletRepository(db)
+	paymentRepo := order.NewPaymentRepository(db)
+	walletRepo := userrepo.NewWalletRepository(db)
 
 	svc := paymentsvc.NewPaymentService(paymentRepo, orderRepo)
 	svc.SetWalletRepository(walletRepo)

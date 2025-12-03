@@ -9,11 +9,8 @@ import (
 	gameRepo "gamelink/internal/repository/game"
 	orderrepo "gamelink/internal/repository/implementations"
 	repoiface "gamelink/internal/repository/interfaces"
-	operationlog "gamelink/internal/repository/operation_log"
-	"gamelink/internal/repository/payment"
-	playerrepo "gamelink/internal/repository/player"
-	playertag "gamelink/internal/repository/player_tag"
-	"gamelink/internal/repository/review"
+	adminrepo "gamelink/internal/repository/admin"
+	order "gamelink/internal/repository/order"
 	"gamelink/internal/repository/user"
 )
 
@@ -44,12 +41,12 @@ func (u *UnitOfWork) WithTx(ctx context.Context, fn func(r *Repos) error) error 
 		r := &Repos{
 			Games:    gameRepo.NewGameRepository(tx),
 			Users:    user.NewUserRepository(tx),
-			Players:  playerrepo.NewPlayerRepository(tx),
+			Players:  user.NewPlayerRepository(tx),
 			Orders:   orderrepo.NewOrderRepository(tx),
-			Payments: payment.NewPaymentRepository(tx),
-			Tags:     playertag.NewPlayerTagRepository(tx),
-			OpLogs:   operationlog.NewOperationLogRepository(tx),
-			Reviews:  review.NewReviewRepository(tx),
+			Payments: order.NewPaymentRepository(tx),
+			Tags:     user.NewPlayerTagRepository(tx),
+			OpLogs:   adminrepo.NewOperationLogRepository(tx),
+			Reviews:  order.NewReviewRepository(tx),
 		}
 		return fn(r)
 	})

@@ -11,12 +11,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	"gamelink/internal/auth"
+	"gamelink/pkg/auth"
 	"gamelink/internal/handler"
 	"gamelink/internal/model"
 	userrepo "gamelink/internal/repository/user"
 	authservice "gamelink/internal/service/auth"
-	"gamelink/internal/testutil"
+	"gamelink/pkg/testutil"
 )
 
 type apiResponse[T any] struct {

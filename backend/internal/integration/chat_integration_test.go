@@ -9,13 +9,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/internal/cache"
+	"gamelink/pkg/cache"
 	userchat "gamelink/internal/handler/user"
 	"gamelink/internal/model"
 	chatrepo "gamelink/internal/repository/chat"
 	userrepo "gamelink/internal/repository/user"
 	chatservice "gamelink/internal/service/chat"
-	"gamelink/internal/testutil"
+	"gamelink/pkg/testutil"
 )
 
 // IM 集成：列群组 -> 发消息 -> 拉取消息 -> 举报消息

@@ -3,13 +3,13 @@ package user
 import (
 	"github.com/gin-gonic/gin"
 
-	"gamelink/internal/apierr"
+	"gamelink/pkg/apierr"
 	"gamelink/internal/model"
-	"gamelink/internal/service/wallet"
+	walletservice "gamelink/internal/service/wallet"
 )
 
 // RegisterWalletRoutes 注册钱包路由
-func RegisterWalletRoutes(router gin.IRouter, svc *wallet.Service, auth gin.HandlerFunc) {
+func RegisterWalletRoutes(router gin.IRouter, svc *walletservice.WalletService, auth gin.HandlerFunc) {
 	group := router.Group("/wallet")
 	group.Use(auth)
 	{
@@ -23,19 +23,19 @@ type rechargeRequest struct {
 	Method      model.PaymentMethod `json:"method" binding:"required,oneof=wechat alipay"`
 }
 
-func rechargeHandler(c *gin.Context, svc *wallet.Service) {
+func rechargeHandler(c *gin.Context, svc *walletservice.WalletService) {
 	userID := getUserIDFromContext(c)
 	var req rechargeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondAPIError(c, apierr.BadRequest(apierr.ErrInvalidJSONPayload).WithDetails(err.Error()))
 		return
 	}
-	resp, err := svc.Recharge(c.Request.Context(), userID, wallet.RechargeRequest{
+	resp, err := svc.Recharge(c.Request.Context(), userID, walletservice.RechargeRequest{
 		AmountCents: req.AmountCents,
 		Method:      req.Method,
 	})
 	if err != nil {
-		if err == wallet.ErrInvalidAmount {
+		if err == walletservice.ErrInvalidAmount {
 			respondAPIError(c, apierr.BadRequest(err.Error()))
 			return
 		}
@@ -45,7 +45,7 @@ func rechargeHandler(c *gin.Context, svc *wallet.Service) {
 	respondSuccess(c, "OK", resp)
 }
 
-func getBalanceHandler(c *gin.Context, svc *wallet.Service) {
+func getBalanceHandler(c *gin.Context, svc *walletservice.WalletService) {
 	userID := getUserIDFromContext(c)
 	w, err := svc.GetBalance(c.Request.Context(), userID)
 	if err != nil {

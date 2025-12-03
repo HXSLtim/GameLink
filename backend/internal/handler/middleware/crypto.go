@@ -17,7 +17,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/internal/config"
+	"gamelink/pkg/config"
 	"gamelink/internal/model"
 )
 

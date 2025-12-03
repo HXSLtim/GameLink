@@ -7,17 +7,17 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"gamelink/internal/model"
-	"gamelink/internal/service/review"
+	orderservice "gamelink/internal/service/order"
 )
 
 // CreateReviewResponse 创建评价响应（类型别名）
-type CreateReviewResponse = review.CreateReviewResponse
+type CreateReviewResponse = orderservice.CreateReviewResponse
 
 // MyReviewListResponse 我的评价列表响应（类型别名）
-type MyReviewListResponse = review.MyReviewListResponse
+type MyReviewListResponse = orderservice.MyReviewListResponse
 
 // RegisterReviewRoutes 注册用户端评价路由
-func RegisterReviewRoutes(router gin.IRouter, svc *review.ReviewService, authMiddleware gin.HandlerFunc) {
+func RegisterReviewRoutes(router gin.IRouter, svc *orderservice.ReviewService, authMiddleware gin.HandlerFunc) {
 	group := router.Group("/reviews")
 	group.Use(authMiddleware) // 需要认证
 	group.POST("", func(c *gin.Context) { createReviewHandler(c, svc) })
@@ -31,15 +31,15 @@ func RegisterReviewRoutes(router gin.IRouter, svc *review.ReviewService, authMid
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string                        true  "Bearer {token}"
-// @Param        request        body      review.CreateReviewRequest    true  "创建评价请求"
+// @Param        request        body      orderservice.CreateReviewRequest    true  "创建评价请求"
 // @Success      200            {object}  model.APIResponse[CreateReviewResponse]
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /user/reviews [post]
-func createReviewHandler(c *gin.Context, svc *review.ReviewService) {
+func createReviewHandler(c *gin.Context, svc *orderservice.ReviewService) {
 	userID := getUserIDFromContext(c)
 
-	var req review.CreateReviewRequest
+	var req orderservice.CreateReviewRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
@@ -47,15 +47,15 @@ func createReviewHandler(c *gin.Context, svc *review.ReviewService) {
 
 	resp, err := svc.CreateReview(c.Request.Context(), userID, req)
 	if err != nil {
-		if err == review.ErrAlreadyReviewed {
+		if err == orderservice.ErrAlreadyReviewed {
 			respondError(c, http.StatusBadRequest, err.Error())
 			return
 		}
-		if err == review.ErrOrderNotCompleted {
+		if err == orderservice.ErrOrderNotCompleted {
 			respondError(c, http.StatusBadRequest, err.Error())
 			return
 		}
-		if err == review.ErrUnauthorized {
+		if err == orderservice.ErrReviewUnauthorized {
 			respondError(c, http.StatusForbidden, err.Error())
 			return
 		}
@@ -63,7 +63,7 @@ func createReviewHandler(c *gin.Context, svc *review.ReviewService) {
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[review.CreateReviewResponse]{
+	respondJSON(c, http.StatusOK, model.APIResponse[orderservice.CreateReviewResponse]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "评价创建成功",
@@ -82,7 +82,7 @@ func createReviewHandler(c *gin.Context, svc *review.ReviewService) {
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /user/reviews/my [get]
-func getMyReviewsHandler(c *gin.Context, svc *review.ReviewService) {
+func getMyReviewsHandler(c *gin.Context, svc *orderservice.ReviewService) {
 	userID := getUserIDFromContext(c)
 
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
@@ -94,7 +94,7 @@ func getMyReviewsHandler(c *gin.Context, svc *review.ReviewService) {
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[review.MyReviewListResponse]{
+	respondJSON(c, http.StatusOK, model.APIResponse[orderservice.MyReviewListResponse]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",

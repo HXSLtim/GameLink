@@ -16,15 +16,15 @@ import (
 	"gamelink/internal/repository/commission"
 	"gamelink/internal/repository/game"
 	orderimpl "gamelink/internal/repository/implementations"
-	"gamelink/internal/repository/payment"
-	"gamelink/internal/repository/player"
-	"gamelink/internal/repository/review"
+	"gamelink/internal/repository/order"
+	"gamelink/internal/repository/user"
+	"gamelink/internal/repository/order"
 	"gamelink/internal/repository/user"
 	"gamelink/internal/repository/withdraw"
-	earningssvc "gamelink/internal/service/earnings"
+	userservice "gamelink/internal/service/user"
 	ordersvc "gamelink/internal/service/order"
 	paymentsvc "gamelink/internal/service/payment"
-	"gamelink/internal/testutil"
+	"gamelink/pkg/testutil"
 )
 
 // 玩家收益/提现：订单完成后查询收益概览、趋势、申请提现并查看记录
@@ -38,16 +38,16 @@ func TestEarningsWithdrawFlow(t *testing.T) {
 
 	orderRepo := orderimpl.NewOrderRepository(db)
 	userRepo := user.NewUserRepository(db)
-	playerRepo := player.NewPlayerRepository(db)
+	playerRepo := user.NewPlayerRepository(db)
 	gameRepo := game.NewGameRepository(db)
-	paymentRepo := payment.NewPaymentRepository(db)
+	paymentRepo := order.NewPaymentRepository(db)
 	reviewRepo := review.NewReviewRepository(db)
 	commissionRepo := commission.NewCommissionRepository(db)
 	withdrawRepo := withdraw.NewWithdrawRepository(db)
 
 	orderService := ordersvc.NewOrderService(orderRepo, playerRepo, userRepo, gameRepo, paymentRepo, reviewRepo, commissionRepo)
 	paymentService := paymentsvc.NewPaymentService(paymentRepo, orderRepo)
-	earningsService := earningssvc.NewEarningsService(playerRepo, orderRepo, withdrawRepo)
+	earningsService := userservice.NewEarningsService(playerRepo, orderRepo, withdrawRepo)
 
 	router := gin.New()
 	api := router.Group("/api/v1")
@@ -68,7 +68,7 @@ func TestEarningsWithdrawFlow(t *testing.T) {
 	if summaryResp.Code != http.StatusOK {
 		t.Fatalf("summary status=%d body=%s", summaryResp.Code, summaryResp.Body.String())
 	}
-	var summaryParsed apiResp[earningssvc.EarningsSummaryResponse]
+	var summaryParsed apiResp[userservice.EarningsSummaryResponse]
 	if err := json.Unmarshal(summaryResp.Body.Bytes(), &summaryParsed); err != nil {
 		t.Fatalf("parse summary: %v", err)
 	}
@@ -97,7 +97,7 @@ func TestEarningsWithdrawFlow(t *testing.T) {
 	}
 
 	// 基础校验：提现后可用余额应减少（至少不为负）
-	var afterSummary apiResp[earningssvc.EarningsSummaryResponse]
+	var afterSummary apiResp[userservice.EarningsSummaryResponse]
 	if err := json.Unmarshal(summaryResp.Body.Bytes(), &summaryParsed); err == nil {
 		// ignore parse error already handled
 	}
@@ -139,7 +139,7 @@ func seedEarningsData(t *testing.T, db *gorm.DB) earningsSeed {
 	ctx := context.Background()
 
 	userRepo := user.NewUserRepository(db)
-	playerRepo := player.NewPlayerRepository(db)
+	playerRepo := user.NewPlayerRepository(db)
 	gameRepo := game.NewGameRepository(db)
 
 	userModel := &model.User{

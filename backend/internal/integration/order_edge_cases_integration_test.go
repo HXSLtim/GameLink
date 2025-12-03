@@ -17,13 +17,13 @@ import (
 	"gamelink/internal/repository/commission"
 	"gamelink/internal/repository/game"
 	orderimpl "gamelink/internal/repository/implementations"
-	"gamelink/internal/repository/payment"
-	"gamelink/internal/repository/player"
-	"gamelink/internal/repository/review"
+	"gamelink/internal/repository/order"
+	"gamelink/internal/repository/user"
+	"gamelink/internal/repository/order"
 	"gamelink/internal/repository/user"
 	ordersvc "gamelink/internal/service/order"
 	paymentsvc "gamelink/internal/service/payment"
-	"gamelink/internal/testutil"
+	"gamelink/pkg/testutil"
 )
 
 // 支付/订单边缘：重复支付幂等 & 退款后再次支付被拒
@@ -36,9 +36,9 @@ func TestOrderPaymentEdgeCases(t *testing.T) {
 
 	orderRepo := orderimpl.NewOrderRepository(db)
 	userRepo := user.NewUserRepository(db)
-	playerRepo := player.NewPlayerRepository(db)
+	playerRepo := user.NewPlayerRepository(db)
 	gameRepo := game.NewGameRepository(db)
-	paymentRepo := payment.NewPaymentRepository(db)
+	paymentRepo := order.NewPaymentRepository(db)
 	reviewRepo := review.NewReviewRepository(db)
 	commissionRepo := commission.NewCommissionRepository(db)
 

@@ -1,14 +1,12 @@
 package notification
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
 	"gamelink/internal/model"
-	"gamelink/internal/service"
-	notificationservice "gamelink/internal/service/notification"
+	contentservice "gamelink/internal/service/content"
 )
 
 // ListNotificationsRequest 获取通知列表请求
@@ -25,10 +23,10 @@ type MarkNotificationsReadRequest struct {
 }
 
 // NotificationListResponse 通知列表响应（类型别名）
-type NotificationListResponse = notificationservice.ListResponse
+type NotificationListResponse = contentservice.NotificationListResponse
 
 // RegisterRoutes 注册通知中心路由。
-func RegisterRoutes(router gin.IRouter, svc *notificationservice.Service, authMiddleware gin.HandlerFunc) {
+func RegisterRoutes(router gin.IRouter, svc *contentservice.NotificationService, authMiddleware gin.HandlerFunc) {
 	group := router.Group("/notifications")
 	group.Use(authMiddleware)
 	group.GET("", func(c *gin.Context) { listNotificationsHandler(c, svc) })
@@ -52,7 +50,7 @@ func RegisterRoutes(router gin.IRouter, svc *notificationservice.Service, authMi
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
 // @Router       /notifications [get]
-func listNotificationsHandler(c *gin.Context, svc *notificationservice.Service) {
+func listNotificationsHandler(c *gin.Context, svc *contentservice.NotificationService) {
 	userID := getUserIDFromContext(c)
 	var req ListNotificationsRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
@@ -63,21 +61,17 @@ func listNotificationsHandler(c *gin.Context, svc *notificationservice.Service) 
 	for _, p := range req.Priority {
 		priorities = append(priorities, model.NotificationPriority(p))
 	}
-	resp, err := svc.List(c.Request.Context(), userID, notificationservice.ListRequest{
+	resp, err := svc.ListNotifications(c.Request.Context(), userID, contentservice.NotificationListRequest{
 		Page:       req.Page,
 		PageSize:   req.PageSize,
 		UnreadOnly: req.Unread,
 		Priorities: priorities,
 	})
 	if err != nil {
-		if errors.Is(err, service.ErrValidation) {
-			respondError(c, http.StatusBadRequest, err.Error())
-		} else {
-			respondError(c, http.StatusInternalServerError, err.Error())
-		}
+		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondJSON(c, http.StatusOK, model.APIResponse[*notificationservice.ListResponse]{
+	respondJSON(c, http.StatusOK, model.APIResponse[*contentservice.NotificationListResponse]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
@@ -98,14 +92,14 @@ func listNotificationsHandler(c *gin.Context, svc *notificationservice.Service) 
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
 // @Router       /notifications/read [post]
-func markNotificationsReadHandler(c *gin.Context, svc *notificationservice.Service) {
+func markNotificationsReadHandler(c *gin.Context, svc *contentservice.NotificationService) {
 	userID := getUserIDFromContext(c)
 	var body MarkNotificationsReadRequest
 	if err := c.ShouldBindJSON(&body); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := svc.MarkRead(c.Request.Context(), userID, body.IDs); err != nil {
+	if err := svc.MarkNotificationsRead(c.Request.Context(), userID, body.IDs); err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -127,9 +121,9 @@ func markNotificationsReadHandler(c *gin.Context, svc *notificationservice.Servi
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
 // @Router       /notifications/unread-count [get]
-func unreadCountHandler(c *gin.Context, svc *notificationservice.Service) {
+func unreadCountHandler(c *gin.Context, svc *contentservice.NotificationService) {
 	userID := getUserIDFromContext(c)
-	count, err := svc.GetUnreadCount(c.Request.Context(), userID)
+	count, err := svc.GetUnreadNotificationCount(c.Request.Context(), userID)
 	if err != nil {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return

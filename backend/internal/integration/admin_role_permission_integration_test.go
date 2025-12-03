@@ -8,16 +8,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	"gamelink/internal/cache"
+	"gamelink/pkg/cache"
 	adminhandler "gamelink/internal/handler/admin"
 	"gamelink/internal/handler/middleware"
 	"gamelink/internal/model"
-	"gamelink/internal/repository/permission"
-	"gamelink/internal/repository/role"
+	adminrepo "gamelink/internal/repository/admin"
+	adminrepo "gamelink/internal/repository/admin"
 	"gamelink/internal/repository/user"
-	permissionservice "gamelink/internal/service/permission"
-	roleservice "gamelink/internal/service/role"
-	"gamelink/internal/testutil"
+	permissionservice "gamelink/internal/service/admin"
+	roleservice "gamelink/internal/service/admin"
+	"gamelink/pkg/testutil"
 )
 
 // 管理端角色/权限：创建角色、创建权限、分配权限给角色、分配角色给用户，并验证权限中间件放行/拦截
@@ -28,7 +28,7 @@ func TestAdminRolePermissionSync(t *testing.T) {
 	migrateRBACModels(t, db)
 
 	userRepo := user.NewUserRepository(db)
-	roleRepo := role.NewRoleRepository(db)
+	roleRepo := adminrepo.NewRoleRepository(db)
 	permRepo := permission.NewPermissionRepository(db)
 
 	// 种子：超级管理员 + 普通管理员 + 无权限用户

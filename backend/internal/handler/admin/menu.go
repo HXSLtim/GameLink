@@ -7,19 +7,19 @@ import (
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
-	menusvc "gamelink/internal/service/menu"
+	menusvc "gamelink/internal/service/admin"
 )
 
 type MenuHandler struct {
-	svc *menusvc.Service
+	svc *menusvc.MenuService
 }
 
-func NewMenuHandler(svc *menusvc.Service) *MenuHandler {
+func NewMenuHandler(svc *menusvc.MenuService) *MenuHandler {
 	return &MenuHandler{svc: svc}
 }
 
 // RegisterMenuRoutes 管理端菜单 CRUD
-func RegisterMenuRoutes(router gin.IRouter, svc *menusvc.Service) {
+func RegisterMenuRoutes(router gin.IRouter, svc *menusvc.MenuService) {
 	h := NewMenuHandler(svc)
 	group := router.Group("/menus")
 	group.GET("", h.List)

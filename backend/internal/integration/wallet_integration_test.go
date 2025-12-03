@@ -12,12 +12,12 @@ import (
 	userhandler "gamelink/internal/handler/user"
 	"gamelink/internal/model"
 	orderimpl "gamelink/internal/repository/implementations"
-	"gamelink/internal/repository/payment"
+	"gamelink/internal/repository/order"
 	"gamelink/internal/repository/user"
-	"gamelink/internal/repository/wallet"
+userrepo "gamelink/internal/repository/user"
 	paymentservice "gamelink/internal/service/payment"
-	walletservice "gamelink/internal/service/wallet"
-	"gamelink/internal/testutil"
+	userservice "gamelink/internal/service/user"
+	"gamelink/pkg/testutil"
 )
 
 // 钱包集成：充值 -> 查询余额 -> 查询支付列表
@@ -35,10 +35,10 @@ func TestWalletRechargeAndBalance(t *testing.T) {
 	}
 
 	orderRepo := orderimpl.NewOrderRepository(db)
-	paymentRepo := payment.NewPaymentRepository(db)
-	walletRepo := wallet.NewWalletRepository(db)
+	paymentRepo := order.NewPaymentRepository(db)
+	walletRepo := userrepo.NewWalletRepository(db)
 	paymentSvc := paymentservice.NewPaymentService(paymentRepo, orderRepo)
-	walletSvc := walletservice.NewService(walletRepo, paymentRepo, orderRepo)
+	walletSvc := userservice.NewWalletService(walletRepo, paymentRepo, orderRepo)
 
 	router := gin.New()
 	api := router.Group("/api/v1")
@@ -56,7 +56,7 @@ func TestWalletRechargeAndBalance(t *testing.T) {
 	if rechargeResp.Code != http.StatusOK {
 		t.Fatalf("recharge status=%d body=%s", rechargeResp.Code, rechargeResp.Body.String())
 	}
-	var rechargeParsed apiResp[walletservice.RechargeResponse]
+	var rechargeParsed apiResp[userservice.RechargeResponse]
 	if err := json.Unmarshal(rechargeResp.Body.Bytes(), &rechargeParsed); err != nil {
 		t.Fatalf("parse recharge resp: %v", err)
 	}
@@ -102,10 +102,10 @@ func TestWalletRechargeInvalidAmount(t *testing.T) {
 	_ = userRepo.Create(context.Background(), u)
 
 	orderRepo := orderimpl.NewOrderRepository(db)
-	paymentRepo := payment.NewPaymentRepository(db)
-	walletRepo := wallet.NewWalletRepository(db)
+	paymentRepo := order.NewPaymentRepository(db)
+	walletRepo := userrepo.NewWalletRepository(db)
 	paymentSvc := paymentservice.NewPaymentService(paymentRepo, orderRepo)
-	walletSvc := walletservice.NewService(walletRepo, paymentRepo, orderRepo)
+	walletSvc := userservice.NewWalletService(walletRepo, paymentRepo, orderRepo)
 
 	router := gin.New()
 	api := router.Group("/api/v1")
@@ -136,10 +136,10 @@ func TestWalletBalanceZeroForNewUser(t *testing.T) {
 	_ = userRepo.Create(context.Background(), u)
 
 	orderRepo := orderimpl.NewOrderRepository(db)
-	paymentRepo := payment.NewPaymentRepository(db)
-	walletRepo := wallet.NewWalletRepository(db)
+	paymentRepo := order.NewPaymentRepository(db)
+	walletRepo := userrepo.NewWalletRepository(db)
 	paymentSvc := paymentservice.NewPaymentService(paymentRepo, orderRepo)
-	walletSvc := walletservice.NewService(walletRepo, paymentRepo, orderRepo)
+	walletSvc := userservice.NewWalletService(walletRepo, paymentRepo, orderRepo)
 
 	router := gin.New()
 	api := router.Group("/api/v1")
@@ -180,10 +180,10 @@ func TestWalletRechargeAccumulationAndPaymentOrder(t *testing.T) {
 	_ = userRepo.Create(context.Background(), u)
 
 	orderRepo := orderimpl.NewOrderRepository(db)
-	paymentRepo := payment.NewPaymentRepository(db)
-	walletRepo := wallet.NewWalletRepository(db)
+	paymentRepo := order.NewPaymentRepository(db)
+	walletRepo := userrepo.NewWalletRepository(db)
 	paymentSvc := paymentservice.NewPaymentService(paymentRepo, orderRepo)
-	walletSvc := walletservice.NewService(walletRepo, paymentRepo, orderRepo)
+	walletSvc := userservice.NewWalletService(walletRepo, paymentRepo, orderRepo)
 
 	router := gin.New()
 	api := router.Group("/api/v1")

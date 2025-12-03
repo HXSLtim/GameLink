@@ -107,6 +107,41 @@ test-tools:
 	@go install github.com/mitranim/gow@latest
 	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
+# Generate Swagger documentation (supports generics)
+swagger:
+	@echo "Generating Swagger documentation (with generics support)..."
+	@which swag >/dev/null 2>&1 || go install github.com/swaggo/swag/cmd/swag@latest
+	@cd cmd && swag init \
+		-g main.go \
+		--output "../docs" \
+		--generalInfo "main.go" \
+		--dir "." \
+		--parseDependency \
+		--parseInternal \
+		--parseDepth 10
+	@echo "Swagger docs generated in docs/"
+
+# Generate Swagger documentation with vendor
+swagger-vendor:
+	@echo "Generating Swagger documentation (with vendor support)..."
+	@which swag >/dev/null 2>&1 || go install github.com/swaggo/swag/cmd/swag@latest
+	@cd cmd && swag init \
+		-g main.go \
+		--output "../docs" \
+		--generalInfo "main.go" \
+		--dir "." \
+		--parseDependency \
+		--parseInternal \
+		--parseDepth 10 \
+		--parseVendor
+	@echo "Swagger docs with vendor support generated in docs/"
+
+# Clean Swagger docs
+clean-swagger:
+	@echo "Cleaning Swagger documentation..."
+	@rm -rf docs/swagger.json docs/swagger.yaml docs/docs.go docs/swagger/*
+	@echo "Swagger docs cleaned"
+
 # Help
 help:
 	@echo "Available targets:"
@@ -121,6 +156,9 @@ help:
 	@echo "  cover-pkg PKG=pkg Run coverage for specific package"
 	@echo "  clean             Clean test artifacts"
 	@echo "  generate-mocks    Generate mocks"
+	@echo "  swagger           Generate Swagger documentation (supports generics)"
+	@echo "  swagger-vendor    Generate Swagger documentation with vendor support"
+	@echo "  clean-swagger     Clean Swagger documentation"
 	@echo "  lint              Run linter"
 	@echo "  fmt               Format code"
 	@echo "  vet               Vet code"

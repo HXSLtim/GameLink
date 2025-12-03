@@ -9,19 +9,18 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/internal/cache"
+	"gamelink/pkg/cache"
 	adminhandler "gamelink/internal/handler/admin"
 	"gamelink/internal/model"
 	"gamelink/internal/repository/game"
 	orderimpl "gamelink/internal/repository/implementations"
 	repoiface "gamelink/internal/repository/interfaces"
-	"gamelink/internal/repository/payment"
-	"gamelink/internal/repository/player"
-	"gamelink/internal/repository/role"
-	"gamelink/internal/repository/serviceitem"
+	"gamelink/internal/repository/order"
 	"gamelink/internal/repository/user"
+	adminrepo "gamelink/internal/repository/admin"
+	"gamelink/internal/repository/serviceitem"
 	adminservice "gamelink/internal/service/admin"
-	"gamelink/internal/testutil"
+	"gamelink/pkg/testutil"
 )
 
 // 管理端订单取消/退款链路：管理员取消待付款订单，管理员为已完成订单发起退款
@@ -36,10 +35,10 @@ func TestAdminOrderCancelAndRefund(t *testing.T) {
 
 	orderRepo := orderimpl.NewOrderRepository(db)
 	userRepo := user.NewUserRepository(db)
-	playerRepo := player.NewPlayerRepository(db)
+	playerRepo := user.NewPlayerRepository(db)
 	gameRepo := game.NewGameRepository(db)
-	paymentRepo := payment.NewPaymentRepository(db)
-	roleRepo := role.NewRoleRepository(db)
+	paymentRepo := order.NewPaymentRepository(db)
+	roleRepo := adminrepo.NewRoleRepository(db)
 	memCache := cache.NewMemory()
 
 	serviceItemRepo := serviceitem.NewServiceItemRepository(db)

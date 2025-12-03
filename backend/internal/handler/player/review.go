@@ -6,14 +6,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/internal/apierr"
+	"gamelink/pkg/apierr"
 	"gamelink/internal/model"
-	"gamelink/internal/service"
-	reviewservice "gamelink/internal/service/review"
+	orderservice "gamelink/internal/service/order"
 )
 
 // RegisterReviewRoutes 注册陪玩师评价回复路由。
-func RegisterReviewRoutes(router gin.IRouter, svc *reviewservice.ReviewService, authMiddleware gin.HandlerFunc) {
+func RegisterReviewRoutes(router gin.IRouter, svc *orderservice.ReviewService, authMiddleware gin.HandlerFunc) {
 	group := router.Group("/reviews")
 	group.Use(authMiddleware)
 	group.POST(":id/reply", func(c *gin.Context) { replyReviewHandler(c, svc) })
@@ -27,39 +26,39 @@ func RegisterReviewRoutes(router gin.IRouter, svc *reviewservice.ReviewService, 
 // @Produce      json
 // @Param        Authorization  header    string                             true  "Bearer {token}"
 // @Param        id             path      int                                true  "Review ID"
-// @Param        request        body      reviewservice.ReplyReviewRequest   true  "Reply content"
-// @Success      200            {object}  model.APIResponse[reviewservice.ReplyReviewResponse]
+// @Param        request        body      orderservice.ReplyReviewRequest   true  "Reply content"
+// @Success      200            {object}  model.APIResponse[orderservice.ReplyReviewResponse]
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      403            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
 // @Router       /player/reviews/{id}/reply [post]
-func replyReviewHandler(c *gin.Context, svc *reviewservice.ReviewService) {
+func replyReviewHandler(c *gin.Context, svc *orderservice.ReviewService) {
 	userID := getUserIDFromContext(c)
 	reviewID, err := parseUintParam(c, "id")
 	if err != nil {
 		respondError(c, http.StatusBadRequest, apierr.ErrInvalidID)
 		return
 	}
-	var req reviewservice.ReplyReviewRequest
+	var req orderservice.ReplyReviewRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 	resp, err := svc.ReplyReview(c.Request.Context(), userID, reviewID, req)
 	if err != nil {
-		if errors.Is(err, service.ErrValidation) {
+		if err != nil {
 			respondError(c, http.StatusBadRequest, err.Error())
 			return
 		}
-		if errors.Is(err, reviewservice.ErrUnauthorized) {
+		if errors.Is(err, orderservice.ErrUnauthorized) {
 			respondError(c, http.StatusForbidden, err.Error())
 			return
 		}
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondJSON(c, http.StatusOK, model.APIResponse[*reviewservice.ReplyReviewResponse]{
+	respondJSON(c, http.StatusOK, model.APIResponse[*orderservice.ReplyReviewResponse]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "回复已提交",

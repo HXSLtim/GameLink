@@ -24,10 +24,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	"gamelink/internal/config"
-	"gamelink/internal/container"
-	"gamelink/internal/lifecycle"
-	"gamelink/internal/metrics"
+	"gamelink/pkg/config"
+	"gamelink/pkg/container"
+	"gamelink/pkg/lifecycle"
+	"gamelink/pkg/metrics"
 )
 
 func main() {

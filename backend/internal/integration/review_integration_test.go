@@ -16,15 +16,13 @@ import (
 	"gamelink/internal/repository/commission"
 	"gamelink/internal/repository/game"
 	orderimpl "gamelink/internal/repository/implementations"
-	"gamelink/internal/repository/payment"
-	"gamelink/internal/repository/player"
-	"gamelink/internal/repository/review"
-	"gamelink/internal/repository/reviewreply"
+	"gamelink/internal/repository/order"
+	"gamelink/internal/repository/user"
 	"gamelink/internal/repository/user"
 	ordersvc "gamelink/internal/service/order"
 	paymentsvc "gamelink/internal/service/payment"
 	reviewsvc "gamelink/internal/service/review"
-	"gamelink/internal/testutil"
+	"gamelink/pkg/testutil"
 )
 
 // 场景：用户完成订单后创建评价 -> 陪玩师回复 -> 用户查询自己的评价列表
@@ -38,9 +36,9 @@ func TestReviewFlow(t *testing.T) {
 
 	orderRepo := orderimpl.NewOrderRepository(db)
 	userRepo := user.NewUserRepository(db)
-	playerRepo := player.NewPlayerRepository(db)
+	playerRepo := user.NewPlayerRepository(db)
 	gameRepo := game.NewGameRepository(db)
-	paymentRepo := payment.NewPaymentRepository(db)
+	paymentRepo := order.NewPaymentRepository(db)
 	reviewRepo := review.NewReviewRepository(db)
 	commissionRepo := commission.NewCommissionRepository(db)
 	replyRepo := reviewreply.NewReviewReplyRepository(db)
@@ -142,7 +140,7 @@ func seedReviewData(t *testing.T, db *gorm.DB) reviewSeed {
 	ctx := context.Background()
 
 	userRepo := user.NewUserRepository(db)
-	playerRepo := player.NewPlayerRepository(db)
+	playerRepo := user.NewPlayerRepository(db)
 	gameRepo := game.NewGameRepository(db)
 
 	userModel := &model.User{

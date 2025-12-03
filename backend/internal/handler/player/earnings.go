@@ -5,9 +5,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/internal/apierr"
+	"gamelink/pkg/apierr"
 	"gamelink/internal/model"
-	"gamelink/internal/service/earnings"
+	userservice "gamelink/internal/service/user"
 )
 
 // Swagger DTOs
@@ -87,7 +87,7 @@ type WithdrawHistoryAPIResponseSwagger struct {
 }
 
 // RegisterEarningsRoutes 注册陪玩师端收益管理路由
-func RegisterEarningsRoutes(router gin.IRouter, svc *earnings.EarningsService, authMiddleware gin.HandlerFunc) {
+func RegisterEarningsRoutes(router gin.IRouter, svc *userservice.EarningsService, authMiddleware gin.HandlerFunc) {
 	group := router.Group("/earnings")
 	group.Use(authMiddleware)
 	group.GET("/summary", func(c *gin.Context) { getEarningsSummaryHandler(c, svc) })
@@ -108,7 +108,7 @@ func RegisterEarningsRoutes(router gin.IRouter, svc *earnings.EarningsService, a
 // @Failure      403  {object}  apierr.APIError
 // @Failure      500  {object}  apierr.APIError
 // @Router       /player/earnings/summary [get]
-func getEarningsSummaryHandler(c *gin.Context, svc *earnings.EarningsService) {
+func getEarningsSummaryHandler(c *gin.Context, svc *userservice.EarningsService) {
 	userID := getUserIDFromContext(c)
 
 	resp, err := svc.GetEarningsSummary(c.Request.Context(), userID)
@@ -133,7 +133,7 @@ func getEarningsSummaryHandler(c *gin.Context, svc *earnings.EarningsService) {
 // @Failure      401   {object}  apierr.APIError
 // @Failure      500   {object}  apierr.APIError
 // @Router       /player/earnings/trend [get]
-func getEarningsTrendHandler(c *gin.Context, svc *earnings.EarningsService) {
+func getEarningsTrendHandler(c *gin.Context, svc *userservice.EarningsService) {
 	userID := getUserIDFromContext(c)
 
 	days, err := strconv.Atoi(c.Query("days"))
@@ -158,7 +158,7 @@ func getEarningsTrendHandler(c *gin.Context, svc *earnings.EarningsService) {
 // @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Param        request  body  earnings.WithdrawRequest  true  "提现信息"
+// @Param        request  body  userservice.WithdrawRequest  true  "提现信息"
 // @Success      200      {object}  WithdrawAPIResponseSwagger
 // @Failure      400      {object}  apierr.APIError
 // @Failure      401      {object}  apierr.APIError
@@ -168,10 +168,10 @@ func getEarningsTrendHandler(c *gin.Context, svc *earnings.EarningsService) {
 // @Router       /player/earnings/withdraw [post]
 //
 // ✅ 资金安全修复: 增强错误处理,支持新的验证错误类型
-func requestWithdrawHandler(c *gin.Context, svc *earnings.EarningsService) {
+func requestWithdrawHandler(c *gin.Context, svc *userservice.EarningsService) {
 	userID := getUserIDFromContext(c)
 
-	var req earnings.WithdrawRequest
+	var req userservice.WithdrawRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondAPIError(c, apierr.BadRequest(apierr.ErrInvalidJSONPayload).WithDetails(err.Error()))
 		return
@@ -179,28 +179,28 @@ func requestWithdrawHandler(c *gin.Context, svc *earnings.EarningsService) {
 
 	resp, err := svc.RequestWithdraw(c.Request.Context(), userID, req)
 	if err != nil {
-		// ✅ 处理各种验证错误
+			// ✅ 处理各种验证错误
 		switch err {
-		case earnings.ErrInsufficientBalance:
+		case userservice.ErrInsufficientBalance:
 			respondAPIError(c, apierr.BadRequest("余额不足"))
 			return
-		case earnings.ErrDailyLimitExceeded:
+		case userservice.ErrDailyLimitExceeded:
 			respondAPIError(c, apierr.BadRequest("超过每日提现限额"))
 			return
-		case earnings.ErrMonthlyLimitExceeded:
+		case userservice.ErrMonthlyLimitExceeded:
 			respondAPIError(c, apierr.BadRequest("超过每月提现限额"))
 			return
-		case earnings.ErrPendingWithdrawExists:
+		case userservice.ErrPendingWithdrawExists:
 			respondAPIError(c, apierr.BadRequest("存在待处理的提现申请,请等待处理完成后再试"))
 			return
-		case earnings.ErrValidation:
+		case userservice.ErrValidation:
 			respondAPIError(c, apierr.BadRequest(err.Error()))
 			return
 		}
 
 		// 处理其他包含详细信息的错误
 		errMsg := err.Error()
-		if len(errMsg) > 0 && (err != earnings.ErrNotFound && err != earnings.ErrUnauthorized) {
+		if len(errMsg) > 0 && (err != userservice.ErrNotFound && err != userservice.ErrUnauthorized) {
 			respondAPIError(c, apierr.BadRequest(errMsg))
 			return
 		}
@@ -226,7 +226,7 @@ func requestWithdrawHandler(c *gin.Context, svc *earnings.EarningsService) {
 // @Failure      401       {object}  apierr.APIError
 // @Failure      500       {object}  apierr.APIError
 // @Router       /player/earnings/withdraw-history [get]
-func getWithdrawHistoryHandler(c *gin.Context, svc *earnings.EarningsService) {
+func getWithdrawHistoryHandler(c *gin.Context, svc *userservice.EarningsService) {
 	userID := getUserIDFromContext(c)
 
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))

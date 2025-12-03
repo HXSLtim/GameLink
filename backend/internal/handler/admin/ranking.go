@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	apierr "gamelink/internal/apierr"
+	apierr "gamelink/pkg/apierr"
 	"gamelink/internal/model"
 	rankingrepo "gamelink/internal/repository/ranking"
 	commissionservice "gamelink/internal/service/commission"

@@ -7,8 +7,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/internal/cache"
-	"gamelink/internal/config"
+	"gamelink/pkg/cache"
+	"gamelink/pkg/config"
 	mw "gamelink/internal/handler/middleware"
 	"gamelink/internal/model"
 )

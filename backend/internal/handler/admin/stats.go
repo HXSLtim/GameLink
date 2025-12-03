@@ -10,17 +10,16 @@ import (
 
 	"gamelink/internal/model"
 	statsrepo "gamelink/internal/repository/stats"
-	"gamelink/internal/service/stats"
-	statsservice "gamelink/internal/service/stats"
+	statsservice "gamelink/internal/service/admin"
 )
 
 // StatsHandler 统计数据Handler
 type StatsHandler struct {
-	svc *stats.StatsService
+	svc *statsservice.StatsService
 }
 
 // NewStatsHandler 创建统计Handler
-func NewStatsHandler(svc *stats.StatsService) *StatsHandler {
+func NewStatsHandler(svc *statsservice.StatsService) *StatsHandler {
 	return &StatsHandler{svc: svc}
 }
 

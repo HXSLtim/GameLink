@@ -6,17 +6,17 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/internal/apierr"
+	"gamelink/pkg/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
-	"gamelink/internal/service/payment"
+	orderservice "gamelink/internal/service/order"
 )
 
-type CreatePaymentResponse = payment.CreatePaymentResponse
+type CreatePaymentResponse = orderservice.CreatePaymentResponse
 type Payment = model.Payment
-type PaymentStatusResponse = payment.PaymentStatusResponse
+type PaymentStatusResponse = orderservice.PaymentStatusResponse
 
-func RegisterPaymentRoutes(router gin.IRouter, svc *payment.PaymentService, authMiddleware gin.HandlerFunc) {
+func RegisterPaymentRoutes(router gin.IRouter, svc *orderservice.PaymentService, authMiddleware gin.HandlerFunc) {
 	group := router.Group("/payments")
 	group.Use(authMiddleware)
 	group.GET("", func(c *gin.Context) { listPaymentsHandler(c, svc) })
@@ -32,13 +32,13 @@ func RegisterPaymentRoutes(router gin.IRouter, svc *payment.PaymentService, auth
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string                          true  "Bearer {token}"
-// @Param        request        body      payment.CreatePaymentRequest    true  "创建支付请求"
+// @Param        request        body      orderservice.CreatePaymentRequest    true  "创建支付请求"
 // @Success      200            {object}  model.APIResponse[Payment]
 // @Router       /user/payments [post]
-func createPaymentHandler(c *gin.Context, svc *payment.PaymentService) {
+func createPaymentHandler(c *gin.Context, svc *orderservice.PaymentService) {
 	userID := getUserIDFromContext(c)
 
-	var req payment.CreatePaymentRequest
+	var req orderservice.CreatePaymentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondAPIError(c, apierr.BadRequest(apierr.ErrInvalidJSONPayload).WithDetails(err.Error()))
 		return
@@ -46,11 +46,11 @@ func createPaymentHandler(c *gin.Context, svc *payment.PaymentService) {
 
 	resp, err := svc.CreatePayment(c.Request.Context(), userID, req)
 	if err != nil {
-		if err == payment.ErrOrderAlreadyPaid {
+		if err == orderservice.ErrOrderAlreadyPaid {
 			respondAPIError(c, apierr.Conflict(err.Error()))
 			return
 		}
-		if err == payment.ErrValidation {
+		if err == orderservice.ErrPaymentValidation {
 			respondAPIError(c, apierr.BadRequest(err.Error()))
 			return
 		}
@@ -68,7 +68,7 @@ func createPaymentHandler(c *gin.Context, svc *payment.PaymentService) {
 // @Param        id    path      uint64  true  "支付ID"
 // @Success      200   {object}  model.APIResponse[Payment]
 // @Router       /user/payments/{id} [get]
-func getPaymentStatusHandler(c *gin.Context, svc *payment.PaymentService) {
+func getPaymentStatusHandler(c *gin.Context, svc *orderservice.PaymentService) {
 	paymentID, err := parseUintParam(c, "id")
 	if err != nil {
 		respondAPIError(c, apierr.BadRequest(apierr.ErrInvalidID))
@@ -77,7 +77,7 @@ func getPaymentStatusHandler(c *gin.Context, svc *payment.PaymentService) {
 
 	resp, err := svc.GetPaymentStatus(c.Request.Context(), paymentID)
 	if err != nil {
-		if err == payment.ErrNotFound {
+		if err == orderservice.ErrPaymentNotFound {
 			respondAPIError(c, apierr.NotFound(err.Error()))
 			return
 		}
@@ -95,7 +95,7 @@ func getPaymentStatusHandler(c *gin.Context, svc *payment.PaymentService) {
 // @Param        id    path      uint64  true  "支付ID"
 // @Success      200   {object}  model.SuccessResponse
 // @Router       /user/payments/{id}/cancel [post]
-func cancelPaymentHandler(c *gin.Context, svc *payment.PaymentService) {
+func cancelPaymentHandler(c *gin.Context, svc *orderservice.PaymentService) {
 	userID := getUserIDFromContext(c)
 
 	paymentID, err := parseUintParam(c, "id")
@@ -105,7 +105,7 @@ func cancelPaymentHandler(c *gin.Context, svc *payment.PaymentService) {
 	}
 
 	if err := svc.CancelPayment(c.Request.Context(), userID, paymentID); err != nil {
-		if err == payment.ErrNotFound {
+		if err == orderservice.ErrPaymentNotFound {
 			respondAPIError(c, apierr.NotFound(err.Error()))
 			return
 		}
@@ -129,11 +129,11 @@ func cancelPaymentHandler(c *gin.Context, svc *payment.PaymentService) {
 // @Param        dateTo     query  string  false  "结束时间 RFC3339"
 // @Success      200        {object}  model.SuccessResponse
 // @Router       /user/payments [get]
-func listPaymentsHandler(c *gin.Context, svc *payment.PaymentService) {
+func listPaymentsHandler(c *gin.Context, svc *orderservice.PaymentService) {
 	userID := getUserIDFromContext(c)
 	opts := buildPaymentListOptionsFromQuery(c)
 	opts.UserID = &userID
-	payments, total, err := svc.List(c.Request.Context(), opts)
+	payments, total, err := svc.ListPayments(c.Request.Context(), opts)
 	if err != nil {
 		respondAPIError(c, apierr.InternalError("获取支付列表失败").WithDetails(err.Error()))
 		return
@@ -143,7 +143,6 @@ func listPaymentsHandler(c *gin.Context, svc *payment.PaymentService) {
 		Total int64           `json:"total"`
 	}{Items: payments, Total: total})
 }
-
 func buildPaymentListOptionsFromQuery(c *gin.Context) repository.PaymentListOptions {
 	opts := repository.PaymentListOptions{
 		Page:     parseIntWithDefault(c.Query("page"), 1),

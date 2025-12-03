@@ -146,9 +146,16 @@ generate_and_validate() {
 
     cd /mnt/c/Users/a2778/Desktop/code/GameLink/backend
 
-    # 生成 Swagger 文档
-    echo "生成 Swagger 文档..."
-    if swag init -g cmd/main.go; then
+    # 生成 Swagger 文档（支持泛型）
+    echo "生成 Swagger 文档（支持泛型）..."
+    if swag init \
+        -g cmd/main.go \
+        --output "./docs" \
+        --generalInfo "main.go" \
+        --dir "." \
+        --parseDependency \
+        --parseInternal \
+        --parseDepth 10; then
         echo -e "${GREEN}✅ Swagger 文档生成成功${NC}"
     else
         echo -e "${RED}❌ Swagger 文档生成失败${NC}"

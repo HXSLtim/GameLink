@@ -13,15 +13,15 @@ import (
 
 var ErrInvalidAmount = errors.New("invalid amount")
 
-// Service 提供钱包余额与充值能力
-type Service struct {
+// WalletService 提供钱包余额与充值能力
+type WalletService struct {
 	wallets  walletrepo.Repository
 	payments repository.PaymentRepository
 	orders   interfaces.OrderRepository
 }
 
-func NewService(wallets walletrepo.Repository, payments repository.PaymentRepository, orders interfaces.OrderRepository) *Service {
-	return &Service{wallets: wallets, payments: payments, orders: orders}
+func NewWalletService(wallets walletrepo.Repository, payments repository.PaymentRepository, orders interfaces.OrderRepository) *WalletService {
+	return &WalletService{wallets: wallets, payments: payments, orders: orders}
 }
 
 type RechargeRequest struct {
@@ -36,7 +36,7 @@ type RechargeResponse struct {
 }
 
 // Recharge 创建充值订单并直接记为已支付，累加余额（简化版，无第三方回调）
-func (s *Service) Recharge(ctx context.Context, userID uint64, req RechargeRequest) (*RechargeResponse, error) {
+func (s *WalletService) Recharge(ctx context.Context, userID uint64, req RechargeRequest) (*RechargeResponse, error) {
 	if req.AmountCents <= 0 {
 		return nil, ErrInvalidAmount
 	}
@@ -88,7 +88,7 @@ func (s *Service) Recharge(ctx context.Context, userID uint64, req RechargeReque
 	}, nil
 }
 
-func (s *Service) GetBalance(ctx context.Context, userID uint64) (*model.Wallet, error) {
+func (s *WalletService) GetBalance(ctx context.Context, userID uint64) (*model.Wallet, error) {
 	w, err := s.wallets.GetByUserID(ctx, userID)
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {

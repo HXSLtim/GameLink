@@ -5,8 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/internal/apierr"
-	"gamelink/internal/auth"
+	"gamelink/pkg/apierr"
+	"gamelink/pkg/auth"
 	"gamelink/internal/model"
 	"gamelink/internal/service"
 	authservice "gamelink/internal/service/auth"

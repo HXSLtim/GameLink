@@ -8,16 +8,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	"gamelink/internal/cache"
+	"gamelink/pkg/cache"
 	adminhandler "gamelink/internal/handler/admin"
 	"gamelink/internal/model"
 	"gamelink/internal/repository/game"
-	"gamelink/internal/repository/player"
-	"gamelink/internal/repository/role"
-	"gamelink/internal/repository/serviceitem"
 	"gamelink/internal/repository/user"
+	adminrepo "gamelink/internal/repository/admin"
+	"gamelink/internal/repository/serviceitem"
 	adminservice "gamelink/internal/service/admin"
-	"gamelink/internal/testutil"
+	"gamelink/pkg/testutil"
 )
 
 // 管理端用户管理：创建用户 -> 查询 -> 更新状态/角色 -> 删除
@@ -29,9 +28,9 @@ func TestAdminUserManagement(t *testing.T) {
 
 	// repos & service
 	userRepo := user.NewUserRepository(db)
-	playerRepo := player.NewPlayerRepository(db)
+	playerRepo := user.NewPlayerRepository(db)
 	gameRepo := game.NewGameRepository(db)
-	roleRepo := role.NewRoleRepository(db)
+	roleRepo := adminrepo.NewRoleRepository(db)
 	memCache := cache.NewMemory()
 	serviceItemRepo := serviceitem.NewServiceItemRepository(db)
 	adminSvc := adminservice.NewAdminService(gameRepo, userRepo, playerRepo, nil, nil, roleRepo, serviceItemRepo, memCache)

@@ -17,16 +17,16 @@ import (
 	commissionrepo "gamelink/internal/repository/commission"
 	"gamelink/internal/repository/game"
 	orderimpl "gamelink/internal/repository/implementations"
-	"gamelink/internal/repository/payment"
-	"gamelink/internal/repository/player"
+	"gamelink/internal/repository/order"
+	"gamelink/internal/repository/user"
 	"gamelink/internal/repository/ranking"
-	"gamelink/internal/repository/review"
+	"gamelink/internal/repository/order"
 	"gamelink/internal/repository/user"
 	commissionservice "gamelink/internal/service/commission"
 	ordersvc "gamelink/internal/service/order"
 	paymentsvc "gamelink/internal/service/payment"
 	rankingservice "gamelink/internal/service/ranking"
-	"gamelink/internal/testutil"
+	"gamelink/pkg/testutil"
 )
 
 // 管理端抽成规则与排名抽成：创建规则+排名配置 -> 订单支付 -> 校验平台统计
@@ -41,9 +41,9 @@ func TestCommissionRuleFlow(t *testing.T) {
 
 	orderRepo := orderimpl.NewOrderRepository(db)
 	userRepo := user.NewUserRepository(db)
-	playerRepo := player.NewPlayerRepository(db)
+	playerRepo := user.NewPlayerRepository(db)
 	gameRepo := game.NewGameRepository(db)
-	paymentRepo := payment.NewPaymentRepository(db)
+	paymentRepo := order.NewPaymentRepository(db)
 	reviewRepo := review.NewReviewRepository(db)
 	commissionRepo := commissionrepo.NewCommissionRepository(db)
 	rankingRepo := ranking.NewRankingCommissionRepository(db)
@@ -316,7 +316,7 @@ func createRankingPlayer(t *testing.T, db *gorm.DB, name, email, phone string) u
 	t.Helper()
 	ctx := context.Background()
 	userRepo := user.NewUserRepository(db)
-	playerRepo := player.NewPlayerRepository(db)
+	playerRepo := user.NewPlayerRepository(db)
 
 	userModel := &model.User{
 		Name:         name,

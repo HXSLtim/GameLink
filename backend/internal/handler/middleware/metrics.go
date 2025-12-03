@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"time"
 
-	"gamelink/internal/metrics"
+	"gamelink/pkg/metrics"
 	"github.com/gin-gonic/gin"
 )
 

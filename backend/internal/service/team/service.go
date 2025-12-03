@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"gamelink/internal/model"
+t"gamelink/pkg/apierr"
 )
 
 // Service provides team order assignment and payout operations.
@@ -102,7 +103,7 @@ func (s *Service) SnatchOrder(ctx context.Context, leaderID uint64, req SnatchRe
 		return nil, err
 	}
 	if member.Role != model.TeamRoleLeader || member.Status != model.TeamMemberStatusActive {
-		return nil, errors.New("permission denied: not active team leader")
+		return nil, apierr.Forbidden("权限不足：不是活跃的团队队长")
 	}
 
 	// acquire order for snatch
@@ -112,10 +113,10 @@ func (s *Service) SnatchOrder(ctx context.Context, leaderID uint64, req SnatchRe
 	}
 	// basic validation according to test data
 	if order.Status != model.OrderStatusPending {
-		return nil, fmt.Errorf("invalid order status: %s", order.Status)
+		return nil, apierr.BadRequest("订单状态无效")
 	}
 	if order.QueueType != model.OrderQueueTypeTeam {
-		return nil, errors.New("order is not in team queue")
+		return nil, apierr.BadRequest("订单不在团队队列中")
 	}
 
 	// create assignment (first wins, others will fail inside repo)
@@ -183,7 +184,7 @@ func (s *Service) UpsertPayoutPlan(ctx context.Context, leaderID uint64, req Pay
 		return nil, err
 	}
 	if member.Role != model.TeamRoleLeader || member.Status != model.TeamMemberStatusActive {
-		return nil, errors.New("permission denied: not active team leader")
+		return nil, apierr.Forbidden("权限不足：不是活跃的团队队长")
 	}
 
 	// fetch assignment by order
@@ -192,7 +193,7 @@ func (s *Service) UpsertPayoutPlan(ctx context.Context, leaderID uint64, req Pay
 		return nil, err
 	}
 	if assignment.TeamID != req.TeamID {
-		return nil, errors.New("assignment team mismatch")
+		return nil, apierr.BadRequest("分配团队不匹配")
 	}
 
 	// validate custom shares sum to 100
@@ -202,7 +203,7 @@ func (s *Service) UpsertPayoutPlan(ctx context.Context, leaderID uint64, req Pay
 			sum += s.Percent
 		}
 		if sum != 100 {
-			return nil, errors.New("shares percent must sum to 100")
+			return nil, apierr.BadRequest("分成比例总和必须为100")
 		}
 	}
 

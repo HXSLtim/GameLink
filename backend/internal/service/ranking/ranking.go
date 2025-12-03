@@ -2,9 +2,9 @@ package ranking
 
 import (
 	"context"
-	"errors"
 	"time"
 
+	"gamelink/pkg/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	repoiface "gamelink/internal/repository/interfaces"
@@ -15,7 +15,7 @@ var (
 	// ErrNotFound 排名不存在
 	ErrNotFound = repository.ErrNotFound
 	// ErrValidation 表示输入校验失败
-	ErrValidation = errors.New("validation failed")
+	ErrValidation = apierr.BadRequest("验证失败")
 )
 
 // RankingService 排名服务

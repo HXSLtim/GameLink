@@ -7,7 +7,7 @@ import (
 	"gamelink/internal/model"
 	chatrepo "gamelink/internal/repository/chat"
 	chatservice "gamelink/internal/service/chat"
-	"gamelink/internal/testutil"
+	"gamelink/pkg/testutil"
 )
 
 // 聊天组清理：删除已停用且超过截止时间的订单群

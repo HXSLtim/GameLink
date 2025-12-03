@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"gamelink/internal/apierr"
-	"gamelink/internal/cache"
+	"gamelink/pkg/apierr"
+	"gamelink/pkg/cache"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	commissionrepo "gamelink/internal/repository/commission"
@@ -152,13 +152,6 @@ type PaymentDTO struct {
 	CreatedAt   time.Time           `json:"createdAt"`
 }
 
-// ReviewDTO 评价信息
-type ReviewDTO struct {
-	ID        uint64 `json:"id"`
-	Rating    int    `json:"rating"`
-	Comment   string `json:"comment"`
-	CreatedAt string `json:"createdAt"`
-}
 
 // PlayerCardDTO 陪玩师卡片信息
 type PlayerCardDTO struct {
@@ -522,7 +515,7 @@ func (s *OrderService) recordCommissionAsync(ctx context.Context, orderID uint64
 	now := time.Now()
 	playerID := order.GetPlayerID()
 	if playerID == 0 {
-		return errors.New("order has no player assigned")
+		return apierr.BadRequest("订单未分配打手")
 	}
 
 	record := &model.CommissionRecord{
@@ -764,7 +757,7 @@ func (s *OrderService) AcceptOrder(ctx context.Context, playerUserID uint64, ord
 	// 直接根据UserID查找陪玩师 (性能优化: 避免全表扫描)
 	player, err := s.players.GetByUserID(ctx, playerUserID)
 	if err != nil {
-		return errors.New("player not found")
+		return apierr.NotFound("陪玩师不存在")
 	}
 
 	playerID := player.ID
@@ -795,7 +788,7 @@ func (s *OrderService) CompleteOrderByPlayer(ctx context.Context, playerUserID u
 	// 直接根据UserID查找陪玩师 (性能优化: 避免全表扫描)
 	player, err := s.players.GetByUserID(ctx, playerUserID)
 	if err != nil {
-		return errors.New("player not found")
+		return apierr.NotFound("陪玩师不存在")
 	}
 
 	playerID := player.ID

@@ -1,34 +1,29 @@
 package router
 
 import (
-	"gamelink/internal/cache"
+	"gamelink/pkg/cache"
 	chatrepo "gamelink/internal/repository/chat"
 	commissionrepo "gamelink/internal/repository/commission"
-	feedrepo "gamelink/internal/repository/feed"
+	feedrepo "gamelink/internal/repository/content"
 	gamerepo "gamelink/internal/repository/game"
 	orderrepo "gamelink/internal/repository/implementations"
-	notificationrepo "gamelink/internal/repository/notification"
-	paymentrepo "gamelink/internal/repository/payment"
-	playerrepo "gamelink/internal/repository/player"
-	playertagrepo "gamelink/internal/repository/player_tag"
-	reviewrepo "gamelink/internal/repository/review"
-	reviewreplyrepo "gamelink/internal/repository/reviewreply"
-	serviceitemrepo "gamelink/internal/repository/serviceitem"
+	notificationrepo "gamelink/internal/repository/content"
+	paymentrepo "gamelink/internal/repository/order"
 	userrepo "gamelink/internal/repository/user"
-	walletrepo "gamelink/internal/repository/wallet"
+	reviewrepo "gamelink/internal/repository/order"
+	reviewreplyrepo "gamelink/internal/repository/order"
+	serviceitemrepo "gamelink/internal/repository/serviceitem"
+	adminrepo "gamelink/internal/repository/admin"
 	withdrawrepo "gamelink/internal/repository/withdraw"
-	"gamelink/internal/scheduler"
+	"gamelink/pkg/scheduler"
 	chatservice "gamelink/internal/service/chat"
 	commissionservice "gamelink/internal/service/commission"
-	earningsservice "gamelink/internal/service/earnings"
-	feedservice "gamelink/internal/service/feed"
+	contentservice "gamelink/internal/service/content"
 	giftservice "gamelink/internal/service/gift"
 	itemservice "gamelink/internal/service/item"
-	notificationservice "gamelink/internal/service/notification"
 	orderservice "gamelink/internal/service/order"
-	paymentservice "gamelink/internal/service/payment"
-	playerservice "gamelink/internal/service/player"
-	reviewservice "gamelink/internal/service/review"
+	serviceplayer "gamelink/internal/service/player"
+	userservice "gamelink/internal/service/user"
 	walletservice "gamelink/internal/service/wallet"
 
 	"gorm.io/gorm"
@@ -40,14 +35,15 @@ type appServices struct {
 	serviceItemSvc      *itemservice.ServiceItemService
 	giftSvc             *giftservice.GiftService
 	orderSvc            *orderservice.OrderService
-	paymentSvc          *paymentservice.PaymentService
-	playerSvc           *playerservice.PlayerService
-	reviewSvc           *reviewservice.ReviewService
-	earningsSvc         *earningsservice.EarningsService
+	paymentSvc          *orderservice.PaymentService
+	playerSvc           *serviceplayer.PlayerService
+	reviewSvc           *orderservice.ReviewService
+	disputeSvc          *orderservice.DisputeService
+	earningsSvc         *userservice.EarningsService
 	chatSvc             *chatservice.ChatService
-	feedSvc             *feedservice.Service
-	notificationSvc     *notificationservice.Service
-	walletSvc           *walletservice.Service
+	feedSvc             *contentservice.FeedService
+	notificationSvc     *contentservice.NotificationService
+	walletSvc           *walletservice.WalletService
 	settlementScheduler *scheduler.SettlementScheduler
 	chatRetention       *scheduler.ChatRetentionScheduler
 }
@@ -56,7 +52,7 @@ type appServices struct {
 func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 	// 仓库实例（仅在此函数内部复用）
 	userRepo := userrepo.NewUserRepository(orm)
-	playerRepo := playerrepo.NewPlayerRepository(orm)
+	playerRepo := userrepo.NewPlayerRepository(orm)
 	gameRepo := gamerepo.NewGameRepository(orm)
 	orderRepo := orderrepo.NewOrderRepository(orm)
 	chatGroupRepo := chatrepo.NewChatGroupRepository(orm)
@@ -66,13 +62,13 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 	paymentRepo := paymentrepo.NewPaymentRepository(orm)
 	reviewRepo := reviewrepo.NewReviewRepository(orm)
 	reviewReplyRepo := reviewreplyrepo.NewReviewReplyRepository(orm)
-	playerTagRepo := playertagrepo.NewPlayerTagRepository(orm)
+	playerTagRepo := userrepo.NewPlayerTagRepository(orm)
 	withdrawRepo := withdrawrepo.NewWithdrawRepository(orm)
 	commissionRepo := commissionrepo.NewCommissionRepository(orm)
 	serviceItemRepo := serviceitemrepo.NewServiceItemRepository(orm)
 	feedRepo := feedrepo.NewFeedRepository(orm)
 	notificationRepo := notificationrepo.NewNotificationRepository(orm)
-	walletRepo := walletrepo.NewWalletRepository(orm)
+	walletRepo := userrepo.NewWalletRepository(orm)
 
 	// 领域服务
 	commissionSvc := commissionservice.NewCommissionService(commissionRepo, orderRepo, playerRepo)
@@ -81,14 +77,17 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 	orderSvc := orderservice.NewOrderService(orderRepo, playerRepo, userRepo, gameRepo, paymentRepo, reviewRepo, commissionRepo)
 	// 注入聊天群仓库用于订单聊天自动销毁
 	orderSvc.SetChatGroupRepository(chatGroupRepo)
-	paymentSvc := paymentservice.NewPaymentService(paymentRepo, orderRepo)
-	playerSvc := playerservice.NewPlayerService(playerRepo, userRepo, gameRepo, orderRepo, reviewRepo, playerTagRepo, cacheClient)
-	reviewSvc := reviewservice.NewReviewService(reviewRepo, orderRepo, playerRepo, userRepo, reviewReplyRepo)
-	earningsSvc := earningsservice.NewEarningsService(playerRepo, orderRepo, withdrawRepo)
+	paymentSvc := orderservice.NewPaymentService(paymentRepo, orderRepo)
+	playerSvc := serviceplayer.NewPlayerService(playerRepo, userRepo, gameRepo, orderRepo, reviewRepo, playerTagRepo, cacheClient)
+	reviewSvc := orderservice.NewReviewService(reviewRepo, orderRepo, playerRepo, userRepo, reviewReplyRepo)
+	disputeRepo := reviewrepo.NewDisputeRepository(orm)
+	operationLogRepo := adminrepo.NewOperationLogRepository(orm)
+	disputeSvc := orderservice.NewDisputeService(disputeRepo, orderRepo, userRepo, operationLogRepo, notificationRepo, paymentRepo)
+	earningsSvc := userservice.NewEarningsService(playerRepo, orderRepo, withdrawRepo)
 	chatSvc := chatservice.NewChatService(chatGroupRepo, chatMemberRepo, chatMessageRepo, chatReportRepo, cacheClient)
-	feedSvc := feedservice.NewService(feedRepo, nil)
-	notificationSvc := notificationservice.NewService(notificationRepo)
-	walletSvc := walletservice.NewService(walletRepo, paymentRepo, orderRepo)
+	feedSvc := contentservice.NewFeedService(feedRepo, nil)
+	notificationSvc := contentservice.NewNotificationService(notificationRepo)
+	walletSvc := walletservice.NewWalletService(walletRepo, paymentRepo, orderRepo)
 
 	// 调度器（先构造，调用方负责 Start/Stop）
 	settlementScheduler := scheduler.NewSettlementScheduler(commissionSvc)
@@ -102,6 +101,7 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 		paymentSvc:          paymentSvc,
 		playerSvc:           playerSvc,
 		reviewSvc:           reviewSvc,
+		disputeSvc:          disputeSvc,
 		earningsSvc:         earningsSvc,
 		chatSvc:             chatSvc,
 		feedSvc:             feedSvc,

@@ -10,8 +10,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 
-	"gamelink/internal/auth"
-	"gamelink/internal/cache"
+	"gamelink/pkg/auth"
+	"gamelink/pkg/cache"
 	"gamelink/internal/handler"
 	adminhandler "gamelink/internal/handler/admin"
 	userhandler "gamelink/internal/handler/user"
@@ -20,15 +20,15 @@ import (
 	chatsrepo "gamelink/internal/repository/chat"
 	"gamelink/internal/repository/game"
 	orderimpl "gamelink/internal/repository/implementations"
-	"gamelink/internal/repository/payment"
-	"gamelink/internal/repository/player"
-	"gamelink/internal/repository/role"
+	"gamelink/internal/repository/order"
+	"gamelink/internal/repository/user"
+	adminrepo "gamelink/internal/repository/admin"
 	"gamelink/internal/repository/serviceitem"
 	"gamelink/internal/repository/user"
 	adminservice "gamelink/internal/service/admin"
 	authservice "gamelink/internal/service/auth"
 	chatservice "gamelink/internal/service/chat"
-	"gamelink/internal/testutil"
+	"gamelink/pkg/testutil"
 )
 
 // 封禁：登录成功 -> 管理端封禁 -> 登录被拒
@@ -39,11 +39,11 @@ func TestUserBanAfterAdminUpdate(t *testing.T) {
 	migrateAuthModels(t, db)
 
 	userRepo := user.NewUserRepository(db)
-	roleRepo := role.NewRoleRepository(db)
+	roleRepo := adminrepo.NewRoleRepository(db)
 	gameRepo := game.NewGameRepository(db)
-	playerRepo := player.NewPlayerRepository(db)
+	playerRepo := user.NewPlayerRepository(db)
 	orderRepo := orderimpl.NewOrderRepository(db)
-	paymentRepo := payment.NewPaymentRepository(db)
+	paymentRepo := order.NewPaymentRepository(db)
 
 	hashed, _ := bcrypt.GenerateFromPassword([]byte("Passw0rd"), bcrypt.DefaultCost)
 	u := &model.User{Name: "BanUser", Email: "ban@example.com", Phone: "19912345678", PasswordHash: string(hashed), Role: model.RoleUser, Status: model.UserStatusActive}

@@ -14,12 +14,12 @@ import (
 	"gamelink/internal/model"
 	"gamelink/internal/repository/commission"
 	orderimpl "gamelink/internal/repository/implementations"
-	"gamelink/internal/repository/player"
+	"gamelink/internal/repository/user"
 	"gamelink/internal/repository/serviceitem"
 	"gamelink/internal/repository/user"
 	giftsvc "gamelink/internal/service/gift"
 	itemsvc "gamelink/internal/service/item"
-	"gamelink/internal/testutil"
+	"gamelink/pkg/testutil"
 )
 
 // 礼物业务集成：列举礼物->发送礼物->陪玩师查看收到的礼物与统计
@@ -33,7 +33,7 @@ func TestGiftFlow(t *testing.T) {
 
 	// repositories & services
 	orderRepo := orderimpl.NewOrderRepository(db)
-	playerRepo := player.NewPlayerRepository(db)
+	playerRepo := user.NewPlayerRepository(db)
 	itemRepo := serviceitem.NewServiceItemRepository(db)
 	commissionRepo := commission.NewCommissionRepository(db)
 
@@ -110,7 +110,7 @@ func TestGiftListExcludeInactive(t *testing.T) {
 
 	// 路由
 	orderRepo := orderimpl.NewOrderRepository(db)
-	playerRepo := player.NewPlayerRepository(db)
+	playerRepo := user.NewPlayerRepository(db)
 	itemRepo = serviceitem.NewServiceItemRepository(db)
 	commissionRepo := commission.NewCommissionRepository(db)
 	itemService := itemsvc.NewServiceItemService(itemRepo, nil, playerRepo)
@@ -155,7 +155,7 @@ func seedGiftData(t *testing.T, db *gorm.DB) giftSeed {
 	ctx := context.Background()
 
 	userRepo := user.NewUserRepository(db)
-	playerRepo := player.NewPlayerRepository(db)
+	playerRepo := user.NewPlayerRepository(db)
 	itemRepo := serviceitem.NewServiceItemRepository(db)
 
 	userModel := &model.User{

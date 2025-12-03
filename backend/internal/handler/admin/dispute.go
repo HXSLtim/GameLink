@@ -8,9 +8,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	apierr "gamelink/internal/apierr"
+	apierr "gamelink/pkg/apierr"
 	"gamelink/internal/model"
-	"gamelink/internal/service/assignment"
+	orderservice "gamelink/internal/service/order"
 )
 
 // OrderDispute 订单纠纷模型（类型别名）
@@ -18,11 +18,11 @@ type OrderDispute = model.OrderDispute
 
 // DisputeHandler handles order dispute related endpoints
 type DisputeHandler struct {
-	svc *assignment.AssignmentService
+	svc *orderservice.DisputeService
 }
 
 // NewDisputeHandler creates a new dispute handler
-func NewDisputeHandler(svc *assignment.AssignmentService) *DisputeHandler {
+func NewDisputeHandler(svc *orderservice.DisputeService) *DisputeHandler {
 	return &DisputeHandler{svc: svc}
 }
 
@@ -46,7 +46,7 @@ func (h *DisputeHandler) GetDisputeDetail(c *gin.Context) {
 
 	dispute, err := h.svc.GetDisputeDetail(c.Request.Context(), disputeID)
 	if err != nil {
-		if errors.Is(err, assignment.ErrNotFound) {
+		if errors.Is(err, orderservice.ErrDisputeNotFound) {
 			writeJSONError(c, http.StatusNotFound, apierr.ErrDisputeNotFound)
 			return
 		}
@@ -158,7 +158,7 @@ func (h *DisputeHandler) AssignDispute(c *gin.Context) {
 		return
 	}
 
-	err = h.svc.AssignDispute(c.Request.Context(), assignment.AssignDisputeRequest{
+	err = h.svc.AssignDispute(c.Request.Context(), orderservice.AssignDisputeRequest{
 		DisputeID:        disputeID,
 		AssignedToUserID: payload.AssignedToUserID,
 		Source:           source,
@@ -166,11 +166,11 @@ func (h *DisputeHandler) AssignDispute(c *gin.Context) {
 	})
 
 	if err != nil {
-		if errors.Is(err, assignment.ErrValidation) {
+		if errors.Is(err, orderservice.ErrDisputeValidation) {
 			writeJSONError(c, http.StatusBadRequest, err.Error())
 			return
 		}
-		if errors.Is(err, assignment.ErrInvalidStatus) {
+		if errors.Is(err, orderservice.ErrDisputeInvalidStatus) {
 			writeJSONError(c, http.StatusConflict, err.Error())
 			return
 		}
@@ -225,18 +225,18 @@ func (h *DisputeHandler) RollbackAssignment(c *gin.Context) {
 		return
 	}
 
-	err = h.svc.RollbackAssignment(c.Request.Context(), assignment.RollbackAssignmentRequest{
+	err = h.svc.RollbackDisputeAssignment(c.Request.Context(), orderservice.RollbackDisputeRequest{
 		DisputeID:      disputeID,
 		RollbackReason: payload.RollbackReason,
 		ActorUserID:    actorUserID.(uint64),
 	})
 
 	if err != nil {
-		if errors.Is(err, assignment.ErrValidation) {
+		if errors.Is(err, orderservice.ErrDisputeValidation) {
 			writeJSONError(c, http.StatusBadRequest, err.Error())
 			return
 		}
-		if errors.Is(err, assignment.ErrInvalidStatus) {
+		if errors.Is(err, orderservice.ErrDisputeInvalidStatus) {
 			writeJSONError(c, http.StatusConflict, err.Error())
 			return
 		}
@@ -295,7 +295,7 @@ func (h *DisputeHandler) ResolveDispute(c *gin.Context) {
 
 	resolution := model.DisputeResolution(payload.Resolution)
 
-	err = h.svc.ResolveDispute(c.Request.Context(), assignment.ResolveDisputeRequest{
+	err = h.svc.ResolveDispute(c.Request.Context(), orderservice.ResolveDisputeRequest{
 		DisputeID:        disputeID,
 		Resolution:       resolution,
 		ResolutionAmount: payload.ResolutionAmount,
@@ -304,11 +304,11 @@ func (h *DisputeHandler) ResolveDispute(c *gin.Context) {
 	})
 
 	if err != nil {
-		if errors.Is(err, assignment.ErrValidation) {
+		if errors.Is(err, orderservice.ErrDisputeValidation) {
 			writeJSONError(c, http.StatusBadRequest, err.Error())
 			return
 		}
-		if errors.Is(err, assignment.ErrInvalidStatus) {
+		if errors.Is(err, orderservice.ErrDisputeInvalidStatus) {
 			writeJSONError(c, http.StatusConflict, err.Error())
 			return
 		}

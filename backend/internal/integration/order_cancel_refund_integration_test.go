@@ -14,13 +14,13 @@ import (
 	"gamelink/internal/repository/commission"
 	"gamelink/internal/repository/game"
 	orderimpl "gamelink/internal/repository/implementations"
-	"gamelink/internal/repository/payment"
-	"gamelink/internal/repository/player"
-	"gamelink/internal/repository/review"
+	"gamelink/internal/repository/order"
+	"gamelink/internal/repository/user"
+	"gamelink/internal/repository/order"
 	"gamelink/internal/repository/user"
 	ordersvc "gamelink/internal/service/order"
 	paymentsvc "gamelink/internal/service/payment"
-	"gamelink/internal/testutil"
+	"gamelink/pkg/testutil"
 )
 
 // 用户支付后取消订单 -> 自动退款 + 状态退款
@@ -34,9 +34,9 @@ func TestOrderCancelAfterPayment(t *testing.T) {
 
 	orderRepo := orderimpl.NewOrderRepository(db)
 	userRepo := user.NewUserRepository(db)
-	playerRepo := player.NewPlayerRepository(db)
+	playerRepo := user.NewPlayerRepository(db)
 	gameRepo := game.NewGameRepository(db)
-	paymentRepo := payment.NewPaymentRepository(db)
+	paymentRepo := order.NewPaymentRepository(db)
 	reviewRepo := review.NewReviewRepository(db)
 	commissionRepo := commission.NewCommissionRepository(db)
 

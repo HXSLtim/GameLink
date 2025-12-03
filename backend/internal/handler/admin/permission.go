@@ -9,7 +9,7 @@ import (
 	"gamelink/internal/handler/middleware"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
-	permissionservice "gamelink/internal/service/permission"
+	permissionservice "gamelink/internal/service/admin"
 )
 
 // Permission 权限模型（类型别名）

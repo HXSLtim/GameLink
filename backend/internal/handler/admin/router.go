@@ -6,11 +6,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/internal/config"
+	"gamelink/pkg/config"
 	mw "gamelink/internal/handler/middleware"
 	"gamelink/internal/model"
 	adminservice "gamelink/internal/service/admin"
-	statsservice "gamelink/internal/service/stats"
+	statsservice "gamelink/internal/service/admin"
 )
 
 // RegisterRoutes 注册后台管理相关路由

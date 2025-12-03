@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"gamelink/internal/apierr"
+	"gamelink/pkg/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 )

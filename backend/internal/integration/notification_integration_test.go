@@ -11,10 +11,10 @@ import (
 
 	notificationhandler "gamelink/internal/handler/notification"
 	"gamelink/internal/model"
-	notificationrepo "gamelink/internal/repository/notification"
+	notificationrepo "gamelink/internal/repository/content"
 	userrepo "gamelink/internal/repository/user"
 	notificationservice "gamelink/internal/service/notification"
-	"gamelink/internal/testutil"
+	"gamelink/pkg/testutil"
 )
 
 // 场景：种子通知 -> 列表 -> 未读数 -> 标记已读 -> 未读数减少

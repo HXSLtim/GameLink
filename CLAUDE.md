@@ -318,3 +318,35 @@ docs(api): update payment API documentation
 - 代码审查前请运行lint检查
 - 查看docs/目录获取详细文档
 - **质量优先**: 功能实现必须以保证代码质量为前提
+## Swagger 文档生成
+
+本项目支持使用 swag 生成包含泛型的 Swagger 文档。
+
+### 生成文档
+
+#### Windows (PowerShell)
+```powershell
+# 运行 PowerShell 脚本
+.\scripts\generate-swagger.ps1
+```
+
+#### Linux/macOS
+```bash
+# 方式 1: 使用 Makefile
+make swagger
+
+# 方式 2: 使用 Bash 脚本
+./scripts/fix-swagger-annotations.sh
+
+# 方式 3: 手动运行
+cd cmd && swag init -g main.go --output "../docs" --parseDependency --parseInternal --parseDepth 10
+```
+
+### 访问 Swagger UI
+
+服务启动后，访问: http://localhost:8080/swagger/index.html
+
+### 详细说明
+
+查看 [SWAGGER_USAGE.md](SWAGGER_USAGE.md) 获取完整的 Swagger 使用指南。
+

@@ -6,10 +6,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/internal/auth"
+	"gamelink/pkg/auth"
 	"gamelink/internal/model"
-	permissionservice "gamelink/internal/service/permission"
-	roleservice "gamelink/internal/service/role"
+	permissionservice "gamelink/internal/service/admin"
+	roleservice "gamelink/internal/service/admin"
 )
 
 const (

@@ -5,9 +5,9 @@ import (
 
 	"gamelink/internal/model"
 	orderimpl "gamelink/internal/repository/implementations"
-	"gamelink/internal/repository/payment"
+	"gamelink/internal/repository/order"
 	paymentsvc "gamelink/internal/service/payment"
-	"gamelink/internal/testutil"
+	"gamelink/pkg/testutil"
 )
 
 // 支付退款：已支付订单退款成功，重复退款返回错误且状态不变
@@ -17,7 +17,7 @@ func TestPaymentRefundFlow(t *testing.T) {
 	migratePaymentModels(t, db)
 
 	orderRepo := orderimpl.NewOrderRepository(db)
-	paymentRepo := payment.NewPaymentRepository(db)
+	paymentRepo := order.NewPaymentRepository(db)
 	svc := paymentsvc.NewPaymentService(paymentRepo, orderRepo)
 
 	// 创建订单（pending）

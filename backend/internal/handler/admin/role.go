@@ -8,7 +8,7 @@ import (
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
-	roleservice "gamelink/internal/service/role"
+	roleservice "gamelink/internal/service/admin"
 )
 
 // RoleHandler 角色管理处理器

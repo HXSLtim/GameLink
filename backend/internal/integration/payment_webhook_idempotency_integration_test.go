@@ -5,9 +5,9 @@ import (
 
 	"gamelink/internal/model"
 	orderimpl "gamelink/internal/repository/implementations"
-	"gamelink/internal/repository/payment"
+	"gamelink/internal/repository/order"
 	paymentsvc "gamelink/internal/service/payment"
-	"gamelink/internal/testutil"
+	"gamelink/pkg/testutil"
 )
 
 // 支付回调幂等 & 提供商校验：首次回调成功更新支付/订单，再次回调无副作用，提供商不匹配返回错误
@@ -17,7 +17,7 @@ func TestPaymentCallbackIdempotencyAndProviderCheck(t *testing.T) {
 	migratePaymentModels(t, db)
 
 	orderRepo := orderimpl.NewOrderRepository(db)
-	paymentRepo := payment.NewPaymentRepository(db)
+	paymentRepo := order.NewPaymentRepository(db)
 	svc := paymentsvc.NewPaymentService(paymentRepo, orderRepo)
 
 	// 准备订单（待支付）

@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"gamelink/internal/cache"
+	"gamelink/pkg/apierr"
+	"gamelink/pkg/cache"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 )
@@ -14,10 +15,10 @@ import (
 // Errors specific to chat domain.
 var (
 	ErrNotFound        = repository.ErrNotFound
-	ErrNotMember       = errors.New("chat: user not a member of group")
-	ErrInactiveGroup   = errors.New("chat: group is inactive")
-	ErrMessageTooLarge = errors.New("chat: message exceeds length limit")
-	ErrThrottled       = errors.New("chat: message throttled, please wait")
+	ErrNotMember       = apierr.Forbidden("用户不是聊天组成员")
+	ErrInactiveGroup   = apierr.BadRequest("聊天组已停用")
+	ErrMessageTooLarge = apierr.BadRequest("消息超出长度限制")
+	ErrThrottled       = apierr.TooManyRequests("消息发送过于频繁，请稍后再试")
 )
 
 // SendMessageInput represents payload for sending chat messages.
@@ -46,7 +47,7 @@ func (s *ChatService) RejectMessage(ctx context.Context, messageID uint64, moder
 // ReportMessage creates a report record for moderation.
 func (s *ChatService) ReportMessage(ctx context.Context, reporterID, messageID uint64, reason, evidence string) error {
 	if s.reports == nil {
-		return fmt.Errorf("report repository not configured")
+		return apierr.InternalError("举报仓库未配置")
 	}
 	if reason == "" {
 		reason = "unspecified"
@@ -59,7 +60,7 @@ func (s *ChatService) ReportMessage(ctx context.Context, reporterID, messageID u
 		Status:     "pending",
 	}
 	if err := s.reports.Create(ctx, report); err != nil {
-		return fmt.Errorf("create chat report: %w", err)
+		return apierr.InternalError("创建举报记录失败")
 	}
 	return nil
 }
@@ -112,7 +113,7 @@ func (s *ChatService) ListUserGroups(ctx context.Context, userID uint64, page, p
 		PageSize: pageSize,
 	})
 	if err != nil {
-		return nil, 0, fmt.Errorf("list user chat groups: %w", err)
+		return nil, 0, apierr.InternalError("获取用户聊天组失败").WithDetails(err.Error())
 	}
 	return groups, total, nil
 }
@@ -124,7 +125,7 @@ func (s *ChatService) EnsureMembership(ctx context.Context, groupID, userID uint
 		if errors.Is(err, repository.ErrNotFound) {
 			return nil, ErrNotMember
 		}
-		return nil, fmt.Errorf("get chat membership: %w", err)
+		return nil, apierr.InternalError("获取聊天成员信息失败").WithDetails(err.Error())
 	}
 	if !member.IsActive {
 		return nil, ErrNotMember
@@ -140,7 +141,7 @@ func (s *ChatService) ListMessages(ctx context.Context, userID, groupID uint64, 
 
 	group, err := s.groups.Get(ctx, groupID)
 	if err != nil {
-		return nil, 0, fmt.Errorf("get chat group: %w", err)
+		return nil, 0, apierr.InternalError("获取聊天组失败").WithDetails(err.Error())
 	}
 
 	if opts.Page < 1 {
@@ -164,7 +165,7 @@ func (s *ChatService) ListMessages(ctx context.Context, userID, groupID uint64, 
 
 	messages, total, err := s.messages.ListByGroup(ctx, listOpts)
 	if err != nil {
-		return nil, 0, fmt.Errorf("list chat messages: %w", err)
+		return nil, 0, apierr.InternalError("获取聊天消息失败").WithDetails(err.Error())
 	}
 	return messages, total, nil
 }
@@ -184,7 +185,7 @@ func (s *ChatService) SendMessage(ctx context.Context, input SendMessageInput) (
 
 	group, err := s.groups.Get(ctx, input.GroupID)
 	if err != nil {
-		return nil, fmt.Errorf("get chat group: %w", err)
+		return nil, apierr.InternalError("获取聊天组失败").WithDetails(err.Error())
 	}
 	if !group.IsActive {
 		return nil, ErrInactiveGroup
@@ -218,7 +219,7 @@ func (s *ChatService) SendMessage(ctx context.Context, input SendMessageInput) (
 	}
 
 	if err := s.messages.Create(ctx, msg); err != nil {
-		return nil, fmt.Errorf("create chat message: %w", err)
+		return nil, apierr.InternalError("创建聊天消息失败").WithDetails(err.Error())
 	}
 
 	return msg, nil
@@ -228,7 +229,7 @@ func (s *ChatService) SendMessage(ctx context.Context, input SendMessageInput) (
 func (s *ChatService) JoinGroup(ctx context.Context, groupID, userID uint64, nickname string) error {
 	group, err := s.groups.Get(ctx, groupID)
 	if err != nil {
-		return fmt.Errorf("get chat group: %w", err)
+		return apierr.InternalError("获取聊天组失败").WithDetails(err.Error())
 	}
 	if !group.IsActive {
 		return ErrInactiveGroup
@@ -247,7 +248,7 @@ func (s *ChatService) JoinGroup(ctx context.Context, groupID, userID uint64, nic
 			}
 			return s.members.Add(ctx, m)
 		}
-		return fmt.Errorf("get chat member: %w", err)
+		return apierr.InternalError("获取聊天成员信息失败").WithDetails(err.Error())
 	}
 
 	// Reactivate existing member.
@@ -263,7 +264,7 @@ func (s *ChatService) LeaveGroup(ctx context.Context, groupID, userID uint64) er
 		if errors.Is(err, repository.ErrNotFound) {
 			return ErrNotMember
 		}
-		return fmt.Errorf("get chat member: %w", err)
+		return apierr.InternalError("获取聊天成员信息失败").WithDetails(err.Error())
 	}
 	member.IsActive = false
 	return s.members.Update(ctx, member)
@@ -276,7 +277,7 @@ func (s *ChatService) MarkRead(ctx context.Context, groupID, userID, messageID u
 		if errors.Is(err, repository.ErrNotFound) {
 			return ErrNotMember
 		}
-		return fmt.Errorf("get chat member: %w", err)
+		return apierr.InternalError("获取聊天成员信息失败").WithDetails(err.Error())
 	}
 	member.LastReadMessageID = &messageID
 	now := time.Now()

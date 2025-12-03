@@ -8,15 +8,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	"gamelink/internal/cache"
+	"gamelink/pkg/cache"
 	"gamelink/internal/handler/middleware"
 	"gamelink/internal/model"
-	"gamelink/internal/repository/permission"
-	"gamelink/internal/repository/role"
+	adminrepo "gamelink/internal/repository/admin"
+	adminrepo "gamelink/internal/repository/admin"
 	"gamelink/internal/repository/user"
-	permissionservice "gamelink/internal/service/permission"
-	roleservice "gamelink/internal/service/role"
-	"gamelink/internal/testutil"
+	permissionservice "gamelink/internal/service/admin"
+	roleservice "gamelink/internal/service/admin"
+	"gamelink/pkg/testutil"
 )
 
 // 权限中间件：超级管理员放行、具备权限放行、无权限拒绝
@@ -27,7 +27,7 @@ func TestPermissionMiddleware(t *testing.T) {
 	migratePermissionModels(t, db)
 
 	userRepo := user.NewUserRepository(db)
-	roleRepo := role.NewRoleRepository(db)
+	roleRepo := adminrepo.NewRoleRepository(db)
 	permRepo := permission.NewPermissionRepository(db)
 
 	// seed roles

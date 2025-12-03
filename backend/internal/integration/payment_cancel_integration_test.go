@@ -5,9 +5,9 @@ import (
 
 	"gamelink/internal/model"
 	orderimpl "gamelink/internal/repository/implementations"
-	"gamelink/internal/repository/payment"
+	"gamelink/internal/repository/order"
 	paymentsvc "gamelink/internal/service/payment"
-	"gamelink/internal/testutil"
+	"gamelink/pkg/testutil"
 )
 
 // 待支付取消后可重新发起支付
@@ -17,7 +17,7 @@ func TestCancelPendingPaymentAndRepay(t *testing.T) {
 	migratePaymentModels(t, db)
 
 	orderRepo := orderimpl.NewOrderRepository(db)
-	paymentRepo := payment.NewPaymentRepository(db)
+	paymentRepo := order.NewPaymentRepository(db)
 	svc := paymentsvc.NewPaymentService(paymentRepo, orderRepo)
 
 	// seed order pending
@@ -79,7 +79,7 @@ func TestCancelPaidPaymentShouldFail(t *testing.T) {
 	migratePaymentModels(t, db)
 
 	orderRepo := orderimpl.NewOrderRepository(db)
-	paymentRepo := payment.NewPaymentRepository(db)
+	paymentRepo := order.NewPaymentRepository(db)
 	svc := paymentsvc.NewPaymentService(paymentRepo, orderRepo)
 
 	order := &model.Order{

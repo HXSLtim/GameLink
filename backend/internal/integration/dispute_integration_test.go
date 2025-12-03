@@ -11,24 +11,22 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/internal/cache"
+	"gamelink/pkg/cache"
 	adminhandler "gamelink/internal/handler/admin"
 	userhandler "gamelink/internal/handler/user"
 	"gamelink/internal/model"
-	"gamelink/internal/repository/dispute"
+	"gamelink/internal/repository/order"
 	"gamelink/internal/repository/game"
 	orderimpl "gamelink/internal/repository/implementations"
 	repoiface "gamelink/internal/repository/interfaces"
-	"gamelink/internal/repository/notification"
-	operationlog "gamelink/internal/repository/operation_log"
-	"gamelink/internal/repository/payment"
-	"gamelink/internal/repository/player"
-	"gamelink/internal/repository/role"
+	"gamelink/internal/repository/content"
+	adminrepo "gamelink/internal/repository/admin"
+	"gamelink/internal/repository/user"
 	"gamelink/internal/repository/serviceitem"
 	"gamelink/internal/repository/user"
 	adminservice "gamelink/internal/service/admin"
 	"gamelink/internal/service/assignment"
-	"gamelink/internal/testutil"
+	"gamelink/pkg/testutil"
 )
 
 // 纠纷全链路：用户发起 -> 管理端列表/分配 -> 管理端解决（部分退款）
@@ -43,12 +41,12 @@ func TestDisputeFlow(t *testing.T) {
 
 	orderRepo := orderimpl.NewOrderRepository(db)
 	userRepo := user.NewUserRepository(db)
-	playerRepo := player.NewPlayerRepository(db)
+	playerRepo := user.NewPlayerRepository(db)
 	gameRepo := game.NewGameRepository(db)
-	paymentRepo := payment.NewPaymentRepository(db)
-	roleRepo := role.NewRoleRepository(db)
+	paymentRepo := order.NewPaymentRepository(db)
+	roleRepo := adminrepo.NewRoleRepository(db)
 	disputeRepo := dispute.NewDisputeRepository(db)
-	opLogRepo := operationlog.NewOperationLogRepository(db)
+	opLogRepo := adminrepo.NewOperationLogRepository(db)
 	notificationRepo := notification.NewNotificationRepository(db)
 	memCache := cache.NewMemory()
 

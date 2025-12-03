@@ -8,7 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	apierr "gamelink/internal/apierr"
+	apierr "gamelink/pkg/apierr"
 	"gamelink/internal/handler"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
@@ -116,7 +116,7 @@ func (h *GameHandler) CreateGame(c *gin.Context) {
 		Description: payload.Description,
 	})
 	if err != nil {
-		if errors.Is(err, adminservice.ErrValidation) {
+		if errors.Is(err, apierr.BadRequest("validation failed")) {
 			handler.RespondWithServiceError(c, apierr.BadRequest("validation failed"))
 			return
 		}
@@ -159,7 +159,7 @@ func (h *GameHandler) UpdateGame(c *gin.Context) {
 		Description: payload.Description,
 	})
 	if err != nil {
-		if errors.Is(err, adminservice.ErrValidation) {
+		if errors.Is(err, apierr.BadRequest("validation failed")) {
 			handler.RespondWithServiceError(c, apierr.BadRequest("validation failed"))
 			return
 		}

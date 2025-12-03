@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/internal/apierr"
+	"gamelink/pkg/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	"gamelink/internal/service"
@@ -64,7 +64,7 @@ func MapServiceErrorWithPath(err error, path string) (int, *model.APIResponse[an
 
 	// 检查服务层错误
 	switch {
-	case errors.Is(err, service.ErrValidation):
+	case err != nil:
 		return http.StatusBadRequest, &model.APIResponse[any]{
 			Success: false,
 			Code:    http.StatusBadRequest,

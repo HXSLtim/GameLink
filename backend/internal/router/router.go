@@ -13,32 +13,29 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"gorm.io/gorm"
 
-	"gamelink/internal/auth"
-	"gamelink/internal/cache"
-	"gamelink/internal/config"
+	"gamelink/pkg/auth"
+	"gamelink/pkg/cache"
+	"gamelink/pkg/config"
 	"gamelink/internal/handler"
 	adminhandler "gamelink/internal/handler/admin"
 	"gamelink/internal/handler/middleware"
 	notificationhandler "gamelink/internal/handler/notification"
-	"gamelink/internal/lifecycle"
+	"gamelink/pkg/lifecycle"
 	"gamelink/internal/model"
 	commissionrepo "gamelink/internal/repository/commission"
 	orderrepo "gamelink/internal/repository/implementations"
-	menurepo "gamelink/internal/repository/menu"
-	permissionrepo "gamelink/internal/repository/permission"
-	playerrepo "gamelink/internal/repository/player"
+	adminrepo "gamelink/internal/repository/admin"
+	userrepo "gamelink/internal/repository/user"
 	rankingrepo "gamelink/internal/repository/ranking"
 	serviceitemrepo "gamelink/internal/repository/serviceitem"
-	rolerepo "gamelink/internal/repository/role"
 	statsrepo "gamelink/internal/repository/stats"
-	userrepo "gamelink/internal/repository/user"
 	withdrawrepo "gamelink/internal/repository/withdraw"
 	adminservice "gamelink/internal/service/admin"
 	authservice "gamelink/internal/service/auth"
-	menuservice "gamelink/internal/service/menu"
-	permissionservice "gamelink/internal/service/permission"
-	roleservice "gamelink/internal/service/role"
-	statsservice "gamelink/internal/service/stats"
+	menuservice "gamelink/internal/service/admin"
+	permissionservice "gamelink/internal/service/admin"
+	roleservice "gamelink/internal/service/admin"
+	statsservice "gamelink/internal/service/admin"
 )
 
 // Router 包含所有路由配置和依赖
@@ -170,8 +167,6 @@ func (r *Router) registerRoutes() {
 func (r *Router) registerSwaggerRoutes() {
 	if r.cfg.EnableSwagger {
 		log.Println("swagger endpoint enabled at /swagger")
-		// Serve embedded OpenAPI v3 at /swagger and /swagger.json
-		handler.RegisterSwagger(r.engine)
 		// Serve gin-swagger UI backed by /swagger.json for compatibility
 		r.engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.URL("/swagger.json")))
 	} else {
@@ -182,9 +177,9 @@ func (r *Router) registerSwaggerRoutes() {
 // registerAdminRoutes 注册管理端路由
 func (r *Router) registerAdminRoutes(api *gin.RouterGroup) {
 	// RBAC - 权限服务
-	permRepo := permissionrepo.NewPermissionRepository(r.orm)
+	permRepo := adminrepo.NewPermissionRepository(r.orm)
 	permService := permissionservice.NewPermissionService(permRepo, r.cacheClient)
-	roleSvc := roleservice.NewRoleService(rolerepo.NewRoleRepository(r.orm), r.cacheClient)
+	roleSvc := roleservice.NewRoleService(adminrepo.NewRoleRepository(r.orm), r.cacheClient)
 	r.permMiddleware = middleware.NewPermissionMiddleware(r.jwtMgr, permService, roleSvc)
 
 	// Notification center routes
@@ -215,7 +210,7 @@ func (r *Router) registerAdminRoutes(api *gin.RouterGroup) {
 func (r *Router) registerRBACRoutes(rbacGroup *gin.RouterGroup, roleSvc *roleservice.RoleService, permService *permissionservice.PermissionService) {
 	roleHandler := adminhandler.NewRoleHandler(roleSvc)
 	permHandler := adminhandler.NewPermissionHandler(permService)
-	menuSvc := menuservice.NewService(menurepo.NewMenuRepository(r.orm))
+	menuSvc := menuservice.NewMenuService(adminrepo.NewMenuRepository(r.orm))
 	menuHandler := adminhandler.NewMenuHandler(menuSvc)
 	rbacGroup.Use(r.permMiddleware.RequireAuth()) // 所有 RBAC 接口需要认证
 	{
@@ -263,7 +258,7 @@ func (r *Router) registerAdminBusinessRoutes(rbacGroup *gin.RouterGroup) {
 
 	// Dashboard routes
 	userRepo := userrepo.NewUserRepository(r.orm)
-	playerRepo := playerrepo.NewPlayerRepository(r.orm)
+	playerRepo := userrepo.NewPlayerRepository(r.orm)
 	orderRepo := orderrepo.NewOrderRepository(r.orm)
 	commissionRepo := commissionrepo.NewCommissionRepository(r.orm)
 	serviceItemRepo := serviceitemrepo.NewServiceItemRepository(r.orm)

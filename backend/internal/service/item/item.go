@@ -2,10 +2,9 @@ package item
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"time"
 
+	"gamelink/pkg/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 )
@@ -14,7 +13,7 @@ var (
 	// ErrNotFound 服务项目不存
 	ErrNotFound = repository.ErrNotFound
 	// ErrValidation 表示输入校验失败
-	ErrValidation = errors.New("validation failed")
+	ErrValidation = apierr.BadRequest("输入参数验证失败")
 )
 
 // ServiceItemService 服务项目服务(统一管理护航服务和礼物)
@@ -62,7 +61,7 @@ func (s *ServiceItemService) CreateServiceItem(ctx context.Context, req CreateSe
 	if req.GameID != nil {
 		_, err := s.games.Get(ctx, *req.GameID)
 		if err != nil {
-			return nil, fmt.Errorf("invalid game_id: %w", err)
+			return nil, apierr.BadRequest("游戏ID无效").WithDetails(err.Error())
 		}
 	}
 
@@ -70,13 +69,13 @@ func (s *ServiceItemService) CreateServiceItem(ctx context.Context, req CreateSe
 	if req.PlayerID != nil {
 		_, err := s.players.Get(ctx, *req.PlayerID)
 		if err != nil {
-			return nil, fmt.Errorf("invalid player_id: %w", err)
+			return nil, apierr.BadRequest("陪玩师ID无效").WithDetails(err.Error())
 		}
 	}
 
 	// 验证礼物的service_hours必须
 	if req.SubCategory == model.SubCategoryGift && req.ServiceHours != 0 {
-		return nil, errors.New("gift items must have service_hours = 0")
+		return nil, apierr.BadRequest("礼物类项目的服务时长必须为0")
 	}
 
 	item := &model.ServiceItem{
@@ -136,20 +135,20 @@ func (s *ServiceItemService) UpdateServiceItem(ctx context.Context, id uint64, r
 	}
 	if req.BasePriceCents != nil {
 		if *req.BasePriceCents < 0 {
-			return errors.New("base price must be >= 0")
+			return apierr.BadRequest("基础价格必须大于等于0")
 		}
 		item.BasePriceCents = *req.BasePriceCents
 	}
 	if req.ServiceHours != nil {
 		// 礼物的service_hours必须
 		if item.IsGift() && *req.ServiceHours != 0 {
-			return errors.New("gift items must have service_hours = 0")
+			return apierr.BadRequest("礼物类项目的服务时长必须为0")
 		}
 		item.ServiceHours = *req.ServiceHours
 	}
 	if req.CommissionRate != nil {
 		if *req.CommissionRate < 0 || *req.CommissionRate > 1 {
-			return errors.New("commission rate must be between 0 and 1")
+			return apierr.BadRequest("抽成比例必须在0-1之间")
 		}
 		item.CommissionRate = *req.CommissionRate
 	}
@@ -334,7 +333,7 @@ type BatchUpdateStatusRequest struct {
 // BatchUpdateStatus 批量更新状
 func (s *ServiceItemService) BatchUpdateStatus(ctx context.Context, req BatchUpdateStatusRequest) error {
 	if len(req.IDs) == 0 {
-		return errors.New("no item ids provided")
+		return apierr.BadRequest("未提供项目ID")
 	}
 	return s.items.BatchUpdateStatus(ctx, req.IDs, req.IsActive)
 }
@@ -348,7 +347,7 @@ type BatchUpdatePriceRequest struct {
 // BatchUpdatePrice 批量更新价格
 func (s *ServiceItemService) BatchUpdatePrice(ctx context.Context, req BatchUpdatePriceRequest) error {
 	if len(req.IDs) == 0 {
-		return errors.New("no item ids provided")
+		return apierr.BadRequest("未提供项目ID")
 	}
 	return s.items.BatchUpdatePrice(ctx, req.IDs, req.BasePriceCents)
 }

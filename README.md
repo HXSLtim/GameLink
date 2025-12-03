@@ -80,16 +80,20 @@ npm run dev
 ```
 
 ### 技术栈
-**后端**: Go 1.25.3, Gin, GORM, Redis, JWT, WebSocket
+**后端**: Go 1.25.3, Gin, GORM, Redis, JWT, WebSocket, 纯Go SQLite驱动
 **前端**: React 18, TypeScript, Vite, Less, WebSocket
-**数据库**: MySQL, Redis
-**测试**: Go testing, Vitest, Playwright
+**数据库**: MySQL, Redis, SQLite（测试环境）
+**测试**: Go testing + Testify, Vitest, Playwright, 并发安全测试
+**安全**: JWT + RBAC, CSRF防护, SQL注入防护, 输入验证
+**错误处理**: 分层错误机制（Repository→Service→API标准化）
 
 ### 项目状态
 - ✅ **后端完成度**: 85%
 - ⏳ **前端完成度**: 70%
 - 📈 **测试覆盖率**: 76.4%
 - 📚 **文档完整性**: 95%
+- 🛡️ **安全等级**: 高 (SQL注入漏洞已修复，JWT认证增强)
+- ⚡ **性能优化**: 并发处理优化，纯Go测试环境
 
 ---
 
@@ -126,6 +130,12 @@ GameLink/
 4. **支付结算** - 自动分账，收益提现
 5. **评价反馈** - 双向评价，信用积累
 
+### 技术特色
+- **测试体系**：表驱动测试、并发安全测试、边界值测试、纯Go测试环境
+- **错误处理**：分层错误机制，Repository→Service→API标准化，支持错误码和详情
+- **并发安全**：订单接单原子性操作，分布式锁机制，压力测试验证
+- **安全加固**：SQL注入防护、JWT令牌管理、CSRF防护、输入验证
+
 ---
 
 ## 📚 文档导航
@@ -135,6 +145,8 @@ GameLink/
 - **[部署指南](DEPLOYMENT.md)** - 生产环境部署和运维
 - **[架构设计](ARCHITECTURE.md)** - 系统架构和设计理念
 - **[API 文档](API.md)** - RESTful API 接口文档
+- **[测试指南](backend/TESTING_GUIDE.md)** - 单元测试和集成测试最佳实践
+- **[错误处理规范](backend/ERROR_HANDLING.md)** - 分层错误处理机制说明
 
 ### 🎯 功能指南
 - **[前端开发完整指南](frontend/docs/FRONTEND_DEVELOPMENT_COMPLETE_GUIDE.md)**
@@ -142,9 +154,12 @@ GameLink/
 - **[用户端页面设计](frontend/docs/USER_FACING_PAGES_GUIDE.md)**
 
 ### 📊 项目报告
-- **[项目状态报告](docs/PROJECT_STATUS_FINAL_REPORT.md)**
-- **[测试覆盖率报告](backend/LATEST_COVERAGE_REPORT.md)**
-- **[用户接口设计报告](backend/USER_INTERFACE_INTEGRITY_REPORT.md)**
+- **[项目状态报告](docs/PROJECT_STATUS_FINAL_REPORT.md)** - 整体项目进展和质量评估
+- **[测试覆盖率报告](backend/LATEST_COVERAGE_REPORT.md)** - 单元测试和集成测试覆盖率分析
+- **[用户接口设计报告](backend/USER_INTERFACE_INTEGRITY_REPORT.md)** - 三端接口完整性和一致性分析
+- **[安全修复总结](SECURITY_FIXES_SUMMARY_2025-12-01.md)** - SQL注入、JWT认证等安全漏洞修复记录
+- **[并发处理优化报告](backend/CONCURRENCY_FIX_ORDER_ACCEPT.md)** - 订单接单并发安全性分析和优化
+- **[性能优化报告](backend/PERFORMANCE_FIX_PLAYER_LOOKUP.md)** - 数据库查询和缓存策略优化
 
 ---
 
@@ -242,6 +257,6 @@ docker-compose ps
 
 **🚀 让我们一起构建更好的游戏陪玩生态！**
 
-*最后更新: 2025-11-13 | 版本: v2.1*
+*最后更新: 2025-12-02 | 版本: v2.2*
 
 </div>

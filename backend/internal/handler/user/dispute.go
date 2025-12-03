@@ -5,17 +5,17 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/internal/apierr"
-	"gamelink/internal/service/assignment"
+	"gamelink/pkg/apierr"
+	orderservice "gamelink/internal/service/order"
 )
 
 // DisputeHandler handles order dispute related endpoints for users
 type DisputeHandler struct {
-	svc *assignment.AssignmentService
+	svc *orderservice.DisputeService
 }
 
 // NewDisputeHandler creates a new dispute handler
-func NewDisputeHandler(svc *assignment.AssignmentService) *DisputeHandler {
+func NewDisputeHandler(svc *orderservice.DisputeService) *DisputeHandler {
 	return &DisputeHandler{svc: svc}
 }
 
@@ -28,7 +28,7 @@ type InitiateDisputePayload struct {
 }
 
 // InitiateDisputeResponse represents the response for initiating a dispute
-type InitiateDisputeResponse = assignment.InitiateDisputeResponse
+type InitiateDisputeResponse = orderservice.InitiateDisputeResponse
 
 // InitiateDispute creates a new dispute for an order
 // @Summary      Initiate Dispute
@@ -74,7 +74,7 @@ func (h *DisputeHandler) InitiateDispute(c *gin.Context) {
 		}
 	}
 
-	resp, err := h.svc.InitiateDispute(c.Request.Context(), assignment.InitiateDisputeRequest{
+	resp, err := h.svc.InitiateDispute(c.Request.Context(), orderservice.InitiateDisputeRequest{
 		OrderID:      payload.OrderID,
 		UserID:       userID.(uint64),
 		Reason:       payload.Reason,
@@ -83,19 +83,19 @@ func (h *DisputeHandler) InitiateDispute(c *gin.Context) {
 	})
 
 	if err != nil {
-		if errors.Is(err, assignment.ErrValidation) {
+		if errors.Is(err, orderservice.ErrDisputeValidation) {
 			respondAPIError(c, apierr.BadRequest(err.Error()))
 			return
 		}
-		if errors.Is(err, assignment.ErrCannotInitiateDispute) {
+		if errors.Is(err, orderservice.ErrCannotInitiateDispute) {
 			respondAPIError(c, apierr.Conflict("当前订单状态不能发起纠纷"))
 			return
 		}
-		if errors.Is(err, assignment.ErrDisputeExists) {
+		if errors.Is(err, orderservice.ErrDisputeExists) {
 			respondAPIError(c, apierr.Conflict("该订单已存在纠纷"))
 			return
 		}
-		if errors.Is(err, assignment.ErrOrderNotFound) {
+		if errors.Is(err, orderservice.ErrOrderNotFound) {
 			respondAPIError(c, apierr.NotFound("订单不存在"))
 			return
 		}
@@ -103,7 +103,7 @@ func (h *DisputeHandler) InitiateDispute(c *gin.Context) {
 		return
 	}
 
-	respondSuccess(c, "纠纷发起成功", assignment.InitiateDisputeResponse{
+	respondSuccess(c, "纠纷发起成功", orderservice.InitiateDisputeResponse{
 		DisputeID:   resp.DisputeID,
 		TraceID:     resp.TraceID,
 		SLADeadline: resp.SLADeadline,
@@ -141,7 +141,7 @@ func (h *DisputeHandler) GetDisputeDetail(c *gin.Context) {
 
 	dispute, err := h.svc.GetDisputeDetail(c.Request.Context(), disputeID)
 	if err != nil {
-		if errors.Is(err, assignment.ErrNotFound) {
+		if errors.Is(err, orderservice.ErrDisputeNotFound) {
 			respondAPIError(c, apierr.NotFound("纠纷不存在"))
 			return
 		}

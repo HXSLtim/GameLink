@@ -1,20 +1,18 @@
 package user
 
 import (
-	"errors"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/internal/apierr"
+	"gamelink/pkg/apierr"
 	"gamelink/internal/model"
-	"gamelink/internal/service"
-	feedservice "gamelink/internal/service/feed"
+	contentservice "gamelink/internal/service/content"
 )
 
 // RegisterFeedRoutes 注册社区动态路由。
-func RegisterFeedRoutes(router gin.IRouter, svc *feedservice.Service, authMiddleware gin.HandlerFunc) {
+func RegisterFeedRoutes(router gin.IRouter, svc *contentservice.FeedService, authMiddleware gin.HandlerFunc) {
 	group := router.Group("/feeds")
 	group.Use(authMiddleware)
 	group.POST("", func(c *gin.Context) { createFeedHandler(c, svc) })
@@ -29,22 +27,22 @@ func RegisterFeedRoutes(router gin.IRouter, svc *feedservice.Service, authMiddle
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string                          true  "Bearer {token}"
-// @Param        request        body      feedservice.CreateFeedRequest   true  "Feed content"
-// @Success      200            {object}  feedservice.FeedView
+// @Param        request        body      contentservice.CreateFeedRequest   true  "Feed content"
+// @Success      200            {object}  contentservice.FeedView
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
 // @Router       /user/feeds [post]
-func createFeedHandler(c *gin.Context, svc *feedservice.Service) {
+func createFeedHandler(c *gin.Context, svc *contentservice.FeedService) {
 	userID := getUserIDFromContext(c)
-	var req feedservice.CreateFeedRequest
+	var req contentservice.CreateFeedRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 	feed, err := svc.CreateFeed(c.Request.Context(), userID, req)
 	if err != nil {
-		if errors.Is(err, service.ErrValidation) {
+		if err != nil {
 			respondError(c, http.StatusBadRequest, err.Error())
 		} else {
 			respondError(c, http.StatusInternalServerError, err.Error())
@@ -68,21 +66,21 @@ func createFeedHandler(c *gin.Context, svc *feedservice.Service) {
 // @Param        Authorization  header    string  true   "Bearer {token}"
 // @Param        limit          query     int     false  "Limit (default 20)"
 // @Param        cursor         query     string  false  "Cursor for pagination"
-// @Success      200            {object}  feedservice.ListFeedsResponse
+// @Success      200            {object}  contentservice.ListFeedsResponse
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
 // @Router       /user/feeds [get]
-func listFeedsHandler(c *gin.Context, svc *feedservice.Service) {
+func listFeedsHandler(c *gin.Context, svc *contentservice.FeedService) {
 	userID := getUserIDFromContext(c)
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
 	cursor := c.Query("cursor")
-	resp, err := svc.ListFeeds(c.Request.Context(), userID, feedservice.ListFeedsRequest{
+	resp, err := svc.ListFeeds(c.Request.Context(), userID, contentservice.ListFeedsRequest{
 		Cursor: cursor,
 		Limit:  limit,
 	})
 	if err != nil {
-		if errors.Is(err, service.ErrValidation) {
+		if err != nil {
 			respondError(c, http.StatusBadRequest, err.Error())
 		} else {
 			respondError(c, http.StatusInternalServerError, err.Error())
@@ -111,7 +109,7 @@ func listFeedsHandler(c *gin.Context, svc *feedservice.Service) {
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
 // @Router       /user/feeds/{id}/report [post]
-func reportFeedHandler(c *gin.Context, svc *feedservice.Service) {
+func reportFeedHandler(c *gin.Context, svc *contentservice.FeedService) {
 	userID := getUserIDFromContext(c)
 	feedID, err := parseUintParam(c, "id")
 	if err != nil {
@@ -126,7 +124,7 @@ func reportFeedHandler(c *gin.Context, svc *feedservice.Service) {
 		return
 	}
 	if err := svc.ReportFeed(c.Request.Context(), userID, feedID, body.Reason); err != nil {
-		if errors.Is(err, service.ErrValidation) {
+		if err != nil {
 			respondError(c, http.StatusBadRequest, err.Error())
 		} else {
 			respondError(c, http.StatusInternalServerError, err.Error())

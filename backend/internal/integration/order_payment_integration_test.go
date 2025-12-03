@@ -16,13 +16,13 @@ import (
 	"gamelink/internal/repository/commission"
 	"gamelink/internal/repository/game"
 	orderimpl "gamelink/internal/repository/implementations"
-	"gamelink/internal/repository/payment"
-	"gamelink/internal/repository/player"
-	"gamelink/internal/repository/review"
+	"gamelink/internal/repository/order"
+	"gamelink/internal/repository/user"
+	"gamelink/internal/repository/order"
 	"gamelink/internal/repository/user"
 	ordersvc "gamelink/internal/service/order"
 	paymentsvc "gamelink/internal/service/payment"
-	"gamelink/internal/testutil"
+	"gamelink/pkg/testutil"
 )
 
 // 用户创建订单 -> 支付（自动确认）-> 陪玩接单完成 -> 查询详情/列表
@@ -36,9 +36,9 @@ func TestOrderPaymentFlow(t *testing.T) {
 
 	orderRepo := orderimpl.NewOrderRepository(db)
 	userRepo := user.NewUserRepository(db)
-	playerRepo := player.NewPlayerRepository(db)
+	playerRepo := user.NewPlayerRepository(db)
 	gameRepo := game.NewGameRepository(db)
-	paymentRepo := payment.NewPaymentRepository(db)
+	paymentRepo := order.NewPaymentRepository(db)
 	reviewRepo := review.NewReviewRepository(db)
 	commissionRepo := commission.NewCommissionRepository(db)
 
@@ -159,7 +159,7 @@ func seedOrderData(t *testing.T, db *gorm.DB) orderSeed {
 	ctx := context.Background()
 
 	userRepo := user.NewUserRepository(db)
-	playerRepo := player.NewPlayerRepository(db)
+	playerRepo := user.NewPlayerRepository(db)
 	gameRepo := game.NewGameRepository(db)
 
 	userModel := &model.User{

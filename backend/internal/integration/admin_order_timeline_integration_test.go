@@ -10,20 +10,18 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	"gamelink/internal/cache"
+	"gamelink/pkg/cache"
 	adminhandler "gamelink/internal/handler/admin"
 	"gamelink/internal/model"
 	"gamelink/internal/repository/common"
 	"gamelink/internal/repository/game"
 	orderimpl "gamelink/internal/repository/implementations"
-	operationlog "gamelink/internal/repository/operation_log"
-	"gamelink/internal/repository/payment"
-	"gamelink/internal/repository/player"
-	"gamelink/internal/repository/role"
-	"gamelink/internal/repository/serviceitem"
+	adminrepo "gamelink/internal/repository/admin"
+	"gamelink/internal/repository/order"
 	"gamelink/internal/repository/user"
+	"gamelink/internal/repository/serviceitem"
 	adminservice "gamelink/internal/service/admin"
-	"gamelink/internal/testutil"
+	"gamelink/pkg/testutil"
 )
 
 // 管理端订单时间线：操作日志+支付事件汇总
@@ -38,11 +36,11 @@ func TestAdminOrderTimeline(t *testing.T) {
 
 	orderRepo := orderimpl.NewOrderRepository(db)
 	userRepo := user.NewUserRepository(db)
-	playerRepo := player.NewPlayerRepository(db)
+	playerRepo := user.NewPlayerRepository(db)
 	gameRepo := game.NewGameRepository(db)
-	paymentRepo := payment.NewPaymentRepository(db)
-	roleRepo := role.NewRoleRepository(db)
-	opRepo := operationlog.NewOperationLogRepository(db)
+	paymentRepo := order.NewPaymentRepository(db)
+	roleRepo := adminrepo.NewRoleRepository(db)
+	opRepo := adminrepo.NewOperationLogRepository(db)
 	memCache := cache.NewMemory()
 	serviceItemRepo := serviceitem.NewServiceItemRepository(db)
 

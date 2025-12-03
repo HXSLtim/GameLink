@@ -11,7 +11,7 @@ import (
 	adminhandler "gamelink/internal/handler/admin"
 	"gamelink/internal/model"
 	withdrawrepo "gamelink/internal/repository/withdraw"
-	"gamelink/internal/testutil"
+	"gamelink/pkg/testutil"
 )
 
 // 管理端提现审批流：批准->完成、拒绝，状态与处理人应正确更新

@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	apierr "gamelink/internal/apierr"
+	apierr "gamelink/pkg/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	adminservice "gamelink/internal/service/admin"
@@ -122,8 +122,8 @@ func (h *ReviewHandler) CreateReview(c *gin.Context) {
 	}
 	r := model.Review{OrderID: p.OrderID, UserID: p.UserID, PlayerID: p.PlayerID, Score: model.Rating(p.Score), Content: strings.TrimSpace(p.Content)}
 	out, err := h.svc.CreateReview(c.Request.Context(), r)
-	if errors.Is(err, adminservice.ErrValidation) {
-		_ = c.Error(adminservice.ErrValidation)
+	if errors.Is(err, apierr.BadRequest("validation failed")) {
+		_ = c.Error(apierr.BadRequest("validation failed"))
 		return
 	}
 	if err != nil {
@@ -156,8 +156,8 @@ func (h *ReviewHandler) UpdateReview(c *gin.Context) {
 		return
 	}
 	out, err := h.svc.UpdateReview(c.Request.Context(), id, model.Rating(p.Score), p.Content)
-	if errors.Is(err, adminservice.ErrValidation) {
-		_ = c.Error(adminservice.ErrValidation)
+	if errors.Is(err, apierr.BadRequest("validation failed")) {
+		_ = c.Error(apierr.BadRequest("validation failed"))
 		return
 	}
 	if errors.Is(err, adminservice.ErrNotFound) {

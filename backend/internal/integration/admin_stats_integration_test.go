@@ -14,13 +14,12 @@ import (
 	"gamelink/internal/model"
 	"gamelink/internal/repository/game"
 	orderimpl "gamelink/internal/repository/implementations"
-	operationlog "gamelink/internal/repository/operation_log"
-	"gamelink/internal/repository/payment"
-	"gamelink/internal/repository/player"
-	statsrepo "gamelink/internal/repository/stats"
+	adminrepo "gamelink/internal/repository/admin"
+	"gamelink/internal/repository/order"
 	"gamelink/internal/repository/user"
-	"gamelink/internal/service/stats"
-	"gamelink/internal/testutil"
+	statsrepo "gamelink/internal/repository/stats"
+	"gamelink/internal/service/admin"
+	"gamelink/pkg/testutil"
 )
 
 // 管理端统计：dashboard + revenue/user/orders
@@ -78,8 +77,8 @@ func TestAdminStatsTopPlayersAndAudit(t *testing.T) {
 
 	// seed players with ratings
 	userRepo := user.NewUserRepository(db)
-	playerRepo := player.NewPlayerRepository(db)
-	opRepo := operationlog.NewOperationLogRepository(db)
+	playerRepo := user.NewPlayerRepository(db)
+	opRepo := adminrepo.NewOperationLogRepository(db)
 
 	u1 := &model.User{Name: "P1", Email: "p1@example.com", Phone: "18000000011", PasswordHash: "x", Role: model.RolePlayer, Status: model.UserStatusActive}
 	u2 := &model.User{Name: "P2", Email: "p2@example.com", Phone: "18000000022", PasswordHash: "x", Role: model.RolePlayer, Status: model.UserStatusActive}
@@ -138,10 +137,10 @@ func seedStatsData(t *testing.T, db *gorm.DB) {
 	t.Helper()
 	ctx := context.Background()
 	userRepo := user.NewUserRepository(db)
-	playerRepo := player.NewPlayerRepository(db)
+	playerRepo := user.NewPlayerRepository(db)
 	gameRepo := game.NewGameRepository(db)
 	orderRepo := orderimpl.NewOrderRepository(db)
-	paymentRepo := payment.NewPaymentRepository(db)
+	paymentRepo := order.NewPaymentRepository(db)
 
 	// users
 	userA := &model.User{Name: "A", Email: "a@example.com", Phone: "10000000001", PasswordHash: "x", Role: model.RoleUser, Status: model.UserStatusActive}

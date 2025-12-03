@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"gamelink/internal/apierr"
-	"gamelink/internal/cache"
+	"gamelink/pkg/apierr"
+	"gamelink/pkg/cache"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	repoiface "gamelink/internal/repository/interfaces"

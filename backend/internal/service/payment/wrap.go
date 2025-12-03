@@ -3,7 +3,7 @@ package payment
 import (
 	"errors"
 
-	"gamelink/internal/apierr"
+	"gamelink/pkg/apierr"
 	"gamelink/internal/repository"
 )
 

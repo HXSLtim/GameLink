@@ -9,18 +9,17 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/internal/cache"
+	"gamelink/pkg/cache"
 	adminhandler "gamelink/internal/handler/admin"
 	"gamelink/internal/model"
 	"gamelink/internal/repository/game"
 	orderimpl "gamelink/internal/repository/implementations"
-	"gamelink/internal/repository/payment"
-	"gamelink/internal/repository/player"
-	"gamelink/internal/repository/role"
-	"gamelink/internal/repository/serviceitem"
+	"gamelink/internal/repository/order"
 	"gamelink/internal/repository/user"
+	adminrepo "gamelink/internal/repository/admin"
+	"gamelink/internal/repository/serviceitem"
 	adminservice "gamelink/internal/service/admin"
-	"gamelink/internal/testutil"
+	"gamelink/pkg/testutil"
 )
 
 // 管理端支付退款：管理员对已支付记录执行退款
@@ -35,10 +34,10 @@ func TestAdminPaymentRefund(t *testing.T) {
 
 	orderRepo := orderimpl.NewOrderRepository(db)
 	userRepo := user.NewUserRepository(db)
-	playerRepo := player.NewPlayerRepository(db)
+	playerRepo := user.NewPlayerRepository(db)
 	gameRepo := game.NewGameRepository(db)
-	paymentRepo := payment.NewPaymentRepository(db)
-	roleRepo := role.NewRoleRepository(db)
+	paymentRepo := order.NewPaymentRepository(db)
+	roleRepo := adminrepo.NewRoleRepository(db)
 	memCache := cache.NewMemory()
 	serviceItemRepo := serviceitem.NewServiceItemRepository(db)
 

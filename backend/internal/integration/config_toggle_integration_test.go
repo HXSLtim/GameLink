@@ -14,13 +14,13 @@ import (
 	"gamelink/internal/repository/commission"
 	"gamelink/internal/repository/game"
 	orderimpl "gamelink/internal/repository/implementations"
-	"gamelink/internal/repository/payment"
-	"gamelink/internal/repository/player"
+	"gamelink/internal/repository/order"
+	"gamelink/internal/repository/user"
 	"gamelink/internal/repository/ranking"
 	"gamelink/internal/repository/user"
 	commissionservice "gamelink/internal/service/commission"
 	rankingservice "gamelink/internal/service/ranking"
-	"gamelink/internal/testutil"
+	"gamelink/pkg/testutil"
 )
 
 // 配置禁用/更新：抽成规则、排名抽成配置
@@ -33,9 +33,9 @@ func TestConfigUpdateAndDisable(t *testing.T) {
 	ctx := context.Background()
 	orderRepo := orderimpl.NewOrderRepository(db)
 	_ = user.NewUserRepository(db)
-	playerRepo := player.NewPlayerRepository(db)
+	playerRepo := user.NewPlayerRepository(db)
 	_ = game.NewGameRepository(db)
-	_ = payment.NewPaymentRepository(db)
+	_ = order.NewPaymentRepository(db)
 	commissionRepo := commission.NewCommissionRepository(db)
 	rankingRepo := ranking.NewRankingCommissionRepository(db)
 

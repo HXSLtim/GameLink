@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/internal/logging"
+	"gamelink/pkg/logging"
 )
 
 // AdminAuth enforces a simple bearer token for admin endpoints.
