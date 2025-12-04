@@ -82,6 +82,47 @@ export interface UserQueryParams {
     date_to?: string;
 }
 
+export interface UserTag {
+    id: number;
+    name: string;
+    color: string;
+    description?: string;
+    userCount?: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface CreateTagDto {
+    name: string;
+    color: string;
+    description?: string;
+}
+
+export type UpdateTagDto = Partial<CreateTagDto>;
+
+export interface BatchRoleDto {
+    userIds: number[];
+    role: string;
+}
+
+export interface BatchStatusDto {
+    userIds: number[];
+    status: string;
+}
+
+export interface BatchPointsDto {
+    userIds: number[];
+    points: number;
+    reason?: string;
+}
+
+export interface BatchNotificationDto {
+    userIds: number[];
+    title: string;
+    content: string;
+    type?: string;
+}
+
 export interface UserOrderParams {
     page?: number;
     page_size?: number;
@@ -260,11 +301,27 @@ export const adminApi = {
     createUser: (data: CreateUserDto) => apiClient.post<ApiResponse<User>>('/admin/users', data),
     updateUser: (id: number, data: UpdateUserDto) => apiClient.put<ApiResponse<User>>(`/admin/users/${id}`, data),
     deleteUser: (id: number) => apiClient.delete<ApiResponse<void>>(`/admin/users/${id}`),
-    batchDeleteUsers: (ids: number[]) => apiClient.post<ApiResponse<void>>('/admin/users/batch-delete', { ids }),
     updateUserStatus: (id: number, status: string) => apiClient.put<ApiResponse<User>>(`/admin/users/${id}/status`, { status }),
     updateUserRole: (id: number, role: string) => apiClient.put<ApiResponse<User>>(`/admin/users/${id}/role`, { role }),
     getUserOrders: (id: number, params?: UserOrderParams) => apiClient.get<ApiResponse<Order[]>>(`/admin/users/${id}/orders`, { params }),
     getUserLogs: (id: number, params?: UserLogParams) => apiClient.get<ApiResponse<AuditLog[]>>(`/admin/users/${id}/logs`, { params }),
+
+    // User Tags
+    getTags: () => apiClient.get<ApiResponse<UserTag[]>>('/admin/tags'),
+    createTag: (data: CreateTagDto) => apiClient.post<ApiResponse<UserTag>>('/admin/tags', data),
+    updateTag: (id: number, data: UpdateTagDto) => apiClient.put<ApiResponse<UserTag>>(`/admin/tags/${id}`, data),
+    deleteTag: (id: number) => apiClient.delete<ApiResponse<void>>(`/admin/tags/${id}`),
+    assignUserTag: (userId: number, tagId: number) => apiClient.post<ApiResponse<void>>(`/admin/users/${userId}/tags/${tagId}`),
+    removeUserTag: (userId: number, tagId: number) => apiClient.delete<ApiResponse<void>>(`/admin/users/${userId}/tags/${tagId}`),
+    batchSetUserTags: (userId: number, tagIds: number[]) => apiClient.put<ApiResponse<void>>(`/admin/users/${userId}/tags`, { tagIds }),
+    getUserTags: (userId: number) => apiClient.get<ApiResponse<UserTag[]>>(`/admin/users/${userId}/tags`),
+
+    // Batch Operations
+    batchUpdateUserRole: (data: BatchRoleDto) => apiClient.post<ApiResponse<void>>('/admin/users/batch/role', data),
+    batchUpdateUserStatus: (data: BatchStatusDto) => apiClient.post<ApiResponse<void>>('/admin/users/batch/status', data),
+    batchDeleteUsers: (userIds: number[]) => apiClient.post<ApiResponse<void>>('/admin/users/batch/delete', { userIds }),
+    batchAddUserPoints: (data: BatchPointsDto) => apiClient.post<ApiResponse<void>>('/admin/users/batch/points', data),
+    batchSendNotification: (data: BatchNotificationDto) => apiClient.post<ApiResponse<void>>('/admin/users/batch/notification', data),
 
     // Game Management
     getGames: (params?: { status?: string; page_size?: number }) => apiClient.get('/admin/games', { params }),

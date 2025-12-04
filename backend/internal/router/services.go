@@ -60,6 +60,9 @@ type appServices struct {
 	analyticsSvc    *analyticsservice.AnalyticsService
 	// KPI service
 	kpiSvc          *kpiservice.KPIService
+	// User management services
+	tagSvc          *userservice.UserTagService
+	batchSvc        *userservice.BatchOperationService
 }
 
 // initServices 初始化领域服务和调度任务（但不启动调度器）。
@@ -118,6 +121,11 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 	// KPI service
 	kpiSvc := kpiservice.NewKPIService(orm)
 
+	// User management services
+	tagRepo := userrepo.NewUserTagRepository(orm)
+	tagSvc := userservice.NewUserTagService(tagRepo, userRepo, cacheClient)
+	batchSvc := userservice.NewBatchOperationService(orm, userRepo, tagRepo)
+
 	return &appServices{
 		commissionSvc:       commissionSvc,
 		serviceItemSvc:      serviceItemSvc,
@@ -139,5 +147,7 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 		alertRepo:           alertRepo,
 		analyticsSvc:        analyticsSvc,
 		kpiSvc:              kpiSvc,
+		tagSvc:              tagSvc,
+		batchSvc:            batchSvc,
 	}
 }

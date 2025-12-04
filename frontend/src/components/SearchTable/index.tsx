@@ -43,7 +43,7 @@ export interface ToolbarButton {
     /** 权限码 */
     permission?: string;
     /** 点击回调 */
-    onClick?: () => void;
+    onClick?: (keys?: React.Key[]) => void;
     /** 是否需要选中行 */
     needSelection?: boolean;
     /** 确认提示（批量删除等危险操作） */
@@ -173,7 +173,7 @@ export function SearchTable<T extends object>({
         const button = btn.confirmText ? (
             <Popconfirm
                 title={btn.confirmText}
-                onConfirm={btn.onClick}
+                onConfirm={() => btn.onClick?.(selectedRowKeys)}
                 disabled={disabled}
             >
                 <Button
@@ -193,7 +193,7 @@ export function SearchTable<T extends object>({
                 type={btn.type}
                 icon={btn.icon}
                 danger={btn.danger}
-                onClick={btn.onClick}
+                onClick={() => btn.onClick?.(selectedRowKeys)}
                 disabled={disabled}
             >
                 {btn.text}

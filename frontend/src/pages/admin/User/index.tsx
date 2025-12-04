@@ -1,6 +1,3 @@
-/**
- * 用户管理页面
- */
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
     Tag,
@@ -21,6 +18,9 @@ import {
     Col,
     Card,
     Statistic,
+    Tabs,
+    Empty,
+    Radio
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
@@ -41,7 +41,6 @@ import { USER_PERMISSIONS } from '@/constants/permissions';
 import { PermissionGuard } from '@/components/PermissionGuard';
 import { adminApi, type User, type CreateUserDto, type UpdateUserDto, type UserQueryParams, type UserStats, type ApiResponse } from '@/api/admin';
 import dayjs from 'dayjs';
-import { Tabs, Empty } from 'antd';
 
 /**
  * 角色映射
@@ -84,6 +83,15 @@ const UserPage: React.FC = () => {
     const [detailDrawerVisible, setDetailDrawerVisible] = useState(false);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [form] = Form.useForm();
+
+    // Batch Operation States
+    const [batchRoleVisible, setBatchRoleVisible] = useState(false);
+    const [batchStatusVisible, setBatchStatusVisible] = useState(false);
+    const [batchNotificationVisible, setBatchNotificationVisible] = useState(false);
+    const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
+    const [batchForm] = Form.useForm();
+    const [notificationForm] = Form.useForm();
+    const [statusForm] = Form.useForm();
 
     /**
      * 加载统计数据
@@ -134,7 +142,7 @@ const UserPage: React.FC = () => {
     useEffect(() => {
         loadData();
         loadStats();
-    }, [loadData]);
+    }, [loadData, loadStats]);
 
     /**
      * 搜索处理
@@ -315,6 +323,82 @@ const UserPage: React.FC = () => {
         }
     }, [loadData]);
 
+    const handleBatchModifyRole = (keys: React.Key[]) => {
+        if (!keys || keys.length === 0) return;
+        setSelectedUserIds(keys.map(k => Number(k)));
+        batchForm.resetFields();
+        setBatchRoleVisible(true);
+    };
+
+    const handleBatchModifyStatus = (keys: React.Key[]) => {
+        if (!keys || keys.length === 0) return;
+        setSelectedUserIds(keys.map(k => Number(k)));
+        statusForm.resetFields();
+        setBatchStatusVisible(true);
+    };
+
+    const handleBatchSendNotification = (keys: React.Key[]) => {
+        if (!keys || keys.length === 0) return;
+        setSelectedUserIds(keys.map(k => Number(k)));
+        notificationForm.resetFields();
+        setBatchNotificationVisible(true);
+    };
+
+    const submitBatchRole = async () => {
+        try {
+            const values = await batchForm.validateFields();
+            const res = await adminApi.batchUpdateUserRole({
+                userIds: selectedUserIds,
+                role: values.role
+            }) as unknown as ApiResponse<void>;
+
+            if (res.success) {
+                message.success('批量修改角色成功');
+                setBatchRoleVisible(false);
+                loadData();
+            }
+        } catch (error) {
+            message.error('操作失败');
+        }
+    };
+
+    const submitBatchStatus = async () => {
+        try {
+            const values = await statusForm.validateFields();
+            const res = await adminApi.batchUpdateUserStatus({
+                userIds: selectedUserIds,
+                status: values.status
+            }) as unknown as ApiResponse<void>;
+
+            if (res.success) {
+                message.success('批量修改状态成功');
+                setBatchStatusVisible(false);
+                loadData();
+            }
+        } catch (error) {
+            message.error('操作失败');
+        }
+    };
+
+    const submitBatchNotification = async () => {
+        try {
+            const values = await notificationForm.validateFields();
+            const res = await adminApi.batchSendNotification({
+                userIds: selectedUserIds,
+                title: values.title,
+                content: values.content,
+                type: values.type
+            }) as unknown as ApiResponse<void>;
+
+            if (res.success) {
+                message.success('批量发送通知成功');
+                setBatchNotificationVisible(false);
+            }
+        } catch (error) {
+            message.error('操作失败');
+        }
+    };
+
     /**
      * 搜索字段配置
      */
@@ -488,14 +572,21 @@ const UserPage: React.FC = () => {
             text: '批量修改角色',
             icon: <EditOutlined />,
             needSelection: true,
-            onClick: () => message.info('批量修改角色功能开发中...'),
+            onClick: (keys) => handleBatchModifyRole(keys || []),
+            permission: USER_PERMISSIONS.UPDATE,
+        },
+        {
+            text: '批量修改状态',
+            icon: <SafetyOutlined />,
+            needSelection: true,
+            onClick: (keys) => handleBatchModifyStatus(keys || []),
             permission: USER_PERMISSIONS.UPDATE,
         },
         {
             text: '批量发送通知',
             icon: <MailOutlined />,
             needSelection: true,
-            onClick: () => message.info('批量发送通知功能开发中...'),
+            onClick: (keys) => handleBatchSendNotification(keys || []),
             permission: USER_PERMISSIONS.UPDATE,
         },
     ];
@@ -706,6 +797,65 @@ const UserPage: React.FC = () => {
                     </Tabs>
                 )}
             </Drawer>
+
+            {/* Batch Role Modal */}
+            <Modal
+                title="批量修改角色"
+                open={batchRoleVisible}
+                onOk={submitBatchRole}
+                onCancel={() => setBatchRoleVisible(false)}
+            >
+                <Form form={batchForm} layout="vertical">
+                    <Form.Item name="role" label="选择角色" rules={[{ required: true }]}>
+                        <Select>
+                            <Select.Option value="user">普通用户</Select.Option>
+                            <Select.Option value="player">陪玩师</Select.Option>
+                            <Select.Option value="admin">管理员</Select.Option>
+                        </Select>
+                    </Form.Item>
+                </Form>
+            </Modal>
+
+            {/* Batch Status Modal */}
+            <Modal
+                title="批量修改状态"
+                open={batchStatusVisible}
+                onOk={submitBatchStatus}
+                onCancel={() => setBatchStatusVisible(false)}
+            >
+                <Form form={statusForm} layout="vertical">
+                    <Form.Item name="status" label="选择状态" rules={[{ required: true }]}>
+                        <Select>
+                            <Select.Option value="active">正常</Select.Option>
+                            <Select.Option value="banned">封禁</Select.Option>
+                            <Select.Option value="suspended">停用</Select.Option>
+                        </Select>
+                    </Form.Item>
+                </Form>
+            </Modal>
+
+            {/* Batch Notification Modal */}
+            <Modal
+                title="批量发送通知"
+                open={batchNotificationVisible}
+                onOk={submitBatchNotification}
+                onCancel={() => setBatchNotificationVisible(false)}
+            >
+                <Form form={notificationForm} layout="vertical">
+                    <Form.Item name="title" label="标题" rules={[{ required: true }]}>
+                        <Input />
+                    </Form.Item>
+                    <Form.Item name="type" label="类型" initialValue="system">
+                        <Radio.Group>
+                            <Radio value="system">系统通知</Radio>
+                            <Radio value="activity">活动通知</Radio>
+                        </Radio.Group>
+                    </Form.Item>
+                    <Form.Item name="content" label="内容" rules={[{ required: true }]}>
+                        <Input.TextArea rows={4} />
+                    </Form.Item>
+                </Form>
+            </Modal>
         </PageContainer>
     );
 };

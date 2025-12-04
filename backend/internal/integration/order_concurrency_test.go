@@ -1,4 +1,4 @@
-package order
+package integration
 
 import (
 	"context"
@@ -13,6 +13,7 @@ import (
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	repoiface "gamelink/internal/repository/interfaces"
+	orderservice "gamelink/internal/service/order"
 )
 
 // mockConcurrentOrderRepo 模拟支持并发安全的订单repository
@@ -239,7 +240,7 @@ func TestAcceptOrderConcurrency(t *testing.T) {
 	assert.NoError(t, orderRepo.Create(ctx, order))
 
 	// 创建service (参数顺序: orders, users, players, payments, serviceItems, games, reviews)
-	service := NewOrderService(orderRepo, playerRepo, userRepo, nil, nil, nil, nil)
+	service := orderservice.NewOrderService(orderRepo, playerRepo, userRepo, nil, nil, nil, nil)
 
 	// 并发测试: 多个陪玩师同时尝试接单
 	var wg sync.WaitGroup
@@ -270,7 +271,7 @@ func TestAcceptOrderConcurrency(t *testing.T) {
 			t.Logf("Player %d (UserID=%d): 成功接单", i, playerUserIDs[i])
 		} else {
 			failCount++
-			if err == ErrInvalidTransition {
+			if err == orderservice.ErrInvalidTransition {
 				t.Logf("Player %d (UserID=%d): 接单失败 - 订单状态已变更", i, playerUserIDs[i])
 			} else {
 				t.Logf("Player %d (UserID=%d): 接单失败 - %v", i, playerUserIDs[i], err)
@@ -341,7 +342,7 @@ func TestAcceptOrderConcurrencyStress(t *testing.T) {
 	}
 	assert.NoError(t, orderRepo.Create(ctx, order))
 
-	service := NewOrderService(orderRepo, playerRepo, userRepo, nil, nil, nil, nil)
+	service := orderservice.NewOrderService(orderRepo, playerRepo, userRepo, nil, nil, nil, nil)
 
 	// 高并发测试
 	var wg sync.WaitGroup

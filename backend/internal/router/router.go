@@ -292,6 +292,12 @@ func (r *Router) registerAdminBusinessRoutes(rbacGroup *gin.RouterGroup) {
 	rankingCommissionRepo := rankingrepo.NewRankingCommissionRepository(r.orm)
 	adminhandler.RegisterRankingCommissionRoutes(rbacGroup, rankingCommissionRepo)
 
+	// User Tag routes (用户标签管理)
+	adminhandler.RegisterTagRoutes(rbacGroup, r.services.tagSvc)
+
+	// User Batch Operation routes (用户批量操作)
+	adminhandler.RegisterBatchRoutes(rbacGroup, r.services.batchSvc)
+
 	// Monitor routes (实时监控)
 	r.registerMonitorRoutes(rbacGroup)
 

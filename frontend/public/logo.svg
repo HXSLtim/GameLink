@@ -1,37 +1,36 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
   <defs>
-    <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#5865F2;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#4752C4;stop-opacity:1" />
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6A7BFF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00D2FF;stop-opacity:1" />
     </linearGradient>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000000" flood-opacity="0.3"/>
-    </filter>
+    <mask id="cutout">
+      <rect x="0" y="0" width="200" height="200" fill="white" />
+      
+      <!-- D-Pad (Left) - Centered at (50, 100), Size 28x28 -->
+      <path d="M 46 86 h 8 v 10 h 10 v 8 h -10 v 10 h -8 v -10 h -10 v -8 h 10 z" fill="black" />
+      
+      <!-- Buttons (Right) - Centered at (150, 100), Size 28x28 -->
+      <g transform="translate(150, 100)">
+        <circle cx="0" cy="-10" r="4" fill="black" />
+        <circle cx="10" cy="0" r="4" fill="black" />
+        <circle cx="0" cy="10" r="4" fill="black" />
+        <circle cx="-10" cy="0" r="4" fill="black" />
+      </g>
+      
+      <!-- Checkmark (Center) - Cutout directly from body -->
+      <path d="M 88 100 L 98 110 L 112 90" fill="none" stroke="black" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+    </mask>
   </defs>
   
-  <!-- Background Container -->
-  <rect x="32" y="32" width="448" height="448" rx="128" ry="128" fill="url(#bg-gradient)" filter="url(#shadow)"/>
+  <!-- Background -->
+  <rect x="0" y="0" width="200" height="200" rx="40" ry="40" fill="url(#grad)" />
   
-  <!-- Game Controller Body -->
-  <path d="M140 160 C 80 160, 40 220, 60 280 L 100 380 C 110 410, 150 420, 170 390 L 190 350 L 322 350 L 342 390 C 362 420, 402 410, 412 380 L 452 280 C 472 220, 432 160, 372 160 Z" fill="#ffffff"/>
-  
-  <!-- D-Pad (Left) -->
-  <path d="M135 210 V 235 H 110 C 105 235 100 240 100 245 V 265 C 100 270 105 275 110 275 H 135 V 300 C 135 305 140 310 145 310 H 165 C 170 310 175 305 175 300 V 275 H 200 C 205 275 210 270 210 265 V 245 C 210 240 205 235 200 235 H 175 V 210 C 175 205 170 200 165 200 H 145 C 140 200 135 205 135 210 Z" fill="#5865F2"/>
-  
-  <!-- Action Buttons (Right) -->
-  <circle cx="370" cy="230" r="18" fill="#FAA61A"/> <!-- Y/Triangle - Gold -->
-  <circle cx="400" cy="260" r="18" fill="#ED4245"/> <!-- B/Circle - Red -->
-  <circle cx="340" cy="260" r="18" fill="#3BA55C"/> <!-- X/Square - Green -->
-  <circle cx="370" cy="290" r="18" fill="#5865F2"/> <!-- A/Cross - Blue -->
-  
-  <!-- Central Link Icon (Connecting the controller halves) -->
-  <path d="M230 240 C 220 240 215 255 225 265 L 245 285 C 255 295 270 290 270 280 M 282 232 C 292 222 277 207 267 217 L 247 237 C 237 247 252 262 262 252" stroke="#202225" stroke-width="8" stroke-linecap="round" fill="none"/>
-  <path d="M256 220 L 256 300" stroke="#202225" stroke-width="0" fill="none"/> <!-- Spacer -->
-  
-  <!-- Stylized Link Chain in Center -->
-  <g transform="translate(256, 260) rotate(-45)">
-     <rect x="-25" y="-10" width="30" height="20" rx="8" ry="8" stroke="#202225" stroke-width="6" fill="none" />
-     <rect x="-5" y="-10" width="30" height="20" rx="8" ry="8" stroke="#202225" stroke-width="6" fill="none" />
+  <!-- Main Icon Shape -->
+  <g mask="url(#cutout)">
+    <!-- Controller Body -->
+    <rect x="30" y="60" width="140" height="80" rx="20" fill="white" />
+    <!-- Chat Bubble Tail -->
+    <path d="M 110 140 L 110 155 L 90 140 Z" fill="white" />
   </g>
-
 </svg>

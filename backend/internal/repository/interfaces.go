@@ -495,9 +495,43 @@ type SettlementListOptions struct {
 
 // MonthlyStats 月度统计
 type MonthlyStats struct {
-	Month                  string
-	TotalOrders            int64
-	TotalRevenueCents      int64
-	TotalCommissionCents   int64
-	TotalPlayerIncomeCents int64
+    Month                  string
+    TotalOrders            int64
+    TotalRevenueCents      int64
+    TotalCommissionCents   int64
+    TotalPlayerIncomeCents int64
+}
+
+// UserTagRepository 用户标签仓储接口
+// 错误约定：当资源不存在时返回 repository.ErrNotFound
+type UserTagRepository interface {
+    // 标签管理
+    CreateTag(ctx context.Context, tag *model.UserTag) error
+    GetTag(ctx context.Context, id uint64) (*model.UserTag, error)
+    ListTags(ctx context.Context) ([]model.UserTag, error)
+    UpdateTag(ctx context.Context, tag *model.UserTag) error
+    DeleteTag(ctx context.Context, id uint64) error
+
+    // 用户标签操作
+    AddTagToUser(ctx context.Context, userID uint64, tagID uint64) error
+    RemoveTagFromUser(ctx context.Context, userID uint64, tagID uint64) error
+    GetUserTags(ctx context.Context, userID uint64) ([]model.UserTag, error)
+    BatchSetUserTags(ctx context.Context, userID uint64, tagIDs []uint64) error
+    GetUsersByTag(ctx context.Context, tagID uint64, page, pageSize int) ([]model.User, int64, error)
+}
+
+// UserLoginHistoryRepository 登录历史仓储接口
+// 错误约定：当资源不存在时返回 repository.ErrNotFound
+type UserLoginHistoryRepository interface {
+    Create(ctx context.Context, history *model.UserLoginHistory) error
+    GetByUserID(ctx context.Context, userID uint64, page, pageSize int) ([]model.UserLoginHistory, int64, error)
+    GetByUserIDAndDate(ctx context.Context, userID uint64, dateFrom, dateTo time.Time) ([]model.UserLoginHistory, error)
+}
+
+// UserBehaviorRepository 用户行为仓储接口
+// 错误约定：当资源不存在时返回 repository.ErrNotFound
+type UserBehaviorRepository interface {
+    Create(ctx context.Context, behavior *model.UserBehavior) error
+    GetUserBehaviors(ctx context.Context, userID uint64, page, pageSize int) ([]model.UserBehavior, int64, error)
+    GetBehaviorStats(ctx context.Context, days int) (map[string]int64, error)
 }

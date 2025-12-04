@@ -29,9 +29,23 @@ import (
 
 	"gamelink/pkg/config"
 	"gamelink/pkg/container"
+	"gamelink/pkg/db"
 	"gamelink/pkg/lifecycle"
 	"gamelink/pkg/metrics"
+
+	"gorm.io/gorm"
 )
+
+type cfgAdapter struct{ cfg config.AppConfig }
+
+func (a *cfgAdapter) GetDatabaseDSN() string  { return a.cfg.Database.DSN }
+func (a *cfgAdapter) IsSeedEnabled() bool     { return false }
+func (a *cfgAdapter) GetMaxOpenConns() int    { return 1 }
+func (a *cfgAdapter) GetDatabaseType() string { return a.cfg.Database.Type }
+
+type noopMetrics struct{}
+
+func (n *noopMetrics) InstrumentGorm(db interface{}) error { return nil }
 
 func main() {
 	app, err := container.NewApplication()
@@ -54,7 +68,33 @@ func main() {
 		log.Fatalf("failed to start services: %v", err)
 	}
 
+	// 迁移用户管理相关表结构
+	if err := migrateUserManagement(app.Config); err != nil {
+		log.Fatalf("failed to migrate user management tables: %v", err)
+	}
+
 	startServer(app.Engine, app.Config.Port, app.Lifecycle)
+}
+
+// migrateUserManagement 打开数据库并执行用户管理模块的迁移
+func migrateUserManagement(cfg config.AppConfig) error {
+	orm, err := db.Open(&cfgAdapter{cfg: cfg}, &noopMetrics{})
+	if err != nil {
+		return err
+	}
+	if err := db.MigrateUserManagement(orm); err != nil {
+		return err
+	}
+	return closeSQL(orm)
+}
+
+// closeSQL 关闭底层 SQL 连接
+func closeSQL(orm *gorm.DB) error {
+	sqlDB, err := orm.DB()
+	if err != nil {
+		return err
+	}
+	return sqlDB.Close()
 }
 
 func startServer(router *gin.Engine, port string, lifecycle *lifecycle.Manager) {
