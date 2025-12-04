@@ -18,6 +18,11 @@ import {
     Grid,
     Drawer,
     ConfigProvider,
+    Popover,
+    List,
+    Typography,
+    Empty,
+    message,
 } from 'antd';
 import type { MenuProps } from 'antd';
 import {
@@ -43,10 +48,12 @@ import { useAdmin } from '@/context/AdminContext';
 import { useTheme } from '@/context/ThemeContext';
 import { authApi } from '@/api/auth';
 import { adminApi, type Menu as BackendMenuItem } from '@/api/admin';
+import { userApi, type Notification, type ApiResponse, type NotificationListResponse } from '@/api/user';
 import { ThemeToggle } from '@/components';
 import styles from './index.module.css';
 
 const { Header, Sider, Content } = Layout;
+const { Text } = Typography;
 
 type MenuItem = Required<MenuProps>['items'][number];
 
@@ -68,9 +75,6 @@ const iconMap: Record<string, any> = {
     FileTextOutlined,
 };
 
-/**
- * AdminLayout组件
- */
 const AdminLayout: React.FC = () => {
     const [collapsed, setCollapsed] = useState(false);
     const navigate = useNavigate();
@@ -79,15 +83,118 @@ const AdminLayout: React.FC = () => {
     const { token } = theme.useToken();
     const screens = Grid.useBreakpoint();
     const { mode } = useTheme();
+    const [messageApi, contextHolder] = message.useMessage();
 
     // 菜单数据
     const [menuData, setMenuData] = useState<BackendMenuItem[]>([]);
     const [menuLoading, setMenuLoading] = useState(true);
 
     // 用户信息
-    const [userInfo, setUserInfo] = useState<{ username: string; avatar?: string }>({
+    const [userInfo, setUserInfo] = useState<{ username: string; avatar?: string; id?: number }>({
         username: 'Admin',
     });
+
+    // 通知状态
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [unreadCount, setUnreadCount] = useState(0);
+    const [loadingNotifications, setLoadingNotifications] = useState(false);
+    const [notificationOpen, setNotificationOpen] = useState(false);
+
+    const fetchNotifications = async () => {
+        setLoadingNotifications(true);
+        try {
+            const res = await userApi.getNotifications({ page: 1, page_size: 5 }) as unknown as ApiResponse<NotificationListResponse>;
+            if (res.success && res.data) {
+                setNotifications(res.data.items || []);
+                if (res.data.unreadCount !== undefined) {
+                    setUnreadCount(res.data.unreadCount);
+                }
+            }
+        } catch (error) {
+            console.error('Failed to fetch notifications', error);
+        } finally {
+            setLoadingNotifications(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchNotifications();
+        // Poll every 60 seconds
+        const interval = setInterval(fetchNotifications, 60000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const handleNotificationClick = async (item: Notification) => {
+        if (!item.isRead) {
+            try {
+                await userApi.markAsRead(item.id);
+                setUnreadCount(prev => Math.max(0, prev - 1));
+                setNotifications(prev => prev.map(n => n.id === item.id ? { ...n, isRead: true } : n));
+            } catch (error) {
+                console.error('Failed to mark as read', error);
+            }
+        }
+    };
+
+    const handleMarkAllRead = async () => {
+        try {
+            await userApi.markAllAsRead();
+            setUnreadCount(0);
+            setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+            messageApi.success('已全部标记为已读');
+        } catch (error) {
+            messageApi.error('全部标记已读失败');
+        }
+    };
+
+    const notificationContent = (
+        <div style={{ width: 300 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, padding: '0 8px' }}>
+                <Text strong>通知</Text>
+                {unreadCount > 0 && (
+                    <Button type="link" size="small" onClick={handleMarkAllRead}>
+                        全部已读
+                    </Button>
+                )}
+            </div>
+            <List
+                loading={loadingNotifications}
+                dataSource={notifications}
+                locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无通知" /> }}
+                renderItem={(item) => (
+                    <List.Item
+                        onClick={() => handleNotificationClick(item)}
+                        style={{
+                            cursor: 'pointer',
+                            background: item.isRead ? 'transparent' : token.colorBgContainer, // Use token for bg
+                            padding: '8px 12px',
+                            borderRadius: '4px',
+                            marginBottom: '4px',
+                            transition: 'background 0.3s'
+                        }}
+                    >
+                        <List.Item.Meta
+                            title={
+                                <Space>
+                                    {!item.isRead && <Badge status="processing" />}
+                                    <Text strong={!item.isRead}>{item.title}</Text>
+                                </Space>
+                            }
+                            description={
+                                <div>
+                                    <div style={{ fontSize: '12px', color: token.colorTextSecondary }}>{item.message}</div>
+                                    <div style={{ fontSize: '10px', marginTop: 4, color: token.colorTextTertiary }}>
+                                        {new Date(item.createdAt).toLocaleString()}
+                                    </div>
+                                </div>
+                            }
+                        />
+                    </List.Item>
+                )}
+                style={{ maxHeight: 400, overflowY: 'auto' }}
+            />
+        </div>
+    );
 
     useEffect(() => {
         const storedUser = localStorage.getItem('user_info');
@@ -393,6 +500,7 @@ const AdminLayout: React.FC = () => {
 
     return (
         <Layout className={styles.layout} style={{ minHeight: '100vh' }}>
+            {contextHolder}
             {/* 侧边栏 - 移动端使用 Drawer */}
             {!screens.md ? (
                 <Drawer
@@ -461,9 +569,19 @@ const AdminLayout: React.FC = () => {
                             <ThemeToggle />
 
                             {/* 通知 */}
-                            <Badge count={5} size="small">
-                                <Button type="text" icon={<BellOutlined />} />
-                            </Badge>
+                            {/* 通知 */}
+                            <Popover
+                                content={notificationContent}
+                                trigger="click"
+                                open={notificationOpen}
+                                onOpenChange={setNotificationOpen}
+                                placement="bottomRight"
+                                overlayInnerStyle={{ padding: 0 }}
+                            >
+                                <Badge count={unreadCount} size="small">
+                                    <Button type="text" icon={<BellOutlined />} />
+                                </Badge>
+                            </Popover>
 
                             {/* 用户信息 */}
                             <Dropdown

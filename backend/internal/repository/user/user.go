@@ -79,7 +79,8 @@ func (r *gormUserRepository) ListWithFilters(ctx context.Context, opts repositor
 		return nil, 0, err
 	}
 	var users []model.User
-	if err := q.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&users).Error; err != nil {
+	if err := q.Order("created_at DESC").Offset(offset).Limit(pageSize).
+		Preload("Wallet").Find(&users).Error; err != nil {
 		return nil, 0, err
 	}
 	return users, total, nil

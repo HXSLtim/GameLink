@@ -106,7 +106,7 @@ func (r *Router) setupAuth() {
 
 	r.jwtMgr = auth.NewJWTManager(jwtSecret, tokenTTL)
 	r.authSvc = authservice.NewAuthService(userrepo.NewUserRepository(r.orm), r.jwtMgr)
-	r.authMiddleware = middleware.JWTAuth()
+	r.authMiddleware = middleware.JWTAuth(jwtSecret)
 }
 
 // setupServices 初始化业务服务

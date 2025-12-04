@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { List, Typography, Card, Button, Badge, Space, Empty, message, theme } from 'antd';
-import { CheckOutlined, DeleteOutlined, BellOutlined } from '@ant-design/icons';
+import { List, Typography, Card, Button, Badge, Space, Empty, message, Popconfirm, theme } from 'antd';
+import { CheckOutlined, BellOutlined, DeleteOutlined } from '@ant-design/icons';
 import { userApi, type Notification, type ApiResponse, type NotificationListResponse } from '@/api/user';
 import dayjs from 'dayjs';
 
 const { Title, Text, Paragraph } = Typography;
 
-const NotificationsPage: React.FC = () => {
+const AdminNotificationsPage: React.FC = () => {
     const { token } = theme.useToken();
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(false);
@@ -23,7 +23,7 @@ const NotificationsPage: React.FC = () => {
                 setHasMore(newNotifications.length === 20);
             }
         } catch (error) {
-            message.error('Failed to load notifications');
+            message.error('加载通知失败');
         } finally {
             setLoading(false);
         }
@@ -44,17 +44,7 @@ const NotificationsPage: React.FC = () => {
             await userApi.markAsRead(id);
             setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
         } catch (error) {
-            message.error('Operation failed');
-        }
-    };
-
-    const handleDelete = async (id: number) => {
-        try {
-            await userApi.deleteNotification(id);
-            setNotifications(prev => prev.filter(n => n.id !== id));
-            message.success('Deleted');
-        } catch (error) {
-            message.error('Delete failed');
+            message.error('操作失败');
         }
     };
 
@@ -62,19 +52,29 @@ const NotificationsPage: React.FC = () => {
         try {
             await userApi.markAllAsRead();
             setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-            message.success('All marked as read');
+            message.success('已全部标记为已读');
         } catch (error) {
-            message.error('Operation failed');
+            message.error('操作失败');
+        }
+    };
+
+    const handleDelete = async (id: number) => {
+        try {
+            await userApi.deleteNotification(id);
+            setNotifications(prev => prev.filter(n => n.id !== id));
+            message.success('通知已删除');
+        } catch (error) {
+            message.error('删除失败');
         }
     };
 
     return (
-        <div style={{ maxWidth: 800, margin: '24px auto', padding: '0 24px' }}>
+        <div style={{ padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                <Title level={2} style={{ margin: 0 }}>
-                    <BellOutlined /> Notifications
+                <Title level={4} style={{ margin: 0 }}>
+                    <BellOutlined /> 消息通知
                 </Title>
-                <Button onClick={handleMarkAllRead}>Mark all as read</Button>
+                <Button onClick={handleMarkAllRead}>全部已读</Button>
             </div>
 
             <List
@@ -83,11 +83,11 @@ const NotificationsPage: React.FC = () => {
                 loadMore={
                     hasMore && !loading ? (
                         <div style={{ textAlign: 'center', marginTop: 12, height: 32, lineHeight: '32px' }}>
-                            <Button onClick={handleLoadMore}>Load More</Button>
+                            <Button onClick={handleLoadMore}>加载更多</Button>
                         </div>
                     ) : null
                 }
-                locale={{ emptyText: <Empty description="No notifications" /> }}
+                locale={{ emptyText: <Empty description="暂无通知" /> }}
                 renderItem={(item) => (
                     <Card
                         style={{
@@ -116,16 +116,23 @@ const NotificationsPage: React.FC = () => {
                                         type="text"
                                         icon={<CheckOutlined />}
                                         onClick={() => handleMarkAsRead(item.id)}
-                                        title="Mark as read"
+                                        title="标记为已读"
                                     />
                                 )}
-                                <Button
-                                    type="text"
-                                    danger
-                                    icon={<DeleteOutlined />}
-                                    onClick={() => handleDelete(item.id)}
-                                    title="Delete"
-                                />
+                                <Popconfirm
+                                    title="删除通知"
+                                    description="确定要删除这条通知吗？"
+                                    onConfirm={() => handleDelete(item.id)}
+                                    okText="是"
+                                    cancelText="否"
+                                >
+                                    <Button
+                                        type="text"
+                                        danger
+                                        icon={<DeleteOutlined />}
+                                        title="删除"
+                                    />
+                                </Popconfirm>
                             </Space>
                         </div>
                     </Card>
@@ -135,4 +142,4 @@ const NotificationsPage: React.FC = () => {
     );
 };
 
-export default NotificationsPage;
+export default AdminNotificationsPage;

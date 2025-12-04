@@ -284,7 +284,7 @@ type BatchSendNotificationRequest struct {
 	UserIDs []uint64 `json:"userIds" binding:"required,min=1,max=1000"`
 	Title   string   `json:"title" binding:"required,max=100"`
 	Content string   `json:"content" binding:"required,max=500"`
-	Type    string   `json:"type" binding:"required,oneof=system marketing personal"`
+	Type    string   `json:"type" binding:"required,oneof=system marketing personal activity"`
 }
 
 // batchSendNotificationHandler 批量发送通知

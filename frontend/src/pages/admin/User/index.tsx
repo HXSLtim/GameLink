@@ -19,7 +19,6 @@ import {
     Card,
     Statistic,
     Tabs,
-    Empty,
     Radio
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
@@ -39,7 +38,8 @@ import { PageContainer, SearchTable, type ToolbarButton } from '@/components';
 import type { SearchField } from '@/components';
 import { USER_PERMISSIONS } from '@/constants/permissions';
 import { PermissionGuard } from '@/components/PermissionGuard';
-import { adminApi, type User, type CreateUserDto, type UpdateUserDto, type UserQueryParams, type UserStats, type ApiResponse } from '@/api/admin';
+import { adminApi, type User, type CreateUserDto, type UpdateUserDto, type UserQueryParams, type UserStats, type ApiResponse, type LoginHistory, type AuditLog } from '@/api/admin';
+import { Table } from 'antd';
 import dayjs from 'dayjs';
 
 /**
@@ -88,10 +88,65 @@ const UserPage: React.FC = () => {
     const [batchRoleVisible, setBatchRoleVisible] = useState(false);
     const [batchStatusVisible, setBatchStatusVisible] = useState(false);
     const [batchNotificationVisible, setBatchNotificationVisible] = useState(false);
+    const [batchPointsVisible, setBatchPointsVisible] = useState(false);
     const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
     const [batchForm] = Form.useForm();
     const [notificationForm] = Form.useForm();
     const [statusForm] = Form.useForm();
+    const [pointsForm] = Form.useForm();
+
+    // Login History State
+    const [loginHistory, setLoginHistory] = useState<LoginHistory[]>([]);
+    const [loginHistoryLoading, setLoginHistoryLoading] = useState(false);
+
+    // Operation Logs State
+    const [operationLogs, setOperationLogs] = useState<AuditLog[]>([]);
+    const [operationLogsLoading, setOperationLogsLoading] = useState(false);
+
+    const fetchLoginHistory = async (userId: number) => {
+        setLoginHistoryLoading(true);
+        try {
+            const res = await adminApi.getUserLogs(userId, { page: 1, page_size: 10, type: 'login' }) as unknown as ApiResponse<AuditLog[]>;
+            if (res.success) {
+                const history: LoginHistory[] = (res.data || []).map(log => ({
+                    id: log.id,
+                    ip: log.ip,
+                    location: log.location,
+                    device: log.device,
+                    loginAt: log.createdAt,
+                    status: log.action.includes('fail') ? 'failed' : 'success'
+                }));
+                setLoginHistory(history);
+            }
+        } catch (error) {
+            console.error('Failed to fetch login history', error);
+        } finally {
+            setLoginHistoryLoading(false);
+        }
+    };
+
+    const fetchOperationLogs = async (userId: number) => {
+        setOperationLogsLoading(true);
+        try {
+            const res = await adminApi.getUserLogs(userId, { page: 1, page_size: 10 }) as unknown as ApiResponse<AuditLog[]>;
+            if (res.success) {
+                setOperationLogs(res.data || []);
+            }
+        } catch (error) {
+            console.error('Failed to fetch operation logs', error);
+        } finally {
+            setOperationLogsLoading(false);
+        }
+    };
+
+    const handleTabChange = (key: string) => {
+        if (!currentUser) return;
+        if (key === '2') {
+            fetchLoginHistory(currentUser.id);
+        } else if (key === '3') {
+            fetchOperationLogs(currentUser.id);
+        }
+    };
 
     /**
      * 加载统计数据
@@ -399,6 +454,33 @@ const UserPage: React.FC = () => {
         }
     };
 
+    const handleBatchAddPoints = (keys: React.Key[]) => {
+        if (!keys || keys.length === 0) return;
+        setSelectedUserIds(keys.map(k => Number(k)));
+        pointsForm.resetFields();
+        setBatchPointsVisible(true);
+    };
+
+    const submitBatchPoints = async () => {
+        try {
+            const values = await pointsForm.validateFields();
+            const res = await adminApi.batchAddUserPoints({
+                userIds: selectedUserIds,
+                points: Number(values.points),
+                reason: values.reason,
+                type: values.type
+            }) as unknown as ApiResponse<void>;
+
+            if (res.success) {
+                message.success('批量增加积分成功');
+                setBatchPointsVisible(false);
+                loadData();
+            }
+        } catch (error) {
+            message.error('操作失败');
+        }
+    };
+
     /**
      * 搜索字段配置
      */
@@ -476,6 +558,16 @@ const UserPage: React.FC = () => {
             key: 'level',
             width: 80,
             render: (level: number) => <Tag color="gold">Lv.{level || 0}</Tag>,
+        },
+        {
+            title: '积分',
+            dataIndex: ['wallet', 'balanceCents'],
+            key: 'points',
+            width: 100,
+            render: (_: any, record: any) => {
+                const points = record.wallet?.balanceCents ?? 0;
+                return <span style={{ fontWeight: 500, color: token.colorPrimary }}>{points}</span>;
+            },
         },
         {
             title: '标签',
@@ -587,6 +679,13 @@ const UserPage: React.FC = () => {
             icon: <MailOutlined />,
             needSelection: true,
             onClick: (keys) => handleBatchSendNotification(keys || []),
+            permission: USER_PERMISSIONS.UPDATE,
+        },
+        {
+            text: '批量增加积分',
+            icon: <CrownOutlined />,
+            needSelection: true,
+            onClick: (keys) => handleBatchAddPoints(keys || []),
             permission: USER_PERMISSIONS.UPDATE,
         },
     ];
@@ -752,11 +851,11 @@ const UserPage: React.FC = () => {
                 title="用户详情"
                 open={detailDrawerVisible}
                 onClose={() => setDetailDrawerVisible(false)}
-                width={800}
+                size="large"
                 style={{ maxWidth: '100%' }}
             >
                 {currentUser && (
-                    <Tabs defaultActiveKey="1">
+                    <Tabs defaultActiveKey="1" onChange={handleTabChange}>
                         <Tabs.TabPane tab="基本信息" key="1">
                             <div style={{ textAlign: 'center', marginBottom: 24 }}>
                                 <Avatar
@@ -789,10 +888,33 @@ const UserPage: React.FC = () => {
                             </Descriptions>
                         </Tabs.TabPane>
                         <Tabs.TabPane tab="登录历史" key="2">
-                            <Empty description="暂无登录历史" />
+                            <Table
+                                dataSource={loginHistory}
+                                loading={loginHistoryLoading}
+                                rowKey="id"
+                                pagination={false}
+                                columns={[
+                                    { title: '时间', dataIndex: 'loginAt', render: (t) => dayjs(t).format('YYYY-MM-DD HH:mm:ss') },
+                                    { title: 'IP', dataIndex: 'ip' },
+                                    { title: '地点', dataIndex: 'location' },
+                                    { title: '设备', dataIndex: 'device' },
+                                    { title: '状态', dataIndex: 'status', render: (s) => <Tag color={s === 'success' ? 'success' : 'error'}>{s === 'success' ? '成功' : '失败'}</Tag> },
+                                ]}
+                            />
                         </Tabs.TabPane>
                         <Tabs.TabPane tab="操作日志" key="3">
-                            <Empty description="暂无操作日志" />
+                            <Table
+                                dataSource={operationLogs}
+                                loading={operationLogsLoading}
+                                rowKey="id"
+                                pagination={false}
+                                columns={[
+                                    { title: '时间', dataIndex: 'createdAt', render: (t) => dayjs(t).format('YYYY-MM-DD HH:mm:ss') },
+                                    { title: '操作', dataIndex: 'action' },
+                                    { title: '详情', dataIndex: 'details' },
+                                    { title: 'IP', dataIndex: 'ip' },
+                                ]}
+                            />
                         </Tabs.TabPane>
                     </Tabs>
                 )}
@@ -848,11 +970,37 @@ const UserPage: React.FC = () => {
                     <Form.Item name="type" label="类型" initialValue="system">
                         <Radio.Group>
                             <Radio value="system">系统通知</Radio>
+                            <Radio value="marketing">营销通知</Radio>
+                            <Radio value="personal">个人通知</Radio>
                             <Radio value="activity">活动通知</Radio>
                         </Radio.Group>
                     </Form.Item>
                     <Form.Item name="content" label="内容" rules={[{ required: true }]}>
                         <Input.TextArea rows={4} />
+                    </Form.Item>
+                </Form>
+            </Modal>
+
+            {/* Batch Points Modal */}
+            <Modal
+                title="批量增加积分"
+                open={batchPointsVisible}
+                onOk={submitBatchPoints}
+                onCancel={() => setBatchPointsVisible(false)}
+            >
+                <Form form={pointsForm} layout="vertical">
+                    <Form.Item name="points" label="积分数量" rules={[{ required: true, message: '请输入积分数量' }]}>
+                        <Input type="number" placeholder="请输入积分数量" />
+                    </Form.Item>
+                    <Form.Item name="type" label="积分类型" rules={[{ required: true, message: '请选择积分类型' }]}>
+                        <Select placeholder="请选择积分类型">
+                            <Select.Option value="admin">管理赠送</Select.Option>
+                            <Select.Option value="activity">活动奖励</Select.Option>
+                            <Select.Option value="compensation">补偿</Select.Option>
+                        </Select>
+                    </Form.Item>
+                    <Form.Item name="reason" label="变动原因" rules={[{ required: true, message: '请输入变动原因' }]}>
+                        <Input placeholder="请输入变动原因" />
                     </Form.Item>
                 </Form>
             </Modal>

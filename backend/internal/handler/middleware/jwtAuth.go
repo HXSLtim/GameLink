@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -16,26 +15,13 @@ import (
 // JWTAuth JWT认证中间件
 //
 // 使用方法：
-// router.Use(middleware.JWTAuth())
+// router.Use(middleware.JWTAuth(secretKey))
 // 或者
-// adminGroup.Use(middleware.JWTAuth())
-func JWTAuth() gin.HandlerFunc {
-	// 从环境变量获取JWT密钥
-	secretKey := os.Getenv("JWT_SECRET_KEY")
-	if secretKey == "" {
-		logging.Error("JWT_SECRET_KEY not configured")
-		return func(c *gin.Context) {
-			c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{
-				"success": false,
-				"code":    http.StatusServiceUnavailable,
-				"message": "认证服务配置错误，请联系管理员",
-			})
-		}
-	}
-
+// adminGroup.Use(middleware.JWTAuth(secretKey))
+func JWTAuth(secretKey string) gin.HandlerFunc {
 	// 验证密钥长度
 	if len(secretKey) < 32 {
-		logging.Error("JWT_SECRET_KEY too short, must be at least 32 characters")
+		logging.Error("JWT secret too short, must be at least 32 characters")
 		return func(c *gin.Context) {
 			c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{
 				"success": false,
@@ -177,23 +163,10 @@ func RequireRole(allowedRoles ...string) gin.HandlerFunc {
 //
 // 如果提供了Token则验证，如果没有提供Token则允许继续
 // 适用于那些既可以登录访问也可以匿名访问的接口
-func OptionalAuth() gin.HandlerFunc {
-	// 从环境变量获取JWT密钥
-	secretKey := os.Getenv("JWT_SECRET_KEY")
-	if secretKey == "" {
-		logging.Error("JWT_SECRET_KEY not configured - authentication service unavailable")
-		return func(c *gin.Context) {
-			c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{
-				"success": false,
-				"code":    http.StatusServiceUnavailable,
-				"message": "认证服务配置错误，请联系管理员",
-			})
-		}
-	}
-
+func OptionalAuth(secretKey string) gin.HandlerFunc {
 	// 验证密钥长度
 	if len(secretKey) < 32 {
-		logging.Error("JWT_SECRET_KEY too short, must be at least 32 characters")
+		logging.Error("JWT secret too short, must be at least 32 characters")
 		return func(c *gin.Context) {
 			c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{
 				"success": false,

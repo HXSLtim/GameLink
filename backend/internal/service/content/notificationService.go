@@ -36,6 +36,7 @@ type NotificationView struct {
 	ReferenceType string                     `json:"referenceType"`
 	ReferenceID   *uint64                    `json:"referenceId,omitempty"`
 	ReadAt        *time.Time                 `json:"readAt,omitempty"`
+	IsRead        bool                       `json:"isRead"`
 	CreatedAt     time.Time                  `json:"createdAt"`
 }
 
@@ -89,6 +90,7 @@ func (s *NotificationService) ListNotifications(ctx context.Context, userID uint
 		}
 		if item.ReadAt != nil {
 			view.ReadAt = item.ReadAt
+			view.IsRead = true
 		}
 		resp.Items = append(resp.Items, view)
 	}
@@ -100,7 +102,17 @@ func (s *NotificationService) MarkNotificationsRead(ctx context.Context, userID 
 	return s.repo.MarkRead(ctx, userID, ids)
 }
 
+// MarkAllNotificationsRead marks all notifications as read.
+func (s *NotificationService) MarkAllNotificationsRead(ctx context.Context, userID uint64) error {
+	return s.repo.MarkAllRead(ctx, userID)
+}
+
 // GetUnreadNotificationCount returns unread notifications count.
 func (s *NotificationService) GetUnreadNotificationCount(ctx context.Context, userID uint64) (int64, error) {
 	return s.repo.CountUnread(ctx, userID)
+}
+
+// DeleteNotification deletes a notification by ID.
+func (s *NotificationService) DeleteNotification(ctx context.Context, userID uint64, id uint64) error {
+	return s.repo.Delete(ctx, userID, id)
 }

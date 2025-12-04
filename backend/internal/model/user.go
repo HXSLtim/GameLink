@@ -38,4 +38,7 @@ type User struct {
 
 	// 多角色支持（新增）
 	Roles []RoleModel `json:"roles,omitempty" gorm:"many2many:user_roles;"`
+
+	// 用户钱包（积分就是余额，从钱包读取）
+	Wallet *Wallet `json:"wallet,omitempty" gorm:"foreignKey:UserID"`
 }

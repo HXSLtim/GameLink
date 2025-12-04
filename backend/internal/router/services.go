@@ -123,8 +123,9 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 
 	// User management services
 	tagRepo := userrepo.NewUserTagRepository(orm)
+	notifRepo := notificationrepo.NewNotificationRepository(orm)
 	tagSvc := userservice.NewUserTagService(tagRepo, userRepo, cacheClient)
-	batchSvc := userservice.NewBatchOperationService(orm, userRepo, tagRepo)
+	batchSvc := userservice.NewBatchOperationService(orm, userRepo, tagRepo, notifRepo)
 
 	return &appServices{
 		commissionSvc:       commissionSvc,

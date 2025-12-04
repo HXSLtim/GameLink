@@ -31,7 +31,9 @@ func RegisterRoutes(router gin.IRouter, svc *contentservice.NotificationService,
 	group.Use(authMiddleware)
 	group.GET("", func(c *gin.Context) { listNotificationsHandler(c, svc) })
 	group.POST("/read", func(c *gin.Context) { markNotificationsReadHandler(c, svc) })
+	group.POST("/read-all", func(c *gin.Context) { markAllNotificationsReadHandler(c, svc) })
 	group.GET("/unread-count", func(c *gin.Context) { unreadCountHandler(c, svc) })
+	group.DELETE("/:id", func(c *gin.Context) { deleteNotificationHandler(c, svc) })
 }
 
 // listNotificationsHandler 获取通知列表
@@ -76,6 +78,30 @@ func listNotificationsHandler(c *gin.Context, svc *contentservice.NotificationSe
 		Code:    http.StatusOK,
 		Message: "OK",
 		Data:    resp,
+	})
+}
+
+// markAllNotificationsReadHandler 标记所有通知为已读
+// @Summary      标记所有通知为已读
+// @Description  将当前用户的所有未读通知标记为已读
+// @Tags         Notifications
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string           true  "Bearer {token}"
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /notifications/read-all [post]
+func markAllNotificationsReadHandler(c *gin.Context, svc *contentservice.NotificationService) {
+	userID := getUserIDFromContext(c)
+	if err := svc.MarkAllNotificationsRead(c.Request.Context(), userID); err != nil {
+		respondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondJSON(c, http.StatusOK, model.APIResponse[any]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: "所有通知已标记为已读",
 	})
 }
 
@@ -133,6 +159,42 @@ func unreadCountHandler(c *gin.Context, svc *contentservice.NotificationService)
 		Code:    http.StatusOK,
 		Message: "OK",
 		Data:    map[string]int64{"unread": count},
+	})
+}
+
+// deleteNotificationHandler 删除通知
+// @Summary      删除通知
+// @Description  删除指定ID的通知
+// @Tags         Notifications
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string  true  "Bearer {token}"
+// @Param        id             path      uint64  true  "Notification ID"
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /notifications/{id} [delete]
+func deleteNotificationHandler(c *gin.Context, svc *contentservice.NotificationService) {
+	userID := getUserIDFromContext(c)
+
+	var uri struct {
+		ID uint64 `uri:"id" binding:"required"`
+	}
+	if err := c.ShouldBindUri(&uri); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err := svc.DeleteNotification(c.Request.Context(), userID, uri.ID); err != nil {
+		respondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	respondJSON(c, http.StatusOK, model.APIResponse[any]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: "通知已删除",
 	})
 }
 

@@ -31,6 +31,14 @@ export interface User {
     tags?: string[];
     level?: number;
     vipExpiry?: string;
+    wallet?: {
+        id: number;
+        userId: number;
+        balanceCents: number;
+        frozenCents: number;
+        createdAt: string;
+        updatedAt: string;
+    };
 }
 
 export interface Order {
@@ -50,6 +58,15 @@ export interface AuditLog {
     device?: string;
     createdAt: string;
     details?: string;
+}
+
+export interface LoginHistory {
+    id: number;
+    ip: string;
+    location?: string;
+    device?: string;
+    loginAt: string;
+    status: 'success' | 'failed';
 }
 
 export interface CreateUserDto {
@@ -114,13 +131,14 @@ export interface BatchPointsDto {
     userIds: number[];
     points: number;
     reason?: string;
+    type?: string;
 }
 
 export interface BatchNotificationDto {
     userIds: number[];
     title: string;
     content: string;
-    type?: string;
+    type: 'system' | 'marketing' | 'personal' | 'activity';
 }
 
 export interface UserOrderParams {
@@ -305,6 +323,7 @@ export const adminApi = {
     updateUserRole: (id: number, role: string) => apiClient.put<ApiResponse<User>>(`/admin/users/${id}/role`, { role }),
     getUserOrders: (id: number, params?: UserOrderParams) => apiClient.get<ApiResponse<Order[]>>(`/admin/users/${id}/orders`, { params }),
     getUserLogs: (id: number, params?: UserLogParams) => apiClient.get<ApiResponse<AuditLog[]>>(`/admin/users/${id}/logs`, { params }),
+    getUserLoginHistory: (id: number, params?: { page?: number; page_size?: number }) => apiClient.get<ApiResponse<LoginHistory[]>>(`/admin/users/${id}/login-history`, { params }),
 
     // User Tags
     getTags: () => apiClient.get<ApiResponse<UserTag[]>>('/admin/tags'),

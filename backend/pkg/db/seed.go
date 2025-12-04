@@ -87,7 +87,7 @@ func applySeeds(db *gorm.DB) error {
 			{Key: "customerB", Email: "vip.user@gamelink.com", Phone: "13800138002", Name: "高级会员", Role: model.RoleUser, Password: "Vip@123456"},
 			{Key: "customerC", Email: "new.user@gamelink.com", Phone: "13800138003", Name: "体验用户", Role: model.RoleUser, Password: "User@123789"},
 			{Key: "proB", Email: "streamer@gamelink.com", Phone: "13800138004", Name: "魔王主播", Role: model.RolePlayer, Password: "Player@654321"},
-			{Key: "adminA", Email: "admin@gamelink.com", Phone: "13800138005", Name: "系统管理员", Role: model.RoleAdmin, Password: "Admin@123456"},
+			{Key: "adminA", Email: "sysadmin@gamelink.com", Phone: "13800138100", Name: "系统管理员", Role: model.RoleAdmin, Password: "Admin@123456"},
 			{Key: "customerD", Email: "casual.player@gamelink.com", Phone: "13800138006", Name: "休闲玩家", Role: model.RoleUser, Password: "User@123789"},
 			{Key: "customerE", Email: "competitive.gamer@gamelink.com", Phone: "13800138007", Name: "竞技高手", Role: model.RoleUser, Password: "User@456789"},
 			{Key: "proC", Email: "fps.master@gamelink.com", Phone: "13800138008", Name: "FPS大神", Role: model.RolePlayer, Password: "Player@987654"},
@@ -1180,12 +1180,21 @@ func seedMonitorData(tx *gorm.DB) error {
 
 // seedUserManagementData 创建用户管理模块种子数据
 func seedUserManagementData(tx *gorm.DB, users map[string]*model.User) error {
+	// 检查表是否存在
+	if !tx.Migrator().HasTable(&model.UserTag{}) {
+		// 如果表不存在，先创建表
+		if err := tx.AutoMigrate(&model.UserTag{}, &model.UserTagRelation{}, &model.UserLoginHistory{}, &model.UserBehavior{}); err != nil {
+			return fmt.Errorf("failed to migrate user management tables: %w", err)
+		}
+		log.Println("created user management tables")
+	}
+
 	// 检查是否已有用户标签数据
 	var tagCount int64
 	if err := tx.Model(&model.UserTag{}).Count(&tagCount).Error; err != nil {
 		return err
 	}
-	
+
 	if tagCount > 0 {
 		log.Println("user management seed data already exists, skipping")
 		return nil

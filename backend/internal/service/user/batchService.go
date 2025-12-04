@@ -16,9 +16,10 @@ import (
 
 // BatchOperationService 批量操作服务
 type BatchOperationService struct {
-	db       *gorm.DB
-	userRepo repository.UserRepository
-	tagRepo  repository.UserTagRepository
+	db                  *gorm.DB
+	userRepo            repository.UserRepository
+	tagRepo             repository.UserTagRepository
+	notificationRepo    repository.NotificationRepository
 }
 
 // NewBatchOperationService 创建批量操作服务
@@ -26,11 +27,13 @@ func NewBatchOperationService(
 	db *gorm.DB,
 	userRepo repository.UserRepository,
 	tagRepo repository.UserTagRepository,
+	notificationRepo repository.NotificationRepository,
 ) *BatchOperationService {
 	return &BatchOperationService{
-		db:       db,
-		userRepo: userRepo,
-		tagRepo:  tagRepo,
+		db:                  db,
+		userRepo:            userRepo,
+		tagRepo:             tagRepo,
+		notificationRepo:    notificationRepo,
 	}
 }
 
@@ -194,13 +197,12 @@ func (s *BatchOperationService) BatchAddPoints(ctx context.Context, req *BatchAd
 		go s.recordOperation(ctx, operationLog)
 	}()
 
-	// 批量增加积分
+	// 批量增加积分（积分就是余额，直接增加钱包余额）
 	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		for _, userID := range req.UserIDs {
-			// 这里应该调用积分服务，简化处理直接在用户表更新
-			if err := tx.Model(&model.User{}).
-				Where("id = ?", userID).
-				UpdateColumn("points", gorm.Expr("points + ?", req.Points)).Error; err != nil {
+			if err := tx.Model(&model.Wallet{}).
+				Where("user_id = ?", userID).
+				UpdateColumn("balance_cents", gorm.Expr("balance_cents + ?", req.Points)).Error; err != nil {
 				failedCount++
 				continue
 			}
@@ -217,7 +219,7 @@ type BatchSendNotificationRequest struct {
 	UserIDs []uint64 `json:"userIds" binding:"required,min=1,max=1000"`
 	Title   string   `json:"title" binding:"required,max=100"`
 	Content string   `json:"content" binding:"required,max=500"`
-	Type    string   `json:"type" binding:"required,oneof=system marketing personal"`
+	Type    string   `json:"type" binding:"required,oneof=system marketing personal activity"`
 }
 
 // BatchSendNotification 批量发送通知
@@ -236,10 +238,33 @@ func (s *BatchOperationService) BatchSendNotification(ctx context.Context, req *
 	}
 	go s.recordOperation(ctx, operationLog)
 
-	// 这里实际应该调用通知服务，简化处理：直接打印日志
-	// TODO: 集成实际的通知服务（消息队列或通知模块）
+	// 根据通知类型确定优先级
+	var priority model.NotificationPriority
+	switch req.Type {
+	case "system":
+		priority = model.NotificationPriorityHigh
+	case "marketing":
+		priority = model.NotificationPriorityNormal
+	case "personal":
+		priority = model.NotificationPriorityLow
+	default:
+		priority = model.NotificationPriorityNormal
+	}
+
+	// 批量创建通知
 	for _, userID := range req.UserIDs {
-		fmt.Printf("[Notification] Sending to user %d: %s - %s\n", userID, req.Title, req.Type)
+		note := &model.NotificationEvent{
+			UserID:   userID,
+			Title:    req.Title,
+			Message:  req.Content,
+			Channel:  "web",
+			Priority: priority,
+		}
+		if err := s.notificationRepo.Create(ctx, note); err != nil {
+			fmt.Printf("[Notification] Failed to create for user %d: %v\n", userID, err)
+			// 单个通知失败不中断整个批处理
+			continue
+		}
 	}
 
 	return nil

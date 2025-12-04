@@ -41,6 +41,9 @@ const RealtimeMonitor = lazy(() => import('@/pages/admin/Monitor/Realtime'));
 const AnalyticsPage = lazy(() => import('@/pages/admin/Monitor/Analytics'));
 const KPIDashboard = lazy(() => import('@/pages/admin/Monitor/KPI'));
 
+// Notifications
+const AdminNotificationsPage = lazy(() => import('@/pages/admin/Notifications'));
+
 // Service Item Pages
 const ServiceItemList = lazy(() => import('@/pages/biz/service'));
 const ServiceItemForm = lazy(() => import('@/pages/biz/service/form'));
@@ -204,6 +207,11 @@ export const routes: RouteConfig[] = [
                 path: 'settings',
                 element: <LazyLoad><AdminSettings /></LazyLoad>,
                 meta: { title: '系统设置' }
+            },
+            {
+                path: 'notifications',
+                element: <LazyLoad><AdminNotificationsPage /></LazyLoad>,
+                meta: { title: '通知中心' }
             },
             // 监控模块
             {

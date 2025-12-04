@@ -48,13 +48,21 @@ func (r *gormNotificationRepository) ListByUser(ctx context.Context, opts reposi
 }
 
 func (r *gormNotificationRepository) MarkRead(ctx context.Context, userID uint64, ids []uint64) error {
-	tx := r.db.WithContext(ctx).Model(&model.NotificationEvent{}).
-		Where("user_id = ?", userID)
-	if len(ids) > 0 {
-		tx = tx.Where("id IN ?", ids)
+	if len(ids) == 0 {
+		return nil // Do nothing if no IDs are provided
 	}
-	tx = tx.Where("read_at IS NULL").Update("read_at", gorm.Expr("CURRENT_TIMESTAMP"))
+	tx := r.db.WithContext(ctx).Model(&model.NotificationEvent{}).
+		Where("user_id = ?", userID).
+		Where("id IN ?", ids).
+		Where("read_at IS NULL").
+		Update("read_at", gorm.Expr("CURRENT_TIMESTAMP"))
 	return tx.Error
+}
+
+func (r *gormNotificationRepository) MarkAllRead(ctx context.Context, userID uint64) error {
+	return r.db.WithContext(ctx).Model(&model.NotificationEvent{}).
+		Where("user_id = ? AND read_at IS NULL", userID).
+		Update("read_at", gorm.Expr("CURRENT_TIMESTAMP")).Error
 }
 
 func (r *gormNotificationRepository) CountUnread(ctx context.Context, userID uint64) (int64, error) {
@@ -65,4 +73,10 @@ func (r *gormNotificationRepository) CountUnread(ctx context.Context, userID uin
 
 func (r *gormNotificationRepository) Create(ctx context.Context, event *model.NotificationEvent) error {
 	return r.db.WithContext(ctx).Create(event).Error
+}
+
+func (r *gormNotificationRepository) Delete(ctx context.Context, userID uint64, id uint64) error {
+	return r.db.WithContext(ctx).
+		Where("user_id = ? AND id = ?", userID, id).
+		Delete(&model.NotificationEvent{}).Error
 }
