@@ -14,7 +14,7 @@
 }
 
 .searchCard :global(.ant-card-body) {
-    padding: 16px 24px 0;
+    padding: 0;
 }
 
 .formItem {
@@ -25,25 +25,11 @@
     display: flex;
     justify-content: flex-end;
     align-items: flex-start;
-    padding-top: 4px;
 }
 
 /* 表格卡片 */
 .tableCard {
     margin-bottom: 0;
-}
-
-.tableCard :global(.ant-card-head) {
-    min-height: 56px;
-    padding: 0 16px;
-}
-
-.tableCard :global(.ant-card-head-title) {
-    padding: 16px 0;
-}
-
-.tableCard :global(.ant-card-extra) {
-    padding: 12px 0;
 }
 
 .tableCard :global(.ant-card-body) {
@@ -56,6 +42,28 @@
 
 .tableCard :global(.ant-table) {
     border-radius: 0;
+}
+
+/* 工具栏 */
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.toolbarTitle {
+    font-size: 16px;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.88);
+}
+
+.toolbarActions {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
 }
 
 /* 操作列 */

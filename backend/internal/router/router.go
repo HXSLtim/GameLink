@@ -20,6 +20,7 @@ import (
 	adminhandler "gamelink/internal/handler/admin"
 	"gamelink/internal/handler/middleware"
 	notificationhandler "gamelink/internal/handler/notification"
+	"gamelink/internal/ws"
 	"gamelink/pkg/lifecycle"
 	"gamelink/internal/model"
 	commissionrepo "gamelink/internal/repository/commission"
@@ -116,6 +117,9 @@ func (r *Router) setupServices() {
 	if r.lifecycle == nil {
 		services.settlementScheduler.Start()
 		services.chatRetention.Start()
+		// Start monitor services
+		go services.wsHub.Run()
+		services.realtimeSvc.Start(context.Background())
 		return
 	}
 
@@ -132,6 +136,24 @@ func (r *Router) setupServices() {
 		return nil
 	}, func(context.Context) error {
 		services.chatRetention.Stop()
+		return nil
+	})
+
+	// WebSocket Hub 生命周期管理
+	r.lifecycle.RegisterHook("websocket:hub", func(ctx context.Context) error {
+		go services.wsHub.Run()
+		return nil
+	}, func(ctx context.Context) error {
+		// Hub 会在所有连接关闭后自动停止
+		return nil
+	})
+
+	// 实时监控服务生命周期管理
+	r.lifecycle.RegisterHook("monitor:realtime", func(ctx context.Context) error {
+		services.realtimeSvc.Start(ctx)
+		return nil
+	}, func(ctx context.Context) error {
+		services.realtimeSvc.Stop()
 		return nil
 	})
 }
@@ -167,6 +189,8 @@ func (r *Router) registerRoutes() {
 func (r *Router) registerSwaggerRoutes() {
 	if r.cfg.EnableSwagger {
 		log.Println("swagger endpoint enabled at /swagger")
+		// Serve swagger.json file
+		r.engine.StaticFile("/swagger.json", "./docs/swagger.json")
 		// Serve gin-swagger UI backed by /swagger.json for compatibility
 		r.engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.URL("/swagger.json")))
 	} else {
@@ -267,6 +291,69 @@ func (r *Router) registerAdminBusinessRoutes(rbacGroup *gin.RouterGroup) {
 	// Ranking Commission routes
 	rankingCommissionRepo := rankingrepo.NewRankingCommissionRepository(r.orm)
 	adminhandler.RegisterRankingCommissionRoutes(rbacGroup, rankingCommissionRepo)
+
+	// Monitor routes (实时监控)
+	r.registerMonitorRoutes(rbacGroup)
+
+	// Analytics routes (运营分析)
+	r.registerAnalyticsRoutes(rbacGroup)
+
+	// KPI routes (KPI 仪表板)
+	r.registerKPIRoutes(rbacGroup)
+}
+
+// registerMonitorRoutes 注册监控相关路由
+func (r *Router) registerMonitorRoutes(rbacGroup *gin.RouterGroup) {
+	monitorHandler := adminhandler.NewMonitorHandler(r.services.realtimeSvc, r.services.alertRepo)
+
+	monitorGroup := rbacGroup.Group("/monitor")
+	monitorGroup.Use(r.permMiddleware.RequireAuth())
+	{
+		// 实时监控 API
+		monitorGroup.GET("/system-status", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/monitor/system-status"), monitorHandler.GetSystemStatus)
+		monitorGroup.GET("/online-users", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/monitor/online-users"), monitorHandler.GetOnlineUsers)
+		monitorGroup.GET("/order-queue", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/monitor/order-queue"), monitorHandler.GetOrderQueue)
+		monitorGroup.GET("/alerts", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/monitor/alerts"), monitorHandler.GetAlerts)
+		monitorGroup.PUT("/alerts/:id/read", r.permMiddleware.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/monitor/alerts/:id/read"), monitorHandler.MarkAlertRead)
+		monitorGroup.PUT("/alerts/batch-read", r.permMiddleware.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/monitor/alerts/batch-read"), monitorHandler.BatchMarkAlertsRead)
+	}
+
+	// WebSocket 路由 (使用 ws.Handler 的认证机制)
+	wsHandler := ws.NewHandler(r.services.wsHub)
+	rbacGroup.GET("/ws/monitor", r.permMiddleware.RequireAuth(), wsHandler.ServeWS)
+}
+
+// registerAnalyticsRoutes 注册运营分析路由
+func (r *Router) registerAnalyticsRoutes(rbacGroup *gin.RouterGroup) {
+	analyticsHandler := adminhandler.NewAnalyticsHandler(r.services.analyticsSvc)
+
+	analyticsGroup := rbacGroup.Group("/analytics")
+	analyticsGroup.Use(r.permMiddleware.RequireAuth())
+	{
+		analyticsGroup.GET("/active-users", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/analytics/active-users"), analyticsHandler.GetActiveUsers)
+		analyticsGroup.GET("/retention", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/analytics/retention"), analyticsHandler.GetRetention)
+		analyticsGroup.GET("/payment", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/analytics/payment"), analyticsHandler.GetPaymentAnalytics)
+		analyticsGroup.GET("/conversion", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/analytics/conversion"), analyticsHandler.GetConversionFunnel)
+	}
+}
+
+// registerKPIRoutes 注册 KPI 仪表板路由
+func (r *Router) registerKPIRoutes(rbacGroup *gin.RouterGroup) {
+	kpiHandler := adminhandler.NewKPIHandler(r.services.kpiSvc)
+
+	kpiGroup := rbacGroup.Group("/kpi")
+	kpiGroup.Use(r.permMiddleware.RequireAuth())
+	{
+		// KPI 概览和趋势
+		kpiGroup.GET("/overview", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/kpi/overview"), kpiHandler.GetOverview)
+		kpiGroup.GET("/trend", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/kpi/trend"), kpiHandler.GetTrend)
+
+		// KPI 目标管理
+		kpiGroup.GET("/targets", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/kpi/targets"), kpiHandler.GetTargets)
+		kpiGroup.POST("/targets", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/kpi/targets"), kpiHandler.CreateTarget)
+		kpiGroup.PUT("/targets/:id", r.permMiddleware.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/kpi/targets/:id"), kpiHandler.UpdateTarget)
+		kpiGroup.DELETE("/targets/:id", r.permMiddleware.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/kpi/targets/:id"), kpiHandler.DeleteTarget)
+	}
 }
 
 // syncAPIPermissions 同步 API 权限

@@ -28,16 +28,21 @@ import {
     SettingOutlined,
     BellOutlined,
     DashboardOutlined,
+    SettingFilled,
     TeamOutlined,
+    SafetyCertificateOutlined,
+    MenuOutlined,
     AppstoreOutlined,
     ShoppingCartOutlined,
-    SafetyCertificateOutlined,
-    SettingFilled,
-    MenuOutlined,
+    MonitorOutlined,
+    LineChartOutlined,
+    FundOutlined,
+    FileTextOutlined,
 } from '@ant-design/icons';
 import { useAdmin } from '@/context/AdminContext';
 import { useTheme } from '@/context/ThemeContext';
 import { authApi } from '@/api/auth';
+import { adminApi, type Menu as BackendMenuItem } from '@/api/admin';
 import { ThemeToggle } from '@/components';
 import styles from './index.module.css';
 
@@ -46,59 +51,21 @@ const { Header, Sider, Content } = Layout;
 type MenuItem = Required<MenuProps>['items'][number];
 
 /**
- * 菜单配置
+ * 图标映射 - 将图标名称字符串映射到实际的图标组件
  */
-const menuItems: MenuItem[] = [
-    {
-        key: '/admin',
-        icon: <DashboardOutlined />,
-        label: '仪表盘',
-    },
-    {
-        key: '/admin/sys',
-        icon: <SettingFilled />,
-        label: '系统管理',
-        children: [
-            { key: '/admin/sys/user', icon: <TeamOutlined />, label: '用户管理' },
-            { key: '/admin/sys/role', icon: <SafetyCertificateOutlined />, label: '角色管理' },
-            { key: '/admin/sys/permission', icon: <SafetyCertificateOutlined />, label: '权限管理' },
-            { key: '/admin/sys/menu', icon: <MenuOutlined />, label: '菜单管理' },
-        ],
-    },
-    {
-        key: '/admin/biz',
-        icon: <AppstoreOutlined />,
-        label: '业务管理',
-        children: [
-            { key: '/admin/biz/game', icon: <AppstoreOutlined />, label: '游戏管理' },
-            { key: '/admin/biz/player', icon: <TeamOutlined />, label: '陪玩师管理' },
-            { key: '/admin/biz/order', icon: <ShoppingCartOutlined />, label: '订单管理' },
-            { key: '/admin/biz/service', icon: <AppstoreOutlined />, label: '服务项目' },
-        ],
-    },
-    {
-        key: '/admin/settings',
-        icon: <SettingOutlined />,
-        label: '系统设置',
-    },
-];
-
-/**
- * 面包屑映射
- */
-const breadcrumbMap: Record<string, string> = {
-    '/admin': '仪表盘',
-    '/admin/sys': '系统管理',
-    '/admin/sys/user': '用户管理',
-    '/admin/sys/role': '角色管理',
-    '/admin/sys/permission': '权限管理',
-    '/admin/sys/menu': '菜单管理',
-    '/admin/biz': '业务管理',
-    '/admin/biz/game': '游戏管理',
-    '/admin/biz/player': '陪玩师管理',
-    '/admin/biz/order': '订单管理',
-    '/admin/biz/service': '服务项目',
-    '/admin/settings': '系统设置',
+const iconMap: Record<string, any> = {
+    DashboardOutlined,
+    SettingFilled,
+    TeamOutlined,
+    SafetyCertificateOutlined,
+    MenuOutlined,
+    AppstoreOutlined,
+    ShoppingCartOutlined,
+    MonitorOutlined,
+    LineChartOutlined,
+    FundOutlined,
+    SettingOutlined,
+    FileTextOutlined,
 };
 
 /**
@@ -112,6 +79,10 @@ const AdminLayout: React.FC = () => {
     const { token } = theme.useToken();
     const screens = Grid.useBreakpoint();
     const { mode } = useTheme();
+
+    // 菜单数据
+    const [menuData, setMenuData] = useState<BackendMenuItem[]>([]);
+    const [menuLoading, setMenuLoading] = useState(true);
 
     // 用户信息
     const [userInfo, setUserInfo] = useState<{ username: string; avatar?: string }>({
@@ -130,6 +101,74 @@ const AdminLayout: React.FC = () => {
         }
     }, []);
 
+    // 加载菜单数据
+    useEffect(() => {
+        const loadMenus = async () => {
+            try {
+                setMenuLoading(true);
+                console.log('[AdminLayout] 开始加载菜单数据...');
+                const response = await adminApi.getMenus({ parentId: undefined });
+                console.log('[AdminLayout] 菜单API响应:', response);
+                console.log('[AdminLayout] response 类型:', typeof response);
+
+                // Axios 拦截器返回的是 response.data，所以 response 就是 ApiResponse
+                // response.data 才是实际的菜单数组
+                let menus: BackendMenuItem[] = [];
+                if (response && Array.isArray(response.data)) {
+                    // response.data 是菜单数组
+                    menus = response.data;
+                    console.log('[AdminLayout] 从 response.data 提取菜单，数量:', menus.length);
+                } else if (Array.isArray(response)) {
+                    // 如果后端直接返回数组（不应该发生）
+                    menus = response;
+                    console.log('[AdminLayout] 直接获取菜单数组，数量:', menus.length);
+                } else {
+                    console.log('[AdminLayout] 未识别的响应格式:', response);
+                    menus = [];
+                }
+
+                console.log('[AdminLayout] 提取的菜单数据:', menus);
+
+                // 检查 visible 字段（注意后端字段是 visible，不是 hidden）
+                menus.forEach(menu => {
+                    console.log(`[AdminLayout] 菜单: ${menu.name}, parentId: ${menu.parentId}, visible: ${menu.visible}`);
+                });
+
+                // 构建菜单树：将扁平数组转换为层级树结构
+                const buildMenuTree = (menus: BackendMenuItem[], parentId: number | null = null): BackendMenuItem[] => {
+                    return menus
+                        .filter(menu => {
+                            // 过滤：1) visible=true 2) parentId匹配
+                            const isVisible = menu.visible !== false;
+                            const isMatchParent = menu.parentId === parentId;
+                            return isVisible && isMatchParent;
+                        })
+                        .sort((a, b) => a.order - b.order)  // 按order排序
+                        .map(menu => {
+                            // 递归查找子菜单
+                            const children = buildMenuTree(menus, menu.id);
+                            return {
+                                ...menu,
+                                children: children.length > 0 ? children : undefined
+                            };
+                        });
+                };
+
+                const menuTree = buildMenuTree(menus);
+                console.log('[AdminLayout] 构建的菜单树:', menuTree);
+                console.log('[AdminLayout] 根菜单数量:', menuTree.length);
+
+                setMenuData(menuTree);
+            } catch (error) {
+                console.error('Failed to load menus:', error);
+            } finally {
+                setMenuLoading(false);
+            }
+        };
+
+        loadMenus();
+    }, []);
+
     // 响应式处理：屏幕变窄时自动收起
     useEffect(() => {
         if (!screens.md) {
@@ -140,25 +179,86 @@ const AdminLayout: React.FC = () => {
     }, [screens.md]);
 
     /**
+     * 将后端菜单转换为 Ant Design 菜单格式
+     */
+    const menuItems = useMemo((): MenuItem[] => {
+        if (!menuData || menuData.length === 0) return [];
+
+        const transformMenu = (menus: BackendMenuItem[]): MenuItem[] => {
+            return menus.map(menu => {
+                const IconComponent = menu.icon ? iconMap[menu.icon] : null;
+                const children = menu.children && menu.children.length > 0
+                    ? transformMenu(menu.children)
+                    : undefined;
+
+                return {
+                    key: menu.path,
+                    icon: IconComponent ? React.createElement(IconComponent) : null,
+                    label: menu.name,
+                    children,
+                } as MenuItem;
+            });
+        };
+
+        return transformMenu(menuData);
+    }, [menuData]);
+
+    /**
+     * 创建面包屑映射
+     */
+    const breadcrumbMap = useMemo((): Record<string, string> => {
+        const map: Record<string, string> = {};
+
+        const traverse = (menus: BackendMenuItem[]) => {
+            menus.forEach(menu => {
+                map[menu.path] = menu.name;
+                if (menu.children && menu.children.length > 0) {
+                    traverse(menu.children);
+                }
+            });
+        };
+
+        if (menuData && menuData.length > 0) {
+            traverse(menuData);
+        }
+
+        return map;
+    }, [menuData]);
+
+    /**
      * 获取当前选中的菜单项
      */
     const selectedKeys = useMemo(() => {
         const path = location.pathname;
-        // 精确匹配或找到最长匹配的父路径
         const keys = Object.keys(breadcrumbMap).filter(key => path.startsWith(key));
         return keys.length > 0 ? [keys.sort((a, b) => b.length - a.length)[0]] : ['/admin'];
-    }, [location.pathname]);
+    }, [location.pathname, breadcrumbMap]);
 
     /**
      * 获取展开的菜单项
      */
     const openKeys = useMemo(() => {
         const path = location.pathname;
-        const keys: string[] = [];
-        if (path.startsWith('/admin/sys')) keys.push('/admin/sys');
-        if (path.startsWith('/admin/biz')) keys.push('/admin/biz');
-        return keys;
-    }, [location.pathname]);
+
+        // 根据菜单层级结构找出需要展开的父菜单
+        const findParentKeys = (menus: BackendMenuItem[], currentPath: string): string[] => {
+            const parentKeys: string[] = [];
+
+            const checkMenu = (menu: BackendMenuItem, parentKey?: string) => {
+                if (currentPath.startsWith(menu.path)) {
+                    if (parentKey) parentKeys.push(parentKey);
+                }
+                if (menu.children) {
+                    menu.children.forEach(child => checkMenu(child, menu.path));
+                }
+            };
+
+            menus.forEach(menu => checkMenu(menu));
+            return parentKeys;
+        };
+
+        return findParentKeys(menuData, path);
+    }, [location.pathname, menuData]);
 
     /**
      * 生成面包屑
@@ -179,7 +279,7 @@ const AdminLayout: React.FC = () => {
         });
 
         return items;
-    }, [location.pathname]);
+    }, [location.pathname, breadcrumbMap]);
 
     /**
      * 菜单点击
@@ -238,7 +338,7 @@ const AdminLayout: React.FC = () => {
         }
     };
 
-    if (loading) {
+    if (loading || menuLoading) {
         return (
             <div className={styles.loading} style={{ background: token.colorBgLayout }}>
                 <Spin size="large" tip="加载中...">
@@ -299,8 +399,7 @@ const AdminLayout: React.FC = () => {
                     placement="left"
                     onClose={() => setCollapsed(true)}
                     open={!collapsed}
-                    width={220}
-                    styles={{ body: { padding: 0 }, header: { display: 'none' } }}
+                    styles={{ body: { padding: 0, width: 220 }, header: { display: 'none' } }}
                     closable={false}
                 >
                     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: token.colorBgContainer }}>

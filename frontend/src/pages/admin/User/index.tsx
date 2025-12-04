@@ -17,6 +17,10 @@ import {
     Descriptions,
     Divider,
     theme,
+    Row,
+    Col,
+    Card,
+    Statistic,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
@@ -26,12 +30,16 @@ import {
     LockOutlined,
     UnlockOutlined,
     EyeOutlined,
+    TeamOutlined,
+    CrownOutlined,
+    SafetyOutlined,
+    UserAddOutlined,
 } from '@ant-design/icons';
 import { PageContainer, SearchTable } from '@/components';
 import type { SearchField } from '@/components';
 import { USER_PERMISSIONS } from '@/constants/permissions';
 import { PermissionGuard } from '@/components/PermissionGuard';
-import { adminApi, type User, type CreateUserDto, type UpdateUserDto, type UserQueryParams } from '@/api/admin';
+import { adminApi, type User, type CreateUserDto, type UpdateUserDto, type UserQueryParams, type UserStats } from '@/api/admin';
 import dayjs from 'dayjs';
 
 /**
@@ -63,6 +71,10 @@ const UserPage: React.FC = () => {
     const [current, setCurrent] = useState(1);
     const [pageSize, setPageSize] = useState(10);
 
+    // 统计数据
+    const [stats, setStats] = useState<UserStats | null>(null);
+    const [statsLoading, setStatsLoading] = useState(false);
+
     // 搜索参数
     const [searchParams, setSearchParams] = useState<UserQueryParams>({});
 
@@ -71,6 +83,24 @@ const UserPage: React.FC = () => {
     const [detailDrawerVisible, setDetailDrawerVisible] = useState(false);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [form] = Form.useForm();
+
+    /**
+     * 加载统计数据
+     */
+    const loadStats = useCallback(async () => {
+        try {
+            setStatsLoading(true);
+            const response = await adminApi.getUserStats();
+            if (response.success) {
+                setStats(response.data);
+            }
+        } catch (error: any) {
+            console.error('加载统计数据失败:', error);
+            // 静默失败，不影响主要功能
+        } finally {
+            setStatsLoading(false);
+        }
+    }, []);
 
     /**
      * 加载用户数据
@@ -86,11 +116,11 @@ const UserPage: React.FC = () => {
 
             const response = await adminApi.getUsers(params);
 
-            if (response.data.success) {
-                setUsers(response.data.data || []);
-                setTotal(response.data.pagination?.total || 0);
+            if (response.success) {
+                setUsers(response.data || []);
+                setTotal(response.pagination?.total || 0);
             } else {
-                message.error(response.data.message || '获取用户列表失败');
+                message.error(response.message || '获取用户列表失败');
             }
         } catch (error: any) {
             console.error('加载用户列表失败:', error);
@@ -102,6 +132,7 @@ const UserPage: React.FC = () => {
 
     useEffect(() => {
         loadData();
+        loadStats();
     }, [loadData]);
 
     /**
@@ -177,12 +208,12 @@ const UserPage: React.FC = () => {
 
                 const response = await adminApi.updateUser(currentUser.id, updateData);
 
-                if (response.data.success) {
+                if (response.success) {
                     message.success('更新用户成功');
                     setEditModalVisible(false);
                     loadData();
                 } else {
-                    message.error(response.data.message || '更新用户失败');
+                    message.error(response.message || '更新用户失败');
                 }
             } else {
                 // 创建用户
@@ -198,12 +229,12 @@ const UserPage: React.FC = () => {
 
                 const response = await adminApi.createUser(createData);
 
-                if (response.data.success) {
+                if (response.success) {
                     message.success('创建用户成功');
                     setEditModalVisible(false);
                     loadData();
                 } else {
-                    message.error(response.data.message || '创建用户失败');
+                    message.error(response.message || '创建用户失败');
                 }
             }
         } catch (error: any) {
@@ -226,11 +257,11 @@ const UserPage: React.FC = () => {
 
             const response = await adminApi.updateUserStatus(user.id, newStatus);
 
-            if (response.data.success) {
+            if (response.success) {
                 message.success(`${action}用户成功`);
                 loadData();
             } else {
-                message.error(response.data.message || `${action}用户失败`);
+                message.error(response.message || `${action}用户失败`);
             }
         } catch (error: any) {
             console.error('更新用户状态失败:', error);
@@ -245,11 +276,11 @@ const UserPage: React.FC = () => {
         try {
             const response = await adminApi.deleteUser(user.id);
 
-            if (response.data.success) {
+            if (response.success) {
                 message.success(`删除用户 ${user.name} 成功`);
                 loadData();
             } else {
-                message.error(response.data.message || '删除用户失败');
+                message.error(response.message || '删除用户失败');
             }
         } catch (error: any) {
             console.error('删除用户失败:', error);
@@ -265,11 +296,11 @@ const UserPage: React.FC = () => {
             const ids = selectedRowKeys.map(key => Number(key));
             const response = await adminApi.batchDeleteUsers(ids);
 
-            if (response.data.success) {
+            if (response.success) {
                 message.success(`成功删除 ${ids.length} 个用户`);
                 loadData();
             } else {
-                message.error(response.data.message || '批量删除失败');
+                message.error(response.message || '批量删除失败');
             }
         } catch (error: any) {
             console.error('批量删除用户失败:', error);
@@ -424,6 +455,50 @@ const UserPage: React.FC = () => {
 
     return (
         <PageContainer title="用户管理" subTitle="管理平台所有注册用户">
+            {/* 统计卡片 */}
+            <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+                <Col xs={24} sm={12} lg={6}>
+                    <Card bordered={false} loading={statsLoading}>
+                        <Statistic
+                            title="用户总数"
+                            value={stats?.total || 0}
+                            prefix={<TeamOutlined />}
+                            valueStyle={{ color: token.colorPrimary }}
+                        />
+                    </Card>
+                </Col>
+                <Col xs={24} sm={12} lg={6}>
+                    <Card bordered={false} loading={statsLoading}>
+                        <Statistic
+                            title="陪玩师"
+                            value={stats?.byRole.player || 0}
+                            prefix={<CrownOutlined />}
+                            valueStyle={{ color: '#722ed1' }}
+                        />
+                    </Card>
+                </Col>
+                <Col xs={24} sm={12} lg={6}>
+                    <Card bordered={false} loading={statsLoading}>
+                        <Statistic
+                            title="正常用户"
+                            value={stats?.byStatus.active || 0}
+                            prefix={<SafetyOutlined />}
+                            valueStyle={{ color: '#52c41a' }}
+                        />
+                    </Card>
+                </Col>
+                <Col xs={24} sm={12} lg={6}>
+                    <Card bordered={false} loading={statsLoading}>
+                        <Statistic
+                            title="最近7天注册"
+                            value={stats?.recentRegistrations || 0}
+                            prefix={<UserAddOutlined />}
+                            valueStyle={{ color: '#1890ff' }}
+                        />
+                    </Card>
+                </Col>
+            </Row>
+
             <SearchTable
                 columns={columns}
                 dataSource={users}
@@ -465,6 +540,7 @@ const UserPage: React.FC = () => {
                 onOk={handleSaveEdit}
                 onCancel={() => setEditModalVisible(false)}
                 width={600}
+                style={{ maxWidth: 'calc(100vw - 32px)', top: 20 }}
                 okText="保存"
                 cancelText="取消"
             >
@@ -538,6 +614,7 @@ const UserPage: React.FC = () => {
                 open={detailDrawerVisible}
                 onClose={() => setDetailDrawerVisible(false)}
                 width={500}
+                style={{ maxWidth: '100%' }}
             >
                 {currentUser && (
                     <>

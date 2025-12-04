@@ -192,6 +192,9 @@ func (m *mockUserRepo) ListPaged(ctx context.Context, page, pageSize int) ([]mod
 func (m *mockUserRepo) ListWithFilters(ctx context.Context, filters repository.UserListOptions) ([]model.User, int64, error) {
 	return nil, 0, nil
 }
+func (m *mockUserRepo) Count(ctx context.Context, opts repository.UserListOptions) (int, error) {
+	return 0, nil
+}
 
 // TestAcceptOrderConcurrency 测试多个陪玩师同时接单的并发安全性
 func TestAcceptOrderConcurrency(t *testing.T) {

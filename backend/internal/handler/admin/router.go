@@ -9,13 +9,18 @@ import (
 	"gamelink/pkg/config"
 	mw "gamelink/internal/handler/middleware"
 	"gamelink/internal/model"
+	adminrepo "gamelink/internal/repository/admin"
 	adminservice "gamelink/internal/service/admin"
 	statsservice "gamelink/internal/service/admin"
+	roleservice "gamelink/internal/service/admin"
+	permissionservice "gamelink/internal/service/admin"
 )
 
 // RegisterRoutes 注册后台管理相关路由
 // 使用细粒度权限控制（method+path 级别）
 func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, pm *mw.PermissionMiddleware) {
+	// 先注册同步专用路由（不受限流限制）
+	RegisterSyncRoutes(router, svc, pm)
 	gameHandler := NewGameHandler(svc)
 	userHandler := NewUserHandler(svc)
 	playerHandler := NewPlayerHandler(svc)
@@ -118,6 +123,13 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, pm *mw.P
 		// @Success      200  {object}  model.APIResponse[[]model.User]
 		// @Router       /admin/users [get]
 		group.GET("/users", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users"), userHandler.ListUsers)
+		// @Summary      获取用户统计数据
+		// @Tags         Admin/Users
+		// @Security     BearerAuth
+		// @Produce      json
+		// @Success      200  {object}  model.APIResponse[adminservice.UserStatsResponse]
+		// @Router       /admin/users/stats [get]
+		group.GET("/users/stats", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/stats"), userHandler.GetUserStats)
 		// @Summary      创建用户
 		// @Tags         Admin/Users
 		// @Security     BearerAuth
@@ -761,4 +773,24 @@ func RegisterStatsRoutes(router gin.IRouter, stats *statsservice.StatsService, p
 	// @Success      200            {object}  model.APIResponse[[]stats.DateValue]
 	// @Router       /admin/stats/audit/trend [get]
 	group.GET("/stats/audit/trend", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/stats/audit/trend"), h.AuditTrend)
+}
+
+// RegisterSyncRoutes 注册同步专用路由（不受限流限制）
+func RegisterSyncRoutes(router gin.IRouter, svc *adminservice.AdminService, pm *mw.PermissionMiddleware) {
+	roleRepo := adminrepo.NewRoleRepository(nil) // 实际应该传入 orm
+	roleSvc := roleservice.NewRoleService(roleRepo, nil)
+	roleHandler := NewRoleHandler(roleSvc)
+
+	permRepo := adminrepo.NewPermissionRepository(nil) // 实际应该传入 orm
+	permService := permissionservice.NewPermissionService(permRepo, nil)
+	permHandler := NewPermissionHandler(permService)
+
+	// 创建同步专用路由组 - 只认证，不限流
+	syncGroup := router.Group("/sync")
+	syncGroup.Use(pm.RequireAuth()) // 只需要认证
+	{
+		// 权限和角色的列表接口 - 用于前端同步数据
+		syncGroup.GET("/permissions", permHandler.ListPermissions)
+		syncGroup.GET("/roles", roleHandler.ListRoles)
+	}
 }

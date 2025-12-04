@@ -10,18 +10,6 @@ func RegisterRoot(router gin.IRoutes) {
 }
 
 func rootIndex(c *gin.Context) {
-	RespondSuccess(c, "GameLink API", gin.H{
-		"endpoints": []string{
-			"/swagger",
-			"/swagger.json",
-			"/healthz",
-			"/api/v1/",
-			"/api/v1/healthz",
-			"/api/v1/admin/games",
-			"/api/v1/admin/users",
-			"/api/v1/admin/players",
-			"/api/v1/admin/orders",
-			"/api/v1/admin/payments",
-		},
-	})
+	// 当访问根路径时，重定向到 Swagger UI
+	c.Redirect(302, "/swagger/index.html")
 }

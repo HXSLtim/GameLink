@@ -228,6 +228,12 @@ func RateLimit(config RateLimiterConfig) gin.HandlerFunc {
 		method := c.Request.Method
 		clientIP := getClientIP(c)
 
+		// 跳过同步专用路由的限流
+		if strings.Contains(path, "/sync/") {
+			c.Next()
+			return
+		}
+
 		// 检查IP白名单
 		if limiter.isWhitelistedIP(clientIP) {
 			c.Next()
@@ -312,7 +318,7 @@ func DefaultRateLimitConfig() RateLimiterConfig {
 		IPRequestsPerSecond:   10, // 每秒10个请求
 		UserRequestsPerMinute: 60, // 每分钟60个请求
 		WhitelistIPs:          []string{"127.0.0.1", "::1"},
-		WhitelistRoles:        []string{"super_admin"},
+		WhitelistRoles:        []string{"superAdmin"},
 		RouteLimits: map[string]RouteLimit{
 			// 登录接口限流：每分钟5次
 			"/api/v1/auth/login": {

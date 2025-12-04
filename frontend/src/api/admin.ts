@@ -211,6 +211,7 @@ export const adminApi = {
     assignRolePermissions: (id: number, permissionIds: number[]) => apiClient.put(`/admin/roles/${id}/permissions`, { permissionIds }),
     assignRoleUser: (roleId: number, userId: number) => apiClient.post('/admin/roles/assign-user', { roleId, userId }),
     getUserRoles: (userId: number) => apiClient.get(`/admin/users/${userId}/roles`),
+    getUserStats: () => apiClient.get<ApiResponse<UserStats>>('/admin/users/stats'),
 
     // Order Management
     getOrders: (params?: any) => apiClient.get('/admin/orders', { params }),
@@ -238,6 +239,21 @@ export interface DashboardStats {
     ordersByStatus: Record<string, number>;
     paymentsByStatus: Record<string, number>;
     totalPaidAmountCents: number;
+}
+
+export interface UserStats {
+    total: number;
+    byRole: {
+        user: number;
+        player: number;
+        admin: number;
+    };
+    byStatus: {
+        active: number;
+        banned: number;
+        suspended: number;
+    };
+    recentRegistrations: number; // 最近7天注册数
 }
 
 export interface TrendData {

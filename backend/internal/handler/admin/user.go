@@ -29,6 +29,31 @@ func NewUserHandler(svc *adminservice.AdminService) *UserHandler {
 	return &UserHandler{svc: svc}
 }
 
+// GetUserStats
+// @Summary      获取用户统计数据
+// @Description  获取用户总数、角色分布、状态分布等统计信息
+// @Tags         Admin/Users
+// @Security     BearerAuth
+// @Produce      json
+// @Success      200  {object}  model.APIResponse[UserStatsResponse]
+// @Router       /admin/users/stats [get]
+//
+// GetUserStats returns user statistics.
+func (h *UserHandler) GetUserStats(c *gin.Context) {
+	stats, err := h.svc.GetUserStats(c.Request.Context())
+	if err != nil {
+		respondAPIError(c, apierr.InternalError("获取用户统计失败").WithDetails(err.Error()))
+		return
+	}
+
+	writeJSON(c, http.StatusOK, model.APIResponse[*adminservice.UserStatsResponse]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: "OK",
+		Data:    stats,
+	})
+}
+
 // ListUsers
 // @Summary      列出用户
 // @Description  API endpoint// @Tags         Admin/Users

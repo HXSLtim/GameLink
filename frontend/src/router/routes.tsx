@@ -31,6 +31,11 @@ const AdminAudit = lazy(() => import('@/pages/sys/log'));
 const AdminMenu = lazy(() => import('@/pages/sys/menu'));
 const AdminPermission = lazy(() => import('@/pages/sys/permission'));
 
+// 监控模块页面
+const RealtimeMonitor = lazy(() => import('@/pages/admin/Monitor/Realtime'));
+const AnalyticsPage = lazy(() => import('@/pages/admin/Monitor/Analytics'));
+const KPIDashboard = lazy(() => import('@/pages/admin/Monitor/KPI'));
+
 // Service Item Pages
 const ServiceItemList = lazy(() => import('@/pages/biz/service'));
 const ServiceItemForm = lazy(() => import('@/pages/biz/service/form'));
@@ -169,6 +174,22 @@ export const routes: RouteConfig[] = [
                 path: 'settings',
                 element: <LazyLoad><AdminSettings /></LazyLoad>,
                 meta: { title: '系统设置' }
+            },
+            // 监控模块
+            {
+                path: 'monitor/realtime',
+                element: <LazyLoad><RealtimeMonitor /></LazyLoad>,
+                meta: { title: '实时监控' }
+            },
+            {
+                path: 'monitor/analytics',
+                element: <LazyLoad><AnalyticsPage /></LazyLoad>,
+                meta: { title: '运营分析' }
+            },
+            {
+                path: 'monitor/kpi',
+                element: <LazyLoad><KPIDashboard /></LazyLoad>,
+                meta: { title: 'KPI 仪表板' }
             }
         ]
     },

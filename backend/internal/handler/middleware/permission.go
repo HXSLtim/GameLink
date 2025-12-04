@@ -52,9 +52,31 @@ func (m *PermissionMiddleware) RequireAuth() gin.HandlerFunc {
 }
 
 // authenticateRequest 负责解析并验证 JWT，将用户信息写入 context，成功返回 true。
+// 支持从 Authorization header 或 query parameter (token) 获取 JWT。
 func (m *PermissionMiddleware) authenticateRequest(c *gin.Context) bool {
+	var token string
+	var err error
+
+	// 优先从 Authorization header 获取
 	authHeader := c.GetHeader("Authorization")
-	token, err := auth.ExtractTokenFromHeader(authHeader)
+	if authHeader != "" {
+		token, err = auth.ExtractTokenFromHeader(authHeader)
+	}
+
+	// 如果 header 中没有或提取失败，尝试从 query parameter 获取（支持 WebSocket）
+	if token == "" {
+		token = c.Query("token")
+		if token == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"success": false,
+				"code":    http.StatusUnauthorized,
+				"message": "未授权：缺少Authorization头",
+			})
+			return false
+		}
+		err = nil // 从 query 获取成功，清除之前的错误
+	}
+
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 			"success": false,

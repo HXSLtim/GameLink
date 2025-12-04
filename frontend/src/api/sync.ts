@@ -80,10 +80,10 @@ export interface BatchSyncPermissionsRequest {
  */
 export const syncApi = {
     /**
-     * 获取所有权限列表
+     * 获取所有权限列表（同步专用接口，不受限流限制）
      */
     getPermissions: () =>
-        apiClient.get<ApiResponse<Permission[]>>('/admin/permissions'),
+        apiClient.get<ApiResponse<Permission[]>>('/admin/sync/permissions'),
 
     /**
      * 创建权限
@@ -112,7 +112,22 @@ export const syncApi = {
         try {
             // 获取现有权限
             const response = await syncApi.getPermissions();
-            const existingPermissions = response.data || [];
+            console.log('[Sync] getPermissions response:', response);
+            console.log('[Sync] response.data:', response.data);
+            console.log('[Sync] response.data?.items:', response.data?.items);
+
+            // 后端返回的分页结构: { items: [...], page: 1, pageSize: 10, totalCount: 50 }
+            let existingPermissions: Permission[] = [];
+            if (response.data && typeof response.data === 'object' && 'items' in response.data) {
+                existingPermissions = (response.data as any).items || [];
+            } else if (Array.isArray(response.data)) {
+                existingPermissions = response.data;
+            } else {
+                console.error('[Sync] Unexpected data structure:', response.data);
+                existingPermissions = [];
+            }
+
+            console.log('[Sync] existingPermissions:', existingPermissions);
             const existingMap = new Map(existingPermissions.map(p => [p.code, p]));
 
             // 逐个处理权限
@@ -147,6 +162,9 @@ export const syncApi = {
                 } catch (error) {
                     result.errors.push(`权限 ${perm.code}: ${error instanceof Error ? error.message : '未知错误'}`);
                 }
+
+                // 添加延迟避免限流
+                await new Promise(resolve => setTimeout(resolve, 100));
             }
         } catch (error) {
             result.success = false;
@@ -157,10 +175,10 @@ export const syncApi = {
     },
 
     /**
-     * 获取所有角色列表
+     * 获取所有角色列表（同步专用接口，不受限流限制）
      */
     getRoles: () =>
-        apiClient.get<ApiResponse<Role[]>>('/admin/roles'),
+        apiClient.get<ApiResponse<Role[]>>('/admin/sync/roles'),
 
     /**
      * 获取角色详情
@@ -181,7 +199,11 @@ export const syncApi = {
         try {
             // 获取所有角色
             const rolesResponse = await syncApi.getRoles();
-            const roles = rolesResponse.data || [];
+            console.log('[Sync] getRoles response:', rolesResponse);
+
+            // 后端返回的分页结构: { items: [...], page: 1, pageSize: 10, totalCount: 50 }
+            const roles: Role[] = rolesResponse.data?.items || [];
+            console.log('[Sync] roles:', roles);
 
             // 查找超级管理员角色
             const superAdminRole = roles.find(
@@ -194,7 +216,11 @@ export const syncApi = {
 
             // 获取所有权限
             const permissionsResponse = await syncApi.getPermissions();
-            const permissions = permissionsResponse.data || [];
+            console.log('[Sync] getPermissions response:', permissionsResponse);
+
+            // 后端返回的分页结构: { items: [...], page: 1, pageSize: 10, totalCount: 50 }
+            const permissions: Permission[] = permissionsResponse.data?.items || [];
+            console.log('[Sync] permissions:', permissions);
 
             if (permissions.length === 0) {
                 return { success: false, message: '没有可分配的权限' };
@@ -233,7 +259,20 @@ export const syncApi = {
             const response = await apiClient.get<ApiResponse<Menu[]>>('/admin/menus', {
                 params: { parentId }
             });
-            const existingMenus = response.data || [];
+            console.log('[Sync] getMenus response:', response);
+
+            // 菜单接口在无分页参数时直接返回数组，有分页时返回 { data: [...], pagination: {...} }
+            let existingMenus: Menu[] = [];
+            if (Array.isArray(response.data)) {
+                existingMenus = response.data;
+            } else if (response.data && typeof response.data === 'object' && 'data' in response.data) {
+                // 有分页的情况
+                existingMenus = (response.data as any).data || [];
+            } else {
+                existingMenus = response.data || [];
+            }
+
+            console.log('[Sync] existingMenus:', existingMenus);
             const existingMap = new Map(existingMenus.map(m => [m.path, m]));
 
             for (const menu of menus) {

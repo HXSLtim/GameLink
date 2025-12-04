@@ -7,6 +7,9 @@ package main
 // @description     GameLink 平台 API，包含健康检查、认证与管理端能力
 // @BasePath        /api/v1
 // @schemes         http https
+//
+// @Tags Auth,User,Player,Admin,Admin/Commission,Admin/Games,Admin/Roles,Admin/Orders,Admin/Players,Admin/Payments,Admin/Reviews,Admin/Stats,Admin/Withdraws,Player - Profile,Player - Orders,Player - Earnings,Player - Commission,Player - Gifts,Player - Reviews,User - Orders,User - Payments,User - Wallet,User - Players,User - Reviews,User - Gifts,User - Chat,User - Feeds,System,Notifications
+//
 // @securityDefinitions.apikey BearerAuth
 // @in header
 // @name Authorization

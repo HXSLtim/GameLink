@@ -2,6 +2,7 @@ package router
 
 import (
 	"gamelink/pkg/cache"
+	alertrepo "gamelink/internal/repository/alert"
 	chatrepo "gamelink/internal/repository/chat"
 	commissionrepo "gamelink/internal/repository/commission"
 	feedrepo "gamelink/internal/repository/content"
@@ -15,16 +16,21 @@ import (
 	serviceitemrepo "gamelink/internal/repository/serviceitem"
 	adminrepo "gamelink/internal/repository/admin"
 	withdrawrepo "gamelink/internal/repository/withdraw"
+	"gamelink/internal/model"
 	"gamelink/pkg/scheduler"
 	chatservice "gamelink/internal/service/chat"
 	commissionservice "gamelink/internal/service/commission"
 	contentservice "gamelink/internal/service/content"
 	giftservice "gamelink/internal/service/gift"
 	itemservice "gamelink/internal/service/item"
+	analyticsservice "gamelink/internal/service/analytics"
+	kpiservice "gamelink/internal/service/kpi"
+	monitorservice "gamelink/internal/service/monitor"
 	orderservice "gamelink/internal/service/order"
 	serviceplayer "gamelink/internal/service/player"
 	userservice "gamelink/internal/service/user"
 	walletservice "gamelink/internal/service/wallet"
+	"gamelink/internal/ws"
 
 	"gorm.io/gorm"
 )
@@ -46,6 +52,14 @@ type appServices struct {
 	walletSvc           *walletservice.WalletService
 	settlementScheduler *scheduler.SettlementScheduler
 	chatRetention       *scheduler.ChatRetentionScheduler
+	// Monitor services
+	wsHub           *ws.Hub
+	realtimeSvc     *monitorservice.RealtimeService
+	alertRepo       model.AlertRepository
+	// Analytics service
+	analyticsSvc    *analyticsservice.AnalyticsService
+	// KPI service
+	kpiSvc          *kpiservice.KPIService
 }
 
 // initServices 初始化领域服务和调度任务（但不启动调度器）。
@@ -93,6 +107,17 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 	settlementScheduler := scheduler.NewSettlementScheduler(commissionSvc)
 	chatRetention := scheduler.NewChatRetentionScheduler(chatGroupRepo, chatMessageRepo, 30)
 
+	// Monitor services
+	wsHub := ws.NewHub()
+	alertRepo := alertrepo.NewAlertRepository(orm)
+	realtimeSvc := monitorservice.NewRealtimeService(wsHub, orm)
+
+	// Analytics service
+	analyticsSvc := analyticsservice.NewAnalyticsService(orm)
+
+	// KPI service
+	kpiSvc := kpiservice.NewKPIService(orm)
+
 	return &appServices{
 		commissionSvc:       commissionSvc,
 		serviceItemSvc:      serviceItemSvc,
@@ -109,5 +134,10 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 		walletSvc:           walletSvc,
 		settlementScheduler: settlementScheduler,
 		chatRetention:       chatRetention,
+		wsHub:               wsHub,
+		realtimeSvc:         realtimeSvc,
+		alertRepo:           alertRepo,
+		analyticsSvc:        analyticsSvc,
+		kpiSvc:              kpiSvc,
 	}
 }

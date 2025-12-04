@@ -80,7 +80,7 @@ func TestRoleTableName(t *testing.T) {
 
 func TestRoleConstants(t *testing.T) {
 	// 测试角色标识符常量
-	assert.Equal(t, model.RoleSlug("super_admin"), model.RoleSlugSuperAdmin)
+	assert.Equal(t, model.RoleSlug("superAdmin"), model.RoleSlugSuperAdmin)
 	assert.Equal(t, model.RoleSlug("admin"), model.RoleSlugAdmin)
 	assert.Equal(t, model.RoleSlug("player"), model.RoleSlugPlayer)
 	assert.Equal(t, model.RoleSlug("user"), model.RoleSlugUser)
@@ -103,7 +103,7 @@ func TestRoleIsSystemRole(t *testing.T) {
 func TestRoleIsSuperAdmin(t *testing.T) {
 	// 测试超级管理员角色
 	role1 := &model.RoleModel{
-		Slug: "super_admin",
+		Slug: "superAdmin",
 	}
 	assert.True(t, role1.IsSuperAdmin())
 
@@ -157,7 +157,7 @@ func TestRoleCommonRoles(t *testing.T) {
 		description string
 		isSystem    bool
 	}{
-		{"super_admin", "超级管理员", "拥有系统所有权限的超级管理员角色", true},
+		{"superAdmin", "超级管理员", "拥有系统所有权限的超级管理员角色", true},
 		{"admin", "管理员", "系统管理员，拥有大部分管理权限", true},
 		{"player_manager", "陪玩师管理员", "专门管理陪玩师的管理员", true},
 		{"order_manager", "订单管理员", "专门管理订单的管理员", true},

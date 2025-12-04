@@ -45,12 +45,24 @@ const defaultConfig: InitConfig = {
 };
 
 /**
+ * 用户数据接口（匹配后端实际返回格式）
+ */
+interface UserData {
+    user?: {
+        role?: string;
+    };
+}
+
+/**
  * 检查是否有管理员权限（已登录且是管理员）
  * 通过调用后端API验证，避免客户端JWT解析安全漏洞
  */
 const hasAdminAccess = async (): Promise<boolean> => {
     const token = localStorage.getItem('token');
-    if (!token) return false;
+    if (!token) {
+        console.log('[Init] No token found');
+        return false;
+    }
 
     try {
         // ✅ 安全修复: 通过后端API验证用户角色，不在客户端解析JWT
@@ -58,16 +70,32 @@ const hasAdminAccess = async (): Promise<boolean> => {
         const { authApi } = await import('@/api/auth');
         const response = await authApi.getMe();
 
+        console.log('[Init] getMe response:', response);
+
         // 检查API响应
-        if (!response.data || response.data.code !== 200 || !response.data.data) {
+        if (!response || !response.code) {
+            console.log('[Init] Invalid response or no response.code');
+            return false;
+        }
+        if (response.code !== 200) {
+            console.log('[Init] Response code is not 200:', response.code);
+            return false;
+        }
+        if (!response.data) {
+            console.log('[Init] No response.data');
             return false;
         }
 
-        const loginResponse = response.data.data;
-        const role = loginResponse.user?.role || '';
-        return ['admin', 'super_admin', 'ADMIN', 'CS', 'FINANCE'].includes(role);
-    } catch {
+        // response.data 是 ApiResponse，其中的 data 属性包含用户数据
+        const userData = response.data as unknown as UserData;
+        const role = userData.user?.role || '';
+        console.log('[Init] User role:', role);
+        const isAdmin = ['admin', 'superAdmin', 'ADMIN', 'CS', 'FINANCE'].includes(role);
+        console.log('[Init] Is admin:', isAdmin);
+        return isAdmin;
+    } catch (error) {
         // API调用失败（网络错误、认证失败等）
+        console.log('[Init] API call failed:', error);
         return false;
     }
 };

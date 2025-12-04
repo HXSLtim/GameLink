@@ -163,3 +163,30 @@ func (r *gormUserRepository) Delete(ctx context.Context, id uint64) error {
 	}
 	return nil
 }
+
+// Count returns the number of users matching the given filter options.
+func (r *gormUserRepository) Count(ctx context.Context, opts repository.UserListOptions) (int, error) {
+	q := r.db.WithContext(ctx).Model(&model.User{})
+	if len(opts.Roles) > 0 {
+		q = q.Where("role IN ?", opts.Roles)
+	}
+	if len(opts.Statuses) > 0 {
+		q = q.Where("status IN ?", opts.Statuses)
+	}
+	if opts.DateFrom != nil {
+		q = q.Where("created_at >= ?", *opts.DateFrom)
+	}
+	if opts.DateTo != nil {
+		q = q.Where("created_at <= ?", *opts.DateTo)
+	}
+	if kw := strings.TrimSpace(opts.Keyword); kw != "" {
+		like := "%" + kw + "%"
+		q = q.Where("name LIKE ? OR email LIKE ? OR phone LIKE ?", like, like, like)
+	}
+
+	var count int64
+	if err := q.Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return int(count), nil
+}

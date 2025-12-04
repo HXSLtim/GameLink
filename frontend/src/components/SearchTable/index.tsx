@@ -7,13 +7,8 @@ import {
     Table,
     Card,
     Form,
-    Row,
-    Col,
     Button,
     Space,
-    Input,
-    Select,
-    DatePicker,
     message,
     Popconfirm,
     Tooltip,
@@ -21,35 +16,16 @@ import {
 import type { TableProps, FormInstance } from 'antd';
 import type { ColumnType } from 'antd/es/table';
 import {
-    SearchOutlined,
     ReloadOutlined,
     PlusOutlined,
     DeleteOutlined,
-    DownOutlined,
-    UpOutlined,
 } from '@ant-design/icons';
 import { PermissionGuard } from '@/components/PermissionGuard';
+import { SearchForm } from './SearchForm';
+import type { SearchField } from './SearchForm';
 import styles from './index.module.css';
 
-const { RangePicker } = DatePicker;
-
-/**
- * 搜索字段配置
- */
-export interface SearchField {
-    /** 字段名 */
-    name: string;
-    /** 标签 */
-    label: string;
-    /** 类型 */
-    type: 'input' | 'select' | 'dateRange' | 'date';
-    /** 占位符 */
-    placeholder?: string;
-    /** 选项（select类型使用） */
-    options?: { label: string; value: string | number }[];
-    /** 栅格列数 */
-    span?: number;
-}
+export type { SearchField };
 
 /**
  * 工具栏按钮配置
@@ -114,7 +90,7 @@ export interface SearchTableProps<T> extends Omit<TableProps<T>, 'columns'> {
 /**
  * SearchTable组件
  */
-function SearchTable<T extends object>({
+export function SearchTable<T extends object>({
     columns,
     searchFields = [],
     toolbarButtons = [],
@@ -136,7 +112,6 @@ function SearchTable<T extends object>({
 }: SearchTableProps<T>) {
     const [internalForm] = Form.useForm();
     const form = externalForm || internalForm;
-    const [expanded, setExpanded] = useState(defaultExpanded);
     const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
     // 搜索
@@ -187,44 +162,6 @@ function SearchTable<T extends object>({
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [handleSearch]);
-
-    /**
-     * 渲染搜索字段
-     */
-    const renderSearchField = (field: SearchField) => {
-        switch (field.type) {
-            case 'select':
-                return (
-                    <Select
-                        placeholder={field.placeholder || `请选择${field.label}`}
-                        allowClear
-                        options={field.options}
-                        style={{ width: '100%' }}
-                    />
-                );
-            case 'dateRange':
-                return (
-                    <RangePicker
-                        placeholder={['开始日期', '结束日期']}
-                        style={{ width: '100%' }}
-                    />
-                );
-            case 'date':
-                return (
-                    <DatePicker
-                        placeholder={field.placeholder || `请选择${field.label}`}
-                        style={{ width: '100%' }}
-                    />
-                );
-            default:
-                return (
-                    <Input
-                        placeholder={field.placeholder || `请输入${field.label}`}
-                        allowClear
-                    />
-                );
-        }
-    };
 
     /**
      * 渲染工具栏按钮
@@ -279,97 +216,73 @@ function SearchTable<T extends object>({
             {/* 搜索区域 */}
             {searchFields.length > 0 && (
                 <Card className={styles.searchCard} size="small">
-                    <Form form={form} layout="horizontal">
-                        <Row gutter={16}>
-                            {searchFields.slice(0, expanded ? undefined : 3).map(field => (
-                                <Col key={field.name} span={field.span || 6}>
-                                    <Form.Item
-                                        name={field.name}
-                                        label={field.label}
-                                        className={styles.formItem}
-                                    >
-                                        {renderSearchField(field)}
-                                    </Form.Item>
-                                </Col>
-                            ))}
-                            <Col span={6} className={styles.searchActions}>
-                                <Space>
-                                    <Button
-                                        type="primary"
-                                        icon={<SearchOutlined />}
-                                        onClick={handleSearch}
-                                        loading={loading}
-                                    >
-                                        搜索
-                                    </Button>
-                                    <Button onClick={handleReset}>重置</Button>
-                                    {searchFields.length > 3 && (
-                                        <Button
-                                            type="link"
-                                            onClick={() => setExpanded(!expanded)}
-                                            icon={expanded ? <UpOutlined /> : <DownOutlined />}
-                                        >
-                                            {expanded ? '收起' : '展开'}
-                                        </Button>
-                                    )}
-                                </Space>
-                            </Col>
-                        </Row>
-                    </Form>
+                    <SearchForm
+                        fields={searchFields}
+                        form={form}
+                        onSearch={handleSearch}
+                        onReset={handleReset}
+                        loading={loading}
+                        defaultExpanded={defaultExpanded}
+                    />
                 </Card>
             )}
 
             {/* 表格区域 */}
             <Card
-                title={cardTitle}
                 className={styles.tableCard}
-                extra={
-                    <Space>
-                        {/* 自定义工具栏按钮 */}
-                        {toolbarButtons.map(renderToolbarButton)}
+                bordered={false}
+            >
+                {/* 工具栏 */}
+                <div className={styles.toolbar}>
+                    <div className={styles.toolbarTitle}>{cardTitle}</div>
+                    <div className={styles.toolbarActions}>
+                        <Space wrap>
+                            {/* 自定义工具栏按钮 */}
+                            {toolbarButtons.map(renderToolbarButton)}
 
-                        {/* 批量删除 */}
-                        {showBatchDelete && batchDeletePermission && (
-                            <PermissionGuard permission={batchDeletePermission}>
-                                <Popconfirm
-                                    title={`确定要删除选中的 ${selectedRowKeys.length} 条数据吗？`}
-                                    onConfirm={handleBatchDelete}
-                                    disabled={selectedRowKeys.length === 0}
-                                >
-                                    <Button
-                                        icon={<DeleteOutlined />}
-                                        danger
+                            {/* 批量删除 */}
+                            {showBatchDelete && batchDeletePermission && (
+                                <PermissionGuard permission={batchDeletePermission}>
+                                    <Popconfirm
+                                        title={`确定要删除选中的 ${selectedRowKeys.length} 条数据吗？`}
+                                        onConfirm={handleBatchDelete}
                                         disabled={selectedRowKeys.length === 0}
                                     >
-                                        批量删除 {selectedRowKeys.length > 0 && `(${selectedRowKeys.length})`}
+                                        <Button
+                                            icon={<DeleteOutlined />}
+                                            danger
+                                            disabled={selectedRowKeys.length === 0}
+                                        >
+                                            批量删除 {selectedRowKeys.length > 0 && `(${selectedRowKeys.length})`}
+                                        </Button>
+                                    </Popconfirm>
+                                </PermissionGuard>
+                            )}
+
+                            {/* 新增按钮 */}
+                            {showCreate && (
+                                <PermissionGuard permission={createPermission || ''}>
+                                    <Button
+                                        type="primary"
+                                        icon={<PlusOutlined />}
+                                        onClick={onCreate}
+                                    >
+                                        {createText}
                                     </Button>
-                                </Popconfirm>
-                            </PermissionGuard>
-                        )}
+                                </PermissionGuard>
+                            )}
 
-                        {/* 新增按钮 */}
-                        {showCreate && (
-                            <PermissionGuard permission={createPermission || ''}>
+                            {/* 刷新按钮 */}
+                            <Tooltip title="刷新">
                                 <Button
-                                    type="primary"
-                                    icon={<PlusOutlined />}
-                                    onClick={onCreate}
-                                >
-                                    {createText}
-                                </Button>
-                            </PermissionGuard>
-                        )}
+                                    icon={<ReloadOutlined spin={loading} />}
+                                    onClick={handleRefresh}
+                                />
+                            </Tooltip>
+                        </Space>
+                    </div>
+                </div>
 
-                        {/* 刷新按钮 */}
-                        <Tooltip title="刷新">
-                            <Button
-                                icon={<ReloadOutlined spin={loading} />}
-                                onClick={handleRefresh}
-                            />
-                        </Tooltip>
-                    </Space>
-                }
-            >
                 <Table<T>
                     columns={columns}
                     loading={loading}
@@ -380,5 +293,3 @@ function SearchTable<T extends object>({
         </div>
     );
 }
-
-export default SearchTable;

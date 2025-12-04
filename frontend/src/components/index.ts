@@ -11,7 +11,7 @@ export { default as PageContainer } from './PageContainer';
 export type { PageContainerProps } from './PageContainer';
 
 // 搜索表格
-export { default as SearchTable } from './SearchTable';
+export { SearchTable } from './SearchTable';
 export type { SearchTableProps, SearchField, ToolbarButton } from './SearchTable';
 
 // 统计卡片

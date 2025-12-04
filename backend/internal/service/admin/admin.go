@@ -378,6 +378,63 @@ func (s *AdminService) ListUsersWithOptions(ctx context.Context, opts repository
 	return items, &p, nil
 }
 
+// UserStatsResponse 用户统计信息响应
+type UserStatsResponse struct {
+	Total               int                  `json:"total"`
+	ByRole              map[string]int       `json:"byRole"`
+	ByStatus            map[string]int       `json:"byStatus"`
+	RecentRegistrations int                  `json:"recentRegistrations"`
+}
+
+// GetUserStats 获取用户统计信息
+func (s *AdminService) GetUserStats(ctx context.Context) (*UserStatsResponse, error) {
+	// 获取用户总数
+	total, err := s.users.Count(ctx, repository.UserListOptions{})
+	if err != nil {
+		return nil, WrapError(err, "count total users")
+	}
+
+	// 按角色统计
+	byRole := make(map[string]int)
+	for _, role := range []model.Role{model.RoleUser, model.RolePlayer, model.RoleAdmin} {
+		count, err := s.users.Count(ctx, repository.UserListOptions{
+			Roles: []model.Role{role},
+		})
+		if err != nil {
+			return nil, WrapError(err, "count users by role")
+		}
+		byRole[string(role)] = count
+	}
+
+	// 按状态统计
+	byStatus := make(map[string]int)
+	for _, status := range []model.UserStatus{model.UserStatusActive, model.UserStatusBanned, model.UserStatusSuspended} {
+		count, err := s.users.Count(ctx, repository.UserListOptions{
+			Statuses: []model.UserStatus{status},
+		})
+		if err != nil {
+			return nil, WrapError(err, "count users by status")
+		}
+		byStatus[string(status)] = count
+	}
+
+	// 最近7天注册数
+	sevenDaysAgo := time.Now().AddDate(0, 0, -7)
+	recentCount, err := s.users.Count(ctx, repository.UserListOptions{
+		DateFrom: &sevenDaysAgo,
+	})
+	if err != nil {
+		return nil, WrapError(err, "count recent registrations")
+	}
+
+	return &UserStatsResponse{
+		Total:               total,
+		ByRole:              byRole,
+		ByStatus:            byStatus,
+		RecentRegistrations: recentCount,
+	}, nil
+}
+
 // GetUser 返回指定用户。
 func (s *AdminService) GetUser(ctx context.Context, id uint64) (*model.User, error) {
 	user, err := s.users.Get(ctx, id)

@@ -633,6 +633,16 @@ func applySeeds(db *gorm.DB) error {
 			}
 		}
 
+		// 菜单种子数据
+		if err := seedMenus(tx); err != nil {
+			return err
+		}
+
+		// 监控模块种子数据
+		if err := seedMonitorData(tx); err != nil {
+			return err
+		}
+
 		log.Println("seed data ensured for demo environment")
 		return nil
 	})
@@ -915,4 +925,252 @@ func ptrTimeWithOffset(base time.Time, offset *time.Duration) *time.Time {
 		return nil
 	}
 	return ptrTime(base.Add(*offset))
+}
+
+// seedMenus 创建后台管理菜单
+func seedMenus(tx *gorm.DB) error {
+	// 检查是否已有菜单数据
+	var count int64
+	if err := tx.Model(&model.Menu{}).Count(&count).Error; err != nil {
+		return err
+	}
+	if count > 0 {
+		return nil // 已有菜单数据，跳过
+	}
+
+	// 定义菜单结构
+	type menuDef struct {
+		Name       string
+		Path       string
+		Component  string
+		Icon       string
+		Order      int
+		Permission string
+		Children   []menuDef
+	}
+
+	menus := []menuDef{
+		{
+			Name:      "仪表盘",
+			Path:      "/admin",
+			Component: "Dashboard",
+			Icon:      "DashboardOutlined",
+			Order:     1,
+		},
+		{
+			Name:  "系统管理",
+			Path:  "/admin/sys",
+			Icon:  "SettingFilled",
+			Order: 2,
+			Children: []menuDef{
+				{Name: "用户管理", Path: "/admin/sys/user", Component: "User", Icon: "TeamOutlined", Order: 1, Permission: "admin:user:list"},
+				{Name: "角色管理", Path: "/admin/sys/role", Component: "Role", Icon: "SafetyCertificateOutlined", Order: 2, Permission: "admin:role:list"},
+				{Name: "权限管理", Path: "/admin/sys/permission", Component: "Permission", Icon: "SafetyCertificateOutlined", Order: 3, Permission: "admin:permission:list"},
+				{Name: "菜单管理", Path: "/admin/sys/menu", Component: "Menu", Icon: "MenuOutlined", Order: 4, Permission: "admin:menu:list"},
+				{Name: "审计日志", Path: "/admin/sys/log", Component: "Log", Icon: "FileTextOutlined", Order: 5, Permission: "admin:log:list"},
+			},
+		},
+		{
+			Name:  "业务管理",
+			Path:  "/admin/biz",
+			Icon:  "AppstoreOutlined",
+			Order: 3,
+			Children: []menuDef{
+				{Name: "游戏管理", Path: "/admin/biz/game", Component: "Game", Icon: "AppstoreOutlined", Order: 1, Permission: "admin:game:list"},
+				{Name: "陪玩师管理", Path: "/admin/biz/player", Component: "Player", Icon: "TeamOutlined", Order: 2, Permission: "admin:player:list"},
+				{Name: "订单管理", Path: "/admin/biz/order", Component: "Order", Icon: "ShoppingCartOutlined", Order: 3, Permission: "admin:order:list"},
+				{Name: "服务项目", Path: "/admin/biz/service", Component: "Service", Icon: "AppstoreOutlined", Order: 4, Permission: "admin:service:list"},
+			},
+		},
+		{
+			Name:  "监控中心",
+			Path:  "/admin/monitor",
+			Icon:  "MonitorOutlined",
+			Order: 4,
+			Children: []menuDef{
+				{Name: "实时监控", Path: "/admin/monitor/realtime", Component: "Realtime", Icon: "MonitorOutlined", Order: 1, Permission: "admin:monitor:realtime"},
+				{Name: "运营分析", Path: "/admin/monitor/analytics", Component: "Analytics", Icon: "LineChartOutlined", Order: 2, Permission: "admin:monitor:analytics"},
+				{Name: "KPI 仪表板", Path: "/admin/monitor/kpi", Component: "KPI", Icon: "FundOutlined", Order: 3, Permission: "admin:monitor:kpi"},
+			},
+		},
+		{
+			Name:       "系统设置",
+			Path:       "/admin/settings",
+			Component:  "Settings",
+			Icon:       "SettingOutlined",
+			Order:      5,
+			Permission: "admin:settings:view",
+		},
+	}
+
+	// 创建菜单
+	for _, m := range menus {
+		menu := &model.Menu{
+			Name:       m.Name,
+			Path:       m.Path,
+			Component:  m.Component,
+			Icon:       m.Icon,
+			Order:      m.Order,
+			Permission: m.Permission,
+		}
+		if err := tx.Create(menu).Error; err != nil {
+			return err
+		}
+
+		// 创建子菜单
+		for _, child := range m.Children {
+			childMenu := &model.Menu{
+				Name:       child.Name,
+				Path:       child.Path,
+				Component:  child.Component,
+				Icon:       child.Icon,
+				ParentID:   &menu.ID,
+				Order:      child.Order,
+				Permission: child.Permission,
+			}
+			if err := tx.Create(childMenu).Error; err != nil {
+				return err
+			}
+		}
+	}
+
+	log.Println("menu seed data created")
+	return nil
+}
+
+// seedMonitorData 创建监控模块示例数据
+func seedMonitorData(tx *gorm.DB) error {
+	// 创建示例告警
+	var alertCount int64
+	if err := tx.Model(&model.Alert{}).Count(&alertCount).Error; err != nil {
+		return err
+	}
+	if alertCount == 0 {
+		alerts := []model.Alert{
+			{
+				Level:   model.AlertLevelHigh,
+				Type:    model.AlertTypeSystem,
+				Title:   "CPU 使用率过高",
+				Message: "服务器 CPU 使用率超过 90%，请检查系统负载",
+				Source:  "system-monitor",
+				IsRead:  false,
+			},
+			{
+				Level:   model.AlertLevelMedium,
+				Type:    model.AlertTypeBusiness,
+				Title:   "订单处理延迟",
+				Message: "订单处理队列积压，平均等待时间超过 5 分钟",
+				Source:  "order-service",
+				IsRead:  false,
+			},
+			{
+				Level:   model.AlertLevelLow,
+				Type:    model.AlertTypeSecurity,
+				Title:   "异常登录尝试",
+				Message: "检测到来自异常 IP 的多次登录尝试",
+				Source:  "security-monitor",
+				IsRead:  true,
+			},
+			{
+				Level:   model.AlertLevelMedium,
+				Type:    model.AlertTypeSystem,
+				Title:   "数据库连接池接近上限",
+				Message: "数据库连接池使用率达到 85%",
+				Source:  "db-monitor",
+				IsRead:  false,
+			},
+			{
+				Level:   model.AlertLevelLow,
+				Type:    model.AlertTypeBusiness,
+				Title:   "新陪玩师注册待审核",
+				Message: "有 5 位新陪玩师等待审核认证",
+				Source:  "player-service",
+				IsRead:  true,
+			},
+		}
+		for _, alert := range alerts {
+			if err := tx.Create(&alert).Error; err != nil {
+				return err
+			}
+		}
+		log.Println("alert seed data created")
+	}
+
+	// 创建 KPI 目标
+	var kpiCount int64
+	if err := tx.Model(&model.KPITarget{}).Count(&kpiCount).Error; err != nil {
+		return err
+	}
+	if kpiCount == 0 {
+		now := time.Now()
+		monthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+		monthEnd := monthStart.AddDate(0, 1, -1)
+
+		kpiTargets := []model.KPITarget{
+			{
+				PeriodType:  "monthly",
+				MetricName:  "gmv",
+				TargetValue: 1000000, // 100万GMV
+				StartDate:   monthStart,
+				EndDate:     monthEnd,
+				CreatedBy:   1,
+			},
+			{
+				PeriodType:  "monthly",
+				MetricName:  "orders",
+				TargetValue: 5000, // 5000订单
+				StartDate:   monthStart,
+				EndDate:     monthEnd,
+				CreatedBy:   1,
+			},
+			{
+				PeriodType:  "monthly",
+				MetricName:  "new_users",
+				TargetValue: 1000, // 1000新用户
+				StartDate:   monthStart,
+				EndDate:     monthEnd,
+				CreatedBy:   1,
+			},
+			{
+				PeriodType:  "monthly",
+				MetricName:  "new_players",
+				TargetValue: 100, // 100新陪玩师
+				StartDate:   monthStart,
+				EndDate:     monthEnd,
+				CreatedBy:   1,
+			},
+			{
+				PeriodType:  "monthly",
+				MetricName:  "dau",
+				TargetValue: 500, // 500日活
+				StartDate:   monthStart,
+				EndDate:     monthEnd,
+				CreatedBy:   1,
+			},
+			{
+				PeriodType:  "monthly",
+				MetricName:  "retention",
+				TargetValue: 40, // 40%留存率
+				StartDate:   monthStart,
+				EndDate:     monthEnd,
+				CreatedBy:   1,
+			},
+			{
+				PeriodType:  "monthly",
+				MetricName:  "repurchase",
+				TargetValue: 30, // 30%复购率
+				StartDate:   monthStart,
+				EndDate:     monthEnd,
+				CreatedBy:   1,
+			},
+		}
+		for _, target := range kpiTargets {
+			if err := tx.Create(&target).Error; err != nil {
+				return err
+			}
+		}
+		log.Println("KPI target seed data created")
+	}
+
+	return nil
 }

@@ -1,14 +1,85 @@
-import React from 'react';
-import { Card, Form, Input, Switch, Button, Tabs, Select, ColorPicker, Divider, message, List } from 'antd';
-import { SaveOutlined, SettingOutlined, SafetyOutlined, BellOutlined, BgColorsOutlined } from '@ant-design/icons';
+import React, { useState } from 'react';
+import { Card, Form, Input, Switch, Button, Tabs, Select, ColorPicker, Divider, message, List, Space, Typography, Alert } from 'antd';
+import { SaveOutlined, SettingOutlined, SafetyOutlined, BellOutlined, BgColorsOutlined, SyncOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { motion } from 'framer-motion';
+import { forceInit } from '@/services/init';
+
+const { Text, Paragraph } = Typography;
 
 const Settings: React.FC = () => {
     const [form] = Form.useForm();
+    const [initializing, setInitializing] = useState(false);
+    const [lastInitTime, setLastInitTime] = useState<string | null>(
+        localStorage.getItem('app_init_timestamp')
+    );
 
     const onFinish = (values: any) => {
         console.log('Success:', values);
         message.success('设置已保存');
+    };
+
+    /**
+     * 执行系统初始化
+     * 同步菜单、权限并为超级管理员分配所有权限
+     */
+    const handleInit = async () => {
+        setInitializing(true);
+        const hide = message.loading('正在初始化系统...', 0);
+
+        try {
+            const result = await forceInit({ verbose: true });
+
+            if (result.success) {
+                message.success({
+                    content: `初始化成功！耗时 ${result.duration}ms`,
+                    duration: 3,
+                });
+
+                // 更新最后初始化时间
+                setLastInitTime(Date.now().toString());
+
+                // 显示详细信息
+                if (result.menuSync) {
+                    console.log('[菜单同步]', result.menuSync);
+                }
+                if (result.permissionSync) {
+                    console.log('[权限同步]', result.permissionSync);
+                }
+                if (result.superAdminAssign) {
+                    console.log('[超管权限]', result.superAdminAssign);
+                }
+            } else {
+                message.error({
+                    content: `初始化失败：${result.errors.join(', ')}`,
+                    duration: 5,
+                });
+            }
+        } catch (error) {
+            console.error('初始化异常:', error);
+            message.error({
+                content: `初始化异常：${error instanceof Error ? error.message : '未知错误'}`,
+                duration: 5,
+            });
+        } finally {
+            hide();
+            setInitializing(false);
+        }
+    };
+
+    /**
+     * 格式化时间显示
+     */
+    const formatLastInitTime = () => {
+        if (!lastInitTime) return '从未初始化';
+        const date = new Date(parseInt(lastInitTime, 10));
+        return date.toLocaleString('zh-CN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+        });
     };
 
     const items = [
@@ -138,6 +209,71 @@ const Settings: React.FC = () => {
                         </List.Item>
                     )}
                 />
+            ),
+        },
+        {
+            key: '5',
+            label: (
+                <span>
+                    <SyncOutlined />
+                    系统初始化
+                </span>
+            ),
+            children: (
+                <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                    <Alert
+                        message="系统初始化说明"
+                        description={
+                            <div>
+                                <Paragraph style={{ marginBottom: 8 }}>
+                                    系统初始化会执行以下操作：
+                                </Paragraph>
+                                <ul style={{ marginBottom: 0, paddingLeft: 20 }}>
+                                    <li>同步前端菜单配置到后端数据库</li>
+                                    <li>同步前端权限配置到后端数据库</li>
+                                    <li>为超级管理员自动分配所有权限</li>
+                                </ul>
+                            </div>
+                        }
+                        type="info"
+                        showIcon
+                    />
+
+                    <Card size="small" title="初始化状态">
+                        <Space direction="vertical" style={{ width: '100%' }}>
+                            <div>
+                                <Text type="secondary">上次初始化时间：</Text>
+                                <Text strong style={{ marginLeft: 8 }}>
+                                    {formatLastInitTime()}
+                                </Text>
+                            </div>
+                            <Button
+                                type="primary"
+                                size="large"
+                                icon={<SyncOutlined spin={initializing} />}
+                                onClick={handleInit}
+                                loading={initializing}
+                                style={{ backgroundColor: '#5865F2', width: '100%' }}
+                            >
+                                {initializing ? '正在初始化...' : '立即初始化'}
+                            </Button>
+                        </Space>
+                    </Card>
+
+                    <Alert
+                        message="注意事项"
+                        description={
+                            <ul style={{ marginBottom: 0, paddingLeft: 20 }}>
+                                <li>初始化过程可能需要几秒钟，请耐心等待</li>
+                                <li>初始化不会影响现有的用户数据和业务数据</li>
+                                <li>建议在系统升级或配置变更后执行初始化</li>
+                                <li>普通管理员执行初始化不会影响超级管理员权限</li>
+                            </ul>
+                        }
+                        type="warning"
+                        showIcon
+                    />
+                </Space>
             ),
         },
     ];

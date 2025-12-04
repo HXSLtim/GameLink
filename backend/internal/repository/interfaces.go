@@ -23,6 +23,7 @@ type UserRepository interface {
 	List(ctx context.Context) ([]model.User, error)
 	ListPaged(ctx context.Context, page, pageSize int) ([]model.User, int64, error)
 	ListWithFilters(ctx context.Context, opts UserListOptions) ([]model.User, int64, error)
+	Count(ctx context.Context, opts UserListOptions) (int, error)
 	Get(ctx context.Context, id uint64) (*model.User, error)
 	GetByPhone(ctx context.Context, phone string) (*model.User, error)
 	FindByEmail(ctx context.Context, email string) (*model.User, error)

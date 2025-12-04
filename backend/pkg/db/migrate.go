@@ -149,6 +149,10 @@ func autoMigrate(db *gorm.DB) error {
 		&model.FeedReport{},
 		&model.NotificationEvent{},
 		&model.ReviewReply{},
+		// Monitor and KPI models
+		&model.Alert{},
+		&model.KPITarget{},
+		&model.UserActivityDaily{},
 	)
 }
 

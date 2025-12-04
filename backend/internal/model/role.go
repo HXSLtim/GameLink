@@ -5,7 +5,7 @@ type RoleSlug string
 
 // RoleSlug values define system predefined roles.
 const (
-	RoleSlugSuperAdmin RoleSlug = "super_admin"
+	RoleSlugSuperAdmin RoleSlug = "superAdmin"
 	RoleSlugAdmin      RoleSlug = "admin"
 	RoleSlugPlayer     RoleSlug = "player"
 	RoleSlugUser       RoleSlug = "user"
