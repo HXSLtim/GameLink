@@ -634,6 +634,9 @@ func applySeeds(db *gorm.DB) error {
 		}
 
 		// 菜单种子数据
+	if err := seedUserManagementData(tx, users); err != nil {
+		return err
+	}
 		if err := seedMenus(tx); err != nil {
 			return err
 		}
@@ -1172,5 +1175,138 @@ func seedMonitorData(tx *gorm.DB) error {
 		log.Println("KPI target seed data created")
 	}
 
+	return nil
+}
+
+// seedUserManagementData 创建用户管理模块种子数据
+func seedUserManagementData(tx *gorm.DB, users map[string]*model.User) error {
+	// 检查是否已有用户标签数据
+	var tagCount int64
+	if err := tx.Model(&model.UserTag{}).Count(&tagCount).Error; err != nil {
+		return err
+	}
+	
+	if tagCount > 0 {
+		log.Println("user management seed data already exists, skipping")
+		return nil
+	}
+
+	// 创建用户标签
+	tags := []struct {
+		name        string
+		color       string
+		description string
+		key         string // 用于后续关联
+	}{
+		{"VIP用户", "#FFD700", "付费高级用户", "vip"},
+		{"活跃用户", "#4CAF50", "近期有登录记录的用户", "active"},
+		{"新用户", "#2196F3", "注册30天内的用户", "new"},
+		{"高消费用户", "#FF5722", "累计消费超过1000元的用户", "highspend"},
+		{"陪玩师", "#9C27B0", "认证的游戏陪玩师", "player"},
+		{"潜力用户", "#00BCD4", "有消费意向但未下单的用户", "potential"},
+	}
+
+	tagModels := make(map[string]*model.UserTag)
+	for _, t := range tags {
+		tag := &model.UserTag{
+			Name:        t.name,
+			Color:       t.color,
+			Description: t.description,
+		}
+		if err := tx.Create(tag).Error; err != nil {
+			return err
+		}
+		tagModels[t.key] = tag
+		log.Printf("created user tag: %s\n", t.name)
+	}
+
+	// 为用户分配标签
+	tagAssignments := []struct {
+		userKey string
+		tagKeys []string
+	}{
+		// VIP用户
+		{"customerA", []string{"vip", "active"}},
+		{"customerB", []string{"vip", "active", "highspend"}},
+		{"customerH", []string{"vip", "active"}},
+		
+		// 活跃用户
+		{"proA", []string{"active", "player"}},
+		{"proB", []string{"active", "player"}},
+		{"proC", []string{"active", "player"}},
+		{"customerD", []string{"active"}},
+		{"customerF", []string{"active"}},
+		
+		// 新用户
+		{"customerG", []string{"new", "potential"}},
+		{"customerE", []string{"new"}},
+		
+		// 高消费用户
+		{"customerC", []string{"highspend"}},
+	}
+
+	for _, assignment := range tagAssignments {
+		user, ok := users[assignment.userKey]
+		if !ok {
+			log.Printf("warning: user %s not found, skipping tag assignment\n", assignment.userKey)
+			continue
+		}
+		
+		for _, tagKey := range assignment.tagKeys {
+			tag, ok := tagModels[tagKey]
+			if !ok {
+				log.Printf("warning: tag %s not found\n", tagKey)
+				continue
+			}
+			
+			relation := &model.UserTagRelation{
+				UserID: user.ID,
+				TagID:  tag.ID,
+			}
+			if err := tx.Create(relation).Error; err != nil {
+				return err
+			}
+		}
+		log.Printf("assigned tags to user %s\n", user.Name)
+	}
+
+	// 创建用户登录历史
+	loginHistory := []model.UserLoginHistory{
+		{UserID: users["customerA"].ID, IPAddress: "192.168.1.100", UserAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36", Location: "北京市", DeviceType: "desktop"},
+		{UserID: users["customerA"].ID, IPAddress: "192.168.1.101", UserAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X)", Location: "上海市", DeviceType: "mobile"},
+		{UserID: users["proA"].ID, IPAddress: "192.168.1.102", UserAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36", Location: "广州市", DeviceType: "desktop"},
+		{UserID: users["proB"].ID, IPAddress: "192.168.1.103", UserAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)", Location: "深圳市", DeviceType: "desktop"},
+		{UserID: users["customerB"].ID, IPAddress: "192.168.1.104", UserAgent: "Mozilla/5.0 (iPad; CPU OS 14_6 like Mac OS X)", Location: "成都市", DeviceType: "tablet"},
+	}
+	
+	for _, history := range loginHistory {
+		if err := tx.Create(&history).Error; err != nil {
+			return err
+		}
+	}
+	log.Println("created user login history")
+
+	// 创建用户行为数据
+	behaviors := []model.UserBehavior{
+		{UserID: users["customerA"].ID, Action: "view_order", TargetType: "order", TargetID: 1, Metadata: `{"page": "order_detail"}`},
+		{UserID: users["customerA"].ID, Action: "create_order", TargetType: "order", TargetID: 2, Metadata: `{"game": "dota2"}`},
+		{UserID: users["customerB"].ID, Action: "view_player", TargetType: "player", TargetID: 1, Metadata: `{"player_id": 1}`},
+		{UserID: users["customerB"].ID, Action: "payment", TargetType: "payment", TargetID: 1, Metadata: `{"method": "wechat", "amount": 29900}`},
+		{UserID: users["proA"].ID, Action: "update_profile", TargetType: "player", TargetID: 1, Metadata: `{"field": "bio"}`},
+		{UserID: users["proB"].ID, Action: "accept_order", TargetType: "order", TargetID: 1, Metadata: `{"status": "confirmed"}`},
+		{UserID: users["customerC"].ID, Action: "view_game", TargetType: "game", TargetID: 1, Metadata: `{"game": "lol"}`},
+		{UserID: users["customerC"].ID, Action: "search", TargetType: "search", TargetID: 0, Metadata: `{"keyword": "fps", "results": 15}`},
+		{UserID: users["adminA"].ID, Action: "view_dashboard", TargetType: "admin", TargetID: 0, Metadata: `{"page": "dashboard"}`},
+		{UserID: users["adminA"].ID, Action: "manage_user", TargetType: "user", TargetID: 2, Metadata: `{"action": "update_status"}`},
+	}
+	
+	for _, behavior := range behaviors {
+		if err := tx.Create(&behavior).Error; err != nil {
+			return err
+		}
+	}
+	log.Println("created user behavior data")
+
+	log.Println("user management seed data created successfully")
 	return nil
 }

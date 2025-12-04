@@ -16,6 +16,7 @@ import Register from '@/pages/auth/Register';
 import NotFound from '@/pages/NotFound';
 import ClientHome from '@/pages/client/Home';
 import CompanionDashboard from '@/pages/companion/Dashboard';
+const NotificationsPage = lazy(() => import('@/pages/client/Notifications'));
 
 // 懒加载Admin页面
 const Dashboard = lazy(() => import('@/pages/admin/Dashboard'));
@@ -82,6 +83,11 @@ export const routes: RouteConfig[] = [
                 path: '',
                 element: <ClientHome />,
                 meta: { title: '首页' }
+            },
+            {
+                path: 'notifications',
+                element: <NotificationsPage />,
+                meta: { title: 'Notifications' }
             }
         ]
     },
