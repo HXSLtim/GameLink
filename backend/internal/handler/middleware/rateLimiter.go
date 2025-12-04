@@ -228,8 +228,8 @@ func RateLimit(config RateLimiterConfig) gin.HandlerFunc {
 		method := c.Request.Method
 		clientIP := getClientIP(c)
 
-		// 跳过同步专用路由的限流
-		if strings.Contains(path, "/sync/") {
+		// 跳过同步专用路由和WebSocket路由的限流
+		if strings.Contains(path, "/sync/") || strings.Contains(path, "/ws/") {
 			c.Next()
 			return
 		}

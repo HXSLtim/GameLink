@@ -23,10 +23,15 @@ apiClient.interceptors.request.use(
 );
 
 // Response interceptor
-let isRefreshing = false;
-let failedQueue: any[] = [];
+interface FailedRequest {
+    resolve: (token: string | null) => void;
+    reject: (error: unknown) => void;
+}
 
-const processQueue = (error: any, token: string | null = null) => {
+let isRefreshing = false;
+let failedQueue: FailedRequest[] = [];
+
+const processQueue = (error: unknown, token: string | null = null) => {
     failedQueue.forEach(prom => {
         if (error) {
             prom.reject(error);
@@ -61,10 +66,15 @@ apiClient.interceptors.response.use(
             isRefreshing = true;
 
             try {
-                // Import authApi dynamically to avoid circular dependency if possible, 
+                // Import authApi dynamically to avoid circular dependency if possible,
                 // but here we might need to use a direct axios call or ensure authApi is safe.
                 // Using a direct call to avoid circular dependency issues with auth.ts importing client.ts
-                const response = await axios.post(
+                const response = await axios.post<{
+                    success: boolean;
+                    code: number;
+                    message: string;
+                    data: { token: string }
+                }>(
                     (import.meta.env.VITE_API_BASE_URL || '/api/v1') + '/auth/refresh',
                     {},
                     {
@@ -74,7 +84,6 @@ apiClient.interceptors.response.use(
                     }
                 );
 
-                // @ts-ignore
                 const { token } = response.data.data;
 
                 localStorage.setItem('token', token);

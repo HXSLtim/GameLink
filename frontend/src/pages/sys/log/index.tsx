@@ -106,7 +106,7 @@ const Audit: React.FC = () => {
                                     borderRadius: 8
                                 }}
                             >
-                                <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                                <Space orientation="vertical" size={4} style={{ width: '100%' }}>
                                     <Space>
                                         <Tag color="geekblue">{item.user}</Tag>
                                         <Text style={{ color: '#dcddde' }}>{item.action}</Text>

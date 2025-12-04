@@ -173,7 +173,7 @@ const ServiceItemList: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
         >
-            <Card bordered={false}>
+            <Card variant="borderless">
                 <div style={{ marginBottom: 16 }}>
                     <Row gutter={[16, 16]} justify="space-between">
                         <Col>

@@ -53,7 +53,7 @@ const Games: React.FC = () => {
                     <List.Item>
                         <Card
                             hoverable
-                            bordered={false}
+                            variant="borderless"
                             actions={[
                                 <Button type="text" key="edit">编辑</Button>,
                                 <Button type="text" danger key="delete">下架</Button>
@@ -72,7 +72,7 @@ const Games: React.FC = () => {
                                 }
                                 title={<span style={{ color: '#fff' }}>{item.name}</span>}
                                 description={
-                                    <Space direction="vertical" size={0}>
+                                    <Space orientation="vertical" size={0}>
                                         <Tag color="blue">{item.category}</Tag>
                                         <div style={{ marginTop: 8, fontSize: 12 }}>
                                             <span style={{

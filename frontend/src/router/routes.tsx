@@ -20,6 +20,10 @@ import CompanionDashboard from '@/pages/companion/Dashboard';
 // 懒加载Admin页面
 const Dashboard = lazy(() => import('@/pages/admin/Dashboard'));
 const UserPage = lazy(() => import('@/pages/admin/User'));
+const UserBehavior = lazy(() => import('@/pages/admin/User/Behavior'));
+const UserTags = lazy(() => import('@/pages/admin/User/Tags'));
+const UserLevel = lazy(() => import('@/pages/admin/User/Level'));
+const UserPortrait = lazy(() => import('@/pages/admin/User/Portrait'));
 const RolePage = lazy(() => import('@/pages/admin/Role'));
 const GamePage = lazy(() => import('@/pages/admin/Game'));
 const OrderPage = lazy(() => import('@/pages/admin/Order'));
@@ -111,6 +115,26 @@ export const routes: RouteConfig[] = [
                 path: 'sys/user',
                 element: <LazyLoad><UserPage /></LazyLoad>,
                 meta: { title: '用户管理' }
+            },
+            {
+                path: 'sys/user/behavior',
+                element: <LazyLoad><UserBehavior /></LazyLoad>,
+                meta: { title: '用户行为分析' }
+            },
+            {
+                path: 'sys/user/tags',
+                element: <LazyLoad><UserTags /></LazyLoad>,
+                meta: { title: '用户标签管理' }
+            },
+            {
+                path: 'sys/user/level',
+                element: <LazyLoad><UserLevel /></LazyLoad>,
+                meta: { title: '用户等级管理' }
+            },
+            {
+                path: 'sys/user/portrait',
+                element: <LazyLoad><UserPortrait /></LazyLoad>,
+                meta: { title: '用户画像分析' }
             },
             {
                 path: 'sys/role',

@@ -33,14 +33,15 @@ import {
     TeamOutlined,
     CrownOutlined,
     SafetyOutlined,
-    UserAddOutlined,
+    MailOutlined,
 } from '@ant-design/icons';
-import { PageContainer, SearchTable } from '@/components';
+import { PageContainer, SearchTable, type ToolbarButton } from '@/components';
 import type { SearchField } from '@/components';
 import { USER_PERMISSIONS } from '@/constants/permissions';
 import { PermissionGuard } from '@/components/PermissionGuard';
-import { adminApi, type User, type CreateUserDto, type UpdateUserDto, type UserQueryParams, type UserStats } from '@/api/admin';
+import { adminApi, type User, type CreateUserDto, type UpdateUserDto, type UserQueryParams, type UserStats, type ApiResponse } from '@/api/admin';
 import dayjs from 'dayjs';
+import { Tabs, Empty } from 'antd';
 
 /**
  * 角色映射
@@ -90,7 +91,7 @@ const UserPage: React.FC = () => {
     const loadStats = useCallback(async () => {
         try {
             setStatsLoading(true);
-            const response = await adminApi.getUserStats();
+            const response = await adminApi.getUserStats() as unknown as ApiResponse<UserStats>;
             if (response.success) {
                 setStats(response.data);
             }
@@ -114,7 +115,7 @@ const UserPage: React.FC = () => {
                 ...searchParams,
             };
 
-            const response = await adminApi.getUsers(params);
+            const response = await adminApi.getUsers(params) as unknown as ApiResponse<User[]>;
 
             if (response.success) {
                 setUsers(response.data || []);
@@ -141,16 +142,22 @@ const UserPage: React.FC = () => {
     const handleSearch = useCallback((values: any) => {
         const params: UserQueryParams = {};
 
-        if (values.keyword) {
-            params.keyword = values.keyword;
+        if (values.keyword?.trim()) {
+            params.keyword = values.keyword.trim();
         }
         if (values.role) {
-            params.role = Array.isArray(values.role) ? values.role : [values.role];
+            const roles = Array.isArray(values.role) ? values.role : [values.role];
+            if (roles.length > 0) {
+                params.role = roles;
+            }
         }
         if (values.status) {
-            params.status = Array.isArray(values.status) ? values.status : [values.status];
+            const statuses = Array.isArray(values.status) ? values.status : [values.status];
+            if (statuses.length > 0) {
+                params.status = statuses;
+            }
         }
-        if (values.dateRange && values.dateRange.length === 2) {
+        if (values.dateRange?.length === 2) {
             params.date_from = values.dateRange[0].format('YYYY-MM-DD');
             params.date_to = values.dateRange[1].format('YYYY-MM-DD');
         }
@@ -206,7 +213,7 @@ const UserPage: React.FC = () => {
                     updateData.password = values.password.trim();
                 }
 
-                const response = await adminApi.updateUser(currentUser.id, updateData);
+                const response = await adminApi.updateUser(currentUser.id, updateData) as unknown as ApiResponse<User>;
 
                 if (response.success) {
                     message.success('更新用户成功');
@@ -227,7 +234,7 @@ const UserPage: React.FC = () => {
                     status: values.status,
                 };
 
-                const response = await adminApi.createUser(createData);
+                const response = await adminApi.createUser(createData) as unknown as ApiResponse<User>;
 
                 if (response.success) {
                     message.success('创建用户成功');
@@ -255,7 +262,7 @@ const UserPage: React.FC = () => {
             const newStatus = user.status === 'banned' ? 'active' : 'banned';
             const action = newStatus === 'banned' ? '封禁' : '解封';
 
-            const response = await adminApi.updateUserStatus(user.id, newStatus);
+            const response = await adminApi.updateUserStatus(user.id, newStatus) as unknown as ApiResponse<User>;
 
             if (response.success) {
                 message.success(`${action}用户成功`);
@@ -274,7 +281,7 @@ const UserPage: React.FC = () => {
      */
     const handleDelete = useCallback(async (user: User) => {
         try {
-            const response = await adminApi.deleteUser(user.id);
+            const response = await adminApi.deleteUser(user.id) as unknown as ApiResponse<void>;
 
             if (response.success) {
                 message.success(`删除用户 ${user.name} 成功`);
@@ -294,7 +301,7 @@ const UserPage: React.FC = () => {
     const handleBatchDelete = useCallback(async (selectedRowKeys: React.Key[]) => {
         try {
             const ids = selectedRowKeys.map(key => Number(key));
-            const response = await adminApi.batchDeleteUsers(ids);
+            const response = await adminApi.batchDeleteUsers(ids) as unknown as ApiResponse<void>;
 
             if (response.success) {
                 message.success(`成功删除 ${ids.length} 个用户`);
@@ -317,6 +324,7 @@ const UserPage: React.FC = () => {
             name: 'role',
             label: '角色',
             type: 'select',
+            mode: 'multiple',
             options: [
                 { label: '普通用户', value: 'user' },
                 { label: '陪玩师', value: 'player' },
@@ -327,6 +335,7 @@ const UserPage: React.FC = () => {
             name: 'status',
             label: '状态',
             type: 'select',
+            mode: 'multiple',
             options: [
                 { label: '正常', value: 'active' },
                 { label: '已封禁', value: 'banned' },
@@ -376,6 +385,24 @@ const UserPage: React.FC = () => {
             key: 'role',
             width: 100,
             render: (role: User['role']) => <Tag color={roleMap[role].color}>{roleMap[role].text}</Tag>,
+        },
+        {
+            title: '等级',
+            dataIndex: 'level',
+            key: 'level',
+            width: 80,
+            render: (level: number) => <Tag color="gold">Lv.{level || 0}</Tag>,
+        },
+        {
+            title: '标签',
+            dataIndex: 'tags',
+            key: 'tags',
+            width: 150,
+            render: (tags: string[]) => (
+                <Space size={[0, 4]} wrap>
+                    {tags?.map(tag => <Tag key={tag}>{tag}</Tag>)}
+                </Space>
+            ),
         },
         {
             title: '状态',
@@ -453,47 +480,67 @@ const UserPage: React.FC = () => {
         },
     ], [token, handleViewDetail, handleEdit, handleToggleBan, handleDelete]);
 
+    /**
+     * 工具栏按钮
+     */
+    const toolbarButtons: ToolbarButton[] = [
+        {
+            text: '批量修改角色',
+            icon: <EditOutlined />,
+            needSelection: true,
+            onClick: () => message.info('批量修改角色功能开发中...'),
+            permission: USER_PERMISSIONS.UPDATE,
+        },
+        {
+            text: '批量发送通知',
+            icon: <MailOutlined />,
+            needSelection: true,
+            onClick: () => message.info('批量发送通知功能开发中...'),
+            permission: USER_PERMISSIONS.UPDATE,
+        },
+    ];
+
     return (
         <PageContainer title="用户管理" subTitle="管理平台所有注册用户">
             {/* 统计卡片 */}
             <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card bordered={false} loading={statsLoading}>
+                    <Card variant="borderless" loading={statsLoading}>
                         <Statistic
                             title="用户总数"
                             value={stats?.total || 0}
                             prefix={<TeamOutlined />}
-                            valueStyle={{ color: token.colorPrimary }}
+                            styles={{ content: { color: token.colorPrimary } }}
                         />
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card bordered={false} loading={statsLoading}>
+                    <Card variant="borderless" loading={statsLoading}>
                         <Statistic
                             title="陪玩师"
                             value={stats?.byRole.player || 0}
                             prefix={<CrownOutlined />}
-                            valueStyle={{ color: '#722ed1' }}
+                            styles={{ content: { color: '#722ed1' } }}
                         />
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card bordered={false} loading={statsLoading}>
+                    <Card variant="borderless" loading={statsLoading}>
                         <Statistic
                             title="正常用户"
                             value={stats?.byStatus.active || 0}
                             prefix={<SafetyOutlined />}
-                            valueStyle={{ color: '#52c41a' }}
+                            styles={{ content: { color: '#52c41a' } }}
                         />
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card bordered={false} loading={statsLoading}>
+                    <Card variant="borderless" loading={statsLoading}>
                         <Statistic
-                            title="最近7天注册"
+                            title="最近注册"
                             value={stats?.recentRegistrations || 0}
-                            prefix={<UserAddOutlined />}
-                            valueStyle={{ color: '#1890ff' }}
+                            prefix={<UserOutlined />}
+                            styles={{ content: { color: '#52c41a' } }}
                         />
                     </Card>
                 </Col>
@@ -518,6 +565,7 @@ const UserPage: React.FC = () => {
                 showBatchDelete={true}
                 batchDeletePermission={USER_PERMISSIONS.DELETE}
                 onBatchDelete={handleBatchDelete}
+                toolbarButtons={toolbarButtons}
                 pagination={{
                     current,
                     pageSize,
@@ -613,37 +661,49 @@ const UserPage: React.FC = () => {
                 title="用户详情"
                 open={detailDrawerVisible}
                 onClose={() => setDetailDrawerVisible(false)}
-                width={500}
+                width={800}
                 style={{ maxWidth: '100%' }}
             >
                 {currentUser && (
-                    <>
-                        <div style={{ textAlign: 'center', marginBottom: 24 }}>
-                            <Avatar
-                                size={80}
-                                src={currentUser.avatarUrl}
-                                icon={<UserOutlined />}
-                                style={{ backgroundColor: token.colorPrimary }}
-                            />
-                            <h2 style={{ marginTop: 16, marginBottom: 4 }}>{currentUser.name}</h2>
-                            <Tag color={roleMap[currentUser.role].color}>{roleMap[currentUser.role].text}</Tag>
-                            <Tag color={statusMap[currentUser.status].color}>{statusMap[currentUser.status].text}</Tag>
-                        </div>
+                    <Tabs defaultActiveKey="1">
+                        <Tabs.TabPane tab="基本信息" key="1">
+                            <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                                <Avatar
+                                    size={80}
+                                    src={currentUser.avatarUrl}
+                                    icon={<UserOutlined />}
+                                    style={{ backgroundColor: token.colorPrimary }}
+                                />
+                                <h2 style={{ marginTop: 16, marginBottom: 4 }}>{currentUser.name}</h2>
+                                <Tag color={roleMap[currentUser.role].color}>{roleMap[currentUser.role].text}</Tag>
+                                <Tag color={statusMap[currentUser.status].color}>{statusMap[currentUser.status].text}</Tag>
+                            </div>
 
-                        <Divider />
+                            <Divider />
 
-                        <Descriptions column={1} labelStyle={{ width: 100 }}>
-                            <Descriptions.Item label="用户ID">{currentUser.id}</Descriptions.Item>
-                            <Descriptions.Item label="邮箱">{currentUser.email}</Descriptions.Item>
-                            <Descriptions.Item label="手机号">{currentUser.phone}</Descriptions.Item>
-                            <Descriptions.Item label="注册时间">
-                                {dayjs(currentUser.createdAt).format('YYYY-MM-DD HH:mm:ss')}
-                            </Descriptions.Item>
-                            <Descriptions.Item label="最后登录">
-                                {currentUser.lastLoginAt ? dayjs(currentUser.lastLoginAt).format('YYYY-MM-DD HH:mm:ss') : '从未登录'}
-                            </Descriptions.Item>
-                        </Descriptions>
-                    </>
+                            <Descriptions column={2} labelStyle={{ width: 100 }}>
+                                <Descriptions.Item label="用户ID">{currentUser.id}</Descriptions.Item>
+                                <Descriptions.Item label="邮箱">{currentUser.email}</Descriptions.Item>
+                                <Descriptions.Item label="手机号">{currentUser.phone}</Descriptions.Item>
+                                <Descriptions.Item label="等级">Lv.{currentUser.level || 0}</Descriptions.Item>
+                                <Descriptions.Item label="标签">
+                                    {currentUser.tags?.map(tag => <Tag key={tag}>{tag}</Tag>)}
+                                </Descriptions.Item>
+                                <Descriptions.Item label="注册时间">
+                                    {dayjs(currentUser.createdAt).format('YYYY-MM-DD HH:mm:ss')}
+                                </Descriptions.Item>
+                                <Descriptions.Item label="最后登录">
+                                    {currentUser.lastLoginAt ? dayjs(currentUser.lastLoginAt).format('YYYY-MM-DD HH:mm:ss') : '从未登录'}
+                                </Descriptions.Item>
+                            </Descriptions>
+                        </Tabs.TabPane>
+                        <Tabs.TabPane tab="登录历史" key="2">
+                            <Empty description="暂无登录历史" />
+                        </Tabs.TabPane>
+                        <Tabs.TabPane tab="操作日志" key="3">
+                            <Empty description="暂无操作日志" />
+                        </Tabs.TabPane>
+                    </Tabs>
                 )}
             </Drawer>
         </PageContainer>

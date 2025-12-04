@@ -50,6 +50,7 @@ import {
 } from 'recharts';
 import { PageContainer } from '@/components';
 import { monitorApi } from '@/api/monitor';
+import type { ApiResponse } from '@/api/admin';
 import type { KPIQueryParams } from '@/api/monitor';
 import type { KPIOverview, KPIMetric, KPITrendPoint, KPITarget } from '@/types/monitor';
 import dayjs, { Dayjs } from 'dayjs';
@@ -131,9 +132,9 @@ const KPIDashboard: React.FC = () => {
     setLoading(true);
     try {
       const params = buildQueryParams();
-      const res = await monitorApi.getKPIOverview(params);
-      if (res.data?.success) {
-        setOverview(res.data.data);
+      const res = await monitorApi.getKPIOverview(params) as unknown as ApiResponse<KPIOverview>;
+      if (res.success) {
+        setOverview(res.data);
       }
     } catch (error) {
       console.error('加载 KPI 概览失败:', error);
@@ -150,9 +151,9 @@ const KPIDashboard: React.FC = () => {
     setTrendLoading(true);
     try {
       const params = buildQueryParams();
-      const res = await monitorApi.getKPITrend(selectedMetric, params);
-      if (res.data?.success) {
-        setTrendData(res.data.data || []);
+      const res = await monitorApi.getKPITrend(selectedMetric, params) as unknown as ApiResponse<KPITrendPoint[]>;
+      if (res.success) {
+        setTrendData(res.data || []);
       }
     } catch (error) {
       console.error('加载趋势数据失败:', error);
@@ -166,9 +167,9 @@ const KPIDashboard: React.FC = () => {
    */
   const loadTargets = useCallback(async () => {
     try {
-      const res = await monitorApi.getKPITargets();
-      if (res.data?.success) {
-        setTargets(res.data.data || []);
+      const res = await monitorApi.getKPITargets() as unknown as ApiResponse<KPITarget[]>;
+      if (res.success) {
+        setTargets(res.data || []);
       }
     } catch (error) {
       console.error('加载目标列表失败:', error);
@@ -219,7 +220,7 @@ const KPIDashboard: React.FC = () => {
     return (
       <Col xs={24} sm={12} lg={6} key={key}>
         <Card
-          bordered={false}
+          variant="borderless"
           hoverable
           style={{
             cursor: 'pointer',
@@ -229,7 +230,7 @@ const KPIDashboard: React.FC = () => {
           }}
           onClick={() => setSelectedMetric(key)}
         >
-          <Space direction="vertical" style={{ width: '100%' }} size="small">
+          <Space orientation="vertical" style={{ width: '100%' }} size="small">
             <Space>
               {config.icon}
               <Text type="secondary">{config.label}</Text>
@@ -240,7 +241,7 @@ const KPIDashboard: React.FC = () => {
               precision={config.precision}
               prefix={config.unit === '¥' ? config.unit : undefined}
               suffix={config.unit === '%' ? config.unit : undefined}
-              valueStyle={{ fontSize: 24 }}
+              styles={{ content: { fontSize: 24 } }}
             />
             <Space style={{ width: '100%', justifyContent: 'space-between' }}>
               <Tooltip title={`目标: ${config.unit === '¥' ? '¥' : ''}${metric.targetValue.toLocaleString()}${config.unit === '%' ? '%' : ''}`}>
@@ -446,58 +447,60 @@ const KPIDashboard: React.FC = () => {
                   <span>{METRIC_CONFIG[selectedMetric]?.label || selectedMetric} 趋势</span>
                 </Space>
               }
-              bordered={false}
+              variant="borderless"
             >
               <Spin spinning={trendLoading}>
-                <div style={{ height: 350 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={trendData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke={token.colorSplit} />
-                      <XAxis dataKey="date" stroke={token.colorTextSecondary} />
-                      <YAxis stroke={token.colorTextSecondary} />
-                      <RechartsTooltip
-                        contentStyle={{
-                          backgroundColor: token.colorBgElevated,
-                          borderColor: token.colorBorder,
-                        }}
-                        formatter={(value: number, name: string) => {
-                          const config = METRIC_CONFIG[selectedMetric];
-                          let formatted = value.toLocaleString();
-                          if (config?.unit === '¥') formatted = `¥${formatted}`;
-                          if (config?.unit === '%') formatted = `${formatted}%`;
-                          return [formatted, name === 'value' ? '实际值' : '目标值'];
-                        }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="value"
-                        name="实际值"
-                        stroke={token.colorPrimary}
-                        strokeWidth={2}
-                        dot={{ fill: token.colorPrimary }}
-                      />
-                      {trendData.some(d => d.target !== undefined) && (
+                {!trendLoading && (
+                  <div style={{ height: 350, width: '100%', minWidth: 0, overflow: 'hidden' }}>
+                    <ResponsiveContainer width="100%" height={350}>
+                      <LineChart data={trendData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke={token.colorSplit} />
+                        <XAxis dataKey="date" stroke={token.colorTextSecondary} />
+                        <YAxis stroke={token.colorTextSecondary} />
+                        <RechartsTooltip
+                          contentStyle={{
+                            backgroundColor: token.colorBgElevated,
+                            borderColor: token.colorBorder,
+                          }}
+                          formatter={(value: number, name: string) => {
+                            const config = METRIC_CONFIG[selectedMetric];
+                            let formatted = value.toLocaleString();
+                            if (config?.unit === '¥') formatted = `¥${formatted}`;
+                            if (config?.unit === '%') formatted = `${formatted}%`;
+                            return [formatted, name === 'value' ? '实际值' : '目标值'];
+                          }}
+                        />
                         <Line
                           type="monotone"
-                          dataKey="target"
-                          name="目标值"
-                          stroke={token.colorWarning}
+                          dataKey="value"
+                          name="实际值"
+                          stroke={token.colorPrimary}
                           strokeWidth={2}
-                          strokeDasharray="5 5"
-                          dot={false}
+                          dot={{ fill: token.colorPrimary }}
                         />
-                      )}
-                      {overview && (overview as unknown as Record<string, KPIMetric>)[selectedMetric]?.targetValue && (
-                        <ReferenceLine
-                          y={(overview as unknown as Record<string, KPIMetric>)[selectedMetric]?.targetValue}
-                          stroke={token.colorSuccess}
-                          strokeDasharray="3 3"
-                          label={{ value: '目标', fill: token.colorSuccess, position: 'right' }}
-                        />
-                      )}
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
+                        {trendData.some(d => d.target !== undefined) && (
+                          <Line
+                            type="monotone"
+                            dataKey="target"
+                            name="目标值"
+                            stroke={token.colorWarning}
+                            strokeWidth={2}
+                            strokeDasharray="5 5"
+                            dot={false}
+                          />
+                        )}
+                        {overview && (overview as unknown as Record<string, KPIMetric>)[selectedMetric]?.targetValue && (
+                          <ReferenceLine
+                            y={(overview as unknown as Record<string, KPIMetric>)[selectedMetric]?.targetValue}
+                            stroke={token.colorSuccess}
+                            strokeDasharray="3 3"
+                            label={{ value: '目标', fill: token.colorSuccess, position: 'right' }}
+                          />
+                        )}
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
               </Spin>
             </Card>
           </Col>
@@ -513,7 +516,7 @@ const KPIDashboard: React.FC = () => {
                   <span>KPI 目标管理</span>
                 </Space>
               }
-              bordered={false}
+              variant="borderless"
               extra={
                 <Button type="primary" icon={<PlusOutlined />} onClick={() => openTargetModal()}>
                   新建目标

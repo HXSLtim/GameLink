@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/shirou/gopsutil/v3/cpu"
 	"gamelink/internal/ws"
 
 	"gorm.io/gorm"
@@ -152,16 +153,23 @@ func (s *RealtimeService) GetSystemStatus() *ws.SystemStatus {
 	// Calculate memory usage percentage
 	memUsage := float64(memStats.Alloc) / float64(memStats.Sys) * 100
 
+	// Get CPU usage - 使用 gopsutil
+	cpuPercent, _ := cpu.Percent(0, false)
+	var cpuUsage float64
+	if len(cpuPercent) > 0 {
+		cpuUsage = cpuPercent[0]
+	}
+
 	// Determine system status
 	status := "healthy"
-	if memUsage > 90 || dbConn.Active > dbConn.Max*8/10 {
+	if (memUsage > 90 || cpuUsage > 90) || dbConn.Active > dbConn.Max*8/10 {
 		status = "critical"
-	} else if memUsage > 70 || dbConn.Active > dbConn.Max*6/10 {
+	} else if (memUsage > 70 || cpuUsage > 70) || dbConn.Active > dbConn.Max*6/10 {
 		status = "degraded"
 	}
 
 	return &ws.SystemStatus{
-		CPUUsage:       0, // Would require additional library like gopsutil
+		CPUUsage:       cpuUsage,
 		MemoryUsage:    memUsage,
 		MemoryTotal:    memStats.Sys,
 		MemoryUsed:     memStats.Alloc,

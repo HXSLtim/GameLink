@@ -7,6 +7,16 @@ import type { ApiResponse, Menu, CreateMenuDto } from './admin';
 import type { MenuConfig, PermissionConfig } from '@/config/adminRoutes';
 
 /**
+ * 分页响应接口
+ */
+interface PaginationResponse<T> {
+    items: T[];
+    page: number;
+    pageSize: number;
+    totalCount: number;
+}
+
+/**
  * 权限接口
  */
 export interface Permission {
@@ -119,7 +129,8 @@ export const syncApi = {
             // 后端返回的分页结构: { items: [...], page: 1, pageSize: 10, totalCount: 50 }
             let existingPermissions: Permission[] = [];
             if (response.data && typeof response.data === 'object' && 'items' in response.data) {
-                existingPermissions = (response.data as any).items || [];
+                const paginatedData = response.data as PaginationResponse<Permission>;
+                existingPermissions = paginatedData.items || [];
             } else if (Array.isArray(response.data)) {
                 existingPermissions = response.data;
             } else {
@@ -267,7 +278,8 @@ export const syncApi = {
                 existingMenus = response.data;
             } else if (response.data && typeof response.data === 'object' && 'data' in response.data) {
                 // 有分页的情况
-                existingMenus = (response.data as any).data || [];
+                const paginatedResponse = response.data as { data: Menu[] } & Record<string, unknown>;
+                existingMenus = paginatedResponse.data || [];
             } else {
                 existingMenus = response.data || [];
             }

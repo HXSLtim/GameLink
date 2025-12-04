@@ -13,6 +13,7 @@ export interface SearchField {
     placeholder?: string;
     options?: { label: string; value: string | number }[];
     span?: number;
+    mode?: 'multiple' | 'tags';
 }
 
 export interface SearchFormProps {
@@ -41,6 +42,7 @@ export const SearchForm: React.FC<SearchFormProps> = ({
                     <Select
                         placeholder={field.placeholder || `请选择${field.label}`}
                         allowClear
+                        mode={field.mode}
                         options={field.options}
                         style={{ width: '100%' }}
                     />
@@ -75,13 +77,13 @@ export const SearchForm: React.FC<SearchFormProps> = ({
 
     return (
         <Form form={form} layout="horizontal">
-            <Row gutter={24}>
-                {fields.slice(0, expanded ? undefined : 4).map(field => (
+            <Row gutter={[24, 16]}>
+                {fields.slice(0, expanded ? undefined : 3).map(field => (
                     <Col
                         key={field.name}
                         xs={24}
                         sm={12}
-                        md={12}
+                        md={8}
                         lg={6}
                         xl={6}
                     >
@@ -94,28 +96,30 @@ export const SearchForm: React.FC<SearchFormProps> = ({
                         </Form.Item>
                     </Col>
                 ))}
-            </Row>
-                <Space>
-                    <Button
-                        type="primary"
-                        icon={<SearchOutlined />}
-                        onClick={onSearch}
-                        loading={loading}
-                    >
-                        搜索
-                    </Button>
-                    <Button onClick={onReset}>重置</Button>
-                    {fields.length > 4 && (
+                <Col flex="auto" style={{ textAlign: 'right' }}>
+                    <Space>
                         <Button
-                            type="link"
-                            onClick={() => setExpanded(!expanded)}
-                            style={{ padding: '4px 8px' }}
+                            type="primary"
+                            icon={<SearchOutlined />}
+                            onClick={onSearch}
+                            loading={loading}
                         >
-                            {expanded ? '收起' : '展开'}
-                            {expanded ? <UpOutlined /> : <DownOutlined />}
-                        </Button >
-                    )}
-                </Space >
+                            搜索
+                        </Button>
+                        <Button onClick={onReset}>重置</Button>
+                        {fields.length > 3 && (
+                            <Button
+                                type="link"
+                                onClick={() => setExpanded(!expanded)}
+                                style={{ padding: 0 }}
+                            >
+                                {expanded ? '收起' : '展开'}
+                                {expanded ? <UpOutlined /> : <DownOutlined />}
+                            </Button>
+                        )}
+                    </Space>
+                </Col>
+            </Row>
         </Form >
     );
 };

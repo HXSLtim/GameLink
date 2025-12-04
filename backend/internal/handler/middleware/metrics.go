@@ -4,17 +4,23 @@ import (
 	"strconv"
 	"time"
 
+	monitorservice "gamelink/internal/service/monitor"
 	"gamelink/pkg/metrics"
 	"github.com/gin-gonic/gin"
 )
 
 // MetricsMiddleware returns a gin middleware that records HTTP metrics
-func MetricsMiddleware() gin.HandlerFunc {
+func MetricsMiddleware(monitorSvc *monitorservice.RealtimeService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 		path := c.FullPath()
 		if path == "" {
 			path = "unknown"
+		}
+
+		// Record request count for calculating requests per second
+		if monitorSvc != nil {
+			monitorSvc.IncrementRequestCount()
 		}
 
 		// Process request

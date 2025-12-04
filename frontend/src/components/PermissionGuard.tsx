@@ -56,7 +56,7 @@ export const PermissionButton: React.FC<PermissionButtonProps> = ({
     }
 
     return (
-        <Button {...props}>
+        <Button disabled={disabled} {...props}>
             {children}
         </Button>
     );

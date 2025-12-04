@@ -74,21 +74,21 @@ func (r *Router) Setup() *gin.Engine {
 	// 创建路由引擎
 	r.engine = gin.New()
 
-	// 注册全局中间件（按顺序执行）
-	r.engine.Use(middleware.RequestID())
-	r.engine.Use(middleware.SlogLogger())                                   // 结构化访问日志
-	r.engine.Use(middleware.MetricsMiddleware())                            // HTTP 指标
-	r.engine.Use(middleware.RateLimit(middleware.DefaultRateLimitConfig())) // 限流中间件
-	r.engine.Use(middleware.Crypto(r.cfg.Crypto))                           // 请求解密
-	r.engine.Use(middleware.ErrorMap())                                     // 统一错误映射
-	r.engine.Use(middleware.Recovery())                                     // 统一JSON恢复中间件
-	r.engine.Use(middleware.CORS())                                         // CORS中间件
-
 	// 初始化认证服务
 	r.setupAuth()
 
-	// 初始化业务服务
+	// 初始化业务服务（必须在注册中间件之前，因为MetricsMiddleware需要monitor service）
 	r.setupServices()
+
+	// 注册全局中间件（按顺序执行）
+	r.engine.Use(middleware.RequestID())
+	r.engine.Use(middleware.SlogLogger())                                                       // 结构化访问日志
+	r.engine.Use(middleware.MetricsMiddleware(r.services.realtimeSvc))                          // HTTP 指标，传入monitor service
+	r.engine.Use(middleware.RateLimit(middleware.DefaultRateLimitConfig()))                     // 限流中间件
+	r.engine.Use(middleware.Crypto(r.cfg.Crypto))                                               // 请求解密
+	r.engine.Use(middleware.ErrorMap())                                                         // 统一错误映射
+	r.engine.Use(middleware.Recovery())                                                         // 统一JSON恢复中间件
+	r.engine.Use(middleware.CORS())                                                             // CORS中间件
 
 	// 注册所有路由
 	r.registerRoutes()

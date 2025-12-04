@@ -6,6 +6,16 @@ export interface LoginDto {
     password?: string;
 }
 
+export interface RegisterDto {
+    username: string;
+    email: string;
+    phone?: string;
+    password: string;
+    confirmPassword?: string;
+    avatarUrl?: string;
+    referralCode?: string;
+}
+
 export interface LoginResponse {
     token: string;
     user: {
@@ -18,7 +28,7 @@ export interface LoginResponse {
 
 export const authApi = {
     login: (data: LoginDto) => apiClient.post<ApiResponse<LoginResponse>>('/auth/login', data),
-    register: (data: any) => apiClient.post('/auth/register', data),
+    register: (data: RegisterDto) => apiClient.post('/auth/register', data),
     logout: () => apiClient.post('/auth/logout'),
     getMe: () => apiClient.get<ApiResponse<LoginResponse>>('/auth/me'),
     refresh: () => apiClient.post('/auth/refresh'),

@@ -2,7 +2,8 @@
  * 搜索表格组件
  * 封装表格搜索、分页、批量操作等通用功能
  */
-import React, { useState, useCallback, useEffect, ReactNode } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import {
     Table,
     Card,
@@ -230,13 +231,26 @@ export function SearchTable<T extends object>({
             {/* 表格区域 */}
             <Card
                 className={styles.tableCard}
-                bordered={false}
+                variant="borderless"
             >
                 {/* 工具栏 */}
                 <div className={styles.toolbar}>
                     <div className={styles.toolbarTitle}>{cardTitle}</div>
                     <div className={styles.toolbarActions}>
                         <Space wrap>
+                            {/* 新增按钮 */}
+                            {showCreate && (
+                                <PermissionGuard permission={createPermission || ''}>
+                                    <Button
+                                        type="primary"
+                                        icon={<PlusOutlined />}
+                                        onClick={onCreate}
+                                    >
+                                        {createText}
+                                    </Button>
+                                </PermissionGuard>
+                            )}
+
                             {/* 自定义工具栏按钮 */}
                             {toolbarButtons.map(renderToolbarButton)}
 
@@ -256,19 +270,6 @@ export function SearchTable<T extends object>({
                                             批量删除 {selectedRowKeys.length > 0 && `(${selectedRowKeys.length})`}
                                         </Button>
                                     </Popconfirm>
-                                </PermissionGuard>
-                            )}
-
-                            {/* 新增按钮 */}
-                            {showCreate && (
-                                <PermissionGuard permission={createPermission || ''}>
-                                    <Button
-                                        type="primary"
-                                        icon={<PlusOutlined />}
-                                        onClick={onCreate}
-                                    >
-                                        {createText}
-                                    </Button>
                                 </PermissionGuard>
                             )}
 

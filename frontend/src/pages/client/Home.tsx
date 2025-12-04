@@ -124,7 +124,7 @@ const ClientHome = () => {
                         <Statistic
                             title={<span style={{ color: 'var(--text-muted)' }}>Active Players</span>}
                             value={12500}
-                            valueStyle={{ color: 'var(--text-normal)', fontSize: '36px', fontWeight: 'bold' }}
+                            styles={{ content: { color: 'var(--text-normal)', fontSize: '36px', fontWeight: 'bold' } }}
                             suffix="+"
                         />
                     </Col>
@@ -132,7 +132,7 @@ const ClientHome = () => {
                         <Statistic
                             title={<span style={{ color: 'var(--text-muted)' }}>Pro Companions</span>}
                             value={850}
-                            valueStyle={{ color: 'var(--text-normal)', fontSize: '36px', fontWeight: 'bold' }}
+                            styles={{ content: { color: 'var(--text-normal)', fontSize: '36px', fontWeight: 'bold' } }}
                             suffix="+"
                         />
                     </Col>
@@ -140,7 +140,7 @@ const ClientHome = () => {
                         <Statistic
                             title={<span style={{ color: 'var(--text-muted)' }}>Games Supported</span>}
                             value={45}
-                            valueStyle={{ color: 'var(--text-normal)', fontSize: '36px', fontWeight: 'bold' }}
+                            styles={{ content: { color: 'var(--text-normal)', fontSize: '36px', fontWeight: 'bold' } }}
                             suffix="+"
                         />
                     </Col>

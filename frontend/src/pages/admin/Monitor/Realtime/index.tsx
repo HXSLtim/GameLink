@@ -80,9 +80,10 @@ const formatUptime = (seconds: number): string => {
 const formatBytes = (bytes: number): string => {
   if (bytes === 0) return '0 B';
   const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  const index = Math.min(i, sizes.length - 1);
+  return parseFloat((bytes / Math.pow(k, index)).toFixed(2)) + ' ' + sizes[index];
 };
 
 /**
@@ -110,7 +111,7 @@ const RealtimeMonitor: React.FC = () => {
         setMetricsHistory(prev => {
           const newPoint = {
             time: dayjs().format('HH:mm:ss'),
-            memory: (message.data as SystemStatus).memoryUsage,
+            memory: ((message.data as SystemStatus).memoryUsed || 0) / 1024,
             goroutines: (message.data as SystemStatus).goroutines,
           };
           const updated = [...prev, newPoint];
@@ -223,13 +224,13 @@ const RealtimeMonitor: React.FC = () => {
       {/* 系统状态卡片 */}
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12} lg={6}>
-          <Card bordered={false} loading={loading}>
+          <Card variant="borderless" loading={loading}>
             <Statistic
               title={<Space><ApiOutlined /> CPU 使用率</Space>}
               value={systemStatus?.cpuUsage || 0}
               precision={1}
               suffix="%"
-              valueStyle={{ color: (systemStatus?.cpuUsage || 0) > 80 ? token.colorError : token.colorPrimary }}
+              styles={{ content: { color: (systemStatus?.cpuUsage || 0) > 80 ? token.colorError : token.colorPrimary } }}
             />
             <Progress
               percent={systemStatus?.cpuUsage || 0}
@@ -240,13 +241,11 @@ const RealtimeMonitor: React.FC = () => {
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card bordered={false} loading={loading}>
+          <Card variant="borderless" loading={loading}>
             <Statistic
-              title={<Space><CloudServerOutlined /> 内存使用率</Space>}
-              value={systemStatus?.memoryUsage || 0}
-              precision={1}
-              suffix="%"
-              valueStyle={{ color: (systemStatus?.memoryUsage || 0) > 80 ? token.colorError : token.colorWarning }}
+              title={<Space><CloudServerOutlined /> 内存使用</Space>}
+              value={`${formatBytes((systemStatus?.memoryUsed || 0) * 1024)} / ${formatBytes((systemStatus?.memoryTotal || 0) * 1024)}`}
+              styles={{ content: { color: (systemStatus?.memoryUsage || 0) > 80 ? token.colorError : token.colorWarning } }}
             />
             <Progress
               percent={systemStatus?.memoryUsage || 0}
@@ -254,17 +253,14 @@ const RealtimeMonitor: React.FC = () => {
               strokeColor={(systemStatus?.memoryUsage || 0) > 80 ? token.colorError : token.colorWarning}
               size="small"
             />
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              {formatBytes(systemStatus?.memoryUsed || 0)} / {formatBytes(systemStatus?.memoryTotal || 0)}
-            </Text>
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card bordered={false} loading={loading}>
+          <Card variant="borderless" loading={loading}>
             <Statistic
               title={<Space><ApiOutlined /> Go协程数</Space>}
               value={systemStatus?.goroutines || 0}
-              valueStyle={{ color: token.colorPrimary }}
+              styles={{ content: { color: token.colorPrimary } }}
             />
             <Text type="secondary" style={{ fontSize: 12 }}>
               请求速率: {systemStatus?.requestsPerSec?.toFixed(1) || 0}/s
@@ -272,12 +268,12 @@ const RealtimeMonitor: React.FC = () => {
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card bordered={false} loading={loading}>
+          <Card variant="borderless" loading={loading}>
             <Statistic
               title={<Space><DatabaseOutlined /> 数据库连接</Space>}
               value={systemStatus?.dbConnections?.active || 0}
               suffix={`/ ${systemStatus?.dbConnections?.max || 50}`}
-              valueStyle={{ color: token.colorSuccess }}
+              styles={{ content: { color: token.colorSuccess } }}
             />
             <Text type="secondary" style={{ fontSize: 12 }}>
               空闲: {systemStatus?.dbConnections?.idle || 0} | 运行时间: {formatUptime(systemStatus?.uptime || 0)}
@@ -289,60 +285,62 @@ const RealtimeMonitor: React.FC = () => {
       {/* 监控图表 */}
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col xs={24} lg={16}>
-          <Card title="实时监控趋势" bordered={false} loading={loading}>
-            <div style={{ height: 250 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={metricsHistory}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={token.colorSplit} />
-                  <XAxis dataKey="time" stroke={token.colorTextSecondary} />
-                  <YAxis yAxisId="left" stroke={token.colorTextSecondary} />
-                  <YAxis yAxisId="right" orientation="right" stroke={token.colorTextSecondary} />
-                  <RechartsTooltip
-                    contentStyle={{ backgroundColor: token.colorBgElevated, borderColor: token.colorBorder }}
-                  />
-                  <Line
-                    yAxisId="left"
-                    type="monotone"
-                    dataKey="memory"
-                    name="内存使用率(%)"
-                    stroke={token.colorWarning}
-                    dot={false}
-                  />
-                  <Line
-                    yAxisId="right"
-                    type="monotone"
-                    dataKey="goroutines"
-                    name="协程数"
-                    stroke={token.colorPrimary}
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+          <Card title="实时监控趋势" variant="borderless" loading={loading} style={{ height: '100%' }}>
+            {!loading && (
+              <div style={{ height: 250, width: '100%', minWidth: 0, overflow: 'hidden' }}>
+                <ResponsiveContainer width="100%" height={250}>
+                  <LineChart data={metricsHistory}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={token.colorSplit} />
+                    <XAxis dataKey="time" stroke={token.colorTextSecondary} />
+                    <YAxis yAxisId="left" stroke={token.colorTextSecondary} />
+                    <YAxis yAxisId="right" orientation="right" stroke={token.colorTextSecondary} />
+                    <RechartsTooltip
+                      contentStyle={{ backgroundColor: token.colorBgElevated, borderColor: token.colorBorder }}
+                    />
+                    <Line
+                      yAxisId="left"
+                      type="monotone"
+                      dataKey="memory"
+                      name="内存使用(MB)"
+                      stroke={token.colorWarning}
+                      dot={false}
+                    />
+                    <Line
+                      yAxisId="right"
+                      type="monotone"
+                      dataKey="goroutines"
+                      name="协程数"
+                      stroke={token.colorPrimary}
+                      dot={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </Card>
         </Col>
 
         {/* 在线用户统计 */}
         <Col xs={24} lg={8}>
-          <Card title={<Space><TeamOutlined /> 在线用户</Space>} bordered={false} loading={loading}>
+          <Card title={<Space><TeamOutlined /> 在线用户</Space>} variant="borderless" loading={loading} style={{ height: '100%' }}>
             <Row gutter={16}>
               <Col span={12}>
                 <Statistic
                   title="当前在线"
                   value={onlineUsers?.total || 0}
-                  valueStyle={{ color: token.colorSuccess }}
+                  styles={{ content: { color: token.colorSuccess } }}
                 />
               </Col>
               <Col span={12}>
                 <Statistic
                   title="今日峰值"
                   value={onlineUsers?.peak || 0}
-                  valueStyle={{ color: token.colorPrimary }}
+                  styles={{ content: { color: token.colorPrimary } }}
                 />
               </Col>
             </Row>
             <div style={{ marginTop: 16 }}>
-              <Space direction="vertical" style={{ width: '100%' }}>
+              <Space orientation="vertical" style={{ width: '100%' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Text>普通用户</Text>
                   <Text strong>{onlineUsers?.byRole?.user || 0}</Text>
@@ -365,8 +363,8 @@ const RealtimeMonitor: React.FC = () => {
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         {/* 订单处理队列 */}
         <Col xs={24} lg={8}>
-          <Card title={<Space><ShoppingCartOutlined /> 订单处理队列</Space>} bordered={false} loading={loading}>
-            <Space direction="vertical" style={{ width: '100%' }} size="large">
+          <Card title={<Space><ShoppingCartOutlined /> 订单处理队列</Space>} variant="borderless" loading={loading} style={{ height: '100%' }}>
+            <Space orientation="vertical" style={{ width: '100%' }} size="large">
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                   <Text>待处理</Text>
@@ -399,7 +397,7 @@ const RealtimeMonitor: React.FC = () => {
               </div>
               {orderQueue?.hasBacklog && (
                 <AntAlert
-                  message="订单积压告警"
+                  title="订单积压告警"
                   description="当前待处理订单过多，请关注处理进度"
                   type="warning"
                   showIcon
@@ -419,12 +417,13 @@ const RealtimeMonitor: React.FC = () => {
                 {unreadCount > 0 && <Badge count={unreadCount} />}
               </Space>
             }
-            bordered={false}
+            variant="borderless"
             extra={
               <Button size="small" onClick={handleMarkAllRead} disabled={unreadCount === 0}>
                 全部标记已读
               </Button>
             }
+            style={{ height: '100%' }}
           >
             <List
               size="small"

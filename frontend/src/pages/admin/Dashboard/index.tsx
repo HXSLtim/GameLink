@@ -200,8 +200,8 @@ const Dashboard: React.FC = () => {
             <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
                 <Col xs={24} lg={12}>
                     <Card title="订单状态分布" loading={loading} style={{ border: 'none' }}>
-                        <div style={{ height: 300, width: '100%', minWidth: 0 }}>
-                            <ResponsiveContainer width="100%" height="100%" debounce={300}>
+                        <div style={{ height: 300, width: '100%', minWidth: 0, overflow: 'hidden' }}>
+                            <ResponsiveContainer width="100%" height="100%" debounce={300} minWidth={0} minHeight={0}>
                                 <PieChart>
                                     <Pie
                                         data={orderStatusData}
@@ -226,8 +226,8 @@ const Dashboard: React.FC = () => {
                 </Col>
                 <Col xs={24} lg={12}>
                     <Card title="支付状态分布" loading={loading} style={{ border: 'none' }}>
-                        <div style={{ height: 300, width: '100%', minWidth: 0 }}>
-                            <ResponsiveContainer width="100%" height="100%" debounce={300}>
+                        <div style={{ height: 300, width: '100%', minWidth: 0, overflow: 'hidden' }}>
+                            <ResponsiveContainer width="100%" height="100%" debounce={300} minWidth={0} minHeight={0}>
                                 <PieChart>
                                     <Pie
                                         data={paymentStatusData}
@@ -256,8 +256,8 @@ const Dashboard: React.FC = () => {
             <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
                 <Col xs={24} lg={12}>
                     <Card title="收入趋势 (近7天)" loading={loading} style={{ border: 'none' }}>
-                        <div style={{ height: 300, width: '100%', minWidth: 0 }}>
-                            <ResponsiveContainer width="100%" height="100%" debounce={300}>
+                        <div style={{ height: 300, width: '100%', minWidth: 0, overflow: 'hidden' }}>
+                            <ResponsiveContainer width="100%" height="100%" debounce={300} minWidth={0} minHeight={0}>
                                 <LineChart data={revenueTrend}>
                                     <CartesianGrid strokeDasharray="3 3" stroke={token.colorSplit} />
                                     <XAxis dataKey="date" stroke={token.colorTextSecondary} />
@@ -272,8 +272,8 @@ const Dashboard: React.FC = () => {
                 </Col>
                 <Col xs={24} lg={12}>
                     <Card title="用户增长 (近7天)" loading={loading} style={{ border: 'none' }}>
-                        <div style={{ height: 300, width: '100%', minWidth: 0 }}>
-                            <ResponsiveContainer width="100%" height="100%" debounce={300}>
+                        <div style={{ height: 300, width: '100%', minWidth: 0, overflow: 'hidden' }}>
+                            <ResponsiveContainer width="100%" height="100%" debounce={300} minWidth={0} minHeight={0}>
                                 <LineChart data={userGrowth}>
                                     <CartesianGrid strokeDasharray="3 3" stroke={token.colorSplit} />
                                     <XAxis dataKey="date" stroke={token.colorTextSecondary} />

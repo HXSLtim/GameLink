@@ -89,9 +89,9 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
   }, []);
 
   /**
-   * 连接 WebSocket
+   * 重连函数 - 提取到 connect 函数外部
    */
-  const connect = useCallback(() => {
+  const reconnect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       console.log('WebSocket already connected');
       return;
@@ -105,7 +105,8 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
       const authenticatedUrl = getAuthenticatedUrl();
       wsRef.current = new WebSocket(authenticatedUrl);
 
-      wsRef.current.onopen = () => {
+      // 创建事件处理器
+      const handleOpen = () => {
         console.log('WebSocket connected');
         setConnectionState('connected');
         retryCountRef.current = 0;
@@ -113,7 +114,7 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
         onOpen?.();
       };
 
-      wsRef.current.onmessage = (event) => {
+      const handleMessage = (event: MessageEvent) => {
         try {
           const message: WSMessage = JSON.parse(event.data);
           setLastMessage(message);
@@ -129,13 +130,13 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
         }
       };
 
-      wsRef.current.onerror = (event) => {
+      const handleError = (event: Event) => {
         console.error('WebSocket error:', event);
         setConnectionState('error');
         onError?.(event);
       };
 
-      wsRef.current.onclose = (event) => {
+      const handleClose = (event: CloseEvent) => {
         console.log('WebSocket closed:', event.code, event.reason);
         setConnectionState('disconnected');
         clearTimers();
@@ -147,10 +148,20 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
           console.log(`Reconnecting... (attempt ${retryCountRef.current}/${maxRetries})`);
 
           reconnectTimerRef.current = setTimeout(() => {
-            connect();
+            if (autoConnect) {
+              reconnect();
+            }
           }, reconnectInterval * retryCountRef.current);
         }
       };
+
+      // 绑定事件处理器
+      if (wsRef.current) {
+        wsRef.current.onopen = handleOpen;
+        wsRef.current.onmessage = handleMessage;
+        wsRef.current.onerror = handleError;
+        wsRef.current.onclose = handleClose;
+      }
     } catch (error) {
       console.error('Failed to create WebSocket:', error);
       setConnectionState('error');
@@ -165,7 +176,15 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
     onClose,
     maxRetries,
     reconnectInterval,
+    autoConnect,
   ]);
+
+  /**
+   * 连接 WebSocket - 简化为调用 reconnect
+   */
+  const connect = useCallback(() => {
+    reconnect();
+  }, [reconnect]);
 
   /**
    * 断开 WebSocket 连接

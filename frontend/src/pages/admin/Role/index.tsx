@@ -28,23 +28,10 @@ import type { SearchField } from '@/components';
 import { ROLE_PERMISSIONS } from '@/constants/permissions';
 import { PermissionGuard } from '@/components/PermissionGuard';
 import { adminApi } from '@/api/admin';
+import type { Role } from '@/api/admin';
+import type { ApiResponse } from '@/api/admin';
 
 const { Text } = Typography;
-
-/**
- * 角色数据接口
- */
-interface Role {
-    id: number;
-    name: string;
-    code: string;
-    description: string;
-    isSystem: boolean;
-    userCount: number;
-    permissionCount: number;
-    createdAt: string;
-    updatedAt: string;
-}
 
 /**
  * 角色管理页面
@@ -77,10 +64,12 @@ const RolePage: React.FC = () => {
                 page: current,
                 page_size: pageSize,
                 ...params
-            }) as any;
-            const { items, totalCount } = res.data || { items: [], totalCount: 0 };
-            setRoles(items);
-            setTotal(totalCount);
+            }) as unknown as ApiResponse<{ items: Role[], totalCount: number }>;
+            if (res.success) {
+                const { items, totalCount } = res.data;
+                setRoles(items);
+                setTotal(totalCount);
+            }
         } catch (error) {
             console.error(error);
             message.error('加载角色列表失败');
@@ -240,8 +229,8 @@ const RolePage: React.FC = () => {
         },
         {
             title: '角色编码',
-            dataIndex: 'code',
-            key: 'code',
+            dataIndex: 'slug',
+            key: 'slug',
             width: 120,
             render: text => <Text code>{text}</Text>,
         },
@@ -254,17 +243,17 @@ const RolePage: React.FC = () => {
         },
         {
             title: '用户数',
-            dataIndex: 'userCount',
-            key: 'userCount',
+            dataIndex: 'users',
+            key: 'users',
             width: 100,
-            render: count => <Tag>{count || 0} 人</Tag>,
+            render: (users: any[]) => <Tag>{users?.length || 0} 人</Tag>,
         },
         {
             title: '权限数',
-            dataIndex: 'permissionCount',
-            key: 'permissionCount',
+            dataIndex: 'permissions',
+            key: 'permissions',
             width: 100,
-            render: count => <Tag color="purple">{count || 0} 项</Tag>,
+            render: (permissions: any[]) => <Tag color="purple">{permissions?.length || 0} 项</Tag>,
         },
         {
             title: '更新时间',
@@ -368,7 +357,7 @@ const RolePage: React.FC = () => {
                         <Input placeholder="请输入角色名称" />
                     </Form.Item>
                     <Form.Item
-                        name="code"
+                        name="slug"
                         label="角色编码"
                         rules={[
                             { required: true, message: '请输入角色编码' },

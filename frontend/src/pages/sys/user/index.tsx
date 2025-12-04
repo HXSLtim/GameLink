@@ -107,7 +107,7 @@ const Users: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
         >
-            <Card bordered={false} bodyStyle={{ padding: '24px' }}>
+            <Card variant="borderless" bodyStyle={{ padding: '24px' }}>
                 <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <h2 style={{ margin: 0, fontSize: 20 }}>User Management</h2>
                     <Space>

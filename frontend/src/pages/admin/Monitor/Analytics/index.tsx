@@ -43,6 +43,7 @@ import {
 } from 'recharts';
 import { PageContainer } from '@/components';
 import { monitorApi } from '@/api/monitor';
+import type { ApiResponse } from '@/api/admin';
 import type {
   ActiveUsersData,
   RetentionData,
@@ -58,6 +59,11 @@ const { Text } = Typography;
  * 漏斗图颜色
  */
 const FUNNEL_COLORS = ['#8884d8', '#83a6ed', '#8dd1e1', '#82ca9d', '#a4de6c', '#ffc658'];
+
+/**
+ * 图表高度
+ */
+const CHART_HEIGHT = 320;
 
 /**
  * 运营分析页面组件
@@ -90,16 +96,16 @@ const AnalyticsPage: React.FC = () => {
       };
 
       const [activeRes, retentionRes, paymentRes, funnelRes] = await Promise.all([
-        monitorApi.getActiveUsers(params),
-        monitorApi.getRetention(params),
-        monitorApi.getPaymentAnalytics(params),
-        monitorApi.getConversionFunnel(params),
+        monitorApi.getActiveUsers(params) as unknown as Promise<ApiResponse<ActiveUsersData>>,
+        monitorApi.getRetention(params) as unknown as Promise<ApiResponse<RetentionData>>,
+        monitorApi.getPaymentAnalytics(params) as unknown as Promise<ApiResponse<PaymentData>>,
+        monitorApi.getConversionFunnel(params) as unknown as Promise<ApiResponse<ConversionFunnel>>,
       ]);
 
-      if (activeRes.data?.success) setActiveUsers(activeRes.data.data);
-      if (retentionRes.data?.success) setRetention(retentionRes.data.data);
-      if (paymentRes.data?.success) setPayment(paymentRes.data.data);
-      if (funnelRes.data?.success) setFunnel(funnelRes.data.data);
+      if (activeRes.success) setActiveUsers(activeRes.data);
+      if (retentionRes.success) setRetention(retentionRes.data);
+      if (paymentRes.success) setPayment(paymentRes.data);
+      if (funnelRes.success) setFunnel(funnelRes.data);
     } catch (error) {
       console.error('加载运营数据失败:', error);
     } finally {
@@ -132,8 +138,8 @@ const AnalyticsPage: React.FC = () => {
       key: 'week1',
       width: 80,
       render: (_: unknown, record: { retention: number[] }) => (
-        <span style={{ color: getRetentionColor(record.retention[0]) }}>
-          {record.retention[0]?.toFixed(1)}%
+        <span style={{ color: getRetentionColor(record.retention?.[0]) }}>
+          {record.retention?.[0]?.toFixed(1)}%
         </span>
       ),
     },
@@ -142,8 +148,8 @@ const AnalyticsPage: React.FC = () => {
       key: 'week2',
       width: 80,
       render: (_: unknown, record: { retention: number[] }) => (
-        <span style={{ color: getRetentionColor(record.retention[1]) }}>
-          {record.retention[1]?.toFixed(1) || '-'}%
+        <span style={{ color: getRetentionColor(record.retention?.[1]) }}>
+          {record.retention?.[1]?.toFixed(1) || '-'}%
         </span>
       ),
     },
@@ -152,8 +158,8 @@ const AnalyticsPage: React.FC = () => {
       key: 'week3',
       width: 80,
       render: (_: unknown, record: { retention: number[] }) => (
-        <span style={{ color: getRetentionColor(record.retention[2]) }}>
-          {record.retention[2]?.toFixed(1) || '-'}%
+        <span style={{ color: getRetentionColor(record.retention?.[2]) }}>
+          {record.retention?.[2]?.toFixed(1) || '-'}%
         </span>
       ),
     },
@@ -162,8 +168,8 @@ const AnalyticsPage: React.FC = () => {
       key: 'week4',
       width: 80,
       render: (_: unknown, record: { retention: number[] }) => (
-        <span style={{ color: getRetentionColor(record.retention[3]) }}>
-          {record.retention[3]?.toFixed(1) || '-'}%
+        <span style={{ color: getRetentionColor(record.retention?.[3]) }}>
+          {record.retention?.[3]?.toFixed(1) || '-'}%
         </span>
       ),
     },
@@ -210,40 +216,40 @@ const AnalyticsPage: React.FC = () => {
         {/* 活跃用户统计 */}
         <Row gutter={[16, 16]}>
           <Col xs={24} sm={12} lg={6}>
-            <Card bordered={false}>
+            <Card variant="borderless" style={{ height: '100%' }}>
               <Statistic
                 title={<Space><UserOutlined /> DAU (日活)</Space>}
                 value={activeUsers?.dau || 0}
-                valueStyle={{ color: token.colorPrimary }}
+                styles={{ content: { color: token.colorPrimary } }}
               />
             </Card>
           </Col>
           <Col xs={24} sm={12} lg={6}>
-            <Card bordered={false}>
+            <Card variant="borderless" style={{ height: '100%' }}>
               <Statistic
                 title={<Space><TeamOutlined /> WAU (周活)</Space>}
                 value={activeUsers?.wau || 0}
-                valueStyle={{ color: token.colorSuccess }}
+                styles={{ content: { color: token.colorSuccess } }}
               />
             </Card>
           </Col>
           <Col xs={24} sm={12} lg={6}>
-            <Card bordered={false}>
+            <Card variant="borderless" style={{ height: '100%' }}>
               <Statistic
                 title={<Space><TeamOutlined /> MAU (月活)</Space>}
                 value={activeUsers?.mau || 0}
-                valueStyle={{ color: token.colorWarning }}
+                styles={{ content: { color: token.colorWarning } }}
               />
             </Card>
           </Col>
           <Col xs={24} sm={12} lg={6}>
-            <Card bordered={false}>
+            <Card variant="borderless" style={{ height: '100%' }}>
               <Statistic
                 title={<Space><PercentageOutlined /> DAU/MAU 比率</Space>}
                 value={activeUsers?.dauMauRatio || 0}
                 precision={1}
                 suffix="%"
-                valueStyle={{ color: token.colorInfo }}
+                styles={{ content: { color: token.colorInfo } }}
               />
             </Card>
           </Col>
@@ -252,34 +258,36 @@ const AnalyticsPage: React.FC = () => {
         {/* 活跃用户趋势 */}
         <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
           <Col xs={24} lg={16}>
-            <Card title="活跃用户趋势" bordered={false}>
-              <div style={{ height: 300 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={activeUsers?.trend || []}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={token.colorSplit} />
-                    <XAxis dataKey="date" stroke={token.colorTextSecondary} />
-                    <YAxis stroke={token.colorTextSecondary} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: token.colorBgElevated, borderColor: token.colorBorder }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="value"
-                      name="活跃用户"
-                      stroke={token.colorPrimary}
-                      strokeWidth={2}
-                      dot={{ fill: token.colorPrimary }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
+            <Card title="活跃用户趋势" variant="borderless" style={{ height: '100%' }}>
+              {!loading && (
+                <div style={{ height: CHART_HEIGHT, width: '100%', minWidth: 0, overflow: 'hidden' }}>
+                  <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
+                    <LineChart data={activeUsers?.trend || []}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={token.colorSplit} />
+                      <XAxis dataKey="date" stroke={token.colorTextSecondary} />
+                      <YAxis stroke={token.colorTextSecondary} />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: token.colorBgElevated, borderColor: token.colorBorder }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="value"
+                        name="活跃用户"
+                        stroke={token.colorPrimary}
+                        strokeWidth={2}
+                        dot={{ fill: token.colorPrimary }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </Card>
           </Col>
 
           {/* 留存率卡片 */}
           <Col xs={24} lg={8}>
-            <Card title="用户留存率" bordered={false}>
-              <Space direction="vertical" style={{ width: '100%' }} size="large">
+            <Card title="用户留存率" variant="borderless" style={{ height: '100%' }}>
+              <Space orientation="vertical" style={{ width: '100%' }} size="large">
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                     <Text>次日留存 (D1)</Text>
@@ -330,25 +338,25 @@ const AnalyticsPage: React.FC = () => {
         {/* 付费分析 */}
         <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
           <Col xs={24} sm={12} lg={6}>
-            <Card bordered={false}>
+            <Card variant="borderless" style={{ height: '100%' }}>
               <Statistic
                 title={<Space><DollarOutlined /> 付费率</Space>}
                 value={payment?.payingRate || 0}
                 precision={2}
                 suffix="%"
                 prefix={payment?.payingRate && payment.payingRate > 5 ? <RiseOutlined /> : <FallOutlined />}
-                valueStyle={{ color: payment?.payingRate && payment.payingRate > 5 ? token.colorSuccess : token.colorError }}
+                styles={{ content: { color: payment?.payingRate && payment.payingRate > 5 ? token.colorSuccess : token.colorError } }}
               />
             </Card>
           </Col>
           <Col xs={24} sm={12} lg={6}>
-            <Card bordered={false}>
+            <Card variant="borderless" style={{ height: '100%' }}>
               <Statistic
                 title="ARPU"
                 value={payment?.arpu || 0}
                 precision={2}
                 prefix="¥"
-                valueStyle={{ color: token.colorPrimary }}
+                styles={{ content: { color: token.colorPrimary } }}
               />
               <Text type="secondary" style={{ fontSize: 12 }}>
                 平均每用户收入
@@ -356,13 +364,13 @@ const AnalyticsPage: React.FC = () => {
             </Card>
           </Col>
           <Col xs={24} sm={12} lg={6}>
-            <Card bordered={false}>
+            <Card variant="borderless" style={{ height: '100%' }}>
               <Statistic
                 title="ARPPU"
                 value={payment?.arppu || 0}
                 precision={2}
                 prefix="¥"
-                valueStyle={{ color: token.colorSuccess }}
+                styles={{ content: { color: token.colorSuccess } }}
               />
               <Text type="secondary" style={{ fontSize: 12 }}>
                 平均每付费用户收入
@@ -370,13 +378,13 @@ const AnalyticsPage: React.FC = () => {
             </Card>
           </Col>
           <Col xs={24} sm={12} lg={6}>
-            <Card bordered={false}>
+            <Card variant="borderless" style={{ height: '100%' }}>
               <Statistic
                 title="平均客单价"
                 value={payment?.avgOrderValue || 0}
                 precision={2}
                 prefix="¥"
-                valueStyle={{ color: token.colorWarning }}
+                styles={{ content: { color: token.colorWarning } }}
               />
             </Card>
           </Col>
@@ -385,8 +393,8 @@ const AnalyticsPage: React.FC = () => {
         {/* 收入趋势和转化漏斗 */}
         <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
           <Col xs={24} lg={12}>
-            <Card title="收入趋势" bordered={false}>
-              <div style={{ height: 300 }}>
+            <Card title="收入趋势" variant="borderless" style={{ height: '100%' }}>
+              <div style={{ height: CHART_HEIGHT, width: '100%', minWidth: 0 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={payment?.trend || []}>
                     <CartesianGrid strokeDasharray="3 3" stroke={token.colorSplit} />
@@ -411,9 +419,10 @@ const AnalyticsPage: React.FC = () => {
           <Col xs={24} lg={12}>
             <Card
               title={<Space><FunnelPlotOutlined /> 转化漏斗</Space>}
-              bordered={false}
+              variant="borderless"
+              style={{ height: '100%' }}
             >
-              <div style={{ height: 300 }}>
+              <div style={{ height: CHART_HEIGHT, width: '100%', minWidth: 0 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <FunnelChart>
                     <Tooltip
@@ -448,7 +457,7 @@ const AnalyticsPage: React.FC = () => {
         {/* 留存矩阵 */}
         <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
           <Col span={24}>
-            <Card title="留存矩阵 (按周)" bordered={false}>
+            <Card title="留存矩阵 (按周)" variant="borderless">
               <Table
                 columns={retentionColumns}
                 dataSource={retention?.matrix || []}

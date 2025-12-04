@@ -27,7 +27,7 @@ const MenuList: React.FC = () => {
                 });
             }
         } catch (error) {
-            message.error('Failed to fetch menus');
+            message.error('获取菜单列表失败');
         } finally {
             setLoading(false);
         }
@@ -40,10 +40,10 @@ const MenuList: React.FC = () => {
     const handleDelete = async (id: number) => {
         try {
             await adminApi.deleteMenu(id);
-            message.success('Deleted successfully');
+            message.success('删除成功');
             fetchData();
         } catch (error) {
-            message.error('Delete failed');
+            message.error('删除失败');
         }
     };
 
@@ -53,28 +53,28 @@ const MenuList: React.FC = () => {
 
     const columns = [
         {
-            title: 'Name',
+            title: '菜单名称',
             dataIndex: 'name',
             key: 'name',
         },
         {
-            title: 'Icon',
+            title: '图标',
             dataIndex: 'icon',
             key: 'icon',
             render: (icon: string) => icon ? getIcon(icon) : '-',
         },
         {
-            title: 'Path',
+            title: '路由路径',
             dataIndex: 'path',
             key: 'path',
         },
         {
-            title: 'Component',
+            title: '组件路径',
             dataIndex: 'component',
             key: 'component',
         },
         {
-            title: 'Type',
+            title: '类型',
             dataIndex: 'type',
             key: 'type',
             render: (type: string) => {
@@ -83,37 +83,38 @@ const MenuList: React.FC = () => {
                 if (safeType === 'menu') color = 'blue';
                 if (safeType === 'page') color = 'green';
                 if (safeType === 'button') color = 'orange';
-                return <Tag color={color}>{safeType.toUpperCase()}</Tag>;
+                const typeMap: Record<string, string> = { menu: '目录', page: '页面', button: '按钮' };
+                return <Tag color={color}>{typeMap[safeType] || safeType}</Tag>;
             },
         },
         {
-            title: 'Permission',
+            title: '权限标识',
             dataIndex: 'permission',
             key: 'permission',
             render: (text: string) => text ? <Tag color="cyan">{text}</Tag> : '-',
         },
         {
-            title: 'Sort',
+            title: '排序',
             dataIndex: 'order',
             key: 'order',
         },
         {
-            title: 'Status',
+            title: '状态',
             dataIndex: 'visible',
             key: 'visible',
             render: (visible: boolean) => (
                 <Tag color={visible ? 'success' : 'default'}>
-                    {visible ? 'Visible' : 'Hidden'}
+                    {visible ? '显示' : '隐藏'}
                 </Tag>
             ),
         },
         {
-            title: 'Actions',
+            title: '操作',
             key: 'action',
             render: (_: any, record: Menu) => (
                 <Space size="small">
-                    <Button type="text" icon={<EditOutlined />} onClick={() => message.info('Edit not implemented yet')} />
-                    <Popconfirm title="Are you sure?" onConfirm={() => handleDelete(record.id)}>
+                    <Button type="text" icon={<EditOutlined />} onClick={() => message.info('编辑功能暂未实现')} />
+                    <Popconfirm title="确定要删除吗？" onConfirm={() => handleDelete(record.id)}>
                         <Button type="text" danger icon={<DeleteOutlined />} />
                     </Popconfirm>
                 </Space>
@@ -124,11 +125,11 @@ const MenuList: React.FC = () => {
     return (
         <Card style={{ border: 'none' }}>
             <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
-                <h2>Menu Management</h2>
+                <h2>菜单管理</h2>
                 <Space>
-                    <Button icon={<ReloadOutlined />} onClick={() => fetchData()}>Refresh</Button>
-                    <Button type="primary" icon={<PlusOutlined />} onClick={() => message.info('Create not implemented yet')}>
-                        Add Menu
+                    <Button icon={<ReloadOutlined />} onClick={() => fetchData()}>刷新</Button>
+                    <Button type="primary" icon={<PlusOutlined />} onClick={() => message.info('新增功能暂未实现')}>
+                        新增菜单
                     </Button>
                 </Space>
             </div>

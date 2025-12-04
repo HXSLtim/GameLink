@@ -28,6 +28,28 @@ export interface User {
     lastLoginAt?: string;
     createdAt: string;
     updatedAt?: string;
+    tags?: string[];
+    level?: number;
+    vipExpiry?: string;
+}
+
+export interface Order {
+    id: number;
+    orderNo: string;
+    amount: number;
+    status: string;
+    createdAt: string;
+    // Add other fields as needed
+}
+
+export interface AuditLog {
+    id: number;
+    action: string;
+    ip: string;
+    location?: string;
+    device?: string;
+    createdAt: string;
+    details?: string;
 }
 
 export interface CreateUserDto {
@@ -60,12 +82,33 @@ export interface UserQueryParams {
     date_to?: string;
 }
 
+export interface UserOrderParams {
+    page?: number;
+    page_size?: number;
+    status?: string;
+}
+
+export interface UserLogParams {
+    page?: number;
+    page_size?: number;
+    type?: string;
+}
+
 export interface Game {
     id: string;
     name: string;
     icon: string;
     category: string;
 }
+
+export interface CreateGameDto {
+    name: string;
+    icon?: string;
+    category?: string;
+    status?: 'active' | 'inactive';
+}
+
+export type UpdateGameDto = Partial<CreateGameDto>;
 
 // Service Item Interfaces
 export interface ServiceItem {
@@ -145,7 +188,7 @@ export interface CreateMenuDto {
     children?: Menu[];
 }
 
-export interface UpdateMenuDto extends Partial<CreateMenuDto> { }
+export type UpdateMenuDto = Partial<CreateMenuDto>;
 
 export interface Permission {
     id: number;
@@ -159,6 +202,57 @@ export interface Permission {
     updatedAt: string;
 }
 
+export interface CreatePermissionDto {
+    name: string;
+    code: string;
+    group: string;
+    method?: string;
+    path?: string;
+    description?: string;
+}
+
+export type UpdatePermissionDto = Partial<CreatePermissionDto>;
+
+export interface Role {
+    id: number;
+    name: string;
+    slug: string;
+    description: string;
+    isSystem: boolean;
+    permissions: Permission[] | null;
+    users: User[] | null;
+    createdAt: string;
+    updatedAt: string;
+    deletedAt: string | null;
+}
+
+export interface CreateRoleDto {
+    name: string;
+    description?: string;
+    permissionIds?: number[];
+}
+
+export type UpdateRoleDto = Partial<CreateRoleDto>;
+
+export interface OrderQueryParams {
+    page?: number;
+    page_size?: number;
+    status?: string;
+    userId?: number;
+    orderNumber?: string;
+    dateFrom?: string;
+    dateTo?: string;
+}
+
+export interface WithdrawQueryParams {
+    page?: number;
+    page_size?: number;
+    status?: 'pending' | 'approved' | 'rejected';
+    userId?: number;
+    dateFrom?: string;
+    dateTo?: string;
+}
+
 export const adminApi = {
     // User Management
     getUsers: (params?: UserQueryParams) => apiClient.get<ApiResponse<User[]>>('/admin/users', { params }),
@@ -169,13 +263,13 @@ export const adminApi = {
     batchDeleteUsers: (ids: number[]) => apiClient.post<ApiResponse<void>>('/admin/users/batch-delete', { ids }),
     updateUserStatus: (id: number, status: string) => apiClient.put<ApiResponse<User>>(`/admin/users/${id}/status`, { status }),
     updateUserRole: (id: number, role: string) => apiClient.put<ApiResponse<User>>(`/admin/users/${id}/role`, { role }),
-    getUserOrders: (id: number, params?: any) => apiClient.get<ApiResponse<any[]>>(`/admin/users/${id}/orders`, { params }),
-    getUserLogs: (id: number, params?: any) => apiClient.get<ApiResponse<any[]>>(`/admin/users/${id}/logs`, { params }),
+    getUserOrders: (id: number, params?: UserOrderParams) => apiClient.get<ApiResponse<Order[]>>(`/admin/users/${id}/orders`, { params }),
+    getUserLogs: (id: number, params?: UserLogParams) => apiClient.get<ApiResponse<AuditLog[]>>(`/admin/users/${id}/logs`, { params }),
 
     // Game Management
     getGames: (params?: { status?: string; page_size?: number }) => apiClient.get('/admin/games', { params }),
-    createGame: (data: any) => apiClient.post('/admin/games', data),
-    updateGame: (id: string, data: any) => apiClient.put(`/admin/games/${id}`, data),
+    createGame: (data: CreateGameDto) => apiClient.post('/admin/games', data),
+    updateGame: (id: string, data: UpdateGameDto) => apiClient.put(`/admin/games/${id}`, data),
     deleteGame: (id: string) => apiClient.delete(`/admin/games/${id}`),
 
     // Service Item Management
@@ -194,19 +288,19 @@ export const adminApi = {
     deleteMenu: (id: number) => apiClient.delete<ApiResponse<void>>(`/admin/menus/${id}`),
 
     // Permissions
-    getPermissions: (params?: any) => apiClient.get<ApiResponse<{ items: Permission[], totalCount: number, page: number, pageSize: number }>>('/admin/permissions', { params }),
+    getPermissions: (params?: { page?: number; page_size?: number; group?: string }) => apiClient.get<ApiResponse<{ items: Permission[], totalCount: number, page: number, pageSize: number }>>('/admin/permissions', { params }),
     getPermissionGroups: () => apiClient.get<ApiResponse<string[]>>('/admin/permissions/groups'),
     getPermission: (id: number) => apiClient.get<ApiResponse<Permission>>(`/admin/permissions/${id}`),
-    createPermission: (data: any) => apiClient.post<ApiResponse<Permission>>('/admin/permissions', data),
-    updatePermission: (id: number, data: any) => apiClient.put<ApiResponse<Permission>>(`/admin/permissions/${id}`, data),
+    createPermission: (data: CreatePermissionDto) => apiClient.post<ApiResponse<Permission>>('/admin/permissions', data),
+    updatePermission: (id: number, data: UpdatePermissionDto) => apiClient.put<ApiResponse<Permission>>(`/admin/permissions/${id}`, data),
     deletePermission: (id: number) => apiClient.delete<ApiResponse<void>>(`/admin/permissions/${id}`),
     getMyPermissions: () => apiClient.get<ApiResponse<string[]>>('/admin/permissions/me'),
 
     // Role Management
-    getRoles: (params?: any) => apiClient.get('/admin/roles', { params }),
+    getRoles: (params?: { page?: number; page_size?: number }) => apiClient.get<ApiResponse<{ items: Role[], totalCount: number, page: number, pageSize: number }>>('/admin/roles', { params }),
     getRole: (id: number) => apiClient.get(`/admin/roles/${id}`),
-    createRole: (data: any) => apiClient.post('/admin/roles', data),
-    updateRole: (id: number, data: any) => apiClient.put(`/admin/roles/${id}`, data),
+    createRole: (data: CreateRoleDto) => apiClient.post('/admin/roles', data),
+    updateRole: (id: number, data: UpdateRoleDto) => apiClient.put(`/admin/roles/${id}`, data),
     deleteRole: (id: number) => apiClient.delete(`/admin/roles/${id}`),
     assignRolePermissions: (id: number, permissionIds: number[]) => apiClient.put(`/admin/roles/${id}/permissions`, { permissionIds }),
     assignRoleUser: (roleId: number, userId: number) => apiClient.post('/admin/roles/assign-user', { roleId, userId }),
@@ -214,10 +308,10 @@ export const adminApi = {
     getUserStats: () => apiClient.get<ApiResponse<UserStats>>('/admin/users/stats'),
 
     // Order Management
-    getOrders: (params?: any) => apiClient.get('/admin/orders', { params }),
+    getOrders: (params?: OrderQueryParams) => apiClient.get('/admin/orders', { params }),
 
     // Withdraw Management
-    getWithdraws: (params?: any) => apiClient.get('/admin/withdraws', { params }),
+    getWithdraws: (params?: WithdrawQueryParams) => apiClient.get('/admin/withdraws', { params }),
 
     // Dashboard & Stats
     getDashboardStats: () => apiClient.get<ApiResponse<DashboardStats>>('/admin/stats/dashboard'),

@@ -47,7 +47,7 @@ const ServiceItemDetail: React.FC = () => {
                         编辑
                     </Button>
                 }
-                bordered={false}
+                variant="borderless"
             >
                 <Descriptions bordered column={{ xxl: 4, xl: 3, lg: 3, md: 3, sm: 2, xs: 1 }}>
                     <Descriptions.Item label="服务名称">{data.name}</Descriptions.Item>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Form, Input, Switch, Button, Tabs, Select, ColorPicker, Divider, message, List, Space, Typography, Alert } from 'antd';
-import { SaveOutlined, SettingOutlined, SafetyOutlined, BellOutlined, BgColorsOutlined, SyncOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { SaveOutlined, SettingOutlined, SafetyOutlined, BellOutlined, BgColorsOutlined, SyncOutlined } from '@ant-design/icons';
 import { motion } from 'framer-motion';
 import { forceInit } from '@/services/init';
 
@@ -220,9 +220,9 @@ const Settings: React.FC = () => {
                 </span>
             ),
             children: (
-                <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                <Space orientation="vertical" size="large" style={{ width: '100%' }}>
                     <Alert
-                        message="系统初始化说明"
+                        title="系统初始化说明"
                         description={
                             <div>
                                 <Paragraph style={{ marginBottom: 8 }}>
@@ -240,7 +240,7 @@ const Settings: React.FC = () => {
                     />
 
                     <Card size="small" title="初始化状态">
-                        <Space direction="vertical" style={{ width: '100%' }}>
+                        <Space orientation="vertical" style={{ width: '100%' }}>
                             <div>
                                 <Text type="secondary">上次初始化时间：</Text>
                                 <Text strong style={{ marginLeft: 8 }}>
@@ -261,7 +261,7 @@ const Settings: React.FC = () => {
                     </Card>
 
                     <Alert
-                        message="注意事项"
+                        title="注意事项"
                         description={
                             <ul style={{ marginBottom: 0, paddingLeft: 20 }}>
                                 <li>初始化过程可能需要几秒钟，请耐心等待</li>
@@ -284,7 +284,7 @@ const Settings: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
         >
-            <Card bordered={false} title="系统设置" bodyStyle={{ paddingTop: 0 }}>
+            <Card variant="borderless" title="系统设置" bodyStyle={{ paddingTop: 0 }}>
                 <Tabs defaultActiveKey="1" items={items} />
             </Card>
         </motion.div>

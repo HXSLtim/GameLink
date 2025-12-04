@@ -15,7 +15,12 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8080',
         changeOrigin: true,
+        // 支持 WebSocket
+        ws: true,
       },
     },
+  },
+  optimizeDeps: {
+    include: ['recharts'],
   },
 })

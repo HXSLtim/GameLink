@@ -13,12 +13,8 @@
     margin-bottom: 0;
 }
 
-.searchCard :global(.ant-card-body) {
-    padding: 0;
-}
-
 .formItem {
-    margin-bottom: 16px;
+    margin-bottom: 0;
 }
 
 .searchActions {

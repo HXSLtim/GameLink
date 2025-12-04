@@ -71,7 +71,7 @@ const ServiceItemForm: React.FC = () => {
                         {isEdit ? '编辑服务项目' : '新建服务项目'}
                     </Space>
                 }
-                bordered={false}
+                variant="borderless"
             >
                 <Spin spinning={loading}>
                     <Form

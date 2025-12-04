@@ -34,7 +34,7 @@ const PermissionList: React.FC = () => {
                 setTotal(0);
             }
         } catch (error) {
-            message.error('Failed to fetch permissions');
+            message.error('获取权限列表失败');
         } finally {
             setLoading(false);
         }
@@ -47,7 +47,7 @@ const PermissionList: React.FC = () => {
             const list = res.data?.data || res.data || [];
             setGroups(Array.isArray(list) ? list : []);
         } catch (error) {
-            console.error('Failed to fetch permission groups');
+            console.error('获取权限分组失败');
         }
     };
 
@@ -59,10 +59,10 @@ const PermissionList: React.FC = () => {
     const handleDelete = async (id: number) => {
         try {
             await adminApi.deletePermission(id);
-            message.success('Deleted successfully');
+            message.success('删除成功');
             fetchData();
         } catch (error) {
-            message.error('Delete failed');
+            message.error('删除失败');
         }
     };
 
@@ -83,16 +83,16 @@ const PermissionList: React.FC = () => {
             const values = await form.validateFields();
             if (editingId) {
                 await adminApi.updatePermission(editingId, values);
-                message.success('Updated successfully');
+                message.success('更新成功');
             } else {
                 await adminApi.createPermission(values);
-                message.success('Created successfully');
+                message.success('创建成功');
             }
             setIsModalVisible(false);
             fetchData();
             fetchGroups();
         } catch (error) {
-            message.error('Operation failed');
+            message.error('操作失败');
         }
     };
 
@@ -104,14 +104,14 @@ const PermissionList: React.FC = () => {
 
     const columns = [
         {
-            title: 'Name',
+            title: '权限名称',
             dataIndex: 'name',
             key: 'name',
             width: 200,
             render: (text: string, record: Permission) => text || record.description || record.code,
         },
         {
-            title: 'Method',
+            title: '请求方法',
             dataIndex: 'method',
             key: 'method',
             width: 100,
@@ -125,20 +125,20 @@ const PermissionList: React.FC = () => {
             }
         },
         {
-            title: 'Path',
+            title: '请求路径',
             dataIndex: 'path',
             key: 'path',
             width: 250,
         },
         {
-            title: 'Code',
+            title: '权限编码',
             dataIndex: 'code',
             key: 'code',
             width: 200,
             render: (code: string) => <Tag color="purple">{code}</Tag>,
         },
         {
-            title: 'Group',
+            title: '分组',
             dataIndex: 'group',
             key: 'group',
             width: 200,
@@ -146,20 +146,20 @@ const PermissionList: React.FC = () => {
             onFilter: (value: any, record: Permission) => record.group === value,
         },
         {
-            title: 'Description',
+            title: '描述',
             dataIndex: 'description',
             key: 'description',
             ellipsis: true,
         },
         {
-            title: 'Actions',
+            title: '操作',
             key: 'action',
             width: 120,
             fixed: 'right' as const,
             render: (_: any, record: Permission) => (
                 <Space size="small">
                     <Button type="text" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
-                    <Popconfirm title="Are you sure?" onConfirm={() => handleDelete(record.id)}>
+                    <Popconfirm title="确定要删除吗？" onConfirm={() => handleDelete(record.id)}>
                         <Button type="text" danger icon={<DeleteOutlined />} />
                     </Popconfirm>
                 </Space>
@@ -170,11 +170,11 @@ const PermissionList: React.FC = () => {
     return (
         <Card style={{ border: 'none' }}>
             <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
-                <h2>Permission Management</h2>
+                <h2>权限管理</h2>
                 <Space>
-                    <Button icon={<ReloadOutlined />} onClick={() => fetchData()}>Refresh</Button>
+                    <Button icon={<ReloadOutlined />} onClick={() => fetchData()}>刷新</Button>
                     <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-                        Add Permission
+                        新增权限
                     </Button>
                 </Space>
             </div>
@@ -188,14 +188,14 @@ const PermissionList: React.FC = () => {
                     pageSize,
                     total,
                     showSizeChanger: true,
-                    showTotal: (total) => `Total ${total} items`,
+                    showTotal: (total) => `共 ${total} 条`,
                 }}
                 onChange={handleTableChange}
                 scroll={{ x: 1300 }}
             />
 
             <Modal
-                title={editingId ? 'Edit Permission' : 'Create Permission'}
+                title={editingId ? '编辑权限' : '新增权限'}
                 open={isModalVisible}
                 onOk={handleModalOk}
                 onCancel={() => setIsModalVisible(false)}
@@ -204,17 +204,17 @@ const PermissionList: React.FC = () => {
                 <Form form={form} layout="vertical">
                     <Form.Item
                         name="name"
-                        label="Name"
-                        rules={[{ required: true, message: 'Please input name!' }]}
+                        label="名称"
+                        rules={[{ required: true, message: '请输入名称！' }]}
                     >
                         <Input />
                     </Form.Item>
                     <div style={{ display: 'flex', gap: 16 }}>
                         <Form.Item
                             name="method"
-                            label="Method"
+                            label="请求方法"
                             style={{ width: 120 }}
-                            rules={[{ required: true, message: 'Select method!' }]}
+                            rules={[{ required: true, message: '请选择请求方法！' }]}
                         >
                             <Select>
                                 <Select.Option value="GET">GET</Select.Option>
@@ -226,28 +226,28 @@ const PermissionList: React.FC = () => {
                         </Form.Item>
                         <Form.Item
                             name="path"
-                            label="Path"
+                            label="请求路径"
                             style={{ flex: 1 }}
-                            rules={[{ required: true, message: 'Please input path!' }]}
+                            rules={[{ required: true, message: '请输入请求路径！' }]}
                         >
                             <Input placeholder="/api/v1/..." />
                         </Form.Item>
                     </div>
                     <Form.Item
                         name="code"
-                        label="Code"
-                        rules={[{ required: true, message: 'Please input code!' }]}
+                        label="权限编码"
+                        rules={[{ required: true, message: '请输入权限编码！' }]}
                     >
-                        <Input placeholder="e.g. user:create" />
+                        <Input placeholder="例如 user:create" />
                     </Form.Item>
                     <Form.Item
                         name="group"
-                        label="Group"
-                        rules={[{ required: true, message: 'Please input group!' }]}
+                        label="分组"
+                        rules={[{ required: true, message: '请输入分组！' }]}
                     >
                         <Select
                             showSearch
-                            placeholder="Select a group"
+                            placeholder="选择一个分组"
                             optionFilterProp="children"
                             allowClear
                         >
@@ -258,7 +258,7 @@ const PermissionList: React.FC = () => {
                     </Form.Item>
                     <Form.Item
                         name="description"
-                        label="Description"
+                        label="描述"
                     >
                         <Input.TextArea rows={3} />
                     </Form.Item>
