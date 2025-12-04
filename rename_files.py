@@ -87,6 +87,20 @@ class FileRenamer:
         s2 = re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1)
         return s2.lower()
 
+    def snake_to_camel(self, name: str) -> str:
+        """
+        将snake_case转换为小驼峰命名
+
+        Args:
+            name: snake_case字符串
+
+        Returns:
+            str: 小驼峰字符串
+        """
+        parts = name.split('_')
+        # 第一个单词小写，其余单词首字母大写
+        return parts[0] + ''.join(word.capitalize() for word in parts[1:])
+
     def rename_file(self, old_path: Path) -> str:
         """
         根据规则生成新的文件名
@@ -100,26 +114,27 @@ class FileRenamer:
         filename = old_path.name
 
         # 情况1: 小驼峰测试文件（如 userTest.go）
-        if self.is_test_file(filename):
-            # 移除Test后缀，添加_test前缀
-            base_name = filename[:-6]  # 移除 'Test.go'
+        if filename.endswith('Test.go'):
+            # 移除 Test.go 后缀，保留基础名称
+            base_name = filename[:-7]  # 移除 'Test.go' (7个字符)
             new_name = f"{self.convert_camel_to_snake(base_name)}_test.go"
             return new_name
 
-        # 情况2: snake_case文件（如 user_service.go）
-        if self.is_snake_case(filename):
-            # 保持不变
+        # 情况2: snake_case测试文件（如 user_test.go）
+        # 已经是正确的测试文件命名，保持不变
+        if filename.endswith('_test.go'):
             return filename
 
-        # 情况3: 标准小驼峰文件（如 userService.go）
-        # 判断是否为驼峰命名
-        name_without_ext = filename[:-3]
-        if self.is_camel_case(name_without_ext):
-            # 转换为snake_case
-            new_name = f"{self.convert_camel_to_snake(name_without_ext)}.go"
+        # 情况3: snake_case业务文件（如 user_service.go）
+        # 判断是否为snake_case（包含下划线且非测试文件）
+        name_without_ext = filename[:-3] if filename.endswith('.go') else filename
+        if '_' in name_without_ext:
+            # 转换为小驼峰
+            new_name = f"{self.snake_to_camel(name_without_ext)}.go"
             return new_name
 
-        # 其他情况保持不变
+        # 情况4: 标准小驼峰文件（如 userService.go）
+        # 已经是小驼峰，保持不变
         return filename
 
     def scan_directory(self) -> None:
@@ -173,7 +188,7 @@ class FileRenamer:
         执行重命名操作
         """
         if self.dry_run:
-            print("\n\n⚠️  当前为预览模式，未执行实际重命名操作")
+            print("\n\n注意: 当前为预览模式，未执行实际重命名操作")
             print("   使用 --apply 参数执行实际重命名")
             return
 
@@ -194,10 +209,10 @@ class FileRenamer:
                     raise FileExistsError(f"目标文件已存在: {new_path}")
 
                 old_file.rename(new_file)
-                print(f"✓ {old_file.name} → {new_file.name}")
+                print(f"[成功] {old_file.name} -> {new_file.name}")
                 success_count += 1
             except Exception as e:
-                print(f"✗ {old_file.name} → 失败: {str(e)}")
+                print(f"[失败] {old_file.name} -> 错误: {str(e)}")
                 fail_count += 1
                 failed_files.append((old_path, new_path, str(e)))
 
@@ -254,7 +269,7 @@ def main():
     renamer.execute_renaming()
 
     if not args.apply:
-        print("\n💡 提示: 使用 --apply 参数执行重命名")
+        print("\n提示: 使用 --apply 参数执行重命名")
 
 
 if __name__ == "__main__":
