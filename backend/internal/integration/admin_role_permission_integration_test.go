@@ -8,15 +8,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	"gamelink/pkg/cache"
 	adminhandler "gamelink/internal/handler/admin"
 	"gamelink/internal/handler/middleware"
 	"gamelink/internal/model"
 	adminrepo "gamelink/internal/repository/admin"
-	adminrepo "gamelink/internal/repository/admin"
+	"gamelink/internal/repository/permission"
 	"gamelink/internal/repository/user"
 	permissionservice "gamelink/internal/service/admin"
 	roleservice "gamelink/internal/service/admin"
+	"gamelink/pkg/cache"
 	"gamelink/pkg/testutil"
 )
 

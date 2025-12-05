@@ -82,7 +82,7 @@ npm run dev
 ### 技术栈
 **后端**: Go 1.25.3, Gin, GORM, Redis, JWT, WebSocket, 纯Go SQLite驱动
 **前端**: React 18, TypeScript, Vite, Less, WebSocket
-**数据库**: MySQL, Redis, SQLite（测试环境）
+**数据库**: PGSQL, Redis, SQLite（测试环境）
 **测试**: Go testing + Testify, Vitest, Playwright, 并发安全测试
 **安全**: JWT + RBAC, CSRF防护, SQL注入防护, 输入验证
 **错误处理**: 分层错误机制（Repository→Service→API标准化）
@@ -147,6 +147,17 @@ GameLink/
 - **[API 文档](API.md)** - RESTful API 接口文档
 - **[测试指南](backend/TESTING_GUIDE.md)** - 单元测试和集成测试最佳实践
 - **[错误处理规范](backend/ERROR_HANDLING.md)** - 分层错误处理机制说明
+
+### 📋 产品需求文档（PRD）
+- **[产品概述](./PRODUCT_OVERVIEW.md)** - 产品愿景、市场分析和竞品对比
+- **[用户画像](./USER_PERSONAS.md)** - 三类用户画像和使用场景
+- **[功能需求](./FUNCTIONAL_REQUIREMENTS.md)** - 详细功能规格和接口定义
+- **[数据模型](./DATA_MODEL.md)** - 数据结构和业务流程说明
+- **[技术架构](./TECHNICAL_ARCHITECTURE.md)** - 技术栈和系统架构设计
+- **[UI/UX设计](./UI_UX_DESIGN.md)** - 界面设计规范和交互说明
+- **[非功能性需求](./NON_FUNCTIONAL_REQUIREMENTS.md)** - 性能、安全、可靠性要求
+- **[验收标准](./ACCEPTANCE_CRITERIA.md)** - 测试标准和验收清单
+- **[迭代计划](./ITERATION_PLAN.md)** - MVP版本规划和迭代路线图
 
 ### 🎯 功能指南
 - **[前端开发完整指南](frontend/docs/FRONTEND_DEVELOPMENT_COMPLETE_GUIDE.md)**

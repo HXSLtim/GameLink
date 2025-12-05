@@ -72,22 +72,23 @@ const hasAdminAccess = async (): Promise<boolean> => {
 
         console.log('[Init] getMe response:', response);
 
-        // 检查API响应
-        if (!response || !response.code) {
-            console.log('[Init] Invalid response or no response.code');
+        // AxiosResponse<ApiResponse<LoginResponse>>
+        const api = response?.data;
+        if (!api) {
+            console.log('[Init] No ApiResponse payload');
             return false;
         }
-        if (response.code !== 200) {
-            console.log('[Init] Response code is not 200:', response.code);
+        if (api.code !== 200) {
+            console.log('[Init] ApiResponse.code is not 200:', api.code);
             return false;
         }
-        if (!response.data) {
-            console.log('[Init] No response.data');
+        if (!api.data) {
+            console.log('[Init] ApiResponse.data missing');
             return false;
         }
 
-        // response.data 是 ApiResponse，其中的 data 属性包含用户数据
-        const userData = response.data as unknown as UserData;
+        // ApiResponse<LoginResponse> -> data: LoginResponse
+        const userData = api.data as unknown as UserData;
         const role = userData.user?.role || '';
         console.log('[Init] User role:', role);
         const isAdmin = ['admin', 'superAdmin', 'ADMIN', 'CS', 'FINANCE'].includes(role);

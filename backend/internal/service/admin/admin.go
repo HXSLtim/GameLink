@@ -46,6 +46,7 @@ type AdminService struct {
 	permissions  repository.PermissionRepository
 	menus        repository.MenuRepository
 	stats        repository.StatsRepository
+	wallets      repository.WalletRepository // 用户钱包仓库
 	cache        cache.Cache
 	tx           TxManager
 }
@@ -81,6 +82,7 @@ func NewAdminService(
 	permissions repository.PermissionRepository,
 	menus repository.MenuRepository,
 	stats repository.StatsRepository,
+	wallets repository.WalletRepository,
 	cache cache.Cache,
 ) *AdminService {
 	return &AdminService{
@@ -94,6 +96,7 @@ func NewAdminService(
 		permissions:  permissions,
 		menus:        menus,
 		stats:        stats,
+		wallets:      wallets,
 		cache:        cache,
 	}
 }
@@ -467,6 +470,17 @@ func (s *AdminService) CreateUser(ctx context.Context, input CreateUserInput) (*
 
 	if err := s.users.Create(ctx, user); err != nil {
 		return nil, err
+	}
+
+	// 为新用户创建钱包记录（初始余额为0）
+	wallet := &model.Wallet{
+		UserID:       user.ID,
+		BalanceCents: 0,
+		FrozenCents:  0,
+	}
+	if err := s.wallets.Save(ctx, wallet); err != nil {
+		slog.Warn("failed to create wallet for new user", slog.Uint64("user_id", user.ID), slog.String("error", err.Error()))
+		// 不中断流程，继续执行
 	}
 
 	// 同步 user.Role 到 user_roles 表

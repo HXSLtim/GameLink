@@ -1,0 +1,109 @@
+# gamelink/internal/integration [gamelink/internal/integration.test]
+internal\integration\order_edge_cases_integration_test.go:22:2: order redeclared in this block
+	internal\integration\order_edge_cases_integration_test.go:20:2: other declaration of order
+internal\integration\order_edge_cases_integration_test.go:23:2: user redeclared in this block
+	internal\integration\order_edge_cases_integration_test.go:21:2: other declaration of user
+internal\integration\order_invalid_transition_integration_test.go:19:2: order redeclared in this block
+	internal\integration\order_invalid_transition_integration_test.go:17:2: other declaration of order
+internal\integration\order_invalid_transition_integration_test.go:20:2: user redeclared in this block
+	internal\integration\order_invalid_transition_integration_test.go:18:2: other declaration of user
+internal\integration\order_payment_integration_test.go:21:2: order redeclared in this block
+	internal\integration\order_payment_integration_test.go:19:2: other declaration of order
+internal\integration\order_payment_integration_test.go:22:2: user redeclared in this block
+	internal\integration\order_payment_integration_test.go:20:2: other declaration of user
+internal\integration\payment_filters_integration_test.go:19:2: order redeclared in this block
+	internal\integration\payment_filters_integration_test.go:17:2: other declaration of order
+internal\integration\payment_filters_integration_test.go:20:2: user redeclared in this block
+	internal\integration\payment_filters_integration_test.go:18:2: other declaration of user
+internal\integration\permission_middleware_integration_test.go:15:2: adminrepo redeclared in this block
+	internal\integration\permission_middleware_integration_test.go:14:2: other declaration of adminrepo
+internal\integration\review_integration_test.go:21:2: user redeclared in this block
+	internal\integration\review_integration_test.go:20:2: other declaration of user
+internal\integration\review_integration_test.go:21:2: too many errors
+?   	gamelink/cmd	[no test files]
+?   	gamelink/docs	[no test files]
+?   	gamelink/internal/handler	[no test files]
+?   	gamelink/internal/handler/admin	[no test files]
+ok  	gamelink/internal/handler/middleware	(cached)
+?   	gamelink/internal/handler/notification	[no test files]
+?   	gamelink/internal/handler/player	[no test files]
+ok  	gamelink/internal/handler/response	(cached)
+?   	gamelink/internal/handler/user	[no test files]
+FAIL	gamelink/internal/integration [build failed]
+ok  	gamelink/internal/model	(cached)
+ok  	gamelink/internal/repository	(cached)
+?   	gamelink/internal/repository/admin	[no test files]
+?   	gamelink/internal/repository/alert	[no test files]
+?   	gamelink/internal/repository/chat	[no test files]
+?   	gamelink/internal/repository/commission	[no test files]
+?   	gamelink/internal/repository/common	[no test files]
+?   	gamelink/internal/repository/content	[no test files]
+?   	gamelink/internal/repository/dispute	[no test files]
+?   	gamelink/internal/repository/feed	[no test files]
+ok  	gamelink/internal/repository/game	(cached)
+?   	gamelink/internal/repository/implementations	[no test files]
+?   	gamelink/internal/repository/interfaces	[no test files]
+?   	gamelink/internal/repository/menu	[no test files]
+?   	gamelink/internal/repository/mocks	[no test files]
+?   	gamelink/internal/repository/notification	[no test files]
+?   	gamelink/internal/repository/operation_log	[no test files]
+?   	gamelink/internal/repository/order	[no test files]
+?   	gamelink/internal/repository/payment	[no test files]
+ok  	gamelink/internal/repository/permission	(cached)
+?   	gamelink/internal/repository/player	[no test files]
+?   	gamelink/internal/repository/player_tag	[no test files]
+?   	gamelink/internal/repository/ranking	[no test files]
+?   	gamelink/internal/repository/review	[no test files]
+?   	gamelink/internal/repository/reviewreply	[no test files]
+?   	gamelink/internal/repository/role	[no test files]
+ok  	gamelink/internal/repository/serviceitem	(cached)
+?   	gamelink/internal/repository/stats	[no test files]
+ok  	gamelink/internal/repository/user	(cached)
+?   	gamelink/internal/repository/user_behavior	[no test files]
+?   	gamelink/internal/repository/user_login_history	[no test files]
+?   	gamelink/internal/repository/wallet	[no test files]
+?   	gamelink/internal/repository/withdraw	[no test files]
+?   	gamelink/internal/router	[no test files]
+?   	gamelink/internal/service	[no test files]
+ok  	gamelink/internal/service/admin	(cached)
+?   	gamelink/internal/service/analytics	[no test files]
+?   	gamelink/internal/service/assignment	[no test files]
+?   	gamelink/internal/service/auth	[no test files]
+?   	gamelink/internal/service/chat	[no test files]
+?   	gamelink/internal/service/commission	[no test files]
+?   	gamelink/internal/service/content	[no test files]
+?   	gamelink/internal/service/earnings	[no test files]
+?   	gamelink/internal/service/feed	[no test files]
+?   	gamelink/internal/service/gift	[no test files]
+?   	gamelink/internal/service/item	[no test files]
+?   	gamelink/internal/service/kpi	[no test files]
+?   	gamelink/internal/service/menu	[no test files]
+?   	gamelink/internal/service/monitor	[no test files]
+?   	gamelink/internal/service/notification	[no test files]
+?   	gamelink/internal/service/order	[no test files]
+?   	gamelink/internal/service/payment	[no test files]
+?   	gamelink/internal/service/permission	[no test files]
+?   	gamelink/internal/service/player	[no test files]
+?   	gamelink/internal/service/ranking	[no test files]
+?   	gamelink/internal/service/review	[no test files]
+?   	gamelink/internal/service/role	[no test files]
+?   	gamelink/internal/service/stats	[no test files]
+?   	gamelink/internal/service/team	[no test files]
+?   	gamelink/internal/service/user	[no test files]
+?   	gamelink/internal/service/wallet	[no test files]
+ok  	gamelink/internal/usertag_test	(cached)
+?   	gamelink/internal/ws	[no test files]
+ok  	gamelink/pkg/apierr	(cached)
+ok  	gamelink/pkg/auth	(cached)
+ok  	gamelink/pkg/cache	(cached)
+?   	gamelink/pkg/config	[no test files]
+?   	gamelink/pkg/container	[no test files]
+?   	gamelink/pkg/db	[no test files]
+?   	gamelink/pkg/lifecycle	[no test files]
+ok  	gamelink/pkg/logging	(cached)
+ok  	gamelink/pkg/metrics	(cached)
+ok  	gamelink/pkg/safety	(cached)
+?   	gamelink/pkg/scheduler	[no test files]
+?   	gamelink/pkg/testutil	[no test files]
+?   	gamelink/scripts	[no test files]
+FAIL

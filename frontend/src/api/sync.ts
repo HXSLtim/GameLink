@@ -6,15 +6,7 @@ import apiClient from './client';
 import type { ApiResponse, Menu, CreateMenuDto } from './admin';
 import type { MenuConfig, PermissionConfig } from '@/config/adminRoutes';
 
-/**
- * 分页响应接口
- */
-interface PaginationResponse<T> {
-    items: T[];
-    page: number;
-    pageSize: number;
-    totalCount: number;
-}
+// 移除未使用的分页响应接口
 
 /**
  * 权限接口
@@ -123,20 +115,10 @@ export const syncApi = {
             // 获取现有权限
             const response = await syncApi.getPermissions();
             console.log('[Sync] getPermissions response:', response);
-            console.log('[Sync] response.data:', response.data);
-            console.log('[Sync] response.data?.items:', response.data?.items);
+            console.log('[Sync] api response wrapper:', response.data);
 
-            // 后端返回的分页结构: { items: [...], page: 1, pageSize: 10, totalCount: 50 }
-            let existingPermissions: Permission[] = [];
-            if (response.data && typeof response.data === 'object' && 'items' in response.data) {
-                const paginatedData = response.data as PaginationResponse<Permission>;
-                existingPermissions = paginatedData.items || [];
-            } else if (Array.isArray(response.data)) {
-                existingPermissions = response.data;
-            } else {
-                console.error('[Sync] Unexpected data structure:', response.data);
-                existingPermissions = [];
-            }
+            // 统一处理 ApiResponse<T>
+            const existingPermissions: Permission[] = response.data?.data || [];
 
             console.log('[Sync] existingPermissions:', existingPermissions);
             const existingMap = new Map(existingPermissions.map(p => [p.code, p]));
@@ -212,8 +194,7 @@ export const syncApi = {
             const rolesResponse = await syncApi.getRoles();
             console.log('[Sync] getRoles response:', rolesResponse);
 
-            // 后端返回的分页结构: { items: [...], page: 1, pageSize: 10, totalCount: 50 }
-            const roles: Role[] = rolesResponse.data?.items || [];
+            const roles: Role[] = rolesResponse.data?.data || [];
             console.log('[Sync] roles:', roles);
 
             // 查找超级管理员角色
@@ -229,8 +210,7 @@ export const syncApi = {
             const permissionsResponse = await syncApi.getPermissions();
             console.log('[Sync] getPermissions response:', permissionsResponse);
 
-            // 后端返回的分页结构: { items: [...], page: 1, pageSize: 10, totalCount: 50 }
-            const permissions: Permission[] = permissionsResponse.data?.items || [];
+            const permissions: Permission[] = permissionsResponse.data?.data || [];
             console.log('[Sync] permissions:', permissions);
 
             if (permissions.length === 0) {
@@ -272,17 +252,7 @@ export const syncApi = {
             });
             console.log('[Sync] getMenus response:', response);
 
-            // 菜单接口在无分页参数时直接返回数组，有分页时返回 { data: [...], pagination: {...} }
-            let existingMenus: Menu[] = [];
-            if (Array.isArray(response.data)) {
-                existingMenus = response.data;
-            } else if (response.data && typeof response.data === 'object' && 'data' in response.data) {
-                // 有分页的情况
-                const paginatedResponse = response.data as { data: Menu[] } & Record<string, unknown>;
-                existingMenus = paginatedResponse.data || [];
-            } else {
-                existingMenus = response.data || [];
-            }
+            const existingMenus: Menu[] = response.data?.data || [];
 
             console.log('[Sync] existingMenus:', existingMenus);
             const existingMap = new Map(existingMenus.map(m => [m.path, m]));
@@ -296,7 +266,7 @@ export const syncApi = {
                         component: menu.component,
                         parentId: parentId,
                         order: menu.order,
-                        hidden: menu.hidden || false,
+                        visible: menu.hidden ? false : true,
                         permission: menu.permission,
                         icon: menu.icon,
                         redirect: menu.redirect,
@@ -322,7 +292,7 @@ export const syncApi = {
                     } else {
                         const createResponse = await apiClient.post<ApiResponse<Menu>>('/admin/menus', menuData);
                         result.created++;
-                        currentMenuId = createResponse.data.id;
+                        currentMenuId = createResponse.data.data.id;
                     }
 
                     // 递归处理子菜单

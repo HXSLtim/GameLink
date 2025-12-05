@@ -627,3 +627,66 @@ func isValidEmail(e string) bool {
 	}
 	return true
 }
+
+// ListUserLoginHistory
+// @Summary      获取用户登录历史
+// @Description  获取指定用户的登录历史记录（分页）
+// @Tags         Admin/Users
+// @Security     BearerAuth
+// @Produce      json
+// @Param        id          path   int      true   "用户ID"
+// @Param        page        query  int      false  "页码"
+// @Param        page_size   query  int      false  "每页数量"
+// @Success      200  {object}  model.APIResponse[[]model.UserLoginHistory]
+// @Failure      404  {object}  model.ErrorResponse
+// @Router       /admin/users/{id}/login-history [get]
+func (h *UserHandler) ListUserLoginHistory(c *gin.Context) {
+	id, err := parseUintParam(c, "id")
+	if err != nil {
+		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		return
+	}
+
+	// 确认用户存在
+	_, err = h.svc.GetUser(c.Request.Context(), id)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		respondAPIError(c, apierr.NotFound("用户不存在"))
+		return
+	}
+	if err != nil {
+		respondAPIError(c, apierr.InternalError("查询用户失败").WithDetails(err.Error()))
+		return
+	}
+
+	page, pageSize, ok := parsePagination(c)
+	if !ok {
+		return
+	}
+
+	// TODO: 从UserLoginHistoryRepository获取真实数据
+	// 目前返回空数据,待后续完善
+	histories := []model.UserLoginHistory{}
+	total := int64(0)
+
+	// 构建分页响应
+	totalPages := 0
+	if total > 0 {
+		totalPages = int((total + int64(pageSize) - 1) / int64(pageSize))
+	}
+	pagination := &model.Pagination{
+		Page:       page,
+		PageSize:   pageSize,
+		Total:      int(total),
+		TotalPages: totalPages,
+		HasNext:    page < totalPages,
+		HasPrev:    page > 1,
+	}
+
+	writeJSON(c, http.StatusOK, model.APIResponse[[]model.UserLoginHistory]{
+		Success:    true,
+		Code:       http.StatusOK,
+		Message:    "OK",
+		Data:       histories,
+		Pagination: pagination,
+	})
+}

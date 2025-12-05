@@ -17,3 +17,9 @@ export {
     type SyncState,
     type UseSyncReturn,
 } from './useSync';
+
+// 动画相关 Hooks
+export {
+    useCountUp,
+    formatNumber,
+} from './useCountUp';

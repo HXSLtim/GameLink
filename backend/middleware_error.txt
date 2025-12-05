@@ -1,0 +1,34 @@
+# gamelink/internal/handler/middleware [gamelink/internal/handler/middleware.test]
+internal\handler\middleware\jwt_test.go:27:14: not enough arguments in call to JWTAuth
+	have ()
+	want (string)
+internal\handler\middleware\jwt_test.go:49:14: not enough arguments in call to JWTAuth
+	have ()
+	want (string)
+internal\handler\middleware\jwt_test.go:65:14: not enough arguments in call to JWTAuth
+	have ()
+	want (string)
+internal\handler\middleware\jwt_test.go:94:14: not enough arguments in call to JWTAuth
+	have ()
+	want (string)
+internal\handler\middleware\jwt_test.go:124:14: not enough arguments in call to JWTAuth
+	have ()
+	want (string)
+internal\handler\middleware\jwt_test.go:142:14: not enough arguments in call to JWTAuth
+	have ()
+	want (string)
+internal\handler\middleware\jwt_test.go:157:14: not enough arguments in call to JWTAuth
+	have ()
+	want (string)
+internal\handler\middleware\jwt_test.go:182:14: not enough arguments in call to JWTAuth
+	have ()
+	want (string)
+internal\handler\middleware\jwt_test.go:214:14: not enough arguments in call to JWTAuth
+	have ()
+	want (string)
+internal\handler\middleware\jwt_test.go:235:14: not enough arguments in call to JWTAuth
+	have ()
+	want (string)
+internal\handler\middleware\jwt_test.go:235:14: too many errors
+FAIL	gamelink/internal/handler/middleware [build failed]
+FAIL

@@ -393,9 +393,12 @@ const UserPage: React.FC = () => {
     };
 
     const handleBatchSendNotification = (keys: React.Key[]) => {
-        if (!keys || keys.length === 0) return;
-        setSelectedUserIds(keys.map(k => Number(k)));
+        setSelectedUserIds(keys ? keys.map(k => Number(k)) : []);
         notificationForm.resetFields();
+        notificationForm.setFieldsValue({
+            target: (keys && keys.length > 0) ? 'users' : 'all',
+            type: 'system'
+        });
         setBatchNotificationVisible(true);
     };
 
@@ -438,12 +441,20 @@ const UserPage: React.FC = () => {
     const submitBatchNotification = async () => {
         try {
             const values = await notificationForm.validateFields();
-            const res = await adminApi.batchSendNotification({
-                userIds: selectedUserIds,
+            const payload: any = {
+                target: values.target,
                 title: values.title,
                 content: values.content,
                 type: values.type
-            }) as unknown as ApiResponse<void>;
+            };
+
+            if (values.target === 'users') {
+                payload.userIds = selectedUserIds;
+            } else if (values.target === 'role') {
+                payload.roles = values.roles;
+            }
+
+            const res = await adminApi.batchSendNotification(payload) as unknown as ApiResponse<void>;
 
             if (res.success) {
                 message.success('批量发送通知成功');
@@ -455,21 +466,32 @@ const UserPage: React.FC = () => {
     };
 
     const handleBatchAddPoints = (keys: React.Key[]) => {
-        if (!keys || keys.length === 0) return;
-        setSelectedUserIds(keys.map(k => Number(k)));
+        setSelectedUserIds(keys ? keys.map(k => Number(k)) : []);
         pointsForm.resetFields();
+        pointsForm.setFieldsValue({
+            target: (keys && keys.length > 0) ? 'users' : 'all',
+            type: 'activity'
+        });
         setBatchPointsVisible(true);
     };
 
     const submitBatchPoints = async () => {
         try {
             const values = await pointsForm.validateFields();
-            const res = await adminApi.batchAddUserPoints({
-                userIds: selectedUserIds,
-                points: Number(values.points),
+            const payload: any = {
+                target: values.target,
+                cents: Number(values.points),
                 reason: values.reason,
                 type: values.type
-            }) as unknown as ApiResponse<void>;
+            };
+
+            if (values.target === 'users') {
+                payload.userIds = selectedUserIds;
+            } else if (values.target === 'role') {
+                payload.roles = values.roles;
+            }
+
+            const res = await adminApi.batchAddUserPoints(payload) as unknown as ApiResponse<void>;
 
             if (res.success) {
                 message.success('批量增加积分成功');
@@ -677,14 +699,14 @@ const UserPage: React.FC = () => {
         {
             text: '批量发送通知',
             icon: <MailOutlined />,
-            needSelection: true,
+            needSelection: false,
             onClick: (keys) => handleBatchSendNotification(keys || []),
             permission: USER_PERMISSIONS.UPDATE,
         },
         {
             text: '批量增加积分',
             icon: <CrownOutlined />,
-            needSelection: true,
+            needSelection: false,
             onClick: (keys) => handleBatchAddPoints(keys || []),
             permission: USER_PERMISSIONS.UPDATE,
         },
@@ -964,6 +986,33 @@ const UserPage: React.FC = () => {
                 onCancel={() => setBatchNotificationVisible(false)}
             >
                 <Form form={notificationForm} layout="vertical">
+                    <Form.Item name="target" label="目标对象" rules={[{ required: true }]}>
+                        <Radio.Group>
+                            <Radio value="users" disabled={selectedUserIds.length === 0}>
+                                指定用户 {selectedUserIds.length > 0 ? `(${selectedUserIds.length})` : ''}
+                            </Radio>
+                            <Radio value="role">指定角色</Radio>
+                            <Radio value="all">全体用户</Radio>
+                        </Radio.Group>
+                    </Form.Item>
+
+                    <Form.Item
+                        noStyle
+                        shouldUpdate={(prev, current) => prev.target !== current.target}
+                    >
+                        {({ getFieldValue }) =>
+                            getFieldValue('target') === 'role' ? (
+                                <Form.Item name="roles" label="选择角色" rules={[{ required: true, message: '请选择角色' }]}>
+                                    <Select mode="multiple" placeholder="请选择角色">
+                                        <Select.Option value="user">普通用户</Select.Option>
+                                        <Select.Option value="player">陪玩师</Select.Option>
+                                        <Select.Option value="admin">管理员</Select.Option>
+                                    </Select>
+                                </Form.Item>
+                            ) : null
+                        }
+                    </Form.Item>
+
                     <Form.Item name="title" label="标题" rules={[{ required: true }]}>
                         <Input />
                     </Form.Item>
@@ -989,8 +1038,35 @@ const UserPage: React.FC = () => {
                 onCancel={() => setBatchPointsVisible(false)}
             >
                 <Form form={pointsForm} layout="vertical">
-                    <Form.Item name="points" label="积分数量" rules={[{ required: true, message: '请输入积分数量' }]}>
-                        <Input type="number" placeholder="请输入积分数量" />
+                    <Form.Item name="target" label="目标对象" rules={[{ required: true }]}>
+                        <Radio.Group>
+                            <Radio value="users" disabled={selectedUserIds.length === 0}>
+                                指定用户 {selectedUserIds.length > 0 ? `(${selectedUserIds.length})` : ''}
+                            </Radio>
+                            <Radio value="role">指定角色</Radio>
+                            <Radio value="all">全体用户</Radio>
+                        </Radio.Group>
+                    </Form.Item>
+
+                    <Form.Item
+                        noStyle
+                        shouldUpdate={(prev, current) => prev.target !== current.target}
+                    >
+                        {({ getFieldValue }) =>
+                            getFieldValue('target') === 'role' ? (
+                                <Form.Item name="roles" label="选择角色" rules={[{ required: true, message: '请选择角色' }]}>
+                                    <Select mode="multiple" placeholder="请选择角色">
+                                        <Select.Option value="user">普通用户</Select.Option>
+                                        <Select.Option value="player">陪玩师</Select.Option>
+                                        <Select.Option value="admin">管理员</Select.Option>
+                                    </Select>
+                                </Form.Item>
+                            ) : null
+                        }
+                    </Form.Item>
+
+                    <Form.Item name="points" label="积分数量 (分)" rules={[{ required: true, message: '请输入积分数量' }]}>
+                        <Input type="number" placeholder="请输入积分数量 (100分 = 1元)" />
                     </Form.Item>
                     <Form.Item name="type" label="积分类型" rules={[{ required: true, message: '请选择积分类型' }]}>
                         <Select placeholder="请选择积分类型">

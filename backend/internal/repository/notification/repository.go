@@ -66,3 +66,15 @@ func (r *gormNotificationRepository) CountUnread(ctx context.Context, userID uin
 func (r *gormNotificationRepository) Create(ctx context.Context, event *model.NotificationEvent) error {
 	return r.db.WithContext(ctx).Create(event).Error
 }
+
+func (r *gormNotificationRepository) MarkAllRead(ctx context.Context, userID uint64) error {
+	return r.db.WithContext(ctx).Model(&model.NotificationEvent{}).
+		Where("user_id = ? AND read_at IS NULL", userID).
+		Update("read_at", gorm.Expr("CURRENT_TIMESTAMP")).Error
+}
+
+func (r *gormNotificationRepository) Delete(ctx context.Context, userID uint64, id uint64) error {
+	return r.db.WithContext(ctx).
+		Where("user_id = ? AND id = ?", userID, id).
+		Delete(&model.NotificationEvent{}).Error
+}

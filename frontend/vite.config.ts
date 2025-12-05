@@ -23,4 +23,10 @@ export default defineConfig({
   optimizeDeps: {
     include: ['recharts'],
   },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './src/test/setup.ts',
+    css: true,
+  },
 })

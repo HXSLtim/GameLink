@@ -63,8 +63,11 @@ func (r *gormReviewRepository) Create(ctx context.Context, obj *model.Review) er
 
 func (r *gormReviewRepository) Update(ctx context.Context, obj *model.Review) error {
 	tx := r.db.WithContext(ctx).Model(obj).Where("id = ?", obj.ID).Updates(map[string]any{
-		"score":   obj.Score,
-		"content": obj.Content,
+		"score":            obj.Score,
+		"content":          obj.Content,
+		"status":           obj.Status,
+		"is_reported":      obj.IsReported,
+		"rejection_reason": obj.RejectionReason,
 	})
 	if tx.Error != nil {
 		return tx.Error

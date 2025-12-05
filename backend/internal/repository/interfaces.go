@@ -221,6 +221,14 @@ type ReviewReplyRepository interface {
 	UpdateStatus(ctx context.Context, replyID uint64, status string, note string) error
 }
 
+// ReviewReportRepository defines data access for review reports.
+type ReviewReportRepository interface {
+	Create(ctx context.Context, report *model.ReviewReport) error
+	Get(ctx context.Context, id uint64) (*model.ReviewReport, error)
+	List(ctx context.Context, opts ReviewReportListOptions) ([]model.ReviewReport, int64, error)
+	Update(ctx context.Context, report *model.ReviewReport) error
+}
+
 // DisputeRepository defines data access operations for order disputes.
 type DisputeRepository interface {
 	Create(ctx context.Context, dispute *model.OrderDispute) error
@@ -290,6 +298,17 @@ type ReviewListOptions struct {
 	PlayerID *uint64
 	DateFrom *time.Time
 	DateTo   *time.Time
+}
+
+// ReviewReportListOptions contains filtering options for review report queries.
+type ReviewReportListOptions struct {
+	Page       int
+	PageSize   int
+	ReviewID   *uint64
+	ReporterID *uint64
+	Status     *model.ReviewReportStatus
+	DateFrom   *time.Time
+	DateTo     *time.Time
 }
 
 // DisputeListOptions contains filtering options for dispute queries.

@@ -116,9 +116,11 @@ func autoMigrate(db *gorm.DB) error {
         &model.PlayerGame{},
         &model.PlayerSkillTag{},
         &model.User{},
+        &model.Wallet{}, // 用户钱包
         &model.Order{},
         &model.Payment{},
         &model.Review{},
+        &model.ReviewReport{},
         &model.Withdraw{},
         &model.OperationLog{},
         // Service Item (统一管理护航服务和礼物)

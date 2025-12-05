@@ -13,11 +13,15 @@ func TestReviewModel(t *testing.T) {
 		Base: model.Base{
 			ID: 1,
 		},
-		OrderID:  100,
-		UserID:   200,
-		PlayerID: 300,
-		Score:    5,
-		Content:  "非常好的服务，陪玩师很专业！",
+		OrderID:         100,
+		UserID:          200,
+		PlayerID:        300,
+		Score:           5,
+		Content:         "非常好的服务，陪玩师很专业！",
+		Status:          model.ReviewStatusApproved,
+		IsReported:      false,
+		Images:          model.StringArray{"https://example.com/image1.jpg"},
+		RejectionReason: "",
 	}
 
 	assert.Equal(t, uint64(1), review.ID)
@@ -26,6 +30,10 @@ func TestReviewModel(t *testing.T) {
 	assert.Equal(t, uint64(300), review.PlayerID)
 	assert.Equal(t, model.Rating(5), review.Score)
 	assert.Equal(t, "非常好的服务，陪玩师很专业！", review.Content)
+	assert.Equal(t, model.ReviewStatusApproved, review.Status)
+	assert.False(t, review.IsReported)
+	assert.Len(t, review.Images, 1)
+	assert.Equal(t, "", review.RejectionReason)
 }
 
 func TestReviewJSONSerialization(t *testing.T) {
@@ -253,4 +261,269 @@ func TestReviewHTMLContent(t *testing.T) {
 	}
 
 	assert.Equal(t, "<b>很棒的服务</b><br><i>推荐给大家</i><br><a href='#'>查看更多</a>", review.Content)
+}
+
+func TestReviewStatus(t *testing.T) {
+	tests := []struct {
+		name   string
+		status model.ReviewStatus
+		valid  bool
+	}{
+		{"Pending status", model.ReviewStatusPending, true},
+		{"Approved status", model.ReviewStatusApproved, true},
+		{"Rejected status", model.ReviewStatusRejected, true},
+		{"Deleted status", model.ReviewStatusDeleted, true},
+		{"Invalid status", model.ReviewStatus("invalid"), false},
+		{"Empty status", model.ReviewStatus(""), false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.valid, tt.status.Valid())
+		})
+	}
+}
+
+func TestReviewWithStatus(t *testing.T) {
+	review := &model.Review{
+		Base: model.Base{
+			ID: 1,
+		},
+		OrderID:  100,
+		UserID:   200,
+		PlayerID: 300,
+		Score:    5,
+		Content:  "Great service!",
+		Status:   model.ReviewStatusPending,
+	}
+
+	assert.Equal(t, model.ReviewStatusPending, review.Status)
+
+	// Test status transitions
+	review.Status = model.ReviewStatusApproved
+	assert.Equal(t, model.ReviewStatusApproved, review.Status)
+
+	review.Status = model.ReviewStatusRejected
+	assert.Equal(t, model.ReviewStatusRejected, review.Status)
+
+	review.Status = model.ReviewStatusDeleted
+	assert.Equal(t, model.ReviewStatusDeleted, review.Status)
+}
+
+func TestReviewIsReported(t *testing.T) {
+	review := &model.Review{
+		Base: model.Base{
+			ID: 1,
+		},
+		OrderID:    100,
+		UserID:     200,
+		PlayerID:   300,
+		Score:      5,
+		Content:    "Good service",
+		IsReported: false,
+	}
+
+	assert.False(t, review.IsReported)
+
+	review.IsReported = true
+	assert.True(t, review.IsReported)
+}
+
+func TestReviewImages(t *testing.T) {
+	images := model.StringArray{
+		"https://example.com/image1.jpg",
+		"https://example.com/image2.jpg",
+		"https://example.com/image3.jpg",
+	}
+
+	review := &model.Review{
+		Base: model.Base{
+			ID: 1,
+		},
+		OrderID:  100,
+		UserID:   200,
+		PlayerID: 300,
+		Score:    5,
+		Content:  "Great service with photos!",
+		Images:   images,
+	}
+
+	assert.Len(t, review.Images, 3)
+	assert.Equal(t, "https://example.com/image1.jpg", review.Images[0])
+	assert.Equal(t, "https://example.com/image2.jpg", review.Images[1])
+	assert.Equal(t, "https://example.com/image3.jpg", review.Images[2])
+}
+
+func TestReviewEmptyImages(t *testing.T) {
+	review := &model.Review{
+		Base: model.Base{
+			ID: 1,
+		},
+		OrderID:  100,
+		UserID:   200,
+		PlayerID: 300,
+		Score:    5,
+		Content:  "Good service without photos",
+		Images:   model.StringArray{},
+	}
+
+	assert.Len(t, review.Images, 0)
+	assert.NotNil(t, review.Images)
+}
+
+func TestReviewRejectionReason(t *testing.T) {
+	review := &model.Review{
+		Base: model.Base{
+			ID: 1,
+		},
+		OrderID:         100,
+		UserID:          200,
+		PlayerID:        300,
+		Score:           3,
+		Content:         "Contains inappropriate content",
+		Status:          model.ReviewStatusRejected,
+		RejectionReason: "评价内容包含敏感词",
+	}
+
+	assert.Equal(t, model.ReviewStatusRejected, review.Status)
+	assert.Equal(t, "评价内容包含敏感词", review.RejectionReason)
+}
+
+func TestReviewJSONSerializationWithNewFields(t *testing.T) {
+	review := &model.Review{
+		Base: model.Base{
+			ID: 1,
+		},
+		OrderID:  100,
+		UserID:   200,
+		PlayerID: 300,
+		Score:    4,
+		Content:  "Good service!",
+		Status:   model.ReviewStatusApproved,
+		IsReported: false,
+		Images: model.StringArray{
+			"https://example.com/image1.jpg",
+			"https://example.com/image2.jpg",
+		},
+		RejectionReason: "",
+	}
+
+	// 序列化
+	data, err := json.Marshal(review)
+	assert.NoError(t, err)
+	assert.Contains(t, string(data), "Good service")
+	assert.Contains(t, string(data), "approved")
+	assert.Contains(t, string(data), "image1.jpg")
+
+	// 反序列化
+	var decoded model.Review
+	err = json.Unmarshal(data, &decoded)
+	assert.NoError(t, err)
+	assert.Equal(t, review.ID, decoded.ID)
+	assert.Equal(t, review.OrderID, decoded.OrderID)
+	assert.Equal(t, review.Status, decoded.Status)
+	assert.Equal(t, review.IsReported, decoded.IsReported)
+	assert.Len(t, decoded.Images, 2)
+	assert.Equal(t, review.Images[0], decoded.Images[0])
+}
+
+func TestStringArrayScanAndValue(t *testing.T) {
+	// Test Scan with valid JSON bytes
+	var sa model.StringArray
+	err := sa.Scan([]byte(`["image1.jpg","image2.jpg"]`))
+	assert.NoError(t, err)
+	assert.Len(t, sa, 2)
+	assert.Equal(t, "image1.jpg", sa[0])
+	assert.Equal(t, "image2.jpg", sa[1])
+
+	// Test Scan with string
+	var sa6 model.StringArray
+	err = sa6.Scan(`["image3.jpg","image4.jpg"]`)
+	assert.NoError(t, err)
+	assert.Len(t, sa6, 2)
+	assert.Equal(t, "image3.jpg", sa6[0])
+	assert.Equal(t, "image4.jpg", sa6[1])
+
+	// Test Scan with nil
+	var sa2 model.StringArray
+	err = sa2.Scan(nil)
+	assert.NoError(t, err)
+	assert.Len(t, sa2, 0)
+
+	// Test Scan with empty bytes
+	var sa3 model.StringArray
+	err = sa3.Scan([]byte{})
+	assert.NoError(t, err)
+	assert.Len(t, sa3, 0)
+
+	// Test Value with data
+	sa4 := model.StringArray{"image1.jpg", "image2.jpg"}
+	value, err := sa4.Value()
+	assert.NoError(t, err)
+	assert.NotNil(t, value)
+
+	// Test Value with empty array
+	sa5 := model.StringArray{}
+	value2, err := sa5.Value()
+	assert.NoError(t, err)
+	assert.Equal(t, "[]", value2)
+}
+
+func TestReviewCompleteWorkflow(t *testing.T) {
+	// Create a pending review
+	review := &model.Review{
+		Base: model.Base{
+			ID: 1,
+		},
+		OrderID:    100,
+		UserID:     200,
+		PlayerID:   300,
+		Score:      5,
+		Content:    "Excellent service!",
+		Status:     model.ReviewStatusPending,
+		IsReported: false,
+		Images: model.StringArray{
+			"https://example.com/proof1.jpg",
+		},
+	}
+
+	assert.Equal(t, model.ReviewStatusPending, review.Status)
+	assert.False(t, review.IsReported)
+
+	// Approve the review
+	review.Status = model.ReviewStatusApproved
+	assert.Equal(t, model.ReviewStatusApproved, review.Status)
+
+	// Report the review
+	review.IsReported = true
+	assert.True(t, review.IsReported)
+
+	// Delete the review
+	review.Status = model.ReviewStatusDeleted
+	assert.Equal(t, model.ReviewStatusDeleted, review.Status)
+}
+
+func TestReviewRejectionWorkflow(t *testing.T) {
+	// Create a review with inappropriate content
+	review := &model.Review{
+		Base: model.Base{
+			ID: 1,
+		},
+		OrderID:  100,
+		UserID:   200,
+		PlayerID: 300,
+		Score:    2,
+		Content:  "Contains bad words",
+		Status:   model.ReviewStatusPending,
+	}
+
+	assert.Equal(t, model.ReviewStatusPending, review.Status)
+	assert.Equal(t, "", review.RejectionReason)
+
+	// Reject the review with reason
+	review.Status = model.ReviewStatusRejected
+	review.RejectionReason = "评价内容包含敏感词汇"
+
+	assert.Equal(t, model.ReviewStatusRejected, review.Status)
+	assert.Equal(t, "评价内容包含敏感词汇", review.RejectionReason)
 }

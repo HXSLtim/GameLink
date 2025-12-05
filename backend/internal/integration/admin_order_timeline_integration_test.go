@@ -10,17 +10,21 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	"gamelink/pkg/cache"
 	adminhandler "gamelink/internal/handler/admin"
 	"gamelink/internal/model"
+	adminrepo "gamelink/internal/repository/admin"
 	"gamelink/internal/repository/common"
 	"gamelink/internal/repository/game"
 	orderimpl "gamelink/internal/repository/implementations"
-	adminrepo "gamelink/internal/repository/admin"
+	"gamelink/internal/repository/menu"
 	"gamelink/internal/repository/order"
-	"gamelink/internal/repository/user"
+	"gamelink/internal/repository/permission"
 	"gamelink/internal/repository/serviceitem"
+	"gamelink/internal/repository/stats"
+	"gamelink/internal/repository/user"
+	"gamelink/internal/repository/wallet"
 	adminservice "gamelink/internal/service/admin"
+	"gamelink/pkg/cache"
 	"gamelink/pkg/testutil"
 )
 
@@ -44,7 +48,11 @@ func TestAdminOrderTimeline(t *testing.T) {
 	memCache := cache.NewMemory()
 	serviceItemRepo := serviceitem.NewServiceItemRepository(db)
 
-	adminSvc := adminservice.NewAdminService(gameRepo, userRepo, playerRepo, orderRepo, paymentRepo, roleRepo, serviceItemRepo, memCache)
+	permRepo := permission.NewPermissionRepository(db)
+	menuRepo := menu.NewMenuRepository(db)
+	statsRepo := stats.NewStatsRepository(db)
+	walletRepo := wallet.NewWalletRepository(db)
+	adminSvc := adminservice.NewAdminService(gameRepo, userRepo, playerRepo, orderRepo, paymentRepo, roleRepo, serviceItemRepo, permRepo, menuRepo, statsRepo, walletRepo, memCache)
 	adminSvc.SetTxManager(common.NewUnitOfWork(db))
 	orderHandler := adminhandler.NewOrderHandler(adminSvc)
 

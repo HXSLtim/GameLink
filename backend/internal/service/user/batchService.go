@@ -173,16 +173,81 @@ func (s *BatchOperationService) BatchDeleteUsers(ctx context.Context, req *Batch
 
 // BatchAddPointsRequest 批量增加积分请求
 type BatchAddPointsRequest struct {
-	UserIDs []uint64 `json:"userIds" binding:"required,min=1,max=1000"`
-	Points  int64    `json:"points" binding:"required,min=1,max=10000"` // 最多10000积分
+	// Target指定目标类型：users（指定用户列表）、role（按角色）、all（全体用户）
+	Target  string   `json:"target" binding:"required,oneof=users role all"`
+
+	// 当Target=users时使用，最多1000个用户
+	UserIDs []uint64 `json:"userIds,omitempty"`
+
+	// 当Target=role时使用，可指定多个角色
+	Roles   []string `json:"roles,omitempty"`
+
+	Cents   int64    `json:"cents" binding:"required,min=1,max=1000000"` // 积分金额（分），最多10000元=1000000分
 	Reason  string   `json:"reason" binding:"required,max=200"`
 	Type    string   `json:"type" binding:"required,oneof=admin activity compensation"`
 }
 
 // BatchAddPoints 批量增加用户积分
 func (s *BatchOperationService) BatchAddPoints(ctx context.Context, req *BatchAddPointsRequest, operatorID uint64) (successCount, failedCount int, err error) {
-	if len(req.UserIDs) > 1000 {
-		return 0, 0, fmt.Errorf("一次批量操作最多支持1000个用户")
+	// 根据Target类型获取用户ID列表
+	var userIDs []uint64
+	var targetDesc string
+
+	switch req.Target {
+	case "users":
+		// 指定用户列表模式
+		if len(req.UserIDs) == 0 {
+			return 0, 0, fmt.Errorf("target为users时，userIds不能为空")
+		}
+		if len(req.UserIDs) > 1000 {
+			return 0, 0, fmt.Errorf("一次批量操作最多支持1000个用户")
+		}
+		userIDs = req.UserIDs
+		targetDesc = fmt.Sprintf("指定用户（%d个）", len(userIDs))
+
+	case "role":
+		// 按角色筛选模式
+		if len(req.Roles) == 0 {
+			return 0, 0, fmt.Errorf("target为role时，roles不能为空")
+		}
+		// 转换角色字符串为model.Role类型
+		roles := make([]model.Role, 0, len(req.Roles))
+		for _, roleStr := range req.Roles {
+			roles = append(roles, model.Role(roleStr))
+		}
+		// 查询符合角色条件的用户
+		var users []model.User
+		if err := s.db.WithContext(ctx).Where("role IN ?", roles).Find(&users).Error; err != nil {
+			return 0, 0, fmt.Errorf("查询角色用户失败: %w", err)
+		}
+		if len(users) > 1000 {
+			return 0, 0, fmt.Errorf("符合条件的用户超过1000个，请缩小范围或分批操作")
+		}
+		for _, user := range users {
+			userIDs = append(userIDs, user.ID)
+		}
+		targetDesc = fmt.Sprintf("角色%v（%d个用户）", req.Roles, len(userIDs))
+
+	case "all":
+		// 全体用户模式
+		var users []model.User
+		if err := s.db.WithContext(ctx).Select("id").Find(&users).Error; err != nil {
+			return 0, 0, fmt.Errorf("查询全体用户失败: %w", err)
+		}
+		if len(users) > 1000 {
+			return 0, 0, fmt.Errorf("用户总数超过1000个，请使用分批操作")
+		}
+		for _, user := range users {
+			userIDs = append(userIDs, user.ID)
+		}
+		targetDesc = fmt.Sprintf("全体用户（%d个）", len(userIDs))
+
+	default:
+		return 0, 0, fmt.Errorf("无效的target类型: %s", req.Target)
+	}
+
+	if len(userIDs) == 0 {
+		return 0, 0, fmt.Errorf("没有找到符合条件的用户")
 	}
 
 	// 记录操作日志
@@ -191,18 +256,30 @@ func (s *BatchOperationService) BatchAddPoints(ctx context.Context, req *BatchAd
 			EntityType:  string(model.OpEntityUser),
 			Action:      "batch_add_points",
 			ActorUserID: &operatorID,
-			Reason:      fmt.Sprintf("批量增加积分:%d,原因:%s", req.Points, req.Reason),
-			MetadataJSON: []byte(fmt.Sprintf(`{"userIds": %v, "points": %d, "type": "%s"}`, req.UserIDs, req.Points, req.Type)),
+			Reason:      fmt.Sprintf("批量增加积分:%d分,目标:%s,原因:%s", req.Cents, targetDesc, req.Reason),
+			MetadataJSON: []byte(fmt.Sprintf(`{"target": "%s", "userCount": %d, "cents": %d, "type": "%s"}`, req.Target, len(userIDs), req.Cents, req.Type)),
 		}
 		go s.recordOperation(ctx, operationLog)
 	}()
 
 	// 批量增加积分（积分就是余额，直接增加钱包余额）
 	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		for _, userID := range req.UserIDs {
-			if err := tx.Model(&model.Wallet{}).
-				Where("user_id = ?", userID).
-				UpdateColumn("balance_cents", gorm.Expr("balance_cents + ?", req.Points)).Error; err != nil {
+		for _, userID := range userIDs {
+			// 先确保用户有钱包记录（如果不存在则创建）
+			var wallet model.Wallet
+			result := tx.Where("user_id = ?", userID).FirstOrCreate(&wallet, model.Wallet{
+				UserID:       userID,
+				BalanceCents: 0,
+				FrozenCents:  0,
+			})
+			if result.Error != nil {
+				failedCount++
+				continue
+			}
+
+			// 增加余额
+			if err := tx.Model(&wallet).
+				UpdateColumn("balance_cents", gorm.Expr("balance_cents + ?", req.Cents)).Error; err != nil {
 				failedCount++
 				continue
 			}
@@ -216,7 +293,15 @@ func (s *BatchOperationService) BatchAddPoints(ctx context.Context, req *BatchAd
 
 // BatchSendNotificationRequest 批量发送通知请求
 type BatchSendNotificationRequest struct {
-	UserIDs []uint64 `json:"userIds" binding:"required,min=1,max=1000"`
+	// Target指定目标类型：users（指定用户列表）、role（按角色）、all（全体用户）
+	Target  string   `json:"target" binding:"required,oneof=users role all"`
+
+	// 当Target=users时使用，最多1000个用户
+	UserIDs []uint64 `json:"userIds,omitempty"`
+
+	// 当Target=role时使用，可指定多个角色
+	Roles   []string `json:"roles,omitempty"`
+
 	Title   string   `json:"title" binding:"required,max=100"`
 	Content string   `json:"content" binding:"required,max=500"`
 	Type    string   `json:"type" binding:"required,oneof=system marketing personal activity"`
@@ -224,8 +309,65 @@ type BatchSendNotificationRequest struct {
 
 // BatchSendNotification 批量发送通知
 func (s *BatchOperationService) BatchSendNotification(ctx context.Context, req *BatchSendNotificationRequest, operatorID uint64) error {
-	if len(req.UserIDs) > 1000 {
-		return fmt.Errorf("一次批量操作最多支持1000个用户")
+	// 根据Target类型获取用户ID列表
+	var userIDs []uint64
+	var targetDesc string
+
+	switch req.Target {
+	case "users":
+		// 指定用户列表模式
+		if len(req.UserIDs) == 0 {
+			return fmt.Errorf("target为users时，userIds不能为空")
+		}
+		if len(req.UserIDs) > 1000 {
+			return fmt.Errorf("一次批量操作最多支持1000个用户")
+		}
+		userIDs = req.UserIDs
+		targetDesc = fmt.Sprintf("指定用户（%d个）", len(userIDs))
+
+	case "role":
+		// 按角色筛选模式
+		if len(req.Roles) == 0 {
+			return fmt.Errorf("target为role时，roles不能为空")
+		}
+		// 转换角色字符串为model.Role类型
+		roles := make([]model.Role, 0, len(req.Roles))
+		for _, roleStr := range req.Roles {
+			roles = append(roles, model.Role(roleStr))
+		}
+		// 查询符合角色条件的用户
+		var users []model.User
+		if err := s.db.WithContext(ctx).Where("role IN ?", roles).Find(&users).Error; err != nil {
+			return fmt.Errorf("查询角色用户失败: %w", err)
+		}
+		if len(users) > 1000 {
+			return fmt.Errorf("符合条件的用户超过1000个，请缩小范围或分批操作")
+		}
+		for _, user := range users {
+			userIDs = append(userIDs, user.ID)
+		}
+		targetDesc = fmt.Sprintf("角色%v（%d个用户）", req.Roles, len(userIDs))
+
+	case "all":
+		// 全体用户模式
+		var users []model.User
+		if err := s.db.WithContext(ctx).Select("id").Find(&users).Error; err != nil {
+			return fmt.Errorf("查询全体用户失败: %w", err)
+		}
+		if len(users) > 1000 {
+			return fmt.Errorf("用户总数超过1000个，请使用分批操作")
+		}
+		for _, user := range users {
+			userIDs = append(userIDs, user.ID)
+		}
+		targetDesc = fmt.Sprintf("全体用户（%d个）", len(userIDs))
+
+	default:
+		return fmt.Errorf("无效的target类型: %s", req.Target)
+	}
+
+	if len(userIDs) == 0 {
+		return fmt.Errorf("没有找到符合条件的用户")
 	}
 
 	// 记录操作日志
@@ -233,8 +375,8 @@ func (s *BatchOperationService) BatchSendNotification(ctx context.Context, req *
 		EntityType:  string(model.OpEntityUser),
 		Action:      "batch_send_notification",
 		ActorUserID: &operatorID,
-		Reason:      fmt.Sprintf("批量发送通知,标题:%s", req.Title),
-		MetadataJSON: []byte(fmt.Sprintf(`{"userIds": %v, "title": "%s", "type": "%s"}`, req.UserIDs, req.Title, req.Type)),
+		Reason:      fmt.Sprintf("批量发送通知,目标:%s,标题:%s", targetDesc, req.Title),
+		MetadataJSON: []byte(fmt.Sprintf(`{"target": "%s", "userCount": %d, "title": "%s", "type": "%s"}`, req.Target, len(userIDs), req.Title, req.Type)),
 	}
 	go s.recordOperation(ctx, operationLog)
 
@@ -252,7 +394,7 @@ func (s *BatchOperationService) BatchSendNotification(ctx context.Context, req *
 	}
 
 	// 批量创建通知
-	for _, userID := range req.UserIDs {
+	for _, userID := range userIDs {
 		note := &model.NotificationEvent{
 			UserID:   userID,
 			Title:    req.Title,

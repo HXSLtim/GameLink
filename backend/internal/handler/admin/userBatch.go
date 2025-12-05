@@ -216,15 +216,21 @@ func batchDeleteUsersHandler(s *user.BatchOperationService) gin.HandlerFunc {
 
 // BatchAddPointsRequest 批量增加积分请求
 type BatchAddPointsRequest struct {
-	UserIDs []uint64 `json:"userIds" binding:"required,min=1,max=1000"`
-	Points  int64    `json:"points" binding:"required,min=1,max=10000"`
+	// Target指定目标类型：users（指定用户列表）、role（按角色）、all（全体用户）
+	Target  string   `json:"target" binding:"required,oneof=users role all"`
+	// 当Target=users时使用，最多1000个用户
+	UserIDs []uint64 `json:"userIds,omitempty"`
+	// 当Target=role时使用，可指定多个角色（user, player, admin）
+	Roles   []string `json:"roles,omitempty"`
+
+	Cents   int64    `json:"cents" binding:"required,min=1,max=1000000"` // 积分金额（分），最多10000元=1000000分
 	Reason  string   `json:"reason" binding:"required,max=200"`
 	Type    string   `json:"type" binding:"required,oneof=admin activity compensation"`
 }
 
 // batchAddPointsHandler 批量增加积分
 // @Summary 批量增加用户积分
-// @Description 为多个用户批量增加积分（用于奖励、补偿等场景）
+// @Description 为多个用户批量增加积分（用于奖励、补偿等场景）。支持三种模式：1) target=users时指定userIds列表 2) target=role时指定roles列表 3) target=all时给全体用户增加积分。积分以分为单位（cents），100分=1元
 // @Tags 用户批量操作
 // @Accept json
 // @Produce json
@@ -248,8 +254,10 @@ func batchAddPointsHandler(s *user.BatchOperationService) gin.HandlerFunc {
 		successCount, failedCount, err := s.BatchAddPoints(
 			c.Request.Context(),
 			&user.BatchAddPointsRequest{
+				Target:  req.Target,
 				UserIDs: req.UserIDs,
-				Points:  req.Points,
+				Roles:   req.Roles,
+				Cents:   req.Cents,
 				Reason:  req.Reason,
 				Type:    req.Type,
 			},
@@ -265,7 +273,8 @@ func batchAddPointsHandler(s *user.BatchOperationService) gin.HandlerFunc {
 			return
 		}
 
-		message := fmt.Sprintf("批量增加积分成功，共增加%d积分", req.Points*int64(successCount))
+		totalCents := req.Cents * int64(successCount)
+		message := fmt.Sprintf("批量增加积分成功，共增加%d分（%.2f元）", totalCents, float64(totalCents)/100)
 		if failedCount > 0 {
 			message = fmt.Sprintf("批量增加积分完成，成功%d个，失败%d个", successCount, failedCount)
 		}
@@ -281,7 +290,13 @@ func batchAddPointsHandler(s *user.BatchOperationService) gin.HandlerFunc {
 
 // BatchSendNotificationRequest 批量发送通知请求
 type BatchSendNotificationRequest struct {
-	UserIDs []uint64 `json:"userIds" binding:"required,min=1,max=1000"`
+	// Target指定目标类型：users（指定用户列表）、role（按角色）、all（全体用户）
+	Target  string   `json:"target" binding:"required,oneof=users role all"`
+	// 当Target=users时使用，最多1000个用户
+	UserIDs []uint64 `json:"userIds,omitempty"`
+	// 当Target=role时使用，可指定多个角色（user, player, admin）
+	Roles   []string `json:"roles,omitempty"`
+
 	Title   string   `json:"title" binding:"required,max=100"`
 	Content string   `json:"content" binding:"required,max=500"`
 	Type    string   `json:"type" binding:"required,oneof=system marketing personal activity"`
@@ -289,7 +304,7 @@ type BatchSendNotificationRequest struct {
 
 // batchSendNotificationHandler 批量发送通知
 // @Summary 批量发送站内通知
-// @Description 向多个用户批量发送通知消息
+// @Description 批量发送通知消息。支持三种模式：1) target=users时指定userIds列表 2) target=role时指定roles列表 3) target=all时给全体用户发送通知
 // @Tags 用户批量操作
 // @Accept json
 // @Produce json
@@ -313,7 +328,9 @@ func batchSendNotificationHandler(s *user.BatchOperationService) gin.HandlerFunc
 		if err := s.BatchSendNotification(
 			c.Request.Context(),
 			&user.BatchSendNotificationRequest{
+				Target:  req.Target,
 				UserIDs: req.UserIDs,
+				Roles:   req.Roles,
 				Title:   req.Title,
 				Content: req.Content,
 				Type:    req.Type,

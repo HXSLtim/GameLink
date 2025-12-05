@@ -2,21 +2,17 @@
  * 路由配置
  */
 import { lazy, Suspense } from 'react';
+import { Navigate } from 'react-router-dom';
 import type { RouteConfig } from './types';
 import { Spin } from 'antd';
 
 // 布局组件
-import ClientLayout from '@/layouts/ClientLayout';
-import CompanionLayout from '@/layouts/CompanionLayout';
 import AdminLayout from '@/layouts/AdminLayout/index';
 
 // 直接导入的页面
 import Login from '@/pages/auth/Login';
 import Register from '@/pages/auth/Register';
 import NotFound from '@/pages/NotFound';
-import ClientHome from '@/pages/client/Home';
-import CompanionDashboard from '@/pages/companion/Dashboard';
-const NotificationsPage = lazy(() => import('@/pages/client/Notifications'));
 
 // 懒加载Admin页面
 const Dashboard = lazy(() => import('@/pages/admin/Dashboard'));
@@ -77,35 +73,10 @@ export const routes: RouteConfig[] = [
         element: <Register />,
         meta: { title: '注册' }
     },
-    // 客户端
+    // 重定向首页到管理端
     {
         path: '/',
-        element: <ClientLayout />,
-        children: [
-            {
-                path: '',
-                element: <ClientHome />,
-                meta: { title: '首页' }
-            },
-            {
-                path: 'notifications',
-                element: <NotificationsPage />,
-                meta: { title: 'Notifications' }
-            }
-        ]
-    },
-    // 陪玩师端
-    {
-        path: '/companion',
-        element: <CompanionLayout />,
-        meta: { roles: ['COMPANION'], requiresAuth: true, title: '陪玩师工作台' },
-        children: [
-            {
-                path: '',
-                element: <CompanionDashboard />,
-                meta: { title: '工作台' }
-            }
-        ]
+        element: <Navigate to="/admin" replace />
     },
     // 管理端
     {

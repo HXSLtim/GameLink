@@ -11,21 +11,26 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/pkg/cache"
 	adminhandler "gamelink/internal/handler/admin"
 	userhandler "gamelink/internal/handler/user"
 	"gamelink/internal/model"
-	"gamelink/internal/repository/order"
+	adminrepo "gamelink/internal/repository/admin"
+	"gamelink/internal/repository/dispute"
 	"gamelink/internal/repository/game"
 	orderimpl "gamelink/internal/repository/implementations"
 	repoiface "gamelink/internal/repository/interfaces"
-	"gamelink/internal/repository/content"
-	adminrepo "gamelink/internal/repository/admin"
-	"gamelink/internal/repository/user"
+	"gamelink/internal/repository/menu"
+	"gamelink/internal/repository/notification"
+	"gamelink/internal/repository/order"
+	"gamelink/internal/repository/permission"
 	"gamelink/internal/repository/serviceitem"
+	"gamelink/internal/repository/stats"
 	"gamelink/internal/repository/user"
+	"gamelink/internal/repository/wallet"
+	"gamelink/pkg/cache"
+
 	adminservice "gamelink/internal/service/admin"
-	"gamelink/internal/service/assignment"
+	orderservice "gamelink/internal/service/order"
 	"gamelink/pkg/testutil"
 )
 
@@ -50,9 +55,13 @@ func TestDisputeFlow(t *testing.T) {
 	notificationRepo := notification.NewNotificationRepository(db)
 	memCache := cache.NewMemory()
 
-	assignSvc := assignment.NewAssignmentService(disputeRepo, orderRepo, userRepo, opLogRepo, notificationRepo, paymentRepo)
+	assignSvc := orderservice.NewDisputeService(disputeRepo, orderRepo, userRepo, opLogRepo, notificationRepo, paymentRepo)
 	serviceItemRepo := serviceitem.NewServiceItemRepository(db)
-	_ = adminservice.NewAdminService(gameRepo, userRepo, playerRepo, orderRepo, paymentRepo, roleRepo, serviceItemRepo, memCache) // retain parity with admin handler deps
+	permRepo := permission.NewPermissionRepository(db)
+	menuRepo := menu.NewMenuRepository(db)
+	statsRepo := stats.NewStatsRepository(db)
+	walletRepo := wallet.NewWalletRepository(db)
+	_ = adminservice.NewAdminService(gameRepo, userRepo, playerRepo, orderRepo, paymentRepo, roleRepo, serviceItemRepo, permRepo, menuRepo, statsRepo, walletRepo, memCache) // retain parity with admin handler deps
 	adminDisputeHandler := adminhandler.NewDisputeHandler(assignSvc)
 	userDisputeHandler := userhandler.NewDisputeHandler(assignSvc)
 
@@ -84,7 +93,7 @@ func TestDisputeFlow(t *testing.T) {
 	if initResp.Code != http.StatusOK && initResp.Code != http.StatusCreated {
 		t.Fatalf("initiate dispute status=%d body=%s", initResp.Code, initResp.Body.String())
 	}
-	var initParsed apiResp[assignment.InitiateDisputeResponse]
+	var initParsed apiResp[orderservice.InitiateDisputeResponse]
 	_ = json.Unmarshal(initResp.Body.Bytes(), &initParsed)
 	if initParsed.Data.DisputeID == 0 {
 		t.Fatalf("expected dispute id > 0, got %+v", initParsed.Data)

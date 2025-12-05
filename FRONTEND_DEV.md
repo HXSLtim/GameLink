@@ -89,14 +89,15 @@ GET  /api/v1/admin/stats/kpi              # KPI 指标数据
 
 #### 页面列表
 
-| 页面         | 状态      | 功能描述         | 优先级 |
-| :----------- | :-------- | :--------------- | :----- |
-| 用户列表     | ✅ 已存在 | 用户管理和搜索   | 高     |
-| 用户详情     | ✅ 已存在 | 用户详细信息     | 高     |
-| 用户行为分析 | 🆕 新增   | 用户行为数据统计 | 中     |
-| 用户标签管理 | 🆕 新增   | 标签创建和管理   | 中     |
-| 用户等级管理 | 🆕 新增   | 等级体系设置     | 低     |
-| 用户画像分析 | 🆕 新增   | 用户群体分析     | 低     |
+| 页面         | 状态      | 功能描述         | 优先级 | 后端API | 前端集成 | 数据来源 |
+| :----------- | :-------- | :--------------- | :----- | :------ | :------- | :------- |
+| 用户列表     | ✅ 已存在 | 用户管理和搜索   | 高     | ✅      | ✅       | ✅ 真实  |
+| 用户详情     | ✅ 已存在 | 用户详细信息     | 高     | ✅      | ✅       | ✅ 真实  |
+| 用户行为分析 | ✅ 已完成 | 用户行为数据统计 | 中     | ✅      | ✅       | ✅ 真实  |
+| 用户标签管理 | ✅ 已完成 | 标签创建和管理   | 中     | ✅      | ✅       | ✅ 真实  |
+| 用户等级管理 | ✅ 已完成 | 等级体系设置     | 低     | ✅      | ✅       | ✅ 真实  |
+| 用户画像分析 | ✅ 已完成 | 用户群体分析     | 低     | ✅      | ✅       | ✅ 真实  |
+| 用户登录历史 | ✅ 已完成 | 登录记录查询     | 中     | ✅      | ✅       | ⚠️ 待数据|
 
 #### 关键表单字段
 
@@ -118,13 +119,38 @@ interface UserForm {
 #### 关键 API 端点
 
 ```http
-GET    /api/v1/admin/users           # 用户列表
-POST   /api/v1/admin/users           # 创建用户
-GET    /api/v1/admin/users/:id       # 用户详情
-PUT    /api/v1/admin/users/:id       # 更新用户
-DELETE /api/v1/admin/users/:id       # 删除用户
-PUT    /api/v1/admin/users/:id/status # 更新状态
-GET    /api/v1/admin/users/:id/logs  # 用户操作日志
+# 用户基础管理
+GET    /api/v1/admin/users                    # 用户列表
+POST   /api/v1/admin/users                    # 创建用户
+GET    /api/v1/admin/users/:id                # 用户详情
+PUT    /api/v1/admin/users/:id                # 更新用户
+DELETE /api/v1/admin/users/:id                # 删除用户
+PUT    /api/v1/admin/users/:id/status         # 更新状态
+PUT    /api/v1/admin/users/:id/role           # 更新角色
+GET    /api/v1/admin/users/:id/orders         # 用户订单
+GET    /api/v1/admin/users/:id/logs           # 用户操作日志
+GET    /api/v1/admin/users/:id/login-history  # 用户登录历史 ✅
+
+# 用户行为分析 ✅
+GET    /api/v1/admin/users/behavior/stats         # 行为统计(DAU/时长/消费)
+GET    /api/v1/admin/users/behavior/trend         # 活动趋势(7天)
+GET    /api/v1/admin/users/behavior/distribution  # 用户分布(地域/年龄)
+
+# 用户标签管理
+GET    /api/v1/admin/tags                     # 标签列表
+POST   /api/v1/admin/tags                     # 创建标签
+PUT    /api/v1/admin/tags/:id                 # 更新标签
+DELETE /api/v1/admin/tags/:id                 # 删除标签
+POST   /api/v1/admin/users/:userId/tags/:tagId    # 分配标签
+DELETE /api/v1/admin/users/:userId/tags/:tagId    # 移除标签
+PUT    /api/v1/admin/users/:userId/tags       # 批量设置标签
+
+# 批量操作
+POST   /api/v1/admin/users/batch/role         # 批量更新角色
+POST   /api/v1/admin/users/batch/status       # 批量更新状态
+POST   /api/v1/admin/users/batch/delete       # 批量删除用户
+POST   /api/v1/admin/users/batch/points       # 批量添加积分
+POST   /api/v1/admin/users/batch/notification # 批量发送通知
 ```
 
 ---

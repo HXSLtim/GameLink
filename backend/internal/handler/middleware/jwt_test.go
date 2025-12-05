@@ -17,14 +17,16 @@ import (
 
 func TestJWTAuth(t *testing.T) {
 	// 设置测试用的JWT密钥
-	os.Setenv("JWT_SECRET_KEY", "test-secret-key-that-is-32-characters-long")
+	// 设置测试用的JWT密钥
+	secretKey := "test-secret-key-that-is-32-characters-long"
+	os.Setenv("JWT_SECRET_KEY", secretKey)
 	defer os.Unsetenv("JWT_SECRET_KEY")
 
 	gin.SetMode(gin.TestMode)
 
 	t.Run("MissingAuthorizationHeader", func(t *testing.T) {
 		router := gin.New()
-		router.Use(JWTAuth())
+		router.Use(JWTAuth(secretKey))
 		router.GET("/test", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"message": "success"})
 		})
@@ -46,7 +48,7 @@ func TestJWTAuth(t *testing.T) {
 
 	t.Run("InvalidTokenFormat", func(t *testing.T) {
 		router := gin.New()
-		router.Use(JWTAuth())
+		router.Use(JWTAuth(secretKey))
 		router.GET("/test", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"message": "success"})
 		})
@@ -62,7 +64,7 @@ func TestJWTAuth(t *testing.T) {
 
 	t.Run("ValidToken", func(t *testing.T) {
 		router := gin.New()
-		router.Use(JWTAuth())
+		router.Use(JWTAuth(secretKey))
 		router.GET("/test", func(c *gin.Context) {
 			userID, exists := GetUserID(c)
 			assert.True(t, exists)
@@ -91,7 +93,7 @@ func TestJWTAuth(t *testing.T) {
 
 	t.Run("ExpiredToken", func(t *testing.T) {
 		router := gin.New()
-		router.Use(JWTAuth())
+		router.Use(JWTAuth(secretKey))
 		router.GET("/test", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"message": "success"})
 		})
@@ -121,7 +123,7 @@ func TestJWTAuth(t *testing.T) {
 		defer os.Setenv("JWT_SECRET_KEY", "test-secret-key-that-is-32-characters-long")
 
 		router := gin.New()
-		router.Use(JWTAuth())
+		router.Use(JWTAuth(""))
 		router.GET("/test", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"message": "success"})
 		})
@@ -139,7 +141,7 @@ func TestJWTAuth(t *testing.T) {
 		defer os.Setenv("JWT_SECRET_KEY", "test-secret-key-that-is-32-characters-long")
 
 		router := gin.New()
-		router.Use(JWTAuth())
+		router.Use(JWTAuth("short"))
 		router.GET("/test", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"message": "success"})
 		})
@@ -154,7 +156,7 @@ func TestJWTAuth(t *testing.T) {
 
 	t.Run("TokenAutoRefreshNotTriggered", func(t *testing.T) {
 		router := gin.New()
-		router.Use(JWTAuth())
+		router.Use(JWTAuth(secretKey))
 		router.GET("/test", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"message": "success"})
 		})
@@ -179,7 +181,7 @@ func TestJWTAuth(t *testing.T) {
 
 	t.Run("TokenRefreshRecommendation", func(t *testing.T) {
 		router := gin.New()
-		router.Use(JWTAuth())
+		router.Use(JWTAuth(secretKey))
 		router.GET("/test", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"message": "success"})
 		})
@@ -204,14 +206,15 @@ func TestJWTAuth(t *testing.T) {
 }
 
 func TestRequireRole(t *testing.T) {
-	os.Setenv("JWT_SECRET_KEY", "test-secret-key-that-is-32-characters-long")
+	secretKey := "test-secret-key-that-is-32-characters-long"
+	os.Setenv("JWT_SECRET_KEY", secretKey)
 	defer os.Unsetenv("JWT_SECRET_KEY")
 
 	gin.SetMode(gin.TestMode)
 
 	t.Run("AdminAccessSuccess", func(t *testing.T) {
 		router := gin.New()
-		router.Use(JWTAuth())
+		router.Use(JWTAuth(secretKey))
 		router.Use(RequireRole("admin"))
 		router.GET("/admin", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"message": "admin access"})
@@ -232,7 +235,7 @@ func TestRequireRole(t *testing.T) {
 
 	t.Run("UserAccessAdminForbidden", func(t *testing.T) {
 		router := gin.New()
-		router.Use(JWTAuth())
+		router.Use(JWTAuth(secretKey))
 		router.Use(RequireRole("admin"))
 		router.GET("/admin", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"message": "admin access"})
@@ -253,7 +256,7 @@ func TestRequireRole(t *testing.T) {
 
 	t.Run("MultipleRoles", func(t *testing.T) {
 		router := gin.New()
-		router.Use(JWTAuth())
+		router.Use(JWTAuth(secretKey))
 		router.Use(RequireRole("admin", "moderator"))
 		router.GET("/mod", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"message": "mod access"})
@@ -274,14 +277,15 @@ func TestRequireRole(t *testing.T) {
 }
 
 func TestOptionalAuth(t *testing.T) {
-	os.Setenv("JWT_SECRET_KEY", "test-secret-key-that-is-32-characters-long")
+	secretKey := "test-secret-key-that-is-32-characters-long"
+	os.Setenv("JWT_SECRET_KEY", secretKey)
 	defer os.Unsetenv("JWT_SECRET_KEY")
 
 	gin.SetMode(gin.TestMode)
 
 	t.Run("NoToken", func(t *testing.T) {
 		router := gin.New()
-		router.Use(OptionalAuth())
+		router.Use(OptionalAuth(secretKey))
 		router.GET("/public", func(c *gin.Context) {
 			authenticated := IsAuthenticated(c)
 			assert.False(t, authenticated)
@@ -298,7 +302,7 @@ func TestOptionalAuth(t *testing.T) {
 
 	t.Run("ValidToken", func(t *testing.T) {
 		router := gin.New()
-		router.Use(OptionalAuth())
+		router.Use(OptionalAuth(secretKey))
 		router.GET("/public", func(c *gin.Context) {
 			authenticated := IsAuthenticated(c)
 			assert.True(t, authenticated)
@@ -325,7 +329,7 @@ func TestOptionalAuth(t *testing.T) {
 
 	t.Run("InvalidToken", func(t *testing.T) {
 		router := gin.New()
-		router.Use(OptionalAuth())
+		router.Use(OptionalAuth(secretKey))
 		router.GET("/public", func(c *gin.Context) {
 			authenticated := IsAuthenticated(c)
 			assert.False(t, authenticated)
@@ -346,7 +350,7 @@ func TestOptionalAuth(t *testing.T) {
 		defer os.Setenv("JWT_SECRET_KEY", "test-secret-key-that-is-32-characters-long")
 
 		router := gin.New()
-		router.Use(OptionalAuth())
+		router.Use(OptionalAuth(""))
 		router.GET("/public", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"message": "should not reach here"})
 		})
@@ -371,7 +375,7 @@ func TestOptionalAuth(t *testing.T) {
 		defer os.Setenv("JWT_SECRET_KEY", "test-secret-key-that-is-32-characters-long")
 
 		router := gin.New()
-		router.Use(OptionalAuth())
+		router.Use(OptionalAuth("short"))
 		router.GET("/public", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"message": "should not reach here"})
 		})

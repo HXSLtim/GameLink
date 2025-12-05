@@ -1,10 +1,7 @@
 import React from 'react';
 
 // Lazy load components
-const Dashboard = React.lazy(() => import('@/pages/sys/dashboard'));
-const Users = React.lazy(() => import('@/pages/sys/user'));
-const Games = React.lazy(() => import('@/pages/biz/game'));
-const Orders = React.lazy(() => import('@/pages/biz/order'));
+// Lazy load components
 const Audit = React.lazy(() => import('@/pages/sys/log'));
 const Settings = React.lazy(() => import('@/pages/sys/setting'));
 const ServiceItemList = React.lazy(() => import('@/pages/biz/service'));
@@ -14,11 +11,12 @@ const ServiceItemDetail = React.lazy(() => import('@/pages/biz/service/detail'))
 const Menu = React.lazy(() => import('@/pages/sys/menu'));
 
 export const componentMap: Record<string, React.LazyExoticComponent<React.FC<any>>> = {
-    'sys/dashboard': Dashboard,
-    'sys/user': Users,
+    'sys/dashboard': React.lazy(() => import('@/pages/admin/Dashboard')),
+    'sys/user': React.lazy(() => import('@/pages/admin/User')),
     'sys/menu': Menu,
-    'biz/game': Games,
-    'biz/order': Orders,
+    'biz/game': React.lazy(() => import('@/pages/admin/Game')),
+    'biz/order': React.lazy(() => import('@/pages/admin/Order')),
+    'biz/player': React.lazy(() => import('@/pages/admin/Player')),
     'sys/log': Audit,
     'sys/setting': Settings,
     'biz/service/list': ServiceItemList,

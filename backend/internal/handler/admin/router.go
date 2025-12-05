@@ -18,11 +18,12 @@ import (
 
 // RegisterRoutes 注册后台管理相关路由
 // 使用细粒度权限控制（method+path 级别）
-func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, pm *mw.PermissionMiddleware) {
+func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc *statsservice.StatsService, pm *mw.PermissionMiddleware) {
 	// 先注册同步专用路由（不受限流限制）
 	RegisterSyncRoutes(router, svc, pm)
 	gameHandler := NewGameHandler(svc)
 	userHandler := NewUserHandler(svc)
+	userBehaviorHandler := NewUserBehaviorHandler(statsSvc)
 	playerHandler := NewPlayerHandler(svc)
 	orderHandler := NewOrderHandler(svc)
 	paymentHandler := NewPaymentHandler(svc)
@@ -240,6 +241,44 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, pm *mw.P
 		// @Success      200  {object}  model.APIResponse[[]model.OperationLog]
 		// @Router       /admin/users/{id}/logs [get]
 		group.GET("/users/:id/logs", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/:id/logs"), userHandler.ListUserLogs)
+		// @Summary      获取用户登录历史
+		// @Tags         Admin/Users
+		// @Security     BearerAuth
+		// @Produce      json
+		// @Param        id          path   int      true   "用户ID"
+		// @Param        page        query  int      false  "页码"
+		// @Param        page_size   query  int      false  "每页数量"
+		// @Success      200  {object}  model.APIResponse[[]model.UserLoginHistory]
+		// @Failure      404  {object}  model.ErrorResponse
+		// @Router       /admin/users/{id}/login-history [get]
+		group.GET("/users/:id/login-history", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/:id/login-history"), userHandler.ListUserLoginHistory)
+
+		// 用户行为分析 - 使用细粒度权限
+		// @Summary      获取用户行为统计
+		// @Description  获取DAU、平均在线时长、人均消费等用户行为统计数据
+		// @Tags         Admin/UserBehavior
+		// @Security     BearerAuth
+		// @Produce      json
+		// @Success      200  {object}  model.APIResponse[adminservice.UserBehaviorStatsResponse]
+		// @Router       /admin/users/behavior/stats [get]
+		group.GET("/users/behavior/stats", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/behavior/stats"), userBehaviorHandler.GetBehaviorStats)
+		// @Summary      获取用户活动趋势
+		// @Description  获取最近N天的用户活动趋势数据
+		// @Tags         Admin/UserBehavior
+		// @Security     BearerAuth
+		// @Produce      json
+		// @Param        days  query  int  false  "统计天数（默认7天）"
+		// @Success      200  {object}  model.APIResponse[[]repository.DateValue]
+		// @Router       /admin/users/behavior/trend [get]
+		group.GET("/users/behavior/trend", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/behavior/trend"), userBehaviorHandler.GetActivityTrend)
+		// @Summary      获取用户分布
+		// @Description  获取用户地域分布、年龄分布等统计数据
+		// @Tags         Admin/UserBehavior
+		// @Security     BearerAuth
+		// @Produce      json
+		// @Success      200  {object}  model.APIResponse[adminservice.UserDistributionResponse]
+		// @Router       /admin/users/behavior/distribution [get]
+		group.GET("/users/behavior/distribution", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/behavior/distribution"), userBehaviorHandler.GetUserDistribution)
 
 		// 陪玩师管- 使用细粒度权		// @Summary      列出玩家资料
 		// @Tags         Admin/Players

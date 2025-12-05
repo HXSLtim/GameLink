@@ -211,10 +211,11 @@ func (r *Router) registerAdminRoutes(api *gin.RouterGroup) {
 
 	// Register admin routes under versioned prefix: /api/v1/admin
 	rbacGroup := api.Group("/admin")
-	adminhandler.RegisterRoutes(rbacGroup, r.adminSvc, r.permMiddleware)
 
-	// Stats routes
+	// Stats routes (需要先创建statsSvc，因为RegisterRoutes需要它)
 	statsSvc := statsservice.NewStatsService(statsrepo.NewStatsRepository(r.orm))
+
+	adminhandler.RegisterRoutes(rbacGroup, r.adminSvc, statsSvc, r.permMiddleware)
 	adminhandler.RegisterStatsRoutes(rbacGroup, statsSvc, r.permMiddleware)
 
 	// System info routes

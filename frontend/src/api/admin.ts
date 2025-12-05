@@ -69,6 +69,17 @@ export interface LoginHistory {
     status: 'success' | 'failed';
 }
 
+export interface UserBehaviorStats {
+    dau: number;
+    avgOnlineTime: string;
+    avgConsumption: number;
+}
+
+export interface UserDistribution {
+    byRegion: Array<{ name: string; value: number }>;
+    byAge: Array<{ name: string; value: number }>;
+}
+
 export interface CreateUserDto {
     name: string;
     email: string;
@@ -128,14 +139,18 @@ export interface BatchStatusDto {
 }
 
 export interface BatchPointsDto {
-    userIds: number[];
-    points: number;
-    reason?: string;
-    type?: string;
+    target: 'users' | 'role' | 'all';
+    userIds?: number[];
+    roles?: string[];
+    cents: number;
+    reason: string;
+    type: string;
 }
 
 export interface BatchNotificationDto {
-    userIds: number[];
+    target: 'users' | 'role' | 'all';
+    userIds?: number[];
+    roles?: string[];
     title: string;
     content: string;
     type: 'system' | 'marketing' | 'personal' | 'activity';
@@ -324,6 +339,14 @@ export const adminApi = {
     getUserOrders: (id: number, params?: UserOrderParams) => apiClient.get<ApiResponse<Order[]>>(`/admin/users/${id}/orders`, { params }),
     getUserLogs: (id: number, params?: UserLogParams) => apiClient.get<ApiResponse<AuditLog[]>>(`/admin/users/${id}/logs`, { params }),
     getUserLoginHistory: (id: number, params?: { page?: number; page_size?: number }) => apiClient.get<ApiResponse<LoginHistory[]>>(`/admin/users/${id}/login-history`, { params }),
+
+    // User Behavior Analysis
+    getUserBehaviorStats: () =>
+        apiClient.get<ApiResponse<UserBehaviorStats>>('/admin/users/behavior/stats'),
+    getUserActivityTrend: (params?: { days?: number }) =>
+        apiClient.get<ApiResponse<TrendData[]>>('/admin/users/behavior/trend', { params }),
+    getUserDistribution: () =>
+        apiClient.get<ApiResponse<UserDistribution>>('/admin/users/behavior/distribution'),
 
     // User Tags
     getTags: () => apiClient.get<ApiResponse<UserTag[]>>('/admin/tags'),

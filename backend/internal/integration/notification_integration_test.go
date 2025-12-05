@@ -13,7 +13,7 @@ import (
 	"gamelink/internal/model"
 	notificationrepo "gamelink/internal/repository/content"
 	userrepo "gamelink/internal/repository/user"
-	notificationservice "gamelink/internal/service/notification"
+	notificationservice "gamelink/internal/service/content"
 	"gamelink/pkg/testutil"
 )
 
@@ -50,7 +50,7 @@ func TestNotificationFlow(t *testing.T) {
 		t.Fatalf("seed notif2: %v", err)
 	}
 
-	svc := notificationservice.NewService(notifyRepo)
+	svc := notificationservice.NewNotificationService(notifyRepo)
 	router := gin.New()
 	api := router.Group("/api/v1")
 	auth := fakeAuthMiddleware(user.ID)
@@ -61,7 +61,7 @@ func TestNotificationFlow(t *testing.T) {
 	if listResp.Code != http.StatusOK {
 		t.Fatalf("list notif status=%d body=%s", listResp.Code, listResp.Body.String())
 	}
-	var listParsed apiResp[*notificationservice.ListResponse]
+	var listParsed apiResp[*notificationservice.NotificationListResponse]
 	if err := json.Unmarshal(listResp.Body.Bytes(), &listParsed); err != nil {
 		t.Fatalf("parse list: %v", err)
 	}
@@ -94,6 +94,74 @@ func TestNotificationFlow(t *testing.T) {
 	}
 	if listParsed.Data.UnreadCount != 1 {
 		t.Fatalf("expected unread=1, got %+v", listParsed.Data)
+	}
+}
+
+// 场景：全部已读
+func TestNotificationMarkAllRead(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	db := testutil.NewMemoryDB(t)
+	defer testutil.CleanDB(t, db)
+	migrateNotificationModels(t, db)
+
+	ctx := context.Background()
+	userRepo := userrepo.NewUserRepository(db)
+	notifyRepo := notificationrepo.NewNotificationRepository(db)
+
+	user := &model.User{
+		Name:         "NotifyUser2",
+		Email:        "notify2@example.com",
+		Phone:        "40000000002",
+		PasswordHash: "hashed",
+		Status:       model.UserStatusActive,
+		Role:         model.RoleUser,
+	}
+	if err := userRepo.Create(ctx, user); err != nil {
+		t.Fatalf("seed user: %v", err)
+	}
+
+	// 种子3条未读通知
+	for i := 0; i < 3; i++ {
+		ev := &model.NotificationEvent{
+			UserID:   user.ID,
+			Title:    "Title" + uintToStr(uint64(i)),
+			Message:  "Msg" + uintToStr(uint64(i)),
+			Priority: model.NotificationPriorityNormal,
+		}
+		if err := db.WithContext(ctx).Create(ev).Error; err != nil {
+			t.Fatalf("seed notif %d: %v", i, err)
+		}
+	}
+
+	svc := notificationservice.NewNotificationService(notifyRepo)
+	router := gin.New()
+	api := router.Group("/api/v1")
+	auth := fakeAuthMiddleware(user.ID)
+	notificationhandler.RegisterRoutes(api, svc, auth)
+
+	// 初始未读数应为3
+	unreadResp := doJSON(router, http.MethodGet, "/api/v1/notifications/unread-count", nil, "")
+	var unreadParsed apiResp[map[string]int64]
+	if err := json.Unmarshal(unreadResp.Body.Bytes(), &unreadParsed); err != nil {
+		t.Fatalf("parse unread: %v", err)
+	}
+	if unreadParsed.Data["unread"] != 3 {
+		t.Fatalf("expected 3 unread, got %d", unreadParsed.Data["unread"])
+	}
+
+	// 全部已读
+	readAllResp := doJSON(router, http.MethodPost, "/api/v1/notifications/read-all", nil, "")
+	if readAllResp.Code != http.StatusOK {
+		t.Fatalf("read all status=%d body=%s", readAllResp.Code, readAllResp.Body.String())
+	}
+
+	// 再次查询未读数应为0
+	unreadResp2 := doJSON(router, http.MethodGet, "/api/v1/notifications/unread-count", nil, "")
+	if err := json.Unmarshal(unreadResp2.Body.Bytes(), &unreadParsed); err != nil {
+		t.Fatalf("parse unread2: %v", err)
+	}
+	if unreadParsed.Data["unread"] != 0 {
+		t.Fatalf("expected 0 unread, got %d", unreadParsed.Data["unread"])
 	}
 }
 

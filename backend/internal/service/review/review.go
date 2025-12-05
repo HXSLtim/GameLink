@@ -32,12 +32,14 @@ var (
 // 1. 创建评价
 // 2. 查询评价列表
 // 3. 更新陪玩师评分
+// 4. 举报管理
 type ReviewService struct {
 	reviews repository.ReviewRepository
 	orders  repoiface.OrderReader
 	players repository.PlayerRepository
 	users   repository.UserRepository
 	replies repository.ReviewReplyRepository
+	reports repository.ReviewReportRepository
 }
 
 // NewReviewService 创建评价服务
@@ -47,6 +49,7 @@ func NewReviewService(
 	players repository.PlayerRepository,
 	users repository.UserRepository,
 	replies repository.ReviewReplyRepository,
+	reports repository.ReviewReportRepository,
 ) *ReviewService {
 	return &ReviewService{
 		reviews: reviews,
@@ -54,6 +57,7 @@ func NewReviewService(
 		players: players,
 		users:   users,
 		replies: replies,
+		reports: reports,
 	}
 }
 

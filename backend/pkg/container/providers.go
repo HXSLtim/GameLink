@@ -25,6 +25,7 @@ import (
 	permissionrepo "gamelink/internal/repository/admin"
 	statsrepo "gamelink/internal/repository/stats"
 	serviceitemrepo "gamelink/internal/repository/serviceitem"
+	walletrepo "gamelink/internal/repository/wallet"
 	"gamelink/internal/router"
 	adminservice "gamelink/internal/service/admin"
 )
@@ -103,6 +104,7 @@ func ProvideAdminService(orm *gorm.DB, cacheClient cache.Cache) *adminservice.Ad
 		permissionrepo.NewPermissionRepository(orm),
 		menurepo.NewMenuRepository(orm),
 		statsrepo.NewStatsRepository(orm),
+		walletrepo.NewWalletRepository(orm),
 		cacheClient,
 	)
 	svc.SetTxManager(common.NewUnitOfWork(orm))

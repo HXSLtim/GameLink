@@ -2,7 +2,7 @@
  * 权限守卫组件
  * 用于控制按钮、菜单等UI元素的显示/隐藏
  */
-import React, { ReactNode, ReactElement } from 'react';
+import React, { type ReactNode, type ReactElement } from 'react';
 import { usePermission } from '@/hooks/usePermission';
 
 /**

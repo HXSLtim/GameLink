@@ -12,13 +12,13 @@ import (
 
 	adminhandler "gamelink/internal/handler/admin"
 	"gamelink/internal/model"
+	adminrepo "gamelink/internal/repository/admin"
 	"gamelink/internal/repository/game"
 	orderimpl "gamelink/internal/repository/implementations"
-	adminrepo "gamelink/internal/repository/admin"
 	"gamelink/internal/repository/order"
-	"gamelink/internal/repository/user"
 	statsrepo "gamelink/internal/repository/stats"
-	"gamelink/internal/service/admin"
+	"gamelink/internal/repository/user"
+	adminsvc "gamelink/internal/service/admin"
 	"gamelink/pkg/testutil"
 )
 
@@ -31,7 +31,7 @@ func TestAdminStatsEndpoints(t *testing.T) {
 
 	seedStatsData(t, db)
 
-	statsSvc := stats.NewStatsService(statsrepo.NewStatsRepository(db))
+	statsSvc := adminsvc.NewStatsService(statsrepo.NewStatsRepository(db))
 	statsHandler := adminhandler.NewStatsHandler(statsSvc)
 
 	router := gin.New()
