@@ -38,14 +38,16 @@
   - 实现 Update 方法（处理举报）
   - _需求: 3.1, 3.2_
 
-- [-] 2.3 实现举报服务层
+- [x] 2.3 实现举报服务层
+
 
   - 实现 ReportReview 方法
   - 实现 ListReports 方法
   - 实现 HandleReport 方法（删除评价/警告/驳回）
   - _需求: 3.2, 3.3, 3.4, 3.5_
 
-- [ ] 2.4 实现举报 API 端点
+- [-] 2.4 实现举报 API 端点
+
   - POST /admin/reviews/:id/reports - 创建举报
   - GET /admin/review-reports - 列出举报
   - GET /admin/review-reports/:id - 获取举报详情
