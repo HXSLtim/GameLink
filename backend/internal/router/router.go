@@ -13,30 +13,30 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"gorm.io/gorm"
 
-	"gamelink/pkg/auth"
-	"gamelink/pkg/cache"
-	"gamelink/pkg/config"
 	"gamelink/internal/handler"
 	adminhandler "gamelink/internal/handler/admin"
 	"gamelink/internal/handler/middleware"
 	notificationhandler "gamelink/internal/handler/notification"
-	"gamelink/internal/ws"
-	"gamelink/pkg/lifecycle"
 	"gamelink/internal/model"
+	adminrepo "gamelink/internal/repository/admin"
 	commissionrepo "gamelink/internal/repository/commission"
 	orderrepo "gamelink/internal/repository/implementations"
-	adminrepo "gamelink/internal/repository/admin"
-	userrepo "gamelink/internal/repository/user"
 	rankingrepo "gamelink/internal/repository/ranking"
 	serviceitemrepo "gamelink/internal/repository/serviceitem"
 	statsrepo "gamelink/internal/repository/stats"
+	userrepo "gamelink/internal/repository/user"
 	withdrawrepo "gamelink/internal/repository/withdraw"
 	adminservice "gamelink/internal/service/admin"
-	authservice "gamelink/internal/service/auth"
 	menuservice "gamelink/internal/service/admin"
 	permissionservice "gamelink/internal/service/admin"
 	roleservice "gamelink/internal/service/admin"
 	statsservice "gamelink/internal/service/admin"
+	authservice "gamelink/internal/service/auth"
+	"gamelink/internal/ws"
+	"gamelink/pkg/auth"
+	"gamelink/pkg/cache"
+	"gamelink/pkg/config"
+	"gamelink/pkg/lifecycle"
 )
 
 // Router 包含所有路由配置和依赖
@@ -82,13 +82,13 @@ func (r *Router) Setup() *gin.Engine {
 
 	// 注册全局中间件（按顺序执行）
 	r.engine.Use(middleware.RequestID())
-	r.engine.Use(middleware.SlogLogger())                                                       // 结构化访问日志
-	r.engine.Use(middleware.MetricsMiddleware(r.services.realtimeSvc))                          // HTTP 指标，传入monitor service
-	r.engine.Use(middleware.RateLimit(middleware.DefaultRateLimitConfig()))                     // 限流中间件
-	r.engine.Use(middleware.Crypto(r.cfg.Crypto))                                               // 请求解密
-	r.engine.Use(middleware.ErrorMap())                                                         // 统一错误映射
-	r.engine.Use(middleware.Recovery())                                                         // 统一JSON恢复中间件
-	r.engine.Use(middleware.CORS())                                                             // CORS中间件
+	r.engine.Use(middleware.SlogLogger())                                   // 结构化访问日志
+	r.engine.Use(middleware.MetricsMiddleware(r.services.realtimeSvc))      // HTTP 指标，传入monitor service
+	r.engine.Use(middleware.RateLimit(middleware.DefaultRateLimitConfig())) // 限流中间件
+	r.engine.Use(middleware.Crypto(r.cfg.Crypto))                           // 请求解密
+	r.engine.Use(middleware.ErrorMap())                                     // 统一错误映射
+	r.engine.Use(middleware.Recovery())                                     // 统一JSON恢复中间件
+	r.engine.Use(middleware.CORS())                                         // CORS中间件
 
 	// 注册所有路由
 	r.registerRoutes()
@@ -217,6 +217,13 @@ func (r *Router) registerAdminRoutes(api *gin.RouterGroup) {
 
 	adminhandler.RegisterRoutes(rbacGroup, r.adminSvc, statsSvc, r.permMiddleware)
 	adminhandler.RegisterStatsRoutes(rbacGroup, statsSvc, r.permMiddleware)
+	adminhandler.RegisterReviewStatsRoutes(rbacGroup, r.services.reviewStatsSvc, r.permMiddleware)
+
+	// 创建菜单服务用于批量同步
+	menuSvc := menuservice.NewMenuService(adminrepo.NewMenuRepository(r.orm))
+
+	// 注册同步专用路由（不受限流限制，用于前端初始化）
+	adminhandler.RegisterSyncRoutesWithServices(rbacGroup, roleSvc, permService, menuSvc, r.permMiddleware)
 
 	// System info routes
 	adminhandler.RegisterSystemRoutes(api, r.cfg, r.sqlDB, r.cacheClient, r.permMiddleware)
@@ -227,6 +234,9 @@ func (r *Router) registerAdminRoutes(api *gin.RouterGroup) {
 	// Admin 端业务路由
 	r.registerAdminBusinessRoutes(rbacGroup)
 
+	// 内容管理路由
+	r.registerContentRoutes(rbacGroup)
+
 	// 同步 API 路由到权限表
 	r.syncAPIPermissions(permService, roleSvc)
 }
@@ -236,8 +246,11 @@ func (r *Router) registerRBACRoutes(rbacGroup *gin.RouterGroup, roleSvc *roleser
 	roleHandler := adminhandler.NewRoleHandler(roleSvc)
 	permHandler := adminhandler.NewPermissionHandler(permService)
 	menuSvc := menuservice.NewMenuService(adminrepo.NewMenuRepository(r.orm))
-	menuHandler := adminhandler.NewMenuHandler(menuSvc)
-	rbacGroup.Use(r.permMiddleware.RequireAuth()) // 所有 RBAC 接口需要认证
+	menuHandler := adminhandler.NewMenuHandler(menuSvc, permService)
+
+	// 注意：同步专用路由 /sync/roles 和 /sync/permissions 已在 adminhandler.RegisterRoutes 中注册
+	// 这里只注册常规 RBAC 路由（需要认证和权限检查）
+	rbacGroup.Use(r.permMiddleware.RequireAuth())
 	{
 		// 角色管理
 		rbacGroup.GET("/roles", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/roles"), roleHandler.ListRoles)
@@ -261,6 +274,7 @@ func (r *Router) registerRBACRoutes(rbacGroup *gin.RouterGroup, roleSvc *roleser
 		rbacGroup.GET("/users/:id/permissions", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/:id/permissions"), permHandler.GetUserPermissions)
 
 		// 菜单管理（动态路由配置）
+		rbacGroup.GET("/menus/me", menuHandler.ListMyMenus) // 获取当前用户可访问的菜单，无需额外权限检查
 		rbacGroup.GET("/menus", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/menus"), menuHandler.List)
 		rbacGroup.POST("/menus", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/menus"), menuHandler.Create)
 		rbacGroup.GET("/menus/:id", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/menus/:id"), menuHandler.Get)
@@ -387,6 +401,19 @@ func (r *Router) syncAPIPermissions(permService *permissionservice.PermissionSer
 			log.Printf("分配默认权限失败: %v", err)
 		}
 	}
+}
+
+// registerContentRoutes 注册内容管理路由
+func (r *Router) registerContentRoutes(rbacGroup *gin.RouterGroup) {
+	contentHandler := adminhandler.NewContentHandler(
+		r.services.adminFeedSvc,
+		r.services.chatModerationSvc,
+		r.services.feedReportSvc,
+		r.services.contentStatsSvc,
+	)
+	categoryHandler := adminhandler.NewContentCategoryHandler(r.services.contentCategorySvc)
+
+	adminhandler.RegisterContentRoutes(rbacGroup, contentHandler, categoryHandler, r.permMiddleware)
 }
 
 // resolveGinMode 解析 Gin 运行模式

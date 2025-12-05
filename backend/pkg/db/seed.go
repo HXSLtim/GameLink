@@ -634,15 +634,20 @@ func applySeeds(db *gorm.DB) error {
 		}
 
 		// 菜单种子数据
-	if err := seedUserManagementData(tx, users); err != nil {
-		return err
-	}
+		if err := seedUserManagementData(tx, users); err != nil {
+			return err
+		}
 		if err := seedMenus(tx); err != nil {
 			return err
 		}
 
 		// 监控模块种子数据
 		if err := seedMonitorData(tx); err != nil {
+			return err
+		}
+
+		// 评价管理权限种子数据
+		if err := seedReviewPermissions(tx); err != nil {
 			return err
 		}
 
@@ -931,113 +936,11 @@ func ptrTimeWithOffset(base time.Time, offset *time.Duration) *time.Time {
 }
 
 // seedMenus 创建后台管理菜单
+// 注意：菜单数据现在由前端初始化服务同步，不再在后端种子数据中创建
 func seedMenus(tx *gorm.DB) error {
-	// 检查是否已有菜单数据
-	var count int64
-	if err := tx.Model(&model.Menu{}).Count(&count).Error; err != nil {
-		return err
-	}
-	if count > 0 {
-		return nil // 已有菜单数据，跳过
-	}
-
-	// 定义菜单结构
-	type menuDef struct {
-		Name       string
-		Path       string
-		Component  string
-		Icon       string
-		Order      int
-		Permission string
-		Children   []menuDef
-	}
-
-	menus := []menuDef{
-		{
-			Name:      "仪表盘",
-			Path:      "/admin",
-			Component: "Dashboard",
-			Icon:      "DashboardOutlined",
-			Order:     1,
-		},
-		{
-			Name:  "系统管理",
-			Path:  "/admin/sys",
-			Icon:  "SettingFilled",
-			Order: 2,
-			Children: []menuDef{
-				{Name: "用户管理", Path: "/admin/sys/user", Component: "User", Icon: "TeamOutlined", Order: 1, Permission: "admin:user:list"},
-				{Name: "角色管理", Path: "/admin/sys/role", Component: "Role", Icon: "SafetyCertificateOutlined", Order: 2, Permission: "admin:role:list"},
-				{Name: "权限管理", Path: "/admin/sys/permission", Component: "Permission", Icon: "SafetyCertificateOutlined", Order: 3, Permission: "admin:permission:list"},
-				{Name: "菜单管理", Path: "/admin/sys/menu", Component: "Menu", Icon: "MenuOutlined", Order: 4, Permission: "admin:menu:list"},
-				{Name: "审计日志", Path: "/admin/sys/log", Component: "Log", Icon: "FileTextOutlined", Order: 5, Permission: "admin:log:list"},
-			},
-		},
-		{
-			Name:  "业务管理",
-			Path:  "/admin/biz",
-			Icon:  "AppstoreOutlined",
-			Order: 3,
-			Children: []menuDef{
-				{Name: "游戏管理", Path: "/admin/biz/game", Component: "Game", Icon: "AppstoreOutlined", Order: 1, Permission: "admin:game:list"},
-				{Name: "陪玩师管理", Path: "/admin/biz/player", Component: "Player", Icon: "TeamOutlined", Order: 2, Permission: "admin:player:list"},
-				{Name: "订单管理", Path: "/admin/biz/order", Component: "Order", Icon: "ShoppingCartOutlined", Order: 3, Permission: "admin:order:list"},
-				{Name: "服务项目", Path: "/admin/biz/service", Component: "Service", Icon: "AppstoreOutlined", Order: 4, Permission: "admin:service:list"},
-			},
-		},
-		{
-			Name:  "监控中心",
-			Path:  "/admin/monitor",
-			Icon:  "MonitorOutlined",
-			Order: 4,
-			Children: []menuDef{
-				{Name: "实时监控", Path: "/admin/monitor/realtime", Component: "Realtime", Icon: "MonitorOutlined", Order: 1, Permission: "admin:monitor:realtime"},
-				{Name: "运营分析", Path: "/admin/monitor/analytics", Component: "Analytics", Icon: "LineChartOutlined", Order: 2, Permission: "admin:monitor:analytics"},
-				{Name: "KPI 仪表板", Path: "/admin/monitor/kpi", Component: "KPI", Icon: "FundOutlined", Order: 3, Permission: "admin:monitor:kpi"},
-			},
-		},
-		{
-			Name:       "系统设置",
-			Path:       "/admin/settings",
-			Component:  "Settings",
-			Icon:       "SettingOutlined",
-			Order:      5,
-			Permission: "admin:settings:view",
-		},
-	}
-
-	// 创建菜单
-	for _, m := range menus {
-		menu := &model.Menu{
-			Name:       m.Name,
-			Path:       m.Path,
-			Component:  m.Component,
-			Icon:       m.Icon,
-			Order:      m.Order,
-			Permission: m.Permission,
-		}
-		if err := tx.Create(menu).Error; err != nil {
-			return err
-		}
-
-		// 创建子菜单
-		for _, child := range m.Children {
-			childMenu := &model.Menu{
-				Name:       child.Name,
-				Path:       child.Path,
-				Component:  child.Component,
-				Icon:       child.Icon,
-				ParentID:   &menu.ID,
-				Order:      child.Order,
-				Permission: child.Permission,
-			}
-			if err := tx.Create(childMenu).Error; err != nil {
-				return err
-			}
-		}
-	}
-
-	log.Println("menu seed data created")
+	// 菜单数据由前端 init.ts 服务同步到后端
+	// 当管理员首次登录时，前端会自动将 ADMIN_MENUS 配置同步到数据库
+	log.Println("menu seed skipped - menus are synced from frontend")
 	return nil
 }
 
@@ -1238,18 +1141,18 @@ func seedUserManagementData(tx *gorm.DB, users map[string]*model.User) error {
 		{"customerA", []string{"vip", "active"}},
 		{"customerB", []string{"vip", "active", "highspend"}},
 		{"customerH", []string{"vip", "active"}},
-		
+
 		// 活跃用户
 		{"proA", []string{"active", "player"}},
 		{"proB", []string{"active", "player"}},
 		{"proC", []string{"active", "player"}},
 		{"customerD", []string{"active"}},
 		{"customerF", []string{"active"}},
-		
+
 		// 新用户
 		{"customerG", []string{"new", "potential"}},
 		{"customerE", []string{"new"}},
-		
+
 		// 高消费用户
 		{"customerC", []string{"highspend"}},
 	}
@@ -1260,14 +1163,14 @@ func seedUserManagementData(tx *gorm.DB, users map[string]*model.User) error {
 			log.Printf("warning: user %s not found, skipping tag assignment\n", assignment.userKey)
 			continue
 		}
-		
+
 		for _, tagKey := range assignment.tagKeys {
 			tag, ok := tagModels[tagKey]
 			if !ok {
 				log.Printf("warning: tag %s not found\n", tagKey)
 				continue
 			}
-			
+
 			relation := &model.UserTagRelation{
 				UserID: user.ID,
 				TagID:  tag.ID,
@@ -1287,7 +1190,7 @@ func seedUserManagementData(tx *gorm.DB, users map[string]*model.User) error {
 		{UserID: users["proB"].ID, IPAddress: "192.168.1.103", UserAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)", Location: "深圳市", DeviceType: "desktop"},
 		{UserID: users["customerB"].ID, IPAddress: "192.168.1.104", UserAgent: "Mozilla/5.0 (iPad; CPU OS 14_6 like Mac OS X)", Location: "成都市", DeviceType: "tablet"},
 	}
-	
+
 	for _, history := range loginHistory {
 		if err := tx.Create(&history).Error; err != nil {
 			return err
@@ -1308,7 +1211,7 @@ func seedUserManagementData(tx *gorm.DB, users map[string]*model.User) error {
 		{UserID: users["adminA"].ID, Action: "view_dashboard", TargetType: "admin", TargetID: 0, Metadata: `{"page": "dashboard"}`},
 		{UserID: users["adminA"].ID, Action: "manage_user", TargetType: "user", TargetID: 2, Metadata: `{"action": "update_status"}`},
 	}
-	
+
 	for _, behavior := range behaviors {
 		if err := tx.Create(&behavior).Error; err != nil {
 			return err
@@ -1317,5 +1220,440 @@ func seedUserManagementData(tx *gorm.DB, users map[string]*model.User) error {
 	log.Println("created user behavior data")
 
 	log.Println("user management seed data created successfully")
+	return nil
+}
+
+// seedReviewPermissions 创建评价管理权限种子数据
+func seedReviewPermissions(tx *gorm.DB) error {
+	// 检查是否已有评价管理权限
+	var count int64
+	if err := tx.Model(&model.Permission{}).Where("permissions.\"group\" = ?", "/admin/reviews").Count(&count).Error; err != nil {
+		return err
+	}
+	if count > 0 {
+		log.Println("review permissions already exist, skipping")
+		return nil
+	}
+
+	// 定义评价管理权限
+	// 注意：code 字段有唯一索引，所以每个权限必须有唯一的 code
+	permissions := []model.Permission{
+		// 评价查看权限 (review:view)
+		{
+			Method:      model.HTTPMethodGET,
+			Path:        "/api/v1/admin/reviews",
+			Code:        "review.list",
+			Group:       "/admin/reviews",
+			Description: "查看评价列表",
+		},
+		{
+			Method:      model.HTTPMethodGET,
+			Path:        "/api/v1/admin/reviews/:id",
+			Code:        "review.get",
+			Group:       "/admin/reviews",
+			Description: "查看评价详情",
+		},
+		{
+			Method:      model.HTTPMethodGET,
+			Path:        "/api/v1/admin/reviews/pending",
+			Code:        "review.pending",
+			Group:       "/admin/reviews",
+			Description: "查看待审核评价",
+		},
+		{
+			Method:      model.HTTPMethodGET,
+			Path:        "/api/v1/admin/reviews/:id/logs",
+			Code:        "review.logs",
+			Group:       "/admin/reviews",
+			Description: "查看评价操作日志",
+		},
+		{
+			Method:      model.HTTPMethodGET,
+			Path:        "/api/v1/admin/players/:id/reviews",
+			Code:        "review.player",
+			Group:       "/admin/reviews",
+			Description: "查看陪玩师评价",
+		},
+		{
+			Method:      model.HTTPMethodGET,
+			Path:        "/api/v1/admin/orders/:id/reviews",
+			Code:        "review.order",
+			Group:       "/admin/reviews",
+			Description: "查看订单评价",
+		},
+
+		// 评价审核权限 (review:approve)
+		{
+			Method:      model.HTTPMethodPUT,
+			Path:        "/api/v1/admin/reviews/:id/approve",
+			Code:        "review.approve",
+			Group:       "/admin/reviews",
+			Description: "批准评价",
+		},
+		{
+			Method:      model.HTTPMethodPUT,
+			Path:        "/api/v1/admin/reviews/:id/reject",
+			Code:        "review.reject",
+			Group:       "/admin/reviews",
+			Description: "拒绝评价",
+		},
+		{
+			Method:      model.HTTPMethodPUT,
+			Path:        "/api/v1/admin/reviews/batch-approve",
+			Code:        "review.batch_approve",
+			Group:       "/admin/reviews",
+			Description: "批量批准评价",
+		},
+		{
+			Method:      model.HTTPMethodPUT,
+			Path:        "/api/v1/admin/reviews/batch-reject",
+			Code:        "review.batch_reject",
+			Group:       "/admin/reviews",
+			Description: "批量拒绝评价",
+		},
+
+		// 评价删除权限 (review:delete)
+		{
+			Method:      model.HTTPMethodDELETE,
+			Path:        "/api/v1/admin/reviews/:id",
+			Code:        "review.delete",
+			Group:       "/admin/reviews",
+			Description: "删除评价",
+		},
+		{
+			Method:      model.HTTPMethodPUT,
+			Path:        "/api/v1/admin/reviews/:id",
+			Code:        "review.update",
+			Group:       "/admin/reviews",
+			Description: "更新评价",
+		},
+		{
+			Method:      model.HTTPMethodPOST,
+			Path:        "/api/v1/admin/reviews",
+			Code:        "review.create",
+			Group:       "/admin/reviews",
+			Description: "创建评价",
+		},
+
+		// 评价管理权限 (review:manage) - 敏感词管理
+		{
+			Method:      model.HTTPMethodGET,
+			Path:        "/api/v1/admin/sensitive-words",
+			Code:        "sensitive_word.list",
+			Group:       "/admin/reviews",
+			Description: "查看敏感词列表",
+		},
+		{
+			Method:      model.HTTPMethodPOST,
+			Path:        "/api/v1/admin/sensitive-words",
+			Code:        "sensitive_word.create",
+			Group:       "/admin/reviews",
+			Description: "添加敏感词",
+		},
+		{
+			Method:      model.HTTPMethodPUT,
+			Path:        "/api/v1/admin/sensitive-words/:id",
+			Code:        "sensitive_word.update",
+			Group:       "/admin/reviews",
+			Description: "更新敏感词",
+		},
+		{
+			Method:      model.HTTPMethodDELETE,
+			Path:        "/api/v1/admin/sensitive-words/:id",
+			Code:        "sensitive_word.delete",
+			Group:       "/admin/reviews",
+			Description: "删除敏感词",
+		},
+		{
+			Method:      model.HTTPMethodPOST,
+			Path:        "/api/v1/admin/reviews/detect-sensitive",
+			Code:        "review.detect_sensitive",
+			Group:       "/admin/reviews",
+			Description: "检测敏感词",
+		},
+
+		// 评价举报管理权限
+		{
+			Method:      model.HTTPMethodGET,
+			Path:        "/api/v1/admin/review-reports",
+			Code:        "review_report.list",
+			Group:       "/admin/reviews",
+			Description: "查看评价举报列表",
+		},
+		{
+			Method:      model.HTTPMethodGET,
+			Path:        "/api/v1/admin/review-reports/:id",
+			Code:        "review_report.get",
+			Group:       "/admin/reviews",
+			Description: "查看举报详情",
+		},
+		{
+			Method:      model.HTTPMethodPOST,
+			Path:        "/api/v1/admin/reviews/:id/reports",
+			Code:        "review_report.create",
+			Group:       "/admin/reviews",
+			Description: "创建评价举报",
+		},
+		{
+			Method:      model.HTTPMethodPUT,
+			Path:        "/api/v1/admin/review-reports/:id/handle",
+			Code:        "review_report.handle",
+			Group:       "/admin/reviews",
+			Description: "处理评价举报",
+		},
+
+		// 评价回复管理权限
+		{
+			Method:      model.HTTPMethodPUT,
+			Path:        "/api/v1/admin/review-replies/:id",
+			Code:        "review_reply.update",
+			Group:       "/admin/reviews",
+			Description: "更新评价回复",
+		},
+		{
+			Method:      model.HTTPMethodDELETE,
+			Path:        "/api/v1/admin/review-replies/:id",
+			Code:        "review_reply.delete",
+			Group:       "/admin/reviews",
+			Description: "删除评价回复",
+		},
+
+		// 评价统计权限
+		{
+			Method:      model.HTTPMethodGET,
+			Path:        "/api/v1/admin/reviews/stats",
+			Code:        "review.stats",
+			Group:       "/admin/reviews",
+			Description: "查看评价统计",
+		},
+		{
+			Method:      model.HTTPMethodGET,
+			Path:        "/api/v1/admin/reviews/trend",
+			Code:        "review.trend",
+			Group:       "/admin/reviews",
+			Description: "查看评价趋势",
+		},
+		{
+			Method:      model.HTTPMethodGET,
+			Path:        "/api/v1/admin/reviews/top-players",
+			Code:        "review.top_players",
+			Group:       "/admin/reviews",
+			Description: "查看陪玩师排行榜",
+		},
+		{
+			Method:      model.HTTPMethodGET,
+			Path:        "/api/v1/admin/reviews/game-stats",
+			Code:        "review.game_stats",
+			Group:       "/admin/reviews",
+			Description: "查看游戏评价统计",
+		},
+		{
+			Method:      model.HTTPMethodGET,
+			Path:        "/api/v1/admin/reviews/export",
+			Code:        "review.export",
+			Group:       "/admin/reviews",
+			Description: "导出评价统计",
+		},
+
+		// 评价展示设置权限
+		{
+			Method:      model.HTTPMethodGET,
+			Path:        "/api/v1/admin/review-settings",
+			Code:        "review_settings.get",
+			Group:       "/admin/reviews",
+			Description: "查看评价展示设置",
+		},
+		{
+			Method:      model.HTTPMethodPUT,
+			Path:        "/api/v1/admin/review-settings",
+			Code:        "review_settings.update",
+			Group:       "/admin/reviews",
+			Description: "更新评价展示设置",
+		},
+
+		// 操作日志权限
+		{
+			Method:      model.HTTPMethodGET,
+			Path:        "/api/v1/admin/operation-logs",
+			Code:        "operation_log.list",
+			Group:       "/admin/reviews",
+			Description: "查看操作日志",
+		},
+		{
+			Method:      model.HTTPMethodGET,
+			Path:        "/api/v1/admin/operation-logs/export",
+			Code:        "operation_log.export",
+			Group:       "/admin/reviews",
+			Description: "导出操作日志",
+		},
+
+		// ========== 内容管理权限 ==========
+		// 动态审核权限 (content:view)
+		{
+			Method:      model.HTTPMethodGET,
+			Path:        "/api/v1/admin/content/feeds",
+			Code:        "content.feed.list",
+			Group:       "/admin/content",
+			Description: "查看动态列表",
+		},
+		{
+			Method:      model.HTTPMethodGET,
+			Path:        "/api/v1/admin/content/feeds/:id",
+			Code:        "content.feed.get",
+			Group:       "/admin/content",
+			Description: "查看动态详情",
+		},
+		// 动态审核权限 (content:moderate)
+		{
+			Method:      model.HTTPMethodPUT,
+			Path:        "/api/v1/admin/content/feeds/:id/approve",
+			Code:        "content.feed.approve",
+			Group:       "/admin/content",
+			Description: "批准动态",
+		},
+		{
+			Method:      model.HTTPMethodPUT,
+			Path:        "/api/v1/admin/content/feeds/:id/reject",
+			Code:        "content.feed.reject",
+			Group:       "/admin/content",
+			Description: "拒绝动态",
+		},
+		{
+			Method:      model.HTTPMethodPOST,
+			Path:        "/api/v1/admin/content/feeds/batch-approve",
+			Code:        "content.feed.batch_approve",
+			Group:       "/admin/content",
+			Description: "批量批准动态",
+		},
+		{
+			Method:      model.HTTPMethodPOST,
+			Path:        "/api/v1/admin/content/feeds/batch-reject",
+			Code:        "content.feed.batch_reject",
+			Group:       "/admin/content",
+			Description: "批量拒绝动态",
+		},
+		// 动态删除权限 (content:delete)
+		{
+			Method:      model.HTTPMethodDELETE,
+			Path:        "/api/v1/admin/content/feeds/:id",
+			Code:        "content.feed.delete",
+			Group:       "/admin/content",
+			Description: "删除动态",
+		},
+
+		// 聊天监控权限
+		{
+			Method:      model.HTTPMethodGET,
+			Path:        "/api/v1/admin/content/chat/messages",
+			Code:        "content.chat.list",
+			Group:       "/admin/content",
+			Description: "查看聊天消息",
+		},
+		{
+			Method:      model.HTTPMethodDELETE,
+			Path:        "/api/v1/admin/content/chat/messages/:id",
+			Code:        "content.chat.delete",
+			Group:       "/admin/content",
+			Description: "删除聊天消息",
+		},
+		{
+			Method:      model.HTTPMethodPOST,
+			Path:        "/api/v1/admin/content/chat/mute",
+			Code:        "content.chat.mute",
+			Group:       "/admin/content",
+			Description: "禁言用户",
+		},
+		{
+			Method:      model.HTTPMethodPOST,
+			Path:        "/api/v1/admin/content/chat/unmute",
+			Code:        "content.chat.unmute",
+			Group:       "/admin/content",
+			Description: "解除禁言",
+		},
+
+		// 举报管理权限
+		{
+			Method:      model.HTTPMethodGET,
+			Path:        "/api/v1/admin/content/reports",
+			Code:        "content.report.list",
+			Group:       "/admin/content",
+			Description: "查看举报列表",
+		},
+		{
+			Method:      model.HTTPMethodGET,
+			Path:        "/api/v1/admin/content/reports/:id",
+			Code:        "content.report.get",
+			Group:       "/admin/content",
+			Description: "查看举报详情",
+		},
+		{
+			Method:      model.HTTPMethodPOST,
+			Path:        "/api/v1/admin/content/reports/:id/process",
+			Code:        "content.report.process",
+			Group:       "/admin/content",
+			Description: "处理举报",
+		},
+
+		// 内容统计权限
+		{
+			Method:      model.HTTPMethodGET,
+			Path:        "/api/v1/admin/content/stats",
+			Code:        "content.stats",
+			Group:       "/admin/content",
+			Description: "查看内容统计",
+		},
+
+		// 内容分类管理权限
+		{
+			Method:      model.HTTPMethodGET,
+			Path:        "/api/v1/admin/content/categories",
+			Code:        "content.category.list",
+			Group:       "/admin/content",
+			Description: "查看内容分类",
+		},
+		{
+			Method:      model.HTTPMethodGET,
+			Path:        "/api/v1/admin/content/categories/:id",
+			Code:        "content.category.get",
+			Group:       "/admin/content",
+			Description: "查看分类详情",
+		},
+		{
+			Method:      model.HTTPMethodPOST,
+			Path:        "/api/v1/admin/content/categories",
+			Code:        "content.category.create",
+			Group:       "/admin/content",
+			Description: "创建内容分类",
+		},
+		{
+			Method:      model.HTTPMethodPUT,
+			Path:        "/api/v1/admin/content/categories/:id",
+			Code:        "content.category.update",
+			Group:       "/admin/content",
+			Description: "更新内容分类",
+		},
+		{
+			Method:      model.HTTPMethodDELETE,
+			Path:        "/api/v1/admin/content/categories/:id",
+			Code:        "content.category.delete",
+			Group:       "/admin/content",
+			Description: "删除内容分类",
+		},
+	}
+
+	// 批量创建权限
+	for _, perm := range permissions {
+		if err := tx.Create(&perm).Error; err != nil {
+			// 如果权限已存在（唯一索引冲突），跳过
+			if strings.Contains(err.Error(), "UNIQUE constraint failed") ||
+				strings.Contains(err.Error(), "duplicate key") {
+				log.Printf("permission already exists: %s %s, skipping\n", perm.Method, perm.Path)
+				continue
+			}
+			return fmt.Errorf("failed to create permission %s %s: %w", perm.Method, perm.Path, err)
+		}
+	}
+
+	log.Println("review permissions seed data created successfully")
 	return nil
 }

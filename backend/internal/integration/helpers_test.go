@@ -44,6 +44,7 @@ func uintToStr(v uint64) string {
 func fakeAuthMiddleware(userID uint64) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Set("user_id", userID)
+		c.Set("userID", userID) // Also set userID for handlers that use this key
 		c.Next()
 	}
 }

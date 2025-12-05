@@ -1,4 +1,6 @@
 package repository
 
-// This file is intentionally empty for now.
-// Type aliases will be added later without causing circular imports.
+import "time"
+
+// NowFunc returns the current time. Can be overridden for testing.
+var NowFunc = time.Now

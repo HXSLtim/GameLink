@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"log"
 	"net/http"
 	"strings"
 
@@ -186,6 +187,10 @@ func (m *PermissionMiddleware) RequirePermission(method model.HTTPMethod, path s
 		}
 
 		if !hasPermission {
+			// 记录未授权访问日志
+			log.Printf("Unauthorized access attempt: userID=%d, method=%s, path=%s, clientIP=%s", 
+				uid, method, path, c.ClientIP())
+			
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
 				"success": false,
 				"code":    http.StatusForbidden,

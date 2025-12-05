@@ -6,9 +6,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/pkg/apierr"
 	"gamelink/internal/model"
 	contentservice "gamelink/internal/service/content"
+	"gamelink/pkg/apierr"
 )
 
 // RegisterFeedRoutes 注册社区动态路由。
@@ -75,7 +75,7 @@ func listFeedsHandler(c *gin.Context, svc *contentservice.FeedService) {
 	userID := getUserIDFromContext(c)
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
 	cursor := c.Query("cursor")
-	resp, err := svc.ListFeeds(c.Request.Context(), userID, contentservice.ListFeedsRequest{
+	resp, err := svc.ListFeeds(c.Request.Context(), userID, contentservice.UserListFeedsRequest{
 		Cursor: cursor,
 		Limit:  limit,
 	})

@@ -4,7 +4,7 @@ import { CheckOutlined, BellOutlined, DeleteOutlined } from '@ant-design/icons';
 import { userApi, type Notification, type ApiResponse, type NotificationListResponse } from '@/api/user';
 import dayjs from 'dayjs';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 
 const AdminNotificationsPage: React.FC = () => {
     const { token } = theme.useToken();
@@ -95,7 +95,7 @@ const AdminNotificationsPage: React.FC = () => {
                             opacity: item.isRead ? 0.7 : 1,
                             borderLeft: item.isRead ? '1px solid #f0f0f0' : '4px solid #1890ff'
                         }}
-                        bodyStyle={{ padding: '16px 24px' }}
+                        styles={{ body: { padding: '16px 24px' } }}
                     >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <div style={{ flex: 1 }}>

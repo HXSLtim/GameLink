@@ -29,9 +29,10 @@ func AssignDefaultRolePermissions(ctx context.Context, roleSvc *roleservice.Role
 		permissionIDs = append(permissionIDs, perm.ID)
 	}
 
-	// 为 super_admin 分配所有权限；admin 不再自动获得全部权限，避免与超管等价
+	// 为 super_admin 和 admin 分配所有权限
 	roleSlugs := []string{
 		string(model.RoleSlugSuperAdmin),
+		string(model.RoleSlugAdmin),
 	}
 
 	for _, roleSlug := range roleSlugs {

@@ -1,0 +1,118 @@
+package admin
+
+import (
+	"github.com/gin-gonic/gin"
+
+	"gamelink/internal/model"
+	reviewservice "gamelink/internal/service/review"
+	apierr "gamelink/pkg/apierr"
+)
+
+// ReviewSettingsHandler 评价展示设置处理器
+type ReviewSettingsHandler struct {
+	svc *reviewservice.SettingsService
+}
+
+// NewReviewSettingsHandler 创建评价展示设置处理器实例
+func NewReviewSettingsHandler(svc *reviewservice.SettingsService) *ReviewSettingsHandler {
+	return &ReviewSettingsHandler{svc: svc}
+}
+
+// GetReviewSettings
+// @Summary      获取评价展示设置
+// @Description  获取当前的评价展示规则配置
+// @Tags         Admin/ReviewSettings
+// @Security     BearerAuth
+// @Produce      json
+// @Success      200  {object}  model.APIResponse[model.ReviewDisplaySettings]
+// @Failure      500  {object}  model.ErrorResponse
+// @Router       /admin/review-settings [get]
+func (h *ReviewSettingsHandler) GetReviewSettings(c *gin.Context) {
+	settings, err := h.svc.GetSettings(c.Request.Context())
+	if err != nil {
+		writeJSONError(c, 500, err.Error())
+		return
+	}
+
+	writeJSON(c, 200, model.APIResponse[*model.ReviewDisplaySettings]{
+		Success: true,
+		Code:    200,
+		Message: "OK",
+		Data:    settings,
+	})
+}
+
+// UpdateReviewSettingsPayload 更新评价展示设置请求体
+type UpdateReviewSettingsPayload struct {
+	// 排序方式：time/score/likes
+	// @Enum time, score, likes
+	SortBy *string `json:"sortBy"`
+	// 最低评分阈值（1-5）
+	MinScore *int `json:"minScore"`
+	// 是否显示匿名评价
+	ShowAnonymous *bool `json:"showAnonymous"`
+	// 每页显示数量（1-100）
+	PageSize *int `json:"pageSize"`
+}
+
+// UpdateReviewSettings
+// @Summary      更新评价展示设置
+// @Description  更新评价展示规则配置，支持部分更新
+// @Tags         Admin/ReviewSettings
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body  UpdateReviewSettingsPayload  true  "设置信息"
+// @Success      200  {object}  model.APIResponse[model.ReviewDisplaySettings]
+// @Failure      400  {object}  model.ErrorResponse
+// @Failure      500  {object}  model.ErrorResponse
+// @Router       /admin/review-settings [put]
+func (h *ReviewSettingsHandler) UpdateReviewSettings(c *gin.Context) {
+	var p UpdateReviewSettingsPayload
+	if err := c.ShouldBindJSON(&p); err != nil {
+		writeJSONError(c, 400, apierr.ErrInvalidJSONPayload)
+		return
+	}
+
+	// 构建更新输入
+	input := reviewservice.UpdateSettingsInput{}
+
+	if p.SortBy != nil {
+		sortBy := model.ReviewSortBy(*p.SortBy)
+		if !sortBy.Valid() {
+			writeJSONError(c, 400, "invalid sortBy value, must be one of: time, score, likes")
+			return
+		}
+		input.SortBy = &sortBy
+	}
+
+	if p.MinScore != nil {
+		input.MinScore = p.MinScore
+	}
+
+	if p.ShowAnonymous != nil {
+		input.ShowAnonymous = p.ShowAnonymous
+	}
+
+	if p.PageSize != nil {
+		input.PageSize = p.PageSize
+	}
+
+	settings, err := h.svc.UpdateSettingsPartial(c.Request.Context(), input)
+	if err != nil {
+		// 检查是否是验证错误
+		if _, ok := err.(*model.ValidationError); ok {
+			writeJSONError(c, 400, err.Error())
+			return
+		}
+		writeJSONError(c, 500, err.Error())
+		return
+	}
+
+	writeJSON(c, 200, model.APIResponse[*model.ReviewDisplaySettings]{
+		Success: true,
+		Code:    200,
+		Message: "settings updated",
+		Data:    settings,
+	})
+}

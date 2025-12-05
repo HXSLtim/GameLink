@@ -112,6 +112,9 @@ func TestUserCreation(t *testing.T) {
 				Status: UserStatusActive,
 			}
 			assert.Equal(t, role, user.Role)
+			assert.Equal(t, "role@example.com", user.Email)
+			assert.Equal(t, "Role Test User", user.Name)
+			assert.Equal(t, UserStatusActive, user.Status)
 		}
 	})
 
@@ -126,6 +129,9 @@ func TestUserCreation(t *testing.T) {
 				Status: status,
 			}
 			assert.Equal(t, status, user.Status)
+			assert.Equal(t, "status@example.com", user.Email)
+			assert.Equal(t, "Status Test User", user.Name)
+			assert.Equal(t, RoleUser, user.Role)
 		}
 	})
 }
@@ -259,6 +265,7 @@ func TestUserFieldAccess(t *testing.T) {
 			Email: "nil@example.com",
 		}
 		assert.Nil(t, user.LastLoginAt)
+		assert.Equal(t, "nil@example.com", user.Email)
 	})
 }
 
@@ -320,6 +327,8 @@ func TestUserRoleValidation(t *testing.T) {
 			}
 			assert.Equal(t, tt.role, user.Role)
 			assert.NotEmpty(t, string(user.Role))
+			assert.Equal(t, "role@example.com", user.Email)
+			assert.Equal(t, UserStatusActive, user.Status)
 		})
 	}
 }
@@ -345,6 +354,8 @@ func TestUserStatusValidation(t *testing.T) {
 			}
 			assert.Equal(t, tt.status, user.Status)
 			assert.NotEmpty(t, string(user.Status))
+			assert.Equal(t, "status@example.com", user.Email)
+			assert.Equal(t, RoleUser, user.Role)
 		})
 	}
 }

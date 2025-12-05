@@ -43,6 +43,15 @@ import {
     LineChartOutlined,
     FundOutlined,
     FileTextOutlined,
+    StarOutlined,
+    UnorderedListOutlined,
+    AuditOutlined,
+    WarningOutlined,
+    StopOutlined,
+    BarChartOutlined,
+    GiftOutlined,
+    MessageOutlined,
+    TagsOutlined,
 } from '@ant-design/icons';
 import { useAdmin } from '@/context/AdminContext';
 import { useTheme } from '@/context/ThemeContext';
@@ -60,7 +69,7 @@ type MenuItem = Required<MenuProps>['items'][number];
 /**
  * 图标映射 - 将图标名称字符串映射到实际的图标组件
  */
-const iconMap: Record<string, any> = {
+const iconMap: Record<string, React.ComponentType> = {
     DashboardOutlined,
     SettingFilled,
     TeamOutlined,
@@ -73,6 +82,18 @@ const iconMap: Record<string, any> = {
     FundOutlined,
     SettingOutlined,
     FileTextOutlined,
+    UserOutlined,
+    // 评价管理相关图标
+    StarOutlined,
+    UnorderedListOutlined,
+    AuditOutlined,
+    WarningOutlined,
+    StopOutlined,
+    BarChartOutlined,
+    GiftOutlined,
+    // 内容管理相关图标
+    MessageOutlined,
+    TagsOutlined,
 };
 
 const AdminLayout: React.FC = () => {
@@ -88,6 +109,9 @@ const AdminLayout: React.FC = () => {
     // 菜单数据
     const [menuData, setMenuData] = useState<BackendMenuItem[]>([]);
     const [menuLoading, setMenuLoading] = useState(true);
+
+    // 初始化状态
+    const [initializing, setInitializing] = useState(false);
 
     // 用户信息
     const [userInfo, setUserInfo] = useState<{ username: string; avatar?: string; id?: number }>({
@@ -142,7 +166,7 @@ const AdminLayout: React.FC = () => {
             setUnreadCount(0);
             setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
             messageApi.success('已全部标记为已读');
-        } catch (error) {
+        } catch {
             messageApi.error('全部标记已读失败');
         }
     };
@@ -461,6 +485,29 @@ const AdminLayout: React.FC = () => {
         return collapsed ? 80 : 220;
     };
 
+    // 处理初始化
+    const handleInitialize = async () => {
+        setInitializing(true);
+        try {
+            const { forceInit } = await import('@/services/init');
+            const result = await forceInit();
+            if (result.success) {
+                messageApi.success('初始化成功，正在刷新...');
+                // 重新加载菜单
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                messageApi.error(`初始化失败: ${result.errors.join(', ')}`);
+            }
+        } catch (error) {
+            messageApi.error('初始化失败');
+            console.error('Init error:', error);
+        } finally {
+            setInitializing(false);
+        }
+    };
+
     const renderMenu = () => (
         <>
             {/* Logo */}
@@ -473,7 +520,24 @@ const AdminLayout: React.FC = () => {
                 )}
             </div>
 
-            {/* 菜单 */}
+            {/* 菜单为空时显示初始化按钮 */}
+            {menuItems.length === 0 ? (
+                <div style={{ padding: 16, textAlign: 'center' }}>
+                    <Empty
+                        image={Empty.PRESENTED_IMAGE_SIMPLE}
+                        description="暂无菜单数据"
+                    >
+                        <Button
+                            type="primary"
+                            onClick={handleInitialize}
+                            loading={initializing}
+                        >
+                            初始化系统
+                        </Button>
+                    </Empty>
+                </div>
+            ) : (
+            /* 菜单 */
             <ConfigProvider
                 theme={{
                     components: {
@@ -495,6 +559,7 @@ const AdminLayout: React.FC = () => {
                     style={{ background: 'transparent', borderRight: 0 }}
                 />
             </ConfigProvider>
+            )}
         </>
     );
 
@@ -576,7 +641,7 @@ const AdminLayout: React.FC = () => {
                                 open={notificationOpen}
                                 onOpenChange={setNotificationOpen}
                                 placement="bottomRight"
-                                overlayInnerStyle={{ padding: 0 }}
+                                styles={{ body: { padding: 0 } }}
                             >
                                 <Badge count={unreadCount} size="small">
                                     <Button type="text" icon={<BellOutlined />} />

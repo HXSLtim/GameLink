@@ -13,6 +13,7 @@ type Menu struct {
 	Permission  string  `json:"permission" gorm:"size:128"` // optional permission code required
 	Redirect    string  `json:"redirect" gorm:"size:255"`
 	Description string  `json:"description" gorm:"size:255"`
+	Children    []Menu  `json:"children,omitempty" gorm:"-"` // 非数据库字段，用于构建树形结构
 }
 
 func (Menu) TableName() string { return "menus" }

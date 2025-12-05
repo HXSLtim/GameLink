@@ -38,6 +38,15 @@ const paymentStatusMap: Record<string, string> = {
     failed: '支付失败',
 };
 
+interface OrderRecord {
+    id: number;
+    orderNo: string;
+    userId: number;
+    totalPriceCents: number;
+    status: string;
+    createdAt: string;
+}
+
 const Dashboard: React.FC = () => {
     const { token } = theme.useToken();
     const [loading, setLoading] = useState(true);
@@ -45,48 +54,54 @@ const Dashboard: React.FC = () => {
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [revenueTrend, setRevenueTrend] = useState<TrendData[]>([]);
     const [userGrowth, setUserGrowth] = useState<TrendData[]>([]);
-    const [recentOrders, setRecentOrders] = useState<any[]>([]);
+    const [recentOrders, setRecentOrders] = useState<OrderRecord[]>([]);
     const [topPlayers, setTopPlayers] = useState<TopPlayer[]>([]);
+    const [chartReady, setChartReady] = useState(false);
 
-    const loadData = async () => {
-        setLoading(true);
-        try {
-            const [dashboardRes, revenueRes, userGrowthRes, ordersRes, topPlayersRes] = await Promise.all([
-                adminApi.getDashboardStats(),
-                adminApi.getRevenueTrend({ days }),
-                adminApi.getUserGrowth({ days }),
-                adminApi.getOrders({ page: 1, page_size: 5 }),
-                adminApi.getTopPlayers({ limit: 5 })
-            ]);
-
-            // @ts-ignore
-            setStats(dashboardRes.data?.data || dashboardRes.data || {});
-            // @ts-ignore
-            setRevenueTrend(revenueRes.data?.data || revenueRes.data || []);
-            // @ts-ignore
-            setUserGrowth(userGrowthRes.data?.data || userGrowthRes.data || []);
-
-            // @ts-ignore
-            const ordersData = ordersRes.data?.data || ordersRes.data || [];
-            // Handle case where API returns array directly or { list: [] }
-            setRecentOrders(Array.isArray(ordersData) ? ordersData : (ordersData.list || []));
-
-            // @ts-ignore
-            setTopPlayers(topPlayersRes.data?.data || topPlayersRes.data || []);
-
-        } catch (error) {
-            console.error(error);
-            message.error('加载仪表盘数据失败');
-        } finally {
-            setLoading(false);
-        }
-    };
+    // Delay chart rendering to ensure container dimensions are calculated
+    useEffect(() => {
+        // Use requestAnimationFrame for more reliable timing after layout
+        const raf = requestAnimationFrame(() => {
+            const timer = setTimeout(() => setChartReady(true), 200);
+            return () => clearTimeout(timer);
+        });
+        return () => cancelAnimationFrame(raf);
+    }, []);
 
     useEffect(() => {
+        const loadData = async () => {
+            setLoading(true);
+            try {
+                const [dashboardRes, revenueRes, userGrowthRes, ordersRes, topPlayersRes] = await Promise.all([
+                    adminApi.getDashboardStats(),
+                    adminApi.getRevenueTrend({ days }),
+                    adminApi.getUserGrowth({ days }),
+                    adminApi.getOrders({ page: 1, page_size: 5 }),
+                    adminApi.getTopPlayers({ limit: 5 })
+                ]);
+
+                setStats(dashboardRes.data?.data || dashboardRes.data || {});
+                setRevenueTrend(revenueRes.data?.data || revenueRes.data || []);
+                setUserGrowth(userGrowthRes.data?.data || userGrowthRes.data || []);
+
+                const ordersData = ordersRes.data?.data || ordersRes.data || [];
+                // Handle case where API returns array directly or { list: [] }
+                setRecentOrders(Array.isArray(ordersData) ? ordersData : (ordersData.list || []));
+
+                setTopPlayers(topPlayersRes.data?.data || topPlayersRes.data || []);
+
+            } catch (error) {
+                console.error(error);
+                message.error('加载仪表盘数据失败');
+            } finally {
+                setLoading(false);
+            }
+        };
+
         loadData();
     }, [days]);
 
-    const orderColumns: ColumnsType<any> = [
+    const orderColumns: ColumnsType<OrderRecord> = [
         {
             title: '订单号',
             dataIndex: 'orderNo',
@@ -200,53 +215,57 @@ const Dashboard: React.FC = () => {
             <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
                 <Col xs={24} lg={12}>
                     <Card title="订单状态分布" loading={loading} style={{ border: 'none' }}>
-                        <div style={{ height: 300, width: '100%', minWidth: 0, overflow: 'hidden' }}>
-                            <ResponsiveContainer width="100%" height="100%" debounce={300} minWidth={0} minHeight={0}>
-                                <PieChart>
-                                    <Pie
-                                        data={orderStatusData}
-                                        cx="50%"
-                                        cy="50%"
-                                        labelLine={false}
-                                        label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
-                                        outerRadius={100}
-                                        fill="#8884d8"
-                                        dataKey="value"
-                                    >
-                                        {orderStatusData.map((_, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip contentStyle={{ backgroundColor: token.colorBgElevated, borderColor: token.colorBorder }} itemStyle={{ color: token.colorText }} />
-                                    <Legend />
-                                </PieChart>
-                            </ResponsiveContainer>
+                        <div style={{ height: 300, width: '100%', minWidth: 1, minHeight: 1, overflow: 'hidden' }}>
+                            {chartReady && orderStatusData.length > 0 && (
+                                <ResponsiveContainer width="99%" height={280} debounce={300}>
+                                    <PieChart>
+                                        <Pie
+                                            data={orderStatusData}
+                                            cx="50%"
+                                            cy="50%"
+                                            labelLine={false}
+                                            label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
+                                            outerRadius={100}
+                                            fill="#8884d8"
+                                            dataKey="value"
+                                        >
+                                            {orderStatusData.map((_, index) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip contentStyle={{ backgroundColor: token.colorBgElevated, borderColor: token.colorBorder }} itemStyle={{ color: token.colorText }} />
+                                        <Legend />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            )}
                         </div>
                     </Card>
                 </Col>
                 <Col xs={24} lg={12}>
                     <Card title="支付状态分布" loading={loading} style={{ border: 'none' }}>
-                        <div style={{ height: 300, width: '100%', minWidth: 0, overflow: 'hidden' }}>
-                            <ResponsiveContainer width="100%" height="100%" debounce={300} minWidth={0} minHeight={0}>
-                                <PieChart>
-                                    <Pie
-                                        data={paymentStatusData}
-                                        cx="50%"
-                                        cy="50%"
-                                        labelLine={false}
-                                        label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
-                                        outerRadius={100}
-                                        fill="#82ca9d"
-                                        dataKey="value"
-                                    >
-                                        {paymentStatusData.map((_, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip contentStyle={{ backgroundColor: token.colorBgElevated, borderColor: token.colorBorder }} itemStyle={{ color: token.colorText }} />
-                                    <Legend />
-                                </PieChart>
-                            </ResponsiveContainer>
+                        <div style={{ height: 300, width: '100%', minWidth: 1, minHeight: 1, overflow: 'hidden' }}>
+                            {chartReady && paymentStatusData.length > 0 && (
+                                <ResponsiveContainer width="99%" height={280} debounce={300}>
+                                    <PieChart>
+                                        <Pie
+                                            data={paymentStatusData}
+                                            cx="50%"
+                                            cy="50%"
+                                            labelLine={false}
+                                            label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
+                                            outerRadius={100}
+                                            fill="#82ca9d"
+                                            dataKey="value"
+                                        >
+                                            {paymentStatusData.map((_, index) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip contentStyle={{ backgroundColor: token.colorBgElevated, borderColor: token.colorBorder }} itemStyle={{ color: token.colorText }} />
+                                        <Legend />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            )}
                         </div>
                     </Card>
                 </Col>
@@ -256,33 +275,37 @@ const Dashboard: React.FC = () => {
             <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
                 <Col xs={24} lg={12}>
                     <Card title="收入趋势 (近7天)" loading={loading} style={{ border: 'none' }}>
-                        <div style={{ height: 300, width: '100%', minWidth: 0, overflow: 'hidden' }}>
-                            <ResponsiveContainer width="100%" height="100%" debounce={300} minWidth={0} minHeight={0}>
-                                <LineChart data={revenueTrend}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke={token.colorSplit} />
-                                    <XAxis dataKey="date" stroke={token.colorTextSecondary} />
-                                    <YAxis stroke={token.colorTextSecondary} />
-                                    <Tooltip contentStyle={{ backgroundColor: token.colorBgElevated, borderColor: token.colorBorder }} itemStyle={{ color: token.colorText }} />
-                                    <Legend />
-                                    <Line type="monotone" dataKey="value" name="收入" stroke={token.colorWarning} activeDot={{ r: 8 }} />
-                                </LineChart>
-                            </ResponsiveContainer>
+                        <div style={{ height: 300, width: '100%', minWidth: 1, minHeight: 1, overflow: 'hidden' }}>
+                            {chartReady && (
+                                <ResponsiveContainer width="99%" height={280} debounce={300}>
+                                    <LineChart data={revenueTrend}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke={token.colorSplit} />
+                                        <XAxis dataKey="date" stroke={token.colorTextSecondary} />
+                                        <YAxis stroke={token.colorTextSecondary} />
+                                        <Tooltip contentStyle={{ backgroundColor: token.colorBgElevated, borderColor: token.colorBorder }} itemStyle={{ color: token.colorText }} />
+                                        <Legend />
+                                        <Line type="monotone" dataKey="value" name="收入" stroke={token.colorWarning} activeDot={{ r: 8 }} />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            )}
                         </div>
                     </Card>
                 </Col>
                 <Col xs={24} lg={12}>
                     <Card title="用户增长 (近7天)" loading={loading} style={{ border: 'none' }}>
-                        <div style={{ height: 300, width: '100%', minWidth: 0, overflow: 'hidden' }}>
-                            <ResponsiveContainer width="100%" height="100%" debounce={300} minWidth={0} minHeight={0}>
-                                <LineChart data={userGrowth}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke={token.colorSplit} />
-                                    <XAxis dataKey="date" stroke={token.colorTextSecondary} />
-                                    <YAxis stroke={token.colorTextSecondary} />
-                                    <Tooltip contentStyle={{ backgroundColor: token.colorBgElevated, borderColor: token.colorBorder }} itemStyle={{ color: token.colorText }} />
-                                    <Legend />
-                                    <Line type="monotone" dataKey="value" name="新增用户" stroke={token.colorPrimary} activeDot={{ r: 8 }} />
-                                </LineChart>
-                            </ResponsiveContainer>
+                        <div style={{ height: 300, width: '100%', minWidth: 1, minHeight: 1, overflow: 'hidden' }}>
+                            {chartReady && (
+                                <ResponsiveContainer width="99%" height={280} debounce={300}>
+                                    <LineChart data={userGrowth}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke={token.colorSplit} />
+                                        <XAxis dataKey="date" stroke={token.colorTextSecondary} />
+                                        <YAxis stroke={token.colorTextSecondary} />
+                                        <Tooltip contentStyle={{ backgroundColor: token.colorBgElevated, borderColor: token.colorBorder }} itemStyle={{ color: token.colorText }} />
+                                        <Legend />
+                                        <Line type="monotone" dataKey="value" name="新增用户" stroke={token.colorPrimary} activeDot={{ r: 8 }} />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            )}
                         </div>
                     </Card>
                 </Col>
@@ -328,12 +351,12 @@ const Dashboard: React.FC = () => {
                                     title: '排名',
                                     key: 'rank',
                                     width: 60,
-                                    render: (_: any, __: any, index: number) => <Tag color="gold">#{index + 1}</Tag>,
+                                    render: (_: unknown, __: TopPlayer, index: number) => <Tag color="gold">#{index + 1}</Tag>,
                                 },
                                 {
                                     title: '陪玩',
                                     key: 'player',
-                                    render: (_: any, record: TopPlayer, index: number) => (
+                                    render: (_: unknown, record: TopPlayer, index: number) => (
                                         <Space>
                                             <Avatar
                                                 style={{ backgroundColor: `hsl(${index * 60}, 70%, 50%)` }}
@@ -346,7 +369,7 @@ const Dashboard: React.FC = () => {
                                 {
                                     title: '评分',
                                     key: 'rating',
-                                    render: (_: any, record: TopPlayer) => (
+                                    render: (_: unknown, record: TopPlayer) => (
                                         <Space>
                                             <Text strong>{record.ratingAverage}</Text>
                                             <Text type="secondary">({record.ratingCount})</Text>

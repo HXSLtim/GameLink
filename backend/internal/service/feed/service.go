@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"gamelink/internal/model"
-	"gamelink/pkg/safety"
 	"gamelink/internal/repository"
 	"gamelink/internal/service"
+	"gamelink/pkg/safety"
 )
 
 const (
@@ -130,20 +130,20 @@ func (s *Service) CreateFeed(ctx context.Context, authorID uint64, req CreateFee
 	}
 	switch result.Decision {
 	case ModerationDecisionApprove:
-		if err := s.repo.UpdateModeration(ctx, feed.ID, model.FeedModerationApproved, result.Reason, false); err != nil {
+		if err := s.repo.UpdateModeration(ctx, feed.ID, model.FeedModerationApproved, result.Reason, nil); err != nil {
 			return nil, err
 		}
 		feed.ModerationStatus = model.FeedModerationApproved
 		feed.ModerationNote = result.Reason
 	case ModerationDecisionReject:
-		if err := s.repo.UpdateModeration(ctx, feed.ID, model.FeedModerationRejected, result.Reason, false); err != nil {
+		if err := s.repo.UpdateModeration(ctx, feed.ID, model.FeedModerationRejected, result.Reason, nil); err != nil {
 			return nil, err
 		}
 		feed.ModerationStatus = model.FeedModerationRejected
 		feed.ModerationNote = result.Reason
 	case ModerationDecisionManual:
 		if result.Reason != "" {
-			if err := s.repo.UpdateModeration(ctx, feed.ID, model.FeedModerationPending, result.Reason, false); err != nil {
+			if err := s.repo.UpdateModeration(ctx, feed.ID, model.FeedModerationPending, result.Reason, nil); err != nil {
 				return nil, err
 			}
 			feed.ModerationNote = result.Reason

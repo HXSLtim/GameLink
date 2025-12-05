@@ -1,22 +1,30 @@
 import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { App } from 'antd';
 import type { Role } from './types';
+import { usePermission } from '@/hooks/usePermission';
 
 interface RouteGuardProps {
     children: ReactNode;
     roles?: Role[];
     requiresAuth?: boolean;
+    permission?: string;
 }
 
-const RouteGuard = ({ children, roles, requiresAuth }: RouteGuardProps) => {
+const RouteGuard = ({ children, roles, requiresAuth, permission }: RouteGuardProps) => {
     const navigate = useNavigate();
     const location = useLocation();
+    const { message } = App.useApp();
 
     // In a real app, this would come from a context or store
     const rawRole = localStorage.getItem('user_role');
     const userRole = rawRole ? (rawRole.toUpperCase() as Role) : null;
     const isAuthenticated = !!userRole;
+
+    // Check permission only when permission is defined and not empty
+    const needsPermissionCheck = !!permission && permission.length > 0;
+    const { hasPermission, loading: permissionLoading } = usePermission(needsPermissionCheck ? permission : '');
 
     useEffect(() => {
         if (requiresAuth && !isAuthenticated) {
@@ -33,11 +41,28 @@ const RouteGuard = ({ children, roles, requiresAuth }: RouteGuardProps) => {
         }
     }, [isAuthenticated, userRole, roles, requiresAuth, navigate, location]);
 
+    // Check permission after loading - only if permission check is needed
+    useEffect(() => {
+        if (needsPermissionCheck && !permissionLoading && !hasPermission) {
+            message.error('您没有访问此页面的权限');
+            navigate('/admin', { replace: true });
+        }
+    }, [needsPermissionCheck, permissionLoading, hasPermission, navigate]);
+
     if (requiresAuth && !isAuthenticated) {
         return null; // or loading spinner
     }
 
     if (roles && userRole && !roles.includes(userRole)) {
+        return null; // or unauthorized page
+    }
+
+    // Wait for permission check if permission is specified
+    if (needsPermissionCheck && permissionLoading) {
+        return null; // or loading spinner
+    }
+
+    if (needsPermissionCheck && !hasPermission) {
         return null; // or unauthorized page
     }
 

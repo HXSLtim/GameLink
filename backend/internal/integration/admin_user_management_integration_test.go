@@ -56,7 +56,8 @@ func TestAdminUserManagement(t *testing.T) {
 	createPayload := map[string]interface{}{
 		"name":     "Alice",
 		"email":    "alice@example.com",
-		"password": "Passw0rd",
+		"phone":    "13800138000",
+		"password": "Passw0rd!",
 		"role":     "user",
 		"status":   "active",
 	}

@@ -23,6 +23,12 @@ export const componentMap: Record<string, React.LazyExoticComponent<React.FC<any
     'biz/service/create': ServiceItemCreate,
     'biz/service/edit': ServiceItemEdit,
     'biz/service/detail': ServiceItemDetail,
+    // 内容管理
+    'content/feeds': React.lazy(() => import('@/pages/admin/Content/Feeds')),
+    'content/chat': React.lazy(() => import('@/pages/admin/Content/ChatMonitor')),
+    'content/reports': React.lazy(() => import('@/pages/admin/Content/Reports')),
+    'content/categories': React.lazy(() => import('@/pages/admin/Content/Categories')),
+    'content/stats': React.lazy(() => import('@/pages/admin/Content/Stats')),
 };
 
 export const getComponent = (componentKey: string) => {

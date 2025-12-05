@@ -1,36 +1,40 @@
 package router
 
 import (
-	"gamelink/pkg/cache"
+	"gamelink/internal/model"
+	adminrepo "gamelink/internal/repository/admin"
 	alertrepo "gamelink/internal/repository/alert"
 	chatrepo "gamelink/internal/repository/chat"
 	commissionrepo "gamelink/internal/repository/commission"
 	feedrepo "gamelink/internal/repository/content"
+	notificationrepo "gamelink/internal/repository/content"
+	contentcategoryrepo "gamelink/internal/repository/contentcategory"
 	gamerepo "gamelink/internal/repository/game"
 	orderrepo "gamelink/internal/repository/implementations"
-	notificationrepo "gamelink/internal/repository/content"
 	paymentrepo "gamelink/internal/repository/order"
-	userrepo "gamelink/internal/repository/user"
-	reviewrepo "gamelink/internal/repository/order"
 	reviewreplyrepo "gamelink/internal/repository/order"
+	reviewrepo "gamelink/internal/repository/order"
 	serviceitemrepo "gamelink/internal/repository/serviceitem"
-	adminrepo "gamelink/internal/repository/admin"
+	userrepo "gamelink/internal/repository/user"
 	withdrawrepo "gamelink/internal/repository/withdraw"
-	"gamelink/internal/model"
-	"gamelink/pkg/scheduler"
+	analyticsservice "gamelink/internal/service/analytics"
 	chatservice "gamelink/internal/service/chat"
 	commissionservice "gamelink/internal/service/commission"
 	contentservice "gamelink/internal/service/content"
+	contentcategoryservice "gamelink/internal/service/contentcategory"
 	giftservice "gamelink/internal/service/gift"
 	itemservice "gamelink/internal/service/item"
-	analyticsservice "gamelink/internal/service/analytics"
 	kpiservice "gamelink/internal/service/kpi"
 	monitorservice "gamelink/internal/service/monitor"
 	orderservice "gamelink/internal/service/order"
+	paymentservice "gamelink/internal/service/payment"
 	serviceplayer "gamelink/internal/service/player"
+	reviewstatsservice "gamelink/internal/service/review"
 	userservice "gamelink/internal/service/user"
 	walletservice "gamelink/internal/service/wallet"
 	"gamelink/internal/ws"
+	"gamelink/pkg/cache"
+	"gamelink/pkg/scheduler"
 
 	"gorm.io/gorm"
 )
@@ -41,7 +45,7 @@ type appServices struct {
 	serviceItemSvc      *itemservice.ServiceItemService
 	giftSvc             *giftservice.GiftService
 	orderSvc            *orderservice.OrderService
-	paymentSvc          *orderservice.PaymentService
+	paymentSvc          *paymentservice.PaymentService
 	playerSvc           *serviceplayer.PlayerService
 	reviewSvc           *orderservice.ReviewService
 	disputeSvc          *orderservice.DisputeService
@@ -53,16 +57,24 @@ type appServices struct {
 	settlementScheduler *scheduler.SettlementScheduler
 	chatRetention       *scheduler.ChatRetentionScheduler
 	// Monitor services
-	wsHub           *ws.Hub
-	realtimeSvc     *monitorservice.RealtimeService
-	alertRepo       model.AlertRepository
+	wsHub       *ws.Hub
+	realtimeSvc *monitorservice.RealtimeService
+	alertRepo   model.AlertRepository
 	// Analytics service
-	analyticsSvc    *analyticsservice.AnalyticsService
+	analyticsSvc *analyticsservice.AnalyticsService
 	// KPI service
-	kpiSvc          *kpiservice.KPIService
+	kpiSvc *kpiservice.KPIService
 	// User management services
-	tagSvc          *userservice.UserTagService
-	batchSvc        *userservice.BatchOperationService
+	tagSvc   *userservice.UserTagService
+	batchSvc *userservice.BatchOperationService
+	// Review stats service
+	reviewStatsSvc *reviewstatsservice.ReviewStatsService
+	// Content management services
+	adminFeedSvc       *contentservice.AdminFeedService
+	chatModerationSvc  *contentservice.ChatModerationService
+	feedReportSvc      *contentservice.FeedReportService
+	contentStatsSvc    *contentservice.ContentStatsService
+	contentCategorySvc *contentcategoryservice.ContentCategoryService
 }
 
 // initServices 初始化领域服务和调度任务（但不启动调度器）。
@@ -94,9 +106,9 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 	orderSvc := orderservice.NewOrderService(orderRepo, playerRepo, userRepo, gameRepo, paymentRepo, reviewRepo, commissionRepo)
 	// 注入聊天群仓库用于订单聊天自动销毁
 	orderSvc.SetChatGroupRepository(chatGroupRepo)
-	paymentSvc := orderservice.NewPaymentService(paymentRepo, orderRepo)
+	paymentSvc := paymentservice.NewPaymentService(paymentRepo, orderRepo)
 	playerSvc := serviceplayer.NewPlayerService(playerRepo, userRepo, gameRepo, orderRepo, reviewRepo, playerTagRepo, cacheClient)
-	reviewSvc := orderservice.NewReviewService(reviewRepo, orderRepo, playerRepo, userRepo, reviewReplyRepo)
+	reviewSvc := orderservice.NewReviewService(reviewRepo, orderRepo, playerRepo, userRepo, reviewReplyRepo, notificationRepo)
 	disputeRepo := reviewrepo.NewDisputeRepository(orm)
 	operationLogRepo := adminrepo.NewOperationLogRepository(orm)
 	disputeSvc := orderservice.NewDisputeService(disputeRepo, orderRepo, userRepo, operationLogRepo, notificationRepo, paymentRepo)
@@ -127,6 +139,17 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 	tagSvc := userservice.NewUserTagService(tagRepo, userRepo, cacheClient)
 	batchSvc := userservice.NewBatchOperationService(orm, userRepo, tagRepo, notifRepo)
 
+	// Review stats service
+	reviewStatsSvc := reviewstatsservice.NewReviewStatsService(reviewRepo)
+
+	// Content management services
+	contentCategoryRepo := contentcategoryrepo.NewContentCategoryRepository(orm)
+	adminFeedSvc := contentservice.NewAdminFeedService(feedRepo, nil, operationLogRepo)
+	chatModerationSvc := contentservice.NewChatModerationService(chatMessageRepo, chatMemberRepo, nil, operationLogRepo)
+	feedReportSvc := contentservice.NewFeedReportService(feedRepo, operationLogRepo)
+	contentStatsSvc := contentservice.NewContentStatsService(feedRepo, chatMessageRepo)
+	contentCategorySvc := contentcategoryservice.NewContentCategoryService(contentCategoryRepo)
+
 	return &appServices{
 		commissionSvc:       commissionSvc,
 		serviceItemSvc:      serviceItemSvc,
@@ -150,5 +173,11 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 		kpiSvc:              kpiSvc,
 		tagSvc:              tagSvc,
 		batchSvc:            batchSvc,
+		reviewStatsSvc:      reviewStatsSvc,
+		adminFeedSvc:        adminFeedSvc,
+		chatModerationSvc:   chatModerationSvc,
+		feedReportSvc:       feedReportSvc,
+		contentStatsSvc:     contentStatsSvc,
+		contentCategorySvc:  contentCategorySvc,
 	}
 }

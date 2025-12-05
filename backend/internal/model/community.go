@@ -42,13 +42,16 @@ type Feed struct {
 	Base
 	AuthorID          uint64               `json:"authorId" gorm:"column:author_id;index"`
 	Content           string               `json:"content" gorm:"column:content;type:text"`
+	CategoryID        *uint64              `json:"categoryId,omitempty" gorm:"column:category_id;index"`
 	Visibility        FeedVisibility       `json:"visibility" gorm:"column:visibility;type:varchar(32);default:'public'"`
 	ModerationStatus  FeedModerationStatus `json:"moderationStatus" gorm:"column:moderation_status;type:varchar(32);index;default:'pending'"`
 	ModerationNote    string               `json:"moderationNote,omitempty" gorm:"column:moderation_note;type:text"`
+	ModeratedBy       *uint64              `json:"moderatedBy,omitempty" gorm:"column:moderated_by"`
 	AutoModeratedAt   *time.Time           `json:"autoModeratedAt,omitempty" gorm:"column:auto_moderated_at"`
 	ManualModeratedAt *time.Time           `json:"manualModeratedAt,omitempty" gorm:"column:manual_moderated_at"`
 	Metrics           FeedMetricFields     `json:"metrics" gorm:"embedded"`
 	Images            []FeedImage          `json:"images" gorm:"foreignKey:FeedID;constraint:OnDelete:CASCADE"`
+	Category          *ContentCategory     `json:"category,omitempty" gorm:"foreignKey:CategoryID;references:ID"`
 }
 
 // TableName implements gorm tabler.

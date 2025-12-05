@@ -5,28 +5,19 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"gamelink/internal/handler/middleware"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	menusvc "gamelink/internal/service/admin"
 )
 
 type MenuHandler struct {
-	svc *menusvc.MenuService
+	svc     *menusvc.MenuService
+	permSvc *menusvc.PermissionService
 }
 
-func NewMenuHandler(svc *menusvc.MenuService) *MenuHandler {
-	return &MenuHandler{svc: svc}
-}
-
-// RegisterMenuRoutes 管理端菜单 CRUD
-func RegisterMenuRoutes(router gin.IRouter, svc *menusvc.MenuService) {
-	h := NewMenuHandler(svc)
-	group := router.Group("/menus")
-	group.GET("", h.List)
-	group.POST("", h.Create)
-	group.GET("/:id", h.Get)
-	group.PUT("/:id", h.Update)
-	group.DELETE("/:id", h.Delete)
+func NewMenuHandler(svc *menusvc.MenuService, permSvc *menusvc.PermissionService) *MenuHandler {
+	return &MenuHandler{svc: svc, permSvc: permSvc}
 }
 
 // List 菜单列表（可选 parentId）
@@ -175,4 +166,91 @@ func (h *MenuHandler) Delete(c *gin.Context) {
 		Code:    http.StatusOK,
 		Message: "Deleted",
 	})
+}
+
+// ListMyMenus 获取当前用户可访问的菜单
+// @Summary      获取当前用户菜单
+// @Description  根据当前用户权限返回可访问的菜单列表
+// @Tags         Admin - Menus
+// @Security     BearerAuth
+// @Success      200  {object}  model.APIResponse[[]model.Menu]
+// @Router       /admin/menus/me [get]
+func (h *MenuHandler) ListMyMenus(c *gin.Context) {
+	userIDVal, ok := c.Get(middleware.UserIDKey)
+	if !ok {
+		writeJSONError(c, http.StatusUnauthorized, "未登录")
+		return
+	}
+	userID, _ := userIDVal.(uint64)
+
+	// 获取用户权限列表
+	perms, err := h.permSvc.ListPermissionsByUserID(c.Request.Context(), userID)
+	if err != nil {
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// 提取权限码
+	var codes []string
+	hasSuperAdmin := false
+	for _, p := range perms {
+		if p.Code == "*" {
+			hasSuperAdmin = true
+			break
+		}
+		if p.Code != "" {
+			codes = append(codes, p.Code)
+		}
+	}
+
+	var menus []model.Menu
+
+	// 超级管理员返回所有菜单
+	if hasSuperAdmin {
+		menus, err = h.svc.List(c.Request.Context(), nil)
+	} else {
+		menus, err = h.svc.ListAccessible(c.Request.Context(), codes)
+	}
+
+	if err != nil {
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// 构建菜单树
+	menuTree := buildMenuTree(menus)
+
+	writeJSON(c, http.StatusOK, model.APIResponse[[]model.Menu]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: "OK",
+		Data:    menuTree,
+	})
+}
+
+// buildMenuTree 将扁平菜单列表构建为树形结构
+func buildMenuTree(menus []model.Menu) []model.Menu {
+	menuMap := make(map[uint64]*model.Menu)
+	var roots []model.Menu
+
+	// 先建立 ID -> Menu 映射
+	for i := range menus {
+		menu := menus[i]
+		menu.Children = []model.Menu{}
+		menuMap[menu.ID] = &menu
+	}
+
+	// 构建树
+	for _, menu := range menuMap {
+		if menu.ParentID == nil || *menu.ParentID == 0 {
+			roots = append(roots, *menu)
+		} else if parent, ok := menuMap[*menu.ParentID]; ok {
+			parent.Children = append(parent.Children, *menu)
+		} else {
+			// 父菜单不在权限范围内，作为根节点
+			roots = append(roots, *menu)
+		}
+	}
+
+	return roots
 }

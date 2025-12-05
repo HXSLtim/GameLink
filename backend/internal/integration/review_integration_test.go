@@ -13,6 +13,7 @@ import (
 	playerhandler "gamelink/internal/handler/player"
 	userhandler "gamelink/internal/handler/user"
 	"gamelink/internal/model"
+	"gamelink/internal/repository"
 	"gamelink/internal/repository/commission"
 	"gamelink/internal/repository/game"
 	orderimpl "gamelink/internal/repository/implementations"
@@ -23,7 +24,6 @@ import (
 
 	ordersvc "gamelink/internal/service/order"
 	paymentsvc "gamelink/internal/service/payment"
-	reviewsvc "gamelink/internal/service/review"
 	"gamelink/pkg/testutil"
 )
 
@@ -45,9 +45,10 @@ func TestReviewFlow(t *testing.T) {
 	commissionRepo := commission.NewCommissionRepository(db)
 	replyRepo := reviewreply.NewReviewReplyRepository(db)
 
+	notificationRepo := &mockNotificationRepo{}
 	orderService := ordersvc.NewOrderService(orderRepo, playerRepo, userRepo, gameRepo, paymentRepo, reviewRepo, commissionRepo)
 	paymentService := paymentsvc.NewPaymentService(paymentRepo, orderRepo)
-	reviewService := reviewsvc.NewReviewService(reviewRepo, orderRepo, playerRepo, userRepo, replyRepo)
+	reviewService := ordersvc.NewReviewService(reviewRepo, orderRepo, playerRepo, userRepo, replyRepo, notificationRepo)
 
 	router := gin.New()
 	api := router.Group("/api/v1")
@@ -84,7 +85,7 @@ func TestReviewFlow(t *testing.T) {
 	if createReviewResp.Code != http.StatusOK {
 		t.Fatalf("create review status=%d body=%s", createReviewResp.Code, createReviewResp.Body.String())
 	}
-	var createReviewParsed apiResp[reviewsvc.CreateReviewResponse]
+	var createReviewParsed apiResp[ordersvc.CreateReviewResponse]
 	if err := json.Unmarshal(createReviewResp.Body.Bytes(), &createReviewParsed); err != nil {
 		t.Fatalf("parse create review: %v", err)
 	}
@@ -104,7 +105,7 @@ func TestReviewFlow(t *testing.T) {
 	if myReviewsResp.Code != http.StatusOK {
 		t.Fatalf("my reviews status=%d body=%s", myReviewsResp.Code, myReviewsResp.Body.String())
 	}
-	var myReviewsParsed apiResp[reviewsvc.MyReviewListResponse]
+	var myReviewsParsed apiResp[ordersvc.MyReviewListResponse]
 	if err := json.Unmarshal(myReviewsResp.Body.Bytes(), &myReviewsParsed); err != nil {
 		t.Fatalf("parse my reviews: %v", err)
 	}
@@ -195,6 +196,33 @@ func seedReviewData(t *testing.T, db *gorm.DB) reviewSeed {
 }
 
 // createAndPayOrder 从订单服务创建并支付订单，返回订单ID
+// mockNotificationRepo 用于测试的通知仓库
+type mockNotificationRepo struct{}
+
+func (m *mockNotificationRepo) ListByUser(ctx context.Context, opts repository.NotificationListOptions) ([]model.NotificationEvent, int64, error) {
+	return nil, 0, nil
+}
+
+func (m *mockNotificationRepo) MarkRead(ctx context.Context, userID uint64, ids []uint64) error {
+	return nil
+}
+
+func (m *mockNotificationRepo) MarkAllRead(ctx context.Context, userID uint64) error {
+	return nil
+}
+
+func (m *mockNotificationRepo) CountUnread(ctx context.Context, userID uint64) (int64, error) {
+	return 0, nil
+}
+
+func (m *mockNotificationRepo) Create(ctx context.Context, event *model.NotificationEvent) error {
+	return nil
+}
+
+func (m *mockNotificationRepo) Delete(ctx context.Context, userID uint64, id uint64) error {
+	return nil
+}
+
 func createAndPayOrder(t *testing.T, router *gin.Engine, seed reviewSeed, start time.Time) uint64 {
 	createOrderPayload := map[string]interface{}{
 		"playerId":       seed.playerID,

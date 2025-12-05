@@ -43,17 +43,40 @@ const (
 	OpActionResolveDispute  OperationAction = "resolve_dispute"
 	OpActionRollbackDispute OperationAction = "rollback_dispute"
 	OpActionRejectDispute   OperationAction = "reject_dispute"
+
+	// 评价管理
+	OpActionApprove      OperationAction = "approve"
+	OpActionReject       OperationAction = "reject"
+	OpActionReply        OperationAction = "reply"
+	OpActionUpdateReply  OperationAction = "update_reply"
+	OpActionDeleteReply  OperationAction = "delete_reply"
+	OpActionHandleReport OperationAction = "handle_report"
+
+	// 内容管理
+	OpActionMuteUser      OperationAction = "mute_user"
+	OpActionUnmuteUser    OperationAction = "unmute_user"
+	OpActionDeleteMessage OperationAction = "delete_message"
+	OpActionBatchApprove  OperationAction = "batch_approve"
+	OpActionBatchReject   OperationAction = "batch_reject"
+	OpActionDismissReport OperationAction = "dismiss_report"
+	OpActionWarnUser      OperationAction = "warn_user"
 )
 
 // OperationEntityType 枚举被审计的实体类型。
 type OperationEntityType string
 
 const (
-	OpEntityOrder   OperationEntityType = "order"
-	OpEntityPayment OperationEntityType = "payment"
-	OpEntityPlayer  OperationEntityType = "player"
-	OpEntityGame    OperationEntityType = "game"
-	OpEntityReview  OperationEntityType = "review"
-	OpEntityUser    OperationEntityType = "user"
-	OpEntityDispute OperationEntityType = "dispute"
+	OpEntityOrder           OperationEntityType = "order"
+	OpEntityPayment         OperationEntityType = "payment"
+	OpEntityPlayer          OperationEntityType = "player"
+	OpEntityGame            OperationEntityType = "game"
+	OpEntityReview          OperationEntityType = "review"
+	OpEntityUser            OperationEntityType = "user"
+	OpEntityDispute         OperationEntityType = "dispute"
+	OpEntityFeed            OperationEntityType = "feed"
+	OpEntityChatMessage     OperationEntityType = "chat_message"
+	OpEntitySensitiveWord   OperationEntityType = "sensitive_word"
+	OpEntityContentCategory OperationEntityType = "content_category"
+	OpEntityFeedReport      OperationEntityType = "feed_report"
+	OpEntityChatReport      OperationEntityType = "chat_report"
 )

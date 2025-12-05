@@ -80,7 +80,7 @@ const Audit: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
         >
-            <Card bordered={false} bodyStyle={{ padding: '24px' }}>
+            <Card bordered={false} styles={{ body: { padding: '24px' } }}>
                 <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <h2 style={{ margin: 0, fontSize: 20 }}>系统审计日志</h2>
                     <Space>

@@ -11,6 +11,7 @@ export interface RouteConfig {
         title: string;
         roles?: Role[]; // Allowed roles. If undefined, accessible by everyone (or authenticated users depending on context)
         requiresAuth?: boolean;
+        permission?: string; // Required permission code for this route
         icon?: string;
         hideInMenu?: boolean;
     };

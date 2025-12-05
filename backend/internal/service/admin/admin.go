@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"sort"
 	"strings"
@@ -13,13 +14,14 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"gamelink/pkg/apierr"
-	"gamelink/pkg/cache"
-	"gamelink/pkg/logging"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	"gamelink/internal/repository/common"
 	repoiface "gamelink/internal/repository/interfaces"
+	feedservice "gamelink/internal/service/feed"
+	"gamelink/pkg/apierr"
+	"gamelink/pkg/cache"
+	"gamelink/pkg/logging"
 )
 
 var (
@@ -29,6 +31,8 @@ var (
 	ErrUserNotFound = apierr.NotFound("user not found")
 	// ErrOrderInvalidTransition 代表订单状态流转不合法。
 	ErrOrderInvalidTransition = apierr.BadRequest("invalid order status transition")
+	// ErrUnauthorized 表示无权操作。
+	ErrUnauthorized = apierr.Forbidden("unauthorized")
 
 	// ErrNotFound 暴露仓储的未找到错误，便于 handler 判定。
 	ErrNotFound = repository.ErrNotFound
@@ -383,10 +387,10 @@ func (s *AdminService) ListUsersWithOptions(ctx context.Context, opts repository
 
 // UserStatsResponse 用户统计信息响应
 type UserStatsResponse struct {
-	Total               int                  `json:"total"`
-	ByRole              map[string]int       `json:"byRole"`
-	ByStatus            map[string]int       `json:"byStatus"`
-	RecentRegistrations int                  `json:"recentRegistrations"`
+	Total               int            `json:"total"`
+	ByRole              map[string]int `json:"byRole"`
+	ByStatus            map[string]int `json:"byStatus"`
+	RecentRegistrations int            `json:"recentRegistrations"`
 }
 
 // GetUserStats 获取用户统计信息
@@ -1889,6 +1893,38 @@ func (s *AdminService) ListOperationLogs(ctx context.Context, entityType string,
 	return logs, &p, nil
 }
 
+// SearchOperationLogs 搜索操作日志（支持跨实体搜索）
+func (s *AdminService) SearchOperationLogs(ctx context.Context, opts repository.OperationLogSearchOptions) ([]model.OperationLog, *model.Pagination, error) {
+	if s.tx == nil {
+		return nil, nil, apierr.InternalError("事务管理器未配置")
+	}
+	var logs []model.OperationLog
+	var total int64
+	err := s.tx.WithTx(ctx, func(r *common.Repos) error {
+		norm := repository.OperationLogSearchOptions{
+			Page:        repository.NormalizePage(opts.Page),
+			PageSize:    repository.NormalizePageSize(opts.PageSize),
+			EntityType:  opts.EntityType,
+			EntityID:    opts.EntityID,
+			Action:      opts.Action,
+			ActorUserID: opts.ActorUserID,
+			DateFrom:    opts.DateFrom,
+			DateTo:      opts.DateTo,
+		}
+		items, cnt, err := r.OpLogs.List(ctx, norm)
+		if err != nil {
+			return err
+		}
+		logs, total = items, cnt
+		return nil
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	p := buildPagination(repository.NormalizePage(opts.Page), repository.NormalizePageSize(opts.PageSize), total)
+	return logs, &p, nil
+}
+
 // --- Review management ---
 
 // ListReviews 列出评价。
@@ -2015,18 +2051,18 @@ func getCachedList[T any](ctx context.Context, c cache.Cache, key string, ttl ti
 
 // ReviewReportDTO 举报信息DTO
 type ReviewReportDTO struct {
-	ID           uint64                    `json:"id"`
-	ReviewID     uint64                    `json:"reviewId"`
-	ReporterID   uint64                    `json:"reporterId"`
-	ReporterName string                    `json:"reporterName"`
-	Reason       string                    `json:"reason"`
-	Evidence     string                    `json:"evidence,omitempty"`
-	Status       model.ReviewReportStatus  `json:"status"`
-	HandledBy    *uint64                   `json:"handledBy,omitempty"`
-	HandlerName  string                    `json:"handlerName,omitempty"`
-	HandledAt    *time.Time                `json:"handledAt,omitempty"`
-	HandlingNote string                    `json:"handlingNote,omitempty"`
-	CreatedAt    time.Time                 `json:"createdAt"`
+	ID           uint64                   `json:"id"`
+	ReviewID     uint64                   `json:"reviewId"`
+	ReporterID   uint64                   `json:"reporterId"`
+	ReporterName string                   `json:"reporterName"`
+	Reason       string                   `json:"reason"`
+	Evidence     string                   `json:"evidence,omitempty"`
+	Status       model.ReviewReportStatus `json:"status"`
+	HandledBy    *uint64                  `json:"handledBy,omitempty"`
+	HandlerName  string                   `json:"handlerName,omitempty"`
+	HandledAt    *time.Time               `json:"handledAt,omitempty"`
+	HandlingNote string                   `json:"handlingNote,omitempty"`
+	CreatedAt    time.Time                `json:"createdAt"`
 }
 
 // ReportReview 举报评价
@@ -2234,9 +2270,24 @@ func (s *AdminService) HandleReviewReport(ctx context.Context, reportID, handler
 		switch action {
 		case "delete":
 			// 删除评价
+			oldStatus := review.Status
 			review.Status = model.ReviewStatusDeleted
 			if err := r.Reviews.Update(ctx, review); err != nil {
 				return err
+			}
+
+			// 记录删除评价的操作日志
+			if r.OpLogs != nil {
+				metadata := fmt.Sprintf(`{"old_status":"%s","new_status":"%s","report_id":%d,"action":"delete"}`, oldStatus, model.ReviewStatusDeleted, reportID)
+				log := &model.OperationLog{
+					EntityType:   string(model.OpEntityReview),
+					EntityID:     review.ID,
+					ActorUserID:  &handlerID,
+					Action:       string(model.OpActionDelete),
+					Reason:       fmt.Sprintf("处理举报：%s", note),
+					MetadataJSON: []byte(metadata),
+				}
+				_ = r.OpLogs.Append(ctx, log)
 			}
 
 			// 更新举报状态为已通过
@@ -2269,23 +2320,6 @@ func (s *AdminService) HandleReviewReport(ctx context.Context, reportID, handler
 			if report.HandlingNote == "" {
 				report.HandlingNote = "举报不成立"
 			}
-
-			// 如果没有其他待处理的举报，取消评价的举报标记
-			pendingStatus := model.ReviewReportStatusPending
-			reviewIDPtr := &report.ReviewID
-			pendingReports, _, err := r.ReviewReports.List(ctx, repository.ReviewReportListOptions{
-				ReviewID: reviewIDPtr,
-				Status:   &pendingStatus,
-				Page:     1,
-				PageSize: 1,
-			})
-			if err == nil && len(pendingReports) == 0 {
-				review.IsReported = false
-				if err := r.Reviews.Update(ctx, review); err != nil {
-					// 记录错误但不影响举报处理
-					slog.Warn("failed to update review reported status", slog.Any("error", err))
-				}
-			}
 			message = "举报已驳回"
 
 		default:
@@ -2293,7 +2327,42 @@ func (s *AdminService) HandleReviewReport(ctx context.Context, reportID, handler
 		}
 
 		// 更新举报记录
-		return r.ReviewReports.Update(ctx, report)
+		if err := r.ReviewReports.Update(ctx, report); err != nil {
+			return err
+		}
+
+		// 检查是否还有其他待处理的举报，如果没有则取消评价的举报标记
+		pendingStatus := model.ReviewReportStatusPending
+		reviewIDPtr := &report.ReviewID
+		pendingReports, _, err := r.ReviewReports.List(ctx, repository.ReviewReportListOptions{
+			ReviewID: reviewIDPtr,
+			Status:   &pendingStatus,
+			Page:     1,
+			PageSize: 1,
+		})
+		if err == nil && len(pendingReports) == 0 && review.IsReported {
+			review.IsReported = false
+			if err := r.Reviews.Update(ctx, review); err != nil {
+				// 记录错误但不影响举报处理
+				slog.Warn("failed to update review reported status", slog.Any("error", err))
+			}
+		}
+
+		// 记录处理举报的操作日志
+		if r.OpLogs != nil {
+			metadata := fmt.Sprintf(`{"report_id":%d,"action":"%s","note":"%s"}`, reportID, action, note)
+			log := &model.OperationLog{
+				EntityType:   string(model.OpEntityReview),
+				EntityID:     review.ID,
+				ActorUserID:  &handlerID,
+				Action:       string(model.OpActionHandleReport),
+				Reason:       fmt.Sprintf("处理举报：%s", message),
+				MetadataJSON: []byte(metadata),
+			}
+			_ = r.OpLogs.Append(ctx, log)
+		}
+
+		return nil
 	})
 
 	if err != nil {
@@ -2328,7 +2397,7 @@ func (s *AdminService) ListPendingReviews(ctx context.Context, page, pageSize in
 }
 
 // ApproveReview 批准评价
-func (s *AdminService) ApproveReview(ctx context.Context, reviewID uint64) error {
+func (s *AdminService) ApproveReview(ctx context.Context, reviewID uint64, actorUserID *uint64) error {
 	if s.tx == nil {
 		return apierr.InternalError("事务管理器未配置")
 	}
@@ -2348,8 +2417,28 @@ func (s *AdminService) ApproveReview(ctx context.Context, reviewID uint64) error
 			return apierr.BadRequest("只能批准待审核的评价")
 		}
 
+		oldStatus := review.Status
+
 		// 更新状态为已通过
-		return r.Reviews.UpdateStatus(ctx, reviewID, model.ReviewStatusApproved, "")
+		if err := r.Reviews.UpdateStatus(ctx, reviewID, model.ReviewStatusApproved, ""); err != nil {
+			return err
+		}
+
+		// 记录操作日志
+		if r.OpLogs != nil {
+			metadata := fmt.Sprintf(`{"old_status":"%s","new_status":"%s"}`, oldStatus, model.ReviewStatusApproved)
+			log := &model.OperationLog{
+				EntityType:   string(model.OpEntityReview),
+				EntityID:     reviewID,
+				ActorUserID:  actorUserID,
+				Action:       string(model.OpActionApprove),
+				Reason:       "批准评价",
+				MetadataJSON: []byte(metadata),
+			}
+			_ = r.OpLogs.Append(ctx, log)
+		}
+
+		return nil
 	})
 
 	if err != nil {
@@ -2360,7 +2449,7 @@ func (s *AdminService) ApproveReview(ctx context.Context, reviewID uint64) error
 }
 
 // RejectReview 拒绝评价
-func (s *AdminService) RejectReview(ctx context.Context, reviewID uint64, reason string) error {
+func (s *AdminService) RejectReview(ctx context.Context, reviewID uint64, reason string, actorUserID *uint64) error {
 	if s.tx == nil {
 		return apierr.InternalError("事务管理器未配置")
 	}
@@ -2385,8 +2474,28 @@ func (s *AdminService) RejectReview(ctx context.Context, reviewID uint64, reason
 			return apierr.BadRequest("只能拒绝待审核的评价")
 		}
 
+		oldStatus := review.Status
+
 		// 更新状态为已拒绝
-		return r.Reviews.UpdateStatus(ctx, reviewID, model.ReviewStatusRejected, reason)
+		if err := r.Reviews.UpdateStatus(ctx, reviewID, model.ReviewStatusRejected, reason); err != nil {
+			return err
+		}
+
+		// 记录操作日志
+		if r.OpLogs != nil {
+			metadata := fmt.Sprintf(`{"old_status":"%s","new_status":"%s","rejection_reason":"%s"}`, oldStatus, model.ReviewStatusRejected, reason)
+			log := &model.OperationLog{
+				EntityType:   string(model.OpEntityReview),
+				EntityID:     reviewID,
+				ActorUserID:  actorUserID,
+				Action:       string(model.OpActionReject),
+				Reason:       reason,
+				MetadataJSON: []byte(metadata),
+			}
+			_ = r.OpLogs.Append(ctx, log)
+		}
+
+		return nil
 	})
 
 	if err != nil {
@@ -2397,7 +2506,7 @@ func (s *AdminService) RejectReview(ctx context.Context, reviewID uint64, reason
 }
 
 // BatchApproveReviews 批量批准评价
-func (s *AdminService) BatchApproveReviews(ctx context.Context, reviewIDs []uint64) error {
+func (s *AdminService) BatchApproveReviews(ctx context.Context, reviewIDs []uint64, actorUserID *uint64) error {
 	if s.tx == nil {
 		return apierr.InternalError("事务管理器未配置")
 	}
@@ -2422,7 +2531,27 @@ func (s *AdminService) BatchApproveReviews(ctx context.Context, reviewIDs []uint
 		}
 
 		// 批量更新状态
-		return r.Reviews.BatchUpdateStatus(ctx, reviewIDs, model.ReviewStatusApproved, "")
+		if err := r.Reviews.BatchUpdateStatus(ctx, reviewIDs, model.ReviewStatusApproved, ""); err != nil {
+			return err
+		}
+
+		// 记录操作日志
+		if r.OpLogs != nil {
+			for _, id := range reviewIDs {
+				metadata := fmt.Sprintf(`{"old_status":"%s","new_status":"%s","batch":true}`, model.ReviewStatusPending, model.ReviewStatusApproved)
+				log := &model.OperationLog{
+					EntityType:   string(model.OpEntityReview),
+					EntityID:     id,
+					ActorUserID:  actorUserID,
+					Action:       string(model.OpActionApprove),
+					Reason:       "批量批准评价",
+					MetadataJSON: []byte(metadata),
+				}
+				_ = r.OpLogs.Append(ctx, log)
+			}
+		}
+
+		return nil
 	})
 
 	if err != nil {
@@ -2433,7 +2562,7 @@ func (s *AdminService) BatchApproveReviews(ctx context.Context, reviewIDs []uint
 }
 
 // BatchRejectReviews 批量拒绝评价
-func (s *AdminService) BatchRejectReviews(ctx context.Context, reviewIDs []uint64, reason string) error {
+func (s *AdminService) BatchRejectReviews(ctx context.Context, reviewIDs []uint64, reason string, actorUserID *uint64) error {
 	if s.tx == nil {
 		return apierr.InternalError("事务管理器未配置")
 	}
@@ -2462,7 +2591,27 @@ func (s *AdminService) BatchRejectReviews(ctx context.Context, reviewIDs []uint6
 		}
 
 		// 批量更新状态
-		return r.Reviews.BatchUpdateStatus(ctx, reviewIDs, model.ReviewStatusRejected, reason)
+		if err := r.Reviews.BatchUpdateStatus(ctx, reviewIDs, model.ReviewStatusRejected, reason); err != nil {
+			return err
+		}
+
+		// 记录操作日志
+		if r.OpLogs != nil {
+			for _, id := range reviewIDs {
+				metadata := fmt.Sprintf(`{"old_status":"%s","new_status":"%s","rejection_reason":"%s","batch":true}`, model.ReviewStatusPending, model.ReviewStatusRejected, reason)
+				log := &model.OperationLog{
+					EntityType:   string(model.OpEntityReview),
+					EntityID:     id,
+					ActorUserID:  actorUserID,
+					Action:       string(model.OpActionReject),
+					Reason:       reason,
+					MetadataJSON: []byte(metadata),
+				}
+				_ = r.OpLogs.Append(ctx, log)
+			}
+		}
+
+		return nil
 	})
 
 	if err != nil {
@@ -2470,4 +2619,161 @@ func (s *AdminService) BatchRejectReviews(ctx context.Context, reviewIDs []uint6
 	}
 
 	return nil
+}
+
+// UpdateReviewReply 更新评价回复
+func (s *AdminService) UpdateReviewReply(ctx context.Context, userID, replyID uint64, content string) (map[string]interface{}, error) {
+	if s.tx == nil {
+		return nil, apierr.InternalError("事务管理器未配置")
+	}
+
+	var result map[string]interface{}
+	err := s.tx.WithTx(ctx, func(r *common.Repos) error {
+		// 获取回复
+		reply, err := r.ReviewReplies.Get(ctx, replyID)
+		if err != nil {
+			if errors.Is(err, repository.ErrNotFound) {
+				return ErrNotFound
+			}
+			return err
+		}
+
+		// 权限检查：只能更新自己的回复
+		if reply.AuthorID != userID {
+			return ErrUnauthorized
+		}
+
+		oldContent := reply.Content
+
+		// 更新回复内容
+		reply.Content = strings.TrimSpace(content)
+
+		// 重新进行内容审核
+		engine := feedservice.NewDefaultModerationEngine()
+		moderationResult, err := engine.Evaluate(ctx, feedservice.ModerationInput{Content: reply.Content})
+		if err != nil {
+			return err
+		}
+
+		status := "pending"
+		note := moderationResult.Reason
+		switch moderationResult.Decision {
+		case feedservice.ModerationDecisionApprove:
+			status = "approved"
+		case feedservice.ModerationDecisionReject:
+			status = "rejected"
+		case feedservice.ModerationDecisionManual:
+			status = "pending"
+		}
+
+		reply.Status = status
+		reply.ModerationNote = note
+
+		// 更新回复
+		if err := r.ReviewReplies.Update(ctx, reply); err != nil {
+			return err
+		}
+
+		// 记录操作日志
+		if r.OpLogs != nil {
+			metadata := fmt.Sprintf(`{"reply_id":%d,"old_content":"%s","new_content":"%s","status":"%s"}`, replyID, oldContent, reply.Content, status)
+			log := &model.OperationLog{
+				EntityType:   string(model.OpEntityReview),
+				EntityID:     reply.ReviewID,
+				ActorUserID:  &userID,
+				Action:       string(model.OpActionUpdateReply),
+				Reason:       "更新回复",
+				MetadataJSON: []byte(metadata),
+			}
+			_ = r.OpLogs.Append(ctx, log)
+		}
+
+		// 发送通知给评价者
+		review, err := r.Reviews.Get(ctx, reply.ReviewID)
+		if err == nil && review.UserID != userID {
+			notification := &model.NotificationEvent{
+				UserID:        review.UserID,
+				Title:         "评价回复已更新",
+				Message:       "陪玩师更新了对您评价的回复",
+				Channel:       "web",
+				Priority:      model.NotificationPriorityNormal,
+				ReferenceType: "review_reply",
+				ReferenceID:   &replyID,
+			}
+			_ = r.Notifications.Create(ctx, notification)
+		}
+
+		result = map[string]interface{}{
+			"replyId": reply.ID,
+			"status":  reply.Status,
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// DeleteReviewReply 删除评价回复
+func (s *AdminService) DeleteReviewReply(ctx context.Context, userID, replyID uint64) error {
+	if s.tx == nil {
+		return apierr.InternalError("事务管理器未配置")
+	}
+
+	return s.tx.WithTx(ctx, func(r *common.Repos) error {
+		// 获取回复
+		reply, err := r.ReviewReplies.Get(ctx, replyID)
+		if err != nil {
+			if errors.Is(err, repository.ErrNotFound) {
+				return ErrNotFound
+			}
+			return err
+		}
+
+		// 权限检查：只能删除自己的回复
+		if reply.AuthorID != userID {
+			return ErrUnauthorized
+		}
+
+		reviewID := reply.ReviewID
+
+		// 删除回复
+		if err := r.ReviewReplies.Delete(ctx, replyID); err != nil {
+			return err
+		}
+
+		// 记录操作日志
+		if r.OpLogs != nil {
+			metadata := fmt.Sprintf(`{"reply_id":%d,"content":"%s"}`, replyID, reply.Content)
+			log := &model.OperationLog{
+				EntityType:   string(model.OpEntityReview),
+				EntityID:     reviewID,
+				ActorUserID:  &userID,
+				Action:       string(model.OpActionDeleteReply),
+				Reason:       "删除回复",
+				MetadataJSON: []byte(metadata),
+			}
+			_ = r.OpLogs.Append(ctx, log)
+		}
+
+		// 发送通知给评价者
+		review, err := r.Reviews.Get(ctx, reviewID)
+		if err == nil && review.UserID != userID {
+			notification := &model.NotificationEvent{
+				UserID:        review.UserID,
+				Title:         "评价回复已删除",
+				Message:       "陪玩师删除了对您评价的回复",
+				Channel:       "web",
+				Priority:      model.NotificationPriorityNormal,
+				ReferenceType: "review_reply",
+				ReferenceID:   &replyID,
+			}
+			_ = r.Notifications.Create(ctx, notification)
+		}
+
+		return nil
+	})
 }

@@ -13,7 +13,7 @@ import (
 	"gamelink/internal/model"
 	feedrepo "gamelink/internal/repository/content"
 	userrepo "gamelink/internal/repository/user"
-	feedservice "gamelink/internal/service/feed"
+	feedservice "gamelink/internal/service/content"
 	"gamelink/pkg/testutil"
 )
 
@@ -40,7 +40,7 @@ func TestFeedFlow(t *testing.T) {
 		t.Fatalf("seed user: %v", err)
 	}
 
-	svc := feedservice.NewService(feedRepo, nil)
+	svc := feedservice.NewFeedService(feedRepo, nil)
 
 	router := gin.New()
 	api := router.Group("/api/v1")

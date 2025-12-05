@@ -1,4 +1,4 @@
-package user_login_history
+package userloginhistory
 
 import (
 	"context"

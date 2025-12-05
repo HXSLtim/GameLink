@@ -550,7 +550,7 @@ const UserPage: React.FC = () => {
             render: (_, record) => (
                 <Space>
                     <Avatar
-                        src={record.avatarUrl}
+                        src={record.avatarUrl || undefined}
                         icon={<UserOutlined />}
                         style={{ backgroundColor: token.colorPrimary }}
                     />
@@ -882,7 +882,7 @@ const UserPage: React.FC = () => {
                             <div style={{ textAlign: 'center', marginBottom: 24 }}>
                                 <Avatar
                                     size={80}
-                                    src={currentUser.avatarUrl}
+                                    src={currentUser.avatarUrl || undefined}
                                     icon={<UserOutlined />}
                                     style={{ backgroundColor: token.colorPrimary }}
                                 />

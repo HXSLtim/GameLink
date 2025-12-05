@@ -79,15 +79,24 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         setLoading(true);
         try {
-            // 并行获取权限和菜单
+            // 并行获取权限和当前用户可访问的菜单
             const [permRes, menuRes] = await Promise.all([
-                adminApi.getMyPermissions().catch(() => ({ data: { data: [] } })),
-                adminApi.getMenus().catch(() => ({ data: { data: [] } }))
+                adminApi.getMyPermissions().catch(() => ({ data: [] })),
+                adminApi.getMyMenus().catch(() => ({ data: [] }))
             ]);
 
+            console.log('[AdminContext] permRes:', permRes);
+            console.log('[AdminContext] menuRes:', menuRes);
+
             // 从响应中提取数据
-            const permData = permRes.data?.data || permRes.data || [];
-            const menuData = menuRes.data?.data || menuRes.data || [];
+            // 注意: apiClient 响应拦截器已返回 response.data，所以这里直接是 ApiResponse
+            // permRes 格式: { success, code, message, data: string[] }
+            // menuRes 格式: { success, code, message, data: Menu[] }
+            const apiPermRes = permRes as unknown as { data?: string[] };
+            const apiMenuRes = menuRes as unknown as { data?: Menu[] };
+            
+            const permData = apiPermRes.data || [];
+            const menuData = apiMenuRes.data || [];
 
             // 更新状态
             setPermissions(permData);

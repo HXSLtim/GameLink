@@ -221,7 +221,7 @@ const PlayerPage: React.FC = () => {
                 <Space>
                     <Avatar
                         size={40}
-                        src={record.avatar}
+                        src={record.avatar || undefined}
                         icon={<UserOutlined />}
                         style={{ backgroundColor: record.gender === 'female' ? '#eb2f96' : '#1890ff' }}
                     />
@@ -378,7 +378,7 @@ const PlayerPage: React.FC = () => {
                 title="陪玩师详情"
                 open={detailDrawerVisible}
                 onClose={() => setDetailDrawerVisible(false)}
-                width={600}
+                size="large"
             >
                 {currentPlayer && (
                     <>
@@ -387,7 +387,7 @@ const PlayerPage: React.FC = () => {
                             <div style={{ textAlign: 'center', marginBottom: 16 }}>
                                 <Avatar
                                     size={80}
-                                    src={currentPlayer.avatar}
+                                    src={currentPlayer.avatar || undefined}
                                     icon={<UserOutlined />}
                                     style={{ backgroundColor: currentPlayer.gender === 'female' ? '#eb2f96' : '#1890ff' }}
                                 />

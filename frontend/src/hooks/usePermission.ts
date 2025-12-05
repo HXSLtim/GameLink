@@ -38,6 +38,13 @@ export function usePermission(
     const { permissions, loading } = useAdmin();
 
     const hasPermission = useMemo(() => {
+        // 如果没有指定权限要求，默认允许
+        const permissionList = Array.isArray(permission) ? permission : [permission];
+        const hasValidPermission = permissionList.some(p => p && p.length > 0);
+        if (!hasValidPermission) {
+            return true;
+        }
+
         if (loading || !permissions.length) {
             return false;
         }
@@ -46,8 +53,6 @@ export function usePermission(
         if (permissions.includes('*')) {
             return true;
         }
-
-        const permissionList = Array.isArray(permission) ? permission : [permission];
 
         if (mode === 'all') {
             // 全部满足模式

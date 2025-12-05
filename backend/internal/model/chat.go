@@ -61,6 +61,9 @@ type ChatGroupMember struct {
 	LastReadAt        *time.Time `json:"lastReadAt" gorm:"column:last_read_at"`
 	LastReadMessageID *uint64    `json:"lastReadMessageId" gorm:"column:last_read_message_id"`
 	IsMuted           bool       `json:"isMuted" gorm:"column:is_muted;default:false"`
+	MutedUntil        *time.Time `json:"mutedUntil,omitempty" gorm:"column:muted_until;index"`
+	MutedBy           *uint64    `json:"mutedBy,omitempty" gorm:"column:muted_by"`
+	MuteReason        string     `json:"muteReason,omitempty" gorm:"column:mute_reason;type:text"`
 	IsActive          bool       `json:"isActive" gorm:"column:is_active;default:true"`
 
 	Group ChatGroup `json:"-" gorm:"foreignKey:GroupID;references:ID"`

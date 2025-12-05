@@ -41,8 +41,10 @@ func createTestReportService(db *gorm.DB) *ReviewService {
 	userRepo := &mockUserRepository{db: db}
 	playerRepo := &mockPlayerRepository{db: db}
 	replyRepo := &mockReviewReplyRepository{}
+	notificationRepo := &mockNotificationRepository{}
+	opLogRepo := &mockOperationLogRepository{}
 
-	return NewReviewService(reviewRepo, orderRepo, playerRepo, userRepo, replyRepo, reportRepo)
+	return NewReviewService(reviewRepo, orderRepo, playerRepo, userRepo, replyRepo, reportRepo, notificationRepo, opLogRepo)
 }
 
 // Mock repositories
@@ -146,12 +148,64 @@ func (m *mockReviewReplyRepository) Create(ctx context.Context, reply *model.Rev
 	return nil
 }
 
+func (m *mockReviewReplyRepository) Get(ctx context.Context, replyID uint64) (*model.ReviewReply, error) {
+	return nil, nil
+}
+
 func (m *mockReviewReplyRepository) ListByReview(ctx context.Context, reviewID uint64) ([]model.ReviewReply, error) {
 	return nil, nil
 }
 
+func (m *mockReviewReplyRepository) Update(ctx context.Context, reply *model.ReviewReply) error {
+	return nil
+}
+
+func (m *mockReviewReplyRepository) Delete(ctx context.Context, replyID uint64) error {
+	return nil
+}
+
 func (m *mockReviewReplyRepository) UpdateStatus(ctx context.Context, replyID uint64, status string, note string) error {
 	return nil
+}
+
+type mockNotificationRepository struct{}
+
+func (m *mockNotificationRepository) ListByUser(ctx context.Context, opts repository.NotificationListOptions) ([]model.NotificationEvent, int64, error) {
+	return nil, 0, nil
+}
+
+func (m *mockNotificationRepository) MarkRead(ctx context.Context, userID uint64, ids []uint64) error {
+	return nil
+}
+
+func (m *mockNotificationRepository) MarkAllRead(ctx context.Context, userID uint64) error {
+	return nil
+}
+
+func (m *mockNotificationRepository) CountUnread(ctx context.Context, userID uint64) (int64, error) {
+	return 0, nil
+}
+
+func (m *mockNotificationRepository) Create(ctx context.Context, event *model.NotificationEvent) error {
+	return nil
+}
+
+func (m *mockNotificationRepository) Delete(ctx context.Context, userID uint64, id uint64) error {
+	return nil
+}
+
+type mockOperationLogRepository struct{}
+
+func (m *mockOperationLogRepository) Append(ctx context.Context, log *model.OperationLog) error {
+	return nil
+}
+
+func (m *mockOperationLogRepository) ListByEntity(ctx context.Context, entityType string, entityID uint64, opts repository.OperationLogListOptions) ([]model.OperationLog, int64, error) {
+	return nil, 0, nil
+}
+
+func (m *mockOperationLogRepository) List(ctx context.Context, opts repository.OperationLogSearchOptions) ([]model.OperationLog, int64, error) {
+	return nil, 0, nil
 }
 
 func TestReviewService_ReportReview(t *testing.T) {

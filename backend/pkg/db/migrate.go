@@ -1,18 +1,18 @@
 package db
 
 import (
-    "errors"
-    "fmt"
-    "log"
-    "os"
-    "strings"
-    "time"
+	"errors"
+	"fmt"
+	"log"
+	"os"
+	"strings"
+	"time"
 
-    "golang.org/x/crypto/bcrypt"
-    "gorm.io/gorm"
+	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 
-    "gamelink/pkg/config"
-    "gamelink/internal/model"
+	"gamelink/internal/model"
+	"gamelink/pkg/config"
 )
 
 // prepareOrdersMigration 在 autoMigrate 之前处理 orders 表的字段迁移
@@ -110,62 +110,65 @@ func autoMigrate(db *gorm.DB) error {
 		return err
 	}
 
-    return db.AutoMigrate(
-        &model.Game{},
-        &model.Player{},
-        &model.PlayerGame{},
-        &model.PlayerSkillTag{},
-        &model.User{},
-        &model.Wallet{}, // 用户钱包
-        &model.Order{},
-        &model.Payment{},
-        &model.Review{},
-        &model.ReviewReport{},
-        &model.Withdraw{},
-        &model.OperationLog{},
-        // Service Item (统一管理护航服务和礼物)
-        &model.ServiceItem{},
-        // Commission models
-        &model.CommissionRule{},
-        &model.CommissionRecord{},
-        &model.MonthlySettlement{},
-        // Ranking models
-        &model.PlayerRanking{},
-        &model.RankingCommissionConfig{},
-        // RBAC models
-        &model.Permission{},
-        &model.RoleModel{},
-        &model.RolePermission{},
-        &model.UserRole{},
-        // Menu models (动态路由/前端菜单)
-        &model.Menu{},
-        // Upload model
-        &model.Upload{},
-        // Chat models
-        &model.ChatGroup{},
-        &model.ChatGroupMember{},
-        &model.ChatMessage{},
-        &model.ChatReport{},
-        &model.Feed{},
-        &model.FeedImage{},
-        &model.FeedReport{},
-        &model.NotificationEvent{},
-        &model.ReviewReply{},
-        // Monitor and KPI models
-        &model.Alert{},
-        &model.KPITarget{},
-        &model.UserActivityDaily{},
-    )
+	return db.AutoMigrate(
+		&model.Game{},
+		&model.Player{},
+		&model.PlayerGame{},
+		&model.PlayerSkillTag{},
+		&model.User{},
+		&model.Wallet{}, // 用户钱包
+		&model.Order{},
+		&model.Payment{},
+		&model.Review{},
+		&model.ReviewReport{},
+		&model.ReviewDisplaySettings{}, // 评价展示设置
+		&model.SensitiveWord{},         // 敏感词
+		&model.Withdraw{},
+		&model.OperationLog{},
+		// Service Item (统一管理护航服务和礼物)
+		&model.ServiceItem{},
+		// Commission models
+		&model.CommissionRule{},
+		&model.CommissionRecord{},
+		&model.MonthlySettlement{},
+		// Ranking models
+		&model.PlayerRanking{},
+		&model.RankingCommissionConfig{},
+		// RBAC models
+		&model.Permission{},
+		&model.RoleModel{},
+		&model.RolePermission{},
+		&model.UserRole{},
+		// Menu models (动态路由/前端菜单)
+		&model.Menu{},
+		// Upload model
+		&model.Upload{},
+		// Chat models
+		&model.ChatGroup{},
+		&model.ChatGroupMember{},
+		&model.ChatMessage{},
+		&model.ChatReport{},
+		&model.Feed{},
+		&model.FeedImage{},
+		&model.FeedReport{},
+		&model.ContentCategory{}, // 内容分类
+		&model.NotificationEvent{},
+		&model.ReviewReply{},
+		// Monitor and KPI models
+		&model.Alert{},
+		&model.KPITarget{},
+		&model.UserActivityDaily{},
+	)
 }
 
 // MigrateUserManagement 迁移用户管理相关数据表
 func MigrateUserManagement(db *gorm.DB) error {
-    return db.AutoMigrate(
-        &model.UserTag{},
-        &model.UserTagRelation{},
-        &model.UserLoginHistory{},
-        &model.UserBehavior{},
-    )
+	return db.AutoMigrate(
+		&model.UserTag{},
+		&model.UserTagRelation{},
+		&model.UserLoginHistory{},
+		&model.UserBehavior{},
+	)
 }
 
 // runDataFixups contains data migrations that adjust existing values.

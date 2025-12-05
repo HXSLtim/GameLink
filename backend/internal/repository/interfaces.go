@@ -25,6 +25,7 @@ type UserRepository interface {
 	ListWithFilters(ctx context.Context, opts UserListOptions) ([]model.User, int64, error)
 	Count(ctx context.Context, opts UserListOptions) (int, error)
 	Get(ctx context.Context, id uint64) (*model.User, error)
+	GetByIDs(ctx context.Context, ids []uint64) ([]model.User, error)
 	GetByPhone(ctx context.Context, phone string) (*model.User, error)
 	FindByEmail(ctx context.Context, email string) (*model.User, error)
 	FindByPhone(ctx context.Context, phone string) (*model.User, error)
@@ -137,12 +138,19 @@ type ReviewRepository interface {
 	UpdateStatus(ctx context.Context, id uint64, status model.ReviewStatus, rejectionReason string) error
 	BatchUpdateStatus(ctx context.Context, ids []uint64, status model.ReviewStatus, rejectionReason string) error
 	Delete(ctx context.Context, id uint64) error
+	// Statistics methods
+	GetStats(ctx context.Context) (ReviewStats, error)
+	GetTrend(ctx context.Context, days int) ([]DateValue, error)
+	GetTopPlayersByReviewCount(ctx context.Context, limit int) ([]PlayerReviewStats, error)
+	GetTopPlayersByRating(ctx context.Context, limit int) ([]PlayerReviewStats, error)
+	GetGameStats(ctx context.Context) ([]GameReviewStats, error)
 }
 
 // OperationLogRepository defines operation log data access operations.
 type OperationLogRepository interface {
 	Append(ctx context.Context, log *model.OperationLog) error
 	ListByEntity(ctx context.Context, entityType string, entityID uint64, opts OperationLogListOptions) ([]model.OperationLog, int64, error)
+	List(ctx context.Context, opts OperationLogSearchOptions) ([]model.OperationLog, int64, error)
 }
 
 // ChatGroupRepository defines chat group data access operations.
@@ -203,8 +211,19 @@ type FeedRepository interface {
 	Create(ctx context.Context, feed *model.Feed) error
 	Get(ctx context.Context, id uint64) (*model.Feed, error)
 	List(ctx context.Context, opts FeedListOptions) ([]model.Feed, error)
-	UpdateModeration(ctx context.Context, feedID uint64, status model.FeedModerationStatus, note string, manual bool) error
+	ListPaged(ctx context.Context, opts FeedPagedListOptions) ([]model.Feed, int64, error)
+	Update(ctx context.Context, feed *model.Feed) error
+	Delete(ctx context.Context, id uint64) error
+	// UpdateModeration updates feed moderation status. moderatorID is optional (nil for auto-moderation).
+	UpdateModeration(ctx context.Context, feedID uint64, status model.FeedModerationStatus, note string, moderatorID *uint64) error
+	BatchUpdateModeration(ctx context.Context, feedIDs []uint64, status model.FeedModerationStatus, note string, moderatorID *uint64) error
 	CreateReport(ctx context.Context, report *model.FeedReport) error
+	GetReport(ctx context.Context, id uint64) (*model.FeedReport, error)
+	ListReports(ctx context.Context, opts FeedReportListOptions) ([]model.FeedReport, int64, error)
+	UpdateReport(ctx context.Context, report *model.FeedReport) error
+	// Statistics
+	CountByStatus(ctx context.Context) (map[model.FeedModerationStatus]int64, error)
+	GetTrend(ctx context.Context, days int) ([]DateValue, error)
 }
 
 // NotificationRepository defines persistence for notification events.
@@ -220,7 +239,10 @@ type NotificationRepository interface {
 // ReviewReplyRepository defines data access for review replies.
 type ReviewReplyRepository interface {
 	Create(ctx context.Context, reply *model.ReviewReply) error
+	Get(ctx context.Context, replyID uint64) (*model.ReviewReply, error)
 	ListByReview(ctx context.Context, reviewID uint64) ([]model.ReviewReply, error)
+	Update(ctx context.Context, reply *model.ReviewReply) error
+	Delete(ctx context.Context, replyID uint64) error
 	UpdateStatus(ctx context.Context, replyID uint64, status string, note string) error
 }
 
@@ -260,13 +282,37 @@ type UserListOptions struct {
 	DateTo   *time.Time
 }
 
-// FeedListOptions describes feed query filters.
+// FeedListOptions describes feed query filters (cursor-based).
 type FeedListOptions struct {
 	Limit        int
 	CursorBefore *uint64
 	AuthorID     *uint64
 	Visibility   []model.FeedVisibility
 	OnlyApproved bool
+}
+
+// FeedPagedListOptions describes feed query filters (page-based for admin).
+type FeedPagedListOptions struct {
+	Page             int
+	PageSize         int
+	AuthorID         *uint64
+	CategoryID       *uint64
+	Keyword          string
+	ModerationStatus *model.FeedModerationStatus
+	Visibility       *model.FeedVisibility
+	DateFrom         *time.Time
+	DateTo           *time.Time
+}
+
+// FeedReportListOptions describes feed report query filters.
+type FeedReportListOptions struct {
+	Page       int
+	PageSize   int
+	FeedID     *uint64
+	ReporterID *uint64
+	Status     *string
+	DateFrom   *time.Time
+	DateTo     *time.Time
 }
 
 // NotificationListOptions describes notification queries.
@@ -332,6 +378,18 @@ type DisputeListOptions struct {
 type OperationLogListOptions struct {
 	Page        int
 	PageSize    int
+	Action      string
+	ActorUserID *uint64
+	DateFrom    *time.Time
+	DateTo      *time.Time
+}
+
+// OperationLogSearchOptions contains filtering options for general operation log search.
+type OperationLogSearchOptions struct {
+	Page        int
+	PageSize    int
+	EntityType  string
+	EntityID    *uint64
 	Action      string
 	ActorUserID *uint64
 	DateFrom    *time.Time
@@ -558,4 +616,79 @@ type UserBehaviorRepository interface {
 	Create(ctx context.Context, behavior *model.UserBehavior) error
 	GetUserBehaviors(ctx context.Context, userID uint64, page, pageSize int) ([]model.UserBehavior, int64, error)
 	GetBehaviorStats(ctx context.Context, days int) (map[string]int64, error)
+}
+
+// SensitiveWordRepository 敏感词仓储接口
+// 错误约定：当资源不存在时返回 repository.ErrNotFound
+type SensitiveWordRepository interface {
+	Create(ctx context.Context, word *model.SensitiveWord) error
+	Get(ctx context.Context, id uint64) (*model.SensitiveWord, error)
+	List(ctx context.Context, opts SensitiveWordListOptions) ([]model.SensitiveWord, int64, error)
+	Update(ctx context.Context, word *model.SensitiveWord) error
+	Delete(ctx context.Context, id uint64) error
+	GetAll(ctx context.Context) ([]model.SensitiveWord, error)
+}
+
+// SensitiveWordListOptions 敏感词列表查询选项
+type SensitiveWordListOptions struct {
+	Page     int
+	PageSize int
+	Keyword  string
+	Category *model.SensitiveWordCategory
+	Severity *model.SensitiveWordSeverity
+}
+
+// ReviewStats 评价统计数据
+type ReviewStats struct {
+	TotalReviews       int64         `json:"totalReviews"`
+	AverageRating      float64       `json:"averageRating"`
+	RatingDistribution map[int]int64 `json:"ratingDistribution"` // 1-5分的分布
+}
+
+// PlayerReviewStats 陪玩师评价统计
+type PlayerReviewStats struct {
+	PlayerID      uint64  `json:"playerId"`
+	PlayerName    string  `json:"playerName"`
+	ReviewCount   int64   `json:"reviewCount"`
+	AverageRating float64 `json:"averageRating"`
+}
+
+// GameReviewStats 游戏评价统计
+type GameReviewStats struct {
+	GameID        uint64  `json:"gameId"`
+	GameName      string  `json:"gameName"`
+	ReviewCount   int64   `json:"reviewCount"`
+	AverageRating float64 `json:"averageRating"`
+}
+
+// ReviewDisplaySettingsRepository 评价展示设置仓储接口
+// 错误约定：当资源不存在时返回 repository.ErrNotFound
+type ReviewDisplaySettingsRepository interface {
+	// Get 获取当前设置（单例模式，只有一条记录）
+	Get(ctx context.Context) (*model.ReviewDisplaySettings, error)
+	// Save 保存设置（创建或更新）
+	Save(ctx context.Context, settings *model.ReviewDisplaySettings) error
+}
+
+// ContentCategoryRepository 内容分类仓储接口
+// 错误约定：当资源不存在时返回 repository.ErrNotFound
+type ContentCategoryRepository interface {
+	Create(ctx context.Context, category *model.ContentCategory) error
+	Get(ctx context.Context, id uint64) (*model.ContentCategory, error)
+	GetByName(ctx context.Context, name string) (*model.ContentCategory, error)
+	List(ctx context.Context, opts ContentCategoryListOptions) ([]model.ContentCategory, int64, error)
+	Update(ctx context.Context, category *model.ContentCategory) error
+	Delete(ctx context.Context, id uint64) error
+	// GetFeedCount 获取分类下的动态数量
+	GetFeedCount(ctx context.Context, categoryID uint64) (int64, error)
+	// MigrateFeeds 将分类下的动态迁移到另一个分类
+	MigrateFeeds(ctx context.Context, fromCategoryID, toCategoryID uint64) error
+}
+
+// ContentCategoryListOptions 内容分类列表查询选项
+type ContentCategoryListOptions struct {
+	Page     int
+	PageSize int
+	Keyword  string
+	Status   *model.ContentCategoryStatus
 }

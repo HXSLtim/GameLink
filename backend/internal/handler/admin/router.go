@@ -6,14 +6,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/pkg/config"
 	mw "gamelink/internal/handler/middleware"
 	"gamelink/internal/model"
-	adminrepo "gamelink/internal/repository/admin"
 	adminservice "gamelink/internal/service/admin"
-	statsservice "gamelink/internal/service/admin"
-	roleservice "gamelink/internal/service/admin"
-	permissionservice "gamelink/internal/service/admin"
+	permissionservice "gamelink/internal/service/admin" //nolint:ST1019
+	roleservice "gamelink/internal/service/admin"       //nolint:ST1019
+	statsservice "gamelink/internal/service/admin"      //nolint:ST1019
+	reviewservice "gamelink/internal/service/review"
+	"gamelink/pkg/config"
 )
 
 // RegisterRoutes 注册后台管理相关路由
@@ -837,7 +837,105 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/review-reports/{id}/handle [put]
 		group.PUT("/review-reports/:id/handle", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/review-reports/:id/handle"), reviewHandler.HandleReviewReport)
+
+		// 评价回复管理
+		// @Summary      更新评价回复
+		// @Tags         Admin/Reviews
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        id       path  int                  true  "回复ID"
+		// @Param        request  body  UpdateReplyPayload   true  "回复内容"
+		// @Success      200  {object}  model.APIResponse[map[string]interface{}]
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Failure      404  {object}  model.ErrorResponse
+		// @Router       /admin/review-replies/{id} [put]
+		group.PUT("/review-replies/:id", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/review-replies/:id"), reviewHandler.UpdateReply)
+
+		// @Summary      删除评价回复
+		// @Tags         Admin/Reviews
+		// @Security     BearerAuth
+		// @Produce      json
+		// @Param        id   path  int  true  "回复ID"
+		// @Success      200  {object}  model.SuccessResponse
+		// @Failure      404  {object}  model.ErrorResponse
+		// @Router       /admin/review-replies/{id} [delete]
+		group.DELETE("/review-replies/:id", pm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/review-replies/:id"), reviewHandler.DeleteReply)
+
+		// 操作日志管理
+		// @Summary      搜索操作日志
+		// @Tags         Admin/OperationLogs
+		// @Security     BearerAuth
+		// @Produce      json
+		// @Param        page          query  int     false  "页码"
+		// @Param        pageSize      query  int     false  "每页数量"
+		// @Param        entity_type   query  string  false  "实体类型" Enums(review,order,payment,user,player)
+		// @Param        entity_id     query  int     false  "实体ID"
+		// @Param        action        query  string  false  "动作过滤"
+		// @Param        actor_user_id query  int     false  "操作者用户ID"
+		// @Param        date_from     query  string  false  "开始日期 (YYYY-MM-DD)"
+		// @Param        date_to       query  string  false  "结束日期 (YYYY-MM-DD)"
+		// @Param        export        query  string  false  "导出格式" Enums(csv)
+		// @Success      200  {object}  model.APIResponse[[]model.OperationLog]
+		// @Router       /admin/operation-logs [get]
+		group.GET("/operation-logs", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/operation-logs"), reviewHandler.SearchOperationLogs)
+
+		// @Summary      导出操作日志
+		// @Tags         Admin/OperationLogs
+		// @Security     BearerAuth
+		// @Produce      text/csv
+		// @Param        entity_type   query  string  false  "实体类型" Enums(review,order,payment,user,player)
+		// @Param        entity_id     query  int     false  "实体ID"
+		// @Param        action        query  string  false  "动作过滤"
+		// @Param        actor_user_id query  int     false  "操作者用户ID"
+		// @Param        date_from     query  string  false  "开始日期 (YYYY-MM-DD)"
+		// @Param        date_to       query  string  false  "结束日期 (YYYY-MM-DD)"
+		// @Success      200  {file}  file
+		// @Router       /admin/operation-logs/export [get]
+		group.GET("/operation-logs/export", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/operation-logs/export"), reviewHandler.ExportOperationLogs)
 	}
+}
+
+// RegisterReviewSettingsRoutes 注册评价展示设置相关路由
+func RegisterReviewSettingsRoutes(router gin.IRouter, settingsSvc *reviewservice.SettingsService, pm *mw.PermissionMiddleware) {
+	h := NewReviewSettingsHandler(settingsSvc)
+	group := router
+	// 设置接口均需要认证 + 速率限制
+	cfg := config.Load()
+	if os.Getenv("APP_ENV") == "production" {
+		group.Use(pm.RequireAuth(), mw.RateLimitAdmin())
+	} else {
+		switch strings.ToLower(cfg.AdminAuth.Mode) {
+		case "jwt":
+			group.Use(pm.RequireAuth(), mw.RateLimitAdmin())
+		default:
+			group.Use(mw.AdminAuth(), mw.RateLimitAdmin())
+		}
+	}
+
+	// 评价展示设置 - 使用细粒度权限
+	// @Summary      获取评价展示设置
+	// @Description  获取当前的评价展示规则配置
+	// @Tags         Admin/ReviewSettings
+	// @Security     BearerAuth
+	// @Produce      json
+	// @Success      200  {object}  model.APIResponse[model.ReviewDisplaySettings]
+	// @Failure      500  {object}  model.ErrorResponse
+	// @Router       /admin/review-settings [get]
+	group.GET("/review-settings", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/review-settings"), h.GetReviewSettings)
+
+	// @Summary      更新评价展示设置
+	// @Description  更新评价展示规则配置，支持部分更新
+	// @Tags         Admin/ReviewSettings
+	// @Security     BearerAuth
+	// @Accept       json
+	// @Produce      json
+	// @Param        request  body  UpdateReviewSettingsPayload  true  "设置信息"
+	// @Success      200  {object}  model.APIResponse[model.ReviewDisplaySettings]
+	// @Failure      400  {object}  model.ErrorResponse
+	// @Failure      500  {object}  model.ErrorResponse
+	// @Router       /admin/review-settings [put]
+	group.PUT("/review-settings", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/review-settings"), h.UpdateReviewSettings)
 }
 
 // RegisterStatsRoutes 注册统计相关路由
@@ -919,21 +1017,188 @@ func RegisterStatsRoutes(router gin.IRouter, stats *statsservice.StatsService, p
 }
 
 // RegisterSyncRoutes 注册同步专用路由（不受限流限制）
+// 注意：此函数已废弃，同步路由现在通过 RegisterSyncRoutesWithServices 注册
 func RegisterSyncRoutes(router gin.IRouter, svc *adminservice.AdminService, pm *mw.PermissionMiddleware) {
-	roleRepo := adminrepo.NewRoleRepository(nil) // 实际应该传入 orm
-	roleSvc := roleservice.NewRoleService(roleRepo, nil)
-	roleHandler := NewRoleHandler(roleSvc)
+	// 此函数保留为空，实际的同步路由在 router.go 的 registerRBACRoutes 中注册
+}
 
-	permRepo := adminrepo.NewPermissionRepository(nil) // 实际应该传入 orm
-	permService := permissionservice.NewPermissionService(permRepo, nil)
-	permHandler := NewPermissionHandler(permService)
+// RegisterSyncRoutesWithServices 注册同步专用路由（使用已初始化的服务）
+// 只保留批量同步接口，前端通过一次请求完成所有同步
+func RegisterSyncRoutesWithServices(router gin.IRouter, roleSvc *roleservice.RoleService, permService *permissionservice.PermissionService, menuSvc *adminservice.MenuService, pm *mw.PermissionMiddleware) {
+	batchSyncHandler := NewBatchSyncHandler(menuSvc, permService, roleSvc)
 
 	// 创建同步专用路由组 - 只认证，不限流
 	syncGroup := router.Group("/sync")
-	syncGroup.Use(pm.RequireAuth()) // 只需要认证
+	syncGroup.Use(pm.RequireAuth())
 	{
-		// 权限和角色的列表接口 - 用于前端同步数据
-		syncGroup.GET("/permissions", permHandler.ListPermissions)
-		syncGroup.GET("/roles", roleHandler.ListRoles)
+		// 批量同步接口 - 一次性同步菜单、权限并分配超管权限
+		syncGroup.POST("/batch", batchSyncHandler.BatchSync)
 	}
+}
+
+// RegisterSensitiveWordRoutes 注册敏感词管理路由
+// 这是一个独立的函数，需要在主路由注册时调用
+func RegisterSensitiveWordRoutes(router gin.IRouter, handler *SensitiveWordHandler, pm *mw.PermissionMiddleware) {
+	group := router
+	{
+		// @Summary      列出敏感词
+		// @Tags         Admin/SensitiveWords
+		// @Security     BearerAuth
+		// @Produce      json
+		// @Param        page       query  int     false  "页码"
+		// @Param        pageSize   query  int     false  "每页数量"
+		// @Param        keyword    query  string  false  "关键词搜索"
+		// @Param        category   query  string  false  "分类" Enums(political,pornographic,violent,advertising,other)
+		// @Param        severity   query  string  false  "严重程度" Enums(low,medium,high)
+		// @Success      200  {object}  model.APIResponse[sensitiveword.ListSensitiveWordsResponse]
+		// @Router       /admin/sensitive-words [get]
+		group.GET("/sensitive-words", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/sensitive-words"), handler.ListSensitiveWords)
+
+		// @Summary      添加敏感词
+		// @Tags         Admin/SensitiveWords
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  sensitiveword.AddSensitiveWordRequest  true  "敏感词信息"
+		// @Success      201  {object}  model.APIResponse[sensitiveword.SensitiveWordDTO]
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Router       /admin/sensitive-words [post]
+		group.POST("/sensitive-words", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/sensitive-words"), handler.AddSensitiveWord)
+
+		// @Summary      更新敏感词
+		// @Tags         Admin/SensitiveWords
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        id       path  int                                      true  "敏感词ID"
+		// @Param        request  body  sensitiveword.UpdateSensitiveWordRequest  true  "敏感词信息"
+		// @Success      200  {object}  model.APIResponse[any]
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Failure      404  {object}  model.ErrorResponse
+		// @Router       /admin/sensitive-words/{id} [put]
+		group.PUT("/sensitive-words/:id", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/sensitive-words/:id"), handler.UpdateSensitiveWord)
+
+		// @Summary      删除敏感词
+		// @Tags         Admin/SensitiveWords
+		// @Security     BearerAuth
+		// @Produce      json
+		// @Param        id   path  int  true  "敏感词ID"
+		// @Success      200  {object}  model.APIResponse[any]
+		// @Failure      404  {object}  model.ErrorResponse
+		// @Router       /admin/sensitive-words/{id} [delete]
+		group.DELETE("/sensitive-words/:id", pm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/sensitive-words/:id"), handler.DeleteSensitiveWord)
+
+		// @Summary      检测敏感词
+		// @Tags         Admin/Reviews
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  sensitiveword.DetectSensitiveWordsRequest  true  "检测内容"
+		// @Success      200  {object}  model.APIResponse[sensitiveword.DetectSensitiveWordsResponse]
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Router       /admin/reviews/detect-sensitive [post]
+		group.POST("/reviews/detect-sensitive", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/reviews/detect-sensitive"), handler.DetectSensitiveWords)
+	}
+}
+
+// RegisterReviewStatsRoutes 注册评价统计路由
+// 使用细粒度权限控制（method+path 级别）
+func RegisterReviewStatsRoutes(router gin.IRouter, svc *reviewservice.ReviewStatsService, pm *mw.PermissionMiddleware) {
+	h := NewReviewStatsHandler(svc)
+	group := router
+	{
+		// @Summary      获取评价统计概览
+		// @Description  获取总评价数、平均评分、各评分段分布
+		// @Tags         Admin/Reviews
+		// @Security     BearerAuth
+		// @Produce      json
+		// @Success      200  {object}  model.APIResponse[reviewservice.GetReviewStatsResponse]
+		// @Failure      500  {object}  model.ErrorResponse
+		// @Router       /admin/reviews/stats [get]
+		group.GET("/reviews/stats", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/reviews/stats"), h.GetReviewStats)
+
+		// @Summary      获取评价趋势
+		// @Description  获取最近N天的评价数量趋势
+		// @Tags         Admin/Reviews
+		// @Security     BearerAuth
+		// @Produce      json
+		// @Param        days  query  int  false  "统计天数（默认30天）"
+		// @Success      200  {object}  model.APIResponse[reviewservice.GetReviewTrendResponse]
+		// @Failure      500  {object}  model.ErrorResponse
+		// @Router       /admin/reviews/trend [get]
+		group.GET("/reviews/trend", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/reviews/trend"), h.GetReviewTrend)
+
+		// @Summary      获取陪玩师排行榜
+		// @Description  获取评价最多或评分最高的陪玩师排行榜
+		// @Tags         Admin/Reviews
+		// @Security     BearerAuth
+		// @Produce      json
+		// @Param        limit    query  int     false  "数量限制（默认10）"
+		// @Param        sort_by  query  string  false  "排序方式：count（评价数量）或 rating（评分）"
+		// @Success      200  {object}  model.APIResponse[reviewservice.GetTopPlayersResponse]
+		// @Failure      500  {object}  model.ErrorResponse
+		// @Router       /admin/reviews/top-players [get]
+		group.GET("/reviews/top-players", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/reviews/top-players"), h.GetTopPlayers)
+
+		// @Summary      获取游戏统计
+		// @Description  获取各游戏的评价数量和平均评分
+		// @Tags         Admin/Reviews
+		// @Security     BearerAuth
+		// @Produce      json
+		// @Success      200  {object}  model.APIResponse[reviewservice.GetGameStatsResponse]
+		// @Failure      500  {object}  model.ErrorResponse
+		// @Router       /admin/reviews/game-stats [get]
+		group.GET("/reviews/game-stats", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/reviews/game-stats"), h.GetGameStats)
+
+		// @Summary      导出评价统计数据
+		// @Description  导出评价统计数据为CSV格式
+		// @Tags         Admin/Reviews
+		// @Security     BearerAuth
+		// @Produce      text/csv
+		// @Param        type  query  string  false  "导出类型：overview（概览）、trend（趋势）、players（陪玩师排行）、games（游戏统计）"
+		// @Param        days  query  int     false  "趋势统计天数（默认30天）"
+		// @Param        limit query  int     false  "排行榜数量限制（默认10）"
+		// @Success      200  {file}  file  "CSV文件"
+		// @Failure      500  {object}  model.ErrorResponse
+		// @Router       /admin/reviews/export [get]
+		group.GET("/reviews/export", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/reviews/export"), h.ExportReviewStats)
+	}
+}
+
+// RegisterContentRoutes 注册内容管理相关路由
+func RegisterContentRoutes(
+	group gin.IRouter,
+	contentHandler *ContentHandler,
+	categoryHandler *ContentCategoryHandler,
+	pm *mw.PermissionMiddleware,
+) {
+	// 动态审核
+	group.GET("/content/feeds", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/content/feeds"), contentHandler.ListFeeds)
+	group.GET("/content/feeds/:id", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/content/feeds/:id"), contentHandler.GetFeed)
+	group.PUT("/content/feeds/:id/approve", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/content/feeds/:id/approve"), contentHandler.ApproveFeed)
+	group.PUT("/content/feeds/:id/reject", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/content/feeds/:id/reject"), contentHandler.RejectFeed)
+	group.DELETE("/content/feeds/:id", pm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/content/feeds/:id"), contentHandler.DeleteFeed)
+	group.POST("/content/feeds/batch-approve", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/content/feeds/batch-approve"), contentHandler.BatchApproveFeed)
+	group.POST("/content/feeds/batch-reject", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/content/feeds/batch-reject"), contentHandler.BatchRejectFeed)
+
+	// 聊天监控
+	group.GET("/content/chat/messages", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/content/chat/messages"), contentHandler.ListChatMessages)
+	group.DELETE("/content/chat/messages/:id", pm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/content/chat/messages/:id"), contentHandler.DeleteChatMessage)
+	group.POST("/content/chat/mute", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/content/chat/mute"), contentHandler.MuteUser)
+	group.POST("/content/chat/unmute", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/content/chat/unmute"), contentHandler.UnmuteUser)
+
+	// 举报管理
+	group.GET("/content/reports", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/content/reports"), contentHandler.ListFeedReports)
+	group.GET("/content/reports/:id", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/content/reports/:id"), contentHandler.GetFeedReport)
+	group.POST("/content/reports/:id/process", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/content/reports/:id/process"), contentHandler.ProcessFeedReport)
+
+	// 内容统计
+	group.GET("/content/stats", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/content/stats"), contentHandler.GetContentStats)
+
+	// 内容分类管理
+	group.GET("/content/categories", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/content/categories"), categoryHandler.List)
+	group.GET("/content/categories/:id", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/content/categories/:id"), categoryHandler.Get)
+	group.POST("/content/categories", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/content/categories"), categoryHandler.Create)
+	group.PUT("/content/categories/:id", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/content/categories/:id"), categoryHandler.Update)
+	group.DELETE("/content/categories/:id", pm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/content/categories/:id"), categoryHandler.Delete)
 }

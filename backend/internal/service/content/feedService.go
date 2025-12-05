@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"gamelink/pkg/apierr"
 	"gamelink/internal/model"
-	"gamelink/pkg/safety"
 	"gamelink/internal/repository"
+	"gamelink/pkg/apierr"
+	"gamelink/pkg/safety"
 )
 
 const (
@@ -70,14 +70,14 @@ type FeedImageView struct {
 	Order     int    `json:"order"`
 }
 
-// ListFeedsRequest contains filters for timeline fetch.
-type ListFeedsRequest struct {
+// UserListFeedsRequest contains filters for timeline fetch.
+type UserListFeedsRequest struct {
 	Cursor string
 	Limit  int
 }
 
-// ListFeedsResponse returns feed slice with cursor.
-type ListFeedsResponse struct {
+// UserListFeedsResponse returns feed slice with cursor.
+type UserListFeedsResponse struct {
 	Items      []FeedView `json:"items"`
 	NextCursor string     `json:"nextCursor,omitempty"`
 }
@@ -130,20 +130,20 @@ func (s *FeedService) CreateFeed(ctx context.Context, authorID uint64, req Creat
 	}
 	switch result.Decision {
 	case FeedModerationDecisionApprove:
-		if err := s.repo.UpdateModeration(ctx, feed.ID, model.FeedModerationApproved, result.Reason, false); err != nil {
+		if err := s.repo.UpdateModeration(ctx, feed.ID, model.FeedModerationApproved, result.Reason, nil); err != nil {
 			return nil, err
 		}
 		feed.ModerationStatus = model.FeedModerationApproved
 		feed.ModerationNote = result.Reason
 	case FeedModerationDecisionReject:
-		if err := s.repo.UpdateModeration(ctx, feed.ID, model.FeedModerationRejected, result.Reason, false); err != nil {
+		if err := s.repo.UpdateModeration(ctx, feed.ID, model.FeedModerationRejected, result.Reason, nil); err != nil {
 			return nil, err
 		}
 		feed.ModerationStatus = model.FeedModerationRejected
 		feed.ModerationNote = result.Reason
 	case FeedModerationDecisionManual:
 		if result.Reason != "" {
-			if err := s.repo.UpdateModeration(ctx, feed.ID, model.FeedModerationPending, result.Reason, false); err != nil {
+			if err := s.repo.UpdateModeration(ctx, feed.ID, model.FeedModerationPending, result.Reason, nil); err != nil {
 				return nil, err
 			}
 			feed.ModerationNote = result.Reason
@@ -156,7 +156,7 @@ func (s *FeedService) CreateFeed(ctx context.Context, authorID uint64, req Creat
 }
 
 // ListFeeds returns timeline for user.
-func (s *FeedService) ListFeeds(ctx context.Context, userID uint64, req ListFeedsRequest) (*ListFeedsResponse, error) {
+func (s *FeedService) ListFeeds(ctx context.Context, userID uint64, req UserListFeedsRequest) (*UserListFeedsResponse, error) {
 	var cursorValue *uint64
 	if req.Cursor != "" {
 		parsed, err := strconv.ParseUint(req.Cursor, 10, 64)
@@ -175,7 +175,7 @@ func (s *FeedService) ListFeeds(ctx context.Context, userID uint64, req ListFeed
 		return nil, err
 	}
 
-	resp := &ListFeedsResponse{Items: make([]FeedView, 0, len(feeds))}
+	resp := &UserListFeedsResponse{Items: make([]FeedView, 0, len(feeds))}
 	for _, f := range feeds {
 		feedCopy := f
 		resp.Items = append(resp.Items, *toFeedView(&feedCopy))

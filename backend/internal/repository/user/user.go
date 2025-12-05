@@ -98,6 +98,18 @@ func (r *gormUserRepository) Get(ctx context.Context, id uint64) (*model.User, e
 	return &user, nil
 }
 
+// GetByIDs returns users by a list of IDs.
+func (r *gormUserRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.User, error) {
+	if len(ids) == 0 {
+		return []model.User{}, nil
+	}
+	var users []model.User
+	if err := r.db.WithContext(ctx).Where("id IN ?", ids).Find(&users).Error; err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
 // FindByEmail returns a user by unique email.
 func (r *gormUserRepository) FindByEmail(ctx context.Context, email string) (*model.User, error) {
 	var user model.User

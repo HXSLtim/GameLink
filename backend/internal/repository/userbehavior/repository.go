@@ -1,4 +1,4 @@
-package user_behavior
+package userbehavior
 
 import (
 	"context"

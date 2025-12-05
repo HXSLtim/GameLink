@@ -9,7 +9,7 @@ import (
 	"gamelink/pkg/safety"
 	"gamelink/internal/repository"
 	repoiface "gamelink/internal/repository/interfaces"
-	contentservice "gamelink/internal/service/content"
+	feedservice "gamelink/internal/service/feed"
 )
 
 var (
@@ -31,12 +31,14 @@ var (
 // 1. 创建评价
 // 2. 查询评价列表
 // 3. 更新陪玩师评分
+// 4. 评价回复管理
 type ReviewService struct {
-	reviews repository.ReviewRepository
-	orders  repoiface.OrderReader
-	players repository.PlayerRepository
-	users   repository.UserRepository
-	replies repository.ReviewReplyRepository
+	reviews       repository.ReviewRepository
+	orders        repoiface.OrderReader
+	players       repository.PlayerRepository
+	users         repository.UserRepository
+	replies       repository.ReviewReplyRepository
+	notifications repository.NotificationRepository
 }
 
 // NewReviewService 创建评价服务
@@ -46,13 +48,15 @@ func NewReviewService(
 	players repository.PlayerRepository,
 	users repository.UserRepository,
 	replies repository.ReviewReplyRepository,
+	notifications repository.NotificationRepository,
 ) *ReviewService {
 	return &ReviewService{
-		reviews: reviews,
-		orders:  orders,
-		players: players,
-		users:   users,
-		replies: replies,
+		reviews:       reviews,
+		orders:        orders,
+		players:       players,
+		users:         users,
+		replies:       replies,
+		notifications: notifications,
 	}
 }
 
@@ -297,8 +301,8 @@ func (s *ReviewService) ReplyReview(ctx context.Context, userID, reviewID uint64
 		return nil, err
 	}
 
-	engine := contentservice.NewDefaultFeedModerationEngine()
-	result, err := engine.Evaluate(ctx, contentservice.FeedModerationInput{Content: reply.Content})
+	engine := feedservice.NewDefaultModerationEngine()
+	result, err := engine.Evaluate(ctx, feedservice.ModerationInput{Content: reply.Content})
 	if err != nil {
 		return nil, err
 	}
@@ -306,11 +310,11 @@ func (s *ReviewService) ReplyReview(ctx context.Context, userID, reviewID uint64
 	status := "pending"
 	note := result.Reason
 	switch result.Decision {
-	case contentservice.FeedModerationDecisionApprove:
+	case feedservice.ModerationDecisionApprove:
 		status = "approved"
-	case contentservice.FeedModerationDecisionReject:
+	case feedservice.ModerationDecisionReject:
 		status = "rejected"
-	case contentservice.FeedModerationDecisionManual:
+	case feedservice.ModerationDecisionManual:
 		status = "pending"
 	}
 
@@ -358,4 +362,122 @@ func (s *ReviewService) updatePlayerRating(ctx context.Context, playerID uint64)
 	player.RatingCount = uint32(len(reviews))
 
 	return s.players.Update(ctx, player)
+}
+
+// UpdateReplyRequest 更新回复请求
+type UpdateReplyRequest struct {
+	Content string `json:"content" binding:"required,max=500"`
+}
+
+// UpdateReplyResponse 更新回复响应
+type UpdateReplyResponse struct {
+	ReplyID uint64 `json:"replyId"`
+	Status  string `json:"status"`
+}
+
+// UpdateReply 更新评价回复
+func (s *ReviewService) UpdateReply(ctx context.Context, userID, replyID uint64, req UpdateReplyRequest) (*UpdateReplyResponse, error) {
+	// 验证内容
+	if err := safety.ValidateText(req.Content, 500); err != nil {
+		return nil, apierr.BadRequest("验证失败: " + err.Error())
+	}
+
+	// 获取回复
+	reply, err := s.replies.Get(ctx, replyID)
+	if err != nil {
+		if err == repository.ErrNotFound {
+			return nil, apierr.NotFound("回复不存在")
+		}
+		return nil, err
+	}
+
+	// 权限检查：只能更新自己的回复
+	if reply.AuthorID != userID {
+		return nil, ErrReviewUnauthorized
+	}
+
+	// 更新回复内容
+	reply.Content = strings.TrimSpace(req.Content)
+
+	// 重新进行内容审核
+	engine := feedservice.NewDefaultModerationEngine()
+	result, err := engine.Evaluate(ctx, feedservice.ModerationInput{Content: reply.Content})
+	if err != nil {
+		return nil, err
+	}
+
+	status := "pending"
+	note := result.Reason
+	switch result.Decision {
+	case feedservice.ModerationDecisionApprove:
+		status = "approved"
+	case feedservice.ModerationDecisionReject:
+		status = "rejected"
+	case feedservice.ModerationDecisionManual:
+		status = "pending"
+	}
+
+	reply.Status = status
+	reply.ModerationNote = note
+
+	// 更新回复
+	if err := s.replies.Update(ctx, reply); err != nil {
+		return nil, err
+	}
+
+	// 发送通知给评价者
+	review, err := s.reviews.Get(ctx, reply.ReviewID)
+	if err == nil && review.UserID != userID {
+		notification := &model.NotificationEvent{
+			UserID:        review.UserID,
+			Title:         "评价回复已更新",
+			Message:       "陪玩师更新了对您评价的回复",
+			Channel:       "web",
+			Priority:      model.NotificationPriorityNormal,
+			ReferenceType: "review_reply",
+			ReferenceID:   &replyID,
+		}
+		_ = s.notifications.Create(ctx, notification)
+	}
+
+	return &UpdateReplyResponse{ReplyID: reply.ID, Status: reply.Status}, nil
+}
+
+// DeleteReply 删除评价回复
+func (s *ReviewService) DeleteReply(ctx context.Context, userID, replyID uint64) error {
+	// 获取回复
+	reply, err := s.replies.Get(ctx, replyID)
+	if err != nil {
+		if err == repository.ErrNotFound {
+			return apierr.NotFound("回复不存在")
+		}
+		return err
+	}
+
+	// 权限检查：只能删除自己的回复
+	if reply.AuthorID != userID {
+		return ErrReviewUnauthorized
+	}
+
+	// 删除回复
+	if err := s.replies.Delete(ctx, replyID); err != nil {
+		return err
+	}
+
+	// 发送通知给评价者
+	review, err := s.reviews.Get(ctx, reply.ReviewID)
+	if err == nil && review.UserID != userID {
+		notification := &model.NotificationEvent{
+			UserID:        review.UserID,
+			Title:         "评价回复已删除",
+			Message:       "陪玩师删除了对您评价的回复",
+			Channel:       "web",
+			Priority:      model.NotificationPriorityNormal,
+			ReferenceType: "review_reply",
+			ReferenceID:   &replyID,
+		}
+		_ = s.notifications.Create(ctx, notification)
+	}
+
+	return nil
 }

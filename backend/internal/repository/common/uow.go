@@ -12,6 +12,8 @@ import (
 	adminrepo "gamelink/internal/repository/admin"
 	order "gamelink/internal/repository/order"
 	"gamelink/internal/repository/reviewreport"
+	"gamelink/internal/repository/reviewreply"
+	notification "gamelink/internal/repository/content"
 	"gamelink/internal/repository/user"
 )
 
@@ -26,6 +28,8 @@ type Repos struct {
 	OpLogs        repository.OperationLogRepository
 	Reviews       repository.ReviewRepository
 	ReviewReports repository.ReviewReportRepository
+	ReviewReplies repository.ReviewReplyRepository
+	Notifications repository.NotificationRepository
 }
 
 // UnitOfWork provides a simple transaction wrapper for GORM repositories.
@@ -50,6 +54,8 @@ func (u *UnitOfWork) WithTx(ctx context.Context, fn func(r *Repos) error) error 
 			OpLogs:        adminrepo.NewOperationLogRepository(tx),
 			Reviews:       order.NewReviewRepository(tx),
 			ReviewReports: reviewreport.NewReviewReportRepository(tx),
+			ReviewReplies: reviewreply.NewReviewReplyRepository(tx),
+			Notifications: notification.NewNotificationRepository(tx),
 		}
 		return fn(r)
 	})

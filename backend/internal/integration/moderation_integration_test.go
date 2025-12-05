@@ -44,6 +44,10 @@ func TestUserBanAfterAdminUpdate(t *testing.T) {
 	playerRepo := user.NewPlayerRepository(db)
 	orderRepo := orderimpl.NewOrderRepository(db)
 	paymentRepo := order.NewPaymentRepository(db)
+	permissionRepo := adminrepo.NewPermissionRepository(db)
+	menuRepo := adminrepo.NewMenuRepository(db)
+	statsRepo := &mockStatsRepo{}
+	walletRepo := &mockWalletRepo{}
 
 	hashed, _ := bcrypt.GenerateFromPassword([]byte("Passw0rd"), bcrypt.DefaultCost)
 	u := &model.User{Name: "BanUser", Email: "ban@example.com", Phone: "19912345678", PasswordHash: string(hashed), Role: model.RoleUser, Status: model.UserStatusActive}
@@ -54,7 +58,7 @@ func TestUserBanAfterAdminUpdate(t *testing.T) {
 	jwtMgr := auth.NewJWTManager("secret", time.Hour)
 	authSvc := authservice.NewAuthService(userRepo, jwtMgr)
 	serviceItemRepo := serviceitem.NewServiceItemRepository(db)
-	adminSvc := adminservice.NewAdminService(gameRepo, userRepo, playerRepo, orderRepo, paymentRepo, roleRepo, serviceItemRepo, cache.NewMemory())
+	adminSvc := adminservice.NewAdminService(gameRepo, userRepo, playerRepo, orderRepo, paymentRepo, roleRepo, serviceItemRepo, permissionRepo, menuRepo, statsRepo, walletRepo, cache.NewMemory())
 
 	authRouter := gin.New()
 	api := authRouter.Group("/api/v1")
@@ -131,4 +135,46 @@ func migrateReportModels(t *testing.T, db *gorm.DB) {
 	if err := db.AutoMigrate(&model.User{}, &model.ChatReport{}); err != nil {
 		t.Fatalf("migrate report models: %v", err)
 	}
+}
+
+// mockStatsRepo 用于测试的统计仓库
+type mockStatsRepo struct{}
+
+func (m *mockStatsRepo) Dashboard(ctx context.Context) (repository.Dashboard, error) {
+	return repository.Dashboard{}, nil
+}
+
+func (m *mockStatsRepo) RevenueTrend(ctx context.Context, days int) ([]repository.DateValue, error) {
+	return nil, nil
+}
+
+func (m *mockStatsRepo) UserGrowth(ctx context.Context, days int) ([]repository.DateValue, error) {
+	return nil, nil
+}
+
+func (m *mockStatsRepo) OrdersByStatus(ctx context.Context) (map[string]int64, error) {
+	return nil, nil
+}
+
+func (m *mockStatsRepo) TopPlayers(ctx context.Context, limit int) ([]repository.PlayerTop, error) {
+	return nil, nil
+}
+
+func (m *mockStatsRepo) AuditOverview(ctx context.Context, from, to *time.Time) (map[string]int64, map[string]int64, error) {
+	return nil, nil, nil
+}
+
+func (m *mockStatsRepo) AuditTrend(ctx context.Context, from, to *time.Time, entity, action string) ([]repository.DateValue, error) {
+	return nil, nil
+}
+
+// mockWalletRepo 用于测试的钱包仓库
+type mockWalletRepo struct{}
+
+func (m *mockWalletRepo) GetByUserID(ctx context.Context, userID uint64) (*model.Wallet, error) {
+	return nil, nil
+}
+
+func (m *mockWalletRepo) Save(ctx context.Context, wallet *model.Wallet) error {
+	return nil
 }

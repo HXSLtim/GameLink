@@ -1,10 +1,10 @@
 /**
  * 路由配置
  */
-import { lazy, Suspense } from 'react';
+import { lazy } from 'react';
 import { Navigate } from 'react-router-dom';
 import type { RouteConfig } from './types';
-import { Spin } from 'antd';
+import LazyLoad from '@/components/common/LazyLoad';
 
 // 布局组件
 import AdminLayout from '@/layouts/AdminLayout/index';
@@ -37,6 +37,14 @@ const RealtimeMonitor = lazy(() => import('@/pages/admin/Monitor/Realtime'));
 const AnalyticsPage = lazy(() => import('@/pages/admin/Monitor/Analytics'));
 const KPIDashboard = lazy(() => import('@/pages/admin/Monitor/KPI'));
 
+// 评价管理模块页面
+const ReviewList = lazy(() => import('@/pages/admin/Review/index'));
+const ReviewDetail = lazy(() => import('@/pages/admin/Review/Detail'));
+const ReviewModeration = lazy(() => import('@/pages/admin/Review/Moderation'));
+const ReviewReports = lazy(() => import('@/pages/admin/Review/Reports'));
+const SensitiveWords = lazy(() => import('@/pages/admin/Review/SensitiveWords'));
+const ReviewStats = lazy(() => import('@/pages/admin/Review/Stats'));
+
 // Notifications
 const AdminNotificationsPage = lazy(() => import('@/pages/admin/Notifications'));
 
@@ -44,21 +52,6 @@ const AdminNotificationsPage = lazy(() => import('@/pages/admin/Notifications'))
 const ServiceItemList = lazy(() => import('@/pages/biz/service'));
 const ServiceItemForm = lazy(() => import('@/pages/biz/service/form'));
 const ServiceItemDetail = lazy(() => import('@/pages/biz/service/detail'));
-
-/**
- * 懒加载包装器
- */
-const LazyLoad = ({ children }: { children: React.ReactNode }) => (
-    <Suspense
-        fallback={
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: 300 }}>
-                <Spin size="large" />
-            </div>
-        }
-    >
-        {children}
-    </Suspense>
-);
 
 export const routes: RouteConfig[] = [
     // 登录页
@@ -199,6 +192,37 @@ export const routes: RouteConfig[] = [
                 path: 'monitor/kpi',
                 element: <LazyLoad><KPIDashboard /></LazyLoad>,
                 meta: { title: 'KPI 仪表板' }
+            },
+            // 评价管理模块
+            {
+                path: 'reviews/list',
+                element: <LazyLoad><ReviewList /></LazyLoad>,
+                meta: { title: '评价列表', permission: 'admin.reviews.list' }
+            },
+            {
+                path: 'reviews/detail/:id',
+                element: <LazyLoad><ReviewDetail /></LazyLoad>,
+                meta: { title: '评价详情', permission: 'admin.reviews.read' }
+            },
+            {
+                path: 'reviews/moderation',
+                element: <LazyLoad><ReviewModeration /></LazyLoad>,
+                meta: { title: '评价审核', permission: 'admin.reviews.pending.list' }
+            },
+            {
+                path: 'review-reports',
+                element: <LazyLoad><ReviewReports /></LazyLoad>,
+                meta: { title: '举报管理', permission: 'admin.review-reports.list' }
+            },
+            {
+                path: 'sensitive-words',
+                element: <LazyLoad><SensitiveWords /></LazyLoad>,
+                meta: { title: '敏感词管理', permission: 'sensitive_word.list' }
+            },
+            {
+                path: 'reviews/stats',
+                element: <LazyLoad><ReviewStats /></LazyLoad>,
+                meta: { title: '评价统计', permission: 'admin.reviews.stats.list' }
             }
         ]
     },

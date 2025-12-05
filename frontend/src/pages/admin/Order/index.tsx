@@ -218,7 +218,7 @@ const OrderPage: React.FC = () => {
             width: 150,
             render: (_, record) => (
                 <Space>
-                    <Avatar size="small" icon={<UserOutlined />} src={record.userAvatar} />
+                    <Avatar size="small" icon={<UserOutlined />} src={record.userAvatar || undefined} />
                     <span>{record.userName}</span>
                 </Space>
             ),
@@ -229,7 +229,7 @@ const OrderPage: React.FC = () => {
             width: 150,
             render: (_, record) => (
                 <Space>
-                    <Avatar size="small" icon={<UserOutlined />} src={record.playerAvatar} style={{ backgroundColor: '#722ed1' }} />
+                    <Avatar size="small" icon={<UserOutlined />} src={record.playerAvatar || undefined} style={{ backgroundColor: '#722ed1' }} />
                     <span>{record.playerName}</span>
                 </Space>
             ),

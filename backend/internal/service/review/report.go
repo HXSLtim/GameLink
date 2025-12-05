@@ -223,9 +223,24 @@ func (s *ReviewService) HandleReport(ctx context.Context, reportID, handlerID ui
 	switch req.Action {
 	case "delete":
 		// 删除评价
+		oldStatus := review.Status
 		review.Status = model.ReviewStatusDeleted
 		if err := s.reviews.Update(ctx, review); err != nil {
 			return nil, err
+		}
+
+		// 记录删除评价的操作日志
+		if s.opLogs != nil {
+			metadata := fmt.Sprintf(`{"old_status":"%s","new_status":"%s","report_id":%d,"action":"delete"}`, oldStatus, model.ReviewStatusDeleted, reportID)
+			log := &model.OperationLog{
+				EntityType:   string(model.OpEntityReview),
+				EntityID:     review.ID,
+				ActorUserID:  &handlerID,
+				Action:       string(model.OpActionDelete),
+				Reason:       fmt.Sprintf("处理举报：%s", req.Note),
+				MetadataJSON: []byte(metadata),
+			}
+			_ = s.opLogs.Append(ctx, log)
 		}
 
 		// 更新举报状态为已通过
@@ -284,6 +299,20 @@ func (s *ReviewService) HandleReport(ctx context.Context, reportID, handlerID ui
 	// 更新举报记录
 	if err := s.reports.Update(ctx, report); err != nil {
 		return nil, err
+	}
+
+	// 记录处理举报的操作日志
+	if s.opLogs != nil {
+		metadata := fmt.Sprintf(`{"report_id":%d,"action":"%s","note":"%s"}`, reportID, req.Action, req.Note)
+		log := &model.OperationLog{
+			EntityType:   string(model.OpEntityReview),
+			EntityID:     review.ID,
+			ActorUserID:  &handlerID,
+			Action:       string(model.OpActionHandleReport),
+			Reason:       fmt.Sprintf("处理举报：%s", message),
+			MetadataJSON: []byte(metadata),
+		}
+		_ = s.opLogs.Append(ctx, log)
 	}
 
 	return &HandleReportResponse{

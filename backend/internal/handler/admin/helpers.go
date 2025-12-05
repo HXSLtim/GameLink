@@ -9,11 +9,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/pkg/apierr"
 	"gamelink/internal/handler"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	repoiface "gamelink/internal/repository/interfaces"
+	"gamelink/pkg/apierr"
 )
 
 func parseUintParam(c *gin.Context, key string) (uint64, error) {
@@ -96,16 +96,6 @@ func writeJSONError(c *gin.Context, status int, message string) {
 		Success: false,
 		Code:    status,
 		Message: message,
-	})
-}
-
-// respondSuccess 是writeJSON的简化版本，用于成功响应
-func respondSuccess(c *gin.Context, message string, data any) {
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: message,
-		Data:    data,
 	})
 }
 

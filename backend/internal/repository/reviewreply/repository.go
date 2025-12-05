@@ -22,10 +22,44 @@ func (r *gormReviewReplyRepository) Create(ctx context.Context, reply *model.Rev
 	return r.db.WithContext(ctx).Create(reply).Error
 }
 
+func (r *gormReviewReplyRepository) Get(ctx context.Context, replyID uint64) (*model.ReviewReply, error) {
+	var reply model.ReviewReply
+	err := r.db.WithContext(ctx).Where("id = ?", replyID).First(&reply).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, repository.ErrNotFound
+		}
+		return nil, err
+	}
+	return &reply, nil
+}
+
 func (r *gormReviewReplyRepository) ListByReview(ctx context.Context, reviewID uint64) ([]model.ReviewReply, error) {
 	var replies []model.ReviewReply
 	err := r.db.WithContext(ctx).Where("review_id = ?", reviewID).Order("created_at ASC").Find(&replies).Error
 	return replies, err
+}
+
+func (r *gormReviewReplyRepository) Update(ctx context.Context, reply *model.ReviewReply) error {
+	tx := r.db.WithContext(ctx).Model(&model.ReviewReply{}).Where("id = ?", reply.ID).Updates(reply)
+	if tx.Error != nil {
+		return tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return repository.ErrNotFound
+	}
+	return nil
+}
+
+func (r *gormReviewReplyRepository) Delete(ctx context.Context, replyID uint64) error {
+	tx := r.db.WithContext(ctx).Delete(&model.ReviewReply{}, replyID)
+	if tx.Error != nil {
+		return tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return repository.ErrNotFound
+	}
+	return nil
 }
 
 func (r *gormReviewReplyRepository) UpdateStatus(ctx context.Context, replyID uint64, status string, note string) error {

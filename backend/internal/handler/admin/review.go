@@ -7,14 +7,20 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	apierr "gamelink/pkg/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	adminservice "gamelink/internal/service/admin"
+	apierr "gamelink/pkg/apierr"
 )
 
 // Review 评价模型（类型别名）
 type Review = model.Review
+
+// OperationLogWithActor 带操作员名称的操作日志
+type OperationLogWithActor struct {
+	model.OperationLog
+	ActorName string `json:"actorName,omitempty"`
+}
 
 // ReviewHandler 管理评价接口
 type ReviewHandler struct{ svc *adminservice.AdminService }
@@ -250,8 +256,36 @@ func (h *ReviewHandler) ListReviewLogs(c *gin.Context) {
 		exportOperationLogsCSV(c, "review", id, items)
 		return
 	}
-	items = ensureSlice(items)
-	writeJSON(c, 200, model.APIResponse[[]model.OperationLog]{Success: true, Code: 200, Message: "OK", Data: items, Pagination: p})
+
+	// 填充操作员名称
+	result := make([]OperationLogWithActor, 0, len(items))
+	userIDs := make([]uint64, 0)
+	for _, item := range items {
+		if item.ActorUserID != nil {
+			userIDs = append(userIDs, *item.ActorUserID)
+		}
+	}
+
+	// 批量获取用户名称
+	userNames := make(map[uint64]string)
+	if len(userIDs) > 0 {
+		users, _ := h.svc.GetUsersByIDs(c.Request.Context(), userIDs)
+		for _, u := range users {
+			userNames[u.ID] = u.Name
+		}
+	}
+
+	for _, item := range items {
+		logWithActor := OperationLogWithActor{OperationLog: item}
+		if item.ActorUserID != nil {
+			if name, ok := userNames[*item.ActorUserID]; ok {
+				logWithActor.ActorName = name
+			}
+		}
+		result = append(result, logWithActor)
+	}
+
+	writeJSON(c, 200, model.APIResponse[[]OperationLogWithActor]{Success: true, Code: 200, Message: "OK", Data: result, Pagination: p})
 }
 
 // ListPlayerReviews
@@ -586,7 +620,14 @@ func (h *ReviewHandler) ApproveReview(c *gin.Context) {
 		return
 	}
 
-	err = h.svc.ApproveReview(c.Request.Context(), id)
+	// Get actor user ID from context
+	var actorUserID *uint64
+	if userID, exists := c.Get("userID"); exists {
+		uid := userID.(uint64)
+		actorUserID = &uid
+	}
+
+	err = h.svc.ApproveReview(c.Request.Context(), id, actorUserID)
 	if errors.Is(err, adminservice.ErrNotFound) {
 		_ = c.Error(adminservice.ErrNotFound)
 		return
@@ -628,7 +669,14 @@ func (h *ReviewHandler) RejectReview(c *gin.Context) {
 		return
 	}
 
-	err = h.svc.RejectReview(c.Request.Context(), id, p.Reason)
+	// Get actor user ID from context
+	var actorUserID *uint64
+	if userID, exists := c.Get("userID"); exists {
+		uid := userID.(uint64)
+		actorUserID = &uid
+	}
+
+	err = h.svc.RejectReview(c.Request.Context(), id, p.Reason, actorUserID)
 	if errors.Is(err, adminservice.ErrNotFound) {
 		_ = c.Error(adminservice.ErrNotFound)
 		return
@@ -662,7 +710,14 @@ func (h *ReviewHandler) BatchApproveReviews(c *gin.Context) {
 		return
 	}
 
-	err := h.svc.BatchApproveReviews(c.Request.Context(), p.ReviewIDs)
+	// Get actor user ID from context
+	var actorUserID *uint64
+	if userID, exists := c.Get("userID"); exists {
+		uid := userID.(uint64)
+		actorUserID = &uid
+	}
+
+	err := h.svc.BatchApproveReviews(c.Request.Context(), p.ReviewIDs, actorUserID)
 	if err != nil {
 		writeJSONError(c, 500, err.Error())
 		return
@@ -692,7 +747,14 @@ func (h *ReviewHandler) BatchRejectReviews(c *gin.Context) {
 		return
 	}
 
-	err := h.svc.BatchRejectReviews(c.Request.Context(), p.ReviewIDs, p.Reason)
+	// Get actor user ID from context
+	var actorUserID *uint64
+	if userID, exists := c.Get("userID"); exists {
+		uid := userID.(uint64)
+		actorUserID = &uid
+	}
+
+	err := h.svc.BatchRejectReviews(c.Request.Context(), p.ReviewIDs, p.Reason, actorUserID)
 	if err != nil {
 		writeJSONError(c, 500, err.Error())
 		return
@@ -717,4 +779,229 @@ type BatchApprovePayload struct {
 type BatchRejectPayload struct {
 	ReviewIDs []uint64 `json:"reviewIds" binding:"required,min=1"`
 	Reason    string   `json:"reason" binding:"required,max=500"`
+}
+
+// UpdateReplyPayload 更新回复请求
+type UpdateReplyPayload struct {
+	Content string `json:"content" binding:"required,max=500"`
+}
+
+// UpdateReply
+// @Summary      更新评价回复
+// @Tags         Admin/Reviews
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        id       path  int                  true  "回复ID"
+// @Param        request  body  UpdateReplyPayload   true  "回复内容"
+// @Success      200  {object}  model.APIResponse[map[string]interface{}]
+// @Failure      400  {object}  model.ErrorResponse
+// @Failure      404  {object}  model.ErrorResponse
+// @Router       /admin/review-replies/{id} [put]
+func (h *ReviewHandler) UpdateReply(c *gin.Context) {
+	id, err := parseUintParam(c, "id")
+	if err != nil {
+		writeJSONError(c, 400, apierr.ErrInvalidID)
+		return
+	}
+
+	var p UpdateReplyPayload
+	if err := c.ShouldBindJSON(&p); err != nil {
+		writeJSONError(c, 400, err.Error())
+		return
+	}
+
+	// 获取当前用户ID
+	userID, exists := c.Get("userID")
+	if !exists {
+		writeJSONError(c, 401, "未授权")
+		return
+	}
+
+	result, err := h.svc.UpdateReviewReply(c.Request.Context(), userID.(uint64), id, p.Content)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
+		return
+	}
+	if errors.Is(err, adminservice.ErrUnauthorized) {
+		writeJSONError(c, 403, "无权操作")
+		return
+	}
+	if err != nil {
+		writeJSONError(c, 500, err.Error())
+		return
+	}
+
+	writeJSON(c, 200, model.APIResponse[map[string]interface{}]{
+		Success: true,
+		Code:    200,
+		Message: "回复更新成功",
+		Data:    result,
+	})
+}
+
+// DeleteReply
+// @Summary      删除评价回复
+// @Tags         Admin/Reviews
+// @Security     BearerAuth
+// @Produce      json
+// @Param        id   path  int  true  "回复ID"
+// @Success      200  {object}  model.SuccessResponse
+// @Failure      404  {object}  model.ErrorResponse
+// @Router       /admin/review-replies/{id} [delete]
+func (h *ReviewHandler) DeleteReply(c *gin.Context) {
+	id, err := parseUintParam(c, "id")
+	if err != nil {
+		writeJSONError(c, 400, apierr.ErrInvalidID)
+		return
+	}
+
+	// 获取当前用户ID
+	userID, exists := c.Get("userID")
+	if !exists {
+		writeJSONError(c, 401, "未授权")
+		return
+	}
+
+	err = h.svc.DeleteReviewReply(c.Request.Context(), userID.(uint64), id)
+	if errors.Is(err, adminservice.ErrNotFound) {
+		_ = c.Error(adminservice.ErrNotFound)
+		return
+	}
+	if errors.Is(err, adminservice.ErrUnauthorized) {
+		writeJSONError(c, 403, "无权操作")
+		return
+	}
+	if err != nil {
+		writeJSONError(c, 500, err.Error())
+		return
+	}
+
+	c.JSON(200, model.SuccessResponse{Success: true, Code: 200, Message: "回复删除成功"})
+}
+
+// SearchOperationLogs
+// @Summary      搜索操作日志
+// @Tags         Admin/OperationLogs
+// @Security     BearerAuth
+// @Produce      json
+// @Param        page          query  int     false  "页码"
+// @Param        pageSize      query  int     false  "每页数量"
+// @Param        entity_type   query  string  false  "实体类型" Enums(review,order,payment,user,player)
+// @Param        entity_id     query  int     false  "实体ID"
+// @Param        action        query  string  false  "动作过滤"
+// @Param        actor_user_id query  int     false  "操作者用户ID"
+// @Param        date_from     query  string  false  "开始日期 (YYYY-MM-DD)"
+// @Param        date_to       query  string  false  "结束日期 (YYYY-MM-DD)"
+// @Param        export        query  string  false  "导出格式" Enums(csv)
+// @Success      200  {object}  model.APIResponse[[]model.OperationLog]
+// @Router       /admin/operation-logs [get]
+func (h *ReviewHandler) SearchOperationLogs(c *gin.Context) {
+	page, pageSize, ok := parsePagination(c)
+	if !ok {
+		return
+	}
+
+	var entityID, actorID *uint64
+	if v, err := queryUint64Ptr(c, "entity_id"); err == nil {
+		entityID = v
+	}
+	if v, err := queryUint64Ptr(c, "actor_user_id"); err == nil {
+		actorID = v
+	}
+
+	var dateFrom, dateTo *time.Time
+	if v, err := queryTimePtr(c, "date_from"); err == nil {
+		dateFrom = v
+	} else if strings.TrimSpace(c.Query("date_from")) != "" {
+		writeJSONError(c, 400, apierr.ErrInvalidDateFrom)
+		return
+	}
+	if v, err := queryTimePtr(c, "date_to"); err == nil {
+		dateTo = v
+	} else if strings.TrimSpace(c.Query("date_to")) != "" {
+		writeJSONError(c, 400, apierr.ErrInvalidDateTo)
+		return
+	}
+
+	opts := repository.OperationLogSearchOptions{
+		Page:        page,
+		PageSize:    pageSize,
+		EntityType:  strings.TrimSpace(c.Query("entity_type")),
+		EntityID:    entityID,
+		Action:      strings.TrimSpace(c.Query("action")),
+		ActorUserID: actorID,
+		DateFrom:    dateFrom,
+		DateTo:      dateTo,
+	}
+
+	items, p, err := h.svc.SearchOperationLogs(c.Request.Context(), opts)
+	if err != nil {
+		writeJSONError(c, 500, err.Error())
+		return
+	}
+
+	if strings.EqualFold(strings.TrimSpace(c.Query("export")), "csv") {
+		exportOperationLogsCSV(c, opts.EntityType, 0, items)
+		return
+	}
+
+	items = ensureSlice(items)
+	writeJSON(c, 200, model.APIResponse[[]model.OperationLog]{
+		Success:    true,
+		Code:       200,
+		Message:    "OK",
+		Data:       items,
+		Pagination: p,
+	})
+}
+
+// ExportOperationLogs
+// @Summary      导出操作日志
+// @Tags         Admin/OperationLogs
+// @Security     BearerAuth
+// @Produce      text/csv
+// @Param        entity_type   query  string  false  "实体类型" Enums(review,order,payment,user,player)
+// @Param        entity_id     query  int     false  "实体ID"
+// @Param        action        query  string  false  "动作过滤"
+// @Param        actor_user_id query  int     false  "操作者用户ID"
+// @Param        date_from     query  string  false  "开始日期 (YYYY-MM-DD)"
+// @Param        date_to       query  string  false  "结束日期 (YYYY-MM-DD)"
+// @Success      200  {file}  file
+// @Router       /admin/operation-logs/export [get]
+func (h *ReviewHandler) ExportOperationLogs(c *gin.Context) {
+	var entityID, actorID *uint64
+	if v, err := queryUint64Ptr(c, "entity_id"); err == nil {
+		entityID = v
+	}
+	if v, err := queryUint64Ptr(c, "actor_user_id"); err == nil {
+		actorID = v
+	}
+
+	var dateFrom, dateTo *time.Time
+	if v, err := queryTimePtr(c, "date_from"); err == nil {
+		dateFrom = v
+	}
+	if v, err := queryTimePtr(c, "date_to"); err == nil {
+		dateTo = v
+	}
+
+	opts := repository.OperationLogSearchOptions{
+		Page:        1,
+		PageSize:    10000, // Export all matching records
+		EntityType:  strings.TrimSpace(c.Query("entity_type")),
+		EntityID:    entityID,
+		Action:      strings.TrimSpace(c.Query("action")),
+		ActorUserID: actorID,
+		DateFrom:    dateFrom,
+		DateTo:      dateTo,
+	}
+
+	items, _, err := h.svc.SearchOperationLogs(c.Request.Context(), opts)
+	if err != nil {
+		writeJSONError(c, 500, err.Error())
+		return
+	}
+
+	exportOperationLogsCSV(c, opts.EntityType, 0, items)
 }

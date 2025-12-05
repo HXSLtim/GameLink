@@ -151,13 +151,157 @@ export const ADMIN_MENUS: MenuConfig[] = [
         ],
     },
     {
+        name: '监控中心',
+        path: '/admin/monitor',
+        component: 'Layout',
+        icon: 'MonitorOutlined',
+        order: 4,
+        description: '系统监控和数据分析',
+        children: [
+            {
+                name: '实时监控',
+                path: '/admin/monitor/realtime',
+                component: 'RealtimeMonitor',
+                icon: 'MonitorOutlined',
+                order: 1,
+                description: '实时系统状态监控',
+            },
+            {
+                name: '运营分析',
+                path: '/admin/monitor/analytics',
+                component: 'Analytics',
+                icon: 'LineChartOutlined',
+                order: 2,
+                description: '运营数据分析',
+            },
+            {
+                name: 'KPI 仪表板',
+                path: '/admin/monitor/kpi',
+                component: 'KPIDashboard',
+                icon: 'FundOutlined',
+                order: 3,
+                description: 'KPI 指标展示',
+            },
+        ],
+    },
+    {
+        name: '内容管理',
+        path: '/admin/content',
+        component: 'Layout',
+        icon: 'FileTextOutlined',
+        order: 5,
+        description: '动态审核和聊天监控',
+        children: [
+            {
+                name: '动态审核',
+                path: '/admin/content/feeds',
+                component: 'ContentFeeds',
+                icon: 'FileTextOutlined',
+                order: 1,
+                permission: 'content.feed.list',
+                description: '审核用户发布的动态',
+            },
+            {
+                name: '聊天监控',
+                path: '/admin/content/chat',
+                component: 'ContentChat',
+                icon: 'MessageOutlined',
+                order: 2,
+                permission: 'content.chat.list',
+                description: '监控聊天消息',
+            },
+            {
+                name: '举报管理',
+                path: '/admin/content/reports',
+                component: 'ContentReports',
+                icon: 'WarningOutlined',
+                order: 3,
+                permission: 'content.report.list',
+                description: '处理动态举报',
+            },
+            {
+                name: '内容分类',
+                path: '/admin/content/categories',
+                component: 'ContentCategories',
+                icon: 'TagsOutlined',
+                order: 4,
+                permission: 'content.category.list',
+                description: '管理内容分类',
+            },
+            {
+                name: '内容统计',
+                path: '/admin/content/stats',
+                component: 'ContentStats',
+                icon: 'BarChartOutlined',
+                order: 5,
+                permission: 'content.stats',
+                description: '内容数据统计',
+            },
+        ],
+    },
+    {
+        name: '评价管理',
+        path: '/admin/reviews',
+        component: 'Layout',
+        icon: 'StarOutlined',
+        order: 6,
+        description: '评价和举报管理',
+        children: [
+            {
+                name: '评价列表',
+                path: '/admin/reviews/list',
+                component: 'ReviewList',
+                icon: 'UnorderedListOutlined',
+                order: 1,
+                permission: 'admin.reviews.list',
+                description: '查看和管理评价',
+            },
+            {
+                name: '评价审核',
+                path: '/admin/reviews/moderation',
+                component: 'ReviewModeration',
+                icon: 'AuditOutlined',
+                order: 2,
+                permission: 'admin.reviews.pending.list',
+                description: '审核待处理评价',
+            },
+            {
+                name: '举报管理',
+                path: '/admin/review-reports',
+                component: 'ReviewReports',
+                icon: 'WarningOutlined',
+                order: 3,
+                permission: 'admin.review-reports.list',
+                description: '处理评价举报',
+            },
+            {
+                name: '敏感词管理',
+                path: '/admin/sensitive-words',
+                component: 'SensitiveWords',
+                icon: 'StopOutlined',
+                order: 4,
+                permission: 'sensitive_word.list',
+                description: '管理敏感词库',
+            },
+            {
+                name: '评价统计',
+                path: '/admin/reviews/stats',
+                component: 'ReviewStats',
+                icon: 'BarChartOutlined',
+                order: 5,
+                permission: 'admin.reviews.stats.list',
+                description: '评价数据统计',
+            },
+        ],
+    },
+    {
         name: '系统设置',
         path: '/admin/settings',
         component: 'Settings',
         icon: 'SettingOutlined',
         order: 99,
         permission: 'admin.settings.view',
-        description: '系统参数设置',
+        description: '系统参数设置（含评价设置）',
     },
 ];
 
@@ -231,6 +375,78 @@ export const ADMIN_PERMISSIONS: PermissionConfig[] = [
     // 系统设置
     { method: 'GET', path: '/api/v1/admin/settings', code: 'admin.settings.view', group: '/admin/settings', description: '查看系统设置' },
     { method: 'PUT', path: '/api/v1/admin/settings', code: 'admin.settings.update', group: '/admin/settings', description: '更新系统设置' },
+
+    // 监控中心
+    { method: 'GET', path: '/api/v1/admin/monitor/system-status', code: 'admin.monitor.system', group: '/admin/monitor', description: '查看系统状态' },
+    { method: 'GET', path: '/api/v1/admin/monitor/online-users', code: 'admin.monitor.online', group: '/admin/monitor', description: '查看在线用户' },
+    { method: 'GET', path: '/api/v1/admin/monitor/order-queue', code: 'admin.monitor.orders', group: '/admin/monitor', description: '查看订单队列' },
+    { method: 'GET', path: '/api/v1/admin/monitor/alerts', code: 'admin.monitor.alerts', group: '/admin/monitor', description: '查看告警' },
+    { method: 'GET', path: '/api/v1/admin/analytics/active-users', code: 'admin.analytics.users', group: '/admin/analytics', description: '查看活跃用户' },
+    { method: 'GET', path: '/api/v1/admin/analytics/retention', code: 'admin.analytics.retention', group: '/admin/analytics', description: '查看留存率' },
+    { method: 'GET', path: '/api/v1/admin/analytics/payment', code: 'admin.analytics.payment', group: '/admin/analytics', description: '查看支付分析' },
+    { method: 'GET', path: '/api/v1/admin/analytics/conversion', code: 'admin.analytics.conversion', group: '/admin/analytics', description: '查看转化漏斗' },
+    { method: 'GET', path: '/api/v1/admin/kpi/overview', code: 'admin.kpi.overview', group: '/admin/kpi', description: '查看KPI概览' },
+    { method: 'GET', path: '/api/v1/admin/kpi/trend', code: 'admin.kpi.trend', group: '/admin/kpi', description: '查看KPI趋势' },
+    { method: 'GET', path: '/api/v1/admin/kpi/targets', code: 'admin.kpi.targets', group: '/admin/kpi', description: '查看KPI目标' },
+
+    // 内容管理 - 动态审核
+    { method: 'GET', path: '/api/v1/admin/content/feeds', code: 'content.feed.list', group: '/admin/content', description: '获取动态列表' },
+    { method: 'GET', path: '/api/v1/admin/content/feeds/:id', code: 'content.feed.get', group: '/admin/content', description: '获取动态详情' },
+    { method: 'PUT', path: '/api/v1/admin/content/feeds/:id/approve', code: 'content.feed.approve', group: '/admin/content', description: '批准动态' },
+    { method: 'PUT', path: '/api/v1/admin/content/feeds/:id/reject', code: 'content.feed.reject', group: '/admin/content', description: '拒绝动态' },
+    { method: 'DELETE', path: '/api/v1/admin/content/feeds/:id', code: 'content.feed.delete', group: '/admin/content', description: '删除动态' },
+    { method: 'POST', path: '/api/v1/admin/content/feeds/batch-approve', code: 'content.feed.batch_approve', group: '/admin/content', description: '批量批准动态' },
+    { method: 'POST', path: '/api/v1/admin/content/feeds/batch-reject', code: 'content.feed.batch_reject', group: '/admin/content', description: '批量拒绝动态' },
+
+    // 内容管理 - 聊天监控
+    { method: 'GET', path: '/api/v1/admin/content/chat/messages', code: 'content.chat.list', group: '/admin/content', description: '获取聊天消息列表' },
+    { method: 'DELETE', path: '/api/v1/admin/content/chat/messages/:id', code: 'content.chat.delete', group: '/admin/content', description: '删除聊天消息' },
+    { method: 'POST', path: '/api/v1/admin/content/chat/mute', code: 'content.chat.mute', group: '/admin/content', description: '禁言用户' },
+    { method: 'POST', path: '/api/v1/admin/content/chat/unmute', code: 'content.chat.unmute', group: '/admin/content', description: '解除禁言' },
+
+    // 内容管理 - 举报管理
+    { method: 'GET', path: '/api/v1/admin/content/reports', code: 'content.report.list', group: '/admin/content', description: '获取举报列表' },
+    { method: 'GET', path: '/api/v1/admin/content/reports/:id', code: 'content.report.get', group: '/admin/content', description: '获取举报详情' },
+    { method: 'POST', path: '/api/v1/admin/content/reports/:id/process', code: 'content.report.process', group: '/admin/content', description: '处理举报' },
+
+    // 内容管理 - 分类管理
+    { method: 'GET', path: '/api/v1/admin/content/categories', code: 'content.category.list', group: '/admin/content', description: '获取分类列表' },
+    { method: 'GET', path: '/api/v1/admin/content/categories/:id', code: 'content.category.get', group: '/admin/content', description: '获取分类详情' },
+    { method: 'POST', path: '/api/v1/admin/content/categories', code: 'content.category.create', group: '/admin/content', description: '创建分类' },
+    { method: 'PUT', path: '/api/v1/admin/content/categories/:id', code: 'content.category.update', group: '/admin/content', description: '更新分类' },
+    { method: 'DELETE', path: '/api/v1/admin/content/categories/:id', code: 'content.category.delete', group: '/admin/content', description: '删除分类' },
+
+    // 内容管理 - 统计
+    { method: 'GET', path: '/api/v1/admin/content/stats', code: 'content.stats', group: '/admin/content', description: '获取内容统计' },
+
+    // 评价管理 - 权限码格式与后端自动生成的一致: admin.{resource}.{action}
+    { method: 'GET', path: '/api/v1/admin/reviews', code: 'admin.reviews.list', group: '/admin/reviews', description: '获取评价列表' },
+    { method: 'GET', path: '/api/v1/admin/reviews/:id', code: 'admin.reviews.read', group: '/admin/reviews', description: '获取评价详情' },
+    { method: 'GET', path: '/api/v1/admin/reviews/pending', code: 'admin.reviews.pending.list', group: '/admin/reviews', description: '获取待审核评价' },
+    { method: 'PUT', path: '/api/v1/admin/reviews/:id/approve', code: 'admin.reviews.approve.update', group: '/admin/reviews', description: '批准评价' },
+    { method: 'PUT', path: '/api/v1/admin/reviews/:id/reject', code: 'admin.reviews.reject.update', group: '/admin/reviews', description: '拒绝评价' },
+    { method: 'PUT', path: '/api/v1/admin/reviews/batch-approve', code: 'admin.reviews.batch-approve.update', group: '/admin/reviews', description: '批量批准评价' },
+    { method: 'PUT', path: '/api/v1/admin/reviews/batch-reject', code: 'admin.reviews.batch-reject.update', group: '/admin/reviews', description: '批量拒绝评价' },
+    { method: 'DELETE', path: '/api/v1/admin/reviews/:id', code: 'admin.reviews.delete', group: '/admin/reviews', description: '删除评价' },
+    { method: 'PUT', path: '/api/v1/admin/reviews/:id', code: 'admin.reviews.update', group: '/admin/reviews', description: '更新评价' },
+    { method: 'GET', path: '/api/v1/admin/reviews/:id/logs', code: 'admin.reviews.logs.list', group: '/admin/reviews', description: '查看评价操作日志' },
+
+    // 评价举报管理
+    { method: 'GET', path: '/api/v1/admin/review-reports', code: 'admin.review-reports.list', group: '/admin/review-reports', description: '获取举报列表' },
+    { method: 'GET', path: '/api/v1/admin/review-reports/:id', code: 'admin.review-reports.read', group: '/admin/review-reports', description: '获取举报详情' },
+    { method: 'PUT', path: '/api/v1/admin/review-reports/:id/handle', code: 'admin.review-reports.handle.update', group: '/admin/review-reports', description: '处理举报' },
+
+    // 敏感词管理
+    { method: 'GET', path: '/api/v1/admin/sensitive-words', code: 'sensitive_word.list', group: '/admin/sensitive-words', description: '获取敏感词列表' },
+    { method: 'POST', path: '/api/v1/admin/sensitive-words', code: 'sensitive_word.create', group: '/admin/sensitive-words', description: '添加敏感词' },
+    { method: 'DELETE', path: '/api/v1/admin/sensitive-words/:id', code: 'sensitive_word.delete', group: '/admin/sensitive-words', description: '删除敏感词' },
+
+    // 评价统计
+    { method: 'GET', path: '/api/v1/admin/reviews/stats', code: 'admin.reviews.stats.list', group: '/admin/reviews', description: '获取评价统计' },
+
+    // 评价设置
+    { method: 'GET', path: '/api/v1/admin/review-settings', code: 'admin.review-settings.list', group: '/admin/review-settings', description: '查看评价设置' },
+    { method: 'PUT', path: '/api/v1/admin/review-settings', code: 'admin.review-settings.update', group: '/admin/review-settings', description: '更新评价设置' },
 ];
 
 export default { ADMIN_MENUS, ADMIN_PERMISSIONS };

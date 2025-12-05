@@ -13,10 +13,11 @@ const renderRoutes = (routes: RouteConfig[]): any[] => {
         const element = route.element;
 
         // Wrap element in Guard if needed
-        const guardedElement = (route.meta?.requiresAuth || route.meta?.roles) ? (
+        const guardedElement = (route.meta?.requiresAuth || route.meta?.roles || route.meta?.permission) ? (
             <RouteGuard
                 requiresAuth={route.meta?.requiresAuth}
                 roles={route.meta?.roles}
+                permission={route.meta?.permission}
             >
                 {element}
             </RouteGuard>
