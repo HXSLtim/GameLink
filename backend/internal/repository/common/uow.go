@@ -11,19 +11,21 @@ import (
 	repoiface "gamelink/internal/repository/interfaces"
 	adminrepo "gamelink/internal/repository/admin"
 	order "gamelink/internal/repository/order"
+	"gamelink/internal/repository/reviewreport"
 	"gamelink/internal/repository/user"
 )
 
 // Repos bundles repository interfaces bound to a specific DB (tx) handle.
 type Repos struct {
-	Games    repository.GameRepository
-	Users    repository.UserRepository
-	Players  repository.PlayerRepository
-	Orders   repoiface.OrderRepository
-	Payments repository.PaymentRepository
-	Tags     repository.PlayerTagRepository
-	OpLogs   repository.OperationLogRepository
-	Reviews  repository.ReviewRepository
+	Games         repository.GameRepository
+	Users         repository.UserRepository
+	Players       repository.PlayerRepository
+	Orders        repoiface.OrderRepository
+	Payments      repository.PaymentRepository
+	Tags          repository.PlayerTagRepository
+	OpLogs        repository.OperationLogRepository
+	Reviews       repository.ReviewRepository
+	ReviewReports repository.ReviewReportRepository
 }
 
 // UnitOfWork provides a simple transaction wrapper for GORM repositories.
@@ -39,14 +41,15 @@ func NewUnitOfWork(db *gorm.DB) *UnitOfWork { return &UnitOfWork{db: db} }
 func (u *UnitOfWork) WithTx(ctx context.Context, fn func(r *Repos) error) error {
 	return u.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		r := &Repos{
-			Games:    gameRepo.NewGameRepository(tx),
-			Users:    user.NewUserRepository(tx),
-			Players:  user.NewPlayerRepository(tx),
-			Orders:   orderrepo.NewOrderRepository(tx),
-			Payments: order.NewPaymentRepository(tx),
-			Tags:     user.NewPlayerTagRepository(tx),
-			OpLogs:   adminrepo.NewOperationLogRepository(tx),
-			Reviews:  order.NewReviewRepository(tx),
+			Games:         gameRepo.NewGameRepository(tx),
+			Users:         user.NewUserRepository(tx),
+			Players:       user.NewPlayerRepository(tx),
+			Orders:        orderrepo.NewOrderRepository(tx),
+			Payments:      order.NewPaymentRepository(tx),
+			Tags:          user.NewPlayerTagRepository(tx),
+			OpLogs:        adminrepo.NewOperationLogRepository(tx),
+			Reviews:       order.NewReviewRepository(tx),
+			ReviewReports: reviewreport.NewReviewReportRepository(tx),
 		}
 		return fn(r)
 	})

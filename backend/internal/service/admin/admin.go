@@ -2012,3 +2012,462 @@ func getCachedList[T any](ctx context.Context, c cache.Cache, key string, ttl ti
 
 	return result, nil
 }
+
+// ReviewReportDTO 举报信息DTO
+type ReviewReportDTO struct {
+	ID           uint64                    `json:"id"`
+	ReviewID     uint64                    `json:"reviewId"`
+	ReporterID   uint64                    `json:"reporterId"`
+	ReporterName string                    `json:"reporterName"`
+	Reason       string                    `json:"reason"`
+	Evidence     string                    `json:"evidence,omitempty"`
+	Status       model.ReviewReportStatus  `json:"status"`
+	HandledBy    *uint64                   `json:"handledBy,omitempty"`
+	HandlerName  string                    `json:"handlerName,omitempty"`
+	HandledAt    *time.Time                `json:"handledAt,omitempty"`
+	HandlingNote string                    `json:"handlingNote,omitempty"`
+	CreatedAt    time.Time                 `json:"createdAt"`
+}
+
+// ReportReview 举报评价
+func (s *AdminService) ReportReview(ctx context.Context, reviewID, reporterID uint64, reason, evidence string) (uint64, error) {
+	if s.tx == nil {
+		return 0, apierr.InternalError("事务管理器未配置")
+	}
+
+	var reportID uint64
+	err := s.tx.WithTx(ctx, func(r *common.Repos) error {
+		// 验证评价是否存在
+		_, err := r.Reviews.Get(ctx, reviewID)
+		if err != nil {
+			if errors.Is(err, repository.ErrNotFound) {
+				return ErrNotFound
+			}
+			return err
+		}
+
+		// 创建举报记录
+		report := &model.ReviewReport{
+			ReviewID:   reviewID,
+			ReporterID: reporterID,
+			Reason:     reason,
+			Evidence:   evidence,
+			Status:     model.ReviewReportStatusPending,
+		}
+
+		if err := r.ReviewReports.Create(ctx, report); err != nil {
+			return err
+		}
+
+		reportID = report.ID
+
+		// 标记评价为已举报
+		review, err := r.Reviews.Get(ctx, reviewID)
+		if err != nil {
+			return err
+		}
+		review.IsReported = true
+		return r.Reviews.Update(ctx, review)
+	})
+
+	if err != nil {
+		return 0, WrapError(err, "report review")
+	}
+
+	return reportID, nil
+}
+
+// ListReviewReports 列出举报
+func (s *AdminService) ListReviewReports(ctx context.Context, page, pageSize int, reviewID, reporterID *uint64, status *model.ReviewReportStatus, dateFrom, dateTo *time.Time) ([]ReviewReportDTO, *model.Pagination, error) {
+	if s.tx == nil {
+		return nil, nil, apierr.InternalError("事务管理器未配置")
+	}
+
+	var reports []model.ReviewReport
+	var total int64
+
+	err := s.tx.WithTx(ctx, func(r *common.Repos) error {
+		var err error
+		reports, total, err = r.ReviewReports.List(ctx, repository.ReviewReportListOptions{
+			Page:       page,
+			PageSize:   pageSize,
+			ReviewID:   reviewID,
+			ReporterID: reporterID,
+			Status:     status,
+			DateFrom:   dateFrom,
+			DateTo:     dateTo,
+		})
+		return err
+	})
+
+	if err != nil {
+		return nil, nil, WrapError(err, "list review reports")
+	}
+
+	// 转换为DTO
+	reportDTOs := make([]ReviewReportDTO, 0, len(reports))
+	for _, report := range reports {
+		dto := ReviewReportDTO{
+			ID:           report.ID,
+			ReviewID:     report.ReviewID,
+			ReporterID:   report.ReporterID,
+			Reason:       report.Reason,
+			Evidence:     report.Evidence,
+			Status:       report.Status,
+			HandledBy:    report.HandledBy,
+			HandledAt:    report.HandledAt,
+			HandlingNote: report.HandlingNote,
+			CreatedAt:    report.CreatedAt,
+		}
+
+		// 获取举报人信息
+		if reporter, err := s.users.Get(ctx, report.ReporterID); err == nil {
+			dto.ReporterName = reporter.Name
+		}
+
+		// 获取处理人信息
+		if report.HandledBy != nil {
+			if handler, err := s.users.Get(ctx, *report.HandledBy); err == nil {
+				dto.HandlerName = handler.Name
+			}
+		}
+
+		reportDTOs = append(reportDTOs, dto)
+	}
+
+	p := &model.Pagination{
+		Page:     page,
+		PageSize: pageSize,
+		Total:    int(total),
+	}
+
+	return reportDTOs, p, nil
+}
+
+// GetReviewReport 获取举报详情
+func (s *AdminService) GetReviewReport(ctx context.Context, id uint64) (*ReviewReportDTO, error) {
+	if s.tx == nil {
+		return nil, apierr.InternalError("事务管理器未配置")
+	}
+
+	var report *model.ReviewReport
+	err := s.tx.WithTx(ctx, func(r *common.Repos) error {
+		var err error
+		report, err = r.ReviewReports.Get(ctx, id)
+		return err
+	})
+
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, WrapError(err, "get review report")
+	}
+
+	dto := &ReviewReportDTO{
+		ID:           report.ID,
+		ReviewID:     report.ReviewID,
+		ReporterID:   report.ReporterID,
+		Reason:       report.Reason,
+		Evidence:     report.Evidence,
+		Status:       report.Status,
+		HandledBy:    report.HandledBy,
+		HandledAt:    report.HandledAt,
+		HandlingNote: report.HandlingNote,
+		CreatedAt:    report.CreatedAt,
+	}
+
+	// 获取举报人信息
+	if reporter, err := s.users.Get(ctx, report.ReporterID); err == nil {
+		dto.ReporterName = reporter.Name
+	}
+
+	// 获取处理人信息
+	if report.HandledBy != nil {
+		if handler, err := s.users.Get(ctx, *report.HandledBy); err == nil {
+			dto.HandlerName = handler.Name
+		}
+	}
+
+	return dto, nil
+}
+
+// HandleReportResponse 处理举报响应
+type HandleReportResponse struct {
+	Status  string `json:"status"`
+	Message string `json:"message"`
+}
+
+// HandleReviewReport 处理举报
+func (s *AdminService) HandleReviewReport(ctx context.Context, reportID, handlerID uint64, action, note string) (*HandleReportResponse, error) {
+	if s.tx == nil {
+		return nil, apierr.InternalError("事务管理器未配置")
+	}
+
+	var message string
+	err := s.tx.WithTx(ctx, func(r *common.Repos) error {
+		// 获取举报记录
+		report, err := r.ReviewReports.Get(ctx, reportID)
+		if err != nil {
+			if errors.Is(err, repository.ErrNotFound) {
+				return ErrNotFound
+			}
+			return err
+		}
+
+		// 检查举报是否已处理
+		if report.Status != model.ReviewReportStatusPending {
+			return apierr.BadRequest("report already handled")
+		}
+
+		// 获取被举报的评价
+		review, err := r.Reviews.Get(ctx, report.ReviewID)
+		if err != nil {
+			if errors.Is(err, repository.ErrNotFound) {
+				return ErrNotFound
+			}
+			return err
+		}
+
+		now := time.Now()
+
+		switch action {
+		case "delete":
+			// 删除评价
+			review.Status = model.ReviewStatusDeleted
+			if err := r.Reviews.Update(ctx, review); err != nil {
+				return err
+			}
+
+			// 更新举报状态为已通过
+			report.Status = model.ReviewReportStatusApproved
+			report.HandledBy = &handlerID
+			report.HandledAt = &now
+			report.HandlingNote = note
+			if report.HandlingNote == "" {
+				report.HandlingNote = "评价已删除"
+			}
+			message = "评价已删除"
+
+		case "warn":
+			// 警告评价者（保留评价，但标记为已处理）
+			report.Status = model.ReviewReportStatusApproved
+			report.HandledBy = &handlerID
+			report.HandledAt = &now
+			report.HandlingNote = note
+			if report.HandlingNote == "" {
+				report.HandlingNote = "已警告评价者"
+			}
+			message = "已警告评价者"
+
+		case "reject":
+			// 驳回举报
+			report.Status = model.ReviewReportStatusRejected
+			report.HandledBy = &handlerID
+			report.HandledAt = &now
+			report.HandlingNote = note
+			if report.HandlingNote == "" {
+				report.HandlingNote = "举报不成立"
+			}
+
+			// 如果没有其他待处理的举报，取消评价的举报标记
+			pendingStatus := model.ReviewReportStatusPending
+			reviewIDPtr := &report.ReviewID
+			pendingReports, _, err := r.ReviewReports.List(ctx, repository.ReviewReportListOptions{
+				ReviewID: reviewIDPtr,
+				Status:   &pendingStatus,
+				Page:     1,
+				PageSize: 1,
+			})
+			if err == nil && len(pendingReports) == 0 {
+				review.IsReported = false
+				if err := r.Reviews.Update(ctx, review); err != nil {
+					// 记录错误但不影响举报处理
+					slog.Warn("failed to update review reported status", slog.Any("error", err))
+				}
+			}
+			message = "举报已驳回"
+
+		default:
+			return apierr.BadRequest("invalid action")
+		}
+
+		// 更新举报记录
+		return r.ReviewReports.Update(ctx, report)
+	})
+
+	if err != nil {
+		return nil, WrapError(err, "handle review report")
+	}
+
+	return &HandleReportResponse{
+		Status:  "success",
+		Message: message,
+	}, nil
+}
+
+// ListPendingReviews 获取待审核评价列表
+func (s *AdminService) ListPendingReviews(ctx context.Context, page, pageSize int) ([]model.Review, int64, error) {
+	if s.tx == nil {
+		return nil, 0, apierr.InternalError("事务管理器未配置")
+	}
+
+	var reviews []model.Review
+	var total int64
+	err := s.tx.WithTx(ctx, func(r *common.Repos) error {
+		var err error
+		reviews, total, err = r.Reviews.ListPending(ctx, page, pageSize)
+		return err
+	})
+
+	if err != nil {
+		return nil, 0, WrapError(err, "list pending reviews")
+	}
+
+	return reviews, total, nil
+}
+
+// ApproveReview 批准评价
+func (s *AdminService) ApproveReview(ctx context.Context, reviewID uint64) error {
+	if s.tx == nil {
+		return apierr.InternalError("事务管理器未配置")
+	}
+
+	err := s.tx.WithTx(ctx, func(r *common.Repos) error {
+		// 获取评价
+		review, err := r.Reviews.Get(ctx, reviewID)
+		if err != nil {
+			if errors.Is(err, repository.ErrNotFound) {
+				return ErrNotFound
+			}
+			return err
+		}
+
+		// 检查状态：只有待审核的评价可以批准
+		if review.Status != model.ReviewStatusPending {
+			return apierr.BadRequest("只能批准待审核的评价")
+		}
+
+		// 更新状态为已通过
+		return r.Reviews.UpdateStatus(ctx, reviewID, model.ReviewStatusApproved, "")
+	})
+
+	if err != nil {
+		return WrapError(err, "approve review")
+	}
+
+	return nil
+}
+
+// RejectReview 拒绝评价
+func (s *AdminService) RejectReview(ctx context.Context, reviewID uint64, reason string) error {
+	if s.tx == nil {
+		return apierr.InternalError("事务管理器未配置")
+	}
+
+	// 验证拒绝原因
+	if reason == "" {
+		return apierr.BadRequest("拒绝原因不能为空")
+	}
+
+	err := s.tx.WithTx(ctx, func(r *common.Repos) error {
+		// 获取评价
+		review, err := r.Reviews.Get(ctx, reviewID)
+		if err != nil {
+			if errors.Is(err, repository.ErrNotFound) {
+				return ErrNotFound
+			}
+			return err
+		}
+
+		// 检查状态：只有待审核的评价可以拒绝
+		if review.Status != model.ReviewStatusPending {
+			return apierr.BadRequest("只能拒绝待审核的评价")
+		}
+
+		// 更新状态为已拒绝
+		return r.Reviews.UpdateStatus(ctx, reviewID, model.ReviewStatusRejected, reason)
+	})
+
+	if err != nil {
+		return WrapError(err, "reject review")
+	}
+
+	return nil
+}
+
+// BatchApproveReviews 批量批准评价
+func (s *AdminService) BatchApproveReviews(ctx context.Context, reviewIDs []uint64) error {
+	if s.tx == nil {
+		return apierr.InternalError("事务管理器未配置")
+	}
+
+	if len(reviewIDs) == 0 {
+		return apierr.BadRequest("评价ID列表不能为空")
+	}
+
+	err := s.tx.WithTx(ctx, func(r *common.Repos) error {
+		// 验证所有评价都是待审核状态
+		for _, id := range reviewIDs {
+			review, err := r.Reviews.Get(ctx, id)
+			if err != nil {
+				if errors.Is(err, repository.ErrNotFound) {
+					return apierr.NotFound("评价不存在: " + string(rune(id)))
+				}
+				return err
+			}
+			if review.Status != model.ReviewStatusPending {
+				return apierr.BadRequest("评价不是待审核状态: " + string(rune(id)))
+			}
+		}
+
+		// 批量更新状态
+		return r.Reviews.BatchUpdateStatus(ctx, reviewIDs, model.ReviewStatusApproved, "")
+	})
+
+	if err != nil {
+		return WrapError(err, "batch approve reviews")
+	}
+
+	return nil
+}
+
+// BatchRejectReviews 批量拒绝评价
+func (s *AdminService) BatchRejectReviews(ctx context.Context, reviewIDs []uint64, reason string) error {
+	if s.tx == nil {
+		return apierr.InternalError("事务管理器未配置")
+	}
+
+	if len(reviewIDs) == 0 {
+		return apierr.BadRequest("评价ID列表不能为空")
+	}
+
+	if reason == "" {
+		return apierr.BadRequest("拒绝原因不能为空")
+	}
+
+	err := s.tx.WithTx(ctx, func(r *common.Repos) error {
+		// 验证所有评价都是待审核状态
+		for _, id := range reviewIDs {
+			review, err := r.Reviews.Get(ctx, id)
+			if err != nil {
+				if errors.Is(err, repository.ErrNotFound) {
+					return apierr.NotFound("评价不存在: " + string(rune(id)))
+				}
+				return err
+			}
+			if review.Status != model.ReviewStatusPending {
+				return apierr.BadRequest("评价不是待审核状态: " + string(rune(id)))
+			}
+		}
+
+		// 批量更新状态
+		return r.Reviews.BatchUpdateStatus(ctx, reviewIDs, model.ReviewStatusRejected, reason)
+	})
+
+	if err != nil {
+		return WrapError(err, "batch reject reviews")
+	}
+
+	return nil
+}

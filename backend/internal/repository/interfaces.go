@@ -130,9 +130,12 @@ type PlayerTagRepository interface {
 // ReviewRepository defines review data access operations.
 type ReviewRepository interface {
 	List(ctx context.Context, opts ReviewListOptions) ([]model.Review, int64, error)
+	ListPending(ctx context.Context, page, pageSize int) ([]model.Review, int64, error)
 	Get(ctx context.Context, id uint64) (*model.Review, error)
 	Create(ctx context.Context, review *model.Review) error
 	Update(ctx context.Context, review *model.Review) error
+	UpdateStatus(ctx context.Context, id uint64, status model.ReviewStatus, rejectionReason string) error
+	BatchUpdateStatus(ctx context.Context, ids []uint64, status model.ReviewStatus, rejectionReason string) error
 	Delete(ctx context.Context, id uint64) error
 }
 

@@ -364,3 +364,123 @@ func (s *ReviewService) updatePlayerRating(ctx context.Context, playerID uint64)
 
 	return s.players.Update(ctx, player)
 }
+
+// ApproveReviewRequest 批准评价请求
+type ApproveReviewRequest struct {
+	ReviewID uint64 `json:"reviewId" binding:"required"`
+}
+
+// RejectReviewRequest 拒绝评价请求
+type RejectReviewRequest struct {
+	ReviewID uint64 `json:"reviewId" binding:"required"`
+	Reason   string `json:"reason" binding:"required,max=500"`
+}
+
+// BatchApproveRequest 批量批准评价请求
+type BatchApproveRequest struct {
+	ReviewIDs []uint64 `json:"reviewIds" binding:"required,min=1"`
+}
+
+// BatchRejectRequest 批量拒绝评价请求
+type BatchRejectRequest struct {
+	ReviewIDs []uint64 `json:"reviewIds" binding:"required,min=1"`
+	Reason    string   `json:"reason" binding:"required,max=500"`
+}
+
+// ListPendingReviews 获取待审核评价列表
+func (s *ReviewService) ListPendingReviews(ctx context.Context, page, pageSize int) ([]model.Review, int64, error) {
+	// 默认分页参数
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 20
+	}
+
+	return s.reviews.ListPending(ctx, page, pageSize)
+}
+
+// ApproveReview 批准评价
+func (s *ReviewService) ApproveReview(ctx context.Context, reviewID uint64) error {
+	// 获取评价
+	review, err := s.reviews.Get(ctx, reviewID)
+	if err != nil {
+		return err
+	}
+
+	// 检查状态：只有待审核的评价可以批准
+	if review.Status != model.ReviewStatusPending {
+		return errors.New("只能批准待审核的评价")
+	}
+
+	// 更新状态为已通过
+	return s.reviews.UpdateStatus(ctx, reviewID, model.ReviewStatusApproved, "")
+}
+
+// RejectReview 拒绝评价
+func (s *ReviewService) RejectReview(ctx context.Context, reviewID uint64, reason string) error {
+	// 验证拒绝原因
+	if reason == "" {
+		return errors.New("拒绝原因不能为空")
+	}
+
+	// 获取评价
+	review, err := s.reviews.Get(ctx, reviewID)
+	if err != nil {
+		return err
+	}
+
+	// 检查状态：只有待审核的评价可以拒绝
+	if review.Status != model.ReviewStatusPending {
+		return errors.New("只能拒绝待审核的评价")
+	}
+
+	// 更新状态为已拒绝
+	return s.reviews.UpdateStatus(ctx, reviewID, model.ReviewStatusRejected, reason)
+}
+
+// BatchApprove 批量批准评价
+func (s *ReviewService) BatchApprove(ctx context.Context, reviewIDs []uint64) error {
+	if len(reviewIDs) == 0 {
+		return errors.New("评价ID列表不能为空")
+	}
+
+	// 验证所有评价都是待审核状态
+	for _, id := range reviewIDs {
+		review, err := s.reviews.Get(ctx, id)
+		if err != nil {
+			return fmt.Errorf("获取评价 %d 失败: %w", id, err)
+		}
+		if review.Status != model.ReviewStatusPending {
+			return fmt.Errorf("评价 %d 不是待审核状态", id)
+		}
+	}
+
+	// 批量更新状态
+	return s.reviews.BatchUpdateStatus(ctx, reviewIDs, model.ReviewStatusApproved, "")
+}
+
+// BatchReject 批量拒绝评价
+func (s *ReviewService) BatchReject(ctx context.Context, reviewIDs []uint64, reason string) error {
+	if len(reviewIDs) == 0 {
+		return errors.New("评价ID列表不能为空")
+	}
+
+	if reason == "" {
+		return errors.New("拒绝原因不能为空")
+	}
+
+	// 验证所有评价都是待审核状态
+	for _, id := range reviewIDs {
+		review, err := s.reviews.Get(ctx, id)
+		if err != nil {
+			return fmt.Errorf("获取评价 %d 失败: %w", id, err)
+		}
+		if review.Status != model.ReviewStatusPending {
+			return fmt.Errorf("评价 %d 不是待审核状态", id)
+		}
+	}
+
+	// 批量更新状态
+	return s.reviews.BatchUpdateStatus(ctx, reviewIDs, model.ReviewStatusRejected, reason)
+}

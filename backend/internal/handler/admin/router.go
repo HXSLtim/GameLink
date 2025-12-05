@@ -667,6 +667,15 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Success      200  {object}  model.APIResponse[[]model.Review]
 		// @Router       /admin/reviews [get]
 		group.GET("/reviews", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/reviews"), reviewHandler.ListReviews)
+		// @Summary      获取待审核评价列表
+		// @Tags         Admin/Reviews
+		// @Security     BearerAuth
+		// @Produce      json
+		// @Param        page       query  int  false  "页码"
+		// @Param        pageSize   query  int  false  "每页数量"
+		// @Success      200  {object}  model.APIResponse[[]model.Review]
+		// @Router       /admin/reviews/pending [get]
+		group.GET("/reviews/pending", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/reviews/pending"), reviewHandler.ListPendingReviews)
 		// @Summary      创建评价
 		// @Tags         Admin/Reviews
 		// @Security     BearerAuth
@@ -706,6 +715,49 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/reviews/{id} [delete]
 		group.DELETE("/reviews/:id", pm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/reviews/:id"), reviewHandler.DeleteReview)
+		// @Summary      批准评价
+		// @Tags         Admin/Reviews
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        id   path  int  true  "评价ID"
+		// @Success      200  {object}  model.APIResponse[any]
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Failure      404  {object}  model.ErrorResponse
+		// @Router       /admin/reviews/{id}/approve [put]
+		group.PUT("/reviews/:id/approve", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/reviews/:id/approve"), reviewHandler.ApproveReview)
+		// @Summary      拒绝评价
+		// @Tags         Admin/Reviews
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        id       path  int                   true  "评价ID"
+		// @Param        request  body  RejectReviewPayload   true  "拒绝信息"
+		// @Success      200  {object}  model.APIResponse[any]
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Failure      404  {object}  model.ErrorResponse
+		// @Router       /admin/reviews/{id}/reject [put]
+		group.PUT("/reviews/:id/reject", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/reviews/:id/reject"), reviewHandler.RejectReview)
+		// @Summary      批量批准评价
+		// @Tags         Admin/Reviews
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  BatchApprovePayload  true  "批量批准信息"
+		// @Success      200  {object}  model.APIResponse[any]
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Router       /admin/reviews/batch-approve [put]
+		group.PUT("/reviews/batch-approve", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/reviews/batch-approve"), reviewHandler.BatchApproveReviews)
+		// @Summary      批量拒绝评价
+		// @Tags         Admin/Reviews
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  BatchRejectPayload  true  "批量拒绝信息"
+		// @Success      200  {object}  model.APIResponse[any]
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Router       /admin/reviews/batch-reject [put]
+		group.PUT("/reviews/batch-reject", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/reviews/batch-reject"), reviewHandler.BatchRejectReviews)
 		// @Summary      获取陪玩师的评价
 		// @Tags         Admin/Players
 		// @Security     BearerAuth
@@ -733,6 +785,58 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Success      200  {object}  model.APIResponse[[]model.OperationLog]
 		// @Router       /admin/reviews/{id}/logs [get]
 		group.GET("/reviews/:id/logs", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/reviews/:id/logs"), reviewHandler.ListReviewLogs)
+
+		// 评价举报管理
+		// @Summary      创建评价举报
+		// @Tags         Admin/Reviews
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        id       path  int                      true  "评价ID"
+		// @Param        request  body  CreateReviewReportPayload  true  "举报信息"
+		// @Success      201  {object}  model.APIResponse[CreateReviewReportResponse]
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Failure      404  {object}  model.ErrorResponse
+		// @Router       /admin/reviews/{id}/reports [post]
+		group.POST("/reviews/:id/reports", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/reviews/:id/reports"), reviewHandler.CreateReviewReport)
+
+		// @Summary      列出评价举报
+		// @Tags         Admin/Reviews
+		// @Security     BearerAuth
+		// @Produce      json
+		// @Param        page         query  int     false  "页码"
+		// @Param        pageSize     query  int     false  "每页数量"
+		// @Param        review_id    query  int     false  "评价ID"
+		// @Param        reporter_id  query  int     false  "举报人ID"
+		// @Param        status       query  string  false  "状态" Enums(pending,approved,rejected)
+		// @Param        date_from    query  string  false  "开始日期 (YYYY-MM-DD)"
+		// @Param        date_to      query  string  false  "结束日期 (YYYY-MM-DD)"
+		// @Success      200  {object}  model.APIResponse[[]ReviewReportDTO]
+		// @Router       /admin/review-reports [get]
+		group.GET("/review-reports", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/review-reports"), reviewHandler.ListReviewReports)
+
+		// @Summary      获取举报详情
+		// @Tags         Admin/Reviews
+		// @Security     BearerAuth
+		// @Produce      json
+		// @Param        id   path  int  true  "举报ID"
+		// @Success      200  {object}  model.APIResponse[ReviewReportDTO]
+		// @Failure      404  {object}  model.ErrorResponse
+		// @Router       /admin/review-reports/{id} [get]
+		group.GET("/review-reports/:id", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/review-reports/:id"), reviewHandler.GetReviewReport)
+
+		// @Summary      处理评价举报
+		// @Tags         Admin/Reviews
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        id       path  int                       true  "举报ID"
+		// @Param        request  body  HandleReviewReportPayload  true  "处理信息"
+		// @Success      200  {object}  model.APIResponse[HandleReviewReportResponse]
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Failure      404  {object}  model.ErrorResponse
+		// @Router       /admin/review-reports/{id}/handle [put]
+		group.PUT("/review-reports/:id/handle", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/review-reports/:id/handle"), reviewHandler.HandleReviewReport)
 	}
 }
 

@@ -85,3 +85,63 @@ func (r *gormReviewRepository) Delete(ctx context.Context, id uint64) error {
 	}
 	return nil
 }
+
+// ListPending 获取待审核评价列表
+func (r *gormReviewRepository) ListPending(ctx context.Context, page, pageSize int) ([]model.Review, int64, error) {
+	page = repository.NormalizePage(page)
+	size := repository.NormalizePageSize(pageSize)
+	offset := (page - 1) * size
+
+	q := r.db.WithContext(ctx).Model(&model.Review{}).Where("status = ?", model.ReviewStatusPending)
+
+	var total int64
+	if err := q.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	var items []model.Review
+	if err := q.Order("created_at ASC").Offset(offset).Limit(size).Find(&items).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return items, total, nil
+}
+
+// UpdateStatus 更新评价审核状态
+func (r *gormReviewRepository) UpdateStatus(ctx context.Context, id uint64, status model.ReviewStatus, rejectionReason string) error {
+	updates := map[string]interface{}{
+		"status": status,
+	}
+	if status == model.ReviewStatusRejected && rejectionReason != "" {
+		updates["rejection_reason"] = rejectionReason
+	}
+
+	tx := r.db.WithContext(ctx).Model(&model.Review{}).Where("id = ?", id).Updates(updates)
+	if tx.Error != nil {
+		return tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return repository.ErrNotFound
+	}
+	return nil
+}
+
+// BatchUpdateStatus 批量更新评价审核状态
+func (r *gormReviewRepository) BatchUpdateStatus(ctx context.Context, ids []uint64, status model.ReviewStatus, rejectionReason string) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
+	updates := map[string]interface{}{
+		"status": status,
+	}
+	if status == model.ReviewStatusRejected && rejectionReason != "" {
+		updates["rejection_reason"] = rejectionReason
+	}
+
+	tx := r.db.WithContext(ctx).Model(&model.Review{}).Where("id IN ?", ids).Updates(updates)
+	if tx.Error != nil {
+		return tx.Error
+	}
+	return nil
+}
