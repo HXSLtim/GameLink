@@ -39,20 +39,20 @@ func NewAdminFeedService(
 
 // AdminFeedDTO 动态DTO（管理员视图）
 type AdminFeedDTO struct {
-	ID                uint64                     `json:"id"`
-	AuthorID          uint64                     `json:"authorId"`
-	Content           string                     `json:"content"`
-	CategoryID        *uint64                    `json:"categoryId,omitempty"`
-	CategoryName      string                     `json:"categoryName,omitempty"`
-	Visibility        model.FeedVisibility       `json:"visibility"`
-	ModerationStatus  model.FeedModerationStatus `json:"moderationStatus"`
-	ModerationNote    string                     `json:"moderationNote,omitempty"`
-	Images            []AdminFeedImageDTO        `json:"images"`
-	Metrics           model.FeedMetricFields     `json:"metrics"`
-	CreatedAt         string                     `json:"createdAt"`
-	UpdatedAt         string                     `json:"updatedAt"`
-	HasSensitiveWords bool                       `json:"hasSensitiveWords,omitempty"`
-	HighlightedText   string                     `json:"highlightedText,omitempty"`
+	ID                 uint64                     `json:"id"`
+	AuthorID           uint64                     `json:"authorId"`
+	Content            string                     `json:"content"`
+	CategoryID         *uint64                    `json:"categoryId,omitempty"`
+	CategoryName       string                     `json:"categoryName,omitempty"`
+	Visibility         model.FeedVisibility       `json:"visibility"`
+	ModerationStatus   model.FeedModerationStatus `json:"moderationStatus"`
+	ModerationNote     string                     `json:"moderationNote,omitempty"`
+	Images             []AdminFeedImageDTO        `json:"images"`
+	Metrics            model.FeedMetricFields     `json:"metrics"`
+	CreatedAt          string                     `json:"createdAt"`
+	UpdatedAt          string                     `json:"updatedAt"`
+	HasSensitiveWords  bool                       `json:"hasSensitiveWords,omitempty"`
+	HighlightedContent string                     `json:"highlightedContent,omitempty"`
 }
 
 // AdminFeedImageDTO 动态图片DTO
@@ -125,7 +125,7 @@ func (s *AdminFeedService) ListFeeds(ctx context.Context, req AdminListFeedsRequ
 			})
 			if result != nil {
 				dto.HasSensitiveWords = result.HasSensitiveWords
-				dto.HighlightedText = result.HighlightedText
+				dto.HighlightedContent = result.HighlightedContent
 			}
 		}
 		dtos = append(dtos, *dto)
@@ -148,7 +148,7 @@ func (s *AdminFeedService) GetFeed(ctx context.Context, id uint64) (*AdminFeedDT
 		})
 		if result != nil {
 			dto.HasSensitiveWords = result.HasSensitiveWords
-			dto.HighlightedText = result.HighlightedText
+			dto.HighlightedContent = result.HighlightedContent
 		}
 	}
 	return dto, nil

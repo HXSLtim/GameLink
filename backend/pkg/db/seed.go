@@ -65,11 +65,15 @@ type seedPaymentSpec struct {
 }
 
 type seedReviewSpec struct {
-	OrderKey  string
-	UserKey   string
-	PlayerKey string
-	Score     model.Rating
-	Content   string
+	OrderKey        string
+	UserKey         string
+	PlayerKey       string
+	Score           model.Rating
+	Content         string
+	Status          model.ReviewStatus
+	Images          []string
+	IsReported      bool
+	RejectionReason string
 }
 
 func applySeeds(db *gorm.DB) error {
@@ -558,54 +562,90 @@ func applySeeds(db *gorm.DB) error {
 		}
 
 		reviewSpecs := []seedReviewSpec{
+			// 已通过的好评
 			{
 				OrderKey:  "orderCompleted1",
 				UserKey:   "customerA",
 				PlayerKey: "playerA",
 				Score:     model.MustRating(5),
-				Content:   "很满意的陪玩体验，带我连胜！峡谷守护者技术确实强，打野节奏把控很好。",
-			},
-			{
-				OrderKey:  "orderInProgress1",
-				UserKey:   "customerB",
-				PlayerKey: "playerA",
-				Score:     model.MustRating(4),
-				Content:   "战术指导很专业，期待后续完成。DOTA2的复杂度很高，有专业指导确实不一样。",
+				Content:   "很满意的陪玩体验，带我连胜！峡谷守护者技术确实强，打野节奏把控很好。推荐给大家！",
+				Status:    model.ReviewStatusApproved,
+				Images:    []string{"https://gamelink.oss.com/reviews/lol_win_1.jpg", "https://gamelink.oss.com/reviews/lol_win_2.jpg"},
 			},
 			{
 				OrderKey:  "orderCompleted2",
 				UserKey:   "customerF",
 				PlayerKey: "playerD",
 				Score:     model.MustRating(5),
-				Content:   "异世界旅者对MMORPG的理解非常深入，带我了解了魔兽世界的核心玩法，收益很大！",
+				Content:   "异世界旅者对MMORPG的理解非常深入，带我了解了魔兽世界的核心玩法，收益很大！副本讲解清晰，装备搭配建议很实用。",
+				Status:    model.ReviewStatusApproved,
+				Images:    []string{"https://gamelink.oss.com/reviews/wow_raid_1.jpg"},
+			},
+			// 待审核的评价
+			{
+				OrderKey:  "orderInProgress1",
+				UserKey:   "customerB",
+				PlayerKey: "playerA",
+				Score:     model.MustRating(4),
+				Content:   "战术指导很专业，期待后续完成。DOTA2的复杂度很高，有专业指导确实不一样。",
+				Status:    model.ReviewStatusPending,
 			},
 			{
 				OrderKey:  "orderInProgress2",
 				UserKey:   "customerG",
 				PlayerKey: "playerE",
 				Score:     model.MustRating(4),
-				Content:   "运动健将的足球水平很高，学到了很多实用的技巧。FIFA游戏体验很好。",
-			},
-			{
-				OrderKey:  "orderCompleted1",
-				UserKey:   "customerD",
-				PlayerKey: "playerC",
-				Score:     model.MustRating(5),
-				Content:   "枪神降临不愧是职业选手，枪法精准，教学耐心细致。CS:GO的水平确实提升了很多！",
+				Content:   "运动健将的足球水平很高，学到了很多实用的技巧。FIFA游戏体验很好，传球和射门技巧讲解到位。",
+				Status:    model.ReviewStatusPending,
+				Images:    []string{"https://gamelink.oss.com/reviews/fifa_goal_1.jpg"},
 			},
 			{
 				OrderKey:  "orderConfirmed2",
 				UserKey:   "customerB",
 				PlayerKey: "playerG",
-				Score:     model.MustRating(4),
-				Content:   "DOTA宗师的教学很系统，从基础到进阶都有涉及，受益匪浅。",
+				Score:     model.MustRating(5),
+				Content:   "DOTA宗师的教学很系统，从基础到进阶都有涉及，受益匪浅。英雄池推荐和对线技巧都很实用！",
+				Status:    model.ReviewStatusPending,
 			},
+			// 被拒绝的评价
 			{
-				OrderKey:  "orderRefunded1",
-				UserKey:   "customerA",
-				PlayerKey: "playerB",
+				OrderKey:        "orderRefunded1",
+				UserKey:         "customerA",
+				PlayerKey:       "playerB",
+				Score:           model.MustRating(2),
+				Content:         "服务态度一般，感觉不太专业。",
+				Status:          model.ReviewStatusRejected,
+				RejectionReason: "评价内容过于简短，缺乏具体描述",
+			},
+			// 被举报的评价
+			{
+				OrderKey:   "orderCompleted1",
+				UserKey:    "customerD",
+				PlayerKey:  "playerC",
+				Score:      model.MustRating(5),
+				Content:    "枪神降临不愧是职业选手，枪法精准，教学耐心细致。CS:GO的水平确实提升了很多！强烈推荐！",
+				Status:     model.ReviewStatusApproved,
+				IsReported: true,
+				Images:     []string{"https://gamelink.oss.com/reviews/csgo_ace_1.jpg", "https://gamelink.oss.com/reviews/csgo_ace_2.jpg"},
+			},
+			// 中等评价
+			{
+				OrderKey:  "orderConfirmed1",
+				UserKey:   "customerC",
+				PlayerKey: "playerF",
 				Score:     model.MustRating(3),
-				Content:   "虽然因为服务器维护退款了，但之前的服务还不错。期待下次能正常完成。",
+				Content:   "整体体验一般，陪玩师技术还可以，但沟通上有些问题，回复不够及时。希望能改进。",
+				Status:    model.ReviewStatusApproved,
+			},
+			// 带图片的好评
+			{
+				OrderKey:  "orderPending1",
+				UserKey:   "customerE",
+				PlayerKey: "playerH",
+				Score:     model.MustRating(5),
+				Content:   "卡牌大师对炉石传说的理解太深了！帮我组了一套超强卡组，连胜上传说！感谢！",
+				Status:    model.ReviewStatusPending,
+				Images:    []string{"https://gamelink.oss.com/reviews/hs_legend_1.jpg", "https://gamelink.oss.com/reviews/hs_deck_1.jpg", "https://gamelink.oss.com/reviews/hs_win_1.jpg"},
 			},
 		}
 
@@ -623,11 +663,15 @@ func applySeeds(db *gorm.DB) error {
 				return fmt.Errorf("seed review missing player %s", spec.PlayerKey)
 			}
 			if err := seedReview(tx, seedReviewParams{
-				OrderID:  order.ID,
-				UserID:   user.ID,
-				PlayerID: player.ID,
-				Score:    spec.Score,
-				Content:  spec.Content,
+				OrderID:         order.ID,
+				UserID:          user.ID,
+				PlayerID:        player.ID,
+				Score:           spec.Score,
+				Content:         spec.Content,
+				Status:          spec.Status,
+				Images:          spec.Images,
+				IsReported:      spec.IsReported,
+				RejectionReason: spec.RejectionReason,
 			}); err != nil {
 				return err
 			}
@@ -701,11 +745,15 @@ type seedPaymentParams struct {
 }
 
 type seedReviewParams struct {
-	OrderID  uint64
-	UserID   uint64
-	PlayerID uint64
-	Score    model.Rating
-	Content  string
+	OrderID         uint64
+	UserID          uint64
+	PlayerID        uint64
+	Score           model.Rating
+	Content         string
+	Status          model.ReviewStatus
+	Images          []string
+	IsReported      bool
+	RejectionReason string
 }
 
 func seedGames(tx *gorm.DB) (map[string]*model.Game, error) {
@@ -907,12 +955,20 @@ func seedReview(tx *gorm.DB, input seedReviewParams) error {
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return err
 	}
+	status := input.Status
+	if status == "" {
+		status = model.ReviewStatusApproved
+	}
 	review := &model.Review{
-		OrderID:  input.OrderID,
-		UserID:   input.UserID,
-		PlayerID: input.PlayerID,
-		Score:    input.Score,
-		Content:  input.Content,
+		OrderID:         input.OrderID,
+		UserID:          input.UserID,
+		PlayerID:        input.PlayerID,
+		Score:           input.Score,
+		Content:         input.Content,
+		Status:          status,
+		Images:          input.Images,
+		IsReported:      input.IsReported,
+		RejectionReason: input.RejectionReason,
 	}
 	if err := tx.Create(review).Error; err != nil {
 		return err

@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -304,6 +305,29 @@ func (h *ContentHandler) GetContentStats(c *gin.Context) {
 		Message: "OK",
 		Data:    stats,
 	})
+}
+
+// ExportContentStats 导出内容统计
+// @Summary      导出内容统计Excel
+// @Tags         Admin - Content
+// @Security     BearerAuth
+// @Param        days query     int  false  "趋势天数"
+// @Produce      application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+// @Success      200  {file}    binary
+// @Router       /admin/content/stats/export [get]
+func (h *ContentHandler) ExportContentStats(c *gin.Context) {
+	days, _ := queryIntDefault(c, "days", 30)
+
+	buf, filename, err := h.statsSvc.ExportStats(c.Request.Context(), days)
+	if err != nil {
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	c.Header("Content-Disposition", "attachment; filename=\""+filename+"\"")
+	c.Header("Content-Length", fmt.Sprintf("%d", buf.Len()))
+	c.Data(http.StatusOK, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", buf.Bytes())
 }
 
 // ListChatMessages 列出聊天消息

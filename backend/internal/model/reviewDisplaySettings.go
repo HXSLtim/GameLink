@@ -8,9 +8,9 @@ import (
 type ReviewSortBy string
 
 const (
-	ReviewSortByTime   ReviewSortBy = "time"    // 按时间排序
-	ReviewSortByScore  ReviewSortBy = "score"   // 按评分排序
-	ReviewSortByLikes  ReviewSortBy = "likes"   // 按点赞数排序
+	ReviewSortByTime  ReviewSortBy = "time"  // 按时间排序
+	ReviewSortByScore ReviewSortBy = "score" // 按评分排序
+	ReviewSortByLikes ReviewSortBy = "likes" // 按点赞数排序
 )
 
 // Valid 检查排序方式是否合法
@@ -26,24 +26,30 @@ func (s ReviewSortBy) Valid() bool {
 // ReviewDisplaySettings 评价展示设置模型
 // @Description 评价展示设置，用于配置前端评价的显示方式
 type ReviewDisplaySettings struct {
-	ID            uint64       `json:"id" gorm:"primaryKey"`
+	ID uint64 `json:"id" gorm:"primaryKey"`
 	// 排序方式：time/score/likes
 	// @Enum time, score, likes
 	// @Example time
-	SortBy        ReviewSortBy `json:"sortBy" gorm:"column:sort_by;type:varchar(20);default:'time'"`
+	SortBy ReviewSortBy `json:"sortBy" gorm:"column:sort_by;type:varchar(20);default:'time'"`
 	// 最低评分阈值（1-5），低于此评分的评价不显示
 	// @Example 1
-	MinScore      int          `json:"minScore" gorm:"column:min_score;type:tinyint;default:1"`
+	MinScore int `json:"minScore" gorm:"column:min_score;type:tinyint;default:1"`
 	// 是否显示匿名评价
 	// @Example true
-	ShowAnonymous bool         `json:"showAnonymous" gorm:"column:show_anonymous;default:true"`
+	ShowAnonymous bool `json:"showAnonymous" gorm:"column:show_anonymous;default:true"`
 	// 每页显示数量
 	// @Example 20
-	PageSize      int          `json:"pageSize" gorm:"column:page_size;type:int;default:20"`
+	PageSize int `json:"pageSize" gorm:"column:page_size;type:int;default:20"`
+	// 是否自动批准评价
+	// @Example false
+	AutoApprove bool `json:"autoApprove" gorm:"column:auto_approve;default:false"`
+	// 自动批准最低评分（1-5），只有评分>=此值的评价才会自动批准
+	// @Example 4
+	AutoApproveMinRating int `json:"autoApproveMinRating" gorm:"column:auto_approve_min_rating;type:tinyint;default:4"`
 	// 创建时间
-	CreatedAt     time.Time    `json:"createdAt" gorm:"column:created_at"`
+	CreatedAt time.Time `json:"createdAt" gorm:"column:created_at"`
 	// 更新时间
-	UpdatedAt     time.Time    `json:"updatedAt" gorm:"column:updated_at"`
+	UpdatedAt time.Time `json:"updatedAt" gorm:"column:updated_at"`
 }
 
 // TableName 指定表名
@@ -54,11 +60,13 @@ func (ReviewDisplaySettings) TableName() string {
 // DefaultReviewDisplaySettings 返回默认的评价展示设置
 func DefaultReviewDisplaySettings() *ReviewDisplaySettings {
 	return &ReviewDisplaySettings{
-		ID:            1, // 单例配置，固定ID为1
-		SortBy:        ReviewSortByTime,
-		MinScore:      1,
-		ShowAnonymous: true,
-		PageSize:      20,
+		ID:                   1, // 单例配置，固定ID为1
+		SortBy:               ReviewSortByTime,
+		MinScore:             1,
+		ShowAnonymous:        true,
+		PageSize:             20,
+		AutoApprove:          false,
+		AutoApproveMinRating: 4,
 	}
 }
 

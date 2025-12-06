@@ -223,3 +223,37 @@ func (r *permissionRepository) ListByUserID(ctx context.Context, userID uint64) 
 		Find(&permissions).Error
 	return permissions, err
 }
+
+// ListWithChildren returns all permissions with their children preloaded.
+// Uses a single query with ordering to enable efficient tree building.
+func (r *permissionRepository) ListWithChildren(ctx context.Context) ([]model.Permission, error) {
+	var permissions []model.Permission
+	err := r.db.WithContext(ctx).
+		Order("permissions.\"group\", permissions.sort_order, permissions.id").
+		Find(&permissions).Error
+	return permissions, err
+}
+
+// GetWithChildren returns a permission with its children preloaded.
+func (r *permissionRepository) GetWithChildren(ctx context.Context, id uint64) (*model.Permission, error) {
+	var permission model.Permission
+	err := r.db.WithContext(ctx).
+		Preload("Children", func(db *gorm.DB) *gorm.DB {
+			return db.Order("sort_order, id")
+		}).
+		First(&permission, id).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, repository.ErrNotFound
+	}
+	return &permission, err
+}
+
+// CountRoleReferences counts how many roles reference a specific permission.
+func (r *permissionRepository) CountRoleReferences(ctx context.Context, permissionID uint64) (int64, error) {
+	var count int64
+	err := r.db.WithContext(ctx).
+		Table("role_permissions").
+		Where("permission_id = ?", permissionID).
+		Count(&count).Error
+	return count, err
+}

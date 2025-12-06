@@ -48,33 +48,33 @@ func NewSensitiveWordService(repo repository.SensitiveWordRepository) *Sensitive
 
 // AddSensitiveWordRequest 添加敏感词请求
 type AddSensitiveWordRequest struct {
-	Word     string                        `json:"word" binding:"required,max=100"`
-	Category model.SensitiveWordCategory  `json:"category" binding:"required"`
-	Severity model.SensitiveWordSeverity  `json:"severity" binding:"required"`
+	Word     string                      `json:"word" binding:"required,max=100"`
+	Category model.SensitiveWordCategory `json:"category" binding:"required"`
+	Severity model.SensitiveWordSeverity `json:"severity" binding:"required"`
 }
 
 // UpdateSensitiveWordRequest 更新敏感词请求
 type UpdateSensitiveWordRequest struct {
-	Word     string                        `json:"word" binding:"required,max=100"`
-	Category model.SensitiveWordCategory  `json:"category" binding:"required"`
-	Severity model.SensitiveWordSeverity  `json:"severity" binding:"required"`
+	Word     string                      `json:"word" binding:"required,max=100"`
+	Category model.SensitiveWordCategory `json:"category" binding:"required"`
+	Severity model.SensitiveWordSeverity `json:"severity" binding:"required"`
 }
 
 // SensitiveWordDTO 敏感词DTO
 type SensitiveWordDTO struct {
-	ID        uint64                        `json:"id"`
-	Word      string                        `json:"word"`
-	Category  model.SensitiveWordCategory  `json:"category"`
-	Severity  model.SensitiveWordSeverity  `json:"severity"`
-	CreatedAt string                        `json:"createdAt"`
-	UpdatedAt string                        `json:"updatedAt"`
+	ID        uint64                      `json:"id"`
+	Word      string                      `json:"word"`
+	Category  model.SensitiveWordCategory `json:"category"`
+	Severity  model.SensitiveWordSeverity `json:"severity"`
+	CreatedAt string                      `json:"createdAt"`
+	UpdatedAt string                      `json:"updatedAt"`
 }
 
 // ListSensitiveWordsRequest 列出敏感词请求
 type ListSensitiveWordsRequest struct {
-	Page     int                           `form:"page"`
-	PageSize int                           `form:"pageSize"`
-	Keyword  string                        `form:"keyword"`
+	Page     int                          `form:"page"`
+	PageSize int                          `form:"pageSize"`
+	Keyword  string                       `form:"keyword"`
 	Category *model.SensitiveWordCategory `form:"category"`
 	Severity *model.SensitiveWordSeverity `form:"severity"`
 }
@@ -92,17 +92,17 @@ type DetectSensitiveWordsRequest struct {
 
 // DetectedWord 检测到的敏感词
 type DetectedWord struct {
-	Word     string                        `json:"word"`
-	Category model.SensitiveWordCategory  `json:"category"`
-	Severity model.SensitiveWordSeverity  `json:"severity"`
-	Position int                           `json:"position"` // 在文本中的位置
+	Word      string                      `json:"word"`
+	Category  model.SensitiveWordCategory `json:"category"`
+	Severity  model.SensitiveWordSeverity `json:"severity"`
+	Positions []int                       `json:"positions"` // 在文本中的所有位置
 }
 
 // DetectSensitiveWordsResponse 检测敏感词响应
 type DetectSensitiveWordsResponse struct {
-	HasSensitiveWords bool            `json:"hasSensitiveWords"`
-	DetectedWords     []DetectedWord  `json:"detectedWords"`
-	HighlightedText   string          `json:"highlightedText"` // 高亮显示敏感词的文本
+	HasSensitiveWords  bool           `json:"hasSensitiveWords"`
+	DetectedWords      []DetectedWord `json:"detectedWords"`
+	HighlightedContent string         `json:"highlightedContent"` // 高亮显示敏感词的文本
 }
 
 // AddSensitiveWord 添加敏感词
@@ -243,9 +243,9 @@ func (s *SensitiveWordService) ListSensitiveWords(ctx context.Context, req ListS
 func (s *SensitiveWordService) DetectSensitiveWords(ctx context.Context, req DetectSensitiveWordsRequest) (*DetectSensitiveWordsResponse, error) {
 	if strings.TrimSpace(req.Content) == "" {
 		return &DetectSensitiveWordsResponse{
-			HasSensitiveWords: false,
-			DetectedWords:     []DetectedWord{},
-			HighlightedText:   req.Content,
+			HasSensitiveWords:  false,
+			DetectedWords:      []DetectedWord{},
+			HighlightedContent: req.Content,
 		}, nil
 	}
 
@@ -255,45 +255,73 @@ func (s *SensitiveWordService) DetectSensitiveWords(ctx context.Context, req Det
 		return nil, err
 	}
 
-	// 检测敏感词
-	detectedWords := []DetectedWord{}
-	highlightedText := req.Content
+	// 检测敏感词，按词分组收集位置
+	wordPositions := make(map[string]*DetectedWord)
+	content := strings.ToLower(req.Content)
 
 	for _, word := range words {
-		// 查找敏感词在文本中的所有位置
-		content := strings.ToLower(req.Content)
 		searchWord := strings.ToLower(word.Word)
 		pos := 0
+		var positions []int
 
 		for {
 			index := strings.Index(content[pos:], searchWord)
 			if index == -1 {
 				break
 			}
-
 			actualPos := pos + index
-			detectedWords = append(detectedWords, DetectedWord{
-				Word:     word.Word,
-				Category: word.Category,
-				Severity: word.Severity,
-				Position: actualPos,
-			})
-
+			positions = append(positions, actualPos)
 			pos = actualPos + len(searchWord)
+		}
+
+		if len(positions) > 0 {
+			wordPositions[word.Word] = &DetectedWord{
+				Word:      word.Word,
+				Category:  word.Category,
+				Severity:  word.Severity,
+				Positions: positions,
+			}
 		}
 	}
 
-	// 如果检测到敏感词，高亮显示
-	if len(detectedWords) > 0 {
-		// 按位置排序（从后往前替换，避免位置偏移）
-		for i := len(detectedWords) - 1; i >= 0; i-- {
-			word := detectedWords[i]
-			start := word.Position
-			end := start + len(word.Word)
+	// 转换为切片
+	detectedWords := make([]DetectedWord, 0, len(wordPositions))
+	for _, dw := range wordPositions {
+		detectedWords = append(detectedWords, *dw)
+	}
 
-			// 根据严重程度使用不同的标记
+	// 高亮显示
+	highlightedContent := req.Content
+	if len(detectedWords) > 0 {
+		// 收集所有位置并从后往前替换
+		type posInfo struct {
+			pos      int
+			word     string
+			severity model.SensitiveWordSeverity
+		}
+		var allPositions []posInfo
+		for _, dw := range detectedWords {
+			for _, p := range dw.Positions {
+				allPositions = append(allPositions, posInfo{pos: p, word: dw.Word, severity: dw.Severity})
+			}
+		}
+		// 按位置降序排序
+		for i := 0; i < len(allPositions)-1; i++ {
+			for j := i + 1; j < len(allPositions); j++ {
+				if allPositions[i].pos < allPositions[j].pos {
+					allPositions[i], allPositions[j] = allPositions[j], allPositions[i]
+				}
+			}
+		}
+		// 从后往前替换
+		for _, pi := range allPositions {
+			start := pi.pos
+			end := start + len(pi.word)
+			if end > len(highlightedContent) {
+				continue
+			}
 			var marker string
-			switch word.Severity {
+			switch pi.severity {
 			case model.SensitiveWordSeverityHigh:
 				marker = "***"
 			case model.SensitiveWordSeverityMedium:
@@ -301,15 +329,14 @@ func (s *SensitiveWordService) DetectSensitiveWords(ctx context.Context, req Det
 			default:
 				marker = "*"
 			}
-
-			highlightedText = highlightedText[:start] + marker + req.Content[start:end] + marker + highlightedText[end:]
+			highlightedContent = highlightedContent[:start] + marker + req.Content[start:end] + marker + highlightedContent[end:]
 		}
 	}
 
 	return &DetectSensitiveWordsResponse{
-		HasSensitiveWords: len(detectedWords) > 0,
-		DetectedWords:     detectedWords,
-		HighlightedText:   highlightedText,
+		HasSensitiveWords:  len(detectedWords) > 0,
+		DetectedWords:      detectedWords,
+		HighlightedContent: highlightedContent,
 	}, nil
 }
 

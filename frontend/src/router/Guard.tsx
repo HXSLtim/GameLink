@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { App } from 'antd';
+import { message } from 'antd';
 import type { Role } from './types';
 import { usePermission } from '@/hooks/usePermission';
 
@@ -15,7 +15,7 @@ interface RouteGuardProps {
 const RouteGuard = ({ children, roles, requiresAuth, permission }: RouteGuardProps) => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { message } = App.useApp();
+    const hasShownError = useRef(false);
 
     // In a real app, this would come from a context or store
     const rawRole = localStorage.getItem('user_role');
@@ -43,7 +43,8 @@ const RouteGuard = ({ children, roles, requiresAuth, permission }: RouteGuardPro
 
     // Check permission after loading - only if permission check is needed
     useEffect(() => {
-        if (needsPermissionCheck && !permissionLoading && !hasPermission) {
+        if (needsPermissionCheck && !permissionLoading && !hasPermission && !hasShownError.current) {
+            hasShownError.current = true;
             message.error('您没有访问此页面的权限');
             navigate('/admin', { replace: true });
         }

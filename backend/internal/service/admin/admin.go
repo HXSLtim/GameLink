@@ -451,6 +451,14 @@ func (s *AdminService) GetUser(ctx context.Context, id uint64) (*model.User, err
 	return user, nil
 }
 
+// GetUsersByIDs 批量获取用户信息
+func (s *AdminService) GetUsersByIDs(ctx context.Context, ids []uint64) ([]model.User, error) {
+	if len(ids) == 0 {
+		return []model.User{}, nil
+	}
+	return s.users.GetByIDs(ctx, ids)
+}
+
 // CreateUser 新建用户并对密码加密。
 func (s *AdminService) CreateUser(ctx context.Context, input CreateUserInput) (*model.User, error) {
 	if err := validateUserInput(input.Name, input.Role, input.Status, input.Password); err != nil {
@@ -2397,7 +2405,7 @@ func (s *AdminService) ListPendingReviews(ctx context.Context, page, pageSize in
 }
 
 // ApproveReview 批准评价
-func (s *AdminService) ApproveReview(ctx context.Context, reviewID uint64, actorUserID *uint64) error {
+func (s *AdminService) ApproveReview(ctx context.Context, reviewID uint64, reason string, actorUserID *uint64) error {
 	if s.tx == nil {
 		return apierr.InternalError("事务管理器未配置")
 	}
@@ -2432,7 +2440,7 @@ func (s *AdminService) ApproveReview(ctx context.Context, reviewID uint64, actor
 				EntityID:     reviewID,
 				ActorUserID:  actorUserID,
 				Action:       string(model.OpActionApprove),
-				Reason:       "批准评价",
+				Reason:       reason,
 				MetadataJSON: []byte(metadata),
 			}
 			_ = r.OpLogs.Append(ctx, log)

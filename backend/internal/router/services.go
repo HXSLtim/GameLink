@@ -14,6 +14,8 @@ import (
 	paymentrepo "gamelink/internal/repository/order"
 	reviewreplyrepo "gamelink/internal/repository/order"
 	reviewrepo "gamelink/internal/repository/order"
+	reviewdisplaysettingsrepo "gamelink/internal/repository/reviewdisplaysettings"
+	sensitivewordrepo "gamelink/internal/repository/sensitiveword"
 	serviceitemrepo "gamelink/internal/repository/serviceitem"
 	userrepo "gamelink/internal/repository/user"
 	withdrawrepo "gamelink/internal/repository/withdraw"
@@ -29,7 +31,8 @@ import (
 	orderservice "gamelink/internal/service/order"
 	paymentservice "gamelink/internal/service/payment"
 	serviceplayer "gamelink/internal/service/player"
-	reviewstatsservice "gamelink/internal/service/review"
+	reviewservice "gamelink/internal/service/review"
+	sensitivewordservice "gamelink/internal/service/sensitiveword"
 	userservice "gamelink/internal/service/user"
 	walletservice "gamelink/internal/service/wallet"
 	"gamelink/internal/ws"
@@ -68,13 +71,17 @@ type appServices struct {
 	tagSvc   *userservice.UserTagService
 	batchSvc *userservice.BatchOperationService
 	// Review stats service
-	reviewStatsSvc *reviewstatsservice.ReviewStatsService
+	reviewStatsSvc *reviewservice.ReviewStatsService
 	// Content management services
 	adminFeedSvc       *contentservice.AdminFeedService
 	chatModerationSvc  *contentservice.ChatModerationService
 	feedReportSvc      *contentservice.FeedReportService
 	contentStatsSvc    *contentservice.ContentStatsService
 	contentCategorySvc *contentcategoryservice.ContentCategoryService
+	// Sensitive word service
+	sensitiveWordSvc *sensitivewordservice.SensitiveWordService
+	// Review settings service
+	reviewSettingsSvc *reviewservice.SettingsService
 }
 
 // initServices 初始化领域服务和调度任务（但不启动调度器）。
@@ -140,12 +147,18 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 	batchSvc := userservice.NewBatchOperationService(orm, userRepo, tagRepo, notifRepo)
 
 	// Review stats service
-	reviewStatsSvc := reviewstatsservice.NewReviewStatsService(reviewRepo)
+	reviewStatsSvc := reviewservice.NewReviewStatsService(reviewRepo)
+
+	// Review settings service
+	reviewDisplaySettingsRepo := reviewdisplaysettingsrepo.New(orm)
+	reviewSettingsSvc := reviewservice.NewSettingsService(reviewDisplaySettingsRepo)
 
 	// Content management services
 	contentCategoryRepo := contentcategoryrepo.NewContentCategoryRepository(orm)
-	adminFeedSvc := contentservice.NewAdminFeedService(feedRepo, nil, operationLogRepo)
-	chatModerationSvc := contentservice.NewChatModerationService(chatMessageRepo, chatMemberRepo, nil, operationLogRepo)
+	sensitiveWordRepo := sensitivewordrepo.NewSensitiveWordRepository(orm)
+	sensitiveWordSvc := sensitivewordservice.NewSensitiveWordService(sensitiveWordRepo)
+	adminFeedSvc := contentservice.NewAdminFeedService(feedRepo, sensitiveWordSvc, operationLogRepo)
+	chatModerationSvc := contentservice.NewChatModerationService(chatMessageRepo, chatMemberRepo, sensitiveWordSvc, operationLogRepo)
 	feedReportSvc := contentservice.NewFeedReportService(feedRepo, operationLogRepo)
 	contentStatsSvc := contentservice.NewContentStatsService(feedRepo, chatMessageRepo)
 	contentCategorySvc := contentcategoryservice.NewContentCategoryService(contentCategoryRepo)
@@ -179,5 +192,7 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 		feedReportSvc:       feedReportSvc,
 		contentStatsSvc:     contentStatsSvc,
 		contentCategorySvc:  contentCategorySvc,
+		sensitiveWordSvc:    sensitiveWordSvc,
+		reviewSettingsSvc:   reviewSettingsSvc,
 	}
 }

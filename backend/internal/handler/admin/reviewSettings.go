@@ -53,6 +53,10 @@ type UpdateReviewSettingsPayload struct {
 	ShowAnonymous *bool `json:"showAnonymous"`
 	// 每页显示数量（1-100）
 	PageSize *int `json:"pageSize"`
+	// 是否自动批准评价
+	AutoApprove *bool `json:"autoApprove"`
+	// 自动批准最低评分（1-5）
+	AutoApproveMinRating *int `json:"autoApproveMinRating"`
 }
 
 // UpdateReviewSettings
@@ -96,6 +100,14 @@ func (h *ReviewSettingsHandler) UpdateReviewSettings(c *gin.Context) {
 
 	if p.PageSize != nil {
 		input.PageSize = p.PageSize
+	}
+
+	if p.AutoApprove != nil {
+		input.AutoApprove = p.AutoApprove
+	}
+
+	if p.AutoApproveMinRating != nil {
+		input.AutoApproveMinRating = p.AutoApproveMinRating
 	}
 
 	settings, err := h.svc.UpdateSettingsPartial(c.Request.Context(), input)

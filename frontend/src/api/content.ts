@@ -135,4 +135,11 @@ export const contentStatsApi = {
   // 获取统计数据
   getStats: (days?: number) =>
     apiClient.get<ApiResponse<ContentStatsDTO>>('/admin/content/stats', { params: { days } }),
+
+  // 导出统计数据为Excel
+  exportStats: (days?: number) =>
+    apiClient.get('/admin/content/stats/export', {
+      params: { days },
+      responseType: 'blob',
+    }),
 };

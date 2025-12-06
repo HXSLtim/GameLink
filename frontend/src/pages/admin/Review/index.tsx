@@ -23,6 +23,9 @@ import {
   Divider,
   Spin,
   Timeline,
+  Tooltip,
+  Modal,
+  Form,
 } from 'antd';
 import {
   SearchOutlined,
@@ -46,11 +49,20 @@ import {
   REVIEW_STATUS_TEXT,
   REVIEW_STATUS_COLOR,
 } from '@/types/review';
+import { usePermissions } from '@/hooks/usePermission';
 
 const { RangePicker } = DatePicker;
 const { Text } = Typography;
 
 const ReviewList: React.FC = () => {
+  // 权限检查
+  const permissions = usePermissions({
+    canApprove: 'admin.reviews.approve.update',
+    canReject: 'admin.reviews.reject.update',
+    canDelete: 'admin.reviews.delete',
+    canViewLogs: 'admin.reviews.logs.list',
+  });
+
   // 状态
   const [loading, setLoading] = useState(false);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -73,6 +85,18 @@ const ReviewList: React.FC = () => {
   const [detailLoading, setDetailLoading] = useState(false);
   const [currentReview, setCurrentReview] = useState<Review | null>(null);
   const [reviewLogs, setReviewLogs] = useState<OperationLog[]>([]);
+
+  // 批准弹窗状态
+  const [approveModalVisible, setApproveModalVisible] = useState(false);
+  const [approveReviewId, setApproveReviewId] = useState<number | null>(null);
+  const [approveLoading, setApproveLoading] = useState(false);
+  const [approveForm] = Form.useForm();
+
+  // 批量选择状态
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [batchApproveModalVisible, setBatchApproveModalVisible] = useState(false);
+  const [batchApproveLoading, setBatchApproveLoading] = useState(false);
+  const [batchApproveForm] = Form.useForm();
 
   // 加载数据
   const fetchReviews = useCallback(async (params?: ReviewQueryParams) => {
@@ -150,17 +174,90 @@ const ReviewList: React.FC = () => {
     }));
   };
 
-  // 批准评价
-  const handleApprove = async (id: number) => {
+  // 打开批准弹窗
+  const openApproveModal = (id: number) => {
+    setApproveReviewId(id);
+    approveForm.resetFields();
+    setApproveModalVisible(true);
+  };
+
+  // 确认批准评价
+  const handleApproveConfirm = async () => {
+    if (!approveReviewId) return;
+    
     try {
-      const response = await reviewApi.approveReview(id) as unknown as { success: boolean };
+      const values = await approveForm.validateFields();
+      setApproveLoading(true);
+      const response = await reviewApi.approveReview(approveReviewId, values.reason) as unknown as { success: boolean };
       if (response.success) {
         message.success('评价已批准');
+        setApproveModalVisible(false);
+        setApproveReviewId(null);
+        // 如果详情抽屉打开，也关闭它
+        if (detailVisible) {
+          handleCloseDetail();
+        }
         fetchReviews();
       }
     } catch {
       message.error('操作失败');
+    } finally {
+      setApproveLoading(false);
     }
+  };
+
+  // 打开批量批准弹窗
+  const openBatchApproveModal = () => {
+    const pendingIds = selectedRowKeys.filter(key => {
+      const review = reviews.find(r => r.id === key);
+      return review?.status === 'pending';
+    });
+    if (pendingIds.length === 0) {
+      message.warning('请选择待审核的评价');
+      return;
+    }
+    batchApproveForm.resetFields();
+    setBatchApproveModalVisible(true);
+  };
+
+  // 确认批量批准
+  const handleBatchApproveConfirm = async () => {
+    const pendingIds = selectedRowKeys.filter(key => {
+      const review = reviews.find(r => r.id === key);
+      return review?.status === 'pending';
+    }) as number[];
+
+    if (pendingIds.length === 0) {
+      message.warning('没有待审核的评价');
+      return;
+    }
+
+    try {
+      setBatchApproveLoading(true);
+      const response = await reviewApi.batchApproveReviews(pendingIds) as unknown as { 
+        success: boolean; 
+        data?: { count: number } 
+      };
+      if (response.success) {
+        message.success(`已批准 ${response.data?.count || pendingIds.length} 条评价`);
+        setBatchApproveModalVisible(false);
+        setSelectedRowKeys([]);
+        fetchReviews();
+      }
+    } catch {
+      message.error('批量批准失败');
+    } finally {
+      setBatchApproveLoading(false);
+    }
+  };
+
+  // 表格行选择配置
+  const rowSelection = {
+    selectedRowKeys,
+    onChange: (keys: React.Key[]) => setSelectedRowKeys(keys),
+    getCheckboxProps: (record: Review) => ({
+      disabled: record.status !== 'pending',
+    }),
   };
 
   // 删除评价
@@ -317,43 +414,66 @@ const ReviewList: React.FC = () => {
           </Button>
           {record.status === 'pending' && (
             <>
-              <Button
-                type="link"
-                size="small"
-                icon={<CheckOutlined />}
-                onClick={() => handleApprove(record.id)}
-              >
-                批准
-              </Button>
+              {permissions.canApprove ? (
+                <Button
+                  type="link"
+                  size="small"
+                  icon={<CheckOutlined />}
+                  onClick={() => openApproveModal(record.id)}
+                >
+                  批准
+                </Button>
+              ) : (
+                <Tooltip title="无批准权限">
+                  <Button type="link" size="small" icon={<CheckOutlined />} disabled>
+                    批准
+                  </Button>
+                </Tooltip>
+              )}
+              {permissions.canReject ? (
+                <Button
+                  type="link"
+                  size="small"
+                  danger
+                  icon={<CloseOutlined />}
+                  onClick={() => {
+                    message.info('请前往审核页面进行拒绝操作');
+                  }}
+                >
+                  拒绝
+                </Button>
+              ) : (
+                <Tooltip title="无拒绝权限">
+                  <Button type="link" size="small" danger icon={<CloseOutlined />} disabled>
+                    拒绝
+                  </Button>
+                </Tooltip>
+              )}
+            </>
+          )}
+          {permissions.canDelete ? (
+            <Popconfirm
+              title="确定要删除这条评价吗？"
+              onConfirm={() => handleDelete(record.id)}
+              okText="确定"
+              cancelText="取消"
+            >
               <Button
                 type="link"
                 size="small"
                 danger
-                icon={<CloseOutlined />}
-                onClick={() => {
-                  // TODO: 打开拒绝弹窗
-                  message.info('请前往审核页面进行拒绝操作');
-                }}
+                icon={<DeleteOutlined />}
               >
-                拒绝
+                删除
               </Button>
-            </>
+            </Popconfirm>
+          ) : (
+            <Tooltip title="无删除权限">
+              <Button type="link" size="small" danger icon={<DeleteOutlined />} disabled>
+                删除
+              </Button>
+            </Tooltip>
           )}
-          <Popconfirm
-            title="确定要删除这条评价吗？"
-            onConfirm={() => handleDelete(record.id)}
-            okText="确定"
-            cancelText="取消"
-          >
-            <Button
-              type="link"
-              size="small"
-              danger
-              icon={<DeleteOutlined />}
-            >
-              删除
-            </Button>
-          </Popconfirm>
         </Space>
       ),
     },
@@ -420,6 +540,16 @@ const ReviewList: React.FC = () => {
         <Button icon={<ReloadOutlined />} onClick={handleReset}>
           重置
         </Button>
+        {permissions.canApprove && selectedRowKeys.length > 0 && (
+          <Button
+            type="primary"
+            icon={<CheckOutlined />}
+            onClick={openBatchApproveModal}
+            style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
+          >
+            批量批准 ({selectedRowKeys.filter(key => reviews.find(r => r.id === key)?.status === 'pending').length})
+          </Button>
+        )}
       </Space>
 
       {/* 表格 */}
@@ -428,6 +558,7 @@ const ReviewList: React.FC = () => {
         dataSource={reviews}
         rowKey="id"
         loading={loading}
+        rowSelection={permissions.canApprove ? rowSelection : undefined}
         pagination={{
           ...pagination,
           showSizeChanger: true,
@@ -437,6 +568,74 @@ const ReviewList: React.FC = () => {
         onChange={handleTableChange}
         scroll={{ x: 1400 }}
       />
+
+      {/* 批准弹窗 */}
+      <Modal
+        title="批准评价"
+        open={approveModalVisible}
+        onOk={handleApproveConfirm}
+        onCancel={() => {
+          setApproveModalVisible(false);
+          setApproveReviewId(null);
+          approveForm.resetFields();
+        }}
+        confirmLoading={approveLoading}
+        okText="确认批准"
+        cancelText="取消"
+      >
+        <Form form={approveForm} layout="vertical">
+          <Form.Item
+            name="reason"
+            label="批准原因"
+            rules={[{ max: 500, message: '原因不能超过500个字符' }]}
+            initialValue="批准评价"
+          >
+            <Input.TextArea
+              rows={3}
+              placeholder="请输入批准原因（可选）"
+              maxLength={500}
+              showCount
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* 批量批准弹窗 */}
+      <Modal
+        title="批量批准评价"
+        open={batchApproveModalVisible}
+        onOk={handleBatchApproveConfirm}
+        onCancel={() => {
+          setBatchApproveModalVisible(false);
+          batchApproveForm.resetFields();
+        }}
+        confirmLoading={batchApproveLoading}
+        okText="确认批量批准"
+        cancelText="取消"
+      >
+        <div style={{ marginBottom: 16 }}>
+          <Text>
+            已选择 <Text strong style={{ color: '#1890ff' }}>
+              {selectedRowKeys.filter(key => reviews.find(r => r.id === key)?.status === 'pending').length}
+            </Text> 条待审核评价
+          </Text>
+        </div>
+        <Form form={batchApproveForm} layout="vertical">
+          <Form.Item
+            name="reason"
+            label="批准原因（统一）"
+            rules={[{ max: 500, message: '原因不能超过500个字符' }]}
+            initialValue="批量批准评价"
+          >
+            <Input.TextArea
+              rows={3}
+              placeholder="请输入批准原因（可选，将应用于所有选中的评价）"
+              maxLength={500}
+              showCount
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
 
       {/* 详情抽屉 */}
       <Drawer
@@ -514,7 +713,7 @@ const ReviewList: React.FC = () => {
                 items={reviewLogs.map(log => {
                   const logData = log as OperationLog & { reason?: string; actorUserId?: number };
                   return {
-                    children: (
+                    content: (
                       <div>
                         <Text strong>{String(log.action)}</Text>
                         <br />
@@ -538,40 +737,61 @@ const ReviewList: React.FC = () => {
             <Space>
               {currentReview.status === 'pending' && (
                 <>
-                  <Button
-                    type="primary"
-                    icon={<CheckOutlined />}
-                    onClick={() => {
-                      handleApprove(currentReview.id);
-                      handleCloseDetail();
-                    }}
-                  >
-                    批准
-                  </Button>
-                  <Button
-                    danger
-                    icon={<CloseOutlined />}
-                    onClick={() => {
-                      message.info('请前往审核页面进行拒绝操作');
-                    }}
-                  >
-                    拒绝
-                  </Button>
+                  {permissions.canApprove ? (
+                    <Button
+                      type="primary"
+                      icon={<CheckOutlined />}
+                      onClick={() => openApproveModal(currentReview.id)}
+                    >
+                      批准
+                    </Button>
+                  ) : (
+                    <Tooltip title="无批准权限">
+                      <Button type="primary" icon={<CheckOutlined />} disabled>
+                        批准
+                      </Button>
+                    </Tooltip>
+                  )}
+                  {permissions.canReject ? (
+                    <Button
+                      danger
+                      icon={<CloseOutlined />}
+                      onClick={() => {
+                        message.info('请前往审核页面进行拒绝操作');
+                      }}
+                    >
+                      拒绝
+                    </Button>
+                  ) : (
+                    <Tooltip title="无拒绝权限">
+                      <Button danger icon={<CloseOutlined />} disabled>
+                        拒绝
+                      </Button>
+                    </Tooltip>
+                  )}
                 </>
               )}
-              <Popconfirm
-                title="确定要删除这条评价吗？"
-                onConfirm={() => {
-                  handleDelete(currentReview.id);
-                  handleCloseDetail();
-                }}
-                okText="确定"
-                cancelText="取消"
-              >
-                <Button danger icon={<DeleteOutlined />}>
-                  删除
-                </Button>
-              </Popconfirm>
+              {permissions.canDelete ? (
+                <Popconfirm
+                  title="确定要删除这条评价吗？"
+                  onConfirm={() => {
+                    handleDelete(currentReview.id);
+                    handleCloseDetail();
+                  }}
+                  okText="确定"
+                  cancelText="取消"
+                >
+                  <Button danger icon={<DeleteOutlined />}>
+                    删除
+                  </Button>
+                </Popconfirm>
+              ) : (
+                <Tooltip title="无删除权限">
+                  <Button danger icon={<DeleteOutlined />} disabled>
+                    删除
+                  </Button>
+                </Tooltip>
+              )}
             </Space>
           </Spin>
         )}

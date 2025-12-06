@@ -40,10 +40,12 @@ func (s *SettingsService) UpdateSettings(ctx context.Context, settings *model.Re
 
 // UpdateSettingsInput 更新设置的输入参数
 type UpdateSettingsInput struct {
-	SortBy        *model.ReviewSortBy `json:"sortBy"`
-	MinScore      *int                `json:"minScore"`
-	ShowAnonymous *bool               `json:"showAnonymous"`
-	PageSize      *int                `json:"pageSize"`
+	SortBy               *model.ReviewSortBy `json:"sortBy"`
+	MinScore             *int                `json:"minScore"`
+	ShowAnonymous        *bool               `json:"showAnonymous"`
+	PageSize             *int                `json:"pageSize"`
+	AutoApprove          *bool               `json:"autoApprove"`
+	AutoApproveMinRating *int                `json:"autoApproveMinRating"`
 }
 
 // UpdateSettingsPartial 部分更新评价展示设置
@@ -66,6 +68,12 @@ func (s *SettingsService) UpdateSettingsPartial(ctx context.Context, input Updat
 	}
 	if input.PageSize != nil {
 		current.PageSize = *input.PageSize
+	}
+	if input.AutoApprove != nil {
+		current.AutoApprove = *input.AutoApprove
+	}
+	if input.AutoApproveMinRating != nil {
+		current.AutoApproveMinRating = *input.AutoApproveMinRating
 	}
 
 	// 验证并保存

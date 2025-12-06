@@ -2,42 +2,35 @@ export const ENABLE_QUICK_LOGIN = import.meta.env.DEV; // Only enable in develop
 
 export const DEBUG_USERS = [
     {
-        label: 'Super Admin',
+        label: '超级管理员',
         email: 'admin@gameLink.com',
         password: '123456',
         role: 'ADMIN',
         color: '#f50'
     },
     {
-        label: 'Demo User',
+        label: '测试用户',
         email: 'demo.user@gamelink.com',
         password: 'User@123456',
         role: 'USER',
         color: '#2db7f5'
     },
     {
-        label: 'VIP User',
+        label: '高级会员',
         email: 'vip.user@gamelink.com',
         password: 'Vip@123456',
         role: 'USER',
         color: '#108ee9'
     },
     {
-        label: 'New User',
-        email: 'new.user@gamelink.com',
-        password: 'User@123789',
-        role: 'USER',
-        color: '#87d068'
-    },
-    {
-        label: 'Pro Player',
+        label: '职业陪玩',
         email: 'pro.player@gamelink.com',
         password: 'Player@123456',
         role: 'COMPANION',
         color: '#722ed1'
     },
     {
-        label: 'Streamer',
+        label: '魔王主播',
         email: 'streamer@gamelink.com',
         password: 'Player@654321',
         role: 'COMPANION',

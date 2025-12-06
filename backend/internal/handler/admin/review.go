@@ -357,7 +357,7 @@ func (h *ReviewHandler) CreateReviewReport(c *gin.Context) {
 	}
 
 	// Get reporter ID from context (authenticated user)
-	reporterID, exists := c.Get("userID")
+	reporterID, exists := c.Get("user_id")
 	if !exists {
 		writeJSONError(c, 401, "unauthorized")
 		return
@@ -520,7 +520,7 @@ func (h *ReviewHandler) HandleReviewReport(c *gin.Context) {
 	}
 
 	// Get handler ID from context (authenticated admin)
-	handlerID, exists := c.Get("userID")
+	handlerID, exists := c.Get("user_id")
 	if !exists {
 		writeJSONError(c, 401, "unauthorized")
 		return
@@ -608,7 +608,8 @@ func (h *ReviewHandler) ListPendingReviews(c *gin.Context) {
 // @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Param        id   path  int  true  "评价ID"
+// @Param        id       path  int                    true  "评价ID"
+// @Param        request  body  ApproveReviewPayload   false "批准信息"
 // @Success      200  {object}  model.APIResponse[any]
 // @Failure      400  {object}  model.ErrorResponse
 // @Failure      404  {object}  model.ErrorResponse
@@ -620,14 +621,23 @@ func (h *ReviewHandler) ApproveReview(c *gin.Context) {
 		return
 	}
 
+	// Parse optional reason from body
+	var p ApproveReviewPayload
+	_ = c.ShouldBindJSON(&p) // Ignore error, reason is optional
+
+	reason := p.Reason
+	if reason == "" {
+		reason = "批准评价"
+	}
+
 	// Get actor user ID from context
 	var actorUserID *uint64
-	if userID, exists := c.Get("userID"); exists {
+	if userID, exists := c.Get("user_id"); exists {
 		uid := userID.(uint64)
 		actorUserID = &uid
 	}
 
-	err = h.svc.ApproveReview(c.Request.Context(), id, actorUserID)
+	err = h.svc.ApproveReview(c.Request.Context(), id, reason, actorUserID)
 	if errors.Is(err, adminservice.ErrNotFound) {
 		_ = c.Error(adminservice.ErrNotFound)
 		return
@@ -671,7 +681,7 @@ func (h *ReviewHandler) RejectReview(c *gin.Context) {
 
 	// Get actor user ID from context
 	var actorUserID *uint64
-	if userID, exists := c.Get("userID"); exists {
+	if userID, exists := c.Get("user_id"); exists {
 		uid := userID.(uint64)
 		actorUserID = &uid
 	}
@@ -712,7 +722,7 @@ func (h *ReviewHandler) BatchApproveReviews(c *gin.Context) {
 
 	// Get actor user ID from context
 	var actorUserID *uint64
-	if userID, exists := c.Get("userID"); exists {
+	if userID, exists := c.Get("user_id"); exists {
 		uid := userID.(uint64)
 		actorUserID = &uid
 	}
@@ -749,7 +759,7 @@ func (h *ReviewHandler) BatchRejectReviews(c *gin.Context) {
 
 	// Get actor user ID from context
 	var actorUserID *uint64
-	if userID, exists := c.Get("userID"); exists {
+	if userID, exists := c.Get("user_id"); exists {
 		uid := userID.(uint64)
 		actorUserID = &uid
 	}
@@ -768,6 +778,10 @@ func (h *ReviewHandler) BatchRejectReviews(c *gin.Context) {
 }
 
 // Payload types for review moderation
+type ApproveReviewPayload struct {
+	Reason string `json:"reason" binding:"max=500"`
+}
+
 type RejectReviewPayload struct {
 	Reason string `json:"reason" binding:"required,max=500"`
 }
@@ -812,7 +826,7 @@ func (h *ReviewHandler) UpdateReply(c *gin.Context) {
 	}
 
 	// 获取当前用户ID
-	userID, exists := c.Get("userID")
+	userID, exists := c.Get("user_id")
 	if !exists {
 		writeJSONError(c, 401, "未授权")
 		return
@@ -857,7 +871,7 @@ func (h *ReviewHandler) DeleteReply(c *gin.Context) {
 	}
 
 	// 获取当前用户ID
-	userID, exists := c.Get("userID")
+	userID, exists := c.Get("user_id")
 	if !exists {
 		writeJSONError(c, 401, "未授权")
 		return

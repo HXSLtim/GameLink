@@ -246,7 +246,7 @@ func TestSensitiveWordService_DetectSensitiveWords(t *testing.T) {
 		require.NoError(t, err)
 		assert.True(t, resp.HasSensitiveWords)
 		assert.NotEmpty(t, resp.DetectedWords)
-		assert.Contains(t, resp.HighlightedText, "***")
+		assert.Contains(t, resp.HighlightedContent, "***")
 	})
 
 	t.Run("detect multiple sensitive words", func(t *testing.T) {
@@ -265,7 +265,7 @@ func TestSensitiveWordService_DetectSensitiveWords(t *testing.T) {
 		require.NoError(t, err)
 		assert.False(t, resp.HasSensitiveWords)
 		assert.Empty(t, resp.DetectedWords)
-		assert.Equal(t, "这是一段正常的文本", resp.HighlightedText)
+		assert.Equal(t, "这是一段正常的文本", resp.HighlightedContent)
 	})
 
 	t.Run("empty content", func(t *testing.T) {

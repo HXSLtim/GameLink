@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	"gamelink/pkg/cache"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	"gamelink/internal/service"
+	"gamelink/pkg/cache"
 )
 
 var (
@@ -203,5 +203,51 @@ func (s *PermissionService) ListPermissionGroups(ctx context.Context) ([]string,
 func (s *PermissionService) invalidatePermissionCache() {
 	ctx := context.Background()
 	_ = s.cache.Delete(ctx, cacheKeyPermissions)
+	_ = s.cache.Delete(ctx, cacheKeyPermissionTree)
 	// 注意：用户和角色的权限缓存需要在分配权限时清除
+}
+
+const (
+	cacheKeyPermissionTree = "admin:permissions:tree"
+)
+
+// GetPermissionTree returns all permissions organized in a tree structure.
+// Uses caching to avoid repeated database queries.
+// The tree is organized by Group, with parent-child relationships preserved.
+func (s *PermissionService) GetPermissionTree(ctx context.Context) ([]*model.PermissionTreeNode, error) {
+	// Try to get from cache
+	if value, ok, err := s.cache.Get(ctx, cacheKeyPermissionTree); err == nil && ok {
+		var tree []*model.PermissionTreeNode
+		if err := json.Unmarshal([]byte(value), &tree); err == nil {
+			return tree, nil
+		}
+	}
+
+	// Fetch all permissions with efficient ordering
+	permissions, err := s.permissions.ListWithChildren(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list permissions: %w", err)
+	}
+
+	// Build tree structure
+	tree := model.BuildPermissionTree(permissions)
+
+	// Cache the result
+	if data, err := json.Marshal(tree); err == nil {
+		_ = s.cache.Set(ctx, cacheKeyPermissionTree, string(data), cacheTTLPermissions)
+	}
+
+	return tree, nil
+}
+
+// GetPermissionTreeByGroup returns all permissions organized in a tree structure grouped by permission group.
+func (s *PermissionService) GetPermissionTreeByGroup(ctx context.Context) ([]model.PermissionGroup, error) {
+	// Fetch all permissions with efficient ordering
+	permissions, err := s.permissions.ListWithChildren(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list permissions: %w", err)
+	}
+
+	// Build tree structure grouped by group
+	return model.BuildPermissionTreeByGroup(permissions), nil
 }

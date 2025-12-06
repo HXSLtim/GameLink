@@ -43,8 +43,8 @@ type ChatMessageDTO struct {
 	RejectReason string                       `json:"rejectReason,omitempty"`
 	CreatedAt    string                       `json:"createdAt"`
 	// 敏感词检测结果
-	HasSensitiveWords bool   `json:"hasSensitiveWords,omitempty"`
-	HighlightedText   string `json:"highlightedText,omitempty"`
+	HasSensitiveWords  bool   `json:"hasSensitiveWords,omitempty"`
+	HighlightedContent string `json:"highlightedContent,omitempty"`
 }
 
 // ListMessagesRequest 列出消息请求
@@ -104,7 +104,7 @@ func (s *ChatModerationService) ListMessages(ctx context.Context, req ListMessag
 			})
 			if result != nil {
 				dto.HasSensitiveWords = result.HasSensitiveWords
-				dto.HighlightedText = result.HighlightedText
+				dto.HighlightedContent = result.HighlightedContent
 			}
 		}
 		dtos = append(dtos, *dto)

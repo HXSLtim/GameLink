@@ -13,9 +13,222 @@ import (
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	repoiface "gamelink/internal/repository/interfaces"
+	adminservice "gamelink/internal/service/admin"
 	"gamelink/pkg/apierr"
 )
 
+// ============================================================================
+// 统一响应函数
+// ============================================================================
+
+// respondSuccess 统一成功响应
+func respondSuccess[T any](c *gin.Context, data T) {
+	respondSuccessWithMsg(c, "OK", data)
+}
+
+// respondSuccessWithMsg 统一成功响应（带自定义消息）
+func respondSuccessWithMsg[T any](c *gin.Context, message string, data T) {
+	writeJSON(c, http.StatusOK, model.APIResponse[T]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: message,
+		Data:    data,
+	})
+}
+
+// respondCreated 统一创建成功响应
+func respondCreated[T any](c *gin.Context, data T) {
+	writeJSON(c, http.StatusCreated, model.APIResponse[T]{
+		Success: true,
+		Code:    http.StatusCreated,
+		Message: "created",
+		Data:    data,
+	})
+}
+
+// respondList 统一列表响应（带分页）
+func respondList[T any](c *gin.Context, data []T, pagination *model.Pagination) {
+	data = ensureSlice(data)
+	writeJSON(c, http.StatusOK, model.APIResponse[[]T]{
+		Success:    true,
+		Code:       http.StatusOK,
+		Message:    "OK",
+		Data:       data,
+		Pagination: pagination,
+	})
+}
+
+// respondDeleted 统一删除成功响应
+func respondDeleted(c *gin.Context) {
+	writeJSON(c, http.StatusOK, model.APIResponse[any]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: "deleted",
+	})
+}
+
+// respondUpdated 统一更新成功响应
+func respondUpdated[T any](c *gin.Context, data T) {
+	writeJSON(c, http.StatusOK, model.APIResponse[T]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: "updated",
+		Data:    data,
+	})
+}
+
+// ============================================================================
+// 统一错误处理函数
+// ============================================================================
+
+// respondError 统一错误响应（推荐使用）
+// 自动处理 apierr.APIError、adminservice.ErrNotFound 等常见错误类型
+func respondError(c *gin.Context, err error) {
+	// 处理 apierr.APIError
+	if apiErr, ok := err.(*apierr.APIError); ok {
+		writeJSON(c, apiErr.Code, model.APIResponse[any]{
+			Success: false,
+			Code:    apiErr.Code,
+			Message: apiErr.Message,
+			TraceID: apiErr.RequestID,
+		})
+		return
+	}
+
+	// 处理 adminservice.ErrNotFound
+	if errors.Is(err, adminservice.ErrNotFound) || errors.Is(err, repository.ErrNotFound) {
+		writeJSON(c, http.StatusNotFound, model.APIResponse[any]{
+			Success: false,
+			Code:    http.StatusNotFound,
+			Message: "resource not found",
+		})
+		return
+	}
+
+	// 处理验证错误
+	if apierr.IsValidationError(err) {
+		writeJSON(c, http.StatusBadRequest, model.APIResponse[any]{
+			Success: false,
+			Code:    http.StatusBadRequest,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	// 默认内部错误
+	writeJSON(c, http.StatusInternalServerError, model.APIResponse[any]{
+		Success: false,
+		Code:    http.StatusInternalServerError,
+		Message: err.Error(),
+	})
+}
+
+// respondBadRequest 统一400错误响应
+func respondBadRequest(c *gin.Context, message string) {
+	writeJSON(c, http.StatusBadRequest, model.APIResponse[any]{
+		Success: false,
+		Code:    http.StatusBadRequest,
+		Message: message,
+	})
+}
+
+// respondNotFound 统一404错误响应
+func respondNotFound(c *gin.Context, message string) {
+	if message == "" {
+		message = "resource not found"
+	}
+	writeJSON(c, http.StatusNotFound, model.APIResponse[any]{
+		Success: false,
+		Code:    http.StatusNotFound,
+		Message: message,
+	})
+}
+
+// respondUnauthorized 统一401错误响应
+func respondUnauthorized(c *gin.Context, message string) {
+	if message == "" {
+		message = "unauthorized"
+	}
+	writeJSON(c, http.StatusUnauthorized, model.APIResponse[any]{
+		Success: false,
+		Code:    http.StatusUnauthorized,
+		Message: message,
+	})
+}
+
+// respondForbidden 统一403错误响应
+func respondForbidden(c *gin.Context, message string) {
+	if message == "" {
+		message = "forbidden"
+	}
+	writeJSON(c, http.StatusForbidden, model.APIResponse[any]{
+		Success: false,
+		Code:    http.StatusForbidden,
+		Message: message,
+	})
+}
+
+// respondInternalError 统一500错误响应
+func respondInternalError(c *gin.Context, message string) {
+	writeJSON(c, http.StatusInternalServerError, model.APIResponse[any]{
+		Success: false,
+		Code:    http.StatusInternalServerError,
+		Message: message,
+	})
+}
+
+// ============================================================================
+// 统一参数解析函数
+// ============================================================================
+
+// ParseIDAndRespond 解析ID参数并响应错误（如果需要）
+// 返回 (id, ok)，ok=false 时已写入错误响应，调用方应直接 return
+func ParseIDAndRespond(c *gin.Context, paramName string) (uint64, bool) {
+	id, err := handler.ParseIDParam(c, paramName)
+	if err != nil {
+		respondError(c, err)
+		return 0, false
+	}
+	return id, true
+}
+
+// ValidateAndRespond 验证请求体并响应错误（如果需要）
+// 返回 ok，ok=false 时已写入错误响应，调用方应直接 return
+func ValidateAndRespond(c *gin.Context, obj interface{}) bool {
+	if err := c.ShouldBindJSON(obj); err != nil {
+		respondError(c, apierr.BadRequest(apierr.ErrInvalidJSONPayload).WithDetails(err.Error()))
+		return false
+	}
+	return true
+}
+
+// QueryUint64PtrAndRespond 解析可选的 uint64 查询参数
+// 返回 (value, ok)，ok=false 时已写入错误响应
+func QueryUint64PtrAndRespond(c *gin.Context, key string, errMsg string) (*uint64, bool) {
+	v, err := queryUint64Ptr(c, key)
+	if err != nil {
+		respondBadRequest(c, errMsg)
+		return nil, false
+	}
+	return v, true
+}
+
+// QueryTimePtrAndRespond 解析可选的时间查询参数
+// 返回 (value, ok)，ok=false 时已写入错误响应
+func QueryTimePtrAndRespond(c *gin.Context, key string, errMsg string) (*time.Time, bool) {
+	v, err := queryTimePtr(c, key)
+	if err != nil {
+		respondBadRequest(c, errMsg)
+		return nil, false
+	}
+	return v, true
+}
+
+// ============================================================================
+// 兼容旧代码的函数（逐步废弃）
+// ============================================================================
+
+// parseUintParam 解析路径参数为 uint64（建议使用 ParseIDAndRespond）
 func parseUintParam(c *gin.Context, key string) (uint64, error) {
 	return strconv.ParseUint(c.Param(key), 10, 64)
 }
@@ -79,6 +292,7 @@ func parseCSVParams(values []string) []string {
 	return result
 }
 
+// writeJSON 底层 JSON 响应函数
 func writeJSON[T any](c *gin.Context, status int, payload model.APIResponse[T]) {
 	// 从上下文中获取TraceID
 	if payload.TraceID == "" {
@@ -91,6 +305,7 @@ func writeJSON[T any](c *gin.Context, status int, payload model.APIResponse[T]) 
 	c.JSON(status, payload)
 }
 
+// writeJSONError 底层错误响应函数（建议使用 respondError 或 respondBadRequest）
 func writeJSONError(c *gin.Context, status int, message string) {
 	writeJSON(c, status, model.APIResponse[any]{
 		Success: false,
@@ -99,38 +314,9 @@ func writeJSONError(c *gin.Context, status int, message string) {
 	})
 }
 
-// respondAPIError 使用apierr包的错误响应
+// respondAPIError 使用apierr包的错误响应（建议使用 respondError）
 func respondAPIError(c *gin.Context, err error) {
-	if apiErr, ok := err.(*apierr.APIError); ok {
-		writeJSON(c, apiErr.Code, model.APIResponse[any]{
-			Success: false,
-			Code:    apiErr.Code,
-			Message: apiErr.Message,
-			TraceID: apiErr.RequestID,
-		})
-		return
-	}
-	// fallback
-	writeJSONError(c, http.StatusInternalServerError, err.Error())
-}
-
-// ParseIDAndRespond 解析ID参数并响应错误（如果需要）
-func ParseIDAndRespond(c *gin.Context, paramName string) (uint64, bool) {
-	id, err := handler.ParseIDParam(c, paramName)
-	if err != nil {
-		respondAPIError(c, err)
-		return 0, false
-	}
-	return id, true
-}
-
-// ValidateAndRespond 验证请求并响应错误（如果需要）
-func ValidateAndRespond(c *gin.Context, obj interface{}) bool {
-	if err := c.ShouldBindJSON(obj); err != nil {
-		respondAPIError(c, apierr.BadRequest(apierr.ErrInvalidJSONPayload).WithDetails(err.Error()))
-		return false
-	}
-	return true
+	respondError(c, err)
 }
 
 func ensureSlice[T any](items []T) []T {

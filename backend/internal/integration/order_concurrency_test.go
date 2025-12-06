@@ -196,6 +196,9 @@ func (m *mockUserRepo) ListWithFilters(ctx context.Context, filters repository.U
 func (m *mockUserRepo) Count(ctx context.Context, opts repository.UserListOptions) (int, error) {
 	return 0, nil
 }
+func (m *mockUserRepo) GetByIDs(ctx context.Context, ids []uint64) ([]model.User, error) {
+	return nil, nil
+}
 
 // TestAcceptOrderConcurrency 测试多个陪玩师同时接单的并发安全性
 func TestAcceptOrderConcurrency(t *testing.T) {
@@ -210,7 +213,7 @@ func TestAcceptOrderConcurrency(t *testing.T) {
 		userID := uint64(i + 100)
 		playerUserIDs[i] = userID
 		players[i] = &model.Player{
-			Base: model.Base{ID: uint64(i + 1)},
+			Base:               model.Base{ID: uint64(i + 1)},
 			UserID:             userID,
 			Nickname:           "Player",
 			VerificationStatus: model.VerificationVerified,

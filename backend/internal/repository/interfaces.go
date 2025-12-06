@@ -88,6 +88,11 @@ type PermissionRepository interface {
 	Delete(ctx context.Context, id uint64) error
 	ListByRoleID(ctx context.Context, roleID uint64) ([]model.Permission, error)
 	ListByUserID(ctx context.Context, userID uint64) ([]model.Permission, error)
+	// Tree structure methods
+	ListWithChildren(ctx context.Context) ([]model.Permission, error)
+	GetWithChildren(ctx context.Context, id uint64) (*model.Permission, error)
+	// Reference check methods
+	CountRoleReferences(ctx context.Context, permissionID uint64) (int64, error)
 }
 
 // MenuRepository defines admin menu / front-end route persistence.

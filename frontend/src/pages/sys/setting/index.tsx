@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Form, Input, Switch, Button, Tabs, Select, ColorPicker, Divider, message, List, Space, Typography, Alert, Radio, InputNumber, Spin, Descriptions } from 'antd';
-import { SaveOutlined, SettingOutlined, SafetyOutlined, BellOutlined, BgColorsOutlined, SyncOutlined, StarOutlined, ReloadOutlined, UndoOutlined } from '@ant-design/icons';
+import { Card, Form, Button, Tabs, Divider, message, Space, Typography, Alert, Radio, InputNumber, Spin, Descriptions, Switch, Tooltip, Select } from 'antd';
+import { SaveOutlined, SyncOutlined, StarOutlined, ReloadOutlined, UndoOutlined } from '@ant-design/icons';
 import { motion } from 'framer-motion';
 import { forceInit } from '@/services/init';
 import { reviewSettingsApi } from '@/api/review';
 import type { ReviewDisplaySettings, UpdateSettingsFormData } from '@/types/review';
 import { SORT_BY_TEXT } from '@/types/review';
+import { usePermissions } from '@/hooks/usePermission';
 
 const { Text, Paragraph } = Typography;
 
@@ -15,15 +16,22 @@ const DEFAULT_REVIEW_SETTINGS: UpdateSettingsFormData = {
     minScore: 1,
     showAnonymous: true,
     pageSize: 10,
+    autoApprove: false,
+    autoApproveMinRating: 4,
 };
 
 const Settings: React.FC = () => {
-    const [form] = Form.useForm();
     const [reviewForm] = Form.useForm<UpdateSettingsFormData>();
     const [initializing, setInitializing] = useState(false);
     const [lastInitTime, setLastInitTime] = useState<string | null>(
         localStorage.getItem('app_init_timestamp')
     );
+
+    // 权限检查
+    const permissions = usePermissions({
+        canUpdateReviewSettings: 'admin.review-settings.update',
+        canInit: 'admin.system.init',
+    });
 
     // 评价设置状态
     const [reviewLoading, setReviewLoading] = useState(true);
@@ -45,6 +53,8 @@ const Settings: React.FC = () => {
                     minScore: response.data.minScore,
                     showAnonymous: response.data.showAnonymous,
                     pageSize: response.data.pageSize,
+                    autoApprove: response.data.autoApprove,
+                    autoApproveMinRating: response.data.autoApproveMinRating,
                 });
             }
         } catch {
@@ -94,14 +104,11 @@ const Settings: React.FC = () => {
                 minScore: currentReviewSettings.minScore,
                 showAnonymous: currentReviewSettings.showAnonymous,
                 pageSize: currentReviewSettings.pageSize,
+                autoApprove: currentReviewSettings.autoApprove,
+                autoApproveMinRating: currentReviewSettings.autoApproveMinRating,
             });
             message.info('已恢复为当前保存的设置');
         }
-    };
-
-    const onFinish = (values: Record<string, unknown>) => {
-        console.log('Success:', values);
-        message.success('设置已保存');
     };
 
     /**
@@ -173,134 +180,6 @@ const Settings: React.FC = () => {
             key: '1',
             label: (
                 <span>
-                    <SettingOutlined />
-                    基本设置
-                </span>
-            ),
-            children: (
-                <Form
-                    form={form}
-                    layout="vertical"
-                    initialValues={{
-                        siteName: 'GameLink 游戏陪玩平台',
-                        siteDescription: '专业的游戏陪玩与社交平台',
-                        maintenanceMode: false,
-                        language: 'zh_CN',
-                    }}
-                    onFinish={onFinish}
-                >
-                    <Form.Item label="平台名称" name="siteName" rules={[{ required: true, message: '请输入平台名称' }]}>
-                        <Input placeholder="请输入平台名称" />
-                    </Form.Item>
-                    <Form.Item label="平台描述" name="siteDescription">
-                        <Input.TextArea rows={4} placeholder="请输入平台描述" />
-                    </Form.Item>
-                    <Form.Item label="默认语言" name="language">
-                        <Select>
-                            <Select.Option value="zh_CN">简体中文</Select.Option>
-                            <Select.Option value="en_US">English</Select.Option>
-                        </Select>
-                    </Form.Item>
-                    <Form.Item label="维护模式" name="maintenanceMode" valuePropName="checked" help="开启后，除管理员外用户将无法访问">
-                        <Switch checkedChildren="开启" unCheckedChildren="关闭" />
-                    </Form.Item>
-                    <Form.Item>
-                        <Button type="primary" htmlType="submit" icon={<SaveOutlined />} style={{ backgroundColor: '#5865F2' }}>
-                            保存更改
-                        </Button>
-                    </Form.Item>
-                </Form>
-            ),
-        },
-        {
-            key: '2',
-            label: (
-                <span>
-                    <BgColorsOutlined />
-                    主题设置
-                </span>
-            ),
-            children: (
-                <Form layout="vertical" initialValues={{ primaryColor: '#5865F2', darkMode: true }}>
-                    <Form.Item label="主色调" name="primaryColor">
-                        <ColorPicker showText />
-                    </Form.Item>
-                    <Form.Item label="深色模式" name="darkMode" valuePropName="checked">
-                        <Switch checkedChildren="开启" unCheckedChildren="关闭" />
-                    </Form.Item>
-                    <Divider />
-                    <Form.Item label="侧边栏风格">
-                        <Select defaultValue="dark">
-                            <Select.Option value="dark">深色 (Discord 风格)</Select.Option>
-                            <Select.Option value="light">浅色</Select.Option>
-                        </Select>
-                    </Form.Item>
-                    <Form.Item>
-                        <Button type="primary" icon={<SaveOutlined />} style={{ backgroundColor: '#5865F2' }}>
-                            应用主题
-                        </Button>
-                    </Form.Item>
-                </Form>
-            ),
-        },
-        {
-            key: '3',
-            label: (
-                <span>
-                    <SafetyOutlined />
-                    安全设置
-                </span>
-            ),
-            children: (
-                <Form layout="vertical">
-                    <Form.Item label="注册限制">
-                        <Switch checkedChildren="开放注册" unCheckedChildren="停止注册" defaultChecked />
-                    </Form.Item>
-                    <Form.Item label="密码强度要求">
-                        <Select defaultValue="medium">
-                            <Select.Option value="low">低 (仅长度限制)</Select.Option>
-                            <Select.Option value="medium">中 (需包含字母和数字)</Select.Option>
-                            <Select.Option value="high">高 (需包含特殊字符)</Select.Option>
-                        </Select>
-                    </Form.Item>
-                    <Form.Item>
-                        <Button type="primary" style={{ backgroundColor: '#5865F2' }}>
-                            更新安全策略
-                        </Button>
-                    </Form.Item>
-                </Form>
-            ),
-        },
-        {
-            key: '4',
-            label: (
-                <span>
-                    <BellOutlined />
-                    通知设置
-                </span>
-            ),
-            children: (
-                <List
-                    dataSource={[
-                        { title: '新订单通知', desc: '当有新订单创建时发送通知' },
-                        { title: '用户注册通知', desc: '当有新用户注册时发送通知' },
-                        { title: '系统异常报警', desc: '系统发生严重错误时发送邮件报警' },
-                    ]}
-                    renderItem={(item: { title: string; desc: string }) => (
-                        <List.Item extra={<Switch defaultChecked />}>
-                            <List.Item.Meta
-                                title={<span style={{ color: '#fff' }}>{item.title}</span>}
-                                description={<span style={{ color: 'rgba(255,255,255,0.45)' }}>{item.desc}</span>}
-                            />
-                        </List.Item>
-                    )}
-                />
-            ),
-        },
-        {
-            key: '5',
-            label: (
-                <span>
                     <StarOutlined />
                     评价设置
                 </span>
@@ -325,6 +204,12 @@ const Settings: React.FC = () => {
                             </Descriptions.Item>
                             <Descriptions.Item label="每页显示数量">
                                 {currentReviewSettings?.pageSize || '-'} 条
+                            </Descriptions.Item>
+                            <Descriptions.Item label="自动批准">
+                                {currentReviewSettings?.autoApprove ? '开启' : '关闭'}
+                            </Descriptions.Item>
+                            <Descriptions.Item label="自动批准最低评分">
+                                {currentReviewSettings?.autoApproveMinRating || '-'} 星
                             </Descriptions.Item>
                         </Descriptions>
                     </Card>
@@ -381,19 +266,64 @@ const Settings: React.FC = () => {
                             <InputNumber min={5} max={50} style={{ width: 120 }} suffix="条" />
                         </Form.Item>
 
+                        <Divider orientation="left">审核设置</Divider>
+
+                        <Form.Item
+                            name="autoApprove"
+                            label="自动批准评价"
+                            tooltip="开启后，符合条件的评价将自动批准，无需人工审核"
+                            valuePropName="checked"
+                        >
+                            <Switch checkedChildren="开启" unCheckedChildren="关闭" />
+                        </Form.Item>
+
+                        <Form.Item
+                            noStyle
+                            shouldUpdate={(prevValues, currentValues) => prevValues.autoApprove !== currentValues.autoApprove}
+                        >
+                            {({ getFieldValue }) => 
+                                getFieldValue('autoApprove') ? (
+                                    <Form.Item
+                                        name="autoApproveMinRating"
+                                        label="自动批准最低评分"
+                                        tooltip="只有评分大于等于此值的评价才会自动批准"
+                                        rules={[
+                                            { required: true, message: '请选择最低评分' },
+                                        ]}
+                                    >
+                                        <Select style={{ width: 120 }}>
+                                            <Select.Option value={1}>1 星及以上</Select.Option>
+                                            <Select.Option value={2}>2 星及以上</Select.Option>
+                                            <Select.Option value={3}>3 星及以上</Select.Option>
+                                            <Select.Option value={4}>4 星及以上</Select.Option>
+                                            <Select.Option value={5}>仅 5 星</Select.Option>
+                                        </Select>
+                                    </Form.Item>
+                                ) : null
+                            }
+                        </Form.Item>
+
                         <Divider />
 
                         <Form.Item>
                             <Space>
-                                <Button
-                                    type="primary"
-                                    icon={<SaveOutlined />}
-                                    onClick={handleSaveReviewSettings}
-                                    loading={reviewSaving}
-                                    style={{ backgroundColor: '#5865F2' }}
-                                >
-                                    保存设置
-                                </Button>
+                                {permissions.canUpdateReviewSettings ? (
+                                    <Button
+                                        type="primary"
+                                        icon={<SaveOutlined />}
+                                        onClick={handleSaveReviewSettings}
+                                        loading={reviewSaving}
+                                        style={{ backgroundColor: '#5865F2' }}
+                                    >
+                                        保存设置
+                                    </Button>
+                                ) : (
+                                    <Tooltip title="无修改权限">
+                                        <Button type="primary" icon={<SaveOutlined />} disabled>
+                                            保存设置
+                                        </Button>
+                                    </Tooltip>
+                                )}
                                 <Button icon={<UndoOutlined />} onClick={handleRevertReviewSettings}>
                                     恢复当前
                                 </Button>
@@ -411,7 +341,7 @@ const Settings: React.FC = () => {
             ),
         },
         {
-            key: '6',
+            key: '2',
             label: (
                 <span>
                     <SyncOutlined />
@@ -419,60 +349,132 @@ const Settings: React.FC = () => {
                 </span>
             ),
             children: (
-                <Space direction="vertical" size="large" style={{ width: '100%' }}>
-                    <Alert
-                        message="系统初始化说明"
-                        description={
+                <div style={{ maxWidth: 800 }}>
+                    {/* 初始化状态卡片 */}
+                    <Card 
+                        style={{ marginBottom: 24, borderRadius: 12 }}
+                        styles={{ body: { padding: 24 } }}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
                             <div>
-                                <Paragraph style={{ marginBottom: 8 }}>
-                                    系统初始化会执行以下操作：
-                                </Paragraph>
-                                <ul style={{ marginBottom: 0, paddingLeft: 20 }}>
-                                    <li>同步前端菜单配置到后端数据库</li>
-                                    <li>同步前端权限配置到后端数据库</li>
-                                    <li>为超级管理员自动分配所有权限</li>
-                                </ul>
-                            </div>
-                        }
-                        type="info"
-                        showIcon
-                    />
-
-                    <Card size="small" title="初始化状态">
-                        <Space direction="vertical" style={{ width: '100%' }}>
-                            <div>
-                                <Text type="secondary">上次初始化时间：</Text>
-                                <Text strong style={{ marginLeft: 8 }}>
+                                <Text type="secondary" style={{ fontSize: 13 }}>上次初始化时间</Text>
+                                <div style={{ fontSize: 18, fontWeight: 500, marginTop: 4 }}>
                                     {formatLastInitTime()}
-                                </Text>
+                                </div>
                             </div>
-                            <Button
-                                type="primary"
-                                size="large"
-                                icon={<SyncOutlined spin={initializing} />}
-                                onClick={handleInit}
-                                loading={initializing}
-                                style={{ backgroundColor: '#5865F2', width: '100%' }}
-                            >
-                                {initializing ? '正在初始化...' : '立即初始化'}
-                            </Button>
+                            {permissions.canInit ? (
+                                <Button
+                                    type="primary"
+                                    size="large"
+                                    icon={<SyncOutlined spin={initializing} />}
+                                    onClick={handleInit}
+                                    loading={initializing}
+                                    style={{ 
+                                        backgroundColor: '#5865F2', 
+                                        height: 48,
+                                        paddingLeft: 32,
+                                        paddingRight: 32,
+                                        borderRadius: 8,
+                                        fontSize: 15,
+                                    }}
+                                >
+                                    {initializing ? '正在初始化...' : '立即初始化'}
+                                </Button>
+                            ) : (
+                                <Tooltip title="无初始化权限">
+                                    <Button
+                                        type="primary"
+                                        size="large"
+                                        icon={<SyncOutlined />}
+                                        disabled
+                                        style={{ 
+                                            height: 48,
+                                            paddingLeft: 32,
+                                            paddingRight: 32,
+                                            borderRadius: 8,
+                                            fontSize: 15,
+                                        }}
+                                    >
+                                        立即初始化
+                                    </Button>
+                                </Tooltip>
+                            )}
+                        </div>
+                    </Card>
+
+                    {/* 初始化说明 */}
+                    <Card 
+                        size="small" 
+                        title={<span><Text strong>初始化操作说明</Text></span>}
+                        style={{ marginBottom: 16, borderRadius: 12 }}
+                    >
+                        <Space direction="vertical" size={12} style={{ width: '100%' }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                                <div style={{ 
+                                    width: 24, height: 24, borderRadius: '50%', 
+                                    backgroundColor: 'rgba(88, 101, 242, 0.1)', 
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    flexShrink: 0, marginTop: 2
+                                }}>
+                                    <Text style={{ color: '#5865F2', fontSize: 12, fontWeight: 600 }}>1</Text>
+                                </div>
+                                <div>
+                                    <Text strong>同步菜单配置</Text>
+                                    <Paragraph type="secondary" style={{ margin: 0, fontSize: 13 }}>
+                                        将前端定义的菜单结构同步到后端数据库
+                                    </Paragraph>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                                <div style={{ 
+                                    width: 24, height: 24, borderRadius: '50%', 
+                                    backgroundColor: 'rgba(88, 101, 242, 0.1)', 
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    flexShrink: 0, marginTop: 2
+                                }}>
+                                    <Text style={{ color: '#5865F2', fontSize: 12, fontWeight: 600 }}>2</Text>
+                                </div>
+                                <div>
+                                    <Text strong>同步权限配置</Text>
+                                    <Paragraph type="secondary" style={{ margin: 0, fontSize: 13 }}>
+                                        将前端定义的权限码同步到后端数据库
+                                    </Paragraph>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                                <div style={{ 
+                                    width: 24, height: 24, borderRadius: '50%', 
+                                    backgroundColor: 'rgba(88, 101, 242, 0.1)', 
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    flexShrink: 0, marginTop: 2
+                                }}>
+                                    <Text style={{ color: '#5865F2', fontSize: 12, fontWeight: 600 }}>3</Text>
+                                </div>
+                                <div>
+                                    <Text strong>分配超管权限</Text>
+                                    <Paragraph type="secondary" style={{ margin: 0, fontSize: 13 }}>
+                                        为超级管理员自动分配所有系统权限
+                                    </Paragraph>
+                                </div>
+                            </div>
                         </Space>
                     </Card>
 
+                    {/* 注意事项 */}
                     <Alert
                         message="注意事项"
                         description={
-                            <ul style={{ marginBottom: 0, paddingLeft: 20 }}>
-                                <li>初始化过程可能需要几秒钟，请耐心等待</li>
+                            <ul style={{ marginBottom: 0, paddingLeft: 20, lineHeight: 2 }}>
+                                <li>初始化过程通常需要 2-5 秒，请耐心等待</li>
                                 <li>初始化不会影响现有的用户数据和业务数据</li>
                                 <li>建议在系统升级或配置变更后执行初始化</li>
-                                <li>普通管理员执行初始化不会影响超级管理员权限</li>
                             </ul>
                         }
-                        type="warning"
+                        type="info"
                         showIcon
+                        style={{ borderRadius: 8 }}
                     />
-                </Space>
+                </div>
             ),
         },
     ];

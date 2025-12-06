@@ -1194,6 +1194,7 @@ func RegisterContentRoutes(
 
 	// 内容统计
 	group.GET("/content/stats", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/content/stats"), contentHandler.GetContentStats)
+	group.GET("/content/stats/export", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/content/stats/export"), contentHandler.ExportContentStats)
 
 	// 内容分类管理
 	group.GET("/content/categories", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/content/categories"), categoryHandler.List)

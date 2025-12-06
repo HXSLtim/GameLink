@@ -15,6 +15,7 @@ import {
   Modal,
   Form,
   Popconfirm,
+  Tooltip,
 } from 'antd';
 import {
   SearchOutlined,
@@ -39,9 +40,17 @@ import {
   SENSITIVE_WORD_SEVERITY_TEXT,
   SENSITIVE_WORD_SEVERITY_COLOR,
 } from '@/types/review';
+import { usePermissions } from '@/hooks/usePermission';
 
 const SensitiveWords: React.FC = () => {
   const [form] = Form.useForm<SensitiveWordFormData>();
+
+  // 权限检查
+  const permissions = usePermissions({
+    canCreate: 'sensitive_word.create',
+    canUpdate: 'sensitive_word.update',
+    canDelete: 'sensitive_word.delete',
+  });
 
   // 状态
   const [loading, setLoading] = useState(false);
@@ -229,24 +238,40 @@ const SensitiveWords: React.FC = () => {
       width: 150,
       render: (_: unknown, record: SensitiveWord) => (
         <Space size="small">
-          <Button
-            type="link"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => openEditModal(record)}
-          >
-            编辑
-          </Button>
-          <Popconfirm
-            title="确定要删除这个敏感词吗？"
-            onConfirm={() => handleDelete(record.id)}
-            okText="确定"
-            cancelText="取消"
-          >
-            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
-              删除
+          {permissions.canUpdate ? (
+            <Button
+              type="link"
+              size="small"
+              icon={<EditOutlined />}
+              onClick={() => openEditModal(record)}
+            >
+              编辑
             </Button>
-          </Popconfirm>
+          ) : (
+            <Tooltip title="无编辑权限">
+              <Button type="link" size="small" icon={<EditOutlined />} disabled>
+                编辑
+              </Button>
+            </Tooltip>
+          )}
+          {permissions.canDelete ? (
+            <Popconfirm
+              title="确定要删除这个敏感词吗？"
+              onConfirm={() => handleDelete(record.id)}
+              okText="确定"
+              cancelText="取消"
+            >
+              <Button type="link" size="small" danger icon={<DeleteOutlined />}>
+                删除
+              </Button>
+            </Popconfirm>
+          ) : (
+            <Tooltip title="无删除权限">
+              <Button type="link" size="small" danger icon={<DeleteOutlined />} disabled>
+                删除
+              </Button>
+            </Tooltip>
+          )}
         </Space>
       ),
     },
@@ -295,9 +320,17 @@ const SensitiveWords: React.FC = () => {
         <Button icon={<ReloadOutlined />} onClick={handleReset}>
           重置
         </Button>
-        <Button type="primary" icon={<PlusOutlined />} onClick={openAddModal}>
-          添加敏感词
-        </Button>
+        {permissions.canCreate ? (
+          <Button type="primary" icon={<PlusOutlined />} onClick={openAddModal}>
+            添加敏感词
+          </Button>
+        ) : (
+          <Tooltip title="无添加权限">
+            <Button type="primary" icon={<PlusOutlined />} disabled>
+              添加敏感词
+            </Button>
+          </Tooltip>
+        )}
       </Space>
 
       {/* 表格 */}

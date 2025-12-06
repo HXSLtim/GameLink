@@ -218,6 +218,7 @@ func (r *Router) registerAdminRoutes(api *gin.RouterGroup) {
 	adminhandler.RegisterRoutes(rbacGroup, r.adminSvc, statsSvc, r.permMiddleware)
 	adminhandler.RegisterStatsRoutes(rbacGroup, statsSvc, r.permMiddleware)
 	adminhandler.RegisterReviewStatsRoutes(rbacGroup, r.services.reviewStatsSvc, r.permMiddleware)
+	adminhandler.RegisterReviewSettingsRoutes(rbacGroup, r.services.reviewSettingsSvc, r.permMiddleware)
 
 	// 创建菜单服务用于批量同步
 	menuSvc := menuservice.NewMenuService(adminrepo.NewMenuRepository(r.orm))
@@ -414,6 +415,10 @@ func (r *Router) registerContentRoutes(rbacGroup *gin.RouterGroup) {
 	categoryHandler := adminhandler.NewContentCategoryHandler(r.services.contentCategorySvc)
 
 	adminhandler.RegisterContentRoutes(rbacGroup, contentHandler, categoryHandler, r.permMiddleware)
+
+	// Sensitive word routes (敏感词管理)
+	sensitiveWordHandler := adminhandler.NewSensitiveWordHandler(r.services.sensitiveWordSvc)
+	adminhandler.RegisterSensitiveWordRoutes(rbacGroup, sensitiveWordHandler, r.permMiddleware)
 }
 
 // resolveGinMode 解析 Gin 运行模式

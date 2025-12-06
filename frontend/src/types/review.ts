@@ -184,6 +184,8 @@ export interface ReviewDisplaySettings {
   minScore: number;
   showAnonymous: boolean;
   pageSize: number;
+  autoApprove: boolean;
+  autoApproveMinRating: number;
   updatedAt?: string;
 }
 
@@ -241,6 +243,8 @@ export interface UpdateSettingsFormData {
   minScore: number;
   showAnonymous: boolean;
   pageSize: number;
+  autoApprove?: boolean;
+  autoApproveMinRating?: number;
 }
 
 // ==================== 常量映射 ====================

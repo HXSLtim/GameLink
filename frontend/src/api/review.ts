@@ -51,8 +51,8 @@ export const reviewApi = {
     apiClient.get<ApiResponse<Review[]>>('/admin/reviews/pending', { params }),
 
   // 批准评价
-  approveReview: (id: number) =>
-    apiClient.put<ApiResponse<{ message: string }>>(`/admin/reviews/${id}/approve`),
+  approveReview: (id: number, reason?: string) =>
+    apiClient.put<ApiResponse<{ message: string }>>(`/admin/reviews/${id}/approve`, { reason }),
 
   // 拒绝评价
   rejectReview: (id: number, reason: string) =>

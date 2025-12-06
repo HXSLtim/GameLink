@@ -10,8 +10,7 @@ import LazyLoad from '@/components/common/LazyLoad';
 import AdminLayout from '@/layouts/AdminLayout/index';
 
 // 直接导入的页面
-import Login from '@/pages/auth/Login';
-import Register from '@/pages/auth/Register';
+import Auth from '@/pages/auth/Auth';
 import NotFound from '@/pages/NotFound';
 
 // 懒加载Admin页面
@@ -54,16 +53,15 @@ const ServiceItemForm = lazy(() => import('@/pages/biz/service/form'));
 const ServiceItemDetail = lazy(() => import('@/pages/biz/service/detail'));
 
 export const routes: RouteConfig[] = [
-    // 登录页
+    // 登录/注册页（Tab 切换）
     {
         path: '/login',
-        element: <Login />,
+        element: <Auth />,
         meta: { title: '登录' }
     },
-    // 注册页
     {
         path: '/register',
-        element: <Register />,
+        element: <Auth />,
         meta: { title: '注册' }
     },
     // 重定向首页到管理端
