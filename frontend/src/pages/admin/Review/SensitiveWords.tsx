@@ -11,11 +11,11 @@ import {
   Button,
   Space,
   Tag,
-  message,
   Modal,
   Form,
   Popconfirm,
   Tooltip,
+  App,
 } from 'antd';
 import {
   SearchOutlined,
@@ -44,12 +44,13 @@ import { usePermissions } from '@/hooks/usePermission';
 
 const SensitiveWords: React.FC = () => {
   const [form] = Form.useForm<SensitiveWordFormData>();
+  const { message } = App.useApp();
 
   // 权限检查
   const permissions = usePermissions({
-    canCreate: 'sensitive_word.create',
-    canUpdate: 'sensitive_word.update',
-    canDelete: 'sensitive_word.delete',
+    canCreate: 'admin.sensitive-words.create',
+    canUpdate: 'admin.sensitive-words.update',
+    canDelete: 'admin.sensitive-words.delete',
   });
 
   // 状态
@@ -82,13 +83,13 @@ const SensitiveWords: React.FC = () => {
       };
       const response = await sensitiveWordApi.getWords(params) as unknown as {
         success: boolean;
-        data: { items: SensitiveWord[]; total: number };
+        data: { words: SensitiveWord[]; total: number };
       };
       if (response.success) {
-        setWords(response.data.items || []);
+        setWords(response.data?.words || []);
         setPagination(prev => ({
           ...prev,
-          total: response.data.total,
+          total: response.data?.total || 0,
         }));
       }
     } catch {

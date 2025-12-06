@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { message } from 'antd';
@@ -22,9 +22,15 @@ const RouteGuard = ({ children, roles, requiresAuth, permission }: RouteGuardPro
     const userRole = rawRole ? (rawRole.toUpperCase() as Role) : null;
     const isAuthenticated = !!userRole;
 
-    // Check permission only when permission is defined and not empty
-    const needsPermissionCheck = !!permission && permission.length > 0;
-    const { hasPermission, loading: permissionLoading } = usePermission(needsPermissionCheck ? permission : '');
+    // Always call usePermission with a stable value - never conditionally
+    // Pass the permission as-is, usePermission handles empty strings internally
+    const { hasPermission, loading: permissionLoading } = usePermission(permission || '');
+    
+    // Compute whether we need permission check after hooks
+    const needsPermissionCheck = useMemo(
+        () => !!permission && permission.length > 0,
+        [permission]
+    );
 
     useEffect(() => {
         if (requiresAuth && !isAuthenticated) {

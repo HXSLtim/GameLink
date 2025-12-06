@@ -21,9 +21,9 @@ const StatsPage: React.FC = () => {
   const fetchStats = async () => {
     setLoading(true);
     try {
-      const res = await contentStatsApi.getStats(days);
-      if (res.data.success) {
-        setStats(res.data.data);
+      const res = await contentStatsApi.getStats(days) as unknown as { success: boolean; data: ContentStatsDTO };
+      if (res.success) {
+        setStats(res.data);
       }
     } catch {
       message.error('获取统计数据失败');
@@ -67,7 +67,7 @@ const StatsPage: React.FC = () => {
 
   useEffect(() => {
     fetchStats();
-  }, [days]);
+  }, [days, fetchStats]);
 
   const trendColumns: ColumnsType<ContentTrend> = [
     { title: '日期', dataIndex: 'date', key: 'date' },
@@ -95,7 +95,7 @@ const StatsPage: React.FC = () => {
               title="待审核动态"
               value={stats?.stats?.pendingFeeds || 0}
               prefix={<ClockCircleOutlined />}
-              valueStyle={{ color: '#faad14' }}
+              styles={{ content: { color: '#faad14' } }}
             />
           </Card>
         </Col>
@@ -105,7 +105,7 @@ const StatsPage: React.FC = () => {
               title="已通过动态"
               value={stats?.stats?.approvedFeeds || 0}
               prefix={<CheckCircleOutlined />}
-              valueStyle={{ color: '#52c41a' }}
+              styles={{ content: { color: '#52c41a' } }}
             />
           </Card>
         </Col>
@@ -115,7 +115,7 @@ const StatsPage: React.FC = () => {
               title="已拒绝动态"
               value={stats?.stats?.rejectedFeeds || 0}
               prefix={<CloseCircleOutlined />}
-              valueStyle={{ color: '#ff4d4f' }}
+              styles={{ content: { color: '#ff4d4f' } }}
             />
           </Card>
         </Col>
@@ -134,7 +134,7 @@ const StatsPage: React.FC = () => {
               title="标记消息数"
               value={stats?.stats?.flaggedMessages || 0}
               prefix={<WarningOutlined />}
-              valueStyle={{ color: '#faad14' }}
+              styles={{ content: { color: '#faad14' } }}
             />
           </Card>
         </Col>
@@ -154,7 +154,7 @@ const StatsPage: React.FC = () => {
               value={stats?.stats?.reportHandleRate || 0}
               suffix="%"
               precision={1}
-              valueStyle={{ color: '#52c41a' }}
+              styles={{ content: { color: '#52c41a' } }}
             />
           </Card>
         </Col>

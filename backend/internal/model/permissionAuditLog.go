@@ -7,14 +7,17 @@ type AuditAction string
 
 // AuditAction values define the types of audit actions.
 const (
-	AuditActionCreate        AuditAction = "create"
-	AuditActionUpdate        AuditAction = "update"
-	AuditActionDelete        AuditAction = "delete"
-	AuditActionAssign        AuditAction = "assign"
-	AuditActionRevoke        AuditAction = "revoke"
-	AuditActionBatchAssign   AuditAction = "batch_assign"
-	AuditActionBatchRevoke   AuditAction = "batch_revoke"
-	AuditActionInheritChange AuditAction = "inherit_change"
+	AuditActionCreate           AuditAction = "create"
+	AuditActionUpdate           AuditAction = "update"
+	AuditActionDelete           AuditAction = "delete"
+	AuditActionAssign           AuditAction = "assign"
+	AuditActionRevoke           AuditAction = "revoke"
+	AuditActionBatchAssign      AuditAction = "batch_assign"
+	AuditActionBatchRevoke      AuditAction = "batch_revoke"
+	AuditActionInheritChange    AuditAction = "inherit_change"
+	AuditActionAssignPermission AuditAction = "assign_permission" // 批量分配权限
+	AuditActionAddPermission    AuditAction = "add_permission"    // 添加单个权限
+	AuditActionRemovePermission AuditAction = "remove_permission" // 移除单个权限
 )
 
 // AuditTargetType defines the type of target being audited.

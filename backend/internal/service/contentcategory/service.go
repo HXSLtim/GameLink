@@ -70,8 +70,8 @@ type ListRequest struct {
 
 // ListResponse 列出分类响应
 type ListResponse struct {
-	Categories []CategoryDTO `json:"categories"`
-	Total      int64         `json:"total"`
+	Items []CategoryDTO `json:"items"`
+	Total int64         `json:"total"`
 }
 
 // Create 创建分类
@@ -135,8 +135,8 @@ func (s *ContentCategoryService) List(ctx context.Context, req ListRequest) (*Li
 	}
 
 	return &ListResponse{
-		Categories: dtos,
-		Total:      total,
+		Items: dtos,
+		Total: total,
 	}, nil
 }
 

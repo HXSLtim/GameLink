@@ -440,35 +440,77 @@ const OrderPage: React.FC = () => {
                 open={refundModalVisible}
                 onOk={handleRefund}
                 onCancel={() => setRefundModalVisible(false)}
+                width={550}
             >
-                <Form form={refundForm} layout="vertical">
-                    <Form.Item label="订单号">
-                        <Text>{currentOrder?.orderNo}</Text>
-                    </Form.Item>
-                    <Form.Item
-                        name="amount"
-                        label="退款金额"
-                        rules={[
-                            { required: true, message: '请输入退款金额' },
-                            { type: 'number', max: currentOrder?.amount, message: `退款金额不能超过 ¥${currentOrder?.amount}` },
-                        ]}
-                    >
-                        <InputNumber
-                            min={0.01}
-                            max={currentOrder?.amount}
-                            precision={2}
-                            prefix="¥"
-                            style={{ width: '100%' }}
-                        />
-                    </Form.Item>
-                    <Form.Item
-                        name="reason"
-                        label="退款原因"
-                        rules={[{ required: true, message: '请输入退款原因' }]}
-                    >
-                        <Input.TextArea rows={3} placeholder="请输入退款原因" />
-                    </Form.Item>
-                </Form>
+                {currentOrder && (
+                    <>
+                        {/* 订单信息概览 */}
+                        <Card size="small" style={{ marginBottom: 16, backgroundColor: '#fafafa' }}>
+                            <Descriptions column={2} size="small">
+                                <Descriptions.Item label="订单号" span={2}>
+                                    <Text copyable>{currentOrder.orderNo}</Text>
+                                </Descriptions.Item>
+                                <Descriptions.Item label="用户">
+                                    <Space>
+                                        <Avatar size="small" icon={<UserOutlined />} src={currentOrder.userAvatar || undefined} />
+                                        {currentOrder.userName}
+                                    </Space>
+                                </Descriptions.Item>
+                                <Descriptions.Item label="陪玩师">
+                                    <Space>
+                                        <Avatar size="small" icon={<UserOutlined />} src={currentOrder.playerAvatar || undefined} style={{ backgroundColor: '#722ed1' }} />
+                                        {currentOrder.playerName}
+                                    </Space>
+                                </Descriptions.Item>
+                                <Descriptions.Item label="游戏">{currentOrder.gameName}</Descriptions.Item>
+                                <Descriptions.Item label="服务">{currentOrder.serviceName}</Descriptions.Item>
+                                <Descriptions.Item label="时长">{currentOrder.duration}小时</Descriptions.Item>
+                                <Descriptions.Item label="订单金额">
+                                    <Text strong style={{ color: '#f5222d' }}>¥{currentOrder.amount}</Text>
+                                </Descriptions.Item>
+                                <Descriptions.Item label="订单状态">
+                                    <Tag color={statusMap[currentOrder.status].color}>
+                                        {statusMap[currentOrder.status].text}
+                                    </Tag>
+                                </Descriptions.Item>
+                                <Descriptions.Item label="支付状态">
+                                    <Tag color={paymentStatusMap[currentOrder.paymentStatus].color}>
+                                        {paymentStatusMap[currentOrder.paymentStatus].text}
+                                    </Tag>
+                                </Descriptions.Item>
+                            </Descriptions>
+                        </Card>
+
+                        <Divider style={{ margin: '12px 0' }} />
+
+                        <Form form={refundForm} layout="vertical">
+                            <Form.Item
+                                name="amount"
+                                label="退款金额"
+                                rules={[
+                                    { required: true, message: '请输入退款金额' },
+                                    { type: 'number', max: currentOrder.amount, message: `退款金额不能超过 ¥${currentOrder.amount}` },
+                                ]}
+                                extra={`最大可退款金额: ¥${currentOrder.amount}`}
+                            >
+                                <InputNumber
+                                    min={0.01}
+                                    max={currentOrder.amount}
+                                    precision={2}
+                                    prefix="¥"
+                                    style={{ width: '100%' }}
+                                />
+                            </Form.Item>
+                            <Form.Item
+                                name="reason"
+                                label="退款原因"
+                                rules={[{ required: true, message: '请输入退款原因' }]}
+                            >
+                                <Input.TextArea rows={3} placeholder="请输入退款原因" />
+                            </Form.Item>
+                        </Form>
+                    </>
+                )}
             </Modal>
         </PageContainer>
     );

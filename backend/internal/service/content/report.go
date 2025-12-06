@@ -45,15 +45,30 @@ func NewFeedReportService(
 
 // FeedReportDTO 动态举报DTO
 type FeedReportDTO struct {
-	ID         uint64  `json:"id"`
-	FeedID     uint64  `json:"feedId"`
-	ReporterID uint64  `json:"reporterId"`
-	Reason     string  `json:"reason"`
-	Status     string  `json:"status"`
-	Result     string  `json:"result,omitempty"`
-	HandledBy  *uint64 `json:"handledBy,omitempty"`
-	HandledAt  string  `json:"handledAt,omitempty"`
-	CreatedAt  string  `json:"createdAt"`
+	ID           uint64       `json:"id"`
+	FeedID       uint64       `json:"feedId"`
+	Feed         *FeedSummary `json:"feed,omitempty"`
+	ReporterID   uint64       `json:"reporterId"`
+	ReporterName string       `json:"reporterName,omitempty"`
+	Reason       string       `json:"reason"`
+	Status       string       `json:"status"`
+	Result       string       `json:"result,omitempty"`
+	HandledBy    *uint64      `json:"handledBy,omitempty"`
+	HandlerName  string       `json:"handlerName,omitempty"`
+	HandledAt    string       `json:"handledAt,omitempty"`
+	CreatedAt    string       `json:"createdAt"`
+}
+
+// FeedSummary 动态摘要（用于举报详情）
+type FeedSummary struct {
+	ID               uint64   `json:"id"`
+	AuthorID         uint64   `json:"authorId"`
+	AuthorName       string   `json:"authorName,omitempty"`
+	AuthorAvatar     string   `json:"authorAvatar,omitempty"`
+	Content          string   `json:"content"`
+	Images           []string `json:"images,omitempty"`
+	ModerationStatus string   `json:"moderationStatus"`
+	CreatedAt        string   `json:"createdAt"`
 }
 
 // ListFeedReportsRequest 列出动态举报请求
@@ -69,8 +84,8 @@ type ListFeedReportsRequest struct {
 
 // ListFeedReportsResponse 列出动态举报响应
 type ListFeedReportsResponse struct {
-	Reports []FeedReportDTO `json:"reports"`
-	Total   int64           `json:"total"`
+	Items []FeedReportDTO `json:"items"`
+	Total int64           `json:"total"`
 }
 
 // ProcessReportRequest 处理举报请求
@@ -103,12 +118,13 @@ func (s *FeedReportService) ListFeedReports(ctx context.Context, req ListFeedRep
 
 	dtos := make([]FeedReportDTO, 0, len(reports))
 	for _, r := range reports {
-		dtos = append(dtos, *s.toReportDTO(&r))
+		// 包含动态内容，方便管理员审核
+		dtos = append(dtos, *s.toReportDTOWithFeed(ctx, &r))
 	}
 
 	return &ListFeedReportsResponse{
-		Reports: dtos,
-		Total:   total,
+		Items: dtos,
+		Total: total,
 	}, nil
 }
 
@@ -186,5 +202,29 @@ func (s *FeedReportService) toReportDTO(report *model.FeedReport) *FeedReportDTO
 	if report.HandledAt != nil {
 		dto.HandledAt = report.HandledAt.Format("2006-01-02 15:04:05")
 	}
+	return dto
+}
+
+// toReportDTOWithFeed 转换为DTO并包含动态内容
+func (s *FeedReportService) toReportDTOWithFeed(ctx context.Context, report *model.FeedReport) *FeedReportDTO {
+	dto := s.toReportDTO(report)
+
+	// 获取动态内容
+	feed, err := s.feedRepo.Get(ctx, report.FeedID)
+	if err == nil && feed != nil {
+		images := make([]string, 0)
+		for _, img := range feed.Images {
+			images = append(images, img.URL)
+		}
+		dto.Feed = &FeedSummary{
+			ID:               feed.ID,
+			AuthorID:         feed.AuthorID,
+			Content:          feed.Content,
+			Images:           images,
+			ModerationStatus: string(feed.ModerationStatus),
+			CreatedAt:        feed.CreatedAt.Format("2006-01-02 15:04:05"),
+		}
+	}
+
 	return dto
 }

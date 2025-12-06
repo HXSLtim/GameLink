@@ -16,11 +16,17 @@ type Permission = model.Permission
 // PermissionHandler 权限管理处理器
 type PermissionHandler struct {
 	permissionSvc *permissionservice.PermissionService
+	roleSvc       *permissionservice.RoleService
 }
 
 // NewPermissionHandler 创建权限处理器实例
 func NewPermissionHandler(permissionSvc *permissionservice.PermissionService) *PermissionHandler {
 	return &PermissionHandler{permissionSvc: permissionSvc}
+}
+
+// NewPermissionHandlerWithRoleService 创建带角色服务的权限处理器实例
+func NewPermissionHandlerWithRoleService(permissionSvc *permissionservice.PermissionService, roleSvc *permissionservice.RoleService) *PermissionHandler {
+	return &PermissionHandler{permissionSvc: permissionSvc, roleSvc: roleSvc}
 }
 
 // ListPermissions 获取权限列表
@@ -460,11 +466,12 @@ func (h *PermissionHandler) GetPermissionTreeByGroup(c *gin.Context) {
 
 // GetCurrentUserPermissions 获取当前管理员的权限列表
 // @Summary      获取当前用户权限
-// @Description  返回当前登录管理员拥有的权限码列表
+// @Description  返回当前登录管理员拥有的权限码列表，超级管理员返回 ['*']
 // @Tags         Admin - Permissions
 // @Security     BearerAuth
-// @Success      200  {object}  model.APIResponse[[]model.Permission]
+// @Success      200  {object}  model.APIResponse[[]string]
 // @Router       /admin/permissions/me [get]
+// @Router       /admin/me/permissions [get]
 func (h *PermissionHandler) GetCurrentUserPermissions(c *gin.Context) {
 	userIDVal, ok := c.Get(middleware.UserIDKey)
 	if !ok {
@@ -472,6 +479,22 @@ func (h *PermissionHandler) GetCurrentUserPermissions(c *gin.Context) {
 		return
 	}
 	userID, _ := userIDVal.(uint64)
+
+	// 检查是否为超级管理员（Requirements 5.3）
+	if h.roleSvc != nil {
+		isSuperAdmin, err := h.roleSvc.CheckUserIsSuperAdmin(c.Request.Context(), userID)
+		if err == nil && isSuperAdmin {
+			// 超级管理员返回 ['*']
+			writeJSON(c, http.StatusOK, model.APIResponse[[]string]{
+				Success: true,
+				Code:    http.StatusOK,
+				Message: "OK",
+				Data:    []string{"*"},
+			})
+			return
+		}
+	}
+
 	perms, err := h.permissionSvc.ListPermissionsByUserID(c.Request.Context(), userID)
 	if err != nil {
 		writeJSONError(c, http.StatusInternalServerError, err.Error())

@@ -37,10 +37,10 @@ const CategoriesPage: React.FC = () => {
       const params: Record<string, unknown> = { page, pageSize };
       if (keyword) params.keyword = keyword;
       if (status) params.status = status;
-      const res = await contentCategoryApi.getCategories(params);
-      if (res.data.success) {
-        setCategories(res.data.data.items || []);
-        setTotal(res.data.data.total || 0);
+      const res = await contentCategoryApi.getCategories(params) as unknown as { success: boolean; data: { items: ContentCategory[]; total: number } };
+      if (res.success) {
+        setCategories(res.data?.items || []);
+        setTotal(res.data?.total || 0);
       }
     } catch {
       message.error('获取分类列表失败');

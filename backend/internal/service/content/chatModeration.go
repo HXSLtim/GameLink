@@ -60,8 +60,8 @@ type ListMessagesRequest struct {
 
 // ListMessagesResponse 列出消息响应
 type ListMessagesResponse struct {
-	Messages []ChatMessageDTO `json:"messages"`
-	Total    int64            `json:"total"`
+	Items []ChatMessageDTO `json:"items"`
+	Total int64            `json:"total"`
 }
 
 // MuteUserRequest 禁言用户请求
@@ -111,8 +111,8 @@ func (s *ChatModerationService) ListMessages(ctx context.Context, req ListMessag
 	}
 
 	return &ListMessagesResponse{
-		Messages: dtos,
-		Total:    total,
+		Items: dtos,
+		Total: total,
 	}, nil
 }
 

@@ -45,10 +45,10 @@ const ChatMonitorPage: React.FC = () => {
         params.dateFrom = dateRange[0].format('YYYY-MM-DD');
         params.dateTo = dateRange[1].format('YYYY-MM-DD');
       }
-      const res = await chatModerationApi.getMessages(params);
-      if (res.data.success) {
-        setMessages(res.data.data.items || []);
-        setTotal(res.data.data.total || 0);
+      const res = await chatModerationApi.getMessages(params) as unknown as { success: boolean; data: { items: ChatMessage[]; total: number } };
+      if (res.success) {
+        setMessages(res.data?.items || []);
+        setTotal(res.data?.total || 0);
       }
     } catch {
       message.error('获取消息列表失败');
@@ -252,20 +252,51 @@ const ChatMonitorPage: React.FC = () => {
         scroll={{ x: 1100 }}
       />
 
-      {/* 禁言弹窗 */}
+      {/* 禁言弹窗 - 显示用户和违规消息 */}
       <Modal
         title="禁言用户"
         open={muteVisible}
         onOk={handleMute}
         onCancel={() => { setMuteVisible(false); muteForm.resetFields(); }}
       >
+        {currentMessage && (
+          <div style={{ background: '#fff2f0', border: '1px solid #ffccc7', padding: 12, borderRadius: 8, marginBottom: 16 }}>
+            <div style={{ marginBottom: 8 }}>
+              <Tag color="blue">{currentMessage.groupName || `群组${currentMessage.groupId}`}</Tag>
+              <span style={{ fontWeight: 500 }}>{currentMessage.senderName || `用户${currentMessage.senderId}`}</span>
+            </div>
+            <Paragraph style={{ marginBottom: 8 }}>
+              {highlightContent(currentMessage.content, currentMessage.flaggedWords)}
+            </Paragraph>
+            {currentMessage.flaggedWords && currentMessage.flaggedWords.length > 0 && (
+              <div>
+                <span style={{ fontSize: 12, color: '#999' }}>触发敏感词：</span>
+                {currentMessage.flaggedWords.map((word, idx) => (
+                  <Tag key={idx} color="red" style={{ marginLeft: 4 }}>{word}</Tag>
+                ))}
+              </div>
+            )}
+            <div style={{ fontSize: 12, color: '#999', marginTop: 8 }}>
+              发送时间：{dayjs(currentMessage.createdAt).format('YYYY-MM-DD HH:mm:ss')}
+            </div>
+          </div>
+        )}
         <Form form={muteForm} layout="vertical">
           <Form.Item
             name="duration"
-            label="禁言时长（分钟）"
-            rules={[{ required: true, message: '请输入禁言时长' }]}
+            label="禁言时长"
+            rules={[{ required: true, message: '请选择禁言时长' }]}
           >
-            <InputNumber min={1} max={43200} style={{ width: '100%' }} placeholder="1-43200分钟" />
+            <Select placeholder="选择禁言时长">
+              <Select.Option value={10}>10分钟</Select.Option>
+              <Select.Option value={30}>30分钟</Select.Option>
+              <Select.Option value={60}>1小时</Select.Option>
+              <Select.Option value={360}>6小时</Select.Option>
+              <Select.Option value={1440}>1天</Select.Option>
+              <Select.Option value={4320}>3天</Select.Option>
+              <Select.Option value={10080}>7天</Select.Option>
+              <Select.Option value={43200}>30天</Select.Option>
+            </Select>
           </Form.Item>
           <Form.Item name="reason" label="禁言原因">
             <TextArea rows={3} placeholder="请输入禁言原因（可选）" />

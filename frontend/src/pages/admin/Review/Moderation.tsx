@@ -16,6 +16,7 @@ import {
   Image,
   Typography,
   Alert,
+  Switch,
 } from 'antd';
 import {
   CheckOutlined,
@@ -25,8 +26,8 @@ import {
 } from '@ant-design/icons';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import dayjs from 'dayjs';
-import { reviewApi, sensitiveWordApi } from '@/api/review';
-import type { Review, DetectSensitiveWordsResult } from '@/types/review';
+import { reviewApi } from '@/api/review';
+import type { Review } from '@/types/review';
 import SensitiveWordHighlight from './components/SensitiveWordHighlight';
 
 const { TextArea } = Input;
@@ -49,8 +50,17 @@ const ReviewModeration: React.FC = () => {
   const [currentReviewId, setCurrentReviewId] = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState('');
 
-  // 敏感词检测结果缓存
-  const [sensitiveResults, setSensitiveResults] = useState<Record<number, DetectSensitiveWordsResult>>({});
+  // 只显示含敏感词的评价
+  const [onlySensitive, setOnlySensitive] = useState(false);
+
+  // 全部通过加载状态
+  const [approveAllLoading, setApproveAllLoading] = useState(false);
+
+  // 扩展 Review 类型，包含后端返回的敏感词信息
+  interface PendingReview extends Review {
+    hasSensitiveWords?: boolean;
+    sensitiveWords?: string[];
+  }
 
   // 加载待审核评价
   const fetchPendingReviews = useCallback(async () => {
@@ -61,7 +71,7 @@ const ReviewModeration: React.FC = () => {
         pageSize: pagination.pageSize,
       }) as unknown as {
         success: boolean;
-        data: Review[];
+        data: PendingReview[];
         pagination?: { total: number };
       };
       if (response.success) {
@@ -72,8 +82,6 @@ const ReviewModeration: React.FC = () => {
             total: response.pagination!.total,
           }));
         }
-        // 检测敏感词
-        detectSensitiveWords(response.data || []);
       }
     } catch {
       message.error('获取待审核评价失败');
@@ -82,27 +90,6 @@ const ReviewModeration: React.FC = () => {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pagination.current, pagination.pageSize]);
-
-  // 批量检测敏感词
-  const detectSensitiveWords = async (reviewList: Review[]) => {
-    const results: Record<number, DetectSensitiveWordsResult> = {};
-    for (const review of reviewList) {
-      if (review.comment) {
-        try {
-          const response = await sensitiveWordApi.detectWords(review.comment) as unknown as {
-            success: boolean;
-            data: DetectSensitiveWordsResult;
-          };
-          if (response.success) {
-            results[review.id] = response.data;
-          }
-        } catch {
-          // 忽略检测失败
-        }
-      }
-    }
-    setSensitiveResults(results);
-  };
 
   useEffect(() => {
     fetchPendingReviews();
@@ -255,17 +242,21 @@ const ReviewModeration: React.FC = () => {
       dataIndex: 'comment',
       key: 'comment',
       width: 300,
-      render: (comment: string, record: Review) => {
-        const sensitiveResult = sensitiveResults[record.id];
-        if (sensitiveResult?.hasSensitiveWords) {
+      render: (comment: string, record: Review & { hasSensitiveWords?: boolean; sensitiveWords?: string[] }) => {
+        if (record.hasSensitiveWords && record.sensitiveWords?.length) {
           return (
             <div>
               <SensitiveWordHighlight
                 content={comment}
-                detectedWords={sensitiveResult.detectedWords}
+                detectedWords={record.sensitiveWords.map(word => ({
+                  word,
+                  category: 'other' as const,
+                  severity: 'medium' as const,
+                  positions: [],
+                }))}
               />
               <Tag color="red" style={{ marginTop: 4 }}>
-                含敏感词
+                含敏感词: {record.sensitiveWords.join(', ')}
               </Tag>
             </div>
           );
@@ -338,6 +329,44 @@ const ReviewModeration: React.FC = () => {
     onChange: (keys: React.Key[]) => setSelectedRowKeys(keys),
   };
 
+  // 根据筛选条件过滤评价列表
+  const filteredReviews = onlySensitive
+    ? reviews.filter((review: Review & { hasSensitiveWords?: boolean }) => review.hasSensitiveWords)
+    : reviews;
+
+  // 计算不含敏感词的评价数量
+  const nonSensitiveCount = reviews.filter((review: Review & { hasSensitiveWords?: boolean }) => !review.hasSensitiveWords).length;
+
+  // 全部通过（不含敏感词的评价）
+  const handleApproveAllNonSensitive = async () => {
+    if (nonSensitiveCount === 0) {
+      message.warning('没有不含敏感词的评价需要批准');
+      return;
+    }
+    Modal.confirm({
+      title: '全部通过',
+      icon: <ExclamationCircleOutlined />,
+      content: `确定要批准所有不含敏感词的 ${nonSensitiveCount} 条评价吗？`,
+      onOk: async () => {
+        setApproveAllLoading(true);
+        try {
+          const response = await reviewApi.approveAllNonSensitive() as unknown as {
+            success: boolean;
+            data: { count: number };
+          };
+          if (response.success) {
+            message.success(`成功批准 ${response.data?.count || nonSensitiveCount} 条评价`);
+            fetchPendingReviews();
+          }
+        } catch {
+          message.error('操作失败');
+        } finally {
+          setApproveAllLoading(false);
+        }
+      },
+    });
+  };
+
   return (
     <Card title="评价审核">
       {/* 提示信息 */}
@@ -350,7 +379,7 @@ const ReviewModeration: React.FC = () => {
       />
 
       {/* 批量操作按钮 */}
-      <Space style={{ marginBottom: 16 }}>
+      <Space style={{ marginBottom: 16 }} wrap>
         <Button
           type="primary"
           icon={<CheckOutlined />}
@@ -367,19 +396,44 @@ const ReviewModeration: React.FC = () => {
         >
           批量拒绝 {selectedRowKeys.length > 0 && `(${selectedRowKeys.length})`}
         </Button>
+        <Button
+          type="primary"
+          ghost
+          icon={<CheckOutlined />}
+          onClick={handleApproveAllNonSensitive}
+          loading={approveAllLoading}
+          disabled={nonSensitiveCount === 0}
+        >
+          全部通过 ({nonSensitiveCount})
+        </Button>
         <Button icon={<ReloadOutlined />} onClick={fetchPendingReviews}>
           刷新
         </Button>
+        <Space>
+          <Switch
+            checked={onlySensitive}
+            onChange={setOnlySensitive}
+          />
+          <span>只显示含敏感词的评价</span>
+          {onlySensitive && (
+            <Tag color="red">
+              {filteredReviews.length} 条
+            </Tag>
+          )}
+        </Space>
       </Space>
 
       {/* 表格 */}
       <Table
         columns={columns}
-        dataSource={reviews}
+        dataSource={filteredReviews}
         rowKey="id"
         loading={loading}
         rowSelection={rowSelection}
-        pagination={{
+        pagination={onlySensitive ? {
+          showSizeChanger: true,
+          showTotal: (total) => `共 ${total} 条含敏感词`,
+        } : {
           ...pagination,
           showSizeChanger: true,
           showQuickJumper: true,

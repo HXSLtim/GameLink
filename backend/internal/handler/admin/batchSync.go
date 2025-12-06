@@ -220,18 +220,24 @@ func (h *BatchSyncHandler) assignSuperAdminPermissions(ctx context.Context) *Sup
 		result.Message = "get roles failed: " + err.Error()
 		return result
 	}
-	var superAdminRole *model.RoleModel
+
+	// 找到 super_admin 和 admin 角色
+	var superAdminRole, adminRole *model.RoleModel
 	for i := range roles {
 		if roles[i].Slug == string(model.RoleSlugSuperAdmin) || roles[i].Name == "super_admin" {
 			superAdminRole = &roles[i]
-			break
+		}
+		if roles[i].Slug == string(model.RoleSlugAdmin) || roles[i].Name == "admin" {
+			adminRole = &roles[i]
 		}
 	}
+
 	if superAdminRole == nil {
 		result.Success = false
 		result.Message = "super admin role not found"
 		return result
 	}
+
 	permissions, err := h.permSvc.ListPermissions(ctx)
 	if err != nil {
 		result.Success = false
@@ -243,16 +249,33 @@ func (h *BatchSyncHandler) assignSuperAdminPermissions(ctx context.Context) *Sup
 		result.Message = "no permissions to assign"
 		return result
 	}
+
 	permissionIDs := make([]uint64, len(permissions))
 	for i, p := range permissions {
 		permissionIDs[i] = p.ID
 	}
+
+	// 为 super_admin 分配所有权限
 	if err := h.roleSvc.AssignPermissionsToRole(ctx, superAdminRole.ID, permissionIDs); err != nil {
 		result.Success = false
-		result.Message = "assign permissions failed: " + err.Error()
+		result.Message = "assign permissions to super_admin failed: " + err.Error()
 		return result
 	}
+
+	// 为 admin 角色也分配所有权限
+	if adminRole != nil {
+		if err := h.roleSvc.AssignPermissionsToRole(ctx, adminRole.ID, permissionIDs); err != nil {
+			// admin 角色分配失败不影响整体结果，只记录警告
+			result.Success = true
+			result.Message = fmt.Sprintf("assigned %d permissions to super_admin, but admin role failed: %v", len(permissions), err)
+			return result
+		}
+		result.Success = true
+		result.Message = fmt.Sprintf("assigned %d permissions to super_admin and admin roles", len(permissions))
+		return result
+	}
+
 	result.Success = true
-	result.Message = fmt.Sprintf("assigned %d permissions to super admin", len(permissions))
+	result.Message = fmt.Sprintf("assigned %d permissions to super_admin", len(permissions))
 	return result
 }

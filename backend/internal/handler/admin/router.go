@@ -13,12 +13,23 @@ import (
 	roleservice "gamelink/internal/service/admin"       //nolint:ST1019
 	statsservice "gamelink/internal/service/admin"      //nolint:ST1019
 	reviewservice "gamelink/internal/service/review"
+	"gamelink/internal/service/sensitiveword"
 	"gamelink/pkg/config"
 )
 
+// RegisterRoutesOption 路由注册选项
+type RegisterRoutesOption func(*ReviewHandler)
+
+// WithSensitiveWordService 设置敏感词服务
+func WithSensitiveWordService(svc *sensitiveword.SensitiveWordService) RegisterRoutesOption {
+	return func(h *ReviewHandler) {
+		h.SetSensitiveWordService(svc)
+	}
+}
+
 // RegisterRoutes 注册后台管理相关路由
 // 使用细粒度权限控制（method+path 级别）
-func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc *statsservice.StatsService, pm *mw.PermissionMiddleware) {
+func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc *statsservice.StatsService, pm *mw.PermissionMiddleware, opts ...RegisterRoutesOption) {
 	// 先注册同步专用路由（不受限流限制）
 	RegisterSyncRoutes(router, svc, pm)
 	gameHandler := NewGameHandler(svc)
@@ -28,6 +39,11 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 	orderHandler := NewOrderHandler(svc)
 	paymentHandler := NewPaymentHandler(svc)
 	reviewHandler := NewReviewHandler(svc)
+
+	// 应用可选配置
+	for _, opt := range opts {
+		opt(reviewHandler)
+	}
 
 	group := router
 	// 所有管理接口均需要认+ 速率限制
@@ -758,6 +774,14 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/reviews/batch-reject [put]
 		group.PUT("/reviews/batch-reject", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/reviews/batch-reject"), reviewHandler.BatchRejectReviews)
+		// @Summary      批准所有不含敏感词的待审核评价
+		// @Tags         Admin/Reviews
+		// @Security     BearerAuth
+		// @Produce      json
+		// @Success      200  {object}  model.APIResponse[ApproveAllNonSensitiveResponse]
+		// @Failure      500  {object}  model.ErrorResponse
+		// @Router       /admin/reviews/approve-all-non-sensitive [put]
+		group.PUT("/reviews/approve-all-non-sensitive", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/reviews/batch-approve"), reviewHandler.ApproveAllNonSensitiveReviews)
 		// @Summary      获取陪玩师的评价
 		// @Tags         Admin/Players
 		// @Security     BearerAuth

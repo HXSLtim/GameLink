@@ -6,12 +6,11 @@ import (
 	"fmt"
 	"time"
 
-	"gamelink/pkg/apierr"
-	"gamelink/pkg/cache"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
+	"gamelink/pkg/apierr"
+	"gamelink/pkg/cache"
 )
-
 
 // RoleService 提供角色管理的业务逻辑。
 type RoleService struct {
@@ -256,4 +255,42 @@ func (s *RoleService) invalidatePermissionCacheForRole(roleID uint64) {
 	ctx := context.Background()
 	cacheKey := fmt.Sprintf(cacheKeyPermissionsByRole, roleID)
 	_ = s.cache.Delete(ctx, cacheKey)
+}
+
+// GetRolePermissionIDs 获取角色的权限ID列表。
+func (s *RoleService) GetRolePermissionIDs(ctx context.Context, roleID uint64) ([]uint64, error) {
+	role, err := s.roles.GetWithPermissions(ctx, roleID)
+	if err != nil {
+		return nil, err
+	}
+
+	ids := make([]uint64, len(role.Permissions))
+	for i, perm := range role.Permissions {
+		ids[i] = perm.ID
+	}
+	return ids, nil
+}
+
+// GetUserIDsByRoleID 获取拥有指定角色的所有用户ID。
+func (s *RoleService) GetUserIDsByRoleID(ctx context.Context, roleID uint64) ([]uint64, error) {
+	return s.roles.GetUserIDsByRoleID(ctx, roleID)
+}
+
+// InvalidateRolePermissionsAndPropagateToUsers 失效角色权限缓存并传播到所有拥有该角色的用户。
+func (s *RoleService) InvalidateRolePermissionsAndPropagateToUsers(ctx context.Context, roleID uint64) error {
+	// 清除角色权限缓存
+	s.invalidatePermissionCacheForRole(roleID)
+
+	// 获取所有拥有该角色的用户ID
+	userIDs, err := s.roles.GetUserIDsByRoleID(ctx, roleID)
+	if err != nil {
+		return err
+	}
+
+	// 清除每个用户的权限缓存
+	for _, userID := range userIDs {
+		s.invalidateUserRoleCache(userID)
+	}
+
+	return nil
 }

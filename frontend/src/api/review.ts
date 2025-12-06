@@ -51,6 +51,10 @@ export const reviewApi = {
   batchRejectReviews: (ids: number[], reason: string) =>
     apiClient.put<ApiResponse<{ message: string; count: number }>>('/admin/reviews/batch-reject', { ids, reason }),
 
+  // 批准所有不含敏感词的评价
+  approveAllNonSensitive: () =>
+    apiClient.put<ApiResponse<{ count: number }>>('/admin/reviews/approve-all-non-sensitive'),
+
   // 删除评价
   deleteReview: (id: number) =>
     apiClient.delete<ApiResponse<void>>(`/admin/reviews/${id}`),
@@ -89,7 +93,7 @@ export const reviewReportApi = {
 export const sensitiveWordApi = {
   // 获取敏感词列表
   getWords: (params?: SensitiveWordQueryParams) =>
-    apiClient.get<ApiResponse<{ items: SensitiveWord[]; total: number }>>('/admin/sensitive-words', { params }),
+    apiClient.get<ApiResponse<{ words: SensitiveWord[]; total: number }>>('/admin/sensitive-words', { params }),
 
   // 添加敏感词
   addWord: (data: { word: string; category: string; severity: string }) =>

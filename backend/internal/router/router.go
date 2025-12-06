@@ -215,7 +215,7 @@ func (r *Router) registerAdminRoutes(api *gin.RouterGroup) {
 	// Stats routes (需要先创建statsSvc，因为RegisterRoutes需要它)
 	statsSvc := statsservice.NewStatsService(statsrepo.NewStatsRepository(r.orm))
 
-	adminhandler.RegisterRoutes(rbacGroup, r.adminSvc, statsSvc, r.permMiddleware)
+	adminhandler.RegisterRoutes(rbacGroup, r.adminSvc, statsSvc, r.permMiddleware, adminhandler.WithSensitiveWordService(r.services.sensitiveWordSvc))
 	adminhandler.RegisterStatsRoutes(rbacGroup, statsSvc, r.permMiddleware)
 	adminhandler.RegisterReviewStatsRoutes(rbacGroup, r.services.reviewStatsSvc, r.permMiddleware)
 	adminhandler.RegisterReviewSettingsRoutes(rbacGroup, r.services.reviewSettingsSvc, r.permMiddleware)
@@ -245,26 +245,39 @@ func (r *Router) registerAdminRoutes(api *gin.RouterGroup) {
 // registerRBACRoutes 注册 RBAC 相关路由
 func (r *Router) registerRBACRoutes(rbacGroup *gin.RouterGroup, roleSvc *roleservice.RoleService, permService *permissionservice.PermissionService) {
 	roleHandler := adminhandler.NewRoleHandler(roleSvc)
-	permHandler := adminhandler.NewPermissionHandler(permService)
+	permHandler := adminhandler.NewPermissionHandlerWithRoleService(permService, roleSvc)
 	menuSvc := menuservice.NewMenuService(adminrepo.NewMenuRepository(r.orm))
-	menuHandler := adminhandler.NewMenuHandler(menuSvc, permService)
+	menuHandler := adminhandler.NewMenuHandlerWithRoleService(menuSvc, permService, roleSvc)
 
 	// 注意：同步专用路由 /sync/roles 和 /sync/permissions 已在 adminhandler.RegisterRoutes 中注册
 	// 这里只注册常规 RBAC 路由（需要认证和权限检查）
 	rbacGroup.Use(r.permMiddleware.RequireAuth())
 	{
+		// 当前用户权限和菜单 API（无需额外权限检查，只需认证）
+		// GET /api/admin/me/permissions - 获取当前用户权限码列表，超级管理员返回 ['*']
+		// GET /api/admin/me/menus - 获取当前用户可访问的菜单
+		rbacGroup.GET("/me/permissions", permHandler.GetCurrentUserPermissions)
+		rbacGroup.GET("/me/menus", menuHandler.ListMyMenus)
+
 		// 角色管理
 		rbacGroup.GET("/roles", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/roles"), roleHandler.ListRoles)
 		rbacGroup.GET("/roles/:id", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/roles/:id"), roleHandler.GetRole)
 		rbacGroup.POST("/roles", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/roles"), roleHandler.CreateRole)
 		rbacGroup.PUT("/roles/:id", r.permMiddleware.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/roles/:id"), roleHandler.UpdateRole)
 		rbacGroup.DELETE("/roles/:id", r.permMiddleware.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/roles/:id"), roleHandler.DeleteRole)
-		rbacGroup.PUT("/roles/:id/permissions", r.permMiddleware.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/roles/:id/permissions"), roleHandler.AssignPermissions)
+		// 角色权限分配 API
+		rbacGroup.GET("/roles/:id/permissions", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/roles/:id/permissions"), roleHandler.GetRolePermissionIDs)
+		rbacGroup.PUT("/roles/:id/permissions/batch", r.permMiddleware.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/roles/:id/permissions/batch"), roleHandler.AssignPermissions)
+		rbacGroup.POST("/roles/:id/permissions/:pid", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/roles/:id/permissions/:pid"), roleHandler.AddPermissionToRole)
+		rbacGroup.DELETE("/roles/:id/permissions/:pid", r.permMiddleware.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/roles/:id/permissions/:pid"), roleHandler.RemovePermissionFromRole)
+		// 用户角色分配 API
 		rbacGroup.POST("/roles/assign-user", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/roles/assign-user"), roleHandler.AssignRolesToUser)
 		rbacGroup.GET("/users/:id/roles", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/:id/roles"), roleHandler.GetUserRoles)
+		rbacGroup.PUT("/users/:id/roles", r.permMiddleware.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/users/:id/roles"), roleHandler.UpdateUserRoles)
+		rbacGroup.PUT("/users/roles/batch", r.permMiddleware.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/users/roles/batch"), roleHandler.BatchAssignRolesToUsers)
 
 		// 权限管理
-		rbacGroup.GET("/permissions/me", permHandler.GetCurrentUserPermissions)
+		rbacGroup.GET("/permissions/me", permHandler.GetCurrentUserPermissions) // 保留旧路径兼容性
 		rbacGroup.GET("/permissions", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/permissions"), permHandler.ListPermissions)
 		rbacGroup.GET("/permissions/groups", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/permissions/groups"), permHandler.GetPermissionGroups)
 		rbacGroup.GET("/permissions/tree", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/permissions/tree"), permHandler.GetPermissionTree)
@@ -274,11 +287,11 @@ func (r *Router) registerRBACRoutes(rbacGroup *gin.RouterGroup, roleSvc *roleser
 		rbacGroup.PUT("/permissions/:id", r.permMiddleware.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/permissions/:id"), permHandler.UpdatePermission)
 		rbacGroup.PATCH("/permissions/:id", r.permMiddleware.RequirePermission(model.HTTPMethodPATCH, "/api/v1/admin/permissions/:id"), permHandler.PatchPermission)
 		rbacGroup.DELETE("/permissions/:id", r.permMiddleware.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/permissions/:id"), permHandler.DeletePermission)
-		rbacGroup.GET("/roles/:id/permissions", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/roles/:id/permissions"), permHandler.GetRolePermissions)
+		// Note: /roles/:id/permissions is already registered above with roleHandler.GetRolePermissionIDs
 		rbacGroup.GET("/users/:id/permissions", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/:id/permissions"), permHandler.GetUserPermissions)
 
 		// 菜单管理（动态路由配置）
-		rbacGroup.GET("/menus/me", menuHandler.ListMyMenus) // 获取当前用户可访问的菜单，无需额外权限检查
+		rbacGroup.GET("/menus/me", menuHandler.ListMyMenus) // 保留旧路径兼容性
 		rbacGroup.GET("/menus", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/menus"), menuHandler.List)
 		rbacGroup.POST("/menus", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/menus"), menuHandler.Create)
 		rbacGroup.GET("/menus/:id", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/menus/:id"), menuHandler.Get)

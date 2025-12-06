@@ -9,6 +9,9 @@ export * from './api';
 export * from './content';
 export * from './review';
 
+// RBAC 权限管理类型
+export * from './permission';
+
 // Dashboard 类型 (排除与 monitor 冲突的类型)
 export {
   type DashboardStats,

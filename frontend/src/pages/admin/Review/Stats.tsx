@@ -296,11 +296,13 @@ const ReviewStatsPage: React.FC = () => {
         )}
       </Card>
 
-      <Row gutter={16}>
+      <Row gutter={16} style={{ alignItems: 'stretch' }}>
         {/* 陪玩师排行 */}
-        <Col span={12}>
+        <Col span={12} style={{ display: 'flex' }}>
           <Card
             title="陪玩师排行"
+            style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
+            styles={{ body: { flex: 1, overflow: 'auto' } }}
             extra={
               <Select
                 value={rankType}
@@ -324,8 +326,12 @@ const ReviewStatsPage: React.FC = () => {
         </Col>
 
         {/* 游戏统计 */}
-        <Col span={12}>
-          <Card title="游戏评价统计">
+        <Col span={12} style={{ display: 'flex' }}>
+          <Card
+            title="游戏评价统计"
+            style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
+            styles={{ body: { flex: 1, overflow: 'auto' } }}
+          >
             <Table
               columns={gameColumns}
               dataSource={Array.isArray(gameStats) ? gameStats : []}

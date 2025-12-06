@@ -20,3 +20,7 @@ export type { StatCardProps } from './StatCard';
 
 // 主题切换
 export { ThemeToggle } from './ThemeToggle';
+
+// 权限树组件
+export { PermissionTree } from './PermissionTree';
+export type { PermissionTreeProps } from './PermissionTree';

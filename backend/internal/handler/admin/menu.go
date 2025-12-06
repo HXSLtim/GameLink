@@ -14,10 +14,16 @@ import (
 type MenuHandler struct {
 	svc     *menusvc.MenuService
 	permSvc *menusvc.PermissionService
+	roleSvc *menusvc.RoleService
 }
 
 func NewMenuHandler(svc *menusvc.MenuService, permSvc *menusvc.PermissionService) *MenuHandler {
 	return &MenuHandler{svc: svc, permSvc: permSvc}
+}
+
+// NewMenuHandlerWithRoleService 创建带角色服务的菜单处理器实例
+func NewMenuHandlerWithRoleService(svc *menusvc.MenuService, permSvc *menusvc.PermissionService, roleSvc *menusvc.RoleService) *MenuHandler {
+	return &MenuHandler{svc: svc, permSvc: permSvc, roleSvc: roleSvc}
 }
 
 // List 菜单列表（可选 parentId）
@@ -170,11 +176,12 @@ func (h *MenuHandler) Delete(c *gin.Context) {
 
 // ListMyMenus 获取当前用户可访问的菜单
 // @Summary      获取当前用户菜单
-// @Description  根据当前用户权限返回可访问的菜单列表
+// @Description  根据当前用户权限返回可访问的菜单列表，超级管理员返回所有菜单
 // @Tags         Admin - Menus
 // @Security     BearerAuth
 // @Success      200  {object}  model.APIResponse[[]model.Menu]
 // @Router       /admin/menus/me [get]
+// @Router       /admin/me/menus [get]
 func (h *MenuHandler) ListMyMenus(c *gin.Context) {
 	userIDVal, ok := c.Get(middleware.UserIDKey)
 	if !ok {
@@ -183,35 +190,44 @@ func (h *MenuHandler) ListMyMenus(c *gin.Context) {
 	}
 	userID, _ := userIDVal.(uint64)
 
-	// 获取用户权限列表
-	perms, err := h.permSvc.ListPermissionsByUserID(c.Request.Context(), userID)
-	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	// 提取权限码
-	var codes []string
-	hasSuperAdmin := false
-	for _, p := range perms {
-		if p.Code == "*" {
-			hasSuperAdmin = true
-			break
-		}
-		if p.Code != "" {
-			codes = append(codes, p.Code)
-		}
-	}
-
 	var menus []model.Menu
+	var err error
 
-	// 超级管理员返回所有菜单
-	if hasSuperAdmin {
+	// 检查是否为超级管理员（Requirements 8.1）
+	isSuperAdmin := false
+	if h.roleSvc != nil {
+		isSuperAdmin, _ = h.roleSvc.CheckUserIsSuperAdmin(c.Request.Context(), userID)
+	}
+
+	if isSuperAdmin {
+		// 超级管理员返回所有菜单
 		menus, err = h.svc.List(c.Request.Context(), nil)
 	} else {
+		// 获取用户权限列表
+		perms, permErr := h.permSvc.ListPermissionsByUserID(c.Request.Context(), userID)
+		if permErr != nil {
+			writeJSONError(c, http.StatusInternalServerError, permErr.Error())
+			return
+		}
+
+		// 提取权限码
+		var codes []string
+		for _, p := range perms {
+			if p.Code == "*" {
+				// 如果有 * 权限码，也视为超级管理员
+				menus, err = h.svc.List(c.Request.Context(), nil)
+				goto buildTree
+			}
+			if p.Code != "" {
+				codes = append(codes, p.Code)
+			}
+		}
+
+		// 根据权限过滤菜单
 		menus, err = h.svc.ListAccessible(c.Request.Context(), codes)
 	}
 
+buildTree:
 	if err != nil {
 		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return

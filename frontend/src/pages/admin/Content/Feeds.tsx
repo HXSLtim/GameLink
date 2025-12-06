@@ -50,10 +50,10 @@ const FeedsPage: React.FC = () => {
         params.dateFrom = dateRange[0].format('YYYY-MM-DD');
         params.dateTo = dateRange[1].format('YYYY-MM-DD');
       }
-      const res = await feedApi.getFeeds(params);
-      if (res.data.success) {
-        setFeeds(res.data.data.items || []);
-        setTotal(res.data.data.total || 0);
+      const res = await feedApi.getFeeds(params) as unknown as { success: boolean; data: { items: Feed[]; total: number } };
+      if (res.success) {
+        setFeeds(res.data?.items || []);
+        setTotal(res.data?.total || 0);
       }
     } catch {
       message.error('获取动态列表失败');
@@ -324,26 +324,50 @@ const FeedsPage: React.FC = () => {
         scroll={{ x: 1200 }}
       />
 
-      {/* 详情弹窗 */}
+      {/* 详情弹窗 - 带快捷操作 */}
       <Modal
         title="动态详情"
         open={detailVisible}
         onCancel={() => setDetailVisible(false)}
-        footer={null}
+        footer={currentFeed?.moderationStatus === 'pending' ? (
+          <Space>
+            <Button onClick={() => setDetailVisible(false)}>关闭</Button>
+            <Button
+              type="primary"
+              icon={<CheckOutlined />}
+              onClick={() => {
+                handleApprove(currentFeed.id);
+                setDetailVisible(false);
+              }}
+            >
+              批准
+            </Button>
+            <Button
+              danger
+              icon={<CloseOutlined />}
+              onClick={() => {
+                setDetailVisible(false);
+                setRejectVisible(true);
+              }}
+            >
+              拒绝
+            </Button>
+          </Space>
+        ) : null}
         width={600}
       >
         {currentFeed && (
           <div>
             <p><strong>作者：</strong>{currentFeed.authorName || `用户${currentFeed.authorId}`}</p>
             <p><strong>内容：</strong></p>
-            <Paragraph>{currentFeed.content}</Paragraph>
+            <Paragraph style={{ whiteSpace: 'pre-wrap' }}>{currentFeed.content}</Paragraph>
             {currentFeed.images && currentFeed.images.length > 0 && (
               <>
                 <p><strong>图片：</strong></p>
                 <Image.PreviewGroup>
                   <Space wrap>
                     {currentFeed.images.map((img, idx) => (
-                      <Image key={idx} src={img} width={100} height={100} style={{ objectFit: 'cover' }} />
+                      <Image key={idx} src={img} width={100} height={100} style={{ objectFit: 'cover', borderRadius: 4 }} />
                     ))}
                   </Space>
                 </Image.PreviewGroup>
@@ -363,13 +387,29 @@ const FeedsPage: React.FC = () => {
         )}
       </Modal>
 
-      {/* 拒绝弹窗 */}
+      {/* 拒绝弹窗 - 显示动态内容预览 */}
       <Modal
         title="拒绝动态"
         open={rejectVisible}
         onOk={handleReject}
         onCancel={() => { setRejectVisible(false); rejectForm.resetFields(); }}
       >
+        {currentFeed && (
+          <div style={{ background: '#f5f5f5', padding: 12, borderRadius: 8, marginBottom: 16 }}>
+            <div style={{ fontSize: 12, color: '#999', marginBottom: 8 }}>待拒绝的动态内容：</div>
+            <Paragraph ellipsis={{ rows: 3 }} style={{ marginBottom: 8 }}>
+              {currentFeed.content}
+            </Paragraph>
+            {currentFeed.images && currentFeed.images.length > 0 && (
+              <Space>
+                {currentFeed.images.slice(0, 3).map((img, idx) => (
+                  <Image key={idx} src={img} width={60} height={60} style={{ objectFit: 'cover', borderRadius: 4 }} />
+                ))}
+                {currentFeed.images.length > 3 && <span style={{ color: '#999' }}>+{currentFeed.images.length - 3}</span>}
+              </Space>
+            )}
+          </div>
+        )}
         <Form form={rejectForm}>
           <Form.Item name="reason" label="拒绝原因" rules={[{ required: true, message: '请输入拒绝原因' }]}>
             <TextArea rows={3} placeholder="请输入拒绝原因" />

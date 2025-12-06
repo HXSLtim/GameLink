@@ -280,7 +280,7 @@ export const ADMIN_MENUS: MenuConfig[] = [
                 component: 'SensitiveWords',
                 icon: 'StopOutlined',
                 order: 4,
-                permission: 'sensitive_word.list',
+                permission: 'admin.sensitive-words.list',
                 description: '管理敏感词库',
             },
             {
@@ -437,9 +437,10 @@ export const ADMIN_PERMISSIONS: PermissionConfig[] = [
     { method: 'PUT', path: '/api/v1/admin/review-reports/:id/handle', code: 'admin.review-reports.handle.update', group: '/admin/review-reports', description: '处理举报' },
 
     // 敏感词管理
-    { method: 'GET', path: '/api/v1/admin/sensitive-words', code: 'sensitive_word.list', group: '/admin/sensitive-words', description: '获取敏感词列表' },
-    { method: 'POST', path: '/api/v1/admin/sensitive-words', code: 'sensitive_word.create', group: '/admin/sensitive-words', description: '添加敏感词' },
-    { method: 'DELETE', path: '/api/v1/admin/sensitive-words/:id', code: 'sensitive_word.delete', group: '/admin/sensitive-words', description: '删除敏感词' },
+    { method: 'GET', path: '/api/v1/admin/sensitive-words', code: 'admin.sensitive-words.list', group: '/admin/sensitive-words', description: '获取敏感词列表' },
+    { method: 'POST', path: '/api/v1/admin/sensitive-words', code: 'admin.sensitive-words.create', group: '/admin/sensitive-words', description: '添加敏感词' },
+    { method: 'PUT', path: '/api/v1/admin/sensitive-words/:id', code: 'admin.sensitive-words.update', group: '/admin/sensitive-words', description: '更新敏感词' },
+    { method: 'DELETE', path: '/api/v1/admin/sensitive-words/:id', code: 'admin.sensitive-words.delete', group: '/admin/sensitive-words', description: '删除敏感词' },
 
     // 评价统计
     { method: 'GET', path: '/api/v1/admin/reviews/stats', code: 'admin.reviews.stats.list', group: '/admin/reviews', description: '获取评价统计' },

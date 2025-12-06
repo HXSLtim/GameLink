@@ -9,6 +9,7 @@ import (
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	adminservice "gamelink/internal/service/admin"
+	"gamelink/internal/service/sensitiveword"
 	apierr "gamelink/pkg/apierr"
 )
 
@@ -22,9 +23,19 @@ type OperationLogWithActor struct {
 }
 
 // ReviewHandler 管理评价接口
-type ReviewHandler struct{ svc *adminservice.AdminService }
+type ReviewHandler struct {
+	svc              *adminservice.AdminService
+	sensitiveWordSvc *sensitiveword.SensitiveWordService
+}
 
-func NewReviewHandler(s *adminservice.AdminService) *ReviewHandler { return &ReviewHandler{svc: s} }
+func NewReviewHandler(s *adminservice.AdminService) *ReviewHandler {
+	return &ReviewHandler{svc: s}
+}
+
+// SetSensitiveWordService 设置敏感词服务
+func (h *ReviewHandler) SetSensitiveWordService(svc *sensitiveword.SensitiveWordService) {
+	h.sensitiveWordSvc = svc
+}
 
 // ListReviews
 // @Summary      评价列表
@@ -466,14 +477,22 @@ type HandleReviewReportResponse struct {
 	Message string `json:"message"`
 }
 
+// PendingReviewDTO 待审核评价DTO（包含敏感词检测结果）
+type PendingReviewDTO struct {
+	model.Review
+	HasSensitiveWords bool     `json:"hasSensitiveWords"`
+	SensitiveWords    []string `json:"sensitiveWords,omitempty"`
+}
+
 // ListPendingReviews
 // @Summary      获取待审核评价列表
 // @Tags         Admin/Reviews
 // @Security     BearerAuth
 // @Produce      json
-// @Param        page       query  int  false  "页码"
-// @Param        pageSize   query  int  false  "每页数量"
-// @Success      200  {object}  model.APIResponse[[]Review]
+// @Param        page              query  int   false  "页码"
+// @Param        pageSize          query  int   false  "每页数量"
+// @Param        hasSensitiveWords query  bool  false  "是否含敏感词筛选"
+// @Success      200  {object}  model.APIResponse[[]PendingReviewDTO]
 // @Router       /admin/reviews/pending [get]
 func (h *ReviewHandler) ListPendingReviews(c *gin.Context) {
 	page, pageSize, ok := parsePagination(c)
@@ -487,12 +506,59 @@ func (h *ReviewHandler) ListPendingReviews(c *gin.Context) {
 		return
 	}
 
+	// 检测敏感词并构建DTO
+	dtos := make([]PendingReviewDTO, 0, len(items))
+	for _, item := range items {
+		dto := PendingReviewDTO{
+			Review:            item,
+			HasSensitiveWords: false,
+			SensitiveWords:    []string{},
+		}
+
+		// 检测评价内容中的敏感词
+		if item.Content != "" && h.sensitiveWordSvc != nil {
+			result, err := h.sensitiveWordSvc.DetectSensitiveWords(c.Request.Context(), sensitiveword.DetectSensitiveWordsRequest{
+				Content: item.Content,
+			})
+			if err == nil && result.HasSensitiveWords {
+				dto.HasSensitiveWords = true
+				for _, dw := range result.DetectedWords {
+					dto.SensitiveWords = append(dto.SensitiveWords, dw.Word)
+				}
+			}
+		}
+
+		dtos = append(dtos, dto)
+	}
+
+	// 如果指定了敏感词筛选
+	hasSensitiveFilter := c.Query("hasSensitiveWords")
+	if hasSensitiveFilter == "true" {
+		filtered := make([]PendingReviewDTO, 0)
+		for _, dto := range dtos {
+			if dto.HasSensitiveWords {
+				filtered = append(filtered, dto)
+			}
+		}
+		dtos = filtered
+		total = int64(len(filtered))
+	} else if hasSensitiveFilter == "false" {
+		filtered := make([]PendingReviewDTO, 0)
+		for _, dto := range dtos {
+			if !dto.HasSensitiveWords {
+				filtered = append(filtered, dto)
+			}
+		}
+		dtos = filtered
+		total = int64(len(filtered))
+	}
+
 	p := &model.Pagination{
 		Page:     page,
 		PageSize: pageSize,
 		Total:    int(total),
 	}
-	respondList(c, items, p)
+	respondList(c, dtos, p)
 }
 
 // ApproveReview
@@ -653,6 +719,66 @@ type BatchApprovePayload struct {
 type BatchRejectPayload struct {
 	ReviewIDs []uint64 `json:"reviewIds" binding:"required,min=1"`
 	Reason    string   `json:"reason" binding:"required,max=500"`
+}
+
+// ApproveAllNonSensitiveReviews
+// @Summary      批准所有不含敏感词的待审核评价
+// @Tags         Admin/Reviews
+// @Security     BearerAuth
+// @Produce      json
+// @Success      200  {object}  model.APIResponse[ApproveAllNonSensitiveResponse]
+// @Failure      500  {object}  model.ErrorResponse
+// @Router       /admin/reviews/approve-all-non-sensitive [put]
+func (h *ReviewHandler) ApproveAllNonSensitiveReviews(c *gin.Context) {
+	// 获取所有待审核评价
+	items, _, err := h.svc.ListPendingReviews(c.Request.Context(), 1, 10000) // 获取所有
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	// 筛选不含敏感词的评价
+	var nonSensitiveIDs []uint64
+	for _, item := range items {
+		hasSensitive := false
+		if item.Content != "" && h.sensitiveWordSvc != nil {
+			result, err := h.sensitiveWordSvc.DetectSensitiveWords(c.Request.Context(), sensitiveword.DetectSensitiveWordsRequest{
+				Content: item.Content,
+			})
+			if err == nil && result.HasSensitiveWords {
+				hasSensitive = true
+			}
+		}
+		if !hasSensitive {
+			nonSensitiveIDs = append(nonSensitiveIDs, item.ID)
+		}
+	}
+
+	if len(nonSensitiveIDs) == 0 {
+		respondSuccessWithMsg(c, "没有需要批准的评价", ApproveAllNonSensitiveResponse{Count: 0})
+		return
+	}
+
+	// 获取操作者ID
+	var actorUserID *uint64
+	if userID, exists := c.Get("user_id"); exists {
+		uid := userID.(uint64)
+		actorUserID = &uid
+	}
+
+	// 批量批准
+	err = h.svc.BatchApproveReviews(c.Request.Context(), nonSensitiveIDs, actorUserID)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	respondSuccessWithMsg(c, "批准成功", ApproveAllNonSensitiveResponse{Count: len(nonSensitiveIDs)})
+}
+
+// ApproveAllNonSensitiveResponse 批准所有不含敏感词评价的响应
+type ApproveAllNonSensitiveResponse struct {
+	Count int `json:"count"`
 }
 
 // UpdateReplyPayload 更新回复请求

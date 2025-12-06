@@ -1,5 +1,6 @@
 /**
  * 角色管理页面
+ * Requirements: 2.1, 2.4, 2.5
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import {
@@ -11,18 +12,18 @@ import {
     Input,
     message,
     Popconfirm,
-    Tree,
-    Card,
     Typography,
+    Tooltip,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import type { TreeDataNode } from 'antd';
 import {
     EditOutlined,
     DeleteOutlined,
     SafetyCertificateOutlined,
     SettingOutlined,
+    LockOutlined,
 } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import { PageContainer, SearchTable } from '@/components';
 import type { SearchField } from '@/components';
 import { ROLE_PERMISSIONS } from '@/constants/permissions';
@@ -35,8 +36,10 @@ const { Text } = Typography;
 
 /**
  * 角色管理页面
+ * Requirements: 2.1, 2.4, 2.5
  */
 const RolePage: React.FC = () => {
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [roles, setRoles] = useState<Role[]>([]);
     const [total, setTotal] = useState(0);
@@ -45,14 +48,8 @@ const RolePage: React.FC = () => {
 
     // 弹窗状态
     const [editModalVisible, setEditModalVisible] = useState(false);
-    const [permModalVisible, setPermModalVisible] = useState(false);
     const [currentRole, setCurrentRole] = useState<Role | null>(null);
     const [form] = Form.useForm();
-
-    // 权限树
-    const [permissionTree, setPermissionTree] = useState<TreeDataNode[]>([]);
-    const [checkedKeys, setCheckedKeys] = useState<React.Key[]>([]);
-    const [permLoading, setPermLoading] = useState(false);
 
     /**
      * 加载角色数据
@@ -78,39 +75,9 @@ const RolePage: React.FC = () => {
         }
     }, [current, pageSize]);
 
-    /**
-     * 加载权限树
-     */
-    const loadPermissionTree = useCallback(async () => {
-        setPermLoading(true);
-        try {
-            // 这里假设有一个获取所有权限树的接口，如果没有，可能需要从菜单接口转换
-            // 暂时使用模拟数据，或者调用 getMenus 获取菜单作为权限树
-            // 实际项目中应该有 adminApi.getPermissionTree()
-            // 实际项目中应该有 adminApi.getPermissionTree()
-            const res = await adminApi.getMenus() as any;
-            const menus = res.data || [];
-
-            const convertToTree = (items: any[]): TreeDataNode[] => {
-                return items.map(item => ({
-                    title: item.name,
-                    key: item.permission || `menu_${item.id}`,
-                    children: item.children ? convertToTree(item.children) : undefined
-                }));
-            };
-
-            setPermissionTree(convertToTree(menus));
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setPermLoading(false);
-        }
-    }, []);
-
     useEffect(() => {
         loadData();
-        loadPermissionTree();
-    }, [loadData, loadPermissionTree]);
+    }, [loadData]);
 
     /**
      * 编辑角色
@@ -122,23 +89,12 @@ const RolePage: React.FC = () => {
     };
 
     /**
-     * 配置权限
+     * 配置权限 - 跳转到权限配置页面
+     * Requirements: 2.4 - 查看角色已有权限
+     * Requirements: 2.5 - 系统角色显示特殊提示
      */
-    const handleConfigPermission = async (role: Role) => {
-        setCurrentRole(role);
-        setPermModalVisible(true);
-        setPermLoading(true);
-        try {
-            // 获取角色当前权限
-            // const res = await adminApi.getRolePermissions(role.id);
-            // setCheckedKeys(res.data.data);
-            // 暂时置空或模拟
-            setCheckedKeys([]);
-        } catch (error) {
-            message.error('获取角色权限失败');
-        } finally {
-            setPermLoading(false);
-        }
+    const handleConfigPermission = (role: Role) => {
+        navigate(`/admin/sys/role/${role.id}/permissions`);
     };
 
     /**
@@ -159,23 +115,6 @@ const RolePage: React.FC = () => {
         } catch (error) {
             console.error(error);
             message.error('保存失败');
-        }
-    };
-
-    /**
-     * 保存权限配置
-     */
-    const handleSavePermission = async () => {
-        if (!currentRole) return;
-        try {
-            // @ts-ignore
-            await adminApi.assignRolePermissions(currentRole.id, checkedKeys);
-            message.success('权限配置成功');
-            setPermModalVisible(false);
-            loadData();
-        } catch (error) {
-            console.error(error);
-            message.error('权限配置失败');
         }
     };
 
@@ -218,12 +157,21 @@ const RolePage: React.FC = () => {
             title: '角色名称',
             dataIndex: 'name',
             key: 'name',
-            width: 150,
+            width: 180,
             render: (text, record) => (
                 <Space>
                     <SafetyCertificateOutlined style={{ color: record.isSystem ? '#1890ff' : '#52c41a' }} />
                     <span style={{ fontWeight: 500 }}>{text}</span>
-                    {record.isSystem && <Tag color="blue">系统</Tag>}
+                    {record.isSystem && (
+                        <Tooltip title="系统角色不可删除">
+                            <Tag color="blue" icon={<LockOutlined />}>系统</Tag>
+                        </Tooltip>
+                    )}
+                    {record.slug === 'superAdmin' && (
+                        <Tooltip title="超级管理员拥有所有权限">
+                            <Tag color="gold">超管</Tag>
+                        </Tooltip>
+                    )}
                 </Space>
             ),
         },
@@ -375,24 +323,6 @@ const RolePage: React.FC = () => {
                 </Form>
             </Modal>
 
-            {/* 权限配置弹窗 */}
-            <Modal
-                title={`配置权限 - ${currentRole?.name}`}
-                open={permModalVisible}
-                onOk={handleSavePermission}
-                onCancel={() => setPermModalVisible(false)}
-                width={600}
-            >
-                <Card loading={permLoading}>
-                    <Tree
-                        checkable
-                        defaultExpandAll
-                        checkedKeys={checkedKeys}
-                        onCheck={(checked) => setCheckedKeys(checked as React.Key[])}
-                        treeData={permissionTree}
-                    />
-                </Card>
-            </Modal>
         </PageContainer>
     );
 };

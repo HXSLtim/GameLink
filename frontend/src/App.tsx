@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { BrowserRouter } from 'react-router-dom';
+import { App as AntdApp } from 'antd';
 import AppRouter from '@/router';
 import { AdminProvider } from '@/context/AdminContext';
 import { ThemeProvider } from '@/context/ThemeContext';
@@ -51,11 +52,13 @@ function App() {
 
   return (
     <ThemeProvider>
-      <AdminProvider>
-        <BrowserRouter>
-          <AppRouter />
-        </BrowserRouter>
-      </AdminProvider>
+      <AntdApp>
+        <AdminProvider>
+          <BrowserRouter>
+            <AppRouter />
+          </BrowserRouter>
+        </AdminProvider>
+      </AntdApp>
     </ThemeProvider>
   );
 }

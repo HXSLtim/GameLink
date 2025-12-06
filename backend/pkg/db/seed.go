@@ -695,6 +695,11 @@ func applySeeds(db *gorm.DB) error {
 			return err
 		}
 
+		// 内容管理种子数据
+		if err := seedContentData(tx, users); err != nil {
+			return err
+		}
+
 		log.Println("seed data ensured for demo environment")
 		return nil
 	})
@@ -1281,15 +1286,7 @@ func seedUserManagementData(tx *gorm.DB, users map[string]*model.User) error {
 
 // seedReviewPermissions 创建评价管理权限种子数据
 func seedReviewPermissions(tx *gorm.DB) error {
-	// 检查是否已有评价管理权限
-	var count int64
-	if err := tx.Model(&model.Permission{}).Where("permissions.\"group\" = ?", "/admin/reviews").Count(&count).Error; err != nil {
-		return err
-	}
-	if count > 0 {
-		log.Println("review permissions already exist, skipping")
-		return nil
-	}
+	// 不再检查是否已有权限，改为逐条 upsert，确保新增的权限能被添加
 
 	// 定义评价管理权限
 	// 注意：code 字段有唯一索引，所以每个权限必须有唯一的 code

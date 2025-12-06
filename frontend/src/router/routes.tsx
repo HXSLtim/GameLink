@@ -21,6 +21,7 @@ const UserTags = lazy(() => import('@/pages/admin/User/Tags'));
 const UserLevel = lazy(() => import('@/pages/admin/User/Level'));
 const UserPortrait = lazy(() => import('@/pages/admin/User/Portrait'));
 const RolePage = lazy(() => import('@/pages/admin/Role'));
+const RolePermissionConfig = lazy(() => import('@/pages/admin/Role/PermissionConfig'));
 const GamePage = lazy(() => import('@/pages/admin/Game'));
 const OrderPage = lazy(() => import('@/pages/admin/Order'));
 const PlayerPage = lazy(() => import('@/pages/admin/Player'));
@@ -30,6 +31,7 @@ const AdminSettings = lazy(() => import('@/pages/sys/setting'));
 const AdminAudit = lazy(() => import('@/pages/sys/log'));
 const AdminMenu = lazy(() => import('@/pages/sys/menu'));
 const AdminPermission = lazy(() => import('@/pages/sys/permission'));
+const UserRolePage = lazy(() => import('@/pages/sys/user-role'));
 
 // 监控模块页面
 const RealtimeMonitor = lazy(() => import('@/pages/admin/Monitor/Realtime'));
@@ -43,6 +45,13 @@ const ReviewModeration = lazy(() => import('@/pages/admin/Review/Moderation'));
 const ReviewReports = lazy(() => import('@/pages/admin/Review/Reports'));
 const SensitiveWords = lazy(() => import('@/pages/admin/Review/SensitiveWords'));
 const ReviewStats = lazy(() => import('@/pages/admin/Review/Stats'));
+
+// 内容管理模块页面
+const ContentFeeds = lazy(() => import('@/pages/admin/Content/Feeds'));
+const ContentChatMonitor = lazy(() => import('@/pages/admin/Content/ChatMonitor'));
+const ContentReports = lazy(() => import('@/pages/admin/Content/Reports'));
+const ContentCategories = lazy(() => import('@/pages/admin/Content/Categories'));
+const ContentStats = lazy(() => import('@/pages/admin/Content/Stats'));
 
 // Notifications
 const AdminNotificationsPage = lazy(() => import('@/pages/admin/Notifications'));
@@ -113,9 +122,19 @@ export const routes: RouteConfig[] = [
                 meta: { title: '角色管理' }
             },
             {
+                path: 'sys/role/:id/permissions',
+                element: <LazyLoad><RolePermissionConfig /></LazyLoad>,
+                meta: { title: '角色权限配置', permission: 'admin.roles.permissions' }
+            },
+            {
                 path: 'sys/permission',
                 element: <LazyLoad><AdminPermission /></LazyLoad>,
                 meta: { title: '权限管理' }
+            },
+            {
+                path: 'sys/user-role',
+                element: <LazyLoad><UserRolePage /></LazyLoad>,
+                meta: { title: '用户角色分配', permission: 'admin.roles.assign-user' }
             },
             {
                 path: 'sys/menu',
@@ -215,12 +234,38 @@ export const routes: RouteConfig[] = [
             {
                 path: 'sensitive-words',
                 element: <LazyLoad><SensitiveWords /></LazyLoad>,
-                meta: { title: '敏感词管理', permission: 'sensitive_word.list' }
+                meta: { title: '敏感词管理', permission: 'admin.sensitive-words.list' }
             },
             {
                 path: 'reviews/stats',
                 element: <LazyLoad><ReviewStats /></LazyLoad>,
                 meta: { title: '评价统计', permission: 'admin.reviews.stats.list' }
+            },
+            // 内容管理模块
+            {
+                path: 'content/feeds',
+                element: <LazyLoad><ContentFeeds /></LazyLoad>,
+                meta: { title: '动态审核', permission: 'admin.content.feeds.list' }
+            },
+            {
+                path: 'content/chat',
+                element: <LazyLoad><ContentChatMonitor /></LazyLoad>,
+                meta: { title: '聊天监控', permission: 'admin.content.chat.list' }
+            },
+            {
+                path: 'content/reports',
+                element: <LazyLoad><ContentReports /></LazyLoad>,
+                meta: { title: '举报管理', permission: 'admin.content.reports.list' }
+            },
+            {
+                path: 'content/categories',
+                element: <LazyLoad><ContentCategories /></LazyLoad>,
+                meta: { title: '内容分类', permission: 'admin.content.categories.list' }
+            },
+            {
+                path: 'content/stats',
+                element: <LazyLoad><ContentStats /></LazyLoad>,
+                meta: { title: '内容统计', permission: 'admin.content.stats.list' }
             }
         ]
     },

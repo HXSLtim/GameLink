@@ -12,14 +12,12 @@ import {
     Drawer,
     Descriptions,
     Avatar,
-    Rate,
     Card,
     Row,
     Col,
     Statistic,
     Form,
     Input,
-    Select,
     Typography,
     Divider,
     Image,
@@ -466,6 +464,7 @@ const PlayerPage: React.FC = () => {
                 title="审核陪玩师申请"
                 open={auditModalVisible}
                 onCancel={() => setAuditModalVisible(false)}
+                width={700}
                 footer={
                     <Space>
                         <Button onClick={() => setAuditModalVisible(false)}>取消</Button>
@@ -478,20 +477,77 @@ const PlayerPage: React.FC = () => {
                     </Space>
                 }
             >
-                <Descriptions column={1} size="small">
-                    <Descriptions.Item label="申请人">{currentPlayer?.name}</Descriptions.Item>
-                    <Descriptions.Item label="擅长游戏">
-                        {currentPlayer?.games.join('、')}
-                    </Descriptions.Item>
-                </Descriptions>
+                {currentPlayer && (
+                    <>
+                        {/* 申请人基本信息 */}
+                        <Card size="small" style={{ marginBottom: 16 }}>
+                            <Space align="start">
+                                <Avatar
+                                    size={64}
+                                    src={currentPlayer.avatar || undefined}
+                                    icon={<UserOutlined />}
+                                    style={{ backgroundColor: currentPlayer.gender === 'female' ? '#eb2f96' : '#1890ff' }}
+                                />
+                                <div>
+                                    <div style={{ fontSize: 16, fontWeight: 500 }}>{currentPlayer.name}</div>
+                                    <Text type="secondary">
+                                        {currentPlayer.gender === 'female' ? '女' : '男'} · {currentPlayer.age}岁
+                                    </Text>
+                                    <div style={{ marginTop: 8 }}>
+                                        <Space wrap>
+                                            {currentPlayer.games.map(g => <Tag key={g} color="blue">{g}</Tag>)}
+                                        </Space>
+                                    </div>
+                                </div>
+                            </Space>
+                        </Card>
 
-                <Divider />
+                        {/* 自我介绍 */}
+                        <Descriptions column={1} size="small" bordered style={{ marginBottom: 16 }}>
+                            <Descriptions.Item label="自我介绍">
+                                <Paragraph ellipsis={{ rows: 3, expandable: true }}>
+                                    {currentPlayer.introduction || '暂无介绍'}
+                                </Paragraph>
+                            </Descriptions.Item>
+                            <Descriptions.Item label="申请时间">{currentPlayer.createdAt}</Descriptions.Item>
+                        </Descriptions>
 
-                <Form form={auditForm} layout="vertical">
-                    <Form.Item name="remark" label="审核备注">
-                        <Input.TextArea rows={3} placeholder="请输入审核备注（选填）" />
-                    </Form.Item>
-                </Form>
+                        {/* 身份验证 */}
+                        <div style={{ marginBottom: 16 }}>
+                            <Text strong style={{ display: 'block', marginBottom: 8 }}>身份验证材料</Text>
+                            <Space size={16}>
+                                <div>
+                                    <Text type="secondary" style={{ display: 'block', marginBottom: 4 }}>身份证正面</Text>
+                                    <Image
+                                        width={150}
+                                        height={100}
+                                        src={currentPlayer.idCardFront}
+                                        fallback="https://via.placeholder.com/150x100?text=暂无图片"
+                                        style={{ objectFit: 'cover', borderRadius: 4 }}
+                                    />
+                                </div>
+                                <div>
+                                    <Text type="secondary" style={{ display: 'block', marginBottom: 4 }}>身份证反面</Text>
+                                    <Image
+                                        width={150}
+                                        height={100}
+                                        src={currentPlayer.idCardBack}
+                                        fallback="https://via.placeholder.com/150x100?text=暂无图片"
+                                        style={{ objectFit: 'cover', borderRadius: 4 }}
+                                    />
+                                </div>
+                            </Space>
+                        </div>
+
+                        <Divider />
+
+                        <Form form={auditForm} layout="vertical">
+                            <Form.Item name="remark" label="审核备注">
+                                <Input.TextArea rows={3} placeholder="请输入审核备注（选填，拒绝时建议填写原因）" />
+                            </Form.Item>
+                        </Form>
+                    </>
+                )}
             </Modal>
         </PageContainer>
     );

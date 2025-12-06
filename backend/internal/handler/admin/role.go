@@ -6,19 +6,87 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"gamelink/internal/handler/middleware"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	roleservice "gamelink/internal/service/admin"
+	"gamelink/internal/service/audit"
 )
 
 // RoleHandler 角色管理处理器
 type RoleHandler struct {
-	roleSvc *roleservice.RoleService
+	roleSvc  *roleservice.RoleService
+	auditSvc *audit.Service
 }
 
 // NewRoleHandler 创建角色处理器实例
 func NewRoleHandler(roleSvc *roleservice.RoleService) *RoleHandler {
 	return &RoleHandler{roleSvc: roleSvc}
+}
+
+// NewRoleHandlerWithAudit 创建带审计服务的角色处理器实例
+func NewRoleHandlerWithAudit(roleSvc *roleservice.RoleService, auditSvc *audit.Service) *RoleHandler {
+	return &RoleHandler{roleSvc: roleSvc, auditSvc: auditSvc}
+}
+
+// logRolePermissionChange 记录角色权限变更审计日志
+func (h *RoleHandler) logRolePermissionChange(c *gin.Context, action model.AuditAction, roleID uint64, roleName string, beforeData, afterData any) {
+	if h.auditSvc == nil {
+		return
+	}
+
+	// 获取操作者信息
+	operatorID, _ := middleware.GetUserID(c)
+	operatorName, _ := middleware.GetUserRole(c)
+
+	// 获取请求信息
+	ipAddress := c.ClientIP()
+	userAgent := c.GetHeader("User-Agent")
+	requestID := c.GetHeader("X-Request-ID")
+
+	h.auditSvc.LogRoleChange(
+		c.Request.Context(),
+		operatorID,
+		operatorName,
+		action,
+		roleID,
+		roleName,
+		beforeData,
+		afterData,
+		ipAddress,
+		userAgent,
+		requestID,
+	)
+}
+
+// logUserRoleChange 记录用户角色变更审计日志
+func (h *RoleHandler) logUserRoleChange(c *gin.Context, action model.AuditAction, userID uint64, userName string, beforeData, afterData any) {
+	if h.auditSvc == nil {
+		return
+	}
+
+	// 获取操作者信息
+	operatorID, _ := middleware.GetUserID(c)
+	operatorName, _ := middleware.GetUserRole(c)
+
+	// 获取请求信息
+	ipAddress := c.ClientIP()
+	userAgent := c.GetHeader("User-Agent")
+	requestID := c.GetHeader("X-Request-ID")
+
+	h.auditSvc.LogUserRoleChange(
+		c.Request.Context(),
+		operatorID,
+		operatorName,
+		action,
+		userID,
+		userName,
+		beforeData,
+		afterData,
+		ipAddress,
+		userAgent,
+		requestID,
+	)
 }
 
 // CreateRoleRequest 创建角色请求
@@ -43,6 +111,30 @@ type AssignPermissionsRequest struct {
 type AssignRolesToUserRequest struct {
 	UserID  uint64   `json:"userId" binding:"required"`
 	RoleIDs []uint64 `json:"roleIds" binding:"required"`
+}
+
+// UpdateUserRolesRequest 更新用户角色请求（用于 PUT /users/:id/roles）
+type UpdateUserRolesRequest struct {
+	RoleIDs []uint64 `json:"roleIds" binding:"required"`
+}
+
+// BatchAssignRolesRequest 批量用户角色分配请求
+type BatchAssignRolesRequest struct {
+	UserIDs []uint64 `json:"userIds" binding:"required,min=1"`
+	RoleIDs []uint64 `json:"roleIds" binding:"required"`
+}
+
+// BatchAssignRolesResult 批量分配结果
+type BatchAssignRolesResult struct {
+	SuccessCount int                     `json:"successCount"`
+	FailedCount  int                     `json:"failedCount"`
+	FailedUsers  []BatchAssignFailedUser `json:"failedUsers,omitempty"`
+}
+
+// BatchAssignFailedUser 批量分配失败的用户信息
+type BatchAssignFailedUser struct {
+	UserID uint64 `json:"userId"`
+	Reason string `json:"reason"`
 }
 
 // ListRoles 获取角色列表
@@ -286,7 +378,48 @@ func (h *RoleHandler) DeleteRole(c *gin.Context) {
 	})
 }
 
-// AssignPermissions 为角色分配权// @Summary      为角色分配权// @Description  管理员为指定角色分配多个权限
+// GetRolePermissionIDs 获取角色的权限ID列表
+// @Summary      获取角色的权限ID列表
+// @Description  管理员获取指定角色的所有权限ID列表
+// @Tags         Admin - Roles
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string  true  "Bearer {token}"
+// @Param        id             path      uint    true  "角色ID"
+// @Success      200            {object}  model.APIResponse[[]uint64]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      404            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /admin/roles/{id}/permissions [get]
+func (h *RoleHandler) GetRolePermissionIDs(c *gin.Context) {
+	id, err := parseUintParam(c, "id")
+	if err != nil {
+		writeJSONError(c, http.StatusBadRequest, "无效的角色ID")
+		return
+	}
+
+	permissionIDs, err := h.roleSvc.GetRolePermissionIDs(c.Request.Context(), id)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			writeJSONError(c, http.StatusNotFound, "角色不存在")
+		} else {
+			writeJSONError(c, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+
+	writeJSON(c, http.StatusOK, model.APIResponse[[]uint64]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: "成功",
+		Data:    ensureSlice(permissionIDs),
+	})
+}
+
+// AssignPermissions 为角色分配权限（批量替换）
+// @Summary      批量分配角色权限
+// @Description  管理员为指定角色批量分配权限（替换现有权限，事务保证原子性）
 // @Tags         Admin - Roles
 // @Accept       json
 // @Produce      json
@@ -297,7 +430,7 @@ func (h *RoleHandler) DeleteRole(c *gin.Context) {
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
-// @Router       /admin/roles/{id}/permissions [post]
+// @Router       /admin/roles/{id}/permissions/batch [put]
 func (h *RoleHandler) AssignPermissions(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
@@ -312,10 +445,28 @@ func (h *RoleHandler) AssignPermissions(c *gin.Context) {
 		return
 	}
 
+	// 获取变更前的权限列表（用于审计日志）
+	beforePermIDs, _ := h.roleSvc.GetRolePermissionIDs(c.Request.Context(), id)
+
+	// 获取角色信息（用于审计日志）
+	role, _ := h.roleSvc.GetRole(c.Request.Context(), id)
+	roleName := ""
+	if role != nil {
+		roleName = role.Name
+	}
+
 	if err := h.roleSvc.AssignPermissionsToRole(c.Request.Context(), id, req.PermissionIDs); err != nil {
 		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
+
+	// 失效相关用户缓存
+	_ = h.roleSvc.InvalidateRolePermissionsAndPropagateToUsers(c.Request.Context(), id)
+
+	// 记录审计日志
+	h.logRolePermissionChange(c, model.AuditActionAssignPermission, id, roleName,
+		map[string]any{"permissionIds": beforePermIDs},
+		map[string]any{"permissionIds": req.PermissionIDs})
 
 	writeJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
@@ -325,7 +476,126 @@ func (h *RoleHandler) AssignPermissions(c *gin.Context) {
 	})
 }
 
-// AssignRolesToUser 为用户分配角// @Summary      为用户分配角// @Description  管理员为指定用户分配多个角色
+// AddPermissionRequest 单个添加权限请求
+type AddPermissionRequest struct {
+	PermissionID uint64 `json:"permissionId"`
+}
+
+// AddPermissionToRole 为角色添加单个权限
+// @Summary      为角色添加单个权限
+// @Description  管理员为指定角色添加单个权限
+// @Tags         Admin - Roles
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string  true  "Bearer {token}"
+// @Param        id             path      uint    true  "角色ID"
+// @Param        pid            path      uint    true  "权限ID"
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      404            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /admin/roles/{id}/permissions/{pid} [post]
+func (h *RoleHandler) AddPermissionToRole(c *gin.Context) {
+	roleID, err := parseUintParam(c, "id")
+	if err != nil {
+		writeJSONError(c, http.StatusBadRequest, "无效的角色ID")
+		return
+	}
+
+	permissionID, err := parseUintParam(c, "pid")
+	if err != nil {
+		writeJSONError(c, http.StatusBadRequest, "无效的权限ID")
+		return
+	}
+
+	// 获取角色信息（用于审计日志）
+	role, _ := h.roleSvc.GetRole(c.Request.Context(), roleID)
+	roleName := ""
+	if role != nil {
+		roleName = role.Name
+	}
+
+	if err := h.roleSvc.AddPermissionsToRole(c.Request.Context(), roleID, []uint64{permissionID}); err != nil {
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// 失效相关用户缓存
+	_ = h.roleSvc.InvalidateRolePermissionsAndPropagateToUsers(c.Request.Context(), roleID)
+
+	// 记录审计日志
+	h.logRolePermissionChange(c, model.AuditActionAddPermission, roleID, roleName,
+		nil,
+		map[string]any{"permissionId": permissionID})
+
+	writeJSON(c, http.StatusOK, model.APIResponse[any]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: "权限添加成功",
+		Data:    nil,
+	})
+}
+
+// RemovePermissionFromRole 从角色移除单个权限
+// @Summary      从角色移除单个权限
+// @Description  管理员从指定角色移除单个权限
+// @Tags         Admin - Roles
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string  true  "Bearer {token}"
+// @Param        id             path      uint    true  "角色ID"
+// @Param        pid            path      uint    true  "权限ID"
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      404            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /admin/roles/{id}/permissions/{pid} [delete]
+func (h *RoleHandler) RemovePermissionFromRole(c *gin.Context) {
+	roleID, err := parseUintParam(c, "id")
+	if err != nil {
+		writeJSONError(c, http.StatusBadRequest, "无效的角色ID")
+		return
+	}
+
+	permissionID, err := parseUintParam(c, "pid")
+	if err != nil {
+		writeJSONError(c, http.StatusBadRequest, "无效的权限ID")
+		return
+	}
+
+	// 获取角色信息（用于审计日志）
+	role, _ := h.roleSvc.GetRole(c.Request.Context(), roleID)
+	roleName := ""
+	if role != nil {
+		roleName = role.Name
+	}
+
+	if err := h.roleSvc.RemovePermissionsFromRole(c.Request.Context(), roleID, []uint64{permissionID}); err != nil {
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// 失效相关用户缓存
+	_ = h.roleSvc.InvalidateRolePermissionsAndPropagateToUsers(c.Request.Context(), roleID)
+
+	// 记录审计日志
+	h.logRolePermissionChange(c, model.AuditActionRemovePermission, roleID, roleName,
+		map[string]any{"permissionId": permissionID},
+		nil)
+
+	writeJSON(c, http.StatusOK, model.APIResponse[any]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: "权限移除成功",
+		Data:    nil,
+	})
+}
+
+// AssignRolesToUser 为用户分配角色
+// @Summary      为用户分配角色
+// @Description  管理员为指定用户分配多个角色（自动失效缓存并记录审计日志）
 // @Tags         Admin - Roles
 // @Accept       json
 // @Produce      json
@@ -344,10 +614,23 @@ func (h *RoleHandler) AssignRolesToUser(c *gin.Context) {
 		return
 	}
 
+	// 获取变更前的角色列表（用于审计日志）
+	beforeRoles, _ := h.roleSvc.ListRolesByUserID(c.Request.Context(), req.UserID)
+	beforeRoleIDs := make([]uint64, len(beforeRoles))
+	for i, r := range beforeRoles {
+		beforeRoleIDs[i] = r.ID
+	}
+
+	// 分配角色（服务层会自动失效用户缓存）
 	if err := h.roleSvc.AssignRolesToUser(c.Request.Context(), req.UserID, req.RoleIDs); err != nil {
 		writeJSONError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
+
+	// 记录审计日志
+	h.logUserRoleChange(c, model.AuditActionAssign, req.UserID, "",
+		map[string]any{"roleIds": beforeRoleIDs},
+		map[string]any{"roleIds": req.RoleIDs})
 
 	writeJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
@@ -357,22 +640,34 @@ func (h *RoleHandler) AssignRolesToUser(c *gin.Context) {
 	})
 }
 
-// GetUserRoles 获取用户的角色列// @Summary      获取用户的角色列// @Description  管理员获取指定用户的角色列表
+// GetUserRoles 获取用户的角色列表
+// @Summary      获取用户的角色列表
+// @Description  管理员获取指定用户的角色列表
 // @Tags         Admin - Roles
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
-// @Param        user_id         path      uint    true  "用户ID"
+// @Param        id              path      uint    true  "用户ID"
 // @Success      200            {object}  model.APIResponse[[]model.RoleModel]
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
-// @Router       /admin/users/{user_id}/roles [get]
+// @Router       /admin/users/{id}/roles [get]
 func (h *RoleHandler) GetUserRoles(c *gin.Context) {
-	userID, err := parseUintParam(c, "user_id")
+	// 支持两种参数名：user_id 和 id
+	userIDStr := c.Param("user_id")
+	if userIDStr == "" {
+		userIDStr = c.Param("id")
+	}
+
+	userID, err := parseUintParam(c, "id")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "无效的用户ID")
-		return
+		// 尝试使用 user_id 参数
+		userID, err = parseUintParam(c, "user_id")
+		if err != nil {
+			writeJSONError(c, http.StatusBadRequest, "无效的用户ID")
+			return
+		}
 	}
 
 	roles, err := h.roleSvc.ListRolesByUserID(c.Request.Context(), userID)
@@ -386,5 +681,128 @@ func (h *RoleHandler) GetUserRoles(c *gin.Context) {
 		Code:    http.StatusOK,
 		Message: "成功",
 		Data:    ensureSlice(roles),
+	})
+}
+
+// UpdateUserRoles 更新用户的角色（替换现有角色）
+// @Summary      更新用户角色
+// @Description  管理员更新指定用户的角色（替换现有角色，自动失效缓存并记录审计日志）
+// @Tags         Admin - Roles
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string                    true  "Bearer {token}"
+// @Param        id             path      uint                      true  "用户ID"
+// @Param        request        body      UpdateUserRolesRequest    true  "更新角色请求"
+// @Success      200            {object}  model.APIResponse[[]model.RoleModel]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /admin/users/{id}/roles [put]
+func (h *RoleHandler) UpdateUserRoles(c *gin.Context) {
+	userID, err := parseUintParam(c, "id")
+	if err != nil {
+		writeJSONError(c, http.StatusBadRequest, "无效的用户ID")
+		return
+	}
+
+	var req UpdateUserRolesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeJSONError(c, http.StatusBadRequest, "参数验证失败")
+		return
+	}
+
+	// 获取变更前的角色列表（用于审计日志）
+	beforeRoles, _ := h.roleSvc.ListRolesByUserID(c.Request.Context(), userID)
+	beforeRoleIDs := make([]uint64, len(beforeRoles))
+	for i, r := range beforeRoles {
+		beforeRoleIDs[i] = r.ID
+	}
+
+	// 分配角色
+	if err := h.roleSvc.AssignRolesToUser(c.Request.Context(), userID, req.RoleIDs); err != nil {
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// 获取更新后的角色列表
+	afterRoles, err := h.roleSvc.ListRolesByUserID(c.Request.Context(), userID)
+	if err != nil {
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// 记录审计日志
+	h.logUserRoleChange(c, model.AuditActionAssign, userID, "",
+		map[string]any{"roleIds": beforeRoleIDs},
+		map[string]any{"roleIds": req.RoleIDs})
+
+	writeJSON(c, http.StatusOK, model.APIResponse[[]model.RoleModel]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: "用户角色更新成功",
+		Data:    ensureSlice(afterRoles),
+	})
+}
+
+// BatchAssignRolesToUsers 批量为多个用户分配角色
+// @Summary      批量分配用户角色
+// @Description  管理员批量为多个用户分配相同的角色（自动失效缓存并记录审计日志）
+// @Tags         Admin - Roles
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string                    true  "Bearer {token}"
+// @Param        request        body      BatchAssignRolesRequest   true  "批量分配角色请求"
+// @Success      200            {object}  model.APIResponse[BatchAssignRolesResult]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /admin/users/roles/batch [put]
+func (h *RoleHandler) BatchAssignRolesToUsers(c *gin.Context) {
+	var req BatchAssignRolesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeJSONError(c, http.StatusBadRequest, "参数验证失败")
+		return
+	}
+
+	if len(req.UserIDs) == 0 {
+		writeJSONError(c, http.StatusBadRequest, "用户ID列表不能为空")
+		return
+	}
+
+	result := BatchAssignRolesResult{
+		FailedUsers: make([]BatchAssignFailedUser, 0),
+	}
+
+	for _, userID := range req.UserIDs {
+		// 获取变更前的角色列表（用于审计日志）
+		beforeRoles, _ := h.roleSvc.ListRolesByUserID(c.Request.Context(), userID)
+		beforeRoleIDs := make([]uint64, len(beforeRoles))
+		for i, r := range beforeRoles {
+			beforeRoleIDs[i] = r.ID
+		}
+
+		// 分配角色
+		if err := h.roleSvc.AssignRolesToUser(c.Request.Context(), userID, req.RoleIDs); err != nil {
+			result.FailedCount++
+			result.FailedUsers = append(result.FailedUsers, BatchAssignFailedUser{
+				UserID: userID,
+				Reason: err.Error(),
+			})
+			continue
+		}
+
+		result.SuccessCount++
+
+		// 记录审计日志
+		h.logUserRoleChange(c, model.AuditActionBatchAssign, userID, "",
+			map[string]any{"roleIds": beforeRoleIDs},
+			map[string]any{"roleIds": req.RoleIDs})
+	}
+
+	writeJSON(c, http.StatusOK, model.APIResponse[BatchAssignRolesResult]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: "批量角色分配完成",
+		Data:    result,
 	})
 }

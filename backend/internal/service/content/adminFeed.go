@@ -78,7 +78,7 @@ type AdminListFeedsRequest struct {
 
 // AdminListFeedsResponse 列出动态响应
 type AdminListFeedsResponse struct {
-	Feeds []AdminFeedDTO `json:"feeds"`
+	Items []AdminFeedDTO `json:"items"`
 	Total int64          `json:"total"`
 }
 
@@ -131,7 +131,7 @@ func (s *AdminFeedService) ListFeeds(ctx context.Context, req AdminListFeedsRequ
 		dtos = append(dtos, *dto)
 	}
 
-	return &AdminListFeedsResponse{Feeds: dtos, Total: total}, nil
+	return &AdminListFeedsResponse{Items: dtos, Total: total}, nil
 }
 
 // GetFeed 获取动态详情
