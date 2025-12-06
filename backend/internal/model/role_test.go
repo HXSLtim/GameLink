@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"gamelink/internal/model"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -282,4 +283,187 @@ func TestRoleEmptyRelations(t *testing.T) {
 	users := result["users"].([]interface{})
 	assert.Len(t, permissions, 0)
 	assert.Len(t, users, 0)
+}
+
+// TestRoleHasParent tests the HasParent method
+// Requirements: 10.2
+func TestRoleHasParent(t *testing.T) {
+	tests := []struct {
+		name     string
+		parentID *uint64
+		expected bool
+	}{
+		{"nil parent", nil, false},
+		{"zero parent", func() *uint64 { v := uint64(0); return &v }(), false},
+		{"valid parent", func() *uint64 { v := uint64(1); return &v }(), true},
+		{"large parent ID", func() *uint64 { v := uint64(999999); return &v }(), true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			role := &model.RoleModel{ParentID: tt.parentID}
+			assert.Equal(t, tt.expected, role.HasParent())
+		})
+	}
+}
+
+// TestRoleCalculateLevel tests the CalculateLevel method
+// Requirements: 10.2
+func TestRoleCalculateLevel(t *testing.T) {
+	tests := []struct {
+		name          string
+		parentID      *uint64
+		parentLevel   int
+		expectedLevel int
+	}{
+		{"root role (nil parent)", nil, 0, 0},
+		{"root role (nil parent, any parent level)", nil, 5, 0},
+		{"child of root", func() *uint64 { v := uint64(1); return &v }(), 0, 1},
+		{"grandchild", func() *uint64 { v := uint64(2); return &v }(), 1, 2},
+		{"level 3", func() *uint64 { v := uint64(3); return &v }(), 2, 3},
+		{"level 4", func() *uint64 { v := uint64(4); return &v }(), 3, 4},
+		{"level 5 (max)", func() *uint64 { v := uint64(5); return &v }(), 4, 5},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			role := &model.RoleModel{ParentID: tt.parentID}
+			result := role.CalculateLevel(tt.parentLevel)
+			assert.Equal(t, tt.expectedLevel, result)
+		})
+	}
+}
+
+// TestRoleValidateInheritanceDepth tests the ValidateInheritanceDepth method
+// Requirements: 10.2
+func TestRoleValidateInheritanceDepth(t *testing.T) {
+	tests := []struct {
+		name        string
+		level       int
+		expectError bool
+	}{
+		{"level 0 (root)", 0, false},
+		{"level 1", 1, false},
+		{"level 2", 2, false},
+		{"level 3", 3, false},
+		{"level 4", 4, false},
+		{"level 5 (max allowed)", 5, false},
+		{"level 6 (exceeds max)", 6, true},
+		{"level 10 (far exceeds max)", 10, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			role := &model.RoleModel{Level: tt.level}
+			err := role.ValidateInheritanceDepth()
+			if tt.expectError {
+				assert.Error(t, err)
+				assert.Equal(t, model.ErrRoleMaxDepthExceeded, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+// TestRoleInheritanceFields tests the inheritance-related fields
+// Requirements: 10.2
+func TestRoleInheritanceFields(t *testing.T) {
+	parentID := uint64(1)
+	role := &model.RoleModel{
+		Base:     model.Base{ID: 2},
+		Slug:     "child_role",
+		Name:     "子角色",
+		ParentID: &parentID,
+		Priority: 10,
+		Level:    1,
+	}
+
+	assert.NotNil(t, role.ParentID)
+	assert.Equal(t, uint64(1), *role.ParentID)
+	assert.Equal(t, 10, role.Priority)
+	assert.Equal(t, 1, role.Level)
+}
+
+// TestRoleMaxInheritanceDepthConstant tests the MaxRoleInheritanceDepth constant
+// Requirements: 10.2
+func TestRoleMaxInheritanceDepthConstant(t *testing.T) {
+	assert.Equal(t, 5, model.MaxRoleInheritanceDepth)
+}
+
+// TestRoleInheritanceErrors tests the inheritance error constants
+// Requirements: 10.2, 10.5
+func TestRoleInheritanceErrors(t *testing.T) {
+	assert.NotNil(t, model.ErrRoleMaxDepthExceeded)
+	assert.NotNil(t, model.ErrRoleCircularInheritance)
+	assert.Equal(t, "role inheritance depth exceeds maximum limit", model.ErrRoleMaxDepthExceeded.Error())
+	assert.Equal(t, "circular role inheritance detected", model.ErrRoleCircularInheritance.Error())
+}
+
+// TestRolePriorityForConflictResolution tests the Priority field for conflict resolution
+// Requirements: 10.4
+func TestRolePriorityForConflictResolution(t *testing.T) {
+	// Higher priority should override lower priority
+	lowPriorityRole := &model.RoleModel{
+		Slug:     "low_priority",
+		Priority: 1,
+	}
+	highPriorityRole := &model.RoleModel{
+		Slug:     "high_priority",
+		Priority: 10,
+	}
+
+	assert.Less(t, lowPriorityRole.Priority, highPriorityRole.Priority)
+}
+
+// TestRoleInheritanceChainScenario tests a complete inheritance chain scenario
+// Requirements: 10.2
+func TestRoleInheritanceChainScenario(t *testing.T) {
+	// Create a 3-level inheritance chain: superAdmin -> admin -> moderator
+	superAdminID := uint64(1)
+	adminID := uint64(2)
+
+	superAdmin := &model.RoleModel{
+		Base:     model.Base{ID: superAdminID},
+		Slug:     "superAdmin",
+		Name:     "超级管理员",
+		ParentID: nil,
+		Level:    0,
+	}
+
+	admin := &model.RoleModel{
+		Base:     model.Base{ID: adminID},
+		Slug:     "admin",
+		Name:     "管理员",
+		ParentID: &superAdminID,
+		Level:    1,
+	}
+
+	moderator := &model.RoleModel{
+		Base:     model.Base{ID: 3},
+		Slug:     "moderator",
+		Name:     "版主",
+		ParentID: &adminID,
+		Level:    2,
+	}
+
+	// Verify inheritance relationships
+	assert.False(t, superAdmin.HasParent())
+	assert.True(t, admin.HasParent())
+	assert.True(t, moderator.HasParent())
+
+	// Verify levels
+	assert.Equal(t, 0, superAdmin.Level)
+	assert.Equal(t, 1, admin.Level)
+	assert.Equal(t, 2, moderator.Level)
+
+	// Verify level calculation
+	assert.Equal(t, 0, superAdmin.CalculateLevel(0))
+	assert.Equal(t, 1, admin.CalculateLevel(superAdmin.Level))
+	assert.Equal(t, 2, moderator.CalculateLevel(admin.Level))
+
+	// All should pass depth validation
+	assert.NoError(t, superAdmin.ValidateInheritanceDepth())
+	assert.NoError(t, admin.ValidateInheritanceDepth())
+	assert.NoError(t, moderator.ValidateInheritanceDepth())
 }

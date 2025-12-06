@@ -27,12 +27,23 @@
     - 包含 BeforeData/AfterData 字段存储操作前后数据快照
     - 包含 IPAddress/UserAgent/RequestID 字段
     - _Requirements: 6.1, 6.2_
-  - [ ]* 1.4 编写模型单元测试
+  - [x] 1.4 编写模型单元测试
+
+
+
+
+
+
+
+
+
     - 测试软删除功能
     - 测试继承层级计算
     - _Requirements: 1.1, 10.2_
 
-- [-] 2. 实现权限树形结构服务
+- [x] 2. 实现权限树形结构服务
+
+
 
 
 
@@ -42,46 +53,88 @@
     - 使用递归 CTE 查询避免 N+1 问题
     - 按 Group 分组返回树形结构
     - _Requirements: 2.1_
-  - [-] 2.2 实现权限码格式验证
+  - [x] 2.2 实现权限码格式验证
+
 
     - 验证格式：module.resource.action（三段式）
     - 创建后权限码不可修改
     - _Requirements: 1.2, 1.3_
-  - [ ] 2.3 实现权限删除引用检查
+  - [x] 2.3 实现权限删除引用检查
+
+
     - 检查是否被角色引用
     - 系统权限（IsSystem=true）不可删除
     - _Requirements: 1.5_
-  - [ ]* 2.4 编写权限树属性测试
+
+
+  - [x] 2.4 编写权限树属性测试
+
+
+
+
+
+
+
     - **Property 1: 权限码格式验证**
     - **Validates: Requirements 1.3**
 
-- [ ] 3. 实现角色继承功能
-  - [ ] 3.1 实现 SetRoleParent 方法
+- [x] 3. 实现角色继承功能
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  - [x] 3.1 实现 SetRoleParent 方法
+
+
     - 设置角色继承关系
     - 自动计算 Level 字段
     - 限制最大继承深度为 5 层
     - _Requirements: 10.2_
-  - [ ] 3.2 实现 GetRoleInheritanceChain 方法
+  - [x] 3.2 实现 GetRoleInheritanceChain 方法
+
+
     - 使用递归 CTE 查询继承链
     - 避免 N+1 查询问题
     - _Requirements: 10.2, 10.3_
-  - [ ] 3.3 实现 ValidateNoCircularInheritance 方法
+  - [x] 3.3 实现 ValidateNoCircularInheritance 方法
+
+
     - 检测循环继承
     - 拒绝会导致循环的设置
     - _Requirements: 10.5_
-  - [ ] 3.4 实现权限冲突解决策略
+  - [x] 3.4 实现权限冲突解决策略
+
+
     - 子角色权限覆盖父角色（按 Priority 排序）
     - 合并时去重
     - _Requirements: 10.4_
-  - [ ]* 3.5 编写角色继承属性测试
+  - [-] 3.5 编写角色继承属性测试
+
+
+
+
+
+
     - **Property 19: 循环继承检测**
     - **Validates: Requirements 10.5**
 
 - [ ] 4. Checkpoint - 确保所有测试通过
+
   - 确保所有测试通过，如有问题请询问用户
 
 - [ ] 5. 实现权限审计日志服务
   - [ ] 5.1 实现异步审计日志写入
+
     - 使用 channel 缓冲队列
     - 后台 goroutine 批量写入
     - 避免阻塞主流程
@@ -99,7 +152,9 @@
     - 在线保留 90 天
     - 归档保留 365 天
     - _Requirements: 6.4_
-  - [ ]* 5.5 编写审计日志属性测试
+  - [ ] 5.5 编写审计日志属性测试
+
+
     - **Property 11: 审计日志完整性**
     - **Validates: Requirements 6.1, 6.2**
 

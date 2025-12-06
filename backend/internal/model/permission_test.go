@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"gamelink/internal/model"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -272,4 +273,245 @@ func TestPermissionConstants(t *testing.T) {
 	assert.Equal(t, model.HTTPMethod("PUT"), model.HTTPMethodPUT)
 	assert.Equal(t, model.HTTPMethod("PATCH"), model.HTTPMethodPATCH)
 	assert.Equal(t, model.HTTPMethod("DELETE"), model.HTTPMethodDELETE)
+}
+
+// TestPermissionValidateCode tests the permission code validation
+// Requirements: 1.1, 1.3
+func TestPermissionValidateCode(t *testing.T) {
+	tests := []struct {
+		name     string
+		code     string
+		expected bool
+	}{
+		// Valid codes
+		{"valid three-part code", "admin.users.create", true},
+		{"valid with numbers", "admin2.users3.read4", true},
+		{"valid lowercase", "module.resource.action", true},
+
+		// Invalid codes
+		{"empty code", "", false},
+		{"single part", "admin", false},
+		{"two parts", "admin.users", false},
+		{"four parts", "admin.users.create.extra", false},
+		{"uppercase", "Admin.Users.Create", false},
+		{"starts with number", "1admin.users.create", false},
+		{"contains special chars", "admin.users.create!", false},
+		{"contains spaces", "admin .users.create", false},
+		{"contains underscore", "admin_module.users.create", false},
+		{"contains hyphen", "admin-module.users.create", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			permission := &model.Permission{Code: tt.code}
+			result := permission.ValidateCode()
+			assert.Equal(t, tt.expected, result, "ValidateCode() for code %q", tt.code)
+		})
+	}
+}
+
+// TestPermissionCodeParts tests the GetModule, GetResource, GetAction methods
+// Requirements: 1.1
+func TestPermissionCodeParts(t *testing.T) {
+	tests := []struct {
+		name             string
+		code             string
+		expectedModule   string
+		expectedResource string
+		expectedAction   string
+	}{
+		{
+			name:             "valid three-part code",
+			code:             "admin.users.create",
+			expectedModule:   "admin",
+			expectedResource: "users",
+			expectedAction:   "create",
+		},
+		{
+			name:             "empty code",
+			code:             "",
+			expectedModule:   "",
+			expectedResource: "",
+			expectedAction:   "",
+		},
+		{
+			name:             "single part",
+			code:             "admin",
+			expectedModule:   "admin",
+			expectedResource: "",
+			expectedAction:   "",
+		},
+		{
+			name:             "two parts",
+			code:             "admin.users",
+			expectedModule:   "admin",
+			expectedResource: "users",
+			expectedAction:   "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			permission := &model.Permission{Code: tt.code}
+			assert.Equal(t, tt.expectedModule, permission.GetModule())
+			assert.Equal(t, tt.expectedResource, permission.GetResource())
+			assert.Equal(t, tt.expectedAction, permission.GetAction())
+		})
+	}
+}
+
+// TestPermissionIsSystemPermission tests the IsSystemPermission method
+// Requirements: 1.5
+func TestPermissionIsSystemPermission(t *testing.T) {
+	tests := []struct {
+		name     string
+		isSystem bool
+		expected bool
+	}{
+		{"system permission", true, true},
+		{"non-system permission", false, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			permission := &model.Permission{IsSystem: tt.isSystem}
+			assert.Equal(t, tt.expected, permission.IsSystemPermission())
+		})
+	}
+}
+
+// TestPermissionTreeStructure tests the tree structure fields
+// Requirements: 1.1
+func TestPermissionTreeStructure(t *testing.T) {
+	parentID := uint64(1)
+
+	// Test permission with parent
+	childPermission := &model.Permission{
+		Base:      model.Base{ID: 2},
+		Code:      "admin.users.create",
+		ParentID:  &parentID,
+		SortOrder: 1,
+	}
+
+	assert.NotNil(t, childPermission.ParentID)
+	assert.Equal(t, uint64(1), *childPermission.ParentID)
+	assert.Equal(t, 1, childPermission.SortOrder)
+
+	// Test root permission (no parent)
+	rootPermission := &model.Permission{
+		Base:      model.Base{ID: 1},
+		Code:      "admin.users.read",
+		ParentID:  nil,
+		SortOrder: 0,
+	}
+
+	assert.Nil(t, rootPermission.ParentID)
+	assert.Equal(t, 0, rootPermission.SortOrder)
+}
+
+// TestPermissionToTreeNode tests the ToTreeNode conversion
+// Requirements: 1.1
+func TestPermissionToTreeNode(t *testing.T) {
+	parentID := uint64(1)
+	permission := &model.Permission{
+		Base:        model.Base{ID: 2},
+		Method:      model.HTTPMethodPOST,
+		Path:        "/api/admin/users",
+		Code:        "admin.users.create",
+		Group:       "用户管理",
+		Description: "创建用户",
+		ParentID:    &parentID,
+		SortOrder:   1,
+		IsSystem:    true,
+	}
+
+	node := permission.ToTreeNode()
+
+	assert.Equal(t, uint64(2), node.ID)
+	assert.Equal(t, "admin.users.create", node.Code)
+	assert.Equal(t, "创建用户", node.Description)
+	assert.Equal(t, "用户管理", node.Group)
+	assert.Equal(t, model.HTTPMethodPOST, node.Method)
+	assert.Equal(t, "/api/admin/users", node.Path)
+	assert.NotNil(t, node.ParentID)
+	assert.Equal(t, uint64(1), *node.ParentID)
+	assert.Equal(t, 1, node.SortOrder)
+	assert.True(t, node.IsSystem)
+	assert.NotNil(t, node.Children)
+	assert.Len(t, node.Children, 0)
+}
+
+// TestBuildPermissionTree tests the BuildPermissionTree function
+// Requirements: 1.1
+func TestBuildPermissionTree(t *testing.T) {
+	t.Run("empty permissions", func(t *testing.T) {
+		result := model.BuildPermissionTree([]model.Permission{})
+		assert.Nil(t, result)
+	})
+
+	t.Run("single root permission", func(t *testing.T) {
+		permissions := []model.Permission{
+			{Base: model.Base{ID: 1}, Code: "admin.users.read", ParentID: nil},
+		}
+		result := model.BuildPermissionTree(permissions)
+		assert.Len(t, result, 1)
+		assert.Equal(t, uint64(1), result[0].ID)
+		assert.Len(t, result[0].Children, 0)
+	})
+
+	t.Run("parent-child relationship", func(t *testing.T) {
+		parentID := uint64(1)
+		permissions := []model.Permission{
+			{Base: model.Base{ID: 1}, Code: "admin.users.read", ParentID: nil},
+			{Base: model.Base{ID: 2}, Code: "admin.users.create", ParentID: &parentID},
+		}
+		result := model.BuildPermissionTree(permissions)
+		assert.Len(t, result, 1)
+		assert.Equal(t, uint64(1), result[0].ID)
+		assert.Len(t, result[0].Children, 1)
+		assert.Equal(t, uint64(2), result[0].Children[0].ID)
+	})
+
+	t.Run("orphan child becomes root", func(t *testing.T) {
+		nonExistentParentID := uint64(999)
+		permissions := []model.Permission{
+			{Base: model.Base{ID: 1}, Code: "admin.users.read", ParentID: nil},
+			{Base: model.Base{ID: 2}, Code: "admin.users.create", ParentID: &nonExistentParentID},
+		}
+		result := model.BuildPermissionTree(permissions)
+		// Both should be roots since parent 999 doesn't exist
+		assert.Len(t, result, 2)
+	})
+}
+
+// TestBuildPermissionTreeByGroup tests the BuildPermissionTreeByGroup function
+// Requirements: 1.1
+func TestBuildPermissionTreeByGroup(t *testing.T) {
+	t.Run("empty permissions", func(t *testing.T) {
+		result := model.BuildPermissionTreeByGroup([]model.Permission{})
+		assert.Nil(t, result)
+	})
+
+	t.Run("single group", func(t *testing.T) {
+		permissions := []model.Permission{
+			{Base: model.Base{ID: 1}, Code: "admin.users.read", Group: "用户管理"},
+			{Base: model.Base{ID: 2}, Code: "admin.users.create", Group: "用户管理"},
+		}
+		result := model.BuildPermissionTreeByGroup(permissions)
+		assert.Len(t, result, 1)
+		assert.Equal(t, "用户管理", result[0].Group)
+		assert.Len(t, result[0].Permissions, 2)
+	})
+
+	t.Run("multiple groups", func(t *testing.T) {
+		permissions := []model.Permission{
+			{Base: model.Base{ID: 1}, Code: "admin.users.read", Group: "用户管理"},
+			{Base: model.Base{ID: 2}, Code: "admin.orders.read", Group: "订单管理"},
+		}
+		result := model.BuildPermissionTreeByGroup(permissions)
+		assert.Len(t, result, 2)
+		// Groups should be in order of first appearance
+		assert.Equal(t, "用户管理", result[0].Group)
+		assert.Equal(t, "订单管理", result[1].Group)
+	})
 }

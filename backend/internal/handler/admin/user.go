@@ -1,19 +1,16 @@
 package admin
 
 import (
-	"errors"
-	"net/http"
 	"net/mail"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/pkg/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	adminservice "gamelink/internal/service/admin"
+	"gamelink/pkg/apierr"
 )
 
 // User 用户模型（类型别名）
@@ -42,16 +39,10 @@ func NewUserHandler(svc *adminservice.AdminService) *UserHandler {
 func (h *UserHandler) GetUserStats(c *gin.Context) {
 	stats, err := h.svc.GetUserStats(c.Request.Context())
 	if err != nil {
-		respondAPIError(c, apierr.InternalError("获取用户统计失败").WithDetails(err.Error()))
+		respondError(c, apierr.InternalError("获取用户统计失败").WithDetails(err.Error()))
 		return
 	}
-
-	writeJSON(c, http.StatusOK, model.APIResponse[*adminservice.UserStatsResponse]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    stats,
-	})
+	respondSuccess(c, stats)
 }
 
 // ListUsers
@@ -73,17 +64,10 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 	}
 	users, pagination, err := h.svc.ListUsersWithOptions(c.Request.Context(), opts)
 	if err != nil {
-		respondAPIError(c, apierr.InternalError("获取用户列表失败").WithDetails(err.Error()))
+		respondError(c, apierr.InternalError("获取用户列表失败").WithDetails(err.Error()))
 		return
 	}
-	users = ensureSlice(users)
-	writeJSON(c, http.StatusOK, model.APIResponse[[]model.User]{
-		Success:    true,
-		Code:       http.StatusOK,
-		Message:    "OK",
-		Data:       users,
-		Pagination: pagination,
-	})
+	respondList(c, users, pagination)
 }
 
 // GetUser
@@ -98,26 +82,20 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 //
 // GetUser returns a single user by id.
 func (h *UserHandler) GetUser(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 	user, err := h.svc.GetUser(c.Request.Context(), id)
 	if err != nil {
 		if apierr.IsNotFound(err) {
-			respondAPIError(c, err)
+			respondError(c, err)
 			return
 		}
-		respondAPIError(c, apierr.InternalError("获取用户信息失败").WithDetails(err.Error()))
+		respondError(c, apierr.InternalError("获取用户信息失败").WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[*model.User]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    user,
-	})
+	respondSuccess(c, user)
 }
 
 // CreateUser
@@ -134,17 +112,16 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 // CreateUser creates a new user.
 func (h *UserHandler) CreateUser(c *gin.Context) {
 	var payload CreateUserPayload
-	if bindErr := c.ShouldBindJSON(&payload); bindErr != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+	if !ValidateAndRespond(c, &payload) {
 		return
 	}
 
 	if payload.Email != "" && !isValidEmail(payload.Email) {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidEmailFormat)
+		respondBadRequest(c, apierr.ErrInvalidEmailFormat)
 		return
 	}
 	if payload.Phone != "" && !isValidPhone(payload.Phone) {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidPhoneFormat)
+		respondBadRequest(c, apierr.ErrInvalidPhoneFormat)
 		return
 	}
 
@@ -159,19 +136,13 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	})
 	if err != nil {
 		if apierr.IsValidationError(err) {
-			respondAPIError(c, err)
+			respondError(c, err)
 			return
 		}
-		respondAPIError(c, apierr.InternalError("创建用户失败").WithDetails(err.Error()))
+		respondError(c, apierr.InternalError("创建用户失败").WithDetails(err.Error()))
 		return
 	}
-
-	writeJSON(c, http.StatusCreated, model.APIResponse[*model.User]{
-		Success: true,
-		Code:    http.StatusCreated,
-		Message: "created",
-		Data:    user,
-	})
+	respondCreated(c, user)
 }
 
 // UpdateUser
@@ -188,24 +159,22 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 //
 // UpdateUser updates user profile and optional password.
 func (h *UserHandler) UpdateUser(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
 	var payload UpdateUserPayload
-	if bindErr := c.ShouldBindJSON(&payload); bindErr != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+	if !ValidateAndRespond(c, &payload) {
 		return
 	}
 
 	if payload.Email != "" && !isValidEmail(payload.Email) {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidEmailFormat)
+		respondBadRequest(c, apierr.ErrInvalidEmailFormat)
 		return
 	}
 	if payload.Phone != "" && !isValidPhone(payload.Phone) {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidPhoneFormat)
+		respondBadRequest(c, apierr.ErrInvalidPhoneFormat)
 		return
 	}
 
@@ -228,24 +197,10 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		Password:  passwordPtr,
 	})
 	if err != nil {
-		if apierr.IsValidationError(err) {
-			respondAPIError(c, err)
-			return
-		}
-		if apierr.IsNotFound(err) {
-			respondAPIError(c, err)
-			return
-		}
-		respondAPIError(c, apierr.InternalError("更新用户信息失败").WithDetails(err.Error()))
+		respondError(c, err)
 		return
 	}
-
-	writeJSON(c, http.StatusOK, model.APIResponse[*model.User]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "updated",
-		Data:    user,
-	})
+	respondUpdated(c, user)
 }
 
 // DeleteUser
@@ -260,26 +215,16 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 //
 // DeleteUser deletes a user by id.
 func (h *UserHandler) DeleteUser(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
-	err = h.svc.DeleteUser(c.Request.Context(), id)
+	err := h.svc.DeleteUser(c.Request.Context(), id)
 	if err != nil {
-		if apierr.IsNotFound(err) {
-			respondAPIError(c, err)
-			return
-		}
-		respondAPIError(c, apierr.InternalError("删除用户失败").WithDetails(err.Error()))
+		respondError(c, err)
 		return
 	}
-
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "deleted",
-	})
+	respondDeleted(c)
 }
 
 // BatchDeleteUsers
@@ -298,8 +243,7 @@ func (h *UserHandler) BatchDeleteUsers(c *gin.Context) {
 	var payload struct {
 		IDs []uint64 `json:"ids" binding:"required,min=1"`
 	}
-	if bindErr := c.ShouldBindJSON(&payload); bindErr != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+	if !ValidateAndRespond(c, &payload) {
 		return
 	}
 
@@ -316,25 +260,14 @@ func (h *UserHandler) BatchDeleteUsers(c *gin.Context) {
 	}
 
 	if failedCount > 0 {
-		writeJSON(c, http.StatusOK, model.APIResponse[any]{
-			Success: true,
-			Code:    http.StatusOK,
-			Message: "部分删除成功",
-			Data: map[string]int{
-				"deleted": deletedCount,
-				"failed":  failedCount,
-			},
+		respondSuccessWithMsg(c, "部分删除成功", map[string]int{
+			"deleted": deletedCount,
+			"failed":  failedCount,
 		})
 		return
 	}
-
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "批量删除成功",
-		Data: map[string]int{
-			"deleted": deletedCount,
-		},
+	respondSuccessWithMsg(c, "批量删除成功", map[string]int{
+		"deleted": deletedCount,
 	})
 }
 
@@ -354,44 +287,37 @@ func (h *UserHandler) BatchDeleteUsers(c *gin.Context) {
 // @Success      200  {object}  model.APIResponse[[]model.OperationLog]
 // @Router       /admin/users/{id}/logs [get]
 func (h *UserHandler) ListUserLogs(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 	page, pageSize, ok := parsePagination(c)
 	if !ok {
 		return
 	}
-	var actorID *uint64
-	if v, err := queryUint64Ptr(c, "actor_user_id"); err == nil {
-		actorID = v
-	}
-	var dateFrom, dateTo *time.Time
-	if v, err := queryTimePtr(c, "date_from"); err == nil {
-		dateFrom = v
-	} else {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidDateFrom)
+	actorID, ok := QueryUint64PtrAndRespond(c, "actor_user_id", apierr.ErrInvalidUserID)
+	if !ok {
 		return
 	}
-	if v, err := queryTimePtr(c, "date_to"); err == nil {
-		dateTo = v
-	} else {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidDateTo)
+	dateFrom, ok := QueryTimePtrAndRespond(c, "date_from", apierr.ErrInvalidDateFrom)
+	if !ok {
+		return
+	}
+	dateTo, ok := QueryTimePtrAndRespond(c, "date_to", apierr.ErrInvalidDateTo)
+	if !ok {
 		return
 	}
 	opts := repository.OperationLogListOptions{Page: page, PageSize: pageSize, Action: strings.TrimSpace(c.Query("action")), ActorUserID: actorID, DateFrom: dateFrom, DateTo: dateTo}
 	items, p, err := h.svc.ListOperationLogs(c.Request.Context(), "user", id, opts)
 	if err != nil {
-		respondAPIError(c, apierr.InternalError("获取用户日志失败").WithDetails(err.Error()))
+		respondError(c, apierr.InternalError("获取用户日志失败").WithDetails(err.Error()))
 		return
 	}
 	if strings.EqualFold(strings.TrimSpace(c.Query("export")), "csv") {
 		exportOperationLogsCSV(c, "user", id, items)
 		return
 	}
-	items = ensureSlice(items)
-	writeJSON(c, http.StatusOK, model.APIResponse[[]model.OperationLog]{Success: true, Code: http.StatusOK, Message: "OK", Data: items, Pagination: p})
+	respondList(c, items, p)
 }
 
 // UpdateUserStatus
@@ -406,32 +332,22 @@ func (h *UserHandler) ListUserLogs(c *gin.Context) {
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/users/{id}/status [put]
 func (h *UserHandler) UpdateUserStatus(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 	var payload struct {
 		Status string `json:"status" binding:"required"`
 	}
-	if bindErr := c.ShouldBindJSON(&payload); bindErr != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+	if !ValidateAndRespond(c, &payload) {
 		return
 	}
 	out, err := h.svc.UpdateUserStatus(c.Request.Context(), id, model.UserStatus(payload.Status))
 	if err != nil {
-		if apierr.IsValidationError(err) {
-			respondAPIError(c, err)
-			return
-		}
-		if apierr.IsNotFound(err) {
-			respondAPIError(c, err)
-			return
-		}
-		respondAPIError(c, apierr.InternalError("更新用户状态失败").WithDetails(err.Error()))
+		respondError(c, err)
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[*model.User]{Success: true, Code: http.StatusOK, Message: "updated", Data: out})
+	respondUpdated(c, out)
 }
 
 // UpdateUserRole
@@ -446,32 +362,22 @@ func (h *UserHandler) UpdateUserStatus(c *gin.Context) {
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/users/{id}/role [put]
 func (h *UserHandler) UpdateUserRole(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 	var payload struct {
 		Role string `json:"role" binding:"required"`
 	}
-	if bindErr := c.ShouldBindJSON(&payload); bindErr != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+	if !ValidateAndRespond(c, &payload) {
 		return
 	}
 	out, err := h.svc.UpdateUserRole(c.Request.Context(), id, model.Role(payload.Role))
 	if err != nil {
-		if apierr.IsValidationError(err) {
-			respondAPIError(c, err)
-			return
-		}
-		if apierr.IsNotFound(err) {
-			respondAPIError(c, err)
-			return
-		}
-		respondAPIError(c, apierr.InternalError("更新用户角色失败").WithDetails(err.Error()))
+		respondError(c, err)
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[*model.User]{Success: true, Code: http.StatusOK, Message: "updated", Data: out})
+	respondUpdated(c, out)
 }
 
 // ListUserOrders
@@ -487,19 +393,14 @@ func (h *UserHandler) UpdateUserRole(c *gin.Context) {
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/users/{id}/orders [get]
 func (h *UserHandler) ListUserOrders(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 	// Ensure user exists
-	_, err = h.svc.GetUser(c.Request.Context(), id)
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	}
+	_, err := h.svc.GetUser(c.Request.Context(), id)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 	// Build options from query, then enforce user scope
@@ -512,11 +413,10 @@ func (h *UserHandler) ListUserOrders(c *gin.Context) {
 	opts.UserID = &uid
 	orders, pagination, err := h.svc.ListOrders(c.Request.Context(), opts)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, apierr.InternalError("获取用户订单失败").WithDetails(err.Error()))
 		return
 	}
-	orders = ensureSlice(orders)
-	writeJSON(c, http.StatusOK, model.APIResponse[[]model.Order]{Success: true, Code: http.StatusOK, Message: "OK", Data: orders, Pagination: pagination})
+	respondList(c, orders, pagination)
 }
 
 // CreateUserPayload defines the request body for creating a user.
@@ -563,16 +463,15 @@ type CreateUserWithPlayerPayload struct {
 // CreateUserWithPlayer creates a user and a player profile transactionally.
 func (h *UserHandler) CreateUserWithPlayer(c *gin.Context) {
 	var payload CreateUserWithPlayerPayload
-	if bindErr := c.ShouldBindJSON(&payload); bindErr != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+	if !ValidateAndRespond(c, &payload) {
 		return
 	}
 	if payload.Email != "" && !isValidEmail(payload.Email) {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidEmailFormat)
+		respondBadRequest(c, apierr.ErrInvalidEmailFormat)
 		return
 	}
 	if payload.Phone != "" && !isValidPhone(payload.Phone) {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidPhoneFormat)
+		respondBadRequest(c, apierr.ErrInvalidPhoneFormat)
 		return
 	}
 
@@ -595,19 +494,10 @@ func (h *UserHandler) CreateUserWithPlayer(c *gin.Context) {
 		},
 	)
 	if err != nil {
-		if apierr.IsValidationError(err) {
-			respondAPIError(c, err)
-			return
-		}
-		respondAPIError(c, apierr.InternalError("创建用户和陪玩师失败").WithDetails(err.Error()))
+		respondError(c, err)
 		return
 	}
-	writeJSON(c, http.StatusCreated, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusCreated,
-		Message: "created",
-		Data:    map[string]any{"user": user, "player": player},
-	})
+	respondCreated(c, map[string]any{"user": user, "player": player})
 }
 
 var phoneRegexp = regexp.MustCompile(`^1[3-9]\d{9}$`)
@@ -641,20 +531,15 @@ func isValidEmail(e string) bool {
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/users/{id}/login-history [get]
 func (h *UserHandler) ListUserLoginHistory(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
 	// 确认用户存在
-	_, err = h.svc.GetUser(c.Request.Context(), id)
-	if errors.Is(err, adminservice.ErrNotFound) {
-		respondAPIError(c, apierr.NotFound("用户不存在"))
-		return
-	}
+	_, err := h.svc.GetUser(c.Request.Context(), id)
 	if err != nil {
-		respondAPIError(c, apierr.InternalError("查询用户失败").WithDetails(err.Error()))
+		respondError(c, err)
 		return
 	}
 
@@ -681,12 +566,5 @@ func (h *UserHandler) ListUserLoginHistory(c *gin.Context) {
 		HasNext:    page < totalPages,
 		HasPrev:    page > 1,
 	}
-
-	writeJSON(c, http.StatusOK, model.APIResponse[[]model.UserLoginHistory]{
-		Success:    true,
-		Code:       http.StatusOK,
-		Message:    "OK",
-		Data:       histories,
-		Pagination: pagination,
-	})
+	respondList(c, histories, pagination)
 }

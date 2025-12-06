@@ -125,6 +125,11 @@ type RoleRepository interface {
 	RemoveFromUser(ctx context.Context, userID uint64, roleIDs []uint64) error
 	ListByUserID(ctx context.Context, userID uint64) ([]model.RoleModel, error)
 	CheckUserHasRole(ctx context.Context, userID uint64, roleSlug string) (bool, error)
+	// Role inheritance methods
+	SetParent(ctx context.Context, roleID uint64, parentID *uint64) error
+	GetInheritanceChain(ctx context.Context, roleID uint64) ([]model.RoleModel, error)
+	GetChildRoles(ctx context.Context, roleID uint64) ([]model.RoleModel, error)
+	UpdateLevel(ctx context.Context, roleID uint64, level int) error
 }
 
 // PlayerTagRepository defines player tag data access operations.

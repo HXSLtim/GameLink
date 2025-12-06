@@ -278,3 +278,143 @@ func (r *roleRepository) CheckUserHasRole(ctx context.Context, userID uint64, ro
 		Count(&count).Error
 	return count > 0, err
 }
+
+// SetParent sets the parent role for a given role and updates the level.
+func (r *roleRepository) SetParent(ctx context.Context, roleID uint64, parentID *uint64) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Get the current role
+		var role model.RoleModel
+		if err := tx.First(&role, roleID).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return repository.ErrNotFound
+			}
+			return err
+		}
+
+		// Calculate new level
+		newLevel := 0
+		if parentID != nil && *parentID > 0 {
+			var parent model.RoleModel
+			if err := tx.First(&parent, *parentID).Error; err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return repository.ErrNotFound
+				}
+				return err
+			}
+			newLevel = parent.Level + 1
+		}
+
+		// Check max depth
+		if newLevel > model.MaxRoleInheritanceDepth {
+			return model.ErrRoleMaxDepthExceeded
+		}
+
+		// Update the role
+		updates := map[string]interface{}{
+			"parent_id": parentID,
+			"level":     newLevel,
+		}
+		if err := tx.Model(&role).Updates(updates).Error; err != nil {
+			return err
+		}
+
+		// Update all child roles' levels recursively
+		return r.updateChildLevels(tx, roleID, newLevel)
+	})
+}
+
+// updateChildLevels recursively updates the level of all child roles.
+func (r *roleRepository) updateChildLevels(tx *gorm.DB, parentID uint64, parentLevel int) error {
+	var children []model.RoleModel
+	if err := tx.Where("parent_id = ?", parentID).Find(&children).Error; err != nil {
+		return err
+	}
+
+	for _, child := range children {
+		newLevel := parentLevel + 1
+		if newLevel > model.MaxRoleInheritanceDepth {
+			return model.ErrRoleMaxDepthExceeded
+		}
+
+		if err := tx.Model(&child).Update("level", newLevel).Error; err != nil {
+			return err
+		}
+
+		// Recursively update grandchildren
+		if err := r.updateChildLevels(tx, child.ID, newLevel); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// GetInheritanceChain returns the inheritance chain from the given role up to the root.
+// The chain is ordered from the given role to the root (child -> parent -> grandparent).
+func (r *roleRepository) GetInheritanceChain(ctx context.Context, roleID uint64) ([]model.RoleModel, error) {
+	var chain []model.RoleModel
+
+	// Get the starting role
+	var role model.RoleModel
+	if err := r.db.WithContext(ctx).First(&role, roleID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, repository.ErrNotFound
+		}
+		return nil, err
+	}
+
+	chain = append(chain, role)
+
+	// Traverse up the inheritance chain
+	currentRole := &role
+	visited := make(map[uint64]bool)
+	visited[role.ID] = true
+
+	for currentRole.ParentID != nil && *currentRole.ParentID > 0 {
+		parentID := *currentRole.ParentID
+
+		// Check for circular reference (should not happen if validation is correct)
+		if visited[parentID] {
+			return nil, model.ErrRoleCircularInheritance
+		}
+
+		var parent model.RoleModel
+		if err := r.db.WithContext(ctx).First(&parent, parentID).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				break // Parent not found, stop traversal
+			}
+			return nil, err
+		}
+
+		chain = append(chain, parent)
+		visited[parentID] = true
+		currentRole = &parent
+	}
+
+	return chain, nil
+}
+
+// GetChildRoles returns all direct child roles of the given role.
+func (r *roleRepository) GetChildRoles(ctx context.Context, roleID uint64) ([]model.RoleModel, error) {
+	var children []model.RoleModel
+	err := r.db.WithContext(ctx).
+		Where("parent_id = ?", roleID).
+		Order("priority DESC, slug").
+		Find(&children).Error
+	return children, err
+}
+
+// UpdateLevel updates the level of a role.
+func (r *roleRepository) UpdateLevel(ctx context.Context, roleID uint64, level int) error {
+	result := r.db.WithContext(ctx).
+		Model(&model.RoleModel{}).
+		Where("id = ?", roleID).
+		Update("level", level)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return repository.ErrNotFound
+	}
+	return nil
+}

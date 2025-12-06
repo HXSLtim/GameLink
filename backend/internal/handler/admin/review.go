@@ -1,7 +1,6 @@
 package admin
 
 import (
-	"errors"
 	"strings"
 	"time"
 
@@ -45,42 +44,32 @@ func (h *ReviewHandler) ListReviews(c *gin.Context) {
 	if !ok {
 		return
 	}
-	var orderID, userID, playerID *uint64
-	if v, err := queryUint64Ptr(c, "order_id"); err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidOrderID)
-		return
-	} else {
-		orderID = v
-	}
-	if v, err := queryUint64Ptr(c, "user_id"); err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidUserID)
-		return
-	} else {
-		userID = v
-	}
-	if v, err := queryUint64Ptr(c, "player_id"); err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidPlayerID)
-		return
-	} else {
-		playerID = v
-	}
-	dateFrom, err := queryTimePtr(c, "date_from")
-	if err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidDateFrom)
+	orderID, ok := QueryUint64PtrAndRespond(c, "order_id", apierr.ErrInvalidOrderID)
+	if !ok {
 		return
 	}
-	dateTo, err := queryTimePtr(c, "date_to")
-	if err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidDateTo)
+	userID, ok := QueryUint64PtrAndRespond(c, "user_id", apierr.ErrInvalidUserID)
+	if !ok {
+		return
+	}
+	playerID, ok := QueryUint64PtrAndRespond(c, "player_id", apierr.ErrInvalidPlayerID)
+	if !ok {
+		return
+	}
+	dateFrom, ok := QueryTimePtrAndRespond(c, "date_from", apierr.ErrInvalidDateFrom)
+	if !ok {
+		return
+	}
+	dateTo, ok := QueryTimePtrAndRespond(c, "date_to", apierr.ErrInvalidDateTo)
+	if !ok {
 		return
 	}
 	items, p, err := h.svc.ListReviews(c.Request.Context(), repository.ReviewListOptions{Page: page, PageSize: pageSize, OrderID: orderID, UserID: userID, PlayerID: playerID, DateFrom: dateFrom, DateTo: dateTo})
 	if err != nil {
-		writeJSONError(c, 500, err.Error())
+		respondError(c, err)
 		return
 	}
-	items = ensureSlice(items)
-	writeJSON(c, 200, model.APIResponse[[]model.Review]{Success: true, Code: 200, Message: "OK", Data: items, Pagination: p})
+	respondList(c, items, p)
 }
 
 // GetReview
@@ -93,21 +82,16 @@ func (h *ReviewHandler) ListReviews(c *gin.Context) {
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/reviews/{id} [get]
 func (h *ReviewHandler) GetReview(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidID)
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 	item, err := h.svc.GetReview(c.Request.Context(), id)
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	}
 	if err != nil {
-		writeJSONError(c, 500, err.Error())
+		respondError(c, err)
 		return
 	}
-	writeJSON(c, 200, model.APIResponse[*model.Review]{Success: true, Code: 200, Message: "OK", Data: item})
+	respondSuccess(c, item)
 }
 
 // CreateReview
@@ -122,21 +106,16 @@ func (h *ReviewHandler) GetReview(c *gin.Context) {
 // @Router       /admin/reviews [post]
 func (h *ReviewHandler) CreateReview(c *gin.Context) {
 	var p CreateReviewPayload
-	if err := c.ShouldBindJSON(&p); err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidJSONPayload)
+	if !ValidateAndRespond(c, &p) {
 		return
 	}
 	r := model.Review{OrderID: p.OrderID, UserID: p.UserID, PlayerID: p.PlayerID, Score: model.Rating(p.Score), Content: strings.TrimSpace(p.Content)}
 	out, err := h.svc.CreateReview(c.Request.Context(), r)
-	if errors.Is(err, apierr.BadRequest("validation failed")) {
-		_ = c.Error(apierr.BadRequest("validation failed"))
-		return
-	}
 	if err != nil {
-		writeJSONError(c, 500, err.Error())
+		respondError(c, err)
 		return
 	}
-	writeJSON(c, 201, model.APIResponse[*model.Review]{Success: true, Code: 201, Message: "created", Data: out})
+	respondCreated(c, out)
 }
 
 // UpdateReview
@@ -151,30 +130,20 @@ func (h *ReviewHandler) CreateReview(c *gin.Context) {
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/reviews/{id} [put]
 func (h *ReviewHandler) UpdateReview(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidID)
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 	var p UpdateReviewPayload
-	if err := c.ShouldBindJSON(&p); err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidJSONPayload)
+	if !ValidateAndRespond(c, &p) {
 		return
 	}
 	out, err := h.svc.UpdateReview(c.Request.Context(), id, model.Rating(p.Score), p.Content)
-	if errors.Is(err, apierr.BadRequest("validation failed")) {
-		_ = c.Error(apierr.BadRequest("validation failed"))
-		return
-	}
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	}
 	if err != nil {
-		writeJSONError(c, 500, err.Error())
+		respondError(c, err)
 		return
 	}
-	writeJSON(c, 200, model.APIResponse[*model.Review]{Success: true, Code: 200, Message: "updated", Data: out})
+	respondUpdated(c, out)
 }
 
 // DeleteReview
@@ -187,21 +156,16 @@ func (h *ReviewHandler) UpdateReview(c *gin.Context) {
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/reviews/{id} [delete]
 func (h *ReviewHandler) DeleteReview(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
+		return
+	}
+	err := h.svc.DeleteReview(c.Request.Context(), id)
 	if err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidID)
+		respondError(c, err)
 		return
 	}
-	err = h.svc.DeleteReview(c.Request.Context(), id)
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	}
-	if err != nil {
-		writeJSONError(c, 500, err.Error())
-		return
-	}
-	writeJSON(c, 200, model.APIResponse[any]{Success: true, Code: 200, Message: "deleted"})
+	respondDeleted(c)
 }
 
 // ListReviewLogs
@@ -220,36 +184,30 @@ func (h *ReviewHandler) DeleteReview(c *gin.Context) {
 // @Success      200  {object}  model.APIResponse[[]model.OperationLog]
 // @Router       /admin/reviews/{id}/logs [get]
 func (h *ReviewHandler) ListReviewLogs(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidID)
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 	page, pageSize, ok := parsePagination(c)
 	if !ok {
 		return
 	}
-	var actorID *uint64
-	if v, err := queryUint64Ptr(c, "actor_user_id"); err == nil {
-		actorID = v
-	}
-	var dateFrom, dateTo *time.Time
-	if v, err := queryTimePtr(c, "date_from"); err == nil {
-		dateFrom = v
-	} else {
-		writeJSONError(c, 400, apierr.ErrInvalidDateFrom)
+	actorID, ok := QueryUint64PtrAndRespond(c, "actor_user_id", apierr.ErrInvalidUserID)
+	if !ok {
 		return
 	}
-	if v, err := queryTimePtr(c, "date_to"); err == nil {
-		dateTo = v
-	} else {
-		writeJSONError(c, 400, apierr.ErrInvalidDateTo)
+	dateFrom, ok := QueryTimePtrAndRespond(c, "date_from", apierr.ErrInvalidDateFrom)
+	if !ok {
+		return
+	}
+	dateTo, ok := QueryTimePtrAndRespond(c, "date_to", apierr.ErrInvalidDateTo)
+	if !ok {
 		return
 	}
 	opts := repository.OperationLogListOptions{Page: page, PageSize: pageSize, Action: strings.TrimSpace(c.Query("action")), ActorUserID: actorID, DateFrom: dateFrom, DateTo: dateTo}
 	items, p, err := h.svc.ListOperationLogs(c.Request.Context(), "review", id, opts)
 	if err != nil {
-		writeJSONError(c, 500, err.Error())
+		respondError(c, err)
 		return
 	}
 	if strings.EqualFold(strings.TrimSpace(c.Query("export")), "csv") {
@@ -284,8 +242,7 @@ func (h *ReviewHandler) ListReviewLogs(c *gin.Context) {
 		}
 		result = append(result, logWithActor)
 	}
-
-	writeJSON(c, 200, model.APIResponse[[]OperationLogWithActor]{Success: true, Code: 200, Message: "OK", Data: result, Pagination: p})
+	respondList(c, result, p)
 }
 
 // ListPlayerReviews
@@ -299,9 +256,8 @@ func (h *ReviewHandler) ListReviewLogs(c *gin.Context) {
 // @Success      200  {object}  model.APIResponse[[]Review]
 // @Router       /admin/players/{id}/reviews [get]
 func (h *ReviewHandler) ListPlayerReviews(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidID)
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 	page, pageSize, ok := parsePagination(c)
@@ -311,11 +267,10 @@ func (h *ReviewHandler) ListPlayerReviews(c *gin.Context) {
 	pid := id
 	items, p, err := h.svc.ListReviews(c.Request.Context(), repository.ReviewListOptions{Page: page, PageSize: pageSize, PlayerID: &pid})
 	if err != nil {
-		writeJSONError(c, 500, err.Error())
+		respondError(c, err)
 		return
 	}
-	items = ensureSlice(items)
-	writeJSON(c, 200, model.APIResponse[[]model.Review]{Success: true, Code: 200, Message: "OK", Data: items, Pagination: p})
+	respondList(c, items, p)
 }
 
 type CreateReviewPayload struct {
@@ -344,41 +299,28 @@ type UpdateReviewPayload struct {
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/reviews/{id}/reports [post]
 func (h *ReviewHandler) CreateReviewReport(c *gin.Context) {
-	reviewID, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidID)
+	reviewID, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
 	var p CreateReviewReportPayload
-	if err := c.ShouldBindJSON(&p); err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidJSONPayload)
+	if !ValidateAndRespond(c, &p) {
 		return
 	}
 
 	// Get reporter ID from context (authenticated user)
-	reporterID, exists := c.Get("user_id")
-	if !exists {
-		writeJSONError(c, 401, "unauthorized")
+	reporterID, ok := getAdminUserID(c)
+	if !ok {
 		return
 	}
 
-	out, err := h.svc.ReportReview(c.Request.Context(), reviewID, reporterID.(uint64), p.Reason, p.Evidence)
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	}
+	out, err := h.svc.ReportReview(c.Request.Context(), reviewID, reporterID, p.Reason, p.Evidence)
 	if err != nil {
-		writeJSONError(c, 500, err.Error())
+		respondError(c, err)
 		return
 	}
-
-	writeJSON(c, 201, model.APIResponse[CreateReviewReportResponse]{
-		Success: true,
-		Code:    201,
-		Message: "report created",
-		Data:    CreateReviewReportResponse{ReportID: out},
-	})
+	respondCreated(c, CreateReviewReportResponse{ReportID: out})
 }
 
 // ListReviewReports
@@ -401,57 +343,40 @@ func (h *ReviewHandler) ListReviewReports(c *gin.Context) {
 		return
 	}
 
-	var reviewID, reporterID *uint64
-	if v, err := queryUint64Ptr(c, "review_id"); err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidID)
+	reviewID, ok := QueryUint64PtrAndRespond(c, "review_id", apierr.ErrInvalidID)
+	if !ok {
 		return
-	} else {
-		reviewID = v
 	}
-
-	if v, err := queryUint64Ptr(c, "reporter_id"); err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidUserID)
+	reporterID, ok := QueryUint64PtrAndRespond(c, "reporter_id", apierr.ErrInvalidUserID)
+	if !ok {
 		return
-	} else {
-		reporterID = v
 	}
 
 	var status *model.ReviewReportStatus
 	if statusStr := strings.TrimSpace(c.Query("status")); statusStr != "" {
 		s := model.ReviewReportStatus(statusStr)
 		if !s.Valid() {
-			writeJSONError(c, 400, "invalid status")
+			respondBadRequest(c, "invalid status")
 			return
 		}
 		status = &s
 	}
 
-	dateFrom, err := queryTimePtr(c, "date_from")
-	if err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidDateFrom)
+	dateFrom, ok := QueryTimePtrAndRespond(c, "date_from", apierr.ErrInvalidDateFrom)
+	if !ok {
 		return
 	}
-
-	dateTo, err := queryTimePtr(c, "date_to")
-	if err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidDateTo)
+	dateTo, ok := QueryTimePtrAndRespond(c, "date_to", apierr.ErrInvalidDateTo)
+	if !ok {
 		return
 	}
 
 	items, p, err := h.svc.ListReviewReports(c.Request.Context(), page, pageSize, reviewID, reporterID, status, dateFrom, dateTo)
 	if err != nil {
-		writeJSONError(c, 500, err.Error())
+		respondError(c, err)
 		return
 	}
-
-	items = ensureSlice(items)
-	writeJSON(c, 200, model.APIResponse[[]adminservice.ReviewReportDTO]{
-		Success:    true,
-		Code:       200,
-		Message:    "OK",
-		Data:       items,
-		Pagination: p,
-	})
+	respondList(c, items, p)
 }
 
 // GetReviewReport
@@ -464,28 +389,16 @@ func (h *ReviewHandler) ListReviewReports(c *gin.Context) {
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/review-reports/{id} [get]
 func (h *ReviewHandler) GetReviewReport(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidID)
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
-
 	item, err := h.svc.GetReviewReport(c.Request.Context(), id)
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	}
 	if err != nil {
-		writeJSONError(c, 500, err.Error())
+		respondError(c, err)
 		return
 	}
-
-	writeJSON(c, 200, model.APIResponse[*adminservice.ReviewReportDTO]{
-		Success: true,
-		Code:    200,
-		Message: "OK",
-		Data:    item,
-	})
+	respondSuccess(c, item)
 }
 
 // HandleReviewReport
@@ -501,47 +414,34 @@ func (h *ReviewHandler) GetReviewReport(c *gin.Context) {
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/review-reports/{id}/handle [put]
 func (h *ReviewHandler) HandleReviewReport(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidID)
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
 	var p HandleReviewReportPayload
-	if err := c.ShouldBindJSON(&p); err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidJSONPayload)
+	if !ValidateAndRespond(c, &p) {
 		return
 	}
 
 	// Validate action
 	if p.Action != "delete" && p.Action != "warn" && p.Action != "reject" {
-		writeJSONError(c, 400, "invalid action, must be one of: delete, warn, reject")
+		respondBadRequest(c, "invalid action, must be one of: delete, warn, reject")
 		return
 	}
 
 	// Get handler ID from context (authenticated admin)
-	handlerID, exists := c.Get("user_id")
-	if !exists {
-		writeJSONError(c, 401, "unauthorized")
+	handlerID, ok := getAdminUserID(c)
+	if !ok {
 		return
 	}
 
-	out, err := h.svc.HandleReviewReport(c.Request.Context(), id, handlerID.(uint64), p.Action, p.Note)
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	}
+	out, err := h.svc.HandleReviewReport(c.Request.Context(), id, handlerID, p.Action, p.Note)
 	if err != nil {
-		writeJSONError(c, 500, err.Error())
+		respondError(c, err)
 		return
 	}
-
-	writeJSON(c, 200, model.APIResponse[HandleReviewReportResponse]{
-		Success: true,
-		Code:    200,
-		Message: out.Message,
-		Data:    HandleReviewReportResponse{Status: out.Status, Message: out.Message},
-	})
+	respondSuccessWithMsg(c, out.Message, HandleReviewReportResponse{Status: out.Status, Message: out.Message})
 }
 
 // Payload types for review reports
@@ -583,23 +483,16 @@ func (h *ReviewHandler) ListPendingReviews(c *gin.Context) {
 
 	items, total, err := h.svc.ListPendingReviews(c.Request.Context(), page, pageSize)
 	if err != nil {
-		writeJSONError(c, 500, err.Error())
+		respondError(c, err)
 		return
 	}
 
-	items = ensureSlice(items)
 	p := &model.Pagination{
 		Page:     page,
 		PageSize: pageSize,
 		Total:    int(total),
 	}
-	writeJSON(c, 200, model.APIResponse[[]model.Review]{
-		Success:    true,
-		Code:       200,
-		Message:    "OK",
-		Data:       items,
-		Pagination: p,
-	})
+	respondList(c, items, p)
 }
 
 // ApproveReview
@@ -615,9 +508,8 @@ func (h *ReviewHandler) ListPendingReviews(c *gin.Context) {
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/reviews/{id}/approve [put]
 func (h *ReviewHandler) ApproveReview(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidID)
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
@@ -637,21 +529,12 @@ func (h *ReviewHandler) ApproveReview(c *gin.Context) {
 		actorUserID = &uid
 	}
 
-	err = h.svc.ApproveReview(c.Request.Context(), id, reason, actorUserID)
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	}
+	err := h.svc.ApproveReview(c.Request.Context(), id, reason, actorUserID)
 	if err != nil {
-		writeJSONError(c, 500, err.Error())
+		respondError(c, err)
 		return
 	}
-
-	writeJSON(c, 200, model.APIResponse[any]{
-		Success: true,
-		Code:    200,
-		Message: "review approved",
-	})
+	respondSuccessWithMsg[any](c, "review approved", nil)
 }
 
 // RejectReview
@@ -667,15 +550,13 @@ func (h *ReviewHandler) ApproveReview(c *gin.Context) {
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/reviews/{id}/reject [put]
 func (h *ReviewHandler) RejectReview(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidID)
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
 	var p RejectReviewPayload
-	if err := c.ShouldBindJSON(&p); err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidJSONPayload)
+	if !ValidateAndRespond(c, &p) {
 		return
 	}
 
@@ -686,21 +567,12 @@ func (h *ReviewHandler) RejectReview(c *gin.Context) {
 		actorUserID = &uid
 	}
 
-	err = h.svc.RejectReview(c.Request.Context(), id, p.Reason, actorUserID)
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	}
+	err := h.svc.RejectReview(c.Request.Context(), id, p.Reason, actorUserID)
 	if err != nil {
-		writeJSONError(c, 500, err.Error())
+		respondError(c, err)
 		return
 	}
-
-	writeJSON(c, 200, model.APIResponse[any]{
-		Success: true,
-		Code:    200,
-		Message: "review rejected",
-	})
+	respondSuccessWithMsg[any](c, "review rejected", nil)
 }
 
 // BatchApproveReviews
@@ -715,8 +587,7 @@ func (h *ReviewHandler) RejectReview(c *gin.Context) {
 // @Router       /admin/reviews/batch-approve [put]
 func (h *ReviewHandler) BatchApproveReviews(c *gin.Context) {
 	var p BatchApprovePayload
-	if err := c.ShouldBindJSON(&p); err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidJSONPayload)
+	if !ValidateAndRespond(c, &p) {
 		return
 	}
 
@@ -729,15 +600,10 @@ func (h *ReviewHandler) BatchApproveReviews(c *gin.Context) {
 
 	err := h.svc.BatchApproveReviews(c.Request.Context(), p.ReviewIDs, actorUserID)
 	if err != nil {
-		writeJSONError(c, 500, err.Error())
+		respondError(c, err)
 		return
 	}
-
-	writeJSON(c, 200, model.APIResponse[any]{
-		Success: true,
-		Code:    200,
-		Message: "reviews approved",
-	})
+	respondSuccessWithMsg[any](c, "reviews approved", nil)
 }
 
 // BatchRejectReviews
@@ -752,8 +618,7 @@ func (h *ReviewHandler) BatchApproveReviews(c *gin.Context) {
 // @Router       /admin/reviews/batch-reject [put]
 func (h *ReviewHandler) BatchRejectReviews(c *gin.Context) {
 	var p BatchRejectPayload
-	if err := c.ShouldBindJSON(&p); err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidJSONPayload)
+	if !ValidateAndRespond(c, &p) {
 		return
 	}
 
@@ -766,15 +631,10 @@ func (h *ReviewHandler) BatchRejectReviews(c *gin.Context) {
 
 	err := h.svc.BatchRejectReviews(c.Request.Context(), p.ReviewIDs, p.Reason, actorUserID)
 	if err != nil {
-		writeJSONError(c, 500, err.Error())
+		respondError(c, err)
 		return
 	}
-
-	writeJSON(c, 200, model.APIResponse[any]{
-		Success: true,
-		Code:    200,
-		Message: "reviews rejected",
-	})
+	respondSuccessWithMsg[any](c, "reviews rejected", nil)
 }
 
 // Payload types for review moderation
@@ -813,45 +673,28 @@ type UpdateReplyPayload struct {
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/review-replies/{id} [put]
 func (h *ReviewHandler) UpdateReply(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidID)
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
 	var p UpdateReplyPayload
-	if err := c.ShouldBindJSON(&p); err != nil {
-		writeJSONError(c, 400, err.Error())
+	if !ValidateAndRespond(c, &p) {
 		return
 	}
 
 	// 获取当前用户ID
-	userID, exists := c.Get("user_id")
-	if !exists {
-		writeJSONError(c, 401, "未授权")
+	userID, ok := getAdminUserID(c)
+	if !ok {
 		return
 	}
 
-	result, err := h.svc.UpdateReviewReply(c.Request.Context(), userID.(uint64), id, p.Content)
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	}
-	if errors.Is(err, adminservice.ErrUnauthorized) {
-		writeJSONError(c, 403, "无权操作")
-		return
-	}
+	result, err := h.svc.UpdateReviewReply(c.Request.Context(), userID, id, p.Content)
 	if err != nil {
-		writeJSONError(c, 500, err.Error())
+		respondError(c, err)
 		return
 	}
-
-	writeJSON(c, 200, model.APIResponse[map[string]interface{}]{
-		Success: true,
-		Code:    200,
-		Message: "回复更新成功",
-		Data:    result,
-	})
+	respondSuccessWithMsg(c, "回复更新成功", result)
 }
 
 // DeleteReply
@@ -864,34 +707,23 @@ func (h *ReviewHandler) UpdateReply(c *gin.Context) {
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/review-replies/{id} [delete]
 func (h *ReviewHandler) DeleteReply(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidID)
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
 	// 获取当前用户ID
-	userID, exists := c.Get("user_id")
-	if !exists {
-		writeJSONError(c, 401, "未授权")
+	userID, ok := getAdminUserID(c)
+	if !ok {
 		return
 	}
 
-	err = h.svc.DeleteReviewReply(c.Request.Context(), userID.(uint64), id)
-	if errors.Is(err, adminservice.ErrNotFound) {
-		_ = c.Error(adminservice.ErrNotFound)
-		return
-	}
-	if errors.Is(err, adminservice.ErrUnauthorized) {
-		writeJSONError(c, 403, "无权操作")
-		return
-	}
+	err := h.svc.DeleteReviewReply(c.Request.Context(), userID, id)
 	if err != nil {
-		writeJSONError(c, 500, err.Error())
+		respondError(c, err)
 		return
 	}
-
-	c.JSON(200, model.SuccessResponse{Success: true, Code: 200, Message: "回复删除成功"})
+	respondSuccessWithMsg[any](c, "回复删除成功", nil)
 }
 
 // SearchOperationLogs
@@ -916,25 +748,20 @@ func (h *ReviewHandler) SearchOperationLogs(c *gin.Context) {
 		return
 	}
 
-	var entityID, actorID *uint64
-	if v, err := queryUint64Ptr(c, "entity_id"); err == nil {
-		entityID = v
-	}
-	if v, err := queryUint64Ptr(c, "actor_user_id"); err == nil {
-		actorID = v
-	}
-
-	var dateFrom, dateTo *time.Time
-	if v, err := queryTimePtr(c, "date_from"); err == nil {
-		dateFrom = v
-	} else if strings.TrimSpace(c.Query("date_from")) != "" {
-		writeJSONError(c, 400, apierr.ErrInvalidDateFrom)
+	entityID, ok := QueryUint64PtrAndRespond(c, "entity_id", apierr.ErrInvalidID)
+	if !ok {
 		return
 	}
-	if v, err := queryTimePtr(c, "date_to"); err == nil {
-		dateTo = v
-	} else if strings.TrimSpace(c.Query("date_to")) != "" {
-		writeJSONError(c, 400, apierr.ErrInvalidDateTo)
+	actorID, ok := QueryUint64PtrAndRespond(c, "actor_user_id", apierr.ErrInvalidUserID)
+	if !ok {
+		return
+	}
+	dateFrom, ok := QueryTimePtrAndRespond(c, "date_from", apierr.ErrInvalidDateFrom)
+	if !ok {
+		return
+	}
+	dateTo, ok := QueryTimePtrAndRespond(c, "date_to", apierr.ErrInvalidDateTo)
+	if !ok {
 		return
 	}
 
@@ -951,7 +778,7 @@ func (h *ReviewHandler) SearchOperationLogs(c *gin.Context) {
 
 	items, p, err := h.svc.SearchOperationLogs(c.Request.Context(), opts)
 	if err != nil {
-		writeJSONError(c, 500, err.Error())
+		respondError(c, err)
 		return
 	}
 
@@ -959,15 +786,7 @@ func (h *ReviewHandler) SearchOperationLogs(c *gin.Context) {
 		exportOperationLogsCSV(c, opts.EntityType, 0, items)
 		return
 	}
-
-	items = ensureSlice(items)
-	writeJSON(c, 200, model.APIResponse[[]model.OperationLog]{
-		Success:    true,
-		Code:       200,
-		Message:    "OK",
-		Data:       items,
-		Pagination: p,
-	})
+	respondList(c, items, p)
 }
 
 // ExportOperationLogs

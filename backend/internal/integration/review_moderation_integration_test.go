@@ -14,6 +14,7 @@ import (
 
 	adminhandler "gamelink/internal/handler/admin"
 	"gamelink/internal/model"
+	adminrepo "gamelink/internal/repository/admin"
 	"gamelink/internal/repository/common"
 	"gamelink/internal/repository/game"
 	"gamelink/internal/repository/implementations"
@@ -21,7 +22,6 @@ import (
 	"gamelink/internal/repository/order"
 	"gamelink/internal/repository/permission"
 	"gamelink/internal/repository/review"
-	"gamelink/internal/repository/role"
 	"gamelink/internal/repository/sensitiveword"
 	"gamelink/internal/repository/serviceitem"
 	"gamelink/internal/repository/stats"
@@ -570,7 +570,7 @@ func setupReviewModerationRouter(t *testing.T, db *gorm.DB, adminUserID uint64) 
 	gameRepo := game.NewGameRepository(db)
 	orderRepo := implementations.NewOrderRepository(db)
 	paymentRepo := order.NewPaymentRepository(db)
-	roleRepo := role.NewRoleRepository(db)
+	roleRepo := adminrepo.NewRoleRepository(db)
 	serviceItemRepo := serviceitem.NewServiceItemRepository(db)
 	permRepo := permission.NewPermissionRepository(db)
 	menuRepo := menu.NewMenuRepository(db)

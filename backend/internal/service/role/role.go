@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	"gamelink/pkg/cache"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	"gamelink/internal/service"
+	"gamelink/pkg/cache"
 )
 
 const (
@@ -265,4 +265,230 @@ func (s *RoleService) invalidatePermissionCacheForRole(roleID uint64) {
 	ctx := context.Background()
 	cacheKey := fmt.Sprintf(cacheKeyPermissionsByRole, roleID)
 	_ = s.cache.Delete(ctx, cacheKey)
+}
+
+// SetRoleParent sets the parent role for inheritance.
+// It validates the inheritance depth and checks for circular inheritance.
+func (s *RoleService) SetRoleParent(ctx context.Context, roleID uint64, parentID *uint64) error {
+	// Validate that role exists
+	role, err := s.roles.Get(ctx, roleID)
+	if err != nil {
+		return err
+	}
+
+	// If setting a parent, validate it
+	if parentID != nil && *parentID > 0 {
+		// Check that parent exists
+		parent, err := s.roles.GetWithPermissions(ctx, *parentID)
+		if err != nil {
+			return fmt.Errorf("%w: parent role not found", ErrNotFound)
+		}
+
+		// Check for circular inheritance
+		if err := s.ValidateNoCircularInheritance(ctx, roleID, *parentID); err != nil {
+			return err
+		}
+
+		// Check max depth
+		newLevel := parent.Level + 1
+		if newLevel > model.MaxRoleInheritanceDepth {
+			return model.ErrRoleMaxDepthExceeded
+		}
+
+		// Check if setting parent would cause children to exceed max depth
+		if err := s.validateChildrenDepth(ctx, roleID, newLevel); err != nil {
+			return err
+		}
+	}
+
+	// Set the parent
+	if err := s.roles.SetParent(ctx, roleID, parentID); err != nil {
+		return err
+	}
+
+	// Invalidate caches
+	s.invalidateRoleCache()
+	s.invalidatePermissionCacheForRole(roleID)
+
+	// Also invalidate cache for all users with this role
+	s.invalidateUsersWithRoleCache(ctx, role.ID)
+
+	return nil
+}
+
+// validateChildrenDepth checks if setting a new level would cause any children to exceed max depth.
+func (s *RoleService) validateChildrenDepth(ctx context.Context, roleID uint64, newLevel int) error {
+	children, err := s.roles.GetChildRoles(ctx, roleID)
+	if err != nil {
+		return err
+	}
+
+	for _, child := range children {
+		childNewLevel := newLevel + 1
+		if childNewLevel > model.MaxRoleInheritanceDepth {
+			return model.ErrRoleMaxDepthExceeded
+		}
+
+		// Recursively check grandchildren
+		if err := s.validateChildrenDepth(ctx, child.ID, childNewLevel); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// GetRoleInheritanceChain returns the inheritance chain from the given role up to the root.
+// The chain is ordered from the given role to the root (child -> parent -> grandparent).
+func (s *RoleService) GetRoleInheritanceChain(ctx context.Context, roleID uint64) ([]model.RoleModel, error) {
+	return s.roles.GetInheritanceChain(ctx, roleID)
+}
+
+// ValidateNoCircularInheritance checks if setting parentID as the parent of roleID would create a cycle.
+func (s *RoleService) ValidateNoCircularInheritance(ctx context.Context, roleID uint64, parentID uint64) error {
+	// A role cannot be its own parent
+	if roleID == parentID {
+		return model.ErrRoleCircularInheritance
+	}
+
+	// Get the inheritance chain of the proposed parent
+	chain, err := s.roles.GetInheritanceChain(ctx, parentID)
+	if err != nil {
+		return err
+	}
+
+	// Check if roleID appears in the parent's inheritance chain
+	for _, ancestor := range chain {
+		if ancestor.ID == roleID {
+			return model.ErrRoleCircularInheritance
+		}
+	}
+
+	return nil
+}
+
+// GetEffectivePermissions returns all permissions for a role, including inherited permissions.
+// Permissions are merged with child role permissions taking priority over parent permissions.
+func (s *RoleService) GetEffectivePermissions(ctx context.Context, roleID uint64) ([]model.Permission, error) {
+	// Get the inheritance chain (from child to root)
+	chain, err := s.roles.GetInheritanceChain(ctx, roleID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Collect permissions from all roles in the chain
+	// Process from root to child so child permissions override parent permissions
+	permissionMap := make(map[uint64]model.Permission)
+
+	// Reverse the chain to process from root to child
+	for i := len(chain) - 1; i >= 0; i-- {
+		role := chain[i]
+		roleWithPerms, err := s.roles.GetWithPermissions(ctx, role.ID)
+		if err != nil {
+			continue
+		}
+
+		for _, perm := range roleWithPerms.Permissions {
+			permissionMap[perm.ID] = perm
+		}
+	}
+
+	// Convert map to slice
+	permissions := make([]model.Permission, 0, len(permissionMap))
+	for _, perm := range permissionMap {
+		permissions = append(permissions, perm)
+	}
+
+	return permissions, nil
+}
+
+// GetChildRoles returns all direct child roles of the given role.
+func (s *RoleService) GetChildRoles(ctx context.Context, roleID uint64) ([]model.RoleModel, error) {
+	return s.roles.GetChildRoles(ctx, roleID)
+}
+
+// invalidateUsersWithRoleCache invalidates the permission cache for all users with the given role.
+func (s *RoleService) invalidateUsersWithRoleCache(ctx context.Context, roleID uint64) {
+	// Get all users with this role
+	role, err := s.roles.GetWithPermissions(ctx, roleID)
+	if err != nil {
+		return
+	}
+
+	// Invalidate cache for each user
+	for _, user := range role.Users {
+		s.invalidateUserRoleCache(user.ID)
+	}
+}
+
+// GetUserEffectivePermissions returns all permissions for a user, merging permissions from all assigned roles.
+// This includes inherited permissions from role hierarchies.
+// Permissions are merged using union (all permissions from all roles).
+// When roles have different priorities, higher priority role permissions are preferred.
+func (s *RoleService) GetUserEffectivePermissions(ctx context.Context, userID uint64) ([]model.Permission, error) {
+	// Get all roles for the user
+	roles, err := s.ListRolesByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Sort roles by priority (higher priority first)
+	sortRolesByPriority(roles)
+
+	// Collect all permissions from all roles (including inherited)
+	permissionMap := make(map[uint64]model.Permission)
+
+	for _, role := range roles {
+		// Get effective permissions for this role (including inherited)
+		rolePerms, err := s.GetEffectivePermissions(ctx, role.ID)
+		if err != nil {
+			continue
+		}
+
+		// Add to map (later roles with same permission ID will override)
+		for _, perm := range rolePerms {
+			// Only add if not already present (first role with higher priority wins)
+			if _, exists := permissionMap[perm.ID]; !exists {
+				permissionMap[perm.ID] = perm
+			}
+		}
+	}
+
+	// Convert map to slice
+	permissions := make([]model.Permission, 0, len(permissionMap))
+	for _, perm := range permissionMap {
+		permissions = append(permissions, perm)
+	}
+
+	return permissions, nil
+}
+
+// sortRolesByPriority sorts roles by priority in descending order (higher priority first).
+func sortRolesByPriority(roles []model.RoleModel) {
+	for i := 0; i < len(roles)-1; i++ {
+		for j := i + 1; j < len(roles); j++ {
+			if roles[j].Priority > roles[i].Priority {
+				roles[i], roles[j] = roles[j], roles[i]
+			}
+		}
+	}
+}
+
+// MergePermissions merges multiple permission slices into one, removing duplicates.
+// Permissions are identified by their ID.
+func MergePermissions(permissionSets ...[]model.Permission) []model.Permission {
+	permissionMap := make(map[uint64]model.Permission)
+
+	for _, perms := range permissionSets {
+		for _, perm := range perms {
+			permissionMap[perm.ID] = perm
+		}
+	}
+
+	result := make([]model.Permission, 0, len(permissionMap))
+	for _, perm := range permissionMap {
+		result = append(result, perm)
+	}
+
+	return result
 }

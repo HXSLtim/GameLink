@@ -512,6 +512,112 @@ erDiagram
 *For any* attempt to set a role's parent, if it would create a circular inheritance chain, the operation should be rejected with an error.
 **Validates: Requirements 10.5**
 
+## 统一响应格式
+
+所有 API 接口使用统一的响应格式，通过 `backend/internal/handler/admin/helpers.go` 中的辅助函数实现。
+
+### 响应结构
+
+```go
+// APIResponse 统一响应结构
+type APIResponse[T any] struct {
+    Success    bool        `json:"success"`
+    Code       int         `json:"code"`
+    Message    string      `json:"message"`
+    Data       T           `json:"data,omitempty"`
+    Pagination *Pagination `json:"pagination,omitempty"`
+    TraceID    string      `json:"traceId,omitempty"`
+}
+
+// Pagination 分页信息
+type Pagination struct {
+    Page       int   `json:"page"`
+    PageSize   int   `json:"pageSize"`
+    Total      int64 `json:"total"`
+    TotalPages int   `json:"totalPages"`
+}
+```
+
+### 响应辅助函数
+
+```go
+// 成功响应
+respondSuccess(c, data)                    // 标准成功响应
+respondSuccessWithMsg(c, "message", data)  // 带自定义消息
+respondCreated(c, data)                    // 创建成功 (201)
+respondList(c, items, pagination)          // 列表响应（带分页）
+respondUpdated(c, data)                    // 更新成功
+respondDeleted(c)                          // 删除成功
+
+// 错误响应
+respondError(c, err)                       // 自动处理各类错误
+respondBadRequest(c, "message")            // 400 错误
+respondNotFound(c, "message")              // 404 错误
+respondUnauthorized(c, "message")          // 401 错误
+respondForbidden(c, "message")             // 403 错误
+respondInternalError(c, "message")         // 500 错误
+```
+
+### 参数解析辅助函数
+
+```go
+// ID 参数解析
+id, ok := ParseIDAndRespond(c, "id")
+if !ok {
+    return  // 错误已响应
+}
+
+// JSON 请求体验证
+var req CreatePermissionRequest
+if !ValidateAndRespond(c, &req) {
+    return  // 错误已响应
+}
+
+// 可选查询参数
+userID, ok := QueryUint64PtrAndRespond(c, "user_id", "invalid user_id")
+dateFrom, ok := QueryTimePtrAndRespond(c, "date_from", "invalid date_from")
+```
+
+### 使用示例
+
+```go
+// Handler 示例
+func (h *PermissionHandler) GetPermission(c *gin.Context) {
+    id, ok := ParseIDAndRespond(c, "id")
+    if !ok {
+        return
+    }
+    
+    permission, err := h.permissionSvc.GetPermission(c.Request.Context(), id)
+    if err != nil {
+        respondError(c, err)
+        return
+    }
+    
+    respondSuccess(c, permission)
+}
+
+func (h *PermissionHandler) ListPermissions(c *gin.Context) {
+    page, pageSize, ok := parsePagination(c)
+    if !ok {
+        return
+    }
+    
+    permissions, total, err := h.permissionSvc.ListPermissionsPaged(c.Request.Context(), page, pageSize)
+    if err != nil {
+        respondError(c, err)
+        return
+    }
+    
+    respondList(c, permissions, &model.Pagination{
+        Page:       page,
+        PageSize:   pageSize,
+        Total:      total,
+        TotalPages: int((total + int64(pageSize) - 1) / int64(pageSize)),
+    })
+}
+```
+
 ## 错误处理
 
 使用项目现有的 `pkg/apierr` 包进行标准化错误处理。
