@@ -35,8 +35,13 @@ const mockStatsData = {
   ],
 };
 
-const renderWithRouter = (component: React.ReactNode) => {
-  return render(<BrowserRouter>{component}</BrowserRouter>);
+const renderWithRouter = async (component: React.ReactNode) => {
+  const result = render(<BrowserRouter>{component}</BrowserRouter>);
+  // Wait for initial render and effects to complete
+  await waitFor(() => {
+    expect(contentStatsApi.getStats).toHaveBeenCalled();
+  });
+  return result;
 };
 
 describe('Stats Page', () => {
@@ -49,7 +54,7 @@ describe('Stats Page', () => {
 
   describe('基本渲染', () => {
     it('should render statistics cards', async () => {
-      renderWithRouter(<StatsPage />);
+      await renderWithRouter(<StatsPage />);
 
       await waitFor(() => {
         expect(screen.getByText('总动态数')).toBeInTheDocument();
@@ -64,18 +69,19 @@ describe('Stats Page', () => {
     });
 
     it('should display correct statistics values', async () => {
-      renderWithRouter(<StatsPage />);
+      await renderWithRouter(<StatsPage />);
 
       await waitFor(() => {
         expect(screen.getByText('100')).toBeInTheDocument();
-        expect(screen.getByText('10')).toBeInTheDocument();
         expect(screen.getByText('80')).toBeInTheDocument();
         expect(screen.getByText('500')).toBeInTheDocument();
+        // 10 appears multiple times (pending and rejected), use getAllByText
+        expect(screen.getAllByText('10').length).toBeGreaterThanOrEqual(1);
       });
     });
 
     it('should render trend table', async () => {
-      renderWithRouter(<StatsPage />);
+      await renderWithRouter(<StatsPage />);
 
       await waitFor(() => {
         expect(screen.getByText('内容趋势')).toBeInTheDocument();
@@ -87,7 +93,7 @@ describe('Stats Page', () => {
     });
 
     it('should render export button', async () => {
-      renderWithRouter(<StatsPage />);
+      await renderWithRouter(<StatsPage />);
 
       await waitFor(() => {
         expect(screen.getByText('导出Excel')).toBeInTheDocument();
@@ -97,7 +103,7 @@ describe('Stats Page', () => {
 
   describe('时间范围选择', () => {
     it('should have default 30 days selected', async () => {
-      renderWithRouter(<StatsPage />);
+      await renderWithRouter(<StatsPage />);
 
       await waitFor(() => {
         expect(screen.getByText('最近30天')).toBeInTheDocument();
@@ -105,7 +111,7 @@ describe('Stats Page', () => {
     });
 
     it('should call API with different days when selection changes', async () => {
-      renderWithRouter(<StatsPage />);
+      await renderWithRouter(<StatsPage />);
 
       await waitFor(() => {
         expect(contentStatsApi.getStats).toHaveBeenCalledWith(30);
@@ -127,7 +133,7 @@ describe('Stats Page', () => {
       window.URL.createObjectURL = mockCreateObjectURL;
       window.URL.revokeObjectURL = mockRevokeObjectURL;
 
-      renderWithRouter(<StatsPage />);
+      await renderWithRouter(<StatsPage />);
 
       await waitFor(() => {
         expect(screen.getByText('导出Excel')).toBeInTheDocument();
@@ -144,7 +150,7 @@ describe('Stats Page', () => {
     it('should show error message when export fails', async () => {
       (contentStatsApi.exportStats as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Export failed'));
 
-      renderWithRouter(<StatsPage />);
+      await renderWithRouter(<StatsPage />);
 
       await waitFor(() => {
         expect(screen.getByText('导出Excel')).toBeInTheDocument();
@@ -162,16 +168,18 @@ describe('Stats Page', () => {
   });
 
   describe('加载状态', () => {
-    it('should show loading spinner while fetching data', () => {
+    it('should show loading spinner while fetching data', async () => {
       (contentStatsApi.getStats as ReturnType<typeof vi.fn>).mockImplementation(
         () => new Promise(() => {}) // Never resolves
       );
 
-      renderWithRouter(<StatsPage />);
+      render(<BrowserRouter><StatsPage /></BrowserRouter>);
 
       // Spin component should be present
-      const spinner = document.querySelector('.ant-spin');
-      expect(spinner).toBeInTheDocument();
+      await waitFor(() => {
+        const spinner = document.querySelector('.ant-spin');
+        expect(spinner).toBeInTheDocument();
+      });
     });
   });
 
@@ -179,7 +187,7 @@ describe('Stats Page', () => {
     it('should handle API error gracefully', async () => {
       (contentStatsApi.getStats as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('API Error'));
 
-      renderWithRouter(<StatsPage />);
+      render(<BrowserRouter><StatsPage /></BrowserRouter>);
 
       // Component should still render without crashing
       await waitFor(() => {

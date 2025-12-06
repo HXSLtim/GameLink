@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"context"
 	"encoding/csv"
 	"errors"
 	"fmt"
@@ -631,4 +632,72 @@ func exportOperationLogsCSV(c *gin.Context, entity string, entityID uint64, item
 		_ = w.Write(row)
 	}
 	w.Flush()
+}
+
+// ============================================================================
+// 操作日志查询辅助函数
+// ============================================================================
+
+// OperationLogListFunc 操作日志查询函数类型
+type OperationLogListFunc func(ctx context.Context, entityType string, entityID uint64, opts repository.OperationLogListOptions) ([]model.OperationLog, *model.Pagination, error)
+
+// buildOperationLogListOptions 从请求中构建操作日志查询选项
+// 返回 (opts, ok)，ok=false 时已写入错误响应
+func buildOperationLogListOptions(c *gin.Context) (repository.OperationLogListOptions, bool) {
+	page, pageSize, ok := parsePagination(c)
+	if !ok {
+		return repository.OperationLogListOptions{}, false
+	}
+
+	actorID, ok := QueryUint64PtrAndRespond(c, "actor_user_id", apierr.ErrInvalidUserID)
+	if !ok {
+		return repository.OperationLogListOptions{}, false
+	}
+
+	dateFrom, ok := QueryTimePtrAndRespond(c, "date_from", apierr.ErrInvalidDateFrom)
+	if !ok {
+		return repository.OperationLogListOptions{}, false
+	}
+
+	dateTo, ok := QueryTimePtrAndRespond(c, "date_to", apierr.ErrInvalidDateTo)
+	if !ok {
+		return repository.OperationLogListOptions{}, false
+	}
+
+	return repository.OperationLogListOptions{
+		Page:        page,
+		PageSize:    pageSize,
+		Action:      strings.TrimSpace(c.Query("action")),
+		ActorUserID: actorID,
+		DateFrom:    dateFrom,
+		DateTo:      dateTo,
+	}, true
+}
+
+// handleOperationLogList 通用操作日志列表处理
+// entityType: 实体类型 (如 "game", "player", "user", "review", "order")
+// listFunc: 查询函数
+func handleOperationLogList(c *gin.Context, entityType string, listFunc OperationLogListFunc) {
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
+		return
+	}
+
+	opts, ok := buildOperationLogListOptions(c)
+	if !ok {
+		return
+	}
+
+	items, p, err := listFunc(c.Request.Context(), entityType, id, opts)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	if strings.EqualFold(strings.TrimSpace(c.Query("export")), "csv") {
+		exportOperationLogsCSV(c, entityType, id, items)
+		return
+	}
+
+	respondList(c, items, p)
 }

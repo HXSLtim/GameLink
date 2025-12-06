@@ -418,3 +418,14 @@ func (r *roleRepository) UpdateLevel(ctx context.Context, roleID uint64, level i
 	}
 	return nil
 }
+
+// GetUserIDsByRoleID returns all user IDs that have the specified role.
+// This is used for cache invalidation propagation when role permissions change.
+func (r *roleRepository) GetUserIDsByRoleID(ctx context.Context, roleID uint64) ([]uint64, error) {
+	var userIDs []uint64
+	err := r.db.WithContext(ctx).
+		Model(&model.UserRole{}).
+		Where("role_id = ?", roleID).
+		Pluck("user_id", &userIDs).Error
+	return userIDs, err
+}

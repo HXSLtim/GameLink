@@ -38,13 +38,8 @@ func (r *gormSensitiveWordRepository) Create(ctx context.Context, word *model.Se
 // Get 获取敏感词详情
 func (r *gormSensitiveWordRepository) Get(ctx context.Context, id uint64) (*model.SensitiveWord, error) {
 	var word model.SensitiveWord
-	if err := r.db.WithContext(ctx).First(&word, id).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, repository.ErrNotFound
-		}
-		return nil, err
-	}
-	return &word, nil
+	err := r.db.WithContext(ctx).First(&word, id).Error
+	return repository.HandleGetError(&word, err)
 }
 
 // List 列出敏感词（支持搜索和分类筛选）

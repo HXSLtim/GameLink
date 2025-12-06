@@ -363,8 +363,5 @@ export interface PaginationParams {
   pageSize: number;
 }
 
-export interface ApiResponse<T> {
-  code: number;
-  message: string;
-  data: T;
-}
+// ApiResponse 已移至 @/types/api，这里保留导出以保持向后兼容
+export type { ApiResponse } from './api';

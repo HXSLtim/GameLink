@@ -119,15 +119,20 @@ describe('Feeds Page', () => {
   });
 
   describe('加载状态', () => {
-    it('should show loading state while fetching', () => {
+    it('should show loading state while fetching', async () => {
       (feedApi.getFeeds as ReturnType<typeof vi.fn>).mockImplementation(
         () => new Promise(() => {})
       );
 
       renderWithRouter(<FeedsPage />);
 
-      const spinner = document.querySelector('.ant-spin');
-      expect(spinner).toBeInTheDocument();
+      // Wait for the component to start loading
+      await waitFor(() => {
+        // Check for spinning state on table or any spin indicator
+        const spinner = document.querySelector('.ant-spin-spinning') || 
+                       document.querySelector('.ant-table-loading');
+        expect(spinner || document.querySelector('.ant-spin')).toBeTruthy();
+      }, { timeout: 1000 });
     });
   });
 

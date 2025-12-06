@@ -31,18 +31,21 @@ func NewUserTagService(
 	cache cache.Cache,
 ) *UserTagService {
 	return &UserTagService{
-	tagRepo:  tagRepo,
-	userRepo: userRepo,
-	cache:    cache,
+		tagRepo:  tagRepo,
+		userRepo: userRepo,
+		cache:    cache,
 	}
 }
 
 // CreateTag 创建标签
-// @param name 标签名称
-// @param color 颜色代码（如：#FF6B6B）
-// @param description 标签描述
-// @return 创建的标签
-// @return 错误信息
+// Parameters:
+//   - name: 标签名称
+//   - color: 颜色代码（如：#FF6B6B）
+//   - description: 标签描述
+//
+// Returns:
+//   - 创建的标签
+//   - 错误信息
 func (s *UserTagService) CreateTag(ctx context.Context, name, color, description string) (*model.UserTag, error) {
 	// 参数验证
 	if len(name) == 0 || len(name) > 64 {

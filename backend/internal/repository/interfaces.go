@@ -130,6 +130,8 @@ type RoleRepository interface {
 	GetInheritanceChain(ctx context.Context, roleID uint64) ([]model.RoleModel, error)
 	GetChildRoles(ctx context.Context, roleID uint64) ([]model.RoleModel, error)
 	UpdateLevel(ctx context.Context, roleID uint64, level int) error
+	// Cache invalidation support
+	GetUserIDsByRoleID(ctx context.Context, roleID uint64) ([]uint64, error)
 }
 
 // PlayerTagRepository defines player tag data access operations.
@@ -489,8 +491,8 @@ type WithdrawRepository interface {
 	Create(ctx context.Context, withdraw *model.Withdraw) error
 	Get(ctx context.Context, id uint64) (*model.Withdraw, error)
 	Update(ctx context.Context, withdraw *model.Withdraw) error
-	List(ctx context.Context, opts interface{}) ([]model.Withdraw, int64, error)
-	GetPlayerBalance(ctx context.Context, playerID uint64) (interface{}, error)
+	List(ctx context.Context, opts any) ([]model.Withdraw, int64, error)
+	GetPlayerBalance(ctx context.Context, playerID uint64) (any, error)
 }
 
 // ServiceItemRepository 服务项目仓储接口
@@ -514,23 +516,23 @@ type CommissionRepository interface {
 	GetRule(ctx context.Context, id uint64) (*model.CommissionRule, error)
 	GetDefaultRule(ctx context.Context) (*model.CommissionRule, error)
 	GetRuleForOrder(ctx context.Context, gameID *uint64, playerID *uint64, serviceType *string) (*model.CommissionRule, error)
-	ListRules(ctx context.Context, opts interface{}) ([]model.CommissionRule, int64, error)
+	ListRules(ctx context.Context, opts any) ([]model.CommissionRule, int64, error)
 	UpdateRule(ctx context.Context, rule *model.CommissionRule) error
 	DeleteRule(ctx context.Context, id uint64) error
 	// 抽成记录
 	CreateRecord(ctx context.Context, record *model.CommissionRecord) error
 	GetRecord(ctx context.Context, id uint64) (*model.CommissionRecord, error)
 	GetRecordByOrderID(ctx context.Context, orderID uint64) (*model.CommissionRecord, error)
-	ListRecords(ctx context.Context, opts interface{}) ([]model.CommissionRecord, int64, error)
+	ListRecords(ctx context.Context, opts any) ([]model.CommissionRecord, int64, error)
 	UpdateRecord(ctx context.Context, record *model.CommissionRecord) error
 	// 月度结算
 	CreateSettlement(ctx context.Context, settlement *model.MonthlySettlement) error
 	GetSettlement(ctx context.Context, id uint64) (*model.MonthlySettlement, error)
 	GetSettlementByPlayerMonth(ctx context.Context, playerID uint64, month string) (*model.MonthlySettlement, error)
-	ListSettlements(ctx context.Context, opts interface{}) ([]model.MonthlySettlement, int64, error)
+	ListSettlements(ctx context.Context, opts any) ([]model.MonthlySettlement, int64, error)
 	UpdateSettlement(ctx context.Context, settlement *model.MonthlySettlement) error
 	// 统计查询
-	GetMonthlyStats(ctx context.Context, month string) (interface{}, error)
+	GetMonthlyStats(ctx context.Context, month string) (any, error)
 	GetPlayerMonthlyIncome(ctx context.Context, playerID uint64, month string) (int64, error)
 }
 
@@ -539,7 +541,7 @@ type RankingCommissionRepository interface {
 	CreateConfig(ctx context.Context, config *model.RankingCommissionConfig) error
 	GetConfig(ctx context.Context, id uint64) (*model.RankingCommissionConfig, error)
 	GetActiveConfigForMonth(ctx context.Context, rankingType model.RankingType, month string) (*model.RankingCommissionConfig, error)
-	ListConfigs(ctx context.Context, opts interface{}) ([]model.RankingCommissionConfig, int64, error)
+	ListConfigs(ctx context.Context, opts any) ([]model.RankingCommissionConfig, int64, error)
 	UpdateConfig(ctx context.Context, config *model.RankingCommissionConfig) error
 	DeleteConfig(ctx context.Context, id uint64) error
 }

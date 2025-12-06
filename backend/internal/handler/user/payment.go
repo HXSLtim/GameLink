@@ -25,6 +25,12 @@ func RegisterPaymentRoutes(router gin.IRouter, svc *paymentservice.PaymentServic
 	group.POST("/:id/cancel", func(c *gin.Context) { cancelPaymentHandler(c, svc) })
 }
 
+// CreatePaymentRequest 创建支付请求
+type CreatePaymentRequest struct {
+	OrderID       uint64 `json:"orderId" binding:"required"`
+	PaymentMethod string `json:"paymentMethod" binding:"required"`
+}
+
 // createPaymentHandler 创建支付
 // @Summary      创建支付
 // @Description  为订单创建支付
@@ -32,8 +38,8 @@ func RegisterPaymentRoutes(router gin.IRouter, svc *paymentservice.PaymentServic
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string                          true  "Bearer {token}"
-// @Param        request        body      orderservice.CreatePaymentRequest    true  "创建支付请求"
-// @Success      200            {object}  model.APIResponse[Payment]
+// @Param        request        body      CreatePaymentRequest    true  "创建支付请求"
+// @Success      200            {object}  model.SuccessResponse
 // @Router       /user/payments [post]
 func createPaymentHandler(c *gin.Context, svc *paymentservice.PaymentService) {
 	userID := getUserIDFromContext(c)

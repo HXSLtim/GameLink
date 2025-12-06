@@ -1,14 +1,10 @@
 package admin
 
 import (
-	"strings"
-
 	"github.com/gin-gonic/gin"
 
 	"gamelink/internal/model"
-	"gamelink/internal/repository"
 	adminservice "gamelink/internal/service/admin"
-	apierr "gamelink/pkg/apierr"
 )
 
 // Game 游戏模型（类型别名）
@@ -176,47 +172,7 @@ func (h *GameHandler) DeleteGame(c *gin.Context) {
 // @Success      200  {object}  model.APIResponse[[]model.OperationLog]
 // @Router       /admin/games/{id}/logs [get]
 func (h *GameHandler) ListGameLogs(c *gin.Context) {
-	id, ok := ParseIDAndRespond(c, "id")
-	if !ok {
-		return
-	}
-	page, pageSize, ok := parsePagination(c)
-	if !ok {
-		return
-	}
-
-	actorID, ok := QueryUint64PtrAndRespond(c, "actor_user_id", apierr.ErrInvalidUserID)
-	if !ok {
-		return
-	}
-	dateFrom, ok := QueryTimePtrAndRespond(c, "date_from", apierr.ErrInvalidDateFrom)
-	if !ok {
-		return
-	}
-	dateTo, ok := QueryTimePtrAndRespond(c, "date_to", apierr.ErrInvalidDateTo)
-	if !ok {
-		return
-	}
-
-	opts := repository.OperationLogListOptions{
-		Page:        page,
-		PageSize:    pageSize,
-		Action:      strings.TrimSpace(c.Query("action")),
-		ActorUserID: actorID,
-		DateFrom:    dateFrom,
-		DateTo:      dateTo,
-	}
-	items, p, err := h.svc.ListOperationLogs(c.Request.Context(), "game", id, opts)
-	if err != nil {
-		respondError(c, err)
-		return
-	}
-
-	if strings.EqualFold(strings.TrimSpace(c.Query("export")), "csv") {
-		exportOperationLogsCSV(c, "game", id, items)
-		return
-	}
-	respondList(c, items, p)
+	handleOperationLogList(c, "game", h.svc.ListOperationLogs)
 }
 
 // GamePayload defines request body for creating/updating a game.

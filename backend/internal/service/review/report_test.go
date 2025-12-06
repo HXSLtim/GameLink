@@ -103,6 +103,17 @@ func (m *mockUserRepository) Delete(ctx context.Context, id uint64) error {
 	return nil
 }
 
+func (m *mockUserRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.User, error) {
+	var users []model.User
+	if len(ids) == 0 {
+		return users, nil
+	}
+	if err := m.db.WithContext(ctx).Where("id IN ?", ids).Find(&users).Error; err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
 type mockPlayerRepository struct {
 	db *gorm.DB
 }

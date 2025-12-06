@@ -139,6 +139,7 @@ func autoMigrate(db *gorm.DB) error {
 		&model.RoleModel{},
 		&model.RolePermission{},
 		&model.UserRole{},
+		&model.PermissionAuditLog{}, // Permission audit logs
 		// Menu models (动态路由/前端菜单)
 		&model.Menu{},
 		// Upload model
@@ -229,6 +230,10 @@ func ensureIndexes(db *gorm.DB) error {
 		"CREATE INDEX IF NOT EXISTS idx_oplogs_entity ON operation_logs (entity_type, entity_id, created_at DESC)",
 		"CREATE INDEX IF NOT EXISTS idx_oplogs_actor ON operation_logs (actor_user_id, created_at DESC)",
 		"CREATE INDEX IF NOT EXISTS idx_oplogs_action ON operation_logs (action, created_at DESC)",
+		// Permission audit logs indexes
+		"CREATE INDEX IF NOT EXISTS idx_perm_audit_operator ON permission_audit_logs (operator_id, created_at DESC)",
+		"CREATE INDEX IF NOT EXISTS idx_perm_audit_target ON permission_audit_logs (target_type, target_id, created_at DESC)",
+		"CREATE INDEX IF NOT EXISTS idx_perm_audit_action ON permission_audit_logs (action, created_at DESC)",
 	}
 	for _, s := range stmts {
 		if err := db.Exec(s).Error; err != nil {

@@ -61,7 +61,7 @@ describe('Reports Page', () => {
       renderWithRouter(<ReportsPage />);
 
       await waitFor(() => {
-        expect(screen.getByText('举报管理')).toBeInTheDocument();
+        expect(screen.getByText('动态举报管理')).toBeInTheDocument();
       });
     });
 
@@ -107,15 +107,18 @@ describe('Reports Page', () => {
   });
 
   describe('加载状态', () => {
-    it('should show loading state while fetching', () => {
+    it('should show loading state while fetching', async () => {
       (feedReportApi.getReports as ReturnType<typeof vi.fn>).mockImplementation(
         () => new Promise(() => {})
       );
 
       renderWithRouter(<ReportsPage />);
 
-      const spinner = document.querySelector('.ant-spin');
-      expect(spinner).toBeInTheDocument();
+      await waitFor(() => {
+        const spinner = document.querySelector('.ant-spin-spinning') || 
+                       document.querySelector('.ant-table-loading');
+        expect(spinner || document.querySelector('.ant-spin')).toBeTruthy();
+      }, { timeout: 1000 });
     });
   });
 
@@ -141,7 +144,7 @@ describe('Reports Page', () => {
       renderWithRouter(<ReportsPage />);
 
       await waitFor(() => {
-        expect(screen.getByText('举报管理')).toBeInTheDocument();
+        expect(screen.getByText('动态举报管理')).toBeInTheDocument();
       });
     });
   });

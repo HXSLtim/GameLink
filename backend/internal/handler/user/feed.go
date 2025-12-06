@@ -66,7 +66,7 @@ func createFeedHandler(c *gin.Context, svc *contentservice.FeedService) {
 // @Param        Authorization  header    string  true   "Bearer {token}"
 // @Param        limit          query     int     false  "Limit (default 20)"
 // @Param        cursor         query     string  false  "Cursor for pagination"
-// @Success      200            {object}  contentservice.ListFeedsResponse
+// @Success      200            {object}  model.SuccessResponse
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse

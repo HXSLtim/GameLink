@@ -3,6 +3,7 @@
  * 包含评价列表、审核、举报、回复等功能
  */
 import apiClient from './client';
+import type { ApiResponse } from '@/types/api';
 import type {
   Review,
   ReviewQueryParams,
@@ -18,22 +19,6 @@ import type {
   DetectSensitiveWordsResult,
   ReviewReply,
 } from '@/types/review';
-
-// 通用响应类型
-export interface ApiResponse<T> {
-  success: boolean;
-  code: number;
-  message: string;
-  data: T;
-  pagination?: {
-    page: number;
-    page_size: number;
-    total: number;
-    total_pages: number;
-    has_next: boolean;
-    has_prev: boolean;
-  };
-}
 
 // ==================== 评价管理 API ====================
 

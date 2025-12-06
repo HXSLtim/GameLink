@@ -37,25 +37,15 @@ func (r *gormContentCategoryRepository) Create(ctx context.Context, category *mo
 // Get 获取内容分类详情
 func (r *gormContentCategoryRepository) Get(ctx context.Context, id uint64) (*model.ContentCategory, error) {
 	var category model.ContentCategory
-	if err := r.db.WithContext(ctx).First(&category, id).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, repository.ErrNotFound
-		}
-		return nil, err
-	}
-	return &category, nil
+	err := r.db.WithContext(ctx).First(&category, id).Error
+	return repository.HandleGetError(&category, err)
 }
 
 // GetByName 根据名称获取内容分类
 func (r *gormContentCategoryRepository) GetByName(ctx context.Context, name string) (*model.ContentCategory, error) {
 	var category model.ContentCategory
-	if err := r.db.WithContext(ctx).Where("name = ?", name).First(&category).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, repository.ErrNotFound
-		}
-		return nil, err
-	}
-	return &category, nil
+	err := r.db.WithContext(ctx).Where("name = ?", name).First(&category).Error
+	return repository.HandleGetError(&category, err)
 }
 
 // List 列出内容分类（支持搜索和状态筛选）

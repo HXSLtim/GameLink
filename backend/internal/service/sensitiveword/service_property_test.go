@@ -8,6 +8,7 @@ import (
 	"gamelink/internal/model"
 	"gamelink/internal/repository/sensitiveword"
 	"gamelink/pkg/testutil"
+
 	"github.com/leanovate/gopter"
 	"github.com/leanovate/gopter/gen"
 	"github.com/leanovate/gopter/prop"
@@ -191,7 +192,7 @@ func TestSensitiveWordDetectionAccuracy(t *testing.T) {
 			if variation < 0 {
 				variation = -variation
 			}
-			
+
 			var content string
 			switch variation % 3 {
 			case 0:
@@ -241,6 +242,7 @@ func TestSensitiveWordDetectionAccuracy(t *testing.T) {
 	))
 
 	// Property 4: Multiple occurrences of the same sensitive word should all be detected
+	// Note: The implementation groups occurrences by word, storing positions in a single DetectedWord
 	properties.Property("multiple occurrences should all be detected", prop.ForAll(
 		func(sensitiveWord string, count uint8) bool {
 			if count == 0 {
@@ -296,16 +298,16 @@ func TestSensitiveWordDetectionAccuracy(t *testing.T) {
 				return false
 			}
 
-			// Count detected occurrences
-			detectedCount := 0
+			// Count detected positions (implementation groups by word, positions in Positions slice)
+			positionCount := 0
 			for _, detected := range result.DetectedWords {
 				if strings.EqualFold(detected.Word, sensitiveWord) {
-					detectedCount++
+					positionCount += len(detected.Positions)
 				}
 			}
 
-			if detectedCount != int(count) {
-				t.Logf("Expected %d occurrences, but detected %d", count, detectedCount)
+			if positionCount != int(count) {
+				t.Logf("Expected %d positions, but detected %d", count, positionCount)
 				return false
 			}
 

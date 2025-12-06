@@ -3,6 +3,7 @@
  * 包含动态审核、聊天监控、举报管理、内容分类等功能
  */
 import apiClient from './client';
+import type { ApiResponse } from '@/types/api';
 import type {
   Feed,
   FeedQueryParams,
@@ -18,22 +19,6 @@ import type {
   UpdateCategoryRequest,
   ContentStatsDTO,
 } from '@/types/content';
-
-// 通用响应类型
-export interface ApiResponse<T> {
-  success: boolean;
-  code: number;
-  message: string;
-  data: T;
-  pagination?: {
-    page: number;
-    page_size: number;
-    total: number;
-    total_pages: number;
-    has_next: boolean;
-    has_prev: boolean;
-  };
-}
 
 // ==================== 动态审核 API ====================
 

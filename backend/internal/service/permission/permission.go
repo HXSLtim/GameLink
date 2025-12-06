@@ -45,12 +45,8 @@ func (s *PermissionService) ListPermissions(ctx context.Context) ([]model.Permis
 
 // ListPermissionsPaged 分页获取权限列表。
 func (s *PermissionService) ListPermissionsPaged(ctx context.Context, page, pageSize int) ([]model.Permission, int64, error) {
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 20
-	}
+	page = repository.NormalizePage(page)
+	pageSize = repository.NormalizePageSize(pageSize)
 	return s.permissions.ListPaged(ctx, page, pageSize)
 }
 

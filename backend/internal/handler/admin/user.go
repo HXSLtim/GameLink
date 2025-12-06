@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"gamelink/internal/model"
-	"gamelink/internal/repository"
 	adminservice "gamelink/internal/service/admin"
 	"gamelink/pkg/apierr"
 )
@@ -32,7 +31,7 @@ func NewUserHandler(svc *adminservice.AdminService) *UserHandler {
 // @Tags         Admin/Users
 // @Security     BearerAuth
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[UserStatsResponse]
+// @Success      200  {object}  model.SuccessResponse
 // @Router       /admin/users/stats [get]
 //
 // GetUserStats returns user statistics.
@@ -287,37 +286,7 @@ func (h *UserHandler) BatchDeleteUsers(c *gin.Context) {
 // @Success      200  {object}  model.APIResponse[[]model.OperationLog]
 // @Router       /admin/users/{id}/logs [get]
 func (h *UserHandler) ListUserLogs(c *gin.Context) {
-	id, ok := ParseIDAndRespond(c, "id")
-	if !ok {
-		return
-	}
-	page, pageSize, ok := parsePagination(c)
-	if !ok {
-		return
-	}
-	actorID, ok := QueryUint64PtrAndRespond(c, "actor_user_id", apierr.ErrInvalidUserID)
-	if !ok {
-		return
-	}
-	dateFrom, ok := QueryTimePtrAndRespond(c, "date_from", apierr.ErrInvalidDateFrom)
-	if !ok {
-		return
-	}
-	dateTo, ok := QueryTimePtrAndRespond(c, "date_to", apierr.ErrInvalidDateTo)
-	if !ok {
-		return
-	}
-	opts := repository.OperationLogListOptions{Page: page, PageSize: pageSize, Action: strings.TrimSpace(c.Query("action")), ActorUserID: actorID, DateFrom: dateFrom, DateTo: dateTo}
-	items, p, err := h.svc.ListOperationLogs(c.Request.Context(), "user", id, opts)
-	if err != nil {
-		respondError(c, apierr.InternalError("获取用户日志失败").WithDetails(err.Error()))
-		return
-	}
-	if strings.EqualFold(strings.TrimSpace(c.Query("export")), "csv") {
-		exportOperationLogsCSV(c, "user", id, items)
-		return
-	}
-	respondList(c, items, p)
+	handleOperationLogList(c, "user", h.svc.ListOperationLogs)
 }
 
 // UpdateUserStatus

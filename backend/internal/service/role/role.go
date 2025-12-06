@@ -24,16 +24,24 @@ var (
 
 // RoleService 提供角色管理的业务逻辑。
 type RoleService struct {
-	roles repository.RoleRepository
-	cache cache.Cache
+	roles           repository.RoleRepository
+	cache           cache.Cache
+	permissionCache *cache.PermissionCache
 }
 
 // NewRoleService 创建角色服务实例。
-func NewRoleService(roles repository.RoleRepository, cache cache.Cache) *RoleService {
+func NewRoleService(roles repository.RoleRepository, c cache.Cache) *RoleService {
 	return &RoleService{
-		roles: roles,
-		cache: cache,
+		roles:           roles,
+		cache:           c,
+		permissionCache: cache.NewPermissionCache(c),
 	}
+}
+
+// GetPermissionCache returns the permission cache instance.
+// This is useful for external components that need to interact with the cache.
+func (s *RoleService) GetPermissionCache() *cache.PermissionCache {
+	return s.permissionCache
 }
 
 const (
@@ -49,23 +57,15 @@ func (s *RoleService) ListRoles(ctx context.Context) ([]model.RoleModel, error) 
 
 // ListRolesPaged 分页获取角色列表。
 func (s *RoleService) ListRolesPaged(ctx context.Context, page, pageSize int) ([]model.RoleModel, int64, error) {
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 20
-	}
+	page = repository.NormalizePage(page)
+	pageSize = repository.NormalizePageSize(pageSize)
 	return s.roles.ListPaged(ctx, page, pageSize)
 }
 
 // ListRolesPagedWithFilter 分页获取角色列表（带过滤）。
 func (s *RoleService) ListRolesPagedWithFilter(ctx context.Context, page, pageSize int, keyword string, isSystem *bool) ([]model.RoleModel, int64, error) {
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 20
-	}
+	page = repository.NormalizePage(page)
+	pageSize = repository.NormalizePageSize(pageSize)
 	return s.roles.ListPagedWithFilter(ctx, page, pageSize, keyword, isSystem)
 }
 
@@ -156,9 +156,9 @@ func (s *RoleService) AssignPermissionsToRole(ctx context.Context, roleID uint64
 		return err
 	}
 
-	// 清除缓存
+	// 清除缓存并传播到所有拥有该角色的用户
 	s.invalidateRoleCache()
-	s.invalidatePermissionCacheForRole(roleID)
+	_ = s.InvalidateRolePermissionsAndPropagateToUsers(ctx, roleID)
 	return nil
 }
 
@@ -168,9 +168,9 @@ func (s *RoleService) AddPermissionsToRole(ctx context.Context, roleID uint64, p
 		return err
 	}
 
-	// 清除缓存
+	// 清除缓存并传播到所有拥有该角色的用户
 	s.invalidateRoleCache()
-	s.invalidatePermissionCacheForRole(roleID)
+	_ = s.InvalidateRolePermissionsAndPropagateToUsers(ctx, roleID)
 	return nil
 }
 
@@ -180,9 +180,9 @@ func (s *RoleService) RemovePermissionsFromRole(ctx context.Context, roleID uint
 		return err
 	}
 
-	// 清除缓存
+	// 清除缓存并传播到所有拥有该角色的用户
 	s.invalidateRoleCache()
-	s.invalidatePermissionCacheForRole(roleID)
+	_ = s.InvalidateRolePermissionsAndPropagateToUsers(ctx, roleID)
 	return nil
 }
 
@@ -255,16 +255,21 @@ func (s *RoleService) invalidateUserRoleCache(userID uint64) {
 	cacheKey := fmt.Sprintf(cacheKeyRolesByUser, userID)
 	_ = s.cache.Delete(ctx, cacheKey)
 
-	// 同时清除用户权限缓存
-	permCacheKey := fmt.Sprintf(cacheKeyPermissionsByUser, userID)
-	_ = s.cache.Delete(ctx, permCacheKey)
+	// 同时清除用户权限缓存（使用新的权限缓存）
+	_ = s.permissionCache.InvalidateUserCache(ctx, userID)
 }
 
 // invalidatePermissionCacheForRole 清除角色权限缓存。
 func (s *RoleService) invalidatePermissionCacheForRole(roleID uint64) {
 	ctx := context.Background()
-	cacheKey := fmt.Sprintf(cacheKeyPermissionsByRole, roleID)
-	_ = s.cache.Delete(ctx, cacheKey)
+	_ = s.permissionCache.InvalidateRoleCache(ctx, roleID)
+}
+
+// InvalidateRolePermissionsAndPropagateToUsers invalidates the role's permission cache
+// and propagates the invalidation to all users who have that role.
+// This should be called when role permissions are modified.
+func (s *RoleService) InvalidateRolePermissionsAndPropagateToUsers(ctx context.Context, roleID uint64) error {
+	return s.permissionCache.InvalidateRolePermissionsAndPropagateToUsers(ctx, roleID, s.roles)
 }
 
 // SetRoleParent sets the parent role for inheritance.

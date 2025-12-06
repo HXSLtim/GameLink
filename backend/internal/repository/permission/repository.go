@@ -112,10 +112,7 @@ func (r *permissionRepository) ListGroups(ctx context.Context) ([]string, error)
 func (r *permissionRepository) Get(ctx context.Context, id uint64) (*model.Permission, error) {
 	var permission model.Permission
 	err := r.db.WithContext(ctx).First(&permission, id).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, repository.ErrNotFound
-	}
-	return &permission, err
+	return repository.HandleGetError(&permission, err)
 }
 
 func (r *permissionRepository) GetByResource(ctx context.Context, resource, action string) (*model.Permission, error) {
@@ -123,10 +120,7 @@ func (r *permissionRepository) GetByResource(ctx context.Context, resource, acti
 	err := r.db.WithContext(ctx).
 		Where("resource = ? AND action = ?", resource, action).
 		First(&permission).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, repository.ErrNotFound
-	}
-	return &permission, err
+	return repository.HandleGetError(&permission, err)
 }
 
 func (r *permissionRepository) GetByMethodAndPath(ctx context.Context, method, path string) (*model.Permission, error) {
@@ -134,19 +128,13 @@ func (r *permissionRepository) GetByMethodAndPath(ctx context.Context, method, p
 	err := r.db.WithContext(ctx).
 		Where("method = ? AND path = ?", method, path).
 		First(&permission).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, repository.ErrNotFound
-	}
-	return &permission, err
+	return repository.HandleGetError(&permission, err)
 }
 
 func (r *permissionRepository) GetByCode(ctx context.Context, code string) (*model.Permission, error) {
 	var permission model.Permission
 	err := r.db.WithContext(ctx).Where("code = ?", code).First(&permission).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, repository.ErrNotFound
-	}
-	return &permission, err
+	return repository.HandleGetError(&permission, err)
 }
 
 func (r *permissionRepository) Create(ctx context.Context, permission *model.Permission) error {

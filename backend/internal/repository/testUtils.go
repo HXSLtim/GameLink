@@ -11,11 +11,11 @@ import (
 
 // TestDBConfig 测试数据库配置
 type TestDBConfig struct {
-	Models []interface{}
+	Models []any
 }
 
 // SetupTestDB 设置测试数据库
-func SetupTestDB(t *testing.T, models []interface{}) *gorm.DB {
+func SetupTestDB(t *testing.T, models []any) *gorm.DB {
 	// 使用SQLite内存数据库
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	if err != nil {
@@ -63,7 +63,7 @@ func CreateTestContext() context.Context {
 }
 
 // AssertRecordCount 断言记录数量
-func AssertRecordCount(t *testing.T, db *gorm.DB, model interface{}, expectedCount int64, where ...interface{}) {
+func AssertRecordCount(t *testing.T, db *gorm.DB, model any, expectedCount int64, where ...any) {
 	var count int64
 	err := db.Model(model).Where(where).Count(&count).Error
 	assert.NoError(t, err)
@@ -71,7 +71,7 @@ func AssertRecordCount(t *testing.T, db *gorm.DB, model interface{}, expectedCou
 }
 
 // AssertRecordExists 断言记录存在
-func AssertRecordExists(t *testing.T, db *gorm.DB, model interface{}, where ...interface{}) {
+func AssertRecordExists(t *testing.T, db *gorm.DB, model any, where ...any) {
 	var count int64
 	err := db.Model(model).Where(where).Count(&count).Error
 	assert.NoError(t, err)
@@ -79,7 +79,7 @@ func AssertRecordExists(t *testing.T, db *gorm.DB, model interface{}, where ...i
 }
 
 // AssertRecordNotExists 断言记录不存在
-func AssertRecordNotExists(t *testing.T, db *gorm.DB, model interface{}, where ...interface{}) {
+func AssertRecordNotExists(t *testing.T, db *gorm.DB, model any, where ...any) {
 	var count int64
 	err := db.Model(model).Where(where).Count(&count).Error
 	assert.NoError(t, err)
@@ -182,7 +182,7 @@ type TestRepositorySuite struct {
 }
 
 // SetupSuite 设置测试套件
-func (s *TestRepositorySuite) SetupSuite(t *testing.T, models []interface{}) {
+func (s *TestRepositorySuite) SetupSuite(t *testing.T, models []any) {
 	s.DB = SetupTestDB(t, models)
 	s.Ctx = CreateTestContext()
 }
@@ -199,16 +199,16 @@ func (s *TestRepositorySuite) ClearTables(t *testing.T, tableNames ...string) {
 }
 
 // AssertRecordCount 断言记录数量
-func (s *TestRepositorySuite) AssertRecordCount(t *testing.T, model interface{}, expectedCount int64, where ...interface{}) {
+func (s *TestRepositorySuite) AssertRecordCount(t *testing.T, model any, expectedCount int64, where ...any) {
 	AssertRecordCount(t, s.DB, model, expectedCount, where...)
 }
 
 // AssertRecordExists 断言记录存在
-func (s *TestRepositorySuite) AssertRecordExists(t *testing.T, model interface{}, where ...interface{}) {
+func (s *TestRepositorySuite) AssertRecordExists(t *testing.T, model any, where ...any) {
 	AssertRecordExists(t, s.DB, model, where...)
 }
 
 // AssertRecordNotExists 断言记录不存在
-func (s *TestRepositorySuite) AssertRecordNotExists(t *testing.T, model interface{}, where ...interface{}) {
+func (s *TestRepositorySuite) AssertRecordNotExists(t *testing.T, model any, where ...any) {
 	AssertRecordNotExists(t, s.DB, model, where...)
 }

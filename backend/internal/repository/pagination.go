@@ -24,3 +24,20 @@ func NormalizePageSize(size int) int {
 	}
 	return size
 }
+
+// BuildPagination 构建分页响应对象。
+// 自动规范化 page 和 pageSize 参数。
+func BuildPagination(page, pageSize int, total int64) (int, int, int, int, bool, bool) {
+	page = NormalizePage(page)
+	pageSize = NormalizePageSize(pageSize)
+
+	totalPages := 0
+	if pageSize > 0 {
+		totalPages = int((total + int64(pageSize) - 1) / int64(pageSize))
+	}
+
+	hasNext := page < totalPages
+	hasPrev := page > 1
+
+	return page, pageSize, int(total), totalPages, hasNext, hasPrev
+}

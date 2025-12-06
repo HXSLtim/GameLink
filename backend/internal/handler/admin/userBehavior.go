@@ -56,7 +56,7 @@ func (h *UserBehaviorHandler) GetBehaviorStats(c *gin.Context) {
 // @Security     BearerAuth
 // @Produce      json
 // @Param        days  query  int  false  "统计天数（默认7天）"
-// @Success      200  {object}  model.APIResponse[[]repository.DateValue]
+// @Success      200  {object}  model.SuccessResponse
 // @Router       /admin/users/behavior/trend [get]
 func (h *UserBehaviorHandler) GetActivityTrend(c *gin.Context) {
 	days := 7

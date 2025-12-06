@@ -268,7 +268,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Security     BearerAuth
 		// @Produce      json
 		// @Param        days  query  int  false  "统计天数（默认7天）"
-		// @Success      200  {object}  model.APIResponse[[]repository.DateValue]
+		// @Success      200  {object}  model.SuccessResponse
 		// @Router       /admin/users/behavior/trend [get]
 		group.GET("/users/behavior/trend", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/behavior/trend"), userBehaviorHandler.GetActivityTrend)
 		// @Summary      获取用户分布
@@ -846,7 +846,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Produce      json
 		// @Param        id       path  int                  true  "回复ID"
 		// @Param        request  body  UpdateReplyPayload   true  "回复内容"
-		// @Success      200  {object}  model.APIResponse[map[string]interface{}]
+		// @Success      200  {object}  model.SuccessResponse
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/review-replies/{id} [put]

@@ -56,7 +56,7 @@ func TestReviewReportCreation(t *testing.T) {
 	err = json.Unmarshal(reportResp.Body.Bytes(), &reportParsed)
 	require.NoError(t, err)
 	assert.True(t, reportParsed.Success)
-	assert.Equal(t, "report created", reportParsed.Message)
+	assert.Equal(t, "created", reportParsed.Message)
 	assert.Greater(t, reportParsed.Data.ReportID, uint64(0))
 
 	reportID := reportParsed.Data.ReportID

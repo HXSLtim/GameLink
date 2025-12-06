@@ -1,4 +1,8 @@
 import apiClient from './client';
+import type { ApiResponse } from '@/types/api';
+
+// Re-export for backward compatibility
+export type { ApiResponse };
 
 export interface Notification {
     id: number;
@@ -17,19 +21,6 @@ export interface NotificationQueryParams {
     page?: number;
     page_size?: number;
     type?: string;
-}
-
-export interface ApiResponse<T> {
-    success: boolean;
-    data: T;
-    message?: string;
-    pagination?: {
-        total: number;
-        page: number;
-        pageSize: number;
-        unreadCount?: number;
-    };
-    traceId?: string;
 }
 
 export interface NotificationListResponse {

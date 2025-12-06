@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/suite"
 	"github.com/glebarez/sqlite" // 纯Go SQLite驱动，无需CGO
+	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
 
 	"gamelink/internal/model"
@@ -23,7 +23,8 @@ type ServiceItemRepositorySimpleTestSuite struct {
 func (s *ServiceItemRepositorySimpleTestSuite) SetupSuite() {
 	// 使用纯Go实现的SQLite内存数据库，无需CGO
 	// 使用 github.com/glebarez/sqlite 纯Go驱动
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
+	// 使用共享缓存模式确保所有连接共享同一个数据库
+	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{
 		// 禁用外键约束，避免测试时的复杂性
 		DisableForeignKeyConstraintWhenMigrating: true,
 	})

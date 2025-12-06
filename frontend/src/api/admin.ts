@@ -1,21 +1,8 @@
 import apiClient from './client';
+import type { ApiResponse } from '../types/api';
 
-export interface Pagination {
-    page: number;
-    page_size: number;
-    total: number;
-    total_pages: number;
-    has_next: boolean;
-    has_prev: boolean;
-}
-
-export interface ApiResponse<T> {
-    success: boolean;
-    code: number;
-    message: string;
-    data: T;
-    pagination?: Pagination;
-}
+// Re-export for backward compatibility
+export type { ApiResponse, Pagination } from '../types/api';
 
 export interface User {
     id: number;

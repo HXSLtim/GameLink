@@ -118,7 +118,9 @@
     - 子角色权限覆盖父角色（按 Priority 排序）
     - 合并时去重
     - _Requirements: 10.4_
-  - [-] 3.5 编写角色继承属性测试
+  - [x] 3.5 编写角色继承属性测试
+
+
 
 
 
@@ -128,99 +130,180 @@
     - **Property 19: 循环继承检测**
     - **Validates: Requirements 10.5**
 
-- [ ] 4. Checkpoint - 确保所有测试通过
+
+- [x] 4. Checkpoint - 确保所有测试通过
+
+
+
 
   - 确保所有测试通过，如有问题请询问用户
 
-- [ ] 5. 实现权限审计日志服务
-  - [ ] 5.1 实现异步审计日志写入
+- [x] 5. 实现权限审计日志服务
+
+
+
+
+
+  - [x] 5.1 实现异步审计日志写入
+
+
+
+
 
     - 使用 channel 缓冲队列
     - 后台 goroutine 批量写入
     - 避免阻塞主流程
     - _Requirements: 6.1, 6.2_
-  - [ ] 5.2 实现审计日志查询
+  - [x] 5.2 实现审计日志查询
+
+
     - 支持按时间范围筛选
     - 支持按操作类型筛选
     - 支持按操作者筛选
     - _Requirements: 6.3_
-  - [ ] 5.3 实现审计日志导出
+
+  - [x] 5.3 实现审计日志导出
+
     - 导出 CSV 格式
     - 包含完整操作记录
     - _Requirements: 6.5_
-  - [ ] 5.4 实现审计日志归档策略
+
+  - [x] 5.4 实现审计日志归档策略
+
     - 在线保留 90 天
     - 归档保留 365 天
     - _Requirements: 6.4_
-  - [ ] 5.5 编写审计日志属性测试
+
+
+  - [x] 5.5 编写审计日志属性测试
+
+
 
 
     - **Property 11: 审计日志完整性**
     - **Validates: Requirements 6.1, 6.2**
 
-- [ ] 6. 增强权限中间件
-  - [ ] 6.1 支持按权限码检查
+- [x] 6. 增强权限中间件
+
+
+
+  - [x] 6.1 支持按权限码检查
+
+
     - 除了 method+path，支持 code 检查
     - _Requirements: 4.1_
-  - [ ] 6.2 支持多权限检查模式
+
+  - [x] 6.2 支持多权限检查模式
     - any 模式：任一权限满足
     - all 模式：全部权限满足
     - except 模式：排除某些权限
     - _Requirements: 4.3_
-  - [ ] 6.3 实现超级管理员绕过
+  - [x] 6.3 实现超级管理员绕过
+
     - 自动跳过所有权限检查
     - _Requirements: 4.4_
-  - [ ] 6.4 实现权限白名单
+
+  - [x] 6.4 实现权限白名单
+
     - 配置无需权限检查的接口
     - _Requirements: 4.1_
-  - [ ]* 6.5 编写中间件属性测试
+  - [x] 6.5 编写中间件属性测试
+
+
+
+
+
+
     - **Property 7: 超级管理员权限绕过**
     - **Property 8: API 权限验证一致性**
     - **Validates: Requirements 4.1, 4.4**
 
-- [ ] 7. 实现权限缓存管理
-  - [ ] 7.1 实现缓存 Key 设计
+- [x] 7. 实现权限缓存管理
+
+
+
+
+
+  - [x] 7.1 实现缓存 Key 设计
+
+
     - 包含版本号便于快速刷新
     - 使用 Hash 结构存储用户权限
     - _Requirements: 5.1, 5.2_
-  - [ ] 7.2 实现缓存 TTL 随机抖动
+
+  - [x] 7.2 实现缓存 TTL 随机抖动
+
     - 防止缓存雪崩
     - 默认 30 分钟 + 10% 随机抖动
     - _Requirements: 5.5_
-  - [ ] 7.3 实现缓存预热机制
+
+  - [x] 7.3 实现缓存预热机制
+
     - 系统启动时预热权限树
     - 预热系统角色权限
     - _Requirements: 5.5_
-  - [ ] 7.4 实现缓存失效传播
+
+  - [x] 7.4 实现缓存失效传播
+
     - 角色权限变更时失效所有相关用户缓存
     - 用户角色变更时失效用户缓存
     - _Requirements: 5.1, 5.2_
-  - [ ]* 7.5 编写缓存属性测试
+  - [x] 7.5 编写缓存属性测试
+
+
+
+
+
+
+
+
     - **Property 9: 权限缓存失效传播**
     - **Validates: Requirements 5.1, 5.2**
 
-- [ ] 8. Checkpoint - 确保所有测试通过
+- [x] 8. Checkpoint - 确保所有测试通过
+
+
+
+
+
   - 确保所有测试通过，如有问题请询问用户
 
-- [ ] 9. 实现权限管理 API
-  - [ ] 9.1 实现权限列表接口
+
+- [x] 9. 实现权限管理 API
+
+
+
+
+  - [x] 9.1 实现权限列表接口
+
+
     - GET /api/admin/permissions（分页、搜索、筛选）
     - GET /api/admin/permissions/:id（详情）
     - _Requirements: 1.1_
-  - [ ] 9.2 实现权限树接口
+
+  - [x] 9.2 实现权限树接口
+
     - GET /api/admin/permissions/tree
     - GET /api/admin/permissions/groups
     - _Requirements: 2.1_
-  - [ ] 9.3 实现权限 CRUD 接口
+
+  - [x] 9.3 实现权限 CRUD 接口
+
     - POST /api/admin/permissions（创建）
     - PUT /api/admin/permissions/:id（全量更新）
     - PATCH /api/admin/permissions/:id（部分更新）
     - DELETE /api/admin/permissions/:id（软删除）
     - _Requirements: 1.2, 1.4, 1.5_
-  - [ ]* 9.4 更新 Swagger 文档
+  - [x] 9.4 更新 Swagger 文档
+
+
+
+
+
     - _Requirements: 1.1_
 
 - [ ] 10. 实现角色权限分配 API
+
   - [ ] 10.1 实现角色权限查询接口
     - GET /api/admin/roles/:id/permissions
     - _Requirements: 2.4_

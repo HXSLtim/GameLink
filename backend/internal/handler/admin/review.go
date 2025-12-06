@@ -668,7 +668,7 @@ type UpdateReplyPayload struct {
 // @Produce      json
 // @Param        id       path  int                  true  "回复ID"
 // @Param        request  body  UpdateReplyPayload   true  "回复内容"
-// @Success      200  {object}  model.APIResponse[map[string]interface{}]
+// @Success      200  {object}  model.SuccessResponse
 // @Failure      400  {object}  model.ErrorResponse
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/review-replies/{id} [put]
