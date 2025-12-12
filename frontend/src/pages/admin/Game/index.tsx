@@ -23,7 +23,6 @@ import {
     EditOutlined,
     DeleteOutlined,
     PlusOutlined,
-    AppstoreOutlined,
 } from '@ant-design/icons';
 import { PageContainer, SearchTable } from '@/components';
 import type { SearchField } from '@/components';

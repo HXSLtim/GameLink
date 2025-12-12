@@ -51,12 +51,12 @@ type KPIMetric struct {
 
 // KPIOverview represents the KPI overview data.
 type KPIOverview struct {
-	GMV           KPIMetric `json:"gmv"`
-	Orders        KPIMetric `json:"orders"`
-	NewUsers      KPIMetric `json:"newUsers"`
-	NewPlayers    KPIMetric `json:"newPlayers"`
-	DAU           KPIMetric `json:"dau"`
-	Retention     KPIMetric `json:"retention"`
+	GMV            KPIMetric `json:"gmv"`
+	Orders         KPIMetric `json:"orders"`
+	NewUsers       KPIMetric `json:"newUsers"`
+	NewPlayers     KPIMetric `json:"newPlayers"`
+	DAU            KPIMetric `json:"dau"`
+	Retention      KPIMetric `json:"retention"`
 	RepurchaseRate KPIMetric `json:"repurchaseRate"`
 }
 
@@ -290,8 +290,11 @@ func (s *KPIService) calculateRetention(ctx context.Context, start, end, prevSta
 // calculateRetentionRate calculates retention rate for given days.
 func (s *KPIService) calculateRetentionRate(ctx context.Context, targetDate time.Time, days int) float64 {
 	var registeredCount int64
+	// PostgreSQL: 使用 ::date 进行日期类型转换
+	targetDateOnly := targetDate.Truncate(24 * time.Hour)
+	nextDay := targetDateOnly.Add(24 * time.Hour)
 	s.db.WithContext(ctx).Table("users").
-		Where("DATE(created_at) = DATE(?)", targetDate).
+		Where("created_at >= ? AND created_at < ?", targetDateOnly, nextDay).
 		Count(&registeredCount)
 
 	if registeredCount == 0 {
@@ -299,13 +302,14 @@ func (s *KPIService) calculateRetentionRate(ctx context.Context, targetDate time
 	}
 
 	var activeCount int64
+	// PostgreSQL: 使用时间范围比较代替 DATE() 函数
 	s.db.WithContext(ctx).Raw(`
 		SELECT COUNT(DISTINCT o.user_id)
 		FROM orders o
 		INNER JOIN users u ON o.user_id = u.id
-		WHERE DATE(u.created_at) = DATE(?)
+		WHERE u.created_at >= ? AND u.created_at < ?
 		AND o.created_at > u.created_at
-	`, targetDate).Scan(&activeCount)
+	`, targetDateOnly, nextDay).Scan(&activeCount)
 
 	return float64(activeCount) / float64(registeredCount) * 100
 }

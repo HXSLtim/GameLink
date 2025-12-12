@@ -26,23 +26,67 @@ GameLink 是一个现代化的游戏陪玩管理平台，采用 Go 后端 + Reac
 
 ## 🚀 快速开始
 
-### 环境要求
-- **Go**: 1.25.3+
-- **Node.js**: 18+
-- **MySQL**: 8.0+
-- **Redis**: 6.0+
+### 🐳 方式一：Docker 部署（推荐）
 
-### 一键启动
-```bash
-# 克隆项目
-git clone https://github.com/HXSLtim/GameLink.git
-cd GameLink
+**环境要求**: Docker 20.10+ 和 Docker Compose 2.0+
 
-# 使用快速启动脚本
-./scripts/quick-start.sh
+#### 开发环境（SQLite + 内存缓存）
+```powershell
+# Windows PowerShell
+.\scripts\docker-dev-start.ps1
+
+# 或手动启动
+docker-compose up -d
 ```
 
-### 手动启动
+#### 本地生产环境测试（PostgreSQL + Redis）
+```powershell
+# 快速启动本地生产环境
+.\scripts\docker-prod-local-start.ps1
+
+# 清理数据重新开始
+.\scripts\docker-prod-local-start.ps1 -Clean
+```
+
+#### 生产环境部署
+```powershell
+# 1. 配置环境变量
+Copy-Item .env.example .env
+notepad .env  # 编辑配置
+
+# 2. 启动服务
+.\scripts\docker-prod-start.ps1
+
+# 或手动启动
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+**访问地址**:
+- 🌐 **前端应用**: http://localhost
+- 🔌 **后端API**: http://localhost:8080 (开发) / http://localhost:8081 (本地生产)
+- 📚 **Swagger文档**: http://localhost:8080/swagger/index.html
+- 👤 **默认管理员**: admin@gamelink.com / admin123456
+
+📖 **Docker 文档**:
+- [快速上手指南](DOCKER_GETTING_STARTED.md) - 5分钟快速开始 ⭐ 推荐
+- [快速参考手册](DOCKER_QUICK_REFERENCE.md) - 常用命令速查
+- [完整部署指南](DOCKER_DEPLOYMENT.md) - 详细的部署步骤和配置说明
+- [工具集说明](README.docker.md) - 脚本和工具详解
+
+💡 **统一管理工具**:
+```powershell
+# 查看所有命令
+.\scripts\docker-manager.ps1 help
+
+# 快速启动
+.\scripts\docker-manager.ps1 start
+```
+
+---
+
+### 💻 方式二：本地开发
+
+**环境要求**: Go 1.25.3+, Node.js 18+, MySQL 8.0+, Redis 6.0+
 
 #### 1. 后端服务
 ```bash

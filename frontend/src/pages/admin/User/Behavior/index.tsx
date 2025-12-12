@@ -3,7 +3,8 @@ import { Card, Row, Col, Statistic, Spin, message } from 'antd';
 import { PageContainer } from '@/components';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { UserOutlined, ClockCircleOutlined, DollarOutlined } from '@ant-design/icons';
-import { adminApi, UserBehaviorStats, UserDistribution, TrendData } from '@/api/admin';
+import { adminApi } from '@/api/admin';
+import type { UserBehaviorStats, UserDistribution, TrendData } from '@/api/admin';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
@@ -116,7 +117,7 @@ const UserBehavior: React.FC = () => {
                                             dataKey="value"
                                             label={(entry) => entry.name}
                                         >
-                                            {(distribution?.byRegion || []).map((entry, index) => (
+                                            {(distribution?.byRegion || []).map((_entry, index) => (
                                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                             ))}
                                         </Pie>

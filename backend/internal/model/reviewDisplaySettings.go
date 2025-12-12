@@ -33,7 +33,7 @@ type ReviewDisplaySettings struct {
 	SortBy ReviewSortBy `json:"sortBy" gorm:"column:sort_by;type:varchar(20);default:'time'"`
 	// 最低评分阈值（1-5），低于此评分的评价不显示
 	// @Example 1
-	MinScore int `json:"minScore" gorm:"column:min_score;type:tinyint;default:1"`
+	MinScore int `json:"minScore" gorm:"column:min_score;type:smallint;default:1"` // PostgreSQL uses smallint
 	// 是否显示匿名评价
 	// @Example true
 	ShowAnonymous bool `json:"showAnonymous" gorm:"column:show_anonymous;default:true"`
@@ -45,7 +45,7 @@ type ReviewDisplaySettings struct {
 	AutoApprove bool `json:"autoApprove" gorm:"column:auto_approve;default:false"`
 	// 自动批准最低评分（1-5），只有评分>=此值的评价才会自动批准
 	// @Example 4
-	AutoApproveMinRating int `json:"autoApproveMinRating" gorm:"column:auto_approve_min_rating;type:tinyint;default:4"`
+	AutoApproveMinRating int `json:"autoApproveMinRating" gorm:"column:auto_approve_min_rating;type:smallint;default:4"` // PostgreSQL uses smallint
 	// 创建时间
 	CreatedAt time.Time `json:"createdAt" gorm:"column:created_at"`
 	// 更新时间

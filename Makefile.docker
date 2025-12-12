@@ -1,0 +1,198 @@
+# GameLink Docker 管理 Makefile
+# 使用方式: make -f Makefile.docker <target>
+
+.PHONY: help dev prod-local prod health logs backup restore clean
+
+# 默认目标
+.DEFAULT_GOAL := help
+
+# 颜色定义
+BLUE := \033[0;34m
+GREEN := \033[0;32m
+YELLOW := \033[0;33m
+RED := \033[0;31m
+NC := \033[0m # No Color
+
+##@ 帮助
+
+help: ## 显示帮助信息
+	@echo "$(BLUE)GameLink Docker 管理命令$(NC)"
+	@echo ""
+	@awk 'BEGIN {FS = ":.*##"; printf "使用方式: $(GREEN)make -f Makefile.docker <target>$(NC)\n\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  $(BLUE)%-20s$(NC) %s\n", $$1, $$2 } /^##@/ { printf "\n$(YELLOW)%s$(NC)\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+
+##@ 环境启动
+
+dev: ## 启动开发环境
+	@echo "$(GREEN)启动开发环境...$(NC)"
+	@powershell -ExecutionPolicy Bypass -File scripts/docker-dev-start.ps1
+
+prod-local: ## 启动本地生产环境
+	@echo "$(GREEN)启动本地生产环境...$(NC)"
+	@powershell -ExecutionPolicy Bypass -File scripts/docker-prod-local-start.ps1
+
+prod-local-clean: ## 清理数据并启动本地生产环境
+	@echo "$(YELLOW)清理数据并启动本地生产环境...$(NC)"
+	@powershell -ExecutionPolicy Bypass -File scripts/docker-prod-local-start.ps1 -Clean
+
+prod: ## 启动生产环境
+	@echo "$(GREEN)启动生产环境...$(NC)"
+	@powershell -ExecutionPolicy Bypass -File scripts/docker-prod-start.ps1
+
+##@ 服务管理
+
+stop-dev: ## 停止开发环境
+	@echo "$(YELLOW)停止开发环境...$(NC)"
+	@docker-compose down
+
+stop-prod-local: ## 停止本地生产环境
+	@echo "$(YELLOW)停止本地生产环境...$(NC)"
+	@docker-compose --env-file .env.production.local -f docker-compose.prod.local.yml down
+
+stop-prod: ## 停止生产环境
+	@echo "$(YELLOW)停止生产环境...$(NC)"
+	@docker-compose -f docker-compose.prod.yml down
+
+restart-dev: ## 重启开发环境
+	@echo "$(YELLOW)重启开发环境...$(NC)"
+	@docker-compose restart
+
+restart-prod-local: ## 重启本地生产环境
+	@echo "$(YELLOW)重启本地生产环境...$(NC)"
+	@docker-compose --env-file .env.production.local -f docker-compose.prod.local.yml restart
+
+restart-backend: ## 重启后端服务（本地生产）
+	@echo "$(YELLOW)重启后端服务...$(NC)"
+	@docker-compose --env-file .env.production.local -f docker-compose.prod.local.yml restart backend
+
+##@ 监控和日志
+
+health: ## 健康检查（本地生产）
+	@powershell -ExecutionPolicy Bypass -File scripts/docker-health-check.ps1 -Environment prod-local
+
+health-dev: ## 健康检查（开发环境）
+	@powershell -ExecutionPolicy Bypass -File scripts/docker-health-check.ps1 -Environment dev
+
+logs: ## 查看所有日志（本地生产）
+	@powershell -ExecutionPolicy Bypass -File scripts/docker-logs.ps1 -Environment prod-local
+
+logs-backend: ## 查看后端日志（本地生产）
+	@powershell -ExecutionPolicy Bypass -File scripts/docker-logs.ps1 -Environment prod-local -Service backend -Follow
+
+logs-postgres: ## 查看数据库日志（本地生产）
+	@powershell -ExecutionPolicy Bypass -File scripts/docker-logs.ps1 -Environment prod-local -Service postgres
+
+logs-redis: ## 查看 Redis 日志（本地生产）
+	@powershell -ExecutionPolicy Bypass -File scripts/docker-logs.ps1 -Environment prod-local -Service redis
+
+ps: ## 查看容器状态
+	@echo "$(BLUE)容器状态:$(NC)"
+	@docker ps --filter "name=gamelink" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+stats: ## 查看资源使用
+	@echo "$(BLUE)资源使用情况:$(NC)"
+	@docker stats --no-stream --filter "name=gamelink"
+
+##@ 数据管理
+
+backup: ## 备份数据（本地生产）
+	@echo "$(GREEN)备份数据...$(NC)"
+	@powershell -ExecutionPolicy Bypass -File scripts/docker-backup.ps1 -Environment prod-local
+
+backup-prod: ## 备份数据（生产环境）
+	@echo "$(GREEN)备份生产数据...$(NC)"
+	@powershell -ExecutionPolicy Bypass -File scripts/docker-backup.ps1 -Environment prod
+
+db-shell: ## 进入数据库 Shell
+	@echo "$(BLUE)进入 PostgreSQL...$(NC)"
+	@docker exec -it gamelink-postgres psql -U gamelink -d gamelink
+
+redis-shell: ## 进入 Redis Shell
+	@echo "$(BLUE)进入 Redis...$(NC)"
+	@docker exec -it gamelink-redis redis-cli -a redis123
+
+##@ 清理
+
+clean-soft: ## 软清理（仅停止容器）
+	@echo "$(YELLOW)软清理...$(NC)"
+	@powershell -ExecutionPolicy Bypass -File scripts/docker-clean.ps1 -Level soft -Environment prod-local
+
+clean-medium: ## 中等清理（删除容器和镜像）
+	@echo "$(YELLOW)中等清理...$(NC)"
+	@powershell -ExecutionPolicy Bypass -File scripts/docker-clean.ps1 -Level medium -Environment prod-local
+
+clean-hard: ## 完全清理（删除所有数据）
+	@echo "$(RED)完全清理（包括数据）...$(NC)"
+	@powershell -ExecutionPolicy Bypass -File scripts/docker-clean.ps1 -Level hard -Environment prod-local
+
+clean-all: ## 清理所有环境
+	@echo "$(RED)清理所有环境...$(NC)"
+	@powershell -ExecutionPolicy Bypass -File scripts/docker-clean.ps1 -Level medium -Environment all
+
+prune: ## 清理未使用的 Docker 资源
+	@echo "$(YELLOW)清理未使用的资源...$(NC)"
+	@docker system prune -f
+	@docker volume prune -f
+	@docker network prune -f
+
+##@ 构建
+
+build-dev: ## 构建开发环境镜像
+	@echo "$(GREEN)构建开发环境镜像...$(NC)"
+	@docker-compose build
+
+build-prod-local: ## 构建本地生产环境镜像
+	@echo "$(GREEN)构建本地生产环境镜像...$(NC)"
+	@docker-compose --env-file .env.production.local -f docker-compose.prod.local.yml build
+
+build-backend: ## 仅构建后端镜像
+	@echo "$(GREEN)构建后端镜像...$(NC)"
+	@docker-compose --env-file .env.production.local -f docker-compose.prod.local.yml build backend
+
+build-frontend: ## 仅构建前端镜像
+	@echo "$(GREEN)构建前端镜像...$(NC)"
+	@docker-compose --env-file .env.production.local -f docker-compose.prod.local.yml build frontend
+
+rebuild: ## 强制重新构建（不使用缓存）
+	@echo "$(GREEN)强制重新构建...$(NC)"
+	@docker-compose --env-file .env.production.local -f docker-compose.prod.local.yml build --no-cache
+
+##@ 更新
+
+update-backend: ## 更新后端服务
+	@echo "$(GREEN)更新后端服务...$(NC)"
+	@docker-compose --env-file .env.production.local -f docker-compose.prod.local.yml build backend
+	@docker-compose --env-file .env.production.local -f docker-compose.prod.local.yml up -d --no-deps backend
+
+update-frontend: ## 更新前端服务
+	@echo "$(GREEN)更新前端服务...$(NC)"
+	@docker-compose --env-file .env.production.local -f docker-compose.prod.local.yml build frontend
+	@docker-compose --env-file .env.production.local -f docker-compose.prod.local.yml up -d --no-deps frontend
+
+##@ 调试
+
+shell-backend: ## 进入后端容器 Shell
+	@docker exec -it gamelink-backend sh
+
+shell-frontend: ## 进入前端容器 Shell
+	@docker exec -it gamelink-frontend sh
+
+inspect-backend: ## 查看后端容器详情
+	@docker inspect gamelink-backend
+
+inspect-network: ## 查看网络详情
+	@docker network inspect gamelink-network
+
+inspect-volume: ## 查看数据卷详情
+	@docker volume inspect gamelink-postgres-data
+
+##@ 快捷操作
+
+quick-start: prod-local ## 快速启动（本地生产环境）
+
+quick-restart: restart-prod-local health ## 快速重启并检查健康
+
+quick-clean: clean-soft build-prod-local prod-local ## 清理并重新启动
+
+quick-backup: backup ## 快速备份
+
+quick-check: health ps stats ## 快速检查状态

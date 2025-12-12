@@ -1,4 +1,4 @@
-import { useRoutes } from 'react-router-dom';
+import { useRoutes, type RouteObject } from 'react-router-dom';
 import { routes } from './routes';
 import RouteGuard from './Guard';
 import type { RouteConfig } from './types';
@@ -8,7 +8,7 @@ import { useAdmin } from '@/context/AdminContext';
 import { generateRoutesFromMenus } from '@/utils/dynamicRoutes';
 import { useMemo } from 'react';
 
-const renderRoutes = (routes: RouteConfig[]): any[] => {
+const renderRoutes = (routes: RouteConfig[]): RouteObject[] => {
     return routes.map((route) => {
         const element = route.element;
 
@@ -23,11 +23,18 @@ const renderRoutes = (routes: RouteConfig[]): any[] => {
             </RouteGuard>
         ) : element;
 
+        // Handle index routes (cannot have path and index: true at the same time)
+        if (route.index) {
+            return {
+                index: true,
+                element: guardedElement,
+            };
+        }
+
         return {
             path: route.path,
             element: guardedElement,
             children: route.children ? renderRoutes(route.children) : undefined,
-            index: route.index
         };
     });
 };
@@ -36,21 +43,31 @@ const AppRouter = () => {
     const { menus } = useAdmin();
 
     const finalRoutes = useMemo(() => {
-        // Clone static routes
-        const allRoutes = [...routes];
+        // Clone static routes (only keep non-admin routes like login, 404, etc.)
+        const allRoutes = routes.filter(r => r.path !== '/admin');
 
-        // Find admin route
-        const adminRouteIndex = allRoutes.findIndex(r => r.path === '/admin');
-        if (adminRouteIndex !== -1 && menus.length > 0) {
+        // Find or create admin route
+        if (menus.length > 0) {
             const dynamicRoutes = generateRoutesFromMenus(menus);
-
-            // Merge dynamic routes into admin children
-            const adminRoute = { ...allRoutes[adminRouteIndex] };
-            adminRoute.children = [
-                ...(adminRoute.children || []),
-                ...dynamicRoutes
-            ];
-            allRoutes[adminRouteIndex] = adminRoute;
+            
+            // Find the original admin route for layout and meta
+            const originalAdminRoute = routes.find(r => r.path === '/admin');
+            
+            // Create admin route with dynamic children only
+            const adminRoute: RouteConfig = {
+                path: '/admin',
+                element: originalAdminRoute?.element,
+                meta: originalAdminRoute?.meta,
+                children: dynamicRoutes
+            };
+            
+            allRoutes.push(adminRoute);
+        } else {
+            // If no menus loaded yet, keep original admin route structure
+            const originalAdminRoute = routes.find(r => r.path === '/admin');
+            if (originalAdminRoute) {
+                allRoutes.push(originalAdminRoute);
+            }
         }
 
         return allRoutes;

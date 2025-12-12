@@ -264,7 +264,7 @@ const OrderPage: React.FC = () => {
             dataIndex: 'status',
             key: 'status',
             width: 100,
-            render: status => (
+            render: (status: Order['status']) => (
                 <Tag color={statusMap[status].color} icon={statusMap[status].icon}>
                     {statusMap[status].text}
                 </Tag>
@@ -275,7 +275,7 @@ const OrderPage: React.FC = () => {
             dataIndex: 'paymentStatus',
             key: 'paymentStatus',
             width: 100,
-            render: status => (
+            render: (status: Order['paymentStatus']) => (
                 <Tag color={paymentStatusMap[status].color}>{paymentStatusMap[status].text}</Tag>
             ),
         },

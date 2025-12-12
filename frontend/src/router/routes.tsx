@@ -6,13 +6,13 @@ import { Navigate } from 'react-router-dom';
 import type { RouteConfig } from './types';
 import LazyLoad from '@/components/common/LazyLoad';
 
-// 布局组件
+// 布局组件 - 保持直接导入（核心布局）
 import AdminLayout from '@/layouts/AdminLayout/index';
 
-// 直接导入的页面
-import Auth from '@/pages/auth/Auth';
-import NotFound from '@/pages/NotFound';
-import Forbidden from '@/pages/Forbidden';
+// 懒加载基础页面
+const Auth = lazy(() => import('@/pages/auth/Auth'));
+const NotFound = lazy(() => import('@/pages/NotFound'));
+const Forbidden = lazy(() => import('@/pages/Forbidden'));
 
 // 懒加载Admin页面
 const Dashboard = lazy(() => import('@/pages/admin/Dashboard'));
@@ -66,12 +66,12 @@ export const routes: RouteConfig[] = [
     // 登录/注册页（Tab 切换）
     {
         path: '/login',
-        element: <Auth />,
+        element: <LazyLoad><Auth /></LazyLoad>,
         meta: { title: '登录' }
     },
     {
         path: '/register',
-        element: <Auth />,
+        element: <LazyLoad><Auth /></LazyLoad>,
         meta: { title: '注册' }
     },
     // 重定向首页到管理端
@@ -273,12 +273,12 @@ export const routes: RouteConfig[] = [
     // 403 禁止访问页面
     {
         path: '/403',
-        element: <Forbidden />,
+        element: <LazyLoad><Forbidden /></LazyLoad>,
         meta: { title: '无权限访问' }
     },
     // 404页面
     {
         path: '*',
-        element: <NotFound />
+        element: <LazyLoad><NotFound /></LazyLoad>
     }
 ];

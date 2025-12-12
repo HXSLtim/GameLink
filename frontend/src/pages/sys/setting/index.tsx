@@ -266,7 +266,7 @@ const Settings: React.FC = () => {
                             <InputNumber min={5} max={50} style={{ width: 120 }} suffix="条" />
                         </Form.Item>
 
-                        <Divider orientation="left">审核设置</Divider>
+                        <Divider>审核设置</Divider>
 
                         <Form.Item
                             name="autoApprove"

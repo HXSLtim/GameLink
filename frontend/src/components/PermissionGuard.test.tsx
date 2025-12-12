@@ -242,7 +242,6 @@ describe('PermissionGuard Property Tests', () => {
         fc.assert(
             fc.property(
                 permissionListArb,
-                modeArb,
                 (requiredPermissions) => {
                     mockAdminContext.loading = true;
                     mockAdminContext.permissions = ['*']; // Even with all permissions

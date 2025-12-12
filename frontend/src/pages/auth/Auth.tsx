@@ -52,7 +52,7 @@ const Auth: React.FC = () => {
         setRegisterLoading(true);
         try {
             await authApi.register({
-                username: values.username,
+                name: values.username,  // 后端期望 name 字段
                 email: values.email,
                 phone: values.phone,
                 password: values.password,

@@ -249,22 +249,31 @@ func buildMenuTree(menus []model.Menu) []model.Menu {
 	menuMap := make(map[uint64]*model.Menu)
 	var roots []model.Menu
 
-	// 先建立 ID -> Menu 映射
+	// 先建立 ID -> Menu 映射（使用指针）
 	for i := range menus {
-		menu := menus[i]
-		menu.Children = []model.Menu{}
-		menuMap[menu.ID] = &menu
+		menus[i].Children = []model.Menu{}
+		menuMap[menus[i].ID] = &menus[i]
 	}
 
 	// 构建树
-	for _, menu := range menuMap {
+	for i := range menus {
+		menu := &menus[i]
 		if menu.ParentID == nil || *menu.ParentID == 0 {
+			// 根节点
 			roots = append(roots, *menu)
 		} else if parent, ok := menuMap[*menu.ParentID]; ok {
+			// 添加到父节点的 children
 			parent.Children = append(parent.Children, *menu)
 		} else {
 			// 父菜单不在权限范围内，作为根节点
 			roots = append(roots, *menu)
+		}
+	}
+
+	// 更新根节点的 children（因为之前是值拷贝）
+	for i := range roots {
+		if menuPtr, ok := menuMap[roots[i].ID]; ok {
+			roots[i].Children = menuPtr.Children
 		}
 	}
 

@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.4
 
 # --- Build stage ---
-FROM golang:1.24-alpine AS build
+FROM golang:1.25-alpine AS build
 WORKDIR /app
 
 # Build-time configuration for Go modules (overridable via build-args)
@@ -28,15 +28,18 @@ RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache
 FROM alpine:3.19 AS runtime
 WORKDIR /app
 
+# 安装运行时依赖（用于健康检查）
+RUN apk add --no-cache wget ca-certificates && update-ca-certificates
+
 # Copy binary and configs
 COPY --from=build /app/server /app/server
 COPY configs/ ./configs/
 
-# Prepare runtime data dir (for sqlite dev DB)
-RUN mkdir -p /app/var
+# 创建必要的目录
+RUN mkdir -p /app/var /app/logs
 
-# Default environment (can be overridden)
-ENV APP_ENV=development \
+# 默认使用生产环境（可通过docker-compose或环境变量覆盖）
+ENV APP_ENV=production \
     SERVICE_PORT=8080
 
 EXPOSE 8080

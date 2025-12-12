@@ -3,7 +3,7 @@
  * 提供菜单、权限数据和权限检查方法
  * Requirements: 8.1, 8.2, 8.4 - 菜单权限联动
  */
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { adminApi } from '@/api/admin';
 import type { Menu } from '@/api/admin';
 import { permissionStore } from '@/utils/permission';

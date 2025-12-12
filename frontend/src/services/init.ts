@@ -4,6 +4,7 @@
  */
 import { syncApi, type SyncResult } from '@/api/sync';
 import { ADMIN_MENUS, ADMIN_PERMISSIONS } from '@/config/adminRoutes';
+import { authApi } from '@/api/auth';
 
 /**
  * 初始化配置
@@ -64,7 +65,6 @@ const hasAdminAccess = async (): Promise<boolean> => {
     }
 
     try {
-        const { authApi } = await import('@/api/auth');
         const response = await authApi.getMe();
 
         console.log('[Init] getMe response:', response);

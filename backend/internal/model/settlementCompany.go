@@ -115,13 +115,13 @@ func ValidateCreditCodeWithChecksum(code string) bool {
 // Property 12: 陪玩师结算公司分配唯一性 - Each player can only have one current assignment
 type PlayerCompanyAssignment struct {
 	Base
-	PlayerID            uint64     `json:"playerId" gorm:"column:player_id;not null;index;uniqueIndex:idx_player_current_unique,where:is_current = 1"` // 陪玩师ID
-	SettlementCompanyID uint64     `json:"settlementCompanyId" gorm:"column:settlement_company_id;not null;index"`                                     // 结算公司ID
-	EffectiveDate       time.Time  `json:"effectiveDate" gorm:"column:effective_date;not null;index"`                                                  // 生效日期
-	EndDate             *time.Time `json:"endDate,omitempty" gorm:"column:end_date;index"`                                                             // 结束日期
-	Reason              string     `json:"reason" gorm:"column:reason;size:500"`                                                                       // 分配原因
-	AssignedBy          uint64     `json:"assignedBy" gorm:"column:assigned_by;not null;index"`                                                        // 分配操作人
-	IsCurrent           bool       `json:"isCurrent" gorm:"column:is_current;default:false;index"`                                                     // 是否当前生效
+	PlayerID            uint64     `json:"playerId" gorm:"column:player_id;not null;index;uniqueIndex:idx_player_current_unique,where:is_current = true"` // 陪玩师ID (PostgreSQL requires boolean comparison)
+	SettlementCompanyID uint64     `json:"settlementCompanyId" gorm:"column:settlement_company_id;not null;index"`                                        // 结算公司ID
+	EffectiveDate       time.Time  `json:"effectiveDate" gorm:"column:effective_date;not null;index"`                                                     // 生效日期
+	EndDate             *time.Time `json:"endDate,omitempty" gorm:"column:end_date;index"`                                                                // 结束日期
+	Reason              string     `json:"reason" gorm:"column:reason;size:500"`                                                                          // 分配原因
+	AssignedBy          uint64     `json:"assignedBy" gorm:"column:assigned_by;not null;index"`                                                           // 分配操作人
+	IsCurrent           bool       `json:"isCurrent" gorm:"column:is_current;default:false;index"`                                                        // 是否当前生效
 
 	// Relations
 	Player            Player            `json:"-" gorm:"foreignKey:PlayerID;references:ID"`

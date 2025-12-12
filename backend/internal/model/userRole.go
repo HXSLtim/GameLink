@@ -1,13 +1,10 @@
 package model
 
-import "time"
-
 // UserRole represents the many-to-many relationship between users and roles.
 // One user can have multiple roles.
 type UserRole struct {
-	UserID    uint64    `json:"userId" gorm:"column:user_id;primaryKey;not null"`
-	RoleID    uint64    `json:"roleId" gorm:"column:role_id;primaryKey;not null"`
-	CreatedAt time.Time `json:"createdAt" gorm:"column:created_at;autoCreateTime"`
+	UserID uint64 `json:"userId" gorm:"column:user_id;primaryKey;not null"`
+	RoleID uint64 `json:"roleId" gorm:"column:role_id;primaryKey;not null"`
 
 	// 外键关联
 	User User      `json:"user,omitempty" gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE"`

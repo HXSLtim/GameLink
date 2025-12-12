@@ -59,6 +59,7 @@ import { authApi } from '@/api/auth';
 import { adminApi, type Menu as BackendMenuItem } from '@/api/admin';
 import { userApi, type Notification, type ApiResponse, type NotificationListResponse } from '@/api/user';
 import { ThemeToggle } from '@/components';
+import { forceInit } from '@/services/init';
 import styles from './index.module.css';
 
 const { Header, Sider, Content } = Layout;
@@ -245,27 +246,9 @@ const AdminLayout: React.FC = () => {
                 if (contextMenus && contextMenus.length > 0) {
                     console.log('[AdminLayout] 使用 AdminContext 中的菜单数据，数量:', contextMenus.length);
                     
-                    // 构建菜单树：将扁平数组转换为层级树结构
-                    const buildMenuTree = (menus: BackendMenuItem[], parentId: number | null = null): BackendMenuItem[] => {
-                        return menus
-                            .filter(menu => {
-                                const isVisible = menu.visible !== false;
-                                const isMatchParent = menu.parentId === parentId;
-                                return isVisible && isMatchParent;
-                            })
-                            .sort((a, b) => a.order - b.order)
-                            .map(menu => {
-                                const children = buildMenuTree(menus, menu.id);
-                                return {
-                                    ...menu,
-                                    children: children.length > 0 ? children : undefined
-                                };
-                            });
-                    };
-
-                    const menuTree = buildMenuTree(contextMenus);
-                    console.log('[AdminLayout] 构建的菜单树:', menuTree);
-                    setMenuData(menuTree);
+                    // 后端已经返回树形结构，直接使用
+                    console.log('[AdminLayout] 菜单数据（树形结构）:', contextMenus);
+                    setMenuData(contextMenus);
                     setMenuLoading(false);
                     return;
                 }
@@ -501,7 +484,6 @@ const AdminLayout: React.FC = () => {
     const handleInitialize = async () => {
         setInitializing(true);
         try {
-            const { forceInit } = await import('@/services/init');
             const result = await forceInit();
             if (result.success) {
                 messageApi.success('初始化成功，正在刷新...');
@@ -653,7 +635,6 @@ const AdminLayout: React.FC = () => {
                                 open={notificationOpen}
                                 onOpenChange={setNotificationOpen}
                                 placement="bottomRight"
-                                styles={{ body: { padding: 0 } }}
                             >
                                 <Badge count={unreadCount} size="small">
                                     <Button type="text" icon={<BellOutlined />} />

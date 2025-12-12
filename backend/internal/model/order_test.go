@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"gamelink/internal/model"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -57,7 +58,6 @@ func TestOrderModel(t *testing.T) {
 		OrderConfig:       "{}",
 		UserNotes:         "用户备注",
 		HasDispute:        false,
-		DisputeID:         nil,
 	}
 
 	assert.Equal(t, orderNo, order.OrderNo)
@@ -89,7 +89,7 @@ func TestOrderModel(t *testing.T) {
 	assert.Equal(t, "{}", order.OrderConfig)
 	assert.Equal(t, "用户备注", order.UserNotes)
 	assert.False(t, order.HasDispute)
-	assert.Nil(t, order.DisputeID)
+	// Note: DisputeID field removed from Order model
 }
 
 func TestOrderIsGiftOrder(t *testing.T) {

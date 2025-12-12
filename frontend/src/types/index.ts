@@ -15,9 +15,7 @@ export * from './permission';
 // Dashboard 类型 (排除与 monitor 冲突的类型)
 export {
   type DashboardStats,
-  type OrderStats,
-  type UserStats,
-  type RevenueStats,
+  type OrderStatusData,
   type TrendData,
   type PaginationParams,
   // Alert 相关类型使用 Dashboard 前缀避免冲突

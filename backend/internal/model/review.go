@@ -79,7 +79,7 @@ type Review struct {
 	// 评分，1-5分
 	// @Enum 1, 2, 3, 4, 5
 	// @Example 5
-	Score Rating `json:"rating" gorm:"column:score;type:tinyint"`
+	Score Rating `json:"rating" gorm:"column:score;type:smallint"` // PostgreSQL uses smallint instead of tinyint
 	// 评价内容，可选
 	// @Example 陪玩师技术很好，服务态度也很棒，下次还会选择！
 	Content string `json:"comment,omitempty" gorm:"column:content;type:text"`

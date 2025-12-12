@@ -4,82 +4,54 @@
 
 ```
 GameLink/
-├── backend/              # Go backend service
-├── frontend/             # React frontend application
-├── docs/                 # Project documentation
-├── .kiro/                # Kiro configuration and steering rules
-└── [root files]          # README, LICENSE, PRD documents
+├── backend/              # Go 后端服务
+├── frontend/             # React 前端应用
+├── scripts/              # 部署和工具脚本
+├── docs/                 # 项目文档
+├── .kiro/                # Kiro 配置和 steering 规则
+└── [root files]          # README, LICENSE, docker-compose 等
 ```
 
 ## Backend Structure (`backend/`)
 
 ```
 backend/
-├── cmd/
-│   └── main.go                    # Application entry point
-├── internal/                      # Private application code
-│   ├── handler/                   # HTTP handlers (controllers)
-│   │   ├── admin/                 # Admin panel endpoints
-│   │   ├── middleware/            # HTTP middleware (auth, CORS, logging)
-│   │   ├── notification/          # Notification endpoints
-│   │   ├── player/                # Player/companion endpoints
-│   │   ├── user/                  # User endpoints
-│   │   ├── auth.go                # Authentication handlers
-│   │   ├── error.go               # Error handling utilities
-│   │   └── response.go            # Response formatting
-│   ├── service/                   # Business logic layer
-│   │   ├── admin/                 # Admin services
-│   │   ├── auth/                  # Authentication services
-│   │   ├── chat/                  # Chat services
-│   │   ├── order/                 # Order management
-│   │   ├── payment/               # Payment processing
-│   │   ├── player/                # Player services
-│   │   └── user/                  # User services
-│   ├── repository/                # Data access layer
-│   │   ├── implementations/       # Concrete implementations
-│   │   ├── interfaces/            # Repository interfaces
-│   │   ├── mocks/                 # Mock implementations for testing
-│   │   ├── admin/                 # Admin data access
-│   │   ├── order/                 # Order data access
-│   │   ├── payment/               # Payment data access
-│   │   └── user/                  # User data access
-│   ├── model/                     # Data models and entities
-│   │   ├── user.go                # User model
-│   │   ├── order.go               # Order model
-│   │   ├── player.go              # Player model
-│   │   ├── payment.go             # Payment model
-│   │   ├── chat.go                # Chat model
-│   │   ├── role.go                # RBAC role model
-│   │   └── permission.go          # RBAC permission model
-│   ├── router/                    # Route definitions
-│   ├── integration/               # Integration tests
-│   └── ws/                        # WebSocket handlers
-│       ├── hub.go                 # WebSocket hub
-│       ├── client.go              # WebSocket client
-│       └── message.go             # Message types
-├── pkg/                           # Public/reusable packages
-│   ├── auth/                      # JWT utilities
-│   ├── cache/                     # Cache interfaces and implementations
-│   ├── config/                    # Configuration management
-│   ├── db/                        # Database utilities
-│   ├── logging/                   # Logging utilities
-│   ├── metrics/                   # Prometheus metrics
-│   ├── safety/                    # Safety utilities (panic recovery)
-│   ├── scheduler/                 # Scheduled jobs
-│   └── testutil/                  # Testing utilities
-├── configs/                       # Configuration files
-│   ├── config.development.yaml    # Dev environment config
-│   └── config.production.yaml     # Production config
-├── docs/                          # Generated API documentation
-│   ├── docs.go                    # Swagger docs
-│   ├── swagger.json               # OpenAPI spec (JSON)
-│   └── swagger.yaml               # OpenAPI spec (YAML)
-├── scripts/                       # Utility scripts
-├── var/                           # Runtime data (SQLite DB for dev)
-├── go.mod                         # Go module definition
-├── go.sum                         # Go dependencies checksum
-├── Makefile                       # Build and test commands
-└── Dockerfile                     # Container image definition
+├── cmd/main.go                    # 应用入口
+├── internal/                      # 私有应用代码
+│   ├── handler/                   # HTTP 处理器
+│   │   ├── admin/                 # 管理端接口
+│   │   ├── middleware/            # 中间件（auth, crypto, CORS）
+│   │   ├── player/                # 陪玩师接口
+│   │   └── user/                  # 用户接口
+│   ├── service/                   # 业务逻辑层
+│   │   ├── admin/                 # 管理服务
+│   │   ├── auth/                  # 认证服务
+│   │   ├── order/                 # 订单服务
+│   │   └── player/                # 陪玩师服务
+│   ├── repository/                # 数据访问层
+│   │   ├── admin/                 # 管理数据访问
+│   │   ├── interfaces/            # 仓库接口
+│   │   └── mocks/                 # Mock 实现
+│   ├── model/                     # 数据模型
+│   │   ├── user.go                # 用户模型
+│   │   ├── order.go               # 订单模型
+│   │   ├── role.go                # RBAC 角色
+│   │   └── permission.go          # RBAC 权限
+│   ├── router/                    # 路由定义
+│   ├── integration/               # 集成测试
+│   └── ws/                        # WebSocket 处理
+├── pkg/                           # 公共/可复用包
+│   ├── auth/                      # JWT 工具
+│   ├── cache/                     # 缓存（memory/redis）
+│   ├── config/                    # 配置管理
+│   ├── db/                        # 数据库工具（迁移）
+│   └── logging/                   # 日志工具
+├── configs/                       # 配置文件
+│   ├── config.development.yaml
+│   └── config.production.yaml
+├── docs/                          # Swagger 文档
+├── Makefile                       # 构建命令
+└── Dockerfile                     # 容器镜像
 ```
 
 ## Frontend Structure (`frontend/`)
@@ -87,165 +59,116 @@ backend/
 ```
 frontend/
 ├── src/
-│   ├── api/                       # API client modules
-│   │   ├── auth.ts                # Authentication API
-│   │   ├── order.ts               # Order API
-│   │   ├── player.ts              # Player API
-│   │   └── user.ts                # User API
-│   ├── components/                # Reusable React components
-│   │   ├── common/                # Common UI components
-│   │   ├── layout/                # Layout components
-│   │   └── [feature]/             # Feature-specific components
-│   ├── pages/                     # Page components (routes)
-│   │   ├── admin/                 # Admin panel pages
-│   │   ├── player/                # Player dashboard pages
-│   │   ├── user/                  # User-facing pages
-│   │   ├── Login.tsx              # Login page
-│   │   └── Register.tsx           # Registration page
-│   ├── layouts/                   # Layout wrappers
-│   │   ├── AdminLayout.tsx        # Admin panel layout
-│   │   ├── PlayerLayout.tsx       # Player dashboard layout
-│   │   └── UserLayout.tsx         # User-facing layout
-│   ├── router/                    # Route configuration
-│   │   └── index.tsx              # Route definitions
-│   ├── services/                  # Business logic services
-│   ├── context/                   # React Context providers
-│   │   ├── AuthContext.tsx        # Authentication context
-│   │   └── ThemeContext.tsx       # Theme context
-│   ├── hooks/                     # Custom React hooks
-│   │   ├── useAuth.ts             # Authentication hook
-│   │   └── useWebSocket.ts        # WebSocket hook
-│   ├── types/                     # TypeScript type definitions
-│   │   ├── api.ts                 # API response types
-│   │   ├── models.ts              # Data model types
-│   │   └── index.ts               # Type exports
-│   ├── utils/                     # Utility functions
-│   │   ├── request.ts             # Axios configuration
-│   │   ├── storage.ts             # LocalStorage utilities
-│   │   └── validation.ts          # Form validation
-│   ├── constants/                 # Constants and enums
-│   ├── config/                    # App configuration
-│   ├── assets/                    # Static assets (images, fonts)
-│   ├── App.tsx                    # Root component
-│   ├── main.tsx                   # Application entry point
-│   └── index.css                  # Global styles
-├── public/                        # Public static files
-├── dist/                          # Build output (gitignored)
-├── node_modules/                  # Dependencies (gitignored)
-├── package.json                   # NPM dependencies and scripts
-├── tsconfig.json                  # TypeScript configuration
-├── vite.config.ts                 # Vite build configuration
-├── eslint.config.js               # ESLint configuration
-└── .prettierrc                    # Prettier configuration
+│   ├── api/                       # API 客户端
+│   │   ├── auth.ts                # 认证 API
+│   │   ├── admin.ts               # 管理 API
+│   │   └── client.ts              # Axios 客户端（带加密）
+│   ├── components/                # 可复用组件
+│   │   ├── common/                # 通用 UI 组件
+│   │   └── layout/                # 布局组件
+│   ├── pages/                     # 页面组件
+│   │   ├── admin/                 # 管理端页面
+│   │   ├── auth/                  # 认证页面
+│   │   └── sys/                   # 系统页面
+│   ├── layouts/                   # 布局包装器
+│   │   └── AdminLayout/           # 管理端布局
+│   ├── router/                    # 路由配置
+│   │   ├── index.tsx              # 路由入口
+│   │   ├── routes.tsx             # 静态路由
+│   │   └── componentMap.tsx       # 组件映射
+│   ├── context/                   # React Context
+│   │   ├── AuthContext.tsx        # 认证上下文
+│   │   ├── AdminContext.tsx       # 管理上下文
+│   │   └── ThemeContext.tsx       # 主题上下文
+│   ├── utils/                     # 工具函数
+│   │   ├── crypto.ts              # 加密工具
+│   │   ├── dynamicRoutes.tsx      # 动态路由生成
+│   │   └── menuPermission.ts      # 菜单权限
+│   ├── types/                     # TypeScript 类型
+│   ├── App.tsx                    # 根组件
+│   └── main.tsx                   # 应用入口
+├── public/                        # 静态文件
+├── dist/                          # 构建输出
+├── package.json
+├── vite.config.ts                 # Vite 配置（代码分割）
+└── Dockerfile
 ```
 
-## Documentation Structure (`docs/`)
+## Scripts Structure (`scripts/`)
 
 ```
-docs/
-├── api/                           # API design standards
-│   ├── api-design-standards.md
-│   └── go-coding-standards.md
-├── backend/                       # Backend documentation
-│   ├── README.md
-│   ├── AGENTS.md
-│   └── configs/
-├── frontend/                      # Frontend documentation
-│   ├── README.md
-│   ├── DEVELOPER_GUIDE.md
-│   └── features/
-├── guides/                        # Development guides
-│   ├── CONTRIBUTING.md
-│   └── project-structure.md
-├── reports/                       # Status and coverage reports
-│   ├── coverage/
-│   └── status/
-├── archive/                       # Historical documentation
-└── INDEX.md                       # Documentation index
+scripts/
+├── deploy-production.ps1          # 标准部署脚本
+├── deploy-production-encrypted.ps1 # 加密版部署脚本（推荐）
+├── sync-crypto-keys.ps1           # 加密密钥同步
+└── README.md                      # 脚本说明
 ```
 
 ## Naming Conventions
 
 ### Backend (Go)
 
-- **Files**: `snake_case.go` (e.g., `user_service.go`, `order_repository.go`)
-- **Packages**: lowercase, single word (e.g., `user`, `order`, `payment`)
-- **Types**: PascalCase (e.g., `UserService`, `OrderRepository`)
-- **Functions/Methods**: PascalCase for exported, camelCase for private
-- **Variables**: camelCase (e.g., `userID`, `orderStatus`)
-- **Constants**: PascalCase or UPPER_SNAKE_CASE for exported
-- **Test files**: `*_test.go` (e.g., `user_service_test.go`)
-- **Integration tests**: `*_integration_test.go`
+- **Files**: `snake_case.go`
+- **Packages**: lowercase, single word
+- **Types**: PascalCase
+- **Functions**: PascalCase (exported), camelCase (private)
+- **Variables**: camelCase
+- **Test files**: `*_test.go`
 
 ### Frontend (TypeScript/React)
 
-- **Files**: PascalCase for components (e.g., `UserProfile.tsx`), camelCase for utilities (e.g., `formatDate.ts`)
-- **Components**: PascalCase (e.g., `UserProfile`, `OrderList`)
-- **Functions**: camelCase (e.g., `fetchUserData`, `handleSubmit`)
-- **Variables**: camelCase (e.g., `userId`, `orderStatus`)
-- **Constants**: UPPER_SNAKE_CASE (e.g., `API_BASE_URL`, `MAX_RETRY_COUNT`)
-- **Types/Interfaces**: PascalCase (e.g., `User`, `OrderResponse`)
-- **CSS classes**: kebab-case (e.g., `user-profile`, `order-list`)
+- **Components**: PascalCase (`UserProfile.tsx`)
+- **Utilities**: camelCase (`formatDate.ts`)
+- **Types/Interfaces**: PascalCase
+- **Constants**: UPPER_SNAKE_CASE
+- **CSS classes**: kebab-case
 
 ## Key Architectural Patterns
 
-### Backend Patterns
+### Backend
 
-1. **Dependency Injection**: Using Google Wire for compile-time DI
-2. **Repository Pattern**: Abstraction over data access
-3. **Service Layer**: Business logic separation
-4. **Middleware Chain**: Request processing pipeline
-5. **Error Wrapping**: Context-aware error propagation
+1. **Dependency Injection**: Google Wire
+2. **Repository Pattern**: 数据访问抽象
+3. **Service Layer**: 业务逻辑分离
+4. **Middleware Chain**: 请求处理管道
+5. **Error Wrapping**: 上下文感知错误传播
 
-### Frontend Patterns
+### Frontend
 
-1. **Component Composition**: Reusable, composable components
-2. **Custom Hooks**: Shared stateful logic
-3. **Context API**: Global state management
-4. **Route-based Code Splitting**: Lazy loading pages
-5. **API Client Abstraction**: Centralized HTTP requests
-
-## File Organization Rules
-
-1. **Group by feature**: Related files stay together (e.g., all user-related code in `user/`)
-2. **Separate concerns**: Handler → Service → Repository → Model layers
-3. **Test proximity**: Test files next to implementation files
-4. **Shared code in pkg/**: Reusable utilities in `pkg/` directory
-5. **Configuration separation**: Environment-specific configs in `configs/`
-6. **Documentation co-location**: Feature docs near feature code when appropriate
+1. **Dynamic Routing**: 基于后端菜单的动态路由
+2. **Component Mapping**: 组件名到组件的映射
+3. **Context API**: 全局状态管理
+4. **Lazy Loading**: 路由级代码分割
+5. **Encrypted Communication**: API 请求自动加密
 
 ## Import Organization
 
-### Go Imports
+### Go
 
 ```go
 import (
-    // Standard library
+    // 标准库
     "context"
     "fmt"
-    "time"
 
-    // Third-party packages
+    // 第三方包
     "github.com/gin-gonic/gin"
     "gorm.io/gorm"
 
-    // Internal packages
+    // 内部包
     "gamelink/internal/model"
-    "gamelink/internal/repository"
     "gamelink/pkg/auth"
 )
 ```
 
-### TypeScript Imports
+### TypeScript
 
 ```typescript
-// React and third-party
-import React, { useState, useEffect } from 'react';
-import { Button, Form } from 'antd';
-import axios from 'axios';
+// React 和第三方
+import React from 'react';
+import { Button } from 'antd';
 
-// Internal modules
+// 内部模块
 import { User } from '@/types/models';
-import { fetchUserData } from '@/api/user';
 import { useAuth } from '@/hooks/useAuth';
 ```

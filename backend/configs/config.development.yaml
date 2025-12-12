@@ -6,8 +6,8 @@ server:
   enable_swagger: true
 
 database:
-  type: "sqlite"
-  dsn: "file:./var/dev.db?mode=rwc&_pragma=busy_timeout(5000)&_pragma=foreign_keys(1)"
+  type: "postgres"
+  dsn: "host=localhost port=5432 user=gamelink password=gamelink dbname=gamelink_dev sslmode=disable"
 
 cache:
   type: "memory"

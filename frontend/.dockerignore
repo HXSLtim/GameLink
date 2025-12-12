@@ -1,0 +1,53 @@
+# 依赖
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# 开发工具
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# 测试
+coverage
+.nyc_output
+*.test.js
+
+# 构建产物（构建时会重新生成）
+dist
+build
+.cache
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# 文档
+README.md
+CHANGELOG.md
+docs/
+
+# CI/CD
+.github
+.gitlab-ci.yml
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# TypeScript
+*.tsbuildinfo
+
+# 其他
+*.md
+LICENSE

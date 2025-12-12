@@ -1,28 +1,37 @@
 # Product Overview
 
-GameLink is a modern game companion service platform connecting gamers with professional game companions (陪玩师/players). The platform facilitates order matching, real-time communication, payment processing, and service management.
+GameLink 是一个现代化的游戏陪玩服务平台，连接玩家与专业游戏陪玩师。平台提供订单匹配、实时通信、支付处理和服务管理功能。
 
 ## Core Features
 
-- **Smart Order Distribution**: Automatic matching between users and game companions, supporting both grab-order pool and customer service assignment
-- **Multi-Role System**: Three-tier architecture (User/Player/Admin) with RBAC permission control
-- **Real-Time Communication**: WebSocket-based instant messaging for group and private chats
-- **Payment & Settlement**: Complete payment flow including orders, refunds, and earnings settlement
-- **Data Monitoring**: Real-time order status, earnings statistics, and system metrics
+- **智能订单分配**: 用户与陪玩师自动匹配，支持抢单池和客服分配两种模式
+- **多角色系统**: 三层架构（用户/陪玩师/管理员）+ RBAC 权限控制
+- **实时通信**: 基于 WebSocket 的即时消息，支持群聊和私聊
+- **支付结算**: 完整支付流程，包括订单、退款和收益结算
+- **数据监控**: 实时订单状态、收益统计和系统指标
 
 ## User Roles
 
-1. **Users (用户)**: Browse companions, create orders, make payments, leave reviews
-2. **Players (陪玩师)**: Accept orders, manage services, track earnings, team features
-3. **Admins (管理员)**: Dashboard, user management, order monitoring, financial management, system settings
+1. **用户 (Users)**: 浏览陪玩师、创建订单、支付、评价
+2. **陪玩师 (Players)**: 接单、管理服务、收益追踪、团队功能
+3. **管理员 (Admins)**: 仪表盘、用户管理、订单监控、财务管理、系统设置
 
 ## Business Model
 
-Platform takes 15-25% commission on completed orders. Players set their own hourly rates (¥30-300+/hour). Revenue streams include service commissions, certification fees, and promotional services.
+- 平台抽成: 15-25%（已完成订单）
+- 陪玩师定价: ¥30-300+/小时
+- 收入来源: 服务佣金、认证费用、推广服务
 
 ## Key Metrics
 
-- Test Coverage: 76.4%
-- Backend Completion: 85%
-- Frontend Completion: 70%
-- Security Level: High (SQL injection fixed, JWT authentication enhanced)
+- 测试覆盖率: 76.4%
+- 后端完成度: 85%
+- 前端完成度: 75%
+- 安全等级: 高（SQL 注入已修复，JWT 认证增强，AES-256 加密通信）
+
+## Security Features
+
+- **通信加密**: AES-256-CBC + SHA-256 签名（生产环境强制启用）
+- **认证**: JWT Token + 刷新机制
+- **权限控制**: RBAC 角色权限系统
+- **数据保护**: 敏感数据加密存储

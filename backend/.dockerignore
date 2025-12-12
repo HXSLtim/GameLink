@@ -1,0 +1,55 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# 开发工具
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# 测试和覆盖率
+*_test.go
+testdata
+*.test
+*.out
+coverage.txt
+coverage.html
+
+# 构建产物
+*.exe
+*.dll
+*.so
+*.dylib
+server
+*.log
+
+# 临时文件和数据库
+*.db
+*.db-shm
+*.db-wal
+var/
+tmp/
+logs/
+*.tmp
+
+# 文档
+README.md
+CHANGELOG.md
+docs/
+
+# CI/CD
+.github
+.gitlab-ci.yml
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Makefile
+Makefile
+
+# 其他
+*.md
+LICENSE

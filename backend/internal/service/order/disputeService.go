@@ -7,10 +7,10 @@ import (
 
 	"github.com/google/uuid"
 
-	"gamelink/pkg/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	repoiface "gamelink/internal/repository/interfaces"
+	"gamelink/pkg/apierr"
 )
 
 var (
@@ -141,7 +141,8 @@ func (s *DisputeService) InitiateDispute(ctx context.Context, req InitiateDisput
 
 	// Update order
 	order.HasDispute = true
-	order.DisputeID = &dispute.ID
+	// Note: DisputeID field removed from Order model to avoid circular dependency
+	// The relationship is maintained through OrderDispute.OrderID
 	if err := s.orders.Update(ctx, order); err != nil {
 		return nil, err
 	}

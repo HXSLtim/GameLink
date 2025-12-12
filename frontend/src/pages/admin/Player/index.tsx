@@ -274,14 +274,14 @@ const PlayerPage: React.FC = () => {
             dataIndex: 'status',
             key: 'status',
             width: 100,
-            render: status => <Tag color={statusMap[status].color}>{statusMap[status].text}</Tag>,
+            render: (status: Player['status']) => <Tag color={statusMap[status].color}>{statusMap[status].text}</Tag>,
         },
         {
             title: '在线',
             dataIndex: 'onlineStatus',
             key: 'onlineStatus',
             width: 80,
-            render: status => <Tag color={onlineStatusMap[status].color}>{onlineStatusMap[status].text}</Tag>,
+            render: (status: Player['onlineStatus']) => <Tag color={onlineStatusMap[status].color}>{onlineStatusMap[status].text}</Tag>,
         },
         {
             title: '申请时间',

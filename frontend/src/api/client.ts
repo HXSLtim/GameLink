@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { encryptRequest, shouldEncrypt } from '../utils/crypto';
 
 const apiClient = axios.create({
     baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
@@ -11,10 +12,17 @@ const apiClient = axios.create({
 // Request interceptor
 apiClient.interceptors.request.use(
     (config) => {
+        // 添加 JWT Token
         const token = localStorage.getItem('token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
+        
+        // 加密请求体（如果需要）
+        if (config.data && shouldEncrypt(config.method || 'GET', config.url || '')) {
+            config.data = encryptRequest(config.data);
+        }
+        
         return config;
     },
     (error) => {

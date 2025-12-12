@@ -184,11 +184,13 @@ func (s *AnalyticsService) GetRetention(ctx context.Context, dateRange DateRange
 // calculateRetentionRate calculates retention rate for given days.
 func (s *AnalyticsService) calculateRetentionRate(ctx context.Context, days int) float64 {
 	targetDate := time.Now().AddDate(0, 0, -days).Truncate(24 * time.Hour)
+	nextDay := targetDate.Add(24 * time.Hour)
 
 	// Users who registered on target date
+	// PostgreSQL: 使用时间范围比较代替 DATE() 函数
 	var registeredCount int64
 	s.db.WithContext(ctx).Table("users").
-		Where("DATE(created_at) = DATE(?)", targetDate).
+		Where("created_at >= ? AND created_at < ?", targetDate, nextDay).
 		Count(&registeredCount)
 
 	if registeredCount == 0 {
@@ -196,14 +198,15 @@ func (s *AnalyticsService) calculateRetentionRate(ctx context.Context, days int)
 	}
 
 	// Users who were active after registration
+	// PostgreSQL: 使用时间范围比较代替 DATE() 函数
 	var activeCount int64
 	s.db.WithContext(ctx).Raw(`
 		SELECT COUNT(DISTINCT o.user_id)
 		FROM orders o
 		INNER JOIN users u ON o.user_id = u.id
-		WHERE DATE(u.created_at) = DATE(?)
+		WHERE u.created_at >= ? AND u.created_at < ?
 		AND o.created_at > u.created_at
-	`, targetDate).Scan(&activeCount)
+	`, targetDate, nextDay).Scan(&activeCount)
 
 	return float64(activeCount) / float64(registeredCount) * 100
 }

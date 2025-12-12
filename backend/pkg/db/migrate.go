@@ -15,11 +15,12 @@ import (
 	"gamelink/pkg/config"
 )
 
-// prepareOrdersMigration 在 autoMigrate 之前处理 orders 表的字段迁移
+// prepareOrdersMigration 在 autoMigrate 之前处理 orders 表的字段迁移（仅 PostgreSQL）
 func prepareOrdersMigration(db *gorm.DB) error {
 	// 检查 orders 表是否存在
 	var tableExists bool
-	if err := db.Raw("SELECT COUNT(*) > 0 FROM sqlite_master WHERE type='table' AND name='orders'").Scan(&tableExists).Error; err != nil {
+	checkTableSQL := "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'orders')"
+	if err := db.Raw(checkTableSQL).Scan(&tableExists).Error; err != nil {
 		return err
 	}
 
@@ -29,7 +30,8 @@ func prepareOrdersMigration(db *gorm.DB) error {
 
 	// 检查并添加 item_id 字段（如果不存在）
 	var itemIDExists bool
-	if err := db.Raw("SELECT COUNT(*) > 0 FROM pragma_table_info('orders') WHERE name='item_id'").Scan(&itemIDExists).Error; err != nil {
+	checkColumnSQL := "SELECT EXISTS (SELECT FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'orders' AND column_name = 'item_id')"
+	if err := db.Raw(checkColumnSQL).Scan(&itemIDExists).Error; err != nil {
 		return err
 	}
 
@@ -46,7 +48,8 @@ func prepareOrdersMigration(db *gorm.DB) error {
 
 	// 检查并添加 order_no 字段（如果不存在）
 	var orderNoExists bool
-	if err := db.Raw("SELECT COUNT(*) > 0 FROM pragma_table_info('orders') WHERE name='order_no'").Scan(&orderNoExists).Error; err != nil {
+	checkColumnSQL = "SELECT EXISTS (SELECT FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'orders' AND column_name = 'order_no')"
+	if err := db.Raw(checkColumnSQL).Scan(&orderNoExists).Error; err != nil {
 		return err
 	}
 
@@ -59,7 +62,8 @@ func prepareOrdersMigration(db *gorm.DB) error {
 
 	// 检查并添加 unit_price_cents 字段（如果不存在）
 	var unitPriceExists bool
-	if err := db.Raw("SELECT COUNT(*) > 0 FROM pragma_table_info('orders') WHERE name='unit_price_cents'").Scan(&unitPriceExists).Error; err != nil {
+	checkColumnSQL = "SELECT EXISTS (SELECT FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'orders' AND column_name = 'unit_price_cents')"
+	if err := db.Raw(checkColumnSQL).Scan(&unitPriceExists).Error; err != nil {
 		return err
 	}
 
@@ -70,7 +74,8 @@ func prepareOrdersMigration(db *gorm.DB) error {
 		}
 		// 如果有 price_cents 字段，从中迁移数据
 		var oldPriceExists bool
-		if err := db.Raw("SELECT COUNT(*) > 0 FROM pragma_table_info('orders') WHERE name='price_cents'").Scan(&oldPriceExists).Error; err == nil && oldPriceExists {
+		checkColumnSQL = "SELECT EXISTS (SELECT FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'orders' AND column_name = 'price_cents')"
+		if err := db.Raw(checkColumnSQL).Scan(&oldPriceExists).Error; err == nil && oldPriceExists {
 			if err := db.Exec("UPDATE orders SET unit_price_cents = price_cents WHERE unit_price_cents = 0").Error; err != nil {
 				log.Printf("warning: failed to migrate price_cents to unit_price_cents: %v", err)
 			}
@@ -79,7 +84,8 @@ func prepareOrdersMigration(db *gorm.DB) error {
 
 	// 检查并添加 total_price_cents 字段（如果不存在）
 	var totalPriceExists bool
-	if err := db.Raw("SELECT COUNT(*) > 0 FROM pragma_table_info('orders') WHERE name='total_price_cents'").Scan(&totalPriceExists).Error; err != nil {
+	checkColumnSQL = "SELECT EXISTS (SELECT FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'orders' AND column_name = 'total_price_cents')"
+	if err := db.Raw(checkColumnSQL).Scan(&totalPriceExists).Error; err != nil {
 		return err
 	}
 
@@ -90,7 +96,8 @@ func prepareOrdersMigration(db *gorm.DB) error {
 		}
 		// 如果有 price_cents 字段，从中迁移数据
 		var oldPriceExists bool
-		if err := db.Raw("SELECT COUNT(*) > 0 FROM pragma_table_info('orders') WHERE name='price_cents'").Scan(&oldPriceExists).Error; err == nil && oldPriceExists {
+		checkColumnSQL = "SELECT EXISTS (SELECT FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'orders' AND column_name = 'price_cents')"
+		if err := db.Raw(checkColumnSQL).Scan(&oldPriceExists).Error; err == nil && oldPriceExists {
 			if err := db.Exec("UPDATE orders SET total_price_cents = price_cents WHERE total_price_cents = 0").Error; err != nil {
 				log.Printf("warning: failed to migrate price_cents to total_price_cents: %v", err)
 			}
@@ -101,30 +108,38 @@ func prepareOrdersMigration(db *gorm.DB) error {
 }
 
 func autoMigrate(db *gorm.DB) error {
-	// 临时禁用外键检查（SQLite）
-	db.Exec("PRAGMA foreign_keys = OFF")
-	defer db.Exec("PRAGMA foreign_keys = ON")
-
-	// 先处理 orders 表的特殊字段
+	// 先处理 orders 表的特殊字段（PostgreSQL）
 	if err := prepareOrdersMigration(db); err != nil {
 		return err
 	}
 
-	return db.AutoMigrate(
+	// Phase 1: Create base tables first (tables that others depend on)
+	log.Printf("Phase 1: Creating base tables (Game, User, Player, Order, Payment)...")
+	if err := db.AutoMigrate(
 		&model.Game{},
-		&model.Player{},
-		&model.PlayerGame{},
-		&model.PlayerSkillTag{},
 		&model.User{},
-		&model.Wallet{}, // 用户钱包
+		&model.Player{},
 		&model.Order{},
 		&model.Payment{},
+	); err != nil {
+		log.Printf("Phase 1 failed: %v", err)
+		return fmt.Errorf("phase 1 migration failed: %w", err)
+	}
+	log.Printf("Phase 1: Base tables created successfully")
+
+	// Phase 2: Create all other tables (including those with foreign keys to base tables)
+	log.Printf("Phase 2: Creating dependent tables...")
+	if err := db.AutoMigrate(
+		&model.PlayerGame{},
+		&model.PlayerSkillTag{},
+		&model.Wallet{}, // 用户钱包
 		&model.Review{},
 		&model.ReviewReport{},
 		&model.ReviewDisplaySettings{}, // 评价展示设置
 		&model.SensitiveWord{},         // 敏感词
 		&model.Withdraw{},
 		&model.OperationLog{},
+		&model.OrderDispute{}, // Order disputes (must be after Order, Payment, User)
 		// Service Item (统一管理护航服务和礼物)
 		&model.ServiceItem{},
 		// Commission models
@@ -172,7 +187,12 @@ func autoMigrate(db *gorm.DB) error {
 		&model.RoutingLog{},
 		// Refund records
 		&model.RefundRecord{},
-	)
+	); err != nil {
+		log.Printf("Phase 2 failed: %v", err)
+		return fmt.Errorf("phase 2 migration failed: %w", err)
+	}
+	log.Printf("Phase 2: Dependent tables created successfully")
+	return nil
 }
 
 // MigrateUserManagement 迁移用户管理相关数据表
@@ -361,56 +381,70 @@ func ensureSuperAdmin(db *gorm.DB) error {
 
 	var existing model.User
 	err := lookup.First(&existing).Error
+
+	var admin *model.User
+	userExists := false
+
 	switch {
 	case err == nil:
-		return nil
+		// User already exists, use existing user
+		admin = &existing
+		userExists = true
+		log.Printf("super admin user already exists: email=%s id=%d", admin.Email, admin.ID)
 	case errors.Is(err, gorm.ErrRecordNotFound):
-		// fall through and create admin user
+		// Create new admin user
+		hashed, hashErr := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		if hashErr != nil {
+			return hashErr
+		}
+
+		admin = &model.User{
+			Name:         name,
+			Email:        email,
+			Phone:        phone,
+			PasswordHash: string(hashed),
+			Role:         model.RoleAdmin,
+			Status:       model.UserStatusActive,
+		}
+
+		if createErr := db.Create(admin).Error; createErr != nil {
+			return createErr
+		}
+		log.Printf("created super admin user: email=%s id=%d", admin.Email, admin.ID)
 	default:
 		return err
 	}
 
-	hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return err
-	}
-
-	admin := &model.User{
-		Name:         name,
-		Email:        email,
-		Phone:        phone,
-		PasswordHash: string(hashed),
-		Role:         model.RoleAdmin,
-		Status:       model.UserStatusActive,
-	}
-
-	if err := db.Create(admin).Error; err != nil {
-		return err
-	}
-
-	// Assign super_admin role to this user
+	// Assign super_admin role to this user (whether new or existing)
 	var superAdminRole model.RoleModel
 	if err := db.Where("slug = ?", model.RoleSlugSuperAdmin).First(&superAdminRole).Error; err != nil {
-		log.Printf("warning: super_admin role not found, skipping role assignment: %v", err)
-	} else {
-		// Check if user already has the role
-		var existingUserRole model.UserRole
-		err := db.Where("user_id = ? AND role_id = ?", admin.ID, superAdminRole.ID).First(&existingUserRole).Error
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			// Assign role
-			userRole := &model.UserRole{
-				UserID: admin.ID,
-				RoleID: superAdminRole.ID,
-			}
-			if err := db.Create(userRole).Error; err != nil {
-				log.Printf("warning: failed to assign super_admin role: %v", err)
-			} else {
-				log.Printf("assigned super_admin role to user id=%d", admin.ID)
-			}
-		}
+		return fmt.Errorf("super_admin role not found: %w", err)
 	}
 
-	log.Printf("super admin user ensured: email=%s phone=%s id=%d", email, phone, admin.ID)
+	// Check if user already has the role
+	var existingUserRole model.UserRole
+	err = db.Where("user_id = ? AND role_id = ?", admin.ID, superAdminRole.ID).First(&existingUserRole).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		// Assign role
+		userRole := &model.UserRole{
+			UserID: admin.ID,
+			RoleID: superAdminRole.ID,
+		}
+		if err := db.Create(userRole).Error; err != nil {
+			return fmt.Errorf("failed to assign super_admin role to user %d: %w", admin.ID, err)
+		}
+		log.Printf("assigned super_admin role to user id=%d", admin.ID)
+	} else if err != nil {
+		return fmt.Errorf("failed to check user role: %w", err)
+	} else {
+		log.Printf("user id=%d already has super_admin role", admin.ID)
+	}
+
+	if userExists {
+		log.Printf("super admin user ensured (existing): email=%s phone=%s id=%d", email, phone, admin.ID)
+	} else {
+		log.Printf("super admin user ensured (created): email=%s phone=%s id=%d", email, phone, admin.ID)
+	}
 	return nil
 }
 

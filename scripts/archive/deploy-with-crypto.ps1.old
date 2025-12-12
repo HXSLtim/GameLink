@@ -1,0 +1,125 @@
+# GameLink 生产环境部署脚本（包含加密配置）
+
+param(
+    [switch]$SkipBuild,
+    [switch]$SkipFrontend
+)
+
+$ErrorActionPreference = "Stop"
+
+Write-Host "🚀 GameLink 生产环境部署（加密版）" -ForegroundColor Cyan
+Write-Host "=================================" -ForegroundColor Cyan
+Write-Host ""
+
+# 1. 检查环境变量
+Write-Host "📋 步骤 1/7: 检查环境变量..." -ForegroundColor Yellow
+if (-not (Test-Path ".env")) {
+    Write-Host "❌ 错误: 找不到 .env 文件" -ForegroundColor Red
+    exit 1
+}
+
+$envContent = Get-Content .env -Raw
+if ($envContent -notmatch "CRYPTO_SECRET_KEY=(.+)" -or $envContent -notmatch "CRYPTO_IV=(.+)") {
+    Write-Host "❌ 错误: .env 文件中缺少加密密钥配置" -ForegroundColor Red
+    Write-Host "   请确保配置了 CRYPTO_SECRET_KEY 和 CRYPTO_IV" -ForegroundColor Yellow
+    exit 1
+}
+
+Write-Host "✅ 环境变量检查通过" -ForegroundColor Green
+
+# 2. 同步加密密钥到前端
+Write-Host ""
+Write-Host "🔐 步骤 2/7: 同步加密密钥到前端..." -ForegroundColor Yellow
+& .\scripts\sync-crypto-keys.ps1
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "❌ 密钥同步失败" -ForegroundColor Red
+    exit 1
+}
+
+# 3. 安装前端依赖
+if (-not $SkipFrontend) {
+    Write-Host ""
+    Write-Host "📦 步骤 3/7: 安装前端依赖..." -ForegroundColor Yellow
+    Push-Location frontend
+    
+    # 检查 crypto-js 是否已安装
+    $packageJson = Get-Content package.json -Raw | ConvertFrom-Json
+    if (-not $packageJson.dependencies.'crypto-js') {
+        Write-Host "   安装 crypto-js..." -ForegroundColor Gray
+        npm install crypto-js
+        npm install --save-dev @types/crypto-js
+    } else {
+        Write-Host "   crypto-js 已安装" -ForegroundColor Gray
+    }
+    
+    Pop-Location
+    Write-Host "✅ 前端依赖安装完成" -ForegroundColor Green
+}
+
+# 4. 构建前端
+if (-not $SkipFrontend -and -not $SkipBuild) {
+    Write-Host ""
+    Write-Host "🔨 步骤 4/7: 构建前端..." -ForegroundColor Yellow
+    Push-Location frontend
+    npm run build
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "❌ 前端构建失败" -ForegroundColor Red
+        Pop-Location
+        exit 1
+    }
+    Pop-Location
+    Write-Host "✅ 前端构建完成" -ForegroundColor Green
+}
+
+# 5. 构建 Docker 镜像
+if (-not $SkipBuild) {
+    Write-Host ""
+    Write-Host "🐳 步骤 5/7: 构建 Docker 镜像..." -ForegroundColor Yellow
+    docker-compose -f docker-compose.prod.yml build
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "❌ Docker 镜像构建失败" -ForegroundColor Red
+        exit 1
+    }
+    Write-Host "✅ Docker 镜像构建完成" -ForegroundColor Green
+}
+
+# 6. 停止旧服务
+Write-Host ""
+Write-Host "🛑 步骤 6/7: 停止旧服务..." -ForegroundColor Yellow
+docker-compose -f docker-compose.prod.yml down
+Write-Host "✅ 旧服务已停止" -ForegroundColor Green
+
+# 7. 启动新服务
+Write-Host ""
+Write-Host "▶️  步骤 7/7: 启动新服务..." -ForegroundColor Yellow
+docker-compose -f docker-compose.prod.yml up -d
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "❌ 服务启动失败" -ForegroundColor Red
+    exit 1
+}
+
+Write-Host ""
+Write-Host "⏳ 等待服务启动..." -ForegroundColor Gray
+Start-Sleep -Seconds 15
+
+# 检查服务状态
+Write-Host ""
+Write-Host "📊 服务状态:" -ForegroundColor Cyan
+docker ps --filter "name=gamelink" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+Write-Host ""
+Write-Host "🎉 部署完成！" -ForegroundColor Green
+Write-Host ""
+Write-Host "📝 验证步骤:" -ForegroundColor Cyan
+Write-Host "   1. 检查后端日志: docker logs gamelink-backend --tail=50" -ForegroundColor Gray
+Write-Host "   2. 验证加密启用: docker logs gamelink-backend | Select-String 'crypto'" -ForegroundColor Gray
+Write-Host "   3. 访问前端: http://localhost" -ForegroundColor Gray
+Write-Host "   4. 测试登录功能" -ForegroundColor Gray
+Write-Host ""
+Write-Host "🔐 加密状态:" -ForegroundColor Cyan
+Write-Host "   后端: 已启用 (AES-256-CBC + SHA-256 签名)" -ForegroundColor Green
+Write-Host "   前端: 已启用 (自动加密 POST/PUT/PATCH 请求)" -ForegroundColor Green
+Write-Host ""
+Write-Host "📚 相关文档:" -ForegroundColor Cyan
+Write-Host "   - 加密配置指南: CRYPTO_SETUP_GUIDE.md" -ForegroundColor Gray
+Write-Host "   - 部署文档: DOCKER_PRODUCTION_DEPLOYED.md" -ForegroundColor Gray

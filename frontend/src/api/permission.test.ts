@@ -170,7 +170,7 @@ describe('Permission API', () => {
             const mockResponse = { data: { id: 1, name: 'NewRole' } };
             (apiClient.post as ReturnType<typeof vi.fn>).mockResolvedValue(mockResponse);
 
-            const data = { name: 'NewRole', description: 'New role description' };
+            const data = { slug: 'new-role', name: 'NewRole', description: 'New role description' };
             await roleApi.create(data);
 
             expect(apiClient.post).toHaveBeenCalledWith('/admin/roles', data);

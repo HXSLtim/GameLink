@@ -7,7 +7,7 @@ export interface LoginDto {
 }
 
 export interface RegisterDto {
-    username: string;
+    name: string;  // 后端期望 name 字段，不是 username
     email: string;
     phone?: string;
     password: string;

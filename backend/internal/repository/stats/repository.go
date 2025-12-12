@@ -64,10 +64,10 @@ func (r *gormStatsRepository) RevenueTrend(ctx context.Context, days int) ([]rep
 	}
 	since := time.Now().AddDate(0, 0, -days+1)
 	var rows []repository.DateValue
-	// GROUP BY date(paid_at)
-	q := r.db.WithContext(ctx).Table("payments").Select("DATE(paid_at) as date, COALESCE(SUM(amount_cents),0) as value").
+	// PostgreSQL: 使用 paid_at::date 进行日期类型转换
+	q := r.db.WithContext(ctx).Table("payments").Select("paid_at::date as date, COALESCE(SUM(amount_cents),0) as value").
 		Where("status = ? AND paid_at IS NOT NULL AND paid_at >= ?", "paid", since).
-		Group("DATE(paid_at)").Order("DATE(paid_at)")
+		Group("paid_at::date").Order("paid_at::date")
 	if err := q.Scan(&rows).Error; err != nil {
 		return nil, err
 	}
@@ -80,8 +80,9 @@ func (r *gormStatsRepository) UserGrowth(ctx context.Context, days int) ([]repos
 	}
 	since := time.Now().AddDate(0, 0, -days+1)
 	var rows []repository.DateValue
-	q := r.db.WithContext(ctx).Table("users").Select("DATE(created_at) as date, COUNT(1) as value").
-		Where("created_at >= ?", since).Group("DATE(created_at)").Order("DATE(created_at)")
+	// PostgreSQL: 使用 created_at::date 进行日期类型转换
+	q := r.db.WithContext(ctx).Table("users").Select("created_at::date as date, COUNT(1) as value").
+		Where("created_at >= ?", since).Group("created_at::date").Order("created_at::date")
 	if err := q.Scan(&rows).Error; err != nil {
 		return nil, err
 	}
@@ -165,7 +166,8 @@ func (r *gormStatsRepository) AuditTrend(ctx context.Context, from, to *time.Tim
 		q = q.Where("action = ?", action)
 	}
 	var rows []repository.DateValue
-	if err := q.Select("DATE(created_at) as date, COUNT(1) as value").Group("DATE(created_at)").Order("DATE(created_at)").Scan(&rows).Error; err != nil {
+	// PostgreSQL: 使用 created_at::date 进行日期类型转换
+	if err := q.Select("created_at::date as date, COUNT(1) as value").Group("created_at::date").Order("created_at::date").Scan(&rows).Error; err != nil {
 		return nil, err
 	}
 	return rows, nil

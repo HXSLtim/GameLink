@@ -141,7 +141,8 @@ func (s *AssignmentService) InitiateDispute(ctx context.Context, req InitiateDis
 
 	// Update order
 	order.HasDispute = true
-	order.DisputeID = &dispute.ID
+	// Note: DisputeID field removed from Order model to avoid circular dependency
+	// The relationship is maintained through OrderDispute.OrderID
 	if err := s.orders.Update(ctx, order); err != nil {
 		return nil, err
 	}

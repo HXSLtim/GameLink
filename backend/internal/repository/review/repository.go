@@ -202,11 +202,12 @@ func (r *gormReviewRepository) GetTrend(ctx context.Context, days int) ([]reposi
 	var rows []repository.DateValue
 
 	// 按日期分组统计评价数量
+	// PostgreSQL: 使用 created_at::date 进行日期类型转换
 	if err := r.db.WithContext(ctx).Model(&model.Review{}).
-		Select("DATE(created_at) as date, COUNT(*) as value").
+		Select("created_at::date as date, COUNT(*) as value").
 		Where("created_at >= ? AND status = ?", since, model.ReviewStatusApproved).
-		Group("DATE(created_at)").
-		Order("DATE(created_at)").
+		Group("created_at::date").
+		Order("created_at::date").
 		Scan(&rows).Error; err != nil {
 		return nil, err
 	}

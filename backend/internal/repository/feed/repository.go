@@ -2,6 +2,7 @@ package feed
 
 import (
 	"context"
+	"time"
 
 	"gorm.io/gorm"
 
@@ -250,10 +251,12 @@ func (r *gormFeedRepository) CountByStatus(ctx context.Context) (map[model.FeedM
 
 func (r *gormFeedRepository) GetTrend(ctx context.Context, days int) ([]repository.DateValue, error) {
 	var results []repository.DateValue
+	// PostgreSQL: 使用 created_at::date 和 CURRENT_DATE - INTERVAL
+	since := time.Now().AddDate(0, 0, -days+1)
 	if err := r.db.WithContext(ctx).Model(&model.Feed{}).
-		Select("DATE(created_at) as date, count(*) as value").
-		Where("created_at >= DATE_SUB(CURRENT_DATE, INTERVAL ? DAY)", days).
-		Group("DATE(created_at)").
+		Select("created_at::date as date, count(*) as value").
+		Where("created_at >= ?", since).
+		Group("created_at::date").
 		Order("date ASC").
 		Find(&results).Error; err != nil {
 		return nil, err
