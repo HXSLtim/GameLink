@@ -1,17 +1,38 @@
 /**
  * 管理员上下文
  * 提供菜单、权限数据和权限检查方法
+ * Requirements: 8.1, 8.2, 8.4 - 菜单权限联动
  */
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { adminApi } from '@/api/admin';
 import type { Menu } from '@/api/admin';
 import { permissionStore } from '@/utils/permission';
+import { filterMenusByPermission } from '@/utils/menuPermission';
+
+/**
+ * 权限变更事件名称
+ * 用于跨组件/跨标签页通知权限变更
+ */
+export const PERMISSION_CHANGE_EVENT = 'gamelink:permission-change';
+
+/**
+ * 触发权限变更事件
+ * 可在任何地方调用以通知权限已变更
+ */
+export const triggerPermissionChange = () => {
+    window.dispatchEvent(new CustomEvent(PERMISSION_CHANGE_EVENT));
+    // 同时触发 storage 事件以通知其他标签页
+    const timestamp = Date.now().toString();
+    localStorage.setItem('permission_change_timestamp', timestamp);
+};
 
 /**
  * 管理员上下文类型接口
  */
 interface AdminContextType {
-    /** 可访问的菜单列表 */
+    /** 原始菜单列表（未过滤） */
+    rawMenus: Menu[];
+    /** 根据权限过滤后的菜单列表 */
     menus: Menu[];
     /** 权限码数组 */
     permissions: string[];
@@ -27,9 +48,14 @@ interface AdminContextType {
     hasAnyPermission: (permissions: string[]) => boolean;
     /** 是否为超级管理员 */
     isSuperAdmin: boolean;
+    /** 权限版本号，用于触发权限变更后的更新 */
+    permissionVersion: number;
+    /** 触发权限变更通知（通知其他组件和标签页） */
+    notifyPermissionChange: () => void;
 }
 
 const AdminContext = createContext<AdminContextType>({
+    rawMenus: [],
     menus: [],
     permissions: [],
     loading: false,
@@ -38,6 +64,8 @@ const AdminContext = createContext<AdminContextType>({
     hasAllPermissions: () => false,
     hasAnyPermission: () => false,
     isSuperAdmin: false,
+    permissionVersion: 0,
+    notifyPermissionChange: () => { },
 });
 
 /**
@@ -61,18 +89,20 @@ export const useAdmin = () => useContext(AdminContext);
  * 管理用户的菜单和权限数据，提供权限检查方法
  */
 export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [menus, setMenus] = useState<Menu[]>([]);
+    const [rawMenus, setRawMenus] = useState<Menu[]>([]);
     const [permissions, setPermissions] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
+    const [permissionVersion, setPermissionVersion] = useState(0);
 
     /**
      * 刷新菜单和权限数据
+     * Requirements: 8.4 - 权限变更后菜单更新
      */
     const refreshMenus = useCallback(async () => {
         const token = localStorage.getItem('token');
         if (!token) {
             setPermissions([]);
-            setMenus([]);
+            setRawMenus([]);
             permissionStore.clearPermissions();
             return;
         }
@@ -100,14 +130,17 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
             // 更新状态
             setPermissions(permData);
-            setMenus(menuData);
+            setRawMenus(menuData);
 
             // 同步到权限存储（供非React环境使用）
             permissionStore.setPermissions(permData);
+            
+            // 增加权限版本号，触发依赖组件更新
+            setPermissionVersion(v => v + 1);
         } catch (error) {
             console.error('Failed to fetch admin info', error);
             setPermissions([]);
-            setMenus([]);
+            setRawMenus([]);
             permissionStore.clearPermissions();
         } finally {
             setLoading(false);
@@ -163,25 +196,63 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         [permissions]
     );
 
+    /**
+     * 根据权限过滤后的菜单
+     * Requirements: 8.1, 8.2 - 菜单权限过滤
+     */
+    const menus = useMemo(
+        () => filterMenusByPermission(rawMenus, permissions),
+        [rawMenus, permissions]
+    );
+
+    /**
+     * 触发权限变更通知
+     * 用于在权限分配后通知其他组件和标签页刷新
+     * Requirements: 8.4 - 权限变更后菜单更新
+     */
+    const notifyPermissionChange = useCallback(() => {
+        triggerPermissionChange();
+        // 同时刷新当前上下文
+        refreshMenus();
+    }, [refreshMenus]);
+
     // 初始化时加载权限
     useEffect(() => {
         refreshMenus();
     }, [refreshMenus]);
 
-    // 监听登录/登出事件
+    // 监听登录/登出事件和权限变更事件
+    // Requirements: 8.4 - 权限变更后菜单更新
     useEffect(() => {
         const handleStorageChange = (e: StorageEvent) => {
             if (e.key === 'token') {
                 refreshMenus();
             }
+            // 监听其他标签页的权限变更
+            if (e.key === 'permission_change_timestamp') {
+                console.log('[AdminContext] 检测到其他标签页权限变更，刷新权限...');
+                refreshMenus();
+            }
+        };
+
+        // 监听当前标签页的权限变更事件
+        const handlePermissionChange = () => {
+            console.log('[AdminContext] 检测到权限变更事件，刷新权限...');
+            refreshMenus();
         };
 
         window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
+        window.addEventListener(PERMISSION_CHANGE_EVENT, handlePermissionChange);
+        
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            window.removeEventListener(PERMISSION_CHANGE_EVENT, handlePermissionChange);
+        };
     }, [refreshMenus]);
 
     const contextValue = useMemo(
         () => ({
+            rawMenus,
             menus,
             permissions,
             loading,
@@ -190,8 +261,10 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             hasAllPermissions,
             hasAnyPermission,
             isSuperAdmin,
+            permissionVersion,
+            notifyPermissionChange,
         }),
-        [menus, permissions, loading, refreshMenus, hasPermission, hasAllPermissions, hasAnyPermission, isSuperAdmin]
+        [rawMenus, menus, permissions, loading, refreshMenus, hasPermission, hasAllPermissions, hasAnyPermission, isSuperAdmin, permissionVersion, notifyPermissionChange]
     );
 
     return (

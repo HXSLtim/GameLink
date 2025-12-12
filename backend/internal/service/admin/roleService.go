@@ -146,9 +146,9 @@ func (s *RoleService) AssignPermissionsToRole(ctx context.Context, roleID uint64
 		return err
 	}
 
-	// 清除缓存
+	// 清除缓存并传播到所有拥有该角色的用户
 	s.invalidateRoleCache()
-	s.invalidatePermissionCacheForRole(roleID)
+	_ = s.InvalidateRolePermissionsAndPropagateToUsers(ctx, roleID)
 	return nil
 }
 
@@ -158,9 +158,9 @@ func (s *RoleService) AddPermissionsToRole(ctx context.Context, roleID uint64, p
 		return err
 	}
 
-	// 清除缓存
+	// 清除缓存并传播到所有拥有该角色的用户
 	s.invalidateRoleCache()
-	s.invalidatePermissionCacheForRole(roleID)
+	_ = s.InvalidateRolePermissionsAndPropagateToUsers(ctx, roleID)
 	return nil
 }
 
@@ -170,9 +170,9 @@ func (s *RoleService) RemovePermissionsFromRole(ctx context.Context, roleID uint
 		return err
 	}
 
-	// 清除缓存
+	// 清除缓存并传播到所有拥有该角色的用户
 	s.invalidateRoleCache()
-	s.invalidatePermissionCacheForRole(roleID)
+	_ = s.InvalidateRolePermissionsAndPropagateToUsers(ctx, roleID)
 	return nil
 }
 

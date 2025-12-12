@@ -32,11 +32,13 @@ const TestConsumer = () => {
     const {
         permissions,
         menus,
+        rawMenus,
         loading,
         hasPermission,
         hasAllPermissions,
         hasAnyPermission,
         isSuperAdmin,
+        permissionVersion,
     } = useAdmin();
 
     return (
@@ -44,10 +46,12 @@ const TestConsumer = () => {
             <div data-testid="loading">{loading.toString()}</div>
             <div data-testid="permissions">{JSON.stringify(permissions)}</div>
             <div data-testid="menus">{JSON.stringify(menus)}</div>
+            <div data-testid="raw-menus">{JSON.stringify(rawMenus)}</div>
             <div data-testid="is-super-admin">{isSuperAdmin.toString()}</div>
             <div data-testid="has-users-list">{hasPermission('admin.users.list').toString()}</div>
             <div data-testid="has-all">{hasAllPermissions(['admin.users.list', 'admin.users.create']).toString()}</div>
             <div data-testid="has-any">{hasAnyPermission(['admin.users.list', 'admin.users.delete']).toString()}</div>
+            <div data-testid="permission-version">{permissionVersion}</div>
         </div>
     );
 };
@@ -287,6 +291,76 @@ describe('AdminContext', () => {
             await waitFor(() => {
                 expect(screen.getByTestId('permissions').textContent).toBe('[]');
                 expect(screen.getByTestId('menus').textContent).toBe('[]');
+            });
+        });
+    });
+
+    describe('Permission Change Events', () => {
+        it('should refresh permissions when permission change event is triggered', async () => {
+            localStorage.setItem('token', 'test-token');
+            const initialPermissions = ['admin.users.list'];
+            const updatedPermissions = ['admin.users.list', 'admin.users.create'];
+
+            (adminApi.getMyPermissions as ReturnType<typeof vi.fn>)
+                .mockResolvedValueOnce({ data: initialPermissions })
+                .mockResolvedValueOnce({ data: updatedPermissions });
+            (adminApi.getMyMenus as ReturnType<typeof vi.fn>).mockResolvedValue({ data: [] });
+
+            render(
+                <AdminProvider>
+                    <TestConsumer />
+                </AdminProvider>
+            );
+
+            // Wait for initial load
+            await waitFor(() => {
+                expect(screen.getByTestId('permissions').textContent).toBe(JSON.stringify(initialPermissions));
+            });
+
+            // Trigger permission change event
+            await act(async () => {
+                window.dispatchEvent(new CustomEvent('gamelink:permission-change'));
+            });
+
+            // Wait for refresh
+            await waitFor(() => {
+                expect(screen.getByTestId('permissions').textContent).toBe(JSON.stringify(updatedPermissions));
+            });
+        });
+
+        it('should refresh permissions when storage event is triggered from another tab', async () => {
+            localStorage.setItem('token', 'test-token');
+            const initialPermissions = ['admin.users.list'];
+            const updatedPermissions = ['admin.users.list', 'admin.orders.list'];
+
+            (adminApi.getMyPermissions as ReturnType<typeof vi.fn>)
+                .mockResolvedValueOnce({ data: initialPermissions })
+                .mockResolvedValueOnce({ data: updatedPermissions });
+            (adminApi.getMyMenus as ReturnType<typeof vi.fn>).mockResolvedValue({ data: [] });
+
+            render(
+                <AdminProvider>
+                    <TestConsumer />
+                </AdminProvider>
+            );
+
+            // Wait for initial load
+            await waitFor(() => {
+                expect(screen.getByTestId('permissions').textContent).toBe(JSON.stringify(initialPermissions));
+            });
+
+            // Simulate storage event from another tab
+            await act(async () => {
+                const storageEvent = new StorageEvent('storage', {
+                    key: 'permission_change_timestamp',
+                    newValue: Date.now().toString(),
+                });
+                window.dispatchEvent(storageEvent);
+            });
+
+            // Wait for refresh
+            await waitFor(() => {
+                expect(screen.getByTestId('permissions').textContent).toBe(JSON.stringify(updatedPermissions));
             });
         });
     });

@@ -1,7 +1,12 @@
+/**
+ * 路由权限守卫组件
+ * 实现路由级别的权限控制
+ * Requirements: 8.3 - 无权限重定向到 403 页面
+ */
 import { useEffect, useRef, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { message } from 'antd';
+import { Spin } from 'antd';
 import type { Role } from './types';
 import { usePermission } from '@/hooks/usePermission';
 
@@ -12,10 +17,17 @@ interface RouteGuardProps {
     permission?: string;
 }
 
+/**
+ * 路由守卫组件
+ * - 检查用户是否已登录
+ * - 检查用户角色是否有权限访问
+ * - 检查用户是否有指定的权限码
+ * - 无权限时重定向到 403 页面
+ */
 const RouteGuard = ({ children, roles, requiresAuth, permission }: RouteGuardProps) => {
     const navigate = useNavigate();
     const location = useLocation();
-    const hasShownError = useRef(false);
+    const hasRedirected = useRef(false);
 
     // In a real app, this would come from a context or store
     const rawRole = localStorage.getItem('user_role');
@@ -32,6 +44,7 @@ const RouteGuard = ({ children, roles, requiresAuth, permission }: RouteGuardPro
         [permission]
     );
 
+    // Handle authentication redirect
     useEffect(() => {
         if (requiresAuth && !isAuthenticated) {
             navigate('/login', { state: { from: location } });
@@ -47,30 +60,50 @@ const RouteGuard = ({ children, roles, requiresAuth, permission }: RouteGuardPro
         }
     }, [isAuthenticated, userRole, roles, requiresAuth, navigate, location]);
 
-    // Check permission after loading - only if permission check is needed
+    // Check permission after loading - redirect to 403 if no permission
     useEffect(() => {
-        if (needsPermissionCheck && !permissionLoading && !hasPermission && !hasShownError.current) {
-            hasShownError.current = true;
-            message.error('您没有访问此页面的权限');
-            navigate('/admin', { replace: true });
+        if (needsPermissionCheck && !permissionLoading && !hasPermission && !hasRedirected.current) {
+            hasRedirected.current = true;
+            // 重定向到 403 页面，并传递原始路径信息
+            navigate('/403', { 
+                replace: true,
+                state: { 
+                    from: location.pathname,
+                    requiredPermission: permission 
+                }
+            });
         }
-    }, [needsPermissionCheck, permissionLoading, hasPermission, navigate]);
+    }, [needsPermissionCheck, permissionLoading, hasPermission, navigate, location.pathname, permission]);
+
+    // Reset redirect flag when location changes
+    useEffect(() => {
+        hasRedirected.current = false;
+    }, [location.pathname]);
 
     if (requiresAuth && !isAuthenticated) {
-        return null; // or loading spinner
+        return null; // Will redirect to login
     }
 
     if (roles && userRole && !roles.includes(userRole)) {
-        return null; // or unauthorized page
+        return null; // Will redirect based on role
     }
 
-    // Wait for permission check if permission is specified
+    // Show loading spinner while checking permissions
     if (needsPermissionCheck && permissionLoading) {
-        return null; // or loading spinner
+        return (
+            <div style={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center', 
+                minHeight: '200px' 
+            }}>
+                <Spin size="large" tip="验证权限中..." />
+            </div>
+        );
     }
 
     if (needsPermissionCheck && !hasPermission) {
-        return null; // or unauthorized page
+        return null; // Will redirect to 403
     }
 
     return <>{children}</>;

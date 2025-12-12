@@ -772,23 +772,24 @@ func (h *PaymentHandler) ListPayments(c *gin.Context) {
 }
 
 // GetPayment
-// @Summary      获取支付
+// @Summary      获取支付详情
+// @Description  获取支付记录的完整详细信息，包括关联订单信息、用户信息和支付时间线
 // @Tags         Admin/Payments
 // @Security     BearerAuth
 // @Param        id   path  int  true  "支付ID"
 // @Produce      json
-// @Success      200  {object}  model.SuccessResponse
+// @Success      200  {object}  model.APIResponse[model.Payment]
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/payments/{id} [get]
 //
-// GetPayment returns a single payment by id.
+// GetPayment returns a single payment by id with related order and user info.
 func (h *PaymentHandler) GetPayment(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		respondAPIError(c, apierr.BadRequest("invalid order ID"))
+		respondAPIError(c, apierr.BadRequest("invalid payment ID"))
 		return
 	}
-	payment, err := h.svc.GetPayment(c.Request.Context(), id)
+	payment, err := h.svc.GetPaymentWithRelations(c.Request.Context(), id)
 	if err != nil {
 		if apierr.IsNotFound(err) {
 			respondAPIError(c, err)
@@ -991,37 +992,33 @@ type CapturePaymentPayload struct {
 	PaidAt          *string         `json:"paid_at" example:"2025-10-28T10:00:00Z"`
 }
 
-// RefundPayment
-// @Summary      退款处// @Tags         Admin/Payments
+// RefundPayment processes a refund request with amount validation.
+// @Summary      发起退款
+// @Description  处理退款请求，验证退款金额不超过剩余可退款金额
+// @Tags         Admin/Payments
 // @Security     BearerAuth
 // @Accept       json
 // @Produce      json
 // @Param        id       path  int                    true  "支付ID"
-// @Param        request        body     RefundPaymentPayload false  "Request body"
+// @Param        request  body  RefundPaymentPayload   true  "退款信息"
 // @Success      200  {object}  model.APIResponse[model.Payment]
-// @Failure      404  {object}  model.ErrorResponse
+// @Failure      400  {object}  model.ErrorResponse "退款金额无效或超过可退款金额"
+// @Failure      404  {object}  model.ErrorResponse "支付记录不存在"
 // @Router       /admin/payments/{id}/refund [post]
 func (h *PaymentHandler) RefundPayment(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		respondAPIError(c, apierr.BadRequest("invalid order ID"))
+		respondAPIError(c, apierr.BadRequest("invalid payment ID"))
 		return
-	}
-	var payload RefundPaymentPayload
-	// optional body
-	if c.Request.Body != nil {
-		_ = c.ShouldBindJSON(&payload)
-	}
-	refundedAt, err := parseRFC3339Ptr(payload.RefundedAt)
-	if err != nil {
-		respondAPIError(c, apierr.BadRequest("invalid refunded at time"))
-		return
-	}
-	if refundedAt == nil {
-		now := time.Now().UTC()
-		refundedAt = &now
 	}
 
+	var payload RefundPaymentPayload
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		respondAPIError(c, apierr.BadRequest("invalid request payload").WithDetails(err.Error()))
+		return
+	}
+
+	// Get the payment to validate refund amount
 	payment, err := h.svc.GetPayment(c.Request.Context(), id)
 	if err != nil {
 		if apierr.IsNotFound(err) {
@@ -1032,15 +1029,52 @@ func (h *PaymentHandler) RefundPayment(c *gin.Context) {
 		return
 	}
 
-	// Only allow refund from paid
-	input := adminservice.UpdatePaymentInput{
-		Status:          model.PaymentStatusRefunded,
-		ProviderTradeNo: payload.ProviderTradeNo,
-		ProviderRaw:     payload.ProviderRaw,
-		PaidAt:          payment.PaidAt,
-		RefundedAt:      refundedAt,
+	// Validate refund amount using model validation
+	// Requirements: 9.1, 9.2, 9.3
+	if err := payment.ValidateRefundAmount(payload.AmountCents); err != nil {
+		if refundErr, ok := err.(*model.RefundValidationError); ok {
+			respondAPIError(c, apierr.BadRequest(refundErr.Message).WithDetails(refundErr.Code))
+			return
+		}
+		respondAPIError(c, apierr.BadRequest("invalid refund amount"))
+		return
 	}
-	updated, err := h.svc.UpdatePayment(c.Request.Context(), id, input)
+
+	// Get operator ID from context if available
+	var operatorID *uint64
+	if uid := c.GetUint64("user_id"); uid != 0 {
+		operatorID = &uid
+	}
+
+	// Process the refund
+	refundedAt, _ := parseRFC3339Ptr(payload.RefundedAt)
+	if refundedAt == nil {
+		now := time.Now().UTC()
+		refundedAt = &now
+	}
+
+	// Update payment with refund amount
+	payment.RefundedAmountCents += payload.AmountCents
+	payment.RefundedAt = refundedAt
+	payment.ProviderTradeNo = payload.ProviderTradeNo
+	payment.ProviderRaw = payload.ProviderRaw
+
+	// Check if fully refunded
+	if payment.IsFullyRefunded() {
+		payment.Status = model.PaymentStatusRefunded
+	}
+
+	// Use the existing UpdatePayment with proper status transition
+	input := adminservice.UpdatePaymentInput{
+		Status:              payment.Status,
+		ProviderTradeNo:     payment.ProviderTradeNo,
+		ProviderRaw:         payment.ProviderRaw,
+		PaidAt:              payment.PaidAt,
+		RefundedAt:          refundedAt,
+		RefundedAmountCents: &payment.RefundedAmountCents,
+	}
+
+	updated, err := h.svc.UpdatePaymentWithRefund(c.Request.Context(), id, input, payload.AmountCents, payload.Reason, operatorID)
 	if err != nil {
 		if apierr.IsValidationError(err) {
 			respondAPIError(c, err)
@@ -1050,14 +1084,24 @@ func (h *PaymentHandler) RefundPayment(c *gin.Context) {
 			respondAPIError(c, err)
 			return
 		}
-		respondAPIError(c, apierr.InternalError("update payment failed").WithDetails(err.Error()))
+		respondAPIError(c, apierr.InternalError("refund processing failed").WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[*model.Payment]{Success: true, Code: http.StatusOK, Message: "updated", Data: updated})
+
+	writeJSON(c, http.StatusOK, model.APIResponse[*model.Payment]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: "refund processed",
+		Data:    updated,
+	})
 }
 
-// RefundPaymentPayload defines optional refund fields.
+// RefundPaymentPayload defines refund request fields.
+// Requirements: 2.1, 9.1, 9.2, 9.3
 type RefundPaymentPayload struct {
+	AmountCents     int64           `json:"amount_cents" binding:"required,gt=0" example:"1000"`
+	Reason          string          `json:"reason" binding:"required" example:"Customer requested refund"`
+	Note            string          `json:"note,omitempty" example:"Internal note"`
 	RefundedAt      *string         `json:"refunded_at,omitempty" example:"2025-10-28T12:00:00Z"`
 	ProviderTradeNo string          `json:"provider_trade_no,omitempty"`
 	ProviderRaw     json.RawMessage `json:"provider_raw,omitempty" swaggertype:"string" example:"{\"result\":\"refunded\"}"`
@@ -1072,6 +1116,53 @@ func parseRFC3339Ptr(value *string) (*time.Time, error) {
 		return nil, err
 	}
 	return &parsed, nil
+}
+
+// GetRefundHistory returns the refund history for a payment.
+// @Summary      获取退款历史
+// @Description  获取支付记录的所有退款操作历史
+// @Tags         Admin/Payments
+// @Security     BearerAuth
+// @Produce      json
+// @Param        id   path  int  true  "支付ID"
+// @Success      200  {object}  model.APIResponse[[]model.OperationLog]
+// @Failure      404  {object}  model.ErrorResponse
+// @Router       /admin/payments/{id}/refunds [get]
+func (h *PaymentHandler) GetRefundHistory(c *gin.Context) {
+	id, err := parseUintParam(c, "id")
+	if err != nil {
+		respondAPIError(c, apierr.BadRequest("invalid payment ID"))
+		return
+	}
+
+	// Verify payment exists
+	_, err = h.svc.GetPayment(c.Request.Context(), id)
+	if err != nil {
+		if apierr.IsNotFound(err) {
+			respondAPIError(c, err)
+			return
+		}
+		respondAPIError(c, apierr.InternalError("get payment failed").WithDetails(err.Error()))
+		return
+	}
+
+	// Get refund-related operation logs for this payment
+	logs, _, err := h.svc.GetPaymentLogs(c.Request.Context(), id, repository.OperationLogListOptions{
+		Page:     1,
+		PageSize: 100,
+		Action:   string(model.OpActionRefund),
+	})
+	if err != nil {
+		respondAPIError(c, apierr.InternalError("get refund history failed").WithDetails(err.Error()))
+		return
+	}
+
+	writeJSON(c, http.StatusOK, model.APIResponse[[]model.OperationLog]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: "success",
+		Data:    logs,
+	})
 }
 
 // ReviewOrder

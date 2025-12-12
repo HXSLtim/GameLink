@@ -1,78 +1,535 @@
-import React from 'react';
-import { Timeline, Card, Tag, Typography, Space, DatePicker, Button } from 'antd';
-import { ClockCircleOutlined, UserOutlined, LoginOutlined, EditOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
+/**
+ * 权限审计日志页面
+ * Requirements: 6.3 - 审计日志查询与筛选
+ * Requirements: 6.5 - 审计日志导出
+ * 
+ * 功能：
+ * - 分页显示审计日志
+ * - 显示操作前后数据对比
+ * - 按时间范围、操作类型、操作者筛选
+ * - 导出 CSV 格式
+ */
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+    Card,
+    Table,
+    Tag,
+    Space,
+    Button,
+    DatePicker,
+    Select,
+    Input,
+    Typography,
+    Tooltip,
+    Modal,
+    Descriptions,
+    message,
+    Row,
+    Col,
+    Spin,
+} from 'antd';
+import type { ColumnsType } from 'antd/es/table';
+import {
+    DownloadOutlined,
+    SearchOutlined,
+    ReloadOutlined,
+    EyeOutlined,
+    UserOutlined,
+    ClockCircleOutlined,
+    SwapOutlined,
+    FileTextOutlined,
+} from '@ant-design/icons';
 import { motion } from 'framer-motion';
+import dayjs from 'dayjs';
+import type { Dayjs } from 'dayjs';
+import { auditLogApi } from '@/api/permission';
+import type {
+    PermissionAuditLog,
+    AuditAction,
+    AuditTargetType,
+    AuditLogQueryParams,
+} from '@/types/permission';
 
-const { Text } = Typography;
+const { Text, Paragraph } = Typography;
+const { RangePicker } = DatePicker;
 
-const Audit: React.FC = () => {
-    const activities = [
+/**
+ * 操作类型标签颜色映射
+ */
+const ACTION_COLORS: Record<AuditAction, string> = {
+    permission_create: 'green',
+    permission_update: 'blue',
+    permission_delete: 'red',
+    role_create: 'green',
+    role_update: 'blue',
+    role_delete: 'red',
+    role_permission_assign: 'purple',
+    user_role_assign: 'orange',
+};
+
+/**
+ * 操作类型中文映射
+ */
+const ACTION_LABELS: Record<AuditAction, string> = {
+    permission_create: '创建权限',
+    permission_update: '更新权限',
+    permission_delete: '删除权限',
+    role_create: '创建角色',
+    role_update: '更新角色',
+    role_delete: '删除角色',
+    role_permission_assign: '分配角色权限',
+    user_role_assign: '分配用户角色',
+};
+
+/**
+ * 目标类型中文映射
+ */
+const TARGET_TYPE_LABELS: Record<AuditTargetType, string> = {
+    permission: '权限',
+    role: '角色',
+    user: '用户',
+};
+
+/**
+ * 目标类型颜色映射
+ */
+const TARGET_TYPE_COLORS: Record<AuditTargetType, string> = {
+    permission: 'cyan',
+    role: 'geekblue',
+    user: 'gold',
+};
+
+/**
+ * 操作类型选项
+ */
+const ACTION_OPTIONS = Object.entries(ACTION_LABELS).map(([value, label]) => ({
+    value,
+    label,
+}));
+
+/**
+ * 目标类型选项
+ */
+const TARGET_TYPE_OPTIONS = Object.entries(TARGET_TYPE_LABELS).map(([value, label]) => ({
+    value,
+    label,
+}));
+
+/**
+ * 格式化 JSON 数据用于显示
+ */
+const formatJsonData = (jsonStr?: string): Record<string, unknown> | null => {
+    if (!jsonStr) return null;
+    try {
+        return JSON.parse(jsonStr);
+    } catch {
+        return null;
+    }
+};
+
+/**
+ * 数据对比组件
+ * 显示操作前后数据的差异
+ */
+const DataCompare: React.FC<{
+    beforeData?: string;
+    afterData?: string;
+}> = ({ beforeData, afterData }) => {
+    const before = formatJsonData(beforeData);
+    const after = formatJsonData(afterData);
+
+    if (!before && !after) {
+        return <Text type="secondary">无数据变更</Text>;
+    }
+
+    return (
+        <Row gutter={16}>
+            <Col span={12}>
+                <Card
+                    size="small"
+                    title={<Text type="secondary">变更前</Text>}
+                    style={{ backgroundColor: 'rgba(255, 77, 79, 0.05)' }}
+                >
+                    {before ? (
+                        <Paragraph>
+                            <pre style={{ 
+                                margin: 0, 
+                                fontSize: 12, 
+                                maxHeight: 300, 
+                                overflow: 'auto',
+                                whiteSpace: 'pre-wrap',
+                                wordBreak: 'break-all',
+                            }}>
+                                {JSON.stringify(before, null, 2)}
+                            </pre>
+                        </Paragraph>
+                    ) : (
+                        <Text type="secondary">无数据（新建操作）</Text>
+                    )}
+                </Card>
+            </Col>
+            <Col span={12}>
+                <Card
+                    size="small"
+                    title={<Text type="secondary">变更后</Text>}
+                    style={{ backgroundColor: 'rgba(82, 196, 26, 0.05)' }}
+                >
+                    {after ? (
+                        <Paragraph>
+                            <pre style={{ 
+                                margin: 0, 
+                                fontSize: 12, 
+                                maxHeight: 300, 
+                                overflow: 'auto',
+                                whiteSpace: 'pre-wrap',
+                                wordBreak: 'break-all',
+                            }}>
+                                {JSON.stringify(after, null, 2)}
+                            </pre>
+                        </Paragraph>
+                    ) : (
+                        <Text type="secondary">无数据（删除操作）</Text>
+                    )}
+                </Card>
+            </Col>
+        </Row>
+    );
+};
+
+/**
+ * 审计日志详情弹窗
+ */
+const AuditLogDetailModal: React.FC<{
+    visible: boolean;
+    log: PermissionAuditLog | null;
+    onClose: () => void;
+}> = ({ visible, log, onClose }) => {
+    if (!log) return null;
+
+    return (
+        <Modal
+            title={
+                <Space>
+                    <FileTextOutlined />
+                    审计日志详情
+                </Space>
+            }
+            open={visible}
+            onCancel={onClose}
+            footer={[
+                <Button key="close" onClick={onClose}>
+                    关闭
+                </Button>,
+            ]}
+            width={800}
+        >
+            <Descriptions bordered column={2} size="small" style={{ marginBottom: 16 }}>
+                <Descriptions.Item label="日志ID">{log.id}</Descriptions.Item>
+                <Descriptions.Item label="操作时间">
+                    {dayjs(log.createdAt).format('YYYY-MM-DD HH:mm:ss')}
+                </Descriptions.Item>
+                <Descriptions.Item label="操作者">
+                    <Space>
+                        <UserOutlined />
+                        {log.operatorName} (ID: {log.operatorId})
+                    </Space>
+                </Descriptions.Item>
+                <Descriptions.Item label="操作类型">
+                    <Tag color={ACTION_COLORS[log.action]}>
+                        {ACTION_LABELS[log.action] || log.action}
+                    </Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="目标类型">
+                    <Tag color={TARGET_TYPE_COLORS[log.targetType]}>
+                        {TARGET_TYPE_LABELS[log.targetType] || log.targetType}
+                    </Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="目标">
+                    {log.targetName} (ID: {log.targetId})
+                </Descriptions.Item>
+                <Descriptions.Item label="IP 地址" span={2}>
+                    {log.ipAddress || '-'}
+                </Descriptions.Item>
+                <Descriptions.Item label="请求ID" span={2}>
+                    <Text copyable={{ text: log.requestId || '' }}>
+                        {log.requestId || '-'}
+                    </Text>
+                </Descriptions.Item>
+                <Descriptions.Item label="User Agent" span={2}>
+                    <Tooltip title={log.userAgent}>
+                        <Text ellipsis style={{ maxWidth: 500 }}>
+                            {log.userAgent || '-'}
+                        </Text>
+                    </Tooltip>
+                </Descriptions.Item>
+            </Descriptions>
+
+            <Card title="数据变更对比" size="small">
+                <DataCompare beforeData={log.beforeData} afterData={log.afterData} />
+            </Card>
+        </Modal>
+    );
+};
+
+/**
+ * 权限审计日志页面组件
+ */
+const AuditLogPage: React.FC = () => {
+    // 数据状态
+    const [loading, setLoading] = useState(false);
+    const [logs, setLogs] = useState<PermissionAuditLog[]>([]);
+    const [total, setTotal] = useState(0);
+    const [current, setCurrent] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+
+    // 筛选状态
+    const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null] | null>(null);
+    const [actionFilter, setActionFilter] = useState<AuditAction | undefined>();
+    const [targetTypeFilter, setTargetTypeFilter] = useState<AuditTargetType | undefined>();
+    const [operatorKeyword, setOperatorKeyword] = useState<string>('');
+
+    // 详情弹窗状态
+    const [detailVisible, setDetailVisible] = useState(false);
+    const [selectedLog, setSelectedLog] = useState<PermissionAuditLog | null>(null);
+
+    // 导出状态
+    const [exporting, setExporting] = useState(false);
+
+    /**
+     * 构建查询参数
+     */
+    const buildQueryParams = useCallback((): AuditLogQueryParams => {
+        const params: AuditLogQueryParams = {
+            page: current,
+            page_size: pageSize,
+        };
+
+        if (dateRange && dateRange[0] && dateRange[1]) {
+            params.date_from = dateRange[0].format('YYYY-MM-DD');
+            params.date_to = dateRange[1].format('YYYY-MM-DD');
+        }
+
+        if (actionFilter) {
+            params.action = actionFilter;
+        }
+
+        if (targetTypeFilter) {
+            params.target_type = targetTypeFilter;
+        }
+
+        return params;
+    }, [current, pageSize, dateRange, actionFilter, targetTypeFilter]);
+
+    /**
+     * 加载审计日志数据
+     * Requirements: 6.3 - 审计日志查询
+     */
+    const loadData = useCallback(async () => {
+        setLoading(true);
+        try {
+            const params = buildQueryParams();
+            const res = await auditLogApi.list(params);
+            if (res.data.success && res.data.data) {
+                const { items, totalCount } = res.data.data;
+                setLogs(items || []);
+                setTotal(totalCount || 0);
+            }
+        } catch (error) {
+            console.error('加载审计日志失败:', error);
+            message.error('加载审计日志失败');
+        } finally {
+            setLoading(false);
+        }
+    }, [buildQueryParams]);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
+
+    /**
+     * 搜索处理
+     */
+    const handleSearch = () => {
+        setCurrent(1);
+        loadData();
+    };
+
+    /**
+     * 重置筛选条件
+     */
+    const handleReset = () => {
+        setDateRange(null);
+        setActionFilter(undefined);
+        setTargetTypeFilter(undefined);
+        setOperatorKeyword('');
+        setCurrent(1);
+    };
+
+    /**
+     * 查看详情
+     */
+    const handleViewDetail = (log: PermissionAuditLog) => {
+        setSelectedLog(log);
+        setDetailVisible(true);
+    };
+
+    /**
+     * 导出审计日志
+     * Requirements: 6.5 - 导出 CSV 格式
+     */
+    const handleExport = async () => {
+        setExporting(true);
+        try {
+            const params = {
+                date_from: dateRange?.[0]?.format('YYYY-MM-DD'),
+                date_to: dateRange?.[1]?.format('YYYY-MM-DD'),
+                action: actionFilter,
+                target_type: targetTypeFilter,
+                format: 'csv' as const,
+            };
+
+            const response = await auditLogApi.export(params);
+            
+            // 创建下载链接
+            const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `audit_logs_${dayjs().format('YYYYMMDD_HHmmss')}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+
+            message.success('导出成功');
+        } catch (error) {
+            console.error('导出审计日志失败:', error);
+            message.error('导出失败');
+        } finally {
+            setExporting(false);
+        }
+    };
+
+    /**
+     * 表格列配置
+     */
+    const columns: ColumnsType<PermissionAuditLog> = [
         {
-            id: 1,
-            user: 'Admin',
-            action: '更新了系统设置',
-            target: '平台名称',
-            time: '2023-11-26 10:30:00',
-            type: 'system',
-            ip: '192.168.1.1'
+            title: 'ID',
+            dataIndex: 'id',
+            key: 'id',
+            width: 70,
         },
         {
-            id: 2,
-            user: 'Admin',
-            action: '封禁了用户',
-            target: 'Spammer#1234',
-            time: '2023-11-26 09:15:22',
-            type: 'security',
-            ip: '192.168.1.1'
+            title: '操作时间',
+            dataIndex: 'createdAt',
+            key: 'createdAt',
+            width: 170,
+            render: (time: string) => (
+                <Space>
+                    <ClockCircleOutlined />
+                    {dayjs(time).format('YYYY-MM-DD HH:mm:ss')}
+                </Space>
+            ),
         },
         {
-            id: 3,
-            user: 'Moderator',
-            action: '审核通过了游戏',
-            target: '新游戏申请: Valorant',
-            time: '2023-11-25 16:45:10',
-            type: 'audit',
-            ip: '10.0.0.5'
+            title: '操作者',
+            dataIndex: 'operatorName',
+            key: 'operatorName',
+            width: 120,
+            render: (name: string, record) => (
+                <Tooltip title={`ID: ${record.operatorId}`}>
+                    <Space>
+                        <UserOutlined />
+                        {name}
+                    </Space>
+                </Tooltip>
+            ),
         },
         {
-            id: 4,
-            user: 'System',
-            action: '自动备份数据库',
-            target: 'backup_20231125.sql',
-            time: '2023-11-25 00:00:00',
-            type: 'system',
-            ip: 'localhost'
+            title: '操作类型',
+            dataIndex: 'action',
+            key: 'action',
+            width: 130,
+            render: (action: AuditAction) => (
+                <Tag color={ACTION_COLORS[action]}>
+                    {ACTION_LABELS[action] || action}
+                </Tag>
+            ),
         },
         {
-            id: 5,
-            user: 'Admin',
-            action: '登录系统',
-            target: '-',
-            time: '2023-11-24 08:30:00',
-            type: 'login',
-            ip: '192.168.1.1'
+            title: '目标类型',
+            dataIndex: 'targetType',
+            key: 'targetType',
+            width: 100,
+            render: (type: AuditTargetType) => (
+                <Tag color={TARGET_TYPE_COLORS[type]}>
+                    {TARGET_TYPE_LABELS[type] || type}
+                </Tag>
+            ),
+        },
+        {
+            title: '目标',
+            key: 'target',
+            width: 180,
+            ellipsis: true,
+            render: (_, record) => (
+                <Tooltip title={`ID: ${record.targetId}`}>
+                    <Text>{record.targetName}</Text>
+                </Tooltip>
+            ),
+        },
+        {
+            title: '数据变更',
+            key: 'dataChange',
+            width: 100,
+            align: 'center',
+            render: (_, record) => {
+                const hasBefore = !!record.beforeData;
+                const hasAfter = !!record.afterData;
+                
+                if (!hasBefore && !hasAfter) {
+                    return <Text type="secondary">-</Text>;
+                }
+                
+                return (
+                    <Tooltip title="点击查看详情">
+                        <Button
+                            type="link"
+                            size="small"
+                            icon={<SwapOutlined />}
+                            onClick={() => handleViewDetail(record)}
+                        >
+                            {hasBefore && hasAfter ? '变更' : hasBefore ? '删除' : '新建'}
+                        </Button>
+                    </Tooltip>
+                );
+            },
+        },
+        {
+            title: 'IP 地址',
+            dataIndex: 'ipAddress',
+            key: 'ipAddress',
+            width: 130,
+            render: (ip: string) => ip || '-',
+        },
+        {
+            title: '操作',
+            key: 'action',
+            width: 80,
+            fixed: 'right',
+            render: (_, record) => (
+                <Button
+                    type="link"
+                    size="small"
+                    icon={<EyeOutlined />}
+                    onClick={() => handleViewDetail(record)}
+                >
+                    详情
+                </Button>
+            ),
         },
     ];
-
-    const getIcon = (type: string) => {
-        switch (type) {
-            case 'system': return <ClockCircleOutlined style={{ fontSize: '16px' }} />;
-            case 'login': return <LoginOutlined style={{ fontSize: '16px', color: '#3ba55c' }} />;
-            case 'security': return <SafetyCertificateOutlined style={{ fontSize: '16px', color: '#ed4245' }} />;
-            case 'audit': return <EditOutlined style={{ fontSize: '16px', color: '#faa61a' }} />;
-            default: return <UserOutlined style={{ fontSize: '16px' }} />;
-        }
-    };
-
-    const getColor = (type: string) => {
-        switch (type) {
-            case 'system': return 'blue';
-            case 'login': return 'green';
-            case 'security': return 'red';
-            case 'audit': return 'gold';
-            default: return 'gray';
-        }
-    };
 
     return (
         <motion.div
@@ -80,49 +537,132 @@ const Audit: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
         >
-            <Card bordered={false} styles={{ body: { padding: '24px' } }}>
-                <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h2 style={{ margin: 0, fontSize: 20 }}>系统审计日志</h2>
-                    <Space>
-                        <DatePicker.RangePicker />
-                        <Button type="primary" style={{ backgroundColor: '#5865F2' }}>查询</Button>
-                    </Space>
+            <Card bordered={false}>
+                {/* 页面标题 */}
+                <div style={{ marginBottom: 24 }}>
+                    <h2 style={{ margin: 0, fontSize: 20 }}>权限审计日志</h2>
+                    <Text type="secondary">
+                        查看权限、角色、用户角色分配等操作的审计记录
+                    </Text>
                 </div>
 
-                <Timeline mode="left">
-                    {activities.map(item => (
-                        <Timeline.Item
-                            key={item.id}
-                            color={getColor(item.type)}
-                            dot={getIcon(item.type)}
-                            label={<span style={{ color: 'rgba(255,255,255,0.45)' }}>{item.time}</span>}
-                        >
-                            <Card
-                                size="small"
-                                bordered={false}
-                                style={{
-                                    backgroundColor: 'rgba(255,255,255,0.04)',
-                                    marginBottom: 16,
-                                    borderRadius: 8
-                                }}
-                            >
-                                <Space orientation="vertical" size={4} style={{ width: '100%' }}>
-                                    <Space>
-                                        <Tag color="geekblue">{item.user}</Tag>
-                                        <Text style={{ color: '#dcddde' }}>{item.action}</Text>
-                                        <Tag>{item.target}</Tag>
-                                    </Space>
-                                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>
-                                        IP: {item.ip}
-                                    </div>
-                                </Space>
-                            </Card>
-                        </Timeline.Item>
-                    ))}
-                </Timeline>
+                {/* 筛选区域 - Requirements: 6.3 */}
+                <Card
+                    size="small"
+                    style={{ marginBottom: 16, backgroundColor: 'rgba(255,255,255,0.02)' }}
+                >
+                    <Row gutter={[16, 16]} align="middle">
+                        <Col>
+                            <Space>
+                                <Text>时间范围：</Text>
+                                <RangePicker
+                                    value={dateRange}
+                                    onChange={(dates) => setDateRange(dates)}
+                                    style={{ width: 260 }}
+                                    placeholder={['开始日期', '结束日期']}
+                                />
+                            </Space>
+                        </Col>
+                        <Col>
+                            <Space>
+                                <Text>操作类型：</Text>
+                                <Select
+                                    value={actionFilter}
+                                    onChange={setActionFilter}
+                                    placeholder="全部"
+                                    allowClear
+                                    style={{ width: 150 }}
+                                    options={ACTION_OPTIONS}
+                                />
+                            </Space>
+                        </Col>
+                        <Col>
+                            <Space>
+                                <Text>目标类型：</Text>
+                                <Select
+                                    value={targetTypeFilter}
+                                    onChange={setTargetTypeFilter}
+                                    placeholder="全部"
+                                    allowClear
+                                    style={{ width: 120 }}
+                                    options={TARGET_TYPE_OPTIONS}
+                                />
+                            </Space>
+                        </Col>
+                        <Col>
+                            <Space>
+                                <Text>操作者：</Text>
+                                <Input
+                                    value={operatorKeyword}
+                                    onChange={(e) => setOperatorKeyword(e.target.value)}
+                                    placeholder="搜索操作者"
+                                    style={{ width: 150 }}
+                                    allowClear
+                                />
+                            </Space>
+                        </Col>
+                        <Col flex="auto" style={{ textAlign: 'right' }}>
+                            <Space>
+                                <Button
+                                    icon={<SearchOutlined />}
+                                    type="primary"
+                                    onClick={handleSearch}
+                                >
+                                    搜索
+                                </Button>
+                                <Button
+                                    icon={<ReloadOutlined />}
+                                    onClick={handleReset}
+                                >
+                                    重置
+                                </Button>
+                                <Button
+                                    icon={<DownloadOutlined />}
+                                    onClick={handleExport}
+                                    loading={exporting}
+                                >
+                                    导出 CSV
+                                </Button>
+                            </Space>
+                        </Col>
+                    </Row>
+                </Card>
+
+                {/* 数据表格 */}
+                <Spin spinning={loading}>
+                    <Table
+                        columns={columns}
+                        dataSource={logs}
+                        rowKey="id"
+                        pagination={{
+                            current,
+                            pageSize,
+                            total,
+                            showSizeChanger: true,
+                            showQuickJumper: true,
+                            showTotal: (t) => `共 ${t} 条记录`,
+                            onChange: (page, size) => {
+                                setCurrent(page);
+                                setPageSize(size);
+                            },
+                        }}
+                        scroll={{ x: 1200 }}
+                        size="middle"
+                    />
+                </Spin>
             </Card>
+
+            {/* 详情弹窗 */}
+            <AuditLogDetailModal
+                visible={detailVisible}
+                log={selectedLog}
+                onClose={() => {
+                    setDetailVisible(false);
+                    setSelectedLog(null);
+                }}
+            />
         </motion.div>
     );
 };
 
-export default Audit;
+export default AuditLogPage;

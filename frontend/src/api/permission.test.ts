@@ -290,13 +290,13 @@ describe('Permission API', () => {
         });
 
         it('should batch assign roles', async () => {
-            const mockResponse = { data: { success: 2, failed: 0 } };
-            (apiClient.post as ReturnType<typeof vi.fn>).mockResolvedValue(mockResponse);
+            const mockResponse = { data: { successCount: 2, failedCount: 0 } };
+            (apiClient.put as ReturnType<typeof vi.fn>).mockResolvedValue(mockResponse);
 
             const data = { userIds: [1, 2], roleIds: [1] };
             await userRoleApi.batchAssignRoles(data);
 
-            expect(apiClient.post).toHaveBeenCalledWith('/admin/users/batch/roles', data);
+            expect(apiClient.put).toHaveBeenCalledWith('/admin/users/roles/batch', data);
         });
 
         it('should check super admin', async () => {

@@ -5,6 +5,7 @@
 
 import apiClient from './client';
 import type { ApiResponse } from '../types/api';
+import { triggerPermissionChange } from '../context/AdminContext';
 import type {
   Permission,
   PermissionTreeNode,
@@ -168,30 +169,45 @@ export const roleApi = {
   /**
    * 批量分配角色权限（事务保证原子性）
    * PUT /api/admin/roles/:id/permissions/batch
+   * Requirements: 8.4 - 权限变更后触发菜单更新
    */
-  batchAssignPermissions: (roleId: number, data: BatchAssignPermissionsDto) =>
-    apiClient.put<ApiResponse<void>>(
+  batchAssignPermissions: async (roleId: number, data: BatchAssignPermissionsDto) => {
+    const result = await apiClient.put<ApiResponse<void>>(
       `/admin/roles/${roleId}/permissions/batch`,
       data
-    ),
+    );
+    // 触发权限变更通知
+    triggerPermissionChange();
+    return result;
+  },
 
   /**
    * 单个添加权限
    * POST /api/admin/roles/:id/permissions/:pid
+   * Requirements: 8.4 - 权限变更后触发菜单更新
    */
-  addPermission: (roleId: number, permissionId: number) =>
-    apiClient.post<ApiResponse<void>>(
+  addPermission: async (roleId: number, permissionId: number) => {
+    const result = await apiClient.post<ApiResponse<void>>(
       `/admin/roles/${roleId}/permissions/${permissionId}`
-    ),
+    );
+    // 触发权限变更通知
+    triggerPermissionChange();
+    return result;
+  },
 
   /**
    * 单个移除权限
    * DELETE /api/admin/roles/:id/permissions/:pid
+   * Requirements: 8.4 - 权限变更后触发菜单更新
    */
-  removePermission: (roleId: number, permissionId: number) =>
-    apiClient.delete<ApiResponse<void>>(
+  removePermission: async (roleId: number, permissionId: number) => {
+    const result = await apiClient.delete<ApiResponse<void>>(
       `/admin/roles/${roleId}/permissions/${permissionId}`
-    ),
+    );
+    // 触发权限变更通知
+    triggerPermissionChange();
+    return result;
+  },
 
   /**
    * 设置角色继承关系
@@ -226,9 +242,14 @@ export const userRoleApi = {
   /**
    * 分配用户角色
    * PUT /api/admin/users/:id/roles
+   * Requirements: 8.4 - 权限变更后触发菜单更新
    */
-  assignRoles: (userId: number, data: AssignUserRolesDto) =>
-    apiClient.put<ApiResponse<void>>(`/admin/users/${userId}/roles`, data),
+  assignRoles: async (userId: number, data: AssignUserRolesDto) => {
+    const result = await apiClient.put<ApiResponse<void>>(`/admin/users/${userId}/roles`, data);
+    // 触发权限变更通知
+    triggerPermissionChange();
+    return result;
+  },
 
   /**
    * 获取用户有效权限（合并后的完整权限列表）
@@ -241,14 +262,19 @@ export const userRoleApi = {
 
   /**
    * 批量分配用户角色
-   * POST /api/admin/users/batch/roles
+   * PUT /api/admin/users/roles/batch
+   * Requirements: 8.4 - 权限变更后触发菜单更新
    */
-  batchAssignRoles: (data: BatchAssignUserRolesDto) =>
-    apiClient.post<ApiResponse<{
-      success: number;
-      failed: number;
-      errors?: Array<{ userId: number; error: string }>;
-    }>>('/admin/users/batch/roles', data),
+  batchAssignRoles: async (data: BatchAssignUserRolesDto) => {
+    const result = await apiClient.put<ApiResponse<{
+      successCount: number;
+      failedCount: number;
+      failedUsers?: Array<{ userId: number; reason: string }>;
+    }>>('/admin/users/roles/batch', data);
+    // 触发权限变更通知
+    triggerPermissionChange();
+    return result;
+  },
 
   /**
    * 检查用户是否为超级管理员

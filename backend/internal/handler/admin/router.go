@@ -668,6 +668,16 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Success      200  {object}  model.APIResponse[[]model.OperationLog]
 		// @Router       /admin/payments/{id}/logs [get]
 		group.GET("/payments/:id/logs", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/payments/:id/logs"), paymentHandler.ListPaymentLogs)
+		// @Summary      获取退款历史
+		// @Description  获取支付记录的所有退款操作历史
+		// @Tags         Admin/Payments
+		// @Security     BearerAuth
+		// @Produce      json
+		// @Param        id   path  int  true  "支付ID"
+		// @Success      200  {object}  model.APIResponse[[]model.OperationLog]
+		// @Failure      404  {object}  model.ErrorResponse
+		// @Router       /admin/payments/{id}/refunds [get]
+		group.GET("/payments/:id/refunds", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/payments/:id/refunds"), paymentHandler.GetRefundHistory)
 
 		// 评价管理 - 使用细粒度权		// @Summary      评价列表
 		// @Tags         Admin/Reviews

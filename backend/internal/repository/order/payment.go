@@ -28,23 +28,47 @@ func (r *gormPaymentRepository) Create(ctx context.Context, payment *model.Payme
 func (r *gormPaymentRepository) List(ctx context.Context, opts repository.PaymentListOptions) ([]model.Payment, int64, error) {
 	query := r.db.WithContext(ctx).Model(&model.Payment{})
 
+	// Status filters
 	if len(opts.Statuses) > 0 {
 		query = query.Where("status IN ?", opts.Statuses)
 	}
+	// Method filters
 	if len(opts.Methods) > 0 {
 		query = query.Where("method IN ?", opts.Methods)
 	}
+	// User filter
 	if opts.UserID != nil {
 		query = query.Where("user_id = ?", *opts.UserID)
 	}
+	// Order filter
 	if opts.OrderID != nil {
 		query = query.Where("order_id = ?", *opts.OrderID)
 	}
+	// Date range filters
 	if opts.DateFrom != nil {
 		query = query.Where("created_at >= ?", *opts.DateFrom)
 	}
 	if opts.DateTo != nil {
 		query = query.Where("created_at <= ?", *opts.DateTo)
+	}
+	// Collection entity filter
+	if opts.CollectionEntityID != nil {
+		query = query.Where("collection_entity_id = ?", *opts.CollectionEntityID)
+	}
+	// Merchant number filter
+	if opts.MerchantNo != "" {
+		query = query.Where("merchant_no = ?", opts.MerchantNo)
+	}
+	// Provider trade number filter (partial match)
+	if opts.ProviderTradeNo != "" {
+		query = query.Where("provider_trade_no LIKE ?", "%"+opts.ProviderTradeNo+"%")
+	}
+	// Amount range filters
+	if opts.MinAmountCents != nil {
+		query = query.Where("amount_cents >= ?", *opts.MinAmountCents)
+	}
+	if opts.MaxAmountCents != nil {
+		query = query.Where("amount_cents <= ?", *opts.MaxAmountCents)
 	}
 
 	var total int64
@@ -79,11 +103,14 @@ func (r *gormPaymentRepository) Get(ctx context.Context, id uint64) (*model.Paym
 // Update updates editable fields of a payment.
 func (r *gormPaymentRepository) Update(ctx context.Context, payment *model.Payment) error {
 	tx := r.db.WithContext(ctx).Model(payment).Where("id = ?", payment.ID).Updates(map[string]any{
-		"status":            payment.Status,
-		"provider_trade_no": payment.ProviderTradeNo,
-		"provider_raw":      payment.ProviderRaw,
-		"paid_at":           payment.PaidAt,
-		"refunded_at":       payment.RefundedAt,
+		"status":                payment.Status,
+		"provider_trade_no":     payment.ProviderTradeNo,
+		"provider_raw":          payment.ProviderRaw,
+		"paid_at":               payment.PaidAt,
+		"refunded_at":           payment.RefundedAt,
+		"refunded_amount_cents": payment.RefundedAmountCents,
+		"collection_entity_id":  payment.CollectionEntityID,
+		"merchant_no":           payment.MerchantNo,
 	})
 	if tx.Error != nil {
 		return tx.Error
@@ -104,4 +131,31 @@ func (r *gormPaymentRepository) Delete(ctx context.Context, id uint64) error {
 		return repository.ErrNotFound
 	}
 	return nil
+}
+
+// GetWithRelations returns a payment by id with preloaded Order and User relations.
+func (r *gormPaymentRepository) GetWithRelations(ctx context.Context, id uint64) (*model.Payment, error) {
+	var payment model.Payment
+	if err := r.db.WithContext(ctx).
+		Preload("Order").
+		Preload("User").
+		First(&payment, id).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, repository.ErrNotFound
+		}
+		return nil, err
+	}
+	return &payment, nil
+}
+
+// GetByOrderID returns all payments for a given order ID.
+func (r *gormPaymentRepository) GetByOrderID(ctx context.Context, orderID uint64) ([]model.Payment, error) {
+	var payments []model.Payment
+	if err := r.db.WithContext(ctx).
+		Where("order_id = ?", orderID).
+		Order("created_at DESC").
+		Find(&payments).Error; err != nil {
+		return nil, err
+	}
+	return payments, nil
 }

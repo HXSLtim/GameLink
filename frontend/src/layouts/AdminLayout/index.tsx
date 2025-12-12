@@ -100,13 +100,15 @@ const AdminLayout: React.FC = () => {
     const [collapsed, setCollapsed] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
-    const { loading } = useAdmin();
+    // 使用 AdminContext 中已过滤的菜单数据
+    // Requirements: 8.1, 8.2, 8.4 - 菜单权限联动
+    const { loading, menus: contextMenus, permissionVersion } = useAdmin();
     const { token } = theme.useToken();
     const screens = Grid.useBreakpoint();
     const { mode } = useTheme();
     const [messageApi, contextHolder] = message.useMessage();
 
-    // 菜单数据
+    // 菜单数据 - 现在从 AdminContext 获取已过滤的菜单
     const [menuData, setMenuData] = useState<BackendMenuItem[]>([]);
     const [menuLoading, setMenuLoading] = useState(true);
 
@@ -232,52 +234,65 @@ const AdminLayout: React.FC = () => {
         }
     }, []);
 
-    // 加载菜单数据
+    // 从 AdminContext 获取已过滤的菜单数据
+    // Requirements: 8.1, 8.2, 8.4 - 菜单权限联动，权限变更后自动更新
     useEffect(() => {
         const loadMenus = async () => {
             try {
                 setMenuLoading(true);
-                console.log('[AdminLayout] 开始加载菜单数据...');
-                const response = await adminApi.getMenus({ parentId: undefined });
-                console.log('[AdminLayout] 菜单API响应:', response);
-                console.log('[AdminLayout] response 类型:', typeof response);
+                
+                // 优先使用 AdminContext 中已过滤的菜单
+                if (contextMenus && contextMenus.length > 0) {
+                    console.log('[AdminLayout] 使用 AdminContext 中的菜单数据，数量:', contextMenus.length);
+                    
+                    // 构建菜单树：将扁平数组转换为层级树结构
+                    const buildMenuTree = (menus: BackendMenuItem[], parentId: number | null = null): BackendMenuItem[] => {
+                        return menus
+                            .filter(menu => {
+                                const isVisible = menu.visible !== false;
+                                const isMatchParent = menu.parentId === parentId;
+                                return isVisible && isMatchParent;
+                            })
+                            .sort((a, b) => a.order - b.order)
+                            .map(menu => {
+                                const children = buildMenuTree(menus, menu.id);
+                                return {
+                                    ...menu,
+                                    children: children.length > 0 ? children : undefined
+                                };
+                            });
+                    };
 
-                // Axios 拦截器返回的是 response.data，所以 response 就是 ApiResponse
-                // response.data 才是实际的菜单数组
-                let menus: BackendMenuItem[] = [];
-                if (response && Array.isArray(response.data)) {
-                    // response.data 是菜单数组
-                    menus = response.data;
-                    console.log('[AdminLayout] 从 response.data 提取菜单，数量:', menus.length);
-                } else if (Array.isArray(response)) {
-                    // 如果后端直接返回数组（不应该发生）
-                    menus = response;
-                    console.log('[AdminLayout] 直接获取菜单数组，数量:', menus.length);
-                } else {
-                    console.log('[AdminLayout] 未识别的响应格式:', response);
-                    menus = [];
+                    const menuTree = buildMenuTree(contextMenus);
+                    console.log('[AdminLayout] 构建的菜单树:', menuTree);
+                    setMenuData(menuTree);
+                    setMenuLoading(false);
+                    return;
                 }
 
-                console.log('[AdminLayout] 提取的菜单数据:', menus);
+                // 如果 AdminContext 没有菜单数据，则从 API 加载
+                console.log('[AdminLayout] AdminContext 无菜单数据，从 API 加载...');
+                const response = await adminApi.getMenus({ parentId: undefined });
+                console.log('[AdminLayout] 菜单API响应:', response);
 
-                // 检查 visible 字段（注意后端字段是 visible，不是 hidden）
-                menus.forEach(menu => {
-                    console.log(`[AdminLayout] 菜单: ${menu.name}, parentId: ${menu.parentId}, visible: ${menu.visible}`);
-                });
+                let menus: BackendMenuItem[] = [];
+                if (response && Array.isArray(response.data)) {
+                    menus = response.data;
+                } else if (Array.isArray(response)) {
+                    menus = response;
+                }
 
-                // 构建菜单树：将扁平数组转换为层级树结构
-                const buildMenuTree = (menus: BackendMenuItem[], parentId: number | null = null): BackendMenuItem[] => {
-                    return menus
+                // 构建菜单树
+                const buildMenuTree = (menuList: BackendMenuItem[], parentId: number | null = null): BackendMenuItem[] => {
+                    return menuList
                         .filter(menu => {
-                            // 过滤：1) visible=true 2) parentId匹配
                             const isVisible = menu.visible !== false;
                             const isMatchParent = menu.parentId === parentId;
                             return isVisible && isMatchParent;
                         })
-                        .sort((a, b) => a.order - b.order)  // 按order排序
+                        .sort((a, b) => a.order - b.order)
                         .map(menu => {
-                            // 递归查找子菜单
-                            const children = buildMenuTree(menus, menu.id);
+                            const children = buildMenuTree(menuList, menu.id);
                             return {
                                 ...menu,
                                 children: children.length > 0 ? children : undefined
@@ -286,9 +301,6 @@ const AdminLayout: React.FC = () => {
                 };
 
                 const menuTree = buildMenuTree(menus);
-                console.log('[AdminLayout] 构建的菜单树:', menuTree);
-                console.log('[AdminLayout] 根菜单数量:', menuTree.length);
-
                 setMenuData(menuTree);
             } catch (error) {
                 console.error('Failed to load menus:', error);
@@ -298,7 +310,7 @@ const AdminLayout: React.FC = () => {
         };
 
         loadMenus();
-    }, []);
+    }, [contextMenus, permissionVersion]); // 监听权限版本变化，自动刷新菜单
 
     // 响应式处理：屏幕变窄时自动收起
     useEffect(() => {

@@ -73,6 +73,8 @@ func TestAdminPaymentRefund(t *testing.T) {
 
 	refundAt := time.Now().UTC().Format(time.RFC3339)
 	payload := map[string]interface{}{
+		"amount_cents":      10000, // Full refund of the payment amount
+		"reason":            "Customer requested refund",
 		"refunded_at":       refundAt,
 		"provider_trade_no": "trade-no-1",
 		"provider_raw":      `{"state":"refunded"}`,

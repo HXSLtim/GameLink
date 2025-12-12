@@ -23,6 +23,7 @@ import (
 	orderrepo "gamelink/internal/repository/implementations"
 	rankingrepo "gamelink/internal/repository/ranking"
 	serviceitemrepo "gamelink/internal/repository/serviceitem"
+	settlementcompanyrepo "gamelink/internal/repository/settlementcompany"
 	statsrepo "gamelink/internal/repository/stats"
 	userrepo "gamelink/internal/repository/user"
 	withdrawrepo "gamelink/internal/repository/withdraw"
@@ -32,6 +33,7 @@ import (
 	roleservice "gamelink/internal/service/admin"
 	statsservice "gamelink/internal/service/admin"
 	authservice "gamelink/internal/service/auth"
+	settlementcompanysvc "gamelink/internal/service/settlementcompany"
 	"gamelink/internal/ws"
 	"gamelink/pkg/auth"
 	"gamelink/pkg/cache"
@@ -234,6 +236,11 @@ func (r *Router) registerAdminRoutes(api *gin.RouterGroup) {
 
 	// Admin 端业务路由
 	r.registerAdminBusinessRoutes(rbacGroup)
+
+	// 结算公司管理路由
+	settlementCompanyRepo := settlementcompanyrepo.NewSettlementCompanyRepository(r.orm)
+	settlementCompanySvc := settlementcompanysvc.NewSettlementCompanyService(settlementCompanyRepo, nil)
+	adminhandler.RegisterSettlementCompanyRoutes(rbacGroup, settlementCompanySvc, r.permMiddleware)
 
 	// 内容管理路由
 	r.registerContentRoutes(rbacGroup)

@@ -12,6 +12,7 @@ import AdminLayout from '@/layouts/AdminLayout/index';
 // 直接导入的页面
 import Auth from '@/pages/auth/Auth';
 import NotFound from '@/pages/NotFound';
+import Forbidden from '@/pages/Forbidden';
 
 // 懒加载Admin页面
 const Dashboard = lazy(() => import('@/pages/admin/Dashboard'));
@@ -268,6 +269,12 @@ export const routes: RouteConfig[] = [
                 meta: { title: '内容统计', permission: 'admin.content.stats.list' }
             }
         ]
+    },
+    // 403 禁止访问页面
+    {
+        path: '/403',
+        element: <Forbidden />,
+        meta: { title: '无权限访问' }
     },
     // 404页面
     {

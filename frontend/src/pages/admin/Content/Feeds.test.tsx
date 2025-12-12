@@ -54,8 +54,10 @@ const renderWithRouter = (component: React.ReactNode) => {
 describe('Feeds Page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Mock returns the response directly (not wrapped in data)
     (feedApi.getFeeds as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: { success: true, data: mockFeedsData },
+      success: true,
+      data: mockFeedsData,
     });
   });
 
@@ -139,7 +141,8 @@ describe('Feeds Page', () => {
   describe('空状态', () => {
     it('should handle empty feeds list', async () => {
       (feedApi.getFeeds as ReturnType<typeof vi.fn>).mockResolvedValue({
-        data: { success: true, data: { items: [], total: 0 } },
+        success: true,
+        data: { items: [], total: 0 },
       });
 
       renderWithRouter(<FeedsPage />);

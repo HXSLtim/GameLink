@@ -1432,7 +1432,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_gamelink_internal_handler_admin_OrderDispute"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_internal_handler_admin_OrderDispute"
                         }
                     },
                     "500": {
@@ -1475,7 +1475,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_handler_admin_OrderDispute"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_OrderDispute"
                         }
                     },
                     "404": {
@@ -1519,7 +1519,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_handler_admin.AssignDisputePayload"
+                            "$ref": "#/definitions/internal_handler_admin.AssignDisputePayload"
                         }
                     }
                 ],
@@ -1577,7 +1577,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_handler_admin.ResolveDisputePayload"
+                            "$ref": "#/definitions/internal_handler_admin.ResolveDisputePayload"
                         }
                     }
                 ],
@@ -1635,7 +1635,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_handler_admin.RollbackAssignmentPayload"
+                            "$ref": "#/definitions/internal_handler_admin.RollbackAssignmentPayload"
                         }
                     }
                 ],
@@ -1693,7 +1693,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_gamelink_internal_handler_admin_Game"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_internal_handler_admin_Game"
                         }
                     }
                 }
@@ -1721,7 +1721,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_handler_admin.GamePayload"
+                            "$ref": "#/definitions/internal_handler_admin.GamePayload"
                         }
                     }
                 ],
@@ -1729,7 +1729,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_handler_admin_Game"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Game"
                         }
                     },
                     "400": {
@@ -1768,7 +1768,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_handler_admin_Game"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Game"
                         }
                     },
                     "404": {
@@ -1809,7 +1809,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_handler_admin.GamePayload"
+                            "$ref": "#/definitions/internal_handler_admin.GamePayload"
                         }
                     }
                 ],
@@ -1817,7 +1817,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_handler_admin_Game"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Game"
                         }
                     },
                     "404": {
@@ -2087,7 +2087,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_admin.CreateTargetPayload"
+                            "$ref": "#/definitions/gamelink_internal_handler_admin.CreateTargetPayload"
                         }
                     }
                 ],
@@ -2139,7 +2139,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_admin.UpdateTargetPayload"
+                            "$ref": "#/definitions/gamelink_internal_handler_admin.UpdateTargetPayload"
                         }
                     }
                 ],
@@ -2267,6 +2267,50 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/me/menus": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "根据当前用户权限返回可访问的菜单列表，超级管理员返回所有菜单",
+                "tags": [
+                    "Admin - Menus"
+                ],
+                "summary": "获取当前用户菜单",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_gamelink_internal_model_Menu"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/me/permissions": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回当前登录管理员拥有的权限码列表，超级管理员返回 ['*']",
+                "tags": [
+                    "Admin - Permissions"
+                ],
+                "summary": "获取当前用户权限",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_string"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/menus/me": {
             "get": {
                 "security": [
@@ -2274,7 +2318,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "根据当前用户权限返回可访问的菜单列表",
+                "description": "根据当前用户权限返回可访问的菜单列表，超级管理员返回所有菜单",
                 "tags": [
                     "Admin - Menus"
                 ],
@@ -3971,7 +4015,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_gamelink_internal_handler_admin_Permission"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_internal_handler_admin_Permission"
                         }
                     },
                     "400": {
@@ -4020,7 +4064,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_handler_admin.CreatePermissionRequest"
+                            "$ref": "#/definitions/internal_handler_admin.CreatePermissionRequest"
                         }
                     }
                 ],
@@ -4028,7 +4072,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_handler_admin_Permission"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Permission"
                         }
                     },
                     "400": {
@@ -4103,7 +4147,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "返回当前登录管理员拥有的权限码列表",
+                "description": "返回当前登录管理员拥有的权限码列表，超级管理员返回 ['*']",
                 "tags": [
                     "Admin - Permissions"
                 ],
@@ -4112,7 +4156,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_gamelink_internal_model_Permission"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_string"
                         }
                     }
                 }
@@ -4239,7 +4283,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_handler_admin_Permission"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Permission"
                         }
                     },
                     "400": {
@@ -4301,7 +4345,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_handler_admin.UpdatePermissionRequest"
+                            "$ref": "#/definitions/internal_handler_admin.UpdatePermissionRequest"
                         }
                     }
                 ],
@@ -4309,7 +4353,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_handler_admin_Permission"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Permission"
                         }
                     },
                     "400": {
@@ -4438,7 +4482,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_handler_admin.PatchPermissionRequest"
+                            "$ref": "#/definitions/internal_handler_admin.PatchPermissionRequest"
                         }
                     }
                 ],
@@ -4446,7 +4490,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_handler_admin_Permission"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Permission"
                         }
                     },
                     "400": {
@@ -4536,7 +4580,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_admin.CreatePlayerPayload"
+                            "$ref": "#/definitions/gamelink_internal_handler_admin.CreatePlayerPayload"
                         }
                     }
                 ],
@@ -4544,7 +4588,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Player"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_handler_admin_Player"
                         }
                     },
                     "400": {
@@ -4583,7 +4627,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Player"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_handler_admin_Player"
                         }
                     },
                     "404": {
@@ -4624,7 +4668,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_admin.UpdatePlayerPayload"
+                            "$ref": "#/definitions/gamelink_internal_handler_admin.UpdatePlayerPayload"
                         }
                     }
                 ],
@@ -4632,7 +4676,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Player"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_handler_admin_Player"
                         }
                     },
                     "404": {
@@ -4724,7 +4768,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Player"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_handler_admin_Player"
                         }
                     },
                     "404": {
@@ -4862,7 +4906,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_internal_handler_admin_Review"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_gamelink_internal_handler_admin_Review"
                         }
                     }
                 }
@@ -4899,7 +4943,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_admin.SkillTagsBody"
+                            "$ref": "#/definitions/gamelink_internal_handler_admin.SkillTagsBody"
                         }
                     }
                 ],
@@ -4961,7 +5005,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Player"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_handler_admin_Player"
                         }
                     },
                     "404": {
@@ -5054,7 +5098,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_admin.CreateRankingCommissionConfigRequest"
+                            "$ref": "#/definitions/gamelink_internal_handler_admin.CreateRankingCommissionConfigRequest"
                         }
                     }
                 ],
@@ -5062,7 +5106,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_RankingCommissionConfig"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_handler_admin_RankingCommissionConfig"
                         }
                     },
                     "400": {
@@ -5157,7 +5201,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_admin.UpdateRankingCommissionConfigRequest"
+                            "$ref": "#/definitions/gamelink_internal_handler_admin.UpdateRankingCommissionConfigRequest"
                         }
                     }
                 ],
@@ -5260,7 +5304,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_admin.UpdateReplyPayload"
+                            "$ref": "#/definitions/gamelink_internal_handler_admin.UpdateReplyPayload"
                         }
                     }
                 ],
@@ -5390,7 +5434,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_internal_handler_admin_ReviewReportDTO"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_gamelink_internal_handler_admin_ReviewReportDTO"
                         }
                     }
                 }
@@ -5423,7 +5467,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_ReviewReportDTO"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_handler_admin_ReviewReportDTO"
                         }
                     },
                     "404": {
@@ -5466,7 +5510,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_admin.HandleReviewReportPayload"
+                            "$ref": "#/definitions/gamelink_internal_handler_admin.HandleReviewReportPayload"
                         }
                     }
                 ],
@@ -5474,7 +5518,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_HandleReviewReportResponse"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_handler_admin_HandleReviewReportResponse"
                         }
                     },
                     "400": {
@@ -5546,7 +5590,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_admin.UpdateReviewSettingsPayload"
+                            "$ref": "#/definitions/gamelink_internal_handler_admin.UpdateReviewSettingsPayload"
                         }
                     }
                 ],
@@ -5628,7 +5672,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_internal_handler_admin_Review"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_gamelink_internal_handler_admin_Review"
                         }
                     }
                 }
@@ -5656,7 +5700,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_admin.CreateReviewPayload"
+                            "$ref": "#/definitions/gamelink_internal_handler_admin.CreateReviewPayload"
                         }
                     }
                 ],
@@ -5664,11 +5708,41 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Review"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_handler_admin_Review"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/reviews/approve-all-non-sensitive": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin/Reviews"
+                ],
+                "summary": "批准所有不含敏感词的待审核评价",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_handler_admin_ApproveAllNonSensitiveResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
@@ -5700,7 +5774,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_admin.BatchApprovePayload"
+                            "$ref": "#/definitions/gamelink_internal_handler_admin.BatchApprovePayload"
                         }
                     }
                 ],
@@ -5744,7 +5818,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_admin.BatchRejectPayload"
+                            "$ref": "#/definitions/gamelink_internal_handler_admin.BatchRejectPayload"
                         }
                     }
                 ],
@@ -5916,13 +5990,19 @@ const docTemplate = `{
                         "description": "每页数量",
                         "name": "pageSize",
                         "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否含敏感词筛选",
+                        "name": "hasSensitiveWords",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_internal_handler_admin_Review"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_gamelink_internal_handler_admin_PendingReviewDTO"
                         }
                     }
                 }
@@ -6070,7 +6150,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Review"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_handler_admin_Review"
                         }
                     },
                     "404": {
@@ -6111,7 +6191,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_admin.UpdateReviewPayload"
+                            "$ref": "#/definitions/gamelink_internal_handler_admin.UpdateReviewPayload"
                         }
                     }
                 ],
@@ -6119,7 +6199,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Review"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_handler_admin_Review"
                         }
                     },
                     "404": {
@@ -6198,7 +6278,7 @@ const docTemplate = `{
                         "name": "request",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_admin.ApproveReviewPayload"
+                            "$ref": "#/definitions/gamelink_internal_handler_admin.ApproveReviewPayload"
                         }
                     }
                 ],
@@ -6342,7 +6422,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_admin.RejectReviewPayload"
+                            "$ref": "#/definitions/gamelink_internal_handler_admin.RejectReviewPayload"
                         }
                     }
                 ],
@@ -6399,7 +6479,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_admin.CreateReviewReportPayload"
+                            "$ref": "#/definitions/gamelink_internal_handler_admin.CreateReviewReportPayload"
                         }
                     }
                 ],
@@ -6407,7 +6487,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_CreateReviewReportResponse"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_handler_admin_CreateReviewReportResponse"
                         }
                     },
                     "400": {
@@ -6526,7 +6606,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_handler_admin.CreateRoleRequest"
+                            "$ref": "#/definitions/internal_handler_admin.CreateRoleRequest"
                         }
                     }
                 ],
@@ -6656,7 +6736,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_handler_admin.UpdateRoleRequest"
+                            "$ref": "#/definitions/internal_handler_admin.UpdateRoleRequest"
                         }
                     }
                 ],
@@ -6751,12 +6831,17 @@ const docTemplate = `{
         },
         "/admin/roles/{id}/permissions": {
             "get": {
+                "description": "管理员获取指定角色的所有权限ID列表",
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
                     "application/json"
                 ],
+                "tags": [
+                    "Admin - Roles"
+                ],
+                "summary": "获取角色的权限ID列表",
                 "parameters": [
                     {
                         "type": "string",
@@ -6777,7 +6862,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_gamelink_internal_model_Permission"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_uint64"
                         }
                     },
                     "400": {
@@ -6792,6 +6877,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
                     },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -6799,8 +6890,11 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
-            "post": {
+            }
+        },
+        "/admin/roles/{id}/permissions/batch": {
+            "put": {
+                "description": "管理员为指定角色批量分配权限（替换现有权限，事务保证原子性）",
                 "consumes": [
                     "application/json"
                 ],
@@ -6810,6 +6904,7 @@ const docTemplate = `{
                 "tags": [
                     "Admin - Roles"
                 ],
+                "summary": "批量分配角色权限",
                 "parameters": [
                     {
                         "type": "string",
@@ -6831,7 +6926,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_handler_admin.AssignPermissionsRequest"
+                            "$ref": "#/definitions/internal_handler_admin.AssignPermissionsRequest"
                         }
                     }
                 ],
@@ -6850,6 +6945,144 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/roles/{id}/permissions/{pid}": {
+            "post": {
+                "description": "管理员为指定角色添加单个权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Roles"
+                ],
+                "summary": "为角色添加单个权限",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "角色ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "权限ID",
+                        "name": "pid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "管理员从指定角色移除单个权限",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Roles"
+                ],
+                "summary": "从角色移除单个权限",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "角色ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "权限ID",
+                        "name": "pid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
                         }
@@ -8060,7 +8293,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/internal_handler_admin.ApiResponse"
+                                    "$ref": "#/definitions/gamelink_internal_handler_admin.ApiResponse"
                                 },
                                 {
                                     "type": "object",
@@ -8068,7 +8301,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/internal_handler_admin.TagResponse"
+                                                "$ref": "#/definitions/gamelink_internal_handler_admin.TagResponse"
                                             }
                                         }
                                     }
@@ -8097,7 +8330,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_admin.CreateTagRequest"
+                            "$ref": "#/definitions/gamelink_internal_handler_admin.CreateTagRequest"
                         }
                     }
                 ],
@@ -8107,13 +8340,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/internal_handler_admin.ApiResponse"
+                                    "$ref": "#/definitions/gamelink_internal_handler_admin.ApiResponse"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_handler_admin.TagResponse"
+                                            "$ref": "#/definitions/gamelink_internal_handler_admin.TagResponse"
                                         }
                                     }
                                 }
@@ -8148,13 +8381,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/internal_handler_admin.ApiResponse"
+                                    "$ref": "#/definitions/gamelink_internal_handler_admin.ApiResponse"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_handler_admin.TagResponse"
+                                            "$ref": "#/definitions/gamelink_internal_handler_admin.TagResponse"
                                         }
                                     }
                                 }
@@ -8189,7 +8422,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_admin.UpdateTagRequest"
+                            "$ref": "#/definitions/gamelink_internal_handler_admin.UpdateTagRequest"
                         }
                     }
                 ],
@@ -8199,13 +8432,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/internal_handler_admin.ApiResponse"
+                                    "$ref": "#/definitions/gamelink_internal_handler_admin.ApiResponse"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_handler_admin.TagResponse"
+                                            "$ref": "#/definitions/gamelink_internal_handler_admin.TagResponse"
                                         }
                                     }
                                 }
@@ -8233,7 +8466,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_admin.ApiResponse"
+                            "$ref": "#/definitions/gamelink_internal_handler_admin.ApiResponse"
                         }
                     }
                 }
@@ -8276,7 +8509,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/internal_handler_admin.ApiResponse"
+                                    "$ref": "#/definitions/gamelink_internal_handler_admin.ApiResponse"
                                 },
                                 {
                                     "type": "object",
@@ -8459,7 +8692,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_handler_admin.BatchDeleteUsersRequest"
+                            "$ref": "#/definitions/internal_handler_admin.BatchDeleteUsersRequest"
                         }
                     }
                 ],
@@ -8467,7 +8700,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_handler_admin.BatchResponse"
+                            "$ref": "#/definitions/internal_handler_admin.BatchResponse"
                         }
                     }
                 }
@@ -8493,7 +8726,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_handler_admin.BatchSendNotificationRequest"
+                            "$ref": "#/definitions/internal_handler_admin.BatchSendNotificationRequest"
                         }
                     }
                 ],
@@ -8501,7 +8734,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_handler_admin.ApiResponse"
+                            "$ref": "#/definitions/internal_handler_admin.ApiResponse"
                         }
                     }
                 }
@@ -8527,7 +8760,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_handler_admin.BatchAddPointsRequest"
+                            "$ref": "#/definitions/internal_handler_admin.BatchAddPointsRequest"
                         }
                     }
                 ],
@@ -8535,7 +8768,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_handler_admin.BatchResponse"
+                            "$ref": "#/definitions/internal_handler_admin.BatchResponse"
                         }
                     }
                 }
@@ -8561,7 +8794,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_handler_admin.BatchUpdateUserRoleRequest"
+                            "$ref": "#/definitions/internal_handler_admin.BatchUpdateUserRoleRequest"
                         }
                     }
                 ],
@@ -8569,7 +8802,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_handler_admin.BatchResponse"
+                            "$ref": "#/definitions/internal_handler_admin.BatchResponse"
                         }
                     }
                 }
@@ -8595,7 +8828,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_handler_admin.BatchUpdateUserStatusRequest"
+                            "$ref": "#/definitions/internal_handler_admin.BatchUpdateUserStatusRequest"
                         }
                     }
                 ],
@@ -8603,7 +8836,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_handler_admin.BatchResponse"
+                            "$ref": "#/definitions/internal_handler_admin.BatchResponse"
                         }
                     }
                 }
@@ -8694,6 +8927,7 @@ const docTemplate = `{
         },
         "/admin/users/roles": {
             "post": {
+                "description": "管理员为指定用户分配多个角色（自动失效缓存并记录审计日志）",
                 "consumes": [
                     "application/json"
                 ],
@@ -8703,6 +8937,7 @@ const docTemplate = `{
                 "tags": [
                     "Admin - Roles"
                 ],
+                "summary": "为用户分配角色",
                 "parameters": [
                     {
                         "type": "string",
@@ -8717,7 +8952,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_handler_admin.AssignRolesToUserRequest"
+                            "$ref": "#/definitions/internal_handler_admin.AssignRolesToUserRequest"
                         }
                     }
                 ],
@@ -8726,6 +8961,65 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/gamelink_internal_model.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/users/roles/batch": {
+            "put": {
+                "description": "管理员批量为多个用户分配相同的角色（自动失效缓存并记录审计日志）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Roles"
+                ],
+                "summary": "批量分配用户角色",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "批量分配角色请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_admin.BatchAssignRolesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_BatchAssignRolesResult"
                         }
                     },
                     "400": {
@@ -9205,6 +9499,127 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/users/{id}/roles": {
+            "get": {
+                "description": "管理员获取指定用户的角色列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Roles"
+                ],
+                "summary": "获取用户的角色列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "用户ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_gamelink_internal_model_RoleModel"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "管理员更新指定用户的角色（替换现有角色，自动失效缓存并记录审计日志）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Roles"
+                ],
+                "summary": "更新用户角色",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "用户ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新角色请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_admin.UpdateUserRolesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_gamelink_internal_model_RoleModel"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/users/{id}/status": {
             "put": {
                 "security": [
@@ -9284,7 +9699,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/internal_handler_admin.ApiResponse"
+                                    "$ref": "#/definitions/gamelink_internal_handler_admin.ApiResponse"
                                 },
                                 {
                                     "type": "object",
@@ -9292,7 +9707,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/internal_handler_admin.TagResponse"
+                                                "$ref": "#/definitions/gamelink_internal_handler_admin.TagResponse"
                                             }
                                         }
                                     }
@@ -9328,7 +9743,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_admin.BatchSetUserTagsRequest"
+                            "$ref": "#/definitions/gamelink_internal_handler_admin.BatchSetUserTagsRequest"
                         }
                     }
                 ],
@@ -9336,7 +9751,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_admin.ApiResponse"
+                            "$ref": "#/definitions/gamelink_internal_handler_admin.ApiResponse"
                         }
                     }
                 }
@@ -9367,7 +9782,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_admin.AddUserTagRequest"
+                            "$ref": "#/definitions/gamelink_internal_handler_admin.AddUserTagRequest"
                         }
                     }
                 ],
@@ -9375,7 +9790,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_admin.ApiResponse"
+                            "$ref": "#/definitions/gamelink_internal_handler_admin.ApiResponse"
                         }
                     }
                 }
@@ -9408,62 +9823,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_admin.ApiResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/users/{user_id}/roles": {
-            "get": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Admin - Roles"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer {token}",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "用户ID",
-                        "name": "user_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-array_gamelink_internal_model_RoleModel"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                            "$ref": "#/definitions/gamelink_internal_handler_admin.ApiResponse"
                         }
                     }
                 }
@@ -9566,7 +9926,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_admin_Withdraw"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_handler_admin_Withdraw"
                         }
                     },
                     "400": {
@@ -9615,7 +9975,7 @@ const docTemplate = `{
                         "name": "request",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_admin.ApproveWithdrawRequest"
+                            "$ref": "#/definitions/gamelink_internal_handler_admin.ApproveWithdrawRequest"
                         }
                     }
                 ],
@@ -9722,7 +10082,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_admin.RejectWithdrawRequest"
+                            "$ref": "#/definitions/gamelink_internal_handler_admin.RejectWithdrawRequest"
                         }
                     }
                 ],
@@ -9808,7 +10168,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.loginRequest"
+                            "$ref": "#/definitions/gamelink_internal_handler.loginRequest"
                         }
                     }
                 ],
@@ -9816,7 +10176,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_loginResponse"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_handler_loginResponse"
                         }
                     },
                     "400": {
@@ -9873,7 +10233,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_loginResponse"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_handler_loginResponse"
                         }
                     },
                     "401": {
@@ -9904,7 +10264,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_tokenPayload"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_handler_tokenPayload"
                         }
                     },
                     "401": {
@@ -9936,7 +10296,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.registerRequest"
+                            "$ref": "#/definitions/gamelink_internal_handler.registerRequest"
                         }
                     }
                 ],
@@ -9944,7 +10304,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_loginResponse"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_handler_loginResponse"
                         }
                     },
                     "400": {
@@ -10260,7 +10620,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_player.ApplyPlayerRequest"
+                            "$ref": "#/definitions/gamelink_internal_handler_player.ApplyPlayerRequest"
                         }
                     }
                 ],
@@ -10268,7 +10628,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_player_ApplyPlayerResponseSwagger"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_handler_player_ApplyPlayerResponseSwagger"
                         }
                     },
                     "400": {
@@ -10336,7 +10696,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_handler_player.CommissionRecordListAPIResponseSwagger"
+                            "$ref": "#/definitions/internal_handler_player.CommissionRecordListAPIResponseSwagger"
                         }
                     },
                     "401": {
@@ -10398,7 +10758,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_handler_player.SettlementListAPIResponseSwagger"
+                            "$ref": "#/definitions/internal_handler_player.SettlementListAPIResponseSwagger"
                         }
                     },
                     "401": {
@@ -10453,7 +10813,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_handler_player.CommissionSummaryAPIResponseSwagger"
+                            "$ref": "#/definitions/internal_handler_player.CommissionSummaryAPIResponseSwagger"
                         }
                     },
                     "401": {
@@ -11120,7 +11480,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_player_PlayerDetailResponse"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_handler_player_PlayerDetailResponse"
                         }
                     },
                     "400": {
@@ -11173,7 +11533,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_player.UpdatePlayerProfileRequest"
+                            "$ref": "#/definitions/gamelink_internal_handler_player.UpdatePlayerProfileRequest"
                         }
                     }
                 ],
@@ -11527,7 +11887,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_handler_user.sendMessageRequest"
+                            "$ref": "#/definitions/internal_handler_user.sendMessageRequest"
                         }
                     }
                 ],
@@ -11535,7 +11895,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_handler_user_ChatMessage"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_user_ChatMessage"
                         }
                     },
                     "400": {
@@ -11611,7 +11971,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_handler_user.reportMessageRequest"
+                            "$ref": "#/definitions/internal_handler_user.reportMessageRequest"
                         }
                     }
                 ],
@@ -12078,7 +12438,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_handler_user_MyOrderListResponse"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_user_MyOrderListResponse"
                         }
                     },
                     "400": {
@@ -12129,7 +12489,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_handler_user_CreateOrderResponse"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_user_CreateOrderResponse"
                         }
                     },
                     "400": {
@@ -12179,7 +12539,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_handler_user_OrderDetailResponse"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_user_OrderDetailResponse"
                         }
                     },
                     "400": {
@@ -12734,7 +13094,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_handler_user.PlayerListAPIResponseSwagger"
+                            "$ref": "#/definitions/internal_handler_user.PlayerListAPIResponseSwagger"
                         }
                     },
                     "400": {
@@ -12777,7 +13137,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_handler_user.PlayerDetailAPIResponseSwagger"
+                            "$ref": "#/definitions/internal_handler_user.PlayerDetailAPIResponseSwagger"
                         }
                     },
                     "400": {
@@ -12830,7 +13190,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_user_CreateReviewResponse"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_handler_user_CreateReviewResponse"
                         }
                     },
                     "400": {
@@ -12880,7 +13240,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_user_MyReviewListResponse"
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-gamelink_internal_handler_user_MyReviewListResponse"
                         }
                     },
                     "400": {
@@ -12982,6 +13342,14 @@ const docTemplate = `{
                 },
                 "success": {
                     "type": "boolean"
+                }
+            }
+        },
+        "gamelink_internal_handler_admin.ApproveAllNonSensitiveResponse": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
                 }
             }
         },
@@ -13128,6 +13496,56 @@ const docTemplate = `{
                     "items": {
                         "type": "integer"
                     }
+                }
+            }
+        },
+        "gamelink_internal_handler_admin.BatchAssignFailedUser": {
+            "type": "object",
+            "properties": {
+                "reason": {
+                    "type": "string"
+                },
+                "userId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "gamelink_internal_handler_admin.BatchAssignRolesRequest": {
+            "type": "object",
+            "required": [
+                "roleIds",
+                "userIds"
+            ],
+            "properties": {
+                "roleIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "userIds": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "gamelink_internal_handler_admin.BatchAssignRolesResult": {
+            "type": "object",
+            "properties": {
+                "failedCount": {
+                    "type": "integer"
+                },
+                "failedUsers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/gamelink_internal_handler_admin.BatchAssignFailedUser"
+                    }
+                },
+                "successCount": {
+                    "type": "integer"
                 }
             }
         },
@@ -14081,6 +14499,76 @@ const docTemplate = `{
                 }
             }
         },
+        "gamelink_internal_handler_admin.PendingReviewDTO": {
+            "type": "object",
+            "properties": {
+                "comment": {
+                    "description": "评价内容，可选\n@Example 陪玩师技术很好，服务态度也很棒，下次还会选择！",
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "hasSensitiveWords": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "images": {
+                    "description": "评价图片URL数组\n@Example [\"https://example.com/image1.jpg\", \"https://example.com/image2.jpg\"]",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "isReported": {
+                    "description": "是否被举报\n@Example false",
+                    "type": "boolean"
+                },
+                "orderId": {
+                    "description": "订单ID\n@Example 1001",
+                    "type": "integer"
+                },
+                "playerId": {
+                    "description": "被评价的陪玩师ID\n@Example 3001",
+                    "type": "integer"
+                },
+                "rating": {
+                    "description": "评分，1-5分\n@Enum 1, 2, 3, 4, 5\n@Example 5",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/gamelink_internal_model.Rating"
+                        }
+                    ]
+                },
+                "rejectionReason": {
+                    "description": "拒绝原因（当状态为rejected时）\n@Example 评价内容包含敏感词",
+                    "type": "string"
+                },
+                "reviewerId": {
+                    "description": "评价者ID（用户ID）\n@Example 2001",
+                    "type": "integer"
+                },
+                "sensitiveWords": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "status": {
+                    "description": "审核状态\n@Enum pending, approved, rejected, deleted\n@Example approved",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/gamelink_internal_model.ReviewStatus"
+                        }
+                    ]
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
         "gamelink_internal_handler_admin.Permission": {
             "type": "object",
             "properties": {
@@ -14767,6 +15255,20 @@ const docTemplate = `{
                 },
                 "status": {
                     "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_handler_admin.UpdateUserRolesRequest": {
+            "type": "object",
+            "required": [
+                "roleIds"
+            ],
+            "properties": {
+                "roleIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 }
             }
         },
@@ -15995,6 +16497,33 @@ const docTemplate = `{
                 }
             }
         },
+        "gamelink_internal_model.APIResponse-array_gamelink_internal_handler_admin_PendingReviewDTO": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/gamelink_internal_handler_admin.PendingReviewDTO"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
         "gamelink_internal_model.APIResponse-array_gamelink_internal_handler_admin_Permission": {
             "type": "object",
             "properties": {
@@ -16616,6 +17145,33 @@ const docTemplate = `{
                 }
             }
         },
+        "gamelink_internal_model.APIResponse-array_internal_handler_admin_PendingReviewDTO": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_handler_admin.PendingReviewDTO"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
         "gamelink_internal_model.APIResponse-array_internal_handler_admin_Permission": {
             "type": "object",
             "properties": {
@@ -16735,6 +17291,81 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-array_uint64": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-gamelink_internal_handler_admin_ApproveAllNonSensitiveResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/gamelink_internal_handler_admin.ApproveAllNonSensitiveResponse"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-gamelink_internal_handler_admin_BatchAssignRolesResult": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/gamelink_internal_handler_admin.BatchAssignRolesResult"
                 },
                 "message": {
                     "type": "string"
@@ -18199,6 +18830,54 @@ const docTemplate = `{
                 },
                 "data": {
                     "$ref": "#/definitions/gin.H"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-internal_handler_admin_ApproveAllNonSensitiveResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_admin.ApproveAllNonSensitiveResponse"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-internal_handler_admin_BatchAssignRolesResult": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_admin.BatchAssignRolesResult"
                 },
                 "message": {
                     "type": "string"
@@ -20812,7 +21491,7 @@ const docTemplate = `{
         "gamelink_internal_service_content.AdminListFeedsResponse": {
             "type": "object",
             "properties": {
-                "feeds": {
+                "items": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/gamelink_internal_service_content.AdminFeedDTO"
@@ -20960,6 +21639,9 @@ const docTemplate = `{
                 "createdAt": {
                     "type": "string"
                 },
+                "feed": {
+                    "$ref": "#/definitions/gamelink_internal_service_content.FeedSummary"
+                },
                 "feedId": {
                     "type": "integer"
                 },
@@ -20968,6 +21650,9 @@ const docTemplate = `{
                 },
                 "handledBy": {
                     "type": "integer"
+                },
+                "handlerName": {
+                    "type": "string"
                 },
                 "id": {
                     "type": "integer"
@@ -20978,10 +21663,45 @@ const docTemplate = `{
                 "reporterId": {
                     "type": "integer"
                 },
+                "reporterName": {
+                    "type": "string"
+                },
                 "result": {
                     "type": "string"
                 },
                 "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_service_content.FeedSummary": {
+            "type": "object",
+            "properties": {
+                "authorAvatar": {
+                    "type": "string"
+                },
+                "authorId": {
+                    "type": "integer"
+                },
+                "authorName": {
+                    "type": "string"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "moderationStatus": {
                     "type": "string"
                 }
             }
@@ -21021,7 +21741,7 @@ const docTemplate = `{
         "gamelink_internal_service_content.ListFeedReportsResponse": {
             "type": "object",
             "properties": {
-                "reports": {
+                "items": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/gamelink_internal_service_content.FeedReportDTO"
@@ -21035,7 +21755,7 @@ const docTemplate = `{
         "gamelink_internal_service_content.ListMessagesResponse": {
             "type": "object",
             "properties": {
-                "messages": {
+                "items": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/gamelink_internal_service_content.ChatMessageDTO"
@@ -21198,7 +21918,7 @@ const docTemplate = `{
         "gamelink_internal_service_contentcategory.ListResponse": {
             "type": "object",
             "properties": {
-                "categories": {
+                "items": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/gamelink_internal_service_contentcategory.CategoryDTO"
@@ -22556,6 +23276,14 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_handler_admin.ApproveAllNonSensitiveResponse": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                }
+            }
+        },
         "internal_handler_admin.ApproveReviewPayload": {
             "type": "object",
             "properties": {
@@ -22699,6 +23427,56 @@ const docTemplate = `{
                     "items": {
                         "type": "integer"
                     }
+                }
+            }
+        },
+        "internal_handler_admin.BatchAssignFailedUser": {
+            "type": "object",
+            "properties": {
+                "reason": {
+                    "type": "string"
+                },
+                "userId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler_admin.BatchAssignRolesRequest": {
+            "type": "object",
+            "required": [
+                "roleIds",
+                "userIds"
+            ],
+            "properties": {
+                "roleIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "userIds": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "internal_handler_admin.BatchAssignRolesResult": {
+            "type": "object",
+            "properties": {
+                "failedCount": {
+                    "type": "integer"
+                },
+                "failedUsers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_handler_admin.BatchAssignFailedUser"
+                    }
+                },
+                "successCount": {
+                    "type": "integer"
                 }
             }
         },
@@ -23652,6 +24430,76 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_handler_admin.PendingReviewDTO": {
+            "type": "object",
+            "properties": {
+                "comment": {
+                    "description": "评价内容，可选\n@Example 陪玩师技术很好，服务态度也很棒，下次还会选择！",
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "hasSensitiveWords": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "images": {
+                    "description": "评价图片URL数组\n@Example [\"https://example.com/image1.jpg\", \"https://example.com/image2.jpg\"]",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "isReported": {
+                    "description": "是否被举报\n@Example false",
+                    "type": "boolean"
+                },
+                "orderId": {
+                    "description": "订单ID\n@Example 1001",
+                    "type": "integer"
+                },
+                "playerId": {
+                    "description": "被评价的陪玩师ID\n@Example 3001",
+                    "type": "integer"
+                },
+                "rating": {
+                    "description": "评分，1-5分\n@Enum 1, 2, 3, 4, 5\n@Example 5",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/gamelink_internal_model.Rating"
+                        }
+                    ]
+                },
+                "rejectionReason": {
+                    "description": "拒绝原因（当状态为rejected时）\n@Example 评价内容包含敏感词",
+                    "type": "string"
+                },
+                "reviewerId": {
+                    "description": "评价者ID（用户ID）\n@Example 2001",
+                    "type": "integer"
+                },
+                "sensitiveWords": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "status": {
+                    "description": "审核状态\n@Enum pending, approved, rejected, deleted\n@Example approved",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/gamelink_internal_model.ReviewStatus"
+                        }
+                    ]
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
         "internal_handler_admin.Permission": {
             "type": "object",
             "properties": {
@@ -24338,6 +25186,20 @@ const docTemplate = `{
                 },
                 "status": {
                     "type": "string"
+                }
+            }
+        },
+        "internal_handler_admin.UpdateUserRolesRequest": {
+            "type": "object",
+            "required": [
+                "roleIds"
+            ],
+            "properties": {
+                "roleIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 }
             }
         },

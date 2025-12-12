@@ -159,6 +159,19 @@ func autoMigrate(db *gorm.DB) error {
 		&model.Alert{},
 		&model.KPITarget{},
 		&model.UserActivityDaily{},
+		// Settlement Company models (提现分流)
+		&model.SettlementCompany{},
+		&model.PlayerCompanyAssignment{},
+		&model.SettlementCompanyHistory{},
+		// Collection Entity models (收款分流)
+		&model.CollectionEntity{},
+		&model.PaymentChannelConfig{},
+		&model.RoutingRule{},
+		&model.RoutingRuleHistory{},
+		&model.CollectionEntityHistory{},
+		&model.RoutingLog{},
+		// Refund records
+		&model.RefundRecord{},
 	)
 }
 

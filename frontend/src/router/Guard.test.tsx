@@ -15,11 +15,14 @@ vi.mock('@/hooks/usePermission', () => ({
     usePermission: (permission: string) => mockUsePermission(permission),
 }));
 
-// Mock antd message
+// Mock antd components
 vi.mock('antd', () => ({
     message: {
         error: vi.fn(),
     },
+    Spin: ({ children, tip }: { children?: React.ReactNode; tip?: string }) => (
+        <div data-testid="loading-spinner">{tip}{children}</div>
+    ),
 }));
 
 // Mock navigate
@@ -179,20 +182,30 @@ describe('RouteGuard', () => {
             expect(screen.getByTestId('permission-content')).toBeInTheDocument();
         });
 
-        it('should redirect when user lacks required permission', async () => {
+        it('should redirect to 403 when user lacks required permission', async () => {
             localStorage.setItem('user_role', 'ADMIN');
             mockUsePermission.mockReturnValue({ hasPermission: false, loading: false });
 
             render(
-                <MemoryRouter>
-                    <RouteGuard permission="admin.users.delete">
-                        <div data-testid="permission-content">Permission Content</div>
-                    </RouteGuard>
+                <MemoryRouter initialEntries={['/admin/users']}>
+                    <Routes>
+                        <Route path="/admin/users" element={
+                            <RouteGuard permission="admin.users.delete">
+                                <div data-testid="permission-content">Permission Content</div>
+                            </RouteGuard>
+                        } />
+                    </Routes>
                 </MemoryRouter>
             );
 
             await waitFor(() => {
-                expect(mockNavigate).toHaveBeenCalledWith('/admin', { replace: true });
+                expect(mockNavigate).toHaveBeenCalledWith('/403', expect.objectContaining({
+                    replace: true,
+                    state: expect.objectContaining({
+                        from: '/admin/users',
+                        requiredPermission: 'admin.users.delete'
+                    })
+                }));
             });
         });
 
@@ -251,15 +264,25 @@ describe('RouteGuard', () => {
             mockUsePermission.mockReturnValue({ hasPermission: false, loading: false });
 
             render(
-                <MemoryRouter>
-                    <RouteGuard requiresAuth roles={['ADMIN']} permission="admin.super.access">
-                        <div data-testid="content">Content</div>
-                    </RouteGuard>
+                <MemoryRouter initialEntries={['/admin/super']}>
+                    <Routes>
+                        <Route path="/admin/super" element={
+                            <RouteGuard requiresAuth roles={['ADMIN']} permission="admin.super.access">
+                                <div data-testid="content">Content</div>
+                            </RouteGuard>
+                        } />
+                    </Routes>
                 </MemoryRouter>
             );
 
             await waitFor(() => {
-                expect(mockNavigate).toHaveBeenCalledWith('/admin', { replace: true });
+                expect(mockNavigate).toHaveBeenCalledWith('/403', expect.objectContaining({
+                    replace: true,
+                    state: expect.objectContaining({
+                        from: '/admin/super',
+                        requiredPermission: 'admin.super.access'
+                    })
+                }));
             });
         });
     });

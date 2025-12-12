@@ -47,8 +47,10 @@ const renderWithRouter = async (component: React.ReactNode) => {
 describe('Stats Page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Mock returns the response directly (not wrapped in data)
     (contentStatsApi.getStats as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: { success: true, data: mockStatsData },
+      success: true,
+      data: mockStatsData,
     });
   });
 

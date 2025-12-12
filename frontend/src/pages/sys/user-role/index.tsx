@@ -219,7 +219,7 @@ const UserRolePage: React.FC = () => {
     /**
      * 打开批量角色分配弹窗
      */
-    const handleOpenBatchAssign = useCallback((keys: React.Key[]) => {
+    const handleOpenBatchAssign = useCallback((keys?: React.Key[]) => {
         if (!keys || keys.length === 0) {
             message.warning('请先选择用户');
             return;
@@ -247,10 +247,13 @@ const UserRolePage: React.FC = () => {
 
             if (res.data?.success) {
                 const result = res.data.data;
-                if (result?.failed && result.failed > 0) {
-                    message.warning(`成功: ${result.success}, 失败: ${result.failed}`);
+                // Backend returns successCount/failedCount
+                const successCount = result?.successCount ?? 0;
+                const failedCount = result?.failedCount ?? 0;
+                if (failedCount > 0) {
+                    message.warning(`成功: ${successCount}, 失败: ${failedCount}`);
                 } else {
-                    message.success(`成功为 ${result?.success || selectedUserIds.length} 个用户分配角色`);
+                    message.success(`成功为 ${successCount || selectedUserIds.length} 个用户分配角色`);
                 }
                 setBatchAssignVisible(false);
                 loadData();

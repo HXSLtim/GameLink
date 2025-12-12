@@ -700,6 +700,16 @@ func applySeeds(db *gorm.DB) error {
 			return err
 		}
 
+		// 系统权限种子数据 (必须在 seedDefaultRoles 之前执行)
+		if err := seedSystemPermissions(tx); err != nil {
+			return err
+		}
+
+		// 默认角色和权限种子数据
+		if err := seedDefaultRoles(tx); err != nil {
+			return err
+		}
+
 		log.Println("seed data ensured for demo environment")
 		return nil
 	})

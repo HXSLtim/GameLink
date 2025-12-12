@@ -6,11 +6,14 @@ import (
 	"fmt"
 	"time"
 
-	"gamelink/pkg/apierr"
-	"gamelink/pkg/cache"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
+	"gamelink/internal/repository/collectionentity"
 	repoiface "gamelink/internal/repository/interfaces"
+	"gamelink/internal/repository/routingrule"
+	routingruleservice "gamelink/internal/service/routingrule"
+	"gamelink/pkg/apierr"
+	"gamelink/pkg/cache"
 )
 
 var (
@@ -31,12 +34,14 @@ var (
 // 2. 查询支付状态
 // 3. 取消支付
 // 4. 处理支付回调（Mock版本）
+// 5. 收款分流（Requirements: 17.1, 17.2, 17.3）
 type PaymentService struct {
 	payments        repository.PaymentRepository
 	orders          repoiface.OrderReadWriter
 	providers       map[model.PaymentMethod]ProviderClient
 	distributedLock cache.DistributedLock
-	wallets         repository.WalletRepository // 分布式锁，用于并发控制
+	wallets         repository.WalletRepository       // 分布式锁，用于并发控制
+	routingEngine   *routingruleservice.RoutingEngine // 收款分流引擎
 }
 
 // NewPaymentService 创建支付服务
@@ -62,6 +67,21 @@ func (s *PaymentService) SetDistributedLock(lock cache.DistributedLock) {
 // SetWalletRepository injects wallet repository for refund credit.
 func (s *PaymentService) SetWalletRepository(repo repository.WalletRepository) {
 	s.wallets = repo
+}
+
+// SetRoutingEngine injects routing engine for payment routing.
+// Requirements: 17.1, 17.2, 17.3
+func (s *PaymentService) SetRoutingEngine(engine *routingruleservice.RoutingEngine) {
+	s.routingEngine = engine
+}
+
+// InitRoutingEngine initializes the routing engine with repositories.
+// Requirements: 17.1, 17.2, 17.3
+func (s *PaymentService) InitRoutingEngine(
+	ruleRepo routingrule.RoutingRuleRepository,
+	entityRepo collectionentity.CollectionEntityRepository,
+) {
+	s.routingEngine = routingruleservice.NewRoutingEngine(ruleRepo, entityRepo)
 }
 
 // CreatePaymentRequest 创建支付请求
@@ -147,8 +167,31 @@ func (s *PaymentService) CreatePayment(ctx context.Context, userID uint64, req C
 		Status:      model.PaymentStatusPending,
 	}
 
+	// 执行收款分流
+	// Requirements: 17.1, 17.2, 17.3
+	// Property 17: 收款分流记录完整性 - 支付记录包含收款主体和商户号
+	if s.routingEngine != nil {
+		routingResult, err := s.routePayment(ctx, order, req.Method)
+		if err != nil {
+			// 分流失败不阻止支付，记录错误日志
+			// 使用默认配置继续
+		} else {
+			payment.CollectionEntityID = &routingResult.CollectionEntityID
+			payment.MerchantNo = routingResult.MerchantNo
+		}
+	}
+
 	if err := s.payments.Create(ctx, payment); err != nil {
 		return nil, err
+	}
+
+	// 创建分流日志
+	// Requirements: 17.3
+	if s.routingEngine != nil && payment.CollectionEntityID != nil {
+		routingResult, _ := s.routePayment(ctx, order, req.Method)
+		if routingResult != nil {
+			_ = s.routingEngine.CreateRoutingLog(ctx, payment.ID, order.ID, routingResult)
+		}
 	}
 
 	// Mock: 生成支付参数
@@ -420,4 +463,47 @@ func (s *PaymentService) creditWallet(ctx context.Context, userID uint64, amount
 	}
 	w.BalanceCents += amount
 	return s.wallets.Save(ctx, w)
+}
+
+// routePayment 执行支付分流
+// Requirements: 17.1, 17.2
+// Property 15: 收款分流规则优先级 - 按优先级顺序匹配规则
+// Property 16: 收款分流默认主体回退 - 无规则匹配时使用默认主体
+func (s *PaymentService) routePayment(ctx context.Context, order *model.Order, method model.PaymentMethod) (*routingruleservice.RoutingResult, error) {
+	if s.routingEngine == nil {
+		return nil, errors.New("routing engine not initialized")
+	}
+
+	// 构建分流上下文
+	routingCtx := &routingruleservice.RoutingContext{
+		OrderID:     order.ID,
+		AmountCents: order.TotalPriceCents,
+		Method:      method,
+	}
+
+	// 获取游戏类型
+	if order.Game != nil {
+		routingCtx.GameType = order.Game.Name
+	} else if order.GameID != nil {
+		routingCtx.GameType = fmt.Sprintf("game_%d", *order.GameID)
+	}
+
+	// 获取服务类型
+	if order.ServiceItem != nil {
+		routingCtx.ServiceType = order.ServiceItem.Name
+	} else {
+		routingCtx.ServiceType = "default"
+	}
+
+	// 执行分流
+	return s.routingEngine.RoutePayment(ctx, routingCtx)
+}
+
+// GetPaymentRoutingLog 获取支付分流日志
+// Requirements: 17.3
+func (s *PaymentService) GetPaymentRoutingLog(ctx context.Context, paymentID uint64) (*model.RoutingLog, error) {
+	if s.routingEngine == nil {
+		return nil, errors.New("routing engine not initialized")
+	}
+	return s.routingEngine.GetRoutingLogByPayment(ctx, paymentID)
 }

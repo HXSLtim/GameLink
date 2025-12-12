@@ -51,8 +51,10 @@ const renderWithRouter = (component: React.ReactNode) => {
 describe('Reports Page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Mock returns the response directly (not wrapped in data)
     (feedReportApi.getReports as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: { success: true, data: mockReportsData },
+      success: true,
+      data: mockReportsData,
     });
   });
 
@@ -125,7 +127,8 @@ describe('Reports Page', () => {
   describe('空状态', () => {
     it('should handle empty reports list', async () => {
       (feedReportApi.getReports as ReturnType<typeof vi.fn>).mockResolvedValue({
-        data: { success: true, data: { items: [], total: 0 } },
+        success: true,
+        data: { items: [], total: 0 },
       });
 
       renderWithRouter(<ReportsPage />);

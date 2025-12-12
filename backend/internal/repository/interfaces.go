@@ -61,8 +61,19 @@ type PaymentRepository interface {
 	Create(ctx context.Context, payment *model.Payment) error
 	List(ctx context.Context, opts PaymentListOptions) ([]model.Payment, int64, error)
 	Get(ctx context.Context, id uint64) (*model.Payment, error)
+	GetWithRelations(ctx context.Context, id uint64) (*model.Payment, error) // 获取支付记录及关联的订单和用户信息
 	Update(ctx context.Context, payment *model.Payment) error
 	Delete(ctx context.Context, id uint64) error
+	GetByOrderID(ctx context.Context, orderID uint64) ([]model.Payment, error) // 根据订单ID获取支付记录
+}
+
+// RefundRecordRepository defines refund record data access operations.
+type RefundRecordRepository interface {
+	Create(ctx context.Context, record *model.RefundRecord) error
+	Get(ctx context.Context, id uint64) (*model.RefundRecord, error)
+	Update(ctx context.Context, record *model.RefundRecord) error
+	ListByPaymentID(ctx context.Context, paymentID uint64) ([]model.RefundRecord, error)
+	ListByOrderID(ctx context.Context, orderID uint64) ([]model.RefundRecord, error)
 }
 
 // WalletRepository defines wallet data access operations.
@@ -338,16 +349,21 @@ type NotificationListOptions struct {
 
 // PaymentListOptions contains filtering options for payment queries.
 type PaymentListOptions struct {
-	Page     int
-	PageSize int
-	OrderID  *uint64
-	UserID   *uint64
-	Method   *model.PaymentMethod
-	Methods  []model.PaymentMethod
-	Status   *model.PaymentStatus
-	Statuses []model.PaymentStatus
-	DateFrom *time.Time
-	DateTo   *time.Time
+	Page               int
+	PageSize           int
+	OrderID            *uint64
+	UserID             *uint64
+	Method             *model.PaymentMethod
+	Methods            []model.PaymentMethod
+	Status             *model.PaymentStatus
+	Statuses           []model.PaymentStatus
+	DateFrom           *time.Time
+	DateTo             *time.Time
+	CollectionEntityID *uint64 // 收款主体ID筛选
+	MerchantNo         string  // 商户号筛选
+	ProviderTradeNo    string  // 第三方交易号筛选
+	MinAmountCents     *int64  // 最小金额筛选
+	MaxAmountCents     *int64  // 最大金额筛选
 }
 
 // ReviewListOptions contains filtering options for review queries.

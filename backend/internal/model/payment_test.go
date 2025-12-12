@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"gamelink/internal/model"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -263,4 +264,141 @@ func TestPaymentJSONWithRawMessage(t *testing.T) {
 	assert.NoError(t, err)
 	// 由于JSON序列化会标准化格式，我们验证内容而不是精确的字节匹配
 	assert.Equal(t, string(payment.ProviderRaw), string(decoded.ProviderRaw))
+}
+
+func TestPaymentNewFields(t *testing.T) {
+	// 测试新增的收款主体ID和商户号字段
+	entityID := uint64(123)
+	payment := &model.Payment{
+		CollectionEntityID:  &entityID,
+		MerchantNo:          "MCH123456",
+		RefundedAmountCents: 5000,
+	}
+
+	assert.NotNil(t, payment.CollectionEntityID)
+	assert.Equal(t, uint64(123), *payment.CollectionEntityID)
+	assert.Equal(t, "MCH123456", payment.MerchantNo)
+	assert.Equal(t, int64(5000), payment.RefundedAmountCents)
+}
+
+func TestPaymentHasRequiredFields(t *testing.T) {
+	now := time.Now()
+
+	// 测试完整的支付记录
+	completePayment := &model.Payment{
+		Base: model.Base{
+			ID:        1,
+			CreatedAt: now,
+		},
+		OrderID: 100,
+		UserID:  200,
+		Method:  model.PaymentMethodWeChat,
+		Status:  model.PaymentStatusPaid,
+	}
+	assert.True(t, completePayment.HasRequiredFields())
+
+	// 测试缺少OrderID
+	missingOrderID := &model.Payment{
+		Base: model.Base{
+			ID:        1,
+			CreatedAt: now,
+		},
+		UserID: 200,
+		Method: model.PaymentMethodWeChat,
+		Status: model.PaymentStatusPaid,
+	}
+	assert.False(t, missingOrderID.HasRequiredFields())
+
+	// 测试缺少UserID
+	missingUserID := &model.Payment{
+		Base: model.Base{
+			ID:        1,
+			CreatedAt: now,
+		},
+		OrderID: 100,
+		Method:  model.PaymentMethodWeChat,
+		Status:  model.PaymentStatusPaid,
+	}
+	assert.False(t, missingUserID.HasRequiredFields())
+
+	// 测试缺少Method
+	missingMethod := &model.Payment{
+		Base: model.Base{
+			ID:        1,
+			CreatedAt: now,
+		},
+		OrderID: 100,
+		UserID:  200,
+		Status:  model.PaymentStatusPaid,
+	}
+	assert.False(t, missingMethod.HasRequiredFields())
+
+	// 测试缺少Status
+	missingStatus := &model.Payment{
+		Base: model.Base{
+			ID:        1,
+			CreatedAt: now,
+		},
+		OrderID: 100,
+		UserID:  200,
+		Method:  model.PaymentMethodWeChat,
+	}
+	assert.False(t, missingStatus.HasRequiredFields())
+
+	// 测试缺少CreatedAt
+	missingCreatedAt := &model.Payment{
+		Base: model.Base{
+			ID: 1,
+		},
+		OrderID: 100,
+		UserID:  200,
+		Method:  model.PaymentMethodWeChat,
+		Status:  model.PaymentStatusPaid,
+	}
+	assert.False(t, missingCreatedAt.HasRequiredFields())
+}
+
+func TestPaymentRemainingRefundableAmount(t *testing.T) {
+	// 测试已支付状态的可退款金额
+	paidPayment := &model.Payment{
+		AmountCents:         10000,
+		RefundedAmountCents: 3000,
+		Status:              model.PaymentStatusPaid,
+	}
+	assert.Equal(t, int64(7000), paidPayment.RemainingRefundableAmount())
+
+	// 测试未支付状态的可退款金额（应为0）
+	pendingPayment := &model.Payment{
+		AmountCents:         10000,
+		RefundedAmountCents: 0,
+		Status:              model.PaymentStatusPending,
+	}
+	assert.Equal(t, int64(0), pendingPayment.RemainingRefundableAmount())
+
+	// 测试已退款状态的可退款金额（应为0）
+	refundedPayment := &model.Payment{
+		AmountCents:         10000,
+		RefundedAmountCents: 10000,
+		Status:              model.PaymentStatusRefunded,
+	}
+	assert.Equal(t, int64(0), refundedPayment.RemainingRefundableAmount())
+
+	// 测试全额可退款
+	fullRefundable := &model.Payment{
+		AmountCents:         10000,
+		RefundedAmountCents: 0,
+		Status:              model.PaymentStatusPaid,
+	}
+	assert.Equal(t, int64(10000), fullRefundable.RemainingRefundableAmount())
+}
+
+func TestPaymentCollectionEntityIDNil(t *testing.T) {
+	// 测试收款主体ID为nil的情况
+	payment := &model.Payment{
+		CollectionEntityID: nil,
+		MerchantNo:         "",
+	}
+
+	assert.Nil(t, payment.CollectionEntityID)
+	assert.Equal(t, "", payment.MerchantNo)
 }

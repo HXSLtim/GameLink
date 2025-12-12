@@ -1495,11 +1495,12 @@ func (s *AdminService) DeleteOrder(ctx context.Context, id uint64) error {
 
 // UpdatePaymentInput 调整支付状态。
 type UpdatePaymentInput struct {
-	Status          model.PaymentStatus
-	ProviderTradeNo string
-	ProviderRaw     json.RawMessage
-	PaidAt          *time.Time
-	RefundedAt      *time.Time
+	Status              model.PaymentStatus
+	ProviderTradeNo     string
+	ProviderRaw         json.RawMessage
+	PaidAt              *time.Time
+	RefundedAt          *time.Time
+	RefundedAmountCents *int64 // 已退款金额（分）
 }
 
 // CreatePaymentInput 创建支付记录。
@@ -1600,6 +1601,24 @@ func (s *AdminService) GetPayment(ctx context.Context, id uint64) (*model.Paymen
 	return payment, nil
 }
 
+// GetPaymentWithRelations 获取支付详情及关联的订单和用户信息。
+func (s *AdminService) GetPaymentWithRelations(ctx context.Context, id uint64) (*model.Payment, error) {
+	payment, err := s.payments.GetWithRelations(ctx, id)
+	if err != nil {
+		return nil, WrapError(err, "get payment with relations")
+	}
+	return payment, nil
+}
+
+// GetPaymentsByOrderID 根据订单ID获取所有支付记录。
+func (s *AdminService) GetPaymentsByOrderID(ctx context.Context, orderID uint64) ([]model.Payment, error) {
+	payments, err := s.payments.GetByOrderID(ctx, orderID)
+	if err != nil {
+		return nil, WrapError(err, "get payments by order id")
+	}
+	return payments, nil
+}
+
 // UpdatePayment 更新支付状态。
 func (s *AdminService) UpdatePayment(ctx context.Context, id uint64, input UpdatePaymentInput) (*model.Payment, error) {
 	payment, err := s.payments.Get(ctx, id)
@@ -1638,6 +1657,73 @@ func (s *AdminService) UpdatePayment(ctx context.Context, id uint64, input Updat
 	return payment, nil
 }
 
+// UpdatePaymentWithRefund processes a refund with amount validation and logging.
+// Requirements: 2.1, 2.2, 2.3, 2.4, 9.1, 9.2, 9.3
+func (s *AdminService) UpdatePaymentWithRefund(ctx context.Context, id uint64, input UpdatePaymentInput, refundAmount int64, reason string, operatorID *uint64) (*model.Payment, error) {
+	payment, err := s.payments.Get(ctx, id)
+	if err != nil {
+		return nil, WrapError(err, "get payment")
+	}
+
+	// Validate refund amount
+	if err := payment.ValidateRefundAmount(refundAmount); err != nil {
+		return nil, apierr.BadRequest(err.Error())
+	}
+
+	// Validate status transition if status is changing
+	if input.Status != "" && input.Status != payment.Status {
+		if !isAllowedPaymentTransition(payment.Status, input.Status) {
+			return nil, apierr.BadRequest("invalid payment status transition")
+		}
+		payment.Status = input.Status
+	}
+
+	// Update refunded amount
+	payment.RefundedAmountCents += refundAmount
+	payment.ProviderTradeNo = strings.TrimSpace(input.ProviderTradeNo)
+	payment.ProviderRaw = input.ProviderRaw
+	payment.RefundedAt = input.RefundedAt
+
+	// Check if fully refunded and update status
+	if payment.IsFullyRefunded() && payment.Status != model.PaymentStatusRefunded {
+		payment.Status = model.PaymentStatusRefunded
+	}
+
+	if err := s.payments.Update(ctx, payment); err != nil {
+		return nil, WrapError(err, "update payment")
+	}
+
+	s.invalidateCache(ctx, cacheKeyPayments)
+
+	// Log the refund operation with detailed metadata
+	s.appendLogAsync(ctx, string(model.OpEntityPayment), payment.ID, string(model.OpActionRefund), map[string]any{
+		"refund_amount_cents":  refundAmount,
+		"total_refunded_cents": payment.RefundedAmountCents,
+		"remaining_cents":      payment.RemainingRefundableAmount(),
+		"reason":               reason,
+		"is_full_refund":       payment.IsFullyRefunded(),
+		"operator_id":          operatorID,
+		"status":               payment.Status,
+	})
+
+	if rid, ok := logging.RequestIDFromContext(ctx); ok {
+		slog.Info("payment_refunded",
+			slog.Uint64("payment_id", payment.ID),
+			slog.Int64("refund_amount", refundAmount),
+			slog.Int64("total_refunded", payment.RefundedAmountCents),
+			slog.String("status", string(payment.Status)),
+			slog.String("request_id", rid))
+	} else {
+		slog.Info("payment_refunded",
+			slog.Uint64("payment_id", payment.ID),
+			slog.Int64("refund_amount", refundAmount),
+			slog.Int64("total_refunded", payment.RefundedAmountCents),
+			slog.String("status", string(payment.Status)))
+	}
+
+	return payment, nil
+}
+
 // DeletePayment 删除支付记录。
 func (s *AdminService) DeletePayment(ctx context.Context, id uint64) error {
 	if err := s.payments.Delete(ctx, id); err != nil {
@@ -1646,6 +1732,29 @@ func (s *AdminService) DeletePayment(ctx context.Context, id uint64) error {
 	s.invalidateCache(ctx, cacheKeyPayments)
 	s.appendLogAsync(ctx, string(model.OpEntityPayment), id, string(model.OpActionDelete), nil)
 	return nil
+}
+
+// GetPaymentLogs returns operation logs for a payment.
+// Requirements: 2.5
+func (s *AdminService) GetPaymentLogs(ctx context.Context, paymentID uint64, opts repository.OperationLogListOptions) ([]model.OperationLog, int64, error) {
+	if s.tx == nil {
+		return nil, 0, apierr.InternalError("transaction manager not configured")
+	}
+
+	var logs []model.OperationLog
+	var total int64
+
+	err := s.tx.WithTx(ctx, func(r *common.Repos) error {
+		var err error
+		logs, total, err = r.OpLogs.ListByEntity(ctx, string(model.OpEntityPayment), paymentID, opts)
+		return err
+	})
+
+	if err != nil {
+		return nil, 0, WrapError(err, "get payment logs")
+	}
+
+	return logs, total, nil
 }
 
 // appendLogAsync 追加操作日志（尽力而为，不影响主流程）。
