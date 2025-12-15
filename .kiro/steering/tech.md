@@ -35,7 +35,7 @@
 - **Database**: PostgreSQL 16 (Alpine)
 - **Cache**: Redis 7 (Alpine)
 - **Reverse Proxy**: Nginx
-- **CI/CD**: GitHub Actions (planned)
+- **CI/CD**: GitHub Actions (已配置)
 
 ## Deployment
 
