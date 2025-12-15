@@ -3,7 +3,8 @@
  */
 
 // 权限相关
-export { PermissionGuard, PermissionButton, withPermission } from './PermissionGuard';
+export { PermissionGuard, PermissionButton } from './PermissionGuard';
+export { withPermission } from './withPermission';
 export type { PermissionGuardProps, PermissionButtonProps } from './PermissionGuard';
 
 // 页面容器

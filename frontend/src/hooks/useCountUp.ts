@@ -45,7 +45,6 @@ export const useCountUp = (
   useEffect(() => {
     // 如果动画未启用，直接设置为目标值
     if (!enabled) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCount(end);
       return;
     }

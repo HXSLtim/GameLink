@@ -123,7 +123,6 @@ export const PermissionButton: React.FC<PermissionButtonProps> = ({
     return <PermissionGuard {...props} disabled={disableOnNoPermission} />;
 };
 
-// Re-export withPermission from separate file for Fast Refresh compatibility
-export { withPermission } from './withPermission';
-
 export default PermissionGuard;
+
+// Note: withPermission is exported from './withPermission' separately for Fast Refresh compatibility

@@ -1,7 +1,7 @@
 /**
  * 内容统计页面
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Row, Col, Statistic, Spin, message, Select, Table, Button, Space } from 'antd';
 import {
   FileTextOutlined, MessageOutlined, WarningOutlined,
@@ -18,7 +18,7 @@ const StatsPage: React.FC = () => {
   const [stats, setStats] = useState<ContentStatsDTO | null>(null);
   const [days, setDays] = useState(30);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     setLoading(true);
     try {
       const res = await contentStatsApi.getStats(days) as unknown as { success: boolean; data: ContentStatsDTO };
@@ -30,7 +30,7 @@ const StatsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [days]);
 
   const handleExport = async () => {
     setExporting(true);

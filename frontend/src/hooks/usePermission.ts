@@ -4,7 +4,7 @@
  * Requirements: 3.1, 3.4
  */
 import { useMemo, useCallback } from 'react';
-import { useAdmin } from '@/context/AdminContext';
+import { useAdmin } from '@/context/useAdmin';
 
 /**
  * 权限检查结果接口

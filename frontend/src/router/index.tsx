@@ -4,7 +4,7 @@ import RouteGuard from './Guard';
 import type { RouteConfig } from './types';
 
 
-import { useAdmin } from '@/context/AdminContext';
+import { useAdmin } from '@/context/useAdmin';
 import { generateRoutesFromMenus } from '@/utils/dynamicRoutes';
 import { useMemo } from 'react';
 

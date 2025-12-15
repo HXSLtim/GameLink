@@ -1,6 +1,6 @@
 import React from 'react';
-import { Outlet } from 'react-router-dom';
 import LazyLoad from '@/components/common/LazyLoad';
+import LayoutOutlet from './LayoutOutlet';
 
 // Lazy load components
 const Audit = React.lazy(() => import('@/pages/sys/log'));
@@ -12,9 +12,6 @@ const ServiceItemDetail = React.lazy(() => import('@/pages/biz/service/detail'))
 const Menu = React.lazy(() => import('@/pages/sys/menu'));
 const Permission = React.lazy(() => import('@/pages/sys/permission'));
 const Role = React.lazy(() => import('@/pages/admin/Role'));
-
-// Layout 组件 - 用于父级菜单，渲染子路由
-const LayoutOutlet: React.FC = () => <Outlet />;
 
 // 组件映射表：支持数据库中的组件名称
 export const componentMap: Record<string, React.LazyExoticComponent<React.ComponentType> | React.FC> = {

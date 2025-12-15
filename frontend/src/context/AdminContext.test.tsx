@@ -11,7 +11,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { AdminProvider, useAdmin } from './AdminContext';
+import { AdminProvider } from './AdminContext';
+import { useAdmin } from './useAdmin';
 
 // Test component to access context
 const TestConsumer = () => {

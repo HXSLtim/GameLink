@@ -19,6 +19,11 @@ vi.mock('./client', () => ({
     },
 }));
 
+// Mock the permission events
+vi.mock('../context/permissionEvents', () => ({
+    triggerPermissionChange: vi.fn(),
+}));
+
 describe('Permission API', () => {
     beforeEach(() => {
         vi.clearAllMocks();

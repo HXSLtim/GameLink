@@ -3,28 +3,13 @@
  * 提供菜单、权限数据和权限检查方法
  * Requirements: 8.1, 8.2, 8.4 - 菜单权限联动
  */
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { createContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { adminApi } from '@/api/admin';
 import type { Menu } from '@/api/admin';
 import { permissionStore } from '@/utils/permission';
 import { filterMenusByPermission } from '@/utils/menuPermission';
 
-/**
- * 权限变更事件名称
- * 用于跨组件/跨标签页通知权限变更
- */
-export const PERMISSION_CHANGE_EVENT = 'gamelink:permission-change';
-
-/**
- * 触发权限变更事件
- * 可在任何地方调用以通知权限已变更
- */
-export const triggerPermissionChange = () => {
-    window.dispatchEvent(new CustomEvent(PERMISSION_CHANGE_EVENT));
-    // 同时触发 storage 事件以通知其他标签页
-    const timestamp = Date.now().toString();
-    localStorage.setItem('permission_change_timestamp', timestamp);
-};
+import { PERMISSION_CHANGE_EVENT, triggerPermissionChange } from './permissionEvents';
 
 /**
  * 管理员上下文类型接口
@@ -68,19 +53,7 @@ const AdminContext = createContext<AdminContextType>({
     notifyPermissionChange: () => { },
 });
 
-/**
- * 获取管理员上下文Hook
- *
- * @example
- * ```tsx
- * const { permissions, hasPermission, isSuperAdmin } = useAdmin();
- *
- * if (hasPermission('admin.games.create')) {
- *     // 显示创建按钮
- * }
- * ```
- */
-export const useAdmin = () => useContext(AdminContext);
+// Note: useAdmin is available from './useAdmin' for Fast Refresh compatibility
 
 /**
  * 管理员上下文提供者

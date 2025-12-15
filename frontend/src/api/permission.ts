@@ -5,7 +5,7 @@
 
 import apiClient from './client';
 import type { ApiResponse } from '../types/api';
-import { triggerPermissionChange } from '../context/AdminContext';
+import { triggerPermissionChange } from '../context/permissionEvents';
 import type {
   Permission,
   PermissionTreeNode,

@@ -37,7 +37,7 @@ vi.mock('@/api/permission', () => ({
 
 // Mock the AdminContext
 const mockHasPermission = vi.fn().mockReturnValue(true);
-vi.mock('@/context/AdminContext', () => ({
+vi.mock('@/context/useAdmin', () => ({
     useAdmin: () => ({
         menus: [],
         permissions: ['*'],
