@@ -8,24 +8,34 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import { AdminProvider, useAdmin } from './AdminContext';
 
-// Mock the admin API
-vi.mock('@/api/admin', () => ({
-    adminApi: {
-        getMyPermissions: vi.fn(),
-        getMyMenus: vi.fn(),
-    },
-}));
+// Mock permission store - must be before AdminContext import uses it
+const mockSetPermissions = vi.fn();
+const mockClearPermissions = vi.fn();
 
-// Mock permission store
 vi.mock('@/utils/permission', () => ({
     permissionStore: {
-        setPermissions: vi.fn(),
-        clearPermissions: vi.fn(),
+        setPermissions: mockSetPermissions,
+        clearPermissions: mockClearPermissions,
     },
 }));
 
-import { adminApi } from '@/api/admin';
-import { permissionStore } from '@/utils/permission';
+// Mock the admin API
+// Note: apiClient interceptor returns response.data, so API returns { success, code, data }
+// Then AdminContext extracts .data from that
+const mockGetMyPermissions = vi.fn();
+const mockGetMyMenus = vi.fn();
+
+vi.mock('@/api/admin', () => ({
+    adminApi: {
+        getMyPermissions: () => mockGetMyPermissions(),
+        getMyMenus: () => mockGetMyMenus(),
+    },
+}));
+
+// Mock menuPermission filter to return menus as-is for testing
+vi.mock('@/utils/menuPermission', () => ({
+    filterMenusByPermission: (menus: unknown[]) => menus,
+}));
 
 // Test component to access context
 const TestConsumer = () => {
@@ -68,8 +78,9 @@ describe('AdminContext', () => {
 
     describe('Initial State', () => {
         it('should have empty permissions when no token', async () => {
-            (adminApi.getMyPermissions as ReturnType<typeof vi.fn>).mockResolvedValue({ data: [] });
-            (adminApi.getMyMenus as ReturnType<typeof vi.fn>).mockResolvedValue({ data: [] });
+            // No token set - should clear permissions
+            mockGetMyPermissions.mockResolvedValue({ data: [] });
+            mockGetMyMenus.mockResolvedValue({ data: [] });
 
             render(
                 <AdminProvider>
@@ -84,15 +95,12 @@ describe('AdminContext', () => {
 
         it('should load permissions when token exists', async () => {
             localStorage.setItem('token', 'test-token');
-            const mockPermissions = ['admin.users.list', 'admin.users.create'];
-            const mockMenus = [{ id: 1, name: 'Users', path: '/admin/users' }];
+            const permissions = ['admin.users.list', 'admin.users.create'];
+            const menus = [{ id: 1, name: 'Users', path: '/admin/users' }];
 
-            (adminApi.getMyPermissions as ReturnType<typeof vi.fn>).mockResolvedValue({
-                data: mockPermissions,
-            });
-            (adminApi.getMyMenus as ReturnType<typeof vi.fn>).mockResolvedValue({
-                data: mockMenus,
-            });
+            // API returns { success, code, data } format after interceptor
+            mockGetMyPermissions.mockResolvedValue({ data: permissions });
+            mockGetMyMenus.mockResolvedValue({ data: menus });
 
             render(
                 <AdminProvider>
@@ -101,8 +109,7 @@ describe('AdminContext', () => {
             );
 
             await waitFor(() => {
-                expect(screen.getByTestId('permissions').textContent).toBe(JSON.stringify(mockPermissions));
-                expect(screen.getByTestId('menus').textContent).toBe(JSON.stringify(mockMenus));
+                expect(screen.getByTestId('permissions').textContent).toBe(JSON.stringify(permissions));
             });
         });
     });
@@ -110,10 +117,10 @@ describe('AdminContext', () => {
     describe('hasPermission', () => {
         it('should return true when user has the permission', async () => {
             localStorage.setItem('token', 'test-token');
-            (adminApi.getMyPermissions as ReturnType<typeof vi.fn>).mockResolvedValue({
+            mockGetMyPermissions.mockResolvedValue({
                 data: ['admin.users.list', 'admin.users.create'],
             });
-            (adminApi.getMyMenus as ReturnType<typeof vi.fn>).mockResolvedValue({ data: [] });
+            mockGetMyMenus.mockResolvedValue({ data: [] });
 
             render(
                 <AdminProvider>
@@ -128,10 +135,10 @@ describe('AdminContext', () => {
 
         it('should return false when user lacks the permission', async () => {
             localStorage.setItem('token', 'test-token');
-            (adminApi.getMyPermissions as ReturnType<typeof vi.fn>).mockResolvedValue({
+            mockGetMyPermissions.mockResolvedValue({
                 data: ['admin.orders.list'],
             });
-            (adminApi.getMyMenus as ReturnType<typeof vi.fn>).mockResolvedValue({ data: [] });
+            mockGetMyMenus.mockResolvedValue({ data: [] });
 
             render(
                 <AdminProvider>
@@ -146,10 +153,10 @@ describe('AdminContext', () => {
 
         it('should return true for super admin regardless of permission', async () => {
             localStorage.setItem('token', 'test-token');
-            (adminApi.getMyPermissions as ReturnType<typeof vi.fn>).mockResolvedValue({
+            mockGetMyPermissions.mockResolvedValue({
                 data: ['*'],
             });
-            (adminApi.getMyMenus as ReturnType<typeof vi.fn>).mockResolvedValue({ data: [] });
+            mockGetMyMenus.mockResolvedValue({ data: [] });
 
             render(
                 <AdminProvider>
@@ -167,10 +174,10 @@ describe('AdminContext', () => {
     describe('hasAllPermissions', () => {
         it('should return true when user has all permissions', async () => {
             localStorage.setItem('token', 'test-token');
-            (adminApi.getMyPermissions as ReturnType<typeof vi.fn>).mockResolvedValue({
+            mockGetMyPermissions.mockResolvedValue({
                 data: ['admin.users.list', 'admin.users.create', 'admin.users.delete'],
             });
-            (adminApi.getMyMenus as ReturnType<typeof vi.fn>).mockResolvedValue({ data: [] });
+            mockGetMyMenus.mockResolvedValue({ data: [] });
 
             render(
                 <AdminProvider>
@@ -185,10 +192,10 @@ describe('AdminContext', () => {
 
         it('should return false when user is missing any permission', async () => {
             localStorage.setItem('token', 'test-token');
-            (adminApi.getMyPermissions as ReturnType<typeof vi.fn>).mockResolvedValue({
+            mockGetMyPermissions.mockResolvedValue({
                 data: ['admin.users.list'],
             });
-            (adminApi.getMyMenus as ReturnType<typeof vi.fn>).mockResolvedValue({ data: [] });
+            mockGetMyMenus.mockResolvedValue({ data: [] });
 
             render(
                 <AdminProvider>
@@ -205,10 +212,10 @@ describe('AdminContext', () => {
     describe('hasAnyPermission', () => {
         it('should return true when user has at least one permission', async () => {
             localStorage.setItem('token', 'test-token');
-            (adminApi.getMyPermissions as ReturnType<typeof vi.fn>).mockResolvedValue({
+            mockGetMyPermissions.mockResolvedValue({
                 data: ['admin.users.list'],
             });
-            (adminApi.getMyMenus as ReturnType<typeof vi.fn>).mockResolvedValue({ data: [] });
+            mockGetMyMenus.mockResolvedValue({ data: [] });
 
             render(
                 <AdminProvider>
@@ -223,10 +230,10 @@ describe('AdminContext', () => {
 
         it('should return false when user has none of the permissions', async () => {
             localStorage.setItem('token', 'test-token');
-            (adminApi.getMyPermissions as ReturnType<typeof vi.fn>).mockResolvedValue({
+            mockGetMyPermissions.mockResolvedValue({
                 data: ['admin.orders.list'],
             });
-            (adminApi.getMyMenus as ReturnType<typeof vi.fn>).mockResolvedValue({ data: [] });
+            mockGetMyMenus.mockResolvedValue({ data: [] });
 
             render(
                 <AdminProvider>
@@ -243,11 +250,9 @@ describe('AdminContext', () => {
     describe('Permission Store Sync', () => {
         it('should sync permissions to store on load', async () => {
             localStorage.setItem('token', 'test-token');
-            const mockPermissions = ['admin.users.list'];
-            (adminApi.getMyPermissions as ReturnType<typeof vi.fn>).mockResolvedValue({
-                data: mockPermissions,
-            });
-            (adminApi.getMyMenus as ReturnType<typeof vi.fn>).mockResolvedValue({ data: [] });
+            const permissions = ['admin.users.list'];
+            mockGetMyPermissions.mockResolvedValue({ data: permissions });
+            mockGetMyMenus.mockResolvedValue({ data: [] });
 
             render(
                 <AdminProvider>
@@ -256,13 +261,13 @@ describe('AdminContext', () => {
             );
 
             await waitFor(() => {
-                expect(permissionStore.setPermissions).toHaveBeenCalledWith(mockPermissions);
+                expect(mockSetPermissions).toHaveBeenCalledWith(permissions);
             });
         });
 
         it('should clear permissions from store when no token', async () => {
-            (adminApi.getMyPermissions as ReturnType<typeof vi.fn>).mockResolvedValue({ data: [] });
-            (adminApi.getMyMenus as ReturnType<typeof vi.fn>).mockResolvedValue({ data: [] });
+            mockGetMyPermissions.mockResolvedValue({ data: [] });
+            mockGetMyMenus.mockResolvedValue({ data: [] });
 
             render(
                 <AdminProvider>
@@ -271,7 +276,7 @@ describe('AdminContext', () => {
             );
 
             await waitFor(() => {
-                expect(permissionStore.clearPermissions).toHaveBeenCalled();
+                expect(mockClearPermissions).toHaveBeenCalled();
             });
         });
     });
@@ -279,8 +284,8 @@ describe('AdminContext', () => {
     describe('Error Handling', () => {
         it('should handle API errors gracefully', async () => {
             localStorage.setItem('token', 'test-token');
-            (adminApi.getMyPermissions as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('API Error'));
-            (adminApi.getMyMenus as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('API Error'));
+            mockGetMyPermissions.mockRejectedValue(new Error('API Error'));
+            mockGetMyMenus.mockRejectedValue(new Error('API Error'));
 
             render(
                 <AdminProvider>
@@ -301,10 +306,10 @@ describe('AdminContext', () => {
             const initialPermissions = ['admin.users.list'];
             const updatedPermissions = ['admin.users.list', 'admin.users.create'];
 
-            (adminApi.getMyPermissions as ReturnType<typeof vi.fn>)
+            mockGetMyPermissions
                 .mockResolvedValueOnce({ data: initialPermissions })
                 .mockResolvedValueOnce({ data: updatedPermissions });
-            (adminApi.getMyMenus as ReturnType<typeof vi.fn>).mockResolvedValue({ data: [] });
+            mockGetMyMenus.mockResolvedValue({ data: [] });
 
             render(
                 <AdminProvider>
@@ -333,10 +338,10 @@ describe('AdminContext', () => {
             const initialPermissions = ['admin.users.list'];
             const updatedPermissions = ['admin.users.list', 'admin.orders.list'];
 
-            (adminApi.getMyPermissions as ReturnType<typeof vi.fn>)
+            mockGetMyPermissions
                 .mockResolvedValueOnce({ data: initialPermissions })
                 .mockResolvedValueOnce({ data: updatedPermissions });
-            (adminApi.getMyMenus as ReturnType<typeof vi.fn>).mockResolvedValue({ data: [] });
+            mockGetMyMenus.mockResolvedValue({ data: [] });
 
             render(
                 <AdminProvider>

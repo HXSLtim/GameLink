@@ -7,7 +7,7 @@
  * Property: For any permission tree node, selecting a parent node should result
  * in all its child nodes being selected; deselecting a parent should deselect all children.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import * as fc from 'fast-check';
 import type { PermissionTreeNode } from '@/types/permission';

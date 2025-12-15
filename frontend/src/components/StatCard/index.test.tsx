@@ -27,7 +27,7 @@ describe('StatCard Component', () => {
     });
 
     it('should render with icon', () => {
-      const { container } = render(
+      render(
         <StatCard 
           title="总用户数" 
           value={1000} 

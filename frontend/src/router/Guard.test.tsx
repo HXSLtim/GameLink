@@ -6,13 +6,24 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import RouteGuard from './Guard';
 
-// Mock usePermission hook
+// Mock navigate - must be before RouteGuard import
+const mockNavigate = vi.fn();
+vi.mock('react-router-dom', async () => {
+    const actual = await vi.importActual('react-router-dom');
+    return {
+        ...actual,
+        useNavigate: () => mockNavigate,
+    };
+});
+
+// Mock usePermission hook - must be before RouteGuard import
 const mockUsePermission = vi.fn();
 vi.mock('@/hooks/usePermission', () => ({
     usePermission: (permission: string) => mockUsePermission(permission),
+    default: (permission: string) => mockUsePermission(permission),
 }));
 
 // Mock antd components
@@ -25,15 +36,8 @@ vi.mock('antd', () => ({
     ),
 }));
 
-// Mock navigate
-const mockNavigate = vi.fn();
-vi.mock('react-router-dom', async () => {
-    const actual = await vi.importActual('react-router-dom');
-    return {
-        ...actual,
-        useNavigate: () => mockNavigate,
-    };
-});
+// Import after mocks
+import RouteGuard from './Guard';
 
 describe('RouteGuard', () => {
     beforeEach(() => {
@@ -47,8 +51,9 @@ describe('RouteGuard', () => {
     });
 
     describe('Authentication', () => {
-        it('should render children when authenticated and requiresAuth is true', () => {
+        it('should render children when authenticated and requiresAuth is true', async () => {
             localStorage.setItem('user_role', 'ADMIN');
+            mockUsePermission.mockReturnValue({ hasPermission: true, loading: false });
 
             render(
                 <MemoryRouter>
@@ -58,10 +63,15 @@ describe('RouteGuard', () => {
                 </MemoryRouter>
             );
 
-            expect(screen.getByTestId('protected')).toBeInTheDocument();
+            await waitFor(() => {
+                expect(screen.getByTestId('protected')).toBeInTheDocument();
+            });
         });
 
         it('should redirect to login when not authenticated and requiresAuth is true', async () => {
+            // No user_role means not authenticated
+            mockUsePermission.mockReturnValue({ hasPermission: true, loading: false });
+
             render(
                 <MemoryRouter>
                     <RouteGuard requiresAuth>
@@ -75,7 +85,9 @@ describe('RouteGuard', () => {
             });
         });
 
-        it('should render children when requiresAuth is false', () => {
+        it('should render children when requiresAuth is false', async () => {
+            mockUsePermission.mockReturnValue({ hasPermission: true, loading: false });
+
             render(
                 <MemoryRouter>
                     <RouteGuard requiresAuth={false}>
@@ -84,13 +96,16 @@ describe('RouteGuard', () => {
                 </MemoryRouter>
             );
 
-            expect(screen.getByTestId('public')).toBeInTheDocument();
+            await waitFor(() => {
+                expect(screen.getByTestId('public')).toBeInTheDocument();
+            });
         });
     });
 
     describe('Role-based Access', () => {
-        it('should render children when user has required role', () => {
+        it('should render children when user has required role', async () => {
             localStorage.setItem('user_role', 'ADMIN');
+            mockUsePermission.mockReturnValue({ hasPermission: true, loading: false });
 
             render(
                 <MemoryRouter>
@@ -100,11 +115,14 @@ describe('RouteGuard', () => {
                 </MemoryRouter>
             );
 
-            expect(screen.getByTestId('admin-content')).toBeInTheDocument();
+            await waitFor(() => {
+                expect(screen.getByTestId('admin-content')).toBeInTheDocument();
+            });
         });
 
         it('should redirect USER to home when accessing ADMIN route', async () => {
             localStorage.setItem('user_role', 'USER');
+            mockUsePermission.mockReturnValue({ hasPermission: true, loading: false });
 
             render(
                 <MemoryRouter>
@@ -121,6 +139,7 @@ describe('RouteGuard', () => {
 
         it('should redirect COMPANION to companion home when accessing ADMIN route', async () => {
             localStorage.setItem('user_role', 'COMPANION');
+            mockUsePermission.mockReturnValue({ hasPermission: true, loading: false });
 
             render(
                 <MemoryRouter>
@@ -137,6 +156,7 @@ describe('RouteGuard', () => {
 
         it('should redirect ADMIN to admin home when accessing USER route', async () => {
             localStorage.setItem('user_role', 'ADMIN');
+            mockUsePermission.mockReturnValue({ hasPermission: true, loading: false });
 
             render(
                 <MemoryRouter>
@@ -151,8 +171,9 @@ describe('RouteGuard', () => {
             });
         });
 
-        it('should allow access when user has one of multiple allowed roles', () => {
+        it('should allow access when user has one of multiple allowed roles', async () => {
             localStorage.setItem('user_role', 'COMPANION');
+            mockUsePermission.mockReturnValue({ hasPermission: true, loading: false });
 
             render(
                 <MemoryRouter>
@@ -162,7 +183,9 @@ describe('RouteGuard', () => {
                 </MemoryRouter>
             );
 
-            expect(screen.getByTestId('content')).toBeInTheDocument();
+            await waitFor(() => {
+                expect(screen.getByTestId('content')).toBeInTheDocument();
+            });
         });
     });
 
@@ -213,7 +236,7 @@ describe('RouteGuard', () => {
             localStorage.setItem('user_role', 'ADMIN');
             mockUsePermission.mockReturnValue({ hasPermission: false, loading: true });
 
-            const { container } = render(
+            render(
                 <MemoryRouter>
                     <RouteGuard permission="admin.users.list">
                         <div data-testid="permission-content">Permission Content</div>
