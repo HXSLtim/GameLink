@@ -24,23 +24,25 @@ const ServiceItemForm: React.FC = () => {
 
     useEffect(() => {
         if (isEdit) {
-            setLoading(true);
-            adminApi.getServiceItem(Number(id))
-                .then((res) => {
-                    // @ts-ignore
-                    const data = res.data;
-                    form.setFieldsValue(data);
-                })
-                .catch(() => {
+            let isMounted = true;
+            const loadData = async () => {
+                try {
+                    const res = await adminApi.getServiceItem(Number(id));
+                    // @ts-expect-error API response type mismatch
+                    if (isMounted) form.setFieldsValue(res.data);
+                } catch {
                     message.error('Failed to load data');
-                })
-                .finally(() => {
-                    setLoading(false);
-                });
+                } finally {
+                    if (isMounted) setLoading(false);
+                }
+            };
+            setLoading(true);
+            loadData();
+            return () => { isMounted = false; };
         }
     }, [isEdit, form, id]);
 
-    const onFinish = async (values: any) => {
+    const onFinish = async (values: Record<string, unknown>) => {
         setSubmitting(true);
         try {
             if (isEdit) {
@@ -51,7 +53,7 @@ const ServiceItemForm: React.FC = () => {
                 message.success('Created successfully');
             }
             navigate('/admin/service-items');
-        } catch (error) {
+        } catch {
             message.error('Operation failed');
         } finally {
             setSubmitting(false);

@@ -118,8 +118,8 @@ const UserPage: React.FC = () => {
                 }));
                 setLoginHistory(history);
             }
-        } catch (error) {
-            console.error('Failed to fetch login history', error);
+        } catch (err) {
+            console.error('Failed to fetch login history', err);
         } finally {
             setLoginHistoryLoading(false);
         }
@@ -132,8 +132,8 @@ const UserPage: React.FC = () => {
             if (res.success) {
                 setOperationLogs(res.data || []);
             }
-        } catch (error) {
-            console.error('Failed to fetch operation logs', error);
+        } catch (err) {
+            console.error('Failed to fetch operation logs', err);
         } finally {
             setOperationLogsLoading(false);
         }
@@ -158,8 +158,8 @@ const UserPage: React.FC = () => {
             if (response.success) {
                 setStats(response.data);
             }
-        } catch (error: any) {
-            console.error('加载统计数据失败:', error);
+        } catch (err) {
+            console.error('加载统计数据失败:', err);
             // 静默失败，不影响主要功能
         } finally {
             setStatsLoading(false);
@@ -186,9 +186,10 @@ const UserPage: React.FC = () => {
             } else {
                 message.error(response.message || '获取用户列表失败');
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('加载用户列表失败:', error);
-            message.error(error.response?.data?.message || '获取用户列表失败');
+            const err = error as { response?: { data?: { message?: string } } };
+            message.error(err.response?.data?.message || '获取用户列表失败');
         } finally {
             setLoading(false);
         }
@@ -202,27 +203,29 @@ const UserPage: React.FC = () => {
     /**
      * 搜索处理
      */
-    const handleSearch = useCallback((values: any) => {
+    const handleSearch = useCallback((values: Record<string, unknown>) => {
         const params: UserQueryParams = {};
 
-        if (values.keyword?.trim()) {
-            params.keyword = values.keyword.trim();
+        const keyword = values.keyword as string | undefined;
+        if (keyword?.trim()) {
+            params.keyword = keyword.trim();
         }
         if (values.role) {
             const roles = Array.isArray(values.role) ? values.role : [values.role];
             if (roles.length > 0) {
-                params.role = roles;
+                params.role = roles as string[];
             }
         }
         if (values.status) {
             const statuses = Array.isArray(values.status) ? values.status : [values.status];
             if (statuses.length > 0) {
-                params.status = statuses;
+                params.status = statuses as string[];
             }
         }
-        if (values.dateRange?.length === 2) {
-            params.date_from = values.dateRange[0].format('YYYY-MM-DD');
-            params.date_to = values.dateRange[1].format('YYYY-MM-DD');
+        const dateRange = values.dateRange as { format: (f: string) => string }[] | undefined;
+        if (dateRange?.length === 2) {
+            params.date_from = dateRange[0].format('YYYY-MM-DD');
+            params.date_to = dateRange[1].format('YYYY-MM-DD');
         }
 
         setSearchParams(params);
@@ -307,13 +310,14 @@ const UserPage: React.FC = () => {
                     message.error(response.message || '创建用户失败');
                 }
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('保存用户失败:', error);
-            if (error.errorFields) {
+            const err = error as { errorFields?: unknown; response?: { data?: { message?: string } } };
+            if (err.errorFields) {
                 // 表单验证失败
                 return;
             }
-            message.error(error.response?.data?.message || '保存用户失败');
+            message.error(err.response?.data?.message || '保存用户失败');
         }
     }, [form, currentUser, loadData]);
 
@@ -333,9 +337,10 @@ const UserPage: React.FC = () => {
             } else {
                 message.error(response.message || `${action}用户失败`);
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('更新用户状态失败:', error);
-            message.error(error.response?.data?.message || '更新用户状态失败');
+            const err = error as { response?: { data?: { message?: string } } };
+            message.error(err.response?.data?.message || '更新用户状态失败');
         }
     }, [loadData]);
 
@@ -352,9 +357,10 @@ const UserPage: React.FC = () => {
             } else {
                 message.error(response.message || '删除用户失败');
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('删除用户失败:', error);
-            message.error(error.response?.data?.message || '删除用户失败');
+            const err = error as { response?: { data?: { message?: string } } };
+            message.error(err.response?.data?.message || '删除用户失败');
         }
     }, [loadData]);
 
@@ -372,9 +378,10 @@ const UserPage: React.FC = () => {
             } else {
                 message.error(response.message || '批量删除失败');
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('批量删除用户失败:', error);
-            message.error(error.response?.data?.message || '批量删除失败');
+            const err = error as { response?: { data?: { message?: string } } };
+            message.error(err.response?.data?.message || '批量删除失败');
         }
     }, [loadData]);
 
@@ -415,7 +422,7 @@ const UserPage: React.FC = () => {
                 setBatchRoleVisible(false);
                 loadData();
             }
-        } catch (error) {
+        } catch {
             message.error('操作失败');
         }
     };
@@ -433,7 +440,7 @@ const UserPage: React.FC = () => {
                 setBatchStatusVisible(false);
                 loadData();
             }
-        } catch (error) {
+        } catch {
             message.error('操作失败');
         }
     };
@@ -441,7 +448,7 @@ const UserPage: React.FC = () => {
     const submitBatchNotification = async () => {
         try {
             const values = await notificationForm.validateFields();
-            const payload: any = {
+            const payload: Record<string, unknown> = {
                 target: values.target,
                 title: values.title,
                 content: values.content,
@@ -460,7 +467,7 @@ const UserPage: React.FC = () => {
                 message.success('批量发送通知成功');
                 setBatchNotificationVisible(false);
             }
-        } catch (error) {
+        } catch {
             message.error('操作失败');
         }
     };
@@ -478,7 +485,7 @@ const UserPage: React.FC = () => {
     const submitBatchPoints = async () => {
         try {
             const values = await pointsForm.validateFields();
-            const payload: any = {
+            const payload: Record<string, unknown> = {
                 target: values.target,
                 cents: Number(values.points),
                 reason: values.reason,
@@ -498,7 +505,7 @@ const UserPage: React.FC = () => {
                 setBatchPointsVisible(false);
                 loadData();
             }
-        } catch (error) {
+        } catch {
             message.error('操作失败');
         }
     };
@@ -586,8 +593,8 @@ const UserPage: React.FC = () => {
             dataIndex: ['wallet', 'balanceCents'],
             key: 'points',
             width: 100,
-            render: (_: any, record: any) => {
-                const points = record.wallet?.balanceCents ?? 0;
+            render: (_: unknown, record: User) => {
+                const points = (record as User & { wallet?: { balanceCents?: number } }).wallet?.balanceCents ?? 0;
                 return <span style={{ fontWeight: 500, color: token.colorPrimary }}>{points}</span>;
             },
         },

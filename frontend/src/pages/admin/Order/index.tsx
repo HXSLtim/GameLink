@@ -133,6 +133,7 @@ const OrderPage: React.FC = () => {
     }, [current, pageSize]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         loadData();
     }, [loadData]);
 

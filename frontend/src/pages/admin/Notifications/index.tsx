@@ -22,7 +22,7 @@ const AdminNotificationsPage: React.FC = () => {
                 setNotifications(prev => append ? [...prev, ...newNotifications] : newNotifications);
                 setHasMore(newNotifications.length === 20);
             }
-        } catch (error) {
+        } catch {
             message.error('加载通知失败');
         } finally {
             setLoading(false);
@@ -43,7 +43,7 @@ const AdminNotificationsPage: React.FC = () => {
         try {
             await userApi.markAsRead(id);
             setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
-        } catch (error) {
+        } catch {
             message.error('操作失败');
         }
     };
@@ -53,7 +53,7 @@ const AdminNotificationsPage: React.FC = () => {
             await userApi.markAllAsRead();
             setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
             message.success('已全部标记为已读');
-        } catch (error) {
+        } catch {
             message.error('操作失败');
         }
     };
@@ -63,7 +63,7 @@ const AdminNotificationsPage: React.FC = () => {
             await userApi.deleteNotification(id);
             setNotifications(prev => prev.filter(n => n.id !== id));
             message.success('通知已删除');
-        } catch (error) {
+        } catch {
             message.error('删除失败');
         }
     };

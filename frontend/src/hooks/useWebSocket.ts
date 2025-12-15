@@ -88,6 +88,9 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
     }, PING_INTERVAL);
   }, []);
 
+  // 使用 ref 存储 reconnect 函数以避免循环依赖
+  const reconnectRef = useRef<() => void>(() => {});
+
   /**
    * 重连函数 - 提取到 connect 函数外部
    */
@@ -142,14 +145,14 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
         clearTimers();
         onClose?.();
 
-        // 自动重连
+        // 自动重连 - 使用 ref 避免循环依赖
         if (shouldReconnectRef.current && retryCountRef.current < maxRetries) {
           retryCountRef.current++;
           console.log(`Reconnecting... (attempt ${retryCountRef.current}/${maxRetries})`);
 
           reconnectTimerRef.current = setTimeout(() => {
             if (autoConnect) {
-              reconnect();
+              reconnectRef.current();
             }
           }, reconnectInterval * retryCountRef.current);
         }
@@ -178,6 +181,11 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
     reconnectInterval,
     autoConnect,
   ]);
+
+  // 更新 ref - 在 effect 中更新以避免渲染期间访问 ref
+  useEffect(() => {
+    reconnectRef.current = reconnect;
+  }, [reconnect]);
 
   /**
    * 连接 WebSocket - 简化为调用 reconnect
@@ -216,6 +224,7 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
   // 自动连接
   useEffect(() => {
     if (autoConnect) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       connect();
     }
 

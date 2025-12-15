@@ -45,12 +45,13 @@ export const useCountUp = (
   useEffect(() => {
     // 如果动画未启用，直接设置为目标值
     if (!enabled) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCount(end);
       return;
     }
 
-    // 如果目标值没有变化，不需要动画
-    if (count === end) {
+    // 如果目标值没有变化，不需要动画（使用 ref 避免依赖 count）
+    if (startRef.current === end && rafRef.current === null) {
       return;
     }
 
@@ -92,6 +93,7 @@ export const useCountUp = (
         cancelAnimationFrame(rafRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [end, duration, enabled, easing]);
 
   return count;

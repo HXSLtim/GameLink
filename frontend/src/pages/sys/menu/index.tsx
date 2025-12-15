@@ -1,9 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Table, Button, Space, message, Tag, Popconfirm, Card } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
 import { adminApi } from '@/api/admin';
 import type { Menu } from '@/api/admin';
 import { getIcon } from '@/utils/iconMap';
+
+interface MenuResponse {
+    data: Menu[];
+    pagination?: {
+        page: number;
+        page_size: number;
+        total: number;
+    };
+}
 
 const MenuList: React.FC = () => {
     const [loading, setLoading] = useState(false);
@@ -14,10 +23,10 @@ const MenuList: React.FC = () => {
         total: 0,
     });
 
-    const fetchData = async (page = pagination.current, pageSize = pagination.pageSize) => {
+    const fetchData = useCallback(async (page = 1, pageSize = 10) => {
         setLoading(true);
         try {
-            const res = await adminApi.getMenus({ page, page_size: pageSize }) as any;
+            const res = await adminApi.getMenus({ page, page_size: pageSize }) as MenuResponse;
             setData(res.data);
             if (res.pagination) {
                 setPagination({
@@ -26,29 +35,29 @@ const MenuList: React.FC = () => {
                     total: res.pagination.total,
                 });
             }
-        } catch (error) {
+        } catch {
             message.error('获取菜单列表失败');
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [fetchData]);
 
     const handleDelete = async (id: number) => {
         try {
             await adminApi.deleteMenu(id);
             message.success('删除成功');
-            fetchData();
-        } catch (error) {
+            fetchData(pagination.current, pagination.pageSize);
+        } catch {
             message.error('删除失败');
         }
     };
 
-    const handleTableChange = (newPagination: any) => {
-        fetchData(newPagination.current, newPagination.pageSize);
+    const handleTableChange = (newPagination: { current?: number; pageSize?: number }) => {
+        fetchData(newPagination.current ?? 1, newPagination.pageSize ?? 10);
     };
 
     const columns = [
@@ -111,7 +120,7 @@ const MenuList: React.FC = () => {
         {
             title: '操作',
             key: 'action',
-            render: (_: any, record: Menu) => (
+            render: (_: unknown, record: Menu) => (
                 <Space size="small">
                     <Button type="text" icon={<EditOutlined />} onClick={() => message.info('编辑功能暂未实现')} />
                     <Popconfirm title="确定要删除吗？" onConfirm={() => handleDelete(record.id)}>
@@ -127,7 +136,7 @@ const MenuList: React.FC = () => {
             <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
                 <h2>菜单管理</h2>
                 <Space>
-                    <Button icon={<ReloadOutlined />} onClick={() => fetchData()}>刷新</Button>
+                    <Button icon={<ReloadOutlined />} onClick={() => fetchData(pagination.current, pagination.pageSize)}>刷新</Button>
                     <Button type="primary" icon={<PlusOutlined />} onClick={() => message.info('新增功能暂未实现')}>
                         新增菜单
                     </Button>

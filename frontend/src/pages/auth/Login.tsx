@@ -10,17 +10,17 @@ const Login: React.FC = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
 
-    const onFinish = async (values: any) => {
+    const onFinish = async (values: { username: string; password: string }) => {
         // ... (keep existing logic)
         setLoading(true);
         try {
-            // @ts-ignore
+            // @ts-expect-error API response type mismatch
             const res = await authApi.login({
                 username: values.username,
                 password: values.password
             });
 
-            // @ts-ignore
+            // @ts-expect-error API response type mismatch
             const { token, user } = res.data;
 
             localStorage.setItem('token', token);

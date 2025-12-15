@@ -13,18 +13,21 @@ const ServiceItemDetail: React.FC = () => {
     const [data, setData] = useState<ServiceItem | null>(null);
 
     useEffect(() => {
-        setLoading(true);
-        adminApi.getServiceItem(Number(id))
-            .then((res) => {
-                // @ts-ignore
-                setData(res.data);
-            })
-            .catch(() => {
+        let isMounted = true;
+        const loadData = async () => {
+            try {
+                const res = await adminApi.getServiceItem(Number(id));
+                // @ts-expect-error API response type mismatch
+                if (isMounted) setData(res.data);
+            } catch {
                 // message.error('Failed to load data');
-            })
-            .finally(() => {
-                setLoading(false);
-            });
+            } finally {
+                if (isMounted) setLoading(false);
+            }
+        };
+        setLoading(true);
+        loadData();
+        return () => { isMounted = false; };
     }, [id]);
 
     if (loading || !data) return <Spin />;

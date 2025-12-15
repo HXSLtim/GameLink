@@ -19,7 +19,7 @@ const UserTags: React.FC = () => {
             if (res.success) {
                 setTags(res.data || []);
             }
-        } catch (error) {
+        } catch {
             message.error('获取标签列表失败');
         } finally {
             setLoading(false);
@@ -55,7 +55,7 @@ const UserTags: React.FC = () => {
                 message.success('删除成功');
                 fetchTags();
             }
-        } catch (error) {
+        } catch {
             message.error('删除失败');
         }
     };
@@ -133,7 +133,7 @@ const UserTags: React.FC = () => {
         {
             title: '操作',
             key: 'action',
-            render: (_: any, record: UserTag) => (
+            render: (_: unknown, record: UserTag) => (
                 <Space size="small">
                     <Button type="text" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
                     <Popconfirm title="确定要删除吗？" onConfirm={() => handleDelete(record.id)}>

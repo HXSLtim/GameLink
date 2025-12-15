@@ -152,9 +152,10 @@ const UserRolePage: React.FC = () => {
             } else {
                 message.error(response.message || '获取用户列表失败');
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('加载用户列表失败:', error);
-            message.error(error.response?.data?.message || '获取用户列表失败');
+            const err = error as { response?: { data?: { message?: string } } };
+            message.error(err.response?.data?.message || '获取用户列表失败');
         } finally {
             setLoading(false);
         }
@@ -168,15 +169,16 @@ const UserRolePage: React.FC = () => {
     /**
      * 搜索处理
      */
-    const handleSearch = useCallback((values: any) => {
+    const handleSearch = useCallback((values: Record<string, unknown>) => {
         const params: UserQueryParams = {};
-        if (values.keyword?.trim()) {
-            params.keyword = values.keyword.trim();
+        const keyword = values.keyword as string | undefined;
+        if (keyword?.trim()) {
+            params.keyword = keyword.trim();
         }
         if (values.status) {
             const statuses = Array.isArray(values.status) ? values.status : [values.status];
             if (statuses.length > 0) {
-                params.status = statuses;
+                params.status = statuses as string[];
             }
         }
         setSearchParams(params);
@@ -208,9 +210,10 @@ const UserRolePage: React.FC = () => {
             } else {
                 message.error('角色分配失败');
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('角色分配失败:', error);
-            message.error(error.response?.data?.message || '角色分配失败');
+            const err = error as { response?: { data?: { message?: string } } };
+            message.error(err.response?.data?.message || '角色分配失败');
         } finally {
             setAssignLoading(false);
         }
@@ -260,9 +263,10 @@ const UserRolePage: React.FC = () => {
             } else {
                 message.error('批量角色分配失败');
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('批量角色分配失败:', error);
-            message.error(error.response?.data?.message || '批量角色分配失败');
+            const err = error as { response?: { data?: { message?: string } } };
+            message.error(err.response?.data?.message || '批量角色分配失败');
         } finally {
             setBatchAssignLoading(false);
         }
@@ -283,9 +287,10 @@ const UserRolePage: React.FC = () => {
             } else {
                 message.error('获取用户权限失败');
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('获取用户权限失败:', error);
-            message.error(error.response?.data?.message || '获取用户权限失败');
+            const err = error as { response?: { data?: { message?: string } } };
+            message.error(err.response?.data?.message || '获取用户权限失败');
         } finally {
             setPermissionsLoading(false);
         }

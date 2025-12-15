@@ -18,7 +18,6 @@ import type {
     PermissionAuditLog,
     AuditAction,
     AuditTargetType,
-    AuditLogQueryParams,
 } from '@/types/permission';
 
 // Mock the permission API

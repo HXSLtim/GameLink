@@ -54,7 +54,7 @@ const RolePage: React.FC = () => {
     /**
      * 加载角色数据
      */
-    const loadData = useCallback(async (params: any = {}) => {
+    const loadData = useCallback(async (params: Record<string, unknown> = {}) => {
         setLoading(true);
         try {
             const res = await adminApi.getRoles({
@@ -194,14 +194,14 @@ const RolePage: React.FC = () => {
             dataIndex: 'users',
             key: 'users',
             width: 100,
-            render: (users: any[]) => <Tag>{users?.length || 0} 人</Tag>,
+            render: (users: unknown[]) => <Tag>{users?.length || 0} 人</Tag>,
         },
         {
             title: '权限数',
             dataIndex: 'permissions',
             key: 'permissions',
             width: 100,
-            render: (permissions: any[]) => <Tag color="purple">{permissions?.length || 0} 项</Tag>,
+            render: (permissions: unknown[]) => <Tag color="purple">{permissions?.length || 0} 项</Tag>,
         },
         {
             title: '更新时间',

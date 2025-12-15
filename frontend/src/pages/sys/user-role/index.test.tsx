@@ -9,7 +9,7 @@
  * - Failed user list with reasons
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import fc from 'fast-check';
 import UserRolePage from './index';
@@ -209,7 +209,6 @@ describe('User Role Page', () => {
                         // Property: If all succeed, message should indicate full success
                         if (hasFailures) {
                             // Expected: warning message with both counts
-                            const expectedPattern = new RegExp(`成功.*${successCount}.*失败.*${failedCount}|失败.*${failedCount}.*成功.*${successCount}`);
                             const warningMessage = `成功: ${successCount}, 失败: ${failedCount}`;
                             expect(warningMessage).toMatch(/成功.*\d+.*失败.*\d+/);
                         } else if (hasSuccesses) {
@@ -248,8 +247,6 @@ describe('User Role Page', () => {
                         });
                         
                         // Property: User IDs should be unique in the failure list
-                        const userIds = failedUsers.map(u => u.userId);
-                        const uniqueIds = new Set(userIds);
                         // Note: In real scenarios, user IDs should be unique
                         // This test verifies the structure is valid
                         

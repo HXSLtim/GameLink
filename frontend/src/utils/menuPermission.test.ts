@@ -6,7 +6,7 @@
  * **Feature: rbac-button-level-permission, Property 15: 路由权限保护**
  * **Validates: Requirements 8.1, 8.3**
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it } from 'vitest';
 import * as fc from 'fast-check';
 import type { Menu } from '@/api/admin';
 import {
@@ -383,8 +383,7 @@ describe('hasRoutePermission', () => {
         fc.assert(
             fc.property(
                 fc.stringMatching(/^\/[a-z]+$/),
-                permissionListArb,
-                (path, userPermissions) => {
+                (path) => {
                     const menu: Menu = {
                         id: 1,
                         name: 'Public Menu',

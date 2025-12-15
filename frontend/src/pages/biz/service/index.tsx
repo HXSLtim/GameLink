@@ -39,7 +39,7 @@ const ServiceItemList: React.FC = () => {
                 page_size: pagination.pageSize,
                 game_id: filters.gameId,
             });
-            // @ts-ignore
+            // @ts-expect-error API response type mismatch
             const { data: items, meta } = res.data;
             setData(items);
             setPagination({ ...pagination, current: page, total: meta.total });
@@ -53,9 +53,10 @@ const ServiceItemList: React.FC = () => {
 
     useEffect(() => {
         fetchData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filters]);
 
-    const handleTableChange = (newPagination: any) => {
+    const handleTableChange = (newPagination: { current?: number }) => {
         fetchData(newPagination.current);
     };
 
@@ -64,7 +65,7 @@ const ServiceItemList: React.FC = () => {
             await adminApi.deleteServiceItem(id);
             message.success('Deleted successfully');
             fetchData(pagination.current);
-        } catch (error) {
+        } catch {
             message.error('Delete failed');
         }
     };
@@ -76,7 +77,7 @@ const ServiceItemList: React.FC = () => {
             message.success(`Batch ${status === 'active' ? 'enabled' : 'disabled'} successfully`);
             setSelectedRowKeys([]);
             fetchData(pagination.current);
-        } catch (error) {
+        } catch {
             message.error('Operation failed');
         }
     };
@@ -137,7 +138,7 @@ const ServiceItemList: React.FC = () => {
             title: '操作',
             key: 'action',
             width: 200,
-            render: (_: any, record: ServiceItem) => (
+            render: (_: unknown, record: ServiceItem) => (
                 <Space size="small">
                     <Tooltip title="编辑">
                         <Button
