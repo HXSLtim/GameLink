@@ -185,13 +185,13 @@ func (h *PlayerHandler) ListPlayerLogs(c *gin.Context) {
 }
 
 // UpdatePlayerVerification
-// @Summary      更新玩家认证状
+// @Summary      更新玩家认证状态（审核）
 // @Tags         Admin/Players
 // @Security     BearerAuth
 // @Accept       json
 // @Produce      json
 // @Param        id       path  int  true  "玩家ID"
-// @Param        request  body  map[string]string  true  "{verification_status}"
+// @Param        request  body  UpdateVerificationPayload  true  "审核信息"
 // @Success      200  {object}  model.APIResponse[Player]
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/players/{id}/verification [put]
@@ -200,9 +200,14 @@ func (h *PlayerHandler) UpdatePlayerVerification(c *gin.Context) {
 	if !ok {
 		return
 	}
-	var payload struct {
-		VerificationStatus string `json:"verification_status" binding:"required"`
+
+	// 获取审核人ID
+	adminID, ok := getAdminUserID(c)
+	if !ok {
+		return
 	}
+
+	var payload UpdateVerificationPayload
 	if !ValidateAndRespond(c, &payload) {
 		return
 	}
@@ -213,18 +218,26 @@ func (h *PlayerHandler) UpdatePlayerVerification(c *gin.Context) {
 		return
 	}
 
-	out, err := h.svc.UpdatePlayer(c.Request.Context(), id, adminservice.UpdatePlayerInput{
+	out, err := h.svc.UpdatePlayerVerification(c.Request.Context(), id, adminservice.UpdateVerificationInput{
 		Nickname:           player.Nickname,
 		Bio:                player.Bio,
 		HourlyRateCents:    player.HourlyRateCents,
 		MainGameID:         player.MainGameID,
 		VerificationStatus: model.VerificationStatus(payload.VerificationStatus),
+		VerifiedBy:         adminID,
+		Remark:             payload.Remark,
 	})
 	if err != nil {
 		respondError(c, err)
 		return
 	}
 	respondUpdated(c, out)
+}
+
+// UpdateVerificationPayload 审核请求参数
+type UpdateVerificationPayload struct {
+	VerificationStatus string `json:"verification_status" binding:"required,oneof=pending verified rejected"`
+	Remark             string `json:"remark"`
 }
 
 // UpdatePlayerGames

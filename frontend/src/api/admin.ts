@@ -335,6 +335,11 @@ export interface Player {
     updatedAt: string;
     user?: User;
     mainGame?: Game;
+    // 审核相关字段
+    verifiedAt?: string;
+    verifiedBy?: number;
+    verifyRemark?: string;
+    rejectReason?: string;
 }
 
 export interface CreatePlayerDto {
@@ -524,7 +529,7 @@ export const adminApi = {
     createPlayer: (data: CreatePlayerDto) => apiClient.post<ApiResponse<Player>>('/admin/players', data),
     updatePlayer: (id: number, data: UpdatePlayerDto) => apiClient.put<ApiResponse<Player>>(`/admin/players/${id}`, data),
     deletePlayer: (id: number) => apiClient.delete<ApiResponse<void>>(`/admin/players/${id}`),
-    updatePlayerVerification: (id: number, status: string) => apiClient.put<ApiResponse<Player>>(`/admin/players/${id}/verification`, { verification_status: status }),
+    updatePlayerVerification: (id: number, status: string, remark?: string) => apiClient.put<ApiResponse<Player>>(`/admin/players/${id}/verification`, { verification_status: status, remark }),
     updatePlayerSkillTags: (id: number, tags: string[]) => apiClient.put<ApiResponse<void>>(`/admin/players/${id}/skill-tags`, { tags }),
     // Player Batch Operations
     batchUpdatePlayerStatus: (data: { playerIds: number[]; status: string }) => apiClient.post<ApiResponse<void>>('/admin/players/batch/status', data),

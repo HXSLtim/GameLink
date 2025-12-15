@@ -45,7 +45,7 @@ func UploadImageHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, model.APIResponse[any]{Success: false, Code: http.StatusBadRequest, Message: err.Error()})
 		return
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	head := make([]byte, 512)
 	n, _ := f.Read(head)

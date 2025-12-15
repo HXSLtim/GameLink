@@ -141,11 +141,11 @@ const PlayerPage: React.FC = () => {
         try {
             const values = await auditForm.validateFields();
             const status = approved ? 'verified' : 'rejected';
-            await adminApi.updatePlayerVerification(currentPlayer.id, status);
+            // 传递审核备注到后端保存
+            await adminApi.updatePlayerVerification(currentPlayer.id, status, values.remark);
             message.success(approved ? '审核通过' : '审核拒绝');
             setAuditModalVisible(false);
             loadData();
-            console.log('Audit remark:', values.remark);
         } catch (error) {
             console.error('Audit error:', error);
             message.error('审核操作失败');
@@ -548,6 +548,31 @@ const PlayerPage: React.FC = () => {
                                 {currentPlayer.updatedAt ? dayjs(currentPlayer.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}
                             </Descriptions.Item>
                         </Descriptions>
+
+                        {/* 审核信息 */}
+                        {currentPlayer.verifiedAt && (
+                            <>
+                                <Divider />
+                                <Descriptions title="审核信息" column={2} size="small">
+                                    <Descriptions.Item label="审核时间">
+                                        {dayjs(currentPlayer.verifiedAt).format('YYYY-MM-DD HH:mm:ss')}
+                                    </Descriptions.Item>
+                                    <Descriptions.Item label="审核人ID">
+                                        {currentPlayer.verifiedBy || '-'}
+                                    </Descriptions.Item>
+                                    {currentPlayer.verificationStatus === 'rejected' && currentPlayer.rejectReason && (
+                                        <Descriptions.Item label="拒绝原因" span={2}>
+                                            <Text type="danger">{currentPlayer.rejectReason}</Text>
+                                        </Descriptions.Item>
+                                    )}
+                                    {currentPlayer.verifyRemark && (
+                                        <Descriptions.Item label="审核备注" span={2}>
+                                            {currentPlayer.verifyRemark}
+                                        </Descriptions.Item>
+                                    )}
+                                </Descriptions>
+                            </>
+                        )}
                     </>
                 )}
             </Drawer>

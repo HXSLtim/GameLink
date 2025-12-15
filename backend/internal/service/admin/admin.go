@@ -770,6 +770,17 @@ type UpdatePlayerInput struct {
 	VerificationStatus model.VerificationStatus
 }
 
+// UpdateVerificationInput 审核陪玩师请求参数
+type UpdateVerificationInput struct {
+	Nickname           string
+	Bio                string
+	HourlyRateCents    int64
+	MainGameID         uint64
+	VerificationStatus model.VerificationStatus
+	VerifiedBy         uint64 // 审核人ID
+	Remark             string // 审核备注
+}
+
 // ListPlayers 返回陪玩列表。
 func (s *AdminService) ListPlayers(ctx context.Context) ([]model.Player, error) {
 	return getCachedList(ctx, s.cache, cacheKeyPlayers, listCacheTTL, func() ([]model.Player, error) {
@@ -845,6 +856,59 @@ func (s *AdminService) UpdatePlayer(ctx context.Context, id uint64, input Update
 	s.invalidateCache(ctx, cacheKeyPlayers)
 	// audit
 	s.appendLogAsync(ctx, string(model.OpEntityPlayer), player.ID, string(model.OpActionUpdate), map[string]any{"main_game_id": player.MainGameID})
+	return player, nil
+}
+
+// UpdatePlayerVerification 审核陪玩师（保存审核记录）
+func (s *AdminService) UpdatePlayerVerification(ctx context.Context, id uint64, input UpdateVerificationInput) (*model.Player, error) {
+	player, err := s.players.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := validatePlayerInput(player.UserID, input.VerificationStatus); err != nil {
+		return nil, err
+	}
+
+	// 保留原有信息
+	player.Nickname = strings.TrimSpace(input.Nickname)
+	player.Bio = strings.TrimSpace(input.Bio)
+	player.HourlyRateCents = input.HourlyRateCents
+	player.MainGameID = input.MainGameID
+
+	// 更新审核状态和记录
+	oldStatus := player.VerificationStatus
+	player.VerificationStatus = input.VerificationStatus
+
+	// 记录审核信息
+	now := time.Now()
+	player.VerifiedAt = &now
+	player.VerifiedBy = &input.VerifiedBy
+	player.VerifyRemark = strings.TrimSpace(input.Remark)
+
+	// 如果是拒绝，保存拒绝原因
+	if input.VerificationStatus == model.VerificationRejected {
+		player.RejectReason = strings.TrimSpace(input.Remark)
+	} else {
+		player.RejectReason = ""
+	}
+
+	if err := s.players.Update(ctx, player); err != nil {
+		return nil, err
+	}
+	s.invalidateCache(ctx, cacheKeyPlayers)
+
+	// 审计日志
+	s.appendLogAsync(ctx, string(model.OpEntityPlayer), player.ID, "verify", map[string]any{
+		"old_status":  oldStatus,
+		"new_status":  input.VerificationStatus,
+		"verified_by": input.VerifiedBy,
+		"remark":      input.Remark,
+	})
+
+	// TODO: 发送通知给陪玩师
+	// s.sendVerificationNotification(ctx, player, input.VerificationStatus)
+
 	return player, nil
 }
 

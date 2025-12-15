@@ -212,18 +212,33 @@ func loadFromFile(env string, cfg *AppConfig) {
 		return
 	}
 
+	applyServerConfig(&fc, cfg)
+	applyDatabaseConfig(&fc, cfg)
+	applyCacheConfig(&fc, cfg)
+	applyCryptoConfig(&fc, cfg)
+	applyAuthConfig(&fc, cfg)
+	applySuperAdminConfig(&fc, cfg)
+}
+
+func applyServerConfig(fc *fileConfig, cfg *AppConfig) {
 	if fc.Server.Port != "" {
 		cfg.Port = fc.Server.Port
 	}
 	if fc.Server.EnableSwagger != nil {
 		cfg.EnableSwagger = *fc.Server.EnableSwagger
 	}
+}
+
+func applyDatabaseConfig(fc *fileConfig, cfg *AppConfig) {
 	if fc.Database.Type != "" {
 		cfg.Database.Type = normalizeDBType(fc.Database.Type)
 	}
 	if fc.Database.DSN != "" {
 		cfg.Database.DSN = fc.Database.DSN
 	}
+}
+
+func applyCacheConfig(fc *fileConfig, cfg *AppConfig) {
 	if fc.Cache.Type != "" {
 		cfg.Cache.Type = strings.ToLower(fc.Cache.Type)
 	}
@@ -236,6 +251,9 @@ func loadFromFile(env string, cfg *AppConfig) {
 	if fc.Cache.Redis.DB != 0 {
 		cfg.Cache.Redis.DB = fc.Cache.Redis.DB
 	}
+}
+
+func applyCryptoConfig(fc *fileConfig, cfg *AppConfig) {
 	if fc.Crypto.SecretKey != "" {
 		cfg.Crypto.SecretKey = fc.Crypto.SecretKey
 	}
@@ -254,6 +272,9 @@ func loadFromFile(env string, cfg *AppConfig) {
 	if fc.Crypto.UseSignature != nil {
 		cfg.Crypto.UseSignature = *fc.Crypto.UseSignature
 	}
+}
+
+func applyAuthConfig(fc *fileConfig, cfg *AppConfig) {
 	if fc.Auth.JWTSecret != "" {
 		cfg.Auth.JWTSecret = fc.Auth.JWTSecret
 	}
@@ -263,6 +284,12 @@ func loadFromFile(env string, cfg *AppConfig) {
 	if fc.Seed.Enabled {
 		cfg.Seed.Enabled = fc.Seed.Enabled
 	}
+	if fc.AdminAuth.Mode != "" {
+		cfg.AdminAuth.Mode = fc.AdminAuth.Mode
+	}
+}
+
+func applySuperAdminConfig(fc *fileConfig, cfg *AppConfig) {
 	if fc.SuperAdmin.Email != "" {
 		cfg.SuperAdmin.Email = fc.SuperAdmin.Email
 	}
@@ -275,16 +302,21 @@ func loadFromFile(env string, cfg *AppConfig) {
 	if fc.SuperAdmin.Phone != "" {
 		cfg.SuperAdmin.Phone = fc.SuperAdmin.Phone
 	}
-	if fc.AdminAuth.Mode != "" {
-		cfg.AdminAuth.Mode = fc.AdminAuth.Mode
-	}
 }
 
 func overrideFromEnv(cfg *AppConfig) {
+	overrideServerFromEnv(cfg)
+	overrideDatabaseFromEnv(cfg)
+	overrideCacheFromEnv(cfg)
+	overrideCryptoFromEnv(cfg)
+	overrideAuthFromEnv(cfg)
+	overrideSuperAdminFromEnv(cfg)
+}
+
+func overrideServerFromEnv(cfg *AppConfig) {
 	if port := os.Getenv("SERVICE_PORT"); port != "" {
 		cfg.Port = port
 	}
-
 	if v := os.Getenv("ENABLE_SWAGGER"); v != "" {
 		if enabled, err := strconv.ParseBool(v); err != nil {
 			log.Printf("ENABLE_SWAGGER=%q 无法解析，保持原值 %v", v, cfg.EnableSwagger)
@@ -292,15 +324,18 @@ func overrideFromEnv(cfg *AppConfig) {
 			cfg.EnableSwagger = enabled
 		}
 	}
+}
 
+func overrideDatabaseFromEnv(cfg *AppConfig) {
 	if dbType := os.Getenv("DB_TYPE"); dbType != "" {
 		cfg.Database.Type = normalizeDBType(dbType)
 	}
-
 	if dsn := os.Getenv("DB_DSN"); dsn != "" {
 		cfg.Database.DSN = dsn
 	}
+}
 
+func overrideCacheFromEnv(cfg *AppConfig) {
 	if cacheType := os.Getenv("CACHE_TYPE"); cacheType != "" {
 		cfg.Cache.Type = strings.ToLower(cacheType)
 	}
@@ -317,7 +352,9 @@ func overrideFromEnv(cfg *AppConfig) {
 			cfg.Cache.Redis.DB = db
 		}
 	}
+}
 
+func overrideCryptoFromEnv(cfg *AppConfig) {
 	if v := os.Getenv("CRYPTO_ENABLED"); v != "" {
 		if enabled, err := strconv.ParseBool(v); err != nil {
 			log.Printf("CRYPTO_ENABLED=%q 无法解析，保持原值 %v", v, cfg.Crypto.Enabled)
@@ -344,7 +381,9 @@ func overrideFromEnv(cfg *AppConfig) {
 			cfg.Crypto.UseSignature = enabled
 		}
 	}
+}
 
+func overrideAuthFromEnv(cfg *AppConfig) {
 	if jwtSecret := os.Getenv("JWT_SECRET_KEY"); jwtSecret != "" {
 		cfg.Auth.JWTSecret = jwtSecret
 	}
@@ -355,7 +394,6 @@ func overrideFromEnv(cfg *AppConfig) {
 			cfg.Auth.TokenTTLHours = hours
 		}
 	}
-
 	if seed := os.Getenv("SEED_ENABLED"); seed != "" {
 		if enabled, err := strconv.ParseBool(seed); err != nil {
 			log.Printf("SEED_ENABLED=%q 无法解析，保持原值 %v", seed, cfg.Seed.Enabled)
@@ -363,8 +401,12 @@ func overrideFromEnv(cfg *AppConfig) {
 			cfg.Seed.Enabled = enabled
 		}
 	}
+	if mode := os.Getenv("ADMIN_AUTH_MODE"); mode != "" {
+		cfg.AdminAuth.Mode = strings.ToLower(mode)
+	}
+}
 
-	// 超级管理员配置
+func overrideSuperAdminFromEnv(cfg *AppConfig) {
 	if email := os.Getenv("SUPER_ADMIN_EMAIL"); email != "" {
 		cfg.SuperAdmin.Email = email
 	}
@@ -376,11 +418,6 @@ func overrideFromEnv(cfg *AppConfig) {
 	}
 	if phone := os.Getenv("SUPER_ADMIN_PHONE"); phone != "" {
 		cfg.SuperAdmin.Phone = phone
-	}
-
-	// 管理员认证模式
-	if mode := os.Getenv("ADMIN_AUTH_MODE"); mode != "" {
-		cfg.AdminAuth.Mode = strings.ToLower(mode)
 	}
 }
 

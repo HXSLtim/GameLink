@@ -38,12 +38,12 @@ var levelColors = map[slog.Level]string{
 
 // PrettyHandler 自定义的彩色表格格式Handler
 type PrettyHandler struct {
-	attrs         []slog.Attr
-	groupStack    []string
-	level         slog.Leveler
-	output        io.Writer
-	enableColor   bool
-	timeFormat    string
+	attrs       []slog.Attr
+	groupStack  []string
+	level       slog.Leveler
+	output      io.Writer
+	enableColor bool
+	timeFormat  string
 }
 
 func init() {
@@ -177,135 +177,146 @@ func (h *PrettyHandler) Handle(ctx context.Context, record slog.Record) error {
 	return err
 }
 
+// httpFieldDef 定义HTTP日志字段
+type httpFieldDef struct {
+	key         string
+	label       string
+	colorizeVal func(h *PrettyHandler, v string) string
+}
+
+// getHTTPFields 返回HTTP日志字段定义
+func getHTTPFields() []httpFieldDef {
+	return []httpFieldDef{
+		{"method", "HTTP方法", (*PrettyHandler).colorizeMethod},
+		{"status", "状态码", (*PrettyHandler).colorizeStatus},
+		{"path", "请求路径", func(h *PrettyHandler, v string) string { return v }},
+		{"ip", "客户端IP", func(h *PrettyHandler, v string) string { return v }},
+		{"duration", "响应时间", func(h *PrettyHandler, v string) string { return v }},
+		{"request_id", "请求ID", func(h *PrettyHandler, v string) string { return v }},
+		{"user_id", "用户ID", func(h *PrettyHandler, v string) string { return v }},
+	}
+}
+
+func (h *PrettyHandler) colorizeMethod(v string) string {
+	if !h.enableColor {
+		return v
+	}
+	switch v {
+	case "GET":
+		return colorBlue + v + colorReset
+	case "POST":
+		return colorGreen + v + colorReset
+	case "PUT":
+		return colorYellow + v + colorReset
+	case "DELETE":
+		return colorRed + v + colorReset
+	default:
+		return v
+	}
+}
+
+func (h *PrettyHandler) colorizeStatus(v string) string {
+	if !h.enableColor {
+		return v
+	}
+	status := 0
+	fmt.Sscanf(v, "%d", &status)
+	switch {
+	case status >= 500:
+		return colorRed + v + colorReset
+	case status >= 400:
+		return colorYellow + v + colorReset
+	case status >= 300:
+		return colorCyan + v + colorReset
+	case status >= 200:
+		return colorGreen + v + colorReset
+	default:
+		return v
+	}
+}
+
 // formatHTTPRequest 格式化HTTP请求日志为表格样式
 func (h *PrettyHandler) formatHTTPRequest(attrsMap map[string]interface{}) string {
 	var buf bytes.Buffer
-
-	col1Width := 12
 	col2Width := 60
 
-	// 处理每一行
-	addRow := func(key, value string, colorCode string) {
-		if h.enableColor {
-			buf.WriteString(colorGray + "│ " + colorReset)
-			buf.WriteString(colorCode)
-			buf.WriteString(fmt.Sprintf("%-*s", col1Width, key))
-			buf.WriteString(colorGray + " │ " + colorReset)
-			buf.WriteString(value)
-			buf.WriteString(colorGray)
-			// 填充剩余空间
-			remaining := col2Width - len(value)
-			if remaining > 0 {
-				buf.WriteString(strings.Repeat(" ", remaining))
-			}
-			buf.WriteString(" │" + colorReset + "\n")
-		} else {
-			buf.WriteString(fmt.Sprintf("│ %-12s │ %s", key, value))
-			buf.WriteString(strings.Repeat(" ", col2Width-len(value)))
-			buf.WriteString(" │\n")
-		}
-	}
+	h.writeTableHeader(&buf, col2Width)
+	plainAttrs := h.writeKnownFields(&buf, attrsMap, col2Width)
+	h.writeExtraFields(&buf, plainAttrs, col2Width)
+	h.writeTableFooter(&buf, col2Width)
 
-	// 添加边框
+	return buf.String()
+}
+
+func (h *PrettyHandler) writeTableHeader(buf *bytes.Buffer, col2Width int) {
 	if h.enableColor {
 		buf.WriteString(colorGray + "┌──────────────┬" + strings.Repeat("─", col2Width+2) + "┐\n" + colorReset)
 	} else {
 		buf.WriteString("┌──────────────┬" + strings.Repeat("─", col2Width+2) + "┐\n")
 	}
+}
 
-	// 常用字段
-	fields := []struct {
-		key   string
-		label string
-		enableColor func(string) string
-	}{
-		{"method", "HTTP方法", func(v string) string {
-			if h.enableColor {
-				switch v {
-				case "GET":
-					return colorBlue + v + colorReset
-				case "POST":
-					return colorGreen + v + colorReset
-				case "PUT":
-					return colorYellow + v + colorReset
-				case "DELETE":
-					return colorRed + v + colorReset
-				default:
-					return v
-				}
-			}
-			return v
-		}},
-		{"status", "状态码", func(v string) string {
-			if h.enableColor {
-				status := 0
-				fmt.Sscanf(v, "%d", &status)
-				if status >= 500 {
-					return colorRed + v + colorReset
-				} else if status >= 400 {
-					return colorYellow + v + colorReset
-				} else if status >= 300 {
-					return colorCyan + v + colorReset
-				} else if status >= 200 {
-					return colorGreen + v + colorReset
-				}
-			}
-			return v
-		}},
-		{"path", "请求路径", func(v string) string { return v }},
-		{"ip", "客户端IP", func(v string) string { return v }},
-		{"duration", "响应时间", func(v string) string { return v }},
-		{"request_id", "请求ID", func(v string) string { return v }},
-		{"user_id", "用户ID", func(v string) string { return v }},
-	}
-
-	// 输出每个字段
-	plainAttrs := make(map[string]string)
-
-	for _, field := range fields {
-		if val, ok := attrsMap[field.key]; ok {
-			vStr := fmt.Sprintf("%v", val)
-			coloredValue := field.enableColor(vStr)
-			addRow(field.label, coloredValue, colorCyan)
-		}
-	}
-
-	// 处理剩余的其他属性（分组显示）
-	for key, val := range attrsMap {
-		isKnownField := false
-		for _, field := range fields {
-			if field.key == key {
-				isKnownField = true
-				break
-			}
-		}
-
-		if !isKnownField {
-			plainAttrs[key] = fmt.Sprintf("%v", val)
-		}
-	}
-
-	// 输出其他属性
-	if len(plainAttrs) > 0 {
-		if h.enableColor {
-			buf.WriteString(colorGray + "├──────────────┼" + strings.Repeat("─", col2Width+2) + "┤\n" + colorReset)
-		} else {
-			buf.WriteString("├──────────────┼" + strings.Repeat("─", col2Width+2) + "┤\n")
-		}
-
-		for key, val := range plainAttrs {
-			addRow(key, val, colorWhite)
-		}
-	}
-
-	// 添加底部边框
+func (h *PrettyHandler) writeTableFooter(buf *bytes.Buffer, col2Width int) {
 	if h.enableColor {
 		buf.WriteString(colorGray + "└──────────────┴" + strings.Repeat("─", col2Width+2) + "┘" + colorReset)
 	} else {
 		buf.WriteString("└──────────────┴" + strings.Repeat("─", col2Width+2) + "┘")
 	}
+}
 
-	return buf.String()
+func (h *PrettyHandler) writeKnownFields(buf *bytes.Buffer, attrsMap map[string]interface{}, col2Width int) map[string]string {
+	fields := getHTTPFields()
+	knownKeys := make(map[string]bool)
+	for _, f := range fields {
+		knownKeys[f.key] = true
+		if val, ok := attrsMap[f.key]; ok {
+			vStr := fmt.Sprintf("%v", val)
+			coloredValue := f.colorizeVal(h, vStr)
+			h.writeRow(buf, f.label, coloredValue, colorCyan, col2Width)
+		}
+	}
+
+	plainAttrs := make(map[string]string)
+	for key, val := range attrsMap {
+		if !knownKeys[key] {
+			plainAttrs[key] = fmt.Sprintf("%v", val)
+		}
+	}
+	return plainAttrs
+}
+
+func (h *PrettyHandler) writeExtraFields(buf *bytes.Buffer, plainAttrs map[string]string, col2Width int) {
+	if len(plainAttrs) == 0 {
+		return
+	}
+	if h.enableColor {
+		buf.WriteString(colorGray + "├──────────────┼" + strings.Repeat("─", col2Width+2) + "┤\n" + colorReset)
+	} else {
+		buf.WriteString("├──────────────┼" + strings.Repeat("─", col2Width+2) + "┤\n")
+	}
+	for key, val := range plainAttrs {
+		h.writeRow(buf, key, val, colorWhite, col2Width)
+	}
+}
+
+func (h *PrettyHandler) writeRow(buf *bytes.Buffer, key, value, colorCode string, col2Width int) {
+	col1Width := 12
+	if h.enableColor {
+		buf.WriteString(colorGray + "│ " + colorReset)
+		buf.WriteString(colorCode)
+		buf.WriteString(fmt.Sprintf("%-*s", col1Width, key))
+		buf.WriteString(colorGray + " │ " + colorReset)
+		buf.WriteString(value)
+		buf.WriteString(colorGray)
+		if remaining := col2Width - len(value); remaining > 0 {
+			buf.WriteString(strings.Repeat(" ", remaining))
+		}
+		buf.WriteString(" │" + colorReset + "\n")
+	} else {
+		buf.WriteString(fmt.Sprintf("│ %-12s │ %s", key, value))
+		buf.WriteString(strings.Repeat(" ", col2Width-len(value)))
+		buf.WriteString(" │\n")
+	}
 }
 
 // WithAttrs implements slog.Handler interface.
@@ -344,7 +355,6 @@ func isTerminal(f *os.File) bool {
 	// 在Windows环境下，powerShell和CMD都支持ANSI颜色码
 	return runtime.GOOS == "windows"
 }
-
 
 // Debug logs a debug message with the given key-value pairs.
 func Debug(msg string, args ...interface{}) {

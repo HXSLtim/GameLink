@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 // VerificationStatus indicates identity/skill verification flow.
 // @Enum pending, verified, rejected
 type VerificationStatus string
@@ -23,4 +25,10 @@ type Player struct {
 	HourlyRateCents    int64              `json:"hourlyRateCents" gorm:"column:hourly_rate_cents"`
 	MainGameID         uint64             `json:"mainGameId,omitempty" gorm:"column:main_game_id;index"`
 	VerificationStatus VerificationStatus `json:"verificationStatus" gorm:"column:verification_status;size:32;index"`
+
+	// 审核相关字段
+	VerifiedAt   *time.Time `json:"verifiedAt,omitempty" gorm:"column:verified_at"`              // 审核时间
+	VerifiedBy   *uint64    `json:"verifiedBy,omitempty" gorm:"column:verified_by"`              // 审核人ID
+	VerifyRemark string     `json:"verifyRemark,omitempty" gorm:"column:verify_remark;size:500"` // 审核备注
+	RejectReason string     `json:"rejectReason,omitempty" gorm:"column:reject_reason;size:500"` // 拒绝原因
 }

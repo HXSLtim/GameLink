@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"gamelink/pkg/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
+	"gamelink/pkg/apierr"
 )
 
 var (
@@ -126,32 +126,68 @@ func (s *ServiceItemService) UpdateServiceItem(ctx context.Context, id uint64, r
 		return err
 	}
 
-	// 更新字段
+	if err := applyServiceItemUpdates(item, req); err != nil {
+		return err
+	}
+
+	return s.items.Update(ctx, item)
+}
+
+// applyServiceItemUpdates 应用服务项目更新
+func applyServiceItemUpdates(item *model.ServiceItem, req UpdateServiceItemRequest) error {
 	if req.Name != nil {
 		item.Name = *req.Name
 	}
 	if req.Description != nil {
 		item.Description = *req.Description
 	}
-	if req.BasePriceCents != nil {
-		if *req.BasePriceCents < 0 {
-			return apierr.BadRequest("基础价格必须大于等于0")
-		}
-		item.BasePriceCents = *req.BasePriceCents
+	if err := applyPriceUpdate(item, req); err != nil {
+		return err
 	}
-	if req.ServiceHours != nil {
-		// 礼物的service_hours必须
-		if item.IsGift() && *req.ServiceHours != 0 {
-			return apierr.BadRequest("礼物类项目的服务时长必须为0")
-		}
-		item.ServiceHours = *req.ServiceHours
+	if err := applyServiceHoursUpdate(item, req); err != nil {
+		return err
 	}
-	if req.CommissionRate != nil {
-		if *req.CommissionRate < 0 || *req.CommissionRate > 1 {
-			return apierr.BadRequest("抽成比例必须在0-1之间")
-		}
-		item.CommissionRate = *req.CommissionRate
+	if err := applyCommissionRateUpdate(item, req); err != nil {
+		return err
 	}
+	applyOptionalFields(item, req)
+	return nil
+}
+
+func applyPriceUpdate(item *model.ServiceItem, req UpdateServiceItemRequest) error {
+	if req.BasePriceCents == nil {
+		return nil
+	}
+	if *req.BasePriceCents < 0 {
+		return apierr.BadRequest("基础价格必须大于等于0")
+	}
+	item.BasePriceCents = *req.BasePriceCents
+	return nil
+}
+
+func applyServiceHoursUpdate(item *model.ServiceItem, req UpdateServiceItemRequest) error {
+	if req.ServiceHours == nil {
+		return nil
+	}
+	if item.IsGift() && *req.ServiceHours != 0 {
+		return apierr.BadRequest("礼物类项目的服务时长必须为0")
+	}
+	item.ServiceHours = *req.ServiceHours
+	return nil
+}
+
+func applyCommissionRateUpdate(item *model.ServiceItem, req UpdateServiceItemRequest) error {
+	if req.CommissionRate == nil {
+		return nil
+	}
+	if *req.CommissionRate < 0 || *req.CommissionRate > 1 {
+		return apierr.BadRequest("抽成比例必须在0-1之间")
+	}
+	item.CommissionRate = *req.CommissionRate
+	return nil
+}
+
+func applyOptionalFields(item *model.ServiceItem, req UpdateServiceItemRequest) {
 	if req.RankLevel != nil {
 		item.RankLevel = *req.RankLevel
 	}
@@ -167,8 +203,6 @@ func (s *ServiceItemService) UpdateServiceItem(ctx context.Context, id uint64, r
 	if req.SortOrder != nil {
 		item.SortOrder = *req.SortOrder
 	}
-
-	return s.items.Update(ctx, item)
 }
 
 // DeleteServiceItem 删除服务项目

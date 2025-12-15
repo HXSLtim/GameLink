@@ -7,9 +7,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	apierr "gamelink/pkg/apierr"
 	"gamelink/internal/model"
 	withdrawrepo "gamelink/internal/repository/withdraw"
+	apierr "gamelink/pkg/apierr"
 )
 
 // Withdraw 提现模型（类型别名）
@@ -153,7 +153,7 @@ func approveWithdrawHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository
 	}
 
 	var req ApproveWithdrawRequest
-	c.ShouldBindJSON(&req)
+	_ = c.ShouldBindJSON(&req) // 可选字段，忽略绑定错误
 
 	withdraw, err := repo.Get(c.Request.Context(), id)
 	if err != nil {

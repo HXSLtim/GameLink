@@ -1,125 +1,97 @@
 # 📦 GameLink 文档归档索引
 
-**更新日期**: 2025-10-31
+**更新日期**: 2025-12-16
 
 ---
 
-## 📚 文档总量统计
+## 📚 文档结构
 
-| 位置 | 文档数量 | 说明 |
-|------|----------|------|
-| 项目根目录 | 157+ | 总文档数 |
-| 根目录 `/docs/` | 40+ | 核心文档 |
-| `/docs/archive/` | 20+ | 历史归档 |
-| `/backend/` | 30+ | 后端文档 |
-| `/backend/archive/` | 20+ | 后端归档 |
-| `/frontend/docs/` | 60+ | 前端文档 |
-| `/frontend/docs/archive/` | 15+ | 前端归档 |
+| 目录 | 说明 |
+|------|------|
+| `/docs/` | 核心文档（PRD、开发、进度） |
+| `/docs/api/` | API 规范文档 |
+| `/docs/guides/` | 开发指南 |
+| `/docs/standards/` | 编码规范 |
+| `/docs/archive/` | 历史归档文档 |
 
 ---
 
-## 🎯 核心文档 (保留)
+## 🎯 核心文档
 
-### 📖 用户指南
-- `/docs/README.md` - 项目说明
-- `/docs/INDEX.md` - 文档导航
-- `/docs/CLAUDE.md` - 开发指南
-- `/docs/USER_SIDE_IMPLEMENTATION.md` - 用户端实施
-- `/docs/USER_SIDE_PLANNING.md` - 用户端规划
-- `/docs/USER_SIDE_QUICKSTART.md` - 用户端快速开始
-
-### 🔧 技术文档
-- `/docs/api/` - API 标准和设计规范
-- `/docs/guides/` - 开发指南
-- `/docs/standards/` - 编码规范
-
-### 📊 报告文档
-- `/docs/reports/` - 最新报告
+| 文档 | 说明 |
+|------|------|
+| `PRD.md` | 产品需求文档 |
+| `DEVELOPMENT.md` | 开发技术文档 |
+| `PROGRESS.md` | 开发进度追踪 |
+| `README.md` | 项目说明 |
+| `INDEX.md` | 文档导航 |
+| `CI-CD.md` | CI/CD 配置 |
+| `COMPONENT_LIBRARY.md` | 组件库文档 |
+| `UI_DESIGN_SPEC.md` | UI 设计规范 |
+| `INTERNATIONALIZATION.md` | 国际化方案 |
+| `即时通讯系统设计文档.md` | IM 系统设计 |
 
 ---
 
-## 📦 归档文档
+## 📦 归档目录结构
 
-### 后端测试报告 `/backend/archive/testing-reports/`
+```
+docs/archive/
+├── implementation/     # 功能实现文档
+├── features/          # 功能设计文档
+├── plans/             # 规划文档
+├── reports/           # 报告文档
+├── summaries/         # 总结文档
+├── frontend/          # 前端相关归档
+├── backend/           # 后端相关归档
+├── coverage/          # 测试覆盖率报告
+└── temp-reports/      # 临时报告
+```
 
-#### 覆盖率报告 `coverage/`
-- `legacy-coverage-report.md` - 初始覆盖率报告
-- `real-coverage-report.md` - 实际覆盖率报告
-- `coverage-final-report.md` - 最终覆盖率报告
-- `coverage-final-summary.md` - 覆盖率最终总结
-- `coverage-complete-summary.md` - 覆盖率完整总结
-- `coverage-improvement-summary.md` - 覆盖率改进总结
+### implementation/ - 实现文档
+- `NOTIFICATION_SYSTEM_FIX.md` - 通知系统修复
+- `USER_MANAGEMENT_IMPLEMENTATION.md` - 用户管理实现
+- `USER_MANAGEMENT_IMPLEMENTATION_COMPLETE.md` - 用户管理完成报告
+- `FINANCIAL_MANAGEMENT_IMPLEMENTATION.md` - 财务管理实现
+- `FINANCIAL_MANAGEMENT_SUMMARY.md` - 财务管理总结
+- `USER_SIDE_IMPLEMENTATION.md` - 用户端实现
+- `WORKFLOW_C_IMPLEMENTATION_GUIDE.md` - 工作流实现指南
+- `WORKFLOW_C_IMPLEMENTATION_SUMMARY.md` - 工作流实现总结
+- `WORKFLOW_C_QUICK_REFERENCE.md` - 工作流快速参考
 
-#### Handler 测试 `handler/`
-- `handler-test-progress.md` - Handler 测试进度
-- `handler-test-final-report.md` - Handler 测试最终报告
-- `handler-test-coverage-report.md` - Handler 测试覆盖率
+### features/ - 功能设计
+- `FINANCIAL_MANAGEMENT_DESIGN.md` - 财务管理设计
+- `FINANCIAL_MANAGEMENT_REQUIREMENTS.md` - 财务管理需求
+- `USER_SIDE_PLANNING.md` - 用户端规划
+- `USER_SIDE_QUICKSTART.md` - 用户端快速开始
+- `USER_FLOW_PROTOTYPE.md` - 用户流程原型
 
-#### Repository 测试 `repository/`
-- `repository-test-progress.md` - Repository 测试进度
-- `repository-test-complete.md` - Repository 测试完成
-- `repository-test-final-report.md` - Repository 测试最终报告
-- `repository-test-complete-final.md` - Repository 测试完整报告
-- `repository-test-coverage-final.md` - Repository 覆盖率最终报告
+### plans/ - 规划文档
+- `BACKEND_ARCHITECTURE_REFACTOR_PLAN.md` - 后端架构重构计划
+- `WORK_DISTRIBUTION_PLAN.md` - 工作分配计划
 
-#### Admin 测试 `admin/`
-- `admin-service-test-final.md` - Admin 服务测试最终报告
-- `middleware-admin-test-summary.md` - 中间件和管理测试总结
+### reports/ - 报告文档
+- `DOCUMENTATION_SUMMARY.md` - 文档总结
+- `DOCUMENT_CLEANUP_REPORT.md` - 文档清理报告
 
-#### 其他测试报告
-- `testing-summary.md` - 测试总结
-- `test-completion-report.md` - 测试完成报告
-- `test-improvement-progress.md` - 测试改进进度
-
-### 前端文档 `/frontend/docs/archive/`
-
-#### 报告文档 `reports/`
-- 包含 15+ 份代码质量、API 集成、改进报告
-
-#### 已弃用 `deprecated/`
-- 过时的文档和临时文件
-
----
-
-## 🔍 最新文档 (2025-10-31)
-
-### 后端
-- `FINAL_COVERAGE_REPORT.md` - 最终覆盖率报告
-- `LATEST_COVERAGE_REPORT.md` - 最新覆盖率报告
-- `TEST_COVERAGE_PROGRESS_SUMMARY.md` - 覆盖率进展总结
-
-### 前端
-- `/frontend/docs/api/` - API 文档和集成指南
+### frontend/ - 前端归档
+- `BUILD_OPTIMIZATION.md` - 构建优化
+- `OPTIMIZATION_SETUP.md` - 优化配置
 
 ---
 
-## 📋 文档维护规则
+## 📋 维护规则
 
-1. **定期归档**: 每月归档历史报告
-2. **保留最新**: 保留最近 3 个月的报告
-3. **删除备份**: 定期清理 `.backup` 文件
-4. **更新索引**: 归档后更新本文档
-
----
-
-## 💡 使用说明
-
-### 查找文档
-1. 核心文档: 查看 `/docs/` 下对应目录
-2. 历史报告: 查看 `/archive/` 对应位置
-3. API 文档: 查看 `/docs/api/` 或 `/backend/docs/swagger.yaml`
-
-### 添加新文档
-1. 新文档放在对应功能目录
-2. 更新 `/docs/INDEX.md` 
-3. 记录到本文档索引
+1. **核心文档**: 保留在 `/docs/` 根目录
+2. **实现文档**: 完成后移至 `archive/implementation/`
+3. **临时报告**: 定期清理或归档
+4. **代码目录**: 不保留 `.md` 文档（除 README）
 
 ---
 
-## 🏷️ 标签说明
+## 🔄 最近归档 (2025-12-16)
 
-- ✅ **保留**: 活跃使用的文档
-- 📦 **归档**: 历史文档，保留参考
-- 🔄 **合并**: 已合并到其他文档
-- 🗑️ **删除**: 已删除的冗余文档
-
+- 清理 backend 测试产物（.exe, .txt）
+- 归档 backend 实现文档 (3个)
+- 归档 frontend 优化文档 (2个)
+- 归档 docs 实现/规划文档 (9个)
