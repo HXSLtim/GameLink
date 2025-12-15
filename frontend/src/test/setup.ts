@@ -1,45 +1,51 @@
-/**
- * Test setup file
- * Configures testing environment for Vitest
- */
-import { expect, afterEach, vi } from 'vitest';
-import { cleanup } from '@testing-library/react';
-import '@testing-library/jest-dom/vitest';
+import '@testing-library/jest-dom';
 
-// Mock window.matchMedia (required by Ant Design)
+// Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: vi.fn().mockImplementation((query: string) => ({
+  value: (query: string) => ({
     matches: false,
     media: query,
     onchange: null,
-    addListener: vi.fn(), // deprecated
-    removeListener: vi.fn(), // deprecated
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })),
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  }),
 });
 
-// Mock ResizeObserver (required by Ant Design Table and other components)
-class ResizeObserverMock {
-  observe = vi.fn();
-  unobserve = vi.fn();
-  disconnect = vi.fn();
-}
-window.ResizeObserver = ResizeObserverMock;
-
-// Mock window.getComputedStyle (suppress jsdom warnings)
-const originalGetComputedStyle = window.getComputedStyle;
-window.getComputedStyle = (elt: Element, pseudoElt?: string | null) => {
-  if (pseudoElt) {
-    // Return empty style for pseudo-elements to suppress warnings
-    return {} as CSSStyleDeclaration;
-  }
-  return originalGetComputedStyle(elt, pseudoElt);
+// Mock ResizeObserver
+global.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
 };
 
-// Cleanup after each test
-afterEach(() => {
-  cleanup();
-});
+// Mock IntersectionObserver
+global.IntersectionObserver = class IntersectionObserver {
+  root = null;
+  rootMargin = '';
+  thresholds = [];
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+  takeRecords() { return []; }
+} as unknown as typeof IntersectionObserver;
+
+// Mock scrollTo
+window.scrollTo = () => {};
+
+// Mock localStorage
+const localStorageMock = {
+  getItem: () => null,
+  setItem: () => {},
+  removeItem: () => {},
+  clear: () => {},
+  length: 0,
+  key: () => null,
+};
+Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+
+// Mock sessionStorage
+Object.defineProperty(window, 'sessionStorage', { value: localStorageMock });

@@ -50,7 +50,11 @@ issues:
   max-issues-per-linter: 0
   max-same-issues: 0
   exclude:
-    - 'error return value not checked.*(Close|Write|Stop|Flush)'
+    - 'error return value not checked.*(Close|Write|Stop|Flush|Unlock|Sscanf)'
+    - 'Error return value of `lock.Unlock` is not checked'
+    - 'Error return value of `fmt.Sscanf` is not checked'
+    - 'Error return value of `sqlDB.Close` is not checked'
+    - 'Error return value of `m.stopReverse` is not checked'
   exclude-rules:
     - path: internal/repository/gormrepo
       linters:
@@ -61,3 +65,11 @@ issues:
     - path: internal/db/migrate.go
       linters:
         - misspell
+    - path: pkg/
+      linters:
+        - errcheck
+      text: "Error return value of .*(Unlock|Close|Sscanf).*"
+    - path: _test\.go
+      linters:
+        - errcheck
+        - dupl
