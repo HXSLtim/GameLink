@@ -20,7 +20,7 @@ const mockAdminContext = {
   isSuperAdmin: false,
 };
 
-vi.mock('@/context/AdminContext', () => ({
+vi.mock('@/context/useAdmin', () => ({
   useAdmin: () => mockAdminContext,
 }));
 
