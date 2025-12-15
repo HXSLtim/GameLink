@@ -20,7 +20,8 @@ import {
     Input,
     Typography,
     Divider,
-    Image,
+    Select,
+    Radio,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
@@ -31,57 +32,25 @@ import {
     LockOutlined,
     UnlockOutlined,
     StarOutlined,
+    SafetyOutlined,
+    DeleteOutlined,
 } from '@ant-design/icons';
-import { PageContainer, SearchTable } from '@/components';
+import { PageContainer, SearchTable, type ToolbarButton } from '@/components';
 import type { SearchField } from '@/components';
 import { PLAYER_PERMISSIONS } from '@/constants/permissions';
 import { PermissionGuard } from '@/components/PermissionGuard';
+import { adminApi, type Player, type ApiResponse } from '@/api/admin';
 import dayjs from 'dayjs';
 
 const { Text, Paragraph } = Typography;
-
-/**
- * 陪玩师数据接口
- */
-interface Player {
-    id: number;
-    userId: number;
-    name: string;
-    avatar: string;
-    gender: 'male' | 'female';
-    age: number;
-    games: string[];
-    introduction: string;
-    voiceSample: string;
-    idCardFront: string;
-    idCardBack: string;
-    status: 'pending' | 'approved' | 'rejected' | 'banned';
-    rating: number;
-    orderCount: number;
-    totalEarnings: number;
-    onlineStatus: 'online' | 'offline' | 'busy';
-    createdAt: string;
-    updatedAt: string;
-    auditRemark?: string;
-}
 
 /**
  * 状态映射
  */
 const statusMap = {
     pending: { color: 'gold', text: '待审核' },
-    approved: { color: 'success', text: '已通过' },
+    verified: { color: 'success', text: '已通过' },
     rejected: { color: 'error', text: '已拒绝' },
-    banned: { color: 'default', text: '已封禁' },
-};
-
-/**
- * 在线状态映射
- */
-const onlineStatusMap = {
-    online: { color: 'success', text: '在线' },
-    offline: { color: 'default', text: '离线' },
-    busy: { color: 'warning', text: '忙碌' },
 };
 
 /**
@@ -93,6 +62,7 @@ const PlayerPage: React.FC = () => {
     const [total, setTotal] = useState(0);
     const [current, setCurrent] = useState(1);
     const [pageSize, setPageSize] = useState(10);
+    const [searchParams, setSearchParams] = useState<Record<string, unknown>>({});
 
     // 弹窗状态
     const [detailDrawerVisible, setDetailDrawerVisible] = useState(false);
@@ -100,46 +70,51 @@ const PlayerPage: React.FC = () => {
     const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
     const [auditForm] = Form.useForm();
 
+    // 批量操作状态
+    const [batchStatusVisible, setBatchStatusVisible] = useState(false);
+    const [batchDeleteVisible, setBatchDeleteVisible] = useState(false);
+    const [selectedPlayerIds, setSelectedPlayerIds] = useState<number[]>([]);
+    const [batchTarget, setBatchTarget] = useState<'selected' | 'status' | 'all'>('selected');
+    const [batchForm] = Form.useForm();
+
     /**
      * 加载陪玩师数据
      */
-    const loadData = useCallback(async () => {
+    const loadData = useCallback(async (params?: Record<string, unknown>) => {
         setLoading(true);
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        const mockPlayers: Player[] = Array.from({ length: 25 }, (_, i) => ({
-            id: i + 1,
-            userId: 100 + i,
-            name: `陪玩师${i + 1}`,
-            avatar: '',
-            gender: i % 2 === 0 ? 'female' : 'male',
-            age: 18 + (i % 10),
-            games: [['王者荣耀', '英雄联盟'], ['和平精英', '原神'], ['王者荣耀', '和平精英']][i % 3],
-            introduction: `大家好，我是陪玩师${i + 1}，擅长多种游戏，期待与您一起游戏！`,
-            voiceSample: '',
-            idCardFront: 'https://via.placeholder.com/200x120',
-            idCardBack: 'https://via.placeholder.com/200x120',
-            status: ['pending', 'approved', 'approved', 'rejected', 'banned'][i % 5] as Player['status'],
-            rating: 4 + Math.random(),
-            orderCount: Math.floor(Math.random() * 200),
-            totalEarnings: Math.floor(Math.random() * 50000),
-            onlineStatus: ['online', 'offline', 'busy'][i % 3] as Player['onlineStatus'],
-            createdAt: dayjs().subtract(i, 'day').format('YYYY-MM-DD HH:mm:ss'),
-            updatedAt: dayjs().subtract(i, 'hour').format('YYYY-MM-DD HH:mm:ss'),
-            auditRemark: i % 5 === 3 ? '身份信息不清晰，请重新提交' : undefined,
-        }));
-
-        const start = (current - 1) * pageSize;
-        const end = start + pageSize;
-        setPlayers(mockPlayers.slice(start, end));
-        setTotal(mockPlayers.length);
-        setLoading(false);
-    }, [current, pageSize]);
+        try {
+            const queryParams = {
+                page: current,
+                page_size: pageSize,
+                ...searchParams,
+                ...params,
+            };
+            const response = await adminApi.getPlayers(queryParams);
+            if (response.data.success) {
+                setPlayers(response.data.data || []);
+                setTotal(response.data.pagination?.total || 0);
+            } else {
+                message.error(response.data.message || '加载失败');
+            }
+        } catch (error) {
+            console.error('Load players error:', error);
+            message.error('加载陪玩师列表失败');
+        } finally {
+            setLoading(false);
+        }
+    }, [current, pageSize, searchParams]);
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         loadData();
     }, [loadData]);
+
+    /**
+     * 搜索
+     */
+    const handleSearch = (values: Record<string, unknown>) => {
+        setSearchParams(values);
+        setCurrent(1);
+    };
 
     /**
      * 查看详情
@@ -162,14 +137,18 @@ const PlayerPage: React.FC = () => {
      * 执行审核
      */
     const handleAudit = async (approved: boolean) => {
+        if (!currentPlayer) return;
         try {
             const values = await auditForm.validateFields();
-            console.log('Audit:', { approved, ...values });
+            const status = approved ? 'verified' : 'rejected';
+            await adminApi.updatePlayerVerification(currentPlayer.id, status);
             message.success(approved ? '审核通过' : '审核拒绝');
             setAuditModalVisible(false);
             loadData();
-        } catch {
-            // 验证失败
+            console.log('Audit remark:', values.remark);
+        } catch (error) {
+            console.error('Audit error:', error);
+            message.error('审核操作失败');
         }
     };
 
@@ -177,9 +156,119 @@ const PlayerPage: React.FC = () => {
      * 封禁/解封
      */
     const handleToggleBan = async (player: Player) => {
-        const action = player.status === 'banned' ? '解封' : '封禁';
-        message.success(`${action}成功`);
-        loadData();
+        try {
+            const newStatus = player.verificationStatus === 'rejected' ? 'verified' : 'rejected';
+            await adminApi.updatePlayerVerification(player.id, newStatus);
+            const action = player.verificationStatus === 'rejected' ? '解封' : '封禁';
+            message.success(`${action}成功`);
+            loadData();
+        } catch (error) {
+            console.error('Toggle ban error:', error);
+            message.error('操作失败');
+        }
+    };
+
+    /**
+     * 批量修改状态
+     */
+    const handleBatchStatus = (keys: React.Key[]) => {
+        setSelectedPlayerIds(keys ? keys.map(k => Number(k)) : []);
+        batchForm.resetFields();
+        batchForm.setFieldsValue({
+            target: (keys && keys.length > 0) ? 'selected' : 'all',
+        });
+        setBatchTarget((keys && keys.length > 0) ? 'selected' : 'all');
+        setBatchStatusVisible(true);
+    };
+
+    const submitBatchStatus = async () => {
+        try {
+            const values = await batchForm.validateFields();
+            let playerIds: number[] = [];
+
+            if (values.target === 'selected') {
+                playerIds = selectedPlayerIds;
+            } else if (values.target === 'status') {
+                // 按状态筛选 - 需要获取符合条件的陪玩师ID
+                const response = await adminApi.getPlayers({ status: values.filterStatus, page_size: 1000 });
+                if (response.data.success && response.data.data) {
+                    playerIds = response.data.data.map((p: Player) => p.id);
+                }
+            } else {
+                // 全部 - 获取所有陪玩师ID
+                const response = await adminApi.getPlayers({ page_size: 1000 });
+                if (response.data.success && response.data.data) {
+                    playerIds = response.data.data.map((p: Player) => p.id);
+                }
+            }
+
+            if (playerIds.length === 0) {
+                message.warning('没有符合条件的陪玩师');
+                return;
+            }
+
+            const res = await adminApi.batchUpdatePlayerStatus({
+                playerIds,
+                status: values.status,
+            }) as unknown as ApiResponse<void>;
+
+            if (res.success) {
+                message.success(`批量修改 ${playerIds.length} 个陪玩师状态成功`);
+                setBatchStatusVisible(false);
+                loadData();
+            }
+        } catch {
+            message.error('操作失败');
+        }
+    };
+
+    /**
+     * 批量删除
+     */
+    const handleBatchDelete = (keys: React.Key[]) => {
+        setSelectedPlayerIds(keys ? keys.map(k => Number(k)) : []);
+        batchForm.resetFields();
+        batchForm.setFieldsValue({
+            target: (keys && keys.length > 0) ? 'selected' : 'all',
+        });
+        setBatchTarget((keys && keys.length > 0) ? 'selected' : 'all');
+        setBatchDeleteVisible(true);
+    };
+
+    const submitBatchDelete = async () => {
+        try {
+            const values = await batchForm.validateFields();
+            let playerIds: number[] = [];
+
+            if (values.target === 'selected') {
+                playerIds = selectedPlayerIds;
+            } else if (values.target === 'status') {
+                const response = await adminApi.getPlayers({ status: values.filterStatus, page_size: 1000 });
+                if (response.data.success && response.data.data) {
+                    playerIds = response.data.data.map((p: Player) => p.id);
+                }
+            } else {
+                const response = await adminApi.getPlayers({ page_size: 1000 });
+                if (response.data.success && response.data.data) {
+                    playerIds = response.data.data.map((p: Player) => p.id);
+                }
+            }
+
+            if (playerIds.length === 0) {
+                message.warning('没有符合条件的陪玩师');
+                return;
+            }
+
+            const res = await adminApi.batchDeletePlayers(playerIds) as unknown as ApiResponse<void>;
+
+            if (res.success) {
+                message.success(`批量删除 ${playerIds.length} 个陪玩师成功`);
+                setBatchDeleteVisible(false);
+                loadData();
+            }
+        } catch {
+            message.error('操作失败');
+        }
     };
 
     /**
@@ -193,13 +282,6 @@ const PlayerPage: React.FC = () => {
             type: 'select',
             options: Object.entries(statusMap).map(([key, val]) => ({ label: val.text, value: key })),
         },
-        {
-            name: 'onlineStatus',
-            label: '在线状态',
-            type: 'select',
-            options: Object.entries(onlineStatusMap).map(([key, val]) => ({ label: val.text, value: key })),
-        },
-        { name: 'dateRange', label: '申请时间', type: 'dateRange' },
     ];
 
     /**
@@ -220,75 +302,72 @@ const PlayerPage: React.FC = () => {
                 <Space>
                     <Avatar
                         size={40}
-                        src={record.avatar || undefined}
+                        src={record.user?.avatarUrl || undefined}
                         icon={<UserOutlined />}
-                        style={{ backgroundColor: record.gender === 'female' ? '#eb2f96' : '#1890ff' }}
                     />
                     <div>
-                        <div style={{ fontWeight: 500 }}>{record.name}</div>
+                        <div style={{ fontWeight: 500 }}>{record.nickname || record.user?.name || '-'}</div>
                         <Text type="secondary" style={{ fontSize: 12 }}>
-                            {record.gender === 'female' ? '女' : '男'} · {record.age}岁
+                            用户ID: {record.userId}
                         </Text>
                     </div>
                 </Space>
             ),
         },
         {
-            title: '擅长游戏',
-            dataIndex: 'games',
-            key: 'games',
-            width: 180,
-            render: games => (
-                <Space size={4} wrap>
-                    {games.map((g: string) => <Tag key={g}>{g}</Tag>)}
-                </Space>
-            ),
+            title: '主游戏',
+            key: 'mainGame',
+            width: 120,
+            render: (_, record) => record.mainGame?.name || '-',
+        },
+        {
+            title: '时薪',
+            dataIndex: 'hourlyRateCents',
+            key: 'hourlyRateCents',
+            width: 100,
+            render: cents => cents ? `¥${(cents / 100).toFixed(2)}` : '-',
         },
         {
             title: '评分',
-            dataIndex: 'rating',
             key: 'rating',
             width: 120,
-            render: rating => (
+            render: (_, record) => (
                 <Space>
                     <StarOutlined style={{ color: '#faad14' }} />
-                    <span>{rating.toFixed(1)}</span>
+                    <span>{record.ratingAverage?.toFixed(1) || '0.0'}</span>
+                    <Text type="secondary">({record.ratingCount || 0})</Text>
                 </Space>
             ),
         },
         {
-            title: '订单数',
-            dataIndex: 'orderCount',
-            key: 'orderCount',
-            width: 100,
-            render: count => `${count} 单`,
-        },
-        {
-            title: '收益',
-            dataIndex: 'totalEarnings',
-            key: 'totalEarnings',
-            width: 120,
-            render: earnings => <Text strong>¥{earnings.toLocaleString()}</Text>,
+            title: '技能标签',
+            dataIndex: 'skillTags',
+            key: 'skillTags',
+            width: 180,
+            render: tags => (
+                <Space size={4} wrap>
+                    {(tags || []).slice(0, 3).map((tag: string) => <Tag key={tag}>{tag}</Tag>)}
+                    {(tags || []).length > 3 && <Tag>+{tags.length - 3}</Tag>}
+                </Space>
+            ),
         },
         {
             title: '状态',
-            dataIndex: 'status',
-            key: 'status',
+            dataIndex: 'verificationStatus',
+            key: 'verificationStatus',
             width: 100,
-            render: (status: Player['status']) => <Tag color={statusMap[status].color}>{statusMap[status].text}</Tag>,
+            render: (status: Player['verificationStatus']) => (
+                <Tag color={statusMap[status]?.color || 'default'}>
+                    {statusMap[status]?.text || status}
+                </Tag>
+            ),
         },
         {
-            title: '在线',
-            dataIndex: 'onlineStatus',
-            key: 'onlineStatus',
-            width: 80,
-            render: (status: Player['onlineStatus']) => <Tag color={onlineStatusMap[status].color}>{onlineStatusMap[status].text}</Tag>,
-        },
-        {
-            title: '申请时间',
+            title: '创建时间',
             dataIndex: 'createdAt',
             key: 'createdAt',
             width: 180,
+            render: date => date ? dayjs(date).format('YYYY-MM-DD HH:mm:ss') : '-',
         },
         {
             title: '操作',
@@ -305,7 +384,7 @@ const PlayerPage: React.FC = () => {
                     >
                         详情
                     </Button>
-                    {record.status === 'pending' && (
+                    {record.verificationStatus === 'pending' && (
                         <PermissionGuard permission={PLAYER_PERMISSIONS.AUDIT}>
                             <Button
                                 type="link"
@@ -317,7 +396,7 @@ const PlayerPage: React.FC = () => {
                             </Button>
                         </PermissionGuard>
                     )}
-                    {record.status === 'approved' && (
+                    {record.verificationStatus === 'verified' && (
                         <PermissionGuard permission={PLAYER_PERMISSIONS.UPDATE}>
                             <Popconfirm
                                 title="确定要封禁该陪玩师吗？"
@@ -329,7 +408,7 @@ const PlayerPage: React.FC = () => {
                             </Popconfirm>
                         </PermissionGuard>
                     )}
-                    {record.status === 'banned' && (
+                    {record.verificationStatus === 'rejected' && (
                         <PermissionGuard permission={PLAYER_PERMISSIONS.UPDATE}>
                             <Popconfirm
                                 title="确定要解封该陪玩师吗？"
@@ -346,6 +425,27 @@ const PlayerPage: React.FC = () => {
         },
     ];
 
+    /**
+     * 工具栏按钮
+     */
+    const toolbarButtons: ToolbarButton[] = [
+        {
+            text: '批量修改状态',
+            icon: <SafetyOutlined />,
+            needSelection: false,
+            onClick: (keys) => handleBatchStatus(keys || []),
+            permission: PLAYER_PERMISSIONS.UPDATE,
+        },
+        {
+            text: '批量删除',
+            icon: <DeleteOutlined />,
+            needSelection: false,
+            danger: true,
+            onClick: (keys) => handleBatchDelete(keys || []),
+            permission: PLAYER_PERMISSIONS.DELETE,
+        },
+    ];
+
     return (
         <PageContainer title="陪玩师管理" subTitle="管理平台陪玩师认证和审核">
             <SearchTable
@@ -353,17 +453,18 @@ const PlayerPage: React.FC = () => {
                 dataSource={players}
                 rowKey="id"
                 searchFields={searchFields}
-                onSearch={() => loadData()}
-                onRefresh={loadData}
+                onSearch={handleSearch}
+                onRefresh={() => loadData()}
                 loading={loading}
                 showCreate={false}
+                toolbarButtons={toolbarButtons}
                 pagination={{
                     current,
                     pageSize,
                     total,
                     showSizeChanger: true,
                     showQuickJumper: true,
-                    showTotal: total => `共 ${total} 条`,
+                    showTotal: t => `共 ${t} 条`,
                     onChange: (page, size) => {
                         setCurrent(page);
                         setPageSize(size);
@@ -386,26 +487,34 @@ const PlayerPage: React.FC = () => {
                             <div style={{ textAlign: 'center', marginBottom: 16 }}>
                                 <Avatar
                                     size={80}
-                                    src={currentPlayer.avatar || undefined}
+                                    src={currentPlayer.user?.avatarUrl || undefined}
                                     icon={<UserOutlined />}
-                                    style={{ backgroundColor: currentPlayer.gender === 'female' ? '#eb2f96' : '#1890ff' }}
                                 />
-                                <h2 style={{ marginTop: 12, marginBottom: 4 }}>{currentPlayer.name}</h2>
-                                <Space>
-                                    <Tag color={statusMap[currentPlayer.status].color}>{statusMap[currentPlayer.status].text}</Tag>
-                                    <Tag color={onlineStatusMap[currentPlayer.onlineStatus].color}>{onlineStatusMap[currentPlayer.onlineStatus].text}</Tag>
-                                </Space>
+                                <h2 style={{ marginTop: 12, marginBottom: 4 }}>
+                                    {currentPlayer.nickname || currentPlayer.user?.name || '-'}
+                                </h2>
+                                <Tag color={statusMap[currentPlayer.verificationStatus]?.color}>
+                                    {statusMap[currentPlayer.verificationStatus]?.text}
+                                </Tag>
                             </div>
 
                             <Row gutter={16}>
                                 <Col span={8}>
-                                    <Statistic title="评分" value={currentPlayer.rating.toFixed(1)} prefix={<StarOutlined />} />
+                                    <Statistic
+                                        title="评分"
+                                        value={currentPlayer.ratingAverage?.toFixed(1) || '0.0'}
+                                        prefix={<StarOutlined />}
+                                    />
                                 </Col>
                                 <Col span={8}>
-                                    <Statistic title="订单数" value={currentPlayer.orderCount} suffix="单" />
+                                    <Statistic title="评价数" value={currentPlayer.ratingCount || 0} suffix="条" />
                                 </Col>
                                 <Col span={8}>
-                                    <Statistic title="总收益" value={currentPlayer.totalEarnings} prefix="¥" />
+                                    <Statistic
+                                        title="时薪"
+                                        value={currentPlayer.hourlyRateCents ? (currentPlayer.hourlyRateCents / 100).toFixed(2) : 0}
+                                        prefix="¥"
+                                    />
                                 </Col>
                             </Row>
                         </Card>
@@ -416,44 +525,27 @@ const PlayerPage: React.FC = () => {
                         <Descriptions title="基本信息" column={2} size="small">
                             <Descriptions.Item label="ID">{currentPlayer.id}</Descriptions.Item>
                             <Descriptions.Item label="用户ID">{currentPlayer.userId}</Descriptions.Item>
-                            <Descriptions.Item label="性别">{currentPlayer.gender === 'female' ? '女' : '男'}</Descriptions.Item>
-                            <Descriptions.Item label="年龄">{currentPlayer.age}岁</Descriptions.Item>
-                            <Descriptions.Item label="擅长游戏" span={2}>
+                            <Descriptions.Item label="昵称">{currentPlayer.nickname || '-'}</Descriptions.Item>
+                            <Descriptions.Item label="段位">{currentPlayer.rank || '-'}</Descriptions.Item>
+                            <Descriptions.Item label="主游戏">{currentPlayer.mainGame?.name || '-'}</Descriptions.Item>
+                            <Descriptions.Item label="时薪">
+                                {currentPlayer.hourlyRateCents ? `¥${(currentPlayer.hourlyRateCents / 100).toFixed(2)}` : '-'}
+                            </Descriptions.Item>
+                            <Descriptions.Item label="技能标签" span={2}>
                                 <Space wrap>
-                                    {currentPlayer.games.map(g => <Tag key={g}>{g}</Tag>)}
+                                    {(currentPlayer.skillTags || []).map(tag => <Tag key={tag}>{tag}</Tag>)}
                                 </Space>
                             </Descriptions.Item>
-                            <Descriptions.Item label="自我介绍" span={2}>
+                            <Descriptions.Item label="个人简介" span={2}>
                                 <Paragraph ellipsis={{ rows: 3, expandable: true }}>
-                                    {currentPlayer.introduction}
+                                    {currentPlayer.bio || '暂无介绍'}
                                 </Paragraph>
                             </Descriptions.Item>
-                            <Descriptions.Item label="申请时间">{currentPlayer.createdAt}</Descriptions.Item>
-                            <Descriptions.Item label="更新时间">{currentPlayer.updatedAt}</Descriptions.Item>
-                            {currentPlayer.auditRemark && (
-                                <Descriptions.Item label="审核备注" span={2}>
-                                    <Text type="danger">{currentPlayer.auditRemark}</Text>
-                                </Descriptions.Item>
-                            )}
-                        </Descriptions>
-
-                        <Divider />
-
-                        {/* 身份证照片 */}
-                        <Descriptions title="身份验证" column={2}>
-                            <Descriptions.Item label="身份证正面">
-                                <Image
-                                    width={150}
-                                    src={currentPlayer.idCardFront}
-                                    fallback="https://via.placeholder.com/150x100"
-                                />
+                            <Descriptions.Item label="创建时间">
+                                {currentPlayer.createdAt ? dayjs(currentPlayer.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}
                             </Descriptions.Item>
-                            <Descriptions.Item label="身份证反面">
-                                <Image
-                                    width={150}
-                                    src={currentPlayer.idCardBack}
-                                    fallback="https://via.placeholder.com/150x100"
-                                />
+                            <Descriptions.Item label="更新时间">
+                                {currentPlayer.updatedAt ? dayjs(currentPlayer.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}
                             </Descriptions.Item>
                         </Descriptions>
                     </>
@@ -465,7 +557,7 @@ const PlayerPage: React.FC = () => {
                 title="审核陪玩师申请"
                 open={auditModalVisible}
                 onCancel={() => setAuditModalVisible(false)}
-                width={700}
+                width={600}
                 footer={
                     <Space>
                         <Button onClick={() => setAuditModalVisible(false)}>取消</Button>
@@ -485,60 +577,38 @@ const PlayerPage: React.FC = () => {
                             <Space align="start">
                                 <Avatar
                                     size={64}
-                                    src={currentPlayer.avatar || undefined}
+                                    src={currentPlayer.user?.avatarUrl || undefined}
                                     icon={<UserOutlined />}
-                                    style={{ backgroundColor: currentPlayer.gender === 'female' ? '#eb2f96' : '#1890ff' }}
                                 />
                                 <div>
-                                    <div style={{ fontSize: 16, fontWeight: 500 }}>{currentPlayer.name}</div>
-                                    <Text type="secondary">
-                                        {currentPlayer.gender === 'female' ? '女' : '男'} · {currentPlayer.age}岁
-                                    </Text>
+                                    <div style={{ fontSize: 16, fontWeight: 500 }}>
+                                        {currentPlayer.nickname || currentPlayer.user?.name || '-'}
+                                    </div>
+                                    <Text type="secondary">用户ID: {currentPlayer.userId}</Text>
                                     <div style={{ marginTop: 8 }}>
-                                        <Space wrap>
-                                            {currentPlayer.games.map(g => <Tag key={g} color="blue">{g}</Tag>)}
-                                        </Space>
+                                        {currentPlayer.mainGame && (
+                                            <Tag color="blue">{currentPlayer.mainGame.name}</Tag>
+                                        )}
+                                        {currentPlayer.rank && <Tag>{currentPlayer.rank}</Tag>}
                                     </div>
                                 </div>
                             </Space>
                         </Card>
 
-                        {/* 自我介绍 */}
+                        {/* 详细信息 */}
                         <Descriptions column={1} size="small" bordered style={{ marginBottom: 16 }}>
-                            <Descriptions.Item label="自我介绍">
+                            <Descriptions.Item label="个人简介">
                                 <Paragraph ellipsis={{ rows: 3, expandable: true }}>
-                                    {currentPlayer.introduction || '暂无介绍'}
+                                    {currentPlayer.bio || '暂无介绍'}
                                 </Paragraph>
                             </Descriptions.Item>
-                            <Descriptions.Item label="申请时间">{currentPlayer.createdAt}</Descriptions.Item>
+                            <Descriptions.Item label="期望时薪">
+                                {currentPlayer.hourlyRateCents ? `¥${(currentPlayer.hourlyRateCents / 100).toFixed(2)}` : '-'}
+                            </Descriptions.Item>
+                            <Descriptions.Item label="申请时间">
+                                {currentPlayer.createdAt ? dayjs(currentPlayer.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}
+                            </Descriptions.Item>
                         </Descriptions>
-
-                        {/* 身份验证 */}
-                        <div style={{ marginBottom: 16 }}>
-                            <Text strong style={{ display: 'block', marginBottom: 8 }}>身份验证材料</Text>
-                            <Space size={16}>
-                                <div>
-                                    <Text type="secondary" style={{ display: 'block', marginBottom: 4 }}>身份证正面</Text>
-                                    <Image
-                                        width={150}
-                                        height={100}
-                                        src={currentPlayer.idCardFront}
-                                        fallback="https://via.placeholder.com/150x100?text=暂无图片"
-                                        style={{ objectFit: 'cover', borderRadius: 4 }}
-                                    />
-                                </div>
-                                <div>
-                                    <Text type="secondary" style={{ display: 'block', marginBottom: 4 }}>身份证反面</Text>
-                                    <Image
-                                        width={150}
-                                        height={100}
-                                        src={currentPlayer.idCardBack}
-                                        fallback="https://via.placeholder.com/150x100?text=暂无图片"
-                                        style={{ objectFit: 'cover', borderRadius: 4 }}
-                                    />
-                                </div>
-                            </Space>
-                        </div>
 
                         <Divider />
 
@@ -549,6 +619,80 @@ const PlayerPage: React.FC = () => {
                         </Form>
                     </>
                 )}
+            </Modal>
+
+            {/* 批量修改状态弹窗 */}
+            <Modal
+                title="批量修改陪玩师状态"
+                open={batchStatusVisible}
+                onOk={submitBatchStatus}
+                onCancel={() => setBatchStatusVisible(false)}
+            >
+                <Form form={batchForm} layout="vertical">
+                    <Form.Item name="target" label="目标对象" rules={[{ required: true }]}>
+                        <Radio.Group onChange={(e) => setBatchTarget(e.target.value)}>
+                            <Radio value="selected" disabled={selectedPlayerIds.length === 0}>
+                                选中的陪玩师 {selectedPlayerIds.length > 0 ? `(${selectedPlayerIds.length})` : ''}
+                            </Radio>
+                            <Radio value="status">按状态筛选</Radio>
+                            <Radio value="all">全部陪玩师</Radio>
+                        </Radio.Group>
+                    </Form.Item>
+
+                    {batchTarget === 'status' && (
+                        <Form.Item name="filterStatus" label="筛选状态" rules={[{ required: true, message: '请选择筛选状态' }]}>
+                            <Select placeholder="请选择要筛选的状态">
+                                <Select.Option value="pending">待审核</Select.Option>
+                                <Select.Option value="verified">已通过</Select.Option>
+                                <Select.Option value="rejected">已拒绝</Select.Option>
+                            </Select>
+                        </Form.Item>
+                    )}
+
+                    <Form.Item name="status" label="修改为" rules={[{ required: true, message: '请选择目标状态' }]}>
+                        <Select placeholder="请选择目标状态">
+                            <Select.Option value="pending">待审核</Select.Option>
+                            <Select.Option value="verified">已通过</Select.Option>
+                            <Select.Option value="rejected">已拒绝</Select.Option>
+                        </Select>
+                    </Form.Item>
+                </Form>
+            </Modal>
+
+            {/* 批量删除弹窗 */}
+            <Modal
+                title="批量删除陪玩师"
+                open={batchDeleteVisible}
+                onOk={submitBatchDelete}
+                onCancel={() => setBatchDeleteVisible(false)}
+                okText="确认删除"
+                okButtonProps={{ danger: true }}
+            >
+                <Form form={batchForm} layout="vertical">
+                    <Form.Item name="target" label="目标对象" rules={[{ required: true }]}>
+                        <Radio.Group onChange={(e) => setBatchTarget(e.target.value)}>
+                            <Radio value="selected" disabled={selectedPlayerIds.length === 0}>
+                                选中的陪玩师 {selectedPlayerIds.length > 0 ? `(${selectedPlayerIds.length})` : ''}
+                            </Radio>
+                            <Radio value="status">按状态筛选</Radio>
+                            <Radio value="all">全部陪玩师</Radio>
+                        </Radio.Group>
+                    </Form.Item>
+
+                    {batchTarget === 'status' && (
+                        <Form.Item name="filterStatus" label="筛选状态" rules={[{ required: true, message: '请选择筛选状态' }]}>
+                            <Select placeholder="请选择要筛选的状态">
+                                <Select.Option value="pending">待审核</Select.Option>
+                                <Select.Option value="verified">已通过</Select.Option>
+                                <Select.Option value="rejected">已拒绝</Select.Option>
+                            </Select>
+                        </Form.Item>
+                    )}
+
+                    <div style={{ color: '#ff4d4f', marginTop: 16 }}>
+                        ⚠️ 警告：此操作不可恢复，请谨慎操作！
+                    </div>
+                </Form>
             </Modal>
         </PageContainer>
     );

@@ -176,6 +176,8 @@ export const COMMISSION_PERMISSIONS = {
     UPDATE: 'admin.commissions.update',
     /** 删除佣金配置 */
     DELETE: 'admin.commissions.delete',
+    /** 触发结算 */
+    SETTLE: 'admin.commissions.settle',
 } as const;
 
 /**
@@ -190,6 +192,8 @@ export const WITHDRAW_PERMISSIONS = {
     APPROVE: 'admin.withdraws.approve',
     /** 拒绝提现 */
     REJECT: 'admin.withdraws.reject',
+    /** 完成提现打款 */
+    COMPLETE: 'admin.withdraws.complete',
 } as const;
 
 /**

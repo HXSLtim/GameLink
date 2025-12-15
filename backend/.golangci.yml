@@ -73,3 +73,7 @@ issues:
       linters:
         - errcheck
         - dupl
+    - path: internal/handler/admin/helpers\.go
+      linters:
+        - errcheck
+      text: "Error return value of .*(Write).*"

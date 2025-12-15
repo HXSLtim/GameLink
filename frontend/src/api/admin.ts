@@ -30,11 +30,24 @@ export interface User {
 
 export interface Order {
     id: number;
-    orderNo: string;
-    amount: number;
-    status: string;
+    orderNumber: string;
+    userId: number;
+    playerId: number;
+    gameId: number;
+    title: string;
+    description: string;
+    totalPriceCents: number;
+    currency: string;
+    status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled' | 'refunded';
+    scheduledStart: string;
+    scheduledEnd: string;
+    completedAt: string;
+    cancelReason: string;
     createdAt: string;
-    // Add other fields as needed
+    updatedAt: string;
+    user?: { id: number; name: string; avatarUrl?: string };
+    player?: { id: number; nickname: string; user?: { avatarUrl?: string } };
+    game?: { id: number; name: string };
 }
 
 export interface AuditLog {
@@ -305,13 +318,122 @@ export interface OrderQueryParams {
     dateTo?: string;
 }
 
+// Player (陪玩师) Interfaces
+export interface Player {
+    id: number;
+    userId: number;
+    nickname: string;
+    bio: string;
+    rank: string;
+    hourlyRateCents: number;
+    mainGameId: number;
+    verificationStatus: 'pending' | 'verified' | 'rejected';
+    ratingAverage: number;
+    ratingCount: number;
+    skillTags: string[];
+    createdAt: string;
+    updatedAt: string;
+    user?: User;
+    mainGame?: Game;
+}
+
+export interface CreatePlayerDto {
+    userId: number;
+    nickname?: string;
+    bio?: string;
+    rank?: string;
+    hourlyRateCents?: number;
+    mainGameId?: number;
+    verificationStatus: string;
+}
+
+export interface UpdatePlayerDto {
+    nickname?: string;
+    bio?: string;
+    rank?: string;
+    hourlyRateCents?: number;
+    mainGameId?: number;
+    verificationStatus: string;
+}
+
+export interface PlayerQueryParams {
+    page?: number;
+    page_size?: number;
+    status?: string;
+    keyword?: string;
+}
+
 export interface WithdrawQueryParams {
     page?: number;
     page_size?: number;
-    status?: 'pending' | 'approved' | 'rejected';
-    userId?: number;
+    status?: 'pending' | 'approved' | 'rejected' | 'completed';
+    playerId?: number;
     dateFrom?: string;
     dateTo?: string;
+}
+
+export interface Withdraw {
+    id: number;
+    playerId: number;
+    amountCents: number;
+    status: 'pending' | 'approved' | 'rejected' | 'completed';
+    bankName?: string;
+    bankAccount?: string;
+    accountName?: string;
+    remark?: string;
+    rejectReason?: string;
+    adminRemark?: string;
+    processedBy?: number;
+    processedAt?: string;
+    completedAt?: string;
+    createdAt: string;
+    updatedAt: string;
+    player?: Player;
+}
+
+export interface ApproveWithdrawDto {
+    remark?: string;
+}
+
+export interface RejectWithdrawDto {
+    reason: string;
+}
+
+// Commission Interfaces
+export interface CommissionRule {
+    id: number;
+    name: string;
+    ratePercent: number;
+    minAmountCents?: number;
+    maxAmountCents?: number;
+    gameId?: number;
+    categoryId?: number;
+    isDefault: boolean;
+    status: 'active' | 'inactive';
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface CreateCommissionRuleDto {
+    name: string;
+    ratePercent: number;
+    minAmountCents?: number;
+    maxAmountCents?: number;
+    gameId?: number;
+    categoryId?: number;
+    isDefault?: boolean;
+}
+
+export interface UpdateCommissionRuleDto extends Partial<CreateCommissionRuleDto> {
+    status?: 'active' | 'inactive';
+}
+
+export interface PlatformStats {
+    month: string;
+    totalRevenueCents: number;
+    totalCommissionCents: number;
+    totalOrderCount: number;
+    completedOrderCount: number;
 }
 
 export const adminApi = {
@@ -357,6 +479,8 @@ export const adminApi = {
     createGame: (data: CreateGameDto) => apiClient.post('/admin/games', data),
     updateGame: (id: string, data: UpdateGameDto) => apiClient.put(`/admin/games/${id}`, data),
     deleteGame: (id: string) => apiClient.delete(`/admin/games/${id}`),
+    // Game Batch Operations
+    batchDeleteGames: (gameIds: string[]) => apiClient.post<ApiResponse<void>>('/admin/games/batch/delete', { gameIds }),
 
     // Service Item Management
     getServiceItems: (params?: ServiceItemQueryParams) => apiClient.get<ApiResponse<ServiceItem[]>>('/admin/service-items', { params }),
@@ -394,11 +518,39 @@ export const adminApi = {
     getUserRoles: (userId: number) => apiClient.get(`/admin/users/${userId}/roles`),
     getUserStats: () => apiClient.get<ApiResponse<UserStats>>('/admin/users/stats'),
 
+    // Player Management
+    getPlayers: (params?: PlayerQueryParams) => apiClient.get<ApiResponse<Player[]>>('/admin/players', { params }),
+    getPlayer: (id: number) => apiClient.get<ApiResponse<Player>>(`/admin/players/${id}`),
+    createPlayer: (data: CreatePlayerDto) => apiClient.post<ApiResponse<Player>>('/admin/players', data),
+    updatePlayer: (id: number, data: UpdatePlayerDto) => apiClient.put<ApiResponse<Player>>(`/admin/players/${id}`, data),
+    deletePlayer: (id: number) => apiClient.delete<ApiResponse<void>>(`/admin/players/${id}`),
+    updatePlayerVerification: (id: number, status: string) => apiClient.put<ApiResponse<Player>>(`/admin/players/${id}/verification`, { verification_status: status }),
+    updatePlayerSkillTags: (id: number, tags: string[]) => apiClient.put<ApiResponse<void>>(`/admin/players/${id}/skill-tags`, { tags }),
+    // Player Batch Operations
+    batchUpdatePlayerStatus: (data: { playerIds: number[]; status: string }) => apiClient.post<ApiResponse<void>>('/admin/players/batch/status', data),
+    batchDeletePlayers: (playerIds: number[]) => apiClient.post<ApiResponse<void>>('/admin/players/batch/delete', { playerIds }),
+
     // Order Management
-    getOrders: (params?: OrderQueryParams) => apiClient.get('/admin/orders', { params }),
+    getOrders: (params?: OrderQueryParams) => apiClient.get<ApiResponse<Order[]>>('/admin/orders', { params }),
+    getOrder: (id: number) => apiClient.get<ApiResponse<Order>>(`/admin/orders/${id}`),
+    cancelOrder: (id: number, note?: string) => apiClient.post<ApiResponse<Order>>(`/admin/orders/${id}/cancel`, { note }),
+    refundOrder: (id: number, data: { reason: string; amount_cents: number; note?: string }) => apiClient.post<ApiResponse<Order>>(`/admin/orders/${id}/refund`, data),
+    // Order Batch Operations
+    batchCancelOrders: (orderIds: number[], reason?: string) => apiClient.post<ApiResponse<void>>('/admin/orders/batch/cancel', { orderIds, reason }),
+    batchCompleteOrders: (orderIds: number[]) => apiClient.post<ApiResponse<void>>('/admin/orders/batch/complete', { orderIds }),
 
     // Withdraw Management
-    getWithdraws: (params?: WithdrawQueryParams) => apiClient.get('/admin/withdraws', { params }),
+    getWithdraws: (params?: WithdrawQueryParams) => apiClient.get<ApiResponse<{ withdraws: Withdraw[]; total: number }>>('/admin/withdraws', { params }),
+    getWithdraw: (id: number) => apiClient.get<ApiResponse<Withdraw>>(`/admin/withdraws/${id}`),
+    approveWithdraw: (id: number, data?: ApproveWithdrawDto) => apiClient.post<ApiResponse<void>>(`/admin/withdraws/${id}/approve`, data),
+    rejectWithdraw: (id: number, data: RejectWithdrawDto) => apiClient.post<ApiResponse<void>>(`/admin/withdraws/${id}/reject`, data),
+    completeWithdraw: (id: number) => apiClient.post<ApiResponse<void>>(`/admin/withdraws/${id}/complete`),
+
+    // Commission Management
+    createCommissionRule: (data: CreateCommissionRuleDto) => apiClient.post<ApiResponse<CommissionRule>>('/admin/commission/rules', data),
+    updateCommissionRule: (id: number, data: UpdateCommissionRuleDto) => apiClient.put<ApiResponse<void>>(`/admin/commission/rules/${id}`, data),
+    triggerSettlement: (month?: string) => apiClient.post<ApiResponse<void>>('/admin/commission/settlements/trigger', null, { params: { month } }),
+    getPlatformStats: (month?: string) => apiClient.get<ApiResponse<PlatformStats>>('/admin/commission/stats', { params: { month } }),
 
     // Dashboard & Stats
     getDashboardStats: () => apiClient.get<ApiResponse<DashboardStats>>('/admin/stats/dashboard'),

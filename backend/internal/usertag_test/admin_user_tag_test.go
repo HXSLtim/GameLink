@@ -117,7 +117,7 @@ func TestAdminUserTagManagement(t *testing.T) {
 	resp := doJSON(router, http.MethodPost, "/api/v1/admin/user-tags", tag1Payload, "")
 	assert.Equal(t, http.StatusOK, resp.Code, "创建标签应该成功")
 	var tag1Resp apiResp[admin.TagResponse]
-	json.Unmarshal(resp.Body.Bytes(), &tag1Resp)
+	assert.NoError(t, json.Unmarshal(resp.Body.Bytes(), &tag1Resp))
 	assert.Equal(t, "VIP", tag1Resp.Data.Name)
 	assert.Equal(t, "#FF6B6B", tag1Resp.Data.Color)
 	vipTagID := tag1Resp.Data.ID
@@ -131,13 +131,13 @@ func TestAdminUserTagManagement(t *testing.T) {
 	resp = doJSON(router, http.MethodPost, "/api/v1/admin/user-tags", tag2Payload, "")
 	assert.Equal(t, http.StatusOK, resp.Code, "创建第二个标签应该成功")
 	var tag2Resp apiResp[admin.TagResponse]
-	json.Unmarshal(resp.Body.Bytes(), &tag2Resp)
+	assert.NoError(t, json.Unmarshal(resp.Body.Bytes(), &tag2Resp))
 
 	// 2. 获取标签列表
 	resp = doJSON(router, http.MethodGet, "/api/v1/admin/user-tags", nil, "")
 	assert.Equal(t, http.StatusOK, resp.Code)
 	var tagsResp apiResp[[]admin.TagResponse]
-	json.Unmarshal(resp.Body.Bytes(), &tagsResp)
+	assert.NoError(t, json.Unmarshal(resp.Body.Bytes(), &tagsResp))
 	assert.Len(t, tagsResp.Data, 2, "应该返回两个标签")
 
 	// 3. 更新标签
@@ -149,7 +149,7 @@ func TestAdminUserTagManagement(t *testing.T) {
 	resp = doJSON(router, http.MethodPut, "/api/v1/admin/user-tags/"+uint64ToStr(vipTagID), updatePayload, "")
 	assert.Equal(t, http.StatusOK, resp.Code, "更新标签应该成功")
 	var updatedTag apiResp[admin.TagResponse]
-	json.Unmarshal(resp.Body.Bytes(), &updatedTag)
+	assert.NoError(t, json.Unmarshal(resp.Body.Bytes(), &updatedTag))
 	assert.Equal(t, "VIP用户", updatedTag.Data.Name)
 	assert.Equal(t, "#FF0000", updatedTag.Data.Color)
 
@@ -161,7 +161,7 @@ func TestAdminUserTagManagement(t *testing.T) {
 	resp = doJSON(router, http.MethodGet, "/api/v1/admin/users/"+uint64ToStr(testUser.ID)+"/tags", nil, "")
 	assert.Equal(t, http.StatusOK, resp.Code)
 	var userTagsResp apiResp[[]admin.TagResponse]
-	json.Unmarshal(resp.Body.Bytes(), &userTagsResp)
+	assert.NoError(t, json.Unmarshal(resp.Body.Bytes(), &userTagsResp))
 	assert.Len(t, userTagsResp.Data, 1, "用户应该有一个标签")
 
 	// 6. 移除用户标签
@@ -174,6 +174,6 @@ func TestAdminUserTagManagement(t *testing.T) {
 
 	// 8. 验证标签已被删除
 	resp = doJSON(router, http.MethodGet, "/api/v1/admin/user-tags", nil, "")
-	json.Unmarshal(resp.Body.Bytes(), &tagsResp)
+	assert.NoError(t, json.Unmarshal(resp.Body.Bytes(), &tagsResp))
 	assert.Len(t, tagsResp.Data, 1, "应该只剩一个标签")
 }

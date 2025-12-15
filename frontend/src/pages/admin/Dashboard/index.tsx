@@ -86,7 +86,8 @@ const Dashboard: React.FC = () => {
 
                 const ordersData = ordersRes.data?.data || ordersRes.data || [];
                 // Handle case where API returns array directly or { list: [] }
-                setRecentOrders(Array.isArray(ordersData) ? ordersData : (ordersData.list || []));
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                setRecentOrders(Array.isArray(ordersData) ? ordersData : ((ordersData as any).list || []));
 
                 setTopPlayers(topPlayersRes.data?.data || topPlayersRes.data || []);
 

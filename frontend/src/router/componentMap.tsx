@@ -31,6 +31,10 @@ export const componentMap: Record<string, React.LazyExoticComponent<React.Compon
     'Order': React.lazy(() => import('@/pages/admin/Order')),
     'ServiceItem': ServiceItemList,
     
+    // 财务管理
+    'Withdraw': React.lazy(() => import('@/pages/admin/Withdraw')),
+    'Commission': React.lazy(() => import('@/pages/admin/Commission')),
+    
     // 监控中心
     'RealtimeMonitor': React.lazy(() => import('@/pages/admin/Monitor/Realtime')),
     'Analytics': React.lazy(() => import('@/pages/admin/Monitor/Analytics')),
@@ -69,6 +73,10 @@ export const componentMap: Record<string, React.LazyExoticComponent<React.Compon
     'biz/service/create': ServiceItemCreate,
     'biz/service/edit': ServiceItemEdit,
     'biz/service/detail': ServiceItemDetail,
+    'biz/withdraw': React.lazy(() => import('@/pages/admin/Withdraw')),
+    'biz/commission': React.lazy(() => import('@/pages/admin/Commission')),
+    'finance/withdraw': React.lazy(() => import('@/pages/admin/Withdraw')),
+    'finance/commission': React.lazy(() => import('@/pages/admin/Commission')),
     'content/feeds': React.lazy(() => import('@/pages/admin/Content/Feeds')),
     'content/chat': React.lazy(() => import('@/pages/admin/Content/ChatMonitor')),
     'content/reports': React.lazy(() => import('@/pages/admin/Content/Reports')),

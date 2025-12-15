@@ -151,6 +151,34 @@ export const ADMIN_MENUS: MenuConfig[] = [
         ],
     },
     {
+        name: '财务管理',
+        path: '/admin/finance',
+        component: 'Layout',
+        icon: 'DollarOutlined',
+        order: 3,
+        description: '财务和结算管理',
+        children: [
+            {
+                name: '提现管理',
+                path: '/admin/finance/withdraw',
+                component: 'Withdraw',
+                icon: 'WalletOutlined',
+                order: 1,
+                permission: 'admin.withdraws.list',
+                description: '管理陪玩师提现申请',
+            },
+            {
+                name: '佣金设置',
+                path: '/admin/finance/commission',
+                component: 'Commission',
+                icon: 'PercentageOutlined',
+                order: 2,
+                permission: 'admin.commissions.list',
+                description: '平台佣金规则和结算',
+            },
+        ],
+    },
+    {
         name: '监控中心',
         path: '/admin/monitor',
         component: 'Layout',
@@ -371,6 +399,19 @@ export const ADMIN_PERMISSIONS: PermissionConfig[] = [
     { method: 'POST', path: '/api/v1/admin/service-items', code: 'admin.service-items.create', group: '/admin/service-items', description: '创建服务项目' },
     { method: 'PUT', path: '/api/v1/admin/service-items/:id', code: 'admin.service-items.update', group: '/admin/service-items', description: '更新服务项目' },
     { method: 'DELETE', path: '/api/v1/admin/service-items/:id', code: 'admin.service-items.delete', group: '/admin/service-items', description: '删除服务项目' },
+
+    // 提现管理
+    { method: 'GET', path: '/api/v1/admin/withdraws', code: 'admin.withdraws.list', group: '/admin/withdraws', description: '获取提现列表' },
+    { method: 'GET', path: '/api/v1/admin/withdraws/:id', code: 'admin.withdraws.read', group: '/admin/withdraws', description: '获取提现详情' },
+    { method: 'POST', path: '/api/v1/admin/withdraws/:id/approve', code: 'admin.withdraws.approve', group: '/admin/withdraws', description: '批准提现' },
+    { method: 'POST', path: '/api/v1/admin/withdraws/:id/reject', code: 'admin.withdraws.reject', group: '/admin/withdraws', description: '拒绝提现' },
+    { method: 'POST', path: '/api/v1/admin/withdraws/:id/complete', code: 'admin.withdraws.complete', group: '/admin/withdraws', description: '完成提现打款' },
+
+    // 佣金管理
+    { method: 'GET', path: '/api/v1/admin/commission/stats', code: 'admin.commissions.list', group: '/admin/commission', description: '获取平台统计' },
+    { method: 'POST', path: '/api/v1/admin/commission/rules', code: 'admin.commissions.create', group: '/admin/commission', description: '创建佣金规则' },
+    { method: 'PUT', path: '/api/v1/admin/commission/rules/:id', code: 'admin.commissions.update', group: '/admin/commission', description: '更新佣金规则' },
+    { method: 'POST', path: '/api/v1/admin/commission/settlements/trigger', code: 'admin.commissions.settle', group: '/admin/commission', description: '触发月度结算' },
 
     // 系统设置
     { method: 'GET', path: '/api/v1/admin/settings', code: 'admin.settings.view', group: '/admin/settings', description: '查看系统设置' },

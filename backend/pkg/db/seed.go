@@ -884,6 +884,7 @@ func ensureServiceItem(tx *gorm.DB, code, name string, gameID uint64) (*model.Se
 		ServiceHours:   1,
 		CommissionRate: 0.20,
 		IsActive:       true,
+		Tags:           "[]", // 空 JSON 数组，PostgreSQL JSON 类型不接受空字符串
 	}
 	if err := tx.Create(&item).Error; err != nil {
 		return nil, err
@@ -913,6 +914,7 @@ func seedOrder(tx *gorm.DB, input seedOrderParams) (*model.Order, error) {
 		ScheduledStart:  input.ScheduledStart,
 		ScheduledEnd:    input.ScheduledEnd,
 		CancelReason:    strings.TrimSpace(input.CancelReason),
+		OrderConfig:     "{}", // 空 JSON 对象，PostgreSQL JSON 类型不接受空字符串
 	}
 	if input.PlayerID != nil {
 		order.PlayerID = input.PlayerID

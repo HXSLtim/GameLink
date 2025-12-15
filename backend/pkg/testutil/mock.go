@@ -11,7 +11,7 @@ import (
 type MockHelper struct{}
 
 // AssertMockCalls asserts that all expected mock calls were made.
-func AssertMockCalls(t *testing.T, m mock.Mock) {
+func AssertMockCalls(t *testing.T, m *mock.Mock) {
 	t.Helper()
 
 	m.AssertExpectations(t)

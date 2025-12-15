@@ -36,7 +36,7 @@ auth:
   token_ttl_hours: 24
 
 seed:
-  enabled: false
+  enabled: true
 
 super_admin:
   email: "admin@gameLink.com" # 如不使用环境变量，可在此显式配置

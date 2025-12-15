@@ -190,6 +190,7 @@ func seedChatGroups(tx *gorm.DB, users map[string]*model.User) (map[string]*mode
 			MaxMembers:  100,
 			IsActive:    s.IsActive,
 			Description: s.Desc,
+			Settings:    "{}", // 空 JSON 对象，PostgreSQL JSON 类型不接受空字符串
 		}
 		if err := tx.Create(group).Error; err != nil {
 			return nil, err
@@ -493,6 +494,7 @@ func seedChatMessages(tx *gorm.DB, users map[string]*model.User, groups map[stri
 			MessageType: spec.MessageType,
 			AuditStatus: spec.AuditStatus,
 			IsDeleted:   spec.IsDeleted,
+			Metadata:    "{}", // 空 JSON 对象，PostgreSQL JSON 类型不接受空字符串
 		}
 		msg.CreatedAt = now.Add(spec.TimeOffset)
 
