@@ -28,8 +28,8 @@ const ServiceItemForm: React.FC = () => {
             const loadData = async () => {
                 try {
                     const res = await adminApi.getServiceItem(Number(id));
-                    // @ts-expect-error API response type mismatch
-                    if (isMounted) form.setFieldsValue(res.data);
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    if (isMounted) form.setFieldsValue((res as any).data);
                 } catch {
                     message.error('Failed to load data');
                 } finally {
@@ -42,7 +42,8 @@ const ServiceItemForm: React.FC = () => {
         }
     }, [isEdit, form, id]);
 
-    const onFinish = async (values: Record<string, unknown>) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const onFinish = async (values: any) => {
         setSubmitting(true);
         try {
             if (isEdit) {

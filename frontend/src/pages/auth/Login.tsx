@@ -14,7 +14,6 @@ const Login: React.FC = () => {
         // ... (keep existing logic)
         setLoading(true);
         try {
-            // @ts-expect-error API response type mismatch
             const res = await authApi.login({
                 username: values.username,
                 password: values.password

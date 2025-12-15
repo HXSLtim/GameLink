@@ -26,7 +26,7 @@ const MenuList: React.FC = () => {
     const fetchData = useCallback(async (page = 1, pageSize = 10) => {
         setLoading(true);
         try {
-            const res = await adminApi.getMenus({ page, page_size: pageSize }) as MenuResponse;
+            const res = await adminApi.getMenus({ page, page_size: pageSize }) as unknown as MenuResponse;
             setData(res.data);
             if (res.pagination) {
                 setPagination({

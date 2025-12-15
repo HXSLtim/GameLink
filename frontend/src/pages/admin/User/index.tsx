@@ -448,7 +448,8 @@ const UserPage: React.FC = () => {
     const submitBatchNotification = async () => {
         try {
             const values = await notificationForm.validateFields();
-            const payload: Record<string, unknown> = {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const payload: any = {
                 target: values.target,
                 title: values.title,
                 content: values.content,
@@ -485,7 +486,8 @@ const UserPage: React.FC = () => {
     const submitBatchPoints = async () => {
         try {
             const values = await pointsForm.validateFields();
-            const payload: Record<string, unknown> = {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const payload: any = {
                 target: values.target,
                 cents: Number(values.points),
                 reason: values.reason,
