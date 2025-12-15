@@ -118,7 +118,7 @@ func (s *PaymentService) CreatePayment(ctx context.Context, userID uint64, req C
 		if !locked {
 			return nil, apierr.Conflict("payment creation in progress, please try again")
 		}
-		defer s.distributedLock.Unlock(ctx, lockKey)
+		defer func() { _ = s.distributedLock.Unlock(ctx, lockKey) }()
 	}
 
 	// 验证订单

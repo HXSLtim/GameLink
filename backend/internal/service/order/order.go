@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"time"
 
-	"gamelink/pkg/apierr"
-	"gamelink/pkg/cache"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	commissionrepo "gamelink/internal/repository/commission"
 	repoiface "gamelink/internal/repository/interfaces"
+	"gamelink/pkg/apierr"
+	"gamelink/pkg/cache"
 )
 
 var (
@@ -152,7 +152,6 @@ type PaymentDTO struct {
 	CreatedAt   time.Time           `json:"createdAt"`
 }
 
-
 // PlayerCardDTO 陪玩师卡片信息
 type PlayerCardDTO struct {
 	ID        uint64 `json:"id"`
@@ -207,7 +206,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, userID uint64, req Creat
 		if !locked {
 			return nil, apierr.Conflict("concurrent order creation in progress, please try again")
 		}
-		defer s.distributedLock.Unlock(ctx, lockKey)
+		defer func() { _ = s.distributedLock.Unlock(ctx, lockKey) }()
 	}
 
 	// 验证陪玩师

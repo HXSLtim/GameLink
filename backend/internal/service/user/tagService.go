@@ -82,7 +82,7 @@ func (s *UserTagService) CreateTag(ctx context.Context, name, color, description
 
 	// 清除缓存
 	if s.cache != nil {
-		s.cache.Delete(ctx, "user_tags:list")
+		_ = s.cache.Delete(ctx, "user_tags:list")
 	}
 
 	return tag, nil
@@ -116,7 +116,7 @@ func (s *UserTagService) ListTags(ctx context.Context) ([]model.UserTag, error) 
 	// 写入缓存（1小时过期）
 	if s.cache != nil && len(tags) > 0 {
 		if data, err := json.Marshal(tags); err == nil {
-			s.cache.Set(ctx, cacheKey, string(data), 3600)
+			_ = s.cache.Set(ctx, cacheKey, string(data), 3600)
 		}
 	}
 
@@ -156,8 +156,8 @@ func (s *UserTagService) UpdateTag(ctx context.Context, id uint64, name, color, 
 
 	// 清除缓存
 	if s.cache != nil {
-		s.cache.Delete(ctx, "user_tags:list")
-		s.cache.Delete(ctx, fmt.Sprintf("user_tag:%d", id))
+		_ = s.cache.Delete(ctx, "user_tags:list")
+		_ = s.cache.Delete(ctx, fmt.Sprintf("user_tag:%d", id))
 	}
 
 	return nil
@@ -177,8 +177,8 @@ func (s *UserTagService) DeleteTag(ctx context.Context, id uint64) error {
 
 	// 清除缓存
 	if s.cache != nil {
-		s.cache.Delete(ctx, "user_tags:list")
-		s.cache.Delete(ctx, fmt.Sprintf("user_tag:%d", id))
+		_ = s.cache.Delete(ctx, "user_tags:list")
+		_ = s.cache.Delete(ctx, fmt.Sprintf("user_tag:%d", id))
 	}
 
 	return nil

@@ -7,9 +7,11 @@
 import { describe, it, vi, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import * as fc from 'fast-check';
+import React from 'react';
 
-// Mock the AdminContext
+// Mock the AdminContext value
 const mockAdminContext = {
+  rawMenus: [],
   menus: [],
   permissions: [] as string[],
   loading: false,
@@ -18,8 +20,19 @@ const mockAdminContext = {
   hasAllPermissions: vi.fn(),
   hasAnyPermission: vi.fn(),
   isSuperAdmin: false,
+  permissionVersion: 0,
+  notifyPermissionChange: vi.fn(),
 };
 
+// Create a mock React context
+const MockAdminContext = React.createContext(mockAdminContext);
+
+// Mock AdminContext module (needed because useAdmin.ts imports it)
+vi.mock('@/context/AdminContext', () => ({
+  default: MockAdminContext,
+}));
+
+// Mock useAdmin hook
 vi.mock('@/context/useAdmin', () => ({
   useAdmin: () => mockAdminContext,
 }));
