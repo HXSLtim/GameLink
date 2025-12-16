@@ -44,7 +44,7 @@ export interface FeedQueryParams {
 // ==================== 聊天消息相关类型 ====================
 
 /** 聊天消息审核状态 */
-export type ChatMessageAuditStatus = 'normal' | 'flagged' | 'deleted';
+export type ChatMessageAuditStatus = 'pending' | 'approved' | 'rejected' | 'deleted';
 
 /** 聊天消息 */
 export interface ChatMessage {
@@ -57,6 +57,7 @@ export interface ChatMessage {
   content: string;
   messageType: string;
   auditStatus: ChatMessageAuditStatus;
+  isDeleted?: boolean;
   flaggedWords?: string[];
   createdAt: string;
 }
@@ -212,16 +213,18 @@ export const FEED_MODERATION_STATUS_COLOR: Record<FeedModerationStatus, string> 
 
 /** 聊天消息审核状态显示文本 */
 export const CHAT_AUDIT_STATUS_TEXT: Record<ChatMessageAuditStatus, string> = {
-  normal: '正常',
-  flagged: '已标记',
+  pending: '待审核',
+  approved: '已通过',
+  rejected: '已拒绝',
   deleted: '已删除',
 };
 
 /** 聊天消息审核状态颜色 */
 export const CHAT_AUDIT_STATUS_COLOR: Record<ChatMessageAuditStatus, string> = {
-  normal: 'green',
-  flagged: 'orange',
-  deleted: 'red',
+  pending: 'orange',
+  approved: 'green',
+  rejected: 'red',
+  deleted: 'default',
 };
 
 /** 动态举报状态显示文本 */

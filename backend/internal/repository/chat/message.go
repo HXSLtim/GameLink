@@ -92,12 +92,16 @@ func (r *chatMessageRepository) Get(ctx context.Context, id uint64) (*model.Chat
 }
 
 func (r *chatMessageRepository) MarkDeleted(ctx context.Context, id uint64, deletedBy uint64) error {
+	now := time.Now()
 	return r.db.WithContext(ctx).
 		Model(&model.ChatMessage{}).
 		Where("id = ?", id).
 		Updates(map[string]any{
-			"is_deleted": true,
-			"updated_at": time.Now(),
+			"is_deleted":   true,
+			"audit_status": model.ChatMessageAuditDeleted,
+			"moderated_by": deletedBy,
+			"moderated_at": now,
+			"updated_at":   now,
 		}).Error
 }
 

@@ -222,8 +222,9 @@ const ChatMonitorPage: React.FC = () => {
           style={{ width: 120 }}
           allowClear
         >
-          <Select.Option value="normal">正常</Select.Option>
-          <Select.Option value="flagged">已标记</Select.Option>
+          <Select.Option value="pending">待审核</Select.Option>
+          <Select.Option value="approved">已通过</Select.Option>
+          <Select.Option value="rejected">已拒绝</Select.Option>
           <Select.Option value="deleted">已删除</Select.Option>
         </Select>
         <RangePicker

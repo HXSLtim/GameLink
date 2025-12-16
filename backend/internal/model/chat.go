@@ -30,6 +30,7 @@ const (
 	ChatMessageAuditPending  ChatMessageAuditStatus = "pending"
 	ChatMessageAuditApproved ChatMessageAuditStatus = "approved"
 	ChatMessageAuditRejected ChatMessageAuditStatus = "rejected"
+	ChatMessageAuditDeleted  ChatMessageAuditStatus = "deleted"
 )
 
 // ChatGroup defines a chat room entity.
