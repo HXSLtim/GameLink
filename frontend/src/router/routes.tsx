@@ -228,12 +228,12 @@ export const routes: RouteConfig[] = [
                 meta: { title: '评价审核', permission: 'admin.reviews.pending.list' }
             },
             {
-                path: 'review-reports',
+                path: 'reviews/reports',
                 element: <LazyLoad><ReviewReports /></LazyLoad>,
                 meta: { title: '举报管理', permission: 'admin.review-reports.list' }
             },
             {
-                path: 'sensitive-words',
+                path: 'reviews/sensitive-words',
                 element: <LazyLoad><SensitiveWords /></LazyLoad>,
                 meta: { title: '敏感词管理', permission: 'admin.sensitive-words.list' }
             },

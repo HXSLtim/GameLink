@@ -295,7 +295,7 @@ export const ADMIN_MENUS: MenuConfig[] = [
             },
             {
                 name: '举报管理',
-                path: '/admin/review-reports',
+                path: '/admin/reviews/reports',
                 component: 'ReviewReports',
                 icon: 'WarningOutlined',
                 order: 3,
@@ -304,7 +304,7 @@ export const ADMIN_MENUS: MenuConfig[] = [
             },
             {
                 name: '敏感词管理',
-                path: '/admin/sensitive-words',
+                path: '/admin/reviews/sensitive-words',
                 component: 'SensitiveWords',
                 icon: 'StopOutlined',
                 order: 4,
