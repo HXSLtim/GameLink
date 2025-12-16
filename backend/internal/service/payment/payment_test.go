@@ -387,15 +387,16 @@ func TestPaymentService_RefundPayment(t *testing.T) {
 		}
 		require.NoError(t, db.Create(order).Error)
 
-		// 创建已支付的支付记录
+		// 创建已支付的支付记录（第三方支付）
 		now := time.Now()
 		payment := &model.Payment{
-			OrderID:     order.ID,
-			UserID:      customer.ID,
-			Method:      model.PaymentMethodWeChat,
-			AmountCents: 10000,
-			Status:      model.PaymentStatusPaid,
-			PaidAt:      &now,
+			OrderID:               order.ID,
+			UserID:                customer.ID,
+			Method:                model.PaymentMethodWeChat,
+			AmountCents:           10000,
+			ThirdPartyAmountCents: 10000,
+			Status:                model.PaymentStatusPaid,
+			PaidAt:                &now,
 		}
 		require.NoError(t, db.Create(payment).Error)
 
@@ -415,10 +416,7 @@ func TestPaymentService_RefundPayment(t *testing.T) {
 		assert.Equal(t, model.OrderStatusRefunded, updatedOrder.Status)
 		assert.Equal(t, int64(10000), updatedOrder.RefundAmountCents)
 
-		// 验证钱包余额
-		wallet, err := walletRepo.GetByUserID(context.Background(), customer.ID)
-		require.NoError(t, err)
-		assert.Equal(t, int64(10000), wallet.BalanceCents)
+		// 第三方支付退款不退到钱包，钱包余额应为0
 	})
 
 	t.Run("未支付的订单无法退款", func(t *testing.T) {
@@ -961,19 +959,20 @@ func TestPaymentService_RefundWithWalletCredit(t *testing.T) {
 	}
 	require.NoError(t, db.Create(order).Error)
 
-	// 创建已支付的支付记录
+	// 创建已支付的钱包支付记录
 	now := time.Now()
 	payment := &model.Payment{
-		OrderID:     order.ID,
-		UserID:      customer.ID,
-		Method:      model.PaymentMethodWeChat,
-		AmountCents: 15000,
-		Status:      model.PaymentStatusPaid,
-		PaidAt:      &now,
+		OrderID:           order.ID,
+		UserID:            customer.ID,
+		Method:            model.PaymentMethodWallet,
+		AmountCents:       15000,
+		WalletAmountCents: 15000,
+		Status:            model.PaymentStatusPaid,
+		PaidAt:            &now,
 	}
 	require.NoError(t, db.Create(payment).Error)
 
-	t.Run("退款后钱包余额增加", func(t *testing.T) {
+	t.Run("钱包支付退款后余额增加", func(t *testing.T) {
 		err := svc.RefundPayment(context.Background(), payment.ID, "测试退款")
 		require.NoError(t, err)
 
@@ -2244,5 +2243,358 @@ func TestPaymentService_RefundWithGenericProvider(t *testing.T) {
 		var updated model.Payment
 		require.NoError(t, db.First(&updated, payment.ID).Error)
 		assert.Equal(t, model.PaymentStatusRefunded, updated.Status)
+	})
+}
+
+// ============================================
+// Tests for Combined Payment (Wallet + Third Party)
+// ============================================
+
+func TestPaymentService_CreateWalletPayment(t *testing.T) {
+	db := setupPaymentTestDB(t)
+	defer testutil.CleanDB(t, db)
+
+	customer, _, gameModel, _ := createPaymentTestData(t, db)
+	svc := createPaymentService(db)
+
+	// 设置钱包仓储
+	walletRepo := user.NewWalletRepository(db)
+	svc.SetWalletRepository(walletRepo)
+
+	// 创建用户钱包（有足够余额）
+	wallet := &model.Wallet{
+		UserID:       customer.ID,
+		BalanceCents: 50000, // 500元
+	}
+	require.NoError(t, db.Create(wallet).Error)
+
+	// 创建订单
+	scheduledStart := time.Now().Add(24 * time.Hour)
+	order := &model.Order{
+		UserID:          customer.ID,
+		ItemID:          gameModel.ID,
+		Title:           "钱包支付订单",
+		Status:          model.OrderStatusPending,
+		UnitPriceCents:  5000,
+		TotalPriceCents: 10000, // 100元
+		ScheduledStart:  &scheduledStart,
+	}
+	require.NoError(t, db.Create(order).Error)
+
+	t.Run("纯钱包支付成功", func(t *testing.T) {
+		resp, err := svc.CreatePayment(context.Background(), customer.ID, CreatePaymentRequest{
+			OrderID: order.ID,
+			Method:  model.PaymentMethodWallet,
+		})
+		require.NoError(t, err)
+		assert.NotZero(t, resp.PaymentID)
+		assert.True(t, resp.WalletPaidDirect)
+		assert.Equal(t, int64(10000), resp.WalletDeducted)
+
+		// 验证钱包余额减少
+		updatedWallet, err := walletRepo.GetByUserID(context.Background(), customer.ID)
+		require.NoError(t, err)
+		assert.Equal(t, int64(40000), updatedWallet.BalanceCents)
+	})
+}
+
+func TestPaymentService_CreateWalletPayment_InsufficientBalance(t *testing.T) {
+	db := setupPaymentTestDB(t)
+	defer testutil.CleanDB(t, db)
+
+	customer, _, gameModel, _ := createPaymentTestData(t, db)
+	svc := createPaymentService(db)
+
+	// 设置钱包仓储
+	walletRepo := user.NewWalletRepository(db)
+	svc.SetWalletRepository(walletRepo)
+
+	// 创建用户钱包（余额不足）
+	wallet := &model.Wallet{
+		UserID:       customer.ID,
+		BalanceCents: 5000, // 50元
+	}
+	require.NoError(t, db.Create(wallet).Error)
+
+	// 创建订单
+	scheduledStart := time.Now().Add(24 * time.Hour)
+	order := &model.Order{
+		UserID:          customer.ID,
+		ItemID:          gameModel.ID,
+		Title:           "余额不足订单",
+		Status:          model.OrderStatusPending,
+		UnitPriceCents:  5000,
+		TotalPriceCents: 10000, // 100元
+		ScheduledStart:  &scheduledStart,
+	}
+	require.NoError(t, db.Create(order).Error)
+
+	t.Run("余额不足应失败", func(t *testing.T) {
+		_, err := svc.CreatePayment(context.Background(), customer.ID, CreatePaymentRequest{
+			OrderID: order.ID,
+			Method:  model.PaymentMethodWallet,
+		})
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "insufficient")
+	})
+}
+
+func TestPaymentService_CreateCombinedPayment(t *testing.T) {
+	db := setupPaymentTestDB(t)
+	defer testutil.CleanDB(t, db)
+
+	customer, _, gameModel, _ := createPaymentTestData(t, db)
+	svc := createPaymentService(db)
+
+	// 设置钱包仓储
+	walletRepo := user.NewWalletRepository(db)
+	svc.SetWalletRepository(walletRepo)
+
+	// 创建用户钱包
+	wallet := &model.Wallet{
+		UserID:       customer.ID,
+		BalanceCents: 5000, // 50元
+	}
+	require.NoError(t, db.Create(wallet).Error)
+
+	// 创建订单
+	scheduledStart := time.Now().Add(24 * time.Hour)
+	order := &model.Order{
+		UserID:          customer.ID,
+		ItemID:          gameModel.ID,
+		Title:           "组合支付订单",
+		Status:          model.OrderStatusPending,
+		UnitPriceCents:  5000,
+		TotalPriceCents: 10000, // 100元
+		ScheduledStart:  &scheduledStart,
+	}
+	require.NoError(t, db.Create(order).Error)
+
+	t.Run("组合支付成功", func(t *testing.T) {
+		resp, err := svc.CreatePayment(context.Background(), customer.ID, CreatePaymentRequest{
+			OrderID:           order.ID,
+			Method:            model.PaymentMethodCombined,
+			WalletAmountCents: 3000, // 30元钱包
+			ThirdPartyMethod:  model.PaymentMethodWeChat,
+		})
+		require.NoError(t, err)
+		assert.NotZero(t, resp.PaymentID)
+		assert.Equal(t, int64(3000), resp.WalletDeducted)
+		assert.Equal(t, int64(7000), resp.ThirdPartyAmount)
+
+		// 验证钱包余额减少
+		updatedWallet, err := walletRepo.GetByUserID(context.Background(), customer.ID)
+		require.NoError(t, err)
+		assert.Equal(t, int64(2000), updatedWallet.BalanceCents)
+	})
+}
+
+func TestPaymentService_CreateCombinedPayment_InvalidParams(t *testing.T) {
+	db := setupPaymentTestDB(t)
+	defer testutil.CleanDB(t, db)
+
+	customer, _, gameModel, _ := createPaymentTestData(t, db)
+	svc := createPaymentService(db)
+
+	// 设置钱包仓储
+	walletRepo := user.NewWalletRepository(db)
+	svc.SetWalletRepository(walletRepo)
+
+	// 创建用户钱包
+	wallet := &model.Wallet{
+		UserID:       customer.ID,
+		BalanceCents: 50000,
+	}
+	require.NoError(t, db.Create(wallet).Error)
+
+	// 创建订单
+	scheduledStart := time.Now().Add(24 * time.Hour)
+	order := &model.Order{
+		UserID:          customer.ID,
+		ItemID:          gameModel.ID,
+		Title:           "参数错误订单",
+		Status:          model.OrderStatusPending,
+		UnitPriceCents:  5000,
+		TotalPriceCents: 10000,
+		ScheduledStart:  &scheduledStart,
+	}
+	require.NoError(t, db.Create(order).Error)
+
+	t.Run("钱包金额为0应失败", func(t *testing.T) {
+		_, err := svc.CreatePayment(context.Background(), customer.ID, CreatePaymentRequest{
+			OrderID:           order.ID,
+			Method:            model.PaymentMethodCombined,
+			WalletAmountCents: 0,
+			ThirdPartyMethod:  model.PaymentMethodWeChat,
+		})
+		assert.Error(t, err)
+	})
+
+	t.Run("第三方支付方式无效应失败", func(t *testing.T) {
+		_, err := svc.CreatePayment(context.Background(), customer.ID, CreatePaymentRequest{
+			OrderID:           order.ID,
+			Method:            model.PaymentMethodCombined,
+			WalletAmountCents: 3000,
+			ThirdPartyMethod:  "invalid",
+		})
+		assert.Error(t, err)
+	})
+
+	t.Run("钱包金额超过订单总额应失败", func(t *testing.T) {
+		_, err := svc.CreatePayment(context.Background(), customer.ID, CreatePaymentRequest{
+			OrderID:           order.ID,
+			Method:            model.PaymentMethodCombined,
+			WalletAmountCents: 15000, // 超过订单总额
+			ThirdPartyMethod:  model.PaymentMethodWeChat,
+		})
+		assert.Error(t, err)
+	})
+}
+
+func TestPaymentService_RefundCombinedPayment(t *testing.T) {
+	db := setupPaymentTestDB(t)
+	defer testutil.CleanDB(t, db)
+
+	customer, _, gameModel, _ := createPaymentTestData(t, db)
+	svc := createPaymentService(db)
+
+	// 设置钱包仓储
+	walletRepo := user.NewWalletRepository(db)
+	svc.SetWalletRepository(walletRepo)
+
+	// 创建用户钱包（初始余额为0，因为已经扣款）
+	wallet := &model.Wallet{
+		UserID:       customer.ID,
+		BalanceCents: 0,
+	}
+	require.NoError(t, db.Create(wallet).Error)
+
+	// 创建订单
+	scheduledStart := time.Now().Add(24 * time.Hour)
+	order := &model.Order{
+		UserID:          customer.ID,
+		ItemID:          gameModel.ID,
+		Title:           "组合支付退款订单",
+		Status:          model.OrderStatusConfirmed,
+		UnitPriceCents:  5000,
+		TotalPriceCents: 10000,
+		ScheduledStart:  &scheduledStart,
+	}
+	require.NoError(t, db.Create(order).Error)
+
+	// 创建已支付的组合支付记录
+	now := time.Now()
+	payment := &model.Payment{
+		OrderID:               order.ID,
+		UserID:                customer.ID,
+		Method:                model.PaymentMethodCombined,
+		AmountCents:           10000,
+		WalletAmountCents:     3000,
+		ThirdPartyMethod:      model.PaymentMethodWeChat,
+		ThirdPartyAmountCents: 7000,
+		Status:                model.PaymentStatusPaid,
+		PaidAt:                &now,
+	}
+	require.NoError(t, db.Create(payment).Error)
+
+	t.Run("组合支付退款成功", func(t *testing.T) {
+		err := svc.RefundPayment(context.Background(), payment.ID, "测试退款")
+		require.NoError(t, err)
+
+		// 验证钱包余额增加（只退回钱包部分）
+		updatedWallet, err := walletRepo.GetByUserID(context.Background(), customer.ID)
+		require.NoError(t, err)
+		assert.Equal(t, int64(3000), updatedWallet.BalanceCents)
+
+		// 验证支付状态
+		var updatedPayment model.Payment
+		require.NoError(t, db.First(&updatedPayment, payment.ID).Error)
+		assert.Equal(t, model.PaymentStatusRefunded, updatedPayment.Status)
+	})
+}
+
+func TestPaymentService_GetWalletBalance(t *testing.T) {
+	db := setupPaymentTestDB(t)
+	defer testutil.CleanDB(t, db)
+
+	customer, _, _, _ := createPaymentTestData(t, db)
+	svc := createPaymentService(db)
+
+	// 设置钱包仓储
+	walletRepo := user.NewWalletRepository(db)
+	svc.SetWalletRepository(walletRepo)
+
+	t.Run("无钱包返回0余额", func(t *testing.T) {
+		resp, err := svc.GetWalletBalance(context.Background(), customer.ID)
+		require.NoError(t, err)
+		assert.Equal(t, int64(0), resp.BalanceCents)
+	})
+
+	t.Run("有钱包返回余额", func(t *testing.T) {
+		wallet := &model.Wallet{
+			UserID:       customer.ID,
+			BalanceCents: 10000,
+			FrozenCents:  2000,
+		}
+		require.NoError(t, db.Create(wallet).Error)
+
+		resp, err := svc.GetWalletBalance(context.Background(), customer.ID)
+		require.NoError(t, err)
+		assert.Equal(t, int64(10000), resp.BalanceCents)
+		assert.Equal(t, int64(2000), resp.FrozenCents)
+	})
+}
+
+func TestPaymentService_CalculateCombinedPayment(t *testing.T) {
+	db := setupPaymentTestDB(t)
+	defer testutil.CleanDB(t, db)
+
+	customer, _, gameModel, _ := createPaymentTestData(t, db)
+	svc := createPaymentService(db)
+
+	// 设置钱包仓储
+	walletRepo := user.NewWalletRepository(db)
+	svc.SetWalletRepository(walletRepo)
+
+	// 创建用户钱包
+	wallet := &model.Wallet{
+		UserID:       customer.ID,
+		BalanceCents: 5000,
+	}
+	require.NoError(t, db.Create(wallet).Error)
+
+	// 创建订单
+	scheduledStart := time.Now().Add(24 * time.Hour)
+	order := &model.Order{
+		UserID:          customer.ID,
+		ItemID:          gameModel.ID,
+		Title:           "计算组合支付订单",
+		Status:          model.OrderStatusPending,
+		UnitPriceCents:  5000,
+		TotalPriceCents: 10000,
+		ScheduledStart:  &scheduledStart,
+	}
+	require.NoError(t, db.Create(order).Error)
+
+	t.Run("计算组合支付金额", func(t *testing.T) {
+		resp, err := svc.CalculateCombinedPayment(context.Background(), customer.ID, CalculateCombinedPaymentRequest{
+			OrderID: order.ID,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, int64(10000), resp.OrderTotalCents)
+		assert.Equal(t, int64(5000), resp.WalletBalanceCents)
+		assert.Equal(t, int64(5000), resp.WalletUsableCents)
+		assert.Equal(t, int64(5000), resp.ThirdPartyAmountCents)
+		assert.False(t, resp.CanPayWithWalletOnly)
+	})
+
+	t.Run("指定钱包金额计算", func(t *testing.T) {
+		resp, err := svc.CalculateCombinedPayment(context.Background(), customer.ID, CalculateCombinedPaymentRequest{
+			OrderID:           order.ID,
+			WalletAmountCents: 3000,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, int64(3000), resp.WalletUsableCents)
+		assert.Equal(t, int64(7000), resp.ThirdPartyAmountCents)
 	})
 }

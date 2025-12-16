@@ -87,13 +87,19 @@ func (s *PaymentService) InitRoutingEngine(
 // CreatePaymentRequest 创建支付请求
 type CreatePaymentRequest struct {
 	OrderID uint64              `json:"orderId" binding:"required"`
-	Method  model.PaymentMethod `json:"method" binding:"required,oneof=wechat alipay"`
+	Method  model.PaymentMethod `json:"method" binding:"required,oneof=wechat alipay wallet combined"`
+	// 组合支付参数（仅当 Method 为 combined 时使用）
+	WalletAmountCents int64               `json:"walletAmountCents,omitempty"` // 钱包支付金额（分）
+	ThirdPartyMethod  model.PaymentMethod `json:"thirdPartyMethod,omitempty"`  // 第三方支付方式
 }
 
 // CreatePaymentResponse 创建支付响应
 type CreatePaymentResponse struct {
-	PaymentID uint64                 `json:"paymentId"`
-	PayInfo   map[string]interface{} `json:"payInfo"` // 支付参数（对接支付SDK）
+	PaymentID        uint64                 `json:"paymentId"`
+	PayInfo          map[string]interface{} `json:"payInfo"`                    // 支付参数（对接支付SDK）
+	WalletDeducted   int64                  `json:"walletDeducted,omitempty"`   // 钱包已扣款金额
+	ThirdPartyAmount int64                  `json:"thirdPartyAmount,omitempty"` // 第三方需支付金额
+	WalletPaidDirect bool                   `json:"walletPaidDirect,omitempty"` // 是否纯钱包支付完成
 }
 
 // PaymentStatusResponse 支付状态响应
@@ -105,6 +111,10 @@ type PaymentStatusResponse struct {
 }
 
 // CreatePayment 创建支付
+// 支持三种支付方式：
+// 1. 纯第三方支付（wechat/alipay）
+// 2. 纯钱包支付（wallet）
+// 3. 组合支付（combined）：钱包+第三方
 func (s *PaymentService) CreatePayment(ctx context.Context, userID uint64, req CreatePaymentRequest) (*CreatePaymentResponse, error) {
 	// 使用分布式锁确保幂等性
 	lockKey := fmt.Sprintf("payment:create:order:%d:user:%d", req.OrderID, userID)
@@ -142,40 +152,197 @@ func (s *PaymentService) CreatePayment(ctx context.Context, userID uint64, req C
 	existingPayments, _, err := s.payments.List(ctx, repository.PaymentListOptions{
 		OrderID:  orderIDPtr,
 		Page:     1,
-		PageSize: 10, // 检查更多记录以确保找到pending状态的支付
+		PageSize: 10,
 	})
 	if err == nil && len(existingPayments) > 0 {
-		// 检查是否已支付
 		for _, existingPayment := range existingPayments {
 			if existingPayment.Status == model.PaymentStatusPaid {
 				return nil, ErrOrderAlreadyPaid
 			}
-			// 如果存在pending状态的支付，返回已存在
 			if existingPayment.Status == model.PaymentStatusPending {
 				return nil, apierr.Conflict("payment already exists for this order").WithDetails("Please check your payment status")
 			}
 		}
 	}
 
+	// 根据支付方式处理
+	switch req.Method {
+	case model.PaymentMethodWallet:
+		return s.createWalletPayment(ctx, userID, order, req)
+	case model.PaymentMethodCombined:
+		return s.createCombinedPayment(ctx, userID, order, req)
+	default:
+		return s.createThirdPartyPayment(ctx, userID, order, req)
+	}
+}
+
+// createWalletPayment 创建纯钱包支付
+func (s *PaymentService) createWalletPayment(ctx context.Context, userID uint64, order *model.Order, req CreatePaymentRequest) (*CreatePaymentResponse, error) {
+	if s.wallets == nil {
+		return nil, apierr.BadRequest("wallet payment not supported")
+	}
+
+	// 获取用户钱包
+	wallet, err := s.wallets.GetByUserID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return nil, apierr.BadRequest("insufficient wallet balance")
+		}
+		return nil, err
+	}
+
+	// 检查余额
+	if wallet.BalanceCents < order.TotalPriceCents {
+		return nil, apierr.BadRequest("insufficient wallet balance").WithDetails(
+			fmt.Sprintf("需要 %d 分，余额 %d 分", order.TotalPriceCents, wallet.BalanceCents))
+	}
+
+	// 扣除钱包余额
+	wallet.BalanceCents -= order.TotalPriceCents
+	if err := s.wallets.Save(ctx, wallet); err != nil {
+		return nil, apierr.InternalError("failed to deduct wallet balance").WithDetails(err.Error())
+	}
+
+	// 创建支付记录
+	now := time.Now()
+	payment := &model.Payment{
+		OrderID:           req.OrderID,
+		UserID:            userID,
+		Method:            model.PaymentMethodWallet,
+		AmountCents:       order.TotalPriceCents,
+		WalletAmountCents: order.TotalPriceCents,
+		Currency:          order.Currency,
+		Status:            model.PaymentStatusPaid,
+		PaidAt:            &now,
+		ProviderTradeNo:   fmt.Sprintf("wallet_%d_%d", userID, now.Unix()),
+	}
+
+	if err := s.payments.Create(ctx, payment); err != nil {
+		// 回滚钱包余额
+		wallet.BalanceCents += order.TotalPriceCents
+		_ = s.wallets.Save(ctx, wallet)
+		return nil, err
+	}
+
+	// 更新订单状态
+	order.Status = model.OrderStatusConfirmed
+	if err := s.orders.Update(ctx, order); err != nil {
+		return nil, err
+	}
+
+	return &CreatePaymentResponse{
+		PaymentID:        payment.ID,
+		PayInfo:          map[string]interface{}{"method": "wallet", "status": "paid"},
+		WalletDeducted:   order.TotalPriceCents,
+		WalletPaidDirect: true,
+	}, nil
+}
+
+// createCombinedPayment 创建组合支付（钱包+第三方）
+func (s *PaymentService) createCombinedPayment(ctx context.Context, userID uint64, order *model.Order, req CreatePaymentRequest) (*CreatePaymentResponse, error) {
+	if s.wallets == nil {
+		return nil, apierr.BadRequest("combined payment not supported")
+	}
+
+	// 验证组合支付参数
+	if req.WalletAmountCents <= 0 {
+		return nil, apierr.BadRequest("wallet amount must be positive for combined payment")
+	}
+	if req.ThirdPartyMethod != model.PaymentMethodWeChat && req.ThirdPartyMethod != model.PaymentMethodAlipay {
+		return nil, apierr.BadRequest("third party method must be wechat or alipay")
+	}
+	if req.WalletAmountCents >= order.TotalPriceCents {
+		return nil, apierr.BadRequest("wallet amount must be less than total price for combined payment, use wallet method instead")
+	}
+
+	// 获取用户钱包
+	wallet, err := s.wallets.GetByUserID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return nil, apierr.BadRequest("insufficient wallet balance")
+		}
+		return nil, err
+	}
+
+	// 检查钱包余额
+	if wallet.BalanceCents < req.WalletAmountCents {
+		return nil, apierr.BadRequest("insufficient wallet balance").WithDetails(
+			fmt.Sprintf("需要 %d 分，余额 %d 分", req.WalletAmountCents, wallet.BalanceCents))
+	}
+
+	// 计算第三方支付金额
+	thirdPartyAmount := order.TotalPriceCents - req.WalletAmountCents
+
+	// 先扣除钱包余额（预扣款）
+	wallet.BalanceCents -= req.WalletAmountCents
+	if err := s.wallets.Save(ctx, wallet); err != nil {
+		return nil, apierr.InternalError("failed to deduct wallet balance").WithDetails(err.Error())
+	}
+
 	// 创建支付记录
 	payment := &model.Payment{
-		OrderID:     req.OrderID,
-		UserID:      userID,
-		Method:      req.Method,
-		AmountCents: order.TotalPriceCents,
-		Currency:    order.Currency,
-		Status:      model.PaymentStatusPending,
+		OrderID:               req.OrderID,
+		UserID:                userID,
+		Method:                model.PaymentMethodCombined,
+		AmountCents:           order.TotalPriceCents,
+		WalletAmountCents:     req.WalletAmountCents,
+		ThirdPartyMethod:      req.ThirdPartyMethod,
+		ThirdPartyAmountCents: thirdPartyAmount,
+		Currency:              order.Currency,
+		Status:                model.PaymentStatusPending,
 	}
 
 	// 执行收款分流
-	// Requirements: 17.1, 17.2, 17.3
-	// Property 17: 收款分流记录完整性 - 支付记录包含收款主体和商户号
+	if s.routingEngine != nil {
+		routingResult, err := s.routePayment(ctx, order, req.ThirdPartyMethod)
+		if err == nil {
+			payment.CollectionEntityID = &routingResult.CollectionEntityID
+			payment.MerchantNo = routingResult.MerchantNo
+		}
+	}
+
+	if err := s.payments.Create(ctx, payment); err != nil {
+		// 回滚钱包余额
+		wallet.BalanceCents += req.WalletAmountCents
+		_ = s.wallets.Save(ctx, wallet)
+		return nil, err
+	}
+
+	// 生成第三方支付参数
+	payInfo := s.generateMockPayInfo(payment.ID, req.ThirdPartyMethod, thirdPartyAmount)
+	payInfo["walletDeducted"] = req.WalletAmountCents
+	payInfo["combinedPayment"] = true
+
+	// Mock: 自动完成第三方支付（仅用于测试）
+	if err := s.mockPaymentSuccess(ctx, payment.ID, order); err != nil {
+		return nil, err
+	}
+
+	return &CreatePaymentResponse{
+		PaymentID:        payment.ID,
+		PayInfo:          payInfo,
+		WalletDeducted:   req.WalletAmountCents,
+		ThirdPartyAmount: thirdPartyAmount,
+	}, nil
+}
+
+// createThirdPartyPayment 创建纯第三方支付
+func (s *PaymentService) createThirdPartyPayment(ctx context.Context, userID uint64, order *model.Order, req CreatePaymentRequest) (*CreatePaymentResponse, error) {
+	// 创建支付记录
+	payment := &model.Payment{
+		OrderID:               req.OrderID,
+		UserID:                userID,
+		Method:                req.Method,
+		AmountCents:           order.TotalPriceCents,
+		ThirdPartyAmountCents: order.TotalPriceCents,
+		Currency:              order.Currency,
+		Status:                model.PaymentStatusPending,
+	}
+
+	// 执行收款分流
 	if s.routingEngine != nil {
 		routingResult, err := s.routePayment(ctx, order, req.Method)
-		if err != nil {
-			// 分流失败不阻止支付，记录错误日志
-			// 使用默认配置继续
-		} else {
+		if err == nil {
 			payment.CollectionEntityID = &routingResult.CollectionEntityID
 			payment.MerchantNo = routingResult.MerchantNo
 		}
@@ -186,7 +353,6 @@ func (s *PaymentService) CreatePayment(ctx context.Context, userID uint64, req C
 	}
 
 	// 创建分流日志
-	// Requirements: 17.3
 	if s.routingEngine != nil && payment.CollectionEntityID != nil {
 		routingResult, _ := s.routePayment(ctx, order, req.Method)
 		if routingResult != nil {
@@ -198,14 +364,14 @@ func (s *PaymentService) CreatePayment(ctx context.Context, userID uint64, req C
 	payInfo := s.generateMockPayInfo(payment.ID, req.Method, order.TotalPriceCents)
 
 	// Mock: 自动标记为已支付（仅用于测试）
-	// 在生产环境中，这里应该等待支付回调
 	if err := s.mockPaymentSuccess(ctx, payment.ID, order); err != nil {
 		return nil, err
 	}
 
 	return &CreatePaymentResponse{
-		PaymentID: payment.ID,
-		PayInfo:   payInfo,
+		PaymentID:        payment.ID,
+		PayInfo:          payInfo,
+		ThirdPartyAmount: order.TotalPriceCents,
 	}, nil
 }
 
@@ -383,10 +549,10 @@ func (s *PaymentService) HandlePaymentCallback(ctx context.Context, provider str
 
 // RefundPayment 退款
 //
-// 注意：这是一个简化版本，生产环境需要：
-// 1. 调用真实的支付提供商退款API
-// 2. 处理部分退款
-// 3. 处理退款失败重试
+// 支持三种支付方式的退款：
+// 1. 纯第三方支付：退回第三方
+// 2. 纯钱包支付：退回钱包
+// 3. 组合支付：钱包部分退回钱包，第三方部分退回第三方
 func (s *PaymentService) RefundPayment(ctx context.Context, paymentID uint64, reason string) error {
 	payment, err := s.payments.Get(ctx, paymentID)
 	if err != nil {
@@ -398,18 +564,66 @@ func (s *PaymentService) RefundPayment(ctx context.Context, paymentID uint64, re
 		return fmt.Errorf("payment status must be paid, current: %s", payment.Status)
 	}
 
-	client, ok := s.providers[payment.Method]
-	if !ok {
-		client = genericProvider{}
-	}
-	tradeNo, raw, refundedAt, err := client.Refund(ctx, payment, reason)
-	if err != nil {
-		return err
+	now := time.Now()
+	var tradeNo string
+	var raw []byte
+
+	// 根据支付方式处理退款
+	switch payment.Method {
+	case model.PaymentMethodWallet:
+		// 纯钱包支付：退回钱包
+		if s.wallets != nil {
+			if err := s.creditWallet(ctx, payment.UserID, payment.WalletAmountCents); err != nil {
+				return err
+			}
+		}
+		tradeNo = fmt.Sprintf("wallet_refund_%d_%d", paymentID, now.Unix())
+
+	case model.PaymentMethodCombined:
+		// 组合支付：钱包部分退回钱包，第三方部分退回第三方
+		// 1. 退回钱包部分
+		if s.wallets != nil && payment.WalletAmountCents > 0 {
+			if err := s.creditWallet(ctx, payment.UserID, payment.WalletAmountCents); err != nil {
+				return err
+			}
+		}
+		// 2. 退回第三方部分
+		if payment.ThirdPartyAmountCents > 0 {
+			client, ok := s.providers[payment.ThirdPartyMethod]
+			if !ok {
+				client = genericProvider{}
+			}
+			var refundedAt time.Time
+			tradeNo, raw, refundedAt, err = client.Refund(ctx, payment, reason)
+			if err != nil {
+				// 第三方退款失败，回滚钱包退款
+				if s.wallets != nil && payment.WalletAmountCents > 0 {
+					_ = s.debitWallet(ctx, payment.UserID, payment.WalletAmountCents)
+				}
+				return err
+			}
+			now = refundedAt
+		} else {
+			tradeNo = fmt.Sprintf("combined_refund_%d_%d", paymentID, now.Unix())
+		}
+
+	default:
+		// 纯第三方支付：退回第三方
+		client, ok := s.providers[payment.Method]
+		if !ok {
+			client = genericProvider{}
+		}
+		var refundedAt time.Time
+		tradeNo, raw, refundedAt, err = client.Refund(ctx, payment, reason)
+		if err != nil {
+			return err
+		}
+		now = refundedAt
 	}
 
 	// 更新支付状态
 	payment.Status = model.PaymentStatusRefunded
-	payment.RefundedAt = &refundedAt
+	payment.RefundedAt = &now
 	payment.ProviderTradeNo = tradeNo
 	payment.ProviderRaw = raw
 
@@ -426,17 +640,10 @@ func (s *PaymentService) RefundPayment(ctx context.Context, paymentID uint64, re
 	order.Status = model.OrderStatusRefunded
 	order.RefundAmountCents = payment.AmountCents
 	order.RefundReason = reason
-	order.RefundedAt = &refundedAt
+	order.RefundedAt = &now
 
 	if err := s.orders.Update(ctx, order); err != nil {
 		return err
-	}
-
-	// 钱包回滚：如配置了钱包仓储，将退款金额计入余额
-	if s.wallets != nil {
-		if err := s.creditWallet(ctx, payment.UserID, payment.AmountCents); err != nil {
-			return err
-		}
 	}
 
 	return nil
@@ -462,6 +669,16 @@ func (s *PaymentService) creditWallet(ctx context.Context, userID uint64, amount
 		w = &model.Wallet{UserID: userID}
 	}
 	w.BalanceCents += amount
+	return s.wallets.Save(ctx, w)
+}
+
+// debitWallet 从钱包扣款（用于回滚退款）
+func (s *PaymentService) debitWallet(ctx context.Context, userID uint64, amount int64) error {
+	w, err := s.wallets.GetByUserID(ctx, userID)
+	if err != nil {
+		return err
+	}
+	w.BalanceCents -= amount
 	return s.wallets.Save(ctx, w)
 }
 
@@ -506,4 +723,88 @@ func (s *PaymentService) GetPaymentRoutingLog(ctx context.Context, paymentID uin
 		return nil, errors.New("routing engine not initialized")
 	}
 	return s.routingEngine.GetRoutingLogByPayment(ctx, paymentID)
+}
+
+// WalletBalanceResponse 钱包余额响应
+type WalletBalanceResponse struct {
+	BalanceCents int64 `json:"balanceCents"` // 可用余额（分）
+	FrozenCents  int64 `json:"frozenCents"`  // 冻结金额（分）
+}
+
+// GetWalletBalance 获取用户钱包余额
+func (s *PaymentService) GetWalletBalance(ctx context.Context, userID uint64) (*WalletBalanceResponse, error) {
+	if s.wallets == nil {
+		return &WalletBalanceResponse{BalanceCents: 0, FrozenCents: 0}, nil
+	}
+
+	wallet, err := s.wallets.GetByUserID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return &WalletBalanceResponse{BalanceCents: 0, FrozenCents: 0}, nil
+		}
+		return nil, err
+	}
+
+	return &WalletBalanceResponse{
+		BalanceCents: wallet.BalanceCents,
+		FrozenCents:  wallet.FrozenCents,
+	}, nil
+}
+
+// CalculateCombinedPaymentRequest 计算组合支付请求
+type CalculateCombinedPaymentRequest struct {
+	OrderID           uint64 `json:"orderId" binding:"required"`
+	WalletAmountCents int64  `json:"walletAmountCents"` // 希望使用的钱包金额，0表示使用全部余额
+}
+
+// CalculateCombinedPaymentResponse 计算组合支付响应
+type CalculateCombinedPaymentResponse struct {
+	OrderTotalCents       int64 `json:"orderTotalCents"`       // 订单总金额
+	WalletBalanceCents    int64 `json:"walletBalanceCents"`    // 钱包余额
+	WalletUsableCents     int64 `json:"walletUsableCents"`     // 可使用的钱包金额
+	ThirdPartyAmountCents int64 `json:"thirdPartyAmountCents"` // 需要第三方支付的金额
+	CanPayWithWalletOnly  bool  `json:"canPayWithWalletOnly"`  // 是否可以纯钱包支付
+}
+
+// CalculateCombinedPayment 计算组合支付金额
+func (s *PaymentService) CalculateCombinedPayment(ctx context.Context, userID uint64, req CalculateCombinedPaymentRequest) (*CalculateCombinedPaymentResponse, error) {
+	// 获取订单
+	order, err := s.orders.Get(ctx, req.OrderID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 权限检查
+	if order.UserID != userID {
+		return nil, errors.New("unauthorized")
+	}
+
+	// 获取钱包余额
+	var walletBalance int64
+	if s.wallets != nil {
+		wallet, err := s.wallets.GetByUserID(ctx, userID)
+		if err == nil {
+			walletBalance = wallet.BalanceCents
+		}
+	}
+
+	// 计算可使用的钱包金额
+	walletUsable := walletBalance
+	if req.WalletAmountCents > 0 && req.WalletAmountCents < walletBalance {
+		walletUsable = req.WalletAmountCents
+	}
+	if walletUsable > order.TotalPriceCents {
+		walletUsable = order.TotalPriceCents
+	}
+
+	// 计算第三方支付金额
+	thirdPartyAmount := order.TotalPriceCents - walletUsable
+
+	return &CalculateCombinedPaymentResponse{
+		OrderTotalCents:       order.TotalPriceCents,
+		WalletBalanceCents:    walletBalance,
+		WalletUsableCents:     walletUsable,
+		ThirdPartyAmountCents: thirdPartyAmount,
+		CanPayWithWalletOnly:  walletBalance >= order.TotalPriceCents,
+	}, nil
 }

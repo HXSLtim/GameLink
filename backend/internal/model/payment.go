@@ -7,13 +7,15 @@ import (
 )
 
 // PaymentMethod enumerates supported payment channels.
-// @Enum wechat, alipay
+// @Enum wechat, alipay, wallet, combined
 type PaymentMethod string
 
 // PaymentMethod values enumerate supported channels.
 const (
-	PaymentMethodWeChat PaymentMethod = "wechat"
-	PaymentMethodAlipay PaymentMethod = "alipay"
+	PaymentMethodWeChat   PaymentMethod = "wechat"
+	PaymentMethodAlipay   PaymentMethod = "alipay"
+	PaymentMethodWallet   PaymentMethod = "wallet"   // 纯钱包支付
+	PaymentMethodCombined PaymentMethod = "combined" // 组合支付（钱包+第三方）
 )
 
 // PaymentStatus enumerates payment states.
@@ -44,6 +46,11 @@ type Payment struct {
 	RefundedAmountCents int64           `json:"refundedAmountCents" gorm:"column:refunded_amount_cents;default:0"`     // 已退款金额（分）
 	CollectionEntityID  *uint64         `json:"collectionEntityId,omitempty" gorm:"column:collection_entity_id;index"` // 收款主体ID
 	MerchantNo          string          `json:"merchantNo,omitempty" gorm:"column:merchant_no;size:64"`                // 实际使用的商户号
+
+	// 组合支付字段
+	WalletAmountCents     int64         `json:"walletAmountCents" gorm:"column:wallet_amount_cents;default:0"`          // 钱包支付金额（分）
+	ThirdPartyMethod      PaymentMethod `json:"thirdPartyMethod,omitempty" gorm:"column:third_party_method;size:32"`    // 第三方支付方式（组合支付时使用）
+	ThirdPartyAmountCents int64         `json:"thirdPartyAmountCents" gorm:"column:third_party_amount_cents;default:0"` // 第三方支付金额（分）
 
 	// Relations + FKs
 	Order Order `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;foreignKey:OrderID;references:ID"`
