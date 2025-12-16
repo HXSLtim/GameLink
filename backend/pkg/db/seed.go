@@ -725,6 +725,21 @@ func applySeeds(db *gorm.DB) error {
 			return err
 		}
 
+		// 钱包种子数据（陪玩师需要有余额才能提现）
+		if err := seedWalletData(tx, users, players); err != nil {
+			return err
+		}
+
+		// 佣金规则种子数据
+		if err := seedCommissionRules(tx, games); err != nil {
+			return err
+		}
+
+		// 佣金记录种子数据
+		if err := seedCommissionRecords(tx, orders, players); err != nil {
+			return err
+		}
+
 		log.Println("seed data ensured for demo environment")
 		return nil
 	})
@@ -1733,5 +1748,282 @@ func seedSensitiveWords(tx *gorm.DB) error {
 	}
 
 	log.Println("sensitive words seed data created successfully")
+	return nil
+}
+
+// seedWalletData 创建钱包种子数据
+func seedWalletData(tx *gorm.DB, users map[string]*model.User, players map[string]*model.Player) error {
+	// 为陪玩师创建钱包余额
+	walletSpecs := []struct {
+		UserKey      string
+		BalanceCents int64
+		FrozenCents  int64
+	}{
+		// 陪玩师钱包（有收入）
+		{UserKey: "proA", BalanceCents: 358000, FrozenCents: 50000}, // ¥3580 可用，¥500 冻结
+		{UserKey: "proB", BalanceCents: 256000, FrozenCents: 80000}, // ¥2560 可用，¥800 冻结
+		{UserKey: "proC", BalanceCents: 189000, FrozenCents: 0},     // ¥1890 可用
+		{UserKey: "proD", BalanceCents: 125000, FrozenCents: 30000}, // ¥1250 可用，¥300 冻结
+		{UserKey: "proE", BalanceCents: 98000, FrozenCents: 0},      // ¥980 可用
+		{UserKey: "proF", BalanceCents: 67000, FrozenCents: 15000},  // ¥670 可用，¥150 冻结
+		// 普通用户钱包（充值余额）
+		{UserKey: "customerA", BalanceCents: 50000, FrozenCents: 0},  // ¥500 可用
+		{UserKey: "customerB", BalanceCents: 120000, FrozenCents: 0}, // ¥1200 可用（VIP用户）
+		{UserKey: "customerC", BalanceCents: 20000, FrozenCents: 0},  // ¥200 可用
+		{UserKey: "customerH", BalanceCents: 80000, FrozenCents: 0},  // ¥800 可用（商务人士）
+	}
+
+	for _, spec := range walletSpecs {
+		user, ok := users[spec.UserKey]
+		if !ok {
+			continue
+		}
+
+		// 检查是否已存在
+		var existing model.Wallet
+		if err := tx.Where("user_id = ?", user.ID).First(&existing).Error; err == nil {
+			// 已存在，更新余额
+			if err := tx.Model(&existing).Updates(map[string]interface{}{
+				"balance_cents": spec.BalanceCents,
+				"frozen_cents":  spec.FrozenCents,
+			}).Error; err != nil {
+				return err
+			}
+			continue
+		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+
+		wallet := &model.Wallet{
+			UserID:       user.ID,
+			BalanceCents: spec.BalanceCents,
+			FrozenCents:  spec.FrozenCents,
+		}
+		if err := tx.Create(wallet).Error; err != nil {
+			return err
+		}
+	}
+
+	log.Println("wallet seed data created successfully")
+	return nil
+}
+
+// seedCommissionRules 创建佣金规则种子数据
+func seedCommissionRules(tx *gorm.DB, games map[string]*model.Game) error {
+	// 检查是否已有规则（除了默认规则）
+	var ruleCount int64
+	if err := tx.Model(&model.CommissionRule{}).Where("type != ?", "default").Count(&ruleCount).Error; err != nil {
+		return err
+	}
+	if ruleCount > 0 {
+		log.Println("commission rules already exist, skipping")
+		return nil
+	}
+
+	ruleSpecs := []struct {
+		Name        string
+		Description string
+		Type        string
+		Rate        int
+		GameKey     string
+		ServiceType string
+	}{
+		// 游戏特定规则
+		{
+			Name:        "英雄联盟专属抽成",
+			Description: "英雄联盟游戏订单享受较低抽成",
+			Type:        "special",
+			Rate:        18,
+			GameKey:     "lol",
+		},
+		{
+			Name:        "DOTA2专属抽成",
+			Description: "DOTA2游戏订单抽成规则",
+			Type:        "special",
+			Rate:        18,
+			GameKey:     "dota2",
+		},
+		{
+			Name:        "FPS游戏抽成",
+			Description: "FPS类游戏（CS:GO、Valorant等）抽成规则",
+			Type:        "special",
+			Rate:        22,
+			GameKey:     "csgo",
+		},
+		// 服务类型规则
+		{
+			Name:        "陪练服务抽成",
+			Description: "专业陪练服务抽成比例",
+			Type:        "special",
+			Rate:        15,
+			ServiceType: "training",
+		},
+		{
+			Name:        "娱乐陪玩抽成",
+			Description: "休闲娱乐陪玩服务抽成",
+			Type:        "special",
+			Rate:        25,
+			ServiceType: "entertainment",
+		},
+	}
+
+	for _, spec := range ruleSpecs {
+		rule := &model.CommissionRule{
+			Name:        spec.Name,
+			Description: spec.Description,
+			Type:        spec.Type,
+			Rate:        spec.Rate,
+			IsActive:    true,
+		}
+
+		if spec.GameKey != "" {
+			if game, ok := games[spec.GameKey]; ok {
+				rule.GameID = &game.ID
+			}
+		}
+
+		if spec.ServiceType != "" {
+			rule.ServiceType = &spec.ServiceType
+		}
+
+		if err := tx.Create(rule).Error; err != nil {
+			return err
+		}
+	}
+
+	log.Println("commission rules seed data created successfully")
+	return nil
+}
+
+// seedCommissionRecords 创建佣金记录种子数据
+func seedCommissionRecords(tx *gorm.DB, orders map[string]*model.Order, players map[string]*model.Player) error {
+	now := time.Now()
+	currentMonth := now.Format("2006-01")
+	lastMonth := now.AddDate(0, -1, 0).Format("2006-01")
+
+	// 检查是否已有记录
+	var recordCount int64
+	if err := tx.Model(&model.CommissionRecord{}).Count(&recordCount).Error; err != nil {
+		return err
+	}
+	if recordCount > 0 {
+		log.Println("commission records already exist, skipping")
+		return nil
+	}
+
+	// 为已完成的订单创建佣金记录
+	completedOrders := []string{"orderCompleted1", "orderCompleted2"}
+	for _, orderKey := range completedOrders {
+		order, ok := orders[orderKey]
+		if !ok || order.PlayerID == nil {
+			continue
+		}
+
+		commissionRate := 20 // 默认20%
+		commissionCents := order.TotalPriceCents * int64(commissionRate) / 100
+		playerIncome := order.TotalPriceCents - commissionCents
+
+		record := &model.CommissionRecord{
+			OrderID:           order.ID,
+			PlayerID:          *order.PlayerID,
+			TotalAmountCents:  order.TotalPriceCents,
+			CommissionRate:    commissionRate,
+			CommissionCents:   commissionCents,
+			PlayerIncomeCents: playerIncome,
+			SettlementStatus:  "settled",
+			SettlementMonth:   lastMonth,
+			SettledAt:         ptrTime(now.AddDate(0, 0, -5)),
+		}
+
+		if err := tx.Create(record).Error; err != nil {
+			return err
+		}
+	}
+
+	// 为进行中的订单创建待结算记录
+	pendingOrders := []string{"orderInProgress1", "orderInProgress2", "orderConfirmed1", "orderConfirmed2"}
+	for _, orderKey := range pendingOrders {
+		order, ok := orders[orderKey]
+		if !ok || order.PlayerID == nil {
+			continue
+		}
+
+		commissionRate := 20
+		commissionCents := order.TotalPriceCents * int64(commissionRate) / 100
+		playerIncome := order.TotalPriceCents - commissionCents
+
+		record := &model.CommissionRecord{
+			OrderID:           order.ID,
+			PlayerID:          *order.PlayerID,
+			TotalAmountCents:  order.TotalPriceCents,
+			CommissionRate:    commissionRate,
+			CommissionCents:   commissionCents,
+			PlayerIncomeCents: playerIncome,
+			SettlementStatus:  "pending",
+			SettlementMonth:   currentMonth,
+		}
+
+		if err := tx.Create(record).Error; err != nil {
+			return err
+		}
+	}
+
+	// 创建月度结算记录
+	settlementSpecs := []struct {
+		PlayerKey            string
+		Month                string
+		OrderCount           int64
+		TotalAmountCents     int64
+		TotalCommissionCents int64
+		TotalIncomeCents     int64
+		Status               string
+		IncomeRank           int
+	}{
+		{PlayerKey: "playerA", Month: lastMonth, OrderCount: 45, TotalAmountCents: 450000, TotalCommissionCents: 90000, TotalIncomeCents: 360000, Status: "paid", IncomeRank: 1},
+		{PlayerKey: "playerB", Month: lastMonth, OrderCount: 38, TotalAmountCents: 380000, TotalCommissionCents: 76000, TotalIncomeCents: 304000, Status: "paid", IncomeRank: 2},
+		{PlayerKey: "playerC", Month: lastMonth, OrderCount: 32, TotalAmountCents: 320000, TotalCommissionCents: 64000, TotalIncomeCents: 256000, Status: "paid", IncomeRank: 3},
+		{PlayerKey: "playerD", Month: lastMonth, OrderCount: 28, TotalAmountCents: 280000, TotalCommissionCents: 56000, TotalIncomeCents: 224000, Status: "confirmed", IncomeRank: 4},
+		{PlayerKey: "playerE", Month: lastMonth, OrderCount: 22, TotalAmountCents: 220000, TotalCommissionCents: 44000, TotalIncomeCents: 176000, Status: "confirmed", IncomeRank: 5},
+		{PlayerKey: "playerF", Month: lastMonth, OrderCount: 18, TotalAmountCents: 180000, TotalCommissionCents: 36000, TotalIncomeCents: 144000, Status: "pending", IncomeRank: 6},
+		// 当月数据
+		{PlayerKey: "playerA", Month: currentMonth, OrderCount: 12, TotalAmountCents: 120000, TotalCommissionCents: 24000, TotalIncomeCents: 96000, Status: "pending", IncomeRank: 1},
+		{PlayerKey: "playerB", Month: currentMonth, OrderCount: 10, TotalAmountCents: 100000, TotalCommissionCents: 20000, TotalIncomeCents: 80000, Status: "pending", IncomeRank: 2},
+	}
+
+	for _, spec := range settlementSpecs {
+		player, ok := players[spec.PlayerKey]
+		if !ok {
+			continue
+		}
+
+		// 检查是否已存在
+		var existing model.MonthlySettlement
+		if err := tx.Where("player_id = ? AND settlement_month = ?", player.ID, spec.Month).First(&existing).Error; err == nil {
+			continue
+		}
+
+		settlement := &model.MonthlySettlement{
+			PlayerID:             player.ID,
+			SettlementMonth:      spec.Month,
+			TotalOrderCount:      spec.OrderCount,
+			TotalAmountCents:     spec.TotalAmountCents,
+			TotalCommissionCents: spec.TotalCommissionCents,
+			TotalIncomeCents:     spec.TotalIncomeCents,
+			BonusCents:           0,
+			FinalIncomeCents:     spec.TotalIncomeCents,
+			Status:               spec.Status,
+			IncomeRank:           &spec.IncomeRank,
+		}
+
+		if spec.Status == "paid" {
+			settlement.SettledAt = ptrTime(now.AddDate(0, 0, -3))
+		}
+
+		if err := tx.Create(settlement).Error; err != nil {
+			return err
+		}
+	}
+
+	log.Println("commission records seed data created successfully")
 	return nil
 }
