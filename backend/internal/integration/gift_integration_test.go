@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -128,6 +129,199 @@ func TestGiftListExcludeInactive(t *testing.T) {
 	_ = json.Unmarshal(listResp.Body.Bytes(), &listParsed)
 	if listParsed.Data.Total != 0 || len(listParsed.Data.Items) != 0 {
 		t.Fatalf("expected no active gifts, got %+v", listParsed.Data)
+	}
+}
+
+// 测试发送礼物给不存在的陪玩师
+func TestGiftSendToInvalidPlayer(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	db := testutil.NewMemoryDB(t)
+	defer testutil.CleanDB(t, db)
+	migrateGiftModels(t, db)
+
+	seed := seedGiftData(t, db)
+
+	orderRepo := orderimpl.NewOrderRepository(db)
+	playerRepo := user.NewPlayerRepository(db)
+	itemRepo := serviceitem.NewServiceItemRepository(db)
+	commissionRepo := commission.NewCommissionRepository(db)
+	itemService := itemsvc.NewServiceItemService(itemRepo, nil, playerRepo)
+	giftService := giftsvc.NewGiftService(itemRepo, orderRepo, playerRepo, commissionRepo)
+
+	router := gin.New()
+	api := router.Group("/api/v1")
+	userAuth := fakeAuthMiddleware(seed.userID)
+	userGroup := api.Group("/user")
+	userhandler.RegisterGiftRoutes(userGroup, giftService, itemService, userAuth)
+
+	// 发送礼物给不存在的陪玩师
+	sendPayload := map[string]any{
+		"playerId":   99999, // 不存在的陪玩师
+		"giftItemId": seed.giftItemID,
+		"quantity":   1,
+		"message":    "test",
+	}
+	sendResp := doJSON(router, http.MethodPost, "/api/v1/user/gifts/send", sendPayload, "")
+	// 应该返回错误
+	if sendResp.Code == http.StatusOK {
+		t.Fatalf("expected error for invalid player, got status=%d", sendResp.Code)
+	}
+}
+
+// 测试发送无效礼物项
+func TestGiftSendInvalidItem(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	db := testutil.NewMemoryDB(t)
+	defer testutil.CleanDB(t, db)
+	migrateGiftModels(t, db)
+
+	seed := seedGiftData(t, db)
+
+	orderRepo := orderimpl.NewOrderRepository(db)
+	playerRepo := user.NewPlayerRepository(db)
+	itemRepo := serviceitem.NewServiceItemRepository(db)
+	commissionRepo := commission.NewCommissionRepository(db)
+	itemService := itemsvc.NewServiceItemService(itemRepo, nil, playerRepo)
+	giftService := giftsvc.NewGiftService(itemRepo, orderRepo, playerRepo, commissionRepo)
+
+	router := gin.New()
+	api := router.Group("/api/v1")
+	userAuth := fakeAuthMiddleware(seed.userID)
+	userGroup := api.Group("/user")
+	userhandler.RegisterGiftRoutes(userGroup, giftService, itemService, userAuth)
+
+	// 发送不存在的礼物项
+	sendPayload := map[string]any{
+		"playerId":   seed.playerID,
+		"giftItemId": 99999, // 不存在的礼物项
+		"quantity":   1,
+		"message":    "test",
+	}
+	sendResp := doJSON(router, http.MethodPost, "/api/v1/user/gifts/send", sendPayload, "")
+	if sendResp.Code == http.StatusOK {
+		t.Fatalf("expected error for invalid gift item, got status=%d", sendResp.Code)
+	}
+}
+
+// 测试匿名礼物
+func TestGiftAnonymousSend(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	db := testutil.NewMemoryDB(t)
+	defer testutil.CleanDB(t, db)
+	migrateGiftModels(t, db)
+
+	seed := seedGiftData(t, db)
+
+	orderRepo := orderimpl.NewOrderRepository(db)
+	playerRepo := user.NewPlayerRepository(db)
+	itemRepo := serviceitem.NewServiceItemRepository(db)
+	commissionRepo := commission.NewCommissionRepository(db)
+	itemService := itemsvc.NewServiceItemService(itemRepo, nil, playerRepo)
+	giftService := giftsvc.NewGiftService(itemRepo, orderRepo, playerRepo, commissionRepo)
+
+	router := gin.New()
+	api := router.Group("/api/v1")
+	userAuth := fakeAuthMiddleware(seed.userID)
+	playerGiftAuth := fakeAuthMiddleware(seed.playerID)
+	userGroup := api.Group("/user")
+	playerGroup := api.Group("/player")
+	userhandler.RegisterGiftRoutes(userGroup, giftService, itemService, userAuth)
+	playerhandler.RegisterGiftRoutes(playerGroup, giftService, playerGiftAuth)
+
+	// 发送匿名礼物
+	sendPayload := map[string]any{
+		"playerId":    seed.playerID,
+		"giftItemId":  seed.giftItemID,
+		"quantity":    2,
+		"message":     "anonymous gift",
+		"isAnonymous": true,
+	}
+	sendResp := doJSON(router, http.MethodPost, "/api/v1/user/gifts/send", sendPayload, "")
+	if sendResp.Code != http.StatusOK {
+		t.Fatalf("send anonymous gift status=%d body=%s", sendResp.Code, sendResp.Body.String())
+	}
+
+	// 陪玩师查看收到的礼物，验证匿名标记
+	receivedResp := doJSON(router, http.MethodGet, "/api/v1/player/gifts/received", nil, "")
+	if receivedResp.Code != http.StatusOK {
+		t.Fatalf("received gifts status=%d body=%s", receivedResp.Code, receivedResp.Body.String())
+	}
+	var receivedParsed apiResp[giftsvc.ReceivedGiftsResponse]
+	if err := json.Unmarshal(receivedResp.Body.Bytes(), &receivedParsed); err != nil {
+		t.Fatalf("parse received gifts: %v", err)
+	}
+	if len(receivedParsed.Data.Gifts) == 0 {
+		t.Fatalf("expected received gifts, got none")
+	}
+	// 验证匿名标记
+	found := false
+	for _, gift := range receivedParsed.Data.Gifts {
+		if gift.IsAnonymous && gift.Message == "anonymous gift" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("expected anonymous gift with message, not found")
+	}
+}
+
+// 测试多次发送礼物累计统计
+func TestGiftMultipleSendsStats(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	db := testutil.NewMemoryDB(t)
+	defer testutil.CleanDB(t, db)
+	migrateGiftModels(t, db)
+
+	seed := seedGiftData(t, db)
+
+	orderRepo := orderimpl.NewOrderRepository(db)
+	playerRepo := user.NewPlayerRepository(db)
+	itemRepo := serviceitem.NewServiceItemRepository(db)
+	commissionRepo := commission.NewCommissionRepository(db)
+	itemService := itemsvc.NewServiceItemService(itemRepo, nil, playerRepo)
+	giftService := giftsvc.NewGiftService(itemRepo, orderRepo, playerRepo, commissionRepo)
+
+	router := gin.New()
+	api := router.Group("/api/v1")
+	userAuth := fakeAuthMiddleware(seed.userID)
+	playerGiftAuth := fakeAuthMiddleware(seed.playerID)
+	userGroup := api.Group("/user")
+	playerGroup := api.Group("/player")
+	userhandler.RegisterGiftRoutes(userGroup, giftService, itemService, userAuth)
+	playerhandler.RegisterGiftRoutes(playerGroup, giftService, playerGiftAuth)
+
+	// 发送多次礼物（添加延迟避免订单号冲突）
+	for i := 0; i < 3; i++ {
+		if i > 0 {
+			time.Sleep(2 * time.Millisecond) // 避免订单号冲突
+		}
+		sendPayload := map[string]any{
+			"playerId":   seed.playerID,
+			"giftItemId": seed.giftItemID,
+			"quantity":   i + 1, // 1, 2, 3
+			"message":    "gift " + string(rune('A'+i)),
+		}
+		sendResp := doJSON(router, http.MethodPost, "/api/v1/user/gifts/send", sendPayload, "")
+		if sendResp.Code != http.StatusOK {
+			t.Fatalf("send gift %d status=%d body=%s", i, sendResp.Code, sendResp.Body.String())
+		}
+	}
+
+	// 验证统计：总共 1+2+3=6 个礼物，3 个订单
+	statsResp := doJSON(router, http.MethodGet, "/api/v1/player/gifts/stats", nil, "")
+	if statsResp.Code != http.StatusOK {
+		t.Fatalf("gift stats status=%d body=%s", statsResp.Code, statsResp.Body.String())
+	}
+	var statsParsed apiResp[giftsvc.GiftStatsResponse]
+	if err := json.Unmarshal(statsResp.Body.Bytes(), &statsParsed); err != nil {
+		t.Fatalf("parse gift stats: %v", err)
+	}
+	if statsParsed.Data.TotalGiftOrders != 3 {
+		t.Fatalf("expected 3 gift orders, got %d", statsParsed.Data.TotalGiftOrders)
+	}
+	if statsParsed.Data.TotalGiftsReceived != 6 {
+		t.Fatalf("expected 6 total gifts, got %d", statsParsed.Data.TotalGiftsReceived)
 	}
 }
 

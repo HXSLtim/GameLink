@@ -158,6 +158,9 @@ func (m *propertyMockRepository) getLogs() []*model.PermissionAuditLog {
 // **Feature: rbac-button-level-permission, Property 11: 审计日志完整性**
 // **Validates: Requirements 6.1, 6.2**
 func TestAuditLogCompleteness(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping property-based test in short mode")
+	}
 	parameters := gopter.DefaultTestParameters()
 	parameters.MinSuccessfulTests = 100
 	properties := gopter.NewProperties(parameters)

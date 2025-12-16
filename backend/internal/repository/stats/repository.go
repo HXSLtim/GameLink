@@ -9,9 +9,24 @@ import (
 	"gamelink/internal/repository"
 )
 
-type gormStatsRepository struct{ db *gorm.DB }
+type gormStatsRepository struct {
+	db       *gorm.DB
+	isSQLite bool
+}
 
-func NewStatsRepository(db *gorm.DB) repository.StatsRepository { return &gormStatsRepository{db: db} }
+func NewStatsRepository(db *gorm.DB) repository.StatsRepository {
+	// 检测数据库类型
+	isSQLite := db.Dialector.Name() == "sqlite"
+	return &gormStatsRepository{db: db, isSQLite: isSQLite}
+}
+
+// dateExpr 返回适合当前数据库的日期转换表达式
+func (r *gormStatsRepository) dateExpr(column string) string {
+	if r.isSQLite {
+		return "date(" + column + ")"
+	}
+	return column + "::date"
+}
 
 func (r *gormStatsRepository) Dashboard(ctx context.Context) (repository.Dashboard, error) {
 	var d repository.Dashboard
@@ -64,10 +79,10 @@ func (r *gormStatsRepository) RevenueTrend(ctx context.Context, days int) ([]rep
 	}
 	since := time.Now().AddDate(0, 0, -days+1)
 	var rows []repository.DateValue
-	// PostgreSQL: 使用 paid_at::date 进行日期类型转换
-	q := r.db.WithContext(ctx).Table("payments").Select("paid_at::date as date, COALESCE(SUM(amount_cents),0) as value").
+	dateCol := r.dateExpr("paid_at")
+	q := r.db.WithContext(ctx).Table("payments").Select(dateCol+" as date, COALESCE(SUM(amount_cents),0) as value").
 		Where("status = ? AND paid_at IS NOT NULL AND paid_at >= ?", "paid", since).
-		Group("paid_at::date").Order("paid_at::date")
+		Group(dateCol).Order(dateCol)
 	if err := q.Scan(&rows).Error; err != nil {
 		return nil, err
 	}
@@ -80,9 +95,9 @@ func (r *gormStatsRepository) UserGrowth(ctx context.Context, days int) ([]repos
 	}
 	since := time.Now().AddDate(0, 0, -days+1)
 	var rows []repository.DateValue
-	// PostgreSQL: 使用 created_at::date 进行日期类型转换
-	q := r.db.WithContext(ctx).Table("users").Select("created_at::date as date, COUNT(1) as value").
-		Where("created_at >= ?", since).Group("created_at::date").Order("created_at::date")
+	dateCol := r.dateExpr("created_at")
+	q := r.db.WithContext(ctx).Table("users").Select(dateCol+" as date, COUNT(1) as value").
+		Where("created_at >= ?", since).Group(dateCol).Order(dateCol)
 	if err := q.Scan(&rows).Error; err != nil {
 		return nil, err
 	}
@@ -166,8 +181,8 @@ func (r *gormStatsRepository) AuditTrend(ctx context.Context, from, to *time.Tim
 		q = q.Where("action = ?", action)
 	}
 	var rows []repository.DateValue
-	// PostgreSQL: 使用 created_at::date 进行日期类型转换
-	if err := q.Select("created_at::date as date, COUNT(1) as value").Group("created_at::date").Order("created_at::date").Scan(&rows).Error; err != nil {
+	dateCol := r.dateExpr("created_at")
+	if err := q.Select(dateCol + " as date, COUNT(1) as value").Group(dateCol).Order(dateCol).Scan(&rows).Error; err != nil {
 		return nil, err
 	}
 	return rows, nil

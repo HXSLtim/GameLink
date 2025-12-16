@@ -389,3 +389,293 @@ func TestLogUserRoleChange(t *testing.T) {
 	assert.Equal(t, uint64(300), log.TargetID)
 	assert.Equal(t, model.AuditActionBatchAssign, log.Action)
 }
+
+func TestServiceQuery(t *testing.T) {
+	repo := newMockRepository()
+	svc := NewServiceWithDefaults(repo)
+
+	// Add some test logs directly to mock
+	for i := 0; i < 5; i++ {
+		repo.logs = append(repo.logs, &model.PermissionAuditLog{
+			ID:           uint64(i + 1),
+			OperatorID:   1,
+			OperatorName: "admin",
+			TargetType:   model.AuditTargetTypePermission,
+			TargetID:     uint64(i + 1),
+			TargetName:   "test_permission",
+			Action:       model.AuditActionCreate,
+		})
+	}
+
+	ctx := context.Background()
+
+	t.Run("query with default pagination", func(t *testing.T) {
+		result, err := svc.Query(ctx, QueryOptions{})
+		require.NoError(t, err)
+		assert.Equal(t, int64(5), result.Total)
+		assert.Equal(t, 1, result.Page)
+		assert.Equal(t, 20, result.PageSize)
+	})
+
+	t.Run("query with custom pagination", func(t *testing.T) {
+		result, err := svc.Query(ctx, QueryOptions{
+			Page:     2,
+			PageSize: 10,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 2, result.Page)
+		assert.Equal(t, 10, result.PageSize)
+	})
+
+	t.Run("query with page size limit", func(t *testing.T) {
+		result, err := svc.Query(ctx, QueryOptions{
+			PageSize: 200, // Exceeds max
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 100, result.PageSize) // Should be capped at 100
+	})
+}
+
+func TestServiceQueryByOperator(t *testing.T) {
+	repo := newMockRepository()
+	svc := NewServiceWithDefaults(repo)
+
+	ctx := context.Background()
+	result, err := svc.QueryByOperator(ctx, 1, 1, 10)
+	require.NoError(t, err)
+	assert.NotNil(t, result)
+}
+
+func TestServiceQueryByAction(t *testing.T) {
+	repo := newMockRepository()
+	svc := NewServiceWithDefaults(repo)
+
+	ctx := context.Background()
+	result, err := svc.QueryByAction(ctx, model.AuditActionCreate, 1, 10)
+	require.NoError(t, err)
+	assert.NotNil(t, result)
+}
+
+func TestServiceQueryByDateRange(t *testing.T) {
+	repo := newMockRepository()
+	svc := NewServiceWithDefaults(repo)
+
+	ctx := context.Background()
+	from := time.Now().Add(-24 * time.Hour)
+	to := time.Now()
+	result, err := svc.QueryByDateRange(ctx, from, to, 1, 10)
+	require.NoError(t, err)
+	assert.NotNil(t, result)
+}
+
+func TestServiceQueryByTarget(t *testing.T) {
+	repo := newMockRepository()
+	svc := NewServiceWithDefaults(repo)
+
+	ctx := context.Background()
+	result, err := svc.QueryByTarget(ctx, model.AuditTargetTypePermission, 1, 1, 10)
+	require.NoError(t, err)
+	assert.NotNil(t, result)
+}
+
+func TestServiceGetByID(t *testing.T) {
+	repo := newMockRepository()
+	repo.logs = append(repo.logs, &model.PermissionAuditLog{
+		ID:         1,
+		OperatorID: 1,
+		Action:     model.AuditActionCreate,
+	})
+	svc := NewServiceWithDefaults(repo)
+
+	ctx := context.Background()
+
+	t.Run("get existing log", func(t *testing.T) {
+		log, err := svc.GetByID(ctx, 1)
+		require.NoError(t, err)
+		assert.NotNil(t, log)
+		assert.Equal(t, uint64(1), log.ID)
+	})
+
+	t.Run("get non-existing log", func(t *testing.T) {
+		log, err := svc.GetByID(ctx, 999)
+		require.NoError(t, err)
+		assert.Nil(t, log)
+	})
+}
+
+func TestServiceExportCSV(t *testing.T) {
+	repo := newMockRepository()
+	now := time.Now()
+	repo.logs = append(repo.logs, &model.PermissionAuditLog{
+		ID:           1,
+		OperatorID:   1,
+		OperatorName: "admin",
+		TargetType:   model.AuditTargetTypePermission,
+		TargetID:     100,
+		TargetName:   "test_permission",
+		Action:       model.AuditActionCreate,
+		BeforeData:   "{}",
+		AfterData:    `{"name":"test"}`,
+		IPAddress:    "192.168.1.1",
+		UserAgent:    "Mozilla/5.0",
+		RequestID:    "req-123",
+		CreatedAt:    now,
+	})
+	svc := NewServiceWithDefaults(repo)
+
+	ctx := context.Background()
+
+	t.Run("export with default options", func(t *testing.T) {
+		data, err := svc.ExportCSV(ctx, ExportOptions{})
+		require.NoError(t, err)
+		assert.NotEmpty(t, data)
+		// Check UTF-8 BOM
+		assert.Equal(t, byte(0xEF), data[0])
+		assert.Equal(t, byte(0xBB), data[1])
+		assert.Equal(t, byte(0xBF), data[2])
+		// Check header exists
+		assert.Contains(t, string(data), "ID")
+		assert.Contains(t, string(data), "操作者ID")
+	})
+
+	t.Run("export with max records", func(t *testing.T) {
+		data, err := svc.ExportCSV(ctx, ExportOptions{MaxRecords: 100})
+		require.NoError(t, err)
+		assert.NotEmpty(t, data)
+	})
+}
+
+func TestGenerateExportFilename(t *testing.T) {
+	filename := GenerateExportFilename("audit_export")
+	assert.Contains(t, filename, "audit_export_")
+	assert.Contains(t, filename, ".csv")
+}
+
+func TestServiceGetRepository(t *testing.T) {
+	repo := newMockRepository()
+	svc := NewServiceWithDefaults(repo)
+
+	gotRepo := svc.GetRepository()
+	assert.Equal(t, repo, gotRepo)
+}
+
+func TestServiceStopWithContext(t *testing.T) {
+	repo := newMockRepository()
+	svc := NewService(repo, Config{
+		BufferSize:    100,
+		BatchSize:     10,
+		FlushInterval: 50 * time.Millisecond,
+	})
+
+	svc.Start()
+
+	// Log some entries
+	for i := 0; i < 3; i++ {
+		svc.Log(&model.PermissionAuditLog{
+			OperatorID: 1,
+			TargetID:   uint64(i + 1),
+			Action:     model.AuditActionCreate,
+		})
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err := svc.StopWithContext(ctx)
+	require.NoError(t, err)
+	assert.False(t, svc.IsRunning())
+
+	// Verify logs were flushed
+	logs := repo.getLogs()
+	assert.Equal(t, 3, len(logs))
+}
+
+func TestServiceStopWithContextTimeout(t *testing.T) {
+	repo := newMockRepository()
+	svc := NewServiceWithDefaults(repo)
+
+	// Stop without starting - should return nil immediately
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
+	defer cancel()
+
+	err := svc.StopWithContext(ctx)
+	require.NoError(t, err)
+}
+
+func TestServiceBufferFull(t *testing.T) {
+	repo := newMockRepository()
+	svc := NewService(repo, Config{
+		BufferSize:    2, // Very small buffer
+		BatchSize:     100,
+		FlushInterval: 10 * time.Second, // Long interval
+	})
+
+	svc.Start()
+	defer svc.Stop()
+
+	// Fill the buffer and overflow
+	for i := 0; i < 10; i++ {
+		svc.Log(&model.PermissionAuditLog{
+			OperatorID: 1,
+			TargetID:   uint64(i + 1),
+			Action:     model.AuditActionCreate,
+		})
+	}
+
+	// Wait a bit
+	time.Sleep(50 * time.Millisecond)
+
+	stats := svc.GetStats()
+	assert.True(t, stats.DroppedCount > 0, "Expected some logs to be dropped")
+}
+
+func TestServiceCleanupOldLogs(t *testing.T) {
+	repo := newMockRepository()
+	svc := NewServiceWithDefaults(repo)
+
+	ctx := context.Background()
+
+	t.Run("cleanup with default retention", func(t *testing.T) {
+		count, err := svc.CleanupOldLogs(ctx, 0)
+		require.NoError(t, err)
+		assert.Equal(t, int64(0), count)
+	})
+
+	t.Run("cleanup with custom retention", func(t *testing.T) {
+		count, err := svc.CleanupOldLogs(ctx, 30)
+		require.NoError(t, err)
+		assert.Equal(t, int64(0), count)
+	})
+}
+
+func TestServiceArchiveOldLogs(t *testing.T) {
+	repo := newMockRepository()
+	svc := NewServiceWithDefaults(repo)
+
+	ctx := context.Background()
+
+	result, err := svc.ArchiveOldLogs(ctx, "")
+	require.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.NotZero(t, result.ArchivedAt)
+}
+
+func TestServiceGetRetentionStats(t *testing.T) {
+	repo := newMockRepository()
+	svc := NewServiceWithDefaults(repo)
+
+	ctx := context.Background()
+
+	stats, err := svc.GetRetentionStats(ctx)
+	require.NoError(t, err)
+	assert.NotNil(t, stats)
+	assert.Equal(t, model.AuditLogRetentionDays, stats.OnlineRetention)
+	assert.Equal(t, model.AuditLogArchiveDays, stats.ArchiveRetention)
+}
+
+func TestDefaultConfig(t *testing.T) {
+	config := DefaultConfig()
+	assert.Equal(t, DefaultBufferSize, config.BufferSize)
+	assert.Equal(t, DefaultBatchSize, config.BatchSize)
+	assert.Equal(t, DefaultFlushInterval, config.FlushInterval)
+}

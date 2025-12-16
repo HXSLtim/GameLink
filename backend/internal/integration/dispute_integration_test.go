@@ -34,6 +34,70 @@ import (
 	"gamelink/pkg/testutil"
 )
 
+type disputeSeed struct {
+	userID       uint64
+	playerUserID uint64
+	playerID     uint64
+	gameID       uint64
+}
+
+func seedDisputeData(t *testing.T, db *gorm.DB) disputeSeed {
+	t.Helper()
+	ctx := context.Background()
+
+	userRepo := user.NewUserRepository(db)
+	playerRepo := user.NewPlayerRepository(db)
+	gameRepo := game.NewGameRepository(db)
+
+	userModel := &model.User{
+		Name:         "DisputeUser",
+		Email:        "dispute_user@example.com",
+		Phone:        "30000000001",
+		PasswordHash: "hashed",
+		Status:       model.UserStatusActive,
+		Role:         model.RoleUser,
+	}
+	if err := userRepo.Create(ctx, userModel); err != nil {
+		t.Fatalf("seed user: %v", err)
+	}
+
+	playerUser := &model.User{
+		Name:         "DisputePlayerUser",
+		Email:        "dispute_player@example.com",
+		Phone:        "30000000002",
+		PasswordHash: "hashed",
+		Status:       model.UserStatusActive,
+		Role:         model.RolePlayer,
+	}
+	if err := userRepo.Create(ctx, playerUser); err != nil {
+		t.Fatalf("seed player user: %v", err)
+	}
+
+	playerModel := &model.Player{
+		UserID:          playerUser.ID,
+		Nickname:        "DisputePro",
+		HourlyRateCents: 5000,
+	}
+	if err := playerRepo.Create(ctx, playerModel); err != nil {
+		t.Fatalf("seed player: %v", err)
+	}
+
+	gameModel := &model.Game{
+		Key:  "dispute_game",
+		Name: "Dispute Game",
+	}
+	if err := gameRepo.Create(ctx, gameModel); err != nil {
+		t.Fatalf("seed game: %v", err)
+	}
+
+	return disputeSeed{
+		userID:       userModel.ID,
+		playerUserID: playerUser.ID,
+		playerID:     playerModel.ID,
+		gameID:       gameModel.ID,
+	}
+}
+
 // 纠纷全链路：用户发起 -> 管理端列表/分配 -> 管理端解决（部分退款）
 func TestDisputeFlow(t *testing.T) {
 	gin.SetMode(gin.TestMode)
@@ -42,7 +106,7 @@ func TestDisputeFlow(t *testing.T) {
 	migrateDisputeModels(t, db)
 
 	ctx := context.Background()
-	seed := seedOrderData(t, db)
+	seed := seedDisputeData(t, db)
 
 	orderRepo := orderimpl.NewOrderRepository(db)
 	userRepo := user.NewUserRepository(db)
@@ -61,7 +125,7 @@ func TestDisputeFlow(t *testing.T) {
 	menuRepo := menu.NewMenuRepository(db)
 	statsRepo := stats.NewStatsRepository(db)
 	walletRepo := wallet.NewWalletRepository(db)
-	_ = adminservice.NewAdminService(gameRepo, userRepo, playerRepo, orderRepo, paymentRepo, roleRepo, serviceItemRepo, permRepo, menuRepo, statsRepo, walletRepo, memCache) // retain parity with admin handler deps
+	_ = adminservice.NewAdminService(gameRepo, userRepo, playerRepo, orderRepo, paymentRepo, roleRepo, serviceItemRepo, permRepo, menuRepo, statsRepo, walletRepo, memCache)
 	adminDisputeHandler := adminhandler.NewDisputeHandler(assignSvc)
 	userDisputeHandler := userhandler.NewDisputeHandler(assignSvc)
 
@@ -71,7 +135,7 @@ func TestDisputeFlow(t *testing.T) {
 	adminGroup := api.Group("/admin")
 
 	userGroup.Use(fakeUserBothMiddleware(seed.userID))
-	adminGroup.Use(fakeUserBothMiddleware(seed.playerUserID)) // actor user id for admin ops
+	adminGroup.Use(fakeUserBothMiddleware(seed.playerUserID))
 
 	userGroup.POST("/orders/:id/dispute", userDisputeHandler.InitiateDispute)
 	userGroup.GET("/orders/:id/disputes", userDisputeHandler.GetDisputeDetail)
@@ -79,11 +143,9 @@ func TestDisputeFlow(t *testing.T) {
 	adminGroup.POST("/disputes/:id/assign", adminDisputeHandler.AssignDispute)
 	adminGroup.POST("/disputes/:id/resolve", adminDisputeHandler.ResolveDispute)
 
-	// seed completed order within 24h (可发起纠纷)
-	orderID := createCompletedOrder(t, ctx, orderRepo, seed, time.Now().Add(-1*time.Hour))
+	orderID := createDisputeOrder(t, ctx, orderRepo, seed, time.Now().Add(-1*time.Hour))
 
-	// 用户发起纠纷
-	initPayload := map[string]interface{}{
+	initPayload := map[string]any{
 		"orderId":      orderID,
 		"reason":       "service issue",
 		"description":  "bad experience",
@@ -100,14 +162,12 @@ func TestDisputeFlow(t *testing.T) {
 	}
 	disputeID := initParsed.Data.DisputeID
 
-	// 管理端查询待分配列表
 	listResp := doJSON(router, http.MethodGet, "/api/v1/admin/disputes/pending", nil, "")
 	if listResp.Code != http.StatusOK {
 		t.Fatalf("pending disputes status=%d body=%s", listResp.Code, listResp.Body.String())
 	}
 
-	// 管理端分配纠纷
-	assignResp := doJSON(router, http.MethodPost, "/api/v1/admin/disputes/"+uintToStr(disputeID)+"/assign", map[string]interface{}{
+	assignResp := doJSON(router, http.MethodPost, "/api/v1/admin/disputes/"+uintToStr(disputeID)+"/assign", map[string]any{
 		"assignedToUserId": seed.playerUserID,
 		"source":           "system",
 	}, "")
@@ -115,8 +175,7 @@ func TestDisputeFlow(t *testing.T) {
 		t.Fatalf("assign dispute status=%d body=%s", assignResp.Code, assignResp.Body.String())
 	}
 
-	// 管理端解决纠纷（部分退款）
-	resolveResp := doJSON(router, http.MethodPost, "/api/v1/admin/disputes/"+uintToStr(disputeID)+"/resolve", map[string]interface{}{
+	resolveResp := doJSON(router, http.MethodPost, "/api/v1/admin/disputes/"+uintToStr(disputeID)+"/resolve", map[string]any{
 		"resolution":       "refund",
 		"resolutionAmount": 4000,
 		"resolutionNotes":  "partial refund granted",
@@ -125,18 +184,17 @@ func TestDisputeFlow(t *testing.T) {
 		t.Fatalf("resolve dispute status=%d body=%s", resolveResp.Code, resolveResp.Body.String())
 	}
 
-	// 验证纠纷状态 & 订单退款状态
 	updatedDispute, _ := disputeRepo.Get(ctx, disputeID)
 	if updatedDispute.Status != model.DisputeStatusResolved {
 		t.Fatalf("expected dispute resolved, got %s", updatedDispute.Status)
 	}
 
-	order, _ := orderRepo.Get(ctx, orderID)
-	if order.Status != model.OrderStatusRefunded {
-		t.Fatalf("expected order refunded, got %s", order.Status)
+	orderModel, _ := orderRepo.Get(ctx, orderID)
+	if orderModel.Status != model.OrderStatusRefunded {
+		t.Fatalf("expected order refunded, got %s", orderModel.Status)
 	}
-	if order.RefundAmountCents != 4000 {
-		t.Fatalf("expected refund amount 4000, got %d", order.RefundAmountCents)
+	if orderModel.RefundAmountCents != 4000 {
+		t.Fatalf("expected refund amount 4000, got %d", orderModel.RefundAmountCents)
 	}
 }
 
@@ -156,9 +214,9 @@ func migrateDisputeModels(t *testing.T, db *gorm.DB) {
 	}
 }
 
-func createCompletedOrder(t *testing.T, ctx context.Context, orderRepo repoiface.OrderRepository, seed orderSeed, completedAt time.Time) uint64 {
+func createDisputeOrder(t *testing.T, ctx context.Context, orderRepo repoiface.OrderRepository, seed disputeSeed, completedAt time.Time) uint64 {
 	t.Helper()
-	order := &model.Order{
+	orderModel := &model.Order{
 		UserID:          seed.userID,
 		ItemID:          seed.gameID,
 		Status:          model.OrderStatusCompleted,
@@ -167,19 +225,230 @@ func createCompletedOrder(t *testing.T, ctx context.Context, orderRepo repoiface
 		TotalPriceCents: 10000,
 		CompletedAt:     &completedAt,
 	}
-	order.SetPlayerID(seed.playerID)
-	order.SetGameID(seed.gameID)
-	if err := orderRepo.Create(ctx, order); err != nil {
+	orderModel.SetPlayerID(seed.playerID)
+	orderModel.SetGameID(seed.gameID)
+	if err := orderRepo.Create(ctx, orderModel); err != nil {
 		t.Fatalf("seed dispute order: %v", err)
 	}
-	return order.ID
+	return orderModel.ID
 }
 
-// fakeUserBothMiddleware sets both user_id and userID for compatibility with handlers
 func fakeUserBothMiddleware(userID uint64) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Set("user_id", userID)
 		c.Set("userID", userID)
 		c.Next()
+	}
+}
+
+// 测试纠纷拒绝流程
+func TestDisputeRejectFlow(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	db := testutil.NewMemoryDB(t)
+	defer testutil.CleanDB(t, db)
+	migrateDisputeModels(t, db)
+
+	ctx := context.Background()
+	seed := seedDisputeData(t, db)
+
+	orderRepo := orderimpl.NewOrderRepository(db)
+	userRepo := user.NewUserRepository(db)
+	disputeRepo := dispute.NewDisputeRepository(db)
+	opLogRepo := adminrepo.NewOperationLogRepository(db)
+	notificationRepo := notification.NewNotificationRepository(db)
+	paymentRepo := order.NewPaymentRepository(db)
+
+	assignSvc := orderservice.NewDisputeService(disputeRepo, orderRepo, userRepo, opLogRepo, notificationRepo, paymentRepo)
+	adminDisputeHandler := adminhandler.NewDisputeHandler(assignSvc)
+	userDisputeHandler := userhandler.NewDisputeHandler(assignSvc)
+
+	router := gin.New()
+	api := router.Group("/api/v1")
+	userGroup := api.Group("/user")
+	adminGroup := api.Group("/admin")
+
+	userGroup.Use(fakeUserBothMiddleware(seed.userID))
+	adminGroup.Use(fakeUserBothMiddleware(seed.playerUserID))
+
+	userGroup.POST("/orders/:id/dispute", userDisputeHandler.InitiateDispute)
+	adminGroup.POST("/disputes/:id/assign", adminDisputeHandler.AssignDispute)
+	adminGroup.POST("/disputes/:id/resolve", adminDisputeHandler.ResolveDispute)
+
+	orderID := createDisputeOrder(t, ctx, orderRepo, seed, time.Now().Add(-1*time.Hour))
+
+	initPayload := map[string]any{
+		"orderId":     orderID,
+		"reason":      "unreasonable complaint",
+		"description": "invalid claim",
+	}
+	initResp := doJSON(router, http.MethodPost, "/api/v1/user/orders/"+uintToStr(orderID)+"/dispute", initPayload, "")
+	if initResp.Code != http.StatusOK && initResp.Code != http.StatusCreated {
+		t.Fatalf("initiate dispute status=%d body=%s", initResp.Code, initResp.Body.String())
+	}
+	var initParsed apiResp[orderservice.InitiateDisputeResponse]
+	_ = json.Unmarshal(initResp.Body.Bytes(), &initParsed)
+	disputeID := initParsed.Data.DisputeID
+
+	assignResp := doJSON(router, http.MethodPost, "/api/v1/admin/disputes/"+uintToStr(disputeID)+"/assign", map[string]any{
+		"assignedToUserId": seed.playerUserID,
+		"source":           "manual",
+	}, "")
+	if assignResp.Code != http.StatusOK {
+		t.Fatalf("assign dispute status=%d body=%s", assignResp.Code, assignResp.Body.String())
+	}
+
+	resolveResp := doJSON(router, http.MethodPost, "/api/v1/admin/disputes/"+uintToStr(disputeID)+"/resolve", map[string]any{
+		"resolution":      "reject",
+		"resolutionNotes": "claim not valid",
+	}, "")
+	if resolveResp.Code != http.StatusOK {
+		t.Fatalf("reject dispute status=%d body=%s", resolveResp.Code, resolveResp.Body.String())
+	}
+
+	updatedDispute, _ := disputeRepo.Get(ctx, disputeID)
+	if updatedDispute.Status != model.DisputeStatusResolved {
+		t.Fatalf("expected dispute resolved, got %s", updatedDispute.Status)
+	}
+	if updatedDispute.Resolution != model.ResolutionReject {
+		t.Fatalf("expected resolution reject, got %s", updatedDispute.Resolution)
+	}
+
+	orderModel, _ := orderRepo.Get(ctx, orderID)
+	if orderModel.Status != model.OrderStatusCompleted {
+		t.Fatalf("expected order still completed, got %s", orderModel.Status)
+	}
+}
+
+// 测试超时订单不能发起纠纷
+func TestDisputeExpiredOrder(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	db := testutil.NewMemoryDB(t)
+	defer testutil.CleanDB(t, db)
+	migrateDisputeModels(t, db)
+
+	ctx := context.Background()
+	seed := seedDisputeData(t, db)
+
+	orderRepo := orderimpl.NewOrderRepository(db)
+	userRepo := user.NewUserRepository(db)
+	disputeRepo := dispute.NewDisputeRepository(db)
+	opLogRepo := adminrepo.NewOperationLogRepository(db)
+	notificationRepo := notification.NewNotificationRepository(db)
+	paymentRepo := order.NewPaymentRepository(db)
+
+	assignSvc := orderservice.NewDisputeService(disputeRepo, orderRepo, userRepo, opLogRepo, notificationRepo, paymentRepo)
+	userDisputeHandler := userhandler.NewDisputeHandler(assignSvc)
+
+	router := gin.New()
+	api := router.Group("/api/v1")
+	userGroup := api.Group("/user")
+	userGroup.Use(fakeUserBothMiddleware(seed.userID))
+	userGroup.POST("/orders/:id/dispute", userDisputeHandler.InitiateDispute)
+
+	orderID := createDisputeOrder(t, ctx, orderRepo, seed, time.Now().Add(-48*time.Hour))
+
+	initPayload := map[string]any{
+		"orderId":     orderID,
+		"reason":      "late complaint",
+		"description": "too late",
+	}
+	initResp := doJSON(router, http.MethodPost, "/api/v1/user/orders/"+uintToStr(orderID)+"/dispute", initPayload, "")
+	if initResp.Code == http.StatusOK || initResp.Code == http.StatusCreated {
+		t.Fatalf("expected error for expired order, got status=%d", initResp.Code)
+	}
+}
+
+// 测试重复发起纠纷
+func TestDisputeDuplicate(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	db := testutil.NewMemoryDB(t)
+	defer testutil.CleanDB(t, db)
+	migrateDisputeModels(t, db)
+
+	ctx := context.Background()
+	seed := seedDisputeData(t, db)
+
+	orderRepo := orderimpl.NewOrderRepository(db)
+	userRepo := user.NewUserRepository(db)
+	disputeRepo := dispute.NewDisputeRepository(db)
+	opLogRepo := adminrepo.NewOperationLogRepository(db)
+	notificationRepo := notification.NewNotificationRepository(db)
+	paymentRepo := order.NewPaymentRepository(db)
+
+	assignSvc := orderservice.NewDisputeService(disputeRepo, orderRepo, userRepo, opLogRepo, notificationRepo, paymentRepo)
+	userDisputeHandler := userhandler.NewDisputeHandler(assignSvc)
+
+	router := gin.New()
+	api := router.Group("/api/v1")
+	userGroup := api.Group("/user")
+	userGroup.Use(fakeUserBothMiddleware(seed.userID))
+	userGroup.POST("/orders/:id/dispute", userDisputeHandler.InitiateDispute)
+
+	orderID := createDisputeOrder(t, ctx, orderRepo, seed, time.Now().Add(-1*time.Hour))
+
+	initPayload := map[string]any{
+		"orderId":     orderID,
+		"reason":      "first complaint",
+		"description": "first issue",
+	}
+	initResp := doJSON(router, http.MethodPost, "/api/v1/user/orders/"+uintToStr(orderID)+"/dispute", initPayload, "")
+	if initResp.Code != http.StatusOK && initResp.Code != http.StatusCreated {
+		t.Fatalf("first dispute status=%d body=%s", initResp.Code, initResp.Body.String())
+	}
+
+	initPayload2 := map[string]any{
+		"orderId":     orderID,
+		"reason":      "second complaint",
+		"description": "second issue",
+	}
+	initResp2 := doJSON(router, http.MethodPost, "/api/v1/user/orders/"+uintToStr(orderID)+"/dispute", initPayload2, "")
+	if initResp2.Code == http.StatusOK || initResp2.Code == http.StatusCreated {
+		t.Fatalf("expected error for duplicate dispute, got status=%d", initResp2.Code)
+	}
+}
+
+// 测试查看纠纷详情
+func TestDisputeDetail(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	db := testutil.NewMemoryDB(t)
+	defer testutil.CleanDB(t, db)
+	migrateDisputeModels(t, db)
+
+	ctx := context.Background()
+	seed := seedDisputeData(t, db)
+
+	orderRepo := orderimpl.NewOrderRepository(db)
+	userRepo := user.NewUserRepository(db)
+	disputeRepo := dispute.NewDisputeRepository(db)
+	opLogRepo := adminrepo.NewOperationLogRepository(db)
+	notificationRepo := notification.NewNotificationRepository(db)
+	paymentRepo := order.NewPaymentRepository(db)
+
+	assignSvc := orderservice.NewDisputeService(disputeRepo, orderRepo, userRepo, opLogRepo, notificationRepo, paymentRepo)
+	userDisputeHandler := userhandler.NewDisputeHandler(assignSvc)
+
+	router := gin.New()
+	api := router.Group("/api/v1")
+	userGroup := api.Group("/user")
+	userGroup.Use(fakeUserBothMiddleware(seed.userID))
+	userGroup.POST("/orders/:id/dispute", userDisputeHandler.InitiateDispute)
+	userGroup.GET("/orders/:id/disputes", userDisputeHandler.GetDisputeDetail)
+
+	orderID := createDisputeOrder(t, ctx, orderRepo, seed, time.Now().Add(-1*time.Hour))
+
+	initPayload := map[string]any{
+		"orderId":      orderID,
+		"reason":       "service issue",
+		"description":  "detailed description",
+		"evidenceUrls": []string{"https://example.com/evidence1.jpg", "https://example.com/evidence2.jpg"},
+	}
+	initResp := doJSON(router, http.MethodPost, "/api/v1/user/orders/"+uintToStr(orderID)+"/dispute", initPayload, "")
+	if initResp.Code != http.StatusOK && initResp.Code != http.StatusCreated {
+		t.Fatalf("initiate dispute status=%d body=%s", initResp.Code, initResp.Body.String())
+	}
+
+	detailResp := doJSON(router, http.MethodGet, "/api/v1/user/orders/"+uintToStr(orderID)+"/disputes", nil, "")
+	if detailResp.Code != http.StatusOK {
+		t.Fatalf("get dispute detail status=%d body=%s", detailResp.Code, detailResp.Body.String())
 	}
 }
