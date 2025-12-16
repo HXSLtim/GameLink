@@ -52,6 +52,9 @@ import {
     GiftOutlined,
     MessageOutlined,
     TagsOutlined,
+    DollarOutlined,
+    WalletOutlined,
+    PercentageOutlined,
 } from '@ant-design/icons';
 import { useAdmin } from '@/context/useAdmin';
 import { useTheme } from '@/context/useTheme';
@@ -71,30 +74,37 @@ type MenuItem = Required<MenuProps>['items'][number];
  * 图标映射 - 将图标名称字符串映射到实际的图标组件
  */
 const iconMap: Record<string, React.ComponentType> = {
+    // 通用图标
     DashboardOutlined,
     SettingFilled,
+    SettingOutlined,
+    UserOutlined,
     TeamOutlined,
     SafetyCertificateOutlined,
     MenuOutlined,
+    // 业务管理
     AppstoreOutlined,
     ShoppingCartOutlined,
+    GiftOutlined,
+    // 财务管理
+    DollarOutlined,
+    WalletOutlined,
+    PercentageOutlined,
+    // 监控中心
     MonitorOutlined,
     LineChartOutlined,
     FundOutlined,
-    SettingOutlined,
+    BarChartOutlined,
+    // 内容管理
     FileTextOutlined,
-    UserOutlined,
-    // 评价管理相关图标
+    MessageOutlined,
+    TagsOutlined,
+    // 评价管理
     StarOutlined,
     UnorderedListOutlined,
     AuditOutlined,
     WarningOutlined,
     StopOutlined,
-    BarChartOutlined,
-    GiftOutlined,
-    // 内容管理相关图标
-    MessageOutlined,
-    TagsOutlined,
 };
 
 const AdminLayout: React.FC = () => {
