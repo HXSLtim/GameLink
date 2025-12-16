@@ -1896,3 +1896,353 @@ func TestRefundService_ProcessRefundWithWallet(t *testing.T) {
 		assert.Equal(t, int64(10000), updatedWallet.BalanceCents)
 	})
 }
+
+// ============================================
+// Additional tests to improve coverage to 80%+
+// ============================================
+
+func TestPaymentService_InitRoutingEngine(t *testing.T) {
+	db := setupPaymentTestDB(t)
+	defer testutil.CleanDB(t, db)
+
+	svc := createPaymentService(db)
+
+	t.Run("init routing engine with nil repos", func(t *testing.T) {
+		// This should not panic
+		svc.InitRoutingEngine(nil, nil)
+		assert.NotNil(t, svc.routingEngine)
+	})
+}
+
+func TestPaymentService_RoutePaymentWithoutEngine(t *testing.T) {
+	db := setupPaymentTestDB(t)
+	defer testutil.CleanDB(t, db)
+
+	svc := createPaymentService(db)
+
+	t.Run("route payment without engine returns error", func(t *testing.T) {
+		_, err := svc.GetPaymentRoutingLog(context.Background(), 1)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "routing engine not initialized")
+	})
+}
+
+func TestRefundService_CreditWallet_NewUser(t *testing.T) {
+	db := setupRefundTestDB(t)
+	defer testutil.CleanDB(t, db)
+
+	// Create test user without wallet
+	customer := &model.User{
+		Phone:        "13800000005",
+		Email:        "customer5@test.com",
+		Name:         "Customer5",
+		Role:         model.RoleUser,
+		Status:       model.UserStatusActive,
+		PasswordHash: "hashed",
+	}
+	require.NoError(t, db.Create(customer).Error)
+
+	svc := createRefundService(db)
+	walletRepo := user.NewWalletRepository(db)
+	svc.SetWalletRepository(walletRepo)
+
+	t.Run("credit wallet for new user creates wallet", func(t *testing.T) {
+		err := svc.creditWallet(context.Background(), customer.ID, 5000)
+		require.NoError(t, err)
+
+		// Verify wallet was created
+		wallet, err := walletRepo.GetByUserID(context.Background(), customer.ID)
+		require.NoError(t, err)
+		assert.Equal(t, int64(5000), wallet.BalanceCents)
+	})
+}
+
+func TestRefundService_CreditWallet_ExistingUser(t *testing.T) {
+	db := setupRefundTestDB(t)
+	defer testutil.CleanDB(t, db)
+
+	// Create test user with wallet
+	customer := &model.User{
+		Phone:        "13800000006",
+		Email:        "customer6@test.com",
+		Name:         "Customer6",
+		Role:         model.RoleUser,
+		Status:       model.UserStatusActive,
+		PasswordHash: "hashed",
+	}
+	require.NoError(t, db.Create(customer).Error)
+
+	wallet := &model.Wallet{
+		UserID:       customer.ID,
+		BalanceCents: 10000,
+	}
+	require.NoError(t, db.Create(wallet).Error)
+
+	svc := createRefundService(db)
+	walletRepo := user.NewWalletRepository(db)
+	svc.SetWalletRepository(walletRepo)
+
+	t.Run("credit wallet for existing user adds to balance", func(t *testing.T) {
+		err := svc.creditWallet(context.Background(), customer.ID, 5000)
+		require.NoError(t, err)
+
+		// Verify wallet balance increased
+		updatedWallet, err := walletRepo.GetByUserID(context.Background(), customer.ID)
+		require.NoError(t, err)
+		assert.Equal(t, int64(15000), updatedWallet.BalanceCents)
+	})
+}
+
+func TestRefundService_LogRefundOperation_WithOpLogs(t *testing.T) {
+	db := setupRefundTestDB(t)
+	defer testutil.CleanDB(t, db)
+
+	svc := createRefundService(db)
+
+	// Create operation log repository
+	opLogRepo := &mockOperationLogRepository{}
+	svc.SetOperationLogRepository(opLogRepo)
+
+	t.Run("log refund operation with metadata", func(t *testing.T) {
+		operatorID := uint64(1)
+		svc.logRefundOperation(context.Background(), 1, 1, "refund", &operatorID, map[string]any{
+			"amount_cents": 10000,
+			"reason":       "test",
+		})
+		// Should not panic
+	})
+
+	t.Run("log refund operation without operator", func(t *testing.T) {
+		svc.logRefundOperation(context.Background(), 1, 1, "refund", nil, map[string]any{
+			"amount_cents": 5000,
+		})
+		// Should not panic
+	})
+}
+
+func TestRefundService_LogRefundOperation_WithoutOpLogs(t *testing.T) {
+	db := setupRefundTestDB(t)
+	defer testutil.CleanDB(t, db)
+
+	svc := createRefundService(db)
+	// opLogs is nil by default
+
+	t.Run("log refund operation without op logs repo", func(t *testing.T) {
+		operatorID := uint64(1)
+		svc.logRefundOperation(context.Background(), 1, 1, "refund", &operatorID, map[string]any{
+			"amount_cents": 10000,
+		})
+		// Should not panic, just return early
+	})
+}
+
+// mockOperationLogRepository is a mock implementation
+type mockOperationLogRepository struct{}
+
+func (m *mockOperationLogRepository) Append(ctx context.Context, log *model.OperationLog) error {
+	return nil
+}
+
+func (m *mockOperationLogRepository) ListByEntity(ctx context.Context, entityType string, entityID uint64, opts repository.OperationLogListOptions) ([]model.OperationLog, int64, error) {
+	return nil, 0, nil
+}
+
+func (m *mockOperationLogRepository) List(ctx context.Context, opts repository.OperationLogSearchOptions) ([]model.OperationLog, int64, error) {
+	return nil, 0, nil
+}
+
+func TestRefundService_ProcessRefund_InvalidAmount(t *testing.T) {
+	db := setupRefundTestDB(t)
+	defer testutil.CleanDB(t, db)
+
+	// Create test user
+	customer := &model.User{
+		Phone:        "13800000007",
+		Email:        "customer7@test.com",
+		Name:         "Customer7",
+		Role:         model.RoleUser,
+		Status:       model.UserStatusActive,
+		PasswordHash: "hashed",
+	}
+	require.NoError(t, db.Create(customer).Error)
+
+	// Create paid payment
+	now := time.Now()
+	payment := &model.Payment{
+		OrderID:     1,
+		UserID:      customer.ID,
+		Method:      model.PaymentMethodWeChat,
+		AmountCents: 10000,
+		Status:      model.PaymentStatusPaid,
+		PaidAt:      &now,
+	}
+	require.NoError(t, db.Create(payment).Error)
+
+	svc := createRefundService(db)
+
+	t.Run("refund amount exceeds payment amount", func(t *testing.T) {
+		_, err := svc.ProcessRefund(context.Background(), model.RefundRequest{
+			PaymentID:   payment.ID,
+			AmountCents: 20000, // More than payment amount
+			Reason:      "测试",
+		})
+		assert.Error(t, err)
+	})
+
+	t.Run("refund amount is zero", func(t *testing.T) {
+		_, err := svc.ProcessRefund(context.Background(), model.RefundRequest{
+			PaymentID:   payment.ID,
+			AmountCents: 0,
+			Reason:      "测试",
+		})
+		assert.Error(t, err)
+	})
+
+	t.Run("refund amount is negative", func(t *testing.T) {
+		_, err := svc.ProcessRefund(context.Background(), model.RefundRequest{
+			PaymentID:   payment.ID,
+			AmountCents: -1000,
+			Reason:      "测试",
+		})
+		assert.Error(t, err)
+	})
+}
+
+func TestRefundService_ProcessRefund_PartialRefund(t *testing.T) {
+	db := setupRefundTestDB(t)
+	defer testutil.CleanDB(t, db)
+
+	// Create test user
+	customer := &model.User{
+		Phone:        "13800000008",
+		Email:        "customer8@test.com",
+		Name:         "Customer8",
+		Role:         model.RoleUser,
+		Status:       model.UserStatusActive,
+		PasswordHash: "hashed",
+	}
+	require.NoError(t, db.Create(customer).Error)
+
+	// Create test order
+	scheduledStart := time.Now().Add(24 * time.Hour)
+	order := &model.Order{
+		UserID:          customer.ID,
+		ItemID:          1,
+		Title:           "部分退款测试",
+		Status:          model.OrderStatusConfirmed,
+		UnitPriceCents:  5000,
+		TotalPriceCents: 10000,
+		ScheduledStart:  &scheduledStart,
+	}
+	require.NoError(t, db.Create(order).Error)
+
+	// Create paid payment
+	now := time.Now()
+	payment := &model.Payment{
+		OrderID:     order.ID,
+		UserID:      customer.ID,
+		Method:      model.PaymentMethodWeChat,
+		AmountCents: 10000,
+		Status:      model.PaymentStatusPaid,
+		PaidAt:      &now,
+	}
+	require.NoError(t, db.Create(payment).Error)
+
+	svc := createRefundService(db)
+
+	t.Run("partial refund", func(t *testing.T) {
+		resp, err := svc.ProcessRefund(context.Background(), model.RefundRequest{
+			PaymentID:   payment.ID,
+			AmountCents: 5000, // Partial refund
+			Reason:      "部分退款",
+		})
+		require.NoError(t, err)
+		assert.NotNil(t, resp)
+		assert.Equal(t, int64(5000), resp.RemainingAmount)
+		assert.False(t, resp.Payment.IsFullyRefunded())
+	})
+}
+
+func TestPaymentService_CreatePaymentWithExistingPaidPayment(t *testing.T) {
+	db := setupPaymentTestDB(t)
+	defer testutil.CleanDB(t, db)
+
+	customer, _, gameModel, _ := createPaymentTestData(t, db)
+	svc := createPaymentService(db)
+
+	// Create order
+	scheduledStart := time.Now().Add(24 * time.Hour)
+	order := &model.Order{
+		UserID:          customer.ID,
+		ItemID:          gameModel.ID,
+		Title:           "已支付订单",
+		Status:          model.OrderStatusPending,
+		UnitPriceCents:  5000,
+		TotalPriceCents: 10000,
+		ScheduledStart:  &scheduledStart,
+	}
+	require.NoError(t, db.Create(order).Error)
+
+	// Create existing paid payment
+	now := time.Now()
+	existingPayment := &model.Payment{
+		OrderID:     order.ID,
+		UserID:      customer.ID,
+		Method:      model.PaymentMethodWeChat,
+		AmountCents: 10000,
+		Status:      model.PaymentStatusPaid,
+		PaidAt:      &now,
+	}
+	require.NoError(t, db.Create(existingPayment).Error)
+
+	t.Run("cannot create payment for already paid order", func(t *testing.T) {
+		_, err := svc.CreatePayment(context.Background(), customer.ID, CreatePaymentRequest{
+			OrderID: order.ID,
+			Method:  model.PaymentMethodAlipay,
+		})
+		assert.Error(t, err)
+	})
+}
+
+func TestPaymentService_RefundWithGenericProvider(t *testing.T) {
+	db := setupPaymentTestDB(t)
+	defer testutil.CleanDB(t, db)
+
+	customer, _, gameModel, _ := createPaymentTestData(t, db)
+	svc := createPaymentService(db)
+
+	// Create order
+	scheduledStart := time.Now().Add(24 * time.Hour)
+	order := &model.Order{
+		UserID:          customer.ID,
+		ItemID:          gameModel.ID,
+		Title:           "通用退款测试",
+		Status:          model.OrderStatusConfirmed,
+		UnitPriceCents:  5000,
+		TotalPriceCents: 10000,
+		ScheduledStart:  &scheduledStart,
+	}
+	require.NoError(t, db.Create(order).Error)
+
+	// Create paid payment with unknown method (will use generic provider)
+	now := time.Now()
+	payment := &model.Payment{
+		OrderID:     order.ID,
+		UserID:      customer.ID,
+		Method:      "unknown", // Unknown method
+		AmountCents: 10000,
+		Status:      model.PaymentStatusPaid,
+		PaidAt:      &now,
+	}
+	require.NoError(t, db.Create(payment).Error)
+
+	t.Run("refund with generic provider", func(t *testing.T) {
+		err := svc.RefundPayment(context.Background(), payment.ID, "通用退款")
+		require.NoError(t, err)
+
+		// Verify payment status
+		var updated model.Payment
+		require.NoError(t, db.First(&updated, payment.ID).Error)
+		assert.Equal(t, model.PaymentStatusRefunded, updated.Status)
+	})
+}
