@@ -1296,425 +1296,205 @@ func seedUserManagementData(tx *gorm.DB, users map[string]*model.User) error {
 	return nil
 }
 
-// seedReviewPermissions 创建评价管理权限种子数据
+// seedReviewPermissions 创建所有业务模块权限种子数据
+// 按业务模块组织，便于维护和扩展
 func seedReviewPermissions(tx *gorm.DB) error {
-	// 不再检查是否已有权限，改为逐条 upsert，确保新增的权限能被添加
+	var allPermissions []model.Permission
 
-	// 定义评价管理权限
-	// 注意：code 字段有唯一索引，所以每个权限必须有唯一的 code
-	permissions := []model.Permission{
-		// 评价查看权限 (review:view)
-		{
-			Method:      model.HTTPMethodGET,
-			Path:        "/api/v1/admin/reviews",
-			Code:        "review.list",
-			Group:       "/admin/reviews",
-			Description: "查看评价列表",
-		},
-		{
-			Method:      model.HTTPMethodGET,
-			Path:        "/api/v1/admin/reviews/:id",
-			Code:        "review.get",
-			Group:       "/admin/reviews",
-			Description: "查看评价详情",
-		},
-		{
-			Method:      model.HTTPMethodGET,
-			Path:        "/api/v1/admin/reviews/pending",
-			Code:        "review.pending",
-			Group:       "/admin/reviews",
-			Description: "查看待审核评价",
-		},
-		{
-			Method:      model.HTTPMethodGET,
-			Path:        "/api/v1/admin/reviews/:id/logs",
-			Code:        "review.logs",
-			Group:       "/admin/reviews",
-			Description: "查看评价操作日志",
-		},
-		{
-			Method:      model.HTTPMethodGET,
-			Path:        "/api/v1/admin/players/:id/reviews",
-			Code:        "review.player",
-			Group:       "/admin/reviews",
-			Description: "查看陪玩师评价",
-		},
-		{
-			Method:      model.HTTPMethodGET,
-			Path:        "/api/v1/admin/orders/:id/reviews",
-			Code:        "review.order",
-			Group:       "/admin/reviews",
-			Description: "查看订单评价",
-		},
+	// 1. 评价管理模块
+	allPermissions = append(allPermissions, getReviewPermissions()...)
 
-		// 评价审核权限 (review:approve)
-		{
-			Method:      model.HTTPMethodPUT,
-			Path:        "/api/v1/admin/reviews/:id/approve",
-			Code:        "review.approve",
-			Group:       "/admin/reviews",
-			Description: "批准评价",
-		},
-		{
-			Method:      model.HTTPMethodPUT,
-			Path:        "/api/v1/admin/reviews/:id/reject",
-			Code:        "review.reject",
-			Group:       "/admin/reviews",
-			Description: "拒绝评价",
-		},
-		{
-			Method:      model.HTTPMethodPUT,
-			Path:        "/api/v1/admin/reviews/batch-approve",
-			Code:        "review.batch_approve",
-			Group:       "/admin/reviews",
-			Description: "批量批准评价",
-		},
-		{
-			Method:      model.HTTPMethodPUT,
-			Path:        "/api/v1/admin/reviews/batch-reject",
-			Code:        "review.batch_reject",
-			Group:       "/admin/reviews",
-			Description: "批量拒绝评价",
-		},
+	// 2. 内容管理模块
+	allPermissions = append(allPermissions, getContentPermissions()...)
 
-		// 评价删除权限 (review:delete)
-		{
-			Method:      model.HTTPMethodDELETE,
-			Path:        "/api/v1/admin/reviews/:id",
-			Code:        "review.delete",
-			Group:       "/admin/reviews",
-			Description: "删除评价",
-		},
-		{
-			Method:      model.HTTPMethodPUT,
-			Path:        "/api/v1/admin/reviews/:id",
-			Code:        "review.update",
-			Group:       "/admin/reviews",
-			Description: "更新评价",
-		},
-		{
-			Method:      model.HTTPMethodPOST,
-			Path:        "/api/v1/admin/reviews",
-			Code:        "review.create",
-			Group:       "/admin/reviews",
-			Description: "创建评价",
-		},
+	// 3. 监控模块
+	allPermissions = append(allPermissions, getMonitorPermissions()...)
 
-		// 评价管理权限 (review:manage) - 敏感词管理
-		{
-			Method:      model.HTTPMethodGET,
-			Path:        "/api/v1/admin/sensitive-words",
-			Code:        "sensitive_word.list",
-			Group:       "/admin/reviews",
-			Description: "查看敏感词列表",
-		},
-		{
-			Method:      model.HTTPMethodPOST,
-			Path:        "/api/v1/admin/sensitive-words",
-			Code:        "sensitive_word.create",
-			Group:       "/admin/reviews",
-			Description: "添加敏感词",
-		},
-		{
-			Method:      model.HTTPMethodPUT,
-			Path:        "/api/v1/admin/sensitive-words/:id",
-			Code:        "sensitive_word.update",
-			Group:       "/admin/reviews",
-			Description: "更新敏感词",
-		},
-		{
-			Method:      model.HTTPMethodDELETE,
-			Path:        "/api/v1/admin/sensitive-words/:id",
-			Code:        "sensitive_word.delete",
-			Group:       "/admin/reviews",
-			Description: "删除敏感词",
-		},
-		{
-			Method:      model.HTTPMethodPOST,
-			Path:        "/api/v1/admin/reviews/detect-sensitive",
-			Code:        "review.detect_sensitive",
-			Group:       "/admin/reviews",
-			Description: "检测敏感词",
-		},
+	// 4. 运营分析模块
+	allPermissions = append(allPermissions, getAnalyticsPermissions()...)
 
-		// 评价举报管理权限
-		{
-			Method:      model.HTTPMethodGET,
-			Path:        "/api/v1/admin/review-reports",
-			Code:        "review_report.list",
-			Group:       "/admin/reviews",
-			Description: "查看评价举报列表",
-		},
-		{
-			Method:      model.HTTPMethodGET,
-			Path:        "/api/v1/admin/review-reports/:id",
-			Code:        "review_report.get",
-			Group:       "/admin/reviews",
-			Description: "查看举报详情",
-		},
-		{
-			Method:      model.HTTPMethodPOST,
-			Path:        "/api/v1/admin/reviews/:id/reports",
-			Code:        "review_report.create",
-			Group:       "/admin/reviews",
-			Description: "创建评价举报",
-		},
-		{
-			Method:      model.HTTPMethodPUT,
-			Path:        "/api/v1/admin/review-reports/:id/handle",
-			Code:        "review_report.handle",
-			Group:       "/admin/reviews",
-			Description: "处理评价举报",
-		},
+	// 5. KPI 仪表板模块
+	allPermissions = append(allPermissions, getKPIPermissions()...)
 
-		// 评价回复管理权限
-		{
-			Method:      model.HTTPMethodPUT,
-			Path:        "/api/v1/admin/review-replies/:id",
-			Code:        "review_reply.update",
-			Group:       "/admin/reviews",
-			Description: "更新评价回复",
-		},
-		{
-			Method:      model.HTTPMethodDELETE,
-			Path:        "/api/v1/admin/review-replies/:id",
-			Code:        "review_reply.delete",
-			Group:       "/admin/reviews",
-			Description: "删除评价回复",
-		},
+	// 6. 财务管理模块
+	allPermissions = append(allPermissions, getFinancePermissions()...)
 
-		// 评价统计权限
-		{
-			Method:      model.HTTPMethodGET,
-			Path:        "/api/v1/admin/reviews/stats",
-			Code:        "review.stats",
-			Group:       "/admin/reviews",
-			Description: "查看评价统计",
-		},
-		{
-			Method:      model.HTTPMethodGET,
-			Path:        "/api/v1/admin/reviews/trend",
-			Code:        "review.trend",
-			Group:       "/admin/reviews",
-			Description: "查看评价趋势",
-		},
-		{
-			Method:      model.HTTPMethodGET,
-			Path:        "/api/v1/admin/reviews/top-players",
-			Code:        "review.top_players",
-			Group:       "/admin/reviews",
-			Description: "查看陪玩师排行榜",
-		},
-		{
-			Method:      model.HTTPMethodGET,
-			Path:        "/api/v1/admin/reviews/game-stats",
-			Code:        "review.game_stats",
-			Group:       "/admin/reviews",
-			Description: "查看游戏评价统计",
-		},
-		{
-			Method:      model.HTTPMethodGET,
-			Path:        "/api/v1/admin/reviews/export",
-			Code:        "review.export",
-			Group:       "/admin/reviews",
-			Description: "导出评价统计",
-		},
+	// 7. 系统管理模块
+	allPermissions = append(allPermissions, getSystemPermissions()...)
 
-		// 评价展示设置权限
-		{
-			Method:      model.HTTPMethodGET,
-			Path:        "/api/v1/admin/review-settings",
-			Code:        "review_settings.get",
-			Group:       "/admin/reviews",
-			Description: "查看评价展示设置",
-		},
-		{
-			Method:      model.HTTPMethodPUT,
-			Path:        "/api/v1/admin/review-settings",
-			Code:        "review_settings.update",
-			Group:       "/admin/reviews",
-			Description: "更新评价展示设置",
-		},
-
-		// 操作日志权限
-		{
-			Method:      model.HTTPMethodGET,
-			Path:        "/api/v1/admin/operation-logs",
-			Code:        "operation_log.list",
-			Group:       "/admin/reviews",
-			Description: "查看操作日志",
-		},
-		{
-			Method:      model.HTTPMethodGET,
-			Path:        "/api/v1/admin/operation-logs/export",
-			Code:        "operation_log.export",
-			Group:       "/admin/reviews",
-			Description: "导出操作日志",
-		},
-
-		// ========== 内容管理权限 ==========
-		// 动态审核权限 (content:view)
-		{
-			Method:      model.HTTPMethodGET,
-			Path:        "/api/v1/admin/content/feeds",
-			Code:        "content.feed.list",
-			Group:       "/admin/content",
-			Description: "查看动态列表",
-		},
-		{
-			Method:      model.HTTPMethodGET,
-			Path:        "/api/v1/admin/content/feeds/:id",
-			Code:        "content.feed.get",
-			Group:       "/admin/content",
-			Description: "查看动态详情",
-		},
-		// 动态审核权限 (content:moderate)
-		{
-			Method:      model.HTTPMethodPUT,
-			Path:        "/api/v1/admin/content/feeds/:id/approve",
-			Code:        "content.feed.approve",
-			Group:       "/admin/content",
-			Description: "批准动态",
-		},
-		{
-			Method:      model.HTTPMethodPUT,
-			Path:        "/api/v1/admin/content/feeds/:id/reject",
-			Code:        "content.feed.reject",
-			Group:       "/admin/content",
-			Description: "拒绝动态",
-		},
-		{
-			Method:      model.HTTPMethodPOST,
-			Path:        "/api/v1/admin/content/feeds/batch-approve",
-			Code:        "content.feed.batch_approve",
-			Group:       "/admin/content",
-			Description: "批量批准动态",
-		},
-		{
-			Method:      model.HTTPMethodPOST,
-			Path:        "/api/v1/admin/content/feeds/batch-reject",
-			Code:        "content.feed.batch_reject",
-			Group:       "/admin/content",
-			Description: "批量拒绝动态",
-		},
-		// 动态删除权限 (content:delete)
-		{
-			Method:      model.HTTPMethodDELETE,
-			Path:        "/api/v1/admin/content/feeds/:id",
-			Code:        "content.feed.delete",
-			Group:       "/admin/content",
-			Description: "删除动态",
-		},
-
-		// 聊天监控权限
-		{
-			Method:      model.HTTPMethodGET,
-			Path:        "/api/v1/admin/content/chat/messages",
-			Code:        "content.chat.list",
-			Group:       "/admin/content",
-			Description: "查看聊天消息",
-		},
-		{
-			Method:      model.HTTPMethodDELETE,
-			Path:        "/api/v1/admin/content/chat/messages/:id",
-			Code:        "content.chat.delete",
-			Group:       "/admin/content",
-			Description: "删除聊天消息",
-		},
-		{
-			Method:      model.HTTPMethodPOST,
-			Path:        "/api/v1/admin/content/chat/mute",
-			Code:        "content.chat.mute",
-			Group:       "/admin/content",
-			Description: "禁言用户",
-		},
-		{
-			Method:      model.HTTPMethodPOST,
-			Path:        "/api/v1/admin/content/chat/unmute",
-			Code:        "content.chat.unmute",
-			Group:       "/admin/content",
-			Description: "解除禁言",
-		},
-
-		// 举报管理权限
-		{
-			Method:      model.HTTPMethodGET,
-			Path:        "/api/v1/admin/content/reports",
-			Code:        "content.report.list",
-			Group:       "/admin/content",
-			Description: "查看举报列表",
-		},
-		{
-			Method:      model.HTTPMethodGET,
-			Path:        "/api/v1/admin/content/reports/:id",
-			Code:        "content.report.get",
-			Group:       "/admin/content",
-			Description: "查看举报详情",
-		},
-		{
-			Method:      model.HTTPMethodPOST,
-			Path:        "/api/v1/admin/content/reports/:id/process",
-			Code:        "content.report.process",
-			Group:       "/admin/content",
-			Description: "处理举报",
-		},
-
-		// 内容统计权限
-		{
-			Method:      model.HTTPMethodGET,
-			Path:        "/api/v1/admin/content/stats",
-			Code:        "content.stats",
-			Group:       "/admin/content",
-			Description: "查看内容统计",
-		},
-
-		// 内容分类管理权限
-		{
-			Method:      model.HTTPMethodGET,
-			Path:        "/api/v1/admin/content/categories",
-			Code:        "content.category.list",
-			Group:       "/admin/content",
-			Description: "查看内容分类",
-		},
-		{
-			Method:      model.HTTPMethodGET,
-			Path:        "/api/v1/admin/content/categories/:id",
-			Code:        "content.category.get",
-			Group:       "/admin/content",
-			Description: "查看分类详情",
-		},
-		{
-			Method:      model.HTTPMethodPOST,
-			Path:        "/api/v1/admin/content/categories",
-			Code:        "content.category.create",
-			Group:       "/admin/content",
-			Description: "创建内容分类",
-		},
-		{
-			Method:      model.HTTPMethodPUT,
-			Path:        "/api/v1/admin/content/categories/:id",
-			Code:        "content.category.update",
-			Group:       "/admin/content",
-			Description: "更新内容分类",
-		},
-		{
-			Method:      model.HTTPMethodDELETE,
-			Path:        "/api/v1/admin/content/categories/:id",
-			Code:        "content.category.delete",
-			Group:       "/admin/content",
-			Description: "删除内容分类",
-		},
-	}
-
-	// 批量创建权限（检查 code 和 method+path 两个唯一约束）
-	for _, perm := range permissions {
+	// 批量创建权限
+	for _, perm := range allPermissions {
 		if err := upsertPermission(tx, &perm); err != nil {
 			return err
 		}
 	}
 
-	log.Println("review permissions seed data created successfully")
+	log.Println("all business permissions seed data created successfully")
 	return nil
+}
+
+// getReviewPermissions 评价管理模块权限
+func getReviewPermissions() []model.Permission {
+	return []model.Permission{
+		// 评价查看
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/reviews", Code: "review.list", Group: "评价管理", Description: "查看评价列表"},
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/reviews/:id", Code: "review.get", Group: "评价管理", Description: "查看评价详情"},
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/reviews/pending", Code: "review.pending", Group: "评价管理", Description: "查看待审核评价"},
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/reviews/:id/logs", Code: "review.logs", Group: "评价管理", Description: "查看评价操作日志"},
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/players/:id/reviews", Code: "review.player", Group: "评价管理", Description: "查看陪玩师评价"},
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/orders/:id/reviews", Code: "review.order", Group: "评价管理", Description: "查看订单评价"},
+		// 评价审核
+		{Method: model.HTTPMethodPUT, Path: "/api/v1/admin/reviews/:id/approve", Code: "review.approve", Group: "评价管理", Description: "批准评价"},
+		{Method: model.HTTPMethodPUT, Path: "/api/v1/admin/reviews/:id/reject", Code: "review.reject", Group: "评价管理", Description: "拒绝评价"},
+		{Method: model.HTTPMethodPUT, Path: "/api/v1/admin/reviews/batch-approve", Code: "review.batch_approve", Group: "评价管理", Description: "批量批准评价"},
+		{Method: model.HTTPMethodPUT, Path: "/api/v1/admin/reviews/batch-reject", Code: "review.batch_reject", Group: "评价管理", Description: "批量拒绝评价"},
+		// 评价操作
+		{Method: model.HTTPMethodPOST, Path: "/api/v1/admin/reviews", Code: "review.create", Group: "评价管理", Description: "创建评价"},
+		{Method: model.HTTPMethodPUT, Path: "/api/v1/admin/reviews/:id", Code: "review.update", Group: "评价管理", Description: "更新评价"},
+		{Method: model.HTTPMethodDELETE, Path: "/api/v1/admin/reviews/:id", Code: "review.delete", Group: "评价管理", Description: "删除评价"},
+		// 评价统计
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/reviews/stats", Code: "review.stats", Group: "评价管理", Description: "查看评价统计"},
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/reviews/trend", Code: "review.trend", Group: "评价管理", Description: "查看评价趋势"},
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/reviews/top-players", Code: "review.top_players", Group: "评价管理", Description: "查看陪玩师排行榜"},
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/reviews/game-stats", Code: "review.game_stats", Group: "评价管理", Description: "查看游戏评价统计"},
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/reviews/export", Code: "review.export", Group: "评价管理", Description: "导出评价统计"},
+		// 评价设置
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/review-settings", Code: "review_settings.get", Group: "评价管理", Description: "查看评价展示设置"},
+		{Method: model.HTTPMethodPUT, Path: "/api/v1/admin/review-settings", Code: "review_settings.update", Group: "评价管理", Description: "更新评价展示设置"},
+		// 敏感词管理
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/sensitive-words", Code: "sensitive_word.list", Group: "敏感词管理", Description: "查看敏感词列表"},
+		{Method: model.HTTPMethodPOST, Path: "/api/v1/admin/sensitive-words", Code: "sensitive_word.create", Group: "敏感词管理", Description: "添加敏感词"},
+		{Method: model.HTTPMethodPUT, Path: "/api/v1/admin/sensitive-words/:id", Code: "sensitive_word.update", Group: "敏感词管理", Description: "更新敏感词"},
+		{Method: model.HTTPMethodDELETE, Path: "/api/v1/admin/sensitive-words/:id", Code: "sensitive_word.delete", Group: "敏感词管理", Description: "删除敏感词"},
+		{Method: model.HTTPMethodPOST, Path: "/api/v1/admin/reviews/detect-sensitive", Code: "review.detect_sensitive", Group: "敏感词管理", Description: "检测敏感词"},
+		// 评价举报
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/review-reports", Code: "review_report.list", Group: "评价管理", Description: "查看评价举报列表"},
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/review-reports/:id", Code: "review_report.get", Group: "评价管理", Description: "查看举报详情"},
+		{Method: model.HTTPMethodPOST, Path: "/api/v1/admin/reviews/:id/reports", Code: "review_report.create", Group: "评价管理", Description: "创建评价举报"},
+		{Method: model.HTTPMethodPUT, Path: "/api/v1/admin/review-reports/:id/handle", Code: "review_report.handle", Group: "评价管理", Description: "处理评价举报"},
+		// 评价回复
+		{Method: model.HTTPMethodPUT, Path: "/api/v1/admin/review-replies/:id", Code: "review_reply.update", Group: "评价管理", Description: "更新评价回复"},
+		{Method: model.HTTPMethodDELETE, Path: "/api/v1/admin/review-replies/:id", Code: "review_reply.delete", Group: "评价管理", Description: "删除评价回复"},
+	}
+}
+
+// getContentPermissions 内容管理模块权限
+func getContentPermissions() []model.Permission {
+	return []model.Permission{
+		// 动态管理
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/content/feeds", Code: "content.feed.list", Group: "内容管理", Description: "查看动态列表"},
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/content/feeds/:id", Code: "content.feed.get", Group: "内容管理", Description: "查看动态详情"},
+		{Method: model.HTTPMethodPUT, Path: "/api/v1/admin/content/feeds/:id/approve", Code: "content.feed.approve", Group: "内容管理", Description: "批准动态"},
+		{Method: model.HTTPMethodPUT, Path: "/api/v1/admin/content/feeds/:id/reject", Code: "content.feed.reject", Group: "内容管理", Description: "拒绝动态"},
+		{Method: model.HTTPMethodPOST, Path: "/api/v1/admin/content/feeds/batch-approve", Code: "content.feed.batch_approve", Group: "内容管理", Description: "批量批准动态"},
+		{Method: model.HTTPMethodPOST, Path: "/api/v1/admin/content/feeds/batch-reject", Code: "content.feed.batch_reject", Group: "内容管理", Description: "批量拒绝动态"},
+		{Method: model.HTTPMethodDELETE, Path: "/api/v1/admin/content/feeds/:id", Code: "content.feed.delete", Group: "内容管理", Description: "删除动态"},
+		// 聊天监控
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/content/chat/messages", Code: "content.chat.list", Group: "内容管理", Description: "查看聊天消息"},
+		{Method: model.HTTPMethodDELETE, Path: "/api/v1/admin/content/chat/messages/:id", Code: "content.chat.delete", Group: "内容管理", Description: "删除聊天消息"},
+		{Method: model.HTTPMethodPOST, Path: "/api/v1/admin/content/chat/mute", Code: "content.chat.mute", Group: "内容管理", Description: "禁言用户"},
+		{Method: model.HTTPMethodPOST, Path: "/api/v1/admin/content/chat/unmute", Code: "content.chat.unmute", Group: "内容管理", Description: "解除禁言"},
+		// 举报管理
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/content/reports", Code: "content.report.list", Group: "内容管理", Description: "查看举报列表"},
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/content/reports/:id", Code: "content.report.get", Group: "内容管理", Description: "查看举报详情"},
+		{Method: model.HTTPMethodPOST, Path: "/api/v1/admin/content/reports/:id/process", Code: "content.report.process", Group: "内容管理", Description: "处理举报"},
+		// 内容统计
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/content/stats", Code: "content.stats", Group: "内容管理", Description: "查看内容统计"},
+		// 内容分类
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/content/categories", Code: "content.category.list", Group: "内容管理", Description: "查看内容分类"},
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/content/categories/:id", Code: "content.category.get", Group: "内容管理", Description: "查看分类详情"},
+		{Method: model.HTTPMethodPOST, Path: "/api/v1/admin/content/categories", Code: "content.category.create", Group: "内容管理", Description: "创建内容分类"},
+		{Method: model.HTTPMethodPUT, Path: "/api/v1/admin/content/categories/:id", Code: "content.category.update", Group: "内容管理", Description: "更新内容分类"},
+		{Method: model.HTTPMethodDELETE, Path: "/api/v1/admin/content/categories/:id", Code: "content.category.delete", Group: "内容管理", Description: "删除内容分类"},
+	}
+}
+
+// getMonitorPermissions 监控模块权限
+func getMonitorPermissions() []model.Permission {
+	return []model.Permission{
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/monitor/system-status", Code: "monitor.system_status", Group: "系统监控", Description: "查看系统状态"},
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/monitor/online-users", Code: "monitor.online_users", Group: "系统监控", Description: "查看在线用户"},
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/monitor/order-queue", Code: "monitor.order_queue", Group: "系统监控", Description: "查看订单队列"},
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/monitor/alerts", Code: "monitor.alerts", Group: "系统监控", Description: "查看告警列表"},
+		{Method: model.HTTPMethodPUT, Path: "/api/v1/admin/monitor/alerts/:id/read", Code: "monitor.alert_read", Group: "系统监控", Description: "标记告警已读"},
+		{Method: model.HTTPMethodPUT, Path: "/api/v1/admin/monitor/alerts/batch-read", Code: "monitor.alert_batch_read", Group: "系统监控", Description: "批量标记告警已读"},
+	}
+}
+
+// getAnalyticsPermissions 运营分析模块权限
+func getAnalyticsPermissions() []model.Permission {
+	return []model.Permission{
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/analytics/active-users", Code: "analytics.active_users", Group: "运营分析", Description: "查看活跃用户"},
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/analytics/retention", Code: "analytics.retention", Group: "运营分析", Description: "查看留存分析"},
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/analytics/payment", Code: "analytics.payment", Group: "运营分析", Description: "查看支付分析"},
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/analytics/conversion", Code: "analytics.conversion", Group: "运营分析", Description: "查看转化漏斗"},
+	}
+}
+
+// getKPIPermissions KPI 仪表板模块权限
+func getKPIPermissions() []model.Permission {
+	return []model.Permission{
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/kpi/overview", Code: "kpi.overview", Group: "KPI管理", Description: "查看KPI概览"},
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/kpi/trend", Code: "kpi.trend", Group: "KPI管理", Description: "查看KPI趋势"},
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/kpi/targets", Code: "kpi.targets.list", Group: "KPI管理", Description: "查看KPI目标"},
+		{Method: model.HTTPMethodPOST, Path: "/api/v1/admin/kpi/targets", Code: "kpi.targets.create", Group: "KPI管理", Description: "创建KPI目标"},
+		{Method: model.HTTPMethodPUT, Path: "/api/v1/admin/kpi/targets/:id", Code: "kpi.targets.update", Group: "KPI管理", Description: "更新KPI目标"},
+		{Method: model.HTTPMethodDELETE, Path: "/api/v1/admin/kpi/targets/:id", Code: "kpi.targets.delete", Group: "KPI管理", Description: "删除KPI目标"},
+	}
+}
+
+// getFinancePermissions 财务管理模块权限
+func getFinancePermissions() []model.Permission {
+	return []model.Permission{
+		// 佣金管理
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/commission/rules", Code: "commission.rules.list", Group: "财务管理", Description: "查看佣金规则"},
+		{Method: model.HTTPMethodPOST, Path: "/api/v1/admin/commission/rules", Code: "commission.rules.create", Group: "财务管理", Description: "创建佣金规则"},
+		{Method: model.HTTPMethodPUT, Path: "/api/v1/admin/commission/rules/:id", Code: "commission.rules.update", Group: "财务管理", Description: "更新佣金规则"},
+		{Method: model.HTTPMethodDELETE, Path: "/api/v1/admin/commission/rules/:id", Code: "commission.rules.delete", Group: "财务管理", Description: "删除佣金规则"},
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/commission/records", Code: "commission.records.list", Group: "财务管理", Description: "查看佣金记录"},
+		{Method: model.HTTPMethodPOST, Path: "/api/v1/admin/commission/settlement/trigger", Code: "commission.settlement.trigger", Group: "财务管理", Description: "触发结算"},
+		// 提现管理
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/withdraws", Code: "withdraw.list", Group: "财务管理", Description: "查看提现列表"},
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/withdraws/:id", Code: "withdraw.get", Group: "财务管理", Description: "查看提现详情"},
+		{Method: model.HTTPMethodPUT, Path: "/api/v1/admin/withdraws/:id/approve", Code: "withdraw.approve", Group: "财务管理", Description: "批准提现"},
+		{Method: model.HTTPMethodPUT, Path: "/api/v1/admin/withdraws/:id/reject", Code: "withdraw.reject", Group: "财务管理", Description: "拒绝提现"},
+		// 收款主体
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/collection-entities", Code: "collection_entity.list", Group: "财务管理", Description: "查看收款主体"},
+		{Method: model.HTTPMethodPOST, Path: "/api/v1/admin/collection-entities", Code: "collection_entity.create", Group: "财务管理", Description: "创建收款主体"},
+		{Method: model.HTTPMethodPUT, Path: "/api/v1/admin/collection-entities/:id", Code: "collection_entity.update", Group: "财务管理", Description: "更新收款主体"},
+		{Method: model.HTTPMethodDELETE, Path: "/api/v1/admin/collection-entities/:id", Code: "collection_entity.delete", Group: "财务管理", Description: "删除收款主体"},
+		// 分流规则
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/routing-rules", Code: "routing_rule.list", Group: "财务管理", Description: "查看分流规则"},
+		{Method: model.HTTPMethodPOST, Path: "/api/v1/admin/routing-rules", Code: "routing_rule.create", Group: "财务管理", Description: "创建分流规则"},
+		{Method: model.HTTPMethodPUT, Path: "/api/v1/admin/routing-rules/:id", Code: "routing_rule.update", Group: "财务管理", Description: "更新分流规则"},
+		{Method: model.HTTPMethodDELETE, Path: "/api/v1/admin/routing-rules/:id", Code: "routing_rule.delete", Group: "财务管理", Description: "删除分流规则"},
+		// 排名抽成
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/ranking-commission", Code: "ranking_commission.list", Group: "财务管理", Description: "查看排名抽成"},
+		{Method: model.HTTPMethodPOST, Path: "/api/v1/admin/ranking-commission", Code: "ranking_commission.create", Group: "财务管理", Description: "创建排名抽成"},
+		{Method: model.HTTPMethodPUT, Path: "/api/v1/admin/ranking-commission/:id", Code: "ranking_commission.update", Group: "财务管理", Description: "更新排名抽成"},
+		{Method: model.HTTPMethodDELETE, Path: "/api/v1/admin/ranking-commission/:id", Code: "ranking_commission.delete", Group: "财务管理", Description: "删除排名抽成"},
+	}
+}
+
+// getSystemPermissions 系统管理模块权限
+func getSystemPermissions() []model.Permission {
+	return []model.Permission{
+		// 系统信息
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/system/info", Code: "system.info", Group: "系统管理", Description: "查看系统信息"},
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/system/health", Code: "system.health", Group: "系统管理", Description: "查看系统健康"},
+		// 操作日志
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/operation-logs", Code: "operation_log.list", Group: "系统管理", Description: "查看操作日志"},
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/operation-logs/export", Code: "operation_log.export", Group: "系统管理", Description: "导出操作日志"},
+		// 用户标签
+		{Method: model.HTTPMethodGET, Path: "/api/v1/admin/user-tags", Code: "user_tag.list", Group: "系统管理", Description: "查看用户标签"},
+		{Method: model.HTTPMethodPOST, Path: "/api/v1/admin/user-tags", Code: "user_tag.create", Group: "系统管理", Description: "创建用户标签"},
+		{Method: model.HTTPMethodPUT, Path: "/api/v1/admin/user-tags/:id", Code: "user_tag.update", Group: "系统管理", Description: "更新用户标签"},
+		{Method: model.HTTPMethodDELETE, Path: "/api/v1/admin/user-tags/:id", Code: "user_tag.delete", Group: "系统管理", Description: "删除用户标签"},
+		// 批量操作
+		{Method: model.HTTPMethodPOST, Path: "/api/v1/admin/users/batch/status", Code: "user_batch.status", Group: "系统管理", Description: "批量更新用户状态"},
+		{Method: model.HTTPMethodPOST, Path: "/api/v1/admin/users/batch/tags", Code: "user_batch.tags", Group: "系统管理", Description: "批量更新用户标签"},
+		{Method: model.HTTPMethodPOST, Path: "/api/v1/admin/users/batch/export", Code: "user_batch.export", Group: "系统管理", Description: "批量导出用户"},
+	}
 }
 
 // upsertPermission 安全地插入或更新权限
