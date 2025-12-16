@@ -710,6 +710,21 @@ func applySeeds(db *gorm.DB) error {
 			return err
 		}
 
+		// 提现种子数据
+		if err := seedWithdrawData(tx, players); err != nil {
+			return err
+		}
+
+		// 评价举报种子数据
+		if err := seedReviewReportData(tx, users); err != nil {
+			return err
+		}
+
+		// 敏感词种子数据
+		if err := seedSensitiveWords(tx); err != nil {
+			return err
+		}
+
 		log.Println("seed data ensured for demo environment")
 		return nil
 	})
@@ -1528,5 +1543,195 @@ func upsertPermission(tx *gorm.DB, perm *model.Permission) error {
 	if err := tx.Create(perm).Error; err != nil {
 		return fmt.Errorf("failed to create permission %s %s: %w", perm.Method, perm.Path, err)
 	}
+	return nil
+}
+
+// seedWithdrawData 创建提现种子数据
+func seedWithdrawData(tx *gorm.DB, players map[string]*model.Player) error {
+	now := time.Now()
+	hour := time.Hour
+
+	withdrawSpecs := []struct {
+		PlayerKey    string
+		AmountCents  int64
+		Method       model.WithdrawMethod
+		AccountInfo  string
+		Status       model.WithdrawStatus
+		RejectReason string
+		CreatedAt    time.Time
+	}{
+		// 待审核
+		{PlayerKey: "playerA", AmountCents: 50000, Method: model.WithdrawMethodAlipay, AccountInfo: "138****0001", Status: model.WithdrawStatusPending, CreatedAt: now.Add(-2 * hour)},
+		{PlayerKey: "playerB", AmountCents: 80000, Method: model.WithdrawMethodWeChat, AccountInfo: "wx_user_001", Status: model.WithdrawStatusPending, CreatedAt: now.Add(-1 * hour)},
+		// 已批准
+		{PlayerKey: "playerC", AmountCents: 120000, Method: model.WithdrawMethodBank, AccountInfo: "6222****1234", Status: model.WithdrawStatusApproved, CreatedAt: now.Add(-24 * hour)},
+		{PlayerKey: "playerD", AmountCents: 65000, Method: model.WithdrawMethodAlipay, AccountInfo: "138****0009", Status: model.WithdrawStatusApproved, CreatedAt: now.Add(-12 * hour)},
+		// 已完成
+		{PlayerKey: "playerE", AmountCents: 200000, Method: model.WithdrawMethodBank, AccountInfo: "6228****5678", Status: model.WithdrawStatusCompleted, CreatedAt: now.Add(-72 * hour)},
+		{PlayerKey: "playerF", AmountCents: 45000, Method: model.WithdrawMethodWeChat, AccountInfo: "wx_user_002", Status: model.WithdrawStatusCompleted, CreatedAt: now.Add(-48 * hour)},
+		{PlayerKey: "playerA", AmountCents: 30000, Method: model.WithdrawMethodAlipay, AccountInfo: "138****0001", Status: model.WithdrawStatusCompleted, CreatedAt: now.Add(-96 * hour)},
+		// 已拒绝
+		{PlayerKey: "playerB", AmountCents: 500000, Method: model.WithdrawMethodBank, AccountInfo: "6222****9999", Status: model.WithdrawStatusRejected, RejectReason: "提现金额超过单日限额", CreatedAt: now.Add(-36 * hour)},
+	}
+
+	for _, spec := range withdrawSpecs {
+		player, ok := players[spec.PlayerKey]
+		if !ok {
+			continue
+		}
+
+		// 检查是否已存在
+		var existing model.Withdraw
+		if err := tx.Where("player_id = ? AND amount_cents = ? AND created_at = ?", player.ID, spec.AmountCents, spec.CreatedAt).First(&existing).Error; err == nil {
+			continue
+		}
+
+		withdraw := &model.Withdraw{
+			PlayerID:    player.ID,
+			UserID:      player.UserID,
+			AmountCents: spec.AmountCents,
+			Method:      spec.Method,
+			AccountInfo: spec.AccountInfo,
+			Status:      spec.Status,
+			CreatedAt:   spec.CreatedAt,
+		}
+
+		if spec.RejectReason != "" {
+			withdraw.RejectReason = spec.RejectReason
+			processedAt := spec.CreatedAt.Add(2 * hour)
+			withdraw.ProcessedAt = &processedAt
+		}
+
+		if spec.Status == model.WithdrawStatusApproved {
+			processedAt := spec.CreatedAt.Add(4 * hour)
+			withdraw.ProcessedAt = &processedAt
+		}
+
+		if spec.Status == model.WithdrawStatusCompleted {
+			processedAt := spec.CreatedAt.Add(4 * hour)
+			completedAt := spec.CreatedAt.Add(24 * hour)
+			withdraw.ProcessedAt = &processedAt
+			withdraw.CompletedAt = &completedAt
+			withdraw.ActualAmountCents = spec.AmountCents
+		}
+
+		if err := tx.Create(withdraw).Error; err != nil {
+			return fmt.Errorf("failed to create withdraw: %w", err)
+		}
+	}
+
+	log.Println("withdraw seed data created successfully")
+	return nil
+}
+
+// seedReviewReportData 创建评价举报种子数据
+func seedReviewReportData(tx *gorm.DB, users map[string]*model.User) error {
+	// 先获取一些评价
+	var reviews []model.Review
+	if err := tx.Limit(5).Find(&reviews).Error; err != nil {
+		return nil // 没有评价则跳过
+	}
+
+	if len(reviews) == 0 {
+		return nil
+	}
+
+	now := time.Now()
+	reportSpecs := []struct {
+		ReviewIdx   int
+		ReporterKey string
+		Reason      string
+		Status      model.ReviewReportStatus
+	}{
+		{ReviewIdx: 0, ReporterKey: "customerB", Reason: "评价内容包含不实信息", Status: model.ReviewReportStatusPending},
+		{ReviewIdx: 1, ReporterKey: "customerC", Reason: "恶意差评，与实际服务不符", Status: model.ReviewReportStatusPending},
+		{ReviewIdx: 2, ReporterKey: "customerD", Reason: "评价包含广告内容", Status: model.ReviewReportStatusApproved},
+	}
+
+	for _, spec := range reportSpecs {
+		if spec.ReviewIdx >= len(reviews) {
+			continue
+		}
+
+		reporter, ok := users[spec.ReporterKey]
+		if !ok {
+			continue
+		}
+
+		review := reviews[spec.ReviewIdx]
+
+		// 检查是否已存在
+		var existing model.ReviewReport
+		if err := tx.Where("review_id = ? AND reporter_id = ?", review.ID, reporter.ID).First(&existing).Error; err == nil {
+			continue
+		}
+
+		report := &model.ReviewReport{
+			ReviewID:   review.ID,
+			ReporterID: reporter.ID,
+			Reason:     spec.Reason,
+			Status:     spec.Status,
+		}
+
+		if spec.Status != model.ReviewReportStatusPending {
+			handledAt := now.Add(-12 * time.Hour)
+			report.HandledAt = &handledAt
+			report.HandlingNote = "已处理"
+		}
+
+		if err := tx.Create(report).Error; err != nil {
+			// 忽略错误，可能是表不存在
+			log.Printf("skip creating review report: %v", err)
+			continue
+		}
+	}
+
+	log.Println("review report seed data created successfully")
+	return nil
+}
+
+// seedSensitiveWords 创建敏感词种子数据
+func seedSensitiveWords(tx *gorm.DB) error {
+	words := []struct {
+		Word     string
+		Category model.SensitiveWordCategory
+		Severity model.SensitiveWordSeverity
+	}{
+		// 广告类
+		{Word: "加微信", Category: model.SensitiveWordCategoryAdvertising, Severity: model.SensitiveWordSeverityMedium},
+		{Word: "加QQ", Category: model.SensitiveWordCategoryAdvertising, Severity: model.SensitiveWordSeverityMedium},
+		{Word: "私聊", Category: model.SensitiveWordCategoryAdvertising, Severity: model.SensitiveWordSeverityLow},
+		{Word: "代练", Category: model.SensitiveWordCategoryAdvertising, Severity: model.SensitiveWordSeverityMedium},
+		// 违规类
+		{Word: "骗子", Category: model.SensitiveWordCategoryOther, Severity: model.SensitiveWordSeverityHigh},
+		{Word: "垃圾", Category: model.SensitiveWordCategoryOther, Severity: model.SensitiveWordSeverityMedium},
+		// 其他
+		{Word: "退款", Category: model.SensitiveWordCategoryOther, Severity: model.SensitiveWordSeverityLow},
+		{Word: "投诉", Category: model.SensitiveWordCategoryOther, Severity: model.SensitiveWordSeverityLow},
+	}
+
+	for _, w := range words {
+		var existing model.SensitiveWord
+		if err := tx.Where("word = ?", w.Word).First(&existing).Error; err == nil {
+			continue
+		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+			// 表可能不存在，跳过
+			log.Printf("skip sensitive word check: %v", err)
+			return nil
+		}
+
+		sw := &model.SensitiveWord{
+			Word:     w.Word,
+			Category: w.Category,
+			Severity: w.Severity,
+		}
+
+		if err := tx.Create(sw).Error; err != nil {
+			log.Printf("skip creating sensitive word: %v", err)
+			continue
+		}
+	}
+
+	log.Println("sensitive words seed data created successfully")
 	return nil
 }

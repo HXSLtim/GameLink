@@ -87,12 +87,17 @@ const WithdrawPage: React.FC = () => {
                 ...searchParams,
                 ...params,
             };
-            const response = await adminApi.getWithdraws(queryParams);
-            if (response.data.success) {
-                setWithdraws(response.data.data?.withdraws || []);
-                setTotal(response.data.data?.total || 0);
+            // API client 响应拦截器已返回 response.data，直接访问 success
+            const response = await adminApi.getWithdraws(queryParams) as unknown as {
+                success: boolean;
+                message?: string;
+                data?: { withdraws: Withdraw[]; total: number };
+            };
+            if (response.success) {
+                setWithdraws(response.data?.withdraws || []);
+                setTotal(response.data?.total || 0);
             } else {
-                message.error(response.data.message || '加载失败');
+                message.error(response.message || '加载失败');
             }
         } catch (error) {
             console.error('Load withdraws error:', error);
@@ -108,15 +113,16 @@ const WithdrawPage: React.FC = () => {
     const loadStats = useCallback(async () => {
         try {
             // 获取各状态数量
+            type WithdrawResponse = { success: boolean; data?: { total: number } };
             const [pendingRes, approvedRes, completedRes] = await Promise.all([
-                adminApi.getWithdraws({ status: 'pending', page_size: 1 }),
-                adminApi.getWithdraws({ status: 'approved', page_size: 1 }),
-                adminApi.getWithdraws({ status: 'completed', page_size: 1 }),
+                adminApi.getWithdraws({ status: 'pending', page_size: 1 }) as unknown as WithdrawResponse,
+                adminApi.getWithdraws({ status: 'approved', page_size: 1 }) as unknown as WithdrawResponse,
+                adminApi.getWithdraws({ status: 'completed', page_size: 1 }) as unknown as WithdrawResponse,
             ]);
             setStats({
-                pending: pendingRes.data.data?.total || 0,
-                approved: approvedRes.data.data?.total || 0,
-                completed: completedRes.data.data?.total || 0,
+                pending: pendingRes.data?.total || 0,
+                approved: approvedRes.data?.total || 0,
+                completed: completedRes.data?.total || 0,
                 totalAmount: 0,
             });
         } catch (error) {
