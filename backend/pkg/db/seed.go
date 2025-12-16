@@ -1706,19 +1706,47 @@ func seedReviewPermissions(tx *gorm.DB) error {
 		},
 	}
 
-	// 批量创建权限
+	// 批量创建权限（检查 code 和 method+path 两个唯一约束）
 	for _, perm := range permissions {
-		if err := tx.Create(&perm).Error; err != nil {
-			// 如果权限已存在（唯一索引冲突），跳过
-			if strings.Contains(err.Error(), "UNIQUE constraint failed") ||
-				strings.Contains(err.Error(), "duplicate key") {
-				log.Printf("permission already exists: %s %s, skipping\n", perm.Method, perm.Path)
-				continue
-			}
-			return fmt.Errorf("failed to create permission %s %s: %w", perm.Method, perm.Path, err)
+		if err := upsertPermission(tx, &perm); err != nil {
+			return err
 		}
 	}
 
 	log.Println("review permissions seed data created successfully")
+	return nil
+}
+
+// upsertPermission 安全地插入或更新权限
+// 检查 code 和 method+path 两个唯一约束，避免 PostgreSQL 事务中断
+func upsertPermission(tx *gorm.DB, perm *model.Permission) error {
+	// 1. 先检查 code 是否存在
+	var existingByCode model.Permission
+	if err := tx.Where("code = ?", perm.Code).First(&existingByCode).Error; err == nil {
+		// code 已存在，跳过
+		return nil
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return fmt.Errorf("failed to check permission by code %s: %w", perm.Code, err)
+	}
+
+	// 2. 再检查 method+path 是否存在
+	var existingByPath model.Permission
+	if err := tx.Where("method = ? AND path = ?", perm.Method, perm.Path).First(&existingByPath).Error; err == nil {
+		// method+path 已存在但 code 不同，更新 code
+		existingByPath.Code = perm.Code
+		existingByPath.Description = perm.Description
+		existingByPath.Group = perm.Group
+		if err := tx.Save(&existingByPath).Error; err != nil {
+			return fmt.Errorf("failed to update permission %s %s: %w", perm.Method, perm.Path, err)
+		}
+		return nil
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return fmt.Errorf("failed to check permission by path %s %s: %w", perm.Method, perm.Path, err)
+	}
+
+	// 3. 都不存在，创建新权限
+	if err := tx.Create(perm).Error; err != nil {
+		return fmt.Errorf("failed to create permission %s %s: %w", perm.Method, perm.Path, err)
+	}
 	return nil
 }

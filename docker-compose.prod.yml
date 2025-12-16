@@ -53,7 +53,7 @@ services:
     container_name: gamelink-backend
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "8081:8080"
     environment:
       - APP_ENV=production
       - SERVICE_PORT=8080
