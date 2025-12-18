@@ -187,6 +187,13 @@ func autoMigrate(db *gorm.DB) error {
 		&model.RoutingLog{},
 		// Refund records
 		&model.RefundRecord{},
+		// Statistics models (统计指标)
+		&model.UserStatistics{},
+		&model.PlayerStatistics{},
+		&model.ServiceItemStatistics{},
+		&model.GameStatistics{},
+		&model.PlatformStatistics{},
+		&model.TagThreshold{},
 	); err != nil {
 		log.Printf("Phase 2 failed: %v", err)
 		return fmt.Errorf("phase 2 migration failed: %w", err)
@@ -355,14 +362,15 @@ func ensureSuperAdmin(db *gorm.DB) error {
 		email = "admin@gamelink.local"
 	}
 
-	if password == "" {
+	switch password {
+	case "":
 		if env == "production" {
 			return errors.New("SUPER_ADMIN_PASSWORD must be set in production")
 		}
 		log.Printf("⚠️  警告：未配置超级管理员密码，使用示例密码")
 		log.Printf("   请务必在开发完成后修改默认密码！")
 		password = "Admin@123456"
-	} else if password == "Admin@123456" || password == "123456" {
+	case "Admin@123456", "123456":
 		log.Printf("⚠️  警告：超级管理员正在使用弱密码 '%s'", password)
 		log.Printf("   建议修改为包含大小写字母、数字和特殊符号的强密码")
 	}

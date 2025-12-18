@@ -8,9 +8,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	apierr "gamelink/pkg/apierr"
 	"gamelink/internal/model"
 	orderservice "gamelink/internal/service/order"
+	apierr "gamelink/pkg/apierr"
 )
 
 // OrderDispute 订单纠纷模型（类型别名）
@@ -62,8 +62,8 @@ func (h *DisputeHandler) GetDisputeDetail(c *gin.Context) {
 }
 
 // ListPendingDisputes lists disputes pending assignment
-// @Summary      列出待处理纠
-// @Description  获取状态为待处理的订单纠纷列表，支持分
+// @Summary      列出待处理纠纷
+// @Description  获取状态为待处理的订单纠纷列表，支持分页
 // @Tags         Admin/Disputes
 // @Security     BearerAuth
 // @Accept       json
@@ -110,6 +110,92 @@ func (h *DisputeHandler) ListPendingDisputes(c *gin.Context) {
 			Page:     page,
 			PageSize: pageSize,
 		},
+	})
+}
+
+// ListDisputes lists all disputes with optional status filter
+// @Summary      列出纠纷列表
+// @Description  获取订单纠纷列表，支持状态筛选和分页
+// @Tags         Admin/Disputes
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        page      query  int     false  "页码"  default(1)
+// @Param        pageSize  query  int     false  "每页数量"    default(20)
+// @Param        status    query  string  false  "状态筛选"
+// @Param        orderNo   query  string  false  "订单号"
+// @Success      200  {object}  model.APIResponse[[]OrderDispute]
+// @Failure      500  {object}  model.ErrorResponse
+// @Router       /admin/disputes [get]
+func (h *DisputeHandler) ListDisputes(c *gin.Context) {
+	page := 1
+	pageSize := 20
+
+	if p := c.Query("page"); p != "" {
+		if parsed, err := strconv.Atoi(p); err == nil && parsed > 0 {
+			page = parsed
+		}
+	}
+
+	if ps := c.Query("pageSize"); ps != "" {
+		if parsed, err := strconv.Atoi(ps); err == nil && parsed > 0 && parsed <= 100 {
+			pageSize = parsed
+		}
+	}
+
+	status := c.Query("status")
+	orderNo := c.Query("orderNo")
+
+	disputes, total, err := h.svc.ListDisputes(c.Request.Context(), orderservice.ListDisputesRequest{
+		Page:     page,
+		PageSize: pageSize,
+		Status:   status,
+		OrderNo:  orderNo,
+	})
+	if err != nil {
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	type ListResponse struct {
+		Disputes []model.OrderDispute `json:"disputes"`
+		Total    int64                `json:"total"`
+		Page     int                  `json:"page"`
+		PageSize int                  `json:"pageSize"`
+	}
+	writeJSON(c, http.StatusOK, model.APIResponse[ListResponse]{
+		Success: true,
+		Code:    http.StatusOK,
+		Data: ListResponse{
+			Disputes: disputes,
+			Total:    total,
+			Page:     page,
+			PageSize: pageSize,
+		},
+	})
+}
+
+// GetDisputeStats returns dispute statistics
+// @Summary      获取纠纷统计
+// @Description  获取各状态纠纷数量统计
+// @Tags         Admin/Disputes
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  model.APIResponse[map[string]int64]
+// @Failure      500  {object}  model.ErrorResponse
+// @Router       /admin/disputes/stats [get]
+func (h *DisputeHandler) GetDisputeStats(c *gin.Context) {
+	stats, err := h.svc.GetDisputeStats(c.Request.Context())
+	if err != nil {
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	writeJSON(c, http.StatusOK, model.APIResponse[map[string]int64]{
+		Success: true,
+		Code:    http.StatusOK,
+		Data:    stats,
 	})
 }
 

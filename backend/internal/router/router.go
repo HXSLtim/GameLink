@@ -28,10 +28,6 @@ import (
 	userrepo "gamelink/internal/repository/user"
 	withdrawrepo "gamelink/internal/repository/withdraw"
 	adminservice "gamelink/internal/service/admin"
-	menuservice "gamelink/internal/service/admin"
-	permissionservice "gamelink/internal/service/admin"
-	roleservice "gamelink/internal/service/admin"
-	statsservice "gamelink/internal/service/admin"
 	authservice "gamelink/internal/service/auth"
 	settlementcompanysvc "gamelink/internal/service/settlementcompany"
 	"gamelink/internal/ws"
@@ -204,8 +200,8 @@ func (r *Router) registerSwaggerRoutes() {
 func (r *Router) registerAdminRoutes(api *gin.RouterGroup) {
 	// RBAC - 权限服务
 	permRepo := adminrepo.NewPermissionRepository(r.orm)
-	permService := permissionservice.NewPermissionService(permRepo, r.cacheClient)
-	roleSvc := roleservice.NewRoleService(adminrepo.NewRoleRepository(r.orm), r.cacheClient)
+	permService := adminservice.NewPermissionService(permRepo, r.cacheClient)
+	roleSvc := adminservice.NewRoleService(adminrepo.NewRoleRepository(r.orm), r.cacheClient)
 	r.permMiddleware = middleware.NewPermissionMiddleware(r.jwtMgr, permService, roleSvc)
 
 	// Notification center routes
@@ -215,7 +211,7 @@ func (r *Router) registerAdminRoutes(api *gin.RouterGroup) {
 	rbacGroup := api.Group("/admin")
 
 	// Stats routes (需要先创建statsSvc，因为RegisterRoutes需要它)
-	statsSvc := statsservice.NewStatsService(statsrepo.NewStatsRepository(r.orm))
+	statsSvc := adminservice.NewStatsService(statsrepo.NewStatsRepository(r.orm))
 
 	adminhandler.RegisterRoutes(rbacGroup, r.adminSvc, statsSvc, r.permMiddleware, adminhandler.WithSensitiveWordService(r.services.sensitiveWordSvc))
 	adminhandler.RegisterStatsRoutes(rbacGroup, statsSvc, r.permMiddleware)
@@ -223,7 +219,7 @@ func (r *Router) registerAdminRoutes(api *gin.RouterGroup) {
 	adminhandler.RegisterReviewSettingsRoutes(rbacGroup, r.services.reviewSettingsSvc, r.permMiddleware)
 
 	// 创建菜单服务用于批量同步
-	menuSvc := menuservice.NewMenuService(adminrepo.NewMenuRepository(r.orm))
+	menuSvc := adminservice.NewMenuService(adminrepo.NewMenuRepository(r.orm))
 
 	// 注册同步专用路由（不受限流限制，用于前端初始化）
 	adminhandler.RegisterSyncRoutesWithServices(rbacGroup, roleSvc, permService, menuSvc, r.permMiddleware)
@@ -250,10 +246,10 @@ func (r *Router) registerAdminRoutes(api *gin.RouterGroup) {
 }
 
 // registerRBACRoutes 注册 RBAC 相关路由
-func (r *Router) registerRBACRoutes(rbacGroup *gin.RouterGroup, roleSvc *roleservice.RoleService, permService *permissionservice.PermissionService) {
+func (r *Router) registerRBACRoutes(rbacGroup *gin.RouterGroup, roleSvc *adminservice.RoleService, permService *adminservice.PermissionService) {
 	roleHandler := adminhandler.NewRoleHandler(roleSvc)
 	permHandler := adminhandler.NewPermissionHandlerWithRoleService(permService, roleSvc)
-	menuSvc := menuservice.NewMenuService(adminrepo.NewMenuRepository(r.orm))
+	menuSvc := adminservice.NewMenuService(adminrepo.NewMenuRepository(r.orm))
 	menuHandler := adminhandler.NewMenuHandlerWithRoleService(menuSvc, permService, roleSvc)
 
 	// 注意：同步专用路由 /sync/roles 和 /sync/permissions 已在 adminhandler.RegisterRoutes 中注册
@@ -309,6 +305,20 @@ func (r *Router) registerRBACRoutes(rbacGroup *gin.RouterGroup, roleSvc *roleser
 
 // registerAdminBusinessRoutes 注册管理端业务路由
 func (r *Router) registerAdminBusinessRoutes(rbacGroup *gin.RouterGroup) {
+	// Dispute management routes
+	disputeHandler := adminhandler.NewDisputeHandler(r.services.disputeSvc)
+	disputeGroup := rbacGroup.Group("/disputes")
+	disputeGroup.Use(r.permMiddleware.RequireAuth())
+	{
+		disputeGroup.GET("", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/disputes"), disputeHandler.ListDisputes)
+		disputeGroup.GET("/stats", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/disputes/stats"), disputeHandler.GetDisputeStats)
+		disputeGroup.GET("/pending", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/disputes/pending"), disputeHandler.ListPendingDisputes)
+		disputeGroup.GET("/:id", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/disputes/:id"), disputeHandler.GetDisputeDetail)
+		disputeGroup.POST("/:id/assign", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/disputes/:id/assign"), disputeHandler.AssignDispute)
+		disputeGroup.POST("/:id/rollback", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/disputes/:id/rollback"), disputeHandler.RollbackAssignment)
+		disputeGroup.POST("/:id/resolve", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/disputes/:id/resolve"), disputeHandler.ResolveDispute)
+	}
+
 	// Commission management routes
 	adminhandler.RegisterCommissionRoutes(rbacGroup, r.services.commissionSvc, r.services.settlementScheduler)
 
@@ -340,11 +350,17 @@ func (r *Router) registerAdminBusinessRoutes(rbacGroup *gin.RouterGroup) {
 	// Monitor routes (实时监控)
 	r.registerMonitorRoutes(rbacGroup)
 
+	// Routing Rule routes (分流规则管理)
+	adminhandler.RegisterRoutingRuleRoutes(rbacGroup, r.services.routingRuleSvc, r.permMiddleware)
+
 	// Analytics routes (运营分析)
 	r.registerAnalyticsRoutes(rbacGroup)
 
 	// KPI routes (KPI 仪表板)
 	r.registerKPIRoutes(rbacGroup)
+
+	// Statistics routes (统计指标管理)
+	r.registerStatisticsRoutes(rbacGroup)
 }
 
 // registerMonitorRoutes 注册监控相关路由
@@ -402,7 +418,7 @@ func (r *Router) registerKPIRoutes(rbacGroup *gin.RouterGroup) {
 }
 
 // syncAPIPermissions 同步 API 权限
-func (r *Router) syncAPIPermissions(permService *permissionservice.PermissionService, roleSvc *roleservice.RoleService) {
+func (r *Router) syncAPIPermissions(permService *adminservice.PermissionService, roleSvc *adminservice.RoleService) {
 	// 同步 API 路由到权限表（开发环境自动同步）
 	if os.Getenv("APP_ENV") != "production" || os.Getenv("SYNC_API_PERMISSIONS") == "true" {
 		log.Println("同步 API 权限到数据库...")
@@ -424,6 +440,24 @@ func (r *Router) syncAPIPermissions(permService *permissionservice.PermissionSer
 		if err := AssignDefaultRolePermissions(context.Background(), roleSvc, permService); err != nil {
 			log.Printf("分配默认权限失败: %v", err)
 		}
+	}
+}
+
+// registerStatisticsRoutes 注册统计指标路由
+func (r *Router) registerStatisticsRoutes(rbacGroup *gin.RouterGroup) {
+	statisticsHandler := adminhandler.NewStatisticsHandler(r.services.statisticsSvc, r.services.statisticsEvaluator)
+
+	statsGroup := rbacGroup.Group("/statistics")
+	statsGroup.Use(r.permMiddleware.RequireAuth())
+	{
+		// 刷新统计
+		statsGroup.POST("/user/:id/refresh", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/statistics/user/:id/refresh"), statisticsHandler.RefreshUserStatistics)
+		statsGroup.POST("/player/:id/refresh", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/statistics/player/:id/refresh"), statisticsHandler.RefreshPlayerStatistics)
+		statsGroup.POST("/refresh-all", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/statistics/refresh-all"), statisticsHandler.RefreshAllStatistics)
+
+		// 标签评估
+		statsGroup.GET("/user/:id/evaluate-tags", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/statistics/user/:id/evaluate-tags"), statisticsHandler.EvaluateUserTags)
+		statsGroup.POST("/user/:id/sync-tags", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/statistics/user/:id/sync-tags"), statisticsHandler.SyncUserTags)
 	}
 }
 

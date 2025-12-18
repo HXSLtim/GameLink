@@ -249,6 +249,31 @@ func (s *AdminService) ListGamesPaged(ctx context.Context, page, pageSize int) (
 	return items, &p, nil
 }
 
+// ListGamesPagedWithFilter 返回带筛选的分页游戏列表。
+func (s *AdminService) ListGamesPagedWithFilter(ctx context.Context, page, pageSize int, keyword string) ([]model.Game, *model.Pagination, error) {
+	page = repository.NormalizePage(page)
+	pageSize = repository.NormalizePageSize(pageSize)
+	items, total, err := s.games.ListPagedWithFilter(ctx, page, pageSize, keyword)
+	if err != nil {
+		return nil, nil, err
+	}
+	p := buildPagination(page, pageSize, total)
+	return items, &p, nil
+}
+
+// BatchDeleteGames 批量删除游戏。
+func (s *AdminService) BatchDeleteGames(ctx context.Context, ids []uint64) (int64, error) {
+	if len(ids) == 0 {
+		return 0, apierr.BadRequest("no game ids provided")
+	}
+	deleted, err := s.games.BatchDelete(ctx, ids)
+	if err != nil {
+		return 0, WrapError(err, "batch delete games")
+	}
+	s.invalidateCache(ctx, cacheKeyGames)
+	return deleted, nil
+}
+
 // GetGame 获取单个游戏详情。
 func (s *AdminService) GetGame(ctx context.Context, id uint64) (*model.Game, error) {
 	game, err := s.games.Get(ctx, id)
@@ -798,6 +823,44 @@ func (s *AdminService) ListPlayersPaged(ctx context.Context, page, pageSize int)
 	}
 	p := buildPagination(page, pageSize, total)
 	return items, &p, nil
+}
+
+// ListPlayersPagedWithFilter 返回带筛选的分页陪玩列表。
+func (s *AdminService) ListPlayersPagedWithFilter(ctx context.Context, page, pageSize int, keyword string, status *model.VerificationStatus) ([]model.Player, *model.Pagination, error) {
+	page = repository.NormalizePage(page)
+	pageSize = repository.NormalizePageSize(pageSize)
+	items, total, err := s.players.ListPagedWithFilter(ctx, page, pageSize, keyword, status)
+	if err != nil {
+		return nil, nil, err
+	}
+	p := buildPagination(page, pageSize, total)
+	return items, &p, nil
+}
+
+// BatchUpdatePlayerStatus 批量更新陪玩师状态。
+func (s *AdminService) BatchUpdatePlayerStatus(ctx context.Context, ids []uint64, status model.VerificationStatus) (int64, error) {
+	if len(ids) == 0 {
+		return 0, apierr.BadRequest("no player ids provided")
+	}
+	updated, err := s.players.BatchUpdateStatus(ctx, ids, status)
+	if err != nil {
+		return 0, WrapError(err, "batch update player status")
+	}
+	s.invalidateCache(ctx, cacheKeyPlayers)
+	return updated, nil
+}
+
+// BatchDeletePlayers 批量删除陪玩师。
+func (s *AdminService) BatchDeletePlayers(ctx context.Context, ids []uint64) (int64, error) {
+	if len(ids) == 0 {
+		return 0, apierr.BadRequest("no player ids provided")
+	}
+	deleted, err := s.players.BatchDelete(ctx, ids)
+	if err != nil {
+		return 0, WrapError(err, "batch delete players")
+	}
+	s.invalidateCache(ctx, cacheKeyPlayers)
+	return deleted, nil
 }
 
 // GetPlayer 返回陪玩详情。

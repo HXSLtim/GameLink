@@ -153,6 +153,18 @@ func (m *mockPlayerRepository) Delete(ctx context.Context, id uint64) error {
 	return nil
 }
 
+func (m *mockPlayerRepository) ListPagedWithFilter(ctx context.Context, page, pageSize int, keyword string, status *model.VerificationStatus) ([]model.Player, int64, error) {
+	return nil, 0, nil
+}
+
+func (m *mockPlayerRepository) BatchUpdateStatus(ctx context.Context, ids []uint64, status model.VerificationStatus) (int64, error) {
+	return 0, nil
+}
+
+func (m *mockPlayerRepository) BatchDelete(ctx context.Context, ids []uint64) (int64, error) {
+	return 0, nil
+}
+
 type mockReviewReplyRepository struct{}
 
 func (m *mockReviewReplyRepository) Create(ctx context.Context, reply *model.ReviewReply) error {

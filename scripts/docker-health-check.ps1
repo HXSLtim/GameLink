@@ -173,12 +173,12 @@ function Check-GameLinkHealth {
         Write-Host ""
     }
 
-    # 检查前端服务（如果存在）
-    $frontendContainer = docker ps --filter "name=gamelink-frontend" --format "{{.Names}}" 2>&1
-    if ($frontendContainer -eq "gamelink-frontend") {
-        Write-ColorOutput "🔍 检查前端服务..." "Cyan"
-        Test-ServiceHealth -ServiceName "前端应用" -Url "http://localhost/health" | Out-Null
-        Get-ContainerStats -ContainerName "gamelink-frontend"
+    # 检查管理后台服务（如果存在）
+    $adminContainer = docker ps --filter "name=gamelink-admin" --format "{{.Names}}" 2>&1
+    if ($adminContainer -eq "gamelink-admin") {
+        Write-ColorOutput "🔍 检查管理后台服务..." "Cyan"
+        Test-ServiceHealth -ServiceName "管理后台应用" -Url "http://localhost/health" | Out-Null
+        Get-ContainerStats -ContainerName "gamelink-admin"
         Write-Host ""
     }
 

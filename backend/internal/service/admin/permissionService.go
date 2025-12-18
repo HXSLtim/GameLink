@@ -56,6 +56,7 @@ type PermissionListOptions struct {
 	Keyword  string // 搜索关键词（匹配code, path, description）
 	Method   string // HTTP方法过滤
 	Group    string // 分组过滤
+	IsSystem *bool  // 系统权限过滤
 }
 
 // ListPermissionsPagedWithFilter 分页获取权限列表（支持过滤）。
@@ -66,7 +67,7 @@ func (s *PermissionService) ListPermissionsPagedWithFilter(ctx context.Context, 
 	if opts.PageSize < 1 || opts.PageSize > 100 {
 		opts.PageSize = 20
 	}
-	return s.permissions.ListPagedWithFilter(ctx, opts.Page, opts.PageSize, opts.Keyword, opts.Method, opts.Group)
+	return s.permissions.ListPagedWithFilter(ctx, opts.Page, opts.PageSize, opts.Keyword, opts.Method, opts.Group, opts.IsSystem)
 }
 
 // ListPermissionsByGroup 按分组获取权限。

@@ -198,20 +198,20 @@ func (s *PermissionRepositorySimpleTestSuite) TestFilters() {
 	}
 
 	// 按关键词过滤
-	filtered, total, err := s.repo.ListPagedWithFilter(s.ctx, 1, 10, "user", "", "")
+	filtered, total, err := s.repo.ListPagedWithFilter(s.ctx, 1, 10, "user", "", "", nil)
 	s.NoError(err)
 	s.Len(filtered, 2)
 	s.Equal(int64(2), total)
 
 	// 按方法过滤
-	filtered, total, err = s.repo.ListPagedWithFilter(s.ctx, 1, 10, "", "GET", "")
+	filtered, total, err = s.repo.ListPagedWithFilter(s.ctx, 1, 10, "", "GET", "", nil)
 	s.NoError(err)
 	s.Len(filtered, 1)
 	s.Equal(int64(1), total)
 	s.Equal(model.HTTPMethodGET, filtered[0].Method)
 
 	// 按分组过滤
-	filtered, total, err = s.repo.ListPagedWithFilter(s.ctx, 1, 10, "", "", "admin")
+	filtered, total, err = s.repo.ListPagedWithFilter(s.ctx, 1, 10, "", "", "admin", nil)
 	s.NoError(err)
 	s.Len(filtered, 1)
 	s.Equal(int64(1), total)

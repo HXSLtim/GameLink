@@ -740,6 +740,26 @@ func applySeeds(db *gorm.DB) error {
 			return err
 		}
 
+		// 收款主体和分流规则种子数据
+		if err := seedCollectionEntities(tx); err != nil {
+			return err
+		}
+
+		// 结算公司种子数据（传入players以创建分配关系）
+		if err := seedSettlementCompanies(tx, players); err != nil {
+			return err
+		}
+
+		// 排行榜抽成配置种子数据
+		if err := seedRankingCommissionConfigs(tx); err != nil {
+			return err
+		}
+
+		// 订单纠纷种子数据
+		if err := seedOrderDisputes(tx, orders, users); err != nil {
+			return err
+		}
+
 		log.Println("seed data ensured for demo environment")
 		return nil
 	})
@@ -823,7 +843,14 @@ func seedGames(tx *gorm.DB) (map[string]*model.Game, error) {
 	for i := range seeds {
 		game := &seeds[i]
 		var existing model.Game
-		if err := tx.Where("key = ?", game.Key).First(&existing).Error; err == nil {
+		// 使用 Unscoped 包含软删除的记录，避免唯一索引冲突
+		if err := tx.Unscoped().Where("key = ?", game.Key).First(&existing).Error; err == nil {
+			// 如果记录被软删除，恢复它
+			if existing.DeletedAt.Valid {
+				if err := tx.Unscoped().Model(&existing).Update("deleted_at", nil).Error; err != nil {
+					return nil, err
+				}
+			}
 			ex := existing
 			result[game.Key] = &ex
 			continue
@@ -842,7 +869,8 @@ func seedUser(tx *gorm.DB, input seedUserInput) (*model.User, error) {
 	if input.Email == "" && input.Phone == "" {
 		return nil, errors.New("seed user requires email or phone")
 	}
-	lookup := tx.Model(&model.User{})
+	// 使用 Unscoped 包含软删除的记录，避免唯一索引冲突
+	lookup := tx.Unscoped().Model(&model.User{})
 	if input.Email != "" {
 		lookup = lookup.Where("email = ?", input.Email)
 	} else {
@@ -850,6 +878,12 @@ func seedUser(tx *gorm.DB, input seedUserInput) (*model.User, error) {
 	}
 	var existing model.User
 	if err := lookup.First(&existing).Error; err == nil {
+		// 如果记录被软删除，恢复它
+		if existing.DeletedAt.Valid {
+			if err := tx.Unscoped().Model(&existing).Update("deleted_at", nil).Error; err != nil {
+				return nil, err
+			}
+		}
 		return &existing, nil
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
@@ -1040,7 +1074,7 @@ func ptrTimeWithOffset(base time.Time, offset *time.Duration) *time.Time {
 
 // seedMenus 创建后台管理菜单
 // 注意：菜单数据现在由前端初始化服务同步，不再在后端种子数据中创建
-func seedMenus(tx *gorm.DB) error {
+func seedMenus(_ *gorm.DB) error {
 	// 菜单数据由前端 init.ts 服务同步到后端
 	// 当管理员首次登录时，前端会自动将 ADMIN_MENUS 配置同步到数据库
 	log.Println("menu seed skipped - menus are synced from frontend")
@@ -1752,7 +1786,7 @@ func seedSensitiveWords(tx *gorm.DB) error {
 }
 
 // seedWalletData 创建钱包种子数据
-func seedWalletData(tx *gorm.DB, users map[string]*model.User, players map[string]*model.Player) error {
+func seedWalletData(tx *gorm.DB, users map[string]*model.User, _ map[string]*model.Player) error {
 	// 为陪玩师创建钱包余额
 	walletSpecs := []struct {
 		UserKey      string
@@ -2025,5 +2059,532 @@ func seedCommissionRecords(tx *gorm.DB, orders map[string]*model.Order, players 
 	}
 
 	log.Println("commission records seed data created successfully")
+	return nil
+}
+
+// seedCollectionEntities 创建收款主体和分流规则种子数据
+func seedCollectionEntities(tx *gorm.DB) error {
+	// 检查是否已有收款主体
+	var entityCount int64
+	if err := tx.Model(&model.CollectionEntity{}).Count(&entityCount).Error; err != nil {
+		return err
+	}
+	if entityCount > 0 {
+		log.Println("collection entities already exist, skipping")
+		return nil
+	}
+
+	// 创建收款主体
+	entities := []model.CollectionEntity{
+		{
+			Name:                 "游戏联盟科技有限公司",
+			CreditCode:           "91110108MA01ABCD1X",
+			TaxRegistrationNo:    "110108MA01ABCD1X",
+			Status:               model.EntityStatusActive,
+			IsDefault:            true,
+			TotalCollectionCents: 1580000,
+			TransactionCount:     156,
+			CreatedBy:            1,
+		},
+		{
+			Name:                 "星耀互娱网络科技公司",
+			CreditCode:           "91310115MA1KEFGH2Y",
+			TaxRegistrationNo:    "310115MA1KEFGH2Y",
+			Status:               model.EntityStatusActive,
+			IsDefault:            false,
+			TotalCollectionCents: 890000,
+			TransactionCount:     89,
+			CreatedBy:            1,
+		},
+		{
+			Name:                 "电竞梦想文化传媒公司",
+			CreditCode:           "91440300MA5DIJKL3Z",
+			TaxRegistrationNo:    "440300MA5DIJKL3Z",
+			Status:               model.EntityStatusInactive,
+			IsDefault:            false,
+			TotalCollectionCents: 320000,
+			TransactionCount:     32,
+			CreatedBy:            1,
+		},
+	}
+
+	for i := range entities {
+		if err := tx.Create(&entities[i]).Error; err != nil {
+			return fmt.Errorf("failed to create collection entity: %w", err)
+		}
+	}
+
+	// 创建分流规则
+	rules := []struct {
+		Name           string
+		Priority       int
+		TargetEntityID uint64
+		Conditions     []model.RoutingCondition
+		Description    string
+	}{
+		{
+			Name:           "大额订单分流",
+			Priority:       1,
+			TargetEntityID: 1,
+			Conditions: []model.RoutingCondition{
+				{Field: model.ConditionFieldOrderAmount, Operator: model.ConditionOperatorGreaterThan, Value: json.RawMessage(`500`)},
+			},
+			Description: "订单金额超过500元走主收款主体",
+		},
+		{
+			Name:           "LOL游戏分流",
+			Priority:       2,
+			TargetEntityID: 2,
+			Conditions: []model.RoutingCondition{
+				{Field: model.ConditionFieldGameType, Operator: model.ConditionOperatorEquals, Value: json.RawMessage(`"lol"`)},
+			},
+			Description: "英雄联盟游戏订单走星耀互娱",
+		},
+		{
+			Name:           "华东地区分流",
+			Priority:       3,
+			TargetEntityID: 2,
+			Conditions: []model.RoutingCondition{
+				{Field: model.ConditionFieldRegion, Operator: model.ConditionOperatorIn, Value: json.RawMessage(`["上海","江苏","浙江"]`)},
+			},
+			Description: "华东地区订单走星耀互娱",
+		},
+	}
+
+	for _, spec := range rules {
+		rule := &model.RoutingRule{
+			Name:           spec.Name,
+			Priority:       spec.Priority,
+			TargetEntityID: spec.TargetEntityID,
+			Status:         model.RuleStatusActive,
+			Description:    spec.Description,
+			CreatedBy:      1,
+		}
+		if err := rule.SetConditions(spec.Conditions); err != nil {
+			return fmt.Errorf("failed to set conditions: %w", err)
+		}
+		if err := tx.Create(rule).Error; err != nil {
+			return fmt.Errorf("failed to create routing rule: %w", err)
+		}
+	}
+
+	log.Println("collection entities and routing rules seed data created successfully")
+	return nil
+}
+
+// seedSettlementCompanies 创建结算公司种子数据并分配陪玩师
+// players 参数用于创建真实的陪玩师-结算公司分配关系
+func seedSettlementCompanies(tx *gorm.DB, players map[string]*model.Player) error {
+	// 结算公司定义
+	companySpecs := []struct {
+		Name             string
+		CreditCode       string
+		BankName         string
+		BankAccount      string
+		ContactName      string
+		ContactPhone     string
+		Status           model.CompanyStatus
+		TotalPayoutCents int64
+	}{
+		{
+			Name:             "游戏联盟结算中心",
+			CreditCode:       "91110108MA01WXYZ1A",
+			BankName:         "中国工商银行北京分行",
+			BankAccount:      "6222021234567890123",
+			ContactName:      "张经理",
+			ContactPhone:     "13912345678",
+			Status:           model.CompanyStatusActive,
+			TotalPayoutCents: 2580000,
+		},
+		{
+			Name:             "星耀支付结算公司",
+			CreditCode:       "91310115MA1KMNOP2B",
+			BankName:         "招商银行上海分行",
+			BankAccount:      "6225881234567890456",
+			ContactName:      "李总监",
+			ContactPhone:     "13898765432",
+			Status:           model.CompanyStatusActive,
+			TotalPayoutCents: 1890000,
+		},
+		{
+			Name:             "电竞梦想财务公司",
+			CreditCode:       "91440300MA5DQRST3C",
+			BankName:         "中国建设银行深圳分行",
+			BankAccount:      "6227001234567890789",
+			ContactName:      "王会计",
+			ContactPhone:     "13765432109",
+			Status:           model.CompanyStatusInactive,
+			TotalPayoutCents: 560000,
+		},
+	}
+
+	// 创建或获取结算公司
+	companies := make([]*model.SettlementCompany, len(companySpecs))
+	for i, spec := range companySpecs {
+		var company model.SettlementCompany
+		// 通过 CreditCode 查找是否已存在
+		err := tx.Where("credit_code = ?", spec.CreditCode).First(&company).Error
+		if err == nil {
+			// 已存在，使用现有记录
+			companies[i] = &company
+			log.Printf("settlement company %s already exists (ID:%d)", spec.Name, company.ID)
+		} else if errors.Is(err, gorm.ErrRecordNotFound) {
+			// 不存在，创建新记录
+			company = model.SettlementCompany{
+				Name:             spec.Name,
+				CreditCode:       spec.CreditCode,
+				BankName:         spec.BankName,
+				BankAccount:      spec.BankAccount,
+				ContactName:      spec.ContactName,
+				ContactPhone:     spec.ContactPhone,
+				Status:           spec.Status,
+				TotalPayoutCents: spec.TotalPayoutCents,
+				PlayerCount:      0, // 将根据实际分配更新
+				CreatedBy:        1,
+			}
+			if err := tx.Create(&company).Error; err != nil {
+				return fmt.Errorf("failed to create settlement company %s: %w", spec.Name, err)
+			}
+			companies[i] = &company
+			log.Printf("created settlement company %s (ID:%d)", spec.Name, company.ID)
+		} else {
+			return fmt.Errorf("failed to query settlement company: %w", err)
+		}
+	}
+
+	log.Println("settlement companies seed data ensured successfully")
+
+	// 如果没有陪玩师数据，跳过分配
+	if len(players) == 0 {
+		log.Println("no players provided, skipping player-company assignments")
+		return nil
+	}
+
+	// 检查是否已有分配记录
+	var assignmentCount int64
+	if err := tx.Model(&model.PlayerCompanyAssignment{}).Count(&assignmentCount).Error; err != nil {
+		return err
+	}
+	if assignmentCount > 0 {
+		log.Println("player company assignments already exist, skipping")
+		return nil
+	}
+
+	// 定义陪玩师到结算公司的分配关系
+	// 只分配已认证的陪玩师（VerificationVerified）
+	// 公司0（游戏联盟结算中心）: playerA, playerB, playerC
+	// 公司1（星耀支付结算公司）: playerD, playerE, playerF
+	// 公司2（电竞梦想财务公司）: 不分配（已禁用）
+	assignmentSpecs := []struct {
+		PlayerKey  string
+		CompanyIdx int // 0-based index in companies slice
+	}{
+		{"playerA", 0}, // 峡谷守护者 -> 游戏联盟结算中心
+		{"playerB", 0}, // 王牌射手 -> 游戏联盟结算中心
+		{"playerC", 0}, // 枪神降临 -> 游戏联盟结算中心
+		{"playerD", 1}, // 异世界旅者 -> 星耀支付结算公司
+		{"playerE", 1}, // 运动健将 -> 星耀支付结算公司
+		{"playerF", 1}, // 欢乐使者 -> 星耀支付结算公司
+		// playerG 和 playerH 不分配（playerG 是重复用户，playerH 是待审核状态）
+	}
+
+	now := time.Now()
+	companyPlayerCounts := make(map[uint64]int) // 统计每个公司分配的陪玩师数量
+
+	for _, spec := range assignmentSpecs {
+		player, ok := players[spec.PlayerKey]
+		if !ok {
+			log.Printf("player %s not found, skipping assignment", spec.PlayerKey)
+			continue
+		}
+
+		// 只分配已认证的陪玩师
+		if player.VerificationStatus != model.VerificationVerified {
+			log.Printf("player %s not verified, skipping assignment", spec.PlayerKey)
+			continue
+		}
+
+		company := companies[spec.CompanyIdx]
+
+		// 创建分配记录
+		assignment := &model.PlayerCompanyAssignment{
+			PlayerID:            player.ID,
+			SettlementCompanyID: company.ID,
+			EffectiveDate:       now.AddDate(0, -1, 0), // 一个月前生效
+			Reason:              "初始分配 - 系统种子数据",
+			AssignedBy:          1, // 管理员ID
+			IsCurrent:           true,
+		}
+
+		if err := tx.Create(assignment).Error; err != nil {
+			return fmt.Errorf("failed to create player company assignment for player %d: %w", player.ID, err)
+		}
+
+		companyPlayerCounts[company.ID]++
+		log.Printf("assigned player %s (ID:%d) to company %s (ID:%d)", spec.PlayerKey, player.ID, company.Name, company.ID)
+	}
+
+	// 更新结算公司的 PlayerCount 字段
+	for companyID, count := range companyPlayerCounts {
+		if err := tx.Model(&model.SettlementCompany{}).Where("id = ?", companyID).Update("player_count", count).Error; err != nil {
+			return fmt.Errorf("failed to update player count for company %d: %w", companyID, err)
+		}
+		log.Printf("updated company %d player_count to %d", companyID, count)
+	}
+
+	log.Printf("player company assignments created successfully, total: %d assignments", len(companyPlayerCounts))
+	return nil
+}
+
+// seedRankingCommissionConfigs 创建排行榜抽成配置种子数据
+func seedRankingCommissionConfigs(tx *gorm.DB) error {
+	// 检查是否已有配置
+	var configCount int64
+	if err := tx.Model(&model.RankingCommissionConfig{}).Count(&configCount).Error; err != nil {
+		return err
+	}
+	if configCount > 0 {
+		log.Println("ranking commission configs already exist, skipping")
+		return nil
+	}
+
+	now := time.Now()
+	currentMonth := now.Format("2006-01")
+	nextMonth := now.AddDate(0, 1, 0).Format("2006-01")
+
+	configs := []struct {
+		Name        string
+		RankingType model.RankingType
+		Period      string
+		Month       string
+		Rules       []model.RankingCommissionRule
+		Description string
+		IsActive    bool
+	}{
+		{
+			Name:        "月度收入排行抽成",
+			RankingType: model.RankingTypeIncome,
+			Period:      "monthly",
+			Month:       currentMonth,
+			Rules: []model.RankingCommissionRule{
+				{RankStart: 1, RankEnd: 3, CommissionRate: 10},
+				{RankStart: 4, RankEnd: 10, CommissionRate: 12},
+				{RankStart: 11, RankEnd: 50, CommissionRate: 15},
+				{RankStart: 51, RankEnd: 100, CommissionRate: 18},
+			},
+			Description: "本月收入排行榜抽成规则：TOP3享10%低抽成",
+			IsActive:    true,
+		},
+		{
+			Name:        "月度订单量排行抽成",
+			RankingType: model.RankingTypeOrderCount,
+			Period:      "monthly",
+			Month:       currentMonth,
+			Rules: []model.RankingCommissionRule{
+				{RankStart: 1, RankEnd: 5, CommissionRate: 8},
+				{RankStart: 6, RankEnd: 20, CommissionRate: 12},
+				{RankStart: 21, RankEnd: 100, CommissionRate: 16},
+			},
+			Description: "本月订单量排行榜抽成规则：TOP5享8%超低抽成",
+			IsActive:    true,
+		},
+		{
+			Name:        "下月收入排行抽成（预设）",
+			RankingType: model.RankingTypeIncome,
+			Period:      "monthly",
+			Month:       nextMonth,
+			Rules: []model.RankingCommissionRule{
+				{RankStart: 1, RankEnd: 3, CommissionRate: 10},
+				{RankStart: 4, RankEnd: 10, CommissionRate: 12},
+				{RankStart: 11, RankEnd: 50, CommissionRate: 15},
+				{RankStart: 51, RankEnd: 100, CommissionRate: 18},
+			},
+			Description: "下月收入排行榜抽成规则（预设）",
+			IsActive:    false,
+		},
+	}
+
+	for _, spec := range configs {
+		rulesJSON, err := json.Marshal(spec.Rules)
+		if err != nil {
+			return fmt.Errorf("failed to marshal rules: %w", err)
+		}
+
+		config := &model.RankingCommissionConfig{
+			Name:        spec.Name,
+			RankingType: spec.RankingType,
+			Period:      spec.Period,
+			Month:       spec.Month,
+			RulesJSON:   string(rulesJSON),
+			Description: spec.Description,
+			IsActive:    spec.IsActive,
+		}
+
+		if err := tx.Create(config).Error; err != nil {
+			return fmt.Errorf("failed to create ranking commission config: %w", err)
+		}
+	}
+
+	log.Println("ranking commission configs seed data created successfully")
+	return nil
+}
+
+// seedOrderDisputes 创建订单纠纷种子数据
+func seedOrderDisputes(tx *gorm.DB, orders map[string]*model.Order, users map[string]*model.User) error {
+	// 检查是否已有纠纷
+	var disputeCount int64
+	if err := tx.Model(&model.OrderDispute{}).Count(&disputeCount).Error; err != nil {
+		return err
+	}
+	if disputeCount > 0 {
+		log.Println("order disputes already exist, skipping")
+		return nil
+	}
+
+	now := time.Now()
+	hour := time.Hour
+
+	disputeSpecs := []struct {
+		OrderKey         string
+		UserKey          string
+		Status           model.DisputeStatus
+		Reason           string
+		Description      string
+		Resolution       model.DisputeResolution
+		ResolutionAmount int64
+		ResolutionNotes  string
+		AssignedToKey    string
+		CreatedOffset    time.Duration
+	}{
+		// 待处理纠纷
+		{
+			OrderKey:      "orderInProgress1",
+			UserKey:       "customerA",
+			Status:        model.DisputeStatusPending,
+			Reason:        "陪玩师迟到",
+			Description:   "约定时间是晚上8点，但陪玩师9点才上线，严重影响游戏体验",
+			Resolution:    model.ResolutionPending,
+			CreatedOffset: -2 * hour,
+		},
+		// 已指派纠纷
+		{
+			OrderKey:      "orderInProgress2",
+			UserKey:       "customerB",
+			Status:        model.DisputeStatusAssigned,
+			Reason:        "服务态度差",
+			Description:   "陪玩师在游戏中频繁挂机，态度敷衍",
+			Resolution:    model.ResolutionPending,
+			AssignedToKey: "adminA",
+			CreatedOffset: -4 * hour,
+		},
+		// 调解中纠纷
+		{
+			OrderKey:      "orderConfirmed1",
+			UserKey:       "customerC",
+			Status:        model.DisputeStatusMediating,
+			Reason:        "技术水平不符",
+			Description:   "陪玩师声称是王者段位，实际游戏表现只有黄金水平",
+			Resolution:    model.ResolutionPending,
+			AssignedToKey: "adminA",
+			CreatedOffset: -8 * hour,
+		},
+		// 已解决纠纷（全额退款）
+		{
+			OrderKey:         "orderCompleted1",
+			UserKey:          "customerD",
+			Status:           model.DisputeStatusResolved,
+			Reason:           "陪玩师中途离开",
+			Description:      "游戏进行到一半，陪玩师突然下线不再回来",
+			Resolution:       model.ResolutionRefund,
+			ResolutionAmount: 9900,
+			ResolutionNotes:  "经核实，陪玩师确实中途离开，全额退款",
+			AssignedToKey:    "adminA",
+			CreatedOffset:    -24 * hour,
+		},
+		// 已解决纠纷（部分退款）
+		{
+			OrderKey:         "orderCompleted2",
+			UserKey:          "customerE",
+			Status:           model.DisputeStatusResolved,
+			Reason:           "服务时长不足",
+			Description:      "购买了2小时服务，实际只陪玩了1.5小时",
+			Resolution:       model.ResolutionPartial,
+			ResolutionAmount: 5000,
+			ResolutionNotes:  "按实际服务时长计算，退还0.5小时费用",
+			AssignedToKey:    "adminA",
+			CreatedOffset:    -48 * hour,
+		},
+		// 已驳回纠纷
+		{
+			OrderKey:        "orderCanceled1",
+			UserKey:         "customerF",
+			Status:          model.DisputeStatusRejected,
+			Reason:          "要求退款",
+			Description:     "游戏输了，要求全额退款",
+			Resolution:      model.ResolutionReject,
+			ResolutionNotes: "游戏胜负不在服务保障范围内，驳回退款请求",
+			AssignedToKey:   "adminA",
+			CreatedOffset:   -72 * hour,
+		},
+	}
+
+	for _, spec := range disputeSpecs {
+		order, ok := orders[spec.OrderKey]
+		if !ok {
+			continue
+		}
+		user, ok := users[spec.UserKey]
+		if !ok {
+			continue
+		}
+
+		createdAt := now.Add(spec.CreatedOffset)
+		slaDeadline := createdAt.Add(30 * time.Minute)
+
+		dispute := &model.OrderDispute{
+			OrderID:          order.ID,
+			UserID:           user.ID,
+			Status:           spec.Status,
+			Reason:           spec.Reason,
+			Description:      spec.Description,
+			Resolution:       spec.Resolution,
+			ResolutionAmount: spec.ResolutionAmount,
+			ResolutionNotes:  spec.ResolutionNotes,
+			SLADeadline:      &slaDeadline,
+			EvidenceURLs:     model.EvidenceURLArray{"https://example.com/evidence1.jpg", "https://example.com/evidence2.jpg"},
+		}
+		dispute.CreatedAt = createdAt
+
+		// 设置指派信息
+		if spec.AssignedToKey != "" {
+			if assignedTo, ok := users[spec.AssignedToKey]; ok {
+				dispute.AssignedToUserID = &assignedTo.ID
+				dispute.AssignmentSource = model.AssignmentSourceManual
+				assignedAt := createdAt.Add(10 * time.Minute)
+				dispute.AssignedAt = &assignedAt
+			}
+		}
+
+		// 设置解决信息
+		if spec.Status == model.DisputeStatusResolved || spec.Status == model.DisputeStatusRejected {
+			if admin, ok := users["adminA"]; ok {
+				dispute.ResolvedByUserID = &admin.ID
+				resolvedAt := createdAt.Add(2 * hour)
+				dispute.ResolvedAt = &resolvedAt
+			}
+		}
+
+		// 检查SLA是否超时
+		if now.After(slaDeadline) && spec.Status == model.DisputeStatusPending {
+			dispute.SLABreached = true
+			dispute.SLABreachedAt = &slaDeadline
+		}
+
+		if err := tx.Create(dispute).Error; err != nil {
+			return fmt.Errorf("failed to create order dispute: %w", err)
+		}
+	}
+
+	log.Println("order disputes seed data created successfully")
 	return nil
 }

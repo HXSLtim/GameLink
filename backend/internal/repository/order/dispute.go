@@ -85,6 +85,10 @@ func (r *gormDisputeRepository) List(ctx context.Context, opts repository.Disput
 		like := "%" + trimmed + "%"
 		query = query.Where("reason LIKE ? OR description LIKE ?", like, like)
 	}
+	if trimmed := strings.TrimSpace(opts.OrderNo); trimmed != "" {
+		// 通过子查询关联订单表筛选订单号
+		query = query.Where("order_id IN (SELECT id FROM orders WHERE order_no LIKE ?)", "%"+trimmed+"%")
+	}
 
 	// Count total
 	var total int64
@@ -178,4 +182,35 @@ func (r *gormDisputeRepository) GetPendingCount(ctx context.Context) (int64, err
 		return 0, err
 	}
 	return count, nil
+}
+
+// GetStats returns dispute statistics by status.
+func (r *gormDisputeRepository) GetStats(ctx context.Context) (map[string]int64, error) {
+	stats := make(map[string]int64)
+
+	// 统计各状态数量
+	statuses := []model.DisputeStatus{
+		model.DisputeStatusPending,
+		model.DisputeStatusAssigned,
+		model.DisputeStatusMediating,
+		model.DisputeStatusResolved,
+		model.DisputeStatusRejected,
+		model.DisputeStatusCanceled,
+	}
+
+	var total int64
+	for _, status := range statuses {
+		var count int64
+		if err := r.db.WithContext(ctx).
+			Model(&model.OrderDispute{}).
+			Where("status = ?", status).
+			Count(&count).Error; err != nil {
+			return nil, err
+		}
+		stats[string(status)] = count
+		total += count
+	}
+	stats["total"] = total
+
+	return stats, nil
 }

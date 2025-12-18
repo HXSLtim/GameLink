@@ -19,7 +19,7 @@ services:
     volumes:
       # 挂载配置文件
       - ./backend/configs:/app/configs:ro
-      # 挂载数据目录（SQLite数据库）
+      # 挂载数据目录
       - backend-data:/app/var
     networks:
       - gamelink-network
@@ -30,14 +30,14 @@ services:
       retries: 3
       start_period: 40s
 
-  # 前端服务
-  frontend:
+  # 管理后台前端
+  admin:
     build:
-      context: ./frontend
+      context: ./admin
       dockerfile: Dockerfile
       args:
         NPM_REGISTRY: https://registry.npmmirror.com
-    container_name: gamelink-frontend
+    container_name: gamelink-admin
     restart: unless-stopped
     ports:
       - "80:80"

@@ -104,6 +104,10 @@ func startServer(router *gin.Engine, port string, lifecycle *lifecycle.Manager) 
 		Addr:              addr,
 		Handler:           router,
 		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second, // 读取请求超时（缩短以快速释放连接）
+		WriteTimeout:      30 * time.Second, // 写入响应超时
+		IdleTimeout:       60 * time.Second, // Keep-Alive 空闲超时（缩短以提高连接复用效率）
+		MaxHeaderBytes:    1 << 20,          // 1MB 最大请求头
 	}
 
 	go func() {

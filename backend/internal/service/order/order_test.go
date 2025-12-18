@@ -2323,6 +2323,16 @@ func (m *mockDisputeRepository) GetPendingCount(ctx context.Context) (int64, err
 	return count, nil
 }
 
+func (m *mockDisputeRepository) GetStats(ctx context.Context) (map[string]int64, error) {
+	stats := make(map[string]int64)
+	var disputes []model.OrderDispute
+	m.db.Find(&disputes)
+	for _, d := range disputes {
+		stats[string(d.Status)]++
+	}
+	return stats, nil
+}
+
 type mockOperationLogRepository struct{}
 
 func (m *mockOperationLogRepository) Append(ctx context.Context, log *model.OperationLog) error {

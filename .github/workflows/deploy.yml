@@ -31,7 +31,7 @@ jobs:
     
     outputs:
       backend-image: ${{ steps.meta-backend.outputs.tags }}
-      frontend-image: ${{ steps.meta-frontend.outputs.tags }}
+      admin-image: ${{ steps.meta-admin.outputs.tags }}
 
     steps:
       - name: Checkout code
@@ -57,11 +57,11 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=sha
 
-      - name: Extract metadata (frontend)
-        id: meta-frontend
+      - name: Extract metadata (admin)
+        id: meta-admin
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-admin
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
@@ -77,13 +77,13 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build and push frontend
+      - name: Build and push admin
         uses: docker/build-push-action@v5
         with:
-          context: ./frontend
+          context: ./admin
           push: true
-          tags: ${{ steps.meta-frontend.outputs.tags }}
-          labels: ${{ steps.meta-frontend.outputs.labels }}
+          tags: ${{ steps.meta-admin.outputs.tags }}
+          labels: ${{ steps.meta-admin.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -102,7 +102,7 @@ jobs:
         run: |
           echo "Deploying to staging environment..."
           echo "Backend image: ${{ needs.build-and-push.outputs.backend-image }}"
-          echo "Frontend image: ${{ needs.build-and-push.outputs.frontend-image }}"
+          echo "Admin image: ${{ needs.build-and-push.outputs.admin-image }}"
           # 在这里添加实际的部署命令
           # 例如: SSH 到服务器执行 docker-compose pull && docker-compose up -d
 
@@ -121,5 +121,5 @@ jobs:
         run: |
           echo "Deploying to production environment..."
           echo "Backend image: ${{ needs.build-and-push.outputs.backend-image }}"
-          echo "Frontend image: ${{ needs.build-and-push.outputs.frontend-image }}"
+          echo "Admin image: ${{ needs.build-and-push.outputs.admin-image }}"
           # 在这里添加实际的部署命令

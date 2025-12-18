@@ -15,7 +15,7 @@
 - **Monitoring**: Prometheus client
 - **Encryption**: AES-256-CBC + SHA-256 签名
 
-## Frontend
+## Admin Frontend (管理后台)
 
 - **Framework**: React 18.2+ with TypeScript 5.2+
 - **Build Tool**: Vite 7.2+
@@ -50,7 +50,7 @@
 
 # 部署脚本参数
 -SkipBuild        # 跳过 Docker 镜像构建
--SkipFrontend     # 跳过前端构建
+-SkipAdmin        # 跳过管理后台构建
 -NoPull           # 不拉取基础镜像
 -RegenerateKeys   # 重新生成加密密钥（仅加密版）
 ```
@@ -58,9 +58,9 @@
 **部署脚本自动执行：**
 1. 检查环境变量（.env 文件）
 2. 生成/验证加密密钥（加密版）
-3. 同步密钥到前端（加密版）
-4. 安装前端依赖（包括 crypto-js）
-5. 构建前端（npm run build）
+3. 同步密钥到管理后台（加密版）
+4. 安装管理后台依赖（包括 crypto-js）
+5. 构建管理后台（npm run build）
 6. 构建 Docker 镜像
 7. 停止旧服务
 8. 启动新服务 + 健康检查
@@ -124,10 +124,10 @@ make lint                        # 代码检查
 make swagger                     # 生成 API 文档
 ```
 
-### Frontend
+### Admin (管理后台)
 
 ```bash
-cd frontend
+cd admin
 npm install                      # 安装依赖
 npm run dev                      # 开发服务器 (localhost:5173)
 npm run build                    # 生产构建

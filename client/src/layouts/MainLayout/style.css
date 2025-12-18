@@ -1,0 +1,35 @@
+.main-layout {
+  min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+}
+
+.logo {
+  color: #fff;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-right: 24px;
+}
+
+.nav-menu {
+  flex: 1;
+}
+
+.header-right {
+  margin-left: auto;
+}
+
+.content {
+  padding: 24px;
+  min-height: calc(100vh - 134px);
+}
+
+.footer {
+  text-align: center;
+  color: #999;
+}

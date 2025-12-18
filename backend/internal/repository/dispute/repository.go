@@ -179,3 +179,46 @@ func (r *gormDisputeRepository) GetPendingCount(ctx context.Context) (int64, err
 	}
 	return count, nil
 }
+
+// GetStats returns dispute statistics grouped by status.
+func (r *gormDisputeRepository) GetStats(ctx context.Context) (map[string]int64, error) {
+	stats := make(map[string]int64)
+
+	// Get counts for each status
+	type statusCount struct {
+		Status string
+		Count  int64
+	}
+	var results []statusCount
+
+	if err := r.db.WithContext(ctx).
+		Model(&model.OrderDispute{}).
+		Select("status, COUNT(*) as count").
+		Group("status").
+		Scan(&results).Error; err != nil {
+		return nil, err
+	}
+
+	for _, r := range results {
+		stats[r.Status] = r.Count
+	}
+
+	// Also get total count
+	var total int64
+	if err := r.db.WithContext(ctx).Model(&model.OrderDispute{}).Count(&total).Error; err != nil {
+		return nil, err
+	}
+	stats["total"] = total
+
+	// Get SLA breached count
+	var slaBreached int64
+	if err := r.db.WithContext(ctx).
+		Model(&model.OrderDispute{}).
+		Where("sla_breached = ?", true).
+		Count(&slaBreached).Error; err != nil {
+		return nil, err
+	}
+	stats["sla_breached"] = slaBreached
+
+	return stats, nil
+}

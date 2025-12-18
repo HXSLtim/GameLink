@@ -5,16 +5,15 @@ import (
 	adminrepo "gamelink/internal/repository/admin"
 	alertrepo "gamelink/internal/repository/alert"
 	chatrepo "gamelink/internal/repository/chat"
+	collectionentityrepo "gamelink/internal/repository/collectionentity"
 	commissionrepo "gamelink/internal/repository/commission"
-	feedrepo "gamelink/internal/repository/content"
-	notificationrepo "gamelink/internal/repository/content"
+	contentrepo "gamelink/internal/repository/content"
 	contentcategoryrepo "gamelink/internal/repository/contentcategory"
 	gamerepo "gamelink/internal/repository/game"
 	orderrepo "gamelink/internal/repository/implementations"
-	paymentrepo "gamelink/internal/repository/order"
-	reviewreplyrepo "gamelink/internal/repository/order"
-	reviewrepo "gamelink/internal/repository/order"
+	ordermodelsrepo "gamelink/internal/repository/order"
 	reviewdisplaysettingsrepo "gamelink/internal/repository/reviewdisplaysettings"
+	routingrulerepo "gamelink/internal/repository/routingrule"
 	sensitivewordrepo "gamelink/internal/repository/sensitiveword"
 	serviceitemrepo "gamelink/internal/repository/serviceitem"
 	userrepo "gamelink/internal/repository/user"
@@ -32,7 +31,9 @@ import (
 	paymentservice "gamelink/internal/service/payment"
 	serviceplayer "gamelink/internal/service/player"
 	reviewservice "gamelink/internal/service/review"
+	routingruleservice "gamelink/internal/service/routingrule"
 	sensitivewordservice "gamelink/internal/service/sensitiveword"
+	statisticsservice "gamelink/internal/service/statistics"
 	userservice "gamelink/internal/service/user"
 	walletservice "gamelink/internal/service/wallet"
 	"gamelink/internal/ws"
@@ -82,6 +83,12 @@ type appServices struct {
 	sensitiveWordSvc *sensitivewordservice.SensitiveWordService
 	// Review settings service
 	reviewSettingsSvc *reviewservice.SettingsService
+	// Routing rule service
+	routingRuleSvc *routingruleservice.RoutingRuleService
+	// Statistics service (统计指标)
+	statisticsSvc       *statisticsservice.Service
+	statisticsEvaluator *statisticsservice.TagEvaluator
+	statisticsHooks     *statisticsservice.EventHooks
 }
 
 // initServices 初始化领域服务和调度任务（但不启动调度器）。
@@ -95,15 +102,15 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 	chatMemberRepo := chatrepo.NewChatMemberRepository(orm)
 	chatMessageRepo := chatrepo.NewChatMessageRepository(orm)
 	chatReportRepo := chatrepo.NewChatReportRepository(orm)
-	paymentRepo := paymentrepo.NewPaymentRepository(orm)
-	reviewRepo := reviewrepo.NewReviewRepository(orm)
-	reviewReplyRepo := reviewreplyrepo.NewReviewReplyRepository(orm)
+	paymentRepo := ordermodelsrepo.NewPaymentRepository(orm)
+	reviewRepo := ordermodelsrepo.NewReviewRepository(orm)
+	reviewReplyRepo := ordermodelsrepo.NewReviewReplyRepository(orm)
 	playerTagRepo := userrepo.NewPlayerTagRepository(orm)
 	withdrawRepo := withdrawrepo.NewWithdrawRepository(orm)
 	commissionRepo := commissionrepo.NewCommissionRepository(orm)
 	serviceItemRepo := serviceitemrepo.NewServiceItemRepository(orm)
-	feedRepo := feedrepo.NewFeedRepository(orm)
-	notificationRepo := notificationrepo.NewNotificationRepository(orm)
+	feedRepo := contentrepo.NewFeedRepository(orm)
+	notificationRepo := contentrepo.NewNotificationRepository(orm)
 	walletRepo := userrepo.NewWalletRepository(orm)
 
 	// 领域服务
@@ -116,7 +123,7 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 	paymentSvc := paymentservice.NewPaymentService(paymentRepo, orderRepo)
 	playerSvc := serviceplayer.NewPlayerService(playerRepo, userRepo, gameRepo, orderRepo, reviewRepo, playerTagRepo, cacheClient)
 	reviewSvc := orderservice.NewReviewService(reviewRepo, orderRepo, playerRepo, userRepo, reviewReplyRepo, notificationRepo)
-	disputeRepo := reviewrepo.NewDisputeRepository(orm)
+	disputeRepo := ordermodelsrepo.NewDisputeRepository(orm)
 	operationLogRepo := adminrepo.NewOperationLogRepository(orm)
 	disputeSvc := orderservice.NewDisputeService(disputeRepo, orderRepo, userRepo, operationLogRepo, notificationRepo, paymentRepo)
 	earningsSvc := userservice.NewEarningsService(playerRepo, orderRepo, withdrawRepo)
@@ -142,7 +149,7 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 
 	// User management services
 	tagRepo := userrepo.NewUserTagRepository(orm)
-	notifRepo := notificationrepo.NewNotificationRepository(orm)
+	notifRepo := contentrepo.NewNotificationRepository(orm)
 	tagSvc := userservice.NewUserTagService(tagRepo, userRepo, cacheClient)
 	batchSvc := userservice.NewBatchOperationService(orm, userRepo, tagRepo, notifRepo)
 
@@ -162,6 +169,16 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 	feedReportSvc := contentservice.NewFeedReportService(feedRepo, operationLogRepo)
 	contentStatsSvc := contentservice.NewContentStatsService(feedRepo, chatMessageRepo)
 	contentCategorySvc := contentcategoryservice.NewContentCategoryService(contentCategoryRepo)
+
+	// Routing rule service
+	routingRuleRepo := routingrulerepo.NewRoutingRuleRepository(orm)
+	collectionEntityRepo := collectionentityrepo.NewCollectionEntityRepository(orm)
+	routingRuleSvc := routingruleservice.NewRoutingRuleService(routingRuleRepo, collectionEntityRepo)
+
+	// Statistics service (统计指标)
+	statisticsSvc := statisticsservice.NewService(orm)
+	statisticsEvaluator := statisticsservice.NewTagEvaluator(orm)
+	statisticsHooks := statisticsservice.NewEventHooks(statisticsSvc)
 
 	return &appServices{
 		commissionSvc:       commissionSvc,
@@ -194,5 +211,9 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 		contentCategorySvc:  contentCategorySvc,
 		sensitiveWordSvc:    sensitiveWordSvc,
 		reviewSettingsSvc:   reviewSettingsSvc,
+		routingRuleSvc:      routingRuleSvc,
+		statisticsSvc:       statisticsSvc,
+		statisticsEvaluator: statisticsEvaluator,
+		statisticsHooks:     statisticsHooks,
 	}
 }

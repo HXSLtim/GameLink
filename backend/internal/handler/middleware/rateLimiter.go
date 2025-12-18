@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"gamelink/pkg/apierr"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -312,34 +313,35 @@ func RateLimit(config RateLimiterConfig) gin.HandlerFunc {
 }
 
 // DefaultRateLimitConfig 返回默认限流配置
+// QPS 优化：提升限流阈值以支持更高并发
 func DefaultRateLimitConfig() RateLimiterConfig {
 	return RateLimiterConfig{
-		Enabled:               true,
-		IPRequestsPerSecond:   10, // 每秒10个请求
-		UserRequestsPerMinute: 60, // 每分钟60个请求
+		Enabled:               true, // 生产环境启用限流
+		IPRequestsPerSecond:   50,   // 每秒50个请求（提升5倍）
+		UserRequestsPerMinute: 300,  // 每分钟300个请求（提升5倍）
 		WhitelistIPs:          []string{"127.0.0.1", "::1"},
 		WhitelistRoles:        []string{"superAdmin"},
 		RouteLimits: map[string]RouteLimit{
-			// 登录接口限流：每分钟5次
+			// 登录接口限流：每分钟10次（防暴力破解）
 			"/api/v1/auth/login": {
 				Path:        "/api/v1/auth/login",
-				Requests:    5,
+				Requests:    10,
 				Window:      time.Minute,
 				LimitByIP:   true,
 				LimitByUser: false,
 			},
-			// 注册接口限流：每小时10次
+			// 注册接口限流：每小时20次
 			"/api/v1/auth/register": {
 				Path:        "/api/v1/auth/register",
-				Requests:    10,
+				Requests:    20,
 				Window:      time.Hour,
 				LimitByIP:   true,
 				LimitByUser: false,
 			},
-			// 支付接口限流：每分钟20次
+			// 支付接口限流：每分钟30次
 			"/api/v1/user/orders/:id/pay": {
 				Path:        "/api/v1/user/orders/:id/pay",
-				Requests:    20,
+				Requests:    30,
 				Window:      time.Minute,
 				LimitByIP:   false,
 				LimitByUser: true,

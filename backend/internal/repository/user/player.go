@@ -108,3 +108,58 @@ func (r *gormPlayerRepository) Delete(ctx context.Context, id uint64) error {
 	}
 	return nil
 }
+
+// ListPagedWithFilter returns a page of players with keyword and status filter.
+func (r *gormPlayerRepository) ListPagedWithFilter(ctx context.Context, page, pageSize int, keyword string, status *model.VerificationStatus) ([]model.Player, int64, error) {
+	page = repository.NormalizePage(page)
+	pageSize = repository.NormalizePageSize(pageSize)
+	offset := (page - 1) * pageSize
+
+	query := r.db.WithContext(ctx).Model(&model.Player{})
+
+	// Apply keyword filter (search in nickname and bio)
+	if keyword != "" {
+		likePattern := "%" + keyword + "%"
+		query = query.Where("nickname ILIKE ? OR bio ILIKE ?", likePattern, likePattern)
+	}
+
+	// Apply status filter
+	if status != nil {
+		query = query.Where("verification_status = ?", *status)
+	}
+
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	var players []model.Player
+	if err := query.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&players).Error; err != nil {
+		return nil, 0, err
+	}
+	return players, total, nil
+}
+
+// BatchUpdateStatus updates verification status for multiple players.
+func (r *gormPlayerRepository) BatchUpdateStatus(ctx context.Context, ids []uint64, status model.VerificationStatus) (int64, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+	tx := r.db.WithContext(ctx).Model(&model.Player{}).Where("id IN ?", ids).Update("verification_status", status)
+	if tx.Error != nil {
+		return 0, tx.Error
+	}
+	return tx.RowsAffected, nil
+}
+
+// BatchDelete soft-deletes multiple players by ids.
+func (r *gormPlayerRepository) BatchDelete(ctx context.Context, ids []uint64) (int64, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+	tx := r.db.WithContext(ctx).Delete(&model.Player{}, ids)
+	if tx.Error != nil {
+		return 0, tx.Error
+	}
+	return tx.RowsAffected, nil
+}

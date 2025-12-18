@@ -1,6 +1,8 @@
 package admin
 
 import (
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 
 	"gamelink/internal/model"
@@ -24,8 +26,9 @@ func NewGameHandler(svc *adminservice.AdminService) *GameHandler {
 // @Summary      列出游戏
 // @Tags         Admin/Games
 // @Security     BearerAuth
-// @Param        page       query  int  false  "页码"
-// @Param        pageSize   query     int       false  "每页数量"
+// @Param        page       query  int     false  "页码"
+// @Param        pageSize   query  int     false  "每页数量"
+// @Param        keyword    query  string  false  "关键词搜索"
 // @Produce      json
 // @Success      200  {object}  model.APIResponse[[]Game]
 // @Router       /admin/games [get]
@@ -35,7 +38,8 @@ func (h *GameHandler) ListGames(c *gin.Context) {
 		return
 	}
 
-	games, pagination, err := h.svc.ListGamesPaged(c.Request.Context(), page, pageSize)
+	keyword := c.Query("keyword")
+	games, pagination, err := h.svc.ListGamesPagedWithFilter(c.Request.Context(), page, pageSize, keyword)
 	if err != nil {
 		respondError(c, err)
 		return
@@ -153,6 +157,47 @@ func (h *GameHandler) DeleteGame(c *gin.Context) {
 		return
 	}
 	respondDeleted(c)
+}
+
+// BatchDeleteGamesRequest 批量删除游戏请求
+type BatchDeleteGamesRequest struct {
+	GameIDs []string `json:"gameIds" binding:"required,min=1"`
+}
+
+// BatchDeleteGames
+// @Summary      批量删除游戏
+// @Tags         Admin/Games
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body  BatchDeleteGamesRequest  true  "游戏ID列表"
+// @Success      200  {object}  model.APIResponse[map[string]int64]
+// @Failure      400  {object}  model.ErrorResponse
+// @Router       /admin/games/batch/delete [post]
+func (h *GameHandler) BatchDeleteGames(c *gin.Context) {
+	var req BatchDeleteGamesRequest
+	if !ValidateAndRespond(c, &req) {
+		return
+	}
+
+	// 转换 string[] 到 uint64[]
+	ids := make([]uint64, 0, len(req.GameIDs))
+	for _, idStr := range req.GameIDs {
+		id, err := strconv.ParseUint(idStr, 10, 64)
+		if err != nil {
+			respondBadRequest(c, "invalid game id: "+idStr)
+			return
+		}
+		ids = append(ids, id)
+	}
+
+	deleted, err := h.svc.BatchDeleteGames(c.Request.Context(), ids)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	respondSuccess(c, map[string]int64{"deleted": deleted})
 }
 
 // ListGameLogs

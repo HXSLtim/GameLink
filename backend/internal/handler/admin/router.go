@@ -108,6 +108,16 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/games/{id} [delete]
 		group.DELETE("/games/:id", pm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/games/:id"), gameHandler.DeleteGame)
+		// @Summary      批量删除游戏
+		// @Tags         Admin/Games
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  BatchDeleteGamesRequest  true  "游戏ID列表"
+		// @Success      200  {object}  model.APIResponse[map[string]int64]
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Router       /admin/games/batch/delete [post]
+		group.POST("/games/batch/delete", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/games/batch/delete"), gameHandler.BatchDeleteGames)
 		// @Summary      获取游戏操作日志
 		// @Tags         Admin/Games
 		// @Security     BearerAuth
@@ -391,6 +401,26 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Success      200  {object}  model.APIResponse[[]model.OperationLog]
 		// @Router       /admin/players/{id}/logs [get]
 		group.GET("/players/:id/logs", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/players/:id/logs"), playerHandler.ListPlayerLogs)
+		// @Summary      批量更新陪玩师状态
+		// @Tags         Admin/Players
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  BatchUpdateStatusPayload  true  "批量更新请求"
+		// @Success      200  {object}  model.APIResponse[map[string]int64]
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Router       /admin/players/batch/status [put]
+		group.PUT("/players/batch/status", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/players/batch/status"), playerHandler.BatchUpdatePlayerStatus)
+		// @Summary      批量删除陪玩师
+		// @Tags         Admin/Players
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  BatchDeletePlayersPayload  true  "批量删除请求"
+		// @Success      200  {object}  model.APIResponse[map[string]int64]
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Router       /admin/players/batch/delete [post]
+		group.POST("/players/batch/delete", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/players/batch/delete"), playerHandler.BatchDeletePlayers)
 
 		// 订单管理 - 使用细粒度权		// @Summary      列出订单
 		// @Tags         Admin/Orders

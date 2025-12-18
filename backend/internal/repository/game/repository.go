@@ -48,6 +48,33 @@ func (r *gormGameRepository) ListPaged(ctx context.Context, page, pageSize int) 
 	return games, total, nil
 }
 
+// ListPagedWithFilter returns a page of games with keyword filter.
+func (r *gormGameRepository) ListPagedWithFilter(ctx context.Context, page, pageSize int, keyword string) ([]model.Game, int64, error) {
+	page = repository.NormalizePage(page)
+	pageSize = repository.NormalizePageSize(pageSize)
+	offset := (page - 1) * pageSize
+
+	query := r.db.WithContext(ctx).Model(&model.Game{})
+
+	// 关键词搜索（匹配 name, key, category, description）
+	if keyword != "" {
+		searchPattern := "%" + keyword + "%"
+		query = query.Where("name ILIKE ? OR key ILIKE ? OR category ILIKE ? OR description ILIKE ?",
+			searchPattern, searchPattern, searchPattern, searchPattern)
+	}
+
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	var games []model.Game
+	if err := query.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&games).Error; err != nil {
+		return nil, 0, err
+	}
+	return games, total, nil
+}
+
 // Get returns a game by id.
 func (r *gormGameRepository) Get(ctx context.Context, id uint64) (*model.Game, error) {
 	var game model.Game
@@ -94,4 +121,16 @@ func (r *gormGameRepository) Delete(ctx context.Context, id uint64) error {
 		return repository.ErrNotFound
 	}
 	return nil
+}
+
+// BatchDelete soft-deletes multiple games by ids.
+func (r *gormGameRepository) BatchDelete(ctx context.Context, ids []uint64) (int64, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+	tx := r.db.WithContext(ctx).Delete(&model.Game{}, ids)
+	if tx.Error != nil {
+		return 0, tx.Error
+	}
+	return tx.RowsAffected, nil
 }

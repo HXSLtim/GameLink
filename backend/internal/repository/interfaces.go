@@ -12,10 +12,12 @@ import (
 type GameRepository interface {
 	List(ctx context.Context) ([]model.Game, error)
 	ListPaged(ctx context.Context, page, pageSize int) ([]model.Game, int64, error)
+	ListPagedWithFilter(ctx context.Context, page, pageSize int, keyword string) ([]model.Game, int64, error)
 	Get(ctx context.Context, id uint64) (*model.Game, error)
 	Create(ctx context.Context, game *model.Game) error
 	Update(ctx context.Context, game *model.Game) error
 	Delete(ctx context.Context, id uint64) error
+	BatchDelete(ctx context.Context, ids []uint64) (int64, error)
 }
 
 // UserRepository defines user data access operations.
@@ -38,11 +40,14 @@ type UserRepository interface {
 type PlayerRepository interface {
 	List(ctx context.Context) ([]model.Player, error)
 	ListPaged(ctx context.Context, page, pageSize int) ([]model.Player, int64, error)
+	ListPagedWithFilter(ctx context.Context, page, pageSize int, keyword string, status *model.VerificationStatus) ([]model.Player, int64, error)
 	Get(ctx context.Context, id uint64) (*model.Player, error)
 	GetByUserID(ctx context.Context, userID uint64) (*model.Player, error)
 	Create(ctx context.Context, player *model.Player) error
 	Update(ctx context.Context, player *model.Player) error
 	Delete(ctx context.Context, id uint64) error
+	BatchUpdateStatus(ctx context.Context, ids []uint64, status model.VerificationStatus) (int64, error)
+	BatchDelete(ctx context.Context, ids []uint64) (int64, error)
 }
 
 // Order repository interfaces now live in the interfaces subpackage. Keep
@@ -86,7 +91,7 @@ type WalletRepository interface {
 type PermissionRepository interface {
 	List(ctx context.Context) ([]model.Permission, error)
 	ListPaged(ctx context.Context, page, pageSize int) ([]model.Permission, int64, error)
-	ListPagedWithFilter(ctx context.Context, page, pageSize int, keyword, method, group string) ([]model.Permission, int64, error)
+	ListPagedWithFilter(ctx context.Context, page, pageSize int, keyword, method, group string, isSystem *bool) ([]model.Permission, int64, error)
 	ListByGroup(ctx context.Context) (map[string][]model.Permission, error)
 	ListGroups(ctx context.Context) ([]string, error)
 	Get(ctx context.Context, id uint64) (*model.Permission, error)
@@ -290,6 +295,7 @@ type DisputeRepository interface {
 	Delete(ctx context.Context, id uint64) error
 	CountByStatus(ctx context.Context, status model.DisputeStatus) (int64, error)
 	GetPendingCount(ctx context.Context) (int64, error)
+	GetStats(ctx context.Context) (map[string]int64, error)
 }
 
 // UserListOptions contains filtering options for user queries.
@@ -398,6 +404,7 @@ type DisputeListOptions struct {
 	Statuses         []model.DisputeStatus
 	SLABreached      *bool
 	Keyword          string
+	OrderNo          string // 订单号筛选
 	DateFrom         *time.Time
 	DateTo           *time.Time
 }

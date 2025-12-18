@@ -1,0 +1,303 @@
+# GameLink 生产环境高可用配置（读写分离 + 多实例）
+# 使用方式: docker-compose -f docker-compose.prod.ha.yml up -d
+# 
+# 架构说明:
+# - PostgreSQL 主库 (写) + 从库 (读)
+# - Redis 主库 + 从库
+# - 多个后端实例 + Nginx 负载均衡
+#
+# 注意: 生产环境建议使用 Kubernetes 或云托管数据库
+
+services:
+  # ==================== PostgreSQL 主库 (写) ====================
+  postgres-primary:
+    image: postgres:16-alpine
+    container_name: gamelink-postgres-primary
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-gamelink}
+      - POSTGRES_USER=${POSTGRES_USER:-gamelink}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-gamelink123}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF8 --lc-collate=C --lc-ctype=C
+    volumes:
+      - postgres-primary-data:/var/lib/postgresql/data
+      - ./backend/scripts/sql:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5432:5432"
+    networks:
+      - gamelink-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gamelink}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command:
+      - "postgres"
+      - "-c"
+      - "max_connections=200"
+      - "-c"
+      - "shared_buffers=256MB"
+      - "-c"
+      - "effective_cache_size=768MB"
+      - "-c"
+      - "maintenance_work_mem=64MB"
+      - "-c"
+      - "checkpoint_completion_target=0.9"
+      - "-c"
+      - "wal_buffers=16MB"
+      - "-c"
+      - "default_statistics_target=100"
+      - "-c"
+      - "random_page_cost=1.1"
+      - "-c"
+      - "effective_io_concurrency=200"
+      - "-c"
+      - "work_mem=4MB"
+      - "-c"
+      - "min_wal_size=1GB"
+      - "-c"
+      - "max_wal_size=4GB"
+      # 主从复制配置
+      - "-c"
+      - "wal_level=replica"
+      - "-c"
+      - "max_wal_senders=3"
+      - "-c"
+      - "wal_keep_size=64MB"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  # ==================== PostgreSQL 从库 (读) ====================
+  # 注意: 实际生产环境需要配置流复制，这里是简化版本
+  # 建议使用 Patroni 或云托管 PostgreSQL 实现真正的主从复制
+  postgres-replica:
+    image: postgres:16-alpine
+    container_name: gamelink-postgres-replica
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-gamelink}
+      - POSTGRES_USER=${POSTGRES_USER:-gamelink}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-gamelink123}
+    volumes:
+      - postgres-replica-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - gamelink-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gamelink}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command:
+      - "postgres"
+      - "-c"
+      - "max_connections=200"
+      - "-c"
+      - "shared_buffers=256MB"
+      - "-c"
+      - "effective_cache_size=768MB"
+      - "-c"
+      - "random_page_cost=1.1"
+      - "-c"
+      - "effective_io_concurrency=200"
+      # 从库优化：只读查询
+      - "-c"
+      - "default_transaction_read_only=off"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  # ==================== Redis 主库 ====================
+  redis:
+    image: redis:7-alpine
+    container_name: gamelink-redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD:-redis123}
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --tcp-backlog 511
+      --tcp-keepalive 300
+      --timeout 0
+      --save ""
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - gamelink-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis123}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # ==================== 后端服务实例 1 ====================
+  backend-1:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        GOPROXY: https://goproxy.cn,direct
+    container_name: gamelink-backend-1
+    restart: unless-stopped
+    environment:
+      - APP_ENV=production
+      - SERVICE_PORT=8080
+      - GIN_MODE=release
+      - GOMAXPROCS=2
+      # 主库（写）
+      - DB_DSN=postgresql://${POSTGRES_USER:-gamelink}:${POSTGRES_PASSWORD:-gamelink123}@postgres-primary:5432/${POSTGRES_DB:-gamelink}?sslmode=disable
+      # 从库（读）- 逗号分隔多个从库
+      - DB_READER_DSNS=postgresql://${POSTGRES_USER:-gamelink}:${POSTGRES_PASSWORD:-gamelink123}@postgres-replica:5432/${POSTGRES_DB:-gamelink}?sslmode=disable
+      # 连接池配置
+      - DB_MAX_CONNS=50
+      - DB_MAX_IDLE=25
+      # Redis配置
+      - CACHE_TYPE=redis
+      - REDIS_ADDR=redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-redis123}
+      - REDIS_DB=0
+      # JWT密钥
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      # 加密配置
+      - CRYPTO_ENABLED=true
+      - CRYPTO_SECRET_KEY=${CRYPTO_SECRET_KEY}
+      - CRYPTO_IV=${CRYPTO_IV}
+      - CRYPTO_USE_SIGNATURE=true
+      # 管理员配置
+      - SUPER_ADMIN_EMAIL=${SUPER_ADMIN_EMAIL:-admin@gamelink.com}
+      - SUPER_ADMIN_PASSWORD=${SUPER_ADMIN_PASSWORD}
+    volumes:
+      - ./backend/configs:/app/configs:ro
+      - backend-logs:/app/logs
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+      postgres-replica:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - gamelink-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "-O", "/dev/null", "http://localhost:8080/api/v1/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # ==================== 后端服务实例 2 ====================
+  backend-2:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        GOPROXY: https://goproxy.cn,direct
+    container_name: gamelink-backend-2
+    restart: unless-stopped
+    environment:
+      - APP_ENV=production
+      - SERVICE_PORT=8080
+      - GIN_MODE=release
+      - GOMAXPROCS=2
+      - DB_DSN=postgresql://${POSTGRES_USER:-gamelink}:${POSTGRES_PASSWORD:-gamelink123}@postgres-primary:5432/${POSTGRES_DB:-gamelink}?sslmode=disable
+      - DB_READER_DSNS=postgresql://${POSTGRES_USER:-gamelink}:${POSTGRES_PASSWORD:-gamelink123}@postgres-replica:5432/${POSTGRES_DB:-gamelink}?sslmode=disable
+      - DB_MAX_CONNS=50
+      - DB_MAX_IDLE=25
+      - CACHE_TYPE=redis
+      - REDIS_ADDR=redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-redis123}
+      - REDIS_DB=0
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - CRYPTO_ENABLED=true
+      - CRYPTO_SECRET_KEY=${CRYPTO_SECRET_KEY}
+      - CRYPTO_IV=${CRYPTO_IV}
+      - CRYPTO_USE_SIGNATURE=true
+      - SUPER_ADMIN_EMAIL=${SUPER_ADMIN_EMAIL:-admin@gamelink.com}
+      - SUPER_ADMIN_PASSWORD=${SUPER_ADMIN_PASSWORD}
+    volumes:
+      - ./backend/configs:/app/configs:ro
+      - backend-logs:/app/logs
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+      postgres-replica:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - gamelink-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "-O", "/dev/null", "http://localhost:8080/api/v1/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # ==================== 管理后台 + Nginx 负载均衡 ====================
+  admin:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile.ha
+      args:
+        NPM_REGISTRY: https://registry.npmmirror.com
+    container_name: gamelink-admin
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - backend-1
+      - backend-2
+    networks:
+      - gamelink-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  gamelink-network:
+    driver: bridge
+    name: gamelink-network
+
+volumes:
+  postgres-primary-data:
+    name: gamelink-postgres-primary-data
+  postgres-replica-data:
+    name: gamelink-postgres-replica-data
+  redis-data:
+    name: gamelink-redis-data
+  backend-logs:
+    name: gamelink-backend-logs

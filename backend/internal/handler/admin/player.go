@@ -37,6 +37,28 @@ func (h *PlayerHandler) ListPlayers(c *gin.Context) {
 	if !ok {
 		return
 	}
+
+	// Parse optional filters
+	keyword := c.Query("keyword")
+	statusStr := c.Query("status")
+
+	var status *model.VerificationStatus
+	if statusStr != "" {
+		s := model.VerificationStatus(statusStr)
+		status = &s
+	}
+
+	// Use filter method if any filter is provided
+	if keyword != "" || status != nil {
+		players, pagination, err := h.svc.ListPlayersPagedWithFilter(c.Request.Context(), page, pageSize, keyword, status)
+		if err != nil {
+			respondError(c, apierr.InternalError("list players failed").WithDetails(err.Error()))
+			return
+		}
+		respondList(c, players, pagination)
+		return
+	}
+
 	players, pagination, err := h.svc.ListPlayersPaged(c.Request.Context(), page, pageSize)
 	if err != nil {
 		respondError(c, apierr.InternalError("list players failed").WithDetails(err.Error()))
@@ -338,4 +360,86 @@ type UpdatePlayerPayload struct {
 	HourlyRateCents    int64  `json:"hourly_rate_cents"`
 	MainGameID         uint64 `json:"main_game_id"`
 	VerificationStatus string `json:"verification_status" binding:"required"`
+}
+
+// BatchUpdateStatusPayload 批量更新状态请求
+type BatchUpdateStatusPayload struct {
+	PlayerIDs []string `json:"playerIds" binding:"required"`
+	Status    string   `json:"status" binding:"required,oneof=pending verified rejected"`
+}
+
+// BatchUpdatePlayerStatus
+// @Summary      批量更新陪玩师状态
+// @Tags         Admin/Players
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body  BatchUpdateStatusPayload  true  "批量更新请求"
+// @Success      200  {object}  model.APIResponse[map[string]int64]
+// @Failure      400  {object}  model.ErrorResponse
+// @Router       /admin/players/batch/status [put]
+func (h *PlayerHandler) BatchUpdatePlayerStatus(c *gin.Context) {
+	var payload BatchUpdateStatusPayload
+	if !ValidateAndRespond(c, &payload) {
+		return
+	}
+
+	// Convert string IDs to uint64
+	ids := make([]uint64, 0, len(payload.PlayerIDs))
+	for _, idStr := range payload.PlayerIDs {
+		id, err := parseUint64(idStr)
+		if err != nil {
+			respondError(c, apierr.BadRequest("invalid player id: "+idStr))
+			return
+		}
+		ids = append(ids, id)
+	}
+
+	status := model.VerificationStatus(payload.Status)
+	updated, err := h.svc.BatchUpdatePlayerStatus(c.Request.Context(), ids, status)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	respondSuccess(c, map[string]int64{"updated": updated})
+}
+
+// BatchDeletePlayersPayload 批量删除请求
+type BatchDeletePlayersPayload struct {
+	PlayerIDs []string `json:"playerIds" binding:"required"`
+}
+
+// BatchDeletePlayers
+// @Summary      批量删除陪玩师
+// @Tags         Admin/Players
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body  BatchDeletePlayersPayload  true  "批量删除请求"
+// @Success      200  {object}  model.APIResponse[map[string]int64]
+// @Failure      400  {object}  model.ErrorResponse
+// @Router       /admin/players/batch/delete [post]
+func (h *PlayerHandler) BatchDeletePlayers(c *gin.Context) {
+	var payload BatchDeletePlayersPayload
+	if !ValidateAndRespond(c, &payload) {
+		return
+	}
+
+	// Convert string IDs to uint64
+	ids := make([]uint64, 0, len(payload.PlayerIDs))
+	for _, idStr := range payload.PlayerIDs {
+		id, err := parseUint64(idStr)
+		if err != nil {
+			respondError(c, apierr.BadRequest("invalid player id: "+idStr))
+			return
+		}
+		ids = append(ids, id)
+	}
+
+	deleted, err := h.svc.BatchDeletePlayers(c.Request.Context(), ids)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	respondSuccess(c, map[string]int64{"deleted": deleted})
 }

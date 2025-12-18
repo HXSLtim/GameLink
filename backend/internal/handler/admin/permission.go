@@ -61,6 +61,12 @@ func (h *PermissionHandler) ListPermissions(c *gin.Context) {
 		Group:    c.Query("group"),
 	}
 
+	// 解析 is_system 参数
+	if isSystemStr := c.Query("is_system"); isSystemStr != "" {
+		isSystem := isSystemStr == "true"
+		opts.IsSystem = &isSystem
+	}
+
 	permissions, total, err := h.permissionSvc.ListPermissionsPagedWithFilter(c.Request.Context(), opts)
 	if err != nil {
 		respondError(c, err)

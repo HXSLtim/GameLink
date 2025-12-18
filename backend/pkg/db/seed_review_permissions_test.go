@@ -21,9 +21,9 @@ func TestSeedReviewPermissions(t *testing.T) {
 		t.Fatalf("seedReviewPermissions failed: %v", err)
 	}
 
-	// 验证权限已创建
+	// 验证权限已创建 - 使用中文分组名
 	var count int64
-	if err := db.Model(&model.Permission{}).Where("permissions.\"group\" = ?", "/admin/reviews").Count(&count).Error; err != nil {
+	if err := db.Model(&model.Permission{}).Where("permissions.\"group\" = ?", "评价管理").Count(&count).Error; err != nil {
 		t.Fatalf("failed to count permissions: %v", err)
 	}
 
@@ -33,17 +33,18 @@ func TestSeedReviewPermissions(t *testing.T) {
 
 	t.Logf("Successfully created %d review permissions", count)
 
-	// 验证特定权限存在
+	// 验证特定权限存在 - 使用实际的权限码
 	testCases := []struct {
 		code        string
 		method      model.HTTPMethod
 		path        string
 		description string
+		group       string
 	}{
-		{"review.list", model.HTTPMethodGET, "/api/v1/admin/reviews", "查看评价列表"},
-		{"review.approve", model.HTTPMethodPUT, "/api/v1/admin/reviews/:id/approve", "批准评价"},
-		{"review.delete", model.HTTPMethodDELETE, "/api/v1/admin/reviews/:id", "删除评价"},
-		{"sensitive_word.create", model.HTTPMethodPOST, "/api/v1/admin/sensitive-words", "添加敏感词"},
+		{"admin.reviews.list", model.HTTPMethodGET, "/api/v1/admin/reviews", "查看评价列表", "评价管理"},
+		{"admin.reviews.approve.update", model.HTTPMethodPUT, "/api/v1/admin/reviews/:id/approve", "批准评价", "评价管理"},
+		{"admin.reviews.delete", model.HTTPMethodDELETE, "/api/v1/admin/reviews/:id", "删除评价", "评价管理"},
+		{"admin.sensitive-words.create", model.HTTPMethodPOST, "/api/v1/admin/sensitive-words", "添加敏感词", "敏感词管理"},
 	}
 
 	for _, tc := range testCases {
@@ -58,8 +59,8 @@ func TestSeedReviewPermissions(t *testing.T) {
 			t.Errorf("permission description mismatch: expected=%s, got=%s", tc.description, perm.Description)
 		}
 
-		if perm.Group != "/admin/reviews" {
-			t.Errorf("permission group mismatch: expected=/admin/reviews, got=%s", perm.Group)
+		if perm.Group != tc.group {
+			t.Errorf("permission group mismatch: expected=%s, got=%s", tc.group, perm.Group)
 		}
 	}
 

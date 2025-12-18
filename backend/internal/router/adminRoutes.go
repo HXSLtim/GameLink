@@ -6,12 +6,11 @@ import (
 	"log"
 
 	"gamelink/internal/model"
-	permissionservice "gamelink/internal/service/admin"
-	roleservice "gamelink/internal/service/admin"
+	adminservice "gamelink/internal/service/admin"
 )
 
 // AssignDefaultRolePermissions 为默认角色分配管理权限（默认仅 super_admin 拥有全部权限）。
-func AssignDefaultRolePermissions(ctx context.Context, roleSvc *roleservice.RoleService, permService *permissionservice.PermissionService) error {
+func AssignDefaultRolePermissions(ctx context.Context, roleSvc *adminservice.RoleService, permService *adminservice.PermissionService) error {
 	// 获取所有权限
 	allPermissions, err := permService.ListPermissions(ctx)
 	if err != nil {

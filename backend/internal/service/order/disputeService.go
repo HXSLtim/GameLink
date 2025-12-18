@@ -368,6 +368,39 @@ func (s *DisputeService) ListDisputesByStatus(ctx context.Context, statuses []mo
 	return s.disputes.List(ctx, opts)
 }
 
+// ListDisputesRequest represents a request to list disputes
+type ListDisputesRequest struct {
+	Page     int
+	PageSize int
+	Status   string
+	OrderNo  string
+}
+
+// ListDisputes lists disputes with optional filters
+func (s *DisputeService) ListDisputes(ctx context.Context, req ListDisputesRequest) ([]model.OrderDispute, int64, error) {
+	opts := repository.DisputeListOptions{
+		Page:     req.Page,
+		PageSize: req.PageSize,
+	}
+
+	// Add status filter if provided
+	if req.Status != "" {
+		opts.Statuses = []model.DisputeStatus{model.DisputeStatus(req.Status)}
+	}
+
+	// Add order number filter if provided
+	if req.OrderNo != "" {
+		opts.OrderNo = req.OrderNo
+	}
+
+	return s.disputes.List(ctx, opts)
+}
+
+// GetDisputeStats returns dispute statistics by status
+func (s *DisputeService) GetDisputeStats(ctx context.Context) (map[string]int64, error) {
+	return s.disputes.GetStats(ctx)
+}
+
 // Helper functions
 
 func (s *DisputeService) processRefund(ctx context.Context, order *model.Order, dispute *model.OrderDispute, amount int64, actorID *uint64) error {

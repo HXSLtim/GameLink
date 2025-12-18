@@ -18,10 +18,16 @@ func NewRedis(cfg RedisConfig) (Cache, error) {
 		Addr:         cfg.Addr,
 		Password:     cfg.Password,
 		DB:           cfg.DB,
-		DialTimeout:  10 * time.Second,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		PoolTimeout:  10 * time.Second,
+		DialTimeout:  5 * time.Second,
+		ReadTimeout:  3 * time.Second,
+		WriteTimeout: 3 * time.Second,
+		PoolTimeout:  4 * time.Second,
+		// 连接池优化
+		PoolSize:        100,              // 最大连接数
+		MinIdleConns:    20,               // 最小空闲连接
+		MaxIdleConns:    50,               // 最大空闲连接
+		ConnMaxIdleTime: 5 * time.Minute,  // 空闲连接超时
+		ConnMaxLifetime: 30 * time.Minute, // 连接最大生命周期
 	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

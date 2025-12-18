@@ -165,6 +165,18 @@ func (m *mockPlayerRepo) List(ctx context.Context) ([]model.Player, error) {
 	return result, nil
 }
 
+func (m *mockPlayerRepo) ListPagedWithFilter(ctx context.Context, page, pageSize int, keyword string, status *model.VerificationStatus) ([]model.Player, int64, error) {
+	return nil, 0, nil
+}
+
+func (m *mockPlayerRepo) BatchUpdateStatus(ctx context.Context, ids []uint64, status model.VerificationStatus) (int64, error) {
+	return 0, nil
+}
+
+func (m *mockPlayerRepo) BatchDelete(ctx context.Context, ids []uint64) (int64, error) {
+	return 0, nil
+}
+
 // mockUserRepo 模拟用户repository
 type mockUserRepo struct{}
 

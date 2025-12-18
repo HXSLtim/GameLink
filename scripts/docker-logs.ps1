@@ -6,7 +6,7 @@
 .PARAMETER Environment
     环境类型: dev, prod-local 或 prod
 .PARAMETER Service
-    服务名称: backend, frontend, postgres, redis 或 all
+    服务名称: backend, admin, postgres, redis 或 all
 .PARAMETER Follow
     是否持续跟踪日志
 .PARAMETER Lines
@@ -22,7 +22,7 @@ param(
     [string]$Environment = "prod-local",
     
     [Parameter(Mandatory=$false)]
-    [ValidateSet("backend", "frontend", "postgres", "redis", "all")]
+    [ValidateSet("backend", "admin", "postgres", "redis", "all")]
     [string]$Service = "all",
     
     [Parameter(Mandatory=$false)]

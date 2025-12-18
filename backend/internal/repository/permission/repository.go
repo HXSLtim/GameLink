@@ -45,7 +45,7 @@ func (r *permissionRepository) ListPaged(ctx context.Context, page, pageSize int
 }
 
 // ListPagedWithFilter 分页获取权限列表（支持过滤）
-func (r *permissionRepository) ListPagedWithFilter(ctx context.Context, page, pageSize int, keyword, method, group string) ([]model.Permission, int64, error) {
+func (r *permissionRepository) ListPagedWithFilter(ctx context.Context, page, pageSize int, keyword, method, group string, isSystem *bool) ([]model.Permission, int64, error) {
 	var permissions []model.Permission
 	var total int64
 
@@ -53,7 +53,8 @@ func (r *permissionRepository) ListPagedWithFilter(ctx context.Context, page, pa
 
 	// 关键词搜索（匹配code, path, description）
 	if keyword != "" {
-		query = query.Where("code LIKE ? OR path LIKE ? OR description LIKE ?", "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%")
+		searchPattern := "%" + keyword + "%"
+		query = query.Where("code ILIKE ? OR path ILIKE ? OR description ILIKE ?", searchPattern, searchPattern, searchPattern)
 	}
 
 	// HTTP方法过滤
@@ -64,6 +65,11 @@ func (r *permissionRepository) ListPagedWithFilter(ctx context.Context, page, pa
 	// 分组过滤
 	if group != "" {
 		query = query.Where("permissions.\"group\" = ?", group)
+	}
+
+	// 系统权限过滤
+	if isSystem != nil {
+		query = query.Where("is_system = ?", *isSystem)
 	}
 
 	// 统计总数

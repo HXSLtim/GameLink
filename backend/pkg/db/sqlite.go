@@ -66,9 +66,11 @@ func configureConnection(db *gorm.DB, maxOpen int) error {
 	if err != nil {
 		return err
 	}
-	sqlDB.SetMaxOpenConns(maxOpen)
-	sqlDB.SetMaxIdleConns(maxOpen)
-	sqlDB.SetConnMaxLifetime(30 * time.Minute)
+	// 连接池优化配置
+	sqlDB.SetMaxOpenConns(maxOpen)            // 最大打开连接数
+	sqlDB.SetMaxIdleConns(maxOpen / 2)        // 空闲连接数（一半）
+	sqlDB.SetConnMaxLifetime(time.Hour)       // 连接最大生命周期（延长以减少重连开销）
+	sqlDB.SetConnMaxIdleTime(5 * time.Minute) // 空闲连接最大存活时间
 	return nil
 }
 

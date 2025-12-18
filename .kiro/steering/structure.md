@@ -4,8 +4,10 @@
 
 ```
 GameLink/
+├── admin/                # 管理后台前端 (React)
+├── app/                  # 小程序 (Taro)
 ├── backend/              # Go 后端服务
-├── frontend/             # React 前端应用
+├── client/               # 用户端+陪玩师端前端 (待开发)
 ├── scripts/              # 部署和工具脚本
 ├── docs/                 # 项目文档
 ├── .kiro/                # Kiro 配置和 steering 规则
@@ -54,10 +56,10 @@ backend/
 └── Dockerfile                     # 容器镜像
 ```
 
-## Frontend Structure (`frontend/`)
+## Admin Structure (`admin/`)
 
 ```
-frontend/
+admin/
 ├── src/
 │   ├── api/                       # API 客户端
 │   │   ├── auth.ts                # 认证 API
@@ -115,7 +117,7 @@ scripts/
 - **Variables**: camelCase
 - **Test files**: `*_test.go`
 
-### Frontend (TypeScript/React)
+### Admin (TypeScript/React)
 
 - **Components**: PascalCase (`UserProfile.tsx`)
 - **Utilities**: camelCase (`formatDate.ts`)
@@ -133,7 +135,7 @@ scripts/
 4. **Middleware Chain**: 请求处理管道
 5. **Error Wrapping**: 上下文感知错误传播
 
-### Frontend
+### Admin
 
 1. **Dynamic Routing**: 基于后端菜单的动态路由
 2. **Component Mapping**: 组件名到组件的映射

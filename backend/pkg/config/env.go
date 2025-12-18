@@ -34,8 +34,11 @@ type AppConfig struct {
 
 // DatabaseConfig 描述数据库驱动与连接信息。
 type DatabaseConfig struct {
-	Type string `yaml:"type"`
-	DSN  string `yaml:"dsn"`
+	Type       string   `yaml:"type"`
+	DSN        string   `yaml:"dsn"`
+	ReaderDSNs []string `yaml:"reader_dsns"` // 从库 DSN 列表（读写分离）
+	MaxConns   int      `yaml:"max_conns"`   // 最大连接数
+	MaxIdle    int      `yaml:"max_idle"`    // 最大空闲连接数
 }
 
 // CacheConfig 描述缓存配置。
@@ -332,6 +335,21 @@ func overrideDatabaseFromEnv(cfg *AppConfig) {
 	}
 	if dsn := os.Getenv("DB_DSN"); dsn != "" {
 		cfg.Database.DSN = dsn
+	}
+	// 读写分离：从库 DSN 列表（逗号分隔）
+	if readerDSNs := os.Getenv("DB_READER_DSNS"); readerDSNs != "" {
+		cfg.Database.ReaderDSNs = strings.Split(readerDSNs, ",")
+	}
+	// 连接池配置
+	if maxConns := os.Getenv("DB_MAX_CONNS"); maxConns != "" {
+		if n, err := strconv.Atoi(maxConns); err == nil && n > 0 {
+			cfg.Database.MaxConns = n
+		}
+	}
+	if maxIdle := os.Getenv("DB_MAX_IDLE"); maxIdle != "" {
+		if n, err := strconv.Atoi(maxIdle); err == nil && n > 0 {
+			cfg.Database.MaxIdle = n
+		}
 	}
 }
 

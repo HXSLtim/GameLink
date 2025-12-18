@@ -12,8 +12,9 @@ ENV GOPROXY=$GOPROXY \
     GOPRIVATE=$GOPRIVATE \
     GONOSUMDB=$GONOSUMDB
 
-# Install git for go modules that require it
-RUN apk add --no-cache git ca-certificates && update-ca-certificates
+# 使用阿里云镜像源加速 apk 安装
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories && \
+    apk add --no-cache git ca-certificates && update-ca-certificates
 
 # Cache go modules
 COPY go.mod go.sum ./
@@ -28,8 +29,9 @@ RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache
 FROM alpine:3.19 AS runtime
 WORKDIR /app
 
-# 安装运行时依赖（用于健康检查）
-RUN apk add --no-cache wget ca-certificates && update-ca-certificates
+# 使用阿里云镜像源 + 安装运行时依赖
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories && \
+    apk add --no-cache wget ca-certificates && update-ca-certificates
 
 # Copy binary and configs
 COPY --from=build /app/server /app/server

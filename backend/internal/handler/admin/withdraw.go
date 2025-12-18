@@ -25,6 +25,13 @@ func RegisterWithdrawRoutes(router gin.IRouter, withdrawRepo withdrawrepo.Withdr
 		group.POST("/:id/reject", func(c *gin.Context) { rejectWithdrawHandler(c, withdrawRepo) })
 		group.POST("/:id/complete", func(c *gin.Context) { completeWithdrawHandler(c, withdrawRepo) })
 	}
+
+	// 提现分流路由 (前端使用 /withdrawals 路径)
+	withdrawalsGroup := router.Group("/withdrawals")
+	{
+		withdrawalsGroup.GET("/by-company", func(c *gin.Context) { listWithdrawsByCompanyHandler(c, withdrawRepo) })
+		withdrawalsGroup.GET("/routing-stats", func(c *gin.Context) { getWithdrawRoutingStatsHandler(c, withdrawRepo) })
+	}
 }
 
 // listWithdrawsHandler 获取提现申请列表
@@ -306,5 +313,184 @@ func completeWithdrawHandler(c *gin.Context, repo withdrawrepo.WithdrawRepositor
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "Withdraw completed successfully",
+	})
+}
+
+// listWithdrawsByCompanyHandler 按结算公司查询提现列表
+// @Summary      按结算公司查询提现列表
+// @Description  按结算公司筛选提现记录
+// @Tags         Admin - Withdraw
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        settlementCompanyId  query     int     false  "结算公司ID"
+// @Param        status               query     string  false  "状态"
+// @Param        dateFrom             query     string  false  "开始日期"
+// @Param        dateTo               query     string  false  "结束日期"
+// @Param        page                 query     int     false  "页码"
+// @Param        pageSize             query     int     false  "每页数量"
+// @Success      200                  {object}  model.APIResponse[[]model.Withdraw]
+// @Router       /admin/withdrawals/by-company [get]
+func listWithdrawsByCompanyHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository) {
+	page, pageSize, ok := parsePagination(c)
+	if !ok {
+		return
+	}
+
+	opts := withdrawrepo.WithdrawByCompanyOptions{
+		Page:     page,
+		PageSize: pageSize,
+	}
+
+	// 结算公司ID筛选
+	if companyIDStr := c.Query("settlementCompanyId"); companyIDStr != "" {
+		if companyID, err := strconv.ParseUint(companyIDStr, 10, 64); err == nil {
+			opts.SettlementCompanyID = &companyID
+		}
+	}
+
+	// 状态筛选
+	if status := c.Query("status"); status != "" {
+		s := model.WithdrawStatus(status)
+		opts.Status = &s
+	}
+
+	// 日期筛选
+	if dateFrom := c.Query("dateFrom"); dateFrom != "" {
+		if t, err := time.Parse("2006-01-02", dateFrom); err == nil {
+			opts.DateFrom = &t
+		}
+	}
+	if dateTo := c.Query("dateTo"); dateTo != "" {
+		if t, err := time.Parse("2006-01-02", dateTo); err == nil {
+			nextDay := t.AddDate(0, 0, 1)
+			opts.DateTo = &nextDay
+		}
+	}
+
+	withdraws, total, err := repo.ListByCompany(c.Request.Context(), opts)
+	if err != nil {
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// 转换为前端期望的格式
+	type withdrawResponse struct {
+		ID                    uint64  `json:"id"`
+		PlayerID              uint64  `json:"playerId"`
+		PlayerName            string  `json:"playerName"`
+		Amount                float64 `json:"amount"`
+		Status                string  `json:"status"`
+		SettlementCompanyID   *uint64 `json:"settlementCompanyId"`
+		SettlementCompanyName string  `json:"settlementCompanyName"`
+		CreatedAt             string  `json:"createdAt"`
+	}
+
+	data := make([]withdrawResponse, len(withdraws))
+	for i, w := range withdraws {
+		playerName := "陪玩师 #" + strconv.FormatUint(w.PlayerID, 10)
+		data[i] = withdrawResponse{
+			ID:                    w.ID,
+			PlayerID:              w.PlayerID,
+			PlayerName:            playerName,
+			Amount:                float64(w.AmountCents) / 100,
+			Status:                string(w.Status),
+			SettlementCompanyID:   w.SettlementCompanyID,
+			SettlementCompanyName: w.SettlementCompanyName,
+			CreatedAt:             w.CreatedAt.Format(time.RFC3339),
+		}
+	}
+
+	totalPages := int((total + int64(pageSize) - 1) / int64(pageSize))
+	writeJSON(c, http.StatusOK, model.APIResponse[any]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: "OK",
+		Data:    data,
+		Pagination: &model.Pagination{
+			Page:       page,
+			PageSize:   pageSize,
+			Total:      int(total),
+			TotalPages: totalPages,
+			HasNext:    page < totalPages,
+			HasPrev:    page > 1,
+		},
+	})
+}
+
+// getWithdrawRoutingStatsHandler 获取提现分流统计
+// @Summary      获取提现分流统计
+// @Description  获取提现分流统计数据
+// @Tags         Admin - Withdraw
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        dateFrom  query     string  false  "开始日期"
+// @Param        dateTo    query     string  false  "结束日期"
+// @Success      200       {object}  model.APIResponse[model.WithdrawRoutingStatsResponse]
+// @Router       /admin/withdrawals/routing-stats [get]
+func getWithdrawRoutingStatsHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository) {
+	var dateFrom, dateTo *time.Time
+
+	if df := c.Query("dateFrom"); df != "" {
+		if t, err := time.Parse("2006-01-02", df); err == nil {
+			dateFrom = &t
+		}
+	}
+	if dt := c.Query("dateTo"); dt != "" {
+		if t, err := time.Parse("2006-01-02", dt); err == nil {
+			nextDay := t.AddDate(0, 0, 1)
+			dateTo = &nextDay
+		}
+	}
+
+	stats, err := repo.GetRoutingStats(c.Request.Context(), dateFrom, dateTo)
+	if err != nil {
+		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// 转换为前端期望的格式
+	type companyStats struct {
+		CompanyID   uint64  `json:"companyId"`
+		CompanyName string  `json:"companyName"`
+		Amount      float64 `json:"amount"`
+		Count       int64   `json:"count"`
+	}
+
+	byCompany := make([]companyStats, len(stats.ByCompany))
+	for i, cs := range stats.ByCompany {
+		byCompany[i] = companyStats{
+			CompanyID:   cs.SettlementCompanyID,
+			CompanyName: cs.SettlementCompanyName,
+			Amount:      float64(cs.TotalAmountCents) / 100,
+			Count:       cs.TotalWithdrawals,
+		}
+	}
+
+	// 计算待处理金额（需要额外查询）
+	pendingOpts := withdrawrepo.WithdrawByCompanyOptions{
+		Page:     1,
+		PageSize: 1,
+	}
+	pendingStatus := model.WithdrawStatusPending
+	pendingOpts.Status = &pendingStatus
+	_, pendingTotal, _ := repo.ListByCompany(c.Request.Context(), pendingOpts)
+
+	response := map[string]interface{}{
+		"totalAmount":     float64(stats.TotalAmountCents) / 100,
+		"totalCount":      stats.TotalWithdrawals,
+		"completedAmount": float64(stats.TotalActualAmountCents) / 100,
+		"completedCount":  stats.TotalWithdrawals,
+		"pendingAmount":   0.0,
+		"pendingCount":    pendingTotal,
+		"byCompany":       byCompany,
+	}
+
+	writeJSON(c, http.StatusOK, model.APIResponse[any]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: "OK",
+		Data:    response,
 	})
 }
