@@ -37,6 +37,39 @@
 - **反向代理**: Nginx
 - **CI/CD**: GitHub Actions
 
+## CI/CD 流程
+
+### CI 流程 (ci.yml)
+
+| 功能 | 说明 |
+|------|------|
+| 变更检测 | 只运行受影响的任务（backend/admin） |
+| 并发控制 | 自动取消重复运行 |
+| 后端测试 | PostgreSQL + Redis 服务，race 检测 |
+| 覆盖率检查 | 70% 以下警告 |
+| 前端测试 | 类型检查 + Lint + 单元测试 |
+| Docker 构建 | main/dev 分支自动构建镜像 |
+
+### Security 流程 (security.yml)
+
+| 功能 | 说明 |
+|------|------|
+| Go 安全扫描 | Gosec + govulncheck |
+| NPM 审计 | 高危/严重漏洞检测 |
+| Docker 扫描 | Trivy 镜像漏洞扫描 |
+| 密钥检测 | Gitleaks 密钥泄露检测 |
+| 定时运行 | 每周一凌晨自动运行 |
+
+### Deploy 流程 (deploy.yml)
+
+| 功能 | 说明 |
+|------|------|
+| 触发方式 | Tag 推送 / 手动触发 |
+| 环境选择 | staging / production |
+| 预检查 | 版本和环境自动判断 |
+| 健康检查 | 部署后自动验证 |
+| 回滚机制 | 失败时自动回滚 |
+
 ## 部署
 
 ### 推荐方式（部署脚本）
