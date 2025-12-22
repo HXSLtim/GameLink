@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Table, Button, Space, Modal, Form, Input, ColorPicker, message, Popconfirm, Tag } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
 import { PageContainer } from '@/components';
 import { adminApi, type UserTag, type CreateTagDto, type ApiResponse } from '@/api/admin';
@@ -157,8 +158,8 @@ const UserTags: React.FC = () => {
                     </Space>
                     <Button icon={<ReloadOutlined />} onClick={fetchTags}>刷新</Button>
                 </div>
-                <Table
-                    columns={columns as any}
+                <Table<UserTag>
+                    columns={columns as ColumnsType<UserTag>}
                     dataSource={tags}
                     rowKey="id"
                     loading={loading}

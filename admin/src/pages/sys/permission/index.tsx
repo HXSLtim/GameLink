@@ -36,7 +36,6 @@ import { PERMISSION_PERMISSIONS } from '@/constants/permissions';
 import { PermissionGuard } from '@/components/PermissionGuard';
 import { permissionApi } from '@/api/permission';
 import type { Permission, HTTPMethod, CreatePermissionDto, UpdatePermissionDto } from '@/types/permission';
-import type { ApiResponse } from '@/types/api';
 
 const { Text } = Typography;
 

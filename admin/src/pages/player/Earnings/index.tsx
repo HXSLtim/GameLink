@@ -14,14 +14,12 @@ import {
     Modal,
     InputNumber,
     Form,
-    Input,
     Select,
     Space,
     Typography,
     message,
     Tabs,
     Progress,
-    DatePicker,
 } from 'antd';
 import {
     DollarOutlined,
@@ -34,7 +32,6 @@ import {
 import type { ColumnsType } from 'antd/es/table';
 
 const { Title, Text } = Typography;
-const { RangePicker } = DatePicker;
 
 interface EarningsInfo {
     availableBalance: number;

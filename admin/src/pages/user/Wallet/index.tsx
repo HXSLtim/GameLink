@@ -18,7 +18,6 @@ import {
     Typography,
     message,
     Tabs,
-    Empty,
 } from 'antd';
 import {
     WalletOutlined,

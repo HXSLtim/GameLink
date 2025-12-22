@@ -31,7 +31,7 @@ import {
 import { PageContainer } from '@/components';
 import { COMMISSION_PERMISSIONS } from '@/constants/permissions';
 import { PermissionGuard } from '@/components/PermissionGuard';
-import { adminApi, type PlatformStats, type CreateCommissionRuleDto, type ApiResponse } from '@/api/admin';
+import { adminApi, type PlatformStats, type CreateCommissionRuleDto } from '@/api/admin';
 import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;

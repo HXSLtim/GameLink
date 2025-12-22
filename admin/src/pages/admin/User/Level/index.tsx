@@ -1,9 +1,18 @@
 import React from 'react';
 import { Card, Table, Tag, Button, Space } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
 import { PageContainer } from '@/components';
 import { EditOutlined } from '@ant-design/icons';
 
-const columns = [
+interface LevelData {
+    key: string;
+    level: number;
+    name: string;
+    expRequired: number;
+    benefits: string[];
+}
+
+const columns: ColumnsType<LevelData> = [
     {
         title: '等级',
         dataIndex: 'level',
@@ -87,8 +96,8 @@ const UserLevel: React.FC = () => {
     return (
         <PageContainer title="用户等级管理" subTitle="管理用户VIP等级和积分体系">
             <Card>
-                <Table
-                    columns={columns as any}
+                <Table<LevelData>
+                    columns={columns}
                     dataSource={data}
                     pagination={false}
                     scroll={{ x: 1000 }}

@@ -26,7 +26,7 @@ import { PageContainer, SearchTable, type ToolbarButton } from '@/components';
 import type { SearchField } from '@/components';
 import { GAME_PERMISSIONS } from '@/constants/permissions';
 import { PermissionGuard } from '@/components/PermissionGuard';
-import { adminApi, type ApiResponse } from '@/api/admin';
+import { adminApi } from '@/api/admin';
 import dayjs from 'dayjs';
 
 /**
