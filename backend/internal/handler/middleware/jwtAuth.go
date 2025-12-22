@@ -6,9 +6,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"gamelink/internal/handler/resp"
 	"gamelink/pkg/apierr"
 	"gamelink/pkg/auth"
-	"gamelink/internal/handler"
 	"gamelink/pkg/logging"
 )
 
@@ -41,7 +41,7 @@ func JWTAuth(secretKey string) gin.HandlerFunc {
 		// 从请求头获取Authorization
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			handler.RespondAPIError(c, apierr.Unauthorized("缺少Authorization头"))
+			resp.Error(c, apierr.Unauthorized("缺少Authorization头"))
 			c.Abort()
 			return
 		}
@@ -49,7 +49,7 @@ func JWTAuth(secretKey string) gin.HandlerFunc {
 		// 提取Token
 		tokenString, err := auth.ExtractTokenFromHeader(authHeader)
 		if err != nil {
-			handler.RespondAPIError(c, apierr.Unauthorized(err.Error()))
+			resp.Error(c, apierr.Unauthorized(err.Error()))
 			c.Abort()
 			return
 		}
@@ -57,14 +57,14 @@ func JWTAuth(secretKey string) gin.HandlerFunc {
 		// 验证Token
 		claims, err := jwtManager.VerifyToken(tokenString)
 		if err != nil {
-			handler.RespondAPIError(c, apierr.Unauthorized("无效的Token: "+err.Error()))
+			resp.Error(c, apierr.Unauthorized("无效的Token: "+err.Error()))
 			c.Abort()
 			return
 		}
 
 		// 检查Token是否过期
 		if auth.IsTokenExpired(claims) {
-			handler.RespondAPIError(c, apierr.Unauthorized("Token已过期"))
+			resp.Error(c, apierr.Unauthorized("Token已过期"))
 			c.Abort()
 			return
 		}
@@ -150,7 +150,7 @@ func RequireRole(allowedRoles ...string) gin.HandlerFunc {
 		}
 
 		if !hasPermission {
-			handler.RespondAPIError(c, apierr.Forbidden("权限不足"))
+			resp.Error(c, apierr.Forbidden("权限不足"))
 			c.Abort()
 			return
 		}

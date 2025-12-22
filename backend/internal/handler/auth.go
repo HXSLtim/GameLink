@@ -5,11 +5,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/pkg/apierr"
-	"gamelink/pkg/auth"
+	"gamelink/internal/handler/resp"
 	"gamelink/internal/model"
 	"gamelink/internal/service"
 	authservice "gamelink/internal/service/auth"
+	"gamelink/pkg/apierr"
+	"gamelink/pkg/auth"
 )
 
 // RegisterAuthRoutes registers authentication endpoints under the given router group.
@@ -65,30 +66,30 @@ type registerRequest struct {
 func loginHandler(c *gin.Context, svc *authservice.AuthService) {
 	var req loginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		RespondBadRequest(c, "无效的请求格式: "+err.Error())
+		resp.BadRequest(c, "无效的请求格式: "+err.Error())
 		return
 	}
 
-	resp, err := svc.Login(c.Request.Context(), authservice.LoginRequest{
+	r, err := svc.Login(c.Request.Context(), authservice.LoginRequest{
 		Username: req.Username,
 		Password: req.Password,
 	})
 	if err != nil {
 		switch err {
 		case service.ErrInvalidCredentials:
-			RespondAPIError(c, apierr.Unauthorized("用户名或密码错误"))
+			resp.Error(c, apierr.Unauthorized("用户名或密码错误"))
 		case service.ErrUserDisabled:
-			RespondAPIError(c, apierr.Forbidden("账号已被禁用"))
+			resp.Error(c, apierr.Forbidden("账号已被禁用"))
 		default:
-			RespondAPIError(c, apierr.Unauthorized("登录失败: "+err.Error()))
+			resp.Error(c, apierr.Unauthorized("登录失败: "+err.Error()))
 		}
 		return
 	}
 
-	RespondSuccess(c, "登录成功", loginResponse{
-		Token:     resp.Token,
-		ExpiresAt: resp.ExpiresAt,
-		User:      resp.User,
+	resp.Success(c, "登录成功", loginResponse{
+		Token:     r.Token,
+		ExpiresAt: r.ExpiresAt,
+		User:      r.User,
 	})
 }
 
@@ -105,11 +106,11 @@ func loginHandler(c *gin.Context, svc *authservice.AuthService) {
 func registerHandler(c *gin.Context, svc *authservice.AuthService) {
 	var req registerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		RespondBadRequest(c, "无效的请求格式: "+err.Error())
+		resp.BadRequest(c, "无效的请求格式: "+err.Error())
 		return
 	}
 
-	resp, err := svc.Register(c.Request.Context(), authservice.RegisterRequest{
+	r, err := svc.Register(c.Request.Context(), authservice.RegisterRequest{
 		Phone:    req.Phone,
 		Email:    req.Email,
 		Password: req.Password,
@@ -117,14 +118,14 @@ func registerHandler(c *gin.Context, svc *authservice.AuthService) {
 		Role:     model.RoleUser,
 	})
 	if err != nil {
-		RespondAPIError(c, apierr.BadRequest("注册失败: "+err.Error()))
+		resp.Error(c, apierr.BadRequest("注册失败: "+err.Error()))
 		return
 	}
 
-	RespondSuccess(c, "登录成功", loginResponse{
-		Token:     resp.Token,
-		ExpiresAt: resp.ExpiresAt,
-		User:      resp.User,
+	resp.Success(c, "登录成功", loginResponse{
+		Token:     r.Token,
+		ExpiresAt: r.ExpiresAt,
+		User:      r.User,
 	})
 }
 
@@ -141,14 +142,14 @@ func meHandler(c *gin.Context, svc *authservice.AuthService) {
 	if err != nil {
 		switch err {
 		case service.ErrUserDisabled:
-			RespondAPIError(c, apierr.Forbidden("账号已被禁用"))
+			resp.Error(c, apierr.Forbidden("账号已被禁用"))
 		default:
-			RespondAPIError(c, apierr.Unauthorized("认证失败: "+err.Error()))
+			resp.Error(c, apierr.Unauthorized("认证失败: "+err.Error()))
 		}
 		return
 	}
 
-	RespondSuccess(c, "登录成功", loginResponse{
+	resp.Success(c, "登录成功", loginResponse{
 		Token:     "",
 		ExpiresAt: time.Time{},
 		User:      *user,
@@ -167,7 +168,7 @@ func meHandler(c *gin.Context, svc *authservice.AuthService) {
 func refreshHandler(c *gin.Context, svc *authservice.AuthService) {
 	token, err := auth.ExtractTokenFromHeader(c.GetHeader("Authorization"))
 	if err != nil {
-		RespondAPIError(c, apierr.Unauthorized("无效的Token格式: "+err.Error()))
+		resp.Error(c, apierr.Unauthorized("无效的Token格式: "+err.Error()))
 		return
 	}
 
@@ -175,14 +176,14 @@ func refreshHandler(c *gin.Context, svc *authservice.AuthService) {
 	if err != nil {
 		switch err {
 		case service.ErrUserDisabled:
-			RespondAPIError(c, apierr.Forbidden("账号已被禁用"))
+			resp.Error(c, apierr.Forbidden("账号已被禁用"))
 		default:
-			RespondAPIError(c, apierr.Unauthorized("刷新Token失败: "+err.Error()))
+			resp.Error(c, apierr.Unauthorized("刷新Token失败: "+err.Error()))
 		}
 		return
 	}
 
-	RespondSuccess(c, "刷新成功", tokenPayload{Token: newToken})
+	resp.Success(c, "刷新成功", tokenPayload{Token: newToken})
 }
 
 // Logout handles user logout (stateless, client discards token)
@@ -192,5 +193,5 @@ func refreshHandler(c *gin.Context, svc *authservice.AuthService) {
 // @Success      200  {object}  model.SuccessResponse
 // @Router       /auth/logout [post]
 func logoutHandler(c *gin.Context) {
-	RespondSuccess(c, "登出成功", gin.H{"message": "logged out"})
+	resp.Success(c, "登出成功", gin.H{"message": "logged out"})
 }

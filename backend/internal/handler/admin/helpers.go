@@ -12,7 +12,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/internal/handler"
 	"gamelink/internal/handler/resp"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
@@ -92,12 +91,7 @@ func respondBadRequest(c *gin.Context, message string) {
 // ParseIDAndRespond 解析ID参数并响应错误（如果需要）
 // 返回 (id, ok)，ok=false 时已写入错误响应，调用方应直接 return
 func ParseIDAndRespond(c *gin.Context, paramName string) (uint64, bool) {
-	id, err := handler.ParseIDParam(c, paramName)
-	if err != nil {
-		respondError(c, err)
-		return 0, false
-	}
-	return id, true
+	return resp.ParseIDOrFail(c, paramName)
 }
 
 // ValidateAndRespond 验证请求体并响应错误（如果需要）
@@ -198,16 +192,6 @@ func parseCSVParams(values []string) []string {
 		}
 	}
 	return result
-}
-
-// writeJSONError 底层错误响应函数
-func writeJSONError(c *gin.Context, status int, message string) {
-	resp.ErrorMsg(c, status, message)
-}
-
-// writeJSON 底层 JSON 响应函数（兼容旧代码）
-func writeJSON[T any](c *gin.Context, status int, payload model.APIResponse[T]) {
-	resp.JSON(c, status, payload)
 }
 
 // respondAPIError 使用apierr包的错误响应

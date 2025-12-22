@@ -1,7 +1,8 @@
 package middleware
 
 import (
-	"gamelink/internal/handler"
+	"gamelink/internal/handler/resp"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -24,7 +25,7 @@ func ErrorMap() gin.HandlerFunc {
 		if path == "" {
 			path = c.Request.URL.Path
 		}
-		statusCode, response := handler.MapServiceErrorWithPath(err, path)
+		statusCode, response := resp.MapServiceErrorWithPath(err, path)
 
 		// 添加请求ID到响应中
 		if requestID := c.GetString("request_id"); requestID != "" && response.TraceID == "" {

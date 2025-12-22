@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"gamelink/internal/handler/resp"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -22,5 +24,5 @@ type HealthStatus struct {
 // @Success      200  {object}  HealthStatus
 // @Router       /healthz [get]
 func Health(c *gin.Context) {
-	RespondSuccess(c, "OK", gin.H{"status": "ok"})
+	resp.Success(c, "OK", gin.H{"status": "ok"})
 }
