@@ -45,14 +45,16 @@ func RegisterStatsAnalysisRoutes(router gin.IRouter, db *gorm.DB) {
 	group.GET("/stats/audit/trend", h.AuditTrend)
 }
 
-// Dashboard 获取仪表板数�?// @Summary      仪表板数�?// @Description  获取平台统计数据总览
+// Dashboard 获取仪表板数据
+// @Summary      仪表板数据
+// @Description  获取平台统计数据总览
 // @Tags         Admin - Stats
+// @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Param        Authorization  header    string  true  "Bearer {token}"
-// @Success      200            {object}  model.SuccessResponse
-// @Failure      401            {object}  model.ErrorResponse
-// @Failure      500            {object}  model.ErrorResponse
+// @Success      200  {object}  model.SuccessResponse
+// @Failure      401  {object}  model.ErrorResponse
+// @Failure      500  {object}  model.ErrorResponse
 // @Router       /admin/stats/dashboard [get]
 func (h *StatsHandler) Dashboard(c *gin.Context) {
 	dashboard, err := h.svc.Dashboard(c.Request.Context())
@@ -71,15 +73,16 @@ func (h *StatsHandler) Dashboard(c *gin.Context) {
 
 // RevenueTrend 获取收入趋势
 // @Summary      收入趋势
-// @Description  获取指定天数的收入趋�?// @Tags         Admin - Stats
+// @Description  获取指定天数的收入趋势
+// @Tags         Admin - Stats
+// @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Param        Authorization  header    string  true   "Bearer {token}"
-// @Param        days           query     int     false  "天数" default(7)
-// @Success      200            {object}  model.SuccessResponse
-// @Failure      400            {object}  model.ErrorResponse
-// @Failure      401            {object}  model.ErrorResponse
-// @Failure      500            {object}  model.ErrorResponse
+// @Param        days  query     int  false  "天数" default(7)
+// @Success      200   {object}  model.SuccessResponse
+// @Failure      400   {object}  model.ErrorResponse
+// @Failure      401   {object}  model.ErrorResponse
+// @Failure      500   {object}  model.ErrorResponse
 // @Router       /admin/stats/revenue-trend [get]
 func (h *StatsHandler) RevenueTrend(c *gin.Context) {
 	days := 7
@@ -105,15 +108,16 @@ func (h *StatsHandler) RevenueTrend(c *gin.Context) {
 
 // UserGrowth 获取用户增长趋势
 // @Summary      用户增长趋势
-// @Description  获取指定天数的用户增长趋�?// @Tags         Admin - Stats
+// @Description  获取指定天数的用户增长趋势
+// @Tags         Admin - Stats
+// @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Param        Authorization  header    string  true   "Bearer {token}"
-// @Param        days           query     int     false  "天数" default(7)
-// @Success      200            {object}  model.SuccessResponse
-// @Failure      400            {object}  model.ErrorResponse
-// @Failure      401            {object}  model.ErrorResponse
-// @Failure      500            {object}  model.ErrorResponse
+// @Param        days  query     int  false  "天数" default(7)
+// @Success      200   {object}  model.SuccessResponse
+// @Failure      400   {object}  model.ErrorResponse
+// @Failure      401   {object}  model.ErrorResponse
+// @Failure      500   {object}  model.ErrorResponse
 // @Router       /admin/stats/user-growth [get]
 func (h *StatsHandler) UserGrowth(c *gin.Context) {
 	days := 7
@@ -137,13 +141,16 @@ func (h *StatsHandler) UserGrowth(c *gin.Context) {
 	})
 }
 
-// OrdersSummary 获取订单状态汇�?// @Summary      订单状态汇�?// @Description  获取各状态订单数量统�?// @Tags         Admin - Stats
+// OrdersSummary 获取订单状态汇总
+// @Summary      订单状态汇总
+// @Description  获取各状态订单数量统计
+// @Tags         Admin - Stats
+// @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Param        Authorization  header    string  true  "Bearer {token}"
-// @Success      200            {object}  model.SuccessResponse
-// @Failure      401            {object}  model.ErrorResponse
-// @Failure      500            {object}  model.ErrorResponse
+// @Success      200  {object}  model.SuccessResponse
+// @Failure      401  {object}  model.ErrorResponse
+// @Failure      500  {object}  model.ErrorResponse
 // @Router       /admin/stats/orders [get]
 func (h *StatsHandler) OrdersSummary(c *gin.Context) {
 	stats, err := h.svc.OrdersByStatus(c.Request.Context())
@@ -160,15 +167,18 @@ func (h *StatsHandler) OrdersSummary(c *gin.Context) {
 	})
 }
 
-// TopPlayers 获取顶级陪玩�?// @Summary      顶级陪玩�?// @Description  获取收入最高的陪玩师列�?// @Tags         Admin - Stats
+// TopPlayers 获取顶级陪玩师
+// @Summary      顶级陪玩师
+// @Description  获取收入最高的陪玩师列表
+// @Tags         Admin - Stats
+// @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Param        Authorization  header    string  true   "Bearer {token}"
-// @Param        limit          query     int     false  "数量限制" default(10)
-// @Success      200            {object}  model.SuccessResponse
-// @Failure      400            {object}  model.ErrorResponse
-// @Failure      401            {object}  model.ErrorResponse
-// @Failure      500            {object}  model.ErrorResponse
+// @Param        limit  query     int  false  "数量限制" default(10)
+// @Success      200    {object}  model.SuccessResponse
+// @Failure      400    {object}  model.ErrorResponse
+// @Failure      401    {object}  model.ErrorResponse
+// @Failure      500    {object}  model.ErrorResponse
 // @Router       /admin/stats/top-players [get]
 func (h *StatsHandler) TopPlayers(c *gin.Context) {
 	limit := 10

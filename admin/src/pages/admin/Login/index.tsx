@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Form, Input, Button, Card, message, theme } from 'antd';
+import { Form, Input, Button, Card, App, theme } from 'antd';
 import { UserOutlined, LockOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
 import { authApi } from '@/api/auth';
 import { ENABLE_QUICK_LOGIN, DEBUG_USERS } from '@/config/debug';
@@ -11,6 +11,7 @@ import { ENABLE_QUICK_LOGIN, DEBUG_USERS } from '@/config/debug';
  */
 const AdminLogin: React.FC = () => {
     const { token } = theme.useToken();
+    const { message } = App.useApp(); // 使用 App.useApp() 获取 message 实例
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
 
@@ -24,11 +25,16 @@ const AdminLogin: React.FC = () => {
 
             const response = res.data as { 
                 success?: boolean; 
+                code?: number;
+                message?: string;
                 data?: { token: string; user: { id: number; role: string; [key: string]: unknown } } 
             };
             
             if (!response.success || !response.data) {
-                throw new Error('登录响应格式错误');
+                // 处理业务逻辑错误（success=false 但 HTTP 200）
+                const errorMsg = response.message || '登录失败';
+                message.error(errorMsg);
+                return;
             }
             
             const { token: authToken, user } = response.data;
@@ -46,9 +52,41 @@ const AdminLogin: React.FC = () => {
 
             message.success('登录成功');
             navigate('/admin');
-        } catch (error) {
-            console.error(error);
-            message.error('登录失败，请检查用户名和密码');
+        } catch (error: unknown) {
+            console.error('登录错误:', error);
+            
+            // 处理 Axios 错误响应
+            if (error && typeof error === 'object' && 'response' in error) {
+                const axiosError = error as { response?: { status?: number; data?: { message?: string; code?: number } } };
+                const status = axiosError.response?.status;
+                const errorData = axiosError.response?.data;
+                
+                if (status === 401) {
+                    message.error(errorData?.message || '用户名或密码错误');
+                } else if (status === 403) {
+                    message.error('账号已被禁用，请联系管理员');
+                } else if (status === 404) {
+                    message.error('用户不存在');
+                } else if (status === 429) {
+                    message.error('登录尝试次数过多，请稍后再试');
+                } else if (status && status >= 500) {
+                    message.error('服务器错误，请稍后重试');
+                } else if (errorData?.message) {
+                    message.error(errorData.message);
+                } else {
+                    message.error('登录失败，请检查用户名和密码');
+                }
+            } else if (error && typeof error === 'object' && 'message' in error) {
+                // 网络错误或其他错误
+                const err = error as { message: string };
+                if (err.message.includes('Network Error') || err.message.includes('timeout')) {
+                    message.error('网络连接失败，请检查网络后重试');
+                } else {
+                    message.error(err.message || '登录失败');
+                }
+            } else {
+                message.error('登录失败，请稍后重试');
+            }
         } finally {
             setLoading(false);
         }

@@ -58,6 +58,23 @@ apiClient.interceptors.response.use(
     },
     async (error) => {
         const originalRequest = error.config;
+        
+        // 检查是否在登录页面 - 使用多种方式确保检测准确
+        const pathname = window.location.pathname;
+        const isOnLoginPage = pathname.includes('/login') || 
+                              pathname === '/admin/login' || 
+                              pathname.endsWith('/login');
+        
+        // 检查是否是登录请求
+        const requestUrl = originalRequest?.url || '';
+        const isLoginRequest = requestUrl.includes('/auth/login') || 
+                               requestUrl.includes('login') ||
+                               requestUrl === '/auth/login';
+        
+        // 在登录页面或登录请求，所有错误都直接返回，不尝试刷新 token
+        if (isOnLoginPage || isLoginRequest) {
+            return Promise.reject(error);
+        }
 
         if (error.response?.status === 401 && !originalRequest._retry) {
             if (isRefreshing) {
@@ -106,7 +123,10 @@ apiClient.interceptors.response.use(
                 localStorage.removeItem('token');
                 localStorage.removeItem('user_role');
                 localStorage.removeItem('user_info');
-                window.location.href = '/login';
+                // 如果当前已经在登录页面，不需要重定向
+                if (!window.location.pathname.includes('/login')) {
+                    window.location.href = '/admin/login';
+                }
                 return Promise.reject(err);
             } finally {
                 isRefreshing = false;

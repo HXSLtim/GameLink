@@ -111,11 +111,10 @@ test-tools:
 swagger:
 	@echo "Generating Swagger documentation (with generics support)..."
 	@which swag >/dev/null 2>&1 || go install github.com/swaggo/swag/cmd/swag@latest
-	@cd cmd && swag init \
-		-g main.go \
-		--output "../docs" \
-		--generalInfo "main.go" \
-		--dir "." \
+	@swag init \
+		-g cmd/main.go \
+		--output "docs" \
+		--dir "./" \
 		--parseDependency \
 		--parseInternal \
 		--parseDepth 10
@@ -125,11 +124,10 @@ swagger:
 swagger-vendor:
 	@echo "Generating Swagger documentation (with vendor support)..."
 	@which swag >/dev/null 2>&1 || go install github.com/swaggo/swag/cmd/swag@latest
-	@cd cmd && swag init \
-		-g main.go \
-		--output "../docs" \
-		--generalInfo "main.go" \
-		--dir "." \
+	@swag init \
+		-g cmd/main.go \
+		--output "docs" \
+		--dir "./" \
 		--parseDependency \
 		--parseInternal \
 		--parseDepth 10 \

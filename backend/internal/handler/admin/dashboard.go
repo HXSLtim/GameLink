@@ -163,13 +163,18 @@ func getDashboardOverviewHandler(
 	})
 }
 
-// @Description  API endpoint// @Accept       json
+// getRecentOrdersHandler 获取最近订单
+// @Summary      获取最近订单
+// @Description  获取最近的订单列表
+// @Tags         Admin - Dashboard
+// @Security     BearerAuth
+// @Accept       json
 // @Produce      json
-// @Param        Authorization  header    string  true   "Bearer {token}"
-// @Param        limit          query     int     false  "数量限制"
-// @Success      200            {object}  model.SuccessResponse
-// @Failure      400            {object}  model.ErrorResponse
-// @Failure      401            {object}  model.ErrorResponse
+// @Param        limit  query     int  false  "数量限制" default(10)
+// @Success      200    {object}  model.SuccessResponse
+// @Failure      400    {object}  model.ErrorResponse
+// @Failure      401    {object}  model.ErrorResponse
+// @Failure      500    {object}  model.ErrorResponse
 // @Router       /admin/dashboard/recent-orders [get]
 func getRecentOrdersHandler(c *gin.Context, orderRepo repoiface.OrderQuery) {
 	limit := 10
@@ -198,13 +203,18 @@ func getRecentOrdersHandler(c *gin.Context, orderRepo repoiface.OrderQuery) {
 	})
 }
 
-// @Description  API endpoint// @Accept       json
+// getRecentWithdrawsHandler 获取最近提现
+// @Summary      获取最近提现
+// @Description  获取最近的提现申请列表
+// @Tags         Admin - Dashboard
+// @Security     BearerAuth
+// @Accept       json
 // @Produce      json
-// @Param        Authorization  header    string  true   "Bearer {token}"
-// @Param        limit          query     int     false  "数量限制"
-// @Success      200            {object}  model.SuccessResponse
-// @Failure      400            {object}  model.ErrorResponse
-// @Failure      401            {object}  model.ErrorResponse
+// @Param        limit  query     int  false  "数量限制" default(10)
+// @Success      200    {object}  model.SuccessResponse
+// @Failure      400    {object}  model.ErrorResponse
+// @Failure      401    {object}  model.ErrorResponse
+// @Failure      500    {object}  model.ErrorResponse
 // @Router       /admin/dashboard/recent-withdraws [get]
 func getRecentWithdrawsHandler(c *gin.Context, withdrawRepo withdrawrepo.WithdrawRepository) {
 	limit := 10
@@ -235,13 +245,16 @@ func getRecentWithdrawsHandler(c *gin.Context, withdrawRepo withdrawrepo.Withdra
 
 // getMonthlyRevenueHandler 获取月度收入趋势
 // @Summary      获取月度收入趋势
-// @Description  API endpoint// @Accept       json
+// @Description  获取指定月数的月度收入趋势数据
+// @Tags         Admin - Dashboard
+// @Security     BearerAuth
+// @Accept       json
 // @Produce      json
-// @Param        Authorization  header    string  true   "Bearer {token}"
-// @Param        months         query     int     false  "Number of months (default 12)"
-// @Success      200            {object}  model.SuccessResponse
-// @Failure      400            {object}  model.ErrorResponse
-// @Failure      401            {object}  model.ErrorResponse
+// @Param        months  query     int  false  "月数范围" default(12)
+// @Success      200     {object}  model.SuccessResponse
+// @Failure      400     {object}  model.ErrorResponse
+// @Failure      401     {object}  model.ErrorResponse
+// @Failure      500     {object}  model.ErrorResponse
 // @Router       /admin/dashboard/monthly-revenue [get]
 func getMonthlyRevenueHandler(c *gin.Context, commissionRepo commissionrepo.CommissionRepository) {
 	months := 12

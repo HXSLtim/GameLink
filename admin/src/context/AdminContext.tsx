@@ -189,8 +189,12 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         refreshMenus();
     }, [refreshMenus]);
 
-    // 初始化时加载权限
+    // 初始化时加载权限（仅在非登录页面）
     useEffect(() => {
+        // 如果当前在登录页面，不需要加载权限
+        if (window.location.pathname.includes('/login')) {
+            return;
+        }
         refreshMenus();
     }, [refreshMenus]);
 

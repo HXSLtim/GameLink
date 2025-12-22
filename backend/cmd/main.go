@@ -4,15 +4,62 @@ package main
 //
 // @title           GameLink API
 // @version         0.3.0
-// @description     GameLink 平台 API，包含健康检查、认证与管理端能力
+// @description     GameLink 游戏陪玩服务平台 API
+// @description     提供用户认证、订单管理、支付结算、陪玩师管理等功能
+// @termsOfService  https://gamelink.com/terms/
+// @contact.name    GameLink Support
+// @contact.email   support@gamelink.com
+// @license.name    MIT
+// @license.url     https://opensource.org/licenses/MIT
+// @host            localhost:8080
 // @BasePath        /api/v1
 // @schemes         http https
 //
-// @Tags Auth,User,Player,Admin,Admin/Commission,Admin/Games,Admin/Roles,Admin/Orders,Admin/Players,Admin/Payments,Admin/Reviews,Admin/Stats,Admin/Withdraws,Player - Profile,Player - Orders,Player - Earnings,Player - Commission,Player - Gifts,Player - Reviews,User - Orders,User - Payments,User - Wallet,User - Players,User - Reviews,User - Gifts,User - Chat,User - Feeds,System,Notifications
+// @tag.name        Auth
+// @tag.description 用户认证相关接口
+// @tag.name        User - Orders
+// @tag.description 用户订单管理
+// @tag.name        User - Payments
+// @tag.description 用户支付相关
+// @tag.name        User - Wallet
+// @tag.description 用户钱包管理
+// @tag.name        User - Players
+// @tag.description 浏览陪玩师
+// @tag.name        User - Reviews
+// @tag.description 用户评价管理
+// @tag.name        User - Gifts
+// @tag.description 礼物功能
+// @tag.name        User - Chat
+// @tag.description 聊天功能
+// @tag.name        Player - Profile
+// @tag.description 陪玩师个人资料
+// @tag.name        Player - Orders
+// @tag.description 陪玩师订单管理
+// @tag.name        Player - Earnings
+// @tag.description 陪玩师收益管理
+// @tag.name        Player - Commission
+// @tag.description 陪玩师抽成管理
+// @tag.name        Admin - Dashboard
+// @tag.description 管理后台仪表盘
+// @tag.name        Admin - Stats
+// @tag.description 管理后台统计
+// @tag.name        Admin/Users
+// @tag.description 用户管理
+// @tag.name        Admin/Players
+// @tag.description 陪玩师管理
+// @tag.name        Admin/Orders
+// @tag.description 订单管理
+// @tag.name        Admin/Monitor
+// @tag.description 系统监控
+// @tag.name        Notifications
+// @tag.description 通知中心
+// @tag.name        System
+// @tag.description 系统接口
 //
 // @securityDefinitions.apikey BearerAuth
 // @in header
 // @name Authorization
+// @description JWT Bearer Token 认证，格式: Bearer {token}
 
 import (
 	"context"
