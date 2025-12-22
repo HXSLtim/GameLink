@@ -2,7 +2,6 @@ package admin
 
 import (
 	"context"
-	"net/http"
 	"strconv"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 	commissionrepo "gamelink/internal/repository/commission"
 	repoiface "gamelink/internal/repository/interfaces"
 	withdrawrepo "gamelink/internal/repository/withdraw"
+	"gamelink/pkg/apierr"
 )
 
 // DashboardService Dashboard统计服务接口
@@ -92,20 +92,16 @@ func getDashboardOverviewHandler(
 	ctx := c.Request.Context()
 	stats := &DashboardOverviewStats{}
 
-	// 总用户数
 	users, _ := userRepo.List(ctx)
 	stats.TotalUsers = int64(len(users))
 
-	// 总陪玩师
 	_, totalPlayers, _ := playerRepo.ListPaged(ctx, 1, 1)
 	stats.TotalPlayers = totalPlayers
 
-	// 总订单数
 	orders, total, _ := orderRepo.List(ctx, repoiface.OrderListOptions{Page: 1, PageSize: 1})
 	_ = orders
 	stats.TotalOrders = total
 
-	// 今日订单
 	todayStart := time.Now().Truncate(24 * time.Hour)
 	todayOrders, todayTotal, _ := orderRepo.List(ctx, repoiface.OrderListOptions{
 		DateFrom: &todayStart,
@@ -114,7 +110,6 @@ func getDashboardOverviewHandler(
 	})
 	stats.TodayOrders = todayTotal
 
-	// 今日收入
 	var todayRevenue int64
 	for _, order := range todayOrders {
 		if order.Status == model.OrderStatusCompleted {
@@ -123,7 +118,6 @@ func getDashboardOverviewHandler(
 	}
 	stats.TodayRevenue = todayRevenue
 
-	// 本月收入
 	monthStart := time.Date(time.Now().Year(), time.Now().Month(), 1, 0, 0, 0, 0, time.Now().Location())
 	monthOrders, _, _ := orderRepo.List(ctx, repoiface.OrderListOptions{
 		DateFrom: &monthStart,
@@ -137,7 +131,6 @@ func getDashboardOverviewHandler(
 	}
 	stats.MonthRevenue = monthRevenue
 
-	// 待审批提
 	pendingStatus := model.WithdrawStatusPending
 	_, pendingTotal, _ := withdrawRepo.List(ctx, withdrawrepo.WithdrawListOptions{
 		Status:   &pendingStatus,
@@ -146,7 +139,6 @@ func getDashboardOverviewHandler(
 	})
 	stats.PendingWithdraws = pendingTotal
 
-	// 活跃服务
 	isActive := true
 	_, activeTotal, _ := serviceItemRepo.List(ctx, repository.ServiceItemListOptions{
 		IsActive: &isActive,
@@ -155,12 +147,7 @@ func getDashboardOverviewHandler(
 	})
 	stats.ActiveServices = activeTotal
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    *stats,
-	})
+	respondSuccess(c, *stats)
 }
 
 // getRecentOrdersHandler 获取最近订单
@@ -189,18 +176,11 @@ func getRecentOrdersHandler(c *gin.Context, orderRepo repoiface.OrderQuery) {
 		PageSize: limit,
 	})
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, apierr.InternalError(err.Error()))
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data: map[string]interface{}{
-			"orders": orders,
-		},
-	})
+	respondSuccess(c, gin.H{"orders": orders})
 }
 
 // getRecentWithdrawsHandler 获取最近提现
@@ -229,18 +209,11 @@ func getRecentWithdrawsHandler(c *gin.Context, withdrawRepo withdrawrepo.Withdra
 		PageSize: limit,
 	})
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, apierr.InternalError(err.Error()))
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data: map[string]interface{}{
-			"withdraws": withdraws,
-		},
-	})
+	respondSuccess(c, gin.H{"withdraws": withdraws})
 }
 
 // getMonthlyRevenueHandler 获取月度收入趋势
@@ -267,12 +240,10 @@ func getMonthlyRevenueHandler(c *gin.Context, commissionRepo commissionrepo.Comm
 	ctx := c.Request.Context()
 	revenueData := make([]MonthlyRevenueData, 0, months)
 
-	// 计算每个月的数据
 	now := time.Now()
 	for i := months - 1; i >= 0; i-- {
 		month := now.AddDate(0, -i, 0).Format("2006-01")
 
-		// 获取月度统计 - 直接使用具体类型
 		stats, err := commissionRepo.GetMonthlyStats(ctx, month)
 		if err == nil && stats != nil {
 			revenueData = append(revenueData, MonthlyRevenueData{
@@ -282,7 +253,6 @@ func getMonthlyRevenueHandler(c *gin.Context, commissionRepo commissionrepo.Comm
 				TotalOrders:     stats.TotalOrders,
 			})
 		} else {
-			// 如果没有数据，填0
 			revenueData = append(revenueData, MonthlyRevenueData{
 				Month:           month,
 				TotalRevenue:    0,
@@ -292,12 +262,5 @@ func getMonthlyRevenueHandler(c *gin.Context, commissionRepo commissionrepo.Comm
 		}
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data: map[string]interface{}{
-			"revenue": revenueData,
-		},
-	})
+	respondSuccess(c, gin.H{"revenue": revenueData})
 }

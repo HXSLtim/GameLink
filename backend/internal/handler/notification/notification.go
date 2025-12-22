@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"gamelink/internal/handler/resp"
 	"gamelink/internal/model"
 	contentservice "gamelink/internal/service/content"
 )
@@ -199,32 +200,15 @@ func deleteNotificationHandler(c *gin.Context, svc *contentservice.NotificationS
 }
 
 func getUserIDFromContext(c *gin.Context) uint64 {
-	userIDVal, exists := c.Get("user_id")
-	if !exists {
-		return 0
-	}
-	userID, ok := userIDVal.(uint64)
-	if !ok {
-		return 0
-	}
-	return userID
+	return resp.GetUserID(c)
 }
 
+// respondJSON is an alias for resp.JSON for backward compatibility.
 func respondJSON[T any](c *gin.Context, status int, payload model.APIResponse[T]) {
-	if payload.TraceID == "" {
-		if rid, ok := c.Get("request_id"); ok {
-			if ridStr, ok := rid.(string); ok {
-				payload.TraceID = ridStr
-			}
-		}
-	}
-	c.JSON(status, payload)
+	resp.JSON(c, status, payload)
 }
 
+// respondError is an alias for resp.ErrorMsg for backward compatibility.
 func respondError(c *gin.Context, status int, msg string) {
-	respondJSON(c, status, model.APIResponse[any]{
-		Success: false,
-		Code:    status,
-		Message: msg,
-	})
+	resp.ErrorMsg(c, status, msg)
 }

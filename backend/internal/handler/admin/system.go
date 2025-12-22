@@ -2,15 +2,14 @@ package admin
 
 import (
 	"database/sql"
-	"net/http"
 	"runtime"
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/pkg/cache"
-	"gamelink/pkg/config"
 	mw "gamelink/internal/handler/middleware"
 	"gamelink/internal/model"
+	"gamelink/pkg/cache"
+	"gamelink/pkg/config"
 )
 
 // SystemInfoHandler 系统信息Handler
@@ -53,21 +52,17 @@ func RegisterSystemRoutes(router gin.IRouter, cfg config.AppConfig, sqlDB *sql.D
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/system/config [get]
 func (h *SystemInfoHandler) Config(c *gin.Context) {
-	configInfo := gin.H{
+	respondSuccess(c, gin.H{
 		"databaseType":  h.cfg.Database.Type,
 		"cacheType":     h.cfg.Cache.Type,
 		"adminAuthMode": h.cfg.AdminAuth.Mode,
-	}
-
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    configInfo,
 	})
 }
 
-// DBStatus 获取数据库状�?// @Summary      数据库状�?// @Description  获取数据库连接状�?// @Tags         Admin - System
+// DBStatus 获取数据库状态
+// @Summary      数据库状态
+// @Description  获取数据库连接状态
+// @Tags         Admin - System
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
@@ -77,23 +72,18 @@ func (h *SystemInfoHandler) Config(c *gin.Context) {
 // @Router       /admin/system/db [get]
 func (h *SystemInfoHandler) DBStatus(c *gin.Context) {
 	stats := h.sqlDB.Stats()
-
-	dbStatus := gin.H{
+	respondSuccess(c, gin.H{
 		"openConnections": stats.OpenConnections,
 		"inUse":           stats.InUse,
 		"idle":            stats.Idle,
 		"maxOpenConns":    stats.MaxOpenConnections,
-	}
-
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    dbStatus,
 	})
 }
 
-// CacheStatus 获取缓存状�?// @Summary      缓存状�?// @Description  获取缓存连接状�?// @Tags         Admin - System
+// CacheStatus 获取缓存状态
+// @Summary      缓存状态
+// @Description  获取缓存连接状态
+// @Tags         Admin - System
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
@@ -102,20 +92,11 @@ func (h *SystemInfoHandler) DBStatus(c *gin.Context) {
 // @Failure      500            {object}  model.ErrorResponse
 // @Router       /admin/system/cache [get]
 func (h *SystemInfoHandler) CacheStatus(c *gin.Context) {
-	// 简单测试缓存连�?
 	testKey := "system:health:check"
 	_, _, err := h.cacheClient.Get(c.Request.Context(), testKey)
-
-	cacheStatus := gin.H{
+	respondSuccess(c, gin.H{
 		"connected": err == nil,
 		"type":      h.cfg.Cache.Type,
-	}
-
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    cacheStatus,
 	})
 }
 
@@ -132,21 +113,13 @@ func (h *SystemInfoHandler) CacheStatus(c *gin.Context) {
 func (h *SystemInfoHandler) Resources(c *gin.Context) {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
-
-	resources := gin.H{
+	respondSuccess(c, gin.H{
 		"goroutines":   runtime.NumGoroutine(),
 		"allocMB":      m.Alloc / 1024 / 1024,
 		"totalAllocMB": m.TotalAlloc / 1024 / 1024,
 		"sysMB":        m.Sys / 1024 / 1024,
 		"numGC":        m.NumGC,
 		"cpuCores":     runtime.NumCPU(),
-	}
-
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    resources,
 	})
 }
 
@@ -161,16 +134,9 @@ func (h *SystemInfoHandler) Resources(c *gin.Context) {
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/system/version [get]
 func (h *SystemInfoHandler) Version(c *gin.Context) {
-	version := gin.H{
+	respondSuccess(c, gin.H{
 		"version":   "1.0.0",
 		"goVersion": runtime.Version(),
 		"buildTime": "2024-11-06",
-	}
-
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    version,
 	})
 }

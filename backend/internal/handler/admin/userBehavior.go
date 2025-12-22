@@ -6,12 +6,10 @@
 package admin
 
 import (
-	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/internal/model"
 	adminservice "gamelink/internal/service/admin"
 	"gamelink/pkg/apierr"
 )
@@ -37,16 +35,10 @@ func NewUserBehaviorHandler(statsService *adminservice.StatsService) *UserBehavi
 func (h *UserBehaviorHandler) GetBehaviorStats(c *gin.Context) {
 	stats, err := h.statsService.UserBehaviorStats(c.Request.Context())
 	if err != nil {
-		respondAPIError(c, apierr.InternalError("获取用户行为统计失败").WithDetails(err.Error()))
+		respondError(c, apierr.InternalError("获取用户行为统计失败").WithDetails(err.Error()))
 		return
 	}
-
-	writeJSON(c, http.StatusOK, model.APIResponse[*adminservice.UserBehaviorStatsResponse]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    stats,
-	})
+	respondSuccess(c, stats)
 }
 
 // GetActivityTrend
@@ -68,16 +60,10 @@ func (h *UserBehaviorHandler) GetActivityTrend(c *gin.Context) {
 
 	trend, err := h.statsService.UserActivityTrend(c.Request.Context(), days)
 	if err != nil {
-		respondAPIError(c, apierr.InternalError("获取用户活动趋势失败").WithDetails(err.Error()))
+		respondError(c, apierr.InternalError("获取用户活动趋势失败").WithDetails(err.Error()))
 		return
 	}
-
-	writeJSON(c, http.StatusOK, model.APIResponse[interface{}]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    trend,
-	})
+	respondSuccess(c, trend)
 }
 
 // GetUserDistribution
@@ -91,14 +77,8 @@ func (h *UserBehaviorHandler) GetActivityTrend(c *gin.Context) {
 func (h *UserBehaviorHandler) GetUserDistribution(c *gin.Context) {
 	distribution, err := h.statsService.UserDistribution(c.Request.Context())
 	if err != nil {
-		respondAPIError(c, apierr.InternalError("获取用户分布失败").WithDetails(err.Error()))
+		respondError(c, apierr.InternalError("获取用户分布失败").WithDetails(err.Error()))
 		return
 	}
-
-	writeJSON(c, http.StatusOK, model.APIResponse[*adminservice.UserDistributionResponse]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    distribution,
-	})
+	respondSuccess(c, distribution)
 }

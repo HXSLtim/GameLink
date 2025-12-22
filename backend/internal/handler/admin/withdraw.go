@@ -1,7 +1,6 @@
 package admin
 
 import (
-	"net/http"
 	"strconv"
 	"time"
 
@@ -81,18 +80,13 @@ func listWithdrawsHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository) 
 
 	withdraws, total, err := repo.List(c.Request.Context(), opts)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data: map[string]interface{}{
-			"withdraws": withdraws,
-			"total":     total,
-		},
+	respondSuccess(c, map[string]interface{}{
+		"withdraws": withdraws,
+		"total":     total,
 	})
 }
 
@@ -109,24 +103,18 @@ func listWithdrawsHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository) 
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/withdraws/{id} [get]
 func getWithdrawHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
 	withdraw, err := repo.Get(c.Request.Context(), id)
 	if err != nil {
-		writeJSONError(c, http.StatusNotFound, apierr.ErrWithdrawNotFound)
+		respondError(c, apierr.NotFound(apierr.ErrWithdrawNotFound))
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[model.Withdraw]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    *withdraw,
-	})
+	respondSuccess(c, *withdraw)
 }
 
 // ApproveWithdrawRequest 批准提现请求
@@ -148,9 +136,8 @@ type ApproveWithdrawRequest struct {
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/withdraws/{id}/approve [post]
 func approveWithdrawHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
@@ -164,13 +151,13 @@ func approveWithdrawHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository
 
 	withdraw, err := repo.Get(c.Request.Context(), id)
 	if err != nil {
-		writeJSONError(c, http.StatusNotFound, apierr.ErrWithdrawNotFound)
+		respondError(c, apierr.NotFound(apierr.ErrWithdrawNotFound))
 		return
 	}
 
 	// 只能审批待处理的提现
 	if withdraw.Status != model.WithdrawStatusPending {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrWithdrawApproveInvalidStatus)
+		respondBadRequest(c, apierr.ErrWithdrawApproveInvalidStatus)
 		return
 	}
 
@@ -182,15 +169,11 @@ func approveWithdrawHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository
 	withdraw.AdminRemark = req.Remark
 
 	if err := repo.Update(c.Request.Context(), withdraw); err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "Withdraw approved successfully",
-	})
+	respondMsg(c, "Withdraw approved successfully")
 }
 
 // RejectWithdrawRequest 拒绝提现请求
@@ -212,9 +195,8 @@ type RejectWithdrawRequest struct {
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/withdraws/{id}/reject [post]
 func rejectWithdrawHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
@@ -225,19 +207,19 @@ func rejectWithdrawHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository)
 
 	var req RejectWithdrawRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeJSONError(c, http.StatusBadRequest, err.Error())
+		respondBadRequest(c, err.Error())
 		return
 	}
 
 	withdraw, err := repo.Get(c.Request.Context(), id)
 	if err != nil {
-		writeJSONError(c, http.StatusNotFound, apierr.ErrWithdrawNotFound)
+		respondError(c, apierr.NotFound(apierr.ErrWithdrawNotFound))
 		return
 	}
 
 	// 只能审批待处理的提现
 	if withdraw.Status != model.WithdrawStatusPending {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrWithdrawRejectInvalidStatus)
+		respondBadRequest(c, apierr.ErrWithdrawRejectInvalidStatus)
 		return
 	}
 
@@ -249,15 +231,11 @@ func rejectWithdrawHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository)
 	withdraw.RejectReason = req.Reason
 
 	if err := repo.Update(c.Request.Context(), withdraw); err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "Withdraw rejected",
-	})
+	respondMsg(c, "Withdraw rejected")
 }
 
 // completeWithdrawHandler 完成提现（已打款
@@ -273,9 +251,8 @@ func rejectWithdrawHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository)
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/withdraws/{id}/complete [post]
 func completeWithdrawHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
@@ -286,13 +263,13 @@ func completeWithdrawHandler(c *gin.Context, repo withdrawrepo.WithdrawRepositor
 
 	withdraw, err := repo.Get(c.Request.Context(), id)
 	if err != nil {
-		writeJSONError(c, http.StatusNotFound, apierr.ErrWithdrawNotFound)
+		respondError(c, apierr.NotFound(apierr.ErrWithdrawNotFound))
 		return
 	}
 
 	// 只能完成已批准的提现
 	if withdraw.Status != model.WithdrawStatusApproved {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrWithdrawCompleteInvalidStatus)
+		respondBadRequest(c, apierr.ErrWithdrawCompleteInvalidStatus)
 		return
 	}
 
@@ -305,15 +282,11 @@ func completeWithdrawHandler(c *gin.Context, repo withdrawrepo.WithdrawRepositor
 	}
 
 	if err := repo.Update(c.Request.Context(), withdraw); err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "Withdraw completed successfully",
-	})
+	respondMsg(c, "Withdraw completed successfully")
 }
 
 // listWithdrawsByCompanyHandler 按结算公司查询提现列表
@@ -370,7 +343,7 @@ func listWithdrawsByCompanyHandler(c *gin.Context, repo withdrawrepo.WithdrawRep
 
 	withdraws, total, err := repo.ListByCompany(c.Request.Context(), opts)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
@@ -402,19 +375,13 @@ func listWithdrawsByCompanyHandler(c *gin.Context, repo withdrawrepo.WithdrawRep
 	}
 
 	totalPages := int((total + int64(pageSize) - 1) / int64(pageSize))
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    data,
-		Pagination: &model.Pagination{
-			Page:       page,
-			PageSize:   pageSize,
-			Total:      int(total),
-			TotalPages: totalPages,
-			HasNext:    page < totalPages,
-			HasPrev:    page > 1,
-		},
+	respondList(c, data, &model.Pagination{
+		Page:       page,
+		PageSize:   pageSize,
+		Total:      int(total),
+		TotalPages: totalPages,
+		HasNext:    page < totalPages,
+		HasPrev:    page > 1,
 	})
 }
 
@@ -446,7 +413,7 @@ func getWithdrawRoutingStatsHandler(c *gin.Context, repo withdrawrepo.WithdrawRe
 
 	stats, err := repo.GetRoutingStats(c.Request.Context(), dateFrom, dateTo)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
@@ -487,10 +454,5 @@ func getWithdrawRoutingStatsHandler(c *gin.Context, repo withdrawrepo.WithdrawRe
 		"byCompany":       byCompany,
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    response,
-	})
+	respondSuccess(c, response)
 }

@@ -65,13 +65,15 @@ admin/
 
 | 类型 | 规范 | 示例 |
 |------|------|------|
-| 文件 | snake_case | `user_service.go` |
+| 文件 | camelCase（小驼峰） | `userService.go`, `routingRule.go` |
 | 包名 | lowercase | `handler` |
 | 类型 | PascalCase | `UserService` |
 | 导出函数 | PascalCase | `CreateUser` |
 | 私有函数 | camelCase | `validateInput` |
 | 变量 | camelCase | `userID` |
-| 测试文件 | *_test.go | `user_test.go` |
+| 测试文件 | *_test.go | `userService_test.go` |
+
+> ⚠️ **注意**: Go 文件使用 camelCase（小驼峰），不使用 snake_case
 
 ### 前端 (TypeScript/React)
 

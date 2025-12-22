@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"gamelink/internal/handler"
+	"gamelink/internal/handler/resp"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	repoiface "gamelink/internal/repository/interfaces"
@@ -21,163 +22,67 @@ import (
 )
 
 // ============================================================================
-// 统一响应函数
+// 统一响应函数（使用 resp 包）
 // ============================================================================
 
 // respondSuccess 统一成功响应
 func respondSuccess[T any](c *gin.Context, data T) {
-	respondSuccessWithMsg(c, "OK", data)
+	resp.OK(c, data)
 }
 
 // respondSuccessWithMsg 统一成功响应（带自定义消息）
 func respondSuccessWithMsg[T any](c *gin.Context, message string, data T) {
-	writeJSON(c, http.StatusOK, model.APIResponse[T]{
+	resp.Success(c, message, data)
+}
+
+// respondMsg 统一成功响应（仅消息，无数据）
+func respondMsg(c *gin.Context, message string) {
+	resp.JSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: message,
-		Data:    data,
 	})
 }
 
 // respondCreated 统一创建成功响应
 func respondCreated[T any](c *gin.Context, data T) {
-	writeJSON(c, http.StatusCreated, model.APIResponse[T]{
-		Success: true,
-		Code:    http.StatusCreated,
-		Message: "created",
-		Data:    data,
-	})
+	resp.Created(c, data)
 }
 
 // respondList 统一列表响应（带分页）
 func respondList[T any](c *gin.Context, data []T, pagination *model.Pagination) {
-	data = ensureSlice(data)
-	writeJSON(c, http.StatusOK, model.APIResponse[[]T]{
-		Success:    true,
-		Code:       http.StatusOK,
-		Message:    "OK",
-		Data:       data,
-		Pagination: pagination,
-	})
+	resp.List(c, data, pagination)
 }
 
 // respondDeleted 统一删除成功响应
 func respondDeleted(c *gin.Context) {
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "deleted",
-	})
+	resp.Deleted(c)
 }
 
 // respondUpdated 统一更新成功响应
 func respondUpdated[T any](c *gin.Context, data T) {
-	writeJSON(c, http.StatusOK, model.APIResponse[T]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "updated",
-		Data:    data,
-	})
+	resp.Updated(c, data)
 }
 
 // ============================================================================
-// 统一错误处理函数
+// 统一错误处理函数（使用 resp 包）
 // ============================================================================
 
-// respondError 统一错误响应（推荐使用）
+// respondError 统一错误响应
 // 自动处理 apierr.APIError、adminservice.ErrNotFound 等常见错误类型
 func respondError(c *gin.Context, err error) {
-	// 处理 apierr.APIError
-	if apiErr, ok := err.(*apierr.APIError); ok {
-		writeJSON(c, apiErr.Code, model.APIResponse[any]{
-			Success: false,
-			Code:    apiErr.Code,
-			Message: apiErr.Message,
-			TraceID: apiErr.RequestID,
-		})
+	// 处理 adminservice.ErrNotFound（resp 包不知道这个错误）
+	if errors.Is(err, adminservice.ErrNotFound) {
+		resp.ErrorMsg(c, http.StatusNotFound, "resource not found")
 		return
 	}
-
-	// 处理 adminservice.ErrNotFound
-	if errors.Is(err, adminservice.ErrNotFound) || errors.Is(err, repository.ErrNotFound) {
-		writeJSON(c, http.StatusNotFound, model.APIResponse[any]{
-			Success: false,
-			Code:    http.StatusNotFound,
-			Message: "resource not found",
-		})
-		return
-	}
-
-	// 处理验证错误
-	if apierr.IsValidationError(err) {
-		writeJSON(c, http.StatusBadRequest, model.APIResponse[any]{
-			Success: false,
-			Code:    http.StatusBadRequest,
-			Message: err.Error(),
-		})
-		return
-	}
-
-	// 默认内部错误
-	writeJSON(c, http.StatusInternalServerError, model.APIResponse[any]{
-		Success: false,
-		Code:    http.StatusInternalServerError,
-		Message: err.Error(),
-	})
+	// 其他错误交给 resp 包处理
+	resp.Error(c, err)
 }
 
 // respondBadRequest 统一400错误响应
 func respondBadRequest(c *gin.Context, message string) {
-	writeJSON(c, http.StatusBadRequest, model.APIResponse[any]{
-		Success: false,
-		Code:    http.StatusBadRequest,
-		Message: message,
-	})
-}
-
-// respondNotFound 统一404错误响应
-func respondNotFound(c *gin.Context, message string) {
-	if message == "" {
-		message = "resource not found"
-	}
-	writeJSON(c, http.StatusNotFound, model.APIResponse[any]{
-		Success: false,
-		Code:    http.StatusNotFound,
-		Message: message,
-	})
-}
-
-// respondUnauthorized 统一401错误响应
-func respondUnauthorized(c *gin.Context, message string) {
-	if message == "" {
-		message = "unauthorized"
-	}
-	writeJSON(c, http.StatusUnauthorized, model.APIResponse[any]{
-		Success: false,
-		Code:    http.StatusUnauthorized,
-		Message: message,
-	})
-}
-
-// respondForbidden 统一403错误响应
-func respondForbidden(c *gin.Context, message string) {
-	if message == "" {
-		message = "forbidden"
-	}
-	writeJSON(c, http.StatusForbidden, model.APIResponse[any]{
-		Success: false,
-		Code:    http.StatusForbidden,
-		Message: message,
-	})
-}
-
-// respondInternalError 统一500错误响应
-func respondInternalError(c *gin.Context, message string) {
-	writeJSON(c, http.StatusInternalServerError, model.APIResponse[any]{
-		Success: false,
-		Code:    http.StatusInternalServerError,
-		Message: message,
-	})
+	resp.BadRequest(c, message)
 }
 
 // ============================================================================
@@ -295,33 +200,22 @@ func parseCSVParams(values []string) []string {
 	return result
 }
 
-// writeJSON 底层 JSON 响应函数
-func writeJSON[T any](c *gin.Context, status int, payload model.APIResponse[T]) {
-	// 从上下文中获取TraceID
-	if payload.TraceID == "" {
-		if rid, ok := c.Get("request_id"); ok {
-			if ridStr, ok := rid.(string); ok {
-				payload.TraceID = ridStr
-			}
-		}
-	}
-	c.JSON(status, payload)
-}
-
-// writeJSONError 底层错误响应函数（建议使用 respondError 或 respondBadRequest）
+// writeJSONError 底层错误响应函数
 func writeJSONError(c *gin.Context, status int, message string) {
-	writeJSON(c, status, model.APIResponse[any]{
-		Success: false,
-		Code:    status,
-		Message: message,
-	})
+	resp.ErrorMsg(c, status, message)
 }
 
-// respondAPIError 使用apierr包的错误响应（建议使用 respondError）
+// writeJSON 底层 JSON 响应函数（兼容旧代码）
+func writeJSON[T any](c *gin.Context, status int, payload model.APIResponse[T]) {
+	resp.JSON(c, status, payload)
+}
+
+// respondAPIError 使用apierr包的错误响应
 func respondAPIError(c *gin.Context, err error) {
 	respondError(c, err)
 }
 
+// ensureSlice 确保切片不为 nil
 func ensureSlice[T any](items []T) []T {
 	if items == nil {
 		return make([]T, 0)
@@ -329,22 +223,13 @@ func ensureSlice[T any](items []T) []T {
 	return items
 }
 
-// getAdminUserID 从上下文中读取管理端用户 ID，并在缺失或类型不匹配时写入统一错误响应
-// 返回值中的 bool 表示是否读取成功，调用方应在返回 false 时直接中断处理
+// getAdminUserID 从上下文中读取管理端用户 ID
 func getAdminUserID(c *gin.Context) (uint64, bool) {
-	val, ok := c.Get("user_id")
+	userID, ok := resp.GetUserIDOrFail(c)
 	if !ok {
-		writeJSONError(c, 401, "missing admin user")
 		return 0, false
 	}
-
-	id, ok := val.(uint64)
-	if !ok {
-		writeJSONError(c, 500, "invalid admin user id type")
-		return 0, false
-	}
-
-	return id, true
+	return userID, true
 }
 
 // parsePagination 解析分页参数，支持 page/page_size 以及向后兼容的 pageSize
@@ -352,11 +237,11 @@ func getAdminUserID(c *gin.Context) (uint64, bool) {
 func parsePagination(c *gin.Context) (int, int, bool) {
 	page, err := queryIntDefault(c, "page", 1)
 	if err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidPage)
+		respondBadRequest(c, apierr.ErrInvalidPage)
 		return 0, 0, false
 	}
 
-	// pageSize 同时兼容 page_size �?pageSize，优先读取蛇形命名以保持与大部分接口一�?
+	// pageSize 同时兼容 page_size 和 pageSize，优先读取蛇形命名
 	pageSizeStr := strings.TrimSpace(c.Query("page_size"))
 	if pageSizeStr == "" {
 		pageSizeStr = strings.TrimSpace(c.Query("pageSize"))
@@ -365,7 +250,7 @@ func parsePagination(c *gin.Context) (int, int, bool) {
 	if pageSizeStr != "" {
 		parsed, convErr := strconv.Atoi(pageSizeStr)
 		if convErr != nil {
-			writeJSONError(c, 400, apierr.ErrInvalidPageSize)
+			respondBadRequest(c, apierr.ErrInvalidPageSize)
 			return 0, 0, false
 		}
 		pageSize = parsed
@@ -389,27 +274,27 @@ func buildOrderListOptions(c *gin.Context) (repoiface.OrderListOptions, bool) {
 
 	userID, err := queryUint64Ptr(c, "user_id")
 	if err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidUserID)
+		respondBadRequest(c, apierr.ErrInvalidUserID)
 		return repoiface.OrderListOptions{}, false
 	}
 	playerID, err := queryUint64Ptr(c, "player_id")
 	if err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidPlayerID)
+		respondBadRequest(c, apierr.ErrInvalidPlayerID)
 		return repoiface.OrderListOptions{}, false
 	}
 	gameID, err := queryUint64Ptr(c, "game_id")
 	if err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidGameID)
+		respondBadRequest(c, apierr.ErrInvalidGameID)
 		return repoiface.OrderListOptions{}, false
 	}
 	dateFrom, err := queryTimePtr(c, "date_from")
 	if err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidDateFrom)
+		respondBadRequest(c, apierr.ErrInvalidDateFrom)
 		return repoiface.OrderListOptions{}, false
 	}
 	dateTo, err := queryTimePtr(c, "date_to")
 	if err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidDateTo)
+		respondBadRequest(c, apierr.ErrInvalidDateTo)
 		return repoiface.OrderListOptions{}, false
 	}
 
@@ -447,22 +332,22 @@ func buildPaymentListOptions(c *gin.Context) (repository.PaymentListOptions, boo
 
 	userID, err := queryUint64Ptr(c, "user_id")
 	if err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidUserID)
+		respondBadRequest(c, apierr.ErrInvalidUserID)
 		return repository.PaymentListOptions{}, false
 	}
 	orderID, err := queryUint64Ptr(c, "order_id")
 	if err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidOrderID)
+		respondBadRequest(c, apierr.ErrInvalidOrderID)
 		return repository.PaymentListOptions{}, false
 	}
 	dateFrom, err := queryTimePtr(c, "date_from")
 	if err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidDateFrom)
+		respondBadRequest(c, apierr.ErrInvalidDateFrom)
 		return repository.PaymentListOptions{}, false
 	}
 	dateTo, err := queryTimePtr(c, "date_to")
 	if err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidDateTo)
+		respondBadRequest(c, apierr.ErrInvalidDateTo)
 		return repository.PaymentListOptions{}, false
 	}
 
@@ -511,12 +396,12 @@ func buildUserListOptions(c *gin.Context) (repository.UserListOptions, bool) {
 
 	dateFrom, err := queryTimePtr(c, "date_from")
 	if err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidDateFrom)
+		respondBadRequest(c, apierr.ErrInvalidDateFrom)
 		return repository.UserListOptions{}, false
 	}
 	dateTo, err := queryTimePtr(c, "date_to")
 	if err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidDateTo)
+		respondBadRequest(c, apierr.ErrInvalidDateTo)
 		return repository.UserListOptions{}, false
 	}
 

@@ -10,9 +10,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	reviewservice "gamelink/internal/service/review"
+	"gamelink/pkg/apierr"
 )
 
 // ReviewStatsHandler 评价统计接口
@@ -37,16 +37,10 @@ func NewReviewStatsHandler(svc *reviewservice.ReviewStatsService) *ReviewStatsHa
 func (h *ReviewStatsHandler) GetReviewStats(c *gin.Context) {
 	stats, err := h.svc.GetReviewStats(c.Request.Context())
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, apierr.InternalError(err.Error()))
 		return
 	}
-
-	writeJSON(c, http.StatusOK, model.APIResponse[*reviewservice.GetReviewStatsResponse]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    stats,
-	})
+	respondSuccess(c, stats)
 }
 
 // GetReviewTrend 获取评价趋势
@@ -69,16 +63,10 @@ func (h *ReviewStatsHandler) GetReviewTrend(c *gin.Context) {
 
 	trend, err := h.svc.GetReviewTrend(c.Request.Context(), days)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, apierr.InternalError(err.Error()))
 		return
 	}
-
-	writeJSON(c, http.StatusOK, model.APIResponse[*reviewservice.GetReviewTrendResponse]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    trend,
-	})
+	respondSuccess(c, trend)
 }
 
 // GetTopPlayers 获取陪玩师排行榜
@@ -102,21 +90,15 @@ func (h *ReviewStatsHandler) GetTopPlayers(c *gin.Context) {
 
 	sortBy := strings.TrimSpace(c.Query("sort_by"))
 	if sortBy == "" {
-		sortBy = "count" // default to count
+		sortBy = "count"
 	}
 
 	players, err := h.svc.GetTopPlayers(c.Request.Context(), limit, sortBy)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, apierr.InternalError(err.Error()))
 		return
 	}
-
-	writeJSON(c, http.StatusOK, model.APIResponse[*reviewservice.GetTopPlayersResponse]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    players,
-	})
+	respondSuccess(c, players)
 }
 
 // GetGameStats 获取游戏统计
@@ -131,16 +113,10 @@ func (h *ReviewStatsHandler) GetTopPlayers(c *gin.Context) {
 func (h *ReviewStatsHandler) GetGameStats(c *gin.Context) {
 	games, err := h.svc.GetGameStats(c.Request.Context())
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, apierr.InternalError(err.Error()))
 		return
 	}
-
-	writeJSON(c, http.StatusOK, model.APIResponse[*reviewservice.GetGameStatsResponse]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    games,
-	})
+	respondSuccess(c, games)
 }
 
 // ExportReviewStats 导出评价统计数据
@@ -169,35 +145,35 @@ func (h *ReviewStatsHandler) ExportReviewStats(c *gin.Context) {
 	case "overview":
 		filename = "review_stats_overview.csv"
 		if err := h.exportOverview(c, writer); err != nil {
-			writeJSONError(c, http.StatusInternalServerError, err.Error())
+			respondError(c, apierr.InternalError(err.Error()))
 			return
 		}
 	case "trend":
 		filename = "review_stats_trend.csv"
 		if err := h.exportTrend(c, writer); err != nil {
-			writeJSONError(c, http.StatusInternalServerError, err.Error())
+			respondError(c, apierr.InternalError(err.Error()))
 			return
 		}
 	case "players":
 		filename = "review_stats_players.csv"
 		if err := h.exportPlayers(c, writer); err != nil {
-			writeJSONError(c, http.StatusInternalServerError, err.Error())
+			respondError(c, apierr.InternalError(err.Error()))
 			return
 		}
 	case "games":
 		filename = "review_stats_games.csv"
 		if err := h.exportGames(c, writer); err != nil {
-			writeJSONError(c, http.StatusInternalServerError, err.Error())
+			respondError(c, apierr.InternalError(err.Error()))
 			return
 		}
 	default:
-		writeJSONError(c, http.StatusBadRequest, "invalid export type, must be one of: overview, trend, players, games")
+		respondBadRequest(c, "invalid export type, must be one of: overview, trend, players, games")
 		return
 	}
 
 	writer.Flush()
 	if err := writer.Error(); err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, apierr.InternalError(err.Error()))
 		return
 	}
 
@@ -212,18 +188,15 @@ func (h *ReviewStatsHandler) exportOverview(c *gin.Context, writer *csv.Writer) 
 		return err
 	}
 
-	// Write header
 	if err := writer.Write([]string{"指标", "值"}); err != nil {
 		return err
 	}
 
-	// Write data
 	rows := [][]string{
 		{"总评价数", strconv.FormatInt(stats.TotalReviews, 10)},
 		{"平均评分", fmt.Sprintf("%.2f", stats.AverageRating)},
 	}
 
-	// Add rating distribution
 	for score := 1; score <= 5; score++ {
 		count := stats.RatingDistribution[score]
 		rows = append(rows, []string{fmt.Sprintf("%d星评价数", score), strconv.FormatInt(count, 10)})
@@ -251,12 +224,10 @@ func (h *ReviewStatsHandler) exportTrend(c *gin.Context, writer *csv.Writer) err
 		return err
 	}
 
-	// Write header
 	if err := writer.Write([]string{"日期", "评价数量"}); err != nil {
 		return err
 	}
 
-	// Write data
 	for _, item := range trend.Trend {
 		if err := writer.Write([]string{item.Date, strconv.FormatInt(item.Value, 10)}); err != nil {
 			return err
@@ -284,12 +255,10 @@ func (h *ReviewStatsHandler) exportPlayers(c *gin.Context, writer *csv.Writer) e
 		return err
 	}
 
-	// Write header
 	if err := writer.Write([]string{"排名", "陪玩师ID", "陪玩师名称", "评价数量", "平均评分"}); err != nil {
 		return err
 	}
 
-	// Write data
 	for i, player := range players.Players {
 		row := []string{
 			strconv.Itoa(i + 1),
@@ -312,12 +281,10 @@ func (h *ReviewStatsHandler) exportGames(c *gin.Context, writer *csv.Writer) err
 		return err
 	}
 
-	// Write header
 	if err := writer.Write([]string{"游戏ID", "游戏名称", "评价数量", "平均评分"}); err != nil {
 		return err
 	}
 
-	// Write data
 	for _, game := range games.Games {
 		row := []string{
 			strconv.FormatUint(game.GameID, 10),

@@ -3,7 +3,6 @@ package admin
 import (
 	"errors"
 	"fmt"
-	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -38,27 +37,22 @@ func NewDisputeHandler(svc *orderservice.DisputeService) *DisputeHandler {
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/disputes/{id} [get]
 func (h *DisputeHandler) GetDisputeDetail(c *gin.Context) {
-	disputeID, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+	disputeID, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
 	dispute, err := h.svc.GetDisputeDetail(c.Request.Context(), disputeID)
 	if err != nil {
 		if errors.Is(err, orderservice.ErrDisputeNotFound) {
-			writeJSONError(c, http.StatusNotFound, apierr.ErrDisputeNotFound)
+			respondError(c, apierr.NotFound(apierr.ErrDisputeNotFound))
 			return
 		}
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[*model.OrderDispute]{
-		Success: true,
-		Code:    http.StatusOK,
-		Data:    dispute,
-	})
+	respondSuccess(c, dispute)
 }
 
 // ListPendingDisputes lists disputes pending assignment
@@ -91,7 +85,7 @@ func (h *DisputeHandler) ListPendingDisputes(c *gin.Context) {
 
 	disputes, total, err := h.svc.ListPendingDisputes(c.Request.Context(), page, pageSize)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
@@ -101,15 +95,11 @@ func (h *DisputeHandler) ListPendingDisputes(c *gin.Context) {
 		Page     int                  `json:"page"`
 		PageSize int                  `json:"pageSize"`
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[ListResponse]{
-		Success: true,
-		Code:    http.StatusOK,
-		Data: ListResponse{
-			Disputes: disputes,
-			Total:    total,
-			Page:     page,
-			PageSize: pageSize,
-		},
+	respondSuccess(c, ListResponse{
+		Disputes: disputes,
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
 	})
 }
 
@@ -153,7 +143,7 @@ func (h *DisputeHandler) ListDisputes(c *gin.Context) {
 		OrderNo:  orderNo,
 	})
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
@@ -163,15 +153,11 @@ func (h *DisputeHandler) ListDisputes(c *gin.Context) {
 		Page     int                  `json:"page"`
 		PageSize int                  `json:"pageSize"`
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[ListResponse]{
-		Success: true,
-		Code:    http.StatusOK,
-		Data: ListResponse{
-			Disputes: disputes,
-			Total:    total,
-			Page:     page,
-			PageSize: pageSize,
-		},
+	respondSuccess(c, ListResponse{
+		Disputes: disputes,
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
 	})
 }
 
@@ -188,15 +174,11 @@ func (h *DisputeHandler) ListDisputes(c *gin.Context) {
 func (h *DisputeHandler) GetDisputeStats(c *gin.Context) {
 	stats, err := h.svc.GetDisputeStats(c.Request.Context())
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[map[string]int64]{
-		Success: true,
-		Code:    http.StatusOK,
-		Data:    stats,
-	})
+	respondSuccess(c, stats)
 }
 
 // AssignDisputePayload represents the request to assign a dispute
@@ -219,32 +201,31 @@ type AssignDisputePayload struct {
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/disputes/{id}/assign [post]
 func (h *DisputeHandler) AssignDispute(c *gin.Context) {
-	disputeID, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+	disputeID, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
 	var payload AssignDisputePayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+		respondBadRequest(c, apierr.ErrInvalidJSONPayload)
 		return
 	}
 
 	// Get actor user ID from context (set by auth middleware)
 	actorUserID, exists := c.Get("userID")
 	if !exists {
-		writeJSONError(c, http.StatusUnauthorized, apierr.ErrUserIDNotInContext)
+		respondError(c, apierr.Unauthorized(apierr.ErrUserIDNotInContext))
 		return
 	}
 
 	source := model.AssignmentSource(payload.Source)
 	if source != model.AssignmentSourceSystem && source != model.AssignmentSourceManual {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidAssignmentSource)
+		respondBadRequest(c, apierr.ErrInvalidAssignmentSource)
 		return
 	}
 
-	err = h.svc.AssignDispute(c.Request.Context(), orderservice.AssignDisputeRequest{
+	err := h.svc.AssignDispute(c.Request.Context(), orderservice.AssignDisputeRequest{
 		DisputeID:        disputeID,
 		AssignedToUserID: payload.AssignedToUserID,
 		Source:           source,
@@ -253,23 +234,19 @@ func (h *DisputeHandler) AssignDispute(c *gin.Context) {
 
 	if err != nil {
 		if errors.Is(err, orderservice.ErrDisputeValidation) {
-			writeJSONError(c, http.StatusBadRequest, err.Error())
+			respondBadRequest(c, err.Error())
 			return
 		}
 		if errors.Is(err, orderservice.ErrDisputeInvalidStatus) {
-			writeJSONError(c, http.StatusConflict, err.Error())
+			respondError(c, apierr.Conflict(err.Error()))
 			return
 		}
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[map[string]string]{
-		Success: true,
-		Code:    http.StatusOK,
-		Data: map[string]string{
-			"message": "Dispute assigned successfully",
-		},
+	respondSuccess(c, map[string]string{
+		"message": "Dispute assigned successfully",
 	})
 }
 
@@ -292,26 +269,25 @@ type RollbackAssignmentPayload struct {
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/disputes/{id}/rollback [post]
 func (h *DisputeHandler) RollbackAssignment(c *gin.Context) {
-	disputeID, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+	disputeID, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
 	var payload RollbackAssignmentPayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+		respondBadRequest(c, apierr.ErrInvalidJSONPayload)
 		return
 	}
 
 	// Get actor user ID from context
 	actorUserID, exists := c.Get("userID")
 	if !exists {
-		writeJSONError(c, http.StatusUnauthorized, apierr.ErrUserIDNotInContext)
+		respondError(c, apierr.Unauthorized(apierr.ErrUserIDNotInContext))
 		return
 	}
 
-	err = h.svc.RollbackDisputeAssignment(c.Request.Context(), orderservice.RollbackDisputeRequest{
+	err := h.svc.RollbackDisputeAssignment(c.Request.Context(), orderservice.RollbackDisputeRequest{
 		DisputeID:      disputeID,
 		RollbackReason: payload.RollbackReason,
 		ActorUserID:    actorUserID.(uint64),
@@ -319,23 +295,19 @@ func (h *DisputeHandler) RollbackAssignment(c *gin.Context) {
 
 	if err != nil {
 		if errors.Is(err, orderservice.ErrDisputeValidation) {
-			writeJSONError(c, http.StatusBadRequest, err.Error())
+			respondBadRequest(c, err.Error())
 			return
 		}
 		if errors.Is(err, orderservice.ErrDisputeInvalidStatus) {
-			writeJSONError(c, http.StatusConflict, err.Error())
+			respondError(c, apierr.Conflict(err.Error()))
 			return
 		}
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[map[string]string]{
-		Success: true,
-		Code:    http.StatusOK,
-		Data: map[string]string{
-			"message": "Assignment rolled back successfully",
-		},
+	respondSuccess(c, map[string]string{
+		"message": "Assignment rolled back successfully",
 	})
 }
 
@@ -360,28 +332,27 @@ type ResolveDisputePayload struct {
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/disputes/{id}/resolve [post]
 func (h *DisputeHandler) ResolveDispute(c *gin.Context) {
-	disputeID, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+	disputeID, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
 	var payload ResolveDisputePayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidJSONPayload)
+		respondBadRequest(c, apierr.ErrInvalidJSONPayload)
 		return
 	}
 
 	// Get actor user ID from context
 	actorUserID, exists := c.Get("userID")
 	if !exists {
-		writeJSONError(c, http.StatusUnauthorized, apierr.ErrUserIDNotInContext)
+		respondError(c, apierr.Unauthorized(apierr.ErrUserIDNotInContext))
 		return
 	}
 
 	resolution := model.DisputeResolution(payload.Resolution)
 
-	err = h.svc.ResolveDispute(c.Request.Context(), orderservice.ResolveDisputeRequest{
+	err := h.svc.ResolveDispute(c.Request.Context(), orderservice.ResolveDisputeRequest{
 		DisputeID:        disputeID,
 		Resolution:       resolution,
 		ResolutionAmount: payload.ResolutionAmount,
@@ -391,22 +362,18 @@ func (h *DisputeHandler) ResolveDispute(c *gin.Context) {
 
 	if err != nil {
 		if errors.Is(err, orderservice.ErrDisputeValidation) {
-			writeJSONError(c, http.StatusBadRequest, err.Error())
+			respondBadRequest(c, err.Error())
 			return
 		}
 		if errors.Is(err, orderservice.ErrDisputeInvalidStatus) {
-			writeJSONError(c, http.StatusConflict, err.Error())
+			respondError(c, apierr.Conflict(err.Error()))
 			return
 		}
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[map[string]string]{
-		Success: true,
-		Code:    http.StatusOK,
-		Data: map[string]string{
-			"message": fmt.Sprintf("Dispute resolved with %s decision", resolution),
-		},
+	respondSuccess(c, map[string]string{
+		"message": fmt.Sprintf("Dispute resolved with %s decision", resolution),
 	})
 }

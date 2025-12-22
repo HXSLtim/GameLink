@@ -5,7 +5,7 @@ import (
 
 	"gamelink/internal/model"
 	reviewservice "gamelink/internal/service/review"
-	apierr "gamelink/pkg/apierr"
+	"gamelink/pkg/apierr"
 )
 
 // ReviewSettingsHandler 评价展示设置处理器
@@ -30,16 +30,10 @@ func NewReviewSettingsHandler(svc *reviewservice.SettingsService) *ReviewSetting
 func (h *ReviewSettingsHandler) GetReviewSettings(c *gin.Context) {
 	settings, err := h.svc.GetSettings(c.Request.Context())
 	if err != nil {
-		writeJSONError(c, 500, err.Error())
+		respondError(c, apierr.InternalError(err.Error()))
 		return
 	}
-
-	writeJSON(c, 200, model.APIResponse[*model.ReviewDisplaySettings]{
-		Success: true,
-		Code:    200,
-		Message: "OK",
-		Data:    settings,
-	})
+	respondSuccess(c, settings)
 }
 
 // UpdateReviewSettingsPayload 更新评价展示设置请求体
@@ -74,7 +68,7 @@ type UpdateReviewSettingsPayload struct {
 func (h *ReviewSettingsHandler) UpdateReviewSettings(c *gin.Context) {
 	var p UpdateReviewSettingsPayload
 	if err := c.ShouldBindJSON(&p); err != nil {
-		writeJSONError(c, 400, apierr.ErrInvalidJSONPayload)
+		respondBadRequest(c, apierr.ErrInvalidJSONPayload)
 		return
 	}
 
@@ -84,7 +78,7 @@ func (h *ReviewSettingsHandler) UpdateReviewSettings(c *gin.Context) {
 	if p.SortBy != nil {
 		sortBy := model.ReviewSortBy(*p.SortBy)
 		if !sortBy.Valid() {
-			writeJSONError(c, 400, "invalid sortBy value, must be one of: time, score, likes")
+			respondBadRequest(c, "invalid sortBy value, must be one of: time, score, likes")
 			return
 		}
 		input.SortBy = &sortBy
@@ -112,19 +106,13 @@ func (h *ReviewSettingsHandler) UpdateReviewSettings(c *gin.Context) {
 
 	settings, err := h.svc.UpdateSettingsPartial(c.Request.Context(), input)
 	if err != nil {
-		// 检查是否是验证错误
 		if _, ok := err.(*model.ValidationError); ok {
-			writeJSONError(c, 400, err.Error())
+			respondBadRequest(c, err.Error())
 			return
 		}
-		writeJSONError(c, 500, err.Error())
+		respondError(c, apierr.InternalError(err.Error()))
 		return
 	}
 
-	writeJSON(c, 200, model.APIResponse[*model.ReviewDisplaySettings]{
-		Success: true,
-		Code:    200,
-		Message: "settings updated",
-		Data:    settings,
-	})
+	respondUpdated(c, settings)
 }

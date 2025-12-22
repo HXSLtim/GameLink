@@ -1,16 +1,15 @@
 package admin
 
 import (
-	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	"gamelink/internal/model"
 	statsrepo "gamelink/internal/repository/stats"
 	statsservice "gamelink/internal/service/admin"
+	"gamelink/pkg/apierr"
 )
 
 // StatsHandler 统计数据Handler
@@ -59,16 +58,10 @@ func RegisterStatsAnalysisRoutes(router gin.IRouter, db *gorm.DB) {
 func (h *StatsHandler) Dashboard(c *gin.Context) {
 	dashboard, err := h.svc.Dashboard(c.Request.Context())
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, apierr.InternalError(err.Error()))
 		return
 	}
-
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    dashboard,
-	})
+	respondSuccess(c, dashboard)
 }
 
 // RevenueTrend 获取收入趋势
@@ -94,16 +87,10 @@ func (h *StatsHandler) RevenueTrend(c *gin.Context) {
 
 	trend, err := h.svc.RevenueTrend(c.Request.Context(), days)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, apierr.InternalError(err.Error()))
 		return
 	}
-
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    trend,
-	})
+	respondSuccess(c, trend)
 }
 
 // UserGrowth 获取用户增长趋势
@@ -129,16 +116,10 @@ func (h *StatsHandler) UserGrowth(c *gin.Context) {
 
 	trend, err := h.svc.UserGrowth(c.Request.Context(), days)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, apierr.InternalError(err.Error()))
 		return
 	}
-
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    trend,
-	})
+	respondSuccess(c, trend)
 }
 
 // OrdersSummary 获取订单状态汇总
@@ -155,16 +136,10 @@ func (h *StatsHandler) UserGrowth(c *gin.Context) {
 func (h *StatsHandler) OrdersSummary(c *gin.Context) {
 	stats, err := h.svc.OrdersByStatus(c.Request.Context())
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, apierr.InternalError(err.Error()))
 		return
 	}
-
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    stats,
-	})
+	respondSuccess(c, stats)
 }
 
 // TopPlayers 获取顶级陪玩师
@@ -190,16 +165,10 @@ func (h *StatsHandler) TopPlayers(c *gin.Context) {
 
 	players, err := h.svc.TopPlayers(c.Request.Context(), limit)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, apierr.InternalError(err.Error()))
 		return
 	}
-
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    players,
-	})
+	respondSuccess(c, players)
 }
 
 // AuditOverview 获取审计概览
@@ -233,18 +202,13 @@ func (h *StatsHandler) AuditOverview(c *gin.Context) {
 
 	entityStats, actionStats, err := h.svc.AuditOverview(c.Request.Context(), from, to)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, apierr.InternalError(err.Error()))
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data: gin.H{
-			"entityStats": entityStats,
-			"actionStats": actionStats,
-		},
+	respondSuccess(c, gin.H{
+		"entityStats": entityStats,
+		"actionStats": actionStats,
 	})
 }
 
@@ -284,14 +248,8 @@ func (h *StatsHandler) AuditTrend(c *gin.Context) {
 
 	trend, err := h.svc.AuditTrend(c.Request.Context(), from, to, entity, action)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, apierr.InternalError(err.Error()))
 		return
 	}
-
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    trend,
-	})
+	respondSuccess(c, trend)
 }

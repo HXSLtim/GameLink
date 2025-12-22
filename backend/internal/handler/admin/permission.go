@@ -1,13 +1,12 @@
 package admin
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 
 	"gamelink/internal/handler/middleware"
 	"gamelink/internal/model"
 	permissionservice "gamelink/internal/service/admin"
+	"gamelink/pkg/apierr"
 )
 
 // Permission 权限模型（类型别名）
@@ -346,24 +345,18 @@ func (h *PermissionHandler) DeletePermission(c *gin.Context) {
 // @Failure      500            {object}  model.ErrorResponse
 // @Router       /admin/roles/{id}/permissions [get]
 func (h *PermissionHandler) GetRolePermissions(c *gin.Context) {
-	roleID, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "无效的角色ID")
+	roleID, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
 	permissions, err := h.permissionSvc.ListPermissionsByRoleID(c.Request.Context(), roleID)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[[]model.Permission]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "成功",
-		Data:    ensureSlice(permissions),
-	})
+	respondSuccess(c, ensureSlice(permissions))
 }
 
 // GetUserPermissions 获取用户的权限列// @Summary      获取用户的权限列// @Description  管理员获取指定用户的所有权限列// @Tags         Admin - Permissions
@@ -377,24 +370,18 @@ func (h *PermissionHandler) GetRolePermissions(c *gin.Context) {
 // @Failure      500            {object}  model.ErrorResponse
 // @Router       /admin/users/{id}/permissions [get]
 func (h *PermissionHandler) GetUserPermissions(c *gin.Context) {
-	userID, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "无效的用户ID")
+	userID, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
 	permissions, err := h.permissionSvc.ListPermissionsByUserID(c.Request.Context(), userID)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[[]model.Permission]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "成功",
-		Data:    ensureSlice(permissions),
-	})
+	respondSuccess(c, ensureSlice(permissions))
 }
 
 // GetPermissionGroups 获取所有权限分组列表
@@ -481,7 +468,7 @@ func (h *PermissionHandler) GetPermissionTreeByGroup(c *gin.Context) {
 func (h *PermissionHandler) GetCurrentUserPermissions(c *gin.Context) {
 	userIDVal, ok := c.Get(middleware.UserIDKey)
 	if !ok {
-		writeJSONError(c, http.StatusUnauthorized, "未登录")
+		respondError(c, apierr.Unauthorized("未登录"))
 		return
 	}
 	userID, _ := userIDVal.(uint64)
@@ -491,19 +478,14 @@ func (h *PermissionHandler) GetCurrentUserPermissions(c *gin.Context) {
 		isSuperAdmin, err := h.roleSvc.CheckUserIsSuperAdmin(c.Request.Context(), userID)
 		if err == nil && isSuperAdmin {
 			// 超级管理员返回 ['*']
-			writeJSON(c, http.StatusOK, model.APIResponse[[]string]{
-				Success: true,
-				Code:    http.StatusOK,
-				Message: "OK",
-				Data:    []string{"*"},
-			})
+			respondSuccess(c, []string{"*"})
 			return
 		}
 	}
 
 	perms, err := h.permissionSvc.ListPermissionsByUserID(c.Request.Context(), userID)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
@@ -515,10 +497,5 @@ func (h *PermissionHandler) GetCurrentUserPermissions(c *gin.Context) {
 		}
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[[]string]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    ensureSlice(codes),
-	})
+	respondSuccess(c, ensureSlice(codes))
 }

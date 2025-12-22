@@ -1,13 +1,10 @@
 package admin
 
 import (
-	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 
-	apierr "gamelink/pkg/apierr"
-	"gamelink/internal/model"
 	"gamelink/internal/service/commission"
 )
 
@@ -43,22 +40,17 @@ func RegisterCommissionRoutes(router gin.IRouter, svc *commission.CommissionServ
 func createCommissionRuleHandler(c *gin.Context, svc *commission.CommissionService) {
 	var req commission.CreateCommissionRuleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeJSONError(c, http.StatusBadRequest, err.Error())
+		respondBadRequest(c, err.Error())
 		return
 	}
 
 	rule, err := svc.CreateCommissionRule(c.Request.Context(), req)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "Commission rule created successfully",
-		Data:    *rule,
-	})
+	respondCreated(c, *rule)
 }
 
 // updateCommissionRuleHandler 更新抽成规则
@@ -75,29 +67,24 @@ func createCommissionRuleHandler(c *gin.Context, svc *commission.CommissionServi
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/commission/rules/{id} [put]
 func updateCommissionRuleHandler(c *gin.Context, svc *commission.CommissionService) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
 	var req commission.UpdateCommissionRuleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeJSONError(c, http.StatusBadRequest, err.Error())
+		respondBadRequest(c, err.Error())
 		return
 	}
 
-	err = svc.UpdateCommissionRule(c.Request.Context(), id, req)
+	err := svc.UpdateCommissionRule(c.Request.Context(), id, req)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "Commission rule updated successfully",
-	})
+	respondMsg(c, "Commission rule updated successfully")
 }
 
 // triggerSettlementHandler 手动触发月度结算
@@ -122,15 +109,11 @@ func triggerSettlementHandler(c *gin.Context, scheduler interface{ TriggerSettle
 
 	err := scheduler.TriggerSettlement(month)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "Settlement triggered successfully for month: " + month,
-	})
+	respondMsg(c, "Settlement triggered successfully for month: "+month)
 }
 
 // getPlatformStatsHandler 获取平台统计
@@ -150,14 +133,9 @@ func getPlatformStatsHandler(c *gin.Context, svc *commission.CommissionService) 
 
 	stats, err := svc.GetPlatformStats(c.Request.Context(), month)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[PlatformStatsResponse]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    *stats,
-	})
+	respondSuccess(c, *stats)
 }

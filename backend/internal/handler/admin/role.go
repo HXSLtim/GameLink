@@ -2,7 +2,6 @@ package admin
 
 import (
 	"errors"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 
@@ -11,6 +10,7 @@ import (
 	"gamelink/internal/repository"
 	roleservice "gamelink/internal/service/admin"
 	"gamelink/internal/service/audit"
+	"gamelink/pkg/apierr"
 )
 
 // RoleHandler 角色管理处理器
@@ -187,20 +187,15 @@ func (h *RoleHandler) ListRoles(c *gin.Context) {
 	}
 
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "成功",
-		Data: gin.H{
-			"items":      ensureSlice(roles),
-			"page":       page,
-			"pageSize":   pageSize,
-			"totalCount": total,
-		},
+	respondSuccess(c, gin.H{
+		"items":      ensureSlice(roles),
+		"page":       page,
+		"pageSize":   pageSize,
+		"totalCount": total,
 	})
 }
 
@@ -219,15 +214,15 @@ func (h *RoleHandler) ListRoles(c *gin.Context) {
 // @Failure      500               {object}  model.ErrorResponse
 // @Router       /admin/roles/{id} [get]
 func (h *RoleHandler) GetRole(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "无效的角色ID")
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
 	withPermissions := c.Query("with_permissions") == "true"
 
 	var role *model.RoleModel
+	var err error
 	if withPermissions {
 		role, err = h.roleSvc.GetRoleWithPermissions(c.Request.Context(), id)
 	} else {
@@ -236,19 +231,14 @@ func (h *RoleHandler) GetRole(c *gin.Context) {
 
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
-			writeJSONError(c, http.StatusNotFound, "角色不存在")
+			respondError(c, apierr.NotFound("角色不存在"))
 		} else {
-			writeJSONError(c, http.StatusInternalServerError, err.Error())
+			respondError(c, err)
 		}
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[*model.RoleModel]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "成功",
-		Data:    role,
-	})
+	respondSuccess(c, role)
 }
 
 // CreateRole 创建角色
@@ -267,7 +257,7 @@ func (h *RoleHandler) CreateRole(c *gin.Context) {
 	var req CreateRoleRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeJSONError(c, http.StatusBadRequest, "参数验证失败")
+		respondBadRequest(c, "参数验证失败")
 		return
 	}
 
@@ -279,16 +269,11 @@ func (h *RoleHandler) CreateRole(c *gin.Context) {
 	}
 
 	if err := h.roleSvc.CreateRole(c.Request.Context(), role); err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
-	writeJSON(c, http.StatusCreated, model.APIResponse[*model.RoleModel]{
-		Success: true,
-		Code:    http.StatusCreated,
-		Message: "角色创建成功",
-		Data:    role,
-	})
+	respondCreated(c, role)
 }
 
 // UpdateRole 更新角色
@@ -307,16 +292,15 @@ func (h *RoleHandler) CreateRole(c *gin.Context) {
 // @Failure      500            {object}  model.ErrorResponse
 // @Router       /admin/roles/{id} [put]
 func (h *RoleHandler) UpdateRole(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "无效的角色ID")
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
 	var req UpdateRoleRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeJSONError(c, http.StatusBadRequest, "参数验证失败")
+		respondBadRequest(c, "参数验证失败")
 		return
 	}
 
@@ -327,22 +311,17 @@ func (h *RoleHandler) UpdateRole(c *gin.Context) {
 	}
 
 	if err := h.roleSvc.UpdateRole(c.Request.Context(), role); err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
 	updatedRole, err := h.roleSvc.GetRole(c.Request.Context(), id)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[*model.RoleModel]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "角色更新成功",
-		Data:    updatedRole,
-	})
+	respondUpdated(c, updatedRole)
 }
 
 // DeleteRole 删除角色
@@ -359,23 +338,17 @@ func (h *RoleHandler) UpdateRole(c *gin.Context) {
 // @Failure      500            {object}  model.ErrorResponse
 // @Router       /admin/roles/{id} [delete]
 func (h *RoleHandler) DeleteRole(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "无效的角色ID")
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
 	if err := h.roleSvc.DeleteRole(c.Request.Context(), id); err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "角色删除成功",
-		Data:    nil,
-	})
+	respondMsg(c, "角色删除成功")
 }
 
 // GetRolePermissionIDs 获取角色的权限ID列表
@@ -393,28 +366,22 @@ func (h *RoleHandler) DeleteRole(c *gin.Context) {
 // @Failure      500            {object}  model.ErrorResponse
 // @Router       /admin/roles/{id}/permissions [get]
 func (h *RoleHandler) GetRolePermissionIDs(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "无效的角色ID")
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
 	permissionIDs, err := h.roleSvc.GetRolePermissionIDs(c.Request.Context(), id)
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
-			writeJSONError(c, http.StatusNotFound, "角色不存在")
+			respondError(c, apierr.NotFound("角色不存在"))
 		} else {
-			writeJSONError(c, http.StatusInternalServerError, err.Error())
+			respondError(c, err)
 		}
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[[]uint64]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "成功",
-		Data:    ensureSlice(permissionIDs),
-	})
+	respondSuccess(c, ensureSlice(permissionIDs))
 }
 
 // AssignPermissions 为角色分配权限（批量替换）
@@ -432,16 +399,15 @@ func (h *RoleHandler) GetRolePermissionIDs(c *gin.Context) {
 // @Failure      500            {object}  model.ErrorResponse
 // @Router       /admin/roles/{id}/permissions/batch [put]
 func (h *RoleHandler) AssignPermissions(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "无效的角色ID")
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
 	var req AssignPermissionsRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeJSONError(c, http.StatusBadRequest, "参数验证失败")
+		respondBadRequest(c, "参数验证失败")
 		return
 	}
 
@@ -456,7 +422,7 @@ func (h *RoleHandler) AssignPermissions(c *gin.Context) {
 	}
 
 	if err := h.roleSvc.AssignPermissionsToRole(c.Request.Context(), id, req.PermissionIDs); err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
@@ -468,12 +434,7 @@ func (h *RoleHandler) AssignPermissions(c *gin.Context) {
 		map[string]any{"permissionIds": beforePermIDs},
 		map[string]any{"permissionIds": req.PermissionIDs})
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "权限分配成功",
-		Data:    nil,
-	})
+	respondMsg(c, "权限分配成功")
 }
 
 // AddPermissionRequest 单个添加权限请求
@@ -497,15 +458,14 @@ type AddPermissionRequest struct {
 // @Failure      500            {object}  model.ErrorResponse
 // @Router       /admin/roles/{id}/permissions/{pid} [post]
 func (h *RoleHandler) AddPermissionToRole(c *gin.Context) {
-	roleID, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "无效的角色ID")
+	roleID, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
 	permissionID, err := parseUintParam(c, "pid")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "无效的权限ID")
+		respondBadRequest(c, "无效的权限ID")
 		return
 	}
 
@@ -517,7 +477,7 @@ func (h *RoleHandler) AddPermissionToRole(c *gin.Context) {
 	}
 
 	if err := h.roleSvc.AddPermissionsToRole(c.Request.Context(), roleID, []uint64{permissionID}); err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
@@ -529,12 +489,7 @@ func (h *RoleHandler) AddPermissionToRole(c *gin.Context) {
 		nil,
 		map[string]any{"permissionId": permissionID})
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "权限添加成功",
-		Data:    nil,
-	})
+	respondMsg(c, "权限添加成功")
 }
 
 // RemovePermissionFromRole 从角色移除单个权限
@@ -553,15 +508,14 @@ func (h *RoleHandler) AddPermissionToRole(c *gin.Context) {
 // @Failure      500            {object}  model.ErrorResponse
 // @Router       /admin/roles/{id}/permissions/{pid} [delete]
 func (h *RoleHandler) RemovePermissionFromRole(c *gin.Context) {
-	roleID, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "无效的角色ID")
+	roleID, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
 	permissionID, err := parseUintParam(c, "pid")
 	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "无效的权限ID")
+		respondBadRequest(c, "无效的权限ID")
 		return
 	}
 
@@ -573,7 +527,7 @@ func (h *RoleHandler) RemovePermissionFromRole(c *gin.Context) {
 	}
 
 	if err := h.roleSvc.RemovePermissionsFromRole(c.Request.Context(), roleID, []uint64{permissionID}); err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
@@ -585,12 +539,7 @@ func (h *RoleHandler) RemovePermissionFromRole(c *gin.Context) {
 		map[string]any{"permissionId": permissionID},
 		nil)
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "权限移除成功",
-		Data:    nil,
-	})
+	respondMsg(c, "权限移除成功")
 }
 
 // AssignRolesToUser 为用户分配角色
@@ -610,7 +559,7 @@ func (h *RoleHandler) AssignRolesToUser(c *gin.Context) {
 	var req AssignRolesToUserRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeJSONError(c, http.StatusBadRequest, "参数验证失败")
+		respondBadRequest(c, "参数验证失败")
 		return
 	}
 
@@ -623,7 +572,7 @@ func (h *RoleHandler) AssignRolesToUser(c *gin.Context) {
 
 	// 分配角色（服务层会自动失效用户缓存）
 	if err := h.roleSvc.AssignRolesToUser(c.Request.Context(), req.UserID, req.RoleIDs); err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
@@ -632,12 +581,7 @@ func (h *RoleHandler) AssignRolesToUser(c *gin.Context) {
 		map[string]any{"roleIds": beforeRoleIDs},
 		map[string]any{"roleIds": req.RoleIDs})
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "角色分配成功",
-		Data:    nil,
-	})
+	respondMsg(c, "角色分配成功")
 }
 
 // GetUserRoles 获取用户的角色列表
@@ -655,33 +599,22 @@ func (h *RoleHandler) AssignRolesToUser(c *gin.Context) {
 // @Router       /admin/users/{id}/roles [get]
 func (h *RoleHandler) GetUserRoles(c *gin.Context) {
 	// 支持两种参数名：user_id 和 id
-	userIDStr := c.Param("user_id")
-	if userIDStr == "" {
-		userIDStr = c.Param("id")
-	}
-
-	userID, err := parseUintParam(c, "id")
-	if err != nil {
+	userID, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		// 尝试使用 user_id 参数
-		userID, err = parseUintParam(c, "user_id")
-		if err != nil {
-			writeJSONError(c, http.StatusBadRequest, "无效的用户ID")
+		userID, ok = ParseIDAndRespond(c, "user_id")
+		if !ok {
 			return
 		}
 	}
 
 	roles, err := h.roleSvc.ListRolesByUserID(c.Request.Context(), userID)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[[]model.RoleModel]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "成功",
-		Data:    ensureSlice(roles),
-	})
+	respondSuccess(c, ensureSlice(roles))
 }
 
 // UpdateUserRoles 更新用户的角色（替换现有角色）
@@ -699,15 +632,14 @@ func (h *RoleHandler) GetUserRoles(c *gin.Context) {
 // @Failure      500            {object}  model.ErrorResponse
 // @Router       /admin/users/{id}/roles [put]
 func (h *RoleHandler) UpdateUserRoles(c *gin.Context) {
-	userID, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "无效的用户ID")
+	userID, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
 	var req UpdateUserRolesRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeJSONError(c, http.StatusBadRequest, "参数验证失败")
+		respondBadRequest(c, "参数验证失败")
 		return
 	}
 
@@ -720,14 +652,14 @@ func (h *RoleHandler) UpdateUserRoles(c *gin.Context) {
 
 	// 分配角色
 	if err := h.roleSvc.AssignRolesToUser(c.Request.Context(), userID, req.RoleIDs); err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
 	// 获取更新后的角色列表
 	afterRoles, err := h.roleSvc.ListRolesByUserID(c.Request.Context(), userID)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
@@ -736,12 +668,7 @@ func (h *RoleHandler) UpdateUserRoles(c *gin.Context) {
 		map[string]any{"roleIds": beforeRoleIDs},
 		map[string]any{"roleIds": req.RoleIDs})
 
-	writeJSON(c, http.StatusOK, model.APIResponse[[]model.RoleModel]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "用户角色更新成功",
-		Data:    ensureSlice(afterRoles),
-	})
+	respondUpdated(c, ensureSlice(afterRoles))
 }
 
 // BatchAssignRolesToUsers 批量为多个用户分配角色
@@ -760,12 +687,12 @@ func (h *RoleHandler) UpdateUserRoles(c *gin.Context) {
 func (h *RoleHandler) BatchAssignRolesToUsers(c *gin.Context) {
 	var req BatchAssignRolesRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeJSONError(c, http.StatusBadRequest, "参数验证失败")
+		respondBadRequest(c, "参数验证失败")
 		return
 	}
 
 	if len(req.UserIDs) == 0 {
-		writeJSONError(c, http.StatusBadRequest, "用户ID列表不能为空")
+		respondBadRequest(c, "用户ID列表不能为空")
 		return
 	}
 
@@ -799,10 +726,5 @@ func (h *RoleHandler) BatchAssignRolesToUsers(c *gin.Context) {
 			map[string]any{"roleIds": req.RoleIDs})
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[BatchAssignRolesResult]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "批量角色分配完成",
-		Data:    result,
-	})
+	respondSuccessWithMsg(c, "批量角色分配完成", result)
 }

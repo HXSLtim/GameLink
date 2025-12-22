@@ -958,7 +958,7 @@ func (h *ReviewHandler) ExportOperationLogs(c *gin.Context) {
 
 	items, _, err := h.svc.SearchOperationLogs(c.Request.Context(), opts)
 	if err != nil {
-		writeJSONError(c, 500, err.Error())
+		respondAPIError(c, apierr.InternalError("search operation logs failed").WithDetails(err.Error()))
 		return
 	}
 

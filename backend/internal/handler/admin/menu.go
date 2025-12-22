@@ -1,14 +1,13 @@
 package admin
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 
 	"gamelink/internal/handler/middleware"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	menusvc "gamelink/internal/service/admin"
+	"gamelink/pkg/apierr"
 )
 
 type MenuHandler struct {
@@ -41,15 +40,10 @@ func (h *MenuHandler) List(c *gin.Context) {
 		// No pagination params, return all (backward compatibility)
 		menus, err := h.svc.List(c.Request.Context(), parentID)
 		if err != nil {
-			writeJSONError(c, http.StatusInternalServerError, err.Error())
+			respondError(c, err)
 			return
 		}
-		writeJSON(c, http.StatusOK, model.APIResponse[[]model.Menu]{
-			Success: true,
-			Code:    http.StatusOK,
-			Message: "OK",
-			Data:    ensureSlice(menus),
-		})
+		respondSuccess(c, ensureSlice(menus))
 		return
 	}
 
@@ -61,7 +55,7 @@ func (h *MenuHandler) List(c *gin.Context) {
 
 	menus, total, err := h.svc.ListPaged(c.Request.Context(), page, pageSize, parentID)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
@@ -70,21 +64,13 @@ func (h *MenuHandler) List(c *gin.Context) {
 		totalPages = int((total + int64(pageSize) - 1) / int64(pageSize))
 	}
 
-	pagination := &model.Pagination{
+	respondList(c, ensureSlice(menus), &model.Pagination{
 		Page:       page,
 		PageSize:   pageSize,
 		Total:      int(total),
 		TotalPages: totalPages,
 		HasNext:    page < totalPages,
 		HasPrev:    page > 1,
-	}
-
-	writeJSON(c, http.StatusOK, model.APIResponse[[]model.Menu]{
-		Success:    true,
-		Code:       http.StatusOK,
-		Message:    "OK",
-		Data:       ensureSlice(menus),
-		Pagination: pagination,
 	})
 }
 
@@ -92,86 +78,64 @@ func (h *MenuHandler) List(c *gin.Context) {
 func (h *MenuHandler) Create(c *gin.Context) {
 	var req model.Menu
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeJSONError(c, http.StatusBadRequest, err.Error())
+		respondBadRequest(c, err.Error())
 		return
 	}
 	if err := h.svc.Create(c.Request.Context(), &req); err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
-	writeJSON(c, http.StatusCreated, model.APIResponse[model.Menu]{
-		Success: true,
-		Code:    http.StatusCreated,
-		Message: "Created",
-		Data:    req,
-	})
+	respondCreated(c, req)
 }
 
 // Get 获取菜单详情
 func (h *MenuHandler) Get(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "invalid id")
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 	menu, err := h.svc.Get(c.Request.Context(), id)
 	if err != nil {
 		if err == repository.ErrNotFound {
-			writeJSONError(c, http.StatusNotFound, "menu not found")
+			respondError(c, apierr.NotFound("menu not found"))
 			return
 		}
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[model.Menu]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    *menu,
-	})
+	respondSuccess(c, *menu)
 }
 
 // Update 更新菜单
 func (h *MenuHandler) Update(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "invalid id")
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 	var req model.Menu
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeJSONError(c, http.StatusBadRequest, err.Error())
+		respondBadRequest(c, err.Error())
 		return
 	}
 	req.ID = id
 	if err := h.svc.Update(c.Request.Context(), &req); err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "Updated",
-		Data:    req,
-	})
+	respondUpdated(c, req)
 }
 
 // Delete 删除菜单
 func (h *MenuHandler) Delete(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "invalid id")
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 	if err := h.svc.Delete(c.Request.Context(), id); err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "Deleted",
-	})
+	respondDeleted(c)
 }
 
 // ListMyMenus 获取当前用户可访问的菜单
@@ -185,7 +149,7 @@ func (h *MenuHandler) Delete(c *gin.Context) {
 func (h *MenuHandler) ListMyMenus(c *gin.Context) {
 	userIDVal, ok := c.Get(middleware.UserIDKey)
 	if !ok {
-		writeJSONError(c, http.StatusUnauthorized, "未登录")
+		respondError(c, apierr.Unauthorized("未登录"))
 		return
 	}
 	userID, _ := userIDVal.(uint64)
@@ -206,7 +170,7 @@ func (h *MenuHandler) ListMyMenus(c *gin.Context) {
 		// 获取用户权限列表
 		perms, permErr := h.permSvc.ListPermissionsByUserID(c.Request.Context(), userID)
 		if permErr != nil {
-			writeJSONError(c, http.StatusInternalServerError, permErr.Error())
+			respondError(c, permErr)
 			return
 		}
 
@@ -229,19 +193,14 @@ func (h *MenuHandler) ListMyMenus(c *gin.Context) {
 
 buildTree:
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
 	// 构建菜单树
 	menuTree := buildMenuTree(menus)
 
-	writeJSON(c, http.StatusOK, model.APIResponse[[]model.Menu]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    menuTree,
-	})
+	respondSuccess(c, menuTree)
 }
 
 // buildMenuTree 将扁平菜单列表构建为树形结构

@@ -5,18 +5,18 @@ module gamelink
 // 核心功能：智能订单分发、多角色管理、实时通讯、完整支付、数据监控、安全认证
 // 仓库地址：https://github.com/HXSLtim/GameLink.git
 
-go 1.25.3
+go 1.25.5
 
 require (
 	github.com/gin-gonic/gin v1.10.0
 	github.com/glebarez/sqlite v1.11.0
 	github.com/go-playground/validator/v10 v10.20.0
-	github.com/golang-jwt/jwt/v5 v5.2.1
+	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/golang/mock v1.6.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/leanovate/gopter v0.2.11
 	github.com/prometheus/client_golang v1.18.0
-	github.com/redis/go-redis/v9 v9.6.1
+	github.com/redis/go-redis/v9 v9.6.3
 	github.com/shirou/gopsutil/v3 v3.24.5
 	github.com/stretchr/testify v1.11.1
 	github.com/swaggo/files v1.0.1

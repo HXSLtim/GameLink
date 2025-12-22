@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"gamelink/internal/model"
 	adminservice "gamelink/internal/service/admin"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -73,7 +72,7 @@ type BatchSyncResponse struct {
 func (h *BatchSyncHandler) BatchSync(c *gin.Context) {
 	var req BatchSyncRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeJSONError(c, http.StatusBadRequest, err.Error())
+		respondBadRequest(c, err.Error())
 		return
 	}
 	ctx := c.Request.Context()
@@ -107,9 +106,7 @@ func (h *BatchSyncHandler) BatchSync(c *gin.Context) {
 		response.Success = false
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[BatchSyncResponse]{
-		Success: true, Code: http.StatusOK, Message: "sync complete", Data: response,
-	})
+	respondSuccessWithMsg(c, "sync complete", response)
 }
 
 func (h *BatchSyncHandler) syncPermissions(ctx context.Context, permissions []PermissionSyncItem) *BatchSyncResult {

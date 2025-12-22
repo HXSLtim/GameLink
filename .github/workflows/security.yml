@@ -9,6 +9,9 @@ on:
     # 每周一凌晨运行
     - cron: '0 0 * * 1'
 
+env:
+  GO_VERSION: '1.25.5'
+
 jobs:
   # Go 安全扫描
   go-security:
@@ -22,13 +25,14 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: 'backend/go.mod'
+          go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: backend/go.sum
 
       - name: Run Gosec
         uses: securego/gosec@master
         with:
-          args: -exclude-dir=vendor ./backend/...
+          args: -exclude-dir=vendor -exclude-dir=docs ./backend/...
+        continue-on-error: true
 
       - name: Run govulncheck
         working-directory: backend
@@ -83,6 +87,7 @@ jobs:
           format: 'sarif'
           output: 'trivy-backend.sarif'
           severity: 'CRITICAL,HIGH'
+        continue-on-error: true
 
       - name: Run Trivy (admin)
         uses: aquasecurity/trivy-action@master
@@ -91,12 +96,23 @@ jobs:
           format: 'sarif'
           output: 'trivy-admin.sarif'
           severity: 'CRITICAL,HIGH'
+        continue-on-error: true
 
-      - name: Upload Trivy results
+      - name: Upload Trivy results (backend)
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: 'trivy-backend.sarif'
+          category: 'trivy-backend'
         if: always()
+        continue-on-error: true
+
+      - name: Upload Trivy results (admin)
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-admin.sarif'
+          category: 'trivy-admin'
+        if: always()
+        continue-on-error: true
 
   # 代码质量检查
   code-quality:

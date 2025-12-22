@@ -1,12 +1,11 @@
 package admin
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 
 	"gamelink/internal/model"
 	"gamelink/internal/service/contentcategory"
+	"gamelink/pkg/apierr"
 )
 
 // ContentCategoryHandler 内容分类管理处理器
@@ -48,16 +47,11 @@ func (h *ContentCategoryHandler) List(c *gin.Context) {
 		Status:   status,
 	})
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[*contentcategory.ListResponse]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    resp,
-	})
+	respondSuccess(c, resp)
 }
 
 // Get 获取分类详情
@@ -68,24 +62,18 @@ func (h *ContentCategoryHandler) List(c *gin.Context) {
 // @Success      200  {object}  model.APIResponse[contentcategory.CategoryDTO]
 // @Router       /admin/content/categories/{id} [get]
 func (h *ContentCategoryHandler) Get(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "invalid id")
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
 	category, err := h.svc.Get(c.Request.Context(), id)
 	if err != nil {
-		writeJSONError(c, http.StatusNotFound, err.Error())
+		respondError(c, err)
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[*contentcategory.CategoryDTO]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    category,
-	})
+	respondSuccess(c, category)
 }
 
 // Create 创建分类
@@ -98,26 +86,21 @@ func (h *ContentCategoryHandler) Get(c *gin.Context) {
 func (h *ContentCategoryHandler) Create(c *gin.Context) {
 	var req contentcategory.CreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeJSONError(c, http.StatusBadRequest, err.Error())
+		respondBadRequest(c, err.Error())
 		return
 	}
 
 	category, err := h.svc.Create(c.Request.Context(), req)
 	if err != nil {
 		if err == contentcategory.ErrDuplicate {
-			writeJSONError(c, http.StatusConflict, "分类名称已存在")
+			respondBadRequest(c, "分类名称已存在")
 			return
 		}
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
-	writeJSON(c, http.StatusCreated, model.APIResponse[*contentcategory.CategoryDTO]{
-		Success: true,
-		Code:    http.StatusCreated,
-		Message: "创建成功",
-		Data:    category,
-	})
+	respondCreated(c, category)
 }
 
 // Update 更新分类
@@ -129,36 +112,31 @@ func (h *ContentCategoryHandler) Create(c *gin.Context) {
 // @Success      200  {object}  model.APIResponse[any]
 // @Router       /admin/content/categories/{id} [put]
 func (h *ContentCategoryHandler) Update(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "invalid id")
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
 	var req contentcategory.UpdateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeJSONError(c, http.StatusBadRequest, err.Error())
+		respondBadRequest(c, err.Error())
 		return
 	}
 
 	if err := h.svc.Update(c.Request.Context(), id, req); err != nil {
 		if err == contentcategory.ErrNotFound {
-			writeJSONError(c, http.StatusNotFound, "分类不存在")
+			respondError(c, apierr.NotFound("分类不存在"))
 			return
 		}
 		if err == contentcategory.ErrDuplicate {
-			writeJSONError(c, http.StatusConflict, "分类名称已存在")
+			respondBadRequest(c, "分类名称已存在")
 			return
 		}
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "更新成功",
-	})
+	respondMsg(c, "更新成功")
 }
 
 // Delete 删除分类
@@ -170,9 +148,8 @@ func (h *ContentCategoryHandler) Update(c *gin.Context) {
 // @Success      200  {object}  model.APIResponse[any]
 // @Router       /admin/content/categories/{id} [delete]
 func (h *ContentCategoryHandler) Delete(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "invalid id")
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
@@ -180,20 +157,16 @@ func (h *ContentCategoryHandler) Delete(c *gin.Context) {
 
 	if err := h.svc.Delete(c.Request.Context(), id, migrateTo); err != nil {
 		if err == contentcategory.ErrNotFound {
-			writeJSONError(c, http.StatusNotFound, "分类不存在")
+			respondError(c, apierr.NotFound("分类不存在"))
 			return
 		}
 		if err == contentcategory.ErrHasFeeds {
-			writeJSONError(c, http.StatusBadRequest, "分类下有动态，请指定迁移目标分类")
+			respondBadRequest(c, "分类下有动态，请指定迁移目标分类")
 			return
 		}
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "删除成功",
-	})
+	respondMsg(c, "删除成功")
 }

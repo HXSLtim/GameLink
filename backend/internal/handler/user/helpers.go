@@ -1,46 +1,34 @@
 package user
 
 import (
-	"strconv"
+	"gamelink/internal/handler/resp"
+	"gamelink/internal/model"
 
 	"github.com/gin-gonic/gin"
-
-	"gamelink/internal/handler"
-	"gamelink/internal/model"
 )
 
-// 本包内通用的响应封装
+// respondJSON writes a JSON response with trace ID support.
+// Kept for backward compatibility with existing handlers.
 func respondJSON[T any](c *gin.Context, status int, payload model.APIResponse[T]) {
-	if payload.TraceID == "" {
-		if rid, ok := c.Get("request_id"); ok {
-			if ridStr, ok := rid.(string); ok {
-				payload.TraceID = ridStr
-			}
-		}
-	}
-	c.JSON(status, payload)
+	resp.JSON(c, status, payload)
 }
 
+// respondError sends an error response with status code and message.
 func respondError(c *gin.Context, status int, msg string) {
-	respondJSON(c, status, model.APIResponse[any]{
-		Success: false,
-		Code:    status,
-		Message: msg,
-	})
+	resp.ErrorMsg(c, status, msg)
 }
 
-// respondSuccess sends a successful response with message and optional data
+// respondSuccess sends a successful response with message and optional data.
 func respondSuccess[T any](c *gin.Context, message string, data T) {
-	handler.RespondSuccess(c, message, data)
+	resp.Success(c, message, data)
 }
 
-// respondAPIError sends an API error response
+// respondAPIError sends an API error response.
 func respondAPIError(c *gin.Context, err error) {
-	handler.RespondAPIError(c, err)
+	resp.Error(c, err)
 }
 
-// parseUintParam 从路径参数中解析无符号整型 ID，调用方负责根据返回的 error 决定如何写入错误响应。
+// parseUintParam parses a uint64 path parameter.
 func parseUintParam(c *gin.Context, name string) (uint64, error) {
-	value := c.Param(name)
-	return strconv.ParseUint(value, 10, 64)
+	return resp.ParseUintParam(c, name)
 }

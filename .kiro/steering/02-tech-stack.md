@@ -4,7 +4,7 @@
 
 | 类别 | 技术 | 版本 |
 |------|------|------|
-| 语言 | Go | 1.25.3+ |
+| 语言 | Go | 1.25.5+ |
 | Web 框架 | Gin | - |
 | ORM | GORM | - |
 | 认证 | JWT (golang-jwt/jwt/v5) | - |
@@ -118,9 +118,80 @@ Handler → Service → Repository → Model
 - **Repository**: 数据库操作、缓存、查询封装
 - **Model**: 数据结构、数据库映射、验证规则
 
+### 统一响应规范
+
+Handler 层使用 `resp` 包和 `apierr` 包统一响应格式：
+
+```go
+// 位置: backend/internal/handler/resp/
+
+// 成功响应
+resp.OK(c, data)           // 200 + data
+resp.Created(c, data)      // 201 + data
+resp.Updated(c, data)      // 200 + "updated" + data
+resp.Deleted(c)            // 200 + "deleted"
+resp.List(c, items, pagination)  // 200 + 分页列表
+
+// 错误响应（使用 apierr 包）
+resp.Error(c, apierr.BadRequest("invalid input"))
+resp.Error(c, apierr.NotFound("resource not found"))
+resp.Error(c, apierr.InternalError("operation failed").WithDetails(err.Error()))
+
+// Admin 包辅助函数（backend/internal/handler/admin/helpers.go）
+respondSuccess(c, data)    // 通用成功
+respondCreated(c, data)    // 创建成功
+respondUpdated(c, data)    // 更新成功
+respondDeleted(c)          // 删除成功
+respondList(c, items, pagination)  // 分页列表
+respondMsg(c, "message")   // 仅消息无数据
+respondError(c, err)       // 统一错误处理
+respondBadRequest(c, msg)  // 400 错误
+ParseIDAndRespond(c, "id") // 解析ID并自动响应错误
+ValidateAndRespond(c, &req) // 绑定JSON并自动响应错误
+```
+
 ### 错误处理
 
 使用 `fmt.Errorf("context: %w", err)` 进行错误包装，三层错误机制：
 - Repository errors: 数据库级错误
 - Service errors: 业务逻辑错误（带上下文）
-- API errors: 标准化 HTTP 响应（带错误码）
+- API errors: 标准化 HTTP 响应（使用 `apierr` 包）
+
+```go
+// apierr 包常用函数（backend/pkg/apierr/errors.go）
+apierr.BadRequest(msg)      // 400
+apierr.Unauthorized(msg)    // 401
+apierr.Forbidden(msg)       // 403
+apierr.NotFound(msg)        // 404
+apierr.Conflict(msg)        // 409
+apierr.InternalError(msg)   // 500
+
+// 链式调用添加详情
+apierr.BadRequest("validation failed").WithDetails(err.Error())
+
+// 错误类型判断
+apierr.IsNotFound(err)
+apierr.IsValidationError(err)
+```
+
+### 前端请求层规范
+
+Axios 拦截器已在响应层自动解析 `response.data.data`，页面组件直接使用返回值即可。
+
+```typescript
+// ✅ 正确用法 - 拦截器已解析
+const resp = await api.getUsers();
+const users = resp.data;  // 直接是业务数据
+
+// ❌ 错误用法 - 多余的解析
+const users = resp.data.data;  // 不需要！
+```
+
+API 响应结构：
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": { ... }  // ← 拦截器返回这一层
+}
+```

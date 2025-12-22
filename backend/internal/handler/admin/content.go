@@ -8,6 +8,7 @@ import (
 
 	"gamelink/internal/model"
 	"gamelink/internal/service/content"
+	"gamelink/pkg/apierr"
 )
 
 // ContentHandler 内容管理处理器
@@ -74,16 +75,11 @@ func (h *ContentHandler) ListFeeds(c *gin.Context) {
 		DateTo:           dateTo,
 	})
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, apierr.InternalError(err.Error()))
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[*content.AdminListFeedsResponse]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    resp,
-	})
+	respondSuccess(c, resp)
 }
 
 // GetFeed 获取动态详情
@@ -94,24 +90,18 @@ func (h *ContentHandler) ListFeeds(c *gin.Context) {
 // @Success      200  {object}  model.APIResponse[content.AdminFeedDTO]
 // @Router       /admin/content/feeds/{id} [get]
 func (h *ContentHandler) GetFeed(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "invalid id")
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
 	feed, err := h.feedSvc.GetFeed(c.Request.Context(), id)
 	if err != nil {
-		writeJSONError(c, http.StatusNotFound, err.Error())
+		respondError(c, apierr.NotFound(err.Error()))
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[*content.AdminFeedDTO]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    feed,
-	})
+	respondSuccess(c, feed)
 }
 
 // ApproveFeed 批准动态
@@ -123,9 +113,8 @@ func (h *ContentHandler) GetFeed(c *gin.Context) {
 // @Success      200  {object}  model.APIResponse[any]
 // @Router       /admin/content/feeds/{id}/approve [put]
 func (h *ContentHandler) ApproveFeed(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "invalid id")
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
@@ -138,15 +127,11 @@ func (h *ContentHandler) ApproveFeed(c *gin.Context) {
 	_ = c.ShouldBindJSON(&req)
 
 	if err := h.feedSvc.ApproveFeed(c.Request.Context(), id, adminID, req.Note); err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, apierr.InternalError(err.Error()))
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "已批准",
-	})
+	respondMsg(c, "已批准")
 }
 
 // RejectFeed 拒绝动态
@@ -158,9 +143,8 @@ func (h *ContentHandler) ApproveFeed(c *gin.Context) {
 // @Success      200  {object}  model.APIResponse[any]
 // @Router       /admin/content/feeds/{id}/reject [put]
 func (h *ContentHandler) RejectFeed(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "invalid id")
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
@@ -171,20 +155,16 @@ func (h *ContentHandler) RejectFeed(c *gin.Context) {
 
 	var req content.AdminModerationRequest
 	if err := c.ShouldBindJSON(&req); err != nil || req.Note == "" {
-		writeJSONError(c, http.StatusBadRequest, "拒绝原因不能为空")
+		respondBadRequest(c, "拒绝原因不能为空")
 		return
 	}
 
 	if err := h.feedSvc.RejectFeed(c.Request.Context(), id, adminID, req.Note); err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, apierr.InternalError(err.Error()))
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "已拒绝",
-	})
+	respondMsg(c, "已拒绝")
 }
 
 // DeleteFeed 删除动态
@@ -195,9 +175,8 @@ func (h *ContentHandler) RejectFeed(c *gin.Context) {
 // @Success      200  {object}  model.APIResponse[any]
 // @Router       /admin/content/feeds/{id} [delete]
 func (h *ContentHandler) DeleteFeed(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "invalid id")
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
@@ -210,15 +189,11 @@ func (h *ContentHandler) DeleteFeed(c *gin.Context) {
 	_ = c.ShouldBindJSON(&req)
 
 	if err := h.feedSvc.DeleteFeed(c.Request.Context(), id, adminID, req.Note); err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, apierr.InternalError(err.Error()))
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "已删除",
-	})
+	respondDeleted(c)
 }
 
 // BatchApproveFeed 批量批准动态
@@ -235,21 +210,16 @@ func (h *ContentHandler) BatchApproveFeed(c *gin.Context) {
 	}
 
 	var req content.AdminBatchModerationRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		writeJSONError(c, http.StatusBadRequest, err.Error())
+	if !ValidateAndRespond(c, &req) {
 		return
 	}
 
 	if err := h.feedSvc.BatchApproveFeed(c.Request.Context(), req.FeedIDs, adminID, req.Note); err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, apierr.InternalError(err.Error()))
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "批量批准成功",
-	})
+	respondMsg(c, "批量批准成功")
 }
 
 // BatchRejectFeed 批量拒绝动态
@@ -267,20 +237,16 @@ func (h *ContentHandler) BatchRejectFeed(c *gin.Context) {
 
 	var req content.AdminBatchModerationRequest
 	if err := c.ShouldBindJSON(&req); err != nil || req.Note == "" {
-		writeJSONError(c, http.StatusBadRequest, "拒绝原因不能为空")
+		respondBadRequest(c, "拒绝原因不能为空")
 		return
 	}
 
 	if err := h.feedSvc.BatchRejectFeed(c.Request.Context(), req.FeedIDs, adminID, req.Note); err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, apierr.InternalError(err.Error()))
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "批量拒绝成功",
-	})
+	respondMsg(c, "批量拒绝成功")
 }
 
 // GetContentStats 获取内容统计
@@ -295,16 +261,11 @@ func (h *ContentHandler) GetContentStats(c *gin.Context) {
 
 	stats, err := h.statsSvc.GetStats(c.Request.Context(), days)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, apierr.InternalError(err.Error()))
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[*content.ContentStatsDTO]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    stats,
-	})
+	respondSuccess(c, stats)
 }
 
 // ExportContentStats 导出内容统计
@@ -320,7 +281,7 @@ func (h *ContentHandler) ExportContentStats(c *gin.Context) {
 
 	buf, filename, err := h.statsSvc.ExportStats(c.Request.Context(), days)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, apierr.InternalError(err.Error()))
 		return
 	}
 
@@ -368,16 +329,11 @@ func (h *ContentHandler) ListChatMessages(c *gin.Context) {
 		DateTo:      dateTo,
 	})
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, apierr.InternalError(err.Error()))
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[*content.ListMessagesResponse]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    resp,
-	})
+	respondSuccess(c, resp)
 }
 
 // DeleteChatMessage 删除聊天消息
@@ -388,9 +344,8 @@ func (h *ContentHandler) ListChatMessages(c *gin.Context) {
 // @Success      200  {object}  model.APIResponse[any]
 // @Router       /admin/content/chat/messages/{id} [delete]
 func (h *ContentHandler) DeleteChatMessage(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "invalid id")
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
@@ -405,15 +360,11 @@ func (h *ContentHandler) DeleteChatMessage(c *gin.Context) {
 	_ = c.ShouldBindJSON(&req)
 
 	if err := h.chatSvc.DeleteMessage(c.Request.Context(), id, adminID, req.Reason); err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, apierr.InternalError(err.Error()))
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "已删除",
-	})
+	respondDeleted(c)
 }
 
 // MuteUser 禁言用户
@@ -430,21 +381,16 @@ func (h *ContentHandler) MuteUser(c *gin.Context) {
 	}
 
 	var req content.MuteUserRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		writeJSONError(c, http.StatusBadRequest, err.Error())
+	if !ValidateAndRespond(c, &req) {
 		return
 	}
 
 	if err := h.chatSvc.MuteUser(c.Request.Context(), req, adminID); err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, apierr.InternalError(err.Error()))
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "已禁言",
-	})
+	respondMsg(c, "已禁言")
 }
 
 // UnmuteUser 解除禁言
@@ -461,28 +407,28 @@ func (h *ContentHandler) UnmuteUser(c *gin.Context) {
 		return
 	}
 
-	groupID, err := queryUint64Ptr(c, "groupId")
-	if err != nil || groupID == nil {
-		writeJSONError(c, http.StatusBadRequest, "groupId is required")
+	groupID, ok := QueryUint64PtrAndRespond(c, "groupId", "groupId is required")
+	if !ok || groupID == nil {
+		if ok {
+			respondBadRequest(c, "groupId is required")
+		}
 		return
 	}
 
-	userID, err := queryUint64Ptr(c, "userId")
-	if err != nil || userID == nil {
-		writeJSONError(c, http.StatusBadRequest, "userId is required")
+	userID, ok := QueryUint64PtrAndRespond(c, "userId", "userId is required")
+	if !ok || userID == nil {
+		if ok {
+			respondBadRequest(c, "userId is required")
+		}
 		return
 	}
 
 	if err := h.chatSvc.UnmuteUser(c.Request.Context(), *groupID, *userID, adminID); err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, apierr.InternalError(err.Error()))
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "已解除禁言",
-	})
+	respondMsg(c, "已解除禁言")
 }
 
 // ListFeedReports 列出动态举报
@@ -521,16 +467,11 @@ func (h *ContentHandler) ListFeedReports(c *gin.Context) {
 		DateTo:     dateTo,
 	})
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, apierr.InternalError(err.Error()))
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[*content.ListFeedReportsResponse]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    resp,
-	})
+	respondSuccess(c, resp)
 }
 
 // GetFeedReport 获取举报详情
@@ -541,24 +482,18 @@ func (h *ContentHandler) ListFeedReports(c *gin.Context) {
 // @Success      200  {object}  model.APIResponse[content.FeedReportDTO]
 // @Router       /admin/content/reports/{id} [get]
 func (h *ContentHandler) GetFeedReport(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "invalid id")
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
 	report, err := h.reportSvc.GetFeedReport(c.Request.Context(), id)
 	if err != nil {
-		writeJSONError(c, http.StatusNotFound, err.Error())
+		respondError(c, apierr.NotFound(err.Error()))
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[*content.FeedReportDTO]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    report,
-	})
+	respondSuccess(c, report)
 }
 
 // ProcessFeedReport 处理举报
@@ -570,9 +505,8 @@ func (h *ContentHandler) GetFeedReport(c *gin.Context) {
 // @Success      200  {object}  model.APIResponse[any]
 // @Router       /admin/content/reports/{id}/process [post]
 func (h *ContentHandler) ProcessFeedReport(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, "invalid id")
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
@@ -582,19 +516,14 @@ func (h *ContentHandler) ProcessFeedReport(c *gin.Context) {
 	}
 
 	var req content.ProcessReportRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		writeJSONError(c, http.StatusBadRequest, err.Error())
+	if !ValidateAndRespond(c, &req) {
 		return
 	}
 
 	if err := h.reportSvc.ProcessFeedReport(c.Request.Context(), id, req, adminID); err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, apierr.InternalError(err.Error()))
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "处理成功",
-	})
+	respondMsg(c, "处理成功")
 }

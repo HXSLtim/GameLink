@@ -3,7 +3,6 @@ package admin
 import (
 	"encoding/json"
 	"errors"
-	"net/http"
 	"strings"
 	"time"
 
@@ -80,7 +79,7 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("create order failed").WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusCreated, model.APIResponse[model.Order]{Success: true, Code: http.StatusCreated, Message: "created", Data: *order})
+	respondCreated(c, *order)
 }
 
 // AssignOrder
@@ -95,9 +94,8 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/orders/{id}/assign [post]
 func (h *OrderHandler) AssignOrder(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		respondAPIError(c, apierr.BadRequest("invalid order ID"))
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 	var p AssignOrderPayload
@@ -118,7 +116,7 @@ func (h *OrderHandler) AssignOrder(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("assign order failed").WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: *order})
+	respondUpdated(c, *order)
 }
 
 // ConfirmOrder 确认订单// @Summary      确认订单
@@ -133,9 +131,8 @@ func (h *OrderHandler) AssignOrder(c *gin.Context) {
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/orders/{id}/confirm [post]
 func (h *OrderHandler) ConfirmOrder(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		respondAPIError(c, apierr.BadRequest("invalid order ID"))
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 	var payload orderNotePayload
@@ -158,7 +155,7 @@ func (h *OrderHandler) ConfirmOrder(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("confirm order failed").WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: *order})
+	respondUpdated(c, *order)
 }
 
 // @Description  API endpoint// @Security     BearerAuth
@@ -170,9 +167,8 @@ func (h *OrderHandler) ConfirmOrder(c *gin.Context) {
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/orders/{id}/start [post]
 func (h *OrderHandler) StartOrder(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		respondAPIError(c, apierr.BadRequest("invalid order ID"))
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 	var payload orderNotePayload
@@ -195,7 +191,7 @@ func (h *OrderHandler) StartOrder(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("start order failed").WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: *order})
+	respondUpdated(c, *order)
 }
 
 // CompleteOrder 完成订单// @Summary      完成订单
@@ -210,9 +206,8 @@ func (h *OrderHandler) StartOrder(c *gin.Context) {
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/orders/{id}/complete [post]
 func (h *OrderHandler) CompleteOrder(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		respondAPIError(c, apierr.BadRequest("invalid order ID"))
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 	var payload orderNotePayload
@@ -235,7 +230,7 @@ func (h *OrderHandler) CompleteOrder(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("complete order failed").WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: *order})
+	respondUpdated(c, *order)
 }
 
 // ListOrders
@@ -265,13 +260,7 @@ func (h *OrderHandler) ListOrders(c *gin.Context) {
 		return
 	}
 	orders = ensureSlice(orders)
-	writeJSON(c, http.StatusOK, model.APIResponse[[]model.Order]{
-		Success:    true,
-		Code:       http.StatusOK,
-		Message:    "OK",
-		Data:       orders,
-		Pagination: pagination,
-	})
+	respondList(c, orders, pagination)
 }
 
 // GetOrder
@@ -286,9 +275,8 @@ func (h *OrderHandler) ListOrders(c *gin.Context) {
 //
 // GetOrder returns a single order by id.
 func (h *OrderHandler) GetOrder(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		respondAPIError(c, apierr.BadRequest("invalid order ID"))
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 	order, err := h.svc.GetOrder(c.Request.Context(), id)
@@ -300,12 +288,7 @@ func (h *OrderHandler) GetOrder(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("get order failed").WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[model.Order]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    *order,
-	})
+	respondSuccess(c, *order)
 }
 
 // @Description  API endpoint// @Security     BearerAuth
@@ -316,9 +299,8 @@ func (h *OrderHandler) GetOrder(c *gin.Context) {
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/orders/{id}/refund [post]
 func (h *OrderHandler) RefundOrder(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		respondAPIError(c, apierr.BadRequest("invalid order ID"))
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 	var payload orderRefundPayload
@@ -343,7 +325,7 @@ func (h *OrderHandler) RefundOrder(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("refund order failed").WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: *order})
+	respondUpdated(c, *order)
 }
 
 // @Description  API endpoint// @Tags         Admin/Orders
@@ -354,9 +336,8 @@ func (h *OrderHandler) RefundOrder(c *gin.Context) {
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/orders/{id}/timeline [get]
 func (h *OrderHandler) GetOrderTimeline(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		respondAPIError(c, apierr.BadRequest("invalid order ID"))
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 	items, err := h.svc.GetOrderTimeline(c.Request.Context(), id)
@@ -368,7 +349,7 @@ func (h *OrderHandler) GetOrderTimeline(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("get order timeline failed").WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[[]adminservice.OrderTimelineItem]{Success: true, Code: http.StatusOK, Message: "OK", Data: ensureSlice(items)})
+	respondSuccess(c, ensureSlice(items))
 }
 
 // ListOrderPayments 返回订单关联的支付记录// @Summary      获取订单支付记录
@@ -380,9 +361,8 @@ func (h *OrderHandler) GetOrderTimeline(c *gin.Context) {
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/orders/{id}/payments [get]
 func (h *OrderHandler) ListOrderPayments(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		respondAPIError(c, apierr.BadRequest("invalid order ID"))
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 	items, err := h.svc.GetOrderPayments(c.Request.Context(), id)
@@ -394,8 +374,7 @@ func (h *OrderHandler) ListOrderPayments(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("get order payments failed").WithDetails(err.Error()))
 		return
 	}
-	payments := ensureSlice(items)
-	writeJSON(c, http.StatusOK, model.APIResponse[[]model.Payment]{Success: true, Code: http.StatusOK, Message: "OK", Data: payments})
+	respondSuccess(c, ensureSlice(items))
 }
 
 // ListOrderRefunds 返回订单的退款记录// @Summary      获取订单退款记// @Tags         Admin/Orders
@@ -406,9 +385,8 @@ func (h *OrderHandler) ListOrderPayments(c *gin.Context) {
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/orders/{id}/refunds [get]
 func (h *OrderHandler) ListOrderRefunds(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		respondAPIError(c, apierr.BadRequest("invalid order ID"))
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 	items, err := h.svc.GetOrderRefunds(c.Request.Context(), id)
@@ -420,7 +398,7 @@ func (h *OrderHandler) ListOrderRefunds(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("get order refunds failed").WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[[]adminservice.OrderRefundItem]{Success: true, Code: http.StatusOK, Message: "OK", Data: ensureSlice(items)})
+	respondSuccess(c, ensureSlice(items))
 }
 
 // ListOrderReviews 返回订单评价列表// @Summary      获取订单评价列表
@@ -432,9 +410,8 @@ func (h *OrderHandler) ListOrderRefunds(c *gin.Context) {
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/orders/{id}/reviews [get]
 func (h *OrderHandler) ListOrderReviews(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		respondAPIError(c, apierr.BadRequest("invalid order ID"))
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 	items, err := h.svc.GetOrderReviews(c.Request.Context(), id)
@@ -446,7 +423,7 @@ func (h *OrderHandler) ListOrderReviews(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("get order reviews failed").WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[[]model.Review]{Success: true, Code: http.StatusOK, Message: "OK", Data: ensureSlice(items)})
+	respondSuccess(c, ensureSlice(items))
 }
 
 // UpdateOrder
@@ -513,12 +490,7 @@ func (h *OrderHandler) UpdateOrder(c *gin.Context) {
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[model.Order]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "updated",
-		Data:    *order,
-	})
+	respondUpdated(c, *order)
 }
 
 // DeleteOrder
@@ -548,11 +520,7 @@ func (h *OrderHandler) DeleteOrder(c *gin.Context) {
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "deleted",
-	})
+	respondDeleted(c)
 }
 
 // ListOrderLogs
@@ -611,8 +579,7 @@ func (h *OrderHandler) ListOrderLogs(c *gin.Context) {
 		exportOperationLogsCSV(c, "order", id, items)
 		return
 	}
-	items = ensureSlice(items)
-	writeJSON(c, http.StatusOK, model.APIResponse[[]model.OperationLog]{Success: true, Code: http.StatusOK, Message: "OK", Data: items, Pagination: p})
+	respondList(c, ensureSlice(items), p)
 }
 
 // UpdateOrderPayload defines the request body for updating an order.
@@ -685,7 +652,7 @@ func (h *PaymentHandler) CreatePayment(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("create payment failed").WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusCreated, model.APIResponse[*model.Payment]{Success: true, Code: http.StatusCreated, Message: "created", Data: pay})
+	respondCreated(c, pay)
 }
 
 // CapturePayment
@@ -732,7 +699,7 @@ func (h *PaymentHandler) CapturePayment(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("capture payment failed").WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[*model.Payment]{Success: true, Code: http.StatusOK, Message: "updated", Data: pay})
+	respondUpdated(c, pay)
 }
 
 // ListPayments
@@ -761,14 +728,7 @@ func (h *PaymentHandler) ListPayments(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("list payments failed").WithDetails(err.Error()))
 		return
 	}
-	payments = ensureSlice(payments)
-	writeJSON(c, http.StatusOK, model.APIResponse[[]model.Payment]{
-		Success:    true,
-		Code:       http.StatusOK,
-		Message:    "OK",
-		Data:       payments,
-		Pagination: pagination,
-	})
+	respondList(c, ensureSlice(payments), pagination)
 }
 
 // GetPayment
@@ -798,12 +758,7 @@ func (h *PaymentHandler) GetPayment(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("get payment failed").WithDetails(err.Error()))
 		return
 	}
-	writeJSON(c, http.StatusOK, model.APIResponse[*model.Payment]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    payment,
-	})
+	respondSuccess(c, payment)
 }
 
 // UpdatePayment
@@ -864,12 +819,7 @@ func (h *PaymentHandler) UpdatePayment(c *gin.Context) {
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[*model.Payment]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "updated",
-		Data:    payment,
-	})
+	respondUpdated(c, payment)
 }
 
 // DeletePayment
@@ -884,12 +834,11 @@ func (h *PaymentHandler) UpdatePayment(c *gin.Context) {
 //
 // DeletePayment deletes a payment record by id.
 func (h *PaymentHandler) DeletePayment(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		respondAPIError(c, apierr.BadRequest("invalid order ID"))
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
-	err = h.svc.DeletePayment(c.Request.Context(), id)
+	err := h.svc.DeletePayment(c.Request.Context(), id)
 	if err != nil {
 		if apierr.IsNotFound(err) {
 			respondAPIError(c, err)
@@ -899,11 +848,7 @@ func (h *PaymentHandler) DeletePayment(c *gin.Context) {
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "deleted",
-	})
+	respondDeleted(c)
 }
 
 // ListPaymentLogs
@@ -923,9 +868,8 @@ func (h *PaymentHandler) DeletePayment(c *gin.Context) {
 // @Success      200  {object}  model.APIResponse[model.Order]
 // @Router       /admin/payments/{id}/logs [get]
 func (h *PaymentHandler) ListPaymentLogs(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		respondAPIError(c, apierr.BadRequest("invalid order ID"))
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 	page, pageSize, ok := parsePagination(c)
@@ -962,8 +906,7 @@ func (h *PaymentHandler) ListPaymentLogs(c *gin.Context) {
 		exportOperationLogsCSV(c, "payment", id, items)
 		return
 	}
-	items = ensureSlice(items)
-	writeJSON(c, http.StatusOK, model.APIResponse[[]model.OperationLog]{Success: true, Code: http.StatusOK, Message: "OK", Data: items, Pagination: p})
+	respondList(c, ensureSlice(items), p)
 }
 
 // UpdatePaymentPayload defines the request body for updating a payment.
@@ -1006,9 +949,8 @@ type CapturePaymentPayload struct {
 // @Failure      404  {object}  model.ErrorResponse "支付记录不存在"
 // @Router       /admin/payments/{id}/refund [post]
 func (h *PaymentHandler) RefundPayment(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		respondAPIError(c, apierr.BadRequest("invalid payment ID"))
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
@@ -1088,12 +1030,7 @@ func (h *PaymentHandler) RefundPayment(c *gin.Context) {
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[*model.Payment]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "refund processed",
-		Data:    updated,
-	})
+	respondSuccessWithMsg(c, "refund processed", updated)
 }
 
 // RefundPaymentPayload defines refund request fields.
@@ -1129,14 +1066,13 @@ func parseRFC3339Ptr(value *string) (*time.Time, error) {
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/payments/{id}/refunds [get]
 func (h *PaymentHandler) GetRefundHistory(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		respondAPIError(c, apierr.BadRequest("invalid payment ID"))
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
 	// Verify payment exists
-	_, err = h.svc.GetPayment(c.Request.Context(), id)
+	_, err := h.svc.GetPayment(c.Request.Context(), id)
 	if err != nil {
 		if apierr.IsNotFound(err) {
 			respondAPIError(c, err)
@@ -1157,12 +1093,7 @@ func (h *PaymentHandler) GetRefundHistory(c *gin.Context) {
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[[]model.OperationLog]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "success",
-		Data:    logs,
-	})
+	respondSuccess(c, logs)
 }
 
 // ReviewOrder
@@ -1176,9 +1107,8 @@ func (h *PaymentHandler) GetRefundHistory(c *gin.Context) {
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/orders/{id}/review [post]
 func (h *OrderHandler) ReviewOrder(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		respondAPIError(c, apierr.BadRequest("invalid order ID"))
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 	var payload ReviewOrderPayload
@@ -1226,7 +1156,7 @@ func (h *OrderHandler) ReviewOrder(c *gin.Context) {
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: *updated})
+	respondUpdated(c, *updated)
 }
 
 // CancelOrder
@@ -1241,9 +1171,8 @@ func (h *OrderHandler) ReviewOrder(c *gin.Context) {
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/orders/{id}/cancel [post]
 func (h *OrderHandler) CancelOrder(c *gin.Context) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		respondAPIError(c, apierr.BadRequest("invalid order ID"))
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 	var payload CancelOrderPayload
@@ -1284,7 +1213,7 @@ func (h *OrderHandler) CancelOrder(c *gin.Context) {
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[model.Order]{Success: true, Code: http.StatusOK, Message: "updated", Data: *updated})
+	respondUpdated(c, *updated)
 }
 
 // ReviewOrderPayload defines approval decision.

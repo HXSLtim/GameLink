@@ -1,13 +1,11 @@
 package admin
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 
-	apierr "gamelink/pkg/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/service/item"
+	apierr "gamelink/pkg/apierr"
 )
 
 // ServiceItem 服务项目模型（类型别名）
@@ -42,22 +40,17 @@ func RegisterServiceItemRoutes(router gin.IRouter, svc *item.ServiceItemService)
 func createServiceItemHandler(c *gin.Context, svc *item.ServiceItemService) {
 	var req item.CreateServiceItemRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeJSONError(c, http.StatusBadRequest, err.Error())
+		respondBadRequest(c, err.Error())
 		return
 	}
 
 	item, err := svc.CreateServiceItem(c.Request.Context(), req)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[model.ServiceItem]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "Service item created successfully",
-		Data:    *item,
-	})
+	respondSuccess(c, *item)
 }
 
 // listServiceItemsHandler 获取服务项目列表
@@ -78,22 +71,17 @@ func createServiceItemHandler(c *gin.Context, svc *item.ServiceItemService) {
 func listServiceItemsHandler(c *gin.Context, svc *item.ServiceItemService) {
 	var req item.ListServiceItemsRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
-		writeJSONError(c, http.StatusBadRequest, err.Error())
+		respondBadRequest(c, err.Error())
 		return
 	}
 
 	resp, err := svc.ListServiceItems(c.Request.Context(), req)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[item.ServiceItemListResponse]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    *resp,
-	})
+	respondSuccess(c, *resp)
 }
 
 // getServiceItemHandler 获取服务项目详情
@@ -108,28 +96,22 @@ func listServiceItemsHandler(c *gin.Context, svc *item.ServiceItemService) {
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/service-items/{id} [get]
 func getServiceItemHandler(c *gin.Context, svc *item.ServiceItemService) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
 	resp, err := svc.GetServiceItem(c.Request.Context(), id)
 	if err != nil {
 		if err == item.ErrNotFound {
-			writeJSONError(c, http.StatusNotFound, apierr.ErrServiceItemNotFound)
+			respondError(c, apierr.NotFound(apierr.ErrServiceItemNotFound))
 			return
 		}
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[item.ServiceItemDTO]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "OK",
-		Data:    *resp,
-	})
+	respondSuccess(c, *resp)
 }
 
 // updateServiceItemHandler 更新服务项目
@@ -145,29 +127,24 @@ func getServiceItemHandler(c *gin.Context, svc *item.ServiceItemService) {
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/service-items/{id} [put]
 func updateServiceItemHandler(c *gin.Context, svc *item.ServiceItemService) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
 	var req item.UpdateServiceItemRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeJSONError(c, http.StatusBadRequest, err.Error())
+		respondBadRequest(c, err.Error())
 		return
 	}
 
-	err = svc.UpdateServiceItem(c.Request.Context(), id, req)
+	err := svc.UpdateServiceItem(c.Request.Context(), id, req)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "Service item updated successfully",
-	})
+	respondMsg(c, "Service item updated successfully")
 }
 
 // deleteServiceItemHandler 删除服务项目
@@ -182,23 +159,18 @@ func updateServiceItemHandler(c *gin.Context, svc *item.ServiceItemService) {
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/service-items/{id} [delete]
 func deleteServiceItemHandler(c *gin.Context, svc *item.ServiceItemService) {
-	id, err := parseUintParam(c, "id")
-	if err != nil {
-		writeJSONError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
 		return
 	}
 
-	err = svc.DeleteServiceItem(c.Request.Context(), id)
+	err := svc.DeleteServiceItem(c.Request.Context(), id)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "Service item deleted successfully",
-	})
+	respondMsg(c, "Service item deleted successfully")
 }
 
 // batchUpdateStatusHandler 批量更新状
@@ -215,21 +187,17 @@ func deleteServiceItemHandler(c *gin.Context, svc *item.ServiceItemService) {
 func batchUpdateStatusHandler(c *gin.Context, svc *item.ServiceItemService) {
 	var req item.BatchUpdateStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeJSONError(c, http.StatusBadRequest, err.Error())
+		respondBadRequest(c, err.Error())
 		return
 	}
 
 	err := svc.BatchUpdateStatus(c.Request.Context(), req)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "Status updated successfully",
-	})
+	respondMsg(c, "Status updated successfully")
 }
 
 // batchUpdatePriceHandler 批量更新价格
@@ -246,19 +214,15 @@ func batchUpdateStatusHandler(c *gin.Context, svc *item.ServiceItemService) {
 func batchUpdatePriceHandler(c *gin.Context, svc *item.ServiceItemService) {
 	var req item.BatchUpdatePriceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		writeJSONError(c, http.StatusBadRequest, err.Error())
+		respondBadRequest(c, err.Error())
 		return
 	}
 
 	err := svc.BatchUpdatePrice(c.Request.Context(), req)
 	if err != nil {
-		writeJSONError(c, http.StatusInternalServerError, err.Error())
+		respondError(c, err)
 		return
 	}
 
-	writeJSON(c, http.StatusOK, model.APIResponse[any]{
-		Success: true,
-		Code:    http.StatusOK,
-		Message: "Price updated successfully",
-	})
+	respondMsg(c, "Price updated successfully")
 }
