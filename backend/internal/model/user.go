@@ -41,4 +41,16 @@ type User struct {
 
 	// 用户钱包（积分就是余额，从钱包读取）
 	Wallet *Wallet `json:"wallet,omitempty" gorm:"foreignKey:UserID"`
+
+	// VIP 相关字段
+	VipLevelID          *uint64    `json:"vipLevelId,omitempty" gorm:"column:vip_level_id;index"`              // 当前VIP等级ID
+	VipUnlocked         bool       `json:"vipUnlocked" gorm:"column:vip_unlocked;default:false"`               // VIP是否已解锁
+	VipExp              int64      `json:"vipExp" gorm:"column:vip_exp;default:0"`                             // VIP经验（累计消费，分）
+	TotalRechargeCents  int64      `json:"totalRechargeCents" gorm:"column:total_recharge_cents;default:0"`    // 累计充值（分）
+	VipUnlockedAt       *time.Time `json:"vipUnlockedAt,omitempty" gorm:"column:vip_unlocked_at"`              // VIP解锁时间
+	VipExpireAt         *time.Time `json:"vipExpireAt,omitempty" gorm:"column:vip_expire_at"`                  // VIP过期时间（nil=永久）
+	LastMonthlyCouponAt *time.Time `json:"lastMonthlyCouponAt,omitempty" gorm:"column:last_monthly_coupon_at"` // 上次发放月度券时间
+
+	// VIP 等级关联
+	VipLevel *VipLevel `json:"vipLevel,omitempty" gorm:"foreignKey:VipLevelID"`
 }

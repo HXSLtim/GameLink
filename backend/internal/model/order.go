@@ -64,6 +64,10 @@ type Order struct {
 	HasDispute bool `json:"hasDispute" gorm:"column:has_dispute;default:false;index"` // 是否有争议
 	// Note: DisputeID removed - use reverse relationship from OrderDispute instead
 
+	// 多人服务字段
+	RequiredPlayers int `json:"requiredPlayers" gorm:"column:required_players;default:1"` // 需要的陪玩师数量
+	CurrentPlayers  int `json:"currentPlayers" gorm:"column:current_players;default:0"`   // 当前已接单的陪玩师数量
+
 	// Relations
 	User            User         `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;foreignKey:UserID;references:ID"`
 	Player          *Player      `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;foreignKey:PlayerID;references:ID"`

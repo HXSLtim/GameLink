@@ -14,6 +14,17 @@ const (
 	SubCategoryGift ServiceItemSubCategory = "gift"
 )
 
+// UsageLimitType 使用限制类型
+type UsageLimitType string
+
+const (
+	UsageLimitNone    UsageLimitType = "none"    // 无限制
+	UsageLimitOnce    UsageLimitType = "once"    // 只能用一次（终身）
+	UsageLimitDaily   UsageLimitType = "daily"   // 每日限制
+	UsageLimitWeekly  UsageLimitType = "weekly"  // 每周限制
+	UsageLimitMonthly UsageLimitType = "monthly" // 每月限制
+)
+
 // ServiceItem 服务项目表 (统一管理所有服务类型，包括礼物)
 type ServiceItem struct {
 	ID             uint64                 `gorm:"primaryKey;autoIncrement" json:"id"`
@@ -36,6 +47,17 @@ type ServiceItem struct {
 	SortOrder      int                    `gorm:"default:0" json:"sortOrder"`
 	CreatedAt      time.Time              `gorm:"autoCreateTime" json:"createdAt"`
 	UpdatedAt      time.Time              `gorm:"autoUpdateTime" json:"updatedAt"`
+
+	// 多人服务配置
+	RequiredPlayers int `gorm:"column:required_players;default:1" json:"requiredPlayers"` // 需要的陪玩师数量
+
+	// VIP 专属价（预留）
+	VipPriceCents *int64 `gorm:"column:vip_price_cents" json:"vipPriceCents,omitempty"` // VIP专属价格（分），nil表示无专属价
+
+	// 使用限制配置
+	UsageLimitType  UsageLimitType `gorm:"column:usage_limit_type;size:32;default:'none'" json:"usageLimitType"` // 限制类型
+	UsageLimitCount int            `gorm:"column:usage_limit_count;default:0" json:"usageLimitCount"`            // 限制次数（0=无限制）
+	MaxPerOrder     int            `gorm:"column:max_per_order;default:0" json:"maxPerOrder"`                    // 单次购买数量限制（0=无限制）
 }
 
 // TableName 指定表名

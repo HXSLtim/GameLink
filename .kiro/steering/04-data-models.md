@@ -1,6 +1,13 @@
-# 数据模型
+# 数据模型 - 核心模块
 
 > ⚠️ **文档维护提醒**：修改 `backend/internal/model/` 后必须同步更新此文档。
+
+## 相关文档
+
+- [04a-marketing-models.md](./04a-marketing-models.md) - VIP、优惠券、充值、活动、推荐
+- [04b-team-models.md](./04b-team-models.md) - 团队系统
+- [04c-enums-indexes.md](./04c-enums-indexes.md) - 枚举类型和数据库索引
+- [04d-notification-models.md](./04d-notification-models.md) - 通知系统
 
 ## 维护规范
 
@@ -21,8 +28,11 @@ type Base struct {
     CreatedAt time.Time      `json:"createdAt"`
     UpdatedAt time.Time      `json:"updatedAt"`
     DeletedAt gorm.DeletedAt `json:"deletedAt,omitempty"` // 软删除
+    ExtJSON   string         `json:"extJson,omitempty"`   // 扩展字段（JSON格式）
 }
 ```
+
+> **ExtJSON 用途**：预留扩展字段，用于存储临时性或实验性数据，避免频繁修改表结构。
 
 ---
 
@@ -42,6 +52,13 @@ type Base struct {
 | LastLoginAt | *time.Time | 最后登录时间 |
 | Roles | []RoleModel | 多角色关联（RBAC） |
 | Wallet | *Wallet | 用户钱包 |
+| VipLevelID | *uint64 | 当前VIP等级ID |
+| VipUnlocked | bool | VIP是否已解锁 |
+| VipExp | int64 | VIP经验（累计消费，分） |
+| TotalRechargeCents | int64 | 累计充值（分） |
+| VipUnlockedAt | *time.Time | VIP解锁时间 |
+| VipExpireAt | *time.Time | VIP过期时间（nil=永久） |
+| LastMonthlyCouponAt | *time.Time | 上次发放月度券时间 |
 
 ### RoleModel（角色）
 
@@ -106,14 +123,14 @@ type Base struct {
 
 ## 订单模块
 
-### Order（订单）
+### Order（订单/主订单）
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | OrderNo | string | 订单号（唯一） |
 | UserID | uint64 | 下单用户ID |
-| ItemID | uint64 | 服务项目ID |
-| PlayerID | *uint64 | 服务陪玩师ID |
+| ItemID | uint64 | 服务项目ID（向后兼容，单人订单） |
+| PlayerID | *uint64 | 服务陪玩师ID（向后兼容，单人订单） |
 | RecipientPlayerID | *uint64 | 礼物接收陪玩师ID |
 | Quantity | int | 数量 |
 | UnitPriceCents | int64 | 单价（分） |
@@ -126,6 +143,39 @@ type Base struct {
 | ScheduledStart | *time.Time | 预约开始时间 |
 | CompletedAt | *time.Time | 完成时间 |
 | HasDispute | bool | 是否有争议 |
+| RequiredPlayers | int | 需要的陪玩师数量（默认1） |
+| CurrentPlayers | int | 当前已接单的陪玩师数量 |
+
+### OrderItem（订单明细）
+
+> 支持一个订单包含多个服务项目/座位，每个座位可以是不同等级的陪玩师
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| OrderID | uint64 | 主订单ID |
+| ItemID | uint64 | 服务项目ID |
+| Slot | int | 座位号（1, 2, 3...） |
+| UnitPriceCents | int64 | 单价（分） |
+| Quantity | int | 数量 |
+| TotalCents | int64 | 小计（分） |
+| CommissionRate | float64 | 抽成比例 |
+| Status | string | pending/matched/completed/canceled |
+| PlayerID | *uint64 | 接单的陪玩师ID |
+
+### OrderPlayer（订单陪玩师记录）
+
+> 记录陪玩师接单详情，用于收入分配和状态追踪
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| OrderID | uint64 | 订单ID |
+| OrderItemID | uint64 | 订单明细ID |
+| PlayerID | uint64 | 陪玩师ID |
+| JoinedAt | time.Time | 接单时间 |
+| TeamID | *uint64 | 团队ID（团队接单时） |
+| IncomeCents | int64 | 该陪玩师收入（分） |
+| CommissionCents | int64 | 该陪玩师抽成（分） |
+| Status | string | joined/left/completed |
 
 ### ServiceItem（服务项目）
 
@@ -140,6 +190,59 @@ type Base struct {
 | ServiceHours | int | 服务时长（小时） |
 | CommissionRate | float64 | 抽成比例（默认0.20） |
 | IsActive | bool | 是否启用 |
+| RequiredPlayers | int | 需要的陪玩师数量（默认1） |
+| VipPriceCents | *int64 | VIP专属价格（分） |
+| UsageLimitType | UsageLimitType | 限制类型：none/once/daily/weekly/monthly |
+| UsageLimitCount | int | 限制次数（0=无限制） |
+| MaxPerOrder | int | 单次购买数量限制（0=无限制） |
+
+---
+
+## 订单业务流程
+
+### 多人订单下单流程
+
+```
+1. 用户选择服务项目和座位配置
+   ├── 座位1: 王者陪玩 ¥50
+   └── 座位2: 钻石陪玩 ¥30
+   
+2. 创建订单
+   ├── Order (TotalPrice=80, RequiredPlayers=2, CurrentPlayers=0)
+   ├── OrderItem (Slot=1, ItemID=王者, Price=50, Status=pending)
+   └── OrderItem (Slot=2, ItemID=钻石, Price=30, Status=pending)
+   
+3. 陪玩师接单（防超卖：数据库行锁）
+   ├── 王者陪玩师接单 → OrderItem1.PlayerID=100, Status=matched
+   └── 钻石陪玩师接单 → OrderItem2.PlayerID=200, Status=matched
+   
+4. 人齐检查
+   └── CurrentPlayers == RequiredPlayers → Order.Status = in_progress
+   
+5. 服务完成
+   └── Order.Status = completed
+   
+6. 用户评价（一键评价 + 可选单独评价）
+   └── 批量创建 Review 记录
+```
+
+### 订单补差价（升级/加座位）
+
+> 服务进行中（in_progress）用户可以升级座位等级或新增座位
+
+**触发时机：** 陪玩师进入后（Order.Status = in_progress）
+
+**支持操作：**
+- 升级座位：钻石陪玩 → 王者陪玩
+- 加座位：从 2 人变 3 人
+
+```
+【升级座位流程】
+用户发起升级 → 计算差价 → 创建 Payment → 支付成功 → 更新订单
+
+【加座位流程】
+用户发起加座 → 创建新 OrderItem → 创建 Payment → 支付成功 → 等待接单
+```
 
 ---
 
@@ -200,6 +303,7 @@ type Base struct {
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | OrderID | uint64 | 订单ID |
+| OrderItemID | *uint64 | 订单明细ID（多人订单时关联具体座位） |
 | UserID | uint64 | 评价者ID |
 | PlayerID | uint64 | 被评价陪玩师ID |
 | Score | Rating | 评分（1-5） |
@@ -240,6 +344,10 @@ type Base struct {
 | CreatedBy | uint64 | 创建者ID |
 | MaxMembers | int | 最大成员数（默认100） |
 | IsActive | bool | 是否激活 |
+| AutoDestroy | bool | 订单完成后自动销毁 |
+| VoiceEnabled | bool | 是否启用语音（预留） |
+| VoiceRoomID | string | 语音房间ID（第三方服务） |
+| VoiceProvider | string | 语音服务商：agora/tencent/zego |
 
 ### ChatMessage（聊天消息）
 
@@ -253,31 +361,6 @@ type Base struct {
 
 ---
 
-## 枚举类型
-
-### 用户状态 (UserStatus)
-`active` | `suspended` | `banned`
-
-### 订单状态 (OrderStatus)
-`pending` | `confirmed` | `in_progress` | `completed` | `canceled` | `refunded`
-
-### 支付状态 (PaymentStatus)
-`pending` | `paid` | `failed` | `refunded`
-
-### 支付方式 (PaymentMethod)
-`wechat` | `alipay` | `wallet` | `combined`
-
-### 认证状态 (VerificationStatus)
-`pending` | `verified` | `rejected`
-
-### 争议状态 (DisputeStatus)
-`pending` | `assigned` | `mediating` | `resolved` | `rejected` | `canceled`
-
-### 货币类型 (Currency)
-`CNY` | `USD` | `EUR`
-
----
-
 ## 金额处理规范
 
 所有金额字段使用 **分（Cents）** 为单位存储：
@@ -288,29 +371,3 @@ TotalPriceCents int64  // 存储 10000 表示 ¥100.00
 // 前端显示时转换
 displayPrice := float64(totalPriceCents) / 100
 ```
-
----
-
-## 数据库索引
-
-### 唯一索引
-- User: Phone, Email
-- Order: OrderNo
-- Player: UserID
-- Game: Key
-- RoleModel: Slug
-- Permission: Method+Path, Code
-- ServiceItem: ItemCode
-
-### 复合索引
-- Order: (UserID, Status, CreatedAt)
-- Order: (PlayerID, Status)
-- User: (Status, LastLoginAt)
-
----
-
-## 变更日志
-
-| 日期 | 变更内容 |
-|------|----------|
-| 2024-12-21 | 初始化数据模型文档 |

@@ -142,6 +142,38 @@ func autoMigrate(db *gorm.DB) error {
 		&model.OrderDispute{}, // Order disputes (must be after Order, Payment, User)
 		// Service Item (统一管理护航服务和礼物)
 		&model.ServiceItem{},
+		// Order multi-player support
+		&model.OrderItem{},   // 订单明细
+		&model.OrderPlayer{}, // 订单陪玩师关联
+		// VIP system
+		&model.VipLevel{},  // VIP等级配置
+		&model.VipConfig{}, // VIP系统配置
+		// Coupon system
+		&model.CouponTemplate{}, // 优惠券模板
+		&model.Coupon{},         // 用户优惠券
+		// Recharge system
+		&model.RechargeOption{}, // 充值档位配置
+		&model.RechargeRecord{}, // 充值记录
+		// Team system
+		&model.Team{},       // 陪玩师团队
+		&model.TeamMember{}, // 团队成员
+		&model.TeamInvite{}, // 团队邀请
+		// Referral system (预留)
+		&model.ReferralConfig{}, // 推荐配置
+		&model.ReferralCode{},   // 邀请码
+		&model.Referral{},       // 推荐记录
+		&model.ReferralReward{}, // 推荐奖励
+		// Activity system
+		&model.Activity{},              // 活动
+		&model.ActivityReward{},        // 活动奖励配置
+		&model.ActivityParticipation{}, // 活动参与记录
+		&model.ActivityDailyStats{},    // 活动每日统计
+		// Notification system
+		&model.NotificationTemplate{},    // 通知模板
+		&model.UserNotification{},        // 用户通知（扩展版）
+		&model.UserNotificationSetting{}, // 用户通知设置
+		&model.NotificationConfig{},      // 通知系统配置
+		&model.NotificationSchedule{},    // 定时通知任务
 		// Commission models
 		&model.CommissionRule{},
 		&model.CommissionRecord{},
