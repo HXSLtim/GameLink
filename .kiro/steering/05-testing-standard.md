@@ -119,8 +119,39 @@ docker exec -it gamelink-postgres psql -U gamelink -d gamelink
 
 ## 测试覆盖率目标
 
-- 当前：76.4%
+- 当前：~80%（服务层平均）
 - 目标：80%+
 - 单元测试：表驱动测试，mock 依赖
 - 集成测试：真实数据库（PostgreSQL），测试 fixtures
 - 并发测试：Race detector，压力测试
+
+### 服务层覆盖率详情（2024-12-23）
+
+| 模块 | 覆盖率 | 状态 |
+|------|--------|------|
+| menu | 100.0% | ✅ |
+| handler/resp | 96.0% | ✅ |
+| item | 90.9% | ✅ |
+| sensitiveword | 88.9% | ✅ |
+| audit | 86.9% | ✅ |
+| settlementcompany | 86.5% | ✅ |
+| player | 86.8% | ✅ |
+| role | 84.9% | ✅ |
+| user | 84.5% | ✅ |
+| auth | 84.3% | ✅ |
+| permission | 84.2% | ✅ |
+| withdraw | 81.4% | ✅ |
+| review | 80.3% | ✅ |
+| wallet | 80.0% | ✅ |
+| order | 79.2% | ⚠️ |
+| content | 76.2% | ⚠️ |
+| payment | 75.8% | ⚠️ |
+| routingrule | 50.7% | ⚠️ |
+| admin | 1.2% | ❌ |
+
+### 待提升模块
+
+- `routingrule`: RoutingEngine 复杂接口需要更多测试
+- `admin`: 需要添加单元测试
+- `order`: 接近 80%，可继续提升
+- `payment`: 接近 80%，可继续提升
