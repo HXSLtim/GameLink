@@ -5,7 +5,7 @@ module gamelink
 // 核心功能：智能订单分发、多角色管理、实时通讯、完整支付、数据监控、安全认证
 // 仓库地址：https://github.com/HXSLtim/GameLink.git
 
-go 1.25.5
+go 1.25.3
 
 require (
 	github.com/gin-gonic/gin v1.10.0
@@ -14,7 +14,6 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/golang/mock v1.6.0
 	github.com/gorilla/websocket v1.5.3
-	github.com/leanovate/gopter v0.2.11
 	github.com/prometheus/client_golang v1.18.0
 	github.com/redis/go-redis/v9 v9.6.3
 	github.com/shirou/gopsutil/v3 v3.24.5
@@ -27,14 +26,12 @@ require (
 	golang.org/x/time v0.14.0
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/postgres v1.5.9
-	gorm.io/driver/sqlite v1.6.0
 	gorm.io/gorm v1.30.0
 )
 
 require (
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
-	github.com/mattn/go-sqlite3 v1.14.22 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/richardlehane/mscfb v1.0.4 // indirect
 	github.com/richardlehane/msoleps v1.0.4 // indirect
@@ -45,7 +42,6 @@ require (
 	github.com/xuri/efp v0.0.1 // indirect
 	github.com/xuri/nfp v0.0.2-0.20250530014748-2ddeb826f9a9 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
-	pgregory.net/rapid v1.2.0 // direct
 )
 
 require (
@@ -95,7 +91,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/ncruces/go-strftime v0.1.9 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
-	github.com/prometheus/client_model v0.5.0 // direct
+	github.com/prometheus/client_model v0.5.0 // indirect; direct
 	github.com/prometheus/common v0.45.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
