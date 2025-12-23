@@ -5,7 +5,7 @@ module gamelink
 // 核心功能：智能订单分发、多角色管理、实时通讯、完整支付、数据监控、安全认证
 // 仓库地址：https://github.com/HXSLtim/GameLink.git
 
-go 1.25.5
+go 1.25.3
 
 require (
 	github.com/gin-gonic/gin v1.10.0
