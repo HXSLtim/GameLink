@@ -70,6 +70,8 @@ type Review struct {
 	// 订单ID
 	// @Example 1001
 	OrderID uint64 `json:"orderId" gorm:"column:order_id;index"`
+	// 订单明细ID（多人订单时关联具体座位）
+	OrderItemID *uint64 `json:"orderItemId,omitempty" gorm:"column:order_item_id;index"`
 	// 评价者ID（用户ID）
 	// @Example 2001
 	UserID uint64 `json:"reviewerId" gorm:"column:user_id;index"`
@@ -96,4 +98,7 @@ type Review struct {
 	// 拒绝原因（当状态为rejected时）
 	// @Example 评价内容包含敏感词
 	RejectionReason string `json:"rejectionReason,omitempty" gorm:"column:rejection_reason;type:text"`
+
+	// Relations
+	OrderItem *OrderItem `json:"orderItem,omitempty" gorm:"foreignKey:OrderItemID"`
 }

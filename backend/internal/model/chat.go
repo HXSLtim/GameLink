@@ -48,6 +48,16 @@ type ChatGroup struct {
 	Description    string        `json:"description" gorm:"type:text"`
 	Settings       string        `json:"settings" gorm:"type:json"`
 
+	// 语音服务字段（预留）
+	VoiceEnabled    bool       `json:"voiceEnabled" gorm:"column:voice_enabled;default:false"`     // 是否启用语音
+	VoiceRoomID     string     `json:"voiceRoomId" gorm:"column:voice_room_id;size:128"`           // 语音房间ID（第三方服务）
+	VoiceProvider   string     `json:"voiceProvider" gorm:"column:voice_provider;size:32"`         // 语音服务商（agora/tencent/zego）
+	VoiceStartedAt  *time.Time `json:"voiceStartedAt" gorm:"column:voice_started_at"`              // 语音开始时间
+	VoiceEndedAt    *time.Time `json:"voiceEndedAt" gorm:"column:voice_ended_at"`                  // 语音结束时间
+	VoiceDuration   int        `json:"voiceDuration" gorm:"column:voice_duration;default:0"`       // 语音时长（秒）
+	VoiceRecordURL  string     `json:"voiceRecordUrl" gorm:"column:voice_record_url;size:255"`     // 语音录制文件URL
+	VoiceMaxMembers int        `json:"voiceMaxMembers" gorm:"column:voice_max_members;default:10"` // 语音最大人数
+
 	Members []ChatGroupMember `json:"members" gorm:"foreignKey:GroupID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
 
