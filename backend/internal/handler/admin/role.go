@@ -599,13 +599,21 @@ func (h *RoleHandler) AssignRolesToUser(c *gin.Context) {
 // @Router       /admin/users/{id}/roles [get]
 func (h *RoleHandler) GetUserRoles(c *gin.Context) {
 	// 支持两种参数名：user_id 和 id
-	userID, ok := ParseIDAndRespond(c, "id")
-	if !ok {
-		// 尝试使用 user_id 参数
+	var userID uint64
+	var ok bool
+
+	// 先检查哪个参数存在
+	if c.Param("id") != "" {
+		userID, ok = ParseIDAndRespond(c, "id")
+	} else if c.Param("user_id") != "" {
 		userID, ok = ParseIDAndRespond(c, "user_id")
-		if !ok {
-			return
-		}
+	} else {
+		respondBadRequest(c, "缺少用户ID参数")
+		return
+	}
+
+	if !ok {
+		return
 	}
 
 	roles, err := h.roleSvc.ListRolesByUserID(c.Request.Context(), userID)

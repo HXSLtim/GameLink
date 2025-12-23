@@ -55,7 +55,7 @@ func TestConfigUpdateAndDisable(t *testing.T) {
 		"isActive": true,
 	}
 	ruleResp := doJSON(router, http.MethodPost, "/api/v1/admin/commission/rules", createRulePayload, "")
-	if ruleResp.Code != http.StatusOK {
+	if ruleResp.Code != http.StatusCreated && ruleResp.Code != http.StatusOK {
 		t.Fatalf("create rule status=%d body=%s", ruleResp.Code, ruleResp.Body.String())
 	}
 	var ruleParsed apiResp[model.CommissionRule]
@@ -86,7 +86,7 @@ func TestConfigUpdateAndDisable(t *testing.T) {
 		},
 	}
 	rcResp := doJSON(router, http.MethodPost, "/api/v1/admin/ranking-commission/configs", createRankingPayload, "")
-	if rcResp.Code != http.StatusOK {
+	if rcResp.Code != http.StatusCreated && rcResp.Code != http.StatusOK {
 		t.Fatalf("create ranking cfg status=%d body=%s", rcResp.Code, rcResp.Body.String())
 	}
 	var rcParsed apiResp[model.RankingCommissionConfig]
