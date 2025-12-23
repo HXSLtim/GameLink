@@ -42,7 +42,7 @@ import { PageContainer, SearchTable } from '@/components';
 import type { SearchField, ToolbarButton } from '@/components';
 import { ROLE_PERMISSIONS } from '@/constants/permissions';
 import { PermissionGuard } from '@/components/PermissionGuard';
-import { adminApi, type User, type UserQueryParams, type ApiResponse } from '@/api/admin';
+import { adminApi, type User, type UserQueryParams } from '@/api/admin';
 import { userRoleApi, roleApi } from '@/api/permission';
 import type { Role, UserEffectivePermissions } from '@/types/permission';
 import dayjs from 'dayjs';

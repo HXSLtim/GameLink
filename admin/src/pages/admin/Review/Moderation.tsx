@@ -56,12 +56,6 @@ const ReviewModeration: React.FC = () => {
   // 全部通过加载状态
   const [approveAllLoading, setApproveAllLoading] = useState(false);
 
-  // 扩展 Review 类型，包含后端返回的敏感词信息
-  interface PendingReview extends Review {
-    hasSensitiveWords?: boolean;
-    sensitiveWords?: string[];
-  }
-
   // 加载待审核评价
   const fetchPendingReviews = useCallback(async () => {
     setLoading(true);

@@ -5,15 +5,6 @@ import { adminApi } from '@/api/admin';
 import type { Menu } from '@/api/admin';
 import { getIcon } from '@/utils/iconMap';
 
-interface MenuResponse {
-    data: Menu[];
-    pagination?: {
-        page: number;
-        page_size: number;
-        total: number;
-    };
-}
-
 const MenuList: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState<Menu[]>([]);
