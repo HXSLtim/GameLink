@@ -6,6 +6,7 @@
 
 - [04-data-models.md](./04-data-models.md) - 核心模块
 - [04a-marketing-models.md](./04a-marketing-models.md) - 营销模块
+- [04b-team-models.md](./04b-team-models.md) - 团队系统
 - [04c-enums-indexes.md](./04c-enums-indexes.md) - 枚举类型和数据库索引
 
 ---

@@ -158,6 +158,10 @@ func autoMigrate(db *gorm.DB) error {
 		&model.Team{},       // 陪玩师团队
 		&model.TeamMember{}, // 团队成员
 		&model.TeamInvite{}, // 团队邀请
+		// Player rank/certification system (陪玩师等级/认证)
+		&model.GameRank{},            // 游戏段位配置
+		&model.PlayerRankRecord{},    // 陪玩师段位认证记录
+		&model.PlayerCertification{}, // 陪玩师实名认证
 		// Referral system (预留)
 		&model.ReferralConfig{}, // 推荐配置
 		&model.ReferralCode{},   // 邀请码
@@ -174,6 +178,12 @@ func autoMigrate(db *gorm.DB) error {
 		&model.UserNotificationSetting{}, // 用户通知设置
 		&model.NotificationConfig{},      // 通知系统配置
 		&model.NotificationSchedule{},    // 定时通知任务
+		// Order timeout system (订单超时处理)
+		&model.OrderTimeoutConfig{},     // 订单超时配置
+		&model.OrderTimeoutLog{},        // 订单超时日志
+		&model.OrderServiceAssignment{}, // 订单客服分配记录
+		// User block system (用户拉黑)
+		&model.UserBlock{}, // 用户拉黑记录
 		// Commission models
 		&model.CommissionRule{},
 		&model.CommissionRecord{},
