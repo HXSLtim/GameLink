@@ -24,6 +24,16 @@ const (
 	UserStatusBanned    UserStatus = "banned"
 )
 
+// LoginType 登录方式
+type LoginType string
+
+const (
+	LoginTypePassword LoginType = "password" // 密码登录
+	LoginTypeSMS      LoginType = "sms"      // 短信验证码登录
+	LoginTypeEmail    LoginType = "email"    // 邮箱验证码登录
+	LoginTypeOAuth    LoginType = "oauth"    // 第三方OAuth登录（预留）
+)
+
 // User represents a platform account.
 type User struct {
 	Base
@@ -35,6 +45,11 @@ type User struct {
 	Role         Role       `json:"role" gorm:"size:32;comment:主要角色（向后兼容）"`
 	Status       UserStatus `json:"status" gorm:"size:32;index;index:idx_status_last_login,priority:1"`                       // 复合索引第一部分
 	LastLoginAt  *time.Time `json:"lastLoginAt,omitempty" gorm:"column:last_login_at;index:idx_status_last_login,priority:2"` // 复合索引第二部分
+
+	// 封禁相关字段
+	BanReason string     `json:"banReason,omitempty" gorm:"column:ban_reason;size:500"` // 封禁原因
+	BannedAt  *time.Time `json:"bannedAt,omitempty" gorm:"column:banned_at"`            // 封禁时间
+	BannedBy  *uint64    `json:"bannedBy,omitempty" gorm:"column:banned_by;index"`      // 封禁操作人ID
 
 	// 多角色支持（新增）
 	Roles []RoleModel `json:"roles,omitempty" gorm:"many2many:user_roles;"`

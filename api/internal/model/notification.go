@@ -14,6 +14,8 @@ const (
 	NotificationTypeSystem        NotificationType = "system"         // 系统公告
 	NotificationTypePromotion     NotificationType = "promotion"      // 营销推广（预留）
 	NotificationTypeChat          NotificationType = "chat"           // 聊天消息（预留）
+	NotificationTypeReview        NotificationType = "review"         // 评价提醒
+	NotificationTypeReviewReply   NotificationType = "review_reply"   // 评价回复
 )
 
 // NotificationChannel 通知渠道
@@ -174,21 +176,31 @@ const (
 	NotificationConfigSMSProvider      = "sms_provider"       // 短信服务商（预留）
 )
 
+// NotificationScheduleStatus 定时通知任务状态
+type NotificationScheduleStatus string
+
+const (
+	NotificationScheduleStatusPending    NotificationScheduleStatus = "pending"    // 待执行
+	NotificationScheduleStatusProcessing NotificationScheduleStatus = "processing" // 执行中
+	NotificationScheduleStatusCompleted  NotificationScheduleStatus = "completed"  // 已完成
+	NotificationScheduleStatusFailed     NotificationScheduleStatus = "failed"     // 失败
+)
+
 // NotificationSchedule 定时通知任务
 type NotificationSchedule struct {
 	Base
-	Name        string           `json:"name" gorm:"size:128;not null"`                          // 任务名称
-	Type        NotificationType `json:"type" gorm:"size:32;not null;index"`                     // 通知类型
-	TemplateID  uint64           `json:"templateId" gorm:"column:template_id;not null"`          // 模板ID
-	ScheduleAt  time.Time        `json:"scheduleAt" gorm:"column:schedule_at;not null;index"`    // 计划发送时间
-	Status      string           `json:"status" gorm:"size:32;default:'pending';index"`          // pending/processing/completed/failed
-	TargetType  string           `json:"targetType" gorm:"column:target_type;size:32"`           // 目标类型：all/vip/specific
-	TargetIDs   string           `json:"targetIds,omitempty" gorm:"column:target_ids;type:text"` // 目标用户ID列表（JSON数组）
-	TotalCount  int              `json:"totalCount" gorm:"column:total_count;default:0"`         // 总发送数
-	SentCount   int              `json:"sentCount" gorm:"column:sent_count;default:0"`           // 已发送数
-	FailedCount int              `json:"failedCount" gorm:"column:failed_count;default:0"`       // 失败数
-	StartedAt   *time.Time       `json:"startedAt,omitempty" gorm:"column:started_at"`           // 开始时间
-	CompletedAt *time.Time       `json:"completedAt,omitempty" gorm:"column:completed_at"`       // 完成时间
+	Name        string                     `json:"name" gorm:"size:128;not null"`                          // 任务名称
+	Type        NotificationType           `json:"type" gorm:"size:32;not null;index"`                     // 通知类型
+	TemplateID  uint64                     `json:"templateId" gorm:"column:template_id;not null"`          // 模板ID
+	ScheduleAt  time.Time                  `json:"scheduleAt" gorm:"column:schedule_at;not null;index"`    // 计划发送时间
+	Status      NotificationScheduleStatus `json:"status" gorm:"size:32;default:'pending';index"`          // 状态
+	TargetType  string                     `json:"targetType" gorm:"column:target_type;size:32"`           // 目标类型：all/vip/specific
+	TargetIDs   string                     `json:"targetIds,omitempty" gorm:"column:target_ids;type:text"` // 目标用户ID列表（JSON数组）
+	TotalCount  int                        `json:"totalCount" gorm:"column:total_count;default:0"`         // 总发送数
+	SentCount   int                        `json:"sentCount" gorm:"column:sent_count;default:0"`           // 已发送数
+	FailedCount int                        `json:"failedCount" gorm:"column:failed_count;default:0"`       // 失败数
+	StartedAt   *time.Time                 `json:"startedAt,omitempty" gorm:"column:started_at"`           // 开始时间
+	CompletedAt *time.Time                 `json:"completedAt,omitempty" gorm:"column:completed_at"`       // 完成时间
 
 	// Relations
 	Template *NotificationTemplate `json:"template,omitempty" gorm:"foreignKey:TemplateID"`

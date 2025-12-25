@@ -23,6 +23,8 @@ func (OrderTimeoutConfig) TableName() string {
 
 // 订单超时配置键常量
 const (
+	// PaymentTimeoutMinutes 支付超时时间（分钟），默认30
+	PaymentTimeoutMinutes = "payment_timeout_minutes"
 	// OrderAcceptTimeoutMinutes 接单超时时间（分钟），默认30
 	OrderAcceptTimeoutMinutes = "order_accept_timeout_minutes"
 	// AutoCancelEnabled 是否启用自动取消，默认true
@@ -39,6 +41,8 @@ const (
 type OrderTimeoutType string
 
 const (
+	// OrderTimeoutTypePayment 支付超时
+	OrderTimeoutTypePayment OrderTimeoutType = "payment_timeout"
 	// OrderTimeoutTypeAccept 接单超时
 	OrderTimeoutTypeAccept OrderTimeoutType = "accept_timeout"
 )

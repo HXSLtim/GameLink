@@ -109,15 +109,25 @@ func (tm *TeamMember) IsActive() bool {
 	return tm.Status == TeamMemberStatusActive
 }
 
+// TeamInviteStatus 团队邀请状态
+type TeamInviteStatus string
+
+const (
+	TeamInviteStatusPending  TeamInviteStatus = "pending"  // 待处理
+	TeamInviteStatusAccepted TeamInviteStatus = "accepted" // 已接受
+	TeamInviteStatusRejected TeamInviteStatus = "rejected" // 已拒绝
+	TeamInviteStatusExpired  TeamInviteStatus = "expired"  // 已过期
+)
+
 // TeamInvite 团队邀请（预留）
 type TeamInvite struct {
 	Base
-	TeamID    uint64    `json:"teamId" gorm:"column:team_id;not null;index"`       // 团队ID
-	PlayerID  uint64    `json:"playerId" gorm:"column:player_id;not null;index"`   // 被邀请的陪玩师ID
-	InviterID uint64    `json:"inviterId" gorm:"column:inviter_id;not null;index"` // 邀请人ID
-	Status    string    `json:"status" gorm:"size:32;default:'pending';index"`     // pending/accepted/rejected/expired
-	ExpireAt  time.Time `json:"expireAt" gorm:"column:expire_at;not null"`         // 过期时间
-	Message   string    `json:"message" gorm:"size:255"`                           // 邀请留言
+	TeamID    uint64           `json:"teamId" gorm:"column:team_id;not null;index"`       // 团队ID
+	PlayerID  uint64           `json:"playerId" gorm:"column:player_id;not null;index"`   // 被邀请的陪玩师ID
+	InviterID uint64           `json:"inviterId" gorm:"column:inviter_id;not null;index"` // 邀请人ID
+	Status    TeamInviteStatus `json:"status" gorm:"size:32;default:'pending';index"`     // 状态
+	ExpireAt  time.Time        `json:"expireAt" gorm:"column:expire_at;not null;index"`   // 过期时间
+	Message   string           `json:"message" gorm:"size:255"`                           // 邀请留言
 
 	// Relations
 	Team    *Team   `json:"team,omitempty" gorm:"foreignKey:TeamID"`

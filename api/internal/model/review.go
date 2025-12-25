@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"time"
 )
 
 // ReviewStatus 表示评价的审核状态
@@ -25,6 +26,24 @@ func (rs ReviewStatus) Valid() bool {
 		return false
 	}
 }
+
+// ReviewReplyStatus 评价回复状态
+type ReviewReplyStatus string
+
+const (
+	ReviewReplyStatusPending  ReviewReplyStatus = "pending"  // 待审核
+	ReviewReplyStatusApproved ReviewReplyStatus = "approved" // 已通过
+	ReviewReplyStatusRejected ReviewReplyStatus = "rejected" // 已拒绝
+)
+
+// AppealStatus 申诉状态
+type AppealStatus string
+
+const (
+	AppealStatusPending  AppealStatus = "pending"  // 待处理
+	AppealStatusApproved AppealStatus = "approved" // 已通过
+	AppealStatusRejected AppealStatus = "rejected" // 已拒绝
+)
 
 // StringArray 用于存储字符串数组到数据库
 type StringArray []string
@@ -92,12 +111,23 @@ type Review struct {
 	// 是否被举报
 	// @Example false
 	IsReported bool `json:"isReported" gorm:"column:is_reported;default:false;index"`
-	// 评价图片URL数组
+	// 评价图片URL数组（最多3张）
 	// @Example ["https://example.com/image1.jpg", "https://example.com/image2.jpg"]
 	Images StringArray `json:"images,omitempty" gorm:"column:images;type:json"`
 	// 拒绝原因（当状态为rejected时）
 	// @Example 评价内容包含敏感词
 	RejectionReason string `json:"rejectionReason,omitempty" gorm:"column:rejection_reason;type:text"`
+
+	// 公开与匿名设置
+	IsPublic    bool `json:"isPublic" gorm:"column:is_public;default:false"`       // 是否公开（默认不公开）
+	IsAnonymous bool `json:"isAnonymous" gorm:"column:is_anonymous;default:false"` // 是否匿名
+
+	// 修改记录
+	EditCount  int        `json:"editCount" gorm:"column:edit_count;default:0"`    // 修改次数（最多3次）
+	LastEditAt *time.Time `json:"lastEditAt,omitempty" gorm:"column:last_edit_at"` // 最后修改时间
+
+	// 评价窗口
+	ExpireAt time.Time `json:"expireAt" gorm:"column:expire_at;index"` // 评价截止时间（订单完成后7天）
 
 	// Relations
 	OrderItem *OrderItem `json:"orderItem,omitempty" gorm:"foreignKey:OrderItemID"`

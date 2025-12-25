@@ -1744,19 +1744,18 @@ func seedSensitiveWords(tx *gorm.DB) error {
 	words := []struct {
 		Word     string
 		Category model.SensitiveWordCategory
-		Severity model.SensitiveWordSeverity
 	}{
 		// 广告类
-		{Word: "加微信", Category: model.SensitiveWordCategoryAdvertising, Severity: model.SensitiveWordSeverityMedium},
-		{Word: "加QQ", Category: model.SensitiveWordCategoryAdvertising, Severity: model.SensitiveWordSeverityMedium},
-		{Word: "私聊", Category: model.SensitiveWordCategoryAdvertising, Severity: model.SensitiveWordSeverityLow},
-		{Word: "代练", Category: model.SensitiveWordCategoryAdvertising, Severity: model.SensitiveWordSeverityMedium},
+		{Word: "加微信", Category: model.SensitiveWordCategoryAd},
+		{Word: "加QQ", Category: model.SensitiveWordCategoryAd},
+		{Word: "私聊", Category: model.SensitiveWordCategoryAd},
+		{Word: "代练", Category: model.SensitiveWordCategoryAd},
 		// 违规类
-		{Word: "骗子", Category: model.SensitiveWordCategoryOther, Severity: model.SensitiveWordSeverityHigh},
-		{Word: "垃圾", Category: model.SensitiveWordCategoryOther, Severity: model.SensitiveWordSeverityMedium},
+		{Word: "骗子", Category: model.SensitiveWordCategoryOther},
+		{Word: "垃圾", Category: model.SensitiveWordCategoryOther},
 		// 其他
-		{Word: "退款", Category: model.SensitiveWordCategoryOther, Severity: model.SensitiveWordSeverityLow},
-		{Word: "投诉", Category: model.SensitiveWordCategoryOther, Severity: model.SensitiveWordSeverityLow},
+		{Word: "退款", Category: model.SensitiveWordCategoryOther},
+		{Word: "投诉", Category: model.SensitiveWordCategoryOther},
 	}
 
 	for _, w := range words {
@@ -1772,7 +1771,6 @@ func seedSensitiveWords(tx *gorm.DB) error {
 		sw := &model.SensitiveWord{
 			Word:     w.Word,
 			Category: w.Category,
-			Severity: w.Severity,
 		}
 
 		if err := tx.Create(sw).Error; err != nil {

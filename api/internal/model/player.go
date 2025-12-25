@@ -13,6 +13,15 @@ const (
 	VerificationRejected VerificationStatus = "rejected"
 )
 
+// PlayerOnlineStatus 陪玩师在线状态
+type PlayerOnlineStatus string
+
+const (
+	PlayerOnlineStatusOnline  PlayerOnlineStatus = "online"  // 在线
+	PlayerOnlineStatusOffline PlayerOnlineStatus = "offline" // 离线
+	PlayerOnlineStatusBusy    PlayerOnlineStatus = "busy"    // 忙碌
+)
+
 // Player is the pro/陪玩 profile bound to a User.
 type Player struct {
 	Base
@@ -25,6 +34,11 @@ type Player struct {
 	HourlyRateCents    int64              `json:"hourlyRateCents" gorm:"column:hourly_rate_cents"`
 	MainGameID         uint64             `json:"mainGameId,omitempty" gorm:"column:main_game_id;index"`
 	VerificationStatus VerificationStatus `json:"verificationStatus" gorm:"column:verification_status;size:32;index"`
+
+	// 在线状态相关字段
+	OnlineStatus    PlayerOnlineStatus `json:"onlineStatus" gorm:"column:online_status;size:32;index;default:'offline'"` // 在线状态
+	AcceptingOrders bool               `json:"acceptingOrders" gorm:"column:accepting_orders;index;default:false"`       // 接单开关
+	LastOnlineAt    *time.Time         `json:"lastOnlineAt,omitempty" gorm:"column:last_online_at"`                      // 最后在线时间
 
 	// 审核相关字段
 	VerifiedAt   *time.Time `json:"verifiedAt,omitempty" gorm:"column:verified_at"`              // 审核时间

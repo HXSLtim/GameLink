@@ -118,13 +118,40 @@ func (NotificationEvent) TableName() string { return "notification_events" }
 // ReviewReply represents replies from players to reviews.
 type ReviewReply struct {
 	Base
-	ReviewID       uint64     `json:"reviewId" gorm:"column:review_id;index"`
-	AuthorID       uint64     `json:"authorId" gorm:"column:author_id;index"`
-	Content        string     `json:"content" gorm:"column:content;type:text"`
-	Status         string     `json:"status" gorm:"column:status;type:varchar(32);default:'pending'"`
-	ModerationNote string     `json:"moderationNote,omitempty" gorm:"column:moderation_note;type:text"`
-	ModeratedAt    *time.Time `json:"moderatedAt,omitempty" gorm:"column:moderated_at"`
+	ReviewID       uint64            `json:"reviewId" gorm:"column:review_id;not null;index"`
+	PlayerID       uint64            `json:"playerId" gorm:"column:player_id;not null;index"` // 陪玩师ID
+	AuthorID       uint64            `json:"authorId" gorm:"column:author_id;index"`          // 向后兼容
+	Content        string            `json:"content" gorm:"column:content;type:text;not null"`
+	ReplyCount     int               `json:"replyCount" gorm:"column:reply_count;default:1"`              // 回复次数（最多3次）
+	Status         ReviewReplyStatus `json:"status" gorm:"column:status;size:20;default:'pending';index"` // 状态
+	ModerationNote string            `json:"moderationNote,omitempty" gorm:"column:moderation_note;type:text"`
+	ModeratedAt    *time.Time        `json:"moderatedAt,omitempty" gorm:"column:moderated_at"`
+
+	// Relations
+	Review *Review `json:"review,omitempty" gorm:"foreignKey:ReviewID"`
+	Player *Player `json:"player,omitempty" gorm:"foreignKey:PlayerID"`
 }
 
 // TableName implements gorm tabler.
 func (ReviewReply) TableName() string { return "review_replies" }
+
+// ReviewAppeal 评价申诉（陪玩师对差评的申诉）
+type ReviewAppeal struct {
+	Base
+	ReviewID     uint64       `json:"reviewId" gorm:"column:review_id;not null;index"`              // 评价ID
+	PlayerID     uint64       `json:"playerId" gorm:"column:player_id;not null;index"`              // 陪玩师ID
+	Reason       string       `json:"reason" gorm:"type:text;not null"`                             // 申诉原因
+	EvidenceURLs string       `json:"evidenceUrls,omitempty" gorm:"column:evidence_urls;type:json"` // 证据截图（JSON数组）
+	Status       AppealStatus `json:"status" gorm:"size:20;default:'pending';index"`                // 状态
+	HandledBy    *uint64      `json:"handledBy,omitempty" gorm:"column:handled_by"`                 // 处理人ID
+	HandledAt    *time.Time   `json:"handledAt,omitempty" gorm:"column:handled_at"`                 // 处理时间
+	HandleRemark string       `json:"handleRemark,omitempty" gorm:"column:handle_remark;type:text"` // 处理备注
+
+	// Relations
+	Review  *Review `json:"review,omitempty" gorm:"foreignKey:ReviewID"`
+	Player  *Player `json:"player,omitempty" gorm:"foreignKey:PlayerID"`
+	Handler *User   `json:"handler,omitempty" gorm:"foreignKey:HandledBy"`
+}
+
+// TableName implements gorm tabler.
+func (ReviewAppeal) TableName() string { return "review_appeals" }

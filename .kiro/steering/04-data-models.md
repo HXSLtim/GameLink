@@ -498,7 +498,7 @@ Access Token 过期 → 使用 Refresh Token 获取新 Token
 | Quantity | int | 数量 |
 | TotalCents | int64 | 小计（分） |
 | CommissionRate | float64 | 抽成比例 |
-| Status | string | pending/matched/completed/canceled |
+| Status | OrderItemStatus | 状态：pending/matched/completed/canceled |
 | PlayerID | *uint64 | 接单的陪玩师ID |
 | ReviewID | *uint64 | 关联的评价ID（nil=未评价） |
 
@@ -515,7 +515,7 @@ Access Token 过期 → 使用 Refresh Token 获取新 Token
 | TeamID | *uint64 | 团队ID（团队接单时） |
 | IncomeCents | int64 | 该陪玩师收入（分） |
 | CommissionCents | int64 | 该陪玩师抽成（分） |
-| Status | string | joined/left/completed |
+| Status | OrderPlayerStatus | 状态：joined/left/completed |
 
 ### ServiceItem（服务项目）
 
@@ -939,8 +939,9 @@ SubCategory 字段用于前端展示和快速筛选，礼物订单必须通过�
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | Word | string | 敏感词 |
-| Category | string | 分类：politics/porn/abuse/ad/other |
+| Category | SensitiveWordCategory | 分类：politics/porn/abuse/ad/other |
 | MatchType | SensitiveWordMatchType | 匹配类型：exact/fuzzy/regex |
+| Severity | SensitiveWordSeverity | 严重程度：low/medium/high |
 | Replacement | string | 替换内容（默认 ***） |
 | IsActive | bool | 是否启用 |
 | CreatedBy | uint64 | 创建人ID |
@@ -1067,37 +1068,86 @@ draft（草稿）→ pending（待审核）→ published（已发布）
 
 > 各模块可量化数据的统计汇总
 
-### DailyStatistics（每日统计）
+### PlatformStatistics（平台每日统计）
+
+> 代码中表名为 `platform_statistics`，按日期汇总平台数据
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| StatsDate | time.Time | 统计日期 |
-| NewUsers | int | 新增用户数 |
-| ActiveUsers | int | 活跃用户数 |
-| NewPlayers | int | 新增陪玩师数 |
-| ActivePlayers | int | 活跃陪玩师数 |
-| OrderCount | int | 订单数 |
-| OrderAmountCents | int64 | 订单金额（分） |
-| CompletedOrderCount | int | 完成订单数 |
-| CanceledOrderCount | int | 取消订单数 |
-| RefundOrderCount | int | 退款订单数 |
-| DisputeCount | int | 争议数 |
-| RechargeAmountCents | int64 | 充值金额（分） |
-| WithdrawAmountCents | int64 | 提现金额（分） |
-| CommissionCents | int64 | 平台抽成（分） |
+| StatDate | time.Time | 统计日期（唯一索引） |
+| DailyOrderCount | int | 日订单数 |
+| DailyCompletedCount | int | 日完成订单数 |
+| DailyCanceledCount | int | 日取消订单数 |
+| DailyGMVCents | int64 | 日GMV（分） |
+| DailyCommissionCents | int64 | 日抽成（分） |
+| DailyRefundAmountCents | int64 | 日退款金额（分） |
+| DailyNewUserCount | int | 日新增用户数 |
+| DailyActiveUserCount | int | 日活跃用户数 |
+| DailyPayingUserCount | int | 日付费用户数 |
+| DailyNewPlayerCount | int | 日新增陪玩师数 |
+| DailyActivePlayerCount | int | 日活跃陪玩师数 |
+| DailyRechargeCents | int64 | 日充值金额（分） |
+| DailyWithdrawCents | int64 | 日提现金额（分） |
+| DailyRechargeCount | int | 日充值笔数 |
+| DailyWithdrawCount | int | 日提现笔数 |
+| DailyDisputeCount | int | 日争议数 |
+| DailyResolvedCount | int | 日解决争议数 |
+| DailySLABreachCount | int | 日SLA超时数 |
 
 ### PlayerStatistics（陪玩师统计）
 
+> 代码中表名为 `player_statistics`，累计统计（非按日期）
+
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| PlayerID | uint64 | 陪玩师ID |
-| StatsDate | time.Time | 统计日期 |
-| OrderCount | int | 接单数 |
+| PlayerID | uint64 | 陪玩师ID（唯一索引） |
+| TotalEarningsCents | int64 | 累计收入（分） |
+| TotalCommissionCents | int64 | 累计被抽成（分） |
+| TotalWithdrawCents | int64 | 累计提现（分） |
+| PendingWithdrawCents | int64 | 待提现（分） |
+| TotalOrderCount | int | 累计接单数 |
 | CompletedOrderCount | int | 完成订单数 |
-| IncomeCents | int64 | 收入（分） |
-| ServiceHours | float64 | 服务时长（小时） |
-| RatingAverage | float32 | 平均评分 |
-| ReviewCount | int | 评价数 |
+| CanceledOrderCount | int | 取消订单数 |
+| RefundOrderCount | int | 退款订单数 |
+| TotalServiceMinutes | int | 累计服务时长（分钟） |
+| AvgResponseTimeSec | int | 平均响应时间（秒） |
+| AvgOrderAmountCents | int64 | 平均订单金额（分） |
+| TotalCustomerCount | int | 累计服务客户数 |
+| RepeatCustomerCount | int | 回头客数量 |
+| RepeatOrderRate | float32 | 复购率 |
+| DisputeCount | int | 被投诉次数 |
+| DisputeWonCount | int | 投诉胜诉次数 |
+| DisputeLostCount | int | 投诉败诉次数 |
+| GiftReceivedCount | int | 收到礼物数 |
+| GiftReceivedAmountCents | int64 | 收到礼物金额（分） |
+| FirstOrderAt | *time.Time | 首次接单时间 |
+| LastOrderAt | *time.Time | 最后接单时间 |
+| LastActiveAt | *time.Time | 最后活跃时间 |
+
+### UserStatistics（用户统计）
+
+> 代码中表名为 `user_statistics`，用户消费行为统计
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| UserID | uint64 | 用户ID（唯一索引） |
+| TotalSpentCents | int64 | 累计消费金额（分） |
+| TotalOrderCount | int | 累计订单数 |
+| CompletedOrderCount | int | 完成订单数 |
+| CanceledOrderCount | int | 取消订单数 |
+| RefundOrderCount | int | 退款订单数 |
+| AvgOrderAmountCents | int64 | 平均订单金额（分） |
+| DisputeCount | int | 发起争议次数 |
+| DisputeWonCount | int | 争议胜诉次数 |
+| DisputeLostCount | int | 争议败诉次数 |
+| TotalRechargeCents | int64 | 累计充值金额（分） |
+| RechargeCount | int | 充值次数 |
+| AvgRechargeAmountCents | int64 | 平均充值金额（分） |
+| ReviewCount | int | 评价次数 |
+| AvgReviewScore | float32 | 平均评分 |
+| FirstOrderAt | *time.Time | 首次下单时间 |
+| LastOrderAt | *time.Time | 最后下单时间 |
+| LastRechargeAt | *time.Time | 最后充值时间 |
 
 ---
 
@@ -1117,6 +1167,7 @@ draft（草稿）→ pending（待审核）→ published（已发布）
 - 收入统计：总收入、日/周/月收入
 - 评价统计：评分、评价数
 - 服务统计：服务时长
+
 ```
 
 ### 统计周期
@@ -1433,7 +1484,7 @@ Review.Status = approved
 
 ```
 【状态流转】
-pending → assigned → mediating → resolved/rejected
+pending → assigned → mediating → closed
 
 【详细流程】
 1. 用户/陪玩师发起争议
@@ -1510,7 +1561,7 @@ pending → assigned → mediating → resolved/rejected
 | MaxMembers | int | 最大成员数（默认100） |
 | IsActive | bool | 是否激活 |
 | AutoDestroy | bool | 订单完成后自动销毁 |
-| DestroyAt | *time.Time | 销毁时间 |
+| DeactivatedAt | *time.Time | 停用时间 |
 | MessageRetentionDays | int | 消息保留天数（默认30） |
 | VoiceEnabled | bool | 是否启用语音（预留） |
 | VoiceRoomID | string | 语音房间ID（第三方服务） |
@@ -1559,6 +1610,8 @@ pending → assigned → mediating → resolved/rejected
 ---
 
 ## 聊天业务流程
+
+> **注意**：`social.go` 中已有简单的 `Notification` 模型（表名 `notifications`），用于基础通知场景。详见 [04d-notification-models.md](./04d-notification-models.md) 中"与现有 Notification 的关系"章节。
 
 ### 聊天类型
 
@@ -1743,7 +1796,7 @@ pending → assigned → mediating → resolved/rejected
 | CommissionRate | int | 抽成比例 |
 | CommissionCents | int64 | 平台抽成金额（分） |
 | PlayerIncomeCents | int64 | 陪玩师收入（分） |
-| SettlementStatus | string | 结算状态：pending/settled |
+| SettlementStatus | SettlementStatus | 结算状态：pending/disputed/settled |
 | SettlementMonth | string | 结算月份（YYYY-MM） |
 | SettledAt | *time.Time | 结算时间 |
 
@@ -1759,7 +1812,7 @@ pending → assigned → mediating → resolved/rejected
 | TotalIncomeCents | int64 | 总收入（分） |
 | BonusCents | int64 | 奖金（分） |
 | FinalIncomeCents | int64 | 最终收入（分） |
-| Status | string | 状态：pending/confirmed/paid |
+| Status | MonthlySettlementStatus | 状态：pending/confirmed/paid |
 | IncomeRank | *int | 收入排名 |
 | OrderRank | *int | 订单数排名 |
 | QualityRank | *int | 质量排名 |

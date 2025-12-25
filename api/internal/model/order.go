@@ -14,6 +14,7 @@ const (
 	OrderStatusCompleted  OrderStatus = "completed"
 	OrderStatusCanceled   OrderStatus = "canceled"
 	OrderStatusRefunded   OrderStatus = "refunded"
+	OrderStatusDisputed   OrderStatus = "disputed" // 争议中
 )
 
 // Order represents a unified order (护航服务 or 礼物)

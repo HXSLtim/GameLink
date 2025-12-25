@@ -183,8 +183,8 @@ func (h *DisputeHandler) GetDisputeStats(c *gin.Context) {
 
 // AssignDisputePayload represents the request to assign a dispute
 type AssignDisputePayload struct {
-	AssignedToUserID uint64 `json:"assignedToUserId" binding:"required"`
-	Source           string `json:"source" binding:"required,oneof=system manual"`
+	AssignedServiceID uint64  `json:"assignedServiceId" binding:"required"`
+	OriginalServiceID *uint64 `json:"originalServiceId"`
 }
 
 // AssignDispute assigns a dispute to a customer service representative
@@ -219,17 +219,11 @@ func (h *DisputeHandler) AssignDispute(c *gin.Context) {
 		return
 	}
 
-	source := model.AssignmentSource(payload.Source)
-	if source != model.AssignmentSourceSystem && source != model.AssignmentSourceManual {
-		respondBadRequest(c, apierr.ErrInvalidAssignmentSource)
-		return
-	}
-
 	err := h.svc.AssignDispute(c.Request.Context(), orderservice.AssignDisputeRequest{
-		DisputeID:        disputeID,
-		AssignedToUserID: payload.AssignedToUserID,
-		Source:           source,
-		ActorUserID:      actorUserID.(uint64),
+		DisputeID:         disputeID,
+		AssignedServiceID: payload.AssignedServiceID,
+		OriginalServiceID: payload.OriginalServiceID,
+		ActorUserID:       actorUserID.(uint64),
 	})
 
 	if err != nil {
@@ -313,9 +307,8 @@ func (h *DisputeHandler) RollbackAssignment(c *gin.Context) {
 
 // ResolveDisputePayload represents the request to resolve a dispute
 type ResolveDisputePayload struct {
-	Resolution       string `json:"resolution" binding:"required,oneof=refund partial reassign reject"`
-	ResolutionAmount int64  `json:"resolutionAmount"`
-	ResolutionNotes  string `json:"resolutionNotes" binding:"required"`
+	Resolution    string `json:"resolution" binding:"required,oneof=refund partial reassign reject"`
+	ResolveRemark string `json:"resolveRemark" binding:"required"`
 }
 
 // ResolveDispute resolves a dispute with a decision
@@ -353,11 +346,10 @@ func (h *DisputeHandler) ResolveDispute(c *gin.Context) {
 	resolution := model.DisputeResolution(payload.Resolution)
 
 	err := h.svc.ResolveDispute(c.Request.Context(), orderservice.ResolveDisputeRequest{
-		DisputeID:        disputeID,
-		Resolution:       resolution,
-		ResolutionAmount: payload.ResolutionAmount,
-		ResolutionNotes:  payload.ResolutionNotes,
-		ActorUserID:      actorUserID.(uint64),
+		DisputeID:     disputeID,
+		Resolution:    resolution,
+		ResolveRemark: payload.ResolveRemark,
+		ActorUserID:   actorUserID.(uint64),
 	})
 
 	if err != nil {

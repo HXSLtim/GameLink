@@ -20,6 +20,8 @@ const (
 	ChatMessageTypeImage  ChatMessageType = "image"
 	ChatMessageTypeFile   ChatMessageType = "file"
 	ChatMessageTypeSystem ChatMessageType = "system"
+	ChatMessageTypeVoice  ChatMessageType = "voice" // 语音消息（预留）
+	ChatMessageTypeEmoji  ChatMessageType = "emoji" // 表情包（预留）
 )
 
 // ChatMessageAuditStatus represents moderation state of a message.
@@ -36,17 +38,18 @@ const (
 // ChatGroup defines a chat room entity.
 type ChatGroup struct {
 	Base
-	GroupName      string        `json:"groupName" gorm:"size:128;not null"`
-	GroupType      ChatGroupType `json:"groupType" gorm:"type:varchar(32);not null;index"`
-	RelatedOrderID *uint64       `json:"relatedOrderId,omitempty" gorm:"column:related_order_id;index"`
-	CreatedBy      uint64        `json:"createdBy" gorm:"column:created_by;not null;index"`
-	MaxMembers     int           `json:"maxMembers" gorm:"column:max_members;default:100"`
-	IsActive       bool          `json:"isActive" gorm:"column:is_active;default:true;index"`
-	AutoDestroy    bool          `json:"autoDestroy" gorm:"column:auto_destroy;default:false"`
-	DeactivatedAt  *time.Time    `json:"deactivatedAt" gorm:"column:deactivated_at;index"`
-	AvatarURL      string        `json:"avatarUrl" gorm:"column:avatar_url;size:255"`
-	Description    string        `json:"description" gorm:"type:text"`
-	Settings       string        `json:"settings" gorm:"type:json"`
+	GroupName            string        `json:"groupName" gorm:"size:128;not null"`
+	GroupType            ChatGroupType `json:"groupType" gorm:"type:varchar(32);not null;index"`
+	RelatedOrderID       *uint64       `json:"relatedOrderId,omitempty" gorm:"column:related_order_id;index"`
+	CreatedBy            uint64        `json:"createdBy" gorm:"column:created_by;not null;index"`
+	MaxMembers           int           `json:"maxMembers" gorm:"column:max_members;default:100"`
+	IsActive             bool          `json:"isActive" gorm:"column:is_active;default:true;index"`
+	AutoDestroy          bool          `json:"autoDestroy" gorm:"column:auto_destroy;default:false"`
+	DeactivatedAt        *time.Time    `json:"deactivatedAt" gorm:"column:deactivated_at;index"`
+	AvatarURL            string        `json:"avatarUrl" gorm:"column:avatar_url;size:255"`
+	Description          string        `json:"description" gorm:"type:text"`
+	Settings             string        `json:"settings" gorm:"type:json"`
+	MessageRetentionDays int           `json:"messageRetentionDays" gorm:"column:message_retention_days;default:30"` // 消息保留天数（默认30）
 
 	// 语音服务字段（预留）
 	VoiceEnabled    bool       `json:"voiceEnabled" gorm:"column:voice_enabled;default:false"`     // 是否启用语音
@@ -61,21 +64,30 @@ type ChatGroup struct {
 	Members []ChatGroupMember `json:"members" gorm:"foreignKey:GroupID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
 
+// ChatMemberRole 聊天成员角色
+type ChatMemberRole string
+
+const (
+	ChatMemberRoleOwner  ChatMemberRole = "owner"  // 群主
+	ChatMemberRoleAdmin  ChatMemberRole = "admin"  // 管理员
+	ChatMemberRoleMember ChatMemberRole = "member" // 普通成员
+)
+
 // ChatGroupMember binds users to chat groups.
 type ChatGroupMember struct {
 	Base
-	GroupID           uint64     `json:"groupId" gorm:"column:group_id;not null;index"`
-	UserID            uint64     `json:"userId" gorm:"column:user_id;not null;index"`
-	Role              string     `json:"role" gorm:"size:32;default:'member'"`
-	Nickname          string     `json:"nickname" gorm:"size:64"`
-	JoinedAt          time.Time  `json:"joinedAt" gorm:"column:joined_at;index"`
-	LastReadAt        *time.Time `json:"lastReadAt" gorm:"column:last_read_at"`
-	LastReadMessageID *uint64    `json:"lastReadMessageId" gorm:"column:last_read_message_id"`
-	IsMuted           bool       `json:"isMuted" gorm:"column:is_muted;default:false"`
-	MutedUntil        *time.Time `json:"mutedUntil,omitempty" gorm:"column:muted_until;index"`
-	MutedBy           *uint64    `json:"mutedBy,omitempty" gorm:"column:muted_by"`
-	MuteReason        string     `json:"muteReason,omitempty" gorm:"column:mute_reason;type:text"`
-	IsActive          bool       `json:"isActive" gorm:"column:is_active;default:true"`
+	GroupID           uint64         `json:"groupId" gorm:"column:group_id;not null;index;uniqueIndex:idx_group_user"`
+	UserID            uint64         `json:"userId" gorm:"column:user_id;not null;index;uniqueIndex:idx_group_user"`
+	Role              ChatMemberRole `json:"role" gorm:"size:32;default:'member'"`
+	Nickname          string         `json:"nickname" gorm:"size:64"`
+	JoinedAt          time.Time      `json:"joinedAt" gorm:"column:joined_at;index"`
+	LastReadAt        *time.Time     `json:"lastReadAt" gorm:"column:last_read_at"`
+	LastReadMessageID *uint64        `json:"lastReadMessageId" gorm:"column:last_read_message_id"`
+	IsMuted           bool           `json:"isMuted" gorm:"column:is_muted;default:false"`
+	MutedUntil        *time.Time     `json:"mutedUntil,omitempty" gorm:"column:muted_until;index"`
+	MutedBy           *uint64        `json:"mutedBy,omitempty" gorm:"column:muted_by"`
+	MuteReason        string         `json:"muteReason,omitempty" gorm:"column:mute_reason;type:text"`
+	IsActive          bool           `json:"isActive" gorm:"column:is_active;default:true"`
 
 	Group ChatGroup `json:"-" gorm:"foreignKey:GroupID;references:ID"`
 }

@@ -65,11 +65,13 @@ func NewDisputeService(
 
 // InitiateDisputeRequest represents a request to initiate a dispute
 type InitiateDisputeRequest struct {
-	OrderID      uint64
-	UserID       uint64
-	Reason       string
-	Description  string
-	EvidenceURLs []string
+	OrderID       uint64
+	InitiatorID   uint64
+	InitiatorType model.DisputeInitiatorType
+	Type          model.DisputeType
+	Reason        string
+	EvidenceText  string
+	EvidenceURLs  []string
 }
 
 // InitiateDisputeResponse represents the response after initiating a dispute
@@ -82,7 +84,7 @@ type InitiateDisputeResponse struct {
 // InitiateDispute creates a new dispute for an order
 func (s *DisputeService) InitiateDispute(ctx context.Context, req InitiateDisputeRequest) (*InitiateDisputeResponse, error) {
 	// Validate request
-	if req.OrderID == 0 || req.UserID == 0 {
+	if req.OrderID == 0 || req.InitiatorID == 0 {
 		return nil, ErrDisputeValidation
 	}
 	if req.Reason == "" {
@@ -98,8 +100,12 @@ func (s *DisputeService) InitiateDispute(ctx context.Context, req InitiateDisput
 		return nil, err
 	}
 
-	// Verify order belongs to user
-	if order.UserID != req.UserID {
+	// Verify initiator is related to the order (user or player)
+	if req.InitiatorType == model.DisputeInitiatorUser && order.UserID != req.InitiatorID {
+		return nil, ErrDisputeUnauthorized
+	}
+	// For player initiator, check if they are the assigned player
+	if req.InitiatorType == model.DisputeInitiatorPlayer && (order.PlayerID == nil || *order.PlayerID != req.InitiatorID) {
 		return nil, ErrDisputeUnauthorized
 	}
 
@@ -125,14 +131,16 @@ func (s *DisputeService) InitiateDispute(ctx context.Context, req InitiateDisput
 
 	// Create dispute
 	dispute := &model.OrderDispute{
-		OrderID:      req.OrderID,
-		UserID:       req.UserID,
-		Status:       model.DisputeStatusPending,
-		Reason:       req.Reason,
-		Description:  req.Description,
-		EvidenceURLs: req.EvidenceURLs,
-		SLADeadline:  &slaDeadline,
-		TraceID:      traceID,
+		OrderID:       req.OrderID,
+		InitiatorID:   req.InitiatorID,
+		InitiatorType: req.InitiatorType,
+		Type:          req.Type,
+		Status:        model.DisputeStatusPending,
+		Reason:        req.Reason,
+		EvidenceText:  req.EvidenceText,
+		EvidenceURLs:  req.EvidenceURLs,
+		SLADeadline:   &slaDeadline,
+		TraceID:       traceID,
 	}
 
 	if err := s.disputes.Create(ctx, dispute); err != nil {
@@ -141,14 +149,13 @@ func (s *DisputeService) InitiateDispute(ctx context.Context, req InitiateDisput
 
 	// Update order
 	order.HasDispute = true
-	// Note: DisputeID field removed from Order model to avoid circular dependency
-	// The relationship is maintained through OrderDispute.OrderID
+	order.Status = model.OrderStatusDisputed
 	if err := s.orders.Update(ctx, order); err != nil {
 		return nil, err
 	}
 
 	// Log operation
-	s.logOperation(ctx, model.OpEntityDispute, dispute.ID, model.OpActionInitiateDispute, "User initiated dispute", traceID, &req.UserID)
+	s.logOperation(ctx, model.OpEntityDispute, dispute.ID, model.OpActionInitiateDispute, "Dispute initiated", traceID, &req.InitiatorID)
 
 	return &InitiateDisputeResponse{
 		DisputeID:   dispute.ID,
@@ -159,16 +166,16 @@ func (s *DisputeService) InitiateDispute(ctx context.Context, req InitiateDisput
 
 // AssignDisputeRequest represents a request to assign a dispute to a customer service representative
 type AssignDisputeRequest struct {
-	DisputeID        uint64
-	AssignedToUserID uint64
-	Source           model.AssignmentSource
-	ActorUserID      uint64 // who is making this assignment
+	DisputeID         uint64
+	AssignedServiceID uint64  // 分配的独立客服ID
+	OriginalServiceID *uint64 // 原客服ID（可选）
+	ActorUserID       uint64  // who is making this assignment
 }
 
 // AssignDispute assigns a dispute to a customer service representative
 func (s *DisputeService) AssignDispute(ctx context.Context, req AssignDisputeRequest) error {
 	// Validate request
-	if req.DisputeID == 0 || req.AssignedToUserID == 0 {
+	if req.DisputeID == 0 || req.AssignedServiceID == 0 {
 		return ErrDisputeValidation
 	}
 
@@ -184,43 +191,42 @@ func (s *DisputeService) AssignDispute(ctx context.Context, req AssignDisputeReq
 	}
 
 	// Verify assigned user exists and has appropriate role
-	assignedUser, err := s.users.Get(ctx, req.AssignedToUserID)
+	assignedUser, err := s.users.Get(ctx, req.AssignedServiceID)
 	if err != nil {
 		return err
 	}
 	if assignedUser == nil {
-		return apierr.NotFound("分配的用户不存在")
+		return apierr.NotFound("分配的客服不存在")
 	}
 
 	// Update dispute
-	now := time.Now()
 	dispute.Status = model.DisputeStatusAssigned
-	dispute.AssignedToUserID = &req.AssignedToUserID
-	dispute.AssignmentSource = req.Source
-	dispute.AssignedAt = &now
+	dispute.AssignedServiceID = &req.AssignedServiceID
+	if req.OriginalServiceID != nil {
+		dispute.OriginalServiceID = req.OriginalServiceID
+	}
 
 	if err := s.disputes.Update(ctx, dispute); err != nil {
 		return err
 	}
 
 	// Log operation
-	metadata := fmt.Sprintf("Assigned to user %d via %s", req.AssignedToUserID, req.Source)
+	metadata := fmt.Sprintf("Assigned to service user %d", req.AssignedServiceID)
 	s.logOperation(ctx, model.OpEntityDispute, dispute.ID, model.OpActionAssignDispute, metadata, dispute.TraceID, &req.ActorUserID)
 
 	// Send notification to assigned user
-	s.sendNotification(ctx, req.AssignedToUserID, "New Dispute Assignment",
-		fmt.Sprintf("You have been assigned dispute #%d", dispute.ID), dispute.TraceID)
+	s.sendNotification(ctx, req.AssignedServiceID, "新争议分配",
+		fmt.Sprintf("您已被分配处理争议 #%d", dispute.ID), dispute.TraceID)
 
 	return nil
 }
 
 // ResolveDisputeRequest represents a request to resolve a dispute
 type ResolveDisputeRequest struct {
-	DisputeID        uint64
-	Resolution       model.DisputeResolution
-	ResolutionAmount int64 // in cents
-	ResolutionNotes  string
-	ActorUserID      uint64 // who is resolving this
+	DisputeID     uint64
+	Resolution    model.DisputeResolution
+	ResolveRemark string
+	ActorUserID   uint64 // who is resolving this
 }
 
 // ResolveDispute resolves a dispute with a decision
@@ -249,12 +255,17 @@ func (s *DisputeService) ResolveDispute(ctx context.Context, req ResolveDisputeR
 
 	// Update dispute
 	now := time.Now()
-	dispute.Status = model.DisputeStatusResolved
 	dispute.Resolution = req.Resolution
-	dispute.ResolutionAmount = req.ResolutionAmount
-	dispute.ResolutionNotes = req.ResolutionNotes
+	dispute.ResolveRemark = req.ResolveRemark
 	dispute.ResolvedAt = &now
-	dispute.ResolvedByUserID = &req.ActorUserID
+	dispute.ResolvedBy = &req.ActorUserID
+
+	// Set status based on resolution
+	if req.Resolution == model.ResolutionReject {
+		dispute.Status = model.DisputeStatusRejected
+	} else {
+		dispute.Status = model.DisputeStatusResolved
+	}
 
 	if err := s.disputes.Update(ctx, dispute); err != nil {
 		return err
@@ -262,7 +273,15 @@ func (s *DisputeService) ResolveDispute(ctx context.Context, req ResolveDisputeR
 
 	// Handle resolution based on decision
 	if req.Resolution == model.ResolutionRefund {
-		if err := s.processRefund(ctx, order, dispute, req.ResolutionAmount, &req.ActorUserID); err != nil {
+		// Full refund
+		if err := s.processRefund(ctx, order, dispute, order.TotalPriceCents, &req.ActorUserID); err != nil {
+			return err
+		}
+	} else if req.Resolution == model.ResolutionReject {
+		// Restore order status
+		order.Status = model.OrderStatusCompleted
+		order.HasDispute = false
+		if err := s.orders.Update(ctx, order); err != nil {
 			return err
 		}
 	}
@@ -271,9 +290,9 @@ func (s *DisputeService) ResolveDispute(ctx context.Context, req ResolveDisputeR
 	s.logOperation(ctx, model.OpEntityDispute, dispute.ID, model.OpActionResolveDispute,
 		fmt.Sprintf("Resolved with %s decision", req.Resolution), dispute.TraceID, &req.ActorUserID)
 
-	// Send notification to user
-	s.sendNotification(ctx, dispute.UserID, "Dispute Resolved",
-		fmt.Sprintf("Your dispute #%d has been resolved", dispute.ID), dispute.TraceID)
+	// Send notification to initiator
+	s.sendNotification(ctx, dispute.InitiatorID, "争议处理结果",
+		fmt.Sprintf("您的争议 #%d 已处理完成", dispute.ID), dispute.TraceID)
 
 	return nil
 }
@@ -306,9 +325,8 @@ func (s *DisputeService) RollbackDisputeAssignment(ctx context.Context, req Roll
 	// Update dispute
 	now := time.Now()
 	dispute.Status = model.DisputeStatusPending
-	dispute.AssignedToUserID = nil
-	dispute.AssignmentSource = ""
-	dispute.AssignedAt = nil
+	dispute.AssignedServiceID = nil
+	dispute.OriginalServiceID = nil
 	dispute.RolledBackAt = &now
 	dispute.RolledBackByUserID = &req.ActorUserID
 	dispute.RollbackReason = req.RollbackReason
@@ -338,11 +356,13 @@ func (s *DisputeService) CheckAndMarkSLABreaches(ctx context.Context) error {
 
 		// Log operation
 		s.logOperation(ctx, model.OpEntityDispute, dispute.ID, model.OpActionUpdateStatus,
-			"SLA breached", dispute.TraceID, dispute.AssignedToUserID)
+			"SLA breached", dispute.TraceID, dispute.AssignedServiceID)
 
-		// Send alert notification
-		s.sendNotification(ctx, *dispute.AssignedToUserID, "SLA Breached",
-			fmt.Sprintf("Dispute #%d has exceeded SLA deadline", dispute.ID), dispute.TraceID)
+		// Send alert notification to assigned service user
+		if dispute.AssignedServiceID != nil {
+			s.sendNotification(ctx, *dispute.AssignedServiceID, "SLA 超时警告",
+				fmt.Sprintf("争议 #%d 已超过 SLA 截止时间", dispute.ID), dispute.TraceID)
+		}
 	}
 
 	return nil
@@ -407,7 +427,7 @@ func (s *DisputeService) processRefund(ctx context.Context, order *model.Order, 
 	// Update order status
 	order.Status = model.OrderStatusRefunded
 	order.RefundAmountCents = amount
-	order.RefundReason = fmt.Sprintf("Dispute resolution: %s", dispute.ResolutionNotes)
+	order.RefundReason = fmt.Sprintf("争议处理退款: %s", dispute.ResolveRemark)
 	now := time.Now()
 	order.RefundedAt = &now
 

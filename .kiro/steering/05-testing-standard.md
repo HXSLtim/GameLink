@@ -125,7 +125,7 @@ docker exec -it gamelink-postgres psql -U gamelink -d gamelink
 - 集成测试：真实数据库（PostgreSQL），测试 fixtures
 - 并发测试：Race detector，压力测试
 
-### 服务层覆盖率详情（2024-12-23）
+### 服务层覆盖率详情（2025-12-25）
 
 | 模块 | 覆盖率 | 状态 |
 |------|--------|------|

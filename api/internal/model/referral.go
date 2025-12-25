@@ -120,17 +120,26 @@ func (Referral) TableName() string {
 	return "referrals"
 }
 
+// ReferralRewardStatus 推荐奖励状态
+type ReferralRewardStatus string
+
+const (
+	ReferralRewardStatusPending ReferralRewardStatus = "pending" // 待发放
+	ReferralRewardStatusIssued  ReferralRewardStatus = "issued"  // 已发放
+	ReferralRewardStatusFailed  ReferralRewardStatus = "failed"  // 发放失败
+)
+
 // ReferralReward 推荐奖励记录
 type ReferralReward struct {
 	Base
-	ReferralID    uint64     `json:"referralId" gorm:"column:referral_id;not null;index"`           // 推荐记录ID
-	UserID        uint64     `json:"userId" gorm:"column:user_id;not null;index"`                   // 获得奖励的用户ID
-	Type          RewardType `json:"type" gorm:"size:32"`                                           // 奖励类型
-	AmountCents   int64      `json:"amountCents" gorm:"column:amount_cents;default:0"`              // 奖励金额（分）
-	CouponID      *uint64    `json:"couponId,omitempty" gorm:"column:coupon_id;index"`              // 发放的优惠券ID
-	Status        string     `json:"status" gorm:"size:32;default:'pending'"`                       // pending/issued/failed
-	IssuedAt      *time.Time `json:"issuedAt,omitempty" gorm:"column:issued_at"`                    // 发放时间
-	FailureReason string     `json:"failureReason,omitempty" gorm:"column:failure_reason;size:255"` // 失败原因
+	ReferralID    uint64               `json:"referralId" gorm:"column:referral_id;not null;index"`           // 推荐记录ID
+	UserID        uint64               `json:"userId" gorm:"column:user_id;not null;index"`                   // 获得奖励的用户ID
+	Type          RewardType           `json:"type" gorm:"size:32"`                                           // 奖励类型
+	AmountCents   int64                `json:"amountCents" gorm:"column:amount_cents;default:0"`              // 奖励金额（分）
+	CouponID      *uint64              `json:"couponId,omitempty" gorm:"column:coupon_id;index"`              // 发放的优惠券ID
+	Status        ReferralRewardStatus `json:"status" gorm:"size:32;default:'pending';index"`                 // 状态
+	IssuedAt      *time.Time           `json:"issuedAt,omitempty" gorm:"column:issued_at"`                    // 发放时间
+	FailureReason string               `json:"failureReason,omitempty" gorm:"column:failure_reason;size:255"` // 失败原因
 
 	// Relations
 	Referral *Referral `json:"referral,omitempty" gorm:"foreignKey:ReferralID"`

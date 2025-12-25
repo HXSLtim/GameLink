@@ -4,12 +4,12 @@ import (
 	"context"
 	"strings"
 
-	"gamelink/pkg/apierr"
 	"gamelink/internal/model"
-	"gamelink/pkg/safety"
 	"gamelink/internal/repository"
 	repoiface "gamelink/internal/repository/interfaces"
 	feedservice "gamelink/internal/service/feed"
+	"gamelink/pkg/apierr"
+	"gamelink/pkg/safety"
 )
 
 var (
@@ -307,26 +307,28 @@ func (s *ReviewService) ReplyReview(ctx context.Context, userID, reviewID uint64
 		return nil, err
 	}
 
-	status := "pending"
+	var status model.ReviewReplyStatus
 	note := result.Reason
 	switch result.Decision {
 	case feedservice.ModerationDecisionApprove:
-		status = "approved"
+		status = model.ReviewReplyStatusApproved
 	case feedservice.ModerationDecisionReject:
-		status = "rejected"
+		status = model.ReviewReplyStatusRejected
 	case feedservice.ModerationDecisionManual:
-		status = "pending"
+		status = model.ReviewReplyStatusPending
+	default:
+		status = model.ReviewReplyStatusPending
 	}
 
 	reply.Status = status
-	if status != "pending" || note != "" {
-		if err := s.replies.UpdateStatus(ctx, reply.ID, status, note); err != nil {
+	if status != model.ReviewReplyStatusPending || note != "" {
+		if err := s.replies.UpdateStatus(ctx, reply.ID, string(status), note); err != nil {
 			return nil, err
 		}
 		reply.ModerationNote = note
 	}
 
-	return &ReplyReviewResponse{ReplyID: reply.ID, Status: reply.Status}, nil
+	return &ReplyReviewResponse{ReplyID: reply.ID, Status: string(reply.Status)}, nil
 }
 
 // updatePlayerRating 更新陪玩师评分
@@ -406,15 +408,17 @@ func (s *ReviewService) UpdateReply(ctx context.Context, userID, replyID uint64,
 		return nil, err
 	}
 
-	status := "pending"
+	var status model.ReviewReplyStatus
 	note := result.Reason
 	switch result.Decision {
 	case feedservice.ModerationDecisionApprove:
-		status = "approved"
+		status = model.ReviewReplyStatusApproved
 	case feedservice.ModerationDecisionReject:
-		status = "rejected"
+		status = model.ReviewReplyStatusRejected
 	case feedservice.ModerationDecisionManual:
-		status = "pending"
+		status = model.ReviewReplyStatusPending
+	default:
+		status = model.ReviewReplyStatusPending
 	}
 
 	reply.Status = status
@@ -440,7 +444,7 @@ func (s *ReviewService) UpdateReply(ctx context.Context, userID, replyID uint64,
 		_ = s.notifications.Create(ctx, notification)
 	}
 
-	return &UpdateReplyResponse{ReplyID: reply.ID, Status: reply.Status}, nil
+	return &UpdateReplyResponse{ReplyID: reply.ID, Status: string(reply.Status)}, nil
 }
 
 // DeleteReply 删除评价回复

@@ -31,11 +31,11 @@ const (
 type UserBlock struct {
 	Base
 	// 拉黑发起人ID（User.ID）
-	BlockerID uint64 `json:"blockerId" gorm:"column:blocker_id;index;not null"`
+	BlockerID uint64 `json:"blockerId" gorm:"column:blocker_id;index;not null;uniqueIndex:idx_blocker_blocked"`
 	// 发起人类型：user/player
 	BlockerType BlockUserType `json:"blockerType" gorm:"column:blocker_type;size:32;index;not null"`
 	// 被拉黑人ID（User.ID）
-	BlockedID uint64 `json:"blockedId" gorm:"column:blocked_id;index;not null"`
+	BlockedID uint64 `json:"blockedId" gorm:"column:blocked_id;index;not null;uniqueIndex:idx_blocker_blocked"`
 	// 被拉黑人类型：user/player
 	BlockedType BlockUserType `json:"blockedType" gorm:"column:blocked_type;size:32;index;not null"`
 	// 拉黑原因（可选）

@@ -91,8 +91,8 @@ func (h *EventHooks) OnDisputeResolved(ctx context.Context, dispute *model.Order
 	go func() {
 		bgCtx := context.Background()
 
-		if err := h.svc.UpdateUserStatistics(bgCtx, dispute.UserID); err != nil {
-			log.Printf("[Statistics] update user %d stats failed: %v", dispute.UserID, err)
+		if err := h.svc.UpdateUserStatistics(bgCtx, dispute.InitiatorID); err != nil {
+			log.Printf("[Statistics] update user %d stats failed: %v", dispute.InitiatorID, err)
 		}
 
 		if order != nil && order.PlayerID != nil {

@@ -5,8 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/pkg/apierr"
 	orderservice "gamelink/internal/service/order"
+	"gamelink/pkg/apierr"
 )
 
 // DisputeHandler handles order dispute related endpoints for users
@@ -75,11 +75,12 @@ func (h *DisputeHandler) InitiateDispute(c *gin.Context) {
 	}
 
 	resp, err := h.svc.InitiateDispute(c.Request.Context(), orderservice.InitiateDisputeRequest{
-		OrderID:      payload.OrderID,
-		UserID:       userID.(uint64),
-		Reason:       payload.Reason,
-		Description:  payload.Description,
-		EvidenceURLs: payload.EvidenceURLs,
+		OrderID:       payload.OrderID,
+		InitiatorID:   userID.(uint64),
+		InitiatorType: "user",
+		Reason:        payload.Reason,
+		EvidenceText:  payload.Description,
+		EvidenceURLs:  payload.EvidenceURLs,
 	})
 
 	if err != nil {
@@ -150,7 +151,7 @@ func (h *DisputeHandler) GetDisputeDetail(c *gin.Context) {
 	}
 
 	// Verify user owns this dispute
-	if dispute.UserID != userID.(uint64) {
+	if dispute.InitiatorID != userID.(uint64) {
 		respondAPIError(c, apierr.Forbidden("您只能查看自己的纠纷"))
 		return
 	}

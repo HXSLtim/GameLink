@@ -39,7 +39,7 @@
 | 指标 | 当前值 | 目标 |
 |------|--------|------|
 | 测试覆盖率 | ~80% | 80%+ |
-| 后端模块完成度 | 64%（18/28 模块） | 100% |
+| 后端模块完成度 | 74%（26/35 模块） | 100% |
 | 前端完成度 | 75% | 100% |
 | CI/CD | ✅ 完善 | - |
 
@@ -47,14 +47,22 @@
 
 | 分类 | 完成 | 进行中 | 仅Model | 说明 |
 |------|------|--------|---------|------|
-| 核心模块 | 18 | 1 | 0 | user/order/player 等 |
+| 核心模块 | 19 | 0 | 0 | user/order/player/chat/dispute 等 |
 | 新增业务模块 | 0 | 0 | 3 | player-rank/order-timeout/user-block |
-| 营销模块 | 0 | 1 | 5 | vip/coupon/recharge/activity/referral |
+| 营销模块 | 0 | 1 | 5 | vip/coupon/recharge/activity/team/referral |
+| 辅助模块 | 7 | 0 | 0 | commission/ranking/routing-rule/operation-log 等 |
 
 > 详细模块状态见 `06-project-management.md`
 
 ### 最近完成
 
+- ✅ 全量代码审查完成（所有模块无编译错误）
+- ✅ 项目进度更新（74% 完成度，26/35 模块）
+- ✅ operation-log 模块确认完成（admin service 包含）
+- ✅ 全量代码审查修复（eventHooks/assignment/user dispute handler 字段与模型同步）
+- ✅ 争议模块代码修复（disputeService.go 和 dispute handler 字段与模型同步）
+- ✅ 模块进度核实（核心模块全部完成，整体完成度提升至 71%）
+- ✅ 代码与文档一致性同步（User/OrderDispute/ChatGroup/Commission/OrderItem/OrderPlayer/GameRank 模型更新）
 - ✅ 业务文档完善（游戏/服务项目/敏感词/内容管理/统计模块）
 - ✅ 用户/认证模块业务流程文档（注册/登录/密码/封禁/Token/RBAC）
 - ✅ 项目管理 steering 规则（AI 辅助维护文档）
@@ -75,7 +83,14 @@
 | P2 | coupon | 优惠券系统 | 🟡 Model完成 |
 | P2 | recharge | 充值系统 | 🟡 Model完成 |
 | P2 | activity | 活动系统 | 🟡 Model完成 |
+| P2 | team | 团队系统 | 🔄 Service完成，需实现 Repo/Handler |
 | P3 | referral | 推荐/邀请系统 | 🟡 Model完成（预留） |
+
+- **通信加密**: AES-256-CBC + SHA-256 签名（生产环境强制启用）
+- **认证**: JWT Token + 刷新机制
+- **权限控制**: RBAC 角色权限系统
+- **数据保护**: 敏感数据加密存储
+
 
 ## 安全特性
 

@@ -394,7 +394,7 @@ AllowVipStack = false：活动券与VIP折扣择优使用（互斥）
 | Type | RewardType | 奖励类型 |
 | AmountCents | int64 | 奖励金额（分） |
 | CouponID | *uint64 | 发放的优惠券ID |
-| Status | string | pending/issued/failed |
+| Status | ReferralRewardStatus | 状态：pending/issued/failed |
 | IssuedAt | *time.Time | 发放时间 |
 | FailureReason | string | 失败原因 |
 

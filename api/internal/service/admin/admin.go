@@ -2899,15 +2899,17 @@ func (s *AdminService) UpdateReviewReply(ctx context.Context, userID, replyID ui
 			return err
 		}
 
-		status := "pending"
+		var status model.ReviewReplyStatus
 		note := moderationResult.Reason
 		switch moderationResult.Decision {
 		case feedservice.ModerationDecisionApprove:
-			status = "approved"
+			status = model.ReviewReplyStatusApproved
 		case feedservice.ModerationDecisionReject:
-			status = "rejected"
+			status = model.ReviewReplyStatusRejected
 		case feedservice.ModerationDecisionManual:
-			status = "pending"
+			status = model.ReviewReplyStatusPending
+		default:
+			status = model.ReviewReplyStatusPending
 		}
 
 		reply.Status = status
@@ -2949,7 +2951,7 @@ func (s *AdminService) UpdateReviewReply(ctx context.Context, userID, replyID ui
 
 		result = map[string]interface{}{
 			"replyId": reply.ID,
-			"status":  reply.Status,
+			"status":  string(reply.Status),
 		}
 		return nil
 	})

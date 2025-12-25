@@ -13,11 +13,20 @@ type Game struct {
 	Name string `json:"name" gorm:"size:128"`
 	// 游戏分类，如 moba/fps
 	// @Example MOBA
-	Category string `json:"category,omitempty" gorm:"size:64"`
+	Category string `json:"category,omitempty" gorm:"size:64;index"`
 	// 游戏图标URL
 	// @Example https://example.com/game-icon.png
 	IconURL string `json:"iconUrl,omitempty" gorm:"column:icon_url;size:255"`
+	// 游戏封面图URL
+	// @Example https://example.com/game-cover.png
+	CoverURL string `json:"coverUrl,omitempty" gorm:"column:cover_url;size:255"`
 	// 游戏描述
 	// @Example 英雄联盟是一款由Riot Games开发的MOBA类游戏
 	Description string `json:"description,omitempty" gorm:"type:text"`
+	// 是否上架
+	// @Example true
+	IsActive bool `json:"isActive" gorm:"column:is_active;default:true;index"`
+	// 排序（越小越靠前）
+	// @Example 0
+	SortOrder int `json:"sortOrder" gorm:"column:sort_order;default:0;index"`
 }

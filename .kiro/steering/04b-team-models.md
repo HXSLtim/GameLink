@@ -51,7 +51,7 @@
 | TeamID | uint64 | 团队ID |
 | PlayerID | uint64 | 被邀请的陪玩师ID |
 | InviterID | uint64 | 邀请人ID |
-| Status | string | pending/accepted/rejected/expired |
+| Status | TeamInviteStatus | 状态：pending/accepted/rejected/expired |
 | ExpireAt | time.Time | 过期时间 |
 | Message | string | 邀请留言 |
 
@@ -119,6 +119,8 @@ MemberCount == 0 → 团队自动销毁
 团队接受订单 → 所有成员进入忙碌状态
   ├── Team.Status = busy
   ├── Team.CurrentOrderID = 订单ID
+  ├── Order.Status = in_progress（订单状态变更）
+  ├── Order.CurrentPlayers = RequiredPlayers
   └── 为每个成员创建 OrderPlayer 记录
 ```
 

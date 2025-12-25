@@ -7,11 +7,11 @@ import (
 	"math"
 	"time"
 
-	"gamelink/pkg/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	commissionrepo "gamelink/internal/repository/commission"
 	repoiface "gamelink/internal/repository/interfaces"
+	"gamelink/pkg/apierr"
 )
 
 var (
@@ -269,15 +269,15 @@ func (s *CommissionService) GetCommissionRecords(ctx context.Context, playerID u
 
 // CommissionRecordDTO 抽成记录DTO
 type CommissionRecordDTO struct {
-	ID                uint64    `json:"id"`
-	OrderID           uint64    `json:"orderId"`
-	TotalAmountCents  int64     `json:"totalAmountCents"`
-	CommissionRate    int       `json:"commissionRate"`
-	CommissionCents   int64     `json:"commissionCents"`
-	PlayerIncomeCents int64     `json:"playerIncomeCents"`
-	SettlementStatus  string    `json:"settlementStatus"`
-	SettlementMonth   string    `json:"settlementMonth"`
-	CreatedAt         time.Time `json:"createdAt"`
+	ID                uint64                 `json:"id"`
+	OrderID           uint64                 `json:"orderId"`
+	TotalAmountCents  int64                  `json:"totalAmountCents"`
+	CommissionRate    int                    `json:"commissionRate"`
+	CommissionCents   int64                  `json:"commissionCents"`
+	PlayerIncomeCents int64                  `json:"playerIncomeCents"`
+	SettlementStatus  model.SettlementStatus `json:"settlementStatus"`
+	SettlementMonth   string                 `json:"settlementMonth"`
+	CreatedAt         time.Time              `json:"createdAt"`
 }
 
 // CommissionRecordListResponse 抽成记录列表响应
@@ -323,17 +323,17 @@ func (s *CommissionService) GetMonthlySettlements(ctx context.Context, playerID 
 
 // SettlementDTO 结算DTO
 type SettlementDTO struct {
-	ID                   uint64     `json:"id"`
-	SettlementMonth      string     `json:"settlementMonth"`
-	TotalOrderCount      int64      `json:"totalOrderCount"`
-	TotalAmountCents     int64      `json:"totalAmountCents"`
-	TotalCommissionCents int64      `json:"totalCommissionCents"`
-	TotalIncomeCents     int64      `json:"totalIncomeCents"`
-	BonusCents           int64      `json:"bonusCents"`
-	FinalIncomeCents     int64      `json:"finalIncomeCents"`
-	Status               string     `json:"status"`
-	CreatedAt            time.Time  `json:"createdAt"`
-	SettledAt            *time.Time `json:"settledAt"`
+	ID                   uint64                        `json:"id"`
+	SettlementMonth      string                        `json:"settlementMonth"`
+	TotalOrderCount      int64                         `json:"totalOrderCount"`
+	TotalAmountCents     int64                         `json:"totalAmountCents"`
+	TotalCommissionCents int64                         `json:"totalCommissionCents"`
+	TotalIncomeCents     int64                         `json:"totalIncomeCents"`
+	BonusCents           int64                         `json:"bonusCents"`
+	FinalIncomeCents     int64                         `json:"finalIncomeCents"`
+	Status               model.MonthlySettlementStatus `json:"status"`
+	CreatedAt            time.Time                     `json:"createdAt"`
+	SettledAt            *time.Time                    `json:"settledAt"`
 }
 
 // SettlementListResponse 结算列表响应
@@ -369,13 +369,13 @@ func (s *CommissionService) CreateCommissionRule(ctx context.Context, req Create
 
 // CreateCommissionRuleRequest 创建抽成规则请求
 type CreateCommissionRuleRequest struct {
-	Name        string  `json:"name" binding:"required,max=128"`
-	Description string  `json:"description"`
-	Type        string  `json:"type" binding:"required,oneof=default special gift"`
-	Rate        int     `json:"rate" binding:"required,min=0,max=100"`
-	GameID      *uint64 `json:"gameId"`
-	PlayerID    *uint64 `json:"playerId"`
-	ServiceType *string `json:"serviceType"`
+	Name        string                   `json:"name" binding:"required,max=128"`
+	Description string                   `json:"description"`
+	Type        model.CommissionRuleType `json:"type" binding:"required"`
+	Rate        int                      `json:"rate" binding:"required,min=0,max=100"`
+	GameID      *uint64                  `json:"gameId"`
+	PlayerID    *uint64                  `json:"playerId"`
+	ServiceType *string                  `json:"serviceType"`
 }
 
 // UpdateCommissionRule 更新抽成规则（管理员）

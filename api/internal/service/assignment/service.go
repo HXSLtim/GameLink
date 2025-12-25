@@ -125,14 +125,15 @@ func (s *AssignmentService) InitiateDispute(ctx context.Context, req InitiateDis
 
 	// Create dispute
 	dispute := &model.OrderDispute{
-		OrderID:      req.OrderID,
-		UserID:       req.UserID,
-		Status:       model.DisputeStatusPending,
-		Reason:       req.Reason,
-		Description:  req.Description,
-		EvidenceURLs: req.EvidenceURLs,
-		SLADeadline:  &slaDeadline,
-		TraceID:      traceID,
+		OrderID:       req.OrderID,
+		InitiatorID:   req.UserID,
+		InitiatorType: model.DisputeInitiatorUser,
+		Status:        model.DisputeStatusPending,
+		Reason:        req.Reason,
+		EvidenceText:  req.Description,
+		EvidenceURLs:  req.EvidenceURLs,
+		SLADeadline:   &slaDeadline,
+		TraceID:       traceID,
 	}
 
 	if err := s.disputes.Create(ctx, dispute); err != nil {
@@ -193,11 +194,8 @@ func (s *AssignmentService) AssignDispute(ctx context.Context, req AssignDispute
 	}
 
 	// Update dispute
-	now := time.Now()
 	dispute.Status = model.DisputeStatusAssigned
-	dispute.AssignedToUserID = &req.AssignedToUserID
-	dispute.AssignmentSource = req.Source
-	dispute.AssignedAt = &now
+	dispute.AssignedServiceID = &req.AssignedToUserID
 
 	if err := s.disputes.Update(ctx, dispute); err != nil {
 		return err
@@ -251,10 +249,9 @@ func (s *AssignmentService) ResolveDispute(ctx context.Context, req ResolveDispu
 	now := time.Now()
 	dispute.Status = model.DisputeStatusResolved
 	dispute.Resolution = req.Resolution
-	dispute.ResolutionAmount = req.ResolutionAmount
-	dispute.ResolutionNotes = req.ResolutionNotes
+	dispute.ResolveRemark = req.ResolutionNotes
 	dispute.ResolvedAt = &now
-	dispute.ResolvedByUserID = &req.ActorUserID
+	dispute.ResolvedBy = &req.ActorUserID
 
 	if err := s.disputes.Update(ctx, dispute); err != nil {
 		return err
@@ -272,7 +269,7 @@ func (s *AssignmentService) ResolveDispute(ctx context.Context, req ResolveDispu
 		fmt.Sprintf("Resolved with %s decision", req.Resolution), dispute.TraceID, &req.ActorUserID)
 
 	// Send notification to user
-	s.sendNotification(ctx, dispute.UserID, "Dispute Resolved",
+	s.sendNotification(ctx, dispute.InitiatorID, "Dispute Resolved",
 		fmt.Sprintf("Your dispute #%d has been resolved", dispute.ID), dispute.TraceID)
 
 	return nil
@@ -306,9 +303,7 @@ func (s *AssignmentService) RollbackAssignment(ctx context.Context, req Rollback
 	// Update dispute
 	now := time.Now()
 	dispute.Status = model.DisputeStatusPending
-	dispute.AssignedToUserID = nil
-	dispute.AssignmentSource = ""
-	dispute.AssignedAt = nil
+	dispute.AssignedServiceID = nil
 	dispute.RolledBackAt = &now
 	dispute.RolledBackByUserID = &req.ActorUserID
 	dispute.RollbackReason = req.RollbackReason
@@ -338,11 +333,13 @@ func (s *AssignmentService) CheckAndMarkSLABreaches(ctx context.Context) error {
 
 		// Log operation
 		s.logOperation(ctx, model.OpEntityDispute, dispute.ID, model.OpActionUpdateStatus,
-			"SLA breached", dispute.TraceID, dispute.AssignedToUserID)
+			"SLA breached", dispute.TraceID, dispute.AssignedServiceID)
 
 		// Send alert notification
-		s.sendNotification(ctx, *dispute.AssignedToUserID, "SLA Breached",
-			fmt.Sprintf("Dispute #%d has exceeded SLA deadline", dispute.ID), dispute.TraceID)
+		if dispute.AssignedServiceID != nil {
+			s.sendNotification(ctx, *dispute.AssignedServiceID, "SLA Breached",
+				fmt.Sprintf("Dispute #%d has exceeded SLA deadline", dispute.ID), dispute.TraceID)
+		}
 	}
 
 	return nil
@@ -374,7 +371,7 @@ func (s *AssignmentService) processRefund(ctx context.Context, order *model.Orde
 	// Update order status
 	order.Status = model.OrderStatusRefunded
 	order.RefundAmountCents = amount
-	order.RefundReason = fmt.Sprintf("Dispute resolution: %s", dispute.ResolutionNotes)
+	order.RefundReason = fmt.Sprintf("Dispute resolution: %s", dispute.ResolveRemark)
 	now := time.Now()
 	order.RefundedAt = &now
 

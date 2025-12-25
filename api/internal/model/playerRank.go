@@ -9,11 +9,11 @@ import "time"
 type GameRank struct {
 	Base
 	// 游戏ID
-	GameID uint64 `json:"gameId" gorm:"column:game_id;index;not null"`
+	GameID uint64 `json:"gameId" gorm:"column:game_id;index;not null;index:idx_game_level,priority:1"`
 	// 段位名称（如：青铜、白银、黄金、铂金、钻石、大师、王者）
 	Name string `json:"name" gorm:"size:64;not null"`
 	// 段位等级（数字，用于排序和比较，越大越高）
-	Level int `json:"level" gorm:"default:0"`
+	Level int `json:"level" gorm:"default:0;index:idx_game_level,priority:2"`
 	// 该段位定价（分）
 	PriceCents int64 `json:"priceCents" gorm:"column:price_cents;default:0"`
 	// 段位图标URL
@@ -25,7 +25,7 @@ type GameRank struct {
 	// 排序（越小越靠前）
 	SortOrder int `json:"sortOrder" gorm:"column:sort_order;default:0"`
 	// 是否启用
-	IsActive bool `json:"isActive" gorm:"column:is_active;default:true"`
+	IsActive bool `json:"isActive" gorm:"column:is_active;default:true;index"`
 
 	// 关联
 	Game *Game `json:"game,omitempty" gorm:"foreignKey:GameID"`

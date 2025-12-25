@@ -2,6 +2,15 @@ package model
 
 import "time"
 
+// OrderPlayerStatus 订单陪玩师状态
+type OrderPlayerStatus string
+
+const (
+	OrderPlayerStatusJoined    OrderPlayerStatus = "joined"    // 已加入
+	OrderPlayerStatusLeft      OrderPlayerStatus = "left"      // 已离开（中途退出）
+	OrderPlayerStatusCompleted OrderPlayerStatus = "completed" // 已完成
+)
+
 // OrderPlayer 订单陪玩师关联表（记录陪玩师接单详情）
 type OrderPlayer struct {
 	Base
@@ -16,7 +25,7 @@ type OrderPlayer struct {
 	CommissionCents int64 `json:"commissionCents" gorm:"column:commission_cents;default:0"` // 该陪玩师抽成（分）
 
 	// 状态
-	Status string `json:"status" gorm:"column:status;size:32;default:'joined'"` // joined/left/completed
+	Status OrderPlayerStatus `json:"status" gorm:"column:status;size:32;default:'joined';index"` // joined/left/completed
 
 	// Relations
 	Order     *Order     `json:"order,omitempty" gorm:"foreignKey:OrderID"`
@@ -28,10 +37,3 @@ type OrderPlayer struct {
 func (OrderPlayer) TableName() string {
 	return "order_players"
 }
-
-// OrderPlayerStatus 状态常量
-const (
-	OrderPlayerStatusJoined    = "joined"    // 已加入
-	OrderPlayerStatusLeft      = "left"      // 已离开（中途退出）
-	OrderPlayerStatusCompleted = "completed" // 已完成
-)
