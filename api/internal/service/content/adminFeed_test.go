@@ -48,6 +48,87 @@ func (m *MockSensitiveWordService) DetectSensitiveWords(ctx context.Context, req
 	return args.Get(0).(*sensitiveword.DetectSensitiveWordsResponse), args.Error(1)
 }
 
+// MockFeedRepository is a mock implementation of FeedRepository
+type MockFeedRepository struct {
+	mock.Mock
+}
+
+func (m *MockFeedRepository) Create(ctx context.Context, feed *model.Feed) error {
+	args := m.Called(ctx, feed)
+	return args.Error(0)
+}
+
+func (m *MockFeedRepository) Get(ctx context.Context, id uint64) (*model.Feed, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.Feed), args.Error(1)
+}
+
+func (m *MockFeedRepository) List(ctx context.Context, opts repository.FeedListOptions) ([]model.Feed, error) {
+	args := m.Called(ctx, opts)
+	return args.Get(0).([]model.Feed), args.Error(1)
+}
+
+func (m *MockFeedRepository) ListPaged(ctx context.Context, opts repository.FeedPagedListOptions) ([]model.Feed, int64, error) {
+	args := m.Called(ctx, opts)
+	return args.Get(0).([]model.Feed), args.Get(1).(int64), args.Error(2)
+}
+
+func (m *MockFeedRepository) Update(ctx context.Context, feed *model.Feed) error {
+	args := m.Called(ctx, feed)
+	return args.Error(0)
+}
+
+func (m *MockFeedRepository) Delete(ctx context.Context, id uint64) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
+func (m *MockFeedRepository) UpdateModeration(ctx context.Context, feedID uint64, status model.FeedModerationStatus, note string, moderatorID *uint64) error {
+	args := m.Called(ctx, feedID, status, note, moderatorID)
+	return args.Error(0)
+}
+
+func (m *MockFeedRepository) BatchUpdateModeration(ctx context.Context, feedIDs []uint64, status model.FeedModerationStatus, note string, moderatorID *uint64) error {
+	args := m.Called(ctx, feedIDs, status, note, moderatorID)
+	return args.Error(0)
+}
+
+func (m *MockFeedRepository) CreateReport(ctx context.Context, report *model.FeedReport) error {
+	args := m.Called(ctx, report)
+	return args.Error(0)
+}
+
+func (m *MockFeedRepository) GetReport(ctx context.Context, id uint64) (*model.FeedReport, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.FeedReport), args.Error(1)
+}
+
+func (m *MockFeedRepository) ListReports(ctx context.Context, opts repository.FeedReportListOptions) ([]model.FeedReport, int64, error) {
+	args := m.Called(ctx, opts)
+	return args.Get(0).([]model.FeedReport), args.Get(1).(int64), args.Error(2)
+}
+
+func (m *MockFeedRepository) UpdateReport(ctx context.Context, report *model.FeedReport) error {
+	args := m.Called(ctx, report)
+	return args.Error(0)
+}
+
+func (m *MockFeedRepository) CountByStatus(ctx context.Context) (map[model.FeedModerationStatus]int64, error) {
+	args := m.Called(ctx)
+	return args.Get(0).(map[model.FeedModerationStatus]int64), args.Error(1)
+}
+
+func (m *MockFeedRepository) GetTrend(ctx context.Context, days int) ([]repository.DateValue, error) {
+	args := m.Called(ctx, days)
+	return args.Get(0).([]repository.DateValue), args.Error(1)
+}
+
 func TestNewAdminFeedService(t *testing.T) {
 	feedRepo := &MockFeedRepository{}
 	opLogRepo := &MockOperationLogRepository{}
