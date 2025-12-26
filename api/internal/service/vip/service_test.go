@@ -431,3 +431,441 @@ func TestService_BatchDeleteLevels(t *testing.T) {
 		assert.Equal(t, int64(2), affected)
 	})
 }
+
+func TestService_GetLevelBySlug(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("success", func(t *testing.T) {
+		repo := &MockVipRepository{}
+		svc := NewVipService(repo)
+
+		expected := &model.VipLevel{Slug: "vip1", Title: "VIP 1"}
+		repo.On("GetLevelBySlug", ctx, "vip1").Return(expected, nil)
+
+		result, err := svc.GetLevelBySlug(ctx, "vip1")
+		require.NoError(t, err)
+		assert.Equal(t, expected, result)
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		repo := &MockVipRepository{}
+		svc := NewVipService(repo)
+
+		repo.On("GetLevelBySlug", ctx, "nonexistent").Return(nil, repository.ErrNotFound)
+
+		_, err := svc.GetLevelBySlug(ctx, "nonexistent")
+		require.Error(t, err)
+	})
+}
+
+func TestService_GetDefaultLevel(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("success", func(t *testing.T) {
+		repo := &MockVipRepository{}
+		svc := NewVipService(repo)
+
+		expected := &model.VipLevel{Slug: "vip1", Title: "VIP 1", IsDefault: true}
+		repo.On("GetDefaultLevel", ctx).Return(expected, nil)
+
+		result, err := svc.GetDefaultLevel(ctx)
+		require.NoError(t, err)
+		assert.True(t, result.IsDefault)
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		repo := &MockVipRepository{}
+		svc := NewVipService(repo)
+
+		repo.On("GetDefaultLevel", ctx).Return(nil, repository.ErrNotFound)
+
+		_, err := svc.GetDefaultLevel(ctx)
+		require.Error(t, err)
+	})
+}
+
+func TestService_ListActiveLevels(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("success", func(t *testing.T) {
+		repo := &MockVipRepository{}
+		svc := NewVipService(repo)
+
+		levels := []model.VipLevel{
+			{Slug: "vip1", Title: "VIP 1", IsActive: true},
+		}
+		repo.On("ListActiveLevels", ctx).Return(levels, nil)
+
+		result, err := svc.ListActiveLevels(ctx)
+		require.NoError(t, err)
+		assert.Len(t, result, 1)
+	})
+
+	t.Run("error", func(t *testing.T) {
+		repo := &MockVipRepository{}
+		svc := NewVipService(repo)
+
+		repo.On("ListActiveLevels", ctx).Return([]model.VipLevel{}, errors.New("db error"))
+
+		_, err := svc.ListActiveLevels(ctx)
+		require.Error(t, err)
+	})
+}
+
+func TestService_ListLevelsPaged(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("success", func(t *testing.T) {
+		repo := &MockVipRepository{}
+		svc := NewVipService(repo)
+
+		opts := repository.VipLevelListOptions{Page: 1, PageSize: 10}
+		levels := []model.VipLevel{{Slug: "vip1"}}
+		repo.On("ListLevelsPaged", ctx, opts).Return(levels, int64(1), nil)
+
+		result, total, err := svc.ListLevelsPaged(ctx, opts)
+		require.NoError(t, err)
+		assert.Len(t, result, 1)
+		assert.Equal(t, int64(1), total)
+	})
+
+	t.Run("error", func(t *testing.T) {
+		repo := &MockVipRepository{}
+		svc := NewVipService(repo)
+
+		opts := repository.VipLevelListOptions{Page: 1, PageSize: 10}
+		repo.On("ListLevelsPaged", ctx, opts).Return([]model.VipLevel{}, int64(0), errors.New("db error"))
+
+		_, _, err := svc.ListLevelsPaged(ctx, opts)
+		require.Error(t, err)
+	})
+}
+
+func TestService_SetDefaultLevel(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("success", func(t *testing.T) {
+		repo := &MockVipRepository{}
+		svc := NewVipService(repo)
+
+		repo.On("SetDefaultLevel", ctx, uint64(1)).Return(nil)
+
+		err := svc.SetDefaultLevel(ctx, 1)
+		require.NoError(t, err)
+	})
+
+	t.Run("error", func(t *testing.T) {
+		repo := &MockVipRepository{}
+		svc := NewVipService(repo)
+
+		repo.On("SetDefaultLevel", ctx, uint64(999)).Return(errors.New("not found"))
+
+		err := svc.SetDefaultLevel(ctx, 999)
+		require.Error(t, err)
+	})
+}
+
+func TestService_GetLevelByExp(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("success", func(t *testing.T) {
+		repo := &MockVipRepository{}
+		svc := NewVipService(repo)
+
+		expected := &model.VipLevel{Slug: "vip2", ExpRequired: 10000}
+		repo.On("GetLevelByExp", ctx, int64(15000)).Return(expected, nil)
+
+		result, err := svc.GetLevelByExp(ctx, 15000)
+		require.NoError(t, err)
+		assert.Equal(t, expected, result)
+	})
+
+	t.Run("error", func(t *testing.T) {
+		repo := &MockVipRepository{}
+		svc := NewVipService(repo)
+
+		repo.On("GetLevelByExp", ctx, int64(0)).Return(nil, repository.ErrNotFound)
+
+		_, err := svc.GetLevelByExp(ctx, 0)
+		require.Error(t, err)
+	})
+}
+
+func TestService_GetConfigValue(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("success", func(t *testing.T) {
+		repo := &MockVipRepository{}
+		svc := NewVipService(repo)
+
+		config := &model.VipConfig{ConfigKey: "test_key", ConfigValue: "test_value"}
+		repo.On("GetConfig", ctx, "test_key").Return(config, nil)
+
+		result, err := svc.GetConfigValue(ctx, "test_key")
+		require.NoError(t, err)
+		assert.Equal(t, "test_value", result)
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		repo := &MockVipRepository{}
+		svc := NewVipService(repo)
+
+		repo.On("GetConfig", ctx, "nonexistent").Return(nil, repository.ErrNotFound)
+
+		_, err := svc.GetConfigValue(ctx, "nonexistent")
+		require.Error(t, err)
+	})
+}
+
+func TestService_ListConfigs(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("success", func(t *testing.T) {
+		repo := &MockVipRepository{}
+		svc := NewVipService(repo)
+
+		configs := []model.VipConfig{
+			{ConfigKey: "key1", ConfigValue: "value1"},
+			{ConfigKey: "key2", ConfigValue: "value2"},
+		}
+		repo.On("ListConfigs", ctx).Return(configs, nil)
+
+		result, err := svc.ListConfigs(ctx)
+		require.NoError(t, err)
+		assert.Len(t, result, 2)
+	})
+
+	t.Run("error", func(t *testing.T) {
+		repo := &MockVipRepository{}
+		svc := NewVipService(repo)
+
+		repo.On("ListConfigs", ctx).Return([]model.VipConfig{}, errors.New("db error"))
+
+		_, err := svc.ListConfigs(ctx)
+		require.Error(t, err)
+	})
+}
+
+func TestService_SaveConfig(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("success", func(t *testing.T) {
+		repo := &MockVipRepository{}
+		svc := NewVipService(repo)
+
+		config := &model.VipConfig{ConfigKey: "key", ConfigValue: "value"}
+		repo.On("SaveConfig", ctx, config).Return(nil)
+
+		err := svc.SaveConfig(ctx, config)
+		require.NoError(t, err)
+	})
+
+	t.Run("error", func(t *testing.T) {
+		repo := &MockVipRepository{}
+		svc := NewVipService(repo)
+
+		config := &model.VipConfig{ConfigKey: "key", ConfigValue: "value"}
+		repo.On("SaveConfig", ctx, config).Return(errors.New("db error"))
+
+		err := svc.SaveConfig(ctx, config)
+		require.Error(t, err)
+	})
+}
+
+func TestService_DeleteConfig(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("success", func(t *testing.T) {
+		repo := &MockVipRepository{}
+		svc := NewVipService(repo)
+
+		repo.On("DeleteConfig", ctx, "key").Return(nil)
+
+		err := svc.DeleteConfig(ctx, "key")
+		require.NoError(t, err)
+	})
+
+	t.Run("error", func(t *testing.T) {
+		repo := &MockVipRepository{}
+		svc := NewVipService(repo)
+
+		repo.On("DeleteConfig", ctx, "nonexistent").Return(errors.New("not found"))
+
+		err := svc.DeleteConfig(ctx, "nonexistent")
+		require.Error(t, err)
+	})
+}
+
+func TestService_GetUnlockThreshold(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("success", func(t *testing.T) {
+		repo := &MockVipRepository{}
+		svc := NewVipService(repo)
+
+		consumeConfig := &model.VipConfig{ConfigKey: model.VipConfigUnlockByConsume, ConfigValue: "10000"}
+		rechargeConfig := &model.VipConfig{ConfigKey: model.VipConfigUnlockByRecharge, ConfigValue: "5000"}
+		repo.On("GetConfig", ctx, model.VipConfigUnlockByConsume).Return(consumeConfig, nil)
+		repo.On("GetConfig", ctx, model.VipConfigUnlockByRecharge).Return(rechargeConfig, nil)
+
+		consume, recharge, err := svc.GetUnlockThreshold(ctx)
+		require.NoError(t, err)
+		assert.Equal(t, int64(10000), consume)
+		assert.Equal(t, int64(5000), recharge)
+	})
+
+	t.Run("config not found returns zero", func(t *testing.T) {
+		repo := &MockVipRepository{}
+		svc := NewVipService(repo)
+
+		repo.On("GetConfig", ctx, model.VipConfigUnlockByConsume).Return(nil, repository.ErrNotFound)
+		repo.On("GetConfig", ctx, model.VipConfigUnlockByRecharge).Return(nil, repository.ErrNotFound)
+
+		consume, recharge, err := svc.GetUnlockThreshold(ctx)
+		require.NoError(t, err)
+		assert.Equal(t, int64(0), consume)
+		assert.Equal(t, int64(0), recharge)
+	})
+}
+
+func TestService_CalculateVipLevel(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("success", func(t *testing.T) {
+		repo := &MockVipRepository{}
+		svc := NewVipService(repo)
+
+		expected := &model.VipLevel{Slug: "vip2", ExpRequired: 10000}
+		repo.On("GetLevelByExp", ctx, int64(15000)).Return(expected, nil)
+
+		result, err := svc.CalculateVipLevel(ctx, 15000)
+		require.NoError(t, err)
+		assert.Equal(t, expected, result)
+	})
+}
+
+func TestService_GetVipExpireDays(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("success", func(t *testing.T) {
+		repo := &MockVipRepository{}
+		svc := NewVipService(repo)
+
+		config := &model.VipConfig{ConfigKey: model.VipConfigExpireDays, ConfigValue: "365"}
+		repo.On("GetConfig", ctx, model.VipConfigExpireDays).Return(config, nil)
+
+		days, err := svc.GetVipExpireDays(ctx)
+		require.NoError(t, err)
+		assert.Equal(t, int64(365), days)
+	})
+
+	t.Run("not found returns zero (permanent)", func(t *testing.T) {
+		repo := &MockVipRepository{}
+		svc := NewVipService(repo)
+
+		repo.On("GetConfig", ctx, model.VipConfigExpireDays).Return(nil, repository.ErrNotFound)
+
+		days, err := svc.GetVipExpireDays(ctx)
+		require.NoError(t, err)
+		assert.Equal(t, int64(0), days)
+	})
+
+	t.Run("invalid value error", func(t *testing.T) {
+		repo := &MockVipRepository{}
+		svc := NewVipService(repo)
+
+		config := &model.VipConfig{ConfigKey: model.VipConfigExpireDays, ConfigValue: "invalid"}
+		repo.On("GetConfig", ctx, model.VipConfigExpireDays).Return(config, nil)
+
+		_, err := svc.GetVipExpireDays(ctx)
+		require.Error(t, err)
+	})
+}
+
+func TestService_UpdateLevel_GetLevelError(t *testing.T) {
+	ctx := context.Background()
+
+	repo := &MockVipRepository{}
+	svc := NewVipService(repo)
+
+	level := &model.VipLevel{Slug: "vip1"}
+	level.ID = 1
+	repo.On("GetLevel", ctx, uint64(1)).Return(nil, errors.New("db error"))
+
+	err := svc.UpdateLevel(ctx, level)
+	require.Error(t, err)
+}
+
+func TestService_UpdateLevel_CheckSlugError(t *testing.T) {
+	ctx := context.Background()
+
+	repo := &MockVipRepository{}
+	svc := NewVipService(repo)
+
+	existing := &model.VipLevel{Slug: "vip1"}
+	existing.ID = 1
+	level := &model.VipLevel{Slug: "vip2"}
+	level.ID = 1
+
+	repo.On("GetLevel", ctx, uint64(1)).Return(existing, nil)
+	repo.On("GetLevelBySlug", ctx, "vip2").Return(nil, errors.New("db error"))
+
+	err := svc.UpdateLevel(ctx, level)
+	require.Error(t, err)
+}
+
+func TestService_CreateLevel_RepoError(t *testing.T) {
+	ctx := context.Background()
+
+	repo := &MockVipRepository{}
+	svc := NewVipService(repo)
+
+	level := &model.VipLevel{Slug: "vip1", Title: "VIP 1"}
+	repo.On("GetLevelBySlug", ctx, "vip1").Return(nil, repository.ErrNotFound)
+	repo.On("CreateLevel", ctx, level).Return(errors.New("db error"))
+
+	err := svc.CreateLevel(ctx, level)
+	require.Error(t, err)
+}
+
+func TestService_ListLevels_Error(t *testing.T) {
+	ctx := context.Background()
+
+	repo := &MockVipRepository{}
+	svc := NewVipService(repo)
+
+	repo.On("ListLevels", ctx).Return([]model.VipLevel{}, errors.New("db error"))
+
+	_, err := svc.ListLevels(ctx)
+	require.Error(t, err)
+}
+
+func TestService_DeleteLevel_Error(t *testing.T) {
+	ctx := context.Background()
+
+	repo := &MockVipRepository{}
+	svc := NewVipService(repo)
+
+	repo.On("DeleteLevel", ctx, uint64(1)).Return(errors.New("db error"))
+
+	err := svc.DeleteLevel(ctx, 1)
+	require.Error(t, err)
+}
+
+func TestService_UpdateLevel_UpdateError(t *testing.T) {
+	ctx := context.Background()
+
+	repo := &MockVipRepository{}
+	svc := NewVipService(repo)
+
+	existing := &model.VipLevel{Slug: "vip1"}
+	existing.ID = 1
+	level := &model.VipLevel{Slug: "vip1", Title: "Updated"}
+	level.ID = 1
+
+	repo.On("GetLevel", ctx, uint64(1)).Return(existing, nil)
+	repo.On("UpdateLevel", ctx, level).Return(errors.New("db error"))
+
+	err := svc.UpdateLevel(ctx, level)
+	require.Error(t, err)
+}

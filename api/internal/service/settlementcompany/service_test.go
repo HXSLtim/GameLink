@@ -894,3 +894,386 @@ func TestDetectChanges_NoChanges(t *testing.T) {
 
 	assert.Empty(t, changes)
 }
+
+// ============================================================================
+// Additional Tests for Coverage Improvement
+// ============================================================================
+
+func TestCreateCompany_GetByCreditCodeError(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	req := &model.CreateSettlementCompanyRequest{
+		Name:       "Test Company",
+		CreditCode: "91110000100000000A",
+	}
+
+	mockRepo.On("GetByCreditCode", ctx, req.CreditCode).Return((*model.SettlementCompany)(nil), assert.AnError)
+
+	result, err := svc.CreateCompany(ctx, req, 1)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+}
+
+func TestCreateCompany_CreateError(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	req := &model.CreateSettlementCompanyRequest{
+		Name:       "Test Company",
+		CreditCode: "91110000100000000A",
+	}
+
+	mockRepo.On("GetByCreditCode", ctx, req.CreditCode).Return((*model.SettlementCompany)(nil), repository.ErrNotFound)
+	mockRepo.On("Create", ctx, mock.AnythingOfType("*model.SettlementCompany")).Return(assert.AnError)
+
+	result, err := svc.CreateCompany(ctx, req, 1)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+}
+
+func TestGetCompany_Error(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	mockRepo.On("Get", ctx, uint64(1)).Return((*model.SettlementCompany)(nil), assert.AnError)
+
+	result, err := svc.GetCompany(ctx, 1)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+}
+
+func TestUpdateCompany_GetError(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	mockRepo.On("Get", ctx, uint64(1)).Return((*model.SettlementCompany)(nil), assert.AnError)
+
+	newName := "New Name"
+	req := &model.UpdateSettlementCompanyRequest{Name: &newName}
+	result, err := svc.UpdateCompany(ctx, 1, req, 1)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+}
+
+func TestUpdateCompany_UpdateError(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	company := &model.SettlementCompany{Base: model.Base{ID: 1}, Name: "Old"}
+	newName := "New"
+	req := &model.UpdateSettlementCompanyRequest{Name: &newName}
+
+	mockRepo.On("Get", ctx, uint64(1)).Return(company, nil)
+	mockRepo.On("Update", ctx, mock.AnythingOfType("*model.SettlementCompany")).Return(assert.AnError)
+
+	result, err := svc.UpdateCompany(ctx, 1, req, 1)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+}
+
+func TestListCompanies_Error(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	mockRepo.On("List", ctx, mock.Anything).Return([]model.SettlementCompany{}, int64(0), assert.AnError)
+
+	req := &model.ListSettlementCompaniesRequest{Page: 1, PageSize: 10}
+	result, err := svc.ListCompanies(ctx, req)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+}
+
+func TestToggleCompanyStatus_GetError(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	mockRepo.On("Get", ctx, uint64(1)).Return((*model.SettlementCompany)(nil), assert.AnError)
+
+	err := svc.ToggleCompanyStatus(ctx, 1, true, 1)
+
+	assert.Error(t, err)
+}
+
+func TestToggleCompanyStatus_ToggleError(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	company := &model.SettlementCompany{Base: model.Base{ID: 1}, Status: model.CompanyStatusActive}
+	mockRepo.On("Get", ctx, uint64(1)).Return(company, nil)
+	mockRepo.On("CreateHistory", ctx, mock.Anything).Return(nil)
+	mockRepo.On("ToggleStatus", ctx, uint64(1), model.CompanyStatusInactive).Return(assert.AnError)
+
+	err := svc.ToggleCompanyStatus(ctx, 1, false, 1)
+
+	assert.Error(t, err)
+}
+
+func TestGetCompanyHistory_GetError(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	mockRepo.On("Get", ctx, uint64(1)).Return((*model.SettlementCompany)(nil), assert.AnError)
+
+	result, err := svc.GetCompanyHistory(ctx, 1)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+}
+
+func TestGetCompanyHistory_HistoryError(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	company := &model.SettlementCompany{Base: model.Base{ID: 1}}
+	mockRepo.On("Get", ctx, uint64(1)).Return(company, nil)
+	mockRepo.On("GetHistory", ctx, uint64(1)).Return([]model.SettlementCompanyHistory{}, assert.AnError)
+
+	result, err := svc.GetCompanyHistory(ctx, 1)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+}
+
+func TestAssignPlayerToCompany_GetError(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	req := &model.AssignPlayerToCompanyRequest{
+		PlayerID:            1,
+		SettlementCompanyID: 1,
+	}
+
+	mockRepo.On("Get", ctx, uint64(1)).Return((*model.SettlementCompany)(nil), assert.AnError)
+
+	result, err := svc.AssignPlayerToCompany(ctx, req, 1)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+}
+
+func TestAssignPlayerToCompany_PlayerGetError(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	mockPlayerRepo := new(MockPlayerRepository)
+	svc := NewSettlementCompanyService(mockRepo, mockPlayerRepo)
+
+	company := &model.SettlementCompany{Base: model.Base{ID: 1}, Status: model.CompanyStatusActive}
+	req := &model.AssignPlayerToCompanyRequest{
+		PlayerID:            1,
+		SettlementCompanyID: 1,
+	}
+
+	mockRepo.On("Get", ctx, uint64(1)).Return(company, nil)
+	mockPlayerRepo.On("Get", ctx, uint64(1)).Return((*model.Player)(nil), assert.AnError)
+
+	result, err := svc.AssignPlayerToCompany(ctx, req, 1)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+}
+
+func TestAssignPlayerToCompany_AssignError(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	company := &model.SettlementCompany{Base: model.Base{ID: 1}, Status: model.CompanyStatusActive}
+	req := &model.AssignPlayerToCompanyRequest{
+		PlayerID:            1,
+		SettlementCompanyID: 1,
+		EffectiveDate:       time.Now(),
+	}
+
+	mockRepo.On("Get", ctx, uint64(1)).Return(company, nil)
+	mockRepo.On("AssignPlayer", ctx, mock.AnythingOfType("*model.PlayerCompanyAssignment")).Return(assert.AnError)
+
+	result, err := svc.AssignPlayerToCompany(ctx, req, 1)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+}
+
+func TestBatchAssignPlayers_GetError(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	req := &model.BatchAssignPlayersRequest{
+		PlayerIDs:           []uint64{1, 2},
+		SettlementCompanyID: 1,
+	}
+
+	mockRepo.On("Get", ctx, uint64(1)).Return((*model.SettlementCompany)(nil), assert.AnError)
+
+	count, err := svc.BatchAssignPlayers(ctx, req, 1)
+
+	assert.Error(t, err)
+	assert.Equal(t, 0, count)
+}
+
+func TestBatchAssignPlayers_PlayerGetError(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	mockPlayerRepo := new(MockPlayerRepository)
+	svc := NewSettlementCompanyService(mockRepo, mockPlayerRepo)
+
+	company := &model.SettlementCompany{Base: model.Base{ID: 1}, Status: model.CompanyStatusActive}
+	req := &model.BatchAssignPlayersRequest{
+		PlayerIDs:           []uint64{1},
+		SettlementCompanyID: 1,
+	}
+
+	mockRepo.On("Get", ctx, uint64(1)).Return(company, nil)
+	mockPlayerRepo.On("Get", ctx, uint64(1)).Return((*model.Player)(nil), assert.AnError)
+
+	count, err := svc.BatchAssignPlayers(ctx, req, 1)
+
+	assert.Error(t, err)
+	assert.Equal(t, 0, count)
+}
+
+func TestBatchAssignPlayers_BatchAssignError(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	company := &model.SettlementCompany{Base: model.Base{ID: 1}, Status: model.CompanyStatusActive}
+	req := &model.BatchAssignPlayersRequest{
+		PlayerIDs:           []uint64{1, 2},
+		SettlementCompanyID: 1,
+		EffectiveDate:       time.Now(),
+	}
+
+	mockRepo.On("Get", ctx, uint64(1)).Return(company, nil)
+	mockRepo.On("BatchAssignPlayers", ctx, mock.AnythingOfType("[]model.PlayerCompanyAssignment")).Return(assert.AnError)
+
+	count, err := svc.BatchAssignPlayers(ctx, req, 1)
+
+	assert.Error(t, err)
+	assert.Equal(t, 0, count)
+}
+
+func TestGetCurrentAssignment_Error(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	mockRepo.On("GetCurrentAssignment", ctx, uint64(1)).Return((*model.PlayerCompanyAssignment)(nil), assert.AnError)
+
+	result, err := svc.GetCurrentAssignment(ctx, 1)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+}
+
+func TestGetAssignmentHistory_PlayerGetError(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	mockPlayerRepo := new(MockPlayerRepository)
+	svc := NewSettlementCompanyService(mockRepo, mockPlayerRepo)
+
+	mockPlayerRepo.On("Get", ctx, uint64(1)).Return((*model.Player)(nil), assert.AnError)
+
+	result, err := svc.GetAssignmentHistory(ctx, 1)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+}
+
+func TestGetAssignmentHistory_HistoryError(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	mockPlayerRepo := new(MockPlayerRepository)
+	svc := NewSettlementCompanyService(mockRepo, mockPlayerRepo)
+
+	player := &model.Player{Base: model.Base{ID: 1}}
+	mockPlayerRepo.On("Get", ctx, uint64(1)).Return(player, nil)
+	mockRepo.On("GetAssignmentHistory", ctx, uint64(1)).Return([]model.PlayerCompanyAssignment{}, assert.AnError)
+
+	result, err := svc.GetAssignmentHistory(ctx, 1)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+}
+
+func TestEndCurrentAssignment_GetError(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	mockRepo.On("GetCurrentAssignment", ctx, uint64(1)).Return((*model.PlayerCompanyAssignment)(nil), assert.AnError)
+
+	err := svc.EndCurrentAssignment(ctx, 1, time.Now())
+
+	assert.Error(t, err)
+}
+
+func TestEndCurrentAssignment_EndError(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	assignment := &model.PlayerCompanyAssignment{PlayerID: 1, IsCurrent: true}
+	endDate := time.Now()
+
+	mockRepo.On("GetCurrentAssignment", ctx, uint64(1)).Return(assignment, nil)
+	mockRepo.On("EndCurrentAssignment", ctx, uint64(1), endDate).Return(assert.AnError)
+
+	err := svc.EndCurrentAssignment(ctx, 1, endDate)
+
+	assert.Error(t, err)
+}
+
+func TestUpdateCompany_HistoryCreateError(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	company := &model.SettlementCompany{Base: model.Base{ID: 1}, Name: "Old"}
+	newName := "New"
+	req := &model.UpdateSettlementCompanyRequest{Name: &newName}
+
+	mockRepo.On("Get", ctx, uint64(1)).Return(company, nil)
+	mockRepo.On("Update", ctx, mock.AnythingOfType("*model.SettlementCompany")).Return(nil)
+	mockRepo.On("CreateHistory", ctx, mock.AnythingOfType("*model.SettlementCompanyHistory")).Return(assert.AnError)
+
+	result, err := svc.UpdateCompany(ctx, 1, req, 1)
+
+	// History error should not affect main flow
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+}
+
+func TestToggleCompanyStatus_HistoryCreateError(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	company := &model.SettlementCompany{Base: model.Base{ID: 1}, Status: model.CompanyStatusActive}
+	mockRepo.On("Get", ctx, uint64(1)).Return(company, nil)
+	mockRepo.On("CreateHistory", ctx, mock.AnythingOfType("*model.SettlementCompanyHistory")).Return(assert.AnError)
+	mockRepo.On("ToggleStatus", ctx, uint64(1), model.CompanyStatusInactive).Return(nil)
+
+	err := svc.ToggleCompanyStatus(ctx, 1, false, 1)
+
+	// History error should not affect main flow
+	assert.NoError(t, err)
+}
