@@ -2,6 +2,7 @@ package router
 
 import (
 	"gamelink/internal/model"
+	activityrepo "gamelink/internal/repository/activity"
 	adminrepo "gamelink/internal/repository/admin"
 	alertrepo "gamelink/internal/repository/alert"
 	chatrepo "gamelink/internal/repository/chat"
@@ -9,6 +10,7 @@ import (
 	commissionrepo "gamelink/internal/repository/commission"
 	contentrepo "gamelink/internal/repository/content"
 	contentcategoryrepo "gamelink/internal/repository/contentcategory"
+	couponrepo "gamelink/internal/repository/coupon"
 	gamerepo "gamelink/internal/repository/game"
 	gamerankrepo "gamelink/internal/repository/gamerank"
 	orderrepo "gamelink/internal/repository/implementations"
@@ -16,18 +18,24 @@ import (
 	ordertimeoutrepo "gamelink/internal/repository/ordertimeout"
 	playercertificationrepo "gamelink/internal/repository/playercertification"
 	playerrankrepo "gamelink/internal/repository/playerrank"
+	rechargerepo "gamelink/internal/repository/recharge"
+	referralrepo "gamelink/internal/repository/referral"
 	reviewdisplaysettingsrepo "gamelink/internal/repository/reviewdisplaysettings"
 	routingrulerepo "gamelink/internal/repository/routingrule"
 	sensitivewordrepo "gamelink/internal/repository/sensitiveword"
 	serviceitemrepo "gamelink/internal/repository/serviceitem"
+	teamrepo "gamelink/internal/repository/team"
 	userrepo "gamelink/internal/repository/user"
 	userblockrepo "gamelink/internal/repository/userblock"
+	viprepo "gamelink/internal/repository/vip"
 	withdrawrepo "gamelink/internal/repository/withdraw"
+	activityservice "gamelink/internal/service/activity"
 	analyticsservice "gamelink/internal/service/analytics"
 	chatservice "gamelink/internal/service/chat"
 	commissionservice "gamelink/internal/service/commission"
 	contentservice "gamelink/internal/service/content"
 	contentcategoryservice "gamelink/internal/service/contentcategory"
+	couponservice "gamelink/internal/service/coupon"
 	gamerankservice "gamelink/internal/service/gamerank"
 	giftservice "gamelink/internal/service/gift"
 	itemservice "gamelink/internal/service/item"
@@ -39,12 +47,16 @@ import (
 	serviceplayer "gamelink/internal/service/player"
 	playercertificationservice "gamelink/internal/service/playercertification"
 	playerrankservice "gamelink/internal/service/playerrank"
+	rechargeservice "gamelink/internal/service/recharge"
+	referralservice "gamelink/internal/service/referral"
 	reviewservice "gamelink/internal/service/review"
 	routingruleservice "gamelink/internal/service/routingrule"
 	sensitivewordservice "gamelink/internal/service/sensitiveword"
 	statisticsservice "gamelink/internal/service/statistics"
+	teamservice "gamelink/internal/service/team"
 	userservice "gamelink/internal/service/user"
 	userblockservice "gamelink/internal/service/userblock"
+	vipservice "gamelink/internal/service/vip"
 	walletservice "gamelink/internal/service/wallet"
 	"gamelink/internal/ws"
 	"gamelink/pkg/cache"
@@ -107,6 +119,18 @@ type appServices struct {
 	orderTimeoutSvc *ordertimeoutservice.OrderTimeoutService
 	// User block service (用户拉黑)
 	userBlockSvc *userblockservice.UserBlockService
+	// VIP service (VIP会员)
+	vipSvc *vipservice.Service
+	// Coupon service (优惠券)
+	couponSvc *couponservice.Service
+	// Recharge service (充值)
+	rechargeSvc *rechargeservice.Service
+	// Activity service (活动)
+	activitySvc *activityservice.Service
+	// Team service (团队)
+	teamSvc *teamservice.TeamService
+	// Referral service (推荐)
+	referralSvc *referralservice.Service
 }
 
 // initServices 初始化领域服务和调度任务（但不启动调度器）。
@@ -214,6 +238,30 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 	userBlockRepo := userblockrepo.NewUserBlockRepository(orm)
 	userBlockSvc := userblockservice.NewUserBlockService(userBlockRepo, userRepo)
 
+	// VIP service (VIP会员)
+	vipRepo := viprepo.NewVipRepository(orm)
+	vipSvc := vipservice.NewVipService(vipRepo)
+
+	// Coupon service (优惠券)
+	couponRepo := couponrepo.NewCouponRepository(orm)
+	couponSvc := couponservice.NewCouponService(couponRepo)
+
+	// Recharge service (充值)
+	rechargeRepo := rechargerepo.NewRechargeRepository(orm)
+	rechargeSvc := rechargeservice.NewRechargeService(rechargeRepo, walletRepo, couponSvc)
+
+	// Activity service (活动)
+	activityRepo := activityrepo.NewActivityRepository(orm)
+	activitySvc := activityservice.NewActivityService(activityRepo, couponSvc)
+
+	// Team service (团队)
+	teamRepo := teamrepo.NewTeamRepository(orm)
+	teamSvc := teamservice.NewTeamService(teamRepo)
+
+	// Referral service (推荐)
+	referralRepo := referralrepo.NewReferralRepository(orm)
+	referralSvc := referralservice.NewReferralService(referralRepo)
+
 	return &appServices{
 		commissionSvc:       commissionSvc,
 		serviceItemSvc:      serviceItemSvc,
@@ -257,5 +305,17 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 		orderTimeoutSvc: orderTimeoutSvc,
 		// User block service
 		userBlockSvc: userBlockSvc,
+		// VIP service
+		vipSvc: vipSvc,
+		// Coupon service
+		couponSvc: couponSvc,
+		// Recharge service
+		rechargeSvc: rechargeSvc,
+		// Activity service
+		activitySvc: activitySvc,
+		// Team service
+		teamSvc: teamSvc,
+		// Referral service
+		referralSvc: referralSvc,
 	}
 }

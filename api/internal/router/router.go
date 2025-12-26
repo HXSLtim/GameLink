@@ -370,6 +370,24 @@ func (r *Router) registerAdminBusinessRoutes(rbacGroup *gin.RouterGroup) {
 
 	// User block routes (用户拉黑管理)
 	r.registerUserBlockRoutes(rbacGroup)
+
+	// VIP routes (VIP会员管理)
+	r.registerVipRoutes(rbacGroup)
+
+	// Coupon routes (优惠券管理)
+	r.registerCouponRoutes(rbacGroup)
+
+	// Recharge routes (充值管理)
+	r.registerRechargeRoutes(rbacGroup)
+
+	// Activity routes (活动管理)
+	r.registerActivityRoutes(rbacGroup)
+
+	// Team routes (团队管理)
+	r.registerTeamRoutes(rbacGroup)
+
+	// Referral routes (推荐管理)
+	r.registerReferralRoutes(rbacGroup)
 }
 
 // registerMonitorRoutes 注册监控相关路由
@@ -502,6 +520,36 @@ func (r *Router) registerOrderTimeoutRoutes(rbacGroup *gin.RouterGroup) {
 // registerUserBlockRoutes 注册用户拉黑管理路由
 func (r *Router) registerUserBlockRoutes(rbacGroup *gin.RouterGroup) {
 	adminhandler.RegisterUserBlockRoutes(rbacGroup, r.services.userBlockSvc, r.permMiddleware)
+}
+
+// registerVipRoutes 注册VIP管理路由
+func (r *Router) registerVipRoutes(rbacGroup *gin.RouterGroup) {
+	adminhandler.RegisterVipRoutes(rbacGroup, r.services.vipSvc, r.permMiddleware)
+}
+
+// registerCouponRoutes 注册优惠券管理路由
+func (r *Router) registerCouponRoutes(rbacGroup *gin.RouterGroup) {
+	adminhandler.RegisterCouponRoutes(rbacGroup, r.services.couponSvc, r.permMiddleware)
+}
+
+// registerRechargeRoutes 注册充值管理路由
+func (r *Router) registerRechargeRoutes(rbacGroup *gin.RouterGroup) {
+	adminhandler.RegisterRechargeRoutes(rbacGroup, r.services.rechargeSvc, r.permMiddleware)
+}
+
+// registerActivityRoutes 注册活动管理路由
+func (r *Router) registerActivityRoutes(rbacGroup *gin.RouterGroup) {
+	adminhandler.RegisterActivityRoutes(rbacGroup, r.services.activitySvc, r.permMiddleware)
+}
+
+// registerTeamRoutes 注册团队管理路由
+func (r *Router) registerTeamRoutes(rbacGroup *gin.RouterGroup) {
+	adminhandler.RegisterTeamRoutes(rbacGroup, r.services.teamSvc, r.permMiddleware)
+}
+
+// registerReferralRoutes 注册推荐管理路由
+func (r *Router) registerReferralRoutes(rbacGroup *gin.RouterGroup) {
+	adminhandler.RegisterReferralRoutes(rbacGroup, r.services.referralSvc, r.permMiddleware)
 }
 
 // resolveGinMode 解析 Gin 运行模式

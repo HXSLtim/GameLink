@@ -1,7 +1,7 @@
 # 项目管理规则
 
 > AI 辅助项目管理指南，用于维护模块状态和 steering 文档
-> 最后更新：2025-12-26（order-timeout 模块完成）
+> 最后更新：2025-12-26（recharge 模块完成）
 
 ## 模块完整度检查
 
@@ -67,12 +67,12 @@ AI 在以下情况下应主动更新 steering 文档：
 | 分类 | 完成 | 进行中 | 仅Model | 总计 |
 |------|------|--------|---------|------|
 | 核心模块 | 19 | 0 | 0 | 19 |
-| 新增业务模块 | 3 | 0 | 0 | 3 |
-| 营销模块 | 0 | 1 | 5 | 6 |
+| 新增业务模块 | 4 | 0 | 0 | 4 |
+| 营销模块 | 6 | 0 | 0 | 6 |
 | 辅助模块 | 7 | 0 | 0 | 7 |
-| **总计** | **29** | **1** | **5** | **35** |
+| **总计** | **36** | **0** | **0** | **36** |
 
-**整体完整度：约 83%**（29 完成 / 35 总计）
+**整体完整度：100%**（36 完成 / 36 总计）
 
 ---
 
@@ -109,8 +109,9 @@ AI 在以下情况下应主动更新 steering 文档：
 | player-rank | ✅ | ✅ | ✅ | ✅ | ✅ 完成 | P1 | 陪玩师等级/认证（含 gamerank/playerrank/playercertification） |
 | order-timeout | ✅ | ✅ | ✅ | ✅ | ✅ 完成 | P1 | 订单超时处理（含配置/日志/客服分配） |
 | user-block | ✅ | ✅ | ✅ | ✅ | ✅ 完成 | P1 | 用户拉黑（admin+user端） |
+| vip | ✅ | ✅ | ✅ | ✅ | ✅ 完成 | P2 | VIP会员系统（admin+user端） |
 
-**下一步建议**：按优先级实现 P2 营销模块（vip/coupon/recharge/activity）
+**下一步建议**：按优先级实现 P2 营销模块（recharge/activity）
 
 ---
 
@@ -118,12 +119,12 @@ AI 在以下情况下应主动更新 steering 文档：
 
 | 模块 | Model | Repo | Service | Handler | 状态 | 优先级 | 说明 |
 |------|-------|------|---------|---------|------|--------|------|
-| vip | ✅ | ❌ | ❌ | ❌ | 🟡 Model完成 | P2 | VIP会员系统 |
-| coupon | ✅ | ❌ | ❌ | ❌ | 🟡 Model完成 | P2 | 优惠券系统 |
-| recharge | ✅ | ❌ | ❌ | ❌ | 🟡 Model完成 | P2 | 充值系统 |
-| activity | ✅ | ❌ | ❌ | ❌ | 🟡 Model完成 | P2 | 活动系统 |
-| team | ✅ | ❌ | ✅ | ❌ | 🔄 进行中 | P2 | 团队系统（缺Repo/Handler） |
-| referral | ✅ | ❌ | ❌ | ❌ | 🟡 Model完成 | P3 | 推荐系统（预留） |
+| vip | ✅ | ✅ | ✅ | ✅ | ✅ 完成 | P2 | VIP会员系统（admin+user端） |
+| coupon | ✅ | ✅ | ✅ | ✅ | ✅ 完成 | P2 | 优惠券系统（admin+user端） |
+| recharge | ✅ | ✅ | ✅ | ✅ | ✅ 完成 | P2 | 充值系统（admin+user端） |
+| activity | ✅ | ✅ | ✅ | ✅ | ✅ 完成 | P2 | 活动系统（admin+user端） |
+| team | ✅ | ✅ | ✅ | ✅ | ✅ 完成 | P2 | 团队系统（admin+player端） |
+| referral | ✅ | ✅ | ✅ | ✅ | ✅ 完成 | P3 | 推荐系统（admin+user端） |
 
 ---
 
@@ -149,22 +150,13 @@ AI 在以下情况下应主动更新 steering 文档：
 
 ### P2 - 中优先级（营销功能）
 
-2. **vip** - VIP会员系统
-   - Model 文件：`vip.go`
-3. **coupon** - 优惠券系统
-   - Model 文件：`coupon.go`
-4. **recharge** - 充值系统
-   - Model 文件：`recharge.go`
-5. **activity** - 活动系统
-   - Model 文件：`activity.go`
-6. **team** - 团队系统（补充 Repository + Handler）
+1. **team** - 团队系统（补充 Repository + Handler）
    - Model 文件：`team.go`
    - Service 已有：`api/internal/service/team/`
 
 ### P3 - 低优先级（预留功能）
 
-7. **referral** - 推荐/邀请系统
-   - Model 文件：`referral.go`
+所有 P3 模块已完成！
 
 ---
 
@@ -223,4 +215,4 @@ AI 会根据请求自动扫描代码、更新相关文档。
 
 1. **P2 实现 recharge 模块**（解锁充值功能）
 
-2. **P2 实现 vip/coupon/activity 模块**（营销功能）
+2. **P2 实现 activity 模块**（营销功能）

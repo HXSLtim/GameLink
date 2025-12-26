@@ -906,3 +906,40 @@ type UserBlockListOptions struct {
 	DateFrom    *time.Time
 	DateTo      *time.Time
 }
+
+// ============================================================================
+// VIP会员模块接口
+// ============================================================================
+
+// VipRepository VIP仓储接口
+// 错误约定：当资源不存在时返回 repository.ErrNotFound
+type VipRepository interface {
+	// VIP等级管理
+	CreateLevel(ctx context.Context, level *model.VipLevel) error
+	GetLevel(ctx context.Context, id uint64) (*model.VipLevel, error)
+	GetLevelBySlug(ctx context.Context, slug string) (*model.VipLevel, error)
+	GetDefaultLevel(ctx context.Context) (*model.VipLevel, error)
+	ListLevels(ctx context.Context) ([]model.VipLevel, error)
+	ListActiveLevels(ctx context.Context) ([]model.VipLevel, error)
+	ListLevelsPaged(ctx context.Context, opts VipLevelListOptions) ([]model.VipLevel, int64, error)
+	UpdateLevel(ctx context.Context, level *model.VipLevel) error
+	DeleteLevel(ctx context.Context, id uint64) error
+	SetDefaultLevel(ctx context.Context, id uint64) error
+	GetLevelByExp(ctx context.Context, exp int64) (*model.VipLevel, error)
+	BatchUpdateLevelStatus(ctx context.Context, ids []uint64, isActive bool) (int64, error)
+	BatchDeleteLevels(ctx context.Context, ids []uint64) (int64, error)
+
+	// VIP配置管理
+	GetConfig(ctx context.Context, key string) (*model.VipConfig, error)
+	ListConfigs(ctx context.Context) ([]model.VipConfig, error)
+	SaveConfig(ctx context.Context, config *model.VipConfig) error
+	DeleteConfig(ctx context.Context, key string) error
+}
+
+// VipLevelListOptions VIP等级列表查询选项
+type VipLevelListOptions struct {
+	Page     int
+	PageSize int
+	Keyword  string
+	IsActive *bool
+}
