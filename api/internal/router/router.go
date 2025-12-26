@@ -361,6 +361,15 @@ func (r *Router) registerAdminBusinessRoutes(rbacGroup *gin.RouterGroup) {
 
 	// Statistics routes (统计指标管理)
 	r.registerStatisticsRoutes(rbacGroup)
+
+	// Player rank routes (陪玩师等级/认证管理)
+	r.registerPlayerRankRoutes(rbacGroup)
+
+	// Order timeout routes (订单超时管理)
+	r.registerOrderTimeoutRoutes(rbacGroup)
+
+	// User block routes (用户拉黑管理)
+	r.registerUserBlockRoutes(rbacGroup)
 }
 
 // registerMonitorRoutes 注册监控相关路由
@@ -476,6 +485,23 @@ func (r *Router) registerContentRoutes(rbacGroup *gin.RouterGroup) {
 	// Sensitive word routes (敏感词管理)
 	sensitiveWordHandler := adminhandler.NewSensitiveWordHandler(r.services.sensitiveWordSvc)
 	adminhandler.RegisterSensitiveWordRoutes(rbacGroup, sensitiveWordHandler, r.permMiddleware)
+}
+
+// registerPlayerRankRoutes 注册陪玩师等级/认证管理路由
+func (r *Router) registerPlayerRankRoutes(rbacGroup *gin.RouterGroup) {
+	adminhandler.RegisterGameRankRoutes(rbacGroup, r.services.gameRankSvc, r.permMiddleware)
+	adminhandler.RegisterPlayerRankRoutes(rbacGroup, r.services.playerRankSvc, r.permMiddleware)
+	adminhandler.RegisterPlayerCertificationRoutes(rbacGroup, r.services.playerCertificationSvc, r.permMiddleware)
+}
+
+// registerOrderTimeoutRoutes 注册订单超时管理路由
+func (r *Router) registerOrderTimeoutRoutes(rbacGroup *gin.RouterGroup) {
+	adminhandler.RegisterOrderTimeoutRoutes(rbacGroup, r.services.orderTimeoutSvc, r.permMiddleware)
+}
+
+// registerUserBlockRoutes 注册用户拉黑管理路由
+func (r *Router) registerUserBlockRoutes(rbacGroup *gin.RouterGroup) {
+	adminhandler.RegisterUserBlockRoutes(rbacGroup, r.services.userBlockSvc, r.permMiddleware)
 }
 
 // resolveGinMode 解析 Gin 运行模式

@@ -727,3 +727,182 @@ type ContentCategoryListOptions struct {
 	Keyword  string
 	Status   *model.ContentCategoryStatus
 }
+
+// ============================================================================
+// 陪玩师等级/认证模块接口
+// ============================================================================
+
+// GameRankRepository 游戏段位配置仓储接口
+// 错误约定：当资源不存在时返回 repository.ErrNotFound
+type GameRankRepository interface {
+	Create(ctx context.Context, rank *model.GameRank) error
+	Get(ctx context.Context, id uint64) (*model.GameRank, error)
+	GetWithGame(ctx context.Context, id uint64) (*model.GameRank, error)
+	List(ctx context.Context) ([]model.GameRank, error)
+	ListByGameID(ctx context.Context, gameID uint64) ([]model.GameRank, error)
+	ListPaged(ctx context.Context, opts GameRankListOptions) ([]model.GameRank, int64, error)
+	Update(ctx context.Context, rank *model.GameRank) error
+	Delete(ctx context.Context, id uint64) error
+	BatchDelete(ctx context.Context, ids []uint64) (int64, error)
+	BatchUpdateStatus(ctx context.Context, ids []uint64, isActive bool) (int64, error)
+}
+
+// GameRankListOptions 游戏段位列表查询选项
+type GameRankListOptions struct {
+	Page     int
+	PageSize int
+	GameID   *uint64
+	Keyword  string
+	IsActive *bool
+}
+
+// PlayerRankRepository 陪玩师段位认证仓储接口
+// 错误约定：当资源不存在时返回 repository.ErrNotFound
+type PlayerRankRepository interface {
+	Create(ctx context.Context, record *model.PlayerRankRecord) error
+	Get(ctx context.Context, id uint64) (*model.PlayerRankRecord, error)
+	GetWithRelations(ctx context.Context, id uint64) (*model.PlayerRankRecord, error)
+	GetByPlayerAndGame(ctx context.Context, playerID, gameID uint64) (*model.PlayerRankRecord, error)
+	ListByPlayerID(ctx context.Context, playerID uint64) ([]model.PlayerRankRecord, error)
+	ListPaged(ctx context.Context, opts PlayerRankListOptions) ([]model.PlayerRankRecord, int64, error)
+	ListPending(ctx context.Context, page, pageSize int) ([]model.PlayerRankRecord, int64, error)
+	Update(ctx context.Context, record *model.PlayerRankRecord) error
+	UpdateStatus(ctx context.Context, id uint64, status model.PlayerRankStatus, verifiedBy *uint64, rejectReason string) error
+	Delete(ctx context.Context, id uint64) error
+	CountByStatus(ctx context.Context) (map[model.PlayerRankStatus]int64, error)
+	GetPendingCount(ctx context.Context) (int64, error)
+}
+
+// PlayerRankListOptions 陪玩师段位认证列表查询选项
+type PlayerRankListOptions struct {
+	Page     int
+	PageSize int
+	PlayerID *uint64
+	GameID   *uint64
+	Status   *model.PlayerRankStatus
+	Statuses []model.PlayerRankStatus
+}
+
+// PlayerCertificationRepository 陪玩师实名认证仓储接口
+// 错误约定：当资源不存在时返回 repository.ErrNotFound
+type PlayerCertificationRepository interface {
+	Create(ctx context.Context, cert *model.PlayerCertification) error
+	Get(ctx context.Context, id uint64) (*model.PlayerCertification, error)
+	GetWithPlayer(ctx context.Context, id uint64) (*model.PlayerCertification, error)
+	GetByPlayerID(ctx context.Context, playerID uint64) (*model.PlayerCertification, error)
+	ListPaged(ctx context.Context, opts PlayerCertificationListOptions) ([]model.PlayerCertification, int64, error)
+	ListPending(ctx context.Context, page, pageSize int) ([]model.PlayerCertification, int64, error)
+	Update(ctx context.Context, cert *model.PlayerCertification) error
+	UpdateStatus(ctx context.Context, id uint64, status model.CertificationStatus, verifiedBy *uint64, rejectReason string) error
+	Delete(ctx context.Context, id uint64) error
+	CountByStatus(ctx context.Context) (map[model.CertificationStatus]int64, error)
+	GetPendingCount(ctx context.Context) (int64, error)
+}
+
+// PlayerCertificationListOptions 陪玩师实名认证列表查询选项
+type PlayerCertificationListOptions struct {
+	Page     int
+	PageSize int
+	PlayerID *uint64
+	Status   *model.CertificationStatus
+	Statuses []model.CertificationStatus
+	Keyword  string
+}
+
+// ============================================================================
+// 订单超时处理模块接口
+// ============================================================================
+
+// OrderTimeoutRepository 订单超时仓储接口
+// 错误约定：当资源不存在时返回 repository.ErrNotFound
+type OrderTimeoutRepository interface {
+	// 配置管理
+	GetConfig(ctx context.Context, key string) (*model.OrderTimeoutConfig, error)
+	ListConfigs(ctx context.Context) ([]model.OrderTimeoutConfig, error)
+	SaveConfig(ctx context.Context, config *model.OrderTimeoutConfig) error
+	DeleteConfig(ctx context.Context, key string) error
+
+	// 超时日志
+	CreateLog(ctx context.Context, log *model.OrderTimeoutLog) error
+	GetLog(ctx context.Context, id uint64) (*model.OrderTimeoutLog, error)
+	GetLogWithOrder(ctx context.Context, id uint64) (*model.OrderTimeoutLog, error)
+	ListLogsByOrderID(ctx context.Context, orderID uint64) ([]model.OrderTimeoutLog, error)
+	ListLogsPaged(ctx context.Context, opts OrderTimeoutLogListOptions) ([]model.OrderTimeoutLog, int64, error)
+	GetLogStats(ctx context.Context) (map[model.OrderTimeoutType]int64, error)
+
+	// 客服分配
+	CreateAssignment(ctx context.Context, assignment *model.OrderServiceAssignment) error
+	GetAssignment(ctx context.Context, id uint64) (*model.OrderServiceAssignment, error)
+	GetAssignmentWithRelations(ctx context.Context, id uint64) (*model.OrderServiceAssignment, error)
+	GetAssignmentByOrderID(ctx context.Context, orderID uint64) (*model.OrderServiceAssignment, error)
+	ListAssignmentsByServiceUser(ctx context.Context, serviceUserID uint64, status *model.ServiceAssignmentStatus) ([]model.OrderServiceAssignment, error)
+	ListAssignmentsPaged(ctx context.Context, opts ServiceAssignmentListOptions) ([]model.OrderServiceAssignment, int64, error)
+	UpdateAssignment(ctx context.Context, assignment *model.OrderServiceAssignment) error
+	UpdateAssignmentStatus(ctx context.Context, id uint64, status model.ServiceAssignmentStatus) error
+	DeleteAssignment(ctx context.Context, id uint64) error
+	GetAssignmentStats(ctx context.Context) (map[model.ServiceAssignmentStatus]int64, error)
+	GetActiveAssignmentCount(ctx context.Context, serviceUserID uint64) (int64, error)
+}
+
+// OrderTimeoutLogListOptions 订单超时日志列表查询选项
+type OrderTimeoutLogListOptions struct {
+	Page        int
+	PageSize    int
+	OrderID     *uint64
+	TimeoutType *model.OrderTimeoutType
+	Action      *model.OrderTimeoutAction
+	DateFrom    *time.Time
+	DateTo      *time.Time
+}
+
+// ServiceAssignmentListOptions 客服分配列表查询选项
+type ServiceAssignmentListOptions struct {
+	Page          int
+	PageSize      int
+	OrderID       *uint64
+	ServiceUserID *uint64
+	Status        *model.ServiceAssignmentStatus
+	AssignType    string
+	DateFrom      *time.Time
+	DateTo        *time.Time
+}
+
+// ============================================================================
+// 用户拉黑模块接口
+// ============================================================================
+
+// UserBlockRepository 用户拉黑仓储接口
+// 错误约定：当资源不存在时返回 repository.ErrNotFound
+type UserBlockRepository interface {
+	Create(ctx context.Context, block *model.UserBlock) error
+	Get(ctx context.Context, id uint64) (*model.UserBlock, error)
+	GetWithRelations(ctx context.Context, id uint64) (*model.UserBlock, error)
+	GetByBlockerAndBlocked(ctx context.Context, blockerID, blockedID uint64) (*model.UserBlock, error)
+	GetActiveByBlockerAndBlocked(ctx context.Context, blockerID, blockedID uint64) (*model.UserBlock, error)
+	IsBlocked(ctx context.Context, userID1, userID2 uint64) (bool, error)
+	IsBlockedBy(ctx context.Context, blockerID, blockedID uint64) (bool, error)
+	ListByBlockerID(ctx context.Context, blockerID uint64, status *model.BlockStatus) ([]model.UserBlock, error)
+	ListByBlockedID(ctx context.Context, blockedID uint64, status *model.BlockStatus) ([]model.UserBlock, error)
+	ListPaged(ctx context.Context, opts UserBlockListOptions) ([]model.UserBlock, int64, error)
+	Update(ctx context.Context, block *model.UserBlock) error
+	UpdateStatus(ctx context.Context, id uint64, status model.BlockStatus, canceledBy *uint64, adminRemark string) error
+	Delete(ctx context.Context, id uint64) error
+	GetBlockedUserIDs(ctx context.Context, blockerID uint64) ([]uint64, error)
+	GetBlockerUserIDs(ctx context.Context, blockedID uint64) ([]uint64, error)
+	GetAllBlockRelatedUserIDs(ctx context.Context, userID uint64) ([]uint64, error)
+	CountByStatus(ctx context.Context) (map[model.BlockStatus]int64, error)
+	GetActiveCount(ctx context.Context) (int64, error)
+}
+
+// UserBlockListOptions 用户拉黑列表查询选项
+type UserBlockListOptions struct {
+	Page        int
+	PageSize    int
+	BlockerID   *uint64
+	BlockedID   *uint64
+	BlockerType *model.BlockUserType
+	BlockedType *model.BlockUserType
+	Status      *model.BlockStatus
+	DateFrom    *time.Time
+	DateTo      *time.Time
+}

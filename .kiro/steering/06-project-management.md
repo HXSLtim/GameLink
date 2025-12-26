@@ -1,7 +1,7 @@
 # 项目管理规则
 
 > AI 辅助项目管理指南，用于维护模块状态和 steering 文档
-> 最后更新：2025-12-25（全量代码审查完成，模块进度更新）
+> 最后更新：2025-12-26（order-timeout 模块完成）
 
 ## 模块完整度检查
 
@@ -67,12 +67,12 @@ AI 在以下情况下应主动更新 steering 文档：
 | 分类 | 完成 | 进行中 | 仅Model | 总计 |
 |------|------|--------|---------|------|
 | 核心模块 | 19 | 0 | 0 | 19 |
-| 新增业务模块 | 0 | 0 | 3 | 3 |
+| 新增业务模块 | 3 | 0 | 0 | 3 |
 | 营销模块 | 0 | 1 | 5 | 6 |
 | 辅助模块 | 7 | 0 | 0 | 7 |
-| **总计** | **26** | **1** | **8** | **35** |
+| **总计** | **29** | **1** | **5** | **35** |
 
-**整体完整度：约 74%**（26 完成 / 35 总计）
+**整体完整度：约 83%**（29 完成 / 35 总计）
 
 ---
 
@@ -102,15 +102,15 @@ AI 在以下情况下应主动更新 steering 文档：
 
 ---
 
-### 新增业务模块（仅Model完成）
+### 新增业务模块
 
 | 模块 | Model | Repo | Service | Handler | 状态 | 优先级 | 说明 |
 |------|-------|------|---------|---------|------|--------|------|
-| player-rank | ✅ | ❌ | ❌ | ❌ | 🟡 Model完成 | P1 | 陪玩师等级/认证 |
-| order-timeout | ✅ | ❌ | ❌ | ❌ | 🟡 Model完成 | P1 | 订单超时处理 |
-| user-block | ✅ | ❌ | ❌ | ❌ | 🟡 Model完成 | P1 | 用户拉黑 |
+| player-rank | ✅ | ✅ | ✅ | ✅ | ✅ 完成 | P1 | 陪玩师等级/认证（含 gamerank/playerrank/playercertification） |
+| order-timeout | ✅ | ✅ | ✅ | ✅ | ✅ 完成 | P1 | 订单超时处理（含配置/日志/客服分配） |
+| user-block | ✅ | ✅ | ✅ | ✅ | ✅ 完成 | P1 | 用户拉黑（admin+user端） |
 
-**下一步建议**：按优先级实现 Repository → Service → Handler
+**下一步建议**：按优先级实现 P2 营销模块（vip/coupon/recharge/activity）
 
 ---
 
@@ -145,38 +145,25 @@ AI 在以下情况下应主动更新 steering 文档：
 
 ### P1 - 高优先级（核心业务）
 
-1. **player-rank** - 陪玩师等级/认证系统
-   - 缺失：Repository, Service, Handler
-   - 依赖：player, game
-   - Model 文件：`playerRank.go`
-
-2. **order-timeout** - 订单超时处理
-   - 缺失：Repository, Service, Handler
-   - 依赖：order
-   - Model 文件：`orderTimeout.go`
-
-3. **user-block** - 用户拉黑功能
-   - 缺失：Repository, Service, Handler
-   - 依赖：user
-   - Model 文件：`userBlock.go`
+所有 P1 模块已完成！
 
 ### P2 - 中优先级（营销功能）
 
-4. **vip** - VIP会员系统
+2. **vip** - VIP会员系统
    - Model 文件：`vip.go`
-5. **coupon** - 优惠券系统
+3. **coupon** - 优惠券系统
    - Model 文件：`coupon.go`
-6. **recharge** - 充值系统
+4. **recharge** - 充值系统
    - Model 文件：`recharge.go`
-7. **activity** - 活动系统
+5. **activity** - 活动系统
    - Model 文件：`activity.go`
-8. **team** - 团队系统（补充 Repository + Handler）
+6. **team** - 团队系统（补充 Repository + Handler）
    - Model 文件：`team.go`
    - Service 已有：`api/internal/service/team/`
 
 ### P3 - 低优先级（预留功能）
 
-9. **referral** - 推荐/邀请系统
+7. **referral** - 推荐/邀请系统
    - Model 文件：`referral.go`
 
 ---
@@ -222,30 +209,18 @@ AI 会根据请求自动扫描代码、更新相关文档。
 | 端 | 总功能点 | 已完成 | 进行中 | 未开始 | 完成率 |
 |----|----------|--------|--------|--------|--------|
 | 用户端 | 17 | 16 | 1 | 0 | 94% |
-| 陪玩师端 | 14 | 10 | 3 | 1 | 71% |
-| 管理后台 | 24 | 19 | 0 | 5 | 79% |
-| **总计** | **55** | **45** | **4** | **6** | **82%** |
+| 陪玩师端 | 14 | 13 | 0 | 1 | 93% |
+| 管理后台 | 24 | 24 | 0 | 0 | 100% |
+| **总计** | **55** | **53** | **1** | **1** | **96%** |
 
 ### 未完成的 P0/P1 功能点
 
 | 端 | 功能点 | 优先级 | 依赖模块 | 状态 |
 |----|--------|--------|----------|------|
-| 陪玩师端 | 实名认证 | P0 | player-rank | 🟡 Model完成 |
-| 陪玩师端 | 段位认证 | P0 | player-rank | 🟡 Model完成 |
-| 管理后台 | 段位审核 | P0 | player-rank | 🟡 Model完成 |
-| 管理后台 | 实名审核 | P0 | player-rank | 🟡 Model完成 |
 | 用户端 | 充值 | P1 | recharge | 🟡 Model完成 |
-| 管理后台 | 订单超时 | P1 | order-timeout | 🟡 Model完成 |
-| 管理后台 | 用户拉黑 | P1 | user-block | 🟡 Model完成 |
-| 管理后台 | 段位管理 | P1 | player-rank | 🟡 Model完成 |
 
 ### 下一步实现建议
 
-1. **P1 优先实现 player-rank 模块**（解锁 4 个 P0 功能点）
-   - 实名认证、段位认证、段位审核、实名审核
-   
-2. **P1 实现 order-timeout 模块**（解锁订单超时功能）
+1. **P2 实现 recharge 模块**（解锁充值功能）
 
-3. **P1 实现 user-block 模块**（解锁用户拉黑功能）
-
-4. **P2 实现 recharge 模块**（解锁充值功能）
+2. **P2 实现 vip/coupon/activity 模块**（营销功能）

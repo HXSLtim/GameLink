@@ -19,5 +19,6 @@ func registerUserRoutes(api *gin.RouterGroup, authMiddleware gin.HandlerFunc, se
 		userhandler.RegisterGiftRoutes(userGroup, services.giftSvc, services.serviceItemSvc, authMiddleware)
 		userhandler.RegisterChatRoutes(userGroup, services.chatSvc, authMiddleware)
 		userhandler.RegisterFeedRoutes(userGroup, services.feedSvc, authMiddleware)
+		userhandler.RegisterBlockRoutes(userGroup, services.userBlockSvc, authMiddleware)
 	}
 }

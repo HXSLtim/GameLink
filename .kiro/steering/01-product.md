@@ -39,9 +39,9 @@
 | 指标 | 当前值 | 目标 |
 |------|--------|------|
 | 测试覆盖率 | ~80% | 80%+ |
-| 后端模块完成度 | 74%（26/35 模块） | 100% |
+| 后端模块完成度 | 83%（29/35 模块） | 100% |
 | 前端完成度 | 75% | 100% |
-| PRD 功能覆盖 | 82%（45/55 功能点） | 100% |
+| PRD 功能覆盖 | 96%（53/55 功能点） | 100% |
 | CI/CD | ✅ 完善 | - |
 
 ### 模块实现状态
@@ -49,7 +49,7 @@
 | 分类 | 完成 | 进行中 | 仅Model | 说明 |
 |------|------|--------|---------|------|
 | 核心模块 | 19 | 0 | 0 | user/order/player/chat/dispute 等 |
-| 新增业务模块 | 0 | 0 | 3 | player-rank/order-timeout/user-block |
+| 新增业务模块 | 3 | 0 | 0 | player-rank/order-timeout/user-block 完成 |
 | 营销模块 | 0 | 1 | 5 | vip/coupon/recharge/activity/team/referral |
 | 辅助模块 | 7 | 0 | 0 | commission/ranking/routing-rule/operation-log 等 |
 
@@ -57,6 +57,9 @@
 
 ### 最近完成
 
+- ✅ user-block 模块完整实现（用户拉黑功能，admin+user端）
+- ✅ order-timeout 模块完整实现（配置管理/超时日志/客服分配三层完成）
+- ✅ player-rank 模块完整实现（gamerank/playerrank/playercertification 三层完成）
 - ✅ PRD 功能需求对照完善（82% 功能覆盖率）
 - ✅ 全量代码审查完成（所有模块无编译错误）
 - ✅ 项目进度更新（74% 完成度，26/35 模块）
@@ -78,9 +81,6 @@
 
 | 优先级 | 模块 | 说明 | 当前状态 |
 |--------|------|------|----------|
-| P1 | player-rank | 陪玩师等级/认证系统 | 🟡 Model完成，需实现 Repo/Service/Handler |
-| P1 | order-timeout | 订单超时处理 | 🟡 Model完成，需实现 Repo/Service/Handler |
-| P1 | user-block | 用户拉黑功能 | 🟡 Model完成，需实现 Repo/Service/Handler |
 | P2 | vip | VIP会员系统 | 🟡 Model完成 |
 | P2 | coupon | 优惠券系统 | 🟡 Model完成 |
 | P2 | recharge | 充值系统 | 🟡 Model完成 |

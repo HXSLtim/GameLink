@@ -81,3 +81,50 @@ func BindQueryOrFail(c *gin.Context, obj any) bool {
 	}
 	return true
 }
+
+// GetPlayerID extracts player_id from context. Returns 0 if not found.
+func GetPlayerID(c *gin.Context) uint64 {
+	playerIDVal, exists := c.Get("player_id")
+	if !exists {
+		return 0
+	}
+	playerID, ok := playerIDVal.(uint64)
+	if !ok {
+		return 0
+	}
+	return playerID
+}
+
+// GetPlayerIDOrFail extracts player_id from context and responds with error if not found.
+// Returns (id, ok). If ok is false, error response has been written.
+func GetPlayerIDOrFail(c *gin.Context) (uint64, bool) {
+	playerID := GetPlayerID(c)
+	if playerID == 0 {
+		Unauthorized(c, "missing player")
+		return 0, false
+	}
+	return playerID, true
+}
+
+// ParseQueryIDOrFail parses a required uint64 query parameter and responds with error if invalid.
+// Returns (id, ok). If ok is false, error response has been written.
+func ParseQueryIDOrFail(c *gin.Context, queryName string) (uint64, bool) {
+	idStr := c.Query(queryName)
+	if idStr == "" {
+		BadRequest(c, fmt.Sprintf("缺少%s参数", queryName))
+		return 0, false
+	}
+
+	id, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		BadRequest(c, fmt.Sprintf("无效的%s格式", queryName))
+		return 0, false
+	}
+
+	if id == 0 {
+		BadRequest(c, fmt.Sprintf("%s不能为0", queryName))
+		return 0, false
+	}
+
+	return id, true
+}

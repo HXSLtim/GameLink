@@ -10,31 +10,41 @@ import (
 	contentrepo "gamelink/internal/repository/content"
 	contentcategoryrepo "gamelink/internal/repository/contentcategory"
 	gamerepo "gamelink/internal/repository/game"
+	gamerankrepo "gamelink/internal/repository/gamerank"
 	orderrepo "gamelink/internal/repository/implementations"
 	ordermodelsrepo "gamelink/internal/repository/order"
+	ordertimeoutrepo "gamelink/internal/repository/ordertimeout"
+	playercertificationrepo "gamelink/internal/repository/playercertification"
+	playerrankrepo "gamelink/internal/repository/playerrank"
 	reviewdisplaysettingsrepo "gamelink/internal/repository/reviewdisplaysettings"
 	routingrulerepo "gamelink/internal/repository/routingrule"
 	sensitivewordrepo "gamelink/internal/repository/sensitiveword"
 	serviceitemrepo "gamelink/internal/repository/serviceitem"
 	userrepo "gamelink/internal/repository/user"
+	userblockrepo "gamelink/internal/repository/userblock"
 	withdrawrepo "gamelink/internal/repository/withdraw"
 	analyticsservice "gamelink/internal/service/analytics"
 	chatservice "gamelink/internal/service/chat"
 	commissionservice "gamelink/internal/service/commission"
 	contentservice "gamelink/internal/service/content"
 	contentcategoryservice "gamelink/internal/service/contentcategory"
+	gamerankservice "gamelink/internal/service/gamerank"
 	giftservice "gamelink/internal/service/gift"
 	itemservice "gamelink/internal/service/item"
 	kpiservice "gamelink/internal/service/kpi"
 	monitorservice "gamelink/internal/service/monitor"
 	orderservice "gamelink/internal/service/order"
+	ordertimeoutservice "gamelink/internal/service/ordertimeout"
 	paymentservice "gamelink/internal/service/payment"
 	serviceplayer "gamelink/internal/service/player"
+	playercertificationservice "gamelink/internal/service/playercertification"
+	playerrankservice "gamelink/internal/service/playerrank"
 	reviewservice "gamelink/internal/service/review"
 	routingruleservice "gamelink/internal/service/routingrule"
 	sensitivewordservice "gamelink/internal/service/sensitiveword"
 	statisticsservice "gamelink/internal/service/statistics"
 	userservice "gamelink/internal/service/user"
+	userblockservice "gamelink/internal/service/userblock"
 	walletservice "gamelink/internal/service/wallet"
 	"gamelink/internal/ws"
 	"gamelink/pkg/cache"
@@ -89,6 +99,14 @@ type appServices struct {
 	statisticsSvc       *statisticsservice.Service
 	statisticsEvaluator *statisticsservice.TagEvaluator
 	statisticsHooks     *statisticsservice.EventHooks
+	// Player rank services (陪玩师等级/认证)
+	gameRankSvc            *gamerankservice.GameRankService
+	playerRankSvc          *playerrankservice.PlayerRankService
+	playerCertificationSvc *playercertificationservice.PlayerCertificationService
+	// Order timeout service (订单超时处理)
+	orderTimeoutSvc *ordertimeoutservice.OrderTimeoutService
+	// User block service (用户拉黑)
+	userBlockSvc *userblockservice.UserBlockService
 }
 
 // initServices 初始化领域服务和调度任务（但不启动调度器）。
@@ -180,6 +198,22 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 	statisticsEvaluator := statisticsservice.NewTagEvaluator(orm)
 	statisticsHooks := statisticsservice.NewEventHooks(statisticsSvc)
 
+	// Player rank services (陪玩师等级/认证)
+	gameRankRepo := gamerankrepo.NewGameRankRepository(orm)
+	playerRankRepo := playerrankrepo.NewPlayerRankRepository(orm)
+	playerCertificationRepo := playercertificationrepo.NewPlayerCertificationRepository(orm)
+	gameRankSvc := gamerankservice.NewGameRankService(gameRankRepo, gameRepo)
+	playerRankSvc := playerrankservice.NewPlayerRankService(playerRankRepo, gameRankRepo, playerRepo, gameRepo)
+	playerCertificationSvc := playercertificationservice.NewPlayerCertificationService(playerCertificationRepo, playerRepo)
+
+	// Order timeout service (订单超时处理)
+	orderTimeoutRepo := ordertimeoutrepo.NewOrderTimeoutRepository(orm)
+	orderTimeoutSvc := ordertimeoutservice.NewOrderTimeoutService(orderTimeoutRepo, orderRepo, userRepo)
+
+	// User block service (用户拉黑)
+	userBlockRepo := userblockrepo.NewUserBlockRepository(orm)
+	userBlockSvc := userblockservice.NewUserBlockService(userBlockRepo, userRepo)
+
 	return &appServices{
 		commissionSvc:       commissionSvc,
 		serviceItemSvc:      serviceItemSvc,
@@ -215,5 +249,13 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 		statisticsSvc:       statisticsSvc,
 		statisticsEvaluator: statisticsEvaluator,
 		statisticsHooks:     statisticsHooks,
+		// Player rank services
+		gameRankSvc:            gameRankSvc,
+		playerRankSvc:          playerRankSvc,
+		playerCertificationSvc: playerCertificationSvc,
+		// Order timeout service
+		orderTimeoutSvc: orderTimeoutSvc,
+		// User block service
+		userBlockSvc: userBlockSvc,
 	}
 }

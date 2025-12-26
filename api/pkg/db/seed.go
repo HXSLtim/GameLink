@@ -1903,7 +1903,7 @@ func seedCommissionRules(tx *gorm.DB, games map[string]*model.Game) error {
 		rule := &model.CommissionRule{
 			Name:        spec.Name,
 			Description: spec.Description,
-			Type:        spec.Type,
+			Type:        model.CommissionRuleType(spec.Type),
 			Rate:        spec.Rate,
 			IsActive:    true,
 		}
@@ -2043,7 +2043,7 @@ func seedCommissionRecords(tx *gorm.DB, orders map[string]*model.Order, players 
 			TotalIncomeCents:     spec.TotalIncomeCents,
 			BonusCents:           0,
 			FinalIncomeCents:     spec.TotalIncomeCents,
-			Status:               spec.Status,
+			Status:               model.MonthlySettlementStatus(spec.Status),
 			IncomeRank:           &spec.IncomeRank,
 		}
 
@@ -2540,33 +2540,31 @@ func seedOrderDisputes(tx *gorm.DB, orders map[string]*model.Order, users map[st
 		slaDeadline := createdAt.Add(30 * time.Minute)
 
 		dispute := &model.OrderDispute{
-			OrderID:          order.ID,
-			UserID:           user.ID,
-			Status:           spec.Status,
-			Reason:           spec.Reason,
-			Description:      spec.Description,
-			Resolution:       spec.Resolution,
-			ResolutionAmount: spec.ResolutionAmount,
-			ResolutionNotes:  spec.ResolutionNotes,
-			SLADeadline:      &slaDeadline,
-			EvidenceURLs:     model.EvidenceURLArray{"https://example.com/evidence1.jpg", "https://example.com/evidence2.jpg"},
+			OrderID:       order.ID,
+			InitiatorID:   user.ID,
+			InitiatorType: model.DisputeInitiatorUser,
+			Type:          model.DisputeTypeServiceQuality,
+			Status:        spec.Status,
+			Reason:        spec.Reason,
+			EvidenceText:  spec.Description,
+			Resolution:    spec.Resolution,
+			ResolveRemark: spec.ResolutionNotes,
+			SLADeadline:   &slaDeadline,
+			EvidenceURLs:  model.EvidenceURLArray{"https://example.com/evidence1.jpg", "https://example.com/evidence2.jpg"},
 		}
 		dispute.CreatedAt = createdAt
 
 		// 设置指派信息
 		if spec.AssignedToKey != "" {
 			if assignedTo, ok := users[spec.AssignedToKey]; ok {
-				dispute.AssignedToUserID = &assignedTo.ID
-				dispute.AssignmentSource = model.AssignmentSourceManual
-				assignedAt := createdAt.Add(10 * time.Minute)
-				dispute.AssignedAt = &assignedAt
+				dispute.AssignedServiceID = &assignedTo.ID
 			}
 		}
 
 		// 设置解决信息
 		if spec.Status == model.DisputeStatusResolved || spec.Status == model.DisputeStatusRejected {
 			if admin, ok := users["adminA"]; ok {
-				dispute.ResolvedByUserID = &admin.ID
+				dispute.ResolvedBy = &admin.ID
 				resolvedAt := createdAt.Add(2 * hour)
 				dispute.ResolvedAt = &resolvedAt
 			}
