@@ -10,18 +10,46 @@ import (
 	"gamelink/internal/repository"
 	rechargerepo "gamelink/internal/repository/recharge"
 	walletrepo "gamelink/internal/repository/wallet"
-	couponservice "gamelink/internal/service/coupon"
 )
+
+// RechargeRepository 定义充值仓库接口
+type RechargeRepository interface {
+	ListOptions(ctx context.Context, opts rechargerepo.OptionListOptions) ([]model.RechargeOption, int64, error)
+	GetActiveOptions(ctx context.Context, vipLevel *uint64) ([]model.RechargeOption, error)
+	GetOptionByID(ctx context.Context, id uint64) (*model.RechargeOption, error)
+	CreateOption(ctx context.Context, option *model.RechargeOption) error
+	UpdateOption(ctx context.Context, option *model.RechargeOption) error
+	DeleteOption(ctx context.Context, id uint64) error
+	BatchUpdateOptionStatus(ctx context.Context, ids []uint64, isActive bool) (int64, error)
+	BatchDeleteOptions(ctx context.Context, ids []uint64) (int64, error)
+	IncrementPurchaseCount(ctx context.Context, optionID uint64) error
+	ListRecords(ctx context.Context, opts rechargerepo.RecordListOptions) ([]model.RechargeRecord, int64, error)
+	GetRecordByID(ctx context.Context, id uint64) (*model.RechargeRecord, error)
+	GetRecordByOrderNo(ctx context.Context, orderNo string) (*model.RechargeRecord, error)
+	CreateRecord(ctx context.Context, record *model.RechargeRecord) error
+	MarkAsPaid(ctx context.Context, id uint64, providerTradeNo string) error
+	MarkAsRefunded(ctx context.Context, id uint64, refundAmount int64, reason, providerNo string) error
+	MarkCouponIssued(ctx context.Context, id uint64, couponIDs string) error
+	CountUserPurchases(ctx context.Context, userID, optionID uint64) (int64, error)
+	GetUserRecords(ctx context.Context, userID uint64, limit int) ([]model.RechargeRecord, error)
+	GetRechargeStats(ctx context.Context) (map[string]any, error)
+	CancelExpiredRecords(ctx context.Context) (int64, error)
+}
+
+// CouponService 定义优惠券服务接口
+type CouponService interface {
+	IssueCoupon(ctx context.Context, userID, templateID uint64, source model.CouponSource) (*model.Coupon, error)
+}
 
 // Service 充值业务逻辑层
 type Service struct {
-	repo       *rechargerepo.Repository
+	repo       RechargeRepository
 	walletRepo walletrepo.Repository
-	couponSvc  *couponservice.Service
+	couponSvc  CouponService
 }
 
 // NewRechargeService 创建充值服务
-func NewRechargeService(repo *rechargerepo.Repository, walletRepo walletrepo.Repository, couponSvc *couponservice.Service) *Service {
+func NewRechargeService(repo RechargeRepository, walletRepo walletrepo.Repository, couponSvc CouponService) *Service {
 	return &Service{
 		repo:       repo,
 		walletRepo: walletRepo,

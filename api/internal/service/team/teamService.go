@@ -11,13 +11,38 @@ import (
 	teamrepo "gamelink/internal/repository/team"
 )
 
+// TeamRepository defines the interface for team repository operations
+type TeamRepository interface {
+	Create(ctx context.Context, team *model.Team) error
+	GetByID(ctx context.Context, id uint64) (*model.Team, error)
+	Update(ctx context.Context, team *model.Team) error
+	Delete(ctx context.Context, id uint64) error
+	List(ctx context.Context, opts teamrepo.TeamListOptions) ([]model.Team, int64, error)
+	UpdateStatus(ctx context.Context, id uint64, status model.TeamStatus) error
+	UpdateMemberCount(ctx context.Context, id uint64, delta int) error
+	UpdateLeader(ctx context.Context, id uint64, leaderID uint64) error
+	GetTeamStats(ctx context.Context) (*teamrepo.TeamStats, error)
+	CreateMember(ctx context.Context, member *model.TeamMember) error
+	GetMemberByTeamAndPlayer(ctx context.Context, teamID, playerID uint64) (*model.TeamMember, error)
+	GetActiveMemberByPlayer(ctx context.Context, playerID uint64) (*model.TeamMember, error)
+	UpdateMember(ctx context.Context, member *model.TeamMember) error
+	GetActiveMembers(ctx context.Context, teamID uint64) ([]model.TeamMember, error)
+	ListMembers(ctx context.Context, opts teamrepo.MemberListOptions) ([]model.TeamMember, int64, error)
+	GetNextLeader(ctx context.Context, teamID uint64, excludePlayerID uint64) (*model.TeamMember, error)
+	CreateInvite(ctx context.Context, invite *model.TeamInvite) error
+	GetInviteByID(ctx context.Context, id uint64) (*model.TeamInvite, error)
+	GetPendingInvite(ctx context.Context, teamID, playerID uint64) (*model.TeamInvite, error)
+	UpdateInvite(ctx context.Context, invite *model.TeamInvite) error
+	ListInvites(ctx context.Context, opts teamrepo.InviteListOptions) ([]model.TeamInvite, int64, error)
+}
+
 // TeamService 团队服务
 type TeamService struct {
-	repo *teamrepo.Repository
+	repo TeamRepository
 }
 
 // NewTeamService 创建团队服务
-func NewTeamService(repo *teamrepo.Repository) *TeamService {
+func NewTeamService(repo TeamRepository) *TeamService {
 	return &TeamService{repo: repo}
 }
 

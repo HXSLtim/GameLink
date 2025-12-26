@@ -10,13 +10,41 @@ import (
 	referralrepo "gamelink/internal/repository/referral"
 )
 
+// Repository 定义推荐仓库接口
+type Repository interface {
+	GetAllConfigs(ctx context.Context) ([]model.ReferralConfig, error)
+	GetConfig(ctx context.Context, key string) (*model.ReferralConfig, error)
+	SetConfig(ctx context.Context, key, value, description string) error
+	ListCodes(ctx context.Context, opts referralrepo.CodeListOptions) ([]model.ReferralCode, int64, error)
+	GetCodeByID(ctx context.Context, id uint64) (*model.ReferralCode, error)
+	GetCodeByCode(ctx context.Context, code string) (*model.ReferralCode, error)
+	GetUserCode(ctx context.Context, userID uint64, refType model.ReferralType) (*model.ReferralCode, error)
+	CreateCode(ctx context.Context, item *model.ReferralCode) error
+	UpdateCode(ctx context.Context, item *model.ReferralCode) error
+	DeleteCode(ctx context.Context, id uint64) error
+	IncrementCodeUseCount(ctx context.Context, codeID uint64) error
+	ListReferrals(ctx context.Context, opts referralrepo.ReferralListOptions) ([]model.Referral, int64, error)
+	GetReferralByID(ctx context.Context, id uint64) (*model.Referral, error)
+	GetReferralByReferee(ctx context.Context, refereeID uint64) (*model.Referral, error)
+	CreateReferral(ctx context.Context, item *model.Referral) error
+	UpdateReferralStatus(ctx context.Context, id uint64, status model.ReferralStatus) error
+	GetUserReferrals(ctx context.Context, userID uint64, limit int) ([]model.Referral, error)
+	ListRewards(ctx context.Context, opts referralrepo.RewardListOptions) ([]model.ReferralReward, int64, error)
+	GetRewardByID(ctx context.Context, id uint64) (*model.ReferralReward, error)
+	CreateReward(ctx context.Context, item *model.ReferralReward) error
+	UpdateRewardStatus(ctx context.Context, id uint64, status model.ReferralRewardStatus, failureReason string) error
+	GetUserRewards(ctx context.Context, userID uint64, limit int) ([]model.ReferralReward, error)
+	GetReferralStats(ctx context.Context) (map[string]any, error)
+	GetUserReferralStats(ctx context.Context, userID uint64) (map[string]any, error)
+}
+
 // Service 推荐服务
 type Service struct {
-	repo *referralrepo.Repository
+	repo Repository
 }
 
 // NewReferralService 创建推荐服务
-func NewReferralService(repo *referralrepo.Repository) *Service {
+func NewReferralService(repo Repository) *Service {
 	return &Service{repo: repo}
 }
 

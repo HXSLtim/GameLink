@@ -11,13 +11,38 @@ import (
 	couponrepo "gamelink/internal/repository/coupon"
 )
 
+// CouponRepository defines the interface for coupon repository operations
+type CouponRepository interface {
+	ListTemplates(ctx context.Context, opts couponrepo.TemplateListOptions) ([]model.CouponTemplate, int64, error)
+	GetTemplateByID(ctx context.Context, id uint64) (*model.CouponTemplate, error)
+	GetTemplateByClaimLink(ctx context.Context, link string) (*model.CouponTemplate, error)
+	CreateTemplate(ctx context.Context, template *model.CouponTemplate) error
+	UpdateTemplate(ctx context.Context, template *model.CouponTemplate) error
+	DeleteTemplate(ctx context.Context, id uint64) error
+	BatchUpdateTemplateStatus(ctx context.Context, ids []uint64, isActive bool) (int64, error)
+	BatchDeleteTemplates(ctx context.Context, ids []uint64) (int64, error)
+	ListCoupons(ctx context.Context, opts couponrepo.CouponListOptions) ([]model.Coupon, int64, error)
+	GetCouponByID(ctx context.Context, id uint64) (*model.Coupon, error)
+	GetCouponWithTemplate(ctx context.Context, id uint64) (*model.Coupon, error)
+	GetUserAvailableCoupons(ctx context.Context, userID uint64) ([]model.Coupon, error)
+	CountUserCouponsFromTemplate(ctx context.Context, userID, templateID uint64) (int64, error)
+	CreateCoupon(ctx context.Context, coupon *model.Coupon) error
+	IncrementClaimedCount(ctx context.Context, templateID uint64) error
+	LockCoupon(ctx context.Context, couponID, orderID uint64) error
+	UnlockCoupon(ctx context.Context, couponID uint64) error
+	UseCoupon(ctx context.Context, couponID, orderID uint64, discountCents int64) error
+	ExpireOldCoupons(ctx context.Context) (int64, error)
+	GetCouponStats(ctx context.Context) (map[string]int64, error)
+	DeleteCoupon(ctx context.Context, id uint64) error
+}
+
 // Service 优惠券业务逻辑层
 type Service struct {
-	repo *couponrepo.Repository
+	repo CouponRepository
 }
 
 // NewCouponService 创建优惠券服务
-func NewCouponService(repo *couponrepo.Repository) *Service {
+func NewCouponService(repo CouponRepository) *Service {
 	return &Service{repo: repo}
 }
 

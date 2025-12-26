@@ -9,17 +9,49 @@ import (
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	activityrepo "gamelink/internal/repository/activity"
-	couponservice "gamelink/internal/service/coupon"
 )
+
+// ActivityRepository defines the interface for activity repository operations
+type ActivityRepository interface {
+	ListActivities(ctx context.Context, opts activityrepo.ActivityListOptions) ([]model.Activity, int64, error)
+	GetActiveActivities(ctx context.Context) ([]model.Activity, error)
+	GetVisibleActivities(ctx context.Context) ([]model.Activity, error)
+	GetActivityByID(ctx context.Context, id uint64) (*model.Activity, error)
+	CreateActivity(ctx context.Context, activity *model.Activity) error
+	UpdateActivity(ctx context.Context, activity *model.Activity) error
+	DeleteActivity(ctx context.Context, id uint64) error
+	UpdateActivityStatus(ctx context.Context, id uint64, status model.ActivityStatus) error
+	GetRewardByID(ctx context.Context, id uint64) (*model.ActivityReward, error)
+	GetRewardsByActivityID(ctx context.Context, activityID uint64) ([]model.ActivityReward, error)
+	CreateReward(ctx context.Context, reward *model.ActivityReward) error
+	UpdateReward(ctx context.Context, reward *model.ActivityReward) error
+	DeleteReward(ctx context.Context, id uint64) error
+	CountUserParticipations(ctx context.Context, userID, activityID uint64) (int64, error)
+	CountTodayParticipations(ctx context.Context, activityID uint64) (int64, error)
+	CreateParticipation(ctx context.Context, participation *model.ActivityParticipation) error
+	GetUserParticipations(ctx context.Context, userID uint64, limit int) ([]model.ActivityParticipation, error)
+	ListParticipations(ctx context.Context, opts activityrepo.ParticipationListOptions) ([]model.ActivityParticipation, int64, error)
+	IncrementParticipants(ctx context.Context, activityID uint64) error
+	DecrementRewardStock(ctx context.Context, rewardID uint64) error
+	IncrementDailyStats(ctx context.Context, activityID uint64) error
+	GetActivityStats(ctx context.Context, activityID uint64) (map[string]any, error)
+	GetAllActivityStats(ctx context.Context) (map[string]any, error)
+	ResetTodayParticipants(ctx context.Context) error
+}
+
+// CouponService defines the interface for coupon service operations
+type CouponService interface {
+	IssueCoupon(ctx context.Context, userID, templateID uint64, source model.CouponSource) (*model.Coupon, error)
+}
 
 // Service 活动业务逻辑层
 type Service struct {
-	repo      *activityrepo.Repository
-	couponSvc *couponservice.Service
+	repo      ActivityRepository
+	couponSvc CouponService
 }
 
 // NewActivityService 创建活动服务
-func NewActivityService(repo *activityrepo.Repository, couponSvc *couponservice.Service) *Service {
+func NewActivityService(repo ActivityRepository, couponSvc CouponService) *Service {
 	return &Service{
 		repo:      repo,
 		couponSvc: couponSvc,
