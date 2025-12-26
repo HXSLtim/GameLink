@@ -62,9 +62,41 @@
 【月度券发放】
 每月1号（或用户首次登录时检查）
   └── LastMonthlyCouponAt 不在本月 → 发放券
+```
 
-【下单折扣】
-VIP永久折扣 vs 优惠券 → 取最优（互斥，不叠加）
+---
+
+## 折扣叠加规则
+
+> 统一的折扣计算规则，适用于 VIP 折扣、普通优惠券、活动券
+
+```
+【全局规则】
+- VIP 永久折扣与优惠券互斥，不叠加
+- 多张优惠券之间互斥，不叠加
+- 系统自动选择最优折扣方案
+
+【折扣优先级计算】
+1. 计算 VIP 永久折扣金额
+2. 计算每张可用优惠券的折扣金额
+3. 取最大折扣金额的方案
+
+【活动券特殊规则】
+- Activity.AllowVipStack = true：活动券可与 VIP 折扣叠加（特例）
+- Activity.AllowVipStack = false：活动券与 VIP 折扣择优使用（默认）
+
+【折扣计算示例】
+订单金额：¥100
+VIP 折扣：98折 → 优惠 ¥2
+优惠券A：满100减10 → 优惠 ¥10
+优惠券B：9折 → 优惠 ¥10
+→ 系统选择优惠券A或B（优惠 ¥10 > VIP ¥2）
+
+【活动券叠加示例】
+订单金额：¥100
+VIP 折扣：98折 → 优惠 ¥2
+活动券（AllowVipStack=true）：满100减5 → 优惠 ¥5
+→ 可叠加：¥100 × 0.98 - ¥5 = ¥93（总优惠 ¥7）
 ```
 
 ---
@@ -362,7 +394,7 @@ AllowVipStack = false：活动券与VIP折扣择优使用（互斥）
 | Type | RewardType | 奖励类型 |
 | AmountCents | int64 | 奖励金额（分） |
 | CouponID | *uint64 | 发放的优惠券ID |
-| Status | string | pending/issued/failed |
+| Status | ReferralRewardStatus | 状态：pending/issued/failed |
 | IssuedAt | *time.Time | 发放时间 |
 | FailureReason | string | 失败原因 |
 

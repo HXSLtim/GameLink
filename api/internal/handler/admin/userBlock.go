@@ -1,0 +1,369 @@
+package admin
+
+import (
+	"github.com/gin-gonic/gin"
+
+	"gamelink/internal/handler/middleware"
+	"gamelink/internal/model"
+	"gamelink/internal/repository"
+	"gamelink/internal/service/userblock"
+	"gamelink/pkg/apierr"
+)
+
+// UserBlockHandler 用户拉黑管理接口
+type UserBlockHandler struct {
+	svc *userblock.UserBlockService
+}
+
+// NewUserBlockHandler 创建Handler
+func NewUserBlockHandler(svc *userblock.UserBlockService) *UserBlockHandler {
+	return &UserBlockHandler{svc: svc}
+}
+
+// ============================================================================
+// 拉黑记录管理
+// ============================================================================
+
+// ListUserBlocks
+// @Summary      获取用户拉黑列表
+// @Tags         Admin/UserBlock
+// @Security     BearerAuth
+// @Param        page         query  int     false  "页码"
+// @Param        pageSize     query  int     false  "每页数量"
+// @Param        blockerId    query  int     false  "拉黑发起人ID"
+// @Param        blockedId    query  int     false  "被拉黑人ID"
+// @Param        blockerType  query  string  false  "发起人类型" Enums(user,player)
+// @Param        blockedType  query  string  false  "被拉黑人类型" Enums(user,player)
+// @Param        status       query  string  false  "状态" Enums(active,canceled,admin_canceled)
+// @Produce      json
+// @Success      200  {object}  model.APIResponse[[]model.UserBlock]
+// @Router       /admin/user-blocks [get]
+func (h *UserBlockHandler) ListUserBlocks(c *gin.Context) {
+	page, pageSize, ok := parsePagination(c)
+	if !ok {
+		return
+	}
+
+	blockerID, ok := QueryUint64PtrAndRespond(c, "blockerId", apierr.ErrInvalidUserID)
+	if !ok {
+		return
+	}
+
+	blockedID, ok := QueryUint64PtrAndRespond(c, "blockedId", apierr.ErrInvalidUserID)
+	if !ok {
+		return
+	}
+
+	var blockerType *model.BlockUserType
+	if v := c.Query("blockerType"); v != "" {
+		t := model.BlockUserType(v)
+		blockerType = &t
+	}
+
+	var blockedType *model.BlockUserType
+	if v := c.Query("blockedType"); v != "" {
+		t := model.BlockUserType(v)
+		blockedType = &t
+	}
+
+	var status *model.BlockStatus
+	if v := c.Query("status"); v != "" {
+		s := model.BlockStatus(v)
+		status = &s
+	}
+
+	opts := repository.UserBlockListOptions{
+		Page:        page,
+		PageSize:    pageSize,
+		BlockerID:   blockerID,
+		BlockedID:   blockedID,
+		BlockerType: blockerType,
+		BlockedType: blockedType,
+		Status:      status,
+	}
+
+	blocks, pagination, err := h.svc.ListPaged(c.Request.Context(), opts)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	respondList(c, blocks, pagination)
+}
+
+// GetUserBlock
+// @Summary      获取用户拉黑详情
+// @Tags         Admin/UserBlock
+// @Security     BearerAuth
+// @Param        id   path  int  true  "拉黑记录ID"
+// @Produce      json
+// @Success      200  {object}  model.APIResponse[model.UserBlock]
+// @Failure      404  {object}  model.ErrorResponse
+// @Router       /admin/user-blocks/{id} [get]
+func (h *UserBlockHandler) GetUserBlock(c *gin.Context) {
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
+		return
+	}
+
+	block, err := h.svc.Get(c.Request.Context(), id)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	respondSuccess(c, block)
+}
+
+// CheckBlockStatus
+// @Summary      检查两个用户之间的拉黑状态
+// @Tags         Admin/UserBlock
+// @Security     BearerAuth
+// @Param        userId1  query  int  true  "用户1 ID"
+// @Param        userId2  query  int  true  "用户2 ID"
+// @Produce      json
+// @Success      200  {object}  model.APIResponse[map[string]bool]
+// @Router       /admin/user-blocks/check [get]
+func (h *UserBlockHandler) CheckBlockStatus(c *gin.Context) {
+	userID1Ptr, ok := QueryUint64PtrAndRespond(c, "userId1", apierr.ErrInvalidUserID)
+	if !ok {
+		return
+	}
+	if userID1Ptr == nil {
+		respondBadRequest(c, "userId1 is required")
+		return
+	}
+	userID1 := *userID1Ptr
+
+	userID2Ptr, ok := QueryUint64PtrAndRespond(c, "userId2", apierr.ErrInvalidUserID)
+	if !ok {
+		return
+	}
+	if userID2Ptr == nil {
+		respondBadRequest(c, "userId2 is required")
+		return
+	}
+	userID2 := *userID2Ptr
+
+	// 检查双向拉黑状态
+	isBlocked, err := h.svc.IsBlocked(c.Request.Context(), userID1, userID2)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	// 检查单向拉黑状态
+	user1BlockedUser2, err := h.svc.IsBlockedBy(c.Request.Context(), userID1, userID2)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	user2BlockedUser1, err := h.svc.IsBlockedBy(c.Request.Context(), userID2, userID1)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	result := map[string]bool{
+		"isBlocked":         isBlocked,
+		"user1BlockedUser2": user1BlockedUser2,
+		"user2BlockedUser1": user2BlockedUser1,
+	}
+	respondSuccess(c, result)
+}
+
+// GetUserBlocksByUser
+// @Summary      获取用户的拉黑列表
+// @Tags         Admin/UserBlock
+// @Security     BearerAuth
+// @Param        userId   path  int  true  "用户ID"
+// @Produce      json
+// @Success      200  {object}  model.APIResponse[[]model.UserBlock]
+// @Router       /admin/users/{userId}/blocks [get]
+func (h *UserBlockHandler) GetUserBlocksByUser(c *gin.Context) {
+	userID, ok := ParseIDAndRespond(c, "userId")
+	if !ok {
+		return
+	}
+
+	blocks, err := h.svc.ListByBlocker(c.Request.Context(), userID, true)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	respondSuccess(c, blocks)
+}
+
+// GetUserBlockedByList
+// @Summary      获取拉黑该用户的列表
+// @Tags         Admin/UserBlock
+// @Security     BearerAuth
+// @Param        userId   path  int  true  "用户ID"
+// @Produce      json
+// @Success      200  {object}  model.APIResponse[[]model.UserBlock]
+// @Router       /admin/users/{userId}/blocked-by [get]
+func (h *UserBlockHandler) GetUserBlockedByList(c *gin.Context) {
+	userID, ok := ParseIDAndRespond(c, "userId")
+	if !ok {
+		return
+	}
+
+	blocks, err := h.svc.ListByBlocked(c.Request.Context(), userID, true)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	respondSuccess(c, blocks)
+}
+
+// GetUserBlockStats
+// @Summary      获取用户拉黑统计
+// @Tags         Admin/UserBlock
+// @Security     BearerAuth
+// @Produce      json
+// @Success      200  {object}  model.APIResponse[map[string]int64]
+// @Router       /admin/user-blocks/stats [get]
+func (h *UserBlockHandler) GetUserBlockStats(c *gin.Context) {
+	stats, err := h.svc.GetStats(c.Request.Context())
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	// 转换为 string key 的 map
+	result := make(map[string]int64)
+	for k, v := range stats {
+		result[string(k)] = v
+	}
+	respondSuccess(c, result)
+}
+
+// ============================================================================
+// 管理操作
+// ============================================================================
+
+// AdminUnblockRequest 管理员取消拉黑请求
+type AdminUnblockRequest struct {
+	Remark string `json:"remark"`
+}
+
+// AdminUnblock
+// @Summary      管理员强制取消拉黑
+// @Tags         Admin/UserBlock
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        id       path  int                   true  "拉黑记录ID"
+// @Param        request  body  AdminUnblockRequest   false "备注信息"
+// @Success      200  {object}  model.SuccessResponse
+// @Failure      400  {object}  model.ErrorResponse
+// @Failure      404  {object}  model.ErrorResponse
+// @Router       /admin/user-blocks/{id}/unblock [post]
+func (h *UserBlockHandler) AdminUnblock(c *gin.Context) {
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
+		return
+	}
+
+	var req AdminUnblockRequest
+	_ = c.ShouldBindJSON(&req) // 可选参数
+
+	adminID, ok := getAdminUserID(c)
+	if !ok {
+		return
+	}
+
+	if err := h.svc.AdminUnblock(c.Request.Context(), id, adminID, req.Remark); err != nil {
+		respondError(c, err)
+		return
+	}
+	respondMsg(c, "unblocked")
+}
+
+// BatchUnblockRequest 批量取消拉黑请求
+type BatchUnblockRequest struct {
+	IDs    []uint64 `json:"ids" binding:"required,min=1"`
+	Remark string   `json:"remark"`
+}
+
+// BatchUnblock
+// @Summary      批量取消拉黑
+// @Tags         Admin/UserBlock
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body  BatchUnblockRequest  true  "批量取消请求"
+// @Success      200  {object}  model.APIResponse[map[string]int]
+// @Failure      400  {object}  model.ErrorResponse
+// @Router       /admin/user-blocks/batch-unblock [post]
+func (h *UserBlockHandler) BatchUnblock(c *gin.Context) {
+	var req BatchUnblockRequest
+	if !ValidateAndRespond(c, &req) {
+		return
+	}
+
+	adminID, ok := getAdminUserID(c)
+	if !ok {
+		return
+	}
+
+	count, err := h.svc.BatchUnblock(c.Request.Context(), req.IDs, adminID, req.Remark)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	respondSuccess(c, map[string]int{
+		"successCount": count,
+		"totalCount":   len(req.IDs),
+	})
+}
+
+// DeleteUserBlock
+// @Summary      删除拉黑记录
+// @Tags         Admin/UserBlock
+// @Security     BearerAuth
+// @Param        id   path  int  true  "拉黑记录ID"
+// @Produce      json
+// @Success      200  {object}  model.SuccessResponse
+// @Failure      404  {object}  model.ErrorResponse
+// @Router       /admin/user-blocks/{id} [delete]
+func (h *UserBlockHandler) DeleteUserBlock(c *gin.Context) {
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
+		return
+	}
+
+	if err := h.svc.Delete(c.Request.Context(), id); err != nil {
+		respondError(c, err)
+		return
+	}
+	respondDeleted(c)
+}
+
+// RegisterUserBlockRoutes 注册用户拉黑管理路由
+func RegisterUserBlockRoutes(router gin.IRouter, svc *userblock.UserBlockService, pm *middleware.PermissionMiddleware) {
+	h := NewUserBlockHandler(svc)
+
+	group := router.Group("/user-blocks")
+	group.Use(pm.RequireAuth())
+	{
+		// 列表和查询
+		group.GET("", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/user-blocks"), h.ListUserBlocks)
+		group.GET("/stats", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/user-blocks/stats"), h.GetUserBlockStats)
+		group.GET("/check", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/user-blocks/check"), h.CheckBlockStatus)
+		group.GET("/:id", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/user-blocks/:id"), h.GetUserBlock)
+
+		// 管理操作
+		group.POST("/:id/unblock", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/user-blocks/:id/unblock"), h.AdminUnblock)
+		group.POST("/batch-unblock", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/user-blocks/batch-unblock"), h.BatchUnblock)
+		group.DELETE("/:id", pm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/user-blocks/:id"), h.DeleteUserBlock)
+	}
+
+	// 用户相关路由
+	usersGroup := router.Group("/users")
+	usersGroup.Use(pm.RequireAuth())
+	{
+		usersGroup.GET("/:userId/blocks", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/:userId/blocks"), h.GetUserBlocksByUser)
+		usersGroup.GET("/:userId/blocked-by", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/:userId/blocked-by"), h.GetUserBlockedByList)
+	}
+}

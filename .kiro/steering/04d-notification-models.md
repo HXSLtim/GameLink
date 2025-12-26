@@ -6,6 +6,7 @@
 
 - [04-data-models.md](./04-data-models.md) - 核心模块
 - [04a-marketing-models.md](./04a-marketing-models.md) - 营销模块
+- [04b-team-models.md](./04b-team-models.md) - 团队系统
 - [04c-enums-indexes.md](./04c-enums-indexes.md) - 枚举类型和数据库索引
 
 ---
@@ -93,7 +94,7 @@
 | Type | NotificationType | 通知类型 |
 | TemplateID | uint64 | 模板ID |
 | ScheduleAt | time.Time | 计划发送时间 |
-| Status | string | pending/processing/completed/failed |
+| Status | NotificationScheduleStatus | 状态：pending/processing/completed/failed |
 | TargetType | string | 目标类型：all/vip/specific |
 | TargetIDs | string | 目标用户ID列表（JSON数组） |
 | TotalCount | int | 总发送数 |
@@ -116,6 +117,8 @@
 | activity_start | 活动开始提醒 | 活动开始时 |
 | activity_end | 活动结束提醒 | 活动结束前 |
 | system | 系统公告 | 管理员发布 |
+| review | 评价提醒 | 订单完成后提醒用户评价 |
+| review_reply | 评价回复 | 陪玩师回复评价时通知用户 |
 | promotion | 营销推广（预留） | - |
 | chat | 聊天消息（预留） | - |
 
