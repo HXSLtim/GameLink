@@ -3,14 +3,12 @@ package integration
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gorm.io/gorm"
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository/collectionentity"
@@ -339,57 +337,6 @@ func TestSettlementCompanyService_BatchDeleteCompanies_EmptyIDs(t *testing.T) {
 // ============================================================================
 // RoutingRule Batch Operations Tests
 // ============================================================================
-
-// CreateTestCollectionEntity creates a test collection entity for routing rule tests
-func CreateTestCollectionEntity(t *testing.T, db *gorm.DB, name string) *model.CollectionEntity {
-	t.Helper()
-	adminUser := CreateUniqueTestUser(t, db, "admin_entity_"+name)
-	entity := &model.CollectionEntity{
-		Base: model.Base{
-			ExtJSON: "{}",
-		},
-		Name:       name,
-		CreditCode: fmt.Sprintf("91110000%010d", time.Now().UnixNano()%10000000000),
-		Status:     model.EntityStatusActive,
-		CreatedBy:  adminUser.ID,
-	}
-	if err := db.Create(entity).Error; err != nil {
-		t.Fatalf("Failed to create test collection entity: %v", err)
-	}
-	return entity
-}
-
-// CreateTestRoutingRule creates a test routing rule
-func CreateTestRoutingRule(t *testing.T, db *gorm.DB, entity *model.CollectionEntity, priority int) *model.RoutingRule {
-	t.Helper()
-	adminUser := CreateUniqueTestUser(t, db, "admin_rule")
-
-	conditions := []model.RoutingCondition{
-		{
-			Field:    model.ConditionFieldGameType,
-			Operator: model.ConditionOperatorEquals,
-			Value:    json.RawMessage(`"王者荣耀"`),
-		},
-	}
-	conditionsJSON, _ := json.Marshal(conditions)
-
-	rule := &model.RoutingRule{
-		Base: model.Base{
-			ExtJSON: "{}",
-		},
-		Name:           fmt.Sprintf("Test Rule %d", priority),
-		Priority:       priority,
-		Conditions:     conditionsJSON,
-		TargetEntityID: entity.ID,
-		Status:         model.RuleStatusActive,
-		Description:    "Test routing rule",
-		CreatedBy:      adminUser.ID,
-	}
-	if err := db.Create(rule).Error; err != nil {
-		t.Fatalf("Failed to create test routing rule: %v", err)
-	}
-	return rule
-}
 
 // TestRoutingRuleService_BatchUpdateRuleStatus_Success tests batch updating rule status successfully
 func TestRoutingRuleService_BatchUpdateRuleStatus_Success(t *testing.T) {

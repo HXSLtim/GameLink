@@ -674,11 +674,13 @@ type SensitiveWordRepository interface {
 
 // SensitiveWordListOptions 敏感词列表查询选项
 type SensitiveWordListOptions struct {
-	Page     int
-	PageSize int
-	Keyword  string
-	Category *model.SensitiveWordCategory
-	Severity *model.SensitiveWordSeverity
+	Page      int
+	PageSize   int
+	Keyword    string
+	Category   *model.SensitiveWordCategory
+	Severity   *model.SensitiveWordSeverity
+	MatchType  *model.SensitiveWordMatchType
+	IsActive   *bool
 }
 
 // ReviewStats 评价统计数据

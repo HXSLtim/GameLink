@@ -2,6 +2,7 @@
 package integration
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"sync"
@@ -197,6 +198,25 @@ func migrateModels(db *gorm.DB) error {
 		// User Tag
 		&model.UserTag{},
 		&model.UserTagRelation{},
+
+		// Ranking
+		&model.PlayerRanking{},
+		&model.RankingCommissionConfig{},
+		&model.RankingReward{},
+
+		// Feed/Content
+		&model.Feed{},
+		&model.FeedImage{},
+		&model.FeedReport{},
+		&model.ContentCategory{},
+
+		// Collection Entity & Routing Rule
+		&model.CollectionEntity{},
+		&model.PaymentChannelConfig{},
+		&model.RoutingRule{},
+		&model.RoutingRuleHistory{},
+		&model.CollectionEntityHistory{},
+		&model.RoutingLog{},
 	)
 }
 
@@ -229,6 +249,13 @@ func cleanTables(t *testing.T, db *gorm.DB) {
 		"user_blocks",
 		// User Tag
 		"user_tag_relations", "user_tags",
+		// Ranking
+		"ranking_rewards", "ranking_commission_configs", "player_rankings",
+		// Feed/Content
+		"feed_images", "feed_reports", "feeds", "content_categories",
+		// Collection Entity & Routing Rule
+		"routing_logs", "routing_rule_histories", "collection_entity_histories",
+		"payment_channel_configs", "routing_rules", "collection_entities",
 		// KPI & Statistics
 		"kpi_targets",
 		"user_statistics", "player_statistics", "platform_statistics",
@@ -1079,4 +1106,55 @@ func CreateTestTeam(t *testing.T, db *gorm.DB, name string, leaderID uint64) *mo
 		t.Fatalf("Failed to create test team: %v", err)
 	}
 	return team
+}
+
+// CreateTestCollectionEntity creates a test collection entity for routing rule tests.
+func CreateTestCollectionEntity(t *testing.T, db *gorm.DB, name string) *model.CollectionEntity {
+	t.Helper()
+	adminUser := CreateUniqueTestUser(t, db, "admin_entity_"+name)
+	entity := &model.CollectionEntity{
+		Base: model.Base{
+			ExtJSON: "{}",
+		},
+		Name:       name,
+		CreditCode: fmt.Sprintf("91110000%010d", time.Now().UnixNano()%10000000000),
+		Status:     model.EntityStatusActive,
+		CreatedBy:  adminUser.ID,
+	}
+	if err := db.Create(entity).Error; err != nil {
+		t.Fatalf("Failed to create test collection entity: %v", err)
+	}
+	return entity
+}
+
+// CreateTestRoutingRule creates a test routing rule.
+func CreateTestRoutingRule(t *testing.T, db *gorm.DB, entity *model.CollectionEntity, priority int) *model.RoutingRule {
+	t.Helper()
+	adminUser := CreateUniqueTestUser(t, db, "admin_rule")
+
+	conditions := []model.RoutingCondition{
+		{
+			Field:    model.ConditionFieldGameType,
+			Operator: model.ConditionOperatorEquals,
+			Value:    json.RawMessage(`"王者荣耀"`),
+		},
+	}
+	conditionsJSON, _ := json.Marshal(conditions)
+
+	rule := &model.RoutingRule{
+		Base: model.Base{
+			ExtJSON: "{}",
+		},
+		Name:           fmt.Sprintf("Test Rule %d", priority),
+		Priority:       priority,
+		Conditions:     conditionsJSON,
+		TargetEntityID: entity.ID,
+		Status:         model.RuleStatusActive,
+		Description:    "Test routing rule",
+		CreatedBy:      adminUser.ID,
+	}
+	if err := db.Create(rule).Error; err != nil {
+		t.Fatalf("Failed to create test routing rule: %v", err)
+	}
+	return rule
 }

@@ -65,6 +65,16 @@ func (r *gormSensitiveWordRepository) List(ctx context.Context, opts repository.
 		q = q.Where("severity = ?", *opts.Severity)
 	}
 
+	// 匹配类型筛选
+	if opts.MatchType != nil {
+		q = q.Where("match_type = ?", *opts.MatchType)
+	}
+
+	// 是否启用筛选
+	if opts.IsActive != nil {
+		q = q.Where("is_active = ?", *opts.IsActive)
+	}
+
 	// 统计总数
 	var total int64
 	if err := q.Count(&total).Error; err != nil {

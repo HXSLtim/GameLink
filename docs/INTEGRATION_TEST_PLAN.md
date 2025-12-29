@@ -712,7 +712,73 @@ User A blocks Player B:
 
 **预估工作量**: 3-4小时 |
 
-### 3.11 佣金管理 (commission)
+### 3.11 游戏段位和陪玩师段位认证 (gamerank/playerrank)
+
+**状态**: ✅ 已完成 (30个测试用例)
+
+#### GameRank (游戏段位配置) 测试用例
+
+| 测试用例 | 描述 | 优先级 | 状态 |
+|---------|------|--------|------|
+| `TestGameRankService_Create_Success` | 创建游戏段位成功 | P0 | ✅ 已有 |
+| `TestGameRankService_Create_GameNotFound` | 游戏不存在错误 | P0 | ✅ 已有 |
+| `TestGameRankService_Create_EmptyName` | 空名称验证错误 | P0 | ✅ 已有 |
+| `TestGameRankService_Create_NegativePrice` | 负价格验证错误 | P0 | ✅ 已有 |
+| `TestGameRankService_Get_Success` | 获取段位详情成功 | P0 | ✅ 已有 |
+| `TestGameRankService_Get_NotFound` | 段位不存在错误 | P0 | ✅ 已有 |
+| `TestGameRankService_List_Success` | 获取所有段位列表 | P1 | ✅ 已有 |
+| `TestGameRankService_ListByGameID_Success` | 按游戏ID获取段位列表 | P0 | ✅ 已有 |
+| `TestGameRankService_ListPaged_WithFilters` | 分页查询含筛选 | P1 | ✅ 已有 |
+| `TestGameRankService_Update_Success` | 更新段位成功 | P0 | ✅ 已有 |
+| `TestGameRankService_Update_NotFound` | 更新不存在的段位 | P0 | ✅ 已有 |
+| `TestGameRankService_Update_EmptyName` | 更新空名称验证 | P0 | ✅ 已有 |
+| `TestGameRankService_Delete_Success` | 删除段位成功 | P0 | ✅ 已有 |
+| `TestGameRankService_BatchDelete_Success` | 批量删除段位 | P1 | ✅ 已有 |
+| `TestGameRankService_BatchUpdateStatus_Success` | 批量更新段位状态 | P1 | ✅ 已有 |
+| `TestGameRank_RankLevelOrdering` | 段位按等级排序 | P1 | ✅ 已有 |
+| `TestGameRank_ActiveStatusFilter` | 激活状态筛选 | P1 | ✅ 已有 |
+
+#### PlayerRank (陪玩师段位认证) 测试用例
+
+| 测试用例 | 描述 | 优先级 | 状态 |
+|---------|------|--------|------|
+| `TestPlayerRankService_Apply_Success` | 申请段位认证成功 | P0 | ✅ 已有 |
+| `TestPlayerRankService_Apply_PlayerNotFound` | 陪玩师不存在错误 | P0 | ✅ 已有 |
+| `TestPlayerRankService_Apply_GameNotFound` | 游戏不存在错误 | P0 | ✅ 已有 |
+| `TestPlayerRankService_Apply_RankNotFound` | 段位不存在错误 | P0 | ✅ 已有 |
+| `TestPlayerRankService_Apply_RankNotBelongToGame` | 段位不属于该游戏错误 | P0 | ✅ 已有 |
+| `TestPlayerRankService_Apply_AlreadyApplied` | 重复申请错误 | P0 | ✅ 已有 |
+| `TestPlayerRankService_Apply_AfterRejected` | 拒绝后重新申请 | P1 | ✅ 已有 |
+| `TestPlayerRankService_Verify_Approve` | 审核通过认证 | P0 | ✅ 已有 |
+| `TestPlayerRankService_Verify_Reject` | 审核拒绝认证 | P0 | ✅ 已有 |
+| `TestPlayerRankService_Verify_Revoke` | 撤销已认证段位 | P1 | ✅ 已有 |
+| `TestPlayerRankService_Verify_InvalidStatusTransition` | 无效状态转换错误 | P0 | ✅ 已有 |
+| `TestPlayerRankService_Get_Success` | 获取认证记录成功 | P1 | ✅ 已有 |
+| `TestPlayerRankService_ListByPlayerID_Success` | 获取陪玩师所有认证 | P1 | ✅ 已有 |
+| `TestPlayerRankService_ListPending_Success` | 获取待审核列表 | P0 | ✅ 已有 |
+| `TestPlayerRankService_ListPaged_WithFilters` | 分页查询含筛选 | P1 | ✅ 已有 |
+| `TestPlayerRankService_Delete_Success` | 删除认证记录 | P1 | ✅ 已有 |
+| `TestPlayerRankService_GetStats_Success` | 获取认证统计 | P2 | ✅ 已有 |
+| `TestPlayerRankService_GetPendingCount_Success` | 获取待审核数量 | P1 | ✅ 已有 |
+
+#### 集成场景测试
+
+| 测试用例 | 描述 | 优先级 | 状态 |
+|---------|------|--------|------|
+| `TestGameRank_PlayerRank_FullWorkflow` | 完整工作流测试 | P0 | ✅ 已有 |
+| `TestGameRank_PriceAffectsPlayerHourlyRate` | 段位价格影响陪玩师时薪 | P0 | ✅ 已有 |
+| `TestPlayerRank_MultipleGamesOnePlayer` | 一玩家多游戏段位 | P1 | ✅ 已有 |
+
+**业务规则验证**:
+- 段位价格直接影响陪玩师的时薪 (HourlyRateCents)
+- 段位按Level排序（数值越小越靠前）
+- 陪玩师每个游戏只能有一个pending状态申请
+- 拒绝后可以重新申请
+- 认证通过后自动更新陪玩师的段位和时薪
+
+**预估工作量**: 已完成
+
+### 3.12 佣金管理 (commission)
 
 | 测试用例 | 描述 | 优先级 | 状态 |
 |---------|------|--------|------|
@@ -726,7 +792,7 @@ User A blocks Player B:
 
 **预估工作量**: 3-4小时
 
-### 3.12 权限管理 (permission/role/menu)
+### 3.13 权限管理 (permission/role/menu)
 
 | 测试用例 | 描述 | 优先级 | 状态 |
 |---------|------|--------|------|
@@ -741,7 +807,7 @@ User A blocks Player B:
 
 **预估工作量**: 3-4小时（含新增场景）
 
-### 3.13 游戏和服务项管理 (game/service-item)
+### 3.14 游戏和服务项管理 (game/service-item)
 
 | 测试用例 | 描述 | 优先级 | 状态 |
 |---------|------|--------|------|
@@ -754,7 +820,7 @@ User A blocks Player B:
 
 **预估工作量**: 3小时
 
-### 3.14 营销模块 (vip/coupon/recharge/activity/team/referral)
+### 3.15 营销模块 (vip/coupon/recharge/activity/team/referral)
 
 **状态**: 测试文件已创建，内容待补充
 
@@ -1021,6 +1087,7 @@ go test ./api/internal/service/integration/order_integration_test.go -cover -cov
 
 | 日期 | 版本 | 变更内容 |
 |------|------|----------|
+| 2025-12-30 | v2.3 | 新增游戏段位(GameRank)和陪玩师段位认证(PlayerRank)集成测试（30个测试用例） |
 | 2025-12-30 | v2.2 | 新增钱包服务集成测试（20个测试用例） |
 | 2025-12-29 | v2.1 | 新增批量操作集成测试（团队、活动、佣金） |
 | 2025-12-29 | v2.0 | 基于PRD全面规划测试场景，补充业务规则测试 |
