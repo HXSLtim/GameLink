@@ -23,10 +23,10 @@
 
 | 模块分类 | 总数 | 已有集成测试 | 缺失 | 覆盖率 |
 |---------|------|-------------|------|--------|
-| 核心业务模块 | 19 | 10 | 9 | 53% |
+| 核心业务模块 | 19 | 11 | 8 | 58% |
 | 营销模块 | 6 | 6 | 0 | 100% |
 | 辅助模块 | 7 | 1 | 6 | 14% |
-| **总计** | **32** | **17** | **15** | **53%** |
+| **总计** | **32** | **18** | **14** | **56%** |
 
 ### 1.4 已完成的集成测试
 
@@ -41,6 +41,7 @@
 - `notification` - 通知服务 (4个测试用例)
 - `menu` - 菜单服务 (2个测试用例)
 - `permission` - 权限服务 (4个测试用例)
+- `wallet` - 钱包服务 (20个测试用例)
 
 ✅ **营销模块测试**:
 - `vip` - VIP会员服务 (测试文件已创建)
@@ -59,7 +60,6 @@
 - user - 用户服务 (需要新建)
 - kpi - KPI服务
 - statistics - 统计服务
-- wallet - 钱包服务
 
 ---
 
@@ -689,15 +689,28 @@ User A blocks Player B:
 
 | 测试用例 | 描述 | 优先级 | 状态 |
 |---------|------|--------|------|
-| `TestWalletService_GetBalance` | 获取余额 | P0 | ⏳ 待实现 |
-| `TestWalletService_FreezeOnOrderComplete` | 完成订单冻结 | P0 | ⏳ 待实现 |
-| `TestWalletService_ThawAfter7Days` | T+7解冻 | P0 | ⏳ 待实现 |
-| `TestWalletService_FreezeOnDispute` | 争议冻结 | P0 | ⏳ 待实现 |
-| `TestWalletService_DeductOnRefund` | 退款扣除 | P0 | ⏳ 待实现 |
-| `TestWalletService_GetTransactionHistory` | 交易记录 | P1 | ⏳ 待实现 |
-| `TestWalletService_CalculateAvailableBalance` | 可用余额计算 | P0 | ⏳ 待实现 |
+| `TestWalletService_Recharge_Success_NewWallet` | 充值成功（新钱包创建） | P0 | ✅ 已有 |
+| `TestWalletService_Recharge_Success_ExistingWallet` | 充值到现有钱包 | P0 | ✅ 已有 |
+| `TestWalletService_Recharge_InvalidAmount` | 充值金额无效 | P0 | ✅ 已有 |
+| `TestWalletService_Recharge_DifferentPaymentMethods` | 不同支付方式 | P0 | ✅ 已有 |
+| `TestWalletService_Recharge_LargeAmount` | 大额充值 | P1 | ✅ 已有 |
+| `TestWalletService_Recharge_MultipleSequential` | 多次连续充值 | P1 | ✅ 已有 |
+| `TestWalletService_GetBalance_ExistingWallet` | 获取余额（现有钱包） | P0 | ✅ 已有 |
+| `TestWalletService_GetBalance_NoWallet_ReturnsEmpty` | 获取余额（无钱包返回零） | P0 | ✅ 已有 |
+| `TestWalletService_GetBalance_OnlyBalance_NoFrozen` | 仅可用余额 | P1 | ✅ 已有 |
+| `TestWalletService_GetBalance_OnlyFrozen_NoBalance` | 仅冻结余额 | P1 | ✅ 已有 |
+| `TestWalletService_GetBalance_BothZero` | 余额都为零 | P1 | ✅ 已有 |
+| `TestWalletService_TPlus7_FrozenBalance_Simulation` | T+7冻结余额模拟 | P0 | ✅ 已有 |
+| `TestWalletService_TPlus7_Recharge_WithFrozenFunds` | 带冻结资金的充值 | P0 | ✅ 已有 |
+| `TestWalletService_TPlus7_WithdrawableCalculation` | 可提现金额计算 | P0 | ✅ 已有 |
+| `TestWalletService_Precision_CentsAccuracy` | 金额精度（分） | P0 | ✅ 已有 |
+| `TestWalletService_Precision_Accumulation` | 精度累积测试 | P0 | ✅ 已有 |
+| `TestWalletService_Precision_NoFloatingPointErrors` | 无浮点误差 | P0 | ✅ 已有 |
+| `TestWalletService_Concurrent_Recharge` | 并发充值 | P1 | ✅ 已有 |
+| `TestWalletService_Concurrent_GetBalance` | 并发获取余额 | P1 | ✅ 已有 |
+| `TestWalletService_Concurrent_RechargeAndRead` | 并发充值和读取 | P1 | ✅ 已有 |
 
-**预估工作量**: 3-4小时
+**预估工作量**: 3-4小时 |
 
 ### 3.11 佣金管理 (commission)
 
@@ -1008,6 +1021,7 @@ go test ./api/internal/service/integration/order_integration_test.go -cover -cov
 
 | 日期 | 版本 | 变更内容 |
 |------|------|----------|
+| 2025-12-30 | v2.2 | 新增钱包服务集成测试（20个测试用例） |
 | 2025-12-29 | v2.1 | 新增批量操作集成测试（团队、活动、佣金） |
 | 2025-12-29 | v2.0 | 基于PRD全面规划测试场景，补充业务规则测试 |
 | 2025-12-28 | v1.1 | Phase 1 P0 核心业务流程测试完成编写 |
@@ -1271,5 +1285,5 @@ go test ./api/internal/service/integration/sensitive_word_user_block_tag_batch_i
 ---
 
 **文档维护者**: AI Assistant
-**最后更新**: 2025-12-29
-**版本**: v2.2
+**最后更新**: 2025-12-30
+**版本**: v2.3
