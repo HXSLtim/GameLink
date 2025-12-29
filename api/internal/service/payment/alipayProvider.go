@@ -112,7 +112,7 @@ func (p *RealAlipayProvider) CreateOrder(ctx context.Context, orderID, subject s
 	}
 
 	bizContent := map[string]interface{}{
-		"out_trade_no": fmt.Sprintf("%d", orderID),
+		"out_trade_no": orderID,
 		"total_amount": fmt.Sprintf("%.2f", float64(amountCents)/100),
 		"subject":      subject,
 	}

@@ -198,7 +198,7 @@ func (p *RealWeChatProvider) CreateOrder(ctx context.Context, orderID, descripti
 		"mch_id":           p.config.WeChatPay.MchID,
 		"nonce_str":        generateNonceStr(),
 		"body":             description,
-		"out_trade_no":     fmt.Sprintf("%d", orderID),
+		"out_trade_no":     orderID,
 		"total_fee":        amountCents,
 		"spbill_create_ip": clientIP,
 		"notify_url":       p.config.WeChatPay.NotifyURL,

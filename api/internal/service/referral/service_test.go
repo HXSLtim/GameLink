@@ -165,6 +165,11 @@ func (m *MockReferralRepository) GetUserReferralStats(ctx context.Context, userI
 	return args.Get(0).(map[string]any), args.Error(1)
 }
 
+func (m *MockReferralRepository) DeleteReferral(ctx context.Context, id uint64) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
 // ============================================================================
 // Service Tests - Config Management
 // ============================================================================
@@ -1360,5 +1365,903 @@ func TestService_GetUserReferralStats(t *testing.T) {
 		mockRepo.On("GetUserReferralStats", ctx, uint64(999)).Return(map[string]any{}, errors.New("db error")).Once()
 		_, err := svc.GetUserReferralStats(ctx, 999)
 		assert.Error(t, err)
+	})
+}
+
+// ============================================================================
+// Additional Tests - Coverage Improvement (Target 85%+)
+// ============================================================================
+
+// TestService_CreateCode_CodeUniqueness tests code generation uniqueness scenarios
+func TestService_CreateCode_CodeUniqueness(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockReferralRepository)
+	svc := NewReferralService(mockRepo)
+
+	t.Run("create code with unique user ID", func(t *testing.T) {
+		req := CreateCodeRequest{
+			UserID: 12345,
+			Type:   model.ReferralTypeUserToUser,
+			MaxUse: 100,
+		}
+		mockRepo.On("CreateCode", ctx, mock.MatchedBy(func(c *model.ReferralCode) bool {
+			return c.UserID == 12345 && c.Type == model.ReferralTypeUserToUser
+		})).Return(nil).Once()
+		result, err := svc.CreateCode(ctx, req)
+		require.NoError(t, err)
+		assert.Equal(t, uint64(12345), result.UserID)
+	})
+
+	t.Run("create code for player type", func(t *testing.T) {
+		req := CreateCodeRequest{
+			UserID: 54321,
+			Type:   model.ReferralTypePlayerToPlayer,
+			MaxUse: 50,
+		}
+		mockRepo.On("CreateCode", ctx, mock.MatchedBy(func(c *model.ReferralCode) bool {
+			return c.Type == model.ReferralTypePlayerToPlayer
+		})).Return(nil).Once()
+		result, err := svc.CreateCode(ctx, req)
+		require.NoError(t, err)
+		assert.Equal(t, model.ReferralTypePlayerToPlayer, result.Type)
+	})
+
+	t.Run("create code with max use zero (unlimited)", func(t *testing.T) {
+		req := CreateCodeRequest{
+			UserID: 11111,
+			Type:   model.ReferralTypeUserToPlayer,
+			MaxUse: 0,
+		}
+		mockRepo.On("CreateCode", ctx, mock.MatchedBy(func(c *model.ReferralCode) bool {
+			return c.MaxUse == 0
+		})).Return(nil).Once()
+		result, err := svc.CreateCode(ctx, req)
+		require.NoError(t, err)
+		assert.Equal(t, 0, result.MaxUse)
+	})
+}
+
+// TestService_GetOrCreateUserCode_TypeHandling tests different referral types
+func TestService_GetOrCreateUserCode_TypeHandling(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("user to user type - get existing", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		existingCode := &model.ReferralCode{
+			Code: "U2U123",
+			UserID: 1,
+			Type:  model.ReferralTypeUserToUser,
+		}
+		mockRepo.On("GetUserCode", ctx, uint64(1), model.ReferralTypeUserToUser).Return(existingCode, nil).Once()
+		result, err := svc.GetOrCreateUserCode(ctx, 1, model.ReferralTypeUserToUser)
+		require.NoError(t, err)
+		assert.Equal(t, model.ReferralTypeUserToUser, result.Type)
+	})
+
+	t.Run("player to player type - create new", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		mockRepo.On("GetUserCode", ctx, uint64(2), model.ReferralTypePlayerToPlayer).Return(nil, repository.ErrNotFound).Once()
+		mockRepo.On("GetConfig", ctx, model.ReferralConfigExpireDays).Return(&model.ReferralConfig{ConfigValue: "30"}, nil).Once()
+		mockRepo.On("CreateCode", ctx, mock.MatchedBy(func(c *model.ReferralCode) bool {
+			return c.Type == model.ReferralTypePlayerToPlayer && c.UserID == 2
+		})).Return(nil).Once()
+		result, err := svc.GetOrCreateUserCode(ctx, 2, model.ReferralTypePlayerToPlayer)
+		require.NoError(t, err)
+		assert.Equal(t, model.ReferralTypePlayerToPlayer, result.Type)
+	})
+
+	t.Run("user to player type - create new", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		mockRepo.On("GetUserCode", ctx, uint64(3), model.ReferralTypeUserToPlayer).Return(nil, repository.ErrNotFound).Once()
+		mockRepo.On("GetConfig", ctx, model.ReferralConfigExpireDays).Return(&model.ReferralConfig{ConfigValue: "60"}, nil).Once()
+		mockRepo.On("CreateCode", ctx, mock.MatchedBy(func(c *model.ReferralCode) bool {
+			return c.Type == model.ReferralTypeUserToPlayer
+		})).Return(nil).Once()
+		result, err := svc.GetOrCreateUserCode(ctx, 3, model.ReferralTypeUserToPlayer)
+		require.NoError(t, err)
+		assert.Equal(t, model.ReferralTypeUserToPlayer, result.Type)
+	})
+
+	t.Run("create code uses default expire days", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		mockRepo.On("GetUserCode", ctx, uint64(4), model.ReferralTypeUserToUser).Return(nil, repository.ErrNotFound).Once()
+		mockRepo.On("GetConfig", ctx, model.ReferralConfigExpireDays).Return(nil, repository.ErrNotFound).Once()
+		mockRepo.On("CreateCode", ctx, mock.MatchedBy(func(c *model.ReferralCode) bool {
+			return c.ExpireAt != nil
+		})).Return(nil).Once()
+		result, err := svc.GetOrCreateUserCode(ctx, 4, model.ReferralTypeUserToUser)
+		require.NoError(t, err)
+		assert.NotNil(t, result.ExpireAt)
+	})
+}
+
+// TestService_ValidateCode_ComplexScenarios tests validation edge cases
+func TestService_ValidateCode_ComplexScenarios(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("code at exact expiry time", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		expireAt := time.Now().Add(time.Minute)
+		code := &model.ReferralCode{Code: "SOON123", IsActive: true, ExpireAt: &expireAt}
+		mockRepo.On("GetCodeByCode", ctx, "SOON123").Return(code, nil).Once()
+		result, err := svc.ValidateCode(ctx, "SOON123")
+		require.NoError(t, err)
+		assert.True(t, result.IsValid())
+	})
+
+	t.Run("inactive code", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		code := &model.ReferralCode{Code: "INACTIVE", IsActive: false, MaxUse: 100}
+		mockRepo.On("GetCodeByCode", ctx, "INACTIVE").Return(code, nil).Once()
+		_, err := svc.ValidateCode(ctx, "INACTIVE")
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "expired or reached max use")
+	})
+
+	t.Run("code at max use limit", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		code := &model.ReferralCode{Code: "FULL", IsActive: true, MaxUse: 10, UseCount: 10}
+		mockRepo.On("GetCodeByCode", ctx, "FULL").Return(code, nil).Once()
+		_, err := svc.ValidateCode(ctx, "FULL")
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "expired or reached max use")
+	})
+
+	t.Run("code one under max use", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		code := &model.ReferralCode{Code: "NEARFULL", IsActive: true, MaxUse: 10, UseCount: 9}
+		mockRepo.On("GetCodeByCode", ctx, "NEARFULL").Return(code, nil).Once()
+		result, err := svc.ValidateCode(ctx, "NEARFULL")
+		require.NoError(t, err)
+		assert.True(t, result.IsValid())
+	})
+}
+
+// TestService_CreateReferral_MultiLevel tests multi-level referral rewards
+func TestService_CreateReferral_MultiLevel(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("create level 1 direct referral", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		codeID := uint64(1)
+		req := CreateReferralRequest{
+			ReferrerID: 1,
+			RefereeID:  2,
+			CodeID:     &codeID,
+			Type:       model.ReferralTypeUserToUser,
+			Level:      1,
+		}
+		mockRepo.On("GetReferralByReferee", ctx, uint64(2)).Return(nil, repository.ErrNotFound).Once()
+		mockRepo.On("CreateReferral", ctx, mock.MatchedBy(func(r *model.Referral) bool {
+			return r.Level == 1
+		})).Return(nil).Once()
+		mockRepo.On("IncrementCodeUseCount", ctx, uint64(1)).Return(nil).Once()
+		result, err := svc.CreateReferral(ctx, req)
+		require.NoError(t, err)
+		assert.Equal(t, 1, result.Level)
+	})
+
+	t.Run("create level 2 indirect referral", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		req := CreateReferralRequest{
+			ReferrerID: 3,
+			RefereeID:  4,
+			Type:       model.ReferralTypeUserToUser,
+			Level:      2,
+		}
+		mockRepo.On("GetReferralByReferee", ctx, uint64(4)).Return(nil, repository.ErrNotFound).Once()
+		mockRepo.On("CreateReferral", ctx, mock.MatchedBy(func(r *model.Referral) bool {
+			return r.Level == 2
+		})).Return(nil).Once()
+		result, err := svc.CreateReferral(ctx, req)
+		require.NoError(t, err)
+		assert.Equal(t, 2, result.Level)
+	})
+
+	t.Run("create level 3 indirect referral", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		req := CreateReferralRequest{
+			ReferrerID: 5,
+			RefereeID:  6,
+			Type:       model.ReferralTypePlayerToPlayer,
+			Level:      3,
+		}
+		mockRepo.On("GetReferralByReferee", ctx, uint64(6)).Return(nil, repository.ErrNotFound).Once()
+		mockRepo.On("CreateReferral", ctx, mock.MatchedBy(func(r *model.Referral) bool {
+			return r.Level == 3
+		})).Return(nil).Once()
+		result, err := svc.CreateReferral(ctx, req)
+		require.NoError(t, err)
+		assert.Equal(t, 3, result.Level)
+	})
+
+	t.Run("negative level defaults to 1", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		req := CreateReferralRequest{
+			ReferrerID: 7,
+			RefereeID:  8,
+			Type:       model.ReferralTypeUserToUser,
+			Level:      -1,
+		}
+		mockRepo.On("GetReferralByReferee", ctx, uint64(8)).Return(nil, repository.ErrNotFound).Once()
+		mockRepo.On("CreateReferral", ctx, mock.MatchedBy(func(r *model.Referral) bool {
+			return r.Level == 1
+		})).Return(nil).Once()
+		result, err := svc.CreateReferral(ctx, req)
+		require.NoError(t, err)
+		assert.Equal(t, 1, result.Level)
+	})
+
+	t.Run("referral without code ID", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		req := CreateReferralRequest{
+			ReferrerID: 9,
+			RefereeID:  10,
+			CodeID:     nil,
+			Type:       model.ReferralTypeUserToUser,
+			Level:      1,
+		}
+		mockRepo.On("GetReferralByReferee", ctx, uint64(10)).Return(nil, repository.ErrNotFound).Once()
+		mockRepo.On("CreateReferral", ctx, mock.AnythingOfType("*model.Referral")).Return(nil).Once()
+		result, err := svc.CreateReferral(ctx, req)
+		require.NoError(t, err)
+		assert.Nil(t, result.CodeID)
+	})
+}
+
+// TestService_CompleteReferral_ConditionVariations tests different completion conditions
+func TestService_CompleteReferral_ConditionVariations(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("complete on first order condition", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		referral := &model.Referral{
+			ReferrerID:       1,
+			RefereeID:        2,
+			Status:           model.ReferralStatusPending,
+			RefereeCondition: "first_order",
+		}
+		referral.ID = 1
+		mockRepo.On("GetReferralByReferee", ctx, uint64(2)).Return(referral, nil).Once()
+		mockRepo.On("UpdateReferralStatus", ctx, uint64(1), model.ReferralStatusCompleted).Return(nil).Once()
+		err := svc.CompleteReferral(ctx, 2, "first_order")
+		require.NoError(t, err)
+	})
+
+	t.Run("complete on registration condition", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		referral := &model.Referral{
+			ReferrerID:       3,
+			RefereeID:        4,
+			Status:           model.ReferralStatusPending,
+			RefereeCondition: "registered",
+		}
+		referral.ID = 2
+		mockRepo.On("GetReferralByReferee", ctx, uint64(4)).Return(referral, nil).Once()
+		mockRepo.On("UpdateReferralStatus", ctx, uint64(2), model.ReferralStatusCompleted).Return(nil).Once()
+		err := svc.CompleteReferral(ctx, 4, "registered")
+		require.NoError(t, err)
+	})
+
+	t.Run("complete with empty condition matches any", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		referral := &model.Referral{
+			ReferrerID:       5,
+			RefereeID:        6,
+			Status:           model.ReferralStatusPending,
+			RefereeCondition: "",
+		}
+		referral.ID = 3
+		mockRepo.On("GetReferralByReferee", ctx, uint64(6)).Return(referral, nil).Once()
+		mockRepo.On("UpdateReferralStatus", ctx, uint64(3), model.ReferralStatusCompleted).Return(nil).Once()
+		err := svc.CompleteReferral(ctx, 6, "any_condition")
+		require.NoError(t, err)
+	})
+
+	t.Run("condition mismatch does not update", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		referral := &model.Referral{
+			ReferrerID:       7,
+			RefereeID:        8,
+			Status:           model.ReferralStatusPending,
+			RefereeCondition: "first_order",
+		}
+		referral.ID = 4
+		mockRepo.On("GetReferralByReferee", ctx, uint64(8)).Return(referral, nil).Once()
+		err := svc.CompleteReferral(ctx, 8, "registration")
+		require.NoError(t, err)
+		// Should not call UpdateReferralStatus
+	})
+
+	t.Run("already rewarded skipped", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		referral := &model.Referral{
+			ReferrerID: 9,
+			RefereeID:  10,
+			Status:     model.ReferralStatusRewarded,
+		}
+		referral.ID = 5
+		mockRepo.On("GetReferralByReferee", ctx, uint64(10)).Return(referral, nil).Once()
+		err := svc.CompleteReferral(ctx, 10, "first_order")
+		require.NoError(t, err)
+	})
+
+	t.Run("update status error", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		referral := &model.Referral{
+			ReferrerID:       11,
+			RefereeID:        12,
+			Status:           model.ReferralStatusPending,
+			RefereeCondition: "first_order",
+		}
+		referral.ID = 6
+		mockRepo.On("GetReferralByReferee", ctx, uint64(12)).Return(referral, nil).Once()
+		mockRepo.On("UpdateReferralStatus", ctx, uint64(6), model.ReferralStatusCompleted).Return(errors.New("db error")).Once()
+		err := svc.CompleteReferral(ctx, 12, "first_order")
+		assert.Error(t, err)
+	})
+}
+
+// TestService_UpdateCode_FullUpdate tests all update scenarios
+func TestService_UpdateCode_FullUpdate(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("update all fields", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		existingCode := &model.ReferralCode{
+			Code:     "OLD",
+			IsActive: true,
+			MaxUse:   50,
+		}
+		existingCode.ID = 1
+		expireAt := time.Now().Add(90 * 24 * time.Hour)
+		isActive := false
+		maxUse := 200
+		req := UpdateCodeRequest{
+			ID:       1,
+			IsActive: &isActive,
+			MaxUse:   &maxUse,
+			ExpireAt: &expireAt,
+		}
+		mockRepo.On("GetCodeByID", ctx, uint64(1)).Return(existingCode, nil).Once()
+		mockRepo.On("UpdateCode", ctx, mock.MatchedBy(func(c *model.ReferralCode) bool {
+			return c.IsActive == false && c.MaxUse == 200 && c.ExpireAt != nil
+		})).Return(nil).Once()
+		result, err := svc.UpdateCode(ctx, req)
+		require.NoError(t, err)
+		assert.False(t, result.IsActive)
+		assert.Equal(t, 200, result.MaxUse)
+		assert.NotNil(t, result.ExpireAt)
+	})
+
+	t.Run("update only active status", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		existingCode := &model.ReferralCode{Code: "TEST", IsActive: false}
+		existingCode.ID = 2
+		isActive := true
+		req := UpdateCodeRequest{
+			ID:       2,
+			IsActive: &isActive,
+		}
+		mockRepo.On("GetCodeByID", ctx, uint64(2)).Return(existingCode, nil).Once()
+		mockRepo.On("UpdateCode", ctx, mock.MatchedBy(func(c *model.ReferralCode) bool {
+			return c.IsActive == true
+		})).Return(nil).Once()
+		result, err := svc.UpdateCode(ctx, req)
+		require.NoError(t, err)
+		assert.True(t, result.IsActive)
+	})
+
+	t.Run("update only max use", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		existingCode := &model.ReferralCode{Code: "TEST2", MaxUse: 100}
+		existingCode.ID = 3
+		maxUse := 500
+		req := UpdateCodeRequest{
+			ID:     3,
+			MaxUse: &maxUse,
+		}
+		mockRepo.On("GetCodeByID", ctx, uint64(3)).Return(existingCode, nil).Once()
+		mockRepo.On("UpdateCode", ctx, mock.MatchedBy(func(c *model.ReferralCode) bool {
+			return c.MaxUse == 500
+		})).Return(nil).Once()
+		result, err := svc.UpdateCode(ctx, req)
+		require.NoError(t, err)
+		assert.Equal(t, 500, result.MaxUse)
+	})
+
+	t.Run("update only expire at", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		existingCode := &model.ReferralCode{Code: "TEST3"}
+		existingCode.ID = 4
+		newExpireAt := time.Now().Add(120 * 24 * time.Hour)
+		req := UpdateCodeRequest{
+			ID:       4,
+			ExpireAt: &newExpireAt,
+		}
+		mockRepo.On("GetCodeByID", ctx, uint64(4)).Return(existingCode, nil).Once()
+		mockRepo.On("UpdateCode", ctx, mock.AnythingOfType("*model.ReferralCode")).Return(nil).Once()
+		result, err := svc.UpdateCode(ctx, req)
+		require.NoError(t, err)
+		assert.Equal(t, newExpireAt.Unix(), result.ExpireAt.Unix())
+	})
+}
+
+// TestService_BatchOperations_Comprehensive tests all batch operations
+func TestService_BatchOperations_Comprehensive(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("batch update codes status all success", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		ids := []uint64{1, 2, 3}
+		isActive := false
+		mockRepo.On("GetCodeByID", ctx, uint64(1)).Return(&model.ReferralCode{Base: model.Base{ID: 1}}, nil).Once()
+		mockRepo.On("UpdateCode", ctx, mock.AnythingOfType("*model.ReferralCode")).Return(nil).Once()
+		mockRepo.On("GetCodeByID", ctx, uint64(2)).Return(&model.ReferralCode{Base: model.Base{ID: 2}}, nil).Once()
+		mockRepo.On("UpdateCode", ctx, mock.AnythingOfType("*model.ReferralCode")).Return(nil).Once()
+		mockRepo.On("GetCodeByID", ctx, uint64(3)).Return(&model.ReferralCode{Base: model.Base{ID: 3}}, nil).Once()
+		mockRepo.On("UpdateCode", ctx, mock.AnythingOfType("*model.ReferralCode")).Return(nil).Once()
+		result, err := svc.BatchUpdateCodesStatus(ctx, ids, isActive)
+		require.NoError(t, err)
+		assert.Equal(t, 3, result.TotalCount)
+		assert.Equal(t, 3, result.SuccessCount)
+		assert.Equal(t, 0, result.FailedCount)
+	})
+
+	t.Run("batch update codes status partial failure", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		ids := []uint64{1, 2, 3}
+		isActive := true
+		mockRepo.On("GetCodeByID", ctx, uint64(1)).Return(&model.ReferralCode{Base: model.Base{ID: 1}}, nil).Once()
+		mockRepo.On("UpdateCode", ctx, mock.AnythingOfType("*model.ReferralCode")).Return(nil).Once()
+		mockRepo.On("GetCodeByID", ctx, uint64(2)).Return(nil, repository.ErrNotFound).Once()
+		mockRepo.On("GetCodeByID", ctx, uint64(3)).Return(&model.ReferralCode{Base: model.Base{ID: 3}}, nil).Once()
+		mockRepo.On("UpdateCode", ctx, mock.AnythingOfType("*model.ReferralCode")).Return(nil).Once()
+		result, err := svc.BatchUpdateCodesStatus(ctx, ids, isActive)
+		require.NoError(t, err)
+		assert.Equal(t, 3, result.TotalCount)
+		assert.Equal(t, 2, result.SuccessCount)
+		assert.Equal(t, 1, result.FailedCount)
+		assert.Contains(t, result.FailedIDs, uint64(2))
+	})
+
+	t.Run("batch delete codes all success", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		ids := []uint64{10, 20, 30}
+		mockRepo.On("DeleteCode", ctx, uint64(10)).Return(nil).Once()
+		mockRepo.On("DeleteCode", ctx, uint64(20)).Return(nil).Once()
+		mockRepo.On("DeleteCode", ctx, uint64(30)).Return(nil).Once()
+		result, err := svc.BatchDeleteCodes(ctx, ids)
+		require.NoError(t, err)
+		assert.Equal(t, 3, result.TotalCount)
+		assert.Equal(t, 3, result.SuccessCount)
+		assert.Equal(t, 0, result.FailedCount)
+	})
+
+	t.Run("batch delete codes partial failure", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		ids := []uint64{10, 20, 30}
+		mockRepo.On("DeleteCode", ctx, uint64(10)).Return(nil).Once()
+		mockRepo.On("DeleteCode", ctx, uint64(20)).Return(repository.ErrNotFound).Once()
+		mockRepo.On("DeleteCode", ctx, uint64(30)).Return(nil).Once()
+		result, err := svc.BatchDeleteCodes(ctx, ids)
+		require.NoError(t, err)
+		assert.Equal(t, 3, result.TotalCount)
+		assert.Equal(t, 2, result.SuccessCount)
+		assert.Equal(t, 1, result.FailedCount)
+	})
+
+	t.Run("batch update referrals status", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		ids := []uint64{100, 200}
+		mockRepo.On("UpdateReferralStatus", ctx, uint64(100), model.ReferralStatusCompleted).Return(nil).Once()
+		mockRepo.On("UpdateReferralStatus", ctx, uint64(200), model.ReferralStatusCompleted).Return(nil).Once()
+		result, err := svc.BatchUpdateReferralsStatus(ctx, ids, model.ReferralStatusCompleted)
+		require.NoError(t, err)
+		assert.Equal(t, 2, result.TotalCount)
+		assert.Equal(t, 2, result.SuccessCount)
+	})
+
+	t.Run("batch delete referrals", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		ids := []uint64{1000, 2000}
+		mockRepo.On("DeleteReferral", ctx, uint64(1000)).Return(nil).Once()
+		mockRepo.On("DeleteReferral", ctx, uint64(2000)).Return(repository.ErrNotFound).Once()
+		result, err := svc.BatchDeleteReferrals(ctx, ids)
+		require.NoError(t, err)
+		assert.Equal(t, 2, result.TotalCount)
+		assert.Equal(t, 1, result.SuccessCount)
+		assert.Equal(t, 1, result.FailedCount)
+	})
+
+	t.Run("empty batch operation", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		ids := []uint64{}
+		result, err := svc.BatchUpdateCodesStatus(ctx, ids, true)
+		require.NoError(t, err)
+		assert.Equal(t, 0, result.TotalCount)
+		assert.Equal(t, 0, result.SuccessCount)
+		assert.Equal(t, 0, result.FailedCount)
+	})
+}
+
+// TestService_CreateReward_Variations tests different reward types and scenarios
+func TestService_CreateReward_Variations(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("create cash reward", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		req := CreateRewardRequest{
+			ReferralID:  1,
+			UserID:      100,
+			Type:        model.RewardTypeCash,
+			AmountCents: 5000,
+		}
+		mockRepo.On("CreateReward", ctx, mock.MatchedBy(func(r *model.ReferralReward) bool {
+			return r.Type == model.RewardTypeCash && r.AmountCents == 5000 && r.CouponID == nil
+		})).Return(nil).Once()
+		result, err := svc.CreateReward(ctx, req)
+		require.NoError(t, err)
+		assert.Equal(t, model.RewardTypeCash, result.Type)
+		assert.Equal(t, int64(5000), result.AmountCents)
+		assert.Nil(t, result.CouponID)
+	})
+
+	t.Run("create coupon reward", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		couponID := uint64(123)
+		req := CreateRewardRequest{
+			ReferralID:  2,
+			UserID:      200,
+			Type:        model.RewardTypeCoupon,
+			CouponID:    &couponID,
+			AmountCents: 0,
+		}
+		mockRepo.On("CreateReward", ctx, mock.MatchedBy(func(r *model.ReferralReward) bool {
+			return r.Type == model.RewardTypeCoupon && r.CouponID != nil
+		})).Return(nil).Once()
+		result, err := svc.CreateReward(ctx, req)
+		require.NoError(t, err)
+		assert.Equal(t, model.RewardTypeCoupon, result.Type)
+		assert.NotNil(t, result.CouponID)
+		assert.Equal(t, uint64(123), *result.CouponID)
+	})
+
+	t.Run("create points reward", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		req := CreateRewardRequest{
+			ReferralID:  3,
+			UserID:      300,
+			Type:        model.RewardTypePoints,
+			AmountCents: 1000,
+		}
+		mockRepo.On("CreateReward", ctx, mock.MatchedBy(func(r *model.ReferralReward) bool {
+			return r.Type == model.RewardTypePoints
+		})).Return(nil).Once()
+		result, err := svc.CreateReward(ctx, req)
+		require.NoError(t, err)
+		assert.Equal(t, model.RewardTypePoints, result.Type)
+	})
+
+	t.Run("zero amount cash reward", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		req := CreateRewardRequest{
+			ReferralID:  4,
+			UserID:      400,
+			Type:        model.RewardTypeCash,
+			AmountCents: 0,
+		}
+		mockRepo.On("CreateReward", ctx, mock.MatchedBy(func(r *model.ReferralReward) bool {
+			return r.AmountCents == 0
+		})).Return(nil).Once()
+		result, err := svc.CreateReward(ctx, req)
+		require.NoError(t, err)
+		assert.Equal(t, int64(0), result.AmountCents)
+	})
+}
+
+// TestService_IssueReward_StatusTransitions tests reward status transitions
+func TestService_IssueReward_StatusTransitions(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("pending to issued transition", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		reward := &model.ReferralReward{
+			ReferralID: 1,
+			UserID:     100,
+			Status:     model.ReferralRewardStatusPending,
+		}
+		reward.ID = 1
+		mockRepo.On("GetRewardByID", ctx, uint64(1)).Return(reward, nil).Once()
+		mockRepo.On("UpdateRewardStatus", ctx, uint64(1), model.ReferralRewardStatusIssued, "").Return(nil).Once()
+		mockRepo.On("UpdateReferralStatus", ctx, uint64(1), model.ReferralStatusRewarded).Return(nil).Once()
+		err := svc.IssueReward(ctx, 1)
+		require.NoError(t, err)
+	})
+
+	t.Run("failed reward cannot be issued", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		reward := &model.ReferralReward{
+			Status: model.ReferralRewardStatusFailed,
+		}
+		reward.ID = 2
+		mockRepo.On("GetRewardByID", ctx, uint64(2)).Return(reward, nil).Once()
+		err := svc.IssueReward(ctx, 2)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "already processed")
+	})
+
+	t.Run("update referral status fails", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		reward := &model.ReferralReward{
+			ReferralID: 3,
+			Status:     model.ReferralRewardStatusPending,
+		}
+		reward.ID = 3
+		mockRepo.On("GetRewardByID", ctx, uint64(3)).Return(reward, nil).Once()
+		mockRepo.On("UpdateRewardStatus", ctx, uint64(3), model.ReferralRewardStatusIssued, "").Return(nil).Once()
+		mockRepo.On("UpdateReferralStatus", ctx, uint64(3), model.ReferralStatusRewarded).Return(errors.New("db error")).Once()
+		err := svc.IssueReward(ctx, 3)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "update referral status")
+	})
+}
+
+// TestService_ErrorScenarios tests error recovery scenarios
+func TestService_ErrorScenarios(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("create code database error", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		req := CreateCodeRequest{
+			UserID: 1,
+			Type:   model.ReferralTypeUserToUser,
+		}
+		mockRepo.On("CreateCode", ctx, mock.AnythingOfType("*model.ReferralCode")).Return(errors.New("connection lost")).Once()
+		_, err := svc.CreateCode(ctx, req)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "create code")
+	})
+
+	t.Run("create referral database error", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		req := CreateReferralRequest{
+			ReferrerID: 1,
+			RefereeID:  2,
+			Type:       model.ReferralTypeUserToUser,
+		}
+		mockRepo.On("GetReferralByReferee", ctx, uint64(2)).Return(nil, repository.ErrNotFound).Once()
+		mockRepo.On("CreateReferral", ctx, mock.AnythingOfType("*model.Referral")).Return(errors.New("timeout")).Once()
+		_, err := svc.CreateReferral(ctx, req)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "create referral")
+	})
+
+	t.Run("increment code use count error ignored", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		codeID := uint64(5)
+		req := CreateReferralRequest{
+			ReferrerID: 3,
+			RefereeID:  4,
+			CodeID:     &codeID,
+			Type:       model.ReferralTypeUserToUser,
+		}
+		mockRepo.On("GetReferralByReferee", ctx, uint64(4)).Return(nil, repository.ErrNotFound).Once()
+		mockRepo.On("CreateReferral", ctx, mock.AnythingOfType("*model.Referral")).Return(nil).Once()
+		mockRepo.On("IncrementCodeUseCount", ctx, uint64(5)).Return(errors.New("increment failed")).Once()
+		result, err := svc.CreateReferral(ctx, req)
+		// Error in increment is ignored, referral still succeeds
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+	})
+
+	t.Run("update code not found error", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		req := UpdateCodeRequest{ID: 999}
+		mockRepo.On("GetCodeByID", ctx, uint64(999)).Return(nil, repository.ErrNotFound).Once()
+		_, err := svc.UpdateCode(ctx, req)
+		assert.Error(t, err)
+	})
+}
+
+// TestService_Statistics_Accuracy tests statistics accuracy
+func TestService_Statistics_Accuracy(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("comprehensive referral stats", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		stats := map[string]any{
+			"totalReferrals":     int64(500),
+			"pendingReferrals":   int64(50),
+			"completedReferrals": int64(400),
+			"rewardedReferrals":  int64(350),
+			"expiredReferrals":   int64(25),
+			"canceledReferrals":  int64(25),
+			"totalRewardsCents":  int64(250000),
+		}
+		mockRepo.On("GetReferralStats", ctx).Return(stats, nil).Once()
+		result, err := svc.GetReferralStats(ctx)
+		require.NoError(t, err)
+		assert.Equal(t, int64(500), result["totalReferrals"])
+		assert.Equal(t, int64(250000), result["totalRewardsCents"])
+	})
+
+	t.Run("user referral stats with breakdown", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		stats := map[string]any{
+			"referralCount":      int64(15),
+			"completedCount":     int64(12),
+			"rewardedCount":      int64(10),
+			"pendingCount":       int64(3),
+			"totalRewardCents":   int64(7500),
+			"averageRewardCents": int64(500),
+		}
+		mockRepo.On("GetUserReferralStats", ctx, uint64(123)).Return(stats, nil).Once()
+		result, err := svc.GetUserReferralStats(ctx, 123)
+		require.NoError(t, err)
+		assert.Equal(t, int64(15), result["referralCount"])
+		assert.Equal(t, int64(7500), result["totalRewardCents"])
+	})
+}
+
+// TestService_ReferralLimitHandling tests referral limit scenarios
+func TestService_ReferralLimitHandling(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("code reaches max use", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		code := &model.ReferralCode{
+			Code:     "LIMITED",
+			IsActive: true,
+			MaxUse:   100,
+			UseCount: 100,
+		}
+		mockRepo.On("GetCodeByCode", ctx, "LIMITED").Return(code, nil).Once()
+		_, err := svc.ValidateCode(ctx, "LIMITED")
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "expired or reached max use")
+	})
+
+	t.Run("code approaching max use", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		code := &model.ReferralCode{
+			Code:     "ALMOSTFULL",
+			IsActive: true,
+			MaxUse:   100,
+			UseCount: 99,
+		}
+		mockRepo.On("GetCodeByCode", ctx, "ALMOSTFULL").Return(code, nil).Once()
+		result, err := svc.ValidateCode(ctx, "ALMOSTFULL")
+		require.NoError(t, err)
+		assert.True(t, result.IsValid())
+		assert.Equal(t, 99, result.UseCount)
+	})
+
+	t.Run("unlimited use code", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		code := &model.ReferralCode{
+			Code:     "UNLIMITED",
+			IsActive: true,
+			MaxUse:   0,
+			UseCount: 10000,
+		}
+		mockRepo.On("GetCodeByCode", ctx, "UNLIMITED").Return(code, nil).Once()
+		result, err := svc.ValidateCode(ctx, "UNLIMITED")
+		require.NoError(t, err)
+		assert.True(t, result.IsValid())
+	})
+}
+
+// TestService_MultiTypeReferrals tests different referral type combinations
+func TestService_MultiTypeReferrals(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("user to user referral", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		code := &model.ReferralCode{
+			Code:   "U2U",
+			UserID: 1,
+			Type:   model.ReferralTypeUserToUser,
+			IsActive: true,
+		}
+		mockRepo.On("GetCodeByCode", ctx, "U2U").Return(code, nil).Once()
+		mockRepo.On("GetReferralByReferee", ctx, uint64(2)).Return(nil, repository.ErrNotFound).Once()
+		mockRepo.On("CreateReferral", ctx, mock.MatchedBy(func(r *model.Referral) bool {
+			return r.Type == model.ReferralTypeUserToUser
+		})).Return(nil).Once()
+		mockRepo.On("IncrementCodeUseCount", ctx, mock.AnythingOfType("uint64")).Return(nil).Once()
+		req := UseCodeRequest{Code: "U2U", RefereeID: 2}
+		result, err := svc.UseCode(ctx, req)
+		require.NoError(t, err)
+		assert.Equal(t, model.ReferralTypeUserToUser, result.Type)
+	})
+
+	t.Run("player to player referral", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		code := &model.ReferralCode{
+			Code:   "P2P",
+			UserID: 10,
+			Type:   model.ReferralTypePlayerToPlayer,
+			IsActive: true,
+		}
+		mockRepo.On("GetCodeByCode", ctx, "P2P").Return(code, nil).Once()
+		mockRepo.On("GetReferralByReferee", ctx, uint64(20)).Return(nil, repository.ErrNotFound).Once()
+		mockRepo.On("CreateReferral", ctx, mock.MatchedBy(func(r *model.Referral) bool {
+			return r.Type == model.ReferralTypePlayerToPlayer
+		})).Return(nil).Once()
+		mockRepo.On("IncrementCodeUseCount", ctx, mock.AnythingOfType("uint64")).Return(nil).Once()
+		req := UseCodeRequest{Code: "P2P", RefereeID: 20}
+		result, err := svc.UseCode(ctx, req)
+		require.NoError(t, err)
+		assert.Equal(t, model.ReferralTypePlayerToPlayer, result.Type)
+	})
+
+	t.Run("user to player referral", func(t *testing.T) {
+		mockRepo := new(MockReferralRepository)
+		svc := NewReferralService(mockRepo)
+		code := &model.ReferralCode{
+			Code:   "U2P",
+			UserID: 100,
+			Type:   model.ReferralTypeUserToPlayer,
+			IsActive: true,
+		}
+		mockRepo.On("GetCodeByCode", ctx, "U2P").Return(code, nil).Once()
+		mockRepo.On("GetReferralByReferee", ctx, uint64(200)).Return(nil, repository.ErrNotFound).Once()
+		mockRepo.On("CreateReferral", ctx, mock.MatchedBy(func(r *model.Referral) bool {
+			return r.Type == model.ReferralTypeUserToPlayer
+		})).Return(nil).Once()
+		mockRepo.On("IncrementCodeUseCount", ctx, mock.AnythingOfType("uint64")).Return(nil).Once()
+		req := UseCodeRequest{Code: "U2P", RefereeID: 200}
+		result, err := svc.UseCode(ctx, req)
+		require.NoError(t, err)
+		assert.Equal(t, model.ReferralTypeUserToPlayer, result.Type)
 	})
 }

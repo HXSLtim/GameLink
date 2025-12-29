@@ -128,6 +128,11 @@ func (m *MockOrderRepository) GetUserOrderStats(ctx context.Context, userID uint
 	return args.Get(0).(map[string]int64), args.Error(1)
 }
 
+func (m *MockOrderRepository) UpdateWithCondition(ctx context.Context, orderID uint64, expectedStatus model.OrderStatus, updates map[string]any) (bool, error) {
+	args := m.Called(ctx, orderID, expectedStatus, updates)
+	return args.Bool(0), args.Error(1)
+}
+
 // MockWalletRepository is a mock implementation of WalletRepository
 type MockWalletRepository struct {
 	mock.Mock
@@ -195,7 +200,11 @@ func TestPaymentService_CreatePayment_ThirdParty_Success(t *testing.T) {
 
 	mockOrders.On("Get", ctx, orderID).Return(order, nil)
 	mockPayments.On("List", ctx, mock.AnythingOfType("repository.PaymentListOptions")).Return([]model.Payment{}, int64(0), nil)
-	mockPayments.On("Create", ctx, mock.AnythingOfType("*model.Payment")).Return(nil)
+	mockPayments.On("Create", ctx, mock.AnythingOfType("*model.Payment")).Return(nil).Run(func(args mock.Arguments) {
+		payment := args.Get(1).(*model.Payment)
+		payment.ID = 1
+	})
+	mockPayments.On("Get", ctx, uint64(1)).Return(createTestPayment(1, orderID, userID, model.PaymentStatusPending, 10000, model.PaymentMethodWeChat), nil) // For mockPaymentSuccess
 	mockPayments.On("Update", ctx, mock.AnythingOfType("*model.Payment")).Return(nil)
 	mockOrders.On("Update", ctx, mock.AnythingOfType("*model.Order")).Return(nil)
 
@@ -460,6 +469,7 @@ func TestPaymentService_CreatePayment_Combined_Success(t *testing.T) {
 		payment := args.Get(1).(*model.Payment)
 		payment.ID = 1
 	})
+	mockPayments.On("Get", ctx, uint64(1)).Return(createTestPayment(1, orderID, userID, model.PaymentStatusPending, totalCents, model.PaymentMethodCombined), nil) // For mockPaymentSuccess
 	mockPayments.On("Update", ctx, mock.AnythingOfType("*model.Payment")).Return(nil)
 	mockOrders.On("Update", ctx, mock.AnythingOfType("*model.Order")).Return(nil)
 

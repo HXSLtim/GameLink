@@ -2,19 +2,16 @@ package order
 
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/mock/gomock"
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	commissionrepo "gamelink/internal/repository/commission"
 	repoiface "gamelink/internal/repository/interfaces"
-	"gamelink/pkg/apierr"
 )
 
 // Mock implementations for testing
@@ -237,19 +234,21 @@ func (m *MockCommissionRepository) CreateRecord(ctx context.Context, record *mod
 }
 
 func (m *MockCommissionRepository) CreateRule(ctx context.Context, rule *model.CommissionRule) error { return nil }
-func (m *MockCommissionRepository) ListRules(ctx context.Context, opts any) ([]model.CommissionRule, int64, error) { return nil, 0, nil }
+func (m *MockCommissionRepository) ListRules(ctx context.Context, opts commissionrepo.CommissionRuleListOptions) ([]model.CommissionRule, int64, error) { return nil, 0, nil }
 func (m *MockCommissionRepository) UpdateRule(ctx context.Context, rule *model.CommissionRule) error { return nil }
 func (m *MockCommissionRepository) DeleteRule(ctx context.Context, id uint64) error { return nil }
 func (m *MockCommissionRepository) GetRecord(ctx context.Context, id uint64) (*model.CommissionRecord, error) { return nil, nil }
-func (m *MockCommissionRepository) ListRecords(ctx context.Context, opts any) ([]model.CommissionRecord, int64, error) { return nil, 0, nil }
+func (m *MockCommissionRepository) ListRecords(ctx context.Context, opts commissionrepo.CommissionRecordListOptions) ([]model.CommissionRecord, int64, error) { return nil, 0, nil }
 func (m *MockCommissionRepository) UpdateRecord(ctx context.Context, record *model.CommissionRecord) error { return nil }
 func (m *MockCommissionRepository) CreateSettlement(ctx context.Context, settlement *model.MonthlySettlement) error { return nil }
 func (m *MockCommissionRepository) GetSettlement(ctx context.Context, id uint64) (*model.MonthlySettlement, error) { return nil, nil }
 func (m *MockCommissionRepository) GetSettlementByPlayerMonth(ctx context.Context, playerID uint64, month string) (*model.MonthlySettlement, error) { return nil, nil }
-func (m *MockCommissionRepository) ListSettlements(ctx context.Context, opts any) ([]model.MonthlySettlement, int64, error) { return nil, 0, nil }
+func (m *MockCommissionRepository) ListSettlements(ctx context.Context, opts commissionrepo.SettlementListOptions) ([]model.MonthlySettlement, int64, error) { return nil, 0, nil }
 func (m *MockCommissionRepository) UpdateSettlement(ctx context.Context, settlement *model.MonthlySettlement) error { return nil }
-func (m *MockCommissionRepository) GetMonthlyStats(ctx context.Context, month string) (any, error) { return nil, nil }
 func (m *MockCommissionRepository) GetPlayerMonthlyIncome(ctx context.Context, playerID uint64, month string) (int64, error) { return 0, nil }
+func (m *MockCommissionRepository) GetMonthlyStats(ctx context.Context, month string) (*commissionrepo.MonthlyStats, error) {
+	return &commissionrepo.MonthlyStats{}, nil
+}
 
 // Helper function to create test order
 func createTestOrder(id uint64, userID uint64, status model.OrderStatus) *model.Order {
@@ -283,18 +282,18 @@ func createTestOrder(id uint64, userID uint64, status model.OrderStatus) *model.
 
 func createTestPlayer(id uint64, userID uint64) *model.Player {
 	return &model.Player{
-		ID:            id,
-		UserID:        userID,
-		Nickname:      "TestPlayer",
-		Rank:          "Gold",
-		HourlyRateCents: 5000,
-		Status:        model.VerificationStatusApproved,
+		Base:             model.Base{ID: id},
+		UserID:           userID,
+		Nickname:         "TestPlayer",
+		Rank:             "Gold",
+		HourlyRateCents:  5000,
+		VerificationStatus: model.VerificationVerified,
 	}
 }
 
 func createTestUser(id uint64) *model.User {
 	return &model.User{
-		ID:        id,
+		Base:      model.Base{ID: id},
 		Name:      "Test User",
 		AvatarURL: "https://example.com/avatar.jpg",
 	}
@@ -302,7 +301,7 @@ func createTestUser(id uint64) *model.User {
 
 func createTestGame(id uint64) *model.Game {
 	return &model.Game{
-		ID:   id,
+		Base: model.Base{ID: id},
 		Name: "Test Game",
 	}
 }
@@ -453,7 +452,6 @@ func TestOrderService_GetMyOrders_Success(t *testing.T) {
 		},
 	}
 
-	playerID := uint64(100)
 	players := &MockPlayerRepository{
 		getPlayer: func(ctx context.Context, id uint64) (*model.Player, error) {
 			return createTestPlayer(id, 200), nil
@@ -593,7 +591,6 @@ func TestOrderService_GetOrderDetail_Success(t *testing.T) {
 		},
 	}
 
-	playerID := uint64(100)
 	players := &MockPlayerRepository{
 		getPlayer: func(ctx context.Context, id uint64) (*model.Player, error) {
 			return createTestPlayer(id, 200), nil
@@ -616,7 +613,7 @@ func TestOrderService_GetOrderDetail_Success(t *testing.T) {
 	payments := &MockPaymentRepository{
 		listPayments: func(ctx context.Context, opts repository.PaymentListOptions) ([]model.Payment, int64, error) {
 			return []model.Payment{
-				{ID: 1, Method: model.PaymentMethodAlipay, AmountCents: 5000, Status: model.PaymentStatusPaid, PaidAt: &paymentTime},
+				{Base: model.Base{ID: 1}, Method: model.PaymentMethodAlipay, AmountCents: 5000, Status: model.PaymentStatusPaid, PaidAt: &paymentTime},
 			}, 1, nil
 		},
 	}
@@ -758,7 +755,7 @@ func TestOrderService_CancelOrder_WithRefund(t *testing.T) {
 	payments := &MockPaymentRepository{
 		listPayments: func(ctx context.Context, opts repository.PaymentListOptions) ([]model.Payment, int64, error) {
 			return []model.Payment{
-				{ID: 1, Method: model.PaymentMethodAlipay, AmountCents: 5000, Status: model.PaymentStatusPaid, PaidAt: &paymentTime},
+				{Base: model.Base{ID: 1}, Method: model.PaymentMethodAlipay, AmountCents: 5000, Status: model.PaymentStatusPaid, PaidAt: &paymentTime},
 			}, 1, nil
 		},
 	}
@@ -1197,7 +1194,7 @@ func TestOrderService_recordCommissionAsync(t *testing.T) {
 	assert.Equal(t, int64(5000), createdRecord.TotalAmountCents)
 	assert.Equal(t, int64(1000), createdRecord.CommissionCents) // 20% of 5000
 	assert.Equal(t, int64(4000), createdRecord.PlayerIncomeCents)
-	assert.Equal(t, float64(20), createdRecord.CommissionRate)
+	assert.Equal(t, 20, createdRecord.CommissionRate)
 }
 
 // TestOrderService_recordCommissionAsync_AlreadyRecorded tests commission recording when already recorded

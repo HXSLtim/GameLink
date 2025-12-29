@@ -675,9 +675,10 @@ func TestService_BatchUnblock(t *testing.T) {
 		blockRepo.On("Get", ctx, uint64(2)).Return(block2, nil)
 		blockRepo.On("Update", ctx, mock.AnythingOfType("*model.UserBlock")).Return(nil).Times(2)
 
-		count, err := svc.BatchUnblock(ctx, []uint64{1, 2}, 999, "batch unblock")
+		result, err := svc.BatchUnblock(ctx, []uint64{1, 2}, 999, "batch unblock")
 		require.NoError(t, err)
-		assert.Equal(t, 2, count)
+		assert.Equal(t, 2, result.SuccessCount)
+		assert.Equal(t, 0, result.FailedCount)
 	})
 
 	t.Run("partial success", func(t *testing.T) {
@@ -692,9 +693,11 @@ func TestService_BatchUnblock(t *testing.T) {
 		blockRepo.On("Get", ctx, uint64(2)).Return(nil, repository.ErrNotFound)
 		blockRepo.On("Update", ctx, mock.AnythingOfType("*model.UserBlock")).Return(nil)
 
-		count, err := svc.BatchUnblock(ctx, []uint64{1, 2}, 999, "batch unblock")
+		result, err := svc.BatchUnblock(ctx, []uint64{1, 2}, 999, "batch unblock")
 		require.NoError(t, err)
-		assert.Equal(t, 1, count)
+		assert.Equal(t, 1, result.SuccessCount)
+		assert.Equal(t, 1, result.FailedCount)
+		assert.Len(t, result.FailedIDs, 1)
 	})
 }
 

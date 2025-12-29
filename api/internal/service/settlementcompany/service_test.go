@@ -2,6 +2,7 @@ package settlementcompany
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -1307,4 +1308,591 @@ func TestToggleCompanyStatus_HistoryCreateError(t *testing.T) {
 
 	// History error should not affect main flow
 	assert.NoError(t, err)
+}
+
+// ============================================================================
+// Batch Operation Tests
+// ============================================================================
+
+func TestBatchUpdateCompanyStatus_AllSuccess(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	companies := []model.SettlementCompany{
+		{Base: model.Base{ID: 1}, Name: "Company 1", Status: model.CompanyStatusActive, PlayerCount: 0},
+		{Base: model.Base{ID: 2}, Name: "Company 2", Status: model.CompanyStatusActive, PlayerCount: 0},
+	}
+
+	companyIDs := []uint64{1, 2}
+
+	mockRepo.On("GetByIDsWithPlayerCount", ctx, companyIDs).Return(companies, nil)
+	mockRepo.On("BatchUpdateStatus", ctx, companyIDs, model.CompanyStatusInactive).Return(nil)
+	mockRepo.On("CreateHistory", ctx, mock.AnythingOfType("*model.SettlementCompanyHistory")).Return(nil)
+
+	result, err := svc.BatchUpdateCompanyStatus(ctx, companyIDs, false, 1)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Equal(t, 2, result.TotalCount)
+	assert.Equal(t, 2, result.SuccessCount)
+	assert.Equal(t, 0, result.FailedCount)
+	assert.Len(t, result.SuccessItems, 2)
+}
+
+func TestBatchUpdateCompanyStatus_EmptyList(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	result, err := svc.BatchUpdateCompanyStatus(ctx, []uint64{}, false, 1)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Equal(t, 0, result.TotalCount)
+	assert.Equal(t, 0, result.SuccessCount)
+	assert.Equal(t, 0, result.FailedCount)
+}
+
+func TestBatchUpdateCompanyStatus_SomeNotFound(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	companies := []model.SettlementCompany{
+		{Base: model.Base{ID: 1}, Name: "Company 1", Status: model.CompanyStatusActive, PlayerCount: 0},
+	}
+
+	companyIDs := []uint64{1, 999}
+
+	mockRepo.On("GetByIDsWithPlayerCount", ctx, companyIDs).Return(companies, nil)
+	mockRepo.On("BatchUpdateStatus", ctx, []uint64{1}, model.CompanyStatusInactive).Return(nil)
+	mockRepo.On("CreateHistory", ctx, mock.AnythingOfType("*model.SettlementCompanyHistory")).Return(nil)
+
+	result, err := svc.BatchUpdateCompanyStatus(ctx, companyIDs, false, 1)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Equal(t, 2, result.TotalCount)
+	assert.Equal(t, 1, result.SuccessCount)
+	assert.Equal(t, 1, result.FailedCount)
+	assert.Len(t, result.FailedItems, 1)
+	assert.Contains(t, result.FailedItems[0].Message, "not found")
+}
+
+func TestBatchUpdateCompanyStatus_CannotDisableWithPlayers(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	companies := []model.SettlementCompany{
+		{Base: model.Base{ID: 1}, Name: "Company 1", Status: model.CompanyStatusActive, PlayerCount: 5},
+		{Base: model.Base{ID: 2}, Name: "Company 2", Status: model.CompanyStatusActive, PlayerCount: 0},
+	}
+
+	companyIDs := []uint64{1, 2}
+
+	mockRepo.On("GetByIDsWithPlayerCount", ctx, companyIDs).Return(companies, nil)
+	mockRepo.On("BatchUpdateStatus", ctx, []uint64{2}, model.CompanyStatusInactive).Return(nil)
+	mockRepo.On("CreateHistory", ctx, mock.AnythingOfType("*model.SettlementCompanyHistory")).Return(nil)
+
+	result, err := svc.BatchUpdateCompanyStatus(ctx, companyIDs, false, 1)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Equal(t, 2, result.TotalCount)
+	assert.Equal(t, 1, result.SuccessCount)
+	assert.Equal(t, 1, result.FailedCount)
+	assert.Contains(t, result.FailedItems[0].Message, "active players")
+}
+
+func TestBatchUpdateCompanyStatus_GetByIDsError(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	companyIDs := []uint64{1, 2}
+
+	mockRepo.On("GetByIDsWithPlayerCount", ctx, companyIDs).Return([]model.SettlementCompany{}, assert.AnError)
+
+	result, err := svc.BatchUpdateCompanyStatus(ctx, companyIDs, false, 1)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+}
+
+func TestBatchUpdateCompanyStatus_BatchUpdateError(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	companies := []model.SettlementCompany{
+		{Base: model.Base{ID: 1}, Name: "Company 1", Status: model.CompanyStatusActive, PlayerCount: 0},
+	}
+
+	companyIDs := []uint64{1}
+
+	mockRepo.On("GetByIDsWithPlayerCount", ctx, companyIDs).Return(companies, nil)
+	mockRepo.On("BatchUpdateStatus", ctx, companyIDs, model.CompanyStatusInactive).Return(assert.AnError)
+
+	result, err := svc.BatchUpdateCompanyStatus(ctx, companyIDs, false, 1)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+}
+
+func TestBatchUpdateCompanyStatus_EnableCompany(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	companies := []model.SettlementCompany{
+		{Base: model.Base{ID: 1}, Name: "Company 1", Status: model.CompanyStatusInactive, PlayerCount: 0},
+	}
+
+	companyIDs := []uint64{1}
+
+	mockRepo.On("GetByIDsWithPlayerCount", ctx, companyIDs).Return(companies, nil)
+	mockRepo.On("BatchUpdateStatus", ctx, companyIDs, model.CompanyStatusActive).Return(nil)
+	mockRepo.On("CreateHistory", ctx, mock.AnythingOfType("*model.SettlementCompanyHistory")).Return(nil)
+
+	result, err := svc.BatchUpdateCompanyStatus(ctx, companyIDs, true, 1)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Equal(t, 1, result.SuccessCount)
+}
+
+func TestBatchUpdateCompanyStatus_EnableWithPlayersAllowed(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	companies := []model.SettlementCompany{
+		{Base: model.Base{ID: 1}, Name: "Company 1", Status: model.CompanyStatusInactive, PlayerCount: 5},
+	}
+
+	companyIDs := []uint64{1}
+
+	mockRepo.On("GetByIDsWithPlayerCount", ctx, companyIDs).Return(companies, nil)
+	mockRepo.On("BatchUpdateStatus", ctx, companyIDs, model.CompanyStatusActive).Return(nil)
+	mockRepo.On("CreateHistory", ctx, mock.AnythingOfType("*model.SettlementCompanyHistory")).Return(nil)
+
+	result, err := svc.BatchUpdateCompanyStatus(ctx, companyIDs, true, 1)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Equal(t, 1, result.SuccessCount)
+}
+
+func TestBatchDeleteCompanies_AllSuccess(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	companies := []model.SettlementCompany{
+		{Base: model.Base{ID: 1}, Name: "Company 1", Status: model.CompanyStatusActive, PlayerCount: 0},
+		{Base: model.Base{ID: 2}, Name: "Company 2", Status: model.CompanyStatusActive, PlayerCount: 0},
+	}
+
+	companyIDs := []uint64{1, 2}
+
+	mockRepo.On("GetByIDsWithPlayerCount", ctx, companyIDs).Return(companies, nil)
+	mockRepo.On("BatchDelete", ctx, companyIDs).Return(nil)
+
+	result, err := svc.BatchDeleteCompanies(ctx, companyIDs)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Equal(t, 2, result.TotalCount)
+	assert.Equal(t, 2, result.SuccessCount)
+	assert.Equal(t, 0, result.FailedCount)
+}
+
+func TestBatchDeleteCompanies_EmptyList(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	result, err := svc.BatchDeleteCompanies(ctx, []uint64{})
+
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Equal(t, 0, result.TotalCount)
+	assert.Equal(t, 0, result.SuccessCount)
+	assert.Equal(t, 0, result.FailedCount)
+}
+
+func TestBatchDeleteCompanies_CompanyNotFound(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	companies := []model.SettlementCompany{
+		{Base: model.Base{ID: 1}, Name: "Company 1", Status: model.CompanyStatusActive, PlayerCount: 0},
+	}
+
+	companyIDs := []uint64{1, 999}
+
+	mockRepo.On("GetByIDsWithPlayerCount", ctx, companyIDs).Return(companies, nil)
+	mockRepo.On("BatchDelete", ctx, []uint64{1}).Return(nil)
+
+	result, err := svc.BatchDeleteCompanies(ctx, companyIDs)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Equal(t, 2, result.TotalCount)
+	assert.Equal(t, 1, result.SuccessCount)
+	assert.Equal(t, 1, result.FailedCount)
+	assert.Len(t, result.FailedItems, 1)
+	assert.Contains(t, result.FailedItems[0].Message, "not found")
+}
+
+func TestBatchDeleteCompanies_HasActivePlayers(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	companies := []model.SettlementCompany{
+		{Base: model.Base{ID: 1}, Name: "Company 1", Status: model.CompanyStatusActive, PlayerCount: 3},
+		{Base: model.Base{ID: 2}, Name: "Company 2", Status: model.CompanyStatusActive, PlayerCount: 0},
+	}
+
+	companyIDs := []uint64{1, 2}
+
+	mockRepo.On("GetByIDsWithPlayerCount", ctx, companyIDs).Return(companies, nil)
+	mockRepo.On("BatchDelete", ctx, []uint64{2}).Return(nil)
+
+	result, err := svc.BatchDeleteCompanies(ctx, companyIDs)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Equal(t, 2, result.TotalCount)
+	assert.Equal(t, 1, result.SuccessCount)
+	assert.Equal(t, 1, result.FailedCount)
+	assert.Contains(t, result.FailedItems[0].Message, "active players")
+}
+
+func TestBatchDeleteCompanies_GetByIDsError(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	companyIDs := []uint64{1, 2}
+
+	mockRepo.On("GetByIDsWithPlayerCount", ctx, companyIDs).Return([]model.SettlementCompany{}, assert.AnError)
+
+	result, err := svc.BatchDeleteCompanies(ctx, companyIDs)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+}
+
+func TestBatchDeleteCompanies_BatchDeleteError(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	companies := []model.SettlementCompany{
+		{Base: model.Base{ID: 1}, Name: "Company 1", Status: model.CompanyStatusActive, PlayerCount: 0},
+	}
+
+	companyIDs := []uint64{1}
+
+	mockRepo.On("GetByIDsWithPlayerCount", ctx, companyIDs).Return(companies, nil)
+	mockRepo.On("BatchDelete", ctx, companyIDs).Return(assert.AnError)
+
+	result, err := svc.BatchDeleteCompanies(ctx, companyIDs)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+}
+
+// ============================================================================
+// Additional DetectChanges Edge Case Tests
+// ============================================================================
+
+func TestDetectChanges_AllFieldsChanged(t *testing.T) {
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	company := &model.SettlementCompany{
+		Name:              "Old Name",
+		TaxRegistrationNo: "OldTax",
+		BankName:          "Old Bank",
+		BankAccount:       "OldAccount",
+		BankBranch:        "Old Branch",
+		ContactName:       "Old Contact",
+		ContactPhone:      "OldPhone",
+		Address:           "Old Address",
+	}
+
+	newName := "New Name"
+	newTax := "NewTax"
+	newBank := "New Bank"
+	newAccount := "NewAccount"
+	newBranch := "New Branch"
+	newContact := "New Contact"
+	newPhone := "NewPhone"
+	newAddress := "New Address"
+
+	req := &model.UpdateSettlementCompanyRequest{
+		Name:              &newName,
+		TaxRegistrationNo: &newTax,
+		BankName:          &newBank,
+		BankAccount:       &newAccount,
+		BankBranch:        &newBranch,
+		ContactName:       &newContact,
+		ContactPhone:      &newPhone,
+		Address:           &newAddress,
+	}
+
+	changes := svc.detectChanges(company, req)
+
+	assert.Len(t, changes, 8)
+}
+
+func TestDetectChanges_SomeFieldsChanged(t *testing.T) {
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	company := &model.SettlementCompany{
+		Name:              "Old Name",
+		TaxRegistrationNo: "OldTax",
+		BankName:          "Old Bank",
+		BankAccount:       "OldAccount",
+		BankBranch:        "Old Branch",
+		ContactName:       "Old Contact",
+		ContactPhone:      "OldPhone",
+		Address:           "Old Address",
+	}
+
+	newName := "New Name"
+	newBank := "New Bank"
+	// Only change name and bank
+
+	req := &model.UpdateSettlementCompanyRequest{
+		Name:     &newName,
+		BankName: &newBank,
+	}
+
+	changes := svc.detectChanges(company, req)
+
+	assert.Len(t, changes, 2)
+	assert.Equal(t, "name", changes[0].FieldName)
+	assert.Equal(t, "Old Name", changes[0].OldValue)
+	assert.Equal(t, "New Name", changes[0].NewValue)
+	assert.Equal(t, "bank_name", changes[1].FieldName)
+}
+
+func TestDetectChanges_EmptyStringChanges(t *testing.T) {
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	company := &model.SettlementCompany{
+		Name:     "Old Name",
+		BankName: "Old Bank",
+		Address:  "Old Address",
+	}
+
+	emptyName := ""
+	newAddress := "New Address"
+
+	req := &model.UpdateSettlementCompanyRequest{
+		Name:    &emptyName,
+		Address: &newAddress,
+	}
+
+	changes := svc.detectChanges(company, req)
+
+	assert.Len(t, changes, 2)
+}
+
+// ============================================================================
+// Additional Validation Tests
+// ============================================================================
+
+func TestCreateCompany_MultipleInvalidCreditCodes(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	invalidCodes := []string{
+		"",                   // Empty
+		"123",                // Too short
+		"AAAAAAAAAAAAAAAAAA", // All letters - positions 3-8 must be digits
+		"91110000100000000Z", // Invalid letter Z
+		"9I100001000000000A", // Invalid letter I
+		"91110000100000000",  // Too short (17 chars)
+		"91110000100000000AB", // Too long (19 chars)
+		"9B10000100000000A",   // Position 2 must be digit or valid letter, B is invalid
+	}
+
+	for _, creditCode := range invalidCodes {
+		req := &model.CreateSettlementCompanyRequest{
+			Name:       "Test Company",
+			CreditCode: creditCode,
+		}
+
+		result, err := svc.CreateCompany(ctx, req, 1)
+
+		assert.Error(t, err, fmt.Sprintf("Expected error for credit code: %s", creditCode))
+		assert.Nil(t, result)
+		assert.Contains(t, err.Error(), "invalid credit code")
+	}
+}
+
+func TestCreateCompany_ValidCreditCodes(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	validCodes := []string{
+		"91110000100000000A",
+		"911100001000000010",
+		"91310000123456789X",
+		"92110000MA001234AB",
+	}
+
+	for _, creditCode := range validCodes {
+		req := &model.CreateSettlementCompanyRequest{
+			Name:       "Test Company",
+			CreditCode: creditCode,
+		}
+
+		mockRepo.On("GetByCreditCode", ctx, creditCode).Return((*model.SettlementCompany)(nil), repository.ErrNotFound).Once()
+		mockRepo.On("Create", ctx, mock.AnythingOfType("*model.SettlementCompany")).Return(nil).Once()
+
+		result, err := svc.CreateCompany(ctx, req, 1)
+
+		assert.NoError(t, err, fmt.Sprintf("Expected success for credit code: %s", creditCode))
+		assert.NotNil(t, result)
+		assert.Equal(t, creditCode, result.CreditCode)
+	}
+}
+
+func TestToggleCompanyStatus_StatusAlreadyInactive(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	company := &model.SettlementCompany{
+		Base:   model.Base{ID: 1},
+		Status: model.CompanyStatusInactive,
+	}
+	mockRepo.On("Get", ctx, uint64(1)).Return(company, nil)
+	mockRepo.On("ToggleStatus", ctx, uint64(1), model.CompanyStatusInactive).Return(nil)
+
+	err := svc.ToggleCompanyStatus(ctx, 1, false, 1)
+
+	assert.NoError(t, err)
+}
+
+func TestBatchUpdateCompanyStatus_SameStatusNoHistory(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	companies := []model.SettlementCompany{
+		{Base: model.Base{ID: 1}, Name: "Company 1", Status: model.CompanyStatusActive, PlayerCount: 0},
+	}
+
+	companyIDs := []uint64{1}
+
+	mockRepo.On("GetByIDsWithPlayerCount", ctx, companyIDs).Return(companies, nil)
+	mockRepo.On("BatchUpdateStatus", ctx, companyIDs, model.CompanyStatusActive).Return(nil)
+
+	result, err := svc.BatchUpdateCompanyStatus(ctx, companyIDs, true, 1)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Equal(t, 1, result.SuccessCount)
+}
+
+func TestBatchUpdateCompanyStatus_HistoryErrorDoesNotFail(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	companies := []model.SettlementCompany{
+		{Base: model.Base{ID: 1}, Name: "Company 1", Status: model.CompanyStatusActive, PlayerCount: 0},
+	}
+
+	companyIDs := []uint64{1}
+
+	mockRepo.On("GetByIDsWithPlayerCount", ctx, companyIDs).Return(companies, nil)
+	mockRepo.On("BatchUpdateStatus", ctx, companyIDs, model.CompanyStatusInactive).Return(nil)
+	mockRepo.On("CreateHistory", ctx, mock.AnythingOfType("*model.SettlementCompanyHistory")).Return(assert.AnError)
+
+	result, err := svc.BatchUpdateCompanyStatus(ctx, companyIDs, false, 1)
+
+	// History error should not affect the main operation
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Equal(t, 1, result.SuccessCount)
+}
+
+func TestListCompanies_WithKeyword(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	companies := []model.SettlementCompany{
+		{Base: model.Base{ID: 1}, Name: "Test Company"},
+	}
+	mockRepo.On("List", ctx, mock.MatchedBy(func(opts settlementcompany.ListOptions) bool {
+		return opts.Keyword == "test"
+	})).Return(companies, int64(1), nil)
+
+	req := &model.ListSettlementCompaniesRequest{
+		Page:     1,
+		PageSize: 10,
+		Keyword:  "test",
+	}
+	result, err := svc.ListCompanies(ctx, req)
+
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), result.Total)
+}
+
+func TestListCompanies_WithSorting(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	companies := []model.SettlementCompany{}
+	mockRepo.On("List", ctx, mock.MatchedBy(func(opts settlementcompany.ListOptions) bool {
+		return opts.SortBy == "name" && opts.SortOrder == "asc"
+	})).Return(companies, int64(0), nil)
+
+	req := &model.ListSettlementCompaniesRequest{
+		Page:      1,
+		PageSize:  10,
+		SortBy:    "name",
+		SortOrder: "asc",
+	}
+	result, err := svc.ListCompanies(ctx, req)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+}
+
+func TestListCompanies_MaxPageSize(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := new(MockSettlementCompanyRepository)
+	svc := NewSettlementCompanyService(mockRepo, nil)
+
+	companies := []model.SettlementCompany{}
+	mockRepo.On("List", ctx, mock.MatchedBy(func(opts settlementcompany.ListOptions) bool {
+		return opts.PageSize == 100
+	})).Return(companies, int64(0), nil)
+
+	req := &model.ListSettlementCompaniesRequest{
+		Page:     1,
+		PageSize: 100,
+	}
+	result, err := svc.ListCompanies(ctx, req)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 100, result.PageSize)
 }

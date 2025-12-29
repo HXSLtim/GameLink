@@ -210,7 +210,7 @@ func (p *TencentCOSProvider) generateAuth(method, key, signTime string) string {
 	// Reference: https://cloud.tencent.com/document/product/436/7778
 	requestTime := time.Now().UTC().Format("2006-01-02T15:04:05Z")
 	return fmt.Sprintf("q-sign-algorithm=sha1&q-ak=%s&q-sign-time=%s&q-key-time=%s&q-header-list=&q-url-param-list=&q-signature=",
-		p.SecretID, requestTime, requestTime, "")
+		p.SecretID, requestTime, requestTime)
 }
 
 // generateSign generates signature for Tencent COS
