@@ -80,6 +80,20 @@ const (
 	PermCodeAdminGamesDelete = "admin.games.delete"
 )
 
+// Admin Game Category Module - 游戏分类管理
+const (
+	// PermCodeAdminGameCategoriesRead 查看游戏分类列表
+	PermCodeAdminGameCategoriesRead = "admin.game_categories.read"
+	// PermCodeAdminGameCategoriesCreate 创建游戏分类
+	PermCodeAdminGameCategoriesCreate = "admin.game_categories.create"
+	// PermCodeAdminGameCategoriesUpdate 更新游戏分类
+	PermCodeAdminGameCategoriesUpdate = "admin.game_categories.update"
+	// PermCodeAdminGameCategoriesDelete 删除游戏分类
+	PermCodeAdminGameCategoriesDelete = "admin.game_categories.delete"
+	// PermCodeAdminGameCategoriesBatch 批量操作游戏分类
+	PermCodeAdminGameCategoriesBatch = "admin.game_categories.batch"
+)
+
 // Admin Order Module - 订单管理
 const (
 	// PermCodeAdminOrdersRead 查看订单列表
@@ -456,6 +470,14 @@ var (
 		Module:      "admin",
 	}
 
+	// PermGroupAdminGameCategories 游戏分类管理分组
+	PermGroupAdminGameCategories = PermissionGroupInfo{
+		Group:       "/admin/game-categories",
+		Name:        "游戏分类管理",
+		Description: "管理游戏分类",
+		Module:      "admin",
+	}
+
 	// PermGroupAdminOrders 订单管理分组
 	PermGroupAdminOrders = PermissionGroupInfo{
 		Group:       "/admin/orders",
@@ -577,6 +599,7 @@ func AllPermissionGroups() []PermissionGroupInfo {
 		PermGroupAdminUsers,
 		PermGroupAdminPlayers,
 		PermGroupAdminGames,
+		PermGroupAdminGameCategories,
 		PermGroupAdminOrders,
 		PermGroupAdminPayments,
 		PermGroupAdminWithdraws,
@@ -667,6 +690,17 @@ func GetAllPermissionDefinitions() []PermissionDefinition {
 		{Code: PermCodeAdminGamesCreate, Method: HTTPMethodPOST, Path: "/api/v1/admin/games", Group: PermGroupAdminGames.Group, Description: "创建游戏", IsSystem: true},
 		{Code: PermCodeAdminGamesUpdate, Method: HTTPMethodPUT, Path: "/api/v1/admin/games/:id", Group: PermGroupAdminGames.Group, Description: "更新游戏", IsSystem: true},
 		{Code: PermCodeAdminGamesDelete, Method: HTTPMethodDELETE, Path: "/api/v1/admin/games/:id", Group: PermGroupAdminGames.Group, Description: "删除游戏", IsSystem: true},
+
+		// ========== Admin Game Category Management ==========
+		{Code: PermCodeAdminGameCategoriesRead, Method: HTTPMethodGET, Path: "/api/v1/admin/game-categories", Group: PermGroupAdminGameCategories.Group, Description: "查看游戏分类列表", IsSystem: true},
+		{Code: PermCodeAdminGameCategoriesRead, Method: HTTPMethodGET, Path: "/api/v1/admin/game-categories/:id", Group: PermGroupAdminGameCategories.Group, Description: "查看游戏分类详情", IsSystem: true},
+		{Code: PermCodeAdminGameCategoriesCreate, Method: HTTPMethodPOST, Path: "/api/v1/admin/game-categories", Group: PermGroupAdminGameCategories.Group, Description: "创建游戏分类", IsSystem: true},
+		{Code: PermCodeAdminGameCategoriesUpdate, Method: HTTPMethodPUT, Path: "/api/v1/admin/game-categories/:id", Group: PermGroupAdminGameCategories.Group, Description: "更新游戏分类", IsSystem: true},
+		{Code: PermCodeAdminGameCategoriesUpdate, Method: HTTPMethodPATCH, Path: "/api/v1/admin/game-categories/:id", Group: PermGroupAdminGameCategories.Group, Description: "部分更新游戏分类", IsSystem: true},
+		{Code: PermCodeAdminGameCategoriesDelete, Method: HTTPMethodDELETE, Path: "/api/v1/admin/game-categories/:id", Group: PermGroupAdminGameCategories.Group, Description: "删除游戏分类", IsSystem: true},
+		{Code: PermCodeAdminGameCategoriesBatch, Method: HTTPMethodPOST, Path: "/api/v1/admin/game-categories/batch", Group: PermGroupAdminGameCategories.Group, Description: "批量操作游戏分类", IsSystem: true},
+		{Code: PermCodeAdminGameCategoriesBatch, Method: HTTPMethodPOST, Path: "/api/v1/admin/game-categories/batch/delete", Group: PermGroupAdminGameCategories.Group, Description: "批量删除游戏分类", IsSystem: true},
+		{Code: PermCodeAdminGameCategoriesBatch, Method: HTTPMethodPOST, Path: "/api/v1/admin/game-categories/batch/status", Group: PermGroupAdminGameCategories.Group, Description: "批量更新游戏分类状态", IsSystem: true},
 
 		// ========== Admin Order Management ==========
 		{Code: PermCodeAdminOrdersRead, Method: HTTPMethodGET, Path: "/api/v1/admin/orders", Group: PermGroupAdminOrders.Group, Description: "查看订单列表", IsSystem: true},

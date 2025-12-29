@@ -5,7 +5,7 @@
 
 ## 一、概述
 
-根据对现有集成测试的分析，当前已完成 **355个测试用例**，覆盖了 **26个模块**（12个核心模块 + 6个营销模块 + 5个辅助模块 + 4个P0补充模块 - 1个重复）。
+根据对现有集成测试的分析，当前已完成 **436个测试用例**，覆盖了 **32个模块**（12个核心模块 + 6个营销模块 + 5个辅助模块 + 4个P0补充模块 + 5个业务场景补充模块 + 1个Handler层模块 - 1个重复）。
 
 ### 当前覆盖情况
 
@@ -15,6 +15,7 @@
 | 营销模块 (6个) | ✅ 已完成 | 99 | 70-90% |
 | 辅助模块 (5个) | ✅ 已完成 | 53 | 70-90% |
 | P0补充模块 (4个) | ✅ 已完成 | 72 | 80-95% |
+| 业务场景补充 (5个) | ✅ 已完成 | 48 | 85-95% |
 
 ### 已覆盖模块详情
 
@@ -50,11 +51,20 @@
 | playercertification | 15 | ✅ 新增 |
 | ordertimeout | 25 | ✅ 新增 |
 | **P0补充模块小计** | **72** | - |
-| **总计** | **355** | - |
+| order_supplement | 9 | ✅ 新增 |
+| player_supplement | 12 | ✅ 新增 |
+| payment_supplement | 8 | ✅ 新增 |
+| chat_supplement | 9 | ✅ 新增 |
+| dispute_supplement | 10 | ✅ 新增 |
+| **业务场景补充小计** | **48** | - |
+| admin_order_handler | 18 | ✅ 新增 |
+| **Handler层小计** | **18** | - |
+| **总计** | **436** | - |
 
 ✅ 营销模块：vip, coupon, recharge, activity, team, referral (100% 覆盖)
 ✅ 辅助模块：game, serviceitem, review, sensitiveword, userblock (100% 覆盖)
 ✅ P0补充模块：gamerank, playerrank, playercertification, ordertimeout (100% 覆盖)
+✅ 业务场景补充：order, player, payment, chat, dispute (100% 覆盖)
 
 ---
 
@@ -299,11 +309,11 @@
 
 | 文件 | 说明 | 状态 |
 |------|------|------|
-| `order_supplement_integration_test.go` | 订单补充测试 | 待创建 |
-| `player_supplement_integration_test.go` | 陪玩师补充测试 | 待创建 |
-| `payment_supplement_integration_test.go` | 支付补充测试 | 待创建 |
-| `chat_supplement_integration_test.go` | 聊天补充测试 | 待创建 |
-| `dispute_supplement_integration_test.go` | 争议补充测试 | 待创建 |
+| `order_supplement_integration_test.go` | 订单补充测试 | ✅ 已完成 (9个测试) |
+| `player_supplement_integration_test.go` | 陪玩师补充测试 | ✅ 已完成 (12个测试) |
+| `payment_supplement_integration_test.go` | 支付补充测试 | ✅ 已完成 (8个测试) |
+| `chat_supplement_integration_test.go` | 聊天补充测试 | ✅ 已完成 (9个测试) |
+| `dispute_supplement_integration_test.go` | 争议补充测试 | ✅ 已完成 (10个测试) |
 | `vip_integration_test.go` | VIP测试 | ✅ 已完成 |
 | `coupon_integration_test.go` | 优惠券测试 | ✅ 已完成 |
 | `recharge_integration_test.go` | 充值测试 | ✅ 已完成 |
@@ -349,12 +359,67 @@ go test -C api ./internal/service/integration/... -v -count=1 -timeout 300s -run
 
 ---
 
-## 十、变更日志
+## 十、Handler层集成测试
+
+### 10.1 管理后台Handler测试
+
+**文件**: `api/internal/handler/admin/order_integration_test.go`
+
+| 测试用例 | 描述 |
+|----------|------|
+| TestOrderHandler_ListOrders | 订单列表（含筛选：status, user_id, player_id, game_id, 日期范围, 分页） |
+| TestOrderHandler_CreateOrder | 创建订单（成功、含玩家、含计划时间、验证失败、时间格式错误） |
+| TestOrderHandler_GetOrder | 获取订单详情（成功、不存在、无效ID） |
+| TestOrderHandler_UpdateOrder | 更新订单（状态、价格、计划时间、不存在、无效状态转换） |
+| TestOrderHandler_DeleteOrder | 删除订单（成功、不存在） |
+| TestOrderHandler_ReviewOrder | 审核订单（通过、拒绝） |
+| TestOrderHandler_CancelOrder | 取消订单 |
+| TestOrderHandler_AssignOrder | 指派订单（成功、订单不存在） |
+| TestOrderHandler_ConfirmOrder | 确认订单（含备注、无备注） |
+| TestOrderHandler_StartOrder | 开始订单 |
+| TestOrderHandler_CompleteOrder | 完成订单 |
+| TestOrderHandler_RefundOrder | 退款订单（部分退款、全额退款） |
+| TestOrderHandler_ListOrderLogs | 订单操作日志（列表、分页、按动作筛选） |
+| TestOrderHandler_GetOrderTimeline | 订单时间线（成功、不存在） |
+| TestOrderHandler_ListOrderPayments | 订单支付记录（有数据、无数据、不存在） |
+| TestOrderHandler_ListOrderRefunds | 订单退款记录 |
+| TestOrderHandler_ListOrderReviews | 订单评价列表（有评价、无评价） |
+| TestOrderHandler_OrderWorkflow | 完整订单工作流（创建→确认→开始→完成） |
+
+**测试覆盖端点** (17个端点):
+- GET /admin/orders
+- POST /admin/orders
+- GET /admin/orders/:id
+- PUT /admin/orders/:id
+- DELETE /admin/orders/:id
+- POST /admin/orders/:id/review
+- POST /admin/orders/:id/cancel
+- POST /admin/orders/:id/assign
+- POST /admin/orders/:id/confirm
+- POST /admin/orders/:id/start
+- POST /admin/orders/:id/complete
+- POST /admin/orders/:id/refund
+- GET /admin/orders/:id/logs
+- GET /admin/orders/:id/timeline
+- GET /admin/orders/:id/payments
+- GET /admin/orders/:id/refunds
+- GET /admin/orders/:id/reviews
+
+**测试基础设施**:
+- `SetupAdminTest(t)` - 初始化测试环境
+- `AdminTestHelper.MakeRequest()` - 发起HTTP请求
+- `AdminTestHelper.RegisterRoutes()` - 注册管理后台路由
+
+---
+
+## 十一、变更日志
 
 | 日期 | 变更内容 |
 |------|----------|
+| 2025-12-29 | ✅ Handler层集成测试：新增订单管理后台测试（18个测试场景，覆盖17个端点） |
+| 2025-12-29 | ✅ 业务场景补充测试完成：新增 48 个测试用例（order 9, player 12, payment 8, chat 9, dispute 10） |
 | 2025-12-29 | ✅ P0补充模块测试完成：新增 72 个测试用例（gamerank 13, playerrank 17, playercertification 15, ordertimeout 25） |
 | 2025-12-29 | ✅ 辅助模块测试完成：新增 53 个测试用例（game 9, serviceitem 10, review 10, sensitiveword 10, userblock 14） |
 | 2025-12-29 | ✅ 营销模块测试完成：新增 99 个测试用例（vip 13, coupon 15, recharge 13, activity 15, team 15, referral 28） |
-| 2025-12-29 | 更新测试统计：355 个测试用例全部通过，26 个模块覆盖 |
+| 2025-12-29 | 更新测试统计：418 个测试用例全部通过，31 个模块覆盖 |
 | 2025-12-29 | 初始化集成测试补充计划，基于现有测试用例分析 |

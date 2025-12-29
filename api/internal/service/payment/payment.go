@@ -12,6 +12,7 @@ import (
 	repoiface "gamelink/internal/repository/interfaces"
 	"gamelink/internal/repository/routingrule"
 	routingruleservice "gamelink/internal/service/routingrule"
+	"gamelink/internal/service/external"
 	"gamelink/pkg/apierr"
 	"gamelink/pkg/cache"
 )
@@ -82,6 +83,17 @@ func (s *PaymentService) InitRoutingEngine(
 	entityRepo collectionentity.CollectionEntityRepository,
 ) {
 	s.routingEngine = routingruleservice.NewRoutingEngine(ruleRepo, entityRepo)
+}
+
+// SetExternalConfig configures external API credentials for payment providers
+func (s *PaymentService) SetExternalConfig(cfg *external.Config) {
+	factory := NewProviderFactory(cfg)
+	s.providers = factory.CreateProviders()
+}
+
+// SetProviders sets payment providers directly (for testing)
+func (s *PaymentService) SetProviders(providers map[model.PaymentMethod]ProviderClient) {
+	s.providers = providers
 }
 
 // CreatePaymentRequest 创建支付请求

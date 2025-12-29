@@ -28,6 +28,7 @@ type Repository interface {
 	GetReferralByReferee(ctx context.Context, refereeID uint64) (*model.Referral, error)
 	CreateReferral(ctx context.Context, item *model.Referral) error
 	UpdateReferralStatus(ctx context.Context, id uint64, status model.ReferralStatus) error
+	DeleteReferral(ctx context.Context, id uint64) error
 	GetUserReferrals(ctx context.Context, userID uint64, limit int) ([]model.Referral, error)
 	ListRewards(ctx context.Context, opts referralrepo.RewardListOptions) ([]model.ReferralReward, int64, error)
 	GetRewardByID(ctx context.Context, id uint64) (*model.ReferralReward, error)
@@ -429,4 +430,102 @@ func (s *Service) GetReferralStats(ctx context.Context) (map[string]any, error) 
 // GetUserReferralStats 获取用户推荐统计
 func (s *Service) GetUserReferralStats(ctx context.Context, userID uint64) (map[string]any, error) {
 	return s.repo.GetUserReferralStats(ctx, userID)
+}
+
+// ============================================================================
+// 批量操作
+// ============================================================================
+
+// BatchOperationResult 批量操作结果
+type BatchOperationResult struct {
+	SuccessCount int      `json:"successCount"`
+	FailedCount  int      `json:"failedCount"`
+	FailedIDs    []uint64 `json:"failedIds,omitempty"`
+	TotalCount   int      `json:"totalCount"`
+}
+
+// BatchUpdateCodesStatusRequest 批量更新邀请码状态请求
+type BatchUpdateCodesStatusRequest struct {
+	IDs      []uint64
+	IsActive bool
+}
+
+// BatchUpdateCodesStatus 批量更新邀请码状态
+func (s *Service) BatchUpdateCodesStatus(ctx context.Context, ids []uint64, isActive bool) (*BatchOperationResult, error) {
+	result := &BatchOperationResult{
+		TotalCount: len(ids),
+		FailedIDs:  make([]uint64, 0),
+	}
+
+	for _, id := range ids {
+		req := UpdateCodeRequest{
+			ID:       id,
+			IsActive: &isActive,
+		}
+		if _, err := s.UpdateCode(ctx, req); err != nil {
+			result.FailedCount++
+			result.FailedIDs = append(result.FailedIDs, id)
+		} else {
+			result.SuccessCount++
+		}
+	}
+
+	return result, nil
+}
+
+// BatchDeleteCodes 批量删除邀请码
+func (s *Service) BatchDeleteCodes(ctx context.Context, ids []uint64) (*BatchOperationResult, error) {
+	result := &BatchOperationResult{
+		TotalCount: len(ids),
+		FailedIDs:  make([]uint64, 0),
+	}
+
+	for _, id := range ids {
+		if err := s.DeleteCode(ctx, id); err != nil {
+			result.FailedCount++
+			result.FailedIDs = append(result.FailedIDs, id)
+		} else {
+			result.SuccessCount++
+		}
+	}
+
+	return result, nil
+}
+
+// BatchUpdateReferralsStatus 批量更新推荐状态
+func (s *Service) BatchUpdateReferralsStatus(ctx context.Context, ids []uint64, status model.ReferralStatus) (*BatchOperationResult, error) {
+	result := &BatchOperationResult{
+		TotalCount: len(ids),
+		FailedIDs:  make([]uint64, 0),
+	}
+
+	for _, id := range ids {
+		if err := s.UpdateReferralStatus(ctx, id, status); err != nil {
+			result.FailedCount++
+			result.FailedIDs = append(result.FailedIDs, id)
+		} else {
+			result.SuccessCount++
+		}
+	}
+
+	return result, nil
+}
+
+// BatchDeleteReferrals 批量删除推荐记录
+func (s *Service) BatchDeleteReferrals(ctx context.Context, ids []uint64) (*BatchOperationResult, error) {
+	result := &BatchOperationResult{
+		TotalCount: len(ids),
+		FailedIDs:  make([]uint64, 0),
+	}
+
+	for _, id := range ids {
+		if err := s.repo.DeleteReferral(ctx, id); err != nil {
+			result.FailedCount++
+			result.FailedIDs = append(result.FailedIDs, id)
+		} else {
+			result.SuccessCount++
+		}
+	}
+
+	return result, nil
 }

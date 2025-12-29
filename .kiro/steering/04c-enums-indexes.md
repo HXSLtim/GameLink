@@ -366,6 +366,7 @@ disputed → refunded（争议通过，全额退款）
 | Order | OrderNo |
 | Player | UserID |
 | Game | Key |
+| GameCategory | Name |
 | RoleModel | Slug |
 | Permission | Method+Path |
 | Permission | Code |
@@ -477,12 +478,14 @@ disputed → refunded（争议通过，全额退款）
 - Withdraw: (Method)
 
 #### 游戏相关
+- GameCategory: (IsActive)
 - Game: (Category)
 - Game: (IsActive)
 - Game: (SortOrder)
 
 #### 服务项目相关
 - ServiceItem: (GameID)
+- ServiceItem: (CategoryID)
 - ServiceItem: (Category)
 - ServiceItem: (IsActive)
 - ServiceItem: (SubCategory)
@@ -622,6 +625,7 @@ disputed → refunded（争议通过，全额退款）
 
 | 日期 | 变更内容 |
 |------|----------|
+| 2025-12-29 | 新增 GameCategory 模型（游戏分类管理），ServiceItem 添加 CategoryID 外键关联 GameCategory |
 | 2025-12-25 | 统计模块索引修复：DailyStatistics→PlatformStatistics，PlayerStatistics 移除 StatsDate（累计统计无日期字段），新增 UserStatistics 唯一索引 |
 | 2025-12-25 | 代码与文档一致性同步：User 添加 LoginType 枚举和封禁字段（BanReason/BannedAt/BannedBy）；OrderDispute 重构（添加 InitiatorType/Type/EvidenceText/ChatSnapshotID/OriginalServiceID/AssignedServiceID 字段，支持双客服机制）；新增 DisputeTemplate/ChatSnapshot 模型；ChatGroup 添加 MessageRetentionDays 字段；CommissionRule.Type 改为 CommissionRuleType 枚举；CommissionRecord.SettlementStatus 改为 SettlementStatus 枚举并添加复合索引；MonthlySettlement.Status 改为 MonthlySettlementStatus 枚举并添加复合唯一索引；OrderItem.Status 改为 OrderItemStatus 枚举；OrderPlayer.Status 改为 OrderPlayerStatus 枚举；GameRank 添加 (GameID, Level) 复合索引 |
 | 2025-12-25 | 文档与代码一致性修复：ChatMessageAuditStatus 添加 deleted 状态；WithdrawStatus 移除 processing 状态；ChatGroup.DestroyAt 改为 DeactivatedAt；统计模块重构（DailyStatistics→PlatformStatistics，PlayerStatistics 改为累计统计，新增 UserStatistics）；争议时间窗口从24小时改为7天；Game 添加 CoverURL/IsActive/SortOrder 字段；OrderItem 添加 ReviewID 索引；UserBlock 添加复合唯一索引 |

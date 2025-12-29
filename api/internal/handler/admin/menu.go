@@ -238,3 +238,137 @@ func buildMenuTree(menus []model.Menu) []model.Menu {
 
 	return roots
 }
+
+// ============================================================================
+// 批量操作相关请求和响应结构
+// ============================================================================
+
+// BatchDeleteMenusRequest 批量删除菜单请求
+type BatchDeleteMenusRequest struct {
+	IDs []uint64 `json:"ids" binding:"required,min=1"`
+}
+
+// BatchUpdateMenuStatusRequest 批量更新菜单状态请求
+type BatchUpdateMenuStatusRequest struct {
+	Updates []struct {
+		ID     uint64 `json:"id" binding:"required"`
+		Hidden *bool  `json:"hidden"`
+	} `json:"updates" binding:"required,min=1"`
+}
+
+// BatchUpdateMenuSortRequest 批量更新菜单排序请求
+type BatchUpdateMenuSortRequest struct {
+	Updates []struct {
+		ID        uint64 `json:"id" binding:"required"`
+		SortOrder int    `json:"sortOrder"`
+	} `json:"updates" binding:"required,min=1"`
+}
+
+// ============================================================================
+// 批量操作处理器方法
+// ============================================================================
+
+// BatchDelete 批量删除菜单
+// @Summary      批量删除菜单
+// @Description  批量删除多个菜单，返回成功和失败的数量
+// @Tags         Admin - Menus
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string                      true  "Bearer {token}"
+// @Param        request        body      BatchDeleteMenusRequest      true  "批量删除请求"
+// @Success      200            {object}  model.APIResponse[menusvc.BatchDeleteResult]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /admin/menus/batch [delete]
+func (h *MenuHandler) BatchDelete(c *gin.Context) {
+	var req BatchDeleteMenusRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondBadRequest(c, "参数验证失败: "+err.Error())
+		return
+	}
+
+	result, err := h.svc.BatchDelete(c.Request.Context(), req.IDs)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	respondSuccessWithMsg(c, "批量删除完成", result)
+}
+
+// BatchUpdateStatus 批量更新菜单状态
+// @Summary      批量更新菜单状态
+// @Description  批量更新多个菜单的显示/隐藏状态，返回成功和失败的数量
+// @Tags         Admin - Menus
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string                          true  "Bearer {token}"
+// @Param        request        body      BatchUpdateMenuStatusRequest    true  "批量更新状态请求"
+// @Success      200            {object}  model.APIResponse[menusvc.BatchUpdateStatusResult]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /admin/menus/batch/status [put]
+func (h *MenuHandler) BatchUpdateStatus(c *gin.Context) {
+	var req BatchUpdateMenuStatusRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondBadRequest(c, "参数验证失败: "+err.Error())
+		return
+	}
+
+	// 转换请求格式
+	updates := make([]menusvc.MenuStatusUpdate, len(req.Updates))
+	for i, u := range req.Updates {
+		updates[i] = menusvc.MenuStatusUpdate{
+			ID:     u.ID,
+			Hidden: u.Hidden,
+		}
+	}
+
+	result, err := h.svc.BatchUpdateStatus(c.Request.Context(), updates)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	respondSuccessWithMsg(c, "批量状态更新完成", result)
+}
+
+// BatchUpdateSort 批量更新菜单排序
+// @Summary      批量更新菜单排序
+// @Description  批量更新多个菜单的排序值，返回成功和失败的数量
+// @Tags         Admin - Menus
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string                        true  "Bearer {token}"
+// @Param        request        body      BatchUpdateMenuSortRequest    true  "批量更新排序请求"
+// @Success      200            {object}  model.APIResponse[menusvc.BatchUpdateSortResult]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /admin/menus/batch/sort [put]
+func (h *MenuHandler) BatchUpdateSort(c *gin.Context) {
+	var req BatchUpdateMenuSortRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondBadRequest(c, "参数验证失败: "+err.Error())
+		return
+	}
+
+	// 转换请求格式
+	updates := make([]menusvc.MenuSortUpdate, len(req.Updates))
+	for i, u := range req.Updates {
+		updates[i] = menusvc.MenuSortUpdate{
+			ID:       u.ID,
+			SortOrder: u.SortOrder,
+		}
+	}
+
+	result, err := h.svc.BatchUpdateSort(c.Request.Context(), updates)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	respondSuccessWithMsg(c, "批量排序更新完成", result)
+}

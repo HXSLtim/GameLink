@@ -17,6 +17,7 @@ import (
 	"gamelink/pkg/metrics"
 	"gamelink/internal/repository/common"
 	gamerepo "gamelink/internal/repository/game"
+	gamecategoryrepo "gamelink/internal/repository/gamecategory"
 	orderrepo "gamelink/internal/repository/implementations"
 	paymentrepo "gamelink/internal/repository/order"
 	userrepo "gamelink/internal/repository/user"
@@ -105,6 +106,7 @@ func ProvideAdminService(orm *gorm.DB, cacheClient cache.Cache) *adminservice.Ad
 		menurepo.NewMenuRepository(orm),
 		statsrepo.NewStatsRepository(orm),
 		walletrepo.NewWalletRepository(orm),
+		gamecategoryrepo.NewGameCategoryRepository(orm),
 		cacheClient,
 	)
 	svc.SetTxManager(common.NewUnitOfWork(orm))

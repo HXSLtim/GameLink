@@ -46,3 +46,40 @@ super_admin:
 
 admin_auth:
   mode: "jwt"
+
+# 外部API凭证配置（可选，建议通过环境变量配置）
+external_apis:
+  # 微信支付配置
+  wechat_pay:
+    app_id: ""                    # 通过环境变量 WECHAT_PAY_APP_ID 配置
+    mch_id: ""                    # 通过环境变量 WECHAT_PAY_MCH_ID 配置
+    api_key: ""                   # 通过环境变量 WECHAT_PAY_API_KEY 配置
+    api_cert_path: ""             # 通过环境变量 WECHAT_PAY_API_CERT_PATH 配置
+    notify_url: ""                # 通过环境变量 WECHAT_PAY_NOTIFY_URL 配置
+    enabled: false                # 通过环境变量 WECHAT_PAY_ENABLED 配置
+
+  # 支付宝配置
+  alipay:
+    app_id: ""                    # 通过环境变量 ALIPAY_APP_ID 配置
+    private_key_path: ""          # 通过环境变量 ALIPAY_PRIVATE_KEY_PATH 配置
+    public_key_path: ""           # 通过环境变量 ALIPAY_PUBLIC_KEY_PATH 配置
+    notify_url: ""                # 通过环境变量 ALIPAY_NOTIFY_URL 配置
+    enabled: false                # 通过环境变量 ALIPAY_ENABLED 配置
+
+  # 短信服务配置
+  sms:
+    provider: ""                  # 通过环境变量 SMS_PROVIDER 配置
+    access_key: ""                # 通过环境变量 SMS_ACCESS_KEY 配置
+    secret_key: ""                # 通过环境变量 SMS_SECRET_KEY 配置
+    sign_name: ""                 # 通过环境变量 SMS_SIGN_NAME 配置
+    enabled: false                # 通过环境变量 SMS_ENABLED 配置
+
+  # OSS对象存储配置
+  oss:
+    provider: ""                  # 通过环境变量 OSS_PROVIDER 配置
+    endpoint: ""                  # 通过环境变量 OSS_ENDPOINT 配置
+    access_key: ""                # 通过环境变量 OSS_ACCESS_KEY 配置
+    secret_key: ""                # 通过环境变量 OSS_SECRET_KEY 配置
+    bucket: ""                    # 通过环境变量 OSS_BUCKET 配置
+    region: ""                    # 通过环境变量 OSS_REGION 配置
+    enabled: false                # 通过环境变量 OSS_ENABLED 配置

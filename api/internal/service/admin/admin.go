@@ -40,19 +40,20 @@ var (
 
 // AdminService 聚合后台管理所需的业务逻辑。
 type AdminService struct {
-	games        repository.GameRepository
-	users        repository.UserRepository
-	players      repository.PlayerRepository
-	orders       repoiface.OrderRepository
-	payments     repository.PaymentRepository
-	roles        repository.RoleRepository
-	serviceItems repository.ServiceItemRepository // 服务项目仓库
-	permissions  repository.PermissionRepository
-	menus        repository.MenuRepository
-	stats        repository.StatsRepository
-	wallets      repository.WalletRepository // 用户钱包仓库
-	cache        cache.Cache
-	tx           TxManager
+	games          repository.GameRepository
+	users          repository.UserRepository
+	players        repository.PlayerRepository
+	orders         repoiface.OrderRepository
+	payments       repository.PaymentRepository
+	roles          repository.RoleRepository
+	serviceItems   repository.ServiceItemRepository // 服务项目仓库
+	permissions    repository.PermissionRepository
+	menus          repository.MenuRepository
+	stats          repository.StatsRepository
+	wallets        repository.WalletRepository // 用户钱包仓库
+	gameCategories repository.GameCategoryRepository // 游戏分类仓库
+	cache          cache.Cache
+	tx             TxManager
 }
 
 const (
@@ -87,21 +88,23 @@ func NewAdminService(
 	menus repository.MenuRepository,
 	stats repository.StatsRepository,
 	wallets repository.WalletRepository,
+	gameCategories repository.GameCategoryRepository,
 	cache cache.Cache,
 ) *AdminService {
 	return &AdminService{
-		games:        games,
-		users:        users,
-		players:      players,
-		orders:       orders,
-		payments:     payments,
-		roles:        roles,
-		serviceItems: serviceItems,
-		permissions:  permissions,
-		menus:        menus,
-		stats:        stats,
-		wallets:      wallets,
-		cache:        cache,
+		games:          games,
+		users:          users,
+		players:        players,
+		orders:         orders,
+		payments:       payments,
+		roles:          roles,
+		serviceItems:   serviceItems,
+		permissions:    permissions,
+		menus:          menus,
+		stats:          stats,
+		wallets:        wallets,
+		gameCategories: gameCategories,
+		cache:          cache,
 	}
 }
 
@@ -1861,6 +1864,423 @@ func (s *AdminService) DeletePayment(ctx context.Context, id uint64) error {
 	return nil
 }
 
+// ============================================================================
+// Batch Payment Operations
+// ============================================================================
+
+// BatchCaptureResult 批量收款操作结果
+type BatchCaptureResult struct {
+	SuccessCount int    `json:"successCount"`
+	FailedCount  int    `json:"failedCount"`
+	FailedIDs    []uint64 `json:"failedIds,omitempty"`
+	Errors       []BatchOperationError `json:"errors,omitempty"`
+}
+
+// BatchOperationError 批量操作错误详情
+type BatchOperationError struct {
+	PaymentID uint64 `json:"paymentId"`
+	Message   string `json:"message"`
+}
+
+// BatchCaptureRequest 批量收款请求
+type BatchCaptureRequest struct {
+	PaymentIDs       []uint64 `json:"paymentIds" binding:"required,min=1,max=500"`
+	ProviderTradeNo  string   `json:"providerTradeNo,omitempty"`
+	PaidAt           *time.Time `json:"paidAt,omitempty"`
+}
+
+// BatchCapture 批量收款 - 将多个pending状态的支付标记为已支付
+// 业务规则：
+// 1. 只能处理pending状态的支付
+// 2. 支付会设置为paid状态
+// 3. 返回成功/失败计数及错误详情
+func (s *AdminService) BatchCapture(ctx context.Context, req BatchCaptureRequest) (*BatchCaptureResult, error) {
+	if len(req.PaymentIDs) == 0 {
+		return nil, apierr.BadRequest("payment ids cannot be empty")
+	}
+	if len(req.PaymentIDs) > 500 {
+		return nil, apierr.BadRequest("maximum 500 payments allowed per batch")
+	}
+
+	result := &BatchCaptureResult{
+		FailedIDs: make([]uint64, 0),
+		Errors:    make([]BatchOperationError, 0),
+	}
+
+	paidAt := req.PaidAt
+	if paidAt == nil {
+		now := time.Now().UTC()
+		paidAt = &now
+	}
+
+	for _, paymentID := range req.PaymentIDs {
+		payment, err := s.payments.Get(ctx, paymentID)
+		if err != nil {
+			if errors.Is(err, repository.ErrNotFound) {
+				result.FailedCount++
+				result.FailedIDs = append(result.FailedIDs, paymentID)
+				result.Errors = append(result.Errors, BatchOperationError{
+					PaymentID: paymentID,
+					Message:   "payment not found",
+				})
+				continue
+			}
+			result.FailedCount++
+			result.FailedIDs = append(result.FailedIDs, paymentID)
+			result.Errors = append(result.Errors, BatchOperationError{
+				PaymentID: paymentID,
+				Message:   fmt.Sprintf("failed to get payment: %v", err),
+			})
+			continue
+		}
+
+		// 验证状态：只能capture pending状态的支付
+		if payment.Status != model.PaymentStatusPending {
+			result.FailedCount++
+			result.FailedIDs = append(result.FailedIDs, paymentID)
+			result.Errors = append(result.Errors, BatchOperationError{
+				PaymentID: paymentID,
+				Message:   fmt.Sprintf("invalid status for capture: %s (expected: pending)", payment.Status),
+			})
+			continue
+		}
+
+		// 更新支付状态
+		payment.Status = model.PaymentStatusPaid
+		payment.PaidAt = paidAt
+		if req.ProviderTradeNo != "" {
+			payment.ProviderTradeNo = strings.TrimSpace(req.ProviderTradeNo)
+		} else {
+			payment.ProviderTradeNo = fmt.Sprintf("batch_capture_%d_%d", paymentID, time.Now().Unix())
+		}
+
+		if err := s.payments.Update(ctx, payment); err != nil {
+			result.FailedCount++
+			result.FailedIDs = append(result.FailedIDs, paymentID)
+			result.Errors = append(result.Errors, BatchOperationError{
+				PaymentID: paymentID,
+				Message:   fmt.Sprintf("failed to update payment: %v", err),
+			})
+			continue
+		}
+
+		result.SuccessCount++
+
+		// 异步记录日志
+		s.appendLogAsync(ctx, string(model.OpEntityPayment), payment.ID, string(model.OpActionCapture), map[string]any{
+			"batch_operation": true,
+			"trade_no":       payment.ProviderTradeNo,
+		})
+	}
+
+	s.invalidateCache(ctx, cacheKeyPayments)
+	return result, nil
+}
+
+// BatchRefundRequest 批量退款请求
+type BatchRefundRequest struct {
+	PaymentIDs  []uint64 `json:"paymentIds" binding:"required,min=1,max=500"`
+	Reason      string   `json:"reason" binding:"required,max=500"`
+	RefundedAt  *time.Time `json:"refundedAt,omitempty"`
+}
+
+// BatchRefund 批量退款 - 退款多个已支付的支付
+// 业务规则：
+// 1. 只能退款paid状态的支付
+// 2. 全额退款，状态更新为refunded
+// 3. 订单状态也会更新为refunded
+func (s *AdminService) BatchRefund(ctx context.Context, req BatchRefundRequest) (*BatchCaptureResult, error) {
+	if len(req.PaymentIDs) == 0 {
+		return nil, apierr.BadRequest("payment ids cannot be empty")
+	}
+	if len(req.PaymentIDs) > 500 {
+		return nil, apierr.BadRequest("maximum 500 payments allowed per batch")
+	}
+	if strings.TrimSpace(req.Reason) == "" {
+		return nil, apierr.BadRequest("refund reason is required")
+	}
+
+	result := &BatchCaptureResult{
+		FailedIDs: make([]uint64, 0),
+		Errors:    make([]BatchOperationError, 0),
+	}
+
+	refundedAt := req.RefundedAt
+	if refundedAt == nil {
+		now := time.Now().UTC()
+		refundedAt = &now
+	}
+
+	for _, paymentID := range req.PaymentIDs {
+		payment, err := s.payments.Get(ctx, paymentID)
+		if err != nil {
+			if errors.Is(err, repository.ErrNotFound) {
+				result.FailedCount++
+				result.FailedIDs = append(result.FailedIDs, paymentID)
+				result.Errors = append(result.Errors, BatchOperationError{
+					PaymentID: paymentID,
+					Message:   "payment not found",
+				})
+				continue
+			}
+			result.FailedCount++
+			result.FailedIDs = append(result.FailedIDs, paymentID)
+			result.Errors = append(result.Errors, BatchOperationError{
+				PaymentID: paymentID,
+				Message:   fmt.Sprintf("failed to get payment: %v", err),
+			})
+			continue
+		}
+
+		// 验证状态：只能退款paid状态的支付
+		if payment.Status != model.PaymentStatusPaid {
+			result.FailedCount++
+			result.FailedIDs = append(result.FailedIDs, paymentID)
+			result.Errors = append(result.Errors, BatchOperationError{
+				PaymentID: paymentID,
+				Message:   fmt.Sprintf("invalid status for refund: %s (expected: paid)", payment.Status),
+			})
+			continue
+		}
+
+		// 检查是否已经全额退款
+		if payment.IsFullyRefunded() {
+			result.FailedCount++
+			result.FailedIDs = append(result.FailedIDs, paymentID)
+			result.Errors = append(result.Errors, BatchOperationError{
+				PaymentID: paymentID,
+				Message:   "payment is already fully refunded",
+			})
+			continue
+		}
+
+		// 更新支付状态
+		payment.Status = model.PaymentStatusRefunded
+		payment.RefundedAt = refundedAt
+		payment.RefundedAmountCents = payment.AmountCents
+		payment.ProviderTradeNo = fmt.Sprintf("batch_refund_%d_%d", paymentID, time.Now().Unix())
+
+		if err := s.payments.Update(ctx, payment); err != nil {
+			result.FailedCount++
+			result.FailedIDs = append(result.FailedIDs, paymentID)
+			result.Errors = append(result.Errors, BatchOperationError{
+				PaymentID: paymentID,
+				Message:   fmt.Sprintf("failed to update payment: %v", err),
+			})
+			continue
+		}
+
+		// 更新关联订单状态
+		order, err := s.orders.Get(ctx, payment.OrderID)
+		if err == nil {
+			order.Status = model.OrderStatusRefunded
+			order.RefundAmountCents = payment.AmountCents
+			order.RefundReason = req.Reason
+			order.RefundedAt = refundedAt
+			_ = s.orders.Update(ctx, order)
+		}
+
+		result.SuccessCount++
+
+		// 异步记录日志
+		s.appendLogAsync(ctx, string(model.OpEntityPayment), payment.ID, string(model.OpActionRefund), map[string]any{
+			"batch_operation":    true,
+			"refund_amount_cents": payment.AmountCents,
+			"reason":             req.Reason,
+		})
+	}
+
+	s.invalidateCache(ctx, cacheKeyPayments)
+	return result, nil
+}
+
+// BatchCancelRequest 批量取消支付请求
+type BatchCancelRequest struct {
+	PaymentIDs []uint64 `json:"paymentIds" binding:"required,min=1,max=500"`
+}
+
+// BatchCancel 批量取消支付 - 取消多个pending状态的支付
+// 业务规则：
+// 1. 只能取消pending状态的支付
+// 2. 支付状态更新为failed
+func (s *AdminService) BatchCancel(ctx context.Context, req BatchCancelRequest) (*BatchCaptureResult, error) {
+	if len(req.PaymentIDs) == 0 {
+		return nil, apierr.BadRequest("payment ids cannot be empty")
+	}
+	if len(req.PaymentIDs) > 500 {
+		return nil, apierr.BadRequest("maximum 500 payments allowed per batch")
+	}
+
+	result := &BatchCaptureResult{
+		FailedIDs: make([]uint64, 0),
+		Errors:    make([]BatchOperationError, 0),
+	}
+
+	for _, paymentID := range req.PaymentIDs {
+		payment, err := s.payments.Get(ctx, paymentID)
+		if err != nil {
+			if errors.Is(err, repository.ErrNotFound) {
+				result.FailedCount++
+				result.FailedIDs = append(result.FailedIDs, paymentID)
+				result.Errors = append(result.Errors, BatchOperationError{
+					PaymentID: paymentID,
+					Message:   "payment not found",
+				})
+				continue
+			}
+			result.FailedCount++
+			result.FailedIDs = append(result.FailedIDs, paymentID)
+			result.Errors = append(result.Errors, BatchOperationError{
+				PaymentID: paymentID,
+				Message:   fmt.Sprintf("failed to get payment: %v", err),
+			})
+			continue
+		}
+
+		// 验证状态：只能取消pending状态的支付
+		if payment.Status != model.PaymentStatusPending {
+			result.FailedCount++
+			result.FailedIDs = append(result.FailedIDs, paymentID)
+			result.Errors = append(result.Errors, BatchOperationError{
+				PaymentID: paymentID,
+				Message:   fmt.Sprintf("invalid status for cancel: %s (expected: pending)", payment.Status),
+			})
+			continue
+		}
+
+		// 更新支付状态为failed（表示已取消）
+		payment.Status = model.PaymentStatusFailed
+
+		if err := s.payments.Update(ctx, payment); err != nil {
+			result.FailedCount++
+			result.FailedIDs = append(result.FailedIDs, paymentID)
+			result.Errors = append(result.Errors, BatchOperationError{
+				PaymentID: paymentID,
+				Message:   fmt.Sprintf("failed to update payment: %v", err),
+			})
+			continue
+		}
+
+		result.SuccessCount++
+
+		// 异步记录日志
+		s.appendLogAsync(ctx, string(model.OpEntityPayment), payment.ID, string(model.OpActionCancel), map[string]any{
+			"batch_operation": true,
+		})
+	}
+
+	s.invalidateCache(ctx, cacheKeyPayments)
+	return result, nil
+}
+
+// BatchUpdateStatusRequest 批量更新支付状态请求
+type BatchUpdateStatusRequest struct {
+	PaymentIDs []uint64              `json:"paymentIds" binding:"required,min=1,max=500"`
+	Status     model.PaymentStatus   `json:"-" binding:"-"` // Not used for binding, set from handler
+}
+
+// BatchUpdateStatus 批量更新支付状态
+// 业务规则：
+// 1. 验证状态转换是否有效
+// 2. 只允许有效的状态转换
+func (s *AdminService) BatchUpdateStatus(ctx context.Context, req BatchUpdateStatusRequest) (*BatchCaptureResult, error) {
+	if len(req.PaymentIDs) == 0 {
+		return nil, apierr.BadRequest("payment ids cannot be empty")
+	}
+	if len(req.PaymentIDs) > 500 {
+		return nil, apierr.BadRequest("maximum 500 payments allowed per batch")
+	}
+
+	// 验证状态是否有效
+	if !isValidPaymentStatus(req.Status) {
+		return nil, apierr.BadRequest("invalid payment status")
+	}
+
+	result := &BatchCaptureResult{
+		FailedIDs: make([]uint64, 0),
+		Errors:    make([]BatchOperationError, 0),
+	}
+
+	for _, paymentID := range req.PaymentIDs {
+		payment, err := s.payments.Get(ctx, paymentID)
+		if err != nil {
+			if errors.Is(err, repository.ErrNotFound) {
+				result.FailedCount++
+				result.FailedIDs = append(result.FailedIDs, paymentID)
+				result.Errors = append(result.Errors, BatchOperationError{
+					PaymentID: paymentID,
+					Message:   "payment not found",
+				})
+				continue
+			}
+			result.FailedCount++
+			result.FailedIDs = append(result.FailedIDs, paymentID)
+			result.Errors = append(result.Errors, BatchOperationError{
+				PaymentID: paymentID,
+				Message:   fmt.Sprintf("failed to get payment: %v", err),
+			})
+			continue
+		}
+
+		// 验证状态转换
+		if !isAllowedPaymentTransition(payment.Status, req.Status) {
+			result.FailedCount++
+			result.FailedIDs = append(result.FailedIDs, paymentID)
+			result.Errors = append(result.Errors, BatchOperationError{
+				PaymentID: paymentID,
+				Message:   fmt.Sprintf("invalid status transition from %s to %s", payment.Status, req.Status),
+			})
+			continue
+		}
+
+		// 如果是转换为paid，设置PaidAt
+		if req.Status == model.PaymentStatusPaid && payment.PaidAt == nil {
+			now := time.Now().UTC()
+			payment.PaidAt = &now
+		}
+
+		// 如果是转换为refunded，设置RefundedAt
+		if req.Status == model.PaymentStatusRefunded && payment.RefundedAt == nil {
+			now := time.Now().UTC()
+			payment.RefundedAt = &now
+			payment.RefundedAmountCents = payment.AmountCents
+		}
+
+		// 更新支付状态
+		payment.Status = req.Status
+
+		if err := s.payments.Update(ctx, payment); err != nil {
+			result.FailedCount++
+			result.FailedIDs = append(result.FailedIDs, paymentID)
+			result.Errors = append(result.Errors, BatchOperationError{
+				PaymentID: paymentID,
+				Message:   fmt.Sprintf("failed to update payment: %v", err),
+			})
+			continue
+		}
+
+		result.SuccessCount++
+
+		// 异步记录日志
+		action := model.OpActionUpdateStatus
+		if req.Status == model.PaymentStatusPaid {
+			action = model.OpActionCapture
+		} else if req.Status == model.PaymentStatusRefunded {
+			action = model.OpActionRefund
+		} else if req.Status == model.PaymentStatusFailed {
+			action = model.OpActionCancel
+		}
+		s.appendLogAsync(ctx, string(model.OpEntityPayment), payment.ID, string(action), map[string]any{
+			"batch_operation": true,
+			"old_status":      string(payment.Status),
+			"new_status":      string(req.Status),
+		})
+	}
+
+	s.invalidateCache(ctx, cacheKeyPayments)
+	return result, nil
+}
+
 // GetPaymentLogs returns operation logs for a payment.
 // Requirements: 2.5
 func (s *AdminService) GetPaymentLogs(ctx context.Context, paymentID uint64, opts repository.OperationLogListOptions) ([]model.OperationLog, int64, error) {
@@ -3022,4 +3442,36 @@ func (s *AdminService) DeleteReviewReply(ctx context.Context, userID, replyID ui
 
 		return nil
 	})
+}
+
+// BatchUpdateGamesStatus 批量更新游戏状态（启用/禁用）。
+func (s *AdminService) BatchUpdateGamesStatus(ctx context.Context, ids []uint64, isActive bool) (int64, error) {
+	if len(ids) == 0 {
+		return 0, apierr.BadRequest("no game ids provided")
+	}
+	updated, err := s.games.BatchUpdateStatus(ctx, ids, isActive)
+	if err != nil {
+		return 0, WrapError(err, "batch update games status")
+	}
+	s.invalidateCache(ctx, cacheKeyGames)
+	for _, id := range ids {
+		s.appendLogAsync(ctx, string(model.OpEntityGame), id, string(model.OpActionUpdate), map[string]any{"is_active": isActive})
+	}
+	return updated, nil
+}
+
+// BatchUpdateGamesSortOrder 批量更新游戏排序。
+func (s *AdminService) BatchUpdateGamesSortOrder(ctx context.Context, updates map[uint64]int) (int64, error) {
+	if len(updates) == 0 {
+		return 0, apierr.BadRequest("no updates provided")
+	}
+	updated, err := s.games.BatchUpdateSortOrder(ctx, updates)
+	if err != nil {
+		return 0, WrapError(err, "batch update games sort order")
+	}
+	s.invalidateCache(ctx, cacheKeyGames)
+	for id := range updates {
+		s.appendLogAsync(ctx, string(model.OpEntityGame), id, string(model.OpActionUpdate), map[string]any{"sort_order": updates[id]})
+	}
+	return updated, nil
 }

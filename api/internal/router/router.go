@@ -248,6 +248,7 @@ func (r *Router) registerAdminRoutes(api *gin.RouterGroup) {
 // registerRBACRoutes 注册 RBAC 相关路由
 func (r *Router) registerRBACRoutes(rbacGroup *gin.RouterGroup, roleSvc *adminservice.RoleService, permService *adminservice.PermissionService) {
 	roleHandler := adminhandler.NewRoleHandler(roleSvc)
+	// roleBatchHandler := adminhandler.NewRoleBatchHandler(roleSvc) // TODO: Implement role batch handler
 	permHandler := adminhandler.NewPermissionHandlerWithRoleService(permService, roleSvc)
 	menuSvc := adminservice.NewMenuService(adminrepo.NewMenuRepository(r.orm))
 	menuHandler := adminhandler.NewMenuHandlerWithRoleService(menuSvc, permService, roleSvc)
@@ -278,6 +279,12 @@ func (r *Router) registerRBACRoutes(rbacGroup *gin.RouterGroup, roleSvc *adminse
 		rbacGroup.GET("/users/:id/roles", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/:id/roles"), roleHandler.GetUserRoles)
 		rbacGroup.PUT("/users/:id/roles", r.permMiddleware.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/users/:id/roles"), roleHandler.UpdateUserRoles)
 		rbacGroup.PUT("/users/roles/batch", r.permMiddleware.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/users/roles/batch"), roleHandler.BatchAssignRolesToUsers)
+		// 批量角色操作 API（新的简化接口）- TODO: Implement RoleBatchHandler
+		// rbacGroup.POST("/roles/batch/delete", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/roles/batch/delete"), roleBatchHandler.BatchDeleteRoles)
+		// rbacGroup.POST("/roles/batch/assign-permissions", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/roles/batch/assign-permissions"), roleBatchHandler.BatchAssignPermissions)
+		// 批量角色操作 API（旧接口，保留兼容性）
+		rbacGroup.DELETE("/roles/batch", r.permMiddleware.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/roles/batch"), roleHandler.BatchDeleteRoles)
+		rbacGroup.PUT("/roles/batch/permissions", r.permMiddleware.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/roles/batch/permissions"), roleHandler.BatchAssignPermissionsToRoles)
 
 		// 权限管理
 		rbacGroup.GET("/permissions/me", permHandler.GetCurrentUserPermissions) // 保留旧路径兼容性
@@ -292,6 +299,9 @@ func (r *Router) registerRBACRoutes(rbacGroup *gin.RouterGroup, roleSvc *adminse
 		rbacGroup.DELETE("/permissions/:id", r.permMiddleware.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/permissions/:id"), permHandler.DeletePermission)
 		// Note: /roles/:id/permissions is already registered above with roleHandler.GetRolePermissionIDs
 		rbacGroup.GET("/users/:id/permissions", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/:id/permissions"), permHandler.GetUserPermissions)
+		// 批量权限操作 API
+		rbacGroup.POST("/permissions/batch/delete", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/permissions/batch/delete"), permHandler.BatchDeletePermissions)
+		rbacGroup.DELETE("/permissions/batch", r.permMiddleware.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/permissions/batch"), permHandler.BatchDelete)
 
 		// 菜单管理（动态路由配置）
 		rbacGroup.GET("/menus/me", menuHandler.ListMyMenus) // 保留旧路径兼容性
@@ -300,6 +310,14 @@ func (r *Router) registerRBACRoutes(rbacGroup *gin.RouterGroup, roleSvc *adminse
 		rbacGroup.GET("/menus/:id", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/menus/:id"), menuHandler.Get)
 		rbacGroup.PUT("/menus/:id", r.permMiddleware.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/menus/:id"), menuHandler.Update)
 		rbacGroup.DELETE("/menus/:id", r.permMiddleware.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/menus/:id"), menuHandler.Delete)
+		// 批量菜单操作 API (新格式，使用 POST 方法) - TODO: Implement in MenuHandler
+		// rbacGroup.POST("/menus/batch/delete", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/menus/batch/delete"), menuHandler.BatchDeleteMenus)
+		// rbacGroup.POST("/menus/batch/status", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/menus/batch/status"), menuHandler.BatchUpdateMenuStatus)
+		// rbacGroup.POST("/menus/batch/order", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/menus/batch/order"), menuHandler.BatchUpdateMenuOrder)
+		// 旧批量菜单操作 API (保持向后兼容)
+		rbacGroup.DELETE("/menus/batch", r.permMiddleware.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/menus/batch"), menuHandler.BatchDelete)
+		rbacGroup.PUT("/menus/batch/status", r.permMiddleware.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/menus/batch/status"), menuHandler.BatchUpdateStatus)
+		rbacGroup.PUT("/menus/batch/sort", r.permMiddleware.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/menus/batch/sort"), menuHandler.BatchUpdateSort)
 	}
 }
 
@@ -317,6 +335,10 @@ func (r *Router) registerAdminBusinessRoutes(rbacGroup *gin.RouterGroup) {
 		disputeGroup.POST("/:id/assign", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/disputes/:id/assign"), disputeHandler.AssignDispute)
 		disputeGroup.POST("/:id/rollback", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/disputes/:id/rollback"), disputeHandler.RollbackAssignment)
 		disputeGroup.POST("/:id/resolve", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/disputes/:id/resolve"), disputeHandler.ResolveDispute)
+		// Batch operations
+		disputeGroup.POST("/batch/assign", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/disputes/batch/assign"), disputeHandler.BatchAssignDisputes)
+		disputeGroup.PUT("/batch/status", r.permMiddleware.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/disputes/batch/status"), disputeHandler.BatchUpdateDisputesStatus)
+		disputeGroup.POST("/batch/close", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/disputes/batch/close"), disputeHandler.BatchCloseDisputes)
 	}
 
 	// Commission management routes
@@ -325,9 +347,9 @@ func (r *Router) registerAdminBusinessRoutes(rbacGroup *gin.RouterGroup) {
 	// Service Item management routes
 	adminhandler.RegisterServiceItemRoutes(rbacGroup, r.services.serviceItemSvc)
 
-	// Withdraw management routes
+	// Withdraw management routes - TODO: Add WithdrawRoutingService
 	withdrawRepo := withdrawrepo.NewWithdrawRepository(r.orm)
-	adminhandler.RegisterWithdrawRoutes(rbacGroup, withdrawRepo)
+	// adminhandler.RegisterWithdrawRoutes(rbacGroup, withdrawRepo, r.services.withdrawRoutingSvc)
 
 	// Dashboard routes
 	userRepo := userrepo.NewUserRepository(r.orm)
@@ -388,6 +410,9 @@ func (r *Router) registerAdminBusinessRoutes(rbacGroup *gin.RouterGroup) {
 
 	// Referral routes (推荐管理)
 	r.registerReferralRoutes(rbacGroup)
+
+	// Game Category routes (游戏分类管理)
+	r.registerGameCategoryRoutes(rbacGroup)
 }
 
 // registerMonitorRoutes 注册监控相关路由
@@ -550,6 +575,26 @@ func (r *Router) registerTeamRoutes(rbacGroup *gin.RouterGroup) {
 // registerReferralRoutes 注册推荐管理路由
 func (r *Router) registerReferralRoutes(rbacGroup *gin.RouterGroup) {
 	adminhandler.RegisterReferralRoutes(rbacGroup, r.services.referralSvc, r.permMiddleware)
+}
+
+// registerGameCategoryRoutes 注册游戏分类管理路由
+func (r *Router) registerGameCategoryRoutes(rbacGroup *gin.RouterGroup) {
+	categoryHandler := adminhandler.NewGameCategoryHandler(r.adminSvc)
+
+	categoryGroup := rbacGroup.Group("/game-categories")
+	categoryGroup.Use(r.permMiddleware.RequireAuth())
+	{
+		// 游戏分类 CRUD
+		categoryGroup.GET("", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/game-categories"), categoryHandler.ListCategories)
+		categoryGroup.POST("", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/game-categories"), categoryHandler.CreateCategory)
+		categoryGroup.GET("/:id", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/game-categories/:id"), categoryHandler.GetCategory)
+		categoryGroup.PUT("/:id", r.permMiddleware.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/game-categories/:id"), categoryHandler.UpdateCategory)
+		categoryGroup.DELETE("/:id", r.permMiddleware.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/game-categories/:id"), categoryHandler.DeleteCategory)
+
+		// 批量操作
+		categoryGroup.POST("/batch/status", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/game-categories/batch/status"), categoryHandler.BatchUpdateStatus)
+		categoryGroup.POST("/batch/delete", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/game-categories/batch/delete"), categoryHandler.BatchDeleteCategories)
+	}
 }
 
 // resolveGinMode 解析 Gin 运行模式

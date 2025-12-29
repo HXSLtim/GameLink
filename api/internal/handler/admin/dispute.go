@@ -369,3 +369,213 @@ func (h *DisputeHandler) ResolveDispute(c *gin.Context) {
 		"message": fmt.Sprintf("Dispute resolved with %s decision", resolution),
 	})
 }
+
+// ============================================================================
+// Batch Operations
+// ============================================================================
+
+// DisputeBatchOperationResult represents the result of a dispute batch operation
+type DisputeBatchOperationResult struct {
+	Success      bool                         `json:"success"`
+	Message      string                       `json:"message"`
+	SuccessCount int                          `json:"successCount"`
+	FailedCount  int                          `json:"failedCount"`
+	Errors       []DisputeBatchOperationError `json:"errors,omitempty"`
+}
+
+// DisputeBatchOperationError represents an error that occurred during dispute batch operation
+type DisputeBatchOperationError struct {
+	DisputeID uint64 `json:"disputeId"`
+	Error     string `json:"error"`
+}
+
+// BatchAssignDisputesRequest represents the request to batch assign disputes
+type BatchAssignDisputesRequest struct {
+	DisputeIDs         []uint64 `json:"disputeIds" binding:"required,min=1,max=100"`
+	AssignedServiceID  uint64   `json:"assignedServiceId" binding:"required"`
+	OriginalServiceID  *uint64  `json:"originalServiceId,omitempty"`
+}
+
+// BatchAssignDisputes assigns multiple disputes to a CS agent
+// @Summary      批量分配纠纷
+// @Description  批量将多个纠纷分配给指定的客服人员处理
+// @Tags         Admin/Disputes
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body  BatchAssignDisputesRequest  true  "批量分配请求"
+// @Success      200  {object}  model.APIResponse[DisputeBatchOperationResult]
+// @Failure      400  {object}  model.ErrorResponse
+// @Failure      500  {object}  model.ErrorResponse
+// @Router       /admin/disputes/batch/assign [post]
+func (h *DisputeHandler) BatchAssignDisputes(c *gin.Context) {
+	var req BatchAssignDisputesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondBadRequest(c, apierr.ErrInvalidJSONPayload)
+		return
+	}
+
+	// Get actor user ID from context
+	actorUserID, exists := c.Get("userID")
+	if !exists {
+		respondError(c, apierr.Unauthorized(apierr.ErrUserIDNotInContext))
+		return
+	}
+
+	svcResult, err := h.svc.BatchAssignDisputes(c.Request.Context(), orderservice.BatchAssignDisputesRequest{
+		DisputeIDs:         req.DisputeIDs,
+		AssignedServiceID:  req.AssignedServiceID,
+		OriginalServiceID:  req.OriginalServiceID,
+		ActorUserID:        actorUserID.(uint64),
+	})
+
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	// Convert service result to handler result
+	result := DisputeBatchOperationResult{
+		Success:      svcResult.Success,
+		Message:      svcResult.Message,
+		SuccessCount: svcResult.SuccessCount,
+		FailedCount:  svcResult.FailedCount,
+		Errors:       make([]DisputeBatchOperationError, 0, len(svcResult.Errors)),
+	}
+	for _, e := range svcResult.Errors {
+		result.Errors = append(result.Errors, DisputeBatchOperationError{
+			DisputeID: e.DisputeID,
+			Error:     e.Error,
+		})
+	}
+
+	respondSuccess(c, result)
+}
+
+// BatchUpdateDisputesStatusRequest represents the request to batch update dispute status
+type BatchUpdateDisputesStatusRequest struct {
+	DisputeIDs []uint64 `json:"disputeIds" binding:"required,min=1,max=100"`
+	Status     string   `json:"status" binding:"required,oneof=assigned mediating canceled"`
+}
+
+// BatchUpdateDisputesStatus updates status for multiple disputes
+// @Summary      批量更新纠纷状态
+// @Description  批量更新多个纠纷的状态（已分配/调解中/已取消）
+// @Tags         Admin/Disputes
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body  BatchUpdateDisputesStatusRequest  true  "批量更新状态请求"
+// @Success      200  {object}  model.APIResponse[DisputeBatchOperationResult]
+// @Failure      400  {object}  model.ErrorResponse
+// @Failure      500  {object}  model.ErrorResponse
+// @Router       /admin/disputes/batch/status [put]
+func (h *DisputeHandler) BatchUpdateDisputesStatus(c *gin.Context) {
+	var req BatchUpdateDisputesStatusRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondBadRequest(c, apierr.ErrInvalidJSONPayload)
+		return
+	}
+
+	// Get actor user ID from context
+	actorUserID, exists := c.Get("userID")
+	if !exists {
+		respondError(c, apierr.Unauthorized(apierr.ErrUserIDNotInContext))
+		return
+	}
+
+	status := model.DisputeStatus(req.Status)
+
+	svcResult, err := h.svc.BatchUpdateDisputesStatus(c.Request.Context(), orderservice.BatchUpdateDisputesStatusRequest{
+		DisputeIDs:  req.DisputeIDs,
+		Status:      status,
+		ActorUserID: actorUserID.(uint64),
+	})
+
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	// Convert service result to handler result
+	result := DisputeBatchOperationResult{
+		Success:      svcResult.Success,
+		Message:      svcResult.Message,
+		SuccessCount: svcResult.SuccessCount,
+		FailedCount:  svcResult.FailedCount,
+		Errors:       make([]DisputeBatchOperationError, 0, len(svcResult.Errors)),
+	}
+	for _, e := range svcResult.Errors {
+		result.Errors = append(result.Errors, DisputeBatchOperationError{
+			DisputeID: e.DisputeID,
+			Error:     e.Error,
+		})
+	}
+
+	respondSuccess(c, result)
+}
+
+// BatchCloseDisputesRequest represents the request to batch close disputes
+type BatchCloseDisputesRequest struct {
+	DisputeIDs    []uint64 `json:"disputeIds" binding:"required,min=1,max=100"`
+	Resolution    string   `json:"resolution" binding:"required,oneof=refund partial reject"`
+	ResolveRemark string   `json:"resolveRemark" binding:"required"`
+}
+
+// BatchCloseDisputes closes multiple disputes with resolution
+// @Summary      批量关闭纠纷
+// @Description  批量关闭多个纠纷并做出处理决定（全额退款/部分退款/驳回）
+// @Tags         Admin/Disputes
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body  BatchCloseDisputesRequest  true  "批量关闭请求"
+// @Success      200  {object}  model.APIResponse[DisputeBatchOperationResult]
+// @Failure      400  {object}  model.ErrorResponse
+// @Failure      500  {object}  model.ErrorResponse
+// @Router       /admin/disputes/batch/close [post]
+func (h *DisputeHandler) BatchCloseDisputes(c *gin.Context) {
+	var req BatchCloseDisputesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondBadRequest(c, apierr.ErrInvalidJSONPayload)
+		return
+	}
+
+	// Get actor user ID from context
+	actorUserID, exists := c.Get("userID")
+	if !exists {
+		respondError(c, apierr.Unauthorized(apierr.ErrUserIDNotInContext))
+		return
+	}
+
+	resolution := model.DisputeResolution(req.Resolution)
+
+	svcResult, err := h.svc.BatchCloseDisputes(c.Request.Context(), orderservice.BatchCloseDisputesRequest{
+		DisputeIDs:    req.DisputeIDs,
+		Resolution:    resolution,
+		ResolveRemark: req.ResolveRemark,
+		ActorUserID:   actorUserID.(uint64),
+	})
+
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	// Convert service result to handler result
+	result := DisputeBatchOperationResult{
+		Success:      svcResult.Success,
+		Message:      svcResult.Message,
+		SuccessCount: svcResult.SuccessCount,
+		FailedCount:  svcResult.FailedCount,
+		Errors:       make([]DisputeBatchOperationError, 0, len(svcResult.Errors)),
+	}
+	for _, e := range svcResult.Errors {
+		result.Errors = append(result.Errors, DisputeBatchOperationError{
+			DisputeID: e.DisputeID,
+			Error:     e.Error,
+		})
+	}
+
+	respondSuccess(c, result)
+}

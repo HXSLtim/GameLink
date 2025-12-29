@@ -103,11 +103,13 @@ func (r *gormSensitiveWordRepository) Update(ctx context.Context, word *model.Se
 		}
 	}
 
-	// 更新敏感词
+	// 更新敏感词 - 支持所有字段
 	tx := r.db.WithContext(ctx).Model(word).Where("id = ?", word.ID).Updates(map[string]any{
-		"word":     word.Word,
-		"category": word.Category,
-		"severity": word.Severity,
+		"word":       word.Word,
+		"category":   word.Category,
+		"severity":   word.Severity,
+		"match_type": word.MatchType,
+		"is_active":  word.IsActive,
 	})
 	if tx.Error != nil {
 		return tx.Error

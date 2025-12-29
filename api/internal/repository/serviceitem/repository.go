@@ -121,6 +121,18 @@ func (r *serviceItemRepository) Delete(ctx context.Context, id uint64) error {
 	return r.db.WithContext(ctx).Delete(&model.ServiceItem{}, id).Error
 }
 
+// BatchDelete 批量删除服务项目
+func (r *serviceItemRepository) BatchDelete(ctx context.Context, ids []uint64) (int64, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+	tx := r.db.WithContext(ctx).Delete(&model.ServiceItem{}, ids)
+	if tx.Error != nil {
+		return 0, tx.Error
+	}
+	return tx.RowsAffected, nil
+}
+
 // BatchUpdateStatus 批量更新状
 func (r *serviceItemRepository) BatchUpdateStatus(ctx context.Context, ids []uint64, isActive bool) error {
 	return r.db.WithContext(ctx).
@@ -135,6 +147,14 @@ func (r *serviceItemRepository) BatchUpdatePrice(ctx context.Context, ids []uint
 		Model(&model.ServiceItem{}).
 		Where("id IN ?", ids).
 		Update("base_price_cents", basePriceCents).Error
+}
+
+// BatchUpdateCommission 批量更新佣金比例
+func (r *serviceItemRepository) BatchUpdateCommission(ctx context.Context, ids []uint64, commissionRate float64) error {
+	return r.db.WithContext(ctx).
+		Model(&model.ServiceItem{}).
+		Where("id IN ?", ids).
+		Update("commission_rate", commissionRate).Error
 }
 
 // GetGifts 获取礼物列表

@@ -509,3 +509,340 @@ func TestWithdrawRepository_GetPlayerBalance(t *testing.T) {
 	assert.Equal(t, int64(20000), balance.AvailableBalance) // 30000 - 10000
 }
 
+// ============================================================================
+// Batch Operation Tests
+// ============================================================================
+
+func TestWithdrawService_BatchApprove_AllPending(t *testing.T) {
+	SkipIfNoTestDB(t)
+	db := SetupTestDB(t)
+	ctx := context.Background()
+
+	// Setup service
+	withdrawRepo := withdrawrepo.NewWithdrawRepository(db)
+	settlementRepo := settlementcompany.NewSettlementCompanyRepository(db)
+	svc := withdrawservice.NewWithdrawRoutingService(withdrawRepo, settlementRepo)
+
+	// Create test data
+	adminUser := CreateUniqueTestUser(t, db, "admin_batch_approve")
+	playerUser := CreateUniqueTestUser(t, db, "player_batch_approve")
+	testPlayer := CreateTestPlayer(t, db, playerUser)
+
+	// Create pending withdrawals
+	var withdrawIDs []uint64
+	for i := 0; i < 3; i++ {
+		withdraw := CreateTestWithdraw(t, db, testPlayer, int64(10000+i*1000), model.WithdrawStatusPending)
+		withdrawIDs = append(withdrawIDs, withdraw.ID)
+	}
+
+	// Batch approve
+	req := &withdrawservice.BatchApproveRequest{
+		WithdrawIDs: withdrawIDs,
+		Remark:      "Batch approval test",
+	}
+
+	result, err := svc.BatchApprove(ctx, req, adminUser.ID)
+	require.NoError(t, err)
+	assert.Equal(t, 3, result.SuccessCount)
+	assert.Equal(t, 0, result.FailedCount)
+	assert.Len(t, result.SuccessIDs, 3)
+	assert.Empty(t, result.FailedItems)
+
+	// Verify database state
+	for _, id := range withdrawIDs {
+		withdraw, err := withdrawRepo.Get(ctx, id)
+		require.NoError(t, err)
+		assert.Equal(t, model.WithdrawStatusApproved, withdraw.Status)
+		assert.Equal(t, adminUser.ID, *withdraw.ProcessedBy)
+		assert.NotNil(t, withdraw.ProcessedAt)
+		assert.Equal(t, "Batch approval test", withdraw.AdminRemark)
+	}
+}
+
+func TestWithdrawService_BatchApprove_MixedStatus(t *testing.T) {
+	SkipIfNoTestDB(t)
+	db := SetupTestDB(t)
+	ctx := context.Background()
+
+	// Setup service
+	withdrawRepo := withdrawrepo.NewWithdrawRepository(db)
+	settlementRepo := settlementcompany.NewSettlementCompanyRepository(db)
+	svc := withdrawservice.NewWithdrawRoutingService(withdrawRepo, settlementRepo)
+
+	// Create test data
+	adminUser := CreateUniqueTestUser(t, db, "admin_mixed")
+	playerUser := CreateUniqueTestUser(t, db, "player_mixed")
+	testPlayer := CreateTestPlayer(t, db, playerUser)
+
+	// Create withdrawals with different statuses
+	pending1 := CreateTestWithdraw(t, db, testPlayer, 10000, model.WithdrawStatusPending)
+	pending2 := CreateTestWithdraw(t, db, testPlayer, 10000, model.WithdrawStatusPending)
+	approved := CreateTestWithdraw(t, db, testPlayer, 10000, model.WithdrawStatusApproved)
+	rejected := CreateTestWithdraw(t, db, testPlayer, 10000, model.WithdrawStatusRejected)
+
+	withdrawIDs := []uint64{pending1.ID, pending2.ID, approved.ID, rejected.ID}
+
+	// Batch approve
+	req := &withdrawservice.BatchApproveRequest{
+		WithdrawIDs: withdrawIDs,
+		Remark:      "Test",
+	}
+
+	result, err := svc.BatchApprove(ctx, req, adminUser.ID)
+	require.NoError(t, err)
+	assert.Equal(t, 2, result.SuccessCount)  // Only pending ones
+	assert.Equal(t, 2, result.FailedCount)   // approved and rejected
+	assert.Len(t, result.SuccessIDs, 2)
+	assert.Len(t, result.FailedItems, 2)
+
+	// Verify failed items contain correct IDs
+	failedIDMap := make(map[uint64]bool)
+	for _, item := range result.FailedItems {
+		failedIDMap[item.ID] = true
+	}
+	assert.True(t, failedIDMap[approved.ID])
+	assert.True(t, failedIDMap[rejected.ID])
+}
+
+func TestWithdrawService_BatchReject(t *testing.T) {
+	SkipIfNoTestDB(t)
+	db := SetupTestDB(t)
+	ctx := context.Background()
+
+	// Setup service
+	withdrawRepo := withdrawrepo.NewWithdrawRepository(db)
+	settlementRepo := settlementcompany.NewSettlementCompanyRepository(db)
+	svc := withdrawservice.NewWithdrawRoutingService(withdrawRepo, settlementRepo)
+
+	// Create test data
+	adminUser := CreateUniqueTestUser(t, db, "admin_reject")
+	playerUser := CreateUniqueTestUser(t, db, "player_reject")
+	testPlayer := CreateTestPlayer(t, db, playerUser)
+
+	// Create pending withdrawals
+	var withdrawIDs []uint64
+	for i := 0; i < 3; i++ {
+		withdraw := CreateTestWithdraw(t, db, testPlayer, int64(10000+i*1000), model.WithdrawStatusPending)
+		withdrawIDs = append(withdrawIDs, withdraw.ID)
+	}
+
+	// Batch reject
+	req := &withdrawservice.BatchRejectRequest{
+		WithdrawIDs: withdrawIDs,
+		Reason:      "Insufficient funds",
+	}
+
+	result, err := svc.BatchReject(ctx, req, adminUser.ID)
+	require.NoError(t, err)
+	assert.Equal(t, 3, result.SuccessCount)
+	assert.Equal(t, 0, result.FailedCount)
+
+	// Verify database state
+	for _, id := range withdrawIDs {
+		withdraw, err := withdrawRepo.Get(ctx, id)
+		require.NoError(t, err)
+		assert.Equal(t, model.WithdrawStatusRejected, withdraw.Status)
+		assert.Equal(t, "Insufficient funds", withdraw.RejectReason)
+		assert.Equal(t, adminUser.ID, *withdraw.ProcessedBy)
+		assert.NotNil(t, withdraw.ProcessedAt)
+	}
+}
+
+func TestWithdrawService_BatchComplete(t *testing.T) {
+	SkipIfNoTestDB(t)
+	db := SetupTestDB(t)
+	ctx := context.Background()
+
+	// Setup service
+	withdrawRepo := withdrawrepo.NewWithdrawRepository(db)
+	settlementRepo := settlementcompany.NewSettlementCompanyRepository(db)
+	svc := withdrawservice.NewWithdrawRoutingService(withdrawRepo, settlementRepo)
+
+	// Create test data
+	adminUser := CreateUniqueTestUser(t, db, "admin_complete")
+	playerUser := CreateUniqueTestUser(t, db, "player_complete")
+	testPlayer := CreateTestPlayer(t, db, playerUser)
+
+	// Create approved withdrawals
+	var withdrawIDs []uint64
+	for i := 0; i < 3; i++ {
+		withdraw := CreateTestWithdraw(t, db, testPlayer, int64(10000+i*1000), model.WithdrawStatusApproved)
+		withdrawIDs = append(withdrawIDs, withdraw.ID)
+	}
+
+	// Batch complete
+	req := &withdrawservice.BatchCompleteRequest{
+		WithdrawIDs: withdrawIDs,
+	}
+
+	result, err := svc.BatchComplete(ctx, req, adminUser.ID)
+	require.NoError(t, err)
+	assert.Equal(t, 3, result.SuccessCount)
+	assert.Equal(t, 0, result.FailedCount)
+
+	// Verify database state
+	for _, id := range withdrawIDs {
+		withdraw, err := withdrawRepo.Get(ctx, id)
+		require.NoError(t, err)
+		assert.Equal(t, model.WithdrawStatusCompleted, withdraw.Status)
+		assert.NotNil(t, withdraw.CompletedAt)
+	}
+}
+
+func TestWithdrawService_BatchApprove_EmptyList(t *testing.T) {
+	SkipIfNoTestDB(t)
+	db := SetupTestDB(t)
+	ctx := context.Background()
+
+	// Setup service
+	withdrawRepo := withdrawrepo.NewWithdrawRepository(db)
+	settlementRepo := settlementcompany.NewSettlementCompanyRepository(db)
+	svc := withdrawservice.NewWithdrawRoutingService(withdrawRepo, settlementRepo)
+
+	// Try to approve empty list
+	req := &withdrawservice.BatchApproveRequest{
+		WithdrawIDs: []uint64{},
+	}
+
+	_, err := svc.BatchApprove(ctx, req, 1)
+	assert.Error(t, err)
+}
+
+func TestWithdrawService_BatchApprove_TooMany(t *testing.T) {
+	SkipIfNoTestDB(t)
+	db := SetupTestDB(t)
+	ctx := context.Background()
+
+	// Setup service
+	withdrawRepo := withdrawrepo.NewWithdrawRepository(db)
+	settlementRepo := settlementcompany.NewSettlementCompanyRepository(db)
+	svc := withdrawservice.NewWithdrawRoutingService(withdrawRepo, settlementRepo)
+
+	// Try to approve too many withdrawals (over 100)
+	withdrawIDs := make([]uint64, 101)
+	for i := 0; i < 101; i++ {
+		withdrawIDs[i] = uint64(i + 1)
+	}
+
+	req := &withdrawservice.BatchApproveRequest{
+		WithdrawIDs: withdrawIDs,
+	}
+
+	_, err := svc.BatchApprove(ctx, req, 1)
+	assert.Error(t, err)
+}
+
+func TestWithdrawService_BatchComplete_MixedStatus(t *testing.T) {
+	SkipIfNoTestDB(t)
+	db := SetupTestDB(t)
+	ctx := context.Background()
+
+	// Setup service
+	withdrawRepo := withdrawrepo.NewWithdrawRepository(db)
+	settlementRepo := settlementcompany.NewSettlementCompanyRepository(db)
+	svc := withdrawservice.NewWithdrawRoutingService(withdrawRepo, settlementRepo)
+
+	// Create test data
+	adminUser := CreateUniqueTestUser(t, db, "admin_complete_mixed")
+	playerUser := CreateUniqueTestUser(t, db, "player_complete_mixed")
+	testPlayer := CreateTestPlayer(t, db, playerUser)
+
+	// Create withdrawals with different statuses
+	approved1 := CreateTestWithdraw(t, db, testPlayer, 10000, model.WithdrawStatusApproved)
+	approved2 := CreateTestWithdraw(t, db, testPlayer, 10000, model.WithdrawStatusApproved)
+	pending := CreateTestWithdraw(t, db, testPlayer, 10000, model.WithdrawStatusPending)
+	completed := CreateTestWithdraw(t, db, testPlayer, 10000, model.WithdrawStatusCompleted)
+
+	withdrawIDs := []uint64{approved1.ID, approved2.ID, pending.ID, completed.ID}
+
+	// Batch complete
+	req := &withdrawservice.BatchCompleteRequest{
+		WithdrawIDs: withdrawIDs,
+	}
+
+	result, err := svc.BatchComplete(ctx, req, adminUser.ID)
+	require.NoError(t, err)
+	assert.Equal(t, 2, result.SuccessCount)  // Only approved ones
+	assert.Equal(t, 2, result.FailedCount)   // pending and completed
+
+	// Verify failed items
+	failedIDMap := make(map[uint64]bool)
+	for _, item := range result.FailedItems {
+		failedIDMap[item.ID] = true
+	}
+	assert.True(t, failedIDMap[pending.ID])
+	assert.True(t, failedIDMap[completed.ID])
+}
+
+func TestWithdrawService_BatchReject_RequiredReason(t *testing.T) {
+	SkipIfNoTestDB(t)
+	db := SetupTestDB(t)
+	ctx := context.Background()
+
+	// Setup service
+	withdrawRepo := withdrawrepo.NewWithdrawRepository(db)
+	settlementRepo := settlementcompany.NewSettlementCompanyRepository(db)
+	svc := withdrawservice.NewWithdrawRoutingService(withdrawRepo, settlementRepo)
+
+	// Create test data
+	playerUser := CreateUniqueTestUser(t, db, "player_reason")
+	testPlayer := CreateTestPlayer(t, db, playerUser)
+	withdraw := CreateTestWithdraw(t, db, testPlayer, 10000, model.WithdrawStatusPending)
+
+	// Try to reject without reason
+	req := &withdrawservice.BatchRejectRequest{
+		WithdrawIDs: []uint64{withdraw.ID},
+		Reason:      "", // Empty reason should fail validation
+	}
+
+	// This should fail at handler level due to binding validation
+	// But service level should handle it gracefully
+	_, err := svc.BatchReject(ctx, req, 1)
+	// The request should fail validation before reaching service
+	// So we just verify the service handles empty reasons
+	assert.Error(t, err)
+}
+
+func TestWithdrawRepository_BatchUpdateStatus_Transaction(t *testing.T) {
+	SkipIfNoTestDB(t)
+	db := SetupTestDB(t)
+	ctx := context.Background()
+
+	// Setup repository
+	withdrawRepo := withdrawrepo.NewWithdrawRepository(db)
+
+	// Create test data
+	playerUser := CreateUniqueTestUser(t, db, "player_tx")
+	testPlayer := CreateTestPlayer(t, db, playerUser)
+
+	var withdrawIDs []uint64
+	for i := 0; i < 3; i++ {
+		withdraw := CreateTestWithdraw(t, db, testPlayer, int64(10000+i*1000), model.WithdrawStatusPending)
+		withdrawIDs = append(withdrawIDs, withdraw.ID)
+	}
+
+	// Add a non-existent ID
+	nonExistentID := uint64(999999)
+	withdrawIDs = append(withdrawIDs, nonExistentID)
+
+	// Batch update status
+	now := time.Now()
+	adminID := uint64(123)
+	successIDs, errors, err := withdrawRepo.BatchUpdateStatus(ctx, withdrawIDs, model.WithdrawStatusApproved, &adminID, &now, "test")
+
+	require.NoError(t, err)
+	assert.Len(t, successIDs, 3)  // Only the existing ones
+	assert.Len(t, errors, 1)       // The non-existent one
+
+	// Verify the error
+	assert.Equal(t, nonExistentID, errors[0].ID)
+	assert.Contains(t, errors[0].Message, "not found")
+
+	// Verify the valid ones were updated
+	for _, id := range successIDs {
+		withdraw, _ := withdrawRepo.Get(ctx, id)
+		assert.Equal(t, model.WithdrawStatusApproved, withdraw.Status)
+	}
+}
+
+

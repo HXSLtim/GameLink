@@ -164,3 +164,27 @@ func (r *gormPlayerRepository) BatchDelete(ctx context.Context, ids []uint64) (i
 	}
 	return tx.RowsAffected, nil
 }
+
+// BatchUpdateRank updates rank for multiple players.
+func (r *gormPlayerRepository) BatchUpdateRank(ctx context.Context, ids []uint64, rank string) (int64, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+	tx := r.db.WithContext(ctx).Model(&model.Player{}).Where("id IN ?", ids).Update("rank", rank)
+	if tx.Error != nil {
+		return 0, tx.Error
+	}
+	return tx.RowsAffected, nil
+}
+
+// BatchUpdateHourlyRate updates hourly_rate_cents for multiple players.
+func (r *gormPlayerRepository) BatchUpdateHourlyRate(ctx context.Context, ids []uint64, rateCents int64) (int64, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+	tx := r.db.WithContext(ctx).Model(&model.Player{}).Where("id IN ?", ids).Update("hourly_rate_cents", rateCents)
+	if tx.Error != nil {
+		return 0, tx.Error
+	}
+	return tx.RowsAffected, nil
+}

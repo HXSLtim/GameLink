@@ -22,6 +22,11 @@ func RegisterServiceItemRoutes(router gin.IRouter, svc *item.ServiceItemService)
 		group.DELETE("/:id", func(c *gin.Context) { deleteServiceItemHandler(c, svc) })
 		group.POST("/batch-update-status", func(c *gin.Context) { batchUpdateStatusHandler(c, svc) })
 		group.POST("/batch-update-price", func(c *gin.Context) { batchUpdatePriceHandler(c, svc) })
+
+		// 新增批量操作路由
+		group.POST("/batch/status", func(c *gin.Context) { batchUpdateItemStatusHandler(c, svc) })
+		group.POST("/batch/delete", func(c *gin.Context) { batchDeleteItemsHandler(c, svc) })
+		group.POST("/batch/commission", func(c *gin.Context) { batchUpdateItemCommissionHandler(c, svc) })
 	}
 }
 
@@ -153,7 +158,7 @@ func updateServiceItemHandler(c *gin.Context, svc *item.ServiceItemService) {
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
-// @Param        id             path      int     true  "服务项目ID"
+// @Param        id             path      int  true  "服务项目ID"
 // @Success      200            {object}  model.SuccessResponse
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
@@ -225,4 +230,151 @@ func batchUpdatePriceHandler(c *gin.Context, svc *item.ServiceItemService) {
 	}
 
 	respondMsg(c, "Price updated successfully")
+}
+
+// ============================================================================
+// 新增批量操作 Handler
+// ============================================================================
+
+// BatchUpdateItemStatusRequest 批量更新服务项目状态请求
+type BatchUpdateItemStatusRequest struct {
+	ItemIDs  []uint64 `json:"itemIds" binding:"required,min=1,max=100"`
+	IsActive bool     `json:"isActive"`
+}
+
+// BatchDeleteItemsRequest 批量删除服务项目请求
+type BatchDeleteItemsRequest struct {
+	ItemIDs []uint64 `json:"itemIds" binding:"required,min=1,max=100"`
+}
+
+// BatchUpdateItemCommissionRequest 批量更新佣金比例请求
+type BatchUpdateItemCommissionRequest struct {
+	ItemIDs        []uint64 `json:"itemIds" binding:"required,min=1,max=100"`
+	CommissionRate float64  `json:"commissionRate" binding:"required,min=0,max=1"`
+}
+
+// batchUpdateItemStatusHandler 批量更新服务项目状态（启用/禁用）
+// @Summary      批量更新服务项目状态
+// @Description  批量启用/禁用多个服务项目，最多100条
+// @Tags         Admin - ServiceItem
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body  BatchUpdateItemStatusRequest  true  "批量更新状态请求"
+// @Success      200  {object}  model.APIResponse[item.BatchOperationResponse]
+// @Failure      400  {object}  model.ErrorResponse
+// @Failure      401  {object}  model.ErrorResponse
+// @Failure      500  {object}  model.ErrorResponse
+// @Router       /admin/service-items/batch/status [post]
+func batchUpdateItemStatusHandler(c *gin.Context, svc *item.ServiceItemService) {
+	var req BatchUpdateItemStatusRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondAPIError(c, apierr.BadRequest("invalid request payload").WithDetails(err.Error()))
+		return
+	}
+
+	if len(req.ItemIDs) == 0 {
+		respondAPIError(c, apierr.BadRequest("itemIds is required"))
+		return
+	}
+	if len(req.ItemIDs) > 100 {
+		respondAPIError(c, apierr.BadRequest("maximum 100 items per batch"))
+		return
+	}
+
+	result, err := svc.BatchUpdateItemStatus(c.Request.Context(), item.BatchUpdateItemStatusRequest{
+		ItemIDs:  req.ItemIDs,
+		IsActive: req.IsActive,
+	})
+	if err != nil {
+		respondAPIError(c, apierr.InternalError("batch update status failed").WithDetails(err.Error()))
+		return
+	}
+
+	respondSuccess(c, result)
+}
+
+// batchDeleteItemsHandler 批量删除服务项目
+// @Summary      批量删除服务项目
+// @Description  批量删除多个服务项目，最多100条。检查是否有订单使用这些服务项目
+// @Tags         Admin - ServiceItem
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body  BatchDeleteItemsRequest  true  "批量删除请求"
+// @Success      200  {object}  model.APIResponse[item.BatchOperationResponse]
+// @Failure      400  {object}  model.ErrorResponse
+// @Failure      401  {object}  model.ErrorResponse
+// @Failure      500  {object}  model.ErrorResponse
+// @Router       /admin/service-items/batch/delete [post]
+func batchDeleteItemsHandler(c *gin.Context, svc *item.ServiceItemService) {
+	var req BatchDeleteItemsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondAPIError(c, apierr.BadRequest("invalid request payload").WithDetails(err.Error()))
+		return
+	}
+
+	if len(req.ItemIDs) == 0 {
+		respondAPIError(c, apierr.BadRequest("itemIds is required"))
+		return
+	}
+	if len(req.ItemIDs) > 100 {
+		respondAPIError(c, apierr.BadRequest("maximum 100 items per batch"))
+		return
+	}
+
+	result, err := svc.BatchDeleteItems(c.Request.Context(), item.BatchDeleteItemsRequest{
+		ItemIDs: req.ItemIDs,
+	})
+	if err != nil {
+		respondAPIError(c, apierr.InternalError("batch delete failed").WithDetails(err.Error()))
+		return
+	}
+
+	respondSuccess(c, result)
+}
+
+// batchUpdateItemCommissionHandler 批量更新服务项目佣金比例
+// @Summary      批量更新服务项目佣金比例
+// @Description  批量更新多个服务项目的佣金比例，最多100条
+// @Tags         Admin - ServiceItem
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body  BatchUpdateItemCommissionRequest  true  "批量更新佣金比例请求"
+// @Success      200  {object}  model.APIResponse[item.BatchOperationResponse]
+// @Failure      400  {object}  model.ErrorResponse
+// @Failure      401  {object}  model.ErrorResponse
+// @Failure      500  {object}  model.ErrorResponse
+// @Router       /admin/service-items/batch/commission [post]
+func batchUpdateItemCommissionHandler(c *gin.Context, svc *item.ServiceItemService) {
+	var req BatchUpdateItemCommissionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondAPIError(c, apierr.BadRequest("invalid request payload").WithDetails(err.Error()))
+		return
+	}
+
+	if len(req.ItemIDs) == 0 {
+		respondAPIError(c, apierr.BadRequest("itemIds is required"))
+		return
+	}
+	if len(req.ItemIDs) > 100 {
+		respondAPIError(c, apierr.BadRequest("maximum 100 items per batch"))
+		return
+	}
+	if req.CommissionRate < 0 || req.CommissionRate > 1 {
+		respondAPIError(c, apierr.BadRequest("commissionRate must be between 0 and 1"))
+		return
+	}
+
+	result, err := svc.BatchUpdateItemCommission(c.Request.Context(), item.BatchUpdateItemCommissionRequest{
+		ItemIDs:        req.ItemIDs,
+		CommissionRate: req.CommissionRate,
+	})
+	if err != nil {
+		respondAPIError(c, apierr.InternalError("batch update commission failed").WithDetails(err.Error()))
+		return
+	}
+
+	respondSuccess(c, result)
 }

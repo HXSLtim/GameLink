@@ -2,6 +2,7 @@ package withdraw
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"gamelink/internal/model"
@@ -22,6 +23,12 @@ type WithdrawRepository interface {
 	List(ctx context.Context, opts WithdrawListOptions) ([]model.Withdraw, int64, error)
 	// GetPlayerBalance 获取陪玩师余额信息
 	GetPlayerBalance(ctx context.Context, playerID uint64) (*PlayerBalance, error)
+	// GetByIDs 根据ID列表批量获取提现记录
+	GetByIDs(ctx context.Context, ids []uint64) ([]model.Withdraw, error)
+	// BatchUpdateStatus 批量更新提现状态
+	BatchUpdateStatus(ctx context.Context, ids []uint64, status model.WithdrawStatus, processedBy *uint64, processedAt *time.Time, reason string) ([]uint64, []BatchOperationError, error)
+	// BatchComplete 批量完成提现
+	BatchComplete(ctx context.Context, ids []uint64, adminUserID uint64, completedAt time.Time) ([]uint64, []BatchOperationError, error)
 
 	// 提现分流相关方法 - Requirements: 14.1-14.5
 	// ListByCompany 按结算公司查询提现列表
@@ -66,6 +73,12 @@ type PlayerBalance struct {
 	PendingWithdraw  int64 // 待处理提现
 	AvailableBalance int64 // 可提现余额
 	PendingBalance   int64 // 待结算余额
+}
+
+// BatchOperationError 批量操作中的单个错误
+type BatchOperationError struct {
+	ID      uint64 // 提现ID
+	Message string // 错误信息
 }
 
 type withdrawRepository struct {
@@ -422,4 +435,170 @@ func (r *withdrawRepository) GetSalaryPaymentRecordByWithdrawID(ctx context.Cont
 // UpdateSalaryPaymentRecord 更新工资发放记录
 func (r *withdrawRepository) UpdateSalaryPaymentRecord(ctx context.Context, record *model.SalaryPaymentRecord) error {
 	return r.db.WithContext(ctx).Save(record).Error
+}
+
+// GetByIDs 根据ID列表批量获取提现记录
+func (r *withdrawRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.Withdraw, error) {
+	if len(ids) == 0 {
+		return []model.Withdraw{}, nil
+	}
+
+	var withdraws []model.Withdraw
+	err := r.db.WithContext(ctx).Where("id IN ?", ids).Find(&withdraws).Error
+	if err != nil {
+		return nil, err
+	}
+	return withdraws, nil
+}
+
+// BatchUpdateStatus 批量更新提现状态
+// 只能更新指定状态的提现记录（approve/reject只能更新pending，complete只能更新approved）
+func (r *withdrawRepository) BatchUpdateStatus(ctx context.Context, ids []uint64, status model.WithdrawStatus, processedBy *uint64, processedAt *time.Time, reason string) ([]uint64, []BatchOperationError, error) {
+	if len(ids) == 0 {
+		return []uint64{}, []BatchOperationError{}, nil
+	}
+
+	// 获取所有提现记录
+	withdraws, err := r.GetByIDs(ctx, ids)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// 创建ID到提现记录的映射
+	withdrawMap := make(map[uint64]*model.Withdraw, len(withdraws))
+	for i := range withdraws {
+		withdrawMap[withdraws[i].ID] = &withdraws[i]
+	}
+
+	// 验证状态转换是否有效
+	var validIDs []uint64
+	var errors []BatchOperationError
+
+	for _, id := range ids {
+		withdraw, exists := withdrawMap[id]
+		if !exists {
+			errors = append(errors, BatchOperationError{
+				ID:      id,
+				Message: "withdrawal not found",
+			})
+			continue
+		}
+
+		// 验证状态转换
+		var isValid bool
+		switch status {
+		case model.WithdrawStatusApproved, model.WithdrawStatusRejected:
+			isValid = withdraw.Status == model.WithdrawStatusPending
+		case model.WithdrawStatusCompleted:
+			isValid = withdraw.Status == model.WithdrawStatusApproved
+		default:
+			isValid = false
+		}
+
+		if !isValid {
+			errors = append(errors, BatchOperationError{
+				ID:      id,
+				Message: fmt.Sprintf("invalid status transition from %s to %s", withdraw.Status, status),
+			})
+			continue
+		}
+
+		validIDs = append(validIDs, id)
+	}
+
+	// 批量更新有效的记录
+	if len(validIDs) > 0 {
+		updates := map[string]interface{}{
+			"status":      status,
+			"processed_by": processedBy,
+			"processed_at": processedAt,
+		}
+
+		// 根据状态设置额外字段
+		if status == model.WithdrawStatusRejected {
+			updates["reject_reason"] = reason
+		} else if status == model.WithdrawStatusApproved {
+			updates["admin_remark"] = reason
+		}
+
+		err := r.db.WithContext(ctx).Model(&model.Withdraw{}).
+			Where("id IN ?", validIDs).
+			Updates(updates).Error
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
+	return validIDs, errors, nil
+}
+
+// BatchComplete 批量完成提现（只能完成已批准的提现）
+func (r *withdrawRepository) BatchComplete(ctx context.Context, ids []uint64, adminUserID uint64, completedAt time.Time) ([]uint64, []BatchOperationError, error) {
+	if len(ids) == 0 {
+		return []uint64{}, []BatchOperationError{}, nil
+	}
+
+	// 获取所有提现记录
+	withdraws, err := r.GetByIDs(ctx, ids)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// 创建ID到提现记录的映射
+	withdrawMap := make(map[uint64]*model.Withdraw, len(withdraws))
+	for i := range withdraws {
+		withdrawMap[withdraws[i].ID] = &withdraws[i]
+	}
+
+	// 验证状态并收集有效的ID
+	var validIDs []uint64
+	var errors []BatchOperationError
+
+	for _, id := range ids {
+		withdraw, exists := withdrawMap[id]
+		if !exists {
+			errors = append(errors, BatchOperationError{
+				ID:      id,
+				Message: "withdrawal not found",
+			})
+			continue
+		}
+
+		// 只能完成已批准的提现
+		if withdraw.Status != model.WithdrawStatusApproved {
+			errors = append(errors, BatchOperationError{
+				ID:      id,
+				Message: fmt.Sprintf("cannot complete withdrawal with status %s", withdraw.Status),
+			})
+			continue
+		}
+
+		validIDs = append(validIDs, id)
+	}
+
+	// 批量更新有效的记录
+	if len(validIDs) > 0 {
+		updates := map[string]interface{}{
+			"status":       model.WithdrawStatusCompleted,
+			"completed_at": &completedAt,
+		}
+
+		// 如果没有处理人，设置为当前管理员
+		err := r.db.WithContext(ctx).Model(&model.Withdraw{}).
+			Where("id IN ? AND (processed_by IS NULL OR processed_by = 0)", validIDs).
+			Update("processed_by", adminUserID).Error
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to update processed_by: %w", err)
+		}
+
+		// 更新状态和完成时间
+		err = r.db.WithContext(ctx).Model(&model.Withdraw{}).
+			Where("id IN ?", validIDs).
+			Updates(updates).Error
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to update withdrawal status: %w", err)
+		}
+	}
+
+	return validIDs, errors, nil
 }

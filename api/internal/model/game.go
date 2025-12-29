@@ -11,7 +11,7 @@ type Game struct {
 	// 游戏名称
 	// @Example 英雄联盟
 	Name string `json:"name" gorm:"size:128"`
-	// 游戏分类，如 moba/fps
+	// 游戏分类，如 moba/fps（冗余字段，向后兼容）
 	// @Example MOBA
 	Category string `json:"category,omitempty" gorm:"size:64;index"`
 	// 游戏图标URL

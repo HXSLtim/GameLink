@@ -30,6 +30,7 @@ type AppConfig struct {
 	Seed          SeedConfig
 	SuperAdmin    SuperAdminConfig
 	AdminAuth     AdminAuthConfig
+	ExternalAPI   ExternalAPIConfig
 }
 
 // DatabaseConfig 描述数据库驱动与连接信息。
@@ -88,6 +89,57 @@ type AdminAuthConfig struct {
 	Mode string `yaml:"mode"`
 }
 
+// ExternalAPIConfig 描述外部API凭证配置。
+type ExternalAPIConfig struct {
+	// 微信支付
+	WeChatPay WeChatPayConfig `yaml:"wechat_pay"`
+	// 支付宝
+	Alipay AlipayConfig `yaml:"alipay"`
+	// 短信服务
+	SMS SMSConfig `yaml:"sms"`
+	// OSS对象存储
+	OSS OSSConfig `yaml:"oss"`
+}
+
+// WeChatPayConfig 微信支付配置
+type WeChatPayConfig struct {
+	AppID        string `yaml:"app_id"`        // 应用ID
+	MchID        string `yaml:"mch_id"`        // 商户号
+	APIKey       string `yaml:"api_key"`       // API密钥
+	APICertPath  string `yaml:"api_cert_path"` // API证书路径
+	NotifyURL    string `yaml:"notify_url"`    // 支付结果通知URL
+	Enabled      bool   `yaml:"enabled"`       // 是否启用
+}
+
+// AlipayConfig 支付宝配置
+type AlipayConfig struct {
+	AppID          string `yaml:"app_id"`           // 应用ID
+	PrivateKeyPath string `yaml:"private_key_path"` // 应用私钥路径
+	PublicKeyPath  string `yaml:"public_key_path"`  // 支付宝公钥路径
+	NotifyURL      string `yaml:"notify_url"`       // 支付结果通知URL
+	Enabled        bool   `yaml:"enabled"`          // 是否启用
+}
+
+// SMSConfig 短信服务配置
+type SMSConfig struct {
+	Provider   string `yaml:"provider"`    //服务商: aliyun, tencent
+	AccessKey  string `yaml:"access_key"`  // AccessKey ID
+	SecretKey  string `yaml:"secret_key"`  // AccessKey Secret
+	SignName   string `yaml:"sign_name"`   // 短信签名
+	Enabled    bool   `yaml:"enabled"`     // 是否启用
+}
+
+// OSSConfig 对象存储配置
+type OSSConfig struct {
+	Provider   string `yaml:"provider"`   // 服务商: aliyun, qcloud, minio
+	Endpoint   string `yaml:"endpoint"`   // 访问域名
+	AccessKey  string `yaml:"access_key"` // AccessKey ID
+	SecretKey  string `yaml:"secret_key"` // AccessKey Secret
+	Bucket     string `yaml:"bucket"`     // 存储桶名称
+	Region     string `yaml:"region"`     // 区域
+	Enabled    bool   `yaml:"enabled"`    // 是否启用
+}
+
 type cryptoFileConfig struct {
 	Enabled      *bool    `yaml:"enabled"`
 	SecretKey    string   `yaml:"secret_key"`
@@ -113,6 +165,48 @@ type adminAuthFileConfig struct {
 	Mode string `yaml:"mode"`
 }
 
+type externalAPIFileConfig struct {
+	WeChatPay weChatPayFileConfig    `yaml:"wechat_pay"`
+	Alipay    alipayFileConfig       `yaml:"alipay"`
+	SMS       smsFileConfig          `yaml:"sms"`
+	OSS       ossFileConfig          `yaml:"oss"`
+}
+
+type weChatPayFileConfig struct {
+	AppID       *string `yaml:"app_id"`
+	MchID       *string `yaml:"mch_id"`
+	APIKey      *string `yaml:"api_key"`
+	APICertPath *string `yaml:"api_cert_path"`
+	NotifyURL   *string `yaml:"notify_url"`
+	Enabled     *bool   `yaml:"enabled"`
+}
+
+type alipayFileConfig struct {
+	AppID          *string `yaml:"app_id"`
+	PrivateKeyPath *string `yaml:"private_key_path"`
+	PublicKeyPath  *string `yaml:"public_key_path"`
+	NotifyURL      *string `yaml:"notify_url"`
+	Enabled        *bool   `yaml:"enabled"`
+}
+
+type smsFileConfig struct {
+	Provider  *string `yaml:"provider"`
+	AccessKey *string `yaml:"access_key"`
+	SecretKey *string `yaml:"secret_key"`
+	SignName  *string `yaml:"sign_name"`
+	Enabled   *bool   `yaml:"enabled"`
+}
+
+type ossFileConfig struct {
+	Provider  *string `yaml:"provider"`
+	Endpoint  *string `yaml:"endpoint"`
+	AccessKey *string `yaml:"access_key"`
+	SecretKey *string `yaml:"secret_key"`
+	Bucket    *string `yaml:"bucket"`
+	Region    *string `yaml:"region"`
+	Enabled   *bool   `yaml:"enabled"`
+}
+
 type fileConfig struct {
 	Server struct {
 		Port          string `yaml:"port"`
@@ -125,6 +219,7 @@ type fileConfig struct {
 	Seed       SeedConfig           `yaml:"seed"`
 	SuperAdmin superAdminFileConfig `yaml:"super_admin"`
 	AdminAuth  adminAuthFileConfig  `yaml:"admin_auth"`
+	ExternalAPI externalAPIFileConfig `yaml:"external_apis"`
 }
 
 // Load 读取配置文件及环境变量，生成最终配置。
@@ -170,6 +265,12 @@ func Load() AppConfig {
 		},
 		AdminAuth: AdminAuthConfig{
 			Mode: "admin", // 默认使用 AdminAuth，生产环境建议使用 jwt
+		},
+		ExternalAPI: ExternalAPIConfig{
+			WeChatPay: WeChatPayConfig{Enabled: false},
+			Alipay:    AlipayConfig{Enabled: false},
+			SMS:       SMSConfig{Enabled: false},
+			OSS:       OSSConfig{Enabled: false},
 		},
 	}
 
@@ -221,6 +322,7 @@ func loadFromFile(env string, cfg *AppConfig) {
 	applyCryptoConfig(&fc, cfg)
 	applyAuthConfig(&fc, cfg)
 	applySuperAdminConfig(&fc, cfg)
+	applyExternalAPIConfig(&fc, cfg)
 }
 
 func applyServerConfig(fc *fileConfig, cfg *AppConfig) {
@@ -307,6 +409,85 @@ func applySuperAdminConfig(fc *fileConfig, cfg *AppConfig) {
 	}
 }
 
+func applyExternalAPIConfig(fc *fileConfig, cfg *AppConfig) {
+	// WeChat Pay
+	if fc.ExternalAPI.WeChatPay.AppID != nil {
+		cfg.ExternalAPI.WeChatPay.AppID = *fc.ExternalAPI.WeChatPay.AppID
+	}
+	if fc.ExternalAPI.WeChatPay.MchID != nil {
+		cfg.ExternalAPI.WeChatPay.MchID = *fc.ExternalAPI.WeChatPay.MchID
+	}
+	if fc.ExternalAPI.WeChatPay.APIKey != nil {
+		cfg.ExternalAPI.WeChatPay.APIKey = *fc.ExternalAPI.WeChatPay.APIKey
+	}
+	if fc.ExternalAPI.WeChatPay.APICertPath != nil {
+		cfg.ExternalAPI.WeChatPay.APICertPath = *fc.ExternalAPI.WeChatPay.APICertPath
+	}
+	if fc.ExternalAPI.WeChatPay.NotifyURL != nil {
+		cfg.ExternalAPI.WeChatPay.NotifyURL = *fc.ExternalAPI.WeChatPay.NotifyURL
+	}
+	if fc.ExternalAPI.WeChatPay.Enabled != nil {
+		cfg.ExternalAPI.WeChatPay.Enabled = *fc.ExternalAPI.WeChatPay.Enabled
+	}
+
+	// Alipay
+	if fc.ExternalAPI.Alipay.AppID != nil {
+		cfg.ExternalAPI.Alipay.AppID = *fc.ExternalAPI.Alipay.AppID
+	}
+	if fc.ExternalAPI.Alipay.PrivateKeyPath != nil {
+		cfg.ExternalAPI.Alipay.PrivateKeyPath = *fc.ExternalAPI.Alipay.PrivateKeyPath
+	}
+	if fc.ExternalAPI.Alipay.PublicKeyPath != nil {
+		cfg.ExternalAPI.Alipay.PublicKeyPath = *fc.ExternalAPI.Alipay.PublicKeyPath
+	}
+	if fc.ExternalAPI.Alipay.NotifyURL != nil {
+		cfg.ExternalAPI.Alipay.NotifyURL = *fc.ExternalAPI.Alipay.NotifyURL
+	}
+	if fc.ExternalAPI.Alipay.Enabled != nil {
+		cfg.ExternalAPI.Alipay.Enabled = *fc.ExternalAPI.Alipay.Enabled
+	}
+
+	// SMS
+	if fc.ExternalAPI.SMS.Provider != nil {
+		cfg.ExternalAPI.SMS.Provider = *fc.ExternalAPI.SMS.Provider
+	}
+	if fc.ExternalAPI.SMS.AccessKey != nil {
+		cfg.ExternalAPI.SMS.AccessKey = *fc.ExternalAPI.SMS.AccessKey
+	}
+	if fc.ExternalAPI.SMS.SecretKey != nil {
+		cfg.ExternalAPI.SMS.SecretKey = *fc.ExternalAPI.SMS.SecretKey
+	}
+	if fc.ExternalAPI.SMS.SignName != nil {
+		cfg.ExternalAPI.SMS.SignName = *fc.ExternalAPI.SMS.SignName
+	}
+	if fc.ExternalAPI.SMS.Enabled != nil {
+		cfg.ExternalAPI.SMS.Enabled = *fc.ExternalAPI.SMS.Enabled
+	}
+
+	// OSS
+	if fc.ExternalAPI.OSS.Provider != nil {
+		cfg.ExternalAPI.OSS.Provider = *fc.ExternalAPI.OSS.Provider
+	}
+	if fc.ExternalAPI.OSS.Endpoint != nil {
+		cfg.ExternalAPI.OSS.Endpoint = *fc.ExternalAPI.OSS.Endpoint
+	}
+	if fc.ExternalAPI.OSS.AccessKey != nil {
+		cfg.ExternalAPI.OSS.AccessKey = *fc.ExternalAPI.OSS.AccessKey
+	}
+	if fc.ExternalAPI.OSS.SecretKey != nil {
+		cfg.ExternalAPI.OSS.SecretKey = *fc.ExternalAPI.OSS.SecretKey
+	}
+	if fc.ExternalAPI.OSS.Bucket != nil {
+		cfg.ExternalAPI.OSS.Bucket = *fc.ExternalAPI.OSS.Bucket
+	}
+	if fc.ExternalAPI.OSS.Region != nil {
+		cfg.ExternalAPI.OSS.Region = *fc.ExternalAPI.OSS.Region
+	}
+	if fc.ExternalAPI.OSS.Enabled != nil {
+		cfg.ExternalAPI.OSS.Enabled = *fc.ExternalAPI.OSS.Enabled
+	}
+}
+
 func overrideFromEnv(cfg *AppConfig) {
 	overrideServerFromEnv(cfg)
 	overrideDatabaseFromEnv(cfg)
@@ -314,6 +495,7 @@ func overrideFromEnv(cfg *AppConfig) {
 	overrideCryptoFromEnv(cfg)
 	overrideAuthFromEnv(cfg)
 	overrideSuperAdminFromEnv(cfg)
+	overrideExternalAPIFromEnv(cfg)
 }
 
 func overrideServerFromEnv(cfg *AppConfig) {
@@ -436,6 +618,93 @@ func overrideSuperAdminFromEnv(cfg *AppConfig) {
 	}
 	if phone := os.Getenv("SUPER_ADMIN_PHONE"); phone != "" {
 		cfg.SuperAdmin.Phone = phone
+	}
+}
+
+func overrideExternalAPIFromEnv(cfg *AppConfig) {
+	// WeChat Pay
+	if appID := os.Getenv("WECHAT_PAY_APP_ID"); appID != "" {
+		cfg.ExternalAPI.WeChatPay.AppID = appID
+	}
+	if mchID := os.Getenv("WECHAT_PAY_MCH_ID"); mchID != "" {
+		cfg.ExternalAPI.WeChatPay.MchID = mchID
+	}
+	if apiKey := os.Getenv("WECHAT_PAY_API_KEY"); apiKey != "" {
+		cfg.ExternalAPI.WeChatPay.APIKey = apiKey
+	}
+	if certPath := os.Getenv("WECHAT_PAY_API_CERT_PATH"); certPath != "" {
+		cfg.ExternalAPI.WeChatPay.APICertPath = certPath
+	}
+	if notifyURL := os.Getenv("WECHAT_PAY_NOTIFY_URL"); notifyURL != "" {
+		cfg.ExternalAPI.WeChatPay.NotifyURL = notifyURL
+	}
+	if enabled := os.Getenv("WECHAT_PAY_ENABLED"); enabled != "" {
+		if e, err := strconv.ParseBool(enabled); err == nil {
+			cfg.ExternalAPI.WeChatPay.Enabled = e
+		}
+	}
+
+	// Alipay
+	if appID := os.Getenv("ALIPAY_APP_ID"); appID != "" {
+		cfg.ExternalAPI.Alipay.AppID = appID
+	}
+	if privateKeyPath := os.Getenv("ALIPAY_PRIVATE_KEY_PATH"); privateKeyPath != "" {
+		cfg.ExternalAPI.Alipay.PrivateKeyPath = privateKeyPath
+	}
+	if publicKeyPath := os.Getenv("ALIPAY_PUBLIC_KEY_PATH"); publicKeyPath != "" {
+		cfg.ExternalAPI.Alipay.PublicKeyPath = publicKeyPath
+	}
+	if notifyURL := os.Getenv("ALIPAY_NOTIFY_URL"); notifyURL != "" {
+		cfg.ExternalAPI.Alipay.NotifyURL = notifyURL
+	}
+	if enabled := os.Getenv("ALIPAY_ENABLED"); enabled != "" {
+		if e, err := strconv.ParseBool(enabled); err == nil {
+			cfg.ExternalAPI.Alipay.Enabled = e
+		}
+	}
+
+	// SMS
+	if provider := os.Getenv("SMS_PROVIDER"); provider != "" {
+		cfg.ExternalAPI.SMS.Provider = provider
+	}
+	if accessKey := os.Getenv("SMS_ACCESS_KEY"); accessKey != "" {
+		cfg.ExternalAPI.SMS.AccessKey = accessKey
+	}
+	if secretKey := os.Getenv("SMS_SECRET_KEY"); secretKey != "" {
+		cfg.ExternalAPI.SMS.SecretKey = secretKey
+	}
+	if signName := os.Getenv("SMS_SIGN_NAME"); signName != "" {
+		cfg.ExternalAPI.SMS.SignName = signName
+	}
+	if enabled := os.Getenv("SMS_ENABLED"); enabled != "" {
+		if e, err := strconv.ParseBool(enabled); err == nil {
+			cfg.ExternalAPI.SMS.Enabled = e
+		}
+	}
+
+	// OSS
+	if provider := os.Getenv("OSS_PROVIDER"); provider != "" {
+		cfg.ExternalAPI.OSS.Provider = provider
+	}
+	if endpoint := os.Getenv("OSS_ENDPOINT"); endpoint != "" {
+		cfg.ExternalAPI.OSS.Endpoint = endpoint
+	}
+	if accessKey := os.Getenv("OSS_ACCESS_KEY"); accessKey != "" {
+		cfg.ExternalAPI.OSS.AccessKey = accessKey
+	}
+	if secretKey := os.Getenv("OSS_SECRET_KEY"); secretKey != "" {
+		cfg.ExternalAPI.OSS.SecretKey = secretKey
+	}
+	if bucket := os.Getenv("OSS_BUCKET"); bucket != "" {
+		cfg.ExternalAPI.OSS.Bucket = bucket
+	}
+	if region := os.Getenv("OSS_REGION"); region != "" {
+		cfg.ExternalAPI.OSS.Region = region
+	}
+	if enabled := os.Getenv("OSS_ENABLED"); enabled != "" {
+		if e, err := strconv.ParseBool(enabled); err == nil {
+			cfg.ExternalAPI.OSS.Enabled = e
+		}
 	}
 }
 

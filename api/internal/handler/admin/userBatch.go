@@ -7,11 +7,11 @@ package admin
 
 import (
 	"fmt"
-	"net/http"
 	"strconv"
 
 	"gamelink/internal/service/user"
 	"github.com/gin-gonic/gin"
+	"gamelink/pkg/apierr"
 )
 
 // RegisterBatchRoutes 注册批量操作路由
@@ -53,14 +53,9 @@ func batchUpdateUserRoleHandler(s *user.BatchOperationService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req BatchUpdateUserRoleRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"success": false,
-				"message": "参数验证失败",
-				"error":   err.Error(),
-			})
+			respondAPIError(c, apierr.BadRequest("参数验证失败").WithDetails(err.Error()))
 			return
 		}
-
 
 		successCount, failedCount, err := s.BatchUpdateUserRole(c.Request.Context(), &user.BatchUpdateUserRoleRequest{
 			UserIDs: req.UserIDs,
@@ -68,11 +63,7 @@ func batchUpdateUserRoleHandler(s *user.BatchOperationService) gin.HandlerFunc {
 		})
 
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"success": false,
-				"message": "批量更新角色失败",
-				"error":   err.Error(),
-			})
+			respondAPIError(c, apierr.InternalError("批量更新角色失败").WithDetails(err.Error()))
 			return
 		}
 
@@ -81,11 +72,11 @@ func batchUpdateUserRoleHandler(s *user.BatchOperationService) gin.HandlerFunc {
 			message = fmt.Sprintf("批量更新角色完成，成功%d个，失败%d个", successCount, failedCount)
 		}
 
-		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"message": message,
-			"successCount": successCount,
-			"failedCount":  failedCount,
+		respondSuccessWithMsg(c, message, BatchResponse{
+			Success:     true,
+			Message:     message,
+			SuccessCount: successCount,
+			FailedCount:  failedCount,
 		})
 	}
 }
@@ -110,11 +101,7 @@ func batchUpdateUserStatusHandler(s *user.BatchOperationService) gin.HandlerFunc
 	return func(c *gin.Context) {
 		var req BatchUpdateUserStatusRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"success": false,
-				"message": "参数验证失败",
-				"error":   err.Error(),
-			})
+			respondAPIError(c, apierr.BadRequest("参数验证失败").WithDetails(err.Error()))
 			return
 		}
 
@@ -131,11 +118,7 @@ func batchUpdateUserStatusHandler(s *user.BatchOperationService) gin.HandlerFunc
 		)
 
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"success": false,
-				"message": "批量更新状态失败",
-				"error":   err.Error(),
-			})
+			respondAPIError(c, apierr.InternalError("批量更新状态失败").WithDetails(err.Error()))
 			return
 		}
 
@@ -144,11 +127,11 @@ func batchUpdateUserStatusHandler(s *user.BatchOperationService) gin.HandlerFunc
 			message = fmt.Sprintf("批量更新状态完成，成功%d个，失败%d个", successCount, failedCount)
 		}
 
-		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"message": message,
-			"successCount": successCount,
-			"failedCount":  failedCount,
+		respondSuccessWithMsg(c, message, BatchResponse{
+			Success:     true,
+			Message:     message,
+			SuccessCount: successCount,
+			FailedCount:  failedCount,
 		})
 	}
 }
@@ -172,11 +155,7 @@ func batchDeleteUsersHandler(s *user.BatchOperationService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req BatchDeleteUsersRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"success": false,
-				"message": "参数验证失败",
-				"error":   err.Error(),
-			})
+			respondAPIError(c, apierr.BadRequest("参数验证失败").WithDetails(err.Error()))
 			return
 		}
 
@@ -192,11 +171,7 @@ func batchDeleteUsersHandler(s *user.BatchOperationService) gin.HandlerFunc {
 		)
 
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"success": false,
-				"message": "批量删除失败",
-				"error":   err.Error(),
-			})
+			respondAPIError(c, apierr.InternalError("批量删除失败").WithDetails(err.Error()))
 			return
 		}
 
@@ -205,11 +180,11 @@ func batchDeleteUsersHandler(s *user.BatchOperationService) gin.HandlerFunc {
 			message = fmt.Sprintf("批量删除完成，成功%d个，失败%d个", successCount, failedCount)
 		}
 
-		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"message": message,
-			"successCount": successCount,
-			"failedCount":  failedCount,
+		respondSuccessWithMsg(c, message, BatchResponse{
+			Success:     true,
+			Message:     message,
+			SuccessCount: successCount,
+			FailedCount:  failedCount,
 		})
 	}
 }
@@ -241,11 +216,7 @@ func batchAddPointsHandler(s *user.BatchOperationService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req BatchAddPointsRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"success": false,
-				"message": "参数验证失败",
-				"error":   err.Error(),
-			})
+			respondAPIError(c, apierr.BadRequest("参数验证失败").WithDetails(err.Error()))
 			return
 		}
 
@@ -265,11 +236,7 @@ func batchAddPointsHandler(s *user.BatchOperationService) gin.HandlerFunc {
 		)
 
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"success": false,
-				"message": "批量增加积分失败",
-				"error":   err.Error(),
-			})
+			respondAPIError(c, apierr.InternalError("批量增加积分失败").WithDetails(err.Error()))
 			return
 		}
 
@@ -279,11 +246,11 @@ func batchAddPointsHandler(s *user.BatchOperationService) gin.HandlerFunc {
 			message = fmt.Sprintf("批量增加积分完成，成功%d个，失败%d个", successCount, failedCount)
 		}
 
-		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"message": message,
-			"successCount": successCount,
-			"failedCount":  failedCount,
+		respondSuccessWithMsg(c, message, BatchResponse{
+			Success:     true,
+			Message:     message,
+			SuccessCount: successCount,
+			FailedCount:  failedCount,
 		})
 	}
 }
@@ -315,11 +282,7 @@ func batchSendNotificationHandler(s *user.BatchOperationService) gin.HandlerFunc
 	return func(c *gin.Context) {
 		var req BatchSendNotificationRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"success": false,
-				"message": "参数验证失败",
-				"error":   err.Error(),
-			})
+			respondAPIError(c, apierr.BadRequest("参数验证失败").WithDetails(err.Error()))
 			return
 		}
 
@@ -337,18 +300,11 @@ func batchSendNotificationHandler(s *user.BatchOperationService) gin.HandlerFunc
 			},
 			operatorID,
 		); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"success": false,
-				"message": "批量发送通知失败",
-				"error":   err.Error(),
-			})
+			respondAPIError(c, apierr.InternalError("批量发送通知失败").WithDetails(err.Error()))
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"message": "批量发送通知成功",
-		})
+		respondMsg(c, "批量发送通知成功")
 	}
 }
 

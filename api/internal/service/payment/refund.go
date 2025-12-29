@@ -9,6 +9,7 @@ import (
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	repoiface "gamelink/internal/repository/interfaces"
+	"gamelink/internal/service/external"
 	"gamelink/pkg/apierr"
 )
 
@@ -48,6 +49,12 @@ func (s *RefundService) SetWalletRepository(repo repository.WalletRepository) {
 // SetOperationLogRepository injects operation log repository for audit logging.
 func (s *RefundService) SetOperationLogRepository(repo repository.OperationLogRepository) {
 	s.opLogs = repo
+}
+
+// SetExternalConfig configures external API credentials for payment providers
+func (s *RefundService) SetExternalConfig(cfg *external.Config) {
+	factory := NewProviderFactory(cfg)
+	s.providers = factory.CreateProviders()
 }
 
 // ProcessRefund processes a refund request with validation.

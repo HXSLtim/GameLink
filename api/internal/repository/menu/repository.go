@@ -89,3 +89,14 @@ func (r *repositoryImpl) ListByPermission(ctx context.Context, codes []string) (
 	}
 	return menus, nil
 }
+
+func (r *repositoryImpl) HasChildren(ctx context.Context, parentID uint64) (bool, error) {
+	var count int64
+	if err := r.db.WithContext(ctx).
+		Model(&model.Menu{}).
+		Where("parent_id = ?", parentID).
+		Count(&count).Error; err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}

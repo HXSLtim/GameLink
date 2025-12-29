@@ -736,3 +736,91 @@ func (h *RoleHandler) BatchAssignRolesToUsers(c *gin.Context) {
 
 	respondSuccessWithMsg(c, "批量角色分配完成", result)
 }
+
+// ============================================================================
+// 批量角色操作相关请求和响应结构
+// ============================================================================
+
+// BatchDeleteRolesRequest 批量删除角色请求
+type BatchDeleteRolesRequest struct {
+	IDs []uint64 `json:"ids" binding:"required,min=1"`
+}
+
+// BatchAssignPermissionsToRolesRequest 批量为角色分配权限请求
+type BatchAssignPermissionsToRolesRequest struct {
+	Assignments []struct {
+		RoleID       uint64   `json:"roleId" binding:"required"`
+		PermissionIDs []uint64 `json:"permissionIds"`
+	} `json:"assignments" binding:"required,min=1"`
+}
+
+// ============================================================================
+// 批量角色操作处理器方法
+// ============================================================================
+
+// BatchDeleteRoles 批量删除角色
+// @Summary      批量删除角色
+// @Description  批量删除多个角色（系统角色不可删除），返回成功和失败的数量
+// @Tags         Admin - Roles
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string                       true  "Bearer {token}"
+// @Param        request        body      BatchDeleteRolesRequest       true  "批量删除角色请求"
+// @Success      200            {object}  model.APIResponse[roleservice.RoleBatchDeleteResult]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /admin/roles/batch [delete]
+func (h *RoleHandler) BatchDeleteRoles(c *gin.Context) {
+	var req BatchDeleteRolesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondBadRequest(c, "参数验证失败: "+err.Error())
+		return
+	}
+
+	result, err := h.roleSvc.BatchDeleteRoles(c.Request.Context(), req.IDs)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	respondSuccessWithMsg(c, "批量角色删除完成", result)
+}
+
+// BatchAssignPermissionsToRoles 批量为多个角色分配权限
+// @Summary      批量为角色分配权限
+// @Description  批量为多个角色分配权限（替换现有权限），返回成功和失败的数量
+// @Tags         Admin - Roles
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string                                true  "Bearer {token}"
+// @Param        request        body      BatchAssignPermissionsToRolesRequest    true  "批量分配权限请求"
+// @Success      200            {object}  model.APIResponse[roleservice.RoleBatchPermissionsResult]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /admin/roles/batch/permissions [put]
+func (h *RoleHandler) BatchAssignPermissionsToRoles(c *gin.Context) {
+	var req BatchAssignPermissionsToRolesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondBadRequest(c, "参数验证失败: "+err.Error())
+		return
+	}
+
+	// 转换请求格式
+	assignments := make([]roleservice.RolePermissionAssignment, len(req.Assignments))
+	for i, a := range req.Assignments {
+		assignments[i] = roleservice.RolePermissionAssignment{
+			RoleID:       a.RoleID,
+			PermissionIDs: a.PermissionIDs,
+		}
+	}
+
+	result, err := h.roleSvc.BatchAssignPermissionsToRoles(c.Request.Context(), assignments)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	respondSuccessWithMsg(c, "批量权限分配完成", result)
+}

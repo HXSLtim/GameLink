@@ -507,3 +507,410 @@ func (s *DisputeService) sendNotification(ctx context.Context, userID uint64, ti
 
 	_ = s.notifications.Create(ctx, event)
 }
+
+// ============================================================================
+// Batch Operations
+// ============================================================================
+
+// BatchOperationResult represents the result of a batch operation
+type BatchOperationResult struct {
+	Success      bool                   `json:"success"`
+	Message      string                 `json:"message"`
+	SuccessCount int                    `json:"successCount"`
+	FailedCount  int                    `json:"failedCount"`
+	Errors       []BatchOperationError  `json:"errors,omitempty"`
+}
+
+// BatchOperationError represents an error that occurred during batch operation
+type BatchOperationError struct {
+	DisputeID uint64 `json:"disputeId"`
+	Error     string `json:"error"`
+}
+
+// BatchAssignDisputesRequest represents a request to batch assign disputes
+type BatchAssignDisputesRequest struct {
+	DisputeIDs         []uint64 `json:"disputeIds" binding:"required,min=1,max=100"`
+	AssignedServiceID  uint64   `json:"assignedServiceId" binding:"required"`
+	OriginalServiceID  *uint64  `json:"originalServiceId,omitempty"`
+	ActorUserID        uint64   `json:"actorUserId"`
+}
+
+// BatchAssignDisputes assigns multiple disputes to a customer service representative
+func (s *DisputeService) BatchAssignDisputes(ctx context.Context, req BatchAssignDisputesRequest) (*BatchOperationResult, error) {
+	// Validate request
+	if len(req.DisputeIDs) == 0 {
+		return nil, ErrDisputeValidation
+	}
+	if len(req.DisputeIDs) > 100 {
+		return nil, apierr.BadRequest("批量操作最多支持100个纠纷")
+	}
+	if req.AssignedServiceID == 0 {
+		return nil, ErrDisputeValidation
+	}
+
+	// Verify assigned user exists
+	assignedUser, err := s.users.Get(ctx, req.AssignedServiceID)
+	if err != nil {
+		return nil, err
+	}
+	if assignedUser == nil {
+		return nil, apierr.NotFound("分配的客服不存在")
+	}
+
+	result := &BatchOperationResult{
+		Success:      true,
+		SuccessCount: 0,
+		FailedCount:  0,
+		Errors:       make([]BatchOperationError, 0),
+	}
+
+	// Process each dispute
+	for _, disputeID := range req.DisputeIDs {
+		// Get dispute
+		dispute, err := s.disputes.Get(ctx, disputeID)
+		if err != nil {
+			if err == repository.ErrNotFound {
+				result.FailedCount++
+				result.Errors = append(result.Errors, BatchOperationError{
+					DisputeID: disputeID,
+					Error:     "纠纷不存在",
+				})
+				continue
+			}
+			result.FailedCount++
+			result.Errors = append(result.Errors, BatchOperationError{
+				DisputeID: disputeID,
+				Error:     fmt.Sprintf("获取纠纷失败: %v", err),
+			})
+			continue
+		}
+
+		// Check if dispute can be assigned
+		if dispute.Status != model.DisputeStatusPending {
+			result.FailedCount++
+			result.Errors = append(result.Errors, BatchOperationError{
+				DisputeID: disputeID,
+				Error:     fmt.Sprintf("纠纷状态为%s，无法分配", dispute.Status),
+			})
+			continue
+		}
+
+		// Update dispute
+		dispute.Status = model.DisputeStatusAssigned
+		dispute.AssignedServiceID = &req.AssignedServiceID
+		if req.OriginalServiceID != nil {
+			dispute.OriginalServiceID = req.OriginalServiceID
+		}
+
+		if err := s.disputes.Update(ctx, dispute); err != nil {
+			result.FailedCount++
+			result.Errors = append(result.Errors, BatchOperationError{
+				DisputeID: disputeID,
+				Error:     fmt.Sprintf("更新失败: %v", err),
+			})
+			continue
+		}
+
+		// Log operation
+		s.logOperation(ctx, model.OpEntityDispute, dispute.ID, model.OpActionAssignDispute,
+			fmt.Sprintf("Batch assigned to service user %d", req.AssignedServiceID), dispute.TraceID, &req.ActorUserID)
+
+		// Send notification
+		s.sendNotification(ctx, req.AssignedServiceID, "新争议分配",
+			fmt.Sprintf("您已被分配处理争议 #%d", dispute.ID), dispute.TraceID)
+
+		result.SuccessCount++
+	}
+
+	// Generate message
+	if result.FailedCount == 0 {
+		result.Message = fmt.Sprintf("批量分配成功，共%d个纠纷", result.SuccessCount)
+	} else if result.SuccessCount == 0 {
+		result.Success = false
+		result.Message = "批量分配失败"
+	} else {
+		result.Message = fmt.Sprintf("批量分配完成，成功%d个，失败%d个", result.SuccessCount, result.FailedCount)
+	}
+
+	return result, nil
+}
+
+// BatchUpdateDisputesStatusRequest represents a request to batch update dispute status
+type BatchUpdateDisputesStatusRequest struct {
+	DisputeIDs  []uint64             `json:"disputeIds" binding:"required,min=1,max=100"`
+	Status      model.DisputeStatus  `json:"status" binding:"required"`
+	ActorUserID uint64               `json:"actorUserId"`
+}
+
+// BatchUpdateDisputesStatus updates status for multiple disputes
+func (s *DisputeService) BatchUpdateDisputesStatus(ctx context.Context, req BatchUpdateDisputesStatusRequest) (*BatchOperationResult, error) {
+	// Validate request
+	if len(req.DisputeIDs) == 0 {
+		return nil, ErrDisputeValidation
+	}
+	if len(req.DisputeIDs) > 100 {
+		return nil, apierr.BadRequest("批量操作最多支持100个纠纷")
+	}
+
+	// Validate status transition
+	validStatuses := map[model.DisputeStatus]bool{
+		model.DisputeStatusAssigned:  true,
+		model.DisputeStatusMediating: true,
+		model.DisputeStatusCanceled:  true,
+	}
+	if !validStatuses[req.Status] {
+		return nil, apierr.BadRequest("批量更新不支持的目标状态")
+	}
+
+	result := &BatchOperationResult{
+		Success:      true,
+		SuccessCount: 0,
+		FailedCount:  0,
+		Errors:       make([]BatchOperationError, 0),
+	}
+
+	// Process each dispute
+	for _, disputeID := range req.DisputeIDs {
+		// Get dispute
+		dispute, err := s.disputes.Get(ctx, disputeID)
+		if err != nil {
+			if err == repository.ErrNotFound {
+				result.FailedCount++
+				result.Errors = append(result.Errors, BatchOperationError{
+					DisputeID: disputeID,
+					Error:     "纠纷不存在",
+				})
+				continue
+			}
+			result.FailedCount++
+			result.Errors = append(result.Errors, BatchOperationError{
+				DisputeID: disputeID,
+				Error:     fmt.Sprintf("获取纠纷失败: %v", err),
+			})
+			continue
+		}
+
+		// Validate status transition
+		if !canTransitionTo(dispute.Status, req.Status) {
+			result.FailedCount++
+			result.Errors = append(result.Errors, BatchOperationError{
+				DisputeID: disputeID,
+				Error:     fmt.Sprintf("无法从%s转换到%s", dispute.Status, req.Status),
+			})
+			continue
+		}
+
+		// Update dispute
+		oldStatus := dispute.Status
+		dispute.Status = req.Status
+
+		if err := s.disputes.Update(ctx, dispute); err != nil {
+			result.FailedCount++
+			result.Errors = append(result.Errors, BatchOperationError{
+				DisputeID: disputeID,
+				Error:     fmt.Sprintf("更新失败: %v", err),
+			})
+			continue
+		}
+
+		// Log operation
+		s.logOperation(ctx, model.OpEntityDispute, dispute.ID, model.OpActionUpdateStatus,
+			fmt.Sprintf("Batch status updated: %s -> %s", oldStatus, req.Status), dispute.TraceID, &req.ActorUserID)
+
+		result.SuccessCount++
+	}
+
+	// Generate message
+	if result.FailedCount == 0 {
+		result.Message = fmt.Sprintf("批量更新状态成功，共%d个纠纷", result.SuccessCount)
+	} else if result.SuccessCount == 0 {
+		result.Success = false
+		result.Message = "批量更新状态失败"
+	} else {
+		result.Message = fmt.Sprintf("批量更新状态完成，成功%d个，失败%d个", result.SuccessCount, result.FailedCount)
+	}
+
+	return result, nil
+}
+
+// BatchCloseDisputesRequest represents a request to batch close disputes
+type BatchCloseDisputesRequest struct {
+	DisputeIDs    []uint64                 `json:"disputeIds" binding:"required,min=1,max=100"`
+	Resolution    model.DisputeResolution  `json:"resolution" binding:"required"`
+	ResolveRemark string                   `json:"resolveRemark" binding:"required"`
+	ActorUserID   uint64                   `json:"actorUserId"`
+}
+
+// BatchCloseDisputes closes multiple disputes with resolution
+func (s *DisputeService) BatchCloseDisputes(ctx context.Context, req BatchCloseDisputesRequest) (*BatchOperationResult, error) {
+	// Validate request
+	if len(req.DisputeIDs) == 0 {
+		return nil, ErrDisputeValidation
+	}
+	if len(req.DisputeIDs) > 100 {
+		return nil, apierr.BadRequest("批量操作最多支持100个纠纷")
+	}
+	if req.ResolveRemark == "" {
+		return nil, apierr.BadRequest("处理备注不能为空")
+	}
+
+	// Validate resolution
+	validResolutions := map[model.DisputeResolution]bool{
+		model.ResolutionRefund:  true,
+		model.ResolutionPartial: true,
+		model.ResolutionReject:  true,
+	}
+	if !validResolutions[req.Resolution] {
+		return nil, apierr.BadRequest("批量关闭不支持的处理决定")
+	}
+
+	result := &BatchOperationResult{
+		Success:      true,
+		SuccessCount: 0,
+		FailedCount:  0,
+		Errors:       make([]BatchOperationError, 0),
+	}
+
+	// Process each dispute
+	for _, disputeID := range req.DisputeIDs {
+		// Get dispute
+		dispute, err := s.disputes.Get(ctx, disputeID)
+		if err != nil {
+			if err == repository.ErrNotFound {
+				result.FailedCount++
+				result.Errors = append(result.Errors, BatchOperationError{
+					DisputeID: disputeID,
+					Error:     "纠纷不存在",
+				})
+				continue
+			}
+			result.FailedCount++
+			result.Errors = append(result.Errors, BatchOperationError{
+				DisputeID: disputeID,
+				Error:     fmt.Sprintf("获取纠纷失败: %v", err),
+			})
+			continue
+		}
+
+		// Check if dispute can be resolved
+		if dispute.Status == model.DisputeStatusResolved || dispute.Status == model.DisputeStatusRejected || dispute.Status == model.DisputeStatusCanceled {
+			result.FailedCount++
+			result.Errors = append(result.Errors, BatchOperationError{
+				DisputeID: disputeID,
+				Error:     fmt.Sprintf("纠纷状态为%s，无法再次处理", dispute.Status),
+			})
+			continue
+		}
+
+		// Get order for refund processing
+		order, err := s.orders.Get(ctx, dispute.OrderID)
+		if err != nil {
+			result.FailedCount++
+			result.Errors = append(result.Errors, BatchOperationError{
+				DisputeID: disputeID,
+				Error:     fmt.Sprintf("获取订单失败: %v", err),
+			})
+			continue
+		}
+
+		// Update dispute
+		now := time.Now()
+		dispute.Resolution = req.Resolution
+		dispute.ResolveRemark = req.ResolveRemark
+		dispute.ResolvedAt = &now
+		dispute.ResolvedBy = &req.ActorUserID
+
+		// Set status based on resolution
+		if req.Resolution == model.ResolutionReject {
+			dispute.Status = model.DisputeStatusRejected
+		} else {
+			dispute.Status = model.DisputeStatusResolved
+		}
+
+		if err := s.disputes.Update(ctx, dispute); err != nil {
+			result.FailedCount++
+			result.Errors = append(result.Errors, BatchOperationError{
+				DisputeID: disputeID,
+				Error:     fmt.Sprintf("更新纠纷失败: %v", err),
+			})
+			continue
+		}
+
+		// Handle resolution based on decision
+		if req.Resolution == model.ResolutionRefund {
+			// Full refund
+			if err := s.processRefund(ctx, order, dispute, order.TotalPriceCents, &req.ActorUserID); err != nil {
+				result.FailedCount++
+				result.Errors = append(result.Errors, BatchOperationError{
+					DisputeID: disputeID,
+					Error:     fmt.Sprintf("处理退款失败: %v", err),
+				})
+				continue
+			}
+		} else if req.Resolution == model.ResolutionReject {
+			// Restore order status
+			order.Status = model.OrderStatusCompleted
+			order.HasDispute = false
+			if err := s.orders.Update(ctx, order); err != nil {
+				result.FailedCount++
+				result.Errors = append(result.Errors, BatchOperationError{
+					DisputeID: disputeID,
+					Error:     fmt.Sprintf("恢复订单状态失败: %v", err),
+				})
+				continue
+			}
+		}
+
+		// Log operation
+		s.logOperation(ctx, model.OpEntityDispute, dispute.ID, model.OpActionResolveDispute,
+			fmt.Sprintf("Batch resolved with %s decision", req.Resolution), dispute.TraceID, &req.ActorUserID)
+
+		// Send notification to initiator
+		s.sendNotification(ctx, dispute.InitiatorID, "争议处理结果",
+			fmt.Sprintf("您的争议 #%d 已处理完成", dispute.ID), dispute.TraceID)
+
+		result.SuccessCount++
+	}
+
+	// Generate message
+	if result.FailedCount == 0 {
+		result.Message = fmt.Sprintf("批量关闭成功，共%d个纠纷", result.SuccessCount)
+	} else if result.SuccessCount == 0 {
+		result.Success = false
+		result.Message = "批量关闭失败"
+	} else {
+		result.Message = fmt.Sprintf("批量关闭完成，成功%d个，失败%d个", result.SuccessCount, result.FailedCount)
+	}
+
+	return result, nil
+}
+
+// canTransitionTo checks if a status transition is valid
+func canTransitionTo(from, to model.DisputeStatus) bool {
+	validTransitions := map[model.DisputeStatus][]model.DisputeStatus{
+		model.DisputeStatusPending: {
+			model.DisputeStatusAssigned,
+			model.DisputeStatusCanceled,
+		},
+		model.DisputeStatusAssigned: {
+			model.DisputeStatusMediating,
+			model.DisputeStatusCanceled,
+		},
+		model.DisputeStatusMediating: {
+			model.DisputeStatusAssigned,
+			model.DisputeStatusCanceled,
+		},
+	}
+
+	allowed, exists := validTransitions[from]
+	if !exists {
+		return false
+	}
+
+	for _, status := range allowed {
+		if status == to {
+			return true
+		}
+	}
+	return false
+}

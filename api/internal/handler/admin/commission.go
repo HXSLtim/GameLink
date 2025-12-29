@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -18,6 +19,10 @@ func RegisterCommissionRoutes(router gin.IRouter, svc *commission.CommissionServ
 		// 抽成规则管理
 		group.POST("/rules", func(c *gin.Context) { createCommissionRuleHandler(c, svc) })
 		group.PUT("/rules/:id", func(c *gin.Context) { updateCommissionRuleHandler(c, svc) })
+
+		// 批量操作
+		group.DELETE("/rules/batch", func(c *gin.Context) { batchDeleteCommissionRulesHandler(c, svc) })
+		group.PUT("/rules/batch/status", func(c *gin.Context) { batchUpdateCommissionRulesStatusHandler(c, svc) })
 
 		// 月度结算
 		group.POST("/settlements/trigger", func(c *gin.Context) { triggerSettlementHandler(c, scheduler) })
@@ -138,4 +143,92 @@ func getPlatformStatsHandler(c *gin.Context, svc *commission.CommissionService) 
 	}
 
 	respondSuccess(c, *stats)
+}
+
+// ============================================================================
+// 批量操作处理器
+// ============================================================================
+
+// BatchDeleteCommissionRulesRequest 批量删除抽成规则请求
+type BatchDeleteCommissionRulesRequest struct {
+	IDs []uint64 `json:"ids" binding:"required,min=1"`
+}
+
+// batchDeleteCommissionRulesHandler 批量删除抽成规则
+// @Summary      批量删除抽成规则
+// @Description  批量删除多个抽成规则
+// @Tags         Admin - Commission
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        request        body      BatchDeleteCommissionRulesRequest  true  "规则ID列表"
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Router       /admin/commission/rules/batch [delete]
+func batchDeleteCommissionRulesHandler(c *gin.Context, svc *commission.CommissionService) {
+	var req BatchDeleteCommissionRulesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondBadRequest(c, err.Error())
+		return
+	}
+
+	result, err := svc.BatchDeleteCommissionRules(c.Request.Context(), req.IDs)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	respondSuccess(c, gin.H{
+		"message":      fmt.Sprintf("成功删除 %d 条规则", result.SuccessCount),
+		"successCount": result.SuccessCount,
+		"failedCount":  result.FailedCount,
+		"failedIds":    result.FailedIDs,
+		"errors":       result.Errors,
+	})
+}
+
+// BatchUpdateCommissionRulesStatusRequest 批量更新抽成规则状态请求
+type BatchUpdateCommissionRulesStatusRequest struct {
+	IDs      []uint64 `json:"ids" binding:"required,min=1"`
+	IsActive bool     `json:"isActive"`
+}
+
+// batchUpdateCommissionRulesStatusHandler 批量更新抽成规则状态
+// @Summary      批量更新抽成规则状态
+// @Description  批量启用或禁用抽成规则
+// @Tags         Admin - Commission
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        request        body      BatchUpdateCommissionRulesStatusRequest  true  "规则ID和状态"
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Router       /admin/commission/rules/batch/status [put]
+func batchUpdateCommissionRulesStatusHandler(c *gin.Context, svc *commission.CommissionService) {
+	var req BatchUpdateCommissionRulesStatusRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondBadRequest(c, err.Error())
+		return
+	}
+
+	result, err := svc.BatchUpdateCommissionRuleStatus(c.Request.Context(), req.IDs, req.IsActive)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	action := "启用"
+	if !req.IsActive {
+		action = "禁用"
+	}
+
+	respondSuccess(c, gin.H{
+		"message":      fmt.Sprintf("成功%s %d 条规则", action, result.SuccessCount),
+		"successCount": result.SuccessCount,
+		"failedCount":  result.FailedCount,
+		"failedIds":    result.FailedIDs,
+		"errors":       result.Errors,
+	})
 }

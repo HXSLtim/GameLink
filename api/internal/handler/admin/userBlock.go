@@ -281,23 +281,34 @@ func (h *UserBlockHandler) AdminUnblock(c *gin.Context) {
 
 // BatchUnblockRequest 批量取消拉黑请求
 type BatchUnblockRequest struct {
-	IDs    []uint64 `json:"ids" binding:"required,min=1"`
-	Remark string   `json:"remark"`
+	BlockIDs []uint64 `json:"block_ids" binding:"required,min=1,max=100"`
+	Remark   string   `json:"remark"`
 }
 
 // BatchUnblock
 // @Summary      批量取消拉黑
+// @Description  批量取消多个拉黑记录（管理员强制解除）
 // @Tags         Admin/UserBlock
 // @Security     BearerAuth
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchUnblockRequest  true  "批量取消请求"
-// @Success      200  {object}  model.APIResponse[map[string]int]
+// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
 // @Failure      400  {object}  model.ErrorResponse
-// @Router       /admin/user-blocks/batch-unblock [post]
+// @Router       /admin/user-blocks/batch/unblock [post]
 func (h *UserBlockHandler) BatchUnblock(c *gin.Context) {
 	var req BatchUnblockRequest
-	if !ValidateAndRespond(c, &req) {
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondAPIError(c, apierr.BadRequest("invalid request payload").WithDetails(err.Error()))
+		return
+	}
+
+	if len(req.BlockIDs) == 0 {
+		respondAPIError(c, apierr.BadRequest("block_ids is required"))
+		return
+	}
+	if len(req.BlockIDs) > 100 {
+		respondAPIError(c, apierr.BadRequest("maximum 100 blocks per batch"))
 		return
 	}
 
@@ -306,16 +317,14 @@ func (h *UserBlockHandler) BatchUnblock(c *gin.Context) {
 		return
 	}
 
-	count, err := h.svc.BatchUnblock(c.Request.Context(), req.IDs, adminID, req.Remark)
+	result, err := h.svc.BatchUnblock(c.Request.Context(), req.BlockIDs, adminID, req.Remark)
 	if err != nil {
-		respondError(c, err)
+		respondAPIError(c, apierr.InternalError("batch unblock failed").WithDetails(err.Error()))
 		return
 	}
 
-	respondSuccess(c, map[string]int{
-		"successCount": count,
-		"totalCount":   len(req.IDs),
-	})
+	response := convertBatchOperationResult(result)
+	respondSuccess(c, response)
 }
 
 // DeleteUserBlock
@@ -340,6 +349,132 @@ func (h *UserBlockHandler) DeleteUserBlock(c *gin.Context) {
 	respondDeleted(c)
 }
 
+// BatchDeleteRequest 批量删除请求
+type BatchDeleteRequest struct {
+	BlockIDs []uint64 `json:"block_ids" binding:"required,min=1,max=100"`
+}
+
+// BatchDelete
+// @Summary      批量删除拉黑记录
+// @Description  批量删除多个拉黑记录
+// @Tags         Admin/UserBlock
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body  BatchDeleteRequest  true  "批量删除请求"
+// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+// @Failure      400  {object}  model.ErrorResponse
+// @Router       /admin/user-blocks/batch/delete [post]
+func (h *UserBlockHandler) BatchDelete(c *gin.Context) {
+	var req BatchDeleteRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondAPIError(c, apierr.BadRequest("invalid request payload").WithDetails(err.Error()))
+		return
+	}
+
+	if len(req.BlockIDs) == 0 {
+		respondAPIError(c, apierr.BadRequest("block_ids is required"))
+		return
+	}
+	if len(req.BlockIDs) > 100 {
+		respondAPIError(c, apierr.BadRequest("maximum 100 blocks per batch"))
+		return
+	}
+
+	result, err := h.svc.BatchDelete(c.Request.Context(), req.BlockIDs)
+	if err != nil {
+		respondAPIError(c, apierr.InternalError("batch delete failed").WithDetails(err.Error()))
+		return
+	}
+
+	response := convertBatchOperationResult(result)
+	respondSuccess(c, response)
+}
+
+// batchBlockRequest 批量拉黑请求
+type batchBlockRequest struct {
+	Blocks []blockInputItem `json:"blocks" binding:"required,min=1"`
+}
+
+// blockInputItem 单个拉黑项
+type blockInputItem struct {
+	BlockerID   uint64              `json:"blockerId" binding:"required"`
+	BlockerType model.BlockUserType `json:"blockerType" binding:"required,oneof=user player"`
+	BlockedID   uint64              `json:"blockedId" binding:"required"`
+	BlockedType model.BlockUserType `json:"blockedType" binding:"required,oneof=user player"`
+	Reason      string              `json:"reason"`
+}
+
+// BatchBlock
+// @Summary      批量拉黑用户
+// @Description  批量创建拉黑关系
+// @Tags         Admin/UserBlock
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body  batchBlockRequest  true  "批量拉黑请求"
+// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+// @Failure      400  {object}  model.ErrorResponse
+// @Router       /admin/user-blocks/batch [post]
+func (h *UserBlockHandler) BatchBlock(c *gin.Context) {
+	var req batchBlockRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondAPIError(c, apierr.BadRequest("invalid request payload").WithDetails(err.Error()))
+		return
+	}
+
+	if len(req.Blocks) == 0 {
+		respondAPIError(c, apierr.BadRequest("blocks is required"))
+		return
+	}
+	if len(req.Blocks) > 100 {
+		respondAPIError(c, apierr.BadRequest("maximum 100 blocks per batch"))
+		return
+	}
+
+	// Convert to service input
+	items := make([]userblock.BlockInputItemForBatch, len(req.Blocks))
+	for i, b := range req.Blocks {
+		items[i] = userblock.BlockInputItemForBatch{
+			BlockerID:   b.BlockerID,
+			BlockerType: b.BlockerType,
+			BlockedID:   b.BlockedID,
+			BlockedType: b.BlockedType,
+			Reason:      b.Reason,
+		}
+		_ = i // Avoid unused variable warning
+	}
+
+	result, err := h.svc.BatchBlock(c.Request.Context(), items)
+	if err != nil {
+		respondAPIError(c, apierr.InternalError("batch block failed").WithDetails(err.Error()))
+		return
+	}
+
+	// Convert service result to handler response format
+	response := convertBatchOperationResult(result)
+	respondSuccess(c, response)
+}
+
+// convertBatchOperationResult 转换 service 层的批量操作结果为 handler 层的响应格式
+func convertBatchOperationResult(result *userblock.BatchOperationResult) BatchOperationResponse {
+	response := BatchOperationResponse{
+		SuccessCount: result.SuccessCount,
+		FailedCount:  result.FailedCount,
+		TotalCount:   result.TotalCount,
+		FailedItems:  make([]BatchOperationError, 0, len(result.FailedIDs)),
+	}
+
+	for _, id := range result.FailedIDs {
+		response.FailedItems = append(response.FailedItems, BatchOperationError{
+			ID:      id,
+			Message: "operation failed",
+		})
+	}
+
+	return response
+}
+
 // RegisterUserBlockRoutes 注册用户拉黑管理路由
 func RegisterUserBlockRoutes(router gin.IRouter, svc *userblock.UserBlockService, pm *middleware.PermissionMiddleware) {
 	h := NewUserBlockHandler(svc)
@@ -355,8 +490,10 @@ func RegisterUserBlockRoutes(router gin.IRouter, svc *userblock.UserBlockService
 
 		// 管理操作
 		group.POST("/:id/unblock", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/user-blocks/:id/unblock"), h.AdminUnblock)
-		group.POST("/batch-unblock", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/user-blocks/batch-unblock"), h.BatchUnblock)
+		group.POST("/batch/unblock", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/user-blocks/batch/unblock"), h.BatchUnblock)
 		group.DELETE("/:id", pm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/user-blocks/:id"), h.DeleteUserBlock)
+		group.POST("/batch/delete", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/user-blocks/batch/delete"), h.BatchDelete)
+		group.POST("/batch", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/user-blocks/batch"), h.BatchBlock)
 	}
 
 	// 用户相关路由

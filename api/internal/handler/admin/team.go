@@ -356,6 +356,219 @@ func (h *TeamHandler) TransferLeader(c *gin.Context) {
 	respondMsg(c, "队长转让成功")
 }
 
+// ============================================================================
+// 批量操作
+// ============================================================================
+
+// BatchDeleteTeamsRequest 批量删除团队请求
+type BatchDeleteTeamsRequest struct {
+	TeamIDs []uint64 `json:"team_ids" binding:"required,min=1,max=100"`
+}
+
+// BatchDeleteTeams 批量删除团队
+// @Summary      批量删除团队
+// @Description  批量删除多个团队（会检查成员数量和进行中的订单）
+// @Tags         Admin/Teams
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body  BatchDeleteTeamsRequest  true  "团队ID列表"
+// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+// @Failure      400  {object}  model.ErrorResponse
+// @Router       /admin/teams/batch/delete [post]
+func (h *TeamHandler) BatchDeleteTeams(c *gin.Context) {
+	var req BatchDeleteTeamsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondAPIError(c, apierr.BadRequest("invalid request payload").WithDetails(err.Error()))
+		return
+	}
+
+	if len(req.TeamIDs) == 0 {
+		respondAPIError(c, apierr.BadRequest("team_ids is required"))
+		return
+	}
+	if len(req.TeamIDs) > 100 {
+		respondAPIError(c, apierr.BadRequest("maximum 100 teams per batch"))
+		return
+	}
+
+	result, err := h.svc.BatchDeleteTeams(c.Request.Context(), req.TeamIDs)
+	if err != nil {
+		respondAPIError(c, apierr.InternalError("batch delete teams failed").WithDetails(err.Error()))
+		return
+	}
+
+	// Convert service result to BatchOperationResponse
+	response := convertBatchDeleteResultToResponse(result)
+	respondSuccess(c, response)
+}
+
+// BatchUpdateTeamsStatusRequest 批量更新团队状态请求
+type BatchUpdateTeamsStatusRequest struct {
+	TeamIDs []uint64         `json:"team_ids" binding:"required,min=1,max=100"`
+	Status  model.TeamStatus `json:"status" binding:"required,oneof=active inactive busy"`
+}
+
+// BatchUpdateTeamsStatus 批量更新团队状态
+// @Summary      批量更新团队状态
+// @Description  批量更新多个团队的状态（active/inactive/busy）
+// @Tags         Admin/Teams
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body  BatchUpdateTeamsStatusRequest  true  "团队ID列表和新状态"
+// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+// @Failure      400  {object}  model.ErrorResponse
+// @Router       /admin/teams/batch/status [put]
+func (h *TeamHandler) BatchUpdateTeamsStatus(c *gin.Context) {
+	var req BatchUpdateTeamsStatusRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondAPIError(c, apierr.BadRequest("invalid request payload").WithDetails(err.Error()))
+		return
+	}
+
+	if len(req.TeamIDs) == 0 {
+		respondAPIError(c, apierr.BadRequest("team_ids is required"))
+		return
+	}
+	if len(req.TeamIDs) > 100 {
+		respondAPIError(c, apierr.BadRequest("maximum 100 teams per batch"))
+		return
+	}
+	if req.Status == "" {
+		respondAPIError(c, apierr.BadRequest("status is required"))
+		return
+	}
+
+	// Validate status
+	validStatuses := map[model.TeamStatus]bool{
+		model.TeamStatusActive:   true,
+		model.TeamStatusInactive: true,
+		model.TeamStatusBusy:     true,
+	}
+	if !validStatuses[req.Status] {
+		respondAPIError(c, apierr.BadRequest("invalid status, must be one of: active, inactive, busy"))
+		return
+	}
+
+	result, err := h.svc.BatchUpdateTeamStatus(c.Request.Context(), req.TeamIDs, req.Status)
+	if err != nil {
+		respondAPIError(c, apierr.InternalError("batch update team status failed").WithDetails(err.Error()))
+		return
+	}
+
+	// Convert service result to BatchOperationResponse
+	response := convertBatchStatusResultToResponse(result)
+	respondSuccess(c, response)
+}
+
+// BatchAddTeamMembersRequest 批量添加团队成员请求
+type BatchAddTeamMembersRequest struct {
+	TeamID    uint64   `json:"team_id" binding:"required"`
+	PlayerIDs []uint64 `json:"player_ids" binding:"required,min=1,max=100"`
+}
+
+// BatchAddTeamMembers 批量添加团队成员
+// @Summary      批量添加团队成员
+// @Description  批量添加多个陪玩师到指定团队
+// @Tags         Admin/Teams
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body  BatchAddTeamMembersRequest  true  "团队ID和陪玩师ID列表"
+// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+// @Failure      400  {object}  model.ErrorResponse
+// @Router       /admin/teams/batch/members [post]
+func (h *TeamHandler) BatchAddTeamMembers(c *gin.Context) {
+	var req BatchAddTeamMembersRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondAPIError(c, apierr.BadRequest("invalid request payload").WithDetails(err.Error()))
+		return
+	}
+
+	if req.TeamID == 0 {
+		respondAPIError(c, apierr.BadRequest("team_id is required"))
+		return
+	}
+	if len(req.PlayerIDs) == 0 {
+		respondAPIError(c, apierr.BadRequest("player_ids is required"))
+		return
+	}
+	if len(req.PlayerIDs) > 100 {
+		respondAPIError(c, apierr.BadRequest("maximum 100 players per batch"))
+		return
+	}
+
+	result, err := h.svc.BatchAddMembers(c.Request.Context(), req.TeamID, req.PlayerIDs)
+	if err != nil {
+		respondAPIError(c, apierr.InternalError("batch add team members failed").WithDetails(err.Error()))
+		return
+	}
+
+	// Convert service result to BatchOperationResponse
+	response := convertBatchAddMembersResultToResponse(result)
+	respondSuccess(c, response)
+}
+
+// Helper functions to convert service results to unified response format
+
+func convertBatchDeleteResultToResponse(result *teamservice.BatchDeleteTeamsResult) BatchOperationResponse {
+	response := BatchOperationResponse{
+		SuccessCount: result.SuccessCount,
+		FailedCount:  result.FailedCount,
+		TotalCount:   result.SuccessCount + result.FailedCount,
+		FailedItems:  make([]BatchOperationError, 0, len(result.FailedIDs)),
+		SuccessItems: make([]uint64, 0, result.SuccessCount),
+	}
+
+	for i, id := range result.FailedIDs {
+		response.FailedItems = append(response.FailedItems, BatchOperationError{
+			ID:      id,
+			Message: result.Errors[i],
+		})
+	}
+
+	return response
+}
+
+func convertBatchStatusResultToResponse(result *teamservice.BatchUpdateTeamStatusResult) BatchOperationResponse {
+	response := BatchOperationResponse{
+		SuccessCount: result.SuccessCount,
+		FailedCount:  result.FailedCount,
+		TotalCount:   result.SuccessCount + result.FailedCount,
+		FailedItems:  make([]BatchOperationError, 0, len(result.FailedIDs)),
+		SuccessItems: make([]uint64, 0, result.SuccessCount),
+	}
+
+	for i, id := range result.FailedIDs {
+		response.FailedItems = append(response.FailedItems, BatchOperationError{
+			ID:      id,
+			Message: result.Errors[i],
+		})
+	}
+
+	return response
+}
+
+func convertBatchAddMembersResultToResponse(result *teamservice.BatchAddMembersResult) BatchOperationResponse {
+	response := BatchOperationResponse{
+		SuccessCount: result.SuccessCount,
+		FailedCount:  result.FailedCount,
+		TotalCount:   result.SuccessCount + result.FailedCount,
+		FailedItems:  make([]BatchOperationError, 0, len(result.FailedPlayerIDs)),
+		SuccessItems: make([]uint64, 0, result.SuccessCount),
+	}
+
+	for i, id := range result.FailedPlayerIDs {
+		response.FailedItems = append(response.FailedItems, BatchOperationError{
+			ID:      id,
+			Message: result.Errors[i],
+		})
+	}
+
+	return response
+}
+
 // ListMembers 获取成员列表（分页）
 func (h *TeamHandler) ListMembers(c *gin.Context) {
 	page, pageSize, ok := parsePagination(c)
@@ -514,6 +727,11 @@ func RegisterTeamRoutes(rg *gin.RouterGroup, svc *teamservice.TeamService, pm *m
 		teamGroup.PUT("/:id", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/teams/:id"), h.UpdateTeam)
 		teamGroup.DELETE("/:id", pm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/teams/:id"), h.DeleteTeam)
 		teamGroup.PUT("/:id/status", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/teams/:id/status"), h.UpdateTeamStatus)
+
+		// 批量操作
+		teamGroup.DELETE("/batch", pm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/teams/batch"), h.BatchDeleteTeams)
+		teamGroup.PUT("/batch/status", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/teams/batch/status"), h.BatchUpdateTeamsStatus)
+		teamGroup.POST("/batch/members", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/teams/batch/members"), h.BatchAddTeamMembers)
 
 		// 成员管理
 		teamGroup.GET("/:id/members", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/teams/:id/members"), h.GetTeamMembers)

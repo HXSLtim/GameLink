@@ -475,3 +475,122 @@ func (s *TeamService) ListInvites(ctx context.Context, opts teamrepo.InviteListO
 func (s *TeamService) GetInvite(ctx context.Context, id uint64) (*model.TeamInvite, error) {
 	return s.repo.GetInviteByID(ctx, id)
 }
+
+// ============================================================================
+// 批量操作
+// ============================================================================
+
+// BatchDeleteTeamsResult 批量删除团队结果
+type BatchDeleteTeamsResult struct {
+	SuccessCount int      `json:"successCount"`
+	FailedCount  int      `json:"failedCount"`
+	FailedIDs    []uint64 `json:"failedIds"`
+	Errors       []string `json:"errors"`
+}
+
+// BatchDeleteTeams 批量删除团队
+func (s *TeamService) BatchDeleteTeams(ctx context.Context, ids []uint64) (*BatchDeleteTeamsResult, error) {
+	if len(ids) == 0 {
+		return nil, errors.New("团队ID列表不能为空")
+	}
+
+	result := &BatchDeleteTeamsResult{
+		FailedIDs: make([]uint64, 0),
+		Errors:    make([]string, 0),
+	}
+
+	for _, id := range ids {
+		err := s.DeleteTeam(ctx, id)
+		if err != nil {
+			result.FailedCount++
+			result.FailedIDs = append(result.FailedIDs, id)
+			result.Errors = append(result.Errors, fmt.Sprintf("团队%d: %s", id, err.Error()))
+		} else {
+			result.SuccessCount++
+		}
+	}
+
+	return result, nil
+}
+
+// BatchUpdateTeamStatusResult 批量更新团队状态结果
+type BatchUpdateTeamStatusResult struct {
+	SuccessCount int      `json:"successCount"`
+	FailedCount  int      `json:"failedCount"`
+	FailedIDs    []uint64 `json:"failedIds"`
+	Errors       []string `json:"errors"`
+}
+
+// BatchUpdateTeamStatus 批量更新团队状态
+func (s *TeamService) BatchUpdateTeamStatus(ctx context.Context, ids []uint64, status model.TeamStatus) (*BatchUpdateTeamStatusResult, error) {
+	if len(ids) == 0 {
+		return nil, errors.New("团队ID列表不能为空")
+	}
+
+	// 验证状态值
+	validStatuses := map[model.TeamStatus]bool{
+		model.TeamStatusActive:   true,
+		model.TeamStatusInactive: true,
+		model.TeamStatusBusy:     true,
+	}
+	if !validStatuses[status] {
+		return nil, errors.New("无效的团队状态")
+	}
+
+	result := &BatchUpdateTeamStatusResult{
+		FailedIDs: make([]uint64, 0),
+		Errors:    make([]string, 0),
+	}
+
+	for _, id := range ids {
+		err := s.UpdateTeamStatus(ctx, id, status)
+		if err != nil {
+			result.FailedCount++
+			result.FailedIDs = append(result.FailedIDs, id)
+			result.Errors = append(result.Errors, fmt.Sprintf("团队%d: %s", id, err.Error()))
+		} else {
+			result.SuccessCount++
+		}
+	}
+
+	return result, nil
+}
+
+// BatchAddMembersResult 批量添加成员结果
+type BatchAddMembersResult struct {
+	SuccessCount  int      `json:"successCount"`
+	FailedCount   int      `json:"failedCount"`
+	FailedPlayerIDs []uint64 `json:"failedPlayerIds"`
+	Errors        []string `json:"errors"`
+}
+
+// BatchAddMembers 批量添加成员到团队
+func (s *TeamService) BatchAddMembers(ctx context.Context, teamID uint64, playerIDs []uint64) (*BatchAddMembersResult, error) {
+	if len(playerIDs) == 0 {
+		return nil, errors.New("陪玩师ID列表不能为空")
+	}
+
+	// 检查团队是否存在
+	_, err := s.repo.GetByID(ctx, teamID)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &BatchAddMembersResult{
+		FailedPlayerIDs: make([]uint64, 0),
+		Errors:          make([]string, 0),
+	}
+
+	for _, playerID := range playerIDs {
+		err := s.AddMember(ctx, teamID, playerID)
+		if err != nil {
+			result.FailedCount++
+			result.FailedPlayerIDs = append(result.FailedPlayerIDs, playerID)
+			result.Errors = append(result.Errors, fmt.Sprintf("陪玩师%d: %s", playerID, err.Error()))
+		} else {
+			result.SuccessCount++
+		}
+	}
+
+	return result, nil
+}

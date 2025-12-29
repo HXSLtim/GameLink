@@ -287,3 +287,158 @@ func isValidColor(color string) bool {
 	matched, _ := regexp.MatchString(pattern, color)
 	return matched
 }
+
+// ============================================================================
+// 批量操作
+// ============================================================================
+
+// BatchOperationResult 批量操作结果
+type BatchOperationResult struct {
+	SuccessCount int               `json:"successCount"`
+	FailedCount  int               `json:"failedCount"`
+	FailedIDs    []uint64          `json:"failedIds,omitempty"`
+	TotalCount   int               `json:"totalCount"`
+	FailedItems  []BatchErrorItem  `json:"failedItems,omitempty"`
+	SuccessItems []uint64          `json:"successItems,omitempty"`
+}
+
+// BatchErrorItem 单个操作错误详情
+type BatchErrorItem struct {
+	ID      uint64 `json:"id"`
+	Message string `json:"message"`
+}
+
+// UserTagPair 用户标签对（用于批量分配）
+type UserTagPair struct {
+	UserID uint64
+	TagID  uint64
+}
+
+// BatchDeleteTags 批量删除标签
+func (s *UserTagService) BatchDeleteTags(ctx context.Context, ids []uint64) (*BatchOperationResult, error) {
+	result := &BatchOperationResult{
+		TotalCount:   len(ids),
+		FailedItems:  make([]BatchErrorItem, 0),
+		SuccessItems: make([]uint64, 0),
+	}
+
+	for _, id := range ids {
+		if err := s.DeleteTag(ctx, id); err != nil {
+			result.FailedCount++
+			result.FailedItems = append(result.FailedItems, BatchErrorItem{
+				ID:      id,
+				Message: err.Error(),
+			})
+		} else {
+			result.SuccessCount++
+			result.SuccessItems = append(result.SuccessItems, id)
+		}
+	}
+
+	return result, nil
+}
+
+// BatchAssignTags 批量为用户分配标签
+func (s *UserTagService) BatchAssignTags(ctx context.Context, pairs []UserTagPair) (*BatchOperationResult, error) {
+	result := &BatchOperationResult{
+		TotalCount:   len(pairs),
+		FailedItems:  make([]BatchErrorItem, 0),
+		SuccessItems: make([]uint64, 0),
+	}
+
+	for _, pair := range pairs {
+		if err := s.AddTagToUser(ctx, pair.UserID, pair.TagID); err != nil {
+			result.FailedCount++
+			// Use userID as failed identifier
+			result.FailedItems = append(result.FailedItems, BatchErrorItem{
+				ID:      pair.UserID,
+				Message: fmt.Sprintf("tag %d: %s", pair.TagID, err.Error()),
+			})
+		} else {
+			result.SuccessCount++
+			result.SuccessItems = append(result.SuccessItems, pair.UserID)
+		}
+	}
+
+	return result, nil
+}
+
+// BatchAssignTagsToUsers 批量分配标签给用户（笛卡尔积）
+// 为每个用户分配所有指定的标签
+func (s *UserTagService) BatchAssignTagsToUsers(ctx context.Context, userIDs []uint64, tagIDs []uint64) (*BatchOperationResult, error) {
+	result := &BatchOperationResult{
+		TotalCount:   len(userIDs) * len(tagIDs),
+		FailedItems:  make([]BatchErrorItem, 0),
+		SuccessItems: make([]uint64, 0),
+	}
+
+	successSet := make(map[uint64]bool)
+
+	for _, userID := range userIDs {
+		for _, tagID := range tagIDs {
+			// 组合 ID 用于标识唯一的用户-标签对
+			pairID := userID<<32 | tagID
+
+			if err := s.AddTagToUser(ctx, userID, tagID); err != nil {
+				result.FailedCount++
+				result.FailedItems = append(result.FailedItems, BatchErrorItem{
+					ID:      pairID,
+					Message: fmt.Sprintf("user %d tag %d: %s", userID, tagID, err.Error()),
+				})
+			} else {
+				result.SuccessCount++
+				successSet[userID] = true
+			}
+		}
+	}
+
+	// 收集成功获得标签的用户 ID
+	for userID := range successSet {
+		result.SuccessItems = append(result.SuccessItems, userID)
+	}
+
+	return result, nil
+}
+
+// BatchRemoveTagsFromUsers 批量移除用户标签（笛卡尔积）
+// 从每个用户移除所有指定的标签
+func (s *UserTagService) BatchRemoveTagsFromUsers(ctx context.Context, userIDs []uint64, tagIDs []uint64) (*BatchOperationResult, error) {
+	result := &BatchOperationResult{
+		TotalCount:   len(userIDs) * len(tagIDs),
+		FailedItems:  make([]BatchErrorItem, 0),
+		SuccessItems: make([]uint64, 0),
+	}
+
+	successSet := make(map[uint64]bool)
+
+	for _, userID := range userIDs {
+		for _, tagID := range tagIDs {
+			// 组合 ID 用于标识唯一的用户-标签对
+			pairID := userID<<32 | tagID
+
+			if err := s.RemoveTagFromUser(ctx, userID, tagID); err != nil {
+				// 如果标签不存在，不算失败（幂等操作）
+				if err.Error() == "用户标签关联不存在" || err.Error() == "tag not assigned to user" {
+					result.SuccessCount++
+					successSet[userID] = true
+					continue
+				}
+				result.FailedCount++
+				result.FailedItems = append(result.FailedItems, BatchErrorItem{
+					ID:      pairID,
+					Message: fmt.Sprintf("user %d tag %d: %s", userID, tagID, err.Error()),
+				})
+			} else {
+				result.SuccessCount++
+				successSet[userID] = true
+			}
+		}
+	}
+
+	// 收集成功移除标签的用户 ID
+	for userID := range successSet {
+		result.SuccessItems = append(result.SuccessItems, userID)
+	}
+
+	return result, nil
+}

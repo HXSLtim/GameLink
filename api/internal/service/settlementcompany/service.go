@@ -471,3 +471,166 @@ func (s *SettlementCompanyService) EndCurrentAssignment(ctx context.Context, pla
 
 	return nil
 }
+
+// BatchOperationResponse 批量操作结果
+type BatchOperationResponse struct {
+	SuccessCount int                  `json:"success_count"`
+	FailedCount  int                  `json:"failed_count"`
+	TotalCount   int                  `json:"total_count"`
+	FailedItems  []BatchOperationItem `json:"failed_items,omitempty"`
+	SuccessItems []uint64             `json:"success_items,omitempty"`
+}
+
+// BatchOperationItem 单个操作错误详情
+type BatchOperationItem struct {
+	ID      uint64 `json:"id"`
+	Message string `json:"message"`
+}
+
+// BatchUpdateCompanyStatus 批量更新结算公司状态
+func (s *SettlementCompanyService) BatchUpdateCompanyStatus(ctx context.Context, companyIDs []uint64, isActive bool, updatedBy uint64) (*BatchOperationResponse, error) {
+	result := &BatchOperationResponse{
+		TotalCount:   len(companyIDs),
+		SuccessItems: make([]uint64, 0),
+		FailedItems:  make([]BatchOperationItem, 0),
+	}
+
+	if len(companyIDs) == 0 {
+		return result, nil
+	}
+
+	// 获取所有公司及其陪玩师数量
+	companies, err := s.repo.GetByIDsWithPlayerCount(ctx, companyIDs)
+	if err != nil {
+		return nil, apierr.InternalError("failed to get settlement companies").WithDetails(err.Error())
+	}
+
+	// 构建公司ID到公司的映射
+	companyMap := make(map[uint64]*model.SettlementCompany)
+	for i := range companies {
+		companyMap[companies[i].ID] = &companies[i]
+	}
+
+	var newStatus model.CompanyStatus
+	if isActive {
+		newStatus = model.CompanyStatusActive
+	} else {
+		newStatus = model.CompanyStatusInactive
+	}
+
+	// 验证并收集结果
+	var validIDs []uint64
+	for _, companyID := range companyIDs {
+		company, exists := companyMap[companyID]
+		if !exists {
+			result.FailedItems = append(result.FailedItems, BatchOperationItem{
+				ID:      companyID,
+				Message: "settlement company not found",
+			})
+			result.FailedCount++
+			continue
+		}
+
+		// 如果要禁用且有活跃陪玩师，则不允许
+		if !isActive && company.PlayerCount > 0 {
+			result.FailedItems = append(result.FailedItems, BatchOperationItem{
+				ID:      companyID,
+				Message: fmt.Sprintf("cannot disable company with %d active players", company.PlayerCount),
+			})
+			result.FailedCount++
+			continue
+		}
+
+		validIDs = append(validIDs, companyID)
+		result.SuccessItems = append(result.SuccessItems, companyID)
+		result.SuccessCount++
+	}
+
+	// 批量更新状态
+	if len(validIDs) > 0 {
+		if err := s.repo.BatchUpdateStatus(ctx, validIDs, newStatus); err != nil {
+			return nil, apierr.InternalError("failed to batch update company status").WithDetails(err.Error())
+		}
+
+		// 记录状态变更历史
+		for _, companyID := range validIDs {
+			company := companyMap[companyID]
+			if company.Status != newStatus {
+				history := &model.SettlementCompanyHistory{
+					SettlementCompanyID: companyID,
+					FieldName:           "status",
+					OldValue:            string(company.Status),
+					NewValue:            string(newStatus),
+					ChangedBy:           updatedBy,
+				}
+				if err := s.repo.CreateHistory(ctx, history); err != nil {
+					// 记录历史失败不影响主流程
+				}
+			}
+		}
+	}
+
+	return result, nil
+}
+
+// BatchDeleteCompanies 批量删除结算公司
+func (s *SettlementCompanyService) BatchDeleteCompanies(ctx context.Context, companyIDs []uint64) (*BatchOperationResponse, error) {
+	result := &BatchOperationResponse{
+		TotalCount:   len(companyIDs),
+		SuccessItems: make([]uint64, 0),
+		FailedItems:  make([]BatchOperationItem, 0),
+	}
+
+	if len(companyIDs) == 0 {
+		return result, nil
+	}
+
+	// 获取所有公司及其陪玩师数量
+	companies, err := s.repo.GetByIDsWithPlayerCount(ctx, companyIDs)
+	if err != nil {
+		return nil, apierr.InternalError("failed to get settlement companies").WithDetails(err.Error())
+	}
+
+	// 构建公司ID到公司的映射
+	companyMap := make(map[uint64]*model.SettlementCompany)
+	for i := range companies {
+		companyMap[companies[i].ID] = &companies[i]
+	}
+
+	// 验证并收集结果
+	var validIDs []uint64
+	for _, companyID := range companyIDs {
+		company, exists := companyMap[companyID]
+		if !exists {
+			result.FailedItems = append(result.FailedItems, BatchOperationItem{
+				ID:      companyID,
+				Message: "settlement company not found",
+			})
+			result.FailedCount++
+			continue
+		}
+
+		// 如果有活跃陪玩师，则不允许删除
+		if company.PlayerCount > 0 {
+			result.FailedItems = append(result.FailedItems, BatchOperationItem{
+				ID:      companyID,
+				Message: fmt.Sprintf("cannot delete company with %d active players", company.PlayerCount),
+			})
+			result.FailedCount++
+			continue
+		}
+
+		validIDs = append(validIDs, companyID)
+		result.SuccessItems = append(result.SuccessItems, companyID)
+		result.SuccessCount++
+	}
+
+	// 批量删除
+	if len(validIDs) > 0 {
+		if err := s.repo.BatchDelete(ctx, validIDs); err != nil {
+			return nil, apierr.InternalError("failed to batch delete companies").WithDetails(err.Error())
+		}
+	}
+
+	return result, nil
+}

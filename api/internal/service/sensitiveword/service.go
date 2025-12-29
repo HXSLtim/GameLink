@@ -385,3 +385,196 @@ func (s *SensitiveWordService) invalidateCache() {
 	s.cache.wordsMap = make(map[string]model.SensitiveWord)
 	s.cache.lastUpdate = time.Time{}
 }
+
+// ============================================================================
+// 批量操作
+// ============================================================================
+
+// BatchOperationResult 批量操作结果
+type BatchOperationResult struct {
+	SuccessCount int               `json:"success_count"`
+	FailedCount  int               `json:"failed_count"`
+	TotalCount   int               `json:"total_count"`
+	FailedItems  []BatchErrorItem  `json:"failed_items,omitempty"`
+	SuccessItems []uint64          `json:"success_items,omitempty"`
+}
+
+// BatchErrorItem 单个操作错误详情
+type BatchErrorItem struct {
+	ID      uint64 `json:"id"`
+	Message string `json:"message"`
+}
+
+// BatchAddSensitiveWordsRequest 批量添加敏感词请求
+type BatchAddSensitiveWordsRequest struct {
+	Words     []string                      `json:"words" binding:"required,min=1,max=100"`
+	Category  model.SensitiveWordCategory   `json:"category" binding:"required"`
+	Severity  model.SensitiveWordSeverity   `json:"severity" binding:"required"`
+	MatchType model.SensitiveWordMatchType  `json:"matchType"`
+}
+
+// BatchAddSensitiveWords 批量添加敏感词
+func (s *SensitiveWordService) BatchAddSensitiveWords(ctx context.Context, req BatchAddSensitiveWordsRequest) (*BatchOperationResult, error) {
+	response := &BatchOperationResult{
+		TotalCount:   len(req.Words),
+		SuccessItems: make([]uint64, 0),
+		FailedItems:  make([]BatchErrorItem, 0),
+	}
+
+	// 验证分类和严重程度
+	if !req.Category.Valid() {
+		return nil, ErrValidation
+	}
+	if !req.Severity.Valid() {
+		return nil, ErrValidation
+	}
+
+	// 设置默认匹配类型
+	if req.MatchType == "" {
+		req.MatchType = model.SensitiveWordMatchTypeExact
+	}
+	if !req.MatchType.Valid() {
+		return nil, ErrValidation
+	}
+
+	for _, wordStr := range req.Words {
+		// 验证输入
+		trimmedWord := strings.TrimSpace(wordStr)
+		if trimmedWord == "" {
+			response.FailedItems = append(response.FailedItems, BatchErrorItem{
+				ID:      0,
+				Message: "word cannot be empty",
+			})
+			response.FailedCount++
+			continue
+		}
+
+		// 创建敏感词
+		word := &model.SensitiveWord{
+			Word:      trimmedWord,
+			Category:  req.Category,
+			Severity:  req.Severity,
+			MatchType: req.MatchType,
+			IsActive:  true,
+		}
+
+		if err := s.repo.Create(ctx, word); err != nil {
+			if strings.Contains(err.Error(), "已存在") || strings.Contains(err.Error(), "duplicate") {
+				response.FailedItems = append(response.FailedItems, BatchErrorItem{
+					ID:      0,
+					Message: "word already exists",
+				})
+			} else {
+				response.FailedItems = append(response.FailedItems, BatchErrorItem{
+					ID:      0,
+					Message: err.Error(),
+				})
+			}
+			response.FailedCount++
+			continue
+		}
+
+		response.SuccessItems = append(response.SuccessItems, word.ID)
+		response.SuccessCount++
+	}
+
+	// 清除缓存
+	s.invalidateCache()
+
+	return response, nil
+}
+
+// BatchDeleteSensitiveWordsRequest 批量删除敏感词请求
+type BatchDeleteSensitiveWordsRequest struct {
+	IDs []uint64 `json:"ids" binding:"required,min=1,max=100"`
+}
+
+// BatchDeleteSensitiveWords 批量删除敏感词
+func (s *SensitiveWordService) BatchDeleteSensitiveWords(ctx context.Context, ids []uint64) (*BatchOperationResult, error) {
+	response := &BatchOperationResult{
+		TotalCount:   len(ids),
+		SuccessItems: make([]uint64, 0),
+		FailedItems:  make([]BatchErrorItem, 0),
+	}
+
+	for _, id := range ids {
+		err := s.repo.Delete(ctx, id)
+		if err != nil {
+			if errors.Is(err, repository.ErrNotFound) {
+				response.FailedItems = append(response.FailedItems, BatchErrorItem{
+					ID:      id,
+					Message: "word not found",
+				})
+			} else {
+				response.FailedItems = append(response.FailedItems, BatchErrorItem{
+					ID:      id,
+					Message: err.Error(),
+				})
+			}
+			response.FailedCount++
+			continue
+		}
+
+		response.SuccessItems = append(response.SuccessItems, id)
+		response.SuccessCount++
+	}
+
+	// 清除缓存
+	s.invalidateCache()
+
+	return response, nil
+}
+
+// BatchUpdateSensitiveWordStatusRequest 批量更新敏感词状态请求
+type BatchUpdateSensitiveWordStatusRequest struct {
+	IDs       []uint64 `json:"ids" binding:"required,min=1,max=100"`
+	IsActive  bool     `json:"isActive" binding:"required"`
+}
+
+// BatchUpdateSensitiveWordStatus 批量更新敏感词状态
+func (s *SensitiveWordService) BatchUpdateSensitiveWordStatus(ctx context.Context, req BatchUpdateSensitiveWordStatusRequest) (*BatchOperationResult, error) {
+	response := &BatchOperationResult{
+		TotalCount:   len(req.IDs),
+		SuccessItems: make([]uint64, 0),
+		FailedItems:  make([]BatchErrorItem, 0),
+	}
+
+	for _, id := range req.IDs {
+		// 获取现有敏感词
+		word, err := s.repo.Get(ctx, id)
+		if err != nil {
+			if errors.Is(err, repository.ErrNotFound) {
+				response.FailedItems = append(response.FailedItems, BatchErrorItem{
+					ID:      id,
+					Message: "word not found",
+				})
+			} else {
+				response.FailedItems = append(response.FailedItems, BatchErrorItem{
+					ID:      id,
+					Message: err.Error(),
+				})
+			}
+			response.FailedCount++
+			continue
+		}
+
+		// 更新状态
+		word.IsActive = req.IsActive
+		if err := s.repo.Update(ctx, word); err != nil {
+			response.FailedItems = append(response.FailedItems, BatchErrorItem{
+				ID:      id,
+				Message: err.Error(),
+			})
+			response.FailedCount++
+			continue
+		}
+
+		response.SuccessItems = append(response.SuccessItems, id)
+		response.SuccessCount++
+	}
+
+	// 清除缓存
+	s.invalidateCache()
+
+	return response, nil
+}

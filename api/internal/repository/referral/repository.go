@@ -327,6 +327,18 @@ func (r *Repository) UpdateReferralStatus(ctx context.Context, id uint64, status
 	return nil
 }
 
+// DeleteReferral 删除推荐记录
+func (r *Repository) DeleteReferral(ctx context.Context, id uint64) error {
+	result := r.db.WithContext(ctx).Delete(&model.Referral{}, id)
+	if result.Error != nil {
+		return fmt.Errorf("delete referral: %w", result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return repository.ErrNotFound
+	}
+	return nil
+}
+
 // GetUserReferrals 获取用户的推荐记录
 func (r *Repository) GetUserReferrals(ctx context.Context, userID uint64, limit int) ([]model.Referral, error) {
 	var items []model.Referral

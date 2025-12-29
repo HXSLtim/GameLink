@@ -45,3 +45,40 @@ super_admin:
 
 admin_auth:
   mode: "jwt"
+
+# 外部API凭证配置（可选）
+external_apis:
+  # 微信支付配置
+  wechat_pay:
+    app_id: ""                    # 微信支付应用ID
+    mch_id: ""                    # 商户号
+    api_key: ""                   # API密钥
+    api_cert_path: ""             # API证书路径
+    notify_url: ""                # 支付结果通知URL
+    enabled: false                # 是否启用微信支付
+
+  # 支付宝配置
+  alipay:
+    app_id: ""                    # 支付宝应用ID
+    private_key_path: ""          # 应用私钥路径
+    public_key_path: ""           # 支付宝公钥路径
+    notify_url: ""                # 支付结果通知URL
+    enabled: false                # 是否启用支付宝
+
+  # 短信服务配置
+  sms:
+    provider: ""                  # 服务商: aliyun, tencent
+    access_key: ""                # AccessKey ID
+    secret_key: ""                # AccessKey Secret
+    sign_name: ""                 # 短信签名
+    enabled: false                # 是否启用短信服务
+
+  # OSS对象存储配置
+  oss:
+    provider: ""                  # 服务商: aliyun, qcloud, minio
+    endpoint: ""                  # 访问域名
+    access_key: ""                # AccessKey ID
+    secret_key: ""                # AccessKey Secret
+    bucket: ""                    # 存储桶名称
+    region: ""                    # 区域
+    enabled: false                # 是否启用OSS

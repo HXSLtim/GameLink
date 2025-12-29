@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -8,6 +9,7 @@ import (
 
 	"gamelink/internal/model"
 	withdrawrepo "gamelink/internal/repository/withdraw"
+	withdrawservice "gamelink/internal/service/withdraw"
 	apierr "gamelink/pkg/apierr"
 )
 
@@ -15,7 +17,7 @@ import (
 type Withdraw = model.Withdraw
 
 // RegisterWithdrawRoutes 注册管理端提现管理路
-func RegisterWithdrawRoutes(router gin.IRouter, withdrawRepo withdrawrepo.WithdrawRepository) {
+func RegisterWithdrawRoutes(router gin.IRouter, withdrawRepo withdrawrepo.WithdrawRepository, withdrawService *withdrawservice.WithdrawRoutingService) {
 	group := router.Group("/withdraws")
 	{
 		group.GET("", func(c *gin.Context) { listWithdrawsHandler(c, withdrawRepo) })
@@ -23,6 +25,11 @@ func RegisterWithdrawRoutes(router gin.IRouter, withdrawRepo withdrawrepo.Withdr
 		group.POST("/:id/approve", func(c *gin.Context) { approveWithdrawHandler(c, withdrawRepo) })
 		group.POST("/:id/reject", func(c *gin.Context) { rejectWithdrawHandler(c, withdrawRepo) })
 		group.POST("/:id/complete", func(c *gin.Context) { completeWithdrawHandler(c, withdrawRepo) })
+
+		// 批量操作路由
+		group.POST("/batch/approve", func(c *gin.Context) { batchApproveWithdrawalsHandler(c, withdrawService) })
+		group.POST("/batch/reject", func(c *gin.Context) { batchRejectWithdrawalsHandler(c, withdrawService) })
+		group.POST("/batch/complete", func(c *gin.Context) { batchCompleteWithdrawalsHandler(c, withdrawService) })
 	}
 
 	// 提现分流路由 (前端使用 /withdrawals 路径)
@@ -455,4 +462,147 @@ func getWithdrawRoutingStatsHandler(c *gin.Context, repo withdrawrepo.WithdrawRe
 	}
 
 	respondSuccess(c, response)
+}
+
+// ============================================================================
+// 批量操作处理器
+// ============================================================================
+
+// BatchApproveWithdrawalsRequest 批量批准提现请求
+type BatchApproveWithdrawalsRequest struct {
+	WithdrawIDs []uint64 `json:"withdrawIds" binding:"required,min=1,max=100"`
+	Remark      string   `json:"remark" binding:"max=500"`
+}
+
+// batchApproveWithdrawalsHandler 批量批准提现申请
+// @Summary      批量批准提现申请
+// @Description  批量批准多个待处理的提现申请（最多100个）
+// @Tags         Admin - Withdraw
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        request  body  BatchApproveWithdrawalsRequest  true  "批量批准请求"
+// @Success      200      {object}  model.APIResponse[withdrawservice.BatchOperationResult]
+// @Failure      400      {object}  model.ErrorResponse
+// @Failure      401      {object}  model.ErrorResponse
+// @Router       /admin/withdraws/batch/approve [post]
+func batchApproveWithdrawalsHandler(c *gin.Context, svc *withdrawservice.WithdrawRoutingService) {
+	adminUserID, ok := getAdminUserID(c)
+	if !ok {
+		return
+	}
+
+	var req BatchApproveWithdrawalsRequest
+	if !ValidateAndRespond(c, &req) {
+		return
+	}
+
+	result, err := svc.BatchApprove(c.Request.Context(), &withdrawservice.BatchApproveRequest{
+		WithdrawIDs: req.WithdrawIDs,
+		Remark:      req.Remark,
+	}, adminUserID)
+
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	message := "批量批准提现成功"
+	if result.FailedCount > 0 {
+		message = fmt.Sprintf("批量批准提现完成，成功%d个，失败%d个", result.SuccessCount, result.FailedCount)
+	}
+
+	respondSuccessWithMsg(c, message, result)
+}
+
+// BatchRejectWithdrawalsRequest 批量拒绝提现请求
+type BatchRejectWithdrawalsRequest struct {
+	WithdrawIDs []uint64 `json:"withdrawIds" binding:"required,min=1,max=100"`
+	Reason      string   `json:"reason" binding:"required,min=1,max=500"`
+}
+
+// batchRejectWithdrawalsHandler 批量拒绝提现申请
+// @Summary      批量拒绝提现申请
+// @Description  批量拒绝多个待处理的提现申请（最多100个）
+// @Tags         Admin - Withdraw
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        request  body  BatchRejectWithdrawalsRequest  true  "批量拒绝请求"
+// @Success      200      {object}  model.APIResponse[withdrawservice.BatchOperationResult]
+// @Failure      400      {object}  model.ErrorResponse
+// @Failure      401      {object}  model.ErrorResponse
+// @Router       /admin/withdraws/batch/reject [post]
+func batchRejectWithdrawalsHandler(c *gin.Context, svc *withdrawservice.WithdrawRoutingService) {
+	adminUserID, ok := getAdminUserID(c)
+	if !ok {
+		return
+	}
+
+	var req BatchRejectWithdrawalsRequest
+	if !ValidateAndRespond(c, &req) {
+		return
+	}
+
+	result, err := svc.BatchReject(c.Request.Context(), &withdrawservice.BatchRejectRequest{
+		WithdrawIDs: req.WithdrawIDs,
+		Reason:      req.Reason,
+	}, adminUserID)
+
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	message := "批量拒绝提现成功"
+	if result.FailedCount > 0 {
+		message = fmt.Sprintf("批量拒绝提现完成，成功%d个，失败%d个", result.SuccessCount, result.FailedCount)
+	}
+
+	respondSuccessWithMsg(c, message, result)
+}
+
+// BatchCompleteWithdrawalsRequest 批量完成提现请求
+type BatchCompleteWithdrawalsRequest struct {
+	WithdrawIDs []uint64 `json:"withdrawIds" binding:"required,min=1,max=100"`
+}
+
+// batchCompleteWithdrawalsHandler 批量完成提现（标记为已打款）
+// @Summary      批量完成提现
+// @Description  批量将多个已批准的提现申请标记为已完成（已打款）（最多100个）
+// @Tags         Admin - Withdraw
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        request  body  BatchCompleteWithdrawalsRequest  true  "批量完成请求"
+// @Success      200      {object}  model.APIResponse[withdrawservice.BatchOperationResult]
+// @Failure      400      {object}  model.ErrorResponse
+// @Failure      401      {object}  model.ErrorResponse
+// @Router       /admin/withdraws/batch/complete [post]
+func batchCompleteWithdrawalsHandler(c *gin.Context, svc *withdrawservice.WithdrawRoutingService) {
+	adminUserID, ok := getAdminUserID(c)
+	if !ok {
+		return
+	}
+
+	var req BatchCompleteWithdrawalsRequest
+	if !ValidateAndRespond(c, &req) {
+		return
+	}
+
+	result, err := svc.BatchComplete(c.Request.Context(), &withdrawservice.BatchCompleteRequest{
+		WithdrawIDs: req.WithdrawIDs,
+	}, adminUserID)
+
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	message := "批量完成提现成功"
+	if result.FailedCount > 0 {
+		message = fmt.Sprintf("批量完成提现完成，成功%d个，失败%d个", result.SuccessCount, result.FailedCount)
+	}
+
+	respondSuccessWithMsg(c, message, result)
 }

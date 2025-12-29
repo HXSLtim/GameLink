@@ -11,12 +11,109 @@ import (
 // DefaultRolePermissions defines the default permission codes for each system role.
 // superAdmin: All permissions (handled specially with "*")
 // admin: Management permissions (users, players, orders, payments, content, reviews)
+// finance: Financial permissions (withdraws, payments, refunds)
+// customerService: Customer service permissions (disputes, orders, users)
 // player: Player-specific permissions (view own data, manage services)
 // user: Basic user permissions (view public data)
 var DefaultRolePermissions = map[model.RoleSlug][]string{
 	model.RoleSlugSuperAdmin: {
 		// SuperAdmin gets all permissions via "*" wildcard
 		model.SuperAdminPermissionCode,
+	},
+	// ============================================================
+	// 财务角色 - Finance
+	// ============================================================
+	model.RoleSlugFinance: {
+		// Withdraw Management (提现管理)
+		model.PermCodeAdminWithdrawsRead,
+		model.PermCodeAdminWithdrawsApprove,
+		model.PermCodeAdminWithdrawsReject,
+		model.PermCodeAdminWithdrawsExport,
+
+		// Payment Management (支付管理)
+		model.PermCodeAdminPaymentsRead,
+		model.PermCodeAdminPaymentsRefund,
+		model.PermCodeAdminPaymentsExport,
+
+		// Order Refund (订单退款)
+		model.PermCodeAdminOrdersRead,
+		model.PermCodeAdminOrdersRefund,
+
+		// Wallet Management (钱包管理)
+		model.PermCodeWalletRead,
+		model.PermCodeWalletTransactions,
+
+		// Stats (统计)
+		model.PermCodeAdminStatsRead,
+		model.PermCodeAdminStatsExport,
+
+		// Commission (佣金)
+		model.PermCodeCommissionRead,
+		model.PermCodeCommissionExport,
+
+		// Operation Log
+		model.PermCodeOperationLogList,
+	},
+	// ============================================================
+	// 客服角色 - Customer Service
+	// ============================================================
+	model.RoleSlugCustomerService: {
+		// User Management (用户管理 - 只读和状态更新)
+		model.PermCodeAdminUsersRead,
+		model.PermCodeAdminUsersStatus,
+
+		// Player Management (陪玩师管理 - 只读)
+		model.PermCodeAdminPlayersRead,
+
+		// Order Management (订单管理 - 查看、确认、取消)
+		model.PermCodeAdminOrdersRead,
+		model.PermCodeAdminOrdersConfirm,
+		model.PermCodeAdminOrdersCancel,
+		model.PermCodeAdminOrdersAssign,
+
+		// Payment Management (支付管理 - 只读)
+		model.PermCodeAdminPaymentsRead,
+
+		// Dispute Management (纠纷管理)
+		model.PermCodeDisputeRead,
+		model.PermCodeDisputeCreate,
+		model.PermCodeDisputeResolve,
+
+		// Review Management (评论管理 - 审核)
+		model.PermCodeReviewList,
+		model.PermCodeReviewGet,
+		model.PermCodeReviewPending,
+		model.PermCodeReviewApprove,
+		model.PermCodeReviewReject,
+		model.PermCodeReviewBatchApprove,
+		model.PermCodeReviewBatchReject,
+
+		// Content Management (内容管理 - 审核)
+		model.PermCodeContentFeedList,
+		model.PermCodeContentFeedGet,
+		model.PermCodeContentFeedApprove,
+		model.PermCodeContentFeedReject,
+		model.PermCodeContentFeedBatchApprove,
+		model.PermCodeContentFeedBatchReject,
+
+		// Chat Monitoring (聊天监控)
+		model.PermCodeContentChatList,
+
+		// Content Report (内容举报)
+		model.PermCodeContentReportList,
+		model.PermCodeContentReportGet,
+		model.PermCodeContentReportProcess,
+
+		// Notification (通知)
+		model.PermCodeNotificationRead,
+		model.PermCodeNotificationCreate,
+		model.PermCodeNotificationBatchSend,
+
+		// Stats (统计)
+		model.PermCodeAdminStatsRead,
+
+		// Operation Log
+		model.PermCodeOperationLogList,
 	},
 	model.RoleSlugAdmin: {
 		// User Management
@@ -238,9 +335,25 @@ var SystemRoleDefinitions = []model.RoleModel{
 	{
 		Slug:        string(model.RoleSlugAdmin),
 		Name:        "管理员",
-		Description: "平台管理员，负责日常运营管理",
+		Description: "平台管理员/店长，负责日常运营管理",
 		IsSystem:    true,
 		Priority:    500,
+		Level:       0,
+	},
+	{
+		Slug:        string(model.RoleSlugFinance),
+		Name:        "财务",
+		Description: "财务人员，负责提现审批、支付退款等财务操作",
+		IsSystem:    true,
+		Priority:    400,
+		Level:       0,
+	},
+	{
+		Slug:        string(model.RoleSlugCustomerService),
+		Name:        "客服",
+		Description: "客服人员，负责纠纷处理、订单协助、用户服务等",
+		IsSystem:    true,
+		Priority:    300,
 		Level:       0,
 	},
 	{

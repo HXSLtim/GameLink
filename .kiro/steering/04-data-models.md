@@ -526,6 +526,7 @@ Access Token 过期 → 使用 Refresh Token 获取新 Token
 | Category | string | 分类：escort |
 | SubCategory | ServiceItemSubCategory | 子类别：solo/team/gift |
 | GameID | *uint64 | 游戏ID |
+| CategoryID | *uint64 | 游戏分类ID |
 | BasePriceCents | int64 | 基础价格（分） |
 | ServiceHours | int | 服务时长（小时） |
 | CommissionRate | float64 | 抽成比例（默认0.20） |
@@ -804,13 +805,32 @@ T+7 后 → ¥80 从 FrozenCents 转入 BalanceCents，可提现
 
 ## 游戏模块
 
+### GameCategory（游戏分类）
+
+> 管理游戏分类，如 MOBA、FPS、RPG 等
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| Name | string | 分类名称（唯一）：MOBA/FPS/RPG/卡牌 等 |
+| Description | string | 分类描述 |
+| IconURL | string | 分类图标URL |
+| SortOrder | int | 排序权重，数值越小越靠前 |
+| IsActive | bool | 是否启用 |
+
+**GameCategory 权限码：**
+- `admin.game_categories.read` - 查看游戏分类列表
+- `admin.game_categories.create` - 创建游戏分类
+- `admin.game_categories.update` - 更新游戏分类
+- `admin.game_categories.delete` - 删除游戏分类
+- `admin.game_categories.batch` - 批量操作游戏分类
+
 ### Game（游戏）
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | Key | string | 游戏标识（唯一），如 lol/dota2 |
 | Name | string | 游戏名称 |
-| Category | string | 分类（管理员自定义）：moba/fps/rpg/card 等 |
+| Category | string | 分类（管理员自定义）：moba/fps/rpg/card 等（冗余字段，向后兼容） |
 | IconURL | string | 图标URL |
 | CoverURL | string | 封面图URL |
 | Description | string | 游戏描述 |

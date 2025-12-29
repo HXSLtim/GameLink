@@ -499,3 +499,92 @@ func (h *PermissionHandler) GetCurrentUserPermissions(c *gin.Context) {
 
 	respondSuccess(c, ensureSlice(codes))
 }
+
+// ============================================================================
+// 批量权限操作相关请求和响应结构
+// ============================================================================
+
+// BatchDeletePermissionsRequest 批量删除权限请求
+type BatchDeletePermissionsRequest struct {
+	PermissionIDs []uint64 `json:"permission_ids" binding:"required,min=1,max=100"`
+}
+
+// ============================================================================
+// 批量权限操作处理器方法
+// ============================================================================
+
+// BatchDeletePermissions 批量删除权限
+// @Summary      批量删除权限
+// @Description  批量删除多个权限（系统权限不可删除，被引用的权限需要先解除引用或使用force参数），返回成功和失败的数量
+// @Tags         Admin - Permissions
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string                          true  "Bearer {token}"
+// @Param        force          query     bool                            false "强制删除（忽略引用检查）"
+// @Param        request        body      BatchDeletePermissionsRequest    true  "批量删除权限请求"
+// @Success      200            {object}  model.APIResponse[BatchOperationResponse]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /admin/permissions/batch/delete [post]
+func (h *PermissionHandler) BatchDeletePermissions(c *gin.Context) {
+	var req BatchDeletePermissionsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondAPIError(c, apierr.BadRequest("invalid request payload").WithDetails(err.Error()))
+		return
+	}
+
+	if len(req.PermissionIDs) == 0 {
+		respondAPIError(c, apierr.BadRequest("permission_ids is required"))
+		return
+	}
+	if len(req.PermissionIDs) > 100 {
+		respondAPIError(c, apierr.BadRequest("maximum 100 permissions per batch"))
+		return
+	}
+
+	// 检查是否强制删除
+	force := c.Query("force") == "true"
+
+	result, err := h.permissionSvc.BatchDeletePermissionsWithResponse(c.Request.Context(), req.PermissionIDs, force)
+	if err != nil {
+		respondAPIError(c, apierr.InternalError("batch delete permissions failed").WithDetails(err.Error()))
+		return
+	}
+
+	respondSuccess(c, result)
+}
+
+// BatchDelete 批量删除权限（旧接口，保留兼容性）
+// @Summary      批量删除权限（旧接口）
+// @Description  批量删除多个权限（系统权限不可删除，被引用的权限需要先解除引用或使用force参数），返回成功和失败的数量
+// @Tags         Admin - Permissions
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string                          true  "Bearer {token}"
+// @Param        force          query     bool                            false "强制删除（忽略引用检查）"
+// @Param        request        body      BatchDeletePermissionsRequest    true  "批量删除权限请求"
+// @Success      200            {object}  model.APIResponse[permissionservice.PermissionBatchDeleteResult]
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /admin/permissions/batch [delete]
+func (h *PermissionHandler) BatchDelete(c *gin.Context) {
+	var req BatchDeletePermissionsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondBadRequest(c, "参数验证失败: "+err.Error())
+		return
+	}
+
+	// 检查是否强制删除
+	force := c.Query("force") == "true"
+
+	result, err := h.permissionSvc.BatchDeletePermissions(c.Request.Context(), req.PermissionIDs, force)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	respondSuccessWithMsg(c, "批量权限删除完成", result)
+}

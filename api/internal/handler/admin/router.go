@@ -118,6 +118,26 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/games/batch/delete [post]
 		group.POST("/games/batch/delete", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/games/batch/delete"), gameHandler.BatchDeleteGames)
+		// @Summary      批量更新游戏状态
+		// @Tags         Admin/Games
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  BatchUpdateGameStatusRequest  true  "游戏ID列表和状态"
+		// @Success      200  {object}  model.APIResponse[adminservice.BatchOperationResponse]
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Router       /admin/games/batch/status [post]
+		group.POST("/games/batch/status", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/games/batch/status"), gameHandler.BatchUpdateGamesStatus)
+		// @Summary      批量更新游戏分类
+		// @Tags         Admin/Games
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  BatchUpdateGameCategoryRequest  true  "游戏ID列表和分类"
+		// @Success      200  {object}  model.APIResponse[adminservice.BatchOperationResponse]
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Router       /admin/games/batch/category [post]
+		group.POST("/games/batch/category", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/games/batch/category"), gameHandler.BatchUpdateGamesCategory)
 		// @Summary      获取游戏操作日志
 		// @Tags         Admin/Games
 		// @Security     BearerAuth
@@ -421,6 +441,30 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/players/batch/delete [post]
 		group.POST("/players/batch/delete", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/players/batch/delete"), playerHandler.BatchDeletePlayers)
+		// @Summary      批量更新陪玩师认证状态
+		// @Description  批量审核陪玩师认证，支持批量通过/拒绝
+		// @Tags         Admin/Players
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  BatchUpdateVerificationStatusRequest  true  "批量更新认证状态请求"
+		// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Router       /admin/players/batch/verification [post]
+		// TODO: Implement BatchUpdateVerificationStatus method in PlayerHandler
+		// group.POST("/players/batch/verification", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/players/batch/verification"), playerHandler.BatchUpdateVerificationStatus)
+		// @Summary      批量撤销陪玩师认证
+		// @Description  批量撤销已通过认证的陪玩师，将状态改为待审核或已拒绝
+		// @Tags         Admin/Players
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  BatchRevokeCertificationRequest  true  "批量撤销认证请求"
+		// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Router       /admin/players/batch/revoke-certification [post]
+		// TODO: Implement BatchRevokeCertification method in PlayerHandler
+		// group.POST("/players/batch/revoke-certification", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/players/batch/revoke-certification"), playerHandler.BatchRevokeCertification)
 
 		// 订单管理 - 使用细粒度权		// @Summary      列出订单
 		// @Tags         Admin/Orders
@@ -606,6 +650,85 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Router       /admin/orders/{id}/reviews [get]
 		group.GET("/orders/:id/reviews", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/orders/:id/reviews"), orderHandler.ListOrderReviews)
 
+		// 批量订单操作 - Batch Order Operations
+		// @Summary      批量取消订单
+		// @Description  取消多个待处理或已确认的订单
+		// @Tags         Admin/Orders
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  BatchCancelOrdersRequest  true  "订单ID列表和取消原因"
+		// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Router       /admin/orders/batch/cancel [post]
+		group.POST("/orders/batch/cancel", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/batch/cancel"), orderHandler.BatchCancelOrders)
+		// @Summary      批量确认订单
+		// @Description  确认多个待处理的订单
+		// @Tags         Admin/Orders
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  BatchConfirmOrdersRequest  true  "订单ID列表"
+		// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Router       /admin/orders/batch/confirm [post]
+		group.POST("/orders/batch/confirm", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/batch/confirm"), orderHandler.BatchConfirmOrders)
+		// @Summary      批量完成订单
+		// @Description  将多个进行中的订单标记为已完成
+		// @Tags         Admin/Orders
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  BatchCompleteOrdersRequest  true  "订单ID列表"
+		// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Router       /admin/orders/batch/complete [post]
+		group.POST("/orders/batch/complete", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/batch/complete"), orderHandler.BatchCompleteOrders)
+		// @Summary      批量退款订单
+		// @Description  对多个订单执行退款操作
+		// @Tags         Admin/Orders
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  BatchRefundOrdersRequest  true  "订单ID列表和退款信息"
+		// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Router       /admin/orders/batch/refund [post]
+		group.POST("/orders/batch/refund", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/batch/refund"), orderHandler.BatchRefundOrders)
+		// @Summary      批量删除订单
+		// @Description  软删除多个订单
+		// @Tags         Admin/Orders
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  BatchDeleteOrdersRequest  true  "订单ID列表"
+		// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Router       /admin/orders/batch/delete [post]
+		group.POST("/orders/batch/delete", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/batch/delete"), orderHandler.BatchDeleteOrders)
+		// @Summary      批量更新订单状态
+		// @Description  更新多个订单的状态
+		// @Tags         Admin/Orders
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  BatchUpdateOrderStatusRequest  true  "订单ID列表和新状态"
+		// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Router       /admin/orders/batch/status [put]
+		group.PUT("/orders/batch/status", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/orders/batch/status"), orderHandler.BatchUpdateOrderStatus)
+		// @Summary      批量指派订单
+		// @Description  将多个订单指派给指定的陪玩师
+		// @Tags         Admin/Orders
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  BatchAssignOrdersRequest  true  "订单ID列表和陪玩师ID"
+		// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Router       /admin/orders/batch/assign [post]
+		group.POST("/orders/batch/assign", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/batch/assign"), orderHandler.BatchAssignOrders)
+
 		// 支付管理 - 使用细粒度权		// @Summary      列出支付
 		// @Tags         Admin/Payments
 		// @Security     BearerAuth
@@ -708,6 +831,12 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/payments/{id}/refunds [get]
 		group.GET("/payments/:id/refunds", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/payments/:id/refunds"), paymentHandler.GetRefundHistory)
+
+		// 批量支付操作路由 - TODO: Implement batch payment handlers
+		// batchGroup := group.Group("/payments/batch")
+		// {
+		//     // Route definitions commented out pending handler implementation
+		// }
 
 		// 评价管理 - 使用细粒度权		// @Summary      评价列表
 		// @Tags         Admin/Reviews
@@ -1162,6 +1291,43 @@ func RegisterSensitiveWordRoutes(router gin.IRouter, handler *SensitiveWordHandl
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/reviews/detect-sensitive [post]
 		group.POST("/reviews/detect-sensitive", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/reviews/detect-sensitive"), handler.DetectSensitiveWords)
+
+		// 批量操作路由
+		// @Summary      批量添加敏感词
+		// @Description  批量添加敏感词，最多100条
+		// @Tags         Admin/SensitiveWords
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  BatchAddSensitiveWordsRequest  true  "批量添加请求"
+		// @Success      200  {object}  model.APIResponse[sensitiveword.BatchOperationResult]
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Router       /admin/sensitive-words/batch/add [post]
+		group.POST("/sensitive-words/batch/add", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/sensitive-words/batch/add"), handler.BatchAddSensitiveWords)
+
+		// @Summary      批量删除敏感词
+		// @Description  批量删除敏感词，最多100条
+		// @Tags         Admin/SensitiveWords
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  BatchDeleteSensitiveWordsRequest  true  "批量删除请求"
+		// @Success      200  {object}  model.APIResponse[sensitiveword.BatchOperationResult]
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Router       /admin/sensitive-words/batch/delete [post]
+		group.POST("/sensitive-words/batch/delete", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/sensitive-words/batch/delete"), handler.BatchDeleteSensitiveWords)
+
+		// @Summary      批量更新敏感词状态
+		// @Description  批量启用/禁用敏感词，最多100条
+		// @Tags         Admin/SensitiveWords
+		// @Security     BearerAuth
+		// @Accept       json
+		// @Produce      json
+		// @Param        request  body  BatchUpdateSensitiveWordStatusRequest  true  "批量更新状态请求"
+		// @Success      200  {object}  model.APIResponse[sensitiveword.BatchOperationResult]
+		// @Failure      400  {object}  model.ErrorResponse
+		// @Router       /admin/sensitive-words/batch/status [put]
+		group.PUT("/sensitive-words/batch/status", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/sensitive-words/batch/status"), handler.BatchUpdateSensitiveWordStatus)
 	}
 }
 

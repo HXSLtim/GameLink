@@ -102,6 +102,29 @@ func (m *MockSettlementCompanyRepository) UpdatePlayerCount(ctx context.Context,
 	return args.Error(0)
 }
 
+func (m *MockSettlementCompanyRepository) Delete(ctx context.Context, id uint64) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
+func (m *MockSettlementCompanyRepository) BatchUpdateStatus(ctx context.Context, ids []uint64, status model.CompanyStatus) error {
+	args := m.Called(ctx, ids, status)
+	return args.Error(0)
+}
+
+func (m *MockSettlementCompanyRepository) BatchDelete(ctx context.Context, ids []uint64) error {
+	args := m.Called(ctx, ids)
+	return args.Error(0)
+}
+
+func (m *MockSettlementCompanyRepository) GetByIDsWithPlayerCount(ctx context.Context, ids []uint64) ([]model.SettlementCompany, error) {
+	args := m.Called(ctx, ids)
+	if args.Get(0) == nil {
+		return []model.SettlementCompany{}, args.Error(1)
+	}
+	return args.Get(0).([]model.SettlementCompany), args.Error(1)
+}
+
 // MockPlayerRepository is a mock implementation
 type MockPlayerRepository struct {
 	mock.Mock
@@ -147,7 +170,15 @@ func (m *MockPlayerRepository) BatchUpdateStatus(_ context.Context, _ []uint64, 
 	return 0, nil
 }
 
+func (m *MockPlayerRepository) BatchUpdateRank(_ context.Context, _ []uint64, _ string) (int64, error) {
+	return 0, nil
+}
+
 func (m *MockPlayerRepository) BatchDelete(_ context.Context, _ []uint64) (int64, error) {
+	return 0, nil
+}
+
+func (m *MockPlayerRepository) BatchUpdateHourlyRate(_ context.Context, _ []uint64, _ int64) (int64, error) {
 	return 0, nil
 }
 

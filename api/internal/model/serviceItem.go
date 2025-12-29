@@ -34,6 +34,7 @@ type ServiceItem struct {
 	Category       string                 `gorm:"type:varchar(32);not null;default:'escort';index" json:"category"` // 统一为 'escort'
 	SubCategory    ServiceItemSubCategory `gorm:"type:varchar(32);not null;index" json:"subCategory"`               // solo/team/gift
 	GameID         *uint64                `gorm:"index" json:"gameId"`
+	CategoryID     *uint64                `gorm:"index" json:"categoryId,omitempty"` // 游戏分类ID
 	PlayerID       *uint64                `gorm:"index" json:"playerId"`
 	RankLevel      string                 `gorm:"type:varchar(32)" json:"rankLevel"`
 	BasePriceCents int64                  `gorm:"not null;default:0" json:"basePriceCents"`
@@ -58,6 +59,9 @@ type ServiceItem struct {
 	UsageLimitType  UsageLimitType `gorm:"column:usage_limit_type;size:32;default:'none'" json:"usageLimitType"` // 限制类型
 	UsageLimitCount int            `gorm:"column:usage_limit_count;default:0" json:"usageLimitCount"`            // 限制次数（0=无限制）
 	MaxPerOrder     int            `gorm:"column:max_per_order;default:0" json:"maxPerOrder"`                    // 单次购买数量限制（0=无限制）
+
+	// Relations
+	GameCategory *GameCategory `gorm:"foreignKey:CategoryID" json:"category,omitempty"` // 游戏分类关联
 }
 
 // TableName 指定表名

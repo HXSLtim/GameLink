@@ -700,3 +700,70 @@ func (s *RoutingRuleService) ReorderPriorities(ctx context.Context, ruleIDs []ui
 	}
 	return nil
 }
+
+// BatchOperationResponse 批量操作响应
+type BatchOperationResponse struct {
+	SuccessCount int              `json:"success_count"`
+	FailedCount  int              `json:"failed_count"`
+	TotalCount   int              `json:"total_count"`
+	FailedItems  []BatchErrorItem `json:"failed_items,omitempty"`
+	SuccessItems []uint64         `json:"success_items,omitempty"`
+}
+
+// BatchErrorItem 单个操作错误详情
+type BatchErrorItem struct {
+	ID      uint64 `json:"id"`
+	Message string `json:"message"`
+}
+
+// BatchUpdateRuleStatus 批量更新分流规则状态
+func (s *RoutingRuleService) BatchUpdateRuleStatus(ctx context.Context, ruleIDs []uint64, isActive bool, updatedBy uint64) (*BatchOperationResponse, error) {
+	response := &BatchOperationResponse{
+		TotalCount:   len(ruleIDs),
+		SuccessItems: make([]uint64, 0),
+		FailedItems:  make([]BatchErrorItem, 0),
+	}
+
+	for _, ruleID := range ruleIDs {
+		err := s.ToggleRuleStatus(ctx, ruleID, isActive, updatedBy)
+		if err != nil {
+			response.FailedItems = append(response.FailedItems, BatchErrorItem{
+				ID:      ruleID,
+				Message: err.Error(),
+			})
+			response.FailedCount++
+			continue
+		}
+
+		response.SuccessItems = append(response.SuccessItems, ruleID)
+		response.SuccessCount++
+	}
+
+	return response, nil
+}
+
+// BatchDeleteRules 批量删除分流规则
+func (s *RoutingRuleService) BatchDeleteRules(ctx context.Context, ruleIDs []uint64) (*BatchOperationResponse, error) {
+	response := &BatchOperationResponse{
+		TotalCount:   len(ruleIDs),
+		SuccessItems: make([]uint64, 0),
+		FailedItems:  make([]BatchErrorItem, 0),
+	}
+
+	for _, ruleID := range ruleIDs {
+		err := s.DeleteRule(ctx, ruleID)
+		if err != nil {
+			response.FailedItems = append(response.FailedItems, BatchErrorItem{
+				ID:      ruleID,
+				Message: err.Error(),
+			})
+			response.FailedCount++
+			continue
+		}
+
+		response.SuccessItems = append(response.SuccessItems, ruleID)
+		response.SuccessCount++
+	}
+
+	return response, nil
+}

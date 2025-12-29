@@ -11,6 +11,7 @@ import (
 
 	"gamelink/internal/model"
 	"gamelink/internal/service/user"
+	"gamelink/pkg/apierr"
 
 	"github.com/gin-gonic/gin"
 )
@@ -25,6 +26,12 @@ func RegisterTagRoutes(rg *gin.RouterGroup, tagService *user.UserTagService) {
 		tags.GET("/:id", getTagHandler(tagService))
 		tags.PUT("/:id", updateTagHandler(tagService))
 		tags.DELETE("/:id", deleteTagHandler(tagService))
+		tags.DELETE("/batch", batchDeleteTagsHandler(tagService))
+
+		// 批量操作
+		tags.POST("/batch/delete", BatchDeleteUserTags(tagService))
+		tags.POST("/batch/assign", BatchAssignTagsToUsers(tagService))
+		tags.POST("/batch/remove", BatchRemoveTagsFromUsers(tagService))
 
 		// 批量查询
 		tags.GET("/:id/users", getUsersByTagHandler(tagService))
@@ -37,6 +44,7 @@ func RegisterTagRoutes(rg *gin.RouterGroup, tagService *user.UserTagService) {
 		users.POST("/:id/tags", addUserTagHandler(tagService))
 		users.PUT("/:id/tags", batchSetUserTagsHandler(tagService))
 		users.DELETE("/:id/tags/:tagId", removeUserTagHandler(tagService))
+		users.POST("/user-tags/batch/assign", batchAssignTagsHandler(tagService))
 	}
 }
 
@@ -535,6 +543,256 @@ func getPaginationParams(c *gin.Context) (page, pageSize int) {
 	}
 
 	return
+}
+
+// BatchDeleteTagsRequest 批量删除标签请求
+type BatchDeleteTagsRequest struct {
+	IDs []uint64 `json:"ids" binding:"required,min=1"`
+}
+
+// batchDeleteTagsHandler 批量删除标签
+// @Summary 批量删除用户标签
+// @Description 批量删除用户标签（同时会移除所有用户的这些标签）
+// @Tags 用户标签管理
+// @Accept json
+// @Produce json
+// @Param body body BatchDeleteTagsRequest true "标签ID列表"
+// @Success 200 {object} ApiResponse{data=map[string]interface{}}
+// @Router /admin/user-tags/batch [delete]
+func batchDeleteTagsHandler(s *user.UserTagService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var req BatchDeleteTagsRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"success": false,
+				"message": "参数验证失败",
+				"error":   err.Error(),
+			})
+			return
+		}
+
+		result, err := s.BatchDeleteTags(c.Request.Context(), req.IDs)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"message": "批量删除标签失败",
+				"error":   err.Error(),
+			})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"message": "批量删除标签成功",
+			"data":    result,
+		})
+	}
+}
+
+// BatchDeleteUserTagsRequest 批量删除用户标签请求
+type BatchDeleteUserTagsRequest struct {
+	TagIDs []uint64 `json:"tag_ids" binding:"required,min=1,max=100"`
+}
+
+// BatchDeleteUserTags 批量删除用户标签
+// @Summary      批量删除用户标签
+// @Description  批量删除用户标签（同时会移除所有用户的这些标签）
+// @Tags         用户标签管理
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body  BatchDeleteUserTagsRequest  true  "标签ID列表"
+// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+// @Failure      400  {object}  model.ErrorResponse
+// @Router       /admin/user-tags/batch/delete [post]
+func BatchDeleteUserTags(s *user.UserTagService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var req BatchDeleteUserTagsRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			respondAPIError(c, apierr.BadRequest("invalid request payload").WithDetails(err.Error()))
+			return
+		}
+
+		if len(req.TagIDs) == 0 {
+			respondAPIError(c, apierr.BadRequest("tag_ids is required"))
+			return
+		}
+		if len(req.TagIDs) > 100 {
+			respondAPIError(c, apierr.BadRequest("maximum 100 tags can be deleted at once"))
+			return
+		}
+
+		result, err := s.BatchDeleteTags(c.Request.Context(), req.TagIDs)
+		if err != nil {
+			respondAPIError(c, apierr.InternalError("batch delete tags failed").WithDetails(err.Error()))
+			return
+		}
+
+		respondSuccess(c, result)
+	}
+}
+
+// BatchAssignTagsToUsersRequest 批量分配标签给用户请求
+type BatchAssignTagsToUsersRequest struct {
+	UserIDs []uint64 `json:"user_ids" binding:"required,min=1,max=100"`
+	TagIDs  []uint64 `json:"tag_ids" binding:"required,min=1,max=100"`
+}
+
+// BatchAssignTagsToUsers 批量分配标签给用户
+// @Summary      批量分配标签给用户
+// @Description  批量为多个用户分配多个标签（笛卡尔积：每个用户都会获得所有指定的标签）
+// @Tags         用户标签管理
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body  BatchAssignTagsToUsersRequest  true  "用户ID列表和标签ID列表"
+// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+// @Failure      400  {object}  model.ErrorResponse
+// @Router       /admin/user-tags/batch/assign [post]
+func BatchAssignTagsToUsers(s *user.UserTagService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var req BatchAssignTagsToUsersRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			respondAPIError(c, apierr.BadRequest("invalid request payload").WithDetails(err.Error()))
+			return
+		}
+
+		if len(req.UserIDs) == 0 {
+			respondAPIError(c, apierr.BadRequest("user_ids is required"))
+			return
+		}
+		if len(req.UserIDs) > 100 {
+			respondAPIError(c, apierr.BadRequest("maximum 100 users per batch"))
+			return
+		}
+		if len(req.TagIDs) == 0 {
+			respondAPIError(c, apierr.BadRequest("tag_ids is required"))
+			return
+		}
+		if len(req.TagIDs) > 100 {
+			respondAPIError(c, apierr.BadRequest("maximum 100 tags per batch"))
+			return
+		}
+
+		result, err := s.BatchAssignTagsToUsers(c.Request.Context(), req.UserIDs, req.TagIDs)
+		if err != nil {
+			respondAPIError(c, apierr.InternalError("batch assign tags failed").WithDetails(err.Error()))
+			return
+		}
+
+		respondSuccess(c, result)
+	}
+}
+
+// BatchRemoveTagsFromUsersRequest 批量移除用户标签请求
+type BatchRemoveTagsFromUsersRequest struct {
+	UserIDs []uint64 `json:"user_ids" binding:"required,min=1,max=100"`
+	TagIDs  []uint64 `json:"tag_ids" binding:"required,min=1,max=100"`
+}
+
+// BatchRemoveTagsFromUsers 批量移除用户标签
+// @Summary      批量移除用户标签
+// @Description  批量移除多个用户的多个标签（笛卡尔积：移除所有指定用户的所有指定标签）
+// @Tags         用户标签管理
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body  BatchRemoveTagsFromUsersRequest  true  "用户ID列表和标签ID列表"
+// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+// @Failure      400  {object}  model.ErrorResponse
+// @Router       /admin/user-tags/batch/remove [post]
+func BatchRemoveTagsFromUsers(s *user.UserTagService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var req BatchRemoveTagsFromUsersRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			respondAPIError(c, apierr.BadRequest("invalid request payload").WithDetails(err.Error()))
+			return
+		}
+
+		if len(req.UserIDs) == 0 {
+			respondAPIError(c, apierr.BadRequest("user_ids is required"))
+			return
+		}
+		if len(req.UserIDs) > 100 {
+			respondAPIError(c, apierr.BadRequest("maximum 100 users per batch"))
+			return
+		}
+		if len(req.TagIDs) == 0 {
+			respondAPIError(c, apierr.BadRequest("tag_ids is required"))
+			return
+		}
+		if len(req.TagIDs) > 100 {
+			respondAPIError(c, apierr.BadRequest("maximum 100 tags per batch"))
+			return
+		}
+
+		result, err := s.BatchRemoveTagsFromUsers(c.Request.Context(), req.UserIDs, req.TagIDs)
+		if err != nil {
+			respondAPIError(c, apierr.InternalError("batch remove tags failed").WithDetails(err.Error()))
+			return
+		}
+
+		respondSuccess(c, result)
+	}
+}
+
+// BatchAssignTagsRequest 批量分配标签请求
+type BatchAssignTagsRequest struct {
+	UserTagPairs []UserTagPair `json:"userTagPairs" binding:"required,min=1"`
+}
+
+// UserTagPair 用户标签对
+type UserTagPair struct {
+	UserID uint64 `json:"userId" binding:"required"`
+	TagID  uint64 `json:"tagId" binding:"required"`
+}
+
+// batchAssignTagsHandler 批量为用户分配标签（旧版本兼容）
+// @Summary 批量为用户分配标签
+// @Description 批量为多个用户分配标签
+// @Tags 用户标签管理
+// @Accept json
+// @Produce json
+// @Param body body BatchAssignTagsRequest true "用户标签对列表"
+// @Success 200 {object} ApiResponse{data=map[string]interface{}}
+// @Router /admin/users/user-tags/batch/assign [post]
+func batchAssignTagsHandler(s *user.UserTagService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var req BatchAssignTagsRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"success": false,
+				"message": "参数验证失败",
+				"error":   err.Error(),
+			})
+			return
+		}
+
+		// Convert to service input
+		pairs := make([]user.UserTagPair, len(req.UserTagPairs))
+		for i, p := range req.UserTagPairs {
+			pairs[i] = user.UserTagPair{
+				UserID: p.UserID,
+				TagID:  p.TagID,
+			}
+		}
+
+		result, err := s.BatchAssignTags(c.Request.Context(), pairs)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"message": "批量分配标签失败",
+				"error":   err.Error(),
+			})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"message": "批量分配标签成功",
+			"data":    result,
+		})
+	}
 }
 
 // ApiResponse 标准API响应

@@ -134,3 +134,45 @@ func (r *gormGameRepository) BatchDelete(ctx context.Context, ids []uint64) (int
 	}
 	return tx.RowsAffected, nil
 }
+
+// BatchUpdateStatus updates is_active for multiple games.
+func (r *gormGameRepository) BatchUpdateStatus(ctx context.Context, ids []uint64, isActive bool) (int64, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+	tx := r.db.WithContext(ctx).Model(&model.Game{}).Where("id IN ?", ids).Update("is_active", isActive)
+	if tx.Error != nil {
+		return 0, tx.Error
+	}
+	return tx.RowsAffected, nil
+}
+
+// BatchUpdateSortOrder updates sort_order for multiple games.
+func (r *gormGameRepository) BatchUpdateSortOrder(ctx context.Context, updates map[uint64]int) (int64, error) {
+	if len(updates) == 0 {
+		return 0, nil
+	}
+
+	var totalAffected int64
+	for id, sortOrder := range updates {
+		tx := r.db.WithContext(ctx).Model(&model.Game{}).Where("id = ?", id).Update("sort_order", sortOrder)
+		if tx.Error != nil {
+			return totalAffected, tx.Error
+		}
+		totalAffected += tx.RowsAffected
+	}
+
+	return totalAffected, nil
+}
+
+// BatchUpdateCategory updates category for multiple games.
+func (r *gormGameRepository) BatchUpdateCategory(ctx context.Context, ids []uint64, category string) (int64, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+	tx := r.db.WithContext(ctx).Model(&model.Game{}).Where("id IN ?", ids).Update("category", category)
+	if tx.Error != nil {
+		return 0, tx.Error
+	}
+	return tx.RowsAffected, nil
+}

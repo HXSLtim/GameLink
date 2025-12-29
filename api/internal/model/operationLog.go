@@ -70,6 +70,7 @@ const (
 	OpEntityPayment         OperationEntityType = "payment"
 	OpEntityPlayer          OperationEntityType = "player"
 	OpEntityGame            OperationEntityType = "game"
+	OpEntityGameCategory    OperationEntityType = "game_category"
 	OpEntityReview          OperationEntityType = "review"
 	OpEntityUser            OperationEntityType = "user"
 	OpEntityDispute         OperationEntityType = "dispute"

@@ -205,3 +205,166 @@ func (h *SensitiveWordHandler) DetectSensitiveWords(c *gin.Context) {
 
 	respondSuccess(c, resp)
 }
+
+// ============================================================================
+// 批量操作
+// ============================================================================
+
+// BatchAddSensitiveWords
+// @Summary      批量添加敏感词
+// @Description  批量添加敏感词，最多100条
+// @Tags         Admin/SensitiveWords
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body  BatchAddSensitiveWordsRequest  true  "批量添加请求"
+// @Success      200  {object}  model.APIResponse[sensitiveword.BatchOperationResult]
+// @Failure      400  {object}  model.ErrorResponse
+// @Router       /admin/sensitive-words/batch/add [post]
+func (h *SensitiveWordHandler) BatchAddSensitiveWords(c *gin.Context) {
+	var req BatchAddSensitiveWordsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondAPIError(c, apierr.BadRequest("invalid request payload").WithDetails(err.Error()))
+		return
+	}
+
+	if len(req.Words) == 0 {
+		respondAPIError(c, apierr.BadRequest("words is required"))
+		return
+	}
+	if len(req.Words) > 100 {
+		respondAPIError(c, apierr.BadRequest("maximum 100 words per batch"))
+		return
+	}
+
+	svcReq := sensitiveword.BatchAddSensitiveWordsRequest{
+		Words:     req.Words,
+		Category:  req.Category,
+		Severity:  req.Severity,
+		MatchType: req.MatchType,
+	}
+
+	result, err := h.svc.BatchAddSensitiveWords(c.Request.Context(), svcReq)
+	if err != nil {
+		if errors.Is(err, sensitiveword.ErrValidation) {
+			respondBadRequest(c, "validation failed")
+			return
+		}
+		respondError(c, apierr.InternalError(err.Error()))
+		return
+	}
+
+	respondSuccess(c, result)
+}
+
+// BatchDeleteSensitiveWords
+// @Summary      批量删除敏感词
+// @Description  批量删除敏感词，最多100条
+// @Tags         Admin/SensitiveWords
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body  BatchDeleteSensitiveWordsRequest  true  "批量删除请求"
+// @Success      200  {object}  model.APIResponse[sensitiveword.BatchOperationResult]
+// @Failure      400  {object}  model.ErrorResponse
+// @Router       /admin/sensitive-words/batch/delete [post]
+func (h *SensitiveWordHandler) BatchDeleteSensitiveWords(c *gin.Context) {
+	var req BatchDeleteSensitiveWordsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondAPIError(c, apierr.BadRequest("invalid request payload").WithDetails(err.Error()))
+		return
+	}
+
+	if len(req.IDs) == 0 {
+		respondAPIError(c, apierr.BadRequest("ids is required"))
+		return
+	}
+	if len(req.IDs) > 100 {
+		respondAPIError(c, apierr.BadRequest("maximum 100 words per batch"))
+		return
+	}
+
+	result, err := h.svc.BatchDeleteSensitiveWords(c.Request.Context(), req.IDs)
+	if err != nil {
+		respondError(c, apierr.InternalError(err.Error()))
+		return
+	}
+
+	respondSuccess(c, result)
+}
+
+// BatchUpdateSensitiveWordStatus
+// @Summary      批量更新敏感词状态
+// @Description  批量启用/禁用敏感词，最多100条
+// @Tags         Admin/SensitiveWords
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body  BatchUpdateSensitiveWordStatusRequest  true  "批量更新状态请求"
+// @Success      200  {object}  model.APIResponse[sensitiveword.BatchOperationResult]
+// @Failure      400  {object}  model.ErrorResponse
+// @Router       /admin/sensitive-words/batch/status [put]
+func (h *SensitiveWordHandler) BatchUpdateSensitiveWordStatus(c *gin.Context) {
+	var req BatchUpdateSensitiveWordStatusRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondAPIError(c, apierr.BadRequest("invalid request payload").WithDetails(err.Error()))
+		return
+	}
+
+	if len(req.IDs) == 0 {
+		respondAPIError(c, apierr.BadRequest("ids is required"))
+		return
+	}
+	if len(req.IDs) > 100 {
+		respondAPIError(c, apierr.BadRequest("maximum 100 words per batch"))
+		return
+	}
+
+	svcReq := sensitiveword.BatchUpdateSensitiveWordStatusRequest{
+		IDs:      req.IDs,
+		IsActive: req.IsActive,
+	}
+
+	result, err := h.svc.BatchUpdateSensitiveWordStatus(c.Request.Context(), svcReq)
+	if err != nil {
+		respondError(c, apierr.InternalError(err.Error()))
+		return
+	}
+
+	respondSuccess(c, result)
+}
+
+// ============================================================================
+// 批量操作 Request DTOs
+// ============================================================================
+
+// BatchAddSensitiveWordsRequest 批量添加敏感词请求
+type BatchAddSensitiveWordsRequest struct {
+	Words     []string                      `json:"words" binding:"required,min=1,max=100"`
+	Category  model.SensitiveWordCategory   `json:"category" binding:"required"`
+	Severity  model.SensitiveWordSeverity   `json:"severity" binding:"required"`
+	MatchType model.SensitiveWordMatchType  `json:"matchType"`
+}
+
+// BatchDeleteSensitiveWordsRequest 批量删除敏感词请求
+type BatchDeleteSensitiveWordsRequest struct {
+	IDs []uint64 `json:"ids" binding:"required,min=1,max=100"`
+}
+
+// BatchUpdateSensitiveWordStatusRequest 批量更新敏感词状态请求
+type BatchUpdateSensitiveWordStatusRequest struct {
+	IDs      []uint64 `json:"ids" binding:"required,min=1,max=100"`
+	IsActive bool     `json:"isActive" binding:"required"`
+}
+
+// GetSensitiveWord 获取敏感词详情
+func (h *SensitiveWordHandler) GetSensitiveWord(c *gin.Context) {
+	id, ok := ParseIDAndRespond(c, "id")
+	if !ok {
+		return
+	}
+
+	// TODO: Implement GetSensitiveWord in SensitiveWordService
+	_ = id
+	respondError(c, apierr.InternalError("GetSensitiveWord not implemented"))
+}

@@ -18,6 +18,9 @@ type GameRepository interface {
 	Update(ctx context.Context, game *model.Game) error
 	Delete(ctx context.Context, id uint64) error
 	BatchDelete(ctx context.Context, ids []uint64) (int64, error)
+	BatchUpdateStatus(ctx context.Context, ids []uint64, isActive bool) (int64, error)
+	BatchUpdateSortOrder(ctx context.Context, updates map[uint64]int) (int64, error)
+	BatchUpdateCategory(ctx context.Context, ids []uint64, category string) (int64, error)
 }
 
 // UserRepository defines user data access operations.
@@ -46,6 +49,8 @@ type PlayerRepository interface {
 	Create(ctx context.Context, player *model.Player) error
 	Update(ctx context.Context, player *model.Player) error
 	Delete(ctx context.Context, id uint64) error
+	BatchUpdateRank(ctx context.Context, ids []uint64, rank string) (int64, error)
+	BatchUpdateHourlyRate(ctx context.Context, ids []uint64, rateCents int64) (int64, error)
 	BatchUpdateStatus(ctx context.Context, ids []uint64, status model.VerificationStatus) (int64, error)
 	BatchDelete(ctx context.Context, ids []uint64) (int64, error)
 }
@@ -120,6 +125,7 @@ type MenuRepository interface {
 	List(ctx context.Context, parentID *uint64) ([]model.Menu, error)
 	ListPaged(ctx context.Context, page, pageSize int, parentID *uint64) ([]model.Menu, int64, error)
 	ListByPermission(ctx context.Context, codes []string) ([]model.Menu, error)
+	HasChildren(ctx context.Context, parentID uint64) (bool, error)
 }
 
 // RoleRepository defines role data access operations.
@@ -526,8 +532,10 @@ type ServiceItemRepository interface {
 	List(ctx context.Context, opts ServiceItemListOptions) ([]model.ServiceItem, int64, error)
 	Update(ctx context.Context, item *model.ServiceItem) error
 	Delete(ctx context.Context, id uint64) error
+	BatchDelete(ctx context.Context, ids []uint64) (int64, error)
 	BatchUpdateStatus(ctx context.Context, ids []uint64, isActive bool) error
 	BatchUpdatePrice(ctx context.Context, ids []uint64, basePriceCents int64) error
+	BatchUpdateCommission(ctx context.Context, ids []uint64, commissionRate float64) error
 	GetGifts(ctx context.Context, page, pageSize int) ([]model.ServiceItem, int64, error)
 	GetGameServices(ctx context.Context, gameID uint64, subCategory *model.ServiceItemSubCategory) ([]model.ServiceItem, error)
 }
@@ -942,4 +950,39 @@ type VipLevelListOptions struct {
 	PageSize int
 	Keyword  string
 	IsActive *bool
+}
+
+// GameCategoryRepository 游戏分类仓储接口
+// 错误约定：当资源不存在时返回 repository.ErrNotFound
+type GameCategoryRepository interface {
+	// Create 创建分类
+	Create(ctx context.Context, category *model.GameCategory) error
+	// Get 获取分类详情
+	Get(ctx context.Context, id uint64) (*model.GameCategory, error)
+	// List 获取分类列表（支持分页、筛选）
+	List(ctx context.Context, opts GameCategoryListOptions) ([]*model.GameCategory, int64, error)
+	// Update 更新分类
+	Update(ctx context.Context, category *model.GameCategory) error
+	// Delete 删除分类（软删除）
+	Delete(ctx context.Context, id uint64) error
+	// GetByName 根据名称获取分类
+	GetByName(ctx context.Context, name string) (*model.GameCategory, error)
+	// BatchUpdateStatus 批量更新状态
+	BatchUpdateStatus(ctx context.Context, ids []uint64, isActive bool) error
+	// BatchDelete 批量删除
+	BatchDelete(ctx context.Context, ids []uint64) error
+	// Exists 检查分类是否存在
+	Exists(ctx context.Context, id uint64) (bool, error)
+	// CountGames 统计分类下的游戏数量
+	CountGames(ctx context.Context, categoryID uint64) (int64, error)
+	// CountServiceItems 统计分类下的服务项目数量
+	CountServiceItems(ctx context.Context, categoryID uint64) (int64, error)
+}
+
+// GameCategoryListOptions 游戏分类列表查询选项
+type GameCategoryListOptions struct {
+	Page     int
+	PageSize int
+	IsActive *bool
+	Keyword  string
 }

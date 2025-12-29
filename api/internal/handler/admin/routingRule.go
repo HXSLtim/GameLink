@@ -373,4 +373,8 @@ func RegisterRoutingRuleRoutes(router gin.IRouter, svc *svc.RoutingRuleService, 
 	router.DELETE("/routing-rules/:id", pm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/routing-rules/:id"), handler.DeleteRoutingRule)
 	router.POST("/routing-rules/:id/toggle", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/routing-rules/:id/toggle"), handler.ToggleRoutingRuleStatus)
 	router.GET("/routing-rules/:id/history", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/routing-rules/:id/history"), handler.GetRoutingRuleHistory)
+
+	// 批量操作
+	router.POST("/routing-rules/batch/status", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/routing-rules/batch/status"), handler.BatchUpdateRoutingRuleStatus)
+	router.POST("/routing-rules/batch/delete", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/routing-rules/batch/delete"), handler.BatchDeleteRoutingRules)
 }

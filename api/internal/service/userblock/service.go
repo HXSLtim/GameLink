@@ -224,13 +224,84 @@ func (s *UserBlockService) Delete(ctx context.Context, id uint64) error {
 }
 
 // BatchUnblock 批量取消拉黑（管理员）
-func (s *UserBlockService) BatchUnblock(ctx context.Context, ids []uint64, adminID uint64, remark string) (int, error) {
-	var successCount int
+func (s *UserBlockService) BatchUnblock(ctx context.Context, ids []uint64, adminID uint64, remark string) (*BatchOperationResult, error) {
+	result := &BatchOperationResult{
+		TotalCount: len(ids),
+		FailedIDs:  make([]uint64, 0),
+	}
+
 	for _, id := range ids {
 		if err := s.AdminUnblock(ctx, id, adminID, remark); err != nil {
-			continue
+			result.FailedCount++
+			result.FailedIDs = append(result.FailedIDs, id)
+		} else {
+			result.SuccessCount++
 		}
-		successCount++
 	}
-	return successCount, nil
+
+	return result, nil
+}
+
+// BatchOperationResult 批量操作结果
+type BatchOperationResult struct {
+	SuccessCount int      `json:"successCount"`
+	FailedCount  int      `json:"failedCount"`
+	FailedIDs    []uint64 `json:"failedIds,omitempty"`
+	TotalCount   int      `json:"totalCount"`
+}
+
+// BatchDelete 批量删除拉黑记录
+func (s *UserBlockService) BatchDelete(ctx context.Context, ids []uint64) (*BatchOperationResult, error) {
+	result := &BatchOperationResult{
+		TotalCount: len(ids),
+		FailedIDs:  make([]uint64, 0),
+	}
+
+	for _, id := range ids {
+		if err := s.Delete(ctx, id); err != nil {
+			result.FailedCount++
+			result.FailedIDs = append(result.FailedIDs, id)
+		} else {
+			result.SuccessCount++
+		}
+	}
+
+	return result, nil
+}
+
+// BlockInputItemForBatch 批量拉黑输入项
+type BlockInputItemForBatch struct {
+	BlockerID   uint64
+	BlockerType model.BlockUserType
+	BlockedID   uint64
+	BlockedType model.BlockUserType
+	Reason      string
+}
+
+// BatchBlock 批量拉黑用户
+func (s *UserBlockService) BatchBlock(ctx context.Context, items []BlockInputItemForBatch) (*BatchOperationResult, error) {
+	result := &BatchOperationResult{
+		TotalCount: len(items),
+		FailedIDs:  make([]uint64, 0),
+	}
+
+	for i, item := range items {
+		input := BlockInput{
+			BlockerID:   item.BlockerID,
+			BlockerType: item.BlockerType,
+			BlockedID:   item.BlockedID,
+			BlockedType: item.BlockedType,
+			Reason:      item.Reason,
+		}
+		if _, err := s.Block(ctx, input); err != nil {
+			result.FailedCount++
+			// Use the blocked ID as the failed identifier
+			result.FailedIDs = append(result.FailedIDs, item.BlockedID)
+		} else {
+			result.SuccessCount++
+		}
+		_ = i // Avoid unused variable warning
+	}
+
+	return result, nil
 }

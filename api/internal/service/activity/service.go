@@ -511,3 +511,112 @@ func (s *Service) AutoUpdateActivityStatus(ctx context.Context) error {
 
 	return nil
 }
+
+// ============================================================================
+// 批量操作
+// ============================================================================
+
+// BatchOperationResult 批量操作结果
+type BatchOperationResult struct {
+	SuccessCount int      `json:"successCount"`
+	FailedCount  int      `json:"failedCount"`
+	FailedIDs    []uint64 `json:"failedIds"`
+	Errors       []string `json:"errors"`
+}
+
+// BatchDeleteActivities 批量删除活动
+func (s *Service) BatchDeleteActivities(ctx context.Context, ids []uint64) (*BatchOperationResult, error) {
+	if len(ids) == 0 {
+		return nil, errors.New("活动ID列表不能为空")
+	}
+
+	result := &BatchOperationResult{
+		FailedIDs: make([]uint64, 0),
+		Errors:    make([]string, 0),
+	}
+
+	for _, id := range ids {
+		err := s.DeleteActivity(ctx, id)
+		if err != nil {
+			result.FailedCount++
+			result.FailedIDs = append(result.FailedIDs, id)
+			result.Errors = append(result.Errors, fmt.Sprintf("活动%d: %s", id, err.Error()))
+		} else {
+			result.SuccessCount++
+		}
+	}
+
+	return result, nil
+}
+
+// BatchUpdateActivityStatus 批量更新活动状态
+func (s *Service) BatchUpdateActivityStatus(ctx context.Context, ids []uint64, status model.ActivityStatus) (*BatchOperationResult, error) {
+	if len(ids) == 0 {
+		return nil, errors.New("活动ID列表不能为空")
+	}
+
+	// 验证状态值
+	validStatuses := map[model.ActivityStatus]bool{
+		model.ActivityStatusDraft:    true,
+		model.ActivityStatusPreheat:  true,
+		model.ActivityStatusActive:   true,
+		model.ActivityStatusPaused:   true,
+		model.ActivityStatusEnded:    true,
+		model.ActivityStatusCanceled: true,
+	}
+	if !validStatuses[status] {
+		return nil, errors.New("无效的活动状态")
+	}
+
+	result := &BatchOperationResult{
+		FailedIDs: make([]uint64, 0),
+		Errors:    make([]string, 0),
+	}
+
+	for _, id := range ids {
+		err := s.UpdateActivityStatus(ctx, id, status)
+		if err != nil {
+			result.FailedCount++
+			result.FailedIDs = append(result.FailedIDs, id)
+			result.Errors = append(result.Errors, fmt.Sprintf("活动%d: %s", id, err.Error()))
+		} else {
+			result.SuccessCount++
+		}
+	}
+
+	return result, nil
+}
+
+// BatchPublishActivities 批量发布/取消发布活动
+func (s *Service) BatchPublishActivities(ctx context.Context, ids []uint64, isVisible bool) (*BatchOperationResult, error) {
+	if len(ids) == 0 {
+		return nil, errors.New("活动ID列表不能为空")
+	}
+
+	result := &BatchOperationResult{
+		FailedIDs: make([]uint64, 0),
+		Errors:    make([]string, 0),
+	}
+
+	for _, id := range ids {
+		activity, err := s.repo.GetActivityByID(ctx, id)
+		if err != nil {
+			result.FailedCount++
+			result.FailedIDs = append(result.FailedIDs, id)
+			result.Errors = append(result.Errors, fmt.Sprintf("活动%d: %s", id, err.Error()))
+			continue
+		}
+
+		// 更新可见性
+		activity.IsVisible = isVisible
+		if err := s.repo.UpdateActivity(ctx, activity); err != nil {
+			result.FailedCount++
+			result.FailedIDs = append(result.FailedIDs, id)
+			result.Errors = append(result.Errors, fmt.Sprintf("活动%d: %s", id, err.Error()))
+		} else {
+			result.SuccessCount++
+		}
+	}
+
+	return result, nil
+}

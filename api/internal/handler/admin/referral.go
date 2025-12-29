@@ -428,6 +428,95 @@ func (h *ReferralHandler) GetStats(c *gin.Context) {
 	respondSuccess(c, stats)
 }
 
+// ============================================================================
+// 批量操作 - 邀请码
+// ============================================================================
+
+// batchUpdateCodesStatusRequest 批量更新邀请码状态请求
+type batchUpdateCodesStatusRequest struct {
+	IDs      []uint64 `json:"ids" binding:"required,min=1"`
+	IsActive bool     `json:"isActive" binding:"required"`
+}
+
+// BatchUpdateCodesStatus 批量更新邀请码状态
+func (h *ReferralHandler) BatchUpdateCodesStatus(c *gin.Context) {
+	var req batchUpdateCodesStatusRequest
+	if !ValidateAndRespond(c, &req) {
+		return
+	}
+
+	result, err := h.svc.BatchUpdateCodesStatus(c.Request.Context(), req.IDs, req.IsActive)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	respondSuccess(c, result)
+}
+
+// batchDeleteRequest 批量删除请求
+type batchDeleteRequest struct {
+	IDs []uint64 `json:"ids" binding:"required,min=1"`
+}
+
+// BatchDeleteCodes 批量删除邀请码
+func (h *ReferralHandler) BatchDeleteCodes(c *gin.Context) {
+	var req batchDeleteRequest
+	if !ValidateAndRespond(c, &req) {
+		return
+	}
+
+	result, err := h.svc.BatchDeleteCodes(c.Request.Context(), req.IDs)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	respondSuccess(c, result)
+}
+
+// ============================================================================
+// 批量操作 - 推荐记录
+// ============================================================================
+
+// batchUpdateReferralsStatusRequest 批量更新推荐状态请求
+type batchUpdateReferralsStatusRequest struct {
+	IDs    []uint64                `json:"ids" binding:"required,min=1"`
+	Status model.ReferralStatus    `json:"status" binding:"required"`
+}
+
+// BatchUpdateReferralsStatus 批量更新推荐状态
+func (h *ReferralHandler) BatchUpdateReferralsStatus(c *gin.Context) {
+	var req batchUpdateReferralsStatusRequest
+	if !ValidateAndRespond(c, &req) {
+		return
+	}
+
+	result, err := h.svc.BatchUpdateReferralsStatus(c.Request.Context(), req.IDs, req.Status)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	respondSuccess(c, result)
+}
+
+// BatchDeleteReferrals 批量删除推荐记录
+func (h *ReferralHandler) BatchDeleteReferrals(c *gin.Context) {
+	var req batchDeleteRequest
+	if !ValidateAndRespond(c, &req) {
+		return
+	}
+
+	result, err := h.svc.BatchDeleteReferrals(c.Request.Context(), req.IDs)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	respondSuccess(c, result)
+}
+
 // RegisterReferralRoutes 注册推荐管理路由
 func RegisterReferralRoutes(r *gin.RouterGroup, svc *referralservice.Service, perm *middleware.PermissionMiddleware) {
 	h := NewReferralHandler(svc)
@@ -445,11 +534,15 @@ func RegisterReferralRoutes(r *gin.RouterGroup, svc *referralservice.Service, pe
 		g.POST("/codes", perm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/referrals/codes"), h.CreateCode)
 		g.PUT("/codes/:id", perm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/referrals/codes/:id"), h.UpdateCode)
 		g.DELETE("/codes/:id", perm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/referrals/codes/:id"), h.DeleteCode)
+		g.PUT("/codes/batch/status", perm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/referrals/codes/batch/status"), h.BatchUpdateCodesStatus)
+		g.DELETE("/codes/batch", perm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/referrals/codes/batch"), h.BatchDeleteCodes)
 
 		// 推荐记录管理
 		g.GET("", perm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/referrals"), h.ListReferrals)
 		g.GET("/:id", perm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/referrals/:id"), h.GetReferral)
 		g.PUT("/:id/status", perm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/referrals/:id/status"), h.UpdateReferralStatus)
+		g.DELETE("/batch", perm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/referrals/batch"), h.BatchDeleteReferrals)
+		g.PUT("/batch/status", perm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/referrals/batch/status"), h.BatchUpdateReferralsStatus)
 
 		// 奖励管理
 		g.GET("/rewards", perm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/referrals/rewards"), h.ListRewards)

@@ -18,8 +18,14 @@ type SettlementCompanyRepository interface {
 	Get(ctx context.Context, id uint64) (*model.SettlementCompany, error)
 	GetByCreditCode(ctx context.Context, creditCode string) (*model.SettlementCompany, error)
 	Update(ctx context.Context, company *model.SettlementCompany) error
+	Delete(ctx context.Context, id uint64) error
 	List(ctx context.Context, opts ListOptions) ([]model.SettlementCompany, int64, error)
 	ToggleStatus(ctx context.Context, id uint64, status model.CompanyStatus) error
+
+	// Batch operations
+	BatchUpdateStatus(ctx context.Context, ids []uint64, status model.CompanyStatus) error
+	BatchDelete(ctx context.Context, ids []uint64) error
+	GetByIDsWithPlayerCount(ctx context.Context, ids []uint64) ([]model.SettlementCompany, error)
 
 	// Player assignment operations
 	AssignPlayer(ctx context.Context, assignment *model.PlayerCompanyAssignment) error
@@ -308,4 +314,44 @@ func (r *settlementCompanyRepository) updatePlayerCountInTx(tx *gorm.DB, company
 	return tx.Model(&model.SettlementCompany{}).
 		Where("id = ?", companyID).
 		Update("player_count", count).Error
+}
+
+// Delete 删除结算公司（软删除）
+func (r *settlementCompanyRepository) Delete(ctx context.Context, id uint64) error {
+	return r.db.WithContext(ctx).Delete(&model.SettlementCompany{}, id).Error
+}
+
+// BatchUpdateStatus 批量更新结算公司状态
+func (r *settlementCompanyRepository) BatchUpdateStatus(ctx context.Context, ids []uint64, status model.CompanyStatus) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	return r.db.WithContext(ctx).Model(&model.SettlementCompany{}).
+		Where("id IN ?", ids).
+		Update("status", status).Error
+}
+
+// BatchDelete 批量删除结算公司（软删除）
+func (r *settlementCompanyRepository) BatchDelete(ctx context.Context, ids []uint64) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	return r.db.WithContext(ctx).Delete(&model.SettlementCompany{}, ids).Error
+}
+
+// GetByIDsWithPlayerCount 批量获取结算公司及其陪玩师数量
+func (r *settlementCompanyRepository) GetByIDsWithPlayerCount(ctx context.Context, ids []uint64) ([]model.SettlementCompany, error) {
+	if len(ids) == 0 {
+		return []model.SettlementCompany{}, nil
+	}
+
+	var companies []model.SettlementCompany
+	err := r.db.WithContext(ctx).
+		Where("id IN ?", ids).
+		Find(&companies).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return companies, nil
 }

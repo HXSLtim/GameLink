@@ -294,3 +294,129 @@ func (s *RoleService) InvalidateRolePermissionsAndPropagateToUsers(ctx context.C
 
 	return nil
 }
+
+// RoleBatchDeleteResult 角色批量删除结果
+type RoleBatchDeleteResult struct {
+	SuccessCount int      `json:"successCount"`
+	FailedCount  int      `json:"failedCount"`
+	FailedRoles  []RoleDeleteFailure `json:"failedRoles,omitempty"`
+}
+
+// RoleDeleteFailure 角色删除失败详情
+type RoleDeleteFailure struct {
+	RoleID uint64 `json:"roleId"`
+	Reason string `json:"reason"`
+}
+
+// BatchDeleteRoles 批量删除角色（系统角色不可删除）
+func (s *RoleService) BatchDeleteRoles(ctx context.Context, ids []uint64) (*RoleBatchDeleteResult, error) {
+	if len(ids) == 0 {
+		return nil, apierr.BadRequest("角色ID列表不能为空")
+	}
+
+	result := &RoleBatchDeleteResult{
+		FailedRoles: make([]RoleDeleteFailure, 0),
+	}
+
+	for _, id := range ids {
+		// 检查是否为系统角色
+		role, err := s.roles.Get(ctx, id)
+		if err != nil {
+			result.FailedCount++
+			result.FailedRoles = append(result.FailedRoles, RoleDeleteFailure{
+				RoleID: id,
+				Reason: "角色不存在",
+			})
+			continue
+		}
+
+		if role.IsSystem {
+			result.FailedCount++
+			result.FailedRoles = append(result.FailedRoles, RoleDeleteFailure{
+				RoleID: id,
+				Reason: "系统角色不可删除",
+			})
+			continue
+		}
+
+		if err := s.roles.Delete(ctx, id); err != nil {
+			result.FailedCount++
+			result.FailedRoles = append(result.FailedRoles, RoleDeleteFailure{
+				RoleID: id,
+				Reason: err.Error(),
+			})
+		} else {
+			result.SuccessCount++
+		}
+	}
+
+	// 清除缓存
+	if result.SuccessCount > 0 {
+		s.invalidateRoleCache()
+	}
+
+	return result, nil
+}
+
+// RolePermissionAssignment 角色权限分配
+type RolePermissionAssignment struct {
+	RoleID       uint64   `json:"roleId"`
+	PermissionIDs []uint64 `json:"permissionIds"`
+}
+
+// RoleBatchPermissionsResult 角色批量权限分配结果
+type RoleBatchPermissionsResult struct {
+	SuccessCount int                      `json:"successCount"`
+	FailedCount  int                      `json:"failedCount"`
+	FailedRoles  []RolePermissionFailure  `json:"failedRoles,omitempty"`
+}
+
+// RolePermissionFailure 角色权限分配失败详情
+type RolePermissionFailure struct {
+	RoleID uint64 `json:"roleId"`
+	Reason string `json:"reason"`
+}
+
+// BatchAssignPermissionsToRoles 批量为多个角色分配权限
+func (s *RoleService) BatchAssignPermissionsToRoles(ctx context.Context, assignments []RolePermissionAssignment) (*RoleBatchPermissionsResult, error) {
+	if len(assignments) == 0 {
+		return nil, apierr.BadRequest("分配列表不能为空")
+	}
+
+	result := &RoleBatchPermissionsResult{
+		FailedRoles: make([]RolePermissionFailure, 0),
+	}
+
+	for _, assignment := range assignments {
+		if err := s.AssignPermissionsToRole(ctx, assignment.RoleID, assignment.PermissionIDs); err != nil {
+			result.FailedCount++
+			result.FailedRoles = append(result.FailedRoles, RolePermissionFailure{
+				RoleID: assignment.RoleID,
+				Reason: err.Error(),
+			})
+		} else {
+			result.SuccessCount++
+		}
+	}
+
+	return result, nil
+}
+
+// BatchAssignPermissionsToMultipleRoles 批量为多个角色分配相同的权限集合
+// 这是对现有 BatchAssignPermissionsToRoles 的简化封装，用于更简洁的 API
+func (s *RoleService) BatchAssignPermissionsToMultipleRoles(ctx context.Context, roleIDs []uint64, permissionIDs []uint64) (*RoleBatchPermissionsResult, error) {
+	if len(roleIDs) == 0 {
+		return nil, apierr.BadRequest("角色ID列表不能为空")
+	}
+
+	// 将请求转换为 assignments 格式
+	assignments := make([]RolePermissionAssignment, len(roleIDs))
+	for i, roleID := range roleIDs {
+		assignments[i] = RolePermissionAssignment{
+			RoleID:        roleID,
+			PermissionIDs: permissionIDs,
+		}
+	}
+
+	return s.BatchAssignPermissionsToRoles(ctx, assignments)
+}

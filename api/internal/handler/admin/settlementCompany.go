@@ -9,6 +9,7 @@ import (
 	mw "gamelink/internal/handler/middleware"
 	"gamelink/internal/model"
 	svc "gamelink/internal/service/settlementcompany"
+	"gamelink/pkg/apierr"
 )
 
 // SettlementCompanyHandler 处理结算公司管理接口
@@ -356,6 +357,96 @@ type BatchAssignResult struct {
 	Message       string `json:"message"`
 }
 
+// BatchUpdateCompanyStatus 批量更新结算公司状态
+// @Summary      批量更新结算公司状态
+// @Description  批量启用/禁用结算公司
+// @Tags         Admin/SettlementCompanies
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body  BatchUpdateCompanyStatusRequest  true  "批量更新状态请求"
+// @Success      200  {object}  model.APIResponse[object{success_count:int,failed_count:int,total_count:int,failed_items:[]object{id:uint,message:string},success_items:[]uint64}]
+// @Failure      400  {object}  model.ErrorResponse
+// @Router       /admin/settlement-companies/batch/status [post]
+func (h *SettlementCompanyHandler) BatchUpdateCompanyStatus(c *gin.Context) {
+	adminID, ok := getAdminUserID(c)
+	if !ok {
+		return
+	}
+
+	var req BatchUpdateCompanyStatusRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondAPIError(c, apierr.BadRequest("invalid request payload").WithDetails(err.Error()))
+		return
+	}
+
+	if len(req.CompanyIDs) == 0 {
+		respondAPIError(c, apierr.BadRequest("company_ids is required"))
+		return
+	}
+	if len(req.CompanyIDs) > 100 {
+		respondAPIError(c, apierr.BadRequest("maximum 100 companies per batch"))
+		return
+	}
+
+	result, err := h.svc.BatchUpdateCompanyStatus(c.Request.Context(), req.CompanyIDs, req.IsActive, adminID)
+	if err != nil {
+		respondAPIError(c, apierr.InternalError("batch update company status failed").WithDetails(err.Error()))
+		return
+	}
+
+	respondSuccess(c, result)
+}
+
+// BatchDeleteCompanies 批量删除结算公司
+// @Summary      批量删除结算公司
+// @Description  批量删除结算公司（检查是否有陪玩师关联）
+// @Tags         Admin/SettlementCompanies
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        request  body  BatchDeleteCompaniesRequest  true  "批量删除请求"
+// @Success      200  {object}  model.APIResponse[object{success_count:int,failed_count:int,total_count:int,failed_items:[]object{id:uint,message:string},success_items:[]uint64}]
+// @Failure      400  {object}  model.ErrorResponse
+// @Router       /admin/settlement-companies/batch/delete [post]
+func (h *SettlementCompanyHandler) BatchDeleteCompanies(c *gin.Context) {
+	var req BatchDeleteCompaniesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondAPIError(c, apierr.BadRequest("invalid request payload").WithDetails(err.Error()))
+		return
+	}
+
+	if len(req.CompanyIDs) == 0 {
+		respondAPIError(c, apierr.BadRequest("company_ids is required"))
+		return
+	}
+	if len(req.CompanyIDs) > 100 {
+		respondAPIError(c, apierr.BadRequest("maximum 100 companies per batch"))
+		return
+	}
+
+	result, err := h.svc.BatchDeleteCompanies(c.Request.Context(), req.CompanyIDs)
+	if err != nil {
+		respondAPIError(c, apierr.InternalError("batch delete companies failed").WithDetails(err.Error()))
+		return
+	}
+
+	respondSuccess(c, result)
+}
+
+// Batch Operation Request DTOs
+
+// BatchUpdateCompanyStatusRequest 批量更新结算公司状态请求
+type BatchUpdateCompanyStatusRequest struct {
+	CompanyIDs []uint64 `json:"companyIds" binding:"required,min=1,max=100"`
+	IsActive   bool     `json:"isActive" binding:"required"`
+}
+
+// BatchDeleteCompaniesRequest 批量删除结算公司请求
+type BatchDeleteCompaniesRequest struct {
+	CompanyIDs []uint64 `json:"companyIds" binding:"required,min=1,max=100"`
+}
+
 // RegisterSettlementCompanyRoutes 注册结算公司管理路由
 // Requirements: 11.1-11.5, 12.1-12.5
 func RegisterSettlementCompanyRoutes(router gin.IRouter, svc *svc.SettlementCompanyService, pm *mw.PermissionMiddleware) {
@@ -422,4 +513,17 @@ func RegisterSettlementCompanyRoutes(router gin.IRouter, svc *svc.SettlementComp
 	// @Security     BearerAuth
 	// @Router       /admin/players/{id}/company-history [get]
 	router.GET("/players/:id/company-history", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/players/:id/company-history"), handler.GetPlayerAssignmentHistory)
+
+	// 批量操作
+	// @Summary      批量更新结算公司状态
+	// @Tags         Admin/SettlementCompanies
+	// @Security     BearerAuth
+	// @Router       /admin/settlement-companies/batch/status [post]
+	router.POST("/settlement-companies/batch/status", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/settlement-companies/batch/status"), handler.BatchUpdateCompanyStatus)
+
+	// @Summary      批量删除结算公司
+	// @Tags         Admin/SettlementCompanies
+	// @Security     BearerAuth
+	// @Router       /admin/settlement-companies/batch/delete [post]
+	router.POST("/settlement-companies/batch/delete", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/settlement-companies/batch/delete"), handler.BatchDeleteCompanies)
 }

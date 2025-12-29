@@ -13,6 +13,39 @@ import (
 	"gamelink/pkg/apierr"
 )
 
+// BatchOperationResult 批量操作结果
+type BatchOperationResult struct {
+	SuccessCount  int                      `json:"successCount"`
+	FailedCount   int                      `json:"failedCount"`
+	SuccessIDs     []uint64                 `json:"successIds"`
+	FailedItems    []BatchOperationErrorItem `json:"failedItems,omitempty"`
+}
+
+// BatchOperationErrorItem 批量操作错误项
+type BatchOperationErrorItem struct {
+	ID      uint64 `json:"id"`
+	Message string `json:"message"`
+}
+
+// BatchApproveRequest 批量批准提现请求
+type BatchApproveRequest struct {
+	WithdrawIDs []uint64 `json:"withdrawIds" binding:"required,min=1,max=100"`
+	ProcessedBy uint64   `json:"processedBy" binding:"required"` // 处理人ID (管理员)
+	Remark      string   `json:"remark" binding:"max=500"`
+}
+
+// BatchRejectRequest 批量拒绝提现请求
+type BatchRejectRequest struct {
+	WithdrawIDs []uint64 `json:"withdrawIds" binding:"required,min=1,max=100"`
+	ProcessedBy uint64   `json:"processedBy" binding:"required"` // 处理人ID (管理员)
+	Reason      string   `json:"reason" binding:"required,min=1,max=500"`
+}
+
+// BatchCompleteRequest 批量完成提现请求
+type BatchCompleteRequest struct {
+	WithdrawIDs []uint64 `json:"withdrawIds" binding:"required,min=1,max=100"`
+}
+
 var (
 	// ErrNotFound 提现记录不存在
 	ErrNotFound = apierr.NotFound("withdrawal not found")
@@ -305,4 +338,242 @@ func (s *WithdrawRoutingStatsService) GetCompanyWithdrawalStats(ctx context.Cont
 	}
 
 	return stats, nil
+}
+
+// ============================================================================
+// 批量操作服务
+// ============================================================================
+
+// NOTE: 钱包退回功能说明
+// ====================
+// BatchReject 方法在拒绝提现申请时需要将金额退回陪玩师钱包。
+// 当前 WithdrawRoutingService 没有注入 WalletRepository。
+// 如果需要实现钱包退回功能，需要：
+// 1. 在 WithdrawRoutingService 结构体中添加 walletRepo 字段
+// 2. 在 NewWithdrawRoutingService 构造函数中注入 WalletRepository
+// 3. 在 BatchReject 方法中调用 walletRepo.GetByUserID() 和 walletRepo.Save()
+// 4. 实现类似以下的逻辑：
+//    - wallet, err := s.walletRepo.GetByUserID(ctx, withdraw.PlayerID)
+//    - wallet.BalanceCents += withdraw.AmountCents
+//    - err = s.walletRepo.Save(ctx, wallet)
+// ============================================================================
+
+// BatchApprove 批量批准提现申请
+// 只能处理 pending 状态的提现，更新为 approved 状态
+func (s *WithdrawRoutingService) BatchApprove(ctx context.Context, req *BatchApproveRequest, adminUserID uint64) (*BatchOperationResult, error) {
+	result := &BatchOperationResult{
+		SuccessIDs:  make([]uint64, 0),
+		FailedItems: make([]BatchOperationErrorItem, 0),
+	}
+
+	if len(req.WithdrawIDs) == 0 {
+		return nil, apierr.BadRequest("withdrawal IDs are required")
+	}
+	if len(req.WithdrawIDs) > 100 {
+		return nil, apierr.BadRequest("maximum 100 withdrawals can be approved at once")
+	}
+
+	now := time.Now()
+
+	for _, withdrawID := range req.WithdrawIDs {
+		// 获取提现记录
+		withdraw, err := s.withdrawRepo.Get(ctx, withdrawID)
+		if err != nil {
+			if apierr.IsNotFound(err) {
+				result.FailedItems = append(result.FailedItems, BatchOperationErrorItem{
+					ID:      withdrawID,
+					Message: "withdrawal not found",
+				})
+				result.FailedCount++
+				continue
+			}
+			result.FailedItems = append(result.FailedItems, BatchOperationErrorItem{
+				ID:      withdrawID,
+				Message: fmt.Sprintf("get withdrawal failed: %v", err),
+			})
+			result.FailedCount++
+			continue
+		}
+
+		// 验证状态是否可以批准
+		if withdraw.Status != model.WithdrawStatusPending {
+			result.FailedItems = append(result.FailedItems, BatchOperationErrorItem{
+				ID:      withdrawID,
+				Message: fmt.Sprintf("cannot approve withdrawal with status: %s", withdraw.Status),
+			})
+			result.FailedCount++
+			continue
+		}
+
+		// 更新状态
+		withdraw.Status = model.WithdrawStatusApproved
+		withdraw.ProcessedBy = &adminUserID
+		withdraw.ProcessedAt = &now
+		withdraw.AdminRemark = req.Remark
+
+		if err := s.withdrawRepo.Update(ctx, withdraw); err != nil {
+			result.FailedItems = append(result.FailedItems, BatchOperationErrorItem{
+				ID:      withdrawID,
+				Message: fmt.Sprintf("update failed: %v", err),
+			})
+			result.FailedCount++
+			continue
+		}
+
+		result.SuccessIDs = append(result.SuccessIDs, withdrawID)
+		result.SuccessCount++
+	}
+
+	return result, nil
+}
+
+// BatchReject 批量拒绝提现申请
+// 只能处理 pending 状态的提现，更新为 rejected 状态
+// 注意：拒绝后需要将金额退回用户钱包，需要注入 WalletRepository
+func (s *WithdrawRoutingService) BatchReject(ctx context.Context, req *BatchRejectRequest, adminUserID uint64) (*BatchOperationResult, error) {
+	result := &BatchOperationResult{
+		SuccessIDs:  make([]uint64, 0),
+		FailedItems: make([]BatchOperationErrorItem, 0),
+	}
+
+	if len(req.WithdrawIDs) == 0 {
+		return nil, apierr.BadRequest("withdrawal IDs are required")
+	}
+	if len(req.WithdrawIDs) > 100 {
+		return nil, apierr.BadRequest("maximum 100 withdrawals can be rejected at once")
+	}
+
+	now := time.Now()
+
+	for _, withdrawID := range req.WithdrawIDs {
+		// 获取提现记录
+		withdraw, err := s.withdrawRepo.Get(ctx, withdrawID)
+		if err != nil {
+			if apierr.IsNotFound(err) {
+				result.FailedItems = append(result.FailedItems, BatchOperationErrorItem{
+					ID:      withdrawID,
+					Message: "withdrawal not found",
+				})
+				result.FailedCount++
+				continue
+			}
+			result.FailedItems = append(result.FailedItems, BatchOperationErrorItem{
+				ID:      withdrawID,
+				Message: fmt.Sprintf("get withdrawal failed: %v", err),
+			})
+			result.FailedCount++
+			continue
+		}
+
+		// 验证状态是否可以拒绝
+		if withdraw.Status != model.WithdrawStatusPending {
+			result.FailedItems = append(result.FailedItems, BatchOperationErrorItem{
+				ID:      withdrawID,
+				Message: fmt.Sprintf("cannot reject withdrawal with status: %s", withdraw.Status),
+			})
+			result.FailedCount++
+			continue
+		}
+
+		// 更新状态
+		withdraw.Status = model.WithdrawStatusRejected
+		withdraw.ProcessedBy = &adminUserID
+		withdraw.ProcessedAt = &now
+		withdraw.RejectReason = req.Reason
+
+		if err := s.withdrawRepo.Update(ctx, withdraw); err != nil {
+			result.FailedItems = append(result.FailedItems, BatchOperationErrorItem{
+				ID:      withdrawID,
+				Message: fmt.Sprintf("update failed: %v", err),
+			})
+			result.FailedCount++
+			continue
+		}
+
+		// TODO: 将提现金额退回陪玩师钱包
+		// 需要注入 WalletRepository 并实现以下逻辑：
+		// wallet, err := s.walletRepo.GetByUserID(ctx, withdraw.PlayerID)
+		// wallet.BalanceCents += withdraw.AmountCents
+		// s.walletRepo.Save(ctx, wallet)
+
+		result.SuccessIDs = append(result.SuccessIDs, withdrawID)
+		result.SuccessCount++
+	}
+
+	return result, nil
+}
+
+// BatchComplete 批量完成提现
+// 只能处理 approved 状态的提现，更新为 completed 状态
+func (s *WithdrawRoutingService) BatchComplete(ctx context.Context, req *BatchCompleteRequest, adminUserID uint64) (*BatchOperationResult, error) {
+	result := &BatchOperationResult{
+		SuccessIDs:  make([]uint64, 0),
+		FailedItems: make([]BatchOperationErrorItem, 0),
+	}
+
+	if len(req.WithdrawIDs) == 0 {
+		return nil, apierr.BadRequest("withdrawal IDs are required")
+	}
+	if len(req.WithdrawIDs) > 100 {
+		return nil, apierr.BadRequest("maximum 100 withdrawals can be completed at once")
+	}
+
+	now := time.Now()
+
+	for _, withdrawID := range req.WithdrawIDs {
+		// 获取提现记录
+		withdraw, err := s.withdrawRepo.Get(ctx, withdrawID)
+		if err != nil {
+			if apierr.IsNotFound(err) {
+				result.FailedItems = append(result.FailedItems, BatchOperationErrorItem{
+					ID:      withdrawID,
+					Message: "withdrawal not found",
+				})
+				result.FailedCount++
+				continue
+			}
+			result.FailedItems = append(result.FailedItems, BatchOperationErrorItem{
+				ID:      withdrawID,
+				Message: fmt.Sprintf("get withdrawal failed: %v", err),
+			})
+			result.FailedCount++
+			continue
+		}
+
+		// 验证状态是否可以完成
+		if withdraw.Status != model.WithdrawStatusApproved {
+			result.FailedItems = append(result.FailedItems, BatchOperationErrorItem{
+				ID:      withdrawID,
+				Message: fmt.Sprintf("cannot complete withdrawal with status: %s", withdraw.Status),
+			})
+			result.FailedCount++
+			continue
+		}
+
+		// 更新状态
+		withdraw.Status = model.WithdrawStatusCompleted
+		withdraw.CompletedAt = &now
+
+		// 如果没有处理人，设置为当前管理员
+		if withdraw.ProcessedBy == nil {
+			withdraw.ProcessedBy = &adminUserID
+		}
+
+		// 如果没有设置银行流水号，可以在这里设置（可选）
+		// withdraw.BankTransactionNo = req.BankTransactionNo
+
+		if err := s.withdrawRepo.Update(ctx, withdraw); err != nil {
+			result.FailedItems = append(result.FailedItems, BatchOperationErrorItem{
+				ID:      withdrawID,
+				Message: fmt.Sprintf("update failed: %v", err),
+			})
+			result.FailedCount++
+			continue
+		}
+
+		result.SuccessIDs = append(result.SuccessIDs, withdrawID)
+		result.SuccessCount++
+	}
+
+	return result, nil
 }

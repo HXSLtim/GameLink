@@ -1008,11 +1008,268 @@ go test ./api/internal/service/integration/order_integration_test.go -cover -cov
 
 | 日期 | 版本 | 变更内容 |
 |------|------|----------|
+| 2025-12-29 | v2.1 | 新增批量操作集成测试（团队、活动、佣金） |
 | 2025-12-29 | v2.0 | 基于PRD全面规划测试场景，补充业务规则测试 |
 | 2025-12-28 | v1.1 | Phase 1 P0 核心业务流程测试完成编写 |
 | 2025-12-28 | v1.0 | 初始版本，完成测试规划 |
 
 ---
 
+## 十一、批量操作集成测试
+
+### 11.1 批量操作概述
+
+为提高管理后台效率，新增以下批量操作API：
+
+| 模块 | 批量操作 | API端点 | 状态 |
+|------|---------|---------|------|
+| Team | 批量删除团队 | `DELETE /api/v1/admin/teams/batch` | ✅ |
+| Team | 批量更新状态 | `PUT /api/v1/admin/teams/batch/status` | ✅ |
+| Team | 批量添加成员 | `POST /api/v1/admin/teams/batch/members` | ✅ |
+| Activity | 批量删除活动 | `DELETE /api/v1/admin/activities/batch` | ✅ |
+| Activity | 批量更新状态 | `PUT /api/v1/admin/activities/batch/status` | ✅ |
+| Activity | 批量发布/取消 | `PUT /api/v1/admin/activities/batch/publish` | ✅ |
+| Commission | 批量删除规则 | `DELETE /api/v1/admin/commission/rules/batch` | ✅ |
+| Commission | 批量更新状态 | `PUT /api/v1/admin/commission/rules/batch/status` | ✅ |
+
+### 11.2 批量操作测试用例
+
+**测试文件**:
+- `batch_operations_integration_test.go` - 基础批量操作测试
+- `team_batch_integration_test.go` - 团队批量操作专项测试（24个测试用例）
+
+#### 11.2.1 团队批量操作测试
+
+##### 基础批量操作测试 (`batch_operations_integration_test.go`)
+
+| 测试用例 | 描述 | 状态 |
+|---------|------|------|
+| `TestTeamService_BatchDeleteTeams` | 批量删除团队 | ✅ |
+| `TestTeamService_BatchUpdateTeamStatus` | 批量更新团队状态 | ✅ |
+| `TestTeamService_BatchAddMembers` | 批量添加团队成员 | ✅ |
+
+##### 专项批量操作测试 (`team_batch_integration_test.go`)
+
+**BatchDeleteTeams 测试场景**:
+| 测试用例 | 描述 | 状态 |
+|---------|------|------|
+| `TestTeamService_BatchDeleteTeams_AllSuccess` | 批量删除全部成功 | ✅ |
+| `TestTeamService_BatchDeleteTeams_WithActiveOrder` | 包含活跃订单的团队 | ✅ |
+| `TestTeamService_BatchDeleteTeams_NonExistentTeams` | 包含不存在的团队 | ✅ |
+| `TestTeamService_BatchDeleteTeams_WithMembers` | 包含成员的团队 | ✅ |
+| `TestTeamService_BatchDeleteTeams_EmptyList` | 空列表验证 | ✅ |
+
+**BatchUpdateTeamStatus 测试场景**:
+| 测试用例 | 描述 | 状态 |
+|---------|------|------|
+| `TestTeamService_BatchUpdateTeamStatus_ToActive` | 批量激活团队 | ✅ |
+| `TestTeamService_BatchUpdateTeamStatus_ToInactive` | 批量停用团队 | ✅ |
+| `TestTeamService_BatchUpdateTeamStatus_ToBusy` | 批量设置忙碌状态 | ✅ |
+| `TestTeamService_BatchUpdateTeamStatus_NonExistentTeams` | 包含不存在的团队 | ✅ |
+| `TestTeamService_BatchUpdateTeamStatus_InvalidStatus` | 无效状态验证 | ✅ |
+| `TestTeamService_BatchUpdateTeamStatus_EmptyList` | 空列表验证 | ✅ |
+
+**BatchAddMembers 测试场景**:
+| 测试用例 | 描述 | 状态 |
+|---------|------|------|
+| `TestTeamService_BatchAddMembers_AllSuccess` | 批量添加全部成功 | ✅ |
+| `TestTeamService_BatchAddMembers_SomeAlreadyMembers` | 部分已是成员 | ✅ |
+| `TestTeamService_BatchAddMembers_NonExistentPlayers` | 包含不存在的玩家 | ✅ |
+| `TestTeamService_BatchAddMembers_NonExistentTeam` | 团队不存在 | ✅ |
+| `TestTeamService_BatchAddMembers_TeamFull` | 团队已满 | ✅ |
+| `TestTeamService_BatchAddMembers_EmptyList` | 空列表验证 | ✅ |
+| `TestTeamService_BatchAddMembers_MixedScenarios` | 混合场景测试 | ✅ |
+
+**结果格式验证测试**:
+| 测试用例 | 描述 | 状态 |
+|---------|------|------|
+| `TestTeamService_BatchOperationResult_Format` | 批量删除结果格式 | ✅ |
+| `TestTeamService_BatchUpdateStatusResult_Format` | 批量更新状态结果格式 | ✅ |
+| `TestTeamService_BatchAddMembersResult_Format` | 批量添加成员结果格式 | ✅ |
+
+**数据库状态验证测试**:
+| 测试用例 | 描述 | 状态 |
+|---------|------|------|
+| `TestTeamService_BatchDeleteTeams_DatabaseState` | 删除操作数据库状态 | ✅ |
+| `TestTeamService_BatchUpdateStatus_DatabaseState` | 更新状态数据库状态 | ✅ |
+| `TestTeamService_BatchAddMembers_DatabaseState` | 添加成员数据库状态 | ✅ |
+
+**验证要点**:
+- 成功删除的团队数量正确
+- 有活跃订单的团队删除失败
+- 状态更新正确的团队
+- 成员数量增加正确
+- `BatchOperationResult` 格式正确（SuccessCount, FailedCount, FailedIDs, Errors）
+- 数据库状态正确更新（软删除、级联删除、计数器更新）
+
+#### 11.2.2 活动批量操作测试
+
+| 测试用例 | 描述 | 状态 |
+|---------|------|------|
+| `TestActivityService_BatchDeleteActivities` | 批量删除活动 | ✅ |
+| `TestActivityService_BatchUpdateActivityStatus` | 批量更新活动状态 | ✅ |
+| `TestActivityService_BatchPublishActivities` | 批量发布/取消活动 | ✅ |
+
+**验证要点**:
+- 草稿状态的活动可以删除
+- 进行中的活动不能删除
+- 状态流转规则正确
+- 发布/取消发布切换正确
+
+#### 11.2.3 佣金批量操作测试
+
+| 测试用例 | 描述 | 状态 |
+|---------|------|------|
+| `TestCommissionService_BatchDeleteCommissionRules` | 批量删除佣金规则 | ✅ |
+| `TestCommissionService_BatchUpdateCommissionRuleStatus` | 批量更新规则状态 | ✅ |
+
+**验证要点**:
+- 规则删除成功
+- 启用/禁用状态切换正确
+- 不存在的规则处理正确
+
+#### 11.2.4 边界情况测试
+
+| 测试用例 | 描述 | 状态 |
+|---------|------|------|
+| `TestBatchOperations_EmptyIDs` | 空ID列表错误处理 | ✅ |
+| `TestBatchOperations_InvalidStatus` | 无效状态错误处理 | ✅ |
+
+### 11.3 批量操作响应格式
+
+所有批量操作API返回统一格式的响应：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "成功删除 3 个团队",
+  "data": {
+    "successCount": 3,
+    "failedCount": 1,
+    "failedIds": [101],
+    "errors": ["团队101: 团队有进行中的订单，无法删除"]
+  }
+}
+```
+
+### 11.4 运行批量操作测试
+
+```bash
+# 运行所有批量操作测试
+go test ./api/internal/service/integration/batch_operations_integration_test.go -v
+
+# 运行团队批量操作专项测试
+go test ./api/internal/service/integration/team_batch_integration_test.go -v
+
+# 运行特定模块测试
+go test ./api/internal/service/integration/batch_operations_integration_test.go -run TestTeamService_Batch -v
+
+# 运行特定批量操作场景
+go test ./api/internal/service/integration/team_batch_integration_test.go -run TestTeamService_BatchDeleteTeams -v
+go test ./api/internal/service/integration/team_batch_integration_test.go -run TestTeamService_BatchUpdateTeamStatus -v
+go test ./api/internal/service/integration/team_batch_integration_test.go -run TestTeamService_BatchAddMembers -v
+
+# 查看覆盖率
+go test ./api/internal/service/integration/batch_operations_integration_test.go -cover
+go test ./api/internal/service/integration/team_batch_integration_test.go -cover
+```
+
+---
+
+## 十二、敏感词、用户拉黑、用户标签批量操作测试
+
+### 12.1 模块概述
+
+| 模块 | 批量操作 | API端点 | 状态 |
+|------|---------|---------|------|
+| SensitiveWord | 批量添加敏感词 | `POST /api/v1/admin/sensitive-words/batch` | ✅ |
+| SensitiveWord | 批量删除敏感词 | `DELETE /api/v1/admin/sensitive-words/batch` | ✅ |
+| SensitiveWord | 批量更新状态 | `PUT /api/v1/admin/sensitive-words/batch/status` | ✅ |
+| UserBlock | 批量解除拉黑 | `PUT /api/v1/admin/user-blocks/batch/unblock` | ✅ |
+| UserBlock | 批量删除记录 | `DELETE /api/v1/admin/user-blocks/batch` | ✅ |
+| UserTag | 批量删除标签 | `DELETE /api/v1/admin/user-tags/batch` | ✅ |
+| UserTag | 批量分配标签 | `POST /api/v1/admin/user-tags/batch/assign` | ✅ |
+| UserTag | 批量移除标签 | `DELETE /api/v1/admin/user-tags/batch/remove` | ✅ |
+
+### 12.2 测试文件
+
+**文件位置**: `api/internal/service/integration/sensitive_word_user_block_tag_batch_integration_test.go`
+
+### 12.3 测试用例清单
+
+#### 12.3.1 敏感词批量操作测试
+
+| 测试函数 | 描述 | 场景覆盖 |
+|---------|------|---------|
+| `TestSensitiveWordService_BatchAddSensitiveWords_Success` | 批量添加敏感词成功 | ✅ 全部成功 |
+| `TestSensitiveWordService_BatchAddSensitiveWords_WithDuplicates` | 批量添加含重复词 | ✅ 部分失败（重复） |
+| `TestSensitiveWordService_BatchAddSensitiveWords_WithEmptyWords` | 批量添加含空字符串 | ✅ 部分失败（空值） |
+| `TestSensitiveWordService_BatchAddSensitiveWords_ExceedsLimit` | 超过100条限制 | ✅ 验证错误 |
+| `TestSensitiveWordService_BatchDeleteSensitiveWords_Success` | 批量删除成功 | ✅ 全部成功 |
+| `TestSensitiveWordService_BatchDeleteSensitiveWords_PartialNotFound` | 部分敏感词不存在 | ✅ 部分失败 |
+| `TestSensitiveWordService_BatchUpdateSensitiveWordStatus_EnableSuccess` | 批量启用成功 | ✅ 状态变更 |
+| `TestSensitiveWordService_BatchUpdateSensitiveWordStatus_DisableSuccess` | 批量禁用成功 | ✅ 状态变更 |
+| `TestSensitiveWordService_BatchUpdateSensitiveWordStatus_PartialNotFound` | 部分敏感词不存在 | ✅ 部分失败 |
+
+#### 12.3.2 用户拉黑批量操作测试
+
+| 测试函数 | 描述 | 场景覆盖 |
+|---------|------|---------|
+| `TestUserBlockService_BatchUnblock_Success` | 批量解除拉黑成功 | ✅ 全部成功 |
+| `TestUserBlockService_BatchUnblock_PartialNotFound` | 部分记录不存在 | ✅ 部分失败 |
+| `TestUserBlockService_BatchUnblock_AlreadyCanceled` | 包含已取消记录 | ✅ 部分失败 |
+| `TestUserBlockService_BatchDelete_Success` | 批量删除成功 | ✅ 全部成功 |
+| `TestUserBlockService_BatchDelete_PartialNotFound` | 部分记录不存在 | ✅ 部分失败 |
+
+#### 12.3.3 用户标签批量操作测试
+
+| 测试函数 | 描述 | 场景覆盖 |
+|---------|------|---------|
+| `TestUserTagService_BatchDeleteTags_Success` | 批量删除标签成功 | ✅ 全部成功 |
+| `TestUserTagService_BatchDeleteTags_PartialNotFound` | 部分标签不存在 | ✅ 部分失败 |
+| `TestUserTagService_BatchAssignTagsToUsers_Success` | 批量分配标签成功 | ✅ 笛卡尔积分配 |
+| `TestUserTagService_BatchAssignTagsToUsers_UserNotFound` | 用户不存在 | ✅ 部分失败 |
+| `TestUserTagService_BatchAssignTagsToUsers_TagNotFound` | 标签不存在 | ✅ 部分失败 |
+| `TestUserTagService_BatchAssignTagsToUsers_DuplicateAssignment` | 重复分配 | ✅ 幂等性测试 |
+| `TestUserTagService_BatchRemoveTagsFromUsers_Success` | 批量移除标签成功 | ✅ 笛卡尔积移除 |
+| `TestUserTagService_BatchRemoveTagsFromUsers_UserNotFound` | 用户不存在 | ✅ 部分失败 |
+| `TestUserTagService_BatchRemoveTagsFromUsers_TagNotFound` | 标签不存在 | ✅ 部分失败 |
+| `TestUserTagService_BatchRemoveTagsFromUsers_TagNotAssigned` | 标签未分配 | ✅ 幂等性测试 |
+
+#### 12.3.4 综合场景测试
+
+| 测试函数 | 描述 | 场景覆盖 |
+|---------|------|---------|
+| `TestSensitiveWordUserBlockTag_ComplexBatchScenario` | 综合批量操作场景 | ✅ 多模块联动 |
+
+### 12.4 测试断言
+
+每个批量操作测试验证以下内容：
+
+1. **SuccessCount 和 FailedCount** 正确计数
+2. **SuccessItems** 包含成功的ID列表
+3. **FailedItems** 包含失败详情（ID和错误消息）
+4. **数据库状态** 正确更新（增删改）
+5. **缓存失效**（敏感词服务缓存自动失效）
+
+### 12.5 运行测试
+
+```bash
+# 运行敏感词/用户拉黑/用户标签批量操作测试
+go test ./api/internal/service/integration/sensitive_word_user_block_tag_batch_integration_test.go -v
+
+# 运行特定模块测试
+go test ./api/internal/service/integration/sensitive_word_user_block_tag_batch_integration_test.go -run TestSensitiveWordService_Batch -v
+go test ./api/internal/service/integration/sensitive_word_user_block_tag_batch_integration_test.go -run TestUserBlockService_Batch -v
+go test ./api/internal/service/integration/sensitive_word_user_block_tag_batch_integration_test.go -run TestUserTagService_Batch -v
+
+# 查看覆盖率
+go test ./api/internal/service/integration/sensitive_word_user_block_tag_batch_integration_test.go -cover
+```
+
+---
+
 **文档维护者**: AI Assistant
 **最后更新**: 2025-12-29
+**版本**: v2.2

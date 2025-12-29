@@ -95,6 +95,7 @@ func migrateModels(db *gorm.DB) error {
 		&model.User{},
 		&model.Player{},
 		&model.Game{},
+		&model.GameCategory{},
 		&model.ServiceItem{},
 		&model.Order{},
 		&model.OrderItem{},
@@ -169,6 +170,7 @@ func migrateModels(db *gorm.DB) error {
 		// Commission
 		&model.CommissionRule{},
 		&model.CommissionRecord{},
+		&model.MonthlySettlement{},
 
 		// User Block
 		&model.UserBlock{},
@@ -187,6 +189,14 @@ func migrateModels(db *gorm.DB) error {
 		&model.OrderTimeoutConfig{},
 		&model.OrderTimeoutLog{},
 		&model.OrderServiceAssignment{},
+
+		// Dispute Templates & Chat Snapshots
+		&model.DisputeTemplate{},
+		&model.ChatSnapshot{},
+
+		// User Tag
+		&model.UserTag{},
+		&model.UserTagRelation{},
 	)
 }
 
@@ -195,6 +205,8 @@ func cleanTables(t *testing.T, db *gorm.DB) {
 	t.Helper()
 
 	tables := []string{
+		// Dispute Templates & Chat Snapshots
+		"chat_snapshots", "dispute_templates",
 		// Order Timeout
 		"order_service_assignments", "order_timeout_logs", "order_timeout_configs",
 		// Player Rank & Certification
@@ -210,11 +222,13 @@ func cleanTables(t *testing.T, db *gorm.DB) {
 		// Coupon & VIP
 		"coupons", "coupon_templates", "vip_configs", "vip_levels",
 		// Commission
-		"commission_records", "commission_rules",
+		"monthly_settlements", "commission_records", "commission_rules",
 		// Settlement
 		"player_settlement_assignments", "settlement_companies",
 		// User Block
 		"user_blocks",
+		// User Tag
+		"user_tag_relations", "user_tags",
 		// KPI & Statistics
 		"kpi_targets",
 		"user_statistics", "player_statistics", "platform_statistics",
@@ -234,7 +248,7 @@ func cleanTables(t *testing.T, db *gorm.DB) {
 		// Order
 		"order_players", "order_items", "orders",
 		// Core
-		"service_items", "games",
+		"service_items", "games", "game_categories",
 		"players", "users",
 	}
 
@@ -778,6 +792,25 @@ func CreateTestMenu(t *testing.T, db *gorm.DB, name, path string, parentID *uint
 	return menu
 }
 
+// CreateTestMenuWithOrder creates a test menu with specified order and hidden status.
+func CreateTestMenuWithOrder(t *testing.T, db *gorm.DB, name, path string, parentID *uint64, order int, hidden bool) *model.Menu {
+	t.Helper()
+	menu := &model.Menu{
+		Base: model.Base{
+			ExtJSON: "{}",
+		},
+		Name:     name,
+		Path:     path,
+		ParentID: parentID,
+		Order:    order,
+		Hidden:   hidden,
+	}
+	if err := db.Create(menu).Error; err != nil {
+		t.Fatalf("Failed to create test menu: %v", err)
+	}
+	return menu
+}
+
 // CreateTestChatGroupMember creates a test chat group member.
 func CreateTestChatGroupMember(t *testing.T, db *gorm.DB, groupID, userID uint64, role model.ChatMemberRole) *model.ChatGroupMember {
 	t.Helper()
@@ -926,4 +959,124 @@ func CreateTestOrderServiceAssignment(t *testing.T, db *gorm.DB, order *model.Or
 		t.Fatalf("Failed to create test order service assignment: %v", err)
 	}
 	return assignment
+}
+
+
+// CreateTestChatSnapshot creates a test chat snapshot for dispute.
+func CreateTestChatSnapshot(t *testing.T, db *gorm.DB, disputeID, orderID, chatGroupID uint64) *model.ChatSnapshot {
+	t.Helper()
+	snapshot := &model.ChatSnapshot{
+		Base: model.Base{
+			ExtJSON: "{}",
+		},
+		DisputeID:   disputeID,
+		OrderID:     orderID,
+		ChatGroupID: chatGroupID,
+		Messages:    `[{"sender":"user1","content":"test message","time":"2025-01-01T00:00:00Z"}]`,
+		SnapshotAt:  time.Now(),
+	}
+	if err := db.Create(snapshot).Error; err != nil {
+		t.Fatalf("Failed to create test chat snapshot: %v", err)
+	}
+	return snapshot
+}
+
+// CreateTestDisputeTemplate creates a test dispute template.
+func CreateTestDisputeTemplate(t *testing.T, db *gorm.DB, code, name string, initiatorType model.DisputeInitiatorType) *model.DisputeTemplate {
+	t.Helper()
+	template := &model.DisputeTemplate{
+		Base: model.Base{
+			ExtJSON: "{}",
+		},
+		Code:          code,
+		Name:          name,
+		InitiatorType: initiatorType,
+		Description:   "Test dispute template",
+		SortOrder:     0,
+		IsActive:      true,
+	}
+	if err := db.Create(template).Error; err != nil {
+		t.Fatalf("Failed to create test dispute template: %v", err)
+	}
+	return template
+}
+
+// CreateTestCommissionRecord creates a test commission record.
+func CreateTestCommissionRecord(t *testing.T, db *gorm.DB, orderID, playerID uint64, totalCents int64, status model.SettlementStatus) *model.CommissionRecord {
+	t.Helper()
+	record := &model.CommissionRecord{
+		OrderID:           orderID,
+		PlayerID:          playerID,
+		TotalAmountCents:  totalCents,
+		CommissionRate:    20,
+		CommissionCents:   totalCents * 20 / 100,
+		PlayerIncomeCents: totalCents * 80 / 100,
+		SettlementStatus:  status,
+		SettlementMonth:   time.Now().Format("2006-01"),
+	}
+	if err := db.Create(record).Error; err != nil {
+		t.Fatalf("Failed to create test commission record: %v", err)
+	}
+	return record
+}
+
+// CreateTestOrderItem creates a test order item.
+func CreateTestOrderItem(t *testing.T, db *gorm.DB, order *model.Order, slot int, priceCents int64, status model.OrderItemStatus) *model.OrderItem {
+	t.Helper()
+	item := &model.OrderItem{
+		Base: model.Base{
+			ExtJSON: "{}",
+		},
+		OrderID:        order.ID,
+		ItemID:         order.ItemID,
+		Slot:           slot,
+		UnitPriceCents: priceCents,
+		Quantity:       1,
+		TotalCents:     priceCents,
+		CommissionRate: 0.20,
+		Status:         status,
+	}
+	if err := db.Create(item).Error; err != nil {
+		t.Fatalf("Failed to create test order item: %v", err)
+	}
+	return item
+}
+
+// CreateTestOrderPlayer creates a test order player record.
+func CreateTestOrderPlayer(t *testing.T, db *gorm.DB, order *model.Order, orderItem *model.OrderItem, player *model.Player, status model.OrderPlayerStatus) *model.OrderPlayer {
+	t.Helper()
+	record := &model.OrderPlayer{
+		Base: model.Base{
+			ExtJSON: "{}",
+		},
+		OrderID:     order.ID,
+		OrderItemID: orderItem.ID,
+		PlayerID:    player.ID,
+		JoinedAt:    time.Now(),
+		Status:      status,
+	}
+	if err := db.Create(record).Error; err != nil {
+		t.Fatalf("Failed to create test order player: %v", err)
+	}
+	return record
+}
+
+// CreateTestTeam creates a test team.
+func CreateTestTeam(t *testing.T, db *gorm.DB, name string, leaderID uint64) *model.Team {
+	t.Helper()
+	team := &model.Team{
+		Base: model.Base{
+			ExtJSON: "{}",
+		},
+		Name:            name,
+		LeaderID:        leaderID,
+		Status:          model.TeamStatusActive,
+		MaxMembers:      5,
+		MemberCount:     1,
+		IncomeShareType: "equal",
+	}
+	if err := db.Create(team).Error; err != nil {
+		t.Fatalf("Failed to create test team: %v", err)
+	}
+	return team
 }

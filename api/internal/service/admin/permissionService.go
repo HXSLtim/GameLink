@@ -487,3 +487,178 @@ func (s *PermissionService) invalidatePermissionCache() {
 	_ = s.cache.Delete(ctx, cacheKeyPermissions)
 	// 注意：用户和角色的权限缓存需要在分配权限时清除
 }
+
+// PermissionBatchDeleteResult 权限批量删除结果
+type PermissionBatchDeleteResult struct {
+	SuccessCount int                       `json:"successCount"`
+	FailedCount  int                       `json:"failedCount"`
+	FailedPerms  []PermissionDeleteFailure `json:"failedPerms,omitempty"`
+}
+
+// PermissionDeleteFailure 权限删除失败详情
+type PermissionDeleteFailure struct {
+	PermissionID uint64 `json:"permissionId"`
+	Reason       string `json:"reason"`
+}
+
+// BatchDeletePermissions 批量删除权限（系统权限不可删除，被引用的权限需要确认）
+func (s *PermissionService) BatchDeletePermissions(ctx context.Context, ids []uint64, force bool) (*PermissionBatchDeleteResult, error) {
+	if len(ids) == 0 {
+		return nil, apierr.BadRequest("权限ID列表不能为空")
+	}
+
+	result := &PermissionBatchDeleteResult{
+		FailedPerms: make([]PermissionDeleteFailure, 0),
+	}
+
+	for _, id := range ids {
+		// 获取权限信息
+		permission, err := s.permissions.Get(ctx, id)
+		if err != nil {
+			result.FailedCount++
+			result.FailedPerms = append(result.FailedPerms, PermissionDeleteFailure{
+				PermissionID: id,
+				Reason:       "权限不存在",
+			})
+			continue
+		}
+
+		// 系统权限不可删除
+		if permission.IsSystem {
+			result.FailedCount++
+			result.FailedPerms = append(result.FailedPerms, PermissionDeleteFailure{
+				PermissionID: id,
+				Reason:       "系统权限不可删除",
+			})
+			continue
+		}
+
+		// 检查是否被角色引用
+		if !force {
+			refCount, err := s.permissions.CountRoleReferences(ctx, id)
+			if err != nil {
+				result.FailedCount++
+				result.FailedPerms = append(result.FailedPerms, PermissionDeleteFailure{
+					PermissionID: id,
+					Reason:       "检查权限引用失败",
+				})
+				continue
+			}
+			if refCount > 0 {
+				result.FailedCount++
+				result.FailedPerms = append(result.FailedPerms, PermissionDeleteFailure{
+					PermissionID: id,
+					Reason:       fmt.Sprintf("权限被 %d 个角色引用，无法删除", refCount),
+				})
+				continue
+			}
+		}
+
+		if err := s.permissions.Delete(ctx, id); err != nil {
+			result.FailedCount++
+			result.FailedPerms = append(result.FailedPerms, PermissionDeleteFailure{
+				PermissionID: id,
+				Reason:       err.Error(),
+			})
+		} else {
+			result.SuccessCount++
+		}
+	}
+
+	// 清除缓存
+	if result.SuccessCount > 0 {
+		s.invalidatePermissionCache()
+	}
+
+	return result, nil
+}
+
+// BatchDeletePermissionsWithResponse 批量删除权限（返回统一的BatchOperationResponse格式）
+func (s *PermissionService) BatchDeletePermissionsWithResponse(ctx context.Context, ids []uint64, force bool) (*BatchDeletePermissionsResult, error) {
+	if len(ids) == 0 {
+		return nil, apierr.BadRequest("权限ID列表不能为空")
+	}
+
+	result := &BatchDeletePermissionsResult{
+		SuccessItems: make([]uint64, 0),
+		FailedItems:  make([]BatchDeletePermissionError, 0),
+		TotalCount:   len(ids),
+	}
+
+	for _, id := range ids {
+		// 获取权限信息
+		permission, err := s.permissions.Get(ctx, id)
+		if err != nil {
+			result.FailedCount++
+			result.FailedItems = append(result.FailedItems, BatchDeletePermissionError{
+				ID:      id,
+				Message: "权限不存在",
+			})
+			continue
+		}
+
+		// 系统权限不可删除
+		if permission.IsSystem {
+			result.FailedCount++
+			result.FailedItems = append(result.FailedItems, BatchDeletePermissionError{
+				ID:      id,
+				Message: "系统权限不可删除",
+			})
+			continue
+		}
+
+		// 检查是否被角色引用
+		if !force {
+			refCount, err := s.permissions.CountRoleReferences(ctx, id)
+			if err != nil {
+				result.FailedCount++
+				result.FailedItems = append(result.FailedItems, BatchDeletePermissionError{
+					ID:      id,
+					Message: "检查权限引用失败",
+				})
+				continue
+			}
+			if refCount > 0 {
+				result.FailedCount++
+				result.FailedItems = append(result.FailedItems, BatchDeletePermissionError{
+					ID:      id,
+					Message: fmt.Sprintf("权限被 %d 个角色引用，无法删除", refCount),
+				})
+				continue
+			}
+		}
+
+		if err := s.permissions.Delete(ctx, id); err != nil {
+			result.FailedCount++
+			result.FailedItems = append(result.FailedItems, BatchDeletePermissionError{
+				ID:      id,
+				Message: err.Error(),
+			})
+		} else {
+			result.SuccessCount++
+			result.SuccessItems = append(result.SuccessItems, id)
+		}
+	}
+
+	// 清除缓存
+	if result.SuccessCount > 0 {
+		s.invalidatePermissionCache()
+	}
+
+	return result, nil
+}
+
+// BatchDeletePermissionsResult 批量删除权限结果（统一格式）
+type BatchDeletePermissionsResult struct {
+	SuccessCount int                          `json:"success_count"`
+	FailedCount  int                          `json:"failed_count"`
+	TotalCount   int                          `json:"total_count"`
+	FailedItems  []BatchDeletePermissionError `json:"failed_items,omitempty"`
+	SuccessItems []uint64                     `json:"success_items,omitempty"`
+}
+
+// BatchDeletePermissionError 单个权限删除失败详情
+type BatchDeletePermissionError struct {
+	ID      uint64 `json:"id"`
+	Message string `json:"message"`
+}

@@ -2,6 +2,7 @@ package admin
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -517,6 +518,98 @@ func (h *ActivityHandler) GetAllActivityStats(c *gin.Context) {
 }
 
 // ============================================================================
+// 批量操作
+// ============================================================================
+
+// BatchDeleteActivitiesRequest 批量删除活动请求
+type BatchDeleteActivitiesRequest struct {
+	IDs []uint64 `json:"ids" binding:"required,min=1"`
+}
+
+// BatchDeleteActivities 批量删除活动
+func (h *ActivityHandler) BatchDeleteActivities(c *gin.Context) {
+	var req BatchDeleteActivitiesRequest
+	if !ValidateAndRespond(c, &req) {
+		return
+	}
+
+	result, err := h.svc.BatchDeleteActivities(c.Request.Context(), req.IDs)
+	if err != nil {
+		respondError(c, apierr.BadRequest(err.Error()))
+		return
+	}
+
+	respondSuccess(c, gin.H{
+		"message":      fmt.Sprintf("成功删除 %d 个活动", result.SuccessCount),
+		"successCount": result.SuccessCount,
+		"failedCount":  result.FailedCount,
+		"failedIds":    result.FailedIDs,
+		"errors":       result.Errors,
+	})
+}
+
+// BatchUpdateActivitiesStatusRequest 批量更新活动状态请求
+type BatchUpdateActivitiesStatusRequest struct {
+	IDs    []uint64                 `json:"ids" binding:"required,min=1"`
+	Status model.ActivityStatus     `json:"status" binding:"required"`
+}
+
+// BatchUpdateActivitiesStatus 批量更新活动状态
+func (h *ActivityHandler) BatchUpdateActivitiesStatus(c *gin.Context) {
+	var req BatchUpdateActivitiesStatusRequest
+	if !ValidateAndRespond(c, &req) {
+		return
+	}
+
+	result, err := h.svc.BatchUpdateActivityStatus(c.Request.Context(), req.IDs, req.Status)
+	if err != nil {
+		respondError(c, apierr.BadRequest(err.Error()))
+		return
+	}
+
+	respondSuccess(c, gin.H{
+		"message":      fmt.Sprintf("成功更新 %d 个活动状态", result.SuccessCount),
+		"successCount": result.SuccessCount,
+		"failedCount":  result.FailedCount,
+		"failedIds":    result.FailedIDs,
+		"errors":       result.Errors,
+	})
+}
+
+// BatchPublishActivitiesRequest 批量发布活动请求
+type BatchPublishActivitiesRequest struct {
+	IDs       []uint64 `json:"ids" binding:"required,min=1"`
+	IsVisible bool     `json:"isVisible"`
+}
+
+// BatchPublishActivities 批量发布/取消发布活动
+func (h *ActivityHandler) BatchPublishActivities(c *gin.Context) {
+	var req BatchPublishActivitiesRequest
+	if !ValidateAndRespond(c, &req) {
+		return
+	}
+
+	result, err := h.svc.BatchPublishActivities(c.Request.Context(), req.IDs, req.IsVisible)
+	if err != nil {
+		respondError(c, apierr.BadRequest(err.Error()))
+		return
+	}
+
+	action := "发布"
+	if !req.IsVisible {
+		action = "取消发布"
+	}
+
+	respondSuccess(c, gin.H{
+		"message":      fmt.Sprintf("成功%s %d 个活动", action, result.SuccessCount),
+		"successCount": result.SuccessCount,
+		"failedCount":  result.FailedCount,
+		"failedIds":    result.FailedIDs,
+		"errors":       result.Errors,
+	})
+}
+
+// ============================================================================
 // 路由注册
 // ============================================================================
 
@@ -536,6 +629,11 @@ func RegisterActivityRoutes(rg *gin.RouterGroup, svc *activityservice.Service, p
 		activityGroup.PUT("/:id", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/activities/:id"), h.UpdateActivity)
 		activityGroup.DELETE("/:id", pm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/activities/:id"), h.DeleteActivity)
 		activityGroup.PUT("/:id/status", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/activities/:id/status"), h.UpdateActivityStatus)
+
+		// 批量操作
+		activityGroup.DELETE("/batch", pm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/activities/batch"), h.BatchDeleteActivities)
+		activityGroup.PUT("/batch/status", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/activities/batch/status"), h.BatchUpdateActivitiesStatus)
+		activityGroup.PUT("/batch/publish", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/activities/batch/publish"), h.BatchPublishActivities)
 
 		// 活动奖励管理
 		activityGroup.GET("/:id/rewards", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/activities/:id/rewards"), h.GetRewardsByActivity)
