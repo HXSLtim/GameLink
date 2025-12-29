@@ -25,9 +25,9 @@ type GameCategory struct {
 
 	// Relations
 	// 该分类下的游戏列表（非持久化字段）
-	Games []Game `json:"games,omitempty" gorm:"foreignKey:CategoryID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE"`
+	Games []Game `json:"games,omitempty" gorm:"foreignKey:CategoryID;references:ID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE"`
 	// 该分类下的服务项目列表（非持久化字段）
-	ServiceItems []ServiceItem `json:"serviceItems,omitempty" gorm:"-"` // ServiceItem currently uses Category string field
+	ServiceItems []ServiceItem `json:"serviceItems,omitempty" gorm:"foreignKey:CategoryID;references:ID;constraint:OnDelete:SET NULL,OnUpdate:CASCADE"`
 }
 
 // TableName specifies the table name for GameCategory.

@@ -817,6 +817,10 @@ T+7 后 → ¥80 从 FrozenCents 转入 BalanceCents，可提现
 | SortOrder | int | 排序权重，数值越小越靠前 |
 | IsActive | bool | 是否启用 |
 
+**关系说明：**
+- 一个 `GameCategory` 包含多个 `Game` (1:N)
+- 一个 `GameCategory` 包含多个 `ServiceItem` (1:N)
+
 **GameCategory 权限码：**
 - `admin.game_categories.read` - 查看游戏分类列表
 - `admin.game_categories.create` - 创建游戏分类
@@ -830,12 +834,29 @@ T+7 后 → ¥80 从 FrozenCents 转入 BalanceCents，可提现
 |------|------|------|
 | Key | string | 游戏标识（唯一），如 lol/dota2 |
 | Name | string | 游戏名称 |
-| Category | string | 分类（管理员自定义）：moba/fps/rpg/card 等（冗余字段，向后兼容） |
+| Category | string | 分类名称：moba/fps/rpg/card 等（冗余字段，向后兼容）@Deprecated |
+| CategoryID | *uint64 | 分类ID（外键关联 GameCategory） |
 | IconURL | string | 图标URL |
 | CoverURL | string | 封面图URL |
 | Description | string | 游戏描述 |
 | IsActive | bool | 是否上架 |
 | SortOrder | int | 排序 |
+
+**关系说明：**
+- `Game` 属于一个 `GameCategory` (N:1)
+- `Game` 有多个 `GameRank` (1:N)
+- `ServiceItem` 可以关联到 `Game` 和 `GameCategory`
+
+**三层架构关系：**
+```
+GameCategory (分类)
+  ↓ 1:N (通过 CategoryID)
+Game (游戏)
+
+GameCategory (分类)
+  ↓ 1:N (通过 CategoryID)
+ServiceItem (服务项目)
+```
 
 ---
 

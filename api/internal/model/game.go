@@ -11,9 +11,13 @@ type Game struct {
 	// 游戏名称
 	// @Example 英雄联盟
 	Name string `json:"name" gorm:"size:128"`
-	// 游戏分类，如 moba/fps（冗余字段，向后兼容）
+	// 游戏分类名称，如 moba/fps（冗余字段，向后兼容）
 	// @Example MOBA
+	// @Deprecated 使用 CategoryID 关联 GameCategory 代替
 	Category string `json:"category,omitempty" gorm:"size:64;index"`
+	// 游戏分类ID（外键关联 GameCategory）
+	// @Example 1
+	CategoryID *uint64 `json:"categoryId,omitempty" gorm:"column:category_id;index;constraint:OnDelete:SET NULL,OnUpdate:CASCADE"`
 	// 游戏图标URL
 	// @Example https://example.com/game-icon.png
 	IconURL string `json:"iconUrl,omitempty" gorm:"column:icon_url;size:255"`
@@ -29,4 +33,8 @@ type Game struct {
 	// 排序（越小越靠前）
 	// @Example 0
 	SortOrder int `json:"sortOrder" gorm:"column:sort_order;default:0;index"`
+
+	// Relations
+	// 关联的游戏分类（非持久化字段）
+	GameCategory *GameCategory `gorm:"foreignKey:CategoryID" json:"gameCategory,omitempty"`
 }
