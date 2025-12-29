@@ -41,7 +41,7 @@ type ServiceItem struct {
 	CommissionRate float64                `gorm:"type:decimal(5,2);default:0.20" json:"commissionRate"` // 抽成比例
 	MinUsers       int                    `gorm:"default:1" json:"minUsers"`
 	MaxPlayers     int                    `gorm:"default:1" json:"maxPlayers"`
-	Tags           string                 `gorm:"type:json" json:"tags"` // JSON数组
+	Tags           string                 `gorm:"type:json;default:'[]'" json:"tags"` // JSON数组
 	IconURL        string                 `gorm:"type:varchar(255)" json:"iconUrl"`
 	IsActive       bool                   `gorm:"default:true;index" json:"isActive"`
 	SortOrder      int                    `gorm:"default:0" json:"sortOrder"`

@@ -82,6 +82,7 @@ func (r *gormPlayerRepository) Update(ctx context.Context, player *model.Player)
 	tx := r.db.WithContext(ctx).Model(player).Updates(map[string]any{
 		"nickname":            player.Nickname,
 		"bio":                 player.Bio,
+		"rank":                player.Rank,
 		"rating_average":      player.RatingAverage,
 		"rating_count":        player.RatingCount,
 		"hourly_rate_cents":   player.HourlyRateCents,

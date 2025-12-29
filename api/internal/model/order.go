@@ -58,7 +58,7 @@ type Order struct {
 	RefundedAt        *time.Time `json:"refundedAt,omitempty" gorm:"column:refunded_at"`
 
 	// 扩展字段
-	OrderConfig string `json:"orderConfig,omitempty" gorm:"column:order_config;type:json"` // 订单配置（JSON）
+	OrderConfig string `json:"orderConfig,omitempty" gorm:"column:order_config;type:json;default:'{}'"` // 订单配置（JSON）
 	UserNotes   string `json:"userNotes,omitempty" gorm:"column:user_notes;type:text"`     // 用户备注
 
 	// 争议相关字段

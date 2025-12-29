@@ -4,7 +4,7 @@
 
 | 类别 | 技术 | 版本 |
 |------|------|------|
-| 语言 | Go | 1.25.5+ |
+| 语言 | Go | 1.25.3+ |
 | Web 框架 | Gin | - |
 | ORM | GORM | - |
 | 认证 | JWT (golang-jwt/jwt/v5) | - |
@@ -20,14 +20,14 @@
 
 | 类别 | 技术 | 版本 |
 |------|------|------|
-| 框架 | React + TypeScript | 18.2+ / 5.2+ |
+| 框架 | React + TypeScript | 19.x / 5.9+ |
 | 构建工具 | Vite | 7.2+ |
 | UI 库 | Ant Design | 6.0 |
 | 路由 | React Router | 7.9+ |
 | HTTP 客户端 | Axios（带加密拦截器） | 1.13+ |
 | 状态管理 | React Context API | - |
 | 加密 | crypto-js (AES-256-CBC) | - |
-| 样式 | Less | 4.2 |
+| 样式 | Less | 4.4 |
 | WebSocket | socket.io-client | 4.8+ |
 | 测试 | Vitest + Testing Library + Playwright | 4.0+ |
 
@@ -43,7 +43,7 @@
 
 | 功能 | 说明 |
 |------|------|
-| 变更检测 | 只运行受影响的任务（backend/admin） |
+| 变更检测 | 只运行受影响的任务（api/admin） |
 | 并发控制 | 自动取消重复运行 |
 | 后端测试 | PostgreSQL + Redis 服务，race 检测 |
 | 覆盖率检查 | 70% 以下警告 |
@@ -122,7 +122,7 @@ SUPER_ADMIN_PASSWORD=<包含大小写数字特殊字符，8位以上>
 ### 后端
 
 ```bash
-cd backend
+cd api
 go mod tidy          # 整理依赖
 go run cmd/main.go   # 运行应用
 make test            # 运行测试
@@ -156,7 +156,7 @@ Handler → Service → Repository → Model
 Handler 层使用 `resp` 包和 `apierr` 包统一响应格式：
 
 ```go
-// 位置: backend/internal/handler/resp/
+// 位置: api/internal/handler/resp/
 
 // 成功响应
 resp.OK(c, data)           // 200 + data
@@ -170,7 +170,7 @@ resp.Error(c, apierr.BadRequest("invalid input"))
 resp.Error(c, apierr.NotFound("resource not found"))
 resp.Error(c, apierr.InternalError("operation failed").WithDetails(err.Error()))
 
-// Admin 包辅助函数（backend/internal/handler/admin/helpers.go）
+// Admin 包辅助函数（api/internal/handler/admin/helpers.go）
 respondSuccess(c, data)    // 通用成功
 respondCreated(c, data)    // 创建成功
 respondUpdated(c, data)    // 更新成功
@@ -191,7 +191,7 @@ ValidateAndRespond(c, &req) // 绑定JSON并自动响应错误
 - API errors: 标准化 HTTP 响应（使用 `apierr` 包）
 
 ```go
-// apierr 包常用函数（backend/pkg/apierr/errors.go）
+// apierr 包常用函数（api/pkg/apierr/errors.go）
 apierr.BadRequest(msg)      // 400
 apierr.Unauthorized(msg)    // 401
 apierr.Forbidden(msg)       // 403

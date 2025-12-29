@@ -44,7 +44,7 @@ func (r *chatMemberRepository) Get(ctx context.Context, groupID, userID uint64) 
 	if err := r.db.WithContext(ctx).
 		Where("group_id = ? AND user_id = ?", groupID, userID).
 		First(&member).Error; err != nil {
-		return nil, err
+		return nil, repository.WrapNotFound(err)
 	}
 	return &member, nil
 }

@@ -11,6 +11,15 @@ const (
 	RatingMax Rating = 5
 )
 
+// Rating constants for convenience.
+const (
+	Rating1 Rating = 1
+	Rating2 Rating = 2
+	Rating3 Rating = 3
+	Rating4 Rating = 4
+	Rating5 Rating = 5
+)
+
 // Valid 检查评分是否在合法区间内。
 func (r Rating) Valid() bool {
 	return r >= RatingMin && r <= RatingMax

@@ -81,12 +81,12 @@ type RechargeRecord struct {
 
 	// 优惠券发放记录
 	CouponIssued bool   `json:"couponIssued" gorm:"column:coupon_issued;default:false"` // 优惠券是否已发放
-	CouponIDs    string `json:"couponIds" gorm:"column:coupon_ids;type:json"`           // 发放的优惠券ID列表（JSON数组）
+	CouponIDs    string `json:"couponIds" gorm:"column:coupon_ids;type:json;default:'[]'"`           // 发放的优惠券ID列表（JSON数组）
 
 	// 客户端信息
 	ClientIP   string `json:"clientIp" gorm:"column:client_ip;size:64"`       // 客户端IP
 	UserAgent  string `json:"userAgent" gorm:"column:user_agent;size:255"`    // User-Agent
-	DeviceInfo string `json:"deviceInfo" gorm:"column:device_info;type:json"` // 设备信息（JSON）
+	DeviceInfo string `json:"deviceInfo" gorm:"column:device_info;type:json;default:'{}'"` // 设备信息（JSON）
 
 	// 备注
 	Remark string `json:"remark" gorm:"size:255"` // 备注

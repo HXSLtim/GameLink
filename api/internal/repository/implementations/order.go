@@ -108,6 +108,7 @@ func (r *gormOrderRepository) Update(ctx context.Context, order *model.Order) er
 		"gift_message":        order.GiftMessage,
 		"is_anonymous":        order.IsAnonymous,
 		"delivered_at":        order.DeliveredAt,
+		"has_dispute":         order.HasDispute,
 	})
 	if tx.Error != nil {
 		return tx.Error

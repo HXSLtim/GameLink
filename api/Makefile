@@ -47,6 +47,16 @@ test-integration:
 	@echo "Running integration tests..."
 	@go test ./... -tags=integration -v
 
+# Run integration tests with test database environment
+test-integration-db:
+	@echo "Running integration tests with test database..."
+	@TEST_DB_HOST=localhost \
+	TEST_DB_PORT=5433 \
+	TEST_DB_USER=gamelink \
+	TEST_DB_PASSWORD=gamelink \
+	TEST_DB_NAME=gamelink_test \
+	go test ./internal/service/integration/... -v -count=1
+
 # Run tests for a specific package
 run-test:
 	@echo "Running tests for $(PKG)..."
@@ -150,6 +160,8 @@ help:
 	@echo "  test-verbose      Run tests with verbose output"
 	@echo "  test-race         Run tests with race detector"
 	@echo "  test-bench        Run benchmarks"
+	@echo "  test-integration  Run integration tests"
+	@echo "  test-integration-db Run integration tests with test DB (auto-sets env vars)"
 	@echo "  run-test PKG=pkg Run tests for specific package"
 	@echo "  cover-pkg PKG=pkg Run coverage for specific package"
 	@echo "  clean             Clean test artifacts"

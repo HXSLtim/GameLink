@@ -14,10 +14,19 @@ func (s *OrderService) buildOrderForCreation(userID uint64, req CreateOrderReque
 	playerID := req.PlayerID
 	gameID := req.GameID
 
+	// 使用请求中的 ServiceID，如果未提供则默认为 0（允许 NULL）
+	var itemID uint64
+	if req.ServiceID != nil {
+		itemID = *req.ServiceID
+	}
+
 	return &model.Order{
+		Base: model.Base{
+			ExtJSON: "{}",
+		},
 		OrderNo:           model.GenerateEscortOrderNo(),
 		UserID:            userID,
-		ItemID:            1, // TODO: 后续从 service_items 选择对应的服务项
+		ItemID:            itemID,
 		PlayerID:          &playerID,
 		GameID:            &gameID,
 		Quantity:          1,
@@ -31,5 +40,6 @@ func (s *OrderService) buildOrderForCreation(userID uint64, req CreateOrderReque
 		Description:       req.Description,
 		ScheduledStart:    req.ScheduledStart,
 		ScheduledEnd:      &scheduledEnd,
+		OrderConfig:       "{}",
 	}
 }

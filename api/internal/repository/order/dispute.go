@@ -70,7 +70,7 @@ func (r *gormDisputeRepository) List(ctx context.Context, opts repository.Disput
 		query = query.Where("order_id = ?", *opts.OrderID)
 	}
 	if opts.AssignedToUserID != nil {
-		query = query.Where("assigned_to_user_id = ?", *opts.AssignedToUserID)
+		query = query.Where("assigned_service_id = ?", *opts.AssignedToUserID)
 	}
 	if opts.SLABreached != nil {
 		query = query.Where("sla_breached = ?", *opts.SLABreached)
@@ -114,7 +114,7 @@ func (r *gormDisputeRepository) List(ctx context.Context, opts repository.Disput
 func (r *gormDisputeRepository) ListPendingAssignment(ctx context.Context, page, pageSize int) ([]model.OrderDispute, int64, error) {
 	query := r.db.WithContext(ctx).Model(&model.OrderDispute{}).
 		Where("status = ?", model.DisputeStatusPending).
-		Where("assigned_to_user_id IS NULL")
+		Where("assigned_service_id IS NULL")
 
 	var total int64
 	if err := query.Count(&total).Error; err != nil {

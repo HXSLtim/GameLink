@@ -17,7 +17,7 @@ type VipLevel struct {
 	// 展示配置
 	IconURL   string `json:"iconUrl" gorm:"column:icon_url;size:255"`      // 等级图标
 	Color     string `json:"color" gorm:"size:32"`                         // 等级颜色（前端展示）
-	Benefits  string `json:"benefits" gorm:"type:json"`                    // 其他权益描述(JSON)
+	Benefits  string `json:"benefits" gorm:"type:json;default:'{}'"` // 其他权益描述(JSON)
 	SortOrder int    `json:"sortOrder" gorm:"column:sort_order;default:0"` // 排序（越小越靠前）
 
 	// 状态

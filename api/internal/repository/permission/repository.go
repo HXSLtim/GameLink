@@ -207,13 +207,26 @@ func (r *permissionRepository) ListByRoleID(ctx context.Context, roleID uint64) 
 }
 
 func (r *permissionRepository) ListByUserID(ctx context.Context, userID uint64) ([]model.Permission, error) {
-	var permissions []model.Permission
+	// Use subquery to get distinct permission IDs first, avoiding JSON column comparison issues
+	var permissionIDs []uint64
 	err := r.db.WithContext(ctx).
-		Distinct("permissions.*").
+		Model(&model.Permission{}).
+		Distinct("permissions.id").
 		Joins("JOIN role_permissions ON role_permissions.permission_id = permissions.id").
 		Joins("JOIN user_roles ON user_roles.role_id = role_permissions.role_id").
 		Where("user_roles.user_id = ?", userID).
-		Order("permissions.\"group\", permissions.method, permissions.path").
+		Pluck("permissions.id", &permissionIDs).Error
+	if err != nil {
+		return nil, err
+	}
+	if len(permissionIDs) == 0 {
+		return []model.Permission{}, nil
+	}
+
+	var permissions []model.Permission
+	err = r.db.WithContext(ctx).
+		Where("id IN ?", permissionIDs).
+		Order("\"group\", method, path").
 		Find(&permissions).Error
 	return permissions, err
 }

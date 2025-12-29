@@ -12,5 +12,5 @@ type Base struct {
 	CreatedAt time.Time      `json:"createdAt" gorm:"column:created_at;index"`
 	UpdatedAt time.Time      `json:"updatedAt" gorm:"column:updated_at"`
 	DeletedAt gorm.DeletedAt `json:"deletedAt,omitempty" gorm:"column:deleted_at;index" swaggerignore:"true"`
-	ExtJSON   string         `json:"extJson,omitempty" gorm:"column:ext_json;type:json"` // 扩展字段（JSON格式，用于后续扩展）
+	ExtJSON   string         `json:"extJson,omitempty" gorm:"column:ext_json;type:json;default:'{}'"` // 扩展字段（JSON格式，用于后续扩展）
 }

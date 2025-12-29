@@ -37,6 +37,7 @@ type DisputeService struct {
 	disputes       repository.DisputeRepository
 	orders         repoiface.OrderReadWriter
 	users          repository.UserRepository
+	players        repository.PlayerRepository
 	operationLogs  repository.OperationLogRepository
 	notifications  repository.NotificationRepository
 	payments       repository.PaymentRepository
@@ -56,6 +57,28 @@ func NewDisputeService(
 		disputes:       disputes,
 		orders:         orders,
 		users:          users,
+		operationLogs:  operationLogs,
+		notifications:  notifications,
+		payments:       payments,
+		defaultSLAMins: 30,
+	}
+}
+
+// NewDisputeServiceWithPlayers creates a new dispute service with player repository
+func NewDisputeServiceWithPlayers(
+	disputes repository.DisputeRepository,
+	orders repoiface.OrderReadWriter,
+	users repository.UserRepository,
+	players repository.PlayerRepository,
+	operationLogs repository.OperationLogRepository,
+	notifications repository.NotificationRepository,
+	payments repository.PaymentRepository,
+) *DisputeService {
+	return &DisputeService{
+		disputes:       disputes,
+		orders:         orders,
+		users:          users,
+		players:        players,
 		operationLogs:  operationLogs,
 		notifications:  notifications,
 		payments:       payments,
@@ -105,8 +128,23 @@ func (s *DisputeService) InitiateDispute(ctx context.Context, req InitiateDisput
 		return nil, ErrDisputeUnauthorized
 	}
 	// For player initiator, check if they are the assigned player
-	if req.InitiatorType == model.DisputeInitiatorPlayer && (order.PlayerID == nil || *order.PlayerID != req.InitiatorID) {
-		return nil, ErrDisputeUnauthorized
+	// InitiatorID is a user ID, so we need to check if the player's UserID matches
+	if req.InitiatorType == model.DisputeInitiatorPlayer {
+		if order.PlayerID == nil {
+			return nil, ErrDisputeUnauthorized
+		}
+		// If we have a player repository, use it to verify
+		if s.players != nil {
+			player, err := s.players.Get(ctx, *order.PlayerID)
+			if err != nil || player == nil || player.UserID != req.InitiatorID {
+				return nil, ErrDisputeUnauthorized
+			}
+		} else {
+			// Fallback: assume InitiatorID is the player record ID (legacy behavior)
+			if *order.PlayerID != req.InitiatorID {
+				return nil, ErrDisputeUnauthorized
+			}
+		}
 	}
 
 	// Check if dispute can be initiated

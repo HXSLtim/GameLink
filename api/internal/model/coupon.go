@@ -58,8 +58,8 @@ type CouponTemplate struct {
 
 	// 适用范围
 	Scope   CouponScope `json:"scope" gorm:"size:32;default:'all'"`       // 适用范围
-	GameIDs string      `json:"gameIds" gorm:"column:game_ids;type:json"` // 指定游戏ID列表（JSON数组）
-	ItemIDs string      `json:"itemIds" gorm:"column:item_ids;type:json"` // 指定服务项目ID列表（JSON数组）
+	GameIDs string      `json:"gameIds" gorm:"column:game_ids;type:json;default:'[]'"` // 指定游戏ID列表（JSON数组）
+	ItemIDs string      `json:"itemIds" gorm:"column:item_ids;type:json;default:'[]'"` // 指定服务项目ID列表（JSON数组）
 
 	// 有效期配置
 	ValidityType  string     `json:"validityType" gorm:"column:validity_type;size:32;default:'days'"` // days=固定天数, fixed=固定截止日期
@@ -100,8 +100,8 @@ type Coupon struct {
 	DiscountRate      float64      `json:"discountRate" gorm:"column:discount_rate"`            // 折扣率
 	MaxDiscountCents  int64        `json:"maxDiscountCents" gorm:"column:max_discount_cents"`   // 最大折扣金额
 	Scope             CouponScope  `json:"scope" gorm:"size:32"`                                // 适用范围
-	GameIDs           string       `json:"gameIds" gorm:"column:game_ids;type:json"`            // 指定游戏ID
-	ItemIDs           string       `json:"itemIds" gorm:"column:item_ids;type:json"`            // 指定服务项目ID
+	GameIDs           string       `json:"gameIds" gorm:"column:game_ids;type:json;default:'[]'"`  // 指定游戏ID
+	ItemIDs           string       `json:"itemIds" gorm:"column:item_ids;type:json;default:'[]'"`  // 指定服务项目ID
 
 	// 时间
 	ClaimedAt *time.Time `json:"claimedAt" gorm:"column:claimed_at"`     // 领取时间

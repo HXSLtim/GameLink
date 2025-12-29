@@ -47,7 +47,7 @@ func (r *repositoryImpl) List(ctx context.Context, parentID *uint64) ([]model.Me
 		tx = tx.Where("parent_id = ?", *parentID)
 	}
 	var menus []model.Menu
-	if err := tx.Order("`order` ASC, id ASC").Find(&menus).Error; err != nil {
+	if err := tx.Order("\"order\" ASC, id ASC").Find(&menus).Error; err != nil {
 		return nil, err
 	}
 	return menus, nil
@@ -70,7 +70,7 @@ func (r *repositoryImpl) ListPaged(ctx context.Context, page, pageSize int, pare
 	}
 
 	var menus []model.Menu
-	if err := tx.Order("`order` ASC, id ASC").Find(&menus).Error; err != nil {
+	if err := tx.Order("\"order\" ASC, id ASC").Find(&menus).Error; err != nil {
 		return nil, 0, err
 	}
 	return menus, total, nil
@@ -83,7 +83,7 @@ func (r *repositoryImpl) ListByPermission(ctx context.Context, codes []string) (
 	var menus []model.Menu
 	if err := r.db.WithContext(ctx).
 		Where("permission IN ?", codes).
-		Order("`order` ASC, id ASC").
+		Order("\"order\" ASC, id ASC").
 		Find(&menus).Error; err != nil {
 		return nil, err
 	}

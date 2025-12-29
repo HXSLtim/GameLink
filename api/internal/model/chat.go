@@ -48,7 +48,7 @@ type ChatGroup struct {
 	DeactivatedAt        *time.Time    `json:"deactivatedAt" gorm:"column:deactivated_at;index"`
 	AvatarURL            string        `json:"avatarUrl" gorm:"column:avatar_url;size:255"`
 	Description          string        `json:"description" gorm:"type:text"`
-	Settings             string        `json:"settings" gorm:"type:json"`
+	Settings             string        `json:"settings" gorm:"type:json;default:'{}'"`
 	MessageRetentionDays int           `json:"messageRetentionDays" gorm:"column:message_retention_days;default:30"` // 消息保留天数（默认30）
 
 	// 语音服务字段（预留）
@@ -101,7 +101,7 @@ type ChatMessage struct {
 	MessageType  ChatMessageType        `json:"messageType" gorm:"column:message_type;type:varchar(16);default:'text'"`
 	ReplyToID    *uint64                `json:"replyToId" gorm:"column:reply_to_id"`
 	ImageURL     string                 `json:"imageUrl" gorm:"column:image_url;size:255"`
-	Metadata     string                 `json:"metadata" gorm:"type:json"`
+	Metadata     string                 `json:"metadata" gorm:"type:json;default:'{}'"`
 	IsDeleted    bool                   `json:"isDeleted" gorm:"column:is_deleted;default:false"`
 	AuditStatus  ChatMessageAuditStatus `json:"auditStatus" gorm:"column:audit_status;type:varchar(16);default:'pending';index"`
 	ModeratedBy  *uint64                `json:"moderatedBy" gorm:"column:moderated_by"`

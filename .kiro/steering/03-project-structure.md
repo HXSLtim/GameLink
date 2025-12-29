@@ -6,7 +6,7 @@
 GameLink/
 ├── admin/                # 管理后台前端 (React)
 ├── app/                  # 小程序 (Taro)
-├── backend/              # Go 后端服务
+├── api/                  # Go 后端服务
 ├── client/               # 用户端+陪玩师端前端 (待开发)
 ├── scripts/              # 部署和工具脚本
 ├── docs/                 # 项目文档
@@ -14,10 +14,10 @@ GameLink/
 └── [root files]          # README, LICENSE, docker-compose 等
 ```
 
-## 后端结构 (`backend/`)
+## 后端结构 (`api/`)
 
 ```
-backend/
+api/
 ├── cmd/main.go                    # 应用入口
 ├── internal/                      # 私有应用代码
 │   ├── handler/                   # HTTP 处理器
