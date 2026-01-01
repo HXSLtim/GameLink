@@ -8,7 +8,7 @@ import type { ApiResponse, Pagination } from './admin';
 export type CompanyType = 'individual' | 'company';
 export type CompanyStatus = 'active' | 'suspended';
 
-export interface SettlementCompany {
+interface SettlementCompany {
     id: number;
     name: string;
     type: CompanyType;
@@ -24,7 +24,7 @@ export interface SettlementCompany {
     updatedAt: string;
 }
 
-export interface SettlementCompanyHistory {
+interface SettlementCompanyHistory {
     id: number;
     settlementCompanyId: number;
     fieldName: string;
@@ -39,7 +39,7 @@ export interface SettlementCompanyHistory {
     changedAt: string;
 }
 
-export interface PlayerCompanyAssignment {
+interface PlayerCompanyAssignment {
     id: number;
     playerId: number;
     settlementCompanyId: number;
@@ -67,7 +67,7 @@ export interface PlayerCompanyAssignment {
     };
 }
 
-export interface SettlementCompanyListParams {
+interface SettlementCompanyListParams {
     page?: number;
     pageSize?: number;
     status?: CompanyStatus;
@@ -76,7 +76,7 @@ export interface SettlementCompanyListParams {
     sortOrder?: 'asc' | 'desc';
 }
 
-export interface CreateSettlementCompanyDto {
+interface CreateSettlementCompanyDto {
     name: string;
     type: CompanyType;
     businessLicense?: string;
@@ -87,7 +87,7 @@ export interface CreateSettlementCompanyDto {
     contactPhone?: string;
 }
 
-export interface UpdateSettlementCompanyDto {
+interface UpdateSettlementCompanyDto {
     name?: string;
     type?: CompanyType;
     businessLicense?: string;
@@ -98,33 +98,33 @@ export interface UpdateSettlementCompanyDto {
     contactPhone?: string;
 }
 
-export interface ToggleStatusPayload {
+interface ToggleStatusPayload {
     enabled: boolean;
 }
 
-export interface AssignPlayerToCompanyDto {
+interface AssignPlayerToCompanyDto {
     settlementCompanyId: number;
     effectiveDate: string;
     reason: string;
 }
 
-export interface BatchAssignPlayersDto {
+interface BatchAssignPlayersDto {
     playerIds: number[];
     settlementCompanyId: number;
     effectiveDate: string;
     reason: string;
 }
 
-export interface BatchUpdateCompanyStatusDto {
+interface BatchUpdateCompanyStatusDto {
     companyIds: number[];
     isActive: boolean;
 }
 
-export interface BatchDeleteCompaniesDto {
+interface BatchDeleteCompaniesDto {
     companyIds: number[];
 }
 
-export interface BatchOperationResult {
+interface BatchOperationResult {
     successCount: number;
     failedCount: number;
     totalCount: number;
@@ -132,7 +132,7 @@ export interface BatchOperationResult {
     successItems: number[];
 }
 
-export interface CompanyPlayersParams {
+interface CompanyPlayersParams {
     page?: number;
     pageSize?: number;
     keyword?: string;

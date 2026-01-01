@@ -210,17 +210,17 @@ export interface GameServiceItem {
  * Game with Ranks
  * 带段位的游戏信息
  */
-export interface GameWithRanks extends Game {
+export interface GameWithRanks extends Omit<Game, 'category'> {
     ranks?: GameRank[];               // 该游戏的段位列表
     serviceItems?: GameServiceItem[]; // 该游戏的服务项列表
-    category?: GameCategory;          // 游戏分类
+    category?: GameCategory;          // 游戏分类对象（覆盖基类的category: string）
 }
 
 /**
  * Game Category with Games
  * 带游戏的分类信息
  */
-export interface GameCategoryWithGames extends GameCategory {
+export interface GameCategoryWithGames extends Omit<GameCategory, 'games'> {
     games?: GameWithRanks[];          // 该分类下的游戏列表（含段位）
 }
 

@@ -28,7 +28,7 @@ export type RuleStatus = 'active' | 'inactive';
 /**
  * 路由条件
  */
-export interface RoutingCondition {
+interface RoutingCondition {
   field: ConditionField;
   operator: ConditionOperator;
   value: string | number | string[] | number[];
@@ -37,7 +37,7 @@ export interface RoutingCondition {
 /**
  * 收款主体
  */
-export interface CollectionEntity {
+interface CollectionEntity {
   id: number;
   name: string;
   creditCode: string;
@@ -53,7 +53,7 @@ export interface CollectionEntity {
 /**
  * 支付路由规则
  */
-export interface RoutingRule {
+interface RoutingRule {
   id: number;
   name: string;
   priority: number;
@@ -71,7 +71,7 @@ export interface RoutingRule {
 /**
  * 路由规则历史记录
  */
-export interface RoutingRuleHistory {
+interface RoutingRuleHistory {
   id: number;
   routingRuleId: number;
   fieldName: string;
@@ -85,7 +85,7 @@ export interface RoutingRuleHistory {
 /**
  * 路由测试请求
  */
-export interface RoutingTestRequest {
+interface RoutingTestRequest {
   gameType?: string;
   serviceType?: string;
   amountCents?: number;
@@ -95,7 +95,7 @@ export interface RoutingTestRequest {
 /**
  * 路由测试响应
  */
-export interface RoutingTestResponse {
+interface RoutingTestResponse {
   matchedRuleId?: number;
   matchedRuleName?: string;
   collectionEntityId: number;
@@ -108,7 +108,7 @@ export interface RoutingTestResponse {
 /**
  * 批量操作响应
  */
-export interface BatchOperationResponse {
+interface BatchOperationResponse {
   successCount: number;
   failedCount: number;
   errors?: Array<{ id: number; error: string }>;
@@ -119,7 +119,7 @@ export interface BatchOperationResponse {
 /**
  * 创建路由规则请求
  */
-export interface CreateRoutingRuleDto {
+interface CreateRoutingRuleDto {
   name: string;
   priority: number;
   conditions: RoutingCondition[];
@@ -130,7 +130,7 @@ export interface CreateRoutingRuleDto {
 /**
  * 更新路由规则请求
  */
-export interface UpdateRoutingRuleDto {
+interface UpdateRoutingRuleDto {
   name?: string;
   priority?: number;
   conditions?: RoutingCondition[];
@@ -141,7 +141,7 @@ export interface UpdateRoutingRuleDto {
 /**
  * 路由规则查询参数
  */
-export interface RoutingRuleQueryParams {
+interface RoutingRuleQueryParams {
   page?: number;
   page_size?: number;
   status?: RuleStatus;
@@ -152,14 +152,14 @@ export interface RoutingRuleQueryParams {
 /**
  * 切换状态请求
  */
-export interface ToggleStatusPayload {
+interface ToggleStatusPayload {
   enabled: boolean;
 }
 
 /**
  * 批量更新状态请求
  */
-export interface BatchUpdateStatusDto {
+interface BatchUpdateStatusDto {
   rule_ids: number[];
   is_active: boolean;
 }
@@ -167,21 +167,21 @@ export interface BatchUpdateStatusDto {
 /**
  * 批量删除请求
  */
-export interface BatchDeleteDto {
+interface BatchDeleteDto {
   rule_ids: number[];
 }
 
 /**
  * 设置默认主体请求
  */
-export interface SetDefaultEntityDto {
+interface SetDefaultEntityDto {
   entityId: number;
 }
 
 /**
  * 重新排序优先级请求
  */
-export interface ReorderPrioritiesDto {
+interface ReorderPrioritiesDto {
   ruleIds: number[];
 }
 

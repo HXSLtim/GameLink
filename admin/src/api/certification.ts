@@ -18,7 +18,7 @@ export type CertificationStatus = 'pending' | 'approved' | 'rejected';
 /**
  * 实名认证申请
  */
-export interface IdentityCertification {
+interface IdentityCertification {
     id: number;
     userId: number;
     realName: string;
@@ -36,7 +36,7 @@ export interface IdentityCertification {
 /**
  * 段位认证申请
  */
-export interface RankCertification {
+interface RankCertification {
     id: number;
     userId: number;
     gameType: string;
@@ -56,7 +56,7 @@ export interface RankCertification {
 /**
  * 创建实名认证申请 DTO
  */
-export interface CreateIdentityCertificationDto {
+interface CreateIdentityCertificationDto {
     realName: string;
     idCardNumber: string;
     idCardFrontUrl: string;
@@ -66,7 +66,7 @@ export interface CreateIdentityCertificationDto {
 /**
  * 创建段位认证申请 DTO
  */
-export interface CreateRankCertificationDto {
+interface CreateRankCertificationDto {
     gameType: string;
     currentRank: string;
     targetRank: string;
@@ -78,7 +78,7 @@ export interface CreateRankCertificationDto {
 /**
  * 审核认证申请 DTO
  */
-export interface ReviewCertificationDto {
+interface ReviewCertificationDto {
     status: 'approved' | 'rejected';
     rejectReason?: string;
 }
@@ -86,7 +86,7 @@ export interface ReviewCertificationDto {
 /**
  * 认证查询参数
  */
-export interface CertificationQueryParams {
+interface CertificationQueryParams {
     page?: number;
     page_size?: number;
     userId?: number;

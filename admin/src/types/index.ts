@@ -6,7 +6,40 @@
 export * from './api';
 
 // 业务类型
-export * from './content';
+// Note: ChatMessage, ChatMessageQueryParams, MuteUserRequest are only exported from chat.ts
+// to avoid conflicts with the same names in content.ts
+export type {
+  FeedModerationStatus,
+  FeedReportStatus,
+  ChatMessageAuditStatus,
+  ContentCategoryStatus,
+  FeedReportAction,
+  Feed,
+  FeedQueryParams,
+  FeedReport,
+  FeedReportQueryParams,
+  ProcessReportRequest,
+  ContentCategory,
+  ContentCategoryQueryParams,
+  CreateCategoryRequest,
+  UpdateCategoryRequest,
+  ContentStats,
+  ContentTrend,
+  ContentStatsDTO,
+} from './content';
+
+export {
+  FEED_MODERATION_STATUS_TEXT,
+  FEED_MODERATION_STATUS_COLOR,
+  CHAT_AUDIT_STATUS_TEXT,
+  CHAT_AUDIT_STATUS_COLOR,
+  FEED_REPORT_STATUS_TEXT,
+  FEED_REPORT_STATUS_COLOR,
+  CATEGORY_STATUS_TEXT,
+  CATEGORY_STATUS_COLOR,
+  FEED_REPORT_ACTION_TEXT,
+} from './content';
+
 export * from './review';
 
 // RBAC 权限管理类型
@@ -43,7 +76,29 @@ export * from './dispute';
 export * from './marketing';
 
 // Payment & Operations 支付运营类型
-export * from './payment';
+// Note: Dispute* types, BatchOperationResult, BatchOperationError, AssignmentSource are exported from dispute.ts
+// and are not re-exported from here to avoid conflicts
+export type {
+  CompanyType,
+  CompanyStatus,
+  ConditionField,
+  ConditionOperator,
+  RuleStatus,
+  RechargeStatus,
+  SettlementCompany,
+  SettlementCompanyHistory,
+  PlayerCompanyAssignment,
+  RoutingCondition,
+  CollectionEntity,
+  RoutingRule,
+  RoutingRuleHistory,
+  RoutingTestRequest,
+  RoutingTestResponse,
+  RechargeOption,
+  RechargeRecord,
+  RechargeStats,
+  BatchOperationError,
+} from './payment';
 
 // Game 游戏模块类型
 export * from './game';

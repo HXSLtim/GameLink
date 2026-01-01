@@ -8,7 +8,7 @@ import type { ApiResponse, Pagination } from './admin';
 /**
  * Recharge option (充值档位)
  */
-export interface RechargeOption {
+interface RechargeOption {
     id: number;
     name: string;
     amountCents: number;
@@ -33,7 +33,7 @@ export interface RechargeOption {
 /**
  * Create recharge option DTO
  */
-export interface CreateRechargeOptionDto {
+interface CreateRechargeOptionDto {
     name: string;
     amountCents: number;
     bonusCents?: number;
@@ -55,7 +55,7 @@ export interface CreateRechargeOptionDto {
 /**
  * Update recharge option DTO
  */
-export interface UpdateRechargeOptionDto {
+interface UpdateRechargeOptionDto {
     name: string;
     amountCents: number;
     bonusCents?: number;
@@ -77,7 +77,7 @@ export interface UpdateRechargeOptionDto {
 /**
  * Recharge option query parameters
  */
-export interface RechargeOptionQueryParams {
+interface RechargeOptionQueryParams {
     page?: number;
     page_size?: number;
     keyword?: string;
@@ -88,7 +88,7 @@ export interface RechargeOptionQueryParams {
 /**
  * Batch update status DTO
  */
-export interface BatchUpdateOptionStatusDto {
+interface BatchUpdateOptionStatusDto {
     ids: number[];
     isActive: boolean;
 }
@@ -96,7 +96,7 @@ export interface BatchUpdateOptionStatusDto {
 /**
  * Batch delete DTO
  */
-export interface BatchDeleteOptionDto {
+interface BatchDeleteOptionDto {
     ids: number[];
 }
 
@@ -112,7 +112,7 @@ export type RechargeStatus = 'pending' | 'paid' | 'failed' | 'refunded' | 'expir
 /**
  * Recharge record (充值记录)
  */
-export interface RechargeRecord {
+interface RechargeRecord {
     id: number;
     orderNo: string;
     userId: number;
@@ -144,7 +144,7 @@ export interface RechargeRecord {
 /**
  * Recharge record query parameters
  */
-export interface RechargeRecordQueryParams {
+interface RechargeRecordQueryParams {
     page?: number;
     page_size?: number;
     userId?: number;
@@ -159,7 +159,7 @@ export interface RechargeRecordQueryParams {
 /**
  * Refund request DTO
  */
-export interface RefundRecordDto {
+interface RefundRecordDto {
     reason: string;
 }
 
@@ -170,7 +170,7 @@ export interface RefundRecordDto {
 /**
  * Recharge statistics
  */
-export interface RechargeStats {
+interface RechargeStats {
     totalOrders: number;
     totalAmountCents: number;
     totalBonusCents: number;

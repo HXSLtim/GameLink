@@ -5,7 +5,7 @@ import type { ApiResponse, Pagination } from './admin';
 // VIP Level Types
 // ============================================================================
 
-export interface VIPLevel {
+interface VIPLevel {
     id: number;
     slug: string;
     title: string;
@@ -23,7 +23,7 @@ export interface VIPLevel {
     updatedAt: string;
 }
 
-export interface CreateVIPLevelDto {
+interface CreateVIPLevelDto {
     slug: string;
     title: string;
     expRequired?: number;
@@ -38,7 +38,7 @@ export interface CreateVIPLevelDto {
     isActive?: boolean;
 }
 
-export interface UpdateVIPLevelDto {
+interface UpdateVIPLevelDto {
     slug: string;
     title: string;
     expRequired?: number;
@@ -53,7 +53,7 @@ export interface UpdateVIPLevelDto {
     isActive?: boolean;
 }
 
-export interface VIPLevelQueryParams {
+interface VIPLevelQueryParams {
     page?: number;
     page_size?: number;
     keyword?: string;
@@ -64,7 +64,7 @@ export interface VIPLevelQueryParams {
 // VIP Config Types
 // ============================================================================
 
-export interface VIPConfig {
+interface VIPConfig {
     id: number;
     configKey: string;
     configValue: string;
@@ -73,13 +73,13 @@ export interface VIPConfig {
     updatedAt: string;
 }
 
-export interface CreateVIPConfigDto {
+interface CreateVIPConfigDto {
     configKey: string;
     configValue: string;
     description?: string;
 }
 
-export interface UpdateVIPConfigDto {
+interface UpdateVIPConfigDto {
     configValue: string;
     description?: string;
 }

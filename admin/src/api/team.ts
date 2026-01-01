@@ -1,5 +1,5 @@
 import apiClient from './client';
-import type { ApiResponse, PaginationResponse } from '@/types/api';
+import type { ApiResponse, PaginatedResponse } from '@/types/api';
 
 // ============================================================================
 // Types

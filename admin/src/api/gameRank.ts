@@ -1,5 +1,5 @@
 import apiClient from './client';
-import type { ApiResponse, Pagination } from '../types/api';
+import type { ApiResponse } from '../types/api';
 
 // ============================================================================
 // Type Definitions
@@ -9,7 +9,7 @@ import type { ApiResponse, Pagination } from '../types/api';
  * Game Category - 游戏分类模型
  * 对应后端 model.GameCategory
  */
-export interface GameCategory {
+interface GameCategory {
     id: number;
     name: string;
     description?: string;
@@ -27,7 +27,7 @@ export interface GameCategory {
  * Game Rank - 游戏段位配置模型
  * 对应后端 model.GameRank
  */
-export interface GameRank {
+interface GameRank {
     id: number;
     gameId: number;
     name: string;
@@ -48,7 +48,7 @@ export interface GameRank {
 /**
  * Game - 游戏基础信息（段位关联时返回）
  */
-export interface Game {
+interface Game {
     id: number;
     key: string;
     name: string;
@@ -68,7 +68,7 @@ export interface Game {
 /**
  * 创建游戏分类请求
  */
-export interface CreateGameCategoryDto {
+interface CreateGameCategoryDto {
     name: string;
     description?: string;
     iconUrl?: string;
@@ -78,7 +78,7 @@ export interface CreateGameCategoryDto {
 /**
  * 更新游戏分类请求
  */
-export interface UpdateGameCategoryDto {
+interface UpdateGameCategoryDto {
     name?: string;
     description?: string;
     iconUrl?: string;
@@ -89,7 +89,7 @@ export interface UpdateGameCategoryDto {
 /**
  * 批量更新分类状态请求
  */
-export interface BatchUpdateCategoryStatusDto {
+interface BatchUpdateCategoryStatusDto {
     categoryIds: number[];
     isActive: boolean;
 }
@@ -97,14 +97,14 @@ export interface BatchUpdateCategoryStatusDto {
 /**
  * 批量删除分类请求
  */
-export interface BatchDeleteCategoriesDto {
+interface BatchDeleteCategoriesDto {
     categoryIds: number[];
 }
 
 /**
  * 游戏分类查询参数
  */
-export interface GameCategoryQueryParams {
+interface GameCategoryQueryParams {
     page?: number;
     pageSize?: number;
     keyword?: string;
@@ -114,7 +114,7 @@ export interface GameCategoryQueryParams {
 /**
  * 批量操作响应
  */
-export interface BatchOperationResponse {
+interface BatchOperationResponse {
     successCount: number;
     failureCount: number;
     errors?: string[];
@@ -127,7 +127,7 @@ export interface BatchOperationResponse {
 /**
  * 创建游戏段位请求
  */
-export interface CreateGameRankDto {
+interface CreateGameRankDto {
     gameId: number;
     name: string;
     level?: number;
@@ -142,7 +142,7 @@ export interface CreateGameRankDto {
 /**
  * 更新游戏段位请求
  */
-export interface UpdateGameRankDto {
+interface UpdateGameRankDto {
     name?: string;
     level?: number;
     priceCents?: number;
@@ -156,14 +156,14 @@ export interface UpdateGameRankDto {
 /**
  * 批量删除段位请求
  */
-export interface BatchDeleteGameRanksDto {
+interface BatchDeleteGameRanksDto {
     ids: string[];
 }
 
 /**
  * 批量更新段位状态请求
  */
-export interface BatchUpdateRankStatusDto {
+interface BatchUpdateRankStatusDto {
     ids: string[];
     isActive: boolean;
 }
@@ -171,7 +171,7 @@ export interface BatchUpdateRankStatusDto {
 /**
  * 游戏段位查询参数
  */
-export interface GameRankQueryParams {
+interface GameRankQueryParams {
     page?: number;
     pageSize?: number;
     gameId?: number;
