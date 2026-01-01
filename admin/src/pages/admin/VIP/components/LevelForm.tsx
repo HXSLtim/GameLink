@@ -242,7 +242,7 @@ const LevelForm: React.FC<LevelFormProps> = ({ visible, level, onCancel, onSucce
                     <Input placeholder="https://example.com/icon.png" />
                 </Form.Item>
 
-                <Divider orientation="left">月度优惠券配置</Divider>
+                <Divider>月度优惠券配置</Divider>
 
                 <Row gutter={16}>
                     <Col span={12}>
@@ -265,7 +265,7 @@ const LevelForm: React.FC<LevelFormProps> = ({ visible, level, onCancel, onSucce
                     </Col>
                 </Row>
 
-                <Divider orientation="left">会员权益</Divider>
+                <Divider>会员权益</Divider>
 
                 <div style={{ marginBottom: 16 }}>
                     <Space.Compact style={{ width: '100%' }}>

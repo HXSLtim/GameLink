@@ -130,8 +130,8 @@ const RoutingTestPage: React.FC = () => {
                 region: values.region,
             });
 
-            if (response.data) {
-                setTestResult(response.data);
+            if (response.data?.data) {
+                setTestResult(response.data.data);
             }
         } catch {
             // Form validation error or API error

@@ -139,8 +139,8 @@ const RoutingRulePage: React.FC = () => {
                 page_size: pageSize,
                 ...searchParams,
             });
-            if (response.data) {
-                const data = response.data;
+            if (response.data?.data) {
+                const data = response.data.data;
                 setRules(data);
                 setTotal(data.length);
 
@@ -206,8 +206,8 @@ const RoutingRulePage: React.FC = () => {
         setHistoryLoading(true);
         try {
             const response = await routingApi.getRoutingRuleHistory(record.id);
-            if (response.data) {
-                setHistories(response.data);
+            if (response.data?.data) {
+                setHistories(response.data.data);
             }
         } catch {
             message.error('加载历史失败');

@@ -1,5 +1,5 @@
 import apiClient from './client';
-import type { ApiResponse, PaginatedResponse } from '@/types/api';
+import type { ApiResponse } from '@/types/api';
 
 // ============================================================================
 // Types
@@ -35,6 +35,9 @@ export interface Team {
     currentOrderId?: number;
     createdAt: string;
     updatedAt: string;
+    // Frontend additional fields
+    pendingTransfer?: TeamMember;
+    members?: TeamMember[];
 }
 
 export interface TeamMember {
@@ -101,8 +104,16 @@ export interface TeamListParams {
     maxMember?: number;
 }
 
-export interface TeamListResponse extends PaginatedResponse {
+export interface TeamListResponse {
     items: Team[];
+    pagination: {
+        page: number;
+        page_size: number;
+        total: number;
+        total_pages: number;
+        has_next: boolean;
+        has_prev: boolean;
+    };
 }
 
 export interface TeamCreateRequest {
@@ -137,8 +148,16 @@ export interface MemberListParams {
     status?: TeamMemberStatus;
 }
 
-export interface MemberListResponse extends PaginatedResponse {
+export interface MemberListResponse {
     items: TeamMember[];
+    pagination: {
+        page: number;
+        page_size: number;
+        total: number;
+        total_pages: number;
+        has_next: boolean;
+        has_prev: boolean;
+    };
 }
 
 export interface AddMemberRequest {
@@ -157,8 +176,16 @@ export interface InviteListParams {
     status?: TeamInviteStatus;
 }
 
-export interface InviteListResponse extends PaginatedResponse {
+export interface InviteListResponse {
     items: TeamInvite[];
+    pagination: {
+        page: number;
+        page_size: number;
+        total: number;
+        total_pages: number;
+        has_next: boolean;
+        has_prev: boolean;
+    };
 }
 
 // Batch operations

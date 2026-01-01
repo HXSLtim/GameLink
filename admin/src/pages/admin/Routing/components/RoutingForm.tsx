@@ -94,8 +94,8 @@ const RoutingForm: React.FC<RoutingFormProps> = ({
                 pageSize: 1000,
                 status: 'active'
             });
-            if (response.data) {
-                setCollectionEntities(response.data);
+            if (response.data?.data) {
+                setCollectionEntities(response.data.data);
             }
         } catch {
             message.error('加载收款主体失败');

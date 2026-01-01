@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Form, Row, Col, Input, Select, DatePicker, Button, Space } from 'antd';
+import { Form, Row, Col, Input, Select, DatePicker, Button, Space, InputNumber } from 'antd';
 import type { FormInstance } from 'antd';
 import { SearchOutlined, DownOutlined, UpOutlined } from '@ant-design/icons';
 import styles from './index.module.css';
@@ -9,11 +9,12 @@ const { RangePicker } = DatePicker;
 export interface SearchField {
     name: string;
     label: string;
-    type: 'input' | 'select' | 'dateRange' | 'date';
+    type: 'input' | 'select' | 'dateRange' | 'date' | 'input-number';
     placeholder?: string;
     options?: { label: string; value: string | number }[];
     span?: number;
     mode?: 'multiple' | 'tags';
+    props?: Record<string, unknown>;
 }
 
 export interface SearchFormProps {
@@ -59,6 +60,14 @@ export const SearchForm: React.FC<SearchFormProps> = ({
                     <DatePicker
                         placeholder={field.placeholder || `请选择${field.label}`}
                         style={{ width: '100%' }}
+                    />
+                );
+            case 'input-number':
+                return (
+                    <InputNumber
+                        placeholder={field.placeholder || `请输入${field.label}`}
+                        style={{ width: '100%' }}
+                        {...(field.props as Record<string, unknown>)}
                     />
                 );
             default:

@@ -178,7 +178,7 @@ const ConditionBuilder: React.FC<ConditionBuilderProps> = ({
                         placeholder="最大值"
                         value={Array.isArray(condition.value) ? condition.value[1] : undefined}
                         onChange={(val) => updateCondition(condition.id, {
-                            value: [Array.isArray(condition.value) ? condition.value[0] : 0, val || 0]
+                            value: [Array.isArray(condition.value) ? condition.value[0] : 0, (val || 0) as number]
                         })}
                         disabled={disabled}
                         style={{ width: '50%' }}
