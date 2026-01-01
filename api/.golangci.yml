@@ -38,7 +38,7 @@ linters:
     - gocyclo
     # - gosimple  # Disabled due to pre-existing issues
     # - ineffassign  # Disabled due to pre-existing issues
-    - misspell
+    # - misspell  # Disabled due to "cancelled" vs "canceled" in data migration
     # - staticcheck  # Disabled due to pre-existing issues
     - typecheck
     # - unused  # Disabled due to pre-existing test helper functions
