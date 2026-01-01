@@ -322,10 +322,10 @@ const AdminAlert: React.FC = () => {
             {/* 统计卡片 */}
             <Row gutter={16} style={{ marginBottom: 16 }}>
                 <Col xs={12} sm={6}>
-                    <Card><Statistic title="告警总数" value={total} /></Card>
+                    <Card style={{ minHeight: 120 }}><Statistic title="告警总数" value={total} /></Card>
                 </Col>
                 <Col xs={12} sm={6}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic
                             title="未读告警"
                             value={unreadCount}
@@ -335,10 +335,10 @@ const AdminAlert: React.FC = () => {
                     </Card>
                 </Col>
                 <Col xs={12} sm={6}>
-                    <Card><Statistic title="告警规则" value={rules.length} /></Card>
+                    <Card style={{ minHeight: 120 }}><Statistic title="告警规则" value={rules.length} /></Card>
                 </Col>
                 <Col xs={12} sm={6}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic
                             title="启用规则"
                             value={rules.filter(r => r.isActive).length}

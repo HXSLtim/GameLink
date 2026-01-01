@@ -203,22 +203,22 @@ const WithdrawRoutingPage: React.FC = () => {
             <Spin spinning={statsLoading}>
                 <Row gutter={16} style={{ marginBottom: 16 }}>
                     <Col span={6}>
-                        <Card>
+                        <Card style={{ minHeight: 120 }}>
                             <Statistic title="总提现金额" value={stats?.totalAmount || 0} precision={2} prefix={<DollarOutlined />} suffix="元" />
                         </Card>
                     </Col>
                     <Col span={6}>
-                        <Card>
+                        <Card style={{ minHeight: 120 }}>
                             <Statistic title="总提现笔数" value={stats?.totalCount || 0} prefix={<BankOutlined />} />
                         </Card>
                     </Col>
                     <Col span={6}>
-                        <Card>
+                        <Card style={{ minHeight: 120 }}>
                             <Statistic title="已完成金额" value={stats?.completedAmount || 0} precision={2} suffix="元" />
                         </Card>
                     </Col>
                     <Col span={6}>
-                        <Card>
+                        <Card style={{ minHeight: 120 }}>
                             <Statistic title="待处理金额" value={stats?.pendingAmount || 0} precision={2} suffix="元" />
                         </Card>
                     </Col>

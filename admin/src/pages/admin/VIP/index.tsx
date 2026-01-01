@@ -381,12 +381,12 @@ const VIPPage: React.FC = () => {
             {/* 统计卡片 */}
             <Row gutter={16} style={{ marginBottom: 24 }}>
                 <Col xs={24} sm={8}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic title="等级总数" value={stats.total} prefix={<CrownOutlined />} />
                     </Card>
                 </Col>
                 <Col xs={24} sm={8}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic
                             title="已启用"
                             value={stats.active}
@@ -396,7 +396,7 @@ const VIPPage: React.FC = () => {
                     </Card>
                 </Col>
                 <Col xs={24} sm={8}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic
                             title="默认等级"
                             value={stats.defaultCount}

@@ -100,12 +100,12 @@ export type VIPConfigKey = typeof VIP_CONFIG_KEYS[keyof typeof VIP_CONFIG_KEYS];
 // Batch Operation Types
 // ============================================================================
 
-export interface VIPBatchUpdateStatusDto {
+interface VIPBatchUpdateStatusDto {
     ids: number[];
     isActive: boolean;
 }
 
-export interface VIPBatchDeleteDto {
+interface VIPBatchDeleteDto {
     ids: number[];
 }
 

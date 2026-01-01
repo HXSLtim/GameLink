@@ -49,7 +49,7 @@ const UserBehavior: React.FC = () => {
             <Spin spinning={loading}>
                 <Row gutter={[16, 16]}>
                     <Col span={8}>
-                        <Card>
+                        <Card style={{ minHeight: 120 }}>
                             <Statistic
                                 title="日活跃用户 (DAU)"
                                 value={stats?.dau || 0}
@@ -58,7 +58,7 @@ const UserBehavior: React.FC = () => {
                         </Card>
                     </Col>
                     <Col span={8}>
-                        <Card>
+                        <Card style={{ minHeight: 120 }}>
                             <Statistic
                                 title="平均在线时长"
                                 value={stats?.avgOnlineTime || '0m'}
@@ -67,7 +67,7 @@ const UserBehavior: React.FC = () => {
                         </Card>
                     </Col>
                     <Col span={8}>
-                        <Card>
+                        <Card style={{ minHeight: 120 }}>
                             <Statistic
                                 title="人均消费"
                                 value={stats?.avgConsumption || 0}

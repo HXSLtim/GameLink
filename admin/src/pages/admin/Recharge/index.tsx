@@ -57,7 +57,7 @@ const RechargePage: React.FC = () => {
             <Spin spinning={loading && !stats}>
                 <Row gutter={16} style={{ marginBottom: 24 }}>
                     <Col xs={24} sm={12} md={6}>
-                        <Card>
+                        <Card style={{ minHeight: 120 }}>
                             <Statistic
                                 title="总充值订单"
                                 value={stats?.totalOrders || 0}
@@ -67,7 +67,7 @@ const RechargePage: React.FC = () => {
                         </Card>
                     </Col>
                     <Col xs={24} sm={12} md={6}>
-                        <Card>
+                        <Card style={{ minHeight: 120 }}>
                             <Statistic
                                 title="总充值金额"
                                 value={(stats?.totalAmountCents || 0) / 100}
@@ -78,7 +78,7 @@ const RechargePage: React.FC = () => {
                         </Card>
                     </Col>
                     <Col xs={24} sm={12} md={6}>
-                        <Card>
+                        <Card style={{ minHeight: 120 }}>
                             <Statistic
                                 title="成功订单"
                                 value={stats?.paidOrders || 0}
@@ -88,7 +88,7 @@ const RechargePage: React.FC = () => {
                         </Card>
                     </Col>
                     <Col xs={24} sm={12} md={6}>
-                        <Card>
+                        <Card style={{ minHeight: 120 }}>
                             <Statistic
                                 title="失败订单"
                                 value={stats?.failedOrders || 0}
@@ -103,7 +103,7 @@ const RechargePage: React.FC = () => {
             {/* 今日/本月统计 */}
             <Row gutter={16} style={{ marginBottom: 24 }}>
                 <Col xs={24} sm={12} md={8}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic
                             title="今日充值订单"
                             value={stats?.todayOrders || 0}
@@ -112,7 +112,7 @@ const RechargePage: React.FC = () => {
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} md={8}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic
                             title="今日充值金额"
                             value={(stats?.todayAmountCents || 0) / 100}
@@ -123,7 +123,7 @@ const RechargePage: React.FC = () => {
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} md={8}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic
                             title="本月充值金额"
                             value={(stats?.monthAmountCents || 0) / 100}

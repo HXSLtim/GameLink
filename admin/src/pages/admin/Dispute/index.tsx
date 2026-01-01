@@ -275,7 +275,7 @@ const DisputePage: React.FC = () => {
             {stats && (
                 <Row gutter={16} style={{ marginBottom: 16 }}>
                     <Col span={4}>
-                        <Card>
+                        <Card style={{ minHeight: 120 }}>
                             <Statistic
                                 title="待处理"
                                 value={stats.pending}
@@ -285,7 +285,7 @@ const DisputePage: React.FC = () => {
                         </Card>
                     </Col>
                     <Col span={4}>
-                        <Card>
+                        <Card style={{ minHeight: 120 }}>
                             <Statistic
                                 title="已指派"
                                 value={stats.assigned}
@@ -294,7 +294,7 @@ const DisputePage: React.FC = () => {
                         </Card>
                     </Col>
                     <Col span={4}>
-                        <Card>
+                        <Card style={{ minHeight: 120 }}>
                             <Statistic
                                 title="调解中"
                                 value={stats.mediating}
@@ -303,7 +303,7 @@ const DisputePage: React.FC = () => {
                         </Card>
                     </Col>
                     <Col span={4}>
-                        <Card>
+                        <Card style={{ minHeight: 120 }}>
                             <Statistic
                                 title="已解决"
                                 value={stats.resolved}
@@ -313,7 +313,7 @@ const DisputePage: React.FC = () => {
                         </Card>
                     </Col>
                     <Col span={4}>
-                        <Card>
+                        <Card style={{ minHeight: 120 }}>
                             <Statistic
                                 title="已驳回"
                                 value={stats.rejected}
@@ -322,7 +322,7 @@ const DisputePage: React.FC = () => {
                         </Card>
                     </Col>
                     <Col span={4}>
-                        <Card>
+                        <Card style={{ minHeight: 120 }}>
                             <Statistic
                                 title="SLA超时"
                                 value={stats.slaBreached}

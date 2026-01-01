@@ -257,7 +257,7 @@ const UserCouponPage: React.FC = () => {
             {/* Statistics */}
             <Row gutter={16} style={{ marginBottom: 16 }}>
                 <Col xs={12} sm={6}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic
                             title="可用"
                             value={stats.available}
@@ -266,7 +266,7 @@ const UserCouponPage: React.FC = () => {
                     </Card>
                 </Col>
                 <Col xs={12} sm={6}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic
                             title="已使用"
                             value={stats.used}
@@ -275,7 +275,7 @@ const UserCouponPage: React.FC = () => {
                     </Card>
                 </Col>
                 <Col xs={12} sm={6}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic
                             title="已锁定"
                             value={stats.locked}
@@ -284,7 +284,7 @@ const UserCouponPage: React.FC = () => {
                     </Card>
                 </Col>
                 <Col xs={12} sm={6}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic
                             title="已过期"
                             value={stats.expired}

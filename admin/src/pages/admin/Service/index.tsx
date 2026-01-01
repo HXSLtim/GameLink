@@ -313,12 +313,12 @@ const AdminService: React.FC = () => {
             {/* 统计卡片 */}
             <Row gutter={16} style={{ marginBottom: 16 }}>
                 <Col xs={12} sm={6}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic title="服务项目总数" value={stats.total} />
                     </Card>
                 </Col>
                 <Col xs={12} sm={6}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic title="已启用" value={stats.active} valueStyle={{ color: '#3f8600' }} />
                     </Card>
                 </Col>

@@ -574,7 +574,7 @@ const ActivityPage: React.FC = () => {
             {/* Statistics */}
             <Row gutter={16} style={{ marginBottom: 16 }}>
                 <Col xs={12} sm={6}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic
                             title="活动总数"
                             value={stats?.totalActivities || 0}
@@ -583,7 +583,7 @@ const ActivityPage: React.FC = () => {
                     </Card>
                 </Col>
                 <Col xs={12} sm={6}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic
                             title="进行中"
                             value={stats?.activeActivities || 0}
@@ -592,7 +592,7 @@ const ActivityPage: React.FC = () => {
                     </Card>
                 </Col>
                 <Col xs={12} sm={6}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic
                             title="草稿"
                             value={stats?.draftActivities || 0}
@@ -601,7 +601,7 @@ const ActivityPage: React.FC = () => {
                     </Card>
                 </Col>
                 <Col xs={12} sm={6}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic
                             title="总参与"
                             value={stats?.totalParticipants || 0}

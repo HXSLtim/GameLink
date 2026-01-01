@@ -204,7 +204,7 @@ const ReviewStatsPage: React.FC = () => {
       {/* 统计概览 */}
       <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col span={6}>
-          <Card>
+          <Card style={{ minHeight: 120 }}>
             <Statistic
               title="总评价数"
               value={stats?.totalCount || 0}
@@ -213,7 +213,7 @@ const ReviewStatsPage: React.FC = () => {
           </Card>
         </Col>
         <Col span={6}>
-          <Card>
+          <Card style={{ minHeight: 120 }}>
             <Statistic
               title="平均评分"
               value={stats?.averageRating || 0}
@@ -224,7 +224,7 @@ const ReviewStatsPage: React.FC = () => {
           </Card>
         </Col>
         <Col span={6}>
-          <Card>
+          <Card style={{ minHeight: 120 }}>
             <Statistic
               title="待审核"
               value={stats?.pendingCount || 0}
@@ -234,7 +234,7 @@ const ReviewStatsPage: React.FC = () => {
           </Card>
         </Col>
         <Col span={6}>
-          <Card>
+          <Card style={{ minHeight: 120 }}>
             <Statistic
               title="已通过"
               value={stats?.approvedCount || 0}

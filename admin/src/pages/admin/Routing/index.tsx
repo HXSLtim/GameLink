@@ -384,7 +384,7 @@ const RoutingRulePage: React.FC = () => {
             {/* Statistics */}
             <Row gutter={16} style={{ marginBottom: 16 }}>
                 <Col span={6}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic
                             title="规则总数"
                             value={stats.total}
@@ -393,7 +393,7 @@ const RoutingRulePage: React.FC = () => {
                     </Card>
                 </Col>
                 <Col span={6}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic
                             title="启用规则"
                             value={stats.active}
@@ -403,7 +403,7 @@ const RoutingRulePage: React.FC = () => {
                     </Card>
                 </Col>
                 <Col span={6}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic
                             title="禁用规则"
                             value={stats.inactive}
@@ -413,7 +413,7 @@ const RoutingRulePage: React.FC = () => {
                     </Card>
                 </Col>
                 <Col span={6}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic
                             title="默认主体"
                             value={stats.defaultEntity}

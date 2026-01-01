@@ -579,7 +579,7 @@ const WithdrawPage: React.FC = () => {
             {/* 统计卡片 */}
             <Row gutter={16} style={{ marginBottom: 16 }}>
                 <Col span={6}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic
                             title="待审核"
                             value={stats.pending}
@@ -588,7 +588,7 @@ const WithdrawPage: React.FC = () => {
                     </Card>
                 </Col>
                 <Col span={6}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic
                             title="已批准待打款"
                             value={stats.approved}
@@ -597,7 +597,7 @@ const WithdrawPage: React.FC = () => {
                     </Card>
                 </Col>
                 <Col span={6}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic
                             title="已完成"
                             value={stats.completed}
@@ -606,7 +606,7 @@ const WithdrawPage: React.FC = () => {
                     </Card>
                 </Col>
                 <Col span={6}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic
                             title="本月提现总额"
                             value={stats.totalAmount / 100}

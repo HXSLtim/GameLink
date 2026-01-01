@@ -324,12 +324,12 @@ const UserTagPage: React.FC = () => {
             {/* 统计卡片 */}
             <Row gutter={16} style={{ marginBottom: 16 }}>
                 <Col span={12}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic title="标签总数" value={stats.totalTags} prefix={<TagsOutlined />} />
                     </Card>
                 </Col>
                 <Col span={12}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic title="已标记用户" value={stats.totalTaggedUsers} prefix={<UserOutlined />} />
                     </Card>
                 </Col>

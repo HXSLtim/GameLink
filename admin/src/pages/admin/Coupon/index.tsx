@@ -371,7 +371,7 @@ const CouponPage: React.FC = () => {
             {/* Statistics */}
             <Row gutter={16} style={{ marginBottom: 16 }}>
                 <Col xs={12} sm={6}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic
                             title="模板总数"
                             value={stats?.totalTemplates || 0}
@@ -380,7 +380,7 @@ const CouponPage: React.FC = () => {
                     </Card>
                 </Col>
                 <Col xs={12} sm={6}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic
                             title="启用模板"
                             value={stats?.activeTemplates || 0}
@@ -389,7 +389,7 @@ const CouponPage: React.FC = () => {
                     </Card>
                 </Col>
                 <Col xs={12} sm={6}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic
                             title="已发放"
                             value={stats?.totalCoupons || 0}
@@ -397,7 +397,7 @@ const CouponPage: React.FC = () => {
                     </Card>
                 </Col>
                 <Col xs={12} sm={6}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic
                             title="已使用"
                             value={stats?.usedCoupons || 0}

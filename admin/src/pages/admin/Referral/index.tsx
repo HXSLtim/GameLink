@@ -74,7 +74,7 @@ const ReferralPage: React.FC = () => {
             {/* Statistics Cards */}
             <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card variant="borderless" loading={statsLoading}>
+                    <Card variant="borderless" loading={statsLoading} style={{ minHeight: 120 }}>
                         <Statistic
                             title="总推荐数"
                             value={stats?.totalReferrals || 0}
@@ -84,7 +84,7 @@ const ReferralPage: React.FC = () => {
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card variant="borderless" loading={statsLoading}>
+                    <Card variant="borderless" loading={statsLoading} style={{ minHeight: 120 }}>
                         <Statistic
                             title="已完成推荐"
                             value={stats?.completedReferrals || 0}
@@ -94,7 +94,7 @@ const ReferralPage: React.FC = () => {
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card variant="borderless" loading={statsLoading}>
+                    <Card variant="borderless" loading={statsLoading} style={{ minHeight: 120 }}>
                         <Statistic
                             title="已发放奖励"
                             value={(stats?.issuedRewardsCents || 0) / 100}
@@ -106,7 +106,7 @@ const ReferralPage: React.FC = () => {
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card variant="borderless" loading={statsLoading}>
+                    <Card variant="borderless" loading={statsLoading} style={{ minHeight: 120 }}>
                         <Statistic
                             title="活跃邀请码"
                             value={stats?.activeCodes || 0}

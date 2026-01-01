@@ -105,32 +105,32 @@ const UserBehaviorPage: React.FC = () => {
                 {/* 核心指标 */}
                 <Row gutter={16} style={{ marginBottom: 24 }}>
                     <Col span={4}>
-                        <Card>
+                        <Card style={{ minHeight: 120 }}>
                             <Statistic title="日活用户(DAU)" value={stats?.dau || 0} prefix={<UserOutlined />} />
                         </Card>
                     </Col>
                     <Col span={4}>
-                        <Card>
+                        <Card style={{ minHeight: 120 }}>
                             <Statistic title="月活用户(MAU)" value={stats?.mau || 0} prefix={<TeamOutlined />} />
                         </Card>
                     </Col>
                     <Col span={4}>
-                        <Card>
+                        <Card style={{ minHeight: 120 }}>
                             <Statistic title="平均在线时长" value={stats?.avgOnlineTime || 0} suffix="分钟" prefix={<ClockCircleOutlined />} />
                         </Card>
                     </Col>
                     <Col span={4}>
-                        <Card>
+                        <Card style={{ minHeight: 120 }}>
                             <Statistic title="人均消费" value={stats?.avgSpending || 0} precision={2} prefix={<DollarOutlined />} suffix="元" />
                         </Card>
                     </Col>
                     <Col span={4}>
-                        <Card>
+                        <Card style={{ minHeight: 120 }}>
                             <Statistic title="新增用户" value={stats?.newUsers || 0} prefix={<RiseOutlined />} />
                         </Card>
                     </Col>
                     <Col span={4}>
-                        <Card>
+                        <Card style={{ minHeight: 120 }}>
                             <Statistic title="活跃率" value={stats?.activeRate || 0} precision={1} suffix="%" />
                         </Card>
                     </Col>
