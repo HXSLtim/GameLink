@@ -569,7 +569,7 @@ func (h *ReviewHandler) ListPendingReviews(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int                    true  "评价ID"
 // @Param        request  body  ApproveReviewPayload   false "批准信息"
-// @Success      200  {object}  model.APIResponse[any]
+// @Success      200  {object}  model.SuccessResponse
 // @Failure      400  {object}  model.ErrorResponse
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/reviews/{id}/approve [put]
@@ -611,7 +611,7 @@ func (h *ReviewHandler) ApproveReview(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int                   true  "评价ID"
 // @Param        request  body  RejectReviewPayload   true  "拒绝信息"
-// @Success      200  {object}  model.APIResponse[any]
+// @Success      200  {object}  model.SuccessResponse
 // @Failure      400  {object}  model.ErrorResponse
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/reviews/{id}/reject [put]
@@ -648,7 +648,7 @@ func (h *ReviewHandler) RejectReview(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchApprovePayload  true  "批量批准信息"
-// @Success      200  {object}  model.APIResponse[any]
+// @Success      200  {object}  model.SuccessResponse
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/reviews/batch-approve [put]
 func (h *ReviewHandler) BatchApproveReviews(c *gin.Context) {
@@ -679,7 +679,7 @@ func (h *ReviewHandler) BatchApproveReviews(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchRejectPayload  true  "批量拒绝信息"
-// @Success      200  {object}  model.APIResponse[any]
+// @Success      200  {object}  model.SuccessResponse
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/reviews/batch-reject [put]
 func (h *ReviewHandler) BatchRejectReviews(c *gin.Context) {

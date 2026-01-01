@@ -357,6 +357,21 @@ type BatchAssignResult struct {
 	Message       string `json:"message"`
 }
 
+// BatchOperationItem 批量操作项（用于Swagger文档）
+type BatchOperationItem struct {
+	ID      uint64 `json:"id"`
+	Message string `json:"message,omitempty"`
+}
+
+// BatchOperationResult 批量操作结果（用于Swagger文档）
+type BatchOperationResult struct {
+	SuccessCount int                  `json:"success_count"`
+	FailedCount  int                  `json:"failed_count"`
+	TotalCount   int                  `json:"total_count"`
+	FailedItems  []BatchOperationItem `json:"failed_items,omitempty"`
+	SuccessItems []uint64             `json:"success_items,omitempty"`
+}
+
 // BatchUpdateCompanyStatus 批量更新结算公司状态
 // @Summary      批量更新结算公司状态
 // @Description  批量启用/禁用结算公司
@@ -365,7 +380,7 @@ type BatchAssignResult struct {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchUpdateCompanyStatusRequest  true  "批量更新状态请求"
-// @Success      200  {object}  model.APIResponse[object{success_count:int,failed_count:int,total_count:int,failed_items:[]object{id:uint,message:string},success_items:[]uint64}]
+// @Success      200  {object}  model.APIResponse[BatchOperationResult]
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/settlement-companies/batch/status [post]
 func (h *SettlementCompanyHandler) BatchUpdateCompanyStatus(c *gin.Context) {
@@ -406,7 +421,7 @@ func (h *SettlementCompanyHandler) BatchUpdateCompanyStatus(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchDeleteCompaniesRequest  true  "批量删除请求"
-// @Success      200  {object}  model.APIResponse[object{success_count:int,failed_count:int,total_count:int,failed_items:[]object{id:uint,message:string},success_items:[]uint64}]
+// @Success      200  {object}  model.APIResponse[BatchOperationResult]
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/settlement-companies/batch/delete [post]
 func (h *SettlementCompanyHandler) BatchDeleteCompanies(c *gin.Context) {

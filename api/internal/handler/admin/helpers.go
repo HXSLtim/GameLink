@@ -36,7 +36,7 @@ func respondSuccessWithMsg[T any](c *gin.Context, message string, data T) {
 
 // respondMsg 统一成功响应（仅消息，无数据）
 func respondMsg(c *gin.Context, message string) {
-	resp.JSON(c, http.StatusOK, model.APIResponse[any]{
+	resp.JSON(c, http.StatusOK, model.SuccessResponse{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: message,

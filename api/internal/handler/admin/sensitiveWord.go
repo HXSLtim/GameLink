@@ -117,7 +117,7 @@ func (h *SensitiveWordHandler) AddSensitiveWord(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int                                      true  "敏感词ID"
 // @Param        request  body  sensitiveword.UpdateSensitiveWordRequest  true  "敏感词信息"
-// @Success      200  {object}  model.APIResponse[any]
+// @Success      200  {object}  model.SuccessResponse
 // @Failure      400  {object}  model.ErrorResponse
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/sensitive-words/{id} [put]
@@ -159,7 +159,7 @@ func (h *SensitiveWordHandler) UpdateSensitiveWord(c *gin.Context) {
 // @Security     BearerAuth
 // @Produce      json
 // @Param        id   path  int  true  "敏感词ID"
-// @Success      200  {object}  model.APIResponse[any]
+// @Success      200  {object}  model.SuccessResponse
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/sensitive-words/{id} [delete]
 func (h *SensitiveWordHandler) DeleteSensitiveWord(c *gin.Context) {

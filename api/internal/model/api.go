@@ -31,7 +31,16 @@ type ErrorResponse struct {
 }
 
 // SuccessResponse 通用成功响应（用于Swagger文档，避免泛型语法）
-type SuccessResponse APIResponse[any]
+// 注意：这是非泛型版本，仅供Swagger文档使用
+// 实际代码中请使用 resp.OK() 等响应函数
+type SuccessResponse struct {
+	Success bool        `json:"success"`
+	Code    int         `json:"code"`
+	Message string      `json:"message"`
+	Data    any         `json:"data,omitempty"`
+	Meta    any         `json:"meta,omitempty"`
+	TraceID string      `json:"traceId,omitempty"`
+}
 
 // FeedView 动态视图（用于Swagger文档）
 type FeedView struct {

@@ -1,6 +1,7 @@
 package admin
 
 import (
+	_ "gamelink/internal/model" // Imported for Swagger annotations
 	"github.com/gin-gonic/gin"
 
 	"gamelink/pkg/apierr"

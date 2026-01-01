@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	_ "gamelink/internal/model" // Imported for Swagger annotations
 	"gamelink/internal/service/commission"
 )
 

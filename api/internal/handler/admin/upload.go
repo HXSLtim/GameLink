@@ -29,20 +29,20 @@ func RegisterUploadRoutes(router gin.IRouter) {
 func UploadImageHandler(c *gin.Context) {
 	file, err := c.FormFile("file")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, model.APIResponse[any]{Success: false, Code: http.StatusBadRequest, Message: "missing file"})
+		c.JSON(http.StatusBadRequest, model.SuccessResponse{Success: false, Code: http.StatusBadRequest, Message: "missing file"})
 		return
 	}
 
 	// 基础安全校验
 	const maxSize = 5 * 1024 * 1024 // 5MB
 	if file.Size > maxSize {
-		c.JSON(http.StatusBadRequest, model.APIResponse[any]{Success: false, Code: http.StatusBadRequest, Message: "file too large (max 5MB)"})
+		c.JSON(http.StatusBadRequest, model.SuccessResponse{Success: false, Code: http.StatusBadRequest, Message: "file too large (max 5MB)"})
 		return
 	}
 
 	f, err := file.Open()
 	if err != nil {
-		c.JSON(http.StatusBadRequest, model.APIResponse[any]{Success: false, Code: http.StatusBadRequest, Message: err.Error()})
+		c.JSON(http.StatusBadRequest, model.SuccessResponse{Success: false, Code: http.StatusBadRequest, Message: err.Error()})
 		return
 	}
 	defer func() { _ = f.Close() }()
@@ -57,25 +57,25 @@ func UploadImageHandler(c *gin.Context) {
 		"image/webp": true,
 	}
 	if !allowed[contentType] {
-		c.JSON(http.StatusBadRequest, model.APIResponse[any]{Success: false, Code: http.StatusBadRequest, Message: "unsupported file type"})
+		c.JSON(http.StatusBadRequest, model.SuccessResponse{Success: false, Code: http.StatusBadRequest, Message: "unsupported file type"})
 		return
 	}
 	// reset read pointer for saver
 	if _, err := f.Seek(0, 0); err != nil {
-		c.JSON(http.StatusBadRequest, model.APIResponse[any]{Success: false, Code: http.StatusBadRequest, Message: err.Error()})
+		c.JSON(http.StatusBadRequest, model.SuccessResponse{Success: false, Code: http.StatusBadRequest, Message: err.Error()})
 		return
 	}
 
 	cfg := middleware.GetImageConfig()
 	// ensure path exists
 	if err := os.MkdirAll(cfg.UploadPath, os.ModePerm); err != nil {
-		c.JSON(http.StatusInternalServerError, model.APIResponse[any]{Success: false, Code: http.StatusInternalServerError, Message: err.Error()})
+		c.JSON(http.StatusInternalServerError, model.SuccessResponse{Success: false, Code: http.StatusInternalServerError, Message: err.Error()})
 		return
 	}
 
 	res, err := middleware.SaveFile(c, file, cfg)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, model.APIResponse[any]{Success: false, Code: http.StatusBadRequest, Message: err.Error()})
+		c.JSON(http.StatusBadRequest, model.SuccessResponse{Success: false, Code: http.StatusBadRequest, Message: err.Error()})
 		return
 	}
 

@@ -109,7 +109,7 @@ func (h *ContentCategoryHandler) Create(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path      int                            true  "分类ID"
 // @Param        body body      contentcategory.UpdateRequest  true  "更新请求"
-// @Success      200  {object}  model.APIResponse[any]
+// @Success      200  {object}  model.SuccessResponse
 // @Router       /admin/content/categories/{id} [put]
 func (h *ContentCategoryHandler) Update(c *gin.Context) {
 	id, ok := ParseIDAndRespond(c, "id")
@@ -145,7 +145,7 @@ func (h *ContentCategoryHandler) Update(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id                  path      int  true   "分类ID"
 // @Param        migrateToCategoryId query     int  false  "迁移目标分类ID"
-// @Success      200  {object}  model.APIResponse[any]
+// @Success      200  {object}  model.SuccessResponse
 // @Router       /admin/content/categories/{id} [delete]
 func (h *ContentCategoryHandler) Delete(c *gin.Context) {
 	id, ok := ParseIDAndRespond(c, "id")

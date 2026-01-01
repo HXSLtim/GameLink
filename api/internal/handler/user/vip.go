@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	_ "gamelink/internal/model" // Imported for Swagger annotations
 	"gamelink/internal/handler/resp"
 	"gamelink/internal/repository"
 	vipservice "gamelink/internal/service/vip"
@@ -25,7 +26,7 @@ func NewVipHandler(svc *vipservice.Service) *VipHandler {
 // @Summary 获取VIP等级列表
 // @Tags 用户-VIP
 // @Produce json
-// @Success 200 {object} resp.Response{data=[]model.VipLevel}
+// @Success 200 {object} model.APIResponse[[]model.VipLevel]
 // @Router /user/vip/levels [get]
 func (h *VipHandler) ListLevels(c *gin.Context) {
 	levels, err := h.svc.ListActiveLevels(c.Request.Context())
@@ -42,7 +43,7 @@ func (h *VipHandler) ListLevels(c *gin.Context) {
 // @Tags 用户-VIP
 // @Produce json
 // @Param id path int true "等级ID"
-// @Success 200 {object} resp.Response{data=model.VipLevel}
+// @Success 200 {object} model.APIResponse[model.VipLevel]
 // @Router /user/vip/levels/{id} [get]
 func (h *VipHandler) GetLevel(c *gin.Context) {
 	id, ok := resp.ParseIDOrFail(c, "id")
@@ -73,7 +74,7 @@ func (h *VipHandler) GetLevel(c *gin.Context) {
 // @Summary 获取VIP解锁门槛
 // @Tags 用户-VIP
 // @Produce json
-// @Success 200 {object} resp.Response
+// @Success 200 {object} model.SuccessResponse
 // @Router /user/vip/threshold [get]
 func (h *VipHandler) GetUnlockThreshold(c *gin.Context) {
 	consumeThreshold, rechargeThreshold, err := h.svc.GetUnlockThreshold(c.Request.Context())

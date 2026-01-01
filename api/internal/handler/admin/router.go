@@ -906,7 +906,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Accept       json
 		// @Produce      json
 		// @Param        id   path  int  true  "评价ID"
-		// @Success      200  {object}  model.APIResponse[any]
+		// @Success      200  {object}  model.SuccessResponse
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/reviews/{id}/approve [put]
@@ -918,7 +918,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Produce      json
 		// @Param        id       path  int                   true  "评价ID"
 		// @Param        request  body  RejectReviewPayload   true  "拒绝信息"
-		// @Success      200  {object}  model.APIResponse[any]
+		// @Success      200  {object}  model.SuccessResponse
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/reviews/{id}/reject [put]
@@ -929,7 +929,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Accept       json
 		// @Produce      json
 		// @Param        request  body  BatchApprovePayload  true  "批量批准信息"
-		// @Success      200  {object}  model.APIResponse[any]
+		// @Success      200  {object}  model.SuccessResponse
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/reviews/batch-approve [put]
 		group.PUT("/reviews/batch-approve", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/reviews/batch-approve"), reviewHandler.BatchApproveReviews)
@@ -939,7 +939,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Accept       json
 		// @Produce      json
 		// @Param        request  body  BatchRejectPayload  true  "批量拒绝信息"
-		// @Success      200  {object}  model.APIResponse[any]
+		// @Success      200  {object}  model.SuccessResponse
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/reviews/batch-reject [put]
 		group.PUT("/reviews/batch-reject", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/reviews/batch-reject"), reviewHandler.BatchRejectReviews)
@@ -1265,7 +1265,7 @@ func RegisterSensitiveWordRoutes(router gin.IRouter, handler *SensitiveWordHandl
 		// @Produce      json
 		// @Param        id       path  int                                      true  "敏感词ID"
 		// @Param        request  body  sensitiveword.UpdateSensitiveWordRequest  true  "敏感词信息"
-		// @Success      200  {object}  model.APIResponse[any]
+		// @Success      200  {object}  model.SuccessResponse
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/sensitive-words/{id} [put]
@@ -1276,7 +1276,7 @@ func RegisterSensitiveWordRoutes(router gin.IRouter, handler *SensitiveWordHandl
 		// @Security     BearerAuth
 		// @Produce      json
 		// @Param        id   path  int  true  "敏感词ID"
-		// @Success      200  {object}  model.APIResponse[any]
+		// @Success      200  {object}  model.SuccessResponse
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/sensitive-words/{id} [delete]
 		group.DELETE("/sensitive-words/:id", pm.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/sensitive-words/:id"), handler.DeleteSensitiveWord)

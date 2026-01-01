@@ -175,12 +175,12 @@ func (h *UserBlockHandler) CheckBlockStatus(c *gin.Context) {
 // @Summary      获取用户的拉黑列表
 // @Tags         Admin/UserBlock
 // @Security     BearerAuth
-// @Param        userId   path  int  true  "用户ID"
+// @Param        id   path  int  true  "用户ID"
 // @Produce      json
 // @Success      200  {object}  model.APIResponse[[]model.UserBlock]
-// @Router       /admin/users/{userId}/blocks [get]
+// @Router       /admin/users/{id}/blocks [get]
 func (h *UserBlockHandler) GetUserBlocksByUser(c *gin.Context) {
-	userID, ok := ParseIDAndRespond(c, "userId")
+	userID, ok := ParseIDAndRespond(c, "id")
 	if !ok {
 		return
 	}
@@ -197,12 +197,12 @@ func (h *UserBlockHandler) GetUserBlocksByUser(c *gin.Context) {
 // @Summary      获取拉黑该用户的列表
 // @Tags         Admin/UserBlock
 // @Security     BearerAuth
-// @Param        userId   path  int  true  "用户ID"
+// @Param        id   path  int  true  "用户ID"
 // @Produce      json
 // @Success      200  {object}  model.APIResponse[[]model.UserBlock]
-// @Router       /admin/users/{userId}/blocked-by [get]
+// @Router       /admin/users/{id}/blocked-by [get]
 func (h *UserBlockHandler) GetUserBlockedByList(c *gin.Context) {
-	userID, ok := ParseIDAndRespond(c, "userId")
+	userID, ok := ParseIDAndRespond(c, "id")
 	if !ok {
 		return
 	}
@@ -500,7 +500,7 @@ func RegisterUserBlockRoutes(router gin.IRouter, svc *userblock.UserBlockService
 	usersGroup := router.Group("/users")
 	usersGroup.Use(pm.RequireAuth())
 	{
-		usersGroup.GET("/:userId/blocks", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/:userId/blocks"), h.GetUserBlocksByUser)
-		usersGroup.GET("/:userId/blocked-by", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/:userId/blocked-by"), h.GetUserBlockedByList)
+		usersGroup.GET("/:id/blocks", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/:id/blocks"), h.GetUserBlocksByUser)
+		usersGroup.GET("/:id/blocked-by", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/:id/blocked-by"), h.GetUserBlockedByList)
 	}
 }

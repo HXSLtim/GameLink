@@ -110,7 +110,7 @@ func (h *ContentHandler) GetFeed(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path      int                        true  "动态ID"
 // @Param        body body      content.AdminModerationRequest  false "审核备注"
-// @Success      200  {object}  model.APIResponse[any]
+// @Success      200  {object}  model.SuccessResponse
 // @Router       /admin/content/feeds/{id}/approve [put]
 func (h *ContentHandler) ApproveFeed(c *gin.Context) {
 	id, ok := ParseIDAndRespond(c, "id")
@@ -140,7 +140,7 @@ func (h *ContentHandler) ApproveFeed(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path      int                        true  "动态ID"
 // @Param        body body      content.AdminModerationRequest  true  "拒绝原因"
-// @Success      200  {object}  model.APIResponse[any]
+// @Success      200  {object}  model.SuccessResponse
 // @Router       /admin/content/feeds/{id}/reject [put]
 func (h *ContentHandler) RejectFeed(c *gin.Context) {
 	id, ok := ParseIDAndRespond(c, "id")
@@ -172,7 +172,7 @@ func (h *ContentHandler) RejectFeed(c *gin.Context) {
 // @Tags         Admin - Content
 // @Security     BearerAuth
 // @Param        id   path      int  true  "动态ID"
-// @Success      200  {object}  model.APIResponse[any]
+// @Success      200  {object}  model.SuccessResponse
 // @Router       /admin/content/feeds/{id} [delete]
 func (h *ContentHandler) DeleteFeed(c *gin.Context) {
 	id, ok := ParseIDAndRespond(c, "id")
@@ -201,7 +201,7 @@ func (h *ContentHandler) DeleteFeed(c *gin.Context) {
 // @Tags         Admin - Content
 // @Security     BearerAuth
 // @Param        body body      content.AdminBatchModerationRequest  true  "批量审核请求"
-// @Success      200  {object}  model.APIResponse[any]
+// @Success      200  {object}  model.SuccessResponse
 // @Router       /admin/content/feeds/batch-approve [post]
 func (h *ContentHandler) BatchApproveFeed(c *gin.Context) {
 	adminID, ok := getAdminUserID(c)
@@ -227,7 +227,7 @@ func (h *ContentHandler) BatchApproveFeed(c *gin.Context) {
 // @Tags         Admin - Content
 // @Security     BearerAuth
 // @Param        body body      content.AdminBatchModerationRequest  true  "批量审核请求"
-// @Success      200  {object}  model.APIResponse[any]
+// @Success      200  {object}  model.SuccessResponse
 // @Router       /admin/content/feeds/batch-reject [post]
 func (h *ContentHandler) BatchRejectFeed(c *gin.Context) {
 	adminID, ok := getAdminUserID(c)
@@ -341,7 +341,7 @@ func (h *ContentHandler) ListChatMessages(c *gin.Context) {
 // @Tags         Admin - Content
 // @Security     BearerAuth
 // @Param        id   path      int  true  "消息ID"
-// @Success      200  {object}  model.APIResponse[any]
+// @Success      200  {object}  model.SuccessResponse
 // @Router       /admin/content/chat/messages/{id} [delete]
 func (h *ContentHandler) DeleteChatMessage(c *gin.Context) {
 	id, ok := ParseIDAndRespond(c, "id")
@@ -372,7 +372,7 @@ func (h *ContentHandler) DeleteChatMessage(c *gin.Context) {
 // @Tags         Admin - Content
 // @Security     BearerAuth
 // @Param        body body      content.MuteUserRequest  true  "禁言请求"
-// @Success      200  {object}  model.APIResponse[any]
+// @Success      200  {object}  model.SuccessResponse
 // @Router       /admin/content/chat/mute [post]
 func (h *ContentHandler) MuteUser(c *gin.Context) {
 	adminID, ok := getAdminUserID(c)
@@ -399,7 +399,7 @@ func (h *ContentHandler) MuteUser(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        groupId query     int  true  "群组ID"
 // @Param        userId  query     int  true  "用户ID"
-// @Success      200  {object}  model.APIResponse[any]
+// @Success      200  {object}  model.SuccessResponse
 // @Router       /admin/content/chat/unmute [post]
 func (h *ContentHandler) UnmuteUser(c *gin.Context) {
 	adminID, ok := getAdminUserID(c)
@@ -502,7 +502,7 @@ func (h *ContentHandler) GetFeedReport(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path      int                        true  "举报ID"
 // @Param        body body      content.ProcessReportRequest  true  "处理请求"
-// @Success      200  {object}  model.APIResponse[any]
+// @Success      200  {object}  model.SuccessResponse
 // @Router       /admin/content/reports/{id}/process [post]
 func (h *ContentHandler) ProcessFeedReport(c *gin.Context) {
 	id, ok := ParseIDAndRespond(c, "id")

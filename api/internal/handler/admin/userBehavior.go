@@ -6,6 +6,7 @@
 package admin
 
 import (
+	_ "gamelink/internal/model" // Imported for Swagger annotations
 	"strconv"
 
 	"github.com/gin-gonic/gin"

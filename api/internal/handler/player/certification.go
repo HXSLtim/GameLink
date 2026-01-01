@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	_ "gamelink/internal/model" // Imported for Swagger annotations
 	"gamelink/internal/handler/resp"
 	"gamelink/internal/service/playercertification"
 	"gamelink/internal/service/playerrank"

@@ -199,12 +199,12 @@ func (h *OrderTimeoutHandler) GetTimeoutLog(c *gin.Context) {
 // @Summary      获取订单的超时日志
 // @Tags         Admin/OrderTimeout
 // @Security     BearerAuth
-// @Param        orderId   path  int  true  "订单ID"
+// @Param        id   path  int  true  "订单ID"
 // @Produce      json
 // @Success      200  {object}  model.APIResponse[[]model.OrderTimeoutLog]
-// @Router       /admin/orders/{orderId}/timeout-logs [get]
+// @Router       /admin/orders/{id}/timeout-logs [get]
 func (h *OrderTimeoutHandler) GetTimeoutLogsByOrder(c *gin.Context) {
-	orderID, ok := ParseIDAndRespond(c, "orderId")
+	orderID, ok := ParseIDAndRespond(c, "id")
 	if !ok {
 		return
 	}
@@ -417,13 +417,13 @@ func (h *OrderTimeoutHandler) DeleteServiceAssignment(c *gin.Context) {
 // @Summary      获取订单的客服分配
 // @Tags         Admin/OrderTimeout
 // @Security     BearerAuth
-// @Param        orderId   path  int  true  "订单ID"
+// @Param        id   path  int  true  "订单ID"
 // @Produce      json
 // @Success      200  {object}  model.APIResponse[model.OrderServiceAssignment]
 // @Failure      404  {object}  model.ErrorResponse
-// @Router       /admin/orders/{orderId}/service-assignment [get]
+// @Router       /admin/orders/{id}/service-assignment [get]
 func (h *OrderTimeoutHandler) GetAssignmentByOrder(c *gin.Context) {
-	orderID, ok := ParseIDAndRespond(c, "orderId")
+	orderID, ok := ParseIDAndRespond(c, "id")
 	if !ok {
 		return
 	}
@@ -489,7 +489,7 @@ func RegisterOrderTimeoutRoutes(router gin.IRouter, svc *ordertimeout.OrderTimeo
 	ordersGroup := router.Group("/orders")
 	ordersGroup.Use(pm.RequireAuth())
 	{
-		ordersGroup.GET("/:orderId/timeout-logs", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/orders/:orderId/timeout-logs"), h.GetTimeoutLogsByOrder)
-		ordersGroup.GET("/:orderId/service-assignment", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/orders/:orderId/service-assignment"), h.GetAssignmentByOrder)
+		ordersGroup.GET("/:id/timeout-logs", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/orders/:id/timeout-logs"), h.GetTimeoutLogsByOrder)
+		ordersGroup.GET("/:id/service-assignment", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/orders/:id/service-assignment"), h.GetAssignmentByOrder)
 	}
 }

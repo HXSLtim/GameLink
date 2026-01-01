@@ -1,6 +1,7 @@
 package admin
 
 import (
+	_ "gamelink/internal/model" // Imported for Swagger annotations
 	"bytes"
 	"encoding/csv"
 	"fmt"
