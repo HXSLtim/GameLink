@@ -12,6 +12,7 @@ import {
     Typography,
     Tag,
     Descriptions,
+    Divider,
 } from 'antd';
 import {
     couponApi,

@@ -32,6 +32,7 @@ import {
     TeamOutlined,
     UserOutlined,
     CheckOutlined,
+    PlusOutlined,
 } from '@ant-design/icons';
 import { PageContainer, SearchTable, type ToolbarButton } from '@/components';
 import type { SearchField } from '@/components';
@@ -66,6 +67,8 @@ const shareTypeMap: Record<'equal' | 'custom', { text: string }> = {
 const TeamPage: React.FC = () => {
     const { token } = theme.useToken();
     const [loading, setLoading] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [loadError, setLoadError] = useState<string | null>(null);
     const [teams, setTeams] = useState<Team[]>([]);
     const [total, setTotal] = useState(0);
     const [current, setCurrent] = useState(1);

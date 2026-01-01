@@ -59,6 +59,8 @@ const SettlementPlayersPage: React.FC = () => {
     const [total, setTotal] = useState(0);
     const [current, setCurrent] = useState(1);
     const [pageSize, setPageSize] = useState(10);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [searchParams, setSearchParams] = useState<Record<string, unknown>>({});
 
     // 弹窗状态
     const [assignModalVisible, setAssignModalVisible] = useState(false);
