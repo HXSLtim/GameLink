@@ -56,8 +56,10 @@ describe('Feeds Page', () => {
     vi.clearAllMocks();
     // Mock returns the response directly (not wrapped in data)
     (feedApi.getFeeds as ReturnType<typeof vi.fn>).mockResolvedValue({
-      success: true,
-      data: mockFeedsData,
+      data: {
+        success: true,
+        data: mockFeedsData,
+      },
     });
   });
 
@@ -141,8 +143,10 @@ describe('Feeds Page', () => {
   describe('空状态', () => {
     it('should handle empty feeds list', async () => {
       (feedApi.getFeeds as ReturnType<typeof vi.fn>).mockResolvedValue({
-        success: true,
-        data: { items: [], total: 0 },
+        data: {
+          success: true,
+          data: { items: [], total: 0 },
+        },
       });
 
       renderWithRouter(<FeedsPage />);

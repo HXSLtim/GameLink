@@ -1,22 +1,22 @@
 import { View, Text, Image } from '@tarojs/components'
 import { useState } from 'react'
-import { AtIcon } from 'taro-ui'
+import { PLACEHOLDER_AVATAR, ICONS } from '../../constants'
 import './index.scss'
 
 export default function Profile() {
     const [userInfo] = useState({
         name: 'Gamer123',
         id: '888888',
-        avatar: 'https://via.placeholder.com/100',
+        avatar: PLACEHOLDER_AVATAR,
         balance: '128.50',
         coins: '500'
     })
 
     const [menuItems] = useState([
-        { id: 1, title: 'My Wallet', icon: 'credit-card' },
-        { id: 2, title: 'Settings', icon: 'settings' },
-        { id: 3, title: 'Help & Support', icon: 'help' },
-        { id: 4, title: 'About Us', icon: 'alert-circle' },
+        { id: 1, title: 'My Wallet', icon: ICONS.CARD },
+        { id: 2, title: 'Settings', icon: ICONS.SETTINGS },
+        { id: 3, title: 'Help & Support', icon: ICONS.HELP },
+        { id: 4, title: 'About Us', icon: ICONS.INFO },
     ])
 
     return (
@@ -50,7 +50,7 @@ export default function Profile() {
                     <View key={item.id} className='menu-item'>
                         <View className='left'>
                             <View className='icon'>
-                                <AtIcon value={item.icon} size='20' color='#ffffff' />
+                                <Image src={item.icon} style={{ width: '20px', height: '20px' }} />
                             </View>
                             <Text className='title'>{item.title}</Text>
                         </View>

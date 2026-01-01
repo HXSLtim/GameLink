@@ -37,6 +37,9 @@ export default defineConfig<'vite'>(async (merge, { command: _command, mode: _mo
     framework: 'react',
     compiler: 'vite',
     mini: {
+      optimizeMainPackage: {
+        enable: false
+      },
       postcss: {
         pxtransform: {
           enable: true,

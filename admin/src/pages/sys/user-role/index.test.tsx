@@ -71,21 +71,24 @@ const renderWithRouter = async (component: React.ReactNode) => {
 describe('User Role Page', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        
+
         // Setup default mocks
+        // The component expects response.data.success and response.data.data
         (adminApi.getUsers as ReturnType<typeof vi.fn>).mockResolvedValue({
-            success: true,
-            data: mockUsers,
-            pagination: { total: mockUsers.length, page: 1, pageSize: 10 },
+            data: {
+                success: true,
+                data: mockUsers,
+                pagination: { total: mockUsers.length, page: 1, pageSize: 10 },
+            },
         });
-        
+
         (roleApi.list as ReturnType<typeof vi.fn>).mockResolvedValue({
             data: {
                 success: true,
                 data: { items: mockRoles, totalCount: mockRoles.length },
             },
         });
-        
+
         (userRoleApi.getUserRoles as ReturnType<typeof vi.fn>).mockResolvedValue({
             data: { success: true, data: [] },
         });

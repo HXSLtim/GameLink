@@ -1,12 +1,13 @@
 import { View, Text, Image } from '@tarojs/components'
 import { useState } from 'react'
+import { PLACEHOLDER_AVATAR } from '../../constants'
 import './index.scss'
 
 export default function Messages() {
     const [messages] = useState([
-        { id: 1, name: 'Alice', message: 'Hi, are you clear for tonight?', time: '14:30', avatar: 'https://via.placeholder.com/100', unread: 2 },
-        { id: 2, name: 'System', message: 'Your order has been completed.', time: 'Yesterday', avatar: 'https://via.placeholder.com/100', unread: 0 },
-        { id: 3, name: 'Bob', message: 'GG!', time: 'Yesterday', avatar: 'https://via.placeholder.com/100', unread: 0 },
+        { id: 1, name: 'Alice', message: 'Hi, are you clear for tonight?', time: '14:30', avatar: PLACEHOLDER_AVATAR, unread: 2 },
+        { id: 2, name: 'System', message: 'Your order has been completed.', time: 'Yesterday', avatar: PLACEHOLDER_AVATAR, unread: 0 },
+        { id: 3, name: 'Bob', message: 'GG!', time: 'Yesterday', avatar: PLACEHOLDER_AVATAR, unread: 0 },
     ])
 
     return (

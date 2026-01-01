@@ -49,8 +49,10 @@ describe('Stats Page', () => {
     vi.clearAllMocks();
     // Mock returns the response directly (not wrapped in data)
     (contentStatsApi.getStats as ReturnType<typeof vi.fn>).mockResolvedValue({
-      success: true,
-      data: mockStatsData,
+      data: {
+        success: true,
+        data: mockStatsData,
+      },
     });
   });
 
@@ -125,8 +127,10 @@ describe('Stats Page', () => {
     it('should call export API when export button is clicked', async () => {
       const mockBlob = new Blob(['test'], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       (contentStatsApi.exportStats as ReturnType<typeof vi.fn>).mockResolvedValue({
-        data: mockBlob,
-        headers: { 'content-disposition': 'attachment; filename="stats.xlsx"' },
+        data: {
+          data: mockBlob,
+          headers: { 'content-disposition': 'attachment; filename="stats.xlsx"' },
+        },
       });
 
       // Mock URL.createObjectURL and URL.revokeObjectURL

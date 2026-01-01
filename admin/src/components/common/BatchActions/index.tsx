@@ -49,9 +49,13 @@ const BatchActions: React.FC<BatchActionsProps> = React.memo(({
             setCurrentAction(action);
             setModalVisible(true);
         } else {
-            Promise.resolve(action.onConfirm(selectedRowKeys)).then(() => {
-                onActionComplete?.();
-            });
+            Promise.resolve(action.onConfirm(selectedRowKeys))
+                .then(() => {
+                    onActionComplete?.();
+                })
+                .catch(() => {
+                    // Silently handle errors - calling code should handle notifications
+                });
         }
     };
 

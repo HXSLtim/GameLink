@@ -12,17 +12,17 @@ const apiClient = axios.create({
 // Request interceptor
 apiClient.interceptors.request.use(
     (config) => {
-        // 添加 JWT Token
-        const token = localStorage.getItem('token');
+        // 添加 JWT Token - Try sessionStorage first (authStore), fallback to localStorage (legacy)
+        const token = sessionStorage.getItem('auth_token') || localStorage.getItem('token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
-        
+
         // 加密请求体（如果需要）
         if (config.data && shouldEncrypt(config.method || 'GET', config.url || '')) {
             config.data = encryptRequest(config.data);
         }
-        
+
         return config;
     },
     (error) => {
@@ -105,13 +105,15 @@ apiClient.interceptors.response.use(
                     {},
                     {
                         headers: {
-                            Authorization: `Bearer ${localStorage.getItem('token')}`
+                            Authorization: `Bearer ${sessionStorage.getItem('auth_token') || localStorage.getItem('token')}`
                         }
                     }
                 );
 
                 const { token } = response.data.data;
 
+                // Update both sessionStorage (authStore) and localStorage (legacy)
+                sessionStorage.setItem('auth_token', token);
                 localStorage.setItem('token', token);
                 apiClient.defaults.headers.common['Authorization'] = 'Bearer ' + token;
                 processQueue(null, token);
@@ -120,6 +122,9 @@ apiClient.interceptors.response.use(
                 return apiClient(originalRequest);
             } catch (err) {
                 processQueue(err, null);
+                // Clear both sessionStorage and localStorage
+                sessionStorage.removeItem('auth_token');
+                sessionStorage.removeItem('auth-storage');
                 localStorage.removeItem('token');
                 localStorage.removeItem('user_role');
                 localStorage.removeItem('user_info');

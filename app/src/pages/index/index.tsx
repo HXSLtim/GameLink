@@ -1,30 +1,30 @@
 import { View, Text, Image } from '@tarojs/components'
 import { useState } from 'react'
-import { AtIcon } from 'taro-ui'
+import { PLACEHOLDER_AVATAR, ICONS } from '../../constants'
 import './index.scss'
 
 export default function Index() {
   const [categories] = useState([
-    { id: 1, name: 'LoL', icon: 'lightning-bolt' },
-    { id: 2, name: 'HoK', icon: 'star' },
-    { id: 3, name: 'Apex', icon: 'filter' },
-    { id: 4, name: 'Valorant', icon: 'check-circle' },
-    { id: 5, name: 'Genshin', icon: 'eye' },
-    { id: 6, name: 'More', icon: 'menu' },
+    { id: 1, name: 'LoL', icon: ICONS.LIGHTNING },
+    { id: 2, name: 'HoK', icon: ICONS.STAR },
+    { id: 3, name: 'Apex', icon: ICONS.FILTER },
+    { id: 4, name: 'Valorant', icon: ICONS.CHECK },
+    { id: 5, name: 'Genshin', icon: ICONS.EYE },
+    { id: 6, name: 'More', icon: ICONS.MENU },
   ])
 
   const [companions] = useState([
-    { id: 1, name: 'Alice', game: 'LoL', price: '20/hr', rating: '5.0', avatar: 'https://via.placeholder.com/100' },
-    { id: 2, name: 'Bob', game: 'HoK', price: '15/hr', rating: '4.8', avatar: 'https://via.placeholder.com/100' },
-    { id: 3, name: 'Charlie', game: 'Apex', price: '25/hr', rating: '4.9', avatar: 'https://via.placeholder.com/100' },
-    { id: 4, name: 'Diana', game: 'Valorant', price: '30/hr', rating: '5.0', avatar: 'https://via.placeholder.com/100' },
+    { id: 1, name: 'Alice', game: 'LoL', price: '20/hr', rating: '5.0', avatar: PLACEHOLDER_AVATAR },
+    { id: 2, name: 'Bob', game: 'HoK', price: '15/hr', rating: '4.8', avatar: PLACEHOLDER_AVATAR },
+    { id: 3, name: 'Charlie', game: 'Apex', price: '25/hr', rating: '4.9', avatar: PLACEHOLDER_AVATAR },
+    { id: 4, name: 'Diana', game: 'Valorant', price: '30/hr', rating: '5.0', avatar: PLACEHOLDER_AVATAR },
   ])
 
   return (
     <View className='home-page'>
       {/* Search Bar Placeholder */}
       <View className='search-bar'>
-        <AtIcon value='search' size='16' color='#999' />
+        <Image src={ICONS.SEARCH} style={{ width: '16px', height: '16px' }} />
         <Text className='placeholder' style={{ marginLeft: '8px' }}>Search for games or companions...</Text>
       </View>
 
@@ -41,7 +41,7 @@ export default function Index() {
         {categories.map(cat => (
           <View key={cat.id} className='category-item'>
             <View className='icon-wrapper'>
-              <AtIcon value={cat.icon} size='24' color='#ffffff' />
+              <Image src={cat.icon} style={{ width: '24px', height: '24px' }} />
             </View>
             <Text className='name'>{cat.name}</Text>
           </View>
