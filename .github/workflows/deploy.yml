@@ -93,10 +93,10 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
-          cache-dependency-path: backend/go.sum
+          cache-dependency-path: api/go.sum
 
       - name: Run backend tests
-        working-directory: backend
+        working-directory: api
         env:
           DB_DSN: postgresql://gamelink:testpassword@localhost:5432/gamelink_test?sslmode=disable
           JWT_SECRET_KEY: test-secret-key-for-ci-testing-32chars
@@ -170,7 +170,7 @@ jobs:
       - name: Build and push backend
         uses: docker/build-push-action@v5
         with:
-          context: ./backend
+          context: ./api
           push: true
           tags: ${{ steps.meta-backend.outputs.tags }}
           labels: ${{ steps.meta-backend.outputs.labels }}

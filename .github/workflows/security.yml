@@ -4,13 +4,13 @@ on:
   push:
     branches: [main, dev]
     paths:
-      - 'backend/**'
+      - 'api/**'
       - 'admin/**'
       - '.github/workflows/security.yml'
   pull_request:
     branches: [main]
     paths:
-      - 'backend/**'
+      - 'api/**'
       - 'admin/**'
   schedule:
     # 每周一凌晨运行
@@ -34,12 +34,12 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
-          cache-dependency-path: backend/go.sum
+          cache-dependency-path: api/go.sum
 
       - name: Run Gosec
         uses: securego/gosec@master
         with:
-          args: -exclude-dir=vendor -exclude-dir=docs -fmt=sarif -out=gosec.sarif ./backend/...
+          args: -exclude-dir=vendor -exclude-dir=docs -fmt=sarif -out=gosec.sarif ./api/...
         continue-on-error: true
 
       - name: Upload Gosec results
@@ -51,7 +51,7 @@ jobs:
         continue-on-error: true
 
       - name: Run govulncheck
-        working-directory: backend
+        working-directory: api
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
           govulncheck -format text ./... 2>&1 | tee vuln-report.txt
@@ -64,7 +64,7 @@ jobs:
           fi
 
       - name: Check for outdated dependencies
-        working-directory: backend
+        working-directory: api
         run: |
           go list -u -m all 2>/dev/null | grep '\[' || echo "All dependencies are up to date"
         continue-on-error: true
@@ -127,7 +127,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build backend image
-        run: docker build -t gamelink-backend:scan ./backend
+        run: docker build -t gamelink-backend:scan ./api
 
       - name: Build admin image
         run: docker build -t gamelink-admin:scan ./admin
