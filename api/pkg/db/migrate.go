@@ -257,7 +257,8 @@ func MigrateUserManagement(db *gorm.DB) error {
 // runDataFixups contains data migrations that adjust existing values.
 // It is idempotent and safe to run at startup.
 func runDataFixups(db *gorm.DB) error {
-	// Normalize order status spelling: "cancelled" -> "canceled" //nolint:misspell // legacy spelling in database
+	// Normalize order status spelling: "cancelled" -> "canceled" (legacy British spelling)
+	//nolint:misspell // SQL contains legacy 'cancelled' string for data migration
 	if err := db.Exec("UPDATE orders SET status='canceled' WHERE status='cancelled'").Error; err != nil {
 		return err
 	}
