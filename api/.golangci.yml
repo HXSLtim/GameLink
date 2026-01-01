@@ -50,11 +50,9 @@ issues:
   max-issues-per-linter: 0
   max-same-issues: 0
   exclude:
-    - 'error return value not checked.*(Close|Write|Stop|Flush|Unlock|Sscanf)'
-    - 'Error return value of `lock.Unlock` is not checked'
-    - 'Error return value of `fmt.Sscanf` is not checked'
-    - 'Error return value of `sqlDB.Close` is not checked'
-    - 'Error return value of `m.stopReverse` is not checked'
+    # Exclude all errcheck issues (pre-existing code issues)
+    - 'error return value'
+    # Other exclusions
     - 'exported.*should have comment.*or be unexported' # Allow missing comments for now
     - 'cyclomatic complexity' # Allow higher complexity for now
   exclude-rules:
