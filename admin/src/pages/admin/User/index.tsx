@@ -88,14 +88,12 @@ const UserPage: React.FC = () => {
 
     // Batch Operation States
     const [batchRoleVisible, setBatchRoleVisible] = useState(false);
-    const [batchStatusVisible, setBatchStatusVisible] = useState(false);
-    const [batchNotificationVisible, setBatchNotificationVisible] = useState(false);
+        const [batchNotificationVisible, setBatchNotificationVisible] = useState(false);
     const [batchPointsVisible, setBatchPointsVisible] = useState(false);
     const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
     const [batchForm] = Form.useForm();
     const [notificationForm] = Form.useForm();
-    const [statusForm] = Form.useForm();
-    const [pointsForm] = Form.useForm();
+        const [pointsForm] = Form.useForm();
 
     // Login History State
     const [loginHistory, setLoginHistory] = useState<LoginHistory[]>([]);
@@ -394,11 +392,25 @@ const UserPage: React.FC = () => {
         setBatchRoleVisible(true);
     };
 
-    const handleBatchModifyStatus = (keys: React.Key[]) => {
+    /**
+     * 简单批量状态操作（直接执行，不使用弹窗）
+     */
+    const handleSimpleBatchStatus = async (keys: React.Key[], status: string) => {
         if (!keys || keys.length === 0) return;
-        setSelectedUserIds(keys.map(k => Number(k)));
-        statusForm.resetFields();
-        setBatchStatusVisible(true);
+        const ids = keys.map(k => Number(k));
+        try {
+            const res = await adminApi.batchUpdateUserStatus({
+                userIds: ids,
+                status
+            }) as unknown as ApiResponse<void>;
+
+            if (res.success) {
+                message.success(`批量${status === 'active' ? '启用' : '禁用'}成功`);
+                loadData();
+            }
+        } catch {
+            message.error('操作失败');
+        }
     };
 
     const handleBatchSendNotification = (keys: React.Key[]) => {
@@ -429,23 +441,6 @@ const UserPage: React.FC = () => {
         }
     };
 
-    const submitBatchStatus = async () => {
-        try {
-            const values = await statusForm.validateFields();
-            const res = await adminApi.batchUpdateUserStatus({
-                userIds: selectedUserIds,
-                status: values.status
-            }) as unknown as ApiResponse<void>;
-
-            if (res.success) {
-                message.success('批量修改状态成功');
-                setBatchStatusVisible(false);
-                loadData();
-            }
-        } catch {
-            message.error('操作失败');
-        }
-    };
 
     const submitBatchNotification = async () => {
         try {
@@ -704,11 +699,21 @@ const UserPage: React.FC = () => {
             permission: USER_PERMISSIONS.UPDATE,
         },
         {
-            text: '批量修改状态',
+            text: '批量启用',
             icon: <SafetyOutlined />,
             needSelection: true,
-            onClick: (keys) => handleBatchModifyStatus(keys || []),
+            onClick: (keys) => handleSimpleBatchStatus(keys || [], 'active'),
             permission: USER_PERMISSIONS.UPDATE,
+            simpleAction: true,
+        },
+        {
+            text: '批量禁用',
+            icon: <SafetyOutlined />,
+            needSelection: true,
+            onClick: (keys) => handleSimpleBatchStatus(keys || [], 'banned'),
+            permission: USER_PERMISSIONS.UPDATE,
+            simpleAction: true,
+            danger: true,
         },
         {
             text: '批量发送通知',
@@ -1000,24 +1005,7 @@ const UserPage: React.FC = () => {
                 </Form>
             </Modal>
 
-            {/* Batch Status Modal */}
-            <Modal
-                title="批量修改状态"
-                open={batchStatusVisible}
-                onOk={submitBatchStatus}
-                onCancel={() => setBatchStatusVisible(false)}
-            >
-                <Form form={statusForm} layout="vertical">
-                    <Form.Item name="status" label="选择状态" rules={[{ required: true }]}>
-                        <Select>
-                            <Select.Option value="active">正常</Select.Option>
-                            <Select.Option value="banned">封禁</Select.Option>
-                            <Select.Option value="suspended">停用</Select.Option>
-                        </Select>
-                    </Form.Item>
-                </Form>
-            </Modal>
-
+            
             {/* Batch Notification Modal */}
             <Modal
                 title="批量发送通知"

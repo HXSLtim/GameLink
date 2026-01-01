@@ -1,0 +1,442 @@
+/**
+ * 充值选项管理页面
+ * 表格形式展示充值档位，支持增删改查操作
+ */
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+    Card,
+    Table,
+    Button,
+    Space,
+    Tag,
+    message,
+    Popconfirm,
+    Switch,
+    Typography,
+    Image,
+    InputNumber,
+    Tooltip,
+} from 'antd';
+import type { ColumnsType } from 'antd/es/table';
+import {
+    PlusOutlined,
+    EditOutlined,
+    DeleteOutlined,
+    ReloadOutlined,
+    GiftOutlined,
+    StarOutlined,
+    DollarOutlined,
+    CrownOutlined,
+} from '@ant-design/icons';
+import { rechargeApi, type RechargeOption, type RechargeOptionQueryParams } from '@/api/recharge';
+import { RECHARGE_PERMISSIONS } from '@/constants/permissions';
+import { PermissionGuard } from '@/components/PermissionGuard';
+import OptionForm from './components/OptionForm';
+import dayjs from 'dayjs';
+
+const { Text } = Typography;
+
+interface OptionsProps {
+    onStatsUpdate?: () => void;
+}
+
+/**
+ * 状态选项
+ */
+const activeOptions = [
+    { label: '全部', value: undefined },
+    { label: '已启用', value: true },
+    { label: '已禁用', value: false },
+];
+
+const recommendedOptions = [
+    { label: '全部', value: undefined },
+    { label: '推荐', value: true },
+    { label: '普通', value: false },
+];
+
+/**
+ * 充值选项管理页面
+ */
+const RechargeOptions: React.FC<OptionsProps> = ({ onStatsUpdate }) => {
+    const [loading, setLoading] = useState(false);
+    const [options, setOptions] = useState<RechargeOption[]>([]);
+    const [total, setTotal] = useState(0);
+    const [current, setCurrent] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+    const [searchParams, setSearchParams] = useState<RechargeOptionQueryParams>({});
+    const [formVisible, setFormVisible] = useState(false);
+    const [currentOption, setCurrentOption] = useState<RechargeOption | null>(null);
+
+    /**
+     * 加载充值选项数据
+     */
+    const loadData = useCallback(async () => {
+        setLoading(true);
+        try {
+            const queryParams: RechargeOptionQueryParams = {
+                page: current,
+                page_size: pageSize,
+                ...searchParams,
+            };
+            const response = await rechargeApi.getRechargeOptions(queryParams);
+            if (response.data.success) {
+                const data = response.data.data || [];
+                setOptions(data);
+                setTotal(data.length);
+            } else {
+                message.error(response.data.message || '加载失败');
+            }
+        } catch (error) {
+            console.error('Load recharge options error:', error);
+            message.error('加载充值选项失败');
+        } finally {
+            setLoading(false);
+        }
+    }, [current, pageSize, searchParams]);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
+
+    /**
+     * 新增
+     */
+    const handleAdd = () => {
+        setCurrentOption(null);
+        setFormVisible(true);
+    };
+
+    /**
+     * 编辑
+     */
+    const handleEdit = (record: RechargeOption) => {
+        setCurrentOption(record);
+        setFormVisible(true);
+    };
+
+    /**
+     * 删除
+     */
+    const handleDelete = async (record: RechargeOption) => {
+        try {
+            await rechargeApi.deleteRechargeOption(record.id);
+            message.success('删除成功');
+            loadData();
+            onStatsUpdate?.();
+        } catch (error) {
+            console.error('Delete error:', error);
+            message.error('删除失败');
+        }
+    };
+
+    /**
+     * 切换启用状态
+     */
+    const handleToggleActive = async (record: RechargeOption, isActive: boolean) => {
+        try {
+            await rechargeApi.toggleRechargeOptionStatus([record.id], isActive);
+            message.success(isActive ? '已启用' : '已禁用');
+            loadData();
+            onStatsUpdate?.();
+        } catch (error) {
+            console.error('Toggle status error:', error);
+            message.error('操作失败');
+        }
+    };
+
+    /**
+     * 搜索
+     */
+    const handleSearch = (values: Record<string, unknown>) => {
+        setSearchParams(values as RechargeOptionQueryParams);
+        setCurrent(1);
+    };
+
+    /**
+     * 重置搜索
+     */
+    const handleReset = () => {
+        setSearchParams({});
+        setCurrent(1);
+    };
+
+    /**
+     * 表格列配置
+     */
+    const columns: ColumnsType<RechargeOption> = [
+        {
+            title: 'ID',
+            dataIndex: 'id',
+            key: 'id',
+            width: 70,
+        },
+        {
+            title: '图标',
+            dataIndex: 'iconUrl',
+            key: 'iconUrl',
+            width: 70,
+            render: (iconUrl: string) => (
+                <Image
+                    src={iconUrl}
+                    alt="icon"
+                    width={40}
+                    height={40}
+                    preview={false}
+                    style={{ borderRadius: 8 }}
+                    fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
+                />
+            ),
+        },
+        {
+            title: '名称',
+            dataIndex: 'name',
+            key: 'name',
+            width: 150,
+            render: (name: string, record) => (
+                <div>
+                    <div style={{ fontWeight: 500 }}>{name}</div>
+                    {record.tag && (
+                        <Tag color="gold" style={{ marginTop: 4 }}>
+                            {record.tag}
+                        </Tag>
+                    )}
+                </div>
+            ),
+        },
+        {
+            title: '充值金额',
+            key: 'amount',
+            width: 150,
+            render: (_, record) => (
+                <div>
+                    <div style={{ fontWeight: 500, color: '#1890ff' }}>
+                        ¥{(record.amountCents / 100).toFixed(2)}
+                    </div>
+                    {record.originalCents && record.originalCents > record.amountCents && (
+                        <Text delete type="secondary" style={{ fontSize: 12 }}>
+                            ¥{(record.originalCents / 100).toFixed(2)}
+                        </Text>
+                    )}
+                </div>
+            ),
+        },
+        {
+            title: '赠送金额',
+            dataIndex: 'bonusCents',
+            key: 'bonusCents',
+            width: 100,
+            render: (cents: number) => (
+                <div style={{ color: '#52c41a', fontWeight: 500 }}>
+                    {cents > 0 ? (
+                        <>
+                            <GiftOutlined style={{ marginRight: 4 }} />
+                            ¥{(cents / 100).toFixed(2)}
+                        </>
+                    ) : (
+                        '-'
+                    )}
+                </div>
+            ),
+        },
+        {
+            title: '折扣',
+            dataIndex: 'discountPercent',
+            key: 'discountPercent',
+            width: 80,
+            render: (percent?: number) => {
+                if (percent && percent > 0) {
+                    return <Tag color="red">{(percent * 100).toFixed(0)}% OFF</Tag>;
+                }
+                return '-';
+            },
+        },
+        {
+            title: '优惠券',
+            key: 'coupon',
+            width: 120,
+            render: (_, record) => {
+                if (record.couponCount > 0) {
+                    return (
+                        <Tooltip title={`优惠券模板ID: ${record.couponTemplateId}`}>
+                            <Tag color="purple" icon={<GiftOutlined />}>
+                                x{record.couponCount}
+                            </Tag>
+                        </Tooltip>
+                    );
+                }
+                return '-';
+            },
+        },
+        {
+            title: 'VIP等级限制',
+            dataIndex: 'minVipLevel',
+            key: 'minVipLevel',
+            width: 100,
+            render: (level?: number) => {
+                if (level !== undefined && level !== null) {
+                    return (
+                        <Tag color="blue" icon={<CrownOutlined />}>
+                            Lv.{level}+
+                        </Tag>
+                    );
+                }
+                return <Tag color="default">不限</Tag>;
+            },
+        },
+        {
+            title: '排序',
+            dataIndex: 'sortOrder',
+            key: 'sortOrder',
+            width: 70,
+            render: (order: number) => (
+                <InputNumber
+                    size="small"
+                    value={order}
+                    min={0}
+                    style={{ width: 60 }}
+                    onChange={async (value) => {
+                        if (value !== null && value !== order) {
+                            try {
+                                await rechargeApi.updateRechargeOption(record.id, { ...record, sortOrder: value });
+                                message.success('排序已更新');
+                                loadData();
+                            } catch {
+                                message.error('更新失败');
+                            }
+                        }
+                    }}
+                />
+            ),
+        },
+        {
+            title: '推荐',
+            dataIndex: 'isRecommended',
+            key: 'isRecommended',
+            width: 80,
+            render: (recommended: boolean) =>
+                recommended ? (
+                    <Tag color="gold" icon={<StarOutlined />}>
+                        推荐
+                    </Tag>
+                ) : (
+                    <Tag>普通</Tag>
+                ),
+        },
+        {
+            title: '状态',
+            dataIndex: 'isActive',
+            key: 'isActive',
+            width: 90,
+            render: (isActive: boolean) => (
+                <Tag color={isActive ? 'success' : 'default'}>
+                    {isActive ? '启用' : '禁用'}
+                </Tag>
+            ),
+        },
+        {
+            title: '创建时间',
+            dataIndex: 'createdAt',
+            key: 'createdAt',
+            width: 180,
+            render: (date: string) => dayjs(date).format('YYYY-MM-DD HH:mm:ss'),
+        },
+        {
+            title: '操作',
+            key: 'action',
+            width: 180,
+            fixed: 'right',
+            render: (_, record) => (
+                <Space size="small">
+                    <PermissionGuard permission={RECHARGE_PERMISSIONS.UPDATE_OPTION}>
+                        <Button
+                            type="link"
+                            size="small"
+                            icon={<EditOutlined />}
+                            onClick={() => handleEdit(record)}
+                        >
+                            编辑
+                        </Button>
+                    </PermissionGuard>
+                    <PermissionGuard permission={RECHARGE_PERMISSIONS.UPDATE_OPTION}>
+                        <Switch
+                            size="small"
+                            checked={record.isActive}
+                            onChange={(checked) => handleToggleActive(record, checked)}
+                            checkedChildren="启用"
+                            unCheckedChildren="禁用"
+                        />
+                    </PermissionGuard>
+                    <PermissionGuard permission={RECHARGE_PERMISSIONS.DELETE_OPTION}>
+                        <Popconfirm
+                            title="确定要删除此充值选项吗？"
+                            onConfirm={() => handleDelete(record)}
+                            okText="确定"
+                            cancelText="取消"
+                        >
+                            <Button
+                                type="link"
+                                size="small"
+                                danger
+                                icon={<DeleteOutlined />}
+                            >
+                                删除
+                            </Button>
+                        </Popconfirm>
+                    </PermissionGuard>
+                </Space>
+            ),
+        },
+    ];
+
+    return (
+        <>
+            {/* 操作栏 */}
+            <Card style={{ marginBottom: 16 }}>
+                <Space wrap>
+                    <Button icon={<ReloadOutlined />} onClick={loadData} loading={loading}>
+                        刷新
+                    </Button>
+                    <PermissionGuard permission={RECHARGE_PERMISSIONS.CREATE_OPTION}>
+                        <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+                            新增充值选项
+                        </Button>
+                    </PermissionGuard>
+                </Space>
+            </Card>
+
+            {/* 表格 */}
+            <Table
+                columns={columns}
+                dataSource={options}
+                rowKey="id"
+                loading={loading}
+                scroll={{ x: 1600 }}
+                pagination={{
+                    current,
+                    pageSize,
+                    total,
+                    showSizeChanger: true,
+                    showTotal: (t) => `共 ${t} 条`,
+                    onChange: (page, size) => {
+                        setCurrent(page);
+                        setPageSize(size);
+                    },
+                }}
+            />
+
+            {/* 编辑表单弹窗 */}
+            <OptionForm
+                visible={formVisible}
+                option={currentOption}
+                onCancel={() => setFormVisible(false)}
+                onSuccess={() => {
+                    loadData();
+                    onStatsUpdate?.();
+                }}
+            />
+        </>
+    );
+};
+
+export default RechargeOptions;

@@ -520,19 +520,7 @@ export const adminApi = {
     // Menu Management
     getMenus: (params?: { parentId?: number; page?: number; page_size?: number }) => apiClient.get<ApiResponse<Menu[]>>('/admin/menus', { params }),
     getMyMenus: () => apiClient.get<ApiResponse<Menu[]>>('/admin/menus/me'),
-    getMenu: (id: number) => apiClient.get<ApiResponse<Menu>>(`/admin/menus/${id}`),
-    createMenu: (data: CreateMenuDto) => apiClient.post<ApiResponse<Menu>>('/admin/menus', data),
-    updateMenu: (id: number, data: UpdateMenuDto) => apiClient.put<ApiResponse<Menu>>(`/admin/menus/${id}`, data),
     deleteMenu: (id: number) => apiClient.delete<ApiResponse<void>>(`/admin/menus/${id}`),
-
-    // Permissions
-    getPermissions: (params?: { page?: number; page_size?: number; group?: string }) => apiClient.get<ApiResponse<{ items: Permission[], totalCount: number, page: number, pageSize: number }>>('/admin/permissions', { params }),
-    getPermissionGroups: () => apiClient.get<ApiResponse<string[]>>('/admin/permissions/groups'),
-    getPermission: (id: number) => apiClient.get<ApiResponse<Permission>>(`/admin/permissions/${id}`),
-    createPermission: (data: CreatePermissionDto) => apiClient.post<ApiResponse<Permission>>('/admin/permissions', data),
-    updatePermission: (id: number, data: UpdatePermissionDto) => apiClient.put<ApiResponse<Permission>>(`/admin/permissions/${id}`, data),
-    deletePermission: (id: number) => apiClient.delete<ApiResponse<void>>(`/admin/permissions/${id}`),
-    getMyPermissions: () => apiClient.get<ApiResponse<string[]>>('/admin/permissions/me'),
 
     // Role Management
     getRoles: (params?: { page?: number; page_size?: number }) => apiClient.get<ApiResponse<{ items: Role[], totalCount: number, page: number, pageSize: number }>>('/admin/roles', { params }),
