@@ -49,16 +49,12 @@ describe('authStore', () => {
 
   describe('Login', () => {
     it('should login successfully with valid credentials', async () => {
-      const mockUser: UserInfo = {
+      // Mock API response structure (not UserInfo, but what API actually returns)
+      const mockApiUser = {
         id: 1,
-        name: 'Admin User',
+        username: 'Admin User',
         email: 'admin@gamelink.com',
-        phone: '13800138000',
-        avatar: 'https://example.com/avatar.jpg',
         role: 'admin',
-        permissions: ['admin.dashboard.read', 'admin.users.read'],
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z',
       };
 
       const mockToken = 'mock-jwt-token';
@@ -66,13 +62,13 @@ describe('authStore', () => {
         data: {
           data: {
             token: mockToken,
-            user: mockUser,
+            user: mockApiUser,
           },
         },
       };
 
       vi.mocked(authApi.authApi.login).mockResolvedValue(mockResponse as {
-        data: { data: { token: string; user: UserInfo } };
+        data: { data: { token: string; user: typeof mockApiUser } };
       });
 
       const { result } = renderHook(() => useAuthStore());
@@ -81,12 +77,24 @@ describe('authStore', () => {
         await result.current.login({ username: 'admin', password: '123456' });
       });
 
+      // Check basic state
       expect(result.current.token).toBe(mockToken);
-      expect(result.current.userInfo).toEqual(mockUser);
       expect(result.current.isAuthenticated).toBe(true);
       expect(result.current.loading).toBe(false);
       expect(result.current.error).toBeNull();
       expect(sessionStorage.getItem('auth_token')).toBe(mockToken);
+
+      // Check UserInfo is mapped correctly from API response
+      expect(result.current.userInfo).toMatchObject({
+        id: 1,
+        name: 'Admin User', // mapped from username
+        email: 'admin@gamelink.com',
+        role: 'admin',
+        permissions: [], // initialized as empty array
+      });
+      // Optional fields should be undefined
+      expect(result.current.userInfo?.phone).toBeUndefined();
+      expect(result.current.userInfo?.avatar).toBeUndefined();
     });
 
     it('should handle login failure with invalid credentials', async () => {
