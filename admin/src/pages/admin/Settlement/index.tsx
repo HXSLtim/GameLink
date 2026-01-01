@@ -184,7 +184,8 @@ const SettlementPage: React.FC = () => {
     const handleBatchStatus = (keys: React.Key[]) => {
         setSelectedCompanyIds(keys ? keys.map(k => Number(k)) : []);
         setBatchTarget((keys && keys.length > 0) ? 'selected' : 'all');
-        setBatchStatusVisible(true);
+        // Execute immediately without modal
+        setTimeout(() => submitBatchStatus(keys === undefined || keys.length === 0), 100);
     };
 
     const submitBatchStatus = async (isActive: boolean) => {
@@ -221,7 +222,6 @@ const SettlementPage: React.FC = () => {
             if (response.data.success) {
                 const result = response.data.data;
                 message.success(`批量修改完成：成功 ${result.successCount}，失败 ${result.failedCount}`);
-                setBatchStatusVisible(false);
                 loadData();
             }
         } catch (error) {
