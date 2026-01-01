@@ -17,8 +17,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/pkg/config"
 	"gamelink/internal/model"
+	"gamelink/pkg/config"
 )
 
 type encryptedRequest struct {
@@ -125,15 +125,49 @@ func shouldProcessRequest(c *gin.Context, methods map[string]struct{}, excludePa
 	}
 	path := c.Request.URL.Path
 	for _, exclude := range excludePaths {
-		exclude = strings.TrimSpace(exclude)
-		if exclude == "" {
-			continue
-		}
-		if strings.Contains(path, exclude) {
+		if shouldExcludePath(path, exclude) {
 			return false
 		}
 	}
 	return true
+}
+
+// shouldExcludePath checks if a path should be excluded based on pattern matching.
+// Supports three matching modes:
+// 1. Exact match: "/api/v1/health" only matches exactly "/api/v1/health"
+// 2. Prefix match with wildcard: "/api/v1/public/*" matches "/api/v1/public/" and all subpaths
+// 3. Catch-all: "*" matches any path
+func shouldExcludePath(path string, exclude string) bool {
+	exclude = strings.TrimSpace(exclude)
+	if exclude == "" {
+		return false
+	}
+
+	// Catch-all: * matches any path
+	if exclude == "*" {
+		return true
+	}
+
+	// Exact match
+	if path == exclude {
+		return true
+	}
+
+	// Prefix match (ends with /*)
+	if strings.HasSuffix(exclude, "/*") {
+		prefix := strings.TrimSuffix(exclude, "/*")
+		// Match prefix/ or exact prefix (for "/api/v1/public/*" matches "/api/v1/public" and "/api/v1/public/...")
+		return strings.HasPrefix(path, prefix+"/") || path == prefix
+	}
+
+	// Suffix match (starts with *)
+	if strings.HasPrefix(exclude, "*") {
+		suffix := strings.TrimPrefix(exclude, "*")
+		return strings.HasSuffix(path, suffix)
+	}
+
+	// Default: no match
+	return false
 }
 
 func decryptPayload(block cipher.Block, iv []byte, payload string) ([]byte, error) {
@@ -186,7 +220,7 @@ func restoreRequestBody(c *gin.Context, data []byte) {
 }
 
 func abortWithCryptoError(c *gin.Context, status int, message string) {
-	c.AbortWithStatusJSON(status, model.APIResponse[any]{
+	c.AbortWithStatusJSON(status, model.SuccessResponse{
 		Success: false,
 		Code:    status,
 		Message: message,

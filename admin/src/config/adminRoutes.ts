@@ -331,11 +331,85 @@ export const ADMIN_MENUS: MenuConfig[] = [
         ],
     },
     {
+        name: '营销管理',
+        path: '/admin/marketing',
+        component: 'Layout',
+        icon: 'GiftOutlined',
+        order: 6,
+        description: '营销活动和用户增长',
+        children: [
+            {
+                name: 'VIP 管理',
+                path: '/admin/marketing/vip',
+                component: 'VIP',
+                icon: 'crown',
+                order: 1,
+                permission: 'admin.vip.list',
+                description: '管理 VIP 等级和权益',
+            },
+            {
+                name: '优惠券管理',
+                path: '/admin/marketing/coupon',
+                component: 'Coupon',
+                icon: 'gift',
+                order: 2,
+                permission: 'admin.coupons.list',
+                description: '创建和管理优惠券',
+            },
+            {
+                name: '推荐系统',
+                path: '/admin/marketing/referral',
+                component: 'Referral',
+                icon: 'share-alt',
+                order: 3,
+                permission: 'admin.referrals.list',
+                description: '管理推荐和邀请奖励',
+            },
+            {
+                name: '团队管理',
+                path: '/admin/marketing/team',
+                component: 'Team',
+                icon: 'team',
+                order: 4,
+                permission: 'admin.teams.list',
+                description: '管理陪玩师团队',
+            },
+            {
+                name: '活动管理',
+                path: '/admin/marketing/activity',
+                component: 'Activity',
+                icon: 'calendar',
+                order: 5,
+                permission: 'admin.activities.list',
+                description: '创建和管理营销活动',
+            },
+        ],
+    },
+    {
+        name: '支付管理',
+        path: '/admin/payment',
+        component: 'Layout',
+        icon: 'PayCircleOutlined',
+        order: 7,
+        description: '支付和充值管理',
+        children: [
+            {
+                name: '充值管理',
+                path: '/admin/payment/recharge',
+                component: 'Recharge',
+                icon: 'wallet',
+                order: 1,
+                permission: 'admin.recharges.list',
+                description: '管理充值选项和记录',
+            },
+        ],
+    },
+    {
         name: '评价管理',
         path: '/admin/reviews',
         component: 'Layout',
         icon: 'StarOutlined',
-        order: 6,
+        order: 8,
         description: '评价和举报管理',
         children: [
             {
@@ -597,6 +671,100 @@ export const ADMIN_PERMISSIONS: PermissionConfig[] = [
     // 用户行为分析
     { method: 'GET', path: '/api/v1/admin/user-behavior', code: 'admin.user-behavior.list', group: '/admin/user-behavior', description: '获取用户行为数据' },
     { method: 'GET', path: '/api/v1/admin/user-behavior/stats', code: 'admin.user-behavior.stats', group: '/admin/user-behavior', description: '获取用户行为统计' },
+
+    // ==================== 营销管理 ====================
+
+    // VIP 管理
+    { method: 'GET', path: '/api/v1/admin/vip/levels', code: 'admin.vip.list', group: '/admin/marketing/vip', description: '获取 VIP 等级列表' },
+    { method: 'GET', path: '/api/v1/admin/vip/levels/:id', code: 'admin.vip.read', group: '/admin/marketing/vip', description: '获取 VIP 等级详情' },
+    { method: 'POST', path: '/api/v1/admin/vip/levels', code: 'admin.vip.create', group: '/admin/marketing/vip', description: '创建 VIP 等级' },
+    { method: 'PUT', path: '/api/v1/admin/vip/levels/:id', code: 'admin.vip.update', group: '/admin/marketing/vip', description: '更新 VIP 等级' },
+    { method: 'DELETE', path: '/api/v1/admin/vip/levels/:id', code: 'admin.vip.delete', group: '/admin/marketing/vip', description: '删除 VIP 等级' },
+    { method: 'GET', path: '/api/v1/admin/vip/configs', code: 'admin.vip.config.list', group: '/admin/marketing/vip', description: '获取 VIP 配置' },
+    { method: 'PUT', path: '/api/v1/admin/vip/configs/:id', code: 'admin.vip.config.update', group: '/admin/marketing/vip', description: '更新 VIP 配置' },
+
+    // 优惠券管理
+    { method: 'GET', path: '/api/v1/admin/coupons', code: 'admin.coupons.list', group: '/admin/marketing/coupon', description: '获取优惠券列表' },
+    { method: 'GET', path: '/api/v1/admin/coupons/:id', code: 'admin.coupons.read', group: '/admin/marketing/coupon', description: '获取优惠券详情' },
+    { method: 'POST', path: '/api/v1/admin/coupons', code: 'admin.coupons.create', group: '/admin/marketing/coupon', description: '创建优惠券' },
+    { method: 'PUT', path: '/api/v1/admin/coupons/:id', code: 'admin.coupons.update', group: '/admin/marketing/coupon', description: '更新优惠券' },
+    { method: 'DELETE', path: '/api/v1/admin/coupons/:id', code: 'admin.coupons.delete', group: '/admin/marketing/coupon', description: '删除优惠券' },
+    { method: 'POST', path: '/api/v1/admin/coupons/:id/toggle', code: 'admin.coupons.toggle', group: '/admin/marketing/coupon', description: '启用/禁用优惠券' },
+    { method: 'GET', path: '/api/v1/admin/coupons/:id/usage', code: 'admin.coupons.usage', group: '/admin/marketing/coupon', description: '获取优惠券使用情况' },
+    { method: 'POST', path: '/api/v1/admin/coupons/:id/issue', code: 'admin.coupons.issue', group: '/admin/marketing/coupon', description: '发放优惠券' },
+    { method: 'GET', path: '/api/v1/admin/user-coupons', code: 'admin.user-coupons.list', group: '/admin/marketing/coupon', description: '获取用户优惠券列表' },
+    { method: 'POST', path: '/api/v1/admin/coupons/batch/status', code: 'admin.coupons.batch-status', group: '/admin/marketing/coupon', description: '批量更新优惠券状态' },
+    { method: 'POST', path: '/api/v1/admin/coupons/batch/delete', code: 'admin.coupons.batch-delete', group: '/admin/marketing/coupon', description: '批量删除优惠券' },
+
+    // 推荐系统
+    { method: 'GET', path: '/api/v1/admin/referrals/configs', code: 'admin.referrals.config', group: '/admin/marketing/referral', description: '获取推荐配置' },
+    { method: 'PUT', path: '/api/v1/admin/referrals/configs', code: 'admin.referrals.config.update', group: '/admin/marketing/referral', description: '更新推荐配置' },
+    { method: 'GET', path: '/api/v1/admin/referrals/codes', code: 'admin.referral-codes.list', group: '/admin/marketing/referral', description: '获取邀请码列表' },
+    { method: 'POST', path: '/api/v1/admin/referrals/codes', code: 'admin.referral-codes.create', group: '/admin/marketing/referral', description: '创建邀请码' },
+    { method: 'PUT', path: '/api/v1/admin/referrals/codes/:id', code: 'admin.referral-codes.update', group: '/admin/marketing/referral', description: '更新邀请码' },
+    { method: 'DELETE', path: '/api/v1/admin/referrals/codes/:id', code: 'admin.referral-codes.delete', group: '/admin/marketing/referral', description: '删除邀请码' },
+    { method: 'GET', path: '/api/v1/admin/referrals', code: 'admin.referrals.list', group: '/admin/marketing/referral', description: '获取推荐列表' },
+    { method: 'GET', path: '/api/v1/admin/referrals/:id', code: 'admin.referrals.read', group: '/admin/marketing/referral', description: '获取推荐详情' },
+    { method: 'PUT', path: '/api/v1/admin/referrals/:id/status', code: 'admin.referrals.status', group: '/admin/marketing/referral', description: '更新推荐状态' },
+    { method: 'POST', path: '/api/v1/admin/referrals/rewards/:id/issue', code: 'admin.referral-rewards.issue', group: '/admin/marketing/referral', description: '发放推荐奖励' },
+    { method: 'GET', path: '/api/v1/admin/referrals/stats', code: 'admin.referrals.stats', group: '/admin/marketing/referral', description: '获取推荐统计' },
+    { method: 'POST', path: '/api/v1/admin/referrals/codes/batch/status', code: 'admin.referral-codes.batch-status', group: '/admin/marketing/referral', description: '批量更新邀请码状态' },
+    { method: 'DELETE', path: '/api/v1/admin/referrals/codes/batch', code: 'admin.referral-codes.batch-delete', group: '/admin/marketing/referral', description: '批量删除邀请码' },
+
+    // 团队管理
+    { method: 'GET', path: '/api/v1/admin/teams', code: 'admin.teams.list', group: '/admin/marketing/team', description: '获取团队列表' },
+    { method: 'GET', path: '/api/v1/admin/teams/:id', code: 'admin.teams.read', group: '/admin/marketing/team', description: '获取团队详情' },
+    { method: 'POST', path: '/api/v1/admin/teams', code: 'admin.teams.create', group: '/admin/marketing/team', description: '创建团队' },
+    { method: 'PUT', path: '/api/v1/admin/teams/:id', code: 'admin.teams.update', group: '/admin/marketing/team', description: '更新团队' },
+    { method: 'DELETE', path: '/api/v1/admin/teams/:id', code: 'admin.teams.delete', group: '/admin/marketing/team', description: '删除团队' },
+    { method: 'PUT', path: '/api/v1/admin/teams/:id/status', code: 'admin.teams.status', group: '/admin/marketing/team', description: '更新团队状态' },
+    { method: 'GET', path: '/api/v1/admin/teams/:id/members', code: 'admin.teams.members', group: '/admin/marketing/team', description: '获取团队成员' },
+    { method: 'POST', path: '/api/v1/admin/teams/:id/members', code: 'admin.teams.members.add', group: '/admin/marketing/team', description: '添加团队成员' },
+    { method: 'DELETE', path: '/api/v1/admin/teams/:id/members/:userId', code: 'admin.teams.members.remove', group: '/admin/marketing/team', description: '移除团队成员' },
+    { method: 'PUT', path: '/api/v1/admin/teams/:id/captain', code: 'admin.teams.captain', group: '/admin/marketing/team', description: '转让队长' },
+    { method: 'GET', path: '/api/v1/admin/teams/stats', code: 'admin.teams.stats', group: '/admin/marketing/team', description: '获取团队统计' },
+    { method: 'POST', path: '/api/v1/admin/teams/batch/status', code: 'admin.teams.batch-status', group: '/admin/marketing/team', description: '批量更新团队状态' },
+    { method: 'POST', path: '/api/v1/admin/teams/batch/delete', code: 'admin.teams.batch-delete', group: '/admin/marketing/team', description: '批量删除团队' },
+
+    // 活动管理
+    { method: 'GET', path: '/api/v1/admin/activities', code: 'admin.activities.list', group: '/admin/marketing/activity', description: '获取活动列表' },
+    { method: 'GET', path: '/api/v1/admin/activities/:id', code: 'admin.activities.read', group: '/admin/marketing/activity', description: '获取活动详情' },
+    { method: 'POST', path: '/api/v1/admin/activities', code: 'admin.activities.create', group: '/admin/marketing/activity', description: '创建活动' },
+    { method: 'PUT', path: '/api/v1/admin/activities/:id', code: 'admin.activities.update', group: '/admin/marketing/activity', description: '更新活动' },
+    { method: 'DELETE', path: '/api/v1/admin/activities/:id', code: 'admin.activities.delete', group: '/admin/marketing/activity', description: '删除活动' },
+    { method: 'POST', path: '/api/v1/admin/activities/:id/publish', code: 'admin.activities.publish', group: '/admin/marketing/activity', description: '发布活动' },
+    { method: 'POST', path: '/api/v1/admin/activities/:id/unpublish', code: 'admin.activities.unpublish', group: '/admin/marketing/activity', description: '下架活动' },
+    { method: 'GET', path: '/api/v1/admin/activities/:id/rewards', code: 'admin.activity-rewards.list', group: '/admin/marketing/activity', description: '获取活动奖励' },
+
+    // ==================== 支付管理 ====================
+
+    // 充值管理
+    { method: 'GET', path: '/api/v1/admin/recharges/options', code: 'admin.recharges.list', group: '/admin/payment/recharge', description: '获取充值选项列表' },
+    { method: 'GET', path: '/api/v1/admin/recharges/options/:id', code: 'admin.recharges.read', group: '/admin/payment/recharge', description: '获取充值选项详情' },
+    { method: 'POST', path: '/api/v1/admin/recharges/options', code: 'admin.recharges.create', group: '/admin/payment/recharge', description: '创建充值选项' },
+    { method: 'PUT', path: '/api/v1/admin/recharges/options/:id', code: 'admin.recharges.update', group: '/admin/payment/recharge', description: '更新充值选项' },
+    { method: 'DELETE', path: '/api/v1/admin/recharges/options/:id', code: 'admin.recharges.delete', group: '/admin/payment/recharge', description: '删除充值选项' },
+    { method: 'POST', path: '/api/v1/admin/recharges/options/:id/toggle', code: 'admin.recharges.toggle', group: '/admin/payment/recharge', description: '启用/禁用充值选项' },
+    { method: 'GET', path: '/api/v1/admin/recharges/records', code: 'admin.recharge-records.list', group: '/admin/payment/recharge', description: '获取充值记录' },
+    { method: 'GET', path: '/api/v1/admin/recharges/records/:id', code: 'admin.recharge-records.read', group: '/admin/payment/recharge', description: '获取充值记录详情' },
+    { method: 'POST', path: '/api/v1/admin/recharges/records/:id/refund', code: 'admin.recharge-records.refund', group: '/admin/payment/recharge', description: '充值退款' },
+
+    // 支付记录
+    { method: 'GET', path: '/api/v1/admin/payments', code: 'admin.payments.list', group: '/admin/payment', description: '获取支付记录列表' },
+    { method: 'GET', path: '/api/v1/admin/payments/:id', code: 'admin.payments.read', group: '/admin/payment', description: '获取支付记录详情' },
+    { method: 'POST', path: '/api/v1/admin/payments/:id/refund', code: 'admin.payments.refund', group: '/admin/payment', description: '发起支付退款' },
+    { method: 'GET', path: '/api/v1/admin/payments/stats', code: 'admin.payments.stats', group: '/admin/payment', description: '获取支付统计' },
+
+    // ==================== 聊天管理 ====================
+
+    // 聊天会话管理
+    { method: 'GET', path: '/api/v1/admin/chats/conversations', code: 'admin.chats.list', group: '/admin/chats', description: '获取聊天会话列表' },
+    { method: 'GET', path: '/api/v1/admin/chats/conversations/:id', code: 'admin.chats.read', group: '/admin/chats', description: '获取会话详情' },
+    { method: 'POST', path: '/api/v1/admin/chats/conversations/:id/close', code: 'admin.chats.close', group: '/admin/chats', description: '关闭会话' },
+    { method: 'GET', path: '/api/v1/admin/chats/messages', code: 'admin.chat-messages.list', group: '/admin/chats', description: '获取聊天消息' },
+    { method: 'DELETE', path: '/api/v1/admin/chats/messages/:id', code: 'admin.chat-messages.delete', group: '/admin/chats', description: '删除聊天消息' },
+    { method: 'POST', path: '/api/v1/admin/chats/messages/broadcast', code: 'admin.chats.broadcast', group: '/admin/chats', description: '发送系统广播' },
+    { method: 'GET', path: '/api/v1/admin/chats/stats', code: 'admin.chats.stats', group: '/admin/chats', description: '获取聊天统计' },
 ];
 
 export default { ADMIN_MENUS, ADMIN_PERMISSIONS };

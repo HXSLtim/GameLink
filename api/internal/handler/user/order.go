@@ -65,7 +65,7 @@ func createOrderHandler(c *gin.Context, svc *order.OrderService) {
 }
 
 func getOrderMessagesHandler(c *gin.Context, svc *order.OrderService) {
-	respondJSON(c, http.StatusOK, model.APIResponse[any]{
+	respondJSON(c, http.StatusOK, model.SuccessResponse{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",

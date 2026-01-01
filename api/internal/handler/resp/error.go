@@ -17,7 +17,7 @@ import (
 func Error(c *gin.Context, err error) {
 	// Handle apierr.APIError
 	if apiErr, ok := err.(*apierr.APIError); ok {
-		JSON(c, apiErr.Code, model.APIResponse[any]{
+		JSON(c, apiErr.Code, model.SuccessResponse{
 			Success: false,
 			Code:    apiErr.Code,
 			Message: apiErr.Message,
@@ -28,7 +28,7 @@ func Error(c *gin.Context, err error) {
 
 	// Handle repository.ErrNotFound
 	if errors.Is(err, repository.ErrNotFound) {
-		JSON(c, http.StatusNotFound, model.APIResponse[any]{
+		JSON(c, http.StatusNotFound, model.SuccessResponse{
 			Success: false,
 			Code:    http.StatusNotFound,
 			Message: "resource not found",
@@ -38,7 +38,7 @@ func Error(c *gin.Context, err error) {
 
 	// Handle validation errors
 	if apierr.IsValidationError(err) {
-		JSON(c, http.StatusBadRequest, model.APIResponse[any]{
+		JSON(c, http.StatusBadRequest, model.SuccessResponse{
 			Success: false,
 			Code:    http.StatusBadRequest,
 			Message: err.Error(),
@@ -47,7 +47,7 @@ func Error(c *gin.Context, err error) {
 	}
 
 	// Default: internal server error
-	JSON(c, http.StatusInternalServerError, model.APIResponse[any]{
+	JSON(c, http.StatusInternalServerError, model.SuccessResponse{
 		Success: false,
 		Code:    http.StatusInternalServerError,
 		Message: err.Error(),
@@ -56,7 +56,7 @@ func Error(c *gin.Context, err error) {
 
 // ErrorMsg sends an error response with status code and message.
 func ErrorMsg(c *gin.Context, status int, msg string) {
-	JSON(c, status, model.APIResponse[any]{
+	JSON(c, status, model.SuccessResponse{
 		Success: false,
 		Code:    status,
 		Message: msg,
@@ -89,14 +89,14 @@ func InternalError(c *gin.Context, message string) {
 }
 
 // MapServiceError maps service layer errors to standard API error responses
-func MapServiceError(err error) (int, *model.APIResponse[any]) {
+func MapServiceError(err error) (int, *model.SuccessResponse) {
 	return MapServiceErrorWithPath(err, "")
 }
 
 // MapServiceErrorWithPath maps service layer errors to standard API error responses with path-based messages
-func MapServiceErrorWithPath(err error, path string) (int, *model.APIResponse[any]) {
+func MapServiceErrorWithPath(err error, path string) (int, *model.SuccessResponse) {
 	if err == nil {
-		return http.StatusOK, &model.APIResponse[any]{
+		return http.StatusOK, &model.SuccessResponse{
 			Success: true,
 			Code:    http.StatusOK,
 			Message: "success",
@@ -121,7 +121,7 @@ func MapServiceErrorWithPath(err error, path string) (int, *model.APIResponse[an
 			}
 		}
 
-		resp := &model.APIResponse[any]{
+		resp := &model.SuccessResponse{
 			Success: false,
 			Code:    apiErr.Code,
 			Message: apiErr.Message,
@@ -137,25 +137,25 @@ func MapServiceErrorWithPath(err error, path string) (int, *model.APIResponse[an
 	// Check service layer errors
 	switch {
 	case errors.Is(err, service.ErrInvalidCredentials):
-		return http.StatusUnauthorized, &model.APIResponse[any]{
+		return http.StatusUnauthorized, &model.SuccessResponse{
 			Success: false,
 			Code:    http.StatusUnauthorized,
 			Message: "invalid credentials",
 		}
 	case errors.Is(err, service.ErrUserDisabled):
-		return http.StatusForbidden, &model.APIResponse[any]{
+		return http.StatusForbidden, &model.SuccessResponse{
 			Success: false,
 			Code:    http.StatusForbidden,
 			Message: "user account is disabled",
 		}
 	case errors.Is(err, service.ErrOrderInvalidTransition):
-		return http.StatusConflict, &model.APIResponse[any]{
+		return http.StatusConflict, &model.SuccessResponse{
 			Success: false,
 			Code:    http.StatusConflict,
 			Message: apierr.ErrOrderInvalidTransition,
 		}
 	case errors.Is(err, service.ErrUserNotFound):
-		return http.StatusNotFound, &model.APIResponse[any]{
+		return http.StatusNotFound, &model.SuccessResponse{
 			Success: false,
 			Code:    http.StatusNotFound,
 			Message: apierr.ErrUserNotFound,
@@ -165,13 +165,13 @@ func MapServiceErrorWithPath(err error, path string) (int, *model.APIResponse[an
 		if path != "" {
 			message = getDomainNotFoundMessage(path)
 		}
-		return http.StatusNotFound, &model.APIResponse[any]{
+		return http.StatusNotFound, &model.SuccessResponse{
 			Success: false,
 			Code:    http.StatusNotFound,
 			Message: message,
 		}
 	default:
-		return http.StatusInternalServerError, &model.APIResponse[any]{
+		return http.StatusInternalServerError, &model.SuccessResponse{
 			Success: false,
 			Code:    http.StatusInternalServerError,
 			Message: "internal server error",

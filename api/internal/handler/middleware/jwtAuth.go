@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -32,7 +31,7 @@ func JWTAuth(secretKey string) gin.HandlerFunc {
 	}
 
 	// Token有效期（24小时）
-	tokenDuration := 24 * time.Hour
+	tokenDuration := auth.DefaultTokenDuration
 
 	// 创建JWT管理器
 	jwtManager := auth.NewJWTManager(secretKey, tokenDuration)
@@ -80,15 +79,17 @@ func JWTAuth(secretKey string) gin.HandlerFunc {
 		remainingTime := auth.GetTokenRemainingTime(claims)
 
 		// 如果Token即将过期（15分钟内），自动刷新
-		if remainingTime < 15*time.Minute {
+		if remainingTime < auth.TokenAutoRefreshWindow {
 			newToken, err := jwtManager.RefreshToken(claims)
 			if err == nil {
 				// 在响应头中返回新Token
 				c.Header("X-Refreshed-Token", newToken)
 
 				// 更新Context中的Token信息
-				newClaims, _ := jwtManager.VerifyToken(newToken)
-				if newClaims != nil {
+				newClaims, verifyErr := jwtManager.VerifyToken(newToken)
+				if verifyErr != nil {
+					logging.Warn("Failed to verify refreshed token", "error", verifyErr, "user_id", claims.UserID)
+				} else if newClaims != nil {
 					c.Set("jwt_claims", newClaims)
 					c.Set("user_id", newClaims.UserID)
 					c.Set("user_role", newClaims.Role)
@@ -98,7 +99,7 @@ func JWTAuth(secretKey string) gin.HandlerFunc {
 			} else {
 				logging.Warn("Failed to refresh token", "error", err, "user_id", claims.UserID)
 			}
-		} else if remainingTime < 1*time.Hour {
+		} else if remainingTime < auth.TokenRefreshRecommendationWindow {
 			// 仍然保留提示，让前端可以主动刷新
 			c.Header("X-Token-Refresh-Recommendation", "true")
 			c.Header("X-Token-Remaining", remainingTime.String())
@@ -176,7 +177,7 @@ func OptionalAuth(secretKey string) gin.HandlerFunc {
 		}
 	}
 
-	tokenDuration := 24 * time.Hour
+	tokenDuration := auth.DefaultTokenDuration
 	jwtManager := auth.NewJWTManager(secretKey, tokenDuration)
 
 	return func(c *gin.Context) {
