@@ -153,7 +153,7 @@ func TestDeleted(t *testing.T) {
 
 	Deleted(c)
 
-	var resp model.APIResponse[any]
+	var resp model.SuccessResponse
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	assert.NoError(t, err)
 	assert.True(t, resp.Success)

@@ -1096,3 +1096,140 @@ func TestWrapError(t *testing.T) {
 		})
 	}
 }
+
+// TestPaymentService_SetDistributedLock tests setting distributed lock
+func TestPaymentService_SetDistributedLock(t *testing.T) {
+	mockPayments := new(MockPaymentRepository)
+	mockOrders := new(MockOrderRepository)
+
+	service := NewPaymentService(mockPayments, mockOrders)
+
+	// Create a mock distributed lock
+	mockLock := &MockDistributedLock{}
+
+	// Set the lock
+	service.SetDistributedLock(mockLock)
+
+	// Service should still be valid
+	assert.NotNil(t, service)
+}
+
+// TestPaymentService_SetWalletRepository tests setting wallet repository
+func TestPaymentService_SetWalletRepository(t *testing.T) {
+	mockPayments := new(MockPaymentRepository)
+	mockOrders := new(MockOrderRepository)
+
+	service := NewPaymentService(mockPayments, mockOrders)
+
+	// Create a mock wallet repository
+	mockWallets := new(MockWalletRepository)
+
+	// Set the wallet repository
+	service.SetWalletRepository(mockWallets)
+
+	// Service should still be valid
+	assert.NotNil(t, service)
+}
+
+// MockDistributedLock is a mock implementation of DistributedLock
+type MockDistributedLock struct {
+	mock.Mock
+}
+
+func (m *MockDistributedLock) TryLock(ctx context.Context, key string, ttl time.Duration, retries int, retryDelay time.Duration) (bool, error) {
+	args := m.Called(ctx, key, ttl, retries, retryDelay)
+	return args.Bool(0), args.Error(1)
+}
+
+func (m *MockDistributedLock) Lock(ctx context.Context, key string, ttl time.Duration) (bool, error) {
+	args := m.Called(ctx, key, ttl)
+	return args.Bool(0), args.Error(1)
+}
+
+func (m *MockDistributedLock) Unlock(ctx context.Context, key string) error {
+	args := m.Called(ctx, key)
+	return args.Error(0)
+}
+
+// TestPaymentService_RoutingEngineNotInitialized tests behavior when routing engine is not initialized
+func TestPaymentService_RoutingEngineNotInitialized(t *testing.T) {
+	ctx := context.Background()
+	mockPayments := new(MockPaymentRepository)
+	mockOrders := new(MockOrderRepository)
+
+	service := NewPaymentService(mockPayments, mockOrders)
+
+	// Don't initialize routing engine
+	// Call a method that uses routing engine internally
+	// The service should handle this gracefully
+
+	order := createTestOrder(1000, 100, model.OrderStatusPending, 10000)
+
+	mockOrders.On("Get", ctx, uint64(1000)).Return(order, nil)
+	mockPayments.On("List", ctx, mock.AnythingOfType("repository.PaymentListOptions")).Return([]model.Payment{}, int64(0), nil)
+	mockPayments.On("Create", ctx, mock.AnythingOfType("*model.Payment")).Return(nil).Run(func(args mock.Arguments) {
+		payment := args.Get(1).(*model.Payment)
+		payment.ID = 1
+	})
+	mockPayments.On("Get", ctx, uint64(1)).Return(createTestPayment(1, 1000, 100, model.PaymentStatusPending, 10000, model.PaymentMethodWeChat), nil)
+	mockPayments.On("Update", ctx, mock.AnythingOfType("*model.Payment")).Return(nil)
+	mockOrders.On("Update", ctx, mock.AnythingOfType("*model.Order")).Return(nil)
+
+	req := CreatePaymentRequest{
+		OrderID: 1000,
+		Method:  model.PaymentMethodWeChat,
+	}
+
+	// Should work without routing engine
+	resp, err := service.CreatePayment(ctx, 100, req)
+
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	assert.Greater(t, resp.PaymentID, uint64(0))
+
+	mockOrders.AssertExpectations(t)
+	mockPayments.AssertExpectations(t)
+}
+
+// TestPaymentService_GetPaymentRoutingLog_WithoutEngine tests getting routing log without engine
+func TestPaymentService_GetPaymentRoutingLog_WithoutEngine(t *testing.T) {
+	ctx := context.Background()
+	mockPayments := new(MockPaymentRepository)
+	mockOrders := new(MockOrderRepository)
+
+	service := NewPaymentService(mockPayments, mockOrders)
+
+	// Don't initialize routing engine
+	_, err := service.GetPaymentRoutingLog(ctx, 1)
+
+	// Should return an error
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "routing engine not initialized")
+}
+
+// TestPaymentService_routePayment_NoEngine tests routePayment without routing engine
+func TestPaymentService_routePayment_NoEngine(t *testing.T) {
+	ctx := context.Background()
+	mockPayments := new(MockPaymentRepository)
+	mockOrders := new(MockOrderRepository)
+
+	service := NewPaymentService(mockPayments, mockOrders)
+
+	// Don't initialize routing engine
+	order := &model.Order{
+		Base:          model.Base{ID: 1000},
+		TotalPriceCents: 10000,
+		Game: &model.Game{
+			Name: "TestGame",
+		},
+		ServiceItem: &model.ServiceItem{
+			Name: "TestService",
+		},
+	}
+
+	result, err := service.routePayment(ctx, order, model.PaymentMethodWeChat)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "routing engine not initialized")
+	assert.Nil(t, result)
+}

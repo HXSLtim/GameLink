@@ -98,7 +98,7 @@ func TestParseIDOrFail_Empty(t *testing.T) {
 	assert.Equal(t, uint64(0), id)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 
-	var resp model.APIResponse[any]
+	var resp model.SuccessResponse
 	_ = json.Unmarshal(w.Body.Bytes(), &resp)
 	assert.Contains(t, resp.Message, "缺少id参数")
 }
@@ -113,7 +113,7 @@ func TestParseIDOrFail_Invalid(t *testing.T) {
 	assert.Equal(t, uint64(0), id)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 
-	var resp model.APIResponse[any]
+	var resp model.SuccessResponse
 	_ = json.Unmarshal(w.Body.Bytes(), &resp)
 	assert.Contains(t, resp.Message, "无效的id格式")
 }
@@ -128,7 +128,7 @@ func TestParseIDOrFail_Zero(t *testing.T) {
 	assert.Equal(t, uint64(0), id)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 
-	var resp model.APIResponse[any]
+	var resp model.SuccessResponse
 	_ = json.Unmarshal(w.Body.Bytes(), &resp)
 	assert.Contains(t, resp.Message, "id不能为0")
 }

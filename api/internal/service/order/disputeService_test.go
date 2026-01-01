@@ -1217,3 +1217,67 @@ func TestDisputeService_sendNotification(t *testing.T) {
 	assert.Equal(t, "Test Message", sentNotification.Message)
 	assert.Equal(t, model.NotificationPriorityHigh, sentNotification.Priority)
 }
+
+// TestDisputeService_GetDisputeDetail_Success tests successful dispute detail retrieval
+func TestDisputeService_GetDisputeDetail_Success(t *testing.T) {
+	ctx := context.Background()
+	disputeID := uint64(1)
+
+	expectedDispute := &model.OrderDispute{
+		Base:          model.Base{ID: disputeID},
+		OrderID:       100,
+		InitiatorID:   1,
+		InitiatorType: model.DisputeInitiatorUser,
+		Type:          model.DisputeTypeServiceQuality,
+		Reason:        "Service issue",
+		Status:        model.DisputeStatusPending,
+	}
+
+	disputes := &MockDisputeRepository{
+		getDispute: func(ctx context.Context, id uint64) (*model.OrderDispute, error) {
+			return expectedDispute, nil
+		},
+	}
+
+	orders := &MockOrderRepository{}
+	users := &MockUserRepository{}
+	operationLogs := &MockOperationLogRepository{}
+	notifications := &MockNotificationRepository{}
+	payments := &MockPaymentRepository{}
+
+	service := NewDisputeService(disputes, orders, users, operationLogs, notifications, payments)
+
+	result, err := service.GetDisputeDetail(ctx, disputeID)
+
+	require.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Equal(t, disputeID, result.ID)
+	assert.Equal(t, uint64(100), result.OrderID)
+	assert.Equal(t, model.DisputeStatusPending, result.Status)
+}
+
+// TestDisputeService_GetDisputeDetail_NotFound tests dispute detail when dispute doesn't exist
+func TestDisputeService_GetDisputeDetail_NotFound(t *testing.T) {
+	ctx := context.Background()
+	disputeID := uint64(999)
+
+	disputes := &MockDisputeRepository{
+		getDispute: func(ctx context.Context, id uint64) (*model.OrderDispute, error) {
+			return nil, repository.ErrNotFound
+		},
+	}
+
+	orders := &MockOrderRepository{}
+	users := &MockUserRepository{}
+	operationLogs := &MockOperationLogRepository{}
+	notifications := &MockNotificationRepository{}
+	payments := &MockPaymentRepository{}
+
+	service := NewDisputeService(disputes, orders, users, operationLogs, notifications, payments)
+
+	result, err := service.GetDisputeDetail(ctx, disputeID)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+	assert.Equal(t, repository.ErrNotFound, err)
+}

@@ -2,6 +2,7 @@
 package integration
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -18,8 +19,9 @@ import (
 )
 
 var (
-	testDB   *gorm.DB
-	initOnce sync.Once
+	testDB     *gorm.DB
+	initOnce   sync.Once
+	cleanMutex sync.Mutex
 )
 
 // TestDBConfig holds PostgreSQL test database configuration.
@@ -221,8 +223,17 @@ func migrateModels(db *gorm.DB) error {
 }
 
 // cleanTables truncates all tables to ensure test isolation.
+// Uses mutex to prevent concurrent deadlocks and timeout for safety.
 func cleanTables(t *testing.T, db *gorm.DB) {
 	t.Helper()
+
+	// Acquire mutex to prevent concurrent TRUNCATE operations
+	cleanMutex.Lock()
+	defer cleanMutex.Unlock()
+
+	// Add timeout context to prevent indefinite blocking
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
 	tables := []string{
 		// Dispute Templates & Chat Snapshots
@@ -280,11 +291,20 @@ func cleanTables(t *testing.T, db *gorm.DB) {
 	}
 
 	// Disable foreign key checks, truncate, then re-enable
-	db.Exec("SET session_replication_role = 'replica'")
-	for _, table := range tables {
-		db.Exec(fmt.Sprintf("TRUNCATE TABLE %s CASCADE", table))
+	if err := db.WithContext(ctx).Exec("SET session_replication_role = 'replica'").Error; err != nil {
+		t.Logf("Warning: failed to disable foreign key checks: %v", err)
 	}
-	db.Exec("SET session_replication_role = 'origin'")
+
+	for _, table := range tables {
+		if err := db.WithContext(ctx).Exec(fmt.Sprintf("TRUNCATE TABLE %s CASCADE", table)).Error; err != nil {
+			// Log warning but don't fail - table might not exist yet
+			t.Logf("Warning: failed to truncate %s: %v", table, err)
+		}
+	}
+
+	if err := db.WithContext(ctx).Exec("SET session_replication_role = 'origin'").Error; err != nil {
+		t.Logf("Warning: failed to re-enable foreign key checks: %v", err)
+	}
 }
 
 // CreateTestUser creates a test user and returns it.

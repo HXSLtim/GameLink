@@ -20,7 +20,7 @@ func TestError_APIError(t *testing.T) {
 	apiErr := apierr.BadRequest("invalid input").WithRequestID("req-123")
 	Error(c, apiErr)
 
-	var resp model.APIResponse[any]
+	var resp model.SuccessResponse
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	assert.NoError(t, err)
 	assert.False(t, resp.Success)
@@ -35,7 +35,7 @@ func TestError_RepositoryNotFound(t *testing.T) {
 
 	Error(c, repository.ErrNotFound)
 
-	var resp model.APIResponse[any]
+	var resp model.SuccessResponse
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	assert.NoError(t, err)
 	assert.False(t, resp.Success)
@@ -49,7 +49,7 @@ func TestError_ValidationError(t *testing.T) {
 	validationErr := apierr.NewValidationError("email", "invalid email format")
 	Error(c, validationErr)
 
-	var resp model.APIResponse[any]
+	var resp model.SuccessResponse
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	assert.NoError(t, err)
 	assert.False(t, resp.Success)
@@ -61,7 +61,7 @@ func TestError_GenericError(t *testing.T) {
 
 	Error(c, errors.New("something went wrong"))
 
-	var resp model.APIResponse[any]
+	var resp model.SuccessResponse
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	assert.NoError(t, err)
 	assert.False(t, resp.Success)
@@ -74,7 +74,7 @@ func TestErrorMsg(t *testing.T) {
 
 	ErrorMsg(c, http.StatusForbidden, "access denied")
 
-	var resp model.APIResponse[any]
+	var resp model.SuccessResponse
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	assert.NoError(t, err)
 	assert.False(t, resp.Success)
