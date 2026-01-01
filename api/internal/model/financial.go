@@ -87,7 +87,7 @@ const (
 	FinancialVoucherStatusApproved  FinancialVoucherStatus = "approved"  // 已审核
 	FinancialVoucherStatusRejected  FinancialVoucherStatus = "rejected"  // 已驳回
 	FinancialVoucherStatusPosted    FinancialVoucherStatus = "posted"    // 已过账
-	FinancialVoucherStatusCancelled FinancialVoucherStatus = "cancelled" // 已取消
+	FinancialVoucherStatusCanceled FinancialVoucherStatus = "canceled" // 已取消
 )
 
 // FinancialVoucher 财务凭证

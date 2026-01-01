@@ -61,7 +61,7 @@ type ServiceItem struct {
 	MaxPerOrder     int            `gorm:"column:max_per_order;default:0" json:"maxPerOrder"`                    // 单次购买数量限制（0=无限制）
 
 	// Relations
-	GameCategory *GameCategory `gorm:"foreignKey:CategoryID" json:"category,omitempty"` // 游戏分类关联
+	GameCategory *GameCategory `gorm:"foreignKey:CategoryID" json:"gameCategory,omitempty"` // 游戏分类关联
 }
 
 // TableName 指定表名

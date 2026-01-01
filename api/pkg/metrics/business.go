@@ -7,7 +7,7 @@ var BusinessMetrics *BusinessMetricsCollector
 type BusinessMetricsCollector struct {
 	OrdersCreatedTotal     *prometheus.CounterVec
 	OrdersCompletedTotal   *prometheus.CounterVec
-	OrdersCancelledTotal   *prometheus.CounterVec
+	OrdersCanceledTotal   *prometheus.CounterVec
 	OrdersRefundedTotal    *prometheus.CounterVec
 	OrderDurationHours     *prometheus.HistogramVec
 	PaymentsCreatedTotal   *prometheus.CounterVec
@@ -41,9 +41,9 @@ func InitBusinessMetrics(reg prometheus.Registerer) {
 				prometheus.CounterOpts{Name: "gamelink_orders_completed_total", Help: "Total number of orders completed"},
 				[]string{"game_type", "player_tier"},
 			),
-			OrdersCancelledTotal: prometheus.NewCounterVec(
-				prometheus.CounterOpts{Name: "gamelink_orders_cancelled_total", Help: "Total number of orders cancelled"},
-				[]string{"reason", "cancelled_by"},
+			OrdersCanceledTotal: prometheus.NewCounterVec(
+				prometheus.CounterOpts{Name: "gamelink_orders_canceled_total", Help: "Total number of orders canceled"},
+				[]string{"reason", "canceled_by"},
 			),
 			OrdersRefundedTotal: prometheus.NewCounterVec(
 				prometheus.CounterOpts{Name: "gamelink_orders_refunded_total", Help: "Total number of orders refunded"},
@@ -121,7 +121,7 @@ func InitBusinessMetrics(reg prometheus.Registerer) {
 
 	register(BusinessMetrics.OrdersCreatedTotal)
 	register(BusinessMetrics.OrdersCompletedTotal)
-	register(BusinessMetrics.OrdersCancelledTotal)
+	register(BusinessMetrics.OrdersCanceledTotal)
 	register(BusinessMetrics.OrdersRefundedTotal)
 	register(BusinessMetrics.OrderDurationHours)
 	register(BusinessMetrics.PaymentsCreatedTotal)
@@ -154,9 +154,9 @@ func RecordOrderCompleted(gameType, playerTier string, durationHours float64) {
 	}
 }
 
-func RecordOrderCancelled(reason, cancelledBy string) {
+func RecordOrderCanceled(reason, canceledBy string) {
 	if BusinessMetrics != nil {
-		BusinessMetrics.OrdersCancelledTotal.WithLabelValues(reason, cancelledBy).Inc()
+		BusinessMetrics.OrdersCanceledTotal.WithLabelValues(reason, canceledBy).Inc()
 	}
 }
 

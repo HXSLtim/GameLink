@@ -783,7 +783,7 @@ func TestWalletService_Recharge_MultipleRecharges(t *testing.T) {
 func TestWalletService_GetBalance_ContextCancellation(t *testing.T) {
 	svc, mockWallets, _, _ := createTestWalletService()
 
-	// Create a cancelled context
+	// Create a canceled context
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately
 

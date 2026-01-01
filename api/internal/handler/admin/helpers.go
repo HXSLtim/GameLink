@@ -348,7 +348,8 @@ func buildPaymentListOptions(c *gin.Context) (repository.PaymentListOptions, boo
 }
 
 // normalizeOrderStatus maps legacy spellings to canonical values.
-// Accepts "cancelled" (legacy) and returns "canceled".
+// Accepts both "cancelled" (legacy British spelling) and "canceled" (American spelling).
+// Returns "canceled" (canonical American spelling).
 func normalizeOrderStatus(s string) model.OrderStatus { //nolint:misspell // accepts legacy 'cancelled'
 	v := strings.TrimSpace(strings.ToLower(s))
 	switch v {
