@@ -3,6 +3,7 @@ package payment
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -436,12 +437,14 @@ func TestRealWeChatProvider_doRefundRequest(t *testing.T) {
 func TestGenerateNonceStr(t *testing.T) {
 	nonce1 := generateNonceStr()
 	assert.NotEmpty(t, nonce1)
-	// Verify it contains digits (timestamp)
-	assert.Contains(t, nonce1, "0")
+	// Verify it's a numeric string (UnixNano timestamp)
+	_, err := strconv.ParseInt(nonce1, 10, 64)
+	assert.NoError(t, err, "Nonce should be a valid numeric string")
 
-	// Generate another one - may or may not be different depending on timing
+	// Generate another one - should be different (unless very fast execution)
 	nonce2 := generateNonceStr()
 	assert.NotEmpty(t, nonce2)
+	// Most likely they will be different, but we don't strictly require it
 }
 
 // TestHmacSHA256 tests HMAC-SHA256 signature generation
