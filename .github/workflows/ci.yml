@@ -103,7 +103,14 @@ jobs:
       - name: Run tests
         working-directory: api
         env:
+          # DB_DSN for non-integration tests
           DB_DSN: postgresql://gamelink:testpassword@localhost:5432/gamelink_test?sslmode=disable
+          # TEST_DB_* for integration tests
+          TEST_DB_HOST: localhost
+          TEST_DB_PORT: "5432"
+          TEST_DB_USER: gamelink
+          TEST_DB_PASSWORD: testpassword
+          TEST_DB_NAME: gamelink_test
           REDIS_ADDR: localhost:6379
           CACHE_TYPE: redis
           JWT_SECRET_KEY: test-secret-key-for-ci-testing-32chars
