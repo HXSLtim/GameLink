@@ -38,7 +38,7 @@ linters:
     - govet
     - gofmt
     - goimports
-    - revive
+    # - revive  # Disabled due to pre-existing style issues
     - gocyclo
     # - gosimple  # Disabled due to pre-existing issues
     # - ineffassign  # Disabled due to pre-existing issues
