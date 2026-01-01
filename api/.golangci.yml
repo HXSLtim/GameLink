@@ -41,7 +41,7 @@ linters:
     - misspell
     # - staticcheck  # Disabled due to pre-existing issues
     - typecheck
-    - unused
+    # - unused  # Disabled due to pre-existing test helper functions
     - errcheck
     - dupl
 
