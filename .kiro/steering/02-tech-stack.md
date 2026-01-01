@@ -67,8 +67,23 @@
 | 触发方式 | Tag 推送 / 手动触发 |
 | 环境选择 | staging / production |
 | 预检查 | 版本和环境自动判断 |
-| 健康检查 | 部署后自动验证 |
+| 健康检查 | HTTP 请求验证（后端 `/api/v1/healthz` + 前端 `/`） |
+| 重试机制 | 5 次尝试，每次间隔 10 秒 |
+| 超时时间 | 每次 curl 请求 10 秒超时 |
 | 回滚机制 | 失败时自动回滚 |
+
+健康检查实现：
+```bash
+# 后端健康检查端点
+GET /api/v1/healthz  # 返回 200 + {"status": "ok"}
+
+# 健康检查逻辑（5 次重试）
+for i in {1..5}; do
+  curl -f -s --max-time 10 $BACKEND_URL/api/v1/healthz && exit 0
+  sleep 10
+done
+exit 1
+```
 
 ## 部署
 

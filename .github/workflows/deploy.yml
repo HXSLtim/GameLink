@@ -204,21 +204,62 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy to staging
+        id: deploy
         run: |
           echo "🚀 Deploying to staging environment..."
           echo "Version: ${{ needs.build-and-push.outputs.version }}"
           echo "Backend image: ${{ needs.build-and-push.outputs.backend-image }}"
           echo "Admin image: ${{ needs.build-and-push.outputs.admin-image }}"
-          
+
+          # Output deployment URL for health check
+          echo "url=https://staging.gamelink.example.com" >> $GITHUB_OUTPUT
+
           # 实际部署命令示例：
           # ssh ${{ secrets.STAGING_HOST }} "cd /app && docker-compose pull && docker-compose up -d"
 
       - name: Health check
         run: |
-          echo "Waiting for services to start..."
-          sleep 30
-          # curl -f https://staging.gamelink.example.com/api/v1/healthz || exit 1
-          echo "✅ Staging deployment completed"
+          echo "Waiting for services to be ready..."
+          STAGING_URL="${{ steps.deploy.outputs.url }}"
+          BACKEND_URL="${STAGING_URL}/api/v1/healthz"
+          FRONTEND_URL="${STAGING_URL}/"
+
+          # Function to perform health check with retry
+          health_check() {
+            local url=$1
+            local name=$2
+            local max_attempts=5
+            local wait_seconds=10
+
+            for i in $(seq 1 $max_attempts); do
+              echo "Attempt $i/$max_attempts: Checking $name at $url"
+              if curl -f -s --max-time 10 "$url" > /dev/null 2>&1; then
+                echo "✅ $name is healthy"
+                return 0
+              fi
+              if [ $i -lt $max_attempts ]; then
+                echo "Attempt $i failed, waiting ${wait_seconds}s before retry..."
+                sleep $wait_seconds
+              fi
+            done
+
+            echo "❌ $name health check failed after $max_attempts attempts"
+            return 1
+          }
+
+          # Check backend health
+          if ! health_check "$BACKEND_URL" "Backend"; then
+            echo "Backend health check failed at $BACKEND_URL"
+            exit 1
+          fi
+
+          # Check frontend accessibility
+          if ! health_check "$FRONTEND_URL" "Frontend"; then
+            echo "Frontend health check failed at $FRONTEND_URL"
+            exit 1
+          fi
+
+          echo "✅ Staging deployment health checks passed"
 
       - name: Notify on success
         if: success()
@@ -248,20 +289,61 @@ jobs:
           echo "Actor: ${{ github.actor }}"
 
       - name: Deploy to production
+        id: deploy
         run: |
           echo "🚀 Deploying to production environment..."
           echo "Backend image: ${{ needs.build-and-push.outputs.backend-image }}"
           echo "Admin image: ${{ needs.build-and-push.outputs.admin-image }}"
-          
+
+          # Output deployment URL for health check
+          echo "url=https://gamelink.example.com" >> $GITHUB_OUTPUT
+
           # 实际部署命令示例：
           # ssh ${{ secrets.PROD_HOST }} "cd /app && docker-compose pull && docker-compose up -d"
 
       - name: Health check
         run: |
-          echo "Waiting for services to start..."
-          sleep 30
-          # curl -f https://gamelink.example.com/api/v1/healthz || exit 1
-          echo "✅ Production deployment completed"
+          echo "Waiting for services to be ready..."
+          PROD_URL="${{ steps.deploy.outputs.url }}"
+          BACKEND_URL="${PROD_URL}/api/v1/healthz"
+          FRONTEND_URL="${PROD_URL}/"
+
+          # Function to perform health check with retry
+          health_check() {
+            local url=$1
+            local name=$2
+            local max_attempts=5
+            local wait_seconds=10
+
+            for i in $(seq 1 $max_attempts); do
+              echo "Attempt $i/$max_attempts: Checking $name at $url"
+              if curl -f -s --max-time 10 "$url" > /dev/null 2>&1; then
+                echo "✅ $name is healthy"
+                return 0
+              fi
+              if [ $i -lt $max_attempts ]; then
+                echo "Attempt $i failed, waiting ${wait_seconds}s before retry..."
+                sleep $wait_seconds
+              fi
+            done
+
+            echo "❌ $name health check failed after $max_attempts attempts"
+            return 1
+          }
+
+          # Check backend health
+          if ! health_check "$BACKEND_URL" "Backend"; then
+            echo "Backend health check failed at $BACKEND_URL"
+            exit 1
+          fi
+
+          # Check frontend accessibility
+          if ! health_check "$FRONTEND_URL" "Frontend"; then
+            echo "Frontend health check failed at $FRONTEND_URL"
+            exit 1
+          fi
+
+          echo "✅ Production deployment health checks passed"
 
       - name: Notify on success
         if: success()

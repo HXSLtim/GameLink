@@ -46,7 +46,7 @@ func readMaxRefreshWindow() time.Duration {
 			return d
 		}
 	}
-	return 7 * 24 * time.Hour
+	return DefaultMaxRefreshWindow
 }
 
 // GenerateToken 生成JWT Token
@@ -128,7 +128,7 @@ func (manager *JWTManager) VerifyToken(tokenString string) (*Claims, error) {
 // 当Token快要过期时，可以生成新的Token
 func (manager *JWTManager) RefreshToken(claims *Claims) (string, error) {
 	// 检查Token是否还有足够的时间
-	if time.Until(claims.ExpiresAt.Time) > 30*time.Second {
+	if time.Until(claims.ExpiresAt.Time) > TokenMinRefreshThreshold {
 		return "", errors.New("Token还未到刷新时间")
 	}
 

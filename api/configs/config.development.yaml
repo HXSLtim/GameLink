@@ -7,12 +7,12 @@ server:
 
 database:
   type: "postgres"
-  dsn: "host=localhost port=5432 user=gamelink password=gamelink dbname=gamelink_dev sslmode=disable"
+  dsn: "host=localhost port=5433 user=gamelink password=gamelink dbname=gamelink_dev sslmode=disable"
 
 cache:
-  type: "memory"
+  type: "redis"
   redis:
-    addr: "127.0.0.1:6379"
+    addr: "localhost:6380"
     password: ""
     db: 0
 
