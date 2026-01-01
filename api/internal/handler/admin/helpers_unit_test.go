@@ -438,12 +438,12 @@ func TestNormalizeOrderStatus(t *testing.T) {
 			want:  model.OrderStatusConfirmed,
 		},
 		{
-			name:  "Legacy British spelling cancelled", // nolint:misspell // testing legacy input
-			input: "cancelled",
+			name:  "Legacy British spelling canceled", // nolint:misspell // testing legacy input
+			input: "canceled",
 			want:  model.OrderStatusCanceled,
 		},
 		{
-			name:  "Modern spelling canceled",
+			name:  "American spelling canceled",
 			input: "canceled",
 			want:  model.OrderStatusCanceled,
 		},

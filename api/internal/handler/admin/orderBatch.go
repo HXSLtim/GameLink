@@ -1,8 +1,9 @@
 package admin
 
 import (
-	_ "gamelink/internal/model" // Imported for Swagger annotations
 	"time"
+
+	_ "gamelink/internal/model" // Imported for Swagger annotations
 
 	"github.com/gin-gonic/gin"
 

@@ -6,10 +6,11 @@ package mocks
 
 import (
 	context "context"
-	model "gamelink/internal/model"
-	repository "gamelink/internal/repository"
 	reflect "reflect"
 	time "time"
+
+	model "gamelink/internal/model"
+	repository "gamelink/internal/repository"
 
 	gomock "github.com/golang/mock/gomock"
 )

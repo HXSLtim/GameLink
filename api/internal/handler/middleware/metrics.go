@@ -69,7 +69,7 @@ func RecordOrderMetrics(status, gameType string, durationHours float64) {
 		if durationHours > 0 {
 			metrics.BusinessMetrics.OrderDurationHours.WithLabelValues(gameType).Observe(durationHours)
 		}
-	case "cancelled":
+	case "canceled":
 		metrics.BusinessMetrics.OrdersCanceledTotal.WithLabelValues("user_canceled", "user").Inc()
 	case "refunded":
 		metrics.BusinessMetrics.OrdersRefundedTotal.WithLabelValues("full").Inc()

@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"encoding/csv"
 	"fmt"
-	_ "gamelink/internal/model" // Imported for Swagger annotations
 	"net/http"
 	"strconv"
 	"strings"
+
+	_ "gamelink/internal/model" // Imported for Swagger annotations
 
 	"github.com/gin-gonic/gin"
 
