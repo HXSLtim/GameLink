@@ -9,7 +9,8 @@ linters-settings:
     disabled-checks:
       - ifElseChain
   revive:
-    severity: warning
+    severity: warning # Only warnings, not errors
+    confidence: 0.8
     rules:
       - name: exported
       - name: blank-imports
@@ -17,8 +18,11 @@ linters-settings:
       - name: errorf
       - name: error-naming
       - name: indent-error-flow
+        severity: warning
       - name: increment-decrement
+        severity: warning
       - name: var-naming
+        severity: warning
   misspell:
     locale: US
   dupl:
