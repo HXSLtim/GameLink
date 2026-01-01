@@ -30,7 +30,8 @@ func TestRateLimiter_TokenBucket(t *testing.T) {
 		// 6th request should be denied
 		allowed, remaining := tb.Allow()
 		assert.False(t, allowed)
-		assert.Equal(t, 0.0, remaining)
+		// Remaining should be less than 1 token (tiny refill may occur during test execution)
+		assert.Less(t, remaining, 1.0)
 	})
 
 	t.Run("Token refill over time", func(t *testing.T) {
