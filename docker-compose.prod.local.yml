@@ -46,7 +46,7 @@ services:
   # 后端服务
   backend:
     build:
-      context: ./backend
+      context: ./api
       dockerfile: Dockerfile
       args:
         GOPROXY: https://goproxy.cn,direct
@@ -72,7 +72,7 @@ services:
       - SUPER_ADMIN_EMAIL=${SUPER_ADMIN_EMAIL:-admin@gamelink.com}
       - SUPER_ADMIN_PASSWORD=${SUPER_ADMIN_PASSWORD}
     volumes:
-      - ./backend/configs:/app/configs:ro
+      - ./api/configs:/app/configs:ro
       - backend-logs:/app/logs
     depends_on:
       postgres:
@@ -82,7 +82,7 @@ services:
     networks:
       - gamelink-network
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/v1/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/v1/healthz"]
       interval: 30s
       timeout: 10s
       retries: 3

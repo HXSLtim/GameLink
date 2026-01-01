@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Form, Input, Button, Card, App, theme } from 'antd';
+import { Form, Input, Button, Card, App, theme, Checkbox } from 'antd';
 import { UserOutlined, LockOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
 import { authApi } from '@/api/auth';
 import { ENABLE_QUICK_LOGIN, DEBUG_USERS } from '@/config/debug';
+
+const REMEMBER_KEY = 'gamelink_admin_remember';
 
 /**
  * 管理后台登录页面
@@ -14,8 +16,22 @@ const AdminLogin: React.FC = () => {
     const { message } = App.useApp(); // 使用 App.useApp() 获取 message 实例
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
+    const [form] = Form.useForm();
 
-    const onLogin = async (values: { username: string; password: string }) => {
+    // 加载记住的账号密码
+    useEffect(() => {
+        const saved = localStorage.getItem(REMEMBER_KEY);
+        if (saved) {
+            try {
+                const { username, password, remember } = JSON.parse(saved);
+                form.setFieldsValue({ username, password, remember });
+            } catch {
+                localStorage.removeItem(REMEMBER_KEY);
+            }
+        }
+    }, [form]);
+
+    const onLogin = async (values: { username: string; password: string; remember?: boolean }) => {
         setLoading(true);
         try {
             const res = await authApi.login({
@@ -44,6 +60,17 @@ const AdminLogin: React.FC = () => {
             if (role !== 'ADMIN') {
                 message.error('您没有管理后台访问权限');
                 return;
+            }
+
+            // 保存或清除记住的账号密码
+            if (values.remember) {
+                localStorage.setItem(REMEMBER_KEY, JSON.stringify({
+                    username: values.username,
+                    password: values.password,
+                    remember: true
+                }));
+            } else {
+                localStorage.removeItem(REMEMBER_KEY);
             }
 
             localStorage.setItem('token', authToken);
@@ -122,10 +149,10 @@ const AdminLogin: React.FC = () => {
 
                 <Form
                     name="admin_login"
+                    form={form}
                     onFinish={onLogin}
                     layout="vertical"
                     size="large"
-                    initialValues={{ username: 'admin@gameLink.com', password: '' }}
                 >
                     <Form.Item
                         name="username"
@@ -145,6 +172,10 @@ const AdminLogin: React.FC = () => {
                             prefix={<LockOutlined />} 
                             placeholder="密码" 
                         />
+                    </Form.Item>
+
+                    <Form.Item name="remember" valuePropName="checked">
+                        <Checkbox>记住密码</Checkbox>
                     </Form.Item>
 
                     <Form.Item style={{ marginBottom: 16 }}>

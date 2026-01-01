@@ -124,6 +124,7 @@ docker exec -it gamelink-postgres psql -U gamelink -d gamelink
 - 单元测试：表驱动测试，mock 依赖
 - 集成测试：真实数据库（PostgreSQL），测试 fixtures
 - 并发测试：Race detector，压力测试
+- **E2E测试**：Playwright自动化测试覆盖关键业务流程（127个测试用例）
 
 ### 服务层覆盖率详情（2025-12-25）
 
@@ -155,3 +156,94 @@ docker exec -it gamelink-postgres psql -U gamelink -d gamelink
 - `admin`: 需要添加单元测试
 - `order`: 接近 80%，可继续提升
 - `payment`: 接近 80%，可继续提升
+
+## E2E 测试（前端自动化）
+
+### 概述
+使用 Playwright 进行管理后台的端到端测试，覆盖关键业务流程。
+
+### 测试覆盖
+
+| 模块 | 测试文件 | 测试数量 | 状态 |
+|------|---------|---------|------|
+| 认证 | `auth.spec.ts` | 19 | ✅ |
+| 用户管理 | `user-management.spec.ts` | 25 | ✅ |
+| 订单管理 | `order-management.spec.ts` | 20 | ✅ |
+| 支付管理 | `payment-management.spec.ts` | 22 | ✅ |
+| 陪玩师管理 | `player-management.spec.ts` | 28 | ✅ |
+| **总计** | - | **114** | ✅ |
+
+### 运行 E2E 测试
+
+```bash
+cd admin
+
+# 安装 Playwright 浏览器
+npm run test:e2e:install
+
+# 运行所有 E2E 测试（headless）
+npm run test:e2e
+
+# 运行测试并显示浏览器
+npm run test:e2e:headed
+
+# 调试模式
+npm run test:e2e:debug
+
+# 查看测试报告
+npm run test:e2e:report
+```
+
+### E2E 测试特点
+
+1. **Page Object Model**: 使用页面对象模式，提高测试可维护性
+2. **自动清理**: 测试数据自动创建和清理，避免污染环境
+3. **并发执行**: 支持多线程并行测试，提升执行速度
+4. **详细报告**: 失败时自动截图和录屏，便于调试
+5. **API 辅助**: 提供 API 辅助函数用于测试数据准备
+
+### Page Objects
+
+- `LoginPage`: 登录页面的所有交互
+- `UserManagementPage`: 用户管理 CRUD 操作
+- `OrderManagementPage`: 订单查看、取消、退款
+- `PaymentManagementPage`: 支付记录查看、退款处理
+- `PlayerManagementPage`: 陪玩师管理、审核流程
+
+### 测试数据管理
+
+- 使用 Fixtures 生成唯一测试数据（带时间戳）
+- 每个测试独立运行，互不影响
+- `afterEach` 钩子自动清理测试数据
+- 支持通过 API 直接创建测试数据
+
+### 环境要求
+
+- 后端 API 运行在 `http://localhost:8080`
+- 管理后台运行在 `http://localhost:5173`（自动启动）
+- 管理员账号：`admin` / `admin123`（可通过环境变量配置）
+
+### CI/CD 集成
+
+测试已集成到 CI/CD 流程，并执行以下**质量门策略**：
+
+**关键步骤（失败会阻塞构建）**:
+- Linter 检查（后端 golangci-lint，前端 ESLint）
+- 单元测试执行（后端 + 前端）
+- 覆盖率检查（低于 70% 构建失败）
+- 类型检查（前端 TypeScript）
+
+**非关键步骤（失败不阻塞构建）**:
+- 覆盖率报告上传（Codecov）
+- SARIF 结果上传（GitHub Security）
+
+E2E 测试可集成到 CI/CD 流程：
+
+```yaml
+- name: Run E2E tests
+  run: |
+    cd admin
+    npm run test:e2e
+```
+
+详细文档：[admin/tests/e2e/README.md](../../admin/tests/e2e/README.md)

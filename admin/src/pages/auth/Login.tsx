@@ -1,16 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Form, Input, Button, Card, message, Tabs, theme } from 'antd';
+import { Form, Input, Button, Card, message, Tabs, theme, Checkbox } from 'antd';
 import { LockOutlined, UserOutlined } from '@ant-design/icons';
 import { authApi } from '@/api/auth';
 import { ENABLE_QUICK_LOGIN, DEBUG_USERS } from '@/config/debug';
+
+const REMEMBER_KEY = 'gamelink_remember_login';
 
 const Login: React.FC = () => {
     const { token } = theme.useToken();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
+    const [form] = Form.useForm();
 
-    const onFinish = async (values: { username: string; password: string }) => {
+    // 加载记住的账号密码
+    useEffect(() => {
+        const saved = localStorage.getItem(REMEMBER_KEY);
+        if (saved) {
+            try {
+                const { username, password, remember } = JSON.parse(saved);
+                form.setFieldsValue({ username, password, remember });
+            } catch {
+                localStorage.removeItem(REMEMBER_KEY);
+            }
+        }
+    }, [form]);
+
+    const onFinish = async (values: { username: string; password: string; remember?: boolean }) => {
         setLoading(true);
         try {
             const res = await authApi.login({
@@ -33,9 +49,20 @@ const Login: React.FC = () => {
                 return;
             }
             
-            const { token, user } = response.data;
+            const { token: authToken, user } = response.data;
 
-            localStorage.setItem('token', token);
+            // 保存或清除记住的账号密码
+            if (values.remember) {
+                localStorage.setItem(REMEMBER_KEY, JSON.stringify({
+                    username: values.username,
+                    password: values.password,
+                    remember: true
+                }));
+            } else {
+                localStorage.removeItem(REMEMBER_KEY);
+            }
+
+            localStorage.setItem('token', authToken);
             localStorage.setItem('user_role', user.role);
             localStorage.setItem('user_info', JSON.stringify(user));
 
@@ -110,9 +137,9 @@ const Login: React.FC = () => {
                         children: (
                             <Form
                                 name="login"
+                                form={form}
                                 onFinish={onFinish}
                                 layout="vertical"
-                                initialValues={{ username: 'admin@gameLink.com', password: '123456' }}
                             >
                                 <Form.Item
                                     name="username"
@@ -126,6 +153,10 @@ const Login: React.FC = () => {
                                     rules={[{ required: true, message: '请输入密码！' }]}
                                 >
                                     <Input.Password prefix={<LockOutlined />} placeholder="密码" size="large" />
+                                </Form.Item>
+
+                                <Form.Item name="remember" valuePropName="checked">
+                                    <Checkbox>记住密码</Checkbox>
                                 </Form.Item>
 
                                 <Form.Item>

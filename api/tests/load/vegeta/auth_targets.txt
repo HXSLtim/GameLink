@@ -1,0 +1,22 @@
+# Vegeta HTTP Load Testing Targets for GameLink API
+# This file defines HTTP endpoints for load testing
+#
+# Usage:
+#   vegeta attack -targets=auth_targets.txt -rate=100 -duration=30s | vegeta report
+#
+# Format: METHOD URL HEADERS
+#
+
+# Authentication endpoints
+POST http://localhost:8080/api/v1/auth/register
+Content-Type: application/json
+
+{"phone":"13800138000","email":"loadtest1@gamelink.com","password":"password123","name":"Load Test User 1"}
+
+POST http://localhost:8080/api/v1/auth/login
+Content-Type: application/json
+
+{"username":"13800138000","password":"password123"}
+
+GET http://localhost:8080/api/v1/auth/me
+Authorization: Bearer YOUR_TOKEN_HERE

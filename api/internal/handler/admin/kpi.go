@@ -342,7 +342,7 @@ func (h *KPIHandler) UpdateTarget(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, model.SuccessResponse{
+	c.JSON(http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
@@ -380,7 +380,7 @@ func (h *KPIHandler) DeleteTarget(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, model.SuccessResponse{
+	c.JSON(http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",

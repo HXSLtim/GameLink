@@ -92,13 +92,14 @@ jobs:
         working-directory: api
         run: go mod verify
 
+      # CRITICAL: Code quality gate - linter failures block the build
       - name: Run linter
         working-directory: api
         run: |
           go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
           golangci-lint run --timeout=5m --out-format=github-actions
-        continue-on-error: true
 
+      # CRITICAL: Code quality gate - test failures block the build
       - name: Run tests
         working-directory: api
         env:
@@ -110,15 +111,19 @@ jobs:
           go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
           go tool cover -func=coverage.out | tail -1
 
+      # CRITICAL: Quality gate - coverage below 70% fails the build
       - name: Check coverage threshold
         working-directory: api
         run: |
           COVERAGE=$(go tool cover -func=coverage.out | tail -1 | awk '{print $3}' | sed 's/%//')
           echo "Coverage: $COVERAGE%"
           if (( $(echo "$COVERAGE < 70" | bc -l) )); then
-            echo "::warning::Coverage is below 70%: $COVERAGE%"
+            echo "::error::Coverage $COVERAGE% is below 70% threshold"
+            exit 1
           fi
+          echo "✅ Coverage meets 70% threshold"
 
+      # NON-CRITICAL: Coverage upload failures don't block the build
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:
@@ -179,20 +184,20 @@ jobs:
         working-directory: admin
         run: npm ci
 
+      # CRITICAL: Type check failures block the build
       - name: Type check
         working-directory: admin
         run: npm run type-check || npx tsc --noEmit
-        continue-on-error: true
 
+      # CRITICAL: Code quality gate - linter failures block the build
       - name: Run linter
         working-directory: admin
         run: npm run lint
-        continue-on-error: true
 
+      # CRITICAL: Code quality gate - test failures block the build
       - name: Run tests
         working-directory: admin
         run: npm run test:run || npm test -- --run
-        continue-on-error: true
 
   # 管理后台构建
   admin-build:

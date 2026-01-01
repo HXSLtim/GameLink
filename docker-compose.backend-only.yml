@@ -1,12 +1,47 @@
-# GameLink 仅后端服务 Docker Compose 配置
-# 用于快速测试后端服务
-# 使用方式: docker-compose -f docker-compose.backend-only.yml up -d
+# GameLink 后端开发环境 Docker Compose 配置（不含管理端）
+# 使用方式: docker compose -f docker-compose.backend-only.yml up -d --build
 
 services:
+  # PostgreSQL 数据库（开发环境）
+  postgres:
+    image: postgres:16-alpine
+    container_name: gamelink-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: gamelink
+      POSTGRES_PASSWORD: gamelink
+      POSTGRES_DB: gamelink_dev
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    networks:
+      - gamelink-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gamelink -d gamelink_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Redis（开发环境）
+  redis:
+    image: redis:7-alpine
+    container_name: gamelink-redis-dev
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    networks:
+      - gamelink-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   # 后端服务
   backend:
     build:
-      context: ./backend
+      context: ./api
       dockerfile: Dockerfile
       args:
         GOPROXY: https://goproxy.cn,direct
@@ -17,15 +52,26 @@ services:
     environment:
       - APP_ENV=development
       - SERVICE_PORT=8080
+      - CRYPTO_ENABLED=false
+      - DB_DSN=host=postgres port=5432 user=gamelink password=gamelink dbname=gamelink_dev sslmode=disable
+      - REDIS_ADDR=redis:6379
+      - REDIS_PASSWORD=
+      # 开发环境默认超管账号（便于本地管理端登录）
+      - SUPER_ADMIN_EMAIL=admin@gamelink.com
+      - SUPER_ADMIN_PASSWORD=admin123456
     volumes:
       # 挂载配置文件
-      - ./backend/configs:/app/configs:ro
-      # 挂载数据目录（SQLite数据库）
+      - ./api/configs:/app/configs:ro
       - backend-data:/app/var
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - gamelink-network
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/v1/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/v1/healthz"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -39,3 +85,5 @@ networks:
 volumes:
   backend-data:
     name: gamelink-backend-data
+  postgres_dev_data:
+    name: gamelink-postgres-dev-data

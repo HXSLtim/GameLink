@@ -46,19 +46,33 @@
 | 变更检测 | 只运行受影响的任务（api/admin） |
 | 并发控制 | 自动取消重复运行 |
 | 后端测试 | PostgreSQL + Redis 服务，race 检测 |
-| 覆盖率检查 | 70% 以下警告 |
-| 前端测试 | 类型检查 + Lint + 单元测试 |
+| 覆盖率检查 | **70% 以下构建失败**（质量门强制执行） |
+| 代码检查 | **Linter 失败会阻塞构建**（质量门强制执行） |
+| 前端测试 | 类型检查 + Lint + 单元测试（全部强制执行） |
 | Docker 构建 | main/dev 分支自动构建镜像 |
+
+**质量门策略**:
+- 后端/前端 Linter 失败 → **构建失败**
+- 测试失败 → **构建失败**
+- 覆盖率 < 70% → **构建失败**
+- 覆盖率上传失败 → **不阻塞构建**（非关键步骤）
 
 ### Security 流程 (security.yml)
 
 | 功能 | 说明 |
 |------|------|
-| Go 安全扫描 | Gosec + govulncheck |
-| NPM 审计 | 高危/严重漏洞检测 |
-| Docker 扫描 | Trivy 镜像漏洞扫描 |
-| 密钥检测 | Gitleaks 密钥泄露检测 |
+| Go 安全扫描 | Gosec（high 级别以上失败）+ govulncheck（有漏洞即失败） |
+| NPM 审计 | **高危/严重漏洞检测并失败构建** |
+| Docker 扫描 | Trivy 镜像漏洞扫描（CRITICAL/HIGH 级别失败） |
+| 密钥检测 | Gitleaks 密钥泄露检测（发现即失败） |
 | 定时运行 | 每周一凌晨自动运行 |
+
+**安全门策略**:
+- Go 已知漏洞 → **构建失败**
+- NPM高危/严重漏洞 → **构建失败**
+- Docker 镜像高危漏洞 → **构建失败**
+- 密钥泄露 → **构建失败**
+- SARIF 上传失败 → **不阻塞构建**（非关键步骤）
 
 ### Deploy 流程 (deploy.yml)
 
@@ -102,6 +116,8 @@ exit 1
 
 ### 环境变量 (.env)
 
+> **重要**: 生产环境必须配置以下安全密钥，否则应用将拒绝启动。详见 [安全配置指南](../../docs/SECURITY_CONFIG.md)
+
 ```bash
 # 数据库
 POSTGRES_USER=gamelink
@@ -111,17 +127,31 @@ POSTGRES_DB=gamelink
 # Redis
 REDIS_PASSWORD=<安全密码>
 
-# JWT
-JWT_SECRET_KEY=<32字符以上>
+# JWT（必须，32+字符）
+# 生成命令: openssl rand -base64 32
+JWT_SECRET_KEY=<生成的32+字符密钥>
 
 # 加密（生产环境必须）
 CRYPTO_ENABLED=true
-CRYPTO_SECRET_KEY=<32字符>
-CRYPTO_IV=<16字符>
+# 密钥长度要求：必须是 16/24/32 字节
+# 生成命令: openssl rand -base64 32 (密钥) 或 openssl rand -base64 16 (IV)
+CRYPTO_SECRET_KEY=<生成的32字节密钥>
+CRYPTO_IV=<生成的16字节IV>
 
-# 超级管理员
+# 超级管理员（必须，8+字符，包含大小写、数字、特殊符号）
+# 生成命令: openssl rand -base64 24
 SUPER_ADMIN_EMAIL=admin@gamelink.com
-SUPER_ADMIN_PASSWORD=<包含大小写数字特殊字符，8位以上>
+SUPER_ADMIN_PASSWORD=<生成的强密码>
+SUPER_ADMIN_NAME=Super Admin
+```
+
+**快速生成所有密钥**:
+```bash
+# Windows
+.\scripts\generate-secrets.ps1
+
+# Linux/Mac
+./scripts/generate-secrets.sh
 ```
 
 ### 注意事项

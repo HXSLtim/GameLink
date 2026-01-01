@@ -19,8 +19,11 @@ cache:
 
 crypto:
   enabled: true
-  secret_key: "" # 生产环境通过环境变量 CRYPTO_SECRET_KEY 提供
-  iv: ""         # 生产环境通过环境变量 CRYPTO_IV 提供
+  # 生产环境必须通过环境变量配置以下密钥（不可为空）
+  # CRYPTO_SECRET_KEY: 32字节密钥（AES-256-CBC），生成命令: openssl rand -base64 32
+  # CRYPTO_IV: 16字节初始化向量，生成命令: openssl rand -base64 16
+  secret_key: ""
+  iv: ""
   methods:
     - POST
     - PUT
@@ -39,8 +42,11 @@ seed:
   enabled: true
 
 super_admin:
-  email: "admin@gameLink.com" # 如不使用环境变量，可在此显式配置
-  password: "123456" # 生产环境务必改为强密码
+  email: "admin@gameLink.com" # 生产环境通过环境变量 SUPER_ADMIN_EMAIL 配置
+  # 生产环境必须通过环境变量配置强密码（不可为空）
+  # 要求：至少8字符，包含大小写字母、数字、特殊符号
+  # 生成命令: openssl rand -base64 24
+  password: ""
   name: "Super Admin"
   phone: ""
 

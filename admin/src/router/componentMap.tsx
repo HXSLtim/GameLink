@@ -21,6 +21,7 @@ const UserOrders = React.lazy(() => import('@/pages/user/Orders'));
 const PlayerHome = React.lazy(() => import('@/pages/player/Home'));
 const PlayerOrders = React.lazy(() => import('@/pages/player/Orders'));
 const PlayerEarnings = React.lazy(() => import('@/pages/player/Earnings'));
+const PlayerCertification = React.lazy(() => import('@/pages/player/Certification'));
 
 // 用户端扩展组件
 const UserWallet = React.lazy(() => import('@/pages/user/Wallet'));
@@ -118,9 +119,11 @@ export const componentMap: Record<string, React.LazyExoticComponent<React.Compon
     'PlayerHome': PlayerHome,
     'PlayerOrders': PlayerOrders,
     'PlayerEarnings': PlayerEarnings,
+    'PlayerCertification': PlayerCertification,
     'player/home': PlayerHome,
     'player/orders': PlayerOrders,
     'player/earnings': PlayerEarnings,
+    'player/certification': PlayerCertification,
     
     // 用户端扩展
     'UserWallet': UserWallet,

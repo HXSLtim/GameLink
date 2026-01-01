@@ -1,0 +1,489 @@
+package benchmarks
+
+import (
+	"context"
+	"fmt"
+	"testing"
+	"time"
+
+	"gamelink/benchmark/framework"
+	"gamelink/internal/model"
+)
+
+// BenchmarkDBInsert_Single benchmarks single database insert operations
+func BenchmarkDBInsert_Single(b *testing.B) {
+	config := framework.DefaultConfig()
+	suite := framework.NewBenchmarkSuite(b, config)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		user := &model.User{
+			Phone:     fmt.Sprintf("1380013%04d", i),
+			Email:     fmt.Sprintf("user%d@gamelink.com", i),
+			Name:      fmt.Sprintf("User %d", i),
+			Role:      model.RoleUser,
+			Status:    model.UserStatusActive,
+			PasswordHash: "$2a$10$hash",
+		}
+		if err := suite.DB.Create(user).Error; err != nil {
+			b.Fatalf("Failed to insert user: %v", err)
+		}
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkDBInsert_Batch benchmarks batch database insert operations
+func BenchmarkDBInsert_Batch(b *testing.B) {
+	config := framework.DefaultConfig()
+	suite := framework.NewBenchmarkSuite(b, config)
+
+	batchSize := 100
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		users := make([]*model.User, batchSize)
+		for j := 0; j < batchSize; j++ {
+			users[j] = &model.User{
+				Phone:     fmt.Sprintf("1390013%04d", i*batchSize+j),
+				Email:     fmt.Sprintf("batchuser%d@gamelink.com", i*batchSize+j),
+				Name:      fmt.Sprintf("Batch User %d", i*batchSize+j),
+				Role:      model.RoleUser,
+				Status:    model.UserStatusActive,
+				PasswordHash: "$2a$10$hash",
+			}
+		}
+
+		if err := suite.DB.CreateInBatches(users, batchSize).Error; err != nil {
+			b.Fatalf("Failed to batch insert users: %v", err)
+		}
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkDBSelectByPrimaryKey benchmarks primary key lookups
+func BenchmarkDBSelectByPrimaryKey(b *testing.B) {
+	config := framework.DefaultConfig()
+	suite := framework.NewBenchmarkSuite(b, config)
+
+	// Setup test data
+	users := make([]*model.User, 1000)
+	for i := 0; i < 1000; i++ {
+		users[i] = suite.CreateBenchmarkUser(b, fmt.Sprintf("1380014%04d", i))
+	}
+
+	ctx := context.Background()
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		userID := users[i%1000].ID
+		var user model.User
+		if err := suite.DB.WithContext(ctx).First(&user, userID).Error; err != nil {
+			b.Fatalf("Failed to select user: %v", err)
+		}
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkDBSelectByIndex benchmarks indexed column lookups
+func BenchmarkDBSelectByIndex(b *testing.B) {
+	config := framework.DefaultConfig()
+	suite := framework.NewBenchmarkSuite(b, config)
+
+	// Setup test data
+	users := make([]*model.User, 1000)
+	for i := 0; i < 1000; i++ {
+		users[i] = suite.CreateBenchmarkUser(b, fmt.Sprintf("1380015%04d", i))
+	}
+
+	ctx := context.Background()
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		phone := users[i%1000].Phone
+		var user model.User
+		if err := suite.DB.WithContext(ctx).Where("phone = ?", phone).First(&user).Error; err != nil {
+			b.Fatalf("Failed to select user by phone: %v", err)
+		}
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkDBSelect_Pagination benchmarks paginated queries
+func BenchmarkDBSelect_Pagination(b *testing.B) {
+	config := framework.DefaultConfig()
+	suite := framework.NewBenchmarkSuite(b, config)
+
+	// Setup test data
+	for i := 0; i < 1000; i++ {
+		suite.CreateBenchmarkUser(b, fmt.Sprintf("1380016%04d", i))
+	}
+
+	ctx := context.Background()
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		var users []model.User
+		if err := suite.DB.WithContext(ctx).Offset((i % 50) * 20).Limit(20).Find(&users).Error; err != nil {
+			b.Fatalf("Failed to select paginated users: %v", err)
+		}
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkDBUpdate benchmarks update operations
+func BenchmarkDBUpdate(b *testing.B) {
+	config := framework.DefaultConfig()
+	suite := framework.NewBenchmarkSuite(b, config)
+
+	// Setup test data
+	users := make([]*model.User, 1000)
+	for i := 0; i < 1000; i++ {
+		users[i] = suite.CreateBenchmarkUser(b, fmt.Sprintf("1380017%04d", i))
+	}
+
+	ctx := context.Background()
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		userID := users[i%1000].ID
+		if err := suite.DB.WithContext(ctx).Model(&model.User{}).Where("id = ?", userID).Update("name", fmt.Sprintf("Updated User %d", i)).Error; err != nil {
+			b.Fatalf("Failed to update user: %v", err)
+		}
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkDBDelete benchmarks delete operations
+func BenchmarkDBDelete(b *testing.B) {
+	config := framework.DefaultConfig()
+	suite := framework.NewBenchmarkSuite(b, config)
+
+	ctx := context.Background()
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		// Create user
+		user := suite.CreateBenchmarkUser(b, fmt.Sprintf("1380018%04d", i))
+
+		// Delete user
+		if err := suite.DB.WithContext(ctx).Delete(&model.User{}, user.ID).Error; err != nil {
+			b.Fatalf("Failed to delete user: %v", err)
+		}
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkDBJoin_Simple benchmarks simple join operations
+func BenchmarkDBJoin_Simple(b *testing.B) {
+	config := framework.DefaultConfig()
+	suite := framework.NewBenchmarkSuite(b, config)
+
+	// Setup test data
+	users := make([]*model.User, 100)
+	players := make([]*model.Player, 100)
+	for i := 0; i < 100; i++ {
+		users[i] = suite.CreateBenchmarkUser(b, fmt.Sprintf("1380019%04d", i))
+		players[i] = suite.CreateBenchmarkPlayer(b, users[i].ID, fmt.Sprintf("Player %d", i))
+	}
+
+	ctx := context.Background()
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		type result struct {
+			model.User
+			PlayerNickname string
+		}
+		var results []result
+
+		userID := users[i%100].ID
+		if err := suite.DB.WithContext(ctx).
+			Table("users").
+			Select("users.*, players.nickname as player_nickname").
+			Joins("LEFT JOIN players ON players.user_id = users.id").
+			Where("users.id = ?", userID).
+			Find(&results).Error; err != nil {
+			b.Fatalf("Failed to execute join query: %v", err)
+		}
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkDBJoin_Complex benchmarks complex join operations with multiple tables
+func BenchmarkDBJoin_Complex(b *testing.B) {
+	config := framework.DefaultConfig()
+	suite := framework.NewBenchmarkSuite(b, config)
+
+	// Setup test data
+	users := make([]*model.User, 50)
+	players := make([]*model.Player, 50)
+	games := make([]*model.Game, 10)
+	for i := 0; i < 10; i++ {
+		games[i] = suite.CreateBenchmarkGame(b, fmt.Sprintf("Game %d", i))
+	}
+	for i := 0; i < 50; i++ {
+		users[i] = suite.CreateBenchmarkUser(b, fmt.Sprintf("1380020%02d", i))
+		players[i] = suite.CreateBenchmarkPlayer(b, users[i].ID, fmt.Sprintf("Player %d", i))
+
+		// Create orders
+		for j := 0; j < 10; j++ {
+			order := &model.Order{
+				OrderNo:         fmt.Sprintf("ORDER_%d_%d", i, j),
+				UserID:          users[i].ID,
+				PlayerID:        &players[i].ID,
+				GameID:          &games[j%10].ID,
+				TotalPriceCents: 5000,
+				Status:          model.OrderStatusCompleted,
+			}
+			if err := suite.DB.Create(order).Error; err != nil {
+				b.Fatalf("Failed to create order: %v", err)
+			}
+		}
+	}
+
+	ctx := context.Background()
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		type result struct {
+			OrderNo        string
+			UserName       string
+			PlayerNickname string
+			GameName       string
+			TotalPriceCents int64
+		}
+		var results []result
+
+		if err := suite.DB.WithContext(ctx).
+			Table("orders").
+			Select("orders.order_no, users.name as user_name, players.nickname as player_nickname, games.name as game_name, orders.total_price_cents").
+			Joins("LEFT JOIN users ON users.id = orders.user_id").
+			Joins("LEFT JOIN players ON players.id = orders.player_id").
+			Joins("LEFT JOIN games ON games.id = orders.game_id").
+			Where("orders.user_id = ?", users[i%50].ID).
+			Find(&results).Error; err != nil {
+			b.Fatalf("Failed to execute complex join: %v", err)
+		}
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkDBCount benchmarks count operations
+func BenchmarkDBCount(b *testing.B) {
+	config := framework.DefaultConfig()
+	suite := framework.NewBenchmarkSuite(b, config)
+
+	// Setup test data
+	for i := 0; i < 1000; i++ {
+		suite.CreateBenchmarkUser(b, fmt.Sprintf("1380021%04d", i))
+	}
+
+	ctx := context.Background()
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		var count int64
+		if err := suite.DB.WithContext(ctx).Model(&model.User{}).Count(&count).Error; err != nil {
+			b.Fatalf("Failed to count users: %v", err)
+		}
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkDBTransaction benchmarks transaction operations
+func BenchmarkDBTransaction(b *testing.B) {
+	config := framework.DefaultConfig()
+	suite := framework.NewBenchmarkSuite(b, config)
+
+	ctx := context.Background()
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		err := suite.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+			user := &model.User{
+				Phone:     fmt.Sprintf("1380022%04d", i),
+				Email:     fmt.Sprintf("txuser%d@gamelink.com", i),
+				Name:      fmt.Sprintf("TX User %d", i),
+				Role:      model.RoleUser,
+				Status:    model.UserStatusActive,
+				PasswordHash: "$2a$10$hash",
+			}
+			if err := tx.Create(user).Error; err != nil {
+				return err
+			}
+
+			player := &model.Player{
+				UserID:   user.ID,
+				Nickname: fmt.Sprintf("TX Player %d", i),
+				Status:   model.PlayerStatusActive,
+			}
+			if err := tx.Create(player).Error; err != nil {
+				return err
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			b.Fatalf("Transaction failed: %v", err)
+		}
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkDBConcurrentInserts benchmarks concurrent insert operations
+func BenchmarkDBConcurrentInserts(b *testing.B) {
+	config := framework.DefaultConfig()
+	suite := framework.NewBenchmarkSuite(b, config)
+
+	b.ResetTimer()
+
+	b.RunParallel(func(pb *testing.PB) {
+		i := 0
+		for pb.Next() {
+			user := &model.User{
+				Phone:     fmt.Sprintf("1380023%04d", i),
+				Email:     fmt.Sprintf("concurrent%d@gamelink.com", i),
+				Name:      fmt.Sprintf("Concurrent User %d", i),
+				Role:      model.RoleUser,
+				Status:    model.UserStatusActive,
+				PasswordHash: "$2a$10$hash",
+			}
+			if err := suite.DB.Create(user).Error; err != nil {
+				b.Errorf("Failed to insert user: %v", err)
+			}
+			i++
+		}
+	})
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkDBSubQuery benchmarks subquery operations
+func BenchmarkDBSubQuery(b *testing.B) {
+	config := framework.DefaultConfig()
+	suite := framework.NewBenchmarkSuite(b, config)
+
+	// Setup test data
+	users := make([]*model.User, 100)
+	for i := 0; i < 100; i++ {
+		users[i] = suite.CreateBenchmarkUser(b, fmt.Sprintf("1380024%04d", i))
+		suite.CreateBenchmarkPlayer(b, users[i].ID, fmt.Sprintf("Player %d", i))
+	}
+
+	ctx := context.Background()
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		var users []model.User
+		// Find users who are players
+		if err := suite.DB.WithContext(ctx).
+			Where("id IN (SELECT user_id FROM players)").
+			Find(&users).Error; err != nil {
+			b.Fatalf("Failed to execute subquery: %v", err)
+		}
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkDBAggregate benchmarks aggregate functions
+func BenchmarkDBAggregate(b *testing.B) {
+	config := framework.DefaultConfig()
+	suite := framework.NewBenchmarkSuite(b, config)
+
+	// Setup test data with varying amounts
+	for i := 0; i < 1000; i++ {
+		user := suite.CreateBenchmarkUser(b, fmt.Sprintf("1380025%04d", i))
+
+		// Create orders with different prices
+		for j := 0; j < 5; j++ {
+			order := &model.Order{
+				OrderNo:         fmt.Sprintf("AGG_%d_%d", i, j),
+				UserID:          user.ID,
+				TotalPriceCents: int64((j + 1) * 1000),
+				Status:          model.OrderStatusCompleted,
+			}
+			if err := suite.DB.Create(order).Error; err != nil {
+				b.Fatalf("Failed to create order: %v", err)
+			}
+		}
+	}
+
+	ctx := context.Background()
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		type aggregateResult struct {
+			TotalAmount int64
+			AvgAmount   float64
+			MaxAmount   int64
+			MinAmount   int64
+			Count       int64
+		}
+
+		var result aggregateResult
+		if err := suite.DB.WithContext(ctx).
+			Model(&model.Order{}).
+			Select("COALESCE(SUM(total_price_cents), 0) as total_amount, COALESCE(AVG(total_price_cents), 0) as avg_amount, COALESCE(MAX(total_price_cents), 0) as max_amount, COALESCE(MIN(total_price_cents), 0) as min_amount, COUNT(*) as count").
+			Where("status = ?", model.OrderStatusCompleted).
+			Scan(&result).Error; err != nil {
+			b.Fatalf("Failed to execute aggregate query: %v", err)
+		}
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}

@@ -60,7 +60,7 @@ func reportChatMessageHandler(c *gin.Context, svc *chatservice.ChatService) {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondJSON(c, http.StatusOK, model.SuccessResponse{
+	respondJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "reported",
@@ -91,7 +91,7 @@ func listChatGroupsHandler(c *gin.Context, svc *chatservice.ChatService) {
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.SuccessResponse{
+	respondJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
@@ -164,7 +164,7 @@ func listChatMessagesHandler(c *gin.Context, svc *chatservice.ChatService) {
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.SuccessResponse{
+	respondJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",

@@ -93,6 +93,14 @@ type ChatGroupMember struct {
 }
 
 // ChatMessage represents persisted chat messages.
+//
+// Covering Index Notes:
+//   - idx_chat_messages_group_sent_covering: PostgreSQL covering index for message list queries
+//   - Created via migration: api/migrations/0001_add_covering_indexes.sql
+//   - Covers: SELECT id, content, sender_id FROM chat_messages WHERE group_id = ? ORDER BY created_at DESC LIMIT 50
+//   - Index columns: (group_id, created_at DESC)
+//   - INCLUDE columns: (id, content, sender_id, message_type, audit_status)
+//   - Benefit: Index-only scan for chat history, no heap fetch needed
 type ChatMessage struct {
 	Base
 	GroupID      uint64                 `json:"groupId" gorm:"column:group_id;not null;index"`

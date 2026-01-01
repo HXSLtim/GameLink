@@ -99,7 +99,7 @@ func markAllNotificationsReadHandler(c *gin.Context, svc *contentservice.Notific
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondJSON(c, http.StatusOK, model.SuccessResponse{
+	respondJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "所有通知已标记为已读",
@@ -130,7 +130,7 @@ func markNotificationsReadHandler(c *gin.Context, svc *contentservice.Notificati
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondJSON(c, http.StatusOK, model.SuccessResponse{
+	respondJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "已标记为已读",
@@ -192,7 +192,7 @@ func deleteNotificationHandler(c *gin.Context, svc *contentservice.NotificationS
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.SuccessResponse{
+	respondJSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "通知已删除",

@@ -575,6 +575,90 @@ disputed → refunded（争议通过，全额退款）
 - ChatMessage: (AuditStatus)
 - ChatGroupMember: (UserID)
 
+---
+
+### 覆盖索引（Covering Indexes）
+
+> 覆盖索引使用 PostgreSQL INCLUDE 子句（需要 PostgreSQL 11+），通过在索引中包含额外列避免回表查询，提升性能。
+> 迁移脚本：`api/migrations/0001_add_covering_indexes.sql`
+> 回滚脚本：`api/migrations/0001_add_covering_indexes_rollback.sql`
+
+#### 订单表覆盖索引
+- **索引名称**: `idx_orders_user_status_created_covering`
+- **索引列**: `(user_id, status, created_at DESC)`
+- **INCLUDE 列**: `(id, player_id, total_price_cents, commission_cents, player_income_cents)`
+- **优化查询**: 用户订单列表查询
+  ```sql
+  SELECT id, player_id, total_price_cents
+  FROM orders
+  WHERE user_id = ? AND status IN (?)
+  ORDER BY created_at DESC LIMIT 20;
+  ```
+- **性能收益**: 索引只扫描（Index-Only Scan），无需回表获取订单金额和陪玩师信息
+- **创建方式**: `CREATE INDEX CONCURRENTLY`
+- **维护成本**: 索引大小约增加 30%（包含 5 个额外列）
+- **适用场景**: 用户订单列表高频查询（每日 10万+ 次）
+
+#### 聊天消息表覆盖索引
+- **索引名称**: `idx_chat_messages_group_sent_covering`
+- **索引列**: `(group_id, created_at DESC)`
+- **INCLUDE 列**: `(id, content, sender_id, message_type, audit_status)`
+- **优化查询**: 聊天消息历史查询
+  ```sql
+  SELECT id, content, sender_id
+  FROM chat_messages
+  WHERE group_id = ?
+  ORDER BY created_at DESC
+  LIMIT 50;
+  ```
+- **性能收益**: 索引只扫描，无需回表获取消息内容和发送者信息
+- **创建方式**: `CREATE INDEX CONCURRENTLY`
+- **维护成本**: 索引大小约增加 50%（content 列较大）
+- **适用场景**: 聊天记录加载（每日 50万+ 次）
+
+#### 支付表覆盖索引（额外优化）
+- **索引名称**: `idx_payments_user_status_created_covering`
+- **索引列**: `(user_id, status, created_at DESC)`
+- **INCLUDE 列**: `(id, amount_cents, payment_method, provider_trade_no)`
+- **优化查询**: 支付历史查询
+  ```sql
+  SELECT id, amount_cents, payment_method
+  FROM payments
+  WHERE user_id = ? AND status IN (?)
+  ORDER BY created_at DESC;
+  ```
+- **性能收益**: 索引只扫描，无需回表获取支付金额和方式
+- **创建方式**: `CREATE INDEX CONCURRENTLY`
+- **维护成本**: 索引大小约增加 20%
+- **适用场景**: 用户钱包/支付记录查询
+
+#### 覆盖索引监控
+```sql
+-- 查看索引使用情况
+SELECT
+    schemaname,
+    tablename,
+    indexname,
+    idx_scan AS index_scans,
+    idx_tup_read AS tuples_read,
+    idx_tup_fetch AS tuples_fetched,
+    pg_size_pretty(pg_relation_size(indexrelid)) AS size
+FROM pg_stat_user_indexes
+WHERE tablename IN ('orders', 'chat_messages', 'payments')
+ORDER BY idx_scan DESC;
+
+-- 检查索引膨胀（需要 pgstattuple 扩展）
+SELECT * FROM pgstatindex('idx_orders_user_status_created_covering');
+```
+
+#### 覆盖索引维护
+- **重建频率**: 每季度或索引膨胀超过 30% 时
+- **重建命令**: `REINDEX INDEX CONCURRENTLY idx_orders_user_status_created_covering;`
+- **监控指标**:
+  - `idx_scan`: 索引扫描次数（应该持续增长）
+  - `idx_tup_fetch`: 回表获取元组次数（覆盖索引应该较低）
+  - 索引大小：监控增长速度
+
 #### 敏感词相关
 - SensitiveWord: (Category)
 - SensitiveWord: (MatchType)
@@ -625,6 +709,7 @@ disputed → refunded（争议通过，全额退款）
 
 | 日期 | 变更内容 |
 |------|----------|
+| 2026-01-01 | **覆盖索引优化**：新增 PostgreSQL 覆盖索引（Covering Indexes）提升查询性能。订单表：`idx_orders_user_status_created_covering`（包含 id, player_id, total_price_cents, commission_cents, player_income_cents）；聊天消息表：`idx_chat_messages_group_sent_covering`（包含 id, content, sender_id, message_type, audit_status）；支付表：`idx_payments_user_status_created_covering`（包含 id, amount_cents, payment_method, provider_trade_no）。使用 INCLUDE 子句避免回表查询，实现索引只扫描（Index-Only Scan）。迁移脚本：`api/migrations/0001_add_covering_indexes.sql` |
 | 2025-12-30 | **Game ↔ GameCategory 三层架构完整实现**：Game 模型添加 CategoryID 外键字段（*uint64，可空，级联 SET NULL），新增 GameCategory 关系；GameCategory.Games 和 GameCategory.ServiceItems 关系配置完成；Game.Category 字段标记为 @Deprecated |
 | 2025-12-29 | 新增 GameCategory 模型（游戏分类管理），ServiceItem 添加 CategoryID 外键关联 GameCategory |
 | 2025-12-25 | 统计模块索引修复：DailyStatistics→PlatformStatistics，PlayerStatistics 移除 StatsDate（累计统计无日期字段），新增 UserStatistics 唯一索引 |

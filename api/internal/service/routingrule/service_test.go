@@ -3695,3 +3695,171 @@ func TestRoutingEngine_GetAnyMerchantNo_DisabledChannels(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "ENABLED", result.MerchantNo)
 }
+
+// Batch operation tests
+
+func TestBatchUpdateRuleStatus_Success(t *testing.T) {
+	ctx := context.Background()
+	mockRuleRepo := new(MockRoutingRuleRepository)
+	mockEntityRepo := new(MockCollectionEntityRepository)
+	svc := NewRoutingRuleService(mockRuleRepo, mockEntityRepo)
+
+	rule1 := &model.RoutingRule{Base: model.Base{ID: 1}, Status: model.RuleStatusInactive}
+	rule2 := &model.RoutingRule{Base: model.Base{ID: 2}, Status: model.RuleStatusInactive}
+
+	mockRuleRepo.On("Get", ctx, uint64(1)).Return(rule1, nil)
+	mockRuleRepo.On("Get", ctx, uint64(2)).Return(rule2, nil)
+	mockRuleRepo.On("CreateHistory", ctx, mock.Anything).Return(nil)
+	mockRuleRepo.On("ToggleStatus", ctx, uint64(1), model.RuleStatusActive).Return(nil)
+	mockRuleRepo.On("ToggleStatus", ctx, uint64(2), model.RuleStatusActive).Return(nil)
+
+	result, err := svc.BatchUpdateRuleStatus(ctx, []uint64{1, 2}, true, 100)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 2, result.TotalCount)
+	assert.Equal(t, 2, result.SuccessCount)
+	assert.Equal(t, 0, result.FailedCount)
+	assert.Len(t, result.SuccessItems, 2)
+	assert.Len(t, result.FailedItems, 0)
+}
+
+func TestBatchUpdateRuleStatus_PartialFailure(t *testing.T) {
+	ctx := context.Background()
+	mockRuleRepo := new(MockRoutingRuleRepository)
+	mockEntityRepo := new(MockCollectionEntityRepository)
+	svc := NewRoutingRuleService(mockRuleRepo, mockEntityRepo)
+
+	rule1 := &model.RoutingRule{Base: model.Base{ID: 1}, Status: model.RuleStatusInactive}
+
+	mockRuleRepo.On("Get", ctx, uint64(1)).Return(rule1, nil)
+	mockRuleRepo.On("Get", ctx, uint64(999)).Return(nil, repository.ErrNotFound)
+	mockRuleRepo.On("CreateHistory", ctx, mock.Anything).Return(nil)
+	mockRuleRepo.On("ToggleStatus", ctx, uint64(1), model.RuleStatusActive).Return(nil)
+
+	result, err := svc.BatchUpdateRuleStatus(ctx, []uint64{1, 999}, true, 100)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 2, result.TotalCount)
+	assert.Equal(t, 1, result.SuccessCount)
+	assert.Equal(t, 1, result.FailedCount)
+	assert.Len(t, result.SuccessItems, 1)
+	assert.Len(t, result.FailedItems, 1)
+	assert.Contains(t, result.FailedItems[0].Message, "not found")
+}
+
+func TestBatchUpdateRuleStatus_AllFailed(t *testing.T) {
+	ctx := context.Background()
+	mockRuleRepo := new(MockRoutingRuleRepository)
+	mockEntityRepo := new(MockCollectionEntityRepository)
+	svc := NewRoutingRuleService(mockRuleRepo, mockEntityRepo)
+
+	mockRuleRepo.On("Get", ctx, uint64(999)).Return(nil, repository.ErrNotFound)
+	mockRuleRepo.On("Get", ctx, uint64(888)).Return(nil, repository.ErrNotFound)
+
+	result, err := svc.BatchUpdateRuleStatus(ctx, []uint64{999, 888}, true, 100)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 2, result.TotalCount)
+	assert.Equal(t, 0, result.SuccessCount)
+	assert.Equal(t, 2, result.FailedCount)
+	assert.Len(t, result.SuccessItems, 0)
+	assert.Len(t, result.FailedItems, 2)
+}
+
+func TestBatchUpdateRuleStatus_EmptyList(t *testing.T) {
+	ctx := context.Background()
+	mockRuleRepo := new(MockRoutingRuleRepository)
+	mockEntityRepo := new(MockCollectionEntityRepository)
+	svc := NewRoutingRuleService(mockRuleRepo, mockEntityRepo)
+
+	result, err := svc.BatchUpdateRuleStatus(ctx, []uint64{}, true, 100)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 0, result.TotalCount)
+	assert.Equal(t, 0, result.SuccessCount)
+	assert.Equal(t, 0, result.FailedCount)
+	assert.Len(t, result.SuccessItems, 0)
+	assert.Len(t, result.FailedItems, 0)
+}
+
+func TestBatchDeleteRules_Success(t *testing.T) {
+	ctx := context.Background()
+	mockRuleRepo := new(MockRoutingRuleRepository)
+	mockEntityRepo := new(MockCollectionEntityRepository)
+	svc := NewRoutingRuleService(mockRuleRepo, mockEntityRepo)
+
+	rule1 := &model.RoutingRule{Base: model.Base{ID: 1}}
+	rule2 := &model.RoutingRule{Base: model.Base{ID: 2}}
+
+	mockRuleRepo.On("Get", ctx, uint64(1)).Return(rule1, nil)
+	mockRuleRepo.On("Get", ctx, uint64(2)).Return(rule2, nil)
+	mockRuleRepo.On("Delete", ctx, uint64(1)).Return(nil)
+	mockRuleRepo.On("Delete", ctx, uint64(2)).Return(nil)
+
+	result, err := svc.BatchDeleteRules(ctx, []uint64{1, 2})
+
+	assert.NoError(t, err)
+	assert.Equal(t, 2, result.TotalCount)
+	assert.Equal(t, 2, result.SuccessCount)
+	assert.Equal(t, 0, result.FailedCount)
+	assert.Len(t, result.SuccessItems, 2)
+	assert.Len(t, result.FailedItems, 0)
+}
+
+func TestBatchDeleteRules_PartialFailure(t *testing.T) {
+	ctx := context.Background()
+	mockRuleRepo := new(MockRoutingRuleRepository)
+	mockEntityRepo := new(MockCollectionEntityRepository)
+	svc := NewRoutingRuleService(mockRuleRepo, mockEntityRepo)
+
+	rule1 := &model.RoutingRule{Base: model.Base{ID: 1}}
+
+	mockRuleRepo.On("Get", ctx, uint64(1)).Return(rule1, nil)
+	mockRuleRepo.On("Get", ctx, uint64(999)).Return(nil, repository.ErrNotFound)
+	mockRuleRepo.On("Delete", ctx, uint64(1)).Return(nil)
+
+	result, err := svc.BatchDeleteRules(ctx, []uint64{1, 999})
+
+	assert.NoError(t, err)
+	assert.Equal(t, 2, result.TotalCount)
+	assert.Equal(t, 1, result.SuccessCount)
+	assert.Equal(t, 1, result.FailedCount)
+	assert.Len(t, result.SuccessItems, 1)
+	assert.Len(t, result.FailedItems, 1)
+	assert.Contains(t, result.FailedItems[0].Message, "not found")
+}
+
+func TestBatchDeleteRules_AllFailed(t *testing.T) {
+	ctx := context.Background()
+	mockRuleRepo := new(MockRoutingRuleRepository)
+	mockEntityRepo := new(MockCollectionEntityRepository)
+	svc := NewRoutingRuleService(mockRuleRepo, mockEntityRepo)
+
+	mockRuleRepo.On("Get", ctx, uint64(999)).Return(nil, repository.ErrNotFound)
+	mockRuleRepo.On("Get", ctx, uint64(888)).Return(nil, repository.ErrNotFound)
+
+	result, err := svc.BatchDeleteRules(ctx, []uint64{999, 888})
+
+	assert.NoError(t, err)
+	assert.Equal(t, 2, result.TotalCount)
+	assert.Equal(t, 0, result.SuccessCount)
+	assert.Equal(t, 2, result.FailedCount)
+	assert.Len(t, result.SuccessItems, 0)
+	assert.Len(t, result.FailedItems, 2)
+}
+
+func TestBatchDeleteRules_EmptyList(t *testing.T) {
+	ctx := context.Background()
+	mockRuleRepo := new(MockRoutingRuleRepository)
+	mockEntityRepo := new(MockCollectionEntityRepository)
+	svc := NewRoutingRuleService(mockRuleRepo, mockEntityRepo)
+
+	result, err := svc.BatchDeleteRules(ctx, []uint64{})
+
+	assert.NoError(t, err)
+	assert.Equal(t, 0, result.TotalCount)
+	assert.Equal(t, 0, result.SuccessCount)
+	assert.Equal(t, 0, result.FailedCount)
+	assert.Len(t, result.SuccessItems, 0)
+	assert.Len(t, result.FailedItems, 0)
+}

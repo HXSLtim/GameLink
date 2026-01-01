@@ -220,7 +220,7 @@ func restoreRequestBody(c *gin.Context, data []byte) {
 }
 
 func abortWithCryptoError(c *gin.Context, status int, message string) {
-	c.AbortWithStatusJSON(status, model.SuccessResponse{
+	c.AbortWithStatusJSON(status, model.APIResponse[any]{
 		Success: false,
 		Code:    status,
 		Message: message,

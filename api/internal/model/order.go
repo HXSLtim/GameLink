@@ -18,6 +18,14 @@ const (
 )
 
 // Order represents a unified order (护航服务 or 礼物)
+//
+// Covering Index Notes:
+//   - idx_orders_user_status_created_covering: PostgreSQL covering index for user order list queries
+//   - Created via migration: api/migrations/0001_add_covering_indexes.sql
+//   - Covers: SELECT id, player_id, total_price_cents FROM orders WHERE user_id = ? AND status IN (?) ORDER BY created_at DESC
+//   - Index columns: (user_id, status, created_at DESC)
+//   - INCLUDE columns: (id, player_id, total_price_cents, commission_cents, player_income_cents)
+//   - Benefit: Index-only scan, no heap fetch needed for order list queries
 type Order struct {
 	Base
 	OrderNo           string  `json:"orderNo" gorm:"column:order_no;size:64;uniqueIndex:idx_order_no,where:order_no != ''"` // 订单号

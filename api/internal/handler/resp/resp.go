@@ -59,7 +59,7 @@ func Updated[T any](c *gin.Context, data T) {
 
 // Deleted sends a successful delete response.
 func Deleted(c *gin.Context) {
-	JSON(c, http.StatusOK, model.SuccessResponse{
+	JSON(c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "deleted",

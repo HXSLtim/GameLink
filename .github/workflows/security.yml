@@ -36,12 +36,13 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: api/go.sum
 
+      # CRITICAL: Security gate - high/critical severity issues fail the build
       - name: Run Gosec
         uses: securego/gosec@master
         with:
-          args: -exclude-dir=vendor -exclude-dir=docs -fmt=sarif -out=gosec.sarif ./api/...
-        continue-on-error: true
+          args: '-exclude-dir=vendor -exclude-dir=docs -fmt=sarif -out=gosec.sarif -severity=high ./api/...'
 
+      # NON-CRITICAL: SARIF upload failures don't block the build
       - name: Upload Gosec results
         uses: github/codeql-action/upload-sarif@v3
         with:
@@ -50,18 +51,19 @@ jobs:
         if: always()
         continue-on-error: true
 
+      # CRITICAL: Security gate - known vulnerabilities fail the build
       - name: Run govulncheck
         working-directory: api
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
           govulncheck -format text ./... 2>&1 | tee vuln-report.txt
-          
-          # 检查是否有漏洞
+
+          # Check for vulnerabilities
           if grep -q "Vulnerability" vuln-report.txt; then
-            echo "::warning::Vulnerabilities found, please review vuln-report.txt"
-          else
-            echo "✅ No vulnerabilities found"
+            echo "::error::Known vulnerabilities found, please review vuln-report.txt"
+            exit 1
           fi
+          echo "✅ No vulnerabilities found"
 
       - name: Check for outdated dependencies
         working-directory: api
@@ -89,25 +91,31 @@ jobs:
         working-directory: admin
         run: npm ci
 
+      # CRITICAL: Security gate - critical/high vulnerabilities fail the build
       - name: Run npm audit
         working-directory: admin
         run: |
           npm audit --audit-level=high --json > audit-report.json || true
-          
-          # 解析并显示结果
+
+          # Parse and display results
           HIGH=$(cat audit-report.json | jq '.metadata.vulnerabilities.high // 0')
           CRITICAL=$(cat audit-report.json | jq '.metadata.vulnerabilities.critical // 0')
-          
+
           echo "High: $HIGH, Critical: $CRITICAL"
-          
+
+          # Fail for critical vulnerabilities
           if [ "$CRITICAL" -gt 0 ]; then
             echo "::error::Critical vulnerabilities found: $CRITICAL"
             exit 1
           fi
-          
+
+          # Fail for high severity vulnerabilities
           if [ "$HIGH" -gt 0 ]; then
-            echo "::warning::High vulnerabilities found: $HIGH"
+            echo "::error::High severity vulnerabilities found: $HIGH"
+            exit 1
           fi
+
+          echo "✅ No critical or high vulnerabilities found"
 
       - name: Check for outdated packages
         working-directory: admin
@@ -132,6 +140,7 @@ jobs:
       - name: Build admin image
         run: docker build -t gamelink-admin:scan ./admin
 
+      # CRITICAL: Security gate - critical/high vulnerabilities fail the build
       - name: Run Trivy (backend)
         uses: aquasecurity/trivy-action@master
         with:
@@ -139,8 +148,9 @@ jobs:
           format: 'sarif'
           output: 'trivy-backend.sarif'
           severity: 'CRITICAL,HIGH'
-          exit-code: '0'
+          exit-code: '1'
 
+      # CRITICAL: Security gate - critical/high vulnerabilities fail the build
       - name: Run Trivy (admin)
         uses: aquasecurity/trivy-action@master
         with:
@@ -148,7 +158,7 @@ jobs:
           format: 'sarif'
           output: 'trivy-admin.sarif'
           severity: 'CRITICAL,HIGH'
-          exit-code: '0'
+          exit-code: '1'
 
       - name: Upload Trivy results (backend)
         uses: github/codeql-action/upload-sarif@v3
@@ -177,11 +187,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      # CRITICAL: Security gate - secret leaks fail the build
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        continue-on-error: true
 
   # 安全状态汇总
   security-status:
@@ -189,7 +199,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [go-security, npm-audit, docker-scan, secret-scan]
     if: always()
-    
+
     steps:
       - name: Check Security Status
         run: |
@@ -197,10 +207,14 @@ jobs:
           echo "NPM Audit: ${{ needs.npm-audit.result }}"
           echo "Docker Scan: ${{ needs.docker-scan.result }}"
           echo "Secret Scan: ${{ needs.secret-scan.result }}"
-          
+
+          # Fail the job if any security scan failed
           if [[ "${{ needs.go-security.result }}" == "failure" ]] || \
-             [[ "${{ needs.npm-audit.result }}" == "failure" ]]; then
-            echo "::warning::Security issues detected, please review"
-          else
-            echo "✅ Security scan completed"
+             [[ "${{ needs.npm-audit.result }}" == "failure" ]] || \
+             [[ "${{ needs.docker-scan.result }}" == "failure" ]] || \
+             [[ "${{ needs.secret-scan.result }}" == "failure" ]]; then
+            echo "::error::Security issues detected - scan results above"
+            exit 1
           fi
+
+          echo "✅ All security scans passed"

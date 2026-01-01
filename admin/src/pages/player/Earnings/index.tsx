@@ -1,6 +1,6 @@
 /**
  * 陪玩师端收益页面
- * 收益统计、提现申请、收益明细
+ * 收益统计、提现申请、收益明细、图表展示
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import {
@@ -20,6 +20,7 @@ import {
     message,
     Tabs,
     Progress,
+    DatePicker,
 } from 'antd';
 import {
     DollarOutlined,
@@ -28,10 +29,32 @@ import {
     RiseOutlined,
     WalletOutlined,
     CalendarOutlined,
+    LineChartOutlined,
+    BarChartOutlined,
+    TrophyOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
+import {
+    LineChart,
+    Line,
+    AreaChart,
+    Area,
+    BarChart,
+    Bar,
+    PieChart,
+    Pie,
+    Cell,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    Legend,
+    ResponsiveContainer,
+} from 'recharts';
+import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
+const { RangePicker } = DatePicker;
 
 interface EarningsInfo {
     availableBalance: number;
@@ -76,6 +99,10 @@ const PlayerEarnings: React.FC = () => {
     const [withdrawVisible, setWithdrawVisible] = useState(false);
     const [withdrawLoading, setWithdrawLoading] = useState(false);
     const [form] = Form.useForm();
+    const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs]>([
+        dayjs().subtract(30, 'day'),
+        dayjs(),
+    ]);
 
     const loadData = useCallback(async () => {
         setLoading(true);
@@ -179,6 +206,40 @@ const PlayerEarnings: React.FC = () => {
 
     const monthProgress = earningsInfo.monthEarnings > 0 ? Math.min((earningsInfo.monthEarnings / 10000) * 100, 100) : 0;
 
+    // 图表数据
+    const dailyEarningsData = [
+        { date: '12-01', earnings: 120, orders: 3 },
+        { date: '12-02', earnings: 180, orders: 5 },
+        { date: '12-03', earnings: 150, orders: 4 },
+        { date: '12-04', earnings: 220, orders: 6 },
+        { date: '12-05', earnings: 190, orders: 5 },
+        { date: '12-06', earnings: 280, orders: 7 },
+        { date: '12-07', earnings: 310, orders: 8 },
+        { date: '12-08', earnings: 250, orders: 6 },
+        { date: '12-09', earnings: 200, orders: 5 },
+        { date: '12-10', earnings: 240, orders: 6 },
+        { date: '12-11', earnings: 170, orders: 4 },
+        { date: '12-12', earnings: 290, orders: 7 },
+        { date: '12-13', earnings: 320, orders: 8 },
+        { date: '12-14', earnings: 350, orders: 9 },
+        { date: '12-15', earnings: 280, orders: 7 },
+        { date: '12-16', earnings: 380, orders: 10 },
+    ];
+
+    const weeklyEarningsData = [
+        { week: '第1周', earnings: 950, orders: 23 },
+        { week: '第2周', earnings: 1180, orders: 29 },
+        { week: '第3周', earnings: 1340, orders: 33 },
+        { week: '第4周', earnings: 1210, orders: 30 },
+    ];
+
+    const earningsTypeData = [
+        { name: '订单收益', value: 4580, color: '#52c41a' },
+        { name: '礼物收益', value: 680, color: '#eb2f96' },
+        { name: '奖励', value: 320, color: '#faad14' },
+        { name: '其他', value: 100, color: '#1890ff' },
+    ];
+
     return (
         <div style={{ padding: 24 }}>
             <Title level={4}><DollarOutlined /> 我的收益</Title>
@@ -242,6 +303,115 @@ const PlayerEarnings: React.FC = () => {
                     </Col>
                 </Row>
             </Card>
+
+            {/* 收益图表 */}
+            <Row gutter={16} style={{ marginBottom: 16 }}>
+                <Col xs={24} lg={16}>
+                    <Card
+                        title={
+                            <Space>
+                                <LineChartOutlined />
+                                <span>每日收益趋势</span>
+                            </Space>
+                        }
+                        extra={
+                            <RangePicker
+                                value={dateRange}
+                                onChange={(dates) => setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
+                                allowClear={false}
+                            />
+                        }
+                    >
+                        <ResponsiveContainer width="100%" height={300}>
+                            <AreaChart data={dailyEarningsData}>
+                                <defs>
+                                    <linearGradient id="colorEarnings" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#1890ff" stopOpacity={0.8}/>
+                                        <stop offset="95%" stopColor="#1890ff" stopOpacity={0}/>
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="date" />
+                                <YAxis />
+                                <Tooltip
+                                    formatter={(value: number) => [`¥${value}`, '收益']}
+                                    labelFormatter={(label) => `日期: ${label}`}
+                                />
+                                <Legend />
+                                <Area
+                                    type="monotone"
+                                    dataKey="earnings"
+                                    stroke="#1890ff"
+                                    fillOpacity={1}
+                                    fill="url(#colorEarnings)"
+                                    name="收益(元)"
+                                />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </Card>
+                </Col>
+                <Col xs={24} lg={8}>
+                    <Card
+                        title={
+                            <Space>
+                                <TrophyOutlined />
+                                <span>收益构成</span>
+                            </Space>
+                        }
+                    >
+                        <ResponsiveContainer width="100%" height={300}>
+                            <PieChart>
+                                <Pie
+                                    data={earningsTypeData}
+                                    cx="50%"
+                                    cy="50%"
+                                    labelLine={false}
+                                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                    outerRadius={80}
+                                    fill="#8884d8"
+                                    dataKey="value"
+                                >
+                                    {earningsTypeData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.color} />
+                                    ))}
+                                </Pie>
+                                <Tooltip formatter={(value: number) => `¥${value}`} />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </Card>
+                </Col>
+            </Row>
+
+            {/* 周收益统计 */}
+            <Row gutter={16} style={{ marginBottom: 16 }}>
+                <Col span={24}>
+                    <Card
+                        title={
+                            <Space>
+                                <BarChartOutlined />
+                                <span>每周收益统计</span>
+                            </Space>
+                        }
+                    >
+                        <ResponsiveContainer width="100%" height={250}>
+                            <BarChart data={weeklyEarningsData}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="week" />
+                                <YAxis />
+                                <Tooltip
+                                    formatter={(value: number, name: string) => [
+                                        name === 'earnings' ? `¥${value}` : value,
+                                        name === 'earnings' ? '收益' : '订单数'
+                                    ]}
+                                />
+                                <Legend />
+                                <Bar dataKey="earnings" fill="#52c41a" name="收益(元)" radius={[8, 8, 0, 0]} />
+                                <Bar dataKey="orders" fill="#1890ff" name="订单数" radius={[8, 8, 0, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </Card>
+                </Col>
+            </Row>
 
             {/* 收益明细 */}
             <Card title={<><HistoryOutlined /> 收益明细</>}>

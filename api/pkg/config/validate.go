@@ -68,6 +68,13 @@ func validateCryptoConfig(cfg AppConfig) error {
 	if !cfg.Crypto.Enabled {
 		return nil
 	}
+	// 检查密钥是否为空（P0安全漏洞）
+	if strings.TrimSpace(cfg.Crypto.SecretKey) == "" {
+		return errors.New("CRYPTO_SECRET_KEY is required when encryption is enabled")
+	}
+	if strings.TrimSpace(cfg.Crypto.IV) == "" {
+		return errors.New("CRYPTO_IV is required when encryption is enabled")
+	}
 	keyLen := len(cfg.Crypto.SecretKey)
 	if keyLen != 16 && keyLen != 24 && keyLen != 32 {
 		return fmt.Errorf("CRYPTO_SECRET_KEY must be 16, 24 or 32 bytes when encryption is enabled (current: %d)", keyLen)

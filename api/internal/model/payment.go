@@ -31,6 +31,14 @@ const (
 )
 
 // Payment records a payment attempt/result for an order.
+//
+// Covering Index Notes:
+//   - idx_payments_user_status_created_covering: PostgreSQL covering index for payment history queries
+//   - Created via migration: api/migrations/0001_add_covering_indexes.sql
+//   - Covers: SELECT id, amount_cents, payment_method FROM payments WHERE user_id = ? AND status IN (?) ORDER BY created_at DESC
+//   - Index columns: (user_id, status, created_at DESC)
+//   - INCLUDE columns: (id, amount_cents, payment_method, provider_trade_no)
+//   - Benefit: Index-only scan for payment history, no heap fetch needed
 type Payment struct {
 	Base
 	OrderID             uint64          `json:"orderId" gorm:"column:order_id;not null;index"`

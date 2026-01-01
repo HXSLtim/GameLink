@@ -4,7 +4,7 @@ import (
 	_ "gamelink/internal/model" // Imported for Swagger annotations
 	"github.com/gin-gonic/gin"
 
-	adminservice "gamelink/internal/service/admin"
+	_ "gamelink/internal/service/admin" // Imported for Swagger annotations
 	"gamelink/pkg/apierr"
 )
 

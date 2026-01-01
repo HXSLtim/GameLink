@@ -1,0 +1,27 @@
+# Vegeta HTTP Load Testing Targets for Order Operations
+#
+# Usage:
+#   vegeta attack -targets=order_targets.txt -rate=50 -duration=60s | vegeta report
+#
+
+# Create order
+POST http://localhost:8080/api/v1/orders
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{"playerId":1,"gameId":1,"title":"Load Test Order","description":"Performance test","scheduledStart":"2024-12-31T20:00:00Z","durationHours":1}
+
+# List orders
+GET http://localhost:8080/api/v1/orders?page=1&pageSize=20
+Authorization: Bearer YOUR_TOKEN_HERE
+
+# Get order by ID
+GET http://localhost:8080/api/v1/orders/1
+Authorization: Bearer YOUR_TOKEN_HERE
+
+# Cancel order
+PUT http://localhost:8080/api/v1/orders/1/cancel
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{"reason":"Load test cancellation"}
