@@ -16,12 +16,12 @@ import (
 
 // Mock implementations for testing
 type MockOrderRepository struct {
-	createOrder           func(ctx context.Context, order *model.Order) error
-	getOrder              func(ctx context.Context, id uint64) (*model.Order, error)
-	updateOrder           func(ctx context.Context, order *model.Order) error
-	updateWithCondition   func(ctx context.Context, orderID uint64, expectedStatus model.OrderStatus, updates map[string]any) (bool, error)
-	listOrders            func(ctx context.Context, opts repoiface.OrderListOptions) ([]model.Order, int64, error)
-	deleteOrder           func(ctx context.Context, id uint64) error
+	createOrder         func(ctx context.Context, order *model.Order) error
+	getOrder            func(ctx context.Context, id uint64) (*model.Order, error)
+	updateOrder         func(ctx context.Context, order *model.Order) error
+	updateWithCondition func(ctx context.Context, orderID uint64, expectedStatus model.OrderStatus, updates map[string]any) (bool, error)
+	listOrders          func(ctx context.Context, opts repoiface.OrderListOptions) ([]model.Order, int64, error)
+	deleteOrder         func(ctx context.Context, id uint64) error
 }
 
 func (m *MockOrderRepository) Create(ctx context.Context, order *model.Order) error {
@@ -94,14 +94,26 @@ func (m *MockPlayerRepository) Update(ctx context.Context, player *model.Player)
 }
 
 func (m *MockPlayerRepository) List(ctx context.Context) ([]model.Player, error) { return nil, nil }
-func (m *MockPlayerRepository) ListPaged(ctx context.Context, page, pageSize int) ([]model.Player, int64, error) { return nil, 0, nil }
-func (m *MockPlayerRepository) ListPagedWithFilter(ctx context.Context, page, pageSize int, keyword string, status *model.VerificationStatus) ([]model.Player, int64, error) { return nil, 0, nil }
+func (m *MockPlayerRepository) ListPaged(ctx context.Context, page, pageSize int) ([]model.Player, int64, error) {
+	return nil, 0, nil
+}
+func (m *MockPlayerRepository) ListPagedWithFilter(ctx context.Context, page, pageSize int, keyword string, status *model.VerificationStatus) ([]model.Player, int64, error) {
+	return nil, 0, nil
+}
 func (m *MockPlayerRepository) Create(ctx context.Context, player *model.Player) error { return nil }
-func (m *MockPlayerRepository) Delete(ctx context.Context, id uint64) error { return nil }
-func (m *MockPlayerRepository) BatchUpdateRank(ctx context.Context, ids []uint64, rank string) (int64, error) { return 0, nil }
-func (m *MockPlayerRepository) BatchUpdateHourlyRate(ctx context.Context, ids []uint64, rateCents int64) (int64, error) { return 0, nil }
-func (m *MockPlayerRepository) BatchUpdateStatus(ctx context.Context, ids []uint64, status model.VerificationStatus) (int64, error) { return 0, nil }
-func (m *MockPlayerRepository) BatchDelete(ctx context.Context, ids []uint64) (int64, error) { return 0, nil }
+func (m *MockPlayerRepository) Delete(ctx context.Context, id uint64) error            { return nil }
+func (m *MockPlayerRepository) BatchUpdateRank(ctx context.Context, ids []uint64, rank string) (int64, error) {
+	return 0, nil
+}
+func (m *MockPlayerRepository) BatchUpdateHourlyRate(ctx context.Context, ids []uint64, rateCents int64) (int64, error) {
+	return 0, nil
+}
+func (m *MockPlayerRepository) BatchUpdateStatus(ctx context.Context, ids []uint64, status model.VerificationStatus) (int64, error) {
+	return 0, nil
+}
+func (m *MockPlayerRepository) BatchDelete(ctx context.Context, ids []uint64) (int64, error) {
+	return 0, nil
+}
 
 type MockUserRepository struct {
 	getUser func(ctx context.Context, id uint64) (*model.User, error)
@@ -115,16 +127,30 @@ func (m *MockUserRepository) Get(ctx context.Context, id uint64) (*model.User, e
 }
 
 func (m *MockUserRepository) List(ctx context.Context) ([]model.User, error) { return nil, nil }
-func (m *MockUserRepository) ListPaged(ctx context.Context, page, pageSize int) ([]model.User, int64, error) { return nil, 0, nil }
-func (m *MockUserRepository) ListWithFilters(ctx context.Context, opts repository.UserListOptions) ([]model.User, int64, error) { return nil, 0, nil }
-func (m *MockUserRepository) Count(ctx context.Context, opts repository.UserListOptions) (int, error) { return 0, nil }
-func (m *MockUserRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.User, error) { return nil, nil }
-func (m *MockUserRepository) GetByPhone(ctx context.Context, phone string) (*model.User, error) { return nil, nil }
-func (m *MockUserRepository) FindByEmail(ctx context.Context, email string) (*model.User, error) { return nil, nil }
-func (m *MockUserRepository) FindByPhone(ctx context.Context, phone string) (*model.User, error) { return nil, nil }
+func (m *MockUserRepository) ListPaged(ctx context.Context, page, pageSize int) ([]model.User, int64, error) {
+	return nil, 0, nil
+}
+func (m *MockUserRepository) ListWithFilters(ctx context.Context, opts repository.UserListOptions) ([]model.User, int64, error) {
+	return nil, 0, nil
+}
+func (m *MockUserRepository) Count(ctx context.Context, opts repository.UserListOptions) (int, error) {
+	return 0, nil
+}
+func (m *MockUserRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.User, error) {
+	return nil, nil
+}
+func (m *MockUserRepository) GetByPhone(ctx context.Context, phone string) (*model.User, error) {
+	return nil, nil
+}
+func (m *MockUserRepository) FindByEmail(ctx context.Context, email string) (*model.User, error) {
+	return nil, nil
+}
+func (m *MockUserRepository) FindByPhone(ctx context.Context, phone string) (*model.User, error) {
+	return nil, nil
+}
 func (m *MockUserRepository) Create(ctx context.Context, user *model.User) error { return nil }
 func (m *MockUserRepository) Update(ctx context.Context, user *model.User) error { return nil }
-func (m *MockUserRepository) Delete(ctx context.Context, id uint64) error { return nil }
+func (m *MockUserRepository) Delete(ctx context.Context, id uint64) error        { return nil }
 
 type MockGameRepository struct {
 	getGame func(ctx context.Context, id uint64) (*model.Game, error)
@@ -138,15 +164,27 @@ func (m *MockGameRepository) Get(ctx context.Context, id uint64) (*model.Game, e
 }
 
 func (m *MockGameRepository) List(ctx context.Context) ([]model.Game, error) { return nil, nil }
-func (m *MockGameRepository) ListPaged(ctx context.Context, page, pageSize int) ([]model.Game, int64, error) { return nil, 0, nil }
-func (m *MockGameRepository) ListPagedWithFilter(ctx context.Context, page, pageSize int, keyword string) ([]model.Game, int64, error) { return nil, 0, nil }
+func (m *MockGameRepository) ListPaged(ctx context.Context, page, pageSize int) ([]model.Game, int64, error) {
+	return nil, 0, nil
+}
+func (m *MockGameRepository) ListPagedWithFilter(ctx context.Context, page, pageSize int, keyword string) ([]model.Game, int64, error) {
+	return nil, 0, nil
+}
 func (m *MockGameRepository) Create(ctx context.Context, game *model.Game) error { return nil }
 func (m *MockGameRepository) Update(ctx context.Context, game *model.Game) error { return nil }
-func (m *MockGameRepository) Delete(ctx context.Context, id uint64) error { return nil }
-func (m *MockGameRepository) BatchDelete(ctx context.Context, ids []uint64) (int64, error) { return 0, nil }
-func (m *MockGameRepository) BatchUpdateStatus(ctx context.Context, ids []uint64, isActive bool) (int64, error) { return 0, nil }
-func (m *MockGameRepository) BatchUpdateSortOrder(ctx context.Context, updates map[uint64]int) (int64, error) { return 0, nil }
-func (m *MockGameRepository) BatchUpdateCategory(ctx context.Context, ids []uint64, category string) (int64, error) { return 0, nil }
+func (m *MockGameRepository) Delete(ctx context.Context, id uint64) error        { return nil }
+func (m *MockGameRepository) BatchDelete(ctx context.Context, ids []uint64) (int64, error) {
+	return 0, nil
+}
+func (m *MockGameRepository) BatchUpdateStatus(ctx context.Context, ids []uint64, isActive bool) (int64, error) {
+	return 0, nil
+}
+func (m *MockGameRepository) BatchUpdateSortOrder(ctx context.Context, updates map[uint64]int) (int64, error) {
+	return 0, nil
+}
+func (m *MockGameRepository) BatchUpdateCategory(ctx context.Context, ids []uint64, category string) (int64, error) {
+	return 0, nil
+}
 
 type MockPaymentRepository struct {
 	listPayments func(ctx context.Context, opts repository.PaymentListOptions) ([]model.Payment, int64, error)
@@ -160,11 +198,17 @@ func (m *MockPaymentRepository) List(ctx context.Context, opts repository.Paymen
 }
 
 func (m *MockPaymentRepository) Create(ctx context.Context, payment *model.Payment) error { return nil }
-func (m *MockPaymentRepository) Get(ctx context.Context, id uint64) (*model.Payment, error) { return nil, nil }
-func (m *MockPaymentRepository) GetWithRelations(ctx context.Context, id uint64) (*model.Payment, error) { return nil, nil }
+func (m *MockPaymentRepository) Get(ctx context.Context, id uint64) (*model.Payment, error) {
+	return nil, nil
+}
+func (m *MockPaymentRepository) GetWithRelations(ctx context.Context, id uint64) (*model.Payment, error) {
+	return nil, nil
+}
 func (m *MockPaymentRepository) Update(ctx context.Context, payment *model.Payment) error { return nil }
-func (m *MockPaymentRepository) Delete(ctx context.Context, id uint64) error { return nil }
-func (m *MockPaymentRepository) GetByOrderID(ctx context.Context, orderID uint64) ([]model.Payment, error) { return nil, nil }
+func (m *MockPaymentRepository) Delete(ctx context.Context, id uint64) error              { return nil }
+func (m *MockPaymentRepository) GetByOrderID(ctx context.Context, orderID uint64) ([]model.Payment, error) {
+	return nil, nil
+}
 
 type MockReviewRepository struct {
 	listReviews func(ctx context.Context, opts repository.ReviewListOptions) ([]model.Review, int64, error)
@@ -177,18 +221,36 @@ func (m *MockReviewRepository) List(ctx context.Context, opts repository.ReviewL
 	return nil, 0, nil
 }
 
-func (m *MockReviewRepository) Get(ctx context.Context, id uint64) (*model.Review, error) { return nil, nil }
+func (m *MockReviewRepository) Get(ctx context.Context, id uint64) (*model.Review, error) {
+	return nil, nil
+}
 func (m *MockReviewRepository) Create(ctx context.Context, review *model.Review) error { return nil }
 func (m *MockReviewRepository) Update(ctx context.Context, review *model.Review) error { return nil }
-func (m *MockReviewRepository) UpdateStatus(ctx context.Context, id uint64, status model.ReviewStatus, rejectionReason string) error { return nil }
-func (m *MockReviewRepository) BatchUpdateStatus(ctx context.Context, ids []uint64, status model.ReviewStatus, rejectionReason string) error { return nil }
+func (m *MockReviewRepository) UpdateStatus(ctx context.Context, id uint64, status model.ReviewStatus, rejectionReason string) error {
+	return nil
+}
+func (m *MockReviewRepository) BatchUpdateStatus(ctx context.Context, ids []uint64, status model.ReviewStatus, rejectionReason string) error {
+	return nil
+}
 func (m *MockReviewRepository) Delete(ctx context.Context, id uint64) error { return nil }
-func (m *MockReviewRepository) ListPending(ctx context.Context, page, pageSize int) ([]model.Review, int64, error) { return nil, 0, nil }
-func (m *MockReviewRepository) GetStats(ctx context.Context) (repository.ReviewStats, error) { return repository.ReviewStats{}, nil }
-func (m *MockReviewRepository) GetTrend(ctx context.Context, days int) ([]repository.DateValue, error) { return nil, nil }
-func (m *MockReviewRepository) GetTopPlayersByReviewCount(ctx context.Context, limit int) ([]repository.PlayerReviewStats, error) { return nil, nil }
-func (m *MockReviewRepository) GetTopPlayersByRating(ctx context.Context, limit int) ([]repository.PlayerReviewStats, error) { return nil, nil }
-func (m *MockReviewRepository) GetGameStats(ctx context.Context) ([]repository.GameReviewStats, error) { return nil, nil }
+func (m *MockReviewRepository) ListPending(ctx context.Context, page, pageSize int) ([]model.Review, int64, error) {
+	return nil, 0, nil
+}
+func (m *MockReviewRepository) GetStats(ctx context.Context) (repository.ReviewStats, error) {
+	return repository.ReviewStats{}, nil
+}
+func (m *MockReviewRepository) GetTrend(ctx context.Context, days int) ([]repository.DateValue, error) {
+	return nil, nil
+}
+func (m *MockReviewRepository) GetTopPlayersByReviewCount(ctx context.Context, limit int) ([]repository.PlayerReviewStats, error) {
+	return nil, nil
+}
+func (m *MockReviewRepository) GetTopPlayersByRating(ctx context.Context, limit int) ([]repository.PlayerReviewStats, error) {
+	return nil, nil
+}
+func (m *MockReviewRepository) GetGameStats(ctx context.Context) ([]repository.GameReviewStats, error) {
+	return nil, nil
+}
 
 type MockCommissionRepository struct {
 	getRule            func(ctx context.Context, id uint64) (*model.CommissionRule, error)
@@ -233,19 +295,43 @@ func (m *MockCommissionRepository) CreateRecord(ctx context.Context, record *mod
 	return nil
 }
 
-func (m *MockCommissionRepository) CreateRule(ctx context.Context, rule *model.CommissionRule) error { return nil }
-func (m *MockCommissionRepository) ListRules(ctx context.Context, opts commissionrepo.CommissionRuleListOptions) ([]model.CommissionRule, int64, error) { return nil, 0, nil }
-func (m *MockCommissionRepository) UpdateRule(ctx context.Context, rule *model.CommissionRule) error { return nil }
+func (m *MockCommissionRepository) CreateRule(ctx context.Context, rule *model.CommissionRule) error {
+	return nil
+}
+func (m *MockCommissionRepository) ListRules(ctx context.Context, opts commissionrepo.CommissionRuleListOptions) ([]model.CommissionRule, int64, error) {
+	return nil, 0, nil
+}
+func (m *MockCommissionRepository) UpdateRule(ctx context.Context, rule *model.CommissionRule) error {
+	return nil
+}
 func (m *MockCommissionRepository) DeleteRule(ctx context.Context, id uint64) error { return nil }
-func (m *MockCommissionRepository) GetRecord(ctx context.Context, id uint64) (*model.CommissionRecord, error) { return nil, nil }
-func (m *MockCommissionRepository) ListRecords(ctx context.Context, opts commissionrepo.CommissionRecordListOptions) ([]model.CommissionRecord, int64, error) { return nil, 0, nil }
-func (m *MockCommissionRepository) UpdateRecord(ctx context.Context, record *model.CommissionRecord) error { return nil }
-func (m *MockCommissionRepository) CreateSettlement(ctx context.Context, settlement *model.MonthlySettlement) error { return nil }
-func (m *MockCommissionRepository) GetSettlement(ctx context.Context, id uint64) (*model.MonthlySettlement, error) { return nil, nil }
-func (m *MockCommissionRepository) GetSettlementByPlayerMonth(ctx context.Context, playerID uint64, month string) (*model.MonthlySettlement, error) { return nil, nil }
-func (m *MockCommissionRepository) ListSettlements(ctx context.Context, opts commissionrepo.SettlementListOptions) ([]model.MonthlySettlement, int64, error) { return nil, 0, nil }
-func (m *MockCommissionRepository) UpdateSettlement(ctx context.Context, settlement *model.MonthlySettlement) error { return nil }
-func (m *MockCommissionRepository) GetPlayerMonthlyIncome(ctx context.Context, playerID uint64, month string) (int64, error) { return 0, nil }
+func (m *MockCommissionRepository) GetRecord(ctx context.Context, id uint64) (*model.CommissionRecord, error) {
+	return nil, nil
+}
+func (m *MockCommissionRepository) ListRecords(ctx context.Context, opts commissionrepo.CommissionRecordListOptions) ([]model.CommissionRecord, int64, error) {
+	return nil, 0, nil
+}
+func (m *MockCommissionRepository) UpdateRecord(ctx context.Context, record *model.CommissionRecord) error {
+	return nil
+}
+func (m *MockCommissionRepository) CreateSettlement(ctx context.Context, settlement *model.MonthlySettlement) error {
+	return nil
+}
+func (m *MockCommissionRepository) GetSettlement(ctx context.Context, id uint64) (*model.MonthlySettlement, error) {
+	return nil, nil
+}
+func (m *MockCommissionRepository) GetSettlementByPlayerMonth(ctx context.Context, playerID uint64, month string) (*model.MonthlySettlement, error) {
+	return nil, nil
+}
+func (m *MockCommissionRepository) ListSettlements(ctx context.Context, opts commissionrepo.SettlementListOptions) ([]model.MonthlySettlement, int64, error) {
+	return nil, 0, nil
+}
+func (m *MockCommissionRepository) UpdateSettlement(ctx context.Context, settlement *model.MonthlySettlement) error {
+	return nil
+}
+func (m *MockCommissionRepository) GetPlayerMonthlyIncome(ctx context.Context, playerID uint64, month string) (int64, error) {
+	return 0, nil
+}
 func (m *MockCommissionRepository) GetMonthlyStats(ctx context.Context, month string) (*commissionrepo.MonthlyStats, error) {
 	return &commissionrepo.MonthlyStats{}, nil
 }
@@ -259,34 +345,34 @@ func createTestOrder(id uint64, userID uint64, status model.OrderStatus) *model.
 	scheduledEnd := scheduledStart.Add(time.Hour)
 
 	return &model.Order{
-		Base:             model.Base{ID: id},
-		OrderNo:          model.GenerateEscortOrderNo(),
-		UserID:           userID,
-		ItemID:           1,
-		PlayerID:         &playerID,
-		GameID:           &gameID,
-		Quantity:         1,
-		UnitPriceCents:   5000,
-		TotalPriceCents:  5000,
-		CommissionCents:  1000,
+		Base:              model.Base{ID: id},
+		OrderNo:           model.GenerateEscortOrderNo(),
+		UserID:            userID,
+		ItemID:            1,
+		PlayerID:          &playerID,
+		GameID:            &gameID,
+		Quantity:          1,
+		UnitPriceCents:    5000,
+		TotalPriceCents:   5000,
+		CommissionCents:   1000,
 		PlayerIncomeCents: 4000,
-		Currency:         model.CurrencyCNY,
-		Status:           status,
-		Title:            "Test Order",
-		Description:      "Test Description",
-		ScheduledStart:   &scheduledStart,
-		ScheduledEnd:     &scheduledEnd,
-		OrderConfig:      "{}",
+		Currency:          model.CurrencyCNY,
+		Status:            status,
+		Title:             "Test Order",
+		Description:       "Test Description",
+		ScheduledStart:    &scheduledStart,
+		ScheduledEnd:      &scheduledEnd,
+		OrderConfig:       "{}",
 	}
 }
 
 func createTestPlayer(id uint64, userID uint64) *model.Player {
 	return &model.Player{
-		Base:             model.Base{ID: id},
-		UserID:           userID,
-		Nickname:         "TestPlayer",
-		Rank:             "Gold",
-		HourlyRateCents:  5000,
+		Base:               model.Base{ID: id},
+		UserID:             userID,
+		Nickname:           "TestPlayer",
+		Rank:               "Gold",
+		HourlyRateCents:    5000,
 		VerificationStatus: model.VerificationVerified,
 	}
 }
@@ -1203,8 +1289,8 @@ func TestOrderService_recordCommissionAsync_AlreadyRecorded(t *testing.T) {
 	orderID := uint64(1)
 
 	existingRecord := &model.CommissionRecord{
-		ID:              1,
-		OrderID:         orderID,
+		ID:               1,
+		OrderID:          orderID,
 		TotalAmountCents: 5000,
 	}
 
@@ -1241,7 +1327,7 @@ func TestOrderService_calculateOrderPricing(t *testing.T) {
 
 	totalPrice, commissionCents, playerIncomeCents := service.calculateOrderPricing(player, req)
 
-	assert.Equal(t, int64(10000), totalPrice)      // 5000 * 2 hours
+	assert.Equal(t, int64(10000), totalPrice)       // 5000 * 2 hours
 	assert.Equal(t, int64(2000), commissionCents)   // 20% of 10000
 	assert.Equal(t, int64(8000), playerIncomeCents) // 10000 - 2000
 }

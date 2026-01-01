@@ -1,8 +1,8 @@
 package service
 
 import (
-	"gamelink/pkg/apierr"
 	"gamelink/internal/repository"
+	"gamelink/pkg/apierr"
 )
 
 // Common service-level sentinel errors for cross-layer mapping.

@@ -125,7 +125,7 @@ func TestPlayerService_ListPlayers(t *testing.T) {
 
 	// Create test data
 	testGame := CreateTestGame(t, db, "test_game_list")
-	
+
 	// Create multiple players
 	for i := 0; i < 5; i++ {
 		playerUser := CreateUniqueTestUser(t, db, "list_player")
@@ -436,4 +436,3 @@ func TestPlayerService_GetPlayerProfile(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, testPlayer.ID, resp.Player.ID)
 }
-

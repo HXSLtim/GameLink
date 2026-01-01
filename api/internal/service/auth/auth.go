@@ -9,11 +9,11 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"gamelink/pkg/apierr"
-	"gamelink/pkg/auth"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	"gamelink/internal/service"
+	"gamelink/pkg/apierr"
+	"gamelink/pkg/auth"
 )
 
 var (

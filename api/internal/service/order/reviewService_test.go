@@ -13,11 +13,11 @@ import (
 
 // MockReviewRepository is a mock implementation of ReviewRepository for testing
 type MockReviewRepositoryForReviewService struct {
-	getReview     func(ctx context.Context, id uint64) (*model.Review, error)
-	listReviews   func(ctx context.Context, opts repository.ReviewListOptions) ([]model.Review, int64, error)
-	createReview  func(ctx context.Context, review *model.Review) error
-	updateReview  func(ctx context.Context, review *model.Review) error
-	deleteReview  func(ctx context.Context, id uint64) error
+	getReview    func(ctx context.Context, id uint64) (*model.Review, error)
+	listReviews  func(ctx context.Context, opts repository.ReviewListOptions) ([]model.Review, int64, error)
+	createReview func(ctx context.Context, review *model.Review) error
+	updateReview func(ctx context.Context, review *model.Review) error
+	deleteReview func(ctx context.Context, id uint64) error
 }
 
 func (m *MockReviewRepositoryForReviewService) Get(ctx context.Context, id uint64) (*model.Review, error) {
@@ -89,11 +89,11 @@ func (m *MockReviewRepositoryForReviewService) GetGameStats(ctx context.Context)
 
 // MockReviewReplyRepository is a mock implementation of ReviewReplyRepository for testing
 type MockReviewReplyRepositoryForReviewService struct {
-	getReply       func(ctx context.Context, id uint64) (*model.ReviewReply, error)
-	createReply    func(ctx context.Context, reply *model.ReviewReply) error
-	updateReply    func(ctx context.Context, reply *model.ReviewReply) error
-	deleteReply    func(ctx context.Context, id uint64) error
-	updateStatus   func(ctx context.Context, id uint64, status string, note string) error
+	getReply     func(ctx context.Context, id uint64) (*model.ReviewReply, error)
+	createReply  func(ctx context.Context, reply *model.ReviewReply) error
+	updateReply  func(ctx context.Context, reply *model.ReviewReply) error
+	deleteReply  func(ctx context.Context, id uint64) error
+	updateStatus func(ctx context.Context, id uint64, status string, note string) error
 }
 
 func (m *MockReviewReplyRepositoryForReviewService) Get(ctx context.Context, id uint64) (*model.ReviewReply, error) {
@@ -458,7 +458,7 @@ func TestReviewService_GetPlayerReviews_SkipsMissingUsers(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, 2, len(reviewDTOs)) // Only 2 out of 3 have valid users
-	assert.Equal(t, int64(3), total)   // Total still reflects all reviews
+	assert.Equal(t, int64(3), total)    // Total still reflects all reviews
 }
 
 // TestReviewService_updatePlayerRating_Success tests successful player rating update
@@ -467,8 +467,8 @@ func TestReviewService_updatePlayerRating_Success(t *testing.T) {
 	playerID := uint64(100)
 
 	player := &model.Player{
-		Base:    model.Base{ID: playerID},
-		UserID:  200,
+		Base:     model.Base{ID: playerID},
+		UserID:   200,
 		Nickname: "TestPlayer",
 	}
 
@@ -515,8 +515,8 @@ func TestReviewService_updatePlayerRating_NoReviews(t *testing.T) {
 	playerID := uint64(100)
 
 	player := &model.Player{
-		Base:    model.Base{ID: playerID},
-		UserID:  200,
+		Base:     model.Base{ID: playerID},
+		UserID:   200,
 		Nickname: "TestPlayer",
 	}
 

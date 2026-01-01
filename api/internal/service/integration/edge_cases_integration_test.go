@@ -9,13 +9,13 @@ import (
 	"time"
 
 	"gamelink/internal/model"
-	"gamelink/internal/repository/implementations"
+	commissionrepo "gamelink/internal/repository/commission"
 	"gamelink/internal/repository/game"
+	"gamelink/internal/repository/implementations"
 	"gamelink/internal/repository/payment"
 	"gamelink/internal/repository/player"
 	"gamelink/internal/repository/review"
 	userrepo "gamelink/internal/repository/user"
-	commissionrepo "gamelink/internal/repository/commission"
 	"gamelink/internal/service/order"
 
 	"github.com/stretchr/testify/assert"
@@ -42,17 +42,17 @@ func TestOrder_PaymentTimeoutEdgeCase(t *testing.T) {
 	// 测试场景1：订单创建29分59秒前，未超时
 	createdAt := time.Now().Add(-29*time.Minute - 59*time.Second)
 	order1 := &model.Order{
-		Base:             model.Base{ExtJSON: "{}", CreatedAt: createdAt},
-		OrderNo:          fmt.Sprintf("TIMEOUT1%d", time.Now().UnixNano()),
-		UserID:           testUser.ID,
-		PlayerID:         &testPlayer.ID,
-		GameID:           &testGame.ID,
-		ItemID:           serviceItem.ID,
-		TotalPriceCents:  5000,
-		Currency:         model.CurrencyCNY,
-		Status:           model.OrderStatusPending,
-		Title:            "Timeout Test Order 1",
-		OrderConfig:      "{}",
+		Base:            model.Base{ExtJSON: "{}", CreatedAt: createdAt},
+		OrderNo:         fmt.Sprintf("TIMEOUT1%d", time.Now().UnixNano()),
+		UserID:          testUser.ID,
+		PlayerID:        &testPlayer.ID,
+		GameID:          &testGame.ID,
+		ItemID:          serviceItem.ID,
+		TotalPriceCents: 5000,
+		Currency:        model.CurrencyCNY,
+		Status:          model.OrderStatusPending,
+		Title:           "Timeout Test Order 1",
+		OrderConfig:     "{}",
 	}
 	require.NoError(t, db.Create(order1).Error)
 
@@ -65,17 +65,17 @@ func TestOrder_PaymentTimeoutEdgeCase(t *testing.T) {
 	// 测试场景2：订单创建30分01秒前，已超时
 	createdAt2 := time.Now().Add(-30*time.Minute - time.Second)
 	order2 := &model.Order{
-		Base:             model.Base{ExtJSON: "{}", CreatedAt: createdAt2},
-		OrderNo:          fmt.Sprintf("TIMEOUT2%d", time.Now().UnixNano()),
-		UserID:           testUser.ID,
-		PlayerID:         &testPlayer.ID,
-		GameID:           &testGame.ID,
-		ItemID:           serviceItem.ID,
-		TotalPriceCents:  5000,
-		Currency:         model.CurrencyCNY,
-		Status:           model.OrderStatusPending,
-		Title:            "Timeout Test Order 2",
-		OrderConfig:      "{}",
+		Base:            model.Base{ExtJSON: "{}", CreatedAt: createdAt2},
+		OrderNo:         fmt.Sprintf("TIMEOUT2%d", time.Now().UnixNano()),
+		UserID:          testUser.ID,
+		PlayerID:        &testPlayer.ID,
+		GameID:          &testGame.ID,
+		ItemID:          serviceItem.ID,
+		TotalPriceCents: 5000,
+		Currency:        model.CurrencyCNY,
+		Status:          model.OrderStatusPending,
+		Title:           "Timeout Test Order 2",
+		OrderConfig:     "{}",
 	}
 	require.NoError(t, db.Create(order2).Error)
 
@@ -225,19 +225,19 @@ func TestOrder_BoundaryValues(t *testing.T) {
 			scheduledEnd := scheduledStart.Add(time.Duration(tt.durationHours) * time.Hour)
 
 			order := &model.Order{
-				Base:             model.Base{ExtJSON: "{}"},
-				OrderNo:          fmt.Sprintf("BNDRY%d", time.Now().UnixNano()),
-				UserID:           testUser.ID,
-				PlayerID:         &testPlayer.ID,
-				GameID:           &testGame.ID,
-				ItemID:           serviceItem.ID,
-				TotalPriceCents:  tt.expectedPrice,
-				Currency:         model.CurrencyCNY,
-				Status:           model.OrderStatusPending,
-				Title:            tt.name,
-				ScheduledStart:   &scheduledStart,
-				ScheduledEnd:     &scheduledEnd,
-				OrderConfig:      "{}",
+				Base:            model.Base{ExtJSON: "{}"},
+				OrderNo:         fmt.Sprintf("BNDRY%d", time.Now().UnixNano()),
+				UserID:          testUser.ID,
+				PlayerID:        &testPlayer.ID,
+				GameID:          &testGame.ID,
+				ItemID:          serviceItem.ID,
+				TotalPriceCents: tt.expectedPrice,
+				Currency:        model.CurrencyCNY,
+				Status:          model.OrderStatusPending,
+				Title:           tt.name,
+				ScheduledStart:  &scheduledStart,
+				ScheduledEnd:    &scheduledEnd,
+				OrderConfig:     "{}",
 			}
 			require.NoError(t, db.Create(order).Error)
 
@@ -275,21 +275,21 @@ func TestOrder_ZeroAndNegativeAmounts(t *testing.T) {
 	scheduledEnd := now.Add(2 * time.Hour)
 
 	zeroPriceOrder := &model.Order{
-		Base:             model.Base{ExtJSON: "{}"},
-		OrderNo:          fmt.Sprintf("ZERO%d", time.Now().UnixNano()),
-		UserID:           testUser.ID,
-		PlayerID:         &testPlayer.ID,
-		GameID:           &testGame.ID,
-		ItemID:           zeroPriceService.ID,
-		TotalPriceCents:  0,
-		CommissionCents:  0,
+		Base:              model.Base{ExtJSON: "{}"},
+		OrderNo:           fmt.Sprintf("ZERO%d", time.Now().UnixNano()),
+		UserID:            testUser.ID,
+		PlayerID:          &testPlayer.ID,
+		GameID:            &testGame.ID,
+		ItemID:            zeroPriceService.ID,
+		TotalPriceCents:   0,
+		CommissionCents:   0,
 		PlayerIncomeCents: 0,
-		Currency:         model.CurrencyCNY,
-		Status:           model.OrderStatusConfirmed, // 零金额订单直接确认
-		Title:            "Free Order",
-		ScheduledStart:   &scheduledStart,
-		ScheduledEnd:     &scheduledEnd,
-		OrderConfig:      "{}",
+		Currency:          model.CurrencyCNY,
+		Status:            model.OrderStatusConfirmed, // 零金额订单直接确认
+		Title:             "Free Order",
+		ScheduledStart:    &scheduledStart,
+		ScheduledEnd:      &scheduledEnd,
+		OrderConfig:       "{}",
 	}
 	require.NoError(t, db.Create(zeroPriceOrder).Error)
 
@@ -322,18 +322,18 @@ func TestPayment_CombinedPaymentFailure(t *testing.T) {
 
 	now := time.Now().Add(time.Hour)
 	order := &model.Order{
-		Base:             model.Base{ExtJSON: "{}"},
-		OrderNo:          fmt.Sprintf("COMBO%d", time.Now().UnixNano()),
-		UserID:           testUser.ID,
-		PlayerID:         &testPlayer.ID,
-		GameID:           &testGame.ID,
-		ItemID:           serviceItem.ID,
-		TotalPriceCents:  10000,
-		Currency:         model.CurrencyCNY,
-		Status:           model.OrderStatusPending,
-		Title:            "Combined Payment Test",
-		ScheduledStart:   &now,
-		OrderConfig:      "{}",
+		Base:            model.Base{ExtJSON: "{}"},
+		OrderNo:         fmt.Sprintf("COMBO%d", time.Now().UnixNano()),
+		UserID:          testUser.ID,
+		PlayerID:        &testPlayer.ID,
+		GameID:          &testGame.ID,
+		ItemID:          serviceItem.ID,
+		TotalPriceCents: 10000,
+		Currency:        model.CurrencyCNY,
+		Status:          model.OrderStatusPending,
+		Title:           "Combined Payment Test",
+		ScheduledStart:  &now,
+		OrderConfig:     "{}",
 	}
 	require.NoError(t, db.Create(order).Error)
 
@@ -348,15 +348,15 @@ func TestPayment_CombinedPaymentFailure(t *testing.T) {
 
 	// 创建支付记录（钱包部分3000 + 第三方7000）
 	payment := &model.Payment{
-		Base:             model.Base{ExtJSON: "{}"},
-		OrderID:          order.ID,
-		UserID:           testUser.ID,
-		AmountCents:      10000,
-		WalletAmountCents: 3000,
+		Base:                  model.Base{ExtJSON: "{}"},
+		OrderID:               order.ID,
+		UserID:                testUser.ID,
+		AmountCents:           10000,
+		WalletAmountCents:     3000,
 		ThirdPartyAmountCents: 7000,
-		Method:           model.PaymentMethodCombined,
-		Status:           model.PaymentStatusPending,
-		ProviderRaw:      []byte("{}"),
+		Method:                model.PaymentMethodCombined,
+		Status:                model.PaymentStatusPending,
+		ProviderRaw:           []byte("{}"),
 	}
 	require.NoError(t, db.Create(payment).Error)
 
@@ -413,37 +413,37 @@ func TestPayment_PartialRefund(t *testing.T) {
 	scheduledStart := now.Add(-2 * time.Hour)
 	scheduledEnd := now.Add(-1 * time.Hour)
 	order := &model.Order{
-		Base:             model.Base{ExtJSON: "{}"},
-		OrderNo:          fmt.Sprintf("REFUND%d", time.Now().UnixNano()),
-		UserID:           testUser.ID,
-		PlayerID:         &testPlayer.ID,
-		GameID:           &testGame.ID,
-		ItemID:           serviceItem.ID,
-		TotalPriceCents:  10000,
-		CommissionCents:  2000,
+		Base:              model.Base{ExtJSON: "{}"},
+		OrderNo:           fmt.Sprintf("REFUND%d", time.Now().UnixNano()),
+		UserID:            testUser.ID,
+		PlayerID:          &testPlayer.ID,
+		GameID:            &testGame.ID,
+		ItemID:            serviceItem.ID,
+		TotalPriceCents:   10000,
+		CommissionCents:   2000,
 		PlayerIncomeCents: 8000,
-		Currency:         model.CurrencyCNY,
-		Status:           model.OrderStatusCompleted,
-		Title:            "Partial Refund Test",
-		ScheduledStart:   &scheduledStart,
-		ScheduledEnd:     &scheduledEnd,
-		CompletedAt:      &now,
-		OrderConfig:      "{}",
+		Currency:          model.CurrencyCNY,
+		Status:            model.OrderStatusCompleted,
+		Title:             "Partial Refund Test",
+		ScheduledStart:    &scheduledStart,
+		ScheduledEnd:      &scheduledEnd,
+		CompletedAt:       &now,
+		OrderConfig:       "{}",
 	}
 	require.NoError(t, db.Create(order).Error)
 
 	// 创建支付记录（组合支付）
 	payment := &model.Payment{
-		Base:                model.Base{ExtJSON: "{}"},
-		OrderID:             order.ID,
-		UserID:              testUser.ID,
-		AmountCents:         10000,
-		WalletAmountCents:   5000,
+		Base:                  model.Base{ExtJSON: "{}"},
+		OrderID:               order.ID,
+		UserID:                testUser.ID,
+		AmountCents:           10000,
+		WalletAmountCents:     5000,
 		ThirdPartyAmountCents: 5000,
-		Method:              model.PaymentMethodCombined,
-		Status:              model.PaymentStatusPaid,
-		ProviderTradeNo:     "TXN" + fmt.Sprint(time.Now().UnixNano()),
-		ProviderRaw:         []byte("{}"),
+		Method:                model.PaymentMethodCombined,
+		Status:                model.PaymentStatusPaid,
+		ProviderTradeNo:       "TXN" + fmt.Sprint(time.Now().UnixNano()),
+		ProviderRaw:           []byte("{}"),
 	}
 	require.NoError(t, db.Create(payment).Error)
 
@@ -466,10 +466,10 @@ func TestPayment_PartialRefund(t *testing.T) {
 	require.NoError(t, db.Create(playerWallet).Error)
 
 	// 执行部分退款（退款50%）
-	refundAmount := int64(5000) // 总额的一半
-	walletRefund := int64(2500) // 钱包部分一半
+	refundAmount := int64(5000)     // 总额的一半
+	walletRefund := int64(2500)     // 钱包部分一半
 	thirdpartyRefund := int64(2500) // 第三方部分一半
-	_ = thirdpartyRefund // 暂时使用
+	_ = thirdpartyRefund            // 暂时使用
 
 	// 更新钱包
 	wallet.BalanceCents += walletRefund
@@ -516,22 +516,22 @@ func TestWallet_TPlus7Boundary(t *testing.T) {
 	scheduledStart := completedTime.Add(-2 * time.Hour)
 	scheduledEnd := completedTime.Add(-1 * time.Hour)
 	order := &model.Order{
-		Base:             model.Base{ExtJSON: "{}"},
-		OrderNo:          fmt.Sprintf("T7%d", time.Now().UnixNano()),
-		UserID:           testUser.ID,
-		PlayerID:         &testPlayer.ID,
-		GameID:           &testGame.ID,
-		ItemID:           serviceItem.ID,
-		TotalPriceCents:  10000,
-		CommissionCents:  2000,
+		Base:              model.Base{ExtJSON: "{}"},
+		OrderNo:           fmt.Sprintf("T7%d", time.Now().UnixNano()),
+		UserID:            testUser.ID,
+		PlayerID:          &testPlayer.ID,
+		GameID:            &testGame.ID,
+		ItemID:            serviceItem.ID,
+		TotalPriceCents:   10000,
+		CommissionCents:   2000,
 		PlayerIncomeCents: 8000,
-		Currency:         model.CurrencyCNY,
-		Status:           model.OrderStatusCompleted,
-		Title:            "T+7 Boundary Test",
-		ScheduledStart:   &scheduledStart,
-		ScheduledEnd:     &scheduledEnd,
-		CompletedAt:      &completedTime,
-		OrderConfig:      "{}",
+		Currency:          model.CurrencyCNY,
+		Status:            model.OrderStatusCompleted,
+		Title:             "T+7 Boundary Test",
+		ScheduledStart:    &scheduledStart,
+		ScheduledEnd:      &scheduledEnd,
+		CompletedAt:       &completedTime,
+		OrderConfig:       "{}",
 	}
 	require.NoError(t, db.Create(order).Error)
 
@@ -584,22 +584,22 @@ func TestWallet_TPlus7OneSecondBefore(t *testing.T) {
 	scheduledStart := completedTime.Add(-2 * time.Hour)
 	scheduledEnd := completedTime.Add(-1 * time.Hour)
 	order := &model.Order{
-		Base:             model.Base{ExtJSON: "{}"},
-		OrderNo:          fmt.Sprintf("T7B%d", time.Now().UnixNano()),
-		UserID:           testUser.ID,
-		PlayerID:         &testPlayer.ID,
-		GameID:           &testGame.ID,
-		ItemID:           serviceItem.ID,
-		TotalPriceCents:  10000,
-		CommissionCents:  2000,
+		Base:              model.Base{ExtJSON: "{}"},
+		OrderNo:           fmt.Sprintf("T7B%d", time.Now().UnixNano()),
+		UserID:            testUser.ID,
+		PlayerID:          &testPlayer.ID,
+		GameID:            &testGame.ID,
+		ItemID:            serviceItem.ID,
+		TotalPriceCents:   10000,
+		CommissionCents:   2000,
 		PlayerIncomeCents: 8000,
-		Currency:         model.CurrencyCNY,
-		Status:           model.OrderStatusCompleted,
-		Title:            "T+7 One Second Before Test",
-		ScheduledStart:   &scheduledStart,
-		ScheduledEnd:     &scheduledEnd,
-		CompletedAt:      &completedTime,
-		OrderConfig:      "{}",
+		Currency:          model.CurrencyCNY,
+		Status:            model.OrderStatusCompleted,
+		Title:             "T+7 One Second Before Test",
+		ScheduledStart:    &scheduledStart,
+		ScheduledEnd:      &scheduledEnd,
+		CompletedAt:       &completedTime,
+		OrderConfig:       "{}",
 	}
 	require.NoError(t, db.Create(order).Error)
 
@@ -769,13 +769,13 @@ func TestDispute_SLABoundary(t *testing.T) {
 	// 创建29分钟前的争议（刚好在SLA边界内）
 	createdAt := time.Now().Add(-29*time.Minute - 59*time.Second)
 	dispute := &model.OrderDispute{
-		Base:         model.Base{ExtJSON: "{}", CreatedAt: createdAt, UpdatedAt: createdAt},
-		OrderID:      order.ID,
-		InitiatorID:  testUser.ID,
+		Base:          model.Base{ExtJSON: "{}", CreatedAt: createdAt, UpdatedAt: createdAt},
+		OrderID:       order.ID,
+		InitiatorID:   testUser.ID,
 		InitiatorType: "user",
-		Type:         model.DisputeTypeServiceQuality,
-		Reason:       "Test SLA boundary",
-		Status:       model.DisputeStatusPending,
+		Type:          model.DisputeTypeServiceQuality,
+		Reason:        "Test SLA boundary",
+		Status:        model.DisputeStatusPending,
 	}
 	require.NoError(t, db.Create(dispute).Error)
 
@@ -829,13 +829,13 @@ func TestDispute_SLAExpired(t *testing.T) {
 	// 创建31分钟前的争议（SLA已过期）
 	createdAt := time.Now().Add(-30*time.Minute - time.Second)
 	dispute := &model.OrderDispute{
-		Base:           model.Base{ExtJSON: "{}", CreatedAt: createdAt, UpdatedAt: createdAt},
-		OrderID:        order.ID,
-		InitiatorID:    testUser.ID,
-		InitiatorType:  "user",
-		Type:           model.DisputeTypeServiceQuality,
-		Reason:         "Test SLA expired",
-		Status:         model.DisputeStatusPending,
+		Base:          model.Base{ExtJSON: "{}", CreatedAt: createdAt, UpdatedAt: createdAt},
+		OrderID:       order.ID,
+		InitiatorID:   testUser.ID,
+		InitiatorType: "user",
+		Type:          model.DisputeTypeServiceQuality,
+		Reason:        "Test SLA expired",
+		Status:        model.DisputeStatusPending,
 	}
 	require.NoError(t, db.Create(dispute).Error)
 

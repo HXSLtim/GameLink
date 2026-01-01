@@ -1040,8 +1040,8 @@ func TestOrderService_buildOrderForCreation_WithoutServiceID(t *testing.T) {
 	scheduledStart := time.Now().Add(time.Hour)
 
 	req := CreateOrderRequest{
-		PlayerID:       playerID,
-		GameID:         gameID,
+		PlayerID: playerID,
+		GameID:   gameID,
 		// No ServiceID
 		Title:          "Test Order",
 		ScheduledStart: &scheduledStart,

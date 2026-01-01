@@ -43,14 +43,14 @@ func (p *RealWeChatProvider) Refund(ctx context.Context, payment *model.Payment,
 
 	// Build refund request
 	req := WeChatRefundRequest{
-		AppID:     p.config.WeChatPay.AppID,
-		MchID:     p.config.WeChatPay.MchID,
-		NonceStr:  generateNonceStr(),
-		SignType:  "MD5",
-		OutTradeNo: fmt.Sprintf("%d", payment.ID),
+		AppID:       p.config.WeChatPay.AppID,
+		MchID:       p.config.WeChatPay.MchID,
+		NonceStr:    generateNonceStr(),
+		SignType:    "MD5",
+		OutTradeNo:  fmt.Sprintf("%d", payment.ID),
 		OutRefundNo: fmt.Sprintf("refund_%d_%d", payment.ID, time.Now().Unix()),
-		TotalFee:   payment.AmountCents, // 单位：分
-		RefundFee:  payment.AmountCents, // 全额退款
+		TotalFee:    payment.AmountCents, // 单位：分
+		RefundFee:   payment.AmountCents, // 全额退款
 	}
 
 	// Generate signature
@@ -79,13 +79,13 @@ func (p *RealWeChatProvider) Refund(ctx context.Context, payment *model.Payment,
 func (p *RealWeChatProvider) generateSign(req WeChatRefundRequest) string {
 	// Build parameter string
 	params := map[string]string{
-		"appid":      req.AppID,
-		"mch_id":     req.MchID,
-		"nonce_str":  req.NonceStr,
-		"out_trade_no": req.OutTradeNo,
+		"appid":         req.AppID,
+		"mch_id":        req.MchID,
+		"nonce_str":     req.NonceStr,
+		"out_trade_no":  req.OutTradeNo,
 		"out_refund_no": req.OutRefundNo,
-		"total_fee":   fmt.Sprintf("%d", req.TotalFee),
-		"refund_fee":  fmt.Sprintf("%d", req.RefundFee),
+		"total_fee":     fmt.Sprintf("%d", req.TotalFee),
+		"refund_fee":    fmt.Sprintf("%d", req.RefundFee),
 	}
 
 	// Sort keys
@@ -110,35 +110,35 @@ func (p *RealWeChatProvider) generateSign(req WeChatRefundRequest) string {
 
 // WeChatRefundRequest represents WeChat Pay refund request
 type WeChatRefundRequest struct {
-	XMLName    xml.Name `xml:"xml"`
-	AppID      string   `xml:"appid"`
-	MchID      string   `xml:"mch_id"`
-	NonceStr   string   `xml:"nonce_str"`
-	Sign       string   `xml:"sign"`
-	SignType   string   `xml:"sign_type,omitempty"`
-	OutTradeNo string   `xml:"out_trade_no"`
-	OutRefundNo string  `xml:"out_refund_no"`
-	TotalFee   int64    `xml:"total_fee"`
-	RefundFee  int64    `xml:"refund_fee"`
+	XMLName     xml.Name `xml:"xml"`
+	AppID       string   `xml:"appid"`
+	MchID       string   `xml:"mch_id"`
+	NonceStr    string   `xml:"nonce_str"`
+	Sign        string   `xml:"sign"`
+	SignType    string   `xml:"sign_type,omitempty"`
+	OutTradeNo  string   `xml:"out_trade_no"`
+	OutRefundNo string   `xml:"out_refund_no"`
+	TotalFee    int64    `xml:"total_fee"`
+	RefundFee   int64    `xml:"refund_fee"`
 }
 
 // WeChatRefundResponse represents WeChat Pay refund response
 type WeChatRefundResponse struct {
-	XMLName    xml.Name `xml:"xml"`
-	ReturnCode string   `xml:"return_code"`
-	ReturnMsg  string   `xml:"return_msg"`
-	ResultCode string   `xml:"result_code,omitempty"`
-	ErrCode    string   `xml:"err_code,omitempty"`
-	ErrCodeDes string   `xml:"err_code_des,omitempty"`
-	AppID      string   `xml:"appid,omitempty"`
-	MchID      string   `xml:"mch_id,omitempty"`
-	NonceStr   string   `xml:"nonce_str,omitempty"`
-	Sign       string   `xml:"sign,omitempty"`
-	OutTradeNo string   `xml:"out_trade_no,omitempty"`
-	OutRefundNo string  `xml:"out_refund_no,omitempty"`
-	TransactionID string `xml:"transaction_id,omitempty"`
-	TotalFee   int64    `xml:"total_fee,omitempty"`
-	RefundFee  int64    `xml:"refund_fee,omitempty"`
+	XMLName       xml.Name `xml:"xml"`
+	ReturnCode    string   `xml:"return_code"`
+	ReturnMsg     string   `xml:"return_msg"`
+	ResultCode    string   `xml:"result_code,omitempty"`
+	ErrCode       string   `xml:"err_code,omitempty"`
+	ErrCodeDes    string   `xml:"err_code_des,omitempty"`
+	AppID         string   `xml:"appid,omitempty"`
+	MchID         string   `xml:"mch_id,omitempty"`
+	NonceStr      string   `xml:"nonce_str,omitempty"`
+	Sign          string   `xml:"sign,omitempty"`
+	OutTradeNo    string   `xml:"out_trade_no,omitempty"`
+	OutRefundNo   string   `xml:"out_refund_no,omitempty"`
+	TransactionID string   `xml:"transaction_id,omitempty"`
+	TotalFee      int64    `xml:"total_fee,omitempty"`
+	RefundFee     int64    `xml:"refund_fee,omitempty"`
 }
 
 // doRefundRequest performs actual WeChat Pay refund API request

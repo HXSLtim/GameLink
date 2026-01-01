@@ -6,9 +6,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/pkg/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/service/commission"
+	"gamelink/pkg/apierr"
 )
 
 // CommissionSummaryResponse 抽成汇总响应（类型别名）

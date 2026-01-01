@@ -18,12 +18,12 @@ import (
 
 // MockUserRepository is a mock implementation of UserRepository for testing
 type MockUserRepository struct {
-	users         map[uint64]*model.User
- findByEmail   func(ctx context.Context, email string) (*model.User, error)
- findByPhone   func(ctx context.Context, phone string) (*model.User, error)
- createFunc    func(ctx context.Context, user *model.User) error
- getFunc       func(ctx context.Context, id uint64) (*model.User, error)
- updateFunc    func(ctx context.Context, user *model.User) error
+	users       map[uint64]*model.User
+	findByEmail func(ctx context.Context, email string) (*model.User, error)
+	findByPhone func(ctx context.Context, phone string) (*model.User, error)
+	createFunc  func(ctx context.Context, user *model.User) error
+	getFunc     func(ctx context.Context, id uint64) (*model.User, error)
+	updateFunc  func(ctx context.Context, user *model.User) error
 }
 
 func NewMockUserRepository() *MockUserRepository {

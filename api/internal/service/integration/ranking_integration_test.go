@@ -775,12 +775,12 @@ func TestRanking_RankingScoreCalculation(t *testing.T) {
 	player := CreateTestPlayer(t, db, user)
 
 	tests := []struct {
-		name         string
-		rankingType  model.RankingType
-		score        float64
-		orderCount   int64
-		incomeCents  int64
-		avgRating    float32
+		name        string
+		rankingType model.RankingType
+		score       float64
+		orderCount  int64
+		incomeCents int64
+		avgRating   float32
 	}{
 		{
 			name:        "Income ranking",

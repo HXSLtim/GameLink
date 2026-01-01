@@ -5,12 +5,10 @@ package team
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"time"
 
 	"gamelink/internal/model"
-t"gamelink/pkg/apierr"
+	"gamelink/pkg/apierr"
 )
 
 // Service provides team order assignment and payout operations.

@@ -202,7 +202,7 @@ func TestOrderHandler_CreateOrder(t *testing.T) {
 
 	t.Run("CreateOrderValidationFailure", func(t *testing.T) {
 		payload := map[string]interface{}{
-			"user_id":           testUser.ID,
+			"user_id": testUser.ID,
 			// missing required game_id
 			"title":             "Invalid Order",
 			"total_price_cents": 10000,

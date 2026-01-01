@@ -3,9 +3,9 @@ package player
 import (
 	"github.com/gin-gonic/gin"
 
-	"gamelink/pkg/apierr"
 	"gamelink/internal/model"
 	serviceplayer "gamelink/internal/service/player"
+	"gamelink/pkg/apierr"
 )
 
 // ApplyPlayerRequest 申请成为陪玩师请求（类型别名）

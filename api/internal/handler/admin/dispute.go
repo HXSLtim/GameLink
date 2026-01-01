@@ -391,9 +391,9 @@ type DisputeBatchOperationError struct {
 
 // BatchAssignDisputesRequest represents the request to batch assign disputes
 type BatchAssignDisputesRequest struct {
-	DisputeIDs         []uint64 `json:"disputeIds" binding:"required,min=1,max=100"`
-	AssignedServiceID  uint64   `json:"assignedServiceId" binding:"required"`
-	OriginalServiceID  *uint64  `json:"originalServiceId,omitempty"`
+	DisputeIDs        []uint64 `json:"disputeIds" binding:"required,min=1,max=100"`
+	AssignedServiceID uint64   `json:"assignedServiceId" binding:"required"`
+	OriginalServiceID *uint64  `json:"originalServiceId,omitempty"`
 }
 
 // BatchAssignDisputes assigns multiple disputes to a CS agent
@@ -423,10 +423,10 @@ func (h *DisputeHandler) BatchAssignDisputes(c *gin.Context) {
 	}
 
 	svcResult, err := h.svc.BatchAssignDisputes(c.Request.Context(), orderservice.BatchAssignDisputesRequest{
-		DisputeIDs:         req.DisputeIDs,
-		AssignedServiceID:  req.AssignedServiceID,
-		OriginalServiceID:  req.OriginalServiceID,
-		ActorUserID:        actorUserID.(uint64),
+		DisputeIDs:        req.DisputeIDs,
+		AssignedServiceID: req.AssignedServiceID,
+		OriginalServiceID: req.OriginalServiceID,
+		ActorUserID:       actorUserID.(uint64),
 	})
 
 	if err != nil {

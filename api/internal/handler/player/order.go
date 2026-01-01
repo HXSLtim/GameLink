@@ -3,9 +3,9 @@ package player
 import (
 	"github.com/gin-gonic/gin"
 
-	"gamelink/pkg/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/service/order"
+	"gamelink/pkg/apierr"
 )
 
 // SuccessResponseSwagger 通用成功响应（Swagger 用，避免泛型）

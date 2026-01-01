@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 
-	"gamelink/pkg/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
+	"gamelink/pkg/apierr"
 )
 
 // WrapOrder wraps an order with error handling

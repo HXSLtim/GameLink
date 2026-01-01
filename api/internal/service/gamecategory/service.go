@@ -68,10 +68,10 @@ type CategoryResponse struct {
 
 // BatchOperationResult 批量操作结果
 type BatchOperationResult struct {
-	SuccessCount int               `json:"successCount"`
-	FailedCount  int               `json:"failedCount"`
-	FailedIDs    []uint64          `json:"failedIds,omitempty"`
-	Errors       []string          `json:"errors,omitempty"`
+	SuccessCount int      `json:"successCount"`
+	FailedCount  int      `json:"failedCount"`
+	FailedIDs    []uint64 `json:"failedIds,omitempty"`
+	Errors       []string `json:"errors,omitempty"`
 }
 
 // ============================================================================

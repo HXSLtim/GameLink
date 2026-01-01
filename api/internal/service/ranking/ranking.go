@@ -4,11 +4,11 @@ import (
 	"context"
 	"time"
 
-	"gamelink/pkg/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	repoiface "gamelink/internal/repository/interfaces"
 	"gamelink/internal/repository/ranking"
+	"gamelink/pkg/apierr"
 )
 
 var (

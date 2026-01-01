@@ -392,11 +392,11 @@ func (s *ServiceItemService) BatchUpdatePrice(ctx context.Context, req BatchUpda
 
 // BatchOperationResponse 批量操作响应
 type BatchOperationResponse struct {
-	SuccessCount int                      `json:"success_count"`
-	FailedCount  int                      `json:"failed_count"`
-	TotalCount   int                      `json:"total_count"`
+	SuccessCount int                       `json:"success_count"`
+	FailedCount  int                       `json:"failed_count"`
+	TotalCount   int                       `json:"total_count"`
 	FailedItems  []BatchOperationErrorItem `json:"failed_items,omitempty"`
-	SuccessItems []uint64                 `json:"success_items,omitempty"`
+	SuccessItems []uint64                  `json:"success_items,omitempty"`
 }
 
 // BatchOperationErrorItem 单个操作错误详情

@@ -6,9 +6,9 @@ package player
 import (
 	"github.com/gin-gonic/gin"
 
+	serviceplayer "gamelink/internal/service/player"
 	"gamelink/pkg/apierr"
 	"gamelink/pkg/sanitize"
-	serviceplayer "gamelink/internal/service/player"
 )
 
 // updatePlayerProfileHandlerWithXSS 更新陪玩师资料（带 XSS 防护）

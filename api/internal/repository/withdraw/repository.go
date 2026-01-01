@@ -509,7 +509,7 @@ func (r *withdrawRepository) BatchUpdateStatus(ctx context.Context, ids []uint64
 	// 批量更新有效的记录
 	if len(validIDs) > 0 {
 		updates := map[string]interface{}{
-			"status":      status,
+			"status":       status,
 			"processed_by": processedBy,
 			"processed_at": processedAt,
 		}

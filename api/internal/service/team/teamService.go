@@ -558,10 +558,10 @@ func (s *TeamService) BatchUpdateTeamStatus(ctx context.Context, ids []uint64, s
 
 // BatchAddMembersResult 批量添加成员结果
 type BatchAddMembersResult struct {
-	SuccessCount  int      `json:"successCount"`
-	FailedCount   int      `json:"failedCount"`
+	SuccessCount    int      `json:"successCount"`
+	FailedCount     int      `json:"failedCount"`
 	FailedPlayerIDs []uint64 `json:"failedPlayerIds"`
-	Errors        []string `json:"errors"`
+	Errors          []string `json:"errors"`
 }
 
 // BatchAddMembers 批量添加成员到团队

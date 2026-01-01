@@ -7,32 +7,33 @@ import (
 	"sync"
 	"time"
 
-	"github.com/shirou/gopsutil/v3/cpu"
 	"gamelink/internal/ws"
+
+	"github.com/shirou/gopsutil/v3/cpu"
 
 	"gorm.io/gorm"
 )
 
 // RealtimeService provides real-time system monitoring functionality.
 type RealtimeService struct {
-	hub         *ws.Hub
-	db          *gorm.DB
-	startTime   time.Time
-	peakOnline  int
-	mu          sync.RWMutex
-	stopChan    chan struct{}
-	requestCount int64
+	hub              *ws.Hub
+	db               *gorm.DB
+	startTime        time.Time
+	peakOnline       int
+	mu               sync.RWMutex
+	stopChan         chan struct{}
+	requestCount     int64
 	lastRequestCount int64
-	lastRequestTime time.Time
+	lastRequestTime  time.Time
 }
 
 // NewRealtimeService creates a new realtime monitoring service.
 func NewRealtimeService(hub *ws.Hub, db *gorm.DB) *RealtimeService {
 	return &RealtimeService{
-		hub:         hub,
-		db:          db,
-		startTime:   time.Now(),
-		stopChan:    make(chan struct{}),
+		hub:             hub,
+		db:              db,
+		startTime:       time.Now(),
+		stopChan:        make(chan struct{}),
 		lastRequestTime: time.Now(),
 	}
 }

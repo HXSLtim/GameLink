@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"gamelink/internal/model"
+
 	"github.com/stretchr/testify/assert"
 )
 

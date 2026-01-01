@@ -163,17 +163,17 @@ func (s *SecurityTestSuite) setupEngine() {
 			userID, _ := c.Get("user_id")
 			c.JSON(200, gin.H{
 				"success": true,
-				"user_id":  userID,
-				"orders":   []string{"order1", "order2"},
+				"user_id": userID,
+				"orders":  []string{"order1", "order2"},
 			})
 		})
 		userData.GET("/profile/:id", func(c *gin.Context) {
 			// This is vulnerable to IDOR - users can access any profile
 			profileID := c.Param("id")
 			c.JSON(200, gin.H{
-				"success": true,
+				"success":    true,
 				"profile_id": profileID,
-				"name":      "User " + profileID,
+				"name":       "User " + profileID,
 			})
 		})
 	}
@@ -439,8 +439,8 @@ func TestSecurity_HTTPMethod_AllowedMethods(t *testing.T) {
 	suite := SetupSecurityTestSuite(t)
 
 	endpoints := map[string][]string{
-		"/api/v1/admin/users":        {"GET"},
-		"/api/v1/protected/profile":  {"GET"},
+		"/api/v1/admin/users":       {"GET"},
+		"/api/v1/protected/profile": {"GET"},
 	}
 
 	for endpoint, allowedMethods := range endpoints {
@@ -698,7 +698,7 @@ func TestSecurity_Authentication_MissingAuthHeader(t *testing.T) {
 
 	scenarios := []struct {
 		name           string
-		setupRequest    func(*http.Request)
+		setupRequest   func(*http.Request)
 		expectedStatus int
 	}{
 		{
@@ -729,7 +729,7 @@ func TestSecurity_Authentication_MissingAuthHeader(t *testing.T) {
 			},
 			expectedStatus: 401,
 		},
-		}
+	}
 
 	for _, scenario := range scenarios {
 		t.Run(scenario.name, func(t *testing.T) {

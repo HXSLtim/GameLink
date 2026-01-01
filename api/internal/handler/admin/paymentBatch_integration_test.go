@@ -23,7 +23,6 @@ import (
 
 	"gamelink/internal/handler/middleware"
 	"gamelink/internal/model"
-	"gamelink/internal/repository"
 	"gamelink/internal/repository/gamecategory"
 	"gamelink/internal/service/admin"
 	"gamelink/internal/service/integration"

@@ -12,9 +12,9 @@ import (
 	"gamelink/internal/repository/activity"
 	"gamelink/internal/repository/commission"
 	"gamelink/internal/repository/team"
-	teamservice "gamelink/internal/service/team"
 	activityservice "gamelink/internal/service/activity"
 	commissionservice "gamelink/internal/service/commission"
+	teamservice "gamelink/internal/service/team"
 )
 
 // ============================================================================
@@ -215,13 +215,13 @@ func TestActivityService_BatchDeleteActivities(t *testing.T) {
 	var activityIDs []uint64
 	for i := 0; i < 3; i++ {
 		activity := &model.Activity{
-			Name:        "Batch Delete Activity",
-			Type:        model.ActivityTypeCoupon,
-			Status:      model.ActivityStatusDraft,
-			StartAt:     time.Now().Add(24 * time.Hour),
-			EndAt:       time.Now().Add(48 * time.Hour),
-			TotalLimit:  1000,
-			DailyLimit:  100,
+			Name:         "Batch Delete Activity",
+			Type:         model.ActivityTypeCoupon,
+			Status:       model.ActivityStatusDraft,
+			StartAt:      time.Now().Add(24 * time.Hour),
+			EndAt:        time.Now().Add(48 * time.Hour),
+			TotalLimit:   1000,
+			DailyLimit:   100,
 			PerUserLimit: 1,
 		}
 		require.NoError(t, repo.CreateActivity(ctx, activity))
@@ -230,13 +230,13 @@ func TestActivityService_BatchDeleteActivities(t *testing.T) {
 
 	// Add an active activity (should fail)
 	activeActivity := &model.Activity{
-		Name:        "Active Activity",
-		Type:        model.ActivityTypeCoupon,
-		Status:      model.ActivityStatusActive,
-		StartAt:     time.Now().Add(-24 * time.Hour),
-		EndAt:       time.Now().Add(24 * time.Hour),
-		TotalLimit:  1000,
-		DailyLimit:  100,
+		Name:         "Active Activity",
+		Type:         model.ActivityTypeCoupon,
+		Status:       model.ActivityStatusActive,
+		StartAt:      time.Now().Add(-24 * time.Hour),
+		EndAt:        time.Now().Add(24 * time.Hour),
+		TotalLimit:   1000,
+		DailyLimit:   100,
 		PerUserLimit: 1,
 	}
 	require.NoError(t, repo.CreateActivity(ctx, activeActivity))
@@ -270,13 +270,13 @@ func TestActivityService_BatchUpdateActivityStatus(t *testing.T) {
 	var activityIDs []uint64
 	for i := 0; i < 3; i++ {
 		activity := &model.Activity{
-			Name:        "Batch Status Activity",
-			Type:        model.ActivityTypeCoupon,
-			Status:      model.ActivityStatusDraft,
-			StartAt:     time.Now().Add(24 * time.Hour),
-			EndAt:       time.Now().Add(48 * time.Hour),
-			TotalLimit:  1000,
-			DailyLimit:  100,
+			Name:         "Batch Status Activity",
+			Type:         model.ActivityTypeCoupon,
+			Status:       model.ActivityStatusDraft,
+			StartAt:      time.Now().Add(24 * time.Hour),
+			EndAt:        time.Now().Add(48 * time.Hour),
+			TotalLimit:   1000,
+			DailyLimit:   100,
 			PerUserLimit: 1,
 		}
 		require.NoError(t, repo.CreateActivity(ctx, activity))
@@ -285,13 +285,13 @@ func TestActivityService_BatchUpdateActivityStatus(t *testing.T) {
 
 	// Add an ended activity (invalid status transition)
 	endedActivity := &model.Activity{
-		Name:        "Ended Activity",
-		Type:        model.ActivityTypeCoupon,
-		Status:      model.ActivityStatusEnded,
-		StartAt:     time.Now().Add(-48 * time.Hour),
-		EndAt:       time.Now().Add(-24 * time.Hour),
-		TotalLimit:  1000,
-		DailyLimit:  100,
+		Name:         "Ended Activity",
+		Type:         model.ActivityTypeCoupon,
+		Status:       model.ActivityStatusEnded,
+		StartAt:      time.Now().Add(-48 * time.Hour),
+		EndAt:        time.Now().Add(-24 * time.Hour),
+		TotalLimit:   1000,
+		DailyLimit:   100,
 		PerUserLimit: 1,
 	}
 	require.NoError(t, repo.CreateActivity(ctx, endedActivity))
@@ -327,14 +327,14 @@ func TestActivityService_BatchPublishActivities(t *testing.T) {
 	var activityIDs []uint64
 	for i := 0; i < 3; i++ {
 		activity := &model.Activity{
-			Name:        "Batch Publish Activity",
-			Type:        model.ActivityTypeCoupon,
-			Status:      model.ActivityStatusDraft,
-			IsVisible:   false,
-			StartAt:     time.Now().Add(24 * time.Hour),
-			EndAt:       time.Now().Add(48 * time.Hour),
-			TotalLimit:  1000,
-			DailyLimit:  100,
+			Name:         "Batch Publish Activity",
+			Type:         model.ActivityTypeCoupon,
+			Status:       model.ActivityStatusDraft,
+			IsVisible:    false,
+			StartAt:      time.Now().Add(24 * time.Hour),
+			EndAt:        time.Now().Add(48 * time.Hour),
+			TotalLimit:   1000,
+			DailyLimit:   100,
 			PerUserLimit: 1,
 		}
 		require.NoError(t, repo.CreateActivity(ctx, activity))

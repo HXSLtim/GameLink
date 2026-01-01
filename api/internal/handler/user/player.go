@@ -3,9 +3,9 @@ package user
 import (
 	"github.com/gin-gonic/gin"
 
-	"gamelink/pkg/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/service/player"
+	"gamelink/pkg/apierr"
 )
 
 // Swagger envelopes to avoid generics in annotations

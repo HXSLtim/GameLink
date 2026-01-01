@@ -26,7 +26,7 @@ func TestRealAlipayProvider_Refund_NoPrivateKey(t *testing.T) {
 	assert.NoError(t, err)
 
 	payment := &model.Payment{
-		Base:       model.Base{ID: 12345},
+		Base:        model.Base{ID: 12345},
 		AmountCents: 10000,
 	}
 
@@ -53,7 +53,7 @@ func TestRealAlipayProvider_Refund_Disabled(t *testing.T) {
 	assert.NoError(t, err)
 
 	payment := &model.Payment{
-		Base:       model.Base{ID: 12345},
+		Base:        model.Base{ID: 12345},
 		AmountCents: 10000,
 	}
 
@@ -232,7 +232,7 @@ func TestRealWeChatProvider_Refund_Success(t *testing.T) {
 	provider := NewWeChatProvider(cfg)
 
 	payment := &model.Payment{
-		Base:       model.Base{ID: 54321},
+		Base:        model.Base{ID: 54321},
 		AmountCents: 5000,
 	}
 
@@ -265,7 +265,7 @@ func TestRealWeChatProvider_Refund_Disabled(t *testing.T) {
 	provider := NewWeChatProvider(cfg)
 
 	payment := &model.Payment{
-		Base:       model.Base{ID: 54321},
+		Base:        model.Base{ID: 54321},
 		AmountCents: 5000,
 	}
 
@@ -350,7 +350,7 @@ func TestRealWeChatProvider_generateMapSign(t *testing.T) {
 	sign := provider.generateMapSign(params)
 
 	assert.NotEmpty(t, sign)
-	assert.Len(t, sign, 32) // MD5 hash is 32 hex characters
+	assert.Len(t, sign, 32)                       // MD5 hash is 32 hex characters
 	assert.True(t, strings.ToUpper(sign) == sign) // Should be uppercase
 }
 
@@ -379,7 +379,7 @@ func TestRealWeChatProvider_generateSign(t *testing.T) {
 	sign := provider.generateSign(req)
 
 	assert.NotEmpty(t, sign)
-	assert.Len(t, sign, 32) // MD5 hash is 32 hex characters
+	assert.Len(t, sign, 32)                       // MD5 hash is 32 hex characters
 	assert.True(t, strings.ToUpper(sign) == sign) // Should be uppercase
 }
 
@@ -497,7 +497,7 @@ func TestRealWeChatProvider_Refund_LargeAmount(t *testing.T) {
 	provider := NewWeChatProvider(cfg)
 
 	payment := &model.Payment{
-		Base:       model.Base{ID: 99999},
+		Base:        model.Base{ID: 99999},
 		AmountCents: 999999,
 	}
 
@@ -527,7 +527,7 @@ func TestRealAlipayProvider_Refund_VariousAmounts(t *testing.T) {
 	assert.NoError(t, err)
 
 	testCases := []struct {
-		name       string
+		name        string
 		amountCents int64
 	}{
 		{"Minimum", 1},
@@ -539,7 +539,7 @@ func TestRealAlipayProvider_Refund_VariousAmounts(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			payment := &model.Payment{
-				Base:       model.Base{ID: uint64(tc.amountCents)},
+				Base:        model.Base{ID: uint64(tc.amountCents)},
 				AmountCents: tc.amountCents,
 			}
 
@@ -602,7 +602,7 @@ func TestRealAlipayProvider_Refund_WithSpecialCharacters(t *testing.T) {
 	assert.NoError(t, err)
 
 	payment := &model.Payment{
-		Base:       model.Base{ID: 12345},
+		Base:        model.Base{ID: 12345},
 		AmountCents: 10000,
 	}
 

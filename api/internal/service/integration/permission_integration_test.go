@@ -8,8 +8,8 @@ import (
 	"gamelink/internal/model"
 	"gamelink/internal/repository/admin"
 	"gamelink/internal/repository/permission"
-	"gamelink/internal/service/role"
 	permissionservice "gamelink/internal/service/permission"
+	"gamelink/internal/service/role"
 	"gamelink/pkg/cache"
 
 	"github.com/stretchr/testify/assert"

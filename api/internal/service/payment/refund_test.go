@@ -551,17 +551,17 @@ func TestRefundService_GetRefundsByOrder_Success(t *testing.T) {
 // TestPaymentModel_ValidateRefundAmount tests payment model refund validation
 func TestPaymentModel_ValidateRefundAmount(t *testing.T) {
 	tests := []struct {
-		name          string
-		payment       *model.Payment
-		amountCents   int64
-		expectError   bool
-		errorCode     string
+		name        string
+		payment     *model.Payment
+		amountCents int64
+		expectError bool
+		errorCode   string
 	}{
 		{
 			name: "Valid partial refund",
 			payment: &model.Payment{
-				Status:            model.PaymentStatusPaid,
-				AmountCents:       10000,
+				Status:              model.PaymentStatusPaid,
+				AmountCents:         10000,
 				RefundedAmountCents: 0,
 			},
 			amountCents: 5000,
@@ -570,8 +570,8 @@ func TestPaymentModel_ValidateRefundAmount(t *testing.T) {
 		{
 			name: "Valid full refund",
 			payment: &model.Payment{
-				Status:            model.PaymentStatusPaid,
-				AmountCents:       10000,
+				Status:              model.PaymentStatusPaid,
+				AmountCents:         10000,
 				RefundedAmountCents: 0,
 			},
 			amountCents: 10000,
@@ -580,30 +580,30 @@ func TestPaymentModel_ValidateRefundAmount(t *testing.T) {
 		{
 			name: "Zero amount",
 			payment: &model.Payment{
-				Status:            model.PaymentStatusPaid,
-				AmountCents:       10000,
+				Status:              model.PaymentStatusPaid,
+				AmountCents:         10000,
 				RefundedAmountCents: 0,
 			},
-			amountCents:   0,
-			expectError:   true,
-			errorCode:     model.RefundErrCodeInvalidAmount,
+			amountCents: 0,
+			expectError: true,
+			errorCode:   model.RefundErrCodeInvalidAmount,
 		},
 		{
 			name: "Negative amount",
 			payment: &model.Payment{
-				Status:            model.PaymentStatusPaid,
-				AmountCents:       10000,
+				Status:              model.PaymentStatusPaid,
+				AmountCents:         10000,
 				RefundedAmountCents: 0,
 			},
-			amountCents:   -100,
-			expectError:   true,
-			errorCode:     model.RefundErrCodeInvalidAmount,
+			amountCents: -100,
+			expectError: true,
+			errorCode:   model.RefundErrCodeInvalidAmount,
 		},
 		{
 			name: "Exceeds remaining amount",
 			payment: &model.Payment{
-				Status:            model.PaymentStatusPaid,
-				AmountCents:       10000,
+				Status:              model.PaymentStatusPaid,
+				AmountCents:         10000,
 				RefundedAmountCents: 8000,
 			},
 			amountCents: 3000, // Only 2000 remaining
@@ -613,8 +613,8 @@ func TestPaymentModel_ValidateRefundAmount(t *testing.T) {
 		{
 			name: "Invalid payment status - pending",
 			payment: &model.Payment{
-				Status:            model.PaymentStatusPending,
-				AmountCents:       10000,
+				Status:              model.PaymentStatusPending,
+				AmountCents:         10000,
 				RefundedAmountCents: 0,
 			},
 			amountCents: 5000,
@@ -624,8 +624,8 @@ func TestPaymentModel_ValidateRefundAmount(t *testing.T) {
 		{
 			name: "Invalid payment status - failed",
 			payment: &model.Payment{
-				Status:            model.PaymentStatusFailed,
-				AmountCents:       10000,
+				Status:              model.PaymentStatusFailed,
+				AmountCents:         10000,
 				RefundedAmountCents: 0,
 			},
 			amountCents: 5000,
@@ -635,8 +635,8 @@ func TestPaymentModel_ValidateRefundAmount(t *testing.T) {
 		{
 			name: "Already fully refunded",
 			payment: &model.Payment{
-				Status:            model.PaymentStatusPaid,
-				AmountCents:       10000,
+				Status:              model.PaymentStatusPaid,
+				AmountCents:         10000,
 				RefundedAmountCents: 10000,
 			},
 			amountCents: 1000,
@@ -664,15 +664,15 @@ func TestPaymentModel_ValidateRefundAmount(t *testing.T) {
 // TestPaymentModel_RemainingRefundableAmount tests remaining refundable amount calculation
 func TestPaymentModel_RemainingRefundableAmount(t *testing.T) {
 	tests := []struct {
-		name                     string
-		payment                  *model.Payment
-		expectedRemainingAmount  int64
+		name                    string
+		payment                 *model.Payment
+		expectedRemainingAmount int64
 	}{
 		{
 			name: "No refunds yet",
 			payment: &model.Payment{
-				Status:            model.PaymentStatusPaid,
-				AmountCents:       10000,
+				Status:              model.PaymentStatusPaid,
+				AmountCents:         10000,
 				RefundedAmountCents: 0,
 			},
 			expectedRemainingAmount: 10000,
@@ -680,8 +680,8 @@ func TestPaymentModel_RemainingRefundableAmount(t *testing.T) {
 		{
 			name: "Partial refund",
 			payment: &model.Payment{
-				Status:            model.PaymentStatusPaid,
-				AmountCents:       10000,
+				Status:              model.PaymentStatusPaid,
+				AmountCents:         10000,
 				RefundedAmountCents: 3000,
 			},
 			expectedRemainingAmount: 7000,
@@ -689,8 +689,8 @@ func TestPaymentModel_RemainingRefundableAmount(t *testing.T) {
 		{
 			name: "Fully refunded",
 			payment: &model.Payment{
-				Status:            model.PaymentStatusPaid,
-				AmountCents:       10000,
+				Status:              model.PaymentStatusPaid,
+				AmountCents:         10000,
 				RefundedAmountCents: 10000,
 			},
 			expectedRemainingAmount: 0,
@@ -698,8 +698,8 @@ func TestPaymentModel_RemainingRefundableAmount(t *testing.T) {
 		{
 			name: "Payment not paid",
 			payment: &model.Payment{
-				Status:            model.PaymentStatusPending,
-				AmountCents:       10000,
+				Status:              model.PaymentStatusPending,
+				AmountCents:         10000,
 				RefundedAmountCents: 0,
 			},
 			expectedRemainingAmount: 0,
@@ -724,8 +724,8 @@ func TestPaymentModel_CanRefund(t *testing.T) {
 		{
 			name: "Paid with no refunds",
 			payment: &model.Payment{
-				Status:            model.PaymentStatusPaid,
-				AmountCents:       10000,
+				Status:              model.PaymentStatusPaid,
+				AmountCents:         10000,
 				RefundedAmountCents: 0,
 			},
 			expected: true,
@@ -733,8 +733,8 @@ func TestPaymentModel_CanRefund(t *testing.T) {
 		{
 			name: "Paid with partial refund",
 			payment: &model.Payment{
-				Status:            model.PaymentStatusPaid,
-				AmountCents:       10000,
+				Status:              model.PaymentStatusPaid,
+				AmountCents:         10000,
 				RefundedAmountCents: 5000,
 			},
 			expected: true,
@@ -742,8 +742,8 @@ func TestPaymentModel_CanRefund(t *testing.T) {
 		{
 			name: "Fully refunded",
 			payment: &model.Payment{
-				Status:            model.PaymentStatusPaid,
-				AmountCents:       10000,
+				Status:              model.PaymentStatusPaid,
+				AmountCents:         10000,
 				RefundedAmountCents: 10000,
 			},
 			expected: false,
@@ -751,8 +751,8 @@ func TestPaymentModel_CanRefund(t *testing.T) {
 		{
 			name: "Pending payment",
 			payment: &model.Payment{
-				Status:            model.PaymentStatusPending,
-				AmountCents:       10000,
+				Status:              model.PaymentStatusPending,
+				AmountCents:         10000,
 				RefundedAmountCents: 0,
 			},
 			expected: false,
@@ -760,8 +760,8 @@ func TestPaymentModel_CanRefund(t *testing.T) {
 		{
 			name: "Failed payment",
 			payment: &model.Payment{
-				Status:            model.PaymentStatusFailed,
-				AmountCents:       10000,
+				Status:              model.PaymentStatusFailed,
+				AmountCents:         10000,
 				RefundedAmountCents: 0,
 			},
 			expected: false,
@@ -786,7 +786,7 @@ func TestPaymentModel_IsFullyRefunded(t *testing.T) {
 		{
 			name: "No refunds",
 			payment: &model.Payment{
-				AmountCents:       10000,
+				AmountCents:         10000,
 				RefundedAmountCents: 0,
 			},
 			expected: false,
@@ -794,7 +794,7 @@ func TestPaymentModel_IsFullyRefunded(t *testing.T) {
 		{
 			name: "Partial refund",
 			payment: &model.Payment{
-				AmountCents:       10000,
+				AmountCents:         10000,
 				RefundedAmountCents: 5000,
 			},
 			expected: false,
@@ -802,7 +802,7 @@ func TestPaymentModel_IsFullyRefunded(t *testing.T) {
 		{
 			name: "Full refund",
 			payment: &model.Payment{
-				AmountCents:       10000,
+				AmountCents:         10000,
 				RefundedAmountCents: 10000,
 			},
 			expected: true,
@@ -810,7 +810,7 @@ func TestPaymentModel_IsFullyRefunded(t *testing.T) {
 		{
 			name: "Over-refunded (edge case)",
 			payment: &model.Payment{
-				AmountCents:       10000,
+				AmountCents:         10000,
 				RefundedAmountCents: 11000,
 			},
 			expected: true,
@@ -835,7 +835,7 @@ func TestPaymentModel_IsPartiallyRefunded(t *testing.T) {
 		{
 			name: "No refunds",
 			payment: &model.Payment{
-				AmountCents:       10000,
+				AmountCents:         10000,
 				RefundedAmountCents: 0,
 			},
 			expected: false,
@@ -843,7 +843,7 @@ func TestPaymentModel_IsPartiallyRefunded(t *testing.T) {
 		{
 			name: "Partial refund",
 			payment: &model.Payment{
-				AmountCents:       10000,
+				AmountCents:         10000,
 				RefundedAmountCents: 5000,
 			},
 			expected: true,
@@ -851,7 +851,7 @@ func TestPaymentModel_IsPartiallyRefunded(t *testing.T) {
 		{
 			name: "Full refund",
 			payment: &model.Payment{
-				AmountCents:       10000,
+				AmountCents:         10000,
 				RefundedAmountCents: 10000,
 			},
 			expected: false,
@@ -976,8 +976,8 @@ func TestPaymentModel_ValidateStatusTransition(t *testing.T) {
 // TestPaymentModel_GetAllowedTransitions tests getting allowed status transitions
 func TestPaymentModel_GetAllowedTransitions(t *testing.T) {
 	tests := []struct {
-		name              string
-		payment           *model.Payment
+		name                string
+		payment             *model.Payment
 		expectedTransitions []model.PaymentStatus
 	}{
 		{

@@ -1718,12 +1718,12 @@ func TestCreateCompany_MultipleInvalidCreditCodes(t *testing.T) {
 	svc := NewSettlementCompanyService(mockRepo, nil)
 
 	invalidCodes := []string{
-		"",                   // Empty
-		"123",                // Too short
-		"AAAAAAAAAAAAAAAAAA", // All letters - positions 3-8 must be digits
-		"91110000100000000Z", // Invalid letter Z
-		"9I100001000000000A", // Invalid letter I
-		"91110000100000000",  // Too short (17 chars)
+		"",                    // Empty
+		"123",                 // Too short
+		"AAAAAAAAAAAAAAAAAA",  // All letters - positions 3-8 must be digits
+		"91110000100000000Z",  // Invalid letter Z
+		"9I100001000000000A",  // Invalid letter I
+		"91110000100000000",   // Too short (17 chars)
 		"91110000100000000AB", // Too long (19 chars)
 		"9B10000100000000A",   // Position 2 must be digit or valid letter, B is invalid
 	}

@@ -7,12 +7,12 @@ type RoleSlug string
 
 // RoleSlug values define system predefined roles.
 const (
-	RoleSlugSuperAdmin      RoleSlug = "superAdmin" // 超级管理员
-	RoleSlugAdmin           RoleSlug = "admin"       // 管理员/店长
-	RoleSlugFinance         RoleSlug = "finance"     // 财务
+	RoleSlugSuperAdmin      RoleSlug = "superAdmin"      // 超级管理员
+	RoleSlugAdmin           RoleSlug = "admin"           // 管理员/店长
+	RoleSlugFinance         RoleSlug = "finance"         // 财务
 	RoleSlugCustomerService RoleSlug = "customerService" // 客服
-	RoleSlugPlayer          RoleSlug = "player"      // 陪玩师
-	RoleSlugUser            RoleSlug = "user"        // 普通用户
+	RoleSlugPlayer          RoleSlug = "player"          // 陪玩师
+	RoleSlugUser            RoleSlug = "user"            // 普通用户
 )
 
 // MaxRoleInheritanceDepth defines the maximum allowed inheritance depth for roles.

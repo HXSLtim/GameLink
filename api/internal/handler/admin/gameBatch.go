@@ -2,6 +2,7 @@ package admin
 
 import (
 	_ "gamelink/internal/model" // Imported for Swagger annotations
+
 	"github.com/gin-gonic/gin"
 
 	_ "gamelink/internal/service/admin" // Imported for Swagger annotations
@@ -10,8 +11,8 @@ import (
 
 // BatchUpdateGameStatusRequest 批量更新游戏状态请求
 type BatchUpdateGameStatusRequest struct {
-	GameIDs []uint64 `json:"gameIds" binding:"required,min=1,max=100"`
-	IsActive bool    `json:"isActive" binding:"required"`
+	GameIDs  []uint64 `json:"gameIds" binding:"required,min=1,max=100"`
+	IsActive bool     `json:"isActive" binding:"required"`
 }
 
 // BatchUpdateGameCategoryRequest 批量更新游戏分类请求

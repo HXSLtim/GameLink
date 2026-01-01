@@ -10,8 +10,8 @@ import (
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
-	userblockrepo "gamelink/internal/repository/userblock"
 	userrepository "gamelink/internal/repository/user"
+	userblockrepo "gamelink/internal/repository/userblock"
 	userblockservice "gamelink/internal/service/userblock"
 
 	"gorm.io/gorm"
@@ -1020,9 +1020,9 @@ func TestUserBlockService_BatchUnblock_PartialFailure(t *testing.T) {
 	require.NoError(t, err)
 
 	ids := []uint64{
-		block.ID,      // Valid
-		99999,         // Not found
-		99998,         // Not found
+		block.ID, // Valid
+		99999,    // Not found
+		99998,    // Not found
 	}
 
 	result, err := svc.BatchUnblock(ctx, ids, admin.ID, "Batch partial")

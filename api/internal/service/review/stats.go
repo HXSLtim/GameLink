@@ -20,9 +20,9 @@ func NewReviewStatsService(reviews repository.ReviewRepository) *ReviewStatsServ
 
 // GetReviewStatsResponse 评价统计响应
 type GetReviewStatsResponse struct {
-	TotalReviews       int64            `json:"totalReviews"`
-	AverageRating      float64          `json:"averageRating"`
-	RatingDistribution map[int]int64    `json:"ratingDistribution"`
+	TotalReviews       int64         `json:"totalReviews"`
+	AverageRating      float64       `json:"averageRating"`
+	RatingDistribution map[int]int64 `json:"ratingDistribution"`
 }
 
 // GetReviewTrendResponse 评价趋势响应

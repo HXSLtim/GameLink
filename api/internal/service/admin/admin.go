@@ -50,7 +50,7 @@ type AdminService struct {
 	permissions    repository.PermissionRepository
 	menus          repository.MenuRepository
 	stats          repository.StatsRepository
-	wallets        repository.WalletRepository // 用户钱包仓库
+	wallets        repository.WalletRepository       // 用户钱包仓库
 	gameCategories repository.GameCategoryRepository // 游戏分类仓库
 	cache          cache.Cache
 	tx             TxManager
@@ -1870,9 +1870,9 @@ func (s *AdminService) DeletePayment(ctx context.Context, id uint64) error {
 
 // BatchCaptureResult 批量收款操作结果
 type BatchCaptureResult struct {
-	SuccessCount int    `json:"successCount"`
-	FailedCount  int    `json:"failedCount"`
-	FailedIDs    []uint64 `json:"failedIds,omitempty"`
+	SuccessCount int                   `json:"successCount"`
+	FailedCount  int                   `json:"failedCount"`
+	FailedIDs    []uint64              `json:"failedIds,omitempty"`
 	Errors       []BatchOperationError `json:"errors,omitempty"`
 }
 
@@ -1884,9 +1884,9 @@ type BatchOperationError struct {
 
 // BatchCaptureRequest 批量收款请求
 type BatchCaptureRequest struct {
-	PaymentIDs       []uint64 `json:"paymentIds" binding:"required,min=1,max=500"`
-	ProviderTradeNo  string   `json:"providerTradeNo,omitempty"`
-	PaidAt           *time.Time `json:"paidAt,omitempty"`
+	PaymentIDs      []uint64   `json:"paymentIds" binding:"required,min=1,max=500"`
+	ProviderTradeNo string     `json:"providerTradeNo,omitempty"`
+	PaidAt          *time.Time `json:"paidAt,omitempty"`
 }
 
 // BatchCapture 批量收款 - 将多个pending状态的支付标记为已支付
@@ -1969,7 +1969,7 @@ func (s *AdminService) BatchCapture(ctx context.Context, req BatchCaptureRequest
 		// 异步记录日志
 		s.appendLogAsync(ctx, string(model.OpEntityPayment), payment.ID, string(model.OpActionCapture), map[string]any{
 			"batch_operation": true,
-			"trade_no":       payment.ProviderTradeNo,
+			"trade_no":        payment.ProviderTradeNo,
 		})
 	}
 
@@ -1979,9 +1979,9 @@ func (s *AdminService) BatchCapture(ctx context.Context, req BatchCaptureRequest
 
 // BatchRefundRequest 批量退款请求
 type BatchRefundRequest struct {
-	PaymentIDs  []uint64 `json:"paymentIds" binding:"required,min=1,max=500"`
-	Reason      string   `json:"reason" binding:"required,max=500"`
-	RefundedAt  *time.Time `json:"refundedAt,omitempty"`
+	PaymentIDs []uint64   `json:"paymentIds" binding:"required,min=1,max=500"`
+	Reason     string     `json:"reason" binding:"required,max=500"`
+	RefundedAt *time.Time `json:"refundedAt,omitempty"`
 }
 
 // BatchRefund 批量退款 - 退款多个已支付的支付
@@ -2084,9 +2084,9 @@ func (s *AdminService) BatchRefund(ctx context.Context, req BatchRefundRequest) 
 
 		// 异步记录日志
 		s.appendLogAsync(ctx, string(model.OpEntityPayment), payment.ID, string(model.OpActionRefund), map[string]any{
-			"batch_operation":    true,
+			"batch_operation":     true,
 			"refund_amount_cents": payment.AmountCents,
-			"reason":             req.Reason,
+			"reason":              req.Reason,
 		})
 	}
 
@@ -2175,8 +2175,8 @@ func (s *AdminService) BatchCancel(ctx context.Context, req BatchCancelRequest) 
 
 // BatchUpdateStatusRequest 批量更新支付状态请求
 type BatchUpdateStatusRequest struct {
-	PaymentIDs []uint64              `json:"paymentIds" binding:"required,min=1,max=500"`
-	Status     model.PaymentStatus   `json:"-" binding:"-"` // Not used for binding, set from handler
+	PaymentIDs []uint64            `json:"paymentIds" binding:"required,min=1,max=500"`
+	Status     model.PaymentStatus `json:"-" binding:"-"` // Not used for binding, set from handler
 }
 
 // BatchUpdateStatus 批量更新支付状态

@@ -749,7 +749,7 @@ type BatchDeleteRolesRequest struct {
 // BatchAssignPermissionsToRolesRequest 批量为角色分配权限请求
 type BatchAssignPermissionsToRolesRequest struct {
 	Assignments []struct {
-		RoleID       uint64   `json:"roleId" binding:"required"`
+		RoleID        uint64   `json:"roleId" binding:"required"`
 		PermissionIDs []uint64 `json:"permissionIds"`
 	} `json:"assignments" binding:"required,min=1"`
 }
@@ -811,7 +811,7 @@ func (h *RoleHandler) BatchAssignPermissionsToRoles(c *gin.Context) {
 	assignments := make([]roleservice.RolePermissionAssignment, len(req.Assignments))
 	for i, a := range req.Assignments {
 		assignments[i] = roleservice.RolePermissionAssignment{
-			RoleID:       a.RoleID,
+			RoleID:        a.RoleID,
 			PermissionIDs: a.PermissionIDs,
 		}
 	}

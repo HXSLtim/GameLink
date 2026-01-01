@@ -15,14 +15,14 @@ import (
 
 // Mock implementations for dispute service testing
 type MockDisputeRepository struct {
-	createDispute       func(ctx context.Context, dispute *model.OrderDispute) error
-	getDispute          func(ctx context.Context, id uint64) (*model.OrderDispute, error)
-	getDisputeByOrderID func(ctx context.Context, orderID uint64) (*model.OrderDispute, error)
-	updateDispute       func(ctx context.Context, dispute *model.OrderDispute) error
-	listDisputes        func(ctx context.Context, opts repository.DisputeListOptions) ([]model.OrderDispute, int64, error)
-	listSLABreached     func(ctx context.Context) ([]model.OrderDispute, error)
-	markSLABreached     func(ctx context.Context, disputeID uint64) error
-	getStats            func(ctx context.Context) (map[string]int64, error)
+	createDispute         func(ctx context.Context, dispute *model.OrderDispute) error
+	getDispute            func(ctx context.Context, id uint64) (*model.OrderDispute, error)
+	getDisputeByOrderID   func(ctx context.Context, orderID uint64) (*model.OrderDispute, error)
+	updateDispute         func(ctx context.Context, dispute *model.OrderDispute) error
+	listDisputes          func(ctx context.Context, opts repository.DisputeListOptions) ([]model.OrderDispute, int64, error)
+	listSLABreached       func(ctx context.Context) ([]model.OrderDispute, error)
+	markSLABreached       func(ctx context.Context, disputeID uint64) error
+	getStats              func(ctx context.Context) (map[string]int64, error)
 	listPendingAssignment func(ctx context.Context, page, pageSize int) ([]model.OrderDispute, int64, error)
 }
 
@@ -86,7 +86,9 @@ func (m *MockDisputeRepository) MarkSLABreached(ctx context.Context, disputeID u
 }
 
 func (m *MockDisputeRepository) Delete(ctx context.Context, id uint64) error { return nil }
-func (m *MockDisputeRepository) CountByStatus(ctx context.Context, status model.DisputeStatus) (int64, error) { return 0, nil }
+func (m *MockDisputeRepository) CountByStatus(ctx context.Context, status model.DisputeStatus) (int64, error) {
+	return 0, nil
+}
 func (m *MockDisputeRepository) GetPendingCount(ctx context.Context) (int64, error) { return 0, nil }
 func (m *MockDisputeRepository) GetStats(ctx context.Context) (map[string]int64, error) {
 	if m.getStats != nil {
@@ -129,10 +131,18 @@ func (m *MockNotificationRepository) ListByUser(ctx context.Context, opts reposi
 	return nil, 0, nil
 }
 
-func (m *MockNotificationRepository) MarkRead(ctx context.Context, userID uint64, ids []uint64) error { return nil }
-func (m *MockNotificationRepository) MarkAllRead(ctx context.Context, userID uint64) error { return nil }
-func (m *MockNotificationRepository) CountUnread(ctx context.Context, userID uint64) (int64, error) { return 0, nil }
-func (m *MockNotificationRepository) Delete(ctx context.Context, userID uint64, id uint64) error { return nil }
+func (m *MockNotificationRepository) MarkRead(ctx context.Context, userID uint64, ids []uint64) error {
+	return nil
+}
+func (m *MockNotificationRepository) MarkAllRead(ctx context.Context, userID uint64) error {
+	return nil
+}
+func (m *MockNotificationRepository) CountUnread(ctx context.Context, userID uint64) (int64, error) {
+	return 0, nil
+}
+func (m *MockNotificationRepository) Delete(ctx context.Context, userID uint64, id uint64) error {
+	return nil
+}
 
 // Helper functions
 func createTestOrderForDispute(orderID uint64, userID uint64, status model.OrderStatus) *model.Order {
@@ -141,21 +151,21 @@ func createTestOrderForDispute(orderID uint64, userID uint64, status model.Order
 	now := time.Now()
 
 	return &model.Order{
-		Base:             model.Base{ID: orderID, CreatedAt: now, UpdatedAt: now},
-		OrderNo:          model.GenerateEscortOrderNo(),
-		UserID:           userID,
-		ItemID:           1,
-		PlayerID:         &playerID,
-		GameID:           &gameID,
-		Quantity:         1,
-		UnitPriceCents:   5000,
-		TotalPriceCents:  5000,
-		CommissionCents:  1000,
+		Base:              model.Base{ID: orderID, CreatedAt: now, UpdatedAt: now},
+		OrderNo:           model.GenerateEscortOrderNo(),
+		UserID:            userID,
+		ItemID:            1,
+		PlayerID:          &playerID,
+		GameID:            &gameID,
+		Quantity:          1,
+		UnitPriceCents:    5000,
+		TotalPriceCents:   5000,
+		CommissionCents:   1000,
 		PlayerIncomeCents: 4000,
-		Currency:         model.CurrencyCNY,
-		Status:           status,
-		Title:            "Test Order",
-		HasDispute:       false,
+		Currency:          model.CurrencyCNY,
+		Status:            status,
+		Title:             "Test Order",
+		HasDispute:        false,
 	}
 }
 
@@ -165,17 +175,17 @@ func createTestDispute(disputeID uint64, orderID uint64, initiatorID uint64) *mo
 	now := time.Now()
 
 	return &model.OrderDispute{
-		Base:           model.Base{ID: disputeID, CreatedAt: now, UpdatedAt: now},
-		OrderID:        orderID,
-		InitiatorID:    initiatorID,
-		InitiatorType:  model.DisputeInitiatorUser,
-		Type:           model.DisputeTypeServiceQuality,
-		Status:         model.DisputeStatusPending,
-		Reason:         "Service quality issue",
-		EvidenceText:   "Test evidence",
-		EvidenceURLs:   model.EvidenceURLArray{"https://example.com/evidence.jpg"},
-		SLADeadline:    &slaDeadline,
-		TraceID:        traceID,
+		Base:          model.Base{ID: disputeID, CreatedAt: now, UpdatedAt: now},
+		OrderID:       orderID,
+		InitiatorID:   initiatorID,
+		InitiatorType: model.DisputeInitiatorUser,
+		Type:          model.DisputeTypeServiceQuality,
+		Status:        model.DisputeStatusPending,
+		Reason:        "Service quality issue",
+		EvidenceText:  "Test evidence",
+		EvidenceURLs:  model.EvidenceURLArray{"https://example.com/evidence.jpg"},
+		SLADeadline:   &slaDeadline,
+		TraceID:       traceID,
 	}
 }
 

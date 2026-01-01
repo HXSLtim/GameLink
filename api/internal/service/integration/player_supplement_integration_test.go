@@ -381,13 +381,13 @@ func TestPlayerService_PlayerStatistics(t *testing.T) {
 
 	// Create player statistics
 	stats := &model.PlayerStatistics{
-		PlayerID:            testPlayer.ID,
-		TotalEarningsCents:  50000,
+		PlayerID:             testPlayer.ID,
+		TotalEarningsCents:   50000,
 		TotalCommissionCents: 10000,
-		TotalOrderCount:     10,
-		CompletedOrderCount: 8,
-		CanceledOrderCount:  1,
-		RefundOrderCount:    1,
+		TotalOrderCount:      10,
+		CompletedOrderCount:  8,
+		CanceledOrderCount:   1,
+		RefundOrderCount:     1,
 	}
 	err := db.Create(stats).Error
 	require.NoError(t, err)

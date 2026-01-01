@@ -392,11 +392,11 @@ func (s *SensitiveWordService) invalidateCache() {
 
 // BatchOperationResult 批量操作结果
 type BatchOperationResult struct {
-	SuccessCount int               `json:"success_count"`
-	FailedCount  int               `json:"failed_count"`
-	TotalCount   int               `json:"total_count"`
-	FailedItems  []BatchErrorItem  `json:"failed_items,omitempty"`
-	SuccessItems []uint64          `json:"success_items,omitempty"`
+	SuccessCount int              `json:"success_count"`
+	FailedCount  int              `json:"failed_count"`
+	TotalCount   int              `json:"total_count"`
+	FailedItems  []BatchErrorItem `json:"failed_items,omitempty"`
+	SuccessItems []uint64         `json:"success_items,omitempty"`
 }
 
 // BatchErrorItem 单个操作错误详情
@@ -407,10 +407,10 @@ type BatchErrorItem struct {
 
 // BatchAddSensitiveWordsRequest 批量添加敏感词请求
 type BatchAddSensitiveWordsRequest struct {
-	Words     []string                      `json:"words" binding:"required,min=1,max=100"`
-	Category  model.SensitiveWordCategory   `json:"category" binding:"required"`
-	Severity  model.SensitiveWordSeverity   `json:"severity" binding:"required"`
-	MatchType model.SensitiveWordMatchType  `json:"matchType"`
+	Words     []string                     `json:"words" binding:"required,min=1,max=100"`
+	Category  model.SensitiveWordCategory  `json:"category" binding:"required"`
+	Severity  model.SensitiveWordSeverity  `json:"severity" binding:"required"`
+	MatchType model.SensitiveWordMatchType `json:"matchType"`
 }
 
 // BatchAddSensitiveWords 批量添加敏感词
@@ -527,8 +527,8 @@ func (s *SensitiveWordService) BatchDeleteSensitiveWords(ctx context.Context, id
 
 // BatchUpdateSensitiveWordStatusRequest 批量更新敏感词状态请求
 type BatchUpdateSensitiveWordStatusRequest struct {
-	IDs       []uint64 `json:"ids" binding:"required,min=1,max=100"`
-	IsActive  bool     `json:"isActive" binding:"required"`
+	IDs      []uint64 `json:"ids" binding:"required,min=1,max=100"`
+	IsActive bool     `json:"isActive" binding:"required"`
 }
 
 // BatchUpdateSensitiveWordStatus 批量更新敏感词状态

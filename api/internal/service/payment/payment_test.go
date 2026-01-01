@@ -154,13 +154,13 @@ func (m *MockWalletRepository) Save(ctx context.Context, wallet *model.Wallet) e
 // Helper function to create test order
 func createTestOrder(id, userID uint64, status model.OrderStatus, priceCents int64) *model.Order {
 	return &model.Order{
-		Base:          model.Base{ID: id},
-		OrderNo:       "ORD123456",
-		UserID:        userID,
-		ItemID:        1,
-		Status:        status,
+		Base:            model.Base{ID: id},
+		OrderNo:         "ORD123456",
+		UserID:          userID,
+		ItemID:          1,
+		Status:          status,
 		TotalPriceCents: priceCents,
-		Currency:      model.CurrencyCNY,
+		Currency:        model.CurrencyCNY,
 	}
 }
 
@@ -514,24 +514,24 @@ func TestPaymentService_CreatePayment_Combined_InvalidWalletAmount(t *testing.T)
 	service.SetWalletRepository(mockWallets)
 
 	tests := []struct {
-		name             string
+		name              string
 		walletAmountCents int64
-		expectError      string
+		expectError       string
 	}{
 		{
-			name:             "Zero wallet amount",
+			name:              "Zero wallet amount",
 			walletAmountCents: 0,
-			expectError:      "wallet amount must be positive",
+			expectError:       "wallet amount must be positive",
 		},
 		{
-			name:             "Wallet amount equals or exceeds total",
+			name:              "Wallet amount equals or exceeds total",
 			walletAmountCents: 10000,
-			expectError:      "wallet amount must be less than total price",
+			expectError:       "wallet amount must be less than total price",
 		},
 		{
-			name:             "Wallet amount exceeds total",
+			name:              "Wallet amount exceeds total",
 			walletAmountCents: 15000,
-			expectError:      "wallet amount must be less than total price",
+			expectError:       "wallet amount must be less than total price",
 		},
 	}
 
@@ -1217,7 +1217,7 @@ func TestPaymentService_routePayment_NoEngine(t *testing.T) {
 
 	// Don't initialize routing engine
 	order := &model.Order{
-		Base:          model.Base{ID: 1000},
+		Base:            model.Base{ID: 1000},
 		TotalPriceCents: 10000,
 		Game: &model.Game{
 			Name: "TestGame",

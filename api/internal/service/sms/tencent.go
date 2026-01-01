@@ -39,10 +39,10 @@ func (p *TencentProvider) SendNotification(ctx context.Context, phone, templateI
 func (p *TencentProvider) sendRequest(ctx context.Context, phone, templateID string, params map[string]string) error {
 	// Build request body (for future implementation)
 	_ = map[string]interface{}{
-		"PhoneNumberSet": []string{p.formatPhone(phone)},
-		"SmsSdkAppId":    "", // Set from config or use default
-		"SignName":       p.SignName,
-		"TemplateId":     templateID,
+		"PhoneNumberSet":   []string{p.formatPhone(phone)},
+		"SmsSdkAppId":      "", // Set from config or use default
+		"SignName":         p.SignName,
+		"TemplateId":       templateID,
 		"TemplateParamSet": p.buildParams(params),
 	}
 
@@ -89,10 +89,10 @@ func (p *TencentProvider) buildParams(params map[string]string) []string {
 // Tencent SMS API response structures
 type tencentResponse struct {
 	Response struct {
-		RequestID   string `json:"RequestId"`
+		RequestID     string `json:"RequestId"`
 		SendStatusSet []struct {
 			SerialNo    string `json:"SerialNo"`
-			PhoneNumber string  `json:"PhoneNumber"`
+			PhoneNumber string `json:"PhoneNumber"`
 			Fee         int    `json:"Fee"`
 			SessionNo   string `json:"SessionNo"`
 			Code        string `json:"Code"`

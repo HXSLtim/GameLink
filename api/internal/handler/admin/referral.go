@@ -481,8 +481,8 @@ func (h *ReferralHandler) BatchDeleteCodes(c *gin.Context) {
 
 // batchUpdateReferralsStatusRequest 批量更新推荐状态请求
 type batchUpdateReferralsStatusRequest struct {
-	IDs    []uint64                `json:"ids" binding:"required,min=1"`
-	Status model.ReferralStatus    `json:"status" binding:"required"`
+	IDs    []uint64             `json:"ids" binding:"required,min=1"`
+	Status model.ReferralStatus `json:"status" binding:"required"`
 }
 
 // BatchUpdateReferralsStatus 批量更新推荐状态

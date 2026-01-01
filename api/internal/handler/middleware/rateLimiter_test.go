@@ -70,7 +70,7 @@ func TestRateLimiter_IPRateLimit(t *testing.T) {
 	config := RateLimiterConfig{
 		Enabled:             true,
 		IPRequestsPerSecond: 2, // Very low rate for testing
-		RouteLimits:          map[string]RouteLimit{},
+		RouteLimits:         map[string]RouteLimit{},
 	}
 
 	limiter := NewRateLimiter(config)
@@ -147,7 +147,7 @@ func TestRateLimiter_UserRateLimit(t *testing.T) {
 	config := RateLimiterConfig{
 		Enabled:               true,
 		UserRequestsPerMinute: 10, // Low rate for testing
-		RouteLimits:            map[string]RouteLimit{},
+		RouteLimits:           map[string]RouteLimit{},
 	}
 
 	limiter := NewRateLimiter(config)
@@ -221,9 +221,9 @@ func TestRateLimiter_RouteRateLimit(t *testing.T) {
 		Enabled: true,
 		RouteLimits: map[string]RouteLimit{
 			"/api/login": {
-				Path:     "/api/login",
-				Requests: 3,
-				Window:   time.Minute,
+				Path:      "/api/login",
+				Requests:  3,
+				Window:    time.Minute,
 				LimitByIP: true,
 			},
 		},
@@ -242,8 +242,8 @@ func TestRateLimiter_RouteRateLimit(t *testing.T) {
 			tb := limiter.getRouteLimiter(key, routeLimit)
 			if allowed, remaining := tb.Allow(); !allowed {
 				c.JSON(http.StatusTooManyRequests, gin.H{
-					"success": false,
-					"message": "Login rate limit exceeded",
+					"success":   false,
+					"message":   "Login rate limit exceeded",
 					"remaining": remaining,
 				})
 				c.Abort()
@@ -279,10 +279,10 @@ func TestRateLimiter_RouteRateLimit(t *testing.T) {
 // TestRateLimiter_Whitelist tests IP and role whitelisting
 func TestRateLimiter_Whitelist(t *testing.T) {
 	config := RateLimiterConfig{
-		Enabled:        true,
+		Enabled:             true,
 		IPRequestsPerSecond: 1, // Very restrictive
-		WhitelistIPs:   []string{"192.168.1.100", "10.0.0.0/8"},
-		WhitelistRoles: []string{"admin", "superAdmin"},
+		WhitelistIPs:        []string{"192.168.1.100", "10.0.0.0/8"},
+		WhitelistRoles:      []string{"admin", "superAdmin"},
 	}
 
 	limiter := NewRateLimiter(config)
@@ -292,9 +292,9 @@ func TestRateLimiter_Whitelist(t *testing.T) {
 			ip       string
 			expected bool
 		}{
-			{"192.168.1.100", true},  // Exact match
-			{"192.168.1.1", false},    // Not whitelisted
-			{"8.8.8.8", false},        // Not whitelisted
+			{"192.168.1.100", true}, // Exact match
+			{"192.168.1.1", false},  // Not whitelisted
+			{"8.8.8.8", false},      // Not whitelisted
 		}
 
 		for _, tc := range testCases {
@@ -326,7 +326,7 @@ func TestRateLimiter_Disabled(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	config := RateLimiterConfig{
-		Enabled: false, // Disabled
+		Enabled:             false, // Disabled
 		IPRequestsPerSecond: 1,
 	}
 
@@ -388,16 +388,16 @@ func TestRateLimiter_ClientIP(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	testCases := []struct {
-		name           string
-		xForwardedFor  string
-		xRealIP        string
-		remoteAddr     string
-		expectedIP     string
+		name          string
+		xForwardedFor string
+		xRealIP       string
+		remoteAddr    string
+		expectedIP    string
 	}{
 		{
-			name:       "X-Forwarded-For header",
+			name:          "X-Forwarded-For header",
 			xForwardedFor: "203.0.113.1, 198.51.100.1",
-			expectedIP: "203.0.113.1",
+			expectedIP:    "203.0.113.1",
 		},
 		{
 			name:       "X-Real-IP header",
@@ -410,10 +410,10 @@ func TestRateLimiter_ClientIP(t *testing.T) {
 			expectedIP: "192.168.1.1",
 		},
 		{
-			name:       "X-Forwarded-For priority over X-Real-IP",
+			name:          "X-Forwarded-For priority over X-Real-IP",
 			xForwardedFor: "10.0.0.1",
-			xRealIP:    "10.0.0.2",
-			expectedIP: "10.0.0.1",
+			xRealIP:       "10.0.0.2",
+			expectedIP:    "10.0.0.1",
 		},
 	}
 
@@ -432,7 +432,7 @@ func TestRateLimiter_ClientIP(t *testing.T) {
 
 			c.Request = &http.Request{
 				RemoteAddr: tc.remoteAddr,
-				Header:    headers,
+				Header:     headers,
 			}
 
 			ip := getClientIP(c)
@@ -507,10 +507,10 @@ func TestRateLimiter_Integration(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	config := RateLimiterConfig{
-		Enabled:             true,
-		IPRequestsPerSecond: 5, // 5 requests per second
+		Enabled:               true,
+		IPRequestsPerSecond:   5, // 5 requests per second
 		UserRequestsPerMinute: 30,
-		WhitelistIPs:        []string{"127.0.0.1"},
+		WhitelistIPs:          []string{"127.0.0.1"},
 		RouteLimits: map[string]RouteLimit{
 			"/api/v1/test": {
 				Path:     "/api/v1/test",

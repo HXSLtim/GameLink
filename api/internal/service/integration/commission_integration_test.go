@@ -63,8 +63,8 @@ func TestCommissionService_CalculateCommission_PlayerIndividualRate(t *testing.T
 	// Player individual rate (10%) should be used (lowest)
 	assert.Equal(t, int64(10000), calc.TotalAmountCents)
 	assert.Equal(t, 10, calc.CommissionRate)
-	assert.Equal(t, int64(1000), calc.CommissionCents)     // 10% of 10000
-	assert.Equal(t, int64(9000), calc.PlayerIncomeCents)   // 10000 - 1000
+	assert.Equal(t, int64(1000), calc.CommissionCents)   // 10% of 10000
+	assert.Equal(t, int64(9000), calc.PlayerIncomeCents) // 10000 - 1000
 	assert.Equal(t, "陪玩师专属", calc.AppliedRule)
 }
 
@@ -109,8 +109,8 @@ func TestCommissionService_CalculateCommission_ServiceItemDefaultRate(t *testing
 	// Service item rate (20%) should be used (lower than default 25%)
 	assert.Equal(t, int64(10000), calc.TotalAmountCents)
 	assert.Equal(t, 20, calc.CommissionRate)
-	assert.Equal(t, int64(2000), calc.CommissionCents)    // 20% of 10000
-	assert.Equal(t, int64(8000), calc.PlayerIncomeCents)  // 10000 - 2000
+	assert.Equal(t, int64(2000), calc.CommissionCents)   // 20% of 10000
+	assert.Equal(t, int64(8000), calc.PlayerIncomeCents) // 10000 - 2000
 }
 
 func TestCommissionService_CalculateCommission_DefaultRuleOnly(t *testing.T) {
@@ -152,8 +152,8 @@ func TestCommissionService_CalculateCommission_DefaultRuleOnly(t *testing.T) {
 	// Default rate (20%) should be used
 	assert.Equal(t, int64(10000), calc.TotalAmountCents)
 	assert.Equal(t, 20, calc.CommissionRate)
-	assert.Equal(t, int64(2000), calc.CommissionCents)    // 20% of 10000
-	assert.Equal(t, int64(8000), calc.PlayerIncomeCents)  // 10000 - 2000
+	assert.Equal(t, int64(2000), calc.CommissionCents)   // 20% of 10000
+	assert.Equal(t, int64(8000), calc.PlayerIncomeCents) // 10000 - 2000
 	assert.Equal(t, "默认规则", calc.AppliedRule)
 }
 
@@ -210,8 +210,8 @@ func TestCommissionService_CalculateCommission_ThreeTierCalculation(t *testing.T
 	// Player rate (15%) should win - it's the lowest
 	assert.Equal(t, int64(10000), calc.TotalAmountCents)
 	assert.Equal(t, 15, calc.CommissionRate)
-	assert.Equal(t, int64(1500), calc.CommissionCents)    // 15% of 10000
-	assert.Equal(t, int64(8500), calc.PlayerIncomeCents)  // 10000 - 1500
+	assert.Equal(t, int64(1500), calc.CommissionCents)   // 15% of 10000
+	assert.Equal(t, int64(8500), calc.PlayerIncomeCents) // 10000 - 1500
 	assert.Equal(t, "陪玩师专属", calc.AppliedRule)
 
 	// Verify all candidate rates were considered
@@ -235,24 +235,24 @@ func TestCommissionService_CalculateCommission_NoPlayerAssigned(t *testing.T) {
 
 	// Create default rule
 	defaultRule := &model.CommissionRule{
-		Name:        "Default 20%",
-		Type:        model.CommissionRuleTypeDefault,
-		Rate:        20,
-		IsActive:    true,
+		Name:     "Default 20%",
+		Type:     model.CommissionRuleTypeDefault,
+		Rate:     20,
+		IsActive: true,
 	}
 	err := commissionRepo.CreateRule(ctx, defaultRule)
 	require.NoError(t, err)
 
 	// Create order without player
 	testOrder := &model.Order{
-		Base:          model.Base{ExtJSON: "{}"},
-		OrderNo:       "TEST_NO_PLAYER",
-		UserID:        user.ID,
-		PlayerID:      nil, // No player assigned
+		Base:            model.Base{ExtJSON: "{}"},
+		OrderNo:         "TEST_NO_PLAYER",
+		UserID:          user.ID,
+		PlayerID:        nil, // No player assigned
 		TotalPriceCents: 10000,
-		Status:        model.OrderStatusCompleted,
-		Currency:      model.CurrencyCNY,
-		OrderConfig:   "{}",
+		Status:          model.OrderStatusCompleted,
+		Currency:        model.CurrencyCNY,
+		OrderConfig:     "{}",
 	}
 	err = db.Create(testOrder).Error
 	require.NoError(t, err)
@@ -442,10 +442,10 @@ func TestCommissionService_SettleMonth_Success(t *testing.T) {
 
 	// Verify commission records were updated to settled
 	records, _, err := commissionRepo.ListRecords(ctx, commissionrepo.CommissionRecordListOptions{
-		PlayerID:         &testPlayer.ID,
-		SettlementMonth:  &month,
-		Page:             1,
-		PageSize:         10,
+		PlayerID:        &testPlayer.ID,
+		SettlementMonth: &month,
+		Page:            1,
+		PageSize:        10,
 	})
 	require.NoError(t, err)
 	for _, record := range records {
@@ -665,9 +665,9 @@ func TestCommissionService_CreateCommissionRule_InvalidRate(t *testing.T) {
 
 	// Try to create rule with invalid rate (> 100%)
 	req := commissionservice.CreateCommissionRuleRequest{
-		Name:        "Invalid Rule",
-		Type:        model.CommissionRuleTypeDefault,
-		Rate:        150, // Invalid: > 100
+		Name: "Invalid Rule",
+		Type: model.CommissionRuleTypeDefault,
+		Rate: 150, // Invalid: > 100
 	}
 
 	_, err := svc.CreateCommissionRule(ctx, req)
@@ -787,7 +787,7 @@ func TestCommissionService_GetPlayerCommissionSummary(t *testing.T) {
 	// Get summary
 	summary, err := svc.GetPlayerCommissionSummary(ctx, testPlayer.ID, month)
 	require.NoError(t, err)
-	assert.Equal(t, int64(40000), summary.MonthlyIncome)  // 5 * 8000
+	assert.Equal(t, int64(40000), summary.MonthlyIncome)   // 5 * 8000
 	assert.Equal(t, int64(10000), summary.TotalCommission) // 5 * 2000
 	assert.Equal(t, int64(40000), summary.TotalIncome)     // 5 * 8000
 	assert.Equal(t, int64(5), summary.TotalOrders)

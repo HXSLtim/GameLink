@@ -98,10 +98,10 @@ func (s *AdminService) BatchUpdatePlayerVerificationStatus(ctx context.Context, 
 
 		// Log operation
 		s.appendLogAsync(ctx, string(model.OpEntityPlayer), playerID, string(model.OpActionUpdate), map[string]any{
-			"verification_status":   status,
-			"verified_by":           verifiedBy,
-			"previous_status":       player.VerificationStatus,
-			"remark":                remark,
+			"verification_status": status,
+			"verified_by":         verifiedBy,
+			"previous_status":     player.VerificationStatus,
+			"remark":              remark,
 		})
 	}
 
@@ -178,10 +178,10 @@ func (s *AdminService) BatchRevokePlayerCertification(ctx context.Context, playe
 
 		// Log operation
 		s.appendLogAsync(ctx, string(model.OpEntityPlayer), playerID, "revoke_certification", map[string]any{
-			"previous_status":     previousStatus,
-			"new_status":          player.VerificationStatus,
-			"revoked_by":          revokedBy,
-			"revoke_reason":       reason,
+			"previous_status": previousStatus,
+			"new_status":      player.VerificationStatus,
+			"revoked_by":      revokedBy,
+			"revoke_reason":   reason,
 		})
 	}
 

@@ -14,6 +14,7 @@ import (
 	svcauth "gamelink/internal/service/auth"
 	svcpayment "gamelink/internal/service/payment"
 	authpkg "gamelink/pkg/auth"
+
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -21,14 +22,14 @@ import (
 
 // BenchmarkConfig holds configuration for benchmarks
 type BenchmarkConfig struct {
-	DBHost         string
-	DBPort         string
-	DBUser         string
-	DBPassword     string
-	DBName         string
+	DBHost          string
+	DBPort          string
+	DBUser          string
+	DBPassword      string
+	DBName          string
 	EnableProfiling bool
-	CPUProfile     string
-	MemProfile     string
+	CPUProfile      string
+	MemProfile      string
 }
 
 // DefaultConfig returns default benchmark configuration
@@ -45,14 +46,14 @@ func DefaultConfig() *BenchmarkConfig {
 
 // BenchmarkSuite holds all services and repositories for benchmarking
 type BenchmarkSuite struct {
-	DB              *gorm.DB
-	AuthService     *svcauth.AuthService
-	PaymentService  *svcpayment.PaymentService
-	UserRepo        repository.UserRepository
-	PlayerRepo      repository.PlayerRepository
-	GameRepo        repository.GameRepository
-	Config          *BenchmarkConfig
-	CleanupFunc     func()
+	DB             *gorm.DB
+	AuthService    *svcauth.AuthService
+	PaymentService *svcpayment.PaymentService
+	UserRepo       repository.UserRepository
+	PlayerRepo     repository.PlayerRepository
+	GameRepo       repository.GameRepository
+	Config         *BenchmarkConfig
+	CleanupFunc    func()
 }
 
 // NewBenchmarkSuite creates a new benchmark suite
@@ -132,10 +133,10 @@ func setupBenchmarkDB(t testing.TB, config *BenchmarkConfig) (*gorm.DB, func()) 
 // CreateBenchmarkUser creates a test user for benchmarking
 func (s *BenchmarkSuite) CreateBenchmarkUser(t testing.TB, phone string) *model.User {
 	user := &model.User{
-		Phone:     phone,
-		Name:      "Benchmark User",
-		Role:      model.RoleUser,
-		Status:    model.UserStatusActive,
+		Phone:        phone,
+		Name:         "Benchmark User",
+		Role:         model.RoleUser,
+		Status:       model.UserStatusActive,
 		PasswordHash: "$2a$10$benchmark.hash.for.testing",
 	}
 	if err := s.DB.Create(user).Error; err != nil {
@@ -147,13 +148,13 @@ func (s *BenchmarkSuite) CreateBenchmarkUser(t testing.TB, phone string) *model.
 // CreateBenchmarkPlayer creates a test player for benchmarking
 func (s *BenchmarkSuite) CreateBenchmarkPlayer(t testing.TB, userID uint64, nickname string) *model.Player {
 	player := &model.Player{
-		UserID:         userID,
-		Nickname:       nickname,
-		Rank:           "bronze",
-		RatingAverage:  5.0,
-		RatingCount:    0,
+		UserID:          userID,
+		Nickname:        nickname,
+		Rank:            "bronze",
+		RatingAverage:   5.0,
+		RatingCount:     0,
 		HourlyRateCents: 2000, // 20 CNY
-		OnlineStatus:   model.PlayerOnlineStatusOnline,
+		OnlineStatus:    model.PlayerOnlineStatusOnline,
 		AcceptingOrders: true,
 	}
 	if err := s.DB.Create(player).Error; err != nil {
@@ -314,16 +315,16 @@ func CheckDBConnection(db *gorm.DB) error {
 
 // BenchmarkStats holds statistics from benchmark runs
 type BenchmarkStats struct {
-	Operations     int
-	TotalDuration  time.Duration
-	AvgDuration    time.Duration
-	MinDuration    time.Duration
-	MaxDuration    time.Duration
-	Throughput     float64 // operations per second
-	ErrorCount     int
-	DBConnections  int
-	CacheHits      int
-	CacheMisses    int
+	Operations    int
+	TotalDuration time.Duration
+	AvgDuration   time.Duration
+	MinDuration   time.Duration
+	MaxDuration   time.Duration
+	Throughput    float64 // operations per second
+	ErrorCount    int
+	DBConnections int
+	CacheHits     int
+	CacheMisses   int
 }
 
 // CalculateStats calculates benchmark statistics

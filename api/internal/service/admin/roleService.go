@@ -297,8 +297,8 @@ func (s *RoleService) InvalidateRolePermissionsAndPropagateToUsers(ctx context.C
 
 // RoleBatchDeleteResult 角色批量删除结果
 type RoleBatchDeleteResult struct {
-	SuccessCount int      `json:"successCount"`
-	FailedCount  int      `json:"failedCount"`
+	SuccessCount int                 `json:"successCount"`
+	FailedCount  int                 `json:"failedCount"`
 	FailedRoles  []RoleDeleteFailure `json:"failedRoles,omitempty"`
 }
 
@@ -360,15 +360,15 @@ func (s *RoleService) BatchDeleteRoles(ctx context.Context, ids []uint64) (*Role
 
 // RolePermissionAssignment 角色权限分配
 type RolePermissionAssignment struct {
-	RoleID       uint64   `json:"roleId"`
+	RoleID        uint64   `json:"roleId"`
 	PermissionIDs []uint64 `json:"permissionIds"`
 }
 
 // RoleBatchPermissionsResult 角色批量权限分配结果
 type RoleBatchPermissionsResult struct {
-	SuccessCount int                      `json:"successCount"`
-	FailedCount  int                      `json:"failedCount"`
-	FailedRoles  []RolePermissionFailure  `json:"failedRoles,omitempty"`
+	SuccessCount int                     `json:"successCount"`
+	FailedCount  int                     `json:"failedCount"`
+	FailedRoles  []RolePermissionFailure `json:"failedRoles,omitempty"`
 }
 
 // RolePermissionFailure 角色权限分配失败详情

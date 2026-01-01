@@ -135,10 +135,10 @@ func TestFeedRepository_List(t *testing.T) {
 	// Create multiple feeds
 	for i := 0; i < 5; i++ {
 		f := &model.Feed{
-			AuthorID:          user.ID,
-			Content:           fmt.Sprintf("Feed %d", i),
-			Visibility:        model.FeedVisibilityPublic,
-			ModerationStatus:  model.FeedModerationApproved,
+			AuthorID:         user.ID,
+			Content:          fmt.Sprintf("Feed %d", i),
+			Visibility:       model.FeedVisibilityPublic,
+			ModerationStatus: model.FeedModerationApproved,
 		}
 		require.NoError(t, repo.Create(ctx, f))
 	}
@@ -363,10 +363,10 @@ func TestFeedRepository_ListPaged_ByModerationStatus(t *testing.T) {
 
 	for _, status := range statuses {
 		f := &model.Feed{
-			AuthorID:          user.ID,
-			Content:           fmt.Sprintf("Feed with status %s", status),
-			Visibility:        model.FeedVisibilityPublic,
-			ModerationStatus:  status,
+			AuthorID:         user.ID,
+			Content:          fmt.Sprintf("Feed with status %s", status),
+			Visibility:       model.FeedVisibilityPublic,
+			ModerationStatus: status,
 		}
 		require.NoError(t, repo.Create(ctx, f))
 	}
@@ -396,10 +396,10 @@ func TestFeedRepository_UpdateModeration(t *testing.T) {
 	moderator := CreateUniqueTestUser(t, db, "feed_moderator")
 
 	feed := &model.Feed{
-		AuthorID:          user.ID,
-		Content:           "Feed to moderate",
-		Visibility:        model.FeedVisibilityPublic,
-		ModerationStatus:  model.FeedModerationPending,
+		AuthorID:         user.ID,
+		Content:          "Feed to moderate",
+		Visibility:       model.FeedVisibilityPublic,
+		ModerationStatus: model.FeedModerationPending,
 	}
 	require.NoError(t, repo.Create(ctx, feed))
 
@@ -425,10 +425,10 @@ func TestFeedRepository_UpdateModeration_AutoModeration(t *testing.T) {
 	user := CreateUniqueTestUser(t, db, "feed_auto_mod_author")
 
 	feed := &model.Feed{
-		AuthorID:          user.ID,
-		Content:           "Feed for auto moderation",
-		Visibility:        model.FeedVisibilityPublic,
-		ModerationStatus:  model.FeedModerationPending,
+		AuthorID:         user.ID,
+		Content:          "Feed for auto moderation",
+		Visibility:       model.FeedVisibilityPublic,
+		ModerationStatus: model.FeedModerationPending,
 	}
 	require.NoError(t, repo.Create(ctx, feed))
 
@@ -456,10 +456,10 @@ func TestFeedRepository_BatchUpdateModeration(t *testing.T) {
 	var feedIDs []uint64
 	for i := 0; i < 3; i++ {
 		f := &model.Feed{
-			AuthorID:          user.ID,
-			Content:           fmt.Sprintf("Pending feed %d", i),
-			Visibility:        model.FeedVisibilityPublic,
-			ModerationStatus:  model.FeedModerationPending,
+			AuthorID:         user.ID,
+			Content:          fmt.Sprintf("Pending feed %d", i),
+			Visibility:       model.FeedVisibilityPublic,
+			ModerationStatus: model.FeedModerationPending,
 		}
 		require.NoError(t, repo.Create(ctx, f))
 		feedIDs = append(feedIDs, f.ID)
@@ -488,10 +488,10 @@ func TestFeedRepository_CreateReport(t *testing.T) {
 	reporter := CreateUniqueTestUser(t, db, "feed_reporter")
 
 	feed := &model.Feed{
-		AuthorID:          author.ID,
-		Content:           "Feed to be reported",
-		Visibility:        model.FeedVisibilityPublic,
-		ModerationStatus:  model.FeedModerationApproved,
+		AuthorID:         author.ID,
+		Content:          "Feed to be reported",
+		Visibility:       model.FeedVisibilityPublic,
+		ModerationStatus: model.FeedModerationApproved,
 	}
 	require.NoError(t, repo.Create(ctx, feed))
 
@@ -518,10 +518,10 @@ func TestFeedRepository_ListReports(t *testing.T) {
 	reporter := CreateUniqueTestUser(t, db, "feed_list_reporter")
 
 	feed := &model.Feed{
-		AuthorID:          author.ID,
-		Content:           "Feed with reports",
-		Visibility:        model.FeedVisibilityPublic,
-		ModerationStatus:  model.FeedModerationApproved,
+		AuthorID:         author.ID,
+		Content:          "Feed with reports",
+		Visibility:       model.FeedVisibilityPublic,
+		ModerationStatus: model.FeedModerationApproved,
 	}
 	require.NoError(t, repo.Create(ctx, feed))
 
@@ -566,10 +566,10 @@ func TestFeedRepository_CountByStatus(t *testing.T) {
 
 	for _, status := range statuses {
 		f := &model.Feed{
-			AuthorID:          user.ID,
-			Content:           fmt.Sprintf("Count test feed %s", status),
-			Visibility:        model.FeedVisibilityPublic,
-			ModerationStatus:  status,
+			AuthorID:         user.ID,
+			Content:          fmt.Sprintf("Count test feed %s", status),
+			Visibility:       model.FeedVisibilityPublic,
+			ModerationStatus: status,
 		}
 		require.NoError(t, repo.Create(ctx, f))
 	}
@@ -592,10 +592,10 @@ func TestFeedRepository_WithImages(t *testing.T) {
 	user := CreateUniqueTestUser(t, db, "feed_images_author")
 
 	feed := &model.Feed{
-		AuthorID:          user.ID,
-		Content:           "Feed with images",
-		Visibility:        model.FeedVisibilityPublic,
-		ModerationStatus:  model.FeedModerationApproved,
+		AuthorID:         user.ID,
+		Content:          "Feed with images",
+		Visibility:       model.FeedVisibilityPublic,
+		ModerationStatus: model.FeedModerationApproved,
 		Images: []model.FeedImage{
 			{
 				URL:       "https://example.com/image1.jpg",
@@ -641,10 +641,10 @@ func TestFeedRepository_AllVisibilityTypes(t *testing.T) {
 
 	for _, vis := range visibilities {
 		feed := &model.Feed{
-			AuthorID:          user.ID,
-			Content:           fmt.Sprintf("Feed with visibility %s", vis),
-			Visibility:        vis,
-			ModerationStatus:  model.FeedModerationApproved,
+			AuthorID:         user.ID,
+			Content:          fmt.Sprintf("Feed with visibility %s", vis),
+			Visibility:       vis,
+			ModerationStatus: model.FeedModerationApproved,
 		}
 		require.NoError(t, repo.Create(ctx, feed))
 		assert.NotZero(t, feed.ID)

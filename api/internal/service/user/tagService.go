@@ -294,12 +294,12 @@ func isValidColor(color string) bool {
 
 // BatchOperationResult 批量操作结果
 type BatchOperationResult struct {
-	SuccessCount int               `json:"successCount"`
-	FailedCount  int               `json:"failedCount"`
-	FailedIDs    []uint64          `json:"failedIds,omitempty"`
-	TotalCount   int               `json:"totalCount"`
-	FailedItems  []BatchErrorItem  `json:"failedItems,omitempty"`
-	SuccessItems []uint64          `json:"successItems,omitempty"`
+	SuccessCount int              `json:"successCount"`
+	FailedCount  int              `json:"failedCount"`
+	FailedIDs    []uint64         `json:"failedIds,omitempty"`
+	TotalCount   int              `json:"totalCount"`
+	FailedItems  []BatchErrorItem `json:"failedItems,omitempty"`
+	SuccessItems []uint64         `json:"successItems,omitempty"`
 }
 
 // BatchErrorItem 单个操作错误详情

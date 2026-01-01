@@ -103,12 +103,12 @@ type ExternalAPIConfig struct {
 
 // WeChatPayConfig 微信支付配置
 type WeChatPayConfig struct {
-	AppID        string `yaml:"app_id"`        // 应用ID
-	MchID        string `yaml:"mch_id"`        // 商户号
-	APIKey       string `yaml:"api_key"`       // API密钥
-	APICertPath  string `yaml:"api_cert_path"` // API证书路径
-	NotifyURL    string `yaml:"notify_url"`    // 支付结果通知URL
-	Enabled      bool   `yaml:"enabled"`       // 是否启用
+	AppID       string `yaml:"app_id"`        // 应用ID
+	MchID       string `yaml:"mch_id"`        // 商户号
+	APIKey      string `yaml:"api_key"`       // API密钥
+	APICertPath string `yaml:"api_cert_path"` // API证书路径
+	NotifyURL   string `yaml:"notify_url"`    // 支付结果通知URL
+	Enabled     bool   `yaml:"enabled"`       // 是否启用
 }
 
 // AlipayConfig 支付宝配置
@@ -122,22 +122,22 @@ type AlipayConfig struct {
 
 // SMSConfig 短信服务配置
 type SMSConfig struct {
-	Provider   string `yaml:"provider"`    //服务商: aliyun, tencent
-	AccessKey  string `yaml:"access_key"`  // AccessKey ID
-	SecretKey  string `yaml:"secret_key"`  // AccessKey Secret
-	SignName   string `yaml:"sign_name"`   // 短信签名
-	Enabled    bool   `yaml:"enabled"`     // 是否启用
+	Provider  string `yaml:"provider"`   //服务商: aliyun, tencent
+	AccessKey string `yaml:"access_key"` // AccessKey ID
+	SecretKey string `yaml:"secret_key"` // AccessKey Secret
+	SignName  string `yaml:"sign_name"`  // 短信签名
+	Enabled   bool   `yaml:"enabled"`    // 是否启用
 }
 
 // OSSConfig 对象存储配置
 type OSSConfig struct {
-	Provider   string `yaml:"provider"`   // 服务商: aliyun, qcloud, minio
-	Endpoint   string `yaml:"endpoint"`   // 访问域名
-	AccessKey  string `yaml:"access_key"` // AccessKey ID
-	SecretKey  string `yaml:"secret_key"` // AccessKey Secret
-	Bucket     string `yaml:"bucket"`     // 存储桶名称
-	Region     string `yaml:"region"`     // 区域
-	Enabled    bool   `yaml:"enabled"`    // 是否启用
+	Provider  string `yaml:"provider"`   // 服务商: aliyun, qcloud, minio
+	Endpoint  string `yaml:"endpoint"`   // 访问域名
+	AccessKey string `yaml:"access_key"` // AccessKey ID
+	SecretKey string `yaml:"secret_key"` // AccessKey Secret
+	Bucket    string `yaml:"bucket"`     // 存储桶名称
+	Region    string `yaml:"region"`     // 区域
+	Enabled   bool   `yaml:"enabled"`    // 是否启用
 }
 
 type cryptoFileConfig struct {
@@ -166,10 +166,10 @@ type adminAuthFileConfig struct {
 }
 
 type externalAPIFileConfig struct {
-	WeChatPay weChatPayFileConfig    `yaml:"wechat_pay"`
-	Alipay    alipayFileConfig       `yaml:"alipay"`
-	SMS       smsFileConfig          `yaml:"sms"`
-	OSS       ossFileConfig          `yaml:"oss"`
+	WeChatPay weChatPayFileConfig `yaml:"wechat_pay"`
+	Alipay    alipayFileConfig    `yaml:"alipay"`
+	SMS       smsFileConfig       `yaml:"sms"`
+	OSS       ossFileConfig       `yaml:"oss"`
 }
 
 type weChatPayFileConfig struct {
@@ -212,13 +212,13 @@ type fileConfig struct {
 		Port          string `yaml:"port"`
 		EnableSwagger *bool  `yaml:"enable_swagger"`
 	} `yaml:"server"`
-	Database   DatabaseConfig       `yaml:"database"`
-	Cache      CacheConfig          `yaml:"cache"`
-	Crypto     cryptoFileConfig     `yaml:"crypto"`
-	Auth       authFileConfig       `yaml:"auth"`
-	Seed       SeedConfig           `yaml:"seed"`
-	SuperAdmin superAdminFileConfig `yaml:"super_admin"`
-	AdminAuth  adminAuthFileConfig  `yaml:"admin_auth"`
+	Database    DatabaseConfig        `yaml:"database"`
+	Cache       CacheConfig           `yaml:"cache"`
+	Crypto      cryptoFileConfig      `yaml:"crypto"`
+	Auth        authFileConfig        `yaml:"auth"`
+	Seed        SeedConfig            `yaml:"seed"`
+	SuperAdmin  superAdminFileConfig  `yaml:"super_admin"`
+	AdminAuth   adminAuthFileConfig   `yaml:"admin_auth"`
 	ExternalAPI externalAPIFileConfig `yaml:"external_apis"`
 }
 

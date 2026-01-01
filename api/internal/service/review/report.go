@@ -35,13 +35,13 @@ type ReportReviewResponse struct {
 
 // ListReportsRequest 列出举报请求
 type ListReportsRequest struct {
-	Page       int                        `json:"page"`
-	PageSize   int                        `json:"pageSize"`
-	ReviewID   *uint64                    `json:"reviewId"`
-	ReporterID *uint64                    `json:"reporterId"`
-	Status     *model.ReviewReportStatus  `json:"status"`
-	DateFrom   *time.Time                 `json:"dateFrom"`
-	DateTo     *time.Time                 `json:"dateTo"`
+	Page       int                       `json:"page"`
+	PageSize   int                       `json:"pageSize"`
+	ReviewID   *uint64                   `json:"reviewId"`
+	ReporterID *uint64                   `json:"reporterId"`
+	Status     *model.ReviewReportStatus `json:"status"`
+	DateFrom   *time.Time                `json:"dateFrom"`
+	DateTo     *time.Time                `json:"dateTo"`
 }
 
 // ListReportsResponse 列出举报响应
@@ -52,18 +52,18 @@ type ListReportsResponse struct {
 
 // ReviewReportDTO 举报信息DTO
 type ReviewReportDTO struct {
-	ID             uint64                    `json:"id"`
-	ReviewID       uint64                    `json:"reviewId"`
-	ReporterID     uint64                    `json:"reporterId"`
-	ReporterName   string                    `json:"reporterName"`
-	Reason         string                    `json:"reason"`
-	Evidence       string                    `json:"evidence,omitempty"`
-	Status         model.ReviewReportStatus  `json:"status"`
-	HandledBy      *uint64                   `json:"handledBy,omitempty"`
-	HandlerName    string                    `json:"handlerName,omitempty"`
-	HandledAt      *time.Time                `json:"handledAt,omitempty"`
-	HandlingNote   string                    `json:"handlingNote,omitempty"`
-	CreatedAt      time.Time                 `json:"createdAt"`
+	ID           uint64                   `json:"id"`
+	ReviewID     uint64                   `json:"reviewId"`
+	ReporterID   uint64                   `json:"reporterId"`
+	ReporterName string                   `json:"reporterName"`
+	Reason       string                   `json:"reason"`
+	Evidence     string                   `json:"evidence,omitempty"`
+	Status       model.ReviewReportStatus `json:"status"`
+	HandledBy    *uint64                  `json:"handledBy,omitempty"`
+	HandlerName  string                   `json:"handlerName,omitempty"`
+	HandledAt    *time.Time               `json:"handledAt,omitempty"`
+	HandlingNote string                   `json:"handlingNote,omitempty"`
+	CreatedAt    time.Time                `json:"createdAt"`
 }
 
 // HandleReportRequest 处理举报请求

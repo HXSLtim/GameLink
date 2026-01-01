@@ -12,6 +12,7 @@ import (
 	"gamelink/internal/model"
 	"gamelink/internal/repository/game"
 	"gamelink/internal/repository/gamecategory"
+
 	"gorm.io/gorm"
 )
 
@@ -61,12 +62,12 @@ func CreateTestGameWithCategoryID(t *testing.T, db *gorm.DB, key, name string, c
 func CreateTestGameWithStatus(t *testing.T, db *gorm.DB, key, name string, isActive bool) *model.Game {
 	t.Helper()
 	game := &model.Game{
-		Base:        model.Base{ExtJSON: "{}"},
-		Key:         key,
-		Name:        name,
-		Category:    "test",
-		IsActive:    isActive,
-		SortOrder:   0,
+		Base:      model.Base{ExtJSON: "{}"},
+		Key:       key,
+		Name:      name,
+		Category:  "test",
+		IsActive:  isActive,
+		SortOrder: 0,
 	}
 	if err := db.Create(game).Error; err != nil {
 		t.Fatalf("Failed to create test game: %v", err)

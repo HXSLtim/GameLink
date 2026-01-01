@@ -53,9 +53,9 @@ func NewAlipayProvider(cfg *external.Config) (*RealAlipayProvider, error) {
 
 // Alipay API endpoints
 const (
-	alipayGateway     = "https://openapi.alipay.com/gateway.do"
-	alipayRefundURL   = "alipay.trade.refund"
-	alipayCreateURL   = "alipay.trade.create"
+	alipayGateway   = "https://openapi.alipay.com/gateway.do"
+	alipayRefundURL = "alipay.trade.refund"
+	alipayCreateURL = "alipay.trade.create"
 )
 
 // Refund requests refund from Alipay
@@ -66,15 +66,15 @@ func (p *RealAlipayProvider) Refund(ctx context.Context, payment *model.Payment,
 
 	// Build refund request
 	params := map[string]string{
-		"app_id":        p.config.Alipay.AppID,
-		"method":        "alipay.trade.refund",
-		"charset":       "UTF-8",
-		"sign_type":     "RSA2",
-		"timestamp":     time.Now().Format("2006-01-02 15:04:05"),
-		"version":       "1.0",
-		"out_trade_no":  fmt.Sprintf("%d", payment.ID),
-		"refund_amount": fmt.Sprintf("%.2f", float64(payment.AmountCents)/100),
-		"refund_reason": reason,
+		"app_id":         p.config.Alipay.AppID,
+		"method":         "alipay.trade.refund",
+		"charset":        "UTF-8",
+		"sign_type":      "RSA2",
+		"timestamp":      time.Now().Format("2006-01-02 15:04:05"),
+		"version":        "1.0",
+		"out_trade_no":   fmt.Sprintf("%d", payment.ID),
+		"refund_amount":  fmt.Sprintf("%.2f", float64(payment.AmountCents)/100),
+		"refund_reason":  reason,
 		"out_request_no": fmt.Sprintf("refund_%d_%d", payment.ID, time.Now().Unix()),
 	}
 

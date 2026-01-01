@@ -40,7 +40,7 @@ const (
 	ErrWithdrawRejectInvalidStatus   = "Can only reject pending withdraws"
 	ErrWithdrawCompleteInvalidStatus = "Can only complete approved withdraws"
 	// Batch operation errors
-	ErrEmptyWithdrawalIDs            = "withdrawal IDs are required"
-	ErrTooManyWithdrawalIDs          = "maximum 100 withdrawals can be processed at once"
-	ErrBatchOperationFailed          = "batch operation failed"
+	ErrEmptyWithdrawalIDs   = "withdrawal IDs are required"
+	ErrTooManyWithdrawalIDs = "maximum 100 withdrawals can be processed at once"
+	ErrBatchOperationFailed = "batch operation failed"
 )

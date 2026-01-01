@@ -32,12 +32,12 @@ func newTestWithdraw(id uint64, playerID uint64, amountCents int64, status model
 
 func newTestSettlementCompany(id uint64, name string, status model.CompanyStatus) *model.SettlementCompany {
 	return &model.SettlementCompany{
-		Base:       model.Base{ID: id},
-		Name:       name,
-		CreditCode: "91110000MA1234567X",
-		BankName:   "Test Bank",
+		Base:        model.Base{ID: id},
+		Name:        name,
+		CreditCode:  "91110000MA1234567X",
+		BankName:    "Test Bank",
 		BankAccount: "1234567890",
-		Status:     status,
+		Status:      status,
 	}
 }
 
@@ -848,7 +848,7 @@ func TestGenerateRoutingReport_InvalidMonth(t *testing.T) {
 	req := &model.WithdrawRoutingReportRequest{
 		ReportType: "monthly",
 		Year:       2025,
-		Month:      13,  // Invalid
+		Month:      13, // Invalid
 	}
 
 	result, err := service.GenerateRoutingReport(ctx, req)
@@ -868,7 +868,7 @@ func TestGenerateRoutingReport_InvalidQuarter(t *testing.T) {
 	req := &model.WithdrawRoutingReportRequest{
 		ReportType: "quarterly",
 		Year:       2025,
-		Quarter:    5,  // Invalid
+		Quarter:    5, // Invalid
 	}
 
 	result, err := service.GenerateRoutingReport(ctx, req)
@@ -1238,7 +1238,7 @@ func TestBatchComplete_WithProcessedBy(t *testing.T) {
 	adminUserID := uint64(1)
 
 	withdraw := newTestWithdraw(1, 123, 10000, model.WithdrawStatusApproved)
-	withdraw.ProcessedBy = nil  // Not set
+	withdraw.ProcessedBy = nil // Not set
 
 	withdrawRepo.On("Get", ctx, mock.Anything).Return(withdraw, nil)
 	withdrawRepo.On("Update", ctx, mock.MatchedBy(func(w *model.Withdraw) bool {
@@ -1305,8 +1305,8 @@ func TestWithdraw_CalculateActualAmount(t *testing.T) {
 // TestWithdraw_SetRoutingInfo tests setting routing information
 func TestWithdraw_SetRoutingInfo(t *testing.T) {
 	company := &model.SettlementCompany{
-		Base:       model.Base{ID: 1},
-		Name:       "Test Company",
+		Base:        model.Base{ID: 1},
+		Name:        "Test Company",
 		BankAccount: "1234567890",
 	}
 

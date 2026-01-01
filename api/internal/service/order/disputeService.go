@@ -514,11 +514,11 @@ func (s *DisputeService) sendNotification(ctx context.Context, userID uint64, ti
 
 // BatchOperationResult represents the result of a batch operation
 type BatchOperationResult struct {
-	Success      bool                   `json:"success"`
-	Message      string                 `json:"message"`
-	SuccessCount int                    `json:"successCount"`
-	FailedCount  int                    `json:"failedCount"`
-	Errors       []BatchOperationError  `json:"errors,omitempty"`
+	Success      bool                  `json:"success"`
+	Message      string                `json:"message"`
+	SuccessCount int                   `json:"successCount"`
+	FailedCount  int                   `json:"failedCount"`
+	Errors       []BatchOperationError `json:"errors,omitempty"`
 }
 
 // BatchOperationError represents an error that occurred during batch operation
@@ -529,10 +529,10 @@ type BatchOperationError struct {
 
 // BatchAssignDisputesRequest represents a request to batch assign disputes
 type BatchAssignDisputesRequest struct {
-	DisputeIDs         []uint64 `json:"disputeIds" binding:"required,min=1,max=100"`
-	AssignedServiceID  uint64   `json:"assignedServiceId" binding:"required"`
-	OriginalServiceID  *uint64  `json:"originalServiceId,omitempty"`
-	ActorUserID        uint64   `json:"actorUserId"`
+	DisputeIDs        []uint64 `json:"disputeIds" binding:"required,min=1,max=100"`
+	AssignedServiceID uint64   `json:"assignedServiceId" binding:"required"`
+	OriginalServiceID *uint64  `json:"originalServiceId,omitempty"`
+	ActorUserID       uint64   `json:"actorUserId"`
 }
 
 // BatchAssignDisputes assigns multiple disputes to a customer service representative
@@ -637,9 +637,9 @@ func (s *DisputeService) BatchAssignDisputes(ctx context.Context, req BatchAssig
 
 // BatchUpdateDisputesStatusRequest represents a request to batch update dispute status
 type BatchUpdateDisputesStatusRequest struct {
-	DisputeIDs  []uint64             `json:"disputeIds" binding:"required,min=1,max=100"`
-	Status      model.DisputeStatus  `json:"status" binding:"required"`
-	ActorUserID uint64               `json:"actorUserId"`
+	DisputeIDs  []uint64            `json:"disputeIds" binding:"required,min=1,max=100"`
+	Status      model.DisputeStatus `json:"status" binding:"required"`
+	ActorUserID uint64              `json:"actorUserId"`
 }
 
 // BatchUpdateDisputesStatus updates status for multiple disputes
@@ -735,10 +735,10 @@ func (s *DisputeService) BatchUpdateDisputesStatus(ctx context.Context, req Batc
 
 // BatchCloseDisputesRequest represents a request to batch close disputes
 type BatchCloseDisputesRequest struct {
-	DisputeIDs    []uint64                 `json:"disputeIds" binding:"required,min=1,max=100"`
-	Resolution    model.DisputeResolution  `json:"resolution" binding:"required"`
-	ResolveRemark string                   `json:"resolveRemark" binding:"required"`
-	ActorUserID   uint64                   `json:"actorUserId"`
+	DisputeIDs    []uint64                `json:"disputeIds" binding:"required,min=1,max=100"`
+	Resolution    model.DisputeResolution `json:"resolution" binding:"required"`
+	ResolveRemark string                  `json:"resolveRemark" binding:"required"`
+	ActorUserID   uint64                  `json:"actorUserId"`
 }
 
 // BatchCloseDisputes closes multiple disputes with resolution

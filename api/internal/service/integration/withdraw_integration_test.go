@@ -590,8 +590,8 @@ func TestWithdrawService_BatchApprove_MixedStatus(t *testing.T) {
 
 	result, err := svc.BatchApprove(ctx, req, adminUser.ID)
 	require.NoError(t, err)
-	assert.Equal(t, 2, result.SuccessCount)  // Only pending ones
-	assert.Equal(t, 2, result.FailedCount)   // approved and rejected
+	assert.Equal(t, 2, result.SuccessCount) // Only pending ones
+	assert.Equal(t, 2, result.FailedCount)  // approved and rejected
 	assert.Len(t, result.SuccessIDs, 2)
 	assert.Len(t, result.FailedItems, 2)
 
@@ -762,8 +762,8 @@ func TestWithdrawService_BatchComplete_MixedStatus(t *testing.T) {
 
 	result, err := svc.BatchComplete(ctx, req, adminUser.ID)
 	require.NoError(t, err)
-	assert.Equal(t, 2, result.SuccessCount)  // Only approved ones
-	assert.Equal(t, 2, result.FailedCount)   // pending and completed
+	assert.Equal(t, 2, result.SuccessCount) // Only approved ones
+	assert.Equal(t, 2, result.FailedCount)  // pending and completed
 
 	// Verify failed items
 	failedIDMap := make(map[uint64]bool)
@@ -831,8 +831,8 @@ func TestWithdrawRepository_BatchUpdateStatus_Transaction(t *testing.T) {
 	successIDs, errors, err := withdrawRepo.BatchUpdateStatus(ctx, withdrawIDs, model.WithdrawStatusApproved, &adminID, &now, "test")
 
 	require.NoError(t, err)
-	assert.Len(t, successIDs, 3)  // Only the existing ones
-	assert.Len(t, errors, 1)       // The non-existent one
+	assert.Len(t, successIDs, 3) // Only the existing ones
+	assert.Len(t, errors, 1)     // The non-existent one
 
 	// Verify the error
 	assert.Equal(t, nonExistentID, errors[0].ID)
@@ -844,5 +844,3 @@ func TestWithdrawRepository_BatchUpdateStatus_Transaction(t *testing.T) {
 		assert.Equal(t, model.WithdrawStatusApproved, withdraw.Status)
 	}
 }
-
-

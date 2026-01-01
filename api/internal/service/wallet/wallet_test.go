@@ -557,8 +557,8 @@ func TestWalletService_GetBalance_WithFrozenFunds(t *testing.T) {
 
 	wallet, err := svc.GetBalance(ctx, userID)
 	require.NoError(t, err)
-	assert.Equal(t, int64(30000), wallet.BalanceCents)  // Available for withdrawal
-	assert.Equal(t, int64(20000), wallet.FrozenCents)   // Frozen pending T+7
+	assert.Equal(t, int64(30000), wallet.BalanceCents) // Available for withdrawal
+	assert.Equal(t, int64(20000), wallet.FrozenCents)  // Frozen pending T+7
 
 	// Calculate total balance
 	totalBalance := wallet.BalanceCents + wallet.FrozenCents

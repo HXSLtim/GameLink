@@ -262,7 +262,7 @@ func TestCouponService_ClaimCoupon_Inactive(t *testing.T) {
 		ItemIDs:           "[]",
 	}
 	require.NoError(t, db.Create(template).Error)
-	
+
 	// Update to inactive
 	require.NoError(t, db.Model(template).Update("is_active", false).Error)
 

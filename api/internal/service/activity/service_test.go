@@ -1,4 +1,4 @@
-﻿package activity
+package activity
 
 import (
 	"context"

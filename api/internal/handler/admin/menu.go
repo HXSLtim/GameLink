@@ -359,7 +359,7 @@ func (h *MenuHandler) BatchUpdateSort(c *gin.Context) {
 	updates := make([]menusvc.MenuSortUpdate, len(req.Updates))
 	for i, u := range req.Updates {
 		updates[i] = menusvc.MenuSortUpdate{
-			ID:       u.ID,
+			ID:        u.ID,
 			SortOrder: u.SortOrder,
 		}
 	}

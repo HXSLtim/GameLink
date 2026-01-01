@@ -171,9 +171,9 @@ func TestProviderFactory_CreateProviders(t *testing.T) {
 			cfg := &external.Config{
 				WeChatPay: config.WeChatPayConfig{
 					Enabled: tt.weChatEnabled,
-					AppID:    "test_app",
-					MchID:    "test_mch",
-					APIKey:   "test_key",
+					AppID:   "test_app",
+					MchID:   "test_mch",
+					APIKey:  "test_key",
 				},
 				Alipay: config.AlipayConfig{
 					Enabled:        tt.alipayEnabled,
@@ -905,9 +905,9 @@ func TestPaymentService_creditWallet(t *testing.T) {
 	amount := int64(5000)
 
 	tests := []struct {
-		name         string
-		setupMocks   func(*MockWalletRepository)
-		expectError  bool
+		name        string
+		setupMocks  func(*MockWalletRepository)
+		expectError bool
 	}{
 		{
 			name: "Credit existing wallet",
@@ -967,9 +967,9 @@ func TestPaymentService_debitWallet(t *testing.T) {
 	amount := int64(5000)
 
 	tests := []struct {
-		name         string
-		setupMocks   func(*MockWalletRepository)
-		expectError  bool
+		name        string
+		setupMocks  func(*MockWalletRepository)
+		expectError bool
 	}{
 		{
 			name: "Debit existing wallet",

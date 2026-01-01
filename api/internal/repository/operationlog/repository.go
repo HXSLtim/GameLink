@@ -52,7 +52,7 @@ func (r *gormOperationLogRepository) List(ctx context.Context, opts repository.O
 	pageSize := repository.NormalizePageSize(opts.PageSize)
 	offset := (page - 1) * pageSize
 	q := r.db.WithContext(ctx).Model(&model.OperationLog{})
-	
+
 	if opts.EntityType != "" {
 		q = q.Where("entity_type = ?", opts.EntityType)
 	}
@@ -71,7 +71,7 @@ func (r *gormOperationLogRepository) List(ctx context.Context, opts repository.O
 	if opts.DateTo != nil {
 		q = q.Where("created_at <= ?", *opts.DateTo)
 	}
-	
+
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
 		return nil, 0, err

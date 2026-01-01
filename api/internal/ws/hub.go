@@ -29,11 +29,11 @@ type Hub struct {
 
 // HubMetrics contains WebSocket hub statistics.
 type HubMetrics struct {
-	TotalConnections   int64     `json:"totalConnections"`
-	ActiveConnections  int       `json:"activeConnections"`
-	MessagesSent       int64     `json:"messagesSent"`
-	MessagesReceived   int64     `json:"messagesReceived"`
-	LastActivityAt     time.Time `json:"lastActivityAt"`
+	TotalConnections  int64     `json:"totalConnections"`
+	ActiveConnections int       `json:"activeConnections"`
+	MessagesSent      int64     `json:"messagesSent"`
+	MessagesReceived  int64     `json:"messagesReceived"`
+	LastActivityAt    time.Time `json:"lastActivityAt"`
 }
 
 // NewHub creates a new Hub instance.

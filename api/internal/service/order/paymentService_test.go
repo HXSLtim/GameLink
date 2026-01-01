@@ -15,13 +15,13 @@ import (
 
 // MockPaymentRepository for PaymentService tests
 type MockPaymentRepositoryForPayment struct {
-	get         func(ctx context.Context, id uint64) (*model.Payment, error)
-	create      func(ctx context.Context, payment *model.Payment) error
-	update      func(ctx context.Context, payment *model.Payment) error
-	list        func(ctx context.Context, opts repository.PaymentListOptions) ([]model.Payment, int64, error)
+	get              func(ctx context.Context, id uint64) (*model.Payment, error)
+	create           func(ctx context.Context, payment *model.Payment) error
+	update           func(ctx context.Context, payment *model.Payment) error
+	list             func(ctx context.Context, opts repository.PaymentListOptions) ([]model.Payment, int64, error)
 	getWithRelations func(ctx context.Context, id uint64) (*model.Payment, error)
-	getByOrderID func(ctx context.Context, orderID uint64) ([]model.Payment, error)
-	delete      func(ctx context.Context, id uint64) error
+	getByOrderID     func(ctx context.Context, orderID uint64) ([]model.Payment, error)
+	delete           func(ctx context.Context, id uint64) error
 }
 
 func (m *MockPaymentRepositoryForPayment) Create(ctx context.Context, payment *model.Payment) error {
@@ -76,7 +76,7 @@ func (m *MockPaymentRepositoryForPayment) GetByOrderID(ctx context.Context, orde
 // MockOrderReadWriter for PaymentService tests
 type MockOrderReadWriter struct {
 	repoiface.OrderRepository
-	getOrder   func(ctx context.Context, id uint64) (*model.Order, error)
+	getOrder    func(ctx context.Context, id uint64) (*model.Order, error)
 	updateOrder func(ctx context.Context, order *model.Order) error
 }
 
@@ -97,7 +97,7 @@ func (m *MockOrderReadWriter) Update(ctx context.Context, order *model.Order) er
 // MockWalletRepository for refund tests
 type MockWalletRepository struct {
 	getByUserID func(ctx context.Context, userID uint64) (*model.Wallet, error)
-	save       func(ctx context.Context, wallet *model.Wallet) error
+	save        func(ctx context.Context, wallet *model.Wallet) error
 }
 
 func (m *MockWalletRepository) GetByUserID(ctx context.Context, userID uint64) (*model.Wallet, error) {
@@ -536,9 +536,9 @@ func TestPaymentService_HandlePaymentCallback_Success(t *testing.T) {
 	service := NewPaymentService(payments, orders)
 
 	data := map[string]interface{}{
-		"payment_id":  paymentID,
+		"payment_id":   paymentID,
 		"amount_cents": int64(5000),
-		"trade_no":    "ali_test_123",
+		"trade_no":     "ali_test_123",
 	}
 
 	err := service.HandlePaymentCallback(ctx, "alipay", data)
@@ -637,7 +637,7 @@ func TestPaymentService_HandlePaymentCallback_AmountMismatch(t *testing.T) {
 	service := NewPaymentService(payments, orders)
 
 	data := map[string]interface{}{
-		"payment_id":  paymentID,
+		"payment_id":   paymentID,
 		"amount_cents": int64(3000), // Wrong amount
 	}
 
@@ -888,7 +888,7 @@ func TestWechatProvider_Refund(t *testing.T) {
 	provider := wechatProvider{}
 
 	payment := &model.Payment{
-		Base:  model.Base{ID: 123},
+		Base:   model.Base{ID: 123},
 		Method: model.PaymentMethodWeChat,
 	}
 
@@ -907,7 +907,7 @@ func TestAlipayProvider_Refund(t *testing.T) {
 	provider := alipayProvider{}
 
 	payment := &model.Payment{
-		Base:  model.Base{ID: 456},
+		Base:   model.Base{ID: 456},
 		Method: model.PaymentMethodAlipay,
 	}
 
@@ -926,7 +926,7 @@ func TestGenericProvider_Refund(t *testing.T) {
 	provider := genericProvider{}
 
 	payment := &model.Payment{
-		Base:  model.Base{ID: 789},
+		Base:   model.Base{ID: 789},
 		Method: "unknown",
 	}
 

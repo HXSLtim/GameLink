@@ -15,10 +15,10 @@ import (
 
 // BatchOperationResult 批量操作结果
 type BatchOperationResult struct {
-	SuccessCount  int                      `json:"successCount"`
-	FailedCount   int                      `json:"failedCount"`
-	SuccessIDs     []uint64                 `json:"successIds"`
-	FailedItems    []BatchOperationErrorItem `json:"failedItems,omitempty"`
+	SuccessCount int                       `json:"successCount"`
+	FailedCount  int                       `json:"failedCount"`
+	SuccessIDs   []uint64                  `json:"successIds"`
+	FailedItems  []BatchOperationErrorItem `json:"failedItems,omitempty"`
 }
 
 // BatchOperationErrorItem 批量操作错误项

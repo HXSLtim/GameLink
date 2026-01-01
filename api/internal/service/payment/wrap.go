@@ -3,8 +3,8 @@ package payment
 import (
 	"errors"
 
-	"gamelink/pkg/apierr"
 	"gamelink/internal/repository"
+	"gamelink/pkg/apierr"
 )
 
 // WrapError wraps an error from repository to apierr type

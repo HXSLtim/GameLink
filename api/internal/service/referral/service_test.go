@@ -1429,9 +1429,9 @@ func TestService_GetOrCreateUserCode_TypeHandling(t *testing.T) {
 		mockRepo := new(MockReferralRepository)
 		svc := NewReferralService(mockRepo)
 		existingCode := &model.ReferralCode{
-			Code: "U2U123",
+			Code:   "U2U123",
 			UserID: 1,
-			Type:  model.ReferralTypeUserToUser,
+			Type:   model.ReferralTypeUserToUser,
 		}
 		mockRepo.On("GetUserCode", ctx, uint64(1), model.ReferralTypeUserToUser).Return(existingCode, nil).Once()
 		result, err := svc.GetOrCreateUserCode(ctx, 1, model.ReferralTypeUserToUser)
@@ -2206,9 +2206,9 @@ func TestService_MultiTypeReferrals(t *testing.T) {
 		mockRepo := new(MockReferralRepository)
 		svc := NewReferralService(mockRepo)
 		code := &model.ReferralCode{
-			Code:   "U2U",
-			UserID: 1,
-			Type:   model.ReferralTypeUserToUser,
+			Code:     "U2U",
+			UserID:   1,
+			Type:     model.ReferralTypeUserToUser,
 			IsActive: true,
 		}
 		mockRepo.On("GetCodeByCode", ctx, "U2U").Return(code, nil).Once()
@@ -2227,9 +2227,9 @@ func TestService_MultiTypeReferrals(t *testing.T) {
 		mockRepo := new(MockReferralRepository)
 		svc := NewReferralService(mockRepo)
 		code := &model.ReferralCode{
-			Code:   "P2P",
-			UserID: 10,
-			Type:   model.ReferralTypePlayerToPlayer,
+			Code:     "P2P",
+			UserID:   10,
+			Type:     model.ReferralTypePlayerToPlayer,
 			IsActive: true,
 		}
 		mockRepo.On("GetCodeByCode", ctx, "P2P").Return(code, nil).Once()
@@ -2248,9 +2248,9 @@ func TestService_MultiTypeReferrals(t *testing.T) {
 		mockRepo := new(MockReferralRepository)
 		svc := NewReferralService(mockRepo)
 		code := &model.ReferralCode{
-			Code:   "U2P",
-			UserID: 100,
-			Type:   model.ReferralTypeUserToPlayer,
+			Code:     "U2P",
+			UserID:   100,
+			Type:     model.ReferralTypeUserToPlayer,
 			IsActive: true,
 		}
 		mockRepo.On("GetCodeByCode", ctx, "U2P").Return(code, nil).Once()

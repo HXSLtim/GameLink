@@ -16,9 +16,9 @@ import (
 
 // MockDistributedLock for testing distributed lock functionality
 type MockDistributedLock struct {
-	lock     func(ctx context.Context, key string, ttl time.Duration) (bool, error)
-	tryLock  func(ctx context.Context, key string, ttl time.Duration, retry int, interval time.Duration) (bool, error)
-	unlock   func(ctx context.Context, key string) error
+	lock    func(ctx context.Context, key string, ttl time.Duration) (bool, error)
+	tryLock func(ctx context.Context, key string, ttl time.Duration, retry int, interval time.Duration) (bool, error)
+	unlock  func(ctx context.Context, key string) error
 }
 
 func (m *MockDistributedLock) Lock(ctx context.Context, key string, ttl time.Duration) (bool, error) {
@@ -278,10 +278,10 @@ func TestOrderService_deactivateOrderChat_NotActive(t *testing.T) {
 	mockChatGroups := &MockChatGroupRepository{
 		getByRelatedOrderID: func(ctx context.Context, orderID uint64) (*model.ChatGroup, error) {
 			return &model.ChatGroup{
-				Base:            model.Base{ID: 1},
-				IsActive:        false,
-				GroupType:       model.ChatGroupTypeOrder,
-				RelatedOrderID:  &orderID,
+				Base:           model.Base{ID: 1},
+				IsActive:       false,
+				GroupType:      model.ChatGroupTypeOrder,
+				RelatedOrderID: &orderID,
 			}, nil
 		},
 	}
@@ -302,10 +302,10 @@ func TestOrderService_deactivateOrderChat_WrongType(t *testing.T) {
 	mockChatGroups := &MockChatGroupRepository{
 		getByRelatedOrderID: func(ctx context.Context, orderID uint64) (*model.ChatGroup, error) {
 			return &model.ChatGroup{
-				Base:            model.Base{ID: 1},
-				IsActive:        true,
-				GroupType:       model.ChatGroupTypePublic, // Wrong type
-				RelatedOrderID:  &orderID,
+				Base:           model.Base{ID: 1},
+				IsActive:       true,
+				GroupType:      model.ChatGroupTypePublic, // Wrong type
+				RelatedOrderID: &orderID,
 			}, nil
 		},
 	}
@@ -327,10 +327,10 @@ func TestOrderService_deactivateOrderChat_Success(t *testing.T) {
 	mockChatGroups := &MockChatGroupRepository{
 		getByRelatedOrderID: func(ctx context.Context, orderID uint64) (*model.ChatGroup, error) {
 			return &model.ChatGroup{
-				Base:            model.Base{ID: 123},
-				IsActive:        true,
-				GroupType:       model.ChatGroupTypeOrder,
-				RelatedOrderID:  &orderID,
+				Base:           model.Base{ID: 123},
+				IsActive:       true,
+				GroupType:      model.ChatGroupTypeOrder,
+				RelatedOrderID: &orderID,
 			}, nil
 		},
 		deactivate: func(ctx context.Context, groupID uint64) error {
@@ -360,10 +360,10 @@ func TestOrderService_CancelOrder_WithChatDeactivation(t *testing.T) {
 	mockChatGroups := &MockChatGroupRepository{
 		getByRelatedOrderID: func(ctx context.Context, orderID uint64) (*model.ChatGroup, error) {
 			return &model.ChatGroup{
-				Base:            model.Base{ID: 123},
-				IsActive:        true,
-				GroupType:       model.ChatGroupTypeOrder,
-				RelatedOrderID:  &orderID,
+				Base:           model.Base{ID: 123},
+				IsActive:       true,
+				GroupType:      model.ChatGroupTypeOrder,
+				RelatedOrderID: &orderID,
 			}, nil
 		},
 		deactivate: func(ctx context.Context, groupID uint64) error {
@@ -413,10 +413,10 @@ func TestOrderService_CompleteOrder_WithChatDeactivation(t *testing.T) {
 	mockChatGroups := &MockChatGroupRepository{
 		getByRelatedOrderID: func(ctx context.Context, orderID uint64) (*model.ChatGroup, error) {
 			return &model.ChatGroup{
-				Base:            model.Base{ID: 123},
-				IsActive:        true,
-				GroupType:       model.ChatGroupTypeOrder,
-				RelatedOrderID:  &orderID,
+				Base:           model.Base{ID: 123},
+				IsActive:       true,
+				GroupType:      model.ChatGroupTypeOrder,
+				RelatedOrderID: &orderID,
 			}, nil
 		},
 		deactivate: func(ctx context.Context, groupID uint64) error {

@@ -7,9 +7,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/pkg/apierr"
 	"gamelink/internal/model"
 	chatservice "gamelink/internal/service/chat"
+	"gamelink/pkg/apierr"
 )
 
 // ChatMessage 聊天消息模型（类型别名）

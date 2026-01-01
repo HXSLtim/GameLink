@@ -10,8 +10,9 @@ import (
 	"strconv"
 
 	"gamelink/internal/service/user"
-	"github.com/gin-gonic/gin"
 	"gamelink/pkg/apierr"
+
+	"github.com/gin-gonic/gin"
 )
 
 // RegisterBatchRoutes 注册批量操作路由
@@ -28,8 +29,8 @@ func RegisterBatchRoutes(rg *gin.RouterGroup, batchService *user.BatchOperationS
 
 // BatchResponse 批量操作响应
 type BatchResponse struct {
-	Success     bool   `json:"success"`
-	Message     string `json:"message"`
+	Success      bool   `json:"success"`
+	Message      string `json:"message"`
 	SuccessCount int    `json:"successCount"`
 	FailedCount  int    `json:"failedCount"`
 }
@@ -73,8 +74,8 @@ func batchUpdateUserRoleHandler(s *user.BatchOperationService) gin.HandlerFunc {
 		}
 
 		respondSuccessWithMsg(c, message, BatchResponse{
-			Success:     true,
-			Message:     message,
+			Success:      true,
+			Message:      message,
 			SuccessCount: successCount,
 			FailedCount:  failedCount,
 		})
@@ -128,8 +129,8 @@ func batchUpdateUserStatusHandler(s *user.BatchOperationService) gin.HandlerFunc
 		}
 
 		respondSuccessWithMsg(c, message, BatchResponse{
-			Success:     true,
-			Message:     message,
+			Success:      true,
+			Message:      message,
 			SuccessCount: successCount,
 			FailedCount:  failedCount,
 		})
@@ -181,8 +182,8 @@ func batchDeleteUsersHandler(s *user.BatchOperationService) gin.HandlerFunc {
 		}
 
 		respondSuccessWithMsg(c, message, BatchResponse{
-			Success:     true,
-			Message:     message,
+			Success:      true,
+			Message:      message,
 			SuccessCount: successCount,
 			FailedCount:  failedCount,
 		})
@@ -192,15 +193,15 @@ func batchDeleteUsersHandler(s *user.BatchOperationService) gin.HandlerFunc {
 // BatchAddPointsRequest 批量增加积分请求
 type BatchAddPointsRequest struct {
 	// Target指定目标类型：users（指定用户列表）、role（按角色）、all（全体用户）
-	Target  string   `json:"target" binding:"required,oneof=users role all"`
+	Target string `json:"target" binding:"required,oneof=users role all"`
 	// 当Target=users时使用，最多1000个用户
 	UserIDs []uint64 `json:"userIds,omitempty"`
 	// 当Target=role时使用，可指定多个角色（user, player, admin）
-	Roles   []string `json:"roles,omitempty"`
+	Roles []string `json:"roles,omitempty"`
 
-	Cents   int64    `json:"cents" binding:"required,min=1,max=1000000"` // 积分金额（分），最多10000元=1000000分
-	Reason  string   `json:"reason" binding:"required,max=200"`
-	Type    string   `json:"type" binding:"required,oneof=admin activity compensation"`
+	Cents  int64  `json:"cents" binding:"required,min=1,max=1000000"` // 积分金额（分），最多10000元=1000000分
+	Reason string `json:"reason" binding:"required,max=200"`
+	Type   string `json:"type" binding:"required,oneof=admin activity compensation"`
 }
 
 // batchAddPointsHandler 批量增加积分
@@ -247,8 +248,8 @@ func batchAddPointsHandler(s *user.BatchOperationService) gin.HandlerFunc {
 		}
 
 		respondSuccessWithMsg(c, message, BatchResponse{
-			Success:     true,
-			Message:     message,
+			Success:      true,
+			Message:      message,
 			SuccessCount: successCount,
 			FailedCount:  failedCount,
 		})
@@ -258,15 +259,15 @@ func batchAddPointsHandler(s *user.BatchOperationService) gin.HandlerFunc {
 // BatchSendNotificationRequest 批量发送通知请求
 type BatchSendNotificationRequest struct {
 	// Target指定目标类型：users（指定用户列表）、role（按角色）、all（全体用户）
-	Target  string   `json:"target" binding:"required,oneof=users role all"`
+	Target string `json:"target" binding:"required,oneof=users role all"`
 	// 当Target=users时使用，最多1000个用户
 	UserIDs []uint64 `json:"userIds,omitempty"`
 	// 当Target=role时使用，可指定多个角色（user, player, admin）
-	Roles   []string `json:"roles,omitempty"`
+	Roles []string `json:"roles,omitempty"`
 
-	Title   string   `json:"title" binding:"required,max=100"`
-	Content string   `json:"content" binding:"required,max=500"`
-	Type    string   `json:"type" binding:"required,oneof=system marketing personal activity"`
+	Title   string `json:"title" binding:"required,max=100"`
+	Content string `json:"content" binding:"required,max=500"`
+	Type    string `json:"type" binding:"required,oneof=system marketing personal activity"`
 }
 
 // batchSendNotificationHandler 批量发送通知

@@ -12,6 +12,7 @@ import (
 	authservice "gamelink/internal/service/auth"
 	"gamelink/internal/service/user"
 	pkgauth "gamelink/pkg/auth"
+
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/stretchr/testify/assert"

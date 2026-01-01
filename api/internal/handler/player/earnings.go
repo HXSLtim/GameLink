@@ -5,9 +5,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/pkg/apierr"
 	"gamelink/internal/model"
 	userservice "gamelink/internal/service/user"
+	"gamelink/pkg/apierr"
 )
 
 // Swagger DTOs
@@ -179,7 +179,7 @@ func requestWithdrawHandler(c *gin.Context, svc *userservice.EarningsService) {
 
 	resp, err := svc.RequestWithdraw(c.Request.Context(), userID, req)
 	if err != nil {
-			// ✅ 处理各种验证错误
+		// ✅ 处理各种验证错误
 		switch err {
 		case userservice.ErrInsufficientBalance:
 			respondAPIError(c, apierr.BadRequest("余额不足"))

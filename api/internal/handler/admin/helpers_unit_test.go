@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"gamelink/internal/model"
-	repoiface "gamelink/internal/repository/interfaces"
 	"gamelink/internal/repository"
+	repoiface "gamelink/internal/repository/interfaces"
 	"gamelink/pkg/apierr"
 )
 

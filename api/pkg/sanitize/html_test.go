@@ -96,10 +96,10 @@ func TestUnescapeString(t *testing.T) {
 
 func TestSanitizeHTML(t *testing.T) {
 	tests := []struct {
-		name           string
-		input          string
-		shouldNotHave  []string // These patterns should be removed
-		mustContain    []string // These must still exist
+		name          string
+		input         string
+		shouldNotHave []string // These patterns should be removed
+		mustContain   []string // These must still exist
 	}{
 		{
 			name:          "script tag",
@@ -595,9 +595,9 @@ func TestSanitizeReport(t *testing.T) {
 
 func TestEscapeAll(t *testing.T) {
 	tests := []struct {
-		name     string
-		input    map[string]interface{}
-		checks   map[string]string // key -> expected substring
+		name   string
+		input  map[string]interface{}
+		checks map[string]string // key -> expected substring
 	}{
 		{
 			name: "simple map",

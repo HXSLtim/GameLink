@@ -9,8 +9,8 @@ import (
 
 // StatsService 聚合统计查询。
 type StatsService struct {
-	repo                repository.StatsRepository
-	userBehaviorRepo    repository.UserBehaviorRepository
+	repo                 repository.StatsRepository
+	userBehaviorRepo     repository.UserBehaviorRepository
 	userLoginHistoryRepo repository.UserLoginHistoryRepository
 }
 
@@ -60,9 +60,9 @@ func (s *StatsService) AuditTrend(ctx context.Context, from, to *time.Time, enti
 
 // UserBehaviorStatsResponse 用户行为统计响应
 type UserBehaviorStatsResponse struct {
-	DAU            int64   `json:"dau"`           // 日活跃用户
-	AvgOnlineTime  string  `json:"avgOnlineTime"` // 平均在线时长
-	AvgConsumption float64 `json:"avgConsumption"`// 人均消费
+	DAU            int64   `json:"dau"`            // 日活跃用户
+	AvgOnlineTime  string  `json:"avgOnlineTime"`  // 平均在线时长
+	AvgConsumption float64 `json:"avgConsumption"` // 人均消费
 }
 
 // UserDistributionResponse 用户分布响应

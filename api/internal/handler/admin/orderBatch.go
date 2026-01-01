@@ -151,9 +151,9 @@ func (h *OrderHandler) BatchRefundOrders(c *gin.Context) {
 
 	result, err := h.svc.BatchRefundOrders(c.Request.Context(), req.OrderIDs, adminservice.BatchRefundInput{
 		Reason:      req.Reason,
-		AmountCents:  req.AmountCents,
-		Note:         req.Note,
-		RefundedAt:   parseTimePtr(req.RefundedAt),
+		AmountCents: req.AmountCents,
+		Note:        req.Note,
+		RefundedAt:  parseTimePtr(req.RefundedAt),
 	})
 	if err != nil {
 		respondAPIError(c, apierr.InternalError("batch refund orders failed").WithDetails(err.Error()))

@@ -11,15 +11,16 @@ import (
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
+
 	"gorm.io/gorm"
 )
 
 // BatchOperationService 批量操作服务
 type BatchOperationService struct {
-	db                  *gorm.DB
-	userRepo            repository.UserRepository
-	tagRepo             repository.UserTagRepository
-	notificationRepo    repository.NotificationRepository
+	db               *gorm.DB
+	userRepo         repository.UserRepository
+	tagRepo          repository.UserTagRepository
+	notificationRepo repository.NotificationRepository
 }
 
 // NewBatchOperationService 创建批量操作服务
@@ -30,10 +31,10 @@ func NewBatchOperationService(
 	notificationRepo repository.NotificationRepository,
 ) *BatchOperationService {
 	return &BatchOperationService{
-		db:                  db,
-		userRepo:            userRepo,
-		tagRepo:             tagRepo,
-		notificationRepo:    notificationRepo,
+		db:               db,
+		userRepo:         userRepo,
+		tagRepo:          tagRepo,
+		notificationRepo: notificationRepo,
 	}
 }
 
@@ -59,9 +60,9 @@ func (s *BatchOperationService) BatchUpdateUserRole(ctx context.Context, req *Ba
 	// 记录操作日志
 	defer func() {
 		operationLog := &model.OperationLog{
-			EntityType:  string(model.OpEntityUser),
-			Action:      string(model.OpActionUpdateRole),
-			Reason:      fmt.Sprintf("批量更新角色为:%s", req.Role),
+			EntityType:   string(model.OpEntityUser),
+			Action:       string(model.OpActionUpdateRole),
+			Reason:       fmt.Sprintf("批量更新角色为:%s", req.Role),
 			MetadataJSON: []byte(fmt.Sprintf(`{"userIds": %v, "role": "%s"}`, req.UserIDs, req.Role)),
 		}
 		// 异步记录日志
@@ -104,10 +105,10 @@ func (s *BatchOperationService) BatchUpdateUserStatus(ctx context.Context, req *
 	// 记录操作日志
 	defer func() {
 		operationLog := &model.OperationLog{
-			EntityType:  string(model.OpEntityUser),
-			Action:      string(model.OpActionUpdateStatus),
-			ActorUserID: &operatorID,
-			Reason:      fmt.Sprintf("批量更新状态为:%s, 原因:%s", req.Status, req.Reason),
+			EntityType:   string(model.OpEntityUser),
+			Action:       string(model.OpActionUpdateStatus),
+			ActorUserID:  &operatorID,
+			Reason:       fmt.Sprintf("批量更新状态为:%s, 原因:%s", req.Status, req.Reason),
 			MetadataJSON: []byte(fmt.Sprintf(`{"userIds": %v, "status": "%s"}`, req.UserIDs, req.Status)),
 		}
 		go s.recordOperation(ctx, operationLog)
@@ -147,10 +148,10 @@ func (s *BatchOperationService) BatchDeleteUsers(ctx context.Context, req *Batch
 	// 记录操作日志
 	defer func() {
 		operationLog := &model.OperationLog{
-			EntityType:  string(model.OpEntityUser),
-			Action:      string(model.OpActionDelete),
-			ActorUserID: &operatorID,
-			Reason:      fmt.Sprintf("批量删除用户,原因:%s", req.Reason),
+			EntityType:   string(model.OpEntityUser),
+			Action:       string(model.OpActionDelete),
+			ActorUserID:  &operatorID,
+			Reason:       fmt.Sprintf("批量删除用户,原因:%s", req.Reason),
 			MetadataJSON: []byte(fmt.Sprintf(`{"userIds": %v}`, req.UserIDs)),
 		}
 		go s.recordOperation(ctx, operationLog)
@@ -174,17 +175,17 @@ func (s *BatchOperationService) BatchDeleteUsers(ctx context.Context, req *Batch
 // BatchAddPointsRequest 批量增加积分请求
 type BatchAddPointsRequest struct {
 	// Target指定目标类型：users（指定用户列表）、role（按角色）、all（全体用户）
-	Target  string   `json:"target" binding:"required,oneof=users role all"`
+	Target string `json:"target" binding:"required,oneof=users role all"`
 
 	// 当Target=users时使用，最多1000个用户
 	UserIDs []uint64 `json:"userIds,omitempty"`
 
 	// 当Target=role时使用，可指定多个角色
-	Roles   []string `json:"roles,omitempty"`
+	Roles []string `json:"roles,omitempty"`
 
-	Cents   int64    `json:"cents" binding:"required,min=1,max=1000000"` // 积分金额（分），最多10000元=1000000分
-	Reason  string   `json:"reason" binding:"required,max=200"`
-	Type    string   `json:"type" binding:"required,oneof=admin activity compensation"`
+	Cents  int64  `json:"cents" binding:"required,min=1,max=1000000"` // 积分金额（分），最多10000元=1000000分
+	Reason string `json:"reason" binding:"required,max=200"`
+	Type   string `json:"type" binding:"required,oneof=admin activity compensation"`
 }
 
 // BatchAddPoints 批量增加用户积分
@@ -253,10 +254,10 @@ func (s *BatchOperationService) BatchAddPoints(ctx context.Context, req *BatchAd
 	// 记录操作日志
 	defer func() {
 		operationLog := &model.OperationLog{
-			EntityType:  string(model.OpEntityUser),
-			Action:      "batch_add_points",
-			ActorUserID: &operatorID,
-			Reason:      fmt.Sprintf("批量增加积分:%d分,目标:%s,原因:%s", req.Cents, targetDesc, req.Reason),
+			EntityType:   string(model.OpEntityUser),
+			Action:       "batch_add_points",
+			ActorUserID:  &operatorID,
+			Reason:       fmt.Sprintf("批量增加积分:%d分,目标:%s,原因:%s", req.Cents, targetDesc, req.Reason),
 			MetadataJSON: []byte(fmt.Sprintf(`{"target": "%s", "userCount": %d, "cents": %d, "type": "%s"}`, req.Target, len(userIDs), req.Cents, req.Type)),
 		}
 		go s.recordOperation(ctx, operationLog)
@@ -294,17 +295,17 @@ func (s *BatchOperationService) BatchAddPoints(ctx context.Context, req *BatchAd
 // BatchSendNotificationRequest 批量发送通知请求
 type BatchSendNotificationRequest struct {
 	// Target指定目标类型：users（指定用户列表）、role（按角色）、all（全体用户）
-	Target  string   `json:"target" binding:"required,oneof=users role all"`
+	Target string `json:"target" binding:"required,oneof=users role all"`
 
 	// 当Target=users时使用，最多1000个用户
 	UserIDs []uint64 `json:"userIds,omitempty"`
 
 	// 当Target=role时使用，可指定多个角色
-	Roles   []string `json:"roles,omitempty"`
+	Roles []string `json:"roles,omitempty"`
 
-	Title   string   `json:"title" binding:"required,max=100"`
-	Content string   `json:"content" binding:"required,max=500"`
-	Type    string   `json:"type" binding:"required,oneof=system marketing personal activity"`
+	Title   string `json:"title" binding:"required,max=100"`
+	Content string `json:"content" binding:"required,max=500"`
+	Type    string `json:"type" binding:"required,oneof=system marketing personal activity"`
 }
 
 // BatchSendNotification 批量发送通知
@@ -372,10 +373,10 @@ func (s *BatchOperationService) BatchSendNotification(ctx context.Context, req *
 
 	// 记录操作日志
 	operationLog := &model.OperationLog{
-		EntityType:  string(model.OpEntityUser),
-		Action:      "batch_send_notification",
-		ActorUserID: &operatorID,
-		Reason:      fmt.Sprintf("批量发送通知,目标:%s,标题:%s", targetDesc, req.Title),
+		EntityType:   string(model.OpEntityUser),
+		Action:       "batch_send_notification",
+		ActorUserID:  &operatorID,
+		Reason:       fmt.Sprintf("批量发送通知,目标:%s,标题:%s", targetDesc, req.Title),
 		MetadataJSON: []byte(fmt.Sprintf(`{"target": "%s", "userCount": %d, "title": "%s", "type": "%s"}`, req.Target, len(userIDs), req.Title, req.Type)),
 	}
 	go s.recordOperation(ctx, operationLog)

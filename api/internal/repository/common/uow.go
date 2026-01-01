@@ -6,32 +6,32 @@ import (
 	"gorm.io/gorm"
 
 	"gamelink/internal/repository"
+	adminrepo "gamelink/internal/repository/admin"
+	notification "gamelink/internal/repository/content"
 	gameRepo "gamelink/internal/repository/game"
 	gamecategoryrepo "gamelink/internal/repository/gamecategory"
 	orderrepo "gamelink/internal/repository/implementations"
 	repoiface "gamelink/internal/repository/interfaces"
-	adminrepo "gamelink/internal/repository/admin"
 	order "gamelink/internal/repository/order"
-	"gamelink/internal/repository/reviewreport"
 	"gamelink/internal/repository/reviewreply"
-	notification "gamelink/internal/repository/content"
+	"gamelink/internal/repository/reviewreport"
 	"gamelink/internal/repository/user"
 )
 
 // Repos bundles repository interfaces bound to a specific DB (tx) handle.
 type Repos struct {
-	Games           repository.GameRepository
-	GameCategories  repository.GameCategoryRepository
-	Users           repository.UserRepository
-	Players         repository.PlayerRepository
-	Orders          repoiface.OrderRepository
-	Payments        repository.PaymentRepository
-	Tags            repository.PlayerTagRepository
-	OpLogs          repository.OperationLogRepository
-	Reviews         repository.ReviewRepository
-	ReviewReports   repository.ReviewReportRepository
-	ReviewReplies   repository.ReviewReplyRepository
-	Notifications   repository.NotificationRepository
+	Games          repository.GameRepository
+	GameCategories repository.GameCategoryRepository
+	Users          repository.UserRepository
+	Players        repository.PlayerRepository
+	Orders         repoiface.OrderRepository
+	Payments       repository.PaymentRepository
+	Tags           repository.PlayerTagRepository
+	OpLogs         repository.OperationLogRepository
+	Reviews        repository.ReviewRepository
+	ReviewReports  repository.ReviewReportRepository
+	ReviewReplies  repository.ReviewReplyRepository
+	Notifications  repository.NotificationRepository
 }
 
 // UnitOfWork provides a simple transaction wrapper for GORM repositories.

@@ -57,7 +57,7 @@ type CouponTemplate struct {
 	MaxDiscountCents  int64   `json:"maxDiscountCents" gorm:"column:max_discount_cents;default:0"`   // 最大折扣金额（分）- 折扣券用，0=无上限
 
 	// 适用范围
-	Scope   CouponScope `json:"scope" gorm:"size:32;default:'all'"`       // 适用范围
+	Scope   CouponScope `json:"scope" gorm:"size:32;default:'all'"`                    // 适用范围
 	GameIDs string      `json:"gameIds" gorm:"column:game_ids;type:json;default:'[]'"` // 指定游戏ID列表（JSON数组）
 	ItemIDs string      `json:"itemIds" gorm:"column:item_ids;type:json;default:'[]'"` // 指定服务项目ID列表（JSON数组）
 
@@ -92,16 +92,16 @@ type Coupon struct {
 	State      CouponState `json:"state" gorm:"size:32;default:'available';index"`      // 状态
 
 	// 冗余字段（方便查询，从模板复制）
-	Name              string       `json:"name" gorm:"size:128"`                                // 券名称
-	Type              CouponType   `json:"type" gorm:"size:32"`                                 // 类型
-	Source            CouponSource `json:"source" gorm:"size:32"`                               // 来源
-	MinAmountCents    int64        `json:"minAmountCents" gorm:"column:min_amount_cents"`       // 最低消费门槛
-	DeductAmountCents int64        `json:"deductAmountCents" gorm:"column:deduct_amount_cents"` // 满减金额
-	DiscountRate      float64      `json:"discountRate" gorm:"column:discount_rate"`            // 折扣率
-	MaxDiscountCents  int64        `json:"maxDiscountCents" gorm:"column:max_discount_cents"`   // 最大折扣金额
-	Scope             CouponScope  `json:"scope" gorm:"size:32"`                                // 适用范围
-	GameIDs           string       `json:"gameIds" gorm:"column:game_ids;type:json;default:'[]'"`  // 指定游戏ID
-	ItemIDs           string       `json:"itemIds" gorm:"column:item_ids;type:json;default:'[]'"`  // 指定服务项目ID
+	Name              string       `json:"name" gorm:"size:128"`                                  // 券名称
+	Type              CouponType   `json:"type" gorm:"size:32"`                                   // 类型
+	Source            CouponSource `json:"source" gorm:"size:32"`                                 // 来源
+	MinAmountCents    int64        `json:"minAmountCents" gorm:"column:min_amount_cents"`         // 最低消费门槛
+	DeductAmountCents int64        `json:"deductAmountCents" gorm:"column:deduct_amount_cents"`   // 满减金额
+	DiscountRate      float64      `json:"discountRate" gorm:"column:discount_rate"`              // 折扣率
+	MaxDiscountCents  int64        `json:"maxDiscountCents" gorm:"column:max_discount_cents"`     // 最大折扣金额
+	Scope             CouponScope  `json:"scope" gorm:"size:32"`                                  // 适用范围
+	GameIDs           string       `json:"gameIds" gorm:"column:game_ids;type:json;default:'[]'"` // 指定游戏ID
+	ItemIDs           string       `json:"itemIds" gorm:"column:item_ids;type:json;default:'[]'"` // 指定服务项目ID
 
 	// 时间
 	ClaimedAt *time.Time `json:"claimedAt" gorm:"column:claimed_at"`     // 领取时间

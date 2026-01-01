@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	"gamelink/pkg/apierr"
-	"gamelink/pkg/cache"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
+	"gamelink/pkg/apierr"
+	"gamelink/pkg/cache"
 )
 
 // Errors specific to chat domain.

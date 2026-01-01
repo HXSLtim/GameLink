@@ -3,8 +3,8 @@ package admin
 import (
 	"errors"
 
-	"gamelink/pkg/apierr"
 	"gamelink/internal/repository"
+	"gamelink/pkg/apierr"
 )
 
 // wrapRepositoryError wraps repository errors into apierr types

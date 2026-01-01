@@ -550,8 +550,8 @@ func (h *ActivityHandler) BatchDeleteActivities(c *gin.Context) {
 
 // BatchUpdateActivitiesStatusRequest 批量更新活动状态请求
 type BatchUpdateActivitiesStatusRequest struct {
-	IDs    []uint64                 `json:"ids" binding:"required,min=1"`
-	Status model.ActivityStatus     `json:"status" binding:"required"`
+	IDs    []uint64             `json:"ids" binding:"required,min=1"`
+	Status model.ActivityStatus `json:"status" binding:"required"`
 }
 
 // BatchUpdateActivitiesStatus 批量更新活动状态

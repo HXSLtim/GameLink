@@ -52,7 +52,7 @@ func TestValidateCryptoConfig(t *testing.T) {
 			cfg: AppConfig{
 				Crypto: CryptoConfig{
 					Enabled:   true,
-					SecretKey: "short", // 5 bytes
+					SecretKey: "short",            // 5 bytes
 					IV:        "1234567890123456", // 16 bytes
 				},
 			},
@@ -113,7 +113,7 @@ func TestValidateCryptoConfig(t *testing.T) {
 				Crypto: CryptoConfig{
 					Enabled:   true,
 					SecretKey: "123456789012345678901234", // 24 bytes
-					IV:        "1234567890123456", // 16 bytes
+					IV:        "1234567890123456",         // 16 bytes
 					Methods:   []string{"POST", "PUT"},
 				},
 			},
@@ -125,7 +125,7 @@ func TestValidateCryptoConfig(t *testing.T) {
 				Crypto: CryptoConfig{
 					Enabled:   true,
 					SecretKey: "12345678901234567890123456789012", // 32 bytes
-					IV:        "1234567890123456", // 16 bytes
+					IV:        "1234567890123456",                 // 16 bytes
 					Methods:   []string{"POST", "PUT"},
 				},
 			},

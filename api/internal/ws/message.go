@@ -30,15 +30,15 @@ const (
 
 // SystemStatus represents system health metrics.
 type SystemStatus struct {
-	CPUUsage      float64       `json:"cpuUsage"`
-	MemoryUsage   float64       `json:"memoryUsage"`
-	MemoryTotal   uint64        `json:"memoryTotal"`
-	MemoryUsed    uint64        `json:"memoryUsed"`
-	Goroutines    int           `json:"goroutines"`
-	DBConnections DBConnections `json:"dbConnections"`
-	Uptime        int64         `json:"uptime"`        // seconds
-	RequestsPerSec float64      `json:"requestsPerSec"`
-	Status        string        `json:"status"`        // healthy, degraded, critical
+	CPUUsage       float64       `json:"cpuUsage"`
+	MemoryUsage    float64       `json:"memoryUsage"`
+	MemoryTotal    uint64        `json:"memoryTotal"`
+	MemoryUsed     uint64        `json:"memoryUsed"`
+	Goroutines     int           `json:"goroutines"`
+	DBConnections  DBConnections `json:"dbConnections"`
+	Uptime         int64         `json:"uptime"` // seconds
+	RequestsPerSec float64       `json:"requestsPerSec"`
+	Status         string        `json:"status"` // healthy, degraded, critical
 }
 
 // DBConnections represents database connection pool status.
@@ -58,19 +58,19 @@ type OnlineUsers struct {
 
 // OrderQueue represents order processing queue status.
 type OrderQueue struct {
-	Pending          int     `json:"pending"`
-	Processing       int     `json:"processing"`
-	Completed        int     `json:"completed"`
-	ProcessingSpeed  float64 `json:"processingSpeed"` // orders per minute
-	AverageWaitTime  float64 `json:"averageWaitTime"` // seconds
-	HasBacklog       bool    `json:"hasBacklog"`
+	Pending         int     `json:"pending"`
+	Processing      int     `json:"processing"`
+	Completed       int     `json:"completed"`
+	ProcessingSpeed float64 `json:"processingSpeed"` // orders per minute
+	AverageWaitTime float64 `json:"averageWaitTime"` // seconds
+	HasBacklog      bool    `json:"hasBacklog"`
 }
 
 // Alert represents a system or business alert.
 type Alert struct {
 	ID        string    `json:"id"`
-	Level     string    `json:"level"`     // high, medium, low
-	Type      string    `json:"type"`      // system, business, security
+	Level     string    `json:"level"` // high, medium, low
+	Type      string    `json:"type"`  // system, business, security
 	Title     string    `json:"title"`
 	Message   string    `json:"message"`
 	Source    string    `json:"source"`

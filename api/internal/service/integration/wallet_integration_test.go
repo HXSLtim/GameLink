@@ -439,24 +439,24 @@ func TestWalletService_TPlus7_FrozenBalance_Simulation(t *testing.T) {
 	playerIncomeCents := int64(8000) // 80% of 10000 after commission
 
 	order := &model.Order{
-		Base:             model.Base{ExtJSON: "{}"},
-		OrderNo:          "TPLUS7" + now.Format("20060102150405"),
-		UserID:           testUser.ID,
-		PlayerID:         &player.ID,
-		ItemID:           serviceItem.ID,
-		Quantity:         1,
-		UnitPriceCents:   10000,
-		TotalPriceCents:  10000,
-		CommissionCents:  2000,
+		Base:              model.Base{ExtJSON: "{}"},
+		OrderNo:           "TPLUS7" + now.Format("20060102150405"),
+		UserID:            testUser.ID,
+		PlayerID:          &player.ID,
+		ItemID:            serviceItem.ID,
+		Quantity:          1,
+		UnitPriceCents:    10000,
+		TotalPriceCents:   10000,
+		CommissionCents:   2000,
 		PlayerIncomeCents: playerIncomeCents,
-		Currency:         model.CurrencyCNY,
-		Status:           model.OrderStatusCompleted,
-		Title:            "Test Order",
-		ScheduledStart:   &scheduledStart,
-		ScheduledEnd:     &scheduledEnd,
-		CompletedAt:      &now,
-		GameID:           &testGame.ID,
-		OrderConfig:      "{}",
+		Currency:          model.CurrencyCNY,
+		Status:            model.OrderStatusCompleted,
+		Title:             "Test Order",
+		ScheduledStart:    &scheduledStart,
+		ScheduledEnd:      &scheduledEnd,
+		CompletedAt:       &now,
+		GameID:            &testGame.ID,
+		OrderConfig:       "{}",
 	}
 	err := db.Create(order).Error
 	require.NoError(t, err)
@@ -465,8 +465,8 @@ func TestWalletService_TPlus7_FrozenBalance_Simulation(t *testing.T) {
 	playerWallet := &model.Wallet{
 		Base:         model.Base{ExtJSON: "{}"},
 		UserID:       player.ID,
-		BalanceCents: 5000,  // Existing withdrawable balance
-		FrozenCents:  8000,  // Frozen from completed order (T+7 pending)
+		BalanceCents: 5000, // Existing withdrawable balance
+		FrozenCents:  8000, // Frozen from completed order (T+7 pending)
 	}
 	err = db.Create(playerWallet).Error
 	require.NoError(t, err)

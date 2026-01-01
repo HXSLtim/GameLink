@@ -15,8 +15,8 @@ import (
 	"gamelink/internal/repository/player"
 	"gamelink/internal/repository/routingrule"
 	"gamelink/internal/repository/settlementcompany"
-	settlementcompanyservice "gamelink/internal/service/settlementcompany"
 	routingruleservice "gamelink/internal/service/routingrule"
+	settlementcompanyservice "gamelink/internal/service/settlementcompany"
 )
 
 // ============================================================================

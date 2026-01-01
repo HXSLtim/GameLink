@@ -5,10 +5,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"gamelink/pkg/apierr"
 	"gamelink/internal/model"
 	"gamelink/internal/service/gift"
 	"gamelink/internal/service/item"
+	"gamelink/pkg/apierr"
 )
 
 // ServiceItemListResponse 服务列表响应（类型别名）

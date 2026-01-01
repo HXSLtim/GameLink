@@ -140,7 +140,7 @@ func TestUserHandler_ListUsers_WithDateRange(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	var response struct {
-		Success bool `json:"success"`
+		Success bool          `json:"success"`
 		Data    []interface{} `json:"data"`
 	}
 
@@ -220,13 +220,13 @@ func TestUserHandler_CreateUser_Success(t *testing.T) {
 	helper.RegisterRoutes()
 
 	payload := map[string]interface{}{
-		"phone":    "13800138888",
-		"email":    "newuser@test.com",
-		"password": "password123",
-		"name":     "New User",
+		"phone":      "13800138888",
+		"email":      "newuser@test.com",
+		"password":   "password123",
+		"name":       "New User",
 		"avatar_url": "https://example.com/avatar.jpg",
-		"role":     "user",
-		"status":   "active",
+		"role":       "user",
+		"status":     "active",
 	}
 
 	w := helper.MakeRequest("POST", "/users", payload, true)
@@ -331,11 +331,11 @@ func TestUserHandler_CreateUserWithPlayer_Success(t *testing.T) {
 		"role":     "player",
 		"status":   "active",
 		"player": map[string]interface{}{
-			"nickname":              "ProGamer",
-			"bio":                   "Experienced player",
-			"hourly_rate_cents":     5000,
-			"main_game_id":          1,
-			"verification_status":   "verified",
+			"nickname":            "ProGamer",
+			"bio":                 "Experienced player",
+			"hourly_rate_cents":   5000,
+			"main_game_id":        1,
+			"verification_status": "verified",
 		},
 	}
 
@@ -508,7 +508,7 @@ func TestUserHandler_UpdateUserStatus_Success(t *testing.T) {
 	var response struct {
 		Success bool `json:"success"`
 		Data    struct {
-			ID     uint64          `json:"id"`
+			ID     uint64           `json:"id"`
 			Status model.UserStatus `json:"status"`
 		} `json:"data"`
 	}
@@ -610,7 +610,7 @@ func TestUserHandler_BatchDeleteUsers_PartialSuccess(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	var response struct {
-		Success bool `json:"success"`
+		Success bool   `json:"success"`
 		Message string `json:"message"`
 		Data    struct {
 			Deleted int `json:"deleted"`
@@ -651,7 +651,7 @@ func TestUserHandler_ListUserOrders_Success(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	var response struct {
-		Success bool `json:"success"`
+		Success bool          `json:"success"`
 		Data    []interface{} `json:"data"`
 		Meta    struct {
 			Pagination struct {
@@ -697,7 +697,7 @@ func TestUserHandler_ListUserLogs_Success(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	var response struct {
-		Success bool `json:"success"`
+		Success bool          `json:"success"`
 		Data    []interface{} `json:"data"`
 		Meta    struct {
 			Pagination struct {
@@ -730,7 +730,7 @@ func TestUserHandler_ListUserLoginHistory_Success(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	var response struct {
-		Success bool `json:"success"`
+		Success bool          `json:"success"`
 		Data    []interface{} `json:"data"`
 		Meta    struct {
 			Pagination struct {

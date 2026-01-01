@@ -6,12 +6,12 @@ import (
 	"testing"
 
 	"gamelink/internal/model"
-	userblockrepo "gamelink/internal/repository/userblock"
-	userrepository "gamelink/internal/repository/user"
 	sensitivewordrepo "gamelink/internal/repository/sensitiveword"
+	userrepository "gamelink/internal/repository/user"
+	userblockrepo "gamelink/internal/repository/userblock"
 	"gamelink/internal/service/sensitiveword"
-	userblockservice "gamelink/internal/service/userblock"
 	userservice "gamelink/internal/service/user"
+	userblockservice "gamelink/internal/service/userblock"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

@@ -398,9 +398,9 @@ func TestGameCategoryRepository_Update_NotFound(t *testing.T) {
 
 	// Try to update non-existent category
 	category := &model.GameCategory{
-		Base:      model.Base{ID: 99999},
-		Name:      "NonExistent",
-		IsActive:  true,
+		Base:     model.Base{ID: 99999},
+		Name:     "NonExistent",
+		IsActive: true,
 	}
 
 	err := repo.Update(ctx, category)

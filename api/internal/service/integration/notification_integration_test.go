@@ -26,7 +26,9 @@ func setupNotificationService(t *testing.T) (*notification.Service, context.Cont
 }
 
 // createTestNotificationEvent creates a NotificationEvent directly in the database.
-func createTestNotificationEvent(t *testing.T, db interface{ Create(interface{}) interface{ Error() error } }, userID uint64, title, message string, priority model.NotificationPriority) *model.NotificationEvent {
+func createTestNotificationEvent(t *testing.T, db interface {
+	Create(interface{}) interface{ Error() error }
+}, userID uint64, title, message string, priority model.NotificationPriority) *model.NotificationEvent {
 	t.Helper()
 	event := &model.NotificationEvent{
 		Base: model.Base{

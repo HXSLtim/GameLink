@@ -253,7 +253,6 @@ func TestReferralRepository_IncrementCodeUseCount(t *testing.T) {
 	assert.Equal(t, 1, got.UseCount)
 }
 
-
 // ============================================================================
 // Referral Record Tests
 // ============================================================================

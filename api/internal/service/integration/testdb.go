@@ -420,7 +420,6 @@ func SkipIfNoTestDB(t *testing.T) {
 	sqlDB.Close()
 }
 
-
 // CreateTestWallet creates a test wallet for a user.
 func CreateTestWallet(t *testing.T, db *gorm.DB, userID uint64, balanceCents int64) *model.Wallet {
 	t.Helper()
@@ -819,7 +818,6 @@ func CreateTestSensitiveWord(t *testing.T, db *gorm.DB, word string, category mo
 	return sw
 }
 
-
 // CreateTestMenu creates a test menu.
 func CreateTestMenu(t *testing.T, db *gorm.DB, name, path string, parentID *uint64) *model.Menu {
 	t.Helper()
@@ -893,7 +891,6 @@ func AssignPermissionToRole(t *testing.T, db *gorm.DB, roleID, permissionID uint
 		t.Fatalf("Failed to assign permission to role: %v", err)
 	}
 }
-
 
 // CreateTestGameRank creates a test game rank.
 func CreateTestGameRank(t *testing.T, db *gorm.DB, game *model.Game, name string, level int, priceCents int64) *model.GameRank {
@@ -1007,7 +1004,6 @@ func CreateTestOrderServiceAssignment(t *testing.T, db *gorm.DB, order *model.Or
 	}
 	return assignment
 }
-
 
 // CreateTestChatSnapshot creates a test chat snapshot for dispute.
 func CreateTestChatSnapshot(t *testing.T, db *gorm.DB, disputeID, orderID, chatGroupID uint64) *model.ChatSnapshot {

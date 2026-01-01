@@ -340,10 +340,10 @@ func (h *SensitiveWordHandler) BatchUpdateSensitiveWordStatus(c *gin.Context) {
 
 // BatchAddSensitiveWordsRequest 批量添加敏感词请求
 type BatchAddSensitiveWordsRequest struct {
-	Words     []string                      `json:"words" binding:"required,min=1,max=100"`
-	Category  model.SensitiveWordCategory   `json:"category" binding:"required"`
-	Severity  model.SensitiveWordSeverity   `json:"severity" binding:"required"`
-	MatchType model.SensitiveWordMatchType  `json:"matchType"`
+	Words     []string                     `json:"words" binding:"required,min=1,max=100"`
+	Category  model.SensitiveWordCategory  `json:"category" binding:"required"`
+	Severity  model.SensitiveWordSeverity  `json:"severity" binding:"required"`
+	MatchType model.SensitiveWordMatchType `json:"matchType"`
 }
 
 // BatchDeleteSensitiveWordsRequest 批量删除敏感词请求
