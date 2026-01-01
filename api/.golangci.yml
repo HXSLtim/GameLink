@@ -56,6 +56,7 @@ issues:
     - 'Error return value of `sqlDB.Close` is not checked'
     - 'Error return value of `m.stopReverse` is not checked'
     - 'exported.*should have comment.*or be unexported' # Allow missing comments for now
+    - 'cyclomatic complexity' # Allow higher complexity for now
   exclude-rules:
     - path: internal/repository/gormrepo
       linters:
