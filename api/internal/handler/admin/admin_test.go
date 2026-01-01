@@ -77,14 +77,14 @@ func SetupAdminTest(t *testing.T) *AdminTestHelper {
 		Base: model.Base{
 			ExtJSON: "{}",
 		},
-		Phone:  "13800138000",
+	Phone:  "13800138000",
 		Name:   "Test Admin",
 		Role:   model.RoleAdmin,
 		Status: model.UserStatusActive,
 	}
 	require.NoError(t, db.Create(adminUser).Error)
-	// Set role_slug for admin
-	require.NoError(t, db.Model(adminUser).Update("role_slug", string(model.RoleSlugSuperAdmin)).Error)
+	// Update role to superAdmin for testing
+	require.NoError(t, db.Model(adminUser).Update("role", string(model.RoleSlugSuperAdmin)).Error)
 
 	// Generate test token (simplified - in real scenario use JWT)
 	adminToken := fmt.Sprintf("Bearer admin-test-token-%d", adminUser.ID)
