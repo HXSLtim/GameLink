@@ -230,7 +230,7 @@ const RewardsPage: React.FC = () => {
             {selectedActivityId && (
                 <Row gutter={16} style={{ marginBottom: 16 }}>
                     <Col xs={12} sm={6}>
-                        <Card>
+                        <Card style={{ minHeight: 120 }}>
                             <Statistic
                                 title="奖励数量"
                                 value={totalRewards}
@@ -239,7 +239,7 @@ const RewardsPage: React.FC = () => {
                         </Card>
                     </Col>
                     <Col xs={12} sm={6}>
-                        <Card>
+                        <Card style={{ minHeight: 120 }}>
                             <Statistic
                                 title="总库存"
                                 value={totalStock}
@@ -248,7 +248,7 @@ const RewardsPage: React.FC = () => {
                         </Card>
                     </Col>
                     <Col xs={12} sm={6}>
-                        <Card>
+                        <Card style={{ minHeight: 120 }}>
                             <Statistic
                                 title="剩余库存"
                                 value={totalRemaining}
@@ -257,7 +257,7 @@ const RewardsPage: React.FC = () => {
                         </Card>
                     </Col>
                     <Col xs={12} sm={6}>
-                        <Card>
+                        <Card style={{ minHeight: 120 }}>
                             <Statistic
                                 title="总概率"
                                 value={totalProbability}

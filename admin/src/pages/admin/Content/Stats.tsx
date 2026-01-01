@@ -81,7 +81,7 @@ const StatsPage: React.FC = () => {
       <Row gutter={[16, 16]}>
         {/* 统计卡片 */}
         <Col xs={24} sm={12} md={8} lg={6}>
-          <Card>
+          <Card style={{ minHeight: 120 }}>
             <Statistic
               title="总动态数"
               value={stats?.stats?.totalFeeds || 0}
@@ -90,7 +90,7 @@ const StatsPage: React.FC = () => {
           </Card>
         </Col>
         <Col xs={24} sm={12} md={8} lg={6}>
-          <Card>
+          <Card style={{ minHeight: 120 }}>
             <Statistic
               title="待审核动态"
               value={stats?.stats?.pendingFeeds || 0}
@@ -100,7 +100,7 @@ const StatsPage: React.FC = () => {
           </Card>
         </Col>
         <Col xs={24} sm={12} md={8} lg={6}>
-          <Card>
+          <Card style={{ minHeight: 120 }}>
             <Statistic
               title="已通过动态"
               value={stats?.stats?.approvedFeeds || 0}
@@ -110,7 +110,7 @@ const StatsPage: React.FC = () => {
           </Card>
         </Col>
         <Col xs={24} sm={12} md={8} lg={6}>
-          <Card>
+          <Card style={{ minHeight: 120 }}>
             <Statistic
               title="已拒绝动态"
               value={stats?.stats?.rejectedFeeds || 0}
@@ -120,7 +120,7 @@ const StatsPage: React.FC = () => {
           </Card>
         </Col>
         <Col xs={24} sm={12} md={8} lg={6}>
-          <Card>
+          <Card style={{ minHeight: 120 }}>
             <Statistic
               title="总消息数"
               value={stats?.stats?.totalMessages || 0}
@@ -129,7 +129,7 @@ const StatsPage: React.FC = () => {
           </Card>
         </Col>
         <Col xs={24} sm={12} md={8} lg={6}>
-          <Card>
+          <Card style={{ minHeight: 120 }}>
             <Statistic
               title="标记消息数"
               value={stats?.stats?.flaggedMessages || 0}
@@ -139,7 +139,7 @@ const StatsPage: React.FC = () => {
           </Card>
         </Col>
         <Col xs={24} sm={12} md={8} lg={6}>
-          <Card>
+          <Card style={{ minHeight: 120 }}>
             <Statistic
               title="总举报数"
               value={stats?.stats?.totalReports || 0}
@@ -148,7 +148,7 @@ const StatsPage: React.FC = () => {
           </Card>
         </Col>
         <Col xs={24} sm={12} md={8} lg={6}>
-          <Card>
+          <Card style={{ minHeight: 120 }}>
             <Statistic
               title="举报处理率"
               value={stats?.stats?.reportHandleRate || 0}

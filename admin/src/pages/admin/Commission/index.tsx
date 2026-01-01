@@ -255,7 +255,7 @@ const CommissionPage: React.FC = () => {
             {/* 统计卡片 */}
             <Row gutter={16} style={{ marginBottom: 16 }}>
                 <Col span={6}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic
                             title="平台总收入"
                             value={stats?.totalRevenueCents ? stats.totalRevenueCents / 100 : 0}
@@ -266,7 +266,7 @@ const CommissionPage: React.FC = () => {
                     </Card>
                 </Col>
                 <Col span={6}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic
                             title="平台佣金"
                             value={stats?.totalCommissionCents ? stats.totalCommissionCents / 100 : 0}
@@ -277,7 +277,7 @@ const CommissionPage: React.FC = () => {
                     </Card>
                 </Col>
                 <Col span={6}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic
                             title="总订单数"
                             value={stats?.totalOrderCount || 0}
@@ -285,7 +285,7 @@ const CommissionPage: React.FC = () => {
                     </Card>
                 </Col>
                 <Col span={6}>
-                    <Card>
+                    <Card style={{ minHeight: 120 }}>
                         <Statistic
                             title="完成订单数"
                             value={stats?.completedOrderCount || 0}
