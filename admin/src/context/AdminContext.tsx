@@ -6,6 +6,7 @@
 import React, { createContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { adminApi } from '@/api/admin';
 import type { Menu } from '@/api/admin';
+import { permissionApi } from '@/api/permission';
 import { permissionStore } from '@/utils/permission';
 import { filterMenusByPermission } from '@/utils/menuPermission';
 
@@ -84,7 +85,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         try {
             // 并行获取权限和当前用户可访问的菜单
             const [permRes, menuRes] = await Promise.all([
-                adminApi.getMyPermissions().catch(() => ({ data: { success: false, data: [] } })),
+                permissionApi.getMyPermissions().catch(() => ({ data: { success: false, data: [] } })),
                 adminApi.getMyMenus().catch(() => ({ data: { success: false, data: [] } }))
             ]);
 

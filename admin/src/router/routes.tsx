@@ -38,6 +38,7 @@ const UserRolePage = lazy(() => import('@/pages/sys/user-role'));
 const RealtimeMonitor = lazy(() => import('@/pages/admin/Monitor/Realtime'));
 const AnalyticsPage = lazy(() => import('@/pages/admin/Monitor/Analytics'));
 const KPIDashboard = lazy(() => import('@/pages/admin/Monitor/KPI'));
+const AdminAlert = lazy(() => import('@/pages/admin/Alert'));
 
 // 评价管理模块页面
 const ReviewList = lazy(() => import('@/pages/admin/Review/index'));
@@ -62,6 +63,20 @@ const ServiceItemList = lazy(() => import('@/pages/biz/service'));
 const ServiceItemForm = lazy(() => import('@/pages/biz/service/form'));
 const ServiceItemDetail = lazy(() => import('@/pages/biz/service/detail'));
 
+// VIP管理页面
+const VIPLevels = lazy(() => import('@/pages/admin/VIP'));
+const VIPConfig = lazy(() => import('@/pages/admin/VIP/Config'));
+
+// 营销模块页面
+const CouponPage = lazy(() => import('@/pages/admin/Coupon'));
+const ActivityPage = lazy(() => import('@/pages/admin/Activity'));
+const RechargePage = lazy(() => import('@/pages/admin/Recharge'));
+const TeamPage = lazy(() => import('@/pages/admin/Team'));
+const ReferralPage = lazy(() => import('@/pages/admin/Referral'));
+
+// 结算公司管理页面
+const SettlementPage = lazy(() => import('@/pages/admin/Settlement'));
+const SettlementPlayersPage = lazy(() => import('@/pages/admin/Settlement/Players'));
 
 
 export const routes: RouteConfig[] = [
@@ -212,6 +227,11 @@ export const routes: RouteConfig[] = [
                 element: <LazyLoad><KPIDashboard /></LazyLoad>,
                 meta: { title: 'KPI 仪表板' }
             },
+            {
+                path: 'alert',
+                element: <LazyLoad><AdminAlert /></LazyLoad>,
+                meta: { title: '告警管理', permission: 'admin.alert.list' }
+            },
             // 评价管理模块
             {
                 path: 'reviews/list',
@@ -268,6 +288,64 @@ export const routes: RouteConfig[] = [
                 path: 'content/stats',
                 element: <LazyLoad><ContentStats /></LazyLoad>,
                 meta: { title: '内容统计', permission: 'admin.content.stats.list' }
+            },
+            // VIP管理模块
+            {
+                path: 'vip',
+                element: <LazyLoad><VIPLevels /></LazyLoad>,
+                meta: { title: 'VIP等级管理', permission: 'admin.vip.list' }
+            },
+            {
+                path: 'vip/levels',
+                element: <LazyLoad><VIPLevels /></LazyLoad>,
+                meta: { title: 'VIP等级管理', permission: 'admin.vip.list' }
+            },
+            {
+                path: 'vip/config',
+                element: <LazyLoad><VIPConfig /></LazyLoad>,
+                meta: { title: 'VIP系统配置', permission: 'admin.vip.config' }
+            },
+            // 营销模块
+            {
+                path: 'coupon',
+                element: <LazyLoad><CouponPage /></LazyLoad>,
+                meta: { title: '优惠券管理', permission: 'admin.coupon.list' }
+            },
+            {
+                path: 'activity',
+                element: <LazyLoad><ActivityPage /></LazyLoad>,
+                meta: { title: '活动管理', permission: 'admin.activity.list' }
+            },
+            {
+                path: 'recharge',
+                element: <LazyLoad><RechargePage /></LazyLoad>,
+                meta: { title: '充值套餐管理', permission: 'admin.recharge.list' }
+            },
+            {
+                path: 'team',
+                element: <LazyLoad><TeamPage /></LazyLoad>,
+                meta: { title: '战队管理', permission: 'admin.team.list' }
+            },
+            {
+                path: 'referral',
+                element: <LazyLoad><ReferralPage /></LazyLoad>,
+                meta: { title: '推荐管理', permission: 'admin.referral.list' }
+            },
+            // 结算公司管理模块
+            {
+                path: 'settlement',
+                element: <LazyLoad><SettlementPage /></LazyLoad>,
+                meta: { title: '结算公司管理', permission: 'admin.settlement.list' }
+            },
+            {
+                path: 'settlement/companies',
+                element: <LazyLoad><SettlementPage /></LazyLoad>,
+                meta: { title: '结算公司管理', permission: 'admin.settlement.list' }
+            },
+            {
+                path: 'settlement/players',
+                element: <LazyLoad><SettlementPlayersPage /></LazyLoad>,
+                meta: { title: '陪玩师归属管理', permission: 'admin.settlement.players' }
             }
         ]
     },

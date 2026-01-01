@@ -37,6 +37,12 @@ const AdminRoutingRule = React.lazy(() => import('@/pages/admin/RoutingRule'));
 const AdminUserBehavior = React.lazy(() => import('@/pages/admin/UserBehavior'));
 const AdminWithdrawRouting = React.lazy(() => import('@/pages/admin/WithdrawRouting'));
 
+// VIP管理
+const VIPLevels = React.lazy(() => import('@/pages/admin/VIP'));
+const VIPConfig = React.lazy(() => import('@/pages/admin/VIP/Config'));
+
+// 充值管理
+const AdminRecharge = React.lazy(() => import('@/pages/admin/Recharge'));
 // 组件映射表：支持数据库中的组件名称
 export const componentMap: Record<string, React.LazyExoticComponent<React.ComponentType> | React.FC> = {
     // 仪表盘
@@ -150,7 +156,46 @@ export const componentMap: Record<string, React.LazyExoticComponent<React.Compon
     'admin/routing-rule': AdminRoutingRule,
     'admin/user-behavior': AdminUserBehavior,
     'admin/withdraw-routing': AdminWithdrawRouting,
-    
+
+    // VIP管理
+    'VIPLevels': VIPLevels,
+    'VIPConfig': VIPConfig,
+    'VIP': VIPLevels,
+    'vip/levels': VIPLevels,
+    'vip/config': VIPConfig,
+    'admin/vip': VIPLevels,
+    'admin/vip/levels': VIPLevels,
+    'admin/marketing/vip': VIPLevels,
+
+    // 优惠券管理
+    'Coupon': React.lazy(() => import('@/pages/admin/Coupon')),
+    'admin/coupon': React.lazy(() => import('@/pages/admin/Coupon')),
+    'admin/marketing/coupon': React.lazy(() => import('@/pages/admin/Coupon')),
+
+    // 推荐系统
+    'Referral': React.lazy(() => import('@/pages/admin/Referral')),
+    'admin/referral': React.lazy(() => import('@/pages/admin/Referral')),
+    'admin/marketing/referral': React.lazy(() => import('@/pages/admin/Referral')),
+
+    // 团队管理
+    'Team': React.lazy(() => import('@/pages/admin/Team')),
+    'admin/team': React.lazy(() => import('@/pages/admin/Team')),
+    'admin/marketing/team': React.lazy(() => import('@/pages/admin/Team')),
+
+    // 活动管理
+    'Activity': React.lazy(() => import('@/pages/admin/Activity')),
+    'admin/activity': React.lazy(() => import('@/pages/admin/Activity')),
+    'admin/marketing/activity': React.lazy(() => import('@/pages/admin/Activity')),
+
+    // 充值管理
+    'Recharge': AdminRecharge,
+    'admin/recharge': AdminRecharge,
+    'admin/payment/recharge': AdminRecharge,
+    'admin/vip/config': VIPConfig,
+    // 支付记录
+    'PaymentRecords': React.lazy(() => import('@/pages/admin/PaymentRecords')),
+    'admin/payment/records': React.lazy(() => import('@/pages/admin/PaymentRecords')),
+
     'content/feeds': React.lazy(() => import('@/pages/admin/Content/Feeds')),
     'content/chat': React.lazy(() => import('@/pages/admin/Content/ChatMonitor')),
     'content/reports': React.lazy(() => import('@/pages/admin/Content/Reports')),

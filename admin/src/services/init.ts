@@ -65,11 +65,12 @@ const hasAdminAccess = async (): Promise<boolean> => {
     }
 
     try {
-        const response = await authApi.getMe();
+        const axiosResponse = await authApi.getMe();
 
-        console.log('[Init] getMe response:', response);
+        console.log('[Init] getMe response:', axiosResponse);
 
-        const api = response as unknown as {
+        // axios 响应拦截器返回完整响应对象，实际数据在 response.data 中
+        const api = (axiosResponse as any).data as unknown as {
             success?: boolean;
             code?: number;
             message?: string;

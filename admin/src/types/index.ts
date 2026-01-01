@@ -35,3 +35,18 @@ export {
   type Alert as MonitorAlert,
   type AlertLevel as MonitorAlertLevel,
 } from './monitor';
+
+// Dispute 纠纷管理类型
+export * from './dispute';
+
+// Marketing 营销模块类型
+export * from './marketing';
+
+// Payment & Operations 支付运营类型
+export * from './payment';
+
+// Game 游戏模块类型
+export * from './game';
+
+// Chat 聊天模块类型
+export * from './chat';

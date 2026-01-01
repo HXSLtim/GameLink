@@ -59,6 +59,11 @@ import {
     BankOutlined,
     TrophyOutlined,
     SwapOutlined,
+    CrownOutlined,
+    PayCircleOutlined,
+    ShareAltOutlined,
+    CalendarOutlined,
+    TransactionOutlined,
 } from '@ant-design/icons';
 import { useAdmin } from '@/context/useAdmin';
 import { useTheme } from '@/context/useTheme';
@@ -113,6 +118,13 @@ const iconMap: Record<string, React.ComponentType> = {
     AuditOutlined,
     WarningOutlined,
     StopOutlined,
+    // 营销管理
+    CrownOutlined,
+    PayCircleOutlined,
+    ShareAltOutlined,
+    CalendarOutlined,
+    TransactionOutlined,
+
     // 简写名称映射（数据库中存储的名称）
     'dashboard': DashboardOutlined,
     'setting': SettingOutlined,
@@ -138,6 +150,11 @@ const iconMap: Record<string, React.ComponentType> = {
     'bank': BankOutlined,
     'trophy': TrophyOutlined,
     'swap': SwapOutlined,
+    'crown': CrownOutlined,
+    'pay-circle': PayCircleOutlined,
+    'share-alt': ShareAltOutlined,
+    'calendar': CalendarOutlined,
+    'transaction': TransactionOutlined,
 };
 
 const AdminLayout: React.FC = () => {

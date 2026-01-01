@@ -43,6 +43,18 @@ const iconNameMap: Record<string, string> = {
     'profile': 'ProfileOutlined',
     'audit': 'AuditOutlined',
     'solution': 'SolutionOutlined',
+    // 新增模块图标
+    'dispute': 'ExclamationCircleOutlined',
+    'coupon': 'GiftOutlined',
+    'vip': 'CrownOutlined',
+    'referral': 'UserSwitchOutlined',
+    'routing': 'BranchesOutlined',
+    'recharge': 'WalletOutlined',
+    'activity': 'TrophyOutlined',
+    'settlement': 'BankOutlined',
+    'chat': 'MessageOutlined',
+    'rank': 'RocketOutlined',
+    'game': 'GameOutlined',
 };
 
 export const getIcon = (iconName?: string) => {

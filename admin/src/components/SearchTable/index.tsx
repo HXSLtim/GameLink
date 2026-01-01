@@ -48,6 +48,8 @@ export interface ToolbarButton {
     needSelection?: boolean;
     /** 确认提示（批量删除等危险操作） */
     confirmText?: string;
+    /** 是否为简单批量操作（有选中时显示在行内） */
+    simpleAction?: boolean;
 }
 
 /**
@@ -253,6 +255,12 @@ export function SearchTable<T extends object>({
 
                             {/* 自定义工具栏按钮 */}
                             {toolbarButtons.map(renderToolbarButton)}
+
+                            {/* 简单批量操作（有选中时显示） */}
+                            {toolbarButtons.filter(btn => btn.simpleAction).map((btn, idx) => {
+                                if (selectedRowKeys.length === 0) return null;
+                                return renderToolbarButton(btn, `simple-${idx}`);
+                            })}
 
                             {/* 批量删除 */}
                             {showBatchDelete && batchDeletePermission && (
