@@ -28,7 +28,6 @@ import (
 	"gamelink/internal/repository/serviceitem"
 	"gamelink/internal/repository/stats"
 	"gamelink/internal/repository/user"
-	"gamelink/internal/repository/wallet"
 )
 
 // AdminTestHelper provides utilities for admin handler testing.
@@ -61,14 +60,13 @@ func SetupAdminTest(t *testing.T) *AdminTestHelper {
 	permissions := admin.NewPermissionRepository(db)
 	menus := admin.NewMenuRepository(db)
 	statsRepo := stats.NewStatsRepository(db)
-	wallets := user.NewWalletRepository(db)
 	gameCategories := gamecategory.NewGameCategoryRepository(db)
 	c := cache.NewMemory()
 
 	// Create admin service
 	svc := adminservice.NewAdminService(
 		games, users, players, orders, payments,
-		roles, serviceItems, permissions, menus, statsRepo, wallets, gameCategories, c,
+		roles, serviceItems, permissions, menus, statsRepo, nil, gameCategories, c,
 	)
 
 	// Create test router

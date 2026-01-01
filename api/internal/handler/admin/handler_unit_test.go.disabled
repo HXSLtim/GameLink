@@ -120,7 +120,7 @@ func (m *MockAdminService) GetUserStats(ctx any) (*adminservice.UserStatsRespons
 	if m.GetUserStatsFunc != nil {
 		return m.GetUserStatsFunc(ctx)
 	}
-	return &adminservice.UserStatsResponse{TotalUsers: 100}, nil
+	return &adminservice.UserStatsResponse{Total: 100}, nil
 }
 
 func (m *MockAdminService) RegisterUserAndPlayer(ctx any, u adminservice.CreateUserInput, p adminservice.CreatePlayerInput) (*model.User, *model.Player, error) {
@@ -653,9 +653,10 @@ func TestUserHandler_Unit_GetUserStats_Success(t *testing.T) {
 	mockSvc := &MockAdminService{
 		GetUserStatsFunc: func(ctx any) (*adminservice.UserStatsResponse, error) {
 			return &adminservice.UserStatsResponse{
-				TotalUsers:    100,
-				ActiveUsers:   80,
-				InactiveUsers: 20,
+				Total:               100,
+				ByRole:              map[string]int{"user": 60, "player": 30, "admin": 10},
+				ByStatus:            map[string]int{"active": 80, "inactive": 20},
+				RecentRegistrations: 5,
 			}, nil
 		},
 	}
@@ -668,8 +669,7 @@ func TestUserHandler_Unit_GetUserStats_Success(t *testing.T) {
 	resp := parseResponse(t, w)
 	assert.True(t, resp["success"].(bool))
 	data := resp["data"].(map[string]interface{})
-	assert.Equal(t, float64(100), data["total_users"])
-	assert.Equal(t, float64(80), data["active_users"])
+	assert.Equal(t, float64(100), data["total"])
 }
 
 func TestUserHandler_Unit_CreateUserWithPlayer_Success(t *testing.T) {
