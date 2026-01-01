@@ -312,8 +312,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
         ...params,
       });
 
-      if (response.data && response.data.items) {
-        const fetchedRooms = response.data.items.map(
+      if (response.data && response.data.data && response.data.data.items) {
+        const fetchedRooms = response.data.data.items.map(
           (room) =>
             ({
               ...room,
@@ -326,9 +326,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
             refresh || roomsPage === 1
               ? fetchedRooms
               : [...state.rooms, ...fetchedRooms],
-          roomsTotal: response.data.total,
+          roomsTotal: response.data.data.total,
           roomsPage: roomsPage + 1,
-          roomsHasMore: (refresh ? 0 : state.rooms.length) + fetchedRooms.length < response.data.total,
+          roomsHasMore: (refresh ? 0 : state.rooms.length) + fetchedRooms.length < response.data.data.total,
         });
 
         // 重新计算未读数
@@ -477,8 +477,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
         pageSize: pagination.pageSize,
       });
 
-      if (response.data && response.data.items) {
-        const fetchedMessages = response.data.items;
+      if (response.data && response.data.data && response.data.data.items) {
+        const fetchedMessages = response.data.data.items;
         const existingMessages = state.messages[conversationId] || [];
 
         set({
@@ -494,10 +494,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
             [conversationId]: {
               page: pagination.page + 1,
               pageSize: pagination.pageSize,
-              total: response.data.total,
+              total: response.data.data.total,
               hasMore:
                 (refresh ? 0 : existingMessages.length) + fetchedMessages.length <
-                response.data.total,
+                response.data.data.total,
             },
           },
         });

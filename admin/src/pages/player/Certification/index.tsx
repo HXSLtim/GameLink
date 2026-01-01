@@ -9,6 +9,7 @@ import {
     TrophyOutlined,
 } from '@ant-design/icons';
 import RankCertification from './Rank';
+import IdentityCertification from './Identity';
 
 /**
  * 陪玩师认证主页面

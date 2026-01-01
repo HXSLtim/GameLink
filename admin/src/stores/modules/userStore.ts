@@ -432,7 +432,7 @@ export const useUserStore = create<UserState>()(
           // 更新本地缓存
           set((state) => ({
             users: state.users.map((u) =>
-              u.id === id ? { ...u, role } : u
+              u.id === id ? { ...u, role: role as 'user' | 'player' | 'admin' } : u
             ),
             loading: false,
           }));
@@ -460,7 +460,7 @@ export const useUserStore = create<UserState>()(
           // 更新本地缓存
           set((state) => ({
             users: state.users.map((u) =>
-              userIds.includes(u.id) ? { ...u, role } : u
+              userIds.includes(u.id) ? { ...u, role: role as 'user' | 'player' | 'admin' } : u
             ),
             loading: false,
           }));

@@ -19,6 +19,7 @@ import {
     Descriptions,
     Tag,
     Spin,
+    Input,
 } from 'antd';
 import {
     UploadOutlined,
@@ -32,6 +33,7 @@ import { certificationApi, type RankCertification, type IdentityCertification, t
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
+const { TextArea } = Input;
 
 interface CertificationStatusResponse {
     identityCertified: boolean;

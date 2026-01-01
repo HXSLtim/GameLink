@@ -66,10 +66,23 @@ export const useAuthStore = create<AuthState>()(
             throw new Error('Invalid response from server');
           }
 
+          // Map API user response to UserInfo interface
+          const userInfo: UserInfo = {
+            id: user.id,
+            name: user.username,
+            email: user.email,
+            phone: undefined,
+            avatar: undefined,
+            role: user.role,
+            permissions: [], // TODO: Fetch permissions from API
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+
           // Update state
           set({
             token,
-            userInfo: user,
+            userInfo,
             isAuthenticated: true,
             loading: false,
             error: null,

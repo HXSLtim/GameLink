@@ -317,9 +317,9 @@ export const useMenuStore = create<MenuState>()(
  */
 useAuthStore.subscribe(
   (state) => state.userInfo?.permissions,
-  (permissions, previousPermissions) => {
-    // Only refilter if permissions actually changed
-    if (permissions && JSON.stringify(permissions) !== JSON.stringify(previousPermissions)) {
+  (permissions) => {
+    // Only refilter if permissions exist
+    if (permissions) {
       const { rawMenus, filterMenusByPermission } = useMenuStore.getState();
       const filteredMenus = filterMenusByPermission(rawMenus, permissions);
       useMenuStore.setState({ menus: filteredMenus });

@@ -6,6 +6,7 @@ import React from 'react';
 import type { ReactNode } from 'react';
 import { Card, Row, Col, Space, Button, Segmented, Input, Select, DatePicker } from 'antd';
 import { ReloadOutlined, SearchOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
 
 const { RangePicker } = DatePicker;
 
@@ -89,7 +90,18 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
                     <RangePicker
                         key={filter.key}
                         style={filter.style}
-                        value={value as [Date | null, Date | null] | null}
+                        value={
+                            value
+                                ? [
+                                      (value as [Date | null, Date | null])[0]
+                                          ? dayjs((value as [Date | null, Date | null])[0])
+                                          : null,
+                                      (value as [Date | null, Date | null])[1]
+                                          ? dayjs((value as [Date | null, Date | null])[1])
+                                          : null,
+                                  ]
+                                : null
+                        }
                         onChange={(dates) => onFilterChange(filter.key, dates)}
                     />
                 );
