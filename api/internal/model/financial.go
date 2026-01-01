@@ -82,11 +82,11 @@ const (
 type FinancialVoucherStatus string
 
 const (
-	FinancialVoucherStatusDraft     FinancialVoucherStatus = "draft"     // 草稿
-	FinancialVoucherStatusPending   FinancialVoucherStatus = "pending"   // 待审核
-	FinancialVoucherStatusApproved  FinancialVoucherStatus = "approved"  // 已审核
-	FinancialVoucherStatusRejected  FinancialVoucherStatus = "rejected"  // 已驳回
-	FinancialVoucherStatusPosted    FinancialVoucherStatus = "posted"    // 已过账
+	FinancialVoucherStatusDraft    FinancialVoucherStatus = "draft"    // 草稿
+	FinancialVoucherStatusPending  FinancialVoucherStatus = "pending"  // 待审核
+	FinancialVoucherStatusApproved FinancialVoucherStatus = "approved" // 已审核
+	FinancialVoucherStatusRejected FinancialVoucherStatus = "rejected" // 已驳回
+	FinancialVoucherStatusPosted   FinancialVoucherStatus = "posted"   // 已过账
 	FinancialVoucherStatusCanceled FinancialVoucherStatus = "canceled" // 已取消
 )
 

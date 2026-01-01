@@ -7,7 +7,7 @@ var BusinessMetrics *BusinessMetricsCollector
 type BusinessMetricsCollector struct {
 	OrdersCreatedTotal     *prometheus.CounterVec
 	OrdersCompletedTotal   *prometheus.CounterVec
-	OrdersCanceledTotal   *prometheus.CounterVec
+	OrdersCanceledTotal    *prometheus.CounterVec
 	OrdersRefundedTotal    *prometheus.CounterVec
 	OrderDurationHours     *prometheus.HistogramVec
 	PaymentsCreatedTotal   *prometheus.CounterVec
