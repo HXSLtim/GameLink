@@ -21,7 +21,6 @@ import {
     EditOutlined,
     BankOutlined,
     UserOutlined,
-    PlusOutlined,
     HistoryOutlined,
     DeleteOutlined,
     CheckOutlined,
@@ -35,6 +34,7 @@ import type {
     SettlementCompany,
     CompanyType,
     CompanyStatus,
+    SettlementCompanyHistory,
 } from '@/api/settlement';
 import CompanyForm from './components/CompanyForm';
 import dayjs from 'dayjs';
@@ -71,12 +71,10 @@ const SettlementPage: React.FC = () => {
     const [formVisible, setFormVisible] = useState(false);
     const [historyDrawerVisible, setHistoryDrawerVisible] = useState(false);
     const [currentCompany, setCurrentCompany] = useState<SettlementCompany | null>(null);
-    const [companyHistory, setCompanyHistory] = useState<any[]>([]);
+    const [companyHistory, setCompanyHistory] = useState<SettlementCompanyHistory[]>([]);
 
     // 批量操作状态
     const [selectedCompanyIds, setSelectedCompanyIds] = useState<number[]>([]);
-    const [batchStatusVisible, setBatchStatusVisible] = useState(false);
-    const [batchDeleteVisible, setBatchDeleteVisible] = useState(false);
     const [batchTarget, setBatchTarget] = useState<'selected' | 'status' | 'all'>('selected');
 
     /**
@@ -238,39 +236,8 @@ const SettlementPage: React.FC = () => {
     const handleBatchDelete = (keys: React.Key[]) => {
         setSelectedCompanyIds(keys ? keys.map(k => Number(k)) : []);
         setBatchTarget((keys && keys.length > 0) ? 'selected' : 'all');
-        setBatchDeleteVisible(true);
-    };
-
-    const submitBatchDelete = async () => {
-        try {
-            let companyIds: number[] = [];
-
-            if (batchTarget === 'selected') {
-                companyIds = selectedCompanyIds;
-            } else {
-                const response = await settlementApi.getSettlementCompanies({ pageSize: 1000 });
-                if (response.data.success && response.data.data) {
-                    companyIds = response.data.data.map((c: SettlementCompany) => c.id);
-                }
-            }
-
-            if (companyIds.length === 0) {
-                message.warning('没有符合条件的公司');
-                return;
-            }
-
-            const response = await settlementApi.batchDeleteCompanies({ companyIds });
-
-            if (response.data.success) {
-                const result = response.data.data;
-                message.success(`批量删除完成：成功 ${result.successCount}，失败 ${result.failedCount}`);
-                setBatchDeleteVisible(false);
-                loadData();
-            }
-        } catch (error) {
-            console.error('Batch delete error:', error);
-            message.error('操作失败');
-        }
+        // TODO: Implement batch delete modal
+        message.info('批量删除功能开发中');
     };
 
     /**

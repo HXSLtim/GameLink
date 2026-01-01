@@ -18,7 +18,6 @@ const UsersStoresExample = () => {
     pagination,
     fetchUsers,
     deleteUser,
-    setFilters,
     reset: resetUserStore,
   } = useUserStore();
 
@@ -28,7 +27,7 @@ const UsersStoresExample = () => {
   // 初始化加载数据
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [fetchUsers]);
 
   // 权限检查
   if (!hasPermission('admin.users.read')) {
@@ -41,7 +40,7 @@ const UsersStoresExample = () => {
       await deleteUser(userId);
       message.success('删除成功');
       await fetchUsers(); // 刷新列表
-    } catch (error) {
+    } catch {
       message.error('删除失败');
     }
   };
@@ -63,7 +62,7 @@ const UsersStoresExample = () => {
     {
       title: '操作',
       key: 'actions',
-      render: (_: any, record: any) => (
+      render: (_: unknown, record: { id: number }) => (
         <Space>
           <Button type="link">编辑</Button>
           <Button type="link" danger onClick={() => handleDelete(record.id)}>

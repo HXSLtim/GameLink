@@ -23,7 +23,6 @@ import type { ColumnsType } from 'antd/es/table';
 import {
     ReloadOutlined,
     EyeOutlined,
-    DollarOutlined,
     SearchOutlined,
     RollbackOutlined,
     GiftOutlined,

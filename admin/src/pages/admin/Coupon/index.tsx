@@ -41,7 +41,7 @@ import {
     getCouponSourceLabel,
     centsToYuan,
 } from '@/api/coupon';
-import { MONEY, PAGINATION, LAYOUT, SIZES, TABLE, MODAL, OTHER, TEXT } from '@/constants/common';
+import { MONEY, PAGINATION, LAYOUT, SIZES, TABLE, MODAL, OTHER } from '@/constants/common';
 import { StateContainer } from '@/components/common/StateContainer';
 import { TemplateForm, IssueModal } from './components';
 

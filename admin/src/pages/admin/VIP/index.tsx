@@ -39,7 +39,7 @@ import LevelForm from './components/LevelForm';
 import BenefitsEditor from './components/BenefitsEditor';
 import dayjs from 'dayjs';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 const { Search } = Input;
 
 const VIPPage: React.FC = () => {
@@ -465,6 +465,7 @@ const VIPPage: React.FC = () => {
 
             {/* 权益编辑器 */}
             <BenefitsEditor
+                key={benefitsEditingLevel?.id || 'benefits-editor'}
                 visible={benefitsEditorVisible}
                 benefits={benefitsEditingLevel?.benefits || '[]'}
                 onSave={handleSaveBenefits}

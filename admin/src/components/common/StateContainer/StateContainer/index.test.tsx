@@ -290,7 +290,7 @@ describe('StateContainer Component', () => {
             );
 
             // Initially loading
-            let skeletons = document.querySelectorAll('.ant-skeleton');
+            const skeletons = document.querySelectorAll('.ant-skeleton');
             expect(skeletons.length).toBeGreaterThan(0);
 
             // Then empty

@@ -15,7 +15,6 @@ import dayjs from 'dayjs';
 import { feedApi } from '@/api/content';
 import type { Feed, FeedModerationStatus } from '@/types/content';
 import {
-  FEED_MODERATION_STATUS_TEXT,
   FEED_MODERATION_STATUS_COLOR,
 } from '@/types/content';
 

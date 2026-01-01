@@ -25,13 +25,12 @@ import {
     ReloadOutlined,
     GiftOutlined,
     StarOutlined,
-    DollarOutlined,
     CrownOutlined,
 } from '@ant-design/icons';
 import { rechargeApi, type RechargeOption, type RechargeOptionQueryParams } from '@/api/recharge';
 import { RECHARGE_PERMISSIONS } from '@/constants/permissions';
 import { PermissionGuard } from '@/components/PermissionGuard';
-import { MONEY, PAGINATION, LAYOUT, SIZES, TABLE, MODAL, COLORS, BUSINESS } from '@/constants/common';
+import { MONEY, LAYOUT, SIZES, TABLE, COLORS, BUSINESS } from '@/constants/common';
 import OptionForm from './components/OptionForm';
 import dayjs from 'dayjs';
 
@@ -42,21 +41,6 @@ interface OptionsProps {
 }
 
 /**
- * 状态选项
- */
-const activeOptions = [
-    { label: '全部', value: undefined },
-    { label: '已启用', value: true },
-    { label: '已禁用', value: false },
-];
-
-const recommendedOptions = [
-    { label: '全部', value: undefined },
-    { label: '推荐', value: true },
-    { label: '普通', value: false },
-];
-
-/**
  * 充值选项管理页面
  */
 const RechargeOptions: React.FC<OptionsProps> = ({ onStatsUpdate }) => {
@@ -65,7 +49,6 @@ const RechargeOptions: React.FC<OptionsProps> = ({ onStatsUpdate }) => {
     const [total, setTotal] = useState(0);
     const [current, setCurrent] = useState(1);
     const [pageSize, setPageSize] = useState(10);
-    const [searchParams, setSearchParams] = useState<RechargeOptionQueryParams>({});
     const [formVisible, setFormVisible] = useState(false);
     const [currentOption, setCurrentOption] = useState<RechargeOption | null>(null);
 
@@ -144,22 +127,6 @@ const RechargeOptions: React.FC<OptionsProps> = ({ onStatsUpdate }) => {
             console.error('Toggle status error:', error);
             message.error('操作失败');
         }
-    };
-
-    /**
-     * 搜索
-     */
-    const handleSearch = (values: Record<string, unknown>) => {
-        setSearchParams(values as RechargeOptionQueryParams);
-        setCurrent(1);
-    };
-
-    /**
-     * 重置搜索
-     */
-    const handleReset = () => {
-        setSearchParams({});
-        setCurrent(1);
     };
 
     /**

@@ -20,7 +20,7 @@ interface GameCategory {
     updatedAt: string;
     // 关联数据（非持久化字段）
     games?: Game[];
-    serviceItems?: any[];
+    serviceItems?: Array<Record<string, unknown>>;
 }
 
 /**

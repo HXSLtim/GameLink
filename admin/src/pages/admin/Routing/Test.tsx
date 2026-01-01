@@ -6,7 +6,6 @@ import React, { useState } from 'react';
 import {
     Card,
     Form,
-    Input,
     InputNumber,
     Select,
     Button,
@@ -23,7 +22,6 @@ import {
 import {
     ExperimentOutlined,
     CheckCircleOutlined,
-    CloseCircleOutlined,
     ReloadOutlined,
 } from '@ant-design/icons';
 import { routingApi } from '@/api/routing';
@@ -94,19 +92,6 @@ const getConditionDisplay = (condition: RoutingCondition): string => {
     }
 
     return `${fieldLabel} ${operatorLabel} ${valueDisplay}`;
-};
-
-/**
- * Get condition field label
- */
-const getFieldLabel = (field: string): string => {
-    const labels: Record<string, string> = {
-        game_type: '游戏类型',
-        service_type: '服务类型',
-        order_amount: '订单金额',
-        region: '地区',
-    };
-    return labels[field] || field;
 };
 
 /**

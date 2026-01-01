@@ -9,14 +9,11 @@ import {
     Modal,
     message,
     Card,
-    Row,
-    Col,
     Statistic,
     Select,
     Form,
     Input,
     Drawer,
-    Descriptions,
     List,
     theme,
     Avatar,
@@ -30,8 +27,6 @@ import {
     SwapOutlined,
     HistoryOutlined,
     TeamOutlined,
-    CheckOutlined,
-    SearchOutlined,
 } from '@ant-design/icons';
 import { PageContainer, SearchTable, type ToolbarButton } from '@/components';
 import type { SearchField } from '@/components';
@@ -64,7 +59,6 @@ const SettlementPlayersPage: React.FC = () => {
     const [total, setTotal] = useState(0);
     const [current, setCurrent] = useState(1);
     const [pageSize, setPageSize] = useState(10);
-    const [searchParams, setSearchParams] = useState<Record<string, unknown>>({});
 
     // 弹窗状态
     const [assignModalVisible, setAssignModalVisible] = useState(false);

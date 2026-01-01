@@ -4,7 +4,7 @@
  */
 
 import apiClient from './client';
-import type { ApiResponse, Pagination } from '../types/api';
+import type { ApiResponse } from '../types/api';
 
 // ==================== Type Definitions ====================
 

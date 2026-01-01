@@ -6,7 +6,6 @@ import React, { useState, useEffect } from 'react';
 import { Card, Table, Tag, Space, Button, Input, DatePicker, Select, Statistic, Row, Col, App } from 'antd';
 import { SearchOutlined, ReloadOutlined, DownloadOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
-import dayjs from 'dayjs';
 
 const { RangePicker } = DatePicker;
 
@@ -28,7 +27,6 @@ const PaymentRecords: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState<PaymentRecord[]>([]);
     const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
-    const [filters, setFilters] = useState<any>({});
 
     const fetchRecords = async (page = 1, pageSize = 10) => {
         setLoading(true);
@@ -63,7 +61,7 @@ const PaymentRecords: React.FC = () => {
 
             setData(mockData);
             setPagination({ current: page, pageSize, total: mockData.length });
-        } catch (error) {
+        } catch {
             message.error('获取支付记录失败');
         } finally {
             setLoading(false);

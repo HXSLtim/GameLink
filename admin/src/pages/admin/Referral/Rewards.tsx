@@ -11,7 +11,6 @@ import {
     Space,
     Button,
     Avatar,
-    Modal,
     Card,
     Select,
     Drawer,
@@ -22,7 +21,6 @@ import {
 } from 'antd';
 import {
     DollarOutlined,
-    GiftOutlined,
     CheckOutlined,
     CloseOutlined,
     EyeOutlined,
@@ -96,9 +94,8 @@ const Rewards: React.FC<RewardsProps> = ({ onDataChange }) => {
                     }));
                 }
             }
-        } catch (err) {
+        } catch {
             message.error('获取奖励列表失败');
-            console.error('Failed to fetch rewards:', err);
         } finally {
             setLoading(false);
         }
@@ -165,7 +162,7 @@ const Rewards: React.FC<RewardsProps> = ({ onDataChange }) => {
                 fetchRewards();
                 onDataChange?.();
             }
-        } catch (err) {
+        } catch {
             message.error('奖励发放失败');
         }
     };
@@ -182,7 +179,7 @@ const Rewards: React.FC<RewardsProps> = ({ onDataChange }) => {
                 fetchRewards();
                 onDataChange?.();
             }
-        } catch (err) {
+        } catch {
             message.error('操作失败');
         }
     };

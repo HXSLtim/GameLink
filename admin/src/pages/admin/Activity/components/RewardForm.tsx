@@ -8,8 +8,6 @@ import {
     Form,
     Select,
     InputNumber,
-    message,
-    Input,
     Row,
     Col,
 } from 'antd';

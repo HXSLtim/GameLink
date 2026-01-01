@@ -11,12 +11,9 @@ import {
     InputNumber,
     Switch,
     DatePicker,
-    Space,
     Divider,
-    Typography,
     Row,
     Col,
-    message,
 } from 'antd';
 import dayjs from 'dayjs';
 import {
@@ -29,7 +26,6 @@ import {
 import type { Dayjs } from 'dayjs';
 
 const { TextArea } = Input;
-const { Text } = Typography;
 
 interface ActivityFormProps {
     visible: boolean;
@@ -56,7 +52,6 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
     onSubmit,
 }) => {
     const [form] = Form.useForm<ActivityFormData>();
-    const activityType = Form.useWatch('type', form);
 
     // Set initial form values
     useEffect(() => {
@@ -100,10 +95,10 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
             const data: CreateActivityDto = {
                 ...values,
                 preheatAt: values.preheatAt
-                    ? dayjs(values.preheatAt as any).format('YYYY-MM-DD HH:mm:ss')
+                    ? dayjs(values.preheatAt as Dayjs).format('YYYY-MM-DD HH:mm:ss')
                     : undefined,
-                startAt: dayjs(values.startAt as any).format('YYYY-MM-DD HH:mm:ss'),
-                endAt: dayjs(values.endAt as any).format('YYYY-MM-DD HH:mm:ss'),
+                startAt: dayjs(values.startAt as Dayjs).format('YYYY-MM-DD HH:mm:ss'),
+                endAt: dayjs(values.endAt as Dayjs).format('YYYY-MM-DD HH:mm:ss'),
             };
             await onSubmit(data);
         } catch (error) {

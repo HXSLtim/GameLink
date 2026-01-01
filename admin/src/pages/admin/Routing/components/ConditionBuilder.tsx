@@ -2,10 +2,9 @@
  * Condition Builder Component
  * Visual condition builder for routing rules
  */
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
     Card,
-    Form,
     Select,
     Input,
     InputNumber,
@@ -111,8 +110,12 @@ const ConditionBuilder: React.FC<ConditionBuilderProps> = ({
     onChange,
     disabled = false,
 }) => {
+    // Use ref for unique ID generation instead of Date.now()
+    const idCounterRef = useRef(0);
+    const generateId = () => `condition-${idCounterRef.current++}`;
+
     const [conditions, setConditions] = useState<ConditionFormItem[]>(
-        value.length > 0 ? value : [{ id: Date.now().toString(), field: 'game_type', operator: 'eq', value: '' }]
+        value.length > 0 ? value : [{ id: 'initial', field: 'game_type', operator: 'eq', value: '' }]
     );
 
     const updateConditions = useCallback((newConditions: ConditionFormItem[]) => {
@@ -122,13 +125,13 @@ const ConditionBuilder: React.FC<ConditionBuilderProps> = ({
 
     const addCondition = useCallback(() => {
         const newCondition: ConditionFormItem = {
-            id: Date.now().toString(),
+            id: generateId(),
             field: 'game_type',
             operator: 'eq',
             value: '',
         };
         updateConditions([...conditions, newCondition]);
-    }, [conditions, updateConditions]);
+    }, [conditions, updateConditions, generateId]);
 
     const removeCondition = useCallback((id: string) => {
         if (conditions.length > 1) {

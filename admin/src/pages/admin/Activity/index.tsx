@@ -19,7 +19,6 @@ import {
     Select,
     Switch,
     Modal,
-    Divider,
     theme,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';

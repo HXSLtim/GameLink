@@ -11,12 +11,9 @@ import {
     InputNumber,
     Switch,
     DatePicker,
-    Space,
     Divider,
-    Typography,
     Row,
     Col,
-    message,
 } from 'antd';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
@@ -30,12 +27,10 @@ import {
     getCouponScopeLabel,
     getCouponSourceLabel,
     yuanToCents,
-    parseJsonArray,
 } from '@/api/coupon';
-import { MONEY, LAYOUT, TABLE, MODAL, TEXT, BUSINESS } from '@/constants/common';
+import { MONEY, LAYOUT, TABLE, MODAL, BUSINESS } from '@/constants/common';
 
 const { TextArea } = Input;
-const { Text } = Typography;
 
 interface TemplateFormProps {
     visible: boolean;
@@ -108,7 +103,7 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
                     ? yuanToCents(values.maxDiscountCents as number)
                     : 0,
                 fixedExpireAt: values.fixedExpireAt
-                    ? dayjs(values.fixedExpireAt as any).format('YYYY-MM-DD HH:mm:ss')
+                    ? dayjs(values.fixedExpireAt as Dayjs).format('YYYY-MM-DD HH:mm:ss')
                     : undefined,
             };
             await onSubmit(data);

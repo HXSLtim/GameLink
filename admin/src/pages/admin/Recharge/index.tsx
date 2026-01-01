@@ -17,8 +17,6 @@ import { PageContainer } from '@/components';
 import RechargeOptions from './Options';
 import RechargeRecords from './Records';
 
-const { TabPane } = Tabs;
-
 /**
  * 充值管理主页面
  */

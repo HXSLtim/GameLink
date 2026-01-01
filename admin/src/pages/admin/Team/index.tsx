@@ -21,9 +21,7 @@ import {
     theme,
     Radio,
     InputNumber,
-    List,
     Typography,
-    Input,
     Divider,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
@@ -33,16 +31,12 @@ import {
     DeleteOutlined,
     TeamOutlined,
     UserOutlined,
-    CrownOutlined,
-    PlusOutlined,
-    ReloadOutlined,
     CheckOutlined,
-    CloseOutlined,
 } from '@ant-design/icons';
 import { PageContainer, SearchTable, type ToolbarButton } from '@/components';
 import type { SearchField } from '@/components';
 import { StateContainer } from '@/components/common/StateContainer';
-import { teamApi, type Team, type TeamStats, type TeamMember, type BatchOperationResponse } from '@/api/team';
+import { teamApi, type Team, type TeamMember, type BatchOperationResponse } from '@/api/team';
 import TeamForm from './components/TeamForm';
 import MemberCard from './components/MemberCard';
 import dayjs from 'dayjs';
@@ -78,7 +72,6 @@ const TeamPage: React.FC = () => {
     const [pageSize, setPageSize] = useState(10);
     const [searchParams, setSearchParams] = useState<Record<string, unknown>>({});
     const [stats, setStats] = useState<TeamStats | null>(null);
-    const [loadError, setLoadError] = useState<string | null>(null);
 
     // 弹窗状态
     const [formVisible, setFormVisible] = useState(false);

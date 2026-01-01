@@ -7,7 +7,6 @@ import {
     Form,
     Input,
     InputNumber,
-    Select,
     Switch,
     ColorPicker,
     message,
@@ -17,11 +16,9 @@ import {
     Divider,
     Typography,
 } from 'antd';
-import type { ColorPickerProps } from 'antd';
 import { vipApi } from '@/api/vip';
 import type { VIPLevel, CreateVIPLevelDto, UpdateVIPLevelDto } from '@/api/vip';
 
-const { TextArea } = Input;
 const { Text } = Typography;
 
 interface LevelFormProps {

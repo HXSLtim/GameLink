@@ -2,7 +2,7 @@
  * VIP权益编辑器组件
  * 用于快速编辑VIP等级的权益列表
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
     Modal,
     Input,
@@ -52,17 +52,10 @@ const BenefitsEditor: React.FC<BenefitsEditorProps> = ({
     onSave,
     onCancel,
 }) => {
-    const [items, setItems] = useState<string[]>([]);
+    // Initialize from props - component remounts when key changes (from parent)
+    const [items, setItems] = useState<string[]>(() => parseBenefits(benefits));
     const [newItem, setNewItem] = useState('');
     const [viewMode, setViewMode] = useState<'list' | 'text'>('list');
-
-    useEffect(() => {
-        if (visible) {
-            setItems(parseBenefits(benefits));
-            setNewItem('');
-            setViewMode('list');
-        }
-    }, [visible, benefits]);
 
     const handleAdd = () => {
         if (!newItem.trim()) {

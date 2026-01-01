@@ -1,5 +1,5 @@
 import apiClient from './client';
-import type { ApiResponse, Pagination } from './admin';
+import type { ApiResponse } from './admin';
 
 // ============================================================================
 // Certification Types (认证类型)

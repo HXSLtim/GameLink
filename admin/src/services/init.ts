@@ -70,7 +70,7 @@ const hasAdminAccess = async (): Promise<boolean> => {
         console.log('[Init] getMe response:', axiosResponse);
 
         // axios 响应拦截器返回完整响应对象，实际数据在 response.data 中
-        const api = (axiosResponse as any).data as unknown as {
+        const api = (axiosResponse as { data: unknown }).data as {
             success?: boolean;
             code?: number;
             message?: string;

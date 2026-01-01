@@ -192,12 +192,12 @@ export const useMenuStore = create<MenuState>()(
           set({ rawMenus: mockMenus, loading: false });
 
           // Auto-filter menus based on current permissions
-          const permissions = useAuthStore.getState().user?.permissions || [];
+          const permissions = useAuthStore.getState().userInfo?.permissions || [];
           const filteredMenus = get().filterMenusByPermission(mockMenus, permissions);
 
           set({ menus: filteredMenus });
 
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error('Failed to fetch menus:', error);
           set({ loading: false, menus: [] });
         }
@@ -316,7 +316,7 @@ export const useMenuStore = create<MenuState>()(
  * Requirements: 8.4 - Permission changes trigger menu updates
  */
 useAuthStore.subscribe(
-  (state) => state.user?.permissions,
+  (state) => state.userInfo?.permissions,
   (permissions, previousPermissions) => {
     // Only refilter if permissions actually changed
     if (permissions && JSON.stringify(permissions) !== JSON.stringify(previousPermissions)) {

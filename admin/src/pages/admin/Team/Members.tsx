@@ -15,8 +15,6 @@ import {
     Col,
     Statistic,
     Typography,
-    Input,
-    Select,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
@@ -26,7 +24,7 @@ import {
     SearchOutlined,
 } from '@ant-design/icons';
 import { PageContainer, SearchTable, type SearchField } from '@/components';
-import { teamApi, type TeamMember, type Team, type TeamStats } from '@/api/team';
+import { teamApi, type TeamMember, type Team } from '@/api/team';
 import dayjs from 'dayjs';
 
 const { Text } = Typography;

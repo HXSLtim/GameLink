@@ -89,7 +89,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
                     <RangePicker
                         key={filter.key}
                         style={filter.style}
-                        value={value as any}
+                        value={value as [Date | null, Date | null] | null}
                         onChange={(dates) => onFilterChange(filter.key, dates)}
                     />
                 );

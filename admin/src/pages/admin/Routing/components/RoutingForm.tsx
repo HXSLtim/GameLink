@@ -14,7 +14,7 @@ import {
     Divider,
     message,
 } from 'antd';
-import type { RoutingRule, CollectionEntity } from '@/api/routing';
+import type { RoutingRule, RoutingCondition } from '@/api/routing';
 import { routingApi } from '@/api/routing';
 import { settlementApi, type SettlementCompany } from '@/api/settlement';
 import ConditionBuilder from './ConditionBuilder';
@@ -34,15 +34,15 @@ interface RoutingFormProps {
  * Convert form conditions to API conditions
  */
 const toApiConditions = (formConditions: ConditionFormItem[]) => {
-    return formConditions.map(({ id, ...rest }) => rest);
+    return formConditions.map(({ id: _id, ...rest }) => rest);
 };
 
 /**
  * Convert API conditions to form conditions
  */
-const fromApiConditions = (apiConditions: any[]): ConditionFormItem[] => {
+const fromApiConditions = (apiConditions: RoutingCondition[]): ConditionFormItem[] => {
     return apiConditions.map((cond, index) => ({
-        id: `${Date.now()}-${index}`,
+        id: `api-${index}`,
         field: cond.field,
         operator: cond.operator,
         value: cond.value,
@@ -73,7 +73,7 @@ const RoutingForm: React.FC<RoutingFormProps> = ({
                     description: rule.description,
                     priority: rule.priority,
                     targetEntityId: rule.targetEntityId,
-                    conditions: fromApiConditions(rule.conditions as any[] || []),
+                    conditions: fromApiConditions(rule.conditions || []),
                     status: rule.status,
                 });
             } else {
@@ -136,11 +136,6 @@ const RoutingForm: React.FC<RoutingFormProps> = ({
         } finally {
             setSubmitting(false);
         }
-    };
-
-    const getTargetEntityName = (id: number) => {
-        const entity = collectionEntities.find(e => e.id === id);
-        return entity?.name || `主体 #${id}`;
     };
 
     return (

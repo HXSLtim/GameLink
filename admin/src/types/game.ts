@@ -29,7 +29,7 @@ export interface GameCategory {
     updatedAt: string;
     // 关联数据（非持久化字段）
     games?: Game[];                   // 该分类下的游戏列表
-    serviceItems?: any[];             // 该分类下的服务项
+    serviceItems?: GameServiceItem[]; // 该分类下的服务项
 }
 
 // ============================================================================

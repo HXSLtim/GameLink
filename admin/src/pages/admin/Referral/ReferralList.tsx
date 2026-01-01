@@ -18,14 +18,12 @@ import {
     Form,
     Select,
     message,
-    Popconfirm,
     Card,
 } from 'antd';
 import {
     UserOutlined,
     EyeOutlined,
     CheckOutlined,
-    CloseOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import dayjs from 'dayjs';
@@ -101,9 +99,8 @@ const ReferralList: React.FC<ReferralListProps> = ({ onDataChange }) => {
                     }));
                 }
             }
-        } catch (err) {
+        } catch {
             message.error('获取推荐列表失败');
-            console.error('Failed to fetch referrals:', err);
         } finally {
             setLoading(false);
         }
@@ -182,7 +179,7 @@ const ReferralList: React.FC<ReferralListProps> = ({ onDataChange }) => {
                 fetchReferrals();
                 onDataChange?.();
             }
-        } catch (err) {
+        } catch {
             message.error('状态更新失败');
         } finally {
             setUpdateLoading(false);
@@ -215,7 +212,7 @@ const ReferralList: React.FC<ReferralListProps> = ({ onDataChange }) => {
                 fetchReferrals();
                 onDataChange?.();
             }
-        } catch (err) {
+        } catch {
             message.error('批量操作失败');
         } finally {
             setBatchLoading(false);

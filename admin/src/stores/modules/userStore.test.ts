@@ -98,7 +98,9 @@ describe('userStore', () => {
         },
       };
 
-      vi.mocked(adminApi.adminApi.getUsers).mockResolvedValue(mockResponse as any);
+      vi.mocked(adminApi.adminApi.getUsers).mockResolvedValue(mockResponse as {
+        data: { data: ApiUser[]; pagination: { total: number } };
+      });
 
       const { result } = renderHook(() => useUserStore());
 
@@ -126,7 +128,9 @@ describe('userStore', () => {
         },
       };
 
-      vi.mocked(adminApi.adminApi.getUsers).mockResolvedValue(mockResponse as any);
+      vi.mocked(adminApi.adminApi.getUsers).mockResolvedValue(mockResponse as {
+        data: { data: ApiUser[]; pagination: { total: number } };
+      });
 
       const { result } = renderHook(() => useUserStore());
 
@@ -177,7 +181,9 @@ describe('userStore', () => {
         },
       };
 
-      vi.mocked(adminApi.adminApi.getUsers).mockResolvedValue(mockResponse as any);
+      vi.mocked(adminApi.adminApi.getUsers).mockResolvedValue(mockResponse as {
+        data: { data: ApiUser[]; pagination: { total: number } };
+      });
 
       const { result } = renderHook(() => useUserStore());
 
@@ -211,7 +217,9 @@ describe('userStore', () => {
         },
       };
 
-      vi.mocked(adminApi.adminApi.createUser).mockResolvedValue(mockResponse as any);
+      vi.mocked(adminApi.adminApi.createUser).mockResolvedValue(mockResponse as {
+        data: { data: ApiUser };
+      });
 
       const { result } = renderHook(() => useUserStore());
 
@@ -269,7 +277,9 @@ describe('userStore', () => {
         },
       };
 
-      vi.mocked(adminApi.adminApi.updateUser).mockResolvedValue(mockResponse as any);
+      vi.mocked(adminApi.adminApi.updateUser).mockResolvedValue(mockResponse as {
+        data: { data: ApiUser };
+      });
 
       const { result } = renderHook(() => useUserStore());
 
@@ -305,7 +315,7 @@ describe('userStore', () => {
 
   describe('Delete User', () => {
     it('should delete user successfully', async () => {
-      vi.mocked(adminApi.adminApi.deleteUser).mockResolvedValue({} as any);
+      vi.mocked(adminApi.adminApi.deleteUser).mockResolvedValue({} as Record<string, never>);
 
       const { result } = renderHook(() => useUserStore());
 
@@ -344,7 +354,7 @@ describe('userStore', () => {
 
   describe('Batch Delete Users', () => {
     it('should batch delete users successfully', async () => {
-      vi.mocked(adminApi.adminApi.batchDeleteUsers).mockResolvedValue({} as any);
+      vi.mocked(adminApi.adminApi.batchDeleteUsers).mockResolvedValue({} as Record<string, never>);
 
       const { result } = renderHook(() => useUserStore());
 
@@ -383,7 +393,7 @@ describe('userStore', () => {
 
   describe('Update User Status', () => {
     it('should update user status successfully', async () => {
-      vi.mocked(adminApi.adminApi.updateUserStatus).mockResolvedValue({} as any);
+      vi.mocked(adminApi.adminApi.updateUserStatus).mockResolvedValue({} as Record<string, never>);
 
       const { result } = renderHook(() => useUserStore());
 
@@ -402,7 +412,7 @@ describe('userStore', () => {
     });
 
     it('should batch update user status successfully', async () => {
-      vi.mocked(adminApi.adminApi.batchUpdateUserStatus).mockResolvedValue({} as any);
+      vi.mocked(adminApi.adminApi.batchUpdateUserStatus).mockResolvedValue({} as Record<string, never>);
 
       const { result } = renderHook(() => useUserStore());
 
@@ -426,7 +436,7 @@ describe('userStore', () => {
 
   describe('Update User Role', () => {
     it('should update user role successfully', async () => {
-      vi.mocked(adminApi.adminApi.updateUserRole).mockResolvedValue({} as any);
+      vi.mocked(adminApi.adminApi.updateUserRole).mockResolvedValue({} as Record<string, never>);
 
       const { result } = renderHook(() => useUserStore());
 
@@ -445,7 +455,7 @@ describe('userStore', () => {
     });
 
     it('should batch update user role successfully', async () => {
-      vi.mocked(adminApi.adminApi.batchUpdateUserRole).mockResolvedValue({} as any);
+      vi.mocked(adminApi.adminApi.batchUpdateUserRole).mockResolvedValue({} as Record<string, never>);
 
       const { result } = renderHook(() => useUserStore());
 
@@ -620,7 +630,7 @@ describe('userStore', () => {
     });
 
     it('should prevent negative total count on delete', async () => {
-      vi.mocked(adminApi.adminApi.deleteUser).mockResolvedValue({} as any);
+      vi.mocked(adminApi.adminApi.deleteUser).mockResolvedValue({} as Record<string, never>);
 
       const { result } = renderHook(() => useUserStore());
 
@@ -640,7 +650,7 @@ describe('userStore', () => {
     });
 
     it('should handle pagination correctly with batch operations', async () => {
-      vi.mocked(adminApi.adminApi.batchDeleteUsers).mockResolvedValue({} as any);
+      vi.mocked(adminApi.adminApi.batchDeleteUsers).mockResolvedValue({} as Record<string, never>);
 
       const { result } = renderHook(() => useUserStore());
 

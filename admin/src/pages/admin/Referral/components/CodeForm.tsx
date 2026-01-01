@@ -4,19 +4,17 @@
  *
  * Modal form for creating and editing referral codes.
  */
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect } from 'react';
 import {
     Modal,
     Form,
-    Input,
     Select,
     InputNumber,
     DatePicker,
-    message,
 } from 'antd';
 import dayjs from 'dayjs';
-import { referralApi, type ReferralCode } from '@/api/referral';
-import type { CreateReferralCodeDto, UpdateReferralCodeDto, ReferralType } from '@/api/referral';
+import { type ReferralCode } from '@/api/referral';
+import type { CreateReferralCodeDto, UpdateReferralCodeDto } from '@/api/referral';
 
 interface CodeFormProps {
     visible: boolean;
@@ -25,66 +23,8 @@ interface CodeFormProps {
     onCancel: () => void;
 }
 
-/**
- * User search select with debounce
- */
-const UserSearchSelect: React.FC<{
-    value?: number;
-    onChange?: (value: number) => void;
-    type?: ReferralType;
-}> = ({ value, onChange, type }) => {
-    const [options, setOptions] = useState<Array<{ value: number; label: string }>>([]);
-    const [searching, setSearching] = useState(false);
-    const [searchValue, setSearchValue] = useState('');
-
-    const debounceSearch = useMemo(() => {
-        let timeout: ReturnType<typeof setTimeout>;
-        return (value: string) => {
-            clearTimeout(timeout);
-            timeout = setTimeout(async () => {
-                if (!value) {
-                    setOptions([]);
-                    return;
-                }
-                try {
-                    setSearching(true);
-                    // Assuming there's a user search API
-                    // For now, we'll use a placeholder - you may need to adjust based on actual API
-                    setOptions([
-                        { value: 1, label: `用户1 - ${value}` },
-                        { value: 2, label: `用户2 - ${value}` },
-                    ]);
-                } catch (err) {
-                    console.error('Search users failed:', err);
-                } finally {
-                    setSearching(false);
-                }
-            }, 300);
-        };
-    }, []);
-
-    useEffect(() => {
-        if (searchValue) {
-            debounceSearch(searchValue);
-        }
-    }, [searchValue, debounceSearch]);
-
-    return (
-        <Select
-            showSearch
-            value={value}
-            onChange={onChange}
-            onSearch={setSearchValue}
-            filterOption={false}
-            placeholder="输入用户名/手机号/邮箱搜索"
-            style={{ width: '100%' }}
-            options={options}
-            allowClear
-            notFoundContent={searching ? '搜索中...' : '请输入关键词搜索'}
-            loading={searching}
-        />
-    );
-};
+// NOTE: UserSearchSelect component removed as it's currently unused.
+// To implement user search, create a component that uses an API to search users by name/phone/email.
 
 const CodeForm: React.FC<CodeFormProps> = ({
     visible,
@@ -144,7 +84,7 @@ const CodeForm: React.FC<CodeFormProps> = ({
                 };
                 onSave(createData);
             }
-        } catch (err) {
+        } catch {
             // Form validation failed
         }
     };

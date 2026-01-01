@@ -11,7 +11,6 @@ import {
     Space,
     Button,
     Avatar,
-    Modal,
     message,
     Popconfirm,
     Card,
@@ -23,7 +22,6 @@ import {
     Divider,
 } from 'antd';
 import {
-    GiftOutlined,
     PlusOutlined,
     EditOutlined,
     DeleteOutlined,
@@ -47,7 +45,6 @@ import {
     getReferralTypeLabel,
     isCodeExpired,
     isCodeFullyUsed,
-    isCodeAvailable,
     getCodeUsagePercent,
 } from '@/api/referral';
 import CodeForm from './components/CodeForm';
@@ -124,9 +121,8 @@ const Codes: React.FC<CodesProps> = ({ onDataChange }) => {
                     }));
                 }
             }
-        } catch (err) {
+        } catch {
             message.error('获取邀请码列表失败');
-            console.error('Failed to fetch codes:', err);
         } finally {
             setLoading(false);
         }
@@ -207,7 +203,7 @@ const Codes: React.FC<CodesProps> = ({ onDataChange }) => {
             setEditingCode(null);
             fetchCodes();
             onDataChange?.();
-        } catch (err) {
+        } catch {
             message.error(editingCode ? '更新失败' : '创建失败');
         }
     };
@@ -223,7 +219,7 @@ const Codes: React.FC<CodesProps> = ({ onDataChange }) => {
                 fetchCodes();
                 onDataChange?.();
             }
-        } catch (err) {
+        } catch {
             message.error('删除失败');
         }
     };
@@ -241,7 +237,7 @@ const Codes: React.FC<CodesProps> = ({ onDataChange }) => {
                 fetchCodes();
                 onDataChange?.();
             }
-        } catch (err) {
+        } catch {
             message.error('操作失败');
         }
     };
@@ -284,7 +280,7 @@ const Codes: React.FC<CodesProps> = ({ onDataChange }) => {
                 fetchCodes();
                 onDataChange?.();
             }
-        } catch (err) {
+        } catch {
             message.error('批量操作失败');
         }
     };
@@ -310,7 +306,7 @@ const Codes: React.FC<CodesProps> = ({ onDataChange }) => {
                 fetchCodes();
                 onDataChange?.();
             }
-        } catch (err) {
+        } catch {
             message.error('批量删除失败');
         }
     };
@@ -330,7 +326,7 @@ const Codes: React.FC<CodesProps> = ({ onDataChange }) => {
             dataIndex: 'code',
             key: 'code',
             width: 150,
-            render: (code: string, record) => (
+            render: (code: string, _record) => (
                 <Space>
                     <Tag color="blue" style={{ fontFamily: 'monospace', fontSize: 14 }}>
                         {code}

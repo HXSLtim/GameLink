@@ -10,11 +10,7 @@ import {
     message,
     Spin,
     Typography,
-    Space,
-    Divider,
     Tag,
-    Row,
-    Col,
     Descriptions,
 } from 'antd';
 import {
@@ -25,7 +21,6 @@ import {
     getCouponScopeLabel,
     getCouponSourceLabel,
     centsToYuan,
-    parseJsonArray,
 } from '@/api/coupon';
 import { adminApi } from '@/api/admin';
 

@@ -22,13 +22,13 @@ describe('menuStore', () => {
 
     // Mock authStore.getState to return user permissions
     vi.spyOn(useAuthStore, 'getState').mockReturnValue({
-      user: {
+      userInfo: {
         id: 1,
         name: 'Test Admin',
         email: 'test@example.com',
         permissions: [],
       },
-    } as any);
+    } as { userInfo: { id: number; name: string; email: string; permissions: string[] } });
   });
 
   afterEach(() => {
@@ -39,10 +39,10 @@ describe('menuStore', () => {
     it('should fetch and filter menus based on permissions', async () => {
       // Mock authStore with specific permissions
       vi.spyOn(useAuthStore, 'getState').mockReturnValue({
-        user: {
+        userInfo: {
           permissions: ['admin.dashboard.read', 'admin.users.read'],
         },
-      } as any);
+      } as { userInfo: { permissions: string[] } });
 
       const { result } = renderHook(() => useMenuStore());
 
@@ -57,10 +57,10 @@ describe('menuStore', () => {
 
     it('should show all menus for super admin', async () => {
       vi.spyOn(useAuthStore, 'getState').mockReturnValue({
-        user: {
+        userInfo: {
           permissions: ['*'],
         },
-      } as any);
+      } as { userInfo: { permissions: string[] } });
 
       const { result } = renderHook(() => useMenuStore());
 
@@ -73,10 +73,10 @@ describe('menuStore', () => {
 
     it('should filter menus without permissions', async () => {
       vi.spyOn(useAuthStore, 'getState').mockReturnValue({
-        user: {
+        userInfo: {
           permissions: ['admin.dashboard.read'],
         },
-      } as any);
+      } as { userInfo: { permissions: string[] } });
 
       const { result } = renderHook(() => useMenuStore());
 

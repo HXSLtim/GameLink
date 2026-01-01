@@ -28,16 +28,15 @@ import {
     SafetyOutlined,
 } from '@ant-design/icons';
 import type { UploadFile, UploadProps } from 'antd';
-import { certificationApi, type IdentityCertification, type CertificationStatus } from '@/api/certification';
+import { certificationApi, type IdentityCertification, type RankCertification, type CertificationStatus } from '@/api/certification';
 
 const { Title, Text, Paragraph } = Typography;
-const { TextArea } = Input;
 
 interface CertificationStatusResponse {
     identityCertified: boolean;
     rankCertified: boolean;
     identityCertification?: IdentityCertification;
-    rankCertification?: any;
+    rankCertification?: RankCertification;
 }
 
 /**
@@ -87,7 +86,7 @@ const IdentityCertificationPage: React.FC = () => {
             // 模拟上传，实际应该调用上传 API
             await new Promise(resolve => setTimeout(resolve, 1000));
             const fileUrl = URL.createObjectURL(file as File);
-            onSuccess?.({ url: fileUrl } as any);
+            onSuccess?.({ url: fileUrl });
         } catch (error) {
             onError?.(error as Error);
         }

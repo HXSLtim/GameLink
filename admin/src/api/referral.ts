@@ -238,9 +238,7 @@ export interface ReferralReward {
 /**
  * Issue Referral Reward Request
  */
-export interface IssueReferralRewardDto {
-    // No body required, just the reward ID in the URL
-}
+export type IssueReferralRewardDto = Record<string, never>;
 
 /**
  * Fail Referral Reward Request

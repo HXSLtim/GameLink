@@ -13,7 +13,7 @@ import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import { contentCategoryApi } from '@/api/content';
 import type { ContentCategory, ContentCategoryStatus } from '@/types/content';
-import { CATEGORY_STATUS_TEXT, CATEGORY_STATUS_COLOR } from '@/types/content';
+import { CATEGORY_STATUS_COLOR } from '@/types/content';
 
 const { TextArea } = Input;
 

@@ -67,7 +67,7 @@ const BatchActions: React.FC<BatchActionsProps> = React.memo(({
                 setModalVisible(false);
                 form.resetFields();
                 onActionComplete?.();
-            } catch (error) {
+            } catch {
                 // 表单验证失败
             }
         }

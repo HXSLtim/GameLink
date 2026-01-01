@@ -8,10 +8,7 @@ import {
     SafetyOutlined,
     TrophyOutlined,
 } from '@ant-design/icons';
-import IdentityCertification from './Identity';
 import RankCertification from './Rank';
-
-const { TabPane } = Tabs;
 
 /**
  * 陪玩师认证主页面

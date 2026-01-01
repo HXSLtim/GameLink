@@ -13,12 +13,11 @@ import {
     Space,
     Tag,
     Button,
-    Tooltip,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { UserOutlined, DeleteOutlined } from '@ant-design/icons';
 import { settlementApi } from '@/api/settlement';
-import type { SettlementCompany, PlayerCompanyAssignment } from '@/api/settlement';
+import type { SettlementCompany } from '@/api/settlement';
 import dayjs from 'dayjs';
 
 export interface AssignModalProps {
@@ -181,7 +180,7 @@ const AssignModal: React.FC<AssignModalProps> = ({
             dataIndex: 'nickname',
             key: 'nickname',
             width: 150,
-            render: (nickname: string, record) => (
+            render: (nickname: string, _record) => (
                 <Space>
                     <UserOutlined />
                     <span>{nickname}</span>

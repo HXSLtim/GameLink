@@ -21,17 +21,14 @@ import {
     theme,
 } from 'antd';
 import {
-    PlusOutlined,
     EditOutlined,
     DeleteOutlined,
     ExperimentOutlined,
     HistoryOutlined,
-    ReloadOutlined,
     DragOutlined,
     CheckCircleOutlined,
     StopOutlined,
     DownloadOutlined,
-    SyncOutlined,
 } from '@ant-design/icons';
 import { PageContainer, SearchTable, type ToolbarButton, type SearchField } from '@/components';
 import { routingApi } from '@/api/routing';
@@ -44,7 +41,6 @@ import { exportToCSV, type ExportColumn } from '@/utils/export';
 import dayjs from 'dayjs';
 import { useNavigate } from 'react-router-dom';
 import RoutingForm from './components/RoutingForm';
-import type { PriorityReorderItem } from './types';
 
 const statusMap: Record<RuleStatus, { color: string; text: string }> = {
     active: { color: 'success', text: '启用' },
@@ -55,7 +51,7 @@ const exportColumns: ExportColumn[] = [
     { key: 'id', title: 'ID' },
     { key: 'name', title: '规则名称' },
     { key: 'priority', title: '优先级' },
-    { key: 'targetEntity.name', title: '目标主体', render: (v, r) => (r as any).targetEntityName || v },
+    { key: 'targetEntity.name', title: '目标主体', render: (v, r) => (r as RoutingRule & { targetEntityName?: string }).targetEntityName || v },
     { key: 'status', title: '状态', render: (v) => statusMap[v as RuleStatus]?.text || String(v) },
     { key: 'description', title: '描述' },
     { key: 'createdAt', title: '创建时间', render: (v) => v ? dayjs(v as string).format('YYYY-MM-DD HH:mm:ss') : '' },
@@ -64,7 +60,7 @@ const exportColumns: ExportColumn[] = [
 /**
  * Render condition tags for display
  */
-const renderConditions = (conditions: any[]) => {
+const renderConditions = (conditions: Array<{ field: string; operator: string; value: unknown }>) => {
     if (!conditions || conditions.length === 0) {
         return <Tag color="default">无条件</Tag>;
     }
@@ -78,7 +74,7 @@ const renderConditions = (conditions: any[]) => {
 
     return (
         <Space size={4} wrap>
-            {conditions.slice(0, 3).map((cond: any, index: number) => (
+            {conditions.slice(0, 3).map((cond, index: number) => (
                 <Tag key={index} color="blue" style={{ fontSize: 11 }}>
                     {fieldLabels[cond.field] || cond.field}
                     {cond.operator === 'eq' ? '=' :
@@ -288,15 +284,15 @@ const RoutingRulePage: React.FC = () => {
             dataIndex: 'conditions',
             key: 'conditions',
             width: 200,
-            render: (conditions: any[]) => renderConditions(conditions),
+            render: (conditions: Array<{ field: string; operator: string; value: unknown }>) => renderConditions(conditions),
         },
         {
             title: '目标主体',
             dataIndex: ['targetEntity', 'name'],
             key: 'targetEntity',
             width: 150,
-            render: (name: string, record: RoutingRule) => {
-                const entityName = name || (record as any).targetEntityName || `主体 #${record.targetEntityId}`;
+            render: (name: string, record: RoutingRule & { targetEntityName?: string }) => {
+                const entityName = name || record.targetEntityName || `主体 #${record.targetEntityId}`;
                 return <Tag color="purple">{entityName}</Tag>;
             },
         },

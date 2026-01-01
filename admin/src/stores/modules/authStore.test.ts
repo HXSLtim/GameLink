@@ -20,8 +20,8 @@ vi.mock('@/api/auth', () => ({
 describe('authStore', () => {
   beforeEach(() => {
     // Reset store state before each test
-    useAuthStore.getState().setToken(null as any);
-    useAuthStore.getState().setUserInfo(null as any);
+    useAuthStore.getState().setToken(null);
+    useAuthStore.getState().setUserInfo(null);
     useAuthStore.getState().clearError();
 
     // Clear sessionStorage (using the mock from setup.ts)
@@ -71,7 +71,9 @@ describe('authStore', () => {
         },
       };
 
-      vi.mocked(authApi.authApi.login).mockResolvedValue(mockResponse as any);
+      vi.mocked(authApi.authApi.login).mockResolvedValue(mockResponse as {
+        data: { data: { token: string; user: UserInfo } };
+      });
 
       const { result } = renderHook(() => useAuthStore());
 
@@ -96,7 +98,9 @@ describe('authStore', () => {
         },
       };
 
-      vi.mocked(authApi.authApi.login).mockRejectedValue(mockError as any);
+      vi.mocked(authApi.authApi.login).mockRejectedValue(mockError as {
+        response: { data: { message: string } };
+      });
 
       const { result } = renderHook(() => useAuthStore());
 
@@ -138,7 +142,9 @@ describe('authStore', () => {
         },
       };
 
-      vi.mocked(authApi.authApi.login).mockResolvedValue(mockResponse as any);
+      vi.mocked(authApi.authApi.login).mockResolvedValue(mockResponse as {
+        data: { data: { token: string; user: UserInfo } };
+      });
 
       const { result } = renderHook(() => useAuthStore());
 
@@ -173,7 +179,7 @@ describe('authStore', () => {
       expect(result.current.isAuthenticated).toBe(true);
 
       // Mock logout API
-      vi.mocked(authApi.authApi.logout).mockResolvedValue({} as any);
+      vi.mocked(authApi.authApi.logout).mockResolvedValue({} as Record<string, never>);
 
       // Mock other stores' reset methods
       vi.doMock('./orderStore', () => ({
@@ -539,7 +545,7 @@ describe('authStore', () => {
       const { result } = renderHook(() => useAuthStore());
 
       act(() => {
-        result.current.setUserInfo(null as any);
+        result.current.setUserInfo(null);
       });
 
       expect(result.current.hasPermission('admin.users.read')).toBe(false);

@@ -15,7 +15,7 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { UserInfo, LoginRequest, LoginResponse } from '../types';
+import type { UserInfo, LoginRequest } from '../types';
 import { authApi } from '@/api/auth';
 
 interface AuthState {
@@ -78,8 +78,12 @@ export const useAuthStore = create<AuthState>()(
           // Sync to sessionStorage for API interceptor
           sessionStorage.setItem('auth_token', token);
 
-        } catch (error: any) {
-          const errorMessage = error.response?.data?.message || error.message || '登录失败，请检查用户名和密码';
+        } catch (error: unknown) {
+          const errorMessage = error && typeof error === 'object' && 'response' in error
+            ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
+            : error instanceof Error
+            ? error.message
+            : '登录失败，请检查用户名和密码';
           set({
             error: errorMessage,
             loading: false,
