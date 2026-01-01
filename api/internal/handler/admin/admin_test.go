@@ -77,7 +77,7 @@ func SetupAdminTest(t *testing.T) *AdminTestHelper {
 		Base: model.Base{
 			ExtJSON: "{}",
 		},
-	Phone:  "13800138000",
+		Phone:  "13800138000",
 		Name:   "Test Admin",
 		Role:   model.RoleAdmin,
 		Status: model.UserStatusActive,
