@@ -94,7 +94,18 @@ issues:
     - path: internal/repository/ranking/
       linters:
         - dupl
+    # Handler duplicates (similar CRUD patterns across admin handlers)
+    - path: internal/handler/admin/
+      linters:
+        - dupl
+    - path: internal/handler/player/team\.go
+      linters:
+        - dupl
     # Exclude stuttering warnings for service types
     - linters:
         - revive
       text: "stutters"
+    # Exclude comment format warnings (pre-existing issue)
+    - linters:
+        - revive
+      text: "should be of the form"
