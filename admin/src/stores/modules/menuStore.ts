@@ -315,11 +315,14 @@ export const useMenuStore = create<MenuState>()(
  * Listen to permission changes and auto-refresh menus
  * Requirements: 8.4 - Permission changes trigger menu updates
  */
+// Use standard subscribe for zustand v5 with persist middleware
 useAuthStore.subscribe(
-  (state) => state.userInfo?.permissions,
-  (permissions) => {
-    // Only refilter if permissions exist
-    if (permissions) {
+  (state, prevState) => {
+    const permissions = state.userInfo?.permissions;
+    const prevPermissions = prevState.userInfo?.permissions;
+
+    // Only refilter if permissions exist and actually changed
+    if (permissions && permissions !== prevPermissions) {
       const { rawMenus, filterMenusByPermission } = useMenuStore.getState();
       const filteredMenus = filterMenusByPermission(rawMenus, permissions);
       useMenuStore.setState({ menus: filteredMenus });
