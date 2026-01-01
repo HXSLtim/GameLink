@@ -101,7 +101,7 @@ export interface TeamListParams {
     maxMember?: number;
 }
 
-export interface TeamListResponse extends PaginationResponse {
+export interface TeamListResponse extends PaginatedResponse {
     items: Team[];
 }
 
@@ -137,7 +137,7 @@ export interface MemberListParams {
     status?: TeamMemberStatus;
 }
 
-export interface MemberListResponse extends PaginationResponse {
+export interface MemberListResponse extends PaginatedResponse {
     items: TeamMember[];
 }
 
@@ -157,7 +157,7 @@ export interface InviteListParams {
     status?: TeamInviteStatus;
 }
 
-export interface InviteListResponse extends PaginationResponse {
+export interface InviteListResponse extends PaginatedResponse {
     items: TeamInvite[];
 }
 
