@@ -259,7 +259,7 @@ export function SearchTable<T extends object>({
                             {/* 简单批量操作（有选中时显示） */}
                             {toolbarButtons.filter(btn => btn.simpleAction).map((btn, idx) => {
                                 if (selectedRowKeys.length === 0) return null;
-                                return renderToolbarButton(btn, `simple-${idx}`);
+                                return renderToolbarButton(btn, idx);
                             })}
 
                             {/* 批量删除 */}

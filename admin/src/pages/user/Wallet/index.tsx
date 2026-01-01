@@ -2,7 +2,7 @@
  * 用户端钱包页面
  * 余额查看、充值、交易记录
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     Card,
     Row,
@@ -18,6 +18,7 @@ import {
     Typography,
     message,
     Tabs,
+    theme,
 } from 'antd';
 import {
     WalletOutlined,
@@ -28,6 +29,7 @@ import {
     WechatOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
+import { MONEY, PAGINATION, LAYOUT, TIMING, SIZES, MODAL, BUSINESS } from '@/constants/common';
 
 const { Title, Text } = Typography;
 
@@ -49,6 +51,7 @@ interface Transaction {
 }
 
 const UserWallet: React.FC = () => {
+    const { token } = theme.useToken();
     const [loading, setLoading] = useState(false);
     const [walletInfo, setWalletInfo] = useState<WalletInfo>({
         balance: 0,
@@ -62,10 +65,16 @@ const UserWallet: React.FC = () => {
     const [paymentMethod, setPaymentMethod] = useState<string>('alipay');
     const [rechargeLoading, setRechargeLoading] = useState(false);
 
+    // 创建主题适配的渐变背景
+    const cardGradient = useMemo(() => {
+        // 使用主题色创建渐变
+        return `linear-gradient(135deg, ${token.colorPrimary} 0%, ${token.colorInfo} 100%)`;
+    }, [token.colorPrimary, token.colorInfo]);
+
     const loadWalletInfo = useCallback(async () => {
         setLoading(true);
         try {
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(resolve => setTimeout(resolve, TIMING.MOCK_LOAD_DELAY));
             setWalletInfo({
                 balance: 256.50,
                 frozenAmount: 50.00,
@@ -100,13 +109,13 @@ const UserWallet: React.FC = () => {
     }, [loadWalletInfo, loadTransactions]);
 
     const handleRecharge = async () => {
-        if (!rechargeAmount || rechargeAmount < 1) {
+        if (!rechargeAmount || rechargeAmount < MONEY.MIN_CUSTOM_AMOUNT) {
             message.warning('请输入有效的充值金额');
             return;
         }
         setRechargeLoading(true);
         try {
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, TIMING.RECHARGE_MOCK_DELAY));
             message.success(`充值 ¥${rechargeAmount} 成功`);
             setRechargeVisible(false);
             loadWalletInfo();
@@ -131,7 +140,7 @@ const UserWallet: React.FC = () => {
     const columns: ColumnsType<Transaction> = [
         { title: '交易类型', dataIndex: 'type', key: 'type', render: (type) => getTypeTag(type) },
         { title: '金额', dataIndex: 'amount', key: 'amount', render: (amount) => (
-            <Text style={{ color: amount > 0 ? '#52c41a' : '#ff4d4f', fontWeight: 500 }}>
+            <Text style={{ color: amount > 0 ? token.colorSuccess : token.colorError, fontWeight: 500 }}>
                 {amount > 0 ? '+' : ''}{amount.toFixed(2)}
             </Text>
         )},
@@ -145,27 +154,27 @@ const UserWallet: React.FC = () => {
         )},
     ];
 
-    const quickAmounts = [50, 100, 200, 500, 1000];
+    const quickAmounts = MONEY.QUICK_AMOUNTS;
 
     return (
-        <div style={{ padding: 24 }}>
+        <div style={{ padding: LAYOUT.PADDING }}>
             <Title level={4}><WalletOutlined /> 我的钱包</Title>
 
             {/* 余额卡片 */}
-            <Card style={{ marginBottom: 16, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-                <Row gutter={24} align="middle">
+            <Card style={{ marginBottom: LAYOUT.CARD_MARGIN, background: cardGradient }}>
+                <Row gutter={LAYOUT.GUTTER_LARGE} align="middle">
                     <Col flex="auto">
-                        <Text style={{ color: 'rgba(255,255,255,0.8)' }}>账户余额</Text>
+                        <Text style={{ color: 'rgba(255,255,255,0.85)' }}>账户余额</Text>
                         <Title level={2} style={{ color: '#fff', margin: '8px 0' }}>
                             ¥ {walletInfo.balance.toFixed(2)}
                         </Title>
-                        <Text style={{ color: 'rgba(255,255,255,0.6)' }}>
+                        <Text style={{ color: 'rgba(255,255,255,0.7)' }}>
                             冻结金额: ¥{walletInfo.frozenAmount.toFixed(2)}
                         </Text>
                     </Col>
                     <Col>
                         <Button type="primary" size="large" icon={<PlusOutlined />} onClick={() => setRechargeVisible(true)}
-                            style={{ background: '#fff', color: '#667eea', border: 'none' }}>
+                            style={{ background: '#fff', color: token.colorPrimary, border: 'none' }}>
                             充值
                         </Button>
                     </Col>
@@ -173,25 +182,25 @@ const UserWallet: React.FC = () => {
             </Card>
 
             {/* 统计数据 */}
-            <Row gutter={16} style={{ marginBottom: 16 }}>
-                <Col xs={12} sm={6}>
+            <Row gutter={LAYOUT.GUTTER} style={{ marginBottom: LAYOUT.CARD_MARGIN }}>
+                <Col xs={LAYOUT.COL_SPAN.HALF} sm={LAYOUT.COL_SPAN.QUARTER}>
                     <Card loading={loading}>
-                        <Statistic title="累计充值" value={walletInfo.totalRecharge} prefix="¥" precision={2} />
+                        <Statistic title="累计充值" value={walletInfo.totalRecharge} prefix="¥" precision={BUSINESS.PRECISION.AMOUNT} />
                     </Card>
                 </Col>
-                <Col xs={12} sm={6}>
+                <Col xs={LAYOUT.COL_SPAN.HALF} sm={LAYOUT.COL_SPAN.QUARTER}>
                     <Card loading={loading}>
-                        <Statistic title="累计消费" value={walletInfo.totalSpent} prefix="¥" precision={2} />
+                        <Statistic title="累计消费" value={walletInfo.totalSpent} prefix="¥" precision={BUSINESS.PRECISION.AMOUNT} />
                     </Card>
                 </Col>
-                <Col xs={12} sm={6}>
+                <Col xs={LAYOUT.COL_SPAN.HALF} sm={LAYOUT.COL_SPAN.QUARTER}>
                     <Card loading={loading}>
-                        <Statistic title="可用余额" value={walletInfo.balance} prefix="¥" precision={2} valueStyle={{ color: '#3f8600' }} />
+                        <Statistic title="可用余额" value={walletInfo.balance} prefix="¥" precision={BUSINESS.PRECISION.AMOUNT} valueStyle={{ color: token.colorSuccess }} />
                     </Card>
                 </Col>
-                <Col xs={12} sm={6}>
+                <Col xs={LAYOUT.COL_SPAN.HALF} sm={LAYOUT.COL_SPAN.QUARTER}>
                     <Card loading={loading}>
-                        <Statistic title="冻结金额" value={walletInfo.frozenAmount} prefix="¥" precision={2} valueStyle={{ color: '#faad14' }} />
+                        <Statistic title="冻结金额" value={walletInfo.frozenAmount} prefix="¥" precision={BUSINESS.PRECISION.AMOUNT} valueStyle={{ color: token.colorWarning }} />
                     </Card>
                 </Col>
             </Row>
@@ -199,7 +208,7 @@ const UserWallet: React.FC = () => {
             {/* 交易记录 */}
             <Card title={<><HistoryOutlined /> 交易记录</>}>
                 <Tabs defaultActiveKey="all" items={[
-                    { key: 'all', label: '全部', children: <Table columns={columns} dataSource={transactions} rowKey="id" pagination={{ pageSize: 10 }} /> },
+                    { key: 'all', label: '全部', children: <Table columns={columns} dataSource={transactions} rowKey="id" pagination={{ pageSize: PAGINATION.DEFAULT_PAGE_SIZE }} /> },
                     { key: 'recharge', label: '充值', children: <Table columns={columns} dataSource={transactions.filter(t => t.type === 'recharge')} rowKey="id" /> },
                     { key: 'consume', label: '消费', children: <Table columns={columns} dataSource={transactions.filter(t => t.type === 'consume')} rowKey="id" /> },
                     { key: 'refund', label: '退款', children: <Table columns={columns} dataSource={transactions.filter(t => t.type === 'refund')} rowKey="id" /> },
@@ -208,8 +217,8 @@ const UserWallet: React.FC = () => {
 
             {/* 充值弹窗 */}
             <Modal title="账户充值" open={rechargeVisible} onCancel={() => setRechargeVisible(false)} onOk={handleRecharge}
-                confirmLoading={rechargeLoading} okText="确认充值" width={480}>
-                <div style={{ padding: '16px 0' }}>
+                confirmLoading={rechargeLoading} okText="确认充值" width={MODAL.WIDTH.SMALL}>
+                <div style={{ padding: `${LAYOUT.MODAL_PADDING}px 0` }}>
                     <div style={{ marginBottom: 24 }}>
                         <Text strong>选择充值金额</Text>
                         <div style={{ marginTop: 12 }}>
@@ -222,21 +231,21 @@ const UserWallet: React.FC = () => {
                         </div>
                         <div style={{ marginTop: 12 }}>
                             <Text type="secondary">自定义金额：</Text>
-                            <InputNumber min={1} max={10000} value={rechargeAmount} onChange={(v) => setRechargeAmount(v || 0)}
+                            <InputNumber min={MONEY.MIN_CUSTOM_AMOUNT} max={MONEY.MAX_CUSTOM_AMOUNT} value={rechargeAmount} onChange={(v) => setRechargeAmount(v || 0)}
                                 prefix="¥" style={{ width: 150, marginLeft: 8 }} />
                         </div>
                     </div>
                     <div>
                         <Text strong>选择支付方式</Text>
-                        <Radio.Group value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} style={{ marginTop: 12, display: 'block' }}>
+                        <Radio.Group value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} style={{ marginTop: LAYOUT.GUTTER, display: 'block' }}>
                             <Space direction="vertical" style={{ width: '100%' }}>
-                                <Radio.Button value="alipay" style={{ width: '100%', height: 48, lineHeight: '48px' }}>
-                                    <AlipayOutlined style={{ color: '#1677ff', marginRight: 8 }} /> 支付宝
+                                <Radio.Button value="alipay" style={{ width: '100%', height: SIZES.AVATAR.MEDIUM, lineHeight: `${SIZES.AVATAR.MEDIUM}px` }}>
+                                    <AlipayOutlined style={{ color: token.colorPrimary, marginRight: 8 }} /> 支付宝
                                 </Radio.Button>
-                                <Radio.Button value="wechat" style={{ width: '100%', height: 48, lineHeight: '48px' }}>
-                                    <WechatOutlined style={{ color: '#52c41a', marginRight: 8 }} /> 微信支付
+                                <Radio.Button value="wechat" style={{ width: '100%', height: SIZES.AVATAR.MEDIUM, lineHeight: `${SIZES.AVATAR.MEDIUM}px` }}>
+                                    <WechatOutlined style={{ color: token.colorSuccess, marginRight: 8 }} /> 微信支付
                                 </Radio.Button>
-                                <Radio.Button value="card" style={{ width: '100%', height: 48, lineHeight: '48px' }}>
+                                <Radio.Button value="card" style={{ width: '100%', height: SIZES.AVATAR.MEDIUM, lineHeight: `${SIZES.AVATAR.MEDIUM}px` }}>
                                     <CreditCardOutlined style={{ marginRight: 8 }} /> 银行卡
                                 </Radio.Button>
                             </Space>

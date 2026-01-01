@@ -332,7 +332,7 @@ const ReferralList: React.FC<ReferralListProps> = ({ onDataChange }) => {
                 </Space>
             ),
         },
-    ], [handleViewDetail]);
+    ], [handleViewDetail, openUpdateModal]);
 
     /**
      * Row selection config

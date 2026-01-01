@@ -21,6 +21,7 @@ import {
     Tabs,
     Progress,
     DatePicker,
+    theme,
 } from 'antd';
 import {
     DollarOutlined,
@@ -89,6 +90,7 @@ interface WithdrawRecord {
 }
 
 const PlayerEarnings: React.FC = () => {
+    const { token } = theme.useToken();
     const [loading, setLoading] = useState(false);
     const [earningsInfo, setEarningsInfo] = useState<EarningsInfo>({
         availableBalance: 0, frozenBalance: 0, todayEarnings: 0, weekEarnings: 0,
@@ -267,12 +269,12 @@ const PlayerEarnings: React.FC = () => {
             <Row gutter={16} style={{ marginBottom: 16 }}>
                 <Col xs={12} sm={6}>
                     <Card loading={loading}>
-                        <Statistic title="今日收益" value={earningsInfo.todayEarnings} prefix={<RiseOutlined />} suffix="元" valueStyle={{ color: '#3f8600' }} />
+                        <Statistic title="今日收益" value={earningsInfo.todayEarnings} prefix={<RiseOutlined />} suffix="元" valueStyle={{ color: token.colorSuccess }} />
                     </Card>
                 </Col>
                 <Col xs={12} sm={6}>
                     <Card loading={loading}>
-                        <Statistic title="本周收益" value={earningsInfo.weekEarnings} prefix={<CalendarOutlined />} suffix="元" valueStyle={{ color: '#1890ff' }} />
+                        <Statistic title="本周收益" value={earningsInfo.weekEarnings} prefix={<CalendarOutlined />} suffix="元" valueStyle={{ color: token.colorPrimary }} />
                     </Card>
                 </Col>
                 <Col xs={12} sm={6}>
@@ -282,7 +284,7 @@ const PlayerEarnings: React.FC = () => {
                 </Col>
                 <Col xs={12} sm={6}>
                     <Card loading={loading}>
-                        <Statistic title="累计收益" value={earningsInfo.totalEarnings} prefix={<DollarOutlined />} suffix="元" valueStyle={{ color: '#722ed1' }} />
+                        <Statistic title="累计收益" value={earningsInfo.totalEarnings} prefix={<DollarOutlined />} suffix="元" valueStyle={{ color: token.colorInfo }} />
                     </Card>
                 </Col>
             </Row>

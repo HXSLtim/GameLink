@@ -7,13 +7,13 @@ import {
     Space,
     Button,
     Modal,
-    message,
     Form,
     Input,
     InputNumber,
     Select,
     Switch,
     Image,
+    App,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
@@ -38,6 +38,7 @@ const categoryMap = {
  * 服务项目管理页面
  */
 const ServiceItemList: React.FC = () => {
+    const { message } = App.useApp();
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState<ServiceItem[]>([]);
     const [total, setTotal] = useState(0);
@@ -65,7 +66,8 @@ const ServiceItemList: React.FC = () => {
             });
 
             if (res.data.success) {
-                setData(res.data.data || []);
+                const items = res.data.data;
+                setData(Array.isArray(items) ? items : []);
                 setTotal((res.data as { pagination?: { total?: number } }).pagination?.total || 0);
             } else {
                 message.error(res.data.message || '加载数据失败');
@@ -80,7 +82,7 @@ const ServiceItemList: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }, [current, pageSize, searchParams]);
+    }, [current, pageSize, searchParams, message]);
 
     useEffect(() => {
         loadData();

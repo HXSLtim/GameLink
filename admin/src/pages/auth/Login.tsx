@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Form, Input, Button, Card, message, Tabs, theme, Checkbox } from 'antd';
+import { Form, Input, Button, Card, App, Tabs, theme, Checkbox } from 'antd';
 import { LockOutlined, UserOutlined } from '@ant-design/icons';
 import { authApi } from '@/api/auth';
 import { ENABLE_QUICK_LOGIN, DEBUG_USERS } from '@/config/debug';
@@ -8,6 +8,7 @@ import { ENABLE_QUICK_LOGIN, DEBUG_USERS } from '@/config/debug';
 const REMEMBER_KEY = 'gamelink_remember_login';
 
 const Login: React.FC = () => {
+    const { message } = App.useApp();
     const { token } = theme.useToken();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);

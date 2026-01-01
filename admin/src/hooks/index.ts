@@ -23,3 +23,6 @@ export {
     useCountUp,
     formatNumber,
 } from './useCountUp';
+
+// 主题感知消息 Hook
+export { useAppMessage } from './useAppMessage';

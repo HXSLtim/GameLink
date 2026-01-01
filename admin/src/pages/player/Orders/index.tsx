@@ -12,8 +12,8 @@ import {
     Typography,
     Tabs,
     Empty,
-    message,
     Modal,
+    App,
 } from 'antd';
 import {
     UserOutlined,
@@ -56,6 +56,7 @@ const statusConfig: Record<string, { color: string; text: string }> = {
 };
 
 const PlayerOrders: React.FC = () => {
+    const { message, modal } = App.useApp();
     const [loading, setLoading] = useState(false);
     const [orders, setOrders] = useState<Order[]>([]);
     const [activeTab, setActiveTab] = useState('all');
@@ -122,7 +123,7 @@ const PlayerOrders: React.FC = () => {
     }, [loadOrders]);
 
     const handleAccept = (order: Order) => {
-        Modal.confirm({
+        modal.confirm({
             title: '确认接单',
             content: `确定接受订单 ${order.orderNo} 吗？`,
             onOk: async () => {
@@ -133,7 +134,7 @@ const PlayerOrders: React.FC = () => {
     };
 
     const handleStart = (_order: Order) => {
-        Modal.confirm({
+        modal.confirm({
             title: '开始服务',
             content: '确定开始服务吗？开始后将计时。',
             onOk: async () => {
@@ -144,7 +145,7 @@ const PlayerOrders: React.FC = () => {
     };
 
     const handleComplete = (_order: Order) => {
-        Modal.confirm({
+        modal.confirm({
             title: '完成服务',
             content: '确定完成服务吗？',
             onOk: async () => {

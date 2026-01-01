@@ -19,7 +19,7 @@ export const TIME_RANGE_OPTIONS: TimeRangeOption[] = [
 export const DEFAULT_TIME_RANGE = '7d';
 
 // ============================================================================
-// Order Status Constants
+// Order Status Constants (使用 Ant Design 语义化颜色)
 // ============================================================================
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
@@ -31,13 +31,14 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   [OrderStatus.REFUNDED]: '已退款',
 };
 
+// 使用 Ant Design 语义化颜色，与主题系统集成
 export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
-  [OrderStatus.PENDING]: '#faad14',
-  [OrderStatus.CONFIRMED]: '#1890ff',
-  [OrderStatus.IN_PROGRESS]: '#13c2c2',
-  [OrderStatus.COMPLETED]: '#52c41a',
-  [OrderStatus.CANCELLED]: '#8c8c8c',
-  [OrderStatus.REFUNDED]: '#f5222d',
+  [OrderStatus.PENDING]: 'warning',      // gold/faad14
+  [OrderStatus.CONFIRMED]: 'processing', // blue/1890ff
+  [OrderStatus.IN_PROGRESS]: 'processing', // cyan/13c2c2
+  [OrderStatus.COMPLETED]: 'success',    // green/52c41a
+  [OrderStatus.CANCELLED]: 'default',     // gray/8c8c8c
+  [OrderStatus.REFUNDED]: 'error',       // red/f5222d
 };
 
 // ============================================================================
@@ -57,17 +58,20 @@ export const ALERT_LEVEL_LABELS: Record<AlertLevel, string> = {
   [AlertLevel.CRITICAL]: '严重',
 };
 
+// 使用 Ant Design 语义化颜色
 export const ALERT_LEVEL_COLORS: Record<AlertLevel, string> = {
-  [AlertLevel.INFO]: '#1890ff',
-  [AlertLevel.WARNING]: '#faad14',
-  [AlertLevel.ERROR]: '#ff4d4f',
-  [AlertLevel.CRITICAL]: '#cf1322',
+  [AlertLevel.INFO]: 'info',        // blue/1890ff
+  [AlertLevel.WARNING]: 'warning',   // gold/faad14
+  [AlertLevel.ERROR]: 'error',      // red/ff4d4f
+  [AlertLevel.CRITICAL]: 'error',    // dark red/cf1322
 };
 
 // ============================================================================
-// Chart Colors
+// Chart Colors (品牌色，不受主题影响)
 // ============================================================================
 
+// 图表颜色通常需要保持品牌一致性，不受主题切换影响
+// 如果需要主题适配，请使用 theme.useToken() 在组件内部获取
 export const CHART_COLORS = {
   primary: '#1890ff',
   secondary: '#52c41a',

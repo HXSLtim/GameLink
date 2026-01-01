@@ -165,8 +165,11 @@ const filterTreeData = (
  * 权限树组件
  * 支持虚拟滚动、搜索、全选/反选功能
  * Requirements: 2.1 - 以树形结构展示所有权限，按模块和资源分组
+ *
+ * 优化: 使用 React.memo 避免不必要的重新渲染
+ * 适用场景: 大型树组件，仅在关键 props 变化时重新渲染
  */
-export const PermissionTree: React.FC<PermissionTreeProps> = ({
+export const PermissionTree: React.FC<PermissionTreeProps> = React.memo(({
     treeData,
     checkedKeys = [],
     onCheck,
@@ -375,6 +378,6 @@ export const PermissionTree: React.FC<PermissionTreeProps> = ({
             )}
         </div>
     );
-};
+});
 
 export default PermissionTree;

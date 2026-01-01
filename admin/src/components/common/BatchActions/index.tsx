@@ -2,14 +2,16 @@
  * 统一的批量操作组件
  * 支持行内按钮和弹窗两种模式
  */
-import React, { ReactNode, useState } from 'react';
+import React, { useState } from 'react';
+import type { ReactNode } from 'react';
 import { Space, Button, Modal, Form } from 'antd';
 
 export interface BatchAction {
     key: string;
     label: string;
     icon?: ReactNode;
-    type?: 'default' | 'primary' | 'danger';
+    type?: 'default' | 'primary';
+    danger?: boolean;
     mode?: 'inline' | 'modal';
     modalTitle?: string;
     modalContent?: ReactNode;
@@ -27,7 +29,12 @@ export interface BatchActionsProps {
     onActionComplete?: () => void;
 }
 
-const BatchActions: React.FC<BatchActionsProps> = ({
+/**
+ * BatchActions 组件
+ * 优化: 使用 React.memo 避免不必要的重新渲染
+ * 适用场景: 批量操作组件，仅在选中项和操作配置变化时需要重新渲染
+ */
+const BatchActions: React.FC<BatchActionsProps> = React.memo(({
     selectedCount,
     actions,
     selectedRowKeys,
@@ -42,7 +49,7 @@ const BatchActions: React.FC<BatchActionsProps> = ({
             setCurrentAction(action);
             setModalVisible(true);
         } else {
-            action.onConfirm(selectedRowKeys).then(() => {
+            Promise.resolve(action.onConfirm(selectedRowKeys)).then(() => {
                 onActionComplete?.();
             });
         }
@@ -81,7 +88,7 @@ const BatchActions: React.FC<BatchActionsProps> = ({
                             key={action.key}
                             type={action.type || 'default'}
                             icon={action.icon}
-                            danger={action.type === 'danger'}
+                            danger={action.danger}
                             onClick={() => handleActionClick(action)}
                         >
                             {action.label}
@@ -96,12 +103,12 @@ const BatchActions: React.FC<BatchActionsProps> = ({
                 open={modalVisible}
                 onOk={handleModalOk}
                 onCancel={handleModalCancel}
-                destroyOnClose
+                destroyOnHidden
             >
                 {currentAction?.modalContent}
             </Modal>
         </>
     );
-};
+});
 
 export default BatchActions;

@@ -228,7 +228,7 @@ const RoutingForm: React.FC<RoutingFormProps> = ({
                     </Select>
                 </Form.Item>
 
-                <Divider orientation="left">匹配条件</Divider>
+                <Divider>匹配条件</Divider>
 
                 <Form.Item
                     name="conditions"

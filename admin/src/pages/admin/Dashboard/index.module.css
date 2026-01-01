@@ -23,8 +23,10 @@
     justify-content: center;
     font-size: 12px;
     font-weight: 600;
-    color: var(--brand-experiment);
-    background: var(--background-modifier-selected);
+    /* 使用 Ant Design 的主题色 */
+    color: var(--ant-color-primary);
+    /* 使用 Ant Design 的背景色变量 */
+    background: var(--ant-color-bg-text-hover);
     border-radius: 4px;
 }
 

@@ -23,29 +23,31 @@ export interface PermissionWrapperProps {
 
 /**
  * 权限容器组件
- * 
+ * 优化: 使用 React.memo 避免不必要的重新渲染
+ * 适用场景: 权限容器组件，在权限和子元素相同时不需要重新渲染
+ *
  * @example
  * ```tsx
  * // 基础用法 - 无权限时隐藏
  * <PermissionWrapper permission="admin.users.create">
  *     <Button type="primary">新建用户</Button>
  * </PermissionWrapper>
- * 
+ *
  * // 无权限时显示禁用样式
  * <PermissionWrapper permission="admin.users.delete" fallback="disable">
  *     <Button danger>删除</Button>
  * </PermissionWrapper>
- * 
+ *
  * // 无权限时显示替代内容
- * <PermissionWrapper 
- *     permission="admin.reports.view" 
+ * <PermissionWrapper
+ *     permission="admin.reports.view"
  *     fallbackContent={<span>暂无权限查看</span>}
  * >
  *     <ReportChart />
  * </PermissionWrapper>
  * ```
  */
-const PermissionWrapper: React.FC<PermissionWrapperProps> = ({
+const PermissionWrapper: React.FC<PermissionWrapperProps> = React.memo(({
     permission,
     mode = 'any',
     fallback = 'hide',
@@ -82,6 +84,6 @@ const PermissionWrapper: React.FC<PermissionWrapperProps> = ({
             </div>
         </Tooltip>
     );
-};
+});
 
 export default PermissionWrapper;

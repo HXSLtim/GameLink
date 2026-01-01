@@ -12,13 +12,13 @@ import {
     Button,
     Avatar,
     Modal,
-    message,
     Card,
     Select,
     Drawer,
     Descriptions,
     Divider,
     Input,
+    App,
 } from 'antd';
 import {
     DollarOutlined,
@@ -44,6 +44,7 @@ interface RewardsProps {
 }
 
 const Rewards: React.FC<RewardsProps> = ({ onDataChange }) => {
+    const { message, modal } = App.useApp();
     // State
     const [loading, setLoading] = useState(false);
     const [rewards, setRewards] = useState<ReferralReward[]>([]);
@@ -311,7 +312,7 @@ const Rewards: React.FC<RewardsProps> = ({ onDataChange }) => {
                 </Space>
             ),
         },
-    ], [handleViewDetail]);
+    ], [handleViewDetail, openIssueModal]);
 
     /**
      * Row selection config
@@ -337,7 +338,7 @@ const Rewards: React.FC<RewardsProps> = ({ onDataChange }) => {
             return;
         }
 
-        Modal.confirm({
+        modal.confirm({
             title: '批量发放奖励',
             content: `确定要发放 ${pendingRewards.length} 个奖励吗？`,
             onOk: async () => {

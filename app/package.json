@@ -68,6 +68,7 @@
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "taro-hooks": "^2.2.0",
+    "taro-ui": "^3.3.0",
     "zustand": "^5.0.9"
   },
   "devDependencies": {

@@ -14,6 +14,7 @@ import {
     Statistic,
     Popconfirm,
     Tooltip,
+    theme,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
@@ -58,6 +59,7 @@ const companyStatusMap: Record<CompanyStatus, { text: string; color: string }> =
  * 结算公司管理页面
  */
 const SettlementPage: React.FC = () => {
+    const { token } = theme.useToken();
     const [loading, setLoading] = useState(false);
     const [companies, setCompanies] = useState<SettlementCompany[]>([]);
     const [total, setTotal] = useState(0);
@@ -474,7 +476,7 @@ const SettlementPage: React.FC = () => {
             extra={
                 <Space size="large">
                     <Statistic title="公司总数" value={stats.total} prefix={<BankOutlined />} />
-                    <Statistic title="启用公司" value={stats.active} valueStyle={{ color: '#52c41a' }} />
+                    <Statistic title="启用公司" value={stats.active} valueStyle={{ color: token.colorSuccess }} />
                     <Statistic title="关联陪玩师" value={stats.totalPlayers} prefix={<TeamOutlined />} />
                 </Space>
             }

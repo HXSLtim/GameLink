@@ -1,63 +1,14 @@
+/**
+ * 全局样式
+ * 注意: 颜色主题由 Ant Design ConfigProvider 管理
+ * 请使用 theme.useToken() 或 Ant Design 组件的内置样式
+ * 避免使用硬编码颜色，以便支持亮色/暗色主题切换
+ */
+
 :root {
-  /* 基础变量 - 默认亮色模式 (Light Mode) */
-  --bg-primary: #ffffff;
-  --bg-secondary: #f2f3f5;
-  --bg-tertiary: #ebedef;
-  --bg-floating: #ffffff;
-
-  --header-primary: #060607;
-  --header-secondary: #4f5660;
-
-  --text-normal: #2e3338;
-  --text-muted: #747f8d;
-  --text-link: #00b0f4;
-
-  --interactive-normal: #4f5660;
-  --interactive-hover: #2e3338;
-  --interactive-active: #060607;
-  --interactive-muted: #c7ccd1;
-
-  --background-modifier-hover: rgba(116, 127, 141, 0.08);
-  --background-modifier-active: rgba(116, 127, 141, 0.16);
-  --background-modifier-selected: rgba(116, 127, 141, 0.24);
-
-  --channeltextarea-background: #ebedef;
-
-  --brand-experiment: #5865F2;
-  --brand-experiment-hover: #4752c4;
-
-  --danger: #ed4245;
-  --success: #3ba55c;
-  --warning: #faa61a;
-
+  /* 字体变量 (不受主题影响) */
   --font-primary: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   --font-display: 'Ginto', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-}
-
-[data-theme='dark'] {
-  /* 暗色模式 (Dark Mode) - Discord 风格 */
-  --bg-primary: #36393f;
-  --bg-secondary: #2f3136;
-  --bg-tertiary: #202225;
-  --bg-floating: #18191c;
-
-  --header-primary: #ffffff;
-  --header-secondary: #b9bbbe;
-
-  --text-normal: #dcddde;
-  --text-muted: #72767d;
-  --text-link: #00b0f4;
-
-  --interactive-normal: #b9bbbe;
-  --interactive-hover: #dcddde;
-  --interactive-active: #ffffff;
-  --interactive-muted: #4f545c;
-
-  --background-modifier-hover: rgba(79, 84, 92, 0.16);
-  --background-modifier-active: rgba(79, 84, 92, 0.24);
-  --background-modifier-selected: rgba(79, 84, 92, 0.32);
-
-  --channeltextarea-background: #40444b;
 }
 
 * {
@@ -69,31 +20,8 @@
 body {
   margin: 0;
   font-family: var(--font-primary);
-  background-color: var(--bg-primary);
-  color: var(--text-normal);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background-color 0.3s, color 0.3s;
-}
-
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-  background-color: var(--bg-secondary);
-}
-
-::-webkit-scrollbar-thumb {
-  background-color: var(--bg-tertiary);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-track {
-  background-color: var(--bg-secondary);
-}
-
-a {
-  color: var(--brand-experiment);
-  text-decoration: none;
 }
 
 button {

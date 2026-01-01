@@ -2,7 +2,7 @@
  * 管理后台仪表盘
  */
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Table, Tag, Avatar, Typography, Space, message, Select, theme } from 'antd';
+import { Row, Col, Card, Table, Tag, Avatar, Typography, Space, App, Select, theme } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
     UserOutlined,
@@ -48,6 +48,7 @@ interface OrderRecord {
 }
 
 const Dashboard: React.FC = () => {
+    const { message } = App.useApp();
     const { token } = theme.useToken();
     const [loading, setLoading] = useState(true);
     const [days, setDays] = useState(7);

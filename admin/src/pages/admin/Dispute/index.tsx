@@ -11,14 +11,14 @@
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-    Modal,
-    message,
     Drawer,
     Card,
     Row,
     Col,
     Statistic,
     Alert,
+    App,
+    theme,
 } from 'antd';
 import {
     ExclamationCircleOutlined,
@@ -57,6 +57,8 @@ interface DisputeQueryParams {
  * Dispute Management Page
  */
 const DisputePage: React.FC = () => {
+    const { message, modal } = App.useApp();
+    const { token } = theme.useToken();
     const [loading, setLoading] = useState(false);
     const [disputes, setDisputes] = useState<Dispute[]>([]);
     const [total, setTotal] = useState(0);
@@ -86,15 +88,21 @@ const DisputePage: React.FC = () => {
                 ...searchParams,
             };
             const response = await disputeApi.getDisputes(params);
-            setDisputes(response.data.disputes || []);
-            setTotal(response.data.total || 0);
+            const data = response.data?.data;
+            // 确保 disputes 是数组
+            const disputeList = Array.isArray(data?.disputes) ? data.disputes : [];
+            setDisputes(disputeList);
+            setTotal(data?.total || 0);
         } catch (error) {
             console.error('Load disputes error:', error);
             message.error('加载纠纷列表失败');
+            // 确保错误时也设置为空数组
+            setDisputes([]);
+            setTotal(0);
         } finally {
             setLoading(false);
         }
-    }, [current, pageSize, searchParams]);
+    }, [current, pageSize, searchParams, message]);
 
     /**
      * Load dispute statistics
@@ -102,7 +110,7 @@ const DisputePage: React.FC = () => {
     const loadStats = useCallback(async () => {
         try {
             const response = await disputeApi.getDisputeStats();
-            setStats(response.data);
+            setStats(response.data.data);
         } catch (error) {
             console.error('Load stats error:', error);
         }
@@ -167,7 +175,7 @@ const DisputePage: React.FC = () => {
      * Rollback assignment
      */
     const handleRollback = async (dispute: Dispute) => {
-        Modal.confirm({
+        modal.confirm({
             title: '确认回滚',
             content: '确定要回滚此纠纷的分配吗？回滚后纠纷将变为待处理状态。',
             okText: '确认',
@@ -279,7 +287,7 @@ const DisputePage: React.FC = () => {
                             <Statistic
                                 title="待处理"
                                 value={stats.pending}
-                                valueStyle={{ color: '#faad14' }}
+                                valueStyle={{ color: token.colorWarning }}
                                 prefix={<ExclamationCircleOutlined />}
                             />
                         </Card>
@@ -289,7 +297,7 @@ const DisputePage: React.FC = () => {
                             <Statistic
                                 title="已指派"
                                 value={stats.assigned}
-                                valueStyle={{ color: '#1890ff' }}
+                                valueStyle={{ color: token.colorPrimary }}
                             />
                         </Card>
                     </Col>
@@ -298,7 +306,7 @@ const DisputePage: React.FC = () => {
                             <Statistic
                                 title="调解中"
                                 value={stats.mediating}
-                                valueStyle={{ color: '#722ed1' }}
+                                valueStyle={{ color: token.colorInfo }}
                             />
                         </Card>
                     </Col>
@@ -307,7 +315,7 @@ const DisputePage: React.FC = () => {
                             <Statistic
                                 title="已解决"
                                 value={stats.resolved}
-                                valueStyle={{ color: '#52c41a' }}
+                                valueStyle={{ color: token.colorSuccess }}
                                 prefix={<CheckCircleOutlined />}
                             />
                         </Card>
@@ -317,7 +325,7 @@ const DisputePage: React.FC = () => {
                             <Statistic
                                 title="已驳回"
                                 value={stats.rejected}
-                                valueStyle={{ color: '#ff4d4f' }}
+                                valueStyle={{ color: token.colorError }}
                             />
                         </Card>
                     </Col>
@@ -326,7 +334,7 @@ const DisputePage: React.FC = () => {
                             <Statistic
                                 title="SLA超时"
                                 value={stats.slaBreached}
-                                valueStyle={{ color: '#ff4d4f' }}
+                                valueStyle={{ color: token.colorError }}
                                 prefix={<ClockCircleOutlined />}
                             />
                         </Card>

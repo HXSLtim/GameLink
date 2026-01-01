@@ -1,5 +1,6 @@
 /**
  * 权限树组件样式
+ * 使用 Ant Design CSS 变量以支持主题切换
  * Requirements: 2.1
  */
 
@@ -18,10 +19,13 @@
 
 .systemRoleAlert {
     padding: 8px 12px;
-    background-color: #e6f7ff;
-    border: 1px solid #91d5ff;
+    /* 使用 Ant Design 的 info 背景色 */
+    background-color: var(--ant-colorInfoBg);
+    /* 使用 Ant Design 的 info 边框色 */
+    border: 1px solid var(--ant-colorInfoBorder);
     border-radius: 4px;
-    color: #1890ff;
+    /* 使用 Ant Design 的 info 文本色 */
+    color: var(--ant-colorInfo);
     font-size: 13px;
     display: flex;
     align-items: center;
@@ -37,7 +41,8 @@
     justify-content: space-between;
     align-items: center;
     padding: 8px 0;
-    border-bottom: 1px solid #f0f0f0;
+    /* 使用 Ant Design 的边框色 */
+    border-bottom: 1px solid var(--ant-colorBorder);
 }
 
 .selectionInfo {
@@ -45,10 +50,12 @@
 }
 
 .treeContainer {
-    border: 1px solid #f0f0f0;
+    /* 使用 Ant Design 的边框色 */
+    border: 1px solid var(--ant-colorBorder);
     border-radius: 4px;
     padding: 8px;
-    background-color: #fafafa;
+    /* 使用 Ant Design 的背景色 */
+    background-color: var(--ant-colorFillAlter);
     overflow: auto;
 
     :global {
@@ -87,23 +94,28 @@
     flex: 1;
     padding: 2px 4px;
     border-radius: 4px;
+    /* 使用 Ant Design 的过渡效果 */
     transition: background-color 0.2s ease;
 }
 
 // Requirements: 2.4 - 高亮显示已分配的权限项
 .checkedNode {
-    background-color: #f6ffed;
-    border: 1px solid #b7eb8f;
-    
+    /* 使用 Ant Design 的 success 背景色 */
+    background-color: var(--ant-colorSuccessBg);
+    /* 使用 Ant Design 的 success 边框色 */
+    border: 1px solid var(--ant-colorSuccessBorder);
+
     &:hover {
-        background-color: #d9f7be;
+        /* 使用 Ant Design 的 success hover 背景色 */
+        background-color: var(--ant-colorSuccessBgHover);
     }
 }
 
 .permissionCode {
     font-size: 11px;
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-    background-color: #f5f5f5;
+    /* 使用 Ant Design 的填充色 */
+    background-color: var(--ant-colorFillSecondary);
     padding: 1px 6px;
     border-radius: 3px;
     margin-left: 8px;
@@ -125,7 +137,8 @@
 }
 
 .highlight {
-    background-color: #ffc069;
+    /* 使用 Ant Design 的 warning 背景色 */
+    background-color: var(--ant-colorWarningBg);
     padding: 0 2px;
     border-radius: 2px;
 }

@@ -3,7 +3,7 @@
  * Displays detailed information about a dispute
  */
 import React from 'react';
-import { Tag, Descriptions, Card, Timeline, Divider, Image, Space, Button } from 'antd';
+import { Tag, Descriptions, Card, Timeline, Divider, Image, Space, Button, Typography } from 'antd';
 import {
     DISPUTE_STATUS_LABELS,
     DISPUTE_STATUS_COLORS,
@@ -63,7 +63,7 @@ export const DisputeDetail: React.FC<DisputeDetailProps> = ({ dispute }) => {
                     <div style={{ marginTop: 12 }}>
                         <Space>
                             <span>订单号:</span>
-                            <Tag copyable>{dispute.orderNo || `ID: ${dispute.orderId}`}</Tag>
+                            <Typography.Text copyable>{dispute.orderNo || `ID: ${dispute.orderId}`}</Typography.Text>
                         </Space>
                     </div>
                 </div>
@@ -74,7 +74,7 @@ export const DisputeDetail: React.FC<DisputeDetailProps> = ({ dispute }) => {
                 <Descriptions.Item label="纠纷ID">{dispute.id}</Descriptions.Item>
                 <Descriptions.Item label="订单ID">{dispute.orderId}</Descriptions.Item>
                 <Descriptions.Item label="订单号" span={2}>
-                    <Tag copyable>{dispute.orderNo || '-'}</Tag>
+                    <Typography.Text copyable>{dispute.orderNo || '-'}</Typography.Text>
                 </Descriptions.Item>
                 <Descriptions.Item label="发起人ID">{dispute.initiatorId}</Descriptions.Item>
                 <Descriptions.Item label="发起人类型">
@@ -103,7 +103,7 @@ export const DisputeDetail: React.FC<DisputeDetailProps> = ({ dispute }) => {
                 )}
                 {dispute.chatSnapshotId && (
                     <Descriptions.Item label="聊天快照ID" span={2}>
-                        <Tag copyable>{dispute.chatSnapshotId}</Tag>
+                        <Typography.Text copyable>{dispute.chatSnapshotId}</Typography.Text>
                     </Descriptions.Item>
                 )}
                 <Descriptions.Item label="创建时间">
@@ -113,7 +113,7 @@ export const DisputeDetail: React.FC<DisputeDetailProps> = ({ dispute }) => {
                     {dayjs(dispute.updatedAt).format('YYYY-MM-DD HH:mm:ss')}
                 </Descriptions.Item>
                 <Descriptions.Item label="TraceID" span={2}>
-                    <Tag copyable>{dispute.traceId}</Tag>
+                    <Typography.Text copyable>{dispute.traceId}</Typography.Text>
                 </Descriptions.Item>
             </Descriptions>
 

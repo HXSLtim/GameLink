@@ -140,7 +140,7 @@ const OptionForm: React.FC<OptionFormProps> = ({ visible, option, onCancel, onSu
         >
             <Form form={form} layout="vertical">
                 {/* 基本信息 */}
-                <Divider orientation="left">基本信息</Divider>
+                <Divider>基本信息</Divider>
 
                 <Row gutter={16}>
                     <Col span={12}>
@@ -180,7 +180,7 @@ const OptionForm: React.FC<OptionFormProps> = ({ visible, option, onCancel, onSu
                 </Form.Item>
 
                 {/* 金额配置 */}
-                <Divider orientation="left">金额配置</Divider>
+                <Divider>金额配置</Divider>
 
                 <Row gutter={16}>
                     <Col span={8}>
@@ -263,7 +263,7 @@ const OptionForm: React.FC<OptionFormProps> = ({ visible, option, onCancel, onSu
                 </Row>
 
                 {/* 优惠券配置 */}
-                <Divider orientation="left">优惠券配置</Divider>
+                <Divider>优惠券配置</Divider>
 
                 <Row gutter={16}>
                     <Col span={12}>
@@ -295,7 +295,7 @@ const OptionForm: React.FC<OptionFormProps> = ({ visible, option, onCancel, onSu
                 </Row>
 
                 {/* 限制配置 */}
-                <Divider orientation="left">限制配置</Divider>
+                <Divider>限制配置</Divider>
 
                 <Row gutter={16}>
                     <Col span={8}>
@@ -340,7 +340,7 @@ const OptionForm: React.FC<OptionFormProps> = ({ visible, option, onCancel, onSu
                 </Row>
 
                 {/* 状态配置 */}
-                <Divider orientation="left">状态配置</Divider>
+                <Divider>状态配置</Divider>
 
                 <Row gutter={16}>
                     <Col span={12}>

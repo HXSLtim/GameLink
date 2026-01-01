@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Table, Button, Space, message, Tag, Popconfirm, Card } from 'antd';
+import { Table, Button, Space, App, Tag, Popconfirm, Card } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
 import { adminApi } from '@/api/admin';
 import type { Menu } from '@/api/admin';
 import { getIcon } from '@/utils/iconMap';
 
 const MenuList: React.FC = () => {
+    const { message } = App.useApp();
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState<Menu[]>([]);
     const [pagination, setPagination] = useState({

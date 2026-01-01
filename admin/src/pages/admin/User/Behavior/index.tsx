@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Statistic, Spin, message } from 'antd';
+import { Card, Row, Col, Statistic, Spin, App } from 'antd';
 import { PageContainer } from '@/components';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { UserOutlined, ClockCircleOutlined, DollarOutlined } from '@ant-design/icons';
@@ -9,6 +9,7 @@ import type { UserBehaviorStats, UserDistribution, TrendData } from '@/api/admin
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
 const UserBehavior: React.FC = () => {
+    const { message } = App.useApp();
     const [loading, setLoading] = useState(false);
     const [stats, setStats] = useState<UserBehaviorStats | null>(null);
     const [trendData, setTrendData] = useState<TrendData[]>([]);

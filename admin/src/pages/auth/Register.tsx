@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Form, Input, Button, Card, message, Tabs, theme } from 'antd';
+import { Form, Input, Button, Card, App, Tabs, theme } from 'antd';
 import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined } from '@ant-design/icons';
 import { authApi } from '@/api/auth';
 
 const Register: React.FC = () => {
+    const { message } = App.useApp();
     const { token } = theme.useToken();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);

@@ -16,6 +16,7 @@ import {
     Statistic,
     Select,
     Progress,
+    theme,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
@@ -33,6 +34,7 @@ import {
 const { Title, Text } = Typography;
 
 const RewardsPage: React.FC = () => {
+    const { token } = theme.useToken();
     const [loading, setLoading] = useState(false);
     const [activities, setActivities] = useState<Activity[]>([]);
     const [selectedActivityId, setSelectedActivityId] = useState<number | undefined>(undefined);
@@ -243,7 +245,7 @@ const RewardsPage: React.FC = () => {
                             <Statistic
                                 title="总库存"
                                 value={totalStock}
-                                valueStyle={{ color: '#1890ff' }}
+                                valueStyle={{ color: token.colorPrimary }}
                             />
                         </Card>
                     </Col>
@@ -252,7 +254,7 @@ const RewardsPage: React.FC = () => {
                             <Statistic
                                 title="剩余库存"
                                 value={totalRemaining}
-                                valueStyle={{ color: totalRemaining < totalStock * 0.2 ? '#cf1322' : '#3f8600' }}
+                                valueStyle={{ color: totalRemaining < totalStock * 0.2 ? token.colorError : token.colorSuccess }}
                             />
                         </Card>
                     </Col>
@@ -262,7 +264,7 @@ const RewardsPage: React.FC = () => {
                                 title="总概率"
                                 value={totalProbability}
                                 suffix="%"
-                                valueStyle={{ color: totalProbability > 100 ? '#cf1322' : '#1890ff' }}
+                                valueStyle={{ color: totalProbability > 100 ? token.colorError : token.colorPrimary }}
                             />
                         </Card>
                     </Col>

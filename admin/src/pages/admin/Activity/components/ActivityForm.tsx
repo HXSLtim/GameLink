@@ -26,6 +26,7 @@ import {
     type Activity,
     getActivityTypeLabel,
 } from '@/api/activity';
+import type { Dayjs } from 'dayjs';
 
 const { TextArea } = Input;
 const { Text } = Typography;
@@ -39,6 +40,13 @@ interface ActivityFormProps {
     onSubmit: (values: CreateActivityDto) => Promise<void>;
 }
 
+// Form-specific type with dayjs for DatePicker
+interface ActivityFormData extends Omit<CreateActivityDto, 'preheatAt' | 'startAt' | 'endAt'> {
+    preheatAt?: Dayjs;
+    startAt: Dayjs;
+    endAt: Dayjs;
+}
+
 const ActivityForm: React.FC<ActivityFormProps> = ({
     visible,
     editing,
@@ -47,7 +55,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
     onCancel,
     onSubmit,
 }) => {
-    const [form] = Form.useForm<CreateActivityDto>();
+    const [form] = Form.useForm<ActivityFormData>();
     const activityType = Form.useWatch('type', form);
 
     // Set initial form values
@@ -92,10 +100,10 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
             const data: CreateActivityDto = {
                 ...values,
                 preheatAt: values.preheatAt
-                    ? (values.preheatAt as dayjs.Dayjs).format('YYYY-MM-DD HH:mm:ss')
+                    ? dayjs(values.preheatAt as any).format('YYYY-MM-DD HH:mm:ss')
                     : undefined,
-                startAt: (values.startAt as dayjs.Dayjs).format('YYYY-MM-DD HH:mm:ss'),
-                endAt: (values.endAt as dayjs.Dayjs).format('YYYY-MM-DD HH:mm:ss'),
+                startAt: dayjs(values.startAt as any).format('YYYY-MM-DD HH:mm:ss'),
+                endAt: dayjs(values.endAt as any).format('YYYY-MM-DD HH:mm:ss'),
             };
             await onSubmit(data);
         } catch (error) {
@@ -120,7 +128,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                 autoComplete="off"
             >
                 {/* Basic Information */}
-                <Divider orientation="left">基本信息</Divider>
+                <Divider>基本信息</Divider>
 
                 <Row gutter={16}>
                     <Col span={12}>
@@ -162,7 +170,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                 </Form.Item>
 
                 {/* Time Configuration */}
-                <Divider orientation="left">时间配置</Divider>
+                <Divider>时间配置</Divider>
 
                 <Row gutter={16}>
                     <Col span={12}>
@@ -209,7 +217,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                 </Form.Item>
 
                 {/* Participation Limits */}
-                <Divider orientation="left">参与限制</Divider>
+                <Divider>参与限制</Divider>
 
                 <Row gutter={16}>
                     <Col span={8}>
@@ -260,7 +268,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                 </Row>
 
                 {/* VIP Settings */}
-                <Divider orientation="left">VIP设置</Divider>
+                <Divider>VIP设置</Divider>
 
                 <Form.Item
                     name="allowVipStack"
@@ -275,7 +283,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                 </Form.Item>
 
                 {/* Display Settings */}
-                <Divider orientation="left">显示设置</Divider>
+                <Divider>显示设置</Divider>
 
                 <Row gutter={16}>
                     <Col span={12}>
@@ -308,7 +316,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                 </Row>
 
                 {/* Media URLs */}
-                <Divider orientation="left">媒体资源</Divider>
+                <Divider>媒体资源</Divider>
 
                 <Row gutter={16}>
                     <Col span={12}>
@@ -330,7 +338,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                 </Row>
 
                 {/* Rules */}
-                <Divider orientation="left">活动规则</Divider>
+                <Divider>活动规则</Divider>
 
                 <Form.Item
                     name="rules"
@@ -344,7 +352,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
                 </Form.Item>
 
                 {/* Status */}
-                <Divider orientation="left">状态</Divider>
+                <Divider>状态</Divider>
 
                 <Form.Item
                     name="status"

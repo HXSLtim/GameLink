@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Form, Button, Tabs, Divider, message, Space, Typography, Alert, Radio, InputNumber, Spin, Descriptions, Switch, Tooltip, Select } from 'antd';
+import { Card, Form, Button, Tabs, Divider, App, Space, Typography, Alert, Radio, InputNumber, Spin, Descriptions, Switch, Tooltip, Select } from 'antd';
 import { SaveOutlined, SyncOutlined, StarOutlined, ReloadOutlined, UndoOutlined } from '@ant-design/icons';
 import { motion } from 'framer-motion';
 import { forceInit } from '@/services/init';
@@ -21,6 +21,7 @@ const DEFAULT_REVIEW_SETTINGS: UpdateSettingsFormData = {
 };
 
 const Settings: React.FC = () => {
+    const { message } = App.useApp();
     const [reviewForm] = Form.useForm<UpdateSettingsFormData>();
     const [initializing, setInitializing] = useState(false);
     const [lastInitTime, setLastInitTime] = useState<string | null>(

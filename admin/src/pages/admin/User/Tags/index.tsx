@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Table, Button, Space, Modal, Form, Input, ColorPicker, message, Popconfirm, Tag } from 'antd';
+import { Card, Table, Button, Space, Modal, Form, Input, ColorPicker, Popconfirm, Tag, App } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
 import { PageContainer } from '@/components';
@@ -7,6 +7,7 @@ import { adminApi, type UserTag, type CreateTagDto, type ApiResponse } from '@/a
 import dayjs from 'dayjs';
 
 const UserTags: React.FC = () => {
+    const { message } = App.useApp();
     const [loading, setLoading] = useState(false);
     const [tags, setTags] = useState<UserTag[]>([]);
     const [isModalVisible, setIsModalVisible] = useState(false);

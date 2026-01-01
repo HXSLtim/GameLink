@@ -56,8 +56,10 @@ const roleMap: Record<TeamMember['role'], { icon: React.ReactNode; text: string 
 
 /**
  * 成员卡片组件
+ * 优化: 使用 React.memo 避免不必要的重新渲染
+ * 适用场景: 列表项组件，在成员列表中频繁渲染，仅在成员数据变化时重新渲染
  */
-const MemberCard: React.FC<MemberCardProps> = ({
+const MemberCard: React.FC<MemberCardProps> = React.memo(({
     member,
     canTransfer = false,
     onRemove,
@@ -181,6 +183,6 @@ const MemberCard: React.FC<MemberCardProps> = ({
             )}
         </Card>
     );
-};
+});
 
 export default MemberCard;

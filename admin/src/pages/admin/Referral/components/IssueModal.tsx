@@ -109,7 +109,8 @@ const IssueModal: React.FC<IssueModalProps> = ({
             okText={isIssue ? '确认发放' : '确认'}
             cancelText="取消"
             okButtonProps={{
-                style: isIssue ? { backgroundColor: '#52c41a', borderColor: '#52c41a' } : { danger: true },
+                style: isIssue ? { backgroundColor: '#52c41a', borderColor: '#52c41a' } : undefined,
+                danger: !isIssue,
             }}
             width={500}
         >

@@ -185,6 +185,7 @@ export interface UpdateReferralStatusDto {
 export interface ReferralQueryParams {
     page?: number;
     page_size?: number;
+    keyword?: string;
     referrerId?: number;
     refereeId?: number;
     type?: ReferralType;
@@ -254,6 +255,7 @@ export interface FailReferralRewardDto {
 export interface ReferralRewardQueryParams {
     page?: number;
     page_size?: number;
+    keyword?: string;
     userId?: number;
     referralId?: number;
     type?: RewardType;

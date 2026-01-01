@@ -2,7 +2,7 @@
  * 内容统计页面
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Row, Col, Statistic, Spin, message, Select, Table, Button, Space } from 'antd';
+import { Card, Row, Col, Statistic, Spin, Select, Table, Button, Space, App } from 'antd';
 import {
   FileTextOutlined, MessageOutlined, WarningOutlined,
   CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined,
@@ -13,6 +13,7 @@ import { contentStatsApi } from '@/api/content';
 import type { ContentStatsDTO, ContentTrend } from '@/types/content';
 
 const StatsPage: React.FC = () => {
+  const { message } = App.useApp();
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [stats, setStats] = useState<ContentStatsDTO | null>(null);
@@ -30,7 +31,7 @@ const StatsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [days]);
+  }, [days, message]);
 
   const handleExport = async () => {
     setExporting(true);

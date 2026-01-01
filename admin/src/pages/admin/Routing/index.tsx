@@ -18,6 +18,7 @@ import {
     Popconfirm,
     Timeline,
     Descriptions,
+    theme,
 } from 'antd';
 import {
     PlusOutlined,
@@ -106,6 +107,7 @@ const renderConditions = (conditions: any[]) => {
  */
 const RoutingRulePage: React.FC = () => {
     const navigate = useNavigate();
+    const { token } = theme.useToken();
     const [loading, setLoading] = useState(false);
     const [rules, setRules] = useState<RoutingRule[]>([]);
     const [total, setTotal] = useState(0);
@@ -397,7 +399,7 @@ const RoutingRulePage: React.FC = () => {
                         <Statistic
                             title="启用规则"
                             value={stats.active}
-                            valueStyle={{ color: '#52c41a' }}
+                            valueStyle={{ color: token.colorSuccess }}
                             prefix={<CheckCircleOutlined />}
                         />
                     </Card>
@@ -407,7 +409,7 @@ const RoutingRulePage: React.FC = () => {
                         <Statistic
                             title="禁用规则"
                             value={stats.inactive}
-                            valueStyle={{ color: '#999' }}
+                            valueStyle={{ color: token.colorTextSecondary }}
                             prefix={<StopOutlined />}
                         />
                     </Card>

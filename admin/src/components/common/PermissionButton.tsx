@@ -22,36 +22,38 @@ export interface PermissionButtonProps extends ButtonProps {
 
 /**
  * 权限按钮组件
- * 
+ * 优化: 使用 React.memo 避免不必要的重新渲染
+ * 适用场景: 权限检查组件，在权限和按钮 props 相同时不需要重新渲染
+ *
  * @example
  * ```tsx
  * // 基础用法 - 无权限时隐藏
  * <PermissionButton permission="admin.users.create" type="primary">
  *     新建用户
  * </PermissionButton>
- * 
+ *
  * // 无权限时禁用并显示提示
- * <PermissionButton 
- *     permission="admin.users.delete" 
+ * <PermissionButton
+ *     permission="admin.users.delete"
  *     fallback="disable"
  *     disabledTip="您没有删除权限"
  *     danger
  * >
  *     删除
  * </PermissionButton>
- * 
+ *
  * // 多个权限（任一满足）
  * <PermissionButton permission={['admin.users.update', 'admin.users.create']}>
  *     编辑
  * </PermissionButton>
- * 
+ *
  * // 多个权限（全部满足）
  * <PermissionButton permission={['admin.users.update', 'admin.users.delete']} mode="all">
  *     批量操作
  * </PermissionButton>
  * ```
  */
-const PermissionButton: React.FC<PermissionButtonProps> = ({
+const PermissionButton: React.FC<PermissionButtonProps> = React.memo(({
     permission,
     mode = 'any',
     fallback = 'hide',
@@ -92,6 +94,6 @@ const PermissionButton: React.FC<PermissionButtonProps> = ({
             {children}
         </Button>
     );
-};
+});
 
 export default PermissionButton;

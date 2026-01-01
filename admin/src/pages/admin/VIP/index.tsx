@@ -12,14 +12,13 @@ import {
     Tag,
     Typography,
     Image,
-    message,
+    App,
     Popconfirm,
     Switch,
     Statistic,
-    Empty,
-    Spin,
     Segmented,
     Input,
+    theme,
 } from 'antd';
 import {
     PlusOutlined,
@@ -35,6 +34,7 @@ import { vipApi } from '@/api/vip';
 import type { VIPLevel } from '@/api/vip';
 import { VIP_PERMISSIONS } from '@/constants/permissions';
 import { PermissionGuard } from '@/components/PermissionGuard';
+import { StateContainer } from '@/components/common/StateContainer';
 import LevelForm from './components/LevelForm';
 import BenefitsEditor from './components/BenefitsEditor';
 import dayjs from 'dayjs';
@@ -43,9 +43,12 @@ const { Title, Text, Paragraph } = Typography;
 const { Search } = Input;
 
 const VIPPage: React.FC = () => {
+    const { message } = App.useApp();
+    const { token } = theme.useToken();
     const [loading, setLoading] = useState(false);
     const [levels, setLevels] = useState<VIPLevel[]>([]);
     const [filteredLevels, setFilteredLevels] = useState<VIPLevel[]>([]);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const [formVisible, setFormVisible] = useState(false);
     const [currentLevel, setCurrentLevel] = useState<VIPLevel | null>(null);
     const [benefitsEditorVisible, setBenefitsEditorVisible] = useState(false);
@@ -55,6 +58,7 @@ const VIPPage: React.FC = () => {
 
     const loadData = useCallback(async () => {
         setLoading(true);
+        setLoadError(null);
         try {
             const response = await vipApi.getVIPLevels({ page_size: 100 });
             if (response.data.success) {
@@ -62,10 +66,12 @@ const VIPPage: React.FC = () => {
                 setLevels(data);
                 setFilteredLevels(data);
             } else {
+                setLoadError(response.data.message || '加载失败');
                 message.error(response.data.message || '加载失败');
             }
         } catch (error) {
             console.error('Load VIP levels error:', error);
+            setLoadError('加载VIP等级失败');
             message.error('加载VIP等级失败');
         } finally {
             setLoading(false);
@@ -241,7 +247,7 @@ const VIPPage: React.FC = () => {
                                 <Statistic
                                     title="升级经验"
                                     value={level.expRequired}
-                                    valueStyle={{ fontSize: 16, color: '#1890ff' }}
+                                    valueStyle={{ fontSize: 16, color: token.colorPrimary }}
                                 />
                             </Col>
                             <Col span={12}>
@@ -249,7 +255,7 @@ const VIPPage: React.FC = () => {
                                     title="订单折扣"
                                     value={level.orderDiscount * 100}
                                     suffix="%"
-                                    valueStyle={{ fontSize: 16, color: '#52c41a' }}
+                                    valueStyle={{ fontSize: 16, color: token.colorSuccess }}
                                 />
                             </Col>
                         </Row>
@@ -390,7 +396,7 @@ const VIPPage: React.FC = () => {
                         <Statistic
                             title="已启用"
                             value={stats.active}
-                            valueStyle={{ color: '#52c41a' }}
+                            valueStyle={{ color: token.colorSuccess }}
                             prefix={<CheckCircleOutlined />}
                         />
                     </Card>
@@ -400,7 +406,7 @@ const VIPPage: React.FC = () => {
                         <Statistic
                             title="默认等级"
                             value={stats.defaultCount}
-                            valueStyle={{ color: '#faad14' }}
+                            valueStyle={{ color: token.colorWarning }}
                             prefix={<StarOutlined />}
                         />
                     </Card>
@@ -433,28 +439,21 @@ const VIPPage: React.FC = () => {
             </Card>
 
             {/* VIP等级卡片列表 */}
-            <Spin spinning={loading}>
-                {filteredLevels.length > 0 ? (
-                    <Row gutter={[16, 16]}>
-                        {filteredLevels.map(renderVIPCard)}
-                    </Row>
-                ) : (
-                    <Card>
-                        <Empty
-                            description={keyword ? '未找到匹配的VIP等级' : '暂无VIP等级'}
-                            image={Empty.PRESENTED_IMAGE_SIMPLE}
-                        >
-                            {!keyword && (
-                                <PermissionGuard permission={VIP_PERMISSIONS.CREATE}>
-                                    <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-                                        创建第一个等级
-                                    </Button>
-                                </PermissionGuard>
-                            )}
-                        </Empty>
-                    </Card>
-                )}
-            </Spin>
+            <StateContainer
+                loading={loading}
+                data={filteredLevels}
+                error={loadError}
+                emptyType={keyword ? 'no-search' : 'no-data'}
+                emptyTitle={keyword ? '未找到匹配的VIP等级' : '暂无VIP等级'}
+                emptyDescription={keyword ? '请尝试调整搜索条件' : '创建第一个VIP等级开始使用'}
+                emptyActionText={!keyword ? '创建第一个等级' : undefined}
+                onEmptyAction={!keyword ? handleAdd : undefined}
+                loadingConfig={{ card: false, rows: 4 }}
+            >
+                <Row gutter={[16, 16]}>
+                    {filteredLevels.map(renderVIPCard)}
+                </Row>
+            </StateContainer>
 
             {/* 编辑表单弹窗 */}
             <LevelForm

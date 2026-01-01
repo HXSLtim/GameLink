@@ -169,7 +169,7 @@ const IssueModal: React.FC<IssueModalProps> = ({
 
         return (
             <div style={{ marginTop: 16 }}>
-                <Divider orientation="left">优惠券信息</Divider>
+                <Divider>优惠券信息</Divider>
                 <Descriptions column={2} size="small" bordered>
                     <Descriptions.Item label="名称" span={2}>
                         {selectedTemplate.name}

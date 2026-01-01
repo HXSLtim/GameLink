@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Table, Card, Button, Space, Tag, Input, Select, DatePicker,
-  Modal, message, Image, Typography, Tooltip, Popconfirm, Form,
+  Modal, Image, Typography, Tooltip, Popconfirm, Form, App,
 } from 'antd';
 import {
   SearchOutlined, CheckOutlined, CloseOutlined, DeleteOutlined,
@@ -24,6 +24,7 @@ const { TextArea } = Input;
 const { Paragraph } = Typography;
 
 const FeedsPage: React.FC = () => {
+  const { message, modal } = App.useApp();
   const [loading, setLoading] = useState(false);
   const [feeds, setFeeds] = useState<Feed[]>([]);
   const [total, setTotal] = useState(0);
@@ -120,7 +121,7 @@ const FeedsPage: React.FC = () => {
       message.warning('请选择要拒绝的动态');
       return;
     }
-    Modal.confirm({
+    modal.confirm({
       title: '批量拒绝',
       content: (
         <Form form={rejectForm}>

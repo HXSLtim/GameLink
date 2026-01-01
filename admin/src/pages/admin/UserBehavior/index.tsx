@@ -2,7 +2,7 @@
  * 用户行为分析页面
  */
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Statistic, Spin, message, Select } from 'antd';
+import { Card, Row, Col, Statistic, Spin, Select, App } from 'antd';
 import {
     UserOutlined,
     ClockCircleOutlined,
@@ -38,6 +38,7 @@ interface DistributionData {
 }
 
 const UserBehaviorPage: React.FC = () => {
+    const { message } = App.useApp();
     const [loading, setLoading] = useState(false);
     const [stats, setStats] = useState<BehaviorStats | null>(null);
     const [trend, setTrend] = useState<TrendData[]>([]);

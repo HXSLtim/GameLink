@@ -25,6 +25,7 @@ import {
     Badge,
     Alert,
     DatePicker,
+    theme,
 } from 'antd';
 import {
     PlusOutlined,
@@ -70,6 +71,7 @@ const defaultRules: AlertRule[] = [
 ];
 
 const AdminAlert: React.FC = () => {
+    const { token } = theme.useToken();
     const [loading, setLoading] = useState(false);
     const [rules, setRules] = useState<AlertRule[]>(defaultRules);
     const [alerts, setAlerts] = useState<AlertType[]>([]);
@@ -329,7 +331,7 @@ const AdminAlert: React.FC = () => {
                         <Statistic
                             title="未读告警"
                             value={unreadCount}
-                            valueStyle={{ color: unreadCount > 0 ? '#ff4d4f' : '#52c41a' }}
+                            valueStyle={{ color: unreadCount > 0 ? token.colorError : token.colorSuccess }}
                             prefix={<Badge status={unreadCount > 0 ? 'error' : 'success'} />}
                         />
                     </Card>
@@ -342,7 +344,7 @@ const AdminAlert: React.FC = () => {
                         <Statistic
                             title="启用规则"
                             value={rules.filter(r => r.isActive).length}
-                            valueStyle={{ color: '#52c41a' }}
+                            valueStyle={{ color: token.colorSuccess }}
                         />
                     </Card>
                 </Col>

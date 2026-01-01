@@ -4,7 +4,7 @@
  */
 import React, { useMemo } from 'react';
 import type { ReactNode } from 'react';
-import { Card, Statistic, Tooltip, Skeleton } from 'antd';
+import { Card, Statistic, Tooltip, Skeleton, theme } from 'antd';
 import type { StatisticProps } from 'antd';
 import {
     ArrowUpOutlined,
@@ -42,12 +42,14 @@ export interface StatCardProps extends Omit<StatisticProps, 'title'> {
 
 /**
  * StatCard组件
+ * 优化: 使用 React.memo 避免不必要的重新渲染
+ * 适用场景: 在仪表盘中频繁使用，props 相同时不需要重新渲染
  */
-const StatCard: React.FC<StatCardProps> = ({
+const StatCard: React.FC<StatCardProps> = React.memo(({
     title,
     tooltip,
     icon,
-    iconBgColor = '#1890ff',
+    iconBgColor,
     trend,
     trendLabel = '较昨日',
     footer,
@@ -57,6 +59,8 @@ const StatCard: React.FC<StatCardProps> = ({
     animationDuration = ANIMATION_DURATION.number,
     ...statisticProps
 }) => {
+    const { token } = theme.useToken();
+
     // 提取数值用于动画
     const numericValue = useMemo(() => {
         if (typeof statisticProps.value === 'number') {
@@ -80,14 +84,14 @@ const StatCard: React.FC<StatCardProps> = ({
         if (!animated || loading) {
             return statisticProps.value;
         }
-        
+
         // 如果原始值是数字，使用动画值
         if (typeof statisticProps.value === 'number') {
             // 保持原始值的小数位数
             const decimals = statisticProps.precision ?? 0;
             return Number(animatedValue.toFixed(decimals));
         }
-        
+
         return statisticProps.value;
     }, [animated, loading, statisticProps.value, statisticProps.precision, animatedValue]);
 
@@ -97,7 +101,8 @@ const StatCard: React.FC<StatCardProps> = ({
         const isUp = trend > 0;
         const trendValue = Math.abs(trend);
         const TrendIcon = isUp ? ArrowUpOutlined : ArrowDownOutlined;
-        const trendColor = isUp ? '#52c41a' : '#ff4d4f';
+        // 使用主题 token 的颜色
+        const trendColor = isUp ? token.colorSuccess : token.colorError;
 
         return (
             <div className={styles.trend} style={{ color: trendColor }}>
@@ -130,7 +135,7 @@ const StatCard: React.FC<StatCardProps> = ({
                         {icon && (
                             <div
                                 className={styles.iconWrapper}
-                                style={{ backgroundColor: iconBgColor }}
+                                style={{ backgroundColor: iconBgColor || token.colorPrimary }}
                             >
                                 {icon}
                             </div>
@@ -151,6 +156,6 @@ const StatCard: React.FC<StatCardProps> = ({
             )}
         </Card>
     );
-};
+});
 
 export default StatCard;

@@ -35,8 +35,10 @@ export interface PageContainerProps {
 
 /**
  * PageContainer组件
+ * 优化: 使用 React.memo 避免不必要的重新渲染
+ * 适用场景: 纯展示型布局组件，props 相同时不需要重新渲染
  */
-const PageContainer: React.FC<PageContainerProps> = ({
+const PageContainer: React.FC<PageContainerProps> = React.memo(({
     title,
     subTitle,
     extra,
@@ -91,6 +93,6 @@ const PageContainer: React.FC<PageContainerProps> = ({
             <div className={styles.content}>{children}</div>
         </div>
     );
-};
+});
 
 export default PageContainer;

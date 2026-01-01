@@ -10,13 +10,13 @@ import {
   Space,
   Tag,
   Rate,
-  message,
   Modal,
   Input,
   Image,
   Typography,
   Alert,
   Switch,
+  App,
 } from 'antd';
 import {
   CheckOutlined,
@@ -34,6 +34,7 @@ const { TextArea } = Input;
 const { Text } = Typography;
 
 const ReviewModeration: React.FC = () => {
+  const { message, modal } = App.useApp();
   // 状态
   const [loading, setLoading] = useState(false);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -140,7 +141,7 @@ const ReviewModeration: React.FC = () => {
       message.warning('请选择要批准的评价');
       return;
     }
-    Modal.confirm({
+    modal.confirm({
       title: '批量批准',
       icon: <ExclamationCircleOutlined />,
       content: `确定要批准选中的 ${selectedRowKeys.length} 条评价吗？`,
@@ -333,7 +334,7 @@ const ReviewModeration: React.FC = () => {
       message.warning('没有不含敏感词的评价需要批准');
       return;
     }
-    Modal.confirm({
+    modal.confirm({
       title: '全部通过',
       icon: <ExclamationCircleOutlined />,
       content: `确定要批准所有不含敏感词的 ${nonSensitiveCount} 条评价吗？`,

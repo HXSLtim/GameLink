@@ -18,6 +18,7 @@ import {
     message,
     Badge,
     Progress,
+    theme,
 } from 'antd';
 import {
     DollarOutlined,
@@ -51,6 +52,7 @@ interface PendingOrder {
 }
 
 const PlayerHome: React.FC = () => {
+    const { token } = theme.useToken();
     const [loading, setLoading] = useState(false);
     const [isOnline, setIsOnline] = useState(true);
     const [stats, setStats] = useState<DashboardStats>({
@@ -165,7 +167,7 @@ const PlayerHome: React.FC = () => {
                             value={stats.todayEarnings}
                             prefix={<DollarOutlined />}
                             suffix="元"
-                            valueStyle={{ color: '#3f8600' }}
+                            valueStyle={{ color: token.colorSuccess }}
                         />
                     </Card>
                 </Col>
@@ -176,7 +178,7 @@ const PlayerHome: React.FC = () => {
                             value={stats.monthEarnings}
                             prefix={<DollarOutlined />}
                             suffix="元"
-                            valueStyle={{ color: '#1890ff' }}
+                            valueStyle={{ color: token.colorPrimary }}
                         />
                     </Card>
                 </Col>
@@ -196,7 +198,7 @@ const PlayerHome: React.FC = () => {
                             value={stats.rating}
                             prefix={<StarOutlined />}
                             precision={1}
-                            valueStyle={{ color: '#faad14' }}
+                            valueStyle={{ color: token.colorWarning }}
                         />
                     </Card>
                 </Col>

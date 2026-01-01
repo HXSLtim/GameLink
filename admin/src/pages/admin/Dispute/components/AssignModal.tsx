@@ -52,7 +52,7 @@ export const AssignModal: React.FC<AssignModalProps> = ({
         setLoading(true);
         try {
             // Fetch admin users (customer service staff)
-            const response = await adminApi.getUsers({ role: 'admin', page_size: 100 });
+            const response = await adminApi.getUsers({ role: ['admin'], page_size: 100 });
             if (response.data.success && response.data.data) {
                 const staff = response.data.data.map((user: { id: number; name: string; email?: string }) => ({
                     id: user.id,
@@ -71,7 +71,7 @@ export const AssignModal: React.FC<AssignModalProps> = ({
     const handleOk = async () => {
         try {
             const values = await form.validateFields();
-            onConfirm(values.assignedServiceId, values.originalServiceId);
+            onConfirm(values.assignedServiceId as number, values.originalServiceId as number | undefined);
         } catch {
             // Validation failed
         }

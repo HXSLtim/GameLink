@@ -166,9 +166,9 @@ const ConditionBuilder: React.FC<ConditionBuilderProps> = ({
                 <Input.Group compact>
                     <InputNumber
                         placeholder="最小值"
-                        value={Array.isArray(condition.value) ? condition.value[0] : undefined}
+                        value={Array.isArray(condition.value) ? Number(condition.value[0]) : undefined}
                         onChange={(val) => updateCondition(condition.id, {
-                            value: [val || 0, Array.isArray(condition.value) ? condition.value[1] : 0]
+                            value: [Number(val) || 0, Array.isArray(condition.value) ? Number(condition.value[1]) : 0]
                         })}
                         disabled={disabled}
                         style={{ width: '50%' }}
@@ -176,9 +176,9 @@ const ConditionBuilder: React.FC<ConditionBuilderProps> = ({
                     />
                     <InputNumber
                         placeholder="最大值"
-                        value={Array.isArray(condition.value) ? condition.value[1] : undefined}
+                        value={Array.isArray(condition.value) ? Number(condition.value[1]) : undefined}
                         onChange={(val) => updateCondition(condition.id, {
-                            value: [Array.isArray(condition.value) ? condition.value[0] : 0, (val || 0) as number]
+                            value: [Array.isArray(condition.value) ? Number(condition.value[0]) : 0, Number(val) || 0]
                         })}
                         disabled={disabled}
                         style={{ width: '50%' }}
@@ -223,7 +223,7 @@ const ConditionBuilder: React.FC<ConditionBuilderProps> = ({
                 <InputNumber
                     placeholder="输入数值"
                     value={typeof condition.value === 'number' ? condition.value : undefined}
-                    onChange={(val) => updateCondition(condition.id, { value: val || 0 })}
+                    onChange={(val) => updateCondition(condition.id, { value: Number(val) || 0 })}
                     disabled={disabled}
                     style={{ width: '100%' }}
                     min={0}

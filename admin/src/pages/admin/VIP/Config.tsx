@@ -173,7 +173,7 @@ const VIPConfigPage: React.FC = () => {
                                     style={{ width: '100%' }}
                                     placeholder="0"
                                     formatter={(value) => `¥ ${(value || 0) / 100}`}
-                                    parser={(value) => {
+                                    parser={(value: string | undefined) => {
                                         const num = parseFloat(value?.replace(/[¥\s]/g, '') || '0');
                                         return Math.round(num * 100);
                                     }}
@@ -192,7 +192,7 @@ const VIPConfigPage: React.FC = () => {
                                     style={{ width: '100%' }}
                                     placeholder="0"
                                     formatter={(value) => `¥ ${(value || 0) / 100}`}
-                                    parser={(value) => {
+                                    parser={(value: string | undefined) => {
                                         const num = parseFloat(value?.replace(/[¥\s]/g, '') || '0');
                                         return Math.round(num * 100);
                                     }}

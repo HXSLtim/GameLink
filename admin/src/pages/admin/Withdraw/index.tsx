@@ -9,13 +9,14 @@ import {
     Modal,
     Form,
     Input,
-    message,
     Descriptions,
     Statistic,
     Card,
     Row,
     Col,
     Radio,
+    App,
+    theme,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
@@ -61,6 +62,8 @@ const statusTextMap: Record<string, string> = {
  * 提现管理页面
  */
 const WithdrawPage: React.FC = () => {
+    const { message, modal } = App.useApp();
+    const { token } = theme.useToken();
     const [loading, setLoading] = useState(false);
     const [withdraws, setWithdraws] = useState<Withdraw[]>([]);
     const [total, setTotal] = useState(0);
@@ -111,7 +114,7 @@ const WithdrawPage: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }, [current, pageSize, searchParams]);
+    }, [current, message, pageSize, searchParams]);
 
     /**
      * 加载统计数据
@@ -160,7 +163,7 @@ const WithdrawPage: React.FC = () => {
      * 批准提现
      */
     const handleApprove = async (record: Withdraw) => {
-        Modal.confirm({
+        modal.confirm({
             title: '确认批准',
             content: `确定要批准该提现申请吗？金额：¥${(record.amountCents / 100).toFixed(2)}`,
             onOk: async () => {
@@ -210,7 +213,7 @@ const WithdrawPage: React.FC = () => {
      * 完成提现（打款）
      */
     const handleComplete = async (record: Withdraw) => {
-        Modal.confirm({
+        modal.confirm({
             title: '确认完成',
             content: `确定已完成打款吗？金额：¥${(record.amountCents / 100).toFixed(2)}`,
             onOk: async () => {
@@ -474,7 +477,7 @@ const WithdrawPage: React.FC = () => {
             key: 'amountCents',
             width: 120,
             render: (cents: number) => (
-                <span style={{ color: '#f5222d', fontWeight: 500 }}>
+                <span style={{ color: token.colorError, fontWeight: 500 }}>
                     ¥{(cents / 100).toFixed(2)}
                 </span>
             ),
@@ -583,7 +586,7 @@ const WithdrawPage: React.FC = () => {
                         <Statistic
                             title="待审核"
                             value={stats.pending}
-                            valueStyle={{ color: '#faad14' }}
+                            valueStyle={{ color: token.colorWarning }}
                         />
                     </Card>
                 </Col>
@@ -592,7 +595,7 @@ const WithdrawPage: React.FC = () => {
                         <Statistic
                             title="已批准待打款"
                             value={stats.approved}
-                            valueStyle={{ color: '#1890ff' }}
+                            valueStyle={{ color: token.colorPrimary }}
                         />
                     </Card>
                 </Col>
@@ -601,7 +604,7 @@ const WithdrawPage: React.FC = () => {
                         <Statistic
                             title="已完成"
                             value={stats.completed}
-                            valueStyle={{ color: '#52c41a' }}
+                            valueStyle={{ color: token.colorSuccess }}
                         />
                     </Card>
                 </Col>
@@ -660,7 +663,7 @@ const WithdrawPage: React.FC = () => {
                             {currentWithdraw.player?.nickname || `ID: ${currentWithdraw.playerId}`}
                         </Descriptions.Item>
                         <Descriptions.Item label="提现金额">
-                            <span style={{ color: '#f5222d', fontWeight: 500 }}>
+                            <span style={{ color: token.colorError, fontWeight: 500 }}>
                                 ¥{(currentWithdraw.amountCents / 100).toFixed(2)}
                             </span>
                         </Descriptions.Item>
@@ -675,7 +678,7 @@ const WithdrawPage: React.FC = () => {
                         </Descriptions.Item>
                         {currentWithdraw.status === 'rejected' && (
                             <Descriptions.Item label="拒绝原因" span={2}>
-                                <span style={{ color: '#f5222d' }}>{currentWithdraw.rejectReason}</span>
+                                <span style={{ color: token.colorError }}>{currentWithdraw.rejectReason}</span>
                             </Descriptions.Item>
                         )}
                         {currentWithdraw.processedAt && (
@@ -734,7 +737,7 @@ const WithdrawPage: React.FC = () => {
                         </Radio.Group>
                     </Form.Item>
                 </Form>
-                <div style={{ color: '#faad14', marginTop: 16 }}>
+                <div style={{ color: token.colorWarning, marginTop: 16 }}>
                     ⚠️ 提示：批准后提现将进入待打款状态
                 </div>
             </Modal>
@@ -762,7 +765,7 @@ const WithdrawPage: React.FC = () => {
                         <Input.TextArea rows={3} placeholder="请输入拒绝原因（选填）" />
                     </Form.Item>
                 </Form>
-                <div style={{ color: '#ff4d4f', marginTop: 16 }}>
+                <div style={{ color: token.colorError, marginTop: 16 }}>
                     ⚠️ 警告：此操作不可恢复，请谨慎操作！
                 </div>
             </Modal>
@@ -785,7 +788,7 @@ const WithdrawPage: React.FC = () => {
                         </Radio.Group>
                     </Form.Item>
                 </Form>
-                <div style={{ color: '#52c41a', marginTop: 16 }}>
+                <div style={{ color: token.colorSuccess, marginTop: 16 }}>
                     ✓ 确认已完成银行转账后再点击确认
                 </div>
             </Modal>

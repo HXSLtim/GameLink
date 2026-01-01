@@ -20,6 +20,7 @@ import {
     Switch,
     Modal,
     Divider,
+    theme,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
@@ -54,6 +55,7 @@ import { ActivityForm, RewardForm } from './components';
 const { Title, Text } = Typography;
 
 const ActivityPage: React.FC = () => {
+    const { token } = theme.useToken();
     const [loading, setLoading] = useState(false);
     const [activities, setActivities] = useState<Activity[]>([]);
     const [stats, setStats] = useState<AllActivityStats | null>(null);
@@ -587,7 +589,7 @@ const ActivityPage: React.FC = () => {
                         <Statistic
                             title="进行中"
                             value={stats?.activeActivities || 0}
-                            valueStyle={{ color: '#3f8600' }}
+                            valueStyle={{ color: token.colorSuccess }}
                         />
                     </Card>
                 </Col>
@@ -596,7 +598,7 @@ const ActivityPage: React.FC = () => {
                         <Statistic
                             title="草稿"
                             value={stats?.draftActivities || 0}
-                            valueStyle={{ color: '#faad14' }}
+                            valueStyle={{ color: token.colorWarning }}
                         />
                     </Card>
                 </Col>
@@ -605,7 +607,7 @@ const ActivityPage: React.FC = () => {
                         <Statistic
                             title="总参与"
                             value={stats?.totalParticipants || 0}
-                            valueStyle={{ color: '#1890ff' }}
+                            valueStyle={{ color: token.colorPrimary }}
                         />
                     </Card>
                 </Col>

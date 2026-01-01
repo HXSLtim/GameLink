@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Table, Card, Button, Space, Tag, Input, Select,
-  Modal, message, Form, InputNumber, Popconfirm,
+  Modal, Form, InputNumber, Popconfirm, App,
 } from 'antd';
 import {
   SearchOutlined, PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined,
@@ -18,6 +18,7 @@ import { CATEGORY_STATUS_TEXT, CATEGORY_STATUS_COLOR } from '@/types/content';
 const { TextArea } = Input;
 
 const CategoriesPage: React.FC = () => {
+  const { message, modal } = App.useApp();
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<ContentCategory[]>([]);
   const [total, setTotal] = useState(0);
@@ -97,7 +98,7 @@ const CategoriesPage: React.FC = () => {
   const handleDelete = async (id: number, feedCount?: number) => {
     if (feedCount && feedCount > 0) {
       // 如果分类下有动态，需要选择迁移目标
-      Modal.confirm({
+      modal.confirm({
         title: '删除分类',
         content: `该分类下有 ${feedCount} 条动态，请选择迁移目标分类或直接删除（动态将变为无分类）`,
         okText: '直接删除',

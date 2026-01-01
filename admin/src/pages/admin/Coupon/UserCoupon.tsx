@@ -18,6 +18,7 @@ import {
     Select,
     Modal,
     Descriptions,
+    theme,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
@@ -42,6 +43,7 @@ import { adminApi } from '@/api/admin';
 const { Title, Text } = Typography;
 
 const UserCouponPage: React.FC = () => {
+    const { token } = theme.useToken();
     const [loading, setLoading] = useState(false);
     const [coupons, setCoupons] = useState<CouponWithTemplate[]>([]);
     const [total, setTotal] = useState(0);
@@ -261,7 +263,7 @@ const UserCouponPage: React.FC = () => {
                         <Statistic
                             title="可用"
                             value={stats.available}
-                            valueStyle={{ color: '#3f8600' }}
+                            valueStyle={{ color: token.colorSuccess }}
                         />
                     </Card>
                 </Col>
@@ -270,7 +272,7 @@ const UserCouponPage: React.FC = () => {
                         <Statistic
                             title="已使用"
                             value={stats.used}
-                            valueStyle={{ color: '#1890ff' }}
+                            valueStyle={{ color: token.colorPrimary }}
                         />
                     </Card>
                 </Col>
@@ -279,7 +281,7 @@ const UserCouponPage: React.FC = () => {
                         <Statistic
                             title="已锁定"
                             value={stats.locked}
-                            valueStyle={{ color: '#faad14' }}
+                            valueStyle={{ color: token.colorWarning }}
                         />
                     </Card>
                 </Col>
@@ -288,7 +290,7 @@ const UserCouponPage: React.FC = () => {
                         <Statistic
                             title="已过期"
                             value={stats.expired}
-                            valueStyle={{ color: '#8c8c8c' }}
+                            valueStyle={{ color: token.colorTextSecondary }}
                         />
                     </Card>
                 </Col>

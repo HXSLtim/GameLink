@@ -20,9 +20,9 @@ import {
   Modal,
   Form,
   InputNumber,
-  message,
   Tooltip,
   Tag,
+  App,
 } from 'antd';
 import {
   RiseOutlined,
@@ -93,6 +93,7 @@ const METRIC_CONFIG: Record<string, { label: string; icon: React.ReactNode; unit
  * KPI 仪表板页面组件
  */
 const KPIDashboard: React.FC = () => {
+  const { message, modal } = App.useApp();
   const { token } = theme.useToken();
   const [form] = Form.useForm();
 
@@ -322,7 +323,7 @@ const KPIDashboard: React.FC = () => {
    * 删除目标
    */
   const handleDeleteTarget = async (id: number) => {
-    Modal.confirm({
+    modal.confirm({
       title: '确认删除',
       content: '确定要删除这个 KPI 目标吗？',
       onOk: async () => {

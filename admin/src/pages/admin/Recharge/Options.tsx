@@ -31,6 +31,7 @@ import {
 import { rechargeApi, type RechargeOption, type RechargeOptionQueryParams } from '@/api/recharge';
 import { RECHARGE_PERMISSIONS } from '@/constants/permissions';
 import { PermissionGuard } from '@/components/PermissionGuard';
+import { MONEY, PAGINATION, LAYOUT, SIZES, TABLE, MODAL, COLORS, BUSINESS } from '@/constants/common';
 import OptionForm from './components/OptionForm';
 import dayjs from 'dayjs';
 
@@ -169,21 +170,21 @@ const RechargeOptions: React.FC<OptionsProps> = ({ onStatsUpdate }) => {
             title: 'ID',
             dataIndex: 'id',
             key: 'id',
-            width: 70,
+            width: TABLE.COLUMN_WIDTH.SMALL,
         },
         {
             title: '图标',
             dataIndex: 'iconUrl',
             key: 'iconUrl',
-            width: 70,
+            width: TABLE.COLUMN_WIDTH.SMALL,
             render: (iconUrl: string) => (
                 <Image
                     src={iconUrl}
                     alt="icon"
-                    width={40}
-                    height={40}
+                    width={SIZES.AVATAR.MEDIUM}
+                    height={SIZES.AVATAR.MEDIUM}
                     preview={false}
-                    style={{ borderRadius: 8 }}
+                    style={{ borderRadius: SIZES.IMAGE_BORDER_RADIUS }}
                     fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
                 />
             ),
@@ -192,7 +193,7 @@ const RechargeOptions: React.FC<OptionsProps> = ({ onStatsUpdate }) => {
             title: '名称',
             dataIndex: 'name',
             key: 'name',
-            width: 150,
+            width: TABLE.COLUMN_WIDTH.XXLARGE,
             render: (name: string, record) => (
                 <div>
                     <div style={{ fontWeight: 500 }}>{name}</div>
@@ -207,15 +208,15 @@ const RechargeOptions: React.FC<OptionsProps> = ({ onStatsUpdate }) => {
         {
             title: '充值金额',
             key: 'amount',
-            width: 150,
+            width: TABLE.COLUMN_WIDTH.XXLARGE,
             render: (_, record) => (
                 <div>
-                    <div style={{ fontWeight: 500, color: '#1890ff' }}>
-                        ¥{(record.amountCents / 100).toFixed(2)}
+                    <div style={{ fontWeight: 500, color: COLORS.INFO }}>
+                        ¥{(record.amountCents / MONEY.YUAN_TO_FEN).toFixed(BUSINESS.PRECISION.AMOUNT)}
                     </div>
                     {record.originalCents && record.originalCents > record.amountCents && (
-                        <Text delete type="secondary" style={{ fontSize: 12 }}>
-                            ¥{(record.originalCents / 100).toFixed(2)}
+                        <Text delete type="secondary" style={{ fontSize: SIZES.SECONDARY_FONT_SIZE }}>
+                            ¥{(record.originalCents / MONEY.YUAN_TO_FEN).toFixed(BUSINESS.PRECISION.AMOUNT)}
                         </Text>
                     )}
                 </div>
@@ -225,13 +226,13 @@ const RechargeOptions: React.FC<OptionsProps> = ({ onStatsUpdate }) => {
             title: '赠送金额',
             dataIndex: 'bonusCents',
             key: 'bonusCents',
-            width: 100,
+            width: TABLE.COLUMN_WIDTH.XLARGE,
             render: (cents: number) => (
-                <div style={{ color: '#52c41a', fontWeight: 500 }}>
+                <div style={{ color: COLORS.SUCCESS, fontWeight: 500 }}>
                     {cents > 0 ? (
                         <>
                             <GiftOutlined style={{ marginRight: 4 }} />
-                            ¥{(cents / 100).toFixed(2)}
+                            ¥{(cents / MONEY.YUAN_TO_FEN).toFixed(BUSINESS.PRECISION.AMOUNT)}
                         </>
                     ) : (
                         '-'
@@ -243,10 +244,10 @@ const RechargeOptions: React.FC<OptionsProps> = ({ onStatsUpdate }) => {
             title: '折扣',
             dataIndex: 'discountPercent',
             key: 'discountPercent',
-            width: 80,
+            width: TABLE.COLUMN_WIDTH.LARGE,
             render: (percent?: number) => {
                 if (percent && percent > 0) {
-                    return <Tag color="red">{(percent * 100).toFixed(0)}% OFF</Tag>;
+                    return <Tag color="red">{(percent * 100).toFixed(BUSINESS.PRECISION.PERCENT)}% OFF</Tag>;
                 }
                 return '-';
             },
@@ -254,7 +255,7 @@ const RechargeOptions: React.FC<OptionsProps> = ({ onStatsUpdate }) => {
         {
             title: '优惠券',
             key: 'coupon',
-            width: 120,
+            width: TABLE.COLUMN_WIDTH.XXLARGE,
             render: (_, record) => {
                 if (record.couponCount > 0) {
                     return (
@@ -272,7 +273,7 @@ const RechargeOptions: React.FC<OptionsProps> = ({ onStatsUpdate }) => {
             title: 'VIP等级限制',
             dataIndex: 'minVipLevel',
             key: 'minVipLevel',
-            width: 100,
+            width: TABLE.COLUMN_WIDTH.XLARGE,
             render: (level?: number) => {
                 if (level !== undefined && level !== null) {
                     return (
@@ -288,15 +289,15 @@ const RechargeOptions: React.FC<OptionsProps> = ({ onStatsUpdate }) => {
             title: '排序',
             dataIndex: 'sortOrder',
             key: 'sortOrder',
-            width: 70,
-            render: (order: number) => (
+            width: TABLE.COLUMN_WIDTH.SMALL,
+            render: (_: unknown, record: RechargeOption) => (
                 <InputNumber
                     size="small"
-                    value={order}
+                    value={record.sortOrder}
                     min={0}
-                    style={{ width: 60 }}
+                    style={{ width: TABLE.COLUMN_WIDTH.SMALL - 10 }}
                     onChange={async (value) => {
-                        if (value !== null && value !== order) {
+                        if (value !== null && value !== record.sortOrder) {
                             try {
                                 await rechargeApi.updateRechargeOption(record.id, { ...record, sortOrder: value });
                                 message.success('排序已更新');
@@ -313,7 +314,7 @@ const RechargeOptions: React.FC<OptionsProps> = ({ onStatsUpdate }) => {
             title: '推荐',
             dataIndex: 'isRecommended',
             key: 'isRecommended',
-            width: 80,
+            width: TABLE.COLUMN_WIDTH.LARGE,
             render: (recommended: boolean) =>
                 recommended ? (
                     <Tag color="gold" icon={<StarOutlined />}>
@@ -327,7 +328,7 @@ const RechargeOptions: React.FC<OptionsProps> = ({ onStatsUpdate }) => {
             title: '状态',
             dataIndex: 'isActive',
             key: 'isActive',
-            width: 90,
+            width: TABLE.COLUMN_WIDTH.MEDIUM,
             render: (isActive: boolean) => (
                 <Tag color={isActive ? 'success' : 'default'}>
                     {isActive ? '启用' : '禁用'}
@@ -338,13 +339,13 @@ const RechargeOptions: React.FC<OptionsProps> = ({ onStatsUpdate }) => {
             title: '创建时间',
             dataIndex: 'createdAt',
             key: 'createdAt',
-            width: 180,
+            width: TABLE.COLUMN_WIDTH.XXXLARGE,
             render: (date: string) => dayjs(date).format('YYYY-MM-DD HH:mm:ss'),
         },
         {
             title: '操作',
             key: 'action',
-            width: 180,
+            width: TABLE.COLUMN_WIDTH.ACTION,
             fixed: 'right',
             render: (_, record) => (
                 <Space size="small">
@@ -392,7 +393,7 @@ const RechargeOptions: React.FC<OptionsProps> = ({ onStatsUpdate }) => {
     return (
         <>
             {/* 操作栏 */}
-            <Card style={{ marginBottom: 16 }}>
+            <Card style={{ marginBottom: LAYOUT.CARD_MARGIN }}>
                 <Space wrap>
                     <Button icon={<ReloadOutlined />} onClick={loadData} loading={loading}>
                         刷新
@@ -411,7 +412,7 @@ const RechargeOptions: React.FC<OptionsProps> = ({ onStatsUpdate }) => {
                 dataSource={options}
                 rowKey="id"
                 loading={loading}
-                scroll={{ x: 1600 }}
+                scroll={{ x: TABLE.SCROLL_WIDTH.LARGE }}
                 pagination={{
                     current,
                     pageSize,

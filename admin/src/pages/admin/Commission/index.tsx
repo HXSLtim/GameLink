@@ -13,13 +13,14 @@ import {
     Input,
     InputNumber,
     Select,
-    message,
     DatePicker,
     Table,
     Space,
     Typography,
     Divider,
     Alert,
+    App,
+    theme,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
@@ -52,6 +53,8 @@ interface CommissionRule {
  * 佣金管理页面
  */
 const CommissionPage: React.FC = () => {
+    const { message, modal } = App.useApp();
+    const { token } = theme.useToken();
     const [loading, setLoading] = useState(false);
     const [stats, setStats] = useState<PlatformStats | null>(null);
     const [selectedMonth, setSelectedMonth] = useState(dayjs().format('YYYY-MM'));
@@ -91,7 +94,7 @@ const CommissionPage: React.FC = () => {
      * 触发结算
      */
     const handleTriggerSettlement = async () => {
-        Modal.confirm({
+        modal.confirm({
             title: '确认触发结算',
             content: `确定要触发 ${selectedMonth} 的月度结算吗？此操作将计算所有陪玩师的收益。`,
             onOk: async () => {
@@ -261,7 +264,7 @@ const CommissionPage: React.FC = () => {
                             value={stats?.totalRevenueCents ? stats.totalRevenueCents / 100 : 0}
                             precision={2}
                             prefix="¥"
-                            valueStyle={{ color: '#3f8600' }}
+                            valueStyle={{ color: token.colorSuccess }}
                         />
                     </Card>
                 </Col>
@@ -272,7 +275,7 @@ const CommissionPage: React.FC = () => {
                             value={stats?.totalCommissionCents ? stats.totalCommissionCents / 100 : 0}
                             precision={2}
                             prefix="¥"
-                            valueStyle={{ color: '#1890ff' }}
+                            valueStyle={{ color: token.colorPrimary }}
                         />
                     </Card>
                 </Col>
@@ -289,7 +292,7 @@ const CommissionPage: React.FC = () => {
                         <Statistic
                             title="完成订单数"
                             value={stats?.completedOrderCount || 0}
-                            valueStyle={{ color: '#52c41a' }}
+                            valueStyle={{ color: token.colorSuccess }}
                         />
                     </Card>
                 </Col>

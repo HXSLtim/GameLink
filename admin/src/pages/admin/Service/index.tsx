@@ -15,9 +15,10 @@ import {
     InputNumber,
     Select,
     Switch,
-    message,
+    App,
     Popconfirm,
     Typography,
+    theme,
     Row,
     Col,
     Statistic,
@@ -69,6 +70,8 @@ const subCategoryMap: Record<string, string> = {
 };
 
 const AdminService: React.FC = () => {
+    const { message } = App.useApp();
+    const { token } = theme.useToken();
     const [loading, setLoading] = useState(false);
     const [services, setServices] = useState<ServiceItem[]>([]);
     const [games, setGames] = useState<Game[]>([]);
@@ -85,10 +88,15 @@ const AdminService: React.FC = () => {
         try {
             const res = await adminApi.getGames({ page_size: 100 });
             if (res.data?.success && res.data?.data) {
-                setGames(res.data.data.map((g: { id: number; name: string }) => ({ id: g.id, name: g.name })));
+                const data = res.data.data;
+                const gameList = Array.isArray(data) ? data : [];
+                setGames(gameList.map((g: { id: number; name: string }) => ({ id: g.id, name: g.name })));
+            } else {
+                setGames([]);
             }
         } catch (err) {
             console.error('加载游戏列表失败:', err);
+            setGames([]);
         }
     }, []);
 
@@ -106,20 +114,31 @@ const AdminService: React.FC = () => {
             const res = await adminApi.getServiceItems(params);
             if (res.data?.success) {
                 const data = res.data.data;
-                // 处理不同的响应格式
-                const items = Array.isArray(data) ? data : (data as { items?: ServiceItem[] })?.items || [];
+                // 处理不同的响应格式，确保返回数组
+                let items: ServiceItem[] = [];
+                if (Array.isArray(data)) {
+                    items = data;
+                } else if (data && typeof data === 'object') {
+                    items = Array.isArray((data as { items?: ServiceItem[] }).items) 
+                        ? (data as { items: ServiceItem[] }).items 
+                        : [];
+                }
                 setServices(items);
                 setTotal(res.data.pagination?.total || items.length || 0);
             } else {
                 message.error(res.data?.message || '加载失败');
+                setServices([]);
+                setTotal(0);
             }
         } catch (err) {
             console.error('加载服务项目失败:', err);
             message.error('加载数据失败');
+            setServices([]);
+            setTotal(0);
         } finally {
             setLoading(false);
         }
-    }, [current, pageSize, filters]);
+    }, [current, pageSize, filters, message]);
 
     useEffect(() => {
         loadGames();
@@ -319,7 +338,7 @@ const AdminService: React.FC = () => {
                 </Col>
                 <Col xs={12} sm={6}>
                     <Card style={{ minHeight: 120 }}>
-                        <Statistic title="已启用" value={stats.active} valueStyle={{ color: '#3f8600' }} />
+                        <Statistic title="已启用" value={stats.active} valueStyle={{ color: token.colorSuccess }} />
                     </Card>
                 </Col>
             </Row>

@@ -18,6 +18,7 @@ import {
     Statistic,
     Form,
     Select,
+    theme,
     Radio,
     InputNumber,
     List,
@@ -40,6 +41,7 @@ import {
 } from '@ant-design/icons';
 import { PageContainer, SearchTable, type ToolbarButton } from '@/components';
 import type { SearchField } from '@/components';
+import { StateContainer } from '@/components/common/StateContainer';
 import { teamApi, type Team, type TeamStats, type TeamMember, type BatchOperationResponse } from '@/api/team';
 import TeamForm from './components/TeamForm';
 import MemberCard from './components/MemberCard';
@@ -68,6 +70,7 @@ const shareTypeMap: Record<'equal' | 'custom', { text: string }> = {
  * 团队管理页面
  */
 const TeamPage: React.FC = () => {
+    const { token } = theme.useToken();
     const [loading, setLoading] = useState(false);
     const [teams, setTeams] = useState<Team[]>([]);
     const [total, setTotal] = useState(0);
@@ -75,6 +78,7 @@ const TeamPage: React.FC = () => {
     const [pageSize, setPageSize] = useState(10);
     const [searchParams, setSearchParams] = useState<Record<string, unknown>>({});
     const [stats, setStats] = useState<TeamStats | null>(null);
+    const [loadError, setLoadError] = useState<string | null>(null);
 
     // 弹窗状态
     const [formVisible, setFormVisible] = useState(false);
@@ -98,6 +102,7 @@ const TeamPage: React.FC = () => {
      */
     const loadData = useCallback(async (params?: Record<string, unknown>) => {
         setLoading(true);
+        setLoadError(null);
         try {
             const queryParams = {
                 page: current,
@@ -110,10 +115,12 @@ const TeamPage: React.FC = () => {
                 setTeams(response.data.data?.items || []);
                 setTotal(response.data.data?.pagination?.total || 0);
             } else {
+                setLoadError(response.data.message || '加载失败');
                 message.error(response.data.message || '加载失败');
             }
         } catch (error) {
             console.error('Load teams error:', error);
+            setLoadError('加载团队列表失败');
             message.error('加载团队列表失败');
         } finally {
             setLoading(false);
@@ -557,7 +564,7 @@ const TeamPage: React.FC = () => {
                 stats && (
                     <Space size="large">
                         <Statistic title="总团队数" value={stats.totalTeams} />
-                        <Statistic title="活跃团队" value={stats.activeTeams} valueStyle={{ color: '#52c41a' }} />
+                        <Statistic title="活跃团队" value={stats.activeTeams} valueStyle={{ color: token.colorSuccess }} />
                         <Statistic title="总成员数" value={stats.totalMembers} />
                     </Space>
                 )
@@ -710,20 +717,22 @@ const TeamPage: React.FC = () => {
                         </div>
 
                         <div style={{ maxHeight: 400, overflowY: 'auto' }}>
-                            {currentTeam.members && currentTeam.members.length > 0 ? (
-                                currentTeam.members.map(member => (
+                            <StateContainer
+                                data={currentTeam.members}
+                                emptyType="no-data"
+                                emptyTitle="暂无成员"
+                                emptyDescription="点击上方按钮添加团队成员"
+                                loadingConfig={{ card: false, rows: 2 }}
+                            >
+                                {currentTeam.members?.map(member => (
                                     <MemberCard
                                         key={member.id}
                                         member={member}
                                         onRemove={handleRemoveMember}
                                         onTransfer={handleTransferLeader}
                                     />
-                                ))
-                            ) : (
-                                <div style={{ textAlign: 'center', padding: 24, color: '#999' }}>
-                                    暂无成员
-                                </div>
-                            )}
+                                ))}
+                            </StateContainer>
                         </div>
                     </>
                 )}

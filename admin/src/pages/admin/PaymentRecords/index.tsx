@@ -3,7 +3,7 @@
  * Display all payment records in the system
  */
 import React, { useState, useEffect } from 'react';
-import { Card, Table, Tag, Space, Button, Input, DatePicker, Select, message, Statistic, Row, Col } from 'antd';
+import { Card, Table, Tag, Space, Button, Input, DatePicker, Select, Statistic, Row, Col, App } from 'antd';
 import { SearchOutlined, ReloadOutlined, DownloadOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
@@ -24,6 +24,7 @@ interface PaymentRecord {
 }
 
 const PaymentRecords: React.FC = () => {
+    const { message } = App.useApp();
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState<PaymentRecord[]>([]);
     const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });

@@ -19,6 +19,7 @@ import {
     message,
 } from 'antd';
 import dayjs from 'dayjs';
+import type { Dayjs } from 'dayjs';
 import {
     type CouponType,
     type CouponScope,
@@ -31,6 +32,7 @@ import {
     yuanToCents,
     parseJsonArray,
 } from '@/api/coupon';
+import { MONEY, LAYOUT, TABLE, MODAL, TEXT, BUSINESS } from '@/constants/common';
 
 const { TextArea } = Input;
 const { Text } = Typography;
@@ -44,6 +46,11 @@ interface TemplateFormProps {
     onSubmit: (values: CreateTemplateDto) => Promise<void>;
 }
 
+// Form-specific type with dayjs for DatePicker
+interface TemplateFormData extends Omit<CreateTemplateDto, 'fixedExpireAt'> {
+    fixedExpireAt?: Dayjs;
+}
+
 const TemplateForm: React.FC<TemplateFormProps> = ({
     visible,
     editing,
@@ -52,7 +59,7 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
     onCancel,
     onSubmit,
 }) => {
-    const [form] = Form.useForm<CreateTemplateDto>();
+    const [form] = Form.useForm<TemplateFormData>();
     const couponType = Form.useWatch('type', form);
     const couponScope = Form.useWatch('scope', form);
     const validityType = Form.useWatch('validityType', form);
@@ -66,22 +73,23 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
                 scope: 'all' as CouponScope,
                 source: 'manual' as CouponSource,
                 validityType: 'days' as ValidityType,
-                validityDays: 30,
-                perUserLimit: 1,
-                totalCount: 100,
-                minAmountCents: yuanToCents(0),
-                deductAmountCents: yuanToCents(10),
-                discountRate: 0.9,
-                maxDiscountCents: yuanToCents(50),
+                validityDays: MONEY.DEFAULT_VALIDITY_DAYS,
+                perUserLimit: MONEY.DEFAULT_PER_USER_LIMIT,
+                totalCount: MONEY.DEFAULT_TOTAL_COUNT,
+                minAmountCents: yuanToCents(MONEY.DEFAULT_MIN_AMOUNT),
+                deductAmountCents: yuanToCents(MONEY.DEFAULT_DEDUCT_AMOUNT),
+                discountRate: BUSINESS.DISCOUNT_RATE_STEP,
+                maxDiscountCents: yuanToCents(MONEY.DEFAULT_MAX_DISCOUNT),
                 isActive: true,
             });
         } else if (visible && editing && initialValues) {
             form.setFieldsValue({
                 ...initialValues,
-                fixedExpireAt: initialValues.fixedExpireAt
-                    ? dayjs(initialValues.fixedExpireAt)
-                    : undefined,
             });
+            // Fix: Convert dayjs to string for form field values
+            form.setFieldValue('fixedExpireAt', initialValues.fixedExpireAt
+                ? dayjs(initialValues.fixedExpireAt)
+                : undefined);
         }
     }, [visible, editing, initialValues, form]);
 
@@ -100,7 +108,7 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
                     ? yuanToCents(values.maxDiscountCents as number)
                     : 0,
                 fixedExpireAt: values.fixedExpireAt
-                    ? (values.fixedExpireAt as dayjs.Dayjs).format('YYYY-MM-DD HH:mm:ss')
+                    ? dayjs(values.fixedExpireAt as any).format('YYYY-MM-DD HH:mm:ss')
                     : undefined,
             };
             await onSubmit(data);
@@ -116,7 +124,7 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
             onOk={handleOk}
             onCancel={onCancel}
             confirmLoading={loading}
-            width={700}
+            width={MODAL.WIDTH.XLARGE}
             okText="保存"
             cancelText="取消"
         >
@@ -126,19 +134,19 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
                 autoComplete="off"
             >
                 {/* Basic Information */}
-                <Divider orientation="left">基本信息</Divider>
+                <Divider>基本信息</Divider>
 
-                <Row gutter={16}>
-                    <Col span={12}>
+                <Row gutter={LAYOUT.GUTTER}>
+                    <Col span={TABLE.COL_SPAN.HALF}>
                         <Form.Item
                             name="name"
                             label="优惠券名称"
                             rules={[{ required: true, message: '请输入优惠券名称' }]}
                         >
-                            <Input placeholder="如：新人满减券" maxLength={50} />
+                            <Input placeholder="如：新人满减券" maxLength={MONEY.COUPON_NAME_MAX_LENGTH} />
                         </Form.Item>
                     </Col>
-                    <Col span={12}>
+                    <Col span={TABLE.COL_SPAN.HALF}>
                         <Form.Item
                             name="type"
                             label="优惠券类型"
@@ -155,8 +163,8 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
                     </Col>
                 </Row>
 
-                <Row gutter={16}>
-                    <Col span={12}>
+                <Row gutter={LAYOUT.GUTTER}>
+                    <Col span={TABLE.COL_SPAN.HALF}>
                         <Form.Item
                             name="source"
                             label="发放来源"
@@ -176,7 +184,7 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
                             />
                         </Form.Item>
                     </Col>
-                    <Col span={12}>
+                    <Col span={TABLE.COL_SPAN.HALF}>
                         <Form.Item
                             name="scope"
                             label="适用范围"
@@ -199,18 +207,18 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
                     label="优惠券描述"
                 >
                     <TextArea
-                        rows={2}
+                        rows={BUSINESS.FORM_ROWS.DEFAULT}
                         placeholder="请输入优惠券使用说明"
-                        maxLength={200}
+                        maxLength={MONEY.COUPON_DESC_MAX_LENGTH}
                     />
                 </Form.Item>
 
                 {/* Discount Configuration */}
-                <Divider orientation="left">优惠配置</Divider>
+                <Divider>优惠配置</Divider>
 
                 {couponType === 'deduct' && (
-                    <Row gutter={16}>
-                        <Col span={12}>
+                    <Row gutter={LAYOUT.GUTTER}>
+                        <Col span={TABLE.COL_SPAN.HALF}>
                             <Form.Item
                                 name="deductAmountCents"
                                 label="减免金额（元）"
@@ -219,13 +227,13 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
                             >
                                 <InputNumber
                                     min={0}
-                                    precision={2}
+                                    precision={BUSINESS.PRECISION.AMOUNT}
                                     style={{ width: '100%' }}
                                     placeholder="如：10"
                                 />
                             </Form.Item>
                         </Col>
-                        <Col span={12}>
+                        <Col span={TABLE.COL_SPAN.HALF}>
                             <Form.Item
                                 name="minAmountCents"
                                 label="最低消费（元）"
@@ -234,7 +242,7 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
                             >
                                 <InputNumber
                                     min={0}
-                                    precision={2}
+                                    precision={BUSINESS.PRECISION.AMOUNT}
                                     style={{ width: '100%' }}
                                     placeholder="如：100"
                                 />
@@ -244,8 +252,8 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
                 )}
 
                 {couponType === 'discount' && (
-                    <Row gutter={16}>
-                        <Col span={12}>
+                    <Row gutter={LAYOUT.GUTTER}>
+                        <Col span={TABLE.COL_SPAN.HALF}>
                             <Form.Item
                                 name="discountRate"
                                 label="折扣率（0-1）"
@@ -254,16 +262,16 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
                                 extra="如：0.9 表示 9 折"
                             >
                                 <InputNumber
-                                    min={0.1}
-                                    max={1}
-                                    step={0.1}
-                                    precision={2}
+                                    min={MONEY.MIN_DISCOUNT_RATE}
+                                    max={MONEY.MAX_DISCOUNT_RATE}
+                                    step={MONEY.DISCOUNT_RATE_STEP}
+                                    precision={BUSINESS.PRECISION.RATE}
                                     style={{ width: '100%' }}
                                     placeholder="如：0.9"
                                 />
                             </Form.Item>
                         </Col>
-                        <Col span={12}>
+                        <Col span={TABLE.COL_SPAN.HALF}>
                             <Form.Item
                                 name="maxDiscountCents"
                                 label="最大优惠金额（元）"
@@ -271,13 +279,13 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
                             >
                                 <InputNumber
                                     min={0}
-                                    precision={2}
+                                    precision={BUSINESS.PRECISION.AMOUNT}
                                     style={{ width: '100%' }}
                                     placeholder="如：50（0表示不限制）"
                                 />
                             </Form.Item>
                         </Col>
-                        <Col span={12}>
+                        <Col span={TABLE.COL_SPAN.HALF}>
                             <Form.Item
                                 name="minAmountCents"
                                 label="最低消费（元）"
@@ -286,7 +294,7 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
                             >
                                 <InputNumber
                                     min={0}
-                                    precision={2}
+                                    precision={BUSINESS.PRECISION.AMOUNT}
                                     style={{ width: '100%' }}
                                     placeholder="如：100"
                                 />
@@ -307,7 +315,7 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
                 )}
 
                 {/* Validity Configuration */}
-                <Divider orientation="left">有效期配置</Divider>
+                <Divider>有效期配置</Divider>
 
                 <Form.Item
                     name="validityType"
@@ -331,7 +339,7 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
                     >
                         <InputNumber
                             min={1}
-                            max={365}
+                            max={MONEY.MAX_VALIDITY_DAYS}
                             style={{ width: '100%' }}
                             placeholder="如：30"
                             addonAfter="天"
@@ -355,10 +363,10 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
                 )}
 
                 {/* Claim Configuration */}
-                <Divider orientation="left">发放配置</Divider>
+                <Divider>发放配置</Divider>
 
-                <Row gutter={16}>
-                    <Col span={12}>
+                <Row gutter={LAYOUT.GUTTER}>
+                    <Col span={TABLE.COL_SPAN.HALF}>
                         <Form.Item
                             name="totalCount"
                             label="发放总数"
@@ -366,13 +374,13 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
                         >
                             <InputNumber
                                 min={1}
-                                max={1000000}
+                                max={MONEY.MAX_TOTAL_COUNT}
                                 style={{ width: '100%' }}
                                 placeholder="如：100"
                             />
                         </Form.Item>
                     </Col>
-                    <Col span={12}>
+                    <Col span={TABLE.COL_SPAN.HALF}>
                         <Form.Item
                             name="perUserLimit"
                             label="每人限领"
@@ -381,7 +389,7 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
                         >
                             <InputNumber
                                 min={0}
-                                max={100}
+                                max={MONEY.MAX_PER_USER_LIMIT}
                                 style={{ width: '100%' }}
                                 placeholder="如：1"
                             />
@@ -398,7 +406,7 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
                 </Form.Item>
 
                 {/* Status */}
-                <Divider orientation="left">状态</Divider>
+                <Divider>状态</Divider>
 
                 <Form.Item
                     name="isActive"

@@ -1,5 +1,6 @@
 /**
  * StatCard样式
+ * 使用 Ant Design CSS 变量以支持主题切换
  */
 
 .card {
@@ -25,12 +26,14 @@
 
 .title {
     font-size: 14px;
-    color: var(--text-muted);
+    /* 使用 Ant Design 的次要文本颜色变量 */
+    color: var(--ant-color-text-secondary);
 }
 
 .infoIcon {
     font-size: 12px;
-    color: var(--text-muted);
+    /* 使用 Ant Design 的次要文本颜色变量 */
+    color: var(--ant-color-text-secondary);
     cursor: help;
 }
 
@@ -59,7 +62,8 @@
     align-items: center;
     gap: 8px;
     padding-top: 12px;
-    border-top: 1px solid var(--background-modifier-active);
+    /* 使用 Ant Design 的边框颜色变量 */
+    border-top: 1px solid var(--ant-color-border);
 }
 
 .trend {
@@ -70,11 +74,13 @@
 }
 
 .trendLabel {
-    color: var(--text-muted);
+    /* 使用 Ant Design 的次要文本颜色变量 */
+    color: var(--ant-color-text-secondary);
     margin-left: 4px;
 }
 
 .footerContent {
     font-size: 14px;
-    color: var(--text-muted);
+    /* 使用 Ant Design 的次要文本颜色变量 */
+    color: var(--ant-color-text-secondary);
 }

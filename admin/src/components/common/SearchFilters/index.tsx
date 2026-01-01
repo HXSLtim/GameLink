@@ -2,7 +2,8 @@
  * 统一的搜索/筛选组件
  * 标准化所有 CRUD 页面的筛选区域布局
  */
-import React, { ReactNode } from 'react';
+import React from 'react';
+import type { ReactNode } from 'react';
 import { Card, Row, Col, Space, Button, Segmented, Input, Select, DatePicker } from 'antd';
 import { ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 
@@ -88,7 +89,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
                     <RangePicker
                         key={filter.key}
                         style={filter.style}
-                        value={value}
+                        value={value as any}
                         onChange={(dates) => onFilterChange(filter.key, dates)}
                     />
                 );

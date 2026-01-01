@@ -4,7 +4,7 @@
  *
  * Modal form for creating and editing referral codes.
  */
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
     Modal,
     Form,
@@ -38,7 +38,7 @@ const UserSearchSelect: React.FC<{
     const [searchValue, setSearchValue] = useState('');
 
     const debounceSearch = useMemo(() => {
-        let timeout: NodeJS.Timeout;
+        let timeout: ReturnType<typeof setTimeout>;
         return (value: string) => {
             clearTimeout(timeout);
             timeout = setTimeout(async () => {
@@ -76,12 +76,12 @@ const UserSearchSelect: React.FC<{
             onChange={onChange}
             onSearch={setSearchValue}
             filterOption={false}
-            searching={searching}
             placeholder="输入用户名/手机号/邮箱搜索"
             style={{ width: '100%' }}
             options={options}
             allowClear
             notFoundContent={searching ? '搜索中...' : '请输入关键词搜索'}
+            loading={searching}
         />
     );
 };
@@ -176,10 +176,10 @@ const CodeForm: React.FC<CodeFormProps> = ({
                         label="拥有者"
                         rules={[{ required: true, message: '请选择拥有者' }]}
                     >
-                        <Input
-                            type="number"
+                        <InputNumber
                             placeholder="请输入用户ID"
                             min={1}
+                            style={{ width: '100%' }}
                         />
                         {/* Note: Using simple input for user ID. You can replace with UserSearchSelect if needed */}
                     </Form.Item>
@@ -251,6 +251,3 @@ const CodeForm: React.FC<CodeFormProps> = ({
 };
 
 export default CodeForm;
-
-// Add useState import at the top
-import { useState } from 'react';

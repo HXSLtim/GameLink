@@ -12,10 +12,10 @@ import {
     Typography,
     Tabs,
     Empty,
-    message,
     Modal,
     Rate,
     Input,
+    App,
 } from 'antd';
 import {
     UserOutlined,
@@ -59,6 +59,7 @@ const statusConfig: Record<string, { color: string; text: string }> = {
 };
 
 const UserOrders: React.FC = () => {
+    const { message, modal } = App.useApp();
     const [loading, setLoading] = useState(false);
     const [orders, setOrders] = useState<Order[]>([]);
     const [activeTab, setActiveTab] = useState('all');
@@ -127,7 +128,7 @@ const UserOrders: React.FC = () => {
     }, [loadOrders]);
 
     const handleCancel = (order: Order) => {
-        Modal.confirm({
+        modal.confirm({
             title: '确认取消订单',
             content: `确定要取消订单 ${order.orderNo} 吗？`,
             onOk: async () => {
@@ -138,7 +139,7 @@ const UserOrders: React.FC = () => {
     };
 
     const handlePay = (order: Order) => {
-        Modal.confirm({
+        modal.confirm({
             title: '确认支付',
             content: `订单金额：¥${order.totalAmount}`,
             onOk: async () => {

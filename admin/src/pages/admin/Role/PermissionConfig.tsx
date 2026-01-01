@@ -13,7 +13,6 @@ import {
     Card,
     Button,
     Space,
-    message,
     Spin,
     Alert,
     Typography,
@@ -21,6 +20,7 @@ import {
     Tag,
     Divider,
     Modal,
+    App,
 } from 'antd';
 import {
     SaveOutlined,
@@ -43,6 +43,7 @@ const { Text } = Typography;
  * 角色权限配置页面组件
  */
 const RolePermissionConfig: React.FC = () => {
+    const { message, modal } = App.useApp();
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const roleId = id ? parseInt(id, 10) : null;
@@ -187,7 +188,7 @@ const RolePermissionConfig: React.FC = () => {
      */
     const handleBack = useCallback(() => {
         if (hasChanges) {
-            Modal.confirm({
+            modal.confirm({
                 title: '确认离开',
                 content: '您有未保存的更改，确定要离开吗？',
                 icon: <ExclamationCircleOutlined />,
@@ -198,7 +199,7 @@ const RolePermissionConfig: React.FC = () => {
         } else {
             navigate('/admin/sys/role');
         }
-    }, [hasChanges, navigate]);
+    }, [hasChanges, navigate, modal]);
 
     /**
      * 判断是否为系统角色（超级管理员）

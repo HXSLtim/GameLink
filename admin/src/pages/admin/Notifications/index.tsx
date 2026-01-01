@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { List, Typography, Card, Button, Badge, Space, Empty, message, Popconfirm, theme } from 'antd';
+import { List, Typography, Card, Button, Badge, Space, Empty, App, Popconfirm, theme } from 'antd';
 import { CheckOutlined, BellOutlined, DeleteOutlined } from '@ant-design/icons';
 import { userApi, type Notification, type ApiResponse, type NotificationListResponse } from '@/api/user';
 import dayjs from 'dayjs';
@@ -7,6 +7,7 @@ import dayjs from 'dayjs';
 const { Title, Text } = Typography;
 
 const AdminNotificationsPage: React.FC = () => {
+    const { message } = App.useApp();
     const { token } = theme.useToken();
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(false);

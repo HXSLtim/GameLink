@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Form, Input, Button, Card, message, Tabs, theme } from 'antd';
+import { Form, Input, Button, Card, App, Tabs, theme } from 'antd';
 import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined } from '@ant-design/icons';
 import { authApi } from '@/api/auth';
 import { ENABLE_QUICK_LOGIN, DEBUG_USERS } from '@/config/debug';
 
 const Auth: React.FC = () => {
+    const { message } = App.useApp();
     const { token } = theme.useToken();
     const navigate = useNavigate();
     const location = useLocation();

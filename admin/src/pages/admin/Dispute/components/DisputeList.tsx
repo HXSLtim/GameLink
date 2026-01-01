@@ -3,7 +3,7 @@
  * Displays the list of disputes with filters and actions
  */
 import React from 'react';
-import { Tag, Space, Button, Avatar } from 'antd';
+import { Tag, Space, Button, Avatar, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
     EyeOutlined,
@@ -87,7 +87,7 @@ export const DisputeList: React.FC<DisputeListProps> = ({
             dataIndex: 'orderNo',
             key: 'orderNo',
             width: 180,
-            render: (text) => <Tag copyable>{text || '-'}</Tag>,
+            render: (text) => <Typography.Text copyable>{text || '-'}</Typography.Text>,
         },
         {
             title: '发起人',
@@ -116,8 +116,8 @@ export const DisputeList: React.FC<DisputeListProps> = ({
             key: 'status',
             width: 100,
             render: (status) => (
-                <Tag color={DISPUTE_STATUS_COLORS[status] as string}>
-                    {DISPUTE_STATUS_LABELS[status]}
+                <Tag color={DISPUTE_STATUS_COLORS[status as keyof typeof DISPUTE_STATUS_COLORS] as string}>
+                    {DISPUTE_STATUS_LABELS[status as keyof typeof DISPUTE_STATUS_LABELS]}
                 </Tag>
             ),
         },
