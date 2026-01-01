@@ -51,6 +51,7 @@ const RechargeOptions: React.FC<OptionsProps> = ({ onStatsUpdate }) => {
     const [pageSize, setPageSize] = useState(10);
     const [formVisible, setFormVisible] = useState(false);
     const [currentOption, setCurrentOption] = useState<RechargeOption | null>(null);
+    const [searchParams] = useState<Record<string, unknown>>({});
 
     /**
      * 加载充值选项数据

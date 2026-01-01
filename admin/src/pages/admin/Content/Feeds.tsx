@@ -16,6 +16,7 @@ import { feedApi } from '@/api/content';
 import type { Feed, FeedModerationStatus } from '@/types/content';
 import {
   FEED_MODERATION_STATUS_COLOR,
+  FEED_MODERATION_STATUS_TEXT,
 } from '@/types/content';
 
 const { RangePicker } = DatePicker;

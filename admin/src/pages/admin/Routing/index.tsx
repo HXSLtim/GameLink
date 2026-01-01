@@ -51,7 +51,7 @@ const exportColumns: ExportColumn[] = [
     { key: 'id', title: 'ID' },
     { key: 'name', title: '规则名称' },
     { key: 'priority', title: '优先级' },
-    { key: 'targetEntity.name', title: '目标主体', render: (v, r) => (r as RoutingRule & { targetEntityName?: string }).targetEntityName || v },
+    { key: 'targetEntity.name', title: '目标主体', render: (v, r) => String((r as RoutingRule & { targetEntityName?: string }).targetEntityName || v) },
     { key: 'status', title: '状态', render: (v) => statusMap[v as RuleStatus]?.text || String(v) },
     { key: 'description', title: '描述' },
     { key: 'createdAt', title: '创建时间', render: (v) => v ? dayjs(v as string).format('YYYY-MM-DD HH:mm:ss') : '' },
@@ -291,8 +291,8 @@ const RoutingRulePage: React.FC = () => {
             dataIndex: ['targetEntity', 'name'],
             key: 'targetEntity',
             width: 150,
-            render: (name: string, record: RoutingRule & { targetEntityName?: string }) => {
-                const entityName = name || record.targetEntityName || `主体 #${record.targetEntityId}`;
+            render: (name: string, record: RoutingRule) => {
+                const entityName = name || (record as RoutingRule & { targetEntityName?: string }).targetEntityName || `主体 #${record.targetEntityId}`;
                 return <Tag color="purple">{entityName}</Tag>;
             },
         },
