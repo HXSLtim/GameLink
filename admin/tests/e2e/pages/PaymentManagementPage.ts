@@ -175,7 +175,7 @@ export class PaymentManagementPage {
   /**
    * Filter by date range
    */
-  async filterByDateRange(startDate: string, endDate: string) {
+  async filterByDateRange(_startDate: string, _endDate: string) {
     const dateFilter = this.page.getByText(/日期|date/i).first();
     await dateFilter.click();
     // Handle date picker interactions

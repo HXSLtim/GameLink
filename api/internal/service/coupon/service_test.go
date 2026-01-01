@@ -784,12 +784,21 @@ func TestGetCouponStats(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("success", func(t *testing.T) {
-		stats := map[string]int64{"total": 100, "available": 50, "used": 30, "expired": 20}
+		stats := map[string]int64{
+			"totalTemplates":     10,
+			"activeTemplates":    8,
+			"totalCoupons":       100,
+			"availableCoupons":   50,
+			"usedCoupons":        30,
+			"expiredCoupons":     20,
+			"totalDiscountCents": 50000,
+		}
 		mockRepo.On("GetCouponStats", ctx).Return(stats, nil).Once()
 
 		result, err := svc.GetCouponStats(ctx)
 		require.NoError(t, err)
-		assert.Equal(t, int64(100), result["total"])
+		assert.Equal(t, int64(10), result["totalTemplates"])
+		assert.Equal(t, int64(100), result["totalCoupons"])
 	})
 
 	t.Run("error", func(t *testing.T) {

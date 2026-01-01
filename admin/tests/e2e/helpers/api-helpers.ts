@@ -35,6 +35,7 @@ export async function getAdminToken(): Promise<string> {
 /**
  * Create a test user via API
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function createTestUser(token: string, userData: any): Promise<number> {
   const response = await fetch(`${API_BASE}/admin/users`, {
     method: 'POST',
@@ -72,6 +73,7 @@ export async function deleteTestUser(token: string, userId: number): Promise<voi
 /**
  * Create a test player via API
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function createTestPlayer(token: string, playerData: any): Promise<number> {
   const response = await fetch(`${API_BASE}/admin/players`, {
     method: 'POST',
@@ -109,7 +111,9 @@ export async function deleteTestPlayer(token: string, playerId: number): Promise
 /**
  * Get a list of users for testing
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function getUsers(token: string, params?: any): Promise<any[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const queryParams = new URLSearchParams(params as any).toString();
   const response = await fetch(`${API_BASE}/admin/users?${queryParams}`, {
     method: 'GET',
@@ -122,6 +126,7 @@ export async function getUsers(token: string, params?: any): Promise<any[]> {
     throw new Error(`Failed to get users: ${response.statusText}`);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const result = (await response.json()) as ApiResponse<any[]>;
   return result.data;
 }

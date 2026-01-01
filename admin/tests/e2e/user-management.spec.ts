@@ -40,7 +40,7 @@ test.describe('User Management', () => {
     await userManagementPage.goto();
   });
 
-  test.afterEach(async ({ page }) => {
+  test.afterEach(async () => {
     // Cleanup test user if created
     if (testUserId) {
       await deleteTestUser(adminToken, testUserId);
@@ -66,7 +66,7 @@ test.describe('User Management', () => {
     });
 
     test('should support pagination', async () => {
-      const initialCount = await userManagementPage.getUserCount();
+      await userManagementPage.getUserCount();
 
       await userManagementPage.nextPage();
 
@@ -276,7 +276,7 @@ test.describe('User Management', () => {
 
   test.describe('Search and Filter', () => {
     test('should search users by keyword', async () => {
-      const initialCount = await userManagementPage.getUserCount();
+      await userManagementPage.getUserCount();
 
       await userManagementPage.searchUser('admin');
 

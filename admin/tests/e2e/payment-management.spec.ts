@@ -18,10 +18,9 @@ import { getAdminToken } from './helpers/api-helpers';
 test.describe('Payment Management', () => {
   let loginPage: LoginPage;
   let paymentManagementPage: PaymentManagementPage;
-  let adminToken: string;
 
   test.beforeAll(async () => {
-    adminToken = await getAdminToken();
+    await getAdminToken();
   });
 
   test.beforeEach(async ({ page, testData }) => {
@@ -79,7 +78,7 @@ test.describe('Payment Management', () => {
         const amountCell = await paymentManagementPage.getCellText(0, 4);
         expect(amountCell).toBeTruthy();
         // Amount should contain currency symbol or number
-        expect(amountCell).toMatch(/[\$¥€£]|[\d.,]+/);
+        expect(amountCell).toMatch(/[$¥€£]|[\d.,]+/);
       }
     });
   });
@@ -276,8 +275,6 @@ test.describe('Payment Management', () => {
       const paidCount = await paymentManagementPage.getPaymentCount();
 
       if (paidCount > 0) {
-        const initialStatus = await paymentManagementPage.getCellText(0, 3);
-
         await paymentManagementPage.refundOrder(0, {
           reason: 'Service not satisfactory',
         });
@@ -341,7 +338,7 @@ test.describe('Payment Management', () => {
 
   test.describe('Pagination', () => {
     test('should navigate through pages', async () => {
-      const initialCount = await paymentManagementPage.getPaymentCount();
+      await paymentManagementPage.getPaymentCount();
 
       await paymentManagementPage.nextPage();
 
@@ -442,7 +439,7 @@ test.describe('Payment Management', () => {
         const amountCell = await paymentManagementPage.getCellText(0, 4);
 
         // Amount should be formatted with currency symbol and proper decimal places
-        expect(amountCell).toMatch(/[\$¥€£₹][\d,]+\.?\d{0,2}/);
+        expect(amountCell).toMatch(/[$¥€£₹][\d,]+\.?\d{0,2}/);
       }
     });
 

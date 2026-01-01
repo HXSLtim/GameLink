@@ -159,7 +159,7 @@ test.describe('Admin Authentication', () => {
   });
 
   test.describe('UI/UX', () => {
-    test('should show loading state during login', async ({ page, testData }) => {
+    test('should show loading state during login', async ({ testData }) => {
       await loginPage.fillCredentials(testData.adminUser.username, testData.adminUser.password);
 
       // Click login and check for loading indicator
@@ -169,7 +169,7 @@ test.describe('Admin Authentication', () => {
       await expect(loginPage['loginButton']).toHaveAttribute('class', /loading/);
     });
 
-    test('should allow Enter key to submit form', async ({ page, testData }) => {
+    test('should allow Enter key to submit form', async ({ testData }) => {
       await loginPage.fillCredentials(testData.adminUser.username, testData.adminUser.password);
 
       // Press Enter on password field
@@ -198,7 +198,7 @@ test.describe('Admin Authentication', () => {
       await expect(passwordLabel).toBeVisible();
     });
 
-    test('should be keyboard navigable', async ({ testData }) => {
+    test('should be keyboard navigable', async () => {
       // Tab to username
       await page.keyboard.press('Tab');
       await expect(loginPage['usernameInput']).toBeFocused();

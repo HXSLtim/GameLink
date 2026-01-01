@@ -361,12 +361,26 @@ func (r *Repository) ExpireOldCoupons(ctx context.Context) (int64, error) {
 func (r *Repository) GetCouponStats(ctx context.Context) (map[string]int64, error) {
 	stats := make(map[string]int64)
 
-	// 总数
-	var total int64
-	if err := r.db.WithContext(ctx).Model(&model.Coupon{}).Count(&total).Error; err != nil {
-		return nil, fmt.Errorf("count total: %w", err)
+	// 模板总数
+	var totalTemplates int64
+	if err := r.db.WithContext(ctx).Model(&model.CouponTemplate{}).Count(&totalTemplates).Error; err != nil {
+		return nil, fmt.Errorf("count templates: %w", err)
 	}
-	stats["total"] = total
+	stats["totalTemplates"] = totalTemplates
+
+	// 启用的模板数
+	var activeTemplates int64
+	if err := r.db.WithContext(ctx).Model(&model.CouponTemplate{}).Where("is_active = ?", true).Count(&activeTemplates).Error; err != nil {
+		return nil, fmt.Errorf("count active templates: %w", err)
+	}
+	stats["activeTemplates"] = activeTemplates
+
+	// 优惠券总数
+	var totalCoupons int64
+	if err := r.db.WithContext(ctx).Model(&model.Coupon{}).Count(&totalCoupons).Error; err != nil {
+		return nil, fmt.Errorf("count total coupons: %w", err)
+	}
+	stats["totalCoupons"] = totalCoupons
 
 	// 按状态统计
 	type stateCount struct {
@@ -381,8 +395,36 @@ func (r *Repository) GetCouponStats(ctx context.Context) (map[string]int64, erro
 		return nil, fmt.Errorf("count by state: %w", err)
 	}
 	for _, sc := range stateCounts {
-		stats[string(sc.State)] = sc.Count
+		switch sc.State {
+		case model.CouponStateAvailable:
+			stats["availableCoupons"] = sc.Count
+		case model.CouponStateUsed:
+			stats["usedCoupons"] = sc.Count
+		case model.CouponStateExpired:
+			stats["expiredCoupons"] = sc.Count
+		}
 	}
+
+	// 确保所有字段都有值（即使为0）
+	if _, ok := stats["availableCoupons"]; !ok {
+		stats["availableCoupons"] = 0
+	}
+	if _, ok := stats["usedCoupons"]; !ok {
+		stats["usedCoupons"] = 0
+	}
+	if _, ok := stats["expiredCoupons"]; !ok {
+		stats["expiredCoupons"] = 0
+	}
+
+	// 总折扣金额
+	var totalDiscount int64
+	if err := r.db.WithContext(ctx).Model(&model.Coupon{}).
+		Where("state = ?", model.CouponStateUsed).
+		Select("COALESCE(SUM(discount_cents), 0)").
+		Scan(&totalDiscount).Error; err != nil {
+		return nil, fmt.Errorf("sum discount: %w", err)
+	}
+	stats["totalDiscountCents"] = totalDiscount
 
 	return stats, nil
 }

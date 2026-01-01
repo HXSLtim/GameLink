@@ -83,7 +83,7 @@ export class OrderManagementPage {
   /**
    * Filter orders by date range
    */
-  async filterByDateRange(startDate: string, endDate: string) {
+  async filterByDateRange(_startDate: string, _endDate: string) {
     await this.dateFilter.click();
     // Handle date picker interactions
     // This will depend on the actual date picker implementation

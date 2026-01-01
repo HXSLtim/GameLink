@@ -66,7 +66,12 @@ const generateTestData = (): AdminTestData => ({
 export const test = base.extend<{
   testData: AdminTestData;
 }>({
-  testData: async ({}, use) => {
+  testData: async (
+    // eslint-disable-next-line no-empty-pattern
+    {},
+    use
+  ) => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(generateTestData());
   },
 });

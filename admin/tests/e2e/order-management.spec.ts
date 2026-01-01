@@ -19,10 +19,9 @@ import { getAdminToken } from './helpers/api-helpers';
 test.describe('Order Management', () => {
   let loginPage: LoginPage;
   let orderManagementPage: OrderManagementPage;
-  let adminToken: string;
 
   test.beforeAll(async () => {
-    adminToken = await getAdminToken();
+    await getAdminToken();
   });
 
   test.beforeEach(async ({ page, testData }) => {
@@ -354,7 +353,7 @@ test.describe('Order Management', () => {
 
   test.describe('Pagination', () => {
     test('should navigate through pages', async () => {
-      const initialCount = await orderManagementPage.getOrderCount();
+      await orderManagementPage.getOrderCount();
 
       await orderManagementPage.nextPage();
 

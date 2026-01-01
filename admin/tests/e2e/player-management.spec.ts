@@ -40,7 +40,7 @@ test.describe('Player Management', () => {
     await playerManagementPage.goto();
   });
 
-  test.afterEach(async ({ page }) => {
+  test.afterEach(async () => {
     // Cleanup test player if created
     if (testPlayerId) {
       await deleteTestPlayer(adminToken, testPlayerId);
@@ -245,7 +245,7 @@ test.describe('Player Management', () => {
   });
 
   test.describe('Player Verification', () => {
-    test('should approve pending player verification', async ({ page, testData }) => {
+    test('should approve pending player verification', async ({ testData }) => {
       // Create a player with pending verification
       testPlayerId = await createTestPlayer(adminToken, {
         ...testData.testPlayer,
@@ -253,7 +253,7 @@ test.describe('Player Management', () => {
         verificationStatus: 'pending',
       });
 
-      await page.reload();
+      await playerManagementPage.page.reload();
       await playerManagementPage.waitForPageLoad();
 
       await playerManagementPage.waitForUserToAppear(`Pending Player ${testData.testPlayer.nickname}`, 10000);
@@ -330,7 +330,7 @@ test.describe('Player Management', () => {
 
   test.describe('Search and Filter', () => {
     test('should search players by nickname', async () => {
-      const initialCount = await playerManagementPage.getPlayerCount();
+      await playerManagementPage.getPlayerCount();
 
       await playerManagementPage.searchPlayer('Test');
 
@@ -453,7 +453,7 @@ test.describe('Player Management', () => {
 
   test.describe('Pagination', () => {
     test('should navigate through pages', async () => {
-      const initialCount = await playerManagementPage.getPlayerCount();
+      await playerManagementPage.getPlayerCount();
 
       await playerManagementPage.nextPage();
 
