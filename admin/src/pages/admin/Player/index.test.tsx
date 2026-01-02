@@ -18,12 +18,18 @@ import PlayerPage from './index';
 import { renderWithProviders, resetAllMocks, flushPromises } from '@/testutils';
 
 // Mock the adminApi module using vi.hoisted
-const { mockApi } = vi.hoisted(() => ({
+const { mockApi, mockMessage } = vi.hoisted(() => ({
   mockApi: {
     getPlayers: vi.fn(),
     updatePlayerStatus: vi.fn(),
     deletePlayer: vi.fn(),
     batchUpdatePlayerStatus: vi.fn(),
+  },
+  mockMessage: {
+    success: vi.fn(),
+    error: vi.fn(),
+    warning: vi.fn(),
+    info: vi.fn(),
   },
 }));
 
@@ -37,14 +43,35 @@ vi.mock('@/utils/export', () => ({
   playerExportColumns: [],
 }));
 
+// Mock App.useApp to return the message mock
+vi.mock('antd', async () => {
+  const actual = await vi.importActual('antd');
+  return {
+    ...actual,
+    App: {
+      useApp: () => ({
+        message: mockMessage,
+        notification: { success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() },
+        modal: { success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn(), confirm: vi.fn() },
+      }),
+    },
+  };
+});
+
 describe('PlayerPage', () => {
   beforeEach(() => {
     resetAllMocks();
+    mockMessage.success.mockClear();
+    mockMessage.error.mockClear();
     localStorage.setItem('token', 'test-token');
     localStorage.setItem('user_role', 'admin');
     // Set default mock return values
     mockApi.getPlayers.mockResolvedValue({
-      data: { success: true, data: { items: [], total: 0 } },
+      data: {
+        success: true,
+        data: [],
+        pagination: { total: 0, page: 1, pageSize: 10 },
+      },
     });
   });
 
@@ -205,7 +232,7 @@ describe('PlayerPage', () => {
 
   describe('Search and Filtering', () => {
     it('should allow searching by keyword', async () => {
-      const _user = userEvent.setup();
+      const user = userEvent.setup();
       mockApi.getPlayers.mockResolvedValue({
         data: {
           success: true,
@@ -236,7 +263,7 @@ describe('PlayerPage', () => {
     });
 
     it('should allow filtering by status', async () => {
-      const _user = userEvent.setup();
+      const user = userEvent.setup();
       mockApi.getPlayers.mockResolvedValue({
         data: {
           success: true,
@@ -269,7 +296,7 @@ describe('PlayerPage', () => {
     });
 
     it('should reset to first page when searching', async () => {
-      const _user = userEvent.setup();
+      const user = userEvent.setup();
       mockApi.getPlayers.mockResolvedValue({
         data: {
           success: true,
@@ -312,7 +339,7 @@ describe('PlayerPage', () => {
     });
 
     it('should change page when clicking pagination', async () => {
-      const _user = userEvent.setup();
+      const user = userEvent.setup();
       mockApi.getPlayers.mockResolvedValue({
         data: {
           success: true,
@@ -340,7 +367,7 @@ describe('PlayerPage', () => {
     });
 
     it('should change page size when selecting different size', async () => {
-      const _user = userEvent.setup();
+      const user = userEvent.setup();
       mockApi.getPlayers.mockResolvedValue({
         data: {
           success: true,
@@ -373,7 +400,7 @@ describe('PlayerPage', () => {
 
   describe('Player Details', () => {
     it('should open detail drawer when clicking detail button', async () => {
-      const _user = userEvent.setup();
+      const user = userEvent.setup();
       renderWithProviders(<PlayerPage />);
 
       await waitFor(() => {
@@ -389,7 +416,7 @@ describe('PlayerPage', () => {
     });
 
     it('should display player statistics in drawer', async () => {
-      const _user = userEvent.setup();
+      const user = userEvent.setup();
       renderWithProviders(<PlayerPage />);
 
       await waitFor(() => {
@@ -407,7 +434,7 @@ describe('PlayerPage', () => {
     });
 
     it('should display player basic information', async () => {
-      const _user = userEvent.setup();
+      const user = userEvent.setup();
       renderWithProviders(<PlayerPage />);
 
       await waitFor(() => {
@@ -461,7 +488,7 @@ describe('PlayerPage', () => {
     });
 
     it('should open audit modal when clicking audit button', async () => {
-      const _user = userEvent.setup();
+      const user = userEvent.setup();
       mockApi.getPlayers.mockResolvedValue({
         data: {
           success: true,
@@ -500,7 +527,7 @@ describe('PlayerPage', () => {
     });
 
     it('should approve player when clicking approve button', async () => {
-      const _user = userEvent.setup();
+      const user = userEvent.setup();
       mockApi.getPlayers.mockResolvedValue({
         data: {
           success: true,
@@ -546,7 +573,7 @@ describe('PlayerPage', () => {
     });
 
     it('should reject player when clicking reject button', async () => {
-      const _user = userEvent.setup();
+      const user = userEvent.setup();
       mockApi.getPlayers.mockResolvedValue({
         data: {
           success: true,
@@ -604,7 +631,7 @@ describe('PlayerPage', () => {
     });
 
     it('should ban player when confirming ban action', async () => {
-      const _user = userEvent.setup();
+      const user = userEvent.setup();
       renderWithProviders(<PlayerPage />);
 
       await waitFor(() => {
@@ -674,7 +701,7 @@ describe('PlayerPage', () => {
     });
 
     it('should export player data', async () => {
-      const _user = userEvent.setup();
+      const user = userEvent.setup();
       const { exportToCSV } = await import('@/utils/export');
 
       renderWithProviders(<PlayerPage />);
@@ -699,7 +726,7 @@ describe('PlayerPage', () => {
 
   describe('Refresh Functionality', () => {
     it('should refresh data when clicking refresh button', async () => {
-      const _user = userEvent.setup();
+      const user = userEvent.setup();
       renderWithProviders(<PlayerPage />);
 
       await waitFor(() => {
@@ -725,7 +752,7 @@ describe('PlayerPage', () => {
     });
 
     it('should be keyboard navigable', async () => {
-      const _user = userEvent.setup();
+      const user = userEvent.setup();
       renderWithProviders(<PlayerPage />);
 
       await waitFor(() => {
