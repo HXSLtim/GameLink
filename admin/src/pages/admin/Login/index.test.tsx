@@ -16,11 +16,18 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import AdminLogin from './index';
+import { renderWithProviders, resetAllMocks } from '@/testutils';
 
 // Mock the authApi module using vi.hoisted
-const { mockApi } = vi.hoisted(() => ({
+const { mockApi, mockMessage } = vi.hoisted(() => ({
   mockApi: {
     login: vi.fn(),
+  },
+  mockMessage: {
+    success: vi.fn(),
+    error: vi.fn(),
+    warning: vi.fn(),
+    info: vi.fn(),
   },
 }));
 
@@ -34,9 +41,26 @@ vi.mock('@/config/debug', () => ({
   DEBUG_USERS: [],
 }));
 
+// Mock App.useApp to return the message mock
+vi.mock('antd', async () => {
+  const actual = await vi.importActual('antd');
+  return {
+    ...actual,
+    App: {
+      useApp: () => ({
+        message: mockMessage,
+        notification: { success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() },
+        modal: { success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn(), confirm: vi.fn() },
+      }),
+    },
+  };
+});
+
 describe('AdminLogin', () => {
   beforeEach(() => {
     resetAllMocks();
+    mockMessage.success.mockClear();
+    mockMessage.error.mockClear();
     localStorage.clear();
     // Set default mock return value
     mockApi.login.mockResolvedValue({ data: { success: true, data: { token: 'test-token' } } });
@@ -180,7 +204,7 @@ describe('AdminLogin', () => {
       await user.click(loginButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/您没有管理后台访问权限/)).toBeInTheDocument();
+        expect(mockMessage.error).toHaveBeenCalledWith('您没有管理后台访问权限');
       });
 
       // Token should not be saved for non-admin users
@@ -215,7 +239,7 @@ describe('AdminLogin', () => {
       await user.click(loginButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/您没有管理后台访问权限/)).toBeInTheDocument();
+        expect(mockMessage.error).toHaveBeenCalledWith('您没有管理后台访问权限');
       });
     });
   });
@@ -250,11 +274,14 @@ describe('AdminLogin', () => {
       await user.type(passwordInput, 'password123');
       await user.click(loginButton);
 
-      // Button should be in loading state
-      expect(loginButton).toBeDisabled();
-
+      // Wait for button to enter loading state
       await waitFor(() => {
-        expect(loginButton).not.toBeDisabled();
+        expect(loginButton).toHaveClass('ant-btn-loading');
+      });
+
+      // Wait for loading to complete
+      await waitFor(() => {
+        expect(loginButton).not.toHaveClass('ant-btn-loading');
       });
     });
   });
@@ -281,7 +308,7 @@ describe('AdminLogin', () => {
       await user.click(loginButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/用户名或密码错误/)).toBeInTheDocument();
+        expect(mockMessage.error).toHaveBeenCalledWith('用户名或密码错误');
       });
     });
 
@@ -306,7 +333,7 @@ describe('AdminLogin', () => {
       await user.click(loginButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/账号已被禁用/)).toBeInTheDocument();
+        expect(mockMessage.error).toHaveBeenCalledWith('账号已被禁用，请联系管理员');
       });
     });
 
@@ -331,7 +358,7 @@ describe('AdminLogin', () => {
       await user.click(loginButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/用户不存在/)).toBeInTheDocument();
+        expect(mockMessage.error).toHaveBeenCalledWith('用户不存在');
       });
     });
 
@@ -356,7 +383,7 @@ describe('AdminLogin', () => {
       await user.click(loginButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/登录尝试次数过多/)).toBeInTheDocument();
+        expect(mockMessage.error).toHaveBeenCalledWith('登录尝试次数过多，请稍后再试');
       });
     });
 
@@ -381,7 +408,7 @@ describe('AdminLogin', () => {
       await user.click(loginButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/服务器错误/)).toBeInTheDocument();
+        expect(mockMessage.error).toHaveBeenCalledWith('服务器错误，请稍后重试');
       });
     });
 
@@ -403,7 +430,7 @@ describe('AdminLogin', () => {
       await user.click(loginButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/网络连接失败/)).toBeInTheDocument();
+        expect(mockMessage.error).toHaveBeenCalledWith('网络连接失败，请检查网络后重试');
       });
     });
 
@@ -425,7 +452,7 @@ describe('AdminLogin', () => {
       await user.click(loginButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/网络连接失败/)).toBeInTheDocument();
+        expect(mockMessage.error).toHaveBeenCalledWith('网络连接失败，请检查网络后重试');
       });
     });
 
@@ -449,7 +476,7 @@ describe('AdminLogin', () => {
       await user.click(loginButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/登录失败/)).toBeInTheDocument();
+        expect(mockMessage.error).toHaveBeenCalledWith('登录失败');
       });
     });
   });
