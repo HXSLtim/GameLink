@@ -102,6 +102,9 @@ func SetupAdminTest(t *testing.T) *AdminTestHelper {
 func (h *AdminTestHelper) RegisterRoutes() {
 	// Register routes directly without permission middleware for testing
 	userHandler := NewUserHandler(h.svc)
+	gameHandler := NewGameHandler(h.svc)
+
+	// User routes
 	h.router.GET("/users", userHandler.ListUsers)
 	h.router.GET("/users/stats", userHandler.GetUserStats)
 	h.router.POST("/users", userHandler.CreateUser)
@@ -115,6 +118,17 @@ func (h *AdminTestHelper) RegisterRoutes() {
 	h.router.GET("/users/:id/orders", userHandler.ListUserOrders)
 	h.router.GET("/users/:id/logs", userHandler.ListUserLogs)
 	h.router.GET("/users/:id/login-history", userHandler.ListUserLoginHistory)
+
+	// Game routes
+	h.router.GET("/games", gameHandler.ListGames)
+	h.router.POST("/games", gameHandler.CreateGame)
+	h.router.GET("/games/:id", gameHandler.GetGame)
+	h.router.PUT("/games/:id", gameHandler.UpdateGame)
+	h.router.DELETE("/games/:id", gameHandler.DeleteGame)
+	h.router.POST("/games/batch/delete", gameHandler.BatchDeleteGames)
+	h.router.POST("/games/batch/status", gameHandler.BatchUpdateGamesStatus)
+	h.router.POST("/games/batch/category", gameHandler.BatchUpdateGamesCategory)
+	h.router.GET("/games/:id/logs", gameHandler.ListGameLogs)
 }
 
 // MakeRequest performs an HTTP request with authentication.
