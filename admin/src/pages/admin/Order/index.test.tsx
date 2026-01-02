@@ -756,7 +756,7 @@ describe('OrderPage', () => {
     });
 
     it('should be keyboard navigable', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<OrderPage />);
 
       await waitFor(() => {

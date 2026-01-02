@@ -752,7 +752,7 @@ describe('PlayerPage', () => {
     });
 
     it('should be keyboard navigable', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<PlayerPage />);
 
       await waitFor(() => {
