@@ -16,7 +16,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import AdminLogin from './index';
-import { _authApi as authApi } from '@/api/auth';
+
+// Define mock API
+const mockApi = {
+  login: vi.fn(),
+};
 
 // Mock the authApi module
 vi.mock('@/api/auth', () => ({

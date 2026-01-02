@@ -17,8 +17,21 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import UserPage from './index';
-import { renderWithProviders, mockApi, resetAllMocks, flushPromises } from '@/testutils';
-import { _adminApi as adminApi } from '@/api/admin';
+import { renderWithProviders, resetAllMocks, flushPromises } from '@/testutils';
+
+// Define mock API for admin
+const mockApi = {
+  getUsers: vi.fn(),
+  getUserStats: vi.fn(),
+  getUserLogs: vi.fn(),
+  createUser: vi.fn(),
+  updateUser: vi.fn(),
+  deleteUser: vi.fn(),
+  batchUpdateUserStatus: vi.fn(),
+  batchUpdateUserRole: vi.fn(),
+  sendNotification: vi.fn(),
+  adjustPoints: vi.fn(),
+};
 
 // Mock the adminApi module
 vi.mock('@/api/admin', () => ({
