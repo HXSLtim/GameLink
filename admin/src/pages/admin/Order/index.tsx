@@ -41,6 +41,7 @@ import { adminApi, type Order, type ApiResponse } from '@/api/admin';
 import { exportToCSV, orderExportColumns } from '@/utils/export';
 import dayjs from 'dayjs';
 
+import { logger } from '@/utils/logger';
 const { Text, Title } = Typography;
 
 /**
@@ -100,7 +101,7 @@ const OrderPage: React.FC = () => {
                 message.error(response.data.message || '加载失败');
             }
         } catch (error) {
-            console.error('Load orders error:', error);
+            logger.error('Load orders error:', error);
             message.error('加载订单列表失败');
         } finally {
             setLoading(false);
@@ -145,7 +146,7 @@ const OrderPage: React.FC = () => {
             message.success(`订单 ${order.orderNo} 已取消`);
             loadData();
         } catch (error) {
-            console.error('Cancel order error:', error);
+            logger.error('Cancel order error:', error);
             message.error('取消订单失败');
         }
     };
@@ -178,7 +179,7 @@ const OrderPage: React.FC = () => {
             setRefundModalVisible(false);
             loadData();
         } catch (error) {
-            console.error('Refund error:', error);
+            logger.error('Refund error:', error);
             message.error('退款失败');
         } finally {
             setSubmitting(false);

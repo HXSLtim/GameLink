@@ -126,6 +126,7 @@ const Codes: React.FC<CodesProps> = ({ onDataChange }) => {
         } finally {
             setLoading(false);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [pagination.current, pagination.pageSize, keyword, typeFilter, statusFilter]);
 
     useEffect(() => {
@@ -211,7 +212,7 @@ const Codes: React.FC<CodesProps> = ({ onDataChange }) => {
     /**
      * Handle delete code
      */
-    const handleDelete = async (id: number) => {
+    const handleDelete = useCallback(async (id: number) => {
         try {
             const response = await referralApi.deleteReferralCode(id);
             if (response.data.success) {
@@ -222,12 +223,12 @@ const Codes: React.FC<CodesProps> = ({ onDataChange }) => {
         } catch {
             message.error('删除失败');
         }
-    };
+    }, [fetchCodes, onDataChange]);
 
     /**
      * Handle toggle active status
      */
-    const handleToggleActive = async (code: ReferralCode) => {
+    const handleToggleActive = useCallback(async (code: ReferralCode) => {
         try {
             const response = await referralApi.updateReferralCode(code.id, {
                 isActive: !code.isActive,
@@ -240,7 +241,7 @@ const Codes: React.FC<CodesProps> = ({ onDataChange }) => {
         } catch {
             message.error('操作失败');
         }
-    };
+    }, [fetchCodes, onDataChange]);
 
     /**
      * View detail
@@ -476,7 +477,7 @@ const Codes: React.FC<CodesProps> = ({ onDataChange }) => {
                 </Space>
             ),
         },
-    ], [handleViewDetail]);
+    ], [handleViewDetail, handleDelete, handleToggleActive]);
 
     /**
      * Row selection config

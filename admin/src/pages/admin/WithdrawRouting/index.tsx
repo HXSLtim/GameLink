@@ -26,6 +26,7 @@ import { exportToCSV, type ExportColumn } from '@/utils/export';
 import dayjs from 'dayjs';
 import apiClient from '@/api/client';
 
+import { logger } from '@/utils/logger';
 interface WithdrawByCompany {
     id: number;
     playerId: number;
@@ -90,7 +91,7 @@ const WithdrawRoutingPage: React.FC = () => {
                 setTotal(response.data.pagination?.total || 0);
             }
         } catch (error) {
-            console.error('Load error:', error);
+            logger.error('Load error:', error);
             message.error('加载失败');
         } finally {
             setLoading(false);
@@ -109,7 +110,7 @@ const WithdrawRoutingPage: React.FC = () => {
                 setStats(response.data.data);
             }
         } catch (error) {
-            console.error('Load stats error:', error);
+            logger.error('Load stats error:', error);
         } finally {
             setStatsLoading(false);
         }

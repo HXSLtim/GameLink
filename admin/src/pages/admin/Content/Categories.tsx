@@ -48,7 +48,7 @@ const CategoriesPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, keyword, status]);
+  }, [page, pageSize, keyword, status, message]);
 
   useEffect(() => {
     fetchCategories();

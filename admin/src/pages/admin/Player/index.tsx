@@ -44,6 +44,7 @@ import { PermissionGuard } from '@/components/PermissionGuard';
 import { adminApi, type Player, type ApiResponse } from '@/api/admin';
 import dayjs from 'dayjs';
 
+import { logger } from '@/utils/logger';
 const { Text, Paragraph } = Typography;
 
 /**
@@ -99,7 +100,7 @@ const PlayerPage: React.FC = () => {
                 message.error(response.data.message || '加载失败');
             }
         } catch (error) {
-            console.error('Load players error:', error);
+            logger.error('Load players error:', error);
             message.error('加载陪玩师列表失败');
         } finally {
             setLoading(false);
@@ -149,7 +150,7 @@ const PlayerPage: React.FC = () => {
             setAuditModalVisible(false);
             loadData();
         } catch (error) {
-            console.error('Audit error:', error);
+            logger.error('Audit error:', error);
             message.error('审核操作失败');
         }
     };
@@ -165,7 +166,7 @@ const PlayerPage: React.FC = () => {
             message.success(`${action}成功`);
             loadData();
         } catch (error) {
-            console.error('Toggle ban error:', error);
+            logger.error('Toggle ban error:', error);
             message.error('操作失败');
         }
     };

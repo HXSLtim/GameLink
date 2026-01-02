@@ -131,7 +131,7 @@ const ConditionBuilder: React.FC<ConditionBuilderProps> = ({
             value: '',
         };
         updateConditions([...conditions, newCondition]);
-    }, [conditions, updateConditions, generateId]);
+    }, [conditions, updateConditions]);
 
     const removeCondition = useCallback((id: string) => {
         if (conditions.length > 1) {

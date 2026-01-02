@@ -41,6 +41,7 @@ import type {
 } from '@/types/monitor';
 import dayjs from 'dayjs';
 
+import { logger } from '@/utils/logger';
 const { Text } = Typography;
 
 /**
@@ -156,7 +157,7 @@ const RealtimeMonitor: React.FC = () => {
       if (queueRes.data?.success) setOrderQueue(queueRes.data.data);
       if (alertsRes.data?.success) setAlerts(alertsRes.data.data || []);
     } catch (error) {
-      console.error('加载监控数据失败:', error);
+      logger.error('加载监控数据失败:', error);
     } finally {
       setLoading(false);
     }
@@ -174,7 +175,7 @@ const RealtimeMonitor: React.FC = () => {
       await monitorApi.markAlertRead(alertId);
       setAlerts(prev => prev.map(a => (a.id === alertId ? { ...a, isRead: true } : a)));
     } catch (error) {
-      console.error('标记告警已读失败:', error);
+      logger.error('标记告警已读失败:', error);
     }
   };
 
@@ -189,7 +190,7 @@ const RealtimeMonitor: React.FC = () => {
       await monitorApi.markAlertsRead(unreadIds);
       setAlerts(prev => prev.map(a => ({ ...a, isRead: true })));
     } catch (error) {
-      console.error('批量标记已读失败:', error);
+      logger.error('批量标记已读失败:', error);
     }
   };
 

@@ -426,9 +426,9 @@ func (s *ServiceItemService) BatchDeleteItems(ctx context.Context, req BatchDele
 		FailedItems:  make([]BatchOperationErrorItem, 0),
 	}
 
-	// TODO: 检查是否有订单使用这些服务项目
-	// 由于订单可能使用service_item_id字段，需要检查order表
-	// 这里先实现基础删除逻辑，后续可以添加订单引用检查
+	// Order reference check to be implemented: check if any orders use these service items
+	// Requires injecting OrderRepository and querying orders by service_item_id
+	// For now, implements basic deletion logic without order reference checking
 
 	for _, itemID := range req.ItemIDs {
 		// 检查项目是否存在

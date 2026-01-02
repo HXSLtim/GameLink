@@ -6,6 +6,7 @@ import { PageContainer } from '@/components';
 import { adminApi, type UserTag, type CreateTagDto, type ApiResponse } from '@/api/admin';
 import dayjs from 'dayjs';
 
+import { logger } from '@/utils/logger';
 const UserTags: React.FC = () => {
     const { message } = App.useApp();
     const [loading, setLoading] = useState(false);
@@ -30,6 +31,7 @@ const UserTags: React.FC = () => {
 
     useEffect(() => {
         fetchTags();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleCreate = () => {
@@ -90,7 +92,7 @@ const UserTags: React.FC = () => {
                 }
             }
         } catch (error) {
-            console.error(error);
+            logger.error(error);
             message.error('操作失败');
         }
     };

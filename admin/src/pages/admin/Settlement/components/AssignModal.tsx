@@ -1,7 +1,7 @@
 /**
  * 批量分配陪玩师到结算公司弹窗
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     Modal,
     Form,
@@ -20,6 +20,7 @@ import { settlementApi } from '@/api/settlement';
 import type { SettlementCompany } from '@/api/settlement';
 import dayjs from 'dayjs';
 
+import { logger } from '@/utils/logger';
 export interface AssignModalProps {
     /** 是否可见 */
     open: boolean;
@@ -72,14 +73,14 @@ const AssignModal: React.FC<AssignModalProps> = ({
                 setCompanies(response.data.data || []);
             }
         } catch (error) {
-            console.error('Load companies error:', error);
+            logger.error('Load companies error:', error);
         }
     };
 
     /**
      * 加载陪玩师信息
      */
-    const loadPlayers = async () => {
+    const loadPlayers = useCallback(async () => {
         if (playerIds.length === 0) return;
 
         try {
@@ -113,9 +114,9 @@ const AssignModal: React.FC<AssignModalProps> = ({
             const playerData = await Promise.all(playerPromises);
             setPlayers(playerData);
         } catch (error) {
-            console.error('Load players error:', error);
+            logger.error('Load players error:', error);
         }
-    };
+    }, [playerIds]);
 
     useEffect(() => {
         if (open) {
@@ -124,7 +125,7 @@ const AssignModal: React.FC<AssignModalProps> = ({
             form.resetFields();
             setEffectiveDate(dayjs().format('YYYY-MM-DD'));
         }
-    }, [open, playerIds, form]);
+    }, [open, playerIds, form, loadPlayers]);
 
     /**
      * 提交表单
@@ -151,7 +152,7 @@ const AssignModal: React.FC<AssignModalProps> = ({
                 onOk();
             }
         } catch (error) {
-            console.error('Assign players error:', error);
+            logger.error('Assign players error:', error);
             message.error('分配陪玩师失败');
         } finally {
             setLoading(false);

@@ -17,6 +17,7 @@ import { PageContainer } from '@/components';
 import RechargeOptions from './Options';
 import RechargeRecords from './Records';
 
+import { logger } from '@/utils/logger';
 /**
  * 充值管理主页面
  */
@@ -40,7 +41,7 @@ const RechargePage: React.FC = () => {
                 message.error(response.data.message || '加载统计数据失败');
             }
         } catch (error) {
-            console.error('Load stats error:', error);
+            logger.error('Load stats error:', error);
             message.error('加载统计数据失败');
         } finally {
             setLoading(false);

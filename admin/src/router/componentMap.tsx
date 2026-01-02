@@ -2,6 +2,7 @@ import React from 'react';
 import LazyLoad from '@/components/common/LazyLoad';
 import LayoutOutlet from './LayoutOutlet';
 
+import { logger } from '@/utils/logger';
 // Lazy load components
 const Audit = React.lazy(() => import('@/pages/sys/log'));
 const Settings = React.lazy(() => import('@/pages/sys/setting'));
@@ -209,7 +210,7 @@ export const componentMap: Record<string, React.LazyExoticComponent<React.Compon
 export const getComponent = (componentKey: string) => {
     const Component = componentMap[componentKey];
     if (!Component) {
-        console.warn(`Component not found for key: ${componentKey}`);
+        logger.warn(`Component not found for key: ${componentKey}`);
         return null;
     }
     

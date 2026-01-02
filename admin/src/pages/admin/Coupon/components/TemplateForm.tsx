@@ -30,6 +30,7 @@ import {
 } from '@/api/coupon';
 import { MONEY, LAYOUT, TABLE, MODAL, BUSINESS } from '@/constants/common';
 
+import { logger } from '@/utils/logger';
 const { TextArea } = Input;
 
 interface TemplateFormProps {
@@ -108,7 +109,7 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
             };
             await onSubmit(data);
         } catch (error) {
-            console.error('Form validation failed:', error);
+            logger.error('Form validation failed:', error);
         }
     };
 

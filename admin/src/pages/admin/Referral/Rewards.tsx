@@ -99,6 +99,7 @@ const Rewards: React.FC<RewardsProps> = ({ onDataChange }) => {
         } finally {
             setLoading(false);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [pagination.current, pagination.pageSize, keyword, typeFilter, statusFilter]);
 
     useEffect(() => {
@@ -144,11 +145,11 @@ const Rewards: React.FC<RewardsProps> = ({ onDataChange }) => {
     /**
      * Open issue modal
      */
-    const openIssueModal = (reward: ReferralReward, action: 'issue' | 'fail') => {
+    const openIssueModal = useCallback((reward: ReferralReward, action: 'issue' | 'fail') => {
         setIssueReward(reward);
         setIssueAction(action);
         setIssueModalVisible(true);
-    };
+    }, []);
 
     /**
      * Handle issue reward

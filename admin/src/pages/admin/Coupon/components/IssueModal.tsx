@@ -25,6 +25,7 @@ import {
 } from '@/api/coupon';
 import { adminApi } from '@/api/admin';
 
+import { logger } from '@/utils/logger';
 const { Text } = Typography;
 
 interface IssueModalProps {
@@ -86,7 +87,7 @@ const IssueModal: React.FC<IssueModalProps> = ({
                 setUsers(userRes.data.data);
             }
         } catch (err) {
-            console.error('Failed to load data:', err);
+            logger.error('Failed to load data:', err);
             message.error('加载数据失败');
         } finally {
             setLoading(false);
@@ -154,7 +155,7 @@ const IssueModal: React.FC<IssueModalProps> = ({
                 }
             }
         } catch (err) {
-            console.error('Issue coupon failed:', err);
+            logger.error('Issue coupon failed:', err);
         } finally {
             setSubmitting(false);
         }

@@ -37,6 +37,7 @@ import { PermissionGuard } from '@/components/PermissionGuard';
 import { permissionApi } from '@/api/permission';
 import type { Permission, HTTPMethod, CreatePermissionDto, UpdatePermissionDto } from '@/types/permission';
 
+import { logger } from '@/utils/logger';
 const { Text } = Typography;
 
 /**
@@ -109,7 +110,7 @@ const PermissionPage: React.FC = () => {
                 }
             }
         } catch (error) {
-            console.error(error);
+            logger.error(error);
             message.error('加载权限列表失败');
         } finally {
             setLoading(false);
@@ -126,7 +127,7 @@ const PermissionPage: React.FC = () => {
                 setGroups(res.data.data);
             }
         } catch (error) {
-            console.error(error);
+            logger.error(error);
         }
     }, []);
 
@@ -215,7 +216,7 @@ const PermissionPage: React.FC = () => {
             loadData();
             loadGroups();
         } catch (error: unknown) {
-            console.error(error);
+            logger.error(error);
             const err = error as { response?: { data?: { message?: string } }; errorFields?: unknown };
             if (err.response?.data?.message) {
                 message.error(err.response.data.message);
@@ -258,7 +259,7 @@ const PermissionPage: React.FC = () => {
             setPermissionToDelete(null);
             loadData();
         } catch (error: unknown) {
-            console.error(error);
+            logger.error(error);
             const err = error as { response?: { data?: { message?: string } } };
             if (err.response?.data?.message) {
                 message.error(err.response.data.message);

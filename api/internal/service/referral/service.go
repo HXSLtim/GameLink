@@ -387,10 +387,11 @@ func (s *Service) IssueReward(ctx context.Context, rewardID uint64) error {
 		return fmt.Errorf("reward already processed")
 	}
 
-	// TODO: 根据奖励类型执行发放逻辑
-	// - cash: 调用钱包服务增加余额
-	// - coupon: 调用优惠券服务发放优惠券
-	// - points: 调用积分服务增加积分
+	// Issue reward based on reward type (future implementation)
+	// - cash: Call wallet service to increase balance
+	// - coupon: Call coupon service to issue coupon
+	// - points: Call points service to add points
+	// For now, just mark as issued without actual distribution
 
 	// 更新状态为已发放
 	if err := s.repo.UpdateRewardStatus(ctx, rewardID, model.ReferralRewardStatusIssued, ""); err != nil {

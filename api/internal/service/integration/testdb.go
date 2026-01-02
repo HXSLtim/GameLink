@@ -255,7 +255,7 @@ func cleanTables(t *testing.T, db *gorm.DB) {
 		// Commission
 		"monthly_settlements", "commission_records", "commission_rules",
 		// Settlement
-		"player_settlement_assignments", "settlement_companies",
+		"player_company_assignments", "settlement_companies",
 		// User Block
 		"user_blocks",
 		// User Tag

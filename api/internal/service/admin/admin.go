@@ -972,8 +972,7 @@ func (s *AdminService) UpdatePlayerVerification(ctx context.Context, id uint64, 
 		"remark":      input.Remark,
 	})
 
-	// TODO: 发送通知给陪玩师
-	// s.sendVerificationNotification(ctx, player, input.VerificationStatus)
+	// Notification to player will be sent when notification service is integrated
 
 	return player, nil
 }

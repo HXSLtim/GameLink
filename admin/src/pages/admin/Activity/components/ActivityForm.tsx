@@ -25,6 +25,7 @@ import {
 } from '@/api/activity';
 import type { Dayjs } from 'dayjs';
 
+import { logger } from '@/utils/logger';
 const { TextArea } = Input;
 
 interface ActivityFormProps {
@@ -102,7 +103,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
             };
             await onSubmit(data);
         } catch (error) {
-            console.error('Form validation failed:', error);
+            logger.error('Form validation failed:', error);
         }
     };
 

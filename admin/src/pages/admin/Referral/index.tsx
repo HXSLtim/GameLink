@@ -24,6 +24,7 @@ import ReferralList from './ReferralList';
 import ReferralCodes from './Codes';
 import ReferralRewards from './Rewards';
 
+import { logger } from '@/utils/logger';
 /**
  * Referral Management Page
  */
@@ -44,7 +45,7 @@ const ReferralPage: React.FC = () => {
                 setStats(response.data.data);
             }
         } catch (err) {
-            console.error('Failed to load referral stats:', err);
+            logger.error('Failed to load referral stats:', err);
             // Silent fail, don't show error message
         } finally {
             setStatsLoading(false);

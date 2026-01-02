@@ -34,6 +34,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { reviewApi, reviewReplyApi, type OperationLog } from '@/api/review';
 import type { Review, ReviewReply } from '@/types/review';
+import { logger } from '@/utils/logger';
 import {
   REVIEW_STATUS_TEXT,
   REVIEW_STATUS_COLOR,
@@ -80,7 +81,7 @@ const ReviewDetail: React.FC = () => {
         setLogs(response.data.data || []);
       }
     } catch {
-      console.error('Failed to fetch logs');
+      logger.error('Failed to fetch logs');
     }
   }, [id]);
 

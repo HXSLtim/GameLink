@@ -27,6 +27,7 @@ import { PageContainer, SearchTable, type SearchField } from '@/components';
 import { teamApi, type TeamMember, type Team } from '@/api/team';
 import dayjs from 'dayjs';
 
+import { logger } from '@/utils/logger';
 const { Text } = Typography;
 
 /**
@@ -82,7 +83,7 @@ const MembersPage: React.FC = () => {
                 message.error(response.data.message || '加载失败');
             }
         } catch (error) {
-            console.error('Load members error:', error);
+            logger.error('Load members error:', error);
             message.error('加载成员列表失败');
         } finally {
             setLoading(false);
@@ -115,7 +116,7 @@ const MembersPage: React.FC = () => {
                 setMemberTeam(response.data.data);
             }
         } catch (error) {
-            console.error('Load team error:', error);
+            logger.error('Load team error:', error);
         }
     };
 

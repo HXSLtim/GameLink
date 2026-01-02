@@ -39,6 +39,7 @@ import type {
 import AssignModal from './components/AssignModal';
 import dayjs from 'dayjs';
 
+import { logger } from '@/utils/logger';
 const { Text } = Typography;
 
 /**
@@ -102,7 +103,7 @@ const SettlementPlayersPage: React.FC = () => {
                 setTotal(allPlayers.length);
             }
         } catch (error) {
-            console.error('Load players error:', error);
+            logger.error('Load players error:', error);
             message.error('加载陪玩师归属列表失败');
         } finally {
             setLoading(false);
@@ -151,7 +152,7 @@ const SettlementPlayersPage: React.FC = () => {
             setTransferModalVisible(false);
             loadData();
         } catch (error) {
-            console.error('Transfer error:', error);
+            logger.error('Transfer error:', error);
             message.error('转移归属失败');
         }
     };
@@ -171,7 +172,7 @@ const SettlementPlayersPage: React.FC = () => {
                 setHistoryDrawerVisible(true);
             }
         } catch (error) {
-            console.error('Load history error:', error);
+            logger.error('Load history error:', error);
             message.error('加载历史记录失败');
         }
     };

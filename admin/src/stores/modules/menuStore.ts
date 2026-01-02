@@ -9,6 +9,7 @@ import { persist } from 'zustand/middleware';
 import type { MenuItem } from '../types';
 import { useAuthStore } from './authStore';
 
+import { logger } from '@/utils/logger';
 interface MenuState {
   // State
   /** Raw menus from API (unfiltered) */
@@ -198,7 +199,7 @@ export const useMenuStore = create<MenuState>()(
           set({ menus: filteredMenus });
 
         } catch (error: unknown) {
-          console.error('Failed to fetch menus:', error);
+          logger.error('Failed to fetch menus:', error);
           set({ loading: false, menus: [] });
         }
       },

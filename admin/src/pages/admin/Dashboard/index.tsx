@@ -16,6 +16,7 @@ import { PageContainer, StatCard } from '@/components';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { adminApi } from '@/api/admin';
 import type { DashboardStats, TrendData, TopPlayer } from '@/api/admin';
+import { logger } from '@/utils/logger';
 
 const { Text } = Typography;
 const { Option } = Select;
@@ -93,7 +94,7 @@ const Dashboard: React.FC = () => {
                 setTopPlayers(topPlayersRes.data?.data || topPlayersRes.data || []);
 
             } catch (error) {
-                console.error(error);
+                logger.error('Failed to load dashboard data', error);
                 message.error('加载仪表盘数据失败');
             } finally {
                 setLoading(false);
@@ -101,7 +102,7 @@ const Dashboard: React.FC = () => {
         };
 
         loadData();
-    }, [days]);
+    }, [days, message]);
 
     const orderColumns: ColumnsType<OrderRecord> = [
         {

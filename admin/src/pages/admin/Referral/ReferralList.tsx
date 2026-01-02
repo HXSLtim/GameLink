@@ -104,6 +104,7 @@ const ReferralList: React.FC<ReferralListProps> = ({ onDataChange }) => {
         } finally {
             setLoading(false);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [pagination.current, pagination.pageSize, keyword, typeFilter, statusFilter]);
 
     useEffect(() => {
@@ -149,13 +150,13 @@ const ReferralList: React.FC<ReferralListProps> = ({ onDataChange }) => {
     /**
      * Open update modal
      */
-    const openUpdateModal = (record: Referral) => {
+    const openUpdateModal = useCallback((record: Referral) => {
         setCurrentReferral(record);
         updateForm.setFieldsValue({
             status: record.status,
         });
         setUpdateModalVisible(true);
-    };
+    }, [updateForm]);
 
     /**
      * Handle update status

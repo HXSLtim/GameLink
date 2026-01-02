@@ -34,6 +34,7 @@ import { MONEY, LAYOUT, SIZES, TABLE, COLORS, BUSINESS } from '@/constants/commo
 import OptionForm from './components/OptionForm';
 import dayjs from 'dayjs';
 
+import { logger } from '@/utils/logger';
 const { Text } = Typography;
 
 interface OptionsProps {
@@ -73,7 +74,7 @@ const RechargeOptions: React.FC<OptionsProps> = ({ onStatsUpdate }) => {
                 message.error(response.data.message || '加载失败');
             }
         } catch (error) {
-            console.error('Load recharge options error:', error);
+            logger.error('Load recharge options error:', error);
             message.error('加载充值选项失败');
         } finally {
             setLoading(false);
@@ -110,7 +111,7 @@ const RechargeOptions: React.FC<OptionsProps> = ({ onStatsUpdate }) => {
             loadData();
             onStatsUpdate?.();
         } catch (error) {
-            console.error('Delete error:', error);
+            logger.error('Delete error:', error);
             message.error('删除失败');
         }
     };
@@ -125,7 +126,7 @@ const RechargeOptions: React.FC<OptionsProps> = ({ onStatsUpdate }) => {
             loadData();
             onStatsUpdate?.();
         } catch (error) {
-            console.error('Toggle status error:', error);
+            logger.error('Toggle status error:', error);
             message.error('操作失败');
         }
     };

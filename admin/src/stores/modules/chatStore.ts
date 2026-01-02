@@ -11,6 +11,7 @@
  */
 
 import { create } from 'zustand';
+import { logger } from '@/utils/logger';
 import {
   chatConversationApi,
   chatMessageApi,
@@ -335,7 +336,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         get().recalculateTotalUnread();
       }
     } catch (error) {
-      console.error('Failed to fetch chat rooms:', error);
+      logger.error('Failed to fetch chat rooms:', error);
     } finally {
       set({ roomsLoading: false });
     }
@@ -415,7 +416,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       });
       get().updateRoom(roomId, { status: 'closed' } as Partial<ChatRoom>);
     } catch (error) {
-      console.error('Failed to close room:', error);
+      logger.error('Failed to close room:', error);
       throw error;
     }
   },
@@ -428,7 +429,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       await chatConversationApi.reopenConversation(roomId);
       get().updateRoom(roomId, { status: 'active' } as Partial<ChatRoom>);
     } catch (error) {
-      console.error('Failed to reopen room:', error);
+      logger.error('Failed to reopen room:', error);
       throw error;
     }
   },
@@ -503,7 +504,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         });
       }
     } catch (error) {
-      console.error('Failed to fetch messages:', error);
+      logger.error('Failed to fetch messages:', error);
     } finally {
       set({ messagesLoading: false });
     }
@@ -756,7 +757,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         await get().processSendQueue();
       }
     } catch (error) {
-      console.error('Failed to send message:', error);
+      logger.error('Failed to send message:', error);
 
       // 检查是否需要重试
       const firstPending = get().pendingMessages[0];
@@ -803,7 +804,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     //   get().updateRoom(data.roomId, { status: 'closed' });
     // });
 
-    console.log('WebSocket integration initialized (placeholder)');
+    logger.info('WebSocket integration initialized (placeholder)');
   },
 
   /**
@@ -819,7 +820,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     // socket.off('chat:room_updated');
     // socket.off('chat:room_closed');
 
-    console.log('WebSocket listeners cleaned up (placeholder)');
+    logger.info('WebSocket listeners cleaned up (placeholder)');
   },
 
   // ==================== 工具方法实现 ====================

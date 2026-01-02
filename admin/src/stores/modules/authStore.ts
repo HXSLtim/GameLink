@@ -18,6 +18,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import type { UserInfo, LoginRequest } from '../types';
 import { authApi } from '@/api/auth';
 
+import { logger } from '@/utils/logger';
 interface AuthState {
   // State
   token: string | null;
@@ -114,7 +115,7 @@ export const useAuthStore = create<AuthState>()(
         try {
           // Call logout API (ignore errors for local cleanup)
           await authApi.logout().catch(() => {
-            console.warn('Logout API call failed, proceeding with local cleanup');
+            logger.warn('Logout API call failed, proceeding with local cleanup');
           });
 
           // Clear auth state
@@ -141,25 +142,25 @@ export const useAuthStore = create<AuthState>()(
             const { useOrderStore } = await import('./orderStore');
             useOrderStore.getState().reset();
           } catch (e) {
-            console.warn('Failed to clear orderStore:', e);
+            logger.warn('Failed to clear orderStore:', e);
           }
 
           try {
             const { clearPlayerStore } = await import('./playerStore');
             clearPlayerStore();
           } catch (e) {
-            console.warn('Failed to clear playerStore:', e);
+            logger.warn('Failed to clear playerStore:', e);
           }
 
           try {
             const { useChatStore } = await import('./chatStore');
             useChatStore.getState().reset();
           } catch (e) {
-            console.warn('Failed to clear chatStore:', e);
+            logger.warn('Failed to clear chatStore:', e);
           }
 
         } catch (error) {
-          console.error('Logout error:', error);
+          logger.error('Logout error:', error);
           // Force logout even on error
           set({
             token: null,

@@ -19,6 +19,7 @@ import {
 import { vipApi } from '@/api/vip';
 import type { VIPLevel, CreateVIPLevelDto, UpdateVIPLevelDto } from '@/api/vip';
 
+import { logger } from '@/utils/logger';
 const { Text } = Typography;
 
 interface LevelFormProps {
@@ -120,7 +121,7 @@ const LevelForm: React.FC<LevelFormProps> = ({ visible, level, onCancel, onSucce
             form.resetFields();
             setBenefits([]);
         } catch (error) {
-            console.error('Save VIP level error:', error);
+            logger.error('Save VIP level error:', error);
             message.error('操作失败');
         } finally {
             setLoading(false);

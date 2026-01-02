@@ -19,6 +19,7 @@ import {
     theme,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import { logger } from '@/utils/logger';
 import {
     TrophyOutlined,
     ReloadOutlined,
@@ -47,7 +48,7 @@ const RewardsPage: React.FC = () => {
                 setActivities(res.data.data);
             }
         } catch (err) {
-            console.error('Failed to load activities:', err);
+            logger.error('Failed to load activities:', err);
         }
     }, []);
 
@@ -66,7 +67,7 @@ const RewardsPage: React.FC = () => {
                 message.error(res.data?.message || '加载失败');
             }
         } catch (err) {
-            console.error('Failed to load rewards:', err);
+            logger.error('Failed to load rewards:', err);
             message.error('加载失败');
         } finally {
             setLoading(false);

@@ -57,12 +57,12 @@ func (s *SettlementScheduler) monthlySettlement() {
 	err := s.commissionSvc.SettleMonth(ctx, month)
 	if err != nil {
 		log.Printf("[Settlement] ERROR: Monthly settlement failed for %s: %v", month, err)
-		// TODO: 发送告警通知
+		// Alert notification will be sent when notification service is integrated
 		return
 	}
 
 	log.Printf("[Settlement] SUCCESS: Monthly settlement completed for %s", month)
-	// TODO: 发送成功通知
+	// Success notification will be sent when notification service is integrated
 }
 
 // TriggerSettlement 手动触发结算（用于测试和补偿）

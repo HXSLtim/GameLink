@@ -18,6 +18,7 @@ import {
 } from 'antd';
 import { rechargeApi, type RechargeOption, type CreateRechargeOptionDto, type UpdateRechargeOptionDto } from '@/api/recharge';
 
+import { logger } from '@/utils/logger';
 const { TextArea } = Input;
 const { Text } = Typography;
 
@@ -108,7 +109,7 @@ const OptionForm: React.FC<OptionFormProps> = ({ visible, option, onCancel, onSu
             onCancel();
             form.resetFields();
         } catch (error) {
-            console.error('Save option error:', error);
+            logger.error('Save option error:', error);
             message.error('操作失败');
         } finally {
             setLoading(false);

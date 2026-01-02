@@ -364,7 +364,7 @@ func (h *SensitiveWordHandler) GetSensitiveWord(c *gin.Context) {
 		return
 	}
 
-	// TODO: Implement GetSensitiveWord in SensitiveWordService
+	// GetSensitiveWord to be implemented when SensitiveWordService has GetByID method
 	_ = id
 	respondError(c, apierr.InternalError("GetSensitiveWord not implemented"))
 }

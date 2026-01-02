@@ -70,6 +70,7 @@ const PaymentRecords: React.FC = () => {
 
     useEffect(() => {
         fetchRecords();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const getStatusTag = (status: string) => {

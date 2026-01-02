@@ -7,6 +7,7 @@ import { Modal, Form, Select, Alert, Space, Divider } from 'antd';
 import type { Dispute } from '@/types/dispute';
 import { adminApi } from '@/api/admin';
 
+import { logger } from '@/utils/logger';
 export interface AssignModalProps {
     /** Modal visibility */
     open: boolean;
@@ -62,7 +63,7 @@ export const AssignModal: React.FC<AssignModalProps> = ({
                 setStaffList(staff);
             }
         } catch (error) {
-            console.error('Failed to load staff list:', error);
+            logger.error('Failed to load staff list:', error);
         } finally {
             setLoading(false);
         }

@@ -8,6 +8,7 @@ import type { ReviewDisplaySettings, UpdateSettingsFormData } from '@/types/revi
 import { SORT_BY_TEXT } from '@/types/review';
 import { usePermissions } from '@/hooks/usePermission';
 
+import { logger } from '@/utils/logger';
 const { Text, Paragraph } = Typography;
 
 // 评价设置默认值
@@ -128,13 +129,13 @@ const Settings: React.FC = () => {
 
                 // 显示详细信息
                 if (result.menuSync) {
-                    console.log('[菜单同步]', result.menuSync);
+                    logger.info('[菜单同步]', result.menuSync);
                 }
                 if (result.permissionSync) {
-                    console.log('[权限同步]', result.permissionSync);
+                    logger.info('[权限同步]', result.permissionSync);
                 }
                 if (result.superAdminAssign) {
-                    console.log('[超管权限]', result.superAdminAssign);
+                    logger.info('[超管权限]', result.superAdminAssign);
                 }
             } else {
                 message.error({
@@ -143,7 +144,7 @@ const Settings: React.FC = () => {
                 });
             }
         } catch (error) {
-            console.error('初始化异常:', error);
+            logger.error('初始化异常:', error);
             message.error({
                 content: `初始化异常：${error instanceof Error ? error.message : '未知错误'}`,
                 duration: 5,

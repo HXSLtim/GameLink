@@ -253,3 +253,94 @@ func IsAuthenticated(c *gin.Context) bool {
 	authenticated, ok := isAuthenticated.(bool)
 	return ok && authenticated
 }
+
+// JWTAuthWithRevocation 带Token撤销功能的JWT认证中间件
+//
+// 与JWTAuth的区别：
+// - 使用Redis检查Token是否已被撤销
+// - 支持用户登出后立即失效Token
+//
+// 使用方法：
+// router.Use(middleware.JWTAuthWithRevocation(secretKey, cache))
+func JWTAuthWithRevocation(secretKey string, cache auth.Cache) gin.HandlerFunc {
+	// 验证密钥长度
+	if len(secretKey) < 32 {
+		logging.Error("JWT secret too short, must be at least 32 characters")
+		return func(c *gin.Context) {
+			c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{
+				"success": false,
+				"code":    http.StatusServiceUnavailable,
+				"message": "认证服务配置错误，请联系管理员",
+			})
+		}
+	}
+
+	// Token有效期（24小时）
+	tokenDuration := auth.DefaultTokenDuration
+
+	// 创建带缓存的JWT管理器
+	jwtManager := auth.NewJWTManagerWithCache(secretKey, tokenDuration, cache)
+
+	return func(c *gin.Context) {
+		// 从请求头获取Authorization
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			resp.Error(c, apierr.Unauthorized("缺少Authorization头"))
+			c.Abort()
+			return
+		}
+
+		// 提取Token
+		tokenString, err := auth.ExtractTokenFromHeader(authHeader)
+		if err != nil {
+			resp.Error(c, apierr.Unauthorized(err.Error()))
+			c.Abort()
+			return
+		}
+
+		// 验证Token并检查撤销状态
+		claims, err := jwtManager.VerifyTokenWithRevocation(c.Request.Context(), tokenString)
+		if err != nil {
+			resp.Error(c, apierr.Unauthorized("无效的Token: "+err.Error()))
+			c.Abort()
+			return
+		}
+
+		// 检查Token是否过期
+		if auth.IsTokenExpired(claims) {
+			resp.Error(c, apierr.Unauthorized("Token已过期"))
+			c.Abort()
+			return
+		}
+
+		// 将用户信息存储到Context中
+		c.Set("user_id", claims.UserID)
+		c.Set("user_role", claims.Role)
+		c.Set("jwt_claims", claims)
+		c.Set("session_id", claims.SessionID)
+		c.Set("jti", claims.JTI)
+		// 注入 actor 到 request context
+		c.Request = c.Request.WithContext(logging.WithActorUserID(c.Request.Context(), claims.UserID))
+
+		// Token自动刷新逻辑（与JWTAuth相同）
+		remainingTime := auth.GetTokenRemainingTime(claims)
+		if remainingTime < auth.TokenAutoRefreshWindow {
+			newToken, err := jwtManager.RefreshToken(claims)
+			if err == nil {
+				c.Header("X-Refreshed-Token", newToken)
+				newClaims, verifyErr := jwtManager.VerifyToken(newToken)
+				if verifyErr == nil && newClaims != nil {
+					c.Set("jwt_claims", newClaims)
+					c.Set("user_id", newClaims.UserID)
+					c.Set("user_role", newClaims.Role)
+				}
+				logging.Debug("Token auto-refreshed", "user_id", claims.UserID)
+			}
+		} else if remainingTime < auth.TokenRefreshRecommendationWindow {
+			c.Header("X-Token-Refresh-Recommendation", "true")
+			c.Header("X-Token-Remaining", remainingTime.String())
+		}
+
+		c.Next()
+	}
+}

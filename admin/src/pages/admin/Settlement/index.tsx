@@ -39,6 +39,7 @@ import type {
 import CompanyForm from './components/CompanyForm';
 import dayjs from 'dayjs';
 
+import { logger } from '@/utils/logger';
 /**
  * 公司类型映射
  */
@@ -96,7 +97,7 @@ const SettlementPage: React.FC = () => {
                 message.error(response.data.message || '加载失败');
             }
         } catch (error) {
-            console.error('Load settlement companies error:', error);
+            logger.error('Load settlement companies error:', error);
             message.error('加载结算公司列表失败');
         } finally {
             setLoading(false);
@@ -142,7 +143,7 @@ const SettlementPage: React.FC = () => {
             message.success('状态更新成功');
             loadData();
         } catch (error) {
-            console.error('Toggle status error:', error);
+            logger.error('Toggle status error:', error);
             message.error('状态更新失败');
         }
     };
@@ -156,7 +157,7 @@ const SettlementPage: React.FC = () => {
             message.success('删除成功');
             loadData();
         } catch (error) {
-            console.error('Delete company error:', error);
+            logger.error('Delete company error:', error);
             message.error('删除失败');
         }
     };
@@ -173,7 +174,7 @@ const SettlementPage: React.FC = () => {
                 setHistoryDrawerVisible(true);
             }
         } catch (error) {
-            console.error('Load history error:', error);
+            logger.error('Load history error:', error);
             message.error('加载历史记录失败');
         }
     };
@@ -225,7 +226,7 @@ const SettlementPage: React.FC = () => {
                 loadData();
             }
         } catch (error) {
-            console.error('Batch status error:', error);
+            logger.error('Batch status error:', error);
             message.error('操作失败');
         }
     };

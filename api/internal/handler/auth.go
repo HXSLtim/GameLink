@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"net/http"
+	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -54,7 +56,7 @@ type registerRequest struct {
 
 // Login handles user login
 // @Summary      登录
-// @Description  用户名（邮箱或手机号）+ 密码登录，返回 JWT
+// @Description  用户名（邮箱或手机号）+ 密码登录，返回 JWT 并设置 httpOnly Cookie
 // @Tags         Auth
 // @Accept       json
 // @Produce      json
@@ -86,6 +88,26 @@ func loginHandler(c *gin.Context, svc *authservice.AuthService) {
 		return
 	}
 
+	// 检查是否启用 Cookie 认证
+	useCookieAuth := os.Getenv("USE_COOKIE_AUTH") == "true"
+	if useCookieAuth {
+		// 设置 httpOnly Cookie（更安全，前端无法通过 JS 访问）
+		isProduction := os.Getenv("APP_ENV") == "production"
+		maxAge := 3600 * 24 // 24 小时
+
+		c.SetSameSite(http.SameSiteStrictMode)
+		c.SetCookie(
+			"auth_token",        // Cookie 名称
+			r.Token,             // Token 值
+			maxAge,              // 过期时间（秒）
+			"/",                 // 路径
+			"",                  // 域名（留空表示当前域名）
+			isProduction,        // Secure（仅 HTTPS）
+			true,                // HttpOnly（防止 JS 访问）
+		)
+	}
+
+	// 响应中仍然包含 token（用于向后兼容和前端获取用户信息）
 	resp.Success(c, "登录成功", loginResponse{
 		Token:     r.Token,
 		ExpiresAt: r.ExpiresAt,
@@ -186,12 +208,25 @@ func refreshHandler(c *gin.Context, svc *authservice.AuthService) {
 	resp.Success(c, "刷新成功", tokenPayload{Token: newToken})
 }
 
-// Logout handles user logout (stateless, client discards token)
-// @Summary      登出（前端丢弃 Token）
+// Logout handles user logout
+// @Summary      登出
+// @Description  清除 Cookie，撤销 Token（如果启用）
 // @Tags         Auth
 // @Security     BearerAuth
 // @Success      200  {object}  model.SuccessResponse
 // @Router       /auth/logout [post]
 func logoutHandler(c *gin.Context) {
+	// 清除 auth_token Cookie
+	c.SetSameSite(http.SameSiteStrictMode)
+	c.SetCookie(
+		"auth_token",
+		"",
+		-1,    // 立即过期
+		"/",
+		"",
+		os.Getenv("APP_ENV") == "production",
+		true,
+	)
+
 	resp.Success(c, "登出成功", gin.H{"message": "logged out"})
 }

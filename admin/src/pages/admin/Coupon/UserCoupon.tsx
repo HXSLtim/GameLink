@@ -40,6 +40,7 @@ import {
 } from '@/api/coupon';
 import { adminApi } from '@/api/admin';
 
+import { logger } from '@/utils/logger';
 const { Title, Text } = Typography;
 
 const UserCouponPage: React.FC = () => {
@@ -70,7 +71,7 @@ const UserCouponPage: React.FC = () => {
                     setUsers(res.data.data);
                 }
             } catch (err) {
-                console.error('Failed to load users:', err);
+                logger.error('Failed to load users:', err);
             }
         };
         loadUsers();
@@ -95,7 +96,7 @@ const UserCouponPage: React.FC = () => {
                 message.error(res.data?.message || '加载失败');
             }
         } catch (err) {
-            console.error('Failed to load coupons:', err);
+            logger.error('Failed to load coupons:', err);
             message.error('加载失败');
         } finally {
             setLoading(false);

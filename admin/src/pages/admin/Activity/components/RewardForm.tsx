@@ -17,6 +17,7 @@ import {
 } from '@/api/activity';
 import { couponApi } from '@/api/coupon';
 
+import { logger } from '@/utils/logger';
 interface RewardFormProps {
     visible: boolean;
     editing: boolean;
@@ -50,7 +51,7 @@ const RewardForm: React.FC<RewardFormProps> = ({
                     setCouponTemplates(res.data.data.map(t => ({ id: t.id, name: t.name })));
                 }
             } catch (err) {
-                console.error('Failed to load coupon templates:', err);
+                logger.error('Failed to load coupon templates:', err);
             } finally {
                 setLoadingTemplates(false);
             }
@@ -93,7 +94,7 @@ const RewardForm: React.FC<RewardFormProps> = ({
             };
             await onSubmit(data);
         } catch (error) {
-            console.error('Form validation failed:', error);
+            logger.error('Form validation failed:', error);
         }
     };
 

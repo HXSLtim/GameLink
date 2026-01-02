@@ -5,6 +5,7 @@ import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined } from '@ant-de
 import { authApi } from '@/api/auth';
 import { ENABLE_QUICK_LOGIN, DEBUG_USERS } from '@/config/debug';
 
+import { logger } from '@/utils/logger';
 const Auth: React.FC = () => {
     const { message } = App.useApp();
     const { token } = theme.useToken();
@@ -46,7 +47,7 @@ const Auth: React.FC = () => {
                 navigate('/');
             }
         } catch (error) {
-            console.error(error);
+            logger.error(error);
             message.error('登录失败，请检查用户名和密码');
         } finally {
             setLoginLoading(false);
@@ -67,7 +68,7 @@ const Auth: React.FC = () => {
             // 切换到登录 Tab（通过改变 URL）
             navigate('/login');
         } catch (error) {
-            console.error(error);
+            logger.error(error);
             message.error('注册失败，请重试。');
         } finally {
             setRegisterLoading(false);

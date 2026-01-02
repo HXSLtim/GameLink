@@ -5,6 +5,7 @@ import AppRouter from '@/router';
 import { AdminProvider } from '@/context/AdminContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { smartInit } from '@/services/init';
+import { logger } from '@/utils/logger';
 import './App.css';
 
 /**
@@ -32,18 +33,18 @@ function App() {
 
         if (result && import.meta.env.DEV) {
           if (result.success) {
-            console.log('[App] 初始化成功:', {
+            logger.info('[App] 初始化成功:', {
               菜单: result.menuSync ? `创建${result.menuSync.created}个，更新${result.menuSync.updated}个` : '跳过',
               权限: result.permissionSync ? `创建${result.permissionSync.created}个，更新${result.permissionSync.updated}个` : '跳过',
               超管权限: result.superAdminAssign?.message || '跳过',
               耗时: `${result.duration}ms`,
             });
           } else {
-            console.warn('[App] 初始化存在错误:', result.errors);
+            logger.warn('[App] 初始化存在错误:', result.errors);
           }
         }
       } catch (error) {
-        console.error('[App] 初始化失败:', error);
+        logger.error('[App] 初始化失败:', error);
       }
     };
 

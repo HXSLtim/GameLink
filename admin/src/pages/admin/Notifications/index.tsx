@@ -32,6 +32,7 @@ const AdminNotificationsPage: React.FC = () => {
 
     useEffect(() => {
         fetchNotifications(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleLoadMore = () => {

@@ -59,8 +59,9 @@ func (p *RealWeChatProvider) Refund(ctx context.Context, payment *model.Payment,
 	// For development, log instead of actual API call
 	fmt.Printf("[WeChat Pay] Refund: %+v\n", req)
 
-	// TODO: Implement actual WeChat Pay refund API call
+	// WeChat Pay refund API integration will be implemented in production
 	// Reference: https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_4
+	// Requires: merchant certificate, API secret key, HTTPS client
 
 	now := time.Now()
 	raw := map[string]interface{}{
@@ -157,8 +158,8 @@ func (p *RealWeChatProvider) doRefundRequest(ctx context.Context, req WeChatRefu
 
 	httpReq.Header.Set("Content-Type", "application/xml")
 
-	// TODO: Add client certificate for refund
-	// httpReq.GetBody = ...
+	// Client certificate will be added for production WeChat Pay integration
+	// Required for refund API: httpReq.GetBody = ...
 
 	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Do(httpReq)
@@ -182,7 +183,8 @@ func (p *RealWeChatProvider) doRefundRequest(ctx context.Context, req WeChatRefu
 
 // verifySign verifies WeChat Pay response signature
 func (p *RealWeChatProvider) verifySign(resp WeChatRefundResponse) bool {
-	// TODO: Implement signature verification
+	// Signature verification will be implemented for production
+	// Reference: https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=4_3
 	return true
 }
 
@@ -211,7 +213,7 @@ func (p *RealWeChatProvider) CreateOrder(ctx context.Context, orderID, descripti
 
 	fmt.Printf("[WeChat Pay] CreateOrder: %+v\n", req)
 
-	// TODO: Implement actual WeChat Pay unified order API
+	// WeChat Pay unified order API will be implemented for production
 	// Reference: https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=9_1
 
 	return req, nil

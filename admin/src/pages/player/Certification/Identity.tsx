@@ -30,6 +30,7 @@ import {
 import type { UploadFile, UploadProps } from 'antd';
 import { certificationApi, type IdentityCertification, type RankCertification, type CertificationStatus } from '@/api/certification';
 
+import { logger } from '@/utils/logger';
 const { Title, Text, Paragraph } = Typography;
 
 interface CertificationStatusResponse {
@@ -66,7 +67,7 @@ const IdentityCertificationPage: React.FC = () => {
                 message.error(response.data.message || '加载认证状态失败');
             }
         } catch (error) {
-            console.error('Load certification status error:', error);
+            logger.error('Load certification status error:', error);
             message.error('加载认证状态失败');
         } finally {
             setLoading(false);
@@ -123,7 +124,7 @@ const IdentityCertificationPage: React.FC = () => {
             setIdCardBackList([]);
             loadCertificationStatus();
         } catch (error) {
-            console.error('Submit certification error:', error);
+            logger.error('Submit certification error:', error);
             message.error('提交认证申请失败');
         } finally {
             setSubmitting(false);

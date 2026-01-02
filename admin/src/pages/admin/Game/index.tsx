@@ -29,6 +29,7 @@ import { PermissionGuard } from '@/components/PermissionGuard';
 import { adminApi } from '@/api/admin';
 import dayjs from 'dayjs';
 
+import { logger } from '@/utils/logger';
 /**
  * 游戏数据接口
  */
@@ -98,7 +99,7 @@ const GamePage: React.FC = () => {
                 message.error(response.data.message || '加载失败');
             }
         } catch (error) {
-            console.error('Load games error:', error);
+            logger.error('Load games error:', error);
             message.error('加载游戏列表失败');
         } finally {
             setLoading(false);
@@ -167,7 +168,7 @@ const GamePage: React.FC = () => {
             setEditModalVisible(false);
             loadData();
         } catch (error) {
-            console.error('Save game error:', error);
+            logger.error('Save game error:', error);
             message.error('保存失败');
         } finally {
             setSubmitting(false);
@@ -183,7 +184,7 @@ const GamePage: React.FC = () => {
             message.success(`删除游戏 ${game.name} 成功`);
             loadData();
         } catch (error) {
-            console.error('Delete game error:', error);
+            logger.error('Delete game error:', error);
             message.error('删除失败');
         }
     };

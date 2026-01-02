@@ -15,6 +15,7 @@ import { PageContainer } from '@/components';
 import dayjs from 'dayjs';
 import apiClient from '@/api/client';
 
+import { logger } from '@/utils/logger';
 interface BehaviorStats {
     dau: number;
     mau: number;
@@ -52,7 +53,7 @@ const UserBehaviorPage: React.FC = () => {
                 setStats(response.data.data);
             }
         } catch (error) {
-            console.error('Load stats error:', error);
+            logger.error('Load stats error:', error);
         }
     };
 
@@ -63,7 +64,7 @@ const UserBehaviorPage: React.FC = () => {
                 setTrend(response.data.data || []);
             }
         } catch (error) {
-            console.error('Load trend error:', error);
+            logger.error('Load trend error:', error);
         }
     };
 
@@ -74,7 +75,7 @@ const UserBehaviorPage: React.FC = () => {
                 setDistribution(response.data.data);
             }
         } catch (error) {
-            console.error('Load distribution error:', error);
+            logger.error('Load distribution error:', error);
         }
     };
 

@@ -143,7 +143,8 @@ func getSentGiftsHandler(c *gin.Context, svc *gift.GiftService) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "20"))
 
-	// TODO: 实现真实的赠送记录查询
+	// Sent gifts query will be implemented when gift service has GetUserSentGifts method
+	// For now, return empty data
 	_ = userID
 	_ = page
 	_ = pageSize

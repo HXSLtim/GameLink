@@ -6,6 +6,7 @@ import apiClient from './client';
 import type { ApiResponse } from './admin';
 import type { MenuConfig, PermissionConfig } from '@/config/adminRoutes';
 
+import { logger } from '@/utils/logger';
 /**
  * 同步结果
  */
@@ -118,7 +119,7 @@ export const syncApi = {
                 '/admin/sync/batch',
                 request
             )) as unknown as ApiResponse<BatchSyncResponse>;
-            console.log('[Sync] batchSync response:', response);
+            logger.info('[Sync] batchSync response:', response);
             return response.data;
         } catch (error) {
             return {

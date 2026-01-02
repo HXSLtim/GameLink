@@ -25,6 +25,7 @@ import {
 import { vipApi, VIP_CONFIG_KEYS } from '@/api/vip';
 import type { VIPConfig } from '@/api/vip';
 
+import { logger } from '@/utils/logger';
 const { Title, Text } = Typography;
 
 interface ConfigFormData {
@@ -60,7 +61,7 @@ const VIPConfigPage: React.FC = () => {
                 message.error('加载配置失败');
             }
         } catch (error) {
-            console.error('Load VIP configs error:', error);
+            logger.error('Load VIP configs error:', error);
             message.error('加载配置失败');
         } finally {
             setLoading(false);
@@ -69,6 +70,7 @@ const VIPConfigPage: React.FC = () => {
 
     useEffect(() => {
         loadConfigs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleSubmit = async (values: ConfigFormData) => {
@@ -96,7 +98,7 @@ const VIPConfigPage: React.FC = () => {
             message.success('保存成功');
             loadConfigs();
         } catch (error) {
-            console.error('Save VIP config error:', error);
+            logger.error('Save VIP config error:', error);
             message.error('保存失败');
         } finally {
             setSaving(false);

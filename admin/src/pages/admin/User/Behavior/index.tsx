@@ -6,6 +6,7 @@ import { UserOutlined, ClockCircleOutlined, DollarOutlined } from '@ant-design/i
 import { adminApi } from '@/api/admin';
 import type { UserBehaviorStats, UserDistribution, TrendData } from '@/api/admin';
 
+import { logger } from '@/utils/logger';
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
 const UserBehavior: React.FC = () => {
@@ -17,6 +18,7 @@ const UserBehavior: React.FC = () => {
 
     useEffect(() => {
         fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const fetchData = async () => {
@@ -39,7 +41,7 @@ const UserBehavior: React.FC = () => {
             }
         } catch (error) {
             message.error('获取用户行为数据失败');
-            console.error('Failed to fetch user behavior data:', error);
+            logger.error('Failed to fetch user behavior data:', error);
         } finally {
             setLoading(false);
         }

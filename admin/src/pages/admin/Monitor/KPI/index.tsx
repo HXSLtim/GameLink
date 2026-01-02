@@ -55,6 +55,7 @@ import type { KPIQueryParams } from '@/api/monitor';
 import type { KPIOverview, KPIMetric, KPITrendPoint, KPITarget } from '@/types/monitor';
 import dayjs, { Dayjs } from 'dayjs';
 
+import { logger } from '@/utils/logger';
 const { RangePicker } = DatePicker;
 const { Text } = Typography;
 
@@ -138,12 +139,12 @@ const KPIDashboard: React.FC = () => {
         setOverview(res.data);
       }
     } catch (error) {
-      console.error('加载 KPI 概览失败:', error);
+      logger.error('加载 KPI 概览失败:', error);
       message.error('加载 KPI 概览失败');
     } finally {
       setLoading(false);
     }
-  }, [buildQueryParams]);
+  }, [buildQueryParams, message]);
 
   /**
    * 加载趋势数据
@@ -157,7 +158,7 @@ const KPIDashboard: React.FC = () => {
         setTrendData(res.data || []);
       }
     } catch (error) {
-      console.error('加载趋势数据失败:', error);
+      logger.error('加载趋势数据失败:', error);
     } finally {
       setTrendLoading(false);
     }
@@ -173,7 +174,7 @@ const KPIDashboard: React.FC = () => {
         setTargets(res.data || []);
       }
     } catch (error) {
-      console.error('加载目标列表失败:', error);
+      logger.error('加载目标列表失败:', error);
     }
   }, []);
 
@@ -312,7 +313,7 @@ const KPIDashboard: React.FC = () => {
       loadTargets();
       loadOverview();
     } catch (error) {
-      console.error('保存目标失败:', error);
+      logger.error('保存目标失败:', error);
       message.error('保存目标失败');
     } finally {
       setTargetSubmitting(false);
@@ -333,7 +334,7 @@ const KPIDashboard: React.FC = () => {
           loadTargets();
           loadOverview();
         } catch (error) {
-          console.error('删除目标失败:', error);
+          logger.error('删除目标失败:', error);
           message.error('删除目标失败');
         }
       },

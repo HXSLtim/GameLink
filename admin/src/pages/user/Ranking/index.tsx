@@ -3,6 +3,7 @@
  * 陪玩师排行、收益排行、好评排行
  */
 import React, { useState, useEffect, useCallback } from 'react';
+import { logger } from '@/utils/logger';
 import {
     Card,
     Tabs,
@@ -50,7 +51,7 @@ const UserRanking: React.FC = () => {
         setLoading(true);
         try {
             // 使用 activeTab 和 timeRange 构建请求参数
-            console.log('Loading rankings:', activeTab, timeRange);
+            logger.info('Loading rankings:', activeTab, timeRange);
             await new Promise(resolve => setTimeout(resolve, 500));
             const mockData: RankingPlayer[] = [
                 { rank: 1, id: 1, nickname: '小甜甜', avatar: '', level: 6, value: 2580, change: 2, games: ['王者荣耀', '英雄联盟'], tags: ['声音甜美', '技术好'] },
@@ -66,7 +67,7 @@ const UserRanking: React.FC = () => {
             ];
             setRankings(mockData);
         } catch {
-            console.error('加载排行榜失败');
+            logger.error('加载排行榜失败');
         } finally {
             setLoading(false);
         }

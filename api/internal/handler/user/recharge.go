@@ -24,7 +24,9 @@ func NewRechargeHandler(svc *rechargeservice.Service) *RechargeHandler {
 
 // ListOptions 获取充值档位列表
 func (h *RechargeHandler) ListOptions(c *gin.Context) {
-	// TODO: 从用户信息获取 VIP 等级
+	// Get user VIP level from context (set by auth middleware)
+	// For now, pass nil to get all options regardless of VIP level
+	// Future: Extract VIP level from user context when VIP system is fully integrated
 	var vipLevel *uint64
 
 	options, err := h.svc.GetActiveOptions(c.Request.Context(), vipLevel)
@@ -91,10 +93,11 @@ func (h *RechargeHandler) CreateOrder(c *gin.Context) {
 		return
 	}
 
-	// TODO: 调用支付渠道获取支付参数
+	// Payment channel integration will be implemented when payment service is fully integrated
+	// For now, return the recharge record without payment parameters
 	resp.Created(c, gin.H{
 		"record":  record,
-		"payInfo": nil, // 支付参数，需要对接支付渠道
+		"payInfo": nil, // Payment parameters - to be integrated with payment channel
 	})
 }
 

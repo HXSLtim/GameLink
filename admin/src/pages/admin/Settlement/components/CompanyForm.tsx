@@ -13,6 +13,7 @@ import {
 } from 'antd';
 import { settlementApi, type SettlementCompany, type CompanyType } from '@/api/settlement';
 
+import { logger } from '@/utils/logger';
 export interface CompanyFormProps {
     /** 是否可见 */
     open: boolean;
@@ -109,7 +110,7 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
 
             onOk();
         } catch (error) {
-            console.error('Submit company form error:', error);
+            logger.error('Submit company form error:', error);
             message.error(isEdit ? '更新结算公司失败' : '创建结算公司失败');
         } finally {
             setLoading(false);

@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -97,6 +98,21 @@ func Crypto(cfg config.CryptoConfig) gin.HandlerFunc {
 				abortWithCryptoError(c, http.StatusBadRequest, "缺少签名或时间戳")
 				return
 			}
+
+			// 验证时间戳在允许范围内（±5分钟），防止重放攻击
+			const TimestampTolerance = 5 * 60 // 5分钟容差（秒）
+			now := time.Now().Unix()
+			timestamp := req.Timestamp
+
+			if timestamp < now-TimestampTolerance || timestamp > now+TimestampTolerance {
+				slog.Warn("crypto middleware: timestamp out of range",
+					"server_time", now,
+					"request_time", timestamp,
+					"tolerance", TimestampTolerance)
+				abortWithCryptoError(c, http.StatusBadRequest, "时间戳无效或已过期，请检查客户端时间")
+				return
+			}
+
 			expected := generateSignature(plain, req.Timestamp, cfg.SecretKey)
 			if !strings.EqualFold(expected, req.Signature) {
 				slog.Warn("crypto middleware: signature mismatch", "expected", expected, "got", req.Signature)

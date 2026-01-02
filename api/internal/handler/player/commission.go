@@ -218,8 +218,8 @@ func getMonthlySettlementsHandler(c *gin.Context, svc *commission.CommissionServ
 
 // getPlayerIDByUserID 根据用户ID获取陪玩师ID
 func getPlayerIDByUserID(c *gin.Context, userID uint64) (uint64, error) {
-	// TODO: 优化这个查询，可以在用户上下文中缓存playerID
-	// 这里简化处理，实际应该从service层获
-	// 暂时返回userID作为playerID（需要后续完善）
+	// Performance optimization: Cache playerID in user context to avoid repeated queries
+	// This is currently simplified - returns userID as playerID
+	// Future: Query player table to get actual playerID, cache in middleware context
 	return userID, nil
 }

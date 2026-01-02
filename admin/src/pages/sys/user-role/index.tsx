@@ -47,6 +47,7 @@ import { userRoleApi, roleApi } from '@/api/permission';
 import type { Role, UserEffectivePermissions } from '@/types/permission';
 import dayjs from 'dayjs';
 
+import { logger } from '@/utils/logger';
 const { Text, Title } = Typography;
 
 /**
@@ -109,7 +110,7 @@ const UserRolePage: React.FC = () => {
                 setRoles(res.data.data?.items || []);
             }
         } catch (error) {
-            console.error('加载角色列表失败:', error);
+            logger.error('加载角色列表失败:', error);
         } finally {
             setRolesLoading(false);
         }
@@ -153,7 +154,7 @@ const UserRolePage: React.FC = () => {
                 message.error(response.data.message || '获取用户列表失败');
             }
         } catch (error: unknown) {
-            console.error('加载用户列表失败:', error);
+            logger.error('加载用户列表失败:', error);
             const err = error as { response?: { data?: { message?: string } } };
             message.error(err.response?.data?.message || '获取用户列表失败');
         } finally {
@@ -211,7 +212,7 @@ const UserRolePage: React.FC = () => {
                 message.error('角色分配失败');
             }
         } catch (error: unknown) {
-            console.error('角色分配失败:', error);
+            logger.error('角色分配失败:', error);
             const err = error as { response?: { data?: { message?: string } } };
             message.error(err.response?.data?.message || '角色分配失败');
         } finally {
@@ -264,7 +265,7 @@ const UserRolePage: React.FC = () => {
                 message.error('批量角色分配失败');
             }
         } catch (error: unknown) {
-            console.error('批量角色分配失败:', error);
+            logger.error('批量角色分配失败:', error);
             const err = error as { response?: { data?: { message?: string } } };
             message.error(err.response?.data?.message || '批量角色分配失败');
         } finally {
@@ -288,7 +289,7 @@ const UserRolePage: React.FC = () => {
                 message.error('获取用户权限失败');
             }
         } catch (error: unknown) {
-            console.error('获取用户权限失败:', error);
+            logger.error('获取用户权限失败:', error);
             const err = error as { response?: { data?: { message?: string } } };
             message.error(err.response?.data?.message || '获取用户权限失败');
         } finally {

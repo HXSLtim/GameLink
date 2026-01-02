@@ -6,6 +6,7 @@ import { syncApi, type SyncResult } from '@/api/sync';
 import { ADMIN_MENUS, ADMIN_PERMISSIONS } from '@/config/adminRoutes';
 import { authApi } from '@/api/auth';
 
+import { logger } from '@/utils/logger';
 /**
  * 初始化配置
  */
@@ -60,14 +61,14 @@ interface UserData {
 const hasAdminAccess = async (): Promise<boolean> => {
     const token = localStorage.getItem('token');
     if (!token) {
-        console.log('[Init] No token found');
+        logger.info('[Init] No token found');
         return false;
     }
 
     try {
         const axiosResponse = await authApi.getMe();
 
-        console.log('[Init] getMe response:', axiosResponse);
+        logger.info('[Init] getMe response:', axiosResponse);
 
         // axios 响应拦截器返回完整响应对象，实际数据在 response.data 中
         const api = (axiosResponse as { data: unknown }).data as {
@@ -78,29 +79,29 @@ const hasAdminAccess = async (): Promise<boolean> => {
         };
 
         if (!api) {
-            console.log('[Init] No ApiResponse payload');
+            logger.info('[Init] No ApiResponse payload');
             return false;
         }
 
         const isSuccess = api.success === true || api.code === 200;
         if (!isSuccess) {
-            console.log('[Init] ApiResponse not successful:', api);
+            logger.info('[Init] ApiResponse not successful:', api);
             return false;
         }
 
         if (!api.data) {
-            console.log('[Init] ApiResponse.data missing');
+            logger.info('[Init] ApiResponse.data missing');
             return false;
         }
 
         const userData = api.data as UserData;
         const role = userData.user?.role || '';
-        console.log('[Init] User role:', role);
+        logger.info('[Init] User role:', role);
         const isAdmin = ['admin', 'superAdmin', 'ADMIN', 'CS', 'FINANCE'].includes(role);
-        console.log('[Init] Is admin:', isAdmin);
+        logger.info('[Init] Is admin:', isAdmin);
         return isAdmin;
     } catch (error) {
-        console.log('[Init] API call failed:', error);
+        logger.info('[Init] API call failed:', error);
         return false;
     }
 };
@@ -110,7 +111,7 @@ const hasAdminAccess = async (): Promise<boolean> => {
  */
 const log = (verbose: boolean, ...args: unknown[]) => {
     if (verbose) {
-        console.log('[Init]', ...args);
+        logger.info('[Init]', ...args);
     }
 };
 

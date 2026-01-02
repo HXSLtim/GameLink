@@ -4,7 +4,7 @@
  * @file payment batch integration test
  * @description Integration tests for payment batch operations
  * @note This test file is currently disabled due to missing TestHelper implementation
- * TODO: Rewrite this test to use SetupAdminTest like other integration tests
+ * Note: Rewrite this test to use SetupAdminTest like other integration tests when batch payment handlers are implemented
  */
 
 package admin

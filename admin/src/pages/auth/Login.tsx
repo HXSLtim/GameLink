@@ -5,6 +5,7 @@ import { LockOutlined, UserOutlined } from '@ant-design/icons';
 import { authApi } from '@/api/auth';
 import { ENABLE_QUICK_LOGIN, DEBUG_USERS } from '@/config/debug';
 
+import { logger } from '@/utils/logger';
 const REMEMBER_KEY = 'gamelink_remember_login';
 
 const Login: React.FC = () => {
@@ -78,7 +79,7 @@ const Login: React.FC = () => {
                 navigate('/');
             }
         } catch (error: unknown) {
-            console.error('登录错误:', error);
+            logger.error('登录错误:', error);
             
             // 处理 Axios 错误响应
             if (error && typeof error === 'object' && 'response' in error) {

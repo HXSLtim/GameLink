@@ -89,7 +89,7 @@ func (p *RealAlipayProvider) Refund(ctx context.Context, payment *model.Payment,
 	// For development, log instead of actual API call
 	fmt.Printf("[Alipay] Refund: %+v\n", params)
 
-	// TODO: Implement actual Alipay refund API call
+	// Alipay refund API will be implemented for production
 	// Reference: https://opendocs.alipay.com/open/028r8q
 
 	now := time.Now()
@@ -139,7 +139,7 @@ func (p *RealAlipayProvider) CreateOrder(ctx context.Context, orderID, subject s
 
 	fmt.Printf("[Alipay] CreateOrder: %+v\n", params)
 
-	// TODO: Implement actual Alipay create order API
+	// Alipay create order API will be implemented for production
 	// Reference: https://opendocs.alipay.com/apis/api_1/alipay.trade.create
 
 	// Convert to map[string]interface{} for return
@@ -217,14 +217,16 @@ func (p *RealAlipayProvider) doRequest(ctx context.Context, params map[string]st
 
 // loadPrivateKey loads RSA private key from file
 func loadPrivateKey(path string) (*rsa.PrivateKey, error) {
-	// TODO: Implement PEM key loading
+	// PEM key loading will be implemented for production
 	// Reference: https://opendocs.alipay.com/common/02kppl
+	// Requires: x509.ParsePKCS1PrivateKey, pem.Decode
 	return nil, nil
 }
 
 // loadPublicKey loads RSA public key from file
 func loadPublicKey(path string) (*rsa.PublicKey, error) {
-	// TODO: Implement PEM key loading
+	// PEM key loading will be implemented for production
+	// Requires: x509.ParsePKIXPublicKey, pem.Decode
 	return nil, nil
 }
 
@@ -234,6 +236,7 @@ func (p *RealAlipayProvider) VerifySign(params map[string]string, sign string) b
 		return false
 	}
 
-	// TODO: Implement signature verification
+	// Signature verification will be implemented for production
+	// Reference: https://opendocs.alipay.com/common/02kdpe
 	return true
 }

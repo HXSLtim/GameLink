@@ -52,6 +52,7 @@ import type {
 } from '@/types/monitor';
 import dayjs, { Dayjs } from 'dayjs';
 
+import { logger } from '@/utils/logger';
 const { RangePicker } = DatePicker;
 const { Text } = Typography;
 
@@ -107,7 +108,7 @@ const AnalyticsPage: React.FC = () => {
       if (paymentRes.success) setPayment(paymentRes.data);
       if (funnelRes.success) setFunnel(funnelRes.data);
     } catch (error) {
-      console.error('加载运营数据失败:', error);
+      logger.error('加载运营数据失败:', error);
     } finally {
       setLoading(false);
     }

@@ -50,6 +50,7 @@ import {
     calculateStockPercentage,
 } from '@/api/activity';
 import { ActivityForm, RewardForm } from './components';
+import { logger } from '@/utils/logger';
 
 const { Title, Text } = Typography;
 
@@ -93,7 +94,7 @@ const ActivityPage: React.FC = () => {
                 setStats(res.data.data);
             }
         } catch (err) {
-            console.error('Failed to load activity stats:', err);
+            logger.error('Failed to load activity stats', err);
         }
     }, []);
 
@@ -117,7 +118,7 @@ const ActivityPage: React.FC = () => {
                 message.error(res.data?.message || '加载失败');
             }
         } catch (err) {
-            console.error('Failed to load activities:', err);
+            logger.error('Failed to load activities', err);
             message.error('加载失败');
         } finally {
             setLoading(false);
@@ -154,7 +155,7 @@ const ActivityPage: React.FC = () => {
                 message.error(res.data?.message || '删除失败');
             }
         } catch (err) {
-            console.error('Delete failed:', err);
+            logger.error('Failed to delete activity', err);
             message.error('删除失败');
         }
     };
@@ -178,7 +179,7 @@ const ActivityPage: React.FC = () => {
                 message.error(res.data?.message || '操作失败');
             }
         } catch (err) {
-            console.error('Submit failed:', err);
+            logger.error('Failed to submit activity', err);
             message.error('操作失败');
         } finally {
             setFormLoading(false);
@@ -195,7 +196,7 @@ const ActivityPage: React.FC = () => {
                 message.error(res.data?.message || '发布失败');
             }
         } catch (err) {
-            console.error('Publish failed:', err);
+            logger.error('Failed to publish activity', err);
             message.error('发布失败');
         }
     };
@@ -210,7 +211,7 @@ const ActivityPage: React.FC = () => {
                 message.error(res.data?.message || '下架失败');
             }
         } catch (err) {
-            console.error('Unpublish failed:', err);
+            logger.error('Failed to unpublish activity', err);
             message.error('下架失败');
         }
     };
@@ -226,7 +227,7 @@ const ActivityPage: React.FC = () => {
                 setDetailStats(res.data.data);
             }
         } catch (err) {
-            console.error('Failed to load activity stats:', err);
+            logger.error('Failed to load activity stats', err);
         }
     };
 
@@ -241,7 +242,7 @@ const ActivityPage: React.FC = () => {
                 setRewards(res.data.data);
             }
         } catch (err) {
-            console.error('Failed to load rewards:', err);
+            logger.error('Failed to load rewards', err);
             message.error('加载奖励失败');
         }
     };
@@ -272,7 +273,7 @@ const ActivityPage: React.FC = () => {
                 message.error(res.data?.message || '删除失败');
             }
         } catch (err) {
-            console.error('Delete reward failed:', err);
+            logger.error('Failed to delete reward', err);
             message.error('删除失败');
         }
     };
@@ -301,7 +302,7 @@ const ActivityPage: React.FC = () => {
                 message.error(res.data?.message || '操作失败');
             }
         } catch (err) {
-            console.error('Submit reward failed:', err);
+            logger.error('Failed to submit reward', err);
             message.error('操作失败');
         } finally {
             setRewardLoading(false);

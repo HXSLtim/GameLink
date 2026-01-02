@@ -19,6 +19,7 @@ import { RECHARGE_PERMISSIONS } from '@/constants/permissions';
 import { PermissionGuard } from '@/components/PermissionGuard';
 import dayjs from 'dayjs';
 
+import { logger } from '@/utils/logger';
 const { TextArea } = Input;
 const { Text } = Typography;
 
@@ -53,7 +54,7 @@ const RefundModal: React.FC<RefundModalProps> = ({ visible, record, onCancel, on
             form.resetFields();
             onSuccess();
         } catch (error) {
-            console.error('Refund error:', error);
+            logger.error('Refund error:', error);
             message.error('退款失败');
         } finally {
             setLoading(false);

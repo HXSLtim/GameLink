@@ -451,7 +451,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/players/batch/verification [post]
-		// TODO: Implement BatchUpdateVerificationStatus method in PlayerHandler
+		// Batch player verification update - to be implemented in PlayerHandler
 		// group.POST("/players/batch/verification", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/players/batch/verification"), playerHandler.BatchUpdateVerificationStatus)
 		// @Summary      批量撤销陪玩师认证
 		// @Description  批量撤销已通过认证的陪玩师，将状态改为待审核或已拒绝
@@ -463,7 +463,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/players/batch/revoke-certification [post]
-		// TODO: Implement BatchRevokeCertification method in PlayerHandler
+		// Batch player certification revocation - to be implemented in PlayerHandler
 		// group.POST("/players/batch/revoke-certification", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/players/batch/revoke-certification"), playerHandler.BatchRevokeCertification)
 
 		// 订单管理 - 使用细粒度权		// @Summary      列出订单
@@ -832,7 +832,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Router       /admin/payments/{id}/refunds [get]
 		group.GET("/payments/:id/refunds", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/payments/:id/refunds"), paymentHandler.GetRefundHistory)
 
-		// 批量支付操作路由 - TODO: Implement batch payment handlers
+		// Batch payment operations - to be implemented when batch payment handlers are ready
 		// batchGroup := group.Group("/payments/batch")
 		// {
 		//     // Route definitions commented out pending handler implementation

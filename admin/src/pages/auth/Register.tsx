@@ -4,6 +4,7 @@ import { Form, Input, Button, Card, App, Tabs, theme } from 'antd';
 import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined } from '@ant-design/icons';
 import { authApi } from '@/api/auth';
 
+import { logger } from '@/utils/logger';
 const Register: React.FC = () => {
     const { message } = App.useApp();
     const { token } = theme.useToken();
@@ -17,7 +18,7 @@ const Register: React.FC = () => {
             message.success('注册成功！请登录。');
             navigate('/login');
         } catch (error) {
-            console.error(error);
+            logger.error(error);
             message.error('注册失败，请重试。');
         } finally {
             setLoading(false);

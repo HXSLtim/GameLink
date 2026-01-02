@@ -31,6 +31,7 @@ import { PermissionGuard } from '@/components/PermissionGuard';
 import { adminApi } from '@/api/admin';
 import type { Role } from '@/api/admin';
 
+import { logger } from '@/utils/logger';
 const { Text } = Typography;
 
 /**
@@ -75,7 +76,7 @@ const RolePage: React.FC = () => {
                 }
             }
         } catch (error) {
-            console.error(error);
+            logger.error(error);
             message.error('加载角色列表失败');
         } finally {
             setLoading(false);
@@ -120,7 +121,7 @@ const RolePage: React.FC = () => {
             setEditModalVisible(false);
             loadData();
         } catch (error) {
-            console.error(error);
+            logger.error(error);
             message.error('保存失败');
         }
     };
@@ -138,7 +139,7 @@ const RolePage: React.FC = () => {
             message.success(`删除角色 ${role.name} 成功`);
             loadData();
         } catch (error) {
-            console.error(error);
+            logger.error(error);
             message.error('删除失败');
         }
     };

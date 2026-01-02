@@ -25,6 +25,7 @@ import { PageContainer, SearchTable, type ToolbarButton } from '@/components';
 import type { SearchField } from '@/components';
 import { adminApi, type ServiceItem } from '@/api/admin';
 
+import { logger } from '@/utils/logger';
 /**
  * 服务分类映射
  */
@@ -75,7 +76,7 @@ const ServiceItemList: React.FC = () => {
                 setTotal(0);
             }
         } catch (error) {
-            console.error(error);
+            logger.error(error);
             message.error('加载数据失败');
             setData([]);
             setTotal(0);
@@ -163,10 +164,10 @@ const ServiceItemList: React.FC = () => {
                 }
             }
         } catch (error) {
-            console.error('Save failed:', error);
+            logger.error('Save failed:', error);
             message.error('保存失败');
         }
-    }, [currentItem, form, loadData]);
+    }, [currentItem, form, loadData, message]);
 
     /**
      * 批量启用/禁用
@@ -184,7 +185,7 @@ const ServiceItemList: React.FC = () => {
         } catch {
             message.error('操作失败');
         }
-    }, [loadData]);
+    }, [loadData, message]);
 
     /**
      * 搜索字段配置

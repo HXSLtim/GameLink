@@ -41,6 +41,7 @@ import { teamApi, type Team, type TeamMember, type TeamStats, type BatchOperatio
 import TeamForm from './components/TeamForm';
 import MemberCard from './components/MemberCard';
 import dayjs from 'dayjs';
+import { logger } from '@/utils/logger';
 
 const { Text, Title } = Typography;
 
@@ -115,7 +116,7 @@ const TeamPage: React.FC = () => {
                 message.error(response.data.message || '加载失败');
             }
         } catch (error) {
-            console.error('Load teams error:', error);
+            logger.error('Failed to load teams', error);
             setLoadError('加载团队列表失败');
             message.error('加载团队列表失败');
         } finally {
@@ -133,7 +134,7 @@ const TeamPage: React.FC = () => {
                 setStats(response.data.data);
             }
         } catch (error) {
-            console.error('Load stats error:', error);
+            logger.error('Failed to load team stats', error);
         }
     }, []);
 
@@ -183,7 +184,7 @@ const TeamPage: React.FC = () => {
             message.success('删除成功');
             loadData();
         } catch (error) {
-            console.error('Delete team error:', error);
+            logger.error('Failed to delete team', error);
             message.error('删除失败');
         }
     };
@@ -238,7 +239,7 @@ const TeamPage: React.FC = () => {
                 loadStats();
             }
         } catch (error) {
-            console.error('Batch status error:', error);
+            logger.error('Failed to update batch status', error);
             message.error('操作失败');
         }
     };
@@ -290,7 +291,7 @@ const TeamPage: React.FC = () => {
                 loadStats();
             }
         } catch (error) {
-            console.error('Batch delete error:', error);
+            logger.error('Failed to batch delete teams', error);
             message.error('操作失败');
         }
     };
@@ -316,7 +317,7 @@ const TeamPage: React.FC = () => {
                 setCurrentTeam(response.data.data);
             }
         } catch (error) {
-            console.error('Add member error:', error);
+            logger.error('Failed to add team member', error);
             message.error('添加成员失败');
         }
     };
@@ -332,7 +333,7 @@ const TeamPage: React.FC = () => {
                 setCurrentTeam(response.data.data);
             }
         } catch (error) {
-            console.error('Remove member error:', error);
+            logger.error('Failed to remove team member', error);
             message.error('移除成员失败');
         }
     };
@@ -357,7 +358,7 @@ const TeamPage: React.FC = () => {
                 setCurrentTeam(response.data.data);
             }
         } catch (error) {
-            console.error('Transfer leader error:', error);
+            logger.error('Failed to transfer team leader', error);
             message.error('转让队长失败');
         }
     };

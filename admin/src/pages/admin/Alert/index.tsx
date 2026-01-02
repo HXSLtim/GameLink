@@ -44,6 +44,7 @@ import { monitorApi } from '@/api/monitor';
 import type { Alert as AlertType } from '@/types/monitor';
 import dayjs from 'dayjs';
 
+import { logger } from '@/utils/logger';
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
 
@@ -114,7 +115,7 @@ const AdminAlert: React.FC = () => {
                 message.error(res.data?.message || '加载失败');
             }
         } catch (err) {
-            console.error('加载告警失败:', err);
+            logger.error('加载告警失败:', err);
             message.error('加载告警数据失败');
         } finally {
             setLoading(false);
@@ -135,7 +136,7 @@ const AdminAlert: React.FC = () => {
                 message.error(res.data?.message || '操作失败');
             }
         } catch (err) {
-            console.error('标记已读失败:', err);
+            logger.error('标记已读失败:', err);
             message.error('操作失败');
         }
     };
@@ -155,7 +156,7 @@ const AdminAlert: React.FC = () => {
                 message.error(res.data?.message || '操作失败');
             }
         } catch (err) {
-            console.error('批量标记已读失败:', err);
+            logger.error('批量标记已读失败:', err);
             message.error('操作失败');
         }
     };

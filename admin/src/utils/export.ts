@@ -4,6 +4,7 @@
  */
 import dayjs from 'dayjs';
 
+import { logger } from '@/utils/logger';
 export interface ExportColumn {
     key: string;
     title: string;
@@ -19,7 +20,7 @@ export function exportToCSV<T extends Record<string, unknown>>(
     filename: string
 ): void {
     if (!data || data.length === 0) {
-        console.warn('No data to export');
+        logger.warn('No data to export');
         return;
     }
 
@@ -101,7 +102,7 @@ export async function exportToExcel<T extends Record<string, unknown>>(
         XLSX.writeFile(wb, `${filename}_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`);
     } catch {
         // xlsx 库不可用，回退到 CSV
-        console.warn('xlsx library not available, falling back to CSV export');
+        logger.warn('xlsx library not available, falling back to CSV export');
         exportToCSV(data, columns, filename);
     }
 }

@@ -115,7 +115,7 @@ const PlayerOrders: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [message]);
 
     useEffect(() => {
         loadOrders();

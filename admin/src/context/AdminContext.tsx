@@ -12,6 +12,7 @@ import { filterMenusByPermission } from '@/utils/menuPermission';
 
 import { PERMISSION_CHANGE_EVENT, triggerPermissionChange } from './permissionEvents';
 
+import { logger } from '@/utils/logger';
 /**
  * 管理员上下文类型接口
  */
@@ -89,8 +90,8 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 adminApi.getMyMenus().catch(() => ({ data: { success: false, data: [] } }))
             ]);
 
-            console.log('[AdminContext] permRes:', permRes);
-            console.log('[AdminContext] menuRes:', menuRes);
+            logger.info('[AdminContext] permRes:', permRes);
+            logger.info('[AdminContext] menuRes:', menuRes);
 
             // 从响应中提取数据
             // apiClient 返回完整的 AxiosResponse，所以需要访问 response.data
@@ -112,7 +113,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             // 增加权限版本号，触发依赖组件更新
             setPermissionVersion(v => v + 1);
         } catch (error) {
-            console.error('Failed to fetch admin info', error);
+            logger.error('Failed to fetch admin info', error);
             setPermissions([]);
             setRawMenus([]);
             permissionStore.clearPermissions();
@@ -208,14 +209,14 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             }
             // 监听其他标签页的权限变更
             if (e.key === 'permission_change_timestamp') {
-                console.log('[AdminContext] 检测到其他标签页权限变更，刷新权限...');
+                logger.info('[AdminContext] 检测到其他标签页权限变更，刷新权限...');
                 refreshMenus();
             }
         };
 
         // 监听当前标签页的权限变更事件
         const handlePermissionChange = () => {
-            console.log('[AdminContext] 检测到权限变更事件，刷新权限...');
+            logger.info('[AdminContext] 检测到权限变更事件，刷新权限...');
             refreshMenus();
         };
 

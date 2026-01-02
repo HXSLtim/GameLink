@@ -34,6 +34,7 @@ import { PermissionGuard } from '@/components/PermissionGuard';
 import { adminApi, type Withdraw, type WithdrawQueryParams } from '@/api/admin';
 import dayjs from 'dayjs';
 
+import { logger } from '@/utils/logger';
 /**
  * 状态选项
  */
@@ -109,7 +110,7 @@ const WithdrawPage: React.FC = () => {
                 message.error(response.data.message || '加载失败');
             }
         } catch (error) {
-            console.error('Load withdraws error:', error);
+            logger.error('Load withdraws error:', error);
             message.error('加载提现列表失败');
         } finally {
             setLoading(false);
@@ -134,7 +135,7 @@ const WithdrawPage: React.FC = () => {
                 totalAmount: 0,
             });
         } catch (error) {
-            console.error('Load stats error:', error);
+            logger.error('Load stats error:', error);
         }
     }, []);
 
@@ -174,7 +175,7 @@ const WithdrawPage: React.FC = () => {
                     loadData();
                     loadStats();
                 } catch (error) {
-                    console.error('Approve error:', error);
+                    logger.error('Approve error:', error);
                     message.error('批准失败');
                 } finally {
                     setSubmitting(false);
@@ -202,7 +203,7 @@ const WithdrawPage: React.FC = () => {
             loadData();
             loadStats();
         } catch (error) {
-            console.error('Reject error:', error);
+            logger.error('Reject error:', error);
             message.error('操作失败');
         } finally {
             setSubmitting(false);
@@ -224,7 +225,7 @@ const WithdrawPage: React.FC = () => {
                     loadData();
                     loadStats();
                 } catch (error) {
-                    console.error('Complete error:', error);
+                    logger.error('Complete error:', error);
                     message.error('操作失败');
                 } finally {
                     setSubmitting(false);

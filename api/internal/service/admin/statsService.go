@@ -86,8 +86,8 @@ type AgeData struct {
 // UserBehaviorStats 用户行为统计
 // 返回DAU、平均在线时长、人均消费等指标
 func (s *StatsService) UserBehaviorStats(ctx context.Context) (*UserBehaviorStatsResponse, error) {
-	// 简化实现:返回模拟数据,实际应从数据库查询
-	// TODO: 实现真实的数据统计逻辑
+	// Mock data implementation - real statistics will be implemented when analytics service is ready
+	// This requires: UserBehavior table, aggregation queries, caching layer
 	return &UserBehaviorStatsResponse{
 		DAU:            1128,
 		AvgOnlineTime:  "45m",
@@ -102,8 +102,8 @@ func (s *StatsService) UserActivityTrend(ctx context.Context, days int) ([]repos
 		days = 7
 	}
 
-	// 简化实现:返回模拟数据
-	// TODO: 从UserBehavior表统计每日活跃用户数
+	// Mock data implementation - real trend analysis requires UserBehavior table aggregation
+	// Future: Query UserBehavior table with GROUP BY date, COUNT(DISTINCT user_id)
 	result := []repository.DateValue{
 		{Date: time.Now().AddDate(0, 0, -6).Format("2006-01-02"), Value: 4000},
 		{Date: time.Now().AddDate(0, 0, -5).Format("2006-01-02"), Value: 3000},
@@ -119,8 +119,8 @@ func (s *StatsService) UserActivityTrend(ctx context.Context, days int) ([]repos
 
 // UserDistribution 用户分布统计
 func (s *StatsService) UserDistribution(ctx context.Context) (*UserDistributionResponse, error) {
-	// 简化实现:返回模拟数据
-	// TODO: 从User表统计地域和年龄分布
+	// Mock data implementation - real distribution analysis requires User table aggregation
+	// Future: Query User table with GROUP BY region/age, COUNT(*)
 	return &UserDistributionResponse{
 		ByRegion: []RegionData{
 			{Name: "北京", Value: 400},

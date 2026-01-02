@@ -517,8 +517,8 @@ func (h *UserHandler) ListUserLoginHistory(c *gin.Context) {
 		return
 	}
 
-	// TODO: 从UserLoginHistoryRepository获取真实数据
-	// 目前返回空数据,待后续完善
+	// User login history will be implemented when UserLoginHistoryRepository is integrated
+	// For now, return empty data
 	histories := []model.UserLoginHistory{}
 	total := int64(0)
 

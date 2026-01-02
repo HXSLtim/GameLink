@@ -39,6 +39,7 @@ import LevelForm from './components/LevelForm';
 import BenefitsEditor from './components/BenefitsEditor';
 import dayjs from 'dayjs';
 
+import { logger } from '@/utils/logger';
 const { Title, Text } = Typography;
 const { Search } = Input;
 
@@ -70,13 +71,13 @@ const VIPPage: React.FC = () => {
                 message.error(response.data.message || '加载失败');
             }
         } catch (error) {
-            console.error('Load VIP levels error:', error);
+            logger.error('Load VIP levels error:', error);
             setLoadError('加载VIP等级失败');
             message.error('加载VIP等级失败');
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [message]);
 
     useEffect(() => {
         loadData();
@@ -123,7 +124,7 @@ const VIPPage: React.FC = () => {
             message.success('删除成功');
             loadData();
         } catch (error) {
-            console.error('Delete VIP level error:', error);
+            logger.error('Delete VIP level error:', error);
             message.error('删除失败');
         }
     };
@@ -134,7 +135,7 @@ const VIPPage: React.FC = () => {
             message.success('设置成功');
             loadData();
         } catch (error) {
-            console.error('Set default VIP level error:', error);
+            logger.error('Set default VIP level error:', error);
             message.error('设置失败');
         }
     };
@@ -145,7 +146,7 @@ const VIPPage: React.FC = () => {
             message.success(isActive ? '已启用' : '已禁用');
             loadData();
         } catch (error) {
-            console.error('Toggle VIP level status error:', error);
+            logger.error('Toggle VIP level status error:', error);
             message.error('操作失败');
         }
     };
@@ -165,7 +166,7 @@ const VIPPage: React.FC = () => {
                 message.success('更新权益成功');
                 loadData();
             } catch (error) {
-                console.error('Update benefits error:', error);
+                logger.error('Update benefits error:', error);
                 message.error('更新权益失败');
             }
         }

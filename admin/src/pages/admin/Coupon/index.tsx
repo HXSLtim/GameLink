@@ -45,6 +45,7 @@ import { MONEY, PAGINATION, LAYOUT, SIZES, TABLE, MODAL, OTHER } from '@/constan
 import { StateContainer } from '@/components/common/StateContainer';
 import { TemplateForm, IssueModal } from './components';
 
+import { logger } from '@/utils/logger';
 const { Title, Text } = Typography;
 
 const CouponPage: React.FC = () => {
@@ -84,7 +85,7 @@ const CouponPage: React.FC = () => {
                 setStats(res.data.data);
             }
         } catch (err) {
-            console.error('Failed to load coupon stats:', err);
+            logger.error('Failed to load coupon stats:', err);
         }
     }, []);
 
@@ -110,7 +111,7 @@ const CouponPage: React.FC = () => {
                 message.error(res.data?.message || '加载失败');
             }
         } catch (err) {
-            console.error('Failed to load templates:', err);
+            logger.error('Failed to load templates:', err);
             setLoadError('加载失败');
             message.error('加载失败');
         } finally {
@@ -144,7 +145,7 @@ const CouponPage: React.FC = () => {
                 message.error(res.data?.message || '删除失败');
             }
         } catch (err) {
-            console.error('Delete failed:', err);
+            logger.error('Delete failed:', err);
             message.error('删除失败');
         }
     };
@@ -168,7 +169,7 @@ const CouponPage: React.FC = () => {
                 message.error(res.data?.message || '操作失败');
             }
         } catch (err) {
-            console.error('Submit failed:', err);
+            logger.error('Submit failed:', err);
             message.error('操作失败');
         } finally {
             setFormLoading(false);
@@ -186,7 +187,7 @@ const CouponPage: React.FC = () => {
                 message.error(res.data?.message || '操作失败');
             }
         } catch (err) {
-            console.error('Toggle active failed:', err);
+            logger.error('Toggle active failed:', err);
             message.error('操作失败');
         }
     };

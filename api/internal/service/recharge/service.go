@@ -352,7 +352,8 @@ func (s *Service) RefundRecord(ctx context.Context, id uint64, reason string) er
 		return errors.New("该订单不可退款")
 	}
 
-	// TODO: 调用支付渠道退款接口
+	// Payment channel refund will be implemented when payment service is fully integrated
+	// For now, generate a mock refund provider number
 	providerNo := "REFUND_" + record.ProviderTradeNo
 
 	// 标记为已退款

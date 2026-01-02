@@ -547,38 +547,22 @@ type CommissionCalculation struct {
 
 // getRankingCommissionRate 获取陪玩师的排名抽成比例
 func (s *CommissionService) getRankingCommissionRate(ctx context.Context, playerID uint64) (int, string) {
-	// TODO: 查询陪玩师上月排名
-	// 1. 获取上月（例如：当前是2月，查询11月的排名）
-	// lastMonth := time.Now().AddDate(0, -1, 0).Format("2006-01")
-
-	// 2. 查询该陪玩师在上月的排名
-	// rankings, err := s.rankings.GetPlayerRankings(ctx, playerID, lastMonth)
-
-	// 3. 查找对应的排名抽成配置
-	// for _, ranking := range rankings {
-	//     config := s.findRankingCommissionConfig(ctx, ranking.RankingType, lastMonth)
-	//     if config != nil {
-	//         // 解析JSON规则
-	//         var rules []model.RankingCommissionRule
-	//         json.Unmarshal([]byte(config.RulesJSON), &rules)
+	// Ranking commission rate lookup will be implemented when ranking service is fully integrated
+	// This will involve:
+	// 1. Get last month's ranking (e.g., if current is Feb, query Jan rankings)
+	// 2. Query player rankings for last month via rankings.GetPlayerRankings()
+	// 3. Find corresponding ranking commission config
+	// 4. Calculate discount based on ranking tier
 	//
-	//         // 查找该排名对应的抽成
-	//         for _, rule := range rules {
-	//             if ranking.Rank >= rule.RankStart && ranking.Rank <= rule.RankEnd {
-	//                 return rule.CommissionRate, fmt.Sprintf("%s第%d名", config.Name, ranking.Rank)
-	//             }
-	//         }
-	//     }
-	// }
-
-	return 0, "" // 暂时返回0，等待排名系统完整实现
+	// For now, return 0% discount (use base rate)
+	return 0, ""
 }
 
 // getServiceItemForOrder 获取订单的服务项
 func (s *CommissionService) getServiceItemForOrder(ctx context.Context, itemID uint64) (*model.ServiceItem, error) {
-	// TODO: 需要注入 ServiceItemRepository
-	// return s.serviceItems.Get(ctx, itemID)
-	return nil, nil // 暂时返回nil
+	// Service item repository will be injected when service item integration is complete
+	// For now, return nil (commission will use player hourly rate instead)
+	return nil, nil
 }
 
 // selectLowestRate 选择最低抽成比例

@@ -45,6 +45,14 @@ func validateProductionConfig(env string, cfg AppConfig) error {
 	if len(cfg.SuperAdmin.Password) < 8 {
 		return errors.New("SUPER_ADMIN_PASSWORD must be at least 8 characters in production")
 	}
+	// 生产环境必须启用加密
+	if !cfg.Crypto.Enabled {
+		return errors.New("CRYPTO_ENABLED must be true in production for security")
+	}
+	// 生产环境必须配置缓存为 Redis
+	if cfg.Cache.Type != "redis" {
+		return errors.New("CACHE_TYPE must be 'redis' in production (not 'memory')")
+	}
 	return nil
 }
 
@@ -75,18 +83,29 @@ func validateCryptoConfig(cfg AppConfig) error {
 	if strings.TrimSpace(cfg.Crypto.IV) == "" {
 		return errors.New("CRYPTO_IV is required when encryption is enabled")
 	}
+	// 先检查是否使用了已知的硬编码默认值（必须在长度检查之前）
+	deprecatedKeys := []string{
+		"H/oguKMv23lWlivgq8snNZmTzSUp6KSHZnEEo1c0Ook=",
+		"hTeObHJQ3nGDNs4H4O778A==",
+		"GameLink2025SecretKey!@#",
+		"GameLink2025IV!!!",
+	}
+	for _, deprecatedKey := range deprecatedKeys {
+		if cfg.Crypto.SecretKey == deprecatedKey {
+			return errors.New("CRYPTO_SECRET_KEY is using a hardcoded default value, please set a secure key")
+		}
+		if cfg.Crypto.IV == deprecatedKey {
+			return errors.New("CRYPTO_IV is using a hardcoded default value, please set a secure IV")
+		}
+	}
+	// 验证密钥长度（AES支持16、24、32字节，分别对应AES-128、AES-192、AES-256）
+	// 推荐使用32字节以获得最佳安全性（AES-256-CBC）
 	keyLen := len(cfg.Crypto.SecretKey)
 	if keyLen != 16 && keyLen != 24 && keyLen != 32 {
-		return fmt.Errorf("CRYPTO_SECRET_KEY must be 16, 24 or 32 bytes when encryption is enabled (current: %d)", keyLen)
-	}
-	if cfg.Crypto.SecretKey == "GameLink2025SecretKey!@#" {
-		return errors.New("CRYPTO_SECRET_KEY is using hardcoded default value, please set a secure key")
-	}
-	if cfg.Crypto.IV == "GameLink2025IV!!!" {
-		return errors.New("CRYPTO_IV is using hardcoded default value, please set a secure IV")
+		return fmt.Errorf("CRYPTO_SECRET_KEY must be 16, 24 or 32 bytes for AES (current: %d). Generate with: openssl rand -base64 32", keyLen)
 	}
 	if len(cfg.Crypto.IV) < 16 {
-		return fmt.Errorf("CRYPTO_IV must be at least 16 bytes when encryption is enabled (current: %d)", len(cfg.Crypto.IV))
+		return fmt.Errorf("CRYPTO_IV must be at least 16 bytes for AES-CBC (current: %d). Generate with: openssl rand -base64 16", len(cfg.Crypto.IV))
 	}
 	if len(cfg.Crypto.Methods) == 0 {
 		return errors.New("CRYPTO_METHODS must not be empty when encryption is enabled")

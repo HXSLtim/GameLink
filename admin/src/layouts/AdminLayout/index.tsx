@@ -74,6 +74,7 @@ import { ThemeToggle } from '@/components';
 import { forceInit } from '@/services/init';
 import styles from './index.module.css';
 
+import { logger } from '@/utils/logger';
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
 
@@ -198,7 +199,7 @@ const AdminLayout: React.FC = () => {
                 }
             }
         } catch (error) {
-            console.error('Failed to fetch notifications', error);
+            logger.error('Failed to fetch notifications', error);
         } finally {
             setLoadingNotifications(false);
         }
@@ -218,7 +219,7 @@ const AdminLayout: React.FC = () => {
                 setUnreadCount(prev => Math.max(0, prev - 1));
                 setNotifications(prev => prev.map(n => n.id === item.id ? { ...n, isRead: true } : n));
             } catch (error) {
-                console.error('Failed to mark as read', error);
+                logger.error('Failed to mark as read', error);
             }
         }
     };
@@ -304,19 +305,19 @@ const AdminLayout: React.FC = () => {
                 
                 // 优先使用 AdminContext 中已过滤的菜单
                 if (contextMenus && contextMenus.length > 0) {
-                    console.log('[AdminLayout] 使用 AdminContext 中的菜单数据，数量:', contextMenus.length);
+                    logger.info('[AdminLayout] 使用 AdminContext 中的菜单数据，数量:', contextMenus.length);
                     
                     // 后端已经返回树形结构，直接使用
-                    console.log('[AdminLayout] 菜单数据（树形结构）:', contextMenus);
+                    logger.info('[AdminLayout] 菜单数据（树形结构）:', contextMenus);
                     setMenuData(contextMenus);
                     setMenuLoading(false);
                     return;
                 }
 
                 // 如果 AdminContext 没有菜单数据，则从 API 加载
-                console.log('[AdminLayout] AdminContext 无菜单数据，从 API 加载...');
+                logger.info('[AdminLayout] AdminContext 无菜单数据，从 API 加载...');
                 const response = await adminApi.getMenus({ parentId: undefined });
-                console.log('[AdminLayout] 菜单API响应:', response);
+                logger.info('[AdminLayout] 菜单API响应:', response);
 
                 let menus: BackendMenuItem[] = [];
                 if (response && Array.isArray(response.data)) {
@@ -346,7 +347,7 @@ const AdminLayout: React.FC = () => {
                 const menuTree = buildMenuTree(menus);
                 setMenuData(menuTree);
             } catch (error) {
-                console.error('Failed to load menus:', error);
+                logger.error('Failed to load menus:', error);
             } finally {
                 setMenuLoading(false);
             }
@@ -556,7 +557,7 @@ const AdminLayout: React.FC = () => {
             }
         } catch (error) {
             messageApi.error('初始化失败');
-            console.error('Init error:', error);
+            logger.error('Init error:', error);
         } finally {
             setInitializing(false);
         }

@@ -51,6 +51,7 @@ import {
 } from '@/types/review';
 import { usePermissions } from '@/hooks/usePermission';
 
+import { logger } from '@/utils/logger';
 const { RangePicker } = DatePicker;
 const { Text } = Typography;
 
@@ -122,7 +123,7 @@ const ReviewList: React.FC = () => {
       }
     } catch (err) {
       message.error('获取评价列表失败');
-      console.error('Failed to fetch reviews:', err);
+      logger.error('Failed to fetch reviews:', err);
     } finally {
       setLoading(false);
     }

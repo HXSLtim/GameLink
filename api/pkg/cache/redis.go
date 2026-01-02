@@ -62,3 +62,8 @@ func (c *redisCache) Delete(ctx context.Context, key string) error {
 func (c *redisCache) Close(context.Context) error {
 	return c.client.Close()
 }
+
+// GetClient 返回底层 Redis 客户端，供 RedisRateLimiter 使用
+func (c *redisCache) GetClient() *redis.Client {
+	return c.client
+}

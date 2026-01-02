@@ -12,6 +12,7 @@ import {
 } from 'antd';
 import { teamApi, type Team, type TeamCreateRequest, type TeamUpdateRequest } from '@/api/team';
 
+import { logger } from '@/utils/logger';
 export interface TeamFormProps {
     /** 是否可见 */
     open: boolean;
@@ -100,7 +101,7 @@ const TeamForm: React.FC<TeamFormProps> = ({
 
             onOk();
         } catch (error) {
-            console.error('Submit team form error:', error);
+            logger.error('Submit team form error:', error);
             message.error(isEdit ? '更新团队失败' : '创建团队失败');
         } finally {
             setLoading(false);

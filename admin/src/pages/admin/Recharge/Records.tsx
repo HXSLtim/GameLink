@@ -33,6 +33,7 @@ import { PermissionGuard } from '@/components/PermissionGuard';
 import RefundModal from './components/RefundModal';
 import dayjs from 'dayjs';
 
+import { logger } from '@/utils/logger';
 const { RangePicker } = DatePicker;
 const { Text } = Typography;
 
@@ -103,7 +104,7 @@ const RechargeRecords: React.FC<RecordsProps> = ({ onStatsUpdate }) => {
                 message.error(response.data.message || '加载失败');
             }
         } catch (error) {
-            console.error('Load recharge records error:', error);
+            logger.error('Load recharge records error:', error);
             message.error('加载充值记录失败');
         } finally {
             setLoading(false);

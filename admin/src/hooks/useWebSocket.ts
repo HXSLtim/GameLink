@@ -3,6 +3,7 @@
  * 提供 WebSocket 连接管理、自动重连、心跳检测等功能
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { logger } from '@/utils/logger';
 import type {
   WSMessage,
   WSConnectionState,
@@ -46,7 +47,7 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
   const getAuthenticatedUrl = useCallback((): string => {
     const token = localStorage.getItem('token');
     if (!token) {
-      console.warn('No auth token found for WebSocket connection');
+      logger.warn('No auth token found for WebSocket connection');
       return url;
     }
 
@@ -96,7 +97,7 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
    */
   const reconnect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      console.log('WebSocket already connected');
+      logger.info('WebSocket already connected');
       return;
     }
 
@@ -110,7 +111,7 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
 
       // 创建事件处理器
       const handleOpen = () => {
-        console.log('WebSocket connected');
+        logger.info('WebSocket connected');
         setConnectionState('connected');
         retryCountRef.current = 0;
         startPingInterval();
@@ -129,18 +130,18 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
 
           onMessage?.(message);
         } catch (error) {
-          console.error('Failed to parse WebSocket message:', error);
+          logger.error('Failed to parse WebSocket message:', error);
         }
       };
 
       const handleError = (event: Event) => {
-        console.error('WebSocket error:', event);
+        logger.error('WebSocket error:', event);
         setConnectionState('error');
         onError?.(event);
       };
 
       const handleClose = (event: CloseEvent) => {
-        console.log('WebSocket closed:', event.code, event.reason);
+        logger.info('WebSocket closed:', event.code, event.reason);
         setConnectionState('disconnected');
         clearTimers();
         onClose?.();
@@ -148,7 +149,7 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
         // 自动重连 - 使用 ref 避免循环依赖
         if (shouldReconnectRef.current && retryCountRef.current < maxRetries) {
           retryCountRef.current++;
-          console.log(`Reconnecting... (attempt ${retryCountRef.current}/${maxRetries})`);
+          logger.info(`Reconnecting... (attempt ${retryCountRef.current}/${maxRetries})`);
 
           reconnectTimerRef.current = setTimeout(() => {
             if (autoConnect) {
@@ -166,7 +167,7 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
         wsRef.current.onclose = handleClose;
       }
     } catch (error) {
-      console.error('Failed to create WebSocket:', error);
+      logger.error('Failed to create WebSocket:', error);
       setConnectionState('error');
     }
   }, [
@@ -217,7 +218,7 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
       const message = typeof data === 'string' ? data : JSON.stringify(data);
       wsRef.current.send(message);
     } else {
-      console.warn('WebSocket is not connected');
+      logger.warn('WebSocket is not connected');
     }
   }, []);
 

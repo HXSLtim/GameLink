@@ -31,6 +31,7 @@ import {
 import type { UploadFile, UploadProps } from 'antd';
 import { certificationApi, type RankCertification, type IdentityCertification, type CertificationStatus } from '@/api/certification';
 
+import { logger } from '@/utils/logger';
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
@@ -81,7 +82,7 @@ const RankCertificationPage: React.FC = () => {
                 message.error(response.data.message || '加载认证状态失败');
             }
         } catch (error) {
-            console.error('Load certification status error:', error);
+            logger.error('Load certification status error:', error);
             message.error('加载认证状态失败');
         } finally {
             setLoading(false);
@@ -138,7 +139,7 @@ const RankCertificationPage: React.FC = () => {
             setVideoList([]);
             loadCertificationStatus();
         } catch (error) {
-            console.error('Submit certification error:', error);
+            logger.error('Submit certification error:', error);
             message.error('提交认证申请失败');
         } finally {
             setSubmitting(false);

@@ -2,6 +2,7 @@ import type { Menu } from '@/api/admin';
 import type { RouteConfig } from '@/router/types';
 import { getComponent } from '@/router/componentMap';
 
+import { logger } from '@/utils/logger';
 /**
  * 从菜单生成路由配置
  * @param menus 菜单列表（树形结构）
@@ -56,7 +57,7 @@ export const generateRoutesFromMenus = (menus: Menu[], parentPath: string = '/ad
         };
 
         // 调试日志
-        console.log(`[Route] ${menu.name}: path="${path}", fullPath="${menu.path}", component="${menu.component}", hasChildren=${hasChildren}, isIndex=${isIndex}`);
+        logger.info(`[Route] ${menu.name}: path="${path}", fullPath="${menu.path}", component="${menu.component}", hasChildren=${hasChildren}, isIndex=${isIndex}`);
         
         return route;
     });

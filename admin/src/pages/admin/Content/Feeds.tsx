@@ -61,7 +61,7 @@ const FeedsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, keyword, status, dateRange]);
+  }, [page, pageSize, keyword, status, dateRange, message]);
 
   useEffect(() => {
     fetchFeeds();

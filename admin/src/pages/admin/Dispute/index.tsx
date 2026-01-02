@@ -42,6 +42,7 @@ import { DisputeDetail } from './components/DisputeDetail';
 import { ResolveModal } from './components/ResolveModal';
 import { AssignModal } from './components/AssignModal';
 
+import { logger } from '@/utils/logger';
 /**
  * Dispute Query Parameters Interface
  */
@@ -94,7 +95,7 @@ const DisputePage: React.FC = () => {
             setDisputes(disputeList);
             setTotal(data?.total || 0);
         } catch (error) {
-            console.error('Load disputes error:', error);
+            logger.error('Load disputes error:', error);
             message.error('加载纠纷列表失败');
             // 确保错误时也设置为空数组
             setDisputes([]);
@@ -112,7 +113,7 @@ const DisputePage: React.FC = () => {
             const response = await disputeApi.getDisputeStats();
             setStats(response.data.data);
         } catch (error) {
-            console.error('Load stats error:', error);
+            logger.error('Load stats error:', error);
         }
     }, []);
 
@@ -164,7 +165,7 @@ const DisputePage: React.FC = () => {
             loadData();
             loadStats();
         } catch (error) {
-            console.error('Assign error:', error);
+            logger.error('Assign error:', error);
             message.error('分配失败');
         } finally {
             setSubmitting(false);
@@ -190,7 +191,7 @@ const DisputePage: React.FC = () => {
                     loadData();
                     loadStats();
                 } catch (error) {
-                    console.error('Rollback error:', error);
+                    logger.error('Rollback error:', error);
                     message.error('回滚失败');
                 }
             },
@@ -221,7 +222,7 @@ const DisputePage: React.FC = () => {
             loadData();
             loadStats();
         } catch (error) {
-            console.error('Resolve error:', error);
+            logger.error('Resolve error:', error);
             message.error('处理失败');
         } finally {
             setSubmitting(false);

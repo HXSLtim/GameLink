@@ -35,6 +35,7 @@ import { PermissionGuard } from '@/components/PermissionGuard';
 import { adminApi, type PlatformStats, type CreateCommissionRuleDto } from '@/api/admin';
 import dayjs from 'dayjs';
 
+import { logger } from '@/utils/logger';
 const { Title, Text } = Typography;
 
 interface CommissionRule {
@@ -79,12 +80,12 @@ const CommissionPage: React.FC = () => {
                 setStats(response.data.data);
             }
         } catch (error) {
-            console.error('Load stats error:', error);
+            logger.error('Load stats error:', error);
             message.error('加载统计数据失败');
         } finally {
             setLoading(false);
         }
-    }, [selectedMonth]);
+    }, [selectedMonth, message]);
 
     useEffect(() => {
         loadStats();
@@ -104,7 +105,7 @@ const CommissionPage: React.FC = () => {
                     message.success('结算任务已触发');
                     loadStats();
                 } catch (error) {
-                    console.error('Trigger settlement error:', error);
+                    logger.error('Trigger settlement error:', error);
                     message.error('触发结算失败');
                 } finally {
                     setTriggeringSettlement(false);
@@ -164,7 +165,7 @@ const CommissionPage: React.FC = () => {
             setRuleModalVisible(false);
             // 刷新规则列表（如果有API的话）
         } catch (error) {
-            console.error('Save rule error:', error);
+            logger.error('Save rule error:', error);
             message.error('保存失败');
         } finally {
             setSubmitting(false);

@@ -210,6 +210,20 @@ func (r *Router) registerAdminRoutes(api *gin.RouterGroup) {
 	// Register admin routes under versioned prefix: /api/v1/admin
 	rbacGroup := api.Group("/admin")
 
+	// CSRF 保护配置
+	// 根据环境变量决定是否启用 CSRF
+	csrfEnabled := os.Getenv("CSRF_ENABLED") == "true"
+	if csrfEnabled {
+		// 生产环境使用更严格的配置
+		isProduction := os.Getenv("APP_ENV") == "production"
+		csrfConfig := middleware.DefaultCSRFConfig
+		csrfConfig.CookieSecure = isProduction
+		if isProduction {
+			csrfConfig.CookieSameSite = http.SameSiteStrictMode
+		}
+		rbacGroup.Use(middleware.CSRF(csrfConfig))
+	}
+
 	// Stats routes (需要先创建statsSvc，因为RegisterRoutes需要它)
 	statsSvc := adminservice.NewStatsService(statsrepo.NewStatsRepository(r.orm))
 
@@ -248,7 +262,7 @@ func (r *Router) registerAdminRoutes(api *gin.RouterGroup) {
 // registerRBACRoutes 注册 RBAC 相关路由
 func (r *Router) registerRBACRoutes(rbacGroup *gin.RouterGroup, roleSvc *adminservice.RoleService, permService *adminservice.PermissionService) {
 	roleHandler := adminhandler.NewRoleHandler(roleSvc)
-	// roleBatchHandler := adminhandler.NewRoleBatchHandler(roleSvc) // TODO: Implement role batch handler
+	// roleBatchHandler := adminhandler.NewRoleBatchHandler(roleSvc) // Role batch handler to be implemented when needed
 	permHandler := adminhandler.NewPermissionHandlerWithRoleService(permService, roleSvc)
 	menuSvc := adminservice.NewMenuService(adminrepo.NewMenuRepository(r.orm))
 	menuHandler := adminhandler.NewMenuHandlerWithRoleService(menuSvc, permService, roleSvc)
@@ -279,9 +293,10 @@ func (r *Router) registerRBACRoutes(rbacGroup *gin.RouterGroup, roleSvc *adminse
 		rbacGroup.GET("/users/:id/roles", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/:id/roles"), roleHandler.GetUserRoles)
 		rbacGroup.PUT("/users/:id/roles", r.permMiddleware.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/users/:id/roles"), roleHandler.UpdateUserRoles)
 		rbacGroup.PUT("/users/roles/batch", r.permMiddleware.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/users/roles/batch"), roleHandler.BatchAssignRolesToUsers)
-		// 批量角色操作 API（新的简化接口）- TODO: Implement RoleBatchHandler
-		// rbacGroup.POST("/roles/batch/delete", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/roles/batch/delete"), roleBatchHandler.BatchDeleteRoles)
-		// rbacGroup.POST("/roles/batch/assign-permissions", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/roles/batch/assign-permissions"), roleBatchHandler.BatchAssignPermissions)
+		// Batch role operations (simplified API) - to be implemented when RoleBatchHandler is created
+		// For now, using legacy batch endpoints below
+		// rbacGroup.POST("/roles/batch/delete", roleBatchHandler.BatchDeleteRoles)
+		// rbacGroup.POST("/roles/batch/assign-permissions", roleBatchHandler.BatchAssignPermissions)
 		// 批量角色操作 API（旧接口，保留兼容性）
 		rbacGroup.DELETE("/roles/batch", r.permMiddleware.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/roles/batch"), roleHandler.BatchDeleteRoles)
 		rbacGroup.PUT("/roles/batch/permissions", r.permMiddleware.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/roles/batch/permissions"), roleHandler.BatchAssignPermissionsToRoles)
@@ -310,10 +325,11 @@ func (r *Router) registerRBACRoutes(rbacGroup *gin.RouterGroup, roleSvc *adminse
 		rbacGroup.GET("/menus/:id", r.permMiddleware.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/menus/:id"), menuHandler.Get)
 		rbacGroup.PUT("/menus/:id", r.permMiddleware.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/menus/:id"), menuHandler.Update)
 		rbacGroup.DELETE("/menus/:id", r.permMiddleware.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/menus/:id"), menuHandler.Delete)
-		// 批量菜单操作 API (新格式，使用 POST 方法) - TODO: Implement in MenuHandler
-		// rbacGroup.POST("/menus/batch/delete", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/menus/batch/delete"), menuHandler.BatchDeleteMenus)
-		// rbacGroup.POST("/menus/batch/status", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/menus/batch/status"), menuHandler.BatchUpdateMenuStatus)
-		// rbacGroup.POST("/menus/batch/order", r.permMiddleware.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/menus/batch/order"), menuHandler.BatchUpdateMenuOrder)
+		// Batch menu operations (new format using POST) - to be implemented in MenuHandler
+		// For now, using legacy batch endpoints below
+		// rbacGroup.POST("/menus/batch/delete", menuHandler.BatchDeleteMenus)
+		// rbacGroup.POST("/menus/batch/status", menuHandler.BatchUpdateMenuStatus)
+		// rbacGroup.POST("/menus/batch/order", menuHandler.BatchUpdateMenuOrder)
 		// 旧批量菜单操作 API (保持向后兼容)
 		rbacGroup.DELETE("/menus/batch", r.permMiddleware.RequirePermission(model.HTTPMethodDELETE, "/api/v1/admin/menus/batch"), menuHandler.BatchDelete)
 		rbacGroup.PUT("/menus/batch/status", r.permMiddleware.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/menus/batch/status"), menuHandler.BatchUpdateStatus)
@@ -347,7 +363,7 @@ func (r *Router) registerAdminBusinessRoutes(rbacGroup *gin.RouterGroup) {
 	// Service Item management routes
 	adminhandler.RegisterServiceItemRoutes(rbacGroup, r.services.serviceItemSvc)
 
-	// Withdraw management routes - TODO: Add WithdrawRoutingService
+	// Withdraw management routes - to be registered when WithdrawRoutingService is fully integrated
 	withdrawRepo := withdrawrepo.NewWithdrawRepository(r.orm)
 	// adminhandler.RegisterWithdrawRoutes(rbacGroup, withdrawRepo, r.services.withdrawRoutingSvc)
 

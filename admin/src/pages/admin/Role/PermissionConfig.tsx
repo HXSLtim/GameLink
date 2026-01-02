@@ -37,6 +37,7 @@ import { ROLE_PERMISSIONS } from '@/constants/permissions';
 import { PermissionGuard } from '@/components/PermissionGuard';
 import type { Role, PermissionTreeNode } from '@/types/permission';
 
+import { logger } from '@/utils/logger';
 const { Text } = Typography;
 
 /**
@@ -68,10 +69,10 @@ const RolePermissionConfig: React.FC = () => {
                 setRole(res.data.data);
             }
         } catch (error) {
-            console.error('Failed to load role:', error);
+            logger.error('Failed to load role:', error);
             message.error('加载角色信息失败');
         }
-    }, [roleId]);
+    }, [roleId, message]);
 
     /**
      * 加载权限树
@@ -83,10 +84,10 @@ const RolePermissionConfig: React.FC = () => {
                 setPermissionTree(res.data.data);
             }
         } catch (error) {
-            console.error('Failed to load permission tree:', error);
+            logger.error('Failed to load permission tree:', error);
             message.error('加载权限树失败');
         }
-    }, []);
+    }, [message]);
 
     /**
      * 加载角色已有权限
@@ -102,10 +103,10 @@ const RolePermissionConfig: React.FC = () => {
                 setOriginalCheckedKeys(permissionIds);
             }
         } catch (error) {
-            console.error('Failed to load role permissions:', error);
+            logger.error('Failed to load role permissions:', error);
             message.error('加载角色权限失败');
         }
-    }, [roleId]);
+    }, [roleId, message]);
 
     /**
      * 初始化加载
@@ -163,7 +164,7 @@ const RolePermissionConfig: React.FC = () => {
             message.success('权限配置保存成功');
             setOriginalCheckedKeys(checkedKeys);
         } catch (error: unknown) {
-            console.error('Failed to save permissions:', error);
+            logger.error('Failed to save permissions:', error);
             const err = error as { response?: { data?: { message?: string } } };
             if (err.response?.data?.message) {
                 message.error(err.response.data.message);
@@ -173,7 +174,7 @@ const RolePermissionConfig: React.FC = () => {
         } finally {
             setSaving(false);
         }
-    }, [roleId, role, checkedKeys]);
+    }, [roleId, role, checkedKeys, message]);
 
     /**
      * 重置为原始状态
@@ -181,7 +182,7 @@ const RolePermissionConfig: React.FC = () => {
     const handleReset = useCallback(() => {
         setCheckedKeys(originalCheckedKeys);
         message.info('已重置为原始配置');
-    }, [originalCheckedKeys]);
+    }, [originalCheckedKeys, message]);
 
     /**
      * 返回角色列表

@@ -34,6 +34,7 @@ import {
 import type { ColumnsType } from 'antd/es/table';
 import { adminApi } from '@/api/admin';
 
+import { logger } from '@/utils/logger';
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
@@ -95,7 +96,7 @@ const AdminService: React.FC = () => {
                 setGames([]);
             }
         } catch (err) {
-            console.error('加载游戏列表失败:', err);
+            logger.error('加载游戏列表失败:', err);
             setGames([]);
         }
     }, []);
@@ -131,7 +132,7 @@ const AdminService: React.FC = () => {
                 setTotal(0);
             }
         } catch (err) {
-            console.error('加载服务项目失败:', err);
+            logger.error('加载服务项目失败:', err);
             message.error('加载数据失败');
             setServices([]);
             setTotal(0);
@@ -184,7 +185,7 @@ const AdminService: React.FC = () => {
                 message.error(res.data?.message || '删除失败');
             }
         } catch (err) {
-            console.error('删除失败:', err);
+            logger.error('删除失败:', err);
             message.error('删除失败');
         }
     };
@@ -221,7 +222,7 @@ const AdminService: React.FC = () => {
                 message.error(res.data?.message || '操作失败');
             }
         } catch (err) {
-            console.error('保存失败:', err);
+            logger.error('保存失败:', err);
             message.error('操作失败');
         } finally {
             setSubmitting(false);
@@ -238,7 +239,7 @@ const AdminService: React.FC = () => {
                 message.error(res.data?.message || '操作失败');
             }
         } catch (err) {
-            console.error('更新状态失败:', err);
+            logger.error('更新状态失败:', err);
             message.error('操作失败');
         }
     };

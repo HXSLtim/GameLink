@@ -5,6 +5,7 @@ import { UserOutlined, LockOutlined, SafetyCertificateOutlined } from '@ant-desi
 import { authApi } from '@/api/auth';
 import { ENABLE_QUICK_LOGIN, DEBUG_USERS } from '@/config/debug';
 
+import { logger } from '@/utils/logger';
 const REMEMBER_KEY = 'gamelink_admin_remember';
 
 /**
@@ -80,7 +81,7 @@ const AdminLogin: React.FC = () => {
             message.success('登录成功');
             navigate('/admin');
         } catch (error: unknown) {
-            console.error('登录错误:', error);
+            logger.error('登录错误:', error);
             
             // 处理 Axios 错误响应
             if (error && typeof error === 'object' && 'response' in error) {

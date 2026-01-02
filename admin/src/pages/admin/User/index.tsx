@@ -43,6 +43,7 @@ import { PermissionGuard } from '@/components/PermissionGuard';
 import { adminApi, type User, type CreateUserDto, type UpdateUserDto, type UserQueryParams, type UserStats, type ApiResponse, type LoginHistory, type AuditLog } from '@/api/admin';
 import { Table } from 'antd';
 import dayjs from 'dayjs';
+import { logger } from '@/utils/logger';
 
 /**
  * 角色映射
@@ -119,7 +120,7 @@ const UserPage: React.FC = () => {
                 setLoginHistory(history);
             }
         } catch (err) {
-            console.error('Failed to fetch login history', err);
+            logger.error('Failed to fetch login history', err);
         } finally {
             setLoginHistoryLoading(false);
         }
@@ -133,7 +134,7 @@ const UserPage: React.FC = () => {
                 setOperationLogs(res.data || []);
             }
         } catch (err) {
-            console.error('Failed to fetch operation logs', err);
+            logger.error('Failed to fetch operation logs', err);
         } finally {
             setOperationLogsLoading(false);
         }
@@ -159,7 +160,7 @@ const UserPage: React.FC = () => {
                 setStats(response.data.data);
             }
         } catch (err) {
-            console.error('加载统计数据失败:', err);
+            logger.error('Failed to load user stats', err);
             // 静默失败，不影响主要功能
         } finally {
             setStatsLoading(false);
@@ -187,7 +188,7 @@ const UserPage: React.FC = () => {
                 message.error(response.data.message || '获取用户列表失败');
             }
         } catch (error: unknown) {
-            console.error('加载用户列表失败:', error);
+            logger.error('Failed to load user list', error);
             const err = error as { response?: { data?: { message?: string } } };
             message.error(err.response?.data?.message || '获取用户列表失败');
         } finally {
@@ -311,7 +312,7 @@ const UserPage: React.FC = () => {
                 }
             }
         } catch (error: unknown) {
-            console.error('保存用户失败:', error);
+            logger.error('Failed to save user', error);
             const err = error as { errorFields?: unknown; response?: { data?: { message?: string } } };
             if (err.errorFields) {
                 // 表单验证失败
@@ -338,7 +339,7 @@ const UserPage: React.FC = () => {
                 message.error(response.data.message || `${action}用户失败`);
             }
         } catch (error: unknown) {
-            console.error('更新用户状态失败:', error);
+            logger.error('Failed to update user status', error);
             const err = error as { response?: { data?: { message?: string } } };
             message.error(err.response?.data?.message || '更新用户状态失败');
         }
@@ -358,7 +359,7 @@ const UserPage: React.FC = () => {
                 message.error(response.data.message || '删除用户失败');
             }
         } catch (error: unknown) {
-            console.error('删除用户失败:', error);
+            logger.error('Failed to delete user', error);
             const err = error as { response?: { data?: { message?: string } } };
             message.error(err.response?.data?.message || '删除用户失败');
         }
@@ -379,7 +380,7 @@ const UserPage: React.FC = () => {
                 message.error(response.data.message || '批量删除失败');
             }
         } catch (error: unknown) {
-            console.error('批量删除用户失败:', error);
+            logger.error('Failed to batch delete users', error);
             const err = error as { response?: { data?: { message?: string } } };
             message.error(err.response?.data?.message || '批量删除失败');
         }

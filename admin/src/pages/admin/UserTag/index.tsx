@@ -34,6 +34,7 @@ import { exportToCSV, type ExportColumn } from '@/utils/export';
 import dayjs from 'dayjs';
 import apiClient from '@/api/client';
 
+import { logger } from '@/utils/logger';
 /**
  * 标签数据接口
  */
@@ -109,7 +110,7 @@ const UserTagPage: React.FC = () => {
                 });
             }
         } catch (error) {
-            console.error('Load tags error:', error);
+            logger.error('Load tags error:', error);
             message.error('加载标签列表失败');
         } finally {
             setLoading(false);
@@ -169,7 +170,7 @@ const UserTagPage: React.FC = () => {
             setEditVisible(false);
             loadData();
         } catch (error) {
-            console.error('Save tag error:', error);
+            logger.error('Save tag error:', error);
             message.error('保存失败');
         } finally {
             setSubmitting(false);
@@ -182,7 +183,7 @@ const UserTagPage: React.FC = () => {
             message.success('删除成功');
             loadData();
         } catch (error) {
-            console.error('Delete tag error:', error);
+            logger.error('Delete tag error:', error);
             message.error('删除失败');
         }
     };

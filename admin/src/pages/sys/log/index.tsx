@@ -43,6 +43,7 @@ import { motion } from 'framer-motion';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import { auditLogApi } from '@/api/permission';
+import { logger } from '@/utils/logger';
 import type {
     PermissionAuditLog,
     AuditAction,
@@ -343,7 +344,7 @@ const AuditLogPage: React.FC = () => {
                 }
             }
         } catch (error) {
-            console.error('加载审计日志失败:', error);
+            logger.error('加载审计日志失败:', error);
             message.error('加载审计日志失败');
         } finally {
             setLoading(false);
@@ -411,7 +412,7 @@ const AuditLogPage: React.FC = () => {
 
             message.success('导出成功');
         } catch (error) {
-            console.error('导出审计日志失败:', error);
+            logger.error('导出审计日志失败:', error);
             message.error('导出失败');
         } finally {
             setExporting(false);

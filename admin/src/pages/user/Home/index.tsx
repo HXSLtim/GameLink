@@ -30,6 +30,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import styles from './index.module.css';
 
+import { logger } from '@/utils/logger';
 const { Title, Text, Paragraph } = Typography;
 const { Search } = Input;
 
@@ -114,7 +115,7 @@ const UserHome: React.FC = () => {
             ];
             setPlayers(mockPlayers);
         } catch (error) {
-            console.error(error);
+            logger.error(error);
             message.error('加载失败');
         } finally {
             setLoading(false);
