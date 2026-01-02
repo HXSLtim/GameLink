@@ -286,6 +286,7 @@ export function SearchTable<T extends object>({
                                 <Button
                                     icon={<ReloadOutlined spin={loading} />}
                                     onClick={handleRefresh}
+                                    aria-label="刷新"
                                 />
                             </Tooltip>
                         </Space>

@@ -257,7 +257,7 @@ describe('UserPage', () => {
       });
 
       const searchInput = screen.getByPlaceholderText('用户名/邮箱/手机号');
-      await user.type(searchInput, 'Test User');
+      await _user.type(searchInput, 'Test User');
 
       const searchButton = screen.getByRole('button', { name: /搜索/i });
       await user.click(searchButton);
@@ -289,7 +289,7 @@ describe('UserPage', () => {
 
       const roleDropdown = screen.getByText('角色').closest('.ant-select');
       if (roleDropdown) {
-        await user.click(roleDropdown);
+        await _user.click(roleDropdown);
 
         const userOption = await screen.findByText('普通用户');
         await user.click(userOption);
@@ -322,7 +322,7 @@ describe('UserPage', () => {
 
       const statusDropdown = screen.getByText('状态').closest('.ant-select');
       if (statusDropdown) {
-        await user.click(statusDropdown);
+        await _user.click(statusDropdown);
 
         const activeOption = await screen.findByText('正常');
         await user.click(activeOption);
@@ -354,7 +354,7 @@ describe('UserPage', () => {
       });
 
       const searchInput = screen.getByPlaceholderText('用户名/邮箱/手机号');
-      await user.type(searchInput, 'test');
+      await _user.type(searchInput, 'test');
 
       const searchButton = screen.getByRole('button', { name: /搜索/i });
       await user.click(searchButton);
@@ -397,7 +397,7 @@ describe('UserPage', () => {
       });
 
       const nextPageButton = screen.getByTitle('下一页');
-      await user.click(nextPageButton);
+      await _user.click(nextPageButton);
 
       await waitFor(() => {
         expect(mockApi.getUsers).toHaveBeenCalledWith(
@@ -419,7 +419,7 @@ describe('UserPage', () => {
       });
 
       const detailButton = screen.getByRole('button', { name: /详情/i });
-      await user.click(detailButton);
+      await _user.click(detailButton);
 
       await waitFor(() => {
         expect(screen.getByText('用户详情')).toBeInTheDocument();
@@ -435,7 +435,7 @@ describe('UserPage', () => {
       });
 
       const detailButton = screen.getByRole('button', { name: /详情/i });
-      await user.click(detailButton);
+      await _user.click(detailButton);
 
       await waitFor(() => {
         expect(screen.getByText('基本信息')).toBeInTheDocument();
@@ -458,7 +458,7 @@ describe('UserPage', () => {
       });
 
       const detailButton = screen.getByRole('button', { name: /详情/i });
-      await user.click(detailButton);
+      await _user.click(detailButton);
 
       await waitFor(() => {
         expect(screen.getByText('用户详情')).toBeInTheDocument();
@@ -490,7 +490,7 @@ describe('UserPage', () => {
       });
 
       const detailButton = screen.getByRole('button', { name: /详情/i });
-      await user.click(detailButton);
+      await _user.click(detailButton);
 
       await waitFor(() => {
         expect(screen.getByText('用户详情')).toBeInTheDocument();
@@ -518,7 +518,7 @@ describe('UserPage', () => {
       });
 
       const editButton = screen.getByRole('button', { name: /编辑/i });
-      await user.click(editButton);
+      await _user.click(editButton);
 
       await waitFor(() => {
         expect(screen.getByText('编辑用户')).toBeInTheDocument();
@@ -534,7 +534,7 @@ describe('UserPage', () => {
       });
 
       const editButton = screen.getByRole('button', { name: /编辑/i });
-      await user.click(editButton);
+      await _user.click(editButton);
 
       await waitFor(() => {
         expect(screen.getByDisplayValue('Test User')).toBeInTheDocument();
@@ -553,7 +553,7 @@ describe('UserPage', () => {
       });
 
       const editButton = screen.getByRole('button', { name: /编辑/i });
-      await user.click(editButton);
+      await _user.click(editButton);
 
       await waitFor(() => {
         expect(screen.getByText('编辑用户')).toBeInTheDocument();
@@ -599,7 +599,7 @@ describe('UserPage', () => {
       });
 
       const banButton = screen.getByRole('button', { name: /封禁/i });
-      await user.click(banButton);
+      await _user.click(banButton);
 
       const confirmButton = await screen.findByRole('button', { name: /确定/i });
       await user.click(confirmButton);
@@ -658,7 +658,7 @@ describe('UserPage', () => {
       });
 
       const deleteButton = screen.getByRole('button', { name: /删除/i });
-      await user.click(deleteButton);
+      await _user.click(deleteButton);
 
       const confirmButton = await screen.findByRole('button', { name: /确定/i });
       await user.click(confirmButton);
@@ -679,7 +679,7 @@ describe('UserPage', () => {
       });
 
       const createButton = screen.getByRole('button', { name: /新增用户/i });
-      await user.click(createButton);
+      await _user.click(createButton);
 
       await waitFor(() => {
         expect(screen.getByText('新增用户')).toBeInTheDocument();
@@ -691,7 +691,7 @@ describe('UserPage', () => {
       renderWithProviders(<UserPage />);
 
       const createButton = screen.getByRole('button', { name: /新增用户/i });
-      await user.click(createButton);
+      await _user.click(createButton);
 
       await waitFor(() => {
         expect(screen.getByText('新增用户')).toBeInTheDocument();
@@ -744,7 +744,7 @@ describe('UserPage', () => {
       });
 
       const batchRoleButton = screen.getByRole('button', { name: /批量修改角色/i });
-      await user.click(batchRoleButton);
+      await _user.click(batchRoleButton);
 
       await waitFor(() => {
         expect(screen.getByText('批量修改角色')).toBeInTheDocument();
@@ -794,7 +794,7 @@ describe('UserPage', () => {
       });
 
       const exportButton = screen.getByRole('button', { name: /导出数据/i });
-      await user.click(exportButton);
+      await _user.click(exportButton);
 
       await waitFor(() => {
         expect(mockApi.getUsers).toHaveBeenCalledWith(
@@ -817,7 +817,7 @@ describe('UserPage', () => {
       });
 
       const refreshButton = screen.getByRole('button', { name: /刷新/i });
-      await user.click(refreshButton);
+      await _user.click(refreshButton);
 
       await waitFor(() => {
         expect(mockApi.getUsers).toHaveBeenCalledTimes(2);
