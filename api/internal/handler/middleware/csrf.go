@@ -41,15 +41,15 @@ type CSRFConfig struct {
 
 // DefaultCSRFConfig 默认CSRF配置
 var DefaultCSRFConfig = CSRFConfig{
-	TokenLength:     32,
-	CookieName:      "_csrf",
-	HeaderName:      "X-CSRF-Token",
-	FormFieldName:   "_csrf",
-	CookiePath:      "/",
-	CookieSecure:    false, // 开发环境使用 false，生产环境应设为 true
-	CookieHTTPOnly:  false, // 必须设为 false，以便前端 JavaScript 读取并发送 token
-	CookieSameSite:  http.SameSiteLaxMode, // Lax模式允许跨站 GET 请求携带 Cookie
-	TokenLookup:     "header:X-CSRF-Token",
+	TokenLength:    32,
+	CookieName:     "_csrf",
+	HeaderName:     "X-CSRF-Token",
+	FormFieldName:  "_csrf",
+	CookiePath:     "/",
+	CookieSecure:   false,                // 开发环境使用 false，生产环境应设为 true
+	CookieHTTPOnly: false,                // 必须设为 false，以便前端 JavaScript 读取并发送 token
+	CookieSameSite: http.SameSiteLaxMode, // Lax模式允许跨站 GET 请求携带 Cookie
+	TokenLookup:    "header:X-CSRF-Token",
 }
 
 var (

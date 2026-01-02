@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
 	"gamelink/pkg/cache"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // JWT工具类

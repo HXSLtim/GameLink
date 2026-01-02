@@ -31,13 +31,13 @@ import (
 
 // TestContext holds all testing components for handler tests.
 type TestContext struct {
-	T           testing.TB
-	Router      *gin.Engine
-	DB          *gorm.DB
-	Service     interface{} // Can be AdminService, OrderService, etc.
-	AdminUser   *model.User
-	AdminToken  string
-	BaseURL     string
+	T          testing.TB
+	Router     *gin.Engine
+	DB         *gorm.DB
+	Service    interface{} // Can be AdminService, OrderService, etc.
+	AdminUser  *model.User
+	AdminToken string
+	BaseURL    string
 }
 
 // SetupGinTest initializes Gin test mode and returns a test router.

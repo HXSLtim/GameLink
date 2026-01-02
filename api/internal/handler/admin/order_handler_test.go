@@ -15,7 +15,6 @@ import (
 
 	"gamelink/internal/handler/testutil"
 	"gamelink/internal/model"
-	adminservice "gamelink/internal/service/admin"
 	"gamelink/internal/repository/admin"
 	"gamelink/internal/repository/game"
 	"gamelink/internal/repository/gamecategory"
@@ -25,6 +24,7 @@ import (
 	"gamelink/internal/repository/serviceitem"
 	"gamelink/internal/repository/stats"
 	"gamelink/internal/repository/user"
+	adminservice "gamelink/internal/service/admin"
 	"gamelink/pkg/cache"
 )
 
@@ -34,15 +34,15 @@ import (
 
 // OrderTestContext provides test context for order handler tests.
 type OrderTestContext struct {
-	Router      *gin.Engine
-	Handler     *OrderHandler
-	Service     *adminservice.AdminService
-	DB          *gorm.DB
-	AdminUser   *model.User
-	AdminToken  string
-	TestUser    *model.User
-	TestPlayer  *model.Player
-	TestGame    *model.Game
+	Router     *gin.Engine
+	Handler    *OrderHandler
+	Service    *adminservice.AdminService
+	DB         *gorm.DB
+	AdminUser  *model.User
+	AdminToken string
+	TestUser   *model.User
+	TestPlayer *model.Player
+	TestGame   *model.Game
 }
 
 // SetupOrderTest initializes test environment for order handler tests.

@@ -97,13 +97,13 @@ func loginHandler(c *gin.Context, svc *authservice.AuthService) {
 
 		c.SetSameSite(http.SameSiteStrictMode)
 		c.SetCookie(
-			"auth_token",        // Cookie 名称
-			r.Token,             // Token 值
-			maxAge,              // 过期时间（秒）
-			"/",                 // 路径
-			"",                  // 域名（留空表示当前域名）
-			isProduction,        // Secure（仅 HTTPS）
-			true,                // HttpOnly（防止 JS 访问）
+			"auth_token", // Cookie 名称
+			r.Token,      // Token 值
+			maxAge,       // 过期时间（秒）
+			"/",          // 路径
+			"",           // 域名（留空表示当前域名）
+			isProduction, // Secure（仅 HTTPS）
+			true,         // HttpOnly（防止 JS 访问）
 		)
 	}
 
@@ -221,7 +221,7 @@ func logoutHandler(c *gin.Context) {
 	c.SetCookie(
 		"auth_token",
 		"",
-		-1,    // 立即过期
+		-1, // 立即过期
 		"/",
 		"",
 		os.Getenv("APP_ENV") == "production",

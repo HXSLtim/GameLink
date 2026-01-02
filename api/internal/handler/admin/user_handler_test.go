@@ -14,7 +14,6 @@ import (
 
 	"gamelink/internal/handler/testutil"
 	"gamelink/internal/model"
-	adminservice "gamelink/internal/service/admin"
 	"gamelink/internal/repository/admin"
 	"gamelink/internal/repository/game"
 	"gamelink/internal/repository/gamecategory"
@@ -24,6 +23,7 @@ import (
 	"gamelink/internal/repository/serviceitem"
 	"gamelink/internal/repository/stats"
 	"gamelink/internal/repository/user"
+	adminservice "gamelink/internal/service/admin"
 	"gamelink/pkg/cache"
 )
 
@@ -115,13 +115,13 @@ func TestUserHandler_Unit_CreateUser_Success(t *testing.T) {
 	ctx.RegisterUserRoutes()
 
 	payload := map[string]interface{}{
-		"phone":    "13800138001",
-		"email":    "test@example.com",
-		"password": "password123",
-		"name":     "Test User",
+		"phone":      "13800138001",
+		"email":      "test@example.com",
+		"password":   "password123",
+		"name":       "Test User",
 		"avatar_url": "https://example.com/avatar.jpg",
-		"role":     "user",
-		"status":   "active",
+		"role":       "user",
+		"status":     "active",
 	}
 
 	w := testutil.MakeAuthenticatedRequest(t, ctx.Router, "POST", "/admin/users", ctx.AdminToken, payload)
@@ -365,10 +365,10 @@ func TestUserHandler_Unit_UpdateUser_InvalidEmail(t *testing.T) {
 	testUser := testutil.CreateAdminUser(t, ctx.DB, model.RoleUser)
 
 	payload := map[string]interface{}{
-		"email":   "invalid-email",
-		"name":    "Updated Name",
-		"role":    "user",
-		"status":  "active",
+		"email":  "invalid-email",
+		"name":   "Updated Name",
+		"role":   "user",
+		"status": "active",
 	}
 
 	path := fmt.Sprintf("/admin/users/%d", testUser.ID)
@@ -577,11 +577,11 @@ func TestUserHandler_Unit_CreateUserWithPlayer_Success(t *testing.T) {
 		"role":     "player",
 		"status":   "active",
 		"player": map[string]interface{}{
-			"nickname":              "Test Player",
-			"bio":                   "Player bio",
-			"hourly_rate_cents":     5000,
-			"main_game_id":          1,
-			"verification_status":   "pending",
+			"nickname":            "Test Player",
+			"bio":                 "Player bio",
+			"hourly_rate_cents":   5000,
+			"main_game_id":        1,
+			"verification_status": "pending",
 		},
 	}
 

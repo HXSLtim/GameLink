@@ -34,13 +34,13 @@ import (
 
 // UserOrderTestContext provides test context for user order handler tests.
 type UserOrderTestContext struct {
-	Router      *gin.Engine
-	Service     *order.OrderService
-	DB          *gorm.DB
-	TestUser    *model.User
-	TestPlayer  *model.Player
-	TestGame    *model.Game
-	AuthToken   string
+	Router     *gin.Engine
+	Service    *order.OrderService
+	DB         *gorm.DB
+	TestUser   *model.User
+	TestPlayer *model.Player
+	TestGame   *model.Game
+	AuthToken  string
 }
 
 // SetupUserOrderTest initializes test environment for user order handler tests.

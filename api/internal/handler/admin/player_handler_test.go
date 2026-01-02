@@ -14,7 +14,6 @@ import (
 
 	"gamelink/internal/handler/testutil"
 	"gamelink/internal/model"
-	adminservice "gamelink/internal/service/admin"
 	"gamelink/internal/repository/admin"
 	"gamelink/internal/repository/game"
 	"gamelink/internal/repository/gamecategory"
@@ -24,6 +23,7 @@ import (
 	"gamelink/internal/repository/serviceitem"
 	"gamelink/internal/repository/stats"
 	"gamelink/internal/repository/user"
+	adminservice "gamelink/internal/service/admin"
 	"gamelink/pkg/cache"
 )
 
@@ -121,13 +121,13 @@ func TestPlayerHandler_Unit_CreatePlayer_Success(t *testing.T) {
 	ctx.RegisterPlayerRoutes()
 
 	payload := map[string]interface{}{
-		"user_id":              ctx.TestUser.ID,
-		"nickname":             "Test Player",
-		"bio":                  "Test player bio",
-		"rank":                 "bronze",
-		"hourly_rate_cents":    5000,
-		"main_game_id":         ctx.TestGame.ID,
-		"verification_status":  "pending",
+		"user_id":             ctx.TestUser.ID,
+		"nickname":            "Test Player",
+		"bio":                 "Test player bio",
+		"rank":                "bronze",
+		"hourly_rate_cents":   5000,
+		"main_game_id":        ctx.TestGame.ID,
+		"verification_status": "pending",
 	}
 
 	w := testutil.MakeAuthenticatedRequest(t, ctx.Router, "POST", "/admin/players", ctx.AdminToken, payload)
@@ -161,9 +161,9 @@ func TestPlayerHandler_Unit_CreateUser_UserNotFound(t *testing.T) {
 	ctx.RegisterPlayerRoutes()
 
 	payload := map[string]interface{}{
-		"user_id":              999999,
-		"nickname":             "Test Player",
-		"verification_status":  "pending",
+		"user_id":             999999,
+		"nickname":            "Test Player",
+		"verification_status": "pending",
 	}
 
 	w := testutil.MakeAuthenticatedRequest(t, ctx.Router, "POST", "/admin/players", ctx.AdminToken, payload)
@@ -296,12 +296,12 @@ func TestPlayerHandler_Unit_UpdatePlayer_Success(t *testing.T) {
 	testPlayer := testutil.CreateTestPlayer(t, ctx.DB, ctx.TestUser.ID)
 
 	payload := map[string]interface{}{
-		"nickname":             "Updated Nickname",
-		"bio":                  "Updated bio",
-		"rank":                 "silver",
-		"hourly_rate_cents":    6000,
-		"main_game_id":         ctx.TestGame.ID,
-		"verification_status":  "verified",
+		"nickname":            "Updated Nickname",
+		"bio":                 "Updated bio",
+		"rank":                "silver",
+		"hourly_rate_cents":   6000,
+		"main_game_id":        ctx.TestGame.ID,
+		"verification_status": "verified",
 	}
 
 	path := fmt.Sprintf("/admin/players/%d", testPlayer.ID)
@@ -319,8 +319,8 @@ func TestPlayerHandler_Unit_UpdatePlayer_NotFound(t *testing.T) {
 	ctx.RegisterPlayerRoutes()
 
 	payload := map[string]interface{}{
-		"nickname":             "Updated Nickname",
-		"verification_status":  "verified",
+		"nickname":            "Updated Nickname",
+		"verification_status": "verified",
 	}
 
 	w := testutil.MakeAuthenticatedRequest(t, ctx.Router, "PUT", "/admin/players/999999", ctx.AdminToken, payload)

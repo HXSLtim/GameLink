@@ -6,11 +6,11 @@ import (
 	"strconv"
 	"time"
 
+	"gamelink/pkg/cache"
 	"github.com/gin-gonic/gin"
 	redislib "github.com/redis/go-redis/v9"
 	"github.com/ulule/limiter/v3"
 	redislimiter "github.com/ulule/limiter/v3/drivers/store/redis"
-	"gamelink/pkg/cache"
 )
 
 // RedisRateLimiterConfig Redis 限流配置
@@ -38,15 +38,15 @@ type RedisRateLimiterConfig struct {
 // DefaultRedisRateLimiterConfig 返回默认 Redis 限流配置
 func DefaultRedisRateLimiterConfig() RedisRateLimiterConfig {
 	return RedisRateLimiterConfig{
-		Enabled:         true,
-		LoginRequests:   5,               // 5次/15分钟
-		LoginWindow:     15 * time.Minute,
-		SMSRequests:     3,               // 3次/小时
-		SMSWindow:       1 * time.Hour,
-		APIRequests:     60,              // 60次/分钟
-		APIWindow:       1 * time.Minute,
-		UploadRequests:  10,              // 10次/小时
-		UploadWindow:    1 * time.Hour,
+		Enabled:        true,
+		LoginRequests:  5, // 5次/15分钟
+		LoginWindow:    15 * time.Minute,
+		SMSRequests:    3, // 3次/小时
+		SMSWindow:      1 * time.Hour,
+		APIRequests:    60, // 60次/分钟
+		APIWindow:      1 * time.Minute,
+		UploadRequests: 10, // 10次/小时
+		UploadWindow:   1 * time.Hour,
 	}
 }
 
@@ -110,12 +110,12 @@ func NewRedisRateLimiter(cacheClient cache.Cache, config RedisRateLimiterConfig)
 	uploadLimiter := limiter.New(store, uploadRate)
 
 	return &RedisRateLimiter{
-		redisClient:    redisClient,
-		config:         config,
-		loginLimiter:   loginLimiter,
-		smsLimiter:     smsLimiter,
-		apiLimiter:     apiLimiter,
-		uploadLimiter:  uploadLimiter,
+		redisClient:   redisClient,
+		config:        config,
+		loginLimiter:  loginLimiter,
+		smsLimiter:    smsLimiter,
+		apiLimiter:    apiLimiter,
+		uploadLimiter: uploadLimiter,
 	}, nil
 }
 

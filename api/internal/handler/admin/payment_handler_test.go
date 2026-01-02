@@ -15,7 +15,6 @@ import (
 
 	"gamelink/internal/handler/testutil"
 	"gamelink/internal/model"
-	adminservice "gamelink/internal/service/admin"
 	"gamelink/internal/repository/admin"
 	"gamelink/internal/repository/game"
 	"gamelink/internal/repository/gamecategory"
@@ -25,6 +24,7 @@ import (
 	"gamelink/internal/repository/serviceitem"
 	"gamelink/internal/repository/stats"
 	"gamelink/internal/repository/user"
+	adminservice "gamelink/internal/service/admin"
 	"gamelink/pkg/cache"
 )
 
@@ -124,12 +124,12 @@ func TestPaymentHandler_Unit_CreatePayment_Success(t *testing.T) {
 	ctx.RegisterPaymentRoutes()
 
 	payload := map[string]interface{}{
-		"order_id":        ctx.TestOrder.ID,
-		"user_id":         ctx.TestUser.ID,
-		"method":          "alipay",
-		"amount_cents":    10000,
-		"currency":        "USD",
-		"provider_raw":    json.RawMessage(`{"txn_id":"test123"}`),
+		"order_id":     ctx.TestOrder.ID,
+		"user_id":      ctx.TestUser.ID,
+		"method":       "alipay",
+		"amount_cents": 10000,
+		"currency":     "USD",
+		"provider_raw": json.RawMessage(`{"txn_id":"test123"}`),
 	}
 
 	w := testutil.MakeAuthenticatedRequest(t, ctx.Router, "POST", "/admin/payments", ctx.AdminToken, payload)
@@ -163,11 +163,11 @@ func TestPaymentHandler_Unit_CreatePayment_OrderNotFound(t *testing.T) {
 	ctx.RegisterPaymentRoutes()
 
 	payload := map[string]interface{}{
-		"order_id":        999999,
-		"user_id":         ctx.TestUser.ID,
-		"method":          "alipay",
-		"amount_cents":    10000,
-		"currency":        "USD",
+		"order_id":     999999,
+		"user_id":      ctx.TestUser.ID,
+		"method":       "alipay",
+		"amount_cents": 10000,
+		"currency":     "USD",
 	}
 
 	w := testutil.MakeAuthenticatedRequest(t, ctx.Router, "POST", "/admin/payments", ctx.AdminToken, payload)
