@@ -104,7 +104,7 @@ export function renderWithProviders(
 export function mockRouter() {
   return {
     navigate: mockNavigate,
-    location: { pathname: '/', search: '', hash: '', state: null, key: 'default' } as Location,
+    location: { pathname: '/', search: '', hash: '', state: null, key: 'default' } as Partial<Location>,
     params: {},
   };
 }
@@ -162,7 +162,7 @@ export function mockFormSubmit(values: Record<string, unknown>) {
  */
 export function mockWindowLocation(url: string) {
   delete (window as unknown as { location?: Partial<Location> }).location;
-  window.location = {
+  (window as unknown as { location: Location }).location = {
     href: url,
     origin: 'http://localhost:5173',
     pathname: url.replace(window.location.origin, ''),
@@ -171,6 +171,14 @@ export function mockWindowLocation(url: string) {
     assign: vi.fn(),
     reload: vi.fn(),
     replace: vi.fn(),
+    // Add missing Location properties
+    host: 'localhost:5173',
+    hostname: 'localhost',
+    port: '5173',
+    protocol: 'http:',
+    ancestorOrigins: {} as DOMStringList,
+    toString: () => url,
+    valueOf: () => url,
   } as unknown as Location;
 }
 

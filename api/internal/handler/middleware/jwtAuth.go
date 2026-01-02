@@ -8,6 +8,7 @@ import (
 	"gamelink/internal/handler/resp"
 	"gamelink/pkg/apierr"
 	"gamelink/pkg/auth"
+	"gamelink/pkg/cache"
 	"gamelink/pkg/logging"
 )
 
@@ -262,7 +263,7 @@ func IsAuthenticated(c *gin.Context) bool {
 //
 // 使用方法：
 // router.Use(middleware.JWTAuthWithRevocation(secretKey, cache))
-func JWTAuthWithRevocation(secretKey string, cache auth.Cache) gin.HandlerFunc {
+func JWTAuthWithRevocation(secretKey string, c cache.Cache) gin.HandlerFunc {
 	// 验证密钥长度
 	if len(secretKey) < 32 {
 		logging.Error("JWT secret too short, must be at least 32 characters")
@@ -279,7 +280,7 @@ func JWTAuthWithRevocation(secretKey string, cache auth.Cache) gin.HandlerFunc {
 	tokenDuration := auth.DefaultTokenDuration
 
 	// 创建带缓存的JWT管理器
-	jwtManager := auth.NewJWTManagerWithCache(secretKey, tokenDuration, cache)
+	jwtManager := auth.NewJWTManagerWithCache(secretKey, tokenDuration, c)
 
 	return func(c *gin.Context) {
 		// 从请求头获取Authorization
