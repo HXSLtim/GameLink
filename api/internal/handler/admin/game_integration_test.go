@@ -40,9 +40,9 @@ func TestGameHandler_ListGames_Success(t *testing.T) {
 		} `json:"data"`
 		Pagination struct {
 			Page       int `json:"page"`
-			PageSize   int `json:"pageSize"`
+			PageSize   int `json:"page_size"`
 			Total      int `json:"total"`
-			TotalPages int `json:"totalPages"`
+			TotalPages int `json:"total_pages"`
 		} `json:"pagination"`
 	}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
