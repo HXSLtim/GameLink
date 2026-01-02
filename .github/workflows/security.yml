@@ -85,12 +85,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: admin/package-lock.json
 
       - name: Install dependencies
-        working-directory: admin
-        run: npm ci
+        run: cd admin && npm ci --ignore-scripts
 
       # CRITICAL: Security gate - critical vulnerabilities fail the build
       # Note: High severity vulnerabilities are displayed but don't fail the build
@@ -98,9 +95,8 @@ jobs:
       # but are NOT exploitable in our codebase because we only use xlsx for exporting (writing files),
       # not importing (reading files). The vulnerable functions (XLSX.read, sheet_to_json) are not used.
       - name: Run npm audit
-        working-directory: admin
         run: |
-          npm audit --audit-level=high --json > audit-report.json || true
+          cd admin && npm audit --audit-level=high --json > ../audit-report.json || true
 
           # Parse and display results
           HIGH=$(cat audit-report.json | jq '.metadata.vulnerabilities.high // 0')
