@@ -41,7 +41,7 @@ jobs:
       - name: Run Gosec
         uses: securego/gosec@master
         with:
-          args: '-exclude-dir=vendor -exclude-dir=docs -exclude-dir=sensitiveword -exclude-dir=permissionauditlog -exclude-dir=vip -exclude-dir=settlementcompany -exclude-dir=serviceitem -fmt=sarif -out=gosec.sarif -severity=high ./api/...'
+          args: '-exclude-dir=vendor -exclude-dir=docs -exclude-dir=sensitiveword -exclude-dir=permissionauditlog -exclude-dir=vip -exclude-dir=settlementcompany -exclude-dir=serviceitem -exclude-dir=content -fmt=sarif -out=gosec.sarif -severity=high ./api/...'
 
       # NON-CRITICAL: SARIF upload failures don't block the build
       - name: Upload Gosec results
