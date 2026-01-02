@@ -153,14 +153,15 @@ jobs:
       # CRITICAL: Security gate - CRITICAL vulnerabilities fail the build
       # Note: Only CRITICAL severity is checked. HIGH vulnerabilities are displayed but don't fail.
       # Using --ignore-unfixed to skip vulnerabilities without available fixes.
-      - name: Run Trivy (backend)
+      # We manually check the SARIF file for CRITICAL vulnerabilities due to Trivy action exit-code issues.
+      - name: Run Trivy (backend) - generate SARIF
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'gamelink-backend:scan'
           format: 'sarif'
           output: 'trivy-backend.sarif'
           severity: 'CRITICAL'
-          exit-code: '1'
+          exit-code: '0'
           scan-type: 'image'
           scan-ref: '.'
           ignore-unfixed: true
@@ -169,18 +170,41 @@ jobs:
       # CRITICAL: Security gate - CRITICAL vulnerabilities fail the build
       # Note: Only CRITICAL severity is checked. HIGH vulnerabilities are displayed but don't fail.
       # Using --ignore-unfixed to skip vulnerabilities without available fixes.
-      - name: Run Trivy (admin)
+      # We manually check the SARIF file for CRITICAL vulnerabilities due to Trivy action exit-code issues.
+      - name: Run Trivy (admin) - generate SARIF
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'gamelink-admin:scan'
           format: 'sarif'
           output: 'trivy-admin.sarif'
           severity: 'CRITICAL'
-          exit-code: '1'
+          exit-code: '0'
           scan-type: 'image'
           scan-ref: '.'
           ignore-unfixed: true
           vuln-type: 'os,library'
+
+      # Check for CRITICAL vulnerabilities and fail if found
+      - name: Check for CRITICAL vulnerabilities (backend)
+        run: |
+          RESULTS=$(jq '.runs[0].results | length' trivy-backend.sarif)
+          if [ "$RESULTS" -gt 0 ]; then
+            echo "::error::CRITICAL vulnerabilities found in backend image: $RESULTS"
+            jq '.runs[0].results' trivy-backend.sarif
+            exit 1
+          fi
+          echo "✅ No CRITICAL vulnerabilities found in backend image"
+
+      # Check for CRITICAL vulnerabilities and fail if found
+      - name: Check for CRITICAL vulnerabilities (admin)
+        run: |
+          RESULTS=$(jq '.runs[0].results | length' trivy-admin.sarif)
+          if [ "$RESULTS" -gt 0 ]; then
+            echo "::error::CRITICAL vulnerabilities found in admin image: $RESULTS"
+            jq '.runs[0].results' trivy-admin.sarif
+            exit 1
+          fi
+          echo "✅ No CRITICAL vulnerabilities found in admin image"
 
       - name: Upload Trivy results (backend)
         uses: github/codeql-action/upload-sarif@v3
