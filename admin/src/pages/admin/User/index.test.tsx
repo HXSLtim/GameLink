@@ -84,6 +84,13 @@ describe('UserPage', () => {
     resetAllMocks();
     localStorage.setItem('token', 'test-token');
     localStorage.setItem('user_role', 'admin');
+    // Set default mock return values
+    mockGetUsers.mockResolvedValue({
+      data: { success: true, data: { items: [], total: 0 } },
+    });
+    mockGetUserStats.mockResolvedValue({
+      data: { success: true, data: { total: 0, active: 0, banned: 0 } },
+    });
   });
 
   afterEach(() => {

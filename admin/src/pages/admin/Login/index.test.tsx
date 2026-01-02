@@ -43,6 +43,8 @@ describe('AdminLogin', () => {
   beforeEach(() => {
     resetAllMocks();
     localStorage.clear();
+    // Set default mock return value
+    mockLogin.mockResolvedValue({ data: { success: true, data: { token: 'test-token' } } });
   });
 
   afterEach(() => {

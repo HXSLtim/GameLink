@@ -53,6 +53,10 @@ describe('PlayerPage', () => {
     resetAllMocks();
     localStorage.setItem('token', 'test-token');
     localStorage.setItem('user_role', 'admin');
+    // Set default mock return values
+    mockGetPlayers.mockResolvedValue({
+      data: { success: true, data: { items: [], total: 0 } },
+    });
   });
 
   afterEach(() => {
