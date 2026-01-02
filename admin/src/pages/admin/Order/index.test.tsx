@@ -18,7 +18,7 @@ import OrderPage from './index';
 import { renderWithProviders, resetAllMocks, flushPromises } from '@/testutils';
 
 // Mock the adminApi module using vi.hoisted
-const { mockApi } = vi.hoisted(() => ({
+const { mockApi, mockMessage } = vi.hoisted(() => ({
   mockApi: {
     getOrders: vi.fn(),
     getOrder: vi.fn(),
@@ -26,6 +26,12 @@ const { mockApi } = vi.hoisted(() => ({
     refundOrder: vi.fn(),
     batchCancelOrders: vi.fn(),
     batchCompleteOrders: vi.fn(),
+  },
+  mockMessage: {
+    success: vi.fn(),
+    error: vi.fn(),
+    warning: vi.fn(),
+    info: vi.fn(),
   },
 }));
 
@@ -38,6 +44,21 @@ vi.mock('@/utils/export', () => ({
   exportToCSV: vi.fn(),
   orderExportColumns: [],
 }));
+
+// Mock App.useApp to return the message mock
+vi.mock('antd', async () => {
+  const actual = await vi.importActual('antd');
+  return {
+    ...actual,
+    App: {
+      useApp: () => ({
+        message: mockMessage,
+        notification: { success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() },
+        modal: { success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn(), confirm: vi.fn() },
+      }),
+    },
+  };
+});
 
 describe('OrderPage', () => {
   beforeEach(() => {
@@ -247,7 +268,7 @@ describe('OrderPage', () => {
 
   describe('Search and Filtering', () => {
     it('should allow searching by order number', async () => {
-      const _user = userEvent.setup();
+      const user = userEvent.setup();
       mockApi.getOrders.mockResolvedValue({
         data: {
           success: true,
@@ -278,7 +299,7 @@ describe('OrderPage', () => {
     });
 
     it('should allow filtering by order status', async () => {
-      const _user = userEvent.setup();
+      const user = userEvent.setup();
       mockApi.getOrders.mockResolvedValue({
         data: {
           success: true,
@@ -313,7 +334,7 @@ describe('OrderPage', () => {
     });
 
     it('should reset to first page when searching', async () => {
-      const _user = userEvent.setup();
+      const user = userEvent.setup();
       mockApi.getOrders.mockResolvedValue({
         data: {
           success: true,
@@ -356,7 +377,7 @@ describe('OrderPage', () => {
     });
 
     it('should change page when clicking pagination', async () => {
-      const _user = userEvent.setup();
+      const user = userEvent.setup();
       mockApi.getOrders.mockResolvedValue({
         data: {
           success: true,
@@ -385,7 +406,7 @@ describe('OrderPage', () => {
     });
 
     it('should change page size when selecting different size', async () => {
-      const _user = userEvent.setup();
+      const user = userEvent.setup();
       mockApi.getOrders.mockResolvedValue({
         data: {
           success: true,
@@ -420,7 +441,7 @@ describe('OrderPage', () => {
 
   describe('Order Details', () => {
     it('should open detail drawer when clicking detail button', async () => {
-      const _user = userEvent.setup();
+      const user = userEvent.setup();
       renderWithProviders(<OrderPage />);
 
       await waitFor(() => {
@@ -438,7 +459,7 @@ describe('OrderPage', () => {
     });
 
     it('should display order details in drawer', async () => {
-      const _user = userEvent.setup();
+      const user = userEvent.setup();
       renderWithProviders(<OrderPage />);
 
       await waitFor(() => {
@@ -459,7 +480,7 @@ describe('OrderPage', () => {
     });
 
     it('should close detail drawer when clicking close button', async () => {
-      const _user = userEvent.setup();
+      const user = userEvent.setup();
       renderWithProviders(<OrderPage />);
 
       await waitFor(() => {
@@ -495,7 +516,7 @@ describe('OrderPage', () => {
     });
 
     it('should cancel order when confirming cancellation', async () => {
-      const _user = userEvent.setup();
+      const user = userEvent.setup();
       renderWithProviders(<OrderPage />);
 
       await waitFor(() => {
@@ -548,7 +569,7 @@ describe('OrderPage', () => {
 
   describe('Order Refund', () => {
     it('should open refund modal when clicking refund button', async () => {
-      const _user = userEvent.setup();
+      const user = userEvent.setup();
       renderWithProviders(<OrderPage />);
 
       await waitFor(() => {
@@ -564,7 +585,7 @@ describe('OrderPage', () => {
     });
 
     it('should submit refund with valid data', async () => {
-      const _user = userEvent.setup();
+      const user = userEvent.setup();
       renderWithProviders(<OrderPage />);
 
       await waitFor(() => {
@@ -597,7 +618,7 @@ describe('OrderPage', () => {
     });
 
     it('should validate refund amount does not exceed order total', async () => {
-      const _user = userEvent.setup();
+      const user = userEvent.setup();
       renderWithProviders(<OrderPage />);
 
       await waitFor(() => {
@@ -644,7 +665,7 @@ describe('OrderPage', () => {
     });
 
     it('should open batch cancel modal', async () => {
-      const _user = userEvent.setup();
+      const user = userEvent.setup();
       renderWithProviders(<OrderPage />);
 
       await waitFor(() => {
@@ -660,7 +681,7 @@ describe('OrderPage', () => {
     });
 
     it('should export order data', async () => {
-      const _user = userEvent.setup();
+      const user = userEvent.setup();
       const { exportToCSV } = await import('@/utils/export');
 
       renderWithProviders(<OrderPage />);
@@ -685,7 +706,7 @@ describe('OrderPage', () => {
 
   describe('Refresh Functionality', () => {
     it('should refresh data when clicking refresh button', async () => {
-      const _user = userEvent.setup();
+      const user = userEvent.setup();
       renderWithProviders(<OrderPage />);
 
       await waitFor(() => {
@@ -735,7 +756,7 @@ describe('OrderPage', () => {
     });
 
     it('should be keyboard navigable', async () => {
-      const _user = userEvent.setup();
+      const user = userEvent.setup();
       renderWithProviders(<OrderPage />);
 
       await waitFor(() => {
