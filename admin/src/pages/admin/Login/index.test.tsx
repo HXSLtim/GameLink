@@ -17,15 +17,21 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import AdminLogin from './index';
 
-// Define mock API
-const mockApi = {
-  login: vi.fn(),
-};
-
-// Mock the authApi module
-vi.mock('@/api/auth', () => ({
-  authApi: mockApi,
+// Mock the authApi module using vi.hoisted to avoid hoisting issues
+const { mockLogin } = vi.hoisted(() => ({
+  mockLogin: vi.fn(),
 }));
+
+vi.mock('@/api/auth', () => ({
+  authApi: {
+    login: mockLogin,
+  },
+}));
+
+// Export mockLogin for use in tests
+const mockApi = {
+  login: mockLogin,
+};
 
 // Mock config
 vi.mock('@/config/debug', () => ({

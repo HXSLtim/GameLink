@@ -17,18 +17,30 @@ import userEvent from '@testing-library/user-event';
 import PlayerPage from './index';
 import { renderWithProviders, resetAllMocks, flushPromises } from '@/testutils';
 
-// Define mock API for admin
-const mockApi = {
-  getPlayers: vi.fn(),
-  updatePlayerStatus: vi.fn(),
-  deletePlayer: vi.fn(),
-  batchUpdatePlayerStatus: vi.fn(),
-};
-
-// Mock the adminApi module
-vi.mock('@/api/admin', () => ({
-  adminApi: mockApi,
+// Mock the adminApi module using vi.hoisted to avoid hoisting issues
+const { mockGetPlayers, mockUpdatePlayerStatus, mockDeletePlayer, mockBatchUpdatePlayerStatus } = vi.hoisted(() => ({
+  mockGetPlayers: vi.fn(),
+  mockUpdatePlayerStatus: vi.fn(),
+  mockDeletePlayer: vi.fn(),
+  mockBatchUpdatePlayerStatus: vi.fn(),
 }));
+
+vi.mock('@/api/admin', () => ({
+  adminApi: {
+    getPlayers: mockGetPlayers,
+    updatePlayerStatus: mockUpdatePlayerStatus,
+    deletePlayer: mockDeletePlayer,
+    batchUpdatePlayerStatus: mockBatchUpdatePlayerStatus,
+  },
+}));
+
+// Export mockApi for use in tests
+const mockApi = {
+  getPlayers: mockGetPlayers,
+  updatePlayerStatus: mockUpdatePlayerStatus,
+  deletePlayer: mockDeletePlayer,
+  batchUpdatePlayerStatus: mockBatchUpdatePlayerStatus,
+};
 
 // Mock export utilities
 vi.mock('@/utils/export', () => ({
