@@ -58,6 +58,53 @@ vi.mock('antd', async () => {
   };
 });
 
+// Helper function to create mock player data
+const createMockPlayer = (overrides = {}): any => ({
+  id: 1,
+  userId: 1,
+  nickname: 'Test Player',
+  bio: 'Test bio',
+  rank: 'bronze',
+  hourlyRateCents: 5000,
+  mainGameId: 1,
+  verificationStatus: 'verified',
+  ratingAverage: 4.5,
+  ratingCount: 100,
+  skillTags: ['沟通', '技术'],
+  createdAt: '2024-01-01T00:00:00Z',
+  updatedAt: '2024-01-01T00:00:00Z',
+  verifiedAt: '2024-01-01T00:00:00Z',
+  verifiedBy: 1,
+  user: { id: 1, name: 'Test User', avatarUrl: '' },
+  mainGame: { id: 1, name: 'Test Game' },
+  ...overrides,
+});
+
+// Helper function to create mock player list
+const createMockPlayerList = (count = 1, overrides = {}): any[] => {
+  return Array.from({ length: count }, (_, i) =>
+    createMockPlayer({
+      id: i + 1,
+      userId: i + 1,
+      nickname: `Test Player ${i + 1}`,
+      ...overrides,
+    })
+  );
+};
+
+// Helper function to setup mock data with players
+const setupMockDataWithPlayers = (playerCount = 1) => {
+  const players = createMockPlayerList(playerCount);
+  mockApi.getPlayers.mockResolvedValue({
+    data: {
+      success: true,
+      data: players,
+      pagination: { total: playerCount, page: 1, pageSize: 10 },
+    },
+  });
+  return players;
+};
+
 describe('PlayerPage', () => {
   beforeEach(() => {
     resetAllMocks();
@@ -232,7 +279,7 @@ describe('PlayerPage', () => {
 
   describe('Search and Filtering', () => {
     it('should allow searching by keyword', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       mockApi.getPlayers.mockResolvedValue({
         data: {
           success: true,
@@ -248,10 +295,10 @@ describe('PlayerPage', () => {
       });
 
       const searchInput = screen.getByPlaceholderText('名称/ID');
-      await user.type(searchInput, 'Test Player');
+      await _user.type(searchInput, 'Test Player');
 
       const searchButton = screen.getByRole('button', { name: /搜索/i });
-      await user.click(searchButton);
+      await _user.click(searchButton);
 
       await waitFor(() => {
         expect(mockApi.getPlayers).toHaveBeenCalledWith(
@@ -263,7 +310,7 @@ describe('PlayerPage', () => {
     });
 
     it('should allow filtering by status', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       mockApi.getPlayers.mockResolvedValue({
         data: {
           success: true,
@@ -280,10 +327,10 @@ describe('PlayerPage', () => {
 
       const statusDropdown = screen.getByText('状态').closest('.ant-select');
       if (statusDropdown) {
-        await user.click(statusDropdown);
+        await _user.click(statusDropdown);
 
         const verifiedOption = await screen.findByText('已通过');
-        await user.click(verifiedOption);
+        await _user.click(verifiedOption);
 
         await waitFor(() => {
           expect(mockApi.getPlayers).toHaveBeenCalledWith(
@@ -296,7 +343,7 @@ describe('PlayerPage', () => {
     });
 
     it('should reset to first page when searching', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       mockApi.getPlayers.mockResolvedValue({
         data: {
           success: true,
@@ -312,10 +359,10 @@ describe('PlayerPage', () => {
       });
 
       const searchInput = screen.getByPlaceholderText('名称/ID');
-      await user.type(searchInput, 'test');
+      await _user.type(searchInput, 'test');
 
       const searchButton = screen.getByRole('button', { name: /搜索/i });
-      await user.click(searchButton);
+      await _user.click(searchButton);
 
       await waitFor(() => {
         expect(mockApi.getPlayers).toHaveBeenCalledWith(
@@ -339,7 +386,7 @@ describe('PlayerPage', () => {
     });
 
     it('should change page when clicking pagination', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       mockApi.getPlayers.mockResolvedValue({
         data: {
           success: true,
@@ -355,7 +402,7 @@ describe('PlayerPage', () => {
       });
 
       const nextPageButton = screen.getByTitle('下一页');
-      await user.click(nextPageButton);
+      await _user.click(nextPageButton);
 
       await waitFor(() => {
         expect(mockApi.getPlayers).toHaveBeenCalledWith(
@@ -367,7 +414,7 @@ describe('PlayerPage', () => {
     });
 
     it('should change page size when selecting different size', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       mockApi.getPlayers.mockResolvedValue({
         data: {
           success: true,
@@ -383,10 +430,10 @@ describe('PlayerPage', () => {
       });
 
       const pageSizeSelector = screen.getByText('10 条/页');
-      await user.click(pageSizeSelector);
+      await _user.click(pageSizeSelector);
 
       const pageSize20 = await screen.findByText('20 条/页');
-      await user.click(pageSize20);
+      await _user.click(pageSize20);
 
       await waitFor(() => {
         expect(mockApi.getPlayers).toHaveBeenCalledWith(
@@ -400,7 +447,7 @@ describe('PlayerPage', () => {
 
   describe('Player Details', () => {
     it('should open detail drawer when clicking detail button', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<PlayerPage />);
 
       await waitFor(() => {
@@ -408,7 +455,7 @@ describe('PlayerPage', () => {
       });
 
       const detailButton = screen.getByRole('button', { name: /详情/i });
-      await user.click(detailButton);
+      await _user.click(detailButton);
 
       await waitFor(() => {
         expect(screen.getByText('陪玩师详情')).toBeInTheDocument();
@@ -416,7 +463,7 @@ describe('PlayerPage', () => {
     });
 
     it('should display player statistics in drawer', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<PlayerPage />);
 
       await waitFor(() => {
@@ -424,7 +471,7 @@ describe('PlayerPage', () => {
       });
 
       const detailButton = screen.getByRole('button', { name: /详情/i });
-      await user.click(detailButton);
+      await _user.click(detailButton);
 
       await waitFor(() => {
         expect(screen.getByText('评分')).toBeInTheDocument();
@@ -434,7 +481,7 @@ describe('PlayerPage', () => {
     });
 
     it('should display player basic information', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<PlayerPage />);
 
       await waitFor(() => {
@@ -442,7 +489,7 @@ describe('PlayerPage', () => {
       });
 
       const detailButton = screen.getByRole('button', { name: /详情/i });
-      await user.click(detailButton);
+      await _user.click(detailButton);
 
       await waitFor(() => {
         expect(screen.getByText('基本信息')).toBeInTheDocument();
@@ -488,7 +535,7 @@ describe('PlayerPage', () => {
     });
 
     it('should open audit modal when clicking audit button', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       mockApi.getPlayers.mockResolvedValue({
         data: {
           success: true,
@@ -519,7 +566,7 @@ describe('PlayerPage', () => {
       });
 
       const auditButton = screen.getByRole('button', { name: /审核/i });
-      await user.click(auditButton);
+      await _user.click(auditButton);
 
       await waitFor(() => {
         expect(screen.getByText('审核陪玩师申请')).toBeInTheDocument();
@@ -527,7 +574,7 @@ describe('PlayerPage', () => {
     });
 
     it('should approve player when clicking approve button', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       mockApi.getPlayers.mockResolvedValue({
         data: {
           success: true,
@@ -558,14 +605,14 @@ describe('PlayerPage', () => {
       });
 
       const auditButton = screen.getByRole('button', { name: /审核/i });
-      await user.click(auditButton);
+      await _user.click(auditButton);
 
       await waitFor(() => {
         expect(screen.getByText('审核陪玩师申请')).toBeInTheDocument();
       });
 
       const approveButton = screen.getByRole('button', { name: /通过/i });
-      await user.click(approveButton);
+      await _user.click(approveButton);
 
       await waitFor(() => {
         expect(mockApi.updatePlayerVerification).toHaveBeenCalledWith(2, 'verified', '');
@@ -573,7 +620,7 @@ describe('PlayerPage', () => {
     });
 
     it('should reject player when clicking reject button', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       mockApi.getPlayers.mockResolvedValue({
         data: {
           success: true,
@@ -604,14 +651,14 @@ describe('PlayerPage', () => {
       });
 
       const auditButton = screen.getByRole('button', { name: /审核/i });
-      await user.click(auditButton);
+      await _user.click(auditButton);
 
       await waitFor(() => {
         expect(screen.getByText('审核陪玩师申请')).toBeInTheDocument();
       });
 
       const rejectButton = screen.getByRole('button', { name: /拒绝/i });
-      await user.click(rejectButton);
+      await _user.click(rejectButton);
 
       await waitFor(() => {
         expect(mockApi.updatePlayerVerification).toHaveBeenCalledWith(2, 'rejected', '');
@@ -631,7 +678,7 @@ describe('PlayerPage', () => {
     });
 
     it('should ban player when confirming ban action', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<PlayerPage />);
 
       await waitFor(() => {
@@ -639,10 +686,10 @@ describe('PlayerPage', () => {
       });
 
       const banButton = screen.getByRole('button', { name: /封禁/i });
-      await user.click(banButton);
+      await _user.click(banButton);
 
       const confirmButton = await screen.findByRole('button', { name: /确定/i });
-      await user.click(confirmButton);
+      await _user.click(confirmButton);
 
       await waitFor(() => {
         expect(mockApi.updatePlayerVerification).toHaveBeenCalledWith(1, 'rejected');
@@ -701,7 +748,7 @@ describe('PlayerPage', () => {
     });
 
     it('should export player data', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       const { exportToCSV } = await import('@/utils/export');
 
       renderWithProviders(<PlayerPage />);
@@ -711,7 +758,7 @@ describe('PlayerPage', () => {
       });
 
       const exportButton = screen.getByRole('button', { name: /导出数据/i });
-      await user.click(exportButton);
+      await _user.click(exportButton);
 
       await waitFor(() => {
         expect(mockApi.getPlayers).toHaveBeenCalledWith(
@@ -726,7 +773,7 @@ describe('PlayerPage', () => {
 
   describe('Refresh Functionality', () => {
     it('should refresh data when clicking refresh button', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<PlayerPage />);
 
       await waitFor(() => {
@@ -734,7 +781,7 @@ describe('PlayerPage', () => {
       });
 
       const refreshButton = screen.getByRole('button', { name: /刷新/i });
-      await user.click(refreshButton);
+      await _user.click(refreshButton);
 
       await waitFor(() => {
         expect(mockApi.getPlayers).toHaveBeenCalledTimes(2);

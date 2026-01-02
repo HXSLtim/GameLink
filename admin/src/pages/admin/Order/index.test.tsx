@@ -60,6 +60,66 @@ vi.mock('antd', async () => {
   };
 });
 
+// Helper function to create mock order data
+const createMockOrder = (overrides = {}): any => ({
+  id: 1,
+  orderNo: 'ORD20240101001',
+  userId: 1,
+  playerId: 1,
+  gameId: 1,
+  title: 'Test Order',
+  description: 'Test description',
+  totalPriceCents: 10000,
+  currency: 'CNY',
+  status: 'pending',
+  scheduledStart: '2024-01-01T10:00:00Z',
+  scheduledEnd: '2024-01-01T12:00:00Z',
+  completedAt: '',
+  cancelReason: '',
+  createdAt: '2024-01-01T00:00:00Z',
+  updatedAt: '2024-01-01T00:00:00Z',
+  user: { id: 1, name: 'Test User', avatarUrl: '' },
+  player: { id: 1, nickname: 'Test Player', user: { avatarUrl: '' } },
+  game: { id: 1, name: 'Test Game' },
+  ...overrides,
+});
+
+// Helper function to create mock order list
+const createMockOrderList = (count = 1, overrides = {}): any[] => {
+  return Array.from({ length: count }, (_, i) =>
+    createMockOrder({
+      id: i + 1,
+      orderNo: `ORD202401010${String(i + 1).padStart(3, '0')}`,
+      title: `Test Order ${i + 1}`,
+      userId: i + 1,
+      playerId: i + 1,
+      ...overrides,
+    })
+  );
+};
+
+// Helper function to setup mock data with orders
+const setupMockDataWithOrders = (orderCount = 1) => {
+  const orders = createMockOrderList(orderCount);
+  mockApi.getOrders.mockResolvedValue({
+    data: {
+      success: true,
+      data: orders,
+      pagination: { total: orderCount, page: 1, pageSize: 10 },
+    },
+  });
+
+  // Also setup getOrder mock for single order
+  mockApi.getOrder.mockResolvedValue({
+    data: {
+      success: true,
+      data: orders[0],
+    },
+  });
+
+  return orders;
+};
+
 describe('OrderPage', () => {
   beforeEach(() => {
     resetAllMocks();
@@ -268,7 +328,7 @@ describe('OrderPage', () => {
 
   describe('Search and Filtering', () => {
     it('should allow searching by order number', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       mockApi.getOrders.mockResolvedValue({
         data: {
           success: true,
@@ -284,10 +344,10 @@ describe('OrderPage', () => {
       });
 
       const searchInput = screen.getByPlaceholderText('请输入订单号');
-      await user.type(searchInput, 'ORD20240101001');
+      await _user.type(searchInput, 'ORD20240101001');
 
       const searchButton = screen.getByRole('button', { name: /搜索/i });
-      await user.click(searchButton);
+      await _user.click(searchButton);
 
       await waitFor(() => {
         expect(mockApi.getOrders).toHaveBeenCalledWith(
@@ -299,7 +359,7 @@ describe('OrderPage', () => {
     });
 
     it('should allow filtering by order status', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       mockApi.getOrders.mockResolvedValue({
         data: {
           success: true,
@@ -317,11 +377,11 @@ describe('OrderPage', () => {
       // Find and click the status filter dropdown
       const statusDropdown = screen.getByText('订单状态').closest('.ant-select');
       if (statusDropdown) {
-        await user.click(statusDropdown);
+        await _user.click(statusDropdown);
 
         // Select "待确认" status
         const pendingOption = await screen.findByText('待确认');
-        await user.click(pendingOption);
+        await _user.click(pendingOption);
 
         await waitFor(() => {
           expect(mockApi.getOrders).toHaveBeenCalledWith(
@@ -334,7 +394,7 @@ describe('OrderPage', () => {
     });
 
     it('should reset to first page when searching', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       mockApi.getOrders.mockResolvedValue({
         data: {
           success: true,
@@ -350,10 +410,10 @@ describe('OrderPage', () => {
       });
 
       const searchInput = screen.getByPlaceholderText('请输入订单号');
-      await user.type(searchInput, 'test');
+      await _user.type(searchInput, 'test');
 
       const searchButton = screen.getByRole('button', { name: /搜索/i });
-      await user.click(searchButton);
+      await _user.click(searchButton);
 
       await waitFor(() => {
         expect(mockApi.getOrders).toHaveBeenCalledWith(
@@ -367,6 +427,7 @@ describe('OrderPage', () => {
 
   describe('Pagination', () => {
     it('should display pagination controls', async () => {
+      setupMockDataWithOrders(1);
       renderWithProviders(<OrderPage />);
 
       await waitFor(() => {
@@ -377,12 +438,14 @@ describe('OrderPage', () => {
     });
 
     it('should change page when clicking pagination', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
+      // Create 20 orders to show pagination
+      const orders = createMockOrderList(20);
       mockApi.getOrders.mockResolvedValue({
         data: {
           success: true,
-          data: [],
-          pagination: { total: 20, page: 2, pageSize: 10 },
+          data: orders.slice(0, 10),
+          pagination: { total: 20, page: 1, pageSize: 10 },
         },
       });
 
@@ -394,7 +457,7 @@ describe('OrderPage', () => {
 
       // Click next page
       const nextPageButton = screen.getByTitle('下一页');
-      await user.click(nextPageButton);
+      await _user.click(nextPageButton);
 
       await waitFor(() => {
         expect(mockApi.getOrders).toHaveBeenCalledWith(
@@ -406,12 +469,14 @@ describe('OrderPage', () => {
     });
 
     it('should change page size when selecting different size', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
+      // Create 50 orders to show different page sizes
+      const orders = createMockOrderList(50);
       mockApi.getOrders.mockResolvedValue({
         data: {
           success: true,
-          data: [],
-          pagination: { total: 50, page: 1, pageSize: 20 },
+          data: orders.slice(0, 10),
+          pagination: { total: 50, page: 1, pageSize: 10 },
         },
       });
 
@@ -423,11 +488,11 @@ describe('OrderPage', () => {
 
       // Click page size selector
       const pageSizeSelector = screen.getByText('10 条/页');
-      await user.click(pageSizeSelector);
+      await _user.click(pageSizeSelector);
 
       // Select 20 items per page
       const pageSize20 = await screen.findByText('20 条/页');
-      await user.click(pageSize20);
+      await _user.click(pageSize20);
 
       await waitFor(() => {
         expect(mockApi.getOrders).toHaveBeenCalledWith(
@@ -441,7 +506,7 @@ describe('OrderPage', () => {
 
   describe('Order Details', () => {
     it('should open detail drawer when clicking detail button', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<OrderPage />);
 
       await waitFor(() => {
@@ -449,7 +514,7 @@ describe('OrderPage', () => {
       });
 
       const detailButton = screen.getByRole('button', { name: /详情/i });
-      await user.click(detailButton);
+      await _user.click(detailButton);
 
       await waitFor(() => {
         expect(screen.getByText('订单详情')).toBeInTheDocument();
@@ -459,7 +524,7 @@ describe('OrderPage', () => {
     });
 
     it('should display order details in drawer', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<OrderPage />);
 
       await waitFor(() => {
@@ -467,7 +532,7 @@ describe('OrderPage', () => {
       });
 
       const detailButton = screen.getByRole('button', { name: /详情/i });
-      await user.click(detailButton);
+      await _user.click(detailButton);
 
       await waitFor(() => {
         expect(screen.getByText('订单详情')).toBeInTheDocument();
@@ -480,7 +545,7 @@ describe('OrderPage', () => {
     });
 
     it('should close detail drawer when clicking close button', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<OrderPage />);
 
       await waitFor(() => {
@@ -488,7 +553,7 @@ describe('OrderPage', () => {
       });
 
       const detailButton = screen.getByRole('button', { name: /详情/i });
-      await user.click(detailButton);
+      await _user.click(detailButton);
 
       await waitFor(() => {
         expect(screen.getByText('订单详情')).toBeInTheDocument();
@@ -496,7 +561,7 @@ describe('OrderPage', () => {
 
       // Close button is typically an icon button
       const closeButton = screen.getByRole('button', { name: /close/i });
-      await user.click(closeButton);
+      await _user.click(closeButton);
 
       await waitFor(() => {
         expect(screen.queryByText('订单详情')).not.toBeInTheDocument();
@@ -516,7 +581,7 @@ describe('OrderPage', () => {
     });
 
     it('should cancel order when confirming cancellation', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<OrderPage />);
 
       await waitFor(() => {
@@ -524,11 +589,11 @@ describe('OrderPage', () => {
       });
 
       const cancelButton = screen.getByRole('button', { name: /取消/i });
-      await user.click(cancelButton);
+      await _user.click(cancelButton);
 
       // Confirm in popconfirm
       const confirmButton = await screen.findByRole('button', { name: /确定/i });
-      await user.click(confirmButton);
+      await _user.click(confirmButton);
 
       await waitFor(() => {
         expect(mockApi.cancelOrder).toHaveBeenCalledWith(1);
@@ -569,7 +634,7 @@ describe('OrderPage', () => {
 
   describe('Order Refund', () => {
     it('should open refund modal when clicking refund button', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<OrderPage />);
 
       await waitFor(() => {
@@ -577,7 +642,7 @@ describe('OrderPage', () => {
       });
 
       const refundButton = screen.getByRole('button', { name: /退款/i });
-      await user.click(refundButton);
+      await _user.click(refundButton);
 
       await waitFor(() => {
         expect(screen.getByText('订单退款')).toBeInTheDocument();
@@ -585,7 +650,7 @@ describe('OrderPage', () => {
     });
 
     it('should submit refund with valid data', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<OrderPage />);
 
       await waitFor(() => {
@@ -593,7 +658,7 @@ describe('OrderPage', () => {
       });
 
       const refundButton = screen.getByRole('button', { name: /退款/i });
-      await user.click(refundButton);
+      await _user.click(refundButton);
 
       await waitFor(() => {
         expect(screen.getByText('订单退款')).toBeInTheDocument();
@@ -601,13 +666,13 @@ describe('OrderPage', () => {
 
       // Fill refund form
       const amountInput = screen.getByPlaceholderText(/请输入退款金额/);
-      await user.type(amountInput, '50.00');
+      await _user.type(amountInput, '50.00');
 
       const reasonInput = screen.getByPlaceholderText('请输入退款原因');
-      await user.type(reasonInput, '用户申请退款');
+      await _user.type(reasonInput, '用户申请退款');
 
       const confirmButton = screen.getByRole('button', { name: /确认/i });
-      await user.click(confirmButton);
+      await _user.click(confirmButton);
 
       await waitFor(() => {
         expect(mockApi.refundOrder).toHaveBeenCalledWith(1, {
@@ -618,7 +683,7 @@ describe('OrderPage', () => {
     });
 
     it('should validate refund amount does not exceed order total', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<OrderPage />);
 
       await waitFor(() => {
@@ -665,7 +730,7 @@ describe('OrderPage', () => {
     });
 
     it('should open batch cancel modal', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<OrderPage />);
 
       await waitFor(() => {
@@ -681,7 +746,7 @@ describe('OrderPage', () => {
     });
 
     it('should export order data', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       const { exportToCSV } = await import('@/utils/export');
 
       renderWithProviders(<OrderPage />);
@@ -706,7 +771,7 @@ describe('OrderPage', () => {
 
   describe('Refresh Functionality', () => {
     it('should refresh data when clicking refresh button', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<OrderPage />);
 
       await waitFor(() => {
