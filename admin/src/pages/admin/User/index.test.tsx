@@ -52,10 +52,32 @@ describe('UserPage', () => {
     localStorage.setItem('user_role', 'admin');
     // Set default mock return values
     mockApi.getUsers.mockResolvedValue({
-      data: { success: true, data: { items: [], total: 0 } },
+      data: {
+        success: true,
+        data: [],
+        pagination: { total: 0 },
+      },
     });
     mockApi.getUserStats.mockResolvedValue({
-      data: { success: true, data: { total: 0, active: 0, banned: 0 } },
+      data: {
+        success: true,
+        data: {
+          total: 0,
+          active: 0,
+          banned: 0,
+          byRole: {
+            admin: 0,
+            player: 0,
+            user: 0,
+          },
+          byStatus: {
+            active: 0,
+            banned: 0,
+            pending: 0,
+          },
+          recentRegistrations: 0,
+        },
+      },
     });
   });
 
