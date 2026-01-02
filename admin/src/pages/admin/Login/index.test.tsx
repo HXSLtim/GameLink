@@ -17,21 +17,16 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import AdminLogin from './index';
 
-// Mock the authApi module using vi.hoisted to avoid hoisting issues
-const { mockLogin } = vi.hoisted(() => ({
-  mockLogin: vi.fn(),
-}));
-
-vi.mock('@/api/auth', () => ({
-  authApi: {
-    login: mockLogin,
+// Mock the authApi module using vi.hoisted
+const { mockApi } = vi.hoisted(() => ({
+  mockApi: {
+    login: vi.fn(),
   },
 }));
 
-// Export mockLogin for use in tests
-const mockApi = {
-  login: mockLogin,
-};
+vi.mock('@/api/auth', () => ({
+  authApi: mockApi,
+}));
 
 // Mock config
 vi.mock('@/config/debug', () => ({
@@ -44,7 +39,7 @@ describe('AdminLogin', () => {
     resetAllMocks();
     localStorage.clear();
     // Set default mock return value
-    mockLogin.mockResolvedValue({ data: { success: true, data: { token: 'test-token' } } });
+    mockApi.login.mockResolvedValue({ data: { success: true, data: { token: 'test-token' } } });
   });
 
   afterEach(() => {

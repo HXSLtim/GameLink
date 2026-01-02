@@ -17,30 +17,19 @@ import userEvent from '@testing-library/user-event';
 import PlayerPage from './index';
 import { renderWithProviders, resetAllMocks, flushPromises } from '@/testutils';
 
-// Mock the adminApi module using vi.hoisted to avoid hoisting issues
-const { mockGetPlayers, mockUpdatePlayerStatus, mockDeletePlayer, mockBatchUpdatePlayerStatus } = vi.hoisted(() => ({
-  mockGetPlayers: vi.fn(),
-  mockUpdatePlayerStatus: vi.fn(),
-  mockDeletePlayer: vi.fn(),
-  mockBatchUpdatePlayerStatus: vi.fn(),
-}));
-
-vi.mock('@/api/admin', () => ({
-  adminApi: {
-    getPlayers: mockGetPlayers,
-    updatePlayerStatus: mockUpdatePlayerStatus,
-    deletePlayer: mockDeletePlayer,
-    batchUpdatePlayerStatus: mockBatchUpdatePlayerStatus,
+// Mock the adminApi module using vi.hoisted
+const { mockApi } = vi.hoisted(() => ({
+  mockApi: {
+    getPlayers: vi.fn(),
+    updatePlayerStatus: vi.fn(),
+    deletePlayer: vi.fn(),
+    batchUpdatePlayerStatus: vi.fn(),
   },
 }));
 
-// Export mockApi for use in tests
-const mockApi = {
-  getPlayers: mockGetPlayers,
-  updatePlayerStatus: mockUpdatePlayerStatus,
-  deletePlayer: mockDeletePlayer,
-  batchUpdatePlayerStatus: mockBatchUpdatePlayerStatus,
-};
+vi.mock('@/api/admin', () => ({
+  adminApi: mockApi,
+}));
 
 // Mock export utilities
 vi.mock('@/utils/export', () => ({
@@ -54,7 +43,7 @@ describe('PlayerPage', () => {
     localStorage.setItem('token', 'test-token');
     localStorage.setItem('user_role', 'admin');
     // Set default mock return values
-    mockGetPlayers.mockResolvedValue({
+    mockApi.getPlayers.mockResolvedValue({
       data: { success: true, data: { items: [], total: 0 } },
     });
   });

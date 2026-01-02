@@ -19,59 +19,25 @@ import userEvent from '@testing-library/user-event';
 import UserPage from './index';
 import { renderWithProviders, resetAllMocks, flushPromises } from '@/testutils';
 
-// Mock the adminApi module using vi.hoisted to avoid hoisting issues
-const {
-  mockGetUsers,
-  mockGetUserStats,
-  mockGetUserLogs,
-  mockCreateUser,
-  mockUpdateUser,
-  mockDeleteUser,
-  mockBatchUpdateUserStatus,
-  mockBatchUpdateUserRole,
-  mockSendNotification,
-  mockAdjustPoints,
-} = vi.hoisted(() => ({
-  mockGetUsers: vi.fn(),
-  mockGetUserStats: vi.fn(),
-  mockGetUserLogs: vi.fn(),
-  mockCreateUser: vi.fn(),
-  mockUpdateUser: vi.fn(),
-  mockDeleteUser: vi.fn(),
-  mockBatchUpdateUserStatus: vi.fn(),
-  mockBatchUpdateUserRole: vi.fn(),
-  mockSendNotification: vi.fn(),
-  mockAdjustPoints: vi.fn(),
-}));
-
-vi.mock('@/api/admin', () => ({
-  adminApi: {
-    getUsers: mockGetUsers,
-    getUserStats: mockGetUserStats,
-    getUserLogs: mockGetUserLogs,
-    createUser: mockCreateUser,
-    updateUser: mockUpdateUser,
-    deleteUser: mockDeleteUser,
-    batchUpdateUserStatus: mockBatchUpdateUserStatus,
-    batchUpdateUserRole: mockBatchUpdateUserRole,
-    sendNotification: mockSendNotification,
-    adjustPoints: mockAdjustPoints,
+// Mock the adminApi module using vi.hoisted
+const { mockApi } = vi.hoisted(() => ({
+  mockApi: {
+    getUsers: vi.fn(),
+    getUserStats: vi.fn(),
+    getUserLogs: vi.fn(),
+    createUser: vi.fn(),
+    updateUser: vi.fn(),
+    deleteUser: vi.fn(),
+    batchUpdateUserStatus: vi.fn(),
+    batchUpdateUserRole: vi.fn(),
+    sendNotification: vi.fn(),
+    adjustPoints: vi.fn(),
   },
 }));
 
-// Export mockApi for use in tests
-const mockApi = {
-  getUsers: mockGetUsers,
-  getUserStats: mockGetUserStats,
-  getUserLogs: mockGetUserLogs,
-  createUser: mockCreateUser,
-  updateUser: mockUpdateUser,
-  deleteUser: mockDeleteUser,
-  batchUpdateUserStatus: mockBatchUpdateUserStatus,
-  batchUpdateUserRole: mockBatchUpdateUserRole,
-  sendNotification: mockSendNotification,
-  adjustPoints: mockAdjustPoints,
-};
+vi.mock('@/api/admin', () => ({
+  adminApi: mockApi,
+}));
 
 // Mock export utilities
 vi.mock('@/utils/export', () => ({
@@ -85,10 +51,10 @@ describe('UserPage', () => {
     localStorage.setItem('token', 'test-token');
     localStorage.setItem('user_role', 'admin');
     // Set default mock return values
-    mockGetUsers.mockResolvedValue({
+    mockApi.getUsers.mockResolvedValue({
       data: { success: true, data: { items: [], total: 0 } },
     });
-    mockGetUserStats.mockResolvedValue({
+    mockApi.getUserStats.mockResolvedValue({
       data: { success: true, data: { total: 0, active: 0, banned: 0 } },
     });
   });
