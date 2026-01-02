@@ -12,7 +12,7 @@
 
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { screen, within, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import OrderPage from './index';
 import { renderWithProviders, resetAllMocks, flushPromises } from '@/testutils';
@@ -245,7 +245,7 @@ describe('OrderPage', () => {
 
   describe('Search and Filtering', () => {
     it('should allow searching by order number', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       mockApi.getOrders.mockResolvedValue({
         data: {
           success: true,
@@ -276,7 +276,7 @@ describe('OrderPage', () => {
     });
 
     it('should allow filtering by order status', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       mockApi.getOrders.mockResolvedValue({
         data: {
           success: true,
@@ -311,7 +311,7 @@ describe('OrderPage', () => {
     });
 
     it('should reset to first page when searching', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       mockApi.getOrders.mockResolvedValue({
         data: {
           success: true,
@@ -354,7 +354,7 @@ describe('OrderPage', () => {
     });
 
     it('should change page when clicking pagination', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       mockApi.getOrders.mockResolvedValue({
         data: {
           success: true,
@@ -383,7 +383,7 @@ describe('OrderPage', () => {
     });
 
     it('should change page size when selecting different size', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       mockApi.getOrders.mockResolvedValue({
         data: {
           success: true,
@@ -418,7 +418,7 @@ describe('OrderPage', () => {
 
   describe('Order Details', () => {
     it('should open detail drawer when clicking detail button', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<OrderPage />);
 
       await waitFor(() => {
@@ -436,7 +436,7 @@ describe('OrderPage', () => {
     });
 
     it('should display order details in drawer', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<OrderPage />);
 
       await waitFor(() => {
@@ -457,7 +457,7 @@ describe('OrderPage', () => {
     });
 
     it('should close detail drawer when clicking close button', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<OrderPage />);
 
       await waitFor(() => {
@@ -493,7 +493,7 @@ describe('OrderPage', () => {
     });
 
     it('should cancel order when confirming cancellation', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<OrderPage />);
 
       await waitFor(() => {
@@ -546,7 +546,7 @@ describe('OrderPage', () => {
 
   describe('Order Refund', () => {
     it('should open refund modal when clicking refund button', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<OrderPage />);
 
       await waitFor(() => {
@@ -562,7 +562,7 @@ describe('OrderPage', () => {
     });
 
     it('should submit refund with valid data', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<OrderPage />);
 
       await waitFor(() => {
@@ -595,7 +595,7 @@ describe('OrderPage', () => {
     });
 
     it('should validate refund amount does not exceed order total', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<OrderPage />);
 
       await waitFor(() => {
@@ -642,7 +642,7 @@ describe('OrderPage', () => {
     });
 
     it('should open batch cancel modal', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<OrderPage />);
 
       await waitFor(() => {
@@ -658,7 +658,7 @@ describe('OrderPage', () => {
     });
 
     it('should export order data', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       const { exportToCSV } = await import('@/utils/export');
 
       renderWithProviders(<OrderPage />);
@@ -683,7 +683,7 @@ describe('OrderPage', () => {
 
   describe('Refresh Functionality', () => {
     it('should refresh data when clicking refresh button', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<OrderPage />);
 
       await waitFor(() => {
@@ -733,7 +733,7 @@ describe('OrderPage', () => {
     });
 
     it('should be keyboard navigable', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<OrderPage />);
 
       await waitFor(() => {

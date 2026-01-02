@@ -12,11 +12,11 @@
 
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { screen, within, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import PlayerPage from './index';
 import { renderWithProviders, mockApi, resetAllMocks, flushPromises } from '@/testutils';
-import { adminApi } from '@/api/admin';
+import { _adminApi as adminApi } from '@/api/admin';
 
 // Mock the adminApi module
 vi.mock('@/api/admin', () => ({
@@ -193,7 +193,7 @@ describe('PlayerPage', () => {
 
   describe('Search and Filtering', () => {
     it('should allow searching by keyword', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       mockApi.getPlayers.mockResolvedValue({
         data: {
           success: true,
@@ -224,7 +224,7 @@ describe('PlayerPage', () => {
     });
 
     it('should allow filtering by status', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       mockApi.getPlayers.mockResolvedValue({
         data: {
           success: true,
@@ -257,7 +257,7 @@ describe('PlayerPage', () => {
     });
 
     it('should reset to first page when searching', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       mockApi.getPlayers.mockResolvedValue({
         data: {
           success: true,
@@ -300,7 +300,7 @@ describe('PlayerPage', () => {
     });
 
     it('should change page when clicking pagination', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       mockApi.getPlayers.mockResolvedValue({
         data: {
           success: true,
@@ -328,7 +328,7 @@ describe('PlayerPage', () => {
     });
 
     it('should change page size when selecting different size', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       mockApi.getPlayers.mockResolvedValue({
         data: {
           success: true,
@@ -361,7 +361,7 @@ describe('PlayerPage', () => {
 
   describe('Player Details', () => {
     it('should open detail drawer when clicking detail button', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<PlayerPage />);
 
       await waitFor(() => {
@@ -377,7 +377,7 @@ describe('PlayerPage', () => {
     });
 
     it('should display player statistics in drawer', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<PlayerPage />);
 
       await waitFor(() => {
@@ -395,7 +395,7 @@ describe('PlayerPage', () => {
     });
 
     it('should display player basic information', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<PlayerPage />);
 
       await waitFor(() => {
@@ -449,7 +449,7 @@ describe('PlayerPage', () => {
     });
 
     it('should open audit modal when clicking audit button', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       mockApi.getPlayers.mockResolvedValue({
         data: {
           success: true,
@@ -488,7 +488,7 @@ describe('PlayerPage', () => {
     });
 
     it('should approve player when clicking approve button', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       mockApi.getPlayers.mockResolvedValue({
         data: {
           success: true,
@@ -534,7 +534,7 @@ describe('PlayerPage', () => {
     });
 
     it('should reject player when clicking reject button', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       mockApi.getPlayers.mockResolvedValue({
         data: {
           success: true,
@@ -592,7 +592,7 @@ describe('PlayerPage', () => {
     });
 
     it('should ban player when confirming ban action', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<PlayerPage />);
 
       await waitFor(() => {
@@ -662,7 +662,7 @@ describe('PlayerPage', () => {
     });
 
     it('should export player data', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       const { exportToCSV } = await import('@/utils/export');
 
       renderWithProviders(<PlayerPage />);
@@ -687,7 +687,7 @@ describe('PlayerPage', () => {
 
   describe('Refresh Functionality', () => {
     it('should refresh data when clicking refresh button', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<PlayerPage />);
 
       await waitFor(() => {
@@ -713,7 +713,7 @@ describe('PlayerPage', () => {
     });
 
     it('should be keyboard navigable', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<PlayerPage />);
 
       await waitFor(() => {

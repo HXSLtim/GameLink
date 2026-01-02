@@ -18,12 +18,14 @@ import (
 
 	"gamelink/internal/handler/testutil"
 	"gamelink/internal/model"
+	"gamelink/internal/repository/commission"
 	"gamelink/internal/repository/game"
 	"gamelink/internal/repository/implementations"
+	"gamelink/internal/repository/payment"
 	"gamelink/internal/repository/player"
+	"gamelink/internal/repository/review"
 	"gamelink/internal/repository/user"
 	"gamelink/internal/service/order"
-	"gamelink/pkg/apierr"
 )
 
 // ============================================================================
@@ -52,14 +54,17 @@ func SetupUserOrderTest(t *testing.T) *UserOrderTestContext {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
 
-	// Create repositories
+	// Create all required repositories
 	users := user.NewUserRepository(db)
 	players := player.NewPlayerRepository(db)
 	games := game.NewGameRepository(db)
 	orders := implementations.NewOrderRepository(db)
+	payments := payment.NewPaymentRepository(db)
+	reviews := review.NewReviewRepository(db)
+	commissions := commission.NewCommissionRepository(db)
 
-	// Create order service
-	orderSvc := order.NewOrderService(orders, players, games, users)
+	// Create order service with all required dependencies
+	orderSvc := order.NewOrderService(orders, players, users, games, payments, reviews, commissions)
 
 	// Create test user
 	testUser := testutil.CreateAdminUser(t, db, model.RoleUser)
@@ -110,7 +115,7 @@ func (ctx *UserOrderTestContext) RegisterUserOrderRoutes() {
 }
 
 // makeRequest helper for making authenticated requests
-func (ctx *UserOrderTestContext) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
+func (ctx *UserOrderTestContext) makeRequest(t *testing.T, method, path string, body interface{}) *httptest.ResponseRecorder {
 	var reqBody *bytes.Buffer
 	if body != nil {
 		jsonData, err := json.Marshal(body)
@@ -150,7 +155,7 @@ func TestUserOrderHandler_Unit_CreateOrder_Success(t *testing.T) {
 		"duration_mins": 60,
 	}
 
-	w := ctx.makeRequest("POST", "/user/orders", payload)
+	w := ctx.makeRequest(t, "POST", "/user/orders", payload)
 	testutil.AssertSuccess(t, w, http.StatusOK)
 
 	var response map[string]interface{}
@@ -171,7 +176,7 @@ func TestUserOrderHandler_Unit_CreateOrder_ValidationError(t *testing.T) {
 		"title": "Test Order",
 	}
 
-	w := ctx.makeRequest("POST", "/user/orders", payload)
+	w := ctx.makeRequest(t, "POST", "/user/orders", payload)
 	testutil.AssertError(t, w, http.StatusBadRequest)
 }
 
@@ -189,7 +194,7 @@ func TestUserOrderHandler_Unit_CreateOrder_InvalidPlayer(t *testing.T) {
 		"duration_mins": 60,
 	}
 
-	w := ctx.makeRequest("POST", "/user/orders", payload)
+	w := ctx.makeRequest(t, "POST", "/user/orders", payload)
 	testutil.AssertError(t, w, http.StatusNotFound)
 }
 
@@ -207,7 +212,7 @@ func TestUserOrderHandler_Unit_CreateOrder_InvalidGame(t *testing.T) {
 		"duration_mins": 60,
 	}
 
-	w := ctx.makeRequest("POST", "/user/orders", payload)
+	w := ctx.makeRequest(t, "POST", "/user/orders", payload)
 	testutil.AssertError(t, w, http.StatusNotFound)
 }
 
@@ -225,7 +230,7 @@ func TestUserOrderHandler_Unit_CreateOrder_InvalidTime(t *testing.T) {
 		"duration_mins": 60,
 	}
 
-	w := ctx.makeRequest("POST", "/user/orders", payload)
+	w := ctx.makeRequest(t, "POST", "/user/orders", payload)
 	testutil.AssertError(t, w, http.StatusBadRequest)
 }
 
@@ -240,7 +245,7 @@ func TestUserOrderHandler_Unit_GetMyOrders_Success(t *testing.T) {
 	// Create test order
 	testutil.CreateTestOrder(t, ctx.DB, ctx.TestUser.ID, ctx.TestPlayer.ID, ctx.TestGame.ID, model.OrderStatusPending)
 
-	w := ctx.makeRequest("GET", "/user/orders", nil)
+	w := ctx.makeRequest(t, "GET", "/user/orders", nil)
 	testutil.AssertSuccess(t, w)
 
 	var response map[string]interface{}
@@ -260,7 +265,7 @@ func TestUserOrderHandler_Unit_GetMyOrders_WithStatusFilter(t *testing.T) {
 	testutil.CreateTestOrder(t, ctx.DB, ctx.TestUser.ID, ctx.TestPlayer.ID, ctx.TestGame.ID, model.OrderStatusPending)
 	testutil.CreateTestOrder(t, ctx.DB, ctx.TestUser.ID, ctx.TestPlayer.ID, ctx.TestGame.ID, model.OrderStatusCompleted)
 
-	w := ctx.makeRequest("GET", "/user/orders?status=pending", nil)
+	w := ctx.makeRequest(t, "GET", "/user/orders?status=pending", nil)
 	testutil.AssertSuccess(t, w)
 
 	var response map[string]interface{}
@@ -285,7 +290,7 @@ func TestUserOrderHandler_Unit_GetMyOrders_WithPagination(t *testing.T) {
 		testutil.CreateTestOrder(t, ctx.DB, ctx.TestUser.ID, ctx.TestPlayer.ID, ctx.TestGame.ID, model.OrderStatusPending)
 	}
 
-	w := ctx.makeRequest("GET", "/user/orders?page=1&page_size=10", nil)
+	w := ctx.makeRequest(t, "GET", "/user/orders?page=1&page_size=10", nil)
 	testutil.AssertSuccess(t, w)
 
 	var response map[string]interface{}
@@ -304,7 +309,7 @@ func TestUserOrderHandler_Unit_GetMyOrders_InvalidQueryParams(t *testing.T) {
 	ctx := SetupUserOrderTest(t)
 	ctx.RegisterUserOrderRoutes()
 
-	w := ctx.makeRequest("GET", "/user/orders?status=invalid_status", nil)
+	w := ctx.makeRequest(t, "GET", "/user/orders?status=invalid_status", nil)
 	testutil.AssertError(t, w, http.StatusBadRequest)
 }
 
@@ -312,7 +317,7 @@ func TestUserOrderHandler_Unit_GetMyOrders_EmptyList(t *testing.T) {
 	ctx := SetupUserOrderTest(t)
 	ctx.RegisterUserOrderRoutes()
 
-	w := ctx.makeRequest("GET", "/user/orders", nil)
+	w := ctx.makeRequest(t, "GET", "/user/orders", nil)
 	testutil.AssertSuccess(t, w)
 
 	var response map[string]interface{}
@@ -335,7 +340,7 @@ func TestUserOrderHandler_Unit_GetOrderDetail_Success(t *testing.T) {
 	testOrder := testutil.CreateTestOrder(t, ctx.DB, ctx.TestUser.ID, ctx.TestPlayer.ID, ctx.TestGame.ID, model.OrderStatusPending)
 
 	path := fmt.Sprintf("/user/orders/%d", testOrder.ID)
-	w := ctx.makeRequest("GET", path, nil)
+	w := ctx.makeRequest(t, "GET", path, nil)
 	testutil.AssertSuccess(t, w)
 
 	var response map[string]interface{}
@@ -351,7 +356,7 @@ func TestUserOrderHandler_Unit_GetOrderDetail_NotFound(t *testing.T) {
 	ctx := SetupUserOrderTest(t)
 	ctx.RegisterUserOrderRoutes()
 
-	w := ctx.makeRequest("GET", "/user/orders/999999", nil)
+	w := ctx.makeRequest(t, "GET", "/user/orders/999999", nil)
 	testutil.AssertError(t, w, http.StatusNotFound)
 }
 
@@ -364,7 +369,7 @@ func TestUserOrderHandler_Unit_GetOrderDetail_Unauthorized(t *testing.T) {
 	testOrder := testutil.CreateTestOrder(t, ctx.DB, anotherUser.ID, ctx.TestPlayer.ID, ctx.TestGame.ID, model.OrderStatusPending)
 
 	path := fmt.Sprintf("/user/orders/%d", testOrder.ID)
-	w := ctx.makeRequest("GET", path, nil)
+	w := ctx.makeRequest(t, "GET", path, nil)
 	testutil.AssertError(t, w, http.StatusForbidden)
 }
 
@@ -372,7 +377,7 @@ func TestUserOrderHandler_Unit_GetOrderDetail_InvalidID(t *testing.T) {
 	ctx := SetupUserOrderTest(t)
 	ctx.RegisterUserOrderRoutes()
 
-	w := ctx.makeRequest("GET", "/user/orders/invalid", nil)
+	w := ctx.makeRequest(t, "GET", "/user/orders/invalid", nil)
 	testutil.AssertError(t, w, http.StatusBadRequest)
 }
 
@@ -391,7 +396,7 @@ func TestUserOrderHandler_Unit_CancelOrder_Success(t *testing.T) {
 	}
 
 	path := fmt.Sprintf("/user/orders/%d/cancel", testOrder.ID)
-	w := ctx.makeRequest("PUT", path, payload)
+	w := ctx.makeRequest(t, "PUT", path, payload)
 	testutil.AssertSuccess(t, w)
 
 	// Verify order status changed
@@ -410,7 +415,7 @@ func TestUserOrderHandler_Unit_CancelOrder_InvalidTransition(t *testing.T) {
 	}
 
 	path := fmt.Sprintf("/user/orders/%d/cancel", testOrder.ID)
-	w := ctx.makeRequest("PUT", path, payload)
+	w := ctx.makeRequest(t, "PUT", path, payload)
 	testutil.AssertError(t, w, http.StatusBadRequest)
 }
 
@@ -422,7 +427,7 @@ func TestUserOrderHandler_Unit_CancelOrder_NotFound(t *testing.T) {
 		"reason": "Test",
 	}
 
-	w := ctx.makeRequest("PUT", "/user/orders/999999/cancel", payload)
+	w := ctx.makeRequest(t, "PUT", "/user/orders/999999/cancel", payload)
 	testutil.AssertError(t, w, http.StatusNotFound)
 }
 
@@ -433,7 +438,7 @@ func TestUserOrderHandler_Unit_CancelOrder_MissingReason(t *testing.T) {
 	testOrder := testutil.CreateTestOrder(t, ctx.DB, ctx.TestUser.ID, ctx.TestPlayer.ID, ctx.TestGame.ID, model.OrderStatusConfirmed)
 
 	path := fmt.Sprintf("/user/orders/%d/cancel", testOrder.ID)
-	w := ctx.makeRequest("PUT", path, map[string]interface{}{})
+	w := ctx.makeRequest(t, "PUT", path, map[string]interface{}{})
 	testutil.AssertError(t, w, http.StatusBadRequest)
 }
 
@@ -448,7 +453,7 @@ func TestUserOrderHandler_Unit_CompleteOrder_Success(t *testing.T) {
 	testOrder := testutil.CreateTestOrder(t, ctx.DB, ctx.TestUser.ID, ctx.TestPlayer.ID, ctx.TestGame.ID, model.OrderStatusInProgress)
 
 	path := fmt.Sprintf("/user/orders/%d/complete", testOrder.ID)
-	w := ctx.makeRequest("PUT", path, nil)
+	w := ctx.makeRequest(t, "PUT", path, nil)
 	testutil.AssertSuccess(t, w)
 
 	// Verify order status changed
@@ -463,7 +468,7 @@ func TestUserOrderHandler_Unit_CompleteOrder_InvalidTransition(t *testing.T) {
 	testOrder := testutil.CreateTestOrder(t, ctx.DB, ctx.TestUser.ID, ctx.TestPlayer.ID, ctx.TestGame.ID, model.OrderStatusPending)
 
 	path := fmt.Sprintf("/user/orders/%d/complete", testOrder.ID)
-	w := ctx.makeRequest("PUT", path, nil)
+	w := ctx.makeRequest(t, "PUT", path, nil)
 	testutil.AssertError(t, w, http.StatusBadRequest)
 }
 
@@ -471,7 +476,7 @@ func TestUserOrderHandler_Unit_CompleteOrder_NotFound(t *testing.T) {
 	ctx := SetupUserOrderTest(t)
 	ctx.RegisterUserOrderRoutes()
 
-	w := ctx.makeRequest("PUT", "/user/orders/999999/complete", nil)
+	w := ctx.makeRequest(t, "PUT", "/user/orders/999999/complete", nil)
 	testutil.AssertError(t, w, http.StatusNotFound)
 }
 
@@ -484,7 +489,7 @@ func TestUserOrderHandler_Unit_CompleteOrder_Unauthorized(t *testing.T) {
 	testOrder := testutil.CreateTestOrder(t, ctx.DB, anotherUser.ID, ctx.TestPlayer.ID, ctx.TestGame.ID, model.OrderStatusInProgress)
 
 	path := fmt.Sprintf("/user/orders/%d/complete", testOrder.ID)
-	w := ctx.makeRequest("PUT", path, nil)
+	w := ctx.makeRequest(t, "PUT", path, nil)
 	testutil.AssertError(t, w, http.StatusForbidden)
 }
 
@@ -538,7 +543,7 @@ func TestUserOrderHandler_Unit_URLParameterEncoding(t *testing.T) {
 
 	// Use url.PathEscape to ensure proper encoding
 	path := fmt.Sprintf("/user/orders/%d", testOrder.ID)
-	w := ctx.makeRequest("GET", path, nil)
+	w := ctx.makeRequest(t, "GET", path, nil)
 	testutil.AssertSuccess(t, w)
 }
 

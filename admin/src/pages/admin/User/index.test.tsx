@@ -14,11 +14,11 @@
 
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { screen, within, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import UserPage from './index';
 import { renderWithProviders, mockApi, resetAllMocks, flushPromises } from '@/testutils';
-import { adminApi } from '@/api/admin';
+import { _adminApi as adminApi } from '@/api/admin';
 
 // Mock the adminApi module
 vi.mock('@/api/admin', () => ({
@@ -198,7 +198,7 @@ describe('UserPage', () => {
 
   describe('Search and Filtering', () => {
     it('should allow searching by keyword', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       mockApi.getUsers.mockResolvedValue({
         data: {
           success: true,
@@ -229,7 +229,7 @@ describe('UserPage', () => {
     });
 
     it('should allow filtering by role', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       mockApi.getUsers.mockResolvedValue({
         data: {
           success: true,
@@ -262,7 +262,7 @@ describe('UserPage', () => {
     });
 
     it('should allow filtering by status', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       mockApi.getUsers.mockResolvedValue({
         data: {
           success: true,
@@ -295,7 +295,7 @@ describe('UserPage', () => {
     });
 
     it('should reset to first page when searching', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       mockApi.getUsers.mockResolvedValue({
         data: {
           success: true,
@@ -338,7 +338,7 @@ describe('UserPage', () => {
     });
 
     it('should change page when clicking pagination', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       mockApi.getUsers.mockResolvedValue({
         data: {
           success: true,
@@ -368,7 +368,7 @@ describe('UserPage', () => {
 
   describe('User Details', () => {
     it('should open detail drawer when clicking detail button', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<UserPage />);
 
       await waitFor(() => {
@@ -384,7 +384,7 @@ describe('UserPage', () => {
     });
 
     it('should display user basic information in drawer', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<UserPage />);
 
       await waitFor(() => {
@@ -402,7 +402,7 @@ describe('UserPage', () => {
     });
 
     it('should display login history tab', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       mockApi.getUserLogs.mockResolvedValue({
         success: true,
         data: [],
@@ -434,7 +434,7 @@ describe('UserPage', () => {
     });
 
     it('should display operation logs tab', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       mockApi.getUserLogs.mockResolvedValue({
         success: true,
         data: [],
@@ -467,7 +467,7 @@ describe('UserPage', () => {
 
   describe('User Edit', () => {
     it('should open edit modal when clicking edit button', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<UserPage />);
 
       await waitFor(() => {
@@ -483,7 +483,7 @@ describe('UserPage', () => {
     });
 
     it('should pre-fill form with user data', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<UserPage />);
 
       await waitFor(() => {
@@ -502,7 +502,7 @@ describe('UserPage', () => {
     });
 
     it('should update user when submitting form', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<UserPage />);
 
       await waitFor(() => {
@@ -548,7 +548,7 @@ describe('UserPage', () => {
     });
 
     it('should ban user when confirming ban action', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<UserPage />);
 
       await waitFor(() => {
@@ -607,7 +607,7 @@ describe('UserPage', () => {
     });
 
     it('should delete user when confirming delete action', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<UserPage />);
 
       await waitFor(() => {
@@ -628,7 +628,7 @@ describe('UserPage', () => {
 
   describe('Create User', () => {
     it('should open create modal when clicking new user button', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<UserPage />);
 
       await waitFor(() => {
@@ -644,7 +644,7 @@ describe('UserPage', () => {
     });
 
     it('should create user when submitting form with valid data', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<UserPage />);
 
       const createButton = screen.getByRole('button', { name: /新增用户/i });
@@ -693,7 +693,7 @@ describe('UserPage', () => {
     });
 
     it('should open batch role modal', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<UserPage />);
 
       await waitFor(() => {
@@ -741,7 +741,7 @@ describe('UserPage', () => {
     });
 
     it('should export user data', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       const { exportToCSV } = await import('@/utils/export');
 
       renderWithProviders(<UserPage />);
@@ -766,7 +766,7 @@ describe('UserPage', () => {
 
   describe('Refresh Functionality', () => {
     it('should refresh data when clicking refresh button', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<UserPage />);
 
       await waitFor(() => {
@@ -792,7 +792,7 @@ describe('UserPage', () => {
     });
 
     it('should be keyboard navigable', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<UserPage />);
 
       await waitFor(() => {

@@ -16,8 +16,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import AdminLogin from './index';
-import { renderWithProviders, mockApi, resetAllMocks, flushPromises } from '@/testutils';
-import { authApi } from '@/api/auth';
+import { _authApi as authApi } from '@/api/auth';
 
 // Mock the authApi module
 vi.mock('@/api/auth', () => ({
