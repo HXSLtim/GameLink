@@ -94,7 +94,7 @@ jobs:
           head -3 admin/package-lock.json || echo "Cannot read package-lock.json"
 
       - name: Install dependencies
-        run: cd admin && npm ci --ignore-scripts
+        run: cd admin && npm install --ignore-scripts
 
       # CRITICAL: Security gate - critical vulnerabilities fail the build
       # Note: High severity vulnerabilities are displayed but don't fail the build
