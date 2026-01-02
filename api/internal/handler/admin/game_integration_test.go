@@ -30,26 +30,30 @@ func TestGameHandler_ListGames_Success(t *testing.T) {
 	w := helper.MakeRequest("GET", "/admin/games?page=1&page_size=2", nil, true)
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var response map[string]interface{}
+	var response struct {
+		Success bool `json:"success"`
+		Data    []struct {
+			ID    uint64 `json:"id"`
+			Name  string `json:"name"`
+			Slug  string `json:"slug"`
+			Image string `json:"image"`
+		} `json:"data"`
+		Pagination struct {
+			Page       int `json:"page"`
+			PageSize   int `json:"pageSize"`
+			Total      int `json:"total"`
+			TotalPages int `json:"totalPages"`
+		} `json:"pagination"`
+	}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	require.NoError(t, err)
 
 	// Verify response structure
-	assert.True(t, response["success"].(bool))
-	data, ok := response["data"].(map[string]interface{})
-	require.True(t, ok)
-
-	// Verify items
-	items, ok := data["items"].([]interface{})
-	require.True(t, ok)
-	assert.Equal(t, 2, len(items)) // page_size=2
-
-	// Verify pagination
-	pagination, ok := data["pagination"].(map[string]interface{})
-	require.True(t, ok)
-	assert.Equal(t, float64(1), pagination["page"])
-	assert.Equal(t, float64(2), pagination["pageSize"])
-	assert.Equal(t, float64(3), pagination["total"])
+	assert.True(t, response.Success)
+	assert.Equal(t, 2, len(response.Data)) // page_size=2
+	assert.Equal(t, 1, response.Pagination.Page)
+	assert.Equal(t, 2, response.Pagination.PageSize)
+	assert.Equal(t, 3, response.Pagination.Total)
 }
 
 // TestGameHandler_ListGames_WithKeyword tests game listing with keyword filter.
@@ -67,13 +71,18 @@ func TestGameHandler_ListGames_WithKeyword(t *testing.T) {
 	w := helper.MakeRequest("GET", "/admin/games?keyword=Legends", nil, true)
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var response map[string]interface{}
+	var response struct {
+		Success bool `json:"success"`
+		Data    []struct {
+			ID   uint64 `json:"id"`
+			Name string `json:"name"`
+		} `json:"data"`
+	}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	require.NoError(t, err)
 
-	data := response["data"].(map[string]interface{})
-	items := data["items"].([]interface{})
-	assert.Equal(t, 2, len(items)) // "League of Legends" and "Legends of Runeterra"
+	assert.True(t, response.Success)
+	assert.Equal(t, 2, len(response.Data)) // "League of Legends" and "Legends of Runeterra"
 }
 
 // TestGameHandler_GetGame_Success tests successful game retrieval.
