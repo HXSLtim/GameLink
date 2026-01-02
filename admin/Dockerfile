@@ -17,7 +17,8 @@ COPY . .
 RUN npm run build
 
 # --- Runtime stage (使用nginx提供静态文件) ---
-FROM nginx:1.25-alpine AS runtime
+# Use nginx:alpine (latest) which uses Alpine 3.20+ to avoid CVEs in Alpine 3.19
+FROM nginx:alpine AS runtime
 WORKDIR /usr/share/nginx/html
 
 # 删除nginx默认内容
