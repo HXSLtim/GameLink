@@ -17,19 +17,43 @@ import userEvent from '@testing-library/user-event';
 import OrderPage from './index';
 import { renderWithProviders, resetAllMocks, flushPromises } from '@/testutils';
 
-// Mock the adminApi module
-const mockApi = {
-  getOrders: vi.fn(),
-  getOrder: vi.fn(),
-  cancelOrder: vi.fn(),
-  refundOrder: vi.fn(),
-  batchCancelOrders: vi.fn(),
-  batchCompleteOrders: vi.fn(),
-};
+// Mock the adminApi module using vi.hoisted to avoid hoisting issues
+const {
+  mockGetOrders,
+  mockGetOrder,
+  mockCancelOrder,
+  mockRefundOrder,
+  mockBatchCancelOrders,
+  mockBatchCompleteOrders,
+} = vi.hoisted(() => ({
+  mockGetOrders: vi.fn(),
+  mockGetOrder: vi.fn(),
+  mockCancelOrder: vi.fn(),
+  mockRefundOrder: vi.fn(),
+  mockBatchCancelOrders: vi.fn(),
+  mockBatchCompleteOrders: vi.fn(),
+}));
 
 vi.mock('@/api/admin', () => ({
-  adminApi: mockApi,
+  adminApi: {
+    getOrders: mockGetOrders,
+    getOrder: mockGetOrder,
+    cancelOrder: mockCancelOrder,
+    refundOrder: mockRefundOrder,
+    batchCancelOrders: mockBatchCancelOrders,
+    batchCompleteOrders: mockBatchCompleteOrders,
+  },
 }));
+
+// Export mockApi for use in tests
+const mockApi = {
+  getOrders: mockGetOrders,
+  getOrder: mockGetOrder,
+  cancelOrder: mockCancelOrder,
+  refundOrder: mockRefundOrder,
+  batchCancelOrders: mockBatchCancelOrders,
+  batchCompleteOrders: mockBatchCompleteOrders,
+};
 
 // Mock export utilities
 vi.mock('@/utils/export', () => ({
