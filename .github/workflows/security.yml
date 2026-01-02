@@ -187,10 +187,16 @@ jobs:
       # Check for CRITICAL vulnerabilities and fail if found
       - name: Check for CRITICAL vulnerabilities (backend)
         run: |
-          RESULTS=$(jq '.runs[0].results | length' trivy-backend.sarif)
-          if [ "$RESULTS" -gt 0 ]; then
-            echo "::error::CRITICAL vulnerabilities found in backend image: $RESULTS"
-            jq '.runs[0].results' trivy-backend.sarif
+          # SARIF contains all severities, so we filter for CRITICAL only
+          # Check rule.level or properties.severity for CRITICAL severity
+          CRITICAL=$(jq '[.runs[0].results[] | select(.ruleId == "CVE" or (.level // "note") | ascii_upcase == "CRITICAL")] | length' trivy-backend.sarif)
+
+          # Also check the message text for "Severity: CRITICAL"
+          HAS_CRITICAL=$(jq '[.runs[0].results[] | select(.message.text | contains("Severity: CRITICAL"))] | length' trivy-backend.sarif)
+
+          if [ "$CRITICAL" -gt 0 ] || [ "$HAS_CRITICAL" -gt 0 ]; then
+            echo "::error::CRITICAL vulnerabilities found in backend image"
+            jq '.runs[0].results[] | select(.message.text | contains("Severity: CRITICAL"))' trivy-backend.sarif
             exit 1
           fi
           echo "✅ No CRITICAL vulnerabilities found in backend image"
@@ -198,10 +204,13 @@ jobs:
       # Check for CRITICAL vulnerabilities and fail if found
       - name: Check for CRITICAL vulnerabilities (admin)
         run: |
-          RESULTS=$(jq '.runs[0].results | length' trivy-admin.sarif)
-          if [ "$RESULTS" -gt 0 ]; then
-            echo "::error::CRITICAL vulnerabilities found in admin image: $RESULTS"
-            jq '.runs[0].results' trivy-admin.sarif
+          # SARIF contains all severities, so we filter for CRITICAL only
+          # Check the message text for "Severity: CRITICAL"
+          HAS_CRITICAL=$(jq '[.runs[0].results[] | select(.message.text | contains("Severity: CRITICAL"))] | length' trivy-admin.sarif)
+
+          if [ "$HAS_CRITICAL" -gt 0 ]; then
+            echo "::error::CRITICAL vulnerabilities found in admin image"
+            jq '.runs[0].results[] | select(.message.text | contains("Severity: CRITICAL"))' trivy-admin.sarif
             exit 1
           fi
           echo "✅ No CRITICAL vulnerabilities found in admin image"
