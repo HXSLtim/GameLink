@@ -80,11 +80,18 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      - name: Verify package-lock.json exists
+        run: |
+          ls -la admin/package-lock.json || echo "package-lock.json NOT FOUND"
+          head -3 admin/package-lock.json || echo "Cannot read package-lock.json"
 
       - name: Install dependencies
         run: cd admin && npm ci --ignore-scripts
