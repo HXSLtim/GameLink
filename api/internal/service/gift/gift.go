@@ -197,13 +197,9 @@ func (s *GiftService) GetPlayerReceivedGifts(ctx context.Context, playerID uint6
 			}
 
 			// Get sender name if not anonymous
+			// Note: Currently no user repository in gift service, sender name will be empty
 			senderName := ""
-			if !order.IsAnonymous {
-				sender, err := s.users.GetByID(ctx, order.UserID)
-				if err == nil && sender != nil {
-					senderName = sender.Nickname
-				}
-			}
+			// TODO: Add user repository to get sender nickname for non-anonymous gifts
 
 			gifts = append(gifts, ReceivedGiftDTO{
 				OrderID:     order.ID,

@@ -172,7 +172,8 @@ class Logger {
    * Use for tracking API calls
    */
   public api(method: string, url: string, context?: LogContextInput): void {
-    this.debug(`API ${method}`, { url, ...context });
+    const ctx = context && typeof context === 'object' && !Array.isArray(context) ? context : {};
+    this.debug(`API ${method}`, { url, ...ctx });
   }
 
   /**
@@ -180,7 +181,8 @@ class Logger {
    * Use for tracking API responses
    */
   public apiResponse(method: string, url: string, status: number, context?: LogContextInput): void {
-    this.debug(`API Response ${method}`, { url, status, ...context });
+    const ctx = context && typeof context === 'object' && !Array.isArray(context) ? context : {};
+    this.debug(`API Response ${method}`, { url, status, ...ctx });
   }
 
   /**
@@ -196,7 +198,8 @@ class Logger {
    * Use for debugging component mounts/unmounts
    */
   public lifecycle(component: string, phase: 'mount' | 'unmount' | 'update', context?: LogContextInput): void {
-    this.debug(`Component ${phase}`, { component, ...context });
+    const ctx = context && typeof context === 'object' && !Array.isArray(context) ? context : {};
+    this.debug(`Component ${phase}`, { component, ...ctx });
   }
 }
 

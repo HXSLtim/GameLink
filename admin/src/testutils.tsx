@@ -8,11 +8,12 @@
  * - Test helpers and utilities
  */
 
-import React, { ReactElement } from 'react';
-import { render, RenderOptions } from '@testing-library/react';
+import React from 'react';
+import type { ReactElement } from 'react';
+import { render, type RenderOptions } from '@testing-library/react';
 import { BrowserRouter, MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ConfigProvider, theme } from 'antd';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { vi, expect } from 'vitest';
 
 /**
  * Mock user data for testing
@@ -48,32 +49,9 @@ export const mockUser = {
 export const mockNavigate = vi.fn();
 
 /**
- * Create a test query client
- */
-export function createTestQueryClient() {
-  return new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-        gcTime: 0,
-      },
-      mutations: {
-        retry: false,
-      },
-    },
-    logger: {
-      log: console.log,
-      warn: console.warn,
-      error: () => {}, // Suppress error logs in tests
-    },
-  });
-}
-
-/**
  * Custom render function with providers
  */
 interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {
-  queryClient?: QueryClient;
   route?: string;
   router?: 'memory' | 'browser';
 }
@@ -81,7 +59,6 @@ interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {
 export function renderWithProviders(
   ui: ReactElement,
   {
-    queryClient = createTestQueryClient(),
     route = '/',
     router = 'memory',
     ...renderOptions
@@ -111,9 +88,7 @@ export function renderWithProviders(
           },
         }}
       >
-        <QueryClientProvider client={queryClient}>
-          {routerElement}
-        </QueryClientProvider>
+        {routerElement}
       </ConfigProvider>
     );
   };
@@ -129,7 +104,7 @@ export function renderWithProviders(
 export function mockRouter() {
   return {
     navigate: mockNavigate,
-    location: { pathname: '/', search: '', hash: '', state: null, key: 'default' },
+    location: { pathname: '/', search: '', hash: '', state: null, key: 'default' } as Location,
     params: {},
   };
 }

@@ -51,7 +51,7 @@ const UserRanking: React.FC = () => {
         setLoading(true);
         try {
             // 使用 activeTab 和 timeRange 构建请求参数
-            logger.info('Loading rankings:', activeTab, timeRange);
+            logger.info('Loading rankings', { activeTab, timeRange });
             await new Promise(resolve => setTimeout(resolve, 500));
             const mockData: RankingPlayer[] = [
                 { rank: 1, id: 1, nickname: '小甜甜', avatar: '', level: 6, value: 2580, change: 2, games: ['王者荣耀', '英雄联盟'], tags: ['声音甜美', '技术好'] },

@@ -130,12 +130,20 @@ func GetTx(ctx context.Context) (*gorm.DB, bool) {
 }
 
 // Transactional 事务装饰器，用于确保函数在事务中执行
-func Transactional(db *gorm.DB) func(next func(ctx context.Context) error) func(ctx context.Context) error {
-	return func(ctx context.Context) error {
-		return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-			ctxWithTx := context.WithValue(ctx, "tx", tx)
-			return next(ctxWithTx)
-		})
+// 使用示例:
+//
+//	handler := Transactional(db)(func(ctx context.Context) error {
+//	    // 在事务中执行操作
+//	    return nil
+//	})
+func Transactional(db *gorm.DB) func(func(context.Context) error) func(context.Context) error {
+	return func(fn func(context.Context) error) func(context.Context) error {
+		return func(ctx context.Context) error {
+			return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+				ctxWithTx := context.WithValue(ctx, "tx", tx)
+				return fn(ctxWithTx)
+			})
+		}
 	}
 }
 

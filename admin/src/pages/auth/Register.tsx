@@ -18,7 +18,7 @@ const Register: React.FC = () => {
             message.success('注册成功！请登录。');
             navigate('/login');
         } catch (error) {
-            logger.error(error);
+            logger.error("Operation failed", error);
             message.error('注册失败，请重试。');
         } finally {
             setLoading(false);

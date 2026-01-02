@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"gamelink/pkg/cache"
 )
 
 // JWT工具类
@@ -34,7 +35,7 @@ type JWTManager struct {
 	secretKey     string        // 签名密钥
 	tokenDuration time.Duration // Token有效期
 	maxRefresh    time.Duration // 允许刷新窗口（自签发起）
-	cache         Cache         // 缓存接口（用于存储撤销列表）
+	cache         cache.Cache   // 缓存接口（用于存储撤销列表）
 }
 
 // NewJWTManager 创建JWT管理器
@@ -48,12 +49,12 @@ func NewJWTManager(secretKey string, tokenDuration time.Duration) *JWTManager {
 }
 
 // NewJWTManagerWithCache 创建带缓存的JWT管理器（支持Token撤销）
-func NewJWTManagerWithCache(secretKey string, tokenDuration time.Duration, cache Cache) *JWTManager {
+func NewJWTManagerWithCache(secretKey string, tokenDuration time.Duration, c cache.Cache) *JWTManager {
 	return &JWTManager{
 		secretKey:     secretKey,
 		tokenDuration: tokenDuration,
 		maxRefresh:    readMaxRefreshWindow(),
-		cache:         cache,
+		cache:         c,
 	}
 }
 

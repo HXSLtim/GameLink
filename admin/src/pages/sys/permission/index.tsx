@@ -110,7 +110,7 @@ const PermissionPage: React.FC = () => {
                 }
             }
         } catch (error) {
-            logger.error(error);
+            logger.error("Operation failed", error);
             message.error('加载权限列表失败');
         } finally {
             setLoading(false);
@@ -127,7 +127,7 @@ const PermissionPage: React.FC = () => {
                 setGroups(res.data.data);
             }
         } catch (error) {
-            logger.error(error);
+            logger.error("Operation failed", error);
         }
     }, []);
 
@@ -216,7 +216,7 @@ const PermissionPage: React.FC = () => {
             loadData();
             loadGroups();
         } catch (error: unknown) {
-            logger.error(error);
+            logger.error("Operation failed", error);
             const err = error as { response?: { data?: { message?: string } }; errorFields?: unknown };
             if (err.response?.data?.message) {
                 message.error(err.response.data.message);
@@ -259,7 +259,7 @@ const PermissionPage: React.FC = () => {
             setPermissionToDelete(null);
             loadData();
         } catch (error: unknown) {
-            logger.error(error);
+            logger.error("Operation failed", error);
             const err = error as { response?: { data?: { message?: string } } };
             if (err.response?.data?.message) {
                 message.error(err.response.data.message);

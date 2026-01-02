@@ -76,7 +76,7 @@ const ServiceItemList: React.FC = () => {
                 setTotal(0);
             }
         } catch (error) {
-            logger.error(error);
+            logger.error("Operation failed", error);
             message.error('加载数据失败');
             setData([]);
             setTotal(0);

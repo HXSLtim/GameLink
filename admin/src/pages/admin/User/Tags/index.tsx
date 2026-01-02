@@ -92,7 +92,7 @@ const UserTags: React.FC = () => {
                 }
             }
         } catch (error) {
-            logger.error(error);
+            logger.error("Operation failed", error);
             message.error('操作失败');
         }
     };

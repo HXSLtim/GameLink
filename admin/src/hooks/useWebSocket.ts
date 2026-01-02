@@ -141,7 +141,7 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
       };
 
       const handleClose = (event: CloseEvent) => {
-        logger.info('WebSocket closed:', event.code, event.reason);
+        logger.info('WebSocket closed', { code: event.code, reason: event.reason });
         setConnectionState('disconnected');
         clearTimers();
         onClose?.();

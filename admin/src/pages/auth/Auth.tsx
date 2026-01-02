@@ -47,7 +47,7 @@ const Auth: React.FC = () => {
                 navigate('/');
             }
         } catch (error) {
-            logger.error(error);
+            logger.error("Operation failed", error);
             message.error('登录失败，请检查用户名和密码');
         } finally {
             setLoginLoading(false);
@@ -68,7 +68,7 @@ const Auth: React.FC = () => {
             // 切换到登录 Tab（通过改变 URL）
             navigate('/login');
         } catch (error) {
-            logger.error(error);
+            logger.error("Operation failed", error);
             message.error('注册失败，请重试。');
         } finally {
             setRegisterLoading(false);
