@@ -45,6 +45,58 @@ vi.mock('@/utils/export', () => ({
   userExportColumns: [],
 }));
 
+// Helper function to create mock user data
+const createMockUser = (overrides = {}): any => ({
+  id: 1,
+  name: 'Test User',
+  email: 'test@example.com',
+  phone: '13800138000',
+  avatarUrl: 'https://example.com/avatar.jpg',
+  role: 'admin',
+  status: 'active',
+  lastLoginAt: '2024-01-01T00:00:00Z',
+  createdAt: '2024-01-01T00:00:00Z',
+  updatedAt: '2024-01-01T00:00:00Z',
+  tags: ['VIP'],
+  level: 5,
+  vipExpiry: '2024-12-31T00:00:00Z',
+  wallet: {
+    id: 1,
+    userId: 1,
+    balanceCents: 10000,
+    frozenCents: 0,
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+  },
+  ...overrides,
+});
+
+// Helper function to create mock user list
+const createMockUserList = (count = 1, overrides = {}): any[] => {
+  return Array.from({ length: count }, (_, i) =>
+    createMockUser({
+      id: i + 1,
+      name: `Test User ${i + 1}`,
+      email: `test${i + 1}@example.com`,
+      phone: `138001380${i.toString().padStart(2, '0')}`,
+      ...overrides,
+    })
+  );
+};
+
+// Helper function to setup mock data with users
+const setupMockDataWithUsers = (userCount = 1) => {
+  const users = createMockUserList(userCount);
+  mockApi.getUsers.mockResolvedValue({
+    data: {
+      success: true,
+      data: users,
+      pagination: { total: userCount },
+    },
+  });
+  return users;
+};
+
 describe('UserPage', () => {
   beforeEach(() => {
     resetAllMocks();
@@ -87,6 +139,7 @@ describe('UserPage', () => {
 
   describe('Successful Data Loading', () => {
     it('should render user list successfully', async () => {
+      setupMockDataWithUsers(1);
       renderWithProviders(<UserPage />);
 
       await waitFor(() => {
@@ -104,6 +157,7 @@ describe('UserPage', () => {
     });
 
     it('should display user information correctly', async () => {
+      setupMockDataWithUsers(1);
       renderWithProviders(<UserPage />);
 
       await waitFor(() => {
@@ -115,6 +169,7 @@ describe('UserPage', () => {
     });
 
     it('should display user role tags', async () => {
+      setupMockDataWithUsers(1);
       renderWithProviders(<UserPage />);
 
       await waitFor(() => {
@@ -123,6 +178,7 @@ describe('UserPage', () => {
     });
 
     it('should display user status tags', async () => {
+      setupMockDataWithUsers(1);
       renderWithProviders(<UserPage />);
 
       await waitFor(() => {
@@ -260,7 +316,7 @@ describe('UserPage', () => {
       await _user.type(searchInput, 'Test User');
 
       const searchButton = screen.getByRole('button', { name: /搜索/i });
-      await user.click(searchButton);
+      await _user.click(searchButton);
 
       await waitFor(() => {
         expect(mockApi.getUsers).toHaveBeenCalledWith(
@@ -292,7 +348,7 @@ describe('UserPage', () => {
         await _user.click(roleDropdown);
 
         const userOption = await screen.findByText('普通用户');
-        await user.click(userOption);
+        await _user.click(userOption);
 
         await waitFor(() => {
           expect(mockApi.getUsers).toHaveBeenCalledWith(
@@ -325,7 +381,7 @@ describe('UserPage', () => {
         await _user.click(statusDropdown);
 
         const activeOption = await screen.findByText('正常');
-        await user.click(activeOption);
+        await _user.click(activeOption);
 
         await waitFor(() => {
           expect(mockApi.getUsers).toHaveBeenCalledWith(
@@ -357,7 +413,7 @@ describe('UserPage', () => {
       await _user.type(searchInput, 'test');
 
       const searchButton = screen.getByRole('button', { name: /搜索/i });
-      await user.click(searchButton);
+      await _user.click(searchButton);
 
       await waitFor(() => {
         expect(mockApi.getUsers).toHaveBeenCalledWith(
@@ -371,6 +427,7 @@ describe('UserPage', () => {
 
   describe('Pagination', () => {
     it('should display pagination controls', async () => {
+      setupMockDataWithUsers(1);
       renderWithProviders(<UserPage />);
 
       await waitFor(() => {
@@ -382,11 +439,13 @@ describe('UserPage', () => {
 
     it('should change page when clicking pagination', async () => {
       const _user = userEvent.setup();
+      // Create 20 users to show pagination
+      const users = createMockUserList(20);
       mockApi.getUsers.mockResolvedValue({
         data: {
           success: true,
-          data: [],
-          pagination: { total: 20, page: 2, pageSize: 10 },
+          data: users.slice(0, 10),
+          pagination: { total: 20, page: 1, pageSize: 10 },
         },
       });
 
@@ -412,6 +471,7 @@ describe('UserPage', () => {
   describe('User Details', () => {
     it('should open detail drawer when clicking detail button', async () => {
       const _user = userEvent.setup();
+      setupMockDataWithUsers(1);
       renderWithProviders(<UserPage />);
 
       await waitFor(() => {
@@ -428,6 +488,7 @@ describe('UserPage', () => {
 
     it('should display user basic information in drawer', async () => {
       const _user = userEvent.setup();
+      setupMockDataWithUsers(1);
       renderWithProviders(<UserPage />);
 
       await waitFor(() => {
@@ -446,6 +507,7 @@ describe('UserPage', () => {
 
     it('should display login history tab', async () => {
       const _user = userEvent.setup();
+      setupMockDataWithUsers(1);
       mockApi.getUserLogs.mockResolvedValue({
         success: true,
         data: [],
@@ -465,7 +527,7 @@ describe('UserPage', () => {
       });
 
       const loginHistoryTab = screen.getByText('登录历史');
-      await user.click(loginHistoryTab);
+      await _user.click(loginHistoryTab);
 
       await waitFor(() => {
         expect(mockApi.getUserLogs).toHaveBeenCalledWith(1, {
@@ -478,6 +540,7 @@ describe('UserPage', () => {
 
     it('should display operation logs tab', async () => {
       const _user = userEvent.setup();
+      setupMockDataWithUsers(1);
       mockApi.getUserLogs.mockResolvedValue({
         success: true,
         data: [],
@@ -497,7 +560,7 @@ describe('UserPage', () => {
       });
 
       const operationLogsTab = screen.getByText('操作日志');
-      await user.click(operationLogsTab);
+      await _user.click(operationLogsTab);
 
       await waitFor(() => {
         expect(mockApi.getUserLogs).toHaveBeenCalledWith(1, {
@@ -511,6 +574,7 @@ describe('UserPage', () => {
   describe('User Edit', () => {
     it('should open edit modal when clicking edit button', async () => {
       const _user = userEvent.setup();
+      setupMockDataWithUsers(1);
       renderWithProviders(<UserPage />);
 
       await waitFor(() => {
@@ -527,6 +591,7 @@ describe('UserPage', () => {
 
     it('should pre-fill form with user data', async () => {
       const _user = userEvent.setup();
+      setupMockDataWithUsers(1);
       renderWithProviders(<UserPage />);
 
       await waitFor(() => {
@@ -560,11 +625,11 @@ describe('UserPage', () => {
       });
 
       const nameInput = screen.getByDisplayValue('Test User');
-      await user.clear(nameInput);
-      await user.type(nameInput, 'Updated User');
+      await _user.clear(nameInput);
+      await _user.type(nameInput, 'Updated User');
 
       const saveButton = screen.getByRole('button', { name: /保存/i });
-      await user.click(saveButton);
+      await _user.click(saveButton);
 
       await waitFor(() => {
         expect(mockApi.updateUser).toHaveBeenCalledWith(1, {
@@ -581,6 +646,7 @@ describe('UserPage', () => {
 
   describe('User Ban/Unban', () => {
     it('should show ban button for active users', async () => {
+      setupMockDataWithUsers(1);
       renderWithProviders(<UserPage />);
 
       await waitFor(() => {
@@ -592,6 +658,7 @@ describe('UserPage', () => {
 
     it('should ban user when confirming ban action', async () => {
       const _user = userEvent.setup();
+      setupMockDataWithUsers(1);
       renderWithProviders(<UserPage />);
 
       await waitFor(() => {
@@ -602,7 +669,7 @@ describe('UserPage', () => {
       await _user.click(banButton);
 
       const confirmButton = await screen.findByRole('button', { name: /确定/i });
-      await user.click(confirmButton);
+      await _user.click(confirmButton);
 
       await waitFor(() => {
         expect(mockApi.updateUserStatus).toHaveBeenCalledWith(1, 'banned');
@@ -610,20 +677,17 @@ describe('UserPage', () => {
     });
 
     it('should show unban button for banned users', async () => {
+      const bannedUser = createMockUser({
+        id: 2,
+        name: 'Banned User',
+        email: 'banned@example.com',
+        phone: '13800138001',
+        status: 'banned',
+      });
       mockApi.getUsers.mockResolvedValue({
         data: {
           success: true,
-          data: [
-            {
-              ...mockUser,
-              id: 2,
-              name: 'Banned User',
-              email: 'banned@example.com',
-              phone: '13800138001',
-              status: 'banned' as const,
-              createdAt: '2024-01-01T00:00:00Z',
-            },
-          ],
+          data: [bannedUser],
           pagination: { total: 1, page: 1, pageSize: 10 },
         },
       });
@@ -640,6 +704,7 @@ describe('UserPage', () => {
 
   describe('User Delete', () => {
     it('should show delete button', async () => {
+      setupMockDataWithUsers(1);
       renderWithProviders(<UserPage />);
 
       await waitFor(() => {
@@ -651,6 +716,7 @@ describe('UserPage', () => {
 
     it('should delete user when confirming delete action', async () => {
       const _user = userEvent.setup();
+      setupMockDataWithUsers(1);
       renderWithProviders(<UserPage />);
 
       await waitFor(() => {
@@ -661,7 +727,7 @@ describe('UserPage', () => {
       await _user.click(deleteButton);
 
       const confirmButton = await screen.findByRole('button', { name: /确定/i });
-      await user.click(confirmButton);
+      await _user.click(confirmButton);
 
       await waitFor(() => {
         expect(mockApi.deleteUser).toHaveBeenCalledWith(1);
@@ -672,6 +738,7 @@ describe('UserPage', () => {
   describe('Create User', () => {
     it('should open create modal when clicking new user button', async () => {
       const _user = userEvent.setup();
+      setupMockDataWithUsers(1);
       renderWithProviders(<UserPage />);
 
       await waitFor(() => {
@@ -688,6 +755,7 @@ describe('UserPage', () => {
 
     it('should create user when submitting form with valid data', async () => {
       const _user = userEvent.setup();
+      setupMockDataWithUsers(1);
       renderWithProviders(<UserPage />);
 
       const createButton = screen.getByRole('button', { name: /新增用户/i });
@@ -698,19 +766,19 @@ describe('UserPage', () => {
       });
 
       const nameInput = screen.getByPlaceholderText('请输入用户名');
-      await user.type(nameInput, 'New User');
+      await _user.type(nameInput, 'New User');
 
       const emailInput = screen.getByPlaceholderText('请输入邮箱');
-      await user.type(emailInput, 'new@example.com');
+      await _user.type(emailInput, 'new@example.com');
 
       const phoneInput = screen.getByPlaceholderText('请输入手机号');
-      await user.type(phoneInput, '13900139000');
+      await _user.type(phoneInput, '13900139000');
 
       const passwordInput = screen.getByPlaceholderText(/请输入密码/);
-      await user.type(passwordInput, 'password123');
+      await _user.type(passwordInput, 'password123');
 
       const saveButton = screen.getByRole('button', { name: /保存/i });
-      await user.click(saveButton);
+      await _user.click(saveButton);
 
       await waitFor(() => {
         expect(mockApi.createUser).toHaveBeenCalledWith({
@@ -728,6 +796,7 @@ describe('UserPage', () => {
 
   describe('Batch Operations', () => {
     it('should show batch modify role button', async () => {
+      setupMockDataWithUsers(1);
       renderWithProviders(<UserPage />);
 
       await waitFor(() => {
@@ -737,6 +806,7 @@ describe('UserPage', () => {
 
     it('should open batch role modal', async () => {
       const _user = userEvent.setup();
+      setupMockDataWithUsers(1);
       renderWithProviders(<UserPage />);
 
       await waitFor(() => {
@@ -752,6 +822,7 @@ describe('UserPage', () => {
     });
 
     it('should show batch enable button', async () => {
+      setupMockDataWithUsers(1);
       renderWithProviders(<UserPage />);
 
       await waitFor(() => {
@@ -760,6 +831,7 @@ describe('UserPage', () => {
     });
 
     it('should show batch disable button', async () => {
+      setupMockDataWithUsers(1);
       renderWithProviders(<UserPage />);
 
       await waitFor(() => {
@@ -768,6 +840,7 @@ describe('UserPage', () => {
     });
 
     it('should show batch send notification button', async () => {
+      setupMockDataWithUsers(1);
       renderWithProviders(<UserPage />);
 
       await waitFor(() => {
@@ -776,6 +849,7 @@ describe('UserPage', () => {
     });
 
     it('should show batch add points button', async () => {
+      setupMockDataWithUsers(1);
       renderWithProviders(<UserPage />);
 
       await waitFor(() => {
@@ -785,6 +859,7 @@ describe('UserPage', () => {
 
     it('should export user data', async () => {
       const _user = userEvent.setup();
+      setupMockDataWithUsers(1);
       const { exportToCSV } = await import('@/utils/export');
 
       renderWithProviders(<UserPage />);
@@ -810,6 +885,7 @@ describe('UserPage', () => {
   describe('Refresh Functionality', () => {
     it('should refresh data when clicking refresh button', async () => {
       const _user = userEvent.setup();
+      setupMockDataWithUsers(1);
       renderWithProviders(<UserPage />);
 
       await waitFor(() => {
@@ -827,6 +903,7 @@ describe('UserPage', () => {
 
   describe('Accessibility', () => {
     it('should have proper ARIA labels', async () => {
+      setupMockDataWithUsers(1);
       renderWithProviders(<UserPage />);
 
       await waitFor(() => {
