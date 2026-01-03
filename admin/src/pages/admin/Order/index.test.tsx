@@ -691,7 +691,7 @@ describe('OrderPage', () => {
       });
 
       const refundButton = screen.getByRole('button', { name: /退款/i });
-      await user.click(refundButton);
+      await _user.click(refundButton);
 
       await waitFor(() => {
         expect(screen.getByText('订单退款')).toBeInTheDocument();
@@ -699,11 +699,11 @@ describe('OrderPage', () => {
 
       // Try to enter amount greater than order total
       const amountInput = screen.getByPlaceholderText(/请输入退款金额/);
-      await user.clear(amountInput);
-      await user.type(amountInput, '150.00');
+      await _user.clear(amountInput);
+      await _user.type(amountInput, '150.00');
 
       const confirmButton = screen.getByRole('button', { name: /确认/i });
-      await user.click(confirmButton);
+      await _user.click(confirmButton);
 
       // Should show validation error
       await waitFor(() => {
@@ -738,7 +738,7 @@ describe('OrderPage', () => {
       });
 
       const batchCancelButton = screen.getByRole('button', { name: /批量取消/i });
-      await user.click(batchCancelButton);
+      await _user.click(batchCancelButton);
 
       await waitFor(() => {
         expect(screen.getByText('批量取消订单')).toBeInTheDocument();
@@ -756,7 +756,7 @@ describe('OrderPage', () => {
       });
 
       const exportButton = screen.getByRole('button', { name: /导出数据/i });
-      await user.click(exportButton);
+      await _user.click(exportButton);
 
       await waitFor(() => {
         expect(mockApi.getOrders).toHaveBeenCalledWith(
@@ -779,7 +779,7 @@ describe('OrderPage', () => {
       });
 
       const refreshButton = screen.getByRole('button', { name: /刷新/i });
-      await user.click(refreshButton);
+      await _user.click(refreshButton);
 
       await waitFor(() => {
         expect(mockApi.getOrders).toHaveBeenCalledTimes(2); // Initial load + refresh
