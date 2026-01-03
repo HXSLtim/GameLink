@@ -65,7 +65,7 @@ export interface CrudPagination {
 /**
  * Configuration options for useCrud hook
  */
-export interface UseCrudOptions<T, TCreate, TUpdate, TQuery extends CrudQueryParams> {
+export interface UseCrudOptions<T extends object, TCreate, TUpdate, TQuery extends CrudQueryParams> {
     /**
      * API functions for CRUD operations
      */
@@ -146,33 +146,38 @@ export interface CrudMessages {
 
 /**
  * API interface for CRUD operations
+ * Compatible with axios response format
  */
-export interface CrudApi<T, TCreate, TUpdate, TQuery extends CrudQueryParams> {
+export interface CrudApi<T extends object, TCreate, TUpdate, TQuery extends CrudQueryParams> {
     /**
      * Fetch all items with optional query parameters
+     * Accepts: Promise<ApiResponse<T[]>> | Promise<AxiosResponse<ApiResponse<T[]>>>
      */
-    getAll: (params?: TQuery) => Promise<ApiResponse<T[]> | { data: ApiResponse<T[]> }>;
+    getAll: (params?: TQuery) => Promise<ApiResponse<T[]> | { data: ApiResponse<T[]> } | any>;
 
     /**
      * Create a new item
+     * Accepts: Promise<ApiResponse<T>> | Promise<AxiosResponse<ApiResponse<T>>>
      */
-    create: (data: TCreate) => Promise<ApiResponse<T> | { data: ApiResponse<T> }>;
+    create: (data: TCreate) => Promise<ApiResponse<T> | { data: ApiResponse<T> } | any>;
 
     /**
      * Update an existing item
+     * Accepts: Promise<ApiResponse<T>> | Promise<AxiosResponse<ApiResponse<T>>>
      */
-    update: (id: CrudId, data: TUpdate) => Promise<ApiResponse<T> | { data: ApiResponse<T> }>;
+    update: (id: CrudId, data: TUpdate) => Promise<ApiResponse<T> | { data: ApiResponse<T> } | any>;
 
     /**
      * Delete an item
+     * Accepts: Promise<ApiResponse<void>> | Promise<AxiosResponse<ApiResponse<void>>>
      */
-    remove: (id: CrudId) => Promise<ApiResponse<void> | { data: ApiResponse<void> }>;
+    remove: (id: CrudId) => Promise<ApiResponse<void> | { data: ApiResponse<void> } | any>;
 }
 
 /**
  * Return type for useCrud hook
  */
-export interface UseCrudReturn<T> {
+export interface UseCrudReturn<T extends object, TCreate, TUpdate, TQuery extends CrudQueryParams> {
     /**
      * List of items
      */
@@ -280,11 +285,11 @@ const defaultMessages: Required<CrudMessages> = {
  * @returns CRUD operations and state
  */
 export function useCrud<
-    T extends Record<string, unknown>,
+    T extends object,
     TCreate = Partial<T>,
     TUpdate = Partial<T>,
     TQuery extends CrudQueryParams = CrudQueryParams
->(options: UseCrudOptions<T, TCreate, TUpdate, TQuery>): UseCrudReturn<T> {
+>(options: UseCrudOptions<T, TCreate, TUpdate, TQuery>): UseCrudReturn<T, TCreate, TUpdate, TQuery> {
     const {
         api,
         messages = {},
@@ -330,6 +335,18 @@ export function useCrud<
             data: (response as unknown as { data?: unknown }).data,
             pagination: (response as unknown as { pagination?: Pagination }).pagination,
         };
+    }, []);
+
+    /**
+     * Normalize single item API response
+     */
+    const normalizeSingleResponse = useCallback((response: ApiResponse<T> | { data: ApiResponse<T> }) => {
+        // Handle axios response format { data: { success, data } }
+        if ('data' in response && typeof response.data === 'object' && 'data' in response.data) {
+            return response.data.data as T;
+        }
+        // Handle direct API response format { success, data }
+        return (response as unknown as { data?: T }).data as T;
     }, []);
 
     /**
@@ -409,7 +426,7 @@ export function useCrud<
 
             try {
                 const response = await api.create(item);
-                const normalized = normalizeResponse(response);
+                const createdItem = normalizeSingleResponse(response);
 
                 if (!options?.silent) {
                     message.success(mergedMessages.createSuccess);
@@ -419,11 +436,11 @@ export function useCrud<
                 await fetchAll();
 
                 // Call custom success callback
-                if (normalized.data) {
-                    onCreateSuccess?.(normalized.data as T);
+                if (createdItem) {
+                    onCreateSuccess?.(createdItem);
                 }
 
-                return (normalized.data as T) || null;
+                return createdItem || null;
             } catch (err) {
                 const errorObj = err instanceof Error ? err : new Error(String(err));
                 setError(errorObj);
@@ -437,7 +454,7 @@ export function useCrud<
                 setSubmitting(false);
             }
         },
-        [api, fetchAll, mergedMessages, onCreateSuccess, onError, normalizeResponse]
+        [api, fetchAll, mergedMessages, onCreateSuccess, onError, normalizeSingleResponse]
     );
 
     /**
@@ -450,7 +467,7 @@ export function useCrud<
 
             try {
                 const response = await api.update(id, item);
-                const normalized = normalizeResponse(response);
+                const updatedItem = normalizeSingleResponse(response);
 
                 if (!options?.silent) {
                     message.success(mergedMessages.updateSuccess);
@@ -460,11 +477,11 @@ export function useCrud<
                 await fetchAll();
 
                 // Call custom success callback
-                if (normalized.data) {
-                    onUpdateSuccess?.(normalized.data as T);
+                if (updatedItem) {
+                    onUpdateSuccess?.(updatedItem);
                 }
 
-                return (normalized.data as T) || null;
+                return updatedItem || null;
             } catch (err) {
                 const errorObj = err instanceof Error ? err : new Error(String(err));
                 setError(errorObj);
@@ -478,7 +495,7 @@ export function useCrud<
                 setSubmitting(false);
             }
         },
-        [api, fetchAll, mergedMessages, onUpdateSuccess, onError, normalizeResponse]
+        [api, fetchAll, mergedMessages, onUpdateSuccess, onError, normalizeSingleResponse]
     );
 
     /**

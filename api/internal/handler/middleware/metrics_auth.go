@@ -35,7 +35,8 @@ func DefaultMetricsAuthConfig() MetricsAuthConfig {
 // based on IP address. This is suitable for Prometheus scraping in production.
 //
 // Usage:
-//   router.GET("/metrics", middleware.MetricsAuth(middleware.DefaultMetricsAuthConfig()), handler)
+//
+//	router.GET("/metrics", middleware.MetricsAuth(middleware.DefaultMetricsAuthConfig()), handler)
 func MetricsAuth(config MetricsAuthConfig) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if !config.Enabled {

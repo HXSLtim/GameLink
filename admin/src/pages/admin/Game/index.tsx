@@ -12,6 +12,7 @@ import {
     Select,
     Radio,
     Image,
+    message,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
@@ -52,7 +53,7 @@ const GamePage: React.FC = () => {
 
     // 批量操作状态
     const [batchDeleteVisible, setBatchDeleteVisible] = useState(false);
-    const [selectedGameIds, setSelectedGameIds] = useState<string[]>([]);
+    const [selectedGameIds, setSelectedGameIds] = useState<number[]>([]);
     const [batchTarget, setBatchTarget] = useState<'selected' | 'category' | 'all'>('selected');
     const [batchForm] = Form.useForm();
 
@@ -71,10 +72,10 @@ const GamePage: React.FC = () => {
         queryParams,
     } = useCrud<Game, CreateGameDto, UpdateGameDto>({
         api: {
-            getAll: adminApi.getGames,
-            create: adminApi.createGame,
-            update: adminApi.updateGame,
-            remove: adminApi.deleteGame,
+            getAll: adminApi.getGames as any,
+            create: adminApi.createGame as any,
+            update: adminApi.updateGame as any,
+            remove: adminApi.deleteGame as any,
         },
         messages: {
             fetchError: '加载游戏列表失败',
@@ -141,10 +142,13 @@ const GamePage: React.FC = () => {
             }
 
             setEditModalVisible(false);
-        } catch (error) {
+        } catch (err) {
             // Form validation error or API error (handled by hook)
-            if (!error.errorFields) {
-                console.error('Save error:', error);
+            if (err && typeof err === 'object' && 'errorFields' in err) {
+                // Form validation error from Ant Design
+                console.error('Form validation error:', err);
+            } else {
+                console.error('Save error:', err);
             }
         } finally {
             setSubmitting(false);
@@ -155,7 +159,7 @@ const GamePage: React.FC = () => {
      * 删除游戏
      */
     const handleDelete = useCallback(async (game: Game) => {
-        await remove(String(game.id), {
+        await remove(game.id, {
             confirmMessage: `确定要删除游戏 "${game.name}" 吗？`,
         });
     }, [remove]);
@@ -164,7 +168,7 @@ const GamePage: React.FC = () => {
      * 批量删除
      */
     const handleBatchDelete = useCallback((keys: React.Key[]) => {
-        setSelectedGameIds(keys ? keys.map(k => String(k)) : []);
+        setSelectedGameIds(keys ? keys.map(k => Number(k)) : []);
         batchForm.resetFields();
         batchForm.setFieldsValue({
             target: (keys && keys.length > 0) ? 'selected' : 'all',
@@ -176,7 +180,7 @@ const GamePage: React.FC = () => {
     const submitBatchDelete = useCallback(async () => {
         try {
             const values = await batchForm.validateFields();
-            let gameIds: string[] = [];
+            let gameIds: number[] = [];
 
             if (values.target === 'selected') {
                 gameIds = selectedGameIds;
@@ -186,13 +190,13 @@ const GamePage: React.FC = () => {
                 if (response.data.success && response.data.data) {
                     gameIds = response.data.data
                         .filter((g: Game) => g.category === values.filterCategory)
-                        .map((g: Game) => String(g.id));
+                        .map((g: Game) => g.id);
                 }
             } else {
                 // 全部
                 const response = await adminApi.getGames({ page_size: 1000 });
                 if (response.data.success && response.data.data) {
-                    gameIds = response.data.data.map((g: Game) => String(g.id));
+                    gameIds = response.data.data.map((g: Game) => g.id);
                 }
             }
 
@@ -314,15 +318,21 @@ const GamePage: React.FC = () => {
                         </Button>
                     </PermissionGuard>
                     <PermissionGuard permission={GAME_PERMISSIONS.DELETE}>
-                        <Modal
-                            title="确认删除"
-                            content={`确定要删除游戏 "${record.name}" 吗？`}
-                            onOk={() => handleDelete(record)}
+                        <Button
+                            type="link"
+                            size="small"
+                            danger
+                            icon={<DeleteOutlined />}
+                            onClick={() => {
+                                Modal.confirm({
+                                    title: '确认删除',
+                                    content: `确定要删除游戏 "${record.name}" 吗？`,
+                                    onOk: () => handleDelete(record),
+                                });
+                            }}
                         >
-                            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
-                                删除
-                            </Button>
-                        </Modal>
+                            删除
+                        </Button>
                     </PermissionGuard>
                 </Space>
             ),
@@ -334,16 +344,16 @@ const GamePage: React.FC = () => {
      */
     const handleExport = useCallback(async () => {
         try {
-            Modal.loading({ content: '正在导出...', key: 'export' });
+            message.loading({ content: '正在导出...', key: 'export' });
             const response = await adminApi.getGames({ ...queryParams, page_size: 10000 });
             if (response.data.success && response.data.data) {
                 exportToCSV(response.data.data as unknown as Record<string, unknown>[], gameExportColumns, 'games');
-                Modal.success({ content: '导出成功', key: 'export' });
+                message.success({ content: '导出成功', key: 'export' });
             } else {
-                Modal.error({ content: '导出失败', key: 'export' });
+                message.error({ content: '导出失败', key: 'export' });
             }
         } catch {
-            Modal.error({ content: '导出失败', key: 'export' });
+            message.error({ content: '导出失败', key: 'export' });
         }
     }, [queryParams]);
 

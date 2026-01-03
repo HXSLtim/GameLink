@@ -58,10 +58,10 @@ const RolePage: React.FC = () => {
         setSearchParams,
     } = useCrud<Role, CreateRoleDto, UpdateRoleDto>({
         api: {
-            getAll: adminApi.getRoles,
-            create: adminApi.createRole,
-            update: adminApi.updateRole,
-            remove: adminApi.deleteRole,
+            getAll: adminApi.getRoles as any,
+            create: adminApi.createRole as any,
+            update: adminApi.updateRole as any,
+            remove: adminApi.deleteRole as any,
         },
         messages: {
             fetchError: '加载角色列表失败',
@@ -128,11 +128,13 @@ const RolePage: React.FC = () => {
             }
 
             setEditModalVisible(false);
-        } catch (error) {
+        } catch (err) {
             // Form validation error or API error (handled by hook)
-            if (!error.errorFields) {
-                // Non-validation error, already handled by hook
-                console.error('Save error:', error);
+            if (err && typeof err === 'object' && 'errorFields' in err) {
+                // Form validation error from Ant Design
+                console.error('Form validation error:', err);
+            } else {
+                console.error('Save error:', err);
             }
         }
     }, [currentRole, form, updateRole, createRole]);

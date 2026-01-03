@@ -169,17 +169,28 @@ export interface UserLogParams {
 }
 
 export interface Game {
-    id: string;
-    name: string;
-    icon: string;
-    category: string;
+    id: number;
+    key: string;                      // 游戏唯一标识符
+    name: string;                     // 游戏名称
+    category?: string;                // 分类名称
+    categoryId?: number;              // 分类ID
+    iconUrl?: string;                 // 游戏图标
+    coverUrl?: string;                // 游戏封面图
+    description?: string;             // 游戏描述
+    isActive: boolean;                // 是否启用
+    sortOrder: number;                // 排序
 }
 
 export interface CreateGameDto {
-    name: string;
-    icon?: string;
-    category?: string;
-    status?: 'active' | 'inactive';
+    key: string;                      // 游戏唯一标识符
+    name: string;                     // 游戏名称
+    category?: string;                // 分类名称
+    categoryId?: number;              // 分类ID
+    iconUrl?: string;                 // 游戏图标
+    coverUrl?: string;                // 游戏封面图
+    description?: string;             // 游戏描述
+    isActive?: boolean;               // 是否启用
+    sortOrder?: number;               // 排序
 }
 
 export type UpdateGameDto = Partial<CreateGameDto>;
@@ -502,12 +513,12 @@ export const adminApi = {
     batchSendNotification: (data: BatchNotificationDto) => apiClient.post<ApiResponse<void>>('/admin/users/batch/notification', data),
 
     // Game Management
-    getGames: (params?: { status?: string; page_size?: number }) => apiClient.get('/admin/games', { params }),
-    createGame: (data: CreateGameDto) => apiClient.post('/admin/games', data),
-    updateGame: (id: string, data: UpdateGameDto) => apiClient.put(`/admin/games/${id}`, data),
-    deleteGame: (id: string) => apiClient.delete(`/admin/games/${id}`),
+    getGames: (params?: { status?: string; page_size?: number }) => apiClient.get<ApiResponse<Game[]>>('/admin/games', { params }),
+    createGame: (data: CreateGameDto) => apiClient.post<ApiResponse<Game>>('/admin/games', data),
+    updateGame: (id: number, data: UpdateGameDto) => apiClient.put<ApiResponse<Game>>(`/admin/games/${id}`, data),
+    deleteGame: (id: number) => apiClient.delete<ApiResponse<void>>(`/admin/games/${id}`),
     // Game Batch Operations
-    batchDeleteGames: (gameIds: string[]) => apiClient.post<ApiResponse<void>>('/admin/games/batch/delete', { gameIds }),
+    batchDeleteGames: (gameIds: number[]) => apiClient.post<ApiResponse<void>>('/admin/games/batch/delete', { gameIds }),
 
     // Service Item Management
     getServiceItems: (params?: ServiceItemQueryParams) => apiClient.get<ApiResponse<ServiceItem[]>>('/admin/service-items', { params }),
