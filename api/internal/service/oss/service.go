@@ -137,8 +137,9 @@ func (p *TencentCOSProvider) Upload(ctx context.Context, key string, reader io.R
 	req.Header.Set("Authorization", auth)
 	req.Header.Set("Host", fmt.Sprintf("%s.cos.%s.myqcloud.com", p.Bucket, p.Region))
 
-	// Execute request
-	client := &http.Client{}
+	// Execute request with timeout
+	// Timeout choice: 60s for file upload operations (can be large files)
+	client := &http.Client{Timeout: 60 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", err
@@ -168,7 +169,8 @@ func (p *TencentCOSProvider) Delete(ctx context.Context, key string) error {
 	req.Header.Set("Authorization", auth)
 	req.Header.Set("Host", fmt.Sprintf("%s.cos.%s.myqcloud.com", p.Bucket, p.Region))
 
-	client := &http.Client{}
+	// Timeout choice: 10s for delete operations (should be fast)
+	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return err

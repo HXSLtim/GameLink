@@ -26,3 +26,15 @@ export {
 
 // 主题感知消息 Hook
 export { useAppMessage } from './useAppMessage';
+
+// CRUD 操作 Hook
+export {
+    useCrud,
+    type CrudId,
+    type CrudQueryParams,
+    type CrudPagination,
+    type CrudMessages,
+    type CrudApi,
+    type UseCrudOptions,
+    type UseCrudReturn,
+} from './useCrud';

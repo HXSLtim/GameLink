@@ -59,7 +59,7 @@ vi.mock('antd', async () => {
 });
 
 // Helper function to create mock player data
-const createMockPlayer = (overrides = {}): any => ({
+const createMockPlayer = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
   id: 1,
   userId: 1,
   nickname: 'Test Player',
@@ -81,7 +81,7 @@ const createMockPlayer = (overrides = {}): any => ({
 });
 
 // Helper function to create mock player list
-const createMockPlayerList = (count = 1, overrides = {}): any[] => {
+const createMockPlayerList = (count = 1, overrides: Record<string, unknown> = {}): Record<string, unknown>[] => {
   return Array.from({ length: count }, (_, i) =>
     createMockPlayer({
       id: i + 1,
@@ -92,8 +92,8 @@ const createMockPlayerList = (count = 1, overrides = {}): any[] => {
   );
 };
 
-// Helper function to setup mock data with players
-const setupMockDataWithPlayers = (playerCount = 1) => {
+// Helper function to setup mock data with players (unused but kept for future use)
+const _setupMockDataWithPlayers = (playerCount = 1) => {
   const players = createMockPlayerList(playerCount);
   mockApi.getPlayers.mockResolvedValue({
     data: {

@@ -2,7 +2,7 @@
  * 角色管理页面
  * Requirements: 2.1, 2.4, 2.5
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
     Tag,
     Space,
@@ -10,7 +10,6 @@ import {
     Modal,
     Form,
     Input,
-    message,
     Popconfirm,
     Typography,
     Tooltip,
@@ -29,22 +28,16 @@ import type { SearchField } from '@/components';
 import { ROLE_PERMISSIONS } from '@/constants/permissions';
 import { PermissionGuard } from '@/components/PermissionGuard';
 import { adminApi } from '@/api/admin';
-import type { Role } from '@/api/admin';
+import type { Role, CreateRoleDto, UpdateRoleDto } from '@/api/admin';
+import { useCrud } from '@/hooks';
 
-import { logger } from '@/utils/logger';
 const { Text } = Typography;
 
 /**
  * 角色管理页面
- * Requirements: 2.1, 2.4, 2.5
  */
 const RolePage: React.FC = () => {
     const navigate = useNavigate();
-    const [loading, setLoading] = useState(false);
-    const [roles, setRoles] = useState<Role[]>([]);
-    const [total, setTotal] = useState(0);
-    const [current, setCurrent] = useState(1);
-    const [pageSize, setPageSize] = useState(10);
 
     // 弹窗状态
     const [editModalVisible, setEditModalVisible] = useState(false);
@@ -52,97 +45,114 @@ const RolePage: React.FC = () => {
     const [form] = Form.useForm();
 
     /**
-     * 加载角色数据
+     * 使用 CRUD Hook 管理角色数据
      */
-    const loadData = useCallback(async (params: Record<string, unknown> = {}) => {
-        setLoading(true);
-        try {
-            const res = await adminApi.getRoles({
-                page: current,
-                page_size: pageSize,
-                ...params
-            });
-            if (res.data.success && res.data.data) {
-                // Backend returns data as array with pagination object
-                const data = res.data.data;
-                const pagination = (res.data as { pagination?: { total?: number } }).pagination;
-                if (Array.isArray(data)) {
-                    setRoles(data);
-                    setTotal(pagination?.total || data.length);
-                } else {
-                    const { items, totalCount } = data as { items: Role[]; totalCount: number };
-                    setRoles(items || []);
-                    setTotal(totalCount || 0);
-                }
+    const {
+        data: roles,
+        loading,
+        pagination,
+        fetchAll,
+        create: createRole,
+        update: updateRole,
+        remove: deleteRole,
+        setSearchParams,
+    } = useCrud<Role, CreateRoleDto, UpdateRoleDto>({
+        api: {
+            getAll: adminApi.getRoles,
+            create: adminApi.createRole,
+            update: adminApi.updateRole,
+            remove: adminApi.deleteRole,
+        },
+        messages: {
+            fetchError: '加载角色列表失败',
+            createSuccess: '创建角色成功',
+            updateSuccess: '更新角色成功',
+            deleteSuccess: '删除角色成功',
+        },
+        initialPagination: {
+            pageSize: 10,
+        },
+        paginationExtractor: (response) => {
+            // Extract total from nested pagination object
+            const res = response as { data?: { pagination?: { total?: number } } };
+            return res.data?.pagination?.total;
+        },
+        dataTransformer: (rawData) => {
+            // Handle different response formats
+            if (Array.isArray(rawData)) {
+                return rawData as Role[];
             }
-        } catch (error) {
-            logger.error("Operation failed", error);
-            message.error('加载角色列表失败');
-        } finally {
-            setLoading(false);
-        }
-    }, [current, pageSize]);
-
-    useEffect(() => {
-        loadData();
-    }, [loadData]);
-
-    /**
-     * 编辑角色
-     */
-    const handleEdit = (role: Role) => {
-        setCurrentRole(role);
-        form.setFieldsValue(role);
-        setEditModalVisible(true);
-    };
+            const data = rawData as { items?: Role[]; totalCount?: number };
+            return data.items || [];
+        },
+    });
 
     /**
      * 配置权限 - 跳转到权限配置页面
      * Requirements: 2.4 - 查看角色已有权限
      * Requirements: 2.5 - 系统角色显示特殊提示
      */
-    const handleConfigPermission = (role: Role) => {
+    const handleConfigPermission = useCallback((role: Role) => {
         navigate(`/admin/sys/role/${role.id}/permissions`);
-    };
+    }, [navigate]);
+
+    /**
+     * 编辑角色
+     */
+    const handleEdit = useCallback((role: Role) => {
+        setCurrentRole(role);
+        form.setFieldsValue(role);
+        setEditModalVisible(true);
+    }, [form]);
+
+    /**
+     * 新增角色
+     */
+    const handleCreate = useCallback(() => {
+        setCurrentRole(null);
+        form.resetFields();
+        setEditModalVisible(true);
+    }, [form]);
 
     /**
      * 保存编辑
      */
-    const handleSaveEdit = async () => {
+    const handleSaveEdit = useCallback(async () => {
         try {
             const values = await form.validateFields();
+
             if (currentRole) {
-                await adminApi.updateRole(currentRole.id, values);
-                message.success('更新成功');
+                await updateRole(currentRole.id, values);
             } else {
-                await adminApi.createRole(values);
-                message.success('创建成功');
+                await createRole(values);
             }
+
             setEditModalVisible(false);
-            loadData();
         } catch (error) {
-            logger.error("Operation failed", error);
-            message.error('保存失败');
+            // Form validation error or API error (handled by hook)
+            if (!error.errorFields) {
+                // Non-validation error, already handled by hook
+                console.error('Save error:', error);
+            }
         }
-    };
+    }, [currentRole, form, updateRole, createRole]);
 
     /**
      * 删除角色
      */
-    const handleDelete = async (role: Role) => {
+    const handleDelete = useCallback(async (role: Role) => {
         if (role.isSystem) {
-            message.error('系统角色不可删除');
+            Modal.error({
+                title: '操作失败',
+                content: '系统角色不可删除',
+            });
             return;
         }
-        try {
-            await adminApi.deleteRole(role.id);
-            message.success(`删除角色 ${role.name} 成功`);
-            loadData();
-        } catch (error) {
-            logger.error("Operation failed", error);
-            message.error('删除失败');
-        }
-    };
+
+        await deleteRole(role.id, {
+            confirmMessage: `确定要删除角色 "${role.name}" 吗？`,
+        });
+    }, [deleteRole]);
 
     /**
      * 搜索字段配置
@@ -150,6 +160,13 @@ const RolePage: React.FC = () => {
     const searchFields: SearchField[] = [
         { name: 'keyword', label: '关键词', type: 'input', placeholder: '角色名称/编码' },
     ];
+
+    /**
+     * 搜索处理
+     */
+    const handleSearch = useCallback((values: Record<string, unknown>) => {
+        setSearchParams(values);
+    }, [setSearchParams]);
 
     /**
      * 表格列配置
@@ -268,31 +285,14 @@ const RolePage: React.FC = () => {
                 dataSource={roles}
                 rowKey="id"
                 searchFields={searchFields}
-                onSearch={(values) => {
-                    setCurrent(1);
-                    loadData(values);
-                }}
-                onRefresh={loadData}
+                onSearch={handleSearch}
+                onRefresh={() => fetchAll()}
                 loading={loading}
                 showCreate={true}
                 createText="新增角色"
                 createPermission={ROLE_PERMISSIONS.CREATE}
-                onCreate={() => {
-                    setCurrentRole(null);
-                    form.resetFields();
-                    setEditModalVisible(true);
-                }}
-                pagination={{
-                    current,
-                    pageSize,
-                    total,
-                    showSizeChanger: true,
-                    showTotal: total => `共 ${total} 条`,
-                    onChange: (page, size) => {
-                        setCurrent(page);
-                        setPageSize(size);
-                    },
-                }}
+                onCreate={handleCreate}
+                pagination={pagination}
                 scroll={{ x: 1100 }}
             />
 

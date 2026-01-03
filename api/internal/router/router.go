@@ -84,6 +84,7 @@ func (r *Router) Setup() *gin.Engine {
 	r.engine.Use(middleware.SlogLogger())                                   // 结构化访问日志
 	r.engine.Use(middleware.MetricsMiddleware(r.services.realtimeSvc))      // HTTP 指标，传入monitor service
 	r.engine.Use(middleware.RateLimit(middleware.DefaultRateLimitConfig())) // 限流中间件
+	r.engine.Use(middleware.Signature(r.cfg.Signature))                     // HMAC-SHA256签名验证
 	r.engine.Use(middleware.Crypto(r.cfg.Crypto))                           // 请求解密
 	r.engine.Use(middleware.ErrorMap())                                     // 统一错误映射
 	r.engine.Use(middleware.Recovery())                                     // 统一JSON恢复中间件

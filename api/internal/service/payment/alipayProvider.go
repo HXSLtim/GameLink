@@ -60,6 +60,11 @@ const (
 
 // Refund requests refund from Alipay
 func (p *RealAlipayProvider) Refund(ctx context.Context, payment *model.Payment, reason string) (string, json.RawMessage, time.Time, error) {
+	// Timeout choice: 60s for payment gateway refund operations
+	// Payment gateway operations can be slow due to bank processing and network latency
+	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
+
 	if !p.config.Alipay.Enabled {
 		return "", nil, time.Time{}, ErrPaymentDisabled
 	}
@@ -107,6 +112,11 @@ func (p *RealAlipayProvider) Refund(ctx context.Context, payment *model.Payment,
 
 // CreateOrder creates Alipay order
 func (p *RealAlipayProvider) CreateOrder(ctx context.Context, orderID, subject string, amountCents int64) (map[string]interface{}, error) {
+	// Timeout choice: 60s for payment gateway order creation
+	// Payment operations require interaction with external banking systems
+	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
+
 	if !p.config.Alipay.Enabled {
 		return nil, ErrPaymentDisabled
 	}
@@ -205,6 +215,8 @@ func (p *RealAlipayProvider) doRequest(ctx context.Context, params map[string]st
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
+	// Timeout choice: 30s for individual HTTP requests to Alipay API
+	// This is a reasonable timeout for API calls, while the overall operation has 60s
 	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {

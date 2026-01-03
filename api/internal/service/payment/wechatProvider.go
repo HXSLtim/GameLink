@@ -37,6 +37,11 @@ const (
 
 // Refund requests refund from WeChat Pay
 func (p *RealWeChatProvider) Refund(ctx context.Context, payment *model.Payment, reason string) (string, json.RawMessage, time.Time, error) {
+	// Timeout choice: 60s for payment gateway refund operations
+	// Payment gateway operations can be slow due to bank processing and network latency
+	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
+
 	if !p.config.WeChatPay.Enabled {
 		return "", nil, time.Time{}, ErrPaymentDisabled
 	}
@@ -161,6 +166,8 @@ func (p *RealWeChatProvider) doRefundRequest(ctx context.Context, req WeChatRefu
 	// Client certificate will be added for production WeChat Pay integration
 	// Required for refund API: httpReq.GetBody = ...
 
+	// Timeout choice: 30s for individual HTTP requests to WeChat Pay API
+	// This is a reasonable timeout for API calls, while the overall operation has 60s
 	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Do(httpReq)
 	if err != nil {
@@ -190,6 +197,11 @@ func (p *RealWeChatProvider) verifySign(resp WeChatRefundResponse) bool {
 
 // CreateOrder creates WeChat Pay order
 func (p *RealWeChatProvider) CreateOrder(ctx context.Context, orderID, description string, amountCents int64, clientIP string) (map[string]interface{}, error) {
+	// Timeout choice: 60s for payment gateway order creation
+	// Payment operations require interaction with external banking systems
+	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
+
 	if !p.config.WeChatPay.Enabled {
 		return nil, ErrPaymentDisabled
 	}

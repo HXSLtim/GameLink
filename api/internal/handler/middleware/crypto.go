@@ -141,19 +141,19 @@ func shouldProcessRequest(c *gin.Context, methods map[string]struct{}, excludePa
 	}
 	path := c.Request.URL.Path
 	for _, exclude := range excludePaths {
-		if shouldExcludePath(path, exclude) {
+		if ShouldExcludePath(path, exclude) {
 			return false
 		}
 	}
 	return true
 }
 
-// shouldExcludePath checks if a path should be excluded based on pattern matching.
+// ShouldExcludePath checks if a path should be excluded based on pattern matching.
 // Supports three matching modes:
 // 1. Exact match: "/api/v1/health" only matches exactly "/api/v1/health"
 // 2. Prefix match with wildcard: "/api/v1/public/*" matches "/api/v1/public/" and all subpaths
 // 3. Catch-all: "*" matches any path
-func shouldExcludePath(path string, exclude string) bool {
+func ShouldExcludePath(path string, exclude string) bool {
 	exclude = strings.TrimSpace(exclude)
 	if exclude == "" {
 		return false

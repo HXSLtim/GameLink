@@ -237,3 +237,18 @@ func IsBadRequest(err error) bool {
 	}
 	return false
 }
+
+// IsInternalError checks if the error is an internal server error
+func IsInternalError(err error) bool {
+	if err == nil {
+		return false
+	}
+	if apiErr, ok := err.(*APIError); ok {
+		return apiErr.Code == http.StatusInternalServerError
+	}
+	var target *APIError
+	if errors.As(err, &target) {
+		return target.Code == http.StatusInternalServerError
+	}
+	return false
+}

@@ -1,7 +1,7 @@
 /**
  * 游戏管理页面
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
     Tag,
     Space,
@@ -10,10 +10,8 @@ import {
     Form,
     Input,
     Select,
-    message,
-    Popconfirm,
-    Image,
     Radio,
+    Image,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
@@ -26,23 +24,9 @@ import { PageContainer, SearchTable, type ToolbarButton } from '@/components';
 import type { SearchField } from '@/components';
 import { GAME_PERMISSIONS } from '@/constants/permissions';
 import { PermissionGuard } from '@/components/PermissionGuard';
-import { adminApi } from '@/api/admin';
+import { adminApi, type Game, type CreateGameDto, type UpdateGameDto } from '@/api/admin';
+import { useCrud } from '@/hooks';
 import dayjs from 'dayjs';
-
-import { logger } from '@/utils/logger';
-/**
- * 游戏数据接口
- */
-interface Game {
-    id: number;
-    key: string;
-    name: string;
-    iconUrl: string;
-    category: string;
-    description: string;
-    createdAt: string;
-    updatedAt: string;
-}
 
 /**
  * 分类选项
@@ -60,13 +44,6 @@ const categoryOptions = [
  * 游戏管理页面
  */
 const GamePage: React.FC = () => {
-    const [loading, setLoading] = useState(false);
-    const [games, setGames] = useState<Game[]>([]);
-    const [total, setTotal] = useState(0);
-    const [current, setCurrent] = useState(1);
-    const [pageSize, setPageSize] = useState(10);
-    const [searchParams, setSearchParams] = useState<Record<string, unknown>>({});
-
     // 弹窗状态
     const [editModalVisible, setEditModalVisible] = useState(false);
     const [currentGame, setCurrentGame] = useState<Game | null>(null);
@@ -80,48 +57,47 @@ const GamePage: React.FC = () => {
     const [batchForm] = Form.useForm();
 
     /**
-     * 加载游戏数据
+     * 使用 CRUD Hook 管理游戏数据
      */
-    const loadData = useCallback(async (params?: Record<string, unknown>) => {
-        setLoading(true);
-        try {
-            const queryParams = {
-                page: current,
-                page_size: pageSize,
-                ...searchParams,
-                ...params,
-            };
-            const response = await adminApi.getGames(queryParams);
-            if (response.data.success) {
-                setGames(response.data.data || []);
-                setTotal(response.data.pagination?.total || 0);
-            } else {
-                message.error(response.data.message || '加载失败');
-            }
-        } catch (error) {
-            logger.error('Load games error:', error);
-            message.error('加载游戏列表失败');
-        } finally {
-            setLoading(false);
-        }
-    }, [current, pageSize, searchParams]);
-
-    useEffect(() => {
-        loadData();
-    }, [loadData]);
+    const {
+        data: games,
+        loading,
+        pagination,
+        fetchAll,
+        create,
+        update,
+        remove,
+        setSearchParams,
+        queryParams,
+    } = useCrud<Game, CreateGameDto, UpdateGameDto>({
+        api: {
+            getAll: adminApi.getGames,
+            create: adminApi.createGame,
+            update: adminApi.updateGame,
+            remove: adminApi.deleteGame,
+        },
+        messages: {
+            fetchError: '加载游戏列表失败',
+            createSuccess: '创建游戏成功',
+            updateSuccess: '更新游戏成功',
+            deleteSuccess: '删除游戏成功',
+        },
+        initialPagination: {
+            pageSize: 10,
+        },
+    });
 
     /**
      * 搜索
      */
-    const handleSearch = (values: Record<string, unknown>) => {
+    const handleSearch = useCallback((values: Record<string, unknown>) => {
         setSearchParams(values);
-        setCurrent(1);
-    };
+    }, [setSearchParams]);
 
     /**
      * 编辑游戏
      */
-    const handleEdit = (game: Game) => {
+    const handleEdit = useCallback((game: Game) => {
         setCurrentGame(game);
         form.setFieldsValue({
             key: game.key,
@@ -131,21 +107,21 @@ const GamePage: React.FC = () => {
             icon_url: game.iconUrl,
         });
         setEditModalVisible(true);
-    };
+    }, [form]);
 
     /**
      * 新增游戏
      */
-    const handleCreate = () => {
+    const handleCreate = useCallback(() => {
         setCurrentGame(null);
         form.resetFields();
         setEditModalVisible(true);
-    };
+    }, [form]);
 
     /**
      * 保存编辑
      */
-    const handleSaveEdit = async () => {
+    const handleSaveEdit = useCallback(async () => {
         try {
             const values = await form.validateFields();
             setSubmitting(true);
@@ -159,40 +135,35 @@ const GamePage: React.FC = () => {
             };
 
             if (currentGame) {
-                await adminApi.updateGame(String(currentGame.id), data);
-                message.success('更新成功');
+                await update(String(currentGame.id), data as UpdateGameDto);
             } else {
-                await adminApi.createGame(data);
-                message.success('创建成功');
+                await create(data as CreateGameDto);
             }
+
             setEditModalVisible(false);
-            loadData();
         } catch (error) {
-            logger.error('Save game error:', error);
-            message.error('保存失败');
+            // Form validation error or API error (handled by hook)
+            if (!error.errorFields) {
+                console.error('Save error:', error);
+            }
         } finally {
             setSubmitting(false);
         }
-    };
+    }, [currentGame, form, update, create]);
 
     /**
      * 删除游戏
      */
-    const handleDelete = async (game: Game) => {
-        try {
-            await adminApi.deleteGame(String(game.id));
-            message.success(`删除游戏 ${game.name} 成功`);
-            loadData();
-        } catch (error) {
-            logger.error('Delete game error:', error);
-            message.error('删除失败');
-        }
-    };
+    const handleDelete = useCallback(async (game: Game) => {
+        await remove(String(game.id), {
+            confirmMessage: `确定要删除游戏 "${game.name}" 吗？`,
+        });
+    }, [remove]);
 
     /**
      * 批量删除
      */
-    const handleBatchDelete = (keys: React.Key[]) => {
+    const handleBatchDelete = useCallback((keys: React.Key[]) => {
         setSelectedGameIds(keys ? keys.map(k => String(k)) : []);
         batchForm.resetFields();
         batchForm.setFieldsValue({
@@ -200,9 +171,9 @@ const GamePage: React.FC = () => {
         });
         setBatchTarget((keys && keys.length > 0) ? 'selected' : 'all');
         setBatchDeleteVisible(true);
-    };
+    }, []);
 
-    const submitBatchDelete = async () => {
+    const submitBatchDelete = useCallback(async () => {
         try {
             const values = await batchForm.validateFields();
             let gameIds: string[] = [];
@@ -226,21 +197,31 @@ const GamePage: React.FC = () => {
             }
 
             if (gameIds.length === 0) {
-                message.warning('没有符合条件的游戏');
+                Modal.warning({
+                    title: '提示',
+                    content: '没有符合条件的游戏',
+                });
                 return;
             }
 
             const res = await adminApi.batchDeleteGames(gameIds);
 
             if (res.data.success) {
-                message.success(`批量删除 ${gameIds.length} 个游戏成功`);
+                Modal.success({
+                    title: '成功',
+                    content: `批量删除 ${gameIds.length} 个游戏成功`,
+                });
                 setBatchDeleteVisible(false);
-                loadData();
+                fetchAll();
             }
-        } catch {
-            message.error('操作失败');
+        } catch (error) {
+            console.error('Batch delete error:', error);
+            Modal.error({
+                title: '失败',
+                content: '操作失败',
+            });
         }
-    };
+    }, [batchForm, selectedGameIds, fetchAll]);
 
     /**
      * 搜索字段配置
@@ -333,14 +314,15 @@ const GamePage: React.FC = () => {
                         </Button>
                     </PermissionGuard>
                     <PermissionGuard permission={GAME_PERMISSIONS.DELETE}>
-                        <Popconfirm
-                            title="确定要删除该游戏吗？"
-                            onConfirm={() => handleDelete(record)}
+                        <Modal
+                            title="确认删除"
+                            content={`确定要删除游戏 "${record.name}" 吗？`}
+                            onOk={() => handleDelete(record)}
                         >
                             <Button type="link" size="small" danger icon={<DeleteOutlined />}>
                                 删除
                             </Button>
-                        </Popconfirm>
+                        </Modal>
                     </PermissionGuard>
                 </Space>
             ),
@@ -350,20 +332,20 @@ const GamePage: React.FC = () => {
     /**
      * 导出游戏数据
      */
-    const handleExport = async () => {
+    const handleExport = useCallback(async () => {
         try {
-            message.loading({ content: '正在导出...', key: 'export' });
-            const response = await adminApi.getGames({ ...searchParams, page_size: 10000 });
+            Modal.loading({ content: '正在导出...', key: 'export' });
+            const response = await adminApi.getGames({ ...queryParams, page_size: 10000 });
             if (response.data.success && response.data.data) {
                 exportToCSV(response.data.data as unknown as Record<string, unknown>[], gameExportColumns, 'games');
-                message.success({ content: '导出成功', key: 'export' });
+                Modal.success({ content: '导出成功', key: 'export' });
             } else {
-                message.error({ content: '导出失败', key: 'export' });
+                Modal.error({ content: '导出失败', key: 'export' });
             }
         } catch {
-            message.error({ content: '导出失败', key: 'export' });
+            Modal.error({ content: '导出失败', key: 'export' });
         }
-    };
+    }, [queryParams]);
 
     /**
      * 工具栏按钮
@@ -394,24 +376,14 @@ const GamePage: React.FC = () => {
                 rowKey="id"
                 searchFields={searchFields}
                 onSearch={handleSearch}
-                onRefresh={() => loadData()}
+                onRefresh={() => fetchAll()}
                 loading={loading}
                 showCreate={true}
                 createText="新增游戏"
                 createPermission={GAME_PERMISSIONS.CREATE}
                 onCreate={handleCreate}
                 toolbarButtons={toolbarButtons}
-                pagination={{
-                    current,
-                    pageSize,
-                    total,
-                    showSizeChanger: true,
-                    showTotal: t => `共 ${t} 条`,
-                    onChange: (page, size) => {
-                        setCurrent(page);
-                        setPageSize(size);
-                    },
-                }}
+                pagination={pagination}
                 scroll={{ x: 1200 }}
             />
 

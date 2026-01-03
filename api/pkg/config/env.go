@@ -27,6 +27,7 @@ type AppConfig struct {
 	Cache         CacheConfig
 	Crypto        CryptoConfig
 	Auth          AuthConfig
+	Signature     SignatureConfig
 	Seed          SeedConfig
 	SuperAdmin    SuperAdminConfig
 	AdminAuth     AdminAuthConfig
@@ -63,6 +64,15 @@ type CryptoConfig struct {
 	Methods      []string `yaml:"methods"`
 	ExcludePaths []string `yaml:"exclude_paths"`
 	UseSignature bool     `yaml:"use_signature"`
+}
+
+// SignatureConfig 描述HMAC-SHA256请求签名验证配置。
+type SignatureConfig struct {
+	Enabled      bool     `yaml:"enabled"`
+	SecretKey    string   `yaml:"secret_key"`
+	HeaderName   string   `yaml:"header_name"`
+	Methods      []string `yaml:"methods"`
+	ExcludePaths []string `yaml:"exclude_paths"`
 }
 
 // AuthConfig 描述鉴权配置。
@@ -149,6 +159,14 @@ type cryptoFileConfig struct {
 	UseSignature *bool    `yaml:"use_signature"`
 }
 
+type signatureFileConfig struct {
+	Enabled      *bool    `yaml:"enabled"`
+	SecretKey    string   `yaml:"secret_key"`
+	HeaderName   string   `yaml:"header_name"`
+	Methods      []string `yaml:"methods"`
+	ExcludePaths []string `yaml:"exclude_paths"`
+}
+
 type authFileConfig struct {
 	JWTSecret     string `yaml:"jwt_secret"`
 	TokenTTLHours *int   `yaml:"token_ttl_hours"`
@@ -215,6 +233,7 @@ type fileConfig struct {
 	Database    DatabaseConfig        `yaml:"database"`
 	Cache       CacheConfig           `yaml:"cache"`
 	Crypto      cryptoFileConfig      `yaml:"crypto"`
+	Signature   signatureFileConfig   `yaml:"signature"`
 	Auth        authFileConfig        `yaml:"auth"`
 	Seed        SeedConfig            `yaml:"seed"`
 	SuperAdmin  superAdminFileConfig  `yaml:"super_admin"`
@@ -251,6 +270,13 @@ func Load() AppConfig {
 			Methods:      []string{"POST", "PUT", "PATCH"},
 			ExcludePaths: []string{"/api/v1/health", "/api/v1/ping", "/api/v1/auth/refresh"},
 			UseSignature: true,
+		},
+		Signature: SignatureConfig{
+			Enabled:      false,
+			SecretKey:    "", // 必须显式配置，无默认值
+			HeaderName:   "X-Signature",
+			Methods:      []string{"POST", "PUT", "PATCH", "DELETE"},
+			ExcludePaths: []string{"/api/v1/health", "/api/v1/ping", "/api/v1/auth/refresh"},
 		},
 		Auth: AuthConfig{
 			JWTSecret:     "",
@@ -320,6 +346,7 @@ func loadFromFile(env string, cfg *AppConfig) {
 	applyDatabaseConfig(&fc, cfg)
 	applyCacheConfig(&fc, cfg)
 	applyCryptoConfig(&fc, cfg)
+	applySignatureConfig(&fc, cfg)
 	applyAuthConfig(&fc, cfg)
 	applySuperAdminConfig(&fc, cfg)
 	applyExternalAPIConfig(&fc, cfg)
@@ -376,6 +403,24 @@ func applyCryptoConfig(fc *fileConfig, cfg *AppConfig) {
 	}
 	if fc.Crypto.UseSignature != nil {
 		cfg.Crypto.UseSignature = *fc.Crypto.UseSignature
+	}
+}
+
+func applySignatureConfig(fc *fileConfig, cfg *AppConfig) {
+	if fc.Signature.SecretKey != "" {
+		cfg.Signature.SecretKey = fc.Signature.SecretKey
+	}
+	if fc.Signature.HeaderName != "" {
+		cfg.Signature.HeaderName = fc.Signature.HeaderName
+	}
+	if len(fc.Signature.Methods) > 0 {
+		cfg.Signature.Methods = normalizeHTTPMethods(fc.Signature.Methods)
+	}
+	if len(fc.Signature.ExcludePaths) > 0 {
+		cfg.Signature.ExcludePaths = normalizePaths(fc.Signature.ExcludePaths)
+	}
+	if fc.Signature.Enabled != nil {
+		cfg.Signature.Enabled = *fc.Signature.Enabled
 	}
 }
 
@@ -493,6 +538,7 @@ func overrideFromEnv(cfg *AppConfig) {
 	overrideDatabaseFromEnv(cfg)
 	overrideCacheFromEnv(cfg)
 	overrideCryptoFromEnv(cfg)
+	overrideSignatureFromEnv(cfg)
 	overrideAuthFromEnv(cfg)
 	overrideSuperAdminFromEnv(cfg)
 	overrideExternalAPIFromEnv(cfg)
@@ -580,6 +626,28 @@ func overrideCryptoFromEnv(cfg *AppConfig) {
 		} else {
 			cfg.Crypto.UseSignature = enabled
 		}
+	}
+}
+
+func overrideSignatureFromEnv(cfg *AppConfig) {
+	if v := os.Getenv("SIGNATURE_ENABLED"); v != "" {
+		if enabled, err := strconv.ParseBool(v); err != nil {
+			log.Printf("SIGNATURE_ENABLED=%q 无法解析，保持原值 %v", v, cfg.Signature.Enabled)
+		} else {
+			cfg.Signature.Enabled = enabled
+		}
+	}
+	if secret := os.Getenv("SIGNATURE_SECRET_KEY"); secret != "" {
+		cfg.Signature.SecretKey = secret
+	}
+	if header := os.Getenv("SIGNATURE_HEADER_NAME"); header != "" {
+		cfg.Signature.HeaderName = header
+	}
+	if methods := os.Getenv("SIGNATURE_METHODS"); methods != "" {
+		cfg.Signature.Methods = normalizeHTTPMethods(strings.Split(methods, ","))
+	}
+	if excludes := os.Getenv("SIGNATURE_EXCLUDE_PATHS"); excludes != "" {
+		cfg.Signature.ExcludePaths = normalizePaths(strings.Split(excludes, ","))
 	}
 }
 

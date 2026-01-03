@@ -123,6 +123,8 @@ func (p *TencentProvider) doRequest(ctx context.Context, action string, payload 
 	// TC3-HMAC-SHA256 signature will be implemented for production
 	// Reference: https://cloud.tencent.com/document/product/382/43105
 
+	// Timeout choice: 10s for SMS API calls (should be fast)
+	// Note: We use context.WithTimeout to ensure the entire operation respects the deadline
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {

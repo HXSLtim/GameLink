@@ -61,7 +61,7 @@ vi.mock('antd', async () => {
 });
 
 // Helper function to create mock order data
-const createMockOrder = (overrides = {}): any => ({
+const createMockOrder = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
   id: 1,
   orderNo: 'ORD20240101001',
   userId: 1,
@@ -85,7 +85,7 @@ const createMockOrder = (overrides = {}): any => ({
 });
 
 // Helper function to create mock order list
-const createMockOrderList = (count = 1, overrides = {}): any[] => {
+const createMockOrderList = (count = 1, overrides: Record<string, unknown> = {}): Record<string, unknown>[] => {
   return Array.from({ length: count }, (_, i) =>
     createMockOrder({
       id: i + 1,

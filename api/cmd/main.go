@@ -68,12 +68,14 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
+	"gamelink/internal/handler/middleware"
 	"gamelink/pkg/config"
 	"gamelink/pkg/container"
 	"gamelink/pkg/db"
@@ -106,10 +108,34 @@ func main() {
 	metrics.Init(app.PrometheusRegistry)
 	metrics.InitBusinessMetrics(app.PrometheusRegistry)
 
-	// Expose metrics endpoint
-	app.Engine.GET("/metrics", gin.WrapH(promhttp.HandlerFor(app.PrometheusRegistry, promhttp.HandlerOpts{
-		EnableOpenMetrics: true,
-	})))
+	// Initialize metrics collector
+	metrics.NewCollector(app.PrometheusRegistry)
+
+	// Configure metrics authentication based on environment
+	metricsAuthConfig := middleware.DefaultMetricsAuthConfig()
+
+	// In production, require admin authentication or IP whitelist
+	appEnv := os.Getenv("APP_ENV")
+	if appEnv == "production" {
+		// Check if METRICS_ALLOWED_CIDRS is set for private network access
+		if allowedCIDRs := os.Getenv("METRICS_ALLOWED_CIDRS"); allowedCIDRs != "" {
+			metricsAuthConfig.AllowedCIDRs = parseCIDRs(allowedCIDRs)
+		}
+		metricsAuthConfig.Enabled = true
+		log.Println("metrics endpoint: secured with IP whitelist")
+	} else {
+		// In development/staging, allow all access
+		metricsAuthConfig.Enabled = false
+		log.Println("metrics endpoint: open (development mode)")
+	}
+
+	// Expose metrics endpoint with authentication
+	app.Engine.GET("/metrics",
+		middleware.MetricsAuth(metricsAuthConfig),
+		gin.WrapH(promhttp.HandlerFor(app.PrometheusRegistry, promhttp.HandlerOpts{
+			EnableOpenMetrics: true,
+		})),
+	)
 
 	if err := app.Lifecycle.Start(context.Background()); err != nil {
 		log.Fatalf("failed to start services: %v", err)
@@ -189,4 +215,20 @@ func logCryptoStatus(cfg config.AppConfig) {
 		return
 	}
 	log.Println("crypto middleware disabled")
+}
+
+// parseCIDRs parses a comma-separated list of CIDR blocks
+func parseCIDRs(cidrsStr string) []string {
+	if cidrsStr == "" {
+		return nil
+	}
+
+	cidrs := make([]string, 0)
+	for _, cidr := range strings.Split(cidrsStr, ",") {
+		trimmed := strings.TrimSpace(cidr)
+		if trimmed != "" {
+			cidrs = append(cidrs, trimmed)
+		}
+	}
+	return cidrs
 }

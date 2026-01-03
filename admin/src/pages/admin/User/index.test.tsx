@@ -46,7 +46,7 @@ vi.mock('@/utils/export', () => ({
 }));
 
 // Helper function to create mock user data
-const createMockUser = (overrides = {}): any => ({
+const createMockUser = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
   id: 1,
   name: 'Test User',
   email: 'test@example.com',
@@ -72,7 +72,7 @@ const createMockUser = (overrides = {}): any => ({
 });
 
 // Helper function to create mock user list
-const createMockUserList = (count = 1, overrides = {}): any[] => {
+const createMockUserList = (count = 1, overrides: Record<string, unknown> = {}): Record<string, unknown>[] => {
   return Array.from({ length: count }, (_, i) =>
     createMockUser({
       id: i + 1,

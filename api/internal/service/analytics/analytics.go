@@ -87,6 +87,11 @@ type ConversionFunnel struct {
 
 // GetActiveUsers returns active users statistics.
 func (s *AnalyticsService) GetActiveUsers(ctx context.Context, dateRange DateRange, granularity Granularity) (*ActiveUsersData, error) {
+	// Timeout choice: 10s for analytics queries
+	// Analytics queries involve multiple database operations but should complete quickly
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
 	result := &ActiveUsersData{}
 
 	// Get DAU (today's active users)
@@ -168,6 +173,11 @@ func (s *AnalyticsService) getActiveUsersTrend(ctx context.Context, dateRange Da
 
 // GetRetention returns user retention statistics.
 func (s *AnalyticsService) GetRetention(ctx context.Context, dateRange DateRange, _ Granularity) (*RetentionData, error) {
+	// Timeout choice: 10s for analytics queries
+	// Retention calculations involve multiple complex database queries
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
 	result := &RetentionData{}
 
 	// Calculate retention rates
@@ -256,6 +266,11 @@ func (s *AnalyticsService) generateRetentionMatrix(ctx context.Context, cohortCo
 
 // GetPaymentAnalytics returns payment analytics data.
 func (s *AnalyticsService) GetPaymentAnalytics(ctx context.Context, dateRange DateRange, granularity Granularity) (*PaymentData, error) {
+	// Timeout choice: 10s for analytics queries
+	// Payment analytics involve aggregation queries but should be fast
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
 	result := &PaymentData{}
 
 	// Get total users in date range
@@ -351,6 +366,11 @@ func (s *AnalyticsService) getPaymentTrend(ctx context.Context, dateRange DateRa
 
 // GetConversionFunnel returns conversion funnel data.
 func (s *AnalyticsService) GetConversionFunnel(ctx context.Context, dateRange DateRange, _ Granularity) (*ConversionFunnel, error) {
+	// Timeout choice: 10s for analytics queries
+	// Conversion funnel involves multiple aggregation queries
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
 	result := &ConversionFunnel{
 		Steps: make([]FunnelStep, 0),
 	}
