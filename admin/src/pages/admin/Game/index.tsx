@@ -72,9 +72,13 @@ const GamePage: React.FC = () => {
         queryParams,
     } = useCrud<Game, CreateGameDto, UpdateGameDto>({
         api: {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             getAll: adminApi.getGames as any,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             create: adminApi.createGame as any,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             update: adminApi.updateGame as any,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             remove: adminApi.deleteGame as any,
         },
         messages: {
