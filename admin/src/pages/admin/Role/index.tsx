@@ -58,14 +58,10 @@ const RolePage: React.FC = () => {
         setSearchParams,
     } = useCrud<Role, CreateRoleDto, UpdateRoleDto>({
         api: {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            getAll: adminApi.getRoles as any,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            create: adminApi.createRole as any,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            update: adminApi.updateRole as any,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            remove: adminApi.deleteRole as any,
+            getAll: adminApi.getRoles as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+            create: adminApi.createRole as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+            update: adminApi.updateRole as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+            remove: adminApi.deleteRole as any, // eslint-disable-line @typescript-eslint/no-explicit-any
         },
         messages: {
             fetchError: '加载角色列表失败',

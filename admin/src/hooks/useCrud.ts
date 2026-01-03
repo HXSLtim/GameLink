@@ -153,25 +153,25 @@ export interface CrudApi<T extends object, TCreate, TUpdate, TQuery extends Crud
      * Fetch all items with optional query parameters
      * Accepts: Promise<ApiResponse<T[]>> | Promise<AxiosResponse<ApiResponse<T[]>>>
      */
-    getAll: (params?: TQuery) => Promise<ApiResponse<T[]> | { data: ApiResponse<T[]> } | any>;
+    getAll: (params?: TQuery) => Promise<ApiResponse<T[]> | { data: ApiResponse<T[]> }>;
 
     /**
      * Create a new item
      * Accepts: Promise<ApiResponse<T>> | Promise<AxiosResponse<ApiResponse<T>>>
      */
-    create: (data: TCreate) => Promise<ApiResponse<T> | { data: ApiResponse<T> } | any>;
+    create: (data: TCreate) => Promise<ApiResponse<T> | { data: ApiResponse<T> }>;
 
     /**
      * Update an existing item
      * Accepts: Promise<ApiResponse<T>> | Promise<AxiosResponse<ApiResponse<T>>>
      */
-    update: (id: CrudId, data: TUpdate) => Promise<ApiResponse<T> | { data: ApiResponse<T> } | any>;
+    update: (id: CrudId, data: TUpdate) => Promise<ApiResponse<T> | { data: ApiResponse<T> }>;
 
     /**
      * Delete an item
      * Accepts: Promise<ApiResponse<void>> | Promise<AxiosResponse<ApiResponse<void>>>
      */
-    remove: (id: CrudId) => Promise<ApiResponse<void> | { data: ApiResponse<void> } | any>;
+    remove: (id: CrudId) => Promise<ApiResponse<void> | { data: ApiResponse<void> }>;
 }
 
 /**
