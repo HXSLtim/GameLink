@@ -62,15 +62,17 @@ export class LoginPage {
    * Verify error message is displayed
    */
   async verifyErrorMessage(message: string | RegExp) {
-    await expect(this.errorMessage).toBeVisible();
-    await expect(this.errorMessage).toContainText(message);
+    const errorLocator = this.page.locator('.ant-message-error, .error-message, .ant-form-item-explain-error');
+    await expect(errorLocator.first()).toBeVisible();
+    await expect(errorLocator.first()).toContainText(message);
   }
 
   /**
    * Verify login button is disabled while loading
    */
   async verifyLoginButtonDisabled() {
-    await expect(this.loginButton).toBeDisabled();
+    // AntD button uses loading class
+    await expect(this.loginButton).toHaveClass(/ant-btn-loading/);
   }
 
   /**

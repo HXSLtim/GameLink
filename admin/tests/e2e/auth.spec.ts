@@ -60,7 +60,7 @@ test.describe('Admin Authentication', () => {
     test('should show error message with empty credentials', async () => {
       await loginPage.login('', '');
 
-      await loginPage.verifyErrorMessage(/请输入用户名|请输入密码|required/i);
+      await loginPage.verifyErrorMessage(/请输入用户名|请输入密码|请输入管理员账号|required/i);
     });
 
     test('should disable login button during submission', async ({ testData }) => {
@@ -73,18 +73,22 @@ test.describe('Admin Authentication', () => {
   });
 
   test.describe('Form Validation', () => {
-    test('should validate empty username field', async ({ testData }) => {
+    test('should validate empty username field', async ({ page, testData }) => {
       await loginPage.fillCredentials('', testData.adminUser.password);
       await loginPage.clickLogin();
 
-      await expect(loginPage['usernameInput']).toBeFocused();
+      // Verify validation message on the field
+      const error = page.locator('.ant-form-item-explain-error').filter({ hasText: /请输入管理员账号/ });
+      await expect(error).toBeVisible();
     });
 
-    test('should validate empty password field', async ({ testData }) => {
+    test('should validate empty password field', async ({ page, testData }) => {
       await loginPage.fillCredentials(testData.adminUser.username, '');
       await loginPage.clickLogin();
 
-      await expect(loginPage['passwordInput']).toBeFocused();
+      // Verify validation message on the field
+      const error = page.locator('.ant-form-item-explain-error').filter({ hasText: /请输入密码/ });
+      await expect(error).toBeVisible();
     });
 
     test('should trim whitespace from inputs', async ({ testData }) => {
@@ -118,16 +122,27 @@ test.describe('Admin Authentication', () => {
       );
 
       // Click logout button (assuming it exists in the UI)
-      const logoutButton = page.getByRole('button', { name: /退出|logout/i }).first();
-      if (await logoutButton.isVisible()) {
-        await logoutButton.click();
-      }
+      // Open user menu (Dropdown trigger)
+      // Use a more specific selector that targets the avatar in the header
+      const userAvatar = page.locator('.ant-layout-header .ant-space-item .ant-avatar, .ant-dropdown-trigger').first();
+      await userAvatar.click();
+
+      // Click logout menu item
+      const logoutItem = page.getByRole('menuitem', { name: /退出登录|logout/i });
+      await expect(logoutItem).toBeVisible();
+      await logoutItem.click();
 
       // Verify redirected to login page
       await expect(page).toHaveURL(/\/login/);
     });
 
     test('should redirect to login when accessing protected route without auth', async ({ page }) => {
+      // Clear any potential session data
+      await page.evaluate(() => {
+        localStorage.clear();
+        sessionStorage.clear();
+      });
+
       // Try to access admin page directly without login
       await page.goto('/admin/User');
 
@@ -143,11 +158,9 @@ test.describe('Admin Authentication', () => {
         testData.adminUser.password
       );
 
-      const token = await page.evaluate(() => {
-        return localStorage.getItem('token') || sessionStorage.getItem('token');
-      });
-
-      // JWT tokens have 3 parts separated by dots
+      // Wait for token to be available in storage
+      await page.waitForFunction(() => !!localStorage.getItem('token'));
+      const token = await page.evaluate(() => localStorage.getItem('token'));
       expect(token?.split('.')).toHaveLength(3);
     });
 

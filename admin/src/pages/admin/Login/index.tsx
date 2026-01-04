@@ -36,24 +36,24 @@ const AdminLogin: React.FC = () => {
         setLoading(true);
         try {
             const res = await authApi.login({
-                username: values.username,
-                password: values.password
+                username: values.username.trim(),
+                password: values.password.trim()
             });
 
-            const response = res.data as { 
-                success?: boolean; 
+            const response = res.data as {
+                success?: boolean;
                 code?: number;
                 message?: string;
-                data?: { token: string; user: { id: number; role: string; [key: string]: unknown } } 
+                data?: { token: string; user: { id: number; role: string;[key: string]: unknown } }
             };
-            
+
             if (!response.success || !response.data) {
                 // 处理业务逻辑错误（success=false 但 HTTP 200）
                 const errorMsg = response.message || '登录失败';
                 message.error(errorMsg);
                 return;
             }
-            
+
             const { token: authToken, user } = response.data;
             const role = user.role.toUpperCase();
 
@@ -82,13 +82,13 @@ const AdminLogin: React.FC = () => {
             navigate('/admin');
         } catch (error: unknown) {
             logger.error('登录错误:', error);
-            
+
             // 处理 Axios 错误响应
             if (error && typeof error === 'object' && 'response' in error) {
                 const axiosError = error as { response?: { status?: number; data?: { message?: string; code?: number } } };
                 const status = axiosError.response?.status;
                 const errorData = axiosError.response?.data;
-                
+
                 if (status === 401) {
                     message.error(errorData?.message || '用户名或密码错误');
                 } else if (status === 403) {
@@ -131,9 +131,9 @@ const AdminLogin: React.FC = () => {
             minHeight: '100vh',
             background: `linear-gradient(135deg, ${token.colorPrimaryBg} 0%, ${token.colorBgLayout} 100%)`
         }}>
-            <Card 
-                style={{ 
-                    width: 420, 
+            <Card
+                style={{
+                    width: 420,
                     boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
                     borderRadius: 12
                 }}
@@ -159,9 +159,9 @@ const AdminLogin: React.FC = () => {
                         name="username"
                         rules={[{ required: true, message: '请输入管理员账号！' }]}
                     >
-                        <Input 
-                            prefix={<UserOutlined />} 
-                            placeholder="管理员账号/邮箱" 
+                        <Input
+                            prefix={<UserOutlined />}
+                            placeholder="管理员账号/邮箱"
                         />
                     </Form.Item>
 
@@ -169,9 +169,9 @@ const AdminLogin: React.FC = () => {
                         name="password"
                         rules={[{ required: true, message: '请输入密码！' }]}
                     >
-                        <Input.Password 
-                            prefix={<LockOutlined />} 
-                            placeholder="密码" 
+                        <Input.Password
+                            prefix={<LockOutlined />}
+                            placeholder="密码"
                         />
                     </Form.Item>
 
@@ -180,10 +180,10 @@ const AdminLogin: React.FC = () => {
                     </Form.Item>
 
                     <Form.Item style={{ marginBottom: 16 }}>
-                        <Button 
-                            type="primary" 
-                            htmlType="submit" 
-                            block 
+                        <Button
+                            type="primary"
+                            htmlType="submit"
+                            block
                             loading={loading}
                             style={{ height: 44 }}
                         >
@@ -194,16 +194,16 @@ const AdminLogin: React.FC = () => {
 
                 {/* 开发环境快速登录 */}
                 {ENABLE_QUICK_LOGIN && adminUsers.length > 0 && (
-                    <div style={{ 
-                        borderTop: `1px solid ${token.colorBorderSecondary}`, 
+                    <div style={{
+                        borderTop: `1px solid ${token.colorBorderSecondary}`,
                         paddingTop: 16,
                         marginTop: 8
                     }}>
-                        <div style={{ 
-                            marginBottom: 12, 
-                            color: token.colorTextSecondary, 
-                            fontSize: 12, 
-                            textAlign: 'center' 
+                        <div style={{
+                            marginBottom: 12,
+                            color: token.colorTextSecondary,
+                            fontSize: 12,
+                            textAlign: 'center'
                         }}>
                             开发环境快速登录
                         </div>
@@ -226,9 +226,9 @@ const AdminLogin: React.FC = () => {
                     </div>
                 )}
 
-                <div style={{ 
-                    textAlign: 'center', 
-                    marginTop: 24, 
+                <div style={{
+                    textAlign: 'center',
+                    marginTop: 24,
                     color: token.colorTextTertiary,
                     fontSize: 12
                 }}>
