@@ -72,19 +72,6 @@ const RolePage: React.FC = () => {
         initialPagination: {
             pageSize: 10,
         },
-        paginationExtractor: (response) => {
-            // Extract total from nested pagination object
-            const res = response as { data?: { pagination?: { total?: number } } };
-            return res.data?.pagination?.total;
-        },
-        dataTransformer: (rawData) => {
-            // Handle different response formats
-            if (Array.isArray(rawData)) {
-                return rawData as Role[];
-            }
-            const data = rawData as { items?: Role[]; totalCount?: number };
-            return data.items || [];
-        },
     });
 
     /**

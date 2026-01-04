@@ -534,7 +534,7 @@ export const adminApi = {
     deleteMenu: (id: number) => apiClient.delete<ApiResponse<void>>(`/admin/menus/${id}`),
 
     // Role Management
-    getRoles: (params?: { page?: number; page_size?: number }) => apiClient.get<ApiResponse<{ items: Role[], totalCount: number, page: number, pageSize: number }>>('/admin/roles', { params }),
+    getRoles: (params?: { page?: number; page_size?: number }) => apiClient.get<ApiResponse<Role[]>>('/admin/roles', { params }),
     getRole: (id: number) => apiClient.get(`/admin/roles/${id}`),
     createRole: (data: CreateRoleDto) => apiClient.post('/admin/roles', data),
     updateRole: (id: number, data: UpdateRoleDto) => apiClient.put(`/admin/roles/${id}`, data),
