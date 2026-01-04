@@ -73,9 +73,9 @@ const RolePage: React.FC = () => {
             pageSize: 10,
         },
         paginationExtractor: (response) => {
-            // Extract total from backend response format
-            const res = response as { data?: { totalCount?: number } };
-            return res.data?.totalCount;
+            // Extract total from nested pagination object
+            const res = response as { data?: { pagination?: { total?: number } } };
+            return res.data?.pagination?.total;
         },
         dataTransformer: (rawData) => {
             // Handle different response formats
