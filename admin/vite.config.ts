@@ -72,7 +72,7 @@ export default defineConfig(({ mode }) => ({
     // PWA 支持
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icon.svg', 'icon-192x192.png', 'icon-512x512.png'],
+      includeAssets: ['icon.svg'],
       manifest: {
         name: 'GameLink Admin Panel',
         short_name: 'GameLink',
@@ -83,15 +83,9 @@ export default defineConfig(({ mode }) => ({
         orientation: 'portrait-primary',
         icons: [
           {
-            src: 'icon-192x192.png',
-            sizes: '192x192',
-            type: 'image/png',
-            purpose: 'any maskable'
-          },
-          {
-            src: 'icon-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
+            src: 'icon.svg',
+            sizes: '192x192 512x512',
+            type: 'image/svg+xml',
             purpose: 'any maskable'
           }
         ]
@@ -147,7 +141,7 @@ export default defineConfig(({ mode }) => ({
         navigateFallbackDenylist: [/^\/api/]
       },
       devOptions: {
-        enabled: true, // 开发环境也启用 PWA
+        enabled: false, // 开发环境禁用 PWA，避免重复注册
         type: 'module'
       }
     }),
