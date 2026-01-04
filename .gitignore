@@ -90,6 +90,11 @@ coverage/
 reports/
 junit.xml
 
+# E2E test artifacts (Playwright)
+admin/playwright-report/
+admin/test-results/
+admin/dev-dist/
+
 # Windows/System temporary files
 nul
 *.tmp
