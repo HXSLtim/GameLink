@@ -98,7 +98,9 @@ const hasAdminAccess = async (): Promise<boolean> => {
         const userData = api.data as UserData;
         const role = userData.user?.role || '';
         logger.info('[Init] User role:', role);
-        const isAdmin = ['admin', 'superAdmin', 'ADMIN', 'CS', 'FINANCE'].includes(role);
+        // 后端定义的角色: user, player, admin
+        // superAdmin 是 RBAC 角色系统中的角色 slug，不是 User.Role 字段
+        const isAdmin = ['admin', 'superAdmin'].includes(role);
         logger.info('[Init] Is admin:', isAdmin);
         return isAdmin;
     } catch (error) {
@@ -119,6 +121,7 @@ const log = (verbose: boolean, ...args: unknown[]) => {
 /**
  * 检查系统是否需要重新初始化
  * 现在查询后端数据库，而不是使用 localStorage
+ * 注意：此函数应在已登录状态下调用
  */
 const shouldReInit = async (): Promise<{ needsInit: boolean; reason: string; status?: InitStatusResponse }> => {
     try {
@@ -143,9 +146,12 @@ const shouldReInit = async (): Promise<{ needsInit: boolean; reason: string; sta
             status
         };
     } catch (error) {
-        // 如果获取状态失败，为了安全起见，执行初始化
-        logger.warn('[Init] Failed to get init status, will sync:', error);
-        return { needsInit: true, reason: 'Failed to get init status, syncing for safety' };
+        // 如果获取状态失败，记录错误但假设已初始化（避免重复初始化）
+        logger.error('[Init] Failed to get init status, assuming already initialized:', error);
+        return {
+            needsInit: false,
+            reason: 'Failed to get init status, assuming initialized (API error)',
+        };
     }
 };
 
@@ -224,6 +230,13 @@ export const initApp = async (config: InitConfig = {}): Promise<InitResult> => {
  */
 export const smartInit = async (config: InitConfig = {}): Promise<InitResult | null> => {
     const cfg = { ...defaultConfig, ...config };
+
+    // 首先检查是否有管理员权限（未登录则直接跳过）
+    const isAdmin = await hasAdminAccess();
+    if (!isAdmin) {
+        log(cfg.verbose!, '未登录或非管理员，跳过初始化检查');
+        return null;
+    }
 
     // 检查是否需要初始化
     const { needsInit, reason, status } = await shouldReInit();

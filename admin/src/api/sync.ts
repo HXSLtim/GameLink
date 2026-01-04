@@ -88,19 +88,11 @@ export const syncApi = {
      * 获取初始化状态（从后端数据库查询）
      */
     getInitStatus: async (): Promise<InitStatusResponse> => {
-        try {
-            const response = (await apiClient.get<ApiResponse<InitStatusResponse>>(
-                '/system/init-status'
-            )) as unknown as ApiResponse<InitStatusResponse>;
-            logger.info('[Sync] init status response:', response);
-            return response.data;
-        } catch (error) {
-            logger.error('[Sync] getInitStatus failed:', error);
-            return {
-                initialized: false,
-                message: `获取初始化状态失败: ${error instanceof Error ? error.message : '未知错误'}`,
-            };
-        }
+        const response = (await apiClient.get<ApiResponse<InitStatusResponse>>(
+            '/system/init-status'
+        )) as unknown as ApiResponse<InitStatusResponse>;
+        logger.info('[Sync] init status response:', response);
+        return response.data;
     },
 
     /**
