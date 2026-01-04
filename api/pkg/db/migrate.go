@@ -17,6 +17,10 @@ import (
 
 // prepareOrdersMigration 在 autoMigrate 之前处理 orders 表的字段迁移（仅 PostgreSQL）
 func prepareOrdersMigration(db *gorm.DB) error {
+	if db == nil || db.Dialector == nil || db.Dialector.Name() != "postgres" {
+		return nil
+	}
+
 	// 检查 orders 表是否存在
 	var tableExists bool
 	checkTableSQL := "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'orders')"
@@ -236,6 +240,8 @@ func autoMigrate(db *gorm.DB) error {
 		&model.GameStatistics{},
 		&model.PlatformStatistics{},
 		&model.TagThreshold{},
+		// System state tracking (for initialization status)
+		&model.SystemState{},
 	); err != nil {
 		log.Printf("Phase 2 failed: %v", err)
 		return fmt.Errorf("phase 2 migration failed: %w", err)

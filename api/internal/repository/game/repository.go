@@ -88,6 +88,18 @@ func (r *gormGameRepository) Get(ctx context.Context, id uint64) (*model.Game, e
 	return &game, nil
 }
 
+// GetByIDs returns games by a list of IDs.
+func (r *gormGameRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.Game, error) {
+	if len(ids) == 0 {
+		return []model.Game{}, nil
+	}
+	var games []model.Game
+	if err := r.db.WithContext(ctx).Where("id IN ?", ids).Find(&games).Error; err != nil {
+		return nil, err
+	}
+	return games, nil
+}
+
 // Create inserts a new game.
 func (r *gormGameRepository) Create(ctx context.Context, game *model.Game) error {
 	return r.db.WithContext(ctx).Create(game).Error

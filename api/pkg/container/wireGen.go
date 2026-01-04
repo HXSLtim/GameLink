@@ -38,7 +38,6 @@ func initializeApplication() (*Application, error) {
 	engine := ProvideEngine(router)
 	manager := lifecycle.NewManager(registry)
 	prometheusRegistry := prometheus.NewRegistry()
-	metrics.Init(prometheusRegistry)
 	metrics.InitBusinessMetrics(prometheusRegistry)
 	application := &Application{
 		Engine:             engine,

@@ -70,6 +70,11 @@ func (c *memoryCache) Close(context.Context) error {
 	return nil
 }
 
+// GetRedisClient returns nil for memory cache (no Redis client available).
+func (c *memoryCache) GetRedisClient() interface{} {
+	return nil
+}
+
 func (c *memoryCache) janitor(interval time.Duration) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()

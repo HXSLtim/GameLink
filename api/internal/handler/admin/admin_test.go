@@ -20,6 +20,7 @@ import (
 	"gamelink/pkg/cache"
 
 	"gamelink/internal/repository/admin"
+	"gamelink/internal/repository/common"
 	"gamelink/internal/repository/game"
 	"gamelink/internal/repository/gamecategory"
 	"gamelink/internal/repository/implementations"
@@ -61,13 +62,20 @@ func SetupAdminTest(t *testing.T) *AdminTestHelper {
 	menus := admin.NewMenuRepository(db)
 	statsRepo := stats.NewStatsRepository(db)
 	gameCategories := gamecategory.NewGameCategoryRepository(db)
+	wallets := user.NewWalletRepository(db)
 	c := cache.NewMemory()
+
+	// Create Unit of Work for transaction support
+	uow := common.NewUnitOfWork(db)
 
 	// Create admin service
 	svc := adminservice.NewAdminService(
 		games, users, players, orders, payments,
-		roles, serviceItems, permissions, menus, statsRepo, nil, gameCategories, c,
+		roles, serviceItems, permissions, menus, statsRepo, wallets, gameCategories, c,
 	)
+
+	// Set TxManager for operation logs support
+	svc.SetTxManager(uow)
 
 	// Create test router
 	router := gin.New()

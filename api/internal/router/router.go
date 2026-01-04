@@ -238,10 +238,10 @@ func (r *Router) registerAdminRoutes(api *gin.RouterGroup) {
 	menuSvc := adminservice.NewMenuService(adminrepo.NewMenuRepository(r.orm))
 
 	// 注册同步专用路由（不受限流限制，用于前端初始化）
-	adminhandler.RegisterSyncRoutesWithServices(rbacGroup, roleSvc, permService, menuSvc, r.permMiddleware)
+	adminhandler.RegisterSyncRoutesWithServices(rbacGroup, roleSvc, permService, menuSvc, r.orm, r.permMiddleware)
 
 	// System info routes
-	adminhandler.RegisterSystemRoutes(api, r.cfg, r.sqlDB, r.cacheClient, r.permMiddleware)
+	adminhandler.RegisterSystemRoutes(api, r.cfg, r.sqlDB, r.cacheClient, r.orm, r.permMiddleware)
 
 	// 注册角色和权限管理路由
 	r.registerRBACRoutes(rbacGroup, roleSvc, permService)
@@ -365,9 +365,9 @@ func (r *Router) registerAdminBusinessRoutes(rbacGroup *gin.RouterGroup) {
 	// Service Item management routes
 	adminhandler.RegisterServiceItemRoutes(rbacGroup, r.services.serviceItemSvc)
 
-	// Withdraw management routes - to be registered when WithdrawRoutingService is fully integrated
+	// Withdraw management routes
 	withdrawRepo := withdrawrepo.NewWithdrawRepository(r.orm)
-	// adminhandler.RegisterWithdrawRoutes(rbacGroup, withdrawRepo, r.services.withdrawRoutingSvc)
+	adminhandler.RegisterWithdrawRoutes(rbacGroup, withdrawRepo, r.services.withdrawRoutingSvc)
 
 	// Dashboard routes
 	userRepo := userrepo.NewUserRepository(r.orm)

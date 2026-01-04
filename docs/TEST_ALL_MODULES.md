@@ -23,7 +23,7 @@ docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 - gamelink-redis: 6379
 
 ### 2. 测试账号
-- **管理员**: admin@gameLink.com / Admin2025@Pass#
+- **管理员**: 使用 `.env` 中的 `SUPER_ADMIN_EMAIL` / `SUPER_ADMIN_PASSWORD`（由 `docker-compose.prod.yml` 注入后端容器）
 - **测试地址**: http://localhost/admin
 
 ### 3. 日志监控命令

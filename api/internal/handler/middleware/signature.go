@@ -131,8 +131,7 @@ func Signature(cfg config.SignatureConfig) gin.HandlerFunc {
 			slog.Warn("signature validation failed: signature mismatch",
 				"path", path,
 				"method", c.Request.Method,
-				"expected", expectedSignature,
-				"received", clientSignature)
+				"client_ip", c.ClientIP())
 			respondWithError(c, http.StatusUnauthorized, "invalid signature")
 			return
 		}

@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
+import { ReactElement } from 'react';
 
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
@@ -51,6 +52,20 @@ const localStorageMock = (() => {
 })();
 Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 
+// Mock window.location with pathname
+Object.defineProperty(window, 'location', {
+  writable: true,
+  value: {
+    pathname: '/admin/dashboard',
+    href: 'http://localhost:5173/admin/dashboard',
+    origin: 'http://localhost:5173',
+    protocol: 'http:',
+    host: 'localhost:5173',
+    hostname: 'localhost',
+    port: '5173',
+  },
+});
+
 // Mock sessionStorage
 const sessionStorageMock = (() => {
   let store: Record<string, string> = {};
@@ -98,3 +113,27 @@ vi.mock('antd', async () => {
     },
   };
 });
+
+// Mock AdminContext to provide super admin permissions for tests
+// This ensures PermissionGuard components allow all actions in tests
+vi.mock('@/context/AdminContext', () => ({
+  default: {
+    Provider: ({ children }: { children: ReactElement }) => children,
+  },
+}));
+
+vi.mock('@/context/useAdmin', () => ({
+  useAdmin: () => ({
+    rawMenus: [],
+    menus: [],
+    permissions: ['*'], // Super admin - all permissions
+    loading: false,
+    refreshMenus: vi.fn().mockResolvedValue(undefined),
+    hasPermission: vi.fn(() => true), // Always return true
+    hasAllPermissions: vi.fn(() => true),
+    hasAnyPermission: vi.fn(() => true),
+    isSuperAdmin: true, // Super admin mode
+    permissionVersion: 0,
+    notifyPermissionChange: vi.fn(),
+  }),
+}));

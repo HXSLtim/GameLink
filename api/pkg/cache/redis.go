@@ -63,7 +63,13 @@ func (c *redisCache) Close(context.Context) error {
 	return c.client.Close()
 }
 
+// GetRedisClient returns the underlying Redis client for WebSocket Pub/Sub.
+func (c *redisCache) GetRedisClient() interface{} {
+	return c.client
+}
+
 // GetClient 返回底层 Redis 客户端，供 RedisRateLimiter 使用
+// Deprecated: Use GetRedisClient() instead.
 func (c *redisCache) GetClient() *redis.Client {
 	return c.client
 }

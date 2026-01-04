@@ -1,6 +1,9 @@
 package router
 
 import (
+	"github.com/redis/go-redis/v9"
+	"gorm.io/gorm"
+
 	"gamelink/internal/model"
 	activityrepo "gamelink/internal/repository/activity"
 	adminrepo "gamelink/internal/repository/admin"
@@ -24,6 +27,7 @@ import (
 	routingrulerepo "gamelink/internal/repository/routingrule"
 	sensitivewordrepo "gamelink/internal/repository/sensitiveword"
 	serviceitemrepo "gamelink/internal/repository/serviceitem"
+	settlementcompanyrepo "gamelink/internal/repository/settlementcompany"
 	teamrepo "gamelink/internal/repository/team"
 	userrepo "gamelink/internal/repository/user"
 	userblockrepo "gamelink/internal/repository/userblock"
@@ -58,11 +62,10 @@ import (
 	userblockservice "gamelink/internal/service/userblock"
 	vipservice "gamelink/internal/service/vip"
 	walletservice "gamelink/internal/service/wallet"
+	withdrawservice "gamelink/internal/service/withdraw"
 	"gamelink/internal/ws"
 	"gamelink/pkg/cache"
 	"gamelink/pkg/scheduler"
-
-	"gorm.io/gorm"
 )
 
 // appServices 包含所有领域服务实例和调度器句柄，供路由注册使用。
@@ -131,6 +134,8 @@ type appServices struct {
 	teamSvc *teamservice.TeamService
 	// Referral service (推荐)
 	referralSvc *referralservice.Service
+	// Withdraw routing service (提现分流)
+	withdrawRoutingSvc *withdrawservice.WithdrawRoutingService
 }
 
 // initServices 初始化领域服务和调度任务（但不启动调度器）。
@@ -174,12 +179,23 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 	notificationSvc := contentservice.NewNotificationService(notificationRepo)
 	walletSvc := walletservice.NewWalletService(walletRepo, paymentRepo, orderRepo)
 
-	// 调度器（先构造，调用方负责 Start/Stop）
-	settlementScheduler := scheduler.NewSettlementScheduler(commissionSvc)
-	chatRetention := scheduler.NewChatRetentionScheduler(chatGroupRepo, chatMessageRepo, 30)
+	// Create distributed lock for schedulers
+	distributedLock := cache.NewDistributedLock(cacheClient)
 
-	// Monitor services
-	wsHub := ws.NewHub()
+	// 调度器（先构造，调用方负责 Start/Stop）
+	settlementScheduler := scheduler.NewSettlementScheduler(commissionSvc, distributedLock)
+	chatRetention := scheduler.NewChatRetentionScheduler(chatGroupRepo, chatMessageRepo, distributedLock, 30)
+
+	// Monitor services - WebSocket Hub with Redis support for horizontal scaling
+	// If cacheClient uses Redis, WebSocket will enable multi-instance support via Pub/Sub
+	// If cacheClient uses memory, WebSocket will run in single-instance mode (backward compatible)
+	var redisClient *redis.Client
+	if client := cacheClient.GetRedisClient(); client != nil {
+		if rc, ok := client.(*redis.Client); ok {
+			redisClient = rc
+		}
+	}
+	wsHub := ws.NewHubWithRedis(redisClient)
 	alertRepo := alertrepo.NewAlertRepository(orm)
 	realtimeSvc := monitorservice.NewRealtimeService(wsHub, orm)
 
@@ -262,6 +278,12 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 	referralRepo := referralrepo.NewReferralRepository(orm)
 	referralSvc := referralservice.NewReferralService(referralRepo)
 
+	// Withdraw routing service (提现分流)
+	settlementCompanyRepo := settlementcompanyrepo.NewSettlementCompanyRepository(orm)
+	withdrawRoutingSvc := withdrawservice.NewWithdrawRoutingService(withdrawRepo, settlementCompanyRepo)
+	// Inject wallet repository for refund operations
+	withdrawRoutingSvc.SetWalletRepository(walletRepo)
+
 	return &appServices{
 		commissionSvc:       commissionSvc,
 		serviceItemSvc:      serviceItemSvc,
@@ -317,5 +339,7 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 		teamSvc: teamSvc,
 		// Referral service
 		referralSvc: referralSvc,
+		// Withdraw routing service
+		withdrawRoutingSvc: withdrawRoutingSvc,
 	}
 }

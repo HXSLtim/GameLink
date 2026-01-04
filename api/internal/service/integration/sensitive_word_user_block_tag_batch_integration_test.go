@@ -63,39 +63,6 @@ func CreateTestUserBlock(t *testing.T, db *gorm.DB, blockerID, blockedID uint64,
 	return block
 }
 
-// CreateTestUserTag creates a test user tag.
-func CreateTestUserTag(t *testing.T, db *gorm.DB, name, color, description string) *model.UserTag {
-	t.Helper()
-	tag := &model.UserTag{
-		Base: model.Base{
-			ExtJSON: "{}",
-		},
-		Name:        name,
-		Color:       color,
-		Description: description,
-		CreatedBy:   1,
-	}
-	if err := db.Create(tag).Error; err != nil {
-		t.Fatalf("Failed to create test user tag: %v", err)
-	}
-	return tag
-}
-
-// AssignTagToUser assigns a tag to a user via the join table.
-func AssignTagToUser(t *testing.T, db *gorm.DB, userID, tagID uint64) {
-	t.Helper()
-	relation := &model.UserTagRelation{
-		Base: model.Base{
-			ExtJSON: "{}",
-		},
-		UserID: userID,
-		TagID:  tagID,
-	}
-	if err := db.Create(relation).Error; err != nil {
-		t.Fatalf("Failed to assign tag to user: %v", err)
-	}
-}
-
 // GetSensitiveWordCount returns the count of sensitive words in database.
 func GetSensitiveWordCount(t *testing.T, db *gorm.DB) int64 {
 	t.Helper()

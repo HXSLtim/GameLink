@@ -23,6 +23,8 @@ import {
 } from '@ant-design/icons';
 import { PageContainer, SearchTable, type ToolbarButton } from '@/components';
 import type { SearchField } from '@/components';
+import { SERVICE_ITEM_PERMISSIONS } from '@/constants/permissions';
+import { PermissionGuard } from '@/components/PermissionGuard';
 import { adminApi, type ServiceItem } from '@/api/admin';
 
 import { logger } from '@/utils/logger';
@@ -287,23 +289,27 @@ const ServiceItemList: React.FC = () => {
             fixed: 'right',
             render: (_: unknown, record: ServiceItem) => (
                 <Space size="small">
-                    <Button
-                        type="link"
-                        size="small"
-                        icon={<EditOutlined />}
-                        onClick={() => handleEdit(record)}
-                    >
-                        编辑
-                    </Button>
-                    <Button
-                        type="link"
-                        size="small"
-                        icon={record.isActive ? <StopOutlined /> : <CheckCircleOutlined />}
-                        style={{ color: record.isActive ? '#ff4d4f' : '#52c41a' }}
-                        onClick={() => handleBatchStatus([record.id], record.isActive ? 'inactive' : 'active')}
-                    >
-                        {record.isActive ? '禁用' : '启用'}
-                    </Button>
+                    <PermissionGuard permission={SERVICE_ITEM_PERMISSIONS.UPDATE}>
+                        <Button
+                            type="link"
+                            size="small"
+                            icon={<EditOutlined />}
+                            onClick={() => handleEdit(record)}
+                        >
+                            编辑
+                        </Button>
+                    </PermissionGuard>
+                    <PermissionGuard permission={SERVICE_ITEM_PERMISSIONS.BATCH_STATUS}>
+                        <Button
+                            type="link"
+                            size="small"
+                            icon={record.isActive ? <StopOutlined /> : <CheckCircleOutlined />}
+                            style={{ color: record.isActive ? '#ff4d4f' : '#52c41a' }}
+                            onClick={() => handleBatchStatus([record.id], record.isActive ? 'inactive' : 'active')}
+                        >
+                            {record.isActive ? '禁用' : '启用'}
+                        </Button>
+                    </PermissionGuard>
                 </Space>
             ),
         },
@@ -317,6 +323,7 @@ const ServiceItemList: React.FC = () => {
             text: '批量启用',
             icon: <CheckCircleOutlined />,
             needSelection: true,
+            permission: SERVICE_ITEM_PERMISSIONS.BATCH_STATUS,
             onClick: (keys) => handleBatchStatus(keys || [], 'active'),
             simpleAction: true,
         },
@@ -324,6 +331,7 @@ const ServiceItemList: React.FC = () => {
             text: '批量禁用',
             icon: <StopOutlined />,
             needSelection: true,
+            permission: SERVICE_ITEM_PERMISSIONS.BATCH_STATUS,
             onClick: (keys) => handleBatchStatus(keys || [], 'inactive'),
             simpleAction: true,
             danger: true,
@@ -342,6 +350,7 @@ const ServiceItemList: React.FC = () => {
                 loading={loading}
                 showCreate={true}
                 createText="新建服务"
+                createPermission={SERVICE_ITEM_PERMISSIONS.CREATE}
                 onCreate={handleCreate}
                 toolbarButtons={toolbarButtons}
                 rowSelection={{

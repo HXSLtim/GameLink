@@ -195,11 +195,6 @@ export const routes: RouteConfig[] = [
                 element: <LazyLoad><ServiceItemDetail /></LazyLoad>,
                 meta: { title: '服务项目详情' }
             },
-            {
-                path: 'biz/service/:id/edit',
-                element: <LazyLoad><ServiceItemForm /></LazyLoad>,
-                meta: { title: '编辑服务项目' }
-            },
             // 系统设置
             {
                 path: 'settings',

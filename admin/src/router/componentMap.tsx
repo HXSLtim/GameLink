@@ -8,7 +8,6 @@ const Audit = React.lazy(() => import('@/pages/sys/log'));
 const Settings = React.lazy(() => import('@/pages/sys/setting'));
 const ServiceItemList = React.lazy(() => import('@/pages/biz/service'));
 const ServiceItemCreate = React.lazy(() => import('@/pages/biz/service/form'));
-const ServiceItemEdit = React.lazy(() => import('@/pages/biz/service/form'));
 const ServiceItemDetail = React.lazy(() => import('@/pages/biz/service/detail'));
 const Menu = React.lazy(() => import('@/pages/sys/menu'));
 const Permission = React.lazy(() => import('@/pages/sys/permission'));
@@ -103,8 +102,7 @@ export const componentMap: Record<string, React.LazyExoticComponent<React.Compon
     'biz/service': ServiceItemList,
     'biz/service/list': ServiceItemList,
     'biz/service/create': ServiceItemCreate,
-    'biz/service/edit': ServiceItemEdit,
-    'biz/service/detail': ServiceItemDetail,
+    'biz/service/detail': ServiceItemDetail,  // 编辑使用详情页模态弹窗
     'biz/withdraw': React.lazy(() => import('@/pages/admin/Withdraw')),
     'biz/commission': React.lazy(() => import('@/pages/admin/Commission')),
     'finance/withdraw': React.lazy(() => import('@/pages/admin/Withdraw')),

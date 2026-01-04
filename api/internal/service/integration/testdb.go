@@ -113,6 +113,10 @@ func migrateModels(db *gorm.DB) error {
 		&model.RolePermission{},
 		&model.UserRole{},
 		&model.Menu{},
+		&model.PermissionAuditLog{},
+
+		// Operation Logs
+		&model.OperationLog{},
 
 		// Review & Dispute
 		&model.Review{},
@@ -219,6 +223,9 @@ func migrateModels(db *gorm.DB) error {
 		&model.RoutingRuleHistory{},
 		&model.CollectionEntityHistory{},
 		&model.RoutingLog{},
+
+		// System State
+		&model.SystemState{},
 	)
 }
 
@@ -279,7 +286,8 @@ func cleanTables(t *testing.T, db *gorm.DB) {
 		"user_notifications", "notification_events",
 		// Sensitive Word
 		"sensitive_words",
-		// RBAC
+		// RBAC & Audit Logs
+		"permission_audit_logs", "operation_logs",
 		"role_permissions", "user_roles", "menus", "permissions", "roles",
 		// Payment & Wallet
 		"withdraws", "wallets", "payments",
@@ -1173,4 +1181,121 @@ func CreateTestRoutingRule(t *testing.T, db *gorm.DB, entity *model.CollectionEn
 		t.Fatalf("Failed to create test routing rule: %v", err)
 	}
 	return rule
+}
+
+// CreateTestUserTag creates a test user tag.
+func CreateTestUserTag(t *testing.T, db *gorm.DB, name, color, description string) *model.UserTag {
+	t.Helper()
+	adminUser := CreateUniqueTestUser(t, db, "admin_tag_"+name)
+	tag := &model.UserTag{
+		Base: model.Base{
+			ExtJSON: "{}",
+		},
+		Name:        name,
+		Color:       color,
+		Description: description,
+		CreatedBy:   adminUser.ID,
+	}
+	if err := db.Create(tag).Error; err != nil {
+		t.Fatalf("Failed to create test user tag: %v", err)
+	}
+	return tag
+}
+
+// AssignTagToUser assigns a tag to a user via the join table.
+func AssignTagToUser(t *testing.T, db *gorm.DB, userID, tagID uint64) {
+	t.Helper()
+	relation := &model.UserTagRelation{
+		Base: model.Base{
+			ExtJSON: "{}",
+		},
+		UserID: userID,
+		TagID:  tagID,
+	}
+	if err := db.Create(relation).Error; err != nil {
+		t.Fatalf("Failed to assign tag to user: %v", err)
+	}
+}
+
+// CreateTestContentCategory creates a test content category.
+func CreateTestContentCategory(t *testing.T, db *gorm.DB, name string) *model.ContentCategory {
+	t.Helper()
+	category := &model.ContentCategory{
+		Base: model.Base{
+			ExtJSON: "{}",
+		},
+		Name:        name,
+		Description: "Test category description",
+		SortOrder:   0,
+		Status:      model.ContentCategoryStatusActive,
+		IconURL:     "https://example.com/icon.png",
+	}
+	if err := db.Create(category).Error; err != nil {
+		t.Fatalf("Failed to create test content category: %v", err)
+	}
+	return category
+}
+
+// CreateTestFeed creates a test feed with optional category.
+func CreateTestFeed(t *testing.T, db *gorm.DB, authorID uint64, content string, status model.FeedModerationStatus, categoryID *uint64) *model.Feed {
+	t.Helper()
+	feed := &model.Feed{
+		Base: model.Base{
+			ExtJSON: "{}",
+		},
+		AuthorID:         authorID,
+		Content:          content,
+		CategoryID:       categoryID,
+		Visibility:       model.FeedVisibilityPublic,
+		ModerationStatus: status,
+		Metrics:          model.FeedMetricFields{},
+	}
+	if err := db.Create(feed).Error; err != nil {
+		t.Fatalf("Failed to create test feed: %v", err)
+	}
+	return feed
+}
+
+// CreateTestFeedWithImages creates a test feed with images.
+func CreateTestFeedWithImages(t *testing.T, db *gorm.DB, authorID uint64, content string, status model.FeedModerationStatus, imageUrls []string) *model.Feed {
+	t.Helper()
+	feed := CreateTestFeed(t, db, authorID, content, status, nil)
+
+	// Create feed images
+	for i, url := range imageUrls {
+		image := &model.FeedImage{
+			Base:      model.Base{ExtJSON: "{}"},
+			FeedID:    feed.ID,
+			URL:       url,
+			Order:     i,
+			Width:     800,
+			Height:    600,
+			SizeBytes: 102400,
+		}
+		if err := db.Create(image).Error; err != nil {
+			t.Fatalf("Failed to create test feed image: %v", err)
+		}
+	}
+
+	// Reload feed to include images
+	db.Preload("Images").First(feed, feed.ID)
+	return feed
+}
+
+// CreateTestFeedReport creates a test feed report.
+func CreateTestFeedReport(t *testing.T, db *gorm.DB, feedID, reporterID uint64, reason string) *model.FeedReport {
+	t.Helper()
+	report := &model.FeedReport{
+		Base: model.Base{
+			ExtJSON: "{}",
+		},
+		FeedID:   feedID,
+		Reporter: reporterID,
+		Reason:   reason,
+		Status:   "pending",
+	}
+	if err := db.Create(report).Error; err != nil {
+		t.Fatalf("Failed to create test feed report: %v", err)
+	}
+	return report
 }

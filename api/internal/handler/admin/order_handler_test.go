@@ -142,10 +142,14 @@ func TestOrderHandler_Unit_CreateOrder_Success(t *testing.T) {
 	ctx := SetupOrderTest(t)
 	ctx.RegisterOrderRoutes()
 
+	// Create a test service item
+	testServiceItem := testutil.CreateTestServiceItem(t, ctx.DB, ctx.TestGame.ID, 5000, true)
+
 	payload := map[string]interface{}{
 		"user_id":           ctx.TestUser.ID,
 		"player_id":         ctx.TestPlayer.ID,
 		"game_id":           ctx.TestGame.ID,
+		"item_id":           testServiceItem.ID,
 		"title":             "Test Order",
 		"description":       "Test description",
 		"total_price_cents": 10000,
@@ -155,16 +159,34 @@ func TestOrderHandler_Unit_CreateOrder_Success(t *testing.T) {
 	}
 
 	w := testutil.MakeAuthenticatedRequest(t, ctx.Router, "POST", "/admin/orders", ctx.AdminToken, payload)
+
+	// Debug: Print response if not success
+	if w.Code != http.StatusCreated {
+		t.Logf("Response status: %d", w.Code)
+		t.Logf("Response body: %s", w.Body.String())
+	}
+
 	testutil.AssertSuccess(t, w, http.StatusCreated)
 
 	var response map[string]interface{}
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	require.NoError(t, err)
-	assert.True(t, response["success"].(bool))
 
-	data := response["data"].(map[string]interface{})
-	assert.NotEmpty(t, data["id"])
-	assert.Equal(t, "Test Order", data["title"])
+	// Check success field exists
+	success, ok := response["success"]
+	require.True(t, ok, "Response should contain 'success' field")
+	require.True(t, success.(bool), "Response should indicate success")
+
+	// Check data field exists and is not nil
+	data, ok := response["data"]
+	require.True(t, ok, "Response should contain 'data' field")
+	require.NotNil(t, data, "Response data should not be nil")
+
+	dataMap, ok := data.(map[string]interface{})
+	require.True(t, ok, "Data should be a map")
+
+	assert.NotEmpty(t, dataMap["id"])
+	assert.Equal(t, "Test Order", dataMap["title"])
 }
 
 func TestOrderHandler_Unit_CreateOrder_ValidationError(t *testing.T) {

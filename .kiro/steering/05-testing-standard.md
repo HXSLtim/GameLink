@@ -221,7 +221,7 @@ npm run test:e2e:report
 
 - 后端 API 运行在 `http://localhost:8080`
 - 管理后台运行在 `http://localhost:5173`（自动启动）
-- 管理员账号：`admin` / `admin123`（可通过环境变量配置）
+- 管理员账号：通过环境变量 `TEST_ADMIN_USERNAME/TEST_ADMIN_PASSWORD` 配置（建议使用项目初始化的超管账号，例如 `admin@gamelink.com` 对应的密码）
 
 ### CI/CD 集成
 

@@ -328,6 +328,35 @@ func CreateTestOrder(t testing.TB, db *gorm.DB, userID, playerID, gameID uint64,
 	return order
 }
 
+// CreateTestOrderWithItem creates a test order with a service item in the database.
+func CreateTestOrderWithItem(t testing.TB, db *gorm.DB, userID, playerID, itemID uint64, status model.OrderStatus) *model.Order {
+	t.Helper()
+
+	var playerIDPtr *uint64
+	if playerID != 0 {
+		playerIDPtr = &playerID
+	}
+
+	order := &model.Order{
+		Base: model.Base{
+			ExtJSON: "{}",
+		},
+		UserID:          userID,
+		ItemID:          itemID,
+		PlayerID:        playerIDPtr,
+		Title:           "Test Order",
+		Description:     "Test order description",
+		TotalPriceCents: 10000, // $100.00
+		Currency:        model.CurrencyUSD,
+		Status:          status,
+		ScheduledStart:  timePtr(time.Now().Add(1 * time.Hour)),
+		ScheduledEnd:    timePtr(time.Now().Add(2 * time.Hour)),
+	}
+
+	require.NoError(t, db.Create(order).Error, "Failed to create test order")
+	return order
+}
+
 // CreateTestPayment creates a test payment in the database.
 func CreateTestPayment(t testing.TB, db *gorm.DB, orderID, userID uint64, status model.PaymentStatus) *model.Payment {
 	t.Helper()
@@ -384,6 +413,28 @@ func CreateTestPlayer(t testing.TB, db *gorm.DB, userID uint64) *model.Player {
 
 	require.NoError(t, db.Create(player).Error, "Failed to create test player")
 	return player
+}
+
+// CreateTestServiceItem creates a test service item in the database.
+func CreateTestServiceItem(t testing.TB, db *gorm.DB, gameID uint64, priceCents int64, isActive bool) *model.ServiceItem {
+	t.Helper()
+
+	ts := time.Now().UnixNano()
+	item := &model.ServiceItem{
+		ItemCode:       fmt.Sprintf("ITEM-%d", ts),
+		Name:           fmt.Sprintf("Service Item %d", ts),
+		BasePriceCents: priceCents,
+		ServiceHours:   1,
+		IsActive:       isActive,
+		GameID:         &gameID,
+		Description:    "Test service item",
+		Category:       "escort",
+		SubCategory:    model.SubCategorySolo,
+		CommissionRate: 0.20,
+	}
+
+	require.NoError(t, db.Create(item).Error, "Failed to create test service item")
+	return item
 }
 
 // ============================================================================

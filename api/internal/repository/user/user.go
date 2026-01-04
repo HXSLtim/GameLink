@@ -122,6 +122,11 @@ func (r *gormUserRepository) FindByEmail(ctx context.Context, email string) (*mo
 	return &user, nil
 }
 
+// GetByEmail returns a user by email (alias for FindByEmail)
+func (r *gormUserRepository) GetByEmail(ctx context.Context, email string) (*model.User, error) {
+	return r.FindByEmail(ctx, email)
+}
+
 // GetByPhone returns a user by unique phone.
 func (r *gormUserRepository) GetByPhone(ctx context.Context, phone string) (*model.User, error) {
 	var user model.User
@@ -168,6 +173,25 @@ func (r *gormUserRepository) Update(ctx context.Context, user *model.User) error
 // Delete soft-deletes a user by id.
 func (r *gormUserRepository) Delete(ctx context.Context, id uint64) error {
 	tx := r.db.WithContext(ctx).Delete(&model.User{}, id)
+	if tx.Error != nil {
+		return tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return repository.ErrNotFound
+	}
+	return nil
+}
+
+// UpdatePassword updates the user's password (used in password reset flow)
+func (r *gormUserRepository) UpdatePassword(ctx context.Context, userID uint64, newPassword string) error {
+	// Hash the password with bcrypt (cost factor 12 for better security)
+	hashedPassword, err := model.HashPassword(newPassword)
+	if err != nil {
+		return err
+	}
+
+	// Update only the password field
+	tx := r.db.WithContext(ctx).Model(&model.User{}).Where("id = ?", userID).Update("password_hash", string(hashedPassword))
 	if tx.Error != nil {
 		return tx.Error
 	}

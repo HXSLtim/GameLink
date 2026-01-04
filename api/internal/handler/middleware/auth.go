@@ -12,20 +12,21 @@ import (
 
 // AdminAuth enforces a simple bearer token for admin endpoints.
 // Behavior:
-// - If APP_ENV=production and ADMIN_TOKEN is empty -> reject all with 503 to avoid unsafe exposure.
+// - If APP_ENV=production and ADMIN_TOKEN is empty -> reject all with 401 (fail securely).
 // - If ADMIN_TOKEN is set -> require Authorization: Bearer <ADMIN_TOKEN>.
 // - Otherwise (development) -> pass-through.
 func AdminAuth() gin.HandlerFunc {
 	env := os.Getenv("APP_ENV")
 	token := os.Getenv("ADMIN_TOKEN")
 
-	// If production and no token configured, block access.
+	// If production and no token configured, REJECT ALL requests with 401 (fail securely)
+	// This prevents accidental exposure of admin endpoints in production
 	if env == "production" && token == "" {
 		return func(c *gin.Context) {
-			c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"success": false,
-				"code":    http.StatusServiceUnavailable,
-				"message": "admin auth not configured",
+				"code":    http.StatusUnauthorized,
+				"message": "admin authentication required but not configured",
 			})
 		}
 	}

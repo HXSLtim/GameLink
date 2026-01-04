@@ -92,7 +92,7 @@ docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 docker logs gamelink-backend --tail=20
 
 # 检查 Redis 连接（监控数据缓存）
-docker exec -it gamelink-redis redis-cli -a TvXYJ305HNhsnIpQ PING
+docker exec -it gamelink-redis redis-cli -a <REDIS_PASSWORD> PING
 ```
 
 **预期结果**: 所有容器状态为 "Up"，PING 返回 PONG

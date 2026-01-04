@@ -172,10 +172,13 @@ const AdminLayout: React.FC = () => {
 
     // 菜单数据 - 现在从 AdminContext 获取已过滤的菜单
     const [menuData, setMenuData] = useState<BackendMenuItem[]>([]);
-    const [menuLoading, setMenuLoading] = useState(true);
+    const [menuLoading, setMenuLoading] = useState(false); // 由 AdminContext.loading 掟一控制
 
     // 初始化状态
     const [initializing, setInitializing] = useState(false);
+
+    // 数据是否已加载过（用于区分首次加载和数据为空）
+    const [dataLoaded, setDataLoaded] = useState(false);
 
     // 用户信息
     const [userInfo, setUserInfo] = useState<{ username: string; avatar?: string; id?: number }>({
@@ -302,59 +305,40 @@ const AdminLayout: React.FC = () => {
         const loadMenus = async () => {
             try {
                 setMenuLoading(true);
-                
+
                 // 优先使用 AdminContext 中已过滤的菜单
                 if (contextMenus && contextMenus.length > 0) {
                     logger.info('[AdminLayout] 使用 AdminContext 中的菜单数据，数量:', contextMenus.length);
-                    
+
                     // 后端已经返回树形结构，直接使用
                     logger.info('[AdminLayout] 菜单数据（树形结构）:', contextMenus);
                     setMenuData(contextMenus);
+                    setDataLoaded(true); // 标记数据已加载
                     setMenuLoading(false);
                     return;
                 }
 
-                // 如果 AdminContext 没有菜单数据，则从 API 加载
-                logger.info('[AdminLayout] AdminContext 无菜单数据，从 API 加载...');
-                const response = await adminApi.getMenus({ parentId: undefined });
-                logger.info('[AdminLayout] 菜单API响应:', response);
-
-                let menus: BackendMenuItem[] = [];
-                if (response && Array.isArray(response.data)) {
-                    menus = response.data;
-                } else if (Array.isArray(response)) {
-                    menus = response;
+                // 如果 AdminContext 没有菜单数据，等待 AdminContext 加载完成
+                // 不再直接调用 API，完全依赖 AdminContext
+                if (loading) {
+                    logger.info('[AdminLayout] AdminContext 正在加载中，等待...');
+                    return;
                 }
 
-                // 构建菜单树
-                const buildMenuTree = (menuList: BackendMenuItem[], parentId: number | null = null): BackendMenuItem[] => {
-                    return menuList
-                        .filter(menu => {
-                            const isVisible = menu.visible !== false;
-                            const isMatchParent = menu.parentId === parentId;
-                            return isVisible && isMatchParent;
-                        })
-                        .sort((a, b) => a.order - b.order)
-                        .map(menu => {
-                            const children = buildMenuTree(menuList, menu.id);
-                            return {
-                                ...menu,
-                                children: children.length > 0 ? children : undefined
-                            };
-                        });
-                };
-
-                const menuTree = buildMenuTree(menus);
-                setMenuData(menuTree);
+                // AdminContext 加载完成但没有菜单数据
+                logger.info('[AdminLayout] AdminContext 加载完成但无菜单数据');
+                setDataLoaded(true);
+                setMenuData([]);
             } catch (error) {
                 logger.error('Failed to load menus:', error);
+                setDataLoaded(true);
             } finally {
                 setMenuLoading(false);
             }
         };
 
         loadMenus();
-    }, [contextMenus, permissionVersion]); // 监听权限版本变化，自动刷新菜单
+    }, [contextMenus, loading, permissionVersion]); // 监听 loading 状态变化
 
     // 响应式处理：屏幕变窄时自动收起
     useEffect(() => {
@@ -525,6 +509,8 @@ const AdminLayout: React.FC = () => {
         }
     };
 
+    // 首次加载时显示加载状态
+    // 只有数据已加载且为空时才显示初始化按钮
     if (loading || menuLoading) {
         return (
             <div className={styles.loading} style={{ background: token.colorBgLayout }}>
@@ -575,8 +561,8 @@ const AdminLayout: React.FC = () => {
                 )}
             </div>
 
-            {/* 菜单为空时显示初始化按钮 */}
-            {menuItems.length === 0 ? (
+            {/* 只有数据已加载且为空时才显示初始化按钮 */}
+            {dataLoaded && menuItems.length === 0 ? (
                 <div style={{ padding: 16, textAlign: 'center' }}>
                     <Empty
                         image={Empty.PRESENTED_IMAGE_SIMPLE}

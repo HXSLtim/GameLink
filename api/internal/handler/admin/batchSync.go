@@ -2,10 +2,15 @@ package admin
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"time"
 
 	"gamelink/internal/model"
 	adminservice "gamelink/internal/service/admin"
+	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 )
@@ -14,10 +19,11 @@ type BatchSyncHandler struct {
 	menuSvc *adminservice.MenuService
 	permSvc *adminservice.PermissionService
 	roleSvc *adminservice.RoleService
+	db      *gorm.DB
 }
 
-func NewBatchSyncHandler(menuSvc *adminservice.MenuService, permSvc *adminservice.PermissionService, roleSvc *adminservice.RoleService) *BatchSyncHandler {
-	return &BatchSyncHandler{menuSvc: menuSvc, permSvc: permSvc, roleSvc: roleSvc}
+func NewBatchSyncHandler(menuSvc *adminservice.MenuService, permSvc *adminservice.PermissionService, roleSvc *adminservice.RoleService, db *gorm.DB) *BatchSyncHandler {
+	return &BatchSyncHandler{menuSvc: menuSvc, permSvc: permSvc, roleSvc: roleSvc, db: db}
 }
 
 type MenuSyncItem struct {
@@ -107,7 +113,86 @@ func (h *BatchSyncHandler) BatchSync(c *gin.Context) {
 		response.Success = false
 	}
 
+	// Track initialization state in database if sync was successful
+	if response.Success && h.db != nil {
+		if err := h.recordInitState(ctx, req, c); err != nil {
+			// Log the error but don't fail the sync
+			fmt.Printf("warning: failed to record init state: %v\n", err)
+		}
+	}
+
 	respondSuccessWithMsg(c, "sync complete", response)
+}
+
+// recordInitState records the initialization state in the database
+func (h *BatchSyncHandler) recordInitState(ctx context.Context, req BatchSyncRequest, c *gin.Context) error {
+	// Calculate version hashes
+	menuVersion := h.calculateMenuVersion(req.Menus)
+	permVersion := h.calculatePermVersion(req.Permissions)
+
+	// Get user ID from context (set by auth middleware)
+	var userID uint64 = 0
+	if userIDVal, exists := c.Get("userID"); exists {
+		userID = userIDVal.(uint64)
+	}
+
+	// Get IP address
+	ip := c.ClientIP()
+
+	// Count total items
+	menuCount := countMenus(req.Menus)
+	permCount := len(req.Permissions)
+
+	// Create or update system state
+	var existing model.SystemState
+	err := h.db.Where("key = ?", model.SystemStateKeyAdminInit).First(&existing).Error
+
+	initData := &model.SystemInitData{
+		MenuCount:       menuCount,
+		PermissionCount: permCount,
+		MenuVersion:     menuVersion,
+		PermVersion:     permVersion,
+	}
+
+	if err == nil {
+		// Update existing record
+		existing.Version = menuVersion + ":" + permVersion
+		existing.LastSyncAt = time.Now()
+		existing.SyncedBy = userID
+		existing.SyncedByIP = ip
+		if err := existing.SetInitData(initData); err != nil {
+			return err
+		}
+		return h.db.Save(&existing).Error
+	} else if err == gorm.ErrRecordNotFound {
+		// Create new record
+		newState := model.NewAdminInitState(menuCount, permCount, menuVersion, permVersion, userID, ip)
+		return h.db.Create(newState).Error
+	}
+	return err
+}
+
+// calculateMenuVersion calculates a hash version of menus
+func (h *BatchSyncHandler) calculateMenuVersion(menus []MenuSyncItem) string {
+	data, _ := json.Marshal(menus)
+	hash := sha256.Sum256(data)
+	return hex.EncodeToString(hash[:])[:16]
+}
+
+// calculatePermVersion calculates a hash version of permissions
+func (h *BatchSyncHandler) calculatePermVersion(perms []PermissionSyncItem) string {
+	data, _ := json.Marshal(perms)
+	hash := sha256.Sum256(data)
+	return hex.EncodeToString(hash[:])[:16]
+}
+
+// countMenus counts total number of menus including children
+func countMenus(menus []MenuSyncItem) int {
+	count := len(menus)
+	for _, m := range menus {
+		count += countMenus(m.Children)
+	}
+	return count
 }
 
 func (h *BatchSyncHandler) syncPermissions(ctx context.Context, permissions []PermissionSyncItem) *BatchSyncResult {

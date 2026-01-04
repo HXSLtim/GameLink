@@ -1,8 +1,9 @@
 /**
  * 应用初始化服务
  * 在应用启动时自动同步路由和权限
+ * 现在使用后端数据库来跟踪初始化状态，而不是 localStorage
  */
-import { syncApi, type SyncResult } from '@/api/sync';
+import { syncApi, type SyncResult, type InitStatusResponse } from '@/api/sync';
 import { ADMIN_MENUS, ADMIN_PERMISSIONS } from '@/config/adminRoutes';
 import { authApi } from '@/api/auth';
 
@@ -116,6 +117,39 @@ const log = (verbose: boolean, ...args: unknown[]) => {
 };
 
 /**
+ * 检查系统是否需要重新初始化
+ * 现在查询后端数据库，而不是使用 localStorage
+ */
+const shouldReInit = async (): Promise<{ needsInit: boolean; reason: string; status?: InitStatusResponse }> => {
+    try {
+        const status = await syncApi.getInitStatus();
+
+        if (!status.initialized) {
+            return { needsInit: true, reason: 'System not initialized', status };
+        }
+
+        // 系统已初始化，记录状态
+        logger.info('[Init] System already initialized:', {
+            lastSyncAt: status.lastSyncAt,
+            menuCount: status.menuCount,
+            permissionCount: status.permissionCount,
+            version: status.version,
+        });
+
+        // 返回不需要初始化
+        return {
+            needsInit: false,
+            reason: `Already initialized (last sync: ${status.lastSyncAt})`,
+            status
+        };
+    } catch (error) {
+        // 如果获取状态失败，为了安全起见，执行初始化
+        logger.warn('[Init] Failed to get init status, will sync:', error);
+        return { needsInit: true, reason: 'Failed to get init status, syncing for safety' };
+    }
+};
+
+/**
  * 初始化应用 - 批量同步菜单和权限到后端
  */
 export const initApp = async (config: InitConfig = {}): Promise<InitResult> => {
@@ -184,42 +218,32 @@ export const initApp = async (config: InitConfig = {}): Promise<InitResult> => {
     return result;
 };
 
-const INIT_STORAGE_KEY = 'app_init_timestamp';
-const INIT_INTERVAL = 24 * 60 * 60 * 1000; // 24小时
-
-const shouldReInit = (): boolean => {
-    const lastInit = localStorage.getItem(INIT_STORAGE_KEY);
-    if (!lastInit) return true;
-    const lastTime = parseInt(lastInit, 10);
-    return Date.now() - lastTime > INIT_INTERVAL;
-};
-
-const markInitComplete = () => {
-    localStorage.setItem(INIT_STORAGE_KEY, Date.now().toString());
-};
-
 /**
- * 智能初始化（带缓存）- 每24小时只执行一次完整同步
+ * 智能初始化 - 查询后端数据库检查是否需要初始化
+ * 不再使用 localStorage 缓存
  */
 export const smartInit = async (config: InitConfig = {}): Promise<InitResult | null> => {
-    if (!shouldReInit()) {
-        const cfg = { ...defaultConfig, ...config };
-        log(cfg.verbose!, '24小时内已初始化，跳过');
+    const cfg = { ...defaultConfig, ...config };
+
+    // 检查是否需要初始化
+    const { needsInit, reason, status } = await shouldReInit();
+
+    log(cfg.verbose!, `[Init] Initialization check: ${reason}`);
+
+    if (!needsInit) {
+        log(cfg.verbose!, '系统已初始化，跳过同步');
         return null;
     }
 
+    log(cfg.verbose!, '系统需要初始化，开始执行...');
     const result = await initApp(config);
-    if (result.success) {
-        markInitComplete();
-    }
     return result;
 };
 
 /**
- * 强制重新初始化
+ * 强制重新初始化 - 忽略后端状态，强制执行同步
  */
 export const forceInit = async (config: InitConfig = {}): Promise<InitResult> => {
-    localStorage.removeItem(INIT_STORAGE_KEY);
     return initApp(config);
 };
 

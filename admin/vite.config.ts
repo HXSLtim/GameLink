@@ -4,6 +4,54 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 import viteCompression from 'vite-plugin-compression'
 import { visualizer } from 'rollup-plugin-visualizer'
+import os from 'os'
+import pc from 'picocolors'
+import { VitePWA } from 'vite-plugin-pwa'
+
+// 获取所有可用的网络接口IP地址
+function getNetworkIPs() {
+  const interfaces = os.networkInterfaces()
+  const ips: string[] = []
+
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name] || []) {
+      // 跳过内部IP和IPv6
+      if (!iface.internal && iface.family === 'IPv4') {
+        ips.push(iface.address)
+      }
+    }
+  }
+
+  return ips
+}
+
+// 自定义插件：显示所有可访问的IP地址
+function showNetworkIPs() {
+  return {
+    name: 'show-network-ips',
+    configureServer(server: any) {
+      const { port = 5173, https } = server.config.server
+      const protocol = https ? 'https' : 'http'
+      const localhost = `${protocol}://localhost:${port}`
+      const networkIPs = getNetworkIPs()
+
+      // 服务器启动后显示
+      server.httpServer?.once('listening', () => {
+        console.log('\n' + pc.bold('🚀 GameLink Admin Server is running!'))
+        console.log('\n' + pc.bold('  Local:   ') + pc.cyan(localhost))
+
+        if (networkIPs.length > 0) {
+          console.log(pc.bold('  Network: ') + pc.cyan(
+            networkIPs.map(ip => `${protocol}://${ip}:${port}`).join('\n          ')
+          ))
+        }
+
+        console.log(pc.bold('\n  Press ') + pc.green('Enter') + pc.bold(' to open in browser'))
+        console.log('  ' + pc.cyan('-'.repeat(50)) + '\n')
+      })
+    }
+  }
+}
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -20,6 +68,89 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
+    showNetworkIPs(), // 显示所有网络IP地址
+    // PWA 支持
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['icon.svg', 'icon-192x192.png', 'icon-512x512.png'],
+      manifest: {
+        name: 'GameLink Admin Panel',
+        short_name: 'GameLink',
+        description: 'GameLink 陪玩平台管理后台',
+        theme_color: '#1890ff',
+        background_color: '#ffffff',
+        display: 'standalone',
+        orientation: 'portrait-primary',
+        icons: [
+          {
+            src: 'icon-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any maskable'
+          },
+          {
+            src: 'icon-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable'
+          }
+        ]
+      },
+      workbox: {
+        // 缓存策略
+        runtimeCaching: [
+          {
+            // API 请求 - NetworkFirst 策略
+            urlPattern: /^https:\/\/.*\/api\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-cache',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 // 24 小时
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            // 静态资源 - CacheFirst 策略
+            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'image-cache',
+              expiration: {
+                maxEntries: 200,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 天
+              }
+            }
+          },
+          {
+            // CSS 和 JS - StaleWhileRevalidate 策略
+            urlPattern: /\.(?:css|js)$/i,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'static-resources-cache',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 天
+              }
+            }
+          }
+        ],
+        // 清理过时的缓存
+        cleanupOutdatedCaches: true,
+        // 导航预加载
+        navigateFallback: null,
+        // 开发环境禁用范围
+        navigateFallbackDenylist: [/^\/api/]
+      },
+      devOptions: {
+        enabled: true, // 开发环境也启用 PWA
+        type: 'module'
+      }
+    }),
     // Gzip 压缩
     viteCompression({
       verbose: true,
@@ -50,11 +181,26 @@ export default defineConfig(({ mode }) => ({
     },
   },
   server: {
+    // 监听所有网络接口，可以通过局域网IP访问
+    host: '0.0.0.0',
+    // 严格端口，如果被占用则失败而不是尝试下一个端口
+    strictPort: false,
     proxy: {
       '/api/v1': {
-        target: 'http://localhost:8080',
+        target: 'http://localhost:8080',  // Docker后端端口
         changeOrigin: true,
         // 支持 WebSocket
+        ws: true,
+      },
+    },
+  },
+  preview: {
+    host: '0.0.0.0',
+    port: 5173,
+    proxy: {
+      '/api/v1': {
+        target: 'http://localhost:8081',  // 生产环境后端端口
+        changeOrigin: true,
         ws: true,
       },
     },

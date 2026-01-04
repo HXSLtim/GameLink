@@ -62,8 +62,9 @@ func validateJWTSecret(cfg AppConfig) error {
 	if jwtSecret == "" {
 		return nil
 	}
-	if len(jwtSecret) < 16 {
-		return fmt.Errorf("JWT secret is too short (length: %d, minimum: 16)", len(jwtSecret))
+	// Enforce minimum 32 characters for JWT secret (increased from 16)
+	if len(jwtSecret) < 32 {
+		return fmt.Errorf("JWT secret is too short (length: %d, minimum: 32 characters for production security)", len(jwtSecret))
 	}
 	if jwtSecret == deprecatedDefaultJWTSecret {
 		return fmt.Errorf("JWT secret cannot be the deprecated default value '%s'", deprecatedDefaultJWTSecret)

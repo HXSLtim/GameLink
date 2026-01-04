@@ -99,8 +99,8 @@ func Crypto(cfg config.CryptoConfig) gin.HandlerFunc {
 				return
 			}
 
-			// 验证时间戳在允许范围内（±5分钟），防止重放攻击
-			const TimestampTolerance = 5 * 60 // 5分钟容差（秒）
+			// 验证时间戳在允许范围内（±30秒），防止重放攻击
+			const TimestampTolerance = 30 // 30秒容差（原为 5 分钟，加强安全性）
 			now := time.Now().Unix()
 			timestamp := req.Timestamp
 

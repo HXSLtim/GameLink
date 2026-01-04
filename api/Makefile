@@ -188,6 +188,19 @@ vet:
 check: fmt vet lint test
 	@echo "All checks passed!"
 
+# Quick pre-commit check (fmt, vet only - no lint/test)
+pre-commit: fmt vet
+	@echo "Pre-commit checks passed!"
+
+# Format check (CI-friendly)
+fmt-check:
+	@echo "Checking code formatting..."
+	@if [ -n "$$(go fmt ./...)" ]; then \
+		echo "Code is not formatted. Run 'make fmt'"; \
+		exit 1; \
+	fi
+	@echo "Code is properly formatted"
+
 # Install dependencies
 deps:
 	@echo "Installing dependencies..."

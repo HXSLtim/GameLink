@@ -14,6 +14,7 @@ type GameRepository interface {
 	ListPaged(ctx context.Context, page, pageSize int) ([]model.Game, int64, error)
 	ListPagedWithFilter(ctx context.Context, page, pageSize int, keyword string) ([]model.Game, int64, error)
 	Get(ctx context.Context, id uint64) (*model.Game, error)
+	GetByIDs(ctx context.Context, ids []uint64) ([]model.Game, error)
 	Create(ctx context.Context, game *model.Game) error
 	Update(ctx context.Context, game *model.Game) error
 	Delete(ctx context.Context, id uint64) error
@@ -32,10 +33,12 @@ type UserRepository interface {
 	Get(ctx context.Context, id uint64) (*model.User, error)
 	GetByIDs(ctx context.Context, ids []uint64) ([]model.User, error)
 	GetByPhone(ctx context.Context, phone string) (*model.User, error)
+	GetByEmail(ctx context.Context, email string) (*model.User, error)
 	FindByEmail(ctx context.Context, email string) (*model.User, error)
 	FindByPhone(ctx context.Context, phone string) (*model.User, error)
 	Create(ctx context.Context, user *model.User) error
 	Update(ctx context.Context, user *model.User) error
+	UpdatePassword(ctx context.Context, userID uint64, newPassword string) error
 	Delete(ctx context.Context, id uint64) error
 }
 
@@ -45,6 +48,7 @@ type PlayerRepository interface {
 	ListPaged(ctx context.Context, page, pageSize int) ([]model.Player, int64, error)
 	ListPagedWithFilter(ctx context.Context, page, pageSize int, keyword string, status *model.VerificationStatus) ([]model.Player, int64, error)
 	Get(ctx context.Context, id uint64) (*model.Player, error)
+	GetByIDs(ctx context.Context, ids []uint64) ([]model.Player, error)
 	GetByUserID(ctx context.Context, userID uint64) (*model.Player, error)
 	Create(ctx context.Context, player *model.Player) error
 	Update(ctx context.Context, player *model.Player) error

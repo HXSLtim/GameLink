@@ -52,7 +52,7 @@ const statusMap = {
     confirmed: { color: 'blue', text: '已确认', icon: <CheckCircleOutlined /> },
     in_progress: { color: 'processing', text: '进行中', icon: <ClockCircleOutlined /> },
     completed: { color: 'success', text: '已完成', icon: <CheckCircleOutlined /> },
-    cancelled: { color: 'default', text: '已取消', icon: <CloseCircleOutlined /> },
+    canceled: { color: 'default', text: '已取消', icon: <CloseCircleOutlined /> },
     refunded: { color: 'error', text: '已退款', icon: <ExclamationCircleOutlined /> },
 };
 
@@ -406,7 +406,7 @@ const OrderPage: React.FC = () => {
                             </Popconfirm>
                         </PermissionGuard>
                     )}
-                    {!['cancelled', 'refunded'].includes(record.status) && record.totalPriceCents > 0 && (
+                    {!['canceled', 'refunded'].includes(record.status) && record.totalPriceCents > 0 && (
                         <PermissionGuard permission={ORDER_PERMISSIONS.REFUND}>
                             <Button
                                 type="link"
@@ -620,6 +620,17 @@ const OrderPage: React.FC = () => {
                 onCancel={() => setRefundModalVisible(false)}
                 confirmLoading={submitting}
                 width={550}
+                okButtonProps={{ hidden: true }}
+                footer={
+                    <Space>
+                        <Button onClick={() => setRefundModalVisible(false)}>取消</Button>
+                        <PermissionGuard permission={ORDER_PERMISSIONS.REFUND}>
+                            <Button type="primary" loading={submitting} onClick={handleRefund}>
+                                确认退款
+                            </Button>
+                        </PermissionGuard>
+                    </Space>
+                }
             >
                 {currentOrder && (
                     <>

@@ -79,15 +79,24 @@ func getAllowedOrigins() []string {
 		return out
 	}
 
-	if env == "production" {
-		// In production, default to EMPTY (deny) unless explicitly configured.
+	// Security: Never use wildcard in production or staging
+	if env == "production" || env == "staging" {
+		// In production/staging, default to EMPTY (deny) unless explicitly configured.
 		// This prevents insecure wildcard. Set CORS_ALLOWED_ORIGINS to a comma-separated list.
+		// Example: CORS_ALLOWED_ORIGINS=https://gamelink.com,https://admin.gamelink.com
 		return parse(raw)
 	}
 
-	// Development: allow configured list if present, otherwise wildcard.
+	// Development: use safe defaults
 	if list := parse(raw); len(list) > 0 {
 		return list
 	}
-	return []string{"*"}
+
+	// Development defaults (localhost only - no wildcard)
+	return []string{
+		"http://localhost:5173",  // Vite dev server
+		"http://localhost:3000",  // Alternative dev server
+		"http://127.0.0.1:5173",
+		"http://127.0.0.1:3000",
+	}
 }

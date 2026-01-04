@@ -1233,3 +1233,325 @@ func TestPaymentService_routePayment_NoEngine(t *testing.T) {
 	assert.Contains(t, err.Error(), "routing engine not initialized")
 	assert.Nil(t, result)
 }
+
+// TestPaymentService_CreatePayment_Combined_ThirdPartyMethodRequired tests combined payment without third party method
+func TestPaymentService_CreatePayment_Combined_ThirdPartyMethodRequired(t *testing.T) {
+	ctx := context.Background()
+	userID := uint64(100)
+	orderID := uint64(1000)
+
+	mockPayments := new(MockPaymentRepository)
+	mockOrders := new(MockOrderRepository)
+	mockWallets := new(MockWalletRepository)
+
+	order := createTestOrder(orderID, userID, model.OrderStatusPending, 10000)
+
+	mockOrders.On("Get", ctx, orderID).Return(order, nil)
+	mockPayments.On("List", ctx, mock.AnythingOfType("repository.PaymentListOptions")).Return([]model.Payment{}, int64(0), nil)
+
+	service := NewPaymentService(mockPayments, mockOrders)
+	service.SetWalletRepository(mockWallets)
+
+	req := CreatePaymentRequest{
+		OrderID:           orderID,
+		Method:            model.PaymentMethodCombined,
+		WalletAmountCents: 5000,
+		// Missing ThirdPartyMethod
+	}
+
+	resp, err := service.CreatePayment(ctx, userID, req)
+
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+	assert.Contains(t, err.Error(), "third party method must be wechat or alipay")
+
+	mockOrders.AssertExpectations(t)
+	mockPayments.AssertExpectations(t)
+}
+
+// TestPaymentService_CreatePayment_Wallet_SaveFailure tests wallet payment when save fails
+func TestPaymentService_CreatePayment_Wallet_SaveFailure(t *testing.T) {
+	ctx := context.Background()
+	userID := uint64(100)
+	orderID := uint64(1000)
+	priceCents := int64(10000)
+
+	mockPayments := new(MockPaymentRepository)
+	mockOrders := new(MockOrderRepository)
+	mockWallets := new(MockWalletRepository)
+
+	order := createTestOrder(orderID, userID, model.OrderStatusPending, priceCents)
+	wallet := createTestWallet(userID, 20000, 0)
+
+	mockOrders.On("Get", ctx, orderID).Return(order, nil)
+	mockPayments.On("List", ctx, mock.AnythingOfType("repository.PaymentListOptions")).Return([]model.Payment{}, int64(0), nil)
+	mockWallets.On("GetByUserID", ctx, userID).Return(wallet, nil)
+	mockWallets.On("Save", ctx, mock.AnythingOfType("*model.Wallet")).Return(errors.New("database error"))
+
+	service := NewPaymentService(mockPayments, mockOrders)
+	service.SetWalletRepository(mockWallets)
+
+	req := CreatePaymentRequest{
+		OrderID: orderID,
+		Method:  model.PaymentMethodWallet,
+	}
+
+	resp, err := service.CreatePayment(ctx, userID, req)
+
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+	assert.Contains(t, err.Error(), "failed to deduct wallet balance")
+
+	mockOrders.AssertExpectations(t)
+	mockPayments.AssertExpectations(t)
+	mockWallets.AssertExpectations(t)
+}
+
+// TestPaymentService_creditWallet_CreateNew tests creditWallet when user has no wallet
+func TestPaymentService_creditWallet_CreateNew(t *testing.T) {
+	ctx := context.Background()
+	userID := uint64(100)
+	amountCents := int64(5000)
+
+	mockPayments := new(MockPaymentRepository)
+	mockWallets := new(MockWalletRepository)
+
+	mockWallets.On("GetByUserID", ctx, userID).Return(nil, repository.ErrNotFound)
+	mockWallets.On("Save", ctx, mock.MatchedBy(func(w *model.Wallet) bool {
+		return w.UserID == userID && w.BalanceCents == amountCents
+	})).Return(nil)
+
+	service := NewPaymentService(mockPayments, nil)
+	service.SetWalletRepository(mockWallets)
+
+	err := service.creditWallet(ctx, userID, amountCents)
+
+	assert.NoError(t, err)
+	mockWallets.AssertExpectations(t)
+}
+
+// TestPaymentService_creditWallet_Error tests creditWallet when save fails
+func TestPaymentService_creditWallet_Error(t *testing.T) {
+	ctx := context.Background()
+	userID := uint64(100)
+	amountCents := int64(5000)
+
+	mockPayments := new(MockPaymentRepository)
+	mockWallets := new(MockWalletRepository)
+
+	wallet := createTestWallet(userID, 1000, 0)
+
+	mockWallets.On("GetByUserID", ctx, userID).Return(wallet, nil)
+	mockWallets.On("Save", ctx, mock.AnythingOfType("*model.Wallet")).Return(errors.New("database error"))
+
+	service := NewPaymentService(mockPayments, nil)
+	service.SetWalletRepository(mockWallets)
+
+	err := service.creditWallet(ctx, userID, amountCents)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "database error")
+	mockWallets.AssertExpectations(t)
+}
+
+// TestPaymentService_CreatePayment_Combined_InsufficientWallet tests combined payment with insufficient wallet
+func TestPaymentService_CreatePayment_Combined_InsufficientWallet(t *testing.T) {
+	ctx := context.Background()
+	userID := uint64(100)
+	orderID := uint64(1000)
+
+	mockPayments := new(MockPaymentRepository)
+	mockOrders := new(MockOrderRepository)
+	mockWallets := new(MockWalletRepository)
+
+	order := createTestOrder(orderID, userID, model.OrderStatusPending, 10000)
+	wallet := createTestWallet(userID, 3000, 0) // Only 3000 available
+
+	mockOrders.On("Get", ctx, orderID).Return(order, nil)
+	mockPayments.On("List", ctx, mock.AnythingOfType("repository.PaymentListOptions")).Return([]model.Payment{}, int64(0), nil)
+	mockWallets.On("GetByUserID", ctx, userID).Return(wallet, nil)
+
+	service := NewPaymentService(mockPayments, mockOrders)
+	service.SetWalletRepository(mockWallets)
+
+	req := CreatePaymentRequest{
+		OrderID:           orderID,
+		Method:            model.PaymentMethodCombined,
+		WalletAmountCents: 6000,
+		ThirdPartyMethod:  model.PaymentMethodWeChat,
+	}
+
+	resp, err := service.CreatePayment(ctx, userID, req)
+
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+	assert.Contains(t, err.Error(), "insufficient wallet balance")
+
+	mockOrders.AssertExpectations(t)
+	mockPayments.AssertExpectations(t)
+	mockWallets.AssertExpectations(t)
+}
+
+// TestPaymentService_CreatePayment_Combined_CreatePaymentError tests combined payment when payment creation fails
+func TestPaymentService_CreatePayment_Combined_CreatePaymentError(t *testing.T) {
+	ctx := context.Background()
+	userID := uint64(100)
+	orderID := uint64(1000)
+
+	mockPayments := new(MockPaymentRepository)
+	mockOrders := new(MockOrderRepository)
+	mockWallets := new(MockWalletRepository)
+
+	order := createTestOrder(orderID, userID, model.OrderStatusPending, 10000)
+	wallet := createTestWallet(userID, 10000, 0)
+
+	mockOrders.On("Get", ctx, orderID).Return(order, nil)
+	mockPayments.On("List", ctx, mock.AnythingOfType("repository.PaymentListOptions")).Return([]model.Payment{}, int64(0), nil)
+	mockWallets.On("GetByUserID", ctx, userID).Return(wallet, nil)
+	mockWallets.On("Save", ctx, mock.MatchedBy(func(w *model.Wallet) bool {
+		return w.BalanceCents == 4000
+	})).Return(nil)
+	mockPayments.On("Create", ctx, mock.AnythingOfType("*model.Payment")).Return(errors.New("database error"))
+	// Rollback wallet
+	mockWallets.On("Save", ctx, mock.MatchedBy(func(w *model.Wallet) bool {
+		return w.BalanceCents == 10000
+	})).Return(nil)
+
+	service := NewPaymentService(mockPayments, mockOrders)
+	service.SetWalletRepository(mockWallets)
+
+	req := CreatePaymentRequest{
+		OrderID:           orderID,
+		Method:            model.PaymentMethodCombined,
+		WalletAmountCents: 6000,
+		ThirdPartyMethod:  model.PaymentMethodWeChat,
+	}
+
+	resp, err := service.CreatePayment(ctx, userID, req)
+
+	assert.Error(t, err)
+	assert.Nil(t, resp)
+	assert.Contains(t, err.Error(), "database error")
+
+	mockOrders.AssertExpectations(t)
+	mockPayments.AssertExpectations(t)
+	mockWallets.AssertExpectations(t)
+}
+
+// TestPaymentService_HandlePaymentCallback_FloatPaymentID tests callback with float payment ID
+func TestPaymentService_HandlePaymentCallback_FloatPaymentID(t *testing.T) {
+	ctx := context.Background()
+	paymentID := uint64(1)
+	orderID := uint64(1000)
+	userID := uint64(100)
+	amountCents := int64(10000)
+
+	mockPayments := new(MockPaymentRepository)
+	mockOrders := new(MockOrderRepository)
+
+	payment := createTestPayment(paymentID, orderID, userID, model.PaymentStatusPending, amountCents, model.PaymentMethodWeChat)
+	order := createTestOrder(orderID, userID, model.OrderStatusPending, amountCents)
+
+	mockPayments.On("Get", ctx, paymentID).Return(payment, nil)
+	mockPayments.On("Update", ctx, mock.MatchedBy(func(p *model.Payment) bool {
+		return p.Status == model.PaymentStatusPaid && p.PaidAt != nil
+	})).Return(nil)
+	mockOrders.On("Get", ctx, orderID).Return(order, nil)
+	mockOrders.On("Update", ctx, mock.MatchedBy(func(o *model.Order) bool {
+		return o.Status == model.OrderStatusConfirmed
+	})).Return(nil)
+
+	service := NewPaymentService(mockPayments, mockOrders)
+
+	// Pass paymentID as float (common in JSON unmarshaling)
+	callbackData := map[string]interface{}{
+		"payment_id":   float64(paymentID),
+		"amount_cents": amountCents,
+		"trade_no":     "wx_trade_123",
+	}
+
+	err := service.HandlePaymentCallback(ctx, "wechat", callbackData)
+
+	assert.NoError(t, err)
+
+	mockPayments.AssertExpectations(t)
+	mockOrders.AssertExpectations(t)
+}
+
+// TestPaymentService_HandlePaymentCallback_NoTradeNo tests callback without trade number
+func TestPaymentService_HandlePaymentCallback_NoTradeNo(t *testing.T) {
+	ctx := context.Background()
+	paymentID := uint64(1)
+	orderID := uint64(1000)
+	userID := uint64(100)
+	amountCents := int64(10000)
+
+	mockPayments := new(MockPaymentRepository)
+	mockOrders := new(MockOrderRepository)
+
+	payment := createTestPayment(paymentID, orderID, userID, model.PaymentStatusPending, amountCents, model.PaymentMethodWeChat)
+	order := createTestOrder(orderID, userID, model.OrderStatusPending, amountCents)
+
+	mockPayments.On("Get", ctx, paymentID).Return(payment, nil)
+	mockPayments.On("Update", ctx, mock.MatchedBy(func(p *model.Payment) bool {
+		return p.Status == model.PaymentStatusPaid && p.ProviderTradeNo != ""
+	})).Return(nil)
+	mockOrders.On("Get", ctx, orderID).Return(order, nil)
+	mockOrders.On("Update", ctx, mock.MatchedBy(func(o *model.Order) bool {
+		return o.Status == model.OrderStatusConfirmed
+	})).Return(nil)
+
+	service := NewPaymentService(mockPayments, mockOrders)
+
+	callbackData := map[string]interface{}{
+		"payment_id":   paymentID,
+		"amount_cents": amountCents,
+		// No trade_no - should generate one
+	}
+
+	err := service.HandlePaymentCallback(ctx, "wechat", callbackData)
+
+	assert.NoError(t, err)
+
+	mockPayments.AssertExpectations(t)
+	mockOrders.AssertExpectations(t)
+}
+
+// TestPaymentService_HandlePaymentCallback_NoAmount tests callback without amount validation
+func TestPaymentService_HandlePaymentCallback_NoAmount(t *testing.T) {
+	ctx := context.Background()
+	paymentID := uint64(1)
+	orderID := uint64(1000)
+	userID := uint64(100)
+	amountCents := int64(10000)
+
+	mockPayments := new(MockPaymentRepository)
+	mockOrders := new(MockOrderRepository)
+
+	payment := createTestPayment(paymentID, orderID, userID, model.PaymentStatusPending, amountCents, model.PaymentMethodWeChat)
+	order := createTestOrder(orderID, userID, model.OrderStatusPending, amountCents)
+
+	mockPayments.On("Get", ctx, paymentID).Return(payment, nil)
+	mockPayments.On("Update", ctx, mock.MatchedBy(func(p *model.Payment) bool {
+		return p.Status == model.PaymentStatusPaid
+	})).Return(nil)
+	mockOrders.On("Get", ctx, orderID).Return(order, nil)
+	mockOrders.On("Update", ctx, mock.MatchedBy(func(o *model.Order) bool {
+		return o.Status == model.OrderStatusConfirmed
+	})).Return(nil)
+
+	service := NewPaymentService(mockPayments, mockOrders)
+
+	callbackData := map[string]interface{}{
+		"payment_id": paymentID,
+		// No amount_cents field - should skip validation
+		"trade_no":   "wx_trade_123",
+	}
+
+	err := service.HandlePaymentCallback(ctx, "wechat", callbackData)
+
+	assert.NoError(t, err)
+
+	mockPayments.AssertExpectations(t)
+	mockOrders.AssertExpectations(t)
+}

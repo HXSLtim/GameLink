@@ -30,7 +30,7 @@ test.describe('Admin Authentication', () => {
       await expect(loginPage['loginButton']).toBeVisible();
     });
 
-    test('should login successfully with valid credentials', async ({ testData }) => {
+    test('should login successfully with valid credentials', async ({ page, testData }) => {
       await loginPage.login(
         testData.adminUser.username,
         testData.adminUser.password
@@ -137,7 +137,7 @@ test.describe('Admin Authentication', () => {
   });
 
   test.describe('Token Validation', async () => {
-    test('should validate API token format', async ({ testData }) => {
+    test('should validate API token format', async ({ page, testData }) => {
       await loginPage.loginAndWaitForDashboard(
         testData.adminUser.username,
         testData.adminUser.password
@@ -190,15 +190,15 @@ test.describe('Admin Authentication', () => {
   });
 
   test.describe('Accessibility', () => {
-    test('should have proper form labels', async () => {
-      const usernameLabel = loginPage.page.getByText(/用户名|username/i);
-      const passwordLabel = loginPage.page.getByText(/密码|password/i);
+    test('should have proper form labels', async ({ page }) => {
+      const usernameLabel = page.getByText(/用户名|username/i);
+      const passwordLabel = page.getByText(/密码|password/i);
 
       await expect(usernameLabel).toBeVisible();
       await expect(passwordLabel).toBeVisible();
     });
 
-    test('should be keyboard navigable', async () => {
+    test('should be keyboard navigable', async ({ page }) => {
       // Tab to username
       await page.keyboard.press('Tab');
       await expect(loginPage['usernameInput']).toBeFocused();

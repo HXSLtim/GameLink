@@ -104,12 +104,11 @@ func main() {
 
 	logCryptoStatus(app.Config)
 
-	// Initialize metrics
-	metrics.Init(app.PrometheusRegistry)
-	metrics.InitBusinessMetrics(app.PrometheusRegistry)
-
-	// Initialize metrics collector
+	// Initialize metrics collector (includes HTTP and DB metrics)
 	metrics.NewCollector(app.PrometheusRegistry)
+
+	// Initialize business metrics
+	metrics.InitBusinessMetrics(app.PrometheusRegistry)
 
 	// Configure metrics authentication based on environment
 	metricsAuthConfig := middleware.DefaultMetricsAuthConfig()

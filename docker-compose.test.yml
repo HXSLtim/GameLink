@@ -20,6 +20,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - test-network
 
   redis-test:
     image: redis:7-alpine
@@ -31,6 +33,12 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - test-network
+
+networks:
+  test-network:
+    driver: bridge
 
 volumes:
   postgres_test_data:

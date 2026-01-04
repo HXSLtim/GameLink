@@ -75,7 +75,7 @@ FROM withdraws GROUP BY status;
 ```
 
 ### 测试账号
-- **管理员**: admin@gameLink.com / Admin2025@Pass#
+- **管理员**: 使用 `.env` 中的 `SUPER_ADMIN_EMAIL` / `SUPER_ADMIN_PASSWORD`
 
 ---
 

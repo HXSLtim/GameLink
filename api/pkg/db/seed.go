@@ -78,6 +78,62 @@ type seedReviewSpec struct {
 
 func applySeeds(db *gorm.DB) error {
 	return db.Transaction(func(tx *gorm.DB) error {
+		// Clean up stale data to ensure consistency when seed data changes
+		// Use raw SQL with IF EXISTS to handle tables that may not exist
+		log.Println("Cleaning up stale seed data...")
+		cleanupSQL := []string{
+			// Child tables of orders (must be deleted first to avoid FK violations)
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'order_players') THEN DELETE FROM order_players; END IF; END $$;",
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'order_items') THEN DELETE FROM order_items; END IF; END $$;",
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'order_teams') THEN DELETE FROM order_teams; END IF; END $$;",
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'order_disputes') THEN DELETE FROM order_disputes; END IF; END $$;",
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'order_service_assignments') THEN DELETE FROM order_service_assignments; END IF; END $$;",
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'order_timeout_logs') THEN DELETE FROM order_timeout_logs; END IF; END $$;",
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'reviews') THEN DELETE FROM reviews; END IF; END $$;",
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'review_appeals') THEN DELETE FROM review_appeals; END IF; END $$;",
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'review_replies') THEN DELETE FROM review_replies; END IF; END $$;",
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'refund_records') THEN DELETE FROM refund_records; END IF; END $$;",
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'payments') THEN DELETE FROM payments; END IF; END $$;",
+			// Parent tables (deleted after children)
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'orders') THEN DELETE FROM orders; END IF; END $$;",
+			// Chat tables (order_service_assignments deleted before chat_groups)
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'chat_reports') THEN DELETE FROM chat_reports; END IF; END $$;",
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'chat_snapshots') THEN DELETE FROM chat_snapshots; END IF; END $$;",
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'chat_messages') THEN DELETE FROM chat_messages; END IF; END $$;",
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'chat_group_members') THEN DELETE FROM chat_group_members; END IF; END $$;",
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'chat_groups') THEN DELETE FROM chat_groups; END IF; END $$;",
+			// Team tables (teams may reference orders via current_order_id)
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'team_invites') THEN DELETE FROM team_invites; END IF; END $$;",
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'team_members') THEN DELETE FROM team_members; END IF; END $$;",
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'teams') THEN DELETE FROM teams; END IF; END $$;",
+			// Recharge and referral related tables (child tables first)
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'referral_rewards') THEN DELETE FROM referral_rewards; END IF; END $$;",
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'referrals') THEN DELETE FROM referrals; END IF; END $$;",
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'referral_codes') THEN DELETE FROM referral_codes; END IF; END $$;",
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'recharge_records') THEN DELETE FROM recharge_records; END IF; END $$;",
+			// Wallet and settlement related tables
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'player_company_assignments') THEN DELETE FROM player_company_assignments; END IF; END $$;",
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'monthly_settlements') THEN DELETE FROM monthly_settlements; END IF; END $$;",
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'ranking_rewards') THEN DELETE FROM ranking_rewards; END IF; END $$;",
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'settlement_companies') THEN DELETE FROM settlement_companies; END IF; END $$;",
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'wallets') THEN DELETE FROM wallets; END IF; END $$;",
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'withdraws') THEN DELETE FROM withdraws; END IF; END $$;",
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'user_notifications') THEN DELETE FROM user_notifications; END IF; END $$;",
+			// Marketing-related tables (child tables first)
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'recharge_options') THEN DELETE FROM recharge_options; END IF; END $$;",
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'activity_participations') THEN DELETE FROM activity_participations; END IF; END $$;",
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'activity_rewards') THEN DELETE FROM activity_rewards; END IF; END $$;",
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'activity_daily_stats') THEN DELETE FROM activity_daily_stats; END IF; END $$;",
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'user_coupons') THEN DELETE FROM user_coupons; END IF; END $$;",
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'coupons') THEN DELETE FROM coupons; END IF; END $$;",
+			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'coupon_templates') THEN DELETE FROM coupon_templates; END IF; END $$;",
+		}
+		for _, sql := range cleanupSQL {
+			if err := tx.Exec(sql).Error; err != nil {
+				log.Printf("warning: failed to cleanup: %v", err)
+			}
+		}
+
 		games, err := seedGames(tx)
 		if err != nil {
 			return err
@@ -229,11 +285,13 @@ func applySeeds(db *gorm.DB) error {
 			players[spec.Key] = player
 		}
 
-		// 确保有一个默认护航服务项，供订单外键引用
-		defaultGame := games["lol"]
-		serviceItem, err := ensureServiceItem(tx, "escort-default", "默认护航服务", defaultGame.ID)
+		serviceItems, err := seedServiceItems(tx, games)
 		if err != nil {
 			return err
+		}
+		defaultServiceItem, ok := serviceItems["escort-default"]
+		if !ok || defaultServiceItem == nil {
+			return errors.New("seed service item escort-default missing")
 		}
 
 		hour := time.Hour
@@ -244,6 +302,7 @@ func applySeeds(db *gorm.DB) error {
 				UserKey:     "customerA",
 				PlayerKey:   "playerA",
 				GameKey:     "lol",
+				ItemCode:    "escort-lol-solo",
 				Title:       "欢迎体验 GameLink 陪玩",
 				Description: "我们为您匹配了经验丰富的高胜率陪玩，尽情享受游戏时光吧！",
 				Status:      model.OrderStatusCompleted,
@@ -257,6 +316,7 @@ func applySeeds(db *gorm.DB) error {
 				UserKey:     "customerB",
 				PlayerKey:   "playerA",
 				GameKey:     "dota2",
+				ItemCode:    "escort-dota2-solo",
 				Title:       "高端局连胜陪玩",
 				Description: "DOTA2 冠军陪练，助你提升团队协作。",
 				Status:      model.OrderStatusInProgress,
@@ -270,6 +330,7 @@ func applySeeds(db *gorm.DB) error {
 				UserKey:     "customerC",
 				PlayerKey:   "playerA",
 				GameKey:     "lol",
+				ItemCode:    "escort-lol-solo",
 				Title:       "黄金段位冲刺",
 				Description: "等待分配陪玩师，预计 30 分钟内开始。",
 				Status:      model.OrderStatusPending,
@@ -283,6 +344,7 @@ func applySeeds(db *gorm.DB) error {
 				UserKey:      "customerB",
 				PlayerKey:    "playerB",
 				GameKey:      "valorant",
+				ItemCode:     "escort-valorant-solo",
 				Title:        "战术射击训练营",
 				Description:  "因临时有事取消，等待重新安排。",
 				Status:       model.OrderStatusCanceled,
@@ -297,6 +359,7 @@ func applySeeds(db *gorm.DB) error {
 				UserKey:     "customerD",
 				PlayerKey:   "playerC",
 				GameKey:     "csgo",
+				ItemCode:    "escort-default",
 				Title:       "枪法强化训练",
 				Description: "专业CS:GO选手带你提升枪法，从基础到进阶全覆盖。",
 				Status:      model.OrderStatusConfirmed,
@@ -310,6 +373,7 @@ func applySeeds(db *gorm.DB) error {
 				UserKey:     "customerE",
 				PlayerKey:   "playerB",
 				GameKey:     "apex",
+				ItemCode:    "escort-default",
 				Title:       "大逃杀双人排位",
 				Description: "寻找志同道合的队友一起冲击更高段位。",
 				Status:      model.OrderStatusPending,
@@ -323,6 +387,7 @@ func applySeeds(db *gorm.DB) error {
 				UserKey:     "customerF",
 				PlayerKey:   "playerD",
 				GameKey:     "wow",
+				ItemCode:    "escort-wow-solo",
 				Title:       "魔兽世界副本开荒",
 				Description: "资深玩家带你体验经典副本，了解游戏机制和装备获取。",
 				Status:      model.OrderStatusCompleted,
@@ -336,6 +401,7 @@ func applySeeds(db *gorm.DB) error {
 				UserKey:     "customerG",
 				PlayerKey:   "playerE",
 				GameKey:     "fifa",
+				ItemCode:    "escort-default",
 				Title:       "FIFA在线友谊赛",
 				Description: "体育游戏爱好者之间的友好比赛，享受竞技乐趣。",
 				Status:      model.OrderStatusInProgress,
@@ -349,6 +415,7 @@ func applySeeds(db *gorm.DB) error {
 				UserKey:     "customerH",
 				PlayerKey:   "playerF",
 				GameKey:     "fallguys",
+				ItemCode:    "escort-default",
 				Title:       "糖豆人欢乐时光",
 				Description: "轻松愉快的派对游戏，适合休闲娱乐，放松心情。",
 				Status:      model.OrderStatusPending,
@@ -362,6 +429,7 @@ func applySeeds(db *gorm.DB) error {
 				UserKey:      "customerA",
 				PlayerKey:    "playerB",
 				GameKey:      "overwatch",
+				ItemCode:     "escort-default",
 				Title:        "守望先锋团队竞技",
 				Description:  "因技术问题服务器维护，全额退款。",
 				Status:       model.OrderStatusRefunded,
@@ -376,6 +444,7 @@ func applySeeds(db *gorm.DB) error {
 				UserKey:     "customerB",
 				PlayerKey:   "playerG",
 				GameKey:     "dota2",
+				ItemCode:    "escort-dota2-solo",
 				Title:       "DOTA2新手教学",
 				Description: "DOTA2老玩家带你熟悉游戏机制，学习基础操作和战术理解。",
 				Status:      model.OrderStatusConfirmed,
@@ -395,6 +464,14 @@ func applySeeds(db *gorm.DB) error {
 			game, ok := games[spec.GameKey]
 			if !ok {
 				return fmt.Errorf("seed order missing game %s", spec.GameKey)
+			}
+			item := defaultServiceItem
+			if spec.ItemCode != "" {
+				if found, ok := serviceItems[spec.ItemCode]; ok && found != nil {
+					item = found
+				} else {
+					log.Printf("warning: seed order %s references missing service item %q, fallback to escort-default", spec.Key, spec.ItemCode)
+				}
 			}
 			var playerID *uint64
 			if spec.PlayerKey != "" {
@@ -425,7 +502,7 @@ func applySeeds(db *gorm.DB) error {
 				Description:    spec.Description,
 				UserID:         user.ID,
 				PlayerID:       playerID,
-				ItemID:         serviceItem.ID,
+				ItemID:         item.ID,
 				GameID:         game.ID,
 				Status:         spec.Status,
 				PriceCents:     spec.PriceCents,
@@ -619,7 +696,7 @@ func applySeeds(db *gorm.DB) error {
 			},
 			// 被举报的评价
 			{
-				OrderKey:   "orderCompleted1",
+				OrderKey:   "orderConfirmed1",
 				UserKey:    "customerD",
 				PlayerKey:  "playerC",
 				Score:      model.MustRating(5),
@@ -630,8 +707,8 @@ func applySeeds(db *gorm.DB) error {
 			},
 			// 中等评价
 			{
-				OrderKey:  "orderConfirmed1",
-				UserKey:   "customerC",
+				OrderKey:  "orderPending3",
+				UserKey:   "customerH",
 				PlayerKey: "playerF",
 				Score:     model.MustRating(3),
 				Content:   "整体体验一般，陪玩师技术还可以，但沟通上有些问题，回复不够及时。希望能改进。",
@@ -639,17 +716,17 @@ func applySeeds(db *gorm.DB) error {
 			},
 			// 带图片的好评
 			{
-				OrderKey:  "orderPending1",
+				OrderKey:  "orderPending2",
 				UserKey:   "customerE",
-				PlayerKey: "playerH",
+				PlayerKey: "playerB",
 				Score:     model.MustRating(5),
-				Content:   "卡牌大师对炉石传说的理解太深了！帮我组了一套超强卡组，连胜上传说！感谢！",
+				Content:   "王牌射手带我打Apex双排上分，枪线和走位讲得很细，实战提升明显！体验很棒。",
 				Status:    model.ReviewStatusPending,
-				Images:    []string{"https://gamelink.oss.com/reviews/hs_legend_1.jpg", "https://gamelink.oss.com/reviews/hs_deck_1.jpg", "https://gamelink.oss.com/reviews/hs_win_1.jpg"},
+				Images:    []string{"https://gamelink.oss.com/reviews/apex_rank_1.jpg", "https://gamelink.oss.com/reviews/apex_win_1.jpg"},
 			},
 		}
 
-		for _, spec := range reviewSpecs {
+		for i, spec := range reviewSpecs {
 			order, ok := orders[spec.OrderKey]
 			if !ok {
 				return fmt.Errorf("seed review missing order %s", spec.OrderKey)
@@ -662,6 +739,8 @@ func applySeeds(db *gorm.DB) error {
 			if !ok {
 				return fmt.Errorf("seed review missing player %s", spec.PlayerKey)
 			}
+			log.Printf("seed review[%d]: OrderKey=%s (id=%d, user_id=%d), UserKey=%s (id=%d), PlayerKey=%s (id=%d)",
+				i, spec.OrderKey, order.ID, order.UserID, spec.UserKey, user.ID, spec.PlayerKey, player.ID)
 			if err := seedReview(tx, seedReviewParams{
 				OrderID:         order.ID,
 				UserID:          user.ID,
@@ -760,6 +839,65 @@ func applySeeds(db *gorm.DB) error {
 			return err
 		}
 
+		couponTemplates, vipLevels, err := seedVipAndCouponTemplates(tx, games, serviceItems)
+		if err != nil {
+			return err
+		}
+
+		if err := seedUserVipState(tx, now, users, vipLevels); err != nil {
+			return err
+		}
+
+		coupons, err := seedUserCoupons(tx, couponTemplates, users, orders)
+		if err != nil {
+			return err
+		}
+
+		activities, err := seedActivityData(tx, couponTemplates, users)
+		if err != nil {
+			return err
+		}
+
+		if err := seedRechargeData(tx, couponTemplates, users); err != nil {
+			return err
+		}
+
+		if err := seedTeamData(tx, players, orders); err != nil {
+			return err
+		}
+
+		if err := seedReferralData(tx, couponTemplates, users); err != nil {
+			return err
+		}
+
+		if err := seedUserBlockData(tx, users); err != nil {
+			return err
+		}
+
+		if err := seedGameRankAndCertificationData(tx, games, players, users); err != nil {
+			return err
+		}
+
+		if err := seedNotificationData(tx, users, orders, coupons, activities, vipLevels); err != nil {
+			return err
+		}
+
+		if err := seedAdditionalFlowOrders(tx, now, users, players, serviceItems, orders); err != nil {
+			return err
+		}
+
+		if err := seedRefundAndTimeoutData(tx, now, users); err != nil {
+			return err
+		}
+
+		if err := seedOrderChatAndServiceAssignment(tx, now, users, players, orders); err != nil {
+			return err
+		}
+
+		if err := validateSeedAssociations(tx); err != nil {
+			return err
+		}
+
 		log.Println("seed data ensured for demo environment")
 		return nil
 	})
@@ -807,6 +945,11 @@ type seedPaymentParams struct {
 	ProviderRaw     json.RawMessage
 	PaidAt          *time.Time
 	RefundedAt      *time.Time
+
+	// Combined payment fields (optional)
+	WalletAmountCents     int64
+	ThirdPartyMethod      model.PaymentMethod
+	ThirdPartyAmountCents int64
 }
 
 type seedReviewParams struct {
@@ -1022,6 +1165,10 @@ func seedPayment(tx *gorm.DB, input seedPaymentParams) error {
 		ProviderRaw:     input.ProviderRaw,
 		PaidAt:          input.PaidAt,
 		RefundedAt:      input.RefundedAt,
+
+		WalletAmountCents:     input.WalletAmountCents,
+		ThirdPartyMethod:      input.ThirdPartyMethod,
+		ThirdPartyAmountCents: input.ThirdPartyAmountCents,
 	}
 	if err := tx.Create(payment).Error; err != nil {
 		return err
@@ -1032,7 +1179,13 @@ func seedPayment(tx *gorm.DB, input seedPaymentParams) error {
 func seedReview(tx *gorm.DB, input seedReviewParams) error {
 	var existing model.Review
 	if err := tx.Where("order_id = ?", input.OrderID).First(&existing).Error; err == nil {
-		return nil
+		// Delete and recreate to ensure data consistency (user_id or player_id may have changed)
+		log.Printf("seedReview: deleting stale review id=%d (order_id=%d, old user_id=%d) to recreate with correct data",
+			existing.ID, existing.OrderID, existing.UserID)
+		if err := tx.Delete(&existing).Error; err != nil {
+			return err
+		}
+		// Continue to create new review below
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return err
 	}
@@ -1054,6 +1207,7 @@ func seedReview(tx *gorm.DB, input seedReviewParams) error {
 	if err := tx.Create(review).Error; err != nil {
 		return err
 	}
+	log.Printf("seedReview: created review id=%d (order_id=%d, user_id=%d)", review.ID, review.OrderID, review.UserID)
 	return nil
 }
 

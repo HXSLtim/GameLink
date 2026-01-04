@@ -634,8 +634,10 @@ func TestUserHandler_Unit_GetUserStats_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	data := response["data"].(map[string]interface{})
-	assert.NotNil(t, data["total_users"])
-	assert.NotNil(t, data["role_distribution"])
+	assert.NotNil(t, data["total"])
+	assert.NotNil(t, data["byRole"])
+	assert.NotNil(t, data["byStatus"])
+	assert.NotNil(t, data["recentRegistrations"])
 }
 
 // ============================================================================
@@ -649,19 +651,33 @@ func TestUserHandler_Unit_ListUserOrders_Success(t *testing.T) {
 	// Create test game
 	testGame := testutil.CreateTestGame(t, ctx.DB)
 
+	// Create test service item (required for order foreign key constraint)
+	testServiceItem := testutil.CreateTestServiceItem(t, ctx.DB, testGame.ID, 5000, true)
+
 	// Create test player
 	testPlayer := testutil.CreateTestPlayer(t, ctx.DB, ctx.AdminUser.ID)
 
 	// Create test user and order
 	testUser := testutil.CreateAdminUser(t, ctx.DB, model.RoleUser)
-	testutil.CreateTestOrder(t, ctx.DB, testUser.ID, testPlayer.ID, testGame.ID, model.OrderStatusPending)
+	testutil.CreateTestOrderWithItem(t, ctx.DB, testUser.ID, testPlayer.ID, testServiceItem.ID, model.OrderStatusPending)
 
 	path := fmt.Sprintf("/admin/users/%d/orders", testUser.ID)
 	w := testutil.MakeAuthenticatedRequest(t, ctx.Router, "GET", path, ctx.AdminToken, nil)
 	testutil.AssertSuccess(t, w)
 
-	items, _ := testutil.GetResponseList(t, w)
-	assert.GreaterOrEqual(t, len(items), 1)
+	// Parse the response directly since resp.List returns data as array, not wrapped object
+	var response struct {
+		Success    bool                   `json:"success"`
+		Code       int                    `json:"code"`
+		Message    string                 `json:"message"`
+		Data       []interface{}          `json:"data"`
+		Pagination map[string]interface{} `json:"pagination"`
+	}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	require.NoError(t, err, "Failed to parse response")
+
+	assert.GreaterOrEqual(t, len(response.Data), 1)
+	assert.NotNil(t, response.Pagination)
 }
 
 func TestUserHandler_Unit_ListUserOrders_UserNotFound(t *testing.T) {

@@ -11,6 +11,10 @@ type Cache interface {
 	Set(ctx context.Context, key, value string, ttl time.Duration) error
 	Delete(ctx context.Context, key string) error
 	Close(ctx context.Context) error
+
+	// GetRedisClient returns the underlying Redis client if using Redis cache,
+	// or nil if using memory cache. This is used for WebSocket Pub/Sub.
+	GetRedisClient() interface{}
 }
 
 // New 根据配置创建缓存实例。

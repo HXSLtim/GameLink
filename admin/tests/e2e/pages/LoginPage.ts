@@ -1,18 +1,23 @@
-import { Page, expect } from '@playwright/test';
+import { Page, expect, Locator } from '@playwright/test';
 
 /**
  * Page Object Model for Login Page
  * Encapsulates all login page interactions and assertions
  */
 export class LoginPage {
-  constructor(private page: Page) {}
+  private readonly usernameInput: Locator;
+  private readonly passwordInput: Locator;
+  private readonly loginButton: Locator;
+  private readonly errorMessage: Locator;
+  private readonly successMessage: Locator;
 
-  // Element locators
-  private readonly usernameInput = this.page.getByPlaceholder('请输入用户名');
-  private readonly passwordInput = this.page.getByPlaceholder('请输入密码');
-  private readonly loginButton = this.page.getByRole('button', { name: /登录|login/i });
-  private readonly errorMessage = this.page.locator('.ant-message-error, .error-message');
-  private readonly successMessage = this.page.locator('.ant-message-success');
+  constructor(private page: Page) {
+    this.usernameInput = this.page.getByPlaceholder(/管理员账号\/邮箱|请输入用户名/);
+    this.passwordInput = this.page.getByPlaceholder(/密码|请输入密码/);
+    this.loginButton = this.page.getByRole('button', { name: /登录|login/i });
+    this.errorMessage = this.page.locator('.ant-message-error, .error-message');
+    this.successMessage = this.page.locator('.ant-message-success');
+  }
 
   /**
    * Navigate to login page
@@ -49,13 +54,14 @@ export class LoginPage {
    * Verify login is successful by checking URL change
    */
   async verifyLoginSuccess() {
-    await expect(this.page).toHaveURL(/\/(dashboard|admin)/);
+    await expect(this.page).toHaveURL(/(\/dashboard|\/admin$|\/admin\/)/);
+    await expect(this.page).not.toHaveURL(/login/);
   }
 
   /**
    * Verify error message is displayed
    */
-  async verifyErrorMessage(message: string) {
+  async verifyErrorMessage(message: string | RegExp) {
     await expect(this.errorMessage).toBeVisible();
     await expect(this.errorMessage).toContainText(message);
   }

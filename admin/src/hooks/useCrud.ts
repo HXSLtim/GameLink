@@ -30,7 +30,7 @@
  * ```
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { message, Modal } from 'antd';
 import type { ApiResponse, Pagination } from '@/types/api';
 import { logger } from '@/utils/logger';
@@ -304,7 +304,8 @@ export function useCrud<
         paginationExtractor,
     } = options;
 
-    const mergedMessages = { ...defaultMessages, ...messages };
+    // Memoize merged messages to avoid unnecessary re-renders
+    const mergedMessages = useMemo(() => ({ ...defaultMessages, ...messages }), [messages]);
 
     // State
     const [data, setData] = useState<T[]>([]);
@@ -641,7 +642,7 @@ export function useCrud<
     };
 
     /**
-     * Fetch data on mount
+     * Fetch data on mount and when pagination/query params change
      */
     useEffect(() => {
         if (fetchOnMount) {
@@ -651,16 +652,10 @@ export function useCrud<
         return () => {
             isMountedRef.current = false;
         };
-    }, [current, pageSize, queryParams]); // Only refetch when these dependencies change
-
-    /**
-     * Fetch data when pagination or query params change
-     */
-    useEffect(() => {
-        if (fetchOnMount) {
-            fetchAll();
-        }
-    }, [current, pageSize, queryParams]); // Note: fetchAll is not in dependencies to avoid infinite loop
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        // fetchAll intentionally omitted - adding it would cause infinite loop
+        // Re-fetch when current, pageSize, or queryParams change
+    }, [current, pageSize, queryParams, fetchOnMount]);
 
     return {
         data,

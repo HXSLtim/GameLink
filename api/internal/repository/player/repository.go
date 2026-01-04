@@ -72,6 +72,18 @@ func (r *gormPlayerRepository) GetByUserID(ctx context.Context, userID uint64) (
 	return &player, nil
 }
 
+// GetByIDs returns players by a list of IDs.
+func (r *gormPlayerRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.Player, error) {
+	if len(ids) == 0 {
+		return []model.Player{}, nil
+	}
+	var players []model.Player
+	if err := r.db.WithContext(ctx).Where("id IN ?", ids).Find(&players).Error; err != nil {
+		return nil, err
+	}
+	return players, nil
+}
+
 // Create inserts a new player.
 func (r *gormPlayerRepository) Create(ctx context.Context, player *model.Player) error {
 	return r.db.WithContext(ctx).Create(player).Error

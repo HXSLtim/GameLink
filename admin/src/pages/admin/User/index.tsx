@@ -847,8 +847,17 @@ const UserPage: React.FC = () => {
                 onCancel={() => setEditModalVisible(false)}
                 width={600}
                 style={{ maxWidth: 'calc(100vw - 32px)', top: 20 }}
-                okText="保存"
-                cancelText="取消"
+                okButtonProps={{ hidden: true }}
+                footer={
+                    <Space>
+                        <Button onClick={() => setEditModalVisible(false)}>取消</Button>
+                        <PermissionGuard permission={currentUser ? USER_PERMISSIONS.UPDATE : USER_PERMISSIONS.CREATE}>
+                            <Button type="primary" onClick={handleSaveEdit}>
+                                保存
+                            </Button>
+                        </PermissionGuard>
+                    </Space>
+                }
             >
                 <Form form={form} layout="vertical">
                     <Form.Item

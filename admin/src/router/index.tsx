@@ -44,8 +44,7 @@ const STATIC_CHILD_ROUTES = [
     'sys/role/:id/permissions',  // 角色权限配置页面
     'sys/user/:id/portrait',     // 用户画像页面
     'biz/service/create',        // 服务项目创建页面
-    'biz/service/:id',           // 服务项目详情页面
-    'biz/service/:id/edit',      // 服务项目编辑页面
+    'biz/service/:id',           // 服务项目详情页面（编辑使用模态弹窗）
 ];
 
 const AppRouter = () => {

@@ -4,6 +4,8 @@
 **创建日期**: 2024-12-18  
 **测试环境**: Docker 生产环境 (docker-compose.prod.yml)
 
+> 自动化测试（后端集成测试 / 管理后台 E2E）环境搭建请参考：[TEST_ENVIRONMENT_SETUP.md](TEST_ENVIRONMENT_SETUP.md)。
+
 ---
 
 ## 测试文档清单
@@ -97,9 +99,9 @@ docker compose -f docker-compose.prod.yml ps
 
 ### 测试账号
 
-| 角色 | 邮箱 | 密码 |
-|------|------|------|
-| 超级管理员 | admin@gameLink.com | Admin2025@Pass# |
+| 角色 | 配置来源 | 说明 |
+|------|----------|------|
+| 超级管理员 | `.env` 中的 `SUPER_ADMIN_EMAIL` / `SUPER_ADMIN_PASSWORD` | `docker-compose.prod.yml` 会注入到后端容器 |
 
 ### 数据库连接
 
@@ -110,7 +112,7 @@ docker exec -it gamelink-postgres psql -U gamelink -d gamelink
 ### Redis 连接
 
 ```powershell
-docker exec -it gamelink-redis redis-cli -a TvXYJ305HNhsnIpQ
+docker exec -it gamelink-redis redis-cli -a <REDIS_PASSWORD>
 ```
 
 ---

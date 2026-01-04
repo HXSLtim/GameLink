@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Form, Button, Tabs, Divider, App, Space, Typography, Alert, Radio, InputNumber, Spin, Descriptions, Switch, Tooltip, Select } from 'antd';
-import { SaveOutlined, SyncOutlined, StarOutlined, ReloadOutlined, UndoOutlined } from '@ant-design/icons';
+import { Card, Form, Button, Tabs, Divider, App, Space, Typography, Alert, Radio, InputNumber, Spin, Descriptions, Switch, Tooltip, Select, Row, Col, Badge } from 'antd';
+import { SaveOutlined, SyncOutlined, StarOutlined, ReloadOutlined, UndoOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { motion } from 'framer-motion';
 import { forceInit } from '@/services/init';
+import { syncApi, type InitStatusResponse } from '@/api/sync';
 import { reviewSettingsApi } from '@/api/review';
 import type { ReviewDisplaySettings, UpdateSettingsFormData } from '@/types/review';
 import { SORT_BY_TEXT } from '@/types/review';
@@ -25,9 +26,8 @@ const Settings: React.FC = () => {
     const { message } = App.useApp();
     const [reviewForm] = Form.useForm<UpdateSettingsFormData>();
     const [initializing, setInitializing] = useState(false);
-    const [lastInitTime, setLastInitTime] = useState<string | null>(
-        localStorage.getItem('app_init_timestamp')
-    );
+    const [initStatus, setInitStatus] = useState<InitStatusResponse | null>(null);
+    const [loadingStatus, setLoadingStatus] = useState(true);
 
     // 权限检查
     const permissions = usePermissions({
@@ -64,9 +64,27 @@ const Settings: React.FC = () => {
         }
     };
 
+    // 加载初始化状态（从后端数据库）
+    const fetchInitStatus = async () => {
+        setLoadingStatus(true);
+        try {
+            const status = await syncApi.getInitStatus();
+            setInitStatus(status);
+            logger.info('[Settings] Init status:', status);
+        } catch (error) {
+            logger.error('[Settings] Failed to get init status:', error);
+            setInitStatus({
+                initialized: false,
+                message: '无法获取初始化状态',
+            });
+        } finally {
+            setLoadingStatus(false);
+        }
+    };
+
     useEffect(() => {
         fetchReviewSettings();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        fetchInitStatus();
     }, []);
 
     // 保存评价设置
@@ -124,8 +142,8 @@ const Settings: React.FC = () => {
                     duration: 3,
                 });
 
-                // 更新最后初始化时间
-                setLastInitTime(Date.now().toString());
+                // 重新加载初始化状态
+                await fetchInitStatus();
 
                 // 显示详细信息
                 if (result.menuSync) {
@@ -159,8 +177,8 @@ const Settings: React.FC = () => {
      * 格式化时间显示
      */
     const formatLastInitTime = () => {
-        if (!lastInitTime) return '从未初始化';
-        const date = new Date(parseInt(lastInitTime, 10));
+        if (!initStatus?.lastSyncAt) return '从未初始化';
+        const date = new Date(initStatus.lastSyncAt);
         return date.toLocaleString('zh-CN', {
             year: 'numeric',
             month: '2-digit',
@@ -277,7 +295,7 @@ const Settings: React.FC = () => {
                             noStyle
                             shouldUpdate={(prevValues, currentValues) => prevValues.autoApprove !== currentValues.autoApprove}
                         >
-                            {({ getFieldValue }) => 
+                            {({ getFieldValue }) =>
                                 getFieldValue('autoApprove') ? (
                                     <Form.Item
                                         name="autoApproveMinRating"
@@ -347,15 +365,72 @@ const Settings: React.FC = () => {
             children: (
                 <div style={{ maxWidth: 800 }}>
                     {/* 初始化状态卡片 */}
-                    <Card 
+                    <Card
                         style={{ marginBottom: 24, borderRadius: 12 }}
                         styles={{ body: { padding: 24 } }}
                     >
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+                        {loadingStatus ? (
+                            <div style={{ textAlign: 'center', padding: 20 }}>
+                                <Spin />
+                            </div>
+                        ) : (
+                            <Row gutter={[24, 24]} align="middle">
+                                <Col xs={24} sm={8}>
+                                    <div>
+                                        <Text type="secondary" style={{ fontSize: 13 }}>初始化状态</Text>
+                                        <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                            {initStatus?.initialized ? (
+                                                <>
+                                                    <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 20 }} />
+                                                    <Text strong style={{ color: '#52c41a' }}>已初始化</Text>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <CloseCircleOutlined style={{ color: '#ff4d4f', fontSize: 20 }} />
+                                                    <Text strong style={{ color: '#ff4d4f' }}>未初始化</Text>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                </Col>
+                                <Col xs={24} sm={8}>
+                                    <div>
+                                        <Text type="secondary" style={{ fontSize: 13 }}>上次同步时间</Text>
+                                        <div style={{ fontSize: 14, fontWeight: 500, marginTop: 8 }}>
+                                            {formatLastInitTime()}
+                                        </div>
+                                    </div>
+                                </Col>
+                                <Col xs={24} sm={8}>
+                                    <div>
+                                        <Text type="secondary" style={{ fontSize: 13 }}>数据统计</Text>
+                                        <div style={{ marginTop: 8, display: 'flex', gap: 16 }}>
+                                            <div>
+                                                <Badge count={initStatus?.menuCount || 0} showZero style={{ backgroundColor: '#5865F2' }}>
+                                                    <Text>菜单</Text>
+                                                </Badge>
+                                            </div>
+                                            <div>
+                                                <Badge count={initStatus?.permissionCount || 0} showZero style={{ backgroundColor: '#52c41a' }}>
+                                                    <Text>权限</Text>
+                                                </Badge>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </Col>
+                            </Row>
+                        )}
+                    </Card>
+
+                    {/* 初始化按钮 */}
+                    <Card style={{ marginBottom: 16, borderRadius: 12 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
                             <div>
-                                <Text type="secondary" style={{ fontSize: 13 }}>上次初始化时间</Text>
-                                <div style={{ fontSize: 18, fontWeight: 500, marginTop: 4 }}>
-                                    {formatLastInitTime()}
+                                <Text strong>手动同步菜单和权限</Text>
+                                <div>
+                                    <Text type="secondary" style={{ fontSize: 13 }}>
+                                        当前端配置更新后，点击此按钮同步到后端数据库
+                                    </Text>
                                 </div>
                             </div>
                             {permissions.canInit ? (
@@ -365,8 +440,8 @@ const Settings: React.FC = () => {
                                     icon={<SyncOutlined spin={initializing} />}
                                     onClick={handleInit}
                                     loading={initializing}
-                                    style={{ 
-                                        backgroundColor: '#5865F2', 
+                                    style={{
+                                        backgroundColor: '#5865F2',
                                         height: 48,
                                         paddingLeft: 32,
                                         paddingRight: 32,
@@ -374,7 +449,7 @@ const Settings: React.FC = () => {
                                         fontSize: 15,
                                     }}
                                 >
-                                    {initializing ? '正在初始化...' : '立即初始化'}
+                                    {initializing ? '正在同步...' : '立即同步'}
                                 </Button>
                             ) : (
                                 <Tooltip title="无初始化权限">
@@ -383,7 +458,7 @@ const Settings: React.FC = () => {
                                         size="large"
                                         icon={<SyncOutlined />}
                                         disabled
-                                        style={{ 
+                                        style={{
                                             height: 48,
                                             paddingLeft: 32,
                                             paddingRight: 32,
@@ -391,7 +466,7 @@ const Settings: React.FC = () => {
                                             fontSize: 15,
                                         }}
                                     >
-                                        立即初始化
+                                        立即同步
                                     </Button>
                                 </Tooltip>
                             )}
@@ -399,16 +474,16 @@ const Settings: React.FC = () => {
                     </Card>
 
                     {/* 初始化说明 */}
-                    <Card 
-                        size="small" 
-                        title={<span><Text strong>初始化操作说明</Text></span>}
+                    <Card
+                        size="small"
+                        title={<span><Text strong>同步操作说明</Text></span>}
                         style={{ marginBottom: 16, borderRadius: 12 }}
                     >
                         <Space direction="vertical" size={12} style={{ width: '100%' }}>
                             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                                <div style={{ 
-                                    width: 24, height: 24, borderRadius: '50%', 
-                                    backgroundColor: 'rgba(88, 101, 242, 0.1)', 
+                                <div style={{
+                                    width: 24, height: 24, borderRadius: '50%',
+                                    backgroundColor: 'rgba(88, 101, 242, 0.1)',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     flexShrink: 0, marginTop: 2
                                 }}>
@@ -422,9 +497,9 @@ const Settings: React.FC = () => {
                                 </div>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                                <div style={{ 
-                                    width: 24, height: 24, borderRadius: '50%', 
-                                    backgroundColor: 'rgba(88, 101, 242, 0.1)', 
+                                <div style={{
+                                    width: 24, height: 24, borderRadius: '50%',
+                                    backgroundColor: 'rgba(88, 101, 242, 0.1)',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     flexShrink: 0, marginTop: 2
                                 }}>
@@ -438,9 +513,9 @@ const Settings: React.FC = () => {
                                 </div>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                                <div style={{ 
-                                    width: 24, height: 24, borderRadius: '50%', 
-                                    backgroundColor: 'rgba(88, 101, 242, 0.1)', 
+                                <div style={{
+                                    width: 24, height: 24, borderRadius: '50%',
+                                    backgroundColor: 'rgba(88, 101, 242, 0.1)',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     flexShrink: 0, marginTop: 2
                                 }}>
@@ -461,9 +536,11 @@ const Settings: React.FC = () => {
                         message="注意事项"
                         description={
                             <ul style={{ marginBottom: 0, paddingLeft: 20, lineHeight: 2 }}>
-                                <li>初始化过程通常需要 2-5 秒，请耐心等待</li>
-                                <li>初始化不会影响现有的用户数据和业务数据</li>
-                                <li>建议在系统升级或配置变更后执行初始化</li>
+                                <li>同步过程通常需要 2-5 秒，请耐心等待</li>
+                                <li>同步不会影响现有的用户数据和业务数据</li>
+                                <li>同步不会影响现有角色的权限分配（权限ID不变）</li>
+                                <li>建议在系统升级或配置变更后执行同步</li>
+                                <li>超级管理员和普通管理员会自动获得所有新权限</li>
                             </ul>
                         }
                         type="info"

@@ -420,8 +420,7 @@ func TestGameHandler_ListGameLogs_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.True(t, response["success"].(bool))
-	data := response["data"].(map[string]interface{})
-	items := data["items"].([]interface{})
+	items := response["data"].([]interface{})
 	assert.GreaterOrEqual(t, len(items), 2)
 }
 
@@ -457,8 +456,7 @@ func TestGameHandler_ListGameLogs_WithFilters(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	require.NoError(t, err)
 
-	data := response["data"].(map[string]interface{})
-	items := data["items"].([]interface{})
+	items := response["data"].([]interface{})
 	assert.GreaterOrEqual(t, len(items), 1)
 
 	// Verify filtered items have action="create"
@@ -493,11 +491,11 @@ func TestGameHandler_ListGames_EmptyDatabase(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	require.NoError(t, err)
 
-	data := response["data"].(map[string]interface{})
-	items := data["items"].([]interface{})
+	// API returns data as array directly, not as object with items
+	items := response["data"].([]interface{})
 	assert.Equal(t, 0, len(items))
 
-	pagination := data["pagination"].(map[string]interface{})
+	pagination := response["pagination"].(map[string]interface{})
 	assert.Equal(t, float64(0), pagination["total"])
 }
 
@@ -558,14 +556,14 @@ func TestGameHandler_ListGames_PaginationTests(t *testing.T) {
 			err := json.Unmarshal(w.Body.Bytes(), &response)
 			require.NoError(t, err)
 
-			data := response["data"].(map[string]interface{})
-			items := data["items"].([]interface{})
-			pagination := data["pagination"].(map[string]interface{})
+			// API returns data as array directly, not as object with items
+			items := response["data"].([]interface{})
+			pagination := response["pagination"].(map[string]interface{})
 
 			assert.Equal(t, tc.expectedItems, len(items))
 			assert.Equal(t, float64(tc.expectedTotal), pagination["total"])
 			assert.Equal(t, float64(tc.page), pagination["page"])
-			assert.Equal(t, float64(tc.pageSize), pagination["pageSize"])
+			assert.Equal(t, float64(tc.pageSize), pagination["page_size"])
 		})
 	}
 }
@@ -584,7 +582,7 @@ func TestGameHandler_UpdateGame_ValidationTests(t *testing.T) {
 		expectCode int
 	}{
 		{
-			name: "empty payload",
+			name: "empty payload (with existing values)",
 			payload: map[string]interface{}{
 				"key":  game.Key,
 				"name": game.Name,
@@ -592,11 +590,18 @@ func TestGameHandler_UpdateGame_ValidationTests(t *testing.T) {
 			expectCode: http.StatusOK,
 		},
 		{
-			name: "partial update - only name",
+			name: "partial update - only name (should fail - key is required)",
 			payload: map[string]interface{}{
 				"name": "Updated Name Only",
 			},
-			expectCode: http.StatusOK,
+			expectCode: http.StatusBadRequest, // Key is required by service layer
+		},
+		{
+			name: "partial update - only key (should fail - name is required)",
+			payload: map[string]interface{}{
+				"key": "updated-key",
+			},
+			expectCode: http.StatusBadRequest, // Name is required by service layer
 		},
 		{
 			name: "update all fields",

@@ -614,12 +614,16 @@ const PlayerPage: React.FC = () => {
                 footer={
                     <Space>
                         <Button onClick={() => setAuditModalVisible(false)}>取消</Button>
-                        <Button danger icon={<CloseOutlined />} onClick={() => handleAudit(false)}>
-                            拒绝
-                        </Button>
-                        <Button type="primary" icon={<CheckOutlined />} onClick={() => handleAudit(true)}>
-                            通过
-                        </Button>
+                        <PermissionGuard permission={PLAYER_PERMISSIONS.AUDIT}>
+                            <Button danger icon={<CloseOutlined />} onClick={() => handleAudit(false)}>
+                                拒绝
+                            </Button>
+                        </PermissionGuard>
+                        <PermissionGuard permission={PLAYER_PERMISSIONS.AUDIT}>
+                            <Button type="primary" icon={<CheckOutlined />} onClick={() => handleAudit(true)}>
+                                通过
+                            </Button>
+                        </PermissionGuard>
                     </Space>
                 }
             >

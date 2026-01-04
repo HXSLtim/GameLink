@@ -68,6 +68,9 @@ func (m *MockFeedRepository) Get(ctx context.Context, id uint64) (*model.Feed, e
 
 func (m *MockFeedRepository) List(ctx context.Context, opts repository.FeedListOptions) ([]model.Feed, error) {
 	args := m.Called(ctx, opts)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
 	return args.Get(0).([]model.Feed), args.Error(1)
 }
 

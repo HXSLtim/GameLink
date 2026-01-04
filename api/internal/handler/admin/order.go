@@ -64,6 +64,7 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		UserID:          p.UserID,
 		PlayerID:        playerID,
 		GameID:          p.GameID,
+		ItemID:          p.ItemID,
 		Title:           p.Title,
 		Description:     p.Description,
 		TotalPriceCents: p.TotalPriceCents,
@@ -597,6 +598,7 @@ type CreateOrderPayload struct {
 	UserID          uint64  `json:"user_id" binding:"required"`
 	PlayerID        *uint64 `json:"player_id"`
 	GameID          uint64  `json:"game_id" binding:"required"`
+	ItemID          uint64  `json:"item_id" binding:"required"`
 	Title           string  `json:"title"`
 	Description     string  `json:"description"`
 	TotalPriceCents int64   `json:"total_price_cents" binding:"required"`

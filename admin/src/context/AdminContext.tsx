@@ -66,7 +66,7 @@ const AdminContext = createContext<AdminContextType>({
 export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [rawMenus, setRawMenus] = useState<Menu[]>([]);
     const [permissions, setPermissions] = useState<string[]>([]);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true); // 初始值为 true，首次加载时显示加载状态
     const [permissionVersion, setPermissionVersion] = useState(0);
 
     /**

@@ -2,9 +2,12 @@ package admin
 
 import (
 	"database/sql"
+	"fmt"
 	"runtime"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	mw "gamelink/internal/handler/middleware"
 	"gamelink/internal/model"
@@ -17,20 +20,22 @@ type SystemInfoHandler struct {
 	cfg         config.AppConfig
 	sqlDB       *sql.DB
 	cacheClient cache.Cache
+	db          *gorm.DB
 }
 
 // NewSystemInfoHandler 创建系统信息Handler
-func NewSystemInfoHandler(cfg config.AppConfig, sqlDB *sql.DB, cacheClient cache.Cache) *SystemInfoHandler {
+func NewSystemInfoHandler(cfg config.AppConfig, sqlDB *sql.DB, cacheClient cache.Cache, db *gorm.DB) *SystemInfoHandler {
 	return &SystemInfoHandler{
 		cfg:         cfg,
 		sqlDB:       sqlDB,
 		cacheClient: cacheClient,
+		db:          db,
 	}
 }
 
 // RegisterSystemRoutes 注册系统信息路由
-func RegisterSystemRoutes(router gin.IRouter, cfg config.AppConfig, sqlDB *sql.DB, cacheClient cache.Cache, pm *mw.PermissionMiddleware) {
-	h := NewSystemInfoHandler(cfg, sqlDB, cacheClient)
+func RegisterSystemRoutes(router gin.IRouter, cfg config.AppConfig, sqlDB *sql.DB, cacheClient cache.Cache, db *gorm.DB, pm *mw.PermissionMiddleware) {
+	h := NewSystemInfoHandler(cfg, sqlDB, cacheClient, db)
 	group := router.Group("/system")
 	{
 		group.GET("/config", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/system/config"), h.Config)
@@ -38,7 +43,72 @@ func RegisterSystemRoutes(router gin.IRouter, cfg config.AppConfig, sqlDB *sql.D
 		group.GET("/cache", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/system/cache"), h.CacheStatus)
 		group.GET("/resources", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/system/resources"), h.Resources)
 		group.GET("/version", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/system/version"), h.Version)
+		group.GET("/init-status", h.InitStatus) // No permission required - used for initialization check
 	}
+}
+
+// InitStatusResponse represents the initialization status response
+type InitStatusResponse struct {
+	Initialized    bool      `json:"initialized"`
+	LastSyncAt     *time.Time `json:"lastSyncAt,omitempty"`
+	MenuCount      int       `json:"menuCount,omitempty"`
+	PermissionCount int      `json:"permissionCount,omitempty"`
+	Version        string    `json:"version,omitempty"`
+	SyncedBy       uint64    `json:"syncedBy,omitempty"`
+	Message        string    `json:"message,omitempty"`
+}
+
+// InitStatus 获取系统初始化状态
+// @Summary      获取系统初始化状态
+// @Description  检查系统是否已初始化（菜单和权限同步）
+// @Tags         Admin - System
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string  true  "Bearer {token}"
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Router       /admin/system/init-status [get]
+func (h *SystemInfoHandler) InitStatus(c *gin.Context) {
+	response := InitStatusResponse{
+		Initialized: false,
+		Message:     "System not initialized",
+	}
+
+	// 判断准则：检查数据库内是否有按钮级权限和菜单记录
+	var permCount int64
+	var menuCount int64
+
+	// 统计权限数量（排除系统内置的角色管理权限，检查实际业务权限）
+	if err := h.db.Model(&model.Permission{}).Where("\"group\" != '' OR path LIKE '/api/v1/admin/%'").Count(&permCount).Error; err != nil {
+		respondError(c, fmt.Errorf("failed to check permissions: %w", err))
+		return
+	}
+
+	// 统计菜单数量
+	if err := h.db.Model(&model.Menu{}).Count(&menuCount).Error; err != nil {
+		respondError(c, fmt.Errorf("failed to check menus: %w", err))
+		return
+	}
+
+	// 真正的判断标准：有业务权限和菜单记录
+	if permCount > 0 && menuCount > 0 {
+		response.Initialized = true
+		response.MenuCount = int(menuCount)
+		response.PermissionCount = int(permCount)
+		response.Message = "System initialized"
+
+		// 尝试从 system_states 获取额外的同步信息（如果存在）
+		var state model.SystemState
+		if err := h.db.Where("key = ?", model.SystemStateKeyAdminInit).First(&state).Error; err == nil {
+			response.LastSyncAt = &state.LastSyncAt
+			response.Version = state.Version
+			response.SyncedBy = state.SyncedBy
+		}
+	} else {
+		response.Message = fmt.Sprintf("System not initialized - permissions: %d, menus: %d", permCount, menuCount)
+	}
+
+	respondSuccess(c, response)
 }
 
 // Config 获取系统配置

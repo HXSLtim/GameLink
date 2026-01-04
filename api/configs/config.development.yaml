@@ -55,7 +55,8 @@ signature:
 auth:
   # 建议通过环境变量 JWT_SECRET_KEY 配置（更安全）
   # 生成命令: openssl rand -base64 32
-  jwt_secret: ""
+  # 开发环境固定密钥（至少32字符）
+  jwt_secret: "gamelink-dev-secret-key-32chars-min"
   token_ttl_hours: 24
 
 seed:

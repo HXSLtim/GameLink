@@ -900,13 +900,17 @@ User A blocks Player B:
 # 启动测试数据库
 docker compose -f docker-compose.test.yml up -d
 
-# 环境变量
+# 环境变量（本地运行测试时连接宿主机端口）
 TEST_DB_HOST=localhost
-TEST_DB_PORT=5432
+TEST_DB_PORT=5433
 TEST_DB_USER=gamelink
 TEST_DB_PASSWORD=gamelink
 TEST_DB_NAME=gamelink_test
 ```
+
+> 说明：
+> - `docker-compose.test.yml` 将容器 `5432` 映射到宿主机 `5433`，因此本地跑测试应使用 `TEST_DB_PORT=5433`。
+> - CI（GitHub Actions）通常使用 services 直接暴露 `5432`，因此 CI 里常见 `TEST_DB_PORT=5432`（以 `.github/workflows/ci.yml` 为准）。
 
 ### 5.2 测试工具函数
 
@@ -968,37 +972,38 @@ func Test{ServiceName}_{MethodName}_{ErrorType}(t *testing.T) {
 # 启动测试数据库
 docker compose -f docker-compose.test.yml up -d
 
+# 推荐：使用 Makefile 一键设置环境变量并运行
+cd api
+make test-integration-db
+
 # 运行所有集成测试
-go test ./api/internal/service/integration/... -v
+go test ./internal/service/integration/... -v
 
 # 运行特定模块
-go test ./api/internal/service/integration/order_integration_test.go -v
+go test ./internal/service/integration/order_integration_test.go -v
 
 # 运行特定测试用例
-go test ./api/internal/service/integration/... -run TestOrderService_CreateOrder -v
+go test ./internal/service/integration/... -run TestOrderService_CreateOrder -v
 
 # 查看覆盖率
-go test ./api/internal/service/integration/... -cover -coverprofile=coverage.out
+go test ./internal/service/integration/... -cover -coverprofile=coverage.out
 go tool cover -html=coverage.out
 
 # 运行特定模块的覆盖率
-go test ./api/internal/service/integration/order_integration_test.go -cover -coverprofile=coverage_order.out
+go test ./internal/service/integration/order_integration_test.go -cover -coverprofile=coverage_order.out
 ```
 
 ### 6.2 CI/CD集成
 
 ```yaml
 # .github/workflows/ci.yml
-- name: Start test database
-  run: docker compose -f docker-compose.test.yml up -d
-
-- name: Run integration tests
-  run: go test ./api/internal/service/integration/... -v
+- name: Run tests (includes integration tests)
+  run: go test -v ./...
   env:
     TEST_DB_HOST: localhost
     TEST_DB_PORT: 5432
     TEST_DB_USER: gamelink
-    TEST_DB_PASSWORD: gamelink
+    TEST_DB_PASSWORD: testpassword
     TEST_DB_NAME: gamelink_test
 
 - name: Upload coverage

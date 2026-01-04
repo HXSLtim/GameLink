@@ -144,7 +144,16 @@ const PermissionPage: React.FC = () => {
      */
     const handleSearch = (values: Record<string, unknown>) => {
         setCurrent(1);
-        setSearchParams(values);
+        // 转换 is_system 字符串为布尔值
+        const processedParams = { ...values };
+        if (processedParams.is_system === 'true') {
+            processedParams.is_system = true;
+        } else if (processedParams.is_system === 'false') {
+            processedParams.is_system = false;
+        } else if (processedParams.is_system === undefined || processedParams.is_system === '') {
+            delete processedParams.is_system;
+        }
+        setSearchParams(processedParams);
     };
 
     /**

@@ -1,6 +1,20 @@
 package model
 
-import "time"
+import (
+	"golang.org/x/crypto/bcrypt"
+	"time"
+)
+
+// HashPassword creates a bcrypt hash of the password
+func HashPassword(password string) ([]byte, error) {
+	return bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost+2) // cost=12 for better security
+}
+
+// CheckPassword compares a password with its hash
+func CheckPassword(password string, hash []byte) bool {
+	err := bcrypt.CompareHashAndPassword(hash, []byte(password))
+	return err == nil
+}
 
 // Role defines platform roles for access control.
 // @Enum user, player, admin

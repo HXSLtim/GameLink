@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	mw "gamelink/internal/handler/middleware"
 	"gamelink/internal/model"
@@ -1217,8 +1218,8 @@ func RegisterSyncRoutes(router gin.IRouter, svc *adminservice.AdminService, pm *
 
 // RegisterSyncRoutesWithServices 注册同步专用路由（使用已初始化的服务）
 // 只保留批量同步接口，前端通过一次请求完成所有同步
-func RegisterSyncRoutesWithServices(router gin.IRouter, roleSvc *roleservice.RoleService, permService *permissionservice.PermissionService, menuSvc *adminservice.MenuService, pm *mw.PermissionMiddleware) {
-	batchSyncHandler := NewBatchSyncHandler(menuSvc, permService, roleSvc)
+func RegisterSyncRoutesWithServices(router gin.IRouter, roleSvc *roleservice.RoleService, permService *permissionservice.PermissionService, menuSvc *adminservice.MenuService, db *gorm.DB, pm *mw.PermissionMiddleware) {
+	batchSyncHandler := NewBatchSyncHandler(menuSvc, permService, roleSvc, db)
 
 	// 创建同步专用路由组 - 只认证，不限流
 	syncGroup := router.Group("/sync")

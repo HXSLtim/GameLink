@@ -546,8 +546,8 @@ func TestContentModeration_CategoryBasedModeration(t *testing.T) {
 	moderator := CreateUniqueTestUser(t, db, "category_moderator")
 
 	// Create content categories
-	category1 := CreateTestContentCategory(t, db, "Gaming", "Gaming related content")
-	category2 := CreateTestContentCategory(t, db, "Off-Topic", "Non-gaming content")
+	category1 := CreateTestContentCategory(t, db, "Gaming")
+	category2 := CreateTestContentCategory(t, db, "Off-Topic")
 
 	// Create content in different categories
 	content1 := &model.Feed{
@@ -951,7 +951,7 @@ func TestContentModeration_ContentWithCategory(t *testing.T) {
 	moderator := CreateUniqueTestUser(t, db, "category_moderator")
 
 	// Create category
-	category := CreateTestContentCategory(t, db, "Game Reviews", "User game reviews")
+	category := CreateTestContentCategory(t, db, "Game Reviews")
 
 	// Create content with category
 	content := &model.Feed{
@@ -1014,22 +1014,4 @@ func CreateTestSensitiveWordWithSeverity(t *testing.T, db *gorm.DB, word string,
 		t.Fatalf("Failed to create test sensitive word: %v", err)
 	}
 	return sw
-}
-
-// CreateTestContentCategory creates a test content category.
-func CreateTestContentCategory(t *testing.T, db *gorm.DB, name, description string) *model.ContentCategory {
-	t.Helper()
-	category := &model.ContentCategory{
-		Base: model.Base{
-			ExtJSON: "{}",
-		},
-		Name:        name,
-		Description: description,
-		Status:      model.ContentCategoryStatusActive,
-		SortOrder:   0,
-	}
-	if err := db.Create(category).Error; err != nil {
-		t.Fatalf("Failed to create test content category: %v", err)
-	}
-	return category
 }

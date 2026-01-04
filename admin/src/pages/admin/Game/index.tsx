@@ -175,7 +175,7 @@ const GamePage: React.FC = () => {
         });
         setBatchTarget((keys && keys.length > 0) ? 'selected' : 'all');
         setBatchDeleteVisible(true);
-    }, []);
+    }, [batchForm]);
 
     const submitBatchDelete = useCallback(async () => {
         try {
@@ -405,6 +405,17 @@ const GamePage: React.FC = () => {
                 onCancel={() => setEditModalVisible(false)}
                 confirmLoading={submitting}
                 width={600}
+                okButtonProps={{ hidden: true }}
+                footer={
+                    <Space>
+                        <Button onClick={() => setEditModalVisible(false)}>取消</Button>
+                        <PermissionGuard permission={currentGame ? GAME_PERMISSIONS.UPDATE : GAME_PERMISSIONS.CREATE}>
+                            <Button type="primary" loading={submitting} onClick={handleSaveEdit}>
+                                {currentGame ? '保存' : '创建'}
+                            </Button>
+                        </PermissionGuard>
+                    </Space>
+                }
             >
                 <Form form={form} layout="vertical">
                     <Form.Item

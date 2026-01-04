@@ -55,7 +55,7 @@ services:
     ports:
       - "8081:8080"  # 使用8081避免冲突
     environment:
-      - APP_ENV=production
+      - APP_ENV=${APP_ENV:-staging}
       - SERVICE_PORT=8080
       # 数据库配置
       - DB_DSN=postgresql://${POSTGRES_USER:-gamelink}:${POSTGRES_PASSWORD:-gamelink123}@postgres:5432/${POSTGRES_DB:-gamelink}?sslmode=disable
@@ -71,6 +71,8 @@ services:
       # 管理员配置
       - SUPER_ADMIN_EMAIL=${SUPER_ADMIN_EMAIL:-admin@gamelink.com}
       - SUPER_ADMIN_PASSWORD=${SUPER_ADMIN_PASSWORD}
+      # 加密配置（本地生产环境不加密）
+      - CRYPTO_ENABLED=${CRYPTO_ENABLED:-false}
     volumes:
       - ./api/configs:/app/configs:ro
       - backend-logs:/app/logs

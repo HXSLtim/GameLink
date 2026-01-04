@@ -22,11 +22,18 @@ const (
 // - Request duration histogram by method and path
 // - Slow request counter for requests taking longer than SlowRequestThreshold
 // - Logs warnings for slow requests
+// Note: The metrics collector must be initialized before this middleware is used
 func PrometheusMiddleware(monitorSvc *monitorservice.RealtimeService) gin.HandlerFunc {
-	// Initialize metrics collector if not already done
 	collector := metrics.GetCollector()
 	if collector == nil {
-		collector = metrics.NewCollector(nil)
+		// Collector not initialized - return a no-op middleware to avoid panics
+		// In production, ensure metrics.NewCollector is called before setting up routes
+		return func(c *gin.Context) {
+			if monitorSvc != nil {
+				monitorSvc.IncrementRequestCount()
+			}
+			c.Next()
+		}
 	}
 
 	return func(c *gin.Context) {
