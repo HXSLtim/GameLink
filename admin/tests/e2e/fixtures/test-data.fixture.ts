@@ -36,8 +36,8 @@ export interface AdminTestData {
 // Generate unique test data with timestamp to avoid conflicts
 const generateTestData = (): AdminTestData => ({
   adminUser: {
-    username: process.env.TEST_ADMIN_USERNAME || 'admin',
-    password: process.env.TEST_ADMIN_PASSWORD || 'admin123',
+    username: process.env.TEST_ADMIN_USERNAME || 'admin@gamelink.com',
+    password: process.env.TEST_ADMIN_PASSWORD || 'admin123456',
     email: process.env.TEST_ADMIN_EMAIL || 'admin@gamelink.com',
   },
   testUser: {
@@ -68,7 +68,7 @@ export const test = base.extend<{
 }>({
   testData: async (
     // eslint-disable-next-line no-empty-pattern
-    {},
+    { },
     use
   ) => {
     // eslint-disable-next-line react-hooks/rules-of-hooks
