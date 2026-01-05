@@ -38,7 +38,7 @@ export interface Order {
     description: string;
     totalPriceCents: number;
     currency: string;
-    status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled' | 'refunded';
+    status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'canceled' | 'refunded';
     scheduledStart: string;
     scheduledEnd: string;
     completedAt: string;
@@ -624,7 +624,7 @@ export interface TrendData {
 export interface OrderStats {
     total: number;
     completed: number;
-    cancelled: number;
+    canceled: number;
     refunded: number;
 }
 

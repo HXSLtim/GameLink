@@ -88,7 +88,7 @@ func TestRoleHandler_ListRoles(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			expectedCount:  3,
 			checkResponse: func(t *testing.T, body string) {
-				assert.Contains(t, body, `"items"`)
+				assert.Contains(t, body, `"data"`)
 			},
 		},
 		{
@@ -98,8 +98,8 @@ func TestRoleHandler_ListRoles(t *testing.T) {
 			expectedCount:  2,
 			checkResponse: func(t *testing.T, body string) {
 				assert.Contains(t, body, `"page":1`)
-				assert.Contains(t, body, `"pageSize":2`)
-				assert.Contains(t, body, `"totalCount":3`)
+				assert.Contains(t, body, `"page_size":2`)
+				assert.Contains(t, body, `"total":3`)
 			},
 		},
 		{

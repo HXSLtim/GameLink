@@ -704,3 +704,12 @@ func (m *mockPlayerRepo) BatchUpdateStatus(ctx context.Context, ids []uint64, st
 func (m *mockPlayerRepo) BatchDelete(ctx context.Context, ids []uint64) (int64, error) {
 	return int64(len(ids)), nil
 }
+
+func (m *mockPlayerRepo) GetByIDs(ctx context.Context, ids []uint64) ([]model.Player, error) {
+	players := make([]model.Player, len(ids))
+	for i, id := range ids {
+		players[i] = model.Player{}
+		players[i].ID = id
+	}
+	return players, nil
+}

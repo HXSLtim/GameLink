@@ -239,7 +239,7 @@ export const smartInit = async (config: InitConfig = {}): Promise<InitResult | n
     }
 
     // 检查是否需要初始化
-    const { needsInit, reason, status } = await shouldReInit();
+    const { needsInit, reason } = await shouldReInit();
 
     log(cfg.verbose!, `[Init] Initialization check: ${reason}`);
 

@@ -54,7 +54,7 @@ const statusConfig: Record<string, { color: string; text: string }> = {
     accepted: { color: 'cyan', text: '已接单' },
     in_progress: { color: 'processing', text: '进行中' },
     completed: { color: 'green', text: '已完成' },
-    cancelled: { color: 'default', text: '已取消' },
+    canceled: { color: 'default', text: '已取消' },
     refunded: { color: 'red', text: '已退款' },
 };
 
@@ -257,7 +257,7 @@ const UserOrders: React.FC = () => {
         { key: 'pending', label: '待支付', icon: <ExclamationCircleOutlined /> },
         { key: 'in_progress', label: '进行中', icon: <ClockCircleOutlined /> },
         { key: 'completed', label: '已完成', icon: <CheckCircleOutlined /> },
-        { key: 'cancelled', label: '已取消', icon: <CloseCircleOutlined /> },
+        { key: 'canceled', label: '已取消', icon: <CloseCircleOutlined /> },
     ];
 
     return (

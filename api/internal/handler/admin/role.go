@@ -191,11 +191,18 @@ func (h *RoleHandler) ListRoles(c *gin.Context) {
 		return
 	}
 
-	respondSuccess(c, gin.H{
-		"items":      ensureSlice(roles),
-		"page":       page,
-		"pageSize":   pageSize,
-		"totalCount": total,
+	// 使用标准分页响应格式
+	totalPages := int(total) / pageSize
+	if int(total)%pageSize > 0 {
+		totalPages++
+	}
+	respondList(c, roles, &model.Pagination{
+		Page:       page,
+		PageSize:   pageSize,
+		Total:      int(total),
+		TotalPages: totalPages,
+		HasNext:    page < totalPages,
+		HasPrev:    page > 1,
 	})
 }
 

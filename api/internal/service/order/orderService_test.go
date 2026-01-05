@@ -114,6 +114,9 @@ func (m *MockPlayerRepository) BatchUpdateStatus(ctx context.Context, ids []uint
 func (m *MockPlayerRepository) BatchDelete(ctx context.Context, ids []uint64) (int64, error) {
 	return 0, nil
 }
+func (m *MockPlayerRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.Player, error) {
+	return nil, nil
+}
 
 type MockUserRepository struct {
 	getUser func(ctx context.Context, id uint64) (*model.User, error)
@@ -151,6 +154,12 @@ func (m *MockUserRepository) FindByPhone(ctx context.Context, phone string) (*mo
 func (m *MockUserRepository) Create(ctx context.Context, user *model.User) error { return nil }
 func (m *MockUserRepository) Update(ctx context.Context, user *model.User) error { return nil }
 func (m *MockUserRepository) Delete(ctx context.Context, id uint64) error        { return nil }
+func (m *MockUserRepository) GetByEmail(ctx context.Context, email string) (*model.User, error) {
+	return nil, nil
+}
+func (m *MockUserRepository) UpdatePassword(ctx context.Context, userID uint64, newPassword string) error {
+	return nil
+}
 
 type MockGameRepository struct {
 	getGame func(ctx context.Context, id uint64) (*model.Game, error)
@@ -184,6 +193,9 @@ func (m *MockGameRepository) BatchUpdateSortOrder(ctx context.Context, updates m
 }
 func (m *MockGameRepository) BatchUpdateCategory(ctx context.Context, ids []uint64, category string) (int64, error) {
 	return 0, nil
+}
+func (m *MockGameRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.Game, error) {
+	return nil, nil
 }
 
 type MockPaymentRepository struct {

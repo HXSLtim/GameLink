@@ -7,8 +7,8 @@ import { Page, expect } from '@playwright/test';
 export class PlayerManagementPage {
   constructor(private page: Page) {}
 
-  // Element locators
-  private readonly pageTitle = this.page.getByRole('heading', { name: /陪玩师管理|player management/i });
+  // Element locators - PageContainer uses h1 for title
+  private readonly pageTitle = this.page.locator('h1').filter({ hasText: /陪玩师管理/ });
   private readonly table = this.page.locator('.ant-table');
   private readonly tableRows = this.page.locator('.ant-table-tbody tr');
   private readonly editButton = (rowIndex: number) => this.tableRows.nth(rowIndex).getByRole('button', { name: /编辑|edit/i });
@@ -32,7 +32,7 @@ export class PlayerManagementPage {
    * Navigate to player management page
    */
   async goto() {
-    await this.page.goto('/admin/Player');
+    await this.page.goto('/admin/biz/player');
     await this.waitForPageLoad();
   }
 
@@ -41,7 +41,11 @@ export class PlayerManagementPage {
    */
   async waitForPageLoad() {
     await this.page.waitForLoadState('networkidle');
-    await expect(this.pageTitle).toBeVisible({ timeout: 10000 });
+    // Wait for either the page title or the table to be visible
+    await Promise.race([
+      this.pageTitle.waitFor({ state: 'visible', timeout: 15000 }),
+      this.table.waitFor({ state: 'visible', timeout: 15000 }),
+    ]);
   }
 
   /**

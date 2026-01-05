@@ -7,7 +7,7 @@ server:
 
 database:
   type: "postgres"
-  dsn: "host=localhost port=5433 user=gamelink password=gamelink dbname=gamelink_dev sslmode=disable"
+  dsn: "host=localhost port=5433 user=gamelink password=gamelink123 dbname=gamelink sslmode=disable"
 
 cache:
   type: "redis"
@@ -63,7 +63,7 @@ seed:
   enabled: true
 
 super_admin:
-  email: "admin@gameLink.com"
+  email: "admin@gamelink.com"
   # 建议通过环境变量 SUPER_ADMIN_PASSWORD 配置（更安全）
   # 生成命令: openssl rand -base64 24
   password: ""

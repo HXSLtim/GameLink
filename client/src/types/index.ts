@@ -21,7 +21,7 @@ export interface Player {
 }
 
 // 订单相关
-export type OrderStatus = 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled'
+export type OrderStatus = 'pending' | 'accepted' | 'in_progress' | 'completed' | 'canceled'
 
 export interface Order {
   id: string

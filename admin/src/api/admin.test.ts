@@ -1048,8 +1048,8 @@ describe('Admin API - Order Management', () => {
         data: {
           success: true,
           code: 200,
-          message: 'Order cancelled',
-          data: { ...mockOrders[0], status: 'cancelled' as any },
+          message: 'Order canceled',
+          data: { ...mockOrders[0], status: 'canceled' as any },
         },
         status: 200,
         statusText: 'OK',
@@ -1219,7 +1219,7 @@ describe('Admin API - Dashboard & Statistics', () => {
           confirmed: 100,
           in_progress: 75,
           completed: 250,
-          cancelled: 25,
+          canceled: 25,
         },
         paymentsByStatus: {
           pending: 30,

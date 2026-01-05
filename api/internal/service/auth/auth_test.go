@@ -124,6 +124,18 @@ func (m *MockUserRepository) GetByPhone(ctx context.Context, phone string) (*mod
 	return m.FindByPhone(ctx, phone)
 }
 
+func (m *MockUserRepository) GetByEmail(ctx context.Context, email string) (*model.User, error) {
+	return m.FindByEmail(ctx, email)
+}
+
+func (m *MockUserRepository) UpdatePassword(ctx context.Context, userID uint64, newPassword string) error {
+	if user, ok := m.users[userID]; ok {
+		user.PasswordHash = newPassword
+		return nil
+	}
+	return repository.ErrNotFound
+}
+
 func (m *MockUserRepository) Delete(ctx context.Context, id uint64) error {
 	delete(m.users, id)
 	return nil

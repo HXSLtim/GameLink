@@ -263,6 +263,14 @@ func (m *MockPlayerRepository) BatchDelete(ctx context.Context, ids []uint64) (i
 	return args.Get(0).(int64), args.Error(1)
 }
 
+func (m *MockPlayerRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.Player, error) {
+	args := m.Called(ctx, ids)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]model.Player), args.Error(1)
+}
+
 // Helper function to create test order
 func createTestOrder(playerID uint64, totalPriceCents int64) *model.Order {
 	pID := playerID

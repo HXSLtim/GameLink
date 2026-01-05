@@ -4,6 +4,7 @@ import { Form, Input, Button, Card, App, Tabs, theme, Checkbox } from 'antd';
 import { LockOutlined, UserOutlined } from '@ant-design/icons';
 import { authApi } from '@/api/auth';
 import { ENABLE_QUICK_LOGIN, DEBUG_USERS } from '@/config/debug';
+import { useAdmin } from '@/context/useAdmin';
 
 import { logger } from '@/utils/logger';
 const REMEMBER_KEY = 'gamelink_remember_login';
@@ -14,6 +15,7 @@ const Login: React.FC = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [form] = Form.useForm();
+    const { refreshMenus } = useAdmin();
 
     // 加载记住的账号密码
     useEffect(() => {
@@ -68,13 +70,16 @@ const Login: React.FC = () => {
             localStorage.setItem('user_role', user.role);
             localStorage.setItem('user_info', JSON.stringify(user));
 
+            // 登录成功后刷新菜单和权限数据
+            await refreshMenus();
+
             message.success('登录成功');
 
             const role = user.role.toUpperCase();
             if (role === 'ADMIN') {
                 navigate('/admin');
-            } else if (role === 'COMPANION') {
-                navigate('/companion');
+            } else if (role === 'PLAYER') {
+                navigate('/player');
             } else {
                 navigate('/');
             }

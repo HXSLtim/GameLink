@@ -53,7 +53,7 @@ export interface Order {
   orderNo: string;
   userId: number;
   playerIds: number[];
-  status: 'pending' | 'in_progress' | 'completed' | 'cancelled' | 'refunded';
+  status: 'pending' | 'in_progress' | 'completed' | 'canceled' | 'refunded';
   amount: number;
   duration: number;
   createdAt: string;

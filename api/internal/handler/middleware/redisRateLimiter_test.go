@@ -68,6 +68,10 @@ func (tc *testCache) GetClient() *redis.Client {
 	return tc.client
 }
 
+func (tc *testCache) GetRedisClient() interface{} {
+	return tc.client
+}
+
 // TestRedisRateLimiter_NewRedisRateLimiter tests creating a new Redis rate limiter
 func TestRedisRateLimiter_NewRedisRateLimiter(t *testing.T) {
 	gin.SetMode(gin.TestMode)

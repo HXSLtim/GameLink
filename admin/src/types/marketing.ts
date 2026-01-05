@@ -213,7 +213,7 @@ export type ReferralType = 'user' | 'player';
  * Referral Status
  * 推荐状态
  */
-export type ReferralStatus = 'pending' | 'completed' | 'cancelled';
+export type ReferralStatus = 'pending' | 'completed' | 'canceled';
 
 /**
  * Reward Type
@@ -288,7 +288,6 @@ export interface Referral {
     type: ReferralType;
     status: ReferralStatus;
     completedAt?: string;
-    cancelledAt?: string;
     cancelReason?: string;
     createdAt: string;
     updatedAt: string;
@@ -337,7 +336,7 @@ export interface ReferralStats {
     totalReferrals: number;
     completedReferrals: number;
     pendingReferrals: number;
-    cancelledReferrals: number;
+    canceledReferrals: number;
     totalRewardsCents: number;
     issuedRewardsCents: number;
     pendingRewardsCents: number;

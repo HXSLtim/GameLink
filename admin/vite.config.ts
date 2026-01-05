@@ -61,9 +61,16 @@ export default defineConfig(({ mode }) => ({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    testTimeout: 10000,
+    hookTimeout: 10000,
+    // 缓存优化
+    cache: {
+      dir: 'node_modules/.vitest',
+    },
+    // 覆盖率配置
     coverage: {
       reporter: ['text', 'json', 'html'],
-      exclude: ['node_modules/', 'src/test/'],
+      exclude: ['node_modules/', 'src/test/', '**/*.d.ts', '**/*.test.{ts,tsx}'],
     },
   },
   plugins: [

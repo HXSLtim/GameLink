@@ -1,35 +1,43 @@
 # GameLink 开发环境 Docker Compose 配置
-# 使用方式: docker compose up -d --build
+# 使用方式: docker-compose up -d
+#
+# 仅部署数据库服务，后端和前端本地运行:
+#   - 后端: cd api && go run cmd/main.go
+#   - 前端: cd admin && npm run dev
 
 services:
-  # PostgreSQL 数据库（开发环境）
+  # PostgreSQL 数据库
   postgres:
     image: postgres:16-alpine
-    container_name: gamelink-postgres-dev
+    container_name: gamelink-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: gamelink
-      POSTGRES_PASSWORD: gamelink
-      POSTGRES_DB: gamelink_dev
+      POSTGRES_USER: ${POSTGRES_USER:-gamelink}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gamelink123}
+      POSTGRES_DB: ${POSTGRES_DB:-gamelink}
+      POSTGRES_INITDB_ARGS: --encoding=UTF8 --lc-collate=C --lc-ctype=C
     ports:
-      - "5433:5432"
+      - "${POSTGRES_PORT:-5433}:5432"
     volumes:
-      - postgres_dev_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - gamelink-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U gamelink -d gamelink_dev"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gamelink} -d ${POSTGRES_DB:-gamelink}"]
       interval: 5s
       timeout: 5s
       retries: 10
 
-  # Redis（开发环境）
+  # Redis 缓存
   redis:
     image: redis:7-alpine
-    container_name: gamelink-redis-dev
+    container_name: gamelink-redis
     restart: unless-stopped
+    command: redis-server --appendonly yes --appendfsync everysec --maxmemory 256mb --maxmemory-policy allkeys-lru
     ports:
-      - "6380:6379"
+      - "${REDIS_PORT:-6380}:6379"
+    volumes:
+      - redis_data:/data
     networks:
       - gamelink-network
     healthcheck:
@@ -38,75 +46,13 @@ services:
       timeout: 5s
       retries: 10
 
-  # 后端服务
-  backend:
-    build:
-      context: ./api
-      dockerfile: Dockerfile
-      args:
-        GOPROXY: https://goproxy.cn,direct
-    container_name: gamelink-backend
-    restart: unless-stopped
-    ports:
-      - "8080:8080"
-    environment:
-      - APP_ENV=development
-      - SERVICE_PORT=8080
-      - CRYPTO_ENABLED=false
-      - DB_DSN=host=postgres port=5432 user=gamelink password=gamelink dbname=gamelink_dev sslmode=disable
-      - REDIS_ADDR=redis:6379
-      - REDIS_PASSWORD=
-      # 开发环境默认超管账号（便于本地管理端登录）
-      - SUPER_ADMIN_EMAIL=admin@gamelink.com
-      - SUPER_ADMIN_PASSWORD=admin123456
-    volumes:
-      # 挂载配置文件
-      - ./api/configs:/app/configs:ro
-      # 挂载数据目录
-      - backend-data:/app/var
-    networks:
-      - gamelink-network
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/v1/healthz"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-
-  # 管理后台前端
-  admin:
-    build:
-      context: ./admin
-      dockerfile: Dockerfile
-      args:
-        NPM_REGISTRY: https://registry.npmmirror.com
-    container_name: gamelink-admin
-    restart: unless-stopped
-    ports:
-      - "80:80"
-    depends_on:
-      backend:
-        condition: service_healthy
-    networks:
-      - gamelink-network
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
 networks:
   gamelink-network:
     driver: bridge
     name: gamelink-network
 
 volumes:
-  backend-data:
-    name: gamelink-backend-data
-  postgres_dev_data:
-    name: gamelink-postgres-dev-data
+  postgres_data:
+    name: gamelink-postgres-data
+  redis_data:
+    name: gamelink-redis-data

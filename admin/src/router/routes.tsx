@@ -99,7 +99,7 @@ export const routes: RouteConfig[] = [
     {
         path: '/admin',
         element: <AdminLayout />,
-        meta: { roles: ['ADMIN', 'CS', 'FINANCE'], requiresAuth: true, title: '管理后台' },
+        meta: { roles: ['ADMIN'], requiresAuth: true, title: '管理后台' },
         children: [
             // 仪表盘
             {

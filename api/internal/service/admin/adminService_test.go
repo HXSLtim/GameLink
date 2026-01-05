@@ -80,6 +80,14 @@ func (m *MockGameRepository) BatchUpdateCategory(ctx context.Context, ids []uint
 	return args.Get(0).(int64), args.Error(1)
 }
 
+func (m *MockGameRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.Game, error) {
+	args := m.Called(ctx, ids)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]model.Game), args.Error(1)
+}
+
 // MockUserRepository is a mock implementation of UserRepository
 type MockUserRepository struct {
 	mock.Mock
@@ -167,6 +175,15 @@ func (m *MockUserRepository) GetByPhone(ctx context.Context, phone string) (*mod
 	return m.FindByPhone(ctx, phone)
 }
 
+func (m *MockUserRepository) GetByEmail(ctx context.Context, email string) (*model.User, error) {
+	return m.FindByEmail(ctx, email)
+}
+
+func (m *MockUserRepository) UpdatePassword(ctx context.Context, userID uint64, newPassword string) error {
+	args := m.Called(ctx, userID, newPassword)
+	return args.Error(0)
+}
+
 // MockPlayerRepository is a mock implementation of PlayerRepository
 type MockPlayerRepository struct {
 	mock.Mock
@@ -226,6 +243,14 @@ func (m *MockPlayerRepository) BatchUpdateStatus(ctx context.Context, ids []uint
 func (m *MockPlayerRepository) BatchDelete(ctx context.Context, ids []uint64) (int64, error) {
 	args := m.Called(ctx, ids)
 	return args.Get(0).(int64), args.Error(1)
+}
+
+func (m *MockPlayerRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.Player, error) {
+	args := m.Called(ctx, ids)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]model.Player), args.Error(1)
 }
 
 func (m *MockPlayerRepository) BatchUpdateHourlyRate(ctx context.Context, ids []uint64, rateCents int64) (int64, error) {
@@ -836,6 +861,11 @@ func (m *MockCache) Delete(ctx context.Context, key string) error {
 func (m *MockCache) Close(ctx context.Context) error {
 	args := m.Called(ctx)
 	return args.Error(0)
+}
+
+func (m *MockCache) GetRedisClient() interface{} {
+	args := m.Called()
+	return args.Get(0)
 }
 
 // Helper function to create a hashed password

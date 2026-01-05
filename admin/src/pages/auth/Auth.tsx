@@ -41,8 +41,8 @@ const Auth: React.FC = () => {
             const role = user.role.toUpperCase();
             if (role === 'ADMIN') {
                 navigate('/admin');
-            } else if (role === 'COMPANION') {
-                navigate('/companion');
+            } else if (role === 'PLAYER') {
+                navigate('/player');
             } else {
                 navigate('/');
             }

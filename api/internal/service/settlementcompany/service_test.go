@@ -183,6 +183,10 @@ func (m *MockPlayerRepository) BatchUpdateHourlyRate(_ context.Context, _ []uint
 	return 0, nil
 }
 
+func (m *MockPlayerRepository) GetByIDs(_ context.Context, _ []uint64) ([]model.Player, error) {
+	return nil, nil
+}
+
 // Test cases
 
 func TestCreateCompany_Success(t *testing.T) {

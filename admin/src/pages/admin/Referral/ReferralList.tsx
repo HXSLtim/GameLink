@@ -366,7 +366,7 @@ const ReferralList: React.FC<ReferralListProps> = ({ onDataChange }) => {
                             options={[
                                 { value: 'pending', label: '待完成' },
                                 { value: 'completed', label: '已完成' },
-                                { value: 'cancelled', label: '已取消' },
+                                { value: 'canceled', label: '已取消' },
                             ]}
                         />
                     </Space.Compact>
@@ -456,15 +456,10 @@ const ReferralList: React.FC<ReferralListProps> = ({ onDataChange }) => {
                                     {dayjs(currentReferral.completedAt).format('YYYY-MM-DD HH:mm:ss')}
                                 </Descriptions.Item>
                             )}
-                            {currentReferral.cancelledAt && (
-                                <>
-                                    <Descriptions.Item label="取消时间" span={2}>
-                                        {dayjs(currentReferral.cancelledAt).format('YYYY-MM-DD HH:mm:ss')}
-                                    </Descriptions.Item>
-                                    <Descriptions.Item label="取消原因" span={2}>
-                                        {currentReferral.cancelReason || '-'}
-                                    </Descriptions.Item>
-                                </>
+                            {currentReferral.cancelReason && (
+                                <Descriptions.Item label="取消原因" span={2}>
+                                    {currentReferral.cancelReason}
+                                </Descriptions.Item>
                             )}
                         </Descriptions>
 
@@ -510,7 +505,7 @@ const ReferralList: React.FC<ReferralListProps> = ({ onDataChange }) => {
                             options={[
                                 { value: 'pending', label: '待完成' },
                                 { value: 'completed', label: '已完成' },
-                                { value: 'cancelled', label: '已取消' },
+                                { value: 'canceled', label: '已取消' },
                             ]}
                         />
                     </Form.Item>
@@ -542,7 +537,7 @@ const ReferralList: React.FC<ReferralListProps> = ({ onDataChange }) => {
                             options={[
                                 { value: 'pending', label: '待完成' },
                                 { value: 'completed', label: '已完成' },
-                                { value: 'cancelled', label: '已取消' },
+                                { value: 'canceled', label: '已取消' },
                             ]}
                         />
                     </Form.Item>

@@ -110,7 +110,11 @@ apiClient.interceptors.response.use(
                     }
                 );
 
-                const { token } = response.data.data;
+                const tokenData = response.data?.data;
+                if (!tokenData?.token) {
+                    throw new Error('Invalid refresh token response');
+                }
+                const { token } = tokenData;
 
                 // Update both sessionStorage (authStore) and localStorage (legacy)
                 sessionStorage.setItem('auth_token', token);

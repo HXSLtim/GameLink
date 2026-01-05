@@ -9,7 +9,7 @@ interface Order {
   game: string
   hours: number
   amount: number
-  status: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled'
+  status: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'canceled'
   createdAt: string
 }
 
@@ -39,7 +39,7 @@ export default function OrderList() {
     accepted: { color: 'blue', text: '已接单' },
     in_progress: { color: 'processing', text: '进行中' },
     completed: { color: 'success', text: '已完成' },
-    cancelled: { color: 'error', text: '已取消' },
+    canceled: { color: 'error', text: '已取消' },
   }
 
   const columns = [

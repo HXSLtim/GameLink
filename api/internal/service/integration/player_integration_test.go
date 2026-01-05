@@ -105,6 +105,10 @@ func (m *mockCache) Close(ctx context.Context) error {
 	return nil
 }
 
+func (m *mockCache) GetRedisClient() interface{} {
+	return nil
+}
+
 var _ cache.Cache = (*mockCache)(nil)
 
 func TestPlayerService_ListPlayers(t *testing.T) {

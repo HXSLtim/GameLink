@@ -40,7 +40,7 @@ export type OrderStatus =
   | 'paid'          // Paid, waiting for players to accept
   | 'in_progress'   // Service in progress
   | 'completed'     // Service completed
-  | 'cancelled'     // Cancelled
+  | 'canceled'      // Canceled
   | 'refunded';     // Refunded
 
 export interface Order {

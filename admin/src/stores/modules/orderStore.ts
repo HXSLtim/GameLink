@@ -355,7 +355,7 @@ export const useOrderStore = create<OrderState>()(
           // 更新本地缓存
           set((state) => ({
             orders: state.orders.map((o) =>
-              orderIds.includes(o.id) ? { ...o, status: 'cancelled' as const } : o
+              orderIds.includes(o.id) ? { ...o, status: 'canceled' as const } : o
             ),
             selectedOrderIds: [], // 清空选中
             loading: false,

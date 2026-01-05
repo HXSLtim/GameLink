@@ -110,3 +110,9 @@ swagger.yaml
 # Generated files
 *.generated.*
 
+# Additional Test Artifacts
+admin/test-output.txt
+admin/test-results.json
+api/test_coverage.txt
+test_frontend.txt
+

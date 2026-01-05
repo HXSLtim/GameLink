@@ -34,7 +34,7 @@ export type OrderStatus =
   | 'confirmed'
   | 'in_progress'
   | 'completed'
-  | 'cancelled'
+  | 'canceled'
   | 'refunded';
 
 export const OrderStatus = {
@@ -42,7 +42,7 @@ export const OrderStatus = {
   CONFIRMED: 'confirmed' as const,
   IN_PROGRESS: 'in_progress' as const,
   COMPLETED: 'completed' as const,
-  CANCELLED: 'cancelled' as const,
+  CANCELED: 'canceled' as const,
   REFUNDED: 'refunded' as const,
 };
 

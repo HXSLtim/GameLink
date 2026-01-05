@@ -34,33 +34,45 @@ export interface AdminTestData {
 }
 
 // Generate unique test data with timestamp to avoid conflicts
-const generateTestData = (): AdminTestData => ({
-  adminUser: {
-    username: process.env.TEST_ADMIN_USERNAME || 'admin@gamelink.com',
-    password: process.env.TEST_ADMIN_PASSWORD || 'admin123456',
-    email: process.env.TEST_ADMIN_EMAIL || 'admin@gamelink.com',
-  },
-  testUser: {
-    name: `Test User ${Date.now()}`,
-    email: `testuser${Date.now()}@example.com`,
-    phone: `1${Math.floor(Math.random() * 10000000000)}`,
-    password: 'Test123!@#',
-    role: 'user',
-  },
-  testPlayer: {
-    nickname: `Player ${Date.now()}`,
-    bio: 'Professional gamer with 5+ years experience',
-    rank: 'diamond',
-    hourlyRateCents: 5000, // $50/hour
-    mainGameId: 1,
-  },
-  testOrder: {
-    title: `Test Order ${Date.now()}`,
-    description: 'Test order for E2E testing',
-    scheduledStart: new Date(Date.now() + 86400000).toISOString().slice(0, 16),
-    scheduledEnd: new Date(Date.now() + 90000000).toISOString().slice(0, 16),
-  },
-});
+const generateTestData = (): AdminTestData => {
+  // Check for required environment variables
+  const adminPassword = process.env.TEST_ADMIN_PASSWORD;
+  if (!adminPassword) {
+    console.warn(
+      '⚠️ TEST_ADMIN_PASSWORD environment variable not set. ' +
+      'Please set it to your actual admin password or create admin/.env file. ' +
+      'Example: $env:TEST_ADMIN_PASSWORD="YourActualPassword"'
+    );
+  }
+
+  return {
+    adminUser: {
+      username: process.env.TEST_ADMIN_USERNAME || 'admin@gamelink.com',
+      password: adminPassword || 'admin123456', // Default matches docker-compose.yml
+      email: process.env.TEST_ADMIN_EMAIL || 'admin@gamelink.com',
+    },
+    testUser: {
+      name: `Test User ${Date.now()}`,
+      email: `testuser${Date.now()}@example.com`,
+      phone: `1${Math.floor(Math.random() * 10000000000)}`,
+      password: 'Test123!@#',
+      role: 'user',
+    },
+    testPlayer: {
+      nickname: `Player ${Date.now()}`,
+      bio: 'Professional gamer with 5+ years experience',
+      rank: 'diamond',
+      hourlyRateCents: 5000, // $50/hour
+      mainGameId: 1,
+    },
+    testOrder: {
+      title: `Test Order ${Date.now()}`,
+      description: 'Test order for E2E testing',
+      scheduledStart: new Date(Date.now() + 86400000).toISOString().slice(0, 16),
+      scheduledEnd: new Date(Date.now() + 90000000).toISOString().slice(0, 16),
+    },
+  };
+};
 
 // Extend base test with test data fixture
 export const test = base.extend<{

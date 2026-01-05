@@ -27,7 +27,7 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   [OrderStatus.CONFIRMED]: '已确认',
   [OrderStatus.IN_PROGRESS]: '进行中',
   [OrderStatus.COMPLETED]: '已完成',
-  [OrderStatus.CANCELLED]: '已取消',
+  [OrderStatus.CANCELED]: '已取消',
   [OrderStatus.REFUNDED]: '已退款',
 };
 
@@ -37,7 +37,7 @@ export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
   [OrderStatus.CONFIRMED]: 'processing', // blue/1890ff
   [OrderStatus.IN_PROGRESS]: 'processing', // cyan/13c2c2
   [OrderStatus.COMPLETED]: 'success',    // green/52c41a
-  [OrderStatus.CANCELLED]: 'default',     // gray/8c8c8c
+  [OrderStatus.CANCELED]: 'default',     // gray/8c8c8c
   [OrderStatus.REFUNDED]: 'error',       // red/f5222d
 };
 

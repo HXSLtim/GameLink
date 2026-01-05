@@ -142,7 +142,7 @@ export const orderExportColumns: ExportColumn[] = [
     { key: 'status', title: '状态', render: (v) => {
         const map: Record<string, string> = {
             pending: '待确认', confirmed: '已确认', in_progress: '进行中',
-            completed: '已完成', cancelled: '已取消', refunded: '已退款'
+            completed: '已完成', canceled: '已取消', refunded: '已退款'
         };
         return map[v as string] || String(v);
     }},

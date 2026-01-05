@@ -79,6 +79,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             setPermissions([]);
             setRawMenus([]);
             permissionStore.clearPermissions();
+            setLoading(false);
             return;
         }
 
@@ -191,13 +192,22 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         refreshMenus();
     }, [refreshMenus]);
 
-    // 初始化时加载权限（仅在非登录页面）
+    // 初始化时加载权限（仅在非登录页面且有 token 时）
     useEffect(() => {
-        // 如果当前在登录页面，不需要加载权限
+        // 如果当前在登录页面，设置 loading 为 false 并返回
         if (window.location.pathname.includes('/login')) {
+            setLoading(false);
             return;
         }
-        refreshMenus();
+        
+        // 检查是否有 token，如果有则加载菜单
+        const token = localStorage.getItem('token');
+        if (token) {
+            refreshMenus();
+        } else {
+            // 没有 token，设置 loading 为 false
+            setLoading(false);
+        }
     }, [refreshMenus]);
 
     // 监听登录/登出事件和权限变更事件

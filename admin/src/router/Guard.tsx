@@ -56,7 +56,7 @@ const RouteGuard = ({ children, roles, requiresAuth, permission }: RouteGuardPro
         if (roles && userRole && !roles.includes(userRole)) {
             // Redirect to appropriate home based on role or 403 page
             if (userRole === 'USER') navigate('/');
-            else if (userRole === 'COMPANION') navigate('/companion');
+            else if (userRole === 'PLAYER') navigate('/player');
             else if (userRole === 'ADMIN') navigate('/admin');
             else navigate('/'); // Fallback
         }

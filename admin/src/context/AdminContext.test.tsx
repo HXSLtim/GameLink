@@ -11,6 +11,18 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
+
+// Unmock the AdminContext module to test the actual implementation
+vi.unmock('@/context/AdminContext');
+vi.unmock('@/context/useAdmin');
+
+// Mock the API calls that AdminContext makes
+vi.mock('@/api/admin', () => ({
+    getMyMenus: vi.fn().mockResolvedValue({ data: [] }),
+    getMyPermissions: vi.fn().mockResolvedValue({ data: [] }),
+}));
+
+// Import after unmocking
 import { AdminProvider } from './AdminContext';
 import { useAdmin } from './useAdmin';
 

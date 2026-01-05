@@ -18,7 +18,7 @@ export type ReferralType = 'user' | 'player';
  * Referral Status
  * Matches backend model.ReferralStatus
  */
-export type ReferralStatus = 'pending' | 'completed' | 'cancelled';
+export type ReferralStatus = 'pending' | 'completed' | 'canceled';
 
 /**
  * Reward Type
@@ -155,7 +155,6 @@ export interface Referral {
     type: ReferralType;
     status: ReferralStatus;
     completedAt?: string;
-    cancelledAt?: string;
     cancelReason?: string;
     createdAt: string;
     updatedAt: string;
@@ -271,7 +270,7 @@ export interface ReferralStats {
     totalReferrals: number;
     completedReferrals: number;
     pendingReferrals: number;
-    cancelledReferrals: number;
+    canceledReferrals: number;
     totalRewardsCents: number;
     issuedRewardsCents: number;
     pendingRewardsCents: number;
@@ -479,7 +478,7 @@ export const getReferralStatusLabel = (status: ReferralStatus): string => {
     const labels: Record<ReferralStatus, string> = {
         pending: '待完成',
         completed: '已完成',
-        cancelled: '已取消',
+        canceled: '已取消',
     };
     return labels[status] || status;
 };
@@ -491,7 +490,7 @@ export const getReferralStatusColor = (status: ReferralStatus): string => {
     const colors: Record<ReferralStatus, string> = {
         pending: 'orange',
         completed: 'green',
-        cancelled: 'red',
+        canceled: 'red',
     };
     return colors[status] || 'default';
 };
