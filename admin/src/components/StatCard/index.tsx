@@ -118,9 +118,11 @@ const StatCard: React.FC<StatCardProps> = React.memo(({
             className={`${styles.card} ${onClick ? styles.clickable : ''}`}
             onClick={onClick}
             hoverable={!!onClick}
+            role="region"
+            aria-label={typeof title === 'string' ? `${title}统计` : '统计卡片'}
         >
             {loading ? (
-                <Skeleton active paragraph={{ rows: 2 }} />
+                <Skeleton active paragraph={{ rows: 2 }} aria-busy="true" aria-label="加载中" />
             ) : (
                 <>
                     <div className={styles.header}>
@@ -128,7 +130,11 @@ const StatCard: React.FC<StatCardProps> = React.memo(({
                             <span className={styles.title}>{title}</span>
                             {tooltip && (
                                 <Tooltip title={tooltip}>
-                                    <InfoCircleOutlined className={styles.infoIcon} />
+                                    <InfoCircleOutlined
+                                        className={styles.infoIcon}
+                                        aria-label={`提示: ${tooltip}`}
+                                        role="img"
+                                    />
                                 </Tooltip>
                             )}
                         </div>
@@ -136,6 +142,7 @@ const StatCard: React.FC<StatCardProps> = React.memo(({
                             <div
                                 className={styles.iconWrapper}
                                 style={{ backgroundColor: iconBgColor || token.colorPrimary }}
+                                aria-hidden="true"
                             >
                                 {icon}
                             </div>
