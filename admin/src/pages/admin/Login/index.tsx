@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Form, Input, Button, Card, App, theme, Checkbox } from 'antd';
 import { UserOutlined, LockOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
 import { authApi } from '@/api/auth';
+import { useAuthStore } from '@/stores';
 import { ENABLE_QUICK_LOGIN, DEBUG_USERS } from '@/config/debug';
 
 import { logger } from '@/utils/logger';
@@ -18,6 +19,7 @@ const AdminLogin: React.FC = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [form] = Form.useForm();
+    const { setToken, setUserInfo } = useAuthStore();
 
     // 加载记住的账号密码
     useEffect(() => {
@@ -76,7 +78,26 @@ const AdminLogin: React.FC = () => {
 
             localStorage.setItem('token', authToken);
             localStorage.setItem('user_role', user.role);
-            localStorage.setItem('user_info', JSON.stringify(user));
+            // 保存用户信息，同时兼容两种字段名格式
+            localStorage.setItem('user_info', JSON.stringify({
+                ...user,
+                username: user.name || user.username,
+                avatar: user.avatarUrl || user.avatar,
+            }));
+
+            // 同步到 authStore（供 ProfilePage 等组件使用）
+            setToken(authToken);
+            setUserInfo({
+                id: user.id,
+                name: (user.name || user.username) as string,
+                email: user.email as string || '',
+                phone: user.phone as string | undefined,
+                avatar: (user.avatarUrl || user.avatar) as string | undefined,
+                role: user.role,
+                permissions: [],
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+            });
 
             message.success('登录成功');
             navigate('/admin');

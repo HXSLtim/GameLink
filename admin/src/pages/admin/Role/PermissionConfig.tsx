@@ -3,7 +3,7 @@
  * Requirements: 2.1, 2.2, 2.4, 2.5
  *
  * 功能：
- * - 以树形结构展示所有权限
+ * - 以树形结构展示所有权限（按分组懒加载）
  * - 支持父子节点联动选择
  * - 高亮已分配权限
  * - 系统角色显示特殊提示
@@ -32,10 +32,10 @@ import {
 import { useParams, useNavigate } from 'react-router-dom';
 import { PageContainer } from '@/components';
 import { PermissionTree } from '@/components/PermissionTree';
-import { roleApi, permissionApi } from '@/api/permission';
+import { roleApi } from '@/api/permission';
 import { ROLE_PERMISSIONS } from '@/constants/permissions';
 import { PermissionGuard } from '@/components/PermissionGuard';
-import type { Role, PermissionTreeNode } from '@/types/permission';
+import type { Role } from '@/types/permission';
 
 import { logger } from '@/utils/logger';
 const { Text } = Typography;
@@ -53,7 +53,6 @@ const RolePermissionConfig: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [role, setRole] = useState<Role | null>(null);
-    const [permissionTree, setPermissionTree] = useState<PermissionTreeNode[]>([]);
     const [checkedKeys, setCheckedKeys] = useState<number[]>([]);
     const [originalCheckedKeys, setOriginalCheckedKeys] = useState<number[]>([]);
 
@@ -73,21 +72,6 @@ const RolePermissionConfig: React.FC = () => {
             message.error('加载角色信息失败');
         }
     }, [roleId, message]);
-
-    /**
-     * 加载权限树
-     */
-    const loadPermissionTree = useCallback(async () => {
-        try {
-            const res = await permissionApi.getTree();
-            if (res.data.success && res.data.data) {
-                setPermissionTree(res.data.data);
-            }
-        } catch (error) {
-            logger.error('Failed to load permission tree:', error);
-            message.error('加载权限树失败');
-        }
-    }, [message]);
 
     /**
      * 加载角色已有权限
@@ -114,14 +98,14 @@ const RolePermissionConfig: React.FC = () => {
     useEffect(() => {
         const loadData = async () => {
             setLoading(true);
-            await Promise.all([loadRole(), loadPermissionTree(), loadRolePermissions()]);
+            await Promise.all([loadRole(), loadRolePermissions()]);
             setLoading(false);
         };
 
         if (roleId) {
             loadData();
         }
-    }, [roleId, loadRole, loadPermissionTree, loadRolePermissions]);
+    }, [roleId, loadRole, loadRolePermissions]);
 
     /**
      * 处理权限选择变化
@@ -329,7 +313,6 @@ const RolePermissionConfig: React.FC = () => {
                 />
             )}
 
-            {/* 权限配置卡片 */}
             <Card
                 title={
                     <Space>
@@ -341,7 +324,6 @@ const RolePermissionConfig: React.FC = () => {
                 }
             >
                 <PermissionTree
-                    treeData={permissionTree}
                     checkedKeys={checkedKeys}
                     onCheck={handleCheck}
                     loading={loading}
@@ -351,6 +333,7 @@ const RolePermissionConfig: React.FC = () => {
                     height={500}
                     virtual
                     isSystemRole={isSuperAdmin}
+                    lazyLoadByGroup
                 />
 
                 <Divider />

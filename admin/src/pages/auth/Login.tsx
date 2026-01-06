@@ -68,7 +68,12 @@ const Login: React.FC = () => {
 
             localStorage.setItem('token', authToken);
             localStorage.setItem('user_role', user.role);
-            localStorage.setItem('user_info', JSON.stringify(user));
+            // 保存用户信息，同时兼容两种字段名格式
+            localStorage.setItem('user_info', JSON.stringify({
+                ...user,
+                username: user.name || user.username,
+                avatar: user.avatarUrl || user.avatar,
+            }));
 
             // 登录成功后刷新菜单和权限数据
             await refreshMenus();
