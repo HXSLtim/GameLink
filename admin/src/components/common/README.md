@@ -274,3 +274,121 @@ const batchActions: BatchAction[] = [
 | **新页面开发** | 复制粘贴现有代码 | 配置化使用 |
 | **类型安全** | 部分页面缺少类型 | 完整 TypeScript 支持 |
 | **响应式** | 不一致 | 统一处理 |
+
+
+---
+
+## InfiniteList 组件
+
+无限滚动列表组件，配合 `useCrud` hook 的 `lazyLoad` 模式使用，实现列表懒加载。
+
+### 基础用法
+
+```tsx
+import { useCrud } from '@/hooks/useCrud';
+import InfiniteList from '@/components/common/InfiniteList';
+import { userApi } from '@/api/user';
+
+const UserList: React.FC = () => {
+    const {
+        data,
+        loading,
+        loadingMore,
+        hasMore,
+        scrollContainerRef,
+        sentinelRef,
+    } = useCrud({
+        api: userApi,
+        lazyLoad: true,  // 启用懒加载模式
+        initialPagination: { pageSize: 20 },
+        messages: { fetchError: '获取用户列表失败' },
+    });
+
+    return (
+        <InfiniteList
+            data={data}
+            loading={loading}
+            loadingMore={loadingMore}
+            hasMore={hasMore}
+            scrollContainerRef={scrollContainerRef}
+            sentinelRef={sentinelRef}
+            rowKey="id"
+            renderItem={(user) => (
+                <div className="user-card">
+                    <span>{user.name}</span>
+                    <span>{user.email}</span>
+                </div>
+            )}
+            emptyText="暂无用户"
+            style={{ height: 400 }}
+        />
+    );
+};
+```
+
+### 手动触发加载更多
+
+如果不使用 `InfiniteList` 组件，可以手动调用 `loadMore`：
+
+```tsx
+const { data, loading, loadingMore, hasMore, loadMore } = useCrud({
+    api: userApi,
+    lazyLoad: true,
+});
+
+return (
+    <div>
+        {data.map(item => <ItemCard key={item.id} item={item} />)}
+        
+        {loadingMore && <Spin />}
+        
+        {hasMore && !loadingMore && (
+            <Button onClick={loadMore}>加载更多</Button>
+        )}
+        
+        {!hasMore && <div>没有更多了</div>}
+    </div>
+);
+```
+
+### useCrud 懒加载配置
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `lazyLoad` | `boolean` | `false` | 启用懒加载模式 |
+| `loadMoreThreshold` | `number` | `100` | 触发加载的距离阈值（像素） |
+
+### useCrud 懒加载返回值
+
+| 属性 | 类型 | 说明 |
+|------|------|------|
+| `loadingMore` | `boolean` | 加载更多状态 |
+| `hasMore` | `boolean` | 是否还有更多数据 |
+| `loadMore` | `() => Promise<void>` | 手动加载更多 |
+| `scrollContainerRef` | `(node) => void` | 滚动容器 ref |
+| `sentinelRef` | `(node) => void` | 哨兵元素 ref（用于 IntersectionObserver） |
+
+### InfiniteList Props
+
+| 属性 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `data` | `T[]` | ✓ | 数据列表 |
+| `loading` | `boolean` | ✓ | 初始加载状态 |
+| `loadingMore` | `boolean` | ✓ | 加载更多状态 |
+| `hasMore` | `boolean` | ✓ | 是否还有更多 |
+| `scrollContainerRef` | `(node) => void` | ✓ | 滚动容器 ref |
+| `sentinelRef` | `(node) => void` | ✓ | 哨兵元素 ref |
+| `renderItem` | `(item, index) => ReactNode` | ✓ | 渲染单个项目 |
+| `rowKey` | `keyof T \| ((item, index) => string)` | - | 获取项目唯一 key |
+| `emptyText` | `string` | - | 空状态文本 |
+| `loadingMoreText` | `string` | - | 加载更多文本 |
+| `noMoreText` | `string` | - | 没有更多数据文本 |
+| `showNoMore` | `boolean` | - | 是否显示"没有更多"提示 |
+| `style` | `CSSProperties` | - | 容器样式 |
+
+### 性能优势
+
+- **按需加载**：只加载可视区域的数据，减少初始加载时间
+- **IntersectionObserver**：使用原生 API 检测滚动，性能优于 scroll 事件
+- **防抖保护**：内置并发请求保护，避免重复加载
+- **内存优化**：适合大数据量列表场景
