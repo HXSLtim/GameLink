@@ -8,6 +8,12 @@ GameLink is a modern game companion (陪玩) management platform - a full-stack 
 
 **Project Status**: Backend modules are 100% complete (36/36 modules). Frontend admin panel is at ~75% completion.
 
+### 📚 Key Documentation
+
+> **IMPORTANT**: Start here for quick project understanding:
+> - **Quick Reference**: [`.kiro/steering/QUICKSTART.md`](.kiro/steering/QUICKSTART.md) - Essential business rules, naming conventions, testing standards
+> - **Document Index**: [`.kiro/steering/00-INDEX.md`](.kiro/steering/00-INDEX.md) - Complete steering documentation guide
+
 ### Key Business Concepts
 
 - **Commission Structure**: 15-25% platform commission via three-tier calculation (service item rate + player individual rate + monthly ranking adjustment)
@@ -17,7 +23,10 @@ GameLink is a modern game companion (陪玩) management platform - a full-stack 
 - **Dispute Handling**: Dual-CS mechanism (original + independent customer service), 30-minute SLA
 - **Income Settlement**: T+7 holding period before players can withdraw earnings
 
-> See [`.kiro/steering/01-product.md`](.kiro/steering/01-product.md) for complete product overview and business rules.
+> **📖 Steering Documents** (authoritative source for business rules):
+> - [`.kiro/steering/01-product.md`](.kiro/steering/01-product.md) - Complete product overview
+> - [`.kiro/steering/04-data-models.md`](.kiro/steering/04-data-models.md) - **⭐ Data models + business logic** (必读)
+> - [`.kiro/steering/QUICKSTART.md`](.kiro/steering/QUICKSTART.md) - Quick reference guide
 
 ## Technology Stack
 
@@ -155,6 +164,8 @@ go test ./api/internal/service/integration/... -cover -coverprofile=coverage.out
 
 ## Architecture
 
+> **📖 Detailed architecture**: See [`.kiro/steering/03-project-structure.md`](.kiro/steering/03-project-structure.md)
+
 ### Repository Structure
 
 ```
@@ -163,9 +174,9 @@ GameLink/
 │   ├── cmd/main.go       # Application entry point
 │   ├── internal/
 │   │   ├── handler/      # HTTP handlers (admin/, user/, player/, middleware/)
-│   │   ├── service/      # Business logic layer
+│   │   ├── service/      # Business logic layer ⭐ Core layer
 │   │   ├── repository/   # Data access layer
-│   │   ├── model/        # Data models
+│   │   ├── model/        # Data models (see 04-data-models.md)
 │   │   ├── router/       # Route definitions
 │   │   └── ws/           # WebSocket handlers
 │   ├── pkg/              # Public reusable packages
@@ -206,21 +217,25 @@ The backend is organized into 36 modules across 4 categories:
 | **Marketing** | vip, coupon, recharge, activity, team, referral (6) | ✅ 100% |
 | **Auxiliary** | commission, ranking, routing-rule, settlement-company, etc. (7) | ✅ 100% |
 
-See `[.kiro/steering/06-project-management.md`](.kiro/steering/06-project-management.md) for detailed status.
+> **Module status**: See [`.kiro/steering/06-project-management.md`](.kiro/steering/06-project-management.md) or [`.kiro/steering/08-progress.md`](.kiro/steering/08-progress.md)
 
 ## Naming Conventions
+
+> **📖 Full conventions**: See [`.kiro/steering/03-project-structure.md`](.kiro/steering/03-project-structure.md)
 
 ### Go
 
 | Type | Convention | Example |
 |------|-----------|---------|
-| Files | camelCase | `userService.go`, NOT `user_service.go` |
+| Files | **camelCase** (小驼峰) | `userService.go`, NOT `user_service.go` ⚠️ |
 | Packages | lowercase | `handler`, `service` |
 | Types | PascalCase | `UserService`, `Order` |
 | Exported functions | PascalCase | `CreateUser`, `GetOrder` |
 | Private functions | camelCase | `validateInput`, `calculatePrice` |
 | Variables | camelCase | `userID`, `orderService` |
 | Test files | *_test.go | `userService_test.go` |
+
+> ⚠️ **Common mistake**: Using snake_case for Go files. Use `userService.go`, not `user_service.go`.
 
 ### TypeScript/React
 
@@ -396,33 +411,39 @@ import (
 
 ## Key Documentation Files
 
+> **📖 Start here**: [`.kiro/steering/QUICKSTART.md`](.kiro/steering/QUICKSTART.md) - Essential quick reference
+> **📚 Complete index**: [`.kiro/steering/00-INDEX.md`](.kiro/steering/00-INDEX.md) - Full documentation guide
+
 ### Steering Rules (.kiro/steering/)
 
 These are the **authoritative source** for project conventions and must be consulted when making changes.
 
+| Priority | File | Purpose |
+|----------|------|---------|
+| ⭐⭐⭐ | [QUICKSTART.md](.kiro/steering/QUICKSTART.md) | **Quick reference** - business rules, naming conventions, testing |
+| ⭐⭐⭐ | [04-data-models.md](.kiro/steering/04-data-models.md) | **⭐ Data models + business logic** (必读) |
+| ⭐⭐ | [01-product.md](.kiro/steering/01-product.md) | Product overview, core features, business model |
+| ⭐⭐ | [03-project-structure.md](.kiro/steering/03-project-structure.md) | Repository structure, naming conventions |
+| ⭐⭐ | [05-testing-standard.md](.kiro/steering/05-testing-standard.md) | **Testing standards** - 3-level testing approach |
+| ⭐ | [02-tech-stack.md](.kiro/steering/02-tech-stack.md) | Technology stack, CI/CD, deployment |
+| ⭐ | [06-project-management.md](.kiro/steering/06-project-management.md) | Module completion status (36/36 modules) |
+| ⭐ | [00-INDEX.md](.kiro/steering/00-INDEX.md) | **Document navigation** (查找文档入口) |
+
+### Specialized Data Models
+
 | File | Purpose |
 |------|---------|
-| [01-product.md](.kiro/steering/01-product.md) | **Product overview**, core features, business model, commission rules, user roles |
-| [02-tech-stack.md](.kiro/steering/02-tech-stack.md) | **Technology stack**, CI/CD, deployment scripts, environment variables |
-| [03-project-structure.md](.kiro/steering/03-project-structure.md) | **Repository structure**, naming conventions (Go files use camelCase, NOT snake_case) |
-| [04-data-models.md](.kiro/steering/04-data-models.md) | **Data model hierarchy**, business rules for each module, commission calculation |
-| [04c-enums-indexes.md](.kiro/steering/04c-enums-indexes.md) | **Enums and indexes** with changelog |
-| [05-testing-standard.md](.kiro/steering/05-testing-standard.md) | **Testing standards** - 3-level testing approach (frontend/backend/database validation) |
-| [06-project-management.md](.kiro/steering/06-project-management.md) | **Module completion status** - 100% backend complete (36/36 modules) |
+| [04a-marketing-models.md](.kiro/steering/04a-marketing-models.md) | VIP, coupons, recharge, activity, referral |
+| [04b-team-models.md](.kiro/steering/04b-team-models.md) | Team system |
+| [04c-enums-indexes.md](.kiro/steering/04c-enums-indexes.md) | Enums and indexes with changelog |
+| [04d-notification-models.md](.kiro/steering/04d-notification-models.md) | Notification system |
 
 ### Other Documentation
 
 | File | Purpose |
 |------|---------|
-| [docs/INTEGRATION_TEST_PLAN.md](docs/INTEGRATION_TEST_PLAN.md) | Integration test planning, test helpers, execution commands |
-| [PROGRESS.md](PROGRESS.md) | Development progress tracking |
-| [Program.md](Program.md) | Systematic project health report |
-
-### Important Data Model Documents
-
-- [04a-marketing-models.md](.kiro/steering/04a-marketing-models.md) - VIP, coupons, recharge, activity, referral
-- [04b-team-models.md](.kiro/steering/04b-team-models.md) - Team system
-- [04d-notification-models.md](.kiro/steering/04d-notification-models.md) - Notification system
+| [docs/INTEGRATION_TEST_PLAN.md](docs/INTEGRATION_TEST_PLAN.md) | Integration test planning, test helpers |
+| [docs/PROGRESS.md](docs/PROGRESS.md) | Development progress tracking |
 
 ## Business Context
 
