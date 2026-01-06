@@ -4,6 +4,73 @@
  * Custom styles should be theme-aware and use Ant Design design tokens
  */
 
+/* ========================================
+ * 无障碍访问 - 键盘焦点样式
+ * ======================================== */
+
+/**
+ * 为所有可交互元素添加可见的焦点指示器
+ * 使用 :focus-visible 仅在键盘导航时显示，鼠标点击不显示
+ */
+*:focus-visible {
+  outline: 2px solid var(--ant-color-primary, #1677ff);
+  outline-offset: 2px;
+}
+
+/* Ant Design 按钮焦点增强 */
+.ant-btn:focus-visible {
+  outline: 2px solid var(--ant-color-primary, #1677ff);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(22, 119, 255, 0.2);
+}
+
+/* 输入框焦点增强 */
+.ant-input:focus-visible,
+.ant-select-selector:focus-visible,
+.ant-picker:focus-visible {
+  outline: none; /* Ant Design 已有内置焦点样式 */
+}
+
+/* 表格行焦点 */
+.ant-table-row:focus-visible {
+  outline: 2px solid var(--ant-color-primary, #1677ff);
+  outline-offset: -2px;
+}
+
+/* 菜单项焦点 */
+.ant-menu-item:focus-visible {
+  outline: 2px solid var(--ant-color-primary, #1677ff);
+  outline-offset: -2px;
+}
+
+/* 链接焦点 */
+a:focus-visible {
+  outline: 2px solid var(--ant-color-primary, #1677ff);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* 跳过导航链接（屏幕阅读器用户） */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--ant-color-primary, #1677ff);
+  color: white;
+  padding: 8px 16px;
+  z-index: 10000;
+  text-decoration: none;
+  border-radius: 0 0 4px 0;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* ========================================
+ * 布局样式
+ * ======================================== */
+
 .app-layout {
   display: flex;
   width: 100vw;

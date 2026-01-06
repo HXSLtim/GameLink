@@ -4,6 +4,7 @@ import { App as AntdApp } from 'antd';
 import AppRouter from '@/router';
 import { AdminProvider } from '@/context/AdminContext';
 import { ThemeProvider } from '@/context/ThemeContext';
+import { ErrorBoundary } from '@/components';
 import { smartInit } from '@/services/init';
 import { logger } from '@/utils/logger';
 import './App.css';
@@ -52,15 +53,17 @@ function App() {
   }, []);
 
   return (
-    <ThemeProvider>
-      <AntdApp>
-        <AdminProvider>
-          <BrowserRouter>
-            <AppRouter />
-          </BrowserRouter>
-        </AdminProvider>
-      </AntdApp>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <AntdApp>
+          <AdminProvider>
+            <BrowserRouter>
+              <AppRouter />
+            </BrowserRouter>
+          </AdminProvider>
+        </AntdApp>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 

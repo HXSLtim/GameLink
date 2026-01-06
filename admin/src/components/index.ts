@@ -25,3 +25,33 @@ export { ThemeToggle } from './ThemeToggle';
 // 权限树组件
 export { PermissionTree } from './PermissionTree';
 export type { PermissionTreeProps } from './PermissionTree';
+
+// 错误边界
+export { ErrorBoundary, PageErrorBoundary } from './ErrorBoundary';
+
+// 统一按钮
+export { Button, IconButton } from './Button';
+export type { ButtonProps, IconButtonProps, ButtonSize, BtnVariant } from './Button';
+
+// 统一卡片
+export { Card, StatisticCard, ContentCard } from './Card';
+export type { CardProps, CardVariant, CardPadding } from './Card';
+
+// 可折叠区块
+export { CollapsibleSection } from './CollapsibleSection';
+export type { CollapsibleSectionProps } from './CollapsibleSection';
+
+// 动画容器
+export {
+  AnimatedContainer,
+  AnimatedListItem,
+  PageTransition,
+  animationVariants,
+  transitions,
+} from './AnimatedContainer';
+export type {
+  AnimatedContainerProps,
+  AnimatedListItemProps,
+  AnimationType,
+  TransitionType,
+} from './AnimatedContainer';
