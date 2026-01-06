@@ -7,12 +7,12 @@ server:
 
 database:
   type: "postgres"
-  dsn: "host=localhost port=5433 user=gamelink password=gamelink123 dbname=gamelink sslmode=disable"
+  dsn: "host=127.0.0.1 port=5433 user=gamelink password=gamelink123 dbname=gamelink sslmode=disable"
 
 cache:
   type: "redis"
   redis:
-    addr: "localhost:6380"
+    addr: "127.0.0.1:6380"  # 使用 IPv4 地址避免 Windows 上 localhost 解析为 IPv6 的问题
     password: ""
     db: 0
 

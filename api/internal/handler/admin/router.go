@@ -1221,9 +1221,10 @@ func RegisterSyncRoutes(router gin.IRouter, svc *adminservice.AdminService, pm *
 func RegisterSyncRoutesWithServices(router gin.IRouter, roleSvc *roleservice.RoleService, permService *permissionservice.PermissionService, menuSvc *adminservice.MenuService, db *gorm.DB, pm *mw.PermissionMiddleware) {
 	batchSyncHandler := NewBatchSyncHandler(menuSvc, permService, roleSvc, db)
 
-	// 创建同步专用路由组 - 只认证，不限流
+	// 创建同步专用路由组 - 需要认证 + 超级管理员权限
 	syncGroup := router.Group("/sync")
 	syncGroup.Use(pm.RequireAuth())
+	syncGroup.Use(RequireSuperAdmin(db))  // 🔒 只允许超级管理员执行初始化
 	{
 		// 批量同步接口 - 一次性同步菜单、权限并分配超管权限
 		syncGroup.POST("/batch", batchSyncHandler.BatchSync)

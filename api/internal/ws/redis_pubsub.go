@@ -150,21 +150,23 @@ func (rps *RedisPubSub) handleMessage(msg *redis.Message) error {
 	}
 
 	// Route based on message type
+	// IMPORTANT: Use local-only broadcast methods to avoid infinite loop
+	// (Redis message -> hub.Broadcast -> redisPS.Broadcast -> Redis message...)
 	switch psMsg.Type {
 	case "broadcast":
-		// Broadcast to all local clients
-		rps.hub.Broadcast(psMsg.Data)
+		// Broadcast to local clients only (don't re-publish to Redis)
+		rps.hub.BroadcastLocal(psMsg.Data)
 
 	case "role":
 		// Broadcast to local clients with specific role
 		if psMsg.Role != nil {
-			rps.hub.BroadcastToRole(psMsg.Data, *psMsg.Role)
+			rps.hub.BroadcastToRoleLocal(psMsg.Data, *psMsg.Role)
 		}
 
 	case "user":
 		// Send to local client with specific user ID
 		if psMsg.UserID != nil {
-			rps.hub.BroadcastToUser(psMsg.Data, *psMsg.UserID)
+			rps.hub.BroadcastToUserLocal(psMsg.Data, *psMsg.UserID)
 		}
 
 	case "presence":

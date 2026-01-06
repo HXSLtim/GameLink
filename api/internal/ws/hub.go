@@ -148,23 +148,17 @@ func (h *Hub) Broadcast(message []byte) {
 	}
 }
 
+// BroadcastLocal sends a message to local clients only, without publishing to Redis.
+// This is used by Redis Pub/Sub handler to avoid infinite loops.
+func (h *Hub) BroadcastLocal(message []byte) {
+	h.broadcast <- message
+}
+
 // BroadcastToRole sends a message to clients with a specific role.
 // If Redis Pub/Sub is enabled, also broadcasts to all instances.
 func (h *Hub) BroadcastToRole(message []byte, role string) {
 	// Broadcast to local clients
-	h.mu.RLock()
-	for client := range h.clients {
-		if client.Role == role {
-			select {
-			case client.send <- message:
-			default:
-				go func(c *Client) {
-					h.unregister <- c
-				}(client)
-			}
-		}
-	}
-	h.mu.RUnlock()
+	h.broadcastToRoleLocal(message, role)
 
 	// If Redis Pub/Sub is enabled, broadcast to all instances
 	h.mu.RLock()
@@ -180,13 +174,17 @@ func (h *Hub) BroadcastToRole(message []byte, role string) {
 	}
 }
 
-// BroadcastToUser sends a message to a specific user.
-// If Redis Pub/Sub is enabled, also broadcasts to all instances.
-func (h *Hub) BroadcastToUser(message []byte, userID uint64) {
-	// Broadcast to local clients
+// BroadcastToRoleLocal sends a message to local clients with a specific role only.
+// This is used by Redis Pub/Sub handler to avoid infinite loops.
+func (h *Hub) BroadcastToRoleLocal(message []byte, role string) {
+	h.broadcastToRoleLocal(message, role)
+}
+
+// broadcastToRoleLocal is the internal implementation for role-based local broadcast.
+func (h *Hub) broadcastToRoleLocal(message []byte, role string) {
 	h.mu.RLock()
 	for client := range h.clients {
-		if client.UserID == userID {
+		if client.Role == role {
 			select {
 			case client.send <- message:
 			default:
@@ -197,6 +195,13 @@ func (h *Hub) BroadcastToUser(message []byte, userID uint64) {
 		}
 	}
 	h.mu.RUnlock()
+}
+
+// BroadcastToUser sends a message to a specific user.
+// If Redis Pub/Sub is enabled, also broadcasts to all instances.
+func (h *Hub) BroadcastToUser(message []byte, userID uint64) {
+	// Broadcast to local clients
+	h.broadcastToUserLocal(message, userID)
 
 	// If Redis Pub/Sub is enabled, broadcast to all instances
 	h.mu.RLock()
@@ -210,6 +215,29 @@ func (h *Hub) BroadcastToUser(message []byte, userID uint64) {
 			}
 		}()
 	}
+}
+
+// BroadcastToUserLocal sends a message to a specific local user only.
+// This is used by Redis Pub/Sub handler to avoid infinite loops.
+func (h *Hub) BroadcastToUserLocal(message []byte, userID uint64) {
+	h.broadcastToUserLocal(message, userID)
+}
+
+// broadcastToUserLocal is the internal implementation for user-specific local broadcast.
+func (h *Hub) broadcastToUserLocal(message []byte, userID uint64) {
+	h.mu.RLock()
+	for client := range h.clients {
+		if client.UserID == userID {
+			select {
+			case client.send <- message:
+			default:
+				go func(c *Client) {
+					h.unregister <- c
+				}(client)
+			}
+		}
+	}
+	h.mu.RUnlock()
 }
 
 // GetMetrics returns current hub metrics.

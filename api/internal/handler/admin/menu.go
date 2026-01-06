@@ -197,42 +197,76 @@ buildTree:
 		return
 	}
 
+	// 过滤隐藏菜单（hidden=true 的菜单不应该出现在用户可访问的菜单列表中）
+	menus = filterHiddenMenus(menus)
+
 	// 构建菜单树
 	menuTree := buildMenuTree(menus)
 
 	respondSuccess(c, menuTree)
 }
 
+// filterHiddenMenus 过滤掉隐藏的菜单
+func filterHiddenMenus(menus []model.Menu) []model.Menu {
+	result := make([]model.Menu, 0, len(menus))
+	for _, menu := range menus {
+		if !menu.Hidden {
+			result = append(result, menu)
+		}
+	}
+	return result
+}
+
 // buildMenuTree 将扁平菜单列表构建为树形结构
 func buildMenuTree(menus []model.Menu) []model.Menu {
-	menuMap := make(map[uint64]*model.Menu)
-	var roots []model.Menu
-
-	// 先建立 ID -> Menu 映射（使用指针）
-	for i := range menus {
-		menus[i].Children = []model.Menu{}
-		menuMap[menus[i].ID] = &menus[i]
+	if len(menus) == 0 {
+		return []model.Menu{}
 	}
 
-	// 构建树
-	for i := range menus {
-		menu := &menus[i]
+	// 创建菜单副本并建立 ID -> Menu 指针映射
+	menuMap := make(map[uint64]*model.Menu)
+	menuCopies := make([]model.Menu, len(menus))
+	copy(menuCopies, menus)
+
+	for i := range menuCopies {
+		menuCopies[i].Children = []model.Menu{}
+		menuMap[menuCopies[i].ID] = &menuCopies[i]
+	}
+
+	// 收集根节点 ID
+	var rootIDs []uint64
+	for i := range menuCopies {
+		menu := &menuCopies[i]
 		if menu.ParentID == nil || *menu.ParentID == 0 {
 			// 根节点
-			roots = append(roots, *menu)
+			rootIDs = append(rootIDs, menu.ID)
 		} else if parent, ok := menuMap[*menu.ParentID]; ok {
-			// 添加到父节点的 children
+			// 添加到父节点的 children（使用指针操作，直接修改 map 中的数据）
 			parent.Children = append(parent.Children, *menu)
 		} else {
 			// 父菜单不在权限范围内，作为根节点
-			roots = append(roots, *menu)
+			rootIDs = append(rootIDs, menu.ID)
 		}
 	}
 
-	// 更新根节点的 children（因为之前是值拷贝）
-	for i := range roots {
-		if menuPtr, ok := menuMap[roots[i].ID]; ok {
-			roots[i].Children = menuPtr.Children
+	// 递归更新所有节点的 children
+	var updateChildren func(menu *model.Menu)
+	updateChildren = func(menu *model.Menu) {
+		for i := range menu.Children {
+			childID := menu.Children[i].ID
+			if childPtr, ok := menuMap[childID]; ok {
+				menu.Children[i].Children = childPtr.Children
+				updateChildren(&menu.Children[i])
+			}
+		}
+	}
+
+	// 构建最终的根节点列表
+	roots := make([]model.Menu, 0, len(rootIDs))
+	for _, id := range rootIDs {
+		if menuPtr, ok := menuMap[id]; ok {
+			updateChildren(menuPtr)
+			roots = append(roots, *menuPtr)
 		}
 	}
 

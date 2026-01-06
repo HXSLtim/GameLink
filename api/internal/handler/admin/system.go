@@ -74,12 +74,12 @@ func (h *SystemInfoHandler) InitStatus(c *gin.Context) {
 		Message:     "System not initialized",
 	}
 
-	// 判断准则：检查数据库内是否有按钮级权限和菜单记录
+	// 判断准则：检查数据库内是否有权限和菜单记录
 	var permCount int64
 	var menuCount int64
 
-	// 统计权限数量（排除系统内置的角色管理权限，检查实际业务权限）
-	if err := h.db.Model(&model.Permission{}).Where("\"group\" != '' OR path LIKE '/api/v1/admin/%'").Count(&permCount).Error; err != nil {
+	// 统计所有权限数量（不再过滤，直接统计）
+	if err := h.db.Model(&model.Permission{}).Count(&permCount).Error; err != nil {
 		respondError(c, fmt.Errorf("failed to check permissions: %w", err))
 		return
 	}

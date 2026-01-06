@@ -362,3 +362,57 @@ func (h *BatchSyncHandler) assignSuperAdminPermissions(ctx context.Context) *Sup
 	result.Message = fmt.Sprintf("assigned %d permissions to super_admin", len(permissions))
 	return result
 }
+
+// RequireSuperAdmin 中间件：检查用户是否是超级管理员
+// 用于保护系统初始化等敏感操作
+func RequireSuperAdmin(db *gorm.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// 获取用户ID
+		userIDVal, exists := c.Get("userID")
+		if !exists {
+			c.JSON(401, gin.H{
+				"success": false,
+				"code":    401,
+				"message": "未认证",
+			})
+			c.Abort()
+			return
+		}
+		userID := userIDVal.(uint64)
+
+		// 查询用户的 RBAC 角色
+		var userRoles []model.UserRole
+		if err := db.Where("user_id = ?", userID).
+			Preload("Role").
+			Find(&userRoles).Error; err != nil {
+			c.JSON(500, gin.H{
+				"success": false,
+				"code":    500,
+				"message": "无法验证用户权限",
+			})
+			c.Abort()
+			return
+		}
+
+		// 检查是否有超级管理员角色
+		isSuperAdmin := false
+		for _, ur := range userRoles {
+			if ur.Role.IsSuperAdmin() {
+				isSuperAdmin = true
+				break
+			}
+		}
+
+		if !isSuperAdmin {
+			c.JSON(403, gin.H{
+				"success": false,
+				"code":    403,
+				"message": "只有超级管理员才能执行此操作",
+			})
+			c.Abort()
+			return
+		}
+
+		c.Next()
+	}
+}

@@ -1418,6 +1418,187 @@ func seedNotificationDataInternal(tx *gorm.DB, users map[string]*model.User, ord
 		}
 	}
 
+	// 为管理员创建系统通知（演示管理员 adminA）
+	if adminA := users["adminA"]; adminA != nil {
+		sentAt := now.Add(-1 * time.Hour)
+		_ = ensureUserNotif(model.UserNotification{
+			UserID:      adminA.ID,
+			Type:        model.NotificationTypeSystem,
+			Channel:     model.NotificationChannelInApp,
+			Title:       "系统公告",
+			Content:     "欢迎使用 GameLink 管理后台！",
+			Status:      model.NotificationStatusSent,
+			SentAt:      &sentAt,
+			RelatedType: "system",
+		})
+
+		sentAt2 := now.Add(-30 * time.Minute)
+		_ = ensureUserNotif(model.UserNotification{
+			UserID:      adminA.ID,
+			Type:        model.NotificationTypeSystem,
+			Channel:     model.NotificationChannelInApp,
+			Title:       "新用户注册提醒",
+			Content:     "今日有 5 位新用户注册，请及时审核。",
+			Status:      model.NotificationStatusSent,
+			SentAt:      &sentAt2,
+			RelatedType: "system",
+		})
+
+		_ = ensureUserNotif(model.UserNotification{
+			UserID:      adminA.ID,
+			Type:        model.NotificationTypeSystem,
+			Channel:     model.NotificationChannelInApp,
+			Title:       "陪玩师入驻申请",
+			Content:     "有 3 位陪玩师提交了入驻申请，等待审核。",
+			Status:      model.NotificationStatusPending,
+			RelatedType: "system",
+		})
+	}
+
+	// 为超级管理员创建系统通知（从数据库查询超管账户）
+	var superAdmin model.User
+	if err := tx.Where("role = ? AND email LIKE ?", model.RoleAdmin, "%admin%").
+		Order("id ASC").First(&superAdmin).Error; err == nil {
+		// 检查是否已有通知
+		var existingCount int64
+		tx.Model(&model.UserNotification{}).Where("user_id = ?", superAdmin.ID).Count(&existingCount)
+		if existingCount == 0 {
+			sentAt := now.Add(-2 * time.Hour)
+			_ = ensureUserNotif(model.UserNotification{
+				UserID:      superAdmin.ID,
+				Type:        model.NotificationTypeSystem,
+				Channel:     model.NotificationChannelInApp,
+				Title:       "欢迎使用 GameLink",
+				Content:     "您已成功登录管理后台，开始管理您的平台吧！",
+				Status:      model.NotificationStatusSent,
+				SentAt:      &sentAt,
+				RelatedType: "system",
+			})
+
+			sentAt2 := now.Add(-1 * time.Hour)
+			_ = ensureUserNotif(model.UserNotification{
+				UserID:      superAdmin.ID,
+				Type:        model.NotificationTypeSystem,
+				Channel:     model.NotificationChannelInApp,
+				Title:       "系统初始化完成",
+				Content:     "演示数据已加载完成，您可以开始体验各项功能。",
+				Status:      model.NotificationStatusSent,
+				SentAt:      &sentAt2,
+				RelatedType: "system",
+			})
+
+			_ = ensureUserNotif(model.UserNotification{
+				UserID:      superAdmin.ID,
+				Type:        model.NotificationTypeSystem,
+				Channel:     model.NotificationChannelInApp,
+				Title:       "待处理事项",
+				Content:     "您有 2 个陪玩师入驻申请待审核，1 个提现申请待处理。",
+				Status:      model.NotificationStatusPending,
+				RelatedType: "system",
+			})
+		}
+	}
+
+	// ========== 为 notification_events 表创建数据（API 实际查询的表）==========
+	// NotificationEvent 是 API /notifications 端点实际使用的模型
+	ensureNotificationEvent := func(n model.NotificationEvent) error {
+		var existing model.NotificationEvent
+		q := tx.Where("user_id = ? AND title = ? AND channel = ?", n.UserID, n.Title, n.Channel)
+		if n.ReferenceID != nil {
+			q = q.Where("reference_id = ?", *n.ReferenceID)
+		} else {
+			q = q.Where("reference_id IS NULL")
+		}
+		if err := q.First(&existing).Error; err == nil {
+			return nil
+		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+		n.ExtJSON = `{"seed":"demo"}`
+		return tx.Create(&n).Error
+	}
+
+	// 为超级管理员创建 NotificationEvent（API 实际查询的表）
+	if superAdmin.ID > 0 {
+		_ = ensureNotificationEvent(model.NotificationEvent{
+			UserID:        superAdmin.ID,
+			Title:         "欢迎使用 GameLink",
+			Message:       "您已成功登录管理后台，开始管理您的平台吧！",
+			Channel:       "web",
+			Priority:      model.NotificationPriorityNormal,
+			ReferenceType: "system",
+		})
+
+		_ = ensureNotificationEvent(model.NotificationEvent{
+			UserID:        superAdmin.ID,
+			Title:         "系统初始化完成",
+			Message:       "演示数据已加载完成，您可以开始体验各项功能。",
+			Channel:       "web",
+			Priority:      model.NotificationPriorityNormal,
+			ReferenceType: "system",
+		})
+
+		_ = ensureNotificationEvent(model.NotificationEvent{
+			UserID:        superAdmin.ID,
+			Title:         "待处理事项",
+			Message:       "您有 2 个陪玩师入驻申请待审核，1 个提现申请待处理。",
+			Channel:       "web",
+			Priority:      model.NotificationPriorityHigh,
+			ReferenceType: "system",
+		})
+	}
+
+	// 为演示管理员 adminA 创建 NotificationEvent
+	if adminA := users["adminA"]; adminA != nil {
+		_ = ensureNotificationEvent(model.NotificationEvent{
+			UserID:        adminA.ID,
+			Title:         "系统公告",
+			Message:       "欢迎使用 GameLink 管理后台！",
+			Channel:       "web",
+			Priority:      model.NotificationPriorityNormal,
+			ReferenceType: "system",
+		})
+
+		_ = ensureNotificationEvent(model.NotificationEvent{
+			UserID:        adminA.ID,
+			Title:         "新用户注册提醒",
+			Message:       "今日有 5 位新用户注册，请及时审核。",
+			Channel:       "web",
+			Priority:      model.NotificationPriorityNormal,
+			ReferenceType: "user",
+		})
+
+		_ = ensureNotificationEvent(model.NotificationEvent{
+			UserID:        adminA.ID,
+			Title:         "陪玩师入驻申请",
+			Message:       "有 3 位陪玩师提交了入驻申请，等待审核。",
+			Channel:       "web",
+			Priority:      model.NotificationPriorityHigh,
+			ReferenceType: "player",
+		})
+	}
+
+	// 为普通用户创建 NotificationEvent（测试用户端通知）
+	if customerA := users["customerA"]; customerA != nil {
+		_ = ensureNotificationEvent(model.NotificationEvent{
+			UserID:        customerA.ID,
+			Title:         "订单已完成",
+			Message:       "您的订单已完成，感谢使用 GameLink！",
+			Channel:       "web",
+			Priority:      model.NotificationPriorityNormal,
+			ReferenceType: "order",
+		})
+
+		_ = ensureNotificationEvent(model.NotificationEvent{
+			UserID:        customerA.ID,
+			Title:         "优惠券即将过期",
+			Message:       "您有一张优惠券将于 3 天后过期，请尽快使用。",
+			Channel:       "web",
+			Priority:      model.NotificationPriorityNormal,
+			ReferenceType: "coupon",
+		})
+	}
+
 	// 定时任务（演示）
 	var schedule model.NotificationSchedule
 	if err := tx.Where("name = ?", "每日优惠券到期提醒（演示）").First(&schedule).Error; errors.Is(err, gorm.ErrRecordNotFound) {
