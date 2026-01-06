@@ -194,7 +194,9 @@ const AdminLayout: React.FC = () => {
     const fetchNotifications = async () => {
         setLoadingNotifications(true);
         try {
-            const res = await userApi.getNotifications({ page: 1, page_size: 5 }) as unknown as ApiResponse<NotificationListResponse>;
+            const response = await userApi.getNotifications({ page: 1, page_size: 5 });
+            // Axios 返回 AxiosResponse，需要访问 response.data 获取 ApiResponse
+            const res = response.data as ApiResponse<NotificationListResponse>;
             if (res.success && res.data) {
                 setNotifications(res.data.items || []);
                 if (res.data.unreadCount !== undefined) {
@@ -287,15 +289,52 @@ const AdminLayout: React.FC = () => {
         </div>
     );
 
+    // 加载用户信息
     useEffect(() => {
-        const storedUser = localStorage.getItem('user_info');
-        if (storedUser) {
-            try {
-                const parsed = JSON.parse(storedUser);
-                setUserInfo({ username: parsed.username || 'Admin', avatar: parsed.avatar });
-            } catch {
-                // ignore
+        const loadUserInfo = async () => {
+            // 先从 localStorage 获取缓存的用户信息
+            const storedUser = localStorage.getItem('user_info');
+            if (storedUser) {
+                try {
+                    const parsed = JSON.parse(storedUser);
+                    // 兼容两种字段名格式：username/name 和 avatar/avatarUrl
+                    setUserInfo({
+                        username: parsed.username || parsed.name || 'Admin',
+                        avatar: parsed.avatar || parsed.avatarUrl,
+                        id: parsed.id,
+                    });
+                } catch {
+                    // ignore
+                }
             }
+
+            // 从 API 获取最新用户信息
+            try {
+                const { authApi } = await import('@/api/auth');
+                const response = await authApi.getMe();
+                if (response.data?.success && response.data?.data) {
+                    const userData = response.data.data.user || response.data.data;
+                    const newUserInfo = {
+                        username: userData.name || userData.username || 'Admin',
+                        avatar: userData.avatarUrl || userData.avatar,
+                        id: userData.id,
+                    };
+                    setUserInfo(newUserInfo);
+                    // 更新 localStorage 缓存
+                    localStorage.setItem('user_info', JSON.stringify({
+                        ...userData,
+                        username: newUserInfo.username,
+                        avatar: newUserInfo.avatar,
+                    }));
+                }
+            } catch (error) {
+                logger.error('Failed to load user info', error);
+            }
+        };
+
+        const token = localStorage.getItem('token');
+        if (token) {
+            loadUserInfo();
         }
     }, []);
 
@@ -487,11 +526,6 @@ const AdminLayout: React.FC = () => {
             icon: <UserOutlined />,
             label: '个人中心',
         },
-        {
-            key: 'settings',
-            icon: <SettingOutlined />,
-            label: '账号设置',
-        },
         { type: 'divider' },
         {
             key: 'logout',
@@ -504,8 +538,8 @@ const AdminLayout: React.FC = () => {
     const handleUserMenuClick: MenuProps['onClick'] = ({ key }) => {
         if (key === 'logout') {
             handleLogout();
-        } else if (key === 'settings') {
-            navigate('/admin/settings');
+        } else if (key === 'profile') {
+            navigate('/admin/profile');
         }
     };
 

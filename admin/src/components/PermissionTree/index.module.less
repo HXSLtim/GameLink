@@ -12,9 +12,22 @@
 
 .loadingContainer {
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     min-height: 200px;
+    padding: 16px;
+}
+
+// 骨架屏样式：模拟树形结构
+.skeletonTree {
+    width: 100%;
+    padding: 12px;
+    /* 使用 Ant Design 的边框色 */
+    border: 1px solid var(--ant-colorBorder);
+    border-radius: 4px;
+    /* 使用 Ant Design 的背景色 */
+    background-color: var(--ant-colorFillAlter);
 }
 
 .systemRoleAlert {

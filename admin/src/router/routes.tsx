@@ -78,6 +78,9 @@ const ReferralPage = lazy(() => import('@/pages/admin/Referral'));
 const SettlementPage = lazy(() => import('@/pages/admin/Settlement'));
 const SettlementPlayersPage = lazy(() => import('@/pages/admin/Settlement/Players'));
 
+// 个人中心页面
+const ProfilePage = lazy(() => import('@/pages/admin/Profile'));
+
 
 export const routes: RouteConfig[] = [
     // 管理端登录页
@@ -341,6 +344,12 @@ export const routes: RouteConfig[] = [
                 path: 'settlement/players',
                 element: <LazyLoad><SettlementPlayersPage /></LazyLoad>,
                 meta: { title: '陪玩师归属管理', permission: 'admin.settlement.players' }
+            },
+            // 个人中心
+            {
+                path: 'profile',
+                element: <LazyLoad><ProfilePage /></LazyLoad>,
+                meta: { title: '个人中心' }
             }
         ]
     },

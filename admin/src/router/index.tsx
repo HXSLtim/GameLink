@@ -45,6 +45,7 @@ const STATIC_CHILD_ROUTES = [
     'sys/user/:id/portrait',     // 用户画像页面
     'biz/service/create',        // 服务项目创建页面
     'biz/service/:id',           // 服务项目详情页面（编辑使用模态弹窗）
+    'profile',                   // 个人中心页面（通过用户下拉菜单访问）
 ];
 
 const AppRouter = () => {

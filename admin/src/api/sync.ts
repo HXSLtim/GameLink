@@ -88,11 +88,12 @@ export const syncApi = {
      * 获取初始化状态（从后端数据库查询）
      */
     getInitStatus: async (): Promise<InitStatusResponse> => {
-        const response = (await apiClient.get<ApiResponse<InitStatusResponse>>(
+        const response = await apiClient.get<ApiResponse<InitStatusResponse>>(
             '/system/init-status'
-        )) as unknown as ApiResponse<InitStatusResponse>;
-        logger.info('[Sync] init status response:', response);
-        return response.data;
+        );
+        logger.info('[Sync] init status response:', response.data);
+        // response.data 是 ApiResponse，response.data.data 是实际的 InitStatusResponse
+        return response.data.data;
     },
 
     /**
@@ -139,12 +140,13 @@ export const syncApi = {
         };
 
         try {
-            const response = (await apiClient.post<ApiResponse<BatchSyncResponse>>(
+            const response = await apiClient.post<ApiResponse<BatchSyncResponse>>(
                 '/admin/sync/batch',
                 request
-            )) as unknown as ApiResponse<BatchSyncResponse>;
-            logger.info('[Sync] batchSync response:', response);
-            return response.data;
+            );
+            logger.info('[Sync] batchSync response:', response.data);
+            // response.data 是 ApiResponse，response.data.data 是实际的 BatchSyncResponse
+            return response.data.data;
         } catch (error) {
             return {
                 success: false,

@@ -98,11 +98,34 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             // apiClient 返回完整的 AxiosResponse，所以需要访问 response.data
             // permRes.data 格式: { success, code, message, data: string[] }
             // menuRes.data 格式: { success, code, message, data: Menu[] }
-            const apiPermRes = permRes as unknown as { data?: { success?: boolean; data?: string[] } };
-            const apiMenuRes = menuRes as unknown as { data?: { success?: boolean; data?: Menu[] } };
             
-            const permData = apiPermRes.data?.data || [];
-            const menuData = apiMenuRes.data?.data || [];
+            // 处理权限数据 - 兼容多种响应格式
+            let permData: string[] = [];
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const permAny = permRes as any;
+            if (permAny?.data?.data && Array.isArray(permAny.data.data)) {
+                permData = permAny.data.data;
+            } else if (Array.isArray(permAny?.data)) {
+                permData = permAny.data;
+            }
+            
+            // 处理菜单数据 - 兼容多种响应格式
+            let menuData: Menu[] = [];
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const menuAny = menuRes as any;
+            if (menuAny?.data?.data && Array.isArray(menuAny.data.data)) {
+                menuData = menuAny.data.data;
+            } else if (Array.isArray(menuAny?.data)) {
+                menuData = menuAny.data;
+            }
+            
+            logger.info('[AdminContext] 提取的权限数据:', permData);
+            logger.info('[AdminContext] 提取的菜单数据:', menuData);
+            logger.info('[AdminContext] 菜单数据长度:', menuData.length);
+            if (menuData.length > 0) {
+                logger.info('[AdminContext] 第一个菜单项:', menuData[0]);
+                logger.info('[AdminContext] 第一个菜单项的 children:', menuData[0]?.children);
+            }
 
             // 更新状态
             setPermissions(permData);

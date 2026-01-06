@@ -3,6 +3,7 @@
  *
  * A reusable React hook for managing CRUD operations with:
  * - Automatic data fetching and pagination
+ * - Lazy loading / infinite scroll support
  * - Loading states and error handling
  * - Success/error messages via Ant Design message component
  * - Type-safe API integration
@@ -17,7 +18,7 @@
  *   remove: (id: number) => Promise<ApiResponse<void>>;
  * }
  *
- * // Use the hook in your component
+ * // Use the hook in your component (standard pagination)
  * const { data, loading, pagination, fetchAll, create, update, remove } = useCrud({
  *   api: userCrudApi,
  *   messages: {
@@ -26,6 +27,13 @@
  *     updateSuccess: '更新用户成功',
  *     deleteSuccess: '删除用户成功',
  *   }
+ * });
+ *
+ * // Use the hook with lazy loading (infinite scroll)
+ * const { data, loading, loadMore, hasMore, loadingMore } = useCrud({
+ *   api: userCrudApi,
+ *   lazyLoad: true,
+ *   messages: { fetchError: '获取用户列表失败' }
  * });
  * ```
  */
@@ -93,6 +101,18 @@ export interface UseCrudOptions<T extends object, TCreate, TUpdate, TQuery exten
      * Whether to fetch data on mount (default: true)
      */
     fetchOnMount?: boolean;
+
+    /**
+     * Enable lazy loading / infinite scroll mode (default: false)
+     * When enabled, data accumulates instead of replacing on page change
+     */
+    lazyLoad?: boolean;
+
+    /**
+     * Threshold in pixels to trigger loadMore before reaching bottom (default: 100)
+     * Only used when lazyLoad is true
+     */
+    loadMoreThreshold?: number;
 
     /**
      * Custom success callback after create
@@ -184,9 +204,14 @@ export interface UseCrudReturn<T extends object, TCreate, TUpdate, TQuery extend
     data: T[];
 
     /**
-     * Loading state for list operations
+     * Loading state for initial list operations
      */
     loading: boolean;
+
+    /**
+     * Loading state for loadMore operations (lazy load mode)
+     */
+    loadingMore: boolean;
 
     /**
      * Loading state for create/update operations
@@ -209,6 +234,11 @@ export interface UseCrudReturn<T extends object, TCreate, TUpdate, TQuery extend
     queryParams: Record<string, unknown>;
 
     /**
+     * Whether there are more items to load (lazy load mode)
+     */
+    hasMore: boolean;
+
+    /**
      * Fetch all items with optional parameters
      */
     fetchAll: (params?: TQuery | Record<string, unknown>) => Promise<void>;
@@ -217,6 +247,12 @@ export interface UseCrudReturn<T extends object, TCreate, TUpdate, TQuery extend
      * Fetch all items and reset to page 1
      */
     refresh: () => Promise<void>;
+
+    /**
+     * Load more items (lazy load mode)
+     * Appends new items to existing data
+     */
+    loadMore: () => Promise<void>;
 
     /**
      * Create a new item
@@ -257,6 +293,18 @@ export interface UseCrudReturn<T extends object, TCreate, TUpdate, TQuery extend
      * Manually set data (useful for optimistic updates)
      */
     setData: (data: T[]) => void;
+
+    /**
+     * Ref callback for scroll container (lazy load mode)
+     * Attach this to your scrollable container for auto load more
+     */
+    scrollContainerRef: (node: HTMLElement | null) => void;
+
+    /**
+     * Ref callback for sentinel element (lazy load mode)
+     * Place this at the bottom of your list for intersection observer
+     */
+    sentinelRef: (node: HTMLElement | null) => void;
 }
 
 /**
@@ -296,6 +344,8 @@ export function useCrud<
         initialParams = {} as TQuery,
         initialPagination = {},
         fetchOnMount = true,
+        lazyLoad = false,
+        loadMoreThreshold = 100,
         onCreateSuccess,
         onUpdateSuccess,
         onDeleteSuccess,
@@ -310,25 +360,38 @@ export function useCrud<
     // State
     const [data, setData] = useState<T[]>([]);
     const [loading, setLoading] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<Error | null>(null);
     const [current, setCurrent] = useState(initialPagination.current || 1);
     const [pageSize, setPageSize] = useState(initialPagination.pageSize || 10);
     const [total, setTotal] = useState(0);
     const [queryParams, setQueryParams] = useState<Record<string, unknown>>(initialParams);
+    const [hasMore, setHasMore] = useState(true);
 
     // Track if component is mounted
     const isMountedRef = useRef(true);
+    
+    // Refs for lazy loading
+    const scrollContainerNodeRef = useRef<HTMLElement | null>(null);
+    const sentinelNodeRef = useRef<HTMLElement | null>(null);
+    const observerRef = useRef<IntersectionObserver | null>(null);
+    const isLoadingRef = useRef(false); // Prevent concurrent loads
 
     /**
      * Normalize API response to extract data and pagination
      */
     const normalizeResponse = useCallback((response: ApiResponse<T[]> | { data: ApiResponse<T[]> }) => {
         // Handle axios response format { data: { success, data, pagination } }
-        if ('data' in response && typeof response.data === 'object' && 'data' in response.data) {
+        // Check if response.data exists and is an object with a 'data' property
+        if ('data' in response && 
+            response.data !== null && 
+            typeof response.data === 'object' && 
+            'data' in (response.data as object)) {
+            const axiosData = response.data as ApiResponse<T[]>;
             return {
-                data: response.data.data as unknown,
-                pagination: (response.data as unknown as { pagination?: Pagination }).pagination,
+                data: axiosData.data as unknown,
+                pagination: axiosData.pagination,
             };
         }
         // Handle direct API response format { success, data, pagination }
@@ -350,14 +413,33 @@ export function useCrud<
         return (response as unknown as { data?: T }).data as T;
     }, []);
 
+    // Ref to track data length for hasMore calculation (avoids dependency cycle)
+    const dataLengthRef = useRef(0);
+    
+    // Keep dataLengthRef in sync with data
+    useEffect(() => {
+        dataLengthRef.current = data.length;
+    }, [data.length]);
+
     /**
      * Fetch all items
+     * @param params - Query parameters
+     * @param append - Whether to append to existing data (for lazy load)
      */
     const fetchAll = useCallback(
-        async (params?: TQuery | Record<string, unknown>) => {
+        async (params?: TQuery | Record<string, unknown>, append = false) => {
             if (!isMountedRef.current) return;
 
-            setLoading(true);
+            // Prevent concurrent loads
+            if (isLoadingRef.current) return;
+            isLoadingRef.current = true;
+
+            // Set appropriate loading state
+            if (append) {
+                setLoadingMore(true);
+            } else {
+                setLoading(true);
+            }
             setError(null);
 
             try {
@@ -377,18 +459,31 @@ export function useCrud<
                         ? dataTransformer(responseData)
                         : (responseData as T[]);
 
-                    setData(Array.isArray(items) ? items : []);
+                    const finalData = Array.isArray(items) ? items : [];
+                    
+                    // In lazy load mode, append data; otherwise replace
+                    if (lazyLoad && append) {
+                        setData(prev => [...prev, ...finalData]);
+                    } else {
+                        setData(finalData);
+                    }
 
                     // Extract total count
+                    let totalCount = 0;
                     if (paginationExtractor) {
                         const extractedTotal = paginationExtractor(response);
-                        setTotal(extractedTotal || 0);
+                        totalCount = extractedTotal || 0;
                     } else if (responsePagination?.total !== undefined) {
-                        setTotal(responsePagination.total);
+                        totalCount = responsePagination.total;
                     } else if (Array.isArray(items)) {
-                        setTotal(items.length);
-                    } else {
-                        setTotal(0);
+                        totalCount = items.length;
+                    }
+                    setTotal(totalCount);
+
+                    // Calculate hasMore for lazy loading (use ref to avoid dependency cycle)
+                    if (lazyLoad) {
+                        const currentDataLength = append ? dataLengthRef.current + finalData.length : finalData.length;
+                        setHasMore(currentDataLength < totalCount && finalData.length > 0);
                     }
                 }
             } catch (err) {
@@ -402,20 +497,39 @@ export function useCrud<
                     onError?.(err, 'fetch');
                 }
             } finally {
+                isLoadingRef.current = false;
                 if (isMountedRef.current) {
                     setLoading(false);
+                    setLoadingMore(false);
                 }
             }
         },
-        [api, current, pageSize, queryParams, normalizeResponse, dataTransformer, paginationExtractor, mergedMessages, messages, onError]
+        [api, current, pageSize, queryParams, normalizeResponse, dataTransformer, paginationExtractor, mergedMessages, messages, onError, lazyLoad]
     );
 
     /**
      * Refresh data (fetch with current params)
      */
     const refresh = useCallback(async () => {
+        // Reset to page 1 and clear data for lazy load mode
+        if (lazyLoad) {
+            setCurrent(1);
+            setData([]);
+            setHasMore(true);
+        }
         await fetchAll();
-    }, [fetchAll]);
+    }, [fetchAll, lazyLoad]);
+
+    /**
+     * Load more items (lazy load mode)
+     */
+    const loadMore = useCallback(async () => {
+        if (!lazyLoad || !hasMore || loading || loadingMore) return;
+        
+        const nextPage = current + 1;
+        setCurrent(nextPage);
+        await fetchAll({ page: nextPage } as TQuery, true);
+    }, [lazyLoad, hasMore, loading, loadingMore, current, fetchAll]);
 
     /**
      * Create a new item
@@ -616,6 +730,44 @@ export function useCrud<
     }, []);
 
     /**
+     * Scroll container ref callback (for lazy load)
+     */
+    const scrollContainerRef = useCallback((node: HTMLElement | null) => {
+        scrollContainerNodeRef.current = node;
+    }, []);
+
+    /**
+     * Sentinel ref callback with IntersectionObserver (for lazy load)
+     */
+    const sentinelRef = useCallback((node: HTMLElement | null) => {
+        // Cleanup previous observer
+        if (observerRef.current) {
+            observerRef.current.disconnect();
+            observerRef.current = null;
+        }
+
+        sentinelNodeRef.current = node;
+
+        // Only set up observer in lazy load mode
+        if (!lazyLoad || !node) return;
+
+        const observerOptions: IntersectionObserverInit = {
+            root: scrollContainerNodeRef.current,
+            rootMargin: `${loadMoreThreshold}px`,
+            threshold: 0,
+        };
+
+        observerRef.current = new IntersectionObserver((entries) => {
+            const [entry] = entries;
+            if (entry.isIntersecting && hasMore && !loading && !loadingMore && !isLoadingRef.current) {
+                loadMore();
+            }
+        }, observerOptions);
+
+        observerRef.current.observe(node);
+    }, [lazyLoad, loadMoreThreshold, hasMore, loading, loadingMore, loadMore]);
+
+    /**
      * Pagination handler
      */
     const handlePaginationChange = useCallback(
@@ -641,31 +793,64 @@ export function useCrud<
         onChange: handlePaginationChange,
     };
 
+    // Track initial fetch to prevent double fetching in lazy mode
+    const initialFetchDoneRef = useRef(false);
+    
+    // Store fetchAll in a ref to avoid useEffect dependency issues
+    const fetchAllRef = useRef(fetchAll);
+    fetchAllRef.current = fetchAll;
+
     /**
      * Fetch data on mount and when pagination/query params change
+     * Note: We use refs to avoid infinite loops caused by fetchAll recreation
      */
     useEffect(() => {
+        // Reset mounted ref on each effect run
+        isMountedRef.current = true;
+        
         if (fetchOnMount) {
-            fetchAll();
+            if (lazyLoad) {
+                // In lazy load mode, only fetch once on mount
+                if (!initialFetchDoneRef.current) {
+                    initialFetchDoneRef.current = true;
+                    fetchAllRef.current();
+                }
+            } else {
+                // In normal mode, fetch on every pagination/query change
+                fetchAllRef.current();
+            }
         }
 
         return () => {
             isMountedRef.current = false;
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        // fetchAll intentionally omitted - adding it would cause infinite loop
-        // Re-fetch when current, pageSize, or queryParams change
-    }, [current, pageSize, queryParams, fetchOnMount]);
+     
+    }, [current, pageSize, queryParams, fetchOnMount, lazyLoad]);
+
+    /**
+     * Cleanup IntersectionObserver on unmount
+     */
+    useEffect(() => {
+        return () => {
+            if (observerRef.current) {
+                observerRef.current.disconnect();
+                observerRef.current = null;
+            }
+        };
+    }, []);
 
     return {
         data,
         loading,
+        loadingMore,
         submitting,
         error,
         pagination,
         queryParams,
-        fetchAll,
+        hasMore,
+        fetchAll: (params?: TQuery | Record<string, unknown>) => fetchAll(params, false),
         refresh,
+        loadMore,
         create,
         update,
         remove,
@@ -674,5 +859,7 @@ export function useCrud<
         setSearchParams,
         clearError,
         setData,
+        scrollContainerRef,
+        sentinelRef,
     };
 }

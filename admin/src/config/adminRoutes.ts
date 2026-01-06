@@ -468,6 +468,15 @@ export const ADMIN_MENUS: MenuConfig[] = [
         permission: 'admin.settings.view',
         description: '系统参数设置（含评价设置）',
     },
+    {
+        name: '个人中心',
+        path: '/admin/profile',
+        component: 'Profile',
+        icon: 'UserOutlined',
+        order: 100,
+        hidden: true, // 不在侧边栏显示，只通过用户下拉菜单访问
+        description: '个人信息管理和密码修改',
+    },
 ];
 
 /**

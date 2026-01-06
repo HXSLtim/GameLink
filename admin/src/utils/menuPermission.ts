@@ -31,6 +31,7 @@ export const hasPermission = (userPermissions: string[], permission: string): bo
  * - 如果菜单项有权限要求，检查用户是否拥有该权限
  * - 如果菜单项是父菜单（有子菜单），检查是否有任何可访问的子菜单
  * - 无子菜单权限时隐藏父菜单
+ * - 隐藏菜单（hidden=true 或 visible=false）不显示
  * 
  * @param menus 原始菜单列表
  * @param userPermissions 用户权限列表
@@ -40,16 +41,24 @@ export const filterMenusByPermission = (
     menus: Menu[],
     userPermissions: string[]
 ): Menu[] => {
-    // 超级管理员返回所有菜单
-    if (userPermissions.includes('*')) {
-        return menus;
-    }
-
     return menus
         .filter(menu => {
-            // 检查菜单是否可见
-            if (menu.visible === false) {
+            // 检查菜单是否隐藏（兼容 hidden 和 visible 两种字段）
+            // 后端返回 hidden 字段，前端接口定义 visible 字段
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const menuAny = menu as any;
+            if (menuAny.hidden === true || menu.visible === false) {
                 return false;
+            }
+
+            // 超级管理员可以看到所有非隐藏菜单
+            if (userPermissions.includes('*')) {
+                // 如果菜单有子菜单，递归过滤子菜单
+                if (menu.children && menu.children.length > 0) {
+                    const filteredChildren = filterMenusByPermission(menu.children, userPermissions);
+                    return filteredChildren.length > 0;
+                }
+                return true;
             }
 
             // 如果菜单有子菜单，检查是否有可访问的子菜单

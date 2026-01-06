@@ -60,6 +60,13 @@ export const permissionApi = {
     apiClient.get<ApiResponse<string[]>>('/admin/permissions/groups'),
 
   /**
+   * 获取按分组组织的权限树
+   * GET /api/admin/permissions/tree/grouped
+   */
+  getTreeByGroup: () =>
+    apiClient.get<ApiResponse<import('../types/permission').PermissionGroup[]>>('/admin/permissions/tree/grouped'),
+
+  /**
    * 创建权限
    * POST /api/admin/permissions
    */
