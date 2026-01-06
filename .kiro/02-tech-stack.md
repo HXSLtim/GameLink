@@ -254,22 +254,25 @@ apierr.IsValidationError(err)
 
 ### 前端请求层规范
 
-Axios 拦截器已在响应层自动解析 `response.data.data`，页面组件直接使用返回值即可。
+Axios 拦截器返回完整的 `AxiosResponse`，调用方需要手动解析响应数据。
 
 ```typescript
-// ✅ 正确用法 - 拦截器已解析
-const resp = await api.getUsers();
-const users = resp.data;  // 直接是业务数据
+// API 响应结构
+interface ApiResponse<T> {
+  success: boolean;
+  code: number;
+  message: string;
+  data: T;  // 业务数据
+}
 
-// ❌ 错误用法 - 多余的解析
-const users = resp.data.data;  // 不需要！
-```
+// 正确用法 - 需要访问 response.data.data
+const response = await api.getUsers();
+const users = response.data.data;  // response.data 是 ApiResponse，.data 是业务数据
 
-API 响应结构：
-```json
-{
-  "code": 0,
-  "message": "success",
-  "data": { ... }  // ← 拦截器返回这一层
+// 错误处理时可以访问
+if (!response.data.success) {
+  console.error(response.data.message);
 }
 ```
+
+> **注意**：`useCrud` hook 内部已处理响应解析，使用该 hook 时无需手动解析。
