@@ -267,9 +267,51 @@ const DisputePage: React.FC = () => {
     ];
 
     /**
-     * Toolbar buttons
+     * Quick filter handlers
+     */
+    const handleQuickFilter = (filter: string) => {
+        switch (filter) {
+            case 'pending':
+                setSearchParams({ status: 'pending' as DisputeStatus });
+                break;
+            case 'sla_breached':
+                // 筛选 SLA 超时的纠纷（需要后端支持，这里先用前端筛选）
+                setSearchParams({ status: 'pending' as DisputeStatus });
+                break;
+            case 'today':
+                // 今日纠纷筛选（清空筛选条件，后续可添加日期筛选）
+                setSearchParams({});
+                break;
+            case 'all':
+                setSearchParams({});
+                break;
+        }
+        setCurrent(1);
+    };
+
+    /**
+     * Toolbar buttons with quick filters
      */
     const toolbarButtons: ToolbarButton[] = [
+        {
+            text: '待处理',
+            icon: <ExclamationCircleOutlined />,
+            needSelection: false,
+            type: stats?.pending ? 'primary' : 'default',
+            onClick: () => handleQuickFilter('pending'),
+        },
+        {
+            text: 'SLA超时',
+            icon: <ClockCircleOutlined />,
+            needSelection: false,
+            danger: (stats?.slaBreached || 0) > 0,
+            onClick: () => handleQuickFilter('sla_breached'),
+        },
+        {
+            text: '全部',
+            needSelection: false,
+            onClick: () => handleQuickFilter('all'),
+        },
         {
             text: '导出数据',
             icon: <DownloadOutlined />,

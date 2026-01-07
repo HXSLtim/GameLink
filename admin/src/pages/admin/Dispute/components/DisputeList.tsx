@@ -1,9 +1,14 @@
 /**
  * DisputeList Component
  * Displays the list of disputes with filters and actions
+ * 
+ * Features:
+ * - Inline quick assignment via Select dropdown
+ * - Quick filter buttons for common scenarios
+ * - SLA status indicators
  */
-import React from 'react';
-import { Tag, Space, Button, Avatar, Typography } from 'antd';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Tag, Space, Button, Avatar, Typography, Select, App, Tooltip } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
     EyeOutlined,
@@ -12,6 +17,7 @@ import {
     RollbackOutlined,
     ClockCircleOutlined,
     UserOutlined,
+    ThunderboltOutlined,
 } from '@ant-design/icons';
 import { SearchTable, type ToolbarButton, type SearchField } from '@/components';
 import type { Dispute } from '@/types/dispute';
@@ -20,7 +26,10 @@ import {
     DISPUTE_STATUS_COLORS,
     DISPUTE_TYPE_LABELS,
 } from '@/types/dispute';
+import { adminApi } from '@/api/admin';
+import { disputeApi } from '@/api/dispute';
 import dayjs from 'dayjs';
+import { logger } from '@/utils/logger';
 
 export interface DisputeListProps {
     /** Dispute data */
@@ -53,6 +62,11 @@ export interface DisputeListProps {
     onRollback: (dispute: Dispute) => void;
 }
 
+interface CSUser {
+    id: number;
+    name: string;
+}
+
 /**
  * DisputeList Component
  */
@@ -72,6 +86,39 @@ export const DisputeList: React.FC<DisputeListProps> = ({
     onResolve,
     onRollback,
 }) => {
+    const { message } = App.useApp();
+    const [csUsers, setCsUsers] = useState<CSUser[]>([]);
+    const [assigningId, setAssigningId] = useState<number | null>(null);
+
+    // 加载客服列表
+    const loadCSUsers = useCallback(async () => {
+        try {
+            const response = await adminApi.getUsers({ role: ['admin'], page_size: 100 });
+            const users = response.data?.data || [];
+            setCsUsers(Array.isArray(users) ? users.map(u => ({ id: u.id, name: u.name })) : []);
+        } catch (error) {
+            logger.error('Load CS users error:', error);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadCSUsers();
+    }, [loadCSUsers]);
+
+    // 行内快速分配
+    const handleQuickAssign = async (disputeId: number, csId: number) => {
+        setAssigningId(disputeId);
+        try {
+            await disputeApi.assignDispute(disputeId, { assignedServiceId: csId });
+            message.success('分配成功');
+            onRefresh();
+        } catch (error) {
+            logger.error('Quick assign error:', error);
+            message.error('分配失败');
+        } finally {
+            setAssigningId(null);
+        }
+    };
     /**
      * Table columns configuration
      */
@@ -124,8 +171,24 @@ export const DisputeList: React.FC<DisputeListProps> = ({
         {
             title: '处理客服',
             key: 'assignedService',
-            width: 120,
+            width: 160,
             render: (_, record) => {
+                // 待处理状态：显示快速分配下拉框
+                if (record.status === 'pending') {
+                    return (
+                        <Select
+                            placeholder="快速分配"
+                            size="small"
+                            style={{ width: 140 }}
+                            loading={assigningId === record.id}
+                            disabled={assigningId !== null}
+                            onChange={(csId) => handleQuickAssign(record.id, csId)}
+                            options={csUsers.map(u => ({ label: u.name, value: u.id }))}
+                            suffixIcon={<ThunderboltOutlined style={{ color: '#faad14' }} />}
+                        />
+                    );
+                }
+                // 已分配状态：显示客服信息
                 if (record.assignedServiceName) {
                     return (
                         <Space direction="vertical" size={0}>
@@ -174,46 +237,47 @@ export const DisputeList: React.FC<DisputeListProps> = ({
         {
             title: '操作',
             key: 'action',
-            width: 200,
+            width: 180,
             fixed: 'right',
             render: (_, record) => (
                 <Space size="small">
-                    <Button
-                        type="link"
-                        size="small"
-                        icon={<EyeOutlined />}
-                        onClick={() => onViewDetail(record)}
-                    >
-                        详情
-                    </Button>
-                    {record.status === 'pending' && (
+                    <Tooltip title="查看详情">
                         <Button
                             type="link"
                             size="small"
-                            icon={<UserSwitchOutlined />}
-                            onClick={() => onAssign(record)}
-                        >
-                            分配
-                        </Button>
+                            icon={<EyeOutlined />}
+                            onClick={() => onViewDetail(record)}
+                        />
+                    </Tooltip>
+                    {record.status === 'pending' && (
+                        <Tooltip title="高级分配">
+                            <Button
+                                type="link"
+                                size="small"
+                                icon={<UserSwitchOutlined />}
+                                onClick={() => onAssign(record)}
+                            />
+                        </Tooltip>
                     )}
                     {['assigned', 'mediating'].includes(record.status) && (
                         <>
-                            <Button
-                                type="link"
-                                size="small"
-                                icon={<CheckCircleOutlined />}
-                                onClick={() => onResolve(record)}
-                            >
-                                解决
-                            </Button>
-                            <Button
-                                type="link"
-                                size="small"
-                                icon={<RollbackOutlined />}
-                                onClick={() => onRollback(record)}
-                            >
-                                回滚
-                            </Button>
+                            <Tooltip title="解决纠纷">
+                                <Button
+                                    type="link"
+                                    size="small"
+                                    icon={<CheckCircleOutlined />}
+                                    style={{ color: '#52c41a' }}
+                                    onClick={() => onResolve(record)}
+                                />
+                            </Tooltip>
+                            <Tooltip title="回滚分配">
+                                <Button
+                                    type="link"
+                                    size="small"
+                                    icon={<RollbackOutlined />}
+                                    onClick={() => onRollback(record)}
+                                />
+                            </Tooltip>
                         </>
                     )}
                 </Space>
