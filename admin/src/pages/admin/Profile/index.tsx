@@ -86,7 +86,7 @@ const ProfilePage: React.FC = () => {
                 email: authUser.email || '',
                 phone: authUser.phone || '',
                 avatarUrl: authUser.avatar, // UserInfo.avatar → User.avatarUrl
-                role: (authUser.role as any) || 'admin',
+                role: (authUser.role as 'user' | 'player' | 'admin') || 'admin',
                 status: 'active', // 管理员默认状态
                 createdAt: authUser.createdAt || new Date().toISOString(),
                 updatedAt: authUser.updatedAt,
@@ -103,7 +103,8 @@ const ProfilePage: React.FC = () => {
 
     useEffect(() => {
         loadUserInfo();
-    }, [authUser]); // 依赖 authUser
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [authUser]); // 依赖 authUser，loadUserInfo 在组件内部定义，不需要添加到依赖
 
     // 修改密码
     const handleChangePassword = async () => {

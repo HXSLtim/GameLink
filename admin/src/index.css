@@ -30,3 +30,32 @@ button {
   outline: none;
   font-family: inherit;
 }
+
+/* 全局无痕滚动条样式 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(144, 147, 153, 0.3) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(144, 147, 153, 0.3);
+  border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(144, 147, 153, 0.5);
+}
+
+/* 滚动条角落 */
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}

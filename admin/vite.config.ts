@@ -29,8 +29,8 @@ function getNetworkIPs() {
 function showNetworkIPs() {
   return {
     name: 'show-network-ips',
-    configureServer(server: any) {
-      const { port = 5173, https } = server.config.server
+    configureServer(server: { config: { server?: { port?: number; https?: boolean } }; httpServer?: { once: (event: string, callback: () => void) => void } }) {
+      const { port = 5173, https } = server.config.server || { port: 5173, https: false }
       const protocol = https ? 'https' : 'http'
       const localhost = `${protocol}://localhost:${port}`
       const networkIPs = getNetworkIPs()

@@ -141,6 +141,19 @@ export interface ExportColumn<T> {
 }
 
 /**
+ * 获取嵌套对象的值
+ */
+function getNestedValue<T extends Record<string, unknown>>(obj: T, key: string): unknown {
+  const keys = String(key).split('.');
+  let value: unknown = obj;
+  for (const k of keys) {
+    if (value === null || value === undefined) return undefined;
+    value = (value as Record<string, unknown>)[k];
+  }
+  return value;
+}
+
+/**
  * 带格式化的导出
  */
 export function exportWithFormat<T extends Record<string, unknown>>(
@@ -153,8 +166,8 @@ export function exportWithFormat<T extends Record<string, unknown>>(
   const formattedData = data.map((row) => {
     const newRow: Record<string, unknown> = {};
     columns.forEach((col) => {
-      const value = row[col.key];
-      newRow[col.key as string] = col.format ? col.format(value, row) : value;
+      const value = getNestedValue(row, String(col.key));
+      newRow[col.key as string] = col.format ? col.format(value as T[keyof T], row) : value;
     });
     return newRow as T;
   });
@@ -166,3 +179,150 @@ export function exportWithFormat<T extends Record<string, unknown>>(
   }
   return exportToCSV(formattedData, simpleColumns, filename);
 }
+
+/**
+ * 预定义导出列配置
+ */
+
+// 角色映射
+const roleMap: Record<string, string> = {
+  user: '普通用户',
+  player: '陪玩师',
+  admin: '管理员',
+};
+
+// 状态映射
+const statusMap: Record<string, string> = {
+  active: '正常',
+  inactive: '未激活',
+  banned: '已封禁',
+  pending: '待审核',
+  approved: '已通过',
+  rejected: '已拒绝',
+};
+
+// 订单状态映射
+const orderStatusMap: Record<string, string> = {
+  pending: '待确认',
+  confirmed: '已确认',
+  in_progress: '进行中',
+  completed: '已完成',
+  canceled: '已取消',
+  refunded: '已退款',
+};
+
+/**
+ * 用户导出列配置（完整版）
+ */
+export const userExportColumns: ExportColumn<Record<string, unknown>>[] = [
+  { key: 'id', title: 'ID' },
+  { key: 'name', title: '用户名' },
+  { key: 'phone', title: '手机号' },
+  { key: 'email', title: '邮箱' },
+  {
+    key: 'role',
+    title: '角色',
+    format: (value) => roleMap[String(value)] || String(value),
+  },
+  {
+    key: 'status',
+    title: '状态',
+    format: (value) => statusMap[String(value)] || String(value),
+  },
+  { key: 'level', title: '等级' },
+  {
+    key: 'wallet',
+    title: '积分/余额',
+    format: (value, row) => {
+      // 支持嵌套对象 wallet.balanceCents
+      const wallet = row.wallet as { balanceCents?: number } | undefined;
+      return wallet?.balanceCents ?? 0;
+    },
+  },
+  {
+    key: 'tags',
+    title: '标签',
+    format: (value) => {
+      const tags = value as string[] | undefined;
+      return tags?.join(', ') || '';
+    },
+  },
+  {
+    key: 'vipLevelId',
+    title: 'VIP等级ID',
+    format: (value) => (value ? String(value) : '无'),
+  },
+  {
+    key: 'vipExp',
+    title: 'VIP经验',
+    format: (value) => (value ? String(value) : '0'),
+  },
+  {
+    key: 'totalRechargeCents',
+    title: '累计充值(元)',
+    format: (value) => formatAmountForExport(Number(value) || 0),
+  },
+  {
+    key: 'vipExpiry',
+    title: 'VIP到期时间',
+    format: (value) => (value ? formatDateForExport(value as string) : '永久'),
+  },
+  {
+    key: 'lastLoginAt',
+    title: '最后登录',
+    format: (value) => (value ? formatDateForExport(value as string) : ''),
+  },
+  {
+    key: 'createdAt',
+    title: '注册时间',
+    format: (value) => (value ? formatDateForExport(value as string) : ''),
+  },
+];
+
+/**
+ * 订单导出列配置
+ */
+export const orderExportColumns: ExportColumn<Record<string, unknown>>[] = [
+  { key: 'id', title: 'ID' },
+  { key: 'orderNo', title: '订单号' },
+  { key: 'userId', title: '用户ID' },
+  { key: 'playerId', title: '陪玩ID' },
+  {
+    key: 'totalPriceCents',
+    title: '金额(元)',
+    format: (value) => formatAmountForExport(Number(value) || 0),
+  },
+  {
+    key: 'status',
+    title: '状态',
+    format: (value) => orderStatusMap[String(value)] || String(value),
+  },
+  {
+    key: 'createdAt',
+    title: '创建时间',
+    format: (value) => (value ? formatDateForExport(value as string) : ''),
+  },
+];
+
+/**
+ * 陪玩师导出列配置
+ */
+export const playerExportColumns: ExportColumn<Record<string, unknown>>[] = [
+  { key: 'id', title: 'ID' },
+  { key: 'userId', title: '用户ID' },
+  { key: 'nickname', title: '昵称' },
+  { key: 'realName', title: '真实姓名' },
+  {
+    key: 'status',
+    title: '状态',
+    format: (value) => statusMap[String(value)] || String(value),
+  },
+  { key: 'ratingAverage', title: '平均评分' },
+  { key: 'ratingCount', title: '评价数' },
+  { key: 'orderCount', title: '订单数' },
+  {
+    key: 'createdAt',
+    title: '注册时间',
+    format: (value) => (value ? formatDateForExport(value as string) : ''),
+  },
+];

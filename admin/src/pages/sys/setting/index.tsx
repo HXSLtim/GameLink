@@ -85,7 +85,8 @@ const Settings: React.FC = () => {
     useEffect(() => {
         fetchReviewSettings();
         fetchInitStatus();
-    }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // 初始化时只执行一次，fetchReviewSettings 和 fetchInitStatus 在组件内部定义
 
     // 保存评价设置
     const handleSaveReviewSettings = async () => {

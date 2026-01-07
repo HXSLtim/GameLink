@@ -26,6 +26,13 @@ export interface User {
         createdAt: string;
         updatedAt: string;
     };
+    // VIP 相关字段
+    vipLevelId?: number;
+    vipUnlocked?: boolean;
+    vipExp?: number;
+    totalRechargeCents?: number;
+    vipUnlockedAt?: string;
+    vipExpireAt?: string;
 }
 
 export interface Order {

@@ -35,7 +35,7 @@ import {
     MailOutlined,
     DownloadOutlined,
 } from '@ant-design/icons';
-import { exportToCSV, userExportColumns } from '@/utils/export';
+import { exportWithFormat, userExportColumns } from '@/utils/export';
 import { PageContainer, SearchTable, type ToolbarButton } from '@/components';
 import type { SearchField } from '@/components';
 import { USER_PERMISSIONS } from '@/constants/permissions';
@@ -734,7 +734,7 @@ const UserPage: React.FC = () => {
             text: '导出数据',
             icon: <DownloadOutlined />,
             needSelection: false,
-            onClick: () => handleExport(),
+            onClick: (keys) => handleExport(keys),
             permission: USER_PERMISSIONS.LIST,
         },
     ];
@@ -742,13 +742,24 @@ const UserPage: React.FC = () => {
     /**
      * 导出用户数据
      */
-    const handleExport = useCallback(async () => {
+    const handleExport = useCallback(async (selectedKeys?: React.Key[]) => {
         try {
             message.loading({ content: '正在导出...', key: 'export' });
-            // 获取所有符合条件的数据
+            
+            // 如果有选中的行，导出选中的数据
+            if (selectedKeys && selectedKeys.length > 0) {
+                const selectedUsers = users.filter(user => selectedKeys.includes(user.id));
+                if (selectedUsers.length > 0) {
+                    exportWithFormat(selectedUsers as unknown as Record<string, unknown>[], userExportColumns, 'users_selected');
+                    message.success({ content: `导出成功，共 ${selectedUsers.length} 条数据`, key: 'export' });
+                    return;
+                }
+            }
+            
+            // 否则导出所有符合条件的数据（从后端获取完整数据）
             const response = await adminApi.getUsers({ ...searchParams, page_size: 10000 });
             if (response.data.success && response.data.data) {
-                exportToCSV(response.data.data as unknown as Record<string, unknown>[], userExportColumns, 'users');
+                exportWithFormat(response.data.data as unknown as Record<string, unknown>[], userExportColumns, 'users');
                 message.success({ content: '导出成功', key: 'export' });
             } else {
                 message.error({ content: '导出失败', key: 'export' });
@@ -756,7 +767,7 @@ const UserPage: React.FC = () => {
         } catch {
             message.error({ content: '导出失败', key: 'export' });
         }
-    }, [searchParams]);
+    }, [searchParams, users]);
 
     return (
         <PageContainer title="用户管理" subTitle="管理平台所有注册用户">

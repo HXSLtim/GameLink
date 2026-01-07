@@ -101,22 +101,21 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             
             // 处理权限数据 - 兼容多种响应格式
             let permData: string[] = [];
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const permAny = permRes as any;
-            if (permAny?.data?.data && Array.isArray(permAny.data.data)) {
-                permData = permAny.data.data;
-            } else if (Array.isArray(permAny?.data)) {
-                permData = permAny.data;
+            type ApiResponse<T> = { data: { data: T } } | { data: T };
+            const permResTyped = permRes as ApiResponse<string[]>;
+            if ('data' in permResTyped && typeof permResTyped.data === 'object' && permResTyped.data !== null && 'data' in permResTyped.data) {
+                permData = (permResTyped.data as { data: string[] }).data;
+            } else if ('data' in permResTyped && Array.isArray(permResTyped.data)) {
+                permData = permResTyped.data as string[];
             }
-            
+
             // 处理菜单数据 - 兼容多种响应格式
             let menuData: Menu[] = [];
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const menuAny = menuRes as any;
-            if (menuAny?.data?.data && Array.isArray(menuAny.data.data)) {
-                menuData = menuAny.data.data;
-            } else if (Array.isArray(menuAny?.data)) {
-                menuData = menuAny.data;
+            const menuResTyped = menuRes as ApiResponse<Menu[]>;
+            if ('data' in menuResTyped && typeof menuResTyped.data === 'object' && menuResTyped.data !== null && 'data' in menuResTyped.data) {
+                menuData = (menuResTyped.data as { data: Menu[] }).data;
+            } else if ('data' in menuResTyped && Array.isArray(menuResTyped.data)) {
+                menuData = menuResTyped.data as Menu[];
             }
             
             logger.info('[AdminContext] 提取的权限数据:', permData);

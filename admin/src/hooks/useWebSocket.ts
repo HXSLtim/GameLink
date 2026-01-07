@@ -225,7 +225,6 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
   // 自动连接
   useEffect(() => {
     if (autoConnect) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       connect();
     }
 
@@ -236,7 +235,8 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
         wsRef.current.close(1000, 'Component unmount');
       }
     };
-  }, [autoConnect, connect, clearTimers]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoConnect]);
 
   return {
     connected: connectionState === 'connected',

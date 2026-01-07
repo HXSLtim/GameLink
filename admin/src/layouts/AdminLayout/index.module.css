@@ -20,23 +20,39 @@
     top: 0;
     bottom: 0;
     z-index: 100;
-    overflow: auto;
+    overflow: hidden;
 }
 
 .sider :global(.ant-layout-sider-children) {
     display: flex;
     flex-direction: column;
+    height: 100%;
 }
 
-/* Logo区域 */
+/* 侧边栏收起时菜单图标居中 */
+.sider:global(.ant-layout-sider-collapsed) .menu :global(.ant-menu-item),
+.sider:global(.ant-layout-sider-collapsed) .menu :global(.ant-menu-submenu-title) {
+    padding-inline: 0 !important;
+    text-align: center;
+}
+
+.sider:global(.ant-layout-sider-collapsed) .menu :global(.ant-menu-item .anticon),
+.sider:global(.ant-layout-sider-collapsed) .menu :global(.ant-menu-submenu-title .anticon) {
+    margin: 0 auto;
+    font-size: 18px;
+}
+
+/* Logo区域 - 固定在顶部 */
 .logo {
     height: 64px;
+    min-height: 64px;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 0 16px;
     gap: 8px;
     transition: all 0.2s;
+    flex-shrink: 0;
 }
 
 .logoIcon {
@@ -56,6 +72,38 @@
     flex: 1;
     border-inline-end: none !important;
     padding: 8px 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    /* 无痕滚动条 */
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+}
+
+.menu:hover {
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+/* Webkit 浏览器滚动条样式 */
+.menu::-webkit-scrollbar {
+    width: 4px;
+}
+
+.menu::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.menu::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 4px;
+    transition: background 0.3s;
+}
+
+.menu:hover::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.menu::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
 }
 
 /* 顶部栏 */

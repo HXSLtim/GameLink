@@ -68,7 +68,7 @@ import {
 import { useAdmin } from '@/context/useAdmin';
 import { useTheme } from '@/context/useTheme';
 import { authApi } from '@/api/auth';
-import { adminApi, type Menu as BackendMenuItem } from '@/api/admin';
+import type { Menu as BackendMenuItem } from '@/api/admin';
 import { userApi, type Notification, type ApiResponse, type NotificationListResponse } from '@/api/user';
 import { ThemeToggle } from '@/components';
 import { forceInit } from '@/services/init';
