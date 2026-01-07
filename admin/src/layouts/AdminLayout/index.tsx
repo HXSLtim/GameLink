@@ -32,6 +32,7 @@ import {
     LogoutOutlined,
     SettingOutlined,
     BellOutlined,
+    SearchOutlined,
     DashboardOutlined,
     SettingFilled,
     TeamOutlined,
@@ -71,6 +72,7 @@ import { authApi } from '@/api/auth';
 import type { Menu as BackendMenuItem } from '@/api/admin';
 import { userApi, type Notification, type ApiResponse, type NotificationListResponse } from '@/api/user';
 import { ThemeToggle } from '@/components';
+import GlobalSearch from '@/components/GlobalSearch';
 import { forceInit } from '@/services/init';
 import styles from './index.module.css';
 
@@ -190,6 +192,21 @@ const AdminLayout: React.FC = () => {
     const [unreadCount, setUnreadCount] = useState(0);
     const [loadingNotifications, setLoadingNotifications] = useState(false);
     const [notificationOpen, setNotificationOpen] = useState(false);
+
+    // 全局搜索状态
+    const [searchOpen, setSearchOpen] = useState(false);
+
+    // 键盘快捷键：Ctrl+K 打开搜索
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                setSearchOpen(true);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
     const fetchNotifications = async () => {
         setLoadingNotifications(true);
@@ -705,6 +722,13 @@ const AdminLayout: React.FC = () => {
 
                     <div className={styles.headerRight}>
                         <Space size={16}>
+                            {/* 全局搜索 */}
+                            <Button
+                                type="text"
+                                icon={<SearchOutlined />}
+                                onClick={() => setSearchOpen(true)}
+                            />
+
                             {/* 主题切换 */}
                             <ThemeToggle />
 
@@ -758,6 +782,9 @@ const AdminLayout: React.FC = () => {
                     <Outlet />
                 </Content>
             </Layout>
+
+            {/* 全局搜索 */}
+            <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
         </Layout>
     );
 };
