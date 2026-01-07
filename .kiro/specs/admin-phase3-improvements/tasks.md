@@ -1,0 +1,319 @@
+# Implementation Plan
+
+## Phase 1: Service Layer Foundation
+
+- [ ] 1. Set up service layer infrastructure
+  - [ ] 1.1 Create service utilities (serviceError.ts, serviceResult.ts)
+    - Implement `ServiceException` class with code, message, details
+    - Implement `ServiceResult<T>` and `BatchResult<T>` interfaces
+    - Implement error code constants
+    - _Requirements: 1.3_
+  - [ ] 1.2 Write property test for service error format consistency
+    - **Property 1: Service Error Format Consistency**
+    - **Validates: Requirements 1.3**
+  - [ ] 1.3 Create base service class (base.ts)
+    - Implement `BaseService` with dependency injection support
+    - Implement `handleError` method for error wrapping
+    - Implement `wrapAsync` helper for async operations
+    - _Requirements: 1.2, 1.5_
+  - [ ] 1.4 Write property test for service independence from UI
+    - **Property 2: Service Independence from UI**
+    - **Validates: Requirements 1.2**
+
+- [ ] 2. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+## Phase 2: Domain Services Implementation
+
+- [ ] 3. Implement UserService
+  - [ ] 3.1 Create UserService interface and implementation
+    - Implement CRUD operations (getUsers, getUserById, createUser, updateUser, deleteUser)
+    - Implement status and role update methods
+    - _Requirements: 2.1_
+  - [ ] 3.2 Implement user data validation
+    - Implement email format validation (RFC 5322 compliant)
+    - Implement phone format validation (Chinese mobile format)
+    - Implement password strength validation
+    - _Requirements: 2.2_
+  - [ ] 3.3 Write property test for user data validation
+    - **Property 4: User Data Validation Completeness**
+    - **Validates: Requirements 2.2**
+  - [ ] 3.4 Implement batch user operations
+    - Implement batchUpdateStatus with validation
+    - Implement batchUpdateRole with validation
+    - Implement batchDelete with validation
+    - _Requirements: 2.3_
+  - [ ] 3.5 Write property test for batch operation results
+    - **Property 5: Batch Operation Result Completeness**
+    - **Validates: Requirements 2.3**
+  - [ ] 3.6 Implement user data export
+    - Implement exportUsers method returning headers and rows
+    - Format data for Excel/CSV compatibility
+    - _Requirements: 2.5_
+  - [ ] 3.7 Write property test for export data format
+    - **Property 6: Export Data Format Consistency**
+    - **Validates: Requirements 2.5**
+
+- [ ] 4. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 5. Implement OrderService
+  - [ ] 5.1 Create OrderService interface and implementation
+    - Implement query operations (getOrders, getOrderById)
+    - Implement cancelOrder and refundOrder methods
+    - _Requirements: 3.1_
+  - [ ] 5.2 Implement order cancellation validation
+    - Implement canCancel method checking order status
+    - Enforce cancellation rules (only pending/confirmed orders)
+    - _Requirements: 3.2_
+  - [ ] 5.3 Write property test for order cancellation rules
+    - **Property 7: Order Cancellation State Validation**
+    - **Validates: Requirements 3.2**
+  - [ ] 5.4 Implement refund calculation
+    - Implement calculateRefund method
+    - Validate refund amount against original payment
+    - Calculate platform fee and player amount
+    - _Requirements: 3.3_
+  - [ ] 5.5 Write property test for refund calculation
+    - **Property 8: Refund Calculation Accuracy**
+    - **Validates: Requirements 3.3**
+  - [ ] 5.6 Implement batch order operations
+    - Implement batchCancel with parallel processing
+    - Implement batchComplete with parallel processing
+    - _Requirements: 3.4_
+  - [ ] 5.7 Implement order statistics computation
+    - Implement computeStatistics method
+    - Calculate total revenue, order counts, completion rate
+    - Implement computeTrend for trend data
+    - _Requirements: 3.5_
+  - [ ] 5.8 Write property test for order statistics
+    - **Property 9: Order Statistics Computation Accuracy**
+    - **Validates: Requirements 3.5**
+
+- [ ] 6. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 7. Implement PlayerService
+  - [ ] 7.1 Create PlayerService interface and implementation
+    - Implement CRUD operations
+    - Implement skill tag management
+    - _Requirements: 4.1_
+  - [ ] 7.2 Implement player verification workflow
+    - Implement verifyPlayer method
+    - Implement canVerify method with state transition rules
+    - Record audit information
+    - _Requirements: 4.2_
+  - [ ] 7.3 Write property test for verification workflow
+    - **Property 10: Player Verification Workflow Enforcement**
+    - **Validates: Requirements 4.2**
+  - [ ] 7.4 Implement player earnings calculation
+    - Implement calculateEarnings method
+    - Apply commission rules correctly
+    - _Requirements: 4.3_
+  - [ ] 7.5 Write property test for earnings calculation
+    - **Property 11: Player Earnings Calculation Accuracy**
+    - **Validates: Requirements 4.3**
+  - [ ] 7.6 Implement player statistics computation
+    - Implement computeStatistics method
+    - Calculate total earnings, order counts, rating averages
+    - _Requirements: 4.4_
+  - [ ] 7.7 Write property test for player statistics
+    - **Property 12: Player Statistics Computation Accuracy**
+    - **Validates: Requirements 4.4**
+  - [ ] 7.8 Implement batch player operations
+    - Implement batchUpdateStatus with state validation
+    - Implement batchDelete
+    - _Requirements: 4.5_
+
+- [ ] 8. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+## Phase 3: Data Import Framework
+
+- [ ] 9. Create import infrastructure
+  - [ ] 9.1 Create file parsers
+    - Implement Excel parser using xlsx library
+    - Implement CSV parser
+    - Handle file size validation (max 10MB)
+    - _Requirements: 5.1_
+  - [ ] 9.2 Write property test for file format validation
+    - **Property 13: File Format Validation**
+    - **Validates: Requirements 5.1**
+  - [ ] 9.3 Create import template definitions
+    - Define userImportTemplate with columns
+    - Define playerImportTemplate with columns
+    - Define gameImportTemplate with columns
+    - _Requirements: 6.1, 7.1, 8.1_
+  - [ ] 9.4 Implement structure validation
+    - Validate required columns presence
+    - Report missing/extra columns
+    - _Requirements: 5.2_
+  - [ ] 9.5 Write property test for structure validation
+    - **Property 14: Import Structure Validation**
+    - **Validates: Requirements 5.2**
+
+- [ ] 10. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 11. Implement data validators
+  - [ ] 11.1 Create user data validator
+    - Validate email format and uniqueness
+    - Validate phone format and uniqueness
+    - Collect all errors per row
+    - _Requirements: 6.2_
+  - [ ] 11.2 Create player data validator
+    - Validate user reference exists
+    - Validate user not already a player
+    - Validate skill tags format
+    - _Requirements: 7.2, 7.4_
+  - [ ] 11.3 Write property test for skill tag parsing
+    - **Property 21: Skill Tag Parsing**
+    - **Validates: Requirements 7.4**
+  - [ ] 11.4 Create game data validator
+    - Validate game key uniqueness
+    - Validate category references
+    - _Requirements: 8.2_
+  - [ ] 11.5 Write property test for duplicate detection
+    - **Property 17: Import Duplicate Detection**
+    - **Validates: Requirements 6.2, 7.2, 8.2**
+  - [ ] 11.6 Write property test for data validation completeness
+    - **Property 15: Import Data Validation Completeness**
+    - **Validates: Requirements 5.3**
+
+- [ ] 12. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 13. Implement ImportService core
+  - [ ] 13.1 Create ImportService interface and implementation
+    - Implement parseFile method
+    - Implement validateStructure method
+    - Implement getTemplate and downloadTemplate methods
+    - _Requirements: 5.1, 5.2, 5.3_
+  - [ ] 13.2 Implement user import
+    - Implement importUsers method
+    - Generate secure temporary passwords
+    - Set default values for optional fields
+    - _Requirements: 6.3, 6.4_
+  - [ ] 13.3 Write property test for password generation
+    - **Property 18: Password Generation Security**
+    - **Validates: Requirements 6.3**
+  - [ ] 13.4 Implement player import
+    - Implement importPlayers method
+    - Set initial verification status to pending
+    - Parse and validate skill tags
+    - _Requirements: 7.3_
+  - [ ] 13.5 Write property test for player import initial state
+    - **Property 20: Player Import Initial State**
+    - **Validates: Requirements 7.3**
+  - [ ] 13.6 Implement game import
+    - Implement importGames method
+    - Apply default values (isActive=true, sortOrder=0)
+    - Handle duplicate key options (skip/update/fail)
+    - _Requirements: 8.3, 8.4_
+  - [ ] 13.7 Write property test for game import defaults
+    - **Property 22: Game Import Defaults**
+    - **Validates: Requirements 8.3**
+  - [ ] 13.8 Write property test for import summary accuracy
+    - **Property 16: Import Summary Accuracy**
+    - **Validates: Requirements 5.5, 6.5**
+
+- [ ] 14. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+## Phase 4: Import History and UI Integration
+
+- [ ] 15. Implement import history
+  - [ ] 15.1 Create import history storage
+    - Store import metadata (timestamp, user, file, counts, status)
+    - Store row-by-row results for failed imports
+    - _Requirements: 9.1_
+  - [ ] 15.2 Write property test for metadata recording
+    - **Property 23: Import Metadata Recording**
+    - **Validates: Requirements 9.1**
+  - [ ] 15.3 Implement history query and details
+    - Implement getImportHistory with filtering
+    - Implement getImportDetails
+    - _Requirements: 9.2, 9.3_
+  - [ ] 15.4 Write property test for error detail preservation
+    - **Property 19: Error Detail Preservation**
+    - **Validates: Requirements 6.4, 9.3, 9.4**
+  - [ ] 15.5 Implement error report download
+    - Generate report with original data + status + errors
+    - Support Excel/CSV format
+    - _Requirements: 9.5_
+  - [ ] 15.6 Write property test for report format
+    - **Property 24: Import Result Report Format**
+    - **Validates: Requirements 9.5**
+
+- [ ] 16. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 17. Create UI components for import
+  - [ ] 17.1 Create ImportModal component
+    - File upload with drag-and-drop
+    - Template download button
+    - Preview table for parsed data
+    - Error display with row numbers
+    - _Requirements: 5.4_
+  - [ ] 17.2 Create ImportHistoryTable component
+    - Paginated list of past imports
+    - Filter by type and date range
+    - Link to import details
+    - _Requirements: 9.2_
+  - [ ] 17.3 Integrate import into User management page
+    - Add import button to toolbar
+    - Connect to ImportModal
+    - Refresh list after import
+    - _Requirements: 6.5_
+  - [ ] 17.4 Integrate import into Player management page
+    - Add import button to toolbar
+    - Connect to ImportModal
+    - Refresh list after import
+    - _Requirements: 7.5_
+  - [ ] 17.5 Integrate import into Game management page
+    - Add import button to toolbar
+    - Connect to ImportModal
+    - Refresh list after import
+    - _Requirements: 8.5_
+
+- [ ] 18. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+## Phase 5: Store Integration and Refactoring
+
+- [ ] 19. Refactor stores to use services
+  - [ ] 19.1 Refactor userStore to use UserService
+    - Replace direct API calls with service calls
+    - Use service validation methods
+    - Handle service errors consistently
+    - _Requirements: 1.2_
+  - [ ] 19.2 Refactor orderStore to use OrderService
+    - Replace direct API calls with service calls
+    - Use service calculation methods
+    - Handle service errors consistently
+    - _Requirements: 1.2_
+  - [ ] 19.3 Refactor playerStore to use PlayerService
+    - Replace direct API calls with service calls
+    - Use service validation methods
+    - Handle service errors consistently
+    - _Requirements: 1.2_
+  - [ ] 19.4 Write property test for multi-API orchestration
+    - **Property 3: Multi-API Orchestration Graceful Handling**
+    - **Validates: Requirements 1.4**
+
+- [ ] 20. Final Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 21. Update service exports and documentation
+  - [ ] 21.1 Create unified service exports
+    - Export all services from services/index.ts
+    - Export all types and interfaces
+    - _Requirements: 1.1_
+  - [ ] 21.2 Update stores documentation
+    - Document service layer usage patterns
+    - Update BEST_PRACTICES.md
+    - _Requirements: 10.1_
+  - [ ] 21.3 Verify test coverage meets 80% threshold
+    - Run coverage report
+    - Add tests for uncovered code paths
+    - _Requirements: 10.5_
