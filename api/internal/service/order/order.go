@@ -10,6 +10,7 @@ import (
 	"gamelink/internal/repository"
 	commissionrepo "gamelink/internal/repository/commission"
 	repoiface "gamelink/internal/repository/interfaces"
+	"gamelink/internal/repository/ordergroup"
 	"gamelink/pkg/apierr"
 	"gamelink/pkg/cache"
 )
@@ -31,8 +32,10 @@ var (
 // 1. 用户端订单管理（创建、查询、取消、完成）
 // 2. 陪玩师端订单管理（接单、开始、完成）
 // 3. 订单状态流转管理
+// 4. 订单拆分与转单
 type OrderService struct {
 	orders          repoiface.OrderRepository
+	orderGroups     ordergroup.Repository // 主订单仓储
 	players         repository.PlayerRepository
 	users           repository.UserRepository
 	games           repository.GameRepository
@@ -62,6 +65,11 @@ func NewOrderService(
 		reviews:     reviews,
 		commissions: commissions,
 	}
+}
+
+// SetOrderGroupRepository 注入主订单仓储
+func (s *OrderService) SetOrderGroupRepository(repo ordergroup.Repository) {
+	s.orderGroups = repo
 }
 
 // SetDistributedLock injects distributed lock for concurrency control
@@ -101,9 +109,13 @@ type CreateOrderRequest struct {
 
 // CreateOrderResponse 创建订单响应
 type CreateOrderResponse struct {
-	OrderID     uint64 `json:"orderId"`
-	PriceCents  int64  `json:"priceCents"`
-	NeedPayment bool   `json:"needPayment"`
+	OrderID       uint64 `json:"orderId"`
+	GroupNo       string `json:"groupNo,omitempty"`       // 主订单号（拆分时返回）
+	PriceCents    int64  `json:"priceCents"`
+	TotalHours    int    `json:"totalHours,omitempty"`    // 总时长（拆分时返回）
+	NeedPayment   bool   `json:"needPayment"`
+	IsSplit       bool   `json:"isSplit,omitempty"`       // 是否拆分订单
+	SubOrderCount int    `json:"subOrderCount,omitempty"` // 子订单数量
 }
 
 // OrderCardDTO 订单卡片信息（列表展示）
@@ -193,6 +205,7 @@ type CompleteOrderRequest struct {
 }
 
 // CreateOrder 创建订单（用户端）
+// 如果时长 > 1 小时，会自动拆分成多个子订单
 func (s *OrderService) CreateOrder(ctx context.Context, userID uint64, req CreateOrderRequest) (*CreateOrderResponse, error) {
 	// 使用分布式锁防止并发问题
 	lockKey := fmt.Sprintf("order:create:user:%d:player:%d", userID, req.PlayerID)
@@ -215,20 +228,16 @@ func (s *OrderService) CreateOrder(ctx context.Context, userID uint64, req Creat
 		return nil, err
 	}
 
-	// 验证游戏
-	// 已在 validateCreateOrder 中完成
+	// 计算每小时价格
+	hourlyPrice, commissionPerHour, playerIncomePerHour := s.calculateOrderPricing(player, req)
 
-	// 从陪玩师时薪计算价格（简化版本）
-	// Note: Service item integration is deferred. Current pricing uses player hourly rate.
-	// Future: Integrate with service_items table for item-specific pricing.
-	totalPrice, commissionCents, playerIncomeCents := s.calculateOrderPricing(player, req)
+	// 判断是否需要拆分（时长 > 1 小时且 orderGroups 仓储可用）
+	if req.DurationHours > 1 && s.orderGroups != nil {
+		return s.createOrderWithSplit(ctx, userID, req, hourlyPrice, commissionPerHour, playerIncomePerHour)
+	}
 
-	// 默认抽成20%
-	// 已在 calculateOrderPricing 中体现
-
-	// 计算结束时间
-	// 创建订单（使用新的 Order 结构）
-	order := s.buildOrderForCreation(userID, req, totalPrice, commissionCents, playerIncomeCents)
+	// 不拆分，创建单个订单（向后兼容）
+	order := s.buildOrderForCreation(userID, req, hourlyPrice, commissionPerHour, playerIncomePerHour)
 
 	if err := s.orders.Create(ctx, order); err != nil {
 		return nil, err
@@ -236,8 +245,42 @@ func (s *OrderService) CreateOrder(ctx context.Context, userID uint64, req Creat
 
 	return &CreateOrderResponse{
 		OrderID:     order.ID,
-		PriceCents:  totalPrice,
+		PriceCents:  hourlyPrice,
 		NeedPayment: true,
+	}, nil
+}
+
+// createOrderWithSplit 创建拆分订单（主订单 + 子订单）
+func (s *OrderService) createOrderWithSplit(
+	ctx context.Context,
+	userID uint64,
+	req CreateOrderRequest,
+	hourlyPrice, commissionPerHour, playerIncomePerHour int64,
+) (*CreateOrderResponse, error) {
+	// 构建主订单和子订单
+	group, subOrders := s.buildOrderGroupWithSubOrders(userID, req, hourlyPrice, commissionPerHour, playerIncomePerHour)
+
+	// 1. 创建主订单
+	if err := s.orderGroups.Create(ctx, group); err != nil {
+		return nil, apierr.InternalError("创建主订单失败").WithDetails(err.Error())
+	}
+
+	// 2. 创建子订单，关联主订单ID
+	for _, subOrder := range subOrders {
+		subOrder.GroupID = &group.ID
+		if err := s.orders.Create(ctx, subOrder); err != nil {
+			return nil, apierr.InternalError("创建子订单失败").WithDetails(err.Error())
+		}
+	}
+
+	return &CreateOrderResponse{
+		OrderID:     group.ID,                // 返回主订单ID（用户视角）
+		GroupNo:     group.GroupNo,           // 主订单号
+		PriceCents:  group.TotalPriceCents,
+		TotalHours:  group.TotalHours,
+		NeedPayment: true,
+		IsSplit:     true,
+		SubOrderCount: len(subOrders),
 	}, nil
 }
 

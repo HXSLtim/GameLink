@@ -431,6 +431,9 @@ func (r *Router) registerAdminBusinessRoutes(rbacGroup *gin.RouterGroup) {
 
 	// Game Category routes (游戏分类管理)
 	r.registerGameCategoryRoutes(rbacGroup)
+
+	// Order Group routes (主订单/订单拆分管理)
+	adminhandler.RegisterOrderGroupRoutes(rbacGroup, r.services.orderSvc, r.services.orderGroupRepo)
 }
 
 // registerMonitorRoutes 注册监控相关路由

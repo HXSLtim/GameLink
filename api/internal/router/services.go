@@ -18,6 +18,7 @@ import (
 	gamerankrepo "gamelink/internal/repository/gamerank"
 	orderrepo "gamelink/internal/repository/implementations"
 	ordermodelsrepo "gamelink/internal/repository/order"
+	ordergrouprepo "gamelink/internal/repository/ordergroup"
 	ordertimeoutrepo "gamelink/internal/repository/ordertimeout"
 	playercertificationrepo "gamelink/internal/repository/playercertification"
 	playerrankrepo "gamelink/internal/repository/playerrank"
@@ -74,6 +75,7 @@ type appServices struct {
 	serviceItemSvc      *itemservice.ServiceItemService
 	giftSvc             *giftservice.GiftService
 	orderSvc            *orderservice.OrderService
+	orderGroupRepo      ordergrouprepo.Repository // 主订单仓储
 	paymentSvc          *paymentservice.PaymentService
 	playerSvc           *serviceplayer.PlayerService
 	reviewSvc           *orderservice.ReviewService
@@ -167,6 +169,9 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 	orderSvc := orderservice.NewOrderService(orderRepo, playerRepo, userRepo, gameRepo, paymentRepo, reviewRepo, commissionRepo)
 	// 注入聊天群仓库用于订单聊天自动销毁
 	orderSvc.SetChatGroupRepository(chatGroupRepo)
+	// 注入主订单仓库用于订单拆分
+	orderGroupRepo := ordergrouprepo.NewRepository(orm)
+	orderSvc.SetOrderGroupRepository(orderGroupRepo)
 	paymentSvc := paymentservice.NewPaymentService(paymentRepo, orderRepo)
 	playerSvc := serviceplayer.NewPlayerService(playerRepo, userRepo, gameRepo, orderRepo, reviewRepo, playerTagRepo, cacheClient)
 	reviewSvc := orderservice.NewReviewService(reviewRepo, orderRepo, playerRepo, userRepo, reviewReplyRepo, notificationRepo)
@@ -289,6 +294,7 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 		serviceItemSvc:      serviceItemSvc,
 		giftSvc:             giftSvc,
 		orderSvc:            orderSvc,
+		orderGroupRepo:      orderGroupRepo,
 		paymentSvc:          paymentSvc,
 		playerSvc:           playerSvc,
 		reviewSvc:           reviewSvc,

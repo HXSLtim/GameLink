@@ -144,6 +144,7 @@ func autoMigrate(db *gorm.DB) error {
 		&model.Withdraw{},
 		&model.OperationLog{},
 		&model.OrderDispute{}, // Order disputes (must be after Order, Payment, User)
+		&model.OrderGroup{},   // 主订单（用户视角）- 订单拆分功能
 		// Service Item (统一管理护航服务和礼物)
 		&model.ServiceItem{},
 		// Order multi-player support
@@ -310,6 +311,11 @@ func ensureIndexes(db *gorm.DB) error {
 		"CREATE INDEX IF NOT EXISTS idx_service_items_subcat_active ON service_items (sub_category, is_active)",
 		"CREATE INDEX IF NOT EXISTS idx_orders_item_created ON orders (item_id, created_at DESC)",
 		"CREATE INDEX IF NOT EXISTS idx_orders_recipient_player ON orders (recipient_player_id, created_at DESC)",
+		// Order Group indexes (订单拆分)
+		"CREATE INDEX IF NOT EXISTS idx_order_groups_user_status ON order_groups (user_id, status, created_at DESC)",
+		"CREATE INDEX IF NOT EXISTS idx_order_groups_game ON order_groups (game_id, created_at DESC)",
+		"CREATE INDEX IF NOT EXISTS idx_orders_group_hour ON orders (group_id, hour_index)",
+		"CREATE INDEX IF NOT EXISTS idx_orders_transfer ON orders (transfer_from, transfer_to)",
 		// Commission indexes
 		"CREATE INDEX IF NOT EXISTS idx_commission_records_player_month ON commission_records (player_id, settlement_month)",
 		"CREATE INDEX IF NOT EXISTS idx_commission_records_status_month ON commission_records (settlement_status, settlement_month)",

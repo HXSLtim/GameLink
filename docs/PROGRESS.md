@@ -1,6 +1,6 @@
 # GameLink 开发进度文档
 
-> 更新日期：2025-12-16 | 版本：v2.3
+> 更新日期：2026-01-07 | 版本：v2.4
 
 ## 1. 总体进度概览
 
@@ -27,7 +27,7 @@
 | permission | 84.2% | ✅ 优秀 | - |
 | withdraw | 81.4% | ✅ 优秀 | - |
 | review | 80.3% | ✅ 优秀 | - |
-| order | 80.0% | ✅ 优秀 | +45.3% |
+| order | 80.0% | ✅ 优秀 | +45.3% (含拆分转单) |
 | wallet | 80.0% | ✅ 优秀 | - |
 | payment | 74.2% | ✅ 良好 | +29.8% |
 | user | 72.3% | ✅ 良好 | +50.0% |
@@ -41,6 +41,10 @@
 **良好覆盖模块 (70%+):** 14个服务达到70%以上覆盖率
 
 **本次新增测试文件:**
+- `api/internal/service/order/creation_test.go` (订单拆分创建测试)
+- `api/internal/service/order/transfer_test.go` (子订单转单测试)
+- `api/internal/service/order/integration_test.go` (订单拆分集成测试)
+- `api/internal/repository/ordergroup/repository_test.go` (订单组仓储测试)
 - `backend/internal/service/user/earnings_test.go`
 - `backend/internal/service/user/batchService_test.go`
 
@@ -63,7 +67,7 @@
 | **认证 (auth)** | ✅ | ✅ | ✅ | ✅ | 100% | 完成 |
 | **用户 (user)** | ✅ | ✅ | ✅ | ✅ | 100% | 完成 |
 | **陪玩师 (player)** | ✅ | ✅ | ✅ | ✅ | 100% | 完成，含订单流程测试 |
-| **订单 (order)** | ✅ | ✅ | ✅ | ✅ | 100% | 完成，含并发测试 |
+| **订单 (order)** | ✅ | ✅ | ✅ | ✅ | 100% | 完成，含并发测试、订单拆分与转单 |
 | **支付 (payment)** | ✅ | ✅ | ✅ | ✅ | 95% | 完成，银行卡待接入 |
 | **评价 (review)** | ✅ | ✅ | ✅ | ✅ | 100% | 完成 |
 | **钱包 (wallet)** | ✅ | ✅ | ✅ | ✅ | 100% | 完成 |
