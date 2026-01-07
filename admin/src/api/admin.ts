@@ -353,6 +353,7 @@ export interface OrderQueryParams {
     page_size?: number;
     status?: string;
     userId?: number;
+    playerId?: number;
     orderNumber?: string;
     dateFrom?: string;
     dateTo?: string;

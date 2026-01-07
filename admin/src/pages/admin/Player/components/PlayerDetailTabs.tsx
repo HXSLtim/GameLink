@@ -151,7 +151,7 @@ const OrderHistoryTab: React.FC<{ player: Player }> = ({ player }) => {
         const loadOrders = async () => {
             setLoading(true);
             try {
-                const response = await adminApi.getOrders({ player_id: player.id, page_size: 20 });
+                const response = await adminApi.getOrders({ playerId: player.id, page_size: 20 });
                 if (response.data.success) {
                     setOrders(response.data.data || []);
                 }
@@ -248,7 +248,7 @@ const EarningsTab: React.FC<{ player: Player }> = ({ player }) => {
             try {
                 // 获取订单统计
                 const response = await adminApi.getOrders({ 
-                    player_id: player.id, 
+                    playerId: player.id, 
                     status: 'completed',
                     page_size: 1000 
                 });
