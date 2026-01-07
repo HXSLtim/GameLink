@@ -13,13 +13,9 @@ import {
     Descriptions,
     Avatar,
     Card,
-    Row,
-    Col,
-    Statistic,
     Form,
     Input,
     Typography,
-    Divider,
     Select,
     Radio,
 } from 'antd';
@@ -43,6 +39,7 @@ import { PLAYER_PERMISSIONS } from '@/constants/permissions';
 import { PermissionGuard } from '@/components/PermissionGuard';
 import { adminApi, type Player, type ApiResponse } from '@/api/admin';
 import dayjs from 'dayjs';
+import PlayerDetailTabs from './components/PlayerDetailTabs';
 
 import { logger } from '@/utils/logger';
 const { Text, Paragraph } = Typography;
@@ -508,101 +505,7 @@ const PlayerPage: React.FC = () => {
                 onClose={() => setDetailDrawerVisible(false)}
                 size="large"
             >
-                {currentPlayer && (
-                    <>
-                        {/* 基本信息卡片 */}
-                        <Card size="small">
-                            <div style={{ textAlign: 'center', marginBottom: 16 }}>
-                                <Avatar
-                                    size={80}
-                                    src={currentPlayer.user?.avatarUrl || undefined}
-                                    icon={<UserOutlined />}
-                                />
-                                <h2 style={{ marginTop: 12, marginBottom: 4 }}>
-                                    {currentPlayer.nickname || currentPlayer.user?.name || '-'}
-                                </h2>
-                                <Tag color={statusMap[currentPlayer.verificationStatus]?.color}>
-                                    {statusMap[currentPlayer.verificationStatus]?.text}
-                                </Tag>
-                            </div>
-
-                            <Row gutter={16}>
-                                <Col span={8}>
-                                    <Statistic
-                                        title="评分"
-                                        value={currentPlayer.ratingAverage?.toFixed(1) || '0.0'}
-                                        prefix={<StarOutlined />}
-                                    />
-                                </Col>
-                                <Col span={8}>
-                                    <Statistic title="评价数" value={currentPlayer.ratingCount || 0} suffix="条" />
-                                </Col>
-                                <Col span={8}>
-                                    <Statistic
-                                        title="时薪"
-                                        value={currentPlayer.hourlyRateCents ? (currentPlayer.hourlyRateCents / 100).toFixed(2) : 0}
-                                        prefix="¥"
-                                    />
-                                </Col>
-                            </Row>
-                        </Card>
-
-                        <Divider />
-
-                        {/* 详细信息 */}
-                        <Descriptions title="基本信息" column={2} size="small">
-                            <Descriptions.Item label="ID">{currentPlayer.id}</Descriptions.Item>
-                            <Descriptions.Item label="用户ID">{currentPlayer.userId}</Descriptions.Item>
-                            <Descriptions.Item label="昵称">{currentPlayer.nickname || '-'}</Descriptions.Item>
-                            <Descriptions.Item label="段位">{currentPlayer.rank || '-'}</Descriptions.Item>
-                            <Descriptions.Item label="主游戏">{currentPlayer.mainGame?.name || '-'}</Descriptions.Item>
-                            <Descriptions.Item label="时薪">
-                                {currentPlayer.hourlyRateCents ? `¥${(currentPlayer.hourlyRateCents / 100).toFixed(2)}` : '-'}
-                            </Descriptions.Item>
-                            <Descriptions.Item label="技能标签" span={2}>
-                                <Space wrap>
-                                    {(currentPlayer.skillTags || []).map(tag => <Tag key={tag}>{tag}</Tag>)}
-                                </Space>
-                            </Descriptions.Item>
-                            <Descriptions.Item label="个人简介" span={2}>
-                                <Paragraph ellipsis={{ rows: 3, expandable: true }}>
-                                    {currentPlayer.bio || '暂无介绍'}
-                                </Paragraph>
-                            </Descriptions.Item>
-                            <Descriptions.Item label="创建时间">
-                                {currentPlayer.createdAt ? dayjs(currentPlayer.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}
-                            </Descriptions.Item>
-                            <Descriptions.Item label="更新时间">
-                                {currentPlayer.updatedAt ? dayjs(currentPlayer.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}
-                            </Descriptions.Item>
-                        </Descriptions>
-
-                        {/* 审核信息 */}
-                        {currentPlayer.verifiedAt && (
-                            <>
-                                <Divider />
-                                <Descriptions title="审核信息" column={2} size="small">
-                                    <Descriptions.Item label="审核时间">
-                                        {dayjs(currentPlayer.verifiedAt).format('YYYY-MM-DD HH:mm:ss')}
-                                    </Descriptions.Item>
-                                    <Descriptions.Item label="审核人ID">
-                                        {currentPlayer.verifiedBy || '-'}
-                                    </Descriptions.Item>
-                                    {currentPlayer.verificationStatus === 'rejected' && currentPlayer.rejectReason && (
-                                        <Descriptions.Item label="拒绝原因" span={2}>
-                                            <Text type="danger">{currentPlayer.rejectReason}</Text>
-                                        </Descriptions.Item>
-                                    )}
-                                    {currentPlayer.verifyRemark && (
-                                        <Descriptions.Item label="审核备注" span={2}>
-                                            {currentPlayer.verifyRemark}
-                                        </Descriptions.Item>
-                                    )}
-                                </Descriptions>
-                            </>
-                        )}
-                    </>
-                )}
+                {currentPlayer && <PlayerDetailTabs player={currentPlayer} />}
             </Drawer>
 
             {/* 审核弹窗 */}
