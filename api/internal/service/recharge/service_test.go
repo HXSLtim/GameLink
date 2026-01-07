@@ -150,6 +150,19 @@ func (m *MockWalletRepo) Save(ctx context.Context, wallet *model.Wallet) error {
 	return args.Error(0)
 }
 
+func (m *MockWalletRepo) SaveWithOptimisticLock(ctx context.Context, wallet *model.Wallet) error {
+	args := m.Called(ctx, wallet)
+	return args.Error(0)
+}
+
+func (m *MockWalletRepo) UpdateBalanceWithLock(ctx context.Context, userID uint64, delta int64, maxRetries int) (*model.Wallet, error) {
+	args := m.Called(ctx, userID, delta, maxRetries)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.Wallet), args.Error(1)
+}
+
 type MockCouponService struct {
 	mock.Mock
 }

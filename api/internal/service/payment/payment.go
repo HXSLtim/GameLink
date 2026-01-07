@@ -100,6 +100,9 @@ func (s *PaymentService) SetProviders(providers map[model.PaymentMethod]Provider
 type CreatePaymentRequest struct {
 	OrderID uint64              `json:"orderId" binding:"required"`
 	Method  model.PaymentMethod `json:"method" binding:"required,oneof=wechat alipay wallet combined"`
+	// RequestID 客户端生成的唯一请求ID，用于幂等性控制
+	// 客户端应生成 UUID，网络失败时使用相同的 RequestID 重试
+	RequestID string `json:"requestId,omitempty"`
 	// 组合支付参数（仅当 Method 为 combined 时使用）
 	WalletAmountCents int64               `json:"walletAmountCents,omitempty"` // 钱包支付金额（分）
 	ThirdPartyMethod  model.PaymentMethod `json:"thirdPartyMethod,omitempty"`  // 第三方支付方式
@@ -127,8 +130,39 @@ type PaymentStatusResponse struct {
 // 1. 纯第三方支付（wechat/alipay）
 // 2. 纯钱包支付（wallet）
 // 3. 组合支付（combined）：钱包+第三方
+//
+// 幂等性保证：
+// - 如果提供了 RequestID，会先检查是否已存在相同 RequestID 的支付记录
+// - 如果存在且状态为 paid，返回已有支付信息
+// - 如果存在且状态为 pending，返回冲突错误
+// - 如果存在且状态为 failed，允许重新创建
 func (s *PaymentService) CreatePayment(ctx context.Context, userID uint64, req CreatePaymentRequest) (*CreatePaymentResponse, error) {
-	// 使用分布式锁确保幂等性
+	// 幂等性检查：如果提供了 RequestID，先检查是否已存在
+	if req.RequestID != "" {
+		existingPayment, err := s.payments.GetByRequestID(ctx, req.RequestID)
+		if err == nil && existingPayment != nil {
+			// 已存在相同 RequestID 的支付记录
+			switch existingPayment.Status {
+			case model.PaymentStatusPaid:
+				// 已支付成功，返回已有支付信息（幂等返回）
+				return &CreatePaymentResponse{
+					PaymentID:        existingPayment.ID,
+					PayInfo:          map[string]interface{}{"status": "already_paid", "idempotent": true},
+					WalletDeducted:   existingPayment.WalletAmountCents,
+					ThirdPartyAmount: existingPayment.ThirdPartyAmountCents,
+					WalletPaidDirect: existingPayment.Method == model.PaymentMethodWallet,
+				}, nil
+			case model.PaymentStatusPending:
+				// 支付进行中，返回冲突错误
+				return nil, apierr.Conflict("payment with this request_id is already in progress")
+			case model.PaymentStatusFailed:
+				// 之前失败了，允许重新创建（不使用旧记录）
+				// 继续执行创建流程
+			}
+		}
+	}
+
+	// 使用分布式锁确保并发安全
 	lockKey := fmt.Sprintf("payment:create:order:%d:user:%d", req.OrderID, userID)
 
 	// 如果分布式锁可用，使用它
@@ -159,7 +193,7 @@ func (s *PaymentService) CreatePayment(ctx context.Context, userID uint64, req C
 		return nil, ErrInvalidOrderStatus
 	}
 
-	// 检查是否已有支付记录（幂等性检查）
+	// 检查是否已有支付记录（基于 OrderID 的幂等性检查）
 	orderIDPtr := &req.OrderID
 	existingPayments, _, err := s.payments.List(ctx, repository.PaymentListOptions{
 		OrderID:  orderIDPtr,
@@ -209,15 +243,16 @@ func (s *PaymentService) createWalletPayment(ctx context.Context, userID uint64,
 			fmt.Sprintf("需要 %d 分，余额 %d 分", order.TotalPriceCents, wallet.BalanceCents))
 	}
 
-	// 扣除钱包余额
-	wallet.BalanceCents -= order.TotalPriceCents
-	if err := s.wallets.Save(ctx, wallet); err != nil {
+	// 使用乐观锁扣除钱包余额
+	updatedWallet, err := s.wallets.UpdateBalanceWithLock(ctx, userID, -order.TotalPriceCents, 3)
+	if err != nil {
 		return nil, apierr.InternalError("failed to deduct wallet balance").WithDetails(err.Error())
 	}
 
 	// 创建支付记录
 	now := time.Now()
 	payment := &model.Payment{
+		RequestID:         req.RequestID, // 设置幂等请求ID
 		OrderID:           req.OrderID,
 		UserID:            userID,
 		Method:            model.PaymentMethodWallet,
@@ -231,8 +266,7 @@ func (s *PaymentService) createWalletPayment(ctx context.Context, userID uint64,
 
 	if err := s.payments.Create(ctx, payment); err != nil {
 		// 回滚钱包余额
-		wallet.BalanceCents += order.TotalPriceCents
-		_ = s.wallets.Save(ctx, wallet)
+		_, _ = s.wallets.UpdateBalanceWithLock(ctx, userID, order.TotalPriceCents, 3)
 		return nil, err
 	}
 
@@ -244,7 +278,7 @@ func (s *PaymentService) createWalletPayment(ctx context.Context, userID uint64,
 
 	return &CreatePaymentResponse{
 		PaymentID:        payment.ID,
-		PayInfo:          map[string]interface{}{"method": "wallet", "status": "paid"},
+		PayInfo:          map[string]interface{}{"method": "wallet", "status": "paid", "newBalance": updatedWallet.BalanceCents},
 		WalletDeducted:   order.TotalPriceCents,
 		WalletPaidDirect: true,
 	}, nil
@@ -285,14 +319,15 @@ func (s *PaymentService) createCombinedPayment(ctx context.Context, userID uint6
 	// 计算第三方支付金额
 	thirdPartyAmount := order.TotalPriceCents - req.WalletAmountCents
 
-	// 先扣除钱包余额（预扣款）
-	wallet.BalanceCents -= req.WalletAmountCents
-	if err := s.wallets.Save(ctx, wallet); err != nil {
+	// 使用乐观锁扣除钱包余额（预扣款）
+	_, err = s.wallets.UpdateBalanceWithLock(ctx, userID, -req.WalletAmountCents, 3)
+	if err != nil {
 		return nil, apierr.InternalError("failed to deduct wallet balance").WithDetails(err.Error())
 	}
 
 	// 创建支付记录
 	payment := &model.Payment{
+		RequestID:             req.RequestID, // 设置幂等请求ID
 		OrderID:               req.OrderID,
 		UserID:                userID,
 		Method:                model.PaymentMethodCombined,
@@ -315,8 +350,7 @@ func (s *PaymentService) createCombinedPayment(ctx context.Context, userID uint6
 
 	if err := s.payments.Create(ctx, payment); err != nil {
 		// 回滚钱包余额
-		wallet.BalanceCents += req.WalletAmountCents
-		_ = s.wallets.Save(ctx, wallet)
+		_, _ = s.wallets.UpdateBalanceWithLock(ctx, userID, req.WalletAmountCents, 3)
 		return nil, err
 	}
 
@@ -342,6 +376,7 @@ func (s *PaymentService) createCombinedPayment(ctx context.Context, userID uint6
 func (s *PaymentService) createThirdPartyPayment(ctx context.Context, userID uint64, order *model.Order, req CreatePaymentRequest) (*CreatePaymentResponse, error) {
 	// 创建支付记录
 	payment := &model.Payment{
+		RequestID:             req.RequestID, // 设置幂等请求ID
 		OrderID:               req.OrderID,
 		UserID:                userID,
 		Method:                req.Method,

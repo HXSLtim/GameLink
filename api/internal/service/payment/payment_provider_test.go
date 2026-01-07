@@ -537,7 +537,7 @@ func TestPaymentService_CreatePayment_WalletSaveFailed(t *testing.T) {
 	mockOrders.On("Get", ctx, orderID).Return(order, nil)
 	mockPayments.On("List", ctx, mock.AnythingOfType("repository.PaymentListOptions")).Return([]model.Payment{}, int64(0), nil)
 	mockWallets.On("GetByUserID", ctx, userID).Return(wallet, nil)
-	mockWallets.On("Save", ctx, mock.AnythingOfType("*model.Wallet")).Return(errors.New("wallet save failed"))
+	mockWallets.On("UpdateBalanceWithLock", ctx, userID, int64(-10000), 3).Return(nil, errors.New("wallet save failed"))
 
 	service := NewPaymentService(mockPayments, mockOrders)
 	service.SetWalletRepository(mockWallets)
@@ -568,19 +568,15 @@ func TestPaymentService_CreatePayment_PaymentCreateFailed(t *testing.T) {
 	mockWallets := new(MockWalletRepository)
 
 	order := createTestOrder(orderID, userID, model.OrderStatusPending, 10000)
-	wallet := createTestWallet(userID, 20000, 0)
+	updatedWallet := createTestWallet(userID, 10000, 0) // After deduction
 
 	mockOrders.On("Get", ctx, orderID).Return(order, nil)
 	mockPayments.On("List", ctx, mock.AnythingOfType("repository.PaymentListOptions")).Return([]model.Payment{}, int64(0), nil)
-	mockWallets.On("GetByUserID", ctx, userID).Return(wallet, nil)
-	mockWallets.On("Save", ctx, mock.MatchedBy(func(w *model.Wallet) bool {
-		return w.BalanceCents == 10000 // Deducted
-	})).Return(nil)
+	mockWallets.On("GetByUserID", ctx, userID).Return(createTestWallet(userID, 20000, 0), nil)
+	mockWallets.On("UpdateBalanceWithLock", ctx, userID, int64(-10000), 3).Return(updatedWallet, nil)
 	mockPayments.On("Create", ctx, mock.AnythingOfType("*model.Payment")).Return(errors.New("payment creation failed"))
 	// Rollback wallet
-	mockWallets.On("Save", ctx, mock.MatchedBy(func(w *model.Wallet) bool {
-		return w.BalanceCents == 20000 // Rolled back
-	})).Return(nil)
+	mockWallets.On("UpdateBalanceWithLock", ctx, userID, int64(10000), 3).Return(createTestWallet(userID, 20000, 0), nil)
 
 	service := NewPaymentService(mockPayments, mockOrders)
 	service.SetWalletRepository(mockWallets)
@@ -617,7 +613,7 @@ func TestPaymentService_CreatePayment_CombinedWalletSaveFailed(t *testing.T) {
 	mockOrders.On("Get", ctx, orderID).Return(order, nil)
 	mockPayments.On("List", ctx, mock.AnythingOfType("repository.PaymentListOptions")).Return([]model.Payment{}, int64(0), nil)
 	mockWallets.On("GetByUserID", ctx, userID).Return(wallet, nil)
-	mockWallets.On("Save", ctx, mock.AnythingOfType("*model.Wallet")).Return(errors.New("wallet save failed"))
+	mockWallets.On("UpdateBalanceWithLock", ctx, userID, int64(-6000), 3).Return(nil, errors.New("wallet save failed"))
 
 	service := NewPaymentService(mockPayments, mockOrders)
 	service.SetWalletRepository(mockWallets)

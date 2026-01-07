@@ -159,3 +159,21 @@ func (r *gormPaymentRepository) GetByOrderID(ctx context.Context, orderID uint64
 	}
 	return payments, nil
 }
+
+// GetByRequestID returns a payment by its idempotency request ID.
+// Returns nil, nil if no payment found with the given request ID.
+func (r *gormPaymentRepository) GetByRequestID(ctx context.Context, requestID string) (*model.Payment, error) {
+	if requestID == "" {
+		return nil, nil
+	}
+	var payment model.Payment
+	if err := r.db.WithContext(ctx).
+		Where("request_id = ?", requestID).
+		First(&payment).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil // Not found is not an error for idempotency check
+		}
+		return nil, err
+	}
+	return &payment, nil
+}

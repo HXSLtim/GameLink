@@ -79,6 +79,7 @@ type PaymentRepository interface {
 	Update(ctx context.Context, payment *model.Payment) error
 	Delete(ctx context.Context, id uint64) error
 	GetByOrderID(ctx context.Context, orderID uint64) ([]model.Payment, error) // 根据订单ID获取支付记录
+	GetByRequestID(ctx context.Context, requestID string) (*model.Payment, error) // 根据幂等请求ID获取支付记录
 }
 
 // RefundRecordRepository defines refund record data access operations.
@@ -94,6 +95,10 @@ type RefundRecordRepository interface {
 type WalletRepository interface {
 	GetByUserID(ctx context.Context, userID uint64) (*model.Wallet, error)
 	Save(ctx context.Context, wallet *model.Wallet) error
+	// SaveWithOptimisticLock 使用乐观锁保存钱包，防止并发更新冲突
+	SaveWithOptimisticLock(ctx context.Context, wallet *model.Wallet) error
+	// UpdateBalanceWithLock 原子更新余额，使用乐观锁防止并发冲突
+	UpdateBalanceWithLock(ctx context.Context, userID uint64, delta int64, maxRetries int) (*model.Wallet, error)
 }
 
 // PermissionRepository defines permission data access operations.

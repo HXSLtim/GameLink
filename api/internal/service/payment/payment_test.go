@@ -61,6 +61,14 @@ func (m *MockPaymentRepository) GetByOrderID(ctx context.Context, orderID uint64
 	return args.Get(0).([]model.Payment), args.Error(1)
 }
 
+func (m *MockPaymentRepository) GetByRequestID(ctx context.Context, requestID string) (*model.Payment, error) {
+	args := m.Called(ctx, requestID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.Payment), args.Error(1)
+}
+
 // MockOrderRepository is a mock implementation of OrderRepository
 type MockOrderRepository struct {
 	mock.Mock
@@ -149,6 +157,19 @@ func (m *MockWalletRepository) GetByUserID(ctx context.Context, userID uint64) (
 func (m *MockWalletRepository) Save(ctx context.Context, wallet *model.Wallet) error {
 	args := m.Called(ctx, wallet)
 	return args.Error(0)
+}
+
+func (m *MockWalletRepository) SaveWithOptimisticLock(ctx context.Context, wallet *model.Wallet) error {
+	args := m.Called(ctx, wallet)
+	return args.Error(0)
+}
+
+func (m *MockWalletRepository) UpdateBalanceWithLock(ctx context.Context, userID uint64, delta int64, maxRetries int) (*model.Wallet, error) {
+	args := m.Called(ctx, userID, delta, maxRetries)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.Wallet), args.Error(1)
 }
 
 // Helper function to create test order
@@ -334,13 +355,12 @@ func TestPaymentService_CreatePayment_Wallet_Success(t *testing.T) {
 
 	order := createTestOrder(orderID, userID, model.OrderStatusPending, priceCents)
 	wallet := createTestWallet(userID, 20000, 0)
+	updatedWallet := createTestWallet(userID, 10000, 0) // After deduction
 
 	mockOrders.On("Get", ctx, orderID).Return(order, nil)
 	mockPayments.On("List", ctx, mock.AnythingOfType("repository.PaymentListOptions")).Return([]model.Payment{}, int64(0), nil)
 	mockWallets.On("GetByUserID", ctx, userID).Return(wallet, nil)
-	mockWallets.On("Save", ctx, mock.MatchedBy(func(w *model.Wallet) bool {
-		return w.BalanceCents == 10000 // 20000 - 10000
-	})).Return(nil)
+	mockWallets.On("UpdateBalanceWithLock", ctx, userID, int64(-10000), 3).Return(updatedWallet, nil)
 	mockPayments.On("Create", ctx, mock.AnythingOfType("*model.Payment")).Return(nil).Run(func(args mock.Arguments) {
 		payment := args.Get(1).(*model.Payment)
 		payment.ID = 1
@@ -458,13 +478,12 @@ func TestPaymentService_CreatePayment_Combined_Success(t *testing.T) {
 
 	order := createTestOrder(orderID, userID, model.OrderStatusPending, totalCents)
 	wallet := createTestWallet(userID, 10000, 0)
+	updatedWallet := createTestWallet(userID, 4000, 0) // After deduction
 
 	mockOrders.On("Get", ctx, orderID).Return(order, nil)
 	mockPayments.On("List", ctx, mock.AnythingOfType("repository.PaymentListOptions")).Return([]model.Payment{}, int64(0), nil)
 	mockWallets.On("GetByUserID", ctx, userID).Return(wallet, nil)
-	mockWallets.On("Save", ctx, mock.MatchedBy(func(w *model.Wallet) bool {
-		return w.BalanceCents == 4000 // 10000 - 6000
-	})).Return(nil)
+	mockWallets.On("UpdateBalanceWithLock", ctx, userID, int64(-6000), 3).Return(updatedWallet, nil)
 	mockPayments.On("Create", ctx, mock.AnythingOfType("*model.Payment")).Return(nil).Run(func(args mock.Arguments) {
 		payment := args.Get(1).(*model.Payment)
 		payment.ID = 1
@@ -1286,7 +1305,7 @@ func TestPaymentService_CreatePayment_Wallet_SaveFailure(t *testing.T) {
 	mockOrders.On("Get", ctx, orderID).Return(order, nil)
 	mockPayments.On("List", ctx, mock.AnythingOfType("repository.PaymentListOptions")).Return([]model.Payment{}, int64(0), nil)
 	mockWallets.On("GetByUserID", ctx, userID).Return(wallet, nil)
-	mockWallets.On("Save", ctx, mock.AnythingOfType("*model.Wallet")).Return(errors.New("database error"))
+	mockWallets.On("UpdateBalanceWithLock", ctx, userID, int64(-10000), 3).Return(nil, errors.New("database error"))
 
 	service := NewPaymentService(mockPayments, mockOrders)
 	service.SetWalletRepository(mockWallets)
@@ -1404,18 +1423,16 @@ func TestPaymentService_CreatePayment_Combined_CreatePaymentError(t *testing.T) 
 
 	order := createTestOrder(orderID, userID, model.OrderStatusPending, 10000)
 	wallet := createTestWallet(userID, 10000, 0)
+	updatedWallet := createTestWallet(userID, 4000, 0)   // After deduction
+	rolledBackWallet := createTestWallet(userID, 10000, 0) // After rollback
 
 	mockOrders.On("Get", ctx, orderID).Return(order, nil)
 	mockPayments.On("List", ctx, mock.AnythingOfType("repository.PaymentListOptions")).Return([]model.Payment{}, int64(0), nil)
 	mockWallets.On("GetByUserID", ctx, userID).Return(wallet, nil)
-	mockWallets.On("Save", ctx, mock.MatchedBy(func(w *model.Wallet) bool {
-		return w.BalanceCents == 4000
-	})).Return(nil)
+	mockWallets.On("UpdateBalanceWithLock", ctx, userID, int64(-6000), 3).Return(updatedWallet, nil)
 	mockPayments.On("Create", ctx, mock.AnythingOfType("*model.Payment")).Return(errors.New("database error"))
 	// Rollback wallet
-	mockWallets.On("Save", ctx, mock.MatchedBy(func(w *model.Wallet) bool {
-		return w.BalanceCents == 10000
-	})).Return(nil)
+	mockWallets.On("UpdateBalanceWithLock", ctx, userID, int64(6000), 3).Return(rolledBackWallet, nil)
 
 	service := NewPaymentService(mockPayments, mockOrders)
 	service.SetWalletRepository(mockWallets)

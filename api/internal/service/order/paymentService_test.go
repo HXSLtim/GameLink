@@ -73,6 +73,10 @@ func (m *MockPaymentRepositoryForPayment) GetByOrderID(ctx context.Context, orde
 	return nil, nil
 }
 
+func (m *MockPaymentRepositoryForPayment) GetByRequestID(ctx context.Context, requestID string) (*model.Payment, error) {
+	return nil, nil
+}
+
 // MockOrderReadWriter for PaymentService tests
 type MockOrderReadWriter struct {
 	repoiface.OrderRepository
@@ -112,6 +116,22 @@ func (m *MockWalletRepository) Save(ctx context.Context, wallet *model.Wallet) e
 		return m.save(ctx, wallet)
 	}
 	return nil
+}
+
+func (m *MockWalletRepository) SaveWithOptimisticLock(ctx context.Context, wallet *model.Wallet) error {
+	if m.save != nil {
+		return m.save(ctx, wallet)
+	}
+	return nil
+}
+
+func (m *MockWalletRepository) UpdateBalanceWithLock(ctx context.Context, userID uint64, delta int64, maxRetries int) (*model.Wallet, error) {
+	wallet, err := m.GetByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	wallet.BalanceCents += delta
+	return wallet, m.Save(ctx, wallet)
 }
 
 // TestPaymentService_CreatePayment_Success tests successful payment creation

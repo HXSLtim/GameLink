@@ -39,8 +39,16 @@ const (
 //   - Index columns: (user_id, status, created_at DESC)
 //   - INCLUDE columns: (id, amount_cents, payment_method, provider_trade_no)
 //   - Benefit: Index-only scan for payment history, no heap fetch needed
+//
+// Idempotency:
+//   - RequestID: Client-generated unique identifier for idempotent payment creation
+//   - Unique constraint on (user_id, request_id) ensures same request won't create duplicate payments
+//   - Client should generate UUID and retry with same RequestID on network failures
 type Payment struct {
 	Base
+	// RequestID 客户端请求唯一标识，用于幂等性控制
+	// 客户端应生成 UUID 并在网络失败时使用相同的 RequestID 重试
+	RequestID           string          `json:"requestId,omitempty" gorm:"column:request_id;size:64;uniqueIndex:idx_payment_idempotent,where:request_id IS NOT NULL AND request_id != ''"`
 	OrderID             uint64          `json:"orderId" gorm:"column:order_id;not null;index"`
 	UserID              uint64          `json:"userId" gorm:"column:user_id;not null;index"`
 	Method              PaymentMethod   `json:"method" gorm:"size:32"`

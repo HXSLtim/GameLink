@@ -37,6 +37,19 @@ func (m *MockWalletRepository) Save(ctx context.Context, wallet *model.Wallet) e
 	return args.Error(0)
 }
 
+func (m *MockWalletRepository) SaveWithOptimisticLock(ctx context.Context, wallet *model.Wallet) error {
+	args := m.Called(ctx, wallet)
+	return args.Error(0)
+}
+
+func (m *MockWalletRepository) UpdateBalanceWithLock(ctx context.Context, userID uint64, delta int64, maxRetries int) (*model.Wallet, error) {
+	args := m.Called(ctx, userID, delta, maxRetries)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.Wallet), args.Error(1)
+}
+
 // MockPaymentRepository is a mock implementation of payment repository
 type MockPaymentRepository struct {
 	mock.Mock
@@ -87,6 +100,14 @@ func (m *MockPaymentRepository) GetByOrderID(ctx context.Context, orderID uint64
 		return nil, args.Error(1)
 	}
 	return args.Get(0).([]model.Payment), args.Error(1)
+}
+
+func (m *MockPaymentRepository) GetByRequestID(ctx context.Context, requestID string) (*model.Payment, error) {
+	args := m.Called(ctx, requestID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.Payment), args.Error(1)
 }
 
 // MockOrderRepository is a mock implementation of order repository

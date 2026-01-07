@@ -221,6 +221,9 @@ func (m *MockPaymentRepository) Delete(ctx context.Context, id uint64) error    
 func (m *MockPaymentRepository) GetByOrderID(ctx context.Context, orderID uint64) ([]model.Payment, error) {
 	return nil, nil
 }
+func (m *MockPaymentRepository) GetByRequestID(ctx context.Context, requestID string) (*model.Payment, error) {
+	return nil, nil
+}
 
 type MockReviewRepository struct {
 	listReviews func(ctx context.Context, opts repository.ReviewListOptions) ([]model.Review, int64, error)
