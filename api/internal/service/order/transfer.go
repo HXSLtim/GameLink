@@ -3,6 +3,7 @@ package order
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"gamelink/internal/model"
 	"gamelink/pkg/apierr"
@@ -10,20 +11,28 @@ import (
 
 // TransferSubOrderRequest 转单请求
 type TransferSubOrderRequest struct {
-	SubOrderID   uint64 `json:"subOrderId" binding:"required"`   // 要转的子订单ID
-	NewPlayerID  uint64 `json:"newPlayerId" binding:"required"`  // 新陪玩师ID
-	TransferNote string `json:"transferNote"`                    // 转单备注
+	SubOrderID       uint64 `json:"subOrderId" binding:"required"`        // 要转的子订单ID
+	NewPlayerID      uint64 `json:"newPlayerId" binding:"required"`       // 新陪玩师ID
+	TransferNote     string `json:"transferNote"`                         // 转单备注
+	CompletedMinutes int    `json:"completedMinutes"`                     // 原陪玩师已完成的分钟数（0表示未开始）
 }
 
 // TransferSubOrderResponse 转单响应
 type TransferSubOrderResponse struct {
-	Success        bool   `json:"success"`
-	NewSubOrderID  uint64 `json:"newSubOrderId"`  // 新子订单ID
-	Message        string `json:"message"`
+	Success              bool   `json:"success"`
+	NewSubOrderID        uint64 `json:"newSubOrderId"`        // 新子订单ID
+	OriginalPlayerIncome int64  `json:"originalPlayerIncome"` // 原陪玩师应得收入（分）
+	NewPlayerIncome      int64  `json:"newPlayerIncome"`      // 新陪玩师应得收入（分）
+	Message              string `json:"message"`
 }
 
 // TransferSubOrder 转单 - 将子订单转给另一个陪玩师
 // 场景：陪玩 A 打了一半打不了了，将剩余时间转给陪玩 B
+//
+// 收入归属规则：
+// 1. 如果原陪玩师未开始服务（CompletedMinutes=0），全部收入归新陪玩师
+// 2. 如果原陪玩师已开始服务，按已完成时间比例分配收入
+// 3. 平台抽成只计算一次，不重复扣除
 func (s *OrderService) TransferSubOrder(ctx context.Context, operatorID uint64, req TransferSubOrderRequest) (*TransferSubOrderResponse, error) {
 	// 1. 获取原子订单
 	subOrder, err := s.orders.Get(ctx, req.SubOrderID)
@@ -59,7 +68,31 @@ func (s *OrderService) TransferSubOrder(ctx context.Context, operatorID uint64, 
 		return nil, apierr.BadRequest("不能转给同一个陪玩师")
 	}
 
-	// 5. 创建新的子订单（复制原订单信息，更换陪玩师）
+	// 5. 计算收入分配
+	// 每个子订单代表1小时（60分钟）
+	totalMinutes := 60
+	completedMinutes := req.CompletedMinutes
+	if completedMinutes < 0 {
+		completedMinutes = 0
+	}
+	if completedMinutes > totalMinutes {
+		completedMinutes = totalMinutes
+	}
+	remainingMinutes := totalMinutes - completedMinutes
+
+	// 计算原陪玩师和新陪玩师的收入分配
+	// 注意：抽成已经在原订单中计算过，不需要重复计算
+	originalPlayerIncome := int64(0)
+	newPlayerIncome := subOrder.PlayerIncomeCents
+
+	if completedMinutes > 0 {
+		// 按比例分配陪玩师收入
+		originalPlayerIncome = subOrder.PlayerIncomeCents * int64(completedMinutes) / int64(totalMinutes)
+		newPlayerIncome = subOrder.PlayerIncomeCents - originalPlayerIncome
+	}
+
+	// 6. 创建新的子订单（复制原订单信息，更换陪玩师）
+	now := time.Now()
 	newSubOrder := &model.Order{
 		Base: model.Base{
 			ExtJSON: "{}",
@@ -73,8 +106,9 @@ func (s *OrderService) TransferSubOrder(ctx context.Context, operatorID uint64, 
 		Quantity:          subOrder.Quantity,
 		UnitPriceCents:    subOrder.UnitPriceCents,
 		TotalPriceCents:   subOrder.TotalPriceCents,
-		CommissionCents:   subOrder.CommissionCents,
-		PlayerIncomeCents: subOrder.PlayerIncomeCents,
+		// 关键修复：新订单的抽成为0（抽成已在原订单计算），收入为剩余部分
+		CommissionCents:   0, // 抽成不重复计算
+		PlayerIncomeCents: newPlayerIncome,
 		Currency:          subOrder.Currency,
 		Status:            model.OrderStatusPending, // 新订单待确认
 		Title:             subOrder.Title,
@@ -87,27 +121,28 @@ func (s *OrderService) TransferSubOrder(ctx context.Context, operatorID uint64, 
 		IsSubOrder:   true,
 		CanTransfer:  true,
 		TransferFrom: &subOrder.ID,
-		TransferNote: req.TransferNote,
+		TransferNote: fmt.Sprintf("%s (剩余%d分钟)", req.TransferNote, remainingMinutes),
 	}
 
-	// 6. 更新原订单状态
+	// 7. 更新原订单状态和收入
 	subOrder.Status = model.OrderStatusCanceled
 	subOrder.CanTransfer = false
-	subOrder.TransferTo = &newSubOrder.ID
-	subOrder.CancelReason = fmt.Sprintf("转单给陪玩师 %d: %s", req.NewPlayerID, req.TransferNote)
+	subOrder.PlayerIncomeCents = originalPlayerIncome // 更新为实际应得收入
+	subOrder.CancelReason = fmt.Sprintf("转单给陪玩师 %d (已完成%d分钟): %s", req.NewPlayerID, completedMinutes, req.TransferNote)
+	subOrder.CompletedAt = &now
 
-	// 7. 保存新订单
+	// 8. 保存新订单
 	if err := s.orders.Create(ctx, newSubOrder); err != nil {
 		return nil, apierr.InternalError("创建新订单失败").WithDetails(err.Error())
 	}
 
-	// 8. 更新原订单的 TransferTo
+	// 9. 更新原订单的 TransferTo
 	subOrder.TransferTo = &newSubOrder.ID
 	if err := s.orders.Update(ctx, subOrder); err != nil {
 		return nil, apierr.InternalError("更新原订单失败").WithDetails(err.Error())
 	}
 
-	// 9. 更新主订单状态
+	// 10. 更新主订单状态
 	if subOrder.GroupID != nil && s.orderGroups != nil {
 		group, err := s.orderGroups.GetWithSubOrders(ctx, *subOrder.GroupID)
 		if err == nil {
@@ -117,39 +152,52 @@ func (s *OrderService) TransferSubOrder(ctx context.Context, operatorID uint64, 
 	}
 
 	return &TransferSubOrderResponse{
-		Success:       true,
-		NewSubOrderID: newSubOrder.ID,
-		Message:       "转单成功",
+		Success:              true,
+		NewSubOrderID:        newSubOrder.ID,
+		OriginalPlayerIncome: originalPlayerIncome,
+		NewPlayerIncome:      newPlayerIncome,
+		Message:              fmt.Sprintf("转单成功，原陪玩师收入 %d 分，新陪玩师收入 %d 分", originalPlayerIncome, newPlayerIncome),
 	}, nil
 }
 
 // BatchTransferSubOrders 批量转单 - 将多个子订单转给另一个陪玩师
 // 场景：陪玩 A 打了 1 小时后无法继续，将剩余 2 小时都转给陪玩 B
 type BatchTransferRequest struct {
-	SubOrderIDs  []uint64 `json:"subOrderIds" binding:"required,min=1"` // 要转的子订单ID列表
-	NewPlayerID  uint64   `json:"newPlayerId" binding:"required"`       // 新陪玩师ID
-	TransferNote string   `json:"transferNote"`                         // 转单备注
+	SubOrderIDs      []uint64 `json:"subOrderIds" binding:"required,min=1"` // 要转的子订单ID列表
+	NewPlayerID      uint64   `json:"newPlayerId" binding:"required"`       // 新陪玩师ID
+	TransferNote     string   `json:"transferNote"`                         // 转单备注
+	CompletedMinutes int      `json:"completedMinutes"`                     // 第一个订单已完成的分钟数（后续订单视为未开始）
 }
 
 type BatchTransferResponse struct {
-	SuccessCount int      `json:"successCount"`
-	FailedCount  int      `json:"failedCount"`
-	NewOrderIDs  []uint64 `json:"newOrderIds"`
-	Errors       []string `json:"errors,omitempty"`
+	SuccessCount         int      `json:"successCount"`
+	FailedCount          int      `json:"failedCount"`
+	NewOrderIDs          []uint64 `json:"newOrderIds"`
+	TotalOriginalIncome  int64    `json:"totalOriginalIncome"`  // 原陪玩师总收入
+	TotalNewPlayerIncome int64    `json:"totalNewPlayerIncome"` // 新陪玩师总收入
+	Errors               []string `json:"errors,omitempty"`
 }
 
 // BatchTransferSubOrders 批量转单
+// 注意：只有第一个订单使用 CompletedMinutes，后续订单视为未开始（CompletedMinutes=0）
 func (s *OrderService) BatchTransferSubOrders(ctx context.Context, operatorID uint64, req BatchTransferRequest) (*BatchTransferResponse, error) {
 	resp := &BatchTransferResponse{
 		NewOrderIDs: make([]uint64, 0),
 		Errors:      make([]string, 0),
 	}
 
-	for _, subOrderID := range req.SubOrderIDs {
+	for i, subOrderID := range req.SubOrderIDs {
+		// 只有第一个订单使用已完成分钟数，后续订单视为未开始
+		completedMinutes := 0
+		if i == 0 {
+			completedMinutes = req.CompletedMinutes
+		}
+
 		result, err := s.TransferSubOrder(ctx, operatorID, TransferSubOrderRequest{
-			SubOrderID:   subOrderID,
-			NewPlayerID:  req.NewPlayerID,
-			TransferNote: req.TransferNote,
+			SubOrderID:       subOrderID,
+			NewPlayerID:      req.NewPlayerID,
+			TransferNote:     req.TransferNote,
+			CompletedMinutes: completedMinutes,
 		})
 		if err != nil {
 			resp.FailedCount++
@@ -157,6 +205,8 @@ func (s *OrderService) BatchTransferSubOrders(ctx context.Context, operatorID ui
 		} else {
 			resp.SuccessCount++
 			resp.NewOrderIDs = append(resp.NewOrderIDs, result.NewSubOrderID)
+			resp.TotalOriginalIncome += result.OriginalPlayerIncome
+			resp.TotalNewPlayerIncome += result.NewPlayerIncome
 		}
 	}
 

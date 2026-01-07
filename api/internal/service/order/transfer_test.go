@@ -529,3 +529,380 @@ func TestGetTransferableSubOrders_Success(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, transferable, 2) // 只有 subOrder2 和 subOrder3 可转
 }
+
+
+// TestTransferSubOrder_IncomeAttribution_NoServiceStarted 测试转单收入归属 - 未开始服务
+func TestTransferSubOrder_IncomeAttribution_NoServiceStarted(t *testing.T) {
+	ctx := context.Background()
+	operatorID := uint64(1)
+	subOrderID := uint64(10)
+	groupID := uint64(1)
+	newPlayerID := uint64(200)
+
+	// 原订单：总价5000分，抽成1000分，陪玩师收入4000分
+	subOrder := createTestSubOrder(subOrderID, 1, groupID, 2, model.OrderStatusPending)
+
+	var createdOrder *model.Order
+	var updatedOrder *model.Order
+
+	orders := &MockOrderRepository{
+		getOrder: func(ctx context.Context, id uint64) (*model.Order, error) {
+			if id == subOrderID {
+				return subOrder, nil
+			}
+			return nil, repository.ErrNotFound
+		},
+		createOrder: func(ctx context.Context, order *model.Order) error {
+			order.ID = 100
+			createdOrder = order
+			return nil
+		},
+		updateOrder: func(ctx context.Context, order *model.Order) error {
+			updatedOrder = order
+			return nil
+		},
+	}
+
+	players := &MockPlayerRepository{
+		getPlayer: func(ctx context.Context, id uint64) (*model.Player, error) {
+			return &model.Player{
+				Base:               model.Base{ID: id},
+				VerificationStatus: model.VerificationVerified,
+			}, nil
+		},
+	}
+
+	orderGroups := &MockOrderGroupRepository{
+		getWithSubOrders: func(ctx context.Context, id uint64) (*model.OrderGroup, error) {
+			return &model.OrderGroup{Base: model.Base{ID: groupID}, SubOrders: []model.Order{*subOrder}}, nil
+		},
+		updateGroup: func(ctx context.Context, group *model.OrderGroup) error { return nil },
+	}
+
+	service := NewOrderService(orders, players, &MockUserRepository{}, &MockGameRepository{}, &MockPaymentRepository{}, &MockReviewRepository{}, &MockCommissionRepository{})
+	service.SetOrderGroupRepository(orderGroups)
+
+	req := TransferSubOrderRequest{
+		SubOrderID:       subOrderID,
+		NewPlayerID:      newPlayerID,
+		TransferNote:     "未开始服务转单",
+		CompletedMinutes: 0, // 未开始服务
+	}
+
+	resp, err := service.TransferSubOrder(ctx, operatorID, req)
+
+	require.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.True(t, resp.Success)
+
+	// 验证收入归属：原陪玩师0，新陪玩师全部
+	assert.Equal(t, int64(0), resp.OriginalPlayerIncome)
+	assert.Equal(t, int64(4000), resp.NewPlayerIncome)
+
+	// 验证新订单：抽成为0（不重复计算），收入为全部
+	assert.Equal(t, int64(0), createdOrder.CommissionCents)
+	assert.Equal(t, int64(4000), createdOrder.PlayerIncomeCents)
+
+	// 验证原订单：收入更新为0
+	assert.Equal(t, int64(0), updatedOrder.PlayerIncomeCents)
+}
+
+// TestTransferSubOrder_IncomeAttribution_HalfCompleted 测试转单收入归属 - 完成一半
+func TestTransferSubOrder_IncomeAttribution_HalfCompleted(t *testing.T) {
+	ctx := context.Background()
+	operatorID := uint64(1)
+	subOrderID := uint64(10)
+	groupID := uint64(1)
+	newPlayerID := uint64(200)
+
+	subOrder := createTestSubOrder(subOrderID, 1, groupID, 2, model.OrderStatusInProgress)
+
+	var createdOrder *model.Order
+	var updatedOrder *model.Order
+
+	orders := &MockOrderRepository{
+		getOrder: func(ctx context.Context, id uint64) (*model.Order, error) {
+			if id == subOrderID {
+				return subOrder, nil
+			}
+			return nil, repository.ErrNotFound
+		},
+		createOrder: func(ctx context.Context, order *model.Order) error {
+			order.ID = 100
+			createdOrder = order
+			return nil
+		},
+		updateOrder: func(ctx context.Context, order *model.Order) error {
+			updatedOrder = order
+			return nil
+		},
+	}
+
+	players := &MockPlayerRepository{
+		getPlayer: func(ctx context.Context, id uint64) (*model.Player, error) {
+			return &model.Player{
+				Base:               model.Base{ID: id},
+				VerificationStatus: model.VerificationVerified,
+			}, nil
+		},
+	}
+
+	orderGroups := &MockOrderGroupRepository{
+		getWithSubOrders: func(ctx context.Context, id uint64) (*model.OrderGroup, error) {
+			return &model.OrderGroup{Base: model.Base{ID: groupID}, SubOrders: []model.Order{*subOrder}}, nil
+		},
+		updateGroup: func(ctx context.Context, group *model.OrderGroup) error { return nil },
+	}
+
+	service := NewOrderService(orders, players, &MockUserRepository{}, &MockGameRepository{}, &MockPaymentRepository{}, &MockReviewRepository{}, &MockCommissionRepository{})
+	service.SetOrderGroupRepository(orderGroups)
+
+	req := TransferSubOrderRequest{
+		SubOrderID:       subOrderID,
+		NewPlayerID:      newPlayerID,
+		TransferNote:     "完成一半转单",
+		CompletedMinutes: 30, // 完成30分钟（一半）
+	}
+
+	resp, err := service.TransferSubOrder(ctx, operatorID, req)
+
+	require.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.True(t, resp.Success)
+
+	// 验证收入归属：按比例分配 4000 * 30/60 = 2000
+	assert.Equal(t, int64(2000), resp.OriginalPlayerIncome)
+	assert.Equal(t, int64(2000), resp.NewPlayerIncome)
+
+	// 验证新订单
+	assert.Equal(t, int64(0), createdOrder.CommissionCents)
+	assert.Equal(t, int64(2000), createdOrder.PlayerIncomeCents)
+
+	// 验证原订单
+	assert.Equal(t, int64(2000), updatedOrder.PlayerIncomeCents)
+}
+
+// TestTransferSubOrder_IncomeAttribution_MostlyCompleted 测试转单收入归属 - 完成大部分
+func TestTransferSubOrder_IncomeAttribution_MostlyCompleted(t *testing.T) {
+	ctx := context.Background()
+	operatorID := uint64(1)
+	subOrderID := uint64(10)
+	groupID := uint64(1)
+	newPlayerID := uint64(200)
+
+	subOrder := createTestSubOrder(subOrderID, 1, groupID, 2, model.OrderStatusInProgress)
+
+	var createdOrder *model.Order
+	var updatedOrder *model.Order
+
+	orders := &MockOrderRepository{
+		getOrder: func(ctx context.Context, id uint64) (*model.Order, error) {
+			if id == subOrderID {
+				return subOrder, nil
+			}
+			return nil, repository.ErrNotFound
+		},
+		createOrder: func(ctx context.Context, order *model.Order) error {
+			order.ID = 100
+			createdOrder = order
+			return nil
+		},
+		updateOrder: func(ctx context.Context, order *model.Order) error {
+			updatedOrder = order
+			return nil
+		},
+	}
+
+	players := &MockPlayerRepository{
+		getPlayer: func(ctx context.Context, id uint64) (*model.Player, error) {
+			return &model.Player{
+				Base:               model.Base{ID: id},
+				VerificationStatus: model.VerificationVerified,
+			}, nil
+		},
+	}
+
+	orderGroups := &MockOrderGroupRepository{
+		getWithSubOrders: func(ctx context.Context, id uint64) (*model.OrderGroup, error) {
+			return &model.OrderGroup{Base: model.Base{ID: groupID}, SubOrders: []model.Order{*subOrder}}, nil
+		},
+		updateGroup: func(ctx context.Context, group *model.OrderGroup) error { return nil },
+	}
+
+	service := NewOrderService(orders, players, &MockUserRepository{}, &MockGameRepository{}, &MockPaymentRepository{}, &MockReviewRepository{}, &MockCommissionRepository{})
+	service.SetOrderGroupRepository(orderGroups)
+
+	req := TransferSubOrderRequest{
+		SubOrderID:       subOrderID,
+		NewPlayerID:      newPlayerID,
+		TransferNote:     "完成45分钟转单",
+		CompletedMinutes: 45, // 完成45分钟
+	}
+
+	resp, err := service.TransferSubOrder(ctx, operatorID, req)
+
+	require.NoError(t, err)
+	assert.NotNil(t, resp)
+
+	// 验证收入归属：4000 * 45/60 = 3000, 4000 - 3000 = 1000
+	assert.Equal(t, int64(3000), resp.OriginalPlayerIncome)
+	assert.Equal(t, int64(1000), resp.NewPlayerIncome)
+
+	// 验证新订单
+	assert.Equal(t, int64(0), createdOrder.CommissionCents)
+	assert.Equal(t, int64(1000), createdOrder.PlayerIncomeCents)
+
+	// 验证原订单
+	assert.Equal(t, int64(3000), updatedOrder.PlayerIncomeCents)
+}
+
+// TestTransferSubOrder_IncomeAttribution_InvalidMinutes 测试转单收入归属 - 无效分钟数
+func TestTransferSubOrder_IncomeAttribution_InvalidMinutes(t *testing.T) {
+	ctx := context.Background()
+	operatorID := uint64(1)
+	subOrderID := uint64(10)
+	groupID := uint64(1)
+	newPlayerID := uint64(200)
+
+	subOrder := createTestSubOrder(subOrderID, 1, groupID, 2, model.OrderStatusInProgress)
+
+	var createdOrder *model.Order
+
+	orders := &MockOrderRepository{
+		getOrder: func(ctx context.Context, id uint64) (*model.Order, error) {
+			if id == subOrderID {
+				return subOrder, nil
+			}
+			return nil, repository.ErrNotFound
+		},
+		createOrder: func(ctx context.Context, order *model.Order) error {
+			order.ID = 100
+			createdOrder = order
+			return nil
+		},
+		updateOrder: func(ctx context.Context, order *model.Order) error { return nil },
+	}
+
+	players := &MockPlayerRepository{
+		getPlayer: func(ctx context.Context, id uint64) (*model.Player, error) {
+			return &model.Player{
+				Base:               model.Base{ID: id},
+				VerificationStatus: model.VerificationVerified,
+			}, nil
+		},
+	}
+
+	orderGroups := &MockOrderGroupRepository{
+		getWithSubOrders: func(ctx context.Context, id uint64) (*model.OrderGroup, error) {
+			return &model.OrderGroup{Base: model.Base{ID: groupID}, SubOrders: []model.Order{*subOrder}}, nil
+		},
+		updateGroup: func(ctx context.Context, group *model.OrderGroup) error { return nil },
+	}
+
+	service := NewOrderService(orders, players, &MockUserRepository{}, &MockGameRepository{}, &MockPaymentRepository{}, &MockReviewRepository{}, &MockCommissionRepository{})
+	service.SetOrderGroupRepository(orderGroups)
+
+	// 测试负数分钟数 - 应该被修正为0
+	req := TransferSubOrderRequest{
+		SubOrderID:       subOrderID,
+		NewPlayerID:      newPlayerID,
+		CompletedMinutes: -10,
+	}
+
+	resp, err := service.TransferSubOrder(ctx, operatorID, req)
+	require.NoError(t, err)
+	assert.Equal(t, int64(0), resp.OriginalPlayerIncome)
+	assert.Equal(t, int64(4000), resp.NewPlayerIncome)
+
+	// 测试超过60分钟 - 应该被修正为60
+	subOrder2 := createTestSubOrder(subOrderID+1, 1, groupID, 3, model.OrderStatusInProgress)
+	orders.getOrder = func(ctx context.Context, id uint64) (*model.Order, error) {
+		return subOrder2, nil
+	}
+
+	req2 := TransferSubOrderRequest{
+		SubOrderID:       subOrderID + 1,
+		NewPlayerID:      newPlayerID,
+		CompletedMinutes: 100, // 超过60分钟
+	}
+
+	resp2, err := service.TransferSubOrder(ctx, operatorID, req2)
+	require.NoError(t, err)
+	// 修正为60分钟，原陪玩师获得全部收入
+	assert.Equal(t, int64(4000), resp2.OriginalPlayerIncome)
+	assert.Equal(t, int64(0), resp2.NewPlayerIncome)
+	assert.Equal(t, int64(0), createdOrder.PlayerIncomeCents)
+}
+
+// TestBatchTransferSubOrders_IncomeAttribution 测试批量转单收入归属
+func TestBatchTransferSubOrders_IncomeAttribution(t *testing.T) {
+	ctx := context.Background()
+	operatorID := uint64(1)
+	groupID := uint64(1)
+	newPlayerID := uint64(200)
+
+	// 第一个订单完成20分钟，第二个订单未开始
+	subOrder1 := createTestSubOrder(10, 1, groupID, 2, model.OrderStatusInProgress)
+	subOrder2 := createTestSubOrder(11, 1, groupID, 3, model.OrderStatusPending)
+
+	orderMap := map[uint64]*model.Order{
+		10: subOrder1,
+		11: subOrder2,
+	}
+
+	newOrderID := uint64(100)
+	orders := &MockOrderRepository{
+		getOrder: func(ctx context.Context, id uint64) (*model.Order, error) {
+			if order, ok := orderMap[id]; ok {
+				return order, nil
+			}
+			return nil, repository.ErrNotFound
+		},
+		createOrder: func(ctx context.Context, order *model.Order) error {
+			order.ID = newOrderID
+			newOrderID++
+			return nil
+		},
+		updateOrder: func(ctx context.Context, order *model.Order) error { return nil },
+	}
+
+	players := &MockPlayerRepository{
+		getPlayer: func(ctx context.Context, id uint64) (*model.Player, error) {
+			return &model.Player{
+				Base:               model.Base{ID: id},
+				VerificationStatus: model.VerificationVerified,
+			}, nil
+		},
+	}
+
+	orderGroups := &MockOrderGroupRepository{
+		getWithSubOrders: func(ctx context.Context, id uint64) (*model.OrderGroup, error) {
+			return &model.OrderGroup{
+				Base:       model.Base{ID: groupID},
+				SubOrders:  []model.Order{*subOrder1, *subOrder2},
+			}, nil
+		},
+		updateGroup: func(ctx context.Context, group *model.OrderGroup) error { return nil },
+	}
+
+	service := NewOrderService(orders, players, &MockUserRepository{}, &MockGameRepository{}, &MockPaymentRepository{}, &MockReviewRepository{}, &MockCommissionRepository{})
+	service.SetOrderGroupRepository(orderGroups)
+
+	req := BatchTransferRequest{
+		SubOrderIDs:      []uint64{10, 11},
+		NewPlayerID:      newPlayerID,
+		TransferNote:     "批量转单",
+		CompletedMinutes: 20, // 第一个订单完成20分钟
+	}
+
+	resp, err := service.BatchTransferSubOrders(ctx, operatorID, req)
+
+	require.NoError(t, err)
+	assert.Equal(t, 2, resp.SuccessCount)
+
+	// 第一个订单：4000 * 20/60 ≈ 1333 原陪玩师，2667 新陪玩师
+	// 第二个订单：0 原陪玩师，4000 新陪玩师
+	// 总计：原陪玩师 1333，新陪玩师 6667
+	assert.Equal(t, int64(1333), resp.TotalOriginalIncome)
+	assert.Equal(t, int64(6667), resp.TotalNewPlayerIncome)
+}
