@@ -9,7 +9,7 @@
  * - View detailed dispute information including SLA status
  * - Rollback dispute assignments
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     Drawer,
     Card,
@@ -19,12 +19,17 @@ import {
     Alert,
     App,
     theme,
+    Switch,
+    Tooltip,
+    Space,
 } from 'antd';
 import {
     ExclamationCircleOutlined,
     DownloadOutlined,
     ClockCircleOutlined,
     CheckCircleOutlined,
+    BellOutlined,
+    SoundOutlined,
 } from '@ant-design/icons';
 import { PageContainer, type ToolbarButton } from '@/components';
 import type { SearchField } from '@/components';
@@ -41,6 +46,7 @@ import { DisputeList } from './components/DisputeList';
 import { DisputeDetail } from './components/DisputeDetail';
 import { ResolveModal } from './components/ResolveModal';
 import { AssignModal } from './components/AssignModal';
+import { useNotification } from '@/hooks';
 
 import { logger } from '@/utils/logger';
 /**
@@ -69,6 +75,26 @@ const DisputePage: React.FC = () => {
 
     // Statistics
     const [stats, setStats] = useState<DisputeStats | null>(null);
+
+    // Ref for quick filter callback (to avoid stale closure in useNotification)
+    const quickFilterRef = useRef<(filter: string) => void>(() => {});
+
+    // Notification hook for SLA alerts
+    const {
+        isEnabled: notificationEnabled,
+        requestPermission,
+        preferences: notificationPrefs,
+        updatePreferences: updateNotificationPrefs,
+        testSound,
+    } = useNotification({
+        enableSLAMonitoring: true,
+        checkInterval: 60000, // Check every minute
+        getSLABreachCount: () => stats?.slaBreached || 0,
+        onSLAAlert: () => {
+            // Focus on SLA breached disputes
+            quickFilterRef.current('sla_breached');
+        },
+    });
 
     // Modal states
     const [detailVisible, setDetailVisible] = useState(false);
@@ -269,7 +295,7 @@ const DisputePage: React.FC = () => {
     /**
      * Quick filter handlers
      */
-    const handleQuickFilter = (filter: string) => {
+    const handleQuickFilter = useCallback((filter: string) => {
         switch (filter) {
             case 'pending':
                 setSearchParams({ status: 'pending' as DisputeStatus });
@@ -287,7 +313,12 @@ const DisputePage: React.FC = () => {
                 break;
         }
         setCurrent(1);
-    };
+    }, []);
+
+    // Update ref when handleQuickFilter changes
+    useEffect(() => {
+        quickFilterRef.current = handleQuickFilter;
+    }, [handleQuickFilter]);
 
     /**
      * Toolbar buttons with quick filters
@@ -393,8 +424,51 @@ const DisputePage: React.FC = () => {
                     type="warning"
                     showIcon
                     style={{ marginBottom: 16 }}
+                    action={
+                        !notificationEnabled && (
+                            <Tooltip title="开启浏览器通知，及时收到 SLA 超时提醒">
+                                <Switch
+                                    checkedChildren={<BellOutlined />}
+                                    unCheckedChildren={<BellOutlined />}
+                                    checked={false}
+                                    onChange={() => requestPermission()}
+                                />
+                            </Tooltip>
+                        )
+                    }
                 />
             )}
+
+            {/* Notification Settings */}
+            <Card size="small" style={{ marginBottom: 16 }}>
+                <Space>
+                    <span>通知设置：</span>
+                    <Tooltip title="浏览器通知">
+                        <Switch
+                            checkedChildren={<BellOutlined />}
+                            unCheckedChildren={<BellOutlined />}
+                            checked={notificationPrefs.browserNotificationEnabled && notificationEnabled}
+                            onChange={(checked) => {
+                                if (checked && !notificationEnabled) {
+                                    requestPermission();
+                                }
+                                updateNotificationPrefs({ browserNotificationEnabled: checked });
+                            }}
+                        />
+                    </Tooltip>
+                    <Tooltip title="声音提醒">
+                        <Switch
+                            checkedChildren={<SoundOutlined />}
+                            unCheckedChildren={<SoundOutlined />}
+                            checked={notificationPrefs.soundEnabled}
+                            onChange={(checked) => updateNotificationPrefs({ soundEnabled: checked })}
+                        />
+                    </Tooltip>
+                    <Tooltip title="测试声音">
+                        <a onClick={() => testSound('warning')}>测试</a>
+                    </Tooltip>
+                </Space>
+            </Card>
 
             <DisputeList
                 disputes={disputes}

@@ -51,3 +51,6 @@ export {
     useDashboardPreferences,
     type DashboardPreferences,
 } from './useLocalStorage';
+
+// 浏览器通知 Hook
+export { useNotification } from './useNotification';
