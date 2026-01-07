@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"context"
 	"fmt"
 	"strconv"
 	"time"
@@ -155,7 +154,8 @@ func (rl *RedisRateLimiter) createRateLimitMiddleware(limiterInstance *limiter.L
 		// 获取客户端标识（IP 或用户 ID）
 		key := rl.getClientKey(c, prefix)
 
-		ctx := context.Background()
+		// 使用请求上下文，支持请求取消和超时传播
+		ctx := c.Request.Context()
 		limiterContext, err := limiterInstance.Get(ctx, key)
 		if err != nil {
 			// Redis 错误时记录日志但不阻止请求（fail-open）
