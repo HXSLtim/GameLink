@@ -579,6 +579,38 @@ export const gameImportTemplate: ImportTemplate = {
 *For any* import result download, the report SHALL contain all original data columns plus status and error columns.
 **Validates: Requirements 9.5**
 
+### Property 25: Service Method Logging
+*For any* service method invocation, the logger SHALL record method name, sanitized parameters, duration, and result status.
+**Validates: Requirements 10.1, 10.2**
+
+### Property 26: Slow Operation Warning
+*For any* service operation exceeding 3 seconds, the logger SHALL emit a warning log with operation name and duration.
+**Validates: Requirements 10.5**
+
+### Property 27: Batch Concurrency Limit
+*For any* batch operation, the number of concurrent API calls SHALL NOT exceed the configured maximum (default 5).
+**Validates: Requirements 11.1**
+
+### Property 28: Duplicate Operation Prevention
+*For any* batch operation in progress, a duplicate submission with the same operation key SHALL return the existing operation's promise instead of starting a new one.
+**Validates: Requirements 11.2**
+
+### Property 29: Retry with Exponential Backoff
+*For any* retryable error (rate limit, timeout), the service SHALL retry with exponential backoff up to the configured maximum attempts.
+**Validates: Requirements 11.3**
+
+### Property 30: Import Transaction Tracking
+*For any* import operation, the transaction manager SHALL track all created record IDs and persist them to storage.
+**Validates: Requirements 12.1**
+
+### Property 31: Rollback Completeness
+*For any* rollback operation, the transaction manager SHALL attempt to delete all records created during the import and report any failures.
+**Validates: Requirements 12.3, 12.4**
+
+### Property 32: Interrupted Import Detection
+*For any* import transaction in 'in_progress' or 'pending' status when the application loads, the system SHALL mark it as 'interrupted' and make it available for cleanup.
+**Validates: Requirements 12.5**
+
 ## Error Handling
 
 ### Service Layer Error Handling Strategy
@@ -664,6 +696,565 @@ for (const [index, row] of rows.entries()) {
     errors,
     isValid: errors.length === 0,
   });
+}
+```
+
+## Observability and Logging
+
+### Logger Interface
+
+```typescript
+// services/utils/logger.ts
+export interface ServiceLogger {
+  debug(message: string, context?: Record<string, unknown>): void;
+  info(message: string, context?: Record<string, unknown>): void;
+  warn(message: string, context?: Record<string, unknown>): void;
+  error(message: string, error?: Error, context?: Record<string, unknown>): void;
+}
+
+export interface PerformanceMetrics {
+  methodName: string;
+  duration: number;
+  success: boolean;
+  timestamp: Date;
+}
+
+// Default implementation using console + optional external service
+export class DefaultServiceLogger implements ServiceLogger {
+  private serviceName: string;
+  
+  constructor(serviceName: string) {
+    this.serviceName = serviceName;
+  }
+  
+  debug(message: string, context?: Record<string, unknown>) {
+    if (import.meta.env.DEV) {
+      console.debug(`[${this.serviceName}] ${message}`, context);
+    }
+  }
+  
+  info(message: string, context?: Record<string, unknown>) {
+    console.info(`[${this.serviceName}] ${message}`, context);
+  }
+  
+  warn(message: string, context?: Record<string, unknown>) {
+    console.warn(`[${this.serviceName}] ${message}`, context);
+  }
+  
+  error(message: string, error?: Error, context?: Record<string, unknown>) {
+    console.error(`[${this.serviceName}] ${message}`, { error, ...context });
+    // Optional: Send to error tracking service (Sentry, etc.)
+  }
+}
+```
+
+### Performance Monitoring
+
+```typescript
+// services/utils/performance.ts
+export interface PerformanceMonitor {
+  startTimer(operationName: string): () => number;
+  recordMetric(metric: PerformanceMetrics): void;
+  getMetrics(): PerformanceMetrics[];
+}
+
+export class ServicePerformanceMonitor implements PerformanceMonitor {
+  private metrics: PerformanceMetrics[] = [];
+  private readonly SLOW_THRESHOLD_MS = 3000;
+  private logger: ServiceLogger;
+  
+  constructor(logger: ServiceLogger) {
+    this.logger = logger;
+  }
+  
+  startTimer(operationName: string): () => number {
+    const startTime = performance.now();
+    return () => {
+      const duration = performance.now() - startTime;
+      if (duration > this.SLOW_THRESHOLD_MS) {
+        this.logger.warn(`Slow operation detected: ${operationName}`, { duration });
+      }
+      return duration;
+    };
+  }
+  
+  recordMetric(metric: PerformanceMetrics): void {
+    this.metrics.push(metric);
+    // Keep only last 1000 metrics
+    if (this.metrics.length > 1000) {
+      this.metrics = this.metrics.slice(-1000);
+    }
+  }
+  
+  getMetrics(): PerformanceMetrics[] {
+    return [...this.metrics];
+  }
+}
+```
+
+### Logging Decorator Pattern
+
+```typescript
+// Usage in BaseService
+export abstract class BaseService {
+  protected logger: ServiceLogger;
+  protected perfMonitor: PerformanceMonitor;
+  
+  protected async withLogging<T>(
+    methodName: string,
+    params: Record<string, unknown>,
+    operation: () => Promise<T>
+  ): Promise<T> {
+    const sanitizedParams = this.sanitizeParams(params);
+    this.logger.debug(`${methodName} started`, { params: sanitizedParams });
+    
+    const stopTimer = this.perfMonitor.startTimer(methodName);
+    
+    try {
+      const result = await operation();
+      const duration = stopTimer();
+      
+      this.logger.info(`${methodName} completed`, { duration, success: true });
+      this.perfMonitor.recordMetric({
+        methodName,
+        duration,
+        success: true,
+        timestamp: new Date(),
+      });
+      
+      return result;
+    } catch (error) {
+      const duration = stopTimer();
+      
+      this.logger.error(`${methodName} failed`, error as Error, { 
+        params: sanitizedParams,
+        duration 
+      });
+      this.perfMonitor.recordMetric({
+        methodName,
+        duration,
+        success: false,
+        timestamp: new Date(),
+      });
+      
+      throw error;
+    }
+  }
+  
+  private sanitizeParams(params: Record<string, unknown>): Record<string, unknown> {
+    const sensitiveKeys = ['password', 'token', 'secret', 'key'];
+    const sanitized = { ...params };
+    
+    for (const key of Object.keys(sanitized)) {
+      if (sensitiveKeys.some(sk => key.toLowerCase().includes(sk))) {
+        sanitized[key] = '[REDACTED]';
+      }
+    }
+    
+    return sanitized;
+  }
+}
+```
+
+## Concurrency Control
+
+### Batch Operation Concurrency
+
+```typescript
+// services/utils/concurrency.ts
+export interface ConcurrencyConfig {
+  maxConcurrent: number;      // Default: 5
+  chunkSize: number;          // Default: 50
+  retryAttempts: number;      // Default: 3
+  retryDelayMs: number;       // Default: 1000
+  backoffMultiplier: number;  // Default: 2
+}
+
+export const DEFAULT_CONCURRENCY_CONFIG: ConcurrencyConfig = {
+  maxConcurrent: 5,
+  chunkSize: 50,
+  retryAttempts: 3,
+  retryDelayMs: 1000,
+  backoffMultiplier: 2,
+};
+
+export class ConcurrencyController {
+  private activeOperations = new Map<string, Promise<unknown>>();
+  private config: ConcurrencyConfig;
+  
+  constructor(config: Partial<ConcurrencyConfig> = {}) {
+    this.config = { ...DEFAULT_CONCURRENCY_CONFIG, ...config };
+  }
+  
+  // Prevent duplicate submissions
+  async withDeduplication<T>(
+    operationKey: string,
+    operation: () => Promise<T>
+  ): Promise<T> {
+    const existing = this.activeOperations.get(operationKey);
+    if (existing) {
+      return existing as Promise<T>;
+    }
+    
+    const promise = operation().finally(() => {
+      this.activeOperations.delete(operationKey);
+    });
+    
+    this.activeOperations.set(operationKey, promise);
+    return promise;
+  }
+  
+  // Process items with concurrency limit
+  async processWithConcurrency<T, R>(
+    items: T[],
+    processor: (item: T, index: number) => Promise<R>,
+    onProgress?: (completed: number, total: number) => void
+  ): Promise<Array<{ index: number; success: boolean; result?: R; error?: Error }>> {
+    const results: Array<{ index: number; success: boolean; result?: R; error?: Error }> = [];
+    const chunks = this.chunkArray(items, this.config.chunkSize);
+    let completed = 0;
+    
+    for (const chunk of chunks) {
+      const chunkResults = await this.processChunk(chunk, processor, items.indexOf(chunk[0]));
+      results.push(...chunkResults);
+      
+      completed += chunk.length;
+      if (onProgress) {
+        onProgress(completed, items.length);
+      }
+    }
+    
+    return results;
+  }
+  
+  private async processChunk<T, R>(
+    chunk: T[],
+    processor: (item: T, index: number) => Promise<R>,
+    startIndex: number
+  ): Promise<Array<{ index: number; success: boolean; result?: R; error?: Error }>> {
+    const semaphore = new Semaphore(this.config.maxConcurrent);
+    
+    return Promise.all(
+      chunk.map(async (item, i) => {
+        const index = startIndex + i;
+        await semaphore.acquire();
+        
+        try {
+          const result = await this.withRetry(() => processor(item, index));
+          return { index, success: true, result };
+        } catch (error) {
+          return { index, success: false, error: error as Error };
+        } finally {
+          semaphore.release();
+        }
+      })
+    );
+  }
+  
+  private async withRetry<T>(operation: () => Promise<T>): Promise<T> {
+    let lastError: Error | undefined;
+    let delay = this.config.retryDelayMs;
+    
+    for (let attempt = 0; attempt < this.config.retryAttempts; attempt++) {
+      try {
+        return await operation();
+      } catch (error) {
+        lastError = error as Error;
+        
+        // Check if error is retryable (rate limit, network error)
+        if (!this.isRetryableError(error)) {
+          throw error;
+        }
+        
+        if (attempt < this.config.retryAttempts - 1) {
+          await this.sleep(delay);
+          delay *= this.config.backoffMultiplier;
+        }
+      }
+    }
+    
+    throw lastError;
+  }
+  
+  private isRetryableError(error: unknown): boolean {
+    if (error instanceof Error) {
+      const message = error.message.toLowerCase();
+      return message.includes('rate limit') || 
+             message.includes('timeout') ||
+             message.includes('network');
+    }
+    return false;
+  }
+  
+  private chunkArray<T>(array: T[], size: number): T[][] {
+    const chunks: T[][] = [];
+    for (let i = 0; i < array.length; i += size) {
+      chunks.push(array.slice(i, i + size));
+    }
+    return chunks;
+  }
+  
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+}
+
+// Simple semaphore implementation
+class Semaphore {
+  private permits: number;
+  private waiting: Array<() => void> = [];
+  
+  constructor(permits: number) {
+    this.permits = permits;
+  }
+  
+  async acquire(): Promise<void> {
+    if (this.permits > 0) {
+      this.permits--;
+      return;
+    }
+    
+    return new Promise(resolve => {
+      this.waiting.push(resolve);
+    });
+  }
+  
+  release(): void {
+    const next = this.waiting.shift();
+    if (next) {
+      next();
+    } else {
+      this.permits++;
+    }
+  }
+}
+```
+
+## Import Transaction and Rollback
+
+### Transaction Context
+
+```typescript
+// services/import/transaction.ts
+export interface ImportTransaction {
+  id: string;
+  type: ImportType;
+  status: 'pending' | 'in_progress' | 'completed' | 'rolled_back' | 'interrupted';
+  createdRecordIds: number[];
+  startedAt: Date;
+  completedAt?: Date;
+}
+
+export interface TransactionManager {
+  startTransaction(type: ImportType): ImportTransaction;
+  recordCreated(transactionId: string, recordId: number): void;
+  commitTransaction(transactionId: string): Promise<void>;
+  rollbackTransaction(transactionId: string): Promise<RollbackResult>;
+  getTransaction(transactionId: string): ImportTransaction | undefined;
+  cleanupInterrupted(): Promise<void>;
+}
+
+export interface RollbackResult {
+  success: boolean;
+  rolledBackCount: number;
+  failedRollbacks: Array<{ recordId: number; error: string }>;
+}
+
+export class ImportTransactionManager implements TransactionManager {
+  private transactions = new Map<string, ImportTransaction>();
+  private storage: Storage;
+  private api: typeof adminApi;
+  private logger: ServiceLogger;
+  
+  constructor(api: typeof adminApi, logger: ServiceLogger) {
+    this.api = api;
+    this.logger = logger;
+    this.storage = localStorage;
+    this.loadPersistedTransactions();
+  }
+  
+  startTransaction(type: ImportType): ImportTransaction {
+    const transaction: ImportTransaction = {
+      id: crypto.randomUUID(),
+      type,
+      status: 'pending',
+      createdRecordIds: [],
+      startedAt: new Date(),
+    };
+    
+    this.transactions.set(transaction.id, transaction);
+    this.persistTransactions();
+    
+    this.logger.info('Import transaction started', { 
+      transactionId: transaction.id, 
+      type 
+    });
+    
+    return transaction;
+  }
+  
+  recordCreated(transactionId: string, recordId: number): void {
+    const transaction = this.transactions.get(transactionId);
+    if (transaction) {
+      transaction.createdRecordIds.push(recordId);
+      transaction.status = 'in_progress';
+      this.persistTransactions();
+    }
+  }
+  
+  async commitTransaction(transactionId: string): Promise<void> {
+    const transaction = this.transactions.get(transactionId);
+    if (transaction) {
+      transaction.status = 'completed';
+      transaction.completedAt = new Date();
+      this.persistTransactions();
+      
+      this.logger.info('Import transaction committed', {
+        transactionId,
+        recordCount: transaction.createdRecordIds.length,
+      });
+      
+      // Clean up after successful commit
+      setTimeout(() => {
+        this.transactions.delete(transactionId);
+        this.persistTransactions();
+      }, 60000); // Keep for 1 minute for audit
+    }
+  }
+  
+  async rollbackTransaction(transactionId: string): Promise<RollbackResult> {
+    const transaction = this.transactions.get(transactionId);
+    if (!transaction) {
+      return { success: false, rolledBackCount: 0, failedRollbacks: [] };
+    }
+    
+    this.logger.info('Starting rollback', {
+      transactionId,
+      recordCount: transaction.createdRecordIds.length,
+    });
+    
+    const result: RollbackResult = {
+      success: true,
+      rolledBackCount: 0,
+      failedRollbacks: [],
+    };
+    
+    // Rollback in reverse order
+    const recordIds = [...transaction.createdRecordIds].reverse();
+    
+    for (const recordId of recordIds) {
+      try {
+        await this.deleteRecord(transaction.type, recordId);
+        result.rolledBackCount++;
+        
+        this.logger.debug('Record rolled back', { 
+          transactionId, 
+          recordId, 
+          type: transaction.type 
+        });
+      } catch (error) {
+        result.success = false;
+        result.failedRollbacks.push({
+          recordId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        
+        this.logger.error('Rollback failed for record', error as Error, {
+          transactionId,
+          recordId,
+        });
+      }
+    }
+    
+    transaction.status = 'rolled_back';
+    transaction.completedAt = new Date();
+    this.persistTransactions();
+    
+    this.logger.info('Rollback completed', {
+      transactionId,
+      rolledBackCount: result.rolledBackCount,
+      failedCount: result.failedRollbacks.length,
+    });
+    
+    return result;
+  }
+  
+  getTransaction(transactionId: string): ImportTransaction | undefined {
+    return this.transactions.get(transactionId);
+  }
+  
+  async cleanupInterrupted(): Promise<void> {
+    const interrupted = Array.from(this.transactions.values())
+      .filter(t => t.status === 'in_progress' || t.status === 'pending');
+    
+    for (const transaction of interrupted) {
+      transaction.status = 'interrupted';
+      this.logger.warn('Found interrupted transaction', {
+        transactionId: transaction.id,
+        recordCount: transaction.createdRecordIds.length,
+      });
+    }
+    
+    this.persistTransactions();
+  }
+  
+  private async deleteRecord(type: ImportType, recordId: number): Promise<void> {
+    switch (type) {
+      case 'user':
+        await this.api.deleteUser(recordId);
+        break;
+      case 'player':
+        await this.api.deletePlayer(recordId);
+        break;
+      case 'game':
+        await this.api.deleteGame(recordId);
+        break;
+    }
+  }
+  
+  private persistTransactions(): void {
+    const data = Array.from(this.transactions.entries());
+    this.storage.setItem('import_transactions', JSON.stringify(data));
+  }
+  
+  private loadPersistedTransactions(): void {
+    try {
+      const data = this.storage.getItem('import_transactions');
+      if (data) {
+        const entries = JSON.parse(data) as Array<[string, ImportTransaction]>;
+        this.transactions = new Map(entries);
+      }
+    } catch {
+      // Ignore parse errors
+    }
+  }
+}
+```
+
+### Import Service with Transaction Support
+
+```typescript
+// Updated ImportService interface
+export interface ImportService {
+  // ... existing methods ...
+  
+  // Transaction support
+  importWithTransaction(
+    type: ImportType, 
+    rows: ParsedRow[],
+    options?: {
+      onProgress?: (completed: number, total: number) => void;
+      onRollbackPrompt?: () => Promise<'rollback' | 'keep'>;
+    }
+  ): Promise<ImportResultWithTransaction>;
+  
+  getInterruptedImports(): ImportTransaction[];
+  resumeOrCleanup(transactionId: string, action: 'resume' | 'rollback' | 'keep'): Promise<void>;
+}
+
+export interface ImportResultWithTransaction extends ImportResult {
+  transactionId: string;
+  canRollback: boolean;
 }
 ```
 

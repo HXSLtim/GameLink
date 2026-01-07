@@ -281,39 +281,122 @@
 
 ## Phase 5: Store Integration and Refactoring
 
-- [ ] 19. Refactor stores to use services
-  - [ ] 19.1 Refactor userStore to use UserService
+- [ ] 19. Implement observability infrastructure
+  - [ ] 19.1 Create ServiceLogger interface and implementation
+    - Implement debug, info, warn, error methods
+    - Implement parameter sanitization for sensitive data
+    - Support optional external error tracking integration
+    - _Requirements: 10.1, 10.3_
+  - [ ] 19.2 Create PerformanceMonitor
+    - Implement startTimer and recordMetric methods
+    - Implement slow operation detection (>3s threshold)
+    - Store metrics for debugging
+    - _Requirements: 10.2, 10.5_
+  - [ ] 19.3 Write property test for service logging
+    - **Property 25: Service Method Logging**
+    - **Validates: Requirements 10.1, 10.2**
+  - [ ] 19.4 Write property test for slow operation warning
+    - **Property 26: Slow Operation Warning**
+    - **Validates: Requirements 10.5**
+  - [ ] 19.5 Integrate logging into BaseService
+    - Add withLogging wrapper method
+    - Log batch operation progress at 10% intervals
+    - _Requirements: 10.4_
+
+- [ ] 20. Implement concurrency control
+  - [ ] 20.1 Create ConcurrencyController
+    - Implement withDeduplication for duplicate prevention
+    - Implement processWithConcurrency with configurable limits
+    - Implement Semaphore for concurrency limiting
+    - _Requirements: 11.1, 11.2_
+  - [ ] 20.2 Write property test for concurrency limit
+    - **Property 27: Batch Concurrency Limit**
+    - **Validates: Requirements 11.1**
+  - [ ] 20.3 Write property test for duplicate prevention
+    - **Property 28: Duplicate Operation Prevention**
+    - **Validates: Requirements 11.2**
+  - [ ] 20.4 Implement retry with exponential backoff
+    - Implement withRetry method
+    - Implement isRetryableError detection
+    - Configure retry attempts and delays
+    - _Requirements: 11.3_
+  - [ ] 20.5 Write property test for retry behavior
+    - **Property 29: Retry with Exponential Backoff**
+    - **Validates: Requirements 11.3**
+  - [ ] 20.6 Implement batch chunking
+    - Implement chunkArray utility
+    - Configure default chunk size (50 items)
+    - _Requirements: 11.4_
+
+- [ ] 21. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 22. Implement import transaction management
+  - [ ] 22.1 Create ImportTransactionManager
+    - Implement startTransaction, recordCreated, commitTransaction
+    - Implement transaction persistence to localStorage
+    - _Requirements: 12.1_
+  - [ ] 22.2 Write property test for transaction tracking
+    - **Property 30: Import Transaction Tracking**
+    - **Validates: Requirements 12.1**
+  - [ ] 22.3 Implement rollback functionality
+    - Implement rollbackTransaction method
+    - Delete records in reverse order
+    - Log all rollback operations
+    - _Requirements: 12.3, 12.4_
+  - [ ] 22.4 Write property test for rollback completeness
+    - **Property 31: Rollback Completeness**
+    - **Validates: Requirements 12.3, 12.4**
+  - [ ] 22.5 Implement interrupted import handling
+    - Implement cleanupInterrupted method
+    - Load persisted transactions on startup
+    - Mark interrupted transactions
+    - _Requirements: 12.5_
+  - [ ] 22.6 Write property test for interrupted import detection
+    - **Property 32: Interrupted Import Detection**
+    - **Validates: Requirements 12.5**
+  - [ ] 22.7 Update ImportService with transaction support
+    - Implement importWithTransaction method
+    - Add rollback prompt callback
+    - Implement getInterruptedImports and resumeOrCleanup
+    - _Requirements: 12.2_
+
+- [ ] 23. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 24. Refactor stores to use services
+  - [ ] 24.1 Refactor userStore to use UserService
     - Replace direct API calls with service calls
     - Use service validation methods
     - Handle service errors consistently
     - _Requirements: 1.2_
-  - [ ] 19.2 Refactor orderStore to use OrderService
+  - [ ] 24.2 Refactor orderStore to use OrderService
     - Replace direct API calls with service calls
     - Use service calculation methods
     - Handle service errors consistently
     - _Requirements: 1.2_
-  - [ ] 19.3 Refactor playerStore to use PlayerService
+  - [ ] 24.3 Refactor playerStore to use PlayerService
     - Replace direct API calls with service calls
     - Use service validation methods
     - Handle service errors consistently
     - _Requirements: 1.2_
-  - [ ] 19.4 Write property test for multi-API orchestration
+  - [ ] 24.4 Write property test for multi-API orchestration
     - **Property 3: Multi-API Orchestration Graceful Handling**
     - **Validates: Requirements 1.4**
 
-- [ ] 20. Final Checkpoint - Ensure all tests pass
+- [ ] 25. Final Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 21. Update service exports and documentation
-  - [ ] 21.1 Create unified service exports
+- [ ] 26. Update service exports and documentation
+  - [ ] 26.1 Create unified service exports
     - Export all services from services/index.ts
     - Export all types and interfaces
     - _Requirements: 1.1_
-  - [ ] 21.2 Update stores documentation
+  - [ ] 26.2 Update stores documentation
     - Document service layer usage patterns
     - Update BEST_PRACTICES.md
-    - _Requirements: 10.1_
-  - [ ] 21.3 Verify test coverage meets 80% threshold
+    - _Requirements: 13.1_
+  - [ ] 26.3 Verify test coverage meets 80% threshold
     - Run coverage report
     - Add tests for uncovered code paths
-    - _Requirements: 10.5_
+    - _Requirements: 13.5_

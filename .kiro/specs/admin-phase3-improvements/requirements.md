@@ -128,7 +128,43 @@
 4. WHEN an import fails partially THEN the Admin System SHALL preserve the error details for later review and potential retry
 5. WHEN downloading import results THEN the Admin System SHALL generate a report file containing the original data plus status and error columns
 
-### Requirement 10: Service Layer Testing
+### Requirement 10: Observability and Logging
+
+**User Story:** As a developer and operator, I want comprehensive logging and performance monitoring in the service layer, so that I can debug issues and monitor system health in production.
+
+#### Acceptance Criteria
+
+1. WHEN a service method is invoked THEN the Service Layer SHALL log the method name, parameters (sanitized), and execution start time
+2. WHEN a service method completes THEN the Service Layer SHALL log the execution duration and result status (success/failure)
+3. WHEN a service method fails THEN the Service Layer SHALL log the error details including stack trace, error code, and context
+4. WHEN batch operations are performed THEN the Service Layer SHALL log progress at regular intervals (every 10% or 100 items)
+5. WHEN performance thresholds are exceeded THEN the Service Layer SHALL emit warning logs for operations taking longer than 3 seconds
+
+### Requirement 11: Concurrency Control for Batch Operations
+
+**User Story:** As a developer, I want proper concurrency control for batch operations, so that the system maintains data consistency and avoids overwhelming backend services.
+
+#### Acceptance Criteria
+
+1. WHEN performing batch API calls THEN the Service Layer SHALL limit concurrent requests to a configurable maximum (default 5)
+2. WHEN a batch operation is in progress THEN the Service Layer SHALL prevent duplicate submissions of the same operation
+3. WHEN rate limits are encountered THEN the Service Layer SHALL implement exponential backoff with a maximum of 3 retries
+4. WHEN processing large batches THEN the Service Layer SHALL chunk the data into smaller batches (default 50 items per chunk)
+5. WHEN concurrent operations conflict THEN the Service Layer SHALL use optimistic locking and report conflicts to the caller
+
+### Requirement 12: Import Transaction and Rollback
+
+**User Story:** As an admin, I want import operations to be transactional, so that partial failures do not leave the system in an inconsistent state.
+
+#### Acceptance Criteria
+
+1. WHEN an import operation starts THEN the Admin System SHALL create a transaction context and track all created records
+2. WHEN an import row fails after previous rows succeeded THEN the Admin System SHALL offer options to rollback all changes or keep successful imports
+3. WHEN the user chooses rollback THEN the Admin System SHALL delete all records created during the current import session
+4. WHEN rollback is performed THEN the Admin System SHALL log all rolled-back records for audit purposes
+5. WHEN an import is interrupted (browser close, network error) THEN the Admin System SHALL mark the import as incomplete and allow resumption or cleanup
+
+### Requirement 13: Service Layer Testing
 
 **User Story:** As a developer, I want comprehensive tests for the service layer, so that I can ensure business logic correctness and prevent regressions.
 
