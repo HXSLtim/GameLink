@@ -269,7 +269,7 @@ describe('crypto utils', () => {
 
         it('should handle undefined data', () => {
             // undefined may return undefined when encryption is disabled
-            const result = encryptRequest(undefined);
+            encryptRequest(undefined);
             // Just verify it doesn't throw
             expect(true).toBe(true);
         });

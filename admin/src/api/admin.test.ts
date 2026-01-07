@@ -22,15 +22,12 @@ import {
   type UserQueryParams,
   type CreateGameDto,
   type UpdateGameDto,
-  type CreatePlayerDto,
-  type UpdatePlayerDto,
   type OrderQueryParams,
   type ApiResponse,
 } from './admin';
 import apiClient from './client';
-import type { AxiosResponse } from 'axios';
+import type { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 
-// Mock the API client
 vi.mock('./client', () => ({
   default: {
     get: vi.fn(),
@@ -47,7 +44,7 @@ vi.mock('./client', () => ({
       headers: {},
     },
   },
-}));
+} as unknown as typeof import('./client').default));
 
 // Mock crypto utilities
 vi.mock('@/utils/crypto', () => ({
@@ -94,7 +91,7 @@ describe('Admin API - User Management', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.get).mockResolvedValueOnce(axiosResponse);
@@ -124,7 +121,7 @@ describe('Admin API - User Management', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.get).mockResolvedValueOnce(axiosResponse);
@@ -184,7 +181,7 @@ describe('Admin API - User Management', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.get).mockResolvedValueOnce(axiosResponse);
@@ -242,7 +239,7 @@ describe('Admin API - User Management', () => {
         status: 201,
         statusText: 'Created',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.post).mockResolvedValueOnce(axiosResponse);
@@ -335,7 +332,7 @@ describe('Admin API - User Management', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.put).mockResolvedValueOnce(axiosResponse);
@@ -367,7 +364,7 @@ describe('Admin API - User Management', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.put).mockResolvedValueOnce(axiosResponse);
@@ -392,7 +389,7 @@ describe('Admin API - User Management', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.delete).mockResolvedValueOnce(axiosResponse);
@@ -432,12 +429,12 @@ describe('Admin API - User Management', () => {
           success: true,
           code: 200,
           message: 'Status updated',
-          data: { ...mockUsers[0], status: newStatus as any },
+          data: { ...mockUsers[0], status: newStatus as User['status'] },
         },
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.put).mockResolvedValueOnce(axiosResponse);
@@ -460,12 +457,12 @@ describe('Admin API - User Management', () => {
           success: true,
           code: 200,
           message: 'Role updated',
-          data: { ...mockUsers[1], role: newRole as any },
+          data: { ...mockUsers[1], role: newRole as User['role'] },
         },
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.put).mockResolvedValueOnce(axiosResponse);
@@ -495,7 +492,7 @@ describe('Admin API - User Management', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.post).mockResolvedValueOnce(axiosResponse);
@@ -521,7 +518,7 @@ describe('Admin API - User Management', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.post).mockResolvedValueOnce(axiosResponse);
@@ -544,7 +541,7 @@ describe('Admin API - User Management', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.post).mockResolvedValueOnce(axiosResponse);
@@ -602,7 +599,7 @@ describe('Admin API - Game Management', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.get).mockResolvedValueOnce(axiosResponse);
@@ -626,7 +623,7 @@ describe('Admin API - Game Management', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.get).mockResolvedValueOnce(axiosResponse);
@@ -665,7 +662,7 @@ describe('Admin API - Game Management', () => {
         status: 201,
         statusText: 'Created',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.post).mockResolvedValueOnce(axiosResponse);
@@ -720,7 +717,7 @@ describe('Admin API - Game Management', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.put).mockResolvedValueOnce(axiosResponse);
@@ -745,7 +742,7 @@ describe('Admin API - Game Management', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.delete).mockResolvedValueOnce(axiosResponse);
@@ -789,7 +786,7 @@ describe('Admin API - Game Management', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.post).mockResolvedValueOnce(axiosResponse);
@@ -838,7 +835,7 @@ describe('Admin API - Player Management', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.get).mockResolvedValueOnce(axiosResponse);
@@ -862,7 +859,7 @@ describe('Admin API - Player Management', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.get).mockResolvedValueOnce(axiosResponse);
@@ -884,12 +881,12 @@ describe('Admin API - Player Management', () => {
           success: true,
           code: 200,
           message: 'Verification updated',
-          data: { ...mockPlayers[0], verificationStatus: status as any },
+          data: { ...mockPlayers[0], verificationStatus: status as Player['verificationStatus'] },
         },
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.put).mockResolvedValueOnce(axiosResponse);
@@ -912,12 +909,12 @@ describe('Admin API - Player Management', () => {
           success: true,
           code: 200,
           message: 'Verification rejected',
-          data: { ...mockPlayers[0], verificationStatus: status as any },
+          data: { ...mockPlayers[0], verificationStatus: status as Player['verificationStatus'] },
         },
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.put).mockResolvedValueOnce(axiosResponse);
@@ -946,7 +943,7 @@ describe('Admin API - Player Management', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.put).mockResolvedValueOnce(axiosResponse);
@@ -998,7 +995,7 @@ describe('Admin API - Order Management', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.get).mockResolvedValueOnce(axiosResponse);
@@ -1028,7 +1025,7 @@ describe('Admin API - Order Management', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.get).mockResolvedValueOnce(axiosResponse);
@@ -1049,12 +1046,12 @@ describe('Admin API - Order Management', () => {
           success: true,
           code: 200,
           message: 'Order canceled',
-          data: { ...mockOrders[0], status: 'canceled' as any },
+          data: { ...mockOrders[0], status: 'canceled' as Order['status'] },
         },
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.post).mockResolvedValueOnce(axiosResponse);
@@ -1100,12 +1097,12 @@ describe('Admin API - Order Management', () => {
           success: true,
           code: 200,
           message: 'Refund processed',
-          data: { ...mockOrders[0], status: 'refunded' as any },
+          data: { ...mockOrders[0], status: 'refunded' as Order['status'] },
         },
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.post).mockResolvedValueOnce(axiosResponse);
@@ -1136,7 +1133,7 @@ describe('Admin API - Order Management', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.post).mockResolvedValueOnce(axiosResponse);
@@ -1162,7 +1159,7 @@ describe('Admin API - Order Management', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.post).mockResolvedValueOnce(axiosResponse);
@@ -1188,7 +1185,7 @@ describe('Admin API - Order Management', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.post).mockResolvedValueOnce(axiosResponse);
@@ -1239,7 +1236,7 @@ describe('Admin API - Dashboard & Statistics', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.get).mockResolvedValueOnce(axiosResponse);
@@ -1278,7 +1275,7 @@ describe('Admin API - Dashboard & Statistics', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.get).mockResolvedValueOnce(axiosResponse);

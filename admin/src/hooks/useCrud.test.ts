@@ -22,8 +22,6 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
-import * as fc from 'fast-check';
-import React from 'react';
 import { useCrud } from './useCrud';
 import type { CrudApi, CrudQueryParams } from './useCrud';
 

@@ -12,12 +12,11 @@
  * - Permission checks
  */
 
-import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import UserPage from './index';
-import { renderWithProviders, resetAllMocks, flushPromises } from '@/testutils';
+import { renderWithProviders, flushPromises } from '@/testutils';
 
 // Mock the adminApi module using vi.hoisted
 const { mockApi } = vi.hoisted(() => ({
@@ -48,6 +47,9 @@ vi.mock('@/utils/export', () => ({
   exportToCSV: vi.fn(),
   userExportColumns: [],
 }));
+
+// Type for mocked export function
+type ExportToCSVFunction = (data: unknown[], columns: unknown[], filename?: string) => void;
 
 // Helper function to create mock user data
 const createMockUser = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
@@ -962,7 +964,7 @@ describe('UserPage', () => {
     it('should export user data', async () => {
       const _user = userEvent.setup();
       setupMockDataWithUsers(1);
-      const { exportToCSV } = await import('@/utils/export');
+      const { exportToCSV: _exportToCSV } = await import('@/utils/export') as { exportToCSV: ExportToCSVFunction };
 
       renderWithProviders(<UserPage />);
 

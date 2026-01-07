@@ -5,7 +5,7 @@
  * response builders, and test utilities
  */
 
-import { AxiosResponse } from 'axios';
+import { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 
 /**
  * Standard API response structure
@@ -45,7 +45,7 @@ export function buildAxiosResponse<T>(data: T, status = 200): AxiosResponse<ApiS
     status,
     statusText: 'OK',
     headers: {},
-    config: {} as any,
+    config: {} as InternalAxiosRequestConfig,
   };
 }
 
@@ -138,8 +138,18 @@ export function createAxiosError(
   status: number,
   message: string,
   code?: string
-): any {
-  const error: any = new Error(message);
+): Error {
+  const error = new Error(message) as Error & {
+    response?: {
+      status: number;
+      data: {
+        success: false;
+        code: number;
+        message: string;
+      };
+    };
+    code?: string;
+  };
   error.response = {
     status,
     data: {

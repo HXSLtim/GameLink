@@ -14,7 +14,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { authApi, type LoginDto, type RegisterDto, type LoginResponse } from './auth';
 import apiClient from './client';
-import type { AxiosResponse } from 'axios';
+import type { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 
 // Mock the API client
 vi.mock('./client', () => ({
@@ -84,7 +84,7 @@ describe('Auth API', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.post).mockResolvedValueOnce(axiosResponse);
@@ -110,7 +110,7 @@ describe('Auth API', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.post).mockResolvedValueOnce(axiosResponse);
@@ -210,7 +210,7 @@ describe('Auth API', () => {
         status: 201,
         statusText: 'Created',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.post).mockResolvedValueOnce(axiosResponse);
@@ -238,7 +238,7 @@ describe('Auth API', () => {
         status: 201,
         statusText: 'Created',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.post).mockResolvedValueOnce(axiosResponse);
@@ -315,7 +315,7 @@ describe('Auth API', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.post).mockResolvedValueOnce(axiosResponse);
@@ -391,7 +391,7 @@ describe('Auth API', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.get).mockResolvedValueOnce(axiosResponse);
@@ -463,7 +463,7 @@ describe('Auth API', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.post).mockResolvedValueOnce(axiosResponse);
@@ -566,7 +566,7 @@ describe('Auth API', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       vi.mocked(apiClient.post).mockResolvedValueOnce(loginResponse);

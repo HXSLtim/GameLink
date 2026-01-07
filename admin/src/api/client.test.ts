@@ -18,6 +18,11 @@ import apiClient from './client';
 import { encryptRequest, shouldEncrypt } from '@/utils/crypto';
 import type { AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 
+interface MockAxiosHeaders {
+  Authorization?: string;
+  [key: string]: string | undefined;
+}
+
 // Mock crypto utilities
 vi.mock('@/utils/crypto', () => ({
   encryptRequest: vi.fn((data) => data),
@@ -86,7 +91,7 @@ describe('API Client', () => {
       sessionStorage.setItem('auth_token', token);
 
       const config: InternalAxiosRequestConfig = {
-        headers: {} as any,
+        headers: {} as MockAxiosHeaders,
         method: 'GET',
         url: '/test',
       };
@@ -102,7 +107,7 @@ describe('API Client', () => {
       localStorage.setItem('token', token);
 
       const config: InternalAxiosRequestConfig = {
-        headers: {} as any,
+        headers: {} as MockAxiosHeaders,
         method: 'GET',
         url: '/test',
       };
@@ -121,7 +126,7 @@ describe('API Client', () => {
       localStorage.setItem('token', localToken);
 
       const config: InternalAxiosRequestConfig = {
-        headers: {} as any,
+        headers: {} as MockAxiosHeaders,
         method: 'GET',
         url: '/test',
       };
@@ -135,7 +140,7 @@ describe('API Client', () => {
 
     it('should not add Authorization header when no token exists', async () => {
       const config: InternalAxiosRequestConfig = {
-        headers: {} as any,
+        headers: {} as MockAxiosHeaders,
         method: 'GET',
         url: '/test',
       };
@@ -157,14 +162,14 @@ describe('API Client', () => {
 
       const requestData = { sensitive: 'data' };
       const config: InternalAxiosRequestConfig = {
-        headers: {} as any,
+        headers: {} as MockAxiosHeaders,
         method: 'POST',
         url: '/api/v1/test',
         data: requestData,
       };
 
       const interceptor = apiClient.interceptors.request.handlers[0];
-      const result = await interceptor.fulfilled(config);
+      await interceptor.fulfilled(config);
 
       expect(encryptRequest).toHaveBeenCalledWith(requestData);
       expect(shouldEncrypt).toHaveBeenCalledWith('POST', '/api/v1/test');
@@ -172,7 +177,7 @@ describe('API Client', () => {
 
     it('should not encrypt GET requests', async () => {
       const config: InternalAxiosRequestConfig = {
-        headers: {} as any,
+        headers: {} as MockAxiosHeaders,
         method: 'GET',
         url: '/api/v1/test',
         data: null,
@@ -185,8 +190,8 @@ describe('API Client', () => {
     });
 
     it('should handle request interceptor errors', async () => {
-      const config: InternalAxiosRequestConfig = {
-        headers: {} as any,
+      const _config: InternalAxiosRequestConfig = {
+        headers: {} as MockAxiosHeaders,
         method: 'GET',
         url: '/test',
       };
@@ -205,7 +210,7 @@ describe('API Client', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as any,
+        config: {} as InternalAxiosRequestConfig,
       };
 
       const interceptor = apiClient.interceptors.response.handlers[0];
@@ -222,23 +227,23 @@ describe('API Client', () => {
 
       const error: Partial<AxiosError> = {
         config: { url: '/api/v1/test' } as InternalAxiosRequestConfig,
-        response: { status: 401, data: {} } as any,
+        response: { status: 401, data: {} } as AxiosResponse,
       };
 
       const interceptor = apiClient.interceptors.response.handlers[0];
 
-      await expect(interceptor.rejected(error as any)).rejects.toBeDefined();
+      await expect(interceptor.rejected(error as AxiosError)).rejects.toBeDefined();
     });
 
     it('should reject immediately when request is login endpoint', async () => {
       const error: Partial<AxiosError> = {
         config: { url: '/api/v1/auth/login' } as InternalAxiosRequestConfig,
-        response: { status: 401, data: {} } as any,
+        response: { status: 401, data: {} } as AxiosResponse,
       };
 
       const interceptor = apiClient.interceptors.response.handlers[0];
 
-      await expect(interceptor.rejected(error as any)).rejects.toBeDefined();
+      await expect(interceptor.rejected(error as AxiosError)).rejects.toBeDefined();
     });
 
     it('should attempt token refresh for 401 errors', async () => {
@@ -248,9 +253,9 @@ describe('API Client', () => {
       const error: Partial<AxiosError> = {
         config: {
           url: '/api/v1/test',
-          headers: {} as any,
+          headers: {} as MockAxiosHeaders,
         } as InternalAxiosRequestConfig,
-        response: { status: 401, data: {} } as any,
+        response: { status: 401, data: {} } as AxiosResponse,
       };
 
       // Mock successful refresh
@@ -258,14 +263,14 @@ describe('API Client', () => {
         data: {
           data: { token: 'new_token' },
         },
-      } as any);
+      } as AxiosResponse<unknown>);
 
       const interceptor = apiClient.interceptors.response.handlers[0];
 
       // This will attempt to refresh and should trigger the axios.post call
       try {
-        await interceptor.rejected(error as any);
-      } catch (e) {
+        await interceptor.rejected(error as AxiosError);
+      } catch {
         // Expected to fail because we're not fully mocking the retry
       }
 
@@ -286,9 +291,9 @@ describe('API Client', () => {
       const error: Partial<AxiosError> = {
         config: {
           url: '/api/v1/test',
-          headers: {} as any,
+          headers: {} as MockAxiosHeaders,
         } as InternalAxiosRequestConfig,
-        response: { status: 401, data: {} } as any,
+        response: { status: 401, data: {} } as AxiosResponse,
       };
 
       // Mock failed refresh
@@ -297,8 +302,8 @@ describe('API Client', () => {
       const interceptor = apiClient.interceptors.response.handlers[0];
 
       try {
-        await interceptor.rejected(error as any);
-      } catch (e) {
+        await interceptor.rejected(error as AxiosError);
+      } catch {
         // Expected to fail
       }
 
@@ -317,9 +322,9 @@ describe('API Client', () => {
       const error: Partial<AxiosError> = {
         config: {
           url: '/api/v1/test',
-          headers: {} as any,
+          headers: {} as MockAxiosHeaders,
         } as InternalAxiosRequestConfig,
-        response: { status: 401, data: {} } as any,
+        response: { status: 401, data: {} } as AxiosResponse,
       };
 
       // Mock successful refresh
@@ -327,13 +332,13 @@ describe('API Client', () => {
         data: {
           data: { token: newToken },
         },
-      } as any);
+      } as AxiosResponse<unknown>);
 
       const interceptor = apiClient.interceptors.response.handlers[0];
 
       try {
-        await interceptor.rejected(error as any);
-      } catch (e) {
+        await interceptor.rejected(error as AxiosError);
+      } catch {
         // Expected to fail during retry
       }
 
@@ -348,12 +353,12 @@ describe('API Client', () => {
     it('should reject non-401 errors', async () => {
       const error: Partial<AxiosError> = {
         config: { url: '/api/v1/test' } as InternalAxiosRequestConfig,
-        response: { status: 500, data: { message: 'Server error' } } as any,
+        response: { status: 500, data: { message: 'Server error' } } as AxiosResponse,
       };
 
       const interceptor = apiClient.interceptors.response.handlers[0];
 
-      await expect(interceptor.rejected(error as any)).rejects.toBeDefined();
+      await expect(interceptor.rejected(error as AxiosError)).rejects.toBeDefined();
     });
 
     it('should reject errors without response', async () => {
@@ -364,7 +369,7 @@ describe('API Client', () => {
 
       const interceptor = apiClient.interceptors.response.handlers[0];
 
-      await expect(interceptor.rejected(error as any)).rejects.toBeDefined();
+      await expect(interceptor.rejected(error as AxiosError)).rejects.toBeDefined();
     });
   });
 
@@ -377,17 +382,17 @@ describe('API Client', () => {
       const error1: Partial<AxiosError> = {
         config: {
           url: '/api/v1/test1',
-          headers: {} as any,
+          headers: {} as MockAxiosHeaders,
         } as InternalAxiosRequestConfig,
-        response: { status: 401, data: {} } as any,
+        response: { status: 401, data: {} } as AxiosResponse,
       };
 
       const error2: Partial<AxiosError> = {
         config: {
           url: '/api/v1/test2',
-          headers: {} as any,
+          headers: {} as MockAxiosHeaders,
         } as InternalAxiosRequestConfig,
-        response: { status: 401, data: {} } as any,
+        response: { status: 401, data: {} } as AxiosResponse,
       };
 
       // Mock successful refresh
@@ -395,15 +400,15 @@ describe('API Client', () => {
         data: {
           data: { token: 'new_token' },
         },
-      } as any);
+      } as AxiosResponse<unknown>);
 
       const interceptor = apiClient.interceptors.response.handlers[0];
 
       // Trigger first request (should start refresh)
-      const promise1 = interceptor.rejected(error1 as any);
+      const promise1 = interceptor.rejected(error1 as AxiosError);
 
       // Trigger second request (should be queued)
-      const promise2 = interceptor.rejected(error2 as any);
+      const promise2 = interceptor.rejected(error2 as AxiosError);
 
       // Both should be processed
       await Promise.allSettled([promise1, promise2]);
@@ -421,9 +426,9 @@ describe('API Client', () => {
       const error: Partial<AxiosError> = {
         config: {
           url: '/api/v1/test',
-          headers: {} as any,
+          headers: {} as MockAxiosHeaders,
         } as InternalAxiosRequestConfig,
-        response: { status: 401, data: {} } as any,
+        response: { status: 401, data: {} } as AxiosResponse,
       };
 
       // Mock successful refresh
@@ -431,13 +436,13 @@ describe('API Client', () => {
         data: {
           data: { token: 'new_token' },
         },
-      } as any);
+      } as AxiosResponse<unknown>);
 
       const interceptor = apiClient.interceptors.response.handlers[0];
 
       try {
-        await interceptor.rejected(error as any);
-      } catch (e) {
+        await interceptor.rejected(error as AxiosError);
+      } catch {
         // Expected to fail during retry
       }
 
@@ -450,15 +455,15 @@ describe('API Client', () => {
       const error: Partial<AxiosError> = {
         config: {
           url: '/api/v1/test',
-          headers: {} as any,
+          headers: {} as MockAxiosHeaders,
           _retry: true,
         } as InternalAxiosRequestConfig,
-        response: { status: 401, data: {} } as any,
+        response: { status: 401, data: {} } as AxiosResponse,
       };
 
       const interceptor = apiClient.interceptors.response.handlers[0];
 
-      await expect(interceptor.rejected(error as any)).rejects.toBeDefined();
+      await expect(interceptor.rejected(error as AxiosError)).rejects.toBeDefined();
 
       // Should not attempt refresh
       expect(axios.post).not.toHaveBeenCalled();
@@ -480,14 +485,14 @@ describe('API Client', () => {
 
         const error: Partial<AxiosError> = {
           config: { url: '/api/v1/test' } as InternalAxiosRequestConfig,
-          response: { status: 401, data: {} } as any,
+          response: { status: 401, data: {} } as AxiosResponse,
         };
 
         const interceptor = apiClient.interceptors.response.handlers[0];
 
         // The interceptor will reject, but we're testing that it doesn't crash during login page detection
         try {
-          await interceptor.rejected(error as any);
+          await interceptor.rejected(error as AxiosError);
         } catch {
           // Expected to reject - we're just testing that login page detection works
         }

@@ -619,11 +619,13 @@ describe('permission utils', () => {
         });
 
         it('should handle unsubscribe during notification', () => {
-            let unsubscribe: () => void;
+            const unsubscribe = permissionStore.subscribe(() => {
+                // Unsubscribe self during notification
+            });
             const listener1 = vi.fn(() => unsubscribe());
             const listener2 = vi.fn();
 
-            unsubscribe = permissionStore.subscribe(listener1);
+            permissionStore.subscribe(listener1);
             permissionStore.subscribe(listener2);
 
             permissionStore.setPermissions(['admin.users.read']);

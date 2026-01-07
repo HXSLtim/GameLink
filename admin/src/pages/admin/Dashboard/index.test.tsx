@@ -13,7 +13,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { screen, waitFor, fireEvent } from '@testing-library/react';
 import Dashboard from './index';
-import { renderWithProviders, resetAllMocks, flushPromises } from '@/testutils';
+import { renderWithProviders, resetAllMocks } from '@/testutils';
 
 // Mock the adminApi module using vi.hoisted
 const { mockApi, mockMessage } = vi.hoisted(() => ({

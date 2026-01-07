@@ -9,7 +9,6 @@
  * - Coupon operations (create, edit, delete, toggle status, issue)
  */
 
-import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';

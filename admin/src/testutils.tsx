@@ -93,9 +93,8 @@ export function renderWithProviders(
     );
   };
 
-  return {
-    ...render(ui, { wrapper: Wrapper, ...renderOptions }),
-  };
+  const _renderResult = render(ui, { wrapper: Wrapper, ...renderOptions });
+  return _renderResult;
 }
 
 /**
@@ -277,5 +276,6 @@ export function expectApiCallCount(fn: ReturnType<typeof vi.fn>, count: number) 
 }
 
 // Re-export testing library utilities
+// eslint-disable-next-line react-refresh/only-export-components
 export * from '@testing-library/react';
 export { default as userEvent } from '@testing-library/user-event';
