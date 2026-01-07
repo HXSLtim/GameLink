@@ -156,7 +156,9 @@ describe('DisputePage', () => {
       expect(screen.getByText('调解中')).toBeInTheDocument();
       expect(screen.getByText('已解决')).toBeInTheDocument();
       expect(screen.getByText('已驳回')).toBeInTheDocument();
-      expect(screen.getByText('SLA超时')).toBeInTheDocument();
+      // SLA超时 appears in both stats card title and table column header
+      const slaElements = screen.getAllByText('SLA超时');
+      expect(slaElements.length).toBeGreaterThan(0);
     });
 
     it('should display statistics values', async () => {

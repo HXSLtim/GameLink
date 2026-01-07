@@ -511,7 +511,7 @@ const OrderPage: React.FC = () => {
                 title="订单退款"
                 open={refundModalVisible}
                 onOk={handleRefund}
-                onCancel={() => setRefundModalVisible(false)}}
+                onCancel={() => setRefundModalVisible(false)}
                 confirmLoading={submitting}
                 width={550}
                 okButtonProps={{ hidden: true }}

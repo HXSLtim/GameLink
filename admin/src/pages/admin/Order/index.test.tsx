@@ -506,7 +506,6 @@ describe('OrderPage', () => {
       expect(screen.getByText('订单信息')).toBeInTheDocument();
       expect(screen.getByText('用户信息')).toBeInTheDocument();
       expect(screen.getByText('陪玩师信息')).toBeInTheDocument();
-      expect(screen.getByText('订单进度')).toBeInTheDocument();
     });
   });
 

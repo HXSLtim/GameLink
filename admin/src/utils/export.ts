@@ -326,3 +326,65 @@ export const playerExportColumns: ExportColumn<Record<string, unknown>>[] = [
     format: (value) => (value ? formatDateForExport(value as string) : ''),
   },
 ];
+
+/**
+ * 游戏导出列配置
+ */
+export const gameExportColumns: ExportColumn<Record<string, unknown>>[] = [
+  { key: 'id', title: 'ID' },
+  { key: 'name', title: '游戏名称' },
+  { key: 'icon', title: '图标' },
+  { key: 'category', title: '分类' },
+  { key: 'sortOrder', title: '排序' },
+  {
+    key: 'isActive',
+    title: '状态',
+    format: (value) => (value ? '启用' : '禁用'),
+  },
+  {
+    key: 'createdAt',
+    title: '创建时间',
+    format: (value) => (value ? formatDateForExport(value as string) : ''),
+  },
+];
+
+/**
+ * 提现记录导出列配置
+ */
+export const withdrawExportColumns: ExportColumn<Record<string, unknown>>[] = [
+  { key: 'id', title: 'ID' },
+  { key: 'userId', title: '用户ID' },
+  { key: 'userName', title: '用户名' },
+  {
+    key: 'amountCents',
+    title: '提现金额(元)',
+    format: (value) => formatAmountForExport(Number(value) || 0),
+  },
+  { key: 'bankName', title: '银行名称' },
+  { key: 'bankAccount', title: '银行账号' },
+  { key: 'bankAccountName', title: '开户名' },
+  {
+    key: 'status',
+    title: '状态',
+    format: (value) => {
+      const map: Record<string, string> = {
+        pending: '待处理',
+        approved: '已通过',
+        rejected: '已拒绝',
+        completed: '已完成',
+      };
+      return map[String(value)] || String(value);
+    },
+  },
+  { key: 'remark', title: '备注' },
+  {
+    key: 'createdAt',
+    title: '申请时间',
+    format: (value) => (value ? formatDateForExport(value as string) : ''),
+  },
+  {
+    key: 'processedAt',
+    title: '处理时间',
+    format: (value) => (value ? formatDateForExport(value as string) : ''),
+  },
+];
