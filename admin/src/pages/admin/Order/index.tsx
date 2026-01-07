@@ -11,7 +11,6 @@ import {
     Popconfirm,
     Drawer,
     Descriptions,
-    Timeline,
     Card,
     Typography,
     Divider,
@@ -40,9 +39,10 @@ import { PermissionGuard } from '@/components/PermissionGuard';
 import { adminApi, type Order, type ApiResponse } from '@/api/admin';
 import { exportToCSV, orderExportColumns } from '@/utils/export';
 import dayjs from 'dayjs';
+import OrderDetailTabs from './components/OrderDetailTabs';
 
 import { logger } from '@/utils/logger';
-const { Text, Title } = Typography;
+const { Text } = Typography;
 
 /**
  * 订单状态映射
@@ -501,115 +501,9 @@ const OrderPage: React.FC = () => {
                 title="订单详情"
                 open={detailDrawerVisible}
                 onClose={() => setDetailDrawerVisible(false)}
-                width={600}
+                width={650}
             >
-                {currentOrder && (
-                    <>
-                        {/* 状态卡片 */}
-                        <Card size="small" style={{ marginBottom: 16 }}>
-                            <div style={{ textAlign: 'center' }}>
-                                <Tag color={statusMap[currentOrder.status]?.color} style={{ fontSize: 16, padding: '4px 16px' }}>
-                                    {statusMap[currentOrder.status]?.icon} {statusMap[currentOrder.status]?.text}
-                                </Tag>
-                                <Title level={2} style={{ margin: '16px 0 0' }}>
-                                    ¥{(currentOrder.totalPriceCents / 100).toFixed(2)}
-                                </Title>
-                            </div>
-                        </Card>
-
-                        {/* 基本信息 */}
-                        <Descriptions title="订单信息" column={2} size="small" bordered>
-                            <Descriptions.Item label="订单号" span={2}>
-                                <Text copyable>{currentOrder.orderNo}</Text>
-                            </Descriptions.Item>
-                            <Descriptions.Item label="游戏">{currentOrder.game?.name || '-'}</Descriptions.Item>
-                            <Descriptions.Item label="标题">{currentOrder.title || '-'}</Descriptions.Item>
-                            <Descriptions.Item label="金额">
-                                ¥{(currentOrder.totalPriceCents / 100).toFixed(2)} {currentOrder.currency}
-                            </Descriptions.Item>
-                            <Descriptions.Item label="状态">
-                                <Tag color={statusMap[currentOrder.status]?.color}>
-                                    {statusMap[currentOrder.status]?.text}
-                                </Tag>
-                            </Descriptions.Item>
-                            <Descriptions.Item label="预约开始">
-                                {currentOrder.scheduledStart ? dayjs(currentOrder.scheduledStart).format('YYYY-MM-DD HH:mm') : '-'}
-                            </Descriptions.Item>
-                            <Descriptions.Item label="预约结束">
-                                {currentOrder.scheduledEnd ? dayjs(currentOrder.scheduledEnd).format('YYYY-MM-DD HH:mm') : '-'}
-                            </Descriptions.Item>
-                            <Descriptions.Item label="创建时间">
-                                {currentOrder.createdAt ? dayjs(currentOrder.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}
-                            </Descriptions.Item>
-                            <Descriptions.Item label="完成时间">
-                                {currentOrder.completedAt ? dayjs(currentOrder.completedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}
-                            </Descriptions.Item>
-                            {currentOrder.description && (
-                                <Descriptions.Item label="描述" span={2}>{currentOrder.description}</Descriptions.Item>
-                            )}
-                            {currentOrder.cancelReason && (
-                                <Descriptions.Item label="取消原因" span={2}>
-                                    <Text type="danger">{currentOrder.cancelReason}</Text>
-                                </Descriptions.Item>
-                            )}
-                        </Descriptions>
-
-                        <Divider />
-
-                        {/* 用户信息 */}
-                        <Descriptions title="用户信息" column={2} size="small">
-                            <Descriptions.Item label="用户">
-                                <Space>
-                                    <Avatar size="small" icon={<UserOutlined />} src={currentOrder.user?.avatarUrl} />
-                                    {currentOrder.user?.name || `用户${currentOrder.userId}`}
-                                </Space>
-                            </Descriptions.Item>
-                            <Descriptions.Item label="用户ID">{currentOrder.userId}</Descriptions.Item>
-                        </Descriptions>
-
-                        <Descriptions title="陪玩师信息" column={2} size="small">
-                            <Descriptions.Item label="陪玩师">
-                                <Space>
-                                    <Avatar
-                                        size="small"
-                                        icon={<UserOutlined />}
-                                        src={currentOrder.player?.user?.avatarUrl}
-                                        style={{ backgroundColor: '#722ed1' }}
-                                    />
-                                    {currentOrder.player?.nickname || (currentOrder.playerId ? `陪玩师${currentOrder.playerId}` : '未分配')}
-                                </Space>
-                            </Descriptions.Item>
-                            <Descriptions.Item label="陪玩师ID">{currentOrder.playerId || '-'}</Descriptions.Item>
-                        </Descriptions>
-
-                        <Divider />
-
-                        {/* 订单进度 */}
-                        <Title level={5}>订单进度</Title>
-                        <Timeline
-                            items={[
-                                {
-                                    color: 'green',
-                                    children: `${currentOrder.createdAt ? dayjs(currentOrder.createdAt).format('YYYY-MM-DD HH:mm:ss') : ''} 订单创建`,
-                                },
-                                {
-                                    color: ['confirmed', 'in_progress', 'completed'].includes(currentOrder.status) ? 'green' : 'gray',
-                                    children: '订单确认',
-                                },
-                                {
-                                    color: ['in_progress', 'completed'].includes(currentOrder.status) ? 'green' : 'gray',
-                                    children: '开始服务',
-                                },
-                                {
-                                    color: currentOrder.status === 'completed' ? 'green' : 'gray',
-                                    children: currentOrder.completedAt
-                                        ? `${dayjs(currentOrder.completedAt).format('YYYY-MM-DD HH:mm:ss')} 服务完成`
-                                        : '服务完成',
-                                },
-                            ]}
-                        />
-                    </>
-                )}
+                {currentOrder && <OrderDetailTabs order={currentOrder} />}
             </Drawer>
 
             {/* 退款弹窗 */}
@@ -617,7 +511,7 @@ const OrderPage: React.FC = () => {
                 title="订单退款"
                 open={refundModalVisible}
                 onOk={handleRefund}
-                onCancel={() => setRefundModalVisible(false)}
+                onCancel={() => setRefundModalVisible(false)}}
                 confirmLoading={submitting}
                 width={550}
                 okButtonProps={{ hidden: true }}
