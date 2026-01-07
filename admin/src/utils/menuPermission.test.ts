@@ -119,9 +119,9 @@ describe('filterMenusByPermission', () => {
      * **Feature: rbac-button-level-permission, Property 14: 菜单权限过滤**
      * **Validates: Requirements 8.1, 8.2**
      * 
-     * Property: Super admin should see all menus (bypasses permission check)
-     * Note: The current implementation returns all menus for super admin,
-     * including hidden ones. This is the expected behavior for permission bypass.
+     * Property: Super admin should see all visible menus (bypasses permission check)
+     * Note: Hidden menus (visible=false) are still filtered out for everyone,
+     * including super admin. Permission bypass only affects permission checks.
      */
     it('should return all menus for super admin (permission bypass)', () => {
         fc.assert(
@@ -131,8 +131,10 @@ describe('filterMenusByPermission', () => {
                     const userPermissions = ['*'];
                     const filteredMenus = filterMenusByPermission(menus, userPermissions);
                     
-                    // Super admin bypasses permission check, gets all menus
-                    return filteredMenus.length === menus.length;
+                    // Super admin bypasses permission check, but hidden menus are still filtered
+                    // Count visible menus (visible !== false)
+                    const visibleMenus = menus.filter(m => m.visible !== false);
+                    return filteredMenus.length === visibleMenus.length;
                 }
             ),
             { numRuns: 100 }

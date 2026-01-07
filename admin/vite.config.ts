@@ -1,5 +1,5 @@
 /// <reference types="vitest" />
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin, type ViteDevServer } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import viteCompression from 'vite-plugin-compression'
@@ -26,11 +26,11 @@ function getNetworkIPs() {
 }
 
 // 自定义插件：显示所有可访问的IP地址
-function showNetworkIPs() {
+function showNetworkIPs(): Plugin {
   return {
     name: 'show-network-ips',
-    configureServer(server: { config: { server?: { port?: number; https?: boolean } }; httpServer?: { once: (event: string, callback: () => void) => void } }) {
-      const { port = 5173, https } = server.config.server || { port: 5173, https: false }
+    configureServer(server: ViteDevServer) {
+      const { port = 5173, https } = server.config.server || {}
       const protocol = https ? 'https' : 'http'
       const localhost = `${protocol}://localhost:${port}`
       const networkIPs = getNetworkIPs()
@@ -55,6 +55,8 @@ function showNetworkIPs() {
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
+  // Vite 缓存目录（Vitest 会使用 cacheDir/vitest）
+  cacheDir: 'node_modules/.vite',
   // Vitest 测试配置
   test: {
     globals: true,
@@ -63,10 +65,6 @@ export default defineConfig(({ mode }) => ({
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     testTimeout: 10000,
     hookTimeout: 10000,
-    // 缓存优化
-    cache: {
-      dir: 'node_modules/.vitest',
-    },
     // 覆盖率配置
     coverage: {
       reporter: ['text', 'json', 'html'],
