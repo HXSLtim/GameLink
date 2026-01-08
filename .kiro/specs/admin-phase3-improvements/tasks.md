@@ -288,7 +288,9 @@
   - Ensure all tests pass, ask the user if questions arise.
   - ✅ All 208 service tests passed (10 test files)
 
-- [-] 13. Implement ImportService core
+- [x] 13. Implement ImportService core
+
+
 
 
 
@@ -316,202 +318,343 @@
     - Set initial verification status to pending
     - Parse and validate skill tags
     - _Requirements: 7.3_
-  - [-] 13.5 Write property test for player import initial state
+  - [x] 13.5 Write property test for player import initial state
+
 
     - **Property 20: Player Import Initial State**
     - **Validates: Requirements 7.3**
-  - [ ] 13.6 Implement game import
+  - [x] 13.6 Implement game import
+
     - Implement importGames method
     - Apply default values (isActive=true, sortOrder=0)
     - Handle duplicate key options (skip/update/fail)
     - _Requirements: 8.3, 8.4_
-  - [ ] 13.7 Write property test for game import defaults
+  - [x] 13.7 Write property test for game import defaults
+
     - **Property 22: Game Import Defaults**
     - **Validates: Requirements 8.3**
-  - [ ] 13.8 Write property test for import summary accuracy
+  - [x] 13.8 Write property test for import summary accuracy
+
+
     - **Property 16: Import Summary Accuracy**
     - **Validates: Requirements 5.5, 6.5**
 
-- [ ] 14. Checkpoint - Ensure all tests pass
+- [x] 14. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
+  - ✅ All 220 service tests passed (11 test files)
 
 ## Phase 4: Import History and UI Integration
 
-- [ ] 15. Implement import history
-  - [ ] 15.1 Create import history storage
+- [x] 15. Implement import history
+
+
+
+
+
+
+
+  - [x] 15.1 Create import history storage
+
+
     - Store import metadata (timestamp, user, file, counts, status)
     - Store row-by-row results for failed imports
     - _Requirements: 9.1_
-  - [ ] 15.2 Write property test for metadata recording
+  - [x] 15.2 Write property test for metadata recording
+
+
+
+
+
+
+
     - **Property 23: Import Metadata Recording**
     - **Validates: Requirements 9.1**
-  - [ ] 15.3 Implement history query and details
+  - [x] 15.3 Implement history query and details
+
+
     - Implement getImportHistory with filtering
     - Implement getImportDetails
     - _Requirements: 9.2, 9.3_
-  - [ ] 15.4 Write property test for error detail preservation
+  - [x] 15.4 Write property test for error detail preservation
+
+
     - **Property 19: Error Detail Preservation**
     - **Validates: Requirements 6.4, 9.3, 9.4**
-  - [ ] 15.5 Implement error report download
+  - [x] 15.5 Implement error report download
+
+
     - Generate report with original data + status + errors
     - Support Excel/CSV format
     - _Requirements: 9.5_
-  - [ ] 15.6 Write property test for report format
+  - [x] 15.6 Write property test for report format
+
+
     - **Property 24: Import Result Report Format**
     - **Validates: Requirements 9.5**
 
-- [ ] 16. Checkpoint - Ensure all tests pass
+- [x] 16. Checkpoint - Ensure all tests pass
+
+
+
+
+
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 17. Create UI components for import
-  - [ ] 17.1 Create ImportModal component
+- [x] 17. Create UI components for import
+
+
+
+
+
+  - [x] 17.1 Create ImportModal component
+
+
     - File upload with drag-and-drop
     - Template download button
     - Preview table for parsed data
     - Error display with row numbers
     - _Requirements: 5.4_
-  - [ ] 17.2 Create ImportHistoryTable component
+  - [x] 17.2 Create ImportHistoryTable component
+
     - Paginated list of past imports
     - Filter by type and date range
     - Link to import details
     - _Requirements: 9.2_
-  - [ ] 17.3 Integrate import into User management page
+  - [x] 17.3 Integrate import into User management page
+
+
     - Add import button to toolbar
     - Connect to ImportModal
     - Refresh list after import
     - _Requirements: 6.5_
-  - [ ] 17.4 Integrate import into Player management page
+
+  - [x] 17.4 Integrate import into Player management page
+
     - Add import button to toolbar
     - Connect to ImportModal
     - Refresh list after import
     - _Requirements: 7.5_
-  - [ ] 17.5 Integrate import into Game management page
+
+  - [x] 17.5 Integrate import into Game management page
+
     - Add import button to toolbar
     - Connect to ImportModal
     - Refresh list after import
     - _Requirements: 8.5_
 
-- [ ] 18. Checkpoint - Ensure all tests pass
+- [x] 18. Checkpoint - Ensure all tests pass
+
   - Ensure all tests pass, ask the user if questions arise.
+  - ✅ All 1746 tests passed (73 test files)
 
 ## Phase 5: Store Integration and Refactoring
 
-- [ ] 19. Implement observability infrastructure
-  - [ ] 19.1 Create ServiceLogger interface and implementation
+- [x] 19. Implement observability infrastructure
+
+
+
+
+
+  - [x] 19.1 Create ServiceLogger interface and implementation
+
+
     - Implement debug, info, warn, error methods
     - Implement parameter sanitization for sensitive data
     - Support optional external error tracking integration
     - _Requirements: 10.1, 10.3_
-  - [ ] 19.2 Create PerformanceMonitor
+
+  - [x] 19.2 Create PerformanceMonitor
+
     - Implement startTimer and recordMetric methods
     - Implement slow operation detection (>3s threshold)
     - Store metrics for debugging
     - _Requirements: 10.2, 10.5_
-  - [ ] 19.3 Write property test for service logging
+  - [x] 19.3 Write property test for service logging
+
+
     - **Property 25: Service Method Logging**
     - **Validates: Requirements 10.1, 10.2**
-  - [ ] 19.4 Write property test for slow operation warning
+  - [x] 19.4 Write property test for slow operation warning
+
+
     - **Property 26: Slow Operation Warning**
     - **Validates: Requirements 10.5**
-  - [ ] 19.5 Integrate logging into BaseService
+  - [x] 19.5 Integrate logging into BaseService
+
+
     - Add withLogging wrapper method
     - Log batch operation progress at 10% intervals
     - _Requirements: 10.4_
 
-- [ ] 20. Implement concurrency control
-  - [ ] 20.1 Create ConcurrencyController
+- [x] 20. Implement concurrency control
+  - [x] 20.1 Create ConcurrencyController
     - Implement withDeduplication for duplicate prevention
     - Implement processWithConcurrency with configurable limits
     - Implement Semaphore for concurrency limiting
     - _Requirements: 11.1, 11.2_
-  - [ ] 20.2 Write property test for concurrency limit
+  - [x] 20.2 Write property test for concurrency limit
     - **Property 27: Batch Concurrency Limit**
     - **Validates: Requirements 11.1**
-  - [ ] 20.3 Write property test for duplicate prevention
+  - [x] 20.3 Write property test for duplicate prevention
     - **Property 28: Duplicate Operation Prevention**
     - **Validates: Requirements 11.2**
-  - [ ] 20.4 Implement retry with exponential backoff
+  - [x] 20.4 Implement retry with exponential backoff
     - Implement withRetry method
     - Implement isRetryableError detection
     - Configure retry attempts and delays
     - _Requirements: 11.3_
-  - [ ] 20.5 Write property test for retry behavior
+  - [x] 20.5 Write property test for retry behavior
     - **Property 29: Retry with Exponential Backoff**
     - **Validates: Requirements 11.3**
-  - [ ] 20.6 Implement batch chunking
+  - [x] 20.6 Implement batch chunking
     - Implement chunkArray utility
     - Configure default chunk size (50 items)
     - _Requirements: 11.4_
 
-- [ ] 21. Checkpoint - Ensure all tests pass
+- [x] 21. Checkpoint - Ensure all tests pass
+
+
+
+
+
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 22. Implement import transaction management
-  - [ ] 22.1 Create ImportTransactionManager
+- [x] 22. Implement import transaction management
+
+
+
+
+
+
+
+  - [x] 22.1 Create ImportTransactionManager
+
+
     - Implement startTransaction, recordCreated, commitTransaction
     - Implement transaction persistence to localStorage
     - _Requirements: 12.1_
-  - [ ] 22.2 Write property test for transaction tracking
+  - [x] 22.2 Write property test for transaction tracking
+
+
     - **Property 30: Import Transaction Tracking**
     - **Validates: Requirements 12.1**
-  - [ ] 22.3 Implement rollback functionality
+  - [x] 22.3 Implement rollback functionality
+
+
+
+
     - Implement rollbackTransaction method
     - Delete records in reverse order
     - Log all rollback operations
     - _Requirements: 12.3, 12.4_
-  - [ ] 22.4 Write property test for rollback completeness
+  - [x] 22.4 Write property test for rollback completeness
+
+
     - **Property 31: Rollback Completeness**
     - **Validates: Requirements 12.3, 12.4**
-  - [ ] 22.5 Implement interrupted import handling
+  - [x] 22.5 Implement interrupted import handling
+
+
     - Implement cleanupInterrupted method
     - Load persisted transactions on startup
     - Mark interrupted transactions
     - _Requirements: 12.5_
-  - [ ] 22.6 Write property test for interrupted import detection
+  - [x] 22.6 Write property test for interrupted import detection
+
+
     - **Property 32: Interrupted Import Detection**
     - **Validates: Requirements 12.5**
-  - [ ] 22.7 Update ImportService with transaction support
+  - [x] 22.7 Update ImportService with transaction support
+
+
     - Implement importWithTransaction method
     - Add rollback prompt callback
     - Implement getInterruptedImports and resumeOrCleanup
     - _Requirements: 12.2_
 
-- [ ] 23. Checkpoint - Ensure all tests pass
+- [x] 23. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
+  - ✅ All 1840 tests passed (76 test files)
 
-- [ ] 24. Refactor stores to use services
-  - [ ] 24.1 Refactor userStore to use UserService
+- [x] 24. Refactor stores to use services
+
+
+
+
+
+
+
+
+  - [x] 24.1 Refactor userStore to use UserService
+
     - Replace direct API calls with service calls
     - Use service validation methods
     - Handle service errors consistently
     - _Requirements: 1.2_
-  - [ ] 24.2 Refactor orderStore to use OrderService
+
+  - [x] 24.2 Refactor orderStore to use OrderService
+
     - Replace direct API calls with service calls
     - Use service calculation methods
     - Handle service errors consistently
     - _Requirements: 1.2_
-  - [ ] 24.3 Refactor playerStore to use PlayerService
+
+
+  - [x] 24.3 Refactor playerStore to use PlayerService
+
+
+
+
+
     - Replace direct API calls with service calls
     - Use service validation methods
     - Handle service errors consistently
+
     - _Requirements: 1.2_
-  - [ ] 24.4 Write property test for multi-API orchestration
+
+
+  - [x] 24.4 Write property test for multi-API orchestration
+
+
+
+
+
+
+
+
+
     - **Property 3: Multi-API Orchestration Graceful Handling**
     - **Validates: Requirements 1.4**
 
-- [ ] 25. Final Checkpoint - Ensure all tests pass
+- [x] 25. Final Checkpoint - Ensure all tests pass
+
+
+
+
+
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 26. Update service exports and documentation
-  - [ ] 26.1 Create unified service exports
+- [x] 26. Update service exports and documentation
+
+
+
+
+
+  - [x] 26.1 Create unified service exports
+
+
     - Export all services from services/index.ts
     - Export all types and interfaces
     - _Requirements: 1.1_
-  - [ ] 26.2 Update stores documentation
+
+
+  - [x] 26.2 Update stores documentation
     - Document service layer usage patterns
     - Update BEST_PRACTICES.md
+
     - _Requirements: 13.1_
-  - [ ] 26.3 Verify test coverage meets 80% threshold
+  - [x] 26.3 Verify test coverage meets 80% threshold
+
     - Run coverage report
     - Add tests for uncovered code paths
     - _Requirements: 13.5_
