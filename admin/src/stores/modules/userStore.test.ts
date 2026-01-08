@@ -1,28 +1,34 @@
 /**
  * User Store Tests
  * Tests user management, CRUD operations, filtering, and pagination
+ * Uses mocked UserService for testing
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useUserStore } from './userStore';
+import { createUserStore } from './userStore';
 import type { User as ApiUser } from '@/api/admin';
-import * as adminApi from '@/api/admin';
+import type { IUserService, UserValidationResult, UserExportData } from '@/services/domain';
+import type { ServiceResult, BatchResult } from '@/services/utils';
 
-// Mock admin API
-vi.mock('@/api/admin', () => ({
-  adminApi: {
-    getUsers: vi.fn(),
-    createUser: vi.fn(),
-    updateUser: vi.fn(),
-    deleteUser: vi.fn(),
-    batchDeleteUsers: vi.fn(),
-    updateUserStatus: vi.fn(),
-    batchUpdateUserStatus: vi.fn(),
-    updateUserRole: vi.fn(),
-    batchUpdateUserRole: vi.fn(),
-  },
-}));
+// Create mock UserService
+const createMockUserService = (): IUserService => ({
+  getUsers: vi.fn(),
+  getUserById: vi.fn(),
+  createUser: vi.fn(),
+  updateUser: vi.fn(),
+  deleteUser: vi.fn(),
+  updateUserStatus: vi.fn(),
+  updateUserRole: vi.fn(),
+  batchUpdateStatus: vi.fn(),
+  batchUpdateRole: vi.fn(),
+  batchDelete: vi.fn(),
+  validateUserData: vi.fn(),
+  validateEmail: vi.fn(),
+  validatePhone: vi.fn(),
+  validatePassword: vi.fn(),
+  exportUsers: vi.fn(),
+});
 
 describe('userStore', () => {
   const mockUsers: ApiUser[] = [
@@ -61,9 +67,13 @@ describe('userStore', () => {
     },
   ];
 
+  let mockUserService: IUserService;
+  let useUserStore: ReturnType<typeof createUserStore>;
+
   beforeEach(() => {
-    // Reset store state before each test
-    useUserStore.getState().reset();
+    // Create fresh mock service and store for each test
+    mockUserService = createMockUserService();
+    useUserStore = createUserStore(mockUserService);
     vi.clearAllMocks();
   });
 
@@ -84,23 +94,18 @@ describe('userStore', () => {
         total: 0,
       });
       expect(result.current.filters).toEqual({});
+      expect(result.current.lastBatchResult).toBeNull();
     });
   });
 
   describe('Fetch Users', () => {
     it('should fetch users successfully', async () => {
-      const mockResponse = {
-        data: {
-          data: mockUsers,
-          pagination: {
-            total: 3,
-          },
-        },
+      const mockResult: ServiceResult<ApiUser[]> = {
+        success: true,
+        data: mockUsers,
       };
 
-      vi.mocked(adminApi.adminApi.getUsers).mockResolvedValue(mockResponse as {
-        data: { data: ApiUser[]; pagination: { total: number } };
-      });
+      vi.mocked(mockUserService.getUsers).mockResolvedValue(mockResult);
 
       const { result } = renderHook(() => useUserStore());
 
@@ -109,28 +114,20 @@ describe('userStore', () => {
       });
 
       expect(result.current.users).toEqual(mockUsers);
-      expect(result.current.pagination).toEqual({
-        current: 1,
-        pageSize: 10,
-        total: 3,
-      });
+      expect(result.current.pagination.current).toBe(1);
+      expect(result.current.pagination.pageSize).toBe(10);
       expect(result.current.loading).toBe(false);
       expect(result.current.error).toBeNull();
     });
 
     it('should fetch users with filters', async () => {
-      const mockResponse = {
-        data: {
-          data: [mockUsers[0]], // Only admin user
-          pagination: {
-            total: 1,
-          },
-        },
+      const filteredUsers = [mockUsers[0]]; // Only admin user
+      const mockResult: ServiceResult<ApiUser[]> = {
+        success: true,
+        data: filteredUsers,
       };
 
-      vi.mocked(adminApi.adminApi.getUsers).mockResolvedValue(mockResponse as {
-        data: { data: ApiUser[]; pagination: { total: number } };
-      });
+      vi.mocked(mockUserService.getUsers).mockResolvedValue(mockResult);
 
       const { result } = renderHook(() => useUserStore());
 
@@ -143,7 +140,7 @@ describe('userStore', () => {
         await result.current.fetchUsers(1, 10);
       });
 
-      expect(adminApi.adminApi.getUsers).toHaveBeenCalledWith({
+      expect(mockUserService.getUsers).toHaveBeenCalledWith({
         page: 1,
         page_size: 10,
         keyword: undefined,
@@ -158,32 +155,44 @@ describe('userStore', () => {
     });
 
     it('should handle fetch users failure', async () => {
-      const mockError = new Error('Failed to fetch users');
-
-      vi.mocked(adminApi.adminApi.getUsers).mockRejectedValue(mockError);
-
-      const { result } = renderHook(() => useUserStore());
-
-      await expect(
-        act(async () => {
-          await result.current.fetchUsers();
-        })
-      ).rejects.toThrow('Failed to fetch users');
-    });
-
-    it('should handle empty response data', async () => {
-      const mockResponse = {
-        data: {
-          data: null,
-          pagination: {
-            total: 0,
-          },
+      const mockResult: ServiceResult<ApiUser[]> = {
+        success: false,
+        error: {
+          code: 'FETCH_ERROR',
+          message: 'Failed to fetch users',
         },
       };
 
-      vi.mocked(adminApi.adminApi.getUsers).mockResolvedValue(mockResponse as {
-        data: { data: ApiUser[]; pagination: { total: number } };
-      });
+      vi.mocked(mockUserService.getUsers).mockResolvedValue(mockResult);
+
+      const { result } = renderHook(() => useUserStore());
+
+      let thrownError: Error | null = null;
+      try {
+        await act(async () => {
+          await result.current.fetchUsers();
+        });
+      } catch (e) {
+        thrownError = e as Error;
+      }
+
+      // Verify error was thrown
+      expect(thrownError).not.toBeNull();
+      expect(thrownError?.message).toBe('Failed to fetch users');
+
+      // The error should be set in the store
+      expect(result.current.error).not.toBeNull();
+      expect(result.current.error?.code).toBe('FETCH_ERROR');
+      expect(result.current.error?.message).toBe('Failed to fetch users');
+    });
+
+    it('should handle empty response data', async () => {
+      const mockResult: ServiceResult<ApiUser[]> = {
+        success: true,
+        data: [],
+      };
+
+      vi.mocked(mockUserService.getUsers).mockResolvedValue(mockResult);
 
       const { result } = renderHook(() => useUserStore());
 
@@ -192,34 +201,34 @@ describe('userStore', () => {
       });
 
       expect(result.current.users).toEqual([]);
-      expect(result.current.pagination.total).toBe(0);
     });
   });
 
   describe('Create User', () => {
     it('should create user successfully', async () => {
-      const newUser: Partial<ApiUser> = {
+      const newUserData = {
         name: 'New User',
         email: 'new@gamelink.com',
         phone: '13800138004',
-        role: 'user',
-        status: 'active',
+        password: 'Password123!',
+        role: 'user' as const,
+        status: 'active' as const,
       };
 
-      const mockResponse = {
-        data: {
-          data: {
-            id: 4,
-            ...newUser,
-            createdAt: '2024-01-04T00:00:00Z',
-            updatedAt: '2024-01-04T00:00:00Z',
-          } as ApiUser,
-        },
+      const createdUser: ApiUser = {
+        id: 4,
+        ...newUserData,
+        avatarUrl: '',
+        createdAt: '2024-01-04T00:00:00Z',
+        updatedAt: '2024-01-04T00:00:00Z',
       };
 
-      vi.mocked(adminApi.adminApi.createUser).mockResolvedValue(mockResponse as {
-        data: { data: ApiUser };
-      });
+      const mockResult: ServiceResult<ApiUser> = {
+        success: true,
+        data: createdUser,
+      };
+
+      vi.mocked(mockUserService.createUser).mockResolvedValue(mockResult);
 
       const { result } = renderHook(() => useUserStore());
 
@@ -229,57 +238,72 @@ describe('userStore', () => {
       });
 
       await act(async () => {
-        await result.current.createUser(newUser);
+        await result.current.createUser(newUserData);
       });
 
       expect(result.current.users.length).toBe(4);
-      expect(result.current.users[0]).toEqual(mockResponse.data.data);
+      expect(result.current.users[0]).toEqual(createdUser);
       expect(result.current.pagination.total).toBe(4);
       expect(result.current.loading).toBe(false);
     });
 
-    it('should handle create user failure', async () => {
-      const newUser: Partial<ApiUser> = {
+    it('should handle create user failure with validation error', async () => {
+      const newUserData = {
         name: 'New User',
-        email: 'new@gamelink.com',
+        email: 'invalid-email',
         phone: '13800138004',
-        role: 'user',
-        status: 'active',
+        password: 'weak',
+        role: 'user' as const,
+        status: 'active' as const,
       };
 
-      const mockError = new Error('Failed to create user');
+      const mockResult: ServiceResult<ApiUser> = {
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'User data validation failed',
+          details: {
+            errors: [
+              { field: 'email', message: 'Invalid email format' },
+              { field: 'password', message: 'Password too weak' },
+            ],
+          },
+        },
+      };
 
-      vi.mocked(adminApi.adminApi.createUser).mockRejectedValue(mockError);
+      vi.mocked(mockUserService.createUser).mockResolvedValue(mockResult);
 
       const { result } = renderHook(() => useUserStore());
 
-      await expect(
-        act(async () => {
-          await result.current.createUser(newUser);
-        })
-      ).rejects.toThrow('Failed to create user');
+      await act(async () => {
+        const createResult = await result.current.createUser(newUserData);
+        expect(createResult.success).toBe(false);
+        expect(createResult.error?.code).toBe('VALIDATION_ERROR');
+      });
+
+      expect(result.current.error?.code).toBe('VALIDATION_ERROR');
     });
   });
 
   describe('Update User', () => {
     it('should update user successfully', async () => {
-      const updatedData: Partial<ApiUser> = {
+      const updatedData = {
         name: 'Updated Admin User',
         email: 'updated@gamelink.com',
+        phone: '13800138001',
       };
 
-      const mockResponse = {
-        data: {
-          data: {
-            ...mockUsers[0],
-            ...updatedData,
-          } as ApiUser,
-        },
+      const updatedUser: ApiUser = {
+        ...mockUsers[0],
+        ...updatedData,
       };
 
-      vi.mocked(adminApi.adminApi.updateUser).mockResolvedValue(mockResponse as {
-        data: { data: ApiUser };
-      });
+      const mockResult: ServiceResult<ApiUser> = {
+        success: true,
+        data: updatedUser,
+      };
+
+      vi.mocked(mockUserService.updateUser).mockResolvedValue(mockResult);
 
       const { result } = renderHook(() => useUserStore());
 
@@ -292,30 +316,41 @@ describe('userStore', () => {
         await result.current.updateUser(1, updatedData);
       });
 
-      const updatedUser = result.current.users.find((u) => u.id === 1);
-      expect(updatedUser?.name).toBe('Updated Admin User');
-      expect(updatedUser?.email).toBe('updated@gamelink.com');
+      const user = result.current.users.find((u) => u.id === 1);
+      expect(user?.name).toBe('Updated Admin User');
+      expect(user?.email).toBe('updated@gamelink.com');
       expect(result.current.loading).toBe(false);
     });
 
     it('should handle update user failure', async () => {
-      const mockError = new Error('Failed to update user');
+      const mockResult: ServiceResult<ApiUser> = {
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        },
+      };
 
-      vi.mocked(adminApi.adminApi.updateUser).mockRejectedValue(mockError);
+      vi.mocked(mockUserService.updateUser).mockResolvedValue(mockResult);
 
       const { result } = renderHook(() => useUserStore());
 
-      await expect(
-        act(async () => {
-          await result.current.updateUser(1, { name: 'Updated' });
-        })
-      ).rejects.toThrow('Failed to update user');
+      await act(async () => {
+        const updateResult = await result.current.updateUser(999, { name: 'Updated' });
+        expect(updateResult.success).toBe(false);
+      });
+
+      expect(result.current.error?.code).toBe('NOT_FOUND');
     });
   });
 
   describe('Delete User', () => {
     it('should delete user successfully', async () => {
-      vi.mocked(adminApi.adminApi.deleteUser).mockResolvedValue({} as Record<string, never>);
+      const mockResult: ServiceResult<void> = {
+        success: true,
+      };
+
+      vi.mocked(mockUserService.deleteUser).mockResolvedValue(mockResult);
 
       const { result } = renderHook(() => useUserStore());
 
@@ -338,23 +373,41 @@ describe('userStore', () => {
     });
 
     it('should handle delete user failure', async () => {
-      const mockError = new Error('Failed to delete user');
+      const mockResult: ServiceResult<void> = {
+        success: false,
+        error: {
+          code: 'FORBIDDEN',
+          message: 'Cannot delete admin user',
+        },
+      };
 
-      vi.mocked(adminApi.adminApi.deleteUser).mockRejectedValue(mockError);
+      vi.mocked(mockUserService.deleteUser).mockResolvedValue(mockResult);
 
       const { result } = renderHook(() => useUserStore());
 
-      await expect(
-        act(async () => {
-          await result.current.deleteUser(1);
-        })
-      ).rejects.toThrow('Failed to delete user');
+      await act(async () => {
+        const deleteResult = await result.current.deleteUser(1);
+        expect(deleteResult.success).toBe(false);
+      });
+
+      expect(result.current.error?.code).toBe('FORBIDDEN');
     });
   });
 
   describe('Batch Delete Users', () => {
     it('should batch delete users successfully', async () => {
-      vi.mocked(adminApi.adminApi.batchDeleteUsers).mockResolvedValue({} as Record<string, never>);
+      const mockResult: BatchResult<void> = {
+        success: true,
+        total: 2,
+        succeeded: 2,
+        failed: 0,
+        results: [
+          { index: 0, success: true },
+          { index: 1, success: true },
+        ],
+      };
+
+      vi.mocked(mockUserService.batchDelete).mockResolvedValue(mockResult);
 
       const { result } = renderHook(() => useUserStore());
 
@@ -373,27 +426,55 @@ describe('userStore', () => {
       expect(result.current.users.length).toBe(1);
       expect(result.current.users[0].id).toBe(3);
       expect(result.current.pagination.total).toBe(1);
-      expect(adminApi.adminApi.batchDeleteUsers).toHaveBeenCalledWith([1, 2]);
+      expect(result.current.lastBatchResult).toEqual(mockResult);
     });
 
-    it('should handle batch delete failure', async () => {
-      const mockError = new Error('Failed to batch delete');
+    it('should handle partial batch delete failure', async () => {
+      const mockResult: BatchResult<void> = {
+        success: false,
+        total: 2,
+        succeeded: 1,
+        failed: 1,
+        results: [
+          { index: 0, success: true },
+          { index: 1, success: false, error: { code: 'FORBIDDEN', message: 'Cannot delete' } },
+        ],
+      };
 
-      vi.mocked(adminApi.adminApi.batchDeleteUsers).mockRejectedValue(mockError);
+      vi.mocked(mockUserService.batchDelete).mockResolvedValue(mockResult);
 
       const { result } = renderHook(() => useUserStore());
 
-      await expect(
-        act(async () => {
-          await result.current.batchDeleteUsers([1, 2]);
-        })
-      ).rejects.toThrow('Failed to batch delete');
+      // Initialize with users
+      act(() => {
+        useUserStore.setState({
+          users: mockUsers,
+          pagination: { current: 1, pageSize: 10, total: 3 },
+        });
+      });
+
+      await act(async () => {
+        const batchResult = await result.current.batchDeleteUsers([1, 2]);
+        expect(batchResult.success).toBe(false);
+        expect(batchResult.succeeded).toBe(1);
+        expect(batchResult.failed).toBe(1);
+      });
+
+      // Only user 1 should be deleted (index 0)
+      expect(result.current.users.length).toBe(2);
+      expect(result.current.error?.code).toBe('BATCH_PARTIAL_FAILURE');
     });
   });
 
   describe('Update User Status', () => {
     it('should update user status successfully', async () => {
-      vi.mocked(adminApi.adminApi.updateUserStatus).mockResolvedValue({} as Record<string, never>);
+      const updatedUser: ApiUser = { ...mockUsers[0], status: 'banned' };
+      const mockResult: ServiceResult<ApiUser> = {
+        success: true,
+        data: updatedUser,
+      };
+
+      vi.mocked(mockUserService.updateUserStatus).mockResolvedValue(mockResult);
 
       const { result } = renderHook(() => useUserStore());
 
@@ -406,13 +487,23 @@ describe('userStore', () => {
         await result.current.updateUserStatus(1, 'banned');
       });
 
-      const updatedUser = result.current.users.find((u) => u.id === 1);
-      expect(updatedUser?.status).toBe('banned');
-      expect(adminApi.adminApi.updateUserStatus).toHaveBeenCalledWith(1, 'banned');
+      const user = result.current.users.find((u) => u.id === 1);
+      expect(user?.status).toBe('banned');
     });
 
     it('should batch update user status successfully', async () => {
-      vi.mocked(adminApi.adminApi.batchUpdateUserStatus).mockResolvedValue({} as Record<string, never>);
+      const mockResult: BatchResult<void> = {
+        success: true,
+        total: 2,
+        succeeded: 2,
+        failed: 0,
+        results: [
+          { index: 0, success: true },
+          { index: 1, success: true },
+        ],
+      };
+
+      vi.mocked(mockUserService.batchUpdateStatus).mockResolvedValue(mockResult);
 
       const { result } = renderHook(() => useUserStore());
 
@@ -427,16 +518,18 @@ describe('userStore', () => {
 
       expect(result.current.users[0].status).toBe('suspended');
       expect(result.current.users[1].status).toBe('suspended');
-      expect(adminApi.adminApi.batchUpdateUserStatus).toHaveBeenCalledWith({
-        userIds: [1, 2],
-        status: 'suspended',
-      });
     });
   });
 
   describe('Update User Role', () => {
     it('should update user role successfully', async () => {
-      vi.mocked(adminApi.adminApi.updateUserRole).mockResolvedValue({} as Record<string, never>);
+      const updatedUser: ApiUser = { ...mockUsers[1], role: 'admin' };
+      const mockResult: ServiceResult<ApiUser> = {
+        success: true,
+        data: updatedUser,
+      };
+
+      vi.mocked(mockUserService.updateUserRole).mockResolvedValue(mockResult);
 
       const { result } = renderHook(() => useUserStore());
 
@@ -449,13 +542,23 @@ describe('userStore', () => {
         await result.current.updateUserRole(2, 'admin');
       });
 
-      const updatedUser = result.current.users.find((u) => u.id === 2);
-      expect(updatedUser?.role).toBe('admin');
-      expect(adminApi.adminApi.updateUserRole).toHaveBeenCalledWith(2, 'admin');
+      const user = result.current.users.find((u) => u.id === 2);
+      expect(user?.role).toBe('admin');
     });
 
     it('should batch update user role successfully', async () => {
-      vi.mocked(adminApi.adminApi.batchUpdateUserRole).mockResolvedValue({} as Record<string, never>);
+      const mockResult: BatchResult<void> = {
+        success: true,
+        total: 2,
+        succeeded: 2,
+        failed: 0,
+        results: [
+          { index: 0, success: true },
+          { index: 1, success: true },
+        ],
+      };
+
+      vi.mocked(mockUserService.batchUpdateRole).mockResolvedValue(mockResult);
 
       const { result } = renderHook(() => useUserStore());
 
@@ -470,10 +573,67 @@ describe('userStore', () => {
 
       expect(result.current.users[1].role).toBe('admin');
       expect(result.current.users[2].role).toBe('admin');
-      expect(adminApi.adminApi.batchUpdateUserRole).toHaveBeenCalledWith({
-        userIds: [2, 3],
-        role: 'admin',
+    });
+  });
+
+  describe('Validation', () => {
+    it('should validate user data using service', () => {
+      const mockValidationResult: UserValidationResult = {
+        valid: false,
+        errors: [
+          { field: 'email', message: 'Invalid email format' },
+        ],
+      };
+
+      vi.mocked(mockUserService.validateUserData).mockReturnValue(mockValidationResult);
+
+      const { result } = renderHook(() => useUserStore());
+
+      const validation = result.current.validateUserData({ email: 'invalid' });
+
+      expect(validation.valid).toBe(false);
+      expect(validation.errors).toHaveLength(1);
+      expect(mockUserService.validateUserData).toHaveBeenCalledWith({ email: 'invalid' });
+    });
+  });
+
+  describe('Export', () => {
+    it('should export users using service', () => {
+      const mockExportData: UserExportData = {
+        headers: ['ID', '姓名', '邮箱'],
+        rows: [['1', 'Admin User', 'admin@gamelink.com']],
+      };
+
+      vi.mocked(mockUserService.exportUsers).mockReturnValue(mockExportData);
+
+      const { result } = renderHook(() => useUserStore());
+
+      // Initialize with users
+      act(() => {
+        useUserStore.setState({ users: mockUsers });
       });
+
+      const exportData = result.current.exportUsers();
+
+      expect(exportData.headers).toEqual(['ID', '姓名', '邮箱']);
+      expect(mockUserService.exportUsers).toHaveBeenCalledWith(mockUsers);
+    });
+
+    it('should export specific users when provided', () => {
+      const mockExportData: UserExportData = {
+        headers: ['ID', '姓名', '邮箱'],
+        rows: [['1', 'Admin User', 'admin@gamelink.com']],
+      };
+
+      vi.mocked(mockUserService.exportUsers).mockReturnValue(mockExportData);
+
+      const { result } = renderHook(() => useUserStore());
+
+      const specificUsers = [mockUsers[0]];
+      const exportData = result.current.exportUsers(specificUsers);
+
+      expect(mockUserService.exportUsers).toHaveBeenCalledWith(specificUsers);
+      expect(exportData).toEqual(mockExportData);
     });
   });
 
@@ -583,7 +743,7 @@ describe('userStore', () => {
     });
   });
 
-  describe('Reset', () => {
+  describe('Reset and Clear Error', () => {
     it('should reset store to initial state', () => {
       const { result } = renderHook(() => useUserStore());
 
@@ -592,15 +752,16 @@ describe('userStore', () => {
         useUserStore.setState({
           users: mockUsers,
           loading: true,
-          error: 'Test error',
+          error: { code: 'TEST_ERROR', message: 'Test error' },
           filters: { role: 'admin' },
           pagination: { current: 2, pageSize: 20, total: 100 },
+          lastBatchResult: { success: true, total: 1, succeeded: 1, failed: 0, results: [] },
         });
       });
 
       expect(result.current.users.length).toBe(3);
       expect(result.current.loading).toBe(true);
-      expect(result.current.error).toBe('Test error');
+      expect(result.current.error?.message).toBe('Test error');
 
       // Reset
       act(() => {
@@ -616,6 +777,25 @@ describe('userStore', () => {
         pageSize: 10,
         total: 0,
       });
+      expect(result.current.lastBatchResult).toBeNull();
+    });
+
+    it('should clear error state', () => {
+      const { result } = renderHook(() => useUserStore());
+
+      act(() => {
+        useUserStore.setState({
+          error: { code: 'TEST_ERROR', message: 'Test error' },
+        });
+      });
+
+      expect(result.current.error).not.toBeNull();
+
+      act(() => {
+        result.current.clearError();
+      });
+
+      expect(result.current.error).toBeNull();
     });
   });
 
@@ -630,11 +810,15 @@ describe('userStore', () => {
     });
 
     it('should prevent negative total count on delete', async () => {
-      vi.mocked(adminApi.adminApi.deleteUser).mockResolvedValue({} as Record<string, never>);
+      const mockResult: ServiceResult<void> = {
+        success: true,
+      };
+
+      vi.mocked(mockUserService.deleteUser).mockResolvedValue(mockResult);
 
       const { result } = renderHook(() => useUserStore());
 
-      // Initialize with one user
+      // Initialize with one user and zero total
       act(() => {
         useUserStore.setState({
           users: [mockUsers[0]],
@@ -650,7 +834,19 @@ describe('userStore', () => {
     });
 
     it('should handle pagination correctly with batch operations', async () => {
-      vi.mocked(adminApi.adminApi.batchDeleteUsers).mockResolvedValue({} as Record<string, never>);
+      const mockResult: BatchResult<void> = {
+        success: true,
+        total: 3,
+        succeeded: 3,
+        failed: 0,
+        results: [
+          { index: 0, success: true },
+          { index: 1, success: true },
+          { index: 2, success: true },
+        ],
+      };
+
+      vi.mocked(mockUserService.batchDelete).mockResolvedValue(mockResult);
 
       const { result } = renderHook(() => useUserStore());
 

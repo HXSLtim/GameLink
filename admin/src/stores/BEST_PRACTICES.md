@@ -10,6 +10,7 @@
 4. [错误处理](#4-错误处理)
 5. [测试](#5-测试)
 6. [常见陷阱](#6-常见陷阱)
+7. [Service 层集成](#7-service-层集成)
 
 ---
 
@@ -481,3 +482,350 @@ persist(
 - [React 性能优化](https://react.dev/learn/render-and-commit)
 - [项目 README.md](./README.md)
 - [TypeScript 类型指南](./TYPE_GUIDE.md)
+- [Service 层文档](../services/README.md)
+
+---
+
+## 7. Service 层集成
+
+Phase 3 引入了 Service 层架构，将业务逻辑从 Store 中抽离。本节介绍如何正确集成 Service 层。
+
+### 架构概览
+
+```
+UI Components → Zustand Stores → Domain Services → API Layer
+                    ↓
+              (UI State, Cache)    (Business Logic)
+```
+
+**职责分离**：
+- **Store**: 管理 UI 状态、缓存、分页
+- **Service**: 处理业务逻辑、数据验证、API 编排
+
+### 导入 Service
+
+```typescript
+// ✅ 推荐：从统一入口导入
+import { userService, orderService, playerService } from '@/services';
+
+// ✅ 也可以：从具体模块导入
+import { userService } from '@/services/domain/userService';
+
+// ❌ 不推荐：直接导入类（除非需要自定义实例）
+import { UserService } from '@/services/domain/userService';
+```
+
+### Store 中使用 Service
+
+**推荐模式**：Store 调用 Service 方法，处理结果并更新状态
+
+```typescript
+// ✅ 好：Store 使用 Service 进行业务逻辑处理
+import { userService } from '@/services';
+
+export const useUserStore = create<UserState>()((set, get) => ({
+  users: [],
+  loading: false,
+  error: null,
+
+  // 使用 Service 进行数据验证
+  createUser: async (userData: CreateUserDto) => {
+    // 1. 先用 Service 验证数据
+    const validation = userService.validateUserData(userData);
+    if (!validation.valid) {
+      set({ error: validation.errors.map(e => e.message).join(', ') });
+      return;
+    }
+
+    set({ loading: true, error: null });
+    try {
+      // 2. 调用 Service 创建用户
+      const result = await userService.createUser(userData);
+      if (result.success && result.data) {
+        set((state) => ({
+          users: [result.data!, ...state.users],
+          loading: false,
+        }));
+      } else {
+        set({ error: result.error?.message || '创建失败', loading: false });
+      }
+    } catch (error) {
+      set({ error: '创建用户失败', loading: false });
+    }
+  },
+
+  // 使用 Service 进行批量操作
+  batchUpdateStatus: async (userIds: number[], status: string) => {
+    set({ loading: true, error: null });
+    try {
+      const result = await userService.batchUpdateStatus(userIds, status);
+      if (result.success) {
+        // 更新本地状态
+        set((state) => ({
+          users: state.users.map(user =>
+            userIds.includes(user.id) ? { ...user, status } : user
+          ),
+          loading: false,
+        }));
+      } else {
+        // 处理部分失败
+        const failedIds = result.results
+          .filter(r => !r.success)
+          .map(r => r.index);
+        set({
+          error: `${result.failed} 个用户更新失败`,
+          loading: false,
+        });
+      }
+    } catch (error) {
+      set({ error: '批量更新失败', loading: false });
+    }
+  },
+}));
+```
+
+### Service 结果处理
+
+Service 方法返回 `ServiceResult<T>` 或 `BatchResult<T>`，需要正确处理：
+
+```typescript
+import type { ServiceResult, BatchResult } from '@/services';
+
+// 处理单个操作结果
+const handleSingleResult = async () => {
+  const result: ServiceResult<User> = await userService.getUserById(1);
+
+  if (result.success && result.data) {
+    // 成功：使用 result.data
+    console.log('User:', result.data);
+  } else {
+    // 失败：使用 result.error
+    console.error('Error:', result.error?.message);
+    console.error('Code:', result.error?.code);
+  }
+};
+
+// 处理批量操作结果
+const handleBatchResult = async () => {
+  const result: BatchResult<void> = await userService.batchDelete([1, 2, 3]);
+
+  console.log(`Total: ${result.total}`);
+  console.log(`Succeeded: ${result.succeeded}`);
+  console.log(`Failed: ${result.failed}`);
+
+  // 处理每个项目的结果
+  result.results.forEach((item) => {
+    if (item.success) {
+      console.log(`Item ${item.index} succeeded`);
+    } else {
+      console.error(`Item ${item.index} failed:`, item.error?.message);
+    }
+  });
+};
+```
+
+### 数据验证
+
+**推荐**：在 Store 调用 API 前使用 Service 验证数据
+
+```typescript
+// ✅ 好：使用 Service 验证
+const createUser = async (userData: CreateUserDto) => {
+  // 验证用户数据
+  const validation = userService.validateUserData(userData);
+  if (!validation.valid) {
+    set({ error: validation.errors.map(e => e.message).join(', ') });
+    return;
+  }
+
+  // 验证通过，继续创建
+  const result = await userService.createUser(userData);
+  // ...
+};
+
+// ✅ 好：单独验证字段
+const validateEmail = (email: string) => {
+  return userService.validateEmail(email);
+};
+
+const validatePassword = (password: string) => {
+  const result = userService.validatePassword(password);
+  return result; // { valid: boolean, errors: string[] }
+};
+```
+
+### 数据导出
+
+使用 Service 进行数据导出：
+
+```typescript
+import { userService } from '@/services';
+
+const exportUsers = () => {
+  const users = useUserStore.getState().users;
+  const exportData = userService.exportUsers(users);
+
+  // exportData.headers: string[] - 表头
+  // exportData.rows: string[][] - 数据行
+
+  // 使用 xlsx 或其他库生成文件
+  const worksheet = XLSX.utils.aoa_to_sheet([
+    exportData.headers,
+    ...exportData.rows,
+  ]);
+  // ...
+};
+```
+
+### 数据导入
+
+使用 ImportService 进行批量数据导入：
+
+```typescript
+import { importService, parseFile } from '@/services';
+
+const handleImport = async (file: File) => {
+  // 1. 解析文件
+  const preview = await importService.parseFile(file, 'user');
+
+  if (preview.structureErrors.length > 0) {
+    // 显示结构错误
+    console.error('Structure errors:', preview.structureErrors);
+    return;
+  }
+
+  // 2. 显示预览（validRows, invalidRows）
+  console.log('Valid rows:', preview.validRows.length);
+  console.log('Invalid rows:', preview.invalidRows.length);
+
+  // 3. 用户确认后执行导入
+  const result = await importService.importUsers(preview.validRows);
+
+  console.log(`Imported: ${result.importedCount}`);
+  console.log(`Skipped: ${result.skippedCount}`);
+};
+```
+
+### 订单操作
+
+使用 OrderService 进行订单相关操作：
+
+```typescript
+import { orderService } from '@/services';
+
+// 检查是否可以取消订单
+const canCancel = orderService.canCancel(order);
+if (!canCancel.allowed) {
+  message.error(canCancel.reason);
+  return;
+}
+
+// 计算退款金额
+const refundCalc = orderService.calculateRefund(order, requestedAmount);
+console.log('Refund amount:', refundCalc.refundAmount);
+console.log('Platform fee:', refundCalc.platformFee);
+console.log('Player amount:', refundCalc.playerAmount);
+
+// 计算订单统计
+const stats = orderService.computeStatistics(orders);
+console.log('Total revenue:', stats.totalRevenue);
+console.log('Completion rate:', stats.completionRate);
+```
+
+### 陪玩师操作
+
+使用 PlayerService 进行陪玩师相关操作：
+
+```typescript
+import { playerService } from '@/services';
+
+// 检查是否可以验证
+const canVerify = playerService.canVerify(player, 'verified');
+if (!canVerify.allowed) {
+  message.error(canVerify.reason);
+  return;
+}
+
+// 计算收益
+const earnings = playerService.calculateEarnings(order, commissionRule);
+console.log('Gross amount:', earnings.grossAmount);
+console.log('Commission:', earnings.commissionAmount);
+console.log('Net amount:', earnings.netAmount);
+
+// 计算统计
+const stats = playerService.computeStatistics(playerId, orders);
+console.log('Total earnings:', stats.totalEarnings);
+console.log('Average rating:', stats.averageRating);
+```
+
+### 错误处理
+
+Service 层使用统一的错误格式：
+
+```typescript
+import { ServiceErrorCodes, ServiceException } from '@/services';
+
+try {
+  const result = await userService.createUser(userData);
+  if (!result.success) {
+    // 根据错误码处理
+    switch (result.error?.code) {
+      case ServiceErrorCodes.USER_EMAIL_EXISTS:
+        message.error('邮箱已存在');
+        break;
+      case ServiceErrorCodes.USER_PHONE_EXISTS:
+        message.error('手机号已存在');
+        break;
+      case ServiceErrorCodes.VALIDATION_ERROR:
+        message.error(result.error.message);
+        break;
+      default:
+        message.error('创建失败');
+    }
+  }
+} catch (error) {
+  if (error instanceof ServiceException) {
+    console.error('Service error:', error.code, error.message);
+  }
+}
+```
+
+### 日志和性能监控
+
+Service 层内置日志和性能监控：
+
+```typescript
+import { createServiceLogger, createPerformanceMonitor } from '@/services';
+
+// 创建自定义 logger
+const logger = createServiceLogger('MyService', {
+  level: 'debug',
+  enableConsole: true,
+});
+
+logger.info('Operation started', { userId: 1 });
+logger.error('Operation failed', new Error('Something went wrong'));
+
+// 性能监控
+const monitor = createPerformanceMonitor(logger, {
+  slowThresholdMs: 3000,
+  maxMetrics: 1000,
+});
+
+const stopTimer = monitor.startTimer('fetchUsers');
+// ... 执行操作
+const duration = stopTimer();
+console.log(`Operation took ${duration}ms`);
+```
+
+### Service 层检查清单
+
+在使用 Service 层时，检查以下项目：
+
+- [ ] 是否从统一入口 `@/services` 导入？
+- [ ] 是否正确处理 `ServiceResult` 的 success/error？
+- [ ] 是否在调用 API 前使用 Service 验证数据？
+- [ ] 批量操作是否处理了部分失败的情况？
+- [ ] 是否根据错误码提供用户友好的错误信息？
+- [ ] 是否使用 Service 的计算方法而非在组件中计算？
+- [ ] 导入操作是否显示了预览和确认步骤？

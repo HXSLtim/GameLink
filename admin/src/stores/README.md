@@ -350,9 +350,36 @@ try {
 
 ## 相关文档
 
-- [BEST_PRACTICES.md](./BEST_PRACTICES.md) - 最佳实践指南
+- [BEST_PRACTICES.md](./BEST_PRACTICES.md) - 最佳实践指南（包含 Service 层集成）
 - [TYPE_GUIDE.md](./TYPE_GUIDE.md) - TypeScript 类型指南
+- [Service 层文档](../services/README.md) - 领域服务层文档
 - [Zustand 官方文档](https://github.com/pmndrs/zustand)
+
+## Service 层集成
+
+Phase 3 引入了 Service 层架构，Store 现在通过 Service 层处理业务逻辑：
+
+```typescript
+import { userService } from '@/services';
+
+// Store 中使用 Service
+const createUser = async (userData: CreateUserDto) => {
+  // 1. 使用 Service 验证
+  const validation = userService.validateUserData(userData);
+  if (!validation.valid) {
+    set({ error: validation.errors.map(e => e.message).join(', ') });
+    return;
+  }
+
+  // 2. 调用 Service 方法
+  const result = await userService.createUser(userData);
+  if (result.success) {
+    set((state) => ({ users: [result.data!, ...state.users] }));
+  }
+};
+```
+
+详细用法请参阅 [BEST_PRACTICES.md](./BEST_PRACTICES.md#7-service-层集成)。
 
 ## 迁移指南
 
