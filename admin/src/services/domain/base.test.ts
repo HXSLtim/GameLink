@@ -358,16 +358,42 @@ describe('DefaultServiceLogger', () => {
   it('should create logger with service name', () => {
     const logger = new DefaultServiceLogger('TestService');
     expect(logger).toBeDefined();
+    expect(logger.getServiceName()).toBe('TestService');
   });
 
-  it('should log info messages', () => {
+  it('should log info messages with sanitized context', () => {
     const consoleSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
+    const logger = new DefaultServiceLogger('TestService', { includeTimestamp: false });
+
+    logger.info('Test message', { name: 'value' });
+
+    expect(consoleSpy).toHaveBeenCalledWith('[TestService] Test message', { name: 'value' });
+    consoleSpy.mockRestore();
+  });
+
+  it('should redact sensitive keys in context', () => {
+    const consoleSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
+    const logger = new DefaultServiceLogger('TestService', { includeTimestamp: false });
+
+    logger.info('Test message', { password: 'secret', username: 'john' });
+
+    expect(consoleSpy).toHaveBeenCalledWith('[TestService] Test message', {
+      password: '[REDACTED]',
+      username: 'john',
+    });
+    consoleSpy.mockRestore();
+  });
+
+  it('should store log entries', () => {
     const logger = new DefaultServiceLogger('TestService');
 
-    logger.info('Test message', { key: 'value' });
+    logger.info('Test message 1');
+    logger.warn('Test message 2');
 
-    expect(consoleSpy).toHaveBeenCalledWith('[TestService] Test message', { key: 'value' });
-    consoleSpy.mockRestore();
+    const entries = logger.getLogEntries();
+    expect(entries).toHaveLength(2);
+    expect(entries[0].message).toBe('Test message 1');
+    expect(entries[1].message).toBe('Test message 2');
   });
 });
 

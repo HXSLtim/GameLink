@@ -218,12 +218,19 @@ describe('UserService - Property Tests', () => {
     });
 
     it('should return valid for correct data', () => {
+      // Generate valid names that are not just whitespace
+      // Name must have at least 2 non-whitespace characters
+      const alphanumericChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      const validNameArb = fc
+        .array(fc.constantFrom(...alphanumericChars.split('')), { minLength: 2, maxLength: 50 })
+        .map((chars) => chars.join(''));
+
       fc.assert(
         fc.property(
           validEmailArb,
           validPhoneArb,
           validPasswordArb,
-          fc.string({ minLength: 2, maxLength: 50 }),
+          validNameArb,
           fc.constantFrom('user', 'player', 'admin'),
           fc.constantFrom('active', 'banned', 'suspended'),
           (email, phone, password, name, role, status) => {

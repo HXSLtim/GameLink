@@ -30,6 +30,15 @@ import {
 } from './validators/gameDataValidator';
 import { yuanToCents } from './templates/playerTemplate';
 import type { CreateUserDto, CreatePlayerDto, CreateGameDto } from '@/api/admin';
+import {
+  ImportTransactionManager,
+  type TransactionManagerConfig,
+} from './transaction/transactionManager';
+import type {
+  ImportTransaction,
+  RollbackResult,
+  DeleteRecordFn,
+} from './transaction/types';
 
 /**
  * Parsed row with validation status
@@ -82,6 +91,30 @@ export interface ImportOptions {
 }
 
 /**
+ * Import with transaction options
+ */
+export interface ImportWithTransactionOptions extends ImportOptions {
+  /** Callback to prompt user for rollback decision on partial failure */
+  onRollbackPrompt?: (
+    importedCount: number,
+    failedCount: number,
+    errors: Array<{ rowNumber: number; message: string }>
+  ) => Promise<boolean>;
+}
+
+/**
+ * Import with transaction result
+ */
+export interface ImportWithTransactionResult extends ImportResult {
+  /** Transaction ID for tracking */
+  transactionId: string;
+  /** Whether rollback was performed */
+  rolledBack: boolean;
+  /** Rollback result if rollback was performed */
+  rollbackResult?: RollbackResult;
+}
+
+/**
  * Import Service Interface
  */
 export interface IImportService {
@@ -97,6 +130,20 @@ export interface IImportService {
   importUsers(rows: ParsedRow[], options?: ImportOptions): Promise<ImportResult>;
   importPlayers(rows: ParsedRow[], options?: ImportOptions): Promise<ImportResult>;
   importGames(rows: ParsedRow[], options?: ImportOptions): Promise<ImportResult>;
+
+  // Transaction-aware import methods
+  importWithTransaction(
+    type: ImportType,
+    rows: ParsedRow[],
+    options?: ImportWithTransactionOptions
+  ): Promise<ImportWithTransactionResult>;
+
+  // Interrupted import handling
+  getInterruptedImports(): ImportTransaction[];
+  resumeOrCleanup(
+    transactionId: string,
+    action: 'rollback' | 'dismiss'
+  ): Promise<RollbackResult | void>;
 }
 
 
@@ -180,8 +227,34 @@ export function validatePasswordSecurity(password: string): {
  * Import Service Implementation
  */
 export class ImportService extends BaseService implements IImportService {
-  constructor(deps: ServiceDependencies = {}) {
+  private transactionManager: ImportTransactionManager;
+
+  constructor(deps: ServiceDependencies = {}, transactionConfig?: TransactionManagerConfig) {
     super(deps);
+
+    // Create delete record function that uses the API
+    const deleteRecord: DeleteRecordFn = async (type: ImportType, recordId: number) => {
+      switch (type) {
+        case 'user':
+          await this.api.deleteUser(recordId);
+          break;
+        case 'player':
+          await this.api.deletePlayer(recordId);
+          break;
+        case 'game':
+          await this.api.deleteGame(recordId);
+          break;
+      }
+    };
+
+    this.transactionManager = new ImportTransactionManager({
+      deleteRecord,
+      logger: this.logger,
+      ...transactionConfig,
+    });
+
+    // Check for interrupted imports on initialization
+    this.transactionManager.cleanupInterrupted();
   }
 
   /**
@@ -686,6 +759,270 @@ export class ImportService extends BaseService implements IImportService {
     result.success = result.errors.length === 0;
 
     return result;
+  }
+
+  /**
+   * Import data with transaction support
+   * Tracks all created records and supports rollback on failure
+   */
+  async importWithTransaction(
+    type: ImportType,
+    rows: ParsedRow[],
+    options?: ImportWithTransactionOptions
+  ): Promise<ImportWithTransactionResult> {
+    // Start a transaction
+    const transaction = this.transactionManager.startTransaction(type, rows.length);
+
+    const result: ImportWithTransactionResult = {
+      success: true,
+      totalRows: rows.length,
+      importedCount: 0,
+      skippedCount: 0,
+      errors: [],
+      transactionId: transaction.id,
+      rolledBack: false,
+    };
+
+    const validRows = rows.filter((r) => r.isValid);
+    const invalidRows = rows.filter((r) => !r.isValid);
+
+    // Add errors from invalid rows
+    for (const row of invalidRows) {
+      result.skippedCount++;
+      for (const error of row.errors) {
+        result.errors.push({
+          rowNumber: row.rowNumber,
+          field: error.field,
+          message: error.message,
+        });
+      }
+    }
+
+    // Process valid rows with transaction tracking
+    for (let i = 0; i < validRows.length; i++) {
+      const row = validRows[i];
+
+      try {
+        const recordId = await this.importSingleRow(type, row, options);
+
+        if (recordId !== null) {
+          // Track the created record
+          this.transactionManager.recordCreated(transaction.id, recordId);
+          result.importedCount++;
+        } else {
+          result.skippedCount++;
+        }
+
+        // Update progress
+        this.transactionManager.updateProgress(transaction.id, i + 1);
+
+        // Report progress
+        if (options?.onProgress) {
+          options.onProgress(i + 1, validRows.length);
+        }
+      } catch (error) {
+        result.success = false;
+        result.skippedCount++;
+
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error occurred';
+        result.errors.push({
+          rowNumber: row.rowNumber,
+          message: errorMessage,
+        });
+
+        // Check if we should prompt for rollback
+        if (options?.onRollbackPrompt && result.importedCount > 0) {
+          const shouldRollback = await options.onRollbackPrompt(
+            result.importedCount,
+            result.skippedCount,
+            result.errors
+          );
+
+          if (shouldRollback) {
+            const rollbackResult = await this.transactionManager.rollbackTransaction(
+              transaction.id
+            );
+            result.rolledBack = true;
+            result.rollbackResult = rollbackResult;
+            result.importedCount = 0; // All records rolled back
+            return result;
+          }
+        }
+      }
+    }
+
+    // Commit or handle partial success
+    if (result.success) {
+      await this.transactionManager.commitTransaction(transaction.id);
+    } else if (result.importedCount > 0 && options?.onRollbackPrompt) {
+      // Partial success - prompt for rollback
+      const shouldRollback = await options.onRollbackPrompt(
+        result.importedCount,
+        result.skippedCount,
+        result.errors
+      );
+
+      if (shouldRollback) {
+        const rollbackResult = await this.transactionManager.rollbackTransaction(
+          transaction.id
+        );
+        result.rolledBack = true;
+        result.rollbackResult = rollbackResult;
+        result.importedCount = 0;
+      } else {
+        // Keep successful imports
+        await this.transactionManager.commitTransaction(transaction.id);
+      }
+    } else {
+      // No rollback prompt or no successful imports
+      await this.transactionManager.commitTransaction(transaction.id);
+    }
+
+    return result;
+  }
+
+  /**
+   * Import a single row and return the created record ID
+   */
+  private async importSingleRow(
+    type: ImportType,
+    row: ParsedRow,
+    options?: ImportOptions
+  ): Promise<number | null> {
+    switch (type) {
+      case 'user':
+        return this.importSingleUser(row);
+      case 'player':
+        return this.importSinglePlayer(row);
+      case 'game':
+        return this.importSingleGame(row, options);
+      default:
+        return null;
+    }
+  }
+
+  /**
+   * Import a single user and return the created user ID
+   */
+  private async importSingleUser(row: ParsedRow): Promise<number> {
+    const normalizedData = normalizeUserData(row.data);
+    const password = generateSecurePassword();
+
+    const createDto: CreateUserDto = {
+      name: String(normalizedData.name),
+      email: String(normalizedData.email),
+      phone: String(normalizedData.phone),
+      password,
+      role: (normalizedData.role as 'user' | 'player' | 'admin') || 'user',
+      status: (normalizedData.status as 'active' | 'banned' | 'suspended') || 'active',
+    };
+
+    const response = await this.api.createUser(createDto);
+    return response.data?.data?.id || 0;
+  }
+
+  /**
+   * Import a single player and return the created player ID
+   */
+  private async importSinglePlayer(row: ParsedRow): Promise<number> {
+    const normalizedData = normalizePlayerData(row.data);
+    const userEmail = String(normalizedData.userEmail);
+
+    // Look up user by email
+    const userResponse = await this.api.getUsers({ keyword: userEmail, page_size: 1 });
+    const users = userResponse.data?.data || [];
+    const user = users.find(
+      (u) => u.email.toLowerCase() === userEmail.toLowerCase()
+    );
+
+    if (!user) {
+      throw new Error(`User with email "${userEmail}" not found`);
+    }
+
+    const hourlyRateCents = normalizedData.hourlyRate
+      ? yuanToCents(Number(normalizedData.hourlyRate))
+      : 0;
+
+    const createDto: CreatePlayerDto = {
+      userId: user.id,
+      nickname: normalizedData.nickname ? String(normalizedData.nickname) : undefined,
+      bio: normalizedData.bio ? String(normalizedData.bio) : undefined,
+      hourlyRateCents,
+      verificationStatus: 'pending',
+    };
+
+    const response = await this.api.createPlayer(createDto);
+    return response.data?.data?.id || 0;
+  }
+
+  /**
+   * Import a single game and return the created/updated game ID
+   */
+  private async importSingleGame(row: ParsedRow, options?: ImportOptions): Promise<number | null> {
+    const normalizedData = normalizeGameData(row.data);
+    const gameKey = String(normalizedData.key).toLowerCase();
+    const duplicateHandling = options?.duplicateKeyHandling || 'fail';
+
+    // Check for existing game by fetching all and filtering
+    const gamesResponse = await this.api.getGames({ page_size: 1000 });
+    const existingGame = (gamesResponse.data?.data || []).find(
+      (g) => g.key.toLowerCase() === gameKey
+    );
+
+    if (existingGame) {
+      switch (duplicateHandling) {
+        case 'skip':
+          return null; // Skip, no record created
+        case 'update':
+          await this.api.updateGame(existingGame.id, {
+            name: String(normalizedData.name),
+            category: normalizedData.category ? String(normalizedData.category) : undefined,
+            description: normalizedData.description ? String(normalizedData.description) : undefined,
+            isActive: normalizedData.isActive as boolean,
+            sortOrder: normalizedData.sortOrder as number,
+          });
+          return existingGame.id;
+        case 'fail':
+        default:
+          throw new Error(`Game key "${gameKey}" already exists`);
+      }
+    }
+
+    // Create new game
+    const createDto: CreateGameDto = {
+      key: gameKey,
+      name: String(normalizedData.name),
+      category: normalizedData.category ? String(normalizedData.category) : undefined,
+      description: normalizedData.description ? String(normalizedData.description) : undefined,
+      isActive: normalizedData.isActive !== undefined ? (normalizedData.isActive as boolean) : true,
+      sortOrder: normalizedData.sortOrder !== undefined ? (normalizedData.sortOrder as number) : 0,
+    };
+
+    const response = await this.api.createGame(createDto);
+    return response.data?.data?.id || 0;
+  }
+
+  /**
+   * Get all interrupted imports
+   */
+  getInterruptedImports(): ImportTransaction[] {
+    return this.transactionManager.getInterruptedTransactions();
+  }
+
+  /**
+   * Resume or cleanup an interrupted import
+   */
+  async resumeOrCleanup(
+    transactionId: string,
+    action: 'rollback' | 'dismiss'
+  ): Promise<RollbackResult | void> {
+    if (action === 'rollback') {
+      return this.transactionManager.rollbackTransaction(transactionId);
+    } else {
+      // Dismiss - just delete the transaction record
+      this.transactionManager.deleteTransaction(transactionId);
+    }
   }
 }
 

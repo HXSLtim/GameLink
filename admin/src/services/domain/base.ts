@@ -13,36 +13,17 @@ import {
   type BatchResult,
   type BatchItemResult,
   ServiceResultHelper,
+  type ServiceLogger,
+  type PerformanceMonitor,
+  type PerformanceMetrics,
+  DefaultServiceLogger,
+  DefaultPerformanceMonitor,
+  sanitizeParams,
 } from '../utils';
 
-/**
- * Logger interface for service operations
- */
-export interface ServiceLogger {
-  debug(message: string, context?: Record<string, unknown>): void;
-  info(message: string, context?: Record<string, unknown>): void;
-  warn(message: string, context?: Record<string, unknown>): void;
-  error(message: string, error?: Error, context?: Record<string, unknown>): void;
-}
-
-/**
- * Performance metrics for service operations
- */
-export interface PerformanceMetrics {
-  methodName: string;
-  duration: number;
-  success: boolean;
-  timestamp: Date;
-}
-
-/**
- * Performance monitor interface
- */
-export interface PerformanceMonitor {
-  startTimer(operationName: string): () => number;
-  recordMetric(metric: PerformanceMetrics): void;
-  getMetrics(): PerformanceMetrics[];
-}
+// Re-export types for backward compatibility
+export type { ServiceLogger, PerformanceMonitor, PerformanceMetrics };
+export { DefaultServiceLogger, DefaultPerformanceMonitor };
 
 /**
  * Dependencies that can be injected into services
@@ -55,79 +36,6 @@ export interface ServiceDependencies {
   /** Optional performance monitor */
   perfMonitor?: PerformanceMonitor;
 }
-
-/**
- * Default console-based logger implementation
- */
-export class DefaultServiceLogger implements ServiceLogger {
-  private serviceName: string;
-  private isDev: boolean;
-
-  constructor(serviceName: string) {
-    this.serviceName = serviceName;
-    this.isDev = import.meta.env?.DEV ?? false;
-  }
-
-  debug(message: string, context?: Record<string, unknown>): void {
-    if (this.isDev) {
-      console.debug(`[${this.serviceName}] ${message}`, context ?? '');
-    }
-  }
-
-  info(message: string, context?: Record<string, unknown>): void {
-    console.info(`[${this.serviceName}] ${message}`, context ?? '');
-  }
-
-  warn(message: string, context?: Record<string, unknown>): void {
-    console.warn(`[${this.serviceName}] ${message}`, context ?? '');
-  }
-
-  error(message: string, error?: Error, context?: Record<string, unknown>): void {
-    console.error(`[${this.serviceName}] ${message}`, { error, ...context });
-  }
-}
-
-/**
- * Default performance monitor implementation
- */
-export class DefaultPerformanceMonitor implements PerformanceMonitor {
-  private metrics: PerformanceMetrics[] = [];
-  private readonly SLOW_THRESHOLD_MS = 3000;
-  private readonly MAX_METRICS = 1000;
-  private logger?: ServiceLogger;
-
-  constructor(logger?: ServiceLogger) {
-    this.logger = logger;
-  }
-
-  startTimer(operationName: string): () => number {
-    const startTime = performance.now();
-    return () => {
-      const duration = performance.now() - startTime;
-      if (duration > this.SLOW_THRESHOLD_MS && this.logger) {
-        this.logger.warn(`Slow operation detected: ${operationName}`, { duration });
-      }
-      return duration;
-    };
-  }
-
-  recordMetric(metric: PerformanceMetrics): void {
-    this.metrics.push(metric);
-    // Keep only last MAX_METRICS metrics
-    if (this.metrics.length > this.MAX_METRICS) {
-      this.metrics = this.metrics.slice(-this.MAX_METRICS);
-    }
-  }
-
-  getMetrics(): PerformanceMetrics[] {
-    return [...this.metrics];
-  }
-}
-
-/**
- * Sensitive keys that should be redacted in logs
- */
-const SENSITIVE_KEYS = ['password', 'token', 'secret', 'key', 'authorization'];
 
 /**
  * Abstract base class for all domain services
@@ -162,7 +70,7 @@ export abstract class BaseService {
   constructor(deps: ServiceDependencies = {}) {
     this.api = deps.api ?? adminApi;
     this.logger = deps.logger ?? new DefaultServiceLogger(this.constructor.name);
-    this.perfMonitor = deps.perfMonitor ?? new DefaultPerformanceMonitor(this.logger);
+    this.perfMonitor = deps.perfMonitor ?? new DefaultPerformanceMonitor({ logger: this.logger });
   }
 
   /**
@@ -380,19 +288,7 @@ export abstract class BaseService {
    * @returns Sanitized parameters
    */
   protected sanitizeParams(params: Record<string, unknown>): Record<string, unknown> {
-    const sanitized: Record<string, unknown> = {};
-
-    for (const [key, value] of Object.entries(params)) {
-      if (SENSITIVE_KEYS.some((sk) => key.toLowerCase().includes(sk))) {
-        sanitized[key] = '[REDACTED]';
-      } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-        sanitized[key] = this.sanitizeParams(value as Record<string, unknown>);
-      } else {
-        sanitized[key] = value;
-      }
-    }
-
-    return sanitized;
+    return sanitizeParams(params);
   }
 
   /**

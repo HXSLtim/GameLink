@@ -14,6 +14,9 @@ export * from './templates';
 // Validators
 export * from './validators';
 
+// History
+export * from './history';
+
 // Import Service
 export {
   ImportService,
