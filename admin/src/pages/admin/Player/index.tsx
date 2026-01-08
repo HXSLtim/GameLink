@@ -32,9 +32,10 @@ import {
     SafetyOutlined,
     DeleteOutlined,
     DownloadOutlined,
+    UploadOutlined,
 } from '@ant-design/icons';
 import { exportToCSV, playerExportColumns } from '@/utils/export';
-import { PageContainer, SearchTable, type ToolbarButton } from '@/components';
+import { PageContainer, SearchTable, type ToolbarButton, ImportModal } from '@/components';
 import type { SearchField } from '@/components';
 import { PLAYER_PERMISSIONS } from '@/constants/permissions';
 import { PermissionGuard } from '@/components/PermissionGuard';
@@ -77,6 +78,9 @@ const PlayerPage: React.FC = () => {
     const [selectedPlayerIds, setSelectedPlayerIds] = useState<number[]>([]);
     const [batchTarget, setBatchTarget] = useState<'selected' | 'status' | 'all'>('selected');
     const [batchForm] = Form.useForm();
+
+    // 导入弹窗状态
+    const [importModalVisible, setImportModalVisible] = useState(false);
 
     /**
      * 加载陪玩师数据
@@ -449,6 +453,13 @@ const PlayerPage: React.FC = () => {
      */
     const toolbarButtons: ToolbarButton[] = [
         {
+            text: '导入数据',
+            icon: <UploadOutlined />,
+            needSelection: false,
+            onClick: () => setImportModalVisible(true),
+            permission: PLAYER_PERMISSIONS.CREATE,
+        },
+        {
             text: '批量修改状态',
             icon: <SafetyOutlined />,
             needSelection: false,
@@ -655,6 +666,17 @@ const PlayerPage: React.FC = () => {
                     </div>
                 </Form>
             </Modal>
+
+            {/* 导入弹窗 */}
+            <ImportModal
+                open={importModalVisible}
+                type="player"
+                onClose={() => setImportModalVisible(false)}
+                onSuccess={() => {
+                    setImportModalVisible(false);
+                    loadData();
+                }}
+            />
         </PageContainer>
     );
 };

@@ -19,9 +19,10 @@ import {
     EditOutlined,
     DeleteOutlined,
     DownloadOutlined,
+    UploadOutlined,
 } from '@ant-design/icons';
 import { exportToCSV, gameExportColumns } from '@/utils/export';
-import { PageContainer, SearchTable, type ToolbarButton } from '@/components';
+import { PageContainer, SearchTable, type ToolbarButton, ImportModal } from '@/components';
 import type { SearchField } from '@/components';
 import { GAME_PERMISSIONS } from '@/constants/permissions';
 import { PermissionGuard } from '@/components/PermissionGuard';
@@ -56,6 +57,9 @@ const GamePage: React.FC = () => {
     const [selectedGameIds, setSelectedGameIds] = useState<number[]>([]);
     const [batchTarget, setBatchTarget] = useState<'selected' | 'category' | 'all'>('selected');
     const [batchForm] = Form.useForm();
+
+    // 导入弹窗状态
+    const [importModalVisible, setImportModalVisible] = useState(false);
 
     /**
      * 使用 CRUD Hook 管理游戏数据
@@ -362,6 +366,13 @@ const GamePage: React.FC = () => {
      */
     const toolbarButtons: ToolbarButton[] = [
         {
+            text: '导入数据',
+            icon: <UploadOutlined />,
+            needSelection: false,
+            onClick: () => setImportModalVisible(true),
+            permission: GAME_PERMISSIONS.CREATE,
+        },
+        {
             text: '批量删除',
             icon: <DeleteOutlined />,
             needSelection: false,
@@ -479,6 +490,17 @@ const GamePage: React.FC = () => {
                     </div>
                 </Form>
             </Modal>
+
+            {/* 导入弹窗 */}
+            <ImportModal
+                open={importModalVisible}
+                type="game"
+                onClose={() => setImportModalVisible(false)}
+                onSuccess={() => {
+                    setImportModalVisible(false);
+                    fetchAll();
+                }}
+            />
         </PageContainer>
     );
 };

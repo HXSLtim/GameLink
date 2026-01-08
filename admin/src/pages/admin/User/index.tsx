@@ -34,9 +34,10 @@ import {
     SafetyOutlined,
     MailOutlined,
     DownloadOutlined,
+    UploadOutlined,
 } from '@ant-design/icons';
 import { exportWithFormat, userExportColumns } from '@/utils/export';
-import { PageContainer, SearchTable, type ToolbarButton } from '@/components';
+import { PageContainer, SearchTable, type ToolbarButton, ImportModal } from '@/components';
 import type { SearchField } from '@/components';
 import { USER_PERMISSIONS } from '@/constants/permissions';
 import { PermissionGuard } from '@/components/PermissionGuard';
@@ -103,6 +104,9 @@ const UserPage: React.FC = () => {
     // Operation Logs State
     const [operationLogs, setOperationLogs] = useState<AuditLog[]>([]);
     const [operationLogsLoading, setOperationLogsLoading] = useState(false);
+
+    // Import Modal State
+    const [importModalVisible, setImportModalVisible] = useState(false);
 
     const fetchLoginHistory = async (userId: number) => {
         setLoginHistoryLoading(true);
@@ -693,6 +697,13 @@ const UserPage: React.FC = () => {
      */
     const toolbarButtons: ToolbarButton[] = [
         {
+            text: '导入数据',
+            icon: <UploadOutlined />,
+            needSelection: false,
+            onClick: () => setImportModalVisible(true),
+            permission: USER_PERMISSIONS.CREATE,
+        },
+        {
             text: '批量修改角色',
             icon: <EditOutlined />,
             needSelection: true,
@@ -1129,6 +1140,17 @@ const UserPage: React.FC = () => {
                     </Form.Item>
                 </Form>
             </Modal>
+
+            {/* 导入弹窗 */}
+            <ImportModal
+                open={importModalVisible}
+                type="user"
+                onClose={() => setImportModalVisible(false)}
+                onSuccess={() => {
+                    setImportModalVisible(false);
+                    loadData();
+                }}
+            />
         </PageContainer>
     );
 };
