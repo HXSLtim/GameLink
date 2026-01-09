@@ -40,7 +40,24 @@ func (r *gormReviewRepository) List(ctx context.Context, opts repository.ReviewL
 		return nil, 0, err
 	}
 	var items []model.Review
-	if err := q.Order("created_at DESC").Offset(offset).Limit(size).Find(&items).Error; err != nil {
+	// 使用 Preload 预加载关联数据，避免 N+1 查询
+	findQuery := r.db.WithContext(ctx).Preload("User").Preload("Player").Preload("Order")
+	if opts.OrderID != nil {
+		findQuery = findQuery.Where("order_id = ?", *opts.OrderID)
+	}
+	if opts.UserID != nil {
+		findQuery = findQuery.Where("user_id = ?", *opts.UserID)
+	}
+	if opts.PlayerID != nil {
+		findQuery = findQuery.Where("player_id = ?", *opts.PlayerID)
+	}
+	if opts.DateFrom != nil {
+		findQuery = findQuery.Where("created_at >= ?", *opts.DateFrom)
+	}
+	if opts.DateTo != nil {
+		findQuery = findQuery.Where("created_at <= ?", *opts.DateTo)
+	}
+	if err := findQuery.Order("created_at DESC").Offset(offset).Limit(size).Find(&items).Error; err != nil {
 		return nil, 0, err
 	}
 	return items, total, nil
