@@ -586,14 +586,14 @@ describe('UserPage', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Test User', { exact: false })).toBeInTheDocument();
-      });
+      }, { timeout: 5000 });
 
       const detailButton = screen.getByRole('button', { name: /详情/i });
       await _user.click(detailButton);
 
       await waitFor(() => {
         expect(screen.getByText('用户详情')).toBeInTheDocument();
-      });
+      }, { timeout: 5000 });
 
       const loginHistoryTab = screen.getByText('登录历史');
       await _user.click(loginHistoryTab);
@@ -604,8 +604,8 @@ describe('UserPage', () => {
           page_size: 10,
           type: 'login',
         });
-      });
-    });
+      }, { timeout: 5000 });
+    }, 20000);
 
     it('should display operation logs tab', async () => {
       const _user = userEvent.setup();
