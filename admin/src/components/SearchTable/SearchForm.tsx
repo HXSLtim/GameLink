@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Form, Row, Col, Input, Select, DatePicker, Button, Space, InputNumber } from 'antd';
 import type { FormInstance } from 'antd';
 import { SearchOutlined, DownOutlined, UpOutlined } from '@ant-design/icons';
@@ -26,7 +26,11 @@ export interface SearchFormProps {
     defaultExpanded?: boolean;
 }
 
-export const SearchForm: React.FC<SearchFormProps> = ({
+/**
+ * SearchForm 组件
+ * 优化: 使用 React.memo + useCallback + useMemo 减少重渲染
+ */
+export const SearchForm: React.FC<SearchFormProps> = React.memo(({
     fields,
     form,
     onSearch,
@@ -36,7 +40,13 @@ export const SearchForm: React.FC<SearchFormProps> = ({
 }) => {
     const [expanded, setExpanded] = useState(defaultExpanded);
 
-    const renderSearchField = (field: SearchField) => {
+    // 切换展开状态
+    const toggleExpanded = useCallback(() => {
+        setExpanded(prev => !prev);
+    }, []);
+
+    // 渲染搜索字段
+    const renderSearchField = useCallback((field: SearchField) => {
         switch (field.type) {
             case 'select':
                 return (
@@ -78,7 +88,15 @@ export const SearchForm: React.FC<SearchFormProps> = ({
                     />
                 );
         }
-    };
+    }, []);
+
+    // 计算显示的字段
+    const visibleFields = useMemo(() => {
+        return expanded ? fields : fields.slice(0, 3);
+    }, [fields, expanded]);
+
+    // 是否显示展开按钮
+    const showExpandButton = fields.length > 3;
 
     if (fields.length === 0) {
         return null;
@@ -87,7 +105,7 @@ export const SearchForm: React.FC<SearchFormProps> = ({
     return (
         <Form form={form} layout="horizontal">
             <Row gutter={[24, 16]}>
-                {fields.slice(0, expanded ? undefined : 3).map(field => (
+                {visibleFields.map(field => (
                     <Col
                         key={field.name}
                         xs={24}
@@ -116,10 +134,10 @@ export const SearchForm: React.FC<SearchFormProps> = ({
                             搜索
                         </Button>
                         <Button onClick={onReset}>重置</Button>
-                        {fields.length > 3 && (
+                        {showExpandButton && (
                             <Button
                                 type="link"
-                                onClick={() => setExpanded(!expanded)}
+                                onClick={toggleExpanded}
                                 style={{ padding: 0 }}
                             >
                                 {expanded ? '收起' : '展开'}
@@ -131,4 +149,4 @@ export const SearchForm: React.FC<SearchFormProps> = ({
             </Row>
         </Form >
     );
-};
+});

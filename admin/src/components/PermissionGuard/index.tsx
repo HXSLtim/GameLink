@@ -2,7 +2,7 @@
  * 权限守卫组件
  * 用于控制按钮、菜单等UI元素的显示/隐藏
  */
-import React, { type ReactNode, type ReactElement } from 'react';
+import React, { type ReactNode, type ReactElement, useMemo } from 'react';
 // Note: withPermission is in a separate file for React Fast Refresh compatibility
 import { usePermission } from '@/hooks/usePermission';
 
@@ -26,6 +26,7 @@ export interface PermissionGuardProps {
 
 /**
  * PermissionGuard 权限守卫组件
+ * 优化: 使用 React.memo 减少重渲染
  *
  * @description
  * 包裹需要权限控制的UI元素，根据用户权限决定是否渲染
@@ -61,7 +62,7 @@ export interface PermissionGuardProps {
  * </PermissionGuard>
  * ```
  */
-export const PermissionGuard: React.FC<PermissionGuardProps> = ({
+export const PermissionGuard: React.FC<PermissionGuardProps> = React.memo(({
     permission,
     mode = 'any',
     children,
@@ -70,6 +71,16 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
     disabled = false,
 }) => {
     const { hasPermission, loading } = usePermission(permission, mode);
+
+    // 缓存禁用状态的子组件
+    const disabledChildren = useMemo(() => {
+        if (disabled && React.isValidElement(children)) {
+            return React.cloneElement(children as ReactElement<{ disabled?: boolean }>, {
+                disabled: true,
+            });
+        }
+        return null;
+    }, [disabled, children]);
 
     // 加载中
     if (loading && loadingContent) {
@@ -82,15 +93,13 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
     }
 
     // 无权限，禁用模式
-    if (disabled && React.isValidElement(children)) {
-        return React.cloneElement(children as ReactElement<{ disabled?: boolean }>, {
-            disabled: true,
-        });
+    if (disabled && disabledChildren) {
+        return disabledChildren;
     }
 
     // 无权限，显示fallback或不渲染
     return <>{fallback}</>;
-};
+});
 
 /**
  * 权限按钮组件属性接口
@@ -102,6 +111,7 @@ export interface PermissionButtonProps extends Omit<PermissionGuardProps, 'disab
 
 /**
  * PermissionButton 权限按钮包装器
+ * 优化: 使用 React.memo 减少重渲染
  *
  * @description
  * 专门为按钮设计的权限包装器，支持禁用模式
@@ -116,12 +126,12 @@ export interface PermissionButtonProps extends Omit<PermissionGuardProps, 'disab
  * </PermissionButton>
  * ```
  */
-export const PermissionButton: React.FC<PermissionButtonProps> = ({
+export const PermissionButton: React.FC<PermissionButtonProps> = React.memo(({
     disableOnNoPermission = false,
     ...props
 }) => {
     return <PermissionGuard {...props} disabled={disableOnNoPermission} />;
-};
+});
 
 export default PermissionGuard;
 

@@ -2,7 +2,7 @@
  * 搜索表格组件
  * 封装表格搜索、分页、批量操作等通用功能
  */
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import {
     Table,

@@ -6,7 +6,7 @@
  * import { Card } from '@/components';
  * <Card cardVariant="borderless" cardPadding="relaxed">内容</Card>
  */
-import React from 'react';
+import React, { useMemo } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { Card as AntCard } from 'antd';
 import type { CardProps as AntCardProps } from 'antd';
@@ -57,48 +57,47 @@ export interface CardProps extends AntCardProps {
 
 /**
  * 统一卡片组件
+ * 优化: 使用 React.memo + useMemo 减少重渲染
  */
-export const Card: React.FC<CardProps> = ({
+export const Card: React.FC<CardProps> = React.memo(({
   cardVariant = 'bordered',
   cardPadding: padding = 'standard',
   style,
   children,
   ...props
 }) => {
-  const variantStyle = variantStyles[cardVariant] || {};
+  // 缓存样式计算
+  const finalStyle = useMemo<CSSProperties>(() => {
+    const variantStyle = variantStyles[cardVariant] || {};
+    return { ...variantStyle, ...style };
+  }, [cardVariant, style]);
 
-  // 合并样式
-  const finalStyle: CSSProperties = {
-    ...variantStyle,
-    ...style,
-  };
-
-  // 设置 body 内边距
-  const bodyStyle: CSSProperties = {
+  // 缓存 body 样式
+  const bodyStyle = useMemo<CSSProperties>(() => ({
     padding: paddingMap[padding],
-  };
+  }), [padding]);
 
   return (
     <AntCard style={finalStyle} styles={{ body: bodyStyle }} {...props}>
       {children}
     </AntCard>
   );
-};
+});
 
 /**
  * 统计卡片 - 用于仪表盘
  * 预设为无边框 + 标准内边距
  */
-export const StatisticCard: React.FC<CardProps> = (props) => {
+export const StatisticCard: React.FC<CardProps> = React.memo((props) => {
   return <Card cardVariant="borderless" cardPadding="standard" {...props} />;
-};
+});
 
 /**
  * 内容卡片 - 用于表单、详情等
  * 预设为有边框 + 宽松内边距
  */
-export const ContentCard: React.FC<CardProps> = (props) => {
+export const ContentCard: React.FC<CardProps> = React.memo((props) => {
   return <Card cardVariant="bordered" cardPadding="relaxed" {...props} />;
-};
+});
 
 export default Card;
