@@ -18,9 +18,13 @@ func openPostgres(cfg ConfigProvider, metrics MetricsProvider) (*gorm.DB, error)
 		return nil, fmt.Errorf("打开 postgres 失败: %w", err)
 	}
 
-	// PostgreSQL 连接池优化：根据负载调整
-	// 高 QPS 场景：100 最大连接，50 空闲连接
-	if err := configureConnection(gormDB, 100); err != nil {
+	// PostgreSQL 连接池优化：使用配置中的连接数
+	// 生产环境建议：100 最大连接，50 空闲连接
+	maxConns := cfg.GetMaxOpenConns()
+	if maxConns <= 0 {
+		maxConns = 100 // 默认值
+	}
+	if err := configureConnection(gormDB, maxConns); err != nil {
 		return nil, err
 	}
 
