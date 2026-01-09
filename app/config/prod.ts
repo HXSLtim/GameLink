@@ -3,8 +3,12 @@ import type { UserConfigExport } from "@tarojs/cli"
 export default {
   mini: {},
   h5: {
-    // 确保产物为 es5
-    legacy: true,
+    compile: {
+      include: [
+        // 确保产物为 es5
+        filename => /node_modules\/(?!(@babel|core-js|style-loader|css-loader|react|react-dom))/.test(filename)
+      ]
+    },
     /**
      * WebpackChain 插件配置
      * @docs https://github.com/neutrinojs/webpack-chain
@@ -32,4 +36,4 @@ export default {
     //     }))
     // }
   }
-} satisfies UserConfigExport<'vite'>
+} satisfies UserConfigExport<'webpack5'>

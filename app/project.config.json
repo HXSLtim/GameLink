@@ -1,10 +1,10 @@
 {
   "miniprogramRoot": "./dist",
   "projectname": "app",
-  "description": "陪玩小程序端",
+  "description": "陪玩小程序端，包括用户端和陪玩端",
   "appid": "touristappid",
   "setting": {
-    "urlCheck": false,
+    "urlCheck": true,
     "es6": false,
     "enhance": false,
     "compileHotReLoad": false,

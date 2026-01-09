@@ -5,7 +5,7 @@ module.exports = {
     ['taro', {
       framework: 'react',
       ts: true,
-      compiler: 'vite',
+      compiler: 'webpack5',
       useBuiltIns: process.env.TARO_ENV === 'h5' ? 'usage' : false
     }]
   ]
