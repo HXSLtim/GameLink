@@ -1,7 +1,7 @@
 /**
  * 陪玩师管理页面
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     Tag,
     Space,
@@ -279,7 +279,7 @@ const PlayerPage: React.FC = () => {
     /**
      * 搜索字段配置
      */
-    const searchFields: SearchField[] = [
+    const searchFields: SearchField[] = useMemo(() => [
         { name: 'keyword', label: '关键词', type: 'input', placeholder: '名称/ID' },
         {
             name: 'status',
@@ -287,12 +287,12 @@ const PlayerPage: React.FC = () => {
             type: 'select',
             options: Object.entries(statusMap).map(([key, val]) => ({ label: val.text, value: key })),
         },
-    ];
+    ], []);
 
     /**
      * 表格列配置
      */
-    const columns: ColumnsType<Player> = [
+    const columns: ColumnsType<Player> = useMemo(() => [
         {
             title: 'ID',
             dataIndex: 'id',
@@ -416,7 +416,7 @@ const PlayerPage: React.FC = () => {
                 </Space>
             ),
         },
-    ];
+    ], [handleViewDetail, handleOpenAudit, handleToggleBan]);
 
     /**
      * 导出陪玩师数据

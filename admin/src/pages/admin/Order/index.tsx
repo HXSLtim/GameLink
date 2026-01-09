@@ -1,7 +1,7 @@
 /**
  * 订单管理页面
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     Tag,
     Space,
@@ -291,7 +291,7 @@ const OrderPage: React.FC = () => {
     /**
      * 搜索字段配置
      */
-    const searchFields: SearchField[] = [
+    const searchFields: SearchField[] = useMemo(() => [
         { name: 'orderNo', label: '订单号', type: 'input', placeholder: '请输入订单号' },
         {
             name: 'status',
@@ -300,12 +300,12 @@ const OrderPage: React.FC = () => {
             options: Object.entries(statusMap).map(([key, val]) => ({ label: val.text, value: key })),
         },
         { name: 'dateRange', label: '创建时间', type: 'dateRange' },
-    ];
+    ], []);
 
     /**
      * 表格列配置
      */
-    const columns: ColumnsType<Order> = [
+    const columns: ColumnsType<Order> = useMemo(() => [
         {
             title: '订单号',
             dataIndex: 'orderNo',
@@ -425,7 +425,7 @@ const OrderPage: React.FC = () => {
                 </Space>
             ),
         },
-    ];
+    ], [handleViewDetail, handleCancel, handleOpenRefund]);
 
     /**
      * 导出订单数据

@@ -2,7 +2,7 @@
  * 角色管理页面
  * Requirements: 2.1, 2.4, 2.5
  */
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
     Tag,
     Space,
@@ -146,9 +146,9 @@ const RolePage: React.FC = () => {
     /**
      * 搜索字段配置
      */
-    const searchFields: SearchField[] = [
+    const searchFields: SearchField[] = useMemo(() => [
         { name: 'keyword', label: '关键词', type: 'input', placeholder: '角色名称/编码' },
-    ];
+    ], []);
 
     /**
      * 搜索处理
@@ -160,7 +160,7 @@ const RolePage: React.FC = () => {
     /**
      * 表格列配置
      */
-    const columns: ColumnsType<Role> = [
+    const columns: ColumnsType<Role> = useMemo(() => [
         {
             title: 'ID',
             dataIndex: 'id',
@@ -270,7 +270,7 @@ const RolePage: React.FC = () => {
                 </Space>
             ),
         },
-    ];
+    ], [handleConfigPermission, handleEdit, handleDelete]);
 
     return (
         <PageContainer title="角色管理" subTitle="管理系统角色和权限分配">

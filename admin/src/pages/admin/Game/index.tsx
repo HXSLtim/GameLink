@@ -1,7 +1,7 @@
 /**
  * 游戏管理页面
  */
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
     Tag,
     Space,
@@ -234,15 +234,15 @@ const GamePage: React.FC = () => {
     /**
      * 搜索字段配置
      */
-    const searchFields: SearchField[] = [
+    const searchFields: SearchField[] = useMemo(() => [
         { name: 'keyword', label: '游戏名称', type: 'input', placeholder: '请输入游戏名称' },
         { name: 'category', label: '分类', type: 'select', options: categoryOptions },
-    ];
+    ], [categoryOptions]);
 
     /**
      * 表格列配置
      */
-    const columns: ColumnsType<Game> = [
+    const columns: ColumnsType<Game> = useMemo(() => [
         {
             title: 'ID',
             dataIndex: 'id',
@@ -341,7 +341,7 @@ const GamePage: React.FC = () => {
                 </Space>
             ),
         },
-    ];
+    ], [handleEdit, handleDelete]);
 
     /**
      * 导出游戏数据
