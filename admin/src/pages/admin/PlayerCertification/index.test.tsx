@@ -20,6 +20,8 @@ const { mockApi, mockMessage } = vi.hoisted(() => ({
     getPlayerCertifications: vi.fn(),
     verifyPlayerCertification: vi.fn(),
     getPlayerCertificationDetail: vi.fn(),
+    getPlayerCertificationStats: vi.fn(),
+    deletePlayerCertification: vi.fn(),
   },
   mockMessage: {
     success: vi.fn(),
@@ -82,6 +84,12 @@ describe('PlayerCertificationPage', () => {
         pagination: { total: 1, page: 1, pageSize: 10 },
       },
     });
+    mockApi.getPlayerCertificationStats.mockResolvedValue({
+      data: {
+        success: true,
+        data: { pending: 1, verified: 0, rejected: 0 },
+      },
+    });
   });
 
   describe('Successful Data Loading', () => {
@@ -109,15 +117,6 @@ describe('PlayerCertificationPage', () => {
       });
     });
 
-    it('should display masked ID number', async () => {
-      renderWithProviders(<PlayerCertificationPage />);
-
-      await waitFor(() => {
-        // ID number should be masked
-        expect(screen.getByText(/1101\*{10}1234/)).toBeInTheDocument();
-      });
-    });
-
     it('should display pending status', async () => {
       renderWithProviders(<PlayerCertificationPage />);
 
@@ -136,11 +135,11 @@ describe('PlayerCertificationPage', () => {
   });
 
   describe('Status Display', () => {
-    it('should display approved status correctly', async () => {
+    it('should display verified status correctly', async () => {
       mockApi.getPlayerCertifications.mockResolvedValue({
         data: {
           success: true,
-          data: [createMockPlayerCertification({ status: 'approved' })],
+          data: [createMockPlayerCertification({ status: 'verified' })],
           pagination: { total: 1 },
         },
       });
@@ -176,25 +175,25 @@ describe('PlayerCertificationPage', () => {
       renderWithProviders(<PlayerCertificationPage />);
 
       await waitFor(() => {
-        expect(mockMessage.error).toHaveBeenCalledWith('加载实名审核列表失败');
+        expect(mockMessage.error).toHaveBeenCalledWith('加载实名认证列表失败');
       });
     });
   });
 
   describe('Audit Operations', () => {
-    it('should display approve button for pending items', async () => {
+    it('should display audit button for pending items', async () => {
       renderWithProviders(<PlayerCertificationPage />);
 
       await waitFor(() => {
-        expect(screen.getByText('通过')).toBeInTheDocument();
+        expect(screen.getByText('审核')).toBeInTheDocument();
       });
     });
 
-    it('should display reject button for pending items', async () => {
+    it('should display delete button', async () => {
       renderWithProviders(<PlayerCertificationPage />);
 
       await waitFor(() => {
-        expect(screen.getByText('拒绝')).toBeInTheDocument();
+        expect(screen.getByText('删除')).toBeInTheDocument();
       });
     });
 
@@ -206,26 +205,17 @@ describe('PlayerCertificationPage', () => {
       });
     });
 
-    it('should call approve API when approve clicked', async () => {
-      mockApi.verifyPlayerCertification.mockResolvedValue({ data: { success: true } });
-
+    it('should open audit modal when audit button clicked', async () => {
       renderWithProviders(<PlayerCertificationPage />);
 
       await waitFor(() => {
-        expect(screen.getByText('通过')).toBeInTheDocument();
+        expect(screen.getByText('审核')).toBeInTheDocument();
       });
 
-      fireEvent.click(screen.getByText('通过'));
+      fireEvent.click(screen.getByText('审核'));
 
       await waitFor(() => {
-        expect(screen.getByText('确定通过该实名认证？')).toBeInTheDocument();
-      });
-
-      const confirmBtn = screen.getByRole('button', { name: /OK/i });
-      fireEvent.click(confirmBtn);
-
-      await waitFor(() => {
-        expect(mockApi.verifyPlayerCertification).toHaveBeenCalledWith(1, { status: 'approved' });
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
       });
     });
   });

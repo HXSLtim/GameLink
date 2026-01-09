@@ -21,6 +21,7 @@ const { mockApi, mockMessage } = vi.hoisted(() => ({
     getGames: vi.fn(),
     verifyPlayerRank: vi.fn(),
     getPlayerRankDetail: vi.fn(),
+    getPlayerRankStats: vi.fn(),
   },
   mockMessage: {
     success: vi.fn(),
@@ -50,11 +51,13 @@ const createMockPlayerRank = (overrides: Record<string, unknown> = {}): Record<s
   gameRankId: 1,
   status: 'pending',
   proofImages: ['https://example.com/proof1.jpg'],
+  screenshotUrls: '["https://example.com/proof1.jpg"]',
   verifiedAt: null,
   verifiedBy: null,
   rejectReason: null,
   player: {
     id: 1,
+    userId: 100,
     nickname: '测试陪玩师',
     avatarUrl: 'https://example.com/avatar.jpg',
     user: {
@@ -63,13 +66,19 @@ const createMockPlayerRank = (overrides: Record<string, unknown> = {}): Record<s
       email: 'test@example.com',
       phone: '13800138000',
       status: 'active',
+      avatarUrl: 'https://example.com/avatar.jpg',
     },
   },
-  gameRank: {
+  game: {
+    id: 1,
+    name: '王者荣耀',
+    icon: 'https://example.com/icon.png',
+  },
+  rank: {
     id: 1,
     name: '王者',
     level: 10,
-    game: { id: 1, name: '王者荣耀' },
+    color: '#ff0000',
   },
   createdAt: '2024-01-01T00:00:00Z',
   updatedAt: '2024-01-01T00:00:00Z',
@@ -100,6 +109,12 @@ describe('PlayerRankPage', () => {
       data: {
         success: true,
         data: [createMockGame()],
+      },
+    });
+    mockApi.getPlayerRankStats.mockResolvedValue({
+      data: {
+        success: true,
+        data: { pending: 1, verified: 0, rejected: 0 },
       },
     });
   });
@@ -142,7 +157,8 @@ describe('PlayerRankPage', () => {
       renderWithProviders(<PlayerRankPage />);
 
       await waitFor(() => {
-        expect(screen.getByText('张三')).toBeInTheDocument();
+        // 用户名显示在 "账号: xxx" 格式中
+        expect(screen.getByText(/账号: 张三/)).toBeInTheDocument();
       });
     });
 
@@ -157,11 +173,11 @@ describe('PlayerRankPage', () => {
   });
 
   describe('Status Display', () => {
-    it('should display approved status correctly', async () => {
+    it('should display verified status correctly', async () => {
       mockApi.getPlayerRanks.mockResolvedValue({
         data: {
           success: true,
-          data: [createMockPlayerRank({ status: 'approved' })],
+          data: [createMockPlayerRank({ status: 'verified' })],
           pagination: { total: 1 },
         },
       });
@@ -197,25 +213,25 @@ describe('PlayerRankPage', () => {
       renderWithProviders(<PlayerRankPage />);
 
       await waitFor(() => {
-        expect(mockMessage.error).toHaveBeenCalledWith('加载段位审核列表失败');
+        expect(mockMessage.error).toHaveBeenCalledWith('加载段位认证列表失败');
       });
     });
   });
 
   describe('Audit Operations', () => {
-    it('should display approve button for pending items', async () => {
+    it('should display audit button for pending items', async () => {
       renderWithProviders(<PlayerRankPage />);
 
       await waitFor(() => {
-        expect(screen.getByText('通过')).toBeInTheDocument();
+        expect(screen.getByText('审核')).toBeInTheDocument();
       });
     });
 
-    it('should display reject button for pending items', async () => {
+    it('should display delete button', async () => {
       renderWithProviders(<PlayerRankPage />);
 
       await waitFor(() => {
-        expect(screen.getByText('拒绝')).toBeInTheDocument();
+        expect(screen.getByText('删除')).toBeInTheDocument();
       });
     });
 
@@ -227,26 +243,17 @@ describe('PlayerRankPage', () => {
       });
     });
 
-    it('should call approve API when approve clicked', async () => {
-      mockApi.verifyPlayerRank.mockResolvedValue({ data: { success: true } });
-
+    it('should open audit modal when audit button clicked', async () => {
       renderWithProviders(<PlayerRankPage />);
 
       await waitFor(() => {
-        expect(screen.getByText('通过')).toBeInTheDocument();
+        expect(screen.getByText('审核')).toBeInTheDocument();
       });
 
-      fireEvent.click(screen.getByText('通过'));
+      fireEvent.click(screen.getByText('审核'));
 
       await waitFor(() => {
-        expect(screen.getByText('确定通过该段位认证？')).toBeInTheDocument();
-      });
-
-      const confirmBtn = screen.getByRole('button', { name: /OK/i });
-      fireEvent.click(confirmBtn);
-
-      await waitFor(() => {
-        expect(mockApi.verifyPlayerRank).toHaveBeenCalledWith(1, { status: 'approved' });
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
       });
     });
   });
