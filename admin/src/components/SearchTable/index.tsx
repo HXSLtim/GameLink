@@ -149,11 +149,17 @@ export function SearchTable<T extends object>({
         }
     }, [selectedRowKeys, onBatchDelete]);
 
-    // 行选择配置
-    const mergedRowSelection = rowSelection !== undefined ? rowSelection : (showBatchDelete ? {
-        selectedRowKeys,
-        onChange: (keys: React.Key[]) => setSelectedRowKeys(keys),
-    } : undefined);
+    // 行选择配置 - 使用 useMemo 避免重复创建
+    const mergedRowSelection = useMemo(() => {
+        if (rowSelection !== undefined) return rowSelection;
+        if (showBatchDelete) {
+            return {
+                selectedRowKeys,
+                onChange: (keys: React.Key[]) => setSelectedRowKeys(keys),
+            };
+        }
+        return undefined;
+    }, [rowSelection, showBatchDelete, selectedRowKeys]);
 
     // 搜索表单回车提交
     useEffect(() => {
@@ -167,9 +173,9 @@ export function SearchTable<T extends object>({
     }, [handleSearch]);
 
     /**
-     * 渲染工具栏按钮
+     * 渲染工具栏按钮 - 使用 useCallback 优化
      */
-    const renderToolbarButton = (btn: ToolbarButton, index: number) => {
+    const renderToolbarButton = useCallback((btn: ToolbarButton, index: number) => {
         const disabled = btn.needSelection && selectedRowKeys.length === 0;
 
         const button = btn.confirmText ? (
@@ -212,7 +218,7 @@ export function SearchTable<T extends object>({
         }
 
         return button;
-    };
+    }, [selectedRowKeys]);
 
     return (
         <div className={styles.container}>
