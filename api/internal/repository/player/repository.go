@@ -19,16 +19,19 @@ func NewPlayerRepository(db *gorm.DB) repository.PlayerRepository {
 	return &gormPlayerRepository{db: db}
 }
 
-// List returns all players ordered by creation time.
+// List returns all players ordered by creation time with User preloaded.
 func (r *gormPlayerRepository) List(ctx context.Context) ([]model.Player, error) {
 	var players []model.Player
-	if err := r.db.WithContext(ctx).Order("created_at DESC").Find(&players).Error; err != nil {
+	if err := r.db.WithContext(ctx).
+		Preload("User").
+		Order("created_at DESC").
+		Find(&players).Error; err != nil {
 		return nil, err
 	}
 	return players, nil
 }
 
-// ListPaged returns a page of players and the total count.
+// ListPaged returns a page of players and the total count with User preloaded.
 func (r *gormPlayerRepository) ListPaged(ctx context.Context, page, pageSize int) ([]model.Player, int64, error) {
 	page = repository.NormalizePage(page)
 	pageSize = repository.NormalizePageSize(pageSize)
@@ -42,16 +45,21 @@ func (r *gormPlayerRepository) ListPaged(ctx context.Context, page, pageSize int
 	}
 
 	var players []model.Player
-	if err := query.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&players).Error; err != nil {
+	if err := r.db.WithContext(ctx).
+		Preload("User").
+		Order("created_at DESC").
+		Offset(offset).
+		Limit(pageSize).
+		Find(&players).Error; err != nil {
 		return nil, 0, err
 	}
 	return players, total, nil
 }
 
-// Get returns a player by id.
+// Get returns a player by id with User preloaded.
 func (r *gormPlayerRepository) Get(ctx context.Context, id uint64) (*model.Player, error) {
 	var player model.Player
-	if err := r.db.WithContext(ctx).First(&player, id).Error; err != nil {
+	if err := r.db.WithContext(ctx).Preload("User").First(&player, id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, repository.ErrNotFound
 		}
@@ -60,10 +68,10 @@ func (r *gormPlayerRepository) Get(ctx context.Context, id uint64) (*model.Playe
 	return &player, nil
 }
 
-// GetByUserID returns player by bound user id.
+// GetByUserID returns player by bound user id with User preloaded.
 func (r *gormPlayerRepository) GetByUserID(ctx context.Context, userID uint64) (*model.Player, error) {
 	var player model.Player
-	if err := r.db.WithContext(ctx).Where("user_id = ?", userID).First(&player).Error; err != nil {
+	if err := r.db.WithContext(ctx).Preload("User").Where("user_id = ?", userID).First(&player).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, repository.ErrNotFound
 		}
@@ -72,13 +80,13 @@ func (r *gormPlayerRepository) GetByUserID(ctx context.Context, userID uint64) (
 	return &player, nil
 }
 
-// GetByIDs returns players by a list of IDs.
+// GetByIDs returns players by a list of IDs with User preloaded.
 func (r *gormPlayerRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.Player, error) {
 	if len(ids) == 0 {
 		return []model.Player{}, nil
 	}
 	var players []model.Player
-	if err := r.db.WithContext(ctx).Where("id IN ?", ids).Find(&players).Error; err != nil {
+	if err := r.db.WithContext(ctx).Preload("User").Where("id IN ?", ids).Find(&players).Error; err != nil {
 		return nil, err
 	}
 	return players, nil
@@ -122,7 +130,7 @@ func (r *gormPlayerRepository) Delete(ctx context.Context, id uint64) error {
 	return nil
 }
 
-// ListPagedWithFilter returns a page of players with keyword and status filter.
+// ListPagedWithFilter returns a page of players with keyword and status filter, User preloaded.
 func (r *gormPlayerRepository) ListPagedWithFilter(ctx context.Context, page, pageSize int, keyword string, status *model.VerificationStatus) ([]model.Player, int64, error) {
 	page = repository.NormalizePage(page)
 	pageSize = repository.NormalizePageSize(pageSize)
@@ -147,7 +155,16 @@ func (r *gormPlayerRepository) ListPagedWithFilter(ctx context.Context, page, pa
 	}
 
 	var players []model.Player
-	if err := query.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&players).Error; err != nil {
+	// 使用新的查询以便添加 Preload
+	findQuery := r.db.WithContext(ctx).Preload("User")
+	if keyword != "" {
+		likePattern := "%" + keyword + "%"
+		findQuery = findQuery.Where("nickname ILIKE ? OR bio ILIKE ?", likePattern, likePattern)
+	}
+	if status != nil {
+		findQuery = findQuery.Where("verification_status = ?", *status)
+	}
+	if err := findQuery.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&players).Error; err != nil {
 		return nil, 0, err
 	}
 	return players, total, nil
