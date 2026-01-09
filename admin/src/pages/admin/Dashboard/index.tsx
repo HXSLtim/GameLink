@@ -1,8 +1,9 @@
 /**
  * 管理后台仪表盘
  * 支持可折叠区块和用户偏好持久化
+ * 性能优化：使用 useMemo 缓存图表数据和列定义
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, memo } from 'react';
 import { Row, Col, Card, Table, Tag, Avatar, Typography, Space, App, Select, theme } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
@@ -32,6 +33,7 @@ import { adminApi } from '@/api/admin';
 import type { DashboardStats, TrendData, TopPlayer } from '@/api/admin';
 import { logger } from '@/utils/logger';
 import { chartColors } from '@/theme';
+import type { GlobalToken } from 'antd';
 
 const { Text } = Typography;
 const { Option } = Select;
@@ -62,6 +64,102 @@ interface OrderRecord {
   status: string;
   createdAt: string;
 }
+
+interface ChartData {
+  name: string;
+  value: number;
+  [key: string]: string | number;
+}
+
+// 抽取饼图组件并使用 memo 优化
+interface PieChartCardProps {
+  title: string;
+  data: ChartData[];
+  loading: boolean;
+  chartHeight: number;
+  token: GlobalToken;
+  ariaLabel: string;
+}
+
+const PieChartCard = memo(({ title, data, loading, chartHeight, token, ariaLabel }: PieChartCardProps) => (
+  <Card title={title} loading={loading} style={{ border: 'none' }}>
+    <div
+      style={{ height: chartHeight + 20, width: '100%', minWidth: 1, minHeight: 1, overflow: 'hidden' }}
+      role="img"
+      aria-label={ariaLabel}
+    >
+      {data.length > 0 && (
+        <ResponsiveContainer width="99%" height={chartHeight} debounce={300}>
+          <PieChart>
+            <Pie
+              data={data}
+              cx="50%"
+              cy="50%"
+              labelLine={false}
+              label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
+              outerRadius={100}
+              fill="#8884d8"
+              dataKey="value"
+            >
+              {data.map((_, index) => (
+                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip
+              contentStyle={{ backgroundColor: token.colorBgElevated, borderColor: token.colorBorder }}
+              itemStyle={{ color: token.colorText }}
+            />
+            <Legend />
+          </PieChart>
+        </ResponsiveContainer>
+      )}
+    </div>
+  </Card>
+));
+PieChartCard.displayName = 'PieChartCard';
+
+// 抽取折线图组件并使用 memo 优化
+interface LineChartCardProps {
+  title: string;
+  data: TrendData[];
+  loading: boolean;
+  chartHeight: number;
+  token: GlobalToken;
+  ariaLabel: string;
+  dataName: string;
+  lineColor: string;
+}
+
+const LineChartCard = memo(({ title, data, loading, chartHeight, token, ariaLabel, dataName, lineColor }: LineChartCardProps) => (
+  <Card title={title} loading={loading} style={{ border: 'none' }}>
+    <div
+      style={{ height: chartHeight + 20, width: '100%', minWidth: 1, minHeight: 1, overflow: 'hidden' }}
+      role="img"
+      aria-label={ariaLabel}
+    >
+      <ResponsiveContainer width="99%" height={chartHeight} debounce={300}>
+        <LineChart data={data}>
+          <CartesianGrid strokeDasharray="3 3" stroke={token.colorSplit} />
+          <XAxis dataKey="date" stroke={token.colorTextSecondary} />
+          <YAxis stroke={token.colorTextSecondary} />
+          <Tooltip
+            contentStyle={{ backgroundColor: token.colorBgElevated, borderColor: token.colorBorder }}
+            itemStyle={{ color: token.colorText }}
+          />
+          <Legend />
+          <Line
+            type="monotone"
+            dataKey="value"
+            name={dataName}
+            stroke={lineColor}
+            activeDot={{ r: 8 }}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  </Card>
+));
+LineChartCard.displayName = 'LineChartCard';
 
 const Dashboard: React.FC = () => {
   const { message } = App.useApp();
@@ -116,7 +214,8 @@ const Dashboard: React.FC = () => {
     loadData();
   }, [days, message]);
 
-  const orderColumns: ColumnsType<OrderRecord> = [
+  // 使用 useMemo 缓存订单列定义
+  const orderColumns: ColumnsType<OrderRecord> = useMemo(() => [
     {
       title: '订单号',
       dataIndex: 'orderNo',
@@ -158,21 +257,69 @@ const Dashboard: React.FC = () => {
         </Text>
       ),
     },
-  ];
+  ], [token.colorPrimary]);
 
-  const orderStatusData = stats?.ordersByStatus
-    ? Object.entries(stats.ordersByStatus).map(([name, value]) => ({
-        name: statusMap[name]?.text || name,
-        value,
-      }))
-    : [];
+  // 使用 useMemo 缓存热门陪玩列定义
+  const topPlayersColumns: ColumnsType<TopPlayer> = useMemo(() => [
+    {
+      title: '排名',
+      key: 'rank',
+      width: 60,
+      render: (_: unknown, __: TopPlayer, index: number) => <Tag color="gold">#{index + 1}</Tag>,
+    },
+    {
+      title: '陪玩',
+      key: 'player',
+      render: (_: unknown, record: TopPlayer, index: number) => (
+        <Space>
+          <Avatar style={{ backgroundColor: `hsl(${index * 60}, 70%, 50%)` }} icon={<UserOutlined />} />
+          <Text>{record.nickname}</Text>
+        </Space>
+      ),
+    },
+    {
+      title: '评分',
+      key: 'rating',
+      render: (_: unknown, record: TopPlayer) => (
+        <Space>
+          <Text strong>{record.ratingAverage}</Text>
+          <Text type="secondary">({record.ratingCount})</Text>
+        </Space>
+      ),
+    },
+  ], []);
 
-  const paymentStatusData = stats?.paymentsByStatus
-    ? Object.entries(stats.paymentsByStatus).map(([name, value]) => ({
-        name: paymentStatusMap[name] || name,
-        value,
-      }))
-    : [];
+  // 使用 useMemo 缓存图表数据计算
+  const orderStatusData = useMemo(() => 
+    stats?.ordersByStatus
+      ? Object.entries(stats.ordersByStatus).map(([name, value]) => ({
+          name: statusMap[name]?.text || name,
+          value,
+        }))
+      : [],
+    [stats?.ordersByStatus]
+  );
+
+  const paymentStatusData = useMemo(() =>
+    stats?.paymentsByStatus
+      ? Object.entries(stats.paymentsByStatus).map(([name, value]) => ({
+          name: paymentStatusMap[name] || name,
+          value,
+        }))
+      : [],
+    [stats?.paymentsByStatus]
+  );
+
+  // 计算图表 aria-label
+  const orderChartAriaLabel = useMemo(() => 
+    `订单状态分布饼图，共${orderStatusData.reduce((sum, d) => sum + d.value, 0)}个订单`,
+    [orderStatusData]
+  );
+
+  const paymentChartAriaLabel = useMemo(() =>
+    `支付状态分布饼图，共${paymentStatusData.reduce((sum, d) => sum + d.value, 0)}笔支付`,
+    [paymentStatusData]
+  );
 
   return (
     <PageContainer
@@ -237,74 +384,24 @@ const Dashboard: React.FC = () => {
       >
         <Row gutter={[16, 16]}>
           <Col xs={24} lg={12}>
-            <Card title="订单状态分布" loading={loading} style={{ border: 'none' }}>
-              <div
-                style={{ height: chartHeight + 20, width: '100%', minWidth: 1, minHeight: 1, overflow: 'hidden' }}
-                role="img"
-                aria-label={`订单状态分布饼图，共${orderStatusData.reduce((sum, d) => sum + d.value, 0)}个订单`}
-              >
-                {orderStatusData.length > 0 && (
-                  <ResponsiveContainer width="99%" height={chartHeight} debounce={300}>
-                    <PieChart>
-                      <Pie
-                        data={orderStatusData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
-                        outerRadius={100}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {orderStatusData.map((_, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{ backgroundColor: token.colorBgElevated, borderColor: token.colorBorder }}
-                        itemStyle={{ color: token.colorText }}
-                      />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
-            </Card>
+            <PieChartCard
+              title="订单状态分布"
+              data={orderStatusData}
+              loading={loading}
+              chartHeight={chartHeight}
+              token={token}
+              ariaLabel={orderChartAriaLabel}
+            />
           </Col>
           <Col xs={24} lg={12}>
-            <Card title="支付状态分布" loading={loading} style={{ border: 'none' }}>
-              <div
-                style={{ height: chartHeight + 20, width: '100%', minWidth: 1, minHeight: 1, overflow: 'hidden' }}
-                role="img"
-                aria-label={`支付状态分布饼图，共${paymentStatusData.reduce((sum, d) => sum + d.value, 0)}笔支付`}
-              >
-                {paymentStatusData.length > 0 && (
-                  <ResponsiveContainer width="99%" height={chartHeight} debounce={300}>
-                    <PieChart>
-                      <Pie
-                        data={paymentStatusData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
-                        outerRadius={100}
-                        fill="#82ca9d"
-                        dataKey="value"
-                      >
-                        {paymentStatusData.map((_, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{ backgroundColor: token.colorBgElevated, borderColor: token.colorBorder }}
-                        itemStyle={{ color: token.colorText }}
-                      />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
-            </Card>
+            <PieChartCard
+              title="支付状态分布"
+              data={paymentStatusData}
+              loading={loading}
+              chartHeight={chartHeight}
+              token={token}
+              ariaLabel={paymentChartAriaLabel}
+            />
           </Col>
         </Row>
       </CollapsibleSection>
@@ -318,62 +415,28 @@ const Dashboard: React.FC = () => {
       >
         <Row gutter={[16, 16]}>
           <Col xs={24} lg={12}>
-            <Card title={`收入趋势 (近${days}天)`} loading={loading} style={{ border: 'none' }}>
-              <div
-                style={{ height: chartHeight + 20, width: '100%', minWidth: 1, minHeight: 1, overflow: 'hidden' }}
-                role="img"
-                aria-label={`收入趋势折线图，展示近${days}天收入变化`}
-              >
-                <ResponsiveContainer width="99%" height={chartHeight} debounce={300}>
-                  <LineChart data={revenueTrend}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={token.colorSplit} />
-                    <XAxis dataKey="date" stroke={token.colorTextSecondary} />
-                    <YAxis stroke={token.colorTextSecondary} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: token.colorBgElevated, borderColor: token.colorBorder }}
-                      itemStyle={{ color: token.colorText }}
-                    />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="value"
-                      name="收入"
-                      stroke={chartColors.revenue}
-                      activeDot={{ r: 8 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </Card>
+            <LineChartCard
+              title={`收入趋势 (近${days}天)`}
+              data={revenueTrend}
+              loading={loading}
+              chartHeight={chartHeight}
+              token={token}
+              ariaLabel={`收入趋势折线图，展示近${days}天收入变化`}
+              dataName="收入"
+              lineColor={chartColors.revenue}
+            />
           </Col>
           <Col xs={24} lg={12}>
-            <Card title={`用户增长 (近${days}天)`} loading={loading} style={{ border: 'none' }}>
-              <div
-                style={{ height: chartHeight + 20, width: '100%', minWidth: 1, minHeight: 1, overflow: 'hidden' }}
-                role="img"
-                aria-label={`用户增长折线图，展示近${days}天新增用户变化`}
-              >
-                <ResponsiveContainer width="99%" height={chartHeight} debounce={300}>
-                  <LineChart data={userGrowth}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={token.colorSplit} />
-                    <XAxis dataKey="date" stroke={token.colorTextSecondary} />
-                    <YAxis stroke={token.colorTextSecondary} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: token.colorBgElevated, borderColor: token.colorBorder }}
-                      itemStyle={{ color: token.colorText }}
-                    />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="value"
-                      name="新增用户"
-                      stroke={chartColors.users}
-                      activeDot={{ r: 8 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </Card>
+            <LineChartCard
+              title={`用户增长 (近${days}天)`}
+              data={userGrowth}
+              loading={loading}
+              chartHeight={chartHeight}
+              token={token}
+              ariaLabel={`用户增长折线图，展示近${days}天新增用户变化`}
+              dataName="新增用户"
+              lineColor={chartColors.users}
+            />
           </Col>
         </Row>
       </CollapsibleSection>
@@ -413,34 +476,7 @@ const Dashboard: React.FC = () => {
               style={{ flex: 1, width: '100%', border: 'none' }}
             >
               <Table
-                columns={[
-                  {
-                    title: '排名',
-                    key: 'rank',
-                    width: 60,
-                    render: (_: unknown, __: TopPlayer, index: number) => <Tag color="gold">#{index + 1}</Tag>,
-                  },
-                  {
-                    title: '陪玩',
-                    key: 'player',
-                    render: (_: unknown, record: TopPlayer, index: number) => (
-                      <Space>
-                        <Avatar style={{ backgroundColor: `hsl(${index * 60}, 70%, 50%)` }} icon={<UserOutlined />} />
-                        <Text>{record.nickname}</Text>
-                      </Space>
-                    ),
-                  },
-                  {
-                    title: '评分',
-                    key: 'rating',
-                    render: (_: unknown, record: TopPlayer) => (
-                      <Space>
-                        <Text strong>{record.ratingAverage}</Text>
-                        <Text type="secondary">({record.ratingCount})</Text>
-                      </Space>
-                    ),
-                  },
-                ]}
+                columns={topPlayersColumns}
                 dataSource={topPlayers}
                 rowKey="playerId"
                 pagination={false}
