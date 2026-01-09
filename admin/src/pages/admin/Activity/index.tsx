@@ -2,7 +2,7 @@
  * Activity Management Page
  * Manage marketing activities - create, edit, delete, publish/unpublish, rewards management
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     Card,
     Table,
@@ -309,7 +309,7 @@ const ActivityPage: React.FC = () => {
         }
     };
 
-    const columns: ColumnsType<Activity> = [
+    const columns: ColumnsType<Activity> = useMemo(() => [
         {
             title: 'ID',
             dataIndex: 'id',
@@ -472,9 +472,9 @@ const ActivityPage: React.FC = () => {
                 </Space>
             ),
         },
-    ];
+    ], []);
 
-    const rewardsColumns: ColumnsType<ActivityReward> = [
+    const rewardsColumns: ColumnsType<ActivityReward> = useMemo(() => [
         {
             title: 'ID',
             dataIndex: 'id',
@@ -559,7 +559,7 @@ const ActivityPage: React.FC = () => {
                 </Space>
             ),
         },
-    ];
+    ], [rewardsActivity]);
 
     return (
         <div style={{ padding: 24 }}>
