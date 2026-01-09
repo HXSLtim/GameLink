@@ -382,10 +382,10 @@ const OrderPage: React.FC = () => {
         {
             title: '操作',
             key: 'action',
-            width: 200,
+            width: 240, // 3个按钮 × 80px
             fixed: 'right',
             render: (_, record) => (
-                <Space size="small">
+                <Space size={4}>
                     <Button
                         type="link"
                         size="small"
@@ -400,24 +400,28 @@ const OrderPage: React.FC = () => {
                                 title="确定要取消该订单吗？"
                                 onConfirm={() => handleCancel(record)}
                             >
-                                <Button type="link" size="small" danger icon={<CloseCircleOutlined />}>
+                                <Button
+                                    type="link"
+                                    size="small"
+                                    danger
+                                    icon={<CloseCircleOutlined />}
+                                >
                                     取消
                                 </Button>
                             </Popconfirm>
                         </PermissionGuard>
                     )}
-                    {!['canceled', 'refunded'].includes(record.status) && record.totalPriceCents > 0 && (
-                        <PermissionGuard permission={ORDER_PERMISSIONS.REFUND}>
-                            <Button
-                                type="link"
-                                size="small"
-                                icon={<DollarOutlined />}
-                                onClick={() => handleOpenRefund(record)}
-                            >
-                                退款
-                            </Button>
-                        </PermissionGuard>
-                    )}
+                    <PermissionGuard permission={ORDER_PERMISSIONS.REFUND}>
+                        <Button
+                            type="link"
+                            size="small"
+                            icon={<DollarOutlined />}
+                            onClick={() => handleOpenRefund(record)}
+                            disabled={['canceled', 'refunded'].includes(record.status) || record.totalPriceCents <= 0}
+                        >
+                            退款
+                        </Button>
+                    </PermissionGuard>
                 </Space>
             ),
         },

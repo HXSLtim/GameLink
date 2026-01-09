@@ -41,6 +41,7 @@ func (r *gormPlayerRankRepository) GetWithRelations(ctx context.Context, id uint
 	var record model.PlayerRankRecord
 	if err := r.db.WithContext(ctx).
 		Preload("Player").
+		Preload("Player.User").
 		Preload("Game").
 		Preload("Rank").
 		Preload("Verifier").
@@ -117,6 +118,7 @@ func (r *gormPlayerRankRepository) ListPaged(ctx context.Context, opts repositor
 	var records []model.PlayerRankRecord
 	if err := query.
 		Preload("Player").
+		Preload("Player.User").
 		Preload("Game").
 		Preload("Rank").
 		Order("created_at DESC").

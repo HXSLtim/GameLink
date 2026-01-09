@@ -103,6 +103,23 @@ func (h *SystemInfoHandler) InitStatus(c *gin.Context) {
 			response.LastSyncAt = &state.LastSyncAt
 			response.Version = state.Version
 			response.SyncedBy = state.SyncedBy
+		} else {
+			// 如果没有同步记录，尝试从最近更新的权限或菜单获取时间
+			var latestPerm model.Permission
+			var latestMenu model.Menu
+			var latestTime time.Time
+
+			if err := h.db.Order("updated_at DESC").First(&latestPerm).Error; err == nil {
+				latestTime = latestPerm.UpdatedAt
+			}
+			if err := h.db.Order("updated_at DESC").First(&latestMenu).Error; err == nil {
+				if latestMenu.UpdatedAt.After(latestTime) {
+					latestTime = latestMenu.UpdatedAt
+				}
+			}
+			if !latestTime.IsZero() {
+				response.LastSyncAt = &latestTime
+			}
 		}
 	} else {
 		response.Message = fmt.Sprintf("System not initialized - permissions: %d, menus: %d", permCount, menuCount)

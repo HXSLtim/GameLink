@@ -233,10 +233,10 @@ const SensitiveWords: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      width: 150,
+      width: 160,
       fixed: 'right',
       render: (_: unknown, record: SensitiveWord) => (
-        <Space size="small">
+        <Space size={4}>
           {permissions.canUpdate ? (
             <Button
               type="link"

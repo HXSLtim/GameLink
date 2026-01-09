@@ -314,10 +314,10 @@ const RechargeOptions: React.FC<OptionsProps> = ({ onStatsUpdate }) => {
         {
             title: '操作',
             key: 'action',
-            width: TABLE.COLUMN_WIDTH.ACTION,
+            width: 240,
             fixed: 'right',
             render: (_, record) => (
-                <Space size="small">
+                <Space size={4}>
                     <PermissionGuard permission={RECHARGE_PERMISSIONS.UPDATE_OPTION}>
                         <Button
                             type="link"

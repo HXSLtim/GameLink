@@ -262,9 +262,9 @@ const RoutingRulePage: React.FC = () => {
         {
             title: '操作',
             key: 'action',
-            width: 200,
+            width: 240, // 3个按钮 × 80px
             render: (_, record) => (
-                <Space size="small">
+                <Space size={4}>
                     <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>编辑</Button>
                     <Button type="link" size="small" icon={<HistoryOutlined />} onClick={() => handleViewHistory(record)}>历史</Button>
                     <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>删除</Button>

@@ -203,6 +203,26 @@ export const componentMap: Record<string, React.LazyExoticComponent<React.Compon
     'content/reports': React.lazy(() => import('@/pages/admin/Content/Reports')),
     'content/categories': React.lazy(() => import('@/pages/admin/Content/Categories')),
     'content/stats': React.lazy(() => import('@/pages/admin/Content/Stats')),
+
+    // 段位管理
+    'GameRank': React.lazy(() => import('@/pages/admin/GameRank')),
+    'admin/game-rank': React.lazy(() => import('@/pages/admin/GameRank')),
+    'admin/biz/game-rank': React.lazy(() => import('@/pages/admin/GameRank')),
+
+    // 段位审核
+    'PlayerRank': React.lazy(() => import('@/pages/admin/PlayerRank')),
+    'admin/player-rank': React.lazy(() => import('@/pages/admin/PlayerRank')),
+    'admin/biz/player-rank': React.lazy(() => import('@/pages/admin/PlayerRank')),
+
+    // 实名审核（管理端）
+    'PlayerCertificationAdmin': React.lazy(() => import('@/pages/admin/PlayerCertification')),
+    'AdminPlayerCertification': React.lazy(() => import('@/pages/admin/PlayerCertification')),
+    'admin/player-certification': React.lazy(() => import('@/pages/admin/PlayerCertification')),
+    'admin/biz/player-certification': React.lazy(() => import('@/pages/admin/PlayerCertification')),
+
+    // 个人中心
+    'Profile': React.lazy(() => import('@/pages/admin/Profile')),
+    'admin/profile': React.lazy(() => import('@/pages/admin/Profile')),
 };
 
 export const getComponent = (componentKey: string) => {

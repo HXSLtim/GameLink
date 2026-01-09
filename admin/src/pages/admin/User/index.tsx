@@ -640,10 +640,10 @@ const UserPage: React.FC = () => {
         {
             title: '操作',
             key: 'action',
-            width: 240,
+            width: 320, // 4个按钮 × 80px
             fixed: 'right',
             render: (_, record) => (
-                <Space size="small">
+                <Space size={4}>
                     <Button
                         type="link"
                         size="small"

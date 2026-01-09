@@ -387,9 +387,9 @@ const KPIDashboard: React.FC = () => {
     {
       title: '操作',
       key: 'actions',
-      width: 120,
+      width: 160,
       render: (_: unknown, record: KPITarget) => (
-        <Space>
+        <Space size={4}>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openTargetModal(record)} />
           <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDeleteTarget(record.id)} />
         </Space>

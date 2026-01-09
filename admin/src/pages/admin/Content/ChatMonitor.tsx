@@ -171,10 +171,10 @@ const ChatMonitorPage: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      width: 150,
+      width: 240,
       fixed: 'right',
       render: (_, record) => (
-        <Space size="small">
+        <Space size={4}>
           <Tooltip title="禁言用户">
             <Button
               type="link"

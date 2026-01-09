@@ -274,10 +274,10 @@ const Rewards: React.FC<RewardsProps> = ({ onDataChange }) => {
         {
             title: '操作',
             key: 'action',
-            width: 200,
+            width: 240,
             fixed: 'right',
             render: (_, record) => (
-                <Space size="small">
+                <Space size={4}>
                     <Button
                         type="link"
                         size="small"

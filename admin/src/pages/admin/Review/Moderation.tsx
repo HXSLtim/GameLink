@@ -289,10 +289,10 @@ const ReviewModeration: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      width: 150,
+      width: 160,
       fixed: 'right',
       render: (_: unknown, record: Review) => (
-        <Space size="small">
+        <Space size={4}>
           <Button
             type="primary"
             size="small"

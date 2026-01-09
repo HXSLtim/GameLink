@@ -137,10 +137,10 @@ const UserTags: React.FC = () => {
         {
             title: '操作',
             key: 'action',
-            width: 120,
+            width: 160,
             fixed: 'right',
             render: (_: unknown, record: UserTag) => (
-                <Space size="small">
+                <Space size={4}>
                     <Button type="text" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
                     <Popconfirm title="确定要删除吗？" onConfirm={() => handleDelete(record.id)}>
                         <Button type="text" danger icon={<DeleteOutlined />} />

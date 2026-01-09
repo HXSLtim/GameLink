@@ -132,7 +132,7 @@ func (h *BatchSyncHandler) recordInitState(ctx context.Context, req BatchSyncReq
 
 	// Get user ID from context (set by auth middleware)
 	var userID uint64 = 0
-	if userIDVal, exists := c.Get("userID"); exists {
+	if userIDVal, exists := c.Get("user_id"); exists {
 		userID = userIDVal.(uint64)
 	}
 
@@ -367,8 +367,8 @@ func (h *BatchSyncHandler) assignSuperAdminPermissions(ctx context.Context) *Sup
 // 用于保护系统初始化等敏感操作
 func RequireSuperAdmin(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 获取用户ID
-		userIDVal, exists := c.Get("userID")
+		// 获取用户ID（使用与 permission middleware 一致的 key）
+		userIDVal, exists := c.Get("user_id")
 		if !exists {
 			c.JSON(401, gin.H{
 				"success": false,

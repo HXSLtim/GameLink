@@ -415,10 +415,10 @@ const ActivityPage: React.FC = () => {
         {
             title: '操作',
             key: 'action',
-            width: 280,
+            width: 400, // 5个按钮 × 80px
             fixed: 'right',
             render: (_, record) => (
-                <Space size="small" wrap>
+                <Space size={4}>
                     <Button
                         type="link"
                         size="small"
@@ -435,25 +435,14 @@ const ActivityPage: React.FC = () => {
                     >
                         奖励
                     </Button>
-                    {record.isVisible ? (
-                        <Button
-                            type="link"
-                            size="small"
-                            icon={<StopOutlined />}
-                            onClick={() => handleUnpublish(record)}
-                        >
-                            下架
-                        </Button>
-                    ) : (
-                        <Button
-                            type="link"
-                            size="small"
-                            icon={<CheckCircleOutlined />}
-                            onClick={() => handlePublish(record)}
-                        >
-                            发布
-                        </Button>
-                    )}
+                    <Button
+                        type="link"
+                        size="small"
+                        icon={record.isVisible ? <StopOutlined /> : <CheckCircleOutlined />}
+                        onClick={() => record.isVisible ? handleUnpublish(record) : handlePublish(record)}
+                    >
+                        {record.isVisible ? '下架' : '发布'}
+                    </Button>
                     <Button
                         type="link"
                         size="small"
@@ -463,18 +452,23 @@ const ActivityPage: React.FC = () => {
                     >
                         编辑
                     </Button>
-                    {canDeleteActivity(record) && (
-                        <Popconfirm
-                            title="确定删除此活动？"
-                            onConfirm={() => handleDelete(record.id)}
-                            okText="确定"
-                            cancelText="取消"
+                    <Popconfirm
+                        title="确定删除此活动？"
+                        onConfirm={() => handleDelete(record.id)}
+                        okText="确定"
+                        cancelText="取消"
+                        disabled={!canDeleteActivity(record)}
+                    >
+                        <Button
+                            type="link"
+                            size="small"
+                            danger
+                            icon={<DeleteOutlined />}
+                            disabled={!canDeleteActivity(record)}
                         >
-                            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
-                                删除
-                            </Button>
-                        </Popconfirm>
-                    )}
+                            删除
+                        </Button>
+                    </Popconfirm>
                 </Space>
             ),
         },
@@ -541,9 +535,9 @@ const ActivityPage: React.FC = () => {
         {
             title: '操作',
             key: 'action',
-            width: 140,
+            width: 160,
             render: (_, record) => (
-                <Space size="small">
+                <Space size={4}>
                     <Button
                         type="link"
                         size="small"

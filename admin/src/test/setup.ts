@@ -2,6 +2,34 @@ import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 import { ReactElement } from 'react';
 
+// Fix jsdom CSS variable parsing issue
+// Patch CSSStyleDeclaration.prototype to handle CSS custom properties in border shorthand
+const originalSetProperty = CSSStyleDeclaration.prototype.setProperty;
+CSSStyleDeclaration.prototype.setProperty = function (property: string, value: string | null, priority?: string) {
+  // Convert value to string and handle CSS custom properties
+  let stringValue = String(value ?? '');
+
+  if (stringValue.includes('var(')) {
+    // Handle border shorthand with CSS variables (Ant Design issue)
+    if (property === 'border' && stringValue.includes('--ant')) {
+      stringValue = '1px solid #d9d9d9';
+    }
+    // Handle individual border properties with CSS variables
+    else if (property.includes('border') && stringValue.includes('--ant')) {
+      if (property.includes('width')) stringValue = '1px';
+      else if (property.includes('style')) stringValue = 'solid';
+      else if (property.includes('color')) stringValue = '#d9d9d9';
+      else stringValue = stringValue.replace(/var\(--[^)]+\)/g, 'initial');
+    }
+    // Replace other CSS variables with initial values
+    else {
+      stringValue = stringValue.replace(/var\(--[^)]+\)/g, 'initial');
+    }
+  }
+
+  return originalSetProperty.call(this, property, stringValue, priority);
+};
+
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,

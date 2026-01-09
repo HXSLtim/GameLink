@@ -9,6 +9,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Spin } from 'antd';
 import type { Role } from './types';
 import { usePermission } from '@/hooks/usePermission';
+import { useUserInfo, useIsAuthenticated, useIsHydrated } from '@/stores/modules/authStore';
 
 interface RouteGuardProps {
     children: ReactNode;
@@ -29,20 +30,36 @@ const RouteGuard = ({ children, roles, requiresAuth, permission }: RouteGuardPro
     const location = useLocation();
     const hasRedirected = useRef(false);
 
-    // In a real app, this would come from a context or store
-    const rawRole = localStorage.getItem('user_role');
-    const userRole = rawRole ? (rawRole.toUpperCase() as Role) : null;
-    const isAuthenticated = !!userRole;
+    // Super Dev 最佳实践: 使用选择器精确订阅
+    const isAuthenticated = useIsAuthenticated();
+    const userInfo = useUserInfo();
+    const isHydrated = useIsHydrated();
+
+    const userRole = userInfo?.role?.toUpperCase() as Role | null;
 
     // Always call usePermission with a stable value - never conditionally
     // Pass the permission as-is, usePermission handles empty strings internally
     const { hasPermission, loading: permissionLoading } = usePermission(permission || '');
-    
+
     // Compute whether we need permission check after hooks
     const needsPermissionCheck = useMemo(
         () => !!permission && permission.length > 0,
         [permission]
     );
+
+    // 等待 Zustand persist 水合完成
+    if (!isHydrated) {
+        return (
+            <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                minHeight: '200px'
+            }}>
+                <Spin size="large" tip="加载中..." />
+            </div>
+        );
+    }
 
     // Handle authentication redirect
     useEffect(() => {

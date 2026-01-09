@@ -45,8 +45,9 @@ const columns: ColumnsType<LevelData> = [
         title: '操作',
         key: 'action',
         fixed: 'right',
-        width: 100,
+        width: 80,
         render: () => (
+            <Space size={4}>
             <Button type="link" icon={<EditOutlined />}>
                 编辑
             </Button>

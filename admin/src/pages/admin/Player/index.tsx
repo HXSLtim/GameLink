@@ -377,10 +377,10 @@ const PlayerPage: React.FC = () => {
         {
             title: '操作',
             key: 'action',
-            width: 200,
+            width: 240, // 3个按钮 × 80px
             fixed: 'right',
             render: (_, record) => (
-                <Space size="small">
+                <Space size={4}>
                     <Button
                         type="link"
                         size="small"
@@ -389,42 +389,30 @@ const PlayerPage: React.FC = () => {
                     >
                         详情
                     </Button>
-                    {record.verificationStatus === 'pending' && (
-                        <PermissionGuard permission={PLAYER_PERMISSIONS.AUDIT}>
-                            <Button
-                                type="link"
-                                size="small"
-                                icon={<CheckOutlined />}
-                                onClick={() => handleOpenAudit(record)}
-                            >
-                                审核
-                            </Button>
-                        </PermissionGuard>
-                    )}
-                    {record.verificationStatus === 'verified' && (
-                        <PermissionGuard permission={PLAYER_PERMISSIONS.UPDATE}>
-                            <Popconfirm
-                                title="确定要封禁该陪玩师吗？"
-                                onConfirm={() => handleToggleBan(record)}
-                            >
-                                <Button type="link" size="small" danger icon={<LockOutlined />}>
-                                    封禁
-                                </Button>
-                            </Popconfirm>
-                        </PermissionGuard>
-                    )}
-                    {record.verificationStatus === 'rejected' && (
-                        <PermissionGuard permission={PLAYER_PERMISSIONS.UPDATE}>
-                            <Popconfirm
-                                title="确定要解封该陪玩师吗？"
-                                onConfirm={() => handleToggleBan(record)}
-                            >
-                                <Button type="link" size="small" icon={<UnlockOutlined />}>
-                                    解封
-                                </Button>
-                            </Popconfirm>
-                        </PermissionGuard>
-                    )}
+                    <Button
+                        type="link"
+                        size="small"
+                        icon={<CheckOutlined />}
+                        onClick={() => handleOpenAudit(record)}
+                        disabled={record.verificationStatus !== 'pending'}
+                    >
+                        审核
+                    </Button>
+                    <Popconfirm
+                        title={record.verificationStatus === 'verified' ? '确定要封禁该陪玩师吗？' : '确定要解封该陪玩师吗？'}
+                        onConfirm={() => handleToggleBan(record)}
+                        disabled={record.verificationStatus === 'pending'}
+                    >
+                        <Button
+                            type="link"
+                            size="small"
+                            danger={record.verificationStatus === 'verified'}
+                            icon={record.verificationStatus === 'verified' ? <LockOutlined /> : <UnlockOutlined />}
+                            disabled={record.verificationStatus === 'pending'}
+                        >
+                            {record.verificationStatus === 'verified' ? '封禁' : '解封'}
+                        </Button>
+                    </Popconfirm>
                 </Space>
             ),
         },

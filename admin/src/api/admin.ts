@@ -596,6 +596,36 @@ export const adminApi = {
 
     // Legacy (keep if needed, or remove)
     getStats: () => apiClient.get('/admin/stats'),
+
+    // ========== Game Rank Management (段位管理) ==========
+    getGameRanks: (params?: GameRankQueryParams) => apiClient.get<ApiResponse<GameRank[]>>('/admin/game-ranks', { params }),
+    getGameRank: (id: number) => apiClient.get<ApiResponse<GameRank>>(`/admin/game-ranks/${id}`),
+    getGameRanksByGame: (gameId: number) => apiClient.get<ApiResponse<GameRank[]>>(`/admin/games/${gameId}/ranks`),
+    createGameRank: (data: CreateGameRankDto) => apiClient.post<ApiResponse<GameRank>>('/admin/game-ranks', data),
+    updateGameRank: (id: number, data: UpdateGameRankDto) => apiClient.put<ApiResponse<GameRank>>(`/admin/game-ranks/${id}`, data),
+    deleteGameRank: (id: number) => apiClient.delete<ApiResponse<void>>(`/admin/game-ranks/${id}`),
+    batchDeleteGameRanks: (ids: string[]) => apiClient.post<ApiResponse<{ deleted: number }>>('/admin/game-ranks/batch/delete', { ids }),
+    batchUpdateGameRankStatus: (ids: string[], isActive: boolean) => apiClient.post<ApiResponse<{ updated: number }>>('/admin/game-ranks/batch/status', { ids, isActive }),
+
+    // ========== Player Rank Management (段位审核) ==========
+    getPlayerRanks: (params?: PlayerRankQueryParams) => apiClient.get<ApiResponse<PlayerRankRecord[]>>('/admin/player-ranks', { params }),
+    getPlayerRank: (id: number) => apiClient.get<ApiResponse<PlayerRankRecord>>(`/admin/player-ranks/${id}`),
+    getPendingPlayerRanks: (params?: { page?: number; pageSize?: number }) => apiClient.get<ApiResponse<PlayerRankRecord[]>>('/admin/player-ranks/pending', { params }),
+    getPlayerRankStats: () => apiClient.get<ApiResponse<Record<string, number>>>('/admin/player-ranks/stats'),
+    getPlayerRankPendingCount: () => apiClient.get<ApiResponse<{ count: number }>>('/admin/player-ranks/pending/count'),
+    verifyPlayerRank: (id: number, data: VerifyPlayerRankDto) => apiClient.post<ApiResponse<PlayerRankRecord>>(`/admin/player-ranks/${id}/verify`, data),
+    deletePlayerRank: (id: number) => apiClient.delete<ApiResponse<void>>(`/admin/player-ranks/${id}`),
+    getPlayerRanksByPlayer: (playerId: number) => apiClient.get<ApiResponse<PlayerRankRecord[]>>(`/admin/player-ranks/player/${playerId}`),
+
+    // ========== Player Certification Management (实名审核) ==========
+    getPlayerCertifications: (params?: PlayerCertificationQueryParams) => apiClient.get<ApiResponse<PlayerCertification[]>>('/admin/player-certifications', { params }),
+    getPlayerCertification: (id: number) => apiClient.get<ApiResponse<PlayerCertification>>(`/admin/player-certifications/${id}`),
+    getPendingPlayerCertifications: (params?: { page?: number; pageSize?: number }) => apiClient.get<ApiResponse<PlayerCertification[]>>('/admin/player-certifications/pending', { params }),
+    getPlayerCertificationStats: () => apiClient.get<ApiResponse<Record<string, number>>>('/admin/player-certifications/stats'),
+    getPlayerCertificationPendingCount: () => apiClient.get<ApiResponse<{ count: number }>>('/admin/player-certifications/pending/count'),
+    verifyPlayerCertification: (id: number, data: VerifyPlayerCertificationDto) => apiClient.post<ApiResponse<PlayerCertification>>(`/admin/player-certifications/${id}/verify`, data),
+    deletePlayerCertification: (id: number) => apiClient.delete<ApiResponse<void>>(`/admin/player-certifications/${id}`),
+    getPlayerCertificationByPlayer: (playerId: number) => apiClient.get<ApiResponse<PlayerCertification>>(`/admin/player-certifications/player/${playerId}`),
 };
 
 export interface DashboardStats {
@@ -647,4 +677,122 @@ export interface AuditStats {
     pending: number;
     approved: number;
     rejected: number;
+}
+
+// ========== Game Rank (段位管理) ==========
+export interface GameRank {
+    id: number;
+    gameId: number;
+    name: string;
+    level: number;
+    priceCents: number;
+    iconUrl?: string;
+    color?: string;
+    description?: string;
+    sortOrder: number;
+    isActive: boolean;
+    createdAt: string;
+    updatedAt: string;
+    game?: Game;
+}
+
+export interface CreateGameRankDto {
+    gameId: number;
+    name: string;
+    level?: number;
+    priceCents?: number;
+    iconUrl?: string;
+    color?: string;
+    description?: string;
+    sortOrder?: number;
+    isActive?: boolean;
+}
+
+export interface UpdateGameRankDto {
+    name?: string;
+    level?: number;
+    priceCents?: number;
+    iconUrl?: string;
+    color?: string;
+    description?: string;
+    sortOrder?: number;
+    isActive?: boolean;
+}
+
+export interface GameRankQueryParams {
+    page?: number;
+    pageSize?: number;
+    gameId?: number;
+    keyword?: string;
+    isActive?: boolean;
+}
+
+// ========== Player Rank (段位审核) ==========
+export type PlayerRankStatus = 'pending' | 'verified' | 'rejected' | 'revoked' | 'expired';
+
+export interface PlayerRankRecord {
+    id: number;
+    playerId: number;
+    gameId: number;
+    rankId: number;
+    status: PlayerRankStatus;
+    screenshotUrls?: string;
+    verifiedAt?: string;
+    verifiedBy?: number;
+    rejectReason?: string;
+    expireAt?: string;
+    remark?: string;
+    createdAt: string;
+    updatedAt: string;
+    player?: Player;
+    game?: Game;
+    rank?: GameRank;
+    verifier?: User;
+}
+
+export interface PlayerRankQueryParams {
+    page?: number;
+    pageSize?: number;
+    playerId?: number;
+    gameId?: number;
+    status?: PlayerRankStatus;
+}
+
+export interface VerifyPlayerRankDto {
+    status: 'verified' | 'rejected' | 'revoked';
+    rejectReason?: string;
+}
+
+// ========== Player Certification (实名审核) ==========
+export type CertificationStatus = 'pending' | 'verified' | 'rejected';
+
+export interface PlayerCertification {
+    id: number;
+    playerId: number;
+    realName: string;
+    idCardFrontUrl?: string;
+    idCardBackUrl?: string;
+    status: CertificationStatus;
+    verifiedAt?: string;
+    verifiedBy?: number;
+    rejectReason?: string;
+    photoUrl?: string;
+    voiceUrl?: string;
+    createdAt: string;
+    updatedAt: string;
+    player?: Player;
+    verifier?: User;
+}
+
+export interface PlayerCertificationQueryParams {
+    page?: number;
+    pageSize?: number;
+    playerId?: number;
+    status?: CertificationStatus;
+    keyword?: string;
+}
+
+export interface VerifyPlayerCertificationDto {
+    status: 'verified' | 'rejected';
+    rejectReason?: string;
 }

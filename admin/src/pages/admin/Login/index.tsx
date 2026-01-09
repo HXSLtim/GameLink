@@ -4,6 +4,7 @@ import { Form, Input, Button, Card, App, theme, Checkbox } from 'antd';
 import { UserOutlined, LockOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
 import { authApi } from '@/api/auth';
 import { useAuthStore } from '@/stores';
+import { useAdmin } from '@/context/useAdmin';
 import { ENABLE_QUICK_LOGIN, DEBUG_USERS } from '@/config/debug';
 
 import { logger } from '@/utils/logger';
@@ -20,6 +21,7 @@ const AdminLogin: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [form] = Form.useForm();
     const { setToken, setUserInfo } = useAuthStore();
+    const { refreshMenus } = useAdmin();
 
     // 加载记住的账号密码
     useEffect(() => {
@@ -98,6 +100,9 @@ const AdminLogin: React.FC = () => {
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
             });
+
+            // 登录成功后刷新菜单和权限
+            await refreshMenus();
 
             message.success('登录成功');
             navigate('/admin');

@@ -65,6 +65,7 @@ import {
     ShareAltOutlined,
     CalendarOutlined,
     TransactionOutlined,
+    IdcardOutlined,
 } from '@ant-design/icons';
 import { useAdmin } from '@/context/useAdmin';
 import { useTheme } from '@/context/useTheme';
@@ -127,6 +128,8 @@ const iconMap: Record<string, React.ComponentType> = {
     ShareAltOutlined,
     CalendarOutlined,
     TransactionOutlined,
+    // 认证管理
+    IdcardOutlined,
 
     // 简写名称映射（数据库中存储的名称）
     'dashboard': DashboardOutlined,

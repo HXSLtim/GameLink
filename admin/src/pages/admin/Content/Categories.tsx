@@ -171,10 +171,10 @@ const CategoriesPage: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      width: 120,
+      width: 160,
       fixed: 'right',
       render: (_, record) => (
-        <Space size="small">
+        <Space size={4}>
           <Button
             type="link"
             size="small"

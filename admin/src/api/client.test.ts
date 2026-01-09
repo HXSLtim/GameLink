@@ -86,24 +86,10 @@ describe('API Client', () => {
   });
 
   describe('Request Interceptor', () => {
-    it('should add Authorization header with token from sessionStorage', async () => {
-      const token = 'test_token_session';
-      sessionStorage.setItem('auth_token', token);
-
-      const config: InternalAxiosRequestConfig = {
-        headers: {} as MockAxiosHeaders,
-        method: 'GET',
-        url: '/test',
-      };
-
-      const interceptor = apiClient.interceptors.request.handlers[0];
-      const result = await interceptor.fulfilled(config);
-
-      expect(result.headers.Authorization).toBe(`Bearer ${token}`);
-    });
-
-    it('should add Authorization header with token from localStorage as fallback', async () => {
-      const token = 'test_token_local';
+    it('should add Authorization header with token from localStorage', async () => {
+      // Create a non-expiring token for testing (exp far in future)
+      const payload = { sub: 1, exp: Math.floor(Date.now() / 1000) + 3600, iat: Math.floor(Date.now() / 1000) };
+      const token = `header.${btoa(JSON.stringify(payload))}.signature`;
       localStorage.setItem('token', token);
 
       const config: InternalAxiosRequestConfig = {
@@ -118,11 +104,29 @@ describe('API Client', () => {
       expect(result.headers.Authorization).toBe(`Bearer ${token}`);
     });
 
-    it('should prioritize sessionStorage over localStorage', async () => {
-      const sessionToken = 'token_from_session';
-      const localToken = 'token_from_local';
+    it('should add Authorization header with token from localStorage (unified storage)', async () => {
+      // Create a non-expiring token for testing
+      const payload = { sub: 1, exp: Math.floor(Date.now() / 1000) + 3600, iat: Math.floor(Date.now() / 1000) };
+      const token = `header.${btoa(JSON.stringify(payload))}.signature`;
+      localStorage.setItem('token', token);
 
-      sessionStorage.setItem('auth_token', sessionToken);
+      const config: InternalAxiosRequestConfig = {
+        headers: {} as MockAxiosHeaders,
+        method: 'GET',
+        url: '/test',
+      };
+
+      const interceptor = apiClient.interceptors.request.handlers[0];
+      const result = await interceptor.fulfilled(config);
+
+      expect(result.headers.Authorization).toBe(`Bearer ${token}`);
+    });
+
+    it('should use localStorage token (unified storage strategy)', async () => {
+      // Create a non-expiring token for testing
+      const payload = { sub: 1, exp: Math.floor(Date.now() / 1000) + 3600, iat: Math.floor(Date.now() / 1000) };
+      const localToken = `header.${btoa(JSON.stringify(payload))}.signature`;
+
       localStorage.setItem('token', localToken);
 
       const config: InternalAxiosRequestConfig = {
@@ -134,8 +138,7 @@ describe('API Client', () => {
       const interceptor = apiClient.interceptors.request.handlers[0];
       const result = await interceptor.fulfilled(config);
 
-      expect(result.headers.Authorization).toBe(`Bearer ${sessionToken}`);
-      expect(result.headers.Authorization).not.toBe(`Bearer ${localToken}`);
+      expect(result.headers.Authorization).toBe(`Bearer ${localToken}`);
     });
 
     it('should not add Authorization header when no token exists', async () => {
@@ -247,8 +250,10 @@ describe('API Client', () => {
     });
 
     it('should attempt token refresh for 401 errors', async () => {
-      const token = 'valid_token';
-      sessionStorage.setItem('auth_token', token);
+      // Create a valid JWT token format for localStorage
+      const payload = { sub: 1, exp: Math.floor(Date.now() / 1000) + 3600, iat: Math.floor(Date.now() / 1000) };
+      const token = `header.${btoa(JSON.stringify(payload))}.signature`;
+      localStorage.setItem('token', token);
 
       const error: Partial<AxiosError> = {
         config: {
@@ -261,6 +266,7 @@ describe('API Client', () => {
       // Mock successful refresh
       vi.mocked(axios.post).mockResolvedValueOnce({
         data: {
+          success: true,
           data: { token: 'new_token' },
         },
       } as AxiosResponse<unknown>);
@@ -375,8 +381,10 @@ describe('API Client', () => {
 
   describe('Token Refresh Queue Mechanism', () => {
     it('should queue requests when refresh is in progress', async () => {
-      const token = 'valid_token';
-      sessionStorage.setItem('auth_token', token);
+      // Create a valid JWT token format for localStorage
+      const payload = { sub: 1, exp: Math.floor(Date.now() / 1000) + 3600, iat: Math.floor(Date.now() / 1000) };
+      const token = `header.${btoa(JSON.stringify(payload))}.signature`;
+      localStorage.setItem('token', token);
 
       // Create multiple 401 errors
       const error1: Partial<AxiosError> = {
@@ -398,6 +406,7 @@ describe('API Client', () => {
       // Mock successful refresh
       vi.mocked(axios.post).mockResolvedValueOnce({
         data: {
+          success: true,
           data: { token: 'new_token' },
         },
       } as AxiosResponse<unknown>);
@@ -420,8 +429,10 @@ describe('API Client', () => {
 
   describe('Retry Flag', () => {
     it('should set _retry flag on original request', async () => {
-      const token = 'valid_token';
-      sessionStorage.setItem('auth_token', token);
+      // Create a valid JWT token format for localStorage
+      const payload = { sub: 1, exp: Math.floor(Date.now() / 1000) + 3600, iat: Math.floor(Date.now() / 1000) };
+      const token = `header.${btoa(JSON.stringify(payload))}.signature`;
+      localStorage.setItem('token', token);
 
       const error: Partial<AxiosError> = {
         config: {
@@ -434,6 +445,7 @@ describe('API Client', () => {
       // Mock successful refresh
       vi.mocked(axios.post).mockResolvedValueOnce({
         data: {
+          success: true,
           data: { token: 'new_token' },
         },
       } as AxiosResponse<unknown>);
@@ -529,3 +541,104 @@ function mockWindowLocation(): { href: string; pathname: string } {
 
   return location;
 }
+
+// Import JWT utilities for testing
+import { parseJWT, isTokenExpiringSoon, isTokenExpired } from './client';
+
+describe('JWT Utilities', () => {
+  describe('parseJWT', () => {
+    it('should parse a valid JWT token', () => {
+      const payload = { sub: 123, exp: 1234567890, iat: 1234567800 };
+      const token = `header.${btoa(JSON.stringify(payload))}.signature`;
+      
+      const result = parseJWT(token);
+      
+      expect(result).toEqual(payload);
+    });
+
+    it('should return null for invalid token format', () => {
+      expect(parseJWT('invalid')).toBeNull();
+      expect(parseJWT('only.two')).toBeNull();
+      expect(parseJWT('')).toBeNull();
+    });
+
+    it('should return null for invalid base64 payload', () => {
+      const token = 'header.!!!invalid-base64!!!.signature';
+      expect(parseJWT(token)).toBeNull();
+    });
+
+    it('should return null for non-JSON payload', () => {
+      const token = `header.${btoa('not json')}.signature`;
+      expect(parseJWT(token)).toBeNull();
+    });
+  });
+
+  describe('isTokenExpiringSoon', () => {
+    it('should return false for token expiring far in future', () => {
+      const futureExp = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
+      const payload = { sub: 1, exp: futureExp, iat: Math.floor(Date.now() / 1000) };
+      const token = `header.${btoa(JSON.stringify(payload))}.signature`;
+      
+      expect(isTokenExpiringSoon(token)).toBe(false);
+    });
+
+    it('should return true for token expiring within buffer time', () => {
+      const soonExp = Math.floor(Date.now() / 1000) + 60; // 1 minute from now
+      const payload = { sub: 1, exp: soonExp, iat: Math.floor(Date.now() / 1000) };
+      const token = `header.${btoa(JSON.stringify(payload))}.signature`;
+      
+      expect(isTokenExpiringSoon(token, 300)).toBe(true); // 5 min buffer
+    });
+
+    it('should return true for already expired token', () => {
+      const pastExp = Math.floor(Date.now() / 1000) - 60; // 1 minute ago
+      const payload = { sub: 1, exp: pastExp, iat: Math.floor(Date.now() / 1000) - 3600 };
+      const token = `header.${btoa(JSON.stringify(payload))}.signature`;
+      
+      expect(isTokenExpiringSoon(token)).toBe(true);
+    });
+
+    it('should return true for invalid token', () => {
+      expect(isTokenExpiringSoon('invalid')).toBe(true);
+    });
+
+    it('should use custom buffer time', () => {
+      const exp = Math.floor(Date.now() / 1000) + 120; // 2 minutes from now
+      const payload = { sub: 1, exp, iat: Math.floor(Date.now() / 1000) };
+      const token = `header.${btoa(JSON.stringify(payload))}.signature`;
+      
+      expect(isTokenExpiringSoon(token, 60)).toBe(false);  // 1 min buffer - not expiring soon
+      expect(isTokenExpiringSoon(token, 180)).toBe(true);  // 3 min buffer - expiring soon
+    });
+  });
+
+  describe('isTokenExpired', () => {
+    it('should return false for valid non-expired token', () => {
+      const futureExp = Math.floor(Date.now() / 1000) + 3600;
+      const payload = { sub: 1, exp: futureExp, iat: Math.floor(Date.now() / 1000) };
+      const token = `header.${btoa(JSON.stringify(payload))}.signature`;
+      
+      expect(isTokenExpired(token)).toBe(false);
+    });
+
+    it('should return true for expired token', () => {
+      const pastExp = Math.floor(Date.now() / 1000) - 60;
+      const payload = { sub: 1, exp: pastExp, iat: Math.floor(Date.now() / 1000) - 3600 };
+      const token = `header.${btoa(JSON.stringify(payload))}.signature`;
+      
+      expect(isTokenExpired(token)).toBe(true);
+    });
+
+    it('should return true for invalid token', () => {
+      expect(isTokenExpired('invalid')).toBe(true);
+      expect(isTokenExpired('')).toBe(true);
+    });
+
+    it('should return true for token without exp claim', () => {
+      const payload = { sub: 1, iat: Math.floor(Date.now() / 1000) };
+      const token = `header.${btoa(JSON.stringify(payload))}.signature`;
+      
+      expect(isTokenExpired(token)).toBe(true);
+    });
+  });
+});

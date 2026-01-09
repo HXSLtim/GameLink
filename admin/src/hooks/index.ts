@@ -2,6 +2,19 @@
  * Hooks 统一导出
  */
 
+// 认证相关 Hooks (Super Dev 最佳实践)
+export {
+    useAuthCheck,
+    useUserInfo,
+    useIsAuthenticated,
+    useIsHydrated,
+    useAuthToken,
+    useAuthLoading,
+    useAuthError,
+    useIsAdmin,
+    type AuthCheckResult,
+} from './useAuthCheck';
+
 // 权限相关 Hooks
 export {
     usePermission,

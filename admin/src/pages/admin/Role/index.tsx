@@ -226,10 +226,10 @@ const RolePage: React.FC = () => {
         {
             title: '操作',
             key: 'action',
-            width: 200,
+            width: 240, // 3个按钮 × 80px
             fixed: 'right',
             render: (_, record) => (
-                <Space size="small">
+                <Space size={4}>
                     <PermissionGuard permission={ROLE_PERMISSIONS.ASSIGN_PERMISSIONS}>
                         <Button
                             type="link"
@@ -250,18 +250,23 @@ const RolePage: React.FC = () => {
                             编辑
                         </Button>
                     </PermissionGuard>
-                    {!record.isSystem && (
-                        <PermissionGuard permission={ROLE_PERMISSIONS.DELETE}>
+                    <PermissionGuard permission={ROLE_PERMISSIONS.DELETE}>
+                        {!record.isSystem ? (
                             <Popconfirm
                                 title="确定要删除该角色吗？"
                                 onConfirm={() => handleDelete(record)}
                             >
-                                <Button type="link" size="small" danger icon={<DeleteOutlined />}>
+                                <Button
+                                    type="link"
+                                    size="small"
+                                    danger
+                                    icon={<DeleteOutlined />}
+                                >
                                     删除
                                 </Button>
                             </Popconfirm>
-                        </PermissionGuard>
-                    )}
+                        ) : null}
+                    </PermissionGuard>
                 </Space>
             ),
         },

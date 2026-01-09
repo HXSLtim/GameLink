@@ -32,7 +32,7 @@ import {
     UploadOutlined,
 } from '@ant-design/icons';
 import { PageContainer } from '@/components';
-import { useAuthStore } from '@/stores';
+import { useUserInfo, useIsAuthenticated, useIsHydrated } from '@/stores/modules/authStore';
 import { adminApi, type User } from '@/api/admin';
 import dayjs from 'dayjs';
 import { logger } from '@/utils/logger';
@@ -57,7 +57,12 @@ const statusMap: Record<string, { color: string; text: string }> = {
 
 const ProfilePage: React.FC = () => {
     const { token } = theme.useToken();
-    const { userInfo: authUser } = useAuthStore(); // 从 authStore 获取用户信息
+
+    // Super Dev 最佳实践: 使用选择器精确订阅，避免不必要的重渲染
+    const authUser = useUserInfo();
+    const isAuthenticated = useIsAuthenticated();
+    const isHydrated = useIsHydrated();
+
     const [loading, setLoading] = useState(false);
     const [userInfo, setUserInfo] = useState<User | null>(null);
     const [passwordModalVisible, setPasswordModalVisible] = useState(false);
@@ -67,8 +72,19 @@ const ProfilePage: React.FC = () => {
     const [passwordForm] = Form.useForm();
     const [editForm] = Form.useForm();
 
+    // 使用水合状态而非 setTimeout，确保 Zustand persist 完成后再渲染
+    if (!isHydrated) {
+        return (
+            <PageContainer title="个人中心">
+                <div style={{ textAlign: 'center', padding: 100 }}>
+                    <Spin size="large" tip="加载中..." />
+                </div>
+            </PageContainer>
+        );
+    }
+
     // 添加调试日志
-    logger.info('[Profile] Component render, authUser:', authUser);
+    logger.info('[Profile] Component render, authUser:', authUser, 'isAuthenticated:', isAuthenticated);
 
     // 加载用户信息
     const loadUserInfo = async () => {
@@ -220,7 +236,7 @@ const ProfilePage: React.FC = () => {
     };
 
     // 未登录状态
-    if (!authUser) {
+    if (!authUser || !isAuthenticated) {
         return (
             <PageContainer title="个人中心">
                 <div style={{ textAlign: 'center', padding: 100 }}>

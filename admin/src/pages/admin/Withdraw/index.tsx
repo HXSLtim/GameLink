@@ -522,10 +522,10 @@ const WithdrawPage: React.FC = () => {
         {
             title: '操作',
             key: 'action',
-            width: 200,
+            width: 320, // 4个按钮 × 80px
             fixed: 'right',
             render: (_, record) => (
-                <Space size="small">
+                <Space size={4}>
                     <Button
                         type="link"
                         size="small"
@@ -534,45 +534,42 @@ const WithdrawPage: React.FC = () => {
                     >
                         详情
                     </Button>
-                    {record.status === 'pending' && (
-                        <>
-                            <PermissionGuard permission={WITHDRAW_PERMISSIONS.APPROVE}>
-                                <Button
-                                    type="link"
-                                    size="small"
-                                    icon={<CheckOutlined />}
-                                    onClick={() => handleApprove(record)}
-                                    loading={submitting}
-                                >
-                                    批准
-                                </Button>
-                            </PermissionGuard>
-                            <PermissionGuard permission={WITHDRAW_PERMISSIONS.REJECT}>
-                                <Button
-                                    type="link"
-                                    size="small"
-                                    danger
-                                    icon={<CloseOutlined />}
-                                    onClick={() => handleReject(record)}
-                                >
-                                    拒绝
-                                </Button>
-                            </PermissionGuard>
-                        </>
-                    )}
-                    {record.status === 'approved' && (
-                        <PermissionGuard permission={WITHDRAW_PERMISSIONS.APPROVE}>
-                            <Button
-                                type="link"
-                                size="small"
-                                icon={<DollarOutlined />}
-                                onClick={() => handleComplete(record)}
-                                loading={submitting}
-                            >
-                                完成打款
-                            </Button>
-                        </PermissionGuard>
-                    )}
+                    <PermissionGuard permission={WITHDRAW_PERMISSIONS.APPROVE}>
+                        <Button
+                            type="link"
+                            size="small"
+                            icon={<CheckOutlined />}
+                            onClick={() => handleApprove(record)}
+                            loading={submitting}
+                            disabled={record.status !== 'pending'}
+                        >
+                            批准
+                        </Button>
+                    </PermissionGuard>
+                    <PermissionGuard permission={WITHDRAW_PERMISSIONS.REJECT}>
+                        <Button
+                            type="link"
+                            size="small"
+                            danger
+                            icon={<CloseOutlined />}
+                            onClick={() => handleReject(record)}
+                            disabled={record.status !== 'pending'}
+                        >
+                            拒绝
+                        </Button>
+                    </PermissionGuard>
+                    <PermissionGuard permission={WITHDRAW_PERMISSIONS.APPROVE}>
+                        <Button
+                            type="link"
+                            size="small"
+                            icon={<DollarOutlined />}
+                            onClick={() => handleComplete(record)}
+                            loading={submitting}
+                            disabled={record.status !== 'approved'}
+                        >
+                            完成打款
+                        </Button>
+                    </PermissionGuard>
                 </Space>
             ),
         },

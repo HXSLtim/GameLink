@@ -246,9 +246,9 @@ const AdminAlert: React.FC = () => {
         {
             title: '操作',
             key: 'action',
-            width: 100,
+            width: 80,
             render: (_, record) => (
-                <Space>
+                <Space size={4}>
                     {!record.isRead && (
                         <Button type="link" size="small" icon={<CheckOutlined />} onClick={() => handleMarkRead(String(record.id))}>
                             已读
@@ -294,11 +294,12 @@ const AdminAlert: React.FC = () => {
         {
             title: '操作',
             key: 'action',
+            width: 160,
             render: (_, record) => (
-                <Space>
-                    <Button type="link" icon={<EditOutlined />} onClick={() => handleEditRule(record)}>编辑</Button>
+                <Space size={4}>
+                    <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEditRule(record)}>编辑</Button>
                     <Popconfirm title="确定删除此规则？" onConfirm={() => handleDeleteRule(record.id)} okText="确定" cancelText="取消">
-                        <Button type="link" danger icon={<DeleteOutlined />}>删除</Button>
+                        <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
                     </Popconfirm>
                 </Space>
             ),

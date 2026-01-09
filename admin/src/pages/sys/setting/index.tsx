@@ -23,7 +23,7 @@ const DEFAULT_REVIEW_SETTINGS: UpdateSettingsFormData = {
 };
 
 const Settings: React.FC = () => {
-    const { message } = App.useApp();
+    const { message, modal } = App.useApp();
     const [reviewForm] = Form.useForm<UpdateSettingsFormData>();
     const [initializing, setInitializing] = useState(false);
     const [initStatus, setInitStatus] = useState<InitStatusResponse | null>(null);
@@ -131,47 +131,55 @@ const Settings: React.FC = () => {
      * 同步菜单、权限并为超级管理员分配所有权限
      */
     const handleInit = async () => {
-        setInitializing(true);
-        const hide = message.loading('正在初始化系统...', 0);
+        modal.confirm({
+            title: '确认同步',
+            content: '此操作将同步菜单和权限配置到数据库，并为超级管理员分配所有权限。确定要继续吗？',
+            okText: '确认同步',
+            cancelText: '取消',
+            onOk: async () => {
+                setInitializing(true);
+                const hide = message.loading('正在初始化系统...', 0);
 
-        try {
-            const result = await forceInit({ verbose: true });
+                try {
+                    const result = await forceInit({ verbose: true });
 
-            if (result.success) {
-                message.success({
-                    content: `初始化成功！耗时 ${result.duration}ms`,
-                    duration: 3,
-                });
+                    if (result.success) {
+                        message.success({
+                            content: `初始化成功！耗时 ${result.duration}ms`,
+                            duration: 3,
+                        });
 
-                // 重新加载初始化状态
-                await fetchInitStatus();
+                        // 重新加载初始化状态
+                        await fetchInitStatus();
 
-                // 显示详细信息
-                if (result.menuSync) {
-                    logger.info('[菜单同步]', result.menuSync);
+                        // 显示详细信息
+                        if (result.menuSync) {
+                            logger.info('[菜单同步]', result.menuSync);
+                        }
+                        if (result.permissionSync) {
+                            logger.info('[权限同步]', result.permissionSync);
+                        }
+                        if (result.superAdminAssign) {
+                            logger.info('[超管权限]', result.superAdminAssign);
+                        }
+                    } else {
+                        message.error({
+                            content: `初始化失败：${result.errors.join(', ')}`,
+                            duration: 5,
+                        });
+                    }
+                } catch (error) {
+                    logger.error('初始化异常:', error);
+                    message.error({
+                        content: `初始化异常：${error instanceof Error ? error.message : '未知错误'}`,
+                        duration: 5,
+                    });
+                } finally {
+                    hide();
+                    setInitializing(false);
                 }
-                if (result.permissionSync) {
-                    logger.info('[权限同步]', result.permissionSync);
-                }
-                if (result.superAdminAssign) {
-                    logger.info('[超管权限]', result.superAdminAssign);
-                }
-            } else {
-                message.error({
-                    content: `初始化失败：${result.errors.join(', ')}`,
-                    duration: 5,
-                });
-            }
-        } catch (error) {
-            logger.error('初始化异常:', error);
-            message.error({
-                content: `初始化异常：${error instanceof Error ? error.message : '未知错误'}`,
-                duration: 5,
-            });
-        } finally {
-            hide();
-            setInitializing(false);
-        }
+            },
+        });
     };
 
     /**

@@ -27,6 +27,11 @@ const GamePage = lazy(() => import('@/pages/admin/Game'));
 const OrderPage = lazy(() => import('@/pages/admin/Order'));
 const PlayerPage = lazy(() => import('@/pages/admin/Player'));
 
+// 段位管理相关页面
+const GameRankPage = lazy(() => import('@/pages/admin/GameRank'));
+const PlayerRankPage = lazy(() => import('@/pages/admin/PlayerRank'));
+const PlayerCertificationPage = lazy(() => import('@/pages/admin/PlayerCertification'));
+
 // 兼容旧页面（如果存在）
 const AdminSettings = lazy(() => import('@/pages/sys/setting'));
 const AdminAudit = lazy(() => import('@/pages/sys/log'));
@@ -176,6 +181,24 @@ export const routes: RouteConfig[] = [
                 path: 'biz/player',
                 element: <LazyLoad><PlayerPage /></LazyLoad>,
                 meta: { title: '陪玩师管理' }
+            },
+            // 段位管理
+            {
+                path: 'biz/game-rank',
+                element: <LazyLoad><GameRankPage /></LazyLoad>,
+                meta: { title: '段位管理', permission: 'admin.game-ranks.list' }
+            },
+            // 段位审核
+            {
+                path: 'biz/player-rank',
+                element: <LazyLoad><PlayerRankPage /></LazyLoad>,
+                meta: { title: '段位审核', permission: 'admin.player-ranks.list' }
+            },
+            // 实名审核
+            {
+                path: 'biz/player-certification',
+                element: <LazyLoad><PlayerCertificationPage /></LazyLoad>,
+                meta: { title: '实名审核', permission: 'admin.player-certifications.list' }
             },
             {
                 path: 'biz/order',

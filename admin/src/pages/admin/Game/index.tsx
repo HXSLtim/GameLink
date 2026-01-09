@@ -307,10 +307,10 @@ const GamePage: React.FC = () => {
         {
             title: '操作',
             key: 'action',
-            width: 150,
+            width: 160, // 2个按钮 × 80px
             fixed: 'right',
             render: (_, record) => (
-                <Space size="small">
+                <Space size={4}>
                     <PermissionGuard permission={GAME_PERMISSIONS.UPDATE}>
                         <Button
                             type="link"

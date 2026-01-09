@@ -279,10 +279,10 @@ const UserTagPage: React.FC = () => {
         {
             title: '操作',
             key: 'action',
-            width: 150,
+            width: 160,
             fixed: 'right',
             render: (_, record) => (
-                <Space size="small">
+                <Space size={4}>
                     <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
                         编辑
                     </Button>

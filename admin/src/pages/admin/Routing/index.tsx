@@ -322,10 +322,10 @@ const RoutingRulePage: React.FC = () => {
         {
             title: '操作',
             key: 'action',
-            width: 180,
+            width: 240, // 3个按钮 × 80px
             fixed: 'right' as const,
             render: (_: unknown, record: RoutingRule) => (
-                <Space size="small">
+                <Space size={4}>
                     <Tooltip title="编辑">
                         <Button
                             type="link"

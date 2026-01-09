@@ -328,10 +328,10 @@ const CouponPage: React.FC = () => {
         {
             title: '操作',
             key: 'action',
-            width: TABLE.COLUMN_WIDTH.ACTION + TABLE.COLUMN_WIDTH.LARGE,
+            width: 320, // 4个按钮 × 80px
             fixed: 'right',
             render: (_, record) => (
-                <Space size="small" wrap>
+                <Space size={4}>
                     <Button
                         type="link"
                         size="small"

@@ -8,7 +8,7 @@
  * - SLA status indicators
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import { Tag, Space, Button, Avatar, Typography, Select, App, Tooltip } from 'antd';
+import { Tag, Space, Button, Avatar, Typography, Select, App } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
     EyeOutlined,
@@ -237,47 +237,47 @@ export const DisputeList: React.FC<DisputeListProps> = ({
         {
             title: '操作',
             key: 'action',
-            width: 180,
+            width: 320,
             fixed: 'right',
             render: (_, record) => (
-                <Space size="small">
-                    <Tooltip title="查看详情">
+                <Space size={4}>
+                    <Button
+                        type="link"
+                        size="small"
+                        icon={<EyeOutlined />}
+                        onClick={() => onViewDetail(record)}
+                    >
+                        详情
+                    </Button>
+                    {record.status === 'pending' && (
                         <Button
                             type="link"
                             size="small"
-                            icon={<EyeOutlined />}
-                            onClick={() => onViewDetail(record)}
-                        />
-                    </Tooltip>
-                    {record.status === 'pending' && (
-                        <Tooltip title="高级分配">
-                            <Button
-                                type="link"
-                                size="small"
-                                icon={<UserSwitchOutlined />}
-                                onClick={() => onAssign(record)}
-                            />
-                        </Tooltip>
+                            icon={<UserSwitchOutlined />}
+                            onClick={() => onAssign(record)}
+                        >
+                            分配
+                        </Button>
                     )}
                     {['assigned', 'mediating'].includes(record.status) && (
                         <>
-                            <Tooltip title="解决纠纷">
-                                <Button
-                                    type="link"
-                                    size="small"
-                                    icon={<CheckCircleOutlined />}
-                                    style={{ color: '#52c41a' }}
-                                    onClick={() => onResolve(record)}
-                                />
-                            </Tooltip>
-                            <Tooltip title="回滚分配">
-                                <Button
-                                    type="link"
-                                    size="small"
-                                    icon={<RollbackOutlined />}
-                                    onClick={() => onRollback(record)}
-                                />
-                            </Tooltip>
+                            <Button
+                                type="link"
+                                size="small"
+                                icon={<CheckCircleOutlined />}
+                                style={{ color: '#52c41a' }}
+                                onClick={() => onResolve(record)}
+                            >
+                                解决
+                            </Button>
+                            <Button
+                                type="link"
+                                size="small"
+                                icon={<RollbackOutlined />}
+                                onClick={() => onRollback(record)}
+                            >
+                                回滚
+                            </Button>
                         </>
                     )}
                 </Space>

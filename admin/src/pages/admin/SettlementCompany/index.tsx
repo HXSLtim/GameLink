@@ -202,9 +202,9 @@ const SettlementCompanyPage: React.FC = () => {
         {
             title: '操作',
             key: 'action',
-            width: 120,
+            width: 80,
             render: (_, record) => (
-                <Space size="small">
+                <Space size={4}>
                     <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
                         编辑
                     </Button>

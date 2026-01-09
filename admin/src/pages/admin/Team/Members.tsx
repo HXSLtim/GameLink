@@ -243,17 +243,19 @@ const MembersPage: React.FC = () => {
         {
             title: '操作',
             key: 'action',
-            width: 120,
+            width: 80,
             fixed: 'right',
             render: (_, record) => (
-                <Button
-                    type="link"
-                    size="small"
-                    icon={<SearchOutlined />}
-                    onClick={() => handleViewDetail(record)}
-                >
-                    详情
-                </Button>
+                <Space size={4}>
+                    <Button
+                        type="link"
+                        size="small"
+                        icon={<SearchOutlined />}
+                        onClick={() => handleViewDetail(record)}
+                    >
+                        详情
+                    </Button>
+                </Space>
             ),
         },
     ];

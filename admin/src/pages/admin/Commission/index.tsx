@@ -205,7 +205,7 @@ const CommissionPage: React.FC = () => {
             title: '操作',
             key: 'action',
             fixed: 'right',
-            width: 100,
+            width: 80,
             render: (_, record) => (
                 <PermissionGuard permission={COMMISSION_PERMISSIONS.UPDATE}>
                     <Button type="link" size="small" onClick={() => handleEditRule(record)}>

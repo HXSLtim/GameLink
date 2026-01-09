@@ -227,17 +227,19 @@ const UserCouponPage: React.FC = () => {
         {
             title: '操作',
             key: 'action',
-            width: 100,
+            width: 80,
             fixed: 'right',
             render: (_, record) => (
-                <Button
-                    type="link"
-                    size="small"
-                    icon={<EyeOutlined />}
-                    onClick={() => handleViewDetail(record)}
-                >
-                    详情
-                </Button>
+                <Space size={4}>
+                    <Button
+                        type="link"
+                        size="small"
+                        icon={<EyeOutlined />}
+                        onClick={() => handleViewDetail(record)}
+                    >
+                        详情
+                    </Button>
+                </Space>
             ),
         },
     ];

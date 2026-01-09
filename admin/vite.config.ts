@@ -65,6 +65,12 @@ export default defineConfig(({ mode }) => ({
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     testTimeout: 10000,
     hookTimeout: 10000,
+    // CSS 配置 - 避免 jsdom 中解析 CSS 变量出错
+    css: {
+      modules: {
+        classNameStrategy: 'non-scoped',
+      },
+    },
     // 覆盖率配置
     coverage: {
       reporter: ['text', 'json', 'html'],

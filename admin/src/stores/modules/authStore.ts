@@ -2,15 +2,11 @@
  * Auth Store - Authentication and Authorization State Management
  *
  * Features:
- * - Token storage in sessionStorage (cleared on tab close)
+ * - Token storage in localStorage (persistent across sessions)
  * - Permission checking methods (hasPermission, isAdmin)
  * - Logout clears all stores
  * - Integrated with auth API
- *
- * Security:
- * - Does NOT persist to localStorage (security best practice)
- * - Token stored in sessionStorage only
- * - Auto-clears on logout
+ * - Auto-restores state from localStorage on page refresh
  */
 
 import { create } from 'zustand';
@@ -26,6 +22,8 @@ interface AuthState {
   isAuthenticated: boolean;
   loading: boolean;
   error: string | null;
+  /** 水合状态标志: Zustand persist 是否已完成从 localStorage 恢复状态 */
+  _hydrated: boolean;
 
   // Actions
   login: (credentials: LoginRequest) => Promise<void>;
@@ -52,6 +50,7 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       loading: false,
       error: null,
+      _hydrated: false, // 初始为 false，水合完成后设为 true
 
       // Actions
       login: async (credentials: LoginRequest) => {
@@ -89,8 +88,7 @@ export const useAuthStore = create<AuthState>()(
             error: null,
           });
 
-          // Sync to sessionStorage for API interceptor
-          sessionStorage.setItem('auth_token', token);
+          // 不再手动写入 localStorage，由 persist 中间件自动处理
 
         } catch (error: unknown) {
           const errorMessage = error && typeof error === 'object' && 'response' in error
@@ -127,14 +125,8 @@ export const useAuthStore = create<AuthState>()(
             error: null,
           });
 
-          // Clear sessionStorage
-          sessionStorage.removeItem('auth_token');
-          sessionStorage.removeItem('auth-storage');
-
-          // Clear localStorage (legacy compatibility)
-          localStorage.removeItem('token');
-          localStorage.removeItem('user_role');
-          localStorage.removeItem('user_info');
+          // 不再手动清理 localStorage，persist 中间件会自动处理
+          // 只需要清空状态，中间件会同步到 localStorage
 
           // Clear other stores
           // Note: Dynamic imports to avoid circular dependencies
@@ -168,21 +160,13 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: false,
             loading: false,
           });
-          sessionStorage.removeItem('auth_token');
-          sessionStorage.removeItem('auth-storage');
         }
       },
 
       setToken: (token: string) => {
         const isAuthenticated = !!token;
         set({ token, isAuthenticated });
-
-        // Sync to sessionStorage
-        if (token) {
-          sessionStorage.setItem('auth_token', token);
-        } else {
-          sessionStorage.removeItem('auth_token');
-        }
+        // 不再手动写入 localStorage，由 persist 中间件自动处理
       },
 
       setUserInfo: (userInfo: UserInfo) => {
@@ -245,14 +229,22 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
-      // Use sessionStorage (cleared on tab close - security best practice)
-      storage: createJSONStorage(() => sessionStorage),
-      // Only persist userInfo, token is managed by sessionStorage for API interceptor
+      // Use localStorage for persistent auth state
+      storage: createJSONStorage(() => localStorage),
+      // Persist token and userInfo
       partialize: (state) => ({
         userInfo: state.userInfo,
-        isAuthenticated: false, // Force re-validation on page load
+        isAuthenticated: state.isAuthenticated,
         token: state.token,
+        // _hydrated 不持久化，每次刷新都从 false 开始
       }),
+      // 水合完成回调
+      onRehydrateStorage: () => (state) => {
+        logger.info('[authStore] Rehydration complete');
+        if (state) {
+          state._hydrated = true;
+        }
+      },
     }
   )
 );
@@ -260,9 +252,12 @@ export const useAuthStore = create<AuthState>()(
 // Export type for external use
 export type { AuthState };
 
-// Selector hooks for common use cases
+// Selector hooks for common use cases (Super Dev 最佳实践: 精确订阅)
 export const useIsAuthenticated = () => useAuthStore((state) => state.isAuthenticated);
 export const useUserInfo = () => useAuthStore((state) => state.userInfo);
 export const useIsAdmin = () => useAuthStore((state) => state.isAdmin());
 export const useAuthLoading = () => useAuthStore((state) => state.loading);
 export const useAuthError = () => useAuthStore((state) => state.error);
+export const useAuthToken = () => useAuthStore((state) => state.token);
+/** 新增: 水合状态 hook，用于检查 Zustand persist 是否已完成 */
+export const useIsHydrated = () => useAuthStore((state) => state._hydrated);

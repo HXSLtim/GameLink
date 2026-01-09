@@ -45,4 +45,7 @@ type Player struct {
 	VerifiedBy   *uint64    `json:"verifiedBy,omitempty" gorm:"column:verified_by"`              // 审核人ID
 	VerifyRemark string     `json:"verifyRemark,omitempty" gorm:"column:verify_remark;size:500"` // 审核备注
 	RejectReason string     `json:"rejectReason,omitempty" gorm:"column:reject_reason;size:500"` // 拒绝原因
+
+	// 关联
+	User *User `json:"user,omitempty" gorm:"foreignKey:UserID"`
 }
