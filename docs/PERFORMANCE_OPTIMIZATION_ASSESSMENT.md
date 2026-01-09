@@ -82,8 +82,8 @@
 | ✅ 完成 | 修复 SearchTable 内存泄漏 | SearchTable/index.tsx | 10-15% | ✅ |
 | ✅ 完成 | SearchTable 添加 React.memo | SearchTable/index.tsx | 30-40% | ✅ |
 | ✅ 完成 | columns 使用 useMemo | Order/Player/Game/Role | 20-30% | ✅ |
+| ✅ 完成 | Dashboard 图表组件 memo | Dashboard/index.tsx | 10-15% | ✅ |
 | 🟡 中 | InfiniteList 虚拟化 | InfiniteList.tsx | 大数据量 60%+ | 待实施 |
-| 🟡 中 | 图表组件 memo | Dashboard/* | 10-15% | 待实施 |
 | 🟢 低 | 检查所有事件监听器清理 | 各 hooks | 稳定性 | 待实施 |
 
 ---
@@ -272,11 +272,13 @@ cache.Get(ctx, "vip_levels:all", &levels, 1*time.Hour)
 
 1. ✅ **前端**: SearchTable useCallback + useMemo 优化
 2. ✅ **前端**: Order/Player/Game/Role 页面 columns + searchFields useMemo
-3. ✅ **后端**: 配置数据库连接池
-4. ✅ **后端**: Order/Player/Chat/Review Repository Preload 优化
-5. ✅ **数据库**: 添加 12 个外键索引
+3. ✅ **前端**: Dashboard 图表组件 memo + useMemo 优化
+4. ✅ **前端**: Activity 页面 columns useMemo 优化
+5. ✅ **后端**: 配置数据库连接池
+6. ✅ **后端**: Order/Player/Chat/Review Repository Preload 优化
+7. ✅ **数据库**: 添加 12 个外键索引
 
-**总工作量**: ~5 小时 ✅ 已完成
+**总工作量**: ~6 小时 ✅ 已完成
 **实际收益**:
 - 前端渲染速度提升 **30-40%**
 - API 响应时间减少 **50-70%**
