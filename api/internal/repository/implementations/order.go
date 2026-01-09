@@ -63,17 +63,31 @@ func (r *gormOrderRepository) List(ctx context.Context, opts repoiface.OrderList
 	offset := (page - 1) * pageSize
 
 	var orders []model.Order
-	if err := query.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&orders).Error; err != nil {
+	// 使用 Preload 避免 N+1 查询问题
+	if err := query.
+		Preload("User").
+		Preload("Player").
+		Preload("Player.User").
+		Preload("Game").
+		Order("created_at DESC").
+		Offset(offset).
+		Limit(pageSize).
+		Find(&orders).Error; err != nil {
 		return nil, 0, err
 	}
 
 	return orders, total, nil
 }
 
-// Get returns an order by id.
+// Get returns an order by id with related data preloaded.
 func (r *gormOrderRepository) Get(ctx context.Context, id uint64) (*model.Order, error) {
 	var order model.Order
-	if err := r.db.WithContext(ctx).First(&order, id).Error; err != nil {
+	if err := r.db.WithContext(ctx).
+		Preload("User").
+		Preload("Player").
+		Preload("Player.User").
+		Preload("Game").
+		First(&order, id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, repository.ErrNotFound
 		}
