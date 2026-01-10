@@ -1,8 +1,6 @@
 package user
 
 import (
-	"fmt"
-
 	"github.com/gin-gonic/gin"
 
 	"gamelink/internal/handler/resp"
@@ -64,28 +62,7 @@ type FavoritePlayerDTO struct {
 // @Router       /user/favorites/players [get]
 func (h *FavoriteHandler) listFavorites(c *gin.Context) {
 	userID := resp.GetUserID(c)
-
-	page := 1
-	pageSize := 20
-	if p, ok := c.GetQuery("page"); ok {
-		if v, err := resp.ParseUintParam(c, "page"); err == nil && v > 0 {
-			page = int(v)
-		} else {
-			// 尝试从 query 解析
-			var pInt int
-			if _, err := c.GetQuery("page"); err {
-				if n, e := parseIntFromString(p); e == nil && n > 0 {
-					pInt = n
-				}
-				page = pInt
-			}
-		}
-	}
-	if ps, ok := c.GetQuery("pageSize"); ok {
-		if n, err := parseIntFromString(ps); err == nil && n > 0 && n <= 100 {
-			pageSize = n
-		}
-	}
+	page, pageSize := parsePagination(c)
 
 	favorites, total, err := h.favoriteRepo.ListByUserID(c.Request.Context(), userID, page, pageSize)
 	if err != nil {
@@ -247,11 +224,4 @@ func (h *FavoriteHandler) checkFavorite(c *gin.Context) {
 		"isFavorite": exists,
 		"playerId":   playerID,
 	})
-}
-
-// parseIntFromString 从字符串解析整数
-func parseIntFromString(s string) (int, error) {
-	var n int
-	_, err := fmt.Sscanf(s, "%d", &n)
-	return n, err
 }
