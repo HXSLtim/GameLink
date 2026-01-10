@@ -2,11 +2,14 @@ package item
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	"gamelink/pkg/apierr"
+	"gamelink/pkg/cache"
 )
 
 var (
@@ -16,11 +19,23 @@ var (
 	ErrValidation = apierr.BadRequest("输入参数验证失败")
 )
 
+// Cache key patterns and TTL
+const (
+	cacheKeyActiveItems = "service_items:active"
+	cacheKeyGifts       = "service_items:gifts"
+	cacheKeyItem        = "service_item:%d"
+	cacheKeyGame        = "game:%d"
+	cacheTTLItems       = 10 * time.Minute
+	cacheTTLItem        = 5 * time.Minute
+	cacheTTLGame        = 30 * time.Minute
+)
+
 // ServiceItemService 服务项目服务(统一管理护航服务和礼物)
 type ServiceItemService struct {
 	items   repository.ServiceItemRepository
 	games   repository.GameRepository
 	players repository.PlayerRepository
+	cache   cache.Cache
 }
 
 // NewServiceItemService 创建服务项目服务
@@ -34,6 +49,65 @@ func NewServiceItemService(
 		games:   games,
 		players: players,
 	}
+}
+
+// NewServiceItemServiceWithCache 创建带缓存的服务项目服务
+func NewServiceItemServiceWithCache(
+	items repository.ServiceItemRepository,
+	games repository.GameRepository,
+	players repository.PlayerRepository,
+	c cache.Cache,
+) *ServiceItemService {
+	return &ServiceItemService{
+		items:   items,
+		games:   games,
+		players: players,
+		cache:   c,
+	}
+}
+
+// SetCache 设置缓存实例
+func (s *ServiceItemService) SetCache(c cache.Cache) {
+	s.cache = c
+}
+
+// invalidateItemCaches 清除服务项目相关缓存
+func (s *ServiceItemService) invalidateItemCaches(ctx context.Context, itemID uint64) {
+	if s.cache == nil {
+		return
+	}
+	// 清除列表缓存
+	_ = s.cache.Delete(ctx, cacheKeyActiveItems)
+	_ = s.cache.Delete(ctx, cacheKeyGifts)
+	// 清除单个项目缓存
+	if itemID > 0 {
+		_ = s.cache.Delete(ctx, fmt.Sprintf(cacheKeyItem, itemID))
+	}
+}
+
+// getCachedGame 从缓存获取游戏信息
+func (s *ServiceItemService) getCachedGame(ctx context.Context, gameID uint64) (*model.Game, error) {
+	if s.cache == nil {
+		return s.games.Get(ctx, gameID)
+	}
+
+	key := fmt.Sprintf(cacheKeyGame, gameID)
+	if val, ok, _ := s.cache.Get(ctx, key); ok {
+		var game model.Game
+		if err := json.Unmarshal([]byte(val), &game); err == nil {
+			return &game, nil
+		}
+	}
+
+	game, err := s.games.Get(ctx, gameID)
+	if err != nil {
+		return nil, err
+	}
+
+	if data, err := json.Marshal(game); err == nil {
+		_ = s.cache.Set(ctx, key, string(data), cacheTTLGame)
+	}
+	return game, nil
 }
 
 // CreateServiceItemRequest 创建服务项目请求
@@ -102,6 +176,9 @@ func (s *ServiceItemService) CreateServiceItem(ctx context.Context, req CreateSe
 		return nil, err
 	}
 
+	// 清除缓存
+	s.invalidateItemCaches(ctx, item.ID)
+
 	return item, nil
 }
 
@@ -130,7 +207,14 @@ func (s *ServiceItemService) UpdateServiceItem(ctx context.Context, id uint64, r
 		return err
 	}
 
-	return s.items.Update(ctx, item)
+	if err := s.items.Update(ctx, item); err != nil {
+		return err
+	}
+
+	// 清除缓存
+	s.invalidateItemCaches(ctx, id)
+
+	return nil
 }
 
 // applyServiceItemUpdates 应用服务项目更新
@@ -212,7 +296,14 @@ func (s *ServiceItemService) DeleteServiceItem(ctx context.Context, id uint64) e
 		return err
 	}
 
-	return s.items.Delete(ctx, id)
+	if err := s.items.Delete(ctx, id); err != nil {
+		return err
+	}
+
+	// 清除缓存
+	s.invalidateItemCaches(ctx, id)
+
+	return nil
 }
 
 // ServiceItemDTO 服务项目DTO
@@ -339,9 +430,9 @@ func (s *ServiceItemService) toDTO(ctx context.Context, item *model.ServiceItem)
 		UpdatedAt:      item.UpdatedAt,
 	}
 
-	// 获取游戏名称
+	// 获取游戏名称（使用缓存）
 	if item.GameID != nil {
-		game, err := s.games.Get(ctx, *item.GameID)
+		game, err := s.getCachedGame(ctx, *item.GameID)
 		if err == nil {
 			dto.GameName = game.Name
 		}
@@ -369,7 +460,12 @@ func (s *ServiceItemService) BatchUpdateStatus(ctx context.Context, req BatchUpd
 	if len(req.IDs) == 0 {
 		return apierr.BadRequest("未提供项目ID")
 	}
-	return s.items.BatchUpdateStatus(ctx, req.IDs, req.IsActive)
+	if err := s.items.BatchUpdateStatus(ctx, req.IDs, req.IsActive); err != nil {
+		return err
+	}
+	// 清除缓存
+	s.invalidateItemCaches(ctx, 0)
+	return nil
 }
 
 // BatchUpdatePriceRequest 批量更新价格请求
@@ -383,7 +479,12 @@ func (s *ServiceItemService) BatchUpdatePrice(ctx context.Context, req BatchUpda
 	if len(req.IDs) == 0 {
 		return apierr.BadRequest("未提供项目ID")
 	}
-	return s.items.BatchUpdatePrice(ctx, req.IDs, req.BasePriceCents)
+	if err := s.items.BatchUpdatePrice(ctx, req.IDs, req.BasePriceCents); err != nil {
+		return err
+	}
+	// 清除缓存
+	s.invalidateItemCaches(ctx, 0)
+	return nil
 }
 
 // ============================================================================
@@ -465,6 +566,11 @@ func (s *ServiceItemService) BatchDeleteItems(ctx context.Context, req BatchDele
 		response.SuccessCount++
 	}
 
+	// 清除缓存
+	if response.SuccessCount > 0 {
+		s.invalidateItemCaches(ctx, 0)
+	}
+
 	return response, nil
 }
 
@@ -502,6 +608,9 @@ func (s *ServiceItemService) BatchUpdateItemCommission(ctx context.Context, req 
 	response.SuccessItems = req.ItemIDs
 	response.SuccessCount = len(req.ItemIDs)
 
+	// 清除缓存
+	s.invalidateItemCaches(ctx, 0)
+
 	return response, nil
 }
 
@@ -535,6 +644,9 @@ func (s *ServiceItemService) BatchUpdateItemStatus(ctx context.Context, req Batc
 	// 批量更新成功，所有项目都成功
 	response.SuccessItems = req.ItemIDs
 	response.SuccessCount = len(req.ItemIDs)
+
+	// 清除缓存
+	s.invalidateItemCaches(ctx, 0)
 
 	return response, nil
 }
