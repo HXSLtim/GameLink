@@ -1,6 +1,8 @@
 package public
 
 import (
+	"strings"
+
 	"github.com/gin-gonic/gin"
 
 	"gamelink/internal/handler/resp"
@@ -44,12 +46,12 @@ type SearchRequest struct {
 
 // SearchResultItem 搜索结果项
 type SearchResultItem struct {
-	ID          uint64  `json:"id"`
-	Type        string  `json:"type"` // player, game
-	Name        string  `json:"name"`
-	Description string  `json:"description,omitempty"`
-	ImageURL    string  `json:"imageUrl,omitempty"`
-	Extra       any     `json:"extra,omitempty"`
+	ID          uint64 `json:"id"`
+	Type        string `json:"type"` // player, game
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	ImageURL    string `json:"imageUrl,omitempty"`
+	Extra       any    `json:"extra,omitempty"`
 }
 
 // SearchResponse 搜索响应
@@ -96,7 +98,7 @@ func (h *SearchHandler) search(c *gin.Context) {
 		Games:   []SearchResultItem{},
 	}
 
-	// 搜索陪玩师
+	// 搜索陪玩师（使用数据库 LIKE 查询）
 	if req.Type == "all" || req.Type == "player" {
 		players, err := h.searchPlayers(c, req.Query, req.Page, req.PageSize)
 		if err == nil {
@@ -105,7 +107,7 @@ func (h *SearchHandler) search(c *gin.Context) {
 		}
 	}
 
-	// 搜索游戏
+	// 搜索游戏（使用数据库 LIKE 查询）
 	if req.Type == "all" || req.Type == "game" {
 		games, err := h.searchGames(c, req.Query, req.Page, req.PageSize)
 		if err == nil {
@@ -117,26 +119,17 @@ func (h *SearchHandler) search(c *gin.Context) {
 	resp.OK(c, result)
 }
 
-// searchPlayers 搜索陪玩师
+// searchPlayers 搜索陪玩师（使用数据库 LIKE 查询）
 func (h *SearchHandler) searchPlayers(c *gin.Context, query string, page, pageSize int) ([]SearchResultItem, error) {
-	// 获取所有陪玩师并过滤
-	players, _, err := h.playerRepo.ListPaged(c.Request.Context(), 1, 1000)
+	// 使用 Repository 的 ListPagedWithFilter 方法进行数据库级别的搜索
+	status := model.VerificationVerified
+	players, _, err := h.playerRepo.ListPagedWithFilter(c.Request.Context(), page, pageSize, query, &status)
 	if err != nil {
 		return nil, err
 	}
 
-	var results []SearchResultItem
+	results := make([]SearchResultItem, 0, len(players))
 	for _, p := range players {
-		// 只搜索已审核通过的陪玩师
-		if p.VerificationStatus != model.VerificationVerified {
-			continue
-		}
-
-		// 模糊匹配昵称
-		if !containsIgnoreCase(p.Nickname, query) && !containsIgnoreCase(p.Bio, query) {
-			continue
-		}
-
 		// 获取用户头像
 		var avatarURL string
 		if user, err := h.userRepo.Get(c.Request.Context(), p.UserID); err == nil {
@@ -157,36 +150,21 @@ func (h *SearchHandler) searchPlayers(c *gin.Context, query string, page, pageSi
 		})
 	}
 
-	// 分页
-	start := (page - 1) * pageSize
-	if start >= len(results) {
-		return []SearchResultItem{}, nil
-	}
-	end := start + pageSize
-	if end > len(results) {
-		end = len(results)
-	}
-
-	return results[start:end], nil
+	return results, nil
 }
 
-// searchGames 搜索游戏
+// searchGames 搜索游戏（使用数据库 LIKE 查询）
 func (h *SearchHandler) searchGames(c *gin.Context, query string, page, pageSize int) ([]SearchResultItem, error) {
-	// 获取所有游戏并过滤
-	games, _, err := h.gameRepo.ListPaged(c.Request.Context(), 1, 1000)
+	// 使用 Repository 的 ListPagedWithFilter 方法进行数据库级别的搜索
+	games, _, err := h.gameRepo.ListPagedWithFilter(c.Request.Context(), page, pageSize, query)
 	if err != nil {
 		return nil, err
 	}
 
-	var results []SearchResultItem
+	results := make([]SearchResultItem, 0, len(games))
 	for _, g := range games {
-		// 只搜索启用的游戏
+		// 只返回启用的游戏
 		if !g.IsActive {
-			continue
-		}
-
-		// 模糊匹配名称
-		if !containsIgnoreCase(g.Name, query) && !containsIgnoreCase(g.Description, query) {
 			continue
 		}
 
@@ -199,47 +177,13 @@ func (h *SearchHandler) searchGames(c *gin.Context, query string, page, pageSize
 		})
 	}
 
-	// 分页
-	start := (page - 1) * pageSize
-	if start >= len(results) {
-		return []SearchResultItem{}, nil
-	}
-	end := start + pageSize
-	if end > len(results) {
-		end = len(results)
-	}
-
-	return results[start:end], nil
+	return results, nil
 }
 
-// containsIgnoreCase 忽略大小写的包含检查
+// containsIgnoreCase 忽略大小写的包含检查（使用标准库）
 func containsIgnoreCase(s, substr string) bool {
 	if s == "" || substr == "" {
 		return false
 	}
-	return contains(toLower(s), toLower(substr))
-}
-
-// toLower 转小写（简单实现）
-func toLower(s string) string {
-	b := make([]byte, len(s))
-	for i := range s {
-		c := s[i]
-		if c >= 'A' && c <= 'Z' {
-			b[i] = c + 32
-		} else {
-			b[i] = c
-		}
-	}
-	return string(b)
-}
-
-// contains 检查字符串包含
-func contains(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
+	return strings.Contains(strings.ToLower(s), strings.ToLower(substr))
 }
