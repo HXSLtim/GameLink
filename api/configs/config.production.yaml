@@ -1,0 +1,109 @@
+# 生产环境配置文件
+# 用于生产环境部署
+
+server:
+  port: "8080"
+  enable_swagger: false
+
+database:
+  type: "postgres"
+  # dsn intentionally left blank for production; set via env DB_DSN
+  dsn: ""
+
+cache:
+  type: "redis"
+  redis:
+    addr: "127.0.0.1:6379"
+    password: ""
+    db: 0
+
+crypto:
+  enabled: true
+  # 生产环境必须通过环境变量配置以下密钥（不可为空）
+  # CRYPTO_SECRET_KEY: 32字节密钥（AES-256-CBC），生成命令: openssl rand -base64 32
+  # CRYPTO_IV: 16字节初始化向量，生成命令: openssl rand -base64 16
+  secret_key: ""
+  iv: ""
+  methods:
+    - POST
+    - PUT
+    - PATCH
+  exclude_paths:
+    - "/api/v1/health"
+    - "/api/v1/ping"
+    - "/api/v1/auth/refresh"
+  use_signature: true
+
+signature:
+  enabled: true
+  # HMAC-SHA256请求签名验证配置（生产环境必须启用）
+  # 签名算法：HMAC-SHA256(METHOD:PATH:BODY, secret_key)
+  # 生产环境必须通过环境变量配置（不可为空）
+  # SIGNATURE_SECRET_KEY: 32字节密钥，生成命令: openssl rand -base64 32
+  secret_key: ""
+  header_name: "X-Signature"
+  methods:
+    - POST
+    - PUT
+    - PATCH
+    - DELETE
+  exclude_paths:
+    - "/api/v1/health"
+    - "/api/v1/ping"
+    - "/api/v1/auth/refresh"
+
+auth:
+  jwt_secret: "" # 生产环境通过环境变量 JWT_SECRET_KEY 提供
+  token_ttl_hours: 24
+
+seed:
+  enabled: true
+
+super_admin:
+  email: "admin@gameLink.com" # 生产环境通过环境变量 SUPER_ADMIN_EMAIL 配置
+  # 生产环境必须通过环境变量配置强密码（不可为空）
+  # 要求：至少8字符，包含大小写字母、数字、特殊符号
+  # 生成命令: openssl rand -base64 24
+  password: ""
+  name: "Super Admin"
+  phone: ""
+
+admin_auth:
+  mode: "jwt"
+
+# 外部API凭证配置（可选，建议通过环境变量配置）
+external_apis:
+  # 微信支付配置
+  wechat_pay:
+    app_id: ""                    # 通过环境变量 WECHAT_PAY_APP_ID 配置
+    mch_id: ""                    # 通过环境变量 WECHAT_PAY_MCH_ID 配置
+    api_key: ""                   # 通过环境变量 WECHAT_PAY_API_KEY 配置
+    api_cert_path: ""             # 通过环境变量 WECHAT_PAY_API_CERT_PATH 配置
+    notify_url: ""                # 通过环境变量 WECHAT_PAY_NOTIFY_URL 配置
+    enabled: false                # 通过环境变量 WECHAT_PAY_ENABLED 配置
+
+  # 支付宝配置
+  alipay:
+    app_id: ""                    # 通过环境变量 ALIPAY_APP_ID 配置
+    private_key_path: ""          # 通过环境变量 ALIPAY_PRIVATE_KEY_PATH 配置
+    public_key_path: ""           # 通过环境变量 ALIPAY_PUBLIC_KEY_PATH 配置
+    notify_url: ""                # 通过环境变量 ALIPAY_NOTIFY_URL 配置
+    enabled: false                # 通过环境变量 ALIPAY_ENABLED 配置
+
+  # 短信服务配置
+  sms:
+    provider: ""                  # 通过环境变量 SMS_PROVIDER 配置
+    access_key: ""                # 通过环境变量 SMS_ACCESS_KEY 配置
+    secret_key: ""                # 通过环境变量 SMS_SECRET_KEY 配置
+    sign_name: ""                 # 通过环境变量 SMS_SIGN_NAME 配置
+    enabled: false                # 通过环境变量 SMS_ENABLED 配置
+
+  # OSS对象存储配置
+  oss:
+    provider: ""                  # 通过环境变量 OSS_PROVIDER 配置
+    endpoint: ""                  # 通过环境变量 OSS_ENDPOINT 配置
+    access_key: ""                # 通过环境变量 OSS_ACCESS_KEY 配置
+    secret_key: ""                # 通过环境变量 OSS_SECRET_KEY 配置
+    bucket: ""                    # 通过环境变量 OSS_BUCKET 配置
+    region: ""                    # 通过环境变量 OSS_REGION 配置
+    enabled: false                # 通过环境变量 OSS_ENABLED 配置

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" fill="#1890ff" rx="100"/>
+  <g transform="translate(256,256)">
+    <!-- 游戏手柄图标 -->
+    <path d="M-120 -80 L-80 -120 L80 -120 L120 -80 L120 80 L80 120 L-80 120 L-120 80 Z"
+          fill="none" stroke="white" stroke-width="16"/>
+    <!-- 十字键 -->
+    <rect x="-110" y="-40" width="20" height="80" fill="white" rx="4"/>
+    <rect x="-150" y="0" width="80" height="20" fill="white" rx="4"/>
+    <!-- 按钮键 -->
+    <circle cx="80" cy="-40" r="16" fill="white"/>
+    <circle cx="110" cy="0" r="16" fill="white"/>
+    <circle cx="80" cy="40" r="16" fill="white"/>
+  </g>
+  <!-- GL文字 -->
+  <text x="256" y="440" font-family="Arial, sans-serif" font-size="120"
+        font-weight="bold" fill="white" text-anchor="middle">GL</text>
+</svg>

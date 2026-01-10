@@ -1,56 +1,50 @@
 # GameLink 开发环境 Docker Compose 配置
 # 使用方式: docker-compose up -d
+#
+# 仅部署数据库服务，后端和前端本地运行:
+#   - 后端: cd api && go run cmd/main.go
+#   - 前端: cd admin && npm run dev
 
 services:
-  # 后端服务
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-      args:
-        GOPROXY: https://goproxy.cn,direct
-    container_name: gamelink-backend
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:16-alpine
+    container_name: gamelink-postgres
     restart: unless-stopped
-    ports:
-      - "8080:8080"
     environment:
-      - APP_ENV=development
-      - SERVICE_PORT=8080
-    volumes:
-      # 挂载配置文件
-      - ./backend/configs:/app/configs:ro
-      # 挂载数据目录（SQLite数据库）
-      - backend-data:/app/var
-    networks:
-      - gamelink-network
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/v1/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-
-  # 前端服务
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        NPM_REGISTRY: https://registry.npmmirror.com
-    container_name: gamelink-frontend
-    restart: unless-stopped
+      POSTGRES_USER: ${POSTGRES_USER:-gamelink}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gamelink123}
+      POSTGRES_DB: ${POSTGRES_DB:-gamelink}
+      POSTGRES_INITDB_ARGS: --encoding=UTF8 --lc-collate=C --lc-ctype=C
     ports:
-      - "80:80"
-    depends_on:
-      backend:
-        condition: service_healthy
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - gamelink-network
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gamelink} -d ${POSTGRES_DB:-gamelink}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    container_name: gamelink-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --appendfsync everysec --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "${REDIS_PORT:-6380}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - gamelink-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 networks:
   gamelink-network:
@@ -58,5 +52,7 @@ networks:
     name: gamelink-network
 
 volumes:
-  backend-data:
-    name: gamelink-backend-data
+  postgres_data:
+    name: gamelink-postgres-data
+  redis_data:
+    name: gamelink-redis-data

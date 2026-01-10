@@ -1,0 +1,111 @@
+# 开发环境配置文件
+# 用于本地开发和测试
+
+server:
+  port: "8080"
+  enable_swagger: true
+
+database:
+  type: "postgres"
+  dsn: "host=127.0.0.1 port=5433 user=gamelink password=gamelink123 dbname=gamelink sslmode=disable"
+
+cache:
+  type: "redis"
+  redis:
+    addr: "127.0.0.1:6380"  # 使用 IPv4 地址避免 Windows 上 localhost 解析为 IPv6 的问题
+    password: ""
+    db: 0
+
+crypto:
+  enabled: false
+  # 开发环境建议通过环境变量配置密钥（更安全）
+  # 密钥长度要求：secret_key 必须 32 字节（AES-256），iv 必须 16 字节
+  # 生成命令: openssl rand -base64 32 (secret) 或 openssl rand -base64 16 (iv)
+  # 环境变量: CRYPTO_SECRET_KEY, CRYPTO_IV
+  secret_key: ""
+  iv: ""
+  methods:
+    - POST
+    - PUT
+    - PATCH
+  exclude_paths:
+    - "/api/v1/health"
+    - "/api/v1/ping"
+    - "/api/v1/auth/refresh"
+  use_signature: true
+
+signature:
+  enabled: false
+  # HMAC-SHA256请求签名验证配置
+  # 签名算法：HMAC-SHA256(METHOD:PATH:BODY, secret_key)
+  # 生成密钥命令: openssl rand -base64 32
+  # 环境变量: SIGNATURE_SECRET_KEY
+  secret_key: ""
+  header_name: "X-Signature"
+  methods:
+    - POST
+    - PUT
+    - PATCH
+    - DELETE
+  exclude_paths:
+    - "/api/v1/health"
+    - "/api/v1/ping"
+    - "/api/v1/auth/refresh"
+
+auth:
+  # 建议通过环境变量 JWT_SECRET_KEY 配置（更安全）
+  # 生成命令: openssl rand -base64 32
+  # 开发环境固定密钥（至少32字符）
+  jwt_secret: "gamelink-dev-secret-key-32chars-min"
+  token_ttl_hours: 24
+
+seed:
+  enabled: true
+
+super_admin:
+  email: "admin@gamelink.com"
+  # 建议通过环境变量 SUPER_ADMIN_PASSWORD 配置（更安全）
+  # 生成命令: openssl rand -base64 24
+  password: ""
+  name: "Super Admin"
+  phone: ""
+
+admin_auth:
+  mode: "jwt"
+
+# 外部API凭证配置（可选）
+external_apis:
+  # 微信支付配置
+  wechat_pay:
+    app_id: ""                    # 微信支付应用ID
+    mch_id: ""                    # 商户号
+    api_key: ""                   # API密钥
+    api_cert_path: ""             # API证书路径
+    notify_url: ""                # 支付结果通知URL
+    enabled: false                # 是否启用微信支付
+
+  # 支付宝配置
+  alipay:
+    app_id: ""                    # 支付宝应用ID
+    private_key_path: ""          # 应用私钥路径
+    public_key_path: ""           # 支付宝公钥路径
+    notify_url: ""                # 支付结果通知URL
+    enabled: false                # 是否启用支付宝
+
+  # 短信服务配置
+  sms:
+    provider: ""                  # 服务商: aliyun, tencent
+    access_key: ""                # AccessKey ID
+    secret_key: ""                # AccessKey Secret
+    sign_name: ""                 # 短信签名
+    enabled: false                # 是否启用短信服务
+
+  # OSS对象存储配置
+  oss:
+    provider: ""                  # 服务商: aliyun, qcloud, minio
+    endpoint: ""                  # 访问域名
+    access_key: ""                # AccessKey ID
+    secret_key: ""                # AccessKey Secret
+    bucket: ""                    # 存储桶名称
+    region: ""                    # 区域
+    enabled: false                # 是否启用OSS

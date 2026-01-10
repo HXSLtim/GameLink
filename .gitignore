@@ -24,6 +24,10 @@ lerna-debug.log*
 .env
 .env.*
 !.env.example
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 .envrc
 .npmrc
 
@@ -86,6 +90,11 @@ coverage/
 reports/
 junit.xml
 
+# E2E test artifacts (Playwright)
+admin/playwright-report/
+admin/test-results/
+admin/dev-dist/
+
 # Windows/System temporary files
 nul
 *.tmp
@@ -100,4 +109,10 @@ swagger.yaml
 
 # Generated files
 *.generated.*
+
+# Additional Test Artifacts
+admin/test-output.txt
+admin/test-results.json
+api/test_coverage.txt
+test_frontend.txt
 

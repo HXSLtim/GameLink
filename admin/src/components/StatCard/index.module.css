@@ -1,0 +1,86 @@
+/**
+ * StatCard样式
+ * 使用 Ant Design CSS 变量以支持主题切换
+ */
+
+.card {
+    height: 100%;
+}
+
+.clickable {
+    cursor: pointer;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+.titleWrapper {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.title {
+    font-size: 14px;
+    /* 使用 Ant Design 的次要文本颜色变量 */
+    color: var(--ant-color-text-secondary);
+}
+
+.infoIcon {
+    font-size: 12px;
+    /* 使用 Ant Design 的次要文本颜色变量 */
+    color: var(--ant-color-text-secondary);
+    cursor: help;
+}
+
+.iconWrapper {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: #fff;
+}
+
+.body {
+    margin-bottom: 8px;
+}
+
+.body :global(.ant-statistic-content) {
+    font-size: 28px;
+    font-weight: 600;
+}
+
+.footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-top: 12px;
+    /* 使用 Ant Design 的边框颜色变量 */
+    border-top: 1px solid var(--ant-color-border);
+}
+
+.trend {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 14px;
+}
+
+.trendLabel {
+    /* 使用 Ant Design 的次要文本颜色变量 */
+    color: var(--ant-color-text-secondary);
+    margin-left: 4px;
+}
+
+.footerContent {
+    font-size: 14px;
+    /* 使用 Ant Design 的次要文本颜色变量 */
+    color: var(--ant-color-text-secondary);
+}

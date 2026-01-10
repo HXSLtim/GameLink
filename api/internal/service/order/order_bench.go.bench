@@ -1,0 +1,428 @@
+package order
+
+import (
+	"context"
+	"fmt"
+	"testing"
+	"time"
+
+	"gamelink/benchmark/framework"
+	"gamelink/internal/model"
+	"gamelink/internal/repository"
+	"gamelink/internal/repository/commission"
+	"gamelink/internal/repository/game"
+	"gamelink/internal/repository/order"
+	"gamelink/internal/repository/payment"
+	"gamelink/internal/repository/player"
+	"gamelink/internal/repository/review"
+	"gamelink/internal/repository/user"
+	"gamelink/pkg/cache"
+)
+
+// setupOrderBenchmarkSuite creates a benchmark suite for order operations
+func setupOrderBenchmarkSuite(b *testing.B) (*framework.BenchmarkSuite, *OrderService) {
+	config := framework.DefaultConfig()
+	suite := framework.NewBenchmarkSuite(b, config)
+
+	// Create additional repositories needed for order service
+	playerRepo := player.NewPlayerRepository(suite.DB)
+	gameRepo := game.NewGameRepository(suite.DB)
+	paymentRepo := payment.NewPaymentRepository(suite.DB)
+	reviewRepo := review.NewReviewRepository(suite.DB)
+	commissionRepo := commission.NewCommissionRepository(suite.DB)
+
+	// Create order repository
+	orderRepo := order.NewOrderRepository(suite.DB)
+
+	// Create order service
+	orderService := NewOrderService(
+		orderRepo,
+		playerRepo,
+		suite.UserRepo,
+		gameRepo,
+		paymentRepo,
+		reviewRepo,
+		commissionRepo,
+	)
+
+	// Inject cache (in-memory for benchmarks)
+	orderService.SetCache(cache.NewInMemoryCache())
+
+	suite.OrderService = orderService
+	suite.PlayerRepo = playerRepo
+	suite.GameRepo = gameRepo
+
+	return suite, orderService
+}
+
+// BenchmarkOrderCreation_Simple benchmarks basic order creation
+func BenchmarkOrderCreation_Simple(b *testing.B) {
+	suite, orderService := setupOrderBenchmarkSuite(b)
+	ctx := context.Background()
+
+	// Setup test data
+	testUser := suite.CreateBenchmarkUser(b, "bench_user_simple")
+	testPlayer := suite.CreateBenchmarkPlayer(b, testUser.ID, "bench_player_simple")
+	testGame := suite.CreateBenchmarkGame(b, "Benchmark Game")
+
+	scheduledStart := time.Now().Add(1 * time.Hour)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		req := CreateOrderRequest{
+			PlayerID:       testPlayer.ID,
+			GameID:         testGame.ID,
+			Title:          fmt.Sprintf("Benchmark Order %d", i),
+			Description:    "Performance test order",
+			ScheduledStart: &scheduledStart,
+			DurationHours:  1.0,
+		}
+
+		_, err := orderService.CreateOrder(ctx, testUser.ID, req)
+		if err != nil {
+			b.Fatalf("Failed to create order: %v", err)
+		}
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkOrderListing benchmarks order listing with pagination
+func BenchmarkOrderListing(b *testing.B) {
+	suite, orderService := setupOrderBenchmarkSuite(b)
+	ctx := context.Background()
+
+	// Setup test data
+	testUser := suite.CreateBenchmarkUser(b, "bench_user_list")
+	testPlayer := suite.CreateBenchmarkPlayer(b, testUser.ID, "bench_player_list")
+	testGame := suite.CreateBenchmarkGame(b, "List Benchmark Game")
+
+	// Create 1000 orders for listing tests
+	scheduledStart := time.Now().Add(1 * time.Hour)
+	for i := 0; i < 1000; i++ {
+		req := CreateOrderRequest{
+			PlayerID:       testPlayer.ID,
+			GameID:         testGame.ID,
+			Title:          fmt.Sprintf("List Test Order %d", i),
+			ScheduledStart: &scheduledStart,
+			DurationHours:  1.0,
+		}
+		_, _ = orderService.CreateOrder(ctx, testUser.ID, req)
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		_, err := orderService.GetUserOrders(ctx, testUser.ID, 1, 20, nil, nil)
+		if err != nil {
+			b.Fatalf("Failed to list orders: %v", err)
+		}
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkOrderGetByID benchmarks retrieving a single order by ID
+func BenchmarkOrderGetByID(b *testing.B) {
+	suite, orderService := setupOrderBenchmarkSuite(b)
+	ctx := context.Background()
+
+	// Setup test data
+	testUser := suite.CreateBenchmarkUser(b, "bench_user_get")
+	testPlayer := suite.CreateBenchmarkPlayer(b, testUser.ID, "bench_player_get")
+	testGame := suite.CreateBenchmarkGame(b, "Get Benchmark Game")
+
+	scheduledStart := time.Now().Add(1 * time.Hour)
+	req := CreateOrderRequest{
+		PlayerID:       testPlayer.ID,
+		GameID:         testGame.ID,
+		Title:          "Get Test Order",
+		ScheduledStart: &scheduledStart,
+		DurationHours:  1.0,
+	}
+	resp, err := orderService.CreateOrder(ctx, testUser.ID, req)
+	if err != nil {
+		b.Fatalf("Failed to create test order: %v", err)
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		_, err := orderService.GetOrderByID(ctx, resp.OrderID)
+		if err != nil {
+			b.Fatalf("Failed to get order: %v", err)
+		}
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkOrderStatusUpdate benchmarks order status transitions
+func BenchmarkOrderStatusUpdate(b *testing.B) {
+	suite, orderService := setupOrderBenchmarkSuite(b)
+	ctx := context.Background()
+
+	// Setup test data
+	testUser := suite.CreateBenchmarkUser(b, "bench_user_update")
+	testPlayer := suite.CreateBenchmarkPlayer(b, testUser.ID, "bench_player_update")
+	testGame := suite.CreateBenchmarkGame(b, "Update Benchmark Game")
+
+	scheduledStart := time.Now().Add(1 * time.Hour)
+
+	// Create multiple orders to update
+	orders := make([]uint64, 100)
+	for i := 0; i < 100; i++ {
+		req := CreateOrderRequest{
+			PlayerID:       testPlayer.ID,
+			GameID:         testGame.ID,
+			Title:          fmt.Sprintf("Update Test Order %d", i),
+			ScheduledStart: &scheduledStart,
+			DurationHours:  1.0,
+		}
+		resp, _ := orderService.CreateOrder(ctx, testUser.ID, req)
+		orders[i] = resp.OrderID
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	idx := 0
+	for i := 0; i < b.N; i++ {
+		orderID := orders[idx%100]
+		err := orderService.UpdateOrderStatus(ctx, orderID, model.OrderStatusInProgress)
+		if err != nil {
+			b.Fatalf("Failed to update order status: %v", err)
+		}
+		// Reset status for next iteration
+		_ = orderService.UpdateOrderStatus(ctx, orderID, model.OrderStatusPending)
+		idx++
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkOrderCancellation benchmarks order cancellation
+func BenchmarkOrderCancellation(b *testing.B) {
+	suite, orderService := setupOrderBenchmarkSuite(b)
+	ctx := context.Background()
+
+	// Setup test data
+	testUser := suite.CreateBenchmarkUser(b, "bench_user_cancel")
+	testPlayer := suite.CreateBenchmarkPlayer(b, testUser.ID, "bench_player_cancel")
+	testGame := suite.CreateBenchmarkGame(b, "Cancel Benchmark Game")
+
+	scheduledStart := time.Now().Add(1 * time.Hour)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		// Create order
+		req := CreateOrderRequest{
+			PlayerID:       testPlayer.ID,
+			GameID:         testGame.ID,
+			Title:          fmt.Sprintf("Cancel Test Order %d", i),
+			ScheduledStart: &scheduledStart,
+			DurationHours:  1.0,
+		}
+		resp, err := orderService.CreateOrder(ctx, testUser.ID, req)
+		if err != nil {
+			b.Fatalf("Failed to create order: %v", err)
+		}
+
+		// Cancel order
+		err = orderService.CancelOrder(ctx, resp.OrderID, testUser.ID, "test cancellation")
+		if err != nil {
+			b.Fatalf("Failed to cancel order: %v", err)
+		}
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkOrderComplexQuery benchmarks complex order queries with joins
+func BenchmarkOrderComplexQuery(b *testing.B) {
+	suite, orderService := setupOrderBenchmarkSuite(b)
+	ctx := context.Background()
+
+	// Setup test data
+	users := make([]*model.User, 10)
+	players := make([]*model.Player, 10)
+	for i := 0; i < 10; i++ {
+		users[i] = suite.CreateBenchmarkUser(b, fmt.Sprintf("bench_user_complex_%d", i))
+		players[i] = suite.CreateBenchmarkPlayer(b, users[i].ID, fmt.Sprintf("bench_player_complex_%d", i))
+	}
+	testGame := suite.CreateBenchmarkGame(b, "Complex Query Benchmark Game")
+
+	scheduledStart := time.Now().Add(1 * time.Hour)
+
+	// Create orders with different statuses
+	statuses := []model.OrderStatus{
+		model.OrderStatusPending,
+		model.OrderStatusInProgress,
+		model.OrderStatusCompleted,
+		model.OrderStatusCancelled,
+	}
+
+	for i := 0; i < 500; i++ {
+		req := CreateOrderRequest{
+			PlayerID:       players[i%10].ID,
+			GameID:         testGame.ID,
+			Title:          fmt.Sprintf("Complex Query Order %d", i),
+			ScheduledStart: &scheduledStart,
+			DurationHours:  1.0,
+		}
+		resp, _ := orderService.CreateOrder(ctx, users[i%10].ID, req)
+
+		// Set different statuses
+		_ = orderService.UpdateOrderStatus(ctx, resp.OrderID, statuses[i%4])
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		// Complex query: filter by status with pagination
+		status := model.OrderStatusCompleted
+		_, err := orderService.GetUserOrders(ctx, users[0].ID, 1, 20, &status, nil)
+		if err != nil {
+			b.Fatalf("Failed to execute complex query: %v", err)
+		}
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkOrderConcurrentCreation benchmarks concurrent order creation
+func BenchmarkOrderConcurrentCreation(b *testing.B) {
+	suite, orderService := setupOrderBenchmarkSuite(b)
+	ctx := context.Background()
+
+	// Setup test data
+	testUser := suite.CreateBenchmarkUser(b, "bench_user_concurrent")
+	testPlayer := suite.CreateBenchmarkPlayer(b, testUser.ID, "bench_player_concurrent")
+	testGame := suite.CreateBenchmarkGame(b, "Concurrent Benchmark Game")
+
+	scheduledStart := time.Now().Add(1 * time.Hour)
+
+	b.ResetTimer()
+
+	b.RunParallel(func(pb *testing.PB) {
+		i := 0
+		for pb.Next() {
+			req := CreateOrderRequest{
+				PlayerID:       testPlayer.ID,
+				GameID:         testGame.ID,
+				Title:          fmt.Sprintf("Concurrent Order %d", i),
+				ScheduledStart: &scheduledStart,
+				DurationHours:  1.0,
+			}
+
+			_, err := orderService.CreateOrder(ctx, testUser.ID, req)
+			if err != nil {
+				b.Errorf("Failed to create order: %v", err)
+			}
+			i++
+		}
+	})
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkOrderValidation benchmarks order validation logic
+func BenchmarkOrderValidation(b *testing.B) {
+	suite, _ := setupOrderBenchmarkSuite(b)
+
+	// Setup test data
+	testUser := suite.CreateBenchmarkUser(b, "bench_user_validate")
+	testPlayer := suite.CreateBenchmarkPlayer(b, testUser.ID, "bench_player_validate")
+	testGame := suite.CreateBenchmarkGame(b, "Validation Benchmark Game")
+
+	scheduledStart := time.Now().Add(1 * time.Hour)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		req := CreateOrderRequest{
+			PlayerID:       testPlayer.ID,
+			GameID:         testGame.ID,
+			Title:          fmt.Sprintf("Validation Test Order %d", i),
+			Description:    "Testing validation performance",
+			ScheduledStart: &scheduledStart,
+			DurationHours:  1.5,
+		}
+
+		// Validate request
+		if req.Title == "" {
+			b.Error("Title is required")
+		}
+		if req.DurationHours < 0.5 || req.DurationHours > 24 {
+			b.Error("Invalid duration")
+		}
+		if req.ScheduledStart.Before(time.Now()) {
+			b.Error("Scheduled start must be in the future")
+		}
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkOrderPricingCalculation benchmarks pricing calculation
+func BenchmarkOrderPricingCalculation(b *testing.B) {
+	suite, orderService := setupOrderBenchmarkSuite(b)
+
+	// Setup test data
+	testPlayer := suite.CreateBenchmarkPlayer(b, 1, "bench_player_pricing")
+	testGame := suite.CreateBenchmarkGame(b, "Pricing Benchmark Game")
+
+	scheduledStart := time.Now().Add(1 * time.Hour)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		req := CreateOrderRequest{
+			PlayerID:       testPlayer.ID,
+			GameID:         testGame.ID,
+			Title:          "Pricing Test Order",
+			ScheduledStart: &scheduledStart,
+			DurationHours:  float32(1 + (i % 10)), // Varying durations
+		}
+
+		// This would call the actual pricing calculation
+		// For now, we're just simulating the logic
+		basePrice := int64(5000) // 50 CNY per hour
+		duration := req.DurationHours
+		totalPrice := int64(float64(basePrice) * float64(duration))
+
+		if totalPrice <= 0 {
+			b.Errorf("Invalid calculated price: %d", totalPrice)
+		}
+		_ = totalPrice
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}

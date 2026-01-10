@@ -3,7 +3,7 @@
 
 param(
     [switch]$SkipBuild,
-    [switch]$SkipFrontend,
+    [switch]$Skipadmin,
     [switch]$NoPull,
     [switch]$RegenerateKeys
 )
@@ -129,9 +129,9 @@ if ($needsKeys) {
     Write-Host "   ✅ 加密密钥已存在" -ForegroundColor Green
 }
 
-# 3. 同步加密密钥到前端
+# 3. 同步加密密钥到管理后台
 Write-Host ""
-Write-Host "🔄 步骤 3/8: 同步加密密钥到前端..." -ForegroundColor Yellow
+Write-Host "🔄 步骤 3/8: 同步加密密钥到管理后台..." -ForegroundColor Yellow
 if (Test-Path ".\scripts\sync-crypto-keys.ps1") {
     & .\scripts\sync-crypto-keys.ps1
     if ($LASTEXITCODE -ne 0) {
@@ -148,7 +148,7 @@ if (Test-Path ".\scripts\sync-crypto-keys.ps1") {
         $iv = $matches[1].Trim()
     }
     
-    $frontendEnv = @"
+    $adminEnv = @"
 # 生产环境配置
 
 # API 基础 URL
@@ -164,15 +164,15 @@ VITE_CRYPTO_USE_SIGNATURE=true
 VITE_WS_URL=ws://localhost:8080
 "@
     
-    $frontendEnv | Set-Content "frontend\.env.production"
-    Write-Host "   ✅ 密钥已同步到前端" -ForegroundColor Green
+    $adminEnv | Set-Content "admin\.env.production"
+    Write-Host "   ✅ 密钥已同步到管理后台" -ForegroundColor Green
 }
 
-# 4. 安装前端依赖（包括 crypto-js）
-if (-not $SkipFrontend) {
+# 4. 安装管理后台依赖（包括 crypto-js）
+if (-not $Skipadmin) {
     Write-Host ""
-    Write-Host "📦 步骤 4/8: 安装前端依赖..." -ForegroundColor Yellow
-    Push-Location frontend
+    Write-Host "📦 步骤 4/8: 安装管理后台依赖..." -ForegroundColor Yellow
+    Push-Location admin
     
     # 检查 crypto-js 是否已安装
     $packageJson = Get-Content package.json -Raw | ConvertFrom-Json
@@ -191,32 +191,32 @@ if (-not $SkipFrontend) {
     
     # 确保所有依赖都已安装
     if (-not (Test-Path "node_modules")) {
-        Write-Host "   安装所有前端依赖..." -ForegroundColor Gray
+        Write-Host "   安装所有管理后台依赖..." -ForegroundColor Gray
         npm install
         if ($LASTEXITCODE -ne 0) {
-            Write-Host "❌ 前端依赖安装失败" -ForegroundColor Red
+            Write-Host "❌ 管理后台依赖安装失败" -ForegroundColor Red
             Pop-Location
             exit 1
         }
     }
     
     Pop-Location
-    Write-Host "✅ 前端依赖安装完成" -ForegroundColor Green
+    Write-Host "✅ 管理后台依赖安装完成" -ForegroundColor Green
 }
 
-# 5. 构建前端
-if (-not $SkipFrontend -and -not $SkipBuild) {
+# 5. 构建管理后台
+if (-not $Skipadmin -and -not $SkipBuild) {
     Write-Host ""
-    Write-Host "🔨 步骤 5/8: 构建前端..." -ForegroundColor Yellow
-    Push-Location frontend
+    Write-Host "🔨 步骤 5/8: 构建管理后台..." -ForegroundColor Yellow
+    Push-Location admin
     npm run build
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "❌ 前端构建失败" -ForegroundColor Red
+        Write-Host "❌ 管理后台构建失败" -ForegroundColor Red
         Pop-Location
         exit 1
     }
     Pop-Location
-    Write-Host "✅ 前端构建完成" -ForegroundColor Green
+    Write-Host "✅ 管理后台构建完成" -ForegroundColor Green
 }
 
 # 6. 构建 Docker 镜像
@@ -273,12 +273,12 @@ if ($cryptoEnabled) {
     Write-Host "   ⚠️  后端加密中间件未启用（检查日志）" -ForegroundColor Yellow
 }
 
-# 检查前端环境变量
-$frontendEnvCheck = Get-Content "frontend\.env.production" -Raw
-if ($frontendEnvCheck -match "VITE_CRYPTO_ENABLED=true") {
-    Write-Host "   ✅ 前端加密配置已启用" -ForegroundColor Green
+# 检查管理后台环境变量
+$adminEnvCheck = Get-Content "admin\.env.production" -Raw
+if ($adminEnvCheck -match "VITE_CRYPTO_ENABLED=true") {
+    Write-Host "   ✅ 管理后台加密配置已启用" -ForegroundColor Green
 } else {
-    Write-Host "   ⚠️  前端加密配置未启用" -ForegroundColor Yellow
+    Write-Host "   ⚠️  管理后台加密配置未启用" -ForegroundColor Yellow
 }
 
 Write-Host ""
@@ -317,33 +317,33 @@ if ($backendHealthy) {
     }
 }
 
-# 检查前端
-$frontendHealthy = $false
+# 检查管理后台
+$adminHealthy = $false
 try {
     $response = Invoke-WebRequest -Uri "http://localhost" -TimeoutSec 10 -UseBasicParsing -ErrorAction Stop
     if ($response.StatusCode -eq 200) {
-        $frontendHealthy = $true
+        $adminHealthy = $true
     }
 } catch {
     try {
         $curlResult = curl.exe -s -o NUL -w "%{http_code}" "http://localhost" 2>$null
         if ($curlResult -eq "200") {
-            $frontendHealthy = $true
+            $adminHealthy = $true
         }
     } catch {
         # curl 也不可用，忽略
     }
 }
 
-if ($frontendHealthy) {
-    Write-Host "   ✅ 前端服务健康" -ForegroundColor Green
+if ($adminHealthy) {
+    Write-Host "   ✅ 管理后台服务健康" -ForegroundColor Green
 } else {
-    $frontendContainer = docker ps --filter "name=gamelink-frontend" --format "{{.Status}}" 2>$null
-    if ($frontendContainer -match "Up") {
-        Write-Host "   ⚠️  前端容器运行中，但健康检查未通过（可能仍在初始化）" -ForegroundColor Yellow
-        Write-Host "      容器状态: $frontendContainer" -ForegroundColor Gray
+    $adminContainer = docker ps --filter "name=gamelink-admin" --format "{{.Status}}" 2>$null
+    if ($adminContainer -match "Up") {
+        Write-Host "   ⚠️  管理后台容器运行中，但健康检查未通过（可能仍在初始化）" -ForegroundColor Yellow
+        Write-Host "      容器状态: $adminContainer" -ForegroundColor Gray
     } else {
-        Write-Host "   ❌ 前端服务未运行" -ForegroundColor Red
+        Write-Host "   ❌ 管理后台服务未运行" -ForegroundColor Red
     }
 }
 
@@ -351,7 +351,7 @@ Write-Host ""
 Write-Host "🎉 部署完成！" -ForegroundColor Green
 Write-Host ""
 Write-Host "📝 访问信息:" -ForegroundColor Cyan
-Write-Host "   前端: http://localhost" -ForegroundColor Gray
+Write-Host "   管理后台: http://localhost" -ForegroundColor Gray
 Write-Host "   后端 API: http://localhost:8080/api/v1" -ForegroundColor Gray
 Write-Host "   健康检查: http://localhost:8080/api/v1/healthz" -ForegroundColor Gray
 Write-Host ""
@@ -363,7 +363,7 @@ Write-Host "   密码: 查看 .env 文件中的 SUPER_ADMIN_PASSWORD" -Foregroun
 Write-Host ""
 Write-Host "🔐 加密状态:" -ForegroundColor Cyan
 Write-Host "   后端: ✅ 已启用 (AES-256-CBC + SHA-256 签名)" -ForegroundColor Green
-Write-Host "   前端: ✅ 已启用 (自动加密 POST/PUT/PATCH 请求)" -ForegroundColor Green
+Write-Host "   管理后台: ✅ 已启用 (自动加密 POST/PUT/PATCH 请求)" -ForegroundColor Green
 Write-Host "   算法: AES-256-CBC" -ForegroundColor Gray
 Write-Host "   签名: SHA-256" -ForegroundColor Gray
 Write-Host ""

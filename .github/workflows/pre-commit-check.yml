@@ -1,0 +1,92 @@
+name: Pre-Commit Check
+
+# Quick validation before allowing commits
+# This workflow is designed to be run locally or as a quick gate
+
+on:
+  push:
+    branches: [main, dev, develop]
+  pull_request:
+    branches: [main, dev, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20'
+  GO_VERSION: '1.25.5'
+
+jobs:
+  # 快速检查 - 在提交前运行
+  quick-check:
+    name: Quick Pre-Commit Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ==================== Backend Quick Checks ====================
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: api/go.sum
+
+      - name: Check Go formatting
+        working-directory: api
+        run: |
+          echo "Checking Go code formatting..."
+          if [ -n "$(gofmt -l .)" ]; then
+            echo "::error::Go code is not formatted. Run 'go fmt ./...'"
+            gofmt -d .
+            exit 1
+          fi
+          echo "✅ Go code is properly formatted"
+
+      - name: Go vet
+        working-directory: api
+        run: |
+          echo "Running go vet..."
+          go vet ./...
+          echo "✅ Go vet passed"
+
+      # ==================== Frontend Quick Checks ====================
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: admin/package-lock.json
+
+      - name: Install dependencies
+        working-directory: admin
+        run: npm ci
+
+      - name: TypeScript type check
+        working-directory: admin
+        run: |
+          echo "Running TypeScript type check..."
+          npm run type-check || npx tsc --noEmit
+          echo "✅ TypeScript type check passed"
+
+      - name: ESLint check
+        working-directory: admin
+        run: |
+          echo "Running ESLint..."
+          npm run lint
+          echo "✅ ESLint passed"
+
+      - name: Summary
+        run: |
+          echo "## ✅ Pre-Commit Checks Passed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Go Format | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Go Vet | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| TypeScript | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| ESLint | ✅ |" >> $GITHUB_STEP_SUMMARY

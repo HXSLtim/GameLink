@@ -1,0 +1,615 @@
+package payment
+
+import (
+	"context"
+	"fmt"
+	"testing"
+	"time"
+
+	"gamelink/benchmark/framework"
+	"gamelink/internal/model"
+	"gamelink/internal/repository"
+	"gamelink/internal/repository/payment"
+	"gamelink/internal/repository/user"
+	"gamelink/pkg/cache"
+)
+
+// setupPaymentBenchmarkSuite creates a benchmark suite for payment operations
+func setupPaymentBenchmarkSuite(b *testing.B) (*framework.BenchmarkSuite, *Service) {
+	config := framework.DefaultConfig()
+	suite := framework.NewBenchmarkSuite(b, config)
+
+	// Create payment repository
+	paymentRepo := payment.NewPaymentRepository(suite.DB)
+
+	// Create payment service
+	paymentService := NewService(paymentRepo, cache.NewInMemoryCache())
+
+	return suite, paymentService
+}
+
+// BenchmarkCreatePayment benchmarks payment creation
+func BenchmarkCreatePayment(b *testing.B) {
+	suite, paymentService := setupPaymentBenchmarkSuite(b)
+	ctx := context.Background()
+
+	// Setup test data
+	testUser := suite.CreateBenchmarkUser(b, "bench_user_payment")
+	testOrder := &model.Order{
+		Base:         model.Base{ID: 1001},
+		UserID:       testUser.ID,
+		TotalPriceCents: 5000, // 50 CNY
+		Status:       model.OrderStatusPending,
+	}
+	if err := suite.DB.Create(testOrder).Error; err != nil {
+		b.Fatalf("Failed to create test order: %v", err)
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		pay := &model.Payment{
+			OrderID:      testOrder.ID,
+			UserID:       testUser.ID,
+			AmountCents:  testOrder.TotalPriceCents,
+			Method:       model.PaymentMethodAlipay,
+			Status:       model.PaymentStatusPending,
+			TransactionNo: fmt.Sprintf("BENCH_%d_%d", time.Now().Unix(), i),
+		}
+
+		_, err := paymentService.CreatePayment(ctx, pay)
+		if err != nil {
+			b.Fatalf("Failed to create payment: %v", err)
+		}
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkPaymentStatusUpdate benchmarks payment status updates
+func BenchmarkPaymentStatusUpdate(b *testing.B) {
+	suite, paymentService := setupPaymentBenchmarkSuite(b)
+	ctx := context.Background()
+
+	// Setup test data
+	testUser := suite.CreateBenchmarkUser(b, "bench_user_status")
+
+	// Create multiple payments to update
+	payments := make([]*model.Payment, 100)
+	for i := 0; i < 100; i++ {
+		testOrder := &model.Order{
+			Base:           model.Base{ID: uint64(2000 + i)},
+			UserID:         testUser.ID,
+			TotalPriceCents: 5000,
+			Status:         model.OrderStatusPending,
+		}
+		if err := suite.DB.Create(testOrder).Error; err != nil {
+			b.Fatalf("Failed to create test order: %v", err)
+		}
+
+		pay := &model.Payment{
+			OrderID:       testOrder.ID,
+			UserID:        testUser.ID,
+			AmountCents:   testOrder.TotalPriceCents,
+			Method:        model.PaymentMethodAlipay,
+			Status:        model.PaymentStatusPending,
+			TransactionNo: fmt.Sprintf("STATUS_BENCH_%d", i),
+		}
+		if err := suite.DB.Create(pay).Error; err != nil {
+			b.Fatalf("Failed to create payment: %v", err)
+		}
+		payments[i] = pay
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	idx := 0
+	for i := 0; i < b.N; i++ {
+		paymentID := payments[idx%100].ID
+		err := paymentService.UpdatePaymentStatus(ctx, paymentID, model.PaymentStatusSuccess)
+		if err != nil {
+			b.Fatalf("Failed to update payment status: %v", err)
+		}
+		// Reset for next iteration
+		_ = paymentService.UpdatePaymentStatus(ctx, paymentID, model.PaymentStatusPending)
+		idx++
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkGetPaymentByID benchmarks payment retrieval by ID
+func BenchmarkGetPaymentByID(b *testing.B) {
+	suite, paymentService := setupPaymentBenchmarkSuite(b)
+	ctx := context.Background()
+
+	// Setup test data
+	testUser := suite.CreateBenchmarkUser(b, "bench_user_get")
+	testOrder := &model.Order{
+		Base:           model.Base{ID: 3001},
+		UserID:         testUser.ID,
+		TotalPriceCents: 5000,
+		Status:         model.OrderStatusPending,
+	}
+	if err := suite.DB.Create(testOrder).Error; err != nil {
+		b.Fatalf("Failed to create test order: %v", err)
+	}
+
+	testPayment := &model.Payment{
+		OrderID:       testOrder.ID,
+		UserID:        testUser.ID,
+		AmountCents:   testOrder.TotalPriceCents,
+		Method:        model.PaymentMethodAlipay,
+		Status:        model.PaymentStatusSuccess,
+		TransactionNo: "GET_BENCH_001",
+	}
+	if err := suite.DB.Create(testPayment).Error; err != nil {
+		b.Fatalf("Failed to create test payment: %v", err)
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		_, err := paymentService.GetPaymentByID(ctx, testPayment.ID)
+		if err != nil {
+			b.Fatalf("Failed to get payment: %v", err)
+		}
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkGetPaymentsByOrder benchmarks retrieving payments by order ID
+func BenchmarkGetPaymentsByOrder(b *testing.B) {
+	suite, paymentService := setupPaymentBenchmarkSuite(b)
+	ctx := context.Background()
+
+	// Setup test data
+	testUser := suite.CreateBenchmarkUser(b, "bench_user_order")
+	testOrder := &model.Order{
+		Base:           model.Base{ID: 4001},
+		UserID:         testUser.ID,
+		TotalPriceCents: 5000,
+		Status:         model.OrderStatusPending,
+	}
+	if err := suite.DB.Create(testOrder).Error; err != nil {
+		b.Fatalf("Failed to create test order: %v", err)
+	}
+
+	// Create multiple payments for the order
+	for i := 0; i < 10; i++ {
+		pay := &model.Payment{
+			OrderID:       testOrder.ID,
+			UserID:        testUser.ID,
+			AmountCents:   500 + int64(i*100),
+			Method:        model.PaymentMethodAlipay,
+			Status:        model.PaymentStatusPending,
+			TransactionNo: fmt.Sprintf("ORDER_BENCH_%d", i),
+		}
+		if err := suite.DB.Create(pay).Error; err != nil {
+			b.Fatalf("Failed to create payment: %v", err)
+		}
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		_, err := paymentService.GetPaymentsByOrderID(ctx, testOrder.ID)
+		if err != nil {
+			b.Fatalf("Failed to get payments by order: %v", err)
+		}
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkGetUserPayments benchmarks retrieving user payments with pagination
+func BenchmarkGetUserPayments(b *testing.B) {
+	suite, paymentService := setupPaymentBenchmarkSuite(b)
+	ctx := context.Background()
+
+	// Setup test data
+	testUser := suite.CreateBenchmarkUser(b, "bench_user_list")
+
+	// Create 500 payments for the user
+	for i := 0; i < 500; i++ {
+		testOrder := &model.Order{
+			Base:           model.Base{ID: uint64(5000 + i)},
+			UserID:         testUser.ID,
+			TotalPriceCents: 5000,
+			Status:         model.OrderStatusPending,
+		}
+		if err := suite.DB.Create(testOrder).Error; err != nil {
+			b.Fatalf("Failed to create test order: %v", err)
+		}
+
+		pay := &model.Payment{
+			OrderID:       testOrder.ID,
+			UserID:        testUser.ID,
+			AmountCents:   testOrder.TotalPriceCents,
+			Method:        model.PaymentMethod(i % 4), // Different payment methods
+			Status:        model.PaymentStatus(i % 4),
+			TransactionNo: fmt.Sprintf("LIST_BENCH_%d", i),
+		}
+		if err := suite.DB.Create(pay).Error; err != nil {
+			b.Fatalf("Failed to create payment: %v", err)
+		}
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		_, err := paymentService.GetPaymentsByUserID(ctx, testUser.ID, 1, 20)
+		if err != nil {
+			b.Fatalf("Failed to get user payments: %v", err)
+		}
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkPaymentComplexQuery benchmarks complex payment queries with filters
+func BenchmarkPaymentComplexQuery(b *testing.B) {
+	suite, paymentService := setupPaymentBenchmarkSuite(b)
+	ctx := context.Background()
+
+	// Setup test data
+	testUser := suite.CreateBenchmarkUser(b, "bench_user_complex")
+
+	// Create payments with different methods and statuses
+	methods := []model.PaymentMethod{
+		model.PaymentMethodAlipay,
+		model.PaymentMethodWechat,
+		model.PaymentMethodBalance,
+		model.PaymentMethodVIP,
+	}
+	statuses := []model.PaymentStatus{
+		model.PaymentStatusPending,
+		model.PaymentStatusSuccess,
+		model.PaymentStatusFailed,
+		model.PaymentStatusRefunded,
+	}
+
+	for i := 0; i < 500; i++ {
+		testOrder := &model.Order{
+			Base:           model.Base{ID: uint64(6000 + i)},
+			UserID:         testUser.ID,
+			TotalPriceCents: 5000,
+			Status:         model.OrderStatusPending,
+		}
+		if err := suite.DB.Create(testOrder).Error; err != nil {
+			b.Fatalf("Failed to create test order: %v", err)
+		}
+
+		pay := &model.Payment{
+			OrderID:       testOrder.ID,
+			UserID:        testUser.ID,
+			AmountCents:   testOrder.TotalPriceCents,
+			Method:        methods[i%4],
+			Status:        statuses[i%4],
+			TransactionNo: fmt.Sprintf("COMPLEX_BENCH_%d", i),
+		}
+		if err := suite.DB.Create(pay).Error; err != nil {
+			b.Fatalf("Failed to create payment: %v", err)
+		}
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		// Complex query: filter by status and method
+		status := model.PaymentStatusSuccess
+		method := model.PaymentMethodAlipay
+		payments, err := paymentService.GetPaymentsByUserID(ctx, testUser.ID, 1, 20)
+		if err != nil {
+			b.Fatalf("Failed to execute complex query: %v", err)
+		}
+
+		// Filter in-memory (simulating additional filtering)
+		filtered := 0
+		for _, p := range payments {
+			if p.Status == status && p.Method == method {
+				filtered++
+			}
+		}
+		_ = filtered
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkConcurrentPaymentCreation benchmarks concurrent payment creation
+func BenchmarkConcurrentPaymentCreation(b *testing.B) {
+	suite, paymentService := setupPaymentBenchmarkSuite(b)
+	ctx := context.Background()
+
+	// Setup test data
+	testUser := suite.CreateBenchmarkUser(b, "bench_user_concurrent")
+
+	b.ResetTimer()
+
+	b.RunParallel(func(pb *testing.PB) {
+		i := 0
+		for pb.Next() {
+			testOrder := &model.Order{
+				Base:           model.Base{ID: uint64(7000 + i)},
+				UserID:         testUser.ID,
+				TotalPriceCents: 5000,
+				Status:         model.OrderStatusPending,
+			}
+			if err := suite.DB.Create(testOrder).Error; err != nil {
+				b.Errorf("Failed to create test order: %v", err)
+				continue
+			}
+
+			pay := &model.Payment{
+				OrderID:       testOrder.ID,
+				UserID:        testUser.ID,
+				AmountCents:   testOrder.TotalPriceCents,
+				Method:        model.PaymentMethodAlipay,
+				Status:        model.PaymentStatusPending,
+				TransactionNo: fmt.Sprintf("CONCURRENT_BENCH_%d_%d", time.Now().Unix(), i),
+			}
+
+			_, err := paymentService.CreatePayment(ctx, pay)
+			if err != nil {
+				b.Errorf("Failed to create payment: %v", err)
+			}
+			i++
+		}
+	})
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkPaymentCalculation benchmarks payment amount calculations
+func BenchmarkPaymentCalculation(b *testing.B) {
+	suite, _ := setupPaymentBenchmarkSuite(b)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		// Simulate complex payment calculation
+		baseAmount := int64(5000)
+		discount := int64(500)
+		vipDiscount := int64(250)
+		commission := int64(1000)
+
+		totalAmount := baseAmount - discount - vipDiscount
+		if totalAmount < 0 {
+			totalAmount = 0
+		}
+
+		finalAmount := totalAmount + commission
+		platformFee := finalAmount * 15 / 100 // 15% platform fee
+
+		_ = finalAmount
+		_ = platformFee
+	}
+}
+
+// BenchmarkPaymentValidation benchmarks payment validation logic
+func BenchmarkPaymentValidation(b *testing.B) {
+	suite, _ := setupPaymentBenchmarkSuite(b)
+
+	validPayments := []*model.Payment{
+		{
+			OrderID:       1,
+			UserID:        1,
+			AmountCents:   5000,
+			Method:        model.PaymentMethodAlipay,
+			Status:        model.PaymentStatusPending,
+			TransactionNo: "VALID_001",
+		},
+		{
+			OrderID:       2,
+			UserID:        2,
+			AmountCents:   10000,
+			Method:        model.PaymentMethodWechat,
+			Status:        model.PaymentStatusPending,
+			TransactionNo: "VALID_002",
+		},
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		payment := validPayments[i%len(validPayments)]
+
+		// Validate payment
+		if payment.OrderID == 0 {
+			b.Error("Order ID is required")
+		}
+		if payment.UserID == 0 {
+			b.Error("User ID is required")
+		}
+		if payment.AmountCents <= 0 {
+			b.Error("Amount must be positive")
+		}
+		if payment.TransactionNo == "" {
+			b.Error("Transaction number is required")
+		}
+		if payment.Method < 0 || payment.Method >= 4 {
+			b.Error("Invalid payment method")
+		}
+		if payment.Status < 0 || payment.Status >= 5 {
+			b.Error("Invalid payment status")
+		}
+	}
+}
+
+// BenchmarkPaymentRefund benchmarks payment refund processing
+func BenchmarkPaymentRefund(b *testing.B) {
+	suite, paymentService := setupPaymentBenchmarkSuite(b)
+	ctx := context.Background()
+
+	// Setup test data
+	testUser := suite.CreateBenchmarkUser(b, "bench_user_refund")
+
+	// Create successful payments to refund
+	payments := make([]*model.Payment, 100)
+	for i := 0; i < 100; i++ {
+		testOrder := &model.Order{
+			Base:           model.Base{ID: uint64(8000 + i)},
+			UserID:         testUser.ID,
+			TotalPriceCents: 5000,
+			Status:         model.OrderStatusCompleted,
+		}
+		if err := suite.DB.Create(testOrder).Error; err != nil {
+			b.Fatalf("Failed to create test order: %v", err)
+		}
+
+		pay := &model.Payment{
+			OrderID:       testOrder.ID,
+			UserID:        testUser.ID,
+			AmountCents:   testOrder.TotalPriceCents,
+			Method:        model.PaymentMethodAlipay,
+			Status:        model.PaymentStatusSuccess,
+			TransactionNo: fmt.Sprintf("REFUND_BENCH_%d", i),
+		}
+		if err := suite.DB.Create(pay).Error; err != nil {
+			b.Fatalf("Failed to create payment: %v", err)
+		}
+		payments[i] = pay
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	idx := 0
+	for i := 0; i < b.N; i++ {
+		paymentID := payments[idx%100].ID
+		err := paymentService.UpdatePaymentStatus(ctx, paymentID, model.PaymentStatusRefunded)
+		if err != nil {
+			b.Fatalf("Failed to refund payment: %v", err)
+		}
+		// Reset for next iteration
+		_ = paymentService.UpdatePaymentStatus(ctx, paymentID, model.PaymentStatusSuccess)
+		idx++
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkPaymentStatistics benchmarks payment statistics calculation
+func BenchmarkPaymentStatistics(b *testing.B) {
+	suite, paymentService := setupPaymentBenchmarkSuite(b)
+	ctx := context.Background()
+
+	// Setup test data
+	testUser := suite.CreateBenchmarkUser(b, "bench_user_stats")
+
+	// Create various payments
+	for i := 0; i < 1000; i++ {
+		testOrder := &model.Order{
+			Base:           model.Base{ID: uint64(9000 + i)},
+			UserID:         testUser.ID,
+			TotalPriceCents: 5000 + int64(i*10),
+			Status:         model.OrderStatusCompleted,
+		}
+		if err := suite.DB.Create(testOrder).Error; err != nil {
+			b.Fatalf("Failed to create test order: %v", err)
+		}
+
+		pay := &model.Payment{
+			OrderID:       testOrder.ID,
+			UserID:        testUser.ID,
+			AmountCents:   testOrder.TotalPriceCents,
+			Method:        model.PaymentMethod(i % 4),
+			Status:        model.PaymentStatusSuccess,
+			TransactionNo: fmt.Sprintf("STATS_BENCH_%d", i),
+		}
+		if err := suite.DB.Create(pay).Error; err != nil {
+			b.Fatalf("Failed to create payment: %v", err)
+		}
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		// Calculate statistics
+		payments, err := paymentService.GetPaymentsByUserID(ctx, testUser.ID, 1, 1000)
+		if err != nil {
+			b.Fatalf("Failed to get payments: %v", err)
+		}
+
+		totalAmount := int64(0)
+		successCount := 0
+		for _, p := range payments {
+			totalAmount += p.AmountCents
+			if p.Status == model.PaymentStatusSuccess {
+				successCount++
+			}
+		}
+		_ = totalAmount
+		_ = successCount
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// Service is a minimal interface for payment service benchmarking
+type Service interface {
+	CreatePayment(ctx context.Context, payment *model.Payment) (*model.Payment, error)
+	GetPaymentByID(ctx context.Context, id uint64) (*model.Payment, error)
+	GetPaymentsByOrderID(ctx context.Context, orderID uint64) ([]*model.Payment, error)
+	GetPaymentsByUserID(ctx context.Context, userID uint64, page, pageSize int) ([]*model.Payment, error)
+	UpdatePaymentStatus(ctx context.Context, id uint64, status model.PaymentStatus) error
+}
+
+// Mock payment service for benchmarking (replace with actual implementation)
+type mockPaymentService struct {
+	repo repository.PaymentRepository
+	cache cache.Cache
+}
+
+func NewService(repo repository.PaymentRepository, c cache.Cache) Service {
+	return &mockPaymentService{repo: repo, cache: c}
+}
+
+func (s *mockPaymentService) CreatePayment(ctx context.Context, payment *model.Payment) (*model.Payment, error) {
+	return s.repo.Create(ctx, payment)
+}
+
+func (s *mockPaymentService) GetPaymentByID(ctx context.Context, id uint64) (*model.Payment, error) {
+	return s.repo.GetByID(ctx, id)
+}
+
+func (s *mockPaymentService) GetPaymentsByOrderID(ctx context.Context, orderID uint64) ([]*model.Payment, error) {
+	return s.repo.GetByOrderID(ctx, orderID)
+}
+
+func (s *mockPaymentService) GetPaymentsByUserID(ctx context.Context, userID uint64, page, pageSize int) ([]*model.Payment, error) {
+	return s.repo.GetByUserID(ctx, userID, page, pageSize)
+}
+
+func (s *mockPaymentService) UpdatePaymentStatus(ctx context.Context, id uint64, status model.PaymentStatus) error {
+	return s.repo.UpdateStatus(ctx, id, status)
+}

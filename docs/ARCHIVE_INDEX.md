@@ -1,125 +1,99 @@
 # 📦 GameLink 文档归档索引
 
-**更新日期**: 2025-10-31
+**更新日期**: 2026-01-03
 
 ---
 
-## 📚 文档总量统计
+## 📚 文档结构
 
-| 位置 | 文档数量 | 说明 |
-|------|----------|------|
-| 项目根目录 | 157+ | 总文档数 |
-| 根目录 `/docs/` | 40+ | 核心文档 |
-| `/docs/archive/` | 20+ | 历史归档 |
-| `/backend/` | 30+ | 后端文档 |
-| `/backend/archive/` | 20+ | 后端归档 |
-| `/frontend/docs/` | 60+ | 前端文档 |
-| `/frontend/docs/archive/` | 15+ | 前端归档 |
+| 目录 | 说明 |
+|------|------|
+| `/docs/` | 核心文档（PRD、开发、进度） |
+| `/docs/api/` | API 规范文档 |
+| `/docs/guides/` | 开发指南 |
+| `/docs/standards/` | 编码规范 |
+| `/docs/archive/` | 历史归档文档 |
 
 ---
 
-## 🎯 核心文档 (保留)
+## 🎯 核心文档
 
-### 📖 用户指南
-- `/docs/README.md` - 项目说明
-- `/docs/INDEX.md` - 文档导航
-- `/docs/CLAUDE.md` - 开发指南
-- `/docs/USER_SIDE_IMPLEMENTATION.md` - 用户端实施
-- `/docs/USER_SIDE_PLANNING.md` - 用户端规划
-- `/docs/USER_SIDE_QUICKSTART.md` - 用户端快速开始
-
-### 🔧 技术文档
-- `/docs/api/` - API 标准和设计规范
-- `/docs/guides/` - 开发指南
-- `/docs/standards/` - 编码规范
-
-### 📊 报告文档
-- `/docs/reports/` - 最新报告
+| 文档 | 说明 |
+|------|------|
+| `PRD.md` | 产品需求文档 |
+| `DEVELOPMENT.md` | 开发技术文档 |
+| `PROGRESS.md` | 开发进度追踪 |
+| `README.md` | 项目说明 |
+| `INDEX.md` | 文档导航 |
+| `CI-CD.md` | CI/CD 配置 |
+| `COMPONENT_LIBRARY.md` | 组件库文档 |
+| `UI_DESIGN_SPEC.md` | UI 设计规范 |
+| `INTERNATIONALIZATION.md` | 国际化方案 |
+| `即时通讯系统设计文档.md` | IM 系统设计 |
 
 ---
 
-## 📦 归档文档
+## 📦 归档目录结构
 
-### 后端测试报告 `/backend/archive/testing-reports/`
-
-#### 覆盖率报告 `coverage/`
-- `legacy-coverage-report.md` - 初始覆盖率报告
-- `real-coverage-report.md` - 实际覆盖率报告
-- `coverage-final-report.md` - 最终覆盖率报告
-- `coverage-final-summary.md` - 覆盖率最终总结
-- `coverage-complete-summary.md` - 覆盖率完整总结
-- `coverage-improvement-summary.md` - 覆盖率改进总结
-
-#### Handler 测试 `handler/`
-- `handler-test-progress.md` - Handler 测试进度
-- `handler-test-final-report.md` - Handler 测试最终报告
-- `handler-test-coverage-report.md` - Handler 测试覆盖率
-
-#### Repository 测试 `repository/`
-- `repository-test-progress.md` - Repository 测试进度
-- `repository-test-complete.md` - Repository 测试完成
-- `repository-test-final-report.md` - Repository 测试最终报告
-- `repository-test-complete-final.md` - Repository 测试完整报告
-- `repository-test-coverage-final.md` - Repository 覆盖率最终报告
-
-#### Admin 测试 `admin/`
-- `admin-service-test-final.md` - Admin 服务测试最终报告
-- `middleware-admin-test-summary.md` - 中间件和管理测试总结
-
-#### 其他测试报告
-- `testing-summary.md` - 测试总结
-- `test-completion-report.md` - 测试完成报告
-- `test-improvement-progress.md` - 测试改进进度
-
-### 前端文档 `/frontend/docs/archive/`
-
-#### 报告文档 `reports/`
-- 包含 15+ 份代码质量、API 集成、改进报告
-
-#### 已弃用 `deprecated/`
-- 过时的文档和临时文件
+```
+docs/archive/
+├── backend/           # 后端相关归档（23个文档）
+├── frontend/          # 前端相关归档（15个文档）
+├── features/          # 功能设计文档（13个文档）
+├── implementation/    # 实现报告（16个文档）
+├── migration/         # 代码迁移文档（6个文档）
+├── plans/             # 项目计划（7个文档）
+├── summaries/         # 文档总结（7个文档）
+├── README.md          # 归档说明
+└── ARCHIVE_INDEX.md   # 详细归档索引
+```
 
 ---
 
-## 🔍 最新文档 (2025-10-31)
+## 📊 归档统计
 
-### 后端
-- `FINAL_COVERAGE_REPORT.md` - 最终覆盖率报告
-- `LATEST_COVERAGE_REPORT.md` - 最新覆盖率报告
-- `TEST_COVERAGE_PROGRESS_SUMMARY.md` - 覆盖率进展总结
-
-### 前端
-- `/frontend/docs/api/` - API 文档和集成指南
-
----
-
-## 📋 文档维护规则
-
-1. **定期归档**: 每月归档历史报告
-2. **保留最新**: 保留最近 3 个月的报告
-3. **删除备份**: 定期清理 `.backup` 文件
-4. **更新索引**: 归档后更新本文档
+| 分类 | 数量 | 说明 |
+|------|------|------|
+| backend | 23 | 后端相关文档（RBAC、测试覆盖率等） |
+| frontend | 15 | 前端相关文档（UI组件、导航等） |
+| features | 13 | 功能设计文档（游戏、财务、用户端等） |
+| implementation | 16 | 实现报告（CRUD、通知系统等） |
+| migration | 6 | 代码迁移文档（camelCase迁移等） |
+| plans | 7 | 项目计划（架构重构、改进路线图等） |
+| summaries | 7 | 文档总结（覆盖率、项目状态等） |
+| **总计** | **92** | **所有归档文档** |
 
 ---
 
-## 💡 使用说明
+## 📖 详细索引
 
-### 查找文档
-1. 核心文档: 查看 `/docs/` 下对应目录
-2. 历史报告: 查看 `/archive/` 对应位置
-3. API 文档: 查看 `/docs/api/` 或 `/backend/docs/swagger.yaml`
-
-### 添加新文档
-1. 新文档放在对应功能目录
-2. 更新 `/docs/INDEX.md` 
-3. 记录到本文档索引
+完整的归档文档列表请查看：[docs/archive/ARCHIVE_INDEX.md](./archive/ARCHIVE_INDEX.md)
 
 ---
 
-## 🏷️ 标签说明
+## 📋 维护规则
 
-- ✅ **保留**: 活跃使用的文档
-- 📦 **归档**: 历史文档，保留参考
-- 🔄 **合并**: 已合并到其他文档
-- 🗑️ **删除**: 已删除的冗余文档
+1. **核心文档**: 保留在 `/docs/` 根目录
+2. **实现文档**: 完成后移至 `archive/implementation/`
+3. **功能文档**: 移至 `archive/features/`
+4. **后端文档**: 移至 `archive/backend/`
+5. **前端文档**: 移至 `archive/frontend/`
+6. **迁移文档**: 移至 `archive/migration/`
+7. **计划文档**: 移至 `archive/plans/`
+8. **总结文档**: 移至 `archive/summaries/`
+9. **临时报告**: 定期清理或归档
+10. **代码目录**: 不保留 `.md` 文档（除 README）
 
+---
+
+## 🔄 最近归档 (2026-01-03)
+
+**重大重组**：
+- 创建新的 `migration/` 子目录，归档 6 个 camelCase 迁移相关文档
+- 将 5 个 RBAC 权限系统文档移至 `backend/`
+- 将 9 个前端 UI/UX 文档移至 `frontend/`
+- 将 5 个功能设计文档移至 `features/`
+- 将 2 个实现/状态文档移至对应目录
+- 更新归档索引，从 27 个根文件整理到 7 个分类子目录
+- **归档文档总数**: 92 个
+- **根目录清理**: 仅保留 README.md 和 ARCHIVE_INDEX.md

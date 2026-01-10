@@ -1,0 +1,397 @@
+package auth
+
+import (
+	"context"
+	"crypto/rand"
+	"encoding/hex"
+	"errors"
+	"os"
+	"strings"
+	"time"
+
+	"gamelink/pkg/cache"
+
+	"github.com/golang-jwt/jwt/v5"
+)
+
+// JWT工具类
+//
+// 功能：
+// 1. 生成JWT Token
+// 2. 解析和验证JWT Token
+// 3. 提取用户信息
+// 4. Token撤销（防重放）
+
+// Claims 定义JWT载荷结构
+type Claims struct {
+	UserID    uint64 `json:"user_id"`    // 用户ID
+	Role      string `json:"role"`       // 用户角色
+	JTI       string `json:"jti"`        // JWT ID (唯一标识符，用于撤销)
+	SessionID string `json:"session_id"` // 会话标识
+	jwt.RegisteredClaims
+}
+
+// CustomClaims 扩展的JWT载荷（用于小程序等场景）
+type CustomClaims struct {
+	UserID      uint64 `json:"user_id"`               // 用户ID
+	Role        string `json:"role"`                  // 基础角色
+	IsPlayer    bool   `json:"is_player,omitempty"`   // 是否是陪玩师
+	CurrentRole string `json:"current_role,omitempty"` // 当前激活角色 (user/player)
+	IsRefresh   bool   `json:"is_refresh,omitempty"`  // 是否是刷新Token
+	jwt.RegisteredClaims
+}
+
+// JWTManager JWT管理器
+type JWTManager struct {
+	secretKey     string        // 签名密钥
+	tokenDuration time.Duration // Token有效期
+	maxRefresh    time.Duration // 允许刷新窗口（自签发起）
+	cache         cache.Cache   // 缓存接口（用于存储撤销列表）
+}
+
+// NewJWTManager 创建JWT管理器
+func NewJWTManager(secretKey string, tokenDuration time.Duration) *JWTManager {
+	return &JWTManager{
+		secretKey:     secretKey,
+		tokenDuration: tokenDuration,
+		maxRefresh:    readMaxRefreshWindow(),
+		cache:         nil, // 默认无缓存（防重放功能可选）
+	}
+}
+
+// NewJWTManagerWithCache 创建带缓存的JWT管理器（支持Token撤销）
+func NewJWTManagerWithCache(secretKey string, tokenDuration time.Duration, c cache.Cache) *JWTManager {
+	return &JWTManager{
+		secretKey:     secretKey,
+		tokenDuration: tokenDuration,
+		maxRefresh:    readMaxRefreshWindow(),
+		cache:         c,
+	}
+}
+
+// generateJTI 生成唯一的JWT ID
+func generateJTI() string {
+	b := make([]byte, 16)
+	if _, err := rand.Read(b); err != nil {
+		// 如果随机数生成失败，使用时间戳作为fallback
+		return time.Now().Format("20060102150405.999999999")
+	}
+	return hex.EncodeToString(b)
+}
+
+// generateSessionID 生成会话ID
+func generateSessionID() string {
+	return generateJTI()
+}
+
+func readMaxRefreshWindow() time.Duration {
+	v := os.Getenv("JWT_MAX_REFRESH")
+	if v != "" {
+		if d, err := time.ParseDuration(v); err == nil {
+			return d
+		}
+	}
+	return DefaultMaxRefreshWindow
+}
+
+// GenerateToken 生成JWT Token
+//
+// 参数：
+// - userID: 用户ID
+// - role: 用户角色
+//
+// 返回：
+// - token: JWT字符串
+// - err: 错误信息
+func (manager *JWTManager) GenerateToken(userID uint64, role string) (string, error) {
+	// 生成唯一的 JTI 和 SessionID
+	jti := generateJTI()
+	sessionID := generateSessionID()
+
+	// 创建Claims
+	claims := Claims{
+		UserID:    userID,
+		Role:      role,
+		JTI:       jti,
+		SessionID: sessionID,
+		RegisteredClaims: jwt.RegisteredClaims{
+			// 设置过期时间
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(manager.tokenDuration)),
+			// 设置签发时间
+			IssuedAt: jwt.NewNumericDate(time.Now()),
+			// 设置生效时间（立即生效）
+			NotBefore: jwt.NewNumericDate(time.Now()),
+			// 设置签发者
+			Issuer: "gamelink",
+			// 设置 JWT ID
+			ID: jti,
+		},
+	}
+
+	// 创建Token
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	// 签名Token
+	signedToken, err := token.SignedString([]byte(manager.secretKey))
+	if err != nil {
+		return "", err
+	}
+
+	return signedToken, nil
+}
+
+// VerifyToken 验证JWT Token
+//
+// 参数：
+// - tokenString: JWT字符串
+//
+// 返回：
+// - claims: 用户信息
+// - err: 错误信息
+func (manager *JWTManager) VerifyToken(tokenString string) (*Claims, error) {
+	// 解析Token
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+		// 验证签名算法
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("无效的签名算法")
+		}
+		return []byte(manager.secretKey), nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	// 验证Token是否有效
+	if !token.Valid {
+		return nil, errors.New("无效的Token")
+	}
+
+	// 提取Claims
+	claims, ok := token.Claims.(*Claims)
+	if !ok {
+		return nil, errors.New("无法解析Token Claims")
+	}
+
+	return claims, nil
+}
+
+// RefreshToken 刷新Token
+//
+// 当Token快要过期时，可以生成新的Token
+func (manager *JWTManager) RefreshToken(claims *Claims) (string, error) {
+	// 检查Token是否还有足够的时间
+	if time.Until(claims.ExpiresAt.Time) > TokenMinRefreshThreshold {
+		return "", errors.New("Token还未到刷新时间")
+	}
+
+	// 限制刷新窗口：签发时间距今不得超过 maxRefresh
+	if !claims.IssuedAt.Time.IsZero() && time.Since(claims.IssuedAt.Time) > manager.maxRefresh {
+		return "", errors.New("Token已超过可刷新窗口")
+	}
+
+	// 生成新的Token
+	return manager.GenerateToken(claims.UserID, claims.Role)
+}
+
+// ExtractTokenFromHeader 从HTTP头中提取Token
+//
+// Authorization Header格式：Bearer <token>
+func ExtractTokenFromHeader(authHeader string) (string, error) {
+	if authHeader == "" {
+		return "", errors.New("缺少Authorization头")
+	}
+
+	// 检查Bearer前缀
+	const bearerPrefix = "Bearer "
+	if len(authHeader) < len(bearerPrefix) || authHeader[:len(bearerPrefix)] != bearerPrefix {
+		return "", errors.New("Authorization头格式错误，应为'Bearer <token>'")
+	}
+
+	// 提取Token并去除首尾空格
+	token := authHeader[len(bearerPrefix):]
+	token = strings.TrimSpace(token)
+	if token == "" {
+		return "", errors.New("Token为空")
+	}
+
+	return token, nil
+}
+
+// IsTokenExpired 检查Token是否过期
+func IsTokenExpired(claims *Claims) bool {
+	return time.Now().After(claims.ExpiresAt.Time)
+}
+
+// GetTokenRemainingTime 获取Token剩余有效时间
+func GetTokenRemainingTime(claims *Claims) time.Duration {
+	return time.Until(claims.ExpiresAt.Time)
+}
+
+// RevokeToken 撤销指定的Token（通过JTI）
+//
+// 将JTI添加到Redis黑名单，TTL设置为token过期时间
+// 返回错误表示cache未设置或Redis操作失败
+func (manager *JWTManager) RevokeToken(ctx context.Context, jti string) error {
+	if manager.cache == nil {
+		return errors.New("cache not set, revocation not supported")
+	}
+
+	// 计算TTL：使用token的有效期
+	ttl := manager.tokenDuration
+
+	// 存储到Redis，key格式: revoked:jti:<jti>
+	key := "revoked:jti:" + jti
+	return manager.cache.Set(ctx, key, "1", ttl)
+}
+
+// IsTokenRevoked 检查Token是否已被撤销
+//
+// 返回 true 表示token已被撤销，false 表示未撤销或检查失败
+func (manager *JWTManager) IsTokenRevoked(ctx context.Context, jti string) (bool, error) {
+	if manager.cache == nil {
+		// 无cache时无法检查撤销状态，返回false（未撤销）
+		return false, nil
+	}
+
+	key := "revoked:jti:" + jti
+	_, exists, err := manager.cache.Get(ctx, key)
+	if err != nil {
+		// Redis错误时保守处理，返回false
+		return false, nil
+	}
+
+	return exists, nil
+}
+
+// Logout 用户登出，撤销当前Token
+//
+// 参数：
+// - ctx: 上下文
+// - tokenString: 要撤销的token字符串
+//
+// 返回：
+// - err: 错误信息
+func (manager *JWTManager) Logout(ctx context.Context, tokenString string) error {
+	// 验证token获取claims
+	claims, err := manager.VerifyToken(tokenString)
+	if err != nil {
+		return err
+	}
+
+	// 撤销token（通过JTI）
+	return manager.RevokeToken(ctx, claims.JTI)
+}
+
+// VerifyTokenWithRevocation 验证Token并检查是否已撤销
+//
+// 这是VerifyToken的增强版本，会检查token是否在撤销列表中
+// 建议在认证中间件中使用此方法
+func (manager *JWTManager) VerifyTokenWithRevocation(ctx context.Context, tokenString string) (*Claims, error) {
+	// 首先验证token签名和过期时间
+	claims, err := manager.VerifyToken(tokenString)
+	if err != nil {
+		return nil, err
+	}
+
+	// 检查是否已撤销
+	revoked, err := manager.IsTokenRevoked(ctx, claims.JTI)
+	if err != nil {
+		return nil, err
+	}
+	if revoked {
+		return nil, errors.New("token has been revoked")
+	}
+
+	return claims, nil
+}
+
+// ========== 小程序 Token 生成函数 ==========
+
+var defaultSecretKey string
+
+func init() {
+	defaultSecretKey = os.Getenv("JWT_SECRET_KEY")
+}
+
+// SetDefaultSecretKey 设置默认密钥（用于测试）
+func SetDefaultSecretKey(key string) {
+	defaultSecretKey = key
+}
+
+// getSecretKey 获取密钥
+func getSecretKey() string {
+	if defaultSecretKey != "" {
+		return defaultSecretKey
+	}
+	return os.Getenv("JWT_SECRET_KEY")
+}
+
+// GenerateToken 使用 CustomClaims 生成 JWT Token
+func GenerateToken(claims CustomClaims) (string, error) {
+	secretKey := getSecretKey()
+	if secretKey == "" {
+		return "", errors.New("JWT_SECRET_KEY not configured")
+	}
+
+	claims.RegisteredClaims = jwt.RegisteredClaims{
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(DefaultTokenDuration)),
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
+		NotBefore: jwt.NewNumericDate(time.Now()),
+		Issuer:    "gamelink",
+		ID:        generateJTI(),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(secretKey))
+}
+
+// GenerateRefreshToken 生成刷新 Token（有效期 7 天）
+func GenerateRefreshToken(claims CustomClaims) (string, error) {
+	secretKey := getSecretKey()
+	if secretKey == "" {
+		return "", errors.New("JWT_SECRET_KEY not configured")
+	}
+
+	claims.IsRefresh = true
+	claims.RegisteredClaims = jwt.RegisteredClaims{
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(7 * 24 * time.Hour)), // 7 days
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
+		NotBefore: jwt.NewNumericDate(time.Now()),
+		Issuer:    "gamelink",
+		ID:        generateJTI(),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(secretKey))
+}
+
+// VerifyCustomToken 验证 CustomClaims Token
+func VerifyCustomToken(tokenString string) (*CustomClaims, error) {
+	secretKey := getSecretKey()
+	if secretKey == "" {
+		return nil, errors.New("JWT_SECRET_KEY not configured")
+	}
+
+	token, err := jwt.ParseWithClaims(tokenString, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("invalid signing method")
+		}
+		return []byte(secretKey), nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if !token.Valid {
+		return nil, errors.New("invalid token")
+	}
+
+	claims, ok := token.Claims.(*CustomClaims)
+	if !ok {
+		return nil, errors.New("invalid token claims")
+	}
+
+	return claims, nil
+}

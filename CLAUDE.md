@@ -2,351 +2,623 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## 项目概述
+## Project Overview
 
-GameLink是一个现代化的陪玩管理平台，采用Go语言后端+React前端的架构。项目专注于为游戏陪玩服务提供高效的订单分发、用户管理和打手管理功能。
+GameLink is a modern game companion (陪玩) management platform - a full-stack system connecting users with gaming companions for paid gaming sessions. The platform features intelligent order distribution, multi-role management (users, players, admins), real-time chat, payment processing, and comprehensive marketing features (VIP, coupons, referrals, teams).
 
-## 常用开发命令
+**Project Status**: Backend modules are 100% complete (36/36 modules). Frontend admin panel is at ~75% completion.
 
-### 后端开发命令
+### 📚 Key Documentation
 
-在 `backend/` 目录下执行：
+> **IMPORTANT**: Start here for quick project understanding:
+> - **Quick Reference**: [`.kiro/steering/QUICKSTART.md`](.kiro/steering/QUICKSTART.md) - Essential business rules, naming conventions, testing standards
+> - **Document Index**: [`.kiro/steering/00-INDEX.md`](.kiro/steering/00-INDEX.md) - Complete steering documentation guide
 
-```powershell
-# 安装依赖
-make deps
-go mod tidy
+### Key Business Concepts
 
-# 代码检查
-make lint
-golangci-lint run --timeout=5m
+- **Commission Structure**: 15-25% platform commission via three-tier calculation (service item rate + player individual rate + monthly ranking adjustment)
+- **Pricing Model**: System-controlled pricing ¥20-60+/hour based on player rank (players cannot customize rates)
+- **User Roles**: user (customers), player (companions), admin (platform operators)
+- **Order Types**: solo (single player), team (multiple players), gift (direct payment)
+- **Dispute Handling**: Dual-CS mechanism (original + independent customer service), 30-minute SLA
+- **Income Settlement**: T+7 holding period before players can withdraw earnings
 
-# 运行测试
-make test
-go test ./...
+> **📖 Steering Documents** (authoritative source for business rules):
+> - [`.kiro/steering/01-product.md`](.kiro/steering/01-product.md) - Complete product overview
+> - [`.kiro/steering/04-data-models.md`](.kiro/steering/04-data-models.md) - **⭐ Data models + business logic** (必读)
+> - [`.kiro/steering/QUICKSTART.md`](.kiro/steering/QUICKSTART.md) - Quick reference guide
 
-# 启动用户服务 (开发模式)
-make run CMD=user-service
-go run ./cmd/user-service
+## Technology Stack
 
-# 构建所有服务
-make build
-go build ./cmd/...
+| Layer | Backend (Go) | Frontend (Admin) |
+|-------|-------------|------------------|
+| **Language** | Go 1.25+ | TypeScript 5.9+ |
+| **Framework** | Gin (web), GORM (ORM) | React 19, Vite 7 |
+| **UI Library** | - | Ant Design 6.0 |
+| **Database** | PostgreSQL 16+, Redis 7+ | - |
+| **Auth** | JWT (golang-jwt/jwt/v5) | crypto-js |
+| **WebSocket** | gorilla/websocket | socket.io-client |
+| **Testing** | testify, mockery | Vitest, Testing Library |
+| **Docs** | Swagger (swaggo/swag) | - |
+| **Security** | AES-256-CBC + SHA-256 | crypto-js |
 
-# 生成Swagger文档
-make swagger
+## Common Commands
+
+### Backend (api/)
+
+```bash
+cd api
+
+# Run tests
+make test              # Run all tests
+make test-coverage     # With coverage report
+make test-race         # With race detector
+make test-integration  # Integration tests (requires PostgreSQL)
+
+# Linting and formatting
+make lint              # golangci-lint
+make fmt               # go fmt
+make check             # Run all checks (fmt, vet, lint, test)
+
+# Code generation
+make swagger          # Generate Swagger docs
+make generate-mocks   # Generate mocks with mockery
+
+# Dependencies
+make deps             # Install dependencies
+make test-tools       # Install test tools
+
+# Run specific package test
+make run-test PKG=service/user
+make cover-pkg PKG=service/user
+
+# Run application
+go run cmd/main.go
 ```
 
-### 前端开发命令
+### Frontend (admin/)
 
-在 `frontend/` 目录下执行：
+```bash
+cd admin
 
-```powershell
-# 安装依赖
-npm install
-
-# 启动开发服务器
-npm run dev
-
-# 构建生产版本
-npm run build
-npm run build:analyze  # 带分析报告
-
-# 预览构建结果
-npm run preview
-
-# 代码检查
-npm run lint
-
-# 代码格式化
-npm run format
-
-# 类型检查
-npm run typecheck
-
-# 运行测试
-npm run test
-npm run test:run
-npm run test:coverage
+npm install           # Install dependencies
+npm run dev           # Dev server (localhost:5173)
+npm run build         # Production build
+npm run build:analyze # Build with bundle analysis
+npm run lint          # ESLint
+npm run test          # Vitest (watch mode)
+npm run test:run      # Run tests once
 ```
 
-## 项目架构
+### Docker
 
-### 后端架构 (Go 1.25.3)
+```bash
+# Development environment
+docker-compose up -d
 
-**技术栈:**
-- Web框架: Gin + GORM
-- 数据库: SQLite (开发) / PostgreSQL (生产) / Redis
-- 认证: JWT (golang-jwt/jwt/v5)
-- 文档: Swagger (swaggo)
-- 测试: testify + golang/mock
+# Test environment
+docker-compose -f docker-compose.test.yml up -d
 
-**目录结构:**
-```
-backend/
-├── cmd/user-service/          # 应用入口点
-├── internal/                  # 内部包
-│   ├── admin/                 # 管理端处理器
-│   ├── handler/               # HTTP处理器
-│   ├── service/               # 业务逻辑层
-│   ├── repository/            # 数据访问层
-│   ├── model/                 # 数据模型
-│   ├── auth/                  # JWT认证
-│   ├── cache/                 # 缓存层
-│   ├── config/                # 配置管理
-│   └── middleware/            # 中间件
-├── configs/                   # 配置文件
-├── docs/swagger/              # API文档
-└── scripts/sql/               # SQL脚本
+# Production deployment (encrypted, recommended)
+.\scripts\deploy-production-encrypted.ps1
+
+# With options
+.\scripts\deploy-production-encrypted.ps1 -SkipBuild    # Skip Docker image build
+.\scripts\deploy-production-encrypted.ps1 -RegenerateKeys  # Regenerate crypto keys
 ```
 
-### 前端架构 (React 18 + TypeScript)
+### Production Deployment Environment Variables
 
-**技术栈:**
-- 框架: React 18 + TypeScript
-- 构建工具: Vite
-- 路由: React Router v6
-- HTTP客户端: axios
-- 样式: Less
-- 测试: Vitest + Testing Library
-- 代码检查: ESLint + Prettier
+```bash
+# Database
+POSTGRES_USER=gamelink
+POSTGRES_PASSWORD=<safe password, no special characters>
+POSTGRES_DB=gamelink
 
-**目录结构:**
-```
-frontend/
-├── src/
-│   ├── api/                   # API调用层
-│   ├── components/            # 可复用组件
-│   ├── pages/                 # 页面组件
-│   ├── layouts/               # 布局组件
-│   ├── types/                 # TypeScript类型
-│   └── utils/                 # 工具函数
-├── public/                    # 静态资源
-└── docs/                      # 前端文档
-```
+# Redis
+REDIS_PASSWORD=<safe password>
 
-## 核心业务模型
+# JWT
+JWT_SECRET_KEY=<32+ characters>
 
-### 数据模型 (GORM)
-- **User**: 用户基础信息 (角色: user/player/admin)
-- **Player**: 打手认证信息
-- **Game**: 游戏配置
-- **Order**: 订单管理 (状态: pending/confirmed/in_progress/completed/canceled)
-- **Payment**: 支付记录
-- **Review**: 评价系统
+# Encryption (required for production)
+CRYPTO_ENABLED=true
+CRYPTO_SECRET_KEY=<32 characters>
+CRYPTO_IV=<16 characters>
 
-### API设计规范
-- 基础路径: `/api/v1`
-- 管理端路径: `/api/v1/admin`
-- 认证方式: Bearer Token (JWT)
-- 响应格式: 统一JSON格式
-- 命名规范: camelCase
-
-## 开发环境配置
-
-### 环境要求
-- Go: 1.25.3+
-- Node.js: 18+
-- PowerShell: Windows 11环境
-- Git: 版本控制
-
-### 快速启动
-
-1. **后端服务**
-```powershell
-cd backend
-make deps
-make run CMD=user-service
+# Super Admin
+SUPER_ADMIN_EMAIL=admin@gamelink.com
+SUPER_ADMIN_PASSWORD=<8+ chars with upper/lower/number/special>
 ```
 
-2. **前端应用**
-```powershell
-cd frontend
-npm install
-npm run dev
+**Important Notes**:
+- Production must enable encryption middleware (`CRYPTO_ENABLED=true`)
+- Cache must be set to redis (`CACHE_TYPE=redis`)
+- Super admin role slug is `superAdmin` (camelCase)
+- Backend health check path: `/api/v1/healthz`
+- Database password cannot contain URL special characters (like `%`)
+
+### CI/CD Pipeline
+
+| Pipeline | Purpose | Key Features |
+|----------|---------|--------------|
+| ci.yml | Continuous Integration | Change detection, race detection, 70% coverage check, Docker build |
+| security.yml | Security Scanning | Gosec, govulncheck, Trivy, Gitleaks (runs weekly) |
+| deploy.yml | Deployment | Tag/manual trigger, staging/production, auto health check, rollback |
+
+### Integration Tests
+
+```bash
+# Start test database first
+docker-compose -f docker-compose.test.yml up -d
+
+# Run integration tests
+go test ./api/internal/service/integration/... -v
+
+# Run specific integration test
+go test ./api/internal/service/integration/order_integration_test.go -v
+
+# Run with coverage
+go test ./api/internal/service/integration/... -cover -coverprofile=coverage.out
 ```
 
-3. **访问地址**
-- 前端: http://localhost:5173
-- 后端API: http://localhost:8080
-- Swagger文档: http://localhost:8080/swagger/index.html
+## Architecture
 
-## 测试策略
+> **📖 Detailed architecture**: See [`.kiro/steering/03-project-structure.md`](.kiro/steering/03-project-structure.md)
 
-### 后端测试
-- 单元测试: `*_test.go` 文件
-- 测试命令: `make test` 或 `go test ./...`
-- 覆盖率要求: 80%+
-- Mock: 使用golang/mock
+### Repository Structure
 
-### 前端测试
-- 测试框架: Vitest
-- 测试命令: `npm run test`
-- 覆盖率: `npm run test:coverage`
-- 组件测试: Testing Library
-
-## 代码规范
-
-### Go代码规范
-- 遵循Go官方代码规范
-- 使用golangci-lint进行检查
-- 导出函数必须有JSDoc风格注释
-- 命名: 包名小写，函数名大写开头，变量名小写开头
-
-### TypeScript代码规范
-- 严格TypeScript模式
-- 函数必须有参数和返回值类型
-- 使用interface定义对象类型
-- 避免使用any类型
-
-### 提交规范
-使用Conventional Commits格式:
 ```
-<type>(<scope>): <subject>
+GameLink/
+├── api/                  # Go backend (monolithic)
+│   ├── cmd/main.go       # Application entry point
+│   ├── internal/
+│   │   ├── handler/      # HTTP handlers (admin/, user/, player/, middleware/)
+│   │   ├── service/      # Business logic layer ⭐ Core layer
+│   │   ├── repository/   # Data access layer
+│   │   ├── model/        # Data models (see 04-data-models.md)
+│   │   ├── router/       # Route definitions
+│   │   └── ws/           # WebSocket handlers
+│   ├── pkg/              # Public reusable packages
+│   ├── configs/          # Config files (development.yaml, production.yaml)
+│   └── Makefile
+├── admin/                # React admin panel
+│   ├── src/
+│   │   ├── api/          # API clients (auth.ts, admin.ts, client.ts)
+│   │   ├── components/   # Reusable components
+│   │   ├── pages/        # Page components
+│   │   └── ...
+│   └── package.json
+├── app/                  # Taro mini-program
+├── client/               # User/Player frontend (to be developed)
+├── scripts/              # Deployment scripts
+└── docs/                 # Documentation
+```
 
+### Backend Layered Architecture
+
+```
+Handler → Service → Repository → Model
+```
+
+- **Handler** (`api/internal/handler/`): HTTP request handling, validation, response formatting
+- **Service** (`api/internal/service/`): Business logic, transaction management, cross-module coordination
+- **Repository** (`api/internal/repository/`): Data access abstraction, caching, query encapsulation
+- **Model** (`api/internal/model/`): Data structures, DB mappings, validation rules
+
+### Module Organization
+
+The backend is organized into 36 modules across 4 categories:
+
+| Category | Modules | Status |
+|----------|---------|--------|
+| **Core** | user, auth, order, payment, player, chat, dispute, etc. (19) | ✅ 100% |
+| **New Business** | player-rank, order-timeout, user-block, vip (4) | ✅ 100% |
+| **Marketing** | vip, coupon, recharge, activity, team, referral (6) | ✅ 100% |
+| **Auxiliary** | commission, ranking, routing-rule, settlement-company, etc. (7) | ✅ 100% |
+
+> **Module status**: See [`.kiro/steering/06-project-management.md`](.kiro/steering/06-project-management.md) or [`.kiro/steering/08-progress.md`](.kiro/steering/08-progress.md)
+
+## Naming Conventions
+
+> **📖 Full conventions**: See [`.kiro/steering/03-project-structure.md`](.kiro/steering/03-project-structure.md)
+
+### Go
+
+| Type | Convention | Example |
+|------|-----------|---------|
+| Files | **camelCase** (小驼峰) | `userService.go`, NOT `user_service.go` ⚠️ |
+| Packages | lowercase | `handler`, `service` |
+| Types | PascalCase | `UserService`, `Order` |
+| Exported functions | PascalCase | `CreateUser`, `GetOrder` |
+| Private functions | camelCase | `validateInput`, `calculatePrice` |
+| Variables | camelCase | `userID`, `orderService` |
+| Test files | *_test.go | `userService_test.go` |
+
+> ⚠️ **Common mistake**: Using snake_case for Go files. Use `userService.go`, not `user_service.go`.
+
+### TypeScript/React
+
+| Type | Convention | Example |
+|------|-----------|---------|
+| Components | PascalCase | `UserProfile.tsx` |
+| Utilities | camelCase | `formatDate.ts` |
+| Types/Interfaces | PascalCase | `UserResponse` |
+| Constants | UPPER_SNAKE_CASE | `API_BASE_URL` |
+| CSS classes | kebab-case | `user-profile` |
+
+## API Response Patterns
+
+### Unified Response Format
+
+Use the `resp` package for all HTTP responses:
+
+```go
+// Success responses
+resp.OK(c, data)           // 200 with data
+resp.Success(c, message, data)  // 200 with custom message
+resp.Created(c, data)      // 201
+resp.Updated(c, data)      // 200 for updates
+resp.Deleted(c)            // 200 for delete
+
+// List with pagination
+resp.List(c, items, pagination)
+
+// Error responses (using apierr package)
+resp.Error(c, apierr.BadRequest("invalid input"))
+resp.Error(c, apierr.NotFound("user not found"))
+resp.Error(c, apierr.Unauthorized("authentication required"))
+```
+
+### Error Handling
+
+Use the `apierr` package for standardized errors:
+
+```go
+// Common errors (predefined)
+apierr.ErrNotFound
+apierr.ErrUnauthorized
+apierr.ErrForbidden
+apierr.ErrInvalidInput
+apierr.ErrInternal
+
+// Create custom errors
+apierr.BadRequest("invalid phone number")
+apierr.NotFound("user not found")
+apierr.Unauthorized("invalid token")
+
+// Add details
+apierr.BadRequest("validation failed").WithDetails("email is required").WithField("email")
+```
+
+### Frontend API Convention
+
+Axios interceptor auto-parses `response.data.data`, so components use data directly:
+
+```typescript
+// No need to double-nest .data
+const users = await getUsers(); // Returns User[] directly, not Response<User[]>
+```
+
+## Testing
+
+### Test Structure
+
+- **Unit tests**: `*_test.go` alongside source files
+- **Integration tests**: `api/internal/service/integration/*_integration_test.go`
+- **Mock files**: `api/internal/repository/mocks/*.go` (generated by mockery)
+
+### Coverage Goals
+
+Current average: ~80% (service layer)
+
+| Module | Coverage | Status |
+|--------|----------|--------|
+| menu | 100.0% | ✅ |
+| handler/resp | 96.0% | ✅ |
+| item | 90.9% | ✅ |
+| player | 86.8% | ✅ |
+| user | 84.5% | ✅ |
+| auth | 84.3% | ✅ |
+| permission | 84.2% | ✅ |
+| withdraw | 81.4% | ✅ |
+| order | 79.2% | ⚠️ |
+| payment | 75.8% | ⚠️ |
+| routingrule | 50.7% | ⚠️ |
+| admin | 1.2% | ❌ |
+
+**Target**: 80%+ for all modules
+
+### Integration Test Helpers
+
+Located in `api/internal/service/integration/testdb.go`:
+
+```go
+// Database setup
+SkipIfNoTestDB(t)      // Skip if TEST_DB_* not set
+db := SetupTestDB(t)   // Initialize and auto-cleanup
+
+// Create test data
+CreateTestUser(t, db, "name")
+CreateUniqueTestUser(t, db, "prefix")  // Ensures uniqueness
+CreateTestPlayer(t, db, user)
+CreateTestOrder(t, db, user, player, status)
+CreateTestPayment(t, db, order, status)
+CreateTestWallet(t, db, userID, balanceCents)
+// ... and 30+ more helpers
+```
+
+### Test Naming
+
+```go
+// Service test
+func Test{ServiceName}_{MethodName}(t *testing.T) {
+    SkipIfNoTestDB(t)
+    db := SetupTestDB(t)
+    // ...
+}
+
+// Scenario test
+func Test{ServiceName}_{MethodName}_{Scenario}(t *testing.T) {
+    // Example: TestOrderService_CreateOrder_WithCoupon
+}
+```
+
+## Configuration
+
+### Backend Config Files
+
+- `api/configs/config.development.yaml` - Dev (SQLite, memory cache, crypto disabled)
+- `api/configs/config.production.yaml` - Prod (PostgreSQL, Redis, crypto enabled)
+
+### Security Features
+
+- **Production**: AES-256-CBC + SHA-256 signature enforced
+- **Development**: Crypto can be disabled for debugging
+- **Middleware**: `api/internal/handler/middleware/crypto.go` handles encryption
+
+## Important Conventions
+
+### Commit Messages
+
+Follow Conventional Commits:
+
+```
 feat(user): add user registration feature
 fix(order): resolve order status update issue
 docs(api): update payment API documentation
+refactor(payment): simplify payment logic
+test(chat): add integration tests for chat service
 ```
 
-## 常见问题排查
+### Import Organization (Go)
 
-### 后端启动失败
-1. 检查Go版本: `go version` (需要1.25.3+)
-2. 安装依赖: `go mod download`
-3. 检查配置文件路径
-4. 查看端口占用情况
+```go
+import (
+    // Standard library
+    "context"
+    "fmt"
 
-### 前端构建失败
-1. 清除依赖重新安装: `rm -rf node_modules && npm install`
-2. 检查Node.js版本: `node --version` (需要18+)
-3. 检查TypeScript配置
-4. 查看具体错误信息
+    // Third-party packages
+    "github.com/gin-gonic/gin"
+    "gorm.io/gorm"
 
-### 数据库连接问题
-1. 确认数据库配置正确
-2. 检查数据库服务状态
-3. 验证连接字符串格式
-
-## Claude Code 角色和职责
-
-### 🎯 我的角色
-作为**项目测试和质量管理负责人**，我负责：
-- 测试策略制定和执行
-- 代码质量评估和审查
-- 业务流程完整性验证
-- 用户体验问题发现和改进建议
-- 项目风险管理
-
-### 🔍 质量检查要点
-在开发过程中，我会重点关注：
-
-#### 代码质量检查
-1. **规范性检查**
-   - 命名是否清晰、一致
-   - 函数/类/组件职责是否单一
-   - 是否遵循项目编码规范
-
-2. **逻辑性检查**
-   - 业务逻辑是否清晰合理
-   - 是否存在冗余代码
-   - 错误处理是否完善
-
-3. **可维护性检查**
-   - 代码是否易于理解和修改
-   - 注释是否充分
-   - 是否存在硬编码
-
-4. **性能和安全检查**
-   - 是否存在性能瓶颈
-   - 安全性检查
-   - 边界情况处理
-
-#### 业务流程验证
-1. **用户端体验**
-   - 注册登录流程是否顺畅
-   - 订单创建和支付流程是否完整
-   - 用户界面是否友好
-
-2. **管理端功能**
-   - 用户管理是否完善
-   - 订单监控是否实时
-   - 数据统计是否准确
-
-3. **陪玩师端功能**
-   - 订单接收和处理流程
-   - 收益统计和提现功能
-   - 个人信息管理
-
-#### 问题反馈规范
-发现问题后，我会按以下格式提出：
-```
-🔍 **问题发现**: [问题描述]
-📍 **位置**: [文件路径:行号]
-💡 **建议**: [改进建议]
-⚠️ **优先级**: [高/中/低]
-🎯 **影响范围**: [功能模块/用户体验/系统稳定性]
+    // Internal packages
+    "gamelink/internal/model"
+    "gamelink/pkg/auth"
+)
 ```
 
-### 📊 当前项目状态评估
-**质量评级**: ⚠️ **需要改进** (存在阻塞性问题)
+## Key Documentation Files
 
-**主要问题**:
-- 测试系统完全崩溃 (0% 可运行性)
-- 数据模型不一致导致编译错误
-- 前端组件测试失败率高
-- 业务流程完整性不足
+> **📖 Start here**: [`.kiro/steering/QUICKSTART.md`](.kiro/steering/QUICKSTART.md) - Essential quick reference
+> **📚 Complete index**: [`.kiro/steering/00-INDEX.md`](.kiro/steering/00-INDEX.md) - Full documentation guide
 
-**改进重点**:
-1. 立即修复测试系统和数据模型问题
-2. 完善订单和支付业务流程
-3. 提升用户界面和交互体验
-4. 加强API安全性和一致性
+### Steering Rules (.kiro/steering/)
 
-### 🚀 开发阶段质量检查清单
-- **开发前**: 需求分析和设计评审
-- **开发中**: 代码质量和进度检查
-- **测试后**: 功能完整性和性能验证
-- **发布前**: 整体质量和风险评估
+These are the **authoritative source** for project conventions and must be consulted when making changes.
 
-## 重要提醒
+| Priority | File | Purpose |
+|----------|------|---------|
+| ⭐⭐⭐ | [QUICKSTART.md](.kiro/steering/QUICKSTART.md) | **Quick reference** - business rules, naming conventions, testing |
+| ⭐⭐⭐ | [04-data-models.md](.kiro/steering/04-data-models.md) | **⭐ Data models + business logic** (必读) |
+| ⭐⭐ | [01-product.md](.kiro/steering/01-product.md) | Product overview, core features, business model |
+| ⭐⭐ | [03-project-structure.md](.kiro/steering/03-project-structure.md) | Repository structure, naming conventions |
+| ⭐⭐ | [05-testing-standard.md](.kiro/steering/05-testing-standard.md) | **Testing standards** - 3-level testing approach |
+| ⭐ | [02-tech-stack.md](.kiro/steering/02-tech-stack.md) | Technology stack, CI/CD, deployment |
+| ⭐ | [06-project-management.md](.kiro/steering/06-project-management.md) | Module completion status (36/36 modules) |
+| ⭐ | [00-INDEX.md](.kiro/steering/00-INDEX.md) | **Document navigation** (查找文档入口) |
 
-- 项目使用中文响应和注释
-- 前后端API命名统一使用camelCase
-- 所有新功能需要包含测试用例
-- 遵循现有的错误处理模式
-- 代码审查前请运行lint检查
-- 查看docs/目录获取详细文档
-- **质量优先**: 功能实现必须以保证代码质量为前提
-## Swagger 文档生成
+### Specialized Data Models
 
-本项目支持使用 swag 生成包含泛型的 Swagger 文档。
+| File | Purpose |
+|------|---------|
+| [04a-marketing-models.md](.kiro/steering/04a-marketing-models.md) | VIP, coupons, recharge, activity, referral |
+| [04b-team-models.md](.kiro/steering/04b-team-models.md) | Team system |
+| [04c-enums-indexes.md](.kiro/steering/04c-enums-indexes.md) | Enums and indexes with changelog |
+| [04d-notification-models.md](.kiro/steering/04d-notification-models.md) | Notification system |
 
-### 生成文档
+### Other Documentation
 
-#### Windows (PowerShell)
-```powershell
-# 运行 PowerShell 脚本
-.\scripts\generate-swagger.ps1
+| File | Purpose |
+|------|---------|
+| [docs/INTEGRATION_TEST_PLAN.md](docs/INTEGRATION_TEST_PLAN.md) | Integration test planning, test helpers |
+| [docs/PROGRESS.md](docs/PROGRESS.md) | Development progress tracking |
+
+## Business Context
+
+> **IMPORTANT**: All business logic is documented in [`.kiro/steering/04-data-models.md`](.kiro/steering/04-data-models.md). Always reference this file before implementing business features.
+
+### Commission Structure (Three-Tier)
+
+| Priority | Source | Description |
+|----------|--------|-------------|
+| 1 | Player individual | `CommissionRule.PlayerID` - specific rate for a player |
+| 2 | Service item | `ServiceItem.CommissionRate` - default 20% |
+| 3 | Monthly ranking | `RankingCommissionConfig` - tiered reduction based on last month's rank |
+
+**Formula**: Final commission = Base rate - Ranking discount
+
+Example: ¥100 order, 20% base, player ranked #5 (5% discount) → 15% commission → ¥85 player income
+
+### Order Types
+
+| Type | Description | RequiredPlayers | Payment Flow |
+|------|-------------|-----------------|--------------|
+| solo | Single companion | 1 | Standard |
+| team | Multiple companions | 2+ | Match all slots before starting |
+| gift | Direct payment (no service) | 1 | Immediate completion, no T+7 |
+
+### User Block System
+
+**Effects**:
+- No messaging between blocked users
+- Hidden from each other's lists
+- Order room isolation (blocked player invisible to user)
+
+**Rules**:
+- Orders in progress continue even after blocking
+- Cannot place new orders to blocked players
+- Blocking is directional - A blocking B ≠ B blocking A
+
+### Dispute Handling
+
+| Phase | Time Limit | Action |
+|-------|-----------|--------|
+| Filing | Order complete + 7 days | User or player can initiate |
+| SLA | 30 minutes | CS must respond |
+| Resolution | - | Full refund or reject |
+
+**Dual-CS Mechanism**:
+- Original CS (from order, if any)
+- Independent CS (unrelated to order, for fairness)
+
+### Income Settlement
+
+```
+Order complete → Income to FrozenCents (T+7 hold)
+                ↓
+              7 days
+                ↓
+            No issues → FrozenCents → BalanceCents (withdrawable)
+            Dispute → SettlementStatus = disputed (continues frozen)
+            Refund → Deduct from FrozenCents
 ```
 
-#### Linux/macOS
+### Testing Philosophy
+
+> From [`.kiro/steering/05-testing-standard.md`](.kiro/steering/05-testing-standard.md)
+
+**Three-Level Testing**:
+1. **Level 1** - Frontend rendering (NOT sufficient alone)
+2. **Level 2** - Request/response validation (⭐ focus)
+3. **Level 3** - Database and business logic (⭐ focus)
+
+**Test Checklist**:
+- Request sent with correct parameters
+- Response status and code correct
+- Database state changed correctly
+- Page feedback displayed correctly
+- Exception scenarios tested
+
+## Development Workflow
+
+When working on this codebase:
+
+1. **Before implementing**: Check [`.kiro/steering/04-data-models.md`](.kiro/steering/04-data-models.md) for business rules
+2. **For new features**: Check [`.kiro/steering/06-project-management.md`](.kiro/steering/06-project-management.md) - most backend modules are complete
+3. **For bug fixes**: Follow Handler→Service→Repository pattern; update tests
+4. **For frontend work**: The admin panel uses React 19 + Ant Design; check existing API clients
+5. **After changes**: Run `make test` and `make lint` before committing
+6. **Model changes**: Update [`.kiro/steering/04-data-models.md`](.kiro/steering/04-data-models.md) to match
+
+## ⚠️ IMPORTANT: Document Sync Requirements
+
+> **CRITICAL**: After completing ANY work, you MUST update the relevant steering documents to maintain project consistency.
+
+### Required Document Updates After Work Completion
+
+| Work Type | Documents to Update | Description |
+|-----------|-------------------|-------------|
+| **Model Changes** | `.kiro/steering/04-data-models.md` | Add/update model definitions, fields, enums |
+| **New Features** | `.kiro/steering/06-project-management.md` | Mark module status, update progress |
+| **API Changes** | `.kiro/steering/02-tech-stack.md` | Update API documentation status |
+| **Business Rules** | `.kiro/steering/01-product.md` | Document new business logic or rules |
+| **Test Coverage** | `.kiro/steering/05-testing-standard.md` | Update test coverage statistics |
+| **Enum Changes** | `.kiro/steering/04c-enums-indexes.md` | Add enum values with changelog entry |
+| **Module Completion** | `PROGRESS.md` | Update overall project progress |
+| **Test Plans** | `docs/INTEGRATION_TEST_PLAN.md` | Add new test scenarios, update status |
+
+### Update Workflow
+
+After completing a task, always follow this sequence:
+
 ```bash
-# 方式 1: 使用 Makefile
-make swagger
+# 1. Code changes completed
+# Example: Added new fields to Order model
 
-# 方式 2: 使用 Bash 脚本
-./scripts/fix-swagger-annotations.sh
+# 2. Run tests and ensure they pass
+make test
 
-# 方式 3: 手动运行
-cd cmd && swag init -g main.go --output "../docs" --parseDependency --parseInternal --parseDepth 10
+# 3. Update steering documents
+# - Edit .kiro/steering/04-data-models.md to document new fields
+# - Edit .kiro/steering/06-project-management.md if module status changed
+# - Edit PROGRESS.md to reflect progress
+
+# 4. Commit with proper message
+git add .
+git commit -m "feat(order): add new fields for XYZ feature"
 ```
 
-### 访问 Swagger UI
+### Steering Document Ownership
 
-服务启动后，访问: http://localhost:8080/swagger/index.html
+| Document | Maintainer | Update Frequency |
+|----------|-----------|------------------|
+| `01-product.md` | Product/Business | Per feature change |
+| `02-tech-stack.md` | Tech Lead | Per tech stack change |
+| `03-project-structure.md` | Tech Lead | Per structural change |
+| `04-data-models.md` | Backend | **Per model change** ⚠️ |
+| `04c-enums-indexes.md` | Backend | **Per enum change** ⚠️ |
+| `05-testing-standard.md` | QA/Backend | Per test change |
+| `06-project-management.md` | Project Lead | **Per module completion** ⚠️ |
 
-### 详细说明
+### Why This Matters
 
-查看 [SWAGGER_USAGE.md](SWAGGER_USAGE.md) 获取完整的 Swagger 使用指南。
+The `.kiro/steering/` directory is the **single source of truth** for:
+- Business rules and logic
+- Data model definitions
+- Module completion status
+- Testing standards
+- Project structure conventions
+
+**Failing to update these documents causes**:
+- Confusion about actual project status
+- Outdated business rules documentation
+- Misalignment between code and documentation
+- wasted time for future developers
+
+### Example: Proper Completion Workflow
+
+```markdown
+# Task: Add new field `DeliveryMethod` to Order model
+
+## Step 1: Implement code
+- Add field to Order model
+- Update migration
+- Add tests
+
+## Step 2: Update documentation
+- Edit .kiro/steering/04-data-models.md:
+  - Add DeliveryMethod to Order table
+  - Document enum values (standard/express)
+  - Update business rules section
+
+## Step 3: Update progress
+- Edit PROGRESS.md if this completes a feature
+- Edit .kiro/steering/06-project-management.md if module status changed
+
+## Step 4: Commit
+git add .kiro/steering/04-data-models.md PROGRESS.md
+git commit -m "feat(order): add delivery method field"
+```
 

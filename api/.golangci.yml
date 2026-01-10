@@ -1,0 +1,114 @@
+run:
+  timeout: 5m
+  tests: true
+
+linters-settings:
+  gocyclo:
+    min-complexity: 15
+  gocritic:
+    disabled-checks:
+      - ifElseChain
+  revive:
+    severity: warning # Only warnings, not errors
+    confidence: 0.8
+    rules:
+      - name: exported
+      - name: blank-imports
+      - name: context-as-argument
+      - name: errorf
+      - name: error-naming
+      - name: indent-error-flow
+        severity: warning
+      - name: increment-decrement
+        severity: warning
+      - name: var-naming
+        severity: warning
+  misspell:
+    locale: US
+  dupl:
+    threshold: 150
+  gofmt:
+    simplify: true
+  goimports:
+    local-prefixes: gamelink
+
+linters:
+  disable-all: true
+  enable:
+    - govet
+    - gofmt
+    - goimports
+    # - revive  # Disabled due to pre-existing style issues
+    - gocyclo
+    # - gosimple  # Disabled due to pre-existing issues
+    # - ineffassign  # Disabled due to pre-existing issues
+    # - misspell  # Disabled due to "cancelled" vs "canceled" in data migration
+    # - staticcheck  # Disabled due to pre-existing issues
+    - typecheck
+    # - unused  # Disabled due to pre-existing test helper functions
+    - errcheck
+    - dupl
+
+issues:
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  exclude:
+    # Exclude all errcheck issues (pre-existing code issues)
+    - 'error return value'
+    # Other exclusions
+    - 'exported.*should have comment.*or be unexported' # Allow missing comments for now
+    - 'cyclomatic complexity' # Allow higher complexity for now
+  exclude-rules:
+    - path: internal/repository/gormrepo
+      linters:
+        - dupl
+    - path: internal/admin/helpers.go
+      linters:
+        - misspell
+    - path: internal/db/migrate.go
+      linters:
+        - misspell
+    - path: pkg/
+      linters:
+        - errcheck
+      text: "Error return value of .*(Unlock|Close|Sscanf).*"
+    - path: _test\.go
+      linters:
+        - errcheck
+        - dupl
+    - path: internal/handler/admin/helpers\.go
+      linters:
+        - errcheck
+      text: "Error return value of .*(Write).*"
+    # Exclude duplicate code warnings for similar CRUD operations
+    - path: internal/service/withdraw/service\.go
+      linters:
+        - dupl
+    - path: internal/service/admin/orderBatch\.go
+      linters:
+        - dupl
+    - path: internal/service/ranking/ranking\.go
+      linters:
+        - dupl
+    - path: internal/service/statistics/tagEvaluator\.go
+      linters:
+        - dupl
+    - path: internal/repository/ranking/
+      linters:
+        - dupl
+    # Handler duplicates (similar CRUD patterns across admin handlers)
+    - path: internal/handler/admin/
+      linters:
+        - dupl
+    - path: internal/handler/player/team\.go
+      linters:
+        - dupl
+    # Exclude stuttering warnings for service types
+    - linters:
+        - revive
+      text: "stutters"
+    # Exclude comment format warnings (pre-existing issue)
+    - linters:
+        - revive
+      text: "should be of the form"

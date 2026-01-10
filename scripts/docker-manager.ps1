@@ -64,7 +64,7 @@ function Show-Help {
     Write-ColorOutput "  build              构建镜像" "White"
     Write-ColorOutput "  rebuild            强制重新构建" "White"
     Write-ColorOutput "  update-backend     更新后端服务" "White"
-    Write-ColorOutput "  update-frontend    更新前端服务" "White"
+    Write-ColorOutput "  update-admin    更新管理后台服务" "White"
     
     Write-ColorOutput "`n🚀 快捷操作:" "Yellow"
     Write-ColorOutput "  quick-start        快速启动" "White"
@@ -184,10 +184,10 @@ switch ($Command.ToLower()) {
         docker-compose --env-file .env.production.local -f docker-compose.prod.local.yml build backend
         docker-compose --env-file .env.production.local -f docker-compose.prod.local.yml up -d --no-deps backend
     }
-    "update-frontend" {
-        Write-ColorOutput "🔄 更新前端服务..." "Green"
-        docker-compose --env-file .env.production.local -f docker-compose.prod.local.yml build frontend
-        docker-compose --env-file .env.production.local -f docker-compose.prod.local.yml up -d --no-deps frontend
+    "update-admin" {
+        Write-ColorOutput "🔄 更新管理后台服务..." "Green"
+        docker-compose --env-file .env.production.local -f docker-compose.prod.local.yml build admin
+        docker-compose --env-file .env.production.local -f docker-compose.prod.local.yml up -d --no-deps admin
     }
     
     # 快捷操作

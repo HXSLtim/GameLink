@@ -1,0 +1,409 @@
+package auth
+
+import (
+	"context"
+	"fmt"
+	"testing"
+	"time"
+
+	"gamelink/benchmark/framework"
+	"gamelink/internal/model"
+	"gamelink/internal/repository/user"
+	"gamelink/pkg/auth"
+)
+
+// setupAuthBenchmarkSuite creates a benchmark suite for auth operations
+func setupAuthBenchmarkSuite(b *testing.B) (*framework.BenchmarkSuite, *AuthService) {
+	config := framework.DefaultConfig()
+	suite := framework.NewBenchmarkSuite(b, config)
+
+	// Create JWT manager for benchmarks
+	jwtManager := auth.NewJWTManager("benchmark-secret-key-for-performance-testing-32chars", 24*time.Hour, 7*24*time.Hour)
+
+	// Create user repository
+	userRepo := user.NewUserRepository(suite.DB)
+
+	// Create auth service
+	authService := NewAuthService(userRepo, jwtManager)
+
+	suite.AuthService = authService
+
+	return suite, authService
+}
+
+// BenchmarkLogin benchmarks the login operation
+func BenchmarkLogin(b *testing.B) {
+	suite, authService := setupAuthBenchmarkSuite(b)
+	ctx := context.Background()
+
+	// Setup test user with known credentials
+	testUser := &model.User{
+		Phone:     "13800138000",
+		Email:     "benchmark@gamelink.com",
+		Name:      "Benchmark User",
+		Role:      model.RoleUser,
+		Status:    model.UserStatusActive,
+		PasswordHash: "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy", // "password123"
+	}
+	if err := suite.DB.Create(testUser).Error; err != nil {
+		b.Fatalf("Failed to create test user: %v", err)
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		req := LoginRequest{
+			Username: "13800138000",
+			Password: "password123",
+		}
+
+		_, err := authService.Login(ctx, req)
+		if err != nil {
+			b.Fatalf("Login failed: %v", err)
+		}
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkTokenGeneration benchmarks JWT token generation
+func BenchmarkTokenGeneration(b *testing.B) {
+	suite, authService := setupAuthBenchmarkSuite(b)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		userID := uint64(1000 + i)
+		role := model.RoleUser
+
+		_, err := authService.generateToken(userID, role)
+		if err != nil {
+			b.Fatalf("Token generation failed: %v", err)
+		}
+	}
+}
+
+// BenchmarkTokenVerification benchmarks JWT token verification
+func BenchmarkTokenVerification(b *testing.B) {
+	suite, authService := setupAuthBenchmarkSuite(b)
+	ctx := context.Background()
+
+	// Generate a test token
+	testUser := suite.CreateBenchmarkUser(b, "13800138001")
+	token, err := authService.generateToken(testUser.ID, testUser.Role)
+	if err != nil {
+		b.Fatalf("Failed to generate test token: %v", err)
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		_, err := authService.jwtManager.VerifyToken(token)
+		if err != nil {
+			b.Fatalf("Token verification failed: %v", err)
+		}
+	}
+}
+
+// BenchmarkMe benchmarks the /auth/me endpoint (token verification + user retrieval)
+func BenchmarkMe(b *testing.B) {
+	suite, authService := setupAuthBenchmarkSuite(b)
+	ctx := context.Background()
+
+	// Setup test user and generate token
+	testUser := suite.CreateBenchmarkUser(b, "13800138002")
+	token, err := authService.generateToken(testUser.ID, testUser.Role)
+	if err != nil {
+		b.Fatalf("Failed to generate test token: %v", err)
+	}
+
+	authHeader := fmt.Sprintf("Bearer %s", token)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		_, err := authService.Me(ctx, authHeader)
+		if err != nil {
+			b.Fatalf("Me endpoint failed: %v", err)
+		}
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkRegister benchmarks user registration
+func BenchmarkRegister(b *testing.B) {
+	suite, authService := setupAuthBenchmarkSuite(b)
+	ctx := context.Background()
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		req := RegisterRequest{
+			Phone:     fmt.Sprintf("1390013%04d", i),
+			Email:     fmt.Sprintf("user%d@gamelink.com", i),
+			Password: "password123",
+			Name:      fmt.Sprintf("User %d", i),
+			Role:      model.RoleUser,
+		}
+
+		_, err := authService.Register(ctx, req)
+		if err != nil {
+			b.Fatalf("Registration failed: %v", err)
+		}
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkPasswordValidation benchmarks password validation
+func BenchmarkPasswordValidation(b *testing.B) {
+	suite, _ := setupAuthBenchmarkSuite(b)
+
+	passwords := []string{
+		"Pass123!@#",
+		"password123",
+		"PASSWORD123",
+		"Pass123456789",
+		"P@ssw0rd",
+		"Test123!@#",
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		password := passwords[i%len(passwords)]
+		_ = validatePasswordRequirements(password)
+	}
+}
+
+// BenchmarkConcurrentLogin benchmarks concurrent login attempts
+func BenchmarkConcurrentLogin(b *testing.B) {
+	suite, authService := setupAuthBenchmarkSuite(b)
+	ctx := context.Background()
+
+	// Setup test user
+	testUser := &model.User{
+		Phone:     "13800138003",
+		Email:     "concurrent@gamelink.com",
+		Name:      "Concurrent User",
+		Role:      model.RoleUser,
+		Status:    model.UserStatusActive,
+		PasswordHash: "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
+	}
+	if err := suite.DB.Create(testUser).Error; err != nil {
+		b.Fatalf("Failed to create test user: %v", err)
+	}
+
+	b.ResetTimer()
+
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			req := LoginRequest{
+				Username: "13800138003",
+				Password: "password123",
+			}
+
+			_, err := authService.Login(ctx, req)
+			if err != nil {
+				b.Errorf("Concurrent login failed: %v", err)
+			}
+		}
+	})
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkUserRetrieval benchmarks user retrieval by ID
+func BenchmarkUserRetrieval(b *testing.B) {
+	suite, authService := setupAuthBenchmarkSuite(b)
+	ctx := context.Background()
+
+	// Setup test user
+	testUser := suite.CreateBenchmarkUser(b, "13800138004")
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		_, err := authService.GetUser(ctx, testUser.ID)
+		if err != nil {
+			b.Fatalf("User retrieval failed: %v", err)
+		}
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkPhoneNormalization benchmarks phone number normalization
+func BenchmarkPhoneNormalization(b *testing.B) {
+	phones := []string{
+		"13800138000",
+		"+8613800138000",
+		" 13800138000 ",
+		"138-0013-8000",
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		phone := phones[i%len(phones)]
+		_ = normalizePhone(phone)
+	}
+}
+
+// BenchmarkEmailValidation benchmarks email validation
+func BenchmarkEmailValidation(b *testing.B) {
+	emails := []string{
+		"user@gamelink.com",
+		"test.user@example.com",
+		"invalid-email",
+		"invalid@",
+		"@example.com",
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		email := emails[i%len(emails)]
+		_ = isValidEmail(email)
+	}
+}
+
+// BenchmarkMultipleAuthOperations benchmarks mixed authentication operations
+func BenchmarkMultipleAuthOperations(b *testing.B) {
+	suite, authService := setupAuthBenchmarkSuite(b)
+	ctx := context.Background()
+
+	// Setup test users
+	users := make([]*model.User, 10)
+	for i := 0; i < 10; i++ {
+		users[i] = suite.CreateBenchmarkUser(b, fmt.Sprintf("1380013%04d", i))
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		userIdx := i % 10
+
+		// 1. Login
+		req := LoginRequest{
+			Username: users[userIdx].Phone,
+			Password: "password123",
+		}
+		resp, err := authService.Login(ctx, req)
+		if err != nil {
+			b.Fatalf("Login failed: %v", err)
+		}
+
+		// 2. Verify token
+		_, err = authService.jwtManager.VerifyToken(resp.Token)
+		if err != nil {
+			b.Fatalf("Token verification failed: %v", err)
+		}
+
+		// 3. Get user
+		_, err = authService.GetUser(ctx, users[userIdx].ID)
+		if err != nil {
+			b.Fatalf("Get user failed: %v", err)
+		}
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// Helper functions
+
+// generateToken is a helper to generate JWT tokens (extracted for benchmarking)
+func (s *AuthService) generateToken(userID uint64, role model.Role) (string, error) {
+	return s.jwtManager.GenerateToken(userID, role, "")
+}
+
+// validatePasswordRequirements validates password requirements
+func validatePasswordRequirements(password string) bool {
+	if len(password) < 8 {
+		return false
+	}
+
+	hasUpper := false
+	hasLower := false
+	hasNumber := false
+
+	for _, char := range password {
+		switch {
+		case char >= 'A' && char <= 'Z':
+			hasUpper = true
+		case char >= 'a' && char <= 'z':
+			hasLower = true
+		case char >= '0' && char <= '9':
+			hasNumber = true
+		}
+	}
+
+	return hasUpper && hasLower && hasNumber
+}
+
+// normalizePhone normalizes phone number format
+func normalizePhone(phone string) string {
+	// Remove spaces and dashes
+	for _, r := range " -" {
+		phone = removeAll(phone, r)
+	}
+	// Remove +86 prefix if present
+	if len(phone) == 13 && phone[:3] == "+86" {
+		phone = phone[3:]
+	}
+	return phone
+}
+
+// isValidEmail validates email format
+func isValidEmail(email string) bool {
+	return len(email) > 0 && contains(email, "@") && contains(email, ".")
+}
+
+// removeAll removes all occurrences of a rune from string
+func removeAll(s string, r rune) string {
+	result := make([]rune, 0, len(s))
+	for _, c := range s {
+		if c != r {
+			result = append(result, c)
+		}
+	}
+	return string(result)
+}
+
+// contains checks if string contains substring
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && indexOf(s, substr) >= 0
+}
+
+// indexOf finds index of substring
+func indexOf(s, substr string) int {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return i
+		}
+	}
+	return -1
+}

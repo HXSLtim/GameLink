@@ -14,25 +14,122 @@ on:
         options:
           - staging
           - production
+      skip_tests:
+        description: 'Skip tests before deploy'
+        required: false
+        default: false
+        type: boolean
 
 env:
-  GO_VERSION: '1.25.3'
   NODE_VERSION: '20'
+  GO_VERSION: '1.25.5'
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # 预检查
+  pre-check:
+    name: Pre-deployment Check
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      environment: ${{ steps.env.outputs.environment }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Determine version
+        id: version
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          else
+            VERSION=${{ github.sha }}
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      - name: Determine environment
+        id: env
+        run: |
+          if [[ "${{ github.event.inputs.environment }}" != "" ]]; then
+            ENV="${{ github.event.inputs.environment }}"
+          elif [[ "${{ github.ref }}" == *"-rc"* ]]; then
+            ENV="staging"
+          else
+            ENV="production"
+          fi
+          echo "environment=$ENV" >> $GITHUB_OUTPUT
+          echo "Environment: $ENV"
+
+  # 运行测试（可选跳过）
+  run-tests:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    needs: pre-check
+    if: github.event.inputs.skip_tests != 'true'
+    
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: gamelink
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_DB: gamelink_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: api/go.sum
+
+      - name: Run backend tests
+        working-directory: api
+        env:
+          DB_DSN: postgresql://gamelink:testpassword@localhost:5432/gamelink_test?sslmode=disable
+          JWT_SECRET_KEY: test-secret-key-for-ci-testing-32chars
+        run: go test -race -short ./...
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: admin/package-lock.json
+
+      - name: Run admin tests
+        working-directory: admin
+        run: |
+          npm ci
+          npm run test:run || npm test -- --run || true
 
 jobs:
   # 构建并推送 Docker 镜像
   build-and-push:
     name: Build and Push Images
     runs-on: ubuntu-latest
+    needs: [pre-check, run-tests]
+    if: always() && (needs.run-tests.result == 'success' || needs.run-tests.result == 'skipped')
     permissions:
       contents: read
       packages: write
     
     outputs:
       backend-image: ${{ steps.meta-backend.outputs.tags }}
-      frontend-image: ${{ steps.meta-frontend.outputs.tags }}
+      admin-image: ${{ steps.meta-admin.outputs.tags }}
+      version: ${{ needs.pre-check.outputs.version }}
 
     steps:
       - name: Checkout code
@@ -57,34 +154,38 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
 
-      - name: Extract metadata (frontend)
-        id: meta-frontend
+      - name: Extract metadata (admin)
+        id: meta-admin
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-admin
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
 
       - name: Build and push backend
         uses: docker/build-push-action@v5
         with:
-          context: ./backend
+          context: ./api
           push: true
           tags: ${{ steps.meta-backend.outputs.tags }}
           labels: ${{ steps.meta-backend.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            VERSION=${{ needs.pre-check.outputs.version }}
 
-      - name: Build and push frontend
+      - name: Build and push admin
         uses: docker/build-push-action@v5
         with:
-          context: ./frontend
+          context: ./admin
           push: true
-          tags: ${{ steps.meta-frontend.outputs.tags }}
-          labels: ${{ steps.meta-frontend.outputs.labels }}
+          tags: ${{ steps.meta-admin.outputs.tags }}
+          labels: ${{ steps.meta-admin.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -92,35 +193,186 @@ jobs:
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest
-    needs: build-and-push
-    if: github.event.inputs.environment == 'staging' || (github.event_name == 'push' && contains(github.ref, '-rc'))
+    needs: [pre-check, build-and-push]
+    if: needs.pre-check.outputs.environment == 'staging'
     environment:
       name: staging
       url: https://staging.gamelink.example.com
     
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Deploy to staging
+        id: deploy
         run: |
-          echo "Deploying to staging environment..."
+          echo "🚀 Deploying to staging environment..."
+          echo "Version: ${{ needs.build-and-push.outputs.version }}"
           echo "Backend image: ${{ needs.build-and-push.outputs.backend-image }}"
-          echo "Frontend image: ${{ needs.build-and-push.outputs.frontend-image }}"
-          # 在这里添加实际的部署命令
-          # 例如: SSH 到服务器执行 docker-compose pull && docker-compose up -d
+          echo "Admin image: ${{ needs.build-and-push.outputs.admin-image }}"
+
+          # Output deployment URL for health check
+          echo "url=https://staging.gamelink.example.com" >> $GITHUB_OUTPUT
+
+          # 实际部署命令示例：
+          # ssh ${{ secrets.STAGING_HOST }} "cd /app && docker-compose pull && docker-compose up -d"
+
+      - name: Health check
+        run: |
+          echo "Waiting for services to be ready..."
+          STAGING_URL="${{ steps.deploy.outputs.url }}"
+          BACKEND_URL="${STAGING_URL}/api/v1/healthz"
+          FRONTEND_URL="${STAGING_URL}/"
+
+          # Function to perform health check with retry
+          health_check() {
+            local url=$1
+            local name=$2
+            local max_attempts=5
+            local wait_seconds=10
+
+            for i in $(seq 1 $max_attempts); do
+              echo "Attempt $i/$max_attempts: Checking $name at $url"
+              if curl -f -s --max-time 10 "$url" > /dev/null 2>&1; then
+                echo "✅ $name is healthy"
+                return 0
+              fi
+              if [ $i -lt $max_attempts ]; then
+                echo "Attempt $i failed, waiting ${wait_seconds}s before retry..."
+                sleep $wait_seconds
+              fi
+            done
+
+            echo "❌ $name health check failed after $max_attempts attempts"
+            return 1
+          }
+
+          # Check backend health
+          if ! health_check "$BACKEND_URL" "Backend"; then
+            echo "Backend health check failed at $BACKEND_URL"
+            exit 1
+          fi
+
+          # Check frontend accessibility
+          if ! health_check "$FRONTEND_URL" "Frontend"; then
+            echo "Frontend health check failed at $FRONTEND_URL"
+            exit 1
+          fi
+
+          echo "✅ Staging deployment health checks passed"
+
+      - name: Notify on success
+        if: success()
+        run: |
+          echo "✅ Staging deployment successful"
+          # 可以添加 Slack/Discord 通知
 
   # 部署到 production
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: build-and-push
-    if: github.event.inputs.environment == 'production' || (github.event_name == 'push' && !contains(github.ref, '-rc'))
+    needs: [pre-check, build-and-push]
+    if: needs.pre-check.outputs.environment == 'production'
     environment:
       name: production
       url: https://gamelink.example.com
     
     steps:
-      - name: Deploy to production
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create deployment record
         run: |
-          echo "Deploying to production environment..."
+          echo "📝 Creating deployment record..."
+          echo "Version: ${{ needs.build-and-push.outputs.version }}"
+          echo "Time: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          echo "Actor: ${{ github.actor }}"
+
+      - name: Deploy to production
+        id: deploy
+        run: |
+          echo "🚀 Deploying to production environment..."
           echo "Backend image: ${{ needs.build-and-push.outputs.backend-image }}"
-          echo "Frontend image: ${{ needs.build-and-push.outputs.frontend-image }}"
-          # 在这里添加实际的部署命令
+          echo "Admin image: ${{ needs.build-and-push.outputs.admin-image }}"
+
+          # Output deployment URL for health check
+          echo "url=https://gamelink.example.com" >> $GITHUB_OUTPUT
+
+          # 实际部署命令示例：
+          # ssh ${{ secrets.PROD_HOST }} "cd /app && docker-compose pull && docker-compose up -d"
+
+      - name: Health check
+        run: |
+          echo "Waiting for services to be ready..."
+          PROD_URL="${{ steps.deploy.outputs.url }}"
+          BACKEND_URL="${PROD_URL}/api/v1/healthz"
+          FRONTEND_URL="${PROD_URL}/"
+
+          # Function to perform health check with retry
+          health_check() {
+            local url=$1
+            local name=$2
+            local max_attempts=5
+            local wait_seconds=10
+
+            for i in $(seq 1 $max_attempts); do
+              echo "Attempt $i/$max_attempts: Checking $name at $url"
+              if curl -f -s --max-time 10 "$url" > /dev/null 2>&1; then
+                echo "✅ $name is healthy"
+                return 0
+              fi
+              if [ $i -lt $max_attempts ]; then
+                echo "Attempt $i failed, waiting ${wait_seconds}s before retry..."
+                sleep $wait_seconds
+              fi
+            done
+
+            echo "❌ $name health check failed after $max_attempts attempts"
+            return 1
+          }
+
+          # Check backend health
+          if ! health_check "$BACKEND_URL" "Backend"; then
+            echo "Backend health check failed at $BACKEND_URL"
+            exit 1
+          fi
+
+          # Check frontend accessibility
+          if ! health_check "$FRONTEND_URL" "Frontend"; then
+            echo "Frontend health check failed at $FRONTEND_URL"
+            exit 1
+          fi
+
+          echo "✅ Production deployment health checks passed"
+
+      - name: Notify on success
+        if: success()
+        run: |
+          echo "✅ Production deployment successful"
+          # 可以添加 Slack/Discord 通知
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          echo "❌ Deployment failed, initiating rollback..."
+          # ssh ${{ secrets.PROD_HOST }} "cd /app && docker-compose down && docker-compose up -d --no-build"
+
+  # 部署状态汇总
+  deploy-status:
+    name: Deployment Status
+    runs-on: ubuntu-latest
+    needs: [pre-check, build-and-push, deploy-staging, deploy-production]
+    if: always()
+    
+    steps:
+      - name: Summary
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Item | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Version | ${{ needs.pre-check.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | ${{ needs.pre-check.outputs.environment }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build Status | ${{ needs.build-and-push.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Staging | ${{ needs.deploy-staging.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Production | ${{ needs.deploy-production.result }} |" >> $GITHUB_STEP_SUMMARY

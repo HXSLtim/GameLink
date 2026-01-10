@@ -1,0 +1,178 @@
+/**
+ * 权限树组件样式
+ * 使用 Ant Design CSS 变量以支持主题切换
+ * Requirements: 2.1
+ */
+
+.permissionTree {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.loadingContainer {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+    padding: 16px;
+}
+
+// 骨架屏样式：模拟树形结构
+.skeletonTree {
+    width: 100%;
+    padding: 12px;
+    /* 使用 Ant Design 的边框色 */
+    border: 1px solid var(--ant-colorBorder);
+    border-radius: 4px;
+    /* 使用 Ant Design 的背景色 */
+    background-color: var(--ant-colorFillAlter);
+}
+
+.systemRoleAlert {
+    padding: 8px 12px;
+    /* 使用 Ant Design 的 info 背景色 */
+    background-color: var(--ant-colorInfoBg);
+    /* 使用 Ant Design 的 info 边框色 */
+    border: 1px solid var(--ant-colorInfoBorder);
+    border-radius: 4px;
+    /* 使用 Ant Design 的 info 文本色 */
+    color: var(--ant-colorInfo);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.searchInput {
+    margin-bottom: 8px;
+}
+
+.selectAllBar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    /* 使用 Ant Design 的边框色 */
+    border-bottom: 1px solid var(--ant-colorBorder);
+}
+
+.selectionInfo {
+    font-size: 12px;
+}
+
+.treeContainer {
+    /* 使用 Ant Design 的边框色 */
+    border: 1px solid var(--ant-colorBorder);
+    border-radius: 4px;
+    padding: 8px;
+    /* 使用 Ant Design 的背景色 */
+    background-color: var(--ant-colorFillAlter);
+    overflow: auto;
+
+    :global {
+        .ant-tree {
+            background-color: transparent;
+        }
+
+        .ant-tree-node-content-wrapper {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .ant-tree-title {
+            flex: 1;
+            display: flex;
+            align-items: center;
+        }
+
+        .ant-tree-checkbox {
+            margin-right: 8px;
+        }
+
+        .ant-tree-switcher {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    }
+}
+
+.treeNodeTitle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    padding: 2px 4px;
+    border-radius: 4px;
+    /* 使用 Ant Design 的过渡效果 */
+    transition: background-color 0.2s ease;
+}
+
+// Requirements: 2.4 - 高亮显示已分配的权限项
+.checkedNode {
+    /* 使用 Ant Design 的 success 背景色 */
+    background-color: var(--ant-colorSuccessBg);
+    /* 使用 Ant Design 的 success 边框色 */
+    border: 1px solid var(--ant-colorSuccessBorder);
+
+    &:hover {
+        /* 使用 Ant Design 的 success hover 背景色 */
+        background-color: var(--ant-colorSuccessBgHover);
+    }
+}
+
+.permissionCode {
+    font-size: 11px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    /* 使用 Ant Design 的填充色 */
+    background-color: var(--ant-colorFillSecondary);
+    padding: 1px 6px;
+    border-radius: 3px;
+    margin-left: 8px;
+}
+
+.systemTag {
+    font-size: 10px;
+    margin-left: 4px;
+    padding: 0 4px;
+    line-height: 16px;
+}
+
+// Requirements: 2.4 - 已分配权限标签
+.assignedTag {
+    font-size: 10px;
+    margin-left: 4px;
+    padding: 0 4px;
+    line-height: 16px;
+}
+
+.highlight {
+    /* 使用 Ant Design 的 warning 背景色 */
+    background-color: var(--ant-colorWarningBg);
+    padding: 0 2px;
+    border-radius: 2px;
+}
+
+.emptySearch {
+    margin-top: 20px;
+}
+
+// 响应式调整
+@media (max-width: 768px) {
+    .selectAllBar {
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-start;
+    }
+
+    .treeNodeTitle {
+        flex-wrap: wrap;
+    }
+
+    .permissionCode {
+        display: none;
+    }
+}

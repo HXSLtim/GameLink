@@ -1,0 +1,512 @@
+package benchmarks
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+	"time"
+
+	"github.com/gin-gonic/gin"
+
+	"gamelink/benchmark/framework"
+	"gamelink/internal/handler"
+	"gamelink/internal/handler/middleware"
+	"gamelink/internal/model"
+	"gamelink/internal/repository/user"
+	"gamelink/pkg/auth"
+)
+
+// setupHTTPBenchmark creates an HTTP server for benchmarking
+func setupHTTPBenchmark(b *testing.B) (*framework.BenchmarkSuite, *gin.Engine, *auth.JWTManager) {
+	config := framework.DefaultConfig()
+	suite := framework.NewBenchmarkSuite(b, config)
+
+	// Setup Gin in test mode
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+
+	// Add middleware
+	router.Use(gin.Recovery())
+	router.Use(middleware.CORS())
+	router.Use(middleware.Logger())
+	router.Use(middleware.RateLimit(1000)) // High limit for benchmarks
+
+	// Setup JWT manager
+	jwtManager := auth.NewJWTManager("benchmark-secret-key-32charslong", 24*time.Hour, 7*24*time.Hour)
+
+	// Setup repositories
+	userRepo := user.NewUserRepository(suite.DB)
+
+	// Setup handler dependencies
+	authHandler := handler.NewAuthHandler(userRepo, jwtManager)
+
+	// Register routes
+	v1 := router.Group("/api/v1")
+	{
+		auth := v1.Group("/auth")
+		{
+			auth.POST("/register", authHandler.Register)
+			auth.POST("/login", authHandler.Login)
+			auth.GET("/me", middleware.Auth(jwtManager), authHandler.Me)
+		}
+	}
+
+	return suite, router, jwtManager
+}
+
+// BenchmarkHTTP_Login benchmarks the login endpoint
+func BenchmarkHTTP_Login(b *testing.B) {
+	suite, router, _ := setupHTTPBenchmark(b)
+
+	// Setup test user
+	testUser := &model.User{
+		Phone:        "13900138000",
+		Email:        "bench_http@gamelink.com",
+		Name:         "HTTP Benchmark User",
+		Role:         model.RoleUser,
+		Status:       model.UserStatusActive,
+		PasswordHash: "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
+	}
+	if err := suite.DB.Create(testUser).Error; err != nil {
+		b.Fatalf("Failed to create test user: %v", err)
+	}
+
+	loginReq := map[string]string{
+		"username": "13900138000",
+		"password": "password123",
+	}
+	body, _ := json.Marshal(loginReq)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		req := httptest.NewRequest("POST", "/api/v1/auth/login", bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			b.Fatalf("Expected status 200, got %d", w.Code)
+		}
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkHTTP_Register benchmarks the registration endpoint
+func BenchmarkHTTP_Register(b *testing.B) {
+	suite, router, _ := setupHTTPBenchmark(b)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		registerReq := map[string]string{
+			"phone":    fmt.Sprintf("1390013%04d", i),
+			"email":    fmt.Sprintf("bench_http_%d@gamelink.com", i),
+			"password": "password123",
+			"name":     fmt.Sprintf("HTTP User %d", i),
+		}
+		body, _ := json.Marshal(registerReq)
+
+		req := httptest.NewRequest("POST", "/api/v1/auth/register", bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			b.Fatalf("Expected status 201, got %d", w.Code)
+		}
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkHTTP_Me benchmarks the /me endpoint (with authentication)
+func BenchmarkHTTP_Me(b *testing.B) {
+	suite, router, jwtManager := setupHTTPBenchmark(b)
+
+	// Setup test user
+	testUser := suite.CreateBenchmarkUser(b, "13900138001")
+
+	// Generate JWT token
+	token, err := jwtManager.GenerateToken(testUser.ID, testUser.Role, "")
+	if err != nil {
+		b.Fatalf("Failed to generate token: %v", err)
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		req := httptest.NewRequest("GET", "/api/v1/auth/me", nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			b.Fatalf("Expected status 200, got %d", w.Code)
+		}
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkHTTP_ConcurrentRequests benchmarks concurrent HTTP requests
+func BenchmarkHTTP_ConcurrentRequests(b *testing.B) {
+	suite, router, _ := setupHTTPBenchmark(b)
+
+	// Setup test user
+	testUser := &model.User{
+		Phone:        "13900138002",
+		Email:        "concurrent@gamelink.com",
+		Name:         "Concurrent User",
+		Role:         model.RoleUser,
+		Status:       model.UserStatusActive,
+		PasswordHash: "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
+	}
+	if err := suite.DB.Create(testUser).Error; err != nil {
+		b.Fatalf("Failed to create test user: %v", err)
+	}
+
+	loginReq := map[string]string{
+		"username": "13900138002",
+		"password": "password123",
+	}
+	body, _ := json.Marshal(loginReq)
+
+	b.ResetTimer()
+
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			req := httptest.NewRequest("POST", "/api/v1/auth/login", bytes.NewReader(body))
+			req.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+
+			router.ServeHTTP(w, req)
+
+			if w.Code != http.StatusOK {
+				b.Errorf("Expected status 200, got %d", w.Code)
+			}
+		}
+	})
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkHTTP_JSONSerialization benchmarks JSON response serialization
+func BenchmarkHTTP_JSONSerialization(b *testing.B) {
+	suite, _, _ := setupHTTPBenchmark(b)
+
+	// Create test data
+	user := suite.CreateBenchmarkUser(b, "13900138003")
+
+	responseData := map[string]interface{}{
+		"id":         user.ID,
+		"phone":      user.Phone,
+		"email":      user.Email,
+		"name":       user.Name,
+		"role":       user.Role,
+		"status":     user.Status,
+		"created_at": user.CreatedAt,
+		"updated_at": user.UpdatedAt,
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		_, err := json.Marshal(responseData)
+		if err != nil {
+			b.Fatalf("Failed to marshal JSON: %v", err)
+		}
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkHTTP_JSONDeserialization benchmarks JSON request deserialization
+func BenchmarkHTTP_JSONDeserialization(b *testing.B) {
+	suite, _, _ := setupHTTPBenchmark(b)
+
+	requestBody := map[string]string{
+		"phone":    "13900138004",
+		"email":    "jsonbench@gamelink.com",
+		"password": "password123",
+		"name":     "JSON Bench User",
+	}
+	body, _ := json.Marshal(requestBody)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		var result map[string]string
+		err := json.Unmarshal(body, &result)
+		if err != nil {
+			b.Fatalf("Failed to unmarshal JSON: %v", err)
+		}
+	}
+}
+
+// BenchmarkHTTP_Middleware benchmarks middleware overhead
+func BenchmarkHTTP_Middleware(b *testing.B) {
+	suite, router, jwtManager := setupHTTPBenchmark(b)
+
+	// Setup test user and token
+	testUser := suite.CreateBenchmarkUser(b, "13900138005")
+	token, _ := jwtManager.GenerateToken(testUser.ID, testUser.Role, "")
+
+	// Create a simple handler
+	simpleHandler := func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "ok"})
+	}
+
+	// Add middleware chain
+	router.GET("/bench",
+		middleware.CORS(),
+		middleware.Logger(),
+		middleware.RateLimit(1000),
+		middleware.Auth(jwtManager),
+		simpleHandler,
+	)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		req := httptest.NewRequest("GET", "/bench", nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			b.Fatalf("Expected status 200, got %d", w.Code)
+		}
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkHTTP_RateLimiting benchmarks rate limiting middleware
+func BenchmarkHTTP_RateLimiting(b *testing.B) {
+	suite, router, _ := setupHTTPBenchmark(b)
+
+	// Create a simple handler with rate limiting
+	simpleHandler := func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "ok"})
+	}
+
+	router.GET("/ratelimit",
+		middleware.RateLimit(100), // 100 requests per minute
+		simpleHandler,
+	)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		req := httptest.NewRequest("GET", "/ratelimit", nil)
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		// Rate limit may kick in after 100 requests
+		if w.Code != http.StatusOK && w.Code != http.StatusTooManyRequests {
+			b.Fatalf("Unexpected status code: %d", w.Code)
+		}
+	}
+}
+
+// BenchmarkHTTP_ResponseWriting benchmarks HTTP response writing
+func BenchmarkHTTP_ResponseWriting(b *testing.B) {
+	suite, _, _ := setupHTTPBenchmark(b)
+
+	responseData := gin.H{
+		"id":       uint64(1),
+		"phone":    "13900138006",
+		"email":    "response@gamelink.com",
+		"name":     "Response Benchmark",
+		"role":     "user",
+		"status":   "active",
+		"metadata": map[string]interface{}{
+			"created_at": time.Now(),
+			"updated_at": time.Now(),
+			"settings": map[string]interface{}{
+				"notifications": true,
+				"theme":         "dark",
+			},
+		},
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.JSON(http.StatusOK, responseData)
+
+		if w.Code != http.StatusOK {
+			b.Fatalf("Expected status 200, got %d", w.Code)
+		}
+	}
+}
+
+// BenchmarkHTTP_RequestReading benchmarks HTTP request reading
+func BenchmarkHTTP_RequestReading(b *testing.B) {
+	suite, _, _ := setupHTTPBenchmark(b)
+
+	requestData := map[string]interface{}{
+		"phone":    "13900138007",
+		"email":    "request@gamelink.com",
+		"password": "password123",
+		"name":     "Request Benchmark",
+		"metadata": map[string]interface{}{
+			"device":    "mobile",
+			"platform":  "ios",
+			"version":   "1.0.0",
+			"timestamp": time.Now().Unix(),
+		},
+	}
+	body, _ := json.Marshal(requestData)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		req := httptest.NewRequest("POST", "/test", bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+
+		// Read body
+		bodyBytes, err := io.ReadAll(req.Body)
+		if err != nil {
+			b.Fatalf("Failed to read body: %v", err)
+		}
+
+		var result map[string]interface{}
+		err = json.Unmarshal(bodyBytes, &result)
+		if err != nil {
+			b.Fatalf("Failed to unmarshal: %v", err)
+		}
+	}
+}
+
+// BenchmarkHTTP_FullRequestResponse benchmarks full request-response cycle
+func BenchmarkHTTP_FullRequestResponse(b *testing.B) {
+	suite, router, jwtManager := setupHTTPBenchmark(b)
+
+	// Setup test user
+	testUser := &model.User{
+		Phone:        "13900138008",
+		Email:        "fullcycle@gamelink.com",
+		Name:         "Full Cycle User",
+		Role:         model.RoleUser,
+		Status:       model.UserStatusActive,
+		PasswordHash: "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
+	}
+	if err := suite.DB.Create(testUser).Error; err != nil {
+		b.Fatalf("Failed to create test user: %v", err)
+	}
+
+	// Login first
+	loginReq := map[string]string{
+		"username": "13900138008",
+		"password": "password123",
+	}
+	loginBody, _ := json.Marshal(loginReq)
+
+	loginReqHTTP := httptest.NewRequest("POST", "/api/v1/auth/login", bytes.NewReader(loginBody))
+	loginReqHTTP.Header.Set("Content-Type", "application/json")
+	loginW := httptest.NewRecorder()
+	router.ServeHTTP(loginW, loginReqHTTP)
+
+	if loginW.Code != http.StatusOK {
+		b.Fatalf("Login failed: %d", loginW.Code)
+	}
+
+	var loginResp map[string]interface{}
+	json.Unmarshal(loginW.Body.Bytes(), &loginResp)
+	data := loginResp["data"].(map[string]interface{})
+	token := data["token"].(string)
+
+	// Now benchmark the /me endpoint
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		req := httptest.NewRequest("GET", "/api/v1/auth/me", nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			b.Fatalf("Expected status 200, got %d", w.Code)
+		}
+
+		// Read response
+		var resp map[string]interface{}
+		body, _ := io.ReadAll(w.Body)
+		json.Unmarshal(body, &resp)
+	}
+
+	// Cleanup
+	suite.CleanBenchmarkData(b)
+	suite.ResetBenchmarkSequence(b)
+}
+
+// BenchmarkHTTP_ErrorResponse benchmarks error response generation
+func BenchmarkHTTP_ErrorResponse(b *testing.B) {
+	suite, _, _ := setupHTTPBenchmark(b)
+
+	// Create a handler that returns errors
+	errorHandler := func(c *gin.Context) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "validation failed",
+			"details": map[string]interface{}{
+				"phone": "invalid phone number format",
+				"email": "email is required",
+			},
+		})
+	}
+
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.GET("/error", errorHandler)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		req := httptest.NewRequest("GET", "/error", nil)
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			b.Fatalf("Expected status 400, got %d", w.Code)
+		}
+	}
+}
