@@ -34,13 +34,14 @@ import (
 
 // UserOrderTestContext provides test context for user order handler tests.
 type UserOrderTestContext struct {
-	Router     *gin.Engine
-	Service    *order.OrderService
-	DB         *gorm.DB
-	TestUser   *model.User
-	TestPlayer *model.Player
-	TestGame   *model.Game
-	AuthToken  string
+	Router      *gin.Engine
+	Service     *order.OrderService
+	DB          *gorm.DB
+	TestUser    *model.User
+	TestPlayer  *model.Player
+	TestGame    *model.Game
+	TestItem    *model.ServiceItem
+	AuthToken   string
 }
 
 // SetupUserOrderTest initializes test environment for user order handler tests.
@@ -66,15 +67,19 @@ func SetupUserOrderTest(t *testing.T) *UserOrderTestContext {
 	// Create order service with all required dependencies
 	orderSvc := order.NewOrderService(orders, players, users, games, payments, reviews, commissions)
 
-	// Create test user
+	// Create test user (the one placing orders)
 	testUser := testutil.CreateAdminUser(t, db, model.RoleUser)
 	authToken := fmt.Sprintf("Bearer test-token-%d", testUser.ID)
 
 	// Create test game
 	testGame := testutil.CreateTestGame(t, db)
 
-	// Create test player
-	testPlayer := testutil.CreateTestPlayer(t, db, testUser.ID)
+	// Create test service item (required for order creation)
+	testItem := testutil.CreateTestServiceItem(t, db, testGame.ID, 5000, true)
+
+	// Create a separate player user (陪玩师需要是独立用户，不能是下单用户自己)
+	playerUser := testutil.CreateAdminUser(t, db, model.RolePlayer)
+	testPlayer := testutil.CreateTestPlayer(t, db, playerUser.ID)
 
 	return &UserOrderTestContext{
 		Router:     router,
@@ -83,6 +88,7 @@ func SetupUserOrderTest(t *testing.T) *UserOrderTestContext {
 		TestUser:   testUser,
 		TestPlayer: testPlayer,
 		TestGame:   testGame,
+		TestItem:   testItem,
 		AuthToken:  authToken,
 	}
 }
@@ -144,18 +150,24 @@ func TestUserOrderHandler_Unit_CreateOrder_Success(t *testing.T) {
 	ctx := SetupUserOrderTest(t)
 	ctx.RegisterUserOrderRoutes()
 
+	scheduledStart := time.Now().Add(1 * time.Hour)
 	payload := map[string]interface{}{
-		"player_id":     ctx.TestPlayer.ID,
-		"game_id":       ctx.TestGame.ID,
-		"title":         "Test Order",
-		"description":   "I need a companion for gaming",
-		"price_cents":   5000,
-		"currency":      "USD",
-		"scheduled_for": time.Now().Add(1 * time.Hour).Format(time.RFC3339),
-		"duration_mins": 60,
+		"playerId":       ctx.TestPlayer.ID,
+		"gameId":         ctx.TestGame.ID,
+		"serviceId":      ctx.TestItem.ID,
+		"title":          "Test Order",
+		"description":    "I need a companion for gaming",
+		"scheduledStart": scheduledStart.Format(time.RFC3339),
+		"durationHours":  1.0,
 	}
 
 	w := ctx.makeRequest(t, "POST", "/user/orders", payload)
+	
+	// Debug: print response body if not 200
+	if w.Code != http.StatusOK {
+		t.Logf("Response body: %s", w.Body.String())
+	}
+	
 	testutil.AssertSuccess(t, w, http.StatusOK)
 
 	var response map[string]interface{}
@@ -164,7 +176,7 @@ func TestUserOrderHandler_Unit_CreateOrder_Success(t *testing.T) {
 	assert.True(t, response["success"].(bool))
 
 	data := response["data"].(map[string]interface{})
-	assert.NotEmpty(t, data["order_id"])
+	assert.NotEmpty(t, data["orderId"])
 }
 
 func TestUserOrderHandler_Unit_CreateOrder_ValidationError(t *testing.T) {
@@ -184,14 +196,14 @@ func TestUserOrderHandler_Unit_CreateOrder_InvalidPlayer(t *testing.T) {
 	ctx := SetupUserOrderTest(t)
 	ctx.RegisterUserOrderRoutes()
 
+	scheduledStart := time.Now().Add(1 * time.Hour)
 	payload := map[string]interface{}{
-		"player_id":     999999,
-		"game_id":       ctx.TestGame.ID,
-		"title":         "Test Order",
-		"price_cents":   5000,
-		"currency":      "USD",
-		"scheduled_for": time.Now().Add(1 * time.Hour).Format(time.RFC3339),
-		"duration_mins": 60,
+		"playerId":       999999,
+		"gameId":         ctx.TestGame.ID,
+		"serviceId":      ctx.TestItem.ID,
+		"title":          "Test Order",
+		"scheduledStart": scheduledStart.Format(time.RFC3339),
+		"durationHours":  1.0,
 	}
 
 	w := ctx.makeRequest(t, "POST", "/user/orders", payload)
@@ -202,14 +214,14 @@ func TestUserOrderHandler_Unit_CreateOrder_InvalidGame(t *testing.T) {
 	ctx := SetupUserOrderTest(t)
 	ctx.RegisterUserOrderRoutes()
 
+	scheduledStart := time.Now().Add(1 * time.Hour)
 	payload := map[string]interface{}{
-		"player_id":     ctx.TestPlayer.ID,
-		"game_id":       999999,
-		"title":         "Test Order",
-		"price_cents":   5000,
-		"currency":      "USD",
-		"scheduled_for": time.Now().Add(1 * time.Hour).Format(time.RFC3339),
-		"duration_mins": 60,
+		"playerId":       ctx.TestPlayer.ID,
+		"gameId":         999999,
+		"serviceId":      ctx.TestItem.ID,
+		"title":          "Test Order",
+		"scheduledStart": scheduledStart.Format(time.RFC3339),
+		"durationHours":  1.0,
 	}
 
 	w := ctx.makeRequest(t, "POST", "/user/orders", payload)
@@ -221,13 +233,12 @@ func TestUserOrderHandler_Unit_CreateOrder_InvalidTime(t *testing.T) {
 	ctx.RegisterUserOrderRoutes()
 
 	payload := map[string]interface{}{
-		"player_id":     ctx.TestPlayer.ID,
-		"game_id":       ctx.TestGame.ID,
-		"title":         "Test Order",
-		"price_cents":   5000,
-		"currency":      "USD",
-		"scheduled_for": "invalid-time",
-		"duration_mins": 60,
+		"playerId":       ctx.TestPlayer.ID,
+		"gameId":         ctx.TestGame.ID,
+		"serviceId":      ctx.TestItem.ID,
+		"title":          "Test Order",
+		"scheduledStart": "invalid-time",
+		"durationHours":  1.0,
 	}
 
 	w := ctx.makeRequest(t, "POST", "/user/orders", payload)
