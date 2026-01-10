@@ -31,6 +31,16 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
+// CustomClaims 扩展的JWT载荷（用于小程序等场景）
+type CustomClaims struct {
+	UserID      uint64 `json:"user_id"`               // 用户ID
+	Role        string `json:"role"`                  // 基础角色
+	IsPlayer    bool   `json:"is_player,omitempty"`   // 是否是陪玩师
+	CurrentRole string `json:"current_role,omitempty"` // 当前激活角色 (user/player)
+	IsRefresh   bool   `json:"is_refresh,omitempty"`  // 是否是刷新Token
+	jwt.RegisteredClaims
+}
+
 // JWTManager JWT管理器
 type JWTManager struct {
 	secretKey     string        // 签名密钥
@@ -291,6 +301,96 @@ func (manager *JWTManager) VerifyTokenWithRevocation(ctx context.Context, tokenS
 	}
 	if revoked {
 		return nil, errors.New("token has been revoked")
+	}
+
+	return claims, nil
+}
+
+// ========== 小程序 Token 生成函数 ==========
+
+var defaultSecretKey string
+
+func init() {
+	defaultSecretKey = os.Getenv("JWT_SECRET_KEY")
+}
+
+// SetDefaultSecretKey 设置默认密钥（用于测试）
+func SetDefaultSecretKey(key string) {
+	defaultSecretKey = key
+}
+
+// getSecretKey 获取密钥
+func getSecretKey() string {
+	if defaultSecretKey != "" {
+		return defaultSecretKey
+	}
+	return os.Getenv("JWT_SECRET_KEY")
+}
+
+// GenerateToken 使用 CustomClaims 生成 JWT Token
+func GenerateToken(claims CustomClaims) (string, error) {
+	secretKey := getSecretKey()
+	if secretKey == "" {
+		return "", errors.New("JWT_SECRET_KEY not configured")
+	}
+
+	claims.RegisteredClaims = jwt.RegisteredClaims{
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(DefaultTokenDuration)),
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
+		NotBefore: jwt.NewNumericDate(time.Now()),
+		Issuer:    "gamelink",
+		ID:        generateJTI(),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(secretKey))
+}
+
+// GenerateRefreshToken 生成刷新 Token（有效期 7 天）
+func GenerateRefreshToken(claims CustomClaims) (string, error) {
+	secretKey := getSecretKey()
+	if secretKey == "" {
+		return "", errors.New("JWT_SECRET_KEY not configured")
+	}
+
+	claims.IsRefresh = true
+	claims.RegisteredClaims = jwt.RegisteredClaims{
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(7 * 24 * time.Hour)), // 7 days
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
+		NotBefore: jwt.NewNumericDate(time.Now()),
+		Issuer:    "gamelink",
+		ID:        generateJTI(),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(secretKey))
+}
+
+// VerifyCustomToken 验证 CustomClaims Token
+func VerifyCustomToken(tokenString string) (*CustomClaims, error) {
+	secretKey := getSecretKey()
+	if secretKey == "" {
+		return nil, errors.New("JWT_SECRET_KEY not configured")
+	}
+
+	token, err := jwt.ParseWithClaims(tokenString, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("invalid signing method")
+		}
+		return []byte(secretKey), nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if !token.Valid {
+		return nil, errors.New("invalid token")
+	}
+
+	claims, ok := token.Claims.(*CustomClaims)
+	if !ok {
+		return nil, errors.New("invalid token claims")
 	}
 
 	return claims, nil

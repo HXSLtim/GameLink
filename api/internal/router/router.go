@@ -169,11 +169,14 @@ func (r *Router) registerRoutes() {
 	handler.RegisterRoot(api)
 	handler.RegisterHealth(api)
 
+	// 公共 API 路由（无需认证）
+	registerPublicRoutes(api, r.orm)
+
 	// 认证路由
 	handler.RegisterAuthRoutes(api, r.authSvc)
 
-	// 用户端路由
-	registerUserRoutes(api, r.authMiddleware, r.services)
+	// 用户端路由（包含角色切换）
+	registerUserRoutesWithRoleSwitch(api, r.authMiddleware, r.services, r.orm)
 
 	// 陪玩端路由
 	registerPlayerRoutes(api, r.authMiddleware, r.services)

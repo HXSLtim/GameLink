@@ -82,4 +82,8 @@ type User struct {
 
 	// VIP 等级关联
 	VipLevel *VipLevel `json:"vipLevel,omitempty" gorm:"foreignKey:VipLevelID"`
+
+	// 微信小程序字段
+	WeChatOpenID  string `json:"-" gorm:"column:wechat_open_id;size:64;uniqueIndex"`  // 微信 OpenID
+	WeChatUnionID string `json:"-" gorm:"column:wechat_union_id;size:64;index"`       // 微信 UnionID（跨应用）
 }

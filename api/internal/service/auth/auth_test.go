@@ -141,6 +141,26 @@ func (m *MockUserRepository) Delete(ctx context.Context, id uint64) error {
 	return nil
 }
 
+// GetByWeChatOpenID returns a user by WeChat OpenID
+func (m *MockUserRepository) GetByWeChatOpenID(ctx context.Context, openID string) (*model.User, error) {
+	for _, user := range m.users {
+		if user.WeChatOpenID == openID {
+			return user, nil
+		}
+	}
+	return nil, repository.ErrNotFound
+}
+
+// GetByWeChatUnionID returns a user by WeChat UnionID
+func (m *MockUserRepository) GetByWeChatUnionID(ctx context.Context, unionID string) (*model.User, error) {
+	for _, user := range m.users {
+		if user.WeChatUnionID == unionID {
+			return user, nil
+		}
+	}
+	return nil, repository.ErrNotFound
+}
+
 // Helper function to create a test user with hashed password
 func createTestUser(id uint64, email, phone, name string, role model.Role, password string) *model.User {
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)

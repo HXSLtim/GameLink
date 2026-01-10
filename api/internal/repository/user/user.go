@@ -201,6 +201,30 @@ func (r *gormUserRepository) UpdatePassword(ctx context.Context, userID uint64, 
 	return nil
 }
 
+// GetByWeChatOpenID returns a user by WeChat OpenID.
+func (r *gormUserRepository) GetByWeChatOpenID(ctx context.Context, openID string) (*model.User, error) {
+	var user model.User
+	if err := r.db.WithContext(ctx).Where("wechat_open_id = ?", openID).First(&user).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, repository.ErrNotFound
+		}
+		return nil, err
+	}
+	return &user, nil
+}
+
+// GetByWeChatUnionID returns a user by WeChat UnionID.
+func (r *gormUserRepository) GetByWeChatUnionID(ctx context.Context, unionID string) (*model.User, error) {
+	var user model.User
+	if err := r.db.WithContext(ctx).Where("wechat_union_id = ?", unionID).First(&user).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, repository.ErrNotFound
+		}
+		return nil, err
+	}
+	return &user, nil
+}
+
 // Count returns the number of users matching the given filter options.
 func (r *gormUserRepository) Count(ctx context.Context, opts repository.UserListOptions) (int, error) {
 	q := r.db.WithContext(ctx).Model(&model.User{})

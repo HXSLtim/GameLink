@@ -40,6 +40,9 @@ type UserRepository interface {
 	Update(ctx context.Context, user *model.User) error
 	UpdatePassword(ctx context.Context, userID uint64, newPassword string) error
 	Delete(ctx context.Context, id uint64) error
+	// 微信小程序相关
+	GetByWeChatOpenID(ctx context.Context, openID string) (*model.User, error)
+	GetByWeChatUnionID(ctx context.Context, unionID string) (*model.User, error)
 }
 
 // PlayerRepository defines player data access operations.
