@@ -1,0 +1,39 @@
+.home-page {
+    height: 100vh;
+    background-color: #f7f8fa;
+    padding-bottom: 50px; // Spacing for TabBar
+
+    .banner-section {
+        padding: 12px;
+        background: #fff;
+
+        .nut-swiper-inner {
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .banner-img {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+    }
+
+    .category-section {
+        background: #fff;
+        margin-bottom: 12px;
+        padding-bottom: 12px;
+    }
+
+    .recommend-section {
+        padding: 12px;
+
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 12px;
+            display: block;
+        }
+    }
+}

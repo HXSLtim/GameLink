@@ -1,0 +1,10 @@
+@import './variables.scss';
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica,
+        Segoe UI, Arial, Roboto, 'PingFang SC', 'miui', 'Hiragino Sans GB', 'Microsoft Yahei',
+        sans-serif;
+    font-size: $font-size-base;
+}
+
+// 可以在这里添加更多全局样式

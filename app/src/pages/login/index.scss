@@ -1,0 +1,54 @@
+.login-page {
+    padding: 40px 30px;
+    min-height: 100vh;
+    background-color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    .login-header {
+        text-align: center;
+        margin-bottom: 60px;
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: #fa2c19;
+            border-radius: 20px;
+            color: #fff;
+            font-size: 40px;
+            font-weight: bold;
+            line-height: 80px;
+            margin: 0 auto 20px;
+        }
+
+        .title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #999;
+        }
+    }
+
+    .login-form {
+        .nut-cell {
+            padding: 0;
+            margin-bottom: 20px;
+            box-shadow: none;
+
+            &::after {
+                border-bottom: 1px solid #eee;
+            }
+        }
+
+        .nut-input {
+            padding: 15px 0;
+            background: transparent;
+        }
+    }
+}
