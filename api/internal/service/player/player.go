@@ -439,8 +439,8 @@ func (s *PlayerService) UpdatePlayerProfile(ctx context.Context, userID uint64, 
 }
 
 // SetPlayerOnlineStatus 设置陪玩师在线状态
-func (s *PlayerService) SetPlayerOnlineStatus(ctx context.Context, userID uint64, online bool) error {
-	// 查找该用户的陪玩师资料
+func (s *PlayerService) SetPlayerOnlineStatus(ctx context.Context, userID uint64, status string) error {
+	// 查找该用户的陪玩师资料（带缓存）
 	playerID, err := s.getPlayerIDByUserID(ctx, userID)
 	if err != nil {
 		return err
@@ -448,25 +448,34 @@ func (s *PlayerService) SetPlayerOnlineStatus(ctx context.Context, userID uint64
 
 	// 使用 Redis 存储在线状态
 	key := s.getOnlineStatusKey(playerID)
-	if online {
-		// 设置在线状态，TTL为5分钟（需要客户端定期心跳刷新）
-		return s.cache.Set(ctx, key, "1", 5*time.Minute)
+	if status == "offline" || status == "" {
+		// 删除在线状态
+		return s.cache.Delete(ctx, key)
 	}
-	// 删除在线状态
-	return s.cache.Delete(ctx, key)
+	// 设置在线状态，TTL为5分钟（需要客户端定期心跳刷新）
+	return s.cache.Set(ctx, key, status, 5*time.Minute)
 }
 
 // GetPlayerOnlineStatusByUserID 根据用户ID获取陪玩师在线状态
-func (s *PlayerService) GetPlayerOnlineStatusByUserID(ctx context.Context, userID uint64) (bool, error) {
+func (s *PlayerService) GetPlayerOnlineStatusByUserID(ctx context.Context, userID uint64) (string, error) {
 	playerID, err := s.getPlayerIDByUserID(ctx, userID)
 	if err != nil {
-		return false, err
+		return "", err
 	}
-	return s.getPlayerOnlineStatus(ctx, playerID), nil
+	return s.getPlayerOnlineStatusString(ctx, playerID), nil
 }
 
-// getPlayerIDByUserID 根据用户ID获取陪玩师ID
+// getPlayerIDByUserID 根据用户ID获取陪玩师ID（带缓存）
 func (s *PlayerService) getPlayerIDByUserID(ctx context.Context, userID uint64) (uint64, error) {
+	// 先查缓存
+	cacheKey := fmt.Sprintf("player:user_id:%d", userID)
+	if val, ok, _ := s.cache.Get(ctx, cacheKey); ok {
+		if playerID, err := parseUint64(val); err == nil {
+			return playerID, nil
+		}
+	}
+
+	// 缓存未命中，查询数据库
 	players, _, err := s.players.ListPaged(ctx, 1, 100)
 	if err != nil {
 		return 0, err
@@ -474,17 +483,35 @@ func (s *PlayerService) getPlayerIDByUserID(ctx context.Context, userID uint64) 
 
 	for _, p := range players {
 		if p.UserID == userID {
+			// 写入缓存，TTL 10分钟
+			_ = s.cache.Set(ctx, cacheKey, fmt.Sprintf("%d", p.ID), 10*time.Minute)
 			return p.ID, nil
 		}
 	}
 	return 0, ErrNotFound
 }
 
-// getPlayerOnlineStatus 获取陪玩师在线状态
+// parseUint64 解析字符串为 uint64
+func parseUint64(s string) (uint64, error) {
+	var id uint64
+	_, err := fmt.Sscanf(s, "%d", &id)
+	return id, err
+}
+
+// getPlayerOnlineStatus 获取陪玩师在线状态（布尔值，兼容旧代码）
 func (s *PlayerService) getPlayerOnlineStatus(ctx context.Context, playerID uint64) bool {
+	status := s.getPlayerOnlineStatusString(ctx, playerID)
+	return status != "" && status != "offline"
+}
+
+// getPlayerOnlineStatusString 获取陪玩师在线状态字符串
+func (s *PlayerService) getPlayerOnlineStatusString(ctx context.Context, playerID uint64) string {
 	key := s.getOnlineStatusKey(playerID)
-	_, ok, _ := s.cache.Get(ctx, key)
-	return ok
+	val, ok, _ := s.cache.Get(ctx, key)
+	if !ok {
+		return "offline"
+	}
+	return val
 }
 
 // getOnlineStatusKey 获取在线状态的缓存键

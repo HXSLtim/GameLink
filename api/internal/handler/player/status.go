@@ -15,19 +15,30 @@ func RegisterStatusRoutes(router gin.IRouter, svc *player.PlayerService, authMid
 	group.PUT("", func(c *gin.Context) { updateOnlineStatusHandler(c, svc) })
 }
 
+// OnlineStatus 在线状态枚举
+type OnlineStatus string
+
+const (
+	StatusOffline OnlineStatus = "offline" // 离线
+	StatusOnline  OnlineStatus = "online"  // 在线
+	StatusBusy    OnlineStatus = "busy"    // 忙碌（服务中）
+)
+
 // OnlineStatusResponse 在线状态响应
 type OnlineStatusResponse struct {
-	Online bool `json:"online"`
+	Status OnlineStatus `json:"status"` // offline/online/busy
+	Online bool         `json:"online"` // 兼容旧版本
 }
 
 // UpdateOnlineStatusRequest 更新在线状态请求
 type UpdateOnlineStatusRequest struct {
-	Online bool `json:"online"`
+	Status OnlineStatus `json:"status"` // offline/online/busy
+	Online *bool        `json:"online"` // 兼容旧版本（deprecated）
 }
 
 // getOnlineStatusHandler 获取在线状态
 // @Summary      获取在线状态
-// @Description  获取当前陪玩师的在线状态
+// @Description  获取当前陪玩师的在线状态（offline/online/busy）
 // @Tags         Player - Status
 // @Security     BearerAuth
 // @Accept       json
@@ -40,7 +51,7 @@ type UpdateOnlineStatusRequest struct {
 func getOnlineStatusHandler(c *gin.Context, svc *player.PlayerService) {
 	userID := getUserIDFromContext(c)
 
-	online, err := svc.GetPlayerOnlineStatusByUserID(c.Request.Context(), userID)
+	status, err := svc.GetPlayerOnlineStatusByUserID(c.Request.Context(), userID)
 	if err != nil {
 		if err == player.ErrNotFound {
 			respondAPIError(c, apierr.NotFound("陪玩师资料不存在"))
@@ -50,12 +61,15 @@ func getOnlineStatusHandler(c *gin.Context, svc *player.PlayerService) {
 		return
 	}
 
-	respondSuccess(c, "OK", OnlineStatusResponse{Online: online})
+	respondSuccess(c, "OK", OnlineStatusResponse{
+		Status: OnlineStatus(status),
+		Online: status != "offline",
+	})
 }
 
 // updateOnlineStatusHandler 更新在线状态
 // @Summary      更新在线状态
-// @Description  更新当前陪玩师的在线状态
+// @Description  更新当前陪玩师的在线状态（offline/online/busy）
 // @Tags         Player - Status
 // @Security     BearerAuth
 // @Accept       json
@@ -76,7 +90,23 @@ func updateOnlineStatusHandler(c *gin.Context, svc *player.PlayerService) {
 		return
 	}
 
-	if err := svc.SetPlayerOnlineStatus(c.Request.Context(), userID, req.Online); err != nil {
+	// 兼容旧版本：如果使用 online 字段
+	status := req.Status
+	if status == "" && req.Online != nil {
+		if *req.Online {
+			status = StatusOnline
+		} else {
+			status = StatusOffline
+		}
+	}
+
+	// 验证状态值
+	if status != StatusOffline && status != StatusOnline && status != StatusBusy {
+		respondAPIError(c, apierr.BadRequest("无效的状态值，支持: offline/online/busy"))
+		return
+	}
+
+	if err := svc.SetPlayerOnlineStatus(c.Request.Context(), userID, string(status)); err != nil {
 		if err == player.ErrNotFound {
 			respondAPIError(c, apierr.NotFound("陪玩师资料不存在"))
 			return
@@ -85,5 +115,8 @@ func updateOnlineStatusHandler(c *gin.Context, svc *player.PlayerService) {
 		return
 	}
 
-	respondSuccess(c, "在线状态已更新", OnlineStatusResponse{Online: req.Online})
+	respondSuccess(c, "在线状态已更新", OnlineStatusResponse{
+		Status: status,
+		Online: status != StatusOffline,
+	})
 }

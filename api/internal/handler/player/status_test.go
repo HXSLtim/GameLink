@@ -157,7 +157,7 @@ func TestStatusHandler_UpdateOnlineStatus_SetOnline(t *testing.T) {
 	ctx.RegisterStatusRoutes()
 
 	payload := map[string]interface{}{
-		"online": true,
+		"status": "online",
 	}
 
 	w := ctx.makeRequest(t, "PUT", "/player/online-status", payload)
@@ -171,6 +171,29 @@ func TestStatusHandler_UpdateOnlineStatus_SetOnline(t *testing.T) {
 
 	data := response["data"].(map[string]interface{})
 	assert.True(t, data["online"].(bool))
+	assert.Equal(t, "online", data["status"].(string))
+}
+
+func TestStatusHandler_UpdateOnlineStatus_SetBusy(t *testing.T) {
+	ctx := SetupStatusTest(t)
+	ctx.RegisterStatusRoutes()
+
+	payload := map[string]interface{}{
+		"status": "busy",
+	}
+
+	w := ctx.makeRequest(t, "PUT", "/player/online-status", payload)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	require.NoError(t, err)
+	assert.True(t, response["success"].(bool))
+
+	data := response["data"].(map[string]interface{})
+	assert.True(t, data["online"].(bool)) // busy 也算在线
+	assert.Equal(t, "busy", data["status"].(string))
 }
 
 func TestStatusHandler_UpdateOnlineStatus_SetOffline(t *testing.T) {
@@ -178,11 +201,11 @@ func TestStatusHandler_UpdateOnlineStatus_SetOffline(t *testing.T) {
 	ctx.RegisterStatusRoutes()
 
 	// First set online
-	ctx.makeRequest(t, "PUT", "/player/online-status", map[string]interface{}{"online": true})
+	ctx.makeRequest(t, "PUT", "/player/online-status", map[string]interface{}{"status": "online"})
 
 	// Then set offline
 	payload := map[string]interface{}{
-		"online": false,
+		"status": "offline",
 	}
 
 	w := ctx.makeRequest(t, "PUT", "/player/online-status", payload)
@@ -195,6 +218,41 @@ func TestStatusHandler_UpdateOnlineStatus_SetOffline(t *testing.T) {
 
 	data := response["data"].(map[string]interface{})
 	assert.False(t, data["online"].(bool))
+	assert.Equal(t, "offline", data["status"].(string))
+}
+
+func TestStatusHandler_UpdateOnlineStatus_LegacyOnlineField(t *testing.T) {
+	ctx := SetupStatusTest(t)
+	ctx.RegisterStatusRoutes()
+
+	// 测试旧版本兼容性：使用 online 字段
+	payload := map[string]interface{}{
+		"online": true,
+	}
+
+	w := ctx.makeRequest(t, "PUT", "/player/online-status", payload)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	require.NoError(t, err)
+
+	data := response["data"].(map[string]interface{})
+	assert.True(t, data["online"].(bool))
+}
+
+func TestStatusHandler_UpdateOnlineStatus_InvalidStatus(t *testing.T) {
+	ctx := SetupStatusTest(t)
+	ctx.RegisterStatusRoutes()
+
+	payload := map[string]interface{}{
+		"status": "invalid_status",
+	}
+
+	w := ctx.makeRequest(t, "PUT", "/player/online-status", payload)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
 func TestStatusHandler_UpdateOnlineStatus_VerifyPersistence(t *testing.T) {
@@ -202,7 +260,7 @@ func TestStatusHandler_UpdateOnlineStatus_VerifyPersistence(t *testing.T) {
 	ctx.RegisterStatusRoutes()
 
 	// Set online
-	ctx.makeRequest(t, "PUT", "/player/online-status", map[string]interface{}{"online": true})
+	ctx.makeRequest(t, "PUT", "/player/online-status", map[string]interface{}{"status": "online"})
 
 	// Verify status persisted
 	w := ctx.makeRequest(t, "GET", "/player/online-status", nil)
@@ -215,6 +273,7 @@ func TestStatusHandler_UpdateOnlineStatus_VerifyPersistence(t *testing.T) {
 
 	data := response["data"].(map[string]interface{})
 	assert.True(t, data["online"].(bool))
+	assert.Equal(t, "online", data["status"].(string))
 }
 
 func TestStatusHandler_UpdateOnlineStatus_InvalidBody(t *testing.T) {

@@ -166,7 +166,13 @@ func setPlayerStatusHandler(c *gin.Context, svc *serviceplayer.PlayerService) {
 		return
 	}
 
-	if err := svc.SetPlayerOnlineStatus(c.Request.Context(), userID, req.Online); err != nil {
+	// 转换布尔值为状态字符串
+	status := "offline"
+	if req.Online {
+		status = "online"
+	}
+
+	if err := svc.SetPlayerOnlineStatus(c.Request.Context(), userID, status); err != nil {
 		respondAPIError(c, apierr.InternalError("状态更新失败").WithDetails(err.Error()))
 		return
 	}

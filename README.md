@@ -29,7 +29,7 @@ GameLink 是一个现代化的游戏陪玩管理平台，采用 Go 后端 + Reac
 
 | 指标 | 当前值 | 目标 |
 |------|--------|------|
-| 后端模块完成度 | 71%（25/35 模块） | 100% |
+| 后端模块完成度 | 100%（36/36 模块） | 100% ✅ |
 | 前端完成度 | 75% | 100% |
 | 测试覆盖率 | ~80% | 80%+ |
 | CI/CD | ✅ 完善 | - |
@@ -39,9 +39,9 @@ GameLink 是一个现代化的游戏陪玩管理平台，采用 Go 后端 + Reac
 | 分类 | 完成 | 进行中 | 仅Model | 说明 |
 |------|------|--------|---------|------|
 | 核心模块 | 19 | 0 | 0 | user/order/player/chat/dispute 等 |
-| 新增业务模块 | 0 | 0 | 3 | player-rank/order-timeout/user-block |
-| 营销模块 | 0 | 1 | 5 | vip/coupon/recharge/activity/team/referral |
-| 辅助模块 | 6 | 1 | 0 | commission/ranking/routing-rule 等 |
+| 新增业务模块 | 4 | 0 | 0 | player-rank/order-timeout/user-block/vip |
+| 营销模块 | 6 | 0 | 0 | vip/coupon/recharge/activity/team/referral |
+| 辅助模块 | 7 | 0 | 0 | commission/ranking/routing-rule/operation-log 等 |
 
 ---
 
@@ -270,7 +270,7 @@ docker-compose ps
 ## 📞 联系我们
 
 - **项目负责人**: GameLink开发团队
-- **技术支持**: a2778978136@63.com
+- **技术支持**: a2778978136@163.com
 - **项目仓库**: https://github.com/HXSLtim/GameLink.git
 
 ---
@@ -287,6 +287,6 @@ docker-compose ps
 
 **🚀 让我们一起构建更好的游戏陪玩生态！**
 
-*最后更新: 2025-12-25 | 版本: v3.0*
+*最后更新: 2025-01-10 | 版本: v3.1*
 
 </div>
