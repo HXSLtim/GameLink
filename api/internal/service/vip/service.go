@@ -2,22 +2,68 @@ package vip
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
+	"gamelink/pkg/cache"
+)
+
+// Cache key patterns and TTL
+const (
+	cacheKeyVipLevels       = "vip:levels:all"
+	cacheKeyVipActiveLevels = "vip:levels:active"
+	cacheKeyVipDefaultLevel = "vip:levels:default"
+	cacheKeyVipConfigs      = "vip:configs:all"
+	cacheKeyVipConfig       = "vip:config:%s"
+	cacheTTLVipLevels       = 1 * time.Hour
+	cacheTTLVipConfigs      = 1 * time.Hour
 )
 
 // Service VIP业务逻辑层
 type Service struct {
-	repo repository.VipRepository
+	repo  repository.VipRepository
+	cache cache.Cache
 }
 
 // NewVipService 创建VIP服务
 func NewVipService(repo repository.VipRepository) *Service {
 	return &Service{repo: repo}
+}
+
+// NewVipServiceWithCache 创建带缓存的VIP服务
+func NewVipServiceWithCache(repo repository.VipRepository, c cache.Cache) *Service {
+	return &Service{repo: repo, cache: c}
+}
+
+// SetCache 设置缓存实例
+func (s *Service) SetCache(c cache.Cache) {
+	s.cache = c
+}
+
+// invalidateLevelCaches 清除VIP等级相关缓存
+func (s *Service) invalidateLevelCaches(ctx context.Context) {
+	if s.cache == nil {
+		return
+	}
+	_ = s.cache.Delete(ctx, cacheKeyVipLevels)
+	_ = s.cache.Delete(ctx, cacheKeyVipActiveLevels)
+	_ = s.cache.Delete(ctx, cacheKeyVipDefaultLevel)
+}
+
+// invalidateConfigCaches 清除VIP配置相关缓存
+func (s *Service) invalidateConfigCaches(ctx context.Context, key string) {
+	if s.cache == nil {
+		return
+	}
+	_ = s.cache.Delete(ctx, cacheKeyVipConfigs)
+	if key != "" {
+		_ = s.cache.Delete(ctx, fmt.Sprintf(cacheKeyVipConfig, key))
+	}
 }
 
 // ============================================================================
@@ -38,6 +84,10 @@ func (s *Service) CreateLevel(ctx context.Context, level *model.VipLevel) error 
 	if err := s.repo.CreateLevel(ctx, level); err != nil {
 		return fmt.Errorf("create level: %w", err)
 	}
+
+	// 清除缓存
+	s.invalidateLevelCaches(ctx)
+
 	return nil
 }
 
@@ -70,19 +120,55 @@ func (s *Service) GetDefaultLevel(ctx context.Context) (*model.VipLevel, error) 
 
 // ListLevels 获取所有VIP等级
 func (s *Service) ListLevels(ctx context.Context) ([]model.VipLevel, error) {
+	// 尝试从缓存获取
+	if s.cache != nil {
+		if val, ok, _ := s.cache.Get(ctx, cacheKeyVipLevels); ok {
+			var levels []model.VipLevel
+			if err := json.Unmarshal([]byte(val), &levels); err == nil {
+				return levels, nil
+			}
+		}
+	}
+
 	levels, err := s.repo.ListLevels(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("list levels: %w", err)
 	}
+
+	// 写入缓存
+	if s.cache != nil {
+		if data, err := json.Marshal(levels); err == nil {
+			_ = s.cache.Set(ctx, cacheKeyVipLevels, string(data), cacheTTLVipLevels)
+		}
+	}
+
 	return levels, nil
 }
 
 // ListActiveLevels 获取所有启用的VIP等级
 func (s *Service) ListActiveLevels(ctx context.Context) ([]model.VipLevel, error) {
+	// 尝试从缓存获取
+	if s.cache != nil {
+		if val, ok, _ := s.cache.Get(ctx, cacheKeyVipActiveLevels); ok {
+			var levels []model.VipLevel
+			if err := json.Unmarshal([]byte(val), &levels); err == nil {
+				return levels, nil
+			}
+		}
+	}
+
 	levels, err := s.repo.ListActiveLevels(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("list active levels: %w", err)
 	}
+
+	// 写入缓存
+	if s.cache != nil {
+		if data, err := json.Marshal(levels); err == nil {
+			_ = s.cache.Set(ctx, cacheKeyVipActiveLevels, string(data), cacheTTLVipLevels)
+		}
+	}
+
 	return levels, nil
 }
 
@@ -117,6 +203,10 @@ func (s *Service) UpdateLevel(ctx context.Context, level *model.VipLevel) error 
 	if err := s.repo.UpdateLevel(ctx, level); err != nil {
 		return fmt.Errorf("update level: %w", err)
 	}
+
+	// 清除缓存
+	s.invalidateLevelCaches(ctx)
+
 	return nil
 }
 
@@ -125,6 +215,10 @@ func (s *Service) DeleteLevel(ctx context.Context, id uint64) error {
 	if err := s.repo.DeleteLevel(ctx, id); err != nil {
 		return fmt.Errorf("delete level: %w", err)
 	}
+
+	// 清除缓存
+	s.invalidateLevelCaches(ctx)
+
 	return nil
 }
 
@@ -133,6 +227,10 @@ func (s *Service) SetDefaultLevel(ctx context.Context, id uint64) error {
 	if err := s.repo.SetDefaultLevel(ctx, id); err != nil {
 		return fmt.Errorf("set default level: %w", err)
 	}
+
+	// 清除缓存
+	s.invalidateLevelCaches(ctx)
+
 	return nil
 }
 
@@ -151,6 +249,10 @@ func (s *Service) BatchUpdateLevelStatus(ctx context.Context, ids []uint64, isAc
 	if err != nil {
 		return 0, fmt.Errorf("batch update level status: %w", err)
 	}
+
+	// 清除缓存
+	s.invalidateLevelCaches(ctx)
+
 	return affected, nil
 }
 
@@ -160,6 +262,10 @@ func (s *Service) BatchDeleteLevels(ctx context.Context, ids []uint64) (int64, e
 	if err != nil {
 		return 0, fmt.Errorf("batch delete levels: %w", err)
 	}
+
+	// 清除缓存
+	s.invalidateLevelCaches(ctx)
+
 	return affected, nil
 }
 
@@ -200,10 +306,28 @@ func (s *Service) GetConfigInt64(ctx context.Context, key string) (int64, error)
 
 // ListConfigs 获取所有VIP配置
 func (s *Service) ListConfigs(ctx context.Context) ([]model.VipConfig, error) {
+	// 尝试从缓存获取
+	if s.cache != nil {
+		if val, ok, _ := s.cache.Get(ctx, cacheKeyVipConfigs); ok {
+			var configs []model.VipConfig
+			if err := json.Unmarshal([]byte(val), &configs); err == nil {
+				return configs, nil
+			}
+		}
+	}
+
 	configs, err := s.repo.ListConfigs(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("list configs: %w", err)
 	}
+
+	// 写入缓存
+	if s.cache != nil {
+		if data, err := json.Marshal(configs); err == nil {
+			_ = s.cache.Set(ctx, cacheKeyVipConfigs, string(data), cacheTTLVipConfigs)
+		}
+	}
+
 	return configs, nil
 }
 
@@ -212,6 +336,10 @@ func (s *Service) SaveConfig(ctx context.Context, config *model.VipConfig) error
 	if err := s.repo.SaveConfig(ctx, config); err != nil {
 		return fmt.Errorf("save config: %w", err)
 	}
+
+	// 清除缓存
+	s.invalidateConfigCaches(ctx, config.ConfigKey)
+
 	return nil
 }
 
@@ -244,6 +372,10 @@ func (s *Service) DeleteConfig(ctx context.Context, key string) error {
 	if err := s.repo.DeleteConfig(ctx, key); err != nil {
 		return fmt.Errorf("delete config: %w", err)
 	}
+
+	// 清除缓存
+	s.invalidateConfigCaches(ctx, key)
+
 	return nil
 }
 

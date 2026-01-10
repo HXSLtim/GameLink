@@ -12,6 +12,7 @@ import (
 	commissionrepo "gamelink/internal/repository/commission"
 	repoiface "gamelink/internal/repository/interfaces"
 	"gamelink/pkg/apierr"
+	"gamelink/pkg/cache"
 )
 
 var (
@@ -25,11 +26,19 @@ var (
 	ErrAlreadySettled = apierr.Conflict("已经结算")
 )
 
+// Cache key patterns and TTL
+const (
+	cacheKeyCommissionRules   = "commission:rules:all"
+	cacheKeyCommissionDefault = "commission:rules:default"
+	cacheTTLCommissionRules   = 1 * time.Hour
+)
+
 // CommissionService 抽成服务
 type CommissionService struct {
 	commissions commissionrepo.CommissionRepository
 	orders      repoiface.OrderReader
 	players     repository.PlayerRepository
+	cache       cache.Cache
 }
 
 // NewCommissionService 创建抽成服务
@@ -43,6 +52,61 @@ func NewCommissionService(
 		orders:      orders,
 		players:     players,
 	}
+}
+
+// NewCommissionServiceWithCache 创建带缓存的抽成服务
+func NewCommissionServiceWithCache(
+	commissions commissionrepo.CommissionRepository,
+	orders repoiface.OrderReader,
+	players repository.PlayerRepository,
+	c cache.Cache,
+) *CommissionService {
+	return &CommissionService{
+		commissions: commissions,
+		orders:      orders,
+		players:     players,
+		cache:       c,
+	}
+}
+
+// SetCache 设置缓存实例
+func (s *CommissionService) SetCache(c cache.Cache) {
+	s.cache = c
+}
+
+// invalidateRuleCaches 清除抽成规则相关缓存
+func (s *CommissionService) invalidateRuleCaches(ctx context.Context) {
+	if s.cache == nil {
+		return
+	}
+	_ = s.cache.Delete(ctx, cacheKeyCommissionRules)
+	_ = s.cache.Delete(ctx, cacheKeyCommissionDefault)
+}
+
+// getCachedDefaultRule 从缓存获取默认抽成规则
+func (s *CommissionService) getCachedDefaultRule(ctx context.Context) (*model.CommissionRule, error) {
+	if s.cache != nil {
+		if val, ok, _ := s.cache.Get(ctx, cacheKeyCommissionDefault); ok {
+			var rule model.CommissionRule
+			if err := json.Unmarshal([]byte(val), &rule); err == nil {
+				return &rule, nil
+			}
+		}
+	}
+
+	rule, err := s.commissions.GetDefaultRule(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// 写入缓存
+	if s.cache != nil && rule != nil {
+		if data, err := json.Marshal(rule); err == nil {
+			_ = s.cache.Set(ctx, cacheKeyCommissionDefault, string(data), cacheTTLCommissionRules)
+		}
+	}
+
+	return rule, nil
 }
 
 // CalculateCommission 计算订单抽成（便捷方法：通过orderID）
@@ -364,6 +428,9 @@ func (s *CommissionService) CreateCommissionRule(ctx context.Context, req Create
 		return nil, err
 	}
 
+	// 清除缓存
+	s.invalidateRuleCaches(ctx)
+
 	return rule, nil
 }
 
@@ -401,7 +468,14 @@ func (s *CommissionService) UpdateCommissionRule(ctx context.Context, id uint64,
 		rule.IsActive = *req.IsActive
 	}
 
-	return s.commissions.UpdateRule(ctx, rule)
+	if err := s.commissions.UpdateRule(ctx, rule); err != nil {
+		return err
+	}
+
+	// 清除缓存
+	s.invalidateRuleCaches(ctx)
+
+	return nil
 }
 
 // UpdateCommissionRuleRequest 更新抽成规则请求
@@ -492,7 +566,7 @@ func (s *CommissionService) CalculateOrderCommission(ctx context.Context, order 
 
 	// 如果没有任何规则，使用默认20%
 	if len(candidateRates) == 0 {
-		defaultRule, err := s.commissions.GetDefaultRule(ctx)
+		defaultRule, err := s.getCachedDefaultRule(ctx)
 		defaultRate := 20 // 默认20%
 		defaultDetail := "平台默认20%抽成"
 
@@ -666,6 +740,11 @@ func (s *CommissionService) BatchDeleteCommissionRules(ctx context.Context, ids 
 		}
 	}
 
+	// 清除缓存
+	if result.SuccessCount > 0 {
+		s.invalidateRuleCaches(ctx)
+	}
+
 	return result, nil
 }
 
@@ -697,6 +776,11 @@ func (s *CommissionService) BatchUpdateCommissionRuleStatus(ctx context.Context,
 		} else {
 			result.SuccessCount++
 		}
+	}
+
+	// 清除缓存
+	if result.SuccessCount > 0 {
+		s.invalidateRuleCaches(ctx)
 	}
 
 	return result, nil
