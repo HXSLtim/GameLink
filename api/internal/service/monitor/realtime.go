@@ -10,6 +10,7 @@ import (
 	"gamelink/internal/ws"
 
 	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/shirou/gopsutil/v3/mem"
 
 	"gorm.io/gorm"
 )
@@ -151,8 +152,20 @@ func (s *RealtimeService) GetSystemStatus() *ws.SystemStatus {
 		}
 	}
 
-	// Calculate memory usage percentage
-	memUsage := float64(memStats.Alloc) / float64(memStats.Sys) * 100
+	// Get system memory using gopsutil (系统内存，而不是 Go 进程内存)
+	vmStat, _ := mem.VirtualMemory()
+	var memTotal, memUsed uint64
+	var memUsage float64
+	if vmStat != nil {
+		memTotal = vmStat.Total
+		memUsed = vmStat.Used
+		memUsage = vmStat.UsedPercent
+	} else {
+		// Fallback to Go process memory if gopsutil fails
+		memTotal = memStats.Sys
+		memUsed = memStats.Alloc
+		memUsage = float64(memStats.Alloc) / float64(memStats.Sys) * 100
+	}
 
 	// Get CPU usage - 使用 gopsutil
 	cpuPercent, _ := cpu.Percent(0, false)
@@ -172,8 +185,8 @@ func (s *RealtimeService) GetSystemStatus() *ws.SystemStatus {
 	return &ws.SystemStatus{
 		CPUUsage:       cpuUsage,
 		MemoryUsage:    memUsage,
-		MemoryTotal:    memStats.Sys,
-		MemoryUsed:     memStats.Alloc,
+		MemoryTotal:    memTotal,
+		MemoryUsed:     memUsed,
 		Goroutines:     runtime.NumGoroutine(),
 		DBConnections:  dbConn,
 		Uptime:         int64(time.Since(s.startTime).Seconds()),

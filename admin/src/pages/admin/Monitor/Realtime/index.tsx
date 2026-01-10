@@ -77,6 +77,7 @@ const formatUptime = (seconds: number): string => {
 
 /**
  * 格式化字节数
+ * 注意：后端返回的 memoryUsed 和 memoryTotal 单位是字节
  */
 const formatBytes = (bytes: number): string => {
   if (bytes === 0) return '0 B';
@@ -100,6 +101,7 @@ const RealtimeMonitor: React.FC = () => {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [metricsHistory, setMetricsHistory] = useState<{ time: string; memory: number; goroutines: number }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [markingRead, setMarkingRead] = useState(false);
 
   /**
    * WebSocket 消息处理
@@ -107,13 +109,29 @@ const RealtimeMonitor: React.FC = () => {
   const handleWSMessage = useCallback((message: WSMessage) => {
     switch (message.type) {
       case 'system_status':
-        setSystemStatus(message.data as SystemStatus);
+        const status = message.data as SystemStatus;
+        // 调试：打印原始内存值和计算过程
+        const usedInKB = status.memoryUsed;
+        const totalInKB = status.memoryTotal;
+        logger.info('内存原始值 (KB):', {
+          memoryUsed: status.memoryUsed,
+          memoryTotal: status.memoryTotal,
+          usedInKB,
+          totalInKB,
+          // 假设单位是 KB
+          usedGB_fromKB: (usedInKB / 1024 / 1024).toFixed(2),
+          totalGB_fromKB: (totalInKB / 1024 / 1024).toFixed(2),
+          // 假设单位是字节
+          usedGB_fromBytes: (usedInKB / 1024 / 1024 / 1024).toFixed(2),
+          totalGB_fromBytes: (totalInKB / 1024 / 1024 / 1024).toFixed(2),
+        });
+        setSystemStatus(status);
         // 更新历史数据
         setMetricsHistory(prev => {
           const newPoint = {
             time: dayjs().format('HH:mm:ss'),
-            memory: ((message.data as SystemStatus).memoryUsed || 0) / 1024,
-            goroutines: (message.data as SystemStatus).goroutines,
+            memory: (status.memoryUsed || 0) / 1024 / 1024, // 转换为 MB
+            goroutines: status.goroutines,
           };
           const updated = [...prev, newPoint];
           return updated.slice(-20); // 保留最近20个点
@@ -174,8 +192,10 @@ const RealtimeMonitor: React.FC = () => {
     try {
       await monitorApi.markAlertRead(alertId);
       setAlerts(prev => prev.map(a => (a.id === alertId ? { ...a, isRead: true } : a)));
+      message.success('标记已读成功');
     } catch (error) {
       logger.error('标记告警已读失败:', error);
+      message.error('标记已读失败，请稍后重试');
     }
   };
 
@@ -184,13 +204,23 @@ const RealtimeMonitor: React.FC = () => {
    */
   const handleMarkAllRead = async () => {
     const unreadIds = alerts.filter(a => !a.isRead).map(a => a.id);
-    if (unreadIds.length === 0) return;
+    if (unreadIds.length === 0) {
+      message.info('没有未读告警');
+      return;
+    }
 
+    setMarkingRead(true);
     try {
-      await monitorApi.markAlertsRead(unreadIds);
+      logger.info('准备标记已读的告警IDs:', unreadIds);
+      const response = await monitorApi.markAlertsRead(unreadIds);
+      logger.info('标记已读响应:', response);
       setAlerts(prev => prev.map(a => ({ ...a, isRead: true })));
+      message.success(`成功标记 ${unreadIds.length} 条告警为已读`);
     } catch (error) {
       logger.error('批量标记已读失败:', error);
+      message.error('批量标记已读失败，请稍后重试');
+    } finally {
+      setMarkingRead(false);
     }
   };
 
@@ -245,7 +275,7 @@ const RealtimeMonitor: React.FC = () => {
           <Card variant="borderless" loading={loading}>
             <Statistic
               title={<Space><CloudServerOutlined /> 内存使用</Space>}
-              value={`${formatBytes((systemStatus?.memoryUsed || 0) * 1024)} / ${formatBytes((systemStatus?.memoryTotal || 0) * 1024)}`}
+              value={`${formatBytes(systemStatus?.memoryUsed || 0)} / ${formatBytes(systemStatus?.memoryTotal || 0)}`}
               styles={{ content: { color: (systemStatus?.memoryUsage || 0) > 80 ? token.colorError : token.colorWarning } }}
             />
             <Progress
@@ -420,7 +450,12 @@ const RealtimeMonitor: React.FC = () => {
             }
             variant="borderless"
             extra={
-              <Button size="small" onClick={handleMarkAllRead} disabled={unreadCount === 0}>
+              <Button
+                size="small"
+                onClick={handleMarkAllRead}
+                disabled={unreadCount === 0 || markingRead}
+                loading={markingRead}
+              >
                 全部标记已读
               </Button>
             }

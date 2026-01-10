@@ -19,5 +19,6 @@ func registerPlayerRoutes(api *gin.RouterGroup, authMiddleware gin.HandlerFunc, 
 		playerhandler.RegisterReviewRoutes(playerGroup, services.reviewSvc, authMiddleware)
 		playerhandler.RegisterCertificationRoutes(playerGroup, services.playerRankSvc, services.playerCertificationSvc, authMiddleware)
 		playerhandler.RegisterTeamRoutes(playerGroup, services.teamSvc, authMiddleware)
+		playerhandler.RegisterStatusRoutes(playerGroup, services.playerSvc, authMiddleware)
 	}
 }

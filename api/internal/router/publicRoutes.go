@@ -42,6 +42,10 @@ func registerPublicRoutes(api *gin.RouterGroup, orm *gorm.DB) {
 	// 注册服务项目列表路由
 	serviceItemHandler := publichandler.NewServiceItemHandler(serviceItemRepo)
 	serviceItemHandler.RegisterRoutes(publicGroup)
+
+	// 注册搜索路由
+	searchHandler := publichandler.NewSearchHandler(playerRepo, gameRepo, userRepo)
+	publichandler.RegisterSearchRoutes(publicGroup, searchHandler)
 }
 
 // registerRoleSwitchRoutes 注册角色切换路由（需要认证）

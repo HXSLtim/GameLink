@@ -441,21 +441,9 @@ func (s *PlayerService) UpdatePlayerProfile(ctx context.Context, userID uint64, 
 // SetPlayerOnlineStatus 设置陪玩师在线状态
 func (s *PlayerService) SetPlayerOnlineStatus(ctx context.Context, userID uint64, online bool) error {
 	// 查找该用户的陪玩师资料
-	players, _, err := s.players.ListPaged(ctx, 1, 100)
+	playerID, err := s.getPlayerIDByUserID(ctx, userID)
 	if err != nil {
 		return err
-	}
-
-	var playerID uint64
-	for _, p := range players {
-		if p.UserID == userID {
-			playerID = p.ID
-			break
-		}
-	}
-
-	if playerID == 0 {
-		return ErrNotFound
 	}
 
 	// 使用 Redis 存储在线状态
@@ -466,6 +454,30 @@ func (s *PlayerService) SetPlayerOnlineStatus(ctx context.Context, userID uint64
 	}
 	// 删除在线状态
 	return s.cache.Delete(ctx, key)
+}
+
+// GetPlayerOnlineStatusByUserID 根据用户ID获取陪玩师在线状态
+func (s *PlayerService) GetPlayerOnlineStatusByUserID(ctx context.Context, userID uint64) (bool, error) {
+	playerID, err := s.getPlayerIDByUserID(ctx, userID)
+	if err != nil {
+		return false, err
+	}
+	return s.getPlayerOnlineStatus(ctx, playerID), nil
+}
+
+// getPlayerIDByUserID 根据用户ID获取陪玩师ID
+func (s *PlayerService) getPlayerIDByUserID(ctx context.Context, userID uint64) (uint64, error) {
+	players, _, err := s.players.ListPaged(ctx, 1, 100)
+	if err != nil {
+		return 0, err
+	}
+
+	for _, p := range players {
+		if p.UserID == userID {
+			return p.ID, nil
+		}
+	}
+	return 0, ErrNotFound
 }
 
 // getPlayerOnlineStatus 获取陪玩师在线状态

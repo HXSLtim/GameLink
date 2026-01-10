@@ -5,6 +5,7 @@ import (
 	"gorm.io/gorm"
 
 	userhandler "gamelink/internal/handler/user"
+	favoriterepo "gamelink/internal/repository/favorite"
 	playerrepo "gamelink/internal/repository/player"
 	userrepo "gamelink/internal/repository/user"
 	authservice "gamelink/internal/service/auth"
@@ -64,6 +65,11 @@ func registerUserRoutesWithRoleSwitch(api *gin.RouterGroup, authMiddleware gin.H
 		roleSvc := authservice.NewRoleService(userRepo, playerRepo)
 		roleHandler := userhandler.NewRoleHandler(roleSvc)
 		roleHandler.RegisterRoutes(userGroup)
+
+		// 收藏路由
+		favoriteRepo := favoriterepo.NewRepository(orm)
+		favoriteHandler := userhandler.NewFavoriteHandler(favoriteRepo, playerRepo)
+		userhandler.RegisterFavoriteRoutes(userGroup, favoriteHandler, authMiddleware)
 	}
 }
 
