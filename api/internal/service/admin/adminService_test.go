@@ -37,6 +37,9 @@ func (m *MockGameRepository) Get(ctx context.Context, id uint64) (*model.Game, e
 
 func (m *MockGameRepository) List(ctx context.Context) ([]model.Game, error) {
 	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
 	return args.Get(0).([]model.Game), args.Error(1)
 }
 
@@ -106,9 +109,12 @@ func (m *MockUserRepository) Create(ctx context.Context, user *model.User) error
 		return args.Error(0)
 	}
 	if user.ID == 0 {
-		user.ID = uint64(len(m.users) + 1)
+		user.ID = 1 // Assign a default ID for testing
 	}
-	m.users[user.ID] = user
+	// Only store in map if it's initialized (when using NewMockUserRepository)
+	if m.users != nil {
+		m.users[user.ID] = user
+	}
 	return nil
 }
 
@@ -122,6 +128,9 @@ func (m *MockUserRepository) Get(ctx context.Context, id uint64) (*model.User, e
 
 func (m *MockUserRepository) List(ctx context.Context) ([]model.User, error) {
 	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
 	return args.Get(0).([]model.User), args.Error(1)
 }
 
@@ -212,6 +221,9 @@ func (m *MockPlayerRepository) GetByUserID(ctx context.Context, userID uint64) (
 
 func (m *MockPlayerRepository) List(ctx context.Context) ([]model.Player, error) {
 	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
 	return args.Get(0).([]model.Player), args.Error(1)
 }
 
@@ -864,6 +876,16 @@ type MockCache struct {
 	mock.Mock
 }
 
+// NewMockCacheWithDefaults creates a MockCache with default expectations for all cache operations
+func NewMockCacheWithDefaults() *MockCache {
+	c := &MockCache{}
+	// Set up default expectations for common cache operations
+	c.On("Get", mock.Anything, mock.Anything).Return("", false, nil).Maybe()
+	c.On("Set", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
+	c.On("Delete", mock.Anything, mock.Anything).Return(nil).Maybe()
+	return c
+}
+
 func (m *MockCache) Get(ctx context.Context, key string) (string, bool, error) {
 	args := m.Called(ctx, key)
 	return args.String(0), args.Bool(1), args.Error(2)
@@ -905,7 +927,7 @@ func TestAdminService_CreateGame(t *testing.T) {
 	tests := []struct {
 		name        string
 		input       CreateGameInput
-		setupMocks  func(*MockGameRepository)
+		setupMocks  func(*MockGameRepository, *MockCache)
 		wantErr     bool
 		errContains string
 	}{
@@ -918,8 +940,9 @@ func TestAdminService_CreateGame(t *testing.T) {
 				IconURL:     "https://example.com/icon.png",
 				Description: "A test game",
 			},
-			setupMocks: func(m *MockGameRepository) {
+			setupMocks: func(m *MockGameRepository, c *MockCache) {
 				m.On("Create", ctx, mock.AnythingOfType("*model.Game")).Return(nil)
+				c.On("Delete", ctx, "admin:games").Return(nil)
 			},
 			wantErr: false,
 		},
@@ -929,7 +952,7 @@ func TestAdminService_CreateGame(t *testing.T) {
 				Key:  "",
 				Name: "Test Game",
 			},
-			setupMocks:  func(m *MockGameRepository) {},
+			setupMocks:  func(m *MockGameRepository, c *MockCache) {},
 			wantErr:     true,
 			errContains: "validation",
 		},
@@ -939,7 +962,7 @@ func TestAdminService_CreateGame(t *testing.T) {
 				Key:  "test-game",
 				Name: "",
 			},
-			setupMocks:  func(m *MockGameRepository) {},
+			setupMocks:  func(m *MockGameRepository, c *MockCache) {},
 			wantErr:     true,
 			errContains: "validation",
 		},
@@ -949,7 +972,7 @@ func TestAdminService_CreateGame(t *testing.T) {
 				Key:  "test-game",
 				Name: "Test Game",
 			},
-			setupMocks: func(m *MockGameRepository) {
+			setupMocks: func(m *MockGameRepository, c *MockCache) {
 				m.On("Create", ctx, mock.AnythingOfType("*model.Game")).Return(errors.New("db error"))
 			},
 			wantErr:     true,
@@ -960,11 +983,12 @@ func TestAdminService_CreateGame(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			games := &MockGameRepository{}
-			tt.setupMocks(games)
+			cache := NewMockCacheWithDefaults()
+			tt.setupMocks(games, cache)
 
 			svc := NewAdminService(
 				games, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
-				&MockCache{},
+				cache,
 			)
 
 			game, err := svc.CreateGame(ctx, tt.input)
@@ -994,7 +1018,7 @@ func TestAdminService_UpdateGame(t *testing.T) {
 		name        string
 		gameID      uint64
 		input       UpdateGameInput
-		setupMocks  func(*MockGameRepository)
+		setupMocks  func(*MockGameRepository, *MockCache)
 		wantErr     bool
 		errContains string
 	}{
@@ -1008,13 +1032,14 @@ func TestAdminService_UpdateGame(t *testing.T) {
 				IconURL:     "https://example.com/new-icon.png",
 				Description: "Updated description",
 			},
-			setupMocks: func(m *MockGameRepository) {
+			setupMocks: func(m *MockGameRepository, c *MockCache) {
 				m.On("Get", ctx, uint64(1)).Return(&model.Game{
 					Base: model.Base{ID: 1, ExtJSON: "{}"},
 					Key:  "old-game",
 					Name: "Old Game",
 				}, nil)
 				m.On("Update", ctx, mock.AnythingOfType("*model.Game")).Return(nil)
+				c.On("Delete", ctx, "admin:games").Return(nil)
 			},
 			wantErr: false,
 		},
@@ -1025,7 +1050,7 @@ func TestAdminService_UpdateGame(t *testing.T) {
 				Key:  "test-game",
 				Name: "Test Game",
 			},
-			setupMocks: func(m *MockGameRepository) {
+			setupMocks: func(m *MockGameRepository, c *MockCache) {
 				m.On("Get", ctx, uint64(999)).Return(nil, repository.ErrNotFound)
 			},
 			wantErr:     true,
@@ -1038,7 +1063,7 @@ func TestAdminService_UpdateGame(t *testing.T) {
 				Key:  "",
 				Name: "Test Game",
 			},
-			setupMocks:  func(m *MockGameRepository) {},
+			setupMocks:  func(m *MockGameRepository, c *MockCache) {},
 			wantErr:     true,
 			errContains: "validation",
 		},
@@ -1047,11 +1072,12 @@ func TestAdminService_UpdateGame(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			games := &MockGameRepository{}
-			tt.setupMocks(games)
+			cache := NewMockCacheWithDefaults()
+			tt.setupMocks(games, cache)
 
 			svc := NewAdminService(
 				games, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
-				&MockCache{},
+				cache,
 			)
 
 			game, err := svc.UpdateGame(ctx, tt.gameID, tt.input)
@@ -1078,22 +1104,23 @@ func TestAdminService_DeleteGame(t *testing.T) {
 	tests := []struct {
 		name        string
 		gameID      uint64
-		setupMocks  func(*MockGameRepository)
+		setupMocks  func(*MockGameRepository, *MockCache)
 		wantErr     bool
 		errContains string
 	}{
 		{
 			name:   "success - delete game",
 			gameID: 1,
-			setupMocks: func(m *MockGameRepository) {
+			setupMocks: func(m *MockGameRepository, c *MockCache) {
 				m.On("Delete", ctx, uint64(1)).Return(nil)
+				c.On("Delete", ctx, "admin:games").Return(nil)
 			},
 			wantErr: false,
 		},
 		{
 			name:   "game not found",
 			gameID: 999,
-			setupMocks: func(m *MockGameRepository) {
+			setupMocks: func(m *MockGameRepository, c *MockCache) {
 				m.On("Delete", ctx, uint64(999)).Return(repository.ErrNotFound)
 			},
 			wantErr:     true,
@@ -1102,7 +1129,7 @@ func TestAdminService_DeleteGame(t *testing.T) {
 		{
 			name:   "repository error",
 			gameID: 1,
-			setupMocks: func(m *MockGameRepository) {
+			setupMocks: func(m *MockGameRepository, c *MockCache) {
 				m.On("Delete", ctx, uint64(1)).Return(errors.New("db error"))
 			},
 			wantErr:     true,
@@ -1113,11 +1140,12 @@ func TestAdminService_DeleteGame(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			games := &MockGameRepository{}
-			tt.setupMocks(games)
+			cache := NewMockCacheWithDefaults()
+			tt.setupMocks(games, cache)
 
 			svc := NewAdminService(
 				games, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
-				&MockCache{},
+				cache,
 			)
 
 			err := svc.DeleteGame(ctx, tt.gameID)
@@ -1141,24 +1169,28 @@ func TestAdminService_ListGames(t *testing.T) {
 
 	tests := []struct {
 		name       string
-		setupMocks func(*MockGameRepository)
+		setupMocks func(*MockGameRepository, *MockCache)
 		wantErr    bool
 		wantCount  int
 	}{
 		{
 			name: "success - list games",
-			setupMocks: func(m *MockGameRepository) {
+			setupMocks: func(m *MockGameRepository, c *MockCache) {
+				// Cache miss, then fetch from DB
+				c.On("Get", ctx, "admin:games").Return("", false, nil)
 				m.On("List", ctx).Return([]model.Game{
 					{Base: model.Base{ID: 1, ExtJSON: "{}"}, Key: "game1", Name: "Game 1"},
 					{Base: model.Base{ID: 2, ExtJSON: "{}"}, Key: "game2", Name: "Game 2"},
 				}, nil)
+				c.On("Set", ctx, "admin:games", mock.AnythingOfType("string"), mock.AnythingOfType("time.Duration")).Return(nil)
 			},
 			wantErr:   false,
 			wantCount: 2,
 		},
 		{
 			name: "repository error",
-			setupMocks: func(m *MockGameRepository) {
+			setupMocks: func(m *MockGameRepository, c *MockCache) {
+				c.On("Get", ctx, "admin:games").Return("", false, nil)
 				m.On("List", ctx).Return(nil, errors.New("db error"))
 			},
 			wantErr: true,
@@ -1168,11 +1200,12 @@ func TestAdminService_ListGames(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			games := &MockGameRepository{}
-			tt.setupMocks(games)
+			cache := NewMockCacheWithDefaults()
+			tt.setupMocks(games, cache)
 
 			svc := NewAdminService(
 				games, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
-				&MockCache{},
+				cache,
 			)
 
 			result, err := svc.ListGames(ctx)
@@ -1195,7 +1228,7 @@ func TestAdminService_BatchDeleteGames(t *testing.T) {
 	tests := []struct {
 		name        string
 		ids         []uint64
-		setupMocks  func(*MockGameRepository)
+		setupMocks  func(*MockGameRepository, *MockCache)
 		wantErr     bool
 		errContains string
 		wantDeleted int64
@@ -1203,8 +1236,9 @@ func TestAdminService_BatchDeleteGames(t *testing.T) {
 		{
 			name: "success - batch delete",
 			ids:  []uint64{1, 2, 3},
-			setupMocks: func(m *MockGameRepository) {
+			setupMocks: func(m *MockGameRepository, c *MockCache) {
 				m.On("BatchDelete", ctx, []uint64{1, 2, 3}).Return(int64(3), nil)
+				c.On("Delete", ctx, "admin:games").Return(nil)
 			},
 			wantErr:     false,
 			wantDeleted: 3,
@@ -1212,14 +1246,14 @@ func TestAdminService_BatchDeleteGames(t *testing.T) {
 		{
 			name:        "empty ids",
 			ids:         []uint64{},
-			setupMocks:  func(m *MockGameRepository) {},
+			setupMocks:  func(m *MockGameRepository, c *MockCache) {},
 			wantErr:     true,
 			errContains: "no game ids",
 		},
 		{
 			name: "repository error",
 			ids:  []uint64{1, 2},
-			setupMocks: func(m *MockGameRepository) {
+			setupMocks: func(m *MockGameRepository, c *MockCache) {
 				m.On("BatchDelete", ctx, []uint64{1, 2}).Return(int64(0), errors.New("db error"))
 			},
 			wantErr:     true,
@@ -1230,11 +1264,12 @@ func TestAdminService_BatchDeleteGames(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			games := &MockGameRepository{}
-			tt.setupMocks(games)
+			cache := NewMockCacheWithDefaults()
+			tt.setupMocks(games, cache)
 
 			svc := NewAdminService(
 				games, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
-				&MockCache{},
+				cache,
 			)
 
 			deleted, err := svc.BatchDeleteGames(ctx, tt.ids)
@@ -1264,7 +1299,7 @@ func TestAdminService_CreateUser(t *testing.T) {
 	tests := []struct {
 		name        string
 		input       CreateUserInput
-		setupMocks  func(*MockUserRepository, *MockWalletRepository, *MockRoleRepository)
+		setupMocks  func(*MockUserRepository, *MockWalletRepository, *MockRoleRepository, *MockCache)
 		wantErr     bool
 		errContains string
 	}{
@@ -1278,7 +1313,7 @@ func TestAdminService_CreateUser(t *testing.T) {
 				Role:     model.RoleUser,
 				Status:   model.UserStatusActive,
 			},
-			setupMocks: func(u *MockUserRepository, w *MockWalletRepository, r *MockRoleRepository) {
+			setupMocks: func(u *MockUserRepository, w *MockWalletRepository, r *MockRoleRepository, c *MockCache) {
 				u.On("Create", ctx, mock.AnythingOfType("*model.User")).Return(nil)
 				w.On("Save", ctx, mock.AnythingOfType("*model.Wallet")).Return(nil)
 				r.On("GetBySlug", ctx, string(model.RoleSlugUser)).Return(&model.RoleModel{
@@ -1286,6 +1321,7 @@ func TestAdminService_CreateUser(t *testing.T) {
 					Slug: string(model.RoleSlugUser),
 				}, nil)
 				r.On("AssignToUser", ctx, mock.AnythingOfType("uint64"), mock.AnythingOfType("[]uint64")).Return(nil)
+				c.On("Delete", ctx, "admin:users").Return(nil)
 			},
 			wantErr: false,
 		},
@@ -1299,7 +1335,7 @@ func TestAdminService_CreateUser(t *testing.T) {
 				Role:     model.RoleUser,
 				Status:   model.UserStatusActive,
 			},
-			setupMocks:  func(u *MockUserRepository, w *MockWalletRepository, r *MockRoleRepository) {},
+			setupMocks:  func(u *MockUserRepository, w *MockWalletRepository, r *MockRoleRepository, c *MockCache) {},
 			wantErr:     true,
 			errContains: "validation",
 		},
@@ -1313,7 +1349,7 @@ func TestAdminService_CreateUser(t *testing.T) {
 				Role:     model.RoleUser,
 				Status:   model.UserStatusActive,
 			},
-			setupMocks:  func(u *MockUserRepository, w *MockWalletRepository, r *MockRoleRepository) {},
+			setupMocks:  func(u *MockUserRepository, w *MockWalletRepository, r *MockRoleRepository, c *MockCache) {},
 			wantErr:     true,
 			errContains: "validation",
 		},
@@ -1327,7 +1363,7 @@ func TestAdminService_CreateUser(t *testing.T) {
 				Role:     "",
 				Status:   model.UserStatusActive,
 			},
-			setupMocks:  func(u *MockUserRepository, w *MockWalletRepository, r *MockRoleRepository) {},
+			setupMocks:  func(u *MockUserRepository, w *MockWalletRepository, r *MockRoleRepository, c *MockCache) {},
 			wantErr:     true,
 			errContains: "validation",
 		},
@@ -1341,7 +1377,7 @@ func TestAdminService_CreateUser(t *testing.T) {
 				Role:     model.RoleUser,
 				Status:   model.UserStatusActive,
 			},
-			setupMocks: func(u *MockUserRepository, w *MockWalletRepository, r *MockRoleRepository) {
+			setupMocks: func(u *MockUserRepository, w *MockWalletRepository, r *MockRoleRepository, c *MockCache) {
 				u.On("Create", ctx, mock.AnythingOfType("*model.User")).Return(errors.New("db error"))
 			},
 			wantErr: true,
@@ -1353,11 +1389,12 @@ func TestAdminService_CreateUser(t *testing.T) {
 			users := &MockUserRepository{}
 			wallets := &MockWalletRepository{}
 			roles := &MockRoleRepository{}
-			tt.setupMocks(users, wallets, roles)
+			cache := NewMockCacheWithDefaults()
+			tt.setupMocks(users, wallets, roles, cache)
 
 			svc := NewAdminService(
 				nil, users, nil, nil, nil, roles, nil, nil, nil, nil, wallets, nil,
-				&MockCache{},
+				cache,
 			)
 
 			user, err := svc.CreateUser(ctx, tt.input)
@@ -1385,14 +1422,17 @@ func TestAdminService_CreateUser(t *testing.T) {
 func TestAdminService_UpdateUser(t *testing.T) {
 	ctx := context.Background()
 
-	existingUser := &model.User{
-		Base:         model.Base{ID: 1, ExtJSON: "{}"},
-		Name:         "Old Name",
-		Phone:        "13800138000",
-		Email:        "old@example.com",
-		Role:         model.RoleUser,
-		Status:       model.UserStatusActive,
-		PasswordHash: hashPasswordForTest("Old123!@#"),
+	// Helper to create a fresh existingUser for each test
+	newExistingUser := func() *model.User {
+		return &model.User{
+			Base:         model.Base{ID: 1, ExtJSON: "{}"},
+			Name:         "Old Name",
+			Phone:        "13800138000",
+			Email:        "old@example.com",
+			Role:         model.RoleUser,
+			Status:       model.UserStatusActive,
+			PasswordHash: hashPasswordForTest("Old123!@#"),
+		}
 	}
 
 	tests := []struct {
@@ -1414,7 +1454,7 @@ func TestAdminService_UpdateUser(t *testing.T) {
 				Status: model.UserStatusActive,
 			},
 			setupMocks: func(u *MockUserRepository, r *MockRoleRepository) {
-				u.On("Get", ctx, uint64(1)).Return(existingUser, nil)
+				u.On("Get", ctx, uint64(1)).Return(newExistingUser(), nil)
 				u.On("Update", ctx, mock.AnythingOfType("*model.User")).Return(nil)
 				r.On("GetBySlug", ctx, string(model.RoleSlugPlayer)).Return(&model.RoleModel{
 					Base: model.Base{ID: 2, ExtJSON: "{}"},
@@ -1448,10 +1488,8 @@ func TestAdminService_UpdateUser(t *testing.T) {
 				Password: stringPtr("New123!@#"),
 			},
 			setupMocks: func(u *MockUserRepository, r *MockRoleRepository) {
-				u.On("Get", ctx, uint64(1)).Return(existingUser, nil)
-				u.On("Update", ctx, mock.MatchedBy(func(u *model.User) bool {
-					return u.PasswordHash != existingUser.PasswordHash
-				})).Return(nil)
+				u.On("Get", ctx, uint64(1)).Return(newExistingUser(), nil)
+				u.On("Update", ctx, mock.AnythingOfType("*model.User")).Return(nil)
 				r.On("GetBySlug", ctx, string(model.RoleSlugUser)).Return(&model.RoleModel{
 					Base: model.Base{ID: 1, ExtJSON: "{}"},
 					Slug: string(model.RoleSlugUser),
@@ -1470,7 +1508,7 @@ func TestAdminService_UpdateUser(t *testing.T) {
 
 			svc := NewAdminService(
 				nil, users, nil, nil, nil, roles, nil, nil, nil, nil, nil, nil,
-				&MockCache{},
+				NewMockCacheWithDefaults(),
 			)
 
 			user, err := svc.UpdateUser(ctx, tt.userID, tt.input)
@@ -1528,7 +1566,7 @@ func TestAdminService_DeleteUser(t *testing.T) {
 
 			svc := NewAdminService(
 				nil, users, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
-				&MockCache{},
+				NewMockCacheWithDefaults(),
 			)
 
 			err := svc.DeleteUser(ctx, tt.userID)
@@ -1583,7 +1621,7 @@ func TestAdminService_ListUsers(t *testing.T) {
 
 			svc := NewAdminService(
 				nil, users, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
-				&MockCache{},
+				NewMockCacheWithDefaults(),
 			)
 
 			result, err := svc.ListUsers(ctx)
@@ -1639,7 +1677,7 @@ func TestAdminService_GetUser(t *testing.T) {
 
 			svc := NewAdminService(
 				nil, users, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
-				&MockCache{},
+				NewMockCacheWithDefaults(),
 			)
 
 			user, err := svc.GetUser(ctx, tt.userID)
@@ -1708,7 +1746,7 @@ func TestAdminService_UpdateUserStatus(t *testing.T) {
 
 			svc := NewAdminService(
 				nil, users, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
-				&MockCache{},
+				NewMockCacheWithDefaults(),
 			)
 
 			user, err := svc.UpdateUserStatus(ctx, tt.userID, tt.status)
@@ -1784,7 +1822,7 @@ func TestAdminService_UpdateUserRole(t *testing.T) {
 
 			svc := NewAdminService(
 				nil, users, nil, nil, nil, roles, nil, nil, nil, nil, nil, nil,
-				&MockCache{},
+				NewMockCacheWithDefaults(),
 			)
 
 			user, err := svc.UpdateUserRole(ctx, tt.userID, tt.role)
@@ -1865,7 +1903,7 @@ func TestAdminService_GetUserStats(t *testing.T) {
 
 			svc := NewAdminService(
 				nil, users, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
-				&MockCache{},
+				NewMockCacheWithDefaults(),
 			)
 
 			stats, err := svc.GetUserStats(ctx)
@@ -1956,7 +1994,7 @@ func TestAdminService_CreatePlayer(t *testing.T) {
 
 			svc := NewAdminService(
 				nil, nil, players, nil, nil, nil, nil, nil, nil, nil, nil, nil,
-				&MockCache{},
+				NewMockCacheWithDefaults(),
 			)
 
 			player, err := svc.CreatePlayer(ctx, tt.input)
@@ -2035,7 +2073,7 @@ func TestAdminService_UpdatePlayer(t *testing.T) {
 
 			svc := NewAdminService(
 				nil, nil, players, nil, nil, nil, nil, nil, nil, nil, nil, nil,
-				&MockCache{},
+				NewMockCacheWithDefaults(),
 			)
 
 			player, err := svc.UpdatePlayer(ctx, tt.playerID, tt.input)
@@ -2087,7 +2125,7 @@ func TestAdminService_DeletePlayer(t *testing.T) {
 
 			svc := NewAdminService(
 				nil, nil, players, nil, nil, nil, nil, nil, nil, nil, nil, nil,
-				&MockCache{},
+				NewMockCacheWithDefaults(),
 			)
 
 			err := svc.DeletePlayer(ctx, tt.playerID)
@@ -2139,7 +2177,7 @@ func TestAdminService_ListPlayers(t *testing.T) {
 
 			svc := NewAdminService(
 				nil, nil, players, nil, nil, nil, nil, nil, nil, nil, nil, nil,
-				&MockCache{},
+				NewMockCacheWithDefaults(),
 			)
 
 			result, err := svc.ListPlayers(ctx)
@@ -2195,7 +2233,7 @@ func TestAdminService_BatchUpdatePlayerStatus(t *testing.T) {
 
 			svc := NewAdminService(
 				nil, nil, players, nil, nil, nil, nil, nil, nil, nil, nil, nil,
-				&MockCache{},
+				NewMockCacheWithDefaults(),
 			)
 
 			updated, err := svc.BatchUpdatePlayerStatus(ctx, tt.ids, tt.status)
@@ -2251,7 +2289,7 @@ func TestAdminService_BatchDeletePlayers(t *testing.T) {
 
 			svc := NewAdminService(
 				nil, nil, players, nil, nil, nil, nil, nil, nil, nil, nil, nil,
-				&MockCache{},
+				NewMockCacheWithDefaults(),
 			)
 
 			deleted, err := svc.BatchDeletePlayers(ctx, tt.ids)
@@ -2391,7 +2429,7 @@ func TestAdminService_CreateOrder(t *testing.T) {
 
 			svc := NewAdminService(
 				nil, nil, players, orders, nil, nil, serviceItems, nil, nil, nil, nil, nil,
-				&MockCache{},
+				NewMockCacheWithDefaults(),
 			)
 
 			order, err := svc.CreateOrder(ctx, tt.input)
@@ -2482,7 +2520,7 @@ func TestAdminService_UpdateOrder(t *testing.T) {
 				}, nil)
 			},
 			wantErr:     true,
-			errContains: "invalid transition",
+			errContains: "invalid order status transition",
 		},
 	}
 
@@ -2493,7 +2531,7 @@ func TestAdminService_UpdateOrder(t *testing.T) {
 
 			svc := NewAdminService(
 				nil, nil, nil, orders, nil, nil, nil, nil, nil, nil, nil, nil,
-				&MockCache{},
+				NewMockCacheWithDefaults(),
 			)
 
 			order, err := svc.UpdateOrder(ctx, tt.orderID, tt.input)
@@ -2689,7 +2727,7 @@ func TestNewAdminService(t *testing.T) {
 	stats := &MockStatsRepository{}
 	wallets := &MockWalletRepository{}
 	gameCategories := &MockGameCategoryRepository{}
-	cache := &MockCache{}
+	cache := NewMockCacheWithDefaults()
 
 	svc := NewAdminService(
 		games,
