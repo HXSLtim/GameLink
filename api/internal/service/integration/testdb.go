@@ -239,7 +239,8 @@ func cleanTables(t *testing.T, db *gorm.DB) {
 	defer cleanMutex.Unlock()
 
 	// Add timeout context to prevent indefinite blocking
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	// Increased to 120 seconds to handle large number of tables
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 
 	tables := []string{

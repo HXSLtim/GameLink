@@ -1,11 +1,13 @@
 package user
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
 	"gamelink/internal/model"
+	"gamelink/internal/repository"
 	"gamelink/internal/service/order"
 	"gamelink/pkg/apierr"
 )
@@ -55,6 +57,11 @@ func createOrderHandler(c *gin.Context, svc *order.OrderService) {
 	if err != nil {
 		if apierr.IsValidationError(err) {
 			respondAPIError(c, err.(*apierr.APIError))
+			return
+		}
+		// Check for repository.ErrNotFound (player or game not found)
+		if errors.Is(err, repository.ErrNotFound) || apierr.IsNotFound(err) {
+			respondAPIError(c, apierr.NotFound("陪玩师或游戏不存在"))
 			return
 		}
 		respondAPIError(c, apierr.InternalError("创建订单失败").WithDetails(err.Error()))
@@ -167,6 +174,11 @@ func cancelOrderHandler(c *gin.Context, svc *order.OrderService) {
 	}
 
 	if err := svc.CancelOrder(c.Request.Context(), userID, orderID, req); err != nil {
+		// Check for not found error first
+		if errors.Is(err, repository.ErrNotFound) || errors.Is(err, order.ErrNotFound) {
+			respondAPIError(c, apierr.NotFound("订单不存在"))
+			return
+		}
 		if err == order.ErrUnauthorized {
 			respondAPIError(c, apierr.Forbidden("无权限取消此订单"))
 			return
@@ -207,6 +219,11 @@ func completeOrderHandler(c *gin.Context, svc *order.OrderService) {
 	}
 
 	if err := svc.CompleteOrder(c.Request.Context(), userID, orderID); err != nil {
+		// Check for not found error first
+		if errors.Is(err, repository.ErrNotFound) || errors.Is(err, order.ErrNotFound) {
+			respondAPIError(c, apierr.NotFound("订单不存在"))
+			return
+		}
 		if err == order.ErrUnauthorized {
 			respondAPIError(c, apierr.Forbidden("无权限完成此订单"))
 			return

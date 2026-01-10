@@ -295,6 +295,7 @@ func GenerateTestToken(userID uint64) string {
 }
 
 // CreateTestOrder creates a test order in the database.
+// Note: This function automatically creates a ServiceItem for the order since ItemID is required.
 func CreateTestOrder(t testing.TB, db *gorm.DB, userID, playerID, gameID uint64, status model.OrderStatus) *model.Order {
 	t.Helper()
 
@@ -308,15 +309,20 @@ func CreateTestOrder(t testing.TB, db *gorm.DB, userID, playerID, gameID uint64,
 		gameIDPtr = &gameID
 	}
 
+	// Create a ServiceItem first since ItemID is required (NOT NULL constraint)
+	item := CreateTestServiceItem(t, db, gameID, 10000, true)
+
 	order := &model.Order{
 		Base: model.Base{
 			ExtJSON: "{}",
 		},
 		UserID:          userID,
+		ItemID:          item.ID,
 		PlayerID:        playerIDPtr,
 		GameID:          gameIDPtr,
 		Title:           "Test Order",
 		Description:     "Test order description",
+		UnitPriceCents:  10000, // $100.00
 		TotalPriceCents: 10000, // $100.00
 		Currency:        model.CurrencyUSD,
 		Status:          status,
