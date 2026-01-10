@@ -1,10 +1,468 @@
 @import './variables.scss';
 
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica,
-        Segoe UI, Arial, Roboto, 'PingFang SC', 'miui', 'Hiragino Sans GB', 'Microsoft Yahei',
-        sans-serif;
-    font-size: $font-size-base;
+// ============================================
+// GameLink Global Styles
+// Enhanced E-sports Edition
+// ============================================
+
+// Reset & Base
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-// 可以在这里添加更多全局样式
+page {
+  font-family: $font-family-base;
+  font-size: $font-size-base;
+  line-height: $line-height-normal;
+  color: $text-primary;
+  background-color: $bg-primary;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// Typography Utilities
+.text-primary { color: $text-primary; }
+.text-secondary { color: $text-secondary; }
+.text-tertiary { color: $text-tertiary; }
+.text-disabled { color: $text-disabled; }
+.text-on-primary { color: $text-on-primary; }
+
+.text-success { color: $success; }
+.text-warning { color: $warning; }
+.text-error { color: $error; }
+.text-info { color: $info; }
+
+.text-xs { font-size: $font-size-xs; }
+.text-sm { font-size: $font-size-sm; }
+.text-base { font-size: $font-size-base; }
+.text-md { font-size: $font-size-md; }
+.text-lg { font-size: $font-size-lg; }
+.text-xl { font-size: $font-size-xl; }
+.text-xxl { font-size: $font-size-xxl; }
+.text-xxxl { font-size: $font-size-xxxl; }
+
+.font-light { font-weight: $font-weight-light; }
+.font-normal { font-weight: $font-weight-normal; }
+.font-medium { font-weight: $font-weight-medium; }
+.font-bold { font-weight: $font-weight-bold; }
+.font-black { font-weight: $font-weight-black; }
+
+// Background Utilities
+.bg-primary { background-color: $primary-color; }
+.bg-secondary { background-color: $bg-secondary; }
+.bg-white { background-color: $white; }
+.bg-overlay { background-color: $bg-overlay; }
+
+.bg-success-light { background-color: $success-light; }
+.bg-warning-light { background-color: $warning-light; }
+.bg-error-light { background-color: $error-light; }
+.bg-info-light { background-color: $info-light; }
+
+// Spacing Utilities
+.m-xs { margin: $spacing-xs; }
+.m-sm { margin: $spacing-sm; }
+.m-base { margin: $spacing-base; }
+.m-md { margin: $spacing-md; }
+.m-lg { margin: $spacing-lg; }
+.m-xl { margin: $spacing-xl; }
+.m-xxl { margin: $spacing-xxl; }
+.m-0 { margin: 0; }
+
+.p-xs { padding: $spacing-xs; }
+.p-sm { padding: $spacing-sm; }
+.p-base { padding: $spacing-base; }
+.p-md { padding: $spacing-md; }
+.p-lg { padding: $spacing-lg; }
+.p-xl { padding: $spacing-xl; }
+.p-xxl { padding: $spacing-xxl; }
+.p-0 { padding: 0; }
+
+// Flexbox Utilities
+.flex { display: flex; }
+.flex-row { flex-direction: row; }
+.flex-col { flex-direction: column; }
+.flex-wrap { flex-wrap: wrap; }
+
+.items-start { align-items: flex-start; }
+.items-center { align-items: center; }
+.items-end { align-items: flex-end; }
+.items-stretch { align-items: stretch; }
+
+.justify-start { justify-content: flex-start; }
+.justify-center { justify-content: center; }
+.justify-end { justify-content: flex-end; }
+.justify-between { justify-content: space-between; }
+.justify-around { justify-content: space-around; }
+
+.flex-1 { flex: 1; }
+.flex-auto { flex: auto; }
+.flex-none { flex: none; }
+
+// Card Component Styles
+.card {
+  background-color: $card-bg;
+  border: 1px solid $card-border;
+  border-radius: $radius-md;
+  box-shadow: $card-shadow;
+  padding: $spacing-lg;
+  transition: all $transition-base $easing-ease;
+
+  &:hover {
+    box-shadow: $card-shadow-hover;
+  }
+}
+
+.card--flat {
+  box-shadow: $shadow-none;
+}
+
+.card--borderless {
+  border: none;
+}
+
+// Button Base Styles
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-sm $spacing-lg;
+  font-size: $font-size-base;
+  font-weight: $font-weight-medium;
+  border-radius: $radius-base;
+  border: none;
+  cursor: pointer;
+  transition: all $transition-base $easing-ease;
+  outline: none;
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.btn--primary {
+  background: linear-gradient(135deg, $primary-color-start, $primary-color-end);
+  color: $btn-primary-text;
+
+  &:hover {
+    background: linear-gradient(135deg, $btn-primary-hover, $primary-color);
+  }
+
+  &:active {
+    background: $btn-primary-active;
+  }
+}
+
+.btn--secondary {
+  background-color: $btn-secondary-bg;
+  color: $btn-secondary-text;
+
+  &:hover {
+    background-color: $btn-secondary-hover;
+  }
+}
+
+.btn--success {
+  background-color: $success;
+  color: $white;
+}
+
+.btn--warning {
+  background-color: $warning;
+  color: $white;
+}
+
+.btn--error {
+  background-color: $error;
+  color: $white;
+}
+
+.btn--ghost {
+  background-color: transparent;
+  color: $primary-color;
+  border: 1px solid $primary-color;
+}
+
+.btn--sm {
+  padding: $spacing-xs $spacing-base;
+  font-size: $font-size-sm;
+}
+
+.btn--lg {
+  padding: $spacing-md $spacing-xl;
+  font-size: $font-size-lg;
+}
+
+.btn--disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+// Badge/Tag Styles
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: $spacing-xs $spacing-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  border-radius: $radius-full;
+}
+
+.badge--primary {
+  background-color: $badge-primary-bg;
+  color: $badge-primary-text;
+}
+
+.badge--vip {
+  background: $badge-vip-bg;
+  color: $badge-vip-text;
+}
+
+.badge--success {
+  background-color: $success-light;
+  color: $success;
+}
+
+.badge--warning {
+  background-color: $warning-light;
+  color: $warning;
+}
+
+.badge--error {
+  background-color: $error-light;
+  color: $error;
+}
+
+// Player Status Indicators
+.status-dot {
+  display: inline-block;
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: $radius-full;
+  margin-right: $spacing-xs;
+
+  &--online {
+    background-color: $status-online;
+    box-shadow: 0 0 0 4rpx $success-light;
+  }
+
+  &--busy {
+    background-color: $status-busy;
+    box-shadow: 0 0 0 4rpx $warning-light;
+  }
+
+  &--offline {
+    background-color: $status-offline;
+    box-shadow: 0 0 0 4rpx $gray-200;
+  }
+
+  &--in-game {
+    background-color: $status-in-game;
+    box-shadow: 0 0 0 4rpx $info-light;
+  }
+}
+
+// Input Styles
+.input {
+  width: 100%;
+  padding: $spacing-sm $spacing-base;
+  font-size: $font-size-base;
+  background-color: $input-bg;
+  border: 1px solid $input-border;
+  border-radius: $radius-base;
+  color: $text-primary;
+  transition: border-color $transition-base $easing-ease;
+
+  &::placeholder {
+    color: $input-placeholder;
+  }
+
+  &:focus {
+    border-color: $input-border-focus;
+    outline: none;
+  }
+
+  &--disabled {
+    background-color: $bg-secondary;
+    color: $text-disabled;
+    cursor: not-allowed;
+  }
+}
+
+// Game Category Tags
+.category-tag {
+  padding: $spacing-xs $spacing-base;
+  font-size: $font-size-sm;
+  border-radius: $radius-base;
+  font-weight: $font-weight-medium;
+
+  &--esports {
+    background-color: rgba($category-esports, 0.1);
+    color: $category-esports;
+  }
+
+  &--casual {
+    background-color: rgba($category-casual, 0.1);
+    color: $category-casual;
+  }
+
+  &--social {
+    background-color: rgba($category-social, 0.1);
+    color: $category-social;
+  }
+
+  &--moba {
+    background-color: rgba($category-moba, 0.1);
+    color: $category-moba;
+  }
+
+  &--fps {
+    background-color: rgba($category-fps, 0.1);
+    color: $category-fps;
+  }
+
+  &--rpg {
+    background-color: rgba($category-rpg, 0.1);
+    color: $category-rpg;
+  }
+}
+
+// Price Display
+.price {
+  font-weight: $font-weight-bold;
+  color: $primary-color;
+
+  &::before {
+    content: '¥';
+    font-size: 0.8em;
+    margin-right: 2rpx;
+  }
+}
+
+.price--original {
+  color: $text-tertiary;
+  text-decoration: line-through;
+  font-weight: $font-weight-normal;
+}
+
+// VIP Badge
+.vip-badge {
+  display: inline-flex;
+  align-items: center;
+  background: $badge-vip-bg;
+  color: $badge-vip-text;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  box-shadow: 0 2px 8px rgba($accent-gold, 0.3);
+}
+
+// Animation Classes
+.fade-in {
+  animation: fadeIn $transition-base $easing-ease-in;
+}
+
+.slide-up {
+  animation: slideUp $transition-base $easing-ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+// Safe Area Support (for iPhone X+)
+.safe-area-inset-bottom {
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-area-inset-top {
+  padding-top: constant(safe-area-inset-top);
+  padding-top: env(safe-area-inset-top);
+}
+
+// Loading/Spinner
+.spinner {
+  display: inline-block;
+  width: 40rpx;
+  height: 40rpx;
+  border: 4rpx solid $gray-200;
+  border-top-color: $primary-color;
+  border-radius: $radius-full;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Divider
+.divider {
+  height: 1px;
+  background-color: $gray-200;
+  margin: $spacing-lg 0;
+
+  &--vertical {
+    width: 1px;
+    height: auto;
+    margin: 0 $spacing-base;
+  }
+}
+
+// Avatar
+.avatar {
+  border-radius: $radius-full;
+  overflow: hidden;
+  background-color: $gray-200;
+
+  &--sm {
+    width: 64rpx;
+    height: 64rpx;
+  }
+
+  &--base {
+    width: 80rpx;
+    height: 80rpx;
+  }
+
+  &--lg {
+    width: 120rpx;
+    height: 120rpx;
+  }
+
+  &--xl {
+    width: 160rpx;
+    height: 160rpx;
+  }
+}
+
+// Scrollbar hiding (for web)
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

@@ -8,8 +8,8 @@ export default defineAppConfig({
   ],
   tabBar: {
     custom: true,
-    color: '#000000',
-    selectedColor: '#fa2c19',
+    color: '#6B7280',           // $gray-500 - 未选中文字
+    selectedColor: '#FF4755',   // $primary-color - 活力红
     backgroundColor: '#ffffff',
     list: [
       {

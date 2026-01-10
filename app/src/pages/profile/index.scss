@@ -1,37 +1,161 @@
+@import '../../styles/variables.scss';
+
 .profile-page {
     min-height: 100vh;
-    background-color: #f7f8fa;
-    padding-bottom: 100px;
+    background-color: $bg-secondary;
+    padding-bottom: 200rpx;
+
+    // 用户信息头部
+    .user-header {
+        background: linear-gradient(135deg, $primary-color-start, $primary-color-end);
+        padding: $spacing-xxl $spacing-lg;
+        color: $text-on-primary;
+
+        .avatar-section {
+            display: flex;
+            align-items: center;
+            margin-bottom: $spacing-lg;
+
+            .avatar {
+                width: 120rpx;
+                height: 120rpx;
+                border-radius: $radius-full;
+                border: 4rpx solid rgba($white, 0.3);
+                margin-right: $spacing-lg;
+            }
+
+            .user-info {
+                flex: 1;
+
+                .nickname {
+                    font-size: $font-size-xl;
+                    font-weight: $font-weight-bold;
+                    margin-bottom: $spacing-xs;
+                }
+
+                .user-id {
+                    font-size: $font-size-sm;
+                    opacity: 0.8;
+                }
+            }
+        }
+    }
 
     .wallet-card {
-        margin: 12px;
-        background: #fff;
-        border-radius: 8px;
-        padding: 12px;
+        margin: $spacing-base;
+        background: $card-bg;
+        border-radius: $radius-lg;
+        padding: $spacing-lg;
+        box-shadow: $card-shadow;
 
         .wallet-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 12px;
-            font-size: 14px;
-            color: #333;
-            font-weight: bold;
+            margin-bottom: $spacing-base;
+            font-size: $font-size-base;
+            color: $text-primary;
+            font-weight: $font-weight-bold;
 
             .balance {
-                font-size: 18px;
-                color: #fa2c19;
+                font-size: $font-size-xxl;
+                color: $primary-color;
+                font-weight: $font-weight-black;
+
+                &::before {
+                    content: '¥';
+                    font-size: 0.6em;
+                    margin-right: 4rpx;
+                }
+            }
+        }
+
+        .wallet-actions {
+            display: flex;
+            gap: $spacing-base;
+
+            .action-btn {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                padding: $spacing-base;
+                background-color: $bg-secondary;
+                border-radius: $radius-base;
+                color: $text-secondary;
+                font-size: $font-size-sm;
+
+                &:active {
+                    background-color: $gray-200;
+                }
             }
         }
     }
 
     .menu-list {
-        margin: 12px;
-        border-radius: 8px;
+        margin: $spacing-base;
+        border-radius: $radius-lg;
         overflow: hidden;
+        background: $card-bg;
+        box-shadow: $card-shadow;
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            padding: $spacing-lg;
+            border-bottom: 1px solid $gray-100;
+
+            &:last-child {
+                border-bottom: none;
+            }
+
+            &:active {
+                background-color: $bg-secondary;
+            }
+
+            .menu-icon {
+                width: 48rpx;
+                height: 48rpx;
+                margin-right: $spacing-base;
+                color: $text-secondary;
+            }
+
+            .menu-text {
+                flex: 1;
+                font-size: $font-size-base;
+                color: $text-primary;
+            }
+
+            .menu-arrow {
+                color: $text-tertiary;
+            }
+        }
     }
 
     .logout-btn {
-        margin: 20px 12px;
+        margin: $spacing-xl $spacing-base;
+        background-color: $bg-primary;
+        border: 1px solid $gray-200;
+        border-radius: $radius-lg;
+        color: $error;
+        font-size: $font-size-base;
+        font-weight: $font-weight-medium;
+
+        &:active {
+            background-color: $error-light;
+        }
+    }
+
+    // VIP 徽章
+    .vip-badge {
+        display: inline-flex;
+        align-items: center;
+        background: $badge-vip-bg;
+        color: $badge-vip-text;
+        padding: $spacing-xs $spacing-sm;
+        border-radius: $radius-sm;
+        font-size: $font-size-xs;
+        font-weight: $font-weight-bold;
+        margin-left: $spacing-sm;
     }
 }

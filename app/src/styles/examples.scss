@@ -1,0 +1,743 @@
+// ============================================
+// GameLink Design System - Visual Examples
+// ============================================
+// This file demonstrates practical usage of the design system
+// Copy relevant sections to your component files
+
+// ============================================
+// Example 1: Player Card (陪玩师卡片)
+// ============================================
+
+.player-card {
+  background: $card-bg;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $card-shadow;
+  transition: all $transition-base $easing-ease;
+
+  &:hover {
+    box-shadow: $card-shadow-hover;
+    transform: translateY(-4rpx);
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    margin-bottom: $spacing-base;
+  }
+
+  &__avatar {
+    width: 96rpx;
+    height: 96rpx;
+    border-radius: $radius-full;
+    margin-right: $spacing-base;
+  }
+
+  &__info {
+    flex: 1;
+  }
+
+  &__name {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-bold;
+    color: $text-primary;
+    margin-bottom: $spacing-xs;
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    font-size: $font-size-sm;
+    color: $text-secondary;
+  }
+
+  &__status {
+    display: inline-flex;
+    align-items: center;
+    margin-right: $spacing-sm;
+
+    &-dot {
+      width: 16rpx;
+      height: 16rpx;
+      border-radius: $radius-full;
+      margin-right: $spacing-xs;
+
+      &--online {
+        background-color: $status-online;
+        box-shadow: 0 0 0 4rpx $success-light;
+      }
+
+      &--busy {
+        background-color: $status-busy;
+        box-shadow: 0 0 0 4rpx $warning-light;
+      }
+
+      &--offline {
+        background-color: $status-offline;
+        box-shadow: 0 0 0 4rpx $gray-200;
+      }
+
+      &--in-game {
+        background-color: $status-in-game;
+        box-shadow: 0 0 0 4rpx $info-light;
+      }
+    }
+  }
+
+  &__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $spacing-sm;
+    margin-bottom: $spacing-base;
+  }
+
+  &__tag {
+    padding: $spacing-xs $spacing-base;
+    font-size: $font-size-sm;
+    border-radius: $radius-base;
+    font-weight: $font-weight-medium;
+
+    &--esports {
+      background-color: rgba($category-esports, 0.1);
+      color: $category-esports;
+    }
+
+    &--casual {
+      background-color: rgba($category-casual, 0.1);
+      color: $category-casual;
+    }
+
+    &--social {
+      background-color: rgba($category-social, 0.1);
+      color: $category-social;
+    }
+  }
+
+  &__price {
+    display: flex;
+    align-items: baseline;
+    margin-bottom: $spacing-base;
+
+    &-current {
+      font-size: $font-size-xxl;
+      font-weight: $font-weight-bold;
+      color: $primary-color;
+
+      &::before {
+        content: '¥';
+        font-size: 0.6em;
+        margin-right: 4rpx;
+      }
+    }
+
+    &-original {
+      font-size: $font-size-base;
+      color: $text-tertiary;
+      text-decoration: line-through;
+      margin-left: $spacing-sm;
+
+      &::before {
+        content: '¥';
+        font-size: 0.8em;
+        margin-right: 2rpx;
+      }
+    }
+
+    &-unit {
+      font-size: $font-size-sm;
+      color: $text-secondary;
+      margin-left: $spacing-xs;
+    }
+  }
+
+  &__footer {
+    display: flex;
+    gap: $spacing-base;
+  }
+
+  &__btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: $spacing-sm $spacing-lg;
+    font-size: $font-size-base;
+    font-weight: $font-weight-medium;
+    border-radius: $radius-base;
+    border: none;
+    cursor: pointer;
+    transition: all $transition-base $easing-ease;
+
+    &--primary {
+      background: linear-gradient(135deg, $primary-color-start, $primary-color-end);
+      color: $btn-primary-text;
+
+      &:active {
+        background: $btn-primary-active;
+        transform: scale(0.98);
+      }
+    }
+
+    &--ghost {
+      background: transparent;
+      color: $primary-color;
+      border: 1px solid $primary-color;
+    }
+  }
+}
+
+// ============================================
+// Example 2: Game Category Filter (游戏品类筛选)
+// ============================================
+
+.category-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-base;
+  padding: $spacing-base 0;
+
+  &__item {
+    padding: $spacing-sm $spacing-lg;
+    font-size: $font-size-base;
+    font-weight: $font-weight-medium;
+    border-radius: $radius-full;
+    background-color: $bg-secondary;
+    color: $text-secondary;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all $transition-base $easing-ease;
+
+    &--active {
+      background-color: rgba($primary-color, 0.1);
+      color: $primary-color;
+      border-color: $primary-color;
+    }
+
+    &--esports {
+      &:hover, &--active {
+        background-color: rgba($category-esports, 0.1);
+        color: $category-esports;
+        border-color: $category-esports;
+      }
+    }
+
+    &--casual {
+      &:hover, &--active {
+        background-color: rgba($category-casual, 0.1);
+        color: $category-casual;
+        border-color: $category-casual;
+      }
+    }
+
+    &--social {
+      &:hover, &--active {
+        background-color: rgba($category-social, 0.1);
+        color: $category-social;
+        border-color: $category-social;
+      }
+    }
+  }
+}
+
+// ============================================
+// Example 3: Order Status Timeline (订单状态时间线)
+// ============================================
+
+.order-timeline {
+  padding: $spacing-lg 0;
+
+  &__item {
+    display: flex;
+    position: relative;
+    padding-bottom: $spacing-xl;
+
+    &:not(:last-child)::before {
+      content: '';
+      position: absolute;
+      left: 16rpx;
+      top: 40rpx;
+      bottom: 0;
+      width: 2px;
+      background: linear-gradient(to bottom, $primary-color, $gray-200);
+    }
+
+    &--completed {
+      .order-timeline__dot {
+        background-color: $success;
+        border-color: $success-light;
+      }
+
+      .order-timeline__title {
+        color: $text-primary;
+      }
+    }
+
+    &--current {
+      .order-timeline__dot {
+        background-color: $primary-color;
+        border-color: $primary-lighter;
+        box-shadow: 0 0 0 6rpx $primary-lighter;
+      }
+
+      .order-timeline__title {
+        color: $primary-color;
+        font-weight: $font-weight-bold;
+      }
+    }
+
+    &--pending {
+      .order-timeline__dot {
+        background-color: $gray-300;
+        border-color: $gray-200;
+      }
+
+      .order-timeline__title {
+        color: $text-tertiary;
+      }
+    }
+  }
+
+  &__dot {
+    width: 32rpx;
+    height: 32rpx;
+    border-radius: $radius-full;
+    border: 4rpx solid $gray-200;
+    background-color: $gray-300;
+    margin-right: $spacing-base;
+    flex-shrink: 0;
+    transition: all $transition-base $easing-ease;
+  }
+
+  &__content {
+    flex: 1;
+    padding-top: $spacing-xs;
+  }
+
+  &__title {
+    font-size: $font-size-md;
+    font-weight: $font-weight-medium;
+    margin-bottom: $spacing-xs;
+  }
+
+  &__time {
+    font-size: $font-size-sm;
+    color: $text-tertiary;
+  }
+}
+
+// ============================================
+// Example 4: VIP Badge with Shine Effect (VIP徽章光效)
+// ============================================
+
+.vip-badge-shine {
+  display: inline-flex;
+  align-items: center;
+  background: linear-gradient(135deg, $accent-gold, $accent-gold-light);
+  color: $gray-900;
+  padding: $spacing-xs $spacing-base;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  box-shadow: 0 2px 8px rgba($accent-gold, 0.3);
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      45deg,
+      transparent 30%,
+      rgba(255, 255, 255, 0.3) 50%,
+      transparent 70%
+    );
+    animation: shine 3s infinite;
+  }
+
+  &__text {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+@keyframes shine {
+  0% {
+    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+  }
+  100% {
+    transform: translateX(100%) translateY(100%) rotate(45deg);
+  }
+}
+
+// ============================================
+// Example 5: Loading Skeleton (骨架屏)
+// ============================================
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    $gray-100 25%,
+    $gray-200 50%,
+    $gray-100 75%
+  );
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: $radius-base;
+
+  &--avatar {
+    width: 96rpx;
+    height: 96rpx;
+    border-radius: $radius-full;
+  }
+
+  &--text {
+    height: 28rpx;
+    margin-bottom: $spacing-sm;
+
+    &--short {
+      width: 60%;
+    }
+
+    &--long {
+      width: 90%;
+    }
+  }
+
+  &--card {
+    height: 200rpx;
+    border-radius: $radius-lg;
+  }
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+// ============================================
+// Example 6: Price Comparison (价格对比)
+// ============================================
+
+.price-comparison {
+  display: flex;
+  align-items: baseline;
+  gap: $spacing-base;
+
+  &__current {
+    font-size: $font-size-xxxl;
+    font-weight: $font-weight-black;
+    color: $primary-color;
+    line-height: 1;
+
+    &::before {
+      content: '¥';
+      font-size: 0.5em;
+      margin-right: 4rpx;
+    }
+  }
+
+  &__original {
+    font-size: $font-size-lg;
+    color: $text-tertiary;
+    text-decoration: line-through;
+
+    &::before {
+      content: '¥';
+      font-size: 0.7em;
+      margin-right: 2rpx;
+    }
+  }
+
+  &__discount {
+    display: inline-flex;
+    align-items: center;
+    padding: $spacing-xs $spacing-sm;
+    background-color: $error;
+    color: $white;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-bold;
+    border-radius: $radius-sm;
+  }
+
+  &__vip-tip {
+    display: inline-flex;
+    align-items: center;
+    padding: $spacing-xs $spacing-sm;
+    background: $badge-vip-bg;
+    color: $badge-vip-text;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    border-radius: $radius-sm;
+  }
+}
+
+// ============================================
+// Example 7: Notification Banner (通知横幅)
+// ============================================
+
+.notification-banner {
+  display: flex;
+  align-items: center;
+  padding: $spacing-base $spacing-lg;
+  border-radius: $radius-md;
+  margin-bottom: $spacing-base;
+
+  &--info {
+    background-color: $info-light;
+    border-left: 4px solid $info;
+  }
+
+  &--success {
+    background-color: $success-light;
+    border-left: 4px solid $success;
+  }
+
+  &--warning {
+    background-color: $warning-light;
+    border-left: 4px solid $warning;
+  }
+
+  &--error {
+    background-color: $error-light;
+    border-left: 4px solid $error;
+  }
+
+  &__icon {
+    margin-right: $spacing-base;
+    font-size: $font-size-xl;
+  }
+
+  &__content {
+    flex: 1;
+  }
+
+  &__title {
+    font-size: $font-size-base;
+    font-weight: $font-weight-medium;
+    margin-bottom: $spacing-xs;
+  }
+
+  &__message {
+    font-size: $font-size-sm;
+    color: $text-secondary;
+  }
+
+  &__close {
+    margin-left: $spacing-base;
+    padding: $spacing-xs;
+    color: $text-tertiary;
+    cursor: pointer;
+  }
+}
+
+// ============================================
+// Example 8: Gradient Button with Hover Effect
+// ============================================
+
+.gradient-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-md $spacing-xl;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  border-radius: $radius-full;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(135deg, $primary-color-start, $primary-color-end);
+  color: $white;
+  box-shadow: 0 4px 12px rgba($primary-color, 0.3);
+  transition: all $transition-base $easing-ease;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, $primary-light, $primary-color);
+    opacity: 0;
+    transition: opacity $transition-base $easing-ease;
+  }
+
+  &:hover {
+    box-shadow: 0 6px 20px rgba($primary-color, 0.4);
+    transform: translateY(-2rpx);
+
+    &::before {
+      opacity: 1;
+    }
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba($primary-color, 0.3);
+  }
+
+  &__text {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+// ============================================
+// Example 9: Tab Navigation (标签页导航)
+// ============================================
+
+.tab-navigation {
+  display: flex;
+  background-color: $white;
+  border-bottom: 1px solid $gray-200;
+  position: sticky;
+  top: 0;
+  z-index: $z-sticky;
+
+  &__item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: $spacing-base $spacing-lg;
+    cursor: pointer;
+    position: relative;
+    transition: all $transition-base $easing-ease;
+
+    &--active {
+      color: $primary-color;
+
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 40rpx;
+        height: 4px;
+        background-color: $primary-color;
+        border-radius: $radius-full $radius-full 0 0;
+      }
+    }
+  }
+
+  &__icon {
+    font-size: $font-size-xl;
+    margin-bottom: $spacing-xs;
+  }
+
+  &__label {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+  }
+
+  &__badge {
+    position: absolute;
+    top: $spacing-sm;
+    right: 20%;
+    min-width: 32rpx;
+    height: 32rpx;
+    padding: 0 $spacing-xs;
+    background-color: $error;
+    color: $white;
+    font-size: 20rpx;
+    font-weight: $font-weight-bold;
+    border-radius: $radius-full;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+// ============================================
+// Example 10: Modal Overlay (模态框遮罩)
+// ============================================
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: $bg-overlay;
+  z-index: $z-modal-backdrop;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-lg;
+
+  &__content {
+    background-color: $white;
+    border-radius: $radius-xl;
+    padding: $spacing-xl;
+    width: 100%;
+    max-width: 600rpx;
+    box-shadow: $shadow-xl;
+    animation: modalSlideUp $transition-slow $easing-ease-out;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: $spacing-lg;
+  }
+
+  &__title {
+    font-size: $font-size-xxl;
+    font-weight: $font-weight-bold;
+    color: $text-primary;
+  }
+
+  &__close {
+    padding: $spacing-sm;
+    color: $text-tertiary;
+    cursor: pointer;
+  }
+
+  &__body {
+    margin-bottom: $spacing-xl;
+    color: $text-secondary;
+    line-height: $line-height-relaxed;
+  }
+
+  &__footer {
+    display: flex;
+    gap: $spacing-base;
+  }
+}
+
+@keyframes modalSlideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+// ============================================
+// Usage Example
+// ============================================
+
+// Copy this to your component file:
+
+// .my-player-card {
+//   @extend .player-card;
+//
+//   // Add custom styles if needed
+//   &__custom-field {
+//     // Your custom styles
+//   }
+// }

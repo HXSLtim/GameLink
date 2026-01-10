@@ -1,0 +1,121 @@
+@import '../../styles/variables.scss';
+
+.message-page {
+    min-height: 100vh;
+    background-color: $bg-secondary;
+    padding-bottom: 100rpx;
+
+    // 消息列表
+    .message-list {
+        padding: $spacing-base;
+
+        .message-item {
+            display: flex;
+            align-items: center;
+            background: $card-bg;
+            border-radius: $radius-lg;
+            padding: $spacing-lg;
+            margin-bottom: $spacing-base;
+            box-shadow: $card-shadow;
+
+            &:active {
+                background-color: $bg-secondary;
+            }
+
+            .avatar {
+                width: 96rpx;
+                height: 96rpx;
+                border-radius: $radius-full;
+                margin-right: $spacing-base;
+                background-color: $gray-200;
+            }
+
+            .content {
+                flex: 1;
+                overflow: hidden;
+
+                .header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: $spacing-xs;
+
+                    .name {
+                        font-size: $font-size-base;
+                        font-weight: $font-weight-medium;
+                        color: $text-primary;
+                    }
+
+                    .time {
+                        font-size: $font-size-xs;
+                        color: $text-tertiary;
+                    }
+                }
+
+                .preview {
+                    font-size: $font-size-sm;
+                    color: $text-secondary;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+            }
+
+            .badge {
+                min-width: 36rpx;
+                height: 36rpx;
+                padding: 0 $spacing-xs;
+                background-color: $error;
+                color: $white;
+                font-size: $font-size-xs;
+                font-weight: $font-weight-bold;
+                border-radius: $radius-full;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-left: $spacing-sm;
+            }
+        }
+    }
+
+    // 空状态
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: $spacing-xxl * 2;
+        color: $text-tertiary;
+
+        .empty-icon {
+            font-size: 120rpx;
+            margin-bottom: $spacing-lg;
+            opacity: 0.5;
+        }
+
+        .empty-text {
+            font-size: $font-size-base;
+        }
+    }
+
+    // 系统通知样式
+    .system-notice {
+        background: $info-light;
+        border-left: 4px solid $info;
+        padding: $spacing-base $spacing-lg;
+        margin: $spacing-base;
+        border-radius: $radius-base;
+
+        .notice-title {
+            font-size: $font-size-base;
+            font-weight: $font-weight-medium;
+            color: $text-primary;
+            margin-bottom: $spacing-xs;
+        }
+
+        .notice-content {
+            font-size: $font-size-sm;
+            color: $text-secondary;
+        }
+    }
+}

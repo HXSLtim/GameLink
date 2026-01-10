@@ -5,6 +5,12 @@ import { Home, Message, Order, User } from '@nutui/icons-react-taro'
 import '@nutui/nutui-react-taro/dist/style.css' // Import styles
 import './index.scss'
 
+// 使用设计系统色卡
+const COLORS = {
+    primary: '#FF4755',    // 活力红 - 主品牌色
+    inactive: '#6B7280',   // gray-500 - 未选中
+}
+
 export default class CustomTabBar extends Component {
     state = {
         selected: 0
@@ -39,8 +45,8 @@ export default class CustomTabBar extends Component {
                 fixed
                 value={selected}
                 onSwitch={this.switchTab}
-                activeColor="#fa2c19"
-                inactiveColor="#000000"
+                activeColor={COLORS.primary}
+                inactiveColor={COLORS.inactive}
             >
                 <Tabbar.Item title="首页" icon={<Home width={20} height={20} />} />
                 <Tabbar.Item title="消息" icon={<Message width={20} height={20} />} />

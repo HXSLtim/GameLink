@@ -1,3 +1,21 @@
+@import '../styles/variables.scss';
+
 .nut-tabbar {
     padding-bottom: env(safe-area-inset-bottom);
+    background-color: $white;
+    border-top: 1px solid $gray-200;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+}
+
+// 自定义 TabBar 图标样式
+.nut-tabbar-item {
+    &__icon {
+        transition: transform $transition-base $easing-ease;
+    }
+
+    &--active {
+        .nut-tabbar-item__icon {
+            transform: scale(1.1);
+        }
+    }
 }

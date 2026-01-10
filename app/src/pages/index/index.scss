@@ -1,14 +1,16 @@
+@import '../../styles/variables.scss';
+
 .home-page {
-    height: 100vh;
-    background-color: #f7f8fa;
-    padding-bottom: 50px; // Spacing for TabBar
+    min-height: 100vh;
+    background-color: $bg-secondary;
+    padding-bottom: 100rpx; // Spacing for TabBar
 
     .banner-section {
-        padding: 12px;
-        background: #fff;
+        padding: $spacing-base;
+        background: $bg-primary;
 
         .nut-swiper-inner {
-            border-radius: 12px;
+            border-radius: $radius-md;
             overflow: hidden;
         }
 
@@ -20,20 +22,49 @@
     }
 
     .category-section {
-        background: #fff;
-        margin-bottom: 12px;
-        padding-bottom: 12px;
+        background: $bg-primary;
+        margin-bottom: $spacing-base;
+        padding-bottom: $spacing-base;
     }
 
     .recommend-section {
-        padding: 12px;
+        padding: $spacing-base;
 
         .section-title {
-            font-size: 18px;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 12px;
+            font-size: $font-size-xl;
+            font-weight: $font-weight-bold;
+            color: $text-primary;
+            margin-bottom: $spacing-base;
             display: block;
+        }
+    }
+
+    // 搜索栏样式
+    .search-bar {
+        padding: $spacing-base;
+        background: $bg-primary;
+
+        .search-input {
+            background-color: $bg-secondary;
+            border-radius: $radius-full;
+            padding: $spacing-sm $spacing-lg;
+            color: $text-tertiary;
+            font-size: $font-size-base;
+        }
+    }
+
+    // 热门陪玩师卡片
+    .player-card {
+        background: $card-bg;
+        border-radius: $radius-lg;
+        padding: $spacing-lg;
+        box-shadow: $card-shadow;
+        margin-bottom: $spacing-base;
+        transition: all $transition-base $easing-ease;
+
+        &:active {
+            box-shadow: $card-shadow-hover;
+            transform: translateY(-4rpx);
         }
     }
 }
