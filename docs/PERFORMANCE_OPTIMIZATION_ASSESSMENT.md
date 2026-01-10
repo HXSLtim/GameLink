@@ -118,16 +118,18 @@
 
 **中优先级**
 
-3. **缺少慢查询日志** 🟡
-   - **问题**: 无法监控慢查询
-   - **修复**: 启用 GORM 慢查询日志
+3. ~~**缺少慢查询日志**~~ ✅ **已配置**
+   - **文件**: `pkg/db/postgres.go`
+   - **配置**: `logger.Default.LogMode(logger.Warn)` - 自动记录 >200ms 的慢查询
    ```go
-   db.Logger = logger.Default.LogMode(logger.Warn)
+   gorm.Open(postgres.Open(dsn), &gorm.Config{
+       Logger: logger.Default.LogMode(logger.Warn),
+   })
    ```
 
-4. **缓存使用不足** 🟡
+4. ~~**缓存使用不足**~~ ✅ **部分已修复**
    - **问题**: 只有基础架构，实际使用少
-   - **建议**: 用户信息、服务列表等热点数据加缓存
+   - **已实现**: 服务项目缓存、游戏信息缓存 (service/item/item.go)
 
 #### 📋 优化清单
 
@@ -289,17 +291,15 @@ cache.Get(ctx, "service_items:gifts", &items, 10*time.Minute)
 
 ### 🎯 中优先级 (待实施)
 
-1. **前端**: InfiniteList 虚拟化 (4h)
-2. **后端**: 启用慢查询日志 (0.5h)
-3. **后端**: 配置数据缓存 (VIP等级、抽成规则) (1h)
+1. **前端**: InfiniteList 虚拟化 (4h) - 组件未被使用，优先级降低
+2. **后端**: 配置数据缓存 (VIP等级、抽成规则) (1h)
 
-**总工作量**: ~5.5 小时
+**总工作量**: ~5 小时
 
 ### 📊 低优先级 (持续改进)
 
 1. 事件监听器清理检查 (4h)
 2. 定期索引使用分析 (1h/月)
-3. 定期索引使用分析 (1h/月)
 
 ---
 
