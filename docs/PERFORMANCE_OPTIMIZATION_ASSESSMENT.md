@@ -83,7 +83,7 @@
 | ✅ 完成 | SearchTable 添加 React.memo | SearchTable/index.tsx | 30-40% | ✅ |
 | ✅ 完成 | columns 使用 useMemo | Order/Player/Game/Role | 20-30% | ✅ |
 | ✅ 完成 | Dashboard 图表组件 memo | Dashboard/index.tsx | 10-15% | ✅ |
-| 🟡 中 | InfiniteList 虚拟化 | InfiniteList.tsx | 大数据量 60%+ | 待实施 |
+| 🟡 中 | InfiniteList 虚拟化 | InfiniteList.tsx | 大数据量 60%+ | ⏸️ 暂缓 (未使用) |
 | 🟢 低 | 检查所有事件监听器清理 | 各 hooks | 稳定性 | 待实施 |
 
 ---
@@ -292,9 +292,9 @@ cache.Get(ctx, "service_items:gifts", &items, 10*time.Minute)
 
 ### 🎯 中优先级 (待实施)
 
-1. **前端**: InfiniteList 虚拟化 (4h) - 组件未被使用，优先级降低
+1. **前端**: InfiniteList 虚拟化 - ⏸️ **暂缓** (组件当前未被任何页面使用)
 
-**总工作量**: ~4 小时
+**总工作量**: 0 小时 (无需立即实施)
 
 ### 📊 低优先级 (持续改进)
 
