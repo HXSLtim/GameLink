@@ -182,6 +182,9 @@ func migrateModels(db *gorm.DB) error {
 		// User Block
 		&model.UserBlock{},
 
+		// Favorite
+		&model.Favorite{},
+
 		// Settlement
 		&model.SettlementCompany{},
 		&model.PlayerCompanyAssignment{},
@@ -266,6 +269,8 @@ func cleanTables(t *testing.T, db *gorm.DB) {
 		"player_company_assignments", "settlement_companies",
 		// User Block
 		"user_blocks",
+		// Favorite
+		"favorites",
 		// User Tag
 		"user_tag_relations", "user_tags",
 		// Ranking

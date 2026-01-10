@@ -268,11 +268,13 @@ func CreateAdminUser(t testing.TB, db *gorm.DB, role model.Role) *model.User {
 		Base: model.Base{
 			ExtJSON: "{}",
 		},
-		Phone:  fmt.Sprintf("138%011d", ts%100000000000),
-		Name:   fmt.Sprintf("Test Admin %d", ts),
-		Email:  fmt.Sprintf("admin_%d@test.com", ts),
-		Role:   role,
-		Status: model.UserStatusActive,
+		Phone:         fmt.Sprintf("138%011d", ts%100000000000),
+		Name:          fmt.Sprintf("Test Admin %d", ts),
+		Email:         fmt.Sprintf("admin_%d@test.com", ts),
+		Role:          role,
+		Status:        model.UserStatusActive,
+		WeChatOpenID:  fmt.Sprintf("openid_%d", ts),  // 添加唯一的 OpenID
+		WeChatUnionID: fmt.Sprintf("unionid_%d", ts), // 添加唯一的 UnionID
 	}
 
 	require.NoError(t, db.Create(admin).Error, "Failed to create admin user")
@@ -473,6 +475,11 @@ func BuildURL(base string, pathParams, queryParams map[string]string) string {
 
 // Uint64ToStr converts uint64 to string for path parameters.
 func Uint64ToStr(v uint64) string {
+	return strconv.FormatUint(v, 10)
+}
+
+// UintToString converts uint64 to string (alias for Uint64ToStr).
+func UintToString(v uint64) string {
 	return strconv.FormatUint(v, 10)
 }
 
