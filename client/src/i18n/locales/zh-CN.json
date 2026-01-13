@@ -13,7 +13,21 @@
         "logout": "退出登录",
         "username": "用户名",
         "password": "密码",
-        "submit": "提交"
+        "submit": "提交",
+        "welcome_back": "欢迎回来",
+        "enter_credentials": "请输入账号密码以访问您的账户",
+        "sign_in": "立即登录",
+        "forgot_password": "忘记密码？",
+        "create_account": "注册新账号",
+        "continue_with": "或通过以下方式登录",
+        "slogan": "\"连接职业陪玩，提升竞技水平，体验前所未有的游戏乐趣\"",
+        "anonymous": "匿名访问",
+        "secure": "快速安全",
+        "terms_agreement": "点击继续即表示您同意我们的",
+        "terms": "服务条款",
+        "and": "和",
+        "privacy": "隐私政策",
+        "branding_sub": "连接 · 竞技 · 胜利"
     },
     "nav": {
         "home": "首页",

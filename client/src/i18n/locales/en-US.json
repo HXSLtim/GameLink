@@ -13,7 +13,21 @@
         "logout": "Logout",
         "username": "Username",
         "password": "Password",
-        "submit": "Submit"
+        "submit": "Submit",
+        "welcome_back": "Welcome Back",
+        "enter_credentials": "Enter your credentials to access your account",
+        "sign_in": "Sign In",
+        "forgot_password": "Forgot password?",
+        "create_account": "Create an account",
+        "continue_with": "Or continue with",
+        "slogan": "\"Connect with pro players, elevate your skills, and experience gaming like never before.\"",
+        "anonymous": "Anonymous",
+        "secure": "Fast & Secure",
+        "terms_agreement": "By clicking continue, you agree to our",
+        "terms": "Terms",
+        "and": "and",
+        "privacy": "Privacy Policy",
+        "branding_sub": "Connect, Play, Triumph"
     },
     "nav": {
         "home": "Home",

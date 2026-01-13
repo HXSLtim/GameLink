@@ -13,11 +13,10 @@ const PageShowcase = lazy(() => import("@/components/page-showcase"));
 const PlayerListPage = lazy(() => import("@/pages/player/player-list-page"));
 const ChatListPage = lazy(() => import("@/pages/chat/chat-list-page"));
 const ChatRoomPage = lazy(() => import("@/pages/chat/chat-room-page"));
+const ProfilePage = lazy(() => import("@/pages/profile/profile-page"));
+const OrderListPage = lazy(() => import("@/pages/order/order-list-page"));
 
-// Placeholder Pages (Using simple components for now)
-const Home = () => <div className="p-4"><h1>Home Page</h1></div>;
-const Orders = () => <div className="p-4"><h1>My Orders (Protected)</h1></div>;
-const Profile = () => <div className="p-4"><h1>User Profile (Protected)</h1></div>;
+const HomePage = lazy(() => import("@/pages/home/home-page"));
 
 function App() {
   return (
@@ -33,12 +32,12 @@ function App() {
               {/* Protected Layout Routes */}
               <Route element={<ProtectedRoute />}>
                 <Route element={<DesktopLayout />}>
-                  <Route path="/" element={<Home />} />
+                  <Route path="/" element={<HomePage />} />
                   <Route path="/players" element={<PlayerListPage />} />
-                  <Route path="/orders" element={<Orders />} />
+                  <Route path="/orders" element={<OrderListPage />} />
                   <Route path="/chat" element={<ChatListPage />} />
                   <Route path="/chat/:id" element={<ChatRoomPage />} />
-                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/profile" element={<ProfilePage />} />
                   <Route path="/page-structure" element={<PageShowcase />} />
                 </Route>
               </Route>
