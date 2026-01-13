@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Day Theme (Kook-inspired) */
+    /* Primary Green #00D26A -> 150 100% 41% */
+    --primary: 150 100% 41%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Background #F5F7FA -> 216 20% 97% */
+    --background: 216 20% 97%;
+    /* Foreground/Text #1F2937 -> 215 28% 17% */
+    --foreground: 215 28% 17%;
+
+    /* Card #FFFFFF -> 0 0% 100% */
+    --card: 0 0% 100%;
+    --card-foreground: 215 28% 17%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 28% 17%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    /* Muted/Deep #F9FAFB (Secondary BG) */
+    --muted: 210 20% 98%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 150 100% 41%;
+
+    --radius: 0.5rem;
+
+    /* Custom Layout Colors */
+    --sidebar-background: 0 0% 100%;
+    /* White sidebar in Light mode */
+    --sidebar-foreground: 215 28% 17%;
+    --header-background: 0 0% 100%;
+  }
+
+  .dark {
+    /* Night Theme (Discord-inspired) */
+    /* Primary Blue/Blurple #5865F2 -> 235 86% 65% */
+    --primary: 235 86% 65%;
+    --primary-foreground: 210 40% 98%;
+
+    /* Background Main #313338 -> 223 7% 21% */
+    --background: 223 7% 21%;
+    /* Foreground Text #F2F3F5 -> 210 9% 95% */
+    --foreground: 210 9% 95%;
+
+    /* Card/Surface #2B2D31 -> 220 7% 18% */
+    --card: 220 7% 18%;
+    --card-foreground: 210 9% 95%;
+
+    --popover: 220 7% 18%;
+    --popover-foreground: 210 9% 95%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    /* Muted/Deep #1E1F22 -> 225 6% 13% */
+    --muted: 225 6% 13%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 225 6% 13%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 225 6% 13%;
+    /* Dark borders */
+    --input: 225 6% 13%;
+    --ring: 235 86% 65%;
+
+    /* Custom Layout Colors */
+    --sidebar-background: 220 7% 18.2%;
+    /* #2B2D31 for Sidebar/Nav */
+    --sidebar-foreground: 210 9% 95%;
+    --header-background: 223 7% 21%;
+    /* Same as main bg or slightly different? Discord header is #313338 */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}

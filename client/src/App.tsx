@@ -1,39 +1,57 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider } from '@/context/AuthContext'
-import { ThemeProvider } from '@/context/ThemeContext'
-import DiscordLayout from '@/layouts/DiscordLayout'
-import Home from '@/pages/Home'
-import Login from '@/pages/auth/Login'
-import Register from '@/pages/auth/Register'
-import PlayerList from '@/pages/player/List'
-import PlayerDetail from '@/pages/player/Detail'
-import OrderList from '@/pages/order/List'
-import Profile from '@/pages/user/Profile'
+import { Suspense, lazy } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ThemeProvider } from "@/components/theme-provider";
+import DesktopLayout from "@/layouts/DesktopLayout";
+import { AuthProvider } from "@/components/auth/auth-provider";
+import { ProtectedRoute } from "@/components/auth/protected-route";
+import { Toaster } from "sonner";
+
+// Lazy load pages to split code
+const LoginPage = lazy(() => import("@/pages/auth/login-page"));
+const ForbiddenPage = lazy(() => import("@/pages/error/403-page"));
+const PageShowcase = lazy(() => import("@/components/page-showcase"));
+const PlayerListPage = lazy(() => import("@/pages/player/player-list-page"));
+const ChatListPage = lazy(() => import("@/pages/chat/chat-list-page"));
+const ChatRoomPage = lazy(() => import("@/pages/chat/chat-room-page"));
+
+// Placeholder Pages (Using simple components for now)
+const Home = () => <div className="p-4"><h1>Home Page</h1></div>;
+const Orders = () => <div className="p-4"><h1>My Orders (Protected)</h1></div>;
+const Profile = () => <div className="p-4"><h1>User Profile (Protected)</h1></div>;
 
 function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <Routes>
-          {/* 公开路由 */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+        <BrowserRouter>
+          <Suspense fallback={<div className="flex h-screen items-center justify-center">Loading...</div>}>
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/403" element={<ForbiddenPage />} />
 
-          {/* 主布局路由 */}
-          <Route path="/" element={<DiscordLayout />}>
-            <Route index element={<Home />} />
-            <Route path="players" element={<PlayerList />} />
-            <Route path="players/:id" element={<PlayerDetail />} />
-            <Route path="orders" element={<OrderList />} />
-            <Route path="profile" element={<Profile />} />
-          </Route>
+              {/* Protected Layout Routes */}
+              <Route element={<ProtectedRoute />}>
+                <Route element={<DesktopLayout />}>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/players" element={<PlayerListPage />} />
+                  <Route path="/orders" element={<Orders />} />
+                  <Route path="/chat" element={<ChatListPage />} />
+                  <Route path="/chat/:id" element={<ChatRoomPage />} />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/page-structure" element={<PageShowcase />} />
+                </Route>
+              </Route>
 
-          {/* 404 重定向 */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+              {/* Fallback */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
+          <Toaster />
+        </BrowserRouter>
       </AuthProvider>
     </ThemeProvider>
-  )
+  );
 }
 
-export default App
+export default App;

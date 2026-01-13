@@ -1,0 +1,25 @@
+{
+    "app": {
+        "name": "GameLink",
+        "theme": {
+            "light": "日间模式",
+            "dark": "夜间模式",
+            "system": "跟随系统",
+            "toggle": "切换主题"
+        }
+    },
+    "auth": {
+        "login": "登录",
+        "logout": "退出登录",
+        "username": "用户名",
+        "password": "密码",
+        "submit": "提交"
+    },
+    "nav": {
+        "home": "首页",
+        "players": "陪玩师",
+        "orders": "订单",
+        "chat": "消息",
+        "profile": "我的"
+    }
+}

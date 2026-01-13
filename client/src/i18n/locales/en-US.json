@@ -1,0 +1,25 @@
+{
+    "app": {
+        "name": "GameLink",
+        "theme": {
+            "light": "Light Mode",
+            "dark": "Dark Mode",
+            "system": "System",
+            "toggle": "Toggle Theme"
+        }
+    },
+    "auth": {
+        "login": "Login",
+        "logout": "Logout",
+        "username": "Username",
+        "password": "Password",
+        "submit": "Submit"
+    },
+    "nav": {
+        "home": "Home",
+        "players": "Players",
+        "orders": "Orders",
+        "chat": "Chat",
+        "profile": "Profile"
+    }
+}
