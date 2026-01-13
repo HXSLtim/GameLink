@@ -28,7 +28,7 @@ func NewPlayerHandler(svc *adminservice.AdminService) *PlayerHandler {
 // @Param        page       query  int  false  "页码"
 // @Param        pageSize   query     int       false  "每页数量"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[[]model.Player]
+// @Success      200  {array}   model.Player
 // @Router       /admin/players [get]
 //
 // ListPlayers returns a paginated list of players.
@@ -73,7 +73,7 @@ func (h *PlayerHandler) ListPlayers(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "玩家ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[Player]
+// @Success      200  {object}  Player
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/players/{id} [get]
 //
@@ -98,7 +98,7 @@ func (h *PlayerHandler) GetPlayer(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  CreatePlayerPayload  true  "玩家信息"
-// @Success      201  {object}  model.APIResponse[Player]
+// @Success      201  {object}  Player
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/players [post]
 //
@@ -133,7 +133,7 @@ func (h *PlayerHandler) CreatePlayer(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int                   true  "玩家ID"
 // @Param        request  body  UpdatePlayerPayload   true  "玩家信息"
-// @Success      200  {object}  model.APIResponse[Player]
+// @Success      200  {object}  Player
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/players/{id} [put]
 //
@@ -200,7 +200,7 @@ func (h *PlayerHandler) DeletePlayer(c *gin.Context) {
 // @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
 // @Param        export       query  string false "导出格式" Enums(csv)
 // @Param        fields         query    string       false  "Export fields (comma separated)"// @Param        header_lang  query  string false "列头语言" Enums(en,zh)
-// @Success      200  {object}  model.APIResponse[[]model.OperationLog]
+// @Success      200  {array}   model.OperationLog
 // @Router       /admin/players/{id}/logs [get]
 func (h *PlayerHandler) ListPlayerLogs(c *gin.Context) {
 	handleOperationLogList(c, "player", h.svc.ListOperationLogs)
@@ -214,7 +214,7 @@ func (h *PlayerHandler) ListPlayerLogs(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int  true  "玩家ID"
 // @Param        request  body  UpdateVerificationPayload  true  "审核信息"
-// @Success      200  {object}  model.APIResponse[Player]
+// @Success      200  {object}  Player
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/players/{id}/verification [put]
 func (h *PlayerHandler) UpdatePlayerVerification(c *gin.Context) {
@@ -270,7 +270,7 @@ type UpdateVerificationPayload struct {
 // @Produce      json
 // @Param        id       path  int  true  "玩家ID"
 // @Param        request  body  map[string]uint64  true  "{main_game_id}"
-// @Success      200  {object}  model.APIResponse[Player]
+// @Success      200  {object}  Player
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/players/{id}/games [put]
 func (h *PlayerHandler) UpdatePlayerGames(c *gin.Context) {
@@ -375,7 +375,7 @@ type BatchUpdateStatusPayload struct {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchUpdateStatusPayload  true  "批量更新请求"
-// @Success      200  {object}  model.APIResponse[map[string]int64]
+// @Success      200  {object}  map[string]int64
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/players/batch/status [put]
 func (h *PlayerHandler) BatchUpdatePlayerStatus(c *gin.Context) {
@@ -416,7 +416,7 @@ type BatchDeletePlayersPayload struct {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchDeletePlayersPayload  true  "批量删除请求"
-// @Success      200  {object}  model.APIResponse[map[string]int64]
+// @Success      200  {object}  map[string]int64
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/players/batch/delete [post]
 func (h *PlayerHandler) BatchDeletePlayers(c *gin.Context) {

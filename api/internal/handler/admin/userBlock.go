@@ -36,7 +36,7 @@ func NewUserBlockHandler(svc *userblock.UserBlockService) *UserBlockHandler {
 // @Param        blockedType  query  string  false  "被拉黑人类型" Enums(user,player)
 // @Param        status       query  string  false  "状态" Enums(active,canceled,admin_canceled)
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[[]model.UserBlock]
+// @Success      200  {array}   model.UserBlock
 // @Router       /admin/user-blocks [get]
 func (h *UserBlockHandler) ListUserBlocks(c *gin.Context) {
 	page, pageSize, ok := parsePagination(c)
@@ -96,7 +96,7 @@ func (h *UserBlockHandler) ListUserBlocks(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "拉黑记录ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[model.UserBlock]
+// @Success      200  {object}  model.UserBlock
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/user-blocks/{id} [get]
 func (h *UserBlockHandler) GetUserBlock(c *gin.Context) {
@@ -120,7 +120,7 @@ func (h *UserBlockHandler) GetUserBlock(c *gin.Context) {
 // @Param        userId1  query  int  true  "用户1 ID"
 // @Param        userId2  query  int  true  "用户2 ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[map[string]bool]
+// @Success      200  {object}  map[string]bool
 // @Router       /admin/user-blocks/check [get]
 func (h *UserBlockHandler) CheckBlockStatus(c *gin.Context) {
 	userID1Ptr, ok := QueryUint64PtrAndRespond(c, "userId1", apierr.ErrInvalidUserID)
@@ -177,7 +177,7 @@ func (h *UserBlockHandler) CheckBlockStatus(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "用户ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[[]model.UserBlock]
+// @Success      200  {array}   model.UserBlock
 // @Router       /admin/users/{id}/blocks [get]
 func (h *UserBlockHandler) GetUserBlocksByUser(c *gin.Context) {
 	userID, ok := ParseIDAndRespond(c, "id")
@@ -199,7 +199,7 @@ func (h *UserBlockHandler) GetUserBlocksByUser(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "用户ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[[]model.UserBlock]
+// @Success      200  {array}   model.UserBlock
 // @Router       /admin/users/{id}/blocked-by [get]
 func (h *UserBlockHandler) GetUserBlockedByList(c *gin.Context) {
 	userID, ok := ParseIDAndRespond(c, "id")
@@ -220,7 +220,7 @@ func (h *UserBlockHandler) GetUserBlockedByList(c *gin.Context) {
 // @Tags         Admin/UserBlock
 // @Security     BearerAuth
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[map[string]int64]
+// @Success      200  {object}  map[string]int64
 // @Router       /admin/user-blocks/stats [get]
 func (h *UserBlockHandler) GetUserBlockStats(c *gin.Context) {
 	stats, err := h.svc.GetStats(c.Request.Context())
@@ -293,7 +293,7 @@ type BatchUnblockRequest struct {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchUnblockRequest  true  "批量取消请求"
-// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+// @Success      200  {object}  BatchOperationResponse
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/user-blocks/batch/unblock [post]
 func (h *UserBlockHandler) BatchUnblock(c *gin.Context) {
@@ -362,7 +362,7 @@ type BatchDeleteRequest struct {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchDeleteRequest  true  "批量删除请求"
-// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+// @Success      200  {object}  BatchOperationResponse
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/user-blocks/batch/delete [post]
 func (h *UserBlockHandler) BatchDelete(c *gin.Context) {
@@ -413,7 +413,7 @@ type blockInputItem struct {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  batchBlockRequest  true  "批量拉黑请求"
-// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+// @Success      200  {object}  BatchOperationResponse
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/user-blocks/batch [post]
 func (h *UserBlockHandler) BatchBlock(c *gin.Context) {

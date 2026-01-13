@@ -8,8 +8,15 @@ import (
 	"log/slog"
 
 	"gamelink/internal/handler/resp"
+	_ "gamelink/internal/model" // Imported for Swagger annotations
 	"gamelink/pkg/apierr"
 )
+
+// PasswordResetSuccessResponse swagger response type
+type PasswordResetSuccessResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+}
 
 var (
 	// ErrInvalidToken is returned when the password reset token is invalid or expired
@@ -54,7 +61,7 @@ type ResetPasswordRequest struct {
 // @Accept json
 // @Produce json
 // @Param request body RequestPasswordResetRequest true "Email address"
-// @Success 200 {object} handler.APIResponse "If the email is registered, a reset link will be sent"
+// @Success 200 {object} PasswordResetSuccessResponse "If the email is registered, a reset link will be sent"
 // @Router /api/v1/auth/password-reset/request [post]
 func (h *PasswordResetHandler) RequestPasswordReset(c *gin.Context) {
 	var req RequestPasswordResetRequest
@@ -84,8 +91,8 @@ func (h *PasswordResetHandler) RequestPasswordReset(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param request body ResetPasswordRequest true "Reset token and new password"
-// @Success 200 {object} handler.APIResponse "Password reset successful"
-// @Failure 400 {object} handler.APIResponse "Invalid or expired token"
+// @Success 200 {object} PasswordResetSuccessResponse "Password reset successful"
+// @Failure 400 {object} apierr.APIError "Invalid or expired token"
 // @Router /api/v1/auth/password-reset/confirm [post]
 func (h *PasswordResetHandler) ResetPassword(c *gin.Context) {
 	var req ResetPasswordRequest

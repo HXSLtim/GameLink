@@ -33,7 +33,7 @@ type BlockRequest struct {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BlockRequest  true  "拉黑信息"
-// @Success      201  {object}  model.APIResponse[model.UserBlock]
+// @Success      201  {object}  model.UserBlock
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /user/blocks [post]
 func (h *BlockHandler) Block(c *gin.Context) {
@@ -100,7 +100,7 @@ func (h *BlockHandler) Unblock(c *gin.Context) {
 // @Tags         User/Block
 // @Security     BearerAuth
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[[]model.UserBlock]
+// @Success      200  {array}   model.UserBlock
 // @Router       /user/blocks [get]
 func (h *BlockHandler) ListMyBlocks(c *gin.Context) {
 	userID, ok := resp.GetUserIDOrFail(c)
@@ -122,7 +122,7 @@ func (h *BlockHandler) ListMyBlocks(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        targetId   query  int  true  "目标用户ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[map[string]bool]
+// @Success      200  {object}  map[string]bool
 // @Router       /user/blocks/check [get]
 func (h *BlockHandler) CheckBlocked(c *gin.Context) {
 	targetID, ok := resp.ParseQueryIDOrFail(c, "targetId")

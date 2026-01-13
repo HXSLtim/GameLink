@@ -28,8 +28,8 @@ func NewRoleHandler(roleSvc *authService.RoleService) *RoleHandler {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} resp.Response{data=authService.AvailableRolesResponse}
-// @Failure 401 {object} resp.Response
+// @Success 200 {object} authService.AvailableRolesResponse
+// @Failure 401 {object}  apierr.APIError
 // @Router /user/roles [get]
 func (h *RoleHandler) GetAvailableRoles(c *gin.Context) {
 	userID, currentRole, err := extractUserContext(c)
@@ -55,10 +55,10 @@ func (h *RoleHandler) GetAvailableRoles(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param request body authService.RoleSwitchRequest true "切换请求"
-// @Success 200 {object} resp.Response{data=authService.RoleSwitchResponse}
-// @Failure 400 {object} resp.Response
-// @Failure 401 {object} resp.Response
-// @Failure 403 {object} resp.Response
+// @Success 200 {object} authService.RoleSwitchResponse
+// @Failure 400 {object}  apierr.APIError
+// @Failure 401 {object}  apierr.APIError
+// @Failure 403 {object}  apierr.APIError
 // @Router /user/switch-role [post]
 func (h *RoleHandler) SwitchRole(c *gin.Context) {
 	userID, _, err := extractUserContext(c)

@@ -191,7 +191,7 @@ type sendMessageRequest struct {
 // @Param        Authorization  header    string               true  "Bearer {token}"
 // @Param        id             path      int                  true  "Group ID"
 // @Param        request        body      sendMessageRequest   true  "Message content"
-// @Success      201            {object}  model.APIResponse[ChatMessage]
+// @Success      201            {object}  ChatMessage
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      403            {object}  model.ErrorResponse

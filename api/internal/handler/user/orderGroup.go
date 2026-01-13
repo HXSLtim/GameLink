@@ -44,7 +44,7 @@ func (h *OrderGroupHandler) RegisterRoutes(router gin.IRouter) {
 // @Param        status    query   string  false  "状态筛选"
 // @Param        page      query   int     false  "页码"
 // @Param        pageSize  query   int     false  "每页数量"
-// @Success      200  {object}  model.APIResponse[OrderGroupListResponse]
+// @Success      200  {object}  OrderGroupListResponse
 // @Router       /user/order-groups [get]
 func (h *OrderGroupHandler) listMyOrderGroups(c *gin.Context) {
 	userID := getUserIDFromContext(c)
@@ -81,7 +81,7 @@ func (h *OrderGroupHandler) listMyOrderGroups(c *gin.Context) {
 // @Security     BearerAuth
 // @Produce      json
 // @Param        id  path  int  true  "主订单ID"
-// @Success      200  {object}  model.APIResponse[model.OrderGroup]
+// @Success      200  {object}  OrderGroupDTO
 // @Router       /user/order-groups/{id} [get]
 func (h *OrderGroupHandler) getOrderGroup(c *gin.Context) {
 	userID := getUserIDFromContext(c)
@@ -118,7 +118,7 @@ func (h *OrderGroupHandler) getOrderGroup(c *gin.Context) {
 // @Security     BearerAuth
 // @Produce      json
 // @Param        id  path  int  true  "主订单ID"
-// @Success      200  {object}  model.APIResponse[[]model.Order]
+// @Success      200  {array}   OrderGroupDTO
 // @Router       /user/order-groups/{id}/sub-orders [get]
 func (h *OrderGroupHandler) getSubOrders(c *gin.Context) {
 	userID := getUserIDFromContext(c)
@@ -156,7 +156,7 @@ func (h *OrderGroupHandler) getSubOrders(c *gin.Context) {
 // @Produce      json
 // @Param        subOrderId  path  int  true  "子订单ID"
 // @Param        request     body  order.TransferSubOrderRequest  true  "转单请求"
-// @Success      200  {object}  model.APIResponse[order.TransferSubOrderResponse]
+// @Success      200  {object}  order.TransferSubOrderResponse
 // @Router       /user/order-groups/{subOrderId}/transfer [post]
 func (h *OrderGroupHandler) transferSubOrder(c *gin.Context) {
 	userID := getUserIDFromContext(c)
@@ -195,7 +195,7 @@ func (h *OrderGroupHandler) transferSubOrder(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  order.BatchTransferRequest  true  "批量转单请求"
-// @Success      200  {object}  model.APIResponse[order.BatchTransferResponse]
+// @Success      200  {object}  order.BatchTransferResponse
 // @Router       /user/order-groups/batch-transfer [post]
 func (h *OrderGroupHandler) batchTransferSubOrders(c *gin.Context) {
 	userID := getUserIDFromContext(c)

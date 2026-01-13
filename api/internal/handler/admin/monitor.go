@@ -33,7 +33,7 @@ func NewMonitorHandler(realtimeSvc *monitorservice.RealtimeService, alertRepo mo
 // @Tags         Admin/Monitor
 // @Security     BearerAuth
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[ws.SystemStatus]
+// @Success      200  {object}  ws.SystemStatus
 // @Router       /admin/monitor/system-status [get]
 func (h *MonitorHandler) GetSystemStatus(c *gin.Context) {
 	status := h.realtimeSvc.GetSystemStatus()
@@ -51,7 +51,7 @@ func (h *MonitorHandler) GetSystemStatus(c *gin.Context) {
 // @Tags         Admin/Monitor
 // @Security     BearerAuth
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[ws.OnlineUsers]
+// @Success      200  {object}  ws.OnlineUsers
 // @Router       /admin/monitor/online-users [get]
 func (h *MonitorHandler) GetOnlineUsers(c *gin.Context) {
 	users := h.realtimeSvc.GetOnlineUsers()
@@ -69,7 +69,7 @@ func (h *MonitorHandler) GetOnlineUsers(c *gin.Context) {
 // @Tags         Admin/Monitor
 // @Security     BearerAuth
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[ws.OrderQueue]
+// @Success      200  {object}  ws.OrderQueue
 // @Router       /admin/monitor/order-queue [get]
 func (h *MonitorHandler) GetOrderQueue(c *gin.Context) {
 	queue := h.realtimeSvc.GetOrderQueue(c.Request.Context())
@@ -105,7 +105,7 @@ type AlertQueryParams struct {
 // @Param        date_from  query  string  false  "开始日期"
 // @Param        date_to    query  string  false  "结束日期"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[[]model.Alert]
+// @Success      200  {array}   model.Alert
 // @Router       /admin/monitor/alerts [get]
 func (h *MonitorHandler) GetAlerts(c *gin.Context) {
 	var params AlertQueryParams

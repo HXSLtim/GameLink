@@ -53,7 +53,7 @@ type ServiceItemListResponse struct {
 // @Param page query int false "页码" default(1)
 // @Param pageSize query int false "每页数量" default(50)
 // @Param gameId query int false "游戏ID筛选"
-// @Success 200 {object} resp.Response{data=ServiceItemListResponse}
+// @Success 200 {object} ServiceItemListResponse
 // @Router /public/service-items [get]
 func (h *ServiceItemHandler) ListServiceItems(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
@@ -121,8 +121,8 @@ func (h *ServiceItemHandler) ListServiceItems(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path int true "服务项目ID"
-// @Success 200 {object} resp.Response{data=PublicServiceItemInfo}
-// @Failure 404 {object} resp.Response
+// @Success 200 {object} PublicServiceItemInfo
+// @Failure 404 {object}  apierr.APIError
 // @Router /public/service-items/{id} [get]
 func (h *ServiceItemHandler) GetServiceItem(c *gin.Context) {
 	idStr := c.Param("id")

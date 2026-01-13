@@ -33,7 +33,7 @@ func RegisterOrderGroupRoutes(router gin.IRouter, orderSvc *order.OrderService, 
 // @Param        status    query   string  false  "状态筛选"
 // @Param        page      query   int     false  "页码"
 // @Param        pageSize  query   int     false  "每页数量"
-// @Success      200  {object}  model.APIResponse[OrderGroupListResponse]
+// @Success      200  {object}  OrderGroupListResponse
 // @Router       /admin/order-groups [get]
 func listOrderGroupsHandler(repo ordergroup.Repository) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -74,7 +74,7 @@ func listOrderGroupsHandler(repo ordergroup.Repository) gin.HandlerFunc {
 // @Security     BearerAuth
 // @Produce      json
 // @Param        id  path  int  true  "主订单ID"
-// @Success      200  {object}  model.APIResponse[model.OrderGroup]
+// @Success      200  {object}  model.OrderGroup
 // @Router       /admin/order-groups/{id} [get]
 func getOrderGroupHandler(repo ordergroup.Repository) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -101,7 +101,7 @@ func getOrderGroupHandler(repo ordergroup.Repository) gin.HandlerFunc {
 // @Security     BearerAuth
 // @Produce      json
 // @Param        id  path  int  true  "主订单ID"
-// @Success      200  {object}  model.APIResponse[[]model.Order]
+// @Success      200  {array}   model.Order
 // @Router       /admin/order-groups/{id}/sub-orders [get]
 func getOrderGroupSubOrdersHandler(repo ordergroup.Repository) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -130,7 +130,7 @@ func getOrderGroupSubOrdersHandler(repo ordergroup.Repository) gin.HandlerFunc {
 // @Produce      json
 // @Param        subOrderId  path  int  true  "子订单ID"
 // @Param        request     body  order.TransferSubOrderRequest  true  "转单请求"
-// @Success      200  {object}  model.APIResponse[order.TransferSubOrderResponse]
+// @Success      200  {object}  order.TransferSubOrderResponse
 // @Router       /admin/order-groups/{subOrderId}/transfer [post]
 func transferSubOrderHandler(svc *order.OrderService) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -167,7 +167,7 @@ func transferSubOrderHandler(svc *order.OrderService) gin.HandlerFunc {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  order.BatchTransferRequest  true  "批量转单请求"
-// @Success      200  {object}  model.APIResponse[order.BatchTransferResponse]
+// @Success      200  {object}  order.BatchTransferResponse
 // @Router       /admin/order-groups/batch-transfer [post]
 func batchTransferHandler(svc *order.OrderService) gin.HandlerFunc {
 	return func(c *gin.Context) {

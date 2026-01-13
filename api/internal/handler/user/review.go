@@ -32,7 +32,7 @@ func RegisterReviewRoutes(router gin.IRouter, svc *orderservice.ReviewService, a
 // @Produce      json
 // @Param        Authorization  header    string                        true  "Bearer {token}"
 // @Param        request        body      orderservice.CreateReviewRequest    true  "创建评价请求"
-// @Success      200            {object}  model.APIResponse[CreateReviewResponse]
+// @Success      200            {object}  CreateReviewResponse
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /user/reviews [post]
@@ -78,7 +78,7 @@ func createReviewHandler(c *gin.Context, svc *orderservice.ReviewService) {
 // @Param        Authorization  header    string  true   "Bearer {token}"
 // @Param        page           query     int     false  "页码"
 // @Param        pageSize       query     int     false  "每页数量"
-// @Success      200            {object}  model.APIResponse[MyReviewListResponse]
+// @Success      200            {object}  MyReviewListResponse
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /user/reviews/my [get]

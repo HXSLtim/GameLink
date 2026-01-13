@@ -47,7 +47,7 @@ func RegisterProfileRoutes(router gin.IRouter, svc *serviceplayer.PlayerService,
 // @Accept       json
 // @Produce      json
 // @Param        request  body  ApplyPlayerRequest  true  "申请信息"
-// @Success      200      {object}  model.APIResponse[ApplyPlayerResponseSwagger]
+// @Success      200      {object}  ApplyPlayerResponseSwagger
 // @Failure      400      {object}  apierr.APIError
 // @Failure      401      {object}  apierr.APIError
 // @Failure      409      {object}  apierr.APIError
@@ -82,7 +82,7 @@ func applyAsPlayerHandler(c *gin.Context, svc *serviceplayer.PlayerService) {
 // @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[PlayerDetailResponse]
+// @Success      200  {object}  PlayerDetailResponse
 // @Failure      400  {object}  apierr.APIError
 // @Failure      401  {object}  apierr.APIError
 // @Failure      404  {object}  apierr.APIError

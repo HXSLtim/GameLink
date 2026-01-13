@@ -67,7 +67,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Param        page       query  int  false  "页码"
 		// @Param        pageSize   query     int       false  "每页数量"
 		// @Produce      json
-		// @Success      200  {object}  model.APIResponse[[]model.Game]
+		// @Success      200  {array}   model.Game
 		// @Router       /admin/games [get]
 		group.GET("/games", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/games"), gameHandler.ListGames)
 		// @Summary      创建游戏
@@ -76,7 +76,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Accept       json
 		// @Produce      json
 		// @Param        request  body  GamePayload  true  "游戏信息"
-		// @Success      201  {object}  model.APIResponse[model.Game]
+		// @Success      201  {object}  model.Game
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/games [post]
 		group.POST("/games", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/games"), gameHandler.CreateGame)
@@ -85,7 +85,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Security     BearerAuth
 		// @Param        id   path  int  true  "游戏ID"
 		// @Produce      json
-		// @Success      200  {object}  model.APIResponse[model.Game]
+		// @Success      200  {object}  model.Game
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/games/{id} [get]
 		group.GET("/games/:id", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/games/:id"), gameHandler.GetGame)
@@ -96,7 +96,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Produce      json
 		// @Param        id       path  int         true  "游戏ID"
 		// @Param        request  body  GamePayload true  "游戏信息"
-		// @Success      200  {object}  model.APIResponse[model.Game]
+		// @Success      200  {object}  model.Game
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/games/{id} [put]
 		group.PUT("/games/:id", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/games/:id"), gameHandler.UpdateGame)
@@ -115,7 +115,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Accept       json
 		// @Produce      json
 		// @Param        request  body  BatchDeleteGamesRequest  true  "游戏ID列表"
-		// @Success      200  {object}  model.APIResponse[map[string]int64]
+		// @Success      200  {object}  map[string]int64
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/games/batch/delete [post]
 		group.POST("/games/batch/delete", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/games/batch/delete"), gameHandler.BatchDeleteGames)
@@ -125,7 +125,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Accept       json
 		// @Produce      json
 		// @Param        request  body  BatchUpdateGameStatusRequest  true  "游戏ID列表和状态"
-		// @Success      200  {object}  model.APIResponse[adminservice.BatchOperationResponse]
+		// @Success      200  {object}  BatchOperationResponse
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/games/batch/status [post]
 		group.POST("/games/batch/status", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/games/batch/status"), gameHandler.BatchUpdateGamesStatus)
@@ -135,7 +135,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Accept       json
 		// @Produce      json
 		// @Param        request  body  BatchUpdateGameCategoryRequest  true  "游戏ID列表和分类"
-		// @Success      200  {object}  model.APIResponse[adminservice.BatchOperationResponse]
+		// @Success      200  {object}  BatchOperationResponse
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/games/batch/category [post]
 		group.POST("/games/batch/category", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/games/batch/category"), gameHandler.BatchUpdateGamesCategory)
@@ -153,7 +153,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Param        export       query  string false "导出格式" Enums(csv)
 		// @Param        fields         query    string       false  "Export fields (comma separated)"
 		// @Param        header_lang  query  string false "列头语言" Enums(en,zh)
-		// @Success      200  {object}  model.APIResponse[[]model.OperationLog]
+		// @Success      200  {array}   model.OperationLog
 		// @Router       /admin/games/{id}/logs [get]
 		group.GET("/games/:id/logs", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/games/:id/logs"), gameHandler.ListGameLogs)
 
@@ -168,14 +168,14 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
 		// @Param        keyword        query    string       false  "Parameter: keyword"
 		// @Produce      json
-		// @Success      200  {object}  model.APIResponse[[]model.User]
+		// @Success      200  {array}   model.User
 		// @Router       /admin/users [get]
 		group.GET("/users", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users"), userHandler.ListUsers)
 		// @Summary      获取用户统计数据
 		// @Tags         Admin/Users
 		// @Security     BearerAuth
 		// @Produce      json
-		// @Success      200  {object}  model.APIResponse[adminservice.UserStatsResponse]
+		// @Success      200  {object}  adminservice.UserStatsResponse
 		// @Router       /admin/users/stats [get]
 		group.GET("/users/stats", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/stats"), userHandler.GetUserStats)
 		// @Summary      创建用户
@@ -184,7 +184,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Accept       json
 		// @Produce      json
 		// @Param        request  body  CreateUserPayload  true  "用户信息"
-		// @Success      201  {object}  model.APIResponse[model.User]
+		// @Success      201  {object}  model.User
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/users [post]
 		group.POST("/users", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/users"), userHandler.CreateUser)
@@ -213,7 +213,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Security     BearerAuth
 		// @Param        id   path      int  true  "用户ID"
 		// @Produce      json
-		// @Success      200  {object}  model.APIResponse[model.User]
+		// @Success      200  {object}  model.User
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/users/{id} [get]
 		group.GET("/users/:id", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/:id"), userHandler.GetUser)
@@ -224,7 +224,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Produce      json
 		// @Param        id       path  int                  true  "用户ID"
 		// @Param        request  body  UpdateUserPayload    true  "用户信息"
-		// @Success      200  {object}  model.APIResponse[model.User]
+		// @Success      200  {object}  model.User
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/users/{id} [put]
 		group.PUT("/users/:id", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/users/:id"), userHandler.UpdateUser)
@@ -243,7 +243,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Produce      json
 		// @Param        id       path  int  true  "用户ID"
 		// @Param        request  body  map[string]string  true  "{status}"
-		// @Success      200  {object}  model.APIResponse[model.User]
+		// @Success      200  {object}  model.User
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/users/{id}/status [put]
 		group.PUT("/users/:id/status", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/users/:id/status"), userHandler.UpdateUserStatus)
@@ -254,7 +254,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Produce      json
 		// @Param        id       path  int  true  "用户ID"
 		// @Param        request  body  map[string]string  true  "{role}"
-		// @Success      200  {object}  model.APIResponse[model.User]
+		// @Success      200  {object}  model.User
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/users/{id}/role [put]
 		group.PUT("/users/:id/role", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/users/:id/role"), userHandler.UpdateUserRole)
@@ -267,7 +267,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Param        status         query    []string     false  "Status filter"
 		// @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"
 		// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
-		// @Success      200  {object}  model.APIResponse[[]model.Order]
+		// @Success      200  {array}   model.Order
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/users/{id}/orders [get]
 		group.GET("/users/:id/orders", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/:id/orders"), userHandler.ListUserOrders)
@@ -285,7 +285,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Param        export       query  string false "导出格式" Enums(csv)
 		// @Param        fields         query    string       false  "Export fields (comma separated)"
 		// @Param        header_lang  query  string false "列头语言" Enums(en,zh)
-		// @Success      200  {object}  model.APIResponse[[]model.OperationLog]
+		// @Success      200  {array}   model.OperationLog
 		// @Router       /admin/users/{id}/logs [get]
 		group.GET("/users/:id/logs", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/:id/logs"), userHandler.ListUserLogs)
 		// @Summary      获取用户登录历史
@@ -295,7 +295,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Param        id          path   int      true   "用户ID"
 		// @Param        page        query  int      false  "页码"
 		// @Param        page_size   query  int      false  "每页数量"
-		// @Success      200  {object}  model.APIResponse[[]model.UserLoginHistory]
+		// @Success      200  {array}   model.UserLoginHistory
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/users/{id}/login-history [get]
 		group.GET("/users/:id/login-history", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/:id/login-history"), userHandler.ListUserLoginHistory)
@@ -306,7 +306,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Tags         Admin/UserBehavior
 		// @Security     BearerAuth
 		// @Produce      json
-		// @Success      200  {object}  model.APIResponse[adminservice.UserBehaviorStatsResponse]
+		// @Success      200  {object}  adminservice.UserBehaviorStatsResponse
 		// @Router       /admin/users/behavior/stats [get]
 		group.GET("/users/behavior/stats", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/behavior/stats"), userBehaviorHandler.GetBehaviorStats)
 		// @Summary      获取用户活动趋势
@@ -323,7 +323,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Tags         Admin/UserBehavior
 		// @Security     BearerAuth
 		// @Produce      json
-		// @Success      200  {object}  model.APIResponse[adminservice.UserDistributionResponse]
+		// @Success      200  {object}  adminservice.UserDistributionResponse
 		// @Router       /admin/users/behavior/distribution [get]
 		group.GET("/users/behavior/distribution", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/users/behavior/distribution"), userBehaviorHandler.GetUserDistribution)
 
@@ -333,7 +333,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Param        page       query  int  false  "页码"
 		// @Param        pageSize   query     int       false  "每页数量"
 		// @Produce      json
-		// @Success      200  {object}  model.APIResponse[[]model.Player]
+		// @Success      200  {array}   model.Player
 		// @Router       /admin/players [get]
 		group.GET("/players", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/players"), playerHandler.ListPlayers)
 		// @Summary      新建玩家资料
@@ -342,7 +342,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Accept       json
 		// @Produce      json
 		// @Param        request  body  CreatePlayerPayload  true  "玩家信息"
-		// @Success      201  {object}  model.APIResponse[model.Player]
+		// @Success      201  {object}  model.Player
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/players [post]
 		group.POST("/players", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/players"), playerHandler.CreatePlayer)
@@ -351,7 +351,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Security     BearerAuth
 		// @Param        id   path  int  true  "玩家ID"
 		// @Produce      json
-		// @Success      200  {object}  model.APIResponse[model.Player]
+		// @Success      200  {object}  model.Player
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/players/{id} [get]
 		group.GET("/players/:id", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/players/:id"), playerHandler.GetPlayer)
@@ -362,7 +362,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Produce      json
 		// @Param        id       path  int                   true  "玩家ID"
 		// @Param        request  body  UpdatePlayerPayload   true  "玩家信息"
-		// @Success      200  {object}  model.APIResponse[model.Player]
+		// @Success      200  {object}  model.Player
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/players/{id} [put]
 		group.PUT("/players/:id", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/players/:id"), playerHandler.UpdatePlayer)
@@ -381,7 +381,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Produce      json
 		// @Param        id       path  int  true  "玩家ID"
 		// @Param        request  body  map[string]string  true  "{verification_status}"
-		// @Success      200  {object}  model.APIResponse[model.Player]
+		// @Success      200  {object}  model.Player
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/players/{id}/verification [put]
 		group.PUT("/players/:id/verification", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/players/:id/verification"), playerHandler.UpdatePlayerVerification)
@@ -391,7 +391,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Produce      json
 		// @Param        id       path  int  true  "玩家ID"
 		// @Param        request  body  map[string]uint64  true  "{main_game_id}"
-		// @Success      200  {object}  model.APIResponse[model.Player]
+		// @Success      200  {object}  model.Player
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/players/{id}/games [put]
 		group.PUT("/players/:id/games", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/players/:id/games"), playerHandler.UpdatePlayerGames)
@@ -419,7 +419,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Param        export       query  string false "导出格式" Enums(csv)
 		// @Param        fields         query    string       false  "Export fields (comma separated)"
 		// @Param        header_lang  query  string false "列头语言" Enums(en,zh)
-		// @Success      200  {object}  model.APIResponse[[]model.OperationLog]
+		// @Success      200  {array}   model.OperationLog
 		// @Router       /admin/players/{id}/logs [get]
 		group.GET("/players/:id/logs", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/players/:id/logs"), playerHandler.ListPlayerLogs)
 		// @Summary      批量更新陪玩师状态
@@ -428,7 +428,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Accept       json
 		// @Produce      json
 		// @Param        request  body  BatchUpdateStatusPayload  true  "批量更新请求"
-		// @Success      200  {object}  model.APIResponse[map[string]int64]
+		// @Success      200  {object}  map[string]int64
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/players/batch/status [put]
 		group.PUT("/players/batch/status", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/players/batch/status"), playerHandler.BatchUpdatePlayerStatus)
@@ -438,7 +438,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Accept       json
 		// @Produce      json
 		// @Param        request  body  BatchDeletePlayersPayload  true  "批量删除请求"
-		// @Success      200  {object}  model.APIResponse[map[string]int64]
+		// @Success      200  {object}  map[string]int64
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/players/batch/delete [post]
 		group.POST("/players/batch/delete", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/players/batch/delete"), playerHandler.BatchDeletePlayers)
@@ -449,7 +449,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Accept       json
 		// @Produce      json
 		// @Param        request  body  BatchUpdateVerificationStatusRequest  true  "批量更新认证状态请求"
-		// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+		// @Success      200  {object}  BatchOperationResponse
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/players/batch/verification [post]
 		// Batch player verification update - to be implemented in PlayerHandler
@@ -461,7 +461,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Accept       json
 		// @Produce      json
 		// @Param        request  body  BatchRevokeCertificationRequest  true  "批量撤销认证请求"
-		// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+		// @Success      200  {object}  BatchOperationResponse
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/players/batch/revoke-certification [post]
 		// Batch player certification revocation - to be implemented in PlayerHandler
@@ -479,7 +479,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"
 		// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
 		// @Produce      json
-		// @Success      200  {object}  model.APIResponse[[]model.Order]
+		// @Success      200  {array}   model.Order
 		// @Router       /admin/orders [get]
 		group.GET("/orders", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/orders"), orderHandler.ListOrders)
 		// @Summary      创建订单
@@ -488,7 +488,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Accept       json
 		// @Produce      json
 		// @Param        request  body  CreateOrderPayload  true  "订单信息"
-		// @Success      201  {object}  model.APIResponse[model.Order]
+		// @Success      201  {object}  model.Order
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/orders [post]
 		group.POST("/orders", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders"), orderHandler.CreateOrder)
@@ -497,7 +497,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Security     BearerAuth
 		// @Param        id   path  int  true  "订单ID"
 		// @Produce      json
-		// @Success      200  {object}  model.APIResponse[model.Order]
+		// @Success      200  {object}  model.Order
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/orders/{id} [get]
 		group.GET("/orders/:id", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/orders/:id"), orderHandler.GetOrder)
@@ -508,7 +508,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Produce      json
 		// @Param        id       path  int                true  "订单ID"
 		// @Param        request  body  UpdateOrderPayload true  "订单信息"
-		// @Success      200  {object}  model.APIResponse[model.Order]
+		// @Success      200  {object}  model.Order
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/orders/{id} [put]
 		group.PUT("/orders/:id", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/orders/:id"), orderHandler.UpdateOrder)
@@ -528,7 +528,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Produce      json
 		// @Param        id       path  int                true  "订单ID"
 		// @Param        request  body  ReviewOrderPayload true  "评价信息"
-		// @Success      200  {object}  model.APIResponse[model.Review]
+		// @Success      200  {object}  model.Review
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/orders/{id}/review [post]
 		group.POST("/orders/:id/review", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/:id/review"), orderHandler.ReviewOrder)
@@ -539,7 +539,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Produce      json
 		// @Param        id       path  int                true  "订单ID"
 		// @Param        request  body  CancelOrderPayload true  "取消信息"
-		// @Success      200  {object}  model.APIResponse[model.Order]
+		// @Success      200  {object}  model.Order
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/orders/{id}/cancel [post]
 		group.POST("/orders/:id/cancel", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/:id/cancel"), orderHandler.CancelOrder)
@@ -550,7 +550,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Produce      json
 		// @Param        id       path  int                 true  "订单ID"
 		// @Param        request  body  AssignOrderPayload  true  "指派信息"
-		// @Success      200  {object}  model.APIResponse[model.Order]
+		// @Success      200  {object}  model.Order
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/orders/{id}/assign [post]
 		group.POST("/orders/:id/assign", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/:id/assign"), orderHandler.AssignOrder)
@@ -562,7 +562,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Produce      json
 		// @Param        id       path  int               true  "订单ID"
 		// @Param        request  body  orderNotePayload  false "备注（可选）"
-		// @Success      200  {object}  model.APIResponse[model.Order]
+		// @Success      200  {object}  model.Order
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/orders/{id}/confirm [post]
 		group.POST("/orders/:id/confirm", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/:id/confirm"), orderHandler.ConfirmOrder)
@@ -573,7 +573,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Produce      json
 		// @Param        id       path  int               true  "订单ID"
 		// @Param        request  body  orderNotePayload  false "备注（可选）"
-		// @Success      200  {object}  model.APIResponse[model.Order]
+		// @Success      200  {object}  model.Order
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/orders/{id}/start [post]
 		group.POST("/orders/:id/start", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/:id/start"), orderHandler.StartOrder)
@@ -585,7 +585,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Produce      json
 		// @Param        id       path  int               true  "订单ID"
 		// @Param        request  body  orderNotePayload  false "备注（可选）"
-		// @Success      200  {object}  model.APIResponse[model.Order]
+		// @Success      200  {object}  model.Order
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/orders/{id}/complete [post]
 		group.POST("/orders/:id/complete", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/:id/complete"), orderHandler.CompleteOrder)
@@ -595,7 +595,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Produce      json
 		// @Param        id       path  int                  true  "订单ID"
 		// @Param        request        body     orderRefundPayload true   "Request body"
-		// @Success      200  {object}  model.APIResponse[model.Order]
+		// @Success      200  {object}  model.Order
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/orders/{id}/refund [post]
 		group.POST("/orders/:id/refund", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/:id/refund"), orderHandler.RefundOrder)
@@ -613,14 +613,14 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Param        export     query  string false "导出格式" Enums(csv)
 		// @Param        fields     query  string false "Export columns (comma separated)"
 		// @Param        header_lang query string false "列头语言" Enums(en,zh)
-		// @Success      200  {object}  model.APIResponse[[]model.OperationLog]
+		// @Success      200  {array}   model.OperationLog
 		// @Router       /admin/orders/{id}/logs [get]
 		group.GET("/orders/:id/logs", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/orders/:id/logs"), orderHandler.ListOrderLogs)
 		// @Summary      获取订单时间		// @Tags         Admin/Orders
 		// @Security     BearerAuth
 		// @Produce      json
 		// @Param        id   path  int  true  "订单ID"
-		// @Success      200  {object}  model.APIResponse[[]service.OrderTimelineItem]
+		// @Success      200  {array}   service.OrderTimelineItem
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/orders/{id}/timeline [get]
 		group.GET("/orders/:id/timeline", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/orders/:id/timeline"), orderHandler.GetOrderTimeline)
@@ -629,7 +629,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Security     BearerAuth
 		// @Produce      json
 		// @Param        id   path  int  true  "订单ID"
-		// @Success      200  {object}  model.APIResponse[[]model.Payment]
+		// @Success      200  {array}   model.Payment
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/orders/{id}/payments [get]
 		group.GET("/orders/:id/payments", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/orders/:id/payments"), orderHandler.ListOrderPayments)
@@ -637,7 +637,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Security     BearerAuth
 		// @Produce      json
 		// @Param        id   path  int  true  "订单ID"
-		// @Success      200  {object}  model.APIResponse[[]service.OrderRefundItem]
+		// @Success      200  {array}   service.OrderRefundItem
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/orders/{id}/refunds [get]
 		group.GET("/orders/:id/refunds", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/orders/:id/refunds"), orderHandler.ListOrderRefunds)
@@ -646,7 +646,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Security     BearerAuth
 		// @Produce      json
 		// @Param        id   path  int  true  "订单ID"
-		// @Success      200  {object}  model.APIResponse[[]model.Review]
+		// @Success      200  {array}   model.Review
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/orders/{id}/reviews [get]
 		group.GET("/orders/:id/reviews", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/orders/:id/reviews"), orderHandler.ListOrderReviews)
@@ -659,7 +659,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Accept       json
 		// @Produce      json
 		// @Param        request  body  BatchCancelOrdersRequest  true  "订单ID列表和取消原因"
-		// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+		// @Success      200  {object}  BatchOperationResponse
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/orders/batch/cancel [post]
 		group.POST("/orders/batch/cancel", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/batch/cancel"), orderHandler.BatchCancelOrders)
@@ -670,7 +670,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Accept       json
 		// @Produce      json
 		// @Param        request  body  BatchConfirmOrdersRequest  true  "订单ID列表"
-		// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+		// @Success      200  {object}  BatchOperationResponse
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/orders/batch/confirm [post]
 		group.POST("/orders/batch/confirm", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/batch/confirm"), orderHandler.BatchConfirmOrders)
@@ -681,7 +681,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Accept       json
 		// @Produce      json
 		// @Param        request  body  BatchCompleteOrdersRequest  true  "订单ID列表"
-		// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+		// @Success      200  {object}  BatchOperationResponse
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/orders/batch/complete [post]
 		group.POST("/orders/batch/complete", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/batch/complete"), orderHandler.BatchCompleteOrders)
@@ -692,7 +692,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Accept       json
 		// @Produce      json
 		// @Param        request  body  BatchRefundOrdersRequest  true  "订单ID列表和退款信息"
-		// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+		// @Success      200  {object}  BatchOperationResponse
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/orders/batch/refund [post]
 		group.POST("/orders/batch/refund", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/batch/refund"), orderHandler.BatchRefundOrders)
@@ -703,7 +703,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Accept       json
 		// @Produce      json
 		// @Param        request  body  BatchDeleteOrdersRequest  true  "订单ID列表"
-		// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+		// @Success      200  {object}  BatchOperationResponse
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/orders/batch/delete [post]
 		group.POST("/orders/batch/delete", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/batch/delete"), orderHandler.BatchDeleteOrders)
@@ -714,7 +714,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Accept       json
 		// @Produce      json
 		// @Param        request  body  BatchUpdateOrderStatusRequest  true  "订单ID列表和新状态"
-		// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+		// @Success      200  {object}  BatchOperationResponse
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/orders/batch/status [put]
 		group.PUT("/orders/batch/status", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/orders/batch/status"), orderHandler.BatchUpdateOrderStatus)
@@ -725,7 +725,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Accept       json
 		// @Produce      json
 		// @Param        request  body  BatchAssignOrdersRequest  true  "订单ID列表和陪玩师ID"
-		// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+		// @Success      200  {object}  BatchOperationResponse
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/orders/batch/assign [post]
 		group.POST("/orders/batch/assign", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/orders/batch/assign"), orderHandler.BatchAssignOrders)
@@ -742,7 +742,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"
 		// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
 		// @Produce      json
-		// @Success      200  {object}  model.APIResponse[[]model.Payment]
+		// @Success      200  {array}   model.Payment
 		// @Router       /admin/payments [get]
 		group.GET("/payments", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/payments"), paymentHandler.ListPayments)
 		// @Summary      创建支付记录
@@ -751,7 +751,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Accept       json
 		// @Produce      json
 		// @Param        request  body  CreatePaymentPayload  true  "支付信息"
-		// @Success      201  {object}  model.APIResponse[model.Payment]
+		// @Success      201  {object}  model.Payment
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/payments [post]
 		group.POST("/payments", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/payments"), paymentHandler.CreatePayment)
@@ -760,7 +760,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Security     BearerAuth
 		// @Param        id   path  int  true  "支付ID"
 		// @Produce      json
-		// @Success      200  {object}  model.APIResponse[model.Payment]
+		// @Success      200  {object}  model.Payment
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/payments/{id} [get]
 		group.GET("/payments/:id", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/payments/:id"), paymentHandler.GetPayment)
@@ -771,7 +771,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Produce      json
 		// @Param        id       path  int                  true  "支付ID"
 		// @Param        request  body  UpdatePaymentPayload true  "支付信息"
-		// @Success      200  {object}  model.APIResponse[model.Payment]
+		// @Success      200  {object}  model.Payment
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/payments/{id} [put]
 		group.PUT("/payments/:id", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/payments/:id"), paymentHandler.UpdatePayment)
@@ -790,7 +790,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Produce      json
 		// @Param        id       path  int                  true  "支付ID"
 		// @Param        request  body  RefundPaymentPayload true  "退款信息"
-		// @Success      200  {object}  model.APIResponse[model.Payment]
+		// @Success      200  {object}  model.Payment
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/payments/{id}/refund [post]
 		group.POST("/payments/:id/refund", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/payments/:id/refund"), paymentHandler.RefundPayment)
@@ -801,7 +801,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Produce      json
 		// @Param        id       path  int                     true  "支付ID"
 		// @Param        request  body  CapturePaymentPayload   true  "入账信息"
-		// @Success      200  {object}  model.APIResponse[model.Payment]
+		// @Success      200  {object}  model.Payment
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/payments/{id}/capture [post]
 		group.POST("/payments/:id/capture", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/payments/:id/capture"), paymentHandler.CapturePayment)
@@ -819,7 +819,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Param        export     query  string false "导出格式" Enums(csv)
 		// @Param        fields     query  string false "Export columns (comma separated)"
 		// @Param        header_lang query string false "列头语言" Enums(en,zh)
-		// @Success      200  {object}  model.APIResponse[[]model.OperationLog]
+		// @Success      200  {array}   model.OperationLog
 		// @Router       /admin/payments/{id}/logs [get]
 		group.GET("/payments/:id/logs", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/payments/:id/logs"), paymentHandler.ListPaymentLogs)
 		// @Summary      获取退款历史
@@ -828,7 +828,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Security     BearerAuth
 		// @Produce      json
 		// @Param        id   path  int  true  "支付ID"
-		// @Success      200  {object}  model.APIResponse[[]model.OperationLog]
+		// @Success      200  {array}   model.OperationLog
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/payments/{id}/refunds [get]
 		group.GET("/payments/:id/refunds", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/payments/:id/refunds"), paymentHandler.GetRefundHistory)
@@ -850,7 +850,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Param        playerId   query     int       false  "陪玩师ID"
 		// @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"
 		// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
-		// @Success      200  {object}  model.APIResponse[[]model.Review]
+		// @Success      200  {array}   model.Review
 		// @Router       /admin/reviews [get]
 		group.GET("/reviews", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/reviews"), reviewHandler.ListReviews)
 		// @Summary      获取待审核评价列表
@@ -859,7 +859,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Produce      json
 		// @Param        page       query  int  false  "页码"
 		// @Param        pageSize   query  int  false  "每页数量"
-		// @Success      200  {object}  model.APIResponse[[]model.Review]
+		// @Success      200  {array}   model.Review
 		// @Router       /admin/reviews/pending [get]
 		group.GET("/reviews/pending", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/reviews/pending"), reviewHandler.ListPendingReviews)
 		// @Summary      创建评价
@@ -868,7 +868,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Accept       json
 		// @Produce      json
 		// @Param        request  body  CreateReviewPayload  true  "评价"
-		// @Success      201  {object}  model.APIResponse[model.Review]
+		// @Success      201  {object}  model.Review
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/reviews [post]
 		group.POST("/reviews", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/reviews"), reviewHandler.CreateReview)
@@ -877,7 +877,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Security     BearerAuth
 		// @Produce      json
 		// @Param        id   path  int  true  "评价ID"
-		// @Success      200  {object}  model.APIResponse[model.Review]
+		// @Success      200  {object}  model.Review
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/reviews/{id} [get]
 		group.GET("/reviews/:id", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/reviews/:id"), reviewHandler.GetReview)
@@ -888,7 +888,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Produce      json
 		// @Param        id       path  int                    true  "评价ID"
 		// @Param        request  body  UpdateReviewPayload    true  "评价"
-		// @Success      200  {object}  model.APIResponse[model.Review]
+		// @Success      200  {object}  model.Review
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/reviews/{id} [put]
 		group.PUT("/reviews/:id", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/reviews/:id"), reviewHandler.UpdateReview)
@@ -948,7 +948,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Tags         Admin/Reviews
 		// @Security     BearerAuth
 		// @Produce      json
-		// @Success      200  {object}  model.APIResponse[ApproveAllNonSensitiveResponse]
+		// @Success      200  {object}  ApproveAllNonSensitiveResponse
 		// @Failure      500  {object}  model.ErrorResponse
 		// @Router       /admin/reviews/approve-all-non-sensitive [put]
 		group.PUT("/reviews/approve-all-non-sensitive", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/reviews/batch-approve"), reviewHandler.ApproveAllNonSensitiveReviews)
@@ -959,7 +959,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Param        id         path   int  true  "陪玩师ID"
 		// @Param        page       query  int  false  "页码"
 		// @Param        pageSize   query     int       false  "每页数量"
-		// @Success      200  {object}  model.APIResponse[[]model.Review]
+		// @Success      200  {array}   model.Review
 		// @Router       /admin/players/{id}/reviews [get]
 		group.GET("/players/:id/reviews", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/players/:id/reviews"), reviewHandler.ListPlayerReviews)
 		// @Summary      获取评价操作日志
@@ -976,7 +976,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Param        export       query  string false "导出格式" Enums(csv)
 		// @Param        fields         query    string       false  "Export fields (comma separated)"
 		// @Param        header_lang  query  string false "列头语言" Enums(en,zh)
-		// @Success      200  {object}  model.APIResponse[[]model.OperationLog]
+		// @Success      200  {array}   model.OperationLog
 		// @Router       /admin/reviews/{id}/logs [get]
 		group.GET("/reviews/:id/logs", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/reviews/:id/logs"), reviewHandler.ListReviewLogs)
 
@@ -988,7 +988,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Produce      json
 		// @Param        id       path  int                      true  "评价ID"
 		// @Param        request  body  CreateReviewReportPayload  true  "举报信息"
-		// @Success      201  {object}  model.APIResponse[CreateReviewReportResponse]
+		// @Success      201  {object}  CreateReviewReportResponse
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/reviews/{id}/reports [post]
@@ -1005,7 +1005,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Param        status       query  string  false  "状态" Enums(pending,approved,rejected)
 		// @Param        date_from    query  string  false  "开始日期 (YYYY-MM-DD)"
 		// @Param        date_to      query  string  false  "结束日期 (YYYY-MM-DD)"
-		// @Success      200  {object}  model.APIResponse[[]ReviewReportDTO]
+		// @Success      200  {array}   ReviewReportDTO
 		// @Router       /admin/review-reports [get]
 		group.GET("/review-reports", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/review-reports"), reviewHandler.ListReviewReports)
 
@@ -1014,7 +1014,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Security     BearerAuth
 		// @Produce      json
 		// @Param        id   path  int  true  "举报ID"
-		// @Success      200  {object}  model.APIResponse[ReviewReportDTO]
+		// @Success      200  {object}  ReviewReportDTO
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/review-reports/{id} [get]
 		group.GET("/review-reports/:id", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/review-reports/:id"), reviewHandler.GetReviewReport)
@@ -1026,7 +1026,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Produce      json
 		// @Param        id       path  int                       true  "举报ID"
 		// @Param        request  body  HandleReviewReportPayload  true  "处理信息"
-		// @Success      200  {object}  model.APIResponse[HandleReviewReportResponse]
+		// @Success      200  {object}  HandleReviewReportResponse
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Failure      404  {object}  model.ErrorResponse
 		// @Router       /admin/review-reports/{id}/handle [put]
@@ -1070,7 +1070,7 @@ func RegisterRoutes(router gin.IRouter, svc *adminservice.AdminService, statsSvc
 		// @Param        date_from     query  string  false  "开始日期 (YYYY-MM-DD)"
 		// @Param        date_to       query  string  false  "结束日期 (YYYY-MM-DD)"
 		// @Param        export        query  string  false  "导出格式" Enums(csv)
-		// @Success      200  {object}  model.APIResponse[[]model.OperationLog]
+		// @Success      200  {array}   model.OperationLog
 		// @Router       /admin/operation-logs [get]
 		group.GET("/operation-logs", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/operation-logs"), reviewHandler.SearchOperationLogs)
 
@@ -1113,7 +1113,7 @@ func RegisterReviewSettingsRoutes(router gin.IRouter, settingsSvc *reviewservice
 	// @Tags         Admin/ReviewSettings
 	// @Security     BearerAuth
 	// @Produce      json
-	// @Success      200  {object}  model.APIResponse[model.ReviewDisplaySettings]
+	// @Success      200  {object}  model.ReviewDisplaySettings
 	// @Failure      500  {object}  model.ErrorResponse
 	// @Router       /admin/review-settings [get]
 	group.GET("/review-settings", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/review-settings"), h.GetReviewSettings)
@@ -1125,7 +1125,7 @@ func RegisterReviewSettingsRoutes(router gin.IRouter, settingsSvc *reviewservice
 	// @Accept       json
 	// @Produce      json
 	// @Param        request  body  UpdateReviewSettingsPayload  true  "设置信息"
-	// @Success      200  {object}  model.APIResponse[model.ReviewDisplaySettings]
+	// @Success      200  {object}  model.ReviewDisplaySettings
 	// @Failure      400  {object}  model.ErrorResponse
 	// @Failure      500  {object}  model.ErrorResponse
 	// @Router       /admin/review-settings [put]
@@ -1154,7 +1154,7 @@ func RegisterStatsRoutes(router gin.IRouter, stats *statsservice.StatsService, p
 	// @Tags         Admin - Stats
 	// @Accept       json
 	// @Produce      json
-	// @Success      200            {object}  model.APIResponse[stats.DashboardData]
+	// @Success      200            {object}  stats.DashboardData
 	// @Router       /admin/stats/dashboard [get]
 	group.GET("/stats/dashboard", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/stats/dashboard"), h.Dashboard)
 	// @Summary      收入趋势
@@ -1162,7 +1162,7 @@ func RegisterStatsRoutes(router gin.IRouter, stats *statsservice.StatsService, p
 	// @Accept       json
 	// @Produce      json
 	// @Param        days           query     int     false  "天数" default(7)
-	// @Success      200            {object}  model.APIResponse[[]stats.DateValue]
+	// @Success      200            {array}   stats.DateValue
 	// @Router       /admin/stats/revenue-trend [get]
 	group.GET("/stats/revenue-trend", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/stats/revenue-trend"), h.RevenueTrend)
 	// @Summary      用户增长趋势
@@ -1170,20 +1170,20 @@ func RegisterStatsRoutes(router gin.IRouter, stats *statsservice.StatsService, p
 	// @Accept       json
 	// @Produce      json
 	// @Param        days           query     int     false  "天数" default(7)
-	// @Success      200            {object}  model.APIResponse[[]stats.DateValue]
+	// @Success      200            {array}   stats.DateValue
 	// @Router       /admin/stats/user-growth [get]
 	group.GET("/stats/user-growth", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/stats/user-growth"), h.UserGrowth)
 	// @Summary      订单状态汇	// @Description  获取各状态订单数量统	// @Tags         Admin - Stats
 	// @Accept       json
 	// @Produce      json
-	// @Success      200            {object}  model.APIResponse[map[string]int64]
+	// @Success      200            {object}  map[string]int64
 	// @Router       /admin/stats/orders [get]
 	group.GET("/stats/orders", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/stats/orders"), h.OrdersSummary)
 	// @Summary      顶级陪玩	// @Description  获取收入最高的陪玩师列	// @Tags         Admin - Stats
 	// @Accept       json
 	// @Produce      json
 	// @Param        limit          query     int     false  "数量限制" default(10)
-	// @Success      200            {object}  model.APIResponse[[]stats.PlayerValue]
+	// @Success      200            {array}   stats.PlayerValue
 	// @Router       /admin/stats/top-players [get]
 	group.GET("/stats/top-players", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/stats/top-players"), h.TopPlayers)
 	// @Summary      审计概览
@@ -1205,7 +1205,7 @@ func RegisterStatsRoutes(router gin.IRouter, stats *statsservice.StatsService, p
 	// @Param        to             query     string  false  "结束日期"
 	// @Param        entity         query     string  false  "实体类型"
 	// @Param        action         query     string  false  "操作类型"
-	// @Success      200            {object}  model.APIResponse[[]stats.DateValue]
+	// @Success      200            {array}   stats.DateValue
 	// @Router       /admin/stats/audit/trend [get]
 	group.GET("/stats/audit/trend", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/stats/audit/trend"), h.AuditTrend)
 }
@@ -1245,7 +1245,7 @@ func RegisterSensitiveWordRoutes(router gin.IRouter, handler *SensitiveWordHandl
 		// @Param        keyword    query  string  false  "关键词搜索"
 		// @Param        category   query  string  false  "分类" Enums(political,pornographic,violent,advertising,other)
 		// @Param        severity   query  string  false  "严重程度" Enums(low,medium,high)
-		// @Success      200  {object}  model.APIResponse[sensitiveword.ListSensitiveWordsResponse]
+		// @Success      200  {object}  sensitiveword.ListSensitiveWordsResponse
 		// @Router       /admin/sensitive-words [get]
 		group.GET("/sensitive-words", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/sensitive-words"), handler.ListSensitiveWords)
 
@@ -1255,7 +1255,7 @@ func RegisterSensitiveWordRoutes(router gin.IRouter, handler *SensitiveWordHandl
 		// @Accept       json
 		// @Produce      json
 		// @Param        request  body  sensitiveword.AddSensitiveWordRequest  true  "敏感词信息"
-		// @Success      201  {object}  model.APIResponse[sensitiveword.SensitiveWordDTO]
+		// @Success      201  {object}  sensitiveword.SensitiveWordDTO
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/sensitive-words [post]
 		group.POST("/sensitive-words", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/sensitive-words"), handler.AddSensitiveWord)
@@ -1289,7 +1289,7 @@ func RegisterSensitiveWordRoutes(router gin.IRouter, handler *SensitiveWordHandl
 		// @Accept       json
 		// @Produce      json
 		// @Param        request  body  sensitiveword.DetectSensitiveWordsRequest  true  "检测内容"
-		// @Success      200  {object}  model.APIResponse[sensitiveword.DetectSensitiveWordsResponse]
+		// @Success      200  {object}  sensitiveword.DetectSensitiveWordsResponse
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/reviews/detect-sensitive [post]
 		group.POST("/reviews/detect-sensitive", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/reviews/detect-sensitive"), handler.DetectSensitiveWords)
@@ -1302,7 +1302,7 @@ func RegisterSensitiveWordRoutes(router gin.IRouter, handler *SensitiveWordHandl
 		// @Accept       json
 		// @Produce      json
 		// @Param        request  body  BatchAddSensitiveWordsRequest  true  "批量添加请求"
-		// @Success      200  {object}  model.APIResponse[sensitiveword.BatchOperationResult]
+		// @Success      200  {object}  sensitiveword.BatchOperationResult
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/sensitive-words/batch/add [post]
 		group.POST("/sensitive-words/batch/add", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/sensitive-words/batch/add"), handler.BatchAddSensitiveWords)
@@ -1314,7 +1314,7 @@ func RegisterSensitiveWordRoutes(router gin.IRouter, handler *SensitiveWordHandl
 		// @Accept       json
 		// @Produce      json
 		// @Param        request  body  BatchDeleteSensitiveWordsRequest  true  "批量删除请求"
-		// @Success      200  {object}  model.APIResponse[sensitiveword.BatchOperationResult]
+		// @Success      200  {object}  sensitiveword.BatchOperationResult
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/sensitive-words/batch/delete [post]
 		group.POST("/sensitive-words/batch/delete", pm.RequirePermission(model.HTTPMethodPOST, "/api/v1/admin/sensitive-words/batch/delete"), handler.BatchDeleteSensitiveWords)
@@ -1326,7 +1326,7 @@ func RegisterSensitiveWordRoutes(router gin.IRouter, handler *SensitiveWordHandl
 		// @Accept       json
 		// @Produce      json
 		// @Param        request  body  BatchUpdateSensitiveWordStatusRequest  true  "批量更新状态请求"
-		// @Success      200  {object}  model.APIResponse[sensitiveword.BatchOperationResult]
+		// @Success      200  {object}  sensitiveword.BatchOperationResult
 		// @Failure      400  {object}  model.ErrorResponse
 		// @Router       /admin/sensitive-words/batch/status [put]
 		group.PUT("/sensitive-words/batch/status", pm.RequirePermission(model.HTTPMethodPUT, "/api/v1/admin/sensitive-words/batch/status"), handler.BatchUpdateSensitiveWordStatus)
@@ -1344,7 +1344,7 @@ func RegisterReviewStatsRoutes(router gin.IRouter, svc *reviewservice.ReviewStat
 		// @Tags         Admin/Reviews
 		// @Security     BearerAuth
 		// @Produce      json
-		// @Success      200  {object}  model.APIResponse[reviewservice.GetReviewStatsResponse]
+		// @Success      200  {object}  reviewservice.GetReviewStatsResponse
 		// @Failure      500  {object}  model.ErrorResponse
 		// @Router       /admin/reviews/stats [get]
 		group.GET("/reviews/stats", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/reviews/stats"), h.GetReviewStats)
@@ -1355,7 +1355,7 @@ func RegisterReviewStatsRoutes(router gin.IRouter, svc *reviewservice.ReviewStat
 		// @Security     BearerAuth
 		// @Produce      json
 		// @Param        days  query  int  false  "统计天数（默认30天）"
-		// @Success      200  {object}  model.APIResponse[reviewservice.GetReviewTrendResponse]
+		// @Success      200  {object}  reviewservice.GetReviewTrendResponse
 		// @Failure      500  {object}  model.ErrorResponse
 		// @Router       /admin/reviews/trend [get]
 		group.GET("/reviews/trend", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/reviews/trend"), h.GetReviewTrend)
@@ -1367,7 +1367,7 @@ func RegisterReviewStatsRoutes(router gin.IRouter, svc *reviewservice.ReviewStat
 		// @Produce      json
 		// @Param        limit    query  int     false  "数量限制（默认10）"
 		// @Param        sort_by  query  string  false  "排序方式：count（评价数量）或 rating（评分）"
-		// @Success      200  {object}  model.APIResponse[reviewservice.GetTopPlayersResponse]
+		// @Success      200  {object}  reviewservice.GetTopPlayersResponse
 		// @Failure      500  {object}  model.ErrorResponse
 		// @Router       /admin/reviews/top-players [get]
 		group.GET("/reviews/top-players", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/reviews/top-players"), h.GetTopPlayers)
@@ -1377,7 +1377,7 @@ func RegisterReviewStatsRoutes(router gin.IRouter, svc *reviewservice.ReviewStat
 		// @Tags         Admin/Reviews
 		// @Security     BearerAuth
 		// @Produce      json
-		// @Success      200  {object}  model.APIResponse[reviewservice.GetGameStatsResponse]
+		// @Success      200  {object}  reviewservice.GetGameStatsResponse
 		// @Failure      500  {object}  model.ErrorResponse
 		// @Router       /admin/reviews/game-stats [get]
 		group.GET("/reviews/game-stats", pm.RequirePermission(model.HTTPMethodGET, "/api/v1/admin/reviews/game-stats"), h.GetGameStats)

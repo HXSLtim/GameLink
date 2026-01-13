@@ -40,7 +40,7 @@ func NewPermissionHandlerWithRoleService(permissionSvc *permissionservice.Permis
 // @Param        keyword        query     string  false  "关键词搜索（匹配code, path, description）"
 // @Param        method         query     string  false  "HTTP方法过滤（GET, POST, PUT, PATCH, DELETE）"
 // @Param        group          query     string  false  "权限分组过滤"
-// @Success      200            {object}  model.APIResponse[[]Permission]
+// @Success      200            {array}   Permission
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
@@ -94,7 +94,7 @@ func (h *PermissionHandler) ListPermissions(c *gin.Context) {
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
 // @Param        id             path      uint    true  "权限ID"
-// @Success      200            {object}  model.APIResponse[Permission]
+// @Success      200            {object}  Permission
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      404            {object}  model.ErrorResponse
@@ -151,7 +151,7 @@ type PatchPermissionRequest struct {
 // @Produce      json
 // @Param        Authorization  header    string                      true  "Bearer {token}"
 // @Param        request        body      CreatePermissionRequest      true  "创建权限请求"
-// @Success      201            {object}  model.APIResponse[Permission]
+// @Success      201            {object}  Permission
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
@@ -190,7 +190,7 @@ func (h *PermissionHandler) CreatePermission(c *gin.Context) {
 // @Param        Authorization  header    string                      true  "Bearer {token}"
 // @Param        id             path      uint                        true  "权限ID"
 // @Param        request        body      UpdatePermissionRequest      true  "更新权限请求"
-// @Success      200            {object}  model.APIResponse[Permission]
+// @Success      200            {object}  Permission
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      404            {object}  model.ErrorResponse
@@ -249,7 +249,7 @@ func (h *PermissionHandler) UpdatePermission(c *gin.Context) {
 // @Param        Authorization  header    string                      true  "Bearer {token}"
 // @Param        id             path      uint                        true  "权限ID"
 // @Param        request        body      PatchPermissionRequest       true  "部分更新权限请求"
-// @Success      200            {object}  model.APIResponse[Permission]
+// @Success      200            {object}  Permission
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      404            {object}  model.ErrorResponse
@@ -339,7 +339,7 @@ func (h *PermissionHandler) DeletePermission(c *gin.Context) {
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
 // @Param        id             path      uint    true  "角色ID"
-// @Success      200            {object}  model.APIResponse[[]model.Permission]
+// @Success      200            {array}   model.Permission
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
@@ -364,7 +364,7 @@ func (h *PermissionHandler) GetRolePermissions(c *gin.Context) {
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
 // @Param        id             path      uint    true  "用户ID"
-// @Success      200            {object}  model.APIResponse[[]model.Permission]
+// @Success      200            {array}   model.Permission
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
@@ -391,7 +391,7 @@ func (h *PermissionHandler) GetUserPermissions(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
-// @Success      200            {object}  model.APIResponse[[]string]
+// @Success      200            {array}   string
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
 // @Router       /admin/permissions/groups [get]
@@ -412,7 +412,7 @@ func (h *PermissionHandler) GetPermissionGroups(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
-// @Success      200            {object}  model.APIResponse[[]model.PermissionTreeNode]
+// @Success      200            {array}   model.PermissionTreeNode
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
 // @Router       /admin/permissions/tree [get]
@@ -438,7 +438,7 @@ func (h *PermissionHandler) GetPermissionTree(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
-// @Success      200            {object}  model.APIResponse[[]model.PermissionGroup]
+// @Success      200            {array}   model.PermissionGroup
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
 // @Router       /admin/permissions/tree/grouped [get]
@@ -462,7 +462,7 @@ func (h *PermissionHandler) GetPermissionTreeByGroup(c *gin.Context) {
 // @Description  返回当前登录管理员拥有的权限码列表，超级管理员返回 ['*']
 // @Tags         Admin - Permissions
 // @Security     BearerAuth
-// @Success      200  {object}  model.APIResponse[[]string]
+// @Success      200  {array}   string
 // @Router       /admin/permissions/me [get]
 // @Router       /admin/me/permissions [get]
 func (h *PermissionHandler) GetCurrentUserPermissions(c *gin.Context) {
@@ -523,7 +523,7 @@ type BatchDeletePermissionsRequest struct {
 // @Param        Authorization  header    string                          true  "Bearer {token}"
 // @Param        force          query     bool                            false "强制删除（忽略引用检查）"
 // @Param        request        body      BatchDeletePermissionsRequest    true  "批量删除权限请求"
-// @Success      200            {object}  model.APIResponse[BatchOperationResponse]
+// @Success      200            {object}  BatchOperationResponse
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
@@ -565,7 +565,7 @@ func (h *PermissionHandler) BatchDeletePermissions(c *gin.Context) {
 // @Param        Authorization  header    string                          true  "Bearer {token}"
 // @Param        force          query     bool                            false "强制删除（忽略引用检查）"
 // @Param        request        body      BatchDeletePermissionsRequest    true  "批量删除权限请求"
-// @Success      200            {object}  model.APIResponse[permissionservice.PermissionBatchDeleteResult]
+// @Success      200            {object}  permissionservice.PermissionBatchDeleteResult
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse

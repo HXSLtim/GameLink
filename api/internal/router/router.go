@@ -192,8 +192,9 @@ func (r *Router) registerRoutes() {
 func (r *Router) registerSwaggerRoutes() {
 	if r.cfg.EnableSwagger {
 		log.Println("swagger endpoint enabled at /swagger")
-		// Serve swagger.json file
-		r.engine.StaticFile("/swagger.json", "./docs/swagger.json")
+		// Serve swagger.json file - use docs/ relative to working directory
+		// In Docker container, working directory is /app, so this resolves to /app/docs/swagger.json
+		r.engine.StaticFile("/swagger.json", "docs/swagger.json")
 		// Serve gin-swagger UI backed by /swagger.json for compatibility
 		r.engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.URL("/swagger.json")))
 	} else {

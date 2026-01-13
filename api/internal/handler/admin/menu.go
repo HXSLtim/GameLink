@@ -143,7 +143,7 @@ func (h *MenuHandler) Delete(c *gin.Context) {
 // @Description  根据当前用户权限返回可访问的菜单列表，超级管理员返回所有菜单
 // @Tags         Admin - Menus
 // @Security     BearerAuth
-// @Success      200  {object}  model.APIResponse[[]model.Menu]
+// @Success      200  {array}   model.Menu
 // @Router       /admin/menus/me [get]
 // @Router       /admin/me/menus [get]
 func (h *MenuHandler) ListMyMenus(c *gin.Context) {
@@ -310,7 +310,7 @@ type BatchUpdateMenuSortRequest struct {
 // @Produce      json
 // @Param        Authorization  header    string                      true  "Bearer {token}"
 // @Param        request        body      BatchDeleteMenusRequest      true  "批量删除请求"
-// @Success      200            {object}  model.APIResponse[menusvc.BatchDeleteResult]
+// @Success      200            {object}  menusvc.BatchDeleteResult
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
@@ -339,7 +339,7 @@ func (h *MenuHandler) BatchDelete(c *gin.Context) {
 // @Produce      json
 // @Param        Authorization  header    string                          true  "Bearer {token}"
 // @Param        request        body      BatchUpdateMenuStatusRequest    true  "批量更新状态请求"
-// @Success      200            {object}  model.APIResponse[menusvc.BatchUpdateStatusResult]
+// @Success      200            {object}  menusvc.BatchUpdateStatusResult
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
@@ -377,7 +377,7 @@ func (h *MenuHandler) BatchUpdateStatus(c *gin.Context) {
 // @Produce      json
 // @Param        Authorization  header    string                        true  "Bearer {token}"
 // @Param        request        body      BatchUpdateMenuSortRequest    true  "批量更新排序请求"
-// @Success      200            {object}  model.APIResponse[menusvc.BatchUpdateSortResult]
+// @Success      200            {object}  menusvc.BatchUpdateSortResult
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse

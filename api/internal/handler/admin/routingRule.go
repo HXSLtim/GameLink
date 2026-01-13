@@ -31,7 +31,7 @@ func NewRoutingRuleHandler(svc *svc.RoutingRuleService) *RoutingRuleHandler {
 // @Param        targetEntityId query  int     false  "目标收款主体ID"
 // @Param        keyword        query  string  false  "关键词搜索"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[model.ListRoutingRulesResponse]
+// @Success      200  {object}  model.ListRoutingRulesResponse
 // @Router       /admin/routing-rules [get]
 func (h *RoutingRuleHandler) ListRoutingRules(c *gin.Context) {
 	page, pageSize, ok := parsePagination(c)
@@ -81,7 +81,7 @@ func (h *RoutingRuleHandler) ListRoutingRules(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "分流规则ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[model.RoutingRule]
+// @Success      200  {object}  model.RoutingRule
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/routing-rules/{id} [get]
 func (h *RoutingRuleHandler) GetRoutingRule(c *gin.Context) {
@@ -105,7 +105,7 @@ func (h *RoutingRuleHandler) GetRoutingRule(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  model.CreateRoutingRuleRequest  true  "分流规则信息"
-// @Success      201  {object}  model.APIResponse[model.RoutingRule]
+// @Success      201  {object}  model.RoutingRule
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/routing-rules [post]
 func (h *RoutingRuleHandler) CreateRoutingRule(c *gin.Context) {
@@ -135,7 +135,7 @@ func (h *RoutingRuleHandler) CreateRoutingRule(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int                              true  "分流规则ID"
 // @Param        request  body  model.UpdateRoutingRuleRequest  true  "分流规则信息"
-// @Success      200  {object}  model.APIResponse[model.RoutingRule]
+// @Success      200  {object}  model.RoutingRule
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/routing-rules/{id} [put]
 func (h *RoutingRuleHandler) UpdateRoutingRule(c *gin.Context) {
@@ -228,7 +228,7 @@ func (h *RoutingRuleHandler) ToggleRoutingRuleStatus(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "分流规则ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[[]model.RoutingRuleHistory]
+// @Success      200  {array}   model.RoutingRuleHistory
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/routing-rules/{id}/history [get]
 func (h *RoutingRuleHandler) GetRoutingRuleHistory(c *gin.Context) {
@@ -286,7 +286,7 @@ func (h *RoutingRuleHandler) SetDefaultEntity(c *gin.Context) {
 // @Tags         Admin/RoutingRules
 // @Security     BearerAuth
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[model.CollectionEntity]
+// @Success      200  {object}  model.CollectionEntity
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/routing-rules/default-entity [get]
 func (h *RoutingRuleHandler) GetDefaultEntity(c *gin.Context) {
@@ -305,7 +305,7 @@ func (h *RoutingRuleHandler) GetDefaultEntity(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  model.RoutingTestRequest  true  "测试参数"
-// @Success      200  {object}  model.APIResponse[model.RoutingTestResponse]
+// @Success      200  {object}  model.RoutingTestResponse
 // @Router       /admin/routing-rules/test [post]
 func (h *RoutingRuleHandler) TestRouting(c *gin.Context) {
 	var req model.RoutingTestRequest

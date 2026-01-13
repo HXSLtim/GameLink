@@ -36,7 +36,7 @@ type VerifyPlayerRankRequest struct {
 // @Param        gameId     query  int     false  "游戏ID筛选"
 // @Param        status     query  string  false  "状态筛选" Enums(pending,verified,rejected,revoked,expired)
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[[]model.PlayerRankRecord]
+// @Success      200  {array}   model.PlayerRankRecord
 // @Router       /admin/player-ranks [get]
 func (h *PlayerRankHandler) ListPlayerRanks(c *gin.Context) {
 	page, pageSize, ok := parsePagination(c)
@@ -83,7 +83,7 @@ func (h *PlayerRankHandler) ListPlayerRanks(c *gin.Context) {
 // @Param        page       query  int  false  "页码"
 // @Param        pageSize   query  int  false  "每页数量"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[[]model.PlayerRankRecord]
+// @Success      200  {array}   model.PlayerRankRecord
 // @Router       /admin/player-ranks/pending [get]
 func (h *PlayerRankHandler) ListPendingPlayerRanks(c *gin.Context) {
 	page, pageSize, ok := parsePagination(c)
@@ -105,7 +105,7 @@ func (h *PlayerRankHandler) ListPendingPlayerRanks(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "认证记录ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[model.PlayerRankRecord]
+// @Success      200  {object}  model.PlayerRankRecord
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/player-ranks/{id} [get]
 func (h *PlayerRankHandler) GetPlayerRank(c *gin.Context) {
@@ -130,7 +130,7 @@ func (h *PlayerRankHandler) GetPlayerRank(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int                      true  "认证记录ID"
 // @Param        request  body  VerifyPlayerRankRequest  true  "审核信息"
-// @Success      200  {object}  model.APIResponse[model.PlayerRankRecord]
+// @Success      200  {object}  model.PlayerRankRecord
 // @Failure      400  {object}  model.ErrorResponse
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/player-ranks/{id}/verify [post]
@@ -191,7 +191,7 @@ func (h *PlayerRankHandler) DeletePlayerRank(c *gin.Context) {
 // @Tags         Admin/PlayerRanks
 // @Security     BearerAuth
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[map[string]int64]
+// @Success      200  {object}  map[string]int64
 // @Router       /admin/player-ranks/stats [get]
 func (h *PlayerRankHandler) GetPlayerRankStats(c *gin.Context) {
 	stats, err := h.svc.GetStats(c.Request.Context())
@@ -213,7 +213,7 @@ func (h *PlayerRankHandler) GetPlayerRankStats(c *gin.Context) {
 // @Tags         Admin/PlayerRanks
 // @Security     BearerAuth
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[map[string]int64]
+// @Success      200  {object}  map[string]int64
 // @Router       /admin/player-ranks/pending/count [get]
 func (h *PlayerRankHandler) GetPlayerRankPendingCount(c *gin.Context) {
 	count, err := h.svc.GetPendingCount(c.Request.Context())
@@ -230,7 +230,7 @@ func (h *PlayerRankHandler) GetPlayerRankPendingCount(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        playerId   path  int  true  "陪玩师ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[[]model.PlayerRankRecord]
+// @Success      200  {array}   model.PlayerRankRecord
 // @Router       /admin/players/{playerId}/ranks [get]
 func (h *PlayerRankHandler) ListPlayerRanksByPlayer(c *gin.Context) {
 	playerID, ok := ParseIDAndRespond(c, "playerId")

@@ -48,7 +48,7 @@ func (h *ReviewHandler) SetSensitiveWordService(svc *sensitiveword.SensitiveWord
 // @Param        userId     query     int       false  "用户ID"
 // @Param        playerId   query     int       false  "陪玩师ID"
 // @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
-// @Success      200  {object}  model.APIResponse[[]Review]
+// @Success      200  {array}   Review
 // @Router       /admin/reviews [get]
 func (h *ReviewHandler) ListReviews(c *gin.Context) {
 	page, pageSize, ok := parsePagination(c)
@@ -89,7 +89,7 @@ func (h *ReviewHandler) ListReviews(c *gin.Context) {
 // @Security     BearerAuth
 // @Produce      json
 // @Param        id   path  int  true  "评价ID"
-// @Success      200  {object}  model.APIResponse[Review]
+// @Success      200  {object}  Review
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/reviews/{id} [get]
 func (h *ReviewHandler) GetReview(c *gin.Context) {
@@ -112,7 +112,7 @@ func (h *ReviewHandler) GetReview(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  CreateReviewPayload  true  "评价"
-// @Success      201  {object}  model.APIResponse[Review]
+// @Success      201  {object}  Review
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/reviews [post]
 func (h *ReviewHandler) CreateReview(c *gin.Context) {
@@ -137,7 +137,7 @@ func (h *ReviewHandler) CreateReview(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int                    true  "评价ID"
 // @Param        request  body  UpdateReviewPayload    true  "评价"
-// @Success      200  {object}  model.APIResponse[Review]
+// @Success      200  {object}  Review
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/reviews/{id} [put]
 func (h *ReviewHandler) UpdateReview(c *gin.Context) {
@@ -192,7 +192,7 @@ func (h *ReviewHandler) DeleteReview(c *gin.Context) {
 // @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
 // @Param        export       query  string false "导出格式" Enums(csv)
 // @Param        fields         query    string       false  "Export fields (comma separated)"// @Param        header_lang  query  string false "列头语言" Enums(en,zh)
-// @Success      200  {object}  model.APIResponse[[]model.OperationLog]
+// @Success      200  {array}   model.OperationLog
 // @Router       /admin/reviews/{id}/logs [get]
 func (h *ReviewHandler) ListReviewLogs(c *gin.Context) {
 	id, ok := ParseIDAndRespond(c, "id")
@@ -264,7 +264,7 @@ func (h *ReviewHandler) ListReviewLogs(c *gin.Context) {
 // @Param        id         path   int  true  "陪玩师ID"
 // @Param        page       query  int  false  "页码"
 // @Param        pageSize   query     int       false  "每页数量"
-// @Success      200  {object}  model.APIResponse[[]Review]
+// @Success      200  {array}   Review
 // @Router       /admin/players/{id}/reviews [get]
 func (h *ReviewHandler) ListPlayerReviews(c *gin.Context) {
 	id, ok := ParseIDAndRespond(c, "id")
@@ -305,7 +305,7 @@ type UpdateReviewPayload struct {
 // @Produce      json
 // @Param        id       path  int                      true  "评价ID"
 // @Param        request  body  CreateReviewReportPayload  true  "举报信息"
-// @Success      201  {object}  model.APIResponse[CreateReviewReportResponse]
+// @Success      201  {object}  CreateReviewReportResponse
 // @Failure      400  {object}  model.ErrorResponse
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/reviews/{id}/reports [post]
@@ -346,7 +346,7 @@ func (h *ReviewHandler) CreateReviewReport(c *gin.Context) {
 // @Param        status       query  string  false  "状态" Enums(pending,approved,rejected)
 // @Param        date_from    query  string  false  "开始日期 (YYYY-MM-DD)"
 // @Param        date_to      query  string  false  "结束日期 (YYYY-MM-DD)"
-// @Success      200  {object}  model.APIResponse[[]ReviewReportDTO]
+// @Success      200  {array}   ReviewReportDTO
 // @Router       /admin/review-reports [get]
 func (h *ReviewHandler) ListReviewReports(c *gin.Context) {
 	page, pageSize, ok := parsePagination(c)
@@ -396,7 +396,7 @@ func (h *ReviewHandler) ListReviewReports(c *gin.Context) {
 // @Security     BearerAuth
 // @Produce      json
 // @Param        id   path  int  true  "举报ID"
-// @Success      200  {object}  model.APIResponse[ReviewReportDTO]
+// @Success      200  {object}  ReviewReportDTO
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/review-reports/{id} [get]
 func (h *ReviewHandler) GetReviewReport(c *gin.Context) {
@@ -420,7 +420,7 @@ func (h *ReviewHandler) GetReviewReport(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int                       true  "举报ID"
 // @Param        request  body  HandleReviewReportPayload  true  "处理信息"
-// @Success      200  {object}  model.APIResponse[HandleReviewReportResponse]
+// @Success      200  {object}  HandleReviewReportResponse
 // @Failure      400  {object}  model.ErrorResponse
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/review-reports/{id}/handle [put]
@@ -492,7 +492,7 @@ type PendingReviewDTO struct {
 // @Param        page              query  int   false  "页码"
 // @Param        pageSize          query  int   false  "每页数量"
 // @Param        hasSensitiveWords query  bool  false  "是否含敏感词筛选"
-// @Success      200  {object}  model.APIResponse[[]PendingReviewDTO]
+// @Success      200  {array}   PendingReviewDTO
 // @Router       /admin/reviews/pending [get]
 func (h *ReviewHandler) ListPendingReviews(c *gin.Context) {
 	page, pageSize, ok := parsePagination(c)
@@ -726,7 +726,7 @@ type BatchRejectPayload struct {
 // @Tags         Admin/Reviews
 // @Security     BearerAuth
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[ApproveAllNonSensitiveResponse]
+// @Success      200  {object}  ApproveAllNonSensitiveResponse
 // @Failure      500  {object}  model.ErrorResponse
 // @Router       /admin/reviews/approve-all-non-sensitive [put]
 func (h *ReviewHandler) ApproveAllNonSensitiveReviews(c *gin.Context) {
@@ -866,7 +866,7 @@ func (h *ReviewHandler) DeleteReply(c *gin.Context) {
 // @Param        date_from     query  string  false  "开始日期 (YYYY-MM-DD)"
 // @Param        date_to       query  string  false  "结束日期 (YYYY-MM-DD)"
 // @Param        export        query  string  false  "导出格式" Enums(csv)
-// @Success      200  {object}  model.APIResponse[[]model.OperationLog]
+// @Success      200  {array}   model.OperationLog
 // @Router       /admin/operation-logs [get]
 func (h *ReviewHandler) SearchOperationLogs(c *gin.Context) {
 	page, pageSize, ok := parsePagination(c)

@@ -48,7 +48,7 @@ func RegisterRoutes(router gin.IRouter, svc *contentservice.NotificationService,
 // @Param        pageSize       query     int     false  "Page size"
 // @Param        unread         query     bool    false  "Filter unread only"
 // @Param        priority       query     array   false  "Filter by priority"
-// @Success      200            {object}  model.APIResponse[NotificationListResponse]
+// @Success      200            {object}  NotificationListResponse
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
@@ -144,7 +144,7 @@ func markNotificationsReadHandler(c *gin.Context, svc *contentservice.Notificati
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
-// @Success      200            {object}  model.APIResponse[map[string]int64]
+// @Success      200            {object}  map[string]int64
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
 // @Router       /notifications/unread-count [get]

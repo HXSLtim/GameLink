@@ -33,7 +33,7 @@ func NewReviewStatsHandler(svc *reviewservice.ReviewStatsService) *ReviewStatsHa
 // @Tags         Admin/Reviews
 // @Security     BearerAuth
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[reviewservice.GetReviewStatsResponse]
+// @Success      200  {object}  reviewservice.GetReviewStatsResponse
 // @Failure      500  {object}  model.ErrorResponse
 // @Router       /admin/reviews/stats [get]
 func (h *ReviewStatsHandler) GetReviewStats(c *gin.Context) {
@@ -52,7 +52,7 @@ func (h *ReviewStatsHandler) GetReviewStats(c *gin.Context) {
 // @Security     BearerAuth
 // @Produce      json
 // @Param        days  query  int  false  "统计天数（默认30天）"
-// @Success      200  {object}  model.APIResponse[reviewservice.GetReviewTrendResponse]
+// @Success      200  {object}  reviewservice.GetReviewTrendResponse
 // @Failure      500  {object}  model.ErrorResponse
 // @Router       /admin/reviews/trend [get]
 func (h *ReviewStatsHandler) GetReviewTrend(c *gin.Context) {
@@ -79,7 +79,7 @@ func (h *ReviewStatsHandler) GetReviewTrend(c *gin.Context) {
 // @Produce      json
 // @Param        limit    query  int     false  "数量限制（默认10）"
 // @Param        sort_by  query  string  false  "排序方式：count（评价数量）或 rating（评分）"
-// @Success      200  {object}  model.APIResponse[reviewservice.GetTopPlayersResponse]
+// @Success      200  {object}  reviewservice.GetTopPlayersResponse
 // @Failure      500  {object}  model.ErrorResponse
 // @Router       /admin/reviews/top-players [get]
 func (h *ReviewStatsHandler) GetTopPlayers(c *gin.Context) {
@@ -109,7 +109,7 @@ func (h *ReviewStatsHandler) GetTopPlayers(c *gin.Context) {
 // @Tags         Admin/Reviews
 // @Security     BearerAuth
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[reviewservice.GetGameStatsResponse]
+// @Success      200  {object}  reviewservice.GetGameStatsResponse
 // @Failure      500  {object}  model.ErrorResponse
 // @Router       /admin/reviews/game-stats [get]
 func (h *ReviewStatsHandler) GetGameStats(c *gin.Context) {

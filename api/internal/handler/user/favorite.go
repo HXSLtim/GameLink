@@ -56,7 +56,7 @@ type FavoritePlayerDTO struct {
 // @Produce      json
 // @Param        page      query     int  false  "页码" default(1)
 // @Param        pageSize  query     int  false  "每页数量" default(20)
-// @Success      200  {object}  resp.SuccessResponse
+// @Success      200  {object}  model.SuccessResponse
 // @Failure      401  {object}  apierr.APIError
 // @Failure      500  {object}  apierr.APIError
 // @Router       /user/favorites/players [get]
@@ -103,7 +103,7 @@ func (h *FavoriteHandler) listFavorites(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        id  path  uint64  true  "陪玩师ID"
-// @Success      200  {object}  resp.SuccessResponse
+// @Success      200  {object}  model.SuccessResponse
 // @Failure      400  {object}  apierr.APIError
 // @Failure      401  {object}  apierr.APIError
 // @Failure      404  {object}  apierr.APIError
@@ -165,7 +165,7 @@ func (h *FavoriteHandler) addFavorite(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        id  path  uint64  true  "陪玩师ID"
-// @Success      200  {object}  resp.SuccessResponse
+// @Success      200  {object}  model.SuccessResponse
 // @Failure      400  {object}  apierr.APIError
 // @Failure      401  {object}  apierr.APIError
 // @Failure      404  {object}  apierr.APIError
@@ -200,7 +200,7 @@ func (h *FavoriteHandler) removeFavorite(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        id  path  uint64  true  "陪玩师ID"
-// @Success      200  {object}  resp.SuccessResponse
+// @Success      200  {object}  model.SuccessResponse
 // @Failure      400  {object}  apierr.APIError
 // @Failure      401  {object}  apierr.APIError
 // @Failure      500  {object}  apierr.APIError

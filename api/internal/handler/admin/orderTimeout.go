@@ -29,7 +29,7 @@ func NewOrderTimeoutHandler(svc *ordertimeout.OrderTimeoutService) *OrderTimeout
 // @Tags         Admin/OrderTimeout
 // @Security     BearerAuth
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[[]model.OrderTimeoutConfig]
+// @Success      200  {array}   model.OrderTimeoutConfig
 // @Router       /admin/order-timeout/configs [get]
 func (h *OrderTimeoutHandler) ListConfigs(c *gin.Context) {
 	configs, err := h.svc.ListConfigs(c.Request.Context())
@@ -46,7 +46,7 @@ func (h *OrderTimeoutHandler) ListConfigs(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        key   path  string  true  "配置键"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[model.OrderTimeoutConfig]
+// @Success      200  {object}  model.OrderTimeoutConfig
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/order-timeout/configs/{key} [get]
 func (h *OrderTimeoutHandler) GetConfig(c *gin.Context) {
@@ -131,7 +131,7 @@ func (h *OrderTimeoutHandler) DeleteConfig(c *gin.Context) {
 // @Param        timeoutType  query  string  false  "超时类型" Enums(payment_timeout,accept_timeout)
 // @Param        action       query  string  false  "处理动作" Enums(canceled,refunded,notified)
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[[]model.OrderTimeoutLog]
+// @Success      200  {array}   model.OrderTimeoutLog
 // @Router       /admin/order-timeout/logs [get]
 func (h *OrderTimeoutHandler) ListTimeoutLogs(c *gin.Context) {
 	page, pageSize, ok := parsePagination(c)
@@ -178,7 +178,7 @@ func (h *OrderTimeoutHandler) ListTimeoutLogs(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "日志ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[model.OrderTimeoutLog]
+// @Success      200  {object}  model.OrderTimeoutLog
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/order-timeout/logs/{id} [get]
 func (h *OrderTimeoutHandler) GetTimeoutLog(c *gin.Context) {
@@ -201,7 +201,7 @@ func (h *OrderTimeoutHandler) GetTimeoutLog(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "订单ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[[]model.OrderTimeoutLog]
+// @Success      200  {array}   model.OrderTimeoutLog
 // @Router       /admin/orders/{id}/timeout-logs [get]
 func (h *OrderTimeoutHandler) GetTimeoutLogsByOrder(c *gin.Context) {
 	orderID, ok := ParseIDAndRespond(c, "id")
@@ -222,7 +222,7 @@ func (h *OrderTimeoutHandler) GetTimeoutLogsByOrder(c *gin.Context) {
 // @Tags         Admin/OrderTimeout
 // @Security     BearerAuth
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[map[string]int64]
+// @Success      200  {object}  map[string]int64
 // @Router       /admin/order-timeout/logs/stats [get]
 func (h *OrderTimeoutHandler) GetTimeoutLogStats(c *gin.Context) {
 	stats, err := h.svc.GetLogStats(c.Request.Context())
@@ -254,7 +254,7 @@ func (h *OrderTimeoutHandler) GetTimeoutLogStats(c *gin.Context) {
 // @Param        status         query  string  false  "状态筛选" Enums(assigned,joined,left,completed)
 // @Param        assignType     query  string  false  "分配方式" Enums(auto,manual)
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[[]model.OrderServiceAssignment]
+// @Success      200  {array}   model.OrderServiceAssignment
 // @Router       /admin/order-timeout/assignments [get]
 func (h *OrderTimeoutHandler) ListServiceAssignments(c *gin.Context) {
 	page, pageSize, ok := parsePagination(c)
@@ -301,7 +301,7 @@ func (h *OrderTimeoutHandler) ListServiceAssignments(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "分配记录ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[model.OrderServiceAssignment]
+// @Success      200  {object}  model.OrderServiceAssignment
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/order-timeout/assignments/{id} [get]
 func (h *OrderTimeoutHandler) GetServiceAssignment(c *gin.Context) {
@@ -333,7 +333,7 @@ type AssignServiceRequest struct {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  AssignServiceRequest  true  "分配信息"
-// @Success      201  {object}  model.APIResponse[model.OrderServiceAssignment]
+// @Success      201  {object}  model.OrderServiceAssignment
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/order-timeout/assignments [post]
 func (h *OrderTimeoutHandler) AssignService(c *gin.Context) {
@@ -419,7 +419,7 @@ func (h *OrderTimeoutHandler) DeleteServiceAssignment(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "订单ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[model.OrderServiceAssignment]
+// @Success      200  {object}  model.OrderServiceAssignment
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/orders/{id}/service-assignment [get]
 func (h *OrderTimeoutHandler) GetAssignmentByOrder(c *gin.Context) {
@@ -441,7 +441,7 @@ func (h *OrderTimeoutHandler) GetAssignmentByOrder(c *gin.Context) {
 // @Tags         Admin/OrderTimeout
 // @Security     BearerAuth
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[map[string]int64]
+// @Success      200  {object}  map[string]int64
 // @Router       /admin/order-timeout/assignments/stats [get]
 func (h *OrderTimeoutHandler) GetAssignmentStats(c *gin.Context) {
 	stats, err := h.svc.GetAssignmentStats(c.Request.Context())

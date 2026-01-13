@@ -32,7 +32,7 @@ func NewUserBehaviorHandler(statsService *adminservice.StatsService) *UserBehavi
 // @Tags         Admin/UserBehavior
 // @Security     BearerAuth
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[adminservice.UserBehaviorStatsResponse]
+// @Success      200  {object}  adminservice.UserBehaviorStatsResponse
 // @Router       /admin/users/behavior/stats [get]
 func (h *UserBehaviorHandler) GetBehaviorStats(c *gin.Context) {
 	stats, err := h.statsService.UserBehaviorStats(c.Request.Context())
@@ -74,7 +74,7 @@ func (h *UserBehaviorHandler) GetActivityTrend(c *gin.Context) {
 // @Tags         Admin/UserBehavior
 // @Security     BearerAuth
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[adminservice.UserDistributionResponse]
+// @Success      200  {object}  adminservice.UserDistributionResponse
 // @Router       /admin/users/behavior/distribution [get]
 func (h *UserBehaviorHandler) GetUserDistribution(c *gin.Context) {
 	distribution, err := h.statsService.UserDistribution(c.Request.Context())

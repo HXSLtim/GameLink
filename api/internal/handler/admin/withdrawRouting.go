@@ -39,7 +39,7 @@ func NewWithdrawRoutingHandler(statsSvc *svc.WithdrawRoutingStatsService) *Withd
 // @Param        page                 query  int     false  "页码"
 // @Param        pageSize             query  int     false  "每页数量"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[model.ListWithdrawsByCompanyResponse]
+// @Success      200  {object}  model.ListWithdrawsByCompanyResponse
 // @Router       /admin/withdrawals/by-company [get]
 func (h *WithdrawRoutingHandler) ListWithdrawalsByCompany(c *gin.Context) {
 	page, pageSize, ok := parsePagination(c)
@@ -109,7 +109,7 @@ func (h *WithdrawRoutingHandler) ListWithdrawalsByCompany(c *gin.Context) {
 // @Param        dateFrom  query  string  false  "开始日期 (YYYY-MM-DD)"
 // @Param        dateTo    query  string  false  "结束日期 (YYYY-MM-DD)"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[model.WithdrawRoutingStatsResponse]
+// @Success      200  {object}  model.WithdrawRoutingStatsResponse
 // @Router       /admin/withdrawals/routing-stats [get]
 func (h *WithdrawRoutingHandler) GetWithdrawRoutingStats(c *gin.Context) {
 	req := &model.WithdrawRoutingStatsRequest{}
@@ -148,7 +148,7 @@ func (h *WithdrawRoutingHandler) GetWithdrawRoutingStats(c *gin.Context) {
 // @Param        month       query  int     false  "月份 (月报必填)"
 // @Param        quarter     query  int     false  "季度 (季报必填)"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[model.WithdrawRoutingReport]
+// @Success      200  {object}  model.WithdrawRoutingReport
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/withdrawals/routing-report [get]
 func (h *WithdrawRoutingHandler) GenerateWithdrawRoutingReport(c *gin.Context) {
@@ -175,7 +175,7 @@ func (h *WithdrawRoutingHandler) GenerateWithdrawRoutingReport(c *gin.Context) {
 // @Param        dateFrom  query  string  false  "开始日期 (YYYY-MM-DD)"
 // @Param        dateTo    query  string  false  "结束日期 (YYYY-MM-DD)"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[model.WithdrawRoutingStats]
+// @Success      200  {object}  model.WithdrawRoutingStats
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/settlement-companies/{id}/withdrawal-stats [get]
 func (h *WithdrawRoutingHandler) GetCompanyWithdrawalStats(c *gin.Context) {

@@ -19,7 +19,7 @@ import (
 // @Accept       json
 // @Produce      json
 // @Param        request  body  UpdatePlayerProfileRequest  true  "更新信息"
-// @Success      200      {object}  model.SuccessResponse
+// @Success      200      {object}  SuccessResponseSwagger
 // @Failure      400      {object}  apierr.APIError
 // @Failure      401      {object}  apierr.APIError
 // @Failure      404      {object}  apierr.APIError

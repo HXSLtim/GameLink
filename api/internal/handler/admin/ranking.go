@@ -43,7 +43,7 @@ type CreateRankingCommissionConfigRequest struct {
 // @Produce      json
 // @Param        Authorization  header    string                                   true  "Bearer {token}"
 // @Param        request        body      CreateRankingCommissionConfigRequest  true  "配置信息"
-// @Success      200            {object}  model.APIResponse[RankingCommissionConfig]
+// @Success      200            {object}  RankingCommissionConfig
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/ranking-commission/configs [post]

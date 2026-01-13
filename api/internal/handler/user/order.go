@@ -40,7 +40,7 @@ func RegisterOrderRoutes(router gin.IRouter, svc *order.OrderService, authMiddle
 // @Produce      json
 // @Param        Authorization  header    string                       true  "Bearer {token}"
 // @Param        request        body      order.CreateOrderRequest     true  "创建订单请求"
-// @Success      200            {object}  model.APIResponse[CreateOrderResponse]
+// @Success      200            {object}  CreateOrderResponse
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /user/orders [post]
@@ -89,7 +89,7 @@ func getOrderMessagesHandler(c *gin.Context, svc *order.OrderService) {
 // @Param        status    query     string     false  "Status filter" Enums(pending,confirmed,in_progress,completed,canceled,refunded)
 // @Param        page      query     int        false  "Page number" default(1)
 // @Param        pageSize  query     int        false  "Page size" default(20)
-// @Success      200       {object}  model.APIResponse[MyOrderListResponse]
+// @Success      200       {object}  MyOrderListResponse
 // @Failure      400       {object}  model.ErrorResponse
 // @Failure      401       {object}  model.ErrorResponse
 // @Router       /user/orders [get]
@@ -119,7 +119,7 @@ func getMyOrdersHandler(c *gin.Context, svc *order.OrderService) {
 // @Accept       json
 // @Produce      json
 // @Param        id    path      uint64  true  "订单ID"
-// @Success      200   {object}  model.APIResponse[OrderDetailResponse]
+// @Success      200   {object}  OrderDetailResponse
 // @Failure      400   {object}  model.ErrorResponse
 // @Failure      401   {object}  model.ErrorResponse
 // @Failure      404   {object}  model.ErrorResponse

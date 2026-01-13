@@ -71,7 +71,7 @@ func parseQueryParams(c *gin.Context) (*analyticsservice.DateRange, analyticsser
 // @Param        end_date     query  string  true   "结束日期 (YYYY-MM-DD)"
 // @Param        granularity  query  string  false  "时间粒度" Enums(day,week,month)
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[analyticsservice.ActiveUsersData]
+// @Success      200  {object}  analyticsservice.ActiveUsersData
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/analytics/active-users [get]
 func (h *AnalyticsHandler) GetActiveUsers(c *gin.Context) {
@@ -112,7 +112,7 @@ func (h *AnalyticsHandler) GetActiveUsers(c *gin.Context) {
 // @Param        end_date     query  string  true   "结束日期 (YYYY-MM-DD)"
 // @Param        granularity  query  string  false  "时间粒度" Enums(day,week,month)
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[analyticsservice.RetentionData]
+// @Success      200  {object}  analyticsservice.RetentionData
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/analytics/retention [get]
 func (h *AnalyticsHandler) GetRetention(c *gin.Context) {
@@ -153,7 +153,7 @@ func (h *AnalyticsHandler) GetRetention(c *gin.Context) {
 // @Param        end_date     query  string  true   "结束日期 (YYYY-MM-DD)"
 // @Param        granularity  query  string  false  "时间粒度" Enums(day,week,month)
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[analyticsservice.PaymentData]
+// @Success      200  {object}  analyticsservice.PaymentData
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/analytics/payment [get]
 func (h *AnalyticsHandler) GetPaymentAnalytics(c *gin.Context) {
@@ -194,7 +194,7 @@ func (h *AnalyticsHandler) GetPaymentAnalytics(c *gin.Context) {
 // @Param        end_date     query  string  true   "结束日期 (YYYY-MM-DD)"
 // @Param        granularity  query  string  false  "时间粒度" Enums(day,week,month)
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[analyticsservice.ConversionFunnel]
+// @Success      200  {object}  analyticsservice.ConversionFunnel
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/analytics/conversion [get]
 func (h *AnalyticsHandler) GetConversionFunnel(c *gin.Context) {

@@ -51,7 +51,7 @@ func RegisterWithdrawRoutes(router gin.IRouter, withdrawRepo withdrawrepo.Withdr
 // @Param        playerId       query     int     false  "陪玩师ID"
 // @Param        page           query     int     false  "页码"
 // @Param        pageSize       query     int     false  "每页数量"
-// @Success      200            {object}  model.APIResponse[[]model.Withdraw]
+// @Success      200            {array}   model.Withdraw
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/withdraws [get]
@@ -105,7 +105,7 @@ func listWithdrawsHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository) 
 // @Produce      json
 // @Security     BearerAuth
 // @Param        id             path      int     true  "提现ID"
-// @Success      200            {object}  model.APIResponse[Withdraw]
+// @Success      200            {object}  Withdraw
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/withdraws/{id} [get]
@@ -138,7 +138,7 @@ type ApproveWithdrawRequest struct {
 // @Security     BearerAuth
 // @Param        id             path      int                      true  "提现ID"
 // @Param        request        body      ApproveWithdrawRequest  false  "审核备注"
-// @Success      200            {object}  model.APIResponse[string]
+// @Success      200            {object}  string
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/withdraws/{id}/approve [post]
@@ -197,7 +197,7 @@ type RejectWithdrawRequest struct {
 // @Security     BearerAuth
 // @Param        id             path      int                     true  "提现ID"
 // @Param        request        body      RejectWithdrawRequest  true  "拒绝原因"
-// @Success      200            {object}  model.APIResponse[string]
+// @Success      200            {object}  string
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/withdraws/{id}/reject [post]
@@ -253,7 +253,7 @@ func rejectWithdrawHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository)
 // @Produce      json
 // @Security     BearerAuth
 // @Param        id             path      int     true  "提现ID"
-// @Success      200            {object}  model.APIResponse[string]
+// @Success      200            {object}  string
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/withdraws/{id}/complete [post]
@@ -309,7 +309,7 @@ func completeWithdrawHandler(c *gin.Context, repo withdrawrepo.WithdrawRepositor
 // @Param        dateTo               query     string  false  "结束日期"
 // @Param        page                 query     int     false  "页码"
 // @Param        pageSize             query     int     false  "每页数量"
-// @Success      200                  {object}  model.APIResponse[[]model.Withdraw]
+// @Success      200                  {array}   model.Withdraw
 // @Router       /admin/withdrawals/by-company [get]
 func listWithdrawsByCompanyHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository) {
 	page, pageSize, ok := parsePagination(c)
@@ -401,7 +401,7 @@ func listWithdrawsByCompanyHandler(c *gin.Context, repo withdrawrepo.WithdrawRep
 // @Security     BearerAuth
 // @Param        dateFrom  query     string  false  "开始日期"
 // @Param        dateTo    query     string  false  "结束日期"
-// @Success      200       {object}  model.APIResponse[model.WithdrawRoutingStatsResponse]
+// @Success      200       {object}  model.WithdrawRoutingStatsResponse
 // @Router       /admin/withdrawals/routing-stats [get]
 func getWithdrawRoutingStatsHandler(c *gin.Context, repo withdrawrepo.WithdrawRepository) {
 	var dateFrom, dateTo *time.Time
@@ -482,7 +482,7 @@ type BatchApproveWithdrawalsRequest struct {
 // @Produce      json
 // @Security     BearerAuth
 // @Param        request  body  BatchApproveWithdrawalsRequest  true  "批量批准请求"
-// @Success      200      {object}  model.APIResponse[withdrawservice.BatchOperationResult]
+// @Success      200      {object}  withdrawservice.BatchOperationResult
 // @Failure      400      {object}  model.ErrorResponse
 // @Failure      401      {object}  model.ErrorResponse
 // @Router       /admin/withdraws/batch/approve [post]
@@ -529,7 +529,7 @@ type BatchRejectWithdrawalsRequest struct {
 // @Produce      json
 // @Security     BearerAuth
 // @Param        request  body  BatchRejectWithdrawalsRequest  true  "批量拒绝请求"
-// @Success      200      {object}  model.APIResponse[withdrawservice.BatchOperationResult]
+// @Success      200      {object}  withdrawservice.BatchOperationResult
 // @Failure      400      {object}  model.ErrorResponse
 // @Failure      401      {object}  model.ErrorResponse
 // @Router       /admin/withdraws/batch/reject [post]
@@ -575,7 +575,7 @@ type BatchCompleteWithdrawalsRequest struct {
 // @Produce      json
 // @Security     BearerAuth
 // @Param        request  body  BatchCompleteWithdrawalsRequest  true  "批量完成请求"
-// @Success      200      {object}  model.APIResponse[withdrawservice.BatchOperationResult]
+// @Success      200      {object}  withdrawservice.BatchOperationResult
 // @Failure      400      {object}  model.ErrorResponse
 // @Failure      401      {object}  model.ErrorResponse
 // @Router       /admin/withdraws/batch/complete [post]

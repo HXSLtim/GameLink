@@ -602,7 +602,7 @@ type BatchDeleteUserTagsRequest struct {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchDeleteUserTagsRequest  true  "标签ID列表"
-// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+// @Success      200  {object}  BatchOperationResponse
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/user-tags/batch/delete [post]
 func BatchDeleteUserTags(s *user.UserTagService) gin.HandlerFunc {
@@ -646,7 +646,7 @@ type BatchAssignTagsToUsersRequest struct {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchAssignTagsToUsersRequest  true  "用户ID列表和标签ID列表"
-// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+// @Success      200  {object}  BatchOperationResponse
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/user-tags/batch/assign [post]
 func BatchAssignTagsToUsers(s *user.UserTagService) gin.HandlerFunc {
@@ -698,7 +698,7 @@ type BatchRemoveTagsFromUsersRequest struct {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchRemoveTagsFromUsersRequest  true  "用户ID列表和标签ID列表"
-// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+// @Success      200  {object}  BatchOperationResponse
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/user-tags/batch/remove [post]
 func BatchRemoveTagsFromUsers(s *user.UserTagService) gin.HandlerFunc {

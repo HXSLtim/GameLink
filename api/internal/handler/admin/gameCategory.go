@@ -27,7 +27,7 @@ func NewGameCategoryHandler(svc *adminservice.AdminService) *GameCategoryHandler
 // @Accept       json
 // @Produce      json
 // @Param        request  body  CreateCategoryRequest  true  "分类信息"
-// @Success      201  {object}  model.APIResponse[GameCategory]
+// @Success      201  {object}  GameCategory
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/game-categories [post]
 func (h *GameCategoryHandler) CreateCategory(c *gin.Context) {
@@ -55,7 +55,7 @@ func (h *GameCategoryHandler) CreateCategory(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "分类ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[GameCategory]
+// @Success      200  {object}  GameCategory
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/game-categories/{id} [get]
 func (h *GameCategoryHandler) GetCategory(c *gin.Context) {
@@ -81,7 +81,7 @@ func (h *GameCategoryHandler) GetCategory(c *gin.Context) {
 // @Param        keyword    query  string  false  "关键词搜索"
 // @Param        isActive   query  bool    false  "是否启用"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[[]GameCategory]
+// @Success      200  {array}   GameCategory
 // @Router       /admin/game-categories [get]
 func (h *GameCategoryHandler) ListCategories(c *gin.Context) {
 	page, pageSize, ok := parsePagination(c)
@@ -117,7 +117,7 @@ func (h *GameCategoryHandler) ListCategories(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int                      true  "分类ID"
 // @Param        request  body  UpdateCategoryRequest   true  "分类信息"
-// @Success      200  {object}  model.APIResponse[GameCategory]
+// @Success      200  {object}  GameCategory
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/game-categories/{id} [put]
 func (h *GameCategoryHandler) UpdateCategory(c *gin.Context) {
@@ -176,7 +176,7 @@ func (h *GameCategoryHandler) DeleteCategory(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchUpdateCategoryStatusRequest  true  "分类ID列表和状态"
-// @Success      200  {object}  model.APIResponse[adminservice.BatchOperationResponse]
+// @Success      200  {object}  BatchOperationResponse
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/game-categories/batch/status [post]
 func (h *GameCategoryHandler) BatchUpdateStatus(c *gin.Context) {
@@ -210,7 +210,7 @@ func (h *GameCategoryHandler) BatchUpdateStatus(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchDeleteCategoriesRequest  true  "分类ID列表"
-// @Success      200  {object}  model.APIResponse[adminservice.BatchOperationResponse]
+// @Success      200  {object}  BatchOperationResponse
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/game-categories/batch/delete [post]
 func (h *GameCategoryHandler) BatchDeleteCategories(c *gin.Context) {

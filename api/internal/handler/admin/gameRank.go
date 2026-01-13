@@ -57,7 +57,7 @@ type GameRankUpdatePayload struct {
 // @Param        keyword    query  string  false  "关键词搜索"
 // @Param        isActive   query  bool    false  "是否启用"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[[]model.GameRank]
+// @Success      200  {array}   model.GameRank
 // @Router       /admin/game-ranks [get]
 func (h *GameRankHandler) ListGameRanks(c *gin.Context) {
 	page, pageSize, ok := parsePagination(c)
@@ -98,7 +98,7 @@ func (h *GameRankHandler) ListGameRanks(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        gameId   path  int  true  "游戏ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[[]model.GameRank]
+// @Success      200  {array}   model.GameRank
 // @Router       /admin/games/{gameId}/ranks [get]
 func (h *GameRankHandler) ListGameRanksByGame(c *gin.Context) {
 	gameID, ok := ParseIDAndRespond(c, "gameId")
@@ -120,7 +120,7 @@ func (h *GameRankHandler) ListGameRanksByGame(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "段位ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[model.GameRank]
+// @Success      200  {object}  model.GameRank
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/game-ranks/{id} [get]
 func (h *GameRankHandler) GetGameRank(c *gin.Context) {
@@ -144,7 +144,7 @@ func (h *GameRankHandler) GetGameRank(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  GameRankPayload  true  "段位信息"
-// @Success      201  {object}  model.APIResponse[model.GameRank]
+// @Success      201  {object}  model.GameRank
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/game-ranks [post]
 func (h *GameRankHandler) CreateGameRank(c *gin.Context) {
@@ -179,7 +179,7 @@ func (h *GameRankHandler) CreateGameRank(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int                    true  "段位ID"
 // @Param        request  body  GameRankUpdatePayload  true  "段位信息"
-// @Success      200  {object}  model.APIResponse[model.GameRank]
+// @Success      200  {object}  model.GameRank
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/game-ranks/{id} [put]
 func (h *GameRankHandler) UpdateGameRank(c *gin.Context) {
@@ -244,7 +244,7 @@ type BatchDeleteGameRanksRequest struct {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchDeleteGameRanksRequest  true  "段位ID列表"
-// @Success      200  {object}  model.APIResponse[map[string]int64]
+// @Success      200  {object}  map[string]int64
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/game-ranks/batch/delete [post]
 func (h *GameRankHandler) BatchDeleteGameRanks(c *gin.Context) {
@@ -285,7 +285,7 @@ type BatchUpdateStatusRequest struct {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchUpdateStatusRequest  true  "请求体"
-// @Success      200  {object}  model.APIResponse[map[string]int64]
+// @Success      200  {object}  map[string]int64
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/game-ranks/batch/status [post]
 func (h *GameRankHandler) BatchUpdateGameRankStatus(c *gin.Context) {

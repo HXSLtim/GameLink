@@ -27,7 +27,7 @@ func RegisterReviewRoutes(router gin.IRouter, svc *orderservice.ReviewService, a
 // @Param        Authorization  header    string                             true  "Bearer {token}"
 // @Param        id             path      int                                true  "Review ID"
 // @Param        request        body      orderservice.ReplyReviewRequest   true  "Reply content"
-// @Success      200            {object}  model.APIResponse[orderservice.ReplyReviewResponse]
+// @Success      200            {object}  orderservice.ReplyReviewResponse
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      403            {object}  model.ErrorResponse

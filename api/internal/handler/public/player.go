@@ -57,7 +57,7 @@ type PlayerListResponse struct {
 // @Param page query int false "页码" default(1)
 // @Param pageSize query int false "每页数量" default(20)
 // @Param keyword query string false "搜索关键词"
-// @Success 200 {object} resp.Response{data=PlayerListResponse}
+// @Success 200 {object} PlayerListResponse
 // @Router /public/players [get]
 func (h *PlayerHandler) ListPlayers(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
@@ -116,8 +116,8 @@ func (h *PlayerHandler) ListPlayers(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path int true "陪玩师ID"
-// @Success 200 {object} resp.Response{data=PublicPlayerInfo}
-// @Failure 404 {object} resp.Response
+// @Success 200 {object} PublicPlayerInfo
+// @Failure 404 {object}  apierr.APIError
 // @Router /public/players/{id} [get]
 func (h *PlayerHandler) GetPlayer(c *gin.Context) {
 	idStr := c.Param("id")

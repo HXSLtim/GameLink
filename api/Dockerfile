@@ -113,6 +113,7 @@ WORKDIR /app
 # 从构建阶段复制二进制文件和配置
 COPY --from=builder /build/server /app/server
 COPY --chown=gamelink:gamelink configs/ /app/configs/
+COPY --chown=gamelink:gamelink docs/ /app/docs/
 
 # 创建必要的目录并设置权限
 RUN mkdir -p /app/var /app/logs /app/upload && \

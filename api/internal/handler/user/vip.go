@@ -26,7 +26,7 @@ func NewVipHandler(svc *vipservice.Service) *VipHandler {
 // @Summary 获取VIP等级列表
 // @Tags 用户-VIP
 // @Produce json
-// @Success 200 {object} model.APIResponse[[]model.VipLevel]
+// @Success 200 {array}   model.VipLevel
 // @Router /user/vip/levels [get]
 func (h *VipHandler) ListLevels(c *gin.Context) {
 	levels, err := h.svc.ListActiveLevels(c.Request.Context())
@@ -43,7 +43,7 @@ func (h *VipHandler) ListLevels(c *gin.Context) {
 // @Tags 用户-VIP
 // @Produce json
 // @Param id path int true "等级ID"
-// @Success 200 {object} model.APIResponse[model.VipLevel]
+// @Success 200 {object} model.VipLevel
 // @Router /user/vip/levels/{id} [get]
 func (h *VipHandler) GetLevel(c *gin.Context) {
 	id, ok := resp.ParseIDOrFail(c, "id")

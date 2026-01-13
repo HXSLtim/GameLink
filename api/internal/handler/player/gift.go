@@ -29,7 +29,7 @@ func RegisterGiftRoutes(router gin.IRouter, svc *gift.GiftService, authMiddlewar
 // @Param        Authorization  header    string  true   "Bearer {token}"
 // @Param        page           query     int     false  "页码"
 // @Param        pageSize       query     int     false  "每页数量"
-// @Success      200            {object}  model.APIResponse[gift.ReceivedGiftsResponse]
+// @Success      200            {object}  gift.ReceivedGiftsResponse
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /player/gifts/received [get]
@@ -62,7 +62,7 @@ func getReceivedGiftsHandler(c *gin.Context, svc *gift.GiftService) {
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
-// @Success      200            {object}  model.APIResponse[gift.GiftStatsResponse]
+// @Success      200            {object}  gift.GiftStatsResponse
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /player/gifts/stats [get]

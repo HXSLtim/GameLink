@@ -32,7 +32,7 @@ func NewCollectionEntityHandler(svc *svc.CollectionEntityService) *CollectionEnt
 // @Param        sortBy     query  string  false  "排序字段" Enums(name, created_at, total_collection_cents)
 // @Param        sortOrder  query  string  false  "排序方向" Enums(asc, desc)
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[model.ListCollectionEntitiesResponse]
+// @Success      200  {object}  model.ListCollectionEntitiesResponse
 // @Router       /admin/collection-entities [get]
 func (h *CollectionEntityHandler) ListCollectionEntities(c *gin.Context) {
 	page, pageSize, ok := parsePagination(c)
@@ -73,7 +73,7 @@ func (h *CollectionEntityHandler) ListCollectionEntities(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "收款主体ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[model.CollectionEntity]
+// @Success      200  {object}  model.CollectionEntity
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/collection-entities/{id} [get]
 func (h *CollectionEntityHandler) GetCollectionEntity(c *gin.Context) {
@@ -97,7 +97,7 @@ func (h *CollectionEntityHandler) GetCollectionEntity(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  model.CreateCollectionEntityRequest  true  "收款主体信息"
-// @Success      201  {object}  model.APIResponse[model.CollectionEntity]
+// @Success      201  {object}  model.CollectionEntity
 // @Failure      400  {object}  model.ErrorResponse
 // @Failure      409  {object}  model.ErrorResponse
 // @Router       /admin/collection-entities [post]
@@ -128,7 +128,7 @@ func (h *CollectionEntityHandler) CreateCollectionEntity(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int                                   true  "收款主体ID"
 // @Param        request  body  model.UpdateCollectionEntityRequest  true  "收款主体信息"
-// @Success      200  {object}  model.APIResponse[model.CollectionEntity]
+// @Success      200  {object}  model.CollectionEntity
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/collection-entities/{id} [put]
 func (h *CollectionEntityHandler) UpdateCollectionEntity(c *gin.Context) {
@@ -197,7 +197,7 @@ func (h *CollectionEntityHandler) ToggleCollectionEntityStatus(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "收款主体ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[[]model.CollectionEntityHistory]
+// @Success      200  {array}   model.CollectionEntityHistory
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/collection-entities/{id}/history [get]
 func (h *CollectionEntityHandler) GetCollectionEntityHistory(c *gin.Context) {
@@ -252,7 +252,7 @@ func (h *CollectionEntityHandler) SetDefaultCollectionEntity(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int                                true  "收款主体ID"
 // @Param        request  body  model.ConfigurePaymentChannelRequest  true  "支付渠道配置"
-// @Success      200  {object}  model.APIResponse[model.PaymentChannelConfig]
+// @Success      200  {object}  model.PaymentChannelConfig
 // @Failure      400  {object}  model.ErrorResponse
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/collection-entities/{id}/channels [post]
@@ -286,7 +286,7 @@ func (h *CollectionEntityHandler) ConfigurePaymentChannel(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "收款主体ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[[]model.PaymentChannelConfig]
+// @Success      200  {array}   model.PaymentChannelConfig
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/collection-entities/{id}/channels [get]
 func (h *CollectionEntityHandler) ListPaymentChannels(c *gin.Context) {
@@ -312,7 +312,7 @@ func (h *CollectionEntityHandler) ListPaymentChannels(c *gin.Context) {
 // @Param        id         path  int                                true  "收款主体ID"
 // @Param        channelId  path  int                                true  "支付渠道ID"
 // @Param        request    body  model.ConfigurePaymentChannelRequest  true  "支付渠道配置"
-// @Success      200  {object}  model.APIResponse[model.PaymentChannelConfig]
+// @Success      200  {object}  model.PaymentChannelConfig
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/collection-entities/{id}/channels/{channelId} [put]
 func (h *CollectionEntityHandler) UpdatePaymentChannel(c *gin.Context) {

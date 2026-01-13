@@ -45,7 +45,7 @@ func NewContentHandler(
 // @Param        categoryId       query     int     false  "分类ID"
 // @Param        keyword          query     string  false  "关键词"
 // @Param        moderationStatus query     string  false  "审核状态"
-// @Success      200  {object}  model.APIResponse[content.AdminListFeedsResponse]
+// @Success      200  {object}  content.AdminListFeedsResponse
 // @Router       /admin/content/feeds [get]
 func (h *ContentHandler) ListFeeds(c *gin.Context) {
 	page, pageSize, ok := parsePagination(c)
@@ -87,7 +87,7 @@ func (h *ContentHandler) ListFeeds(c *gin.Context) {
 // @Tags         Admin - Content
 // @Security     BearerAuth
 // @Param        id   path      int  true  "动态ID"
-// @Success      200  {object}  model.APIResponse[content.AdminFeedDTO]
+// @Success      200  {object}  content.AdminFeedDTO
 // @Router       /admin/content/feeds/{id} [get]
 func (h *ContentHandler) GetFeed(c *gin.Context) {
 	id, ok := ParseIDAndRespond(c, "id")
@@ -254,7 +254,7 @@ func (h *ContentHandler) BatchRejectFeed(c *gin.Context) {
 // @Tags         Admin - Content
 // @Security     BearerAuth
 // @Param        days query     int  false  "趋势天数"
-// @Success      200  {object}  model.APIResponse[content.ContentStatsDTO]
+// @Success      200  {object}  content.ContentStatsDTO
 // @Router       /admin/content/stats [get]
 func (h *ContentHandler) GetContentStats(c *gin.Context) {
 	days, _ := queryIntDefault(c, "days", 30)
@@ -300,7 +300,7 @@ func (h *ContentHandler) ExportContentStats(c *gin.Context) {
 // @Param        groupId     query     int     false  "群组ID"
 // @Param        senderId    query     int     false  "发送者ID"
 // @Param        auditStatus query     string  false  "审核状态"
-// @Success      200  {object}  model.APIResponse[content.ListMessagesResponse]
+// @Success      200  {object}  content.ListMessagesResponse
 // @Router       /admin/content/chat/messages [get]
 func (h *ContentHandler) ListChatMessages(c *gin.Context) {
 	page, pageSize, ok := parsePagination(c)
@@ -439,7 +439,7 @@ func (h *ContentHandler) UnmuteUser(c *gin.Context) {
 // @Param        pageSize   query     int     false  "每页数量"
 // @Param        feedId     query     int     false  "动态ID"
 // @Param        status     query     string  false  "状态"
-// @Success      200  {object}  model.APIResponse[content.ListFeedReportsResponse]
+// @Success      200  {object}  content.ListFeedReportsResponse
 // @Router       /admin/content/reports [get]
 func (h *ContentHandler) ListFeedReports(c *gin.Context) {
 	page, pageSize, ok := parsePagination(c)
@@ -479,7 +479,7 @@ func (h *ContentHandler) ListFeedReports(c *gin.Context) {
 // @Tags         Admin - Content
 // @Security     BearerAuth
 // @Param        id   path      int  true  "举报ID"
-// @Success      200  {object}  model.APIResponse[content.FeedReportDTO]
+// @Success      200  {object}  content.FeedReportDTO
 // @Router       /admin/content/reports/{id} [get]
 func (h *ContentHandler) GetFeedReport(c *gin.Context) {
 	id, ok := ParseIDAndRespond(c, "id")

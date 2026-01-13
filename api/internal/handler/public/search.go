@@ -71,7 +71,7 @@ type SearchResponse struct {
 // @Param        type      query     string  false  "搜索类型: player, game, all" default(all)
 // @Param        page      query     int     false  "页码" default(1)
 // @Param        pageSize  query     int     false  "每页数量" default(20)
-// @Success      200  {object}  resp.SuccessResponse
+// @Success      200  {object}  model.SuccessResponse
 // @Failure      400  {object}  apierr.APIError
 // @Failure      500  {object}  apierr.APIError
 // @Router       /public/search [get]

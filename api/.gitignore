@@ -25,10 +25,10 @@ coverage.out
 /*_coverage_final*/
 
 # Generated API docs
-docs/swagger.json
-docs/swagger.yaml
-docs/docs.go
-docs/docs_test.go
+# docs/swagger.json
+# docs/swagger.yaml
+# docs/docs.go
+# docs/docs_test.go
 
 # Generated Swagger artifacts folder
 /docs/swagger/*

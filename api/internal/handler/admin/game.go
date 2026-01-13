@@ -30,7 +30,7 @@ func NewGameHandler(svc *adminservice.AdminService) *GameHandler {
 // @Param        pageSize   query  int     false  "每页数量"
 // @Param        keyword    query  string  false  "关键词搜索"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[[]Game]
+// @Success      200  {array}   Game
 // @Router       /admin/games [get]
 func (h *GameHandler) ListGames(c *gin.Context) {
 	page, pageSize, ok := parsePagination(c)
@@ -53,7 +53,7 @@ func (h *GameHandler) ListGames(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "游戏ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[Game]
+// @Success      200  {object}  Game
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/games/{id} [get]
 func (h *GameHandler) GetGame(c *gin.Context) {
@@ -77,7 +77,7 @@ func (h *GameHandler) GetGame(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  GamePayload  true  "游戏信息"
-// @Success      201  {object}  model.APIResponse[Game]
+// @Success      201  {object}  Game
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/games [post]
 func (h *GameHandler) CreateGame(c *gin.Context) {
@@ -108,7 +108,7 @@ func (h *GameHandler) CreateGame(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int         true  "游戏ID"
 // @Param        request  body  GamePayload true  "游戏信息"
-// @Success      200  {object}  model.APIResponse[Game]
+// @Success      200  {object}  Game
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/games/{id} [put]
 func (h *GameHandler) UpdateGame(c *gin.Context) {
@@ -171,7 +171,7 @@ type BatchDeleteGamesRequest struct {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchDeleteGamesRequest  true  "游戏ID列表"
-// @Success      200  {object}  model.APIResponse[map[string]int64]
+// @Success      200  {object}  map[string]int64
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/games/batch/delete [post]
 func (h *GameHandler) BatchDeleteGames(c *gin.Context) {
@@ -214,7 +214,7 @@ func (h *GameHandler) BatchDeleteGames(c *gin.Context) {
 // @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
 // @Param        export       query  string false "导出格式" Enums(csv)
 // @Param        fields         query    string       false  "Export fields (comma separated)"// @Param        header_lang  query  string false "列头语言" Enums(en,zh)
-// @Success      200  {object}  model.APIResponse[[]model.OperationLog]
+// @Success      200  {array}   model.OperationLog
 // @Router       /admin/games/{id}/logs [get]
 func (h *GameHandler) ListGameLogs(c *gin.Context) {
 	handleOperationLogList(c, "game", h.svc.ListOperationLogs)

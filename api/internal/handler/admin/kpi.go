@@ -81,7 +81,7 @@ func parseKPIQueryParams(c *gin.Context) kpiservice.QueryParams {
 // @Param        end_date   query  string  false  "结束日期 (YYYY-MM-DD)"
 // @Param        compare    query  string  false  "对比类型" Enums(mom,yoy)
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[kpiservice.KPIOverview]
+// @Success      200  {object}  kpiservice.KPIOverview
 // @Router       /admin/kpi/overview [get]
 func (h *KPIHandler) GetOverview(c *gin.Context) {
 	params := parseKPIQueryParams(c)
@@ -114,7 +114,7 @@ func (h *KPIHandler) GetOverview(c *gin.Context) {
 // @Param        start_date query  string  false  "开始日期 (YYYY-MM-DD)"
 // @Param        end_date   query  string  false  "结束日期 (YYYY-MM-DD)"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[[]kpiservice.TrendPoint]
+// @Success      200  {array}   kpiservice.TrendPoint
 // @Router       /admin/kpi/trend [get]
 func (h *KPIHandler) GetTrend(c *gin.Context) {
 	metric := c.Query("metric")
@@ -155,7 +155,7 @@ func (h *KPIHandler) GetTrend(c *gin.Context) {
 // @Param        period_type  query  string  false  "周期类型" Enums(daily,weekly,monthly)
 // @Param        metric_name  query  string  false  "指标名称"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[[]model.KPITarget]
+// @Success      200  {array}   model.KPITarget
 // @Router       /admin/kpi/targets [get]
 func (h *KPIHandler) GetTargets(c *gin.Context) {
 	periodType := c.Query("period_type")
@@ -196,7 +196,7 @@ type CreateTargetPayload struct {
 // @Accept       json
 // @Param        request  body  CreateTargetPayload  true  "目标配置"
 // @Produce      json
-// @Success      201  {object}  model.APIResponse[model.KPITarget]
+// @Success      201  {object}  model.KPITarget
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/kpi/targets [post]
 func (h *KPIHandler) CreateTarget(c *gin.Context) {

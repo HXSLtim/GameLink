@@ -373,7 +373,7 @@ type BatchDeleteTeamsRequest struct {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchDeleteTeamsRequest  true  "团队ID列表"
-// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+// @Success      200  {object}  BatchOperationResponse
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/teams/batch/delete [post]
 func (h *TeamHandler) BatchDeleteTeams(c *gin.Context) {
@@ -417,7 +417,7 @@ type BatchUpdateTeamsStatusRequest struct {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchUpdateTeamsStatusRequest  true  "团队ID列表和新状态"
-// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+// @Success      200  {object}  BatchOperationResponse
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/teams/batch/status [put]
 func (h *TeamHandler) BatchUpdateTeamsStatus(c *gin.Context) {
@@ -476,7 +476,7 @@ type BatchAddTeamMembersRequest struct {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchAddTeamMembersRequest  true  "团队ID和陪玩师ID列表"
-// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+// @Success      200  {object}  BatchOperationResponse
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/teams/batch/members [post]
 func (h *TeamHandler) BatchAddTeamMembers(c *gin.Context) {

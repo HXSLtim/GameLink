@@ -34,7 +34,7 @@ func NewSettlementCompanyHandler(svc *svc.SettlementCompanyService) *SettlementC
 // @Param        sortBy     query  string  false  "排序字段" Enums(name, created_at, player_count)
 // @Param        sortOrder  query  string  false  "排序方向" Enums(asc, desc)
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[model.ListSettlementCompaniesResponse]
+// @Success      200  {object}  model.ListSettlementCompaniesResponse
 // @Router       /admin/settlement-companies [get]
 func (h *SettlementCompanyHandler) ListSettlementCompanies(c *gin.Context) {
 	page, pageSize, ok := parsePagination(c)
@@ -75,7 +75,7 @@ func (h *SettlementCompanyHandler) ListSettlementCompanies(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "结算公司ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[model.SettlementCompany]
+// @Success      200  {object}  model.SettlementCompany
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/settlement-companies/{id} [get]
 func (h *SettlementCompanyHandler) GetSettlementCompany(c *gin.Context) {
@@ -99,7 +99,7 @@ func (h *SettlementCompanyHandler) GetSettlementCompany(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  model.CreateSettlementCompanyRequest  true  "结算公司信息"
-// @Success      201  {object}  model.APIResponse[model.SettlementCompany]
+// @Success      201  {object}  model.SettlementCompany
 // @Failure      400  {object}  model.ErrorResponse
 // @Failure      409  {object}  model.ErrorResponse
 // @Router       /admin/settlement-companies [post]
@@ -130,7 +130,7 @@ func (h *SettlementCompanyHandler) CreateSettlementCompany(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int                                   true  "结算公司ID"
 // @Param        request  body  model.UpdateSettlementCompanyRequest  true  "结算公司信息"
-// @Success      200  {object}  model.APIResponse[model.SettlementCompany]
+// @Success      200  {object}  model.SettlementCompany
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/settlement-companies/{id} [put]
 func (h *SettlementCompanyHandler) UpdateSettlementCompany(c *gin.Context) {
@@ -199,7 +199,7 @@ func (h *SettlementCompanyHandler) ToggleSettlementCompanyStatus(c *gin.Context)
 // @Security     BearerAuth
 // @Param        id   path  int  true  "结算公司ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[[]model.SettlementCompanyHistory]
+// @Success      200  {array}   model.SettlementCompanyHistory
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/settlement-companies/{id}/history [get]
 func (h *SettlementCompanyHandler) GetSettlementCompanyHistory(c *gin.Context) {
@@ -224,7 +224,7 @@ func (h *SettlementCompanyHandler) GetSettlementCompanyHistory(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int                                true  "陪玩师ID"
 // @Param        request  body  AssignPlayerToCompanyPayload       true  "分配信息"
-// @Success      200  {object}  model.APIResponse[model.PlayerCompanyAssignment]
+// @Success      200  {object}  model.PlayerCompanyAssignment
 // @Failure      400  {object}  model.ErrorResponse
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/players/{id}/assign-company [post]
@@ -266,7 +266,7 @@ func (h *SettlementCompanyHandler) AssignPlayerToCompany(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  model.BatchAssignPlayersRequest  true  "批量分配信息"
-// @Success      200  {object}  model.APIResponse[BatchAssignResult]
+// @Success      200  {object}  BatchAssignResult
 // @Failure      400  {object}  model.ErrorResponse
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/players/batch-assign-company [post]
@@ -299,7 +299,7 @@ func (h *SettlementCompanyHandler) BatchAssignPlayersToCompany(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "陪玩师ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[model.PlayerCompanyAssignment]
+// @Success      200  {object}  model.PlayerCompanyAssignment
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/players/{id}/current-company [get]
 func (h *SettlementCompanyHandler) GetPlayerCurrentAssignment(c *gin.Context) {
@@ -322,7 +322,7 @@ func (h *SettlementCompanyHandler) GetPlayerCurrentAssignment(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "陪玩师ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[model.PlayerAssignmentHistoryResponse]
+// @Success      200  {object}  model.PlayerAssignmentHistoryResponse
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/players/{id}/company-history [get]
 func (h *SettlementCompanyHandler) GetPlayerAssignmentHistory(c *gin.Context) {
@@ -380,7 +380,7 @@ type BatchOperationResult struct {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchUpdateCompanyStatusRequest  true  "批量更新状态请求"
-// @Success      200  {object}  model.APIResponse[BatchOperationResult]
+// @Success      200  {object}  BatchOperationResult
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/settlement-companies/batch/status [post]
 func (h *SettlementCompanyHandler) BatchUpdateCompanyStatus(c *gin.Context) {
@@ -421,7 +421,7 @@ func (h *SettlementCompanyHandler) BatchUpdateCompanyStatus(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchDeleteCompaniesRequest  true  "批量删除请求"
-// @Success      200  {object}  model.APIResponse[BatchOperationResult]
+// @Success      200  {object}  BatchOperationResult
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/settlement-companies/batch/delete [post]
 func (h *SettlementCompanyHandler) BatchDeleteCompanies(c *gin.Context) {

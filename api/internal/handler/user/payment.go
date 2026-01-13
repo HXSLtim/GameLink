@@ -72,7 +72,7 @@ func createPaymentHandler(c *gin.Context, svc *paymentservice.PaymentService) {
 // @Tags         User - Payments
 // @Security     BearerAuth
 // @Param        id    path      uint64  true  "支付ID"
-// @Success      200   {object}  model.APIResponse[Payment]
+// @Success      200   {object}  Payment
 // @Router       /user/payments/{id} [get]
 func getPaymentStatusHandler(c *gin.Context, svc *paymentservice.PaymentService) {
 	paymentID, err := parseUintParam(c, "id")

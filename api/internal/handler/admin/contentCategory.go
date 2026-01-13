@@ -26,7 +26,7 @@ func NewContentCategoryHandler(svc *contentcategory.ContentCategoryService) *Con
 // @Param        pageSize query     int     false  "每页数量"
 // @Param        keyword  query     string  false  "关键词"
 // @Param        status   query     string  false  "状态"
-// @Success      200  {object}  model.APIResponse[contentcategory.ListResponse]
+// @Success      200  {object}  contentcategory.ListResponse
 // @Router       /admin/content/categories [get]
 func (h *ContentCategoryHandler) List(c *gin.Context) {
 	page, pageSize, ok := parsePagination(c)
@@ -59,7 +59,7 @@ func (h *ContentCategoryHandler) List(c *gin.Context) {
 // @Tags         Admin - Content Category
 // @Security     BearerAuth
 // @Param        id   path      int  true  "分类ID"
-// @Success      200  {object}  model.APIResponse[contentcategory.CategoryDTO]
+// @Success      200  {object}  contentcategory.CategoryDTO
 // @Router       /admin/content/categories/{id} [get]
 func (h *ContentCategoryHandler) Get(c *gin.Context) {
 	id, ok := ParseIDAndRespond(c, "id")
@@ -81,7 +81,7 @@ func (h *ContentCategoryHandler) Get(c *gin.Context) {
 // @Tags         Admin - Content Category
 // @Security     BearerAuth
 // @Param        body body      contentcategory.CreateRequest  true  "创建请求"
-// @Success      201  {object}  model.APIResponse[contentcategory.CategoryDTO]
+// @Success      201  {object}  contentcategory.CategoryDTO
 // @Router       /admin/content/categories [post]
 func (h *ContentCategoryHandler) Create(c *gin.Context) {
 	var req contentcategory.CreateRequest

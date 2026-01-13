@@ -148,7 +148,7 @@ type BatchAssignFailedUser struct {
 // @Param        with_permissions  query     bool    false  "是否包含权限信息"
 // @Param        keyword           query     string  false  "关键词搜索"
 // @Param        isSystem          query     bool    false  "是否为系统角色"
-// @Success      200               {object}  model.APIResponse[gin.H]
+// @Success      200               {object}  gin.H
 // @Failure      400               {object}  model.ErrorResponse
 // @Failure      401               {object}  model.ErrorResponse
 // @Failure      500               {object}  model.ErrorResponse
@@ -214,7 +214,7 @@ func (h *RoleHandler) ListRoles(c *gin.Context) {
 // @Param        Authorization     header    string  true  "Bearer {token}"
 // @Param        id                path      uint    true  "角色ID"
 // @Param        with_permissions  query     bool    false  "是否包含权限信息"
-// @Success      200               {object}  model.APIResponse[gin.H]
+// @Success      200               {object}  gin.H
 // @Failure      400               {object}  model.ErrorResponse
 // @Failure      401               {object}  model.ErrorResponse
 // @Failure      404               {object}  model.ErrorResponse
@@ -255,7 +255,7 @@ func (h *RoleHandler) GetRole(c *gin.Context) {
 // @Produce      json
 // @Param        Authorization  header    string                true  "Bearer {token}"
 // @Param        request        body      CreateRoleRequest      true  "创建角色请求"
-// @Success      201            {object}  model.APIResponse[gin.H]
+// @Success      201            {object}  gin.H
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
@@ -292,7 +292,7 @@ func (h *RoleHandler) CreateRole(c *gin.Context) {
 // @Param        Authorization  header    string                true  "Bearer {token}"
 // @Param        id             path      uint                  true  "角色ID"
 // @Param        request        body      UpdateRoleRequest      true  "更新角色请求"
-// @Success      200            {object}  model.APIResponse[gin.H]
+// @Success      200            {object}  gin.H
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      404            {object}  model.ErrorResponse
@@ -366,7 +366,7 @@ func (h *RoleHandler) DeleteRole(c *gin.Context) {
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
 // @Param        id             path      uint    true  "角色ID"
-// @Success      200            {object}  model.APIResponse[[]uint64]
+// @Success      200            {array}   uint64
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      404            {object}  model.ErrorResponse
@@ -599,7 +599,7 @@ func (h *RoleHandler) AssignRolesToUser(c *gin.Context) {
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
 // @Param        id              path      uint    true  "用户ID"
-// @Success      200            {object}  model.APIResponse[[]model.RoleModel]
+// @Success      200            {array}   model.RoleModel
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
@@ -641,7 +641,7 @@ func (h *RoleHandler) GetUserRoles(c *gin.Context) {
 // @Param        Authorization  header    string                    true  "Bearer {token}"
 // @Param        id             path      uint                      true  "用户ID"
 // @Param        request        body      UpdateUserRolesRequest    true  "更新角色请求"
-// @Success      200            {object}  model.APIResponse[[]model.RoleModel]
+// @Success      200            {array}   model.RoleModel
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
@@ -694,7 +694,7 @@ func (h *RoleHandler) UpdateUserRoles(c *gin.Context) {
 // @Produce      json
 // @Param        Authorization  header    string                    true  "Bearer {token}"
 // @Param        request        body      BatchAssignRolesRequest   true  "批量分配角色请求"
-// @Success      200            {object}  model.APIResponse[BatchAssignRolesResult]
+// @Success      200            {object}  BatchAssignRolesResult
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
@@ -773,7 +773,7 @@ type BatchAssignPermissionsToRolesRequest struct {
 // @Produce      json
 // @Param        Authorization  header    string                       true  "Bearer {token}"
 // @Param        request        body      BatchDeleteRolesRequest       true  "批量删除角色请求"
-// @Success      200            {object}  model.APIResponse[roleservice.RoleBatchDeleteResult]
+// @Success      200            {object}  roleservice.RoleBatchDeleteResult
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
@@ -802,7 +802,7 @@ func (h *RoleHandler) BatchDeleteRoles(c *gin.Context) {
 // @Produce      json
 // @Param        Authorization  header    string                                true  "Bearer {token}"
 // @Param        request        body      BatchAssignPermissionsToRolesRequest    true  "批量分配权限请求"
-// @Success      200            {object}  model.APIResponse[roleservice.RoleBatchPermissionsResult]
+// @Success      200            {object}  roleservice.RoleBatchPermissionsResult
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse

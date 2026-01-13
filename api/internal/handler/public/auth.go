@@ -30,9 +30,9 @@ func NewAuthHandler(wechatSvc *authService.WeChatAuthService) *AuthHandler {
 // @Accept json
 // @Produce json
 // @Param request body authService.WeChatLoginRequest true "登录请求"
-// @Success 200 {object} resp.Response{data=authService.WeChatLoginResponse}
-// @Failure 400 {object} resp.Response
-// @Failure 500 {object} resp.Response
+// @Success 200 {object} authService.WeChatLoginResponse
+// @Failure 400 {object}  apierr.APIError
+// @Failure 500 {object}  apierr.APIError
 // @Router /public/auth/wechat/login [post]
 func (h *AuthHandler) WeChatLogin(c *gin.Context) {
 	var req authService.WeChatLoginRequest
@@ -57,9 +57,9 @@ func (h *AuthHandler) WeChatLogin(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param request body RefreshTokenRequest true "刷新请求"
-// @Success 200 {object} resp.Response{data=authService.WeChatLoginResponse}
-// @Failure 400 {object} resp.Response
-// @Failure 401 {object} resp.Response
+// @Success 200 {object} authService.WeChatLoginResponse
+// @Failure 400 {object}  apierr.APIError
+// @Failure 401 {object}  apierr.APIError
 // @Router /public/auth/refresh [post]
 func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	var req RefreshTokenRequest

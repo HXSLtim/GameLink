@@ -52,7 +52,7 @@ func (h *UserHandler) GetUserStats(c *gin.Context) {
 // @Param        pageSize   query     int       false  "每页数量"
 // @Param        role           query    []string     false  "Role filter"// @Param        status         query    []string     false  "Status filter"// @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
 // @Param        keyword        query    string       false  "Parameter: keyword"// @Produce      json
-// @Success      200  {object}  model.APIResponse[[]User]
+// @Success      200  {array}   User
 // @Router       /admin/users [get]
 //
 // ListUsers returns a paginated list of users.
@@ -75,7 +75,7 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path      int  true  "用户ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[User]
+// @Success      200  {object}  User
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/users/{id} [get]
 //
@@ -104,7 +104,7 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  CreateUserPayload  true  "用户信息"
-// @Success      201  {object}  model.APIResponse[User]
+// @Success      201  {object}  User
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/users [post]
 //
@@ -152,7 +152,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int                  true  "用户ID"
 // @Param        request  body  UpdateUserPayload    true  "用户信息"
-// @Success      200  {object}  model.APIResponse[User]
+// @Success      200  {object}  User
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/users/{id} [put]
 //
@@ -283,7 +283,7 @@ func (h *UserHandler) BatchDeleteUsers(c *gin.Context) {
 // @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
 // @Param        export       query  string false "导出格式" Enums(csv)
 // @Param        fields         query    string       false  "Export fields (comma separated)"// @Param        header_lang  query  string false "列头语言" Enums(en,zh)
-// @Success      200  {object}  model.APIResponse[[]model.OperationLog]
+// @Success      200  {array}   model.OperationLog
 // @Router       /admin/users/{id}/logs [get]
 func (h *UserHandler) ListUserLogs(c *gin.Context) {
 	handleOperationLogList(c, "user", h.svc.ListOperationLogs)
@@ -297,7 +297,7 @@ func (h *UserHandler) ListUserLogs(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int  true  "用户ID"
 // @Param        request  body  map[string]string  true  "{status}"
-// @Success      200  {object}  model.APIResponse[User]
+// @Success      200  {object}  User
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/users/{id}/status [put]
 func (h *UserHandler) UpdateUserStatus(c *gin.Context) {
@@ -327,7 +327,7 @@ func (h *UserHandler) UpdateUserStatus(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int  true  "用户ID"
 // @Param        request  body  map[string]string  true  "{role}"
-// @Success      200  {object}  model.APIResponse[User]
+// @Success      200  {object}  User
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/users/{id}/role [put]
 func (h *UserHandler) UpdateUserRole(c *gin.Context) {
@@ -358,7 +358,7 @@ func (h *UserHandler) UpdateUserRole(c *gin.Context) {
 // @Param        page       query  int      false  "页码"
 // @Param        pageSize   query     int       false  "每页数量"
 // @Param        status         query    []string     false  "Status filter"// @Param        dateFrom       query    string       false  "Start date (YYYY-MM-DD)"// @Param        dateTo     query     string    false  "End date (YYYY-MM-DD)"
-// @Success      200  {object}  model.APIResponse[[]model.Order]
+// @Success      200  {array}   model.Order
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/users/{id}/orders [get]
 func (h *UserHandler) ListUserOrders(c *gin.Context) {
@@ -496,7 +496,7 @@ func isValidEmail(e string) bool {
 // @Param        id          path   int      true   "用户ID"
 // @Param        page        query  int      false  "页码"
 // @Param        page_size   query  int      false  "每页数量"
-// @Success      200  {object}  model.APIResponse[[]model.UserLoginHistory]
+// @Success      200  {array}   model.UserLoginHistory
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/users/{id}/login-history [get]
 func (h *UserHandler) ListUserLoginHistory(c *gin.Context) {

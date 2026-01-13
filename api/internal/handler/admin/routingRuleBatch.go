@@ -16,7 +16,7 @@ import (
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchUpdateRoutingRuleStatusRequest  true  "规则ID列表和状态"
-// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+// @Success      200  {object}  BatchOperationResponse
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/routing-rules/batch/status [post]
 func (h *RoutingRuleHandler) BatchUpdateRoutingRuleStatus(c *gin.Context) {
@@ -57,7 +57,7 @@ func (h *RoutingRuleHandler) BatchUpdateRoutingRuleStatus(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchDeleteRoutingRulesRequest  true  "规则ID列表"
-// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+// @Success      200  {object}  BatchOperationResponse
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/routing-rules/batch/delete [post]
 func (h *RoutingRuleHandler) BatchDeleteRoutingRules(c *gin.Context) {

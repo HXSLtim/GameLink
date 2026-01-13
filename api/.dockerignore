@@ -35,10 +35,13 @@ tmp/
 logs/
 *.tmp
 
-# 文档
+# 文档（保留 swagger 文档）
 README.md
 CHANGELOG.md
-docs/
+docs/*.md
+!docs/swagger.json
+!docs/swagger.yaml
+!docs/docs.go
 
 # CI/CD
 .github

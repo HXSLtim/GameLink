@@ -44,7 +44,7 @@ type WalletBalance struct {
 // @Accept       json
 // @Produce      json
 // @Param        request  body      rechargeRequest  true  "充值请求"
-// @Success      200      {object}  model.APIResponse[RechargeResponse]
+// @Success      200      {object}  RechargeResponse
 // @Failure      400      {object}  apierr.APIError
 // @Failure      401      {object}  apierr.APIError
 // @Failure      500      {object}  apierr.APIError
@@ -77,7 +77,7 @@ func rechargeHandler(c *gin.Context, svc *walletservice.WalletService) {
 // @Tags         User - Wallet
 // @Security     BearerAuth
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[WalletBalance]
+// @Success      200  {object}  WalletBalance
 // @Failure      401  {object}  apierr.APIError
 // @Failure      500  {object}  apierr.APIError
 // @Router       /user/wallet/balance [get]

@@ -33,7 +33,7 @@ func NewDisputeHandler(svc *orderservice.DisputeService) *DisputeHandler {
 // @Accept       json
 // @Produce      json
 // @Param        id  path  int  true  "纠纷ID"
-// @Success      200  {object}  model.APIResponse[OrderDispute]
+// @Success      200  {object}  OrderDispute
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/disputes/{id} [get]
 func (h *DisputeHandler) GetDisputeDetail(c *gin.Context) {
@@ -64,7 +64,7 @@ func (h *DisputeHandler) GetDisputeDetail(c *gin.Context) {
 // @Produce      json
 // @Param        page      query  int  false  "页码"  default(1)
 // @Param        pageSize  query  int  false  "每页数量"    default(20)
-// @Success      200  {object}  model.APIResponse[[]OrderDispute]
+// @Success      200  {array}   OrderDispute
 // @Failure      500  {object}  model.ErrorResponse
 // @Router       /admin/disputes/pending [get]
 func (h *DisputeHandler) ListPendingDisputes(c *gin.Context) {
@@ -114,7 +114,7 @@ func (h *DisputeHandler) ListPendingDisputes(c *gin.Context) {
 // @Param        pageSize  query  int     false  "每页数量"    default(20)
 // @Param        status    query  string  false  "状态筛选"
 // @Param        orderNo   query  string  false  "订单号"
-// @Success      200  {object}  model.APIResponse[[]OrderDispute]
+// @Success      200  {array}   OrderDispute
 // @Failure      500  {object}  model.ErrorResponse
 // @Router       /admin/disputes [get]
 func (h *DisputeHandler) ListDisputes(c *gin.Context) {
@@ -168,7 +168,7 @@ func (h *DisputeHandler) ListDisputes(c *gin.Context) {
 // @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[map[string]int64]
+// @Success      200  {object}  map[string]int64
 // @Failure      500  {object}  model.ErrorResponse
 // @Router       /admin/disputes/stats [get]
 func (h *DisputeHandler) GetDisputeStats(c *gin.Context) {
@@ -196,7 +196,7 @@ type AssignDisputePayload struct {
 // @Produce      json
 // @Param        id       path  int                 true  "纠纷ID"
 // @Param        request  body  AssignDisputePayload   true  "分配信息"
-// @Success      200  {object}  model.APIResponse[string]
+// @Success      200  {object}  string
 // @Failure      400  {object}  model.ErrorResponse
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/disputes/{id}/assign [post]
@@ -258,7 +258,7 @@ type RollbackAssignmentPayload struct {
 // @Produce      json
 // @Param        id       path  int                      true  "纠纷ID"
 // @Param        request  body  RollbackAssignmentPayload   true  "回滚信息"
-// @Success      200  {object}  model.APIResponse[string]
+// @Success      200  {object}  string
 // @Failure      400  {object}  model.ErrorResponse
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/disputes/{id}/rollback [post]
@@ -320,7 +320,7 @@ type ResolveDisputePayload struct {
 // @Produce      json
 // @Param        id       path  int                  true  "纠纷ID"
 // @Param        request  body  ResolveDisputePayload   true  "处理结果信息"
-// @Success      200  {object}  model.APIResponse[string]
+// @Success      200  {object}  string
 // @Failure      400  {object}  model.ErrorResponse
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/disputes/{id}/resolve [post]
@@ -404,7 +404,7 @@ type BatchAssignDisputesRequest struct {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchAssignDisputesRequest  true  "批量分配请求"
-// @Success      200  {object}  model.APIResponse[DisputeBatchOperationResult]
+// @Success      200  {object}  DisputeBatchOperationResult
 // @Failure      400  {object}  model.ErrorResponse
 // @Failure      500  {object}  model.ErrorResponse
 // @Router       /admin/disputes/batch/assign [post]
@@ -466,7 +466,7 @@ type BatchUpdateDisputesStatusRequest struct {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchUpdateDisputesStatusRequest  true  "批量更新状态请求"
-// @Success      200  {object}  model.APIResponse[DisputeBatchOperationResult]
+// @Success      200  {object}  DisputeBatchOperationResult
 // @Failure      400  {object}  model.ErrorResponse
 // @Failure      500  {object}  model.ErrorResponse
 // @Router       /admin/disputes/batch/status [put]
@@ -530,7 +530,7 @@ type BatchCloseDisputesRequest struct {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchCloseDisputesRequest  true  "批量关闭请求"
-// @Success      200  {object}  model.APIResponse[DisputeBatchOperationResult]
+// @Success      200  {object}  DisputeBatchOperationResult
 // @Failure      400  {object}  model.ErrorResponse
 // @Failure      500  {object}  model.ErrorResponse
 // @Router       /admin/disputes/batch/close [post]

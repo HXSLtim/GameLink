@@ -19,7 +19,7 @@ import (
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchCancelOrdersRequest  true  "订单ID列表和取消原因"
-// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+// @Success      200  {object}  BatchOperationResponse
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/orders/batch/cancel [post]
 func (h *OrderHandler) BatchCancelOrders(c *gin.Context) {
@@ -55,7 +55,7 @@ func (h *OrderHandler) BatchCancelOrders(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchConfirmOrdersRequest  true  "订单ID列表"
-// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+// @Success      200  {object}  BatchOperationResponse
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/orders/batch/confirm [post]
 func (h *OrderHandler) BatchConfirmOrders(c *gin.Context) {
@@ -91,7 +91,7 @@ func (h *OrderHandler) BatchConfirmOrders(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchCompleteOrdersRequest  true  "订单ID列表"
-// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+// @Success      200  {object}  BatchOperationResponse
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/orders/batch/complete [post]
 func (h *OrderHandler) BatchCompleteOrders(c *gin.Context) {
@@ -127,7 +127,7 @@ func (h *OrderHandler) BatchCompleteOrders(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchRefundOrdersRequest  true  "订单ID列表和退款信息"
-// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+// @Success      200  {object}  BatchOperationResponse
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/orders/batch/refund [post]
 func (h *OrderHandler) BatchRefundOrders(c *gin.Context) {
@@ -172,7 +172,7 @@ func (h *OrderHandler) BatchRefundOrders(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchDeleteOrdersRequest  true  "订单ID列表"
-// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+// @Success      200  {object}  BatchOperationResponse
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/orders/batch/delete [post]
 func (h *OrderHandler) BatchDeleteOrders(c *gin.Context) {
@@ -208,7 +208,7 @@ func (h *OrderHandler) BatchDeleteOrders(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchUpdateOrderStatusRequest  true  "订单ID列表和新状态"
-// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+// @Success      200  {object}  BatchOperationResponse
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/orders/batch/status [put]
 func (h *OrderHandler) BatchUpdateOrderStatus(c *gin.Context) {
@@ -254,7 +254,7 @@ func (h *OrderHandler) BatchUpdateOrderStatus(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchAssignOrdersRequest  true  "订单ID列表和陪玩师ID"
-// @Success      200  {object}  model.APIResponse[BatchOperationResponse]
+// @Success      200  {object}  BatchOperationResponse
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/orders/batch/assign [post]
 func (h *OrderHandler) BatchAssignOrders(c *gin.Context) {

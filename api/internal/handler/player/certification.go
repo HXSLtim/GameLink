@@ -54,7 +54,7 @@ type ApplyCertificationRequest struct {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  ApplyRankRequest  true  "申请信息"
-// @Success      201  {object}  model.APIResponse[model.PlayerRankRecord]
+// @Success      201  {object}  model.PlayerRankRecord
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /player/certification/rank [post]
 func (h *CertificationHandler) ApplyRank(c *gin.Context) {
@@ -89,7 +89,7 @@ func (h *CertificationHandler) ApplyRank(c *gin.Context) {
 // @Tags         Player/Certification
 // @Security     BearerAuth
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[[]model.PlayerRankRecord]
+// @Success      200  {array}   model.PlayerRankRecord
 // @Router       /player/certification/ranks [get]
 func (h *CertificationHandler) GetMyRanks(c *gin.Context) {
 	playerID, ok := resp.GetPlayerIDOrFail(c)
@@ -112,7 +112,7 @@ func (h *CertificationHandler) GetMyRanks(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        id   path  int  true  "认证记录ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[model.PlayerRankRecord]
+// @Success      200  {object}  model.PlayerRankRecord
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /player/certification/rank/{id} [get]
 func (h *CertificationHandler) GetRankDetail(c *gin.Context) {
@@ -138,7 +138,7 @@ func (h *CertificationHandler) GetRankDetail(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  ApplyCertificationRequest  true  "申请信息"
-// @Success      201  {object}  model.APIResponse[model.PlayerCertification]
+// @Success      201  {object}  model.PlayerCertification
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /player/certification/identity [post]
 func (h *CertificationHandler) ApplyCertification(c *gin.Context) {
@@ -175,7 +175,7 @@ func (h *CertificationHandler) ApplyCertification(c *gin.Context) {
 // @Tags         Player/Certification
 // @Security     BearerAuth
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[model.PlayerCertification]
+// @Success      200  {object}  model.PlayerCertification
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /player/certification/identity [get]
 func (h *CertificationHandler) GetMyCertification(c *gin.Context) {

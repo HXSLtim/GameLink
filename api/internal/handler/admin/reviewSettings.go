@@ -24,7 +24,7 @@ func NewReviewSettingsHandler(svc *reviewservice.SettingsService) *ReviewSetting
 // @Tags         Admin/ReviewSettings
 // @Security     BearerAuth
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[model.ReviewDisplaySettings]
+// @Success      200  {object}  model.ReviewDisplaySettings
 // @Failure      500  {object}  model.ErrorResponse
 // @Router       /admin/review-settings [get]
 func (h *ReviewSettingsHandler) GetReviewSettings(c *gin.Context) {
@@ -61,7 +61,7 @@ type UpdateReviewSettingsPayload struct {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  UpdateReviewSettingsPayload  true  "设置信息"
-// @Success      200  {object}  model.APIResponse[model.ReviewDisplaySettings]
+// @Success      200  {object}  model.ReviewDisplaySettings
 // @Failure      400  {object}  model.ErrorResponse
 // @Failure      500  {object}  model.ErrorResponse
 // @Router       /admin/review-settings [put]

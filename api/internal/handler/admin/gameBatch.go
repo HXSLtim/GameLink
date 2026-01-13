@@ -29,7 +29,7 @@ type BatchUpdateGameCategoryRequest struct {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchUpdateGameStatusRequest  true  "游戏ID列表和状态"
-// @Success      200  {object}  adminservice.BatchOperationResponse
+// @Success      200  {object}  BatchOperationResponse
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/games/batch/status [post]
 func (h *GameHandler) BatchUpdateGamesStatus(c *gin.Context) {
@@ -65,7 +65,7 @@ func (h *GameHandler) BatchUpdateGamesStatus(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchUpdateGameCategoryRequest  true  "游戏ID列表和分类"
-// @Success      200  {object}  adminservice.BatchOperationResponse
+// @Success      200  {object}  BatchOperationResponse
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/games/batch/category [post]
 func (h *GameHandler) BatchUpdateGamesCategory(c *gin.Context) {

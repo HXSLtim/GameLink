@@ -24,7 +24,7 @@ func RegisterUploadRoutes(router gin.IRouter) {
 // @Produce      json
 // @Security     BearerAuth
 // @Param        file  formData  file  true  "Image file"
-// @Success      200   {object}  model.APIResponse[map[string]string]
+// @Success      200   {object}  map[string]string
 // @Router       /admin/upload/image [post]
 func UploadImageHandler(c *gin.Context) {
 	file, err := c.FormFile("file")

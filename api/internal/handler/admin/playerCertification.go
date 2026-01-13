@@ -36,7 +36,7 @@ type VerifyPlayerCertificationRequest struct {
 // @Param        status     query  string  false  "状态筛选" Enums(pending,verified,rejected)
 // @Param        keyword    query  string  false  "关键词搜索（真实姓名）"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[[]model.PlayerCertification]
+// @Success      200  {array}   model.PlayerCertification
 // @Router       /admin/player-certifications [get]
 func (h *PlayerCertificationHandler) ListPlayerCertifications(c *gin.Context) {
 	page, pageSize, ok := parsePagination(c)
@@ -78,7 +78,7 @@ func (h *PlayerCertificationHandler) ListPlayerCertifications(c *gin.Context) {
 // @Param        page       query  int  false  "页码"
 // @Param        pageSize   query  int  false  "每页数量"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[[]model.PlayerCertification]
+// @Success      200  {array}   model.PlayerCertification
 // @Router       /admin/player-certifications/pending [get]
 func (h *PlayerCertificationHandler) ListPendingPlayerCertifications(c *gin.Context) {
 	page, pageSize, ok := parsePagination(c)
@@ -100,7 +100,7 @@ func (h *PlayerCertificationHandler) ListPendingPlayerCertifications(c *gin.Cont
 // @Security     BearerAuth
 // @Param        id   path  int  true  "认证记录ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[model.PlayerCertification]
+// @Success      200  {object}  model.PlayerCertification
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/player-certifications/{id} [get]
 func (h *PlayerCertificationHandler) GetPlayerCertification(c *gin.Context) {
@@ -125,7 +125,7 @@ func (h *PlayerCertificationHandler) GetPlayerCertification(c *gin.Context) {
 // @Produce      json
 // @Param        id       path  int                               true  "认证记录ID"
 // @Param        request  body  VerifyPlayerCertificationRequest  true  "审核信息"
-// @Success      200  {object}  model.APIResponse[model.PlayerCertification]
+// @Success      200  {object}  model.PlayerCertification
 // @Failure      400  {object}  model.ErrorResponse
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/player-certifications/{id}/verify [post]
@@ -186,7 +186,7 @@ func (h *PlayerCertificationHandler) DeletePlayerCertification(c *gin.Context) {
 // @Tags         Admin/PlayerCertifications
 // @Security     BearerAuth
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[map[string]int64]
+// @Success      200  {object}  map[string]int64
 // @Router       /admin/player-certifications/stats [get]
 func (h *PlayerCertificationHandler) GetPlayerCertificationStats(c *gin.Context) {
 	stats, err := h.svc.GetStats(c.Request.Context())
@@ -208,7 +208,7 @@ func (h *PlayerCertificationHandler) GetPlayerCertificationStats(c *gin.Context)
 // @Tags         Admin/PlayerCertifications
 // @Security     BearerAuth
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[map[string]int64]
+// @Success      200  {object}  map[string]int64
 // @Router       /admin/player-certifications/pending/count [get]
 func (h *PlayerCertificationHandler) GetPlayerCertificationPendingCount(c *gin.Context) {
 	count, err := h.svc.GetPendingCount(c.Request.Context())
@@ -225,7 +225,7 @@ func (h *PlayerCertificationHandler) GetPlayerCertificationPendingCount(c *gin.C
 // @Security     BearerAuth
 // @Param        playerId   path  int  true  "陪玩师ID"
 // @Produce      json
-// @Success      200  {object}  model.APIResponse[model.PlayerCertification]
+// @Success      200  {object}  model.PlayerCertification
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/players/{playerId}/certification [get]
 func (h *PlayerCertificationHandler) GetPlayerCertificationByPlayer(c *gin.Context) {

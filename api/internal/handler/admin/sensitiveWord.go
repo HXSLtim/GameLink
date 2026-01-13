@@ -31,7 +31,7 @@ func NewSensitiveWordHandler(svc *sensitiveword.SensitiveWordService) *Sensitive
 // @Param        keyword    query  string  false  "关键词搜索"
 // @Param        category   query  string  false  "分类" Enums(political,pornographic,violent,advertising,other)
 // @Param        severity   query  string  false  "严重程度" Enums(low,medium,high)
-// @Success      200  {object}  model.APIResponse[sensitiveword.ListSensitiveWordsResponse]
+// @Success      200  {object}  sensitiveword.ListSensitiveWordsResponse
 // @Router       /admin/sensitive-words [get]
 func (h *SensitiveWordHandler) ListSensitiveWords(c *gin.Context) {
 	page, pageSize, ok := parsePagination(c)
@@ -83,7 +83,7 @@ func (h *SensitiveWordHandler) ListSensitiveWords(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  sensitiveword.AddSensitiveWordRequest  true  "敏感词信息"
-// @Success      201  {object}  model.APIResponse[sensitiveword.SensitiveWordDTO]
+// @Success      201  {object}  sensitiveword.SensitiveWordDTO
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/sensitive-words [post]
 func (h *SensitiveWordHandler) AddSensitiveWord(c *gin.Context) {
@@ -188,7 +188,7 @@ func (h *SensitiveWordHandler) DeleteSensitiveWord(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  sensitiveword.DetectSensitiveWordsRequest  true  "检测内容"
-// @Success      200  {object}  model.APIResponse[sensitiveword.DetectSensitiveWordsResponse]
+// @Success      200  {object}  sensitiveword.DetectSensitiveWordsResponse
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/reviews/detect-sensitive [post]
 func (h *SensitiveWordHandler) DetectSensitiveWords(c *gin.Context) {
@@ -218,7 +218,7 @@ func (h *SensitiveWordHandler) DetectSensitiveWords(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchAddSensitiveWordsRequest  true  "批量添加请求"
-// @Success      200  {object}  model.APIResponse[sensitiveword.BatchOperationResult]
+// @Success      200  {object}  sensitiveword.BatchOperationResult
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/sensitive-words/batch/add [post]
 func (h *SensitiveWordHandler) BatchAddSensitiveWords(c *gin.Context) {
@@ -265,7 +265,7 @@ func (h *SensitiveWordHandler) BatchAddSensitiveWords(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchDeleteSensitiveWordsRequest  true  "批量删除请求"
-// @Success      200  {object}  model.APIResponse[sensitiveword.BatchOperationResult]
+// @Success      200  {object}  sensitiveword.BatchOperationResult
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/sensitive-words/batch/delete [post]
 func (h *SensitiveWordHandler) BatchDeleteSensitiveWords(c *gin.Context) {
@@ -301,7 +301,7 @@ func (h *SensitiveWordHandler) BatchDeleteSensitiveWords(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchUpdateSensitiveWordStatusRequest  true  "批量更新状态请求"
-// @Success      200  {object}  model.APIResponse[sensitiveword.BatchOperationResult]
+// @Success      200  {object}  sensitiveword.BatchOperationResult
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /admin/sensitive-words/batch/status [put]
 func (h *SensitiveWordHandler) BatchUpdateSensitiveWordStatus(c *gin.Context) {

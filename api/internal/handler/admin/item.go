@@ -38,7 +38,7 @@ func RegisterServiceItemRoutes(router gin.IRouter, svc *item.ServiceItemService)
 // @Produce      json
 // @Param        Authorization  header    string                                true  "Bearer {token}"
 // @Param        request        body      item.CreateServiceItemRequest  true  "服务项目信息"
-// @Success      200            {object}  model.APIResponse[ServiceItem]
+// @Success      200            {object}  ServiceItem
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/service-items [post]
@@ -69,7 +69,7 @@ func createServiceItemHandler(c *gin.Context, svc *item.ServiceItemService) {
 // @Param        gameId         query     int     false  "游戏ID"
 // @Param        isActive       query    bool         false  "Is active"// @Param        page           query     int     false  "页码"
 // @Param        pageSize       query     int     false  "每页数量"
-// @Success      200            {object}  model.APIResponse[item.ServiceItemListResponse]
+// @Success      200            {object}  item.ServiceItemListResponse
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/service-items [get]
@@ -96,7 +96,7 @@ func listServiceItemsHandler(c *gin.Context, svc *item.ServiceItemService) {
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer {token}"
 // @Param        id             path      int     true  "服务项目ID"
-// @Success      200            {object}  model.APIResponse[item.ServiceItemDTO]
+// @Success      200            {object}  item.ServiceItemDTO
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Router       /admin/service-items/{id} [get]
@@ -261,7 +261,7 @@ type BatchUpdateItemCommissionRequest struct {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchUpdateItemStatusRequest  true  "批量更新状态请求"
-// @Success      200  {object}  model.APIResponse[item.BatchOperationResponse]
+// @Success      200  {object}  item.BatchOperationResponse
 // @Failure      400  {object}  model.ErrorResponse
 // @Failure      401  {object}  model.ErrorResponse
 // @Failure      500  {object}  model.ErrorResponse
@@ -302,7 +302,7 @@ func batchUpdateItemStatusHandler(c *gin.Context, svc *item.ServiceItemService) 
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchDeleteItemsRequest  true  "批量删除请求"
-// @Success      200  {object}  model.APIResponse[item.BatchOperationResponse]
+// @Success      200  {object}  item.BatchOperationResponse
 // @Failure      400  {object}  model.ErrorResponse
 // @Failure      401  {object}  model.ErrorResponse
 // @Failure      500  {object}  model.ErrorResponse
@@ -342,7 +342,7 @@ func batchDeleteItemsHandler(c *gin.Context, svc *item.ServiceItemService) {
 // @Accept       json
 // @Produce      json
 // @Param        request  body  BatchUpdateItemCommissionRequest  true  "批量更新佣金比例请求"
-// @Success      200  {object}  model.APIResponse[item.BatchOperationResponse]
+// @Success      200  {object}  item.BatchOperationResponse
 // @Failure      400  {object}  model.ErrorResponse
 // @Failure      401  {object}  model.ErrorResponse
 // @Failure      500  {object}  model.ErrorResponse
