@@ -6,6 +6,8 @@ import (
 
 	userhandler "gamelink/internal/handler/user"
 	favoriterepo "gamelink/internal/repository/favorite"
+	orderrepo "gamelink/internal/repository/implementations"
+	paymentrepo "gamelink/internal/repository/payment"
 	playerrepo "gamelink/internal/repository/player"
 	userrepo "gamelink/internal/repository/user"
 	authservice "gamelink/internal/service/auth"
@@ -70,6 +72,24 @@ func registerUserRoutesWithRoleSwitch(api *gin.RouterGroup, authMiddleware gin.H
 		favoriteRepo := favoriterepo.NewRepository(orm)
 		favoriteHandler := userhandler.NewFavoriteHandler(favoriteRepo, playerRepo)
 		userhandler.RegisterFavoriteRoutes(userGroup, favoriteHandler, authMiddleware)
+
+		// 用户资料路由
+		userhandler.RegisterProfileRoutes(userGroup, userRepo, authMiddleware)
+
+		// 订单统计路由
+		orderRepo := orderrepo.NewOrderRepository(orm)
+		userhandler.RegisterOrderStatsRoutes(userGroup, orderRepo, authMiddleware)
+
+		// VIP 用户信息路由
+		userhandler.RegisterVipInfoRoutes(userGroup, services.vipSvc, userRepo, authMiddleware)
+
+		// 钱包交易记录路由
+		paymentRepo := paymentrepo.NewPaymentRepository(orm)
+		userhandler.RegisterWalletTransactionsRoutes(userGroup, paymentRepo, authMiddleware)
 	}
+
+	// 修改密码路由（注册在 /api/v1 下，不是 /user 下）
+	userRepo := userrepo.NewUserRepository(orm)
+	userhandler.RegisterChangePasswordRoutes(api, userRepo, authMiddleware)
 }
 
