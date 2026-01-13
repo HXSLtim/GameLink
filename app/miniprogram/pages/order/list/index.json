@@ -1,0 +1,8 @@
+{
+  "usingComponents": {
+    "gl-navbar": "../../../components/gl-navbar/index",
+    "gl-card": "../../../components/gl-card/index",
+    "gl-avatar": "../../../components/gl-avatar/index",
+    "gl-tag": "../../../components/gl-tag/index"
+  }
+}

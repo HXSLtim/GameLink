@@ -1,0 +1,54 @@
+@import '../../styles/variables.less';
+@import '../../styles/mixins.less';
+
+.gl-tag {
+  display: inline-flex;
+  align-items: center;
+  border-radius: @radius-sm;
+  font-weight: @font-weight-medium;
+
+  &--small {
+    padding: 4rpx 12rpx;
+    font-size: @font-size-xs;
+  }
+
+  &--medium {
+    padding: 8rpx 16rpx;
+    font-size: @font-size-sm;
+  }
+
+  &--default {
+    background: @bg-tertiary;
+    color: @text-muted;
+  }
+
+  &--primary {
+    background: @user-primary-light;
+    color: @user-primary;
+  }
+
+  &--gold {
+    background: @player-primary-light;
+    color: @player-primary;
+  }
+
+  &--success {
+    background: @color-success-light;
+    color: @color-success;
+  }
+
+  &--warning {
+    background: @color-warning-light;
+    color: @color-warning;
+  }
+
+  &--error {
+    background: @color-error-light;
+    color: @color-error;
+  }
+
+  &--info {
+    background: @color-info-light;
+    color: @color-info;
+  }
+}

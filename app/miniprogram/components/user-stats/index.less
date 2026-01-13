@@ -1,0 +1,35 @@
+@import '../../styles/variables.less';
+@import '../../styles/mixins.less';
+
+.stats-card {
+    .flex-between();
+    margin: @spacing-lg @page-padding;
+    padding: @spacing-lg @spacing-xl;
+    background-color: @bg-secondary;
+    border-radius: @radius-xl;
+    border: 2rpx solid @border-subtle;
+}
+
+.stat {
+    .flex-column-center();
+    gap: 4rpx;
+
+    &__value {
+        font-size: @font-size-lg;
+        font-weight: @font-weight-extrabold;
+        color: @text-header;
+    }
+
+    &__label {
+        font-size: @font-size-xs;
+        font-weight: @font-weight-bold;
+        color: @text-muted;
+        letter-spacing: 1rpx;
+    }
+}
+
+.stat-divider {
+    width: 2rpx;
+    height: 48rpx;
+    background-color: @border-strong;
+}

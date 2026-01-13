@@ -1,0 +1,133 @@
+@import '../../../styles/variables.less';
+@import '../../../styles/mixins.less';
+
+.page {
+  padding-bottom: calc(140rpx + env(safe-area-inset-bottom));
+}
+
+gl-card {
+  display: block;
+  margin-bottom: @spacing-lg;
+}
+
+.service-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: @spacing-sm;
+}
+
+.service-option {
+  .flex-column();
+  align-items: center;
+  padding: @spacing-md;
+  border: 2rpx solid @user-border;
+  border-radius: @radius-md;
+  transition: all @duration-fast @ease-out;
+
+  &--active {
+    border-color: @user-primary;
+    background: @user-primary-lighter;
+  }
+
+  &__name {
+    font-size: @font-size-base;
+    font-weight: @font-weight-medium;
+    color: @user-text;
+    margin-bottom: @spacing-xs;
+  }
+
+  &__price {
+    font-size: @font-size-sm;
+    color: @user-cta;
+  }
+}
+
+.quantity-selector {
+  .flex-center();
+  gap: @spacing-lg;
+}
+
+.quantity-btn {
+  width: 64rpx;
+  height: 64rpx;
+  .flex-center();
+  background: @user-border;
+  border-radius: @radius-md;
+  font-size: @font-size-lg;
+  color: @user-text;
+
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+.quantity-value {
+  font-size: @font-size-xl;
+  font-weight: @font-weight-bold;
+  color: @user-text;
+  min-width: 80rpx;
+  text-align: center;
+}
+
+.remark-input {
+  width: 100%;
+  height: 160rpx;
+  padding: @spacing-md;
+  background: @user-bg;
+  border-radius: @radius-md;
+  font-size: @font-size-base;
+  color: @user-text;
+  box-sizing: border-box;
+}
+
+// 价格明细容器
+
+.price-row {
+  .flex-between();
+  padding: @spacing-sm 0;
+  font-size: @font-size-base;
+  color: @user-text;
+
+  &--total {
+    padding-top: @spacing-md;
+    border-top: 2rpx solid @user-border;
+    margin-top: @spacing-sm;
+  }
+}
+
+.price-total {
+  font-size: @font-size-lg;
+  font-weight: @font-weight-bold;
+  color: @user-cta;
+}
+
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  .flex-between();
+  padding: @spacing-md @page-padding;
+  background: @user-card;
+  box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.08);
+
+  &__price {
+    .flex-start();
+  }
+
+  &__label {
+    font-size: @font-size-base;
+    color: @user-text;
+  }
+
+  &__value {
+    font-size: @font-size-xl;
+    font-weight: @font-weight-bold;
+    color: @user-cta;
+  }
+
+  gl-button {
+    flex: 1;
+    margin-left: @spacing-lg;
+  }
+}

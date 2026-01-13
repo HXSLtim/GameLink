@@ -1,0 +1,95 @@
+@import '../../../styles/variables.less';
+@import '../../../styles/mixins.less';
+
+.page {
+  padding-bottom: calc(140rpx + env(safe-area-inset-bottom));
+}
+
+gl-card {
+  display: block;
+  margin-bottom: @spacing-lg;
+}
+
+.order-status {
+  .flex-between();
+  
+  &__text {
+    font-size: @font-size-lg;
+    font-weight: @font-weight-bold;
+    color: @user-text;
+  }
+}
+
+.player-info {
+  .flex-start();
+  
+  &__content {
+    flex: 1;
+    margin-left: @spacing-md;
+  }
+  
+  &__name {
+    font-size: @font-size-md;
+    font-weight: @font-weight-medium;
+    color: @user-text;
+    display: block;
+    margin-bottom: @spacing-xs;
+  }
+  
+  &__service {
+    font-size: @font-size-sm;
+    color: @user-text-secondary;
+  }
+}
+
+.order-info {
+  // 订单信息容器
+}
+
+.info-row {
+  .flex-between();
+  padding: @spacing-sm 0;
+  font-size: @font-size-base;
+  
+  &__label {
+    color: @user-text-secondary;
+  }
+  
+  &__value {
+    color: @user-text;
+  }
+  
+  &--total {
+    padding-top: @spacing-md;
+    border-top: 2rpx solid @user-border;
+    margin-top: @spacing-sm;
+    
+    .info-row__value {
+      font-size: @font-size-lg;
+      font-weight: @font-weight-bold;
+      color: @user-cta;
+    }
+  }
+}
+
+.remark-text {
+  font-size: @font-size-base;
+  color: @user-text;
+  line-height: @line-height-relaxed;
+}
+
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  .flex-center();
+  gap: @spacing-md;
+  padding: @spacing-md @page-padding;
+  background: @user-card;
+  box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.08);
+  
+  gl-button {
+    flex: 1;
+  }
+}

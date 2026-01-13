@@ -1,0 +1,48 @@
+<gl-page themeMode="{{themeMode}}" isTabBar>
+  <!-- 导航栏占位 (gl-page 已处理) -->
+  
+  <!-- 头部 -->
+  <view class="header">
+    <view class="header__left">
+      <text class="header__title">Discover</text>
+      <text class="header__subtitle">Find your next duo partner</text>
+    </view>
+    <view class="header__bell" bindtap="onBellTap">
+      <image class="header__bell-icon" src="/assets/icons/bell.svg" />
+      <view wx:if="{{hasNotification}}" class="header__bell-dot"></view>
+    </view>
+  </view>
+  
+  <!-- 搜索框 -->
+  <view class="search-wrap">
+    <gl-search placeholder="Search players..." bind:search="onSearch" />
+  </view>
+  
+  <!-- 游戏分类 -->
+  <scroll-view class="categories" scroll-x enable-flex>
+    <view 
+      wx:for="{{categories}}" 
+      wx:key="id" 
+      class="category"
+      bindtap="onCategoryTap"
+      data-id="{{item.id}}"
+    >
+      <view class="category__icon">{{item.icon}}</view>
+      <text class="category__name">{{item.name}}</text>
+    </view>
+  </scroll-view>
+  
+  <!-- 推荐陪玩 -->
+  <view class="content">
+    <gl-section title="RECOMMENDED" showMore moreText="See All" bind:more="onSeeAll">
+      <view class="player-list">
+        <player-card 
+          wx:for="{{players}}" 
+          wx:key="id" 
+          player="{{item}}"
+          bind:tap="onPlayerTap"
+        />
+      </view>
+    </gl-section>
+  </view>
+</gl-page>

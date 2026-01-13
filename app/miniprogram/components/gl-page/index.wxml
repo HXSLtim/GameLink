@@ -1,0 +1,7 @@
+<view 
+  class="gl-page {{isTabBar ? 'gl-page--tabbar' : ''}} {{customHeader ? 'gl-page--custom-header' : ''}} {{themeMode === 'light' ? 'theme-light' : ''}}"
+  style="{{bgColor ? 'background-color: ' + bgColor + ';' : ''}} {{showStatusBar && !customHeader ? 'padding-top: ' + topPadding + 'px;' : ''}} --nav-height: {{topPadding}}px;"
+>
+  <!-- 页面内容 -->
+  <slot></slot>
+</view>

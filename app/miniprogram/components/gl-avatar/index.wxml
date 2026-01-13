@@ -1,0 +1,15 @@
+<view class="gl-avatar gl-avatar--{{size}}" bindtap="handleTap">
+  <image
+    wx:if="{{src}}"
+    class="gl-avatar__img"
+    src="{{src}}"
+    mode="aspectFill"
+    lazy-load
+    binderror="handleError"
+  />
+  <view wx:else class="gl-avatar__placeholder">
+    <text>{{placeholder}}</text>
+  </view>
+  <view wx:if="{{badge}}" class="gl-avatar__badge">{{badge}}</view>
+  <view wx:if="{{online}}" class="gl-avatar__online"></view>
+</view>

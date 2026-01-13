@@ -1,0 +1,7 @@
+{
+  "usingComponents": {
+    "gl-navbar": "../../../components/gl-navbar/index",
+    "gl-card": "../../../components/gl-card/index",
+    "gl-button": "../../../components/gl-button/index"
+  }
+}

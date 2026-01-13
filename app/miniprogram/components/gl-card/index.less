@@ -1,0 +1,35 @@
+@import '../../styles/variables.less';
+@import '../../styles/mixins.less';
+
+.gl-card {
+  .card-base();
+  padding: @card-padding;
+  transition: all @duration-fast @ease-out;
+  
+  &--shadow {
+    box-shadow: @shadow-sm;
+  }
+  
+  &--border {
+    border: 2rpx solid @border-strong;
+  }
+  
+  &--hover {
+    .card-hover();
+  }
+  
+  &__header {
+    .flex-between();
+    margin-bottom: @spacing-md;
+  }
+  
+  &__title {
+    font-size: @font-size-md;
+    font-weight: @font-weight-semibold;
+    color: @text-header;
+  }
+  
+  &__body {
+    // 默认无样式，由 slot 内容决定
+  }
+}

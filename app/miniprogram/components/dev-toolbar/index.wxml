@@ -1,0 +1,11 @@
+<view class="switch-role">
+  <text class="switch-role__title">Prototype Actions</text>
+  <gl-button type="{{role === 'player' ? 'gold' : 'primary'}}" size="large" block catchtap="onSwitchRole">
+    Switch to {{role === 'player' ? 'User' : 'Player'}} View
+  </gl-button>
+  <view style="margin-top: 20rpx;">
+    <gl-button type="secondary" size="large" block catchtap="onToggleTheme">
+      Switch to {{themeMode === 'light' ? 'Dark' : 'Light'}} Theme
+    </gl-button>
+  </view>
+</view>

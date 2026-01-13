@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "gl-page": "/components/gl-page/index",
+    "gl-button": "/components/gl-button/index"
+  }
+}

@@ -1,0 +1,51 @@
+@import '../../styles/variables.less';
+@import '../../styles/mixins.less';
+
+.game-card {
+  .flex-start();
+  .card-base();
+  padding: @spacing-md @spacing-lg;
+  transition: all @duration-fast @ease-out;
+
+  &--hover {
+    .card-hover();
+  }
+
+  &__icon {
+    width: 96rpx;
+    height: 96rpx;
+    border-radius: @radius-md;
+    margin-right: @spacing-lg;
+    flex-shrink: 0;
+    background-color: @bg-tertiary;
+  }
+
+  &__info {
+    flex: 1;
+    .flex-column();
+    min-width: 0;
+  }
+
+  &__name {
+    font-size: @font-size-md;
+    font-weight: @font-weight-semibold;
+    color: @text-header;
+    margin-bottom: @spacing-xs;
+    .text-ellipsis();
+  }
+
+  &__count {
+    font-size: @font-size-sm;
+    color: @color-success;
+  }
+
+  &__arrow {
+    flex-shrink: 0;
+    margin-left: @spacing-md;
+
+    .arrow-icon {
+      font-size: @font-size-xl;
+      color: @text-muted;
+    }
+  }
+}

@@ -1,0 +1,120 @@
+@import '../../styles/variables.less';
+@import '../../styles/mixins.less';
+
+.page {
+  min-height: 100vh;
+  background-color: @bg-primary;
+  padding-bottom: calc(@tabbar-height + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+
+
+// -------------------- 头部 --------------------
+.header {
+  .flex-between();
+  padding: @spacing-lg @page-padding;
+
+  &__left {
+    .flex-column();
+  }
+
+  &__title {
+    font-size: @font-size-2xl;
+    font-weight: @font-weight-extrabold;
+    color: @text-header;
+  }
+
+  &__subtitle {
+    font-size: @font-size-xs;
+    font-weight: @font-weight-medium;
+    color: @text-muted;
+    margin-top: 4rpx;
+  }
+
+  &__bell {
+    position: relative;
+    width: 80rpx;
+    height: 80rpx;
+    .flex-center();
+    background-color: @bg-tertiary;
+    border-radius: @radius-full;
+
+    &:active {
+      background-color: @bg-modifier-hover;
+    }
+  }
+
+  &__bell-icon {
+    width: @icon-md;
+    height: @icon-md;
+  }
+
+  &__bell-dot {
+    position: absolute;
+    top: 16rpx;
+    right: 16rpx;
+    width: 20rpx;
+    height: 20rpx;
+    background-color: @color-error;
+    border-radius: @radius-full;
+    border: 4rpx solid @bg-tertiary;
+  }
+}
+
+// -------------------- 搜索框 --------------------
+.search-wrap {
+  padding: 0 @page-padding @spacing-lg;
+}
+
+// -------------------- 游戏分类 --------------------
+.categories {
+  display: flex;
+  padding: 0 @page-padding @spacing-lg;
+  white-space: nowrap;
+  .hide-scrollbar();
+}
+
+.category {
+  .flex-column-center();
+  margin-right: @spacing-lg;
+  min-width: 144rpx;
+
+  &__icon {
+    width: 128rpx;
+    height: 128rpx;
+    .flex-center();
+    background-color: @bg-secondary;
+    border-radius: @radius-2xl;
+    border: 2rpx solid @border-subtle;
+    font-size: 48rpx;
+    margin-bottom: @spacing-sm;
+    transition: all @duration-normal @ease-out;
+  }
+
+  &__name {
+    font-size: @font-size-xs;
+    font-weight: @font-weight-bold;
+    color: @text-muted;
+  }
+
+  &:active &__icon {
+    background-color: @user-primary;
+    border-radius: @radius-lg;
+  }
+
+  &:active &__name {
+    color: @text-normal;
+  }
+}
+
+// -------------------- 内容区 --------------------
+.content {
+  padding: 0 @page-padding;
+}
+
+// -------------------- 陪玩列表 --------------------
+.player-list {
+  .flex-column();
+  gap: @card-gap;
+}

@@ -1,0 +1,10 @@
+<view class="game-card" hover-class="game-card--hover" bindtap="onTap">
+  <image class="game-card__icon" src="{{game.icon}}" mode="aspectFill" />
+  <view class="game-card__info">
+    <text class="game-card__name">{{game.name}}</text>
+    <text wx:if="{{showCount}}" class="game-card__count">{{game.playerCount}} players online</text>
+  </view>
+  <view class="game-card__arrow">
+    <text class="arrow-icon">›</text>
+  </view>
+</view>

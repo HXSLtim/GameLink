@@ -1,0 +1,17 @@
+<view class="menu-list">
+  <view class="menu-item" hover-class="menu-item--hover" bindtap="onMenuTap" data-type="wallet">
+    <image class="menu-item__icon" src="/assets/icons/wallet.svg" />
+    <text class="menu-item__text">Wallet</text>
+    <image class="menu-item__arrow" src="/assets/icons/arrow-right.svg" />
+  </view>
+  <view class="menu-item" hover-class="menu-item--hover" bindtap="onMenuTap" data-type="orders">
+    <image class="menu-item__icon" src="/assets/icons/order.svg" />
+    <text class="menu-item__text">Activity</text>
+    <image class="menu-item__arrow" src="/assets/icons/arrow-right.svg" />
+  </view>
+  <view class="menu-item" hover-class="menu-item--hover" bindtap="onMenuTap" data-type="favorites">
+    <image class="menu-item__icon" src="/assets/icons/star-outline.svg" />
+    <text class="menu-item__text">Favorites</text>
+    <image class="menu-item__arrow" src="/assets/icons/arrow-right.svg" />
+  </view>
+</view>

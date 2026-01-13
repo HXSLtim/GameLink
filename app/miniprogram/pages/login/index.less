@@ -1,0 +1,107 @@
+@import '../../styles/variables.less';
+@import '../../styles/mixins.less';
+
+.login-container {
+  .flex-column();
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: @spacing-xl;
+  background-color: @user-bg-darker; // Deep background
+  background-image: radial-gradient(circle at top left, @user-bg-dark, transparent 70%),
+    radial-gradient(circle at bottom right, @user-primary-dark, transparent 70%); // Subtle gradient
+}
+
+.login-logo {
+  .flex-column();
+  align-items: center;
+  margin-bottom: @spacing-xl * 1.5;
+  animation: slideUp 0.6s @ease-out forwards;
+
+  &__icon {
+    font-size: 140rpx;
+    margin-bottom: @spacing-lg;
+    animation: float 3s ease-in-out infinite; // Add float animation
+    filter: drop-shadow(0 10rpx 20rpx rgba(0, 0, 0, 0.3));
+  }
+
+  &__name {
+    font-size: 64rpx; // Much larger title
+    font-weight: 800; // Extra bold (Discord font style)
+    color: @user-text-normal;
+    margin-bottom: @spacing-xs;
+    letter-spacing: -2rpx;
+  }
+
+  &__slogan {
+    font-size: @font-size-md;
+    color: @user-text-secondary;
+    font-weight: @font-weight-medium;
+  }
+}
+
+.login-actions {
+  width: 100%;
+  max-width: 640rpx;
+  background: @user-card;
+  padding: @spacing-xl;
+  border-radius: @radius-lg;
+  box-shadow: @shadow-lg;
+  animation: slideUp 0.6s @ease-out 0.2s forwards; // Staggered entry
+  opacity: 0; // Start hidden for animation
+}
+
+.login-agreement {
+  .flex-start();
+  margin-top: @spacing-lg;
+  justify-content: center; // Center the agreement
+
+  &__checkbox {
+    width: 36rpx;
+    height: 36rpx;
+    border: 2rpx solid @user-text-secondary; // More visible border
+    border-radius: 6rpx; // Slightly squarer
+    margin-right: @spacing-sm;
+    flex-shrink: 0;
+    transition: all @duration-fast @ease-out;
+    background: transparent;
+
+    &--checked {
+      background: @user-primary;
+      border-color: @user-primary;
+
+      &::after {
+        content: '✓';
+        display: block;
+        text-align: center;
+        line-height: 34rpx;
+        color: #FFFFFF;
+        font-size: 24rpx;
+        font-weight: bold;
+      }
+    }
+  }
+
+  &__text {
+    font-size: @font-size-xs;
+    color: @user-text-secondary;
+    line-height: @line-height-normal;
+  }
+
+  &__link {
+    color: @color-info; // Use blurple/link color
+    display: inline-block;
+  }
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-16rpx);
+  }
+}

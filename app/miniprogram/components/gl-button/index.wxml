@@ -1,0 +1,8 @@
+<button
+  class="gl-btn gl-btn--{{computedVariant}} gl-btn--{{computedSize}} {{block ? 'gl-btn--block' : ''}} {{disabled ? 'gl-btn--disabled' : ''}}"
+  disabled="{{disabled}}"
+  loading="{{loading}}"
+  catchtap="handleTap"
+>
+  <slot></slot>
+</button>

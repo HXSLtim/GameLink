@@ -1,0 +1,62 @@
+<gl-navbar title="创建订单"></gl-navbar>
+
+<view class="page">
+  <!-- 服务选择 -->
+  <gl-card title="选择服务">
+    <view class="service-options">
+      <view
+        wx:for="{{services}}"
+        wx:key="id"
+        class="service-option {{selectedService === item.id ? 'service-option--active' : ''}}"
+        bindtap="handleServiceSelect"
+        data-id="{{item.id}}"
+      >
+        <text class="service-option__name">{{item.name}}</text>
+        <text class="service-option__price">¥{{item.price}}/{{item.unit}}</text>
+      </view>
+    </view>
+  </gl-card>
+  
+  <!-- 数量选择 -->
+  <gl-card title="服务数量">
+    <view class="quantity-selector">
+      <view class="quantity-btn" bindtap="handleQuantityMinus">-</view>
+      <text class="quantity-value">{{quantity}}</text>
+      <view class="quantity-btn" bindtap="handleQuantityPlus">+</view>
+    </view>
+  </gl-card>
+  
+  <!-- 备注 -->
+  <gl-card title="订单备注">
+    <textarea
+      class="remark-input"
+      placeholder="请输入备注信息（选填）"
+      maxlength="200"
+      value="{{remark}}"
+      bindinput="handleRemarkInput"
+    ></textarea>
+  </gl-card>
+  
+  <!-- 价格明细 -->
+  <gl-card title="价格明细">
+    <view class="price-detail">
+      <view class="price-row">
+        <text>服务费用</text>
+        <text>¥{{serviceFee}}</text>
+      </view>
+      <view class="price-row price-row--total">
+        <text>合计</text>
+        <text class="price-total">¥{{totalPrice}}</text>
+      </view>
+    </view>
+  </gl-card>
+</view>
+
+<!-- 底部提交栏 -->
+<view class="bottom-bar safe-area-bottom">
+  <view class="bottom-bar__price">
+    <text class="bottom-bar__label">合计：</text>
+    <text class="bottom-bar__value">¥{{totalPrice}}</text>
+  </view>
+  <gl-button type="cta" size="large" loading="{{submitting}}" bindtap="handleSubmit">提交订单</gl-button>
+</view>

@@ -1,0 +1,3 @@
+<view class="gl-tag gl-tag--{{type}} gl-tag--{{size}}">
+  <slot></slot>
+</view>

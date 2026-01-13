@@ -1,0 +1,190 @@
+@import '../../styles/variables.less';
+@import '../../styles/mixins.less';
+
+.page {
+  padding-bottom: calc(140rpx + env(safe-area-inset-bottom));
+}
+
+.player-header {
+  .flex-start();
+  align-items: flex-start;
+  .card-base();
+  padding: @spacing-lg;
+  margin-bottom: @spacing-lg;
+  
+  &__info {
+    flex: 1;
+    margin-left: @spacing-lg;
+  }
+  
+  &__name {
+    .flex-start();
+    font-size: @font-size-lg;
+    font-weight: @font-weight-bold;
+    color: @user-text;
+    margin-bottom: @spacing-xs;
+  }
+  
+  &__verified {
+    width: 32rpx;
+    height: 32rpx;
+    margin-left: @spacing-xs;
+    background: @user-primary;
+    color: #FFFFFF;
+    font-size: 20rpx;
+    border-radius: @radius-full;
+    .flex-center();
+  }
+  
+  &__meta {
+    font-size: @font-size-sm;
+    color: @user-text-secondary;
+    margin-bottom: @spacing-sm;
+  }
+  
+  &__divider {
+    margin: 0 @spacing-sm;
+  }
+  
+  &__tags {
+    .flex-start();
+    flex-wrap: wrap;
+    gap: @spacing-xs;
+  }
+}
+
+.rating-card {
+  margin-bottom: @spacing-lg;
+}
+
+.rating-content {
+  .flex-between();
+}
+
+.rating-score {
+  .flex-column();
+  align-items: center;
+  
+  &__value {
+    font-size: 64rpx;
+    font-weight: @font-weight-bold;
+    color: @color-warning;
+    line-height: 1;
+  }
+  
+  &__label {
+    font-size: @font-size-sm;
+    color: @user-text-secondary;
+    margin-top: @spacing-xs;
+  }
+}
+
+.rating-stats {
+  .flex-start();
+  gap: @spacing-xl;
+}
+
+.rating-stat {
+  .flex-column();
+  align-items: center;
+  
+  &__value {
+    font-size: @font-size-lg;
+    font-weight: @font-weight-medium;
+    color: @user-text;
+  }
+  
+  &__label {
+    font-size: @font-size-sm;
+    color: @user-text-secondary;
+    margin-top: @spacing-xs;
+  }
+}
+
+.intro-text {
+  font-size: @font-size-base;
+  color: @user-text;
+  line-height: @line-height-relaxed;
+}
+
+.service-list {
+  margin: -@spacing-sm 0;
+}
+
+.service-item {
+  .flex-between();
+  padding: @spacing-md 0;
+  border-bottom: 2rpx solid @user-border;
+  
+  &:last-child {
+    border-bottom: none;
+  }
+  
+  &__info {
+    flex: 1;
+  }
+  
+  &__name {
+    font-size: @font-size-base;
+    font-weight: @font-weight-medium;
+    color: @user-text;
+    display: block;
+    margin-bottom: @spacing-xs;
+  }
+  
+  &__desc {
+    font-size: @font-size-sm;
+    color: @user-text-secondary;
+  }
+  
+  &__price {
+    text-align: right;
+  }
+  
+  &__price-value {
+    font-size: @font-size-md;
+    font-weight: @font-weight-bold;
+    color: @user-cta;
+  }
+  
+  &__price-unit {
+    font-size: @font-size-xs;
+    color: @user-text-secondary;
+  }
+}
+
+gl-card {
+  display: block;
+  margin-bottom: @spacing-lg;
+}
+
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  .flex-between();
+  padding: @spacing-md @page-padding;
+  background: @user-card;
+  box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.08);
+  
+  &__price {
+    .flex-column();
+  }
+  
+  &__price-label {
+    font-size: @font-size-xs;
+    color: @user-text-secondary;
+  }
+  
+  &__price-value {
+    font-size: @font-size-xl;
+    font-weight: @font-weight-bold;
+    color: @user-cta;
+  }
+  
+  gl-button {
+    flex: 1;
+    margin-left: @spacing-lg;
+  }
+}

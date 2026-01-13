@@ -1,0 +1,61 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/category/index",
+    "pages/message/index",
+    "pages/profile/index",
+    "pages/player/index",
+    "pages/order/create/index",
+    "pages/order/detail/index",
+    "pages/order/list/index",
+    "pages/login/index"
+  ],
+  "window": {
+    "navigationBarTextStyle": "white",
+    "navigationStyle": "custom",
+    "navigationBarBackgroundColor": "#313338",
+    "backgroundColor": "#313338",
+    "backgroundTextStyle": "light",
+    "backgroundColorTop": "#313338",
+    "backgroundColorBottom": "#1E1F22"
+  },
+  "tabBar": {
+    "custom": true,
+    "color": "#949BA4",
+    "selectedColor": "#5865F2",
+    "backgroundColor": "#1E1F22",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/category/index",
+        "text": "分类"
+      },
+      {
+        "pagePath": "pages/message/index",
+        "text": "消息"
+      },
+      {
+        "pagePath": "pages/profile/index",
+        "text": "我的"
+      }
+    ]
+  },
+  "style": "v2",
+  "rendererOptions": {
+    "skyline": {
+      "defaultDisplayBlock": true,
+      "disableABTest": true,
+      "sdkVersionBegin": "3.0.0",
+      "sdkVersionEnd": "15.255.255"
+    }
+  },
+  "componentFramework": "glass-easel",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents",
+  "darkmode": true,
+  "themeLocation": "theme.json"
+}

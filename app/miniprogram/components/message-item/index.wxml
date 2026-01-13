@@ -1,0 +1,21 @@
+<view class="message-item" hover-class="message-item--hover" bindtap="onTap">
+  <!-- 头像 -->
+  <view class="message-item__avatar">
+    <image class="avatar-img" src="{{message.avatar}}" mode="aspectFill" />
+    <view wx:if="{{message.online}}" class="status-dot"></view>
+    <view wx:elif="{{message.unread > 0}}" class="unread-badge">
+      {{message.unread > 9 ? '9+' : message.unread}}
+    </view>
+  </view>
+  
+  <!-- 内容 -->
+  <view class="message-item__content">
+    <view class="message-item__header">
+      <text class="message-item__name">{{message.name}}</text>
+      <text class="message-item__time">{{message.time}}</text>
+    </view>
+    <text class="message-item__text {{message.unread > 0 ? 'message-item__text--unread' : ''}}">
+      {{message.lastMessage}}
+    </text>
+  </view>
+</view>

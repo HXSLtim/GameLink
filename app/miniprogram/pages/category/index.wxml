@@ -1,0 +1,41 @@
+<view class="page" style="padding-top: {{navPadding}}px;">
+  <!-- 页面标题 -->
+  <view class="page-header">
+    <text class="page-title">BROWSE GAMES</text>
+  </view>
+
+  <!-- 搜索框 -->
+  <view class="search-wrap">
+    <gl-search placeholder="Search games..." bind:search="onSearch" />
+  </view>
+
+  <!-- 加载中 -->
+  <gl-loading wx:if="{{loading}}" text="Loading..." />
+  
+  <!-- 分类列表 -->
+  <view wx:else class="content">
+    <view class="category-grid">
+      <game-card
+        wx:for="{{categories}}"
+        wx:key="id"
+        game="{{item}}"
+        bind:tap="handleCategoryTap"
+      />
+    </view>
+
+    <!-- 热门标签 -->
+    <gl-section title="POPULAR TAGS">
+      <view class="tags-wrap">
+        <view 
+          class="tag" 
+          wx:for="{{['上分', '娱乐', '陪聊', '新手教学', '高端局']}}" 
+          wx:key="*this"
+          bindtap="onTagTap"
+          data-tag="{{item}}"
+        >
+          <text class="tag-text">{{item}}</text>
+        </view>
+      </view>
+    </gl-section>
+  </view>
+</view>

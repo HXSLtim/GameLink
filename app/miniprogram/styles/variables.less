@@ -1,0 +1,145 @@
+// ============================================
+// GameLink 小程序设计变量 - Dynamic Theme
+// ============================================
+
+// -------------------- 基础色板 (CSS Vars) --------------------
+// 背景层级
+@bg-primary: var(--bg-primary);
+@bg-secondary: var(--bg-secondary);
+@bg-tertiary: var(--bg-tertiary);
+@bg-modifier-hover: var(--bg-modifier-hover);
+@bg-modifier-active: var(--bg-modifier-active);
+
+// 文字颜色
+@text-normal: var(--text-normal);
+@text-header: var(--text-header);
+@text-muted: var(--text-muted);
+@text-link: var(--text-link);
+
+// 边框
+@border-subtle: var(--border-subtle);
+@border-strong: var(--border-strong);
+
+// -------------------- 主题色 --------------------
+// 用户模式 (Unified Brand Color)
+@user-primary: var(--brand-primary);
+@user-primary-hover: var(--brand-primary-hover);
+@user-primary-light: var(--brand-primary-light);
+@user-primary-lighter: var(--brand-primary-lighter);
+
+// 陪玩师模式 - Gold (保持独立，暂不随主题变色，或后续统一)
+@player-primary: #F0B132;
+@player-primary-hover: #E29D28;
+@player-primary-light: rgba(240, 177, 50, 0.2);
+
+// -------------------- 状态色 --------------------
+@color-success: var(--status-success);
+@color-success-light: var(--status-success-light);
+@color-warning: var(--status-warning);
+@color-warning-light: var(--status-warning-light);
+@color-error: var(--status-error);
+@color-error-light: var(--status-error-light);
+@color-error-lighter: var(--status-error-lighter);
+@color-info: var(--status-info);
+@color-info-light: var(--status-info-light);
+
+// -------------------- 按钮色 --------------------
+@btn-secondary-bg: var(--bg-modifier-hover);
+@btn-secondary-hover: var(--bg-modifier-active);
+
+// -------------------- 字体 --------------------
+@font-size-xs: 20rpx; // 10px - 辅助说明
+@font-size-sm: 24rpx; // 12px - 次要文字
+@font-size-base: 28rpx; // 14px - 正文
+@font-size-md: 32rpx; // 16px - 小标题
+@font-size-lg: 36rpx; // 18px - 标题
+@font-size-xl: 44rpx; // 22px - 大标题
+@font-size-2xl: 48rpx; // 24px - 页面标题
+
+@font-weight-normal: 400;
+@font-weight-medium: 500;
+@font-weight-semibold: 600;
+@font-weight-bold: 700;
+@font-weight-extrabold: 800;
+
+@line-height-tight: 1.25;
+@line-height-normal: 1.5;
+@line-height-relaxed: 1.75;
+
+// -------------------- 间距 --------------------
+@spacing-xs: 8rpx; // 4px
+@spacing-sm: 16rpx; // 8px
+@spacing-md: 24rpx; // 12px
+@spacing-lg: 32rpx; // 16px
+@spacing-xl: 48rpx; // 24px
+@spacing-2xl: 64rpx; // 32px
+
+@page-padding: 40rpx; // 20px - 页面边距
+@card-padding: 32rpx; // 16px - 卡片内边距
+@card-gap: 32rpx; // 16px - 卡片间距
+
+// -------------------- 圆角 --------------------
+@radius-xs: 4rpx; // 2px
+@radius-sm: 8rpx; // 4px
+@radius-md: 16rpx; // 8px
+@radius-lg: 24rpx; // 12px
+@radius-xl: 32rpx; // 16px
+@radius-2xl: 48rpx; // 24px
+@radius-full: 9999rpx;
+
+// -------------------- 阴影 --------------------
+@shadow-sm: 0 2rpx 8rpx var(--shadow-color);
+@shadow-md: 0 4rpx 16rpx var(--shadow-color);
+@shadow-lg: 0 8rpx 32rpx var(--shadow-color);
+
+// -------------------- 动画 --------------------
+@duration-fast: 150ms;
+@duration-normal: 200ms;
+@duration-slow: 300ms;
+@ease-out: cubic-bezier(0, 0, 0.2, 1);
+@ease-in: cubic-bezier(0.4, 0, 1, 1);
+@ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+// -------------------- 布局 --------------------
+@navbar-height: 88rpx;
+@tabbar-height: 140rpx;
+@safe-area-bottom: env(safe-area-inset-bottom);
+
+// -------------------- 按钮尺寸 --------------------
+@btn-height-lg: 88rpx; // 44px
+@btn-height-md: 72rpx; // 36px
+@btn-height-sm: 56rpx; // 28px
+
+// -------------------- 头像尺寸 --------------------
+@avatar-xs: 48rpx; // 24px
+@avatar-sm: 64rpx; // 32px
+@avatar-md: 80rpx; // 40px
+@avatar-lg: 112rpx; // 56px
+@avatar-xl: 160rpx; // 80px
+
+// -------------------- 图标尺寸 --------------------
+@icon-xs: 24rpx; // 12px
+@icon-sm: 32rpx; // 16px
+@icon-md: 40rpx; // 20px
+@icon-lg: 48rpx; // 24px
+@icon-xl: 56rpx; // 28px
+
+// -------------------- 兼容性别名 --------------------
+@user-text: @text-header;
+@user-text-normal: @text-normal;
+@user-text-secondary: @text-muted;
+@user-card: @bg-secondary;
+@user-bg: @bg-primary;
+@user-border: @border-subtle;
+@player-text: @text-header;
+@player-text-normal: @text-normal;
+@player-text-secondary: @text-muted;
+@player-card: @bg-secondary;
+@player-bg: @bg-primary;
+@player-border: @border-subtle;
+@player-secondary: @player-primary-hover;
+@player-cta: @color-success;
+@user-cta: @user-primary;
+@user-bg-darker: @bg-tertiary;
+@user-bg-dark: @bg-secondary;
+@user-primary-dark: var(--brand-primary-hover);

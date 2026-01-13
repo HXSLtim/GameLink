@@ -1,0 +1,112 @@
+@import '../../styles/variables.less';
+@import '../../styles/mixins.less';
+
+.banner {
+    width: 100%;
+    height: 320rpx;
+    background-color: @user-primary;
+    border-bottom-left-radius: @radius-2xl;
+    border-bottom-right-radius: @radius-2xl;
+    transition: background-color 0.3s ease;
+
+    &--gold {
+        background-color: @player-primary;
+    }
+}
+
+.profile-header {
+    position: relative;
+    padding: 0 @page-padding;
+    margin-top: -80rpx;
+    z-index: 10;
+}
+
+.avatar-wrap {
+    position: relative;
+    width: 180rpx;
+    height: 180rpx;
+    margin-bottom: @spacing-md;
+}
+
+.avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 12rpx solid @bg-primary;
+}
+
+.avatar-status {
+    position: absolute;
+    right: 12rpx;
+    bottom: 12rpx;
+    width: 44rpx;
+    height: 44rpx;
+    background-color: @color-success;
+    border-radius: 50%;
+    border: 8rpx solid @bg-primary;
+}
+
+.profile-name-row {
+    .flex-between();
+    align-items: flex-start;
+    margin-bottom: @spacing-xs;
+}
+
+.profile-name {
+    .flex-start();
+    gap: @spacing-xs;
+
+    .name {
+        font-size: @font-size-2xl;
+        font-weight: @font-weight-extrabold;
+        color: @text-header;
+    }
+
+    .star-badge {
+        width: 40rpx;
+        height: 40rpx;
+    }
+}
+
+.profile-id {
+    font-size: @font-size-sm;
+    color: @text-muted;
+    font-weight: @font-weight-medium;
+}
+
+.badges {
+    .flex-start();
+    gap: @spacing-md;
+    padding: @spacing-lg @page-padding;
+    margin-top: @spacing-xs;
+}
+
+.badge {
+    .flex-center();
+    padding: 8rpx 16rpx;
+    background-color: @bg-secondary;
+    border-radius: @radius-sm;
+    gap: @spacing-xs;
+
+    &__dot {
+        width: 16rpx;
+        height: 16rpx;
+        border-radius: 50%;
+        background-color: @user-primary;
+
+        &--gold {
+            background-color: @player-primary;
+        }
+    }
+
+    &__icon {
+        width: 24rpx;
+        height: 24rpx;
+    }
+
+    &__text {
+        font-size: @font-size-xs;
+        font-weight: @font-weight-bold;
+        color: @text-header;
+    }
+}

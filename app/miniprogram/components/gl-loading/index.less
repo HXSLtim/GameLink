@@ -1,0 +1,55 @@
+@import '../../styles/variables.less';
+@import '../../styles/mixins.less';
+
+.gl-loading {
+  .flex-column-center();
+  padding: @spacing-xl;
+
+  &--fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: @bg-primary;
+    z-index: 100;
+  }
+
+  &--small &__spinner {
+    width: 32rpx;
+    height: 32rpx;
+    border-width: 3rpx;
+  }
+
+  &--medium &__spinner {
+    width: 48rpx;
+    height: 48rpx;
+    border-width: 4rpx;
+  }
+
+  &--large &__spinner {
+    width: 64rpx;
+    height: 64rpx;
+    border-width: 5rpx;
+  }
+
+  &__spinner {
+    border-style: solid;
+    border-color: @bg-modifier-hover;
+    border-top-color: @user-primary;
+    border-radius: 50%;
+    animation: gl-spin 0.8s linear infinite;
+  }
+
+  &__text {
+    font-size: @font-size-sm;
+    color: @text-muted;
+    margin-top: @spacing-md;
+  }
+}
+
+@keyframes gl-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -1,0 +1,15 @@
+@import '../../styles/variables.less';
+
+.gl-page {
+  min-height: 100vh;
+  background-color: @bg-primary;
+  box-sizing: border-box;
+
+  &--tabbar {
+    padding-bottom: calc(@tabbar-height + env(safe-area-inset-bottom));
+  }
+
+  &--custom-header {
+    // 自定义头部时不添加顶部 padding，由页面自行处理
+  }
+}

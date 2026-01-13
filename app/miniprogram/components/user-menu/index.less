@@ -1,0 +1,45 @@
+@import '../../styles/variables.less';
+@import '../../styles/mixins.less';
+
+.menu-list {
+    background-color: @bg-secondary;
+    border-radius: @radius-xl;
+    margin: 0 @page-padding;
+    overflow: hidden;
+    border: 2rpx solid @border-subtle;
+}
+
+.menu-item {
+    .flex-between();
+    padding: @spacing-lg;
+    background-color: @bg-secondary;
+    transition: background-color 0.2s;
+
+    &:not(:last-child) {
+        border-bottom: 2rpx solid @border-subtle;
+    }
+
+    &--hover {
+        background-color: @bg-modifier-hover;
+    }
+
+    &__icon {
+        width: 48rpx;
+        height: 48rpx;
+        margin-right: @spacing-md;
+        opacity: 0.8;
+    }
+
+    &__text {
+        flex: 1;
+        font-size: @font-size-md;
+        font-weight: @font-weight-medium;
+        color: @text-normal;
+    }
+
+    &__arrow {
+        width: 32rpx;
+        height: 32rpx;
+        opacity: 0.5;
+    }
+}

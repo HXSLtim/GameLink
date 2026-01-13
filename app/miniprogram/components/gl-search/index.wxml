@@ -1,0 +1,21 @@
+<view class="gl-search">
+  <image wx:if="{{showIcon}}" class="gl-search__icon" src="/assets/icons/search.svg" mode="aspectFit" />
+  <input 
+    class="gl-search__input" 
+    placeholder="{{placeholder}}" 
+    placeholder-class="gl-search__placeholder"
+    value="{{value}}"
+    confirm-type="search"
+    bindinput="onInput"
+    bindfocus="onFocus"
+    bindblur="onBlur"
+    bindconfirm="onConfirm"
+  />
+  <image 
+    wx:if="{{value}}" 
+    class="gl-search__clear" 
+    src="/assets/icons/close.svg" 
+    mode="aspectFit"
+    bindtap="onClear"
+  />
+</view>

@@ -1,0 +1,160 @@
+@import './styles/variables.less';
+@import './styles/theme.less';
+@import './styles/mixins.less';
+
+// 全局样式重置
+page {
+  font-family: 'gg sans', 'Whitney', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: @font-size-base;
+  line-height: @line-height-normal;
+  color: @text-normal;
+  background: @bg-primary;
+  box-sizing: border-box;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+view,
+text,
+image {
+  box-sizing: border-box;
+}
+
+// 隐藏滚动条
+::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+// 安全区域
+.safe-area-bottom {
+  padding-bottom: calc(@spacing-lg + env(safe-area-inset-bottom));
+}
+
+// 页面容器
+.page {
+  min-height: 100vh;
+  background: @bg-primary;
+  padding: @page-padding;
+  box-sizing: border-box;
+}
+
+.page--tabbar {
+  padding-bottom: calc(@tabbar-height + @spacing-lg + env(safe-area-inset-bottom));
+}
+
+// 空状态
+.empty {
+  .flex-column();
+  align-items: center;
+  justify-content: center;
+  padding: @spacing-xl * 2;
+
+  &__icon {
+    width: 200rpx;
+    height: 200rpx;
+    margin-bottom: @spacing-lg;
+    opacity: 0.3;
+  }
+
+  &__text {
+    font-size: @font-size-base;
+    color: @text-muted;
+  }
+}
+
+// 加载状态
+.loading {
+  .flex-center();
+  padding: @spacing-xl;
+
+  &__spinner {
+    width: 48rpx;
+    height: 48rpx;
+    border: 4rpx solid @bg-modifier-hover;
+    border-top-color: @user-primary;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// -------------------- Global Animations (Discord Style) --------------------
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20rpx);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scalePress {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(0.96);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+// Page Transition Entry
+.page-enter {
+  animation: slideUp 0.4s @ease-out forwards;
+}
+
+.anim-fade-in {
+  animation: fadeIn 0.3s @ease-out forwards;
+}
+
+.anim-slide-up {
+  animation: slideUp 0.4s @ease-out forwards;
+}
+
+.anim-press:active {
+  transform: scale(0.96);
+  transition: transform 0.1s;
+}
+
+// Discord 风格弹出动画
+.anim-pop {
+  animation: pop 0.2s @ease-out;
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0.9);
+  }
+
+  50% {
+    transform: scale(1.05);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}

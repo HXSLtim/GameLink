@@ -1,0 +1,20 @@
+<view class="gl-navbar" style="padding-top: {{statusBarHeight}}px;">
+  <view class="gl-navbar__content" style="height: {{navBarHeight}}px;">
+    <view wx:if="{{showBack}}" class="gl-navbar__left" bindtap="handleBack">
+      <image class="gl-navbar__back-icon" src="/assets/icons/arrow-left.svg" mode="aspectFit"></image>
+    </view>
+    <view wx:else class="gl-navbar__left">
+      <slot name="left"></slot>
+    </view>
+    
+    <view class="gl-navbar__title">
+      <text wx:if="{{title}}">{{title}}</text>
+      <slot wx:else name="title"></slot>
+    </view>
+    
+    <view class="gl-navbar__right">
+      <slot name="right"></slot>
+    </view>
+  </view>
+</view>
+<view class="gl-navbar__placeholder" style="height: {{statusBarHeight + navBarHeight}}px;"></view>

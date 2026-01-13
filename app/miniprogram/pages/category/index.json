@@ -1,0 +1,8 @@
+{
+  "usingComponents": {
+    "gl-search": "/components/gl-search/index",
+    "gl-loading": "/components/gl-loading/index",
+    "gl-section": "/components/gl-section/index",
+    "game-card": "/components/game-card/index"
+  }
+}
