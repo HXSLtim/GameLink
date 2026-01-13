@@ -1,28 +1,33 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-// import { http } from '@/lib/http';
+import { http } from '@/lib/http';
 
 export interface VipBenefit {
     id: string;
     name: string;
-    description: string;
+    description?: string;
     icon: string;
 }
 
 export interface VipLevel {
+    id: number;
     level: number;
     name: string;
-    requiredExp: number;
-    benefits: VipBenefit[];
+    icon: string;
+    color: string;
 }
 
 export interface VipState {
-    currentLevel: number;
+    vipUnlocked: boolean;
+    currentLevel: VipLevel | null;
     currentExp: number;
     nextLevelExp: number;
-    isSubscriber: boolean; // Monthly subscription (SVIP)
-    subscriptionExpireAt?: string;
+    expProgress: number; // 0-1
+    vipExpireAt: string | null;
     benefits: VipBenefit[];
+    monthlyTicketsRemaining: number;
+    discountRate: number;
+
     loading: boolean;
     error: string | null;
 }
@@ -35,61 +40,59 @@ export interface VipActions {
 export const useVipStore = create<VipState & VipActions>()(
     persist(
         (set) => ({
-            currentLevel: 0,
+            vipUnlocked: false,
+            currentLevel: null,
             currentExp: 0,
-            nextLevelExp: 100,
-            isSubscriber: false,
+            nextLevelExp: 0,
+            expProgress: 0,
+            vipExpireAt: null,
             benefits: [],
+            monthlyTicketsRemaining: 0,
+            discountRate: 0,
+
             loading: false,
             error: null,
 
             fetchVipInfo: async () => {
                 set({ loading: true, error: null });
                 try {
-                    // await http.get('/vip/info');
-                    await new Promise(resolve => setTimeout(resolve, 500));
+                    const data = await http.get<any>('/user/vip/info');
 
                     set({
-                        currentLevel: 1,
-                        currentExp: 450,
-                        nextLevelExp: 1000,
-                        isSubscriber: true,
-                        subscriptionExpireAt: new Date(Date.now() + 86400000 * 15).toISOString(), // 15 days left
-                        benefits: [
-                            { id: 'b1', name: 'No Ads', description: 'Enjoy ad-free experience', icon: 'block' },
-                            { id: 'b2', name: 'Priority Support', description: '24/7 dedicated support', icon: 'headset' },
-                        ],
+                        vipUnlocked: data.vipUnlocked,
+                        currentLevel: data.currentLevel, // backend object matches interface largely
+                        currentExp: data.currentExp,
+                        nextLevelExp: data.nextLevelExp,
+                        expProgress: data.expProgress,
+                        vipExpireAt: data.vipExpireAt,
+                        benefits: data.benefits || [],
+                        monthlyTicketsRemaining: data.monthlyTicketsRemaining,
+                        discountRate: data.discountRate,
                         loading: false
                     });
                 } catch (err: any) {
-                    set({ loading: false, error: err.message });
+                    set({ loading: false, error: err.message || 'Failed to fetch VIP info' });
                 }
             },
 
             purchaseSubscription: async (months) => {
                 set({ loading: true, error: null });
                 try {
-                    // await http.post('/vip/subscribe', { months });
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-
-                    // Update mock state
-                    set(state => ({
-                        isSubscriber: true,
-                        // Extend time roughly
-                        subscriptionExpireAt: new Date(new Date(state.subscriptionExpireAt || Date.now()).getTime() + months * 30 * 86400000).toISOString(),
-                        loading: false
-                    }));
+                    await http.post('/user/vip/subscribe', { months });
+                    // Refresh info after purchase
+                    await set((state) => ({ ...state })).fetchVipInfo(); // hacky way to access actions or just rely on component re-fetch
                 } catch (err: any) {
-                    set({ loading: false, error: err.message });
+                    set({ loading: false, error: err.message || 'Subscription failed' });
+                    throw err;
                 }
             }
         }),
         {
             name: 'vip-storage',
             partialize: (state) => ({
+                vipUnlocked: state.vipUnlocked,
                 currentLevel: state.currentLevel,
-                isSubscriber: state.isSubscriber,
-                subscriptionExpireAt: state.subscriptionExpireAt
+                vipExpireAt: state.vipExpireAt
             })
         }
     )

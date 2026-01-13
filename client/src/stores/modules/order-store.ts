@@ -51,6 +51,21 @@ export interface OrderActions {
     cancelOrder: (id: string) => Promise<void>;
     updateDraft: (draft: Partial<OrderState['orderDraft']>) => void;
     clearDraft: () => void;
+
+    // New Action for Stats
+    fetchOrderStats: () => Promise<OrderStats | null>;
+}
+
+export interface OrderStats {
+    totalCount: number;
+    monthlyCount: number;
+    monthlyChange: number;
+    pendingCount: number;
+    inProgressCount: number;
+    completedCount: number;
+    canceledCount: number;
+    totalSpentCents: number;
+    avgOrderAmountCents: number;
 }
 
 export const useOrderStore = create<OrderState & OrderActions>((set) => ({
@@ -117,5 +132,17 @@ export const useOrderStore = create<OrderState & OrderActions>((set) => ({
 
     clearDraft: () => {
         set({ orderDraft: null });
+    },
+
+    fetchOrderStats: async () => {
+        set({ loading: true, error: null });
+        try {
+            const data = await http.get<OrderStats>('/user/orders/stats');
+            set({ loading: false });
+            return data;
+        } catch (err: any) {
+            set({ loading: false, error: err.message || 'Failed to fetch order stats' });
+            return null;
+        }
     }
 }));

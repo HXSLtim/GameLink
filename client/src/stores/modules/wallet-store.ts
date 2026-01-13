@@ -1,20 +1,19 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { http } from '@/lib/http';
 
 export interface Transaction {
-    id: string;
-    // ... (rest is same, but I can't leave ... in replace_file_content unless I target specific lines)
-    // Let's target specific blocks.
-    id: string;
+    id: string; // or number, backend sends number but we can normalize
     type: 'recharge' | 'payment' | 'refund' | 'withdrawal';
-    amount: number;
+    amount: number; // Stored as units (e.g., CNY)
     status: 'pending' | 'success' | 'failed';
     createdAt: string;
     description: string;
 }
 
 export interface WalletState {
-    balance: number;
+    balance: number; // Stored as units (e.g., 12.50)
+    frozenBalance: number;
     currency: string;
     transactions: Transaction[];
     loading: boolean;
@@ -23,15 +22,16 @@ export interface WalletState {
 
 export interface WalletActions {
     fetchWallet: () => Promise<void>;
-    fetchTransactions: () => Promise<void>;
+    fetchTransactions: (page?: number) => Promise<void>;
     recharge: (amount: number, method: string) => Promise<void>;
-    withdraw: (amount: number, method: string) => Promise<void>;
+    withdraw: (amount: number, bankCardId: number) => Promise<void>;
 }
 
 export const useWalletStore = create<WalletState & WalletActions>()(
     persist(
-        (set) => ({
+        (set, get) => ({
             balance: 0,
+            frozenBalance: 0,
             currency: 'CNY',
             transactions: [],
             loading: false,
@@ -40,31 +40,34 @@ export const useWalletStore = create<WalletState & WalletActions>()(
             fetchWallet: async () => {
                 set({ loading: true, error: null });
                 try {
-                    // Mock API call
-                    // const data = await http.get('/wallet/balance');
-                    await new Promise(resolve => setTimeout(resolve, 500));
+                    const data = await http.get<any>('/user/wallet/balance');
+                    // Backend returns cents
+                    const balance = (data.balanceCents || 0) / 100;
+                    const frozen = (data.frozenCents || 0) / 100;
 
-                    const mockBalance = 1250.50; // Mock data
-
-                    set({ balance: mockBalance, loading: false });
+                    set({ balance: balance, frozenBalance: frozen, loading: false });
                 } catch (err: any) {
                     set({ loading: false, error: err.message || 'Failed to fetch wallet' });
                 }
             },
 
-            fetchTransactions: async () => {
+            fetchTransactions: async (page = 1) => {
                 set({ loading: true, error: null });
                 try {
-                    // Mock API call
-                    // const data = await http.get('/wallet/transactions');
-                    await new Promise(resolve => setTimeout(resolve, 500));
+                    const data = await http.get<any>('/user/wallet/transactions', {
+                        params: { page, pageSize: 20 }
+                    });
 
-                    const mockTransactions: Transaction[] = [
-                        { id: 't1', type: 'recharge', amount: 500, status: 'success', createdAt: new Date().toISOString(), description: 'Alipay Recharge' },
-                        { id: 't2', type: 'payment', amount: -100, status: 'success', createdAt: new Date(Date.now() - 86400000).toISOString(), description: 'Order Payment #1234' },
-                    ];
+                    const items = (data.items || []).map((t: any) => ({
+                        id: String(t.id),
+                        type: t.type,
+                        amount: t.amountCents / 100, // Convert cents to units
+                        status: t.status,
+                        createdAt: t.createdAt,
+                        description: t.description
+                    }));
 
-                    set({ transactions: mockTransactions, loading: false });
+                    set({ transactions: items, loading: false });
                 } catch (err: any) {
                     set({ loading: false, error: err.message || 'Failed to fetch transactions' });
                 }
@@ -73,52 +76,43 @@ export const useWalletStore = create<WalletState & WalletActions>()(
             recharge: async (amount, method) => {
                 set({ loading: true, error: null });
                 try {
-                    // await http.post('/wallet/recharge', { amount, method });
-                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    // frontend amount is units, backend expects cents
+                    const amountCents = Math.round(amount * 100);
+                    const data = await http.post<any>('/user/wallet/recharge', {
+                        amountCents,
+                        method
+                    });
 
-                    set(state => ({
-                        balance: state.balance + amount,
-                        loading: false,
-                        transactions: [
-                            {
-                                id: `t_${Date.now()}`,
-                                type: 'recharge',
-                                amount,
-                                status: 'success',
-                                createdAt: new Date().toISOString(),
-                                description: `${method} Recharge`
-                            },
-                            ...state.transactions
-                        ]
-                    }));
+                    // Update balance immediately if returned, or fetch
+                    if (data.balanceCents !== undefined) {
+                        set({ balance: data.balanceCents / 100, loading: false });
+                    } else {
+                        // fallback
+                        await get().fetchWallet();
+                        set({ loading: false });
+                    }
                 } catch (err: any) {
                     set({ loading: false, error: err.message || 'Recharge failed' });
+                    throw err;
                 }
             },
 
-            withdraw: async (amount, method) => {
+            withdraw: async (amount, bankCardId) => {
                 set({ loading: true, error: null });
                 try {
-                    // await http.post('/wallet/withdraw', { amount, method });
-                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    // frontend amount is units, backend expects cents
+                    const amountCents = Math.round(amount * 100);
+                    await http.post('/user/wallet/withdraw', {
+                        amountCents,
+                        bankCardId
+                    });
 
-                    set(state => ({
-                        balance: state.balance - amount,
-                        loading: false,
-                        transactions: [
-                            {
-                                id: `t_${Date.now()}`,
-                                type: 'withdrawal',
-                                amount: -amount,
-                                status: 'pending',
-                                createdAt: new Date().toISOString(),
-                                description: `${method} Withdrawal`
-                            },
-                            ...state.transactions
-                        ]
-                    }));
+                    // Withdrawal usually pends, balance might be frozen or deducted
+                    await get().fetchWallet();
+                    set({ loading: false });
                 } catch (err: any) {
                     set({ loading: false, error: err.message || 'Withdrawal failed' });
+                    throw err;
                 }
             }
         }),

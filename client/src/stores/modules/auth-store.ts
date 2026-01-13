@@ -145,10 +145,17 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             },
 
             updateProfile: async (data) => {
-                // TODO: Call API
-                set((state) => ({
-                    user: state.user ? { ...state.user, ...data } : null
-                }));
+                set({ loading: true, error: null });
+                try {
+                    const updatedUser = await http.put<User>('/user/profile', data);
+                    set((state) => ({
+                        user: state.user ? { ...state.user, ...updatedUser } : updatedUser,
+                        loading: false
+                    }));
+                } catch (err: any) {
+                    set({ loading: false, error: err.message || 'Failed to update profile' });
+                    throw err;
+                }
             },
 
             switchToPlayerMode: () => {
