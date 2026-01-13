@@ -17414,6 +17414,63 @@
                 }
             }
         },
+        "/auth/change-password": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "修改当前用户的登录密码",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User - Auth"
+                ],
+                "summary": "修改密码",
+                "parameters": [
+                    {
+                        "description": "密码信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_user.ChangePasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_user.ChangePasswordResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_pkg_apierr.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_pkg_apierr.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_pkg_apierr.APIError"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "description": "用户名（邮箱或手机号）+ 密码登录，返回 JWT 并设置 httpOnly Cookie",
@@ -21078,6 +21135,43 @@
                 }
             }
         },
+        "/user/orders/stats": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取当前用户的订单统计数据",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User - Orders"
+                ],
+                "summary": "获取订单统计",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_user.OrderStatsResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_pkg_apierr.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_pkg_apierr.APIError"
+                        }
+                    }
+                }
+            }
+        },
         "/user/orders/{id}": {
             "get": {
                 "security": [
@@ -21726,6 +21820,98 @@
                 }
             }
         },
+        "/user/profile": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取当前用户的个人资料",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User - Profile"
+                ],
+                "summary": "获取用户资料",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_user.UserProfileResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_pkg_apierr.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_pkg_apierr.APIError"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "更新当前用户的个人资料（昵称、头像）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User - Profile"
+                ],
+                "summary": "更新用户资料",
+                "parameters": [
+                    {
+                        "description": "更新信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_user.UpdateProfileRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_user.UpdateProfileResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_pkg_apierr.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_pkg_apierr.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_pkg_apierr.APIError"
+                        }
+                    }
+                }
+            }
+        },
         "/user/reviews": {
             "post": {
                 "description": "为已完成订单创建评价",
@@ -21920,6 +22106,43 @@
                 }
             }
         },
+        "/user/vip/info": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取当前用户的 VIP 等级、经验值和权益信息",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User - VIP"
+                ],
+                "summary": "获取用户 VIP 信息",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_user.UserVipInfoResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_pkg_apierr.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_pkg_apierr.APIError"
+                        }
+                    }
+                }
+            }
+        },
         "/user/vip/levels": {
             "get": {
                 "produces": [
@@ -22066,6 +22289,82 @@
                         "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/gamelink_pkg_apierr.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_pkg_apierr.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_pkg_apierr.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/wallet/transactions": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取当前用户的钱包交易记录",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User - Wallet"
+                ],
+                "summary": "获取交易记录",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "recharge",
+                            "payment",
+                            "refund",
+                            "withdrawal"
+                        ],
+                        "type": "string",
+                        "description": "交易类型",
+                        "name": "type",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "pending",
+                            "success",
+                            "failed"
+                        ],
+                        "type": "string",
+                        "description": "状态",
+                        "name": "status",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_user.TransactionsResponse"
                         }
                     },
                     "401": {
@@ -33852,6 +34151,31 @@
                 }
             }
         },
+        "internal_handler_user.ChangePasswordRequest": {
+            "type": "object",
+            "required": [
+                "newPassword",
+                "oldPassword"
+            ],
+            "properties": {
+                "newPassword": {
+                    "type": "string",
+                    "minLength": 8
+                },
+                "oldPassword": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_user.ChangePasswordResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "密码修改成功"
+                }
+            }
+        },
         "internal_handler_user.ChatMessage": {
             "type": "object",
             "properties": {
@@ -34145,6 +34469,55 @@
                 }
             }
         },
+        "internal_handler_user.OrderStatsResponse": {
+            "type": "object",
+            "properties": {
+                "avgOrderAmountCents": {
+                    "type": "integer"
+                },
+                "canceledCount": {
+                    "type": "integer"
+                },
+                "completedCount": {
+                    "type": "integer"
+                },
+                "inProgressCount": {
+                    "type": "integer"
+                },
+                "monthlyChange": {
+                    "type": "integer"
+                },
+                "monthlyCount": {
+                    "type": "integer"
+                },
+                "pendingCount": {
+                    "type": "integer"
+                },
+                "totalCount": {
+                    "type": "integer"
+                },
+                "totalSpentCents": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler_user.PaginationInfo": {
+            "type": "object",
+            "properties": {
+                "page": {
+                    "type": "integer"
+                },
+                "pageSize": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "totalPages": {
+                    "type": "integer"
+                }
+            }
+        },
         "internal_handler_user.PasswordResetSuccessResponse": {
             "type": "object",
             "properties": {
@@ -34393,6 +34766,186 @@
                 },
                 "total": {
                     "type": "integer"
+                }
+            }
+        },
+        "internal_handler_user.TransactionItem": {
+            "type": "object",
+            "properties": {
+                "amountCents": {
+                    "type": "integer"
+                },
+                "balanceAfterCents": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "orderId": {
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "pending, success, failed",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "recharge, payment, refund, withdrawal",
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_user.TransactionsResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_handler_user.TransactionItem"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/internal_handler_user.PaginationInfo"
+                }
+            }
+        },
+        "internal_handler_user.UpdateProfileRequest": {
+            "type": "object",
+            "properties": {
+                "avatarUrl": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 2
+                }
+            }
+        },
+        "internal_handler_user.UpdateProfileResponse": {
+            "type": "object",
+            "properties": {
+                "avatarUrl": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_user.UserProfileResponse": {
+            "type": "object",
+            "properties": {
+                "avatarUrl": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_user.UserVipInfoResponse": {
+            "type": "object",
+            "properties": {
+                "benefits": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_handler_user.VipBenefit"
+                    }
+                },
+                "currentExp": {
+                    "type": "integer"
+                },
+                "currentLevel": {
+                    "$ref": "#/definitions/internal_handler_user.VipLevelInfo"
+                },
+                "discountRate": {
+                    "type": "integer"
+                },
+                "expProgress": {
+                    "type": "number"
+                },
+                "monthlyTicketsRemaining": {
+                    "type": "integer"
+                },
+                "nextLevelExp": {
+                    "type": "integer"
+                },
+                "vipExpireAt": {
+                    "type": "string"
+                },
+                "vipUnlocked": {
+                    "type": "boolean"
+                },
+                "vipUnlockedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_user.VipBenefit": {
+            "type": "object",
+            "properties": {
+                "icon": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_user.VipLevelInfo": {
+            "type": "object",
+            "properties": {
+                "color": {
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "level": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "slug": {
+                    "type": "string"
                 }
             }
         },

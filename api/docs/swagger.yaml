@@ -8235,6 +8235,23 @@ definitions:
     required:
     - blockedId
     type: object
+  internal_handler_user.ChangePasswordRequest:
+    properties:
+      newPassword:
+        minLength: 8
+        type: string
+      oldPassword:
+        type: string
+    required:
+    - newPassword
+    - oldPassword
+    type: object
+  internal_handler_user.ChangePasswordResponse:
+    properties:
+      message:
+        example: 密码修改成功
+        type: string
+    type: object
   internal_handler_user.ChatMessage:
     properties:
       auditStatus:
@@ -8430,6 +8447,38 @@ definitions:
       total:
         type: integer
     type: object
+  internal_handler_user.OrderStatsResponse:
+    properties:
+      avgOrderAmountCents:
+        type: integer
+      canceledCount:
+        type: integer
+      completedCount:
+        type: integer
+      inProgressCount:
+        type: integer
+      monthlyChange:
+        type: integer
+      monthlyCount:
+        type: integer
+      pendingCount:
+        type: integer
+      totalCount:
+        type: integer
+      totalSpentCents:
+        type: integer
+    type: object
+  internal_handler_user.PaginationInfo:
+    properties:
+      page:
+        type: integer
+      pageSize:
+        type: integer
+      total:
+        type: integer
+      totalPages:
+        type: integer
+    type: object
   internal_handler_user.PasswordResetSuccessResponse:
     properties:
       message:
@@ -8597,6 +8646,125 @@ definitions:
         type: array
       total:
         type: integer
+    type: object
+  internal_handler_user.TransactionItem:
+    properties:
+      amountCents:
+        type: integer
+      balanceAfterCents:
+        type: integer
+      createdAt:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      orderId:
+        type: integer
+      status:
+        description: pending, success, failed
+        type: string
+      type:
+        description: recharge, payment, refund, withdrawal
+        type: string
+    type: object
+  internal_handler_user.TransactionsResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/internal_handler_user.TransactionItem'
+        type: array
+      pagination:
+        $ref: '#/definitions/internal_handler_user.PaginationInfo'
+    type: object
+  internal_handler_user.UpdateProfileRequest:
+    properties:
+      avatarUrl:
+        maxLength: 255
+        type: string
+      name:
+        maxLength: 32
+        minLength: 2
+        type: string
+    type: object
+  internal_handler_user.UpdateProfileResponse:
+    properties:
+      avatarUrl:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  internal_handler_user.UserProfileResponse:
+    properties:
+      avatarUrl:
+        type: string
+      createdAt:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      phone:
+        type: string
+      status:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  internal_handler_user.UserVipInfoResponse:
+    properties:
+      benefits:
+        items:
+          $ref: '#/definitions/internal_handler_user.VipBenefit'
+        type: array
+      currentExp:
+        type: integer
+      currentLevel:
+        $ref: '#/definitions/internal_handler_user.VipLevelInfo'
+      discountRate:
+        type: integer
+      expProgress:
+        type: number
+      monthlyTicketsRemaining:
+        type: integer
+      nextLevelExp:
+        type: integer
+      vipExpireAt:
+        type: string
+      vipUnlocked:
+        type: boolean
+      vipUnlockedAt:
+        type: string
+    type: object
+  internal_handler_user.VipBenefit:
+    properties:
+      icon:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  internal_handler_user.VipLevelInfo:
+    properties:
+      color:
+        type: string
+      icon:
+        type: string
+      id:
+        type: integer
+      level:
+        type: integer
+      name:
+        type: string
+      slug:
+        type: string
     type: object
   internal_handler_user.WalletBalance:
     properties:
@@ -19688,6 +19856,42 @@ paths:
       summary: Request password reset
       tags:
       - user-auth
+  /auth/change-password:
+    post:
+      consumes:
+      - application/json
+      description: 修改当前用户的登录密码
+      parameters:
+      - description: 密码信息
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler_user.ChangePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handler_user.ChangePasswordResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/gamelink_pkg_apierr.APIError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/gamelink_pkg_apierr.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/gamelink_pkg_apierr.APIError'
+      security:
+      - BearerAuth: []
+      summary: 修改密码
+      tags:
+      - User - Auth
   /auth/login:
     post:
       consumes:
@@ -22282,6 +22486,29 @@ paths:
       summary: Get Dispute Detail
       tags:
       - User - Orders
+  /user/orders/stats:
+    get:
+      description: 获取当前用户的订单统计数据
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handler_user.OrderStatsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/gamelink_pkg_apierr.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/gamelink_pkg_apierr.APIError'
+      security:
+      - BearerAuth: []
+      summary: 获取订单统计
+      tags:
+      - User - Orders
   /user/payments:
     get:
       parameters:
@@ -22479,6 +22706,64 @@ paths:
       summary: 获取陪玩师详情
       tags:
       - User - Players
+  /user/profile:
+    get:
+      description: 获取当前用户的个人资料
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handler_user.UserProfileResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/gamelink_pkg_apierr.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/gamelink_pkg_apierr.APIError'
+      security:
+      - BearerAuth: []
+      summary: 获取用户资料
+      tags:
+      - User - Profile
+    put:
+      consumes:
+      - application/json
+      description: 更新当前用户的个人资料（昵称、头像）
+      parameters:
+      - description: 更新信息
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler_user.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handler_user.UpdateProfileResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/gamelink_pkg_apierr.APIError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/gamelink_pkg_apierr.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/gamelink_pkg_apierr.APIError'
+      security:
+      - BearerAuth: []
+      summary: 更新用户资料
+      tags:
+      - User - Profile
   /user/reviews:
     post:
       consumes:
@@ -22604,6 +22889,29 @@ paths:
       summary: 切换角色
       tags:
       - 用户-角色
+  /user/vip/info:
+    get:
+      description: 获取当前用户的 VIP 等级、经验值和权益信息
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handler_user.UserVipInfoResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/gamelink_pkg_apierr.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/gamelink_pkg_apierr.APIError'
+      security:
+      - BearerAuth: []
+      summary: 获取用户 VIP 信息
+      tags:
+      - User - VIP
   /user/vip/levels:
     get:
       produces:
@@ -22705,6 +23013,57 @@ paths:
       security:
       - BearerAuth: []
       summary: 钱包充值
+      tags:
+      - User - Wallet
+  /user/wallet/transactions:
+    get:
+      description: 获取当前用户的钱包交易记录
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量
+        in: query
+        name: pageSize
+        type: integer
+      - description: 交易类型
+        enum:
+        - recharge
+        - payment
+        - refund
+        - withdrawal
+        in: query
+        name: type
+        type: string
+      - description: 状态
+        enum:
+        - pending
+        - success
+        - failed
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handler_user.TransactionsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/gamelink_pkg_apierr.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/gamelink_pkg_apierr.APIError'
+      security:
+      - BearerAuth: []
+      summary: 获取交易记录
       tags:
       - User - Wallet
 schemes:
