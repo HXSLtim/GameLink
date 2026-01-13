@@ -1,0 +1,44 @@
+# GameLink 服务器部署配置
+# 适用于 1Panel 环境
+# PostgreSQL 和 Redis 通过 1Panel 应用商店安装
+# 只需要部署后端 API 服务
+
+services:
+  backend:
+    build:
+      context: ../api
+      dockerfile: Dockerfile
+    image: gamelink-backend:latest
+    container_name: gamelink-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - APP_ENV=production
+      - GIN_MODE=release
+      # 数据库 - 连接 1Panel 安装的 PostgreSQL
+      - DB_DSN=host=${DB_HOST:-127.0.0.1} port=${DB_PORT:-5432} user=${POSTGRES_USER:-gamelink} password=${POSTGRES_PASSWORD} dbname=${POSTGRES_DB:-gamelink} sslmode=disable
+      # Redis - 连接 1Panel 安装的 Redis
+      - CACHE_TYPE=redis
+      - REDIS_ADDR=${REDIS_HOST:-127.0.0.1}:${REDIS_PORT:-6379}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      # JWT
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      # 加密
+      - CRYPTO_ENABLED=${CRYPTO_ENABLED:-true}
+      - CRYPTO_SECRET_KEY=${CRYPTO_SECRET_KEY}
+      - CRYPTO_IV=${CRYPTO_IV}
+      - CRYPTO_USE_SIGNATURE=true
+      # 超级管理员
+      - SUPER_ADMIN_EMAIL=${SUPER_ADMIN_EMAIL}
+      - SUPER_ADMIN_PASSWORD=${SUPER_ADMIN_PASSWORD}
+      - SUPER_ADMIN_NAME=${SUPER_ADMIN_NAME:-Super Admin}
+      - SEED_ENABLED=false
+    # 使用 host 网络模式，方便连接 1Panel 的数据库
+    network_mode: host
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/v1/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
