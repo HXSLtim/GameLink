@@ -5,9 +5,9 @@
 This repo is a monorepo:
 
 - `api/`: Go backend (Gin/GORM). Entry point: `api/cmd/main.go`. Main code lives in `api/internal/` (layered `handler/ → service/ → repository/ → model/`). Tests live alongside code (`*_test.go`) and under `api/tests/` for integration/load tooling.
-- `admin/`: Admin web UI (React + TypeScript + Vite). Source in `admin/src/`, unit tests in `admin/src/test/`, and Playwright E2E tests under `admin/tests/`.
-- `client/`: User/Player frontend (React + TypeScript + Vite). Source in `client/src/`.
-- `app/`: Taro mini‑program app. Source in `app/src/` (Taro conventions).
+- `admin/`: Admin web UI (React + TypeScript + Ant Design + Vite). Source in `admin/src/`, unit tests in `admin/src/test/`, and Playwright E2E tests under `admin/tests/`.
+- `client/`: **Desktop PWA** for User/Player (React + TypeScript + shadcn/ui + Vite). Targets desktop browsers with PWA support for offline capability. Source in `client/src/`.
+- `app/`: **Mobile** Taro mini‑program app for User/Player. Source in `app/src/` (Taro conventions).
 - `docs/`: Architecture, standards, and feature docs. `scripts/`: deployment and Docker helper scripts (mostly PowerShell).
 
 ## Build, Test, and Development Commands

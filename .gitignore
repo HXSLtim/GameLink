@@ -29,7 +29,7 @@ lerna-debug.log*
 .env.test.local
 .env.production.local
 .envrc
-.npmrc
+.envrc
 
 # Caches
 .cache/
@@ -101,11 +101,11 @@ nul
 desktop.ini
 
 # Generated API documentation
-swagger.json
-swagger.yaml
-**/swagger/docs.go
-**/swagger/swagger.json
-**/swagger/swagger.yaml
+# swagger.json
+# swagger.yaml
+# **/swagger/docs.go
+# **/swagger/swagger.json
+# **/swagger/swagger.yaml
 
 # Generated files
 *.generated.*
