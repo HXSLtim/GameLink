@@ -12,6 +12,9 @@
         "login": "登录",
         "logout": "退出登录",
         "username": "用户名",
+        "nickname": "昵称",
+        "phone": "手机号",
+        "email": "电子邮箱",
         "password": "密码",
         "submit": "提交",
         "welcome_back": "欢迎回来",
@@ -19,6 +22,7 @@
         "sign_in": "立即登录",
         "forgot_password": "忘记密码？",
         "create_account": "注册新账号",
+        "already_have_account": "已有账户？",
         "continue_with": "或通过以下方式登录",
         "slogan": "\"连接职业陪玩，提升竞技水平，体验前所未有的游戏乐趣\"",
         "anonymous": "匿名访问",
@@ -27,13 +31,172 @@
         "terms": "服务条款",
         "and": "和",
         "privacy": "隐私政策",
-        "branding_sub": "连接 · 竞技 · 胜利"
+        "branding_sub": "连接 · 竞技 · 胜利",
+        "remember_me": "记住我",
+        "email_required": "需要电子邮箱",
+        "phone_required": "需要手机号",
+        "password_min_length": "密码至少6位",
+        "provide_contact": "请提供邮箱或手机号"
+    },
+    "wallet": {
+        "title": "钱包余额",
+        "recharge": "充值",
+        "withdraw": "提现",
+        "transactions": "交易记录",
+        "no_transactions": "暂无交易记录",
+        "type": {
+            "deposit": "充值",
+            "payment": "支付",
+            "refund": "退款",
+            "withdrawal": "提现"
+        },
+        "status": {
+            "pending": "处理中",
+            "completed": "已完成",
+            "failed": "失败"
+        }
+    },
+    "vip": {
+        "title": "VIP 会员",
+        "plans": "会员计划",
+        "current_plan": "当前计划",
+        "plan": {
+            "free": "免费会员",
+            "pro": "Pro 会员",
+            "elite": "Elite 精英会员"
+        },
+        "feature": {
+            "ad_free": "免广告",
+            "priority": "优先接单",
+            "badge": "专属徽章"
+        },
+        "subscribe": "立即订阅",
+        "monthly": "/月"
+    },
+    "notifications": {
+        "title": "通知中心",
+        "mark_all_read": "全部已读",
+        "empty": "好清静，暂无通知",
+        "type": {
+            "system": "系统通知",
+            "order": "订单消息"
+        }
+    },
+    "settings": {
+        "save": "保存更改",
+        "cancel": "取消",
+        "avatar_url": "头像链接",
+        "update_success": "资料更新成功",
+        "password_mismatch": "两次输入的密码不一致",
+        "current_password": "当前密码",
+        "new_password": "新密码",
+        "confirm_password": "确认新密码",
+        "security_tip": "安全提示",
+        "tip_content": "建议使用至少8位字符，包含大小写每笔和符号",
+        "username_locked": "用户名不可更改"
     },
     "nav": {
         "home": "首页",
         "players": "陪玩师",
         "orders": "订单",
-        "chat": "消息",
-        "profile": "我的"
+        "chat": "聊天",
+        "profile": "个人中心",
+        "menu": "菜单",
+        "online_status": "在线 - 游戏中",
+        "search_placeholder": "搜索全站...",
+        "dashboard": "仪表盘",
+        "find_players_title": "寻找陪玩",
+        "find_players_desc": "发现有天赋的玩家一起游戏。",
+        "filter": {
+            "all": "全部",
+            "rating": "评分最高",
+            "orders": "接单最多",
+            "price": "价格",
+            "game": "游戏",
+            "gender": "性别"
+        },
+        "status": {
+            "online": "在线",
+            "offline": "离线"
+        },
+        "action": {
+            "book_now": "立即下单",
+            "chat": "私聊"
+        },
+        "no_players": "没有找到符合条件的陪玩师。",
+        "orders_title": "我的订单",
+        "orders_desc": "管理和追踪您的游戏陪玩订单。",
+        "order_id": "订单号 #{{id}}",
+        "order_date": "日期",
+        "order_price": "总价",
+        "order_status": {
+            "pending": "待接单",
+            "accepted": "已接单",
+            "completed": "已完成",
+            "cancelled": "已取消"
+        },
+        "chat_title": "消息中心",
+        "chat_placeholder": "输入消息...",
+        "chat_send": "发送",
+        "no_conversations": "暂无消息记录。",
+        "popular_games": "热门游戏",
+        "featured_pros": "精选大神",
+        "view_all": "查看全部",
+        "find_players": "寻找陪玩",
+        "become_player": "成为大神",
+        "new_season": "新赛季开启",
+        "hero_title": "寻找你的完美",
+        "hero_highlight": "搭档",
+        "hero_desc": "与顶尖玩家连线，无论是上分教学还是娱乐陪玩，即刻加入我们的社区。",
+        "why_choose": "为什么选择 GameLink？",
+        "secure_payments": "安全支付",
+        "secure_desc": "订单完成前资金由平台担保托管。",
+        "verified_pros": "大神认证",
+        "verified_desc": "所有陪玩师均经过严格的技能考核。",
+        "support_247": "24/7 客服",
+        "support_desc": "全天候为您提供帮助和支持。"
+    },
+    "profile": {
+        "title": "个人中心",
+        "edit": "编辑资料",
+        "id": "ID",
+        "wallet": {
+            "title": "钱包余额",
+            "recharge": "充值"
+        },
+        "vip": {
+            "title": "VIP 会员",
+            "expires": "有效期至：{{date}}",
+            "free": "免费计划",
+            "upgrade": "升级会员",
+            "upgrade_cta": "解锁更多特权"
+        },
+        "stats": {
+            "monthly_orders": "本月订单",
+            "from_last_month": "较上月"
+        },
+        "tabs": {
+            "account": "账户",
+            "security": "安全",
+            "notifications": "通知"
+        },
+        "settings": {
+            "general": "通用设置",
+            "general_desc": "管理您的账户偏好和显示设置。",
+            "personal_info": "个人信息",
+            "personal_info_desc": "更新您的昵称、简介和头像",
+            "payment": "支付方式",
+            "payment_desc": "管理银行卡和账单信息",
+            "security": "安全设置",
+            "security_desc": "保护您的账户和数据。",
+            "password": "密码",
+            "password_last_updated": "上次更新于 3 个月前",
+            "password_update": "更新",
+            "notifications": "通知偏好",
+            "notifications_desc": "选择您希望接收的通知类型。",
+            "push": "推送通知",
+            "push_desc": "在您的设备上接收提醒"
+        },
+        "logout": "退出登录"
     }
 }

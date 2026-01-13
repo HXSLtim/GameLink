@@ -8,10 +8,117 @@
             "toggle": "Toggle Theme"
         }
     },
+    "profile": {
+        "title": "Profile",
+        "edit": "Edit Profile",
+        "id": "ID",
+        "wallet": {
+            "title": "Wallet Balance",
+            "recharge": "Recharge"
+        },
+        "vip": {
+            "title": "VIP Status",
+            "expires": "Expires: {{date}}",
+            "free": "Free Plan",
+            "upgrade": "Upgrade Now",
+            "upgrade_cta": "Upgrade to unlock exclusive features"
+        },
+        "stats": {
+            "monthly_orders": "Monthly Orders",
+            "from_last_month": "from last month"
+        },
+        "tabs": {
+            "account": "Account",
+            "security": "Security",
+            "notifications": "Notifications"
+        },
+        "settings": {
+            "general": "General Settings",
+            "general_desc": "Manage your account preferences and display settings.",
+            "personal_info": "Personal Information",
+            "personal_info_desc": "Update your name, bio, and avatar",
+            "payment": "Payment Methods",
+            "payment_desc": "Manage cards and billing info",
+            "security": "Security Settings",
+            "security_desc": "Protect your account and data.",
+            "password": "Password",
+            "password_last_updated": "Last updated 3 months ago",
+            "password_update": "Update",
+            "notifications": "Notification Preferences",
+            "notifications_desc": "Choose what you want to be notified about.",
+            "push": "Push Notifications",
+            "push_desc": "Receive alerts on your device"
+        },
+        "logout": "Log Out"
+    },
+    "nav": {
+        "home": "Home",
+        "players": "Pro Players",
+        "orders": "Orders",
+        "chat": "Chat",
+        "profile": "Profile",
+        "menu": "MENU",
+        "online_status": "Online - In Game",
+        "search_placeholder": "Search...",
+        "dashboard": "Dashboard",
+        "find_players_title": "Find Players",
+        "find_players_desc": "Discover talented players to game with.",
+        "filter": {
+            "all": "All",
+            "rating": "Highest Rated",
+            "orders": "Most Orders",
+            "price": "Price",
+            "game": "Game",
+            "gender": "Gender"
+        },
+        "status": {
+            "online": "Online",
+            "offline": "Offline"
+        },
+        "action": {
+            "book_now": "Book Now",
+            "chat": "Chat"
+        },
+        "no_players": "No players found matching your criteria.",
+        "orders_title": "My Orders",
+        "orders_desc": "Manage and track your game service orders.",
+        "order_id": "Order #{{id}}",
+        "order_date": "Date",
+        "order_price": "Total",
+        "order_status": {
+            "pending": "Pending",
+            "accepted": "Accepted",
+            "completed": "Completed",
+            "cancelled": "Cancelled"
+        },
+        "chat_title": "Messages",
+        "chat_placeholder": "Type a message...",
+        "chat_send": "Send",
+        "no_conversations": "No conversations yet.",
+        "popular_games": "Popular Games",
+        "featured_pros": "Featured Pros",
+        "view_all": "View All",
+        "find_players": "Find Players",
+        "become_player": "Become a Pro",
+        "new_season": "New Season Live",
+        "hero_title": "Find Your Perfect",
+        "hero_highlight": "Duo",
+        "hero_desc": "Connect with top-tier gamers for coaching, ranking up, or just having fun. Join the community today.",
+        "why_choose": "Why choose GameLink?",
+        "secure_payments": "Secure Payments",
+        "secure_desc": "Your funds are protected until the order is complete.",
+        "verified_pros": "Verified Pros",
+        "verified_desc": "All players undergo strict skill verification.",
+        "support_247": "24/7 Support",
+        "support_desc": "We are here to help you anytime, anywhere."
+    },
     "auth": {
         "login": "Login",
         "logout": "Logout",
         "username": "Username",
+        "nickname": "Nickname",
+        "phone": "Phone Number",
+        "email": "Email",
         "password": "Password",
         "submit": "Submit",
         "welcome_back": "Welcome Back",
@@ -19,6 +126,8 @@
         "sign_in": "Sign In",
         "forgot_password": "Forgot password?",
         "create_account": "Create an account",
+        "already_have_account": "Already have an account?",
+        "sign_up": "Sign Up",
         "continue_with": "Or continue with",
         "slogan": "\"Connect with pro players, elevate your skills, and experience gaming like never before.\"",
         "anonymous": "Anonymous",
@@ -27,13 +136,68 @@
         "terms": "Terms",
         "and": "and",
         "privacy": "Privacy Policy",
-        "branding_sub": "Connect, Play, Triumph"
+        "branding_sub": "Connect, Play, Triumph",
+        "remember_me": "Remember me",
+        "email_required": "Email is required",
+        "phone_required": "Phone number is required",
+        "password_min_length": "Password must be at least 6 characters",
+        "provide_contact": "Please provide either an email or phone number"
     },
-    "nav": {
-        "home": "Home",
-        "players": "Players",
-        "orders": "Orders",
-        "chat": "Chat",
-        "profile": "Profile"
+    "wallet": {
+        "title": "Wallet Balance",
+        "recharge": "Recharge",
+        "withdraw": "Withdraw",
+        "transactions": "Transactions",
+        "no_transactions": "No transactions yet",
+        "type": {
+            "deposit": "Deposit",
+            "payment": "Payment",
+            "refund": "Refund",
+            "withdrawal": "Withdrawal"
+        },
+        "status": {
+            "pending": "Pending",
+            "completed": "Completed",
+            "failed": "Failed"
+        }
+    },
+    "vip": {
+        "title": "VIP Status",
+        "plans": "Membership Plans",
+        "current_plan": "Current Plan",
+        "plan": {
+            "free": "Free Plan",
+            "pro": "Pro Plan",
+            "elite": "Elite Plan"
+        },
+        "feature": {
+            "ad_free": "Ad-free experience",
+            "priority": "Priority Support",
+            "badge": "Exclusive Badge"
+        },
+        "subscribe": "Subscribe Now",
+        "monthly": "/mo"
+    },
+    "notifications": {
+        "title": "Notifications",
+        "mark_all_read": "Mark all as read",
+        "empty": "No notifications",
+        "type": {
+            "system": "System",
+            "order": "Order"
+        }
+    },
+    "settings": {
+        "save": "Save Changes",
+        "cancel": "Cancel",
+        "avatar_url": "Avatar URL",
+        "update_success": "Profile updated successfully",
+        "password_mismatch": "New passwords do not match",
+        "current_password": "Current Password",
+        "new_password": "New Password",
+        "confirm_password": "Confirm New Password",
+        "security_tip": "Security Tip",
+        "tip_content": "Use at least 8 characters, including uppercase letters, numbers, and symbols.",
+        "username_locked": "Username cannot be changed"
     }
 }

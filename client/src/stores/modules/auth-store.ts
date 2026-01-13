@@ -37,11 +37,20 @@ export interface AuthState {
     error: string | null;
 }
 
+export interface RegisterPayload {
+    phone?: string;
+    email?: string;
+    password: string;
+    name: string;
+}
+
 export interface AuthActions {
-    login: (credentials: any) => Promise<void>;
+    login: (credentials: { username: string; password: string }) => Promise<void>;
+    register: (credentials: RegisterPayload) => Promise<void>;
     logout: () => Promise<void>;
     refresh: () => Promise<void>;
     updateProfile: (data: Partial<User>) => Promise<void>;
+    changePassword: (data: { oldPassword?: string; newPassword: string }) => Promise<void>;
     switchToPlayerMode: () => void;
     checkAuth: () => Promise<void>;
 }
@@ -65,7 +74,10 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             login: async (credentials) => {
                 set({ loading: true, error: null });
                 try {
-                    const data = await http.post<any>('/auth/login', credentials);
+                    const data = await http.post<any>('/auth/login', {
+                        username: credentials.username,
+                        password: credentials.password
+                    });
                     const { token, refreshToken, user, role, permissions } = data;
 
                     set({
@@ -83,6 +95,33 @@ export const useAuthStore = create<AuthState & AuthActions>()(
                     set({
                         loading: false,
                         error: err.response?.data?.message || err.message || 'Login failed',
+                    });
+                    throw err;
+                }
+            },
+
+            register: async (credentials: RegisterPayload) => {
+                set({ loading: true, error: null });
+                try {
+                    const data = await http.post<any>('/auth/register', credentials);
+                    // Automatically login after register
+                    const { token, refreshToken, user, role, permissions } = data;
+
+                    set({
+                        token,
+                        refreshToken,
+                        user,
+                        role: role || 'user',
+                        permissions: permissions || [],
+                        isAuthenticated: true,
+                        loading: false,
+                        error: null,
+                    });
+                } catch (err: any) {
+                    console.error("Registration failed", err);
+                    set({
+                        loading: false,
+                        error: err.response?.data?.message || err.message || 'Registration failed',
                     });
                     throw err;
                 }
@@ -112,30 +151,26 @@ export const useAuthStore = create<AuthState & AuthActions>()(
                 }
 
                 try {
-                    // MOCK implementation for now - normally this would be a real network call
-                    // const data = await http.post<{ token: string, user: User }>('/auth/refresh', { refreshToken });
-
-                    // Simulating API delay and response
-                    await new Promise(resolve => setTimeout(resolve, 500));
-
-                    // In a real app, backend validates refresh token and issues new access token
-                    // Here we just "mock" a success by retaining the current user/refresh token
-                    // and generating a "new" mock access token if needed, or just acknowledging success.
-
-                    const newToken = "mock_refreshed_access_token_" + Date.now();
+                    // Use public endpoint which doesn't require auth header
+                    const data = await http.post<any>('/public/auth/refresh', { refreshToken });
+                    const { token: newToken, refreshToken: newRefreshToken, user } = data;
 
                     console.log("[Auth] Token refreshed successfully");
 
                     set({
                         token: newToken,
+                        refreshToken: newRefreshToken || refreshToken, // Use new one if provided
+                        user: user || get().user,
                         loading: false,
                         error: null,
                         isAuthenticated: true
                     });
                 } catch (err: any) {
                     console.error("Token refresh failed", err);
+                    // Clear auth state on refresh failure
                     set({
                         token: null,
+                        refreshToken: null,
                         user: null,
                         isAuthenticated: false,
                         role: 'guest'
@@ -154,6 +189,17 @@ export const useAuthStore = create<AuthState & AuthActions>()(
                     }));
                 } catch (err: any) {
                     set({ loading: false, error: err.message || 'Failed to update profile' });
+                    throw err;
+                }
+            },
+
+            changePassword: async (passwords) => {
+                set({ loading: true, error: null });
+                try {
+                    await http.put('/user/password', passwords);
+                    set({ loading: false });
+                } catch (err: any) {
+                    set({ loading: false, error: err.message || 'Failed to change password' });
                     throw err;
                 }
             },
@@ -199,18 +245,15 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         {
             name: 'auth-storage',
             partialize: (state) => ({
-                // SECURITY FLAGGED: Do NOT persist 'token' (Access Token) to localStorage
-                // Only persist refreshToken (simulating httpOnly cookie behavior for this client-only phase)
-                // and non-sensitive user preference/profile data
+                // Always persist auth state for session restoration
+                token: state.token,
                 refreshToken: state.refreshToken,
                 user: state.user,
                 role: state.role,
-                playerProfile: state.playerProfile
+                playerProfile: state.playerProfile,
             }),
             onRehydrateStorage: () => (state) => {
                 if (state) {
-                    // On hydration, if we have a refresh token but no access token, 
-                    // we immediately try to restore the session.
                     if (state.refreshToken && !state.token) {
                         state.refresh().catch(() => {
                             console.log("Session restoration failed on hydration");

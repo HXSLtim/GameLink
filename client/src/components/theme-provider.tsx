@@ -13,26 +13,28 @@ export function ThemeProvider({
     const { theme } = useThemeStore()
 
     useEffect(() => {
-        const root = window.document.documentElement
+        const root = window.document.documentElement;
 
-        root.classList.remove("light", "dark")
+        root.classList.remove("light", "dark");
 
         if (theme === "auto") {
-            const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-                .matches
-                ? "dark"
-                : "light"
+            const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
-            root.classList.add(systemTheme)
-            return
+            const applySystemTheme = () => {
+                root.classList.remove("light", "dark");
+                root.classList.add(mediaQuery.matches ? "dark" : "light");
+            };
+
+            applySystemTheme();
+
+            // Listen for system changes
+            mediaQuery.addEventListener("change", applySystemTheme);
+            return () => mediaQuery.removeEventListener("change", applySystemTheme);
         }
 
-        // 'day' maps to light theme tokens, 'night' maps to dark theme tokens
-        // For Tailwind class compat, we add 'light' or 'dark' to root
-        const rootClass = theme === 'day' ? 'light' : 'dark'
-        root.classList.add(rootClass)
+        const rootClass = theme === 'day' ? 'light' : 'dark';
+        root.classList.add(rootClass);
+    }, [theme]);
 
-    }, [theme])
-
-    return <>{children}</>
+    return <>{children}</>;
 }

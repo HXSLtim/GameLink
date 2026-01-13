@@ -1,33 +1,107 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores';
 import { Button } from '@/components/ui/button';
-import { LanguageSwitcher } from '@/components/language-switcher';
-import { ModeToggle } from '@/components/mode-toggle';
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Loader2, Gamepad2, Ghost, Rocket } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Loader2, Gamepad2, Ghost, Rocket, Mail, Smartphone } from "lucide-react"
+import { LanguageSwitcher } from '@/components/language-switcher';
+import { ModeToggle } from '@/components/mode-toggle';
+import { toast } from 'sonner';
+
+// Storage key for remembered credentials
+const REMEMBER_CREDENTIALS_KEY = 'gamelink_remembered_credentials';
 
 export default function LoginPage() {
     const navigate = useNavigate();
     const location = useLocation();
-    const { login, loading, error } = useAuthStore();
+    const { login, register, loading, error: storeError } = useAuthStore();
+    const { t } = useTranslation();
 
+    const [isRegister, setIsRegister] = useState(false);
+    const [ValidationErr, setValidationErr] = useState<string | null>(null);
+
+    // Login fields
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [rememberMe, setRememberMe] = useState(true);
+
+    // Load remembered credentials on mount
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem(REMEMBER_CREDENTIALS_KEY);
+            if (saved) {
+                const { username: savedUsername, password: savedPassword } = JSON.parse(saved);
+                if (savedUsername) setUsername(savedUsername);
+                if (savedPassword) setPassword(savedPassword);
+                setRememberMe(true);
+            }
+        } catch (e) {
+            // Ignore parse errors
+        }
+    }, []);
+
+    // Register additional fields
+    const [regMethod, setRegMethod] = useState<'email' | 'phone'>('email');
+    const [email, setEmail] = useState('');
+    const [phone, setPhone] = useState('');
+    const [nickname, setNickname] = useState('');
 
     // Get return url from location state or default to home
     const from = (location.state as any)?.from?.pathname || '/';
 
-    const handleLogin = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setValidationErr(null);
+
         try {
-            await login({ username, password });
+            if (isRegister) {
+                // Validation: Password length
+                if (password.length < 6) {
+                    setValidationErr("Password must be at least 6 characters");
+                    return;
+                }
+
+                if (regMethod === 'email' && !email) {
+                    setValidationErr(t('auth.email_required', { defaultValue: 'Email is required' }));
+                    return;
+                }
+                if (regMethod === 'phone' && !phone) {
+                    setValidationErr(t('auth.phone_required', { defaultValue: 'Phone number is required' }));
+                    return;
+                }
+
+                await register({
+                    phone: regMethod === 'phone' ? phone : undefined,
+                    email: regMethod === 'email' ? email : undefined,
+                    password,
+                    name: nickname || (regMethod === 'email' ? email.split('@')[0] : `User${phone.slice(-4)}`)
+                });
+            } else {
+                await login({ username, password });
+                
+                // Save or clear remembered credentials based on checkbox
+                if (rememberMe) {
+                    localStorage.setItem(REMEMBER_CREDENTIALS_KEY, JSON.stringify({ username, password }));
+                } else {
+                    localStorage.removeItem(REMEMBER_CREDENTIALS_KEY);
+                }
+            }
             navigate(from, { replace: true });
         } catch (err) {
-            // Error handled in store
+            // Error handled in store, but we can also show toast/local error
         }
     };
+
+    const toggleMode = () => {
+        setIsRegister(!isRegister);
+        setValidationErr(null);
+    };
+
+    const error = ValidationErr || storeError;
 
     return (
         <div className="w-full h-screen min-h-[600px] lg:grid lg:grid-cols-2 relative transition-colors duration-300">
@@ -38,7 +112,7 @@ export default function LoginPage() {
             </div>
 
             {/* Left Column - Visuals */}
-            <div className="hidden lg:flex flex-col relative bg-muted text-white dark:border-r">
+            <div className="hidden lg:flex flex-col relative bg-muted text-white dark:border-r overflow-hidden">
                 <div className="absolute inset-0 bg-zinc-900" />
                 {/* Abstract Gradient Background */}
                 <div className="absolute inset-0 bg-gradient-to-br from-violet-600/30 via-zinc-900 to-indigo-900/30" />
@@ -47,84 +121,184 @@ export default function LoginPage() {
                 {/* Branding Content */}
                 <div className="relative z-20 flex items-center text-lg font-medium p-10">
                     <Gamepad2 className="mr-2 h-6 w-6" />
-                    GameLink
+                    {t('app.name')}
                 </div>
 
                 <div className="relative z-20 mt-auto p-10 space-y-4">
                     <blockquote className="space-y-2">
                         <p className="text-xl font-semibold leading-relaxed">
-                            "Connect with pro players, elevate your skills, and experience gaming like never before."
+                            {t('auth.slogan')}
                         </p>
                     </blockquote>
                     <div className="flex gap-4 pt-4 text-sm text-muted-foreground/60">
-                        <div className="flex items-center gap-1"><Ghost className="h-4 w-4" /> Anonymous</div>
-                        <div className="flex items-center gap-1"><Rocket className="h-4 w-4" /> Fast & Secure</div>
+                        <div className="flex items-center gap-1"><Ghost className="h-4 w-4" /> {t('auth.anonymous')}</div>
+                        <div className="flex items-center gap-1"><Rocket className="h-4 w-4" /> {t('auth.secure')}</div>
                     </div>
                 </div>
             </div>
 
             {/* Right Column - Form */}
-            <div className="flex items-center justify-center py-12 px-4 sm:px-8">
+            <div className="flex items-center justify-center py-12 px-4 sm:px-8 bg-background">
                 <div className="mx-auto grid w-full max-w-[380px] gap-6">
                     <div className="flex flex-col space-y-2 text-center">
-                        <h1 className="text-3xl font-bold tracking-tight">Welcome Back</h1>
+                        <h1 className="text-3xl font-bold tracking-tight">
+                            {isRegister ? t('auth.create_account') : t('auth.welcome_back')}
+                        </h1>
                         <p className="text-sm text-muted-foreground">
-                            Enter your credentials to access your account
+                            {isRegister ? t('auth.enter_credentials') : t('auth.enter_credentials')}
                         </p>
                     </div>
 
-                    <form onSubmit={handleLogin} className="grid gap-4">
+                    <form onSubmit={handleSubmit} className="grid gap-4">
                         {error && (
                             <div className="p-3 text-sm font-medium text-destructive bg-destructive/10 rounded-md border border-destructive/20 animate-in fade-in slide-in-from-top-1">
                                 {error}
                             </div>
                         )}
-                        <div className="grid gap-2">
-                            <Label htmlFor="username">Username / Email</Label>
-                            <Input
-                                id="username"
-                                placeholder="name@example.com"
-                                type="text"
-                                autoCapitalize="none"
-                                autoComplete="username"
-                                autoCorrect="off"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                                disabled={loading}
-                                className="bg-background/50 backdrop-blur-sm"
-                                required
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <div className="flex items-center justify-between">
-                                <Label htmlFor="password">Password</Label>
-                                <Link
-                                    to="/forgot-password"
-                                    className="text-sm text-primary underline-offset-4 hover:underline"
-                                >
-                                    Forgot password?
-                                </Link>
-                            </div>
-                            <Input
-                                id="password"
-                                placeholder="••••••••"
-                                type="password"
-                                autoComplete="current-password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                disabled={loading}
-                                className="bg-background/50 backdrop-blur-sm"
-                                required
-                            />
-                        </div>
-                        <Button disabled={loading} className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-violet-500/25">
+
+                        {/* Login Mode */}
+                        {!isRegister && (
+                            <>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="username">{t('auth.username')}</Label>
+                                    <Input
+                                        id="username"
+                                        placeholder={t('auth.username')}
+                                        type="text"
+                                        autoCapitalize="none"
+                                        autoComplete="username"
+                                        autoCorrect="off"
+                                        value={username}
+                                        onChange={(e) => setUsername(e.target.value)}
+                                        disabled={loading}
+                                        className="bg-background/50 backdrop-blur-sm"
+                                        required={!isRegister}
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <div className="flex items-center justify-between">
+                                        <Label htmlFor="password">{t('auth.password')}</Label>
+                                        <Link
+                                            to="/forgot-password"
+                                            className="text-sm text-primary underline-offset-4 hover:underline"
+                                        >
+                                            {t('auth.forgot_password')}
+                                        </Link>
+                                    </div>
+                                    <Input
+                                        id="password"
+                                        placeholder="••••••••"
+                                        type="password"
+                                        autoComplete="current-password"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        disabled={loading}
+                                        className="bg-background/50 backdrop-blur-sm"
+                                        required
+                                    />
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                        id="remember"
+                                        checked={rememberMe}
+                                        onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                                    />
+                                    <Label htmlFor="remember" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                        {t('auth.remember_me', { defaultValue: 'Remember me' })}
+                                    </Label>
+                                </div>
+                            </>
+                        )}
+
+                        {/* Register Mode */}
+                        {isRegister && (
+                            <Tabs defaultValue="email" value={regMethod} onValueChange={(v) => setRegMethod(v as 'email' | 'phone')} className="w-full">
+                                <TabsList className="grid w-full grid-cols-2 mb-4">
+                                    <TabsTrigger value="email">
+                                        <Mail className="h-4 w-4 mr-2" />
+                                        Email
+                                    </TabsTrigger>
+                                    <TabsTrigger value="phone">
+                                        <Smartphone className="h-4 w-4 mr-2" />
+                                        Phone
+                                    </TabsTrigger>
+                                </TabsList>
+
+                                <div className="space-y-4">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="nickname">{t('auth.nickname')} <span className="text-destructive">*</span></Label>
+                                        <Input
+                                            id="nickname"
+                                            placeholder={t('auth.nickname')}
+                                            type="text"
+                                            value={nickname}
+                                            onChange={(e) => setNickname(e.target.value)}
+                                            disabled={loading}
+                                            className="bg-background/50 backdrop-blur-sm"
+                                            required={isRegister}
+                                        />
+                                    </div>
+
+                                    <TabsContent value="email" className="space-y-4 m-0">
+                                        <div className="grid gap-2 animate-in fade-in slide-in-from-top-2">
+                                            <Label htmlFor="email">{t('auth.email')} <span className="text-destructive">*</span></Label>
+                                            <Input
+                                                id="email"
+                                                placeholder="name@example.com"
+                                                type="email"
+                                                autoComplete="email"
+                                                value={email}
+                                                onChange={(e) => setEmail(e.target.value)}
+                                                disabled={loading}
+                                                className="bg-background/50 backdrop-blur-sm"
+                                                required={regMethod === 'email'}
+                                            />
+                                        </div>
+                                    </TabsContent>
+
+                                    <TabsContent value="phone" className="space-y-4 m-0">
+                                        <div className="grid gap-2 animate-in fade-in slide-in-from-top-2">
+                                            <Label htmlFor="phone">{t('auth.phone')} <span className="text-destructive">*</span></Label>
+                                            <Input
+                                                id="phone"
+                                                placeholder="13800000000"
+                                                type="tel"
+                                                value={phone}
+                                                onChange={(e) => setPhone(e.target.value)}
+                                                disabled={loading}
+                                                className="bg-background/50 backdrop-blur-sm"
+                                                required={regMethod === 'phone'}
+                                            />
+                                        </div>
+                                    </TabsContent>
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="password">{t('auth.password')} <span className="text-destructive">*</span></Label>
+                                        <Input
+                                            id="password"
+                                            placeholder="••••••••"
+                                            type="password"
+                                            autoComplete="new-password"
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            disabled={loading}
+                                            className="bg-background/50 backdrop-blur-sm"
+                                            required
+                                        />
+                                        <p className="text-[10px] text-muted-foreground">Min. 6 characters</p>
+                                    </div>
+                                </div>
+                            </Tabs>
+                        )}
+
+                        <Button disabled={loading} className="w-full mt-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-violet-500/25">
                             {loading ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Signing In...
+                                    {isRegister ? t('auth.create_account') : t('auth.sign_in')}...
                                 </>
                             ) : (
-                                'Sign In'
+                                isRegister ? t('auth.create_account') : t('auth.sign_in')
                             )}
                         </Button>
                     </form>
@@ -135,23 +309,23 @@ export default function LoginPage() {
                         </div>
                         <div className="relative flex justify-center text-xs uppercase">
                             <span className="bg-background px-2 text-muted-foreground">
-                                Or continue with
+                                {t('auth.continue_with')}
                             </span>
                         </div>
                     </div>
 
-                    <Button variant="outline" type="button" disabled={loading} className="w-full">
-                        Create an account
+                    <Button variant="outline" type="button" disabled={loading} className="w-full" onClick={toggleMode}>
+                        {isRegister ? t('auth.already_have_account') : t('auth.create_account')}
                     </Button>
 
                     <p className="px-8 text-center text-sm text-muted-foreground">
-                        By clicking continue, you agree to our{" "}
+                        {t('auth.terms_agreement')}{" "}
                         <Link to="/terms" className="underline underline-offset-4 hover:text-primary">
-                            Terms
+                            {t('auth.terms')}
                         </Link>{" "}
-                        and{" "}
+                        {t('auth.and')}{" "}
                         <Link to="/privacy" className="underline underline-offset-4 hover:text-primary">
-                            Privacy Policy
+                            {t('auth.privacy')}
                         </Link>
                         .
                     </p>

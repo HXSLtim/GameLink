@@ -11,10 +11,17 @@ const LoginPage = lazy(() => import("@/pages/auth/login-page"));
 const ForbiddenPage = lazy(() => import("@/pages/error/403-page"));
 const PageShowcase = lazy(() => import("@/components/page-showcase"));
 const PlayerListPage = lazy(() => import("@/pages/player/player-list-page"));
+const PlayerDetailPage = lazy(() => import("@/pages/player/player-detail-page"));
 const ChatListPage = lazy(() => import("@/pages/chat/chat-list-page"));
 const ChatRoomPage = lazy(() => import("@/pages/chat/chat-room-page"));
 const ProfilePage = lazy(() => import("@/pages/profile/profile-page"));
 const OrderListPage = lazy(() => import("@/pages/order/order-list-page"));
+const OrderDetailPage = lazy(() => import("@/pages/order/order-detail-page"));
+const WalletPage = lazy(() => import("@/pages/wallet/wallet-page"));
+const VipPage = lazy(() => import("@/pages/vip/vip-page"));
+const EditProfilePage = lazy(() => import("@/pages/settings/edit-profile-page"));
+const ChangePasswordPage = lazy(() => import("@/pages/settings/change-password-page"));
+const NotificationPage = lazy(() => import("@/pages/notification/notification-page"));
 
 const HomePage = lazy(() => import("@/pages/home/home-page"));
 
@@ -35,9 +42,16 @@ function App() {
                   <Route path="/" element={<HomePage />} />
                   <Route path="/players" element={<PlayerListPage />} />
                   <Route path="/orders" element={<OrderListPage />} />
+                  <Route path="/orders/:id" element={<OrderDetailPage />} />
                   <Route path="/chat" element={<ChatListPage />} />
                   <Route path="/chat/:id" element={<ChatRoomPage />} />
+                  <Route path="/players/:id" element={<PlayerDetailPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/wallet" element={<WalletPage />} />
+                  <Route path="/vip" element={<VipPage />} />
+                  <Route path="/settings/profile" element={<EditProfilePage />} />
+                  <Route path="/settings/password" element={<ChangePasswordPage />} />
+                  <Route path="/notifications" element={<NotificationPage />} />
                   <Route path="/page-structure" element={<PageShowcase />} />
                 </Route>
               </Route>

@@ -1,12 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 
 interface LanguageSwitcherProps {
@@ -16,36 +9,28 @@ interface LanguageSwitcherProps {
 export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
     const { i18n } = useTranslation();
 
-    const changeLanguage = (lng: string) => {
-        i18n.changeLanguage(lng);
+    const toggleLanguage = () => {
+        const nextLang = i18n.language === 'zh-CN' ? 'en-US' : 'zh-CN';
+        i18n.changeLanguage(nextLang);
     };
 
-    const currentLanguage = i18n.language;
+    const isZh = i18n.language === 'zh-CN';
 
     return (
-        <div className={cn("z-50", className)}>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-9 w-9 bg-background/50 backdrop-blur-sm hover:bg-background/80 transition-colors rounded-full">
-                        <Globe className="h-[1.2rem] w-[1.2rem]" />
-                        <span className="sr-only">Toggle language</span>
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                        onClick={() => changeLanguage('zh-CN')}
-                        className={cn(currentLanguage === 'zh-CN' && "bg-accent text-accent-foreground")}
-                    >
-                        简体中文
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                        onClick={() => changeLanguage('en-US')}
-                        className={cn(currentLanguage === 'en-US' && "bg-accent text-accent-foreground")}
-                    >
-                        English
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
-        </div>
+        <Button
+            variant="ghost"
+            size="icon"
+            className={cn("h-9 w-9 bg-background/50 backdrop-blur-sm hover:bg-background/80 transition-colors rounded-full z-50", className)}
+            onClick={toggleLanguage}
+            title={isZh ? 'Switch to English' : '切换到简体中文'}
+        >
+            <span className={cn("absolute text-xs font-bold transition-all", isZh ? "rotate-0 scale-100" : "-rotate-90 scale-0")}>
+                中
+            </span>
+            <span className={cn("absolute text-xs font-bold transition-all", !isZh ? "rotate-0 scale-100" : "rotate-90 scale-0")}>
+                En
+            </span>
+            <span className="sr-only">Toggle language</span>
+        </Button>
     );
 }

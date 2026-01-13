@@ -5,22 +5,22 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Separator } from '@/components/ui/separator';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Gamepad2, Trophy, Users, ArrowRight, Star, Zap } from 'lucide-react';
+import { Gamepad2, Trophy, Users, ArrowRight, Star, Zap, Shield, Clock, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const GAMES = [
-    { id: 1, name: 'League of Legends', icon: Trophy, color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
-    { id: 2, name: 'Valorant', icon: Zap, color: 'text-red-500', bg: 'bg-red-500/10' },
-    { id: 3, name: 'Apex Legends', icon: Gamepad2, color: 'text-orange-500', bg: 'bg-orange-500/10' },
-    { id: 4, name: 'Overwatch 2', icon: Users, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+    { id: 1, name: 'League of Legends', icon: Trophy, color: 'text-yellow-500', from: 'from-yellow-500/20', to: 'to-orange-500/20' },
+    { id: 2, name: 'Valorant', icon: Zap, color: 'text-red-500', from: 'from-red-500/20', to: 'to-rose-500/20' },
+    { id: 3, name: 'Apex Legends', icon: Gamepad2, color: 'text-orange-500', from: 'from-orange-500/20', to: 'to-amber-500/20' },
+    { id: 4, name: 'Overwatch 2', icon: Users, color: 'text-blue-500', from: 'from-blue-500/20', to: 'to-cyan-500/20' },
 ];
 
 export default function HomePage() {
     const { featuredPlayers, fetchFeaturedPlayers, loading } = usePlayerStore();
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     useEffect(() => {
         fetchFeaturedPlayers();
@@ -28,130 +28,168 @@ export default function HomePage() {
 
     return (
         <PageContainer>
-            <div className="space-y-8 pb-8">
+            <div className="space-y-10 pb-12">
                 {/* Hero Section */}
-                <section className="relative overflow-hidden rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-background border p-8 md:p-12 mx-4 mt-4">
-                    <div className="relative z-10 max-w-2xl space-y-4">
-                        <Badge variant="secondary" className="mb-2">New Season Live</Badge>
-                        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight lg:text-6xl">
-                            Find Your Perfect <span className="text-primary">Duo</span>
+                <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-600/10 via-background to-indigo-600/10 border border-white/5 p-8 md:p-16 mx-0 mt-4 animate-in fade-in zoom-in-95 duration-500">
+                    <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=2671&auto=format&fit=crop')] bg-cover bg-center opacity-5 mix-blend-overlay pointer-events-none" />
+
+                    <div className="relative z-10 max-w-3xl space-y-6">
+                        <Badge variant="outline" className="mb-2 bg-primary/10 text-primary border-primary/20 backdrop-blur-sm px-3 py-1">
+                            <span className="relative flex h-2 w-2 mr-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                            </span>
+                            {t('nav.new_season')}
+                        </Badge>
+                        <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight">
+                            {t('nav.hero_title')} <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-indigo-500">{t('nav.hero_highlight')}</span>
                         </h1>
-                        <p className="text-muted-foreground text-lg md:text-xl max-w-[600px]">
-                            Connect with top-tier gamers for coaching, ranking up, or just having fun. Join the community today.
+                        <p className="text-muted-foreground text-lg md:text-xl max-w-[600px] leading-relaxed">
+                            {t('nav.hero_desc')}
                         </p>
-                        <div className="flex flex-wrap gap-4 pt-4">
-                            <Button size="lg" onClick={() => navigate('/players')}>
-                                Find Players <ArrowRight className="ml-2 h-4 w-4" />
+                        <div className="flex flex-wrap gap-4 pt-6">
+                            <Button size="lg" className="rounded-full px-8 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25 transition-all hover:scale-105" onClick={() => navigate('/players')}>
+                                {t('nav.find_players')} <ArrowRight className="ml-2 h-4 w-4" />
                             </Button>
-                            <Button size="lg" variant="outline" onClick={() => navigate('/profile')}>
-                                Become a Player
+                            <Button size="lg" variant="outline" className="rounded-full px-8 backdrop-blur-sm hover:bg-white/10" onClick={() => navigate('/profile')}>
+                                {t('nav.become_player')}
                             </Button>
                         </div>
-                    </div>
-                    {/* Decorative Background Elements */}
-                    <div className="absolute top-0 right-0 -translate-y-1/4 translate-x-1/4 opacity-10 pointer-events-none">
-                        <Gamepad2 className="w-96 h-96 text-primary" />
                     </div>
                 </section>
 
                 {/* Popular Games */}
-                <section className="px-4 space-y-4">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-2xl font-bold tracking-tight">Popular Games</h2>
-                        <Button variant="ghost" size="sm" onClick={() => navigate('/players')}>View All</Button>
+                <section className="space-y-6">
+                    <div className="flex items-center justify-between px-2">
+                        <div className="space-y-1">
+                            <h2 className="text-2xl font-bold tracking-tight">{t('nav.popular_games')}</h2>
+                            <p className="text-sm text-muted-foreground">Select a game to find your pro</p>
+                        </div>
+                        <Button variant="ghost" size="sm" onClick={() => navigate('/players')} className="group">
+                            {t('nav.view_all')} <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                        </Button>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {GAMES.map((game) => (
+                        {GAMES.map((game, i) => (
                             <Card
                                 key={game.id}
-                                className="cursor-pointer hover:bg-muted/50 transition-colors border-none shadow-sm bg-muted/20"
+                                className="group cursor-pointer hover:border-primary/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl bg-background/50 backdrop-blur-sm border-white/5 overflow-hidden"
                                 onClick={() => navigate(`/players?gameId=${game.id}`)}
+                                style={{ animationDelay: `${i * 100}ms` }}
                             >
-                                <CardContent className="p-6 flex flex-col items-center justify-center gap-3 text-center">
-                                    <div className={`p-3 rounded-full ${game.bg} ${game.color}`}>
+                                <div className={`absolute inset-0 bg-gradient-to-br ${game.from} ${game.to} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+                                <CardContent className="relative p-6 flex flex-col items-center justify-center gap-4 text-center z-10">
+                                    <div className={`p-4 rounded-2xl bg-background/80 shadow-inner ring-1 ring-white/10 group-hover:scale-110 transition-transform duration-300 ${game.color}`}>
                                         <game.icon className="h-8 w-8" />
                                     </div>
-                                    <span className="font-semibold">{game.name}</span>
+                                    <span className="font-semibold text-lg group-hover:text-primary transition-colors">{game.name}</span>
                                 </CardContent>
                             </Card>
                         ))}
                     </div>
                 </section>
 
-                <Separator className="mx-4" />
-
                 {/* Featured Players */}
-                <section className="px-4 space-y-4">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-2xl font-bold tracking-tight">Featured Pros</h2>
-                        <Button variant="ghost" size="sm" onClick={() => navigate('/players')}>View All</Button>
+                <section className="space-y-6">
+                    <div className="flex items-center justify-between px-2">
+                        <div className="space-y-1">
+                            <h2 className="text-2xl font-bold tracking-tight">{t('nav.featured_pros')}</h2>
+                            <p className="text-sm text-muted-foreground">Top rated players this week</p>
+                        </div>
+                        <div className="flex gap-2">
+                            <Button variant="ghost" size="icon" className="relative group" onClick={() => navigate('/notifications')}>
+                                <Bell className="h-5 w-5 group-hover:text-primary transition-colors" />
+                                <span className="absolute top-2.5 right-2 a h-2 w-2 bg-red-500 rounded-full animate-pulse ring-2 ring-background" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => navigate('/players')} className="group">
+                                {t('nav.view_all')} <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                            </Button>
+                        </div>
                     </div>
 
-                    <div className="relative">
-                        <ScrollArea>
-                            <div className="flex space-x-4 pb-4">
+                    <div className="relative -mx-4 px-4 md:mx-0 md:px-0">
+                        <ScrollArea className="w-full whitespace-nowrap rounded-lg">
+                            <div className="flex w-max space-x-4 pb-4">
                                 {loading || featuredPlayers.length === 0 ? (
                                     Array(5).fill(0).map((_, i) => (
-                                        <Skeleton key={i} className="h-[280px] w-[220px] rounded-xl flex-none" />
+                                        <Skeleton key={i} className="h-[280px] w-[240px] rounded-2xl flex-none bg-muted/50" />
                                     ))
                                 ) : (
                                     featuredPlayers.map((player) => (
                                         <Card
                                             key={player.id}
-                                            className="w-[220px] flex-none cursor-pointer hover:border-primary/50 transition-all group overflow-hidden"
-                                            onClick={() => navigate(`/chat/${player.id}`)} // Or player detail modal
+                                            className="w-[240px] flex-none cursor-pointer border-white/5 hover:border-primary/50 transition-all duration-300 group overflow-hidden bg-background/50 backdrop-blur-sm hover:shadow-lg hover:-translate-y-1"
+                                            onClick={() => navigate(`/chat/${player.id}`)}
                                         >
-                                            <div className="h-[140px] w-full bg-muted relative overflow-hidden">
-                                                {/* Cover Image Placeholder */}
-                                                <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent z-10" />
-                                                <Avatar className="absolute bottom-2 left-2 z-20 h-10 w-10 border-2 border-background">
-                                                    <AvatarImage src={player.avatar} />
-                                                    <AvatarFallback>{player.username[0]}</AvatarFallback>
-                                                </Avatar>
+                                            <div className="h-[160px] w-full bg-muted relative overflow-hidden">
+                                                <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent z-10" />
+                                                <img
+                                                    src={player.avatar || "https://github.com/shadcn.png"}
+                                                    alt={player.nickname}
+                                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                                />
+                                                <div className="absolute top-2 right-2 z-20">
+                                                    <Badge variant="secondary" className="bg-background/80 backdrop-blur-sm text-[10px] font-bold shadow-sm">
+                                                        TOP 10
+                                                    </Badge>
+                                                </div>
                                             </div>
-                                            <CardContent className="p-4 space-y-2">
+                                            <CardContent className="p-4 space-y-3 relative z-20">
                                                 <div>
-                                                    <h3 className="font-semibold truncate group-hover:text-primary transition-colors">{player.nickname || player.username}</h3>
-                                                    <p className="text-xs text-muted-foreground truncate">{player.gameName}</p>
+                                                    <h3 className="font-semibold text-base truncate group-hover:text-primary transition-colors">{player.nickname || player.username}</h3>
+                                                    <p className="text-xs text-muted-foreground truncate font-medium">{player.gameName}</p>
                                                 </div>
-                                                <div className="flex items-center gap-1 text-xs font-medium text-yellow-500">
-                                                    <Star className="h-3 w-3 fill-current" />
-                                                    {player.rating.toFixed(1)}
-                                                    <span className="text-muted-foreground ml-1">({player.orderCount} Orders)</span>
+                                                <div className="flex items-center justify-between text-xs font-medium">
+                                                    <div className="flex items-center gap-1 text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">
+                                                        <Star className="h-3 w-3 fill-current" />
+                                                        {player.rating.toFixed(1)}
+                                                    </div>
+                                                    <span className="text-muted-foreground">{player.orderCount} orders</span>
                                                 </div>
-                                                <div className="flex items-center justify-between pt-2">
-                                                    <span className="font-bold text-lg">¥{player.price}</span>
-                                                    <Badge variant="secondary" className="text-[10px] h-5">PRO</Badge>
+                                                <div className="pt-2 flex items-center justify-between border-t border-border/50">
+                                                    <span className="font-bold text-lg text-primary">¥{player.price}<span className="text-xs text-muted-foreground font-normal">/hr</span></span>
+                                                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                                                        <ArrowRight className="h-4 w-4" />
+                                                    </div>
                                                 </div>
                                             </CardContent>
                                         </Card>
                                     ))
                                 )}
                             </div>
-                            <ScrollBar orientation="horizontal" />
+                            <ScrollBar orientation="horizontal" className="hidden" />
                         </ScrollArea>
                     </div>
                 </section>
 
-                {/* Call to Action or Info Strip */}
-                <section className="px-4">
-                    <div className="rounded-lg bg-muted p-8 flex flex-col items-center text-center space-y-4">
-                        <h3 className="text-2xl font-bold">Why choose GameLink?</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-4xl pt-4">
-                            <div className="space-y-2">
-                                <Shield className="h-8 w-8 text-primary mx-auto" />
-                                <h4 className="font-semibold">Secure Payments</h4>
-                                <p className="text-sm text-muted-foreground">Your funds are protected until the order is complete.</p>
+                {/* Trust Indicators */}
+                <section className="py-8">
+                    <div className="rounded-3xl bg-gradient-to-b from-muted/50 to-muted/10 border border-white/5 p-8 md:p-12">
+                        <div className="text-center space-y-2 mb-10">
+                            <h3 className="text-2xl font-bold">{t('nav.why_choose')}</h3>
+                            <p className="text-muted-foreground">Premier features for the ultimate gaming experience</p>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <div className="flex flex-col items-center text-center space-y-3 p-4 rounded-xl hover:bg-white/5 transition-colors">
+                                <div className="p-3 rounded-full bg-emerald-500/10 text-emerald-500 mb-2">
+                                    <Shield className="h-8 w-8" />
+                                </div>
+                                <h4 className="font-semibold text-lg">{t('nav.secure_payments')}</h4>
+                                <p className="text-sm text-muted-foreground max-w-[250px]">{t('nav.secure_desc')}</p>
                             </div>
-                            <div className="space-y-2">
-                                <Users className="h-8 w-8 text-primary mx-auto" />
-                                <h4 className="font-semibold">Verified Pros</h4>
-                                <p className="text-sm text-muted-foreground">All players undergo strict skill verification.</p>
+                            <div className="flex flex-col items-center text-center space-y-3 p-4 rounded-xl hover:bg-white/5 transition-colors">
+                                <div className="p-3 rounded-full bg-blue-500/10 text-blue-500 mb-2">
+                                    <Users className="h-8 w-8" />
+                                </div>
+                                <h4 className="font-semibold text-lg">{t('nav.verified_pros')}</h4>
+                                <p className="text-sm text-muted-foreground max-w-[250px]">{t('nav.verified_desc')}</p>
                             </div>
-                            <div className="space-y-2">
-                                <Clock className="h-8 w-8 text-primary mx-auto" />
-                                <h4 className="font-semibold">24/7 Support</h4>
-                                <p className="text-sm text-muted-foreground">We are here to help you anytime, anywhere.</p>
+                            <div className="flex flex-col items-center text-center space-y-3 p-4 rounded-xl hover:bg-white/5 transition-colors">
+                                <div className="p-3 rounded-full bg-violet-500/10 text-violet-500 mb-2">
+                                    <Clock className="h-8 w-8" />
+                                </div>
+                                <h4 className="font-semibold text-lg">{t('nav.support_247')}</h4>
+                                <p className="text-sm text-muted-foreground max-w-[250px]">{t('nav.support_desc')}</p>
                             </div>
                         </div>
                     </div>
@@ -160,6 +198,3 @@ export default function HomePage() {
         </PageContainer>
     );
 }
-
-// Importing icons that were missed in the top import if any
-import { Shield, Clock } from 'lucide-react';
