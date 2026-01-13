@@ -61,13 +61,13 @@ interface TagUser {
 /**
  * 导出列配置
  */
-const tagExportColumns: ExportColumn[] = [
+const tagExportColumns: ExportColumn<UserTag>[] = [
     { key: 'id', title: 'ID' },
     { key: 'name', title: '标签名称' },
     { key: 'color', title: '颜色' },
     { key: 'description', title: '描述' },
     { key: 'userCount', title: '用户数' },
-    { key: 'createdAt', title: '创建时间', render: (v) => v ? dayjs(v as string).format('YYYY-MM-DD HH:mm:ss') : '' },
+    { key: 'createdAt', title: '创建时间', format: (v) => v ? dayjs(v as string).format('YYYY-MM-DD HH:mm:ss') : '' },
 ];
 
 const UserTagPage: React.FC = () => {

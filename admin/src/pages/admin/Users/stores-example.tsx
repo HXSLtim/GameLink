@@ -81,7 +81,7 @@ const UsersStoresExample = () => {
       {isAdmin() && <Tag color="blue">管理员</Tag>}
 
       {/* 错误提示 */}
-      {error && <div style={{ color: 'red' }}>{error}</div>}
+      {error && <div style={{ color: 'red' }}>{error.message}</div>}
 
       {/* 数据表格 */}
       <Table

@@ -34,7 +34,7 @@
 
 import { useMemo } from 'react';
 import { useUserInfo, useIsAuthenticated, useIsHydrated } from '@/stores/modules/authStore';
-import type { UserInfo } from '@/stores/modules/authStore';
+import type { UserInfo } from '@/stores/types';
 
 /**
  * 认证检查结果接口

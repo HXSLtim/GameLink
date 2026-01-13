@@ -334,10 +334,12 @@ const AdminLayout: React.FC = () => {
                 const response = await authApi.getMe();
                 if (response.data?.success && response.data?.data) {
                     const userData = response.data.data.user || response.data.data;
+                    // 使用类型断言处理可能存在的额外字段
+                    const extendedUserData = userData as typeof userData & { name?: string; avatarUrl?: string; avatar?: string };
                     const newUserInfo = {
-                        username: userData.name || userData.username || 'Admin',
-                        avatar: userData.avatarUrl || userData.avatar,
-                        id: userData.id,
+                        username: extendedUserData.name || extendedUserData.username || 'Admin',
+                        avatar: extendedUserData.avatarUrl || extendedUserData.avatar,
+                        id: extendedUserData.id,
                     };
                     setUserInfo(newUserInfo);
                     // 更新 localStorage 缓存

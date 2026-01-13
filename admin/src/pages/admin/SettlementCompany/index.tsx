@@ -51,7 +51,7 @@ const statusMap: Record<string, { color: string; text: string }> = {
     inactive: { color: 'default', text: '禁用' },
 };
 
-const exportColumns: ExportColumn[] = [
+const exportColumns: ExportColumn<SettlementCompany>[] = [
     { key: 'id', title: 'ID' },
     { key: 'name', title: '公司名称' },
     { key: 'creditCode', title: '统一社会信用代码' },
@@ -59,8 +59,8 @@ const exportColumns: ExportColumn[] = [
     { key: 'contactPhone', title: '联系电话' },
     { key: 'bankName', title: '银行名称' },
     { key: 'playerCount', title: '陪玩师数' },
-    { key: 'status', title: '状态', render: (v) => statusMap[v as string]?.text || String(v) },
-    { key: 'createdAt', title: '创建时间', render: (v) => v ? dayjs(v as string).format('YYYY-MM-DD HH:mm:ss') : '' },
+    { key: 'status', title: '状态', format: (v) => statusMap[v as string]?.text || String(v) },
+    { key: 'createdAt', title: '创建时间', format: (v) => v ? dayjs(v as string).format('YYYY-MM-DD HH:mm:ss') : '' },
 ];
 
 const SettlementCompanyPage: React.FC = () => {

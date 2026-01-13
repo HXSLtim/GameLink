@@ -56,13 +56,13 @@ const rankingTypeMap: Record<string, { color: string; text: string }> = {
     order_count: { color: 'blue', text: '订单量排行' },
 };
 
-const exportColumns: ExportColumn[] = [
+const exportColumns: ExportColumn<RankingCommissionConfig>[] = [
     { key: 'id', title: 'ID' },
     { key: 'name', title: '配置名称' },
-    { key: 'rankingType', title: '排行类型', render: (v) => rankingTypeMap[v as string]?.text || String(v) },
+    { key: 'rankingType', title: '排行类型', format: (v) => rankingTypeMap[v as string]?.text || String(v) },
     { key: 'month', title: '月份' },
-    { key: 'isActive', title: '状态', render: (v) => v ? '启用' : '禁用' },
-    { key: 'createdAt', title: '创建时间', render: (v) => v ? dayjs(v as string).format('YYYY-MM-DD HH:mm:ss') : '' },
+    { key: 'isActive', title: '状态', format: (v) => v ? '启用' : '禁用' },
+    { key: 'createdAt', title: '创建时间', format: (v) => v ? dayjs(v as string).format('YYYY-MM-DD HH:mm:ss') : '' },
 ];
 
 

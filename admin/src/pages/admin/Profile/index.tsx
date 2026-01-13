@@ -84,7 +84,7 @@ const ProfilePage: React.FC = () => {
     }
 
     // 添加调试日志
-    logger.info('[Profile] Component render, authUser:', authUser, 'isAuthenticated:', isAuthenticated);
+    logger.info('[Profile] Component render', { authUser, isAuthenticated });
 
     // 加载用户信息
     const loadUserInfo = async () => {

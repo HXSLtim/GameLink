@@ -58,13 +58,13 @@ const statusMap: Record<string, { color: string; text: string }> = {
     inactive: { color: 'default', text: '禁用' },
 };
 
-const exportColumns: ExportColumn[] = [
+const exportColumns: ExportColumn<RoutingRule>[] = [
     { key: 'id', title: 'ID' },
     { key: 'name', title: '规则名称' },
     { key: 'priority', title: '优先级' },
     { key: 'targetEntityName', title: '目标主体' },
-    { key: 'status', title: '状态', render: (v) => statusMap[v as string]?.text || String(v) },
-    { key: 'createdAt', title: '创建时间', render: (v) => v ? dayjs(v as string).format('YYYY-MM-DD HH:mm:ss') : '' },
+    { key: 'status', title: '状态', format: (v) => statusMap[v as string]?.text || String(v) },
+    { key: 'createdAt', title: '创建时间', format: (v) => v ? dayjs(v as string).format('YYYY-MM-DD HH:mm:ss') : '' },
 ];
 
 

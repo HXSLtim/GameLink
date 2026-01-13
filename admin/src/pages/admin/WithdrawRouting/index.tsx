@@ -56,13 +56,13 @@ const statusMap: Record<string, { color: string; text: string }> = {
     failed: { color: 'error', text: '失败' },
 };
 
-const exportColumns: ExportColumn[] = [
+const exportColumns: ExportColumn<WithdrawByCompany>[] = [
     { key: 'id', title: 'ID' },
     { key: 'playerName', title: '陪玩师' },
     { key: 'amount', title: '金额' },
     { key: 'settlementCompanyName', title: '结算公司' },
-    { key: 'status', title: '状态', render: (v) => statusMap[v as string]?.text || String(v) },
-    { key: 'createdAt', title: '创建时间', render: (v) => v ? dayjs(v as string).format('YYYY-MM-DD HH:mm:ss') : '' },
+    { key: 'status', title: '状态', format: (v) => statusMap[v as string]?.text || String(v) },
+    { key: 'createdAt', title: '创建时间', format: (v) => v ? dayjs(v as string).format('YYYY-MM-DD HH:mm:ss') : '' },
 ];
 
 
