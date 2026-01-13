@@ -11,6 +11,7 @@ import {
     Search
 } from "lucide-react";
 import { ModeToggle } from "@/components/mode-toggle";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
 export default function DesktopLayout() {
     const location = useLocation();
@@ -119,6 +120,7 @@ export default function DesktopLayout() {
                             />
                         </div>
                         <div className="h-6 w-px bg-border mx-1"></div>
+                        <LanguageSwitcher />
                         <ModeToggle />
                         <button className="relative p-2 hover:bg-muted rounded-full text-muted-foreground hover:text-foreground transition-colors">
                             <Bell className="w-5 h-5" />
