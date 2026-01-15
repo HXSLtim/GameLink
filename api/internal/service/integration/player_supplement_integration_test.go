@@ -326,7 +326,7 @@ func TestPlayerService_OnlineStatusManagement(t *testing.T) {
 	testPlayer := CreateTestPlayer(t, db, playerUser)
 
 	// Set online (this uses cache, not database)
-	err := svc.SetPlayerOnlineStatus(ctx, playerUser.ID, true)
+	err := svc.SetPlayerOnlineStatus(ctx, playerUser.ID, "online")
 	require.NoError(t, err)
 
 	// Verify online status in cache
@@ -335,7 +335,7 @@ func TestPlayerService_OnlineStatusManagement(t *testing.T) {
 	assert.True(t, exists, "Player should be online in cache")
 
 	// Set offline
-	err = svc.SetPlayerOnlineStatus(ctx, playerUser.ID, false)
+	err = svc.SetPlayerOnlineStatus(ctx, playerUser.ID, "offline")
 	require.NoError(t, err)
 
 	// Verify offline status in cache (key should be deleted)

@@ -264,6 +264,7 @@ func CreateAdminUser(t testing.TB, db *gorm.DB, role model.Role) *model.User {
 	t.Helper()
 
 	ts := time.Now().UnixNano()
+	openID := fmt.Sprintf("openid_%d", ts)
 	admin := &model.User{
 		Base: model.Base{
 			ExtJSON: "{}",
@@ -273,7 +274,7 @@ func CreateAdminUser(t testing.TB, db *gorm.DB, role model.Role) *model.User {
 		Email:         fmt.Sprintf("admin_%d@test.com", ts),
 		Role:          role,
 		Status:        model.UserStatusActive,
-		WeChatOpenID:  fmt.Sprintf("openid_%d", ts),  // 添加唯一的 OpenID
+		WeChatOpenID:  &openID,                       // 添加唯一的 OpenID（指针类型）
 		WeChatUnionID: fmt.Sprintf("unionid_%d", ts), // 添加唯一的 UnionID
 	}
 

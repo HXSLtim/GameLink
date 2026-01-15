@@ -140,6 +140,36 @@ describe('AdminLogin', () => {
       });
     });
 
+    it('should trim whitespace from username and password', async () => {
+      const user = userEvent.setup();
+      mockApi.login.mockResolvedValue({
+        data: {
+          success: true,
+          data: {
+            token: 'test-admin-token',
+            user: { id: 1, role: 'admin', name: 'Admin' },
+          },
+        },
+      });
+
+      renderWithProviders(<AdminLogin />, { route: '/admin/login' });
+
+      const usernameInput = screen.getByPlaceholderText('管理员账号/邮箱');
+      const passwordInput = screen.getByPlaceholderText('密码');
+      const loginButton = screen.getByRole('button', { name: '登录管理后台' });
+
+      await user.type(usernameInput, '  admin@gamelink.com  ');
+      await user.type(passwordInput, '  password123  ');
+      await user.click(loginButton);
+
+      await waitFor(() => {
+        expect(mockApi.login).toHaveBeenCalledWith({
+          username: 'admin@gamelink.com',
+          password: 'password123',
+        });
+      });
+    });
+
     it('should show success message on successful login', async () => {
       const user = userEvent.setup();
       mockApi.login.mockResolvedValue({

@@ -44,7 +44,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
                 unreadCount: mock.filter(n => !n.read).length,
                 loading: false
             });
-        } catch (e) {
+        } catch {
             set({ loading: false });
         }
     },

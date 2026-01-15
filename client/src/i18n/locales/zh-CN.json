@@ -123,6 +123,13 @@
             "book_now": "立即下单",
             "chat": "私聊"
         },
+        "home_content": {
+            "select_game_desc": "选择游戏寻找您的专属陪玩",
+            "top_players_desc": "本周评分最高的陪玩师",
+            "features_subtitle": "为极致游戏体验打造的优质服务",
+            "orders_suffix": "单",
+            "per_hour": "/小时"
+        },
         "no_players": "没有找到符合条件的陪玩师。",
         "orders_title": "我的订单",
         "orders_desc": "管理和追踪您的游戏陪玩订单。",
@@ -156,6 +163,29 @@
         "support_247": "24/7 客服",
         "support_desc": "全天候为您提供帮助和支持。"
     },
+    "player": {
+        "all_games": "所有游戏",
+        "starting_at": "起价",
+        "no_results_desc": "尝试调整筛选条件或稍后再来看看。"
+    },
+    "order": {
+        "refresh": "刷新",
+        "tab_active": "进行中",
+        "tab_done": "已完成",
+        "tab_cancel": "已取消",
+        "empty_desc": "在此分类下暂无订单。",
+        "details": "详情",
+        "pay_now": "立即支付",
+        "qty": "时长",
+        "total": "总计",
+        "service_type": "陪玩服务"
+    },
+    "chat": {
+        "loading": "加载聊天中...",
+        "not_found": "未找到对话。",
+        "back": "返回列表",
+        "updating": "更新中..."
+    },
     "profile": {
         "title": "个人中心",
         "edit": "编辑资料",
@@ -168,6 +198,7 @@
             "title": "VIP 会员",
             "expires": "有效期至：{{date}}",
             "free": "免费计划",
+            "level_prefix": "VIP等级",
             "upgrade": "升级会员",
             "upgrade_cta": "解锁更多特权"
         },

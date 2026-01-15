@@ -1,0 +1,7 @@
+{
+  "success": false,
+  "code": 400,
+  "message": "注册失败: [500] 创建用户失败",
+  "data": null,
+  "traceId": "2eabb1168ee3caa91004dfe6fd112e8c"
+}

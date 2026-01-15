@@ -2,7 +2,10 @@ import { useAuthStore } from '@/stores';
 
 type MessageHandler = (data: any) => void;
 
-class WebSocketService {
+// Get WebSocket URL from environment variable
+const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080/ws';
+
+export class WebSocketService {
     private socket: WebSocket | null = null;
     private handlers: Map<string, Set<MessageHandler>> = new Map();
     private reconnectAttempts = 0;
@@ -11,9 +14,7 @@ class WebSocketService {
     private url: string;
 
     constructor() {
-        // ws://localhost:8080/ws
-        // In production, infer from window.location
-        this.url = 'ws://localhost:8080/ws';
+        this.url = WS_URL;
     }
 
     public connect() {
@@ -28,29 +29,41 @@ class WebSocketService {
         // Remove token from query string (Security Fix: URL leakage)
         const wsUrl = this.url;
 
-        // Use sub-protocol for authentication to prevent token logging in URL
-        // Sub-protocol format: 'bearer-TOKEN' (Server must support this)
-        const protocols = ['bearer-' + token];
-
-        this.socket = new WebSocket(wsUrl, protocols);
+        // Authentication via message to prevent token logging
+        // Standard WebSocket connection without sensitive data in URL/Protocols
+        this.socket = new WebSocket(wsUrl);
 
         this.socket.onopen = () => {
-            console.log('WebSocket connected');
+            // console.debug('WebSocket connected');
             this.reconnectAttempts = 0;
+
+            // Send authentication message immediately after connection
+            if (token) {
+                this.send('auth', { token });
+            }
         };
 
         this.socket.onmessage = (event) => {
             try {
                 const message = JSON.parse(event.data);
                 const { type, payload } = message;
-                this.emit(type, payload);
+
+                // Handle auth response if needed, otherwise emit
+                if (type === 'auth_success') {
+                    // console.debug('WebSocket authenticated successfully');
+                } else if (type === 'auth_error') {
+                    console.error('WebSocket authentication failed:', payload);
+                    this.disconnect(); // Or handle token refresh logic
+                } else {
+                    this.emit(type, payload);
+                }
             } catch (e) {
                 console.error('WebSocket message parse error:', e);
             }
         };
 
         this.socket.onclose = () => {
-            console.log('WebSocket disconnected');
+            // console.debug('WebSocket disconnected');
             this.attemptReconnect();
         };
 
@@ -97,7 +110,7 @@ class WebSocketService {
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
             this.reconnectAttempts++;
             const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
-            console.log(`WebSocket reconnecting in ${delay}ms...`);
+            // console.debug(`WebSocket reconnecting in ${delay}ms...`);
 
             if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout);
 

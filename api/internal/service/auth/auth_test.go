@@ -144,7 +144,7 @@ func (m *MockUserRepository) Delete(ctx context.Context, id uint64) error {
 // GetByWeChatOpenID returns a user by WeChat OpenID
 func (m *MockUserRepository) GetByWeChatOpenID(ctx context.Context, openID string) (*model.User, error) {
 	for _, user := range m.users {
-		if user.WeChatOpenID == openID {
+		if user.WeChatOpenID != nil && *user.WeChatOpenID == openID {
 			return user, nil
 		}
 	}

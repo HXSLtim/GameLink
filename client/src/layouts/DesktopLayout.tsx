@@ -1,5 +1,7 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useOrderStore } from "@/stores";
 import { cn } from "@/lib/utils";
 import {
     LayoutDashboard,
@@ -13,6 +15,8 @@ import {
 } from "lucide-react";
 import { ModeToggle } from "@/components/mode-toggle";
 import { LanguageSwitcher } from "@/components/language-switcher";
+
+import { BottomNav } from "@/components/bottom-nav";
 
 export default function DesktopLayout() {
     const location = useLocation();
@@ -32,11 +36,21 @@ export default function DesktopLayout() {
         return false;
     };
 
+    const { subscribeToOrderUpdates, unsubscribeFromOrderUpdates } = useOrderStore();
+
+    useEffect(() => {
+        // Initialize WebSocket subscription for real-time order updates
+        subscribeToOrderUpdates();
+        return () => {
+            unsubscribeFromOrderUpdates();
+        };
+    }, []);
+
     return (
         <div className="flex h-screen w-full bg-background text-foreground overflow-hidden font-sans selection:bg-primary/20">
-            {/* 侧边栏 */}
-            <aside className="w-[240px] flex-shrink-0 flex flex-col border-r border-border/40 bg-background/60 backdrop-blur-xl z-20 transition-all duration-300">
-                {/* Logo 区域 */}
+            {/* Sidebar (Desktop Only) */}
+            <aside className="hidden md:flex w-[240px] flex-shrink-0 flex-col border-r border-border/40 bg-background/60 backdrop-blur-xl z-20 transition-all duration-300">
+                {/* Logo */}
                 <div className="h-16 flex items-center px-6 border-b border-border/40">
                     <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center font-bold text-primary-foreground shadow-lg shadow-primary/20 ring-1 ring-white/10">
@@ -48,9 +62,9 @@ export default function DesktopLayout() {
                     </div>
                 </div>
 
-                {/* 导航菜单 */}
+                {/* Nav Menu */}
                 <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
-                    <div className="text-xs font-bold text-muted-foreground px-3 py-2 uppercase tracking-wider opacity-70">
+                    <div className="text-xs font-bold text-muted-foreground px-3 py-2 opacity-70">
                         {t('nav.menu')}
                     </div>
                     {navItems.map((item) => {
@@ -71,10 +85,9 @@ export default function DesktopLayout() {
                                 {isActive && (
                                     <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-50" />
                                 )}
-                                <Icon className={cn("w-5 h-5 transition-transform duration-300", isActive ? "scale-110" : "group-hover:scale-110")} />
-                                <span className={cn("relative z-10", isActive && "font-semibold")}>{item.label}</span>
+                                <Icon className={cn("w-5 h-5 flex-shrink-0 transition-transform duration-300", isActive ? "scale-110" : "group-hover:scale-110")} />
+                                <span className={cn("relative z-10 truncate", isActive && "font-semibold")}>{item.label}</span>
 
-                                {/* 激活指示条 */}
                                 {isActive && (
                                     <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
                                 )}
@@ -83,12 +96,11 @@ export default function DesktopLayout() {
                     })}
                 </nav>
 
-                {/* 底部用户信息栏 */}
+                {/* User Info Footer */}
                 <div className="p-4 bg-gradient-to-t from-background/90 to-transparent mt-auto border-t border-border/40">
                     <div className="p-3 rounded-2xl bg-card/40 border border-border/50 backdrop-blur-sm shadow-sm flex items-center gap-3 hover:bg-card/60 transition-colors cursor-pointer group">
                         <div className="relative w-10 h-10">
                             <div className="w-full h-full rounded-full bg-muted overflow-hidden ring-2 ring-background group-hover:ring-primary/20 transition-all">
-                                {/* 占位头像 */}
                                 <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white">
                                     U
                                 </div>
@@ -96,7 +108,7 @@ export default function DesktopLayout() {
                             <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-background z-50 shadow-sm"></div>
                         </div>
                         <div className="flex-1 min-w-0">
-                            <div className="text-sm font-semibold truncate text-foreground group-hover:text-primary transition-colors">{t('app.name')} User</div>
+                            <div className="text-sm font-semibold truncate text-foreground group-hover:text-primary transition-colors">User</div>
                             <div className="text-xs text-muted-foreground truncate">{t('nav.online_status')}</div>
                         </div>
                         <button className="p-1.5 hover:bg-muted rounded-full text-muted-foreground hover:text-foreground transition-colors">
@@ -106,10 +118,10 @@ export default function DesktopLayout() {
                 </div>
             </aside>
 
-            {/* 主内容区域 */}
+            {/* Main Content */}
             <main className="flex-1 flex flex-col min-w-0 bg-muted/10 relative">
-                {/* 顶部工具栏 */}
-                <header className="h-16 flex items-center justify-between px-6 sticky top-0 z-10 backdrop-blur-md bg-background/70 border-b border-border/40 transition-all">
+                {/* Header */}
+                <header className="h-16 flex items-center justify-between px-6 sticky top-0 z-40 backdrop-blur-md bg-background/70 border-b border-border/40 transition-all">
                     <div className="flex items-center gap-4">
                         <div className="p-2 bg-background/50 rounded-lg border border-border/50 shadow-sm">
                             <LayoutDashboard className="w-5 h-5 text-muted-foreground" />
@@ -142,18 +154,21 @@ export default function DesktopLayout() {
                     </div>
                 </header>
 
-                {/* 内容区域 - 由页面自己控制滚动和布局 */}
                 <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
                     {/* Background decorations */}
                     <div className="absolute inset-0 pointer-events-none overflow-hidden">
                         <div className="absolute top-[-20%] right-[-10%] w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl opacity-50" />
                         <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] bg-purple-500/5 rounded-full blur-3xl opacity-50" />
                     </div>
-                    <div className="flex-1 relative z-10 overflow-y-auto">
+                    {/* Added pb-20 for mobile bottom nav spacing */}
+                    <div className="flex-1 relative z-10 overflow-y-scroll pb-20 md:pb-0">
                         <Outlet />
                     </div>
                 </div>
             </main>
+
+            {/* Mobile Bottom Nav */}
+            <BottomNav />
         </div>
     );
 }

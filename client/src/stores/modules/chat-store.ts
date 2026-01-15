@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-// import { http } from '@/lib/http';
+import { http } from '@/lib/http';
 
 export interface Message {
     id: string;
@@ -54,38 +54,50 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     fetchConversations: async () => {
         set({ loading: true, error: null });
         try {
-            // Mock API call - Replace with actual endpoint
-            // const data = await http.get<Conversation[]>('/chat/conversations');
+            const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 
-            // Mock data for now to initiate UI development
-            const mockConversations: Conversation[] = [
-                {
-                    id: '1',
-                    participantId: 101,
-                    participantName: "欢乐使者",
-                    participantAvatar: "",
-                    lastMessage: "Hello! Are you available?",
-                    lastMessageTime: new Date().toISOString(),
-                    unreadCount: 2,
-                    online: true,
-                },
-                {
-                    id: '2',
-                    participantId: 102,
-                    participantName: "游戏高手",
-                    participantAvatar: "",
-                    lastMessage: "GG well played!",
-                    lastMessageTime: new Date(Date.now() - 3600000).toISOString(),
-                    unreadCount: 0,
-                    online: false,
-                }
-            ];
+            if (USE_MOCK) {
+                // Mock data for development
+                const mockConversations: Conversation[] = [
+                    {
+                        id: '1',
+                        participantId: 101,
+                        participantName: "欢乐使者",
+                        participantAvatar: "",
+                        lastMessage: "Hello! Are you available?",
+                        lastMessageTime: new Date().toISOString(),
+                        unreadCount: 2,
+                        online: true,
+                    },
+                    {
+                        id: '2',
+                        participantId: 102,
+                        participantName: "游戏高手",
+                        participantAvatar: "",
+                        lastMessage: "GG well played!",
+                        lastMessageTime: new Date(Date.now() - 3600000).toISOString(),
+                        unreadCount: 0,
+                        online: false,
+                    }
+                ];
 
-            set({
-                conversations: mockConversations,
-                loading: false,
-                totalUnreadCount: mockConversations.reduce((acc, curr) => acc + curr.unreadCount, 0)
-            });
+                set({
+                    conversations: mockConversations,
+                    loading: false,
+                    totalUnreadCount: mockConversations.reduce((acc, curr) => acc + curr.unreadCount, 0)
+                });
+            } else {
+                // Real API call
+                // Assuming the API returns Conversation[] directly or wrapped
+                // Ideally this should be typed properly with generic Http response
+                const data = await http.get<Conversation[]>('/chat/conversations');
+
+                set({
+                    conversations: data,
+                    loading: false,
+                    totalUnreadCount: data.reduce((acc, curr) => acc + curr.unreadCount, 0)
+                });
+            }
         } catch (err: any) {
             set({ loading: false, error: err.message || 'Failed to fetch conversations' });
         }
@@ -151,9 +163,33 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
         try {
             // await http.post(`/chat/conversations/${currentConversationId}/messages`, { content, type });
             // In real app, replace tempId with real ID from response
+
+            // Simulating API call for now since we are in mock mode mostly
+            // If VITE_USE_MOCK is false, we would await the real call
+            const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
+            if (!USE_MOCK) {
+                // TODO: Uncomment when backend is ready
+                // const response = await http.post<Message>(`/chat/conversations/${currentConversationId}/messages`, { content, type });
+                // set(state => ({
+                //     messages: {
+                //         ...state.messages,
+                //         [currentConversationId]: state.messages[currentConversationId]?.map(m =>
+                //             m.id === tempId ? { ...m, id: response.id } : m
+                //         )
+                //     }
+                // }));
+            }
+
         } catch (err) {
             console.error("Failed to send message", err);
-            // Rollback or show error state
+            // Rollback: Remove the temporary message
+            set(state => ({
+                messages: {
+                    ...state.messages,
+                    [currentConversationId]: state.messages[currentConversationId]?.filter(m => m.id !== tempId) || []
+                },
+                error: 'Failed to send message. Please try again.'
+            }));
         }
     },
 

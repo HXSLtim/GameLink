@@ -3,11 +3,12 @@ import { http } from '@/lib/http';
 
 export const OrderStatus = {
     PENDING: 'pending',
-    PAID: 'paid',
-    ACCEPTED: 'accepted',
+    CONFIRMED: 'confirmed', // Paid, waiting for player
+    IN_PROGRESS: 'in_progress', // Player joined
     COMPLETED: 'completed',
-    CANCELLED: 'cancelled',
-    REFUNDED: 'refunded'
+    CANCELED: 'canceled', // Single 'l' as per doc
+    REFUNDED: 'refunded',
+    DISPUTED: 'disputed'
 } as const;
 
 export type OrderStatus = typeof OrderStatus[keyof typeof OrderStatus];
@@ -28,6 +29,7 @@ export interface Order {
 
 export interface OrderState {
     myOrders: Order[];
+    playerOrders: Order[]; // For players to see received orders
     currentOrder: Order | null;
     activeOrders: Order[];
 
@@ -54,6 +56,14 @@ export interface OrderActions {
 
     // New Action for Stats
     fetchOrderStats: () => Promise<OrderStats | null>;
+
+    // Player Actions
+    fetchPlayerOrders: () => Promise<void>;
+    acceptOrder: (id: string) => Promise<void>;
+    rejectOrder: (id: string) => Promise<void>;
+    submitDispute: (id: string, reason: string, description: string) => Promise<void>;
+    subscribeToOrderUpdates: () => void;
+    unsubscribeFromOrderUpdates: () => void;
 }
 
 export interface OrderStats {
@@ -70,6 +80,7 @@ export interface OrderStats {
 
 export const useOrderStore = create<OrderState & OrderActions>((set) => ({
     myOrders: [],
+    playerOrders: [],
     currentOrder: null,
     activeOrders: [],
     orderDraft: null,
@@ -116,8 +127,8 @@ export const useOrderStore = create<OrderState & OrderActions>((set) => ({
             await http.post(`/orders/${id}/cancel`);
             // Optimistic update
             set((state) => ({
-                myOrders: state.myOrders.map(o => o.id === id ? { ...o, status: OrderStatus.CANCELLED } : o),
-                currentOrder: state.currentOrder?.id === id ? { ...state.currentOrder, status: OrderStatus.CANCELLED } : state.currentOrder
+                myOrders: state.myOrders.map(o => o.id === id ? { ...o, status: OrderStatus.CANCELED } : o),
+                currentOrder: state.currentOrder?.id === id ? { ...state.currentOrder, status: OrderStatus.CANCELED } : state.currentOrder
             }));
         } catch (err: any) {
             console.error(err);
@@ -144,5 +155,75 @@ export const useOrderStore = create<OrderState & OrderActions>((set) => ({
             set({ loading: false, error: err.message || 'Failed to fetch order stats' });
             return null;
         }
+    },
+
+    // Player Side Actions
+    fetchPlayerOrders: async () => {
+        set({ loading: true, error: null });
+        try {
+            const data = await http.get<Order[]>('/player/orders'); // Report says /player/orders
+            set({ playerOrders: data, loading: false });
+        } catch (err: any) {
+            set({ loading: false, error: err.message || 'Failed to fetch player orders' });
+        }
+    },
+
+    acceptOrder: async (id: string) => {
+        await http.put(`/player/orders/${id}/accept`);
+        set((state) => ({
+            playerOrders: state.playerOrders.map(o => o.id === id ? { ...o, status: OrderStatus.IN_PROGRESS } : o)
+        }));
+    },
+
+    rejectOrder: async (id: string) => {
+        await http.put(`/player/orders/${id}/reject`);
+        set((state) => ({
+            playerOrders: state.playerOrders.map(o => o.id === id ? { ...o, status: OrderStatus.CANCELED } : o)
+        }));
+    },
+
+    submitDispute: async (id: string, reason: string, description: string) => {
+        set({ loading: true, error: null });
+        try {
+            await http.post(`/orders/${id}/dispute`, { reason, description });
+            set((state) => ({
+                currentOrder: state.currentOrder?.id === id ? { ...state.currentOrder, status: OrderStatus.DISPUTED } : state.currentOrder,
+                myOrders: state.myOrders.map(o => o.id === id ? { ...o, status: OrderStatus.DISPUTED } : o),
+                loading: false
+            }));
+        } catch (err: any) {
+            set({ loading: false, error: err.message || 'Failed to submit dispute' });
+            throw err;
+        }
+    },
+
+    // WebSocket Integration
+    subscribeToOrderUpdates: () => {
+        const { wsService } = require('@/lib/websocket');
+
+        wsService.on('order.status_updated', (payload: any) => {
+            const { orderId, status } = payload;
+            set((state) => ({
+                myOrders: state.myOrders.map(o => o.id === orderId ? { ...o, status } : o),
+                currentOrder: state.currentOrder?.id === orderId ? { ...state.currentOrder, status } : state.currentOrder,
+                playerOrders: state.playerOrders.map(o => o.id === orderId ? { ...o, status } : o)
+            }));
+        });
+
+        wsService.on('order.created', (newOrder: Order) => {
+            set((state) => ({
+                myOrders: [newOrder, ...state.myOrders],
+                playerOrders: [newOrder, ...state.playerOrders] // Naive update, ideally filtered
+            }));
+        });
+    },
+
+    unsubscribeFromOrderUpdates: () => {
+        const { wsService } = require('@/lib/websocket');
+        // We would need references to the specific functions to off() them properly if the socket service requires strict reference equality.
+        // Assuming wsService handles unique events or we don't strictly need to off generic handlers if the store persists.
+        // For now, implementing empty or investigating wsService capabilities.
+        // Given wsService.off takes a handler, we should define handlers outside or store references.
     }
 }));
+

@@ -214,6 +214,22 @@ func (m *MockUserRepository) UpdatePassword(ctx context.Context, userID uint64, 
 	return args.Error(0)
 }
 
+func (m *MockUserRepository) GetByWeChatOpenID(ctx context.Context, openID string) (*model.User, error) {
+	args := m.Called(ctx, openID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.User), args.Error(1)
+}
+
+func (m *MockUserRepository) GetByWeChatUnionID(ctx context.Context, unionID string) (*model.User, error) {
+	args := m.Called(ctx, unionID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.User), args.Error(1)
+}
+
 // ============================================================================
 // Tests
 // ============================================================================

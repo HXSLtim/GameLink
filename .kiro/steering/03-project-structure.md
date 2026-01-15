@@ -4,23 +4,15 @@
 
 ```
 GameLink/
-├── admin/                # 管理后台前端 (React + Ant Design)
-├── app/                  # 小程序 (Taro) - 移动端
+├── admin/                # 管理后台前端 (React)
+├── app/                  # 小程序 (Taro)
 ├── api/                  # Go 后端服务
-├── client/               # 桌面端 PWA (React + shadcn/ui) - 用户端+陪玩师端
+├── client/               # 用户端+陪玩师端前端 (待开发)
 ├── scripts/              # 部署和工具脚本
 ├── docs/                 # 项目文档
 ├── .kiro/steering/       # Kiro steering 规则
 └── [root files]          # README, LICENSE, docker-compose 等
 ```
-
-## 客户端架构说明
-
-| 端 | 目录 | 技术栈 | 目标平台 | 说明 |
-|---|------|--------|----------|------|
-| **桌面端** | `client/` | React + shadcn/ui + PWA | 桌面浏览器 | 用户端 + 陪玩师端，支持离线 |
-| **移动端** | `app/` | Taro | 微信小程序 | 用户端 + 陪玩师端 |
-| **管理端** | `admin/` | React + Ant Design | 桌面浏览器 | 管理员后台 |
 
 ## 后端结构 (`api/`)
 

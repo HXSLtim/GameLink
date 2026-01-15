@@ -39,7 +39,7 @@ export interface VipActions {
 
 export const useVipStore = create<VipState & VipActions>()(
     persist(
-        (set) => ({
+        (set, get) => ({
             vipUnlocked: false,
             currentLevel: null,
             currentExp: 0,
@@ -80,7 +80,7 @@ export const useVipStore = create<VipState & VipActions>()(
                 try {
                     await http.post('/user/vip/subscribe', { months });
                     // Refresh info after purchase
-                    await set((state) => ({ ...state })).fetchVipInfo(); // hacky way to access actions or just rely on component re-fetch
+                    await get().fetchVipInfo();
                 } catch (err: any) {
                     set({ loading: false, error: err.message || 'Subscription failed' });
                     throw err;

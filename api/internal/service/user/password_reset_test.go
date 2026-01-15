@@ -68,6 +68,8 @@ func (m *mockUserRepository) FindByPhone(ctx context.Context, phone string) (*mo
 func (m *mockUserRepository) Create(ctx context.Context, user *model.User) error                   { return nil }
 func (m *mockUserRepository) Update(ctx context.Context, user *model.User) error                   { return nil }
 func (m *mockUserRepository) Delete(ctx context.Context, id uint64) error                          { return nil }
+func (m *mockUserRepository) GetByWeChatOpenID(ctx context.Context, openID string) (*model.User, error) { return nil, nil }
+func (m *mockUserRepository) GetByWeChatUnionID(ctx context.Context, unionID string) (*model.User, error) { return nil, nil }
 
 // setupTestRedis creates a miniredis instance for testing
 func setupTestRedis(t *testing.T) (*miniredis.Miniredis, *redis.Client) {

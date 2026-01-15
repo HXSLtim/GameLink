@@ -16,6 +16,26 @@ export interface Player {
     orderCount: number;
 }
 
+// Raw API response structure
+export interface RawPlayer {
+    id: number;
+    userId: number;
+    nickname: string;
+    avatar: string;
+    ratingAverage?: number;
+    ratingCount?: number;
+    price?: number;
+    gameId?: number;
+    gameName?: string;
+    tags?: string[];
+    onlineStatus?: string;
+}
+
+export interface PlayerResponse {
+    players: RawPlayer[];
+    total: number;
+}
+
 export interface PlayerFilters {
     gameId?: number;
     minPrice?: number;
@@ -100,19 +120,20 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
                     ...filters,
                 };
 
-                const data = await http.get<any>('/public/players', { params });
+                // Use generics for strict typing
+                const data = await http.get<PlayerResponse>('/public/players', { params });
 
                 const rawPlayers = data.players || [];
                 const total = data.total || 0;
 
-                const newPlayers = rawPlayers.map((p: any) => ({
+                const newPlayers: Player[] = rawPlayers.map((p) => ({
                     id: p.id,
                     userId: p.userId,
                     username: p.nickname || `user_${p.id}`,
                     nickname: p.nickname,
                     avatar: p.avatar,
                     rating: p.ratingAverage || 5.0,
-                    price: p.price || 10 + Math.floor(Math.random() * 20),
+                    price: p.price !== undefined ? p.price : 0,
                     gameId: p.gameId || 1,
                     gameName: p.gameName || 'Valorant',
                     tags: p.tags || ['Pro', 'Friendly', 'Mic ON'],
@@ -130,9 +151,10 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
                     },
                     loading: false,
                 });
-            } catch (err: any) {
+            } catch (err) {
+                const errorMessage = err instanceof Error ? err.message : 'Failed to fetch players';
                 console.error("Fetch players failed", err);
-                set({ loading: false, error: err.message || 'Failed to fetch players' });
+                set({ loading: false, error: errorMessage });
             }
         },
 
@@ -150,7 +172,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
             try {
                 const data = await http.get<Player[]>('/players/featured');
                 set({ featuredPlayers: data });
-            } catch (e) {
+            } catch {
                 console.warn("Failed to fetch featured players");
             }
         },

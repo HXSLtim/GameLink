@@ -29,7 +29,7 @@ export const useFavoriteStore = create<FavoriteStore>()(
                     // await http.get('/favorites');
                     await new Promise(resolve => setTimeout(resolve, 300));
                     set({ loading: false });
-                } catch (e) {
+                } catch {
                     set({ loading: false });
                 }
             },
@@ -47,7 +47,7 @@ export const useFavoriteStore = create<FavoriteStore>()(
 
                 try {
                     // await http.post('/favorites/toggle', { playerId: player.id });
-                } catch (e) {
+                } catch {
                     // Rollback on error
                     set({ favorites });
                 }

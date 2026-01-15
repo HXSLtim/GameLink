@@ -19749,6 +19749,124 @@
                 }
             }
         },
+        "/public/verification/master-code": {
+            "get": {
+                "description": "获取万能验证码（仅开发/测试环境可用）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "公共-验证码"
+                ],
+                "summary": "获取万能验证码",
+                "responses": {
+                    "200": {
+                        "description": "万能验证码",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_public_MasterCodeResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "生产环境不可用",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/public/verification/send": {
+            "post": {
+                "description": "发送手机或邮箱验证码",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "公共-验证码"
+                ],
+                "summary": "发送验证码",
+                "parameters": [
+                    {
+                        "description": "发送验证码请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_public.SendCodeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "发送成功",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_public_SendCodeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "请求过于频繁",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/public/verification/verify": {
+            "post": {
+                "description": "验证手机或邮箱验证码",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "公共-验证码"
+                ],
+                "summary": "验证验证码",
+                "parameters": [
+                    {
+                        "description": "验证验证码请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_public.VerifyCodeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "验证成功",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.APIResponse-internal_handler_public_VerifyCodeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "验证码错误",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "尝试次数过多",
+                        "schema": {
+                            "$ref": "#/definitions/gamelink_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/user/blocks": {
             "get": {
                 "security": [
@@ -22384,6 +22502,78 @@
         }
     },
     "definitions": {
+        "gamelink_internal_model.APIResponse-internal_handler_public_MasterCodeResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_public.MasterCodeResponse"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-internal_handler_public_SendCodeResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_public.SendCodeResponse"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "gamelink_internal_model.APIResponse-internal_handler_public_VerifyCodeResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/internal_handler_public.VerifyCodeResponse"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {},
+                "pagination": {
+                    "$ref": "#/definitions/gamelink_internal_model.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
         "gamelink_internal_model.Alert": {
             "type": "object",
             "properties": {
@@ -33994,6 +34184,19 @@
                 }
             }
         },
+        "internal_handler_public.MasterCodeResponse": {
+            "type": "object",
+            "properties": {
+                "hint": {
+                    "description": "提示信息",
+                    "type": "string"
+                },
+                "masterCode": {
+                    "description": "万能验证码",
+                    "type": "string"
+                }
+            }
+        },
         "internal_handler_public.PlayerListResponse": {
             "type": "object",
             "properties": {
@@ -34109,6 +34312,44 @@
                 }
             }
         },
+        "internal_handler_public.SendCodeRequest": {
+            "type": "object",
+            "required": [
+                "target",
+                "type"
+            ],
+            "properties": {
+                "target": {
+                    "description": "手机号或邮箱",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "phone 或 email",
+                    "type": "string",
+                    "enum": [
+                        "phone",
+                        "email"
+                    ]
+                }
+            }
+        },
+        "internal_handler_public.SendCodeResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "验证码（仅开发环境）",
+                    "type": "string"
+                },
+                "masterCode": {
+                    "description": "万能验证码（仅开发环境）",
+                    "type": "string"
+                },
+                "message": {
+                    "description": "提示消息",
+                    "type": "string"
+                }
+            }
+        },
         "internal_handler_public.ServiceItemListResponse": {
             "type": "object",
             "properties": {
@@ -34126,6 +34367,41 @@
                 },
                 "total": {
                     "type": "integer"
+                }
+            }
+        },
+        "internal_handler_public.VerifyCodeRequest": {
+            "type": "object",
+            "required": [
+                "code",
+                "target",
+                "type"
+            ],
+            "properties": {
+                "code": {
+                    "description": "6位验证码",
+                    "type": "string"
+                },
+                "target": {
+                    "description": "手机号或邮箱",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "phone 或 email",
+                    "type": "string",
+                    "enum": [
+                        "phone",
+                        "email"
+                    ]
+                }
+            }
+        },
+        "internal_handler_public.VerifyCodeResponse": {
+            "type": "object",
+            "properties": {
+                "verified": {
+                    "description": "是否验证成功",
+                    "type": "boolean"
                 }
             }
         },

@@ -1,5 +1,53 @@
 basePath: /api/v1
 definitions:
+  gamelink_internal_model.APIResponse-internal_handler_public_MasterCodeResponse:
+    properties:
+      code:
+        type: integer
+      data:
+        $ref: '#/definitions/internal_handler_public.MasterCodeResponse'
+      message:
+        type: string
+      meta: {}
+      pagination:
+        $ref: '#/definitions/gamelink_internal_model.Pagination'
+      success:
+        type: boolean
+      traceId:
+        type: string
+    type: object
+  gamelink_internal_model.APIResponse-internal_handler_public_SendCodeResponse:
+    properties:
+      code:
+        type: integer
+      data:
+        $ref: '#/definitions/internal_handler_public.SendCodeResponse'
+      message:
+        type: string
+      meta: {}
+      pagination:
+        $ref: '#/definitions/gamelink_internal_model.Pagination'
+      success:
+        type: boolean
+      traceId:
+        type: string
+    type: object
+  gamelink_internal_model.APIResponse-internal_handler_public_VerifyCodeResponse:
+    properties:
+      code:
+        type: integer
+      data:
+        $ref: '#/definitions/internal_handler_public.VerifyCodeResponse'
+      message:
+        type: string
+      meta: {}
+      pagination:
+        $ref: '#/definitions/gamelink_internal_model.Pagination'
+      success:
+        type: boolean
+      traceId:
+        type: string
+    type: object
   gamelink_internal_model.Alert:
     properties:
       createdAt:
@@ -8134,6 +8182,15 @@ definitions:
       total:
         type: integer
     type: object
+  internal_handler_public.MasterCodeResponse:
+    properties:
+      hint:
+        description: 提示信息
+        type: string
+      masterCode:
+        description: 万能验证码
+        type: string
+    type: object
   internal_handler_public.PlayerListResponse:
     properties:
       page:
@@ -8209,6 +8266,33 @@ definitions:
     required:
     - refreshToken
     type: object
+  internal_handler_public.SendCodeRequest:
+    properties:
+      target:
+        description: 手机号或邮箱
+        type: string
+      type:
+        description: phone 或 email
+        enum:
+        - phone
+        - email
+        type: string
+    required:
+    - target
+    - type
+    type: object
+  internal_handler_public.SendCodeResponse:
+    properties:
+      code:
+        description: 验证码（仅开发环境）
+        type: string
+      masterCode:
+        description: 万能验证码（仅开发环境）
+        type: string
+      message:
+        description: 提示消息
+        type: string
+    type: object
   internal_handler_public.ServiceItemListResponse:
     properties:
       items:
@@ -8221,6 +8305,31 @@ definitions:
         type: integer
       total:
         type: integer
+    type: object
+  internal_handler_public.VerifyCodeRequest:
+    properties:
+      code:
+        description: 6位验证码
+        type: string
+      target:
+        description: 手机号或邮箱
+        type: string
+      type:
+        description: phone 或 email
+        enum:
+        - phone
+        - email
+        type: string
+    required:
+    - code
+    - target
+    - type
+    type: object
+  internal_handler_public.VerifyCodeResponse:
+    properties:
+      verified:
+        description: 是否验证成功
+        type: boolean
     type: object
   internal_handler_user.BlockRequest:
     properties:
@@ -21365,6 +21474,83 @@ paths:
       summary: 获取服务项目详情
       tags:
       - 公共-服务项目
+  /public/verification/master-code:
+    get:
+      description: 获取万能验证码（仅开发/测试环境可用）
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 万能验证码
+          schema:
+            $ref: '#/definitions/gamelink_internal_model.APIResponse-internal_handler_public_MasterCodeResponse'
+        "403":
+          description: 生产环境不可用
+          schema:
+            $ref: '#/definitions/gamelink_internal_model.ErrorResponse'
+      summary: 获取万能验证码
+      tags:
+      - 公共-验证码
+  /public/verification/send:
+    post:
+      consumes:
+      - application/json
+      description: 发送手机或邮箱验证码
+      parameters:
+      - description: 发送验证码请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler_public.SendCodeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 发送成功
+          schema:
+            $ref: '#/definitions/gamelink_internal_model.APIResponse-internal_handler_public_SendCodeResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/gamelink_internal_model.ErrorResponse'
+        "429":
+          description: 请求过于频繁
+          schema:
+            $ref: '#/definitions/gamelink_internal_model.ErrorResponse'
+      summary: 发送验证码
+      tags:
+      - 公共-验证码
+  /public/verification/verify:
+    post:
+      consumes:
+      - application/json
+      description: 验证手机或邮箱验证码
+      parameters:
+      - description: 验证验证码请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler_public.VerifyCodeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 验证成功
+          schema:
+            $ref: '#/definitions/gamelink_internal_model.APIResponse-internal_handler_public_VerifyCodeResponse'
+        "400":
+          description: 验证码错误
+          schema:
+            $ref: '#/definitions/gamelink_internal_model.ErrorResponse'
+        "429":
+          description: 尝试次数过多
+          schema:
+            $ref: '#/definitions/gamelink_internal_model.ErrorResponse'
+      summary: 验证验证码
+      tags:
+      - 公共-验证码
   /user/blocks:
     get:
       produces:

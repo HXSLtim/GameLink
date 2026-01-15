@@ -161,6 +161,14 @@ func (m *MockUserRepository) UpdatePassword(ctx context.Context, userID uint64, 
 	return nil
 }
 
+func (m *MockUserRepository) GetByWeChatOpenID(ctx context.Context, openID string) (*model.User, error) {
+	return nil, nil
+}
+
+func (m *MockUserRepository) GetByWeChatUnionID(ctx context.Context, unionID string) (*model.User, error) {
+	return nil, nil
+}
+
 type MockGameRepository struct {
 	getGame func(ctx context.Context, id uint64) (*model.Game, error)
 }

@@ -20,6 +20,7 @@
             "title": "VIP Status",
             "expires": "Expires: {{date}}",
             "free": "Free Plan",
+            "level_prefix": "VIP Level",
             "upgrade": "Upgrade Now",
             "upgrade_cta": "Upgrade to unlock exclusive features"
         },
@@ -79,6 +80,13 @@
             "book_now": "Book Now",
             "chat": "Chat"
         },
+        "home_content": {
+            "select_game_desc": "Select a game to find your pro",
+            "top_players_desc": "Top rated players this week",
+            "features_subtitle": "Premier features for the ultimate gaming experience",
+            "orders_suffix": " orders",
+            "per_hour": "/hr"
+        },
         "no_players": "No players found matching your criteria.",
         "orders_title": "My Orders",
         "orders_desc": "Manage and track your game service orders.",
@@ -111,6 +119,29 @@
         "verified_desc": "All players undergo strict skill verification.",
         "support_247": "24/7 Support",
         "support_desc": "We are here to help you anytime, anywhere."
+    },
+    "player": {
+        "all_games": "All Games",
+        "starting_at": "Starting at",
+        "no_results_desc": "Try adjusting your filters or come back later to see more pro players."
+    },
+    "order": {
+        "refresh": "Refresh",
+        "tab_active": "Active",
+        "tab_done": "Done",
+        "tab_cancel": "Cancelled",
+        "empty_desc": "You haven't placed any orders in this category yet.",
+        "details": "Details",
+        "pay_now": "Pay Now",
+        "qty": "Qty",
+        "total": "Total",
+        "service_type": "Boosting"
+    },
+    "chat": {
+        "loading": "Loading chats...",
+        "not_found": "Conversation not found.",
+        "back": "Back to list",
+        "updating": "Updating..."
     },
     "auth": {
         "login": "Login",

@@ -404,11 +404,11 @@ func TestPlayerService_SetPlayerOnlineStatus(t *testing.T) {
 	CreateTestPlayer(t, db, playerUser)
 
 	// Set online
-	err := svc.SetPlayerOnlineStatus(ctx, playerUser.ID, true)
+	err := svc.SetPlayerOnlineStatus(ctx, playerUser.ID, "online")
 	require.NoError(t, err)
 
 	// Set offline
-	err = svc.SetPlayerOnlineStatus(ctx, playerUser.ID, false)
+	err = svc.SetPlayerOnlineStatus(ctx, playerUser.ID, "offline")
 	require.NoError(t, err)
 }
 

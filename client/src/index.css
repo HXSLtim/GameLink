@@ -101,3 +101,24 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  .i18n-label {
+    @apply text-sm font-medium tracking-wide text-muted-foreground;
+    line-height: normal;
+    /* Allow natural line height */
+    word-break: break-word;
+    /* Ensure clear wrapping */
+  }
+
+  .i18n-truncate {
+    @apply truncate;
+    max-width: 100%;
+  }
+
+  /* Adaptive height header */
+  .card-header-fixed {
+    @apply min-h-[3.5rem] h-auto flex flex-row items-center px-6 py-3;
+    /* min-h-14 (56px) for consistency, but expands if text needs more lines */
+  }
+}

@@ -260,7 +260,7 @@ func (s *WeChatAuthService) findOrCreateWeChatUser(ctx context.Context, openID, 
 		user, err = s.users.GetByWeChatUnionID(ctx, unionID)
 		if err == nil && user != nil {
 			// 更新 OpenID
-			user.WeChatOpenID = openID
+			user.WeChatOpenID = &openID
 			if phone != "" && user.Phone == "" {
 				user.Phone = phone
 			}
@@ -277,7 +277,7 @@ func (s *WeChatAuthService) findOrCreateWeChatUser(ctx context.Context, openID, 
 		},
 		Name:          fmt.Sprintf("用户%d", now.UnixNano()%1000000),
 		Phone:         phone,
-		WeChatOpenID:  openID,
+		WeChatOpenID:  &openID,
 		WeChatUnionID: unionID,
 		Role:          model.RoleUser,
 		Status:        model.UserStatusActive,

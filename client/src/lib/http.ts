@@ -1,17 +1,45 @@
-import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse, type AxiosError } from 'axios';
+import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse, type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '@/stores';
 
+// Standard API response wrapper
+interface ApiResponse<T> {
+    success: boolean;
+    code: number;
+    message: string;
+    data: T;
+}
 
-class HttpClient {
+// Get API base URL from environment variable
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+
+// Request queue for token refresh
+let isRefreshing = false;
+let failedQueue: Array<{
+    resolve: (value?: unknown) => void;
+    reject: (reason?: unknown) => void;
+}> = [];
+
+const processQueue = (error: Error | null) => {
+    failedQueue.forEach(prom => {
+        if (error) {
+            prom.reject(error);
+        } else {
+            prom.resolve();
+        }
+    });
+    failedQueue = [];
+};
+
+export class HttpClient {
     private instance: AxiosInstance;
 
     constructor() {
         this.instance = axios.create({
-            baseURL: '/api/v1',
-            timeout: 10000,
-            withCredentials: true, // Enable sending cookies (Refresh Token, CSRF Token)
-            xsrfCookieName: 'csrf_token', // Standard CSRF cookie name
-            xsrfHeaderName: 'X-CSRF-Token', // Standard CSRF header name
+            baseURL: API_BASE_URL,
+            timeout: 15000,
+            withCredentials: true,
+            xsrfCookieName: 'csrf_token',
+            xsrfHeaderName: 'X-CSRF-Token',
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -30,64 +58,90 @@ class HttpClient {
                 }
                 return config;
             },
-            (error) => {
-                return Promise.reject(error);
-            }
+            (error) => Promise.reject(error)
         );
 
         // Response Interceptor
         this.instance.interceptors.response.use(
-            (response: AxiosResponse) => {
-                // You can unwrap response data here if your API always wraps in { data: ... }
-                // For now, returning the full response or just response.data depending on convention
-                return response;
-            },
+            (response: AxiosResponse) => response,
             async (error: AxiosError) => {
-                if (error.response) {
-                    const { status } = error.response;
+                const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-                    if (status === 401) {
-                        // Token expired or invalid
-                        console.warn('Unauthorized access, logging out...');
-                        const { logout } = useAuthStore.getState();
-                        await logout();
-                        // Optionally redirect to login, but store logout usually handles state clearing
-                        // which might trigger a redirect via ProtectedRoute
+                if (!error.response) {
+                    // Network error
+                    return Promise.reject(new Error('网络连接失败，请检查网络'));
+                }
+
+                const { status } = error.response;
+
+                // Handle 401 - Token expired
+                if (status === 401 && !originalRequest._retry) {
+                    if (isRefreshing) {
+                        // Wait for token refresh
+                        return new Promise((resolve, reject) => {
+                            failedQueue.push({ resolve, reject });
+                        }).then(() => {
+                            return this.instance(originalRequest);
+                        });
+                    }
+
+                    originalRequest._retry = true;
+                    isRefreshing = true;
+
+                    try {
+                        await useAuthStore.getState().refresh();
+                        processQueue(null);
+                        return this.instance(originalRequest);
+                    } catch (refreshError) {
+                        processQueue(refreshError as Error);
+                        await useAuthStore.getState().logout();
+                        return Promise.reject(refreshError);
+                    } finally {
+                        isRefreshing = false;
                     }
                 }
+
+                // Handle other errors
+                if (status === 403) {
+                    console.warn('Access forbidden');
+                }
+
                 return Promise.reject(error);
             }
         );
     }
 
     // Helper to unwrap response
-    private unwrap<T>(response: AxiosResponse<any>): T {
-        const body = response.data;
-        // Check for standard API wrapper: { success, code, data }
+    private unwrap<T>(response: AxiosResponse<ApiResponse<T> | T>): T {
+        const body = response.data as ApiResponse<T>;
         if (body && typeof body === 'object' && body.success === true && 'data' in body) {
-            return body.data as T;
+            return body.data;
         }
-        return body as T;
+        return response.data as T;
     }
 
-    // Generic request methods
-    public async get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T> {
-        const response = await this.instance.get<T>(url, config);
+    public async get<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
+        const response = await this.instance.get<ApiResponse<T> | T>(url, config);
         return this.unwrap<T>(response);
     }
 
-    public async post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
-        const response = await this.instance.post<T>(url, data, config);
+    public async post<T = unknown, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<T> {
+        const response = await this.instance.post<ApiResponse<T> | T>(url, data, config);
         return this.unwrap<T>(response);
     }
 
-    public async put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
-        const response = await this.instance.put<T>(url, data, config);
+    public async put<T = unknown, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<T> {
+        const response = await this.instance.put<ApiResponse<T> | T>(url, data, config);
         return this.unwrap<T>(response);
     }
 
-    public async delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T> {
-        const response = await this.instance.delete<T>(url, config);
+    public async patch<T = unknown, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<T> {
+        const response = await this.instance.patch<ApiResponse<T> | T>(url, data, config);
+        return this.unwrap<T>(response);
+    }
+
+    public async delete<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
+        const response = await this.instance.delete<ApiResponse<T> | T>(url, config);
         return this.unwrap<T>(response);
     }
 }

@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { http } from '@/lib/http';
+import { getErrorMessage } from '@/types/api';
+import type { LoginResponse, RegisterResponse, RefreshResponse, MeResponse } from '@/types/api';
 
 // --- Types ---
 export interface User {
@@ -74,7 +76,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             login: async (credentials) => {
                 set({ loading: true, error: null });
                 try {
-                    const data = await http.post<any>('/auth/login', {
+                    const data = await http.post<LoginResponse>('/auth/login', {
                         username: credentials.username,
                         password: credentials.password
                     });
@@ -84,17 +86,17 @@ export const useAuthStore = create<AuthState & AuthActions>()(
                         token,
                         refreshToken,
                         user,
-                        role: role || 'user',
+                        role: (role as AuthState['role']) || 'user',
                         permissions: permissions || [],
                         isAuthenticated: true,
                         loading: false,
                         error: null,
                     });
-                } catch (err: any) {
+                } catch (err: unknown) {
                     console.error("Login failed", err);
                     set({
                         loading: false,
-                        error: err.response?.data?.message || err.message || 'Login failed',
+                        error: getErrorMessage(err),
                     });
                     throw err;
                 }
@@ -103,7 +105,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             register: async (credentials: RegisterPayload) => {
                 set({ loading: true, error: null });
                 try {
-                    const data = await http.post<any>('/auth/register', credentials);
+                    const data = await http.post<RegisterResponse>('/auth/register', credentials);
                     // Automatically login after register
                     const { token, refreshToken, user, role, permissions } = data;
 
@@ -111,17 +113,17 @@ export const useAuthStore = create<AuthState & AuthActions>()(
                         token,
                         refreshToken,
                         user,
-                        role: role || 'user',
+                        role: (role as AuthState['role']) || 'user',
                         permissions: permissions || [],
                         isAuthenticated: true,
                         loading: false,
                         error: null,
                     });
-                } catch (err: any) {
+                } catch (err: unknown) {
                     console.error("Registration failed", err);
                     set({
                         loading: false,
-                        error: err.response?.data?.message || err.message || 'Registration failed',
+                        error: getErrorMessage(err),
                     });
                     throw err;
                 }
@@ -131,7 +133,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
                 try {
                     // Best effort logout
                     await http.post('/auth/logout');
-                } catch (e) { /* ignore */ }
+                } catch { /* ignore */ }
 
                 set({
                     user: null,
@@ -152,10 +154,9 @@ export const useAuthStore = create<AuthState & AuthActions>()(
 
                 try {
                     // Use public endpoint which doesn't require auth header
-                    const data = await http.post<any>('/public/auth/refresh', { refreshToken });
+                    const data = await http.post<RefreshResponse>('/public/auth/refresh', { refreshToken });
                     const { token: newToken, refreshToken: newRefreshToken, user } = data;
 
-                    console.log("[Auth] Token refreshed successfully");
 
                     set({
                         token: newToken,
@@ -165,8 +166,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
                         error: null,
                         isAuthenticated: true
                     });
-                } catch (err: any) {
-                    console.error("Token refresh failed", err);
+                } catch (err: unknown) {
                     // Clear auth state on refresh failure
                     set({
                         token: null,
@@ -187,8 +187,8 @@ export const useAuthStore = create<AuthState & AuthActions>()(
                         user: state.user ? { ...state.user, ...updatedUser } : updatedUser,
                         loading: false
                     }));
-                } catch (err: any) {
-                    set({ loading: false, error: err.message || 'Failed to update profile' });
+                } catch (err: unknown) {
+                    set({ loading: false, error: getErrorMessage(err) });
                     throw err;
                 }
             },
@@ -198,16 +198,15 @@ export const useAuthStore = create<AuthState & AuthActions>()(
                 try {
                     await http.put('/user/password', passwords);
                     set({ loading: false });
-                } catch (err: any) {
-                    set({ loading: false, error: err.message || 'Failed to change password' });
+                } catch (err: unknown) {
+                    set({ loading: false, error: getErrorMessage(err) });
                     throw err;
                 }
             },
 
             switchToPlayerMode: () => {
-                if (get().role === 'player' || get().playerProfile) {
-                    console.log("Switching to player mode");
-                }
+                // TODO: Implement player mode switching logic
+                // Currently a no-op placeholder for future implementation
             },
 
             checkAuth: async () => {
@@ -218,7 +217,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
                     try {
                         await refresh();
                         return;
-                    } catch (e) {
+                    } catch {
                         // Refresh failed, proceed to logout/guest state
                     }
                 }
@@ -229,15 +228,14 @@ export const useAuthStore = create<AuthState & AuthActions>()(
                 }
 
                 try {
-                    const data = await http.get<any>('/auth/me');
+                    const data = await http.get<MeResponse>('/auth/me');
                     const userData = data.user || data;
                     set({
-                        user: userData,
+                        user: userData as User,
                         isAuthenticated: true,
-                        role: userData.role || 'user'
+                        role: (userData.role as AuthState['role']) || 'user'
                     });
-                } catch (err) {
-                    console.error("Token validation failed", err);
+                } catch {
                     get().logout();
                 }
             }
@@ -256,7 +254,6 @@ export const useAuthStore = create<AuthState & AuthActions>()(
                 if (state) {
                     if (state.refreshToken && !state.token) {
                         state.refresh().catch(() => {
-                            console.log("Session restoration failed on hydration");
                         });
                     }
                 }

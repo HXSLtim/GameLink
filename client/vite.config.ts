@@ -4,10 +4,18 @@ import react from '@vitejs/plugin-react'
 
 import { VitePWA } from 'vite-plugin-pwa'
 
+import { visualizer } from 'rollup-plugin-visualizer'
+
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
+    mode === 'analyze' && visualizer({
+      open: true,
+      filename: 'dist/stats.html',
+      gzipSize: true,
+      brotliSize: true,
+    }),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
@@ -58,4 +66,4 @@ export default defineConfig({
       },
     },
   }
-})
+}))

@@ -11,11 +11,13 @@ import (
 	serviceitemrepo "gamelink/internal/repository/serviceitem"
 	userrepo "gamelink/internal/repository/user"
 	authservice "gamelink/internal/service/auth"
+	"gamelink/internal/service/verification"
+	"gamelink/pkg/cache"
 	"gorm.io/gorm"
 )
 
 // registerPublicRoutes 注册公共 API 路由（无需认证）
-func registerPublicRoutes(api *gin.RouterGroup, orm *gorm.DB) {
+func registerPublicRoutes(api *gin.RouterGroup, orm *gorm.DB, cacheClient cache.Cache) {
 	publicGroup := api.Group("/public")
 
 	// 初始化仓库
@@ -46,6 +48,11 @@ func registerPublicRoutes(api *gin.RouterGroup, orm *gorm.DB) {
 	// 注册搜索路由
 	searchHandler := publichandler.NewSearchHandler(playerRepo, gameRepo, userRepo)
 	publichandler.RegisterSearchRoutes(publicGroup, searchHandler)
+
+	// 注册验证码路由
+	verificationSvc := verification.NewService(cacheClient)
+	verificationHandler := publichandler.NewVerificationHandler(verificationSvc)
+	verificationHandler.RegisterRoutes(publicGroup)
 }
 
 // registerRoleSwitchRoutes 注册角色切换路由（需要认证）

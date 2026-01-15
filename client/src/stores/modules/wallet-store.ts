@@ -25,6 +25,7 @@ export interface WalletActions {
     fetchTransactions: (page?: number) => Promise<void>;
     recharge: (amount: number, method: string) => Promise<void>;
     withdraw: (amount: number, bankCardId: number) => Promise<void>;
+    fetchEarningsStats: () => Promise<{ total: number; today: number; month: number; pending: number }>;
 }
 
 export const useWalletStore = create<WalletState & WalletActions>()(
@@ -114,6 +115,20 @@ export const useWalletStore = create<WalletState & WalletActions>()(
                     set({ loading: false, error: err.message || 'Withdrawal failed' });
                     throw err;
                 }
+            },
+
+            fetchEarningsStats: async () => {
+                // Mock implementation for now, or fetch from /player/earnings/stats
+                return new Promise((resolve) => {
+                    setTimeout(() => {
+                        resolve({
+                            total: 12580.00,
+                            today: 256.00,
+                            month: 3500.00,
+                            pending: 500.00
+                        });
+                    }, 500);
+                });
             }
         }),
         {
