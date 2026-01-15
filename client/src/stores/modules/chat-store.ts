@@ -98,8 +98,8 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
                     totalUnreadCount: data.reduce((acc, curr) => acc + curr.unreadCount, 0)
                 });
             }
-        } catch (err: any) {
-            set({ loading: false, error: err.message || 'Failed to fetch conversations' });
+        } catch (err) {
+            set({ loading: false, error: err instanceof Error ? err.message : 'Failed to fetch conversations' });
         }
     },
 
@@ -130,7 +130,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
                     loading: false
                 }));
 
-            } catch (err: any) {
+            } catch (err) {
                 console.error(err);
                 set({ loading: false });
             }

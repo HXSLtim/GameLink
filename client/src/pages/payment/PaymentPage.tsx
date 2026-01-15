@@ -80,9 +80,9 @@ export default function PaymentPage() {
 
             toast.success(t('payment.success'));
             navigate(`/orders/${orderId}`, { replace: true });
-        } catch (err: any) {
+        } catch (err) {
             console.error(err);
-            toast.error(err.message || t('payment.failed'));
+            toast.error(err instanceof Error ? err.message : t('payment.failed'));
         } finally {
             setProcessPayment(false);
         }

@@ -61,9 +61,9 @@ export default function ReviewOrderPage() {
 
             toast.success(t('review.success', { defaultValue: 'Review submitted!' }));
             navigate('/orders');
-        } catch (err: any) {
+        } catch (err) {
             console.error(err);
-            toast.error(err.message || t('review.failed', { defaultValue: 'Failed to submit review' }));
+            toast.error(err instanceof Error ? err.message : t('review.failed', { defaultValue: 'Failed to submit review' }));
         } finally {
             setSubmitting(false);
         }

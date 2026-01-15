@@ -212,8 +212,8 @@ export const useOrderStore = create<OrderState & OrderActions>((set) => ({
         import('@/lib/websocket').then(({ wsService }) => {
             wsService.connect();
 
-            wsService.on('order.status_updated', (payload: { orderId: string, status: OrderStatus }) => {
-                const { orderId, status } = payload;
+            wsService.on('order.status_updated', (payload: unknown) => {
+                const { orderId, status } = payload as { orderId: string, status: OrderStatus };
                 set((state) => {
                     const updatedMyOrders = state.myOrders.map(o => o.id === orderId ? { ...o, status } : o);
                     const updatedCurrent = state.currentOrder?.id === orderId ? { ...state.currentOrder, status } : state.currentOrder;
@@ -227,7 +227,8 @@ export const useOrderStore = create<OrderState & OrderActions>((set) => ({
                 });
             });
 
-            wsService.on('order.created', (newOrder: Order) => {
+            wsService.on('order.created', (data: unknown) => {
+                const newOrder = data as Order;
                 set((state) => ({
                     myOrders: [newOrder, ...state.myOrders],
                     playerOrders: [newOrder, ...state.playerOrders] // Naive update, ideally filtered

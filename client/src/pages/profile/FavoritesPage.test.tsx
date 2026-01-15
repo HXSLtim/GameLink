@@ -15,7 +15,7 @@ vi.mock('react-router-dom', async () => {
 });
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
-        t: (key: string, options?: any) => options?.defaultValue || key,
+        t: (key: string, options?: { defaultValue?: string }) => options?.defaultValue || key,
     }),
 }));
 
@@ -25,7 +25,7 @@ describe('FavoritesPage', () => {
     });
 
     test('renders loading state initially', () => {
-        (http.get as any).mockReturnValue(new Promise(() => { })); // pending promise
+        (http.get as ReturnType<typeof vi.fn>).mockReturnValue(new Promise(() => { })); // pending promise
         render(
             <BrowserRouter>
                 <FavoritesPage />
@@ -40,7 +40,7 @@ describe('FavoritesPage', () => {
             { id: 2, nickname: 'ProPlayer2', gameName: 'DOTA2', price: 60, avatar: 'avatar2.png', tags: ['fun'], rating: 4.5 }
         ];
 
-        (http.get as any).mockResolvedValue(mockPlayers);
+        (http.get as ReturnType<typeof vi.fn>).mockResolvedValue(mockPlayers);
 
         render(
             <BrowserRouter>
@@ -55,7 +55,7 @@ describe('FavoritesPage', () => {
     });
 
     test('shows empty state when no favorites', async () => {
-        (http.get as any).mockResolvedValue([]);
+        (http.get as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
         render(
             <BrowserRouter>

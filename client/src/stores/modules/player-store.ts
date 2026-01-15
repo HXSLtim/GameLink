@@ -252,9 +252,9 @@ const INITIAL_FILTERS: PlayerFilters = {
 };
 
 // Debounce helper
-function debounce<T extends (...args: any[]) => void>(func: T, wait: number): T {
+function debounce<T extends (...args: Parameters<T>) => void>(func: T, wait: number): T {
     let timeout: ReturnType<typeof setTimeout>;
-    return function (this: any, ...args: Parameters<T>) {
+    return function (this: unknown, ...args: Parameters<T>) {
         clearTimeout(timeout);
         timeout = setTimeout(() => func.apply(this, args), wait);
     } as T;
@@ -336,8 +336,8 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
             try {
                 const data = await http.get<Player>(`/public/players/${id}`);
                 set({ currentPlayer: data, loading: false });
-            } catch (err: any) {
-                set({ loading: false, error: err.message || 'Failed to fetch player details' });
+            } catch (err) {
+                set({ loading: false, error: err instanceof Error ? err.message : 'Failed to fetch player details' });
             }
         },
 
@@ -382,8 +382,8 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
                 await http.post('/player/apply', data);
                 await get().fetchApplicationStatus();
                 set({ loading: false });
-            } catch (err: any) {
-                set({ loading: false, error: err.message || 'Failed to submit application' });
+            } catch (err) {
+                set({ loading: false, error: err instanceof Error ? err.message : 'Failed to submit application' });
                 throw err;
             }
         },
@@ -392,8 +392,8 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
             try {
                 const data = await http.get<ApplicationStatus>('/player/application');
                 set({ applicationStatus: data });
-            } catch (err: any) {
-                if (err.status !== 404) {
+            } catch (err) {
+                if (err && typeof err === 'object' && 'status' in err && err.status !== 404) {
                     console.error('Failed to fetch application status:', err);
                 }
             }
@@ -405,8 +405,8 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
                 await http.post('/player/reapply', data);
                 await get().fetchApplicationStatus();
                 set({ loading: false });
-            } catch (err: any) {
-                set({ loading: false, error: err.message || 'Failed to reapply' });
+            } catch (err) {
+                set({ loading: false, error: err instanceof Error ? err.message : 'Failed to reapply' });
                 throw err;
             }
         },
@@ -418,8 +418,8 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
             try {
                 const data = await http.get<PlayerDetailProfile>('/player/profile');
                 set({ myProfile: data, loading: false });
-            } catch (err: any) {
-                set({ loading: false, error: err.message || 'Failed to fetch profile' });
+            } catch (err) {
+                set({ loading: false, error: err instanceof Error ? err.message : 'Failed to fetch profile' });
             }
         },
 
@@ -428,8 +428,8 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
             try {
                 const updated = await http.put<PlayerDetailProfile>('/player/profile', data);
                 set({ myProfile: updated, loading: false });
-            } catch (err: any) {
-                set({ loading: false, error: err.message || 'Failed to update profile' });
+            } catch (err) {
+                set({ loading: false, error: err instanceof Error ? err.message : 'Failed to update profile' });
                 throw err;
             }
         },
@@ -442,7 +442,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
                         ? { ...state.myProfile, onlineStatus: status }
                         : null
                 }));
-            } catch (err: any) {
+            } catch (err) {
                 console.error('Failed to update online status:', err);
                 throw err;
             }
@@ -463,8 +463,8 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
             try {
                 const data = await http.get<PlayerEarnings>('/player/earnings');
                 set({ earnings: data, loading: false });
-            } catch (err: any) {
-                set({ loading: false, error: err.message || 'Failed to fetch earnings' });
+            } catch (err) {
+                set({ loading: false, error: err instanceof Error ? err.message : 'Failed to fetch earnings' });
             }
         },
 
@@ -474,7 +474,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
                     params: { page, pageSize: 20 }
                 });
                 set({ earningsRecords: data.items || [] });
-            } catch (err: any) {
+            } catch (err) {
                 console.error('Failed to fetch earnings records:', err);
             }
         },

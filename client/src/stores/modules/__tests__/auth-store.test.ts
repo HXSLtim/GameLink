@@ -34,7 +34,7 @@ describe('Auth Store', () => {
             role: 'user',
             permissions: [],
         };
-        (http.post as any).mockImplementation(() => new Promise(resolve => setTimeout(() => resolve(mockResponse), 10)));
+        (http.post as ReturnType<typeof vi.fn>).mockImplementation(() => new Promise(resolve => setTimeout(() => resolve(mockResponse), 10)));
 
         const loginPromise = useAuthStore.getState().login({ username: 'test', password: 'password' });
 
@@ -51,7 +51,7 @@ describe('Auth Store', () => {
             role: 'user',
             permissions: [],
         };
-        (http.post as any).mockResolvedValue(mockResponse);
+        (http.post as ReturnType<typeof vi.fn>).mockResolvedValue(mockResponse);
 
         await useAuthStore.getState().login({ username: 'test', password: 'password' });
 
@@ -65,7 +65,7 @@ describe('Auth Store', () => {
 
     it('should handle login error', async () => {
         const errorMessage = 'Invalid credentials';
-        (http.post as any).mockRejectedValue(new Error(errorMessage));
+        (http.post as ReturnType<typeof vi.fn>).mockRejectedValue(new Error(errorMessage));
 
         await expect(useAuthStore.getState().login({ username: 'test', password: 'wrong' }))
             .rejects.toThrow(errorMessage);
@@ -84,7 +84,7 @@ describe('Auth Store', () => {
             user: { id: '1', username: 'test', avatar: '' }
         });
 
-        (http.post as any).mockResolvedValue({});
+        (http.post as ReturnType<typeof vi.fn>).mockResolvedValue({});
 
         await useAuthStore.getState().logout();
 
@@ -106,7 +106,7 @@ describe('Auth Store', () => {
             refreshToken: 'new-refresh',
             user: { id: '1', username: 'test', avatar: '' }
         };
-        (http.post as any).mockResolvedValue(mockResponse);
+        (http.post as ReturnType<typeof vi.fn>).mockResolvedValue(mockResponse);
 
         await useAuthStore.getState().refresh();
 
@@ -123,7 +123,7 @@ describe('Auth Store', () => {
             isAuthenticated: true,
         });
 
-        (http.post as any).mockRejectedValue(new Error('Refresh failed'));
+        (http.post as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Refresh failed'));
 
         await expect(useAuthStore.getState().refresh()).rejects.toThrow();
 

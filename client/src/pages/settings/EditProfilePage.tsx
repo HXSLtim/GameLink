@@ -73,12 +73,12 @@ export default function EditProfilePage() {
                 console.warn('No URL in response', response);
             }
 
-        } catch (error: any) {
+        } catch (error) {
             console.error('Upload failed:', error);
             // toast.error(error.message || 'Failed to upload image');
             // For now, if API 404s (since it might not exist), let's simulate success for demo if needed,
             // but ideally we show error. User requested "automatic fill", implying backend exists.
-            toast.error(error.message || 'Failed to upload image');
+            toast.error(error instanceof Error ? error.message : 'Failed to upload image');
         } finally {
             setIsUploading(false);
             // Reset input so same file can be selected again if needed
@@ -98,8 +98,8 @@ export default function EditProfilePage() {
             });
             toast.success(t('settings.update_success'));
             setTimeout(() => navigate('/profile'), 500);
-        } catch (error: any) {
-            toast.error(error.message || 'Failed to update profile');
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Failed to update profile');
         } finally {
             setIsLoading(false);
         }

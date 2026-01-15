@@ -18,7 +18,7 @@ class IntersectionObserverMock {
     rootMargin = '';
     thresholds = [];
 }
-global.IntersectionObserver = IntersectionObserverMock as any;
+global.IntersectionObserver = IntersectionObserverMock as unknown as typeof IntersectionObserver;
 
 // Mock matchMedia
 Object.defineProperty(window, 'matchMedia', {

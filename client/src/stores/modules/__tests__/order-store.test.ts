@@ -26,7 +26,7 @@ describe('Order Store', () => {
             { id: '1', orderNo: 'ORD-1', amount: 100 },
             { id: '2', orderNo: 'ORD-2', amount: 200 }
         ];
-        (http.get as any).mockResolvedValue(mockOrders);
+        (http.get as ReturnType<typeof vi.fn>).mockResolvedValue(mockOrders);
 
         await useOrderStore.getState().fetchOrders();
 
@@ -38,7 +38,7 @@ describe('Order Store', () => {
 
     it('should handle fetch orders error', async () => {
         const errorMessage = 'Network Error';
-        (http.get as any).mockRejectedValue(new Error(errorMessage));
+        (http.get as ReturnType<typeof vi.fn>).mockRejectedValue(new Error(errorMessage));
 
         await useOrderStore.getState().fetchOrders();
 
@@ -52,7 +52,7 @@ describe('Order Store', () => {
         const payload = { playerId: 1, gameId: 1, quantity: 2, amount: 100 };
         const mockOrder = { id: '3', ...payload, orderNo: 'ORD-3' };
 
-        (http.post as any).mockResolvedValue(mockOrder);
+        (http.post as ReturnType<typeof vi.fn>).mockResolvedValue(mockOrder);
 
         const initialState = useOrderStore.getState();
         expect(initialState.myOrders.length).toBe(0);
@@ -68,7 +68,7 @@ describe('Order Store', () => {
 
     it('should handle create order error', async () => {
         const errorMessage = 'Failed to create';
-        (http.post as any).mockRejectedValue(new Error(errorMessage));
+        (http.post as ReturnType<typeof vi.fn>).mockRejectedValue(new Error(errorMessage));
 
         const invalidPayload = { playerId: 1, gameId: 1, quantity: 1, amount: 50 };
         await expect(useOrderStore.getState().createOrder(invalidPayload))
@@ -80,13 +80,13 @@ describe('Order Store', () => {
     });
 
     it('should cancel order optimistically', async () => {
-        const initialOrder = { id: '1', status: 'pending' };
+        const initialOrder = { id: '1', status: 'pending' } as Parameters<typeof useOrderStore.setState>[0] extends infer T ? T extends { myOrders?: infer O } ? O extends (infer E)[] ? E : never : never : never;
         useOrderStore.setState({
-            myOrders: [initialOrder as any],
-            currentOrder: initialOrder as any
+            myOrders: [initialOrder],
+            currentOrder: initialOrder
         });
 
-        (http.post as any).mockResolvedValue({});
+        (http.post as ReturnType<typeof vi.fn>).mockResolvedValue({});
 
         await useOrderStore.getState().cancelOrder('1');
 

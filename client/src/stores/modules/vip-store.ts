@@ -185,7 +185,21 @@ export const useVipStore = create<VipState & VipActions>()(
             fetchVipStatus: async () => {
                 set({ loading: true, error: null });
                 try {
-                    const data = await http.get<any>('/user/vip/status');
+                    const data = await http.get<{
+                        userId: number;
+                        level?: VipLevel;
+                        status?: VipStatus;
+                        totalSpentCents?: number;
+                        currentYearSpentCents?: number;
+                        activatedAt?: string;
+                        expiresAt?: string;
+                        monthlyFreeCoupons?: number;
+                        usedFreeCoupons?: number;
+                        discountRate?: number;
+                        nextLevel?: VipLevel;
+                        nextLevelThreshold?: number;
+                        progressPercent?: number;
+                    }>('/user/vip/status');
 
                     const userVip: UserVip = {
                         userId: data.userId,
@@ -204,8 +218,8 @@ export const useVipStore = create<VipState & VipActions>()(
                     };
 
                     set({ userVip, loading: false });
-                } catch (err: any) {
-                    set({ loading: false, error: err.message || 'Failed to fetch VIP status' });
+                } catch (err) {
+                    set({ loading: false, error: err instanceof Error ? err.message : 'Failed to fetch VIP status' });
                 }
             },
 
@@ -227,8 +241,8 @@ export const useVipStore = create<VipState & VipActions>()(
                     await http.post('/user/vip/monthly-coupon');
                     // 刷新 VIP 状态
                     await get().fetchVipStatus();
-                } catch (err: any) {
-                    set({ loading: false, error: err.message || 'Failed to claim monthly coupon' });
+                } catch (err) {
+                    set({ loading: false, error: err instanceof Error ? err.message : 'Failed to claim monthly coupon' });
                     throw err;
                 }
             },

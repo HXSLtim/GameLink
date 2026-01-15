@@ -45,9 +45,9 @@ export default function ForgotPasswordPage() {
             toast.success(t('auth.code_sent', { defaultValue: 'Verification code sent' }));
             setStep(1);
             setCountdown(60);
-        } catch (error: any) {
+        } catch (error) {
             console.error(error);
-            toast.error(error.message || t('auth.error_generic', { defaultValue: 'Failed to send code' }));
+            toast.error(error instanceof Error ? error.message : t('auth.error_generic', { defaultValue: 'Failed to send code' }));
         } finally {
             setLoading(false);
         }
@@ -67,9 +67,9 @@ export default function ForgotPasswordPage() {
             });
             toast.success(t('auth.code_verified', { defaultValue: 'Verified successfully' }));
             setStep(2);
-        } catch (error: any) {
+        } catch (error) {
             console.error(error);
-            toast.error(error.message || t('auth.invalid_code', { defaultValue: 'Invalid verification code' }));
+            toast.error(error instanceof Error ? error.message : t('auth.invalid_code', { defaultValue: 'Invalid verification code' }));
         } finally {
             setLoading(false);
         }
@@ -92,8 +92,8 @@ export default function ForgotPasswordPage() {
 
             setStep(3);
             toast.success(t('auth.password_reset_success', { defaultValue: 'Password reset successfully' }));
-        } catch (error: any) {
-            toast.error(error.message || t('auth.error_generic'));
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : t('auth.error_generic'));
         } finally {
             setLoading(false);
         }

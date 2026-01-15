@@ -33,18 +33,18 @@ vi.mock('@/stores', () => ({
 
 describe('HttpClient', () => {
     let httpClient: HttpClient;
-    let requestInterceptor: any;
-    let responseInterceptor: any;
+    let requestInterceptor: { success: (config: { headers: Record<string, string> }) => { headers: Record<string, string> }; fail: unknown };
+    let responseInterceptor: { success: (response: unknown) => unknown; fail: unknown };
 
     beforeEach(() => {
         vi.clearAllMocks();
 
         // Capture interceptors
         // We reuse the hoisted instance
-        (mockAxiosInstance.interceptors.request.use as any).mockImplementation((success: any, fail: any) => {
+        (mockAxiosInstance.interceptors.request.use as ReturnType<typeof vi.fn>).mockImplementation((success: (config: { headers: Record<string, string> }) => { headers: Record<string, string> }, fail: unknown) => {
             requestInterceptor = { success, fail };
         });
-        (mockAxiosInstance.interceptors.response.use as any).mockImplementation((success: any, fail: any) => {
+        (mockAxiosInstance.interceptors.response.use as ReturnType<typeof vi.fn>).mockImplementation((success: (response: unknown) => unknown, fail: unknown) => {
             responseInterceptor = { success, fail };
         });
 
@@ -60,7 +60,7 @@ describe('HttpClient', () => {
     describe('Interceptors', () => {
         it('should add Authorization header if token exists', async () => {
             const token = 'test-token';
-            (useAuthStore.getState as any).mockReturnValue({ token });
+            (useAuthStore.getState as ReturnType<typeof vi.fn>).mockReturnValue({ token });
 
             const config = { headers: {} };
             const result = requestInterceptor.success(config);
@@ -69,7 +69,7 @@ describe('HttpClient', () => {
         });
 
         it('should not add Authorization header if no token', async () => {
-            (useAuthStore.getState as any).mockReturnValue({ token: null });
+            (useAuthStore.getState as ReturnType<typeof vi.fn>).mockReturnValue({ token: null });
 
             const config = { headers: {} };
             const result = requestInterceptor.success(config);

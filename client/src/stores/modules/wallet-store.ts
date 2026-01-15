@@ -149,7 +149,7 @@ export interface WalletActions {
     createPayment: (request: CreatePaymentRequest) => Promise<CreatePaymentResponse>;
     checkPaymentStatus: (paymentId: number) => Promise<PaymentStatus>;
     cancelPayment: (paymentId: number) => Promise<void>;
-    withdraw: (amountCents: number, method: 'bank_card' | 'wechat' | 'alipay', accountInfo: any) => Promise<void>;
+    withdraw: (amountCents: number, method: 'bank_card' | 'wechat' | 'alipay', accountInfo: Record<string, string>) => Promise<void>;
     fetchWithdrawRecords: () => Promise<void>;
     getBalance: () => number;
     canAfford: (amountCents: number) => boolean;
@@ -174,8 +174,8 @@ export const useWalletStore = create<WalletState & WalletActions>()(
                 try {
                     const data = await http.get<Wallet>('/user/wallet');
                     set({ wallet: data, loading: false });
-                } catch (err: any) {
-                    set({ loading: false, error: err.message || 'Failed to fetch wallet' });
+                } catch (err) {
+                    set({ loading: false, error: err instanceof Error ? err.message : 'Failed to fetch wallet' });
                 }
             },
 
@@ -186,8 +186,8 @@ export const useWalletStore = create<WalletState & WalletActions>()(
                         params: { page: params.page || 1, pageSize: 20, ...params }
                     });
                     set({ transactions: data.items || [], loading: false });
-                } catch (err: any) {
-                    set({ loading: false, error: err.message || 'Failed to fetch transactions' });
+                } catch (err) {
+                    set({ loading: false, error: err instanceof Error ? err.message : 'Failed to fetch transactions' });
                 }
             },
 
@@ -195,7 +195,7 @@ export const useWalletStore = create<WalletState & WalletActions>()(
                 try {
                     const data = await http.get<RechargeOption[]>('/user/recharge/options');
                     set({ rechargeOptions: data });
-                } catch (err: any) {
+                } catch (err) {
                     console.error('Failed to fetch recharge options:', err);
                 }
             },
@@ -209,8 +209,8 @@ export const useWalletStore = create<WalletState & WalletActions>()(
                     });
                     set({ loading: false });
                     return data;
-                } catch (err: any) {
-                    set({ loading: false, error: err.message || 'Recharge failed' });
+                } catch (err) {
+                    set({ loading: false, error: err instanceof Error ? err.message : 'Recharge failed' });
                     throw err;
                 }
             },
@@ -221,8 +221,8 @@ export const useWalletStore = create<WalletState & WalletActions>()(
                     const data = await http.post<CreatePaymentResponse>('/payments', request);
                     set({ currentPayment: data, paymentStatus: PaymentStatus.PENDING, loading: false });
                     return data;
-                } catch (err: any) {
-                    set({ loading: false, error: err.message || 'Failed to create payment' });
+                } catch (err) {
+                    set({ loading: false, error: err instanceof Error ? err.message : 'Failed to create payment' });
                     throw err;
                 }
             },
@@ -232,7 +232,7 @@ export const useWalletStore = create<WalletState & WalletActions>()(
                     const data = await http.get<{ status: PaymentStatus }>(`/payments/${paymentId}/status`);
                     set({ paymentStatus: data.status });
                     return data.status;
-                } catch (err: any) {
+                } catch (err) {
                     console.error('Failed to check payment status:', err);
                     throw err;
                 }
@@ -242,7 +242,7 @@ export const useWalletStore = create<WalletState & WalletActions>()(
                 try {
                     await http.put(`/payments/${paymentId}/cancel`);
                     set({ paymentStatus: PaymentStatus.CANCELED });
-                } catch (err: any) {
+                } catch (err) {
                     console.error('Failed to cancel payment:', err);
                     throw err;
                 }
@@ -254,8 +254,8 @@ export const useWalletStore = create<WalletState & WalletActions>()(
                     await http.post('/player/withdraw', { amountCents, method, accountInfo });
                     await get().fetchWallet();
                     set({ loading: false });
-                } catch (err: any) {
-                    set({ loading: false, error: err.message || 'Withdrawal failed' });
+                } catch (err) {
+                    set({ loading: false, error: err instanceof Error ? err.message : 'Withdrawal failed' });
                     throw err;
                 }
             },
@@ -264,7 +264,7 @@ export const useWalletStore = create<WalletState & WalletActions>()(
                 try {
                     const data = await http.get<{ items: WithdrawRecord[] }>('/player/withdraw/records');
                     set({ withdrawRecords: data.items || [] });
-                } catch (err: any) {
+                } catch (err) {
                     console.error('Failed to fetch withdraw records:', err);
                 }
             },

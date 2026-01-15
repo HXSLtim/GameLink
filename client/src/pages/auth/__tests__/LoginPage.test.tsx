@@ -36,7 +36,7 @@ describe('LoginPage', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        (useAuthStore as any).mockReturnValue({
+        (useAuthStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
             login: mockLogin,
             register: mockRegister,
             loading: false,

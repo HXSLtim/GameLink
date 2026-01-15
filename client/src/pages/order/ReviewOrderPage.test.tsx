@@ -16,7 +16,7 @@ vi.mock('react-router-dom', async () => {
 });
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
-        t: (key: string, options?: any) => options?.defaultValue || key,
+        t: (key: string, options?: { defaultValue?: string }) => options?.defaultValue || key,
     }),
 }));
 

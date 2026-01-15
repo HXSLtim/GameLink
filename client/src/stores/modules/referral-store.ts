@@ -94,8 +94,8 @@ export const useReferralStore = create<ReferralState & ReferralActions>()(
                 try {
                     const data = await http.get<ReferralInfo>('/user/referral');
                     set({ referralInfo: data, loading: false });
-                } catch (err: any) {
-                    set({ loading: false, error: err.message || 'Failed to fetch referral info' });
+                } catch (err) {
+                    set({ loading: false, error: err instanceof Error ? err.message : 'Failed to fetch referral info' });
                 }
             },
 
@@ -106,8 +106,8 @@ export const useReferralStore = create<ReferralState & ReferralActions>()(
                         params: { page, pageSize: 20 }
                     });
                     set({ records: data.items || [], loading: false });
-                } catch (err: any) {
-                    set({ loading: false, error: err.message || 'Failed to fetch referral records' });
+                } catch (err) {
+                    set({ loading: false, error: err instanceof Error ? err.message : 'Failed to fetch referral records' });
                 }
             },
 
@@ -124,7 +124,7 @@ export const useReferralStore = create<ReferralState & ReferralActions>()(
                         link: `${window.location.origin}/register?ref=${referralInfo.referralCode}`
                     };
                     set({ shareContent });
-                } catch (err: any) {
+                } catch (err) {
                     console.error('Failed to generate share content:', err);
                 }
             },

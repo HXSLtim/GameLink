@@ -70,9 +70,9 @@ export default function CreateOrderPage() {
             // Navigate to order list or detail page
             navigate('/orders');
 
-        } catch (error: any) {
+        } catch (error) {
             console.error(error);
-            toast.error(error.message || t('orders.create_failed', { defaultValue: 'Failed to create order' }));
+            toast.error(error instanceof Error ? error.message : t('orders.create_failed', { defaultValue: 'Failed to create order' }));
         }
     };
 

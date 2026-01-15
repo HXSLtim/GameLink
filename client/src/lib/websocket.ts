@@ -1,6 +1,6 @@
 import { useAuthStore } from '@/stores';
 
-type MessageHandler = (data: any) => void;
+type MessageHandler = (data: unknown) => void;
 
 // Get WebSocket URL from environment variable
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080/ws';
@@ -79,7 +79,7 @@ export class WebSocketService {
         }
     }
 
-    public send(type: string, payload: any) {
+    public send(type: string, payload: unknown) {
         if (this.socket?.readyState === WebSocket.OPEN) {
             this.socket.send(JSON.stringify({ type, payload }));
         } else {
@@ -100,7 +100,7 @@ export class WebSocketService {
         }
     }
 
-    private emit(type: string, payload: any) {
+    private emit(type: string, payload: unknown) {
         if (this.handlers.has(type)) {
             this.handlers.get(type)!.forEach((handler) => handler(payload));
         }

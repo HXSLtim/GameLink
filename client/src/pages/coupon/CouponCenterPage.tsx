@@ -38,8 +38,8 @@ export default function CouponCenterPage() {
         try {
             await claimCoupon(templateId);
             toast.success(t('coupon.claim_success', { defaultValue: 'Coupon claimed successfully!' }));
-        } catch (err: any) {
-            const message = err.message || t('coupon.claim_failed', { defaultValue: 'Failed to claim coupon' });
+        } catch (err) {
+            const message = err instanceof Error ? err.message : t('coupon.claim_failed', { defaultValue: 'Failed to claim coupon' });
             toast.error(message);
         } finally {
             setClaimingId(null);

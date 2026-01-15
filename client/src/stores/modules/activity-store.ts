@@ -27,13 +27,13 @@ export type ActivityStatus = typeof ActivityStatus[keyof typeof ActivityStatus];
 
 export interface ActivityRule {
     type: 'min_order' | 'first_order' | 'specific_game' | 'specific_player';
-    value: any;
+    value: string | number | boolean;
     description: string;
 }
 
 export interface ActivityReward {
     type: 'coupon' | 'points' | 'discount' | 'gift';
-    value: any;
+    value: string | number;
     description: string;
 }
 
@@ -103,13 +103,13 @@ export const useActivityStore = create<ActivityState & ActivityActions>((set, ge
     fetchActivities: async (type) => {
         set({ loading: true, error: null });
         try {
-            const params: Record<string, any> = { status: 'active' };
+            const params: Record<string, string> = { status: 'active' };
             if (type) params.type = type;
 
             const data = await http.get<Activity[]>('/activities', { params });
             set({ activities: data, loading: false });
-        } catch (err: any) {
-            set({ loading: false, error: err.message || 'Failed to fetch activities' });
+        } catch (err) {
+            set({ loading: false, error: err instanceof Error ? err.message : 'Failed to fetch activities' });
         }
     },
 
@@ -118,8 +118,8 @@ export const useActivityStore = create<ActivityState & ActivityActions>((set, ge
         try {
             const data = await http.get<Activity>(`/activities/${id}`);
             set({ currentActivity: data, loading: false });
-        } catch (err: any) {
-            set({ loading: false, error: err.message || 'Failed to fetch activity detail' });
+        } catch (err) {
+            set({ loading: false, error: err instanceof Error ? err.message : 'Failed to fetch activity detail' });
         }
     },
 
@@ -136,9 +136,9 @@ export const useActivityStore = create<ActivityState & ActivityActions>((set, ge
             }));
 
             return data;
-        } catch (err: any) {
+        } catch (err) {
             // 404 表示未参与，不是错误
-            if (err.status === 404) return null;
+            if (err && typeof err === 'object' && 'status' in err && err.status === 404) return null;
             console.error('Failed to fetch participation:', err);
             return null;
         }
@@ -156,8 +156,8 @@ export const useActivityStore = create<ActivityState & ActivityActions>((set, ge
             ]);
 
             set({ loading: false });
-        } catch (err: any) {
-            set({ loading: false, error: err.message || 'Failed to join activity' });
+        } catch (err) {
+            set({ loading: false, error: err instanceof Error ? err.message : 'Failed to join activity' });
             throw err;
         }
     },

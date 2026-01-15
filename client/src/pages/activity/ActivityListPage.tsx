@@ -64,8 +64,8 @@ export default function ActivityListPage() {
             if (newParticipation) {
                 setParticipations(prev => new Map(prev).set(activity.id, newParticipation));
             }
-        } catch (err: any) {
-            toast.error(err.message || t('activity.join_failed', { defaultValue: 'Failed to join activity' }));
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : t('activity.join_failed', { defaultValue: 'Failed to join activity' }));
         } finally {
             setJoiningId(null);
         }

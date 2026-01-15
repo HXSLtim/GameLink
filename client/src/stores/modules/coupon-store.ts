@@ -121,13 +121,13 @@ export const useCouponStore = create<CouponState & CouponActions>((set, get) => 
     fetchMyCoupons: async (status) => {
         set({ loading: true, error: null });
         try {
-            const params: Record<string, any> = {};
+            const params: Record<string, string> = {};
             if (status) params.status = status;
 
             const data = await http.get<Coupon[]>('/user/coupons', { params });
             set({ myCoupons: data, loading: false });
-        } catch (err: any) {
-            set({ loading: false, error: err.message || 'Failed to fetch coupons' });
+        } catch (err) {
+            set({ loading: false, error: err instanceof Error ? err.message : 'Failed to fetch coupons' });
         }
     },
 
@@ -136,8 +136,8 @@ export const useCouponStore = create<CouponState & CouponActions>((set, get) => 
         try {
             const data = await http.get<CouponTemplate[]>('/coupons/available');
             set({ availableCoupons: data, loading: false });
-        } catch (err: any) {
-            set({ loading: false, error: err.message || 'Failed to fetch available coupons' });
+        } catch (err) {
+            set({ loading: false, error: err instanceof Error ? err.message : 'Failed to fetch available coupons' });
         }
     },
 
@@ -145,7 +145,7 @@ export const useCouponStore = create<CouponState & CouponActions>((set, get) => 
         try {
             const data = await http.get<{ available: number; used: number; expired: number }>('/user/coupons/count');
             set({ couponCounts: data });
-        } catch (err: any) {
+        } catch (err) {
             console.error('Failed to fetch coupon counts:', err);
         }
     },
@@ -163,8 +163,8 @@ export const useCouponStore = create<CouponState & CouponActions>((set, get) => 
             ]);
 
             set({ loading: false });
-        } catch (err: any) {
-            set({ loading: false, error: err.message || 'Failed to claim coupon' });
+        } catch (err) {
+            set({ loading: false, error: err instanceof Error ? err.message : 'Failed to claim coupon' });
             throw err;
         }
     },
@@ -173,7 +173,7 @@ export const useCouponStore = create<CouponState & CouponActions>((set, get) => 
         try {
             const data = await http.get<Coupon>(`/user/coupons/${id}`);
             return data;
-        } catch (err: any) {
+        } catch (err) {
             console.error('Failed to get coupon detail:', err);
             return null;
         }
