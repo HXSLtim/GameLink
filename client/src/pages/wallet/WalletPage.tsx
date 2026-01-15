@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useWalletStore } from '@/stores';
+import { useWalletStore, TransactionType } from '@/stores';
 import { PageContainer } from '@/components/page-container';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,18 +12,22 @@ import { useNavigate } from 'react-router-dom';
 export default function WalletPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { balance, currency, transactions, fetchWallet, recharge } = useWalletStore();
+    const { transactions, fetchWallet, fetchTransactions, recharge, getBalance } = useWalletStore();
     const [isLoading, setIsLoading] = useState(false);
+
+    const balance = getBalance() / 100; // Convert cents to yuan
+    const currency = '¥';
 
     useEffect(() => {
         fetchWallet();
+        fetchTransactions();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleRecharge = async (amount: number) => {
         setIsLoading(true);
         try {
-            await recharge(amount, 'alipay'); // Amount in standard units, store handles cents
+            await recharge(amount * 100, 'alipay'); // Convert to cents
             toast.success(`Successfully recharged ${currency}${amount}`);
         } catch {
             toast.error("Recharge failed. Please try again.");
@@ -140,23 +144,23 @@ export default function WalletPage() {
                                             <div className="flex items-center gap-4">
                                                 <div className={`
                                                     h-10 w-10 rounded-full flex items-center justify-center
-                                                    ${tx.type === 'recharge' ? 'bg-green-500/10 text-green-500' : ''}
-                                                    ${tx.type === 'payment' ? 'bg-red-500/10 text-red-500' : ''}
-                                                    ${tx.type === 'refund' ? 'bg-blue-500/10 text-blue-500' : ''}
-                                                    ${tx.type === 'withdrawal' ? 'bg-orange-500/10 text-orange-500' : ''}
+                                                    ${tx.type === TransactionType.RECHARGE ? 'bg-green-500/10 text-green-500' : ''}
+                                                    ${tx.type === TransactionType.CONSUME ? 'bg-red-500/10 text-red-500' : ''}
+                                                    ${tx.type === TransactionType.REFUND ? 'bg-blue-500/10 text-blue-500' : ''}
+                                                    ${tx.type === TransactionType.WITHDRAW ? 'bg-orange-500/10 text-orange-500' : ''}
+                                                    ${tx.type === TransactionType.INCOME ? 'bg-green-500/10 text-green-500' : ''}
+                                                    ${tx.type === TransactionType.BONUS ? 'bg-purple-500/10 text-purple-500' : ''}
                                                 `}>
-                                                    {tx.type === 'recharge' && <ArrowDownLeft className="h-5 w-5" />}
-                                                    {tx.type === 'payment' && <ArrowUpRight className="h-5 w-5" />}
-                                                    {tx.type === 'refund' && <ArrowDownLeft className="h-5 w-5" />}
-                                                    {tx.type === 'withdrawal' && <ArrowUpRight className="h-5 w-5" />}
+                                                    {tx.direction === 'in' && <ArrowDownLeft className="h-5 w-5" />}
+                                                    {tx.direction === 'out' && <ArrowUpRight className="h-5 w-5" />}
                                                 </div>
                                                 <div>
-                                                    <div className="font-medium capitalize">{tx.type}</div>
+                                                    <div className="font-medium capitalize">{tx.title || tx.type}</div>
                                                     <div className="text-xs text-muted-foreground">{format(new Date(tx.createdAt), 'PPP p')}</div>
                                                 </div>
                                             </div>
-                                            <div className={`font-bold ${tx.amount > 0 ? 'text-green-500' : 'text-foreground'}`}>
-                                                {tx.amount > 0 ? '+' : ''}{tx.amount.toFixed(2)}
+                                            <div className={`font-bold ${tx.direction === 'in' ? 'text-green-500' : 'text-foreground'}`}>
+                                                {tx.direction === 'in' ? '+' : '-'}{currency}{(tx.amountCents / 100).toFixed(2)}
                                             </div>
                                         </div>
                                     ))}

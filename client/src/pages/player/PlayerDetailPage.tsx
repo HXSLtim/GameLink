@@ -45,10 +45,8 @@ export default function PlayerDetailPage() {
             await createOrder({
                 playerId: currentPlayer.id,
                 gameId: currentPlayer.gameId,
-                gameName: currentPlayer.gameName,
                 quantity: quantity,
                 amount: currentPlayer.price * quantity, // Total price (assuming price is per hour)
-                status: 'pending'
             });
             setBookingSuccess(true);
             toast.success(t('order.success', { defaultValue: 'Order created successfully!' }));

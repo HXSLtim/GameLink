@@ -49,7 +49,7 @@ describe('Order Store', () => {
     });
 
     it('should create order successfully', async () => {
-        const payload = { playerId: 1, amount: 100 };
+        const payload = { playerId: 1, gameId: 1, quantity: 2, amount: 100 };
         const mockOrder = { id: '3', ...payload, orderNo: 'ORD-3' };
 
         (http.post as any).mockResolvedValue(mockOrder);
@@ -70,7 +70,8 @@ describe('Order Store', () => {
         const errorMessage = 'Failed to create';
         (http.post as any).mockRejectedValue(new Error(errorMessage));
 
-        await expect(useOrderStore.getState().createOrder({}))
+        const invalidPayload = { playerId: 1, gameId: 1, quantity: 1, amount: 50 };
+        await expect(useOrderStore.getState().createOrder(invalidPayload))
             .rejects.toThrow(errorMessage);
 
         const state = useOrderStore.getState();

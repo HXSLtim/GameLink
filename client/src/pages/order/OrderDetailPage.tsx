@@ -29,7 +29,7 @@ export default function OrderDetailPage() {
         if (id) {
             fetchOrderById(id);
         }
-    }, [id]);
+    }, [id, fetchOrderById]);
 
     const handleCopy = (text: string) => {
         navigator.clipboard.writeText(text);
@@ -55,8 +55,8 @@ export default function OrderDetailPage() {
             await submitDispute(currentOrder.id, disputeType, disputeDesc);
             toast.success("Dispute submitted successfully");
             setDisputeOpen(false);
-        } catch (error: any) {
-            toast.error(error.message || "Failed to submit dispute");
+        } catch (error) {
+            toast.error((error as Error).message || "Failed to submit dispute");
         } finally {
             setSubmittingDispute(false);
         }

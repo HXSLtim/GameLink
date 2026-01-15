@@ -47,7 +47,7 @@ export interface Player {
     orderCount: number;
 }
 
-export interface PlayerProfile {
+export interface PlayerDetailProfile {
     id: number;
     userId: number;
 
@@ -210,7 +210,7 @@ export interface PlayerState {
     };
 
     // 陪玩师端数据
-    myProfile: PlayerProfile | null;
+    myProfile: PlayerDetailProfile | null;
     applicationStatus: ApplicationStatus | null;
     earnings: PlayerEarnings | null;
     earningsRecords: EarningsRecord[];
@@ -236,7 +236,7 @@ export interface PlayerActions {
 
     // 陪玩师资料 Actions
     fetchMyProfile: () => Promise<void>;
-    updateProfile: (data: Partial<PlayerProfile>) => Promise<void>;
+    updateProfile: (data: Partial<PlayerDetailProfile>) => Promise<void>;
     updateOnlineStatus: (status: OnlineStatus) => Promise<void>;
     sendHeartbeat: () => Promise<void>;
 
@@ -416,7 +416,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
         fetchMyProfile: async () => {
             set({ loading: true, error: null });
             try {
-                const data = await http.get<PlayerProfile>('/player/profile');
+                const data = await http.get<PlayerDetailProfile>('/player/profile');
                 set({ myProfile: data, loading: false });
             } catch (err: any) {
                 set({ loading: false, error: err.message || 'Failed to fetch profile' });
@@ -426,7 +426,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
         updateProfile: async (data) => {
             set({ loading: true, error: null });
             try {
-                const updated = await http.put<PlayerProfile>('/player/profile', data);
+                const updated = await http.put<PlayerDetailProfile>('/player/profile', data);
                 set({ myProfile: updated, loading: false });
             } catch (err: any) {
                 set({ loading: false, error: err.message || 'Failed to update profile' });

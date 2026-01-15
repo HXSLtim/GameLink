@@ -32,11 +32,14 @@ export default function RechargePage() {
     const handleRecharge = async () => {
         if (!selectedPlan) return;
 
+        // Only allow wechat or alipay for recharge
+        const rechargeMethod = paymentMethod === 'balance' ? 'alipay' : paymentMethod as 'wechat' | 'alipay';
+
         try {
-            await recharge(selectedPlan.amount, paymentMethod);
+            await recharge(selectedPlan.amount * 100, rechargeMethod); // Convert to cents
             toast.success(t('wallet.recharge_success', { defaultValue: 'Recharge successful!' }));
             navigate('/wallet');
-        } catch (error) {
+        } catch {
             toast.error(t('wallet.recharge_failed', { defaultValue: 'Recharge failed' }));
         }
     };

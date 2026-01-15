@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useChatStore, useAuthStore } from '@/stores';
 import { PageContainer } from '@/components/page-container';
@@ -26,7 +26,7 @@ export default function ChatRoomPage() {
     const [inputText, setInputText] = useState('');
 
     const conversation = conversations.find(c => c.id === id);
-    const currentMessages = id ? (messages[id] || []) : [];
+    const currentMessages = useMemo(() => id ? (messages[id] || []) : [], [id, messages]);
 
     useEffect(() => {
         if (id) {

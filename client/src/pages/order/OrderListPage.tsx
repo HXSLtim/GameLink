@@ -19,10 +19,10 @@ export default function OrderListPage() {
 
     useEffect(() => {
         fetchOrders();
-    }, []);
+    }, [fetchOrders]);
 
     const getStatusConfig = (status: OrderStatus) => {
-        const configs: Record<string, { labelKey: string; color: string; icon: any }> = {
+        const configs: Record<string, { labelKey: string; color: string; icon: React.ElementType }> = {
             [OrderStatus.PENDING]: { labelKey: 'order.status.pending', color: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20', icon: Clock },
             [OrderStatus.CONFIRMED]: { labelKey: 'order.status.confirmed', color: 'bg-blue-500/10 text-blue-500 border-blue-500/20', icon: CheckCircle },
             [OrderStatus.IN_PROGRESS]: { labelKey: 'order.status.in_progress', color: 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20', icon: Gamepad2 },

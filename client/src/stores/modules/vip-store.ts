@@ -215,7 +215,7 @@ export const useVipStore = create<VipState & VipActions>()(
                     if (data && data.length > 0) {
                         set({ levelConfigs: data });
                     }
-                } catch (err: any) {
+                } catch {
                     // 使用默认配置
                     console.warn('Using default VIP level configs');
                 }

@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PageContainer } from '@/components/page-container';
 import { EarningsCard } from '@/components/player/earnings-card';
-import { useWalletStore } from '@/stores';
+import { usePlayerStore } from '@/stores';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -19,17 +19,24 @@ import { Download, Filter } from 'lucide-react';
 
 export default function EarningsPage() {
     const { t } = useTranslation();
-    const { fetchEarningsStats } = useWalletStore();
-    const [stats, setStats] = useState({
-        total: 0,
-        today: 0,
-        month: 0,
-        pending: 0
-    });
+    const { earnings, fetchEarnings } = usePlayerStore();
 
     useEffect(() => {
-        fetchEarningsStats().then(setStats);
-    }, [fetchEarningsStats]);
+        fetchEarnings();
+    }, [fetchEarnings]);
+
+    // Derive stats from earnings data using useMemo
+    const stats = useMemo(() => {
+        if (earnings) {
+            return {
+                total: earnings.totalEarningsCents / 100,
+                today: earnings.todayEarningsCents / 100,
+                month: earnings.monthlyEarningsCents / 100,
+                pending: earnings.wallet?.frozenCents ? earnings.wallet.frozenCents / 100 : 0
+            };
+        }
+        return { total: 0, today: 0, month: 0, pending: 0 };
+    }, [earnings]);
 
     // Mock earnings history for now, can be replaced with fetchTransactions filtered by 'income'
     const history = [

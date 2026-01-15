@@ -19,7 +19,7 @@ export default function ChatListPage() {
 
     useEffect(() => {
         fetchConversations();
-    }, []);
+    }, [fetchConversations]);
 
     const handleSelect = (id: string) => {
         navigate(`/chat/${id}`);

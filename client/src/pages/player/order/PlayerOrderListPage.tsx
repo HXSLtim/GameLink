@@ -40,12 +40,12 @@ export default function PlayerOrderListPage() {
     };
 
     const getStatusConfig = (status: OrderStatus) => {
-        const configs: Record<string, { label: string; color: string; icon: any }> = {
+        const configs: Record<string, { label: string; color: string; icon: React.ElementType }> = {
             [OrderStatus.PENDING]: { label: 'Pending', color: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20', icon: Clock },
-            [OrderStatus.PAID]: { label: 'Paid/Pending', color: 'bg-blue-500/10 text-blue-500 border-blue-500/20', icon: CheckCircle },
-            [OrderStatus.ACCEPTED]: { label: 'Accepted', color: 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20', icon: Gamepad2 },
+            [OrderStatus.CONFIRMED]: { label: 'Paid/Pending', color: 'bg-blue-500/10 text-blue-500 border-blue-500/20', icon: CheckCircle },
+            [OrderStatus.IN_PROGRESS]: { label: 'In Progress', color: 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20', icon: Gamepad2 },
             [OrderStatus.COMPLETED]: { label: 'Completed', color: 'bg-green-500/10 text-green-500 border-green-500/20', icon: CheckCircle },
-            [OrderStatus.CANCELLED]: { label: 'Cancelled', color: 'bg-red-500/10 text-red-500 border-red-500/20', icon: XCircle },
+            [OrderStatus.CANCELED]: { label: 'Cancelled', color: 'bg-red-500/10 text-red-500 border-red-500/20', icon: XCircle },
             [OrderStatus.REFUNDED]: { label: 'Refunded', color: 'bg-gray-500/10 text-gray-500 border-gray-500/20', icon: AlertCircle },
         };
         return configs[status] || configs[OrderStatus.PENDING];
@@ -116,7 +116,7 @@ export default function PlayerOrderListPage() {
                                                 </div>
                                             </CardContent>
                                             <CardFooter className="bg-muted/5 p-3 px-5 flex justify-end gap-2 border-t border-white/5 mt-auto">
-                                                {([OrderStatus.PENDING, OrderStatus.PAID] as OrderStatus[]).includes(order.status) ? (
+                                                {([OrderStatus.PENDING, OrderStatus.CONFIRMED] as OrderStatus[]).includes(order.status) ? (
                                                     <>
                                                         <Button
                                                             variant="outline"

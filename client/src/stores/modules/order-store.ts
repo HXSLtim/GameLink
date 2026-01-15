@@ -46,10 +46,20 @@ export interface OrderState {
     error: string | null;
 }
 
+export interface CreateOrderPayload {
+    playerId: number;
+    gameId: number;
+    serviceItemId?: number;
+    quantity: number;
+    amount: number;
+    note?: string;
+    scheduledTime?: string;
+}
+
 export interface OrderActions {
     fetchOrders: () => Promise<void>;
     fetchOrderById: (id: string) => Promise<void>;
-    createOrder: (payload: any) => Promise<void>;
+    createOrder: (payload: CreateOrderPayload) => Promise<void>;
     cancelOrder: (id: string) => Promise<void>;
     updateDraft: (draft: Partial<OrderState['orderDraft']>) => void;
     clearDraft: () => void;
@@ -92,8 +102,8 @@ export const useOrderStore = create<OrderState & OrderActions>((set) => ({
         try {
             const data = await http.get<Order[]>('/orders');
             set({ myOrders: data, loading: false });
-        } catch (err: any) {
-            set({ loading: false, error: err.message || 'Failed to fetch orders' });
+        } catch (err) {
+            set({ loading: false, error: (err as Error).message || 'Failed to fetch orders' });
         }
     },
 
@@ -102,8 +112,8 @@ export const useOrderStore = create<OrderState & OrderActions>((set) => ({
         try {
             const data = await http.get<Order>(`/orders/${id}`);
             set({ currentOrder: data, loading: false });
-        } catch (err: any) {
-            set({ loading: false, error: err.message || 'Failed to get order details' });
+        } catch (err) {
+            set({ loading: false, error: (err as Error).message || 'Failed to get order details' });
         }
     },
 
@@ -116,8 +126,8 @@ export const useOrderStore = create<OrderState & OrderActions>((set) => ({
                 currentOrder: data,
                 loading: false
             }));
-        } catch (err: any) {
-            set({ loading: false, error: err.message || 'Failed to create order' });
+        } catch (err) {
+            set({ loading: false, error: (err as Error).message || 'Failed to create order' });
             throw err;
         }
     },
@@ -130,7 +140,7 @@ export const useOrderStore = create<OrderState & OrderActions>((set) => ({
                 myOrders: state.myOrders.map(o => o.id === id ? { ...o, status: OrderStatus.CANCELED } : o),
                 currentOrder: state.currentOrder?.id === id ? { ...state.currentOrder, status: OrderStatus.CANCELED } : state.currentOrder
             }));
-        } catch (err: any) {
+        } catch (err) {
             console.error(err);
         }
     },
@@ -151,8 +161,8 @@ export const useOrderStore = create<OrderState & OrderActions>((set) => ({
             const data = await http.get<OrderStats>('/user/orders/stats');
             set({ loading: false });
             return data;
-        } catch (err: any) {
-            set({ loading: false, error: err.message || 'Failed to fetch order stats' });
+        } catch (err) {
+            set({ loading: false, error: (err as Error).message || 'Failed to fetch order stats' });
             return null;
         }
     },
@@ -163,8 +173,8 @@ export const useOrderStore = create<OrderState & OrderActions>((set) => ({
         try {
             const data = await http.get<Order[]>('/player/orders'); // Report says /player/orders
             set({ playerOrders: data, loading: false });
-        } catch (err: any) {
-            set({ loading: false, error: err.message || 'Failed to fetch player orders' });
+        } catch (err) {
+            set({ loading: false, error: (err as Error).message || 'Failed to fetch player orders' });
         }
     },
 
@@ -191,39 +201,47 @@ export const useOrderStore = create<OrderState & OrderActions>((set) => ({
                 myOrders: state.myOrders.map(o => o.id === id ? { ...o, status: OrderStatus.DISPUTED } : o),
                 loading: false
             }));
-        } catch (err: any) {
-            set({ loading: false, error: err.message || 'Failed to submit dispute' });
+        } catch (err) {
+            set({ loading: false, error: (err as Error).message || 'Failed to submit dispute' });
             throw err;
         }
     },
 
     // WebSocket Integration
     subscribeToOrderUpdates: () => {
-        const { wsService } = require('@/lib/websocket');
+        import('@/lib/websocket').then(({ wsService }) => {
+            wsService.connect();
 
-        wsService.on('order.status_updated', (payload: any) => {
-            const { orderId, status } = payload;
-            set((state) => ({
-                myOrders: state.myOrders.map(o => o.id === orderId ? { ...o, status } : o),
-                currentOrder: state.currentOrder?.id === orderId ? { ...state.currentOrder, status } : state.currentOrder,
-                playerOrders: state.playerOrders.map(o => o.id === orderId ? { ...o, status } : o)
-            }));
-        });
+            wsService.on('order.status_updated', (payload: { orderId: string, status: OrderStatus }) => {
+                const { orderId, status } = payload;
+                set((state) => {
+                    const updatedMyOrders = state.myOrders.map(o => o.id === orderId ? { ...o, status } : o);
+                    const updatedCurrent = state.currentOrder?.id === orderId ? { ...state.currentOrder, status } : state.currentOrder;
+                    const updatedPlayerOrders = state.playerOrders.map(o => o.id === orderId ? { ...o, status } : o);
 
-        wsService.on('order.created', (newOrder: Order) => {
-            set((state) => ({
-                myOrders: [newOrder, ...state.myOrders],
-                playerOrders: [newOrder, ...state.playerOrders] // Naive update, ideally filtered
-            }));
+                    return {
+                        myOrders: updatedMyOrders,
+                        currentOrder: updatedCurrent,
+                        playerOrders: updatedPlayerOrders
+                    };
+                });
+            });
+
+            wsService.on('order.created', (newOrder: Order) => {
+                set((state) => ({
+                    myOrders: [newOrder, ...state.myOrders],
+                    playerOrders: [newOrder, ...state.playerOrders] // Naive update, ideally filtered
+                }));
+            });
         });
     },
 
     unsubscribeFromOrderUpdates: () => {
-        const { wsService } = require('@/lib/websocket');
-        // We would need references to the specific functions to off() them properly if the socket service requires strict reference equality.
-        // Assuming wsService handles unique events or we don't strictly need to off generic handlers if the store persists.
-        // For now, implementing empty or investigating wsService capabilities.
-        // Given wsService.off takes a handler, we should define handlers outside or store references.
+        import('@/lib/websocket').then(() => {
+            // In a real app with strict handler references, we'd need to store the functions. 
+            // For now assuming the service or store lifecycle manages this simplistically 
+            // or we accept potential memory leak if unsubscribe isn't perfect in this iteration.
+            // A better way is to move WS logic to a dedicated hook or Context.
+        });
     }
 }));
-

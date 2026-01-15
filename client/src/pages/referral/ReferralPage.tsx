@@ -34,7 +34,7 @@ export default function ReferralPage() {
     useEffect(() => {
         fetchReferralInfo();
         fetchReferralRecords();
-    }, []);
+    }, [fetchReferralInfo, fetchReferralRecords]);
 
     const handleCopyCode = async () => {
         const success = await copyReferralCode();

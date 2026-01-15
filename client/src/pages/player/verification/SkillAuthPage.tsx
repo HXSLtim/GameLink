@@ -83,7 +83,7 @@ export default function SkillAuthPage() {
             toast.success("提交成功", {
                 description: "您的技能认证信息已提交审核",
             });
-        } catch (error) {
+        } catch {
             toast.error("提交失败", {
                 description: "请稍后重试"
             });

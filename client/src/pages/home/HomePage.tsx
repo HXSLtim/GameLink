@@ -24,7 +24,7 @@ export default function HomePage() {
 
     useEffect(() => {
         fetchFeaturedPlayers();
-    }, []);
+    }, [fetchFeaturedPlayers]);
 
     return (
         <PageContainer>

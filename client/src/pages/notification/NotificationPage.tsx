@@ -18,7 +18,7 @@ export default function NotificationPage() {
 
     useEffect(() => {
         fetchNotifications();
-    }, []);
+    }, [fetchNotifications]);
 
     const getIcon = (type: string) => {
         switch (type) {

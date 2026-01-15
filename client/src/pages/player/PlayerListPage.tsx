@@ -19,7 +19,7 @@ export default function PlayerListPage() {
     // Initial fetch
     useEffect(() => {
         fetchPlayers(true);
-    }, []);
+    }, [fetchPlayers]);
 
     // Infinite scroll observer
     useEffect(() => {

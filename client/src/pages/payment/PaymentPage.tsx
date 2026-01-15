@@ -22,7 +22,9 @@ export default function PaymentPage() {
     const { orderId } = useParams();
     const navigate = useNavigate();
     const { t } = useTranslation();
-    const { balance, fetchWallet } = useWalletStore(); // Fixed destructuring
+    const { fetchWallet, getBalance } = useWalletStore();
+
+    const balance = getBalance() / 100; // Convert cents to yuan
 
     const [order, setOrder] = useState<OrderDetails | null>(null);
     const [loading, setLoading] = useState(true);

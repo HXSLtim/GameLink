@@ -50,7 +50,7 @@ export default function RealNamePage() {
                 description: "您的实名认证信息已提交审核",
             });
             // Redirect or update state here
-        } catch (error) {
+        } catch {
             toast.error("提交失败", {
                 description: "请稍后重试"
             });

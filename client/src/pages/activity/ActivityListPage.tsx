@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
-    Sparkles, Clock, Users, Gift, Percent, Zap,
+    Sparkles, Users, Gift, Percent, Zap,
     CalendarDays, ChevronRight, PartyPopper, Timer
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -19,7 +19,6 @@ import { zhCN } from 'date-fns/locale';
 
 export default function ActivityListPage() {
     const { t } = useTranslation();
-    const navigate = useNavigate();
     const {
         activities,
         loading,
@@ -35,7 +34,7 @@ export default function ActivityListPage() {
 
     useEffect(() => {
         fetchActivities();
-    }, []);
+    }, [fetchActivities]);
 
     useEffect(() => {
         // Fetch participation status for all activities
@@ -45,7 +44,7 @@ export default function ActivityListPage() {
                 setParticipations(prev => new Map(prev).set(activity.id, participation));
             }
         });
-    }, [activities]);
+    }, [activities, fetchMyParticipation]);
 
     const handleJoin = async (activity: Activity) => {
         const participation = participations.get(activity.id);
@@ -200,7 +199,6 @@ function ActivityCard({ activity, participation, onJoin, joining, canParticipate
     };
 
     const getStatusBadge = () => {
-        const now = new Date();
         const startAt = new Date(activity.startAt);
         const endAt = new Date(activity.endAt);
 
@@ -217,7 +215,6 @@ function ActivityCard({ activity, participation, onJoin, joining, canParticipate
     };
 
     const getTimeDisplay = () => {
-        const now = new Date();
         const startAt = new Date(activity.startAt);
         const endAt = new Date(activity.endAt);
 

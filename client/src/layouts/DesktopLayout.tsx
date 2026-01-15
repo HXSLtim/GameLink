@@ -44,7 +44,7 @@ export default function DesktopLayout() {
         return () => {
             unsubscribeFromOrderUpdates();
         };
-    }, []);
+    }, [subscribeToOrderUpdates, unsubscribeFromOrderUpdates]);
 
     return (
         <div className="flex h-screen w-full bg-background text-foreground overflow-hidden font-sans selection:bg-primary/20">

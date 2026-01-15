@@ -31,7 +31,7 @@ export default function CouponCenterPage() {
         fetchAvailableCoupons();
         fetchMyCoupons();
         fetchCouponCounts();
-    }, []);
+    }, [fetchAvailableCoupons, fetchMyCoupons, fetchCouponCounts]);
 
     const handleClaim = async (templateId: number) => {
         setClaimingId(templateId);
