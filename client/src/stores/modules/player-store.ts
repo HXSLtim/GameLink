@@ -1,9 +1,40 @@
 import { create } from 'zustand';
+import { subscribeWithSelector } from 'zustand/middleware';
 import { http } from '@/lib/http';
+
+// ============ Enums ============
+
+export const VerificationStatus = {
+    PENDING: 'pending',       // 待审核
+    VERIFIED: 'verified',     // 已认证
+    REJECTED: 'rejected',     // 已拒绝
+    SUSPENDED: 'suspended'    // 已暂停
+} as const;
+
+export type VerificationStatus = typeof VerificationStatus[keyof typeof VerificationStatus];
+
+export const OnlineStatus = {
+    ONLINE: 'online',         // 在线接单
+    BUSY: 'busy',             // 忙碌中
+    OFFLINE: 'offline'        // 离线
+} as const;
+
+export type OnlineStatus = typeof OnlineStatus[keyof typeof OnlineStatus];
+
+export const EarningsStatus = {
+    FROZEN: 'frozen',         // 冻结中 (T+7)
+    SETTLED: 'settled',       // 已结算
+    DISPUTED: 'disputed',     // 争议中
+    REFUNDED: 'refunded'      // 已退款
+} as const;
+
+export type EarningsStatus = typeof EarningsStatus[keyof typeof EarningsStatus];
+
+// ============ Interfaces ============
 
 export interface Player {
     id: number;
-    userId: number; // Linked user account
+    userId: number;
     username: string;
     nickname: string;
     avatar: string;
@@ -14,6 +45,133 @@ export interface Player {
     tags: string[];
     online: boolean;
     orderCount: number;
+}
+
+export interface PlayerProfile {
+    id: number;
+    userId: number;
+
+    // 认证信息
+    realName: string;
+    idCard: string;           // 身份证号 (脱敏显示)
+    verificationStatus: VerificationStatus;
+    verifiedAt?: string;
+    rejectionReason?: string;
+
+    // 展示信息
+    displayName: string;
+    bio: string;
+    avatar: string;
+    voiceIntro?: string;      // 语音介绍 URL
+    gallery: string[];        // 相册
+
+    // 服务信息
+    games: PlayerGame[];
+    hourlyRateCents: number;
+    serviceTimeSlots: TimeSlot[];
+
+    // 状态
+    onlineStatus: OnlineStatus;
+    acceptingOrders: boolean;
+    lastOnlineAt?: string;
+
+    // 统计
+    totalOrders: number;
+    completedOrders: number;
+    rating: number;
+    reviewCount: number;
+
+    // 收益
+    totalEarningsCents: number;
+    monthlyEarningsCents: number;
+
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface PlayerGame {
+    gameId: number;
+    gameName: string;
+    gameIcon: string;
+    rank: string;
+    rankIcon?: string;
+    certificate?: string;
+}
+
+export interface TimeSlot {
+    dayOfWeek: number;        // 0-6 (周日-周六)
+    startTime: string;        // "09:00"
+    endTime: string;          // "22:00"
+}
+
+export interface PlayerApplyRequest {
+    realName: string;
+    idCard: string;
+    games: GameApplication[];
+    displayName?: string;
+    bio?: string;
+    voiceIntro?: string;
+    gallery?: string[];
+}
+
+export interface GameApplication {
+    gameId: number;
+    rank: string;
+    certificate?: string;
+}
+
+export interface ApplicationStatus {
+    status: VerificationStatus;
+    appliedAt: string;
+    reviewedAt?: string;
+    rejectionReason?: string;
+    canReapply: boolean;
+    reapplyAfter?: string;
+}
+
+export interface PlayerEarnings {
+    totalEarningsCents: number;
+    monthlyEarningsCents: number;
+    weeklyEarningsCents: number;
+    todayEarningsCents: number;
+
+    wallet: {
+        balanceCents: number;
+        frozenCents: number;
+        pendingWithdrawCents: number;
+    };
+
+    completedOrders: number;
+    averageOrderCents: number;
+}
+
+export interface EarningsRecord {
+    id: number;
+    orderId: number;
+    orderNo: string;
+    orderAmountCents: number;
+    commissionCents: number;
+    earningsCents: number;
+    status: EarningsStatus;
+    settledAt?: string;
+    createdAt: string;
+}
+
+export interface CommissionResult {
+    orderAmountCents: number;
+    baseRate: number;
+    rankingDiscount: number;
+    effectiveRate: number;
+    commissionCents: number;
+    playerEarningsCents: number;
+}
+
+export interface PlayerFilters {
+    gameId?: number;
+    minPrice?: number;
+    maxPrice?: number;
+    onlineOnly: boolean;
+    sortBy: 'rating' | 'price' | 'orders';
 }
 
 // Raw API response structure
@@ -36,24 +194,14 @@ export interface PlayerResponse {
     total: number;
 }
 
-export interface PlayerFilters {
-    gameId?: number;
-    minPrice?: number;
-    maxPrice?: number;
-    onlineOnly: boolean;
-    sortBy: 'rating' | 'price' | 'orders';
-}
+// ============ State & Actions ============
 
 export interface PlayerState {
-    // Data
+    // 用户端数据
     players: Player[];
     featuredPlayers: Player[];
     currentPlayer: Player | null;
-
-    // Filters
     filters: PlayerFilters;
-
-    // Pagination
     pagination: {
         page: number;
         pageSize: number;
@@ -61,26 +209,47 @@ export interface PlayerState {
         total: number;
     };
 
-    // Status
+    // 陪玩师端数据
+    myProfile: PlayerProfile | null;
+    applicationStatus: ApplicationStatus | null;
+    earnings: PlayerEarnings | null;
+    earningsRecords: EarningsRecord[];
+
+    // 状态
     loading: boolean;
     error: string | null;
 }
 
 export interface PlayerActions {
+    // 用户端 Actions
     fetchPlayers: (refresh?: boolean) => Promise<void>;
     fetchPlayerById: (id: number) => Promise<void>;
     fetchFeaturedPlayers: () => Promise<void>;
     setFilters: (filters: Partial<PlayerFilters>) => void;
     resetFilters: () => void;
     setPage: (page: number) => void;
+
+    // 陪玩师申请 Actions
+    applyToBePlayer: (data: PlayerApplyRequest) => Promise<void>;
+    fetchApplicationStatus: () => Promise<void>;
+    reapply: (data: PlayerApplyRequest) => Promise<void>;
+
+    // 陪玩师资料 Actions
+    fetchMyProfile: () => Promise<void>;
+    updateProfile: (data: Partial<PlayerProfile>) => Promise<void>;
+    updateOnlineStatus: (status: OnlineStatus) => Promise<void>;
+    sendHeartbeat: () => Promise<void>;
+
+    // 收益 Actions
+    fetchEarnings: () => Promise<void>;
+    fetchEarningsRecords: (page?: number) => Promise<void>;
+    calculateCommission: (orderAmountCents: number) => CommissionResult;
 }
 
 const INITIAL_FILTERS: PlayerFilters = {
     onlineOnly: false,
     sortBy: 'rating',
 };
-
-import { subscribeWithSelector } from 'zustand/middleware';
 
 // Debounce helper
 function debounce<T extends (...args: any[]) => void>(func: T, wait: number): T {
@@ -90,6 +259,8 @@ function debounce<T extends (...args: any[]) => void>(func: T, wait: number): T 
         timeout = setTimeout(() => func.apply(this, args), wait);
     } as T;
 }
+
+// ============ Store ============
 
 export const usePlayerStore = create<PlayerState & PlayerActions>()(
     subscribeWithSelector((set, get) => ({
@@ -104,10 +275,15 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
             hasMore: true,
             total: 0,
         },
+        myProfile: null,
+        applicationStatus: null,
+        earnings: null,
+        earningsRecords: [],
         loading: false,
         error: null,
 
-        // Actions
+        // ========== 用户端 Actions ==========
+
         fetchPlayers: async (refresh = false) => {
             set({ loading: true, error: null });
             const { filters, pagination, players } = get();
@@ -120,9 +296,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
                     ...filters,
                 };
 
-                // Use generics for strict typing
                 const data = await http.get<PlayerResponse>('/public/players', { params });
-
                 const rawPlayers = data.players || [];
                 const total = data.total || 0;
 
@@ -153,7 +327,6 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
                 });
             } catch (err) {
                 const errorMessage = err instanceof Error ? err.message : 'Failed to fetch players';
-                console.error("Fetch players failed", err);
                 set({ loading: false, error: errorMessage });
             }
         },
@@ -177,16 +350,13 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
             }
         },
 
-        // Debounced Filter Update
         setFilters: (newFilters) => {
-            // 1. Update state immediately for UI responsiveness (optimistic)
             set((state) => ({
                 filters: { ...state.filters, ...newFilters },
                 pagination: { ...state.pagination, page: 1 },
-                players: [] // Clear for visual feedback or keep for smooth transition? Clearing usually better for filter change
+                players: []
             }));
 
-            // 2. Debounce the actual fetch to prevent spamming
             const debouncedFetch = debounce(() => {
                 get().fetchPlayers(true);
             }, 500);
@@ -202,6 +372,129 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
         setPage: (page) => {
             set((state) => ({ pagination: { ...state.pagination, page } }));
             get().fetchPlayers(false);
+        },
+
+        // ========== 陪玩师申请 Actions ==========
+
+        applyToBePlayer: async (data) => {
+            set({ loading: true, error: null });
+            try {
+                await http.post('/player/apply', data);
+                await get().fetchApplicationStatus();
+                set({ loading: false });
+            } catch (err: any) {
+                set({ loading: false, error: err.message || 'Failed to submit application' });
+                throw err;
+            }
+        },
+
+        fetchApplicationStatus: async () => {
+            try {
+                const data = await http.get<ApplicationStatus>('/player/application');
+                set({ applicationStatus: data });
+            } catch (err: any) {
+                if (err.status !== 404) {
+                    console.error('Failed to fetch application status:', err);
+                }
+            }
+        },
+
+        reapply: async (data) => {
+            set({ loading: true, error: null });
+            try {
+                await http.post('/player/reapply', data);
+                await get().fetchApplicationStatus();
+                set({ loading: false });
+            } catch (err: any) {
+                set({ loading: false, error: err.message || 'Failed to reapply' });
+                throw err;
+            }
+        },
+
+        // ========== 陪玩师资料 Actions ==========
+
+        fetchMyProfile: async () => {
+            set({ loading: true, error: null });
+            try {
+                const data = await http.get<PlayerProfile>('/player/profile');
+                set({ myProfile: data, loading: false });
+            } catch (err: any) {
+                set({ loading: false, error: err.message || 'Failed to fetch profile' });
+            }
+        },
+
+        updateProfile: async (data) => {
+            set({ loading: true, error: null });
+            try {
+                const updated = await http.put<PlayerProfile>('/player/profile', data);
+                set({ myProfile: updated, loading: false });
+            } catch (err: any) {
+                set({ loading: false, error: err.message || 'Failed to update profile' });
+                throw err;
+            }
+        },
+
+        updateOnlineStatus: async (status) => {
+            try {
+                await http.put('/player/status', { onlineStatus: status });
+                set((state) => ({
+                    myProfile: state.myProfile
+                        ? { ...state.myProfile, onlineStatus: status }
+                        : null
+                }));
+            } catch (err: any) {
+                console.error('Failed to update online status:', err);
+                throw err;
+            }
+        },
+
+        sendHeartbeat: async () => {
+            try {
+                await http.post('/player/heartbeat');
+            } catch (err) {
+                console.error('Heartbeat failed:', err);
+            }
+        },
+
+        // ========== 收益 Actions ==========
+
+        fetchEarnings: async () => {
+            set({ loading: true, error: null });
+            try {
+                const data = await http.get<PlayerEarnings>('/player/earnings');
+                set({ earnings: data, loading: false });
+            } catch (err: any) {
+                set({ loading: false, error: err.message || 'Failed to fetch earnings' });
+            }
+        },
+
+        fetchEarningsRecords: async (page = 1) => {
+            try {
+                const data = await http.get<{ items: EarningsRecord[] }>('/player/earnings/records', {
+                    params: { page, pageSize: 20 }
+                });
+                set({ earningsRecords: data.items || [] });
+            } catch (err: any) {
+                console.error('Failed to fetch earnings records:', err);
+            }
+        },
+
+        calculateCommission: (orderAmountCents) => {
+            // 默认佣金率 20%，可根据排名减免
+            const baseRate = 20;
+            const rankingDiscount = 0; // 从后端获取实际值
+            const effectiveRate = baseRate - rankingDiscount;
+            const commissionCents = Math.floor(orderAmountCents * effectiveRate / 100);
+            const playerEarningsCents = orderAmountCents - commissionCents;
+
+            return {
+                orderAmountCents,
+                baseRate,
+                rankingDiscount,
+                effectiveRate,
+                commissionCents,
+                playerEarningsCents
+            };
         }
     }))
 );

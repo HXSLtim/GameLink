@@ -37,6 +37,8 @@ const ChangePasswordPage = lazy(() => import("@/pages/settings/ChangePasswordPag
 const NotificationPage = lazy(() => import("@/pages/notification/NotificationPage"));
 const CouponCenterPage = lazy(() => import("@/pages/coupon/CouponCenterPage")); // Added import
 const FavoritesPage = lazy(() => import("@/pages/profile/FavoritesPage")); // Added import
+const ReferralPage = lazy(() => import("@/pages/referral/ReferralPage")); // Added import
+const ActivityListPage = lazy(() => import("@/pages/activity/ActivityListPage")); // Added import
 const ForgotPasswordPage = lazy(() => import("@/pages/auth/ForgotPasswordPage"));
 const NotFoundPage = lazy(() => import("@/pages/error/NotFoundPage"));
 const TermsPage = lazy(() => import("@/pages/legal/TermsPage"));
@@ -94,6 +96,8 @@ function App() {
                   <Route path="/settings/password" element={<ChangePasswordPage />} />
                   <Route path="/notifications" element={<NotificationPage />} />
                   <Route path="/coupons" element={<CouponCenterPage />} /> {/* Added route */}
+                  <Route path="/referral" element={<ReferralPage />} /> {/* Added route */}
+                  <Route path="/activities" element={<ActivityListPage />} /> {/* Added route */}
                   <Route path="/page-structure" element={<PageShowcase />} />
                 </Route>
               </Route>

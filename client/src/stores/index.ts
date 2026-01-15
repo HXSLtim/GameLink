@@ -7,3 +7,8 @@ export * from './modules/wallet-store';
 export * from './modules/vip-store';
 export * from './modules/favorite-store';
 export * from './modules/notification-store';
+
+// Marketing & Promotion
+export * from './modules/coupon-store';
+export * from './modules/activity-store';
+export * from './modules/referral-store';

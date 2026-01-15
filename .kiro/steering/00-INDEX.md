@@ -54,7 +54,17 @@
 |------|------|
 | [08-order-flow-client-guide.md](../../.kiro/steering/08-order-flow-client-guide.md) | **订单状态流转与业务流程**（前端必读） |
 
-### 客户端文档 (client/)
+### 客户端业务流程文档 (client/) ⭐ 前端必读
+
+| 文件 | 说明 |
+|------|------|
+| [client/09-auth-flow-guide.md](../../.kiro/steering/client/09-auth-flow-guide.md) | **用户认证流程** - 登录/注册/Token管理 |
+| [client/10-player-flow-guide.md](../../.kiro/steering/client/10-player-flow-guide.md) | **陪玩师流程** - 申请/接单/收益/提现 |
+| [client/11-payment-wallet-guide.md](../../.kiro/steering/client/11-payment-wallet-guide.md) | **支付钱包流程** - 支付/充值/退款 |
+| [client/12-vip-marketing-guide.md](../../.kiro/steering/client/12-vip-marketing-guide.md) | **VIP营销流程** - VIP/优惠券/活动/推荐 |
+| [client/13-chat-review-dispute-guide.md](../../.kiro/steering/client/13-chat-review-dispute-guide.md) | **聊天评价争议** - WebSocket/评价/争议/通知 |
+
+### 客户端设计文档 (client/)
 
 | 文件 | 说明 |
 |------|------|
