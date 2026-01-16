@@ -21,7 +21,7 @@ export default function ChatListPage() {
         fetchConversations();
     }, [fetchConversations]);
 
-    const handleSelect = (id: string) => {
+    const handleSelect = (id: number) => {
         navigate(`/chat/${id}`);
     };
 

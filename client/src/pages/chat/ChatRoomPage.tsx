@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useChatStore, useAuthStore } from '@/stores';
+import type { ChatMessage } from '@/stores/modules/chat-store';
 import { PageContainer } from '@/components/page-container';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 
 export default function ChatRoomPage() {
     const { id } = useParams<{ id: string }>();
+    const numericId = id ? Number(id) : null;
     const navigate = useNavigate();
     const { t } = useTranslation();
     const { user } = useAuthStore();
@@ -25,14 +27,14 @@ export default function ChatRoomPage() {
 
     const [inputText, setInputText] = useState('');
 
-    const conversation = conversations.find(c => c.id === id);
-    const currentMessages = useMemo(() => id ? (messages[id] || []) : [], [id, messages]);
+    const conversation = conversations.find(c => c.id === numericId);
+    const currentMessages = useMemo(() => numericId ? (messages[numericId] || []) : [], [numericId, messages]);
 
     useEffect(() => {
-        if (id) {
-            selectConversation(id);
+        if (numericId) {
+            selectConversation(numericId);
         }
-    }, [id, selectConversation]);
+    }, [numericId, selectConversation]);
 
     // Auto-scroll to bottom logic adapted for Radix ScrollArea
     useEffect(() => {
@@ -43,12 +45,13 @@ export default function ChatRoomPage() {
             }
         };
         // Small timeout to ensure DOM is rendered
-        setTimeout(scrollToBottom, 50);
+        const timeoutId = setTimeout(scrollToBottom, 50);
+        return () => clearTimeout(timeoutId);
     }, [currentMessages]);
 
 
     const handleSend = async () => {
-        if (!inputText.trim() || !id) return;
+        if (!inputText.trim() || !numericId) return;
         await sendMessage(inputText, 'text');
         setInputText('');
     };
@@ -116,8 +119,8 @@ export default function ChatRoomPage() {
 
                 <ScrollArea className="flex-1 p-4">
                     <div className="space-y-6 px-2 pb-4 w-full pt-4">
-                        {currentMessages.map((msg) => {
-                            const isMe = msg.senderId === 0 || msg.senderId === Number(user?.id);
+                        {currentMessages.map((msg: ChatMessage) => {
+                            const isMe = msg.senderId === Number(user?.id);
                             return (
                                 <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-300`}>
                                     <div

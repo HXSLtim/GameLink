@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { useVipStore, VipLevel, VipStatus } from '../vip-store';
+import { useVipStore, VipStatus } from '../vip-store';
 
 // Mock http module
 vi.mock('@/lib/http', () => ({
@@ -25,58 +25,73 @@ const mockHttp = http as unknown as {
     delete: ReturnType<typeof vi.fn>;
 };
 
+// Default levels matching the store's DEFAULT_LEVELS
+const DEFAULT_LEVELS = [
+    {
+        id: 0,
+        slug: 'none',
+        title: '普通用户',
+        expRequired: 0,
+        orderDiscount: 1.0,
+        monthlyCouponCount: 0,
+        iconUrl: '',
+        color: '#9CA3AF',
+        benefits: {},
+        sortOrder: 0,
+        isDefault: true,
+        isActive: true
+    },
+    {
+        id: 1,
+        slug: 'bronze',
+        title: '青铜 VIP',
+        expRequired: 50000,
+        orderDiscount: 0.98,
+        monthlyCouponCount: 1,
+        iconUrl: '',
+        color: '#CD7F32',
+        benefits: {},
+        sortOrder: 1,
+        isDefault: false,
+        isActive: true
+    },
+    {
+        id: 2,
+        slug: 'silver',
+        title: '白银 VIP',
+        expRequired: 200000,
+        orderDiscount: 0.95,
+        monthlyCouponCount: 2,
+        iconUrl: '',
+        color: '#C0C0C0',
+        benefits: {},
+        sortOrder: 2,
+        isDefault: false,
+        isActive: true
+    },
+    {
+        id: 3,
+        slug: 'gold',
+        title: '黄金 VIP',
+        expRequired: 500000,
+        orderDiscount: 0.92,
+        monthlyCouponCount: 3,
+        iconUrl: '',
+        color: '#FFD700',
+        benefits: {},
+        sortOrder: 3,
+        isDefault: false,
+        isActive: true
+    },
+];
+
 describe('VIP Store', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         // Reset store state
         useVipStore.setState({
             userVip: null,
-            levelConfigs: [
-                {
-                    level: VipLevel.NONE,
-                    name: '普通用户',
-                    icon: '👤',
-                    color: '#9CA3AF',
-                    thresholdCents: 0,
-                    discountRate: 1,
-                    monthlyFreeCoupons: 0,
-                    prioritySupport: false,
-                    exclusiveActivities: false,
-                },
-                {
-                    level: VipLevel.BRONZE,
-                    name: '青铜 VIP',
-                    icon: '🥉',
-                    color: '#CD7F32',
-                    thresholdCents: 50000,
-                    discountRate: 0.98,
-                    monthlyFreeCoupons: 1,
-                    prioritySupport: false,
-                    exclusiveActivities: false,
-                },
-                {
-                    level: VipLevel.SILVER,
-                    name: '白银 VIP',
-                    icon: '🥈',
-                    color: '#C0C0C0',
-                    thresholdCents: 200000,
-                    discountRate: 0.95,
-                    monthlyFreeCoupons: 2,
-                    prioritySupport: false,
-                    exclusiveActivities: false,
-                },
-                {
-                    level: VipLevel.GOLD,
-                    name: '黄金 VIP',
-                    icon: '🥇',
-                    color: '#FFD700',
-                    thresholdCents: 500000,
-                    discountRate: 0.92,
-                    monthlyFreeCoupons: 3,
-                    prioritySupport: true,
-                    exclusiveActivities: false,
-                },
-            ],
+            levels: DEFAULT_LEVELS,
             benefits: [],
             loading: false,
             error: null,
@@ -92,7 +107,7 @@ describe('VIP Store', () => {
             const state = useVipStore.getState();
 
             expect(state.userVip).toBeNull();
-            expect(state.levelConfigs.length).toBeGreaterThan(0);
+            expect(state.levels.length).toBeGreaterThan(0);
             expect(state.benefits).toEqual([]);
             expect(state.loading).toBe(false);
             expect(state.error).toBeNull();
@@ -101,8 +116,8 @@ describe('VIP Store', () => {
         it('should have default level configs', () => {
             const state = useVipStore.getState();
 
-            expect(state.levelConfigs[0].level).toBe(VipLevel.NONE);
-            expect(state.levelConfigs[0].discountRate).toBe(1);
+            expect(state.levels[0].slug).toBe('none');
+            expect(state.levels[0].orderDiscount).toBe(1);
         });
     });
 
@@ -110,17 +125,14 @@ describe('VIP Store', () => {
         it('should fetch VIP status successfully', async () => {
             const mockVipStatus = {
                 userId: 1,
-                level: VipLevel.GOLD,
+                vipLevelId: 3,
+                vipLevel: DEFAULT_LEVELS[3],
                 status: VipStatus.ACTIVE,
-                totalSpentCents: 600000,
-                currentYearSpentCents: 300000,
-                activatedAt: '2024-01-01T00:00:00Z',
-                monthlyFreeCoupons: 3,
-                usedFreeCoupons: 1,
-                discountRate: 0.92,
-                nextLevel: VipLevel.PLATINUM,
-                nextLevelThreshold: 1000000,
-                progressPercent: 60,
+                totalRechargeCents: 600000,
+                totalSpentCents: 500000,
+                vipExp: 500000,
+                vipUnlocked: true,
+                vipUnlockedAt: '2024-01-01T00:00:00Z',
             };
 
             mockHttp.get.mockResolvedValueOnce(mockVipStatus);
@@ -129,9 +141,9 @@ describe('VIP Store', () => {
 
             const state = useVipStore.getState();
             expect(state.userVip).not.toBeNull();
-            expect(state.userVip?.level).toBe(VipLevel.GOLD);
+            expect(state.userVip?.vipLevelId).toBe(3);
             expect(state.userVip?.status).toBe(VipStatus.ACTIVE);
-            expect(state.userVip?.discountRate).toBe(0.92);
+            expect(state.userVip?.vipUnlocked).toBe(true);
             expect(state.loading).toBe(false);
         });
 
@@ -151,44 +163,47 @@ describe('VIP Store', () => {
             await useVipStore.getState().fetchVipStatus();
 
             const state = useVipStore.getState();
-            expect(state.userVip?.level).toBe(VipLevel.NONE);
             expect(state.userVip?.status).toBe(VipStatus.ACTIVE);
-            expect(state.userVip?.discountRate).toBe(1);
+            expect(state.userVip?.vipUnlocked).toBe(false);
+            expect(state.userVip?.totalSpentCents).toBe(0);
         });
     });
 
-    describe('fetchLevelConfigs', () => {
+    describe('fetchLevels', () => {
         it('should fetch level configs from API', async () => {
             const mockConfigs = [
                 {
-                    level: VipLevel.NONE,
-                    name: 'Free User',
-                    icon: '👤',
+                    id: 0,
+                    slug: 'none',
+                    title: 'Free User',
+                    expRequired: 0,
+                    orderDiscount: 1,
+                    monthlyCouponCount: 0,
+                    iconUrl: '',
                     color: '#999',
-                    thresholdCents: 0,
-                    discountRate: 1,
-                    monthlyFreeCoupons: 0,
-                    prioritySupport: false,
-                    exclusiveActivities: false,
+                    benefits: {},
+                    sortOrder: 0,
+                    isDefault: true,
+                    isActive: true,
                 },
             ];
 
             mockHttp.get.mockResolvedValueOnce(mockConfigs);
 
-            await useVipStore.getState().fetchLevelConfigs();
+            await useVipStore.getState().fetchLevels();
 
             const state = useVipStore.getState();
-            expect(state.levelConfigs[0].name).toBe('Free User');
+            expect(state.levels[0].title).toBe('Free User');
         });
 
         it('should keep default configs on API error', async () => {
             mockHttp.get.mockRejectedValueOnce(new Error('API error'));
 
-            await useVipStore.getState().fetchLevelConfigs();
+            await useVipStore.getState().fetchLevels();
 
             const state = useVipStore.getState();
-            expect(state.levelConfigs.length).toBeGreaterThan(0);
-            expect(state.levelConfigs[0].name).toBe('普通用户');
+            expect(state.levels.length).toBeGreaterThan(0);
+            expect(state.levels[0].title).toBe('普通用户');
         });
     });
 
@@ -197,8 +212,8 @@ describe('VIP Store', () => {
             mockHttp.post.mockResolvedValueOnce({});
             mockHttp.get.mockResolvedValueOnce({
                 userId: 1,
-                level: VipLevel.GOLD,
-                usedFreeCoupons: 2,
+                vipLevelId: 3,
+                vipUnlocked: true,
             });
 
             await useVipStore.getState().claimMonthlyCoupon();
@@ -221,80 +236,90 @@ describe('VIP Store', () => {
         it('should return no discount for non-VIP users', () => {
             const result = useVipStore.getState().calculateVipDiscount(10000);
 
-            expect(result.originalPrice).toBe(10000);
+            expect(result.originalPriceCents).toBe(10000);
             expect(result.discountRate).toBe(1);
-            expect(result.discountAmount).toBe(0);
-            expect(result.finalPrice).toBe(10000);
+            expect(result.discountAmountCents).toBe(0);
+            expect(result.finalPriceCents).toBe(10000);
         });
 
         it('should calculate discount for VIP users', () => {
             useVipStore.setState({
                 userVip: {
                     userId: 1,
-                    level: VipLevel.GOLD,
+                    vipLevelId: 3,
+                    vipLevel: {
+                        id: 3,
+                        slug: 'gold',
+                        title: '黄金 VIP',
+                        expRequired: 500000,
+                        orderDiscount: 0.92,
+                        monthlyCouponCount: 3,
+                        iconUrl: '',
+                        color: '#FFD700',
+                        benefits: {},
+                        sortOrder: 3,
+                        isDefault: false,
+                        isActive: true,
+                    },
                     status: VipStatus.ACTIVE,
-                    totalSpentCents: 600000,
-                    currentYearSpentCents: 300000,
-                    monthlyFreeCoupons: 3,
-                    usedFreeCoupons: 0,
-                    discountRate: 0.92,
+                    totalRechargeCents: 600000,
+                    totalSpentCents: 500000,
+                    vipExp: 500000,
+                    vipUnlocked: true,
                     progressPercent: 60,
                 },
             });
 
             const result = useVipStore.getState().calculateVipDiscount(10000);
 
-            expect(result.originalPrice).toBe(10000);
+            expect(result.originalPriceCents).toBe(10000);
             expect(result.discountRate).toBe(0.92);
-            // Note: Due to floating point precision (1 - 0.92 = 0.07999999999999996)
-            // Math.floor(10000 * 0.07999999999999996) = 799
-            expect(result.discountAmount).toBe(799);
-            expect(result.finalPrice).toBe(9201);
+            // 10000 * (1 - 0.92) = 800, but due to floating point: Math.floor(10000 * 0.07999...) = 799
+            expect(result.discountAmountCents).toBe(799);
+            expect(result.finalPriceCents).toBe(9201);
         });
 
-        it('should handle NONE level VIP', () => {
+        it('should handle non-unlocked VIP', () => {
             useVipStore.setState({
                 userVip: {
                     userId: 1,
-                    level: VipLevel.NONE,
+                    vipLevelId: 0,
                     status: VipStatus.ACTIVE,
+                    totalRechargeCents: 0,
                     totalSpentCents: 0,
-                    currentYearSpentCents: 0,
-                    monthlyFreeCoupons: 0,
-                    usedFreeCoupons: 0,
-                    discountRate: 1,
+                    vipExp: 0,
+                    vipUnlocked: false,
                     progressPercent: 0,
                 },
             });
 
             const result = useVipStore.getState().calculateVipDiscount(10000);
 
-            expect(result.discountAmount).toBe(0);
-            expect(result.finalPrice).toBe(10000);
+            expect(result.discountAmountCents).toBe(0);
+            expect(result.finalPriceCents).toBe(10000);
         });
     });
 
-    describe('getLevelName', () => {
-        it('should return correct level name', () => {
-            expect(useVipStore.getState().getLevelName(VipLevel.NONE)).toBe('普通用户');
-            expect(useVipStore.getState().getLevelName(VipLevel.BRONZE)).toBe('青铜 VIP');
-            expect(useVipStore.getState().getLevelName(VipLevel.GOLD)).toBe('黄金 VIP');
+    describe('getLevelBySlug', () => {
+        it('should return correct level by slug', () => {
+            expect(useVipStore.getState().getLevelBySlug('none')?.title).toBe('普通用户');
+            expect(useVipStore.getState().getLevelBySlug('bronze')?.title).toBe('青铜 VIP');
+            expect(useVipStore.getState().getLevelBySlug('gold')?.title).toBe('黄金 VIP');
         });
 
-        it('should return default name for unknown level', () => {
-            expect(useVipStore.getState().getLevelName(99 as VipLevel)).toBe('普通用户');
+        it('should return undefined for unknown slug', () => {
+            expect(useVipStore.getState().getLevelBySlug('unknown')).toBeUndefined();
         });
     });
 
-    describe('getLevelColor', () => {
-        it('should return correct level color', () => {
-            expect(useVipStore.getState().getLevelColor(VipLevel.NONE)).toBe('#9CA3AF');
-            expect(useVipStore.getState().getLevelColor(VipLevel.BRONZE)).toBe('#CD7F32');
-            expect(useVipStore.getState().getLevelColor(VipLevel.GOLD)).toBe('#FFD700');
+    describe('getLevelByTitle', () => {
+        it('should return correct level by title', () => {
+            expect(useVipStore.getState().getLevelByTitle('普通用户')?.slug).toBe('none');
+            expect(useVipStore.getState().getLevelByTitle('青铜 VIP')?.slug).toBe('bronze');
         });
 
-        it('should return default color for unknown level', () => {
-            expect(useVipStore.getState().getLevelColor(99 as VipLevel)).toBe('#9CA3AF');
+        it('should return undefined for unknown title', () => {
+            expect(useVipStore.getState().getLevelByTitle('Unknown Level')).toBeUndefined();
         });
     });
 });

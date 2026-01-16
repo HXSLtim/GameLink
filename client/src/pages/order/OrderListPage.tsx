@@ -27,7 +27,7 @@ export default function OrderListPage() {
             [OrderStatus.CONFIRMED]: { labelKey: 'order.status.confirmed', color: 'bg-blue-500/10 text-blue-500 border-blue-500/20', icon: CheckCircle },
             [OrderStatus.IN_PROGRESS]: { labelKey: 'order.status.in_progress', color: 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20', icon: Gamepad2 },
             [OrderStatus.COMPLETED]: { labelKey: 'order.status.completed', color: 'bg-green-500/10 text-green-500 border-green-500/20', icon: CheckCircle },
-            [OrderStatus.CANCELED]: { labelKey: 'order.status.canceled', color: 'bg-red-500/10 text-red-500 border-red-500/20', icon: XCircle },
+            [OrderStatus.CANCELLED]: { labelKey: 'order.status.canceled', color: 'bg-red-500/10 text-red-500 border-red-500/20', icon: XCircle },
             [OrderStatus.REFUNDED]: { labelKey: 'order.status.refunded', color: 'bg-gray-500/10 text-gray-500 border-gray-500/20', icon: AlertCircle },
             [OrderStatus.DISPUTED]: { labelKey: 'order.status.disputed', color: 'bg-orange-500/10 text-orange-500 border-orange-500/20', icon: AlertCircle },
         };
@@ -39,7 +39,7 @@ export default function OrderListPage() {
         : myOrders.filter(order => {
             if (activeTab === 'active') return ([OrderStatus.PENDING, OrderStatus.CONFIRMED, OrderStatus.IN_PROGRESS, OrderStatus.DISPUTED] as OrderStatus[]).includes(order.status);
             if (activeTab === 'completed') return order.status === OrderStatus.COMPLETED;
-            if (activeTab === 'cancelled') return ([OrderStatus.CANCELED, OrderStatus.REFUNDED] as OrderStatus[]).includes(order.status);
+            if (activeTab === 'cancelled') return ([OrderStatus.CANCELLED, OrderStatus.REFUNDED] as OrderStatus[]).includes(order.status);
             return true;
         });
 

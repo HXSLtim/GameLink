@@ -99,7 +99,7 @@ export default function HomePage() {
                         <div className="flex gap-2">
                             <Button variant="ghost" size="icon" className="relative group" onClick={() => navigate('/notifications')}>
                                 <Bell className="h-5 w-5 group-hover:text-primary transition-colors" />
-                                <span className="absolute top-2.5 right-2 a h-2 w-2 bg-red-500 rounded-full animate-pulse ring-2 ring-background" />
+                                <span className="absolute top-2.5 right-2 h-2 w-2 bg-red-500 rounded-full animate-pulse ring-2 ring-background" />
                             </Button>
                             <Button variant="ghost" size="sm" onClick={() => navigate('/players')} className="group">
                                 {t('nav.view_all')} <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />

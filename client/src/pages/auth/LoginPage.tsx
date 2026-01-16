@@ -11,16 +11,11 @@ import { Loader2, Gamepad2, Ghost, Rocket, Mail, Smartphone } from "lucide-react
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { ModeToggle } from '@/components/mode-toggle';
 
-// Storage key for remembered credentials
-const REMEMBER_CREDENTIALS_KEY = 'gamelink_remembered_credentials';
+// Storage key for remembered username only (NEVER store passwords)
+const REMEMBER_USERNAME_KEY = 'gamelink_remembered_username';
 
 interface LocationState {
     from?: { pathname: string };
-}
-
-interface SavedCredentials {
-    username: string;
-    password: string;
 }
 
 export default function LoginPage() {
@@ -30,27 +25,23 @@ export default function LoginPage() {
     const { t } = useTranslation();
 
     const [isRegister, setIsRegister] = useState(false);
-    const [ValidationErr, setValidationErr] = useState<string | null>(null);
+    const [validationErr, setValidationErr] = useState<string | null>(null);
 
-    // Load remembered credentials
-    const getSavedCredentials = (): SavedCredentials | null => {
-        const saved = localStorage.getItem(REMEMBER_CREDENTIALS_KEY);
-        if (saved) {
-            try {
-                return JSON.parse(saved) as SavedCredentials;
-            } catch {
-                return null;
-            }
+    // Load remembered username only (NEVER store passwords)
+    const getSavedUsername = (): string | null => {
+        try {
+            return localStorage.getItem(REMEMBER_USERNAME_KEY);
+        } catch {
+            return null;
         }
-        return null;
     };
 
-    const savedCreds = getSavedCredentials();
+    const savedUsername = getSavedUsername();
 
     // Login fields
-    const [username, setUsername] = useState(savedCreds?.username || '');
-    const [password, setPassword] = useState(savedCreds?.password || '');
-    const [rememberMe, setRememberMe] = useState(!!savedCreds);
+    const [username, setUsername] = useState(savedUsername || '');
+    const [password, setPassword] = useState('');
+    const [rememberMe, setRememberMe] = useState(!!savedUsername);
 
     // Register additional fields
     const [regMethod, setRegMethod] = useState<'email' | 'phone'>('email');
@@ -91,11 +82,15 @@ export default function LoginPage() {
             } else {
                 await login({ username, password });
 
-                // Save or clear remembered credentials based on checkbox
-                if (rememberMe) {
-                    localStorage.setItem(REMEMBER_CREDENTIALS_KEY, JSON.stringify({ username, password }));
-                } else {
-                    localStorage.removeItem(REMEMBER_CREDENTIALS_KEY);
+                // Save or clear remembered username only (NEVER store passwords)
+                try {
+                    if (rememberMe) {
+                        localStorage.setItem(REMEMBER_USERNAME_KEY, username);
+                    } else {
+                        localStorage.removeItem(REMEMBER_USERNAME_KEY);
+                    }
+                } catch {
+                    // Ignore localStorage errors (quota exceeded, disabled, etc.)
                 }
             }
             navigate(from, { replace: true });
@@ -109,7 +104,7 @@ export default function LoginPage() {
         setValidationErr(null);
     };
 
-    const error = ValidationErr || storeError;
+    const error = validationErr || storeError;
 
     return (
         <div className="w-full h-screen min-h-[600px] lg:grid lg:grid-cols-2 relative transition-colors duration-300">

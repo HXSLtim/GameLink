@@ -55,7 +55,7 @@ export type ChatMemberRole = typeof ChatMemberRole[keyof typeof ChatMemberRole];
 // ============ Interfaces (Match backend models) ============
 
 export interface ChatMessage {
-    id: number;
+    id: number | string;          // Allow string for temporary messages (temp-xxx)
     groupId: number;              // 匹配后端 GroupID
     senderId: number;             // 匹配后端 SenderID
     content: string;
@@ -67,6 +67,7 @@ export interface ChatMessage {
     auditStatus?: ChatMessageAuditStatus; // 匹配后端 AuditStatus
     createdAt: string;
     updatedAt?: string;
+    isTemporary?: boolean;       // Flag to identify temporary messages
 }
 
 export interface ChatGroup {
@@ -204,16 +205,17 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
         const { currentConversationId } = get();
         if (!currentConversationId) return;
 
-        // Optimistic update
+        // Create temporary message with string ID and isTemporary flag
         const tempId = `temp-${Date.now()}`;
         const newMessage: ChatMessage = {
-            id: tempId as unknown as number,
+            id: tempId,
             groupId: currentConversationId,
             senderId: 0, // Will be replaced by server response
             content,
             messageType: type,
             createdAt: new Date().toISOString(),
-            isDeleted: false
+            isDeleted: false,
+            isTemporary: true
         };
 
         set(state => ({
@@ -229,12 +231,12 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
                 { content, messageType: type }
             );
 
-            // Replace temp message with real one
+            // Replace temp message with real one using isTemporary flag for safer matching
             set(state => ({
                 messages: {
                     ...state.messages,
                     [currentConversationId]: state.messages[currentConversationId]?.map(m =>
-                        m.id === tempId ? response : m
+                        (m.id === tempId || m.isTemporary) && m.content === content ? { ...response, isTemporary: false } : m
                     ) || []
                 }
             }));

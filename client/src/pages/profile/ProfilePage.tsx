@@ -20,15 +20,15 @@ export default function ProfilePage() {
     const navigate = useNavigate();
     const { user, logout, role } = useAuthStore();
     const { fetchWallet, getBalance } = useWalletStore();
-    const { userVip, levelConfigs, fetchVipStatus } = useVipStore();
+    const { userVip, levels, fetchVipStatus } = useVipStore();
     const { fetchOrderStats } = useOrderStore();
     const { theme, setTheme } = useThemeStore();
 
     const balance = getBalance() / 100; // Convert cents to yuan
     const currency = '¥';
-    const vipUnlocked = userVip && userVip.level > 0;
-    const vipExpireAt = userVip?.expiresAt;
-    const currentLevelConfig = levelConfigs.find(c => c.level === userVip?.level);
+    const vipUnlocked = userVip?.vipUnlocked ?? false;
+    const vipExpireAt = userVip?.vipExpireAt;
+    const currentLevelConfig = levels.find(c => c.id === userVip?.vipLevelId);
 
     const [orderStats, setOrderStats] = useState<{ monthlyCount: number, monthlyChange: number } | null>(null);
 
@@ -130,7 +130,7 @@ export default function ProfilePage() {
                         </CardHeader>
                         <CardContent className="pb-6">
                             <div className="text-3xl font-bold text-yellow-700 dark:text-yellow-500">
-                                {vipUnlocked ? (currentLevelConfig?.name || `${t('profile.vip.level_prefix')} ${userVip?.level}`) : t('profile.vip.free')}
+                                {vipUnlocked ? (currentLevelConfig?.title || `${t('profile.vip.level_prefix')} ${userVip?.vipLevelId}`) : t('profile.vip.free')}
                             </div>
                             <div className="text-sm text-muted-foreground mt-2 font-medium">
                                 {vipUnlocked && vipExpireAt

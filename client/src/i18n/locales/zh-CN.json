@@ -153,7 +153,7 @@
             "passwordRequired": "请输入密码",
             "wrongPassword": "密码错误"
         },
-        "create": {
+        "createForm": {
             "title": "创建房间",
             "description": "设置一个新的游戏房间",
             "name": "房间名称",

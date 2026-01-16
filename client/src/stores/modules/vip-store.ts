@@ -261,7 +261,7 @@ export const useVipStore = create<VipState & VipActions>()(
             },
 
             calculateVipDiscount: (priceCents) => {
-                const { userVip, levels } = get();
+                const { userVip } = get();
 
                 if (!userVip?.vipLevel || !userVip.vipUnlocked) {
                     return {

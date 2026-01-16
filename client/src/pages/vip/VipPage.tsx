@@ -13,11 +13,11 @@ import { useNavigate } from 'react-router-dom';
 export default function VipPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { userVip, levelConfigs, fetchVipStatus, claimMonthlyCoupon } = useVipStore();
+    const { userVip, levels, fetchVipStatus, claimMonthlyCoupon } = useVipStore();
 
-    const vipUnlocked = userVip && userVip.level > 0;
-    const vipExpireAt = userVip?.expiresAt;
-    const currentLevelConfig = levelConfigs.find(c => c.level === userVip?.level);
+    const vipUnlocked = userVip?.vipUnlocked ?? false;
+    const vipExpireAt = userVip?.vipExpireAt;
+    const currentLevelConfig = levels.find(c => c.id === userVip?.vipLevelId);
 
     useEffect(() => {
         fetchVipStatus();
@@ -77,7 +77,7 @@ export default function VipPage() {
                                     <Gem className="h-6 w-6 text-yellow-600" />
                                 </div>
                                 <div>
-                                    <div className="font-bold text-lg text-yellow-700 dark:text-yellow-500">Current Plan: {currentLevelConfig?.name || 'VIP'}</div>
+                                    <div className="font-bold text-lg text-yellow-700 dark:text-yellow-500">Current Plan: {currentLevelConfig?.title || 'VIP'}</div>
                                     <div className="text-sm text-muted-foreground">Expires on {vipExpireAt ? format(new Date(vipExpireAt), 'PPP') : 'Never'}</div>
                                 </div>
                             </div>

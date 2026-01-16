@@ -4,6 +4,17 @@
  * This module provides consistent error handling patterns across all Zustand stores.
  */
 
+import axios, { AxiosError } from 'axios';
+
+// ============ Type Guards ============
+
+/**
+ * Type guard to check if error is an AxiosError
+ */
+export function isAxiosError<T = unknown>(err: unknown): err is AxiosError<T> {
+    return axios.isAxiosError(err);
+}
+
 // ============ Error Types ============
 
 export interface AppError {
@@ -25,19 +36,34 @@ export interface ApiErrorResponse {
 
 /**
  * Extracts a user-friendly error message from any error type.
- * Handles Error objects, API error responses, and unknown error types.
+ * Handles Error objects, AxiosError, API error responses, and unknown error types.
  *
  * @param err - The error to extract message from
  * @param fallback - Fallback message if extraction fails
  * @returns A user-friendly error message
  */
 export function getErrorMessage(err: unknown, fallback = 'An unexpected error occurred'): string {
+    // Handle AxiosError specifically
+    if (isAxiosError<ApiErrorResponse>(err)) {
+        const responseData = err.response?.data;
+        if (responseData?.message && typeof responseData.message === 'string') {
+            return responseData.message;
+        }
+        if (responseData?.error && typeof responseData.error === 'string') {
+            return responseData.error;
+        }
+        // Fall back to axios error message
+        if (err.message) {
+            return err.message;
+        }
+    }
+
     // Standard Error object
     if (err instanceof Error) {
         return err.message || fallback;
     }
 
-    // API error response object
+    // API error response object (non-axios)
     if (err && typeof err === 'object') {
         const apiError = err as ApiErrorResponse;
 

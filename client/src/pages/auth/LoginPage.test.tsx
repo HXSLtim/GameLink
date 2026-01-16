@@ -4,8 +4,8 @@ import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
 import LoginPage from './LoginPage';
 
-// Storage key constant (same as in login-page.tsx)
-const REMEMBER_CREDENTIALS_KEY = 'gamelink_remembered_credentials';
+// Storage key constant (same as in login-page.tsx) - only username is saved for security
+const REMEMBER_USERNAME_KEY = 'gamelink_remembered_username';
 
 // Mock stores
 vi.mock('@/stores', () => ({
@@ -54,10 +54,9 @@ describe('LoginPage', () => {
         localStorage.clear();
     });
 
-    describe('Remember Me - Load Saved Credentials', () => {
-        it('should load saved credentials from localStorage on mount', () => {
-            const savedCredentials = { username: 'saveduser', password: 'savedpass' };
-            localStorage.setItem(REMEMBER_CREDENTIALS_KEY, JSON.stringify(savedCredentials));
+    describe('Remember Me - Load Saved Username', () => {
+        it('should load saved username from localStorage on mount', () => {
+            localStorage.setItem(REMEMBER_USERNAME_KEY, 'saveduser');
 
             renderLoginPage();
 
@@ -65,16 +64,17 @@ describe('LoginPage', () => {
             const passwordInput = screen.getByPlaceholderText('••••••••') as HTMLInputElement;
 
             expect(usernameInput.value).toBe('saveduser');
-            expect(passwordInput.value).toBe('savedpass');
+            // Password should be empty (not saved for security)
+            expect(passwordInput.value).toBe('');
         });
 
-        it('should not crash if localStorage has invalid JSON', () => {
-            localStorage.setItem(REMEMBER_CREDENTIALS_KEY, 'invalid-json');
+        it('should not crash if localStorage has invalid data', () => {
+            localStorage.setItem(REMEMBER_USERNAME_KEY, '');
 
             expect(() => renderLoginPage()).not.toThrow();
         });
 
-        it('should show empty fields if no saved credentials', () => {
+        it('should show empty fields if no saved username', () => {
             renderLoginPage();
 
             const usernameInput = screen.getByPlaceholderText('auth.username') as HTMLInputElement;
@@ -85,8 +85,8 @@ describe('LoginPage', () => {
         });
     });
 
-    describe('Remember Me - Save Credentials', () => {
-        it('should save credentials to localStorage when remember me is checked', async () => {
+    describe('Remember Me - Save Username', () => {
+        it('should save username to localStorage when remember me is checked', async () => {
             const mockLogin = vi.fn().mockResolvedValue(undefined);
             vi.mocked(useAuthStore).mockReturnValue({
                 login: mockLogin,
@@ -105,7 +105,7 @@ describe('LoginPage', () => {
             await userEvent.type(usernameInput, 'testuser');
             await userEvent.type(passwordInput, 'testpass');
 
-            // Check remember me (default is false when no saved credentials)
+            // Check remember me (default is false when no saved username)
             await userEvent.click(rememberCheckbox);
             expect(rememberCheckbox).toBeChecked();
 
@@ -118,19 +118,16 @@ describe('LoginPage', () => {
                 });
             });
 
-            // Check localStorage was updated
+            // Check localStorage was updated with username only (not password)
             await waitFor(() => {
-                const saved = localStorage.getItem(REMEMBER_CREDENTIALS_KEY);
-                expect(saved).not.toBeNull();
-                const parsed = JSON.parse(saved!);
-                expect(parsed.username).toBe('testuser');
-                expect(parsed.password).toBe('testpass');
+                const saved = localStorage.getItem(REMEMBER_USERNAME_KEY);
+                expect(saved).toBe('testuser');
             });
         });
 
-        it('should remove credentials from localStorage when remember me is unchecked', async () => {
-            // Pre-save some credentials
-            localStorage.setItem(REMEMBER_CREDENTIALS_KEY, JSON.stringify({ username: 'old', password: 'old' }));
+        it('should remove username from localStorage when remember me is unchecked', async () => {
+            // Pre-save a username
+            localStorage.setItem(REMEMBER_USERNAME_KEY, 'olduser');
 
             const mockLogin = vi.fn().mockResolvedValue(undefined);
             vi.mocked(useAuthStore).mockReturnValue({
@@ -153,6 +150,7 @@ describe('LoginPage', () => {
             await userEvent.type(usernameInput, 'newuser');
             await userEvent.type(passwordInput, 'newpass');
 
+            // Checkbox should be checked by default since we had saved username
             // Uncheck remember me
             fireEvent.click(rememberCheckbox);
             expect(rememberCheckbox).not.toBeChecked();
@@ -165,7 +163,7 @@ describe('LoginPage', () => {
 
             // Check localStorage was cleared
             await waitFor(() => {
-                expect(localStorage.getItem(REMEMBER_CREDENTIALS_KEY)).toBeNull();
+                expect(localStorage.getItem(REMEMBER_USERNAME_KEY)).toBeNull();
             });
         });
     });

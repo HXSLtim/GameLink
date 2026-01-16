@@ -1,4 +1,38 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+// Mock TRTC SDK before importing voice-store
+const mockLocalStream = {
+    initialize: vi.fn().mockResolvedValue(undefined),
+    close: vi.fn(),
+    muteAudio: vi.fn(),
+    unmuteAudio: vi.fn(),
+    switchDevice: vi.fn().mockResolvedValue(undefined),
+    play: vi.fn(),
+};
+
+const mockClient = {
+    on: vi.fn(),
+    join: vi.fn().mockResolvedValue(undefined),
+    leave: vi.fn().mockResolvedValue(undefined),
+    publish: vi.fn().mockResolvedValue(undefined),
+    subscribe: vi.fn().mockResolvedValue(undefined),
+};
+
+vi.mock('trtc-js-sdk', () => ({
+    default: {
+        createClient: vi.fn(() => mockClient),
+        createStream: vi.fn(() => mockLocalStream),
+    },
+}));
+
+// Mock http module
+vi.mock('@/lib/http', () => ({
+    http: {
+        get: vi.fn(),
+        post: vi.fn(),
+    },
+}));
+
 import {
     useVoiceStore,
     type VoiceToken,
@@ -9,14 +43,6 @@ import {
     selectVoiceMembers,
     selectVoiceStatus,
 } from '../voice-store';
-
-// Mock http module
-vi.mock('@/lib/http', () => ({
-    http: {
-        get: vi.fn(),
-        post: vi.fn(),
-    },
-}));
 
 // Mock navigator.mediaDevices
 const mockEnumerateDevices = vi.fn();

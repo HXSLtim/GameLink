@@ -1,6 +1,12 @@
 import { create } from 'zustand';
 import { http } from '@/lib/http';
 import { getErrorMessage, logError } from '@/lib/error';
+import type { wsService as WsServiceType } from '@/lib/websocket';
+
+// Store WebSocket handler references for proper cleanup
+let orderStatusHandler: ((payload: unknown) => void) | null = null;
+let orderCreatedHandler: ((payload: unknown) => void) | null = null;
+let wsServiceInstance: typeof WsServiceType | null = null;
 
 export const OrderStatus = {
     PENDING: 'pending',
@@ -141,8 +147,8 @@ export const useOrderStore = create<OrderState & OrderActions>((set) => ({
             await http.post(`/orders/${id}/cancel`);
             // Optimistic update
             set((state) => ({
-                myOrders: state.myOrders.map(o => o.id === id ? { ...o, status: OrderStatus.CANCELED } : o),
-                currentOrder: state.currentOrder?.id === id ? { ...state.currentOrder, status: OrderStatus.CANCELED } : state.currentOrder
+                myOrders: state.myOrders.map(o => o.id === id ? { ...o, status: OrderStatus.CANCELLED } : o),
+                currentOrder: state.currentOrder?.id === id ? { ...state.currentOrder, status: OrderStatus.CANCELLED } : state.currentOrder
             }));
         } catch (err) {
             logError('cancelOrder', err);
@@ -185,21 +191,21 @@ export const useOrderStore = create<OrderState & OrderActions>((set) => ({
         }
     },
 
-    acceptOrder: async (id: string) => {
+    acceptOrder: async (id: number) => {
         await http.put(`/player/orders/${id}/accept`);
         set((state) => ({
             playerOrders: state.playerOrders.map(o => o.id === id ? { ...o, status: OrderStatus.IN_PROGRESS } : o)
         }));
     },
 
-    rejectOrder: async (id: string) => {
+    rejectOrder: async (id: number) => {
         await http.put(`/player/orders/${id}/reject`);
         set((state) => ({
-            playerOrders: state.playerOrders.map(o => o.id === id ? { ...o, status: OrderStatus.CANCELED } : o)
+            playerOrders: state.playerOrders.map(o => o.id === id ? { ...o, status: OrderStatus.CANCELLED } : o)
         }));
     },
 
-    submitDispute: async (id: string, reason: string, description: string) => {
+    submitDispute: async (id: number, reason: string, description: string) => {
         set({ loading: true, error: null });
         try {
             await http.post(`/orders/${id}/dispute`, { reason, description });
@@ -214,12 +220,22 @@ export const useOrderStore = create<OrderState & OrderActions>((set) => ({
         }
     },
 
-    // WebSocket Integration
+    // WebSocket Integration with proper cleanup
     subscribeToOrderUpdates: () => {
         import('@/lib/websocket').then(({ wsService }) => {
+            wsServiceInstance = wsService;
             wsService.connect();
 
-            wsService.on('order.status_updated', (payload: unknown) => {
+            // Remove existing handlers first to prevent duplicates
+            if (orderStatusHandler) {
+                wsService.off('order.status_updated', orderStatusHandler);
+            }
+            if (orderCreatedHandler) {
+                wsService.off('order.created', orderCreatedHandler);
+            }
+
+            // Create and store new handlers
+            orderStatusHandler = (payload: unknown) => {
                 const { orderId, status } = payload as { orderId: number, status: OrderStatus };
                 set((state) => {
                     const updatedMyOrders = state.myOrders.map(o => o.id === orderId ? { ...o, status } : o);
@@ -232,24 +248,33 @@ export const useOrderStore = create<OrderState & OrderActions>((set) => ({
                         playerOrders: updatedPlayerOrders
                     };
                 });
-            });
+            };
 
-            wsService.on('order.created', (data: unknown) => {
+            orderCreatedHandler = (data: unknown) => {
                 const newOrder = data as Order;
                 set((state) => ({
                     myOrders: [newOrder, ...state.myOrders],
-                    playerOrders: [newOrder, ...state.playerOrders] // Naive update, ideally filtered
+                    playerOrders: [newOrder, ...state.playerOrders]
                 }));
-            });
+            };
+
+            // Register handlers
+            wsService.on('order.status_updated', orderStatusHandler);
+            wsService.on('order.created', orderCreatedHandler);
         });
     },
 
     unsubscribeFromOrderUpdates: () => {
-        import('@/lib/websocket').then(() => {
-            // In a real app with strict handler references, we'd need to store the functions. 
-            // For now assuming the service or store lifecycle manages this simplistically 
-            // or we accept potential memory leak if unsubscribe isn't perfect in this iteration.
-            // A better way is to move WS logic to a dedicated hook or Context.
-        });
+        // Properly clean up WebSocket handlers to prevent memory leaks
+        if (wsServiceInstance) {
+            if (orderStatusHandler) {
+                wsServiceInstance.off('order.status_updated', orderStatusHandler);
+                orderStatusHandler = null;
+            }
+            if (orderCreatedHandler) {
+                wsServiceInstance.off('order.created', orderCreatedHandler);
+                orderCreatedHandler = null;
+            }
+        }
     }
 }));

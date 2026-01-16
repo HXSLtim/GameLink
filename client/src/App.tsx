@@ -6,12 +6,15 @@ import { AuthProvider } from "@/components/auth/auth-provider";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { OfflineBanner } from "@/components/offline-banner";
 import { PageLoading } from "@/components/loading-spinner";
-import { InstallPrompt } from "@/components/pwa/install-prompt"; // Added import
+import { InstallPrompt } from "@/components/pwa/install-prompt";
 import { Toaster } from "sonner";
 
-// Lazy load pages to split code
+// HomePage is loaded synchronously for faster first contentful paint (FCP)
+import HomePage from "@/pages/home/HomePage";
+
+// Lazy load other pages to split code
 const LoginPage = lazy(() => import("@/pages/auth/LoginPage"));
-const RegisterPage = lazy(() => import("@/pages/auth/RegisterPage")); // Added import
+const RegisterPage = lazy(() => import("@/pages/auth/RegisterPage"));
 const ForbiddenPage = lazy(() => import("@/pages/error/ForbiddenPage"));
 const PageShowcase = lazy(() => import("@/components/page-showcase"));
 const PlayerListPage = lazy(() => import("@/pages/player/PlayerListPage"));
@@ -21,31 +24,31 @@ const ChatRoomPage = lazy(() => import("@/pages/chat/ChatRoomPage"));
 const ProfilePage = lazy(() => import("@/pages/profile/ProfilePage"));
 const OrderListPage = lazy(() => import("@/pages/order/OrderListPage"));
 const OrderDetailPage = lazy(() => import("@/pages/order/OrderDetailPage"));
-const ReviewOrderPage = lazy(() => import("@/pages/order/ReviewOrderPage")); // Added import
+const ReviewOrderPage = lazy(() => import("@/pages/order/ReviewOrderPage"));
 const CreateOrderPage = lazy(() => import("@/pages/order/CreateOrderPage"));
 const PaymentPage = lazy(() => import("@/pages/payment/PaymentPage"));
 const PlayerDashboardPage = lazy(() => import("@/pages/player/dashboard/PlayerDashboardPage"));
 const PlayerOrderListPage = lazy(() => import("@/pages/player/order/PlayerOrderListPage"));
 const EarningsPage = lazy(() => import("@/pages/player/earnings/EarningsPage"));
-const BecomePlayerPage = lazy(() => import("@/pages/player/apply/BecomePlayerPage")); // Added import
+const BecomePlayerPage = lazy(() => import("@/pages/player/apply/BecomePlayerPage"));
 const EditPlayerProfilePage = lazy(() => import("@/pages/player/profile/EditPlayerProfilePage"));
-const RechargePage = lazy(() => import("@/pages/wallet/RechargePage")); // Added import
+const RechargePage = lazy(() => import("@/pages/wallet/RechargePage"));
 const WalletPage = lazy(() => import("@/pages/wallet/WalletPage"));
 const VipPage = lazy(() => import("@/pages/vip/VipPage"));
 const EditProfilePage = lazy(() => import("@/pages/settings/EditProfilePage"));
 const ChangePasswordPage = lazy(() => import("@/pages/settings/ChangePasswordPage"));
 const NotificationPage = lazy(() => import("@/pages/notification/NotificationPage"));
-const CouponCenterPage = lazy(() => import("@/pages/coupon/CouponCenterPage")); // Added import
-const FavoritesPage = lazy(() => import("@/pages/profile/FavoritesPage")); // Added import
-const ReferralPage = lazy(() => import("@/pages/referral/ReferralPage")); // Added import
-const ActivityListPage = lazy(() => import("@/pages/activity/ActivityListPage")); // Added import
+const CouponCenterPage = lazy(() => import("@/pages/coupon/CouponCenterPage"));
+const FavoritesPage = lazy(() => import("@/pages/profile/FavoritesPage"));
+const ReferralPage = lazy(() => import("@/pages/referral/ReferralPage"));
+const ActivityListPage = lazy(() => import("@/pages/activity/ActivityListPage"));
 const ForgotPasswordPage = lazy(() => import("@/pages/auth/ForgotPasswordPage"));
 const NotFoundPage = lazy(() => import("@/pages/error/NotFoundPage"));
 const TermsPage = lazy(() => import("@/pages/legal/TermsPage"));
 const PrivacyPage = lazy(() => import("@/pages/legal/PrivacyPage"));
-const RealNamePage = lazy(() => import("@/pages/player/verification/RealNamePage")); // Added import
-const SkillAuthPage = lazy(() => import("@/pages/player/verification/SkillAuthPage")); // Added import
-const TeamPage = lazy(() => import("@/pages/player/team/TeamPage")); // Added import
+const RealNamePage = lazy(() => import("@/pages/player/verification/RealNamePage"));
+const SkillAuthPage = lazy(() => import("@/pages/player/verification/SkillAuthPage"));
+const TeamPage = lazy(() => import("@/pages/player/team/TeamPage"));
 
 // Room pages
 const RoomListPage = lazy(() => import("@/pages/room/RoomListPage"));
@@ -55,8 +58,6 @@ const CreateRoomPage = lazy(() => import("@/pages/room/CreateRoomPage"));
 // LFG pages
 const LFGPage = lazy(() => import("@/pages/lfg/LFGPage"));
 const CreateLFGPage = lazy(() => import("@/pages/lfg/CreateLFGPage"));
-
-const HomePage = lazy(() => import("@/pages/home/HomePage"));
 
 function App() {
   return (

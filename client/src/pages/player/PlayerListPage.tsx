@@ -40,6 +40,7 @@ export default function PlayerListPage() {
             if (observerRef) {
                 observer.unobserve(observerRef);
             }
+            observer.disconnect();
         };
     }, [observerRef, pagination.hasMore, loading, fetchPlayers]);
 

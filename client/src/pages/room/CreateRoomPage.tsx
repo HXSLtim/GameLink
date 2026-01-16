@@ -80,8 +80,8 @@ export default function CreateRoomPage() {
                     <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <PageHeader
-                    title={t('room.create.title')}
-                    description={t('room.create.description')}
+                    title={t('room.create')}
+                    description={t('room.description')}
                 />
             </div>
 
@@ -90,12 +90,12 @@ export default function CreateRoomPage() {
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {/* Room Name */}
                         <div className="space-y-2">
-                            <Label htmlFor="name">{t('room.create.name')}</Label>
+                            <Label htmlFor="name">{t('room.createForm.name')}</Label>
                             <Input
                                 id="name"
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                placeholder={t('room.create.namePlaceholder')}
+                                placeholder={t('room.createForm.namePlaceholder')}
                                 maxLength={64}
                             />
                             {errors.name && (
@@ -105,7 +105,7 @@ export default function CreateRoomPage() {
 
                         {/* Room Type */}
                         <div className="space-y-2">
-                            <Label>{t('room.create.type')}</Label>
+                            <Label>{t('room.createForm.type')}</Label>
                             <Select
                                 value={formData.groupType}
                                 onValueChange={(value) =>
@@ -125,13 +125,13 @@ export default function CreateRoomPage() {
 
                         {/* Game Selection */}
                         <div className="space-y-2">
-                            <Label htmlFor="gameId">{t('room.create.game')}</Label>
+                            <Label htmlFor="gameId">{t('room.createForm.game')}</Label>
                             <Input
                                 id="gameId"
                                 type="number"
                                 value={formData.gameId}
                                 onChange={(e) => setFormData({ ...formData, gameId: e.target.value })}
-                                placeholder={t('room.create.gamePlaceholder')}
+                                placeholder={t('room.createForm.gamePlaceholder')}
                             />
                             {errors.gameId && (
                                 <p className="text-sm text-destructive">{errors.gameId}</p>
@@ -241,7 +241,7 @@ export default function CreateRoomPage() {
                                 {t('common.cancel')}
                             </Button>
                             <Button type="submit" disabled={isLoading} className="flex-1">
-                                {isLoading ? t('room.create.creating') : t('room.create.submit')}
+                                {isLoading ? t('room.createForm.creating') : t('room.createForm.submit')}
                             </Button>
                         </div>
                     </form>

@@ -55,6 +55,47 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // Build optimization: Code splitting for better caching and faster loads
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          // Core vendor libraries (rarely change)
+          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/') || id.includes('node_modules/react-router-dom/')) {
+            return 'vendor-react';
+          }
+          // State management
+          if (id.includes('node_modules/zustand/')) {
+            return 'vendor-state';
+          }
+          // UI components (Radix UI)
+          if (id.includes('node_modules/@radix-ui/')) {
+            return 'vendor-ui';
+          }
+          // Form handling
+          if (id.includes('node_modules/react-hook-form/') || id.includes('node_modules/@hookform/') || id.includes('node_modules/zod/')) {
+            return 'vendor-form';
+          }
+          // i18n
+          if (id.includes('node_modules/i18next') || id.includes('node_modules/react-i18next/')) {
+            return 'vendor-i18n';
+          }
+          // HTTP and utilities
+          if (id.includes('node_modules/axios/') || id.includes('node_modules/date-fns/') || id.includes('node_modules/clsx/') || id.includes('node_modules/tailwind-merge/')) {
+            return 'vendor-utils';
+          }
+          // Voice/Video (large, load on demand)
+          if (id.includes('node_modules/trtc-js-sdk/')) {
+            return 'vendor-trtc';
+          }
+        },
+      },
+    },
+    // Warn if chunks exceed 500KB
+    chunkSizeWarningLimit: 500,
+    // Enable source maps for production debugging (optional)
+    sourcemap: mode === 'development',
+  },
   server: {
     port: 5000,
     host: true, // Listen on all addresses

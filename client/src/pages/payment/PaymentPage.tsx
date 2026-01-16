@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 interface OrderDetails {
     id: string;
     orderNo: string;
-    amount: number;
+    amount: number; // Amount in yuan (元), converted from cents by API
     status: string;
     serviceName: string;
     createdAt: string;
@@ -24,7 +24,9 @@ export default function PaymentPage() {
     const { t } = useTranslation();
     const { fetchWallet, getBalance } = useWalletStore();
 
-    const balance = getBalance() / 100; // Convert cents to yuan
+    // Balance from wallet is in cents, convert to yuan (元) for display and comparison
+    // order.amount is already in yuan (元) from API response
+    const balance = getBalance() / 100;
 
     const [order, setOrder] = useState<OrderDetails | null>(null);
     const [loading, setLoading] = useState(true);
@@ -63,6 +65,7 @@ export default function PaymentPage() {
     const handlePay = async () => {
         if (!order) return;
 
+        // Check if balance (yuan) is sufficient for order amount (yuan)
         if (paymentMethod === 'balance' && (balance || 0) < order.amount) {
             toast.error(t('payment.insufficient_balance'));
             // Optionally navigate to recharge page

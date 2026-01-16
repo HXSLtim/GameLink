@@ -43,6 +43,8 @@ export interface MeResponse {
     id?: string;
     username?: string;
     avatar?: string;
+    email?: string;
+    nickname?: string;
     role?: string;
 }
 

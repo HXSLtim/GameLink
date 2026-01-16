@@ -19,7 +19,7 @@ export default function PlayerOrderListPage() {
         fetchPlayerOrders();
     }, [fetchPlayerOrders]);
 
-    const handleAccept = async (id: string, e: React.MouseEvent) => {
+    const handleAccept = async (id: number, e: React.MouseEvent) => {
         e.stopPropagation();
         try {
             await acceptOrder(id);
@@ -29,7 +29,7 @@ export default function PlayerOrderListPage() {
         }
     };
 
-    const handleReject = async (id: string, e: React.MouseEvent) => {
+    const handleReject = async (id: number, e: React.MouseEvent) => {
         e.stopPropagation();
         try {
             await rejectOrder(id);
@@ -45,7 +45,7 @@ export default function PlayerOrderListPage() {
             [OrderStatus.CONFIRMED]: { label: 'Paid/Pending', color: 'bg-blue-500/10 text-blue-500 border-blue-500/20', icon: CheckCircle },
             [OrderStatus.IN_PROGRESS]: { label: 'In Progress', color: 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20', icon: Gamepad2 },
             [OrderStatus.COMPLETED]: { label: 'Completed', color: 'bg-green-500/10 text-green-500 border-green-500/20', icon: CheckCircle },
-            [OrderStatus.CANCELED]: { label: 'Cancelled', color: 'bg-red-500/10 text-red-500 border-red-500/20', icon: XCircle },
+            [OrderStatus.CANCELLED]: { label: 'Cancelled', color: 'bg-red-500/10 text-red-500 border-red-500/20', icon: XCircle },
             [OrderStatus.REFUNDED]: { label: 'Refunded', color: 'bg-gray-500/10 text-gray-500 border-gray-500/20', icon: AlertCircle },
         };
         return configs[status] || configs[OrderStatus.PENDING];

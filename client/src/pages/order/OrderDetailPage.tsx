@@ -27,7 +27,10 @@ export default function OrderDetailPage() {
 
     useEffect(() => {
         if (id) {
-            fetchOrderById(id);
+            const orderId = Number(id);
+            if (!isNaN(orderId)) {
+                fetchOrderById(orderId);
+            }
         }
     }, [id, fetchOrderById]);
 
@@ -77,7 +80,7 @@ export default function OrderDetailPage() {
         { status: OrderStatus.COMPLETED, label: 'Completed', done: currentOrder.status === OrderStatus.COMPLETED }
     ];
 
-    const isCancelled = ([OrderStatus.CANCELED, OrderStatus.REFUNDED] as OrderStatus[]).includes(currentOrder.status);
+    const isCancelled = ([OrderStatus.CANCELLED, OrderStatus.REFUNDED] as OrderStatus[]).includes(currentOrder.status);
     const isDisputed = currentOrder.status === OrderStatus.DISPUTED;
 
     return (

@@ -4,13 +4,33 @@ import { http } from '@/lib/http';
 import { getErrorMessage } from '@/types/api';
 import type { LoginResponse, RegisterResponse, RefreshResponse, MeResponse } from '@/types/api';
 
+// Promise lock to prevent concurrent refresh calls
+let refreshPromise: Promise<void> | null = null;
+
 // --- Types ---
 export interface User {
     id: number; // Changed to number to match backend uint64
     username: string;
     avatar: string;
     email?: string;
-    name: string; // Backend uses 'name', not 'nickname'
+    name: string; // Display name (mapped from backend 'nickname')
+}
+
+// Helper to map API user response to User type
+function mapApiUserToUser(apiUser: {
+    id: string;
+    username: string;
+    avatar: string;
+    email?: string;
+    nickname?: string;
+}): User {
+    return {
+        id: parseInt(apiUser.id, 10) || 0,
+        username: apiUser.username,
+        avatar: apiUser.avatar,
+        email: apiUser.email,
+        name: apiUser.nickname || apiUser.username, // Fallback to username if no nickname
+    };
 }
 
 export interface PlayerProfile {
@@ -95,7 +115,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
                     set({
                         token,
                         refreshToken,
-                        user,
+                        user: mapApiUserToUser(user),
                         role: (role as AuthState['role']) || 'user',
                         permissions: permissions || [],
                         isAuthenticated: true,
@@ -122,7 +142,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
                     set({
                         token,
                         refreshToken,
-                        user,
+                        user: mapApiUserToUser(user),
                         role: (role as AuthState['role']) || 'user',
                         permissions: permissions || [],
                         isAuthenticated: true,
@@ -157,36 +177,46 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             },
 
             refresh: async () => {
+                // Use Promise lock to prevent concurrent refresh calls (race condition fix)
+                if (refreshPromise) {
+                    return refreshPromise;
+                }
+
                 const { refreshToken } = get();
                 if (!refreshToken) {
                     throw new Error('No refresh token available');
                 }
 
-                try {
-                    // Use public endpoint which doesn't require auth header
-                    const data = await http.post<RefreshResponse>('/public/auth/refresh', { refreshToken });
-                    const { token: newToken, refreshToken: newRefreshToken, user } = data;
+                refreshPromise = (async () => {
+                    try {
+                        // Use public endpoint which doesn't require auth header
+                        const data = await http.post<RefreshResponse>('/public/auth/refresh', { refreshToken });
+                        const { token: newToken, refreshToken: newRefreshToken, user } = data;
 
+                        set({
+                            token: newToken,
+                            refreshToken: newRefreshToken || refreshToken, // Use new one if provided
+                            user: user ? mapApiUserToUser(user) : get().user,
+                            loading: false,
+                            error: null,
+                            isAuthenticated: true
+                        });
+                    } catch (err: unknown) {
+                        // Clear auth state on refresh failure
+                        set({
+                            token: null,
+                            refreshToken: null,
+                            user: null,
+                            isAuthenticated: false,
+                            role: 'guest'
+                        });
+                        throw err;
+                    } finally {
+                        refreshPromise = null;
+                    }
+                })();
 
-                    set({
-                        token: newToken,
-                        refreshToken: newRefreshToken || refreshToken, // Use new one if provided
-                        user: user || get().user,
-                        loading: false,
-                        error: null,
-                        isAuthenticated: true
-                    });
-                } catch (err: unknown) {
-                    // Clear auth state on refresh failure
-                    set({
-                        token: null,
-                        refreshToken: null,
-                        user: null,
-                        isAuthenticated: false,
-                        role: 'guest'
-                    });
-                    throw err;
-                }
+                return refreshPromise;
             },
 
             updateProfile: async (data) => {
@@ -254,17 +284,30 @@ export const useAuthStore = create<AuthState & AuthActions>()(
                 try {
                     const data = await http.get<MeResponse>('/auth/me');
                     const userData = data.user || data;
+                    // Map the API response to User type
+                    const mappedUser: User = {
+                        id: parseInt(userData.id || '0', 10),
+                        username: userData.username || '',
+                        avatar: userData.avatar || '',
+                        email: userData.email,
+                        name: userData.nickname || userData.username || '',
+                    };
                     set({
-                        user: userData as User,
+                        user: mappedUser,
                         isAuthenticated: true,
                         role: (userData.role as AuthState['role']) || 'user'
                     });
-                } catch (err: any) {
+                } catch (err: unknown) {
                     // Only logout if it's an authentication error
-                    if (err.response?.status === 401) {
-                        get().logout();
+                    if (err && typeof err === 'object' && 'response' in err) {
+                        const axiosErr = err as { response?: { status?: number } };
+                        if (axiosErr.response?.status === 401) {
+                            get().logout();
+                        } else {
+                            console.warn('CheckAuth failed but not 401, keeping session:', err);
+                        }
                     } else {
-                        console.warn('CheckAuth failed but not 401, keeping session:', err);
+                        console.warn('CheckAuth failed with non-axios error, keeping session:', err);
                     }
                 }
             }
@@ -287,7 +330,8 @@ export const useAuthStore = create<AuthState & AuthActions>()(
                     if ((state.token && !state.isAuthenticated) || (state.refreshToken && !state.token)) {
                         state.refresh().catch(() => {
                             // Refresh failed, user will be logged out
-                            set({
+                            // Use useAuthStore.setState() since we're outside the store creator
+                            useAuthStore.setState({
                                 user: null,
                                 token: null,
                                 refreshToken: null,

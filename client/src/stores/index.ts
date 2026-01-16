@@ -11,7 +11,25 @@ export * from './modules/presence-store';
 export * from './modules/dispute-store';
 
 // Game Room & Voice
-export * from './modules/room-store';
+// Note: room-store also exports ChatGroupType and ChatGroupStatus, but we use the ones from chat-store
+// which include both the const object and type. Re-export room-store types with aliases to avoid conflicts.
+export {
+    useRoomStore,
+    type GameRoom,
+    type RoomMember,
+    type CreateRoomRequest,
+    type UpdateRoomRequest,
+    type RoomListOptions,
+    type RoomState,
+    selectRooms,
+    selectCurrentRoom,
+    selectMembers,
+    selectIsLoading,
+    selectRoomError,
+    // Re-export with aliases for room-specific usage if needed
+    type ChatGroupType as RoomGroupType,
+    type ChatGroupStatus as RoomGroupStatus,
+} from './modules/room-store';
 export * from './modules/lfg-store';
 export * from './modules/voice-store';
 

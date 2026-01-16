@@ -81,7 +81,7 @@ describe('Order Store', () => {
 
     it('should cancel order optimistically', async () => {
         // Use any to bypass strict type check for partial mock state if needed, or precise type
-        const initialOrder = { id: '1', status: OrderStatus.PENDING } as any;
+        const initialOrder = { id: 1, status: OrderStatus.PENDING } as any;
         useOrderStore.setState({
             myOrders: [initialOrder],
             currentOrder: initialOrder
@@ -89,11 +89,11 @@ describe('Order Store', () => {
 
         (http.post as ReturnType<typeof vi.fn>).mockResolvedValue({});
 
-        await useOrderStore.getState().cancelOrder('1');
+        await useOrderStore.getState().cancelOrder(1);
 
         const state = useOrderStore.getState();
-        expect(state.myOrders[0].status).toBe(OrderStatus.CANCELED);
-        expect(state.currentOrder?.status).toBe(OrderStatus.CANCELED);
+        expect(state.myOrders[0].status).toBe(OrderStatus.CANCELLED);
+        expect(state.currentOrder?.status).toBe(OrderStatus.CANCELLED);
         expect(http.post).toHaveBeenCalledWith('/orders/1/cancel');
     });
 });

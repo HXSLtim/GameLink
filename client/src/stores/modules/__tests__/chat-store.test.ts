@@ -204,21 +204,23 @@ describe('Chat Store', () => {
     describe('sendMessage', () => {
         it('should send message with optimistic update', async () => {
             const mockResponse = {
-                id: 'server-id-1',
-                conversationId: '1',
+                id: 1,
+                groupId: 1,
                 senderId: 100,
                 content: 'Hello!',
-                type: 'text',
+                messageType: 'text',
                 createdAt: '2024-01-01T00:00:00Z',
-                read: true
+                isDeleted: false
             };
             mockHttp.post.mockResolvedValueOnce(mockResponse);
 
             useChatStore.setState({
-                currentConversationId: '1',
-                messages: { '1': [] },
+                currentConversationId: 1,
+                messages: { 1: [] },
                 conversations: [{
-                    id: '1',
+                    id: 1,
+                    groupName: 'Test',
+                    groupType: 'public',
                     participantId: 101,
                     participantName: 'Player1',
                     participantAvatar: 'avatar1.jpg',
@@ -226,35 +228,39 @@ describe('Chat Store', () => {
                     lastMessageTime: '',
                     unreadCount: 0,
                     online: true,
+                    isActive: true,
+                    isPrivate: false,
                 }],
             });
 
             await useChatStore.getState().sendMessage('Hello!');
 
             const state = useChatStore.getState();
-            expect(state.messages['1']).toHaveLength(1);
-            expect(state.messages['1'][0].content).toBe('Hello!');
-            expect(state.messages['1'][0].type).toBe('text');
-            expect(mockHttp.post).toHaveBeenCalledWith('/chat/conversations/1/messages', { content: 'Hello!', type: 'text' });
+            expect(state.messages[1]).toHaveLength(1);
+            expect(state.messages[1][0].content).toBe('Hello!');
+            expect(state.messages[1][0].messageType).toBe('text');
+            expect(mockHttp.post).toHaveBeenCalledWith('/chat/groups/1/messages', { content: 'Hello!', messageType: 'text' });
         });
 
         it('should send image message', async () => {
             const mockResponse = {
-                id: 'server-id-2',
-                conversationId: '1',
+                id: 2,
+                groupId: 1,
                 senderId: 100,
                 content: 'image-url.jpg',
-                type: 'image',
+                messageType: 'image',
                 createdAt: '2024-01-01T00:00:00Z',
-                read: true
+                isDeleted: false
             };
             mockHttp.post.mockResolvedValueOnce(mockResponse);
 
             useChatStore.setState({
-                currentConversationId: '1',
-                messages: { '1': [] },
+                currentConversationId: 1,
+                messages: { 1: [] },
                 conversations: [{
-                    id: '1',
+                    id: 1,
+                    groupName: 'Test',
+                    groupType: 'public',
                     participantId: 101,
                     participantName: 'Player1',
                     participantAvatar: 'avatar1.jpg',
@@ -262,13 +268,15 @@ describe('Chat Store', () => {
                     lastMessageTime: '',
                     unreadCount: 0,
                     online: true,
+                    isActive: true,
+                    isPrivate: false,
                 }],
             });
 
             await useChatStore.getState().sendMessage('image-url.jpg', 'image');
 
             const state = useChatStore.getState();
-            expect(state.messages['1'][0].type).toBe('image');
+            expect(state.messages[1][0].messageType).toBe('image');
         });
 
         it('should not send if no conversation selected', async () => {
@@ -286,21 +294,23 @@ describe('Chat Store', () => {
 
         it('should create messages array if not exists', async () => {
             const mockResponse = {
-                id: 'server-id-3',
-                conversationId: '1',
+                id: 3,
+                groupId: 1,
                 senderId: 100,
                 content: 'Hello!',
-                type: 'text',
+                messageType: 'text',
                 createdAt: '2024-01-01T00:00:00Z',
-                read: true
+                isDeleted: false
             };
             mockHttp.post.mockResolvedValueOnce(mockResponse);
 
             useChatStore.setState({
-                currentConversationId: '1',
+                currentConversationId: 1,
                 messages: {},
                 conversations: [{
-                    id: '1',
+                    id: 1,
+                    groupName: 'Test',
+                    groupType: 'public',
                     participantId: 101,
                     participantName: 'Player1',
                     participantAvatar: 'avatar1.jpg',
@@ -308,29 +318,31 @@ describe('Chat Store', () => {
                     lastMessageTime: '',
                     unreadCount: 0,
                     online: true,
+                    isActive: true,
+                    isPrivate: false,
                 }],
             });
 
             await useChatStore.getState().sendMessage('Hello!');
 
             const state = useChatStore.getState();
-            expect(state.messages['1']).toBeDefined();
-            expect(state.messages['1']).toHaveLength(1);
+            expect(state.messages[1]).toBeDefined();
+            expect(state.messages[1]).toHaveLength(1);
         });
 
         it('should rollback on send error', async () => {
             mockHttp.post.mockRejectedValueOnce(new Error('Network error'));
 
             useChatStore.setState({
-                currentConversationId: '1',
-                messages: { '1': [] },
+                currentConversationId: 1,
+                messages: { 1: [] },
                 conversations: [],
             });
 
             await expect(useChatStore.getState().sendMessage('Hello!')).rejects.toThrow('Network error');
 
             const state = useChatStore.getState();
-            expect(state.messages['1']).toHaveLength(0);
+            expect(state.messages[1]).toHaveLength(0);
             expect(state.error).toBe('Network error');
         });
     });
@@ -338,43 +350,45 @@ describe('Chat Store', () => {
     describe('receiveMessage', () => {
         it('should add received message to conversation', () => {
             useChatStore.setState({
-                currentConversationId: '1',
-                messages: { '1': [] },
+                currentConversationId: 1,
+                messages: { 1: [] },
+                conversations: [{ id: 1, groupName: 'Test', groupType: 'public', participantId: 101, participantName: 'Player1', lastMessage: '', lastMessageTime: '', unreadCount: 0, online: true, isActive: true, isPrivate: false }],
                 totalUnreadCount: 0,
             });
 
             const newMessage = {
-                id: 'm1',
-                conversationId: '1',
+                id: 1,
+                groupId: 1,
                 senderId: 101,
                 content: 'New message',
-                type: 'text' as const,
+                messageType: 'text' as const,
                 createdAt: '2024-01-01',
-                read: false,
+                isDeleted: false,
             };
 
             useChatStore.getState().receiveMessage(newMessage);
 
             const state = useChatStore.getState();
-            expect(state.messages['1']).toHaveLength(1);
-            expect(state.messages['1'][0].content).toBe('New message');
+            expect(state.messages[1]).toHaveLength(1);
+            expect(state.messages[1][0].content).toBe('New message');
         });
 
         it('should increment unread count for non-current conversation', () => {
             useChatStore.setState({
-                currentConversationId: '1',
-                messages: { '2': [] },
+                currentConversationId: 1,
+                messages: { 2: [] },
+                conversations: [{ id: 2, groupName: 'Test', groupType: 'public', participantId: 102, participantName: 'Player2', lastMessage: '', lastMessageTime: '', unreadCount: 0, online: true, isActive: true, isPrivate: false }],
                 totalUnreadCount: 0,
             });
 
             const newMessage = {
-                id: 'm1',
-                conversationId: '2', // Different from current
+                id: 1,
+                groupId: 2, // Different from current
                 senderId: 102,
                 content: 'New message',
-                type: 'text' as const,
+                messageType: 'text' as const,
                 createdAt: '2024-01-01',
-                read: false,
+                isDeleted: false,
             };
 
             useChatStore.getState().receiveMessage(newMessage);
@@ -384,19 +398,20 @@ describe('Chat Store', () => {
 
         it('should not increment unread count for current conversation', () => {
             useChatStore.setState({
-                currentConversationId: '1',
-                messages: { '1': [] },
+                currentConversationId: 1,
+                messages: { 1: [] },
+                conversations: [{ id: 1, groupName: 'Test', groupType: 'public', participantId: 101, participantName: 'Player1', lastMessage: '', lastMessageTime: '', unreadCount: 0, online: true, isActive: true, isPrivate: false }],
                 totalUnreadCount: 0,
             });
 
             const newMessage = {
-                id: 'm1',
-                conversationId: '1', // Same as current
+                id: 1,
+                groupId: 1, // Same as current
                 senderId: 101,
                 content: 'New message',
-                type: 'text' as const,
+                messageType: 'text' as const,
                 createdAt: '2024-01-01',
-                read: false,
+                isDeleted: false,
             };
 
             useChatStore.getState().receiveMessage(newMessage);
@@ -406,48 +421,50 @@ describe('Chat Store', () => {
 
         it('should not add duplicate messages', () => {
             const existingMessage = {
-                id: 'm1',
-                conversationId: '1',
+                id: 1,
+                groupId: 1,
                 senderId: 101,
                 content: 'Existing',
-                type: 'text' as const,
+                messageType: 'text' as const,
                 createdAt: '2024-01-01',
-                read: true,
+                isDeleted: false,
             };
 
             useChatStore.setState({
-                currentConversationId: '1',
-                messages: { '1': [existingMessage] },
+                currentConversationId: 1,
+                messages: { 1: [existingMessage] },
+                conversations: [],
             });
 
             // Try to add same message again
             useChatStore.getState().receiveMessage(existingMessage);
 
-            expect(useChatStore.getState().messages['1']).toHaveLength(1);
+            expect(useChatStore.getState().messages[1]).toHaveLength(1);
         });
 
         it('should create messages array for new conversation', () => {
             useChatStore.setState({
                 currentConversationId: null,
                 messages: {},
+                conversations: [{ id: 3, groupName: 'Test', groupType: 'public', participantId: 103, participantName: 'Player3', lastMessage: '', lastMessageTime: '', unreadCount: 0, online: true, isActive: true, isPrivate: false }],
                 totalUnreadCount: 0,
             });
 
             const newMessage = {
-                id: 'm1',
-                conversationId: '3',
+                id: 1,
+                groupId: 3,
                 senderId: 103,
                 content: 'New conversation',
-                type: 'text' as const,
+                messageType: 'text' as const,
                 createdAt: '2024-01-01',
-                read: false,
+                isDeleted: false,
             };
 
             useChatStore.getState().receiveMessage(newMessage);
 
             const state = useChatStore.getState();
-            expect(state.messages['3']).toBeDefined();
-            expect(state.messages['3']).toHaveLength(1);
+            expect(state.messages[3]).toBeDefined();
+            expect(state.messages[3]).toHaveLength(1);
         });
     });
 

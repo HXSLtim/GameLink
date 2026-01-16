@@ -2,6 +2,19 @@ import { create } from 'zustand';
 import { http } from '@/lib/http';
 import TRTC from 'trtc-js-sdk';
 
+// Development-only logging helper
+const devLog = (...args: unknown[]) => {
+    if (import.meta.env.DEV) {
+        console.log('[Voice]', ...args);
+    }
+};
+
+const devError = (...args: unknown[]) => {
+    if (import.meta.env.DEV) {
+        console.error('[Voice]', ...args);
+    }
+};
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -183,27 +196,27 @@ export const useVoiceStore = create<VoiceState>((set, get) => ({
             client.on('stream-added', (event) => {
                 const remoteStream = event.stream;
                 const remoteUserId = remoteStream.getUserId();
-                console.log('[Voice] Remote stream added:', remoteUserId);
+                devLog('Remote stream added:', remoteUserId);
                 client.subscribe(remoteStream);
             });
 
             client.on('stream-subscribed', (event) => {
                 const remoteStream = event.stream;
                 remoteStream.play('remote-audio-container');
-                console.log('[Voice] Remote stream subscribed');
+                devLog('Remote stream subscribed');
             });
 
             client.on('stream-removed', (event) => {
                 const remoteStream = event.stream;
-                console.log('[Voice] Remote stream removed:', remoteStream.getUserId());
+                devLog('Remote stream removed:', remoteStream.getUserId());
             });
 
             client.on('peer-join', (event) => {
-                console.log('[Voice] Peer joined:', event.userId);
+                devLog('Peer joined:', event.userId);
             });
 
             client.on('peer-leave', (event) => {
-                console.log('[Voice] Peer left:', event.userId);
+                devLog('Peer left:', event.userId);
             });
 
             // 3. 创建本地音频流
@@ -219,7 +232,7 @@ export const useVoiceStore = create<VoiceState>((set, get) => ({
             // 5. 发布本地流
             await client.publish(localStream);
 
-            console.log('[Voice] Successfully joined voice room:', token.roomId);
+            devLog('Successfully joined voice room:', token.roomId);
 
             set({
                 isInVoice: true,
@@ -257,7 +270,7 @@ export const useVoiceStore = create<VoiceState>((set, get) => ({
                 await state.trtcClient.leave();
             }
 
-            console.log('[Voice] Left voice room');
+            devLog('Left voice room');
 
             set({
                 isInVoice: false,
@@ -289,7 +302,7 @@ export const useVoiceStore = create<VoiceState>((set, get) => ({
             }
         }
 
-        console.log('[Voice] Mute:', newMuted);
+        devLog('Mute:', newMuted);
         set({ isMuted: newMuted });
     },
 
@@ -299,7 +312,7 @@ export const useVoiceStore = create<VoiceState>((set, get) => ({
         const newDeafened = !state.isDeafened;
 
         // 实际实现需要控制远程流的音量
-        console.log('[Voice] Deafen:', newDeafened);
+        devLog('Deafen:', newDeafened);
         set({ isDeafened: newDeafened });
     },
 
@@ -309,13 +322,13 @@ export const useVoiceStore = create<VoiceState>((set, get) => ({
         if (state.localStream) {
             await state.localStream.switchDevice('audio', deviceId);
         }
-        console.log('[Voice] Set input device:', deviceId);
+        devLog('Set input device:', deviceId);
         set({ selectedInputDevice: deviceId });
     },
 
     // 设置输出设备
     setOutputDevice: (deviceId: string) => {
-        console.log('[Voice] Set output device:', deviceId);
+        devLog('Set output device:', deviceId);
         set({ selectedOutputDevice: deviceId });
     },
 
@@ -335,7 +348,7 @@ export const useVoiceStore = create<VoiceState>((set, get) => ({
                 audioOutputDevices: audioOutputs,
             });
         } catch (error) {
-            console.error('[Voice] Failed to enumerate devices:', error);
+            devError('Failed to enumerate devices:', error);
         }
     },
 

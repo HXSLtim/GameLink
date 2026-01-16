@@ -47,7 +47,7 @@ describe('Auth Store', () => {
         const mockResponse = {
             token: 'fake-token',
             refreshToken: 'fake-refresh',
-            user: { id: '1', username: 'test', avatar: 'avatar.png' },
+            user: { id: '1', username: 'test', avatar: 'avatar.png', nickname: 'Test User' },
             role: 'user',
             permissions: [],
         };
@@ -58,7 +58,11 @@ describe('Auth Store', () => {
         const state = useAuthStore.getState();
         expect(state.isAuthenticated).toBe(true);
         expect(state.token).toBe('fake-token');
-        expect(state.user).toEqual(mockResponse.user);
+        // User is mapped from API response
+        expect(state.user?.id).toBe(1);
+        expect(state.user?.username).toBe('test');
+        expect(state.user?.avatar).toBe('avatar.png');
+        expect(state.user?.name).toBe('Test User');
         expect(state.error).toBeNull();
         expect(http.post).toHaveBeenCalledWith('/auth/login', { username: 'test', password: 'password' });
     });
