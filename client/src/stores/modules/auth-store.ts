@@ -283,8 +283,17 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             }),
             onRehydrateStorage: () => (state) => {
                 if (state) {
-                    if (state.refreshToken && !state.token) {
+                    // If token exists but is expired, or there's only a refresh token, try to refresh
+                    if ((state.token && !state.isAuthenticated) || (state.refreshToken && !state.token)) {
                         state.refresh().catch(() => {
+                            // Refresh failed, user will be logged out
+                            set({
+                                user: null,
+                                token: null,
+                                refreshToken: null,
+                                isAuthenticated: false,
+                                role: 'guest'
+                            });
                         });
                     }
                 }
