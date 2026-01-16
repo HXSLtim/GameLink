@@ -21,13 +21,14 @@ func setupTestDB(t *testing.T) *Repository {
 
 func createTestUser(t *testing.T, repo *Repository, suffix string) *model.User {
 	t.Helper()
+	openID := "openid_" + suffix
 	user := &model.User{
 		Phone:         "138" + suffix,
 		Name:          "Test User " + suffix,
 		Email:         "user_" + suffix + "@test.com",
 		Role:          model.RoleUser,
 		Status:        model.UserStatusActive,
-		WeChatOpenID:  "openid_" + suffix,
+		WeChatOpenID:  &openID,
 		WeChatUnionID: "unionid_" + suffix,
 	}
 	err := repo.db.Create(user).Error

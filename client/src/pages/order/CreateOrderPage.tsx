@@ -45,30 +45,27 @@ export default function CreateOrderPage() {
         if (!playerId) return;
 
         try {
-            // 1. Create Order
-            // Payload needs to align with backend expectations.
-            // Assuming basic structure based on typical order flows.
+            // Create Order
             const orderPayload = {
                 playerId: parseInt(playerId),
-                serviceItemId: serviceId ? parseInt(serviceId) : undefined, // Optional or required depending on logic
-                gameId: 1, // Mock game ID for now or derive from query
+                serviceItemId: serviceId ? parseInt(serviceId) : undefined,
+                gameId: 1, // TODO: Get from query params or player data
                 quantity,
-                amount: totalAmount, // Backend might calculate this, but good to send expected
+                amount: totalAmount,
                 note
             };
 
             await createOrder(orderPayload);
 
-            // 2. Mock Payment Flow
-            toast.info(t('orders.processing_payment', { defaultValue: 'Processing payment...' }));
-
-            // Simulate payment delay
-            await new Promise(resolve => setTimeout(resolve, 1500));
-
-            // 3. Success & Redirect
-            toast.success(t('orders.create_success', { defaultValue: 'Order created successfully!' }));
-            // Navigate to order list or detail page
-            navigate('/orders');
+            // Get the created order from store and navigate to payment
+            const { currentOrder } = useOrderStore.getState();
+            if (currentOrder?.id) {
+                toast.success(t('orders.create_success', { defaultValue: 'Order created! Redirecting to payment...' }));
+                navigate(`/payment/${currentOrder.id}`);
+            } else {
+                // Fallback to orders list if no order ID
+                navigate('/orders');
+            }
 
         } catch (error) {
             console.error(error);

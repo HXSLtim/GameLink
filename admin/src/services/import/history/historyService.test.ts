@@ -7,7 +7,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ImportHistoryService } from './historyService';
 import { ImportHistoryStorage, createImportHistoryRecord } from './storage';
-import type { ImportHistoryRecord, ImportRowResult } from './types';
+import type {} from './types';
 
 /**
  * Create a mock in-memory storage for testing

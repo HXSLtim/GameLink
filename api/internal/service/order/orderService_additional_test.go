@@ -90,6 +90,54 @@ func (m *MockChatGroupRepository) DeleteByIDs(ctx context.Context, ids []uint64)
 	return nil
 }
 
+func (m *MockChatGroupRepository) GetWithRelations(ctx context.Context, id uint64) (*model.ChatGroup, error) {
+	return nil, nil
+}
+
+func (m *MockChatGroupRepository) GetByRelatedTeamID(ctx context.Context, teamID uint64) (*model.ChatGroup, error) {
+	return nil, nil
+}
+
+func (m *MockChatGroupRepository) GetByRelatedLFGID(ctx context.Context, lfgID uint64) (*model.ChatGroup, error) {
+	return nil, nil
+}
+
+func (m *MockChatGroupRepository) GetByVoiceRoomID(ctx context.Context, voiceRoomID string) (*model.ChatGroup, error) {
+	return nil, nil
+}
+
+func (m *MockChatGroupRepository) UpdateRoomStatus(ctx context.Context, id uint64, status model.ChatGroupStatus) error {
+	return nil
+}
+
+func (m *MockChatGroupRepository) ListGameRooms(ctx context.Context, opts repository.GameRoomListOptions) ([]model.ChatGroup, int64, error) {
+	return nil, 0, nil
+}
+
+func (m *MockChatGroupRepository) ListPublicRooms(ctx context.Context, gameID *uint64, page, pageSize int) ([]model.ChatGroup, int64, error) {
+	return nil, 0, nil
+}
+
+func (m *MockChatGroupRepository) ListByHostUserID(ctx context.Context, hostUserID uint64, status *model.ChatGroupStatus) ([]model.ChatGroup, error) {
+	return nil, nil
+}
+
+func (m *MockChatGroupRepository) IncrementMemberCount(ctx context.Context, groupID uint64) error {
+	return nil
+}
+
+func (m *MockChatGroupRepository) DecrementMemberCount(ctx context.Context, groupID uint64) error {
+	return nil
+}
+
+func (m *MockChatGroupRepository) CountByRoomStatus(ctx context.Context) (map[model.ChatGroupStatus]int64, error) {
+	return nil, nil
+}
+
+func (m *MockChatGroupRepository) CountActiveRooms(ctx context.Context) (int64, error) {
+	return 0, nil
+}
+
 // TestOrderService_CreateOrder_WithDistributedLock tests order creation with distributed lock
 func TestOrderService_CreateOrder_WithDistributedLock(t *testing.T) {
 	ctx := context.Background()

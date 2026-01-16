@@ -1,0 +1,69 @@
+
+> client@0.0.0 lint
+> eslint .
+
+
+D:\Desktop\Code\GameLink\client\coverage\block-navigation.js
+  1:1  warning  Unused eslint-disable directive (no problems were reported)
+
+D:\Desktop\Code\GameLink\client\coverage\prettify.js
+  1:1  warning  Unused eslint-disable directive (no problems were reported)
+
+D:\Desktop\Code\GameLink\client\coverage\sorter.js
+  1:1  warning  Unused eslint-disable directive (no problems were reported)
+
+D:\Desktop\Code\GameLink\client\src\components\room\room-card.tsx
+  85:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Desktop\Code\GameLink\client\src\pages\room\RoomDetailPage.tsx
+  68:22  error  'setPassword' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+D:\Desktop\Code\GameLink\client\src\stores\modules\__tests__\order-store.test.ts
+  84:74  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Desktop\Code\GameLink\client\src\stores\modules\auth-store.ts
+  238:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Desktop\Code\GameLink\client\src\stores\modules\lfg-store.ts
+   72:51  warning  Unexpected any. Specify a different type                               @typescript-eslint/no-explicit-any
+  101:51  error    'get' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  124:25  warning  Unexpected any. Specify a different type                               @typescript-eslint/no-explicit-any
+  148:25  warning  Unexpected any. Specify a different type                               @typescript-eslint/no-explicit-any
+  166:25  warning  Unexpected any. Specify a different type                               @typescript-eslint/no-explicit-any
+  179:25  warning  Unexpected any. Specify a different type                               @typescript-eslint/no-explicit-any
+  198:25  warning  Unexpected any. Specify a different type                               @typescript-eslint/no-explicit-any
+  217:25  warning  Unexpected any. Specify a different type                               @typescript-eslint/no-explicit-any
+  236:25  warning  Unexpected any. Specify a different type                               @typescript-eslint/no-explicit-any
+  254:25  warning  Unexpected any. Specify a different type                               @typescript-eslint/no-explicit-any
+  272:25  warning  Unexpected any. Specify a different type                               @typescript-eslint/no-explicit-any
+  289:25  warning  Unexpected any. Specify a different type                               @typescript-eslint/no-explicit-any
+
+D:\Desktop\Code\GameLink\client\src\stores\modules\room-store.ts
+  144:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  158:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  171:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  189:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  202:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  218:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  234:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  250:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  263:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  275:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  287:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  300:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  314:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Desktop\Code\GameLink\client\src\stores\modules\voice-store.ts
+   55:17  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+   56:18  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  110:25  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  125:25  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  137:25  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  149:25  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  205:25  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  245:25  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  316:15  error    'state' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+✖ 41 problems (3 errors, 38 warnings)
+  0 errors and 3 warnings potentially fixable with the `--fix` option.
+

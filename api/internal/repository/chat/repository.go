@@ -167,3 +167,267 @@ func (r *chatGroupRepository) Deactivate(ctx context.Context, id uint64) error {
 			"deactivated_at": now,
 		}).Error
 }
+
+// GetWithRelations 获取聊天组及其关联数据
+func (r *chatGroupRepository) GetWithRelations(ctx context.Context, id uint64) (*model.ChatGroup, error) {
+	var group model.ChatGroup
+	if err := r.db.WithContext(ctx).
+		Preload("Members").
+		Preload("Game").
+		First(&group, id).Error; err != nil {
+		return nil, err
+	}
+	return &group, nil
+}
+
+// GetByRelatedTeamID 根据关联战队ID获取聊天组
+func (r *chatGroupRepository) GetByRelatedTeamID(ctx context.Context, teamID uint64) (*model.ChatGroup, error) {
+	var group model.ChatGroup
+	if err := r.db.WithContext(ctx).
+		Preload("Members").
+		Where("related_team_id = ?", teamID).
+		First(&group).Error; err != nil {
+		return nil, err
+	}
+	return &group, nil
+}
+
+// GetByRelatedLFGID 根据关联LFG请求ID获取聊天组
+func (r *chatGroupRepository) GetByRelatedLFGID(ctx context.Context, lfgID uint64) (*model.ChatGroup, error) {
+	var group model.ChatGroup
+	if err := r.db.WithContext(ctx).
+		Preload("Members").
+		Where("related_lfg_id = ?", lfgID).
+		First(&group).Error; err != nil {
+		return nil, err
+	}
+	return &group, nil
+}
+
+// GetByVoiceRoomID 根据语音房间ID获取聊天组
+func (r *chatGroupRepository) GetByVoiceRoomID(ctx context.Context, voiceRoomID string) (*model.ChatGroup, error) {
+	var group model.ChatGroup
+	if err := r.db.WithContext(ctx).
+		Preload("Members").
+		Where("voice_room_id = ?", voiceRoomID).
+		First(&group).Error; err != nil {
+		return nil, err
+	}
+	return &group, nil
+}
+
+// UpdateRoomStatus 更新房间状态
+func (r *chatGroupRepository) UpdateRoomStatus(ctx context.Context, id uint64, status model.ChatGroupStatus) error {
+	updates := map[string]any{
+		"room_status": status,
+	}
+	// 根据状态更新相关时间字段
+	now := time.Now()
+	switch status {
+	case model.ChatGroupStatusInGame:
+		updates["started_at"] = now
+	case model.ChatGroupStatusFinished, model.ChatGroupStatusCanceled:
+		updates["finished_at"] = now
+	}
+	return r.db.WithContext(ctx).
+		Model(&model.ChatGroup{}).
+		Where("id = ?", id).
+		Updates(updates).Error
+}
+
+// ListGameRooms 列出游戏房间
+func (r *chatGroupRepository) ListGameRooms(ctx context.Context, opts repository.GameRoomListOptions) ([]model.ChatGroup, int64, error) {
+	tx := r.db.WithContext(ctx).Model(&model.ChatGroup{}).
+		Where("group_type IN ?", []model.ChatGroupType{
+			model.ChatGroupTypeTeam,
+			model.ChatGroupTypeLFG,
+			model.ChatGroupTypeCustom,
+		})
+
+	if opts.GameID != nil {
+		tx = tx.Where("game_id = ?", *opts.GameID)
+	}
+	if opts.HostUserID != nil {
+		tx = tx.Where("created_by = ?", *opts.HostUserID)
+	}
+	if opts.GroupType != nil {
+		tx = tx.Where("group_type = ?", *opts.GroupType)
+	}
+	if opts.RoomStatus != nil {
+		tx = tx.Where("room_status = ?", *opts.RoomStatus)
+	}
+	if len(opts.Statuses) > 0 {
+		tx = tx.Where("room_status IN ?", opts.Statuses)
+	}
+	if opts.IsPrivate != nil {
+		tx = tx.Where("is_private = ?", *opts.IsPrivate)
+	}
+	if opts.Keyword != "" {
+		like := fmt.Sprintf("%%%s%%", opts.Keyword)
+		tx = tx.Where("group_name LIKE ? OR description LIKE ?", like, like)
+	}
+	tx = tx.Where("is_active = ?", true)
+
+	page := opts.Page
+	if page <= 0 {
+		page = 1
+	}
+	pageSize := opts.PageSize
+	if pageSize <= 0 || pageSize > 100 {
+		pageSize = 20
+	}
+
+	var total int64
+	if err := tx.Session(&gorm.Session{}).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	var groups []model.ChatGroup
+	if err := tx.
+		Preload("Members").
+		Preload("Game").
+		Order("created_at DESC").
+		Offset((page - 1) * pageSize).
+		Limit(pageSize).
+		Find(&groups).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return groups, total, nil
+}
+
+// ListPublicRooms 列出公开房间
+func (r *chatGroupRepository) ListPublicRooms(ctx context.Context, gameID *uint64, page, pageSize int) ([]model.ChatGroup, int64, error) {
+	tx := r.db.WithContext(ctx).Model(&model.ChatGroup{}).
+		Where("group_type IN ?", []model.ChatGroupType{
+			model.ChatGroupTypeTeam,
+			model.ChatGroupTypeLFG,
+			model.ChatGroupTypeCustom,
+		}).
+		Where("is_private = ?", false).
+		Where("is_active = ?", true).
+		Where("room_status IN ?", []model.ChatGroupStatus{
+			model.ChatGroupStatusWaiting,
+			model.ChatGroupStatusReady,
+		})
+
+	if gameID != nil {
+		tx = tx.Where("game_id = ?", *gameID)
+	}
+
+	if page <= 0 {
+		page = 1
+	}
+	if pageSize <= 0 || pageSize > 100 {
+		pageSize = 20
+	}
+
+	var total int64
+	if err := tx.Session(&gorm.Session{}).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	var groups []model.ChatGroup
+	if err := tx.
+		Preload("Members").
+		Preload("Game").
+		Order("created_at DESC").
+		Offset((page - 1) * pageSize).
+		Limit(pageSize).
+		Find(&groups).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return groups, total, nil
+}
+
+// ListByHostUserID 根据房主用户ID列出房间
+func (r *chatGroupRepository) ListByHostUserID(ctx context.Context, hostUserID uint64, status *model.ChatGroupStatus) ([]model.ChatGroup, error) {
+	tx := r.db.WithContext(ctx).Model(&model.ChatGroup{}).
+		Where("created_by = ?", hostUserID).
+		Where("group_type IN ?", []model.ChatGroupType{
+			model.ChatGroupTypeTeam,
+			model.ChatGroupTypeLFG,
+			model.ChatGroupTypeCustom,
+		}).
+		Where("is_active = ?", true)
+
+	if status != nil {
+		tx = tx.Where("room_status = ?", *status)
+	}
+
+	var groups []model.ChatGroup
+	if err := tx.
+		Preload("Members").
+		Order("created_at DESC").
+		Find(&groups).Error; err != nil {
+		return nil, err
+	}
+
+	return groups, nil
+}
+
+// IncrementMemberCount 增加成员数
+func (r *chatGroupRepository) IncrementMemberCount(ctx context.Context, groupID uint64) error {
+	return r.db.WithContext(ctx).
+		Model(&model.ChatGroup{}).
+		Where("id = ?", groupID).
+		UpdateColumn("current_members", gorm.Expr("current_members + 1")).Error
+}
+
+// DecrementMemberCount 减少成员数
+func (r *chatGroupRepository) DecrementMemberCount(ctx context.Context, groupID uint64) error {
+	return r.db.WithContext(ctx).
+		Model(&model.ChatGroup{}).
+		Where("id = ? AND current_members > 0", groupID).
+		UpdateColumn("current_members", gorm.Expr("current_members - 1")).Error
+}
+
+// CountByRoomStatus 按房间状态统计
+func (r *chatGroupRepository) CountByRoomStatus(ctx context.Context) (map[model.ChatGroupStatus]int64, error) {
+	type result struct {
+		RoomStatus model.ChatGroupStatus
+		Count      int64
+	}
+	var results []result
+	if err := r.db.WithContext(ctx).
+		Model(&model.ChatGroup{}).
+		Where("group_type IN ?", []model.ChatGroupType{
+			model.ChatGroupTypeTeam,
+			model.ChatGroupTypeLFG,
+			model.ChatGroupTypeCustom,
+		}).
+		Select("room_status, COUNT(*) as count").
+		Group("room_status").
+		Find(&results).Error; err != nil {
+		return nil, err
+	}
+
+	counts := make(map[model.ChatGroupStatus]int64)
+	for _, r := range results {
+		counts[r.RoomStatus] = r.Count
+	}
+	return counts, nil
+}
+
+// CountActiveRooms 统计活跃房间数
+func (r *chatGroupRepository) CountActiveRooms(ctx context.Context) (int64, error) {
+	var count int64
+	if err := r.db.WithContext(ctx).
+		Model(&model.ChatGroup{}).
+		Where("group_type IN ?", []model.ChatGroupType{
+			model.ChatGroupTypeTeam,
+			model.ChatGroupTypeLFG,
+			model.ChatGroupTypeCustom,
+		}).
+		Where("is_active = ?", true).
+		Where("room_status IN ?", []model.ChatGroupStatus{
+			model.ChatGroupStatusWaiting,
+			model.ChatGroupStatusReady,
+			model.ChatGroupStatusInGame,
+		}).
+		Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
+}

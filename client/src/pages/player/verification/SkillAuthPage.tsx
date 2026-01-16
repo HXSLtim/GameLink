@@ -24,6 +24,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
+import { http } from "@/lib/http";
 
 const formSchema = z.object({
     gameId: z.string().min(1, "请选择游戏"),
@@ -77,15 +78,18 @@ export default function SkillAuthPage() {
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setIsSubmitting(true);
         try {
-            // Simulate API call
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-            console.log(values);
+            await http.post('/player/verification/skill', {
+                gameId: values.gameId,
+                rank: values.rankId,
+                // In production, upload screenshot first and send URL
+                // screenshotUrl: screenshotImageUrl,
+            });
             toast.success("提交成功", {
                 description: "您的技能认证信息已提交审核",
             });
-        } catch {
+        } catch (error) {
             toast.error("提交失败", {
-                description: "请稍后重试"
+                description: error instanceof Error ? error.message : "请稍后重试"
             });
         } finally {
             setIsSubmitting(false);

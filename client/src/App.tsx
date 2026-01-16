@@ -47,6 +47,15 @@ const RealNamePage = lazy(() => import("@/pages/player/verification/RealNamePage
 const SkillAuthPage = lazy(() => import("@/pages/player/verification/SkillAuthPage")); // Added import
 const TeamPage = lazy(() => import("@/pages/player/team/TeamPage")); // Added import
 
+// Room pages
+const RoomListPage = lazy(() => import("@/pages/room/RoomListPage"));
+const RoomDetailPage = lazy(() => import("@/pages/room/RoomDetailPage"));
+const CreateRoomPage = lazy(() => import("@/pages/room/CreateRoomPage"));
+
+// LFG pages
+const LFGPage = lazy(() => import("@/pages/lfg/LFGPage"));
+const CreateLFGPage = lazy(() => import("@/pages/lfg/CreateLFGPage"));
+
 const HomePage = lazy(() => import("@/pages/home/HomePage"));
 
 function App() {
@@ -98,6 +107,16 @@ function App() {
                   <Route path="/coupons" element={<CouponCenterPage />} /> {/* Added route */}
                   <Route path="/referral" element={<ReferralPage />} /> {/* Added route */}
                   <Route path="/activities" element={<ActivityListPage />} /> {/* Added route */}
+
+                  {/* Room Routes */}
+                  <Route path="/rooms" element={<RoomListPage />} />
+                  <Route path="/rooms/create" element={<CreateRoomPage />} />
+                  <Route path="/rooms/:id" element={<RoomDetailPage />} />
+
+                  {/* LFG Routes */}
+                  <Route path="/lfg" element={<LFGPage />} />
+                  <Route path="/lfg/create" element={<CreateLFGPage />} />
+
                   <Route path="/page-structure" element={<PageShowcase />} />
                 </Route>
               </Route>

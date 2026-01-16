@@ -166,6 +166,20 @@ export interface CommissionResult {
     playerEarningsCents: number;
 }
 
+export interface EarningsTrendPoint {
+    date: string;
+    earningsCents: number;
+    orderCount: number;
+}
+
+export interface EarningsTrend {
+    period: 'week' | 'month' | 'year';
+    data: EarningsTrendPoint[];
+    totalEarningsCents: number;
+    totalOrders: number;
+    averageEarningsCents: number;
+}
+
 export interface PlayerFilters {
     gameId?: number;
     minPrice?: number;
@@ -214,6 +228,7 @@ export interface PlayerState {
     applicationStatus: ApplicationStatus | null;
     earnings: PlayerEarnings | null;
     earningsRecords: EarningsRecord[];
+    earningsTrend: EarningsTrend | null;
 
     // 状态
     loading: boolean;
@@ -243,7 +258,8 @@ export interface PlayerActions {
     // 收益 Actions
     fetchEarnings: () => Promise<void>;
     fetchEarningsRecords: (page?: number) => Promise<void>;
-    calculateCommission: (orderAmountCents: number) => CommissionResult;
+    fetchEarningsTrend: (period?: 'week' | 'month' | 'year') => Promise<void>;
+    calculateCommission: (orderAmountCents: number) => Promise<CommissionResult>;
 }
 
 const INITIAL_FILTERS: PlayerFilters = {
@@ -259,6 +275,17 @@ function debounce<T extends (...args: Parameters<T>) => void>(func: T, wait: num
         timeout = setTimeout(() => func.apply(this, args), wait);
     } as T;
 }
+
+// PERFORMANCE FIX: Create debounced fetch function ONCE outside the store
+// to prevent memory leak from creating new debounce instances on every filter change
+let debouncedFetchPlayers: (() => void) | null = null;
+
+const getDebouncedFetchPlayers = (fetchFn: () => void) => {
+    if (!debouncedFetchPlayers) {
+        debouncedFetchPlayers = debounce(fetchFn, 500);
+    }
+    return debouncedFetchPlayers;
+};
 
 // ============ Store ============
 
@@ -279,6 +306,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
         applicationStatus: null,
         earnings: null,
         earningsRecords: [],
+        earningsTrend: null,
         loading: false,
         error: null,
 
@@ -343,7 +371,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
 
         fetchFeaturedPlayers: async () => {
             try {
-                const data = await http.get<Player[]>('/players/featured');
+                const data = await http.get<Player[]>('/public/players/featured');
                 set({ featuredPlayers: data });
             } catch {
                 console.warn("Failed to fetch featured players");
@@ -357,10 +385,10 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
                 players: []
             }));
 
-            const debouncedFetch = debounce(() => {
+            // PERFORMANCE FIX: Use memoized debounce function to prevent memory leak
+            const debouncedFetch = getDebouncedFetchPlayers(() => {
                 get().fetchPlayers(true);
-            }, 500);
-
+            });
             debouncedFetch();
         },
 
@@ -479,22 +507,37 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
             }
         },
 
-        calculateCommission: (orderAmountCents) => {
-            // 默认佣金率 20%，可根据排名减免
-            const baseRate = 20;
-            const rankingDiscount = 0; // 从后端获取实际值
-            const effectiveRate = baseRate - rankingDiscount;
-            const commissionCents = Math.floor(orderAmountCents * effectiveRate / 100);
-            const playerEarningsCents = orderAmountCents - commissionCents;
+        fetchEarningsTrend: async (period = 'month') => {
+            try {
+                const data = await http.get<EarningsTrend>('/player/earnings/trend', {
+                    params: { period }
+                });
+                set({ earningsTrend: data });
+            } catch (err) {
+                console.error('Failed to fetch earnings trend:', err);
+            }
+        },
 
-            return {
-                orderAmountCents,
-                baseRate,
-                rankingDiscount,
-                effectiveRate,
-                commissionCents,
-                playerEarningsCents
-            };
+        calculateCommission: async (orderAmountCents) => {
+            // SECURITY: Commission calculation MUST be server-authoritative
+            // Never trust client-side calculations for financial data
+            try {
+                const result = await http.post<CommissionResult>('/player/commission/calculate', {
+                    orderAmountCents
+                });
+                return result;
+            } catch (err) {
+                console.error('Failed to calculate commission:', err);
+                // Return a safe fallback that shows no earnings (server will validate anyway)
+                return {
+                    orderAmountCents,
+                    baseRate: 0,
+                    rankingDiscount: 0,
+                    effectiveRate: 0,
+                    commissionCents: orderAmountCents,
+                    playerEarningsCents: 0
+                };
+            }
         }
     }))
 );

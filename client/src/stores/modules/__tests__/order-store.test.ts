@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { useOrderStore } from '../order-store';
+import { useOrderStore, OrderStatus } from '../order-store';
 import { http } from '@/lib/http';
 
 // Mock http client
@@ -80,7 +80,8 @@ describe('Order Store', () => {
     });
 
     it('should cancel order optimistically', async () => {
-        const initialOrder = { id: '1', status: 'pending' } as Parameters<typeof useOrderStore.setState>[0] extends infer T ? T extends { myOrders?: infer O } ? O extends (infer E)[] ? E : never : never : never;
+        // Use any to bypass strict type check for partial mock state if needed, or precise type
+        const initialOrder = { id: '1', status: OrderStatus.PENDING } as any;
         useOrderStore.setState({
             myOrders: [initialOrder],
             currentOrder: initialOrder
@@ -91,8 +92,8 @@ describe('Order Store', () => {
         await useOrderStore.getState().cancelOrder('1');
 
         const state = useOrderStore.getState();
-        expect(state.myOrders[0].status).toBe('cancelled');
-        expect(state.currentOrder?.status).toBe('cancelled');
+        expect(state.myOrders[0].status).toBe(OrderStatus.CANCELED);
+        expect(state.currentOrder?.status).toBe(OrderStatus.CANCELED);
         expect(http.post).toHaveBeenCalledWith('/orders/1/cancel');
     });
 });

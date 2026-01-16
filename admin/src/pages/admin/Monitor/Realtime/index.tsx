@@ -109,7 +109,7 @@ const RealtimeMonitor: React.FC = () => {
    */
   const handleWSMessage = useCallback((message: WSMessage) => {
     switch (message.type) {
-      case 'system_status':
+      case 'system_status': {
         const status = message.data as SystemStatus;
         // 调试：打印原始内存值和计算过程
         const usedInKB = status.memoryUsed;
@@ -138,6 +138,7 @@ const RealtimeMonitor: React.FC = () => {
           return updated.slice(-20); // 保留最近20个点
         });
         break;
+      }
       case 'online_users':
         setOnlineUsers(message.data as OnlineUsers);
         break;

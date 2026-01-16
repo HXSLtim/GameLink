@@ -128,3 +128,30 @@ func ParseQueryIDOrFail(c *gin.Context, queryName string) (uint64, bool) {
 
 	return id, true
 }
+
+// ParseQueryInt parses an optional int query parameter with a default value.
+func ParseQueryInt(c *gin.Context, queryName string, defaultValue int) int {
+	str := c.Query(queryName)
+	if str == "" {
+		return defaultValue
+	}
+	val, err := strconv.Atoi(str)
+	if err != nil {
+		return defaultValue
+	}
+	return val
+}
+
+// ParseQueryUint64Ptr parses an optional uint64 query parameter.
+// Returns nil if the parameter is not provided or invalid.
+func ParseQueryUint64Ptr(c *gin.Context, queryName string) *uint64 {
+	str := c.Query(queryName)
+	if str == "" {
+		return nil
+	}
+	val, err := strconv.ParseUint(str, 10, 64)
+	if err != nil {
+		return nil
+	}
+	return &val
+}

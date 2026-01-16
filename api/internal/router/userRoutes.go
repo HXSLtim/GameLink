@@ -86,6 +86,18 @@ func registerUserRoutesWithRoleSwitch(api *gin.RouterGroup, authMiddleware gin.H
 		// 钱包交易记录路由
 		paymentRepo := paymentrepo.NewPaymentRepository(orm)
 		userhandler.RegisterWalletTransactionsRoutes(userGroup, paymentRepo, authMiddleware)
+
+		// 在线状态路由
+		userhandler.RegisterPresenceRoutes(userGroup, services.presenceSvc, authMiddleware)
+
+		// 游戏房间路由
+		userhandler.RegisterGameRoomRoutes(userGroup, services.gameRoomSvc, authMiddleware)
+
+		// 快速匹配路由
+		userhandler.RegisterLFGRoutes(userGroup, services.lfgSvc, authMiddleware)
+
+		// 语音通话路由
+		userhandler.RegisterVoiceRoutes(userGroup, services.trtcSvc, authMiddleware)
 	}
 
 	// 修改密码路由（注册在 /api/v1 下，不是 /user 下）

@@ -13,7 +13,7 @@ import * as fc from 'fast-check';
 import type { ServiceDependencies } from '@/services/domain/base';
 import { BaseService } from '@/services/domain/base';
 import type { BatchResult, BatchItemResult } from '@/services/utils';
-import { ServiceResultHelper, ServiceException, ServiceErrorCodes } from '@/services/utils';
+import { ServiceResultHelper } from '@/services/utils';
 
 /**
  * Test service that simulates multi-API orchestration scenarios

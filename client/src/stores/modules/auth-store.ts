@@ -20,6 +20,8 @@ export interface PlayerProfile {
     rating: number;
 }
 
+export type ViewMode = 'user' | 'player';
+
 export interface AuthState {
     // User Info
     user: User | null;
@@ -30,6 +32,10 @@ export interface AuthState {
     // Role Info
     role: 'guest' | 'user' | 'player' | 'admin';
     permissions: string[];
+
+    // View Mode (用户视图 or 陪玩视图)
+    viewMode: ViewMode;
+    isPlayer: boolean; // 用户是否已认证为陪玩
 
     // Player Profile (if applicable)
     playerProfile: PlayerProfile | null;
@@ -54,6 +60,8 @@ export interface AuthActions {
     updateProfile: (data: Partial<User>) => Promise<void>;
     changePassword: (data: { oldPassword?: string; newPassword: string }) => Promise<void>;
     switchToPlayerMode: () => void;
+    switchToUserMode: () => void;
+    setIsPlayer: (isPlayer: boolean) => void;
     checkAuth: () => Promise<void>;
 }
 
@@ -68,6 +76,8 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             isAuthenticated: false,
             role: 'guest',
             permissions: [],
+            viewMode: 'user',
+            isPlayer: false,
             playerProfile: null,
             loading: false,
             error: null,
@@ -205,8 +215,22 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             },
 
             switchToPlayerMode: () => {
-                // TODO: Implement player mode switching logic
-                // Currently a no-op placeholder for future implementation
+                const { isPlayer } = get();
+                if (isPlayer) {
+                    set({ viewMode: 'player' });
+                }
+            },
+
+            switchToUserMode: () => {
+                set({ viewMode: 'user' });
+            },
+
+            setIsPlayer: (isPlayer: boolean) => {
+                set({ isPlayer });
+                // 如果不再是陪玩，自动切换回用户视图
+                if (!isPlayer) {
+                    set({ viewMode: 'user' });
+                }
             },
 
             checkAuth: async () => {
@@ -235,8 +259,13 @@ export const useAuthStore = create<AuthState & AuthActions>()(
                         isAuthenticated: true,
                         role: (userData.role as AuthState['role']) || 'user'
                     });
-                } catch {
-                    get().logout();
+                } catch (err: any) {
+                    // Only logout if it's an authentication error
+                    if (err.response?.status === 401) {
+                        get().logout();
+                    } else {
+                        console.warn('CheckAuth failed but not 401, keeping session:', err);
+                    }
                 }
             }
         }),
@@ -248,6 +277,8 @@ export const useAuthStore = create<AuthState & AuthActions>()(
                 refreshToken: state.refreshToken,
                 user: state.user,
                 role: state.role,
+                viewMode: state.viewMode,
+                isPlayer: state.isPlayer,
                 playerProfile: state.playerProfile,
             }),
             onRehydrateStorage: () => (state) => {

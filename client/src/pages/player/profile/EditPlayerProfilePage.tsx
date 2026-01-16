@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PageContainer } from '@/components/page-container';
 import { Button } from '@/components/ui/button';
@@ -7,43 +7,117 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Clock, Image as ImageIcon, Mic } from 'lucide-react';
+import { Clock, Image as ImageIcon, Mic, Loader2 } from 'lucide-react';
+import { usePlayerStore, type TimeSlot } from '@/stores/modules/player-store';
+
+// Day mapping: 0=Sunday, 1=Monday, ..., 6=Saturday
+const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
+type DayKey = typeof DAY_KEYS[number];
 
 export default function EditPlayerProfilePage() {
     const { t } = useTranslation();
-    const [loading, setLoading] = useState(false);
+    const { myProfile, loading, fetchMyProfile, updateProfile } = usePlayerStore();
+    const [saving, setSaving] = useState(false);
+    const [initialLoading, setInitialLoading] = useState(true);
 
-    // Mock Availability State (True = Available)
-    const [availability, setAvailability] = useState({
-        mon: true,
-        tue: true,
-        wed: true,
-        thu: true,
-        fri: true,
-        sat: true,
-        sun: true,
+    // Availability state derived from serviceTimeSlots
+    const [availability, setAvailability] = useState<Record<DayKey, boolean>>({
+        sun: false,
+        mon: false,
+        tue: false,
+        wed: false,
+        thu: false,
+        fri: false,
+        sat: false,
     });
 
-    const [album, setAlbum] = useState([
-        'https://api.dicebear.com/7.x/adventurer/svg?seed=Felix',
-        'https://api.dicebear.com/7.x/adventurer/svg?seed=Coco',
-    ]);
+    // Album state from gallery
+    const [album, setAlbum] = useState<string[]>([]);
 
-    const handleSave = () => {
-        setLoading(true);
-        setTimeout(() => {
-            setLoading(false);
+    // Load profile on mount
+    useEffect(() => {
+        const loadProfile = async () => {
+            try {
+                await fetchMyProfile();
+            } finally {
+                setInitialLoading(false);
+            }
+        };
+        loadProfile();
+    }, [fetchMyProfile]);
+
+    // Sync state when profile loads
+    useEffect(() => {
+        if (myProfile) {
+            // Convert serviceTimeSlots to availability map
+            const newAvailability: Record<DayKey, boolean> = {
+                sun: false, mon: false, tue: false, wed: false, thu: false, fri: false, sat: false,
+            };
+            myProfile.serviceTimeSlots?.forEach((slot: TimeSlot) => {
+                const dayKey = DAY_KEYS[slot.dayOfWeek];
+                if (dayKey) newAvailability[dayKey] = true;
+            });
+            setAvailability(newAvailability);
+
+            // Set album from gallery
+            setAlbum(myProfile.gallery || []);
+        }
+    }, [myProfile]);
+
+    const handleSave = useCallback(async () => {
+        setSaving(true);
+        try {
+            // Convert availability back to TimeSlots
+            const serviceTimeSlots: TimeSlot[] = DAY_KEYS
+                .map((day, index) => ({ dayOfWeek: index, day }))
+                .filter(({ day }) => availability[day])
+                .map(({ dayOfWeek }) => ({
+                    dayOfWeek,
+                    startTime: '09:00',
+                    endTime: '22:00',
+                }));
+
+            await updateProfile({
+                serviceTimeSlots,
+                gallery: album,
+            });
             toast.success(t('player.edit.success', { defaultValue: 'Profile updated successfully!' }));
-        }, 1000);
-    };
+        } catch {
+            toast.error(t('player.edit.error', { defaultValue: 'Failed to update profile' }));
+        } finally {
+            setSaving(false);
+        }
+    }, [availability, album, updateProfile, t]);
 
-    const toggleDay = (day: keyof typeof availability) => {
+    const toggleDay = (day: DayKey) => {
         setAvailability(prev => ({ ...prev, [day]: !prev[day] }));
     };
 
     const handleDeletePhoto = (index: number) => {
         setAlbum(prev => prev.filter((_, i) => i !== index));
     };
+
+    // Show loading state while fetching profile
+    if (initialLoading || loading) {
+        return (
+            <PageContainer>
+                <div className="flex items-center justify-center min-h-[400px]">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+            </PageContainer>
+        );
+    }
+
+    // Show error if no profile found
+    if (!myProfile) {
+        return (
+            <PageContainer>
+                <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+                    <p className="text-muted-foreground">{t('player.edit.no_profile', { defaultValue: 'Player profile not found. Please apply to become a player first.' })}</p>
+                </div>
+            </PageContainer>
+        );
+    }
 
     return (
         <PageContainer>
@@ -53,8 +127,13 @@ export default function EditPlayerProfilePage() {
                         <h1 className="text-3xl font-bold tracking-tight">{t('player.edit.title', { defaultValue: 'Player Settings' })}</h1>
                         <p className="text-muted-foreground">{t('player.edit.subtitle', { defaultValue: 'Manage your service availability and media.' })}</p>
                     </div>
-                    <Button onClick={handleSave} disabled={loading}>
-                        {loading ? t('common.saving', { defaultValue: 'Saving...' }) : t('common.save', { defaultValue: 'Save Changes' })}
+                    <Button onClick={handleSave} disabled={saving}>
+                        {saving ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                {t('common.saving', { defaultValue: 'Saving...' })}
+                            </>
+                        ) : t('common.save', { defaultValue: 'Save Changes' })}
                     </Button>
                 </div>
 

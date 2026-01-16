@@ -47,22 +47,10 @@ const RouteGuard = ({ children, roles, requiresAuth, permission }: RouteGuardPro
         [permission]
     );
 
-    // 等待 Zustand persist 水合完成
-    if (!isHydrated) {
-        return (
-            <div style={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                minHeight: '200px'
-            }}>
-                <Spin size="large" tip="加载中..." />
-            </div>
-        );
-    }
-
-    // Handle authentication redirect
+    // Handle authentication redirect - must be called unconditionally
     useEffect(() => {
+        if (!isHydrated) return; // Skip if not hydrated yet
+
         if (requiresAuth && !isAuthenticated) {
             // 根据当前路径决定重定向到哪个登录页
             const loginPath = location.pathname.startsWith('/admin') ? '/admin/login' : '/login';
@@ -77,27 +65,43 @@ const RouteGuard = ({ children, roles, requiresAuth, permission }: RouteGuardPro
             else if (userRole === 'ADMIN') navigate('/admin');
             else navigate('/'); // Fallback
         }
-    }, [isAuthenticated, userRole, roles, requiresAuth, navigate, location]);
+    }, [isHydrated, isAuthenticated, userRole, roles, requiresAuth, navigate, location]);
 
     // Check permission after loading - redirect to 403 if no permission
     useEffect(() => {
+        if (!isHydrated) return; // Skip if not hydrated yet
+
         if (needsPermissionCheck && !permissionLoading && !hasPermission && !hasRedirected.current) {
             hasRedirected.current = true;
             // 重定向到 403 页面，并传递原始路径信息
-            navigate('/403', { 
+            navigate('/403', {
                 replace: true,
-                state: { 
+                state: {
                     from: location.pathname,
-                    requiredPermission: permission 
+                    requiredPermission: permission
                 }
             });
         }
-    }, [needsPermissionCheck, permissionLoading, hasPermission, navigate, location.pathname, permission]);
+    }, [isHydrated, needsPermissionCheck, permissionLoading, hasPermission, navigate, location.pathname, permission]);
 
     // Reset redirect flag when location changes
     useEffect(() => {
         hasRedirected.current = false;
     }, [location.pathname]);
+
+    // 等待 Zustand persist 水合完成
+    if (!isHydrated) {
+        return (
+            <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                minHeight: '200px'
+            }}>
+                <Spin size="large" tip="加载中..." />
+            </div>
+        );
+    }
 
     if (requiresAuth && !isAuthenticated) {
         return null; // Will redirect to login
@@ -110,11 +114,11 @@ const RouteGuard = ({ children, roles, requiresAuth, permission }: RouteGuardPro
     // Show loading spinner while checking permissions
     if (needsPermissionCheck && permissionLoading) {
         return (
-            <div style={{ 
-                display: 'flex', 
-                justifyContent: 'center', 
-                alignItems: 'center', 
-                minHeight: '200px' 
+            <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                minHeight: '200px'
             }}>
                 <Spin size="large" tip="验证权限中..." />
             </div>

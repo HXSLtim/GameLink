@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { http } from '@/lib/http';
+import { getErrorMessage, logError } from '@/lib/error';
 
 export const OrderStatus = {
     PENDING: 'pending',
@@ -103,7 +104,8 @@ export const useOrderStore = create<OrderState & OrderActions>((set) => ({
             const data = await http.get<Order[]>('/orders');
             set({ myOrders: data, loading: false });
         } catch (err) {
-            set({ loading: false, error: (err as Error).message || 'Failed to fetch orders' });
+            logError('fetchOrders', err);
+            set({ loading: false, error: getErrorMessage(err, 'Failed to fetch orders') });
         }
     },
 
@@ -113,7 +115,8 @@ export const useOrderStore = create<OrderState & OrderActions>((set) => ({
             const data = await http.get<Order>(`/orders/${id}`);
             set({ currentOrder: data, loading: false });
         } catch (err) {
-            set({ loading: false, error: (err as Error).message || 'Failed to get order details' });
+            logError('fetchOrderById', err);
+            set({ loading: false, error: getErrorMessage(err, 'Failed to get order details') });
         }
     },
 
@@ -127,7 +130,8 @@ export const useOrderStore = create<OrderState & OrderActions>((set) => ({
                 loading: false
             }));
         } catch (err) {
-            set({ loading: false, error: (err as Error).message || 'Failed to create order' });
+            logError('createOrder', err);
+            set({ loading: false, error: getErrorMessage(err, 'Failed to create order') });
             throw err;
         }
     },
@@ -141,7 +145,8 @@ export const useOrderStore = create<OrderState & OrderActions>((set) => ({
                 currentOrder: state.currentOrder?.id === id ? { ...state.currentOrder, status: OrderStatus.CANCELED } : state.currentOrder
             }));
         } catch (err) {
-            console.error(err);
+            logError('cancelOrder', err);
+            throw err;
         }
     },
 
@@ -162,7 +167,8 @@ export const useOrderStore = create<OrderState & OrderActions>((set) => ({
             set({ loading: false });
             return data;
         } catch (err) {
-            set({ loading: false, error: (err as Error).message || 'Failed to fetch order stats' });
+            logError('fetchOrderStats', err);
+            set({ loading: false, error: getErrorMessage(err, 'Failed to fetch order stats') });
             return null;
         }
     },
@@ -174,7 +180,8 @@ export const useOrderStore = create<OrderState & OrderActions>((set) => ({
             const data = await http.get<Order[]>('/player/orders'); // Report says /player/orders
             set({ playerOrders: data, loading: false });
         } catch (err) {
-            set({ loading: false, error: (err as Error).message || 'Failed to fetch player orders' });
+            logError('fetchPlayerOrders', err);
+            set({ loading: false, error: getErrorMessage(err, 'Failed to fetch player orders') });
         }
     },
 

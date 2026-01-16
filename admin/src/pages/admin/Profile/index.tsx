@@ -2,7 +2,7 @@
  * 个人中心页面
  * 显示当前登录用户信息，支持修改密码和个人信息
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     Card,
     Form,
@@ -72,27 +72,11 @@ const ProfilePage: React.FC = () => {
     const [passwordForm] = Form.useForm();
     const [editForm] = Form.useForm();
 
-    // 使用水合状态而非 setTimeout，确保 Zustand persist 完成后再渲染
-    if (!isHydrated) {
-        return (
-            <PageContainer title="个人中心">
-                <div style={{ textAlign: 'center', padding: 100 }}>
-                    <Spin size="large" tip="加载中..." />
-                </div>
-            </PageContainer>
-        );
-    }
-
-    // 添加调试日志
-    logger.info('[Profile] Component render', { authUser, isAuthenticated });
-
-    // 加载用户信息
-    const loadUserInfo = async () => {
-        // 如果没有 authUser 信息，直接返回
+    // 加载用户信息 - 定义为 useCallback 以便在多处调用
+    const loadUserInfo = useCallback(async () => {
         if (!authUser) {
             return;
         }
-
         try {
             setLoading(true);
             // 从 authUser 构建 User 对象
@@ -115,12 +99,29 @@ const ProfilePage: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [authUser]);
 
+    // 初始加载用户信息
     useEffect(() => {
+        if (!isHydrated || !authUser) {
+            return;
+        }
         loadUserInfo();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [authUser]); // 依赖 authUser，loadUserInfo 在组件内部定义，不需要添加到依赖
+    }, [isHydrated, authUser, loadUserInfo]);
+
+    // 使用水合状态而非 setTimeout，确保 Zustand persist 完成后再渲染
+    if (!isHydrated) {
+        return (
+            <PageContainer title="个人中心">
+                <div style={{ textAlign: 'center', padding: 100 }}>
+                    <Spin size="large" tip="加载中..." />
+                </div>
+            </PageContainer>
+        );
+    }
+
+    // 添加调试日志
+    logger.info('[Profile] Component render', { authUser, isAuthenticated });
 
     // 修改密码
     const handleChangePassword = async () => {

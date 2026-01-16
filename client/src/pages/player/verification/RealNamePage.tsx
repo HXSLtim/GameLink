@@ -19,11 +19,12 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
+import { http } from "@/lib/http";
 
 const formSchema = z.object({
     realName: z.string().min(2, "真实姓名至少需要2个字符"),
     idNumber: z.string().regex(/(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/, "请输入有效的身份证号"),
-    idCardFront: z.any().optional(), // In a real app, refine this validation
+    idCardFront: z.any().optional(),
     idCardBack: z.any().optional(),
 });
 
@@ -43,16 +44,19 @@ export default function RealNamePage() {
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setIsSubmitting(true);
         try {
-            // Simulate API call
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-            console.log(values);
+            await http.post('/player/verification/realname', {
+                realName: values.realName,
+                idCard: values.idNumber,
+                // In production, upload images first and send URLs
+                // idCardFrontUrl: frontImageUrl,
+                // idCardBackUrl: backImageUrl,
+            });
             toast.success("提交成功", {
                 description: "您的实名认证信息已提交审核",
             });
-            // Redirect or update state here
-        } catch {
+        } catch (error) {
             toast.error("提交失败", {
-                description: "请稍后重试"
+                description: error instanceof Error ? error.message : "请稍后重试"
             });
         } finally {
             setIsSubmitting(false);

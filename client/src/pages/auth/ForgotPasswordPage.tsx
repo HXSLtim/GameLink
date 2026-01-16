@@ -84,11 +84,11 @@ export default function ForgotPasswordPage() {
 
         setLoading(true);
         try {
-            // Mocking Password Reset since no specific endpoint provided yet
-            // In real scenario: POST /api/v1/auth/reset-password { email, code, password }
-            // But since we verified code in step 1, maybe we have a temp token?
-            // For now, let's assume validation passed and we just simulate success
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await http.post('/public/auth/reset-password', {
+                email,
+                code,
+                newPassword,
+            });
 
             setStep(3);
             toast.success(t('auth.password_reset_success', { defaultValue: 'Password reset successfully' }));

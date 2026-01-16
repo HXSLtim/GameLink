@@ -73,11 +73,15 @@ export default function PlayerDetailPage() {
             {/* Header Image Background */}
             <div className="relative h-64 md:h-80 w-full overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent z-10" />
-                <img
-                    src={`https://api.dicebear.com/7.x/shapes/svg?seed=${currentPlayer.username}`}
-                    alt="Cover"
-                    className="w-full h-full object-cover"
-                />
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-muted to-muted">
+                    {currentPlayer.avatar && (
+                        <img
+                            src={currentPlayer.avatar}
+                            alt="Cover"
+                            className="w-full h-full object-cover"
+                        />
+                    )}
+                </div>
 
                 <div className="absolute top-4 left-4 z-20 flex w-full pr-8 justify-between items-center">
                     <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="rounded-full bg-background/20 backdrop-blur-md hover:bg-background/40 text-white">

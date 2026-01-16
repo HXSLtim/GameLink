@@ -5,6 +5,10 @@ type MessageHandler = (data: unknown) => void;
 // Get WebSocket URL from environment variable
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080/ws';
 
+// Heartbeat configuration
+const HEARTBEAT_INTERVAL = 30000; // 30 seconds
+const HEARTBEAT_TIMEOUT = 10000;  // 10 seconds to wait for pong
+
 export class WebSocketService {
     private socket: WebSocket | null = null;
     private handlers: Map<string, Set<MessageHandler>> = new Map();
@@ -12,6 +16,10 @@ export class WebSocketService {
     private maxReconnectAttempts = 5;
     private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
     private url: string;
+
+    // Heartbeat state
+    private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
+    private heartbeatTimeout: ReturnType<typeof setTimeout> | null = null;
 
     constructor() {
         this.url = WS_URL;
@@ -41,12 +49,21 @@ export class WebSocketService {
             if (token) {
                 this.send('auth', { token });
             }
+
+            // Start heartbeat after connection
+            this.startHeartbeat();
         };
 
         this.socket.onmessage = (event) => {
             try {
                 const message = JSON.parse(event.data);
                 const { type, payload } = message;
+
+                // Handle pong response
+                if (type === 'pong') {
+                    this.handlePong();
+                    return;
+                }
 
                 // Handle auth response if needed, otherwise emit
                 if (type === 'auth_success') {
@@ -64,6 +81,7 @@ export class WebSocketService {
 
         this.socket.onclose = () => {
             // console.debug('WebSocket disconnected');
+            this.stopHeartbeat();
             this.attemptReconnect();
         };
 
@@ -73,6 +91,7 @@ export class WebSocketService {
     }
 
     public disconnect() {
+        this.stopHeartbeat();
         if (this.socket) {
             this.socket.close();
             this.socket = null;
@@ -100,6 +119,10 @@ export class WebSocketService {
         }
     }
 
+    public isConnected(): boolean {
+        return this.socket?.readyState === WebSocket.OPEN;
+    }
+
     private emit(type: string, payload: unknown) {
         if (this.handlers.has(type)) {
             this.handlers.get(type)!.forEach((handler) => handler(payload));
@@ -117,6 +140,55 @@ export class WebSocketService {
             this.reconnectTimeout = setTimeout(() => {
                 this.connect();
             }, delay);
+        }
+    }
+
+    // ============ Heartbeat Methods ============
+
+    private startHeartbeat() {
+        this.stopHeartbeat(); // Clear any existing heartbeat
+
+        // Send ping at regular intervals
+        this.heartbeatInterval = setInterval(() => {
+            this.sendPing();
+        }, HEARTBEAT_INTERVAL);
+
+        // Send initial ping
+        this.sendPing();
+    }
+
+    private stopHeartbeat() {
+        if (this.heartbeatInterval) {
+            clearInterval(this.heartbeatInterval);
+            this.heartbeatInterval = null;
+        }
+        if (this.heartbeatTimeout) {
+            clearTimeout(this.heartbeatTimeout);
+            this.heartbeatTimeout = null;
+        }
+    }
+
+    private sendPing() {
+        if (this.socket?.readyState !== WebSocket.OPEN) return;
+
+        // Send ping message
+        this.send('ping', { timestamp: Date.now() });
+
+        // Set timeout for pong response
+        if (this.heartbeatTimeout) clearTimeout(this.heartbeatTimeout);
+
+        this.heartbeatTimeout = setTimeout(() => {
+            // No pong received within timeout - connection is dead
+            console.warn('WebSocket heartbeat timeout - reconnecting...');
+            this.socket?.close();
+        }, HEARTBEAT_TIMEOUT);
+    }
+
+    private handlePong() {
+        // Clear the timeout since we received pong
+        if (this.heartbeatTimeout) {
+            clearTimeout(this.heartbeatTimeout);
+            this.heartbeatTimeout = null;
         }
     }
 }

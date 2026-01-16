@@ -164,11 +164,60 @@ func (h *PlayerHandler) GetPlayer(c *gin.Context) {
 	resp.OK(c, info)
 }
 
+// ListFeaturedPlayers 获取精选陪玩师列表（公开）
+// @Summary 获取精选陪玩师列表
+// @Description 获取评分高、订单多的精选陪玩师，无需登录
+// @Tags 公共-陪玩师
+// @Accept json
+// @Produce json
+// @Param limit query int false "返回数量" default(10)
+// @Success 200 {array} PublicPlayerInfo
+// @Router /public/players/featured [get]
+func (h *PlayerHandler) ListFeaturedPlayers(c *gin.Context) {
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	if limit < 1 || limit > 50 {
+		limit = 10
+	}
+
+	// 只查询已认证的陪玩师
+	status := model.VerificationVerified
+	players, _, err := h.players.ListFeatured(c.Request.Context(), limit, &status)
+	if err != nil {
+		resp.Error(c, apierr.InternalError("获取精选陪玩师列表失败"))
+		return
+	}
+
+	// 转换为公开信息
+	result := make([]PublicPlayerInfo, 0, len(players))
+	for _, p := range players {
+		avatar := ""
+		if p.User != nil {
+			avatar = p.User.AvatarURL
+		}
+		info := PublicPlayerInfo{
+			ID:                 p.ID,
+			UserID:             p.UserID,
+			Nickname:           p.Nickname,
+			Avatar:             avatar,
+			Bio:                p.Bio,
+			Rank:               p.Rank,
+			RatingAverage:      p.RatingAverage,
+			RatingCount:        p.RatingCount,
+			OnlineStatus:       string(p.OnlineStatus),
+			VerificationStatus: string(p.VerificationStatus),
+		}
+		result = append(result, info)
+	}
+
+	resp.OK(c, result)
+}
+
 // RegisterRoutes 注册公共陪玩师路由
 func (h *PlayerHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	players := rg.Group("/players")
 	{
 		players.GET("", h.ListPlayers)
+		players.GET("/featured", h.ListFeaturedPlayers)
 		players.GET("/:id", h.GetPlayer)
 	}
 }

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { http } from '@/lib/http';
+import { getErrorMessage, logError } from '@/lib/error';
 
 export interface Message {
     id: string;
@@ -37,12 +38,15 @@ export interface ChatState {
 export interface ChatActions {
     fetchConversations: () => Promise<void>;
     selectConversation: (conversationId: string) => Promise<void>;
+    fetchMessages: (conversationId: string) => Promise<void>;
     sendMessage: (content: string, type?: 'text' | 'image') => Promise<void>;
     receiveMessage: (message: Message) => void;
     markAsRead: (conversationId: string) => Promise<void>;
+    setConnected: (connected: boolean) => void;
+    reset: () => void;
 }
 
-export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
+const INITIAL_STATE: ChatState = {
     conversations: [],
     currentConversationId: null,
     messages: {},
@@ -50,90 +54,56 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     isConnected: false,
     loading: false,
     error: null,
+};
+
+export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
+    ...INITIAL_STATE,
 
     fetchConversations: async () => {
         set({ loading: true, error: null });
         try {
-            const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
+            const data = await http.get<Conversation[]>('/chat/conversations');
+            const conversations = data || [];
 
-            if (USE_MOCK) {
-                // Mock data for development
-                const mockConversations: Conversation[] = [
-                    {
-                        id: '1',
-                        participantId: 101,
-                        participantName: "欢乐使者",
-                        participantAvatar: "",
-                        lastMessage: "Hello! Are you available?",
-                        lastMessageTime: new Date().toISOString(),
-                        unreadCount: 2,
-                        online: true,
-                    },
-                    {
-                        id: '2',
-                        participantId: 102,
-                        participantName: "游戏高手",
-                        participantAvatar: "",
-                        lastMessage: "GG well played!",
-                        lastMessageTime: new Date(Date.now() - 3600000).toISOString(),
-                        unreadCount: 0,
-                        online: false,
-                    }
-                ];
-
-                set({
-                    conversations: mockConversations,
-                    loading: false,
-                    totalUnreadCount: mockConversations.reduce((acc, curr) => acc + curr.unreadCount, 0)
-                });
-            } else {
-                // Real API call
-                // Assuming the API returns Conversation[] directly or wrapped
-                // Ideally this should be typed properly with generic Http response
-                const data = await http.get<Conversation[]>('/chat/conversations');
-
-                set({
-                    conversations: data,
-                    loading: false,
-                    totalUnreadCount: data.reduce((acc, curr) => acc + curr.unreadCount, 0)
-                });
-            }
+            set({
+                conversations,
+                loading: false,
+                totalUnreadCount: conversations.reduce((acc, curr) => acc + curr.unreadCount, 0)
+            });
         } catch (err) {
-            set({ loading: false, error: err instanceof Error ? err.message : 'Failed to fetch conversations' });
+            logError('fetchConversations', err);
+            set({ loading: false, error: getErrorMessage(err, 'Failed to fetch conversations') });
         }
     },
 
     selectConversation: async (conversationId: string) => {
         set({ currentConversationId: conversationId });
-        const { messages, markAsRead } = get();
+        const { messages, markAsRead, fetchMessages } = get();
 
         // Mark as read immediately when selecting
         void markAsRead(conversationId);
 
         // Fetch messages if not loaded
         if (!messages[conversationId]) {
-            set({ loading: true });
-            try {
-                // Mock API call
-                // const history = await http.get<Message[]>(`/chat/conversations/${conversationId}/messages`);
+            await fetchMessages(conversationId);
+        }
+    },
 
-                const mockHandler = conversationId === '1' ? [
-                    { id: 'm1', conversationId, senderId: 101, content: 'Hi there!', type: 'text', createdAt: new Date(Date.now() - 60000).toISOString(), read: true },
-                    { id: 'm2', conversationId, senderId: 999, content: 'Hello! Yes I am.', type: 'text', createdAt: new Date().toISOString(), read: true }, // 999 is self
-                ] : [];
+    fetchMessages: async (conversationId: string) => {
+        set({ loading: true });
+        try {
+            const data = await http.get<Message[]>(`/chat/conversations/${conversationId}/messages`);
 
-                set((state) => ({
-                    messages: {
-                        ...state.messages,
-                        [conversationId]: mockHandler as Message[] // Cast for mock
-                    },
-                    loading: false
-                }));
-
-            } catch (err) {
-                console.error(err);
-                set({ loading: false });
-            }
+            set((state) => ({
+                messages: {
+                    ...state.messages,
+                    [conversationId]: data || []
+                },
+                loading: false
+            }));
+        } catch (err) {
+            logError('fetchMessages', err);
+            set({ loading: false, error: getErrorMessage(err, 'Failed to fetch messages') });
         }
     },
 
@@ -146,7 +116,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
         const newMessage: Message = {
             id: tempId,
             conversationId: currentConversationId,
-            senderId: 0, // 0 usually means 'me' in optimistic UI before real ID
+            senderId: 0, // Will be replaced by server response
             content,
             type,
             createdAt: new Date().toISOString(),
@@ -161,42 +131,47 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
         }));
 
         try {
-            // await http.post(`/chat/conversations/${currentConversationId}/messages`, { content, type });
-            // In real app, replace tempId with real ID from response
+            const response = await http.post<Message>(
+                `/chat/conversations/${currentConversationId}/messages`,
+                { content, type }
+            );
 
-            // Simulating API call for now since we are in mock mode mostly
-            // If VITE_USE_MOCK is false, we would await the real call
-            const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
-            if (!USE_MOCK) {
-                // TODO: Uncomment when backend is ready
-                // const response = await http.post<Message>(`/chat/conversations/${currentConversationId}/messages`, { content, type });
-                // set(state => ({
-                //     messages: {
-                //         ...state.messages,
-                //         [currentConversationId]: state.messages[currentConversationId]?.map(m =>
-                //             m.id === tempId ? { ...m, id: response.id } : m
-                //         )
-                //     }
-                // }));
-            }
+            // Replace temp message with real one
+            set(state => ({
+                messages: {
+                    ...state.messages,
+                    [currentConversationId]: state.messages[currentConversationId]?.map(m =>
+                        m.id === tempId ? response : m
+                    ) || []
+                }
+            }));
 
+            // Update conversation's last message
+            set(state => ({
+                conversations: state.conversations.map(c =>
+                    c.id === currentConversationId
+                        ? { ...c, lastMessage: content, lastMessageTime: new Date().toISOString() }
+                        : c
+                )
+            }));
         } catch (err) {
-            console.error("Failed to send message", err);
+            logError('sendMessage', err);
             // Rollback: Remove the temporary message
             set(state => ({
                 messages: {
                     ...state.messages,
                     [currentConversationId]: state.messages[currentConversationId]?.filter(m => m.id !== tempId) || []
                 },
-                error: 'Failed to send message. Please try again.'
+                error: getErrorMessage(err, 'Failed to send message')
             }));
+            throw err;
         }
     },
 
     receiveMessage: (message) => {
         set(state => {
             const conversationMsgs = state.messages[message.conversationId] || [];
-            // Check for dups
+            // Check for duplicates
             if (conversationMsgs.some(m => m.id === message.id)) return state;
 
             return {
@@ -204,6 +179,19 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
                     ...state.messages,
                     [message.conversationId]: [...conversationMsgs, message]
                 },
+                // Update conversation's last message
+                conversations: state.conversations.map(c =>
+                    c.id === message.conversationId
+                        ? {
+                            ...c,
+                            lastMessage: message.content,
+                            lastMessageTime: message.createdAt,
+                            unreadCount: state.currentConversationId !== message.conversationId
+                                ? c.unreadCount + 1
+                                : c.unreadCount
+                        }
+                        : c
+                ),
                 // Increment unread if not current conversation
                 totalUnreadCount: state.currentConversationId !== message.conversationId
                     ? state.totalUnreadCount + 1
@@ -213,7 +201,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     },
 
     markAsRead: async (conversationId) => {
-        // Optimistic
+        // Optimistic update
         set(state => ({
             conversations: state.conversations.map(c =>
                 c.id === conversationId ? { ...c, unreadCount: 0 } : c
@@ -224,9 +212,30 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
         }));
 
         try {
-            // await http.post(`/chat/conversations/${conversationId}/read`);
-        } catch (e) {
-            console.error(e);
+            await http.post(`/chat/conversations/${conversationId}/read`);
+        } catch (err) {
+            logError('markAsRead', err);
+            // Don't throw - marking as read is not critical
         }
-    }
+    },
+
+    setConnected: (connected) => {
+        set({ isConnected: connected });
+    },
+
+    reset: () => set(INITIAL_STATE)
 }));
+
+// ============ Selectors ============
+
+export const selectCurrentMessages = (state: ChatState) => {
+    if (!state.currentConversationId) return [];
+    return state.messages[state.currentConversationId] || [];
+};
+
+export const selectCurrentConversation = (state: ChatState) => {
+    if (!state.currentConversationId) return null;
+    return state.conversations.find(c => c.id === state.currentConversationId) || null;
+};
+
+export const selectHasUnread = (state: ChatState) => state.totalUnreadCount > 0;

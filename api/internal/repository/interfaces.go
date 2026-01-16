@@ -50,6 +50,7 @@ type PlayerRepository interface {
 	List(ctx context.Context) ([]model.Player, error)
 	ListPaged(ctx context.Context, page, pageSize int) ([]model.Player, int64, error)
 	ListPagedWithFilter(ctx context.Context, page, pageSize int, keyword string, status *model.VerificationStatus) ([]model.Player, int64, error)
+	ListFeatured(ctx context.Context, limit int, status *model.VerificationStatus) ([]model.Player, int64, error)
 	Get(ctx context.Context, id uint64) (*model.Player, error)
 	GetByIDs(ctx context.Context, ids []uint64) ([]model.Player, error)
 	GetByUserID(ctx context.Context, userID uint64) (*model.Player, error)
@@ -203,13 +204,26 @@ type OperationLogRepository interface {
 type ChatGroupRepository interface {
 	Create(ctx context.Context, group *model.ChatGroup) error
 	Get(ctx context.Context, id uint64) (*model.ChatGroup, error)
+	GetWithRelations(ctx context.Context, id uint64) (*model.ChatGroup, error)
 	GetByRelatedOrderID(ctx context.Context, orderID uint64) (*model.ChatGroup, error)
+	GetByRelatedTeamID(ctx context.Context, teamID uint64) (*model.ChatGroup, error)
+	GetByRelatedLFGID(ctx context.Context, lfgID uint64) (*model.ChatGroup, error)
+	GetByVoiceRoomID(ctx context.Context, voiceRoomID string) (*model.ChatGroup, error)
 	ListByUser(ctx context.Context, userID uint64, opts ChatGroupListOptions) ([]model.ChatGroup, int64, error)
 	ListMembers(ctx context.Context, groupID uint64, opts ChatGroupMemberListOptions) ([]model.ChatGroupMember, int64, error)
 	Update(ctx context.Context, group *model.ChatGroup) error
+	UpdateRoomStatus(ctx context.Context, id uint64, status model.ChatGroupStatus) error
 	Deactivate(ctx context.Context, id uint64) error
 	ListDeactivatedBefore(ctx context.Context, cutoff time.Time, limit int) ([]model.ChatGroup, error)
 	DeleteByIDs(ctx context.Context, ids []uint64) error
+	// 游戏房间相关
+	ListGameRooms(ctx context.Context, opts GameRoomListOptions) ([]model.ChatGroup, int64, error)
+	ListPublicRooms(ctx context.Context, gameID *uint64, page, pageSize int) ([]model.ChatGroup, int64, error)
+	ListByHostUserID(ctx context.Context, hostUserID uint64, status *model.ChatGroupStatus) ([]model.ChatGroup, error)
+	IncrementMemberCount(ctx context.Context, groupID uint64) error
+	DecrementMemberCount(ctx context.Context, groupID uint64) error
+	CountByRoomStatus(ctx context.Context) (map[model.ChatGroupStatus]int64, error)
+	CountActiveRooms(ctx context.Context) (int64, error)
 }
 
 // ChatMemberRepository defines membership access operations.
@@ -465,6 +479,19 @@ type ChatGroupMemberListOptions struct {
 	PageSize int
 	Role     string
 	Keyword  string
+}
+
+// GameRoomListOptions 游戏房间列表查询选项 (用于 ChatGroup 的游戏房间功能)
+type GameRoomListOptions struct {
+	Page       int
+	PageSize   int
+	GameID     *uint64
+	HostUserID *uint64
+	GroupType  *model.ChatGroupType
+	RoomStatus *model.ChatGroupStatus
+	Statuses   []model.ChatGroupStatus
+	IsPrivate  *bool
+	Keyword    string
 }
 
 // ChatMessageListOptions defines filters for listing chat messages.
@@ -999,4 +1026,86 @@ type GameCategoryListOptions struct {
 	PageSize int
 	IsActive *bool
 	Keyword  string
+}
+
+// ============================================================================
+// 丰富在线状态模块接口 (Discord/Kook 风格)
+// ============================================================================
+
+// PlayerPresenceRepository 陪玩师在线状态仓储接口
+// 错误约定：当资源不存在时返回 repository.ErrNotFound
+type PlayerPresenceRepository interface {
+	Create(ctx context.Context, presence *model.PlayerPresence) error
+	Get(ctx context.Context, id uint64) (*model.PlayerPresence, error)
+	GetByPlayerID(ctx context.Context, playerID uint64) (*model.PlayerPresence, error)
+	GetWithPlayer(ctx context.Context, id uint64) (*model.PlayerPresence, error)
+	Update(ctx context.Context, presence *model.PlayerPresence) error
+	UpdateStatus(ctx context.Context, playerID uint64, status model.PlayerPresenceStatus) error
+	UpdateHeartbeat(ctx context.Context, playerID uint64) error
+	Delete(ctx context.Context, id uint64) error
+	// 批量查询
+	ListByPlayerIDs(ctx context.Context, playerIDs []uint64) ([]model.PlayerPresence, error)
+	ListOnline(ctx context.Context, opts PlayerPresenceListOptions) ([]model.PlayerPresence, int64, error)
+	ListByStatus(ctx context.Context, status model.PlayerPresenceStatus, page, pageSize int) ([]model.PlayerPresence, int64, error)
+	// 心跳超时检测
+	ListStalePresences(ctx context.Context, threshold time.Time) ([]model.PlayerPresence, error)
+	BatchUpdateOffline(ctx context.Context, playerIDs []uint64) error
+	// 统计
+	CountByStatus(ctx context.Context) (map[model.PlayerPresenceStatus]int64, error)
+	CountOnline(ctx context.Context) (int64, error)
+}
+
+// PlayerPresenceListOptions 陪玩师在线状态列表查询选项
+type PlayerPresenceListOptions struct {
+	Page       int
+	PageSize   int
+	Statuses   []model.PlayerPresenceStatus
+	GameID     *uint64
+	DeviceType string
+}
+
+
+// ============================================================================
+// 快速匹配 (LFG) 模块接口
+// ============================================================================
+
+// LFGRequestRepository 快速匹配请求仓储接口
+// 错误约定：当资源不存在时返回 repository.ErrNotFound
+type LFGRequestRepository interface {
+	Create(ctx context.Context, request *model.LFGRequest) error
+	Get(ctx context.Context, id uint64) (*model.LFGRequest, error)
+	GetWithRelations(ctx context.Context, id uint64) (*model.LFGRequest, error)
+	GetActiveByUserID(ctx context.Context, userID uint64) (*model.LFGRequest, error)
+	Update(ctx context.Context, request *model.LFGRequest) error
+	UpdateStatus(ctx context.Context, id uint64, status model.LFGRequestStatus) error
+	UpdateMatched(ctx context.Context, id uint64, roomID uint64) error
+	Delete(ctx context.Context, id uint64) error
+	// 列表查询
+	List(ctx context.Context, opts LFGRequestListOptions) ([]model.LFGRequest, int64, error)
+	ListByUserID(ctx context.Context, userID uint64, status *model.LFGRequestStatus) ([]model.LFGRequest, error)
+	ListByGameID(ctx context.Context, gameID uint64, status *model.LFGRequestStatus, page, pageSize int) ([]model.LFGRequest, int64, error)
+	ListPending(ctx context.Context, gameID *uint64, page, pageSize int) ([]model.LFGRequest, int64, error)
+	// 过期处理
+	ListExpired(ctx context.Context, limit int) ([]model.LFGRequest, error)
+	BatchExpire(ctx context.Context, ids []uint64) error
+	// 匹配查询
+	FindMatchingRequests(ctx context.Context, request *model.LFGRequest, limit int) ([]model.LFGRequest, error)
+	// 统计
+	CountByStatus(ctx context.Context) (map[model.LFGRequestStatus]int64, error)
+	CountPending(ctx context.Context, gameID *uint64) (int64, error)
+}
+
+// LFGRequestListOptions 快速匹配请求列表查询选项
+type LFGRequestListOptions struct {
+	Page        int
+	PageSize    int
+	UserID      *uint64
+	GameID      *uint64
+	RequestType *model.LFGRequestType
+	Status      *model.LFGRequestStatus
+	Statuses    []model.LFGRequestStatus
+	MinRank     string
+	MaxPrice    *int64
+	DateFrom    *time.Time
+	DateTo      *time.Time
 }

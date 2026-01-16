@@ -1,7 +1,7 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useOrderStore } from "@/stores";
+import { useOrderStore, useAuthStore } from "@/stores";
 import { cn } from "@/lib/utils";
 import {
     LayoutDashboard,
@@ -11,7 +11,14 @@ import {
     User,
     Settings,
     Bell,
-    Search
+    Search,
+    Users,
+    Target,
+    Wallet,
+    // Star import removed as it is unused
+    ArrowLeftRight,
+    BadgeCheck,
+    // TrendingUp import removed as it is unused
 } from "lucide-react";
 import { ModeToggle } from "@/components/mode-toggle";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -21,14 +28,38 @@ import { BottomNav } from "@/components/bottom-nav";
 export default function DesktopLayout() {
     const location = useLocation();
     const { t } = useTranslation();
+    const {
+        user,
+        viewMode,
+        isPlayer,
+        switchToPlayerMode,
+        switchToUserMode
+    } = useAuthStore();
 
-    const navItems = [
+    // 用户视图导航
+    const userNavItems = [
         { icon: LayoutDashboard, label: t('nav.home'), path: "/" },
         { icon: Gamepad2, label: t('nav.players'), path: "/players" },
+        { icon: Users, label: t('nav.rooms'), path: "/rooms" },
+        { icon: Target, label: t('nav.lfg'), path: "/lfg" },
         { icon: ShoppingBag, label: t('nav.orders'), path: "/orders" },
         { icon: MessageSquare, label: t('nav.chat'), path: "/chat" },
         { icon: User, label: t('nav.profile'), path: "/profile" },
     ];
+
+    // 陪玩视图导航
+    const playerNavItems = [
+        { icon: LayoutDashboard, label: t('nav.playerDashboard'), path: "/player/dashboard" },
+        { icon: ShoppingBag, label: t('nav.playerOrders'), path: "/player/orders" },
+        { icon: Wallet, label: t('nav.earnings'), path: "/player/earnings" },
+        { icon: Users, label: t('nav.team'), path: "/player/team" },
+        { icon: MessageSquare, label: t('nav.chat'), path: "/chat" },
+        { icon: BadgeCheck, label: t('nav.verification'), path: "/player/verification/realname" },
+        { icon: User, label: t('nav.playerProfile'), path: "/player/profile/edit" },
+    ];
+
+    // 根据当前视图模式选择导航项
+    const navItems = viewMode === 'player' ? playerNavItems : userNavItems;
 
     const isLinkActive = (path: string) => {
         if (path === "/" && location.pathname === "/") return true;
@@ -98,22 +129,53 @@ export default function DesktopLayout() {
 
                 {/* User Info Footer */}
                 <div className="p-4 bg-gradient-to-t from-background/90 to-transparent mt-auto border-t border-border/40">
+                    {/* View Mode Switcher - 只有陪玩用户才显示 */}
+                    {isPlayer && (
+                        <button
+                            onClick={() => viewMode === 'player' ? switchToUserMode() : switchToPlayerMode()}
+                            className="w-full mb-3 p-3 rounded-xl bg-gradient-to-r from-primary/10 to-purple-500/10 border border-primary/20 hover:border-primary/40 transition-all group flex items-center justify-between"
+                        >
+                            <div className="flex items-center gap-2">
+                                <ArrowLeftRight className="w-4 h-4 text-primary" />
+                                <span className="text-sm font-medium text-foreground">
+                                    {viewMode === 'player' ? t('nav.switchToUser') : t('nav.switchToPlayer')}
+                                </span>
+                            </div>
+                            <div className={cn(
+                                "px-2 py-0.5 rounded-full text-xs font-medium",
+                                viewMode === 'player'
+                                    ? "bg-purple-500/20 text-purple-400"
+                                    : "bg-primary/20 text-primary"
+                            )}>
+                                {viewMode === 'player' ? t('nav.playerMode') : t('nav.userMode')}
+                            </div>
+                        </button>
+                    )}
+
                     <div className="p-3 rounded-2xl bg-card/40 border border-border/50 backdrop-blur-sm shadow-sm flex items-center gap-3 hover:bg-card/60 transition-colors cursor-pointer group">
                         <div className="relative w-10 h-10">
                             <div className="w-full h-full rounded-full bg-muted overflow-hidden ring-2 ring-background group-hover:ring-primary/20 transition-all">
-                                <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white">
-                                    U
-                                </div>
+                                {user?.avatar ? (
+                                    <img src={user.avatar} alt={user.nickname || user.username} className="w-full h-full object-cover" />
+                                ) : (
+                                    <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white">
+                                        {(user?.nickname || user?.username || 'U').charAt(0).toUpperCase()}
+                                    </div>
+                                )}
                             </div>
                             <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-background z-50 shadow-sm"></div>
                         </div>
                         <div className="flex-1 min-w-0">
-                            <div className="text-sm font-semibold truncate text-foreground group-hover:text-primary transition-colors">User</div>
-                            <div className="text-xs text-muted-foreground truncate">{t('nav.online_status')}</div>
+                            <div className="text-sm font-semibold truncate text-foreground group-hover:text-primary transition-colors">
+                                {user?.nickname || user?.username || t('nav.guest')}
+                            </div>
+                            <div className="text-xs text-muted-foreground truncate">
+                                {viewMode === 'player' ? t('nav.playerMode') : t('nav.online_status')}
+                            </div>
                         </div>
-                        <button className="p-1.5 hover:bg-muted rounded-full text-muted-foreground hover:text-foreground transition-colors">
+                        <Link to="/profile" className="p-1.5 hover:bg-muted rounded-full text-muted-foreground hover:text-foreground transition-colors">
                             <Settings className="w-4 h-4" />
-                        </button>
+                        </Link>
                     </div>
                 </div>
             </aside>

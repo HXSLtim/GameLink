@@ -112,13 +112,15 @@ export default function PlayerListPage() {
                                 <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
                                 {/* Image Section */}
-                                <div className="relative h-[220px] overflow-hidden bg-muted">
+                                <div className="relative h-[220px] overflow-hidden bg-gradient-to-br from-primary/20 via-muted to-muted">
                                     <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent z-10" />
-                                    <img
-                                        src={`https://api.dicebear.com/7.x/shapes/svg?seed=${player.username}`} // Placeholder cover style
-                                        alt="Cover"
-                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                                    />
+                                    {player.avatar && (
+                                        <img
+                                            src={player.avatar}
+                                            alt="Cover"
+                                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                        />
+                                    )}
 
                                     {/* Status Badge */}
                                     <div className="absolute top-3 right-3 z-20">

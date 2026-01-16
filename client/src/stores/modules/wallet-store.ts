@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { http } from '@/lib/http';
+import { getErrorMessage, logError } from '@/lib/error';
 
 // ============ Enums ============
 
@@ -175,7 +176,8 @@ export const useWalletStore = create<WalletState & WalletActions>()(
                     const data = await http.get<Wallet>('/user/wallet');
                     set({ wallet: data, loading: false });
                 } catch (err) {
-                    set({ loading: false, error: err instanceof Error ? err.message : 'Failed to fetch wallet' });
+                    logError('fetchWallet', err);
+                    set({ loading: false, error: getErrorMessage(err, 'Failed to fetch wallet') });
                 }
             },
 
@@ -187,7 +189,8 @@ export const useWalletStore = create<WalletState & WalletActions>()(
                     });
                     set({ transactions: data.items || [], loading: false });
                 } catch (err) {
-                    set({ loading: false, error: err instanceof Error ? err.message : 'Failed to fetch transactions' });
+                    logError('fetchTransactions', err);
+                    set({ loading: false, error: getErrorMessage(err, 'Failed to fetch transactions') });
                 }
             },
 
@@ -196,7 +199,7 @@ export const useWalletStore = create<WalletState & WalletActions>()(
                     const data = await http.get<RechargeOption[]>('/user/recharge/options');
                     set({ rechargeOptions: data });
                 } catch (err) {
-                    console.error('Failed to fetch recharge options:', err);
+                    logError('fetchRechargeOptions', err);
                 }
             },
 
@@ -210,7 +213,8 @@ export const useWalletStore = create<WalletState & WalletActions>()(
                     set({ loading: false });
                     return data;
                 } catch (err) {
-                    set({ loading: false, error: err instanceof Error ? err.message : 'Recharge failed' });
+                    logError('recharge', err);
+                    set({ loading: false, error: getErrorMessage(err, 'Recharge failed') });
                     throw err;
                 }
             },
@@ -222,7 +226,8 @@ export const useWalletStore = create<WalletState & WalletActions>()(
                     set({ currentPayment: data, paymentStatus: PaymentStatus.PENDING, loading: false });
                     return data;
                 } catch (err) {
-                    set({ loading: false, error: err instanceof Error ? err.message : 'Failed to create payment' });
+                    logError('createPayment', err);
+                    set({ loading: false, error: getErrorMessage(err, 'Failed to create payment') });
                     throw err;
                 }
             },
@@ -233,7 +238,7 @@ export const useWalletStore = create<WalletState & WalletActions>()(
                     set({ paymentStatus: data.status });
                     return data.status;
                 } catch (err) {
-                    console.error('Failed to check payment status:', err);
+                    logError('checkPaymentStatus', err);
                     throw err;
                 }
             },
@@ -243,7 +248,7 @@ export const useWalletStore = create<WalletState & WalletActions>()(
                     await http.put(`/payments/${paymentId}/cancel`);
                     set({ paymentStatus: PaymentStatus.CANCELED });
                 } catch (err) {
-                    console.error('Failed to cancel payment:', err);
+                    logError('cancelPayment', err);
                     throw err;
                 }
             },
@@ -255,7 +260,8 @@ export const useWalletStore = create<WalletState & WalletActions>()(
                     await get().fetchWallet();
                     set({ loading: false });
                 } catch (err) {
-                    set({ loading: false, error: err instanceof Error ? err.message : 'Withdrawal failed' });
+                    logError('withdraw', err);
+                    set({ loading: false, error: getErrorMessage(err, 'Withdrawal failed') });
                     throw err;
                 }
             },
@@ -265,7 +271,7 @@ export const useWalletStore = create<WalletState & WalletActions>()(
                     const data = await http.get<{ items: WithdrawRecord[] }>('/player/withdraw/records');
                     set({ withdrawRecords: data.items || [] });
                 } catch (err) {
-                    console.error('Failed to fetch withdraw records:', err);
+                    logError('fetchWithdrawRecords', err);
                 }
             },
 

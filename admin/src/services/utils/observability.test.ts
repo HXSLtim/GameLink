@@ -12,14 +12,12 @@ import {
   DefaultServiceLogger,
   sanitizeParams,
   isSensitiveKey,
-  LogLevel,
   type LogEntry,
   type ServiceLogger,
 } from './logger';
 import {
   DefaultPerformanceMonitor,
   type PerformanceMonitor,
-  type PerformanceMetrics,
 } from './performance';
 
 describe('Service Method Logging - Property Tests', () => {
@@ -200,7 +198,7 @@ describe('Slow Operation Warning - Property Tests', () => {
 
           // Simulate a slow operation by directly calling the timer callback
           // with a duration that exceeds the threshold
-          const stopTimer = monitor.startTimer(operationName);
+          const _stopTimer = monitor.startTimer(operationName);
 
           // We can't actually wait 3 seconds, so we'll test the logic differently
           // by checking that the monitor correctly identifies slow operations

@@ -225,7 +225,7 @@ export const useVipStore = create<VipState & VipActions>()(
 
             fetchLevelConfigs: async () => {
                 try {
-                    const data = await http.get<VipLevelConfig[]>('/vip/levels');
+                    const data = await http.get<VipLevelConfig[]>('/user/vip/levels');
                     if (data && data.length > 0) {
                         set({ levelConfigs: data });
                     }
@@ -296,9 +296,21 @@ export const useVipStore = create<VipState & VipActions>()(
         }),
         {
             name: 'vip-storage',
+            // SECURITY: Only persist non-sensitive configuration data
+            // User spending data (totalSpentCents, currentYearSpentCents) should NOT be persisted
+            // to localStorage as it could be accessed by malicious scripts (XSS)
             partialize: (state) => ({
-                userVip: state.userVip,
-                levelConfigs: state.levelConfigs
+                // Only persist level configs (public data)
+                levelConfigs: state.levelConfigs,
+                // Persist only non-sensitive VIP info for UI display
+                userVip: state.userVip ? {
+                    userId: state.userVip.userId,
+                    level: state.userVip.level,
+                    status: state.userVip.status,
+                    discountRate: state.userVip.discountRate,
+                    progressPercent: state.userVip.progressPercent
+                    // Excluded: totalSpentCents, currentYearSpentCents, monthlyFreeCoupons, usedFreeCoupons
+                } : null
             })
         }
     )

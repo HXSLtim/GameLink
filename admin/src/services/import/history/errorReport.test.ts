@@ -11,7 +11,7 @@ import {
   getErrorSummary,
 } from './errorReport';
 import { createImportHistoryRecord } from './storage';
-import type { ImportHistoryRecord, ImportRowResult } from './types';
+import type { ImportRowResult } from './types';
 
 /**
  * Helper to read blob content as text

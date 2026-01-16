@@ -82,6 +82,90 @@ func (m *MockChatGroupRepository) DeleteByIDs(ctx context.Context, ids []uint64)
 	return args.Error(0)
 }
 
+func (m *MockChatGroupRepository) GetWithRelations(ctx context.Context, id uint64) (*model.ChatGroup, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.ChatGroup), args.Error(1)
+}
+
+func (m *MockChatGroupRepository) GetByRelatedTeamID(ctx context.Context, teamID uint64) (*model.ChatGroup, error) {
+	args := m.Called(ctx, teamID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.ChatGroup), args.Error(1)
+}
+
+func (m *MockChatGroupRepository) GetByRelatedLFGID(ctx context.Context, lfgID uint64) (*model.ChatGroup, error) {
+	args := m.Called(ctx, lfgID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.ChatGroup), args.Error(1)
+}
+
+func (m *MockChatGroupRepository) GetByVoiceRoomID(ctx context.Context, voiceRoomID string) (*model.ChatGroup, error) {
+	args := m.Called(ctx, voiceRoomID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.ChatGroup), args.Error(1)
+}
+
+func (m *MockChatGroupRepository) UpdateRoomStatus(ctx context.Context, id uint64, status model.ChatGroupStatus) error {
+	args := m.Called(ctx, id, status)
+	return args.Error(0)
+}
+
+func (m *MockChatGroupRepository) ListGameRooms(ctx context.Context, opts repository.GameRoomListOptions) ([]model.ChatGroup, int64, error) {
+	args := m.Called(ctx, opts)
+	if args.Get(0) == nil {
+		return nil, args.Get(1).(int64), args.Error(2)
+	}
+	return args.Get(0).([]model.ChatGroup), args.Get(1).(int64), args.Error(2)
+}
+
+func (m *MockChatGroupRepository) ListPublicRooms(ctx context.Context, gameID *uint64, page, pageSize int) ([]model.ChatGroup, int64, error) {
+	args := m.Called(ctx, gameID, page, pageSize)
+	if args.Get(0) == nil {
+		return nil, args.Get(1).(int64), args.Error(2)
+	}
+	return args.Get(0).([]model.ChatGroup), args.Get(1).(int64), args.Error(2)
+}
+
+func (m *MockChatGroupRepository) ListByHostUserID(ctx context.Context, hostUserID uint64, status *model.ChatGroupStatus) ([]model.ChatGroup, error) {
+	args := m.Called(ctx, hostUserID, status)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]model.ChatGroup), args.Error(1)
+}
+
+func (m *MockChatGroupRepository) IncrementMemberCount(ctx context.Context, groupID uint64) error {
+	args := m.Called(ctx, groupID)
+	return args.Error(0)
+}
+
+func (m *MockChatGroupRepository) DecrementMemberCount(ctx context.Context, groupID uint64) error {
+	args := m.Called(ctx, groupID)
+	return args.Error(0)
+}
+
+func (m *MockChatGroupRepository) CountByRoomStatus(ctx context.Context) (map[model.ChatGroupStatus]int64, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(map[model.ChatGroupStatus]int64), args.Error(1)
+}
+
+func (m *MockChatGroupRepository) CountActiveRooms(ctx context.Context) (int64, error) {
+	args := m.Called(ctx)
+	return args.Get(0).(int64), args.Error(1)
+}
+
 // MockChatMemberRepository is a mock implementation of ChatMemberRepository
 type MockChatMemberRepository struct {
 	mock.Mock

@@ -170,6 +170,32 @@ func (r *gormPlayerRepository) ListPagedWithFilter(ctx context.Context, page, pa
 	return players, total, nil
 }
 
+// ListFeatured returns featured players (high rating and order count), User preloaded.
+func (r *gormPlayerRepository) ListFeatured(ctx context.Context, limit int, status *model.VerificationStatus) ([]model.Player, int64, error) {
+	query := r.db.WithContext(ctx).Model(&model.Player{})
+
+	// Apply status filter
+	if status != nil {
+		query = query.Where("verification_status = ?", *status)
+	}
+
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Order by rating (desc) and rating count (desc) to get featured players, with User preloaded
+	var players []model.Player
+	findQuery := r.db.WithContext(ctx).Preload("User")
+	if status != nil {
+		findQuery = findQuery.Where("verification_status = ?", *status)
+	}
+	if err := findQuery.Order("rating_average DESC, rating_count DESC").Limit(limit).Find(&players).Error; err != nil {
+		return nil, 0, err
+	}
+	return players, total, nil
+}
+
 // BatchUpdateStatus updates verification status for multiple players.
 func (r *gormPlayerRepository) BatchUpdateStatus(ctx context.Context, ids []uint64, status model.VerificationStatus) (int64, error) {
 	if len(ids) == 0 {

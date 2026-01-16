@@ -1,0 +1,75 @@
+
+> client@0.0.0 test:coverage
+> vitest run --coverage
+
+
+[1m[46m RUN [49m[22m [36mv4.0.17 [39m[90mD:/Desktop/Code/GameLink/client[39m
+      [2mCoverage enabled with [22m[33mv8[39m
+
+ [32m✓[39m src/lib/http.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/stores/modules/__tests__/order-store.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/stores/modules/auth-store.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m src/stores/modules/__tests__/auth-store.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 42[2mms[22m[39m
+ [32m✓[39m src/pages/auth/__tests__/LoginPage.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 585[2mms[22m[39m
+     [33m[2m✓[22m[39m renders login form by default [33m 319[2mms[22m[39m
+ [32m✓[39m src/pages/order/ReviewOrderPage.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 150[2mms[22m[39m
+ [32m✓[39m src/pages/profile/FavoritesPage.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 136[2mms[22m[39m
+ [32m✓[39m src/pages/auth/LoginPage.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 2129[2mms[22m[39m
+       [33m[2m✓[22m[39m should load saved credentials from localStorage on mount [33m 301[2mms[22m[39m
+       [33m[2m✓[22m[39m should save credentials to localStorage when remember me is checked [33m 549[2mms[22m[39m
+       [33m[2m✓[22m[39m should remove credentials from localStorage when remember me is unchecked [33m 475[2mms[22m[39m
+       [33m[2m✓[22m[39m should show error for short password during registration [33m 771[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m8 passed[39m[22m[90m (8)[39m
+[2m      Tests [22m [1m[32m39 passed[39m[22m[90m (39)[39m
+[2m   Start at [22m 18:14:20
+[2m   Duration [22m 31.76s[2m (transform 1.93s, setup 24.22s, import 29.30s, tests 3.08s, environment 156.67s)[22m
+
+[34m % [39m[2mCoverage report from [22m[33mv8[39m
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   28.69 |    19.64 |   28.01 |    30.2 |                   
+ components        |   33.33 |    42.85 |   33.33 |   33.33 |                   
+  ...container.tsx |   33.33 |    42.85 |   33.33 |   33.33 | 44-61             
+ components/player |   17.39 |    36.36 |      50 |   19.04 |                   
+  ...te-button.tsx |   17.39 |    36.36 |      50 |   19.04 | 20-46             
+ components/ui     |   83.82 |    41.66 |   66.66 |   83.82 |                   
+  badge.tsx        |     100 |      100 |     100 |     100 |                   
+  button.tsx       |     100 |    66.66 |     100 |     100 | 45                
+  card.tsx         |   94.44 |      100 |   83.33 |   94.44 | 51                
+  checkbox.tsx     |     100 |      100 |     100 |     100 |                   
+  input.tsx        |     100 |      100 |     100 |     100 |                   
+  label.tsx        |     100 |      100 |     100 |     100 |                   
+  separator.tsx    |   66.66 |        0 |       0 |   66.66 | 10                
+  skeleton.tsx     |       0 |      100 |       0 |       0 | 7                 
+  star-rating.tsx  |      50 |    44.44 |   28.57 |      50 | ...32,37-38,61-62 
+  tabs.tsx         |     100 |      100 |     100 |     100 |                   
+  textarea.tsx     |     100 |      100 |     100 |     100 |                   
+ lib               |    22.1 |    18.75 |   25.92 |    24.7 |                   
+  http.ts          |   35.71 |     40.9 |    37.5 |   35.71 | ...68-109,129-145 
+  utils.ts         |    2.56 |        0 |    9.09 |    3.44 | 14-103            
+ pages/auth        |   83.92 |       62 |   83.33 |   83.92 |                   
+  LoginPage.tsx    |   83.92 |       62 |   83.33 |   83.92 | 76-85,223,275     
+ pages/order       |   79.31 |       60 |   77.77 |   79.31 |                   
+  ...OrderPage.tsx |   79.31 |       60 |   77.77 |   79.31 | 43,50-51,65-66,75 
+ pages/profile     |   68.18 |     62.5 |   45.45 |      75 |                   
+  ...ritesPage.tsx |   68.18 |     62.5 |   45.45 |      75 | 25,35,64,84,114   
+ stores            |       0 |        0 |       0 |       0 |                   
+  index.ts         |       0 |        0 |       0 |       0 |                   
+ stores/modules    |   14.52 |     5.55 |   14.28 |   14.67 |                   
+  ...vity-store.ts |    7.14 |        0 |      10 |    5.88 | 104-204           
+  auth-store.ts    |   50.81 |     37.5 |   53.84 |   51.66 | ...28,183-239,256 
+  chat-store.ts    |       4 |        0 |    5.88 |    2.38 | 55-229            
+  coupon-store.ts  |    6.77 |        0 |   11.11 |    5.66 | 122-231           
+  ...rite-store.ts |   10.52 |        0 |    12.5 |   13.33 | 27-57             
+  ...tion-store.ts |    8.33 |        0 |    7.69 |    5.88 | 31-79             
+  order-store.ts   |   27.39 |     12.5 |   21.87 |   26.98 | 111-116,144-241   
+  player-store.ts  |    6.25 |        0 |       4 |    6.59 | 257-259,288-490   
+  ...rral-store.ts |    6.38 |        0 |   11.11 |    6.81 | 93-180            
+  theme-store.ts   |   18.18 |      100 |    12.5 |   22.22 | 31-47             
+  vip-store.ts     |    11.9 |        0 |    9.09 |   12.82 | 186-299           
+  wallet-store.ts  |    9.83 |        0 |    7.69 |    9.83 | 173-284           
+ types             |      75 |    71.42 |     100 |      75 |                   
+  api.ts           |      75 |    71.42 |     100 |      75 | 65                
+-------------------|---------|----------|---------|---------|-------------------

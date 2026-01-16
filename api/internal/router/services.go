@@ -64,6 +64,12 @@ import (
 	vipservice "gamelink/internal/service/vip"
 	walletservice "gamelink/internal/service/wallet"
 	withdrawservice "gamelink/internal/service/withdraw"
+	gameroomservice "gamelink/internal/service/gameroom"
+	lfgservice "gamelink/internal/service/lfg"
+	trtcservice "gamelink/internal/service/trtc"
+	presencerepo "gamelink/internal/repository/presence"
+	lfgrepo "gamelink/internal/repository/lfg"
+	presenceservice "gamelink/internal/service/presence"
 	"gamelink/internal/ws"
 	"gamelink/pkg/cache"
 	"gamelink/pkg/scheduler"
@@ -138,6 +144,14 @@ type appServices struct {
 	referralSvc *referralservice.Service
 	// Withdraw routing service (提现分流)
 	withdrawRoutingSvc *withdrawservice.WithdrawRoutingService
+	// Presence service (在线状态)
+	presenceSvc *presenceservice.Service
+	// GameRoom service (游戏房间)
+	gameRoomSvc *gameroomservice.Service
+	// LFG service (快速匹配)
+	lfgSvc *lfgservice.Service
+	// TRTC service (语音通话)
+	trtcSvc *trtcservice.Service
 }
 
 // initServices 初始化领域服务和调度任务（但不启动调度器）。
@@ -289,6 +303,29 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 	// Inject wallet repository for refund operations
 	withdrawRoutingSvc.SetWalletRepository(walletRepo)
 
+	// Presence service (在线状态)
+	presenceRepo := presencerepo.NewPresenceRepository(orm)
+	presenceSvc := presenceservice.NewPresenceServiceWithCache(presenceRepo, cacheClient)
+
+	// GameRoom service (游戏房间)
+	gameRoomSvc := gameroomservice.NewService(chatGroupRepo, chatMemberRepo, cacheClient)
+
+	// LFG service (快速匹配)
+	lfgRepo := lfgrepo.NewLFGRepository(orm)
+	lfgSvc := lfgservice.NewService(lfgRepo, gameRoomSvc, cacheClient)
+
+	// TRTC service (语音通话) - 可选，需要配置
+	var trtcSvc *trtcservice.Service
+	// TRTC 配置从环境变量读取，如果未配置则跳过
+	// trtcConfig := &trtcservice.Config{
+	//     SDKAppID:  uint64(os.Getenv("TRTC_SDK_APP_ID")),
+	//     SecretKey: os.Getenv("TRTC_SECRET_KEY"),
+	//     ExpireSec: 86400 * 7,
+	// }
+	// if trtcConfig.SDKAppID > 0 && trtcConfig.SecretKey != "" {
+	//     trtcSvc = trtcservice.NewService(trtcConfig, chatGroupRepo, chatMemberRepo, cacheClient)
+	// }
+
 	return &appServices{
 		commissionSvc:       commissionSvc,
 		serviceItemSvc:      serviceItemSvc,
@@ -347,5 +384,13 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 		referralSvc: referralSvc,
 		// Withdraw routing service
 		withdrawRoutingSvc: withdrawRoutingSvc,
+		// Presence service
+		presenceSvc: presenceSvc,
+		// GameRoom service
+		gameRoomSvc: gameRoomSvc,
+		// LFG service
+		lfgSvc: lfgSvc,
+		// TRTC service
+		trtcSvc: trtcSvc,
 	}
 }
