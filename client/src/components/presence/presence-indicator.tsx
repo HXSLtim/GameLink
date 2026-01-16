@@ -1,8 +1,8 @@
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 import {
     PresenceStatus,
     getStatusColor,
-    getStatusDisplay,
     isOnlineStatus,
 } from '@/stores/modules/presence-store';
 
@@ -37,16 +37,18 @@ export function PresenceIndicator({
     showGameName = true,
     className,
 }: PresenceIndicatorProps) {
+    const { t } = useTranslation();
     const color = getStatusColor(status);
-    const label = getStatusDisplay(status);
     const isOnline = isOnlineStatus(status);
 
     // Build display text
-    let displayText = label;
-    if (status === PresenceStatus.IN_GAME && currentGameName && showGameName) {
-        displayText = `正在玩 ${currentGameName}`;
+    let displayText: string;
+    if (status === 'in_game' && currentGameName && showGameName) {
+        displayText = t('presence.playing', { game: currentGameName });
     } else if (customStatus) {
         displayText = customStatus;
+    } else {
+        displayText = t(`presence.${status}`, { defaultValue: status });
     }
 
     return (
@@ -132,12 +134,14 @@ export function PresenceBadge({
     currentGameName,
     className,
 }: PresenceBadgeProps) {
+    const { t } = useTranslation();
     const color = getStatusColor(status);
-    const label = getStatusDisplay(status);
 
-    let displayText = label;
-    if (status === PresenceStatus.IN_GAME && currentGameName) {
-        displayText = `正在玩 ${currentGameName}`;
+    let displayText: string;
+    if (status === 'in_game' && currentGameName) {
+        displayText = t('presence.playing', { game: currentGameName });
+    } else {
+        displayText = t(`presence.${status}`, { defaultValue: status });
     }
 
     return (

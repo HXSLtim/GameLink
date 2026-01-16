@@ -515,5 +515,25 @@
                 "gold": "Gold"
             }
         }
+    },
+    "presence": {
+        "online": "Online",
+        "online_desc": "Show as online",
+        "accepting": "Accepting Orders",
+        "accepting_desc": "Available for orders",
+        "in_game": "In Game",
+        "in_game_desc": "Currently playing a game",
+        "resting": "Resting",
+        "resting_desc": "Taking a break, not accepting orders",
+        "invisible": "Invisible",
+        "invisible_desc": "Appear offline to others",
+        "offline": "Offline",
+        "offline_desc": "Set as offline",
+        "playing": "Playing {{game}}",
+        "status_updated": "Status updated to {{status}}",
+        "status_update_failed": "Failed to update status",
+        "current_status": "Current status: {{status}}",
+        "toggle_status": "Toggle online status",
+        "offline_banner": "Network disconnected. Some features may be unavailable."
     }
 }

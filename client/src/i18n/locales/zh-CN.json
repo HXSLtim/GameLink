@@ -514,5 +514,25 @@
                 "gold": "黄金"
             }
         }
+    },
+    "presence": {
+        "online": "在线",
+        "online_desc": "显示为在线状态",
+        "accepting": "接单中",
+        "accepting_desc": "正在接受订单",
+        "in_game": "游戏中",
+        "in_game_desc": "正在进行游戏",
+        "resting": "休息中",
+        "resting_desc": "暂时休息，不接单",
+        "invisible": "隐身",
+        "invisible_desc": "对他人显示为离线",
+        "offline": "离线",
+        "offline_desc": "设为离线状态",
+        "playing": "正在玩 {{game}}",
+        "status_updated": "状态已更新为 {{status}}",
+        "status_update_failed": "状态更新失败",
+        "current_status": "当前状态: {{status}}",
+        "toggle_status": "切换在线状态",
+        "offline_banner": "网络连接已断开，部分功能可能不可用"
     }
 }

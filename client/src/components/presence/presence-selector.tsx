@@ -1,9 +1,9 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import {
     PresenceStatus,
     getStatusColor,
-    getStatusDisplay,
     usePresenceStore,
 } from '@/stores/modules/presence-store';
 import {
@@ -25,80 +25,77 @@ interface PresenceSelectorProps {
 
 interface StatusOption {
     status: PresenceStatus;
-    label: string;
+    labelKey: string;
+    descriptionKey: string;
     icon: React.ReactNode;
-    color: string;
-    description?: string;
 }
-
-const statusOptions: StatusOption[] = [
-    {
-        status: PresenceStatus.ONLINE,
-        label: '在线',
-        icon: <Circle className="h-3 w-3 fill-current" />,
-        color: getStatusColor(PresenceStatus.ONLINE),
-        description: '显示为在线状态',
-    },
-    {
-        status: PresenceStatus.ACCEPTING,
-        label: '接单中',
-        icon: <CheckCircle className="h-3 w-3" />,
-        color: getStatusColor(PresenceStatus.ACCEPTING),
-        description: '正在接受订单',
-    },
-    {
-        status: PresenceStatus.IN_GAME,
-        label: '游戏中',
-        icon: <Gamepad2 className="h-3 w-3" />,
-        color: getStatusColor(PresenceStatus.IN_GAME),
-        description: '正在进行游戏',
-    },
-    {
-        status: PresenceStatus.RESTING,
-        label: '休息中',
-        icon: <Coffee className="h-3 w-3" />,
-        color: getStatusColor(PresenceStatus.RESTING),
-        description: '暂时休息，不接单',
-    },
-    {
-        status: PresenceStatus.INVISIBLE,
-        label: '隐身',
-        icon: <EyeOff className="h-3 w-3" />,
-        color: getStatusColor(PresenceStatus.INVISIBLE),
-        description: '对他人显示为离线',
-    },
-    {
-        status: PresenceStatus.OFFLINE,
-        label: '离线',
-        icon: <Eye className="h-3 w-3" />,
-        color: getStatusColor(PresenceStatus.OFFLINE),
-        description: '设为离线状态',
-    },
-];
-
-const sizeClasses = {
-    sm: 'h-7 text-xs px-2',
-    md: 'h-9 text-sm px-3',
-    lg: 'h-11 text-base px-4',
-};
-
-const dotSizeClasses = {
-    sm: 'h-2 w-2',
-    md: 'h-2.5 w-2.5',
-    lg: 'h-3 w-3',
-};
 
 export function PresenceSelector({
     className,
     showLabel = true,
     size = 'md',
 }: PresenceSelectorProps) {
+    const { t } = useTranslation();
     const { myPresence, setStatus } = usePresenceStore();
     const [loading, setLoading] = useState(false);
     const [open, setOpen] = useState(false);
 
     const currentStatus = myPresence?.status || PresenceStatus.OFFLINE;
+
+    // Status options with i18n keys
+    const statusOptions: StatusOption[] = [
+        {
+            status: PresenceStatus.ONLINE,
+            labelKey: 'online',
+            descriptionKey: 'online_desc',
+            icon: <Circle className="h-3 w-3 fill-current" />,
+        },
+        {
+            status: PresenceStatus.ACCEPTING,
+            labelKey: 'accepting',
+            descriptionKey: 'accepting_desc',
+            icon: <CheckCircle className="h-3 w-3" />,
+        },
+        {
+            status: PresenceStatus.IN_GAME,
+            labelKey: 'in_game',
+            descriptionKey: 'in_game_desc',
+            icon: <Gamepad2 className="h-3 w-3" />,
+        },
+        {
+            status: PresenceStatus.RESTING,
+            labelKey: 'resting',
+            descriptionKey: 'resting_desc',
+            icon: <Coffee className="h-3 w-3" />,
+        },
+        {
+            status: PresenceStatus.INVISIBLE,
+            labelKey: 'invisible',
+            descriptionKey: 'invisible_desc',
+            icon: <EyeOff className="h-3 w-3" />,
+        },
+        {
+            status: PresenceStatus.OFFLINE,
+            labelKey: 'offline',
+            descriptionKey: 'offline_desc',
+            icon: <Eye className="h-3 w-3" />,
+        },
+    ];
+
     const currentOption = statusOptions.find((opt) => opt.status === currentStatus) || statusOptions[5];
+    const color = getStatusColor(currentStatus);
+
+    const sizeClasses = {
+        sm: 'h-7 text-xs px-2',
+        md: 'h-9 text-sm px-3',
+        lg: 'h-11 text-base px-4',
+    };
+
+    const dotSizeClasses = {
+        sm: 'h-2 w-2',
+        md: 'h-2.5 w-2.5',
+        lg: 'h-3 w-3',
+    };
 
     const handleStatusChange = async (status: PresenceStatus) => {
         if (status === currentStatus) {
@@ -109,9 +106,9 @@ export function PresenceSelector({
         setLoading(true);
         try {
             await setStatus(status);
-            toast.success(`状态已更新为${getStatusDisplay(status)}`);
+            toast.success(t('presence.status_updated', { status: t(`presence.${status}`) }));
         } catch {
-            toast.error('状态更新失败');
+            toast.error(t('presence.status_update_failed'));
         } finally {
             setLoading(false);
             setOpen(false);
@@ -132,10 +129,10 @@ export function PresenceSelector({
                 >
                     <span
                         className={cn('rounded-full', dotSizeClasses[size])}
-                        style={{ backgroundColor: currentOption.color }}
+                        style={{ backgroundColor: color }}
                     />
                     {showLabel && (
-                        <span className="truncate">{currentOption.label}</span>
+                        <span className="truncate">{t(`presence.${currentOption.labelKey}`)}</span>
                     )}
                     <ChevronDown className="h-3.5 w-3.5 opacity-50" />
                 </Button>
@@ -152,9 +149,12 @@ export function PresenceSelector({
                     >
                         <span
                             className="h-2.5 w-2.5 rounded-full"
-                            style={{ backgroundColor: option.color }}
+                            style={{ backgroundColor: getStatusColor(option.status) }}
                         />
-                        <span className="flex-1">{option.label}</span>
+                        <div className="flex-1">
+                            <div className="text-sm">{t(`presence.${option.labelKey}`)}</div>
+                            <div className="text-xs text-muted-foreground">{t(`presence.${option.descriptionKey}`)}</div>
+                        </div>
                         {currentStatus === option.status && (
                             <CheckCircle className="h-3.5 w-3.5 text-primary" />
                         )}
@@ -172,9 +172,12 @@ export function PresenceSelector({
                     >
                         <span
                             className="h-2.5 w-2.5 rounded-full"
-                            style={{ backgroundColor: option.color }}
+                            style={{ backgroundColor: getStatusColor(option.status) }}
                         />
-                        <span className="flex-1">{option.label}</span>
+                        <div className="flex-1">
+                            <div className="text-sm">{t(`presence.${option.labelKey}`)}</div>
+                            <div className="text-xs text-muted-foreground">{t(`presence.${option.descriptionKey}`)}</div>
+                        </div>
                         {currentStatus === option.status && (
                             <CheckCircle className="h-3.5 w-3.5 text-primary" />
                         )}
@@ -191,6 +194,7 @@ interface PresenceSelectorCompactProps {
 }
 
 export function PresenceSelectorCompact({ className }: PresenceSelectorCompactProps) {
+    const { t } = useTranslation();
     const { myPresence, setStatus } = usePresenceStore();
     const [loading, setLoading] = useState(false);
 
@@ -208,7 +212,7 @@ export function PresenceSelectorCompact({ className }: PresenceSelectorCompactPr
         try {
             await setStatus(newStatus);
         } catch {
-            toast.error('状态更新失败');
+            toast.error(t('presence.status_update_failed'));
         } finally {
             setLoading(false);
         }
@@ -224,9 +228,9 @@ export function PresenceSelectorCompact({ className }: PresenceSelectorCompactPr
                 className
             )}
             style={{ backgroundColor: getStatusColor(currentStatus) }}
-            title={`当前状态: ${getStatusDisplay(currentStatus)}`}
+            title={t('presence.current_status', { status: t(`presence.${currentStatus}`) })}
         >
-            <span className="sr-only">切换在线状态</span>
+            <span className="sr-only">{t('presence.toggle_status')}</span>
         </button>
     );
 }
