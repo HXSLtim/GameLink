@@ -4,17 +4,6 @@ import { http } from '@/lib/http';
 
 // ============ Enums ============
 
-export const VipLevel = {
-    NONE: 0,           // 非 VIP
-    BRONZE: 1,         // 青铜 VIP
-    SILVER: 2,         // 白银 VIP
-    GOLD: 3,           // 黄金 VIP
-    PLATINUM: 4,       // 铂金 VIP
-    DIAMOND: 5         // 钻石 VIP
-} as const;
-
-export type VipLevel = typeof VipLevel[keyof typeof VipLevel];
-
 export const VipStatus = {
     ACTIVE: 'active',       // 有效
     EXPIRED: 'expired',     // 已过期
@@ -25,44 +14,48 @@ export type VipStatus = typeof VipStatus[keyof typeof VipStatus];
 
 // ============ Interfaces ============
 
-export interface VipLevelConfig {
-    level: VipLevel;
-    name: string;
-    icon: string;
-    color: string;
-
-    // 解锁条件
-    thresholdCents: number;          // 累计消费门槛
-
-    // 权益
-    discountRate: number;            // 订单折扣 (如 0.95 = 95折)
-    monthlyFreeCoupons: number;      // 每月免费优惠券
-    prioritySupport: boolean;        // 优先客服
-    exclusiveActivities: boolean;    // 专属活动
+// Matches backend VipLevel model from api/internal/model/vip.go
+export interface VipLevel {
+    id: number;
+    slug: string;                // 等级标识 (vip1, vip2, svip1, etc.)
+    title: string;               // 等级名称
+    expRequired: number;         // 升级所需累计消费/经验（分）
+    orderDiscount: number;       // 下单永久折扣 (0.98 = 98折, 1.0 = 无折扣)
+    monthlyCouponTemplateId?: number;
+    monthlyCouponCount: number;   // 每月发放数量
+    iconUrl: string;             // 等级图标URL
+    color: string;               // 等级颜色
+    benefits: Record<string, unknown>; // 其他权益描述 (JSON)
+    sortOrder: number;           // 排序（越小越靠前）
+    isDefault: boolean;          // 是否默认等级
+    isActive: boolean;           // 是否启用
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface UserVip {
     userId: number;
-    level: VipLevel;
+    vipLevelId?: number;
+    vipLevel?: VipLevel;         // 关联的VIP等级详情
     status: VipStatus;
 
-    // 累计消费
-    totalSpentCents: number;
-    currentYearSpentCents: number;
+    // 累计消费/经验
+    totalRechargeCents: number;   // 累计充值（分）
+    totalSpentCents: number;      // 累计消费（分）
+    vipExp: number;              // VIP经验（分）
 
     // 有效期
-    activatedAt?: string;
-    expiresAt?: string;
+    vipUnlocked: boolean;
+    vipUnlockedAt?: string;
+    vipExpireAt?: string;
 
-    // 权益使用
-    monthlyFreeCoupons: number;      // 本月免费优惠券数
-    usedFreeCoupons: number;         // 已使用数
-    discountRate: number;            // 折扣率
+    // 权益
+    currentMonthCouponClaimedAt?: string; // 本月月度券已领取时间
 
     // 升级进度
     nextLevel?: VipLevel;
     nextLevelThreshold?: number;     // 下一等级门槛
-    progressPercent: number;         // 升级进度百分比
+    progressPercent: number;         // 当前等级进度百分比
 }
 
 export interface VipBenefit {
@@ -70,22 +63,25 @@ export interface VipBenefit {
     name: string;
     description: string;
     icon: string;
-    unlockLevel: VipLevel;
+    requiredLevel: string;  // VIP level slug required
     isUnlocked: boolean;
 }
 
 export interface DiscountResult {
     originalPrice: number;
+    originalPriceCents: number;
     discountRate: number;
     discountAmount: number;
+    discountAmountCents: number;
     finalPrice: number;
+    finalPriceCents: number;
 }
 
 // ============ State & Actions ============
 
 export interface VipState {
     userVip: UserVip | null;
-    levelConfigs: VipLevelConfig[];
+    levels: VipLevel[];
     benefits: VipBenefit[];
     loading: boolean;
     error: string | null;
@@ -93,81 +89,99 @@ export interface VipState {
 
 export interface VipActions {
     fetchVipStatus: () => Promise<void>;
-    fetchLevelConfigs: () => Promise<void>;
+    fetchLevels: () => Promise<void>;
     claimMonthlyCoupon: () => Promise<void>;
-    calculateVipDiscount: (originalPriceCents: number) => DiscountResult;
-    getLevelName: (level: VipLevel) => string;
-    getLevelColor: (level: VipLevel) => string;
+    calculateVipDiscount: (priceCents: number) => DiscountResult;
+    getLevelBySlug: (slug: string) => VipLevel | undefined;
+    getLevelByTitle: (title: string) => VipLevel | undefined;
 }
 
-// ============ Default Level Configs ============
+// ============ Default Level Configs (Fallback) ============
 
-const DEFAULT_LEVEL_CONFIGS: VipLevelConfig[] = [
+const DEFAULT_LEVELS: VipLevel[] = [
     {
-        level: VipLevel.NONE,
-        name: '普通用户',
-        icon: '👤',
+        id: 0,
+        slug: 'none',
+        title: '普通用户',
+        expRequired: 0,
+        orderDiscount: 1.0,
+        monthlyCouponCount: 0,
+        iconUrl: '',
         color: '#9CA3AF',
-        thresholdCents: 0,
-        discountRate: 1,
-        monthlyFreeCoupons: 0,
-        prioritySupport: false,
-        exclusiveActivities: false
+        benefits: {},
+        sortOrder: 0,
+        isDefault: true,
+        isActive: true
     },
     {
-        level: VipLevel.BRONZE,
-        name: '青铜 VIP',
-        icon: '🥉',
+        id: 1,
+        slug: 'bronze',
+        title: '青铜 VIP',
+        expRequired: 50000,      // ¥500
+        orderDiscount: 0.98,
+        monthlyCouponCount: 1,
+        iconUrl: '',
         color: '#CD7F32',
-        thresholdCents: 50000,      // ¥500
-        discountRate: 0.98,
-        monthlyFreeCoupons: 1,
-        prioritySupport: false,
-        exclusiveActivities: false
+        benefits: {},
+        sortOrder: 1,
+        isDefault: false,
+        isActive: true
     },
     {
-        level: VipLevel.SILVER,
-        name: '白银 VIP',
-        icon: '🥈',
+        id: 2,
+        slug: 'silver',
+        title: '白银 VIP',
+        expRequired: 200000,     // ¥2,000
+        orderDiscount: 0.95,
+        monthlyCouponCount: 2,
+        iconUrl: '',
         color: '#C0C0C0',
-        thresholdCents: 200000,     // ¥2,000
-        discountRate: 0.95,
-        monthlyFreeCoupons: 2,
-        prioritySupport: false,
-        exclusiveActivities: false
+        benefits: {},
+        sortOrder: 2,
+        isDefault: false,
+        isActive: true
     },
     {
-        level: VipLevel.GOLD,
-        name: '黄金 VIP',
-        icon: '🥇',
+        id: 3,
+        slug: 'gold',
+        title: '黄金 VIP',
+        expRequired: 500000,     // ¥5,000
+        orderDiscount: 0.92,
+        monthlyCouponCount: 3,
+        iconUrl: '',
         color: '#FFD700',
-        thresholdCents: 500000,     // ¥5,000
-        discountRate: 0.92,
-        monthlyFreeCoupons: 3,
-        prioritySupport: true,
-        exclusiveActivities: false
+        benefits: {},
+        sortOrder: 3,
+        isDefault: false,
+        isActive: true
     },
     {
-        level: VipLevel.PLATINUM,
-        name: '铂金 VIP',
-        icon: '💎',
+        id: 4,
+        slug: 'platinum',
+        title: '铂金 VIP',
+        expRequired: 1000000,    // ¥10,000
+        orderDiscount: 0.90,
+        monthlyCouponCount: 5,
+        iconUrl: '',
         color: '#E5E4E2',
-        thresholdCents: 1000000,    // ¥10,000
-        discountRate: 0.90,
-        monthlyFreeCoupons: 5,
-        prioritySupport: true,
-        exclusiveActivities: true
+        benefits: {},
+        sortOrder: 4,
+        isDefault: false,
+        isActive: true
     },
     {
-        level: VipLevel.DIAMOND,
-        name: '钻石 VIP',
-        icon: '👑',
+        id: 5,
+        slug: 'diamond',
+        title: '钻石 VIP',
+        expRequired: 3000000,    // ¥30,000
+        orderDiscount: 0.88,
+        monthlyCouponCount: 8,
+        iconUrl: '',
         color: '#B9F2FF',
-        thresholdCents: 3000000,    // ¥30,000
-        discountRate: 0.88,
-        monthlyFreeCoupons: 8,
-        prioritySupport: true,
-        exclusiveActivities: true
+        benefits: {},
+        sortOrder: 5,
+        isDefault: false,
+        isActive: true
     }
 ];
 
@@ -177,7 +191,7 @@ export const useVipStore = create<VipState & VipActions>()(
     persist(
         (set, get) => ({
             userVip: null,
-            levelConfigs: DEFAULT_LEVEL_CONFIGS,
+            levels: DEFAULT_LEVELS,
             benefits: [],
             loading: false,
             error: null,
@@ -187,47 +201,46 @@ export const useVipStore = create<VipState & VipActions>()(
                 try {
                     const data = await http.get<{
                         userId: number;
-                        level?: VipLevel;
+                        vipLevelId?: number;
+                        vipLevel?: VipLevel;
                         status?: VipStatus;
+                        totalRechargeCents?: number;
                         totalSpentCents?: number;
-                        currentYearSpentCents?: number;
-                        activatedAt?: string;
-                        expiresAt?: string;
-                        monthlyFreeCoupons?: number;
-                        usedFreeCoupons?: number;
-                        discountRate?: number;
-                        nextLevel?: VipLevel;
-                        nextLevelThreshold?: number;
-                        progressPercent?: number;
+                        vipExp?: number;
+                        vipUnlocked?: boolean;
+                        vipUnlockedAt?: string;
+                        vipExpireAt?: string;
+                        currentMonthCouponClaimedAt?: string;
                     }>('/user/vip/status');
 
-                    const userVip: UserVip = {
-                        userId: data.userId,
-                        level: data.level || VipLevel.NONE,
-                        status: data.status || VipStatus.ACTIVE,
-                        totalSpentCents: data.totalSpentCents || 0,
-                        currentYearSpentCents: data.currentYearSpentCents || 0,
-                        activatedAt: data.activatedAt,
-                        expiresAt: data.expiresAt,
-                        monthlyFreeCoupons: data.monthlyFreeCoupons || 0,
-                        usedFreeCoupons: data.usedFreeCoupons || 0,
-                        discountRate: data.discountRate || 1,
-                        nextLevel: data.nextLevel,
-                        nextLevelThreshold: data.nextLevelThreshold,
-                        progressPercent: data.progressPercent || 0
-                    };
-
-                    set({ userVip, loading: false });
+                    set({
+                        userVip: {
+                            userId: data.userId,
+                            vipLevelId: data.vipLevelId,
+                            vipLevel: data.vipLevel,
+                            status: data.status || VipStatus.ACTIVE,
+                            totalRechargeCents: data.totalRechargeCents || 0,
+                            totalSpentCents: data.totalSpentCents || 0,
+                            vipExp: data.vipExp || 0,
+                            vipUnlocked: data.vipUnlocked || false,
+                            vipUnlockedAt: data.vipUnlockedAt,
+                            vipExpireAt: data.vipExpireAt,
+                            currentMonthCouponClaimedAt: data.currentMonthCouponClaimedAt,
+                            nextLevel: undefined,
+                            progressPercent: 0
+                        },
+                        loading: false
+                    });
                 } catch (err) {
                     set({ loading: false, error: err instanceof Error ? err.message : 'Failed to fetch VIP status' });
                 }
             },
 
-            fetchLevelConfigs: async () => {
+            fetchLevels: async () => {
                 try {
-                    const data = await http.get<VipLevelConfig[]>('/user/vip/levels');
+                    const data = await http.get<VipLevel[]>('/user/vip/levels');
                     if (data && data.length > 0) {
-                        set({ levelConfigs: data });
+                        set({ levels: data });
                     }
                 } catch {
                     // 使用默认配置
@@ -247,69 +260,73 @@ export const useVipStore = create<VipState & VipActions>()(
                 }
             },
 
-            calculateVipDiscount: (originalPriceCents) => {
-                const { userVip, levelConfigs } = get();
+            calculateVipDiscount: (priceCents) => {
+                const { userVip, levels } = get();
 
-                if (!userVip || userVip.level === VipLevel.NONE) {
+                if (!userVip?.vipLevel || !userVip.vipUnlocked) {
                     return {
-                        originalPrice: originalPriceCents,
+                        originalPrice: priceCents / 100,
+                        originalPriceCents: priceCents,
                         discountRate: 1,
                         discountAmount: 0,
-                        finalPrice: originalPriceCents
+                        discountAmountCents: 0,
+                        finalPrice: priceCents / 100,
+                        finalPriceCents: priceCents
                     };
                 }
 
-                const config = levelConfigs.find(c => c.level === userVip.level);
-                const discountRate = config?.discountRate || 1;
+                const discountRate = userVip.vipLevel.orderDiscount;
 
                 if (discountRate >= 1) {
                     return {
-                        originalPrice: originalPriceCents,
+                        originalPrice: priceCents / 100,
+                        originalPriceCents: priceCents,
                         discountRate: 1,
                         discountAmount: 0,
-                        finalPrice: originalPriceCents
+                        discountAmountCents: 0,
+                        finalPrice: priceCents / 100,
+                        finalPriceCents: priceCents
                     };
                 }
 
-                const discountAmount = Math.floor(originalPriceCents * (1 - discountRate));
-                const finalPrice = originalPriceCents - discountAmount;
+                const discountCents = Math.floor(priceCents * (1 - discountRate));
+                const finalCents = priceCents - discountCents;
 
                 return {
-                    originalPrice: originalPriceCents,
+                    originalPrice: priceCents / 100,
+                    originalPriceCents: priceCents,
                     discountRate,
-                    discountAmount,
-                    finalPrice
+                    discountAmount: discountCents / 100,
+                    discountAmountCents: discountCents,
+                    finalPrice: finalCents / 100,
+                    finalPriceCents: finalCents
                 };
             },
 
-            getLevelName: (level) => {
-                const { levelConfigs } = get();
-                const config = levelConfigs.find(c => c.level === level);
-                return config?.name || '普通用户';
+            getLevelBySlug: (slug) => {
+                const { levels } = get();
+                return levels.find(l => l.slug === slug);
             },
 
-            getLevelColor: (level) => {
-                const { levelConfigs } = get();
-                const config = levelConfigs.find(c => c.level === level);
-                return config?.color || '#9CA3AF';
+            getLevelByTitle: (title) => {
+                const { levels } = get();
+                return levels.find(l => l.title === title);
             }
         }),
         {
             name: 'vip-storage',
-            // SECURITY: Only persist non-sensitive configuration data
-            // User spending data (totalSpentCents, currentYearSpentCents) should NOT be persisted
-            // to localStorage as it could be accessed by malicious scripts (XSS)
             partialize: (state) => ({
                 // Only persist level configs (public data)
-                levelConfigs: state.levelConfigs,
+                levels: state.levels,
                 // Persist only non-sensitive VIP info for UI display
                 userVip: state.userVip ? {
                     userId: state.userVip.userId,
-                    level: state.userVip.level,
+                    vipLevelId: state.userVip.vipLevelId,
+                    vipLevel: state.userVip.vipLevel,
                     status: state.userVip.status,
-                    discountRate: state.userVip.discountRate,
+                    vipUnlocked: state.userVip.vipUnlocked,
                     progressPercent: state.userVip.progressPercent
-                    // Excluded: totalSpentCents, currentYearSpentCents, monthlyFreeCoupons, usedFreeCoupons
+                    // Excluded: totalRechargeCents, totalSpentCents, vipExp, dates
                 } : null
             })
         }
