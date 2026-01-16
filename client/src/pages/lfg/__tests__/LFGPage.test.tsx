@@ -68,7 +68,7 @@ vi.mock('react-router-dom', async () => {
 
 // Mock components
 vi.mock('@/components/lfg', () => ({
-    LFGRequestCard: ({ request, onAccept, onCancel }: any) => (
+    LFGRequestCard: ({ request, onAccept, onCancel }: { request: { id: number; title: string }; onAccept?: (id: number) => void; onCancel?: (id: number) => void }) => (
         <div data-testid={`lfg-card-${request.id}`}>
             <span>{request.title}</span>
             {onAccept && <button onClick={() => onAccept(request.id)}>Accept</button>}
@@ -79,8 +79,8 @@ vi.mock('@/components/lfg', () => ({
 }));
 
 vi.mock('@/components/page-container', () => ({
-    PageContainer: ({ children }: any) => <div>{children}</div>,
-    PageHeader: ({ title, description }: any) => (
+    PageContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    PageHeader: ({ title, description }: { title: string; description: string }) => (
         <div>
             <h1>{title}</h1>
             <p>{description}</p>
@@ -137,7 +137,7 @@ describe('LFGPage', () => {
             fetchActiveRequest: mockFetchActiveRequest,
             acceptRequest: mockAcceptRequest,
             cancelRequest: mockCancelRequest,
-        } as any);
+        } as Partial<ReturnType<typeof useLFGStore>>);
 
         renderWithRouter(<LFGPage />);
 
@@ -155,7 +155,7 @@ describe('LFGPage', () => {
             fetchActiveRequest: mockFetchActiveRequest,
             acceptRequest: mockAcceptRequest,
             cancelRequest: mockCancelRequest,
-        } as any);
+        } as Partial<ReturnType<typeof useLFGStore>>);
 
         renderWithRouter(<LFGPage />);
 
@@ -178,7 +178,7 @@ describe('LFGPage', () => {
             fetchActiveRequest: mockFetchActiveRequest,
             acceptRequest: mockAcceptRequest,
             cancelRequest: mockCancelRequest,
-        } as any);
+        } as Partial<ReturnType<typeof useLFGStore>>);
 
         renderWithRouter(<LFGPage />);
 
@@ -205,7 +205,7 @@ describe('LFGPage', () => {
             fetchActiveRequest: mockFetchActiveRequest,
             acceptRequest: mockAcceptRequest,
             cancelRequest: mockCancelRequest,
-        } as any);
+        } as Partial<ReturnType<typeof useLFGStore>>);
 
         renderWithRouter(<LFGPage />);
 
@@ -224,7 +224,7 @@ describe('LFGPage', () => {
             fetchActiveRequest: mockFetchActiveRequest,
             acceptRequest: mockAcceptRequest,
             cancelRequest: mockCancelRequest,
-        } as any);
+        } as Partial<ReturnType<typeof useLFGStore>>);
 
         renderWithRouter(<LFGPage />);
 
@@ -248,7 +248,7 @@ describe('LFGPage', () => {
             fetchActiveRequest: mockFetchActiveRequest,
             acceptRequest: mockAcceptRequest,
             cancelRequest: mockCancelRequest,
-        } as any);
+        } as Partial<ReturnType<typeof useLFGStore>>);
 
         renderWithRouter(<LFGPage />);
 
@@ -273,7 +273,7 @@ describe('LFGPage', () => {
             fetchActiveRequest: mockFetchActiveRequest,
             acceptRequest: mockAcceptRequest,
             cancelRequest: mockCancelRequest,
-        } as any);
+        } as Partial<ReturnType<typeof useLFGStore>>);
 
         renderWithRouter(<LFGPage />);
 
@@ -299,7 +299,7 @@ describe('LFGPage', () => {
             fetchActiveRequest: mockFetchActiveRequest,
             acceptRequest: mockAcceptRequest,
             cancelRequest: mockCancelRequest,
-        } as any);
+        } as Partial<ReturnType<typeof useLFGStore>>);
 
         renderWithRouter(<LFGPage />);
 
@@ -321,7 +321,7 @@ describe('LFGPage', () => {
             fetchActiveRequest: mockFetchActiveRequest,
             acceptRequest: mockAcceptRequest,
             cancelRequest: mockCancelRequest,
-        } as any);
+        } as Partial<ReturnType<typeof useLFGStore>>);
 
         renderWithRouter(<LFGPage />);
 

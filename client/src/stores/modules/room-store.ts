@@ -142,8 +142,8 @@ export const useRoomStore = create<RoomState>((set, get) => ({
                 pagination: response.pagination || initialState.pagination,
                 isLoading: false,
             });
-        } catch (error: any) {
-            const message = error?.message || 'Failed to fetch rooms';
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Failed to fetch rooms';
             set({ error: message, isLoading: false });
             throw error;
         }
@@ -156,8 +156,8 @@ export const useRoomStore = create<RoomState>((set, get) => ({
             const response = await http.get<GameRoom>(`/user/rooms/${roomId}`);
             set({ currentRoom: response, isLoading: false });
             return response;
-        } catch (error: any) {
-            const message = error?.message || 'Failed to fetch room';
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Failed to fetch room';
             set({ error: message, isLoading: false });
             throw error;
         }
@@ -169,8 +169,8 @@ export const useRoomStore = create<RoomState>((set, get) => ({
         try {
             const response = await http.get<GameRoom[]>('/user/rooms/my');
             set({ rooms: response || [], isLoading: false });
-        } catch (error: any) {
-            const message = error?.message || 'Failed to fetch my rooms';
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Failed to fetch my rooms';
             set({ error: message, isLoading: false });
             throw error;
         }
@@ -187,8 +187,8 @@ export const useRoomStore = create<RoomState>((set, get) => ({
                 isLoading: false,
             }));
             return response;
-        } catch (error: any) {
-            const message = error?.message || 'Failed to create room';
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Failed to create room';
             set({ error: message, isLoading: false });
             throw error;
         }
@@ -200,8 +200,8 @@ export const useRoomStore = create<RoomState>((set, get) => ({
             await http.put(`/user/rooms/${roomId}`, data);
             // Refresh room data
             await get().fetchRoom(roomId);
-        } catch (error: any) {
-            const message = error?.message || 'Failed to update room';
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Failed to update room';
             set({ error: message });
             throw error;
         }
@@ -216,8 +216,8 @@ export const useRoomStore = create<RoomState>((set, get) => ({
                 currentRoom:
                     state.currentRoom?.id === roomId ? null : state.currentRoom,
             }));
-        } catch (error: any) {
-            const message = error?.message || 'Failed to close room';
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Failed to close room';
             set({ error: message });
             throw error;
         }
@@ -232,8 +232,8 @@ export const useRoomStore = create<RoomState>((set, get) => ({
             await get().fetchRoom(roomId);
             await get().fetchMembers(roomId);
             set({ isLoading: false });
-        } catch (error: any) {
-            const message = error?.message || 'Failed to join room';
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Failed to join room';
             set({ error: message, isLoading: false });
             throw error;
         }
@@ -248,8 +248,8 @@ export const useRoomStore = create<RoomState>((set, get) => ({
                     state.currentRoom?.id === roomId ? null : state.currentRoom,
                 members: [],
             }));
-        } catch (error: any) {
-            const message = error?.message || 'Failed to leave room';
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Failed to leave room';
             set({ error: message });
             throw error;
         }
@@ -261,8 +261,8 @@ export const useRoomStore = create<RoomState>((set, get) => ({
             await http.post(`/user/rooms/${roomId}/ready`);
             // Refresh members
             await get().fetchMembers(roomId);
-        } catch (error: any) {
-            const message = error?.message || 'Failed to toggle ready';
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Failed to toggle ready';
             set({ error: message });
             throw error;
         }
@@ -273,8 +273,8 @@ export const useRoomStore = create<RoomState>((set, get) => ({
         try {
             await http.post(`/user/rooms/${roomId}/start`);
             await get().fetchRoom(roomId);
-        } catch (error: any) {
-            const message = error?.message || 'Failed to start game';
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Failed to start game';
             set({ error: message });
             throw error;
         }
@@ -285,8 +285,8 @@ export const useRoomStore = create<RoomState>((set, get) => ({
         try {
             await http.post(`/user/rooms/${roomId}/finish`);
             await get().fetchRoom(roomId);
-        } catch (error: any) {
-            const message = error?.message || 'Failed to finish game';
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Failed to finish game';
             set({ error: message });
             throw error;
         }
@@ -298,8 +298,8 @@ export const useRoomStore = create<RoomState>((set, get) => ({
             await http.post(`/user/rooms/${roomId}/kick/${userId}`);
             await get().fetchMembers(roomId);
             await get().fetchRoom(roomId);
-        } catch (error: any) {
-            const message = error?.message || 'Failed to kick member';
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Failed to kick member';
             set({ error: message });
             throw error;
         }
@@ -312,8 +312,8 @@ export const useRoomStore = create<RoomState>((set, get) => ({
                 `/user/rooms/${roomId}/members`
             );
             set({ members: response || [] });
-        } catch (error: any) {
-            const message = error?.message || 'Failed to fetch members';
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Failed to fetch members';
             set({ error: message });
             throw error;
         }

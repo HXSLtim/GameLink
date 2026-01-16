@@ -80,11 +80,11 @@ describe('Order Store', () => {
     });
 
     it('should cancel order optimistically', async () => {
-        // Use any to bypass strict type check for partial mock state if needed, or precise type
-        const initialOrder = { id: 1, status: OrderStatus.PENDING } as any;
+        // Use Partial type for partial mock state
+        const initialOrder = { id: 1, status: OrderStatus.PENDING } as Partial<Order>;
         useOrderStore.setState({
-            myOrders: [initialOrder],
-            currentOrder: initialOrder
+            myOrders: [initialOrder as Order],
+            currentOrder: initialOrder as Order
         });
 
         (http.post as ReturnType<typeof vi.fn>).mockResolvedValue({});

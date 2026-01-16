@@ -82,8 +82,8 @@ export function RoomCard({ room, currentUserId, onJoin, isJoining }: RoomCardPro
             setShowPasswordDialog(false);
             setPassword('');
             navigate(`/rooms/${room.id}`);
-        } catch (error: any) {
-            setPasswordError(error?.message || t('room.errors.wrongPassword'));
+        } catch (error: unknown) {
+            setPasswordError(error instanceof Error ? error.message : t('room.errors.wrongPassword'));
         }
     };
 

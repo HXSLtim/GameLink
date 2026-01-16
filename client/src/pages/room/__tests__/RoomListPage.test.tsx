@@ -23,7 +23,7 @@ vi.mock('@/stores', () => ({
 // Mock react-i18next
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
-        t: (key: string, options?: any) => {
+        t: (key: string, options?: { count?: number; total?: number }) => {
             const translations: Record<string, string> = {
                 'room.title': 'Game Rooms',
                 'room.description': 'Find or create a room',
@@ -57,7 +57,7 @@ vi.mock('react-router-dom', async () => {
 
 // Mock components
 vi.mock('@/components/room', () => ({
-    RoomCard: ({ room, onJoin }: any) => (
+    RoomCard: ({ room, onJoin }: { room: { id: number; name: string }; onJoin: (id: number) => void }) => (
         <div data-testid={`room-card-${room.id}`}>
             <span>{room.name}</span>
             <button onClick={() => onJoin(room.id)}>Join</button>
@@ -67,8 +67,8 @@ vi.mock('@/components/room', () => ({
 }));
 
 vi.mock('@/components/page-container', () => ({
-    PageContainer: ({ children }: any) => <div>{children}</div>,
-    PageHeader: ({ title, description }: any) => (
+    PageContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    PageHeader: ({ title, description }: { title: string; description: string }) => (
         <div>
             <h1>{title}</h1>
             <p>{description}</p>
@@ -123,7 +123,7 @@ describe('RoomListPage', () => {
             pagination: { page: 1, pageSize: 20, total: 0 },
             fetchRooms: mockFetchRooms,
             joinRoom: mockJoinRoom,
-        } as any);
+        } as Partial<ReturnType<typeof useRoomStore>>);
 
         renderWithRouter(<RoomListPage />);
 
@@ -137,7 +137,7 @@ describe('RoomListPage', () => {
             pagination: { page: 1, pageSize: 20, total: 0 },
             fetchRooms: mockFetchRooms,
             joinRoom: mockJoinRoom,
-        } as any);
+        } as Partial<ReturnType<typeof useRoomStore>>);
 
         renderWithRouter(<RoomListPage />);
 
@@ -157,7 +157,7 @@ describe('RoomListPage', () => {
             pagination: { page: 1, pageSize: 20, total: 2 },
             fetchRooms: mockFetchRooms,
             joinRoom: mockJoinRoom,
-        } as any);
+        } as Partial<ReturnType<typeof useRoomStore>>);
 
         renderWithRouter(<RoomListPage />);
 
@@ -185,7 +185,7 @@ describe('RoomListPage', () => {
             pagination: { page: 1, pageSize: 20, total: 2 },
             fetchRooms: mockFetchRooms,
             joinRoom: mockJoinRoom,
-        } as any);
+        } as Partial<ReturnType<typeof useRoomStore>>);
 
         renderWithRouter(<RoomListPage />);
 
@@ -205,7 +205,7 @@ describe('RoomListPage', () => {
             pagination: { page: 1, pageSize: 20, total: 1 },
             fetchRooms: mockFetchRooms,
             joinRoom: mockJoinRoom,
-        } as any);
+        } as Partial<ReturnType<typeof useRoomStore>>);
 
         renderWithRouter(<RoomListPage />);
 

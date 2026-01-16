@@ -581,7 +581,7 @@ describe('Dispute Store', () => {
                     createMockDispute({ id: 6, status: DisputeStatus.CANCELED }),
                 ];
 
-                const state = { myDisputes: disputes } as any;
+                const state = { myDisputes: disputes } as Pick<DisputeState, 'myDisputes'>;
                 const active = selectActiveDisputes(state);
 
                 expect(active).toHaveLength(3);
@@ -594,7 +594,7 @@ describe('Dispute Store', () => {
                     createMockDispute({ id: 2, status: DisputeStatus.CANCELED }),
                 ];
 
-                const state = { myDisputes: disputes } as any;
+                const state = { myDisputes: disputes } as Pick<DisputeState, 'myDisputes'>;
                 const active = selectActiveDisputes(state);
 
                 expect(active).toHaveLength(0);
@@ -610,7 +610,7 @@ describe('Dispute Store', () => {
                     createMockDispute({ id: 4, status: DisputeStatus.CANCELED }),
                 ];
 
-                const state = { myDisputes: disputes } as any;
+                const state = { myDisputes: disputes } as Pick<DisputeState, 'myDisputes'>;
                 const resolved = selectResolvedDisputes(state);
 
                 expect(resolved).toHaveLength(3);

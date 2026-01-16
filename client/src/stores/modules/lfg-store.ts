@@ -69,7 +69,7 @@ export interface LFGState {
     fetchRequest: (requestId: number) => Promise<LFGRequest>;
     createRequest: (data: CreateLFGRequest) => Promise<LFGRequest>;
     cancelRequest: (requestId: number) => Promise<void>;
-    acceptRequest: (requestId: number) => Promise<any>;
+    acceptRequest: (requestId: number) => Promise<{ roomId?: number }>;
     findMatches: (requestId: number, limit?: number) => Promise<void>;
     fetchPendingCount: (gameId?: number) => Promise<void>;
     reset: () => void;
@@ -121,8 +121,8 @@ export const useLFGStore = create<LFGState>((set) => ({
                 pagination: response.pagination || initialState.pagination,
                 isLoading: false,
             });
-        } catch (error: any) {
-            const message = error?.message || 'Failed to fetch LFG requests';
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Failed to fetch LFG requests';
             set({ error: message, isLoading: false });
             throw error;
         }
@@ -145,8 +145,8 @@ export const useLFGStore = create<LFGState>((set) => ({
                 pagination: response.pagination || initialState.pagination,
                 isLoading: false,
             });
-        } catch (error: any) {
-            const message = error?.message || 'Failed to fetch pending requests';
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Failed to fetch pending requests';
             set({ error: message, isLoading: false });
             throw error;
         }
@@ -163,8 +163,8 @@ export const useLFGStore = create<LFGState>((set) => ({
                 `/user/lfg/my?${params.toString()}`
             );
             set({ myRequests: response || [], isLoading: false });
-        } catch (error: any) {
-            const message = error?.message || 'Failed to fetch my requests';
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Failed to fetch my requests';
             set({ error: message, isLoading: false });
             throw error;
         }
@@ -176,13 +176,14 @@ export const useLFGStore = create<LFGState>((set) => ({
         try {
             const response = await http.get<LFGRequest>('/user/lfg/active');
             set({ activeRequest: response, isLoading: false });
-        } catch (error: any) {
+        } catch (error: unknown) {
             // 404 means no active request, which is fine
-            if (error?.status === 404) {
+            const httpError = error as { status?: number };
+            if (httpError?.status === 404) {
                 set({ activeRequest: null, isLoading: false });
                 return;
             }
-            const message = error?.message || 'Failed to fetch active request';
+            const message = error instanceof Error ? error.message : 'Failed to fetch active request';
             set({ error: message, isLoading: false });
             throw error;
         }
@@ -195,8 +196,8 @@ export const useLFGStore = create<LFGState>((set) => ({
             const response = await http.get<LFGRequest>(`/user/lfg/${requestId}`);
             set({ isLoading: false });
             return response;
-        } catch (error: any) {
-            const message = error?.message || 'Failed to fetch request';
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Failed to fetch request';
             set({ error: message, isLoading: false });
             throw error;
         }
@@ -214,8 +215,8 @@ export const useLFGStore = create<LFGState>((set) => ({
                 isLoading: false,
             }));
             return response;
-        } catch (error: any) {
-            const message = error?.message || 'Failed to create request';
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Failed to create request';
             set({ error: message, isLoading: false });
             throw error;
         }
@@ -233,8 +234,8 @@ export const useLFGStore = create<LFGState>((set) => ({
                         ? null
                         : state.activeRequest,
             }));
-        } catch (error: any) {
-            const message = error?.message || 'Failed to cancel request';
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Failed to cancel request';
             set({ error: message });
             throw error;
         }
@@ -244,15 +245,15 @@ export const useLFGStore = create<LFGState>((set) => ({
     acceptRequest: async (requestId: number) => {
         set({ isLoading: true, error: null });
         try {
-            const response = await http.post(`/user/lfg/${requestId}/accept`);
+            const response = await http.post<{ roomId?: number }>(`/user/lfg/${requestId}/accept`);
             // Remove from pending list
             set((state) => ({
                 requests: state.requests.filter((r) => r.id !== requestId),
                 isLoading: false,
             }));
             return response;
-        } catch (error: any) {
-            const message = error?.message || 'Failed to accept request';
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Failed to accept request';
             set({ error: message, isLoading: false });
             throw error;
         }
@@ -269,8 +270,8 @@ export const useLFGStore = create<LFGState>((set) => ({
                 `/user/lfg/${requestId}/matches?${params.toString()}`
             );
             set({ matches: response || [], isLoading: false });
-        } catch (error: any) {
-            const message = error?.message || 'Failed to find matches';
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Failed to find matches';
             set({ error: message, isLoading: false });
             throw error;
         }
@@ -286,7 +287,7 @@ export const useLFGStore = create<LFGState>((set) => ({
                 `/user/lfg/count?${params.toString()}`
             );
             set({ pendingCount: response.count || 0 });
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('[LFG] Failed to fetch pending count:', error);
         }
     },

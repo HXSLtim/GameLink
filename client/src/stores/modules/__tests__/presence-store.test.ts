@@ -63,7 +63,7 @@ describe('presence-store', () => {
         });
 
         it('should return "未知" for unknown status', () => {
-            expect(getStatusDisplay('unknown' as any)).toBe('未知');
+            expect(getStatusDisplay('unknown' as PresenceStatus)).toBe('未知');
         });
     });
 
