@@ -21,7 +21,7 @@ export default function EditProfilePage() {
     const [isLoading, setIsLoading] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [formData, setFormData] = useState({
-        nickname: user?.nickname || '',
+        name: user?.name || '',
         username: user?.username || '',
         email: user?.email || '',
         avatar: user?.avatar || ''
@@ -92,7 +92,7 @@ export default function EditProfilePage() {
         setIsLoading(true);
         try {
             await updateProfile({
-                nickname: formData.nickname,
+                name: formData.name,
                 email: formData.email,
                 avatar: formData.avatar
             });
@@ -134,7 +134,7 @@ export default function EditProfilePage() {
                                 <Avatar className="h-40 w-40 border-4 border-background shadow-2xl ring-4 ring-primary/10 transition-all duration-300 group-hover:ring-primary/30">
                                     <AvatarImage src={formData.avatar} className="object-cover" />
                                     <AvatarFallback className="text-5xl font-bold bg-primary/5 text-primary">
-                                        {isUploading ? <Loader2 className="h-10 w-10 animate-spin" /> : (formData.nickname?.[0]?.toUpperCase() || 'U')}
+                                        {isUploading ? <Loader2 className="h-10 w-10 animate-spin" /> : (formData.name?.[0]?.toUpperCase() || 'U')}
                                     </AvatarFallback>
                                 </Avatar>
                                 <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-[2px]">
@@ -143,7 +143,7 @@ export default function EditProfilePage() {
                             </div>
 
                             <div className="space-y-2 w-full px-4">
-                                <h3 className="font-semibold text-xl">{formData.nickname || user?.username}</h3>
+                                <h3 className="font-semibold text-xl">{formData.name || user?.username}</h3>
                                 <p className="text-sm text-muted-foreground">{formData.email}</p>
                                 <Button variant="outline" size="sm" className="mt-2 w-full" onClick={handleFileSelect} disabled={isUploading}>
                                     <Upload className="h-4 w-4 mr-2" />
@@ -173,14 +173,14 @@ export default function EditProfilePage() {
                             <CardContent className="space-y-8 pt-8">
                                 <div className="grid gap-6">
                                     <div className="grid gap-3">
-                                        <Label htmlFor="nickname" className="text-base font-medium flex items-center gap-2">
+                                        <Label htmlFor="name" className="text-base font-medium flex items-center gap-2">
                                             <User className="h-4 w-4 text-primary" />
                                             {t('auth.nickname')}
                                         </Label>
                                         <Input
-                                            id="nickname"
-                                            name="nickname"
-                                            value={formData.nickname}
+                                            id="name"
+                                            name="name"
+                                            value={formData.name}
                                             onChange={handleChange}
                                             placeholder={t('auth.nickname')}
                                             className="h-12 bg-muted/30 focus:bg-background text-lg"

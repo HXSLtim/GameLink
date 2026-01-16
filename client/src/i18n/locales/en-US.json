@@ -434,5 +434,86 @@
         "searchPlaceholder": "Search games...",
         "noResults": "No games found",
         "noGames": "No games available"
+    },
+    "verification": {
+        "realname": {
+            "title": "Real Name Verification",
+            "description": "Complete identity verification for account security",
+            "min_length": "Real name must be at least 2 characters",
+            "invalid_id": "Please enter a valid ID number",
+            "submit_success": "Submitted Successfully",
+            "submit_success_desc": "Your verification has been submitted for review",
+            "submit_failed": "Submission Failed",
+            "try_again": "Please try again later",
+            "security_title": "Security Notice",
+            "security_desc": "Your information is only used for identity verification and will be kept strictly confidential.",
+            "identity_info": "Identity Information",
+            "identity_info_desc": "Please provide accurate information matching your ID",
+            "real_name": "Real Name",
+            "real_name_placeholder": "Enter your real name",
+            "id_number": "ID Number",
+            "id_number_placeholder": "Enter your 18-digit ID number",
+            "id_photos": "ID Photos",
+            "id_photos_desc": "Upload front and back photos of your valid ID",
+            "photo_front": "Front Side",
+            "photo_back": "Back Side",
+            "click_upload": "Click to Upload",
+            "submitting": "Submitting...",
+            "submit": "Submit Verification"
+        },
+        "skill": {
+            "title": "Skill Verification",
+            "description": "Verify your game rank to showcase your skills",
+            "select_game": "Please select a game",
+            "select_rank": "Select rank",
+            "submit_success": "Submitted Successfully",
+            "submit_success_desc": "Your skill verification has been submitted for review",
+            "submit_failed": "Submission Failed",
+            "try_again": "Please try again later",
+            "alert_title": "Verification Notice",
+            "alert_desc": "Please upload a screenshot of your profile with your game ID clearly visible.",
+            "game_info": "Game Information",
+            "game_info_desc": "Select your game and current rank",
+            "game": "Game",
+            "select_game_first": "Please select a game first",
+            "rank": "Rank",
+            "screenshot_title": "Rank Screenshot",
+            "screenshot_desc": "Upload a recent screenshot showing your game ID and rank",
+            "click_upload": "Click to Upload Screenshot",
+            "submitting": "Submitting...",
+            "submit": "Submit Verification",
+            "lol": {
+                "name": "League of Legends",
+                "challenger": "Challenger",
+                "grandmaster": "Grandmaster",
+                "master": "Master",
+                "diamond": "Diamond",
+                "platinum": "Platinum"
+            },
+            "wzry": {
+                "name": "Honor of Kings",
+                "glory_king": "Glory King",
+                "king": "King",
+                "star": "Star",
+                "diamond": "Diamond",
+                "platinum": "Platinum"
+            },
+            "pubg": {
+                "name": "PUBG",
+                "conqueror": "Conqueror",
+                "ace": "Ace",
+                "crown": "Crown",
+                "diamond": "Diamond",
+                "platinum": "Platinum"
+            },
+            "apex": {
+                "name": "Apex Legends",
+                "predator": "Predator",
+                "master": "Master",
+                "diamond": "Diamond",
+                "platinum": "Platinum",
+                "gold": "Gold"
+            }
+        }
     }
 }

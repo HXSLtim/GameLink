@@ -73,7 +73,7 @@ export default function ProfilePage() {
                         </div>
                         <div className="mb-2 space-y-1">
                             <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-                                {user?.nickname || user?.username}
+                                {user?.name || user?.username}
                                 {vipUnlocked && <Crown className="h-6 w-6 text-yellow-500 fill-yellow-500 animate-in zoom-in spin-in-12" />}
                             </h1>
                             <div className="flex items-center gap-3 text-muted-foreground">

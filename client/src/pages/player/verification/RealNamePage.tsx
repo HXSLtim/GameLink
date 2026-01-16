@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { ShieldCheck, Upload, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { PageContainer } from "@/components/page-container";
 import { Button } from "@/components/ui/button";
@@ -22,13 +23,14 @@ import { toast } from "sonner";
 import { http } from "@/lib/http";
 
 const formSchema = z.object({
-    realName: z.string().min(2, "真实姓名至少需要2个字符"),
-    idNumber: z.string().regex(/(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/, "请输入有效的身份证号"),
+    realName: z.string().min(2, "verification.realname.min_length"),
+    idNumber: z.string().regex(/(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/, "verification.realname.invalid_id"),
     idCardFront: z.any().optional(),
     idCardBack: z.any().optional(),
 });
 
 export default function RealNamePage() {
+    const { t } = useTranslation();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [frontPreview, setFrontPreview] = useState<string | null>(null);
     const [backPreview, setBackPreview] = useState<string | null>(null);
@@ -51,12 +53,12 @@ export default function RealNamePage() {
                 // idCardFrontUrl: frontImageUrl,
                 // idCardBackUrl: backImageUrl,
             });
-            toast.success("提交成功", {
-                description: "您的实名认证信息已提交审核",
+            toast.success(t('verification.realname.submit_success'), {
+                description: t('verification.realname.submit_success_desc'),
             });
         } catch (error) {
-            toast.error("提交失败", {
-                description: error instanceof Error ? error.message : "请稍后重试"
+            toast.error(t('verification.realname.submit_failed'), {
+                description: error instanceof Error ? error.message : t('verification.realname.try_again')
             });
         } finally {
             setIsSubmitting(false);
@@ -77,17 +79,17 @@ export default function RealNamePage() {
     return (
         <PageContainer>
             <div className="px-4 py-4 md:px-8">
-                <h1 className="text-2xl font-bold tracking-tight mb-2">实名认证</h1>
+                <h1 className="text-2xl font-bold tracking-tight mb-2">{t('verification.realname.title')}</h1>
                 <p className="text-sm text-muted-foreground mb-6">
-                    为了保障账号安全，请完成实名认证
+                    {t('verification.realname.description')}
                 </p>
 
                 <div className="max-w-md mx-auto space-y-6">
                     <Alert variant="default" className="bg-blue-50/50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-800">
                         <ShieldCheck className="h-4 w-4" />
-                        <AlertTitle>安全提示</AlertTitle>
+                        <AlertTitle>{t('verification.realname.security_title')}</AlertTitle>
                         <AlertDescription>
-                            您的信息仅用于身份核验，平台将严格保密。
+                            {t('verification.realname.security_desc')}
                         </AlertDescription>
                     </Alert>
 
@@ -95,9 +97,9 @@ export default function RealNamePage() {
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>身份信息</CardTitle>
+                                    <CardTitle>{t('verification.realname.identity_info')}</CardTitle>
                                     <CardDescription>
-                                        请填写真实的身份信息，与身份证保持一致
+                                        {t('verification.realname.identity_info_desc')}
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
@@ -106,9 +108,9 @@ export default function RealNamePage() {
                                         name="realName"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>真实姓名</FormLabel>
+                                                <FormLabel>{t('verification.realname.real_name')}</FormLabel>
                                                 <FormControl>
-                                                    <Input placeholder="请输入真实姓名" {...field} />
+                                                    <Input placeholder={t('verification.realname.real_name_placeholder')} {...field} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -119,9 +121,9 @@ export default function RealNamePage() {
                                         name="idNumber"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>身份证号</FormLabel>
+                                                <FormLabel>{t('verification.realname.id_number')}</FormLabel>
                                                 <FormControl>
-                                                    <Input placeholder="请输入18位身份证号" {...field} />
+                                                    <Input placeholder={t('verification.realname.id_number_placeholder')} {...field} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -132,16 +134,16 @@ export default function RealNamePage() {
 
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>证件照片</CardTitle>
+                                    <CardTitle>{t('verification.realname.id_photos')}</CardTitle>
                                     <CardDescription>
-                                        请上传有效期内的身份证正反面照片
+                                        {t('verification.realname.id_photos_desc')}
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
                                     <div className="grid grid-cols-2 gap-4">
                                         {/* Front Side */}
                                         <div className="space-y-2">
-                                            <FormLabel className="text-xs text-muted-foreground block text-center">人像面</FormLabel>
+                                            <FormLabel className="text-xs text-muted-foreground block text-center">{t('verification.realname.photo_front')}</FormLabel>
                                             <div
                                                 className="relative aspect-[3/2] rounded-lg border-2 border-dashed border-muted-foreground/25 hover:border-primary/50 transition-colors flex flex-col items-center justify-center bg-muted/50 cursor-pointer overflow-hidden"
                                                 onClick={() => document.getElementById('front-upload')?.click()}
@@ -151,7 +153,7 @@ export default function RealNamePage() {
                                                 ) : (
                                                     <>
                                                         <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                                                        <span className="text-xs text-muted-foreground">点击上传</span>
+                                                        <span className="text-xs text-muted-foreground">{t('verification.realname.click_upload')}</span>
                                                     </>
                                                 )}
                                                 <input
@@ -166,7 +168,7 @@ export default function RealNamePage() {
 
                                         {/* Back Side */}
                                         <div className="space-y-2">
-                                            <FormLabel className="text-xs text-muted-foreground block text-center">国徽面</FormLabel>
+                                            <FormLabel className="text-xs text-muted-foreground block text-center">{t('verification.realname.photo_back')}</FormLabel>
                                             <div
                                                 className="relative aspect-[3/2] rounded-lg border-2 border-dashed border-muted-foreground/25 hover:border-primary/50 transition-colors flex flex-col items-center justify-center bg-muted/50 cursor-pointer overflow-hidden"
                                                 onClick={() => document.getElementById('back-upload')?.click()}
@@ -176,7 +178,7 @@ export default function RealNamePage() {
                                                 ) : (
                                                     <>
                                                         <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                                                        <span className="text-xs text-muted-foreground">点击上传</span>
+                                                        <span className="text-xs text-muted-foreground">{t('verification.realname.click_upload')}</span>
                                                     </>
                                                 )}
                                                 <input
@@ -196,10 +198,10 @@ export default function RealNamePage() {
                                 {isSubmitting ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        提交审核中...
+                                        {t('verification.realname.submitting')}
                                     </>
                                 ) : (
-                                    "提交认证"
+                                    t('verification.realname.submit')
                                 )}
                             </Button>
                         </form>

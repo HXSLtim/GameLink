@@ -93,7 +93,7 @@ export default function NotificationPage() {
                                                 </span>
                                             </div>
                                             <p className="text-sm text-muted-foreground leading-snug">
-                                                {notification.message}
+                                                {notification.content}
                                             </p>
                                         </div>
                                     </CardContent>

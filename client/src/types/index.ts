@@ -23,11 +23,11 @@ export interface PaginatedResponse<T> {
     pagination: Pagination;
 }
 
-// User types
+// User types (backend uses 'name' not 'nickname')
 export interface User {
     id: number;
     phone: string;
-    nickname: string;
+    name: string; // Backend User.Name
     avatar: string;
     gender: 'male' | 'female' | 'unknown';
     birthday?: string;
@@ -68,15 +68,15 @@ export interface PlayerService {
     status: 'active' | 'inactive';
 }
 
-// Order types
-export type OrderStatus = 
-    | 'pending_payment'
-    | 'pending_accept'
-    | 'in_progress'
-    | 'completed'
-    | 'cancelled'
-    | 'refunding'
-    | 'refunded';
+// Order types (matching backend OrderStatus)
+export type OrderStatus =
+    | 'pending'      // Initial state
+    | 'confirmed'    // Paid, waiting for player
+    | 'in_progress'  // Player joined, service in progress
+    | 'completed'    // Service completed
+    | 'canceled'     // Order cancelled
+    | 'refunded'     // Order refunded
+    | 'disputed';    // Dispute raised
 
 export type OrderType = 'solo' | 'team' | 'gift';
 

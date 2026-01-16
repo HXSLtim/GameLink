@@ -156,10 +156,10 @@ export default function DesktopLayout() {
                         <div className="relative w-10 h-10">
                             <div className="w-full h-full rounded-full bg-muted overflow-hidden ring-2 ring-background group-hover:ring-primary/20 transition-all">
                                 {user?.avatar ? (
-                                    <img src={user.avatar} alt={user.nickname || user.username} className="w-full h-full object-cover" />
+                                    <img src={user.avatar} alt={user.name || user.username} className="w-full h-full object-cover" />
                                 ) : (
                                     <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white">
-                                        {(user?.nickname || user?.username || 'U').charAt(0).toUpperCase()}
+                                        {(user?.name || user?.username || 'U').charAt(0).toUpperCase()}
                                     </div>
                                 )}
                             </div>
@@ -167,7 +167,7 @@ export default function DesktopLayout() {
                         </div>
                         <div className="flex-1 min-w-0">
                             <div className="text-sm font-semibold truncate text-foreground group-hover:text-primary transition-colors">
-                                {user?.nickname || user?.username || t('nav.guest')}
+                                {user?.name || user?.username || t('nav.guest')}
                             </div>
                             <div className="text-xs text-muted-foreground truncate">
                                 {viewMode === 'player' ? t('nav.playerMode') : t('nav.online_status')}

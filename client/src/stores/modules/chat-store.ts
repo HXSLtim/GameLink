@@ -3,8 +3,8 @@ import { http } from '@/lib/http';
 import { getErrorMessage, logError } from '@/lib/error';
 
 export interface Message {
-    id: string;
-    conversationId: string;
+    id: number;
+    conversationId: number;
     senderId: number;
     content: string;
     type: 'text' | 'image' | 'system';
@@ -13,7 +13,7 @@ export interface Message {
 }
 
 export interface Conversation {
-    id: string;
+    id: number;
     participantId: number;
     participantName: string;
     participantAvatar: string;
@@ -25,8 +25,8 @@ export interface Conversation {
 
 export interface ChatState {
     conversations: Conversation[];
-    currentConversationId: string | null;
-    messages: Record<string, Message[]>; // Keyed by conversationId
+    currentConversationId: number | null;
+    messages: Record<number, Message[]>; // Keyed by conversationId
 
     // Status
     totalUnreadCount: number;
@@ -37,11 +37,11 @@ export interface ChatState {
 
 export interface ChatActions {
     fetchConversations: () => Promise<void>;
-    selectConversation: (conversationId: string) => Promise<void>;
-    fetchMessages: (conversationId: string) => Promise<void>;
+    selectConversation: (conversationId: number) => Promise<void>;
+    fetchMessages: (conversationId: number) => Promise<void>;
     sendMessage: (content: string, type?: 'text' | 'image') => Promise<void>;
     receiveMessage: (message: Message) => void;
-    markAsRead: (conversationId: string) => Promise<void>;
+    markAsRead: (conversationId: number) => Promise<void>;
     setConnected: (connected: boolean) => void;
     reset: () => void;
 }
@@ -76,7 +76,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
         }
     },
 
-    selectConversation: async (conversationId: string) => {
+    selectConversation: async (conversationId: number) => {
         set({ currentConversationId: conversationId });
         const { messages, markAsRead, fetchMessages } = get();
 
@@ -89,7 +89,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
         }
     },
 
-    fetchMessages: async (conversationId: string) => {
+    fetchMessages: async (conversationId: number) => {
         set({ loading: true });
         try {
             const data = await http.get<Message[]>(`/chat/conversations/${conversationId}/messages`);
@@ -144,7 +144,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
                         m.id === tempId ? response : m
                     ) || []
                 }
-            }));
+            ));
 
             // Update conversation's last message
             set(state => ({

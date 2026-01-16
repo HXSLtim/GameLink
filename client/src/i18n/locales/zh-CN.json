@@ -433,5 +433,86 @@
         "searchPlaceholder": "搜索游戏...",
         "noResults": "未找到游戏",
         "noGames": "暂无游戏"
+    },
+    "verification": {
+        "realname": {
+            "title": "实名认证",
+            "description": "为了保障账号安全，请完成实名认证",
+            "min_length": "真实姓名至少需要2个字符",
+            "invalid_id": "请输入有效的身份证号",
+            "submit_success": "提交成功",
+            "submit_success_desc": "您的实名认证信息已提交审核",
+            "submit_failed": "提交失败",
+            "try_again": "请稍后重试",
+            "security_title": "安全提示",
+            "security_desc": "您的信息仅用于身份核验，平台将严格保密。",
+            "identity_info": "身份信息",
+            "identity_info_desc": "请填写真实的身份信息，与身份证保持一致",
+            "real_name": "真实姓名",
+            "real_name_placeholder": "请输入真实姓名",
+            "id_number": "身份证号",
+            "id_number_placeholder": "请输入18位身份证号",
+            "id_photos": "证件照片",
+            "id_photos_desc": "请上传有效期内的身份证正反面照片",
+            "photo_front": "人像面",
+            "photo_back": "国徽面",
+            "click_upload": "点击上传",
+            "submitting": "提交审核中...",
+            "submit": "提交认证"
+        },
+        "skill": {
+            "title": "技能认证",
+            "description": "认证游戏段位，展示您的实力",
+            "select_game": "请选择游戏",
+            "select_rank": "选择段位",
+            "submit_success": "提交成功",
+            "submit_success_desc": "您的技能认证信息已提交审核",
+            "submit_failed": "提交失败",
+            "try_again": "请稍后重试",
+            "alert_title": "认证提示",
+            "alert_desc": "请上传带有游戏ID的个人主页截图，确保ID清晰可见。",
+            "game_info": "游戏信息",
+            "game_info_desc": "选择您擅长的游戏及当前段位",
+            "game": "游戏",
+            "select_game_first": "请先选择游戏",
+            "rank": "段位",
+            "screenshot_title": "段位截图",
+            "screenshot_desc": "请上传包含游戏ID和段位信息的最新截图",
+            "click_upload": "点击上传段位截图",
+            "submitting": "提交审核中...",
+            "submit": "提交认证",
+            "lol": {
+                "name": "英雄联盟",
+                "challenger": "最强王者",
+                "grandmaster": "傲世宗师",
+                "master": "超凡大师",
+                "diamond": "璀璨钻石",
+                "platinum": "华贵铂金"
+            },
+            "wzry": {
+                "name": "王者荣耀",
+                "glory_king": "荣耀王者",
+                "king": "最强王者",
+                "star": "至尊星耀",
+                "diamond": "永恒钻石",
+                "platinum": "尊贵铂金"
+            },
+            "pubg": {
+                "name": "绝地求生",
+                "conqueror": "无敌战神",
+                "ace": "王牌",
+                "crown": "皇冠",
+                "diamond": "星钻",
+                "platinum": "白金"
+            },
+            "apex": {
+                "name": "Apex Legends",
+                "predator": "顶尖猎杀者",
+                "master": "大师",
+                "diamond": "钻石",
+                "platinum": "白金",
+                "gold": "黄金"
+            }
+        }
     }
 }

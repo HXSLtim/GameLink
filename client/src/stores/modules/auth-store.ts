@@ -6,11 +6,11 @@ import type { LoginResponse, RegisterResponse, RefreshResponse, MeResponse } fro
 
 // --- Types ---
 export interface User {
-    id: string; // or number, aligning with existing logic
+    id: number; // Changed to number to match backend uint64
     username: string;
     avatar: string;
     email?: string;
-    nickname?: string;
+    name: string; // Backend uses 'name', not 'nickname'
 }
 
 export interface PlayerProfile {

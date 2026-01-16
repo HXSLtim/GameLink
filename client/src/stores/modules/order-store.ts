@@ -7,7 +7,7 @@ export const OrderStatus = {
     CONFIRMED: 'confirmed', // Paid, waiting for player
     IN_PROGRESS: 'in_progress', // Player joined
     COMPLETED: 'completed',
-    CANCELED: 'canceled', // Single 'l' as per doc
+    CANCELLED: 'canceled', // Changed to match backend
     REFUNDED: 'refunded',
     DISPUTED: 'disputed'
 } as const;
@@ -15,7 +15,7 @@ export const OrderStatus = {
 export type OrderStatus = typeof OrderStatus[keyof typeof OrderStatus];
 
 export interface Order {
-    id: string; // or number
+    id: number;
     orderNo: string;
     playerId: number;
     userId: number;
@@ -59,9 +59,9 @@ export interface CreateOrderPayload {
 
 export interface OrderActions {
     fetchOrders: () => Promise<void>;
-    fetchOrderById: (id: string) => Promise<void>;
+    fetchOrderById: (id: number) => Promise<void>;
     createOrder: (payload: CreateOrderPayload) => Promise<void>;
-    cancelOrder: (id: string) => Promise<void>;
+    cancelOrder: (id: number) => Promise<void>;
     updateDraft: (draft: Partial<OrderState['orderDraft']>) => void;
     clearDraft: () => void;
 
@@ -70,9 +70,9 @@ export interface OrderActions {
 
     // Player Actions
     fetchPlayerOrders: () => Promise<void>;
-    acceptOrder: (id: string) => Promise<void>;
-    rejectOrder: (id: string) => Promise<void>;
-    submitDispute: (id: string, reason: string, description: string) => Promise<void>;
+    acceptOrder: (id: number) => Promise<void>;
+    rejectOrder: (id: number) => Promise<void>;
+    submitDispute: (id: number, reason: string, description: string) => Promise<void>;
     subscribeToOrderUpdates: () => void;
     unsubscribeFromOrderUpdates: () => void;
 }
@@ -220,7 +220,7 @@ export const useOrderStore = create<OrderState & OrderActions>((set) => ({
             wsService.connect();
 
             wsService.on('order.status_updated', (payload: unknown) => {
-                const { orderId, status } = payload as { orderId: string, status: OrderStatus };
+                const { orderId, status } = payload as { orderId: number, status: OrderStatus };
                 set((state) => {
                     const updatedMyOrders = state.myOrders.map(o => o.id === orderId ? { ...o, status } : o);
                     const updatedCurrent = state.currentOrder?.id === orderId ? { ...state.currentOrder, status } : state.currentOrder;

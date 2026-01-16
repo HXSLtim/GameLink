@@ -16,9 +16,9 @@ export type NotificationType = typeof NotificationType[keyof typeof Notification
 // ============ Interfaces ============
 
 export interface AppNotification {
-    id: string;
+    id: number;
     title: string;
-    message: string;
+    content: string; // Backend uses 'content', not 'message'
     type: NotificationType;
     read: boolean;
     createdAt: string;
@@ -36,9 +36,9 @@ export interface NotificationStore {
 
     fetchNotifications: (reset?: boolean) => Promise<void>;
     fetchUnreadCount: () => Promise<void>;
-    markAsRead: (id: string) => Promise<void>;
+    markAsRead: (id: number) => Promise<void>;
     markAllAsRead: () => Promise<void>;
-    deleteNotification: (id: string) => Promise<void>;
+    deleteNotification: (id: number) => Promise<void>;
     addNotification: (notification: AppNotification) => void;
     loadMore: () => Promise<void>;
 }
