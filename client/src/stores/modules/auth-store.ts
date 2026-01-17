@@ -326,11 +326,14 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             }),
             onRehydrateStorage: () => (state) => {
                 if (state) {
-                    // If token exists but is expired, or there's only a refresh token, try to refresh
-                    if ((state.token && !state.isAuthenticated) || (state.refreshToken && !state.token)) {
+                    // If we have a token, trust it and set isAuthenticated
+                    // The token will be validated on the next API call
+                    if (state.token) {
+                        useAuthStore.setState({ isAuthenticated: true });
+                    } else if (state.refreshToken && !state.token) {
+                        // Only refresh if we have a refresh token but no access token
                         state.refresh().catch(() => {
                             // Refresh failed, user will be logged out
-                            // Use useAuthStore.setState() since we're outside the store creator
                             useAuthStore.setState({
                                 user: null,
                                 token: null,

@@ -216,6 +216,114 @@ export function handleStoreError(
     };
 }
 
+// ============ Error Code Mapping (Backend Error Codes) ============
+
+/**
+ * Map backend error codes to user-friendly Chinese messages
+ * Aligned with backend error code ranges
+ */
+export const ERROR_CODE_MESSAGES: Record<number, string> = {
+    // Authentication errors (40000-40099)
+    40001: '用户名或密码错误',
+    40002: '账号已被禁用',
+    40003: '账号已被封禁',
+    40004: 'Token已过期，请重新登录',
+    40005: '无效的Token',
+    40006: '验证码错误',
+    40007: '验证码已过期',
+    40008: '手机号已被注册',
+    40009: '邮箱已被注册',
+
+    // Authorization errors (40100-40199)
+    40101: '您没有权限执行此操作',
+    40102: '需要管理员权限',
+    40103: '需要陪玩师权限',
+    40104: '账号未认证',
+
+    // Validation errors (40200-40299)
+    40201: '手机号格式不正确',
+    40202: '邮箱格式不正确',
+    40203: '密码长度不符合要求',
+    40204: '密码必须包含大小写字母和数字',
+    40205: '必填字段不能为空',
+    40206: '参数格式不正确',
+    40207: '文件大小超出限制',
+    40208: '文件类型不支持',
+
+    // Business logic errors (40300-40399)
+    40301: '余额不足，请先充值',
+    40302: '订单不存在',
+    40303: '订单状态不允许此操作',
+    40304: '陪玩师不可用',
+    40305: '服务项目不存在',
+    40306: '优惠券不可用',
+    40307: '优惠券已使用',
+    40308: '优惠券已过期',
+    40309: '提现金额不足',
+    40310: '提现金额超出限制',
+    40311: '已达到每日提现次数限制',
+    40312: '该用户已被拉黑',
+    40313: '不能对自己进行此操作',
+    40314: '聊天消息发送失败',
+    40315: '纠纷已存在',
+    40316: '纠纷处理超时',
+
+    // Resource not found (40400-40499)
+    40401: '用户不存在',
+    40402: '陪玩师不存在',
+    40403: '订单不存在',
+    40404: '资源不存在',
+
+    // Server errors (50000-50099)
+    50001: '服务器繁忙，请稍后重试',
+    50002: '数据库连接失败',
+    50003: '缓存服务异常',
+    50004: '第三方服务异常',
+    50005: '文件上传失败',
+};
+
+/**
+ * Get user-friendly message from error code
+ */
+export function getMessageByCode(code: number): string {
+    return ERROR_CODE_MESSAGES[code] || '操作失败，请稍后重试';
+}
+
+/**
+ * Check if error code is in specific range
+ */
+export function isErrorCodeInRange(code: number, min: number, max: number): boolean {
+    return code >= min && code < max;
+}
+
+/**
+ * Check if error is authentication error by code
+ */
+export function isAuthErrorByCode(code: number): boolean {
+    return isErrorCodeInRange(code, 40000, 40100);
+}
+
+/**
+ * Check if error is authorization error by code
+ */
+export function isAuthorizationErrorByCode(code: number): boolean {
+    return isErrorCodeInRange(code, 40100, 40200);
+}
+
+/**
+ * Check if error is validation error by code
+ */
+export function isValidationErrorByCode(code: number): boolean {
+    return isErrorCodeInRange(code, 40200, 40300);
+}
+
+/**
+ * Check if error is business logic error by code
+ */
+export function isBusinessErrorByCode(code: number): boolean {
+    return isErrorCodeInRange(code, 40300, 40400);
+}
+
 // ============ Error Messages (i18n-ready) ============
 
 export const ErrorMessages = {
