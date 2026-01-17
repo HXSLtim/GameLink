@@ -11,7 +11,14 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "security:audit": "npm audit --production",
+    "security:fix": "npm audit fix",
+    "security:check": "npm audit --audit-level=moderate",
+    "prebuild": "node scripts/pre-build-check.cjs",
+    "validate:env": "node scripts/validate-env.cjs .env.production",
+    "validate:env:dev": "node scripts/validate-env.cjs .env.development",
+    "ci": "npm run validate:env && npm run prebuild && npm run build"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

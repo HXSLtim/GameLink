@@ -4,7 +4,8 @@
  * - Proactive JWT token refresh (5-minute buffer)
  * - Request encryption (AES-256-CBC)
  * - Unified error handling
- * - Request queue during token refresh
+ * - Request queue during token refresh with size limits and timeout
+ * - Performance monitoring
  * - Auto-unwrap API responses
  */
 
@@ -17,6 +18,14 @@ import axios, {
 } from 'axios';
 import { useAuthStore } from '@/stores';
 import { encryptRequest, shouldEncrypt } from './crypto';
+import {
+    TOKEN_REFRESH_BUFFER_SECONDS,
+    MAX_QUEUE_SIZE,
+    QUEUE_TIMEOUT_MS,
+    QUEUE_CLEANUP_INTERVAL_MS,
+    HTTP_TIMEOUT_MS,
+} from './constants';
+import { performanceMonitor } from './monitor';
 
 /**
  * Standard API response wrapper
@@ -26,6 +35,20 @@ interface ApiResponse<T> {
     code: number;
     message: string;
     data: T;
+}
+
+/**
+ * Request metadata for performance tracking
+ */
+interface RequestMetadata {
+    startTime: number;
+}
+
+/**
+ * Extended Axios config with metadata
+ */
+interface AxiosConfigWithMetadata extends AxiosRequestConfig {
+    metadata?: RequestMetadata;
 }
 
 /**
@@ -56,7 +79,7 @@ function parseJWT(token: string): JWTPayload | null {
  * Check if token is expiring soon (within buffer seconds)
  * Default buffer: 300 seconds (5 minutes)
  */
-function isTokenExpiringSoon(token: string, bufferSeconds = 300): boolean {
+function isTokenExpiringSoon(token: string, bufferSeconds = TOKEN_REFRESH_BUFFER_SECONDS): boolean {
     const payload = parseJWT(token);
     if (!payload?.exp) return true;
 
@@ -81,15 +104,23 @@ export { parseJWT, isTokenExpiringSoon, isTokenExpired };
 // Get API base URL from environment
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
-// Request queue for token refresh
-let isRefreshing = false;
-let failedQueue: Array<{
+/**
+ * Queued request with timestamp for timeout tracking
+ */
+interface QueuedRequest {
     resolve: (value?: unknown) => void;
     reject: (reason?: unknown) => void;
-}> = [];
+    timestamp: number;
+}
+
+// Request queue for token refresh with enhanced tracking
+let isRefreshing = false;
+let failedQueue: QueuedRequest[] = [];
 
 /**
  * Process queued requests after token refresh
+ *
+ * @param error - Error if refresh failed, null if successful
  */
 const processQueue = (error: Error | null) => {
     failedQueue.forEach(prom => {
@@ -103,6 +134,63 @@ const processQueue = (error: Error | null) => {
 };
 
 /**
+ * Add a request to the queue with size limit checking
+ *
+ * @returns Promise that resolves when token refresh completes
+ * @throws Error if queue is full
+ */
+function enqueueRequest(): Promise<void> {
+    // Check queue size limit
+    if (failedQueue.length >= MAX_QUEUE_SIZE) {
+        performanceMonitor.recordQueueRejection();
+        return Promise.reject(new Error('Token refresh queue is full'));
+    }
+
+    return new Promise((resolve, reject) => {
+        failedQueue.push({
+            resolve,
+            reject,
+            timestamp: Date.now(),
+        });
+    });
+}
+
+/**
+ * Clean up expired queue items
+ * Called periodically to remove requests that have waited too long
+ */
+function cleanupExpiredQueueItems(): void {
+    const now = Date.now();
+    const initialLength = failedQueue.length;
+
+    failedQueue = failedQueue.filter(item => {
+        if (now - item.timestamp > QUEUE_TIMEOUT_MS) {
+            item.reject(new Error('Request queue timeout'));
+            performanceMonitor.recordQueueTimeout();
+            return false;
+        }
+        return true;
+    });
+
+    // Log if items were removed
+    if (import.meta.env.DEV && failedQueue.length < initialLength) {
+        console.warn(
+            `[HTTP] Cleaned up ${initialLength - failedQueue.length} expired queue items`
+        );
+    }
+}
+
+// Start periodic queue cleanup
+if (typeof window !== 'undefined') {
+    const cleanupInterval = setInterval(cleanupExpiredQueueItems, QUEUE_CLEANUP_INTERVAL_MS);
+
+    // Clear interval on page unload to prevent memory leaks
+    window.addEventListener('beforeunload', () => {
+        clearInterval(cleanupInterval);
+    });
+}
+
+/**
  * Enhanced HTTP client class
  */
 export class HttpClient {
@@ -111,7 +199,7 @@ export class HttpClient {
     constructor() {
         this.instance = axios.create({
             baseURL: API_BASE_URL,
-            timeout: 15000,
+            timeout: HTTP_TIMEOUT_MS,
             withCredentials: true,
             xsrfCookieName: 'csrf_token',
             xsrfHeaderName: 'X-CSRF-Token',
@@ -129,7 +217,10 @@ export class HttpClient {
     private setupInterceptors() {
         // Request Interceptor
         this.instance.interceptors.request.use(
-            async (config) => {
+            async (config: AxiosConfigWithMetadata) => {
+                // Add timestamp for performance monitoring
+                config.metadata = { startTime: Date.now() };
+
                 const token = useAuthStore.getState().token;
 
                 if (token) {
@@ -142,25 +233,30 @@ export class HttpClient {
                     if (!isAuthRequest && isTokenExpiringSoon(token)) {
                         if (isRefreshing) {
                             // Wait for ongoing refresh
-                            await new Promise((resolve, reject) => {
-                                failedQueue.push({ resolve, reject });
-                            });
-                            // Use new token after refresh
-                            const newToken = useAuthStore.getState().token;
-                            if (newToken) {
-                                config.headers.Authorization = `Bearer ${newToken}`;
+                            try {
+                                await enqueueRequest();
+                                // Use new token after refresh
+                                const newToken = useAuthStore.getState().token;
+                                if (newToken) {
+                                    config.headers.Authorization = `Bearer ${newToken}`;
+                                }
+                            } catch {
+                                // Queue rejected or timed out, still try with old token
+                                config.headers.Authorization = `Bearer ${token}`;
                             }
                         } else {
                             // Start refresh
                             isRefreshing = true;
                             try {
                                 await useAuthStore.getState().refresh();
+                                performanceMonitor.recordTokenRefresh(true);
                                 processQueue(null);
                                 const newToken = useAuthStore.getState().token;
                                 if (newToken) {
                                     config.headers.Authorization = `Bearer ${newToken}`;
                                 }
                             } catch (err) {
+                                performanceMonitor.recordTokenRefresh(false);
                                 processQueue(err as Error);
                                 // Use old token as fallback
                                 config.headers.Authorization = `Bearer ${token}`;
@@ -185,8 +281,20 @@ export class HttpClient {
 
         // Response Interceptor
         this.instance.interceptors.response.use(
-            (response: AxiosResponse) => response,
+            (response: AxiosResponse) => {
+                // Record successful request performance
+                const metadata = (response.config as AxiosConfigWithMetadata).metadata;
+                const duration = metadata ? Date.now() - metadata.startTime : 0;
+                performanceMonitor.recordRequest(duration, true);
+
+                return response;
+            },
             async (error: AxiosError) => {
+                // Record failed request performance
+                const metadata = error.config ? (error.config as AxiosConfigWithMetadata).metadata : undefined;
+                const duration = metadata ? Date.now() - metadata.startTime : 0;
+                performanceMonitor.recordRequest(duration, false);
+
                 const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
                 if (!error.response) {
@@ -200,11 +308,13 @@ export class HttpClient {
                 if (status === 401 && !originalRequest._retry) {
                     if (isRefreshing) {
                         // Wait for token refresh
-                        return new Promise((resolve, reject) => {
-                            failedQueue.push({ resolve, reject });
-                        }).then(() => {
+                        try {
+                            await enqueueRequest();
                             return this.instance(originalRequest);
-                        });
+                        } catch (err) {
+                            // Queue rejected or timed out
+                            return Promise.reject(err);
+                        }
                     }
 
                     originalRequest._retry = true;
@@ -212,9 +322,11 @@ export class HttpClient {
 
                     try {
                         await useAuthStore.getState().refresh();
+                        performanceMonitor.recordTokenRefresh(true);
                         processQueue(null);
                         return this.instance(originalRequest);
                     } catch (refreshError) {
+                        performanceMonitor.recordTokenRefresh(false);
                         processQueue(refreshError as Error);
                         await useAuthStore.getState().logout();
                         return Promise.reject(refreshError);
