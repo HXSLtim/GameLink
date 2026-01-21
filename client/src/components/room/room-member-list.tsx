@@ -118,7 +118,7 @@ function RoomMemberItem({
                 {member.isReady && (
                     <Badge variant="secondary" className="bg-green-500/20 text-green-600">
                         <Check className="h-3 w-3 mr-1" />
-                        {t('room.ready')}
+                        {t('room.actions.ready')}
                     </Badge>
                 )}
 
@@ -135,7 +135,7 @@ function RoomMemberItem({
                                 className="text-destructive"
                                 onClick={() => onKick(member.userId)}
                             >
-                                {t('room.kick')}
+                                {t('room.actions.kick')}
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>

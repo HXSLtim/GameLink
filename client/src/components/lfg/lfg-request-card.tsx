@@ -49,7 +49,8 @@ export function LFGRequestCard({
     const now = new Date();
     const timeRemaining = Math.max(0, Math.floor((expiresAt.getTime() - now.getTime()) / 60000));
 
-    const formatPrice = (cents: number) => {
+    const formatPrice = (cents?: number) => {
+        if (!cents) return '';
         return `¥${(cents / 100).toFixed(0)}`;
     };
 
@@ -78,7 +79,7 @@ export function LFGRequestCard({
                                 </span>
                                 {isOwner && (
                                     <Badge variant="outline" className="text-xs">
-                                        {t('lfg.you')}
+                                        {t('lfg.card.you')}
                                     </Badge>
                                 )}
                             </div>
@@ -124,7 +125,7 @@ export function LFGRequestCard({
                     <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                         <Users className="h-4 w-4" />
                         <span>
-                            {t('lfg.requiredPlayers', { count: request.requiredPlayers })}
+                            {t('lfg.card.requiredPlayers', { count: request.requiredPlayers })}
                         </span>
                     </div>
 
@@ -140,7 +141,7 @@ export function LFGRequestCard({
                     {request.maxPriceCents && request.maxPriceCents > 0 && (
                         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                             <DollarSign className="h-4 w-4" />
-                            <span>{t('lfg.maxPrice', { price: formatPrice(request.maxPriceCents) })}</span>
+                            <span>{t('lfg.card.maxPrice', { price: formatPrice(request.maxPriceCents) })}</span>
                         </div>
                     )}
                 </div>
@@ -157,8 +158,8 @@ export function LFGRequestCard({
                                 )}
                             >
                                 {timeRemaining > 0
-                                    ? t('lfg.timeRemaining', { minutes: timeRemaining })
-                                    : t('lfg.expiringSoon')}
+                                    ? t('lfg.card.timeRemaining', { minutes: timeRemaining })
+                                    : t('lfg.card.expiringSoon')}
                             </span>
                         </div>
                     )}
@@ -172,7 +173,7 @@ export function LFGRequestCard({
                                 size="sm"
                                 onClick={() => onCancel(request.id)}
                             >
-                                {t('lfg.cancel')}
+                                {t('lfg.actions.cancel')}
                             </Button>
                         )}
                         {canAccept && onAccept && (
@@ -181,7 +182,7 @@ export function LFGRequestCard({
                                 onClick={() => onAccept(request.id)}
                                 disabled={isAccepting}
                             >
-                                {isAccepting ? t('lfg.accepting') : t('lfg.accept')}
+                                {isAccepting ? t('lfg.actions.accepting') : t('lfg.actions.accept')}
                             </Button>
                         )}
                         {request.status === 'matched' && request.matchedRoomId && (
@@ -189,7 +190,7 @@ export function LFGRequestCard({
                                 size="sm"
                                 onClick={() => navigate(`/rooms/${request.matchedRoomId}`)}
                             >
-                                {t('lfg.goToRoom')}
+                                {t('lfg.card.goToRoom')}
                             </Button>
                         )}
                     </div>

@@ -72,7 +72,7 @@ export function RoomCard({ room, currentUserId, onJoin, isJoining }: RoomCardPro
 
     const handlePasswordSubmit = async () => {
         if (!password.trim()) {
-            setPasswordError(t('room.errors.passwordRequired'));
+            setPasswordError(t('room.form.errors.passwordRequired'));
             return;
         }
         setPasswordError('');
@@ -91,7 +91,7 @@ export function RoomCard({ room, currentUserId, onJoin, isJoining }: RoomCardPro
         if (isHost) return { text: t('room.enter'), disabled: false };
         if (isFull) return { text: t('room.full'), disabled: true };
         if (room.roomStatus !== 'waiting') return { text: t('room.status.' + room.roomStatus), disabled: true };
-        return { text: t('room.join'), disabled: false };
+        return { text: t('room.actions.join'), disabled: false };
     };
 
     const buttonContent = getButtonContent();
@@ -203,7 +203,7 @@ export function RoomCard({ room, currentUserId, onJoin, isJoining }: RoomCardPro
                             {t('common.cancel')}
                         </Button>
                         <Button onClick={handlePasswordSubmit} disabled={isJoining}>
-                            {isJoining ? t('room.joining') : t('room.join')}
+                            {isJoining ? t('room.joining') : t('room.actions.join')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

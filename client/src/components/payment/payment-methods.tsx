@@ -34,7 +34,7 @@ export function PaymentMethods({ value, onChange, balance = 0, amount = 0, class
                     <div className="flex-1 space-y-1">
                         <p className="text-sm font-medium leading-none">{t('payment.wallet_balance', { defaultValue: 'Wallet Balance' })}</p>
                         <p className="text-xs text-muted-foreground">
-                            {t('payment.balance_available', { defaultValue: 'Available' })}: ¥{balance.toFixed(2)}
+                            {t('payment.balance_available', { defaultValue: 'Available' })}: ¥{(balance ?? 0).toFixed(2)}
                             {!isBalanceSufficient && <span className="text-destructive ml-2">({t('payment.insufficient', { defaultValue: 'Insufficient' })})</span>}
                         </p>
                     </div>

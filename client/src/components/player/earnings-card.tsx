@@ -27,7 +27,7 @@ export function EarningsCard({
                     <Wallet className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">¥{totalEarnings.toFixed(2)}</div>
+                    <div className="text-2xl font-bold">¥{(totalEarnings ?? 0).toFixed(2)}</div>
                     <p className="text-xs text-muted-foreground">
                         {t('player.lifetime_earnings', { defaultValue: 'Lifetime earnings' })}
                     </p>
@@ -42,7 +42,7 @@ export function EarningsCard({
                     <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">¥{todayEarnings.toFixed(2)}</div>
+                    <div className="text-2xl font-bold">¥{(todayEarnings ?? 0).toFixed(2)}</div>
                     <p className="text-xs text-muted-foreground">
                         {t('player.earnings_today_desc', { defaultValue: 'Generated today' })}
                     </p>
@@ -57,7 +57,7 @@ export function EarningsCard({
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">¥{monthEarnings.toFixed(2)}</div>
+                    <div className="text-2xl font-bold">¥{(monthEarnings ?? 0).toFixed(2)}</div>
                     <p className="text-xs text-muted-foreground">
                         {t('player.earnings_month_desc', { defaultValue: 'Current billing cycle' })}
                     </p>
@@ -72,7 +72,7 @@ export function EarningsCard({
                     <CreditCard className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">¥{pendingWithdraw.toFixed(2)}</div>
+                    <div className="text-2xl font-bold">¥{(pendingWithdraw ?? 0).toFixed(2)}</div>
                     <p className="text-xs text-muted-foreground">
                         {t('player.pending_withdraw_desc', { defaultValue: 'Processing withdrawals' })}
                     </p>
