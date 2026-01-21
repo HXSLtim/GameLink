@@ -1,538 +1,604 @@
 {
-    "app": {
-        "name": "GameLink",
-        "theme": {
-            "light": "日间模式",
-            "dark": "夜间模式",
-            "system": "跟随系统",
-            "toggle": "切换主题"
-        }
+  "app": {
+    "name": "GameLink",
+    "theme": {
+      "light": "日间模式",
+      "dark": "夜间模式",
+      "system": "跟随系统",
+      "toggle": "切换主题"
+    }
+  },
+  "auth": {
+    "login": "登录",
+    "logout": "退出登录",
+    "username": "用户名",
+    "nickname": "昵称",
+    "phone": "手机号",
+    "email": "电子邮箱",
+    "password": "密码",
+    "submit": "提交",
+    "welcome_back": "欢迎回来",
+    "enter_credentials": "请输入账号密码以访问您的账户",
+    "sign_in": "立即登录",
+    "forgot_password": "忘记密码？",
+    "create_account": "注册新账号",
+    "already_have_account": "已有账户？",
+    "continue_with": "或通过以下方式登录",
+    "slogan": "\"连接职业陪玩，提升竞技水平，体验前所未有的游戏乐趣\"",
+    "anonymous": "匿名访问",
+    "secure": "快速安全",
+    "terms_agreement": "点击继续即表示您同意我们的",
+    "terms": "服务条款",
+    "and": "和",
+    "privacy": "隐私政策",
+    "branding_sub": "连接 · 竞技 · 胜利",
+    "remember_me": "记住我",
+    "email_required": "需要电子邮箱",
+    "phone_required": "需要手机号",
+    "password_min_length": "密码至少6位",
+    "provide_contact": "请提供邮箱或手机号",
+    "sign_up": "注册",
+    "error_generic": "发生错误，请稍后重试",
+    "or": "或"
+  },
+  "wallet": {
+    "title": "钱包余额",
+    "recharge": "充值",
+    "withdraw": "提现",
+    "transactions": "交易记录",
+    "no_transactions": "暂无交易记录",
+    "type": {
+      "deposit": "充值",
+      "payment": "支付",
+      "refund": "退款",
+      "withdrawal": "提现"
     },
-    "auth": {
-        "login": "登录",
-        "logout": "退出登录",
-        "username": "用户名",
-        "nickname": "昵称",
-        "phone": "手机号",
-        "email": "电子邮箱",
+    "status": {
+      "pending": "处理中",
+      "completed": "已完成",
+      "failed": "失败"
+    }
+  },
+  "vip": {
+    "title": "VIP 会员",
+    "plans": "会员计划",
+    "current_plan": "当前计划",
+    "plan": {
+      "free": "免费会员",
+      "pro": "Pro 会员",
+      "elite": "Elite 精英会员"
+    },
+    "feature": {
+      "ad_free": "免广告",
+      "priority": "优先接单",
+      "badge": "专属徽章"
+    },
+    "subscribe": "立即订阅",
+    "monthly": "/月"
+  },
+  "notifications": {
+    "title": "通知中心",
+    "mark_all_read": "全部已读",
+    "empty": "好清静，暂无通知",
+    "type": {
+      "system": "系统通知",
+      "order": "订单消息"
+    }
+  },
+  "payment": {
+    "order_not_pending": "订单状态不正确",
+    "fetch_failed": "获取订单信息失败",
+    "insufficient_balance": "余额不足",
+    "success": "支付成功",
+    "failed": "支付失败"
+  },
+  "common": {
+    "cancel": "取消",
+    "confirm": "确认",
+    "save": "保存",
+    "delete": "删除",
+    "edit": "编辑",
+    "back": "返回"
+  },
+  "room": {
+    "title": "游戏房间",
+    "description": "加入或创建游戏房间与他人一起玩",
+    "list": {
+      "title": "房间列表",
+      "searchPlaceholder": "搜索房间...",
+      "filterStatus": "按状态筛选",
+      "empty": "暂无房间",
+      "emptyDescription": "创建一个房间或等待他人创建"
+    },
+    "form": {
+      "title": "创建房间",
+      "description": "设置一个新的游戏房间",
+      "fields": {
+        "name": "房间名称",
+        "namePlaceholder": "输入房间名称",
+        "type": "房间类型",
+        "game": "游戏",
+        "gamePlaceholder": "输入游戏ID",
+        "maxMembers": "最大人数",
+        "people": "人",
+        "description": "描述",
+        "descriptionPlaceholder": "描述你的房间（可选）",
+        "private": "私密房间",
+        "privateDescription": "只有知道密码的玩家才能加入",
         "password": "密码",
-        "submit": "提交",
-        "welcome_back": "欢迎回来",
-        "enter_credentials": "请输入账号密码以访问您的账户",
-        "sign_in": "立即登录",
-        "forgot_password": "忘记密码？",
-        "create_account": "注册新账号",
-        "already_have_account": "已有账户？",
-        "continue_with": "或通过以下方式登录",
-        "slogan": "\"连接职业陪玩，提升竞技水平，体验前所未有的游戏乐趣\"",
-        "anonymous": "匿名访问",
-        "secure": "快速安全",
-        "terms_agreement": "点击继续即表示您同意我们的",
-        "terms": "服务条款",
-        "and": "和",
-        "privacy": "隐私政策",
-        "branding_sub": "连接 · 竞技 · 胜利",
-        "remember_me": "记住我",
-        "email_required": "需要电子邮箱",
-        "phone_required": "需要手机号",
-        "password_min_length": "密码至少6位",
-        "provide_contact": "请提供邮箱或手机号"
+        "passwordPlaceholder": "输入房间密码"
+      },
+      "voice": {
+        "enable": "语音聊天",
+        "description": "启用语音通讯"
+      },
+      "errors": {
+        "nameRequired": "请输入房间名称",
+        "gameRequired": "请选择游戏",
+        "passwordRequired": "私密房间需要设置密码"
+      },
+      "creating": "创建中...",
+      "submit": "创建房间"
     },
+    "detail": {
+      "info": "房间信息",
+      "members": "成员列表",
+      "actions": "操作",
+      "startGame": "开始游戏",
+      "finishGame": "结束游戏",
+      "settings": "设置"
+    },
+    "status": {
+      "all": "全部",
+      "waiting": "等待中",
+      "ready": "准备就绪",
+      "in_game": "游戏中",
+      "finished": "已结束",
+      "canceled": "已取消"
+    },
+    "type": {
+      "team": "组队",
+      "lfg": "快速匹配",
+      "custom": "自定义",
+      "order": "订单"
+    },
+    "actions": {
+      "create": "创建房间",
+      "join": "加入",
+      "leave": "离开",
+      "ready": "准备",
+      "cancelReady": "取消准备",
+      "start": "开始游戏",
+      "finish": "结束游戏",
+      "close": "关闭房间",
+      "kick": "踢出"
+    },
+    "dialogs": {
+      "closeConfirm": {
+        "title": "确认关闭房间",
+        "description": "关闭房间后，所有成员将被移出。此操作无法撤销。"
+      },
+      "enterPassword": {
+        "title": "输入密码",
+        "description": "此房间需要密码才能加入",
+        "placeholder": "输入房间密码"
+      }
+    },
+    "members": "成员列表",
+    "private": "私密",
+    "voice": "语音",
+    "host": "房主",
+    "notFound": "房间不存在",
+    "enter": "进入",
+    "full": "已满",
+    "joining": "加入中...",
+    "passwordRequired": "需要密码",
+    "passwordRequiredDescription": "这是一个私密房间，请输入密码加入。",
+    "showing": "显示 {{count}} / {{total}} 个房间",
+    "createFirst": "创建第一个房间",
+    "noMembers": "暂无成员",
+    "you": "你",
+    "member": "成员",
+    "errors": {
+      "passwordRequired": "请输入密码",
+      "wrongPassword": "密码错误"
+    },
+    "searchPlaceholder": "搜索房间...",
+    "filterStatus": "按状态筛选",
+    "empty": "暂无房间",
+    "emptyDescription": "创建一个房间或等待他人创建",
+    "maxMembers": "最大人数",
+    "people": "人",
+    "password": "密码",
+    "passwordPlaceholder": "输入房间密码",
+    "enterPassword": "输入密码",
+    "enterPasswordDescription": "此房间需要密码才能加入"
+  },
+  "voice": {
+    "title": "语音频道",
+    "join": "加入语音",
+    "leave": "离开语音",
+    "mute": "静音",
+    "unmute": "取消静音",
+    "deafen": "关闭声音",
+    "undeafen": "开启声音",
+    "settings": "语音设置",
+    "selectDevice": "选择设备",
+    "speaking": "正在说话",
+    "muted": "已静音",
+    "deafened": "已关闭声音",
+    "members": "语音成员",
+    "notEnabled": "语音未启用",
+    "enable": "启用语音",
+    "disable": "关闭语音",
+    "connecting": "连接中...",
+    "connected": "已连接",
+    "mutedAndDeafened": "已静音且已关闭声音",
+    "inputDevice": "输入设备",
+    "outputDevice": "输出设备",
+    "defaultDevice": "默认设备"
+  },
+  "lfg": {
+    "title": "快速匹配",
+    "description": "寻找玩家或队伍一起游戏",
+    "list": {
+      "title": "匹配请求列表",
+      "searchPlaceholder": "搜索请求...",
+      "filterType": "按类型筛选",
+      "empty": "暂无请求",
+      "emptyDescription": "成为第一个发布请求的人",
+      "createFirst": "发布第一个请求",
+      "myEmpty": "暂无请求",
+      "myEmptyDescription": "发布请求来寻找玩家或队伍"
+    },
+    "form": {
+      "title": "发布匹配请求",
+      "description": "发布请求来寻找玩家或队伍",
+      "fields": {
+        "type": "请求类型",
+        "typeDescriptionFindPlayer": "你正在寻找玩家加入你的队伍",
+        "typeDescriptionFindTeam": "你正在寻找队伍加入",
+        "game": "游戏",
+        "gamePlaceholder": "输入游戏ID",
+        "title": "标题",
+        "titlePlaceholder": "给你的请求起个标题（可选）",
+        "description": "描述",
+        "descriptionPlaceholder": "描述你在寻找什么（可选）",
+        "requiredPlayers": "需要人数",
+        "people": "人",
+        "minRank": "最低段位",
+        "minRankPlaceholder": "例如：钻石、大师（可选）",
+        "maxPrice": "最高价格（元）",
+        "maxPricePlaceholder": "最高时薪（可选）",
+        "maxPriceHint": "留空表示不限价格",
+        "expireTime": "过期时间",
+        "minutes": "分钟"
+      },
+      "errors": {
+        "gameRequired": "请选择游戏"
+      },
+      "creating": "发布中...",
+      "submit": "发布请求"
+    },
+    "type": {
+      "all": "全部类型",
+      "findPlayer": "找队友",
+      "findTeam": "找队伍"
+    },
+    "tabs": {
+      "browse": "浏览",
+      "my": "我的请求"
+    },
+    "card": {
+      "activeRequest": "进行中的请求",
+      "untitled": "未命名请求",
+      "players": "需要 {{count}} 名玩家",
+      "minRank": "最低段位: {{rank}}",
+      "maxPrice": "最高价格: ¥{{price}}",
+      "expires": "{{time}} 后过期",
+      "expired": "已过期",
+      "you": "你",
+      "requiredPlayers": "需要 {{count}} 名玩家",
+      "timeRemaining": "{{minutes}} 分钟后过期",
+      "expiringSoon": "即将过期",
+      "goToRoom": "进入房间"
+    },
+    "actions": {
+      "create": "发布请求",
+      "cancel": "取消",
+      "accept": "接受",
+      "accepting": "接受中..."
+    },
+    "searchPlaceholder": "搜索请求...",
+    "filterType": "按类型筛选",
+    "empty": "暂无请求",
+    "emptyDescription": "成为第一个发布请求的人",
+    "createFirst": "发布第一个请求",
+    "myEmpty": "暂无请求",
+    "myEmptyDescription": "发布请求来寻找玩家或队伍",
+    "activeRequest": "进行中的请求",
+    "untitled": "未命名请求",
+    "expiringSoon": "即将过期",
+    "goToRoom": "进入房间",
+    "you": "你",
+    "requiredPlayers": "需要 {{count}} 名玩家",
+    "minRank": "最低段位: {{rank}}",
+    "maxPrice": "最高价格: ¥{{price}}",
+    "timeRemaining": "{{minutes}} 分钟后过期",
+    "expired": "已过期",
+    "expires": "{{time}} 后过期",
+    "players": "需要 {{count}} 名玩家"
+  },
+  "settings": {
+    "save": "保存更改",
+    "cancel": "取消",
+    "avatar_url": "头像链接",
+    "update_success": "资料更新成功",
+    "password_mismatch": "两次输入的密码不一致",
+    "current_password": "当前密码",
+    "new_password": "新密码",
+    "confirm_password": "确认新密码",
+    "security_tip": "安全提示",
+    "tip_content": "建议使用至少8位字符，包含大小写每笔和符号",
+    "username_locked": "用户名不可更改",
+    "file_too_large": "文件太大，请选择小于 5MB 的文件",
+    "upload_success": "上传成功",
+    "security": "安全设置",
+    "security_desc": "保护您的账户和数据"
+  },
+  "nav": {
+    "home": "首页",
+    "players": "陪玩师",
+    "rooms": "游戏房间",
+    "lfg": "快速匹配",
+    "orders": "订单",
+    "chat": "聊天",
+    "profile": "个人中心",
+    "menu": "菜单",
+    "online_status": "在线 - 游戏中",
+    "search_placeholder": "搜索全站...",
+    "dashboard": "仪表盘",
+    "playerDashboard": "陪玩中心",
+    "playerOrders": "我的订单",
+    "earnings": "收益",
+    "team": "我的团队",
+    "verification": "认证中心",
+    "playerProfile": "陪玩资料",
+    "guest": "游客",
+    "switchToUser": "切换到用户视图",
+    "switchToPlayer": "切换到陪玩视图",
+    "playerMode": "陪玩模式",
+    "userMode": "用户模式",
+    "find_players_title": "寻找陪玩",
+    "find_players_desc": "发现有天赋的玩家一起游戏。",
+    "filter": {
+      "all": "全部",
+      "rating": "评分最高",
+      "orders": "接单最多",
+      "price": "价格",
+      "game": "游戏",
+      "gender": "性别"
+    },
+    "status": {
+      "online": "在线",
+      "offline": "离线"
+    },
+    "action": {
+      "book_now": "立即下单",
+      "chat": "私聊"
+    },
+    "home_content": {
+      "select_game_desc": "选择游戏寻找您的专属陪玩",
+      "top_players_desc": "本周评分最高的陪玩师",
+      "features_subtitle": "为极致游戏体验打造的优质服务",
+      "orders_suffix": "单",
+      "per_hour": "/小时"
+    },
+    "no_players": "没有找到符合条件的陪玩师。",
+    "orders_title": "我的订单",
+    "orders_desc": "管理和追踪您的游戏陪玩订单。",
+    "order_id": "订单号 #{{id}}",
+    "order_date": "日期",
+    "order_price": "总价",
+    "order_status": {
+      "pending": "待接单",
+      "accepted": "已接单",
+      "completed": "已完成",
+      "cancelled": "已取消"
+    },
+    "chat_title": "消息中心",
+    "chat_placeholder": "输入消息...",
+    "chat_send": "发送",
+    "no_conversations": "暂无消息记录。",
+    "popular_games": "热门游戏",
+    "featured_pros": "精选大神",
+    "view_all": "查看全部",
+    "find_players": "寻找陪玩",
+    "become_player": "成为大神",
+    "new_season": "新赛季开启",
+    "hero_title": "寻找你的完美",
+    "hero_highlight": "搭档",
+    "hero_desc": "与顶尖玩家连线，无论是上分教学还是娱乐陪玩，即刻加入我们的社区。",
+    "why_choose": "为什么选择 GameLink？",
+    "secure_payments": "安全支付",
+    "secure_desc": "订单完成前资金由平台担保托管。",
+    "verified_pros": "大神认证",
+    "verified_desc": "所有陪玩师均经过严格的技能考核。",
+    "support_247": "24/7 客服",
+    "support_desc": "全天候为您提供帮助和支持。"
+  },
+  "player": {
+    "all_games": "所有游戏",
+    "starting_at": "起价",
+    "no_results_desc": "尝试调整筛选条件或稍后再来看看。"
+  },
+  "order": {
+    "refresh": "刷新",
+    "tab_active": "进行中",
+    "tab_done": "已完成",
+    "tab_cancel": "已取消",
+    "empty_desc": "在此分类下暂无订单。",
+    "details": "详情",
+    "pay_now": "立即支付",
+    "qty": "时长",
+    "total": "总计",
+    "service_type": "陪玩服务"
+  },
+  "chat": {
+    "loading": "加载聊天中...",
+    "not_found": "未找到对话。",
+    "back": "返回列表",
+    "updating": "更新中..."
+  },
+  "profile": {
+    "title": "个人中心",
+    "edit": "编辑资料",
+    "id": "ID",
     "wallet": {
-        "title": "钱包余额",
-        "recharge": "充值",
-        "withdraw": "提现",
-        "transactions": "交易记录",
-        "no_transactions": "暂无交易记录",
-        "type": {
-            "deposit": "充值",
-            "payment": "支付",
-            "refund": "退款",
-            "withdrawal": "提现"
-        },
-        "status": {
-            "pending": "处理中",
-            "completed": "已完成",
-            "failed": "失败"
-        }
+      "title": "钱包余额",
+      "recharge": "充值"
     },
     "vip": {
-        "title": "VIP 会员",
-        "plans": "会员计划",
-        "current_plan": "当前计划",
-        "plan": {
-            "free": "免费会员",
-            "pro": "Pro 会员",
-            "elite": "Elite 精英会员"
-        },
-        "feature": {
-            "ad_free": "免广告",
-            "priority": "优先接单",
-            "badge": "专属徽章"
-        },
-        "subscribe": "立即订阅",
-        "monthly": "/月"
+      "title": "VIP 会员",
+      "expires": "有效期至：{{date}}",
+      "free": "免费计划",
+      "level_prefix": "VIP等级",
+      "upgrade": "升级会员",
+      "upgrade_cta": "解锁更多特权"
     },
-    "notifications": {
-        "title": "通知中心",
-        "mark_all_read": "全部已读",
-        "empty": "好清静，暂无通知",
-        "type": {
-            "system": "系统通知",
-            "order": "订单消息"
-        }
+    "stats": {
+      "monthly_orders": "本月订单",
+      "from_last_month": "较上月"
     },
-    "common": {
-        "cancel": "取消",
-        "confirm": "确认",
-        "save": "保存",
-        "delete": "删除",
-        "edit": "编辑",
-        "back": "返回"
-    },
-    "room": {
-        "title": "游戏房间",
-        "description": "加入或创建游戏房间与他人一起玩",
-        "create": "创建房间",
-        "searchPlaceholder": "搜索房间...",
-        "filterStatus": "按状态筛选",
-        "status": {
-            "all": "全部",
-            "waiting": "等待中",
-            "ready": "准备就绪",
-            "in_game": "游戏中",
-            "finished": "已结束",
-            "canceled": "已取消"
-        },
-        "empty": "暂无房间",
-        "emptyDescription": "创建一个房间或等待他人创建",
-        "type": {
-            "team": "组队",
-            "lfg": "快速匹配",
-            "custom": "自定义",
-            "order": "订单"
-        },
-        "members": "{{current}}/{{max}} 人",
-        "private": "私密",
-        "voice": "语音",
-        "host": "房主",
-        "join": "加入",
-        "leave": "离开",
-        "ready": "准备",
-        "cancelReady": "取消准备",
-        "start": "开始游戏",
-        "finish": "结束游戏",
-        "close": "关闭房间",
-        "kick": "踢出",
-        "notFound": "房间不存在",
-        "enter": "进入",
-        "full": "已满",
-        "joining": "加入中...",
-        "enterPassword": "输入密码",
-        "enterPasswordDescription": "此房间需要密码才能加入",
-        "passwordPlaceholder": "输入房间密码",
-        "passwordRequired": "需要密码",
-        "passwordRequiredDescription": "这是一个私密房间，请输入密码加入。",
-        "password": "密码",
-        "showing": "显示 {{count}} / {{total}} 个房间",
-        "createFirst": "创建第一个房间",
-        "noMembers": "暂无成员",
-        "you": "你",
-        "member": "成员",
-        "info": "房间信息",
-        "members": "成员列表",
-        "actions": "操作",
-        "startGame": "开始游戏",
-        "finishGame": "结束游戏",
-        "settings": "设置",
-        "closeConfirm": {
-            "title": "确认关闭房间",
-            "description": "关闭房间后，所有成员将被移出。此操作无法撤销。"
-        },
-        "errors": {
-            "passwordRequired": "请输入密码",
-            "wrongPassword": "密码错误"
-        },
-        "createForm": {
-            "title": "创建房间",
-            "description": "设置一个新的游戏房间",
-            "name": "房间名称",
-            "namePlaceholder": "输入房间名称",
-            "type": "房间类型",
-            "game": "游戏",
-            "gamePlaceholder": "输入游戏ID",
-            "maxMembers": "最大人数",
-            "people": "人",
-            "descriptionLabel": "描述",
-            "descriptionPlaceholder": "描述你的房间（可选）",
-            "private": "私密房间",
-            "privateDescription": "只有知道密码的玩家才能加入",
-            "password": "密码",
-            "passwordPlaceholder": "输入房间密码",
-            "voice": "语音聊天",
-            "voiceDescription": "启用语音通讯",
-            "creating": "创建中...",
-            "submit": "创建房间",
-            "errors": {
-                "nameRequired": "请输入房间名称",
-                "gameRequired": "请选择游戏",
-                "passwordRequired": "私密房间需要设置密码"
-            }
-        }
-    },
-    "voice": {
-        "title": "语音频道",
-        "join": "加入语音",
-        "leave": "离开语音",
-        "mute": "静音",
-        "unmute": "取消静音",
-        "deafen": "关闭声音",
-        "undeafen": "开启声音",
-        "settings": "语音设置",
-        "selectDevice": "选择设备",
-        "speaking": "正在说话",
-        "muted": "已静音",
-        "deafened": "已关闭声音",
-        "members": "语音成员",
-        "notEnabled": "语音未启用",
-        "enable": "启用语音",
-        "disable": "关闭语音",
-        "connecting": "连接中...",
-        "connected": "已连接",
-        "mutedAndDeafened": "已静音且已关闭声音",
-        "inputDevice": "输入设备",
-        "outputDevice": "输出设备",
-        "defaultDevice": "默认设备"
-    },
-    "lfg": {
-        "title": "快速匹配",
-        "description": "寻找玩家或队伍一起游戏",
-        "create": "发布请求",
-        "searchPlaceholder": "搜索请求...",
-        "filterType": "按类型筛选",
-        "type": {
-            "all": "全部类型",
-            "findPlayer": "找队友",
-            "findTeam": "找队伍"
-        },
-        "tabs": {
-            "browse": "浏览",
-            "my": "我的请求"
-        },
-        "empty": "暂无请求",
-        "emptyDescription": "成为第一个发布请求的人",
-        "createFirst": "发布第一个请求",
-        "myEmpty": "暂无请求",
-        "myEmptyDescription": "发布请求来寻找玩家或队伍",
-        "activeRequest": "进行中的请求",
-        "untitled": "未命名请求",
-        "cancel": "取消",
-        "accept": "接受",
-        "accepting": "接受中...",
-        "players": "需要 {{count}} 名玩家",
-        "minRank": "最低段位: {{rank}}",
-        "maxPrice": "最高价格: ¥{{price}}",
-        "expires": "{{time}} 后过期",
-        "expired": "已过期",
-        "you": "你",
-        "requiredPlayers": "需要 {{count}} 名玩家",
-        "timeRemaining": "{{minutes}} 分钟后过期",
-        "expiringSoon": "即将过期",
-        "goToRoom": "进入房间",
-        "create": {
-            "title": "发布匹配请求",
-            "description": "发布请求来寻找玩家或队伍",
-            "type": "请求类型",
-            "typeDescriptionFindPlayer": "你正在寻找玩家加入你的队伍",
-            "typeDescriptionFindTeam": "你正在寻找队伍加入",
-            "game": "游戏",
-            "gamePlaceholder": "输入游戏ID",
-            "titleLabel": "标题",
-            "titlePlaceholder": "给你的请求起个标题（可选）",
-            "descriptionLabel": "描述",
-            "descriptionPlaceholder": "描述你在寻找什么（可选）",
-            "requiredPlayers": "需要人数",
-            "people": "人",
-            "minRank": "最低段位",
-            "minRankPlaceholder": "例如：钻石、大师（可选）",
-            "maxPrice": "最高价格（元）",
-            "maxPricePlaceholder": "最高时薪（可选）",
-            "maxPriceHint": "留空表示不限价格",
-            "expireTime": "过期时间",
-            "minutes": "分钟",
-            "creating": "发布中...",
-            "submit": "发布请求",
-            "errors": {
-                "gameRequired": "请选择游戏"
-            }
-        }
+    "tabs": {
+      "account": "账户",
+      "security": "安全",
+      "notifications": "通知"
     },
     "settings": {
-        "save": "保存更改",
-        "cancel": "取消",
-        "avatar_url": "头像链接",
-        "update_success": "资料更新成功",
-        "password_mismatch": "两次输入的密码不一致",
-        "current_password": "当前密码",
-        "new_password": "新密码",
-        "confirm_password": "确认新密码",
-        "security_tip": "安全提示",
-        "tip_content": "建议使用至少8位字符，包含大小写每笔和符号",
-        "username_locked": "用户名不可更改"
+      "general": "通用设置",
+      "general_desc": "管理您的账户偏好和显示设置。",
+      "personal_info": "个人信息",
+      "personal_info_desc": "更新您的昵称、简介和头像",
+      "payment": "支付方式",
+      "payment_desc": "管理银行卡和账单信息",
+      "security": "安全设置",
+      "security_desc": "保护您的账户和数据。",
+      "password": "密码",
+      "password_last_updated": "上次更新于 3 个月前",
+      "password_update": "更新",
+      "notifications": "通知偏好",
+      "notifications_desc": "选择您希望接收的通知类型。",
+      "push": "推送通知",
+      "push_desc": "在您的设备上接收提醒"
     },
-    "nav": {
-        "home": "首页",
-        "players": "陪玩师",
-        "rooms": "游戏房间",
-        "lfg": "快速匹配",
-        "orders": "订单",
-        "chat": "聊天",
-        "profile": "个人中心",
-        "menu": "菜单",
-        "online_status": "在线 - 游戏中",
-        "search_placeholder": "搜索全站...",
-        "dashboard": "仪表盘",
-        "playerDashboard": "陪玩中心",
-        "playerOrders": "我的订单",
-        "earnings": "收益",
-        "team": "我的团队",
-        "verification": "认证中心",
-        "playerProfile": "陪玩资料",
-        "guest": "游客",
-        "switchToUser": "切换到用户视图",
-        "switchToPlayer": "切换到陪玩视图",
-        "playerMode": "陪玩模式",
-        "userMode": "用户模式",
-        "find_players_title": "寻找陪玩",
-        "find_players_desc": "发现有天赋的玩家一起游戏。",
-        "filter": {
-            "all": "全部",
-            "rating": "评分最高",
-            "orders": "接单最多",
-            "price": "价格",
-            "game": "游戏",
-            "gender": "性别"
-        },
-        "status": {
-            "online": "在线",
-            "offline": "离线"
-        },
-        "action": {
-            "book_now": "立即下单",
-            "chat": "私聊"
-        },
-        "home_content": {
-            "select_game_desc": "选择游戏寻找您的专属陪玩",
-            "top_players_desc": "本周评分最高的陪玩师",
-            "features_subtitle": "为极致游戏体验打造的优质服务",
-            "orders_suffix": "单",
-            "per_hour": "/小时"
-        },
-        "no_players": "没有找到符合条件的陪玩师。",
-        "orders_title": "我的订单",
-        "orders_desc": "管理和追踪您的游戏陪玩订单。",
-        "order_id": "订单号 #{{id}}",
-        "order_date": "日期",
-        "order_price": "总价",
-        "order_status": {
-            "pending": "待接单",
-            "accepted": "已接单",
-            "completed": "已完成",
-            "cancelled": "已取消"
-        },
-        "chat_title": "消息中心",
-        "chat_placeholder": "输入消息...",
-        "chat_send": "发送",
-        "no_conversations": "暂无消息记录。",
-        "popular_games": "热门游戏",
-        "featured_pros": "精选大神",
-        "view_all": "查看全部",
-        "find_players": "寻找陪玩",
-        "become_player": "成为大神",
-        "new_season": "新赛季开启",
-        "hero_title": "寻找你的完美",
-        "hero_highlight": "搭档",
-        "hero_desc": "与顶尖玩家连线，无论是上分教学还是娱乐陪玩，即刻加入我们的社区。",
-        "why_choose": "为什么选择 GameLink？",
-        "secure_payments": "安全支付",
-        "secure_desc": "订单完成前资金由平台担保托管。",
-        "verified_pros": "大神认证",
-        "verified_desc": "所有陪玩师均经过严格的技能考核。",
-        "support_247": "24/7 客服",
-        "support_desc": "全天候为您提供帮助和支持。"
+    "logout": "退出登录"
+  },
+  "game": {
+    "selectGame": "选择游戏",
+    "searchPlaceholder": "搜索游戏...",
+    "noResults": "未找到游戏",
+    "noGames": "暂无游戏"
+  },
+  "verification": {
+    "realname": {
+      "title": "实名认证",
+      "description": "为了保障账号安全，请完成实名认证",
+      "min_length": "真实姓名至少需要2个字符",
+      "invalid_id": "请输入有效的身份证号",
+      "submit_success": "提交成功",
+      "submit_success_desc": "您的实名认证信息已提交审核",
+      "submit_failed": "提交失败",
+      "try_again": "请稍后重试",
+      "security_title": "安全提示",
+      "security_desc": "您的信息仅用于身份核验，平台将严格保密。",
+      "identity_info": "身份信息",
+      "identity_info_desc": "请填写真实的身份信息，与身份证保持一致",
+      "real_name": "真实姓名",
+      "real_name_placeholder": "请输入真实姓名",
+      "id_number": "身份证号",
+      "id_number_placeholder": "请输入18位身份证号",
+      "id_photos": "证件照片",
+      "id_photos_desc": "请上传有效期内的身份证正反面照片",
+      "photo_front": "人像面",
+      "photo_back": "国徽面",
+      "click_upload": "点击上传",
+      "submitting": "提交审核中...",
+      "submit": "提交认证"
     },
-    "player": {
-        "all_games": "所有游戏",
-        "starting_at": "起价",
-        "no_results_desc": "尝试调整筛选条件或稍后再来看看。"
-    },
-    "order": {
-        "refresh": "刷新",
-        "tab_active": "进行中",
-        "tab_done": "已完成",
-        "tab_cancel": "已取消",
-        "empty_desc": "在此分类下暂无订单。",
-        "details": "详情",
-        "pay_now": "立即支付",
-        "qty": "时长",
-        "total": "总计",
-        "service_type": "陪玩服务"
-    },
-    "chat": {
-        "loading": "加载聊天中...",
-        "not_found": "未找到对话。",
-        "back": "返回列表",
-        "updating": "更新中..."
-    },
-    "profile": {
-        "title": "个人中心",
-        "edit": "编辑资料",
-        "id": "ID",
-        "wallet": {
-            "title": "钱包余额",
-            "recharge": "充值"
-        },
-        "vip": {
-            "title": "VIP 会员",
-            "expires": "有效期至：{{date}}",
-            "free": "免费计划",
-            "level_prefix": "VIP等级",
-            "upgrade": "升级会员",
-            "upgrade_cta": "解锁更多特权"
-        },
-        "stats": {
-            "monthly_orders": "本月订单",
-            "from_last_month": "较上月"
-        },
-        "tabs": {
-            "account": "账户",
-            "security": "安全",
-            "notifications": "通知"
-        },
-        "settings": {
-            "general": "通用设置",
-            "general_desc": "管理您的账户偏好和显示设置。",
-            "personal_info": "个人信息",
-            "personal_info_desc": "更新您的昵称、简介和头像",
-            "payment": "支付方式",
-            "payment_desc": "管理银行卡和账单信息",
-            "security": "安全设置",
-            "security_desc": "保护您的账户和数据。",
-            "password": "密码",
-            "password_last_updated": "上次更新于 3 个月前",
-            "password_update": "更新",
-            "notifications": "通知偏好",
-            "notifications_desc": "选择您希望接收的通知类型。",
-            "push": "推送通知",
-            "push_desc": "在您的设备上接收提醒"
-        },
-        "logout": "退出登录"
-    },
-    "game": {
-        "selectGame": "选择游戏",
-        "searchPlaceholder": "搜索游戏...",
-        "noResults": "未找到游戏",
-        "noGames": "暂无游戏"
-    },
-    "verification": {
-        "realname": {
-            "title": "实名认证",
-            "description": "为了保障账号安全，请完成实名认证",
-            "min_length": "真实姓名至少需要2个字符",
-            "invalid_id": "请输入有效的身份证号",
-            "submit_success": "提交成功",
-            "submit_success_desc": "您的实名认证信息已提交审核",
-            "submit_failed": "提交失败",
-            "try_again": "请稍后重试",
-            "security_title": "安全提示",
-            "security_desc": "您的信息仅用于身份核验，平台将严格保密。",
-            "identity_info": "身份信息",
-            "identity_info_desc": "请填写真实的身份信息，与身份证保持一致",
-            "real_name": "真实姓名",
-            "real_name_placeholder": "请输入真实姓名",
-            "id_number": "身份证号",
-            "id_number_placeholder": "请输入18位身份证号",
-            "id_photos": "证件照片",
-            "id_photos_desc": "请上传有效期内的身份证正反面照片",
-            "photo_front": "人像面",
-            "photo_back": "国徽面",
-            "click_upload": "点击上传",
-            "submitting": "提交审核中...",
-            "submit": "提交认证"
-        },
-        "skill": {
-            "title": "技能认证",
-            "description": "认证游戏段位，展示您的实力",
-            "select_game": "请选择游戏",
-            "select_rank": "选择段位",
-            "submit_success": "提交成功",
-            "submit_success_desc": "您的技能认证信息已提交审核",
-            "submit_failed": "提交失败",
-            "try_again": "请稍后重试",
-            "alert_title": "认证提示",
-            "alert_desc": "请上传带有游戏ID的个人主页截图，确保ID清晰可见。",
-            "game_info": "游戏信息",
-            "game_info_desc": "选择您擅长的游戏及当前段位",
-            "game": "游戏",
-            "select_game_first": "请先选择游戏",
-            "rank": "段位",
-            "screenshot_title": "段位截图",
-            "screenshot_desc": "请上传包含游戏ID和段位信息的最新截图",
-            "click_upload": "点击上传段位截图",
-            "submitting": "提交审核中...",
-            "submit": "提交认证",
-            "lol": {
-                "name": "英雄联盟",
-                "challenger": "最强王者",
-                "grandmaster": "傲世宗师",
-                "master": "超凡大师",
-                "diamond": "璀璨钻石",
-                "platinum": "华贵铂金"
-            },
-            "wzry": {
-                "name": "王者荣耀",
-                "glory_king": "荣耀王者",
-                "king": "最强王者",
-                "star": "至尊星耀",
-                "diamond": "永恒钻石",
-                "platinum": "尊贵铂金"
-            },
-            "pubg": {
-                "name": "绝地求生",
-                "conqueror": "无敌战神",
-                "ace": "王牌",
-                "crown": "皇冠",
-                "diamond": "星钻",
-                "platinum": "白金"
-            },
-            "apex": {
-                "name": "Apex Legends",
-                "predator": "顶尖猎杀者",
-                "master": "大师",
-                "diamond": "钻石",
-                "platinum": "白金",
-                "gold": "黄金"
-            }
-        }
-    },
-    "presence": {
-        "online": "在线",
-        "online_desc": "显示为在线状态",
-        "accepting": "接单中",
-        "accepting_desc": "正在接受订单",
-        "in_game": "游戏中",
-        "in_game_desc": "正在进行游戏",
-        "resting": "休息中",
-        "resting_desc": "暂时休息，不接单",
-        "invisible": "隐身",
-        "invisible_desc": "对他人显示为离线",
-        "offline": "离线",
-        "offline_desc": "设为离线状态",
-        "playing": "正在玩 {{game}}",
-        "status_updated": "状态已更新为 {{status}}",
-        "status_update_failed": "状态更新失败",
-        "current_status": "当前状态: {{status}}",
-        "toggle_status": "切换在线状态",
-        "offline_banner": "网络连接已断开，部分功能可能不可用"
+    "skill": {
+      "title": "技能认证",
+      "description": "认证游戏段位，展示您的实力",
+      "select_game": "请选择游戏",
+      "select_rank": "选择段位",
+      "submit_success": "提交成功",
+      "submit_success_desc": "您的技能认证信息已提交审核",
+      "submit_failed": "提交失败",
+      "try_again": "请稍后重试",
+      "alert_title": "认证提示",
+      "alert_desc": "请上传带有游戏ID的个人主页截图，确保ID清晰可见。",
+      "game_info": "游戏信息",
+      "game_info_desc": "选择您擅长的游戏及当前段位",
+      "game": "游戏",
+      "select_game_first": "请先选择游戏",
+      "rank": "段位",
+      "screenshot_title": "段位截图",
+      "screenshot_desc": "请上传包含游戏ID和段位信息的最新截图",
+      "click_upload": "点击上传段位截图",
+      "submitting": "提交审核中...",
+      "submit": "提交认证",
+      "lol": {
+        "name": "英雄联盟",
+        "challenger": "最强王者",
+        "grandmaster": "傲世宗师",
+        "master": "超凡大师",
+        "diamond": "璀璨钻石",
+        "platinum": "华贵铂金"
+      },
+      "wzry": {
+        "name": "王者荣耀",
+        "glory_king": "荣耀王者",
+        "king": "最强王者",
+        "star": "至尊星耀",
+        "diamond": "永恒钻石",
+        "platinum": "尊贵铂金"
+      },
+      "pubg": {
+        "name": "绝地求生",
+        "conqueror": "无敌战神",
+        "ace": "王牌",
+        "crown": "皇冠",
+        "diamond": "星钻",
+        "platinum": "白金"
+      },
+      "apex": {
+        "name": "Apex Legends",
+        "predator": "顶尖猎杀者",
+        "master": "大师",
+        "diamond": "钻石",
+        "platinum": "白金",
+        "gold": "黄金"
+      }
     }
+  },
+  "presence": {
+    "online": "在线",
+    "online_desc": "显示为在线状态",
+    "accepting": "接单中",
+    "accepting_desc": "正在接受订单",
+    "in_game": "游戏中",
+    "in_game_desc": "正在进行游戏",
+    "resting": "休息中",
+    "resting_desc": "暂时休息，不接单",
+    "invisible": "隐身",
+    "invisible_desc": "对他人显示为离线",
+    "offline": "离线",
+    "offline_desc": "设为离线状态",
+    "playing": "正在玩 {{game}}",
+    "status_updated": "状态已更新为 {{status}}",
+    "status_update_failed": "状态更新失败",
+    "current_status": "当前状态: {{status}}",
+    "toggle_status": "切换在线状态",
+    "offline_banner": "网络连接已断开，部分功能可能不可用"
+  }
 }

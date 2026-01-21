@@ -1,539 +1,604 @@
 {
-    "app": {
-        "name": "GameLink",
-        "theme": {
-            "light": "Light Mode",
-            "dark": "Dark Mode",
-            "system": "System",
-            "toggle": "Toggle Theme"
-        }
+  "app": {
+    "name": "GameLink",
+    "theme": {
+      "light": "Light Mode",
+      "dark": "Dark Mode",
+      "system": "System",
+      "toggle": "Toggle Theme"
+    }
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "username": "Username",
+    "nickname": "Nickname",
+    "phone": "Phone Number",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Submit",
+    "welcome_back": "Welcome Back",
+    "enter_credentials": "Enter your credentials to access your account",
+    "sign_in": "Sign In",
+    "forgot_password": "Forgot password?",
+    "create_account": "Create an account",
+    "already_have_account": "Already have an account?",
+    "continue_with": "Or continue with",
+    "slogan": "\"Connect with pro players, elevate your skills, and experience gaming like never before.\"",
+    "anonymous": "Anonymous",
+    "secure": "Fast & Secure",
+    "terms_agreement": "By clicking continue, you agree to our",
+    "terms": "Terms",
+    "and": "and",
+    "privacy": "Privacy Policy",
+    "branding_sub": "Connect, Play, Triumph",
+    "remember_me": "Remember me",
+    "email_required": "Email is required",
+    "phone_required": "Phone number is required",
+    "password_min_length": "Password must be at least 6 characters",
+    "provide_contact": "Please provide either an email or phone number",
+    "sign_up": "Sign Up",
+    "error_generic": "An error occurred, please try again later",
+    "or": "Or"
+  },
+  "wallet": {
+    "title": "Wallet Balance",
+    "recharge": "Recharge",
+    "withdraw": "Withdraw",
+    "transactions": "Transactions",
+    "no_transactions": "No transactions yet",
+    "type": {
+      "deposit": "Deposit",
+      "payment": "Payment",
+      "refund": "Refund",
+      "withdrawal": "Withdrawal"
     },
-    "profile": {
-        "title": "Profile",
-        "edit": "Edit Profile",
-        "id": "ID",
-        "wallet": {
-            "title": "Wallet Balance",
-            "recharge": "Recharge"
-        },
-        "vip": {
-            "title": "VIP Status",
-            "expires": "Expires: {{date}}",
-            "free": "Free Plan",
-            "level_prefix": "VIP Level",
-            "upgrade": "Upgrade Now",
-            "upgrade_cta": "Upgrade to unlock exclusive features"
-        },
-        "stats": {
-            "monthly_orders": "Monthly Orders",
-            "from_last_month": "from last month"
-        },
-        "tabs": {
-            "account": "Account",
-            "security": "Security",
-            "notifications": "Notifications"
-        },
-        "settings": {
-            "general": "General Settings",
-            "general_desc": "Manage your account preferences and display settings.",
-            "personal_info": "Personal Information",
-            "personal_info_desc": "Update your name, bio, and avatar",
-            "payment": "Payment Methods",
-            "payment_desc": "Manage cards and billing info",
-            "security": "Security Settings",
-            "security_desc": "Protect your account and data.",
-            "password": "Password",
-            "password_last_updated": "Last updated 3 months ago",
-            "password_update": "Update",
-            "notifications": "Notification Preferences",
-            "notifications_desc": "Choose what you want to be notified about.",
-            "push": "Push Notifications",
-            "push_desc": "Receive alerts on your device"
-        },
-        "logout": "Log Out"
+    "status": {
+      "pending": "Pending",
+      "completed": "Completed",
+      "failed": "Failed"
+    }
+  },
+  "vip": {
+    "title": "VIP Status",
+    "plans": "Membership Plans",
+    "current_plan": "Current Plan",
+    "plan": {
+      "free": "Free Plan",
+      "pro": "Pro Plan",
+      "elite": "Elite Plan"
     },
-    "nav": {
-        "home": "Home",
-        "players": "Pro Players",
-        "rooms": "Game Rooms",
-        "lfg": "LFG",
-        "orders": "Orders",
-        "chat": "Chat",
-        "profile": "Profile",
-        "menu": "MENU",
-        "online_status": "Online - In Game",
-        "search_placeholder": "Search...",
-        "dashboard": "Dashboard",
-        "playerDashboard": "Dashboard",
-        "playerOrders": "My Orders",
-        "earnings": "Earnings",
-        "team": "My Team",
-        "verification": "Verification",
-        "playerProfile": "Player Profile",
-        "guest": "Guest",
-        "switchToUser": "Switch to User",
-        "switchToPlayer": "Switch to Player",
-        "playerMode": "Player Mode",
-        "userMode": "User Mode",
-        "find_players_title": "Find Players",
-        "find_players_desc": "Discover talented players to game with.",
-        "filter": {
-            "all": "All",
-            "rating": "Highest Rated",
-            "orders": "Most Orders",
-            "price": "Price",
-            "game": "Game",
-            "gender": "Gender"
-        },
-        "status": {
-            "online": "Online",
-            "offline": "Offline"
-        },
-        "action": {
-            "book_now": "Book Now",
-            "chat": "Chat"
-        },
-        "home_content": {
-            "select_game_desc": "Select a game to find your pro",
-            "top_players_desc": "Top rated players this week",
-            "features_subtitle": "Premier features for the ultimate gaming experience",
-            "orders_suffix": " orders",
-            "per_hour": "/hr"
-        },
-        "no_players": "No players found matching your criteria.",
-        "orders_title": "My Orders",
-        "orders_desc": "Manage and track your game service orders.",
-        "order_id": "Order #{{id}}",
-        "order_date": "Date",
-        "order_price": "Total",
-        "order_status": {
-            "pending": "Pending",
-            "accepted": "Accepted",
-            "completed": "Completed",
-            "cancelled": "Cancelled"
-        },
-        "chat_title": "Messages",
-        "chat_placeholder": "Type a message...",
-        "chat_send": "Send",
-        "no_conversations": "No conversations yet.",
-        "popular_games": "Popular Games",
-        "featured_pros": "Featured Pros",
-        "view_all": "View All",
-        "find_players": "Find Players",
-        "become_player": "Become a Pro",
-        "new_season": "New Season Live",
-        "hero_title": "Find Your Perfect",
-        "hero_highlight": "Duo",
-        "hero_desc": "Connect with top-tier gamers for coaching, ranking up, or just having fun. Join the community today.",
-        "why_choose": "Why choose GameLink?",
-        "secure_payments": "Secure Payments",
-        "secure_desc": "Your funds are protected until the order is complete.",
-        "verified_pros": "Verified Pros",
-        "verified_desc": "All players undergo strict skill verification.",
-        "support_247": "24/7 Support",
-        "support_desc": "We are here to help you anytime, anywhere."
+    "feature": {
+      "ad_free": "Ad-free experience",
+      "priority": "Priority Support",
+      "badge": "Exclusive Badge"
     },
-    "player": {
-        "all_games": "All Games",
-        "starting_at": "Starting at",
-        "no_results_desc": "Try adjusting your filters or come back later to see more pro players."
+    "subscribe": "Subscribe Now",
+    "monthly": "/mo"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "mark_all_read": "Mark all as read",
+    "empty": "No notifications",
+    "type": {
+      "system": "System",
+      "order": "Order"
+    }
+  },
+  "payment": {
+    "order_not_pending": "Order is not in pending status",
+    "fetch_failed": "Failed to fetch order information",
+    "insufficient_balance": "Insufficient balance",
+    "success": "Payment successful",
+    "failed": "Payment failed"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back"
+  },
+  "room": {
+    "title": "Game Rooms",
+    "description": "Join or create game rooms to play with others",
+    "list": {
+      "title": "Room List",
+      "searchPlaceholder": "Search rooms...",
+      "filterStatus": "Filter by status",
+      "empty": "No rooms found",
+      "emptyDescription": "Create a room or wait for others to create one"
     },
-    "order": {
-        "refresh": "Refresh",
-        "tab_active": "Active",
-        "tab_done": "Done",
-        "tab_cancel": "Cancelled",
-        "empty_desc": "You haven't placed any orders in this category yet.",
-        "details": "Details",
-        "pay_now": "Pay Now",
-        "qty": "Qty",
-        "total": "Total",
-        "service_type": "Boosting"
-    },
-    "chat": {
-        "loading": "Loading chats...",
-        "not_found": "Conversation not found.",
-        "back": "Back to list",
-        "updating": "Updating..."
-    },
-    "auth": {
-        "login": "Login",
-        "logout": "Logout",
-        "username": "Username",
-        "nickname": "Nickname",
-        "phone": "Phone Number",
-        "email": "Email",
+    "form": {
+      "title": "Create Room",
+      "description": "Set up a new game room",
+      "fields": {
+        "name": "Room Name",
+        "namePlaceholder": "Enter room name",
+        "type": "Room Type",
+        "game": "Game",
+        "gamePlaceholder": "Enter game ID",
+        "maxMembers": "Max Members",
+        "people": "people",
+        "description": "Description",
+        "descriptionPlaceholder": "Describe your room (optional)",
+        "private": "Private Room",
+        "privateDescription": "Only players with password can join",
         "password": "Password",
-        "submit": "Submit",
-        "welcome_back": "Welcome Back",
-        "enter_credentials": "Enter your credentials to access your account",
-        "sign_in": "Sign In",
-        "forgot_password": "Forgot password?",
-        "create_account": "Create an account",
-        "already_have_account": "Already have an account?",
-        "sign_up": "Sign Up",
-        "continue_with": "Or continue with",
-        "slogan": "\"Connect with pro players, elevate your skills, and experience gaming like never before.\"",
-        "anonymous": "Anonymous",
-        "secure": "Fast & Secure",
-        "terms_agreement": "By clicking continue, you agree to our",
-        "terms": "Terms",
-        "and": "and",
-        "privacy": "Privacy Policy",
-        "branding_sub": "Connect, Play, Triumph",
-        "remember_me": "Remember me",
-        "email_required": "Email is required",
-        "phone_required": "Phone number is required",
-        "password_min_length": "Password must be at least 6 characters",
-        "provide_contact": "Please provide either an email or phone number"
+        "passwordPlaceholder": "Enter room password"
+      },
+      "voice": {
+        "enable": "Voice Chat",
+        "description": "Enable voice communication"
+      },
+      "errors": {
+        "nameRequired": "Room name is required",
+        "gameRequired": "Game is required",
+        "passwordRequired": "Password is required for private rooms"
+      },
+      "creating": "Creating...",
+      "submit": "Create Room"
     },
+    "detail": {
+      "info": "Room Info",
+      "members": "Members",
+      "actions": "Actions",
+      "startGame": "Start Game",
+      "finishGame": "Finish Game",
+      "settings": "Settings"
+    },
+    "status": {
+      "all": "All",
+      "waiting": "Waiting",
+      "ready": "Ready",
+      "in_game": "In Game",
+      "finished": "Finished",
+      "canceled": "Canceled"
+    },
+    "type": {
+      "team": "Team",
+      "lfg": "LFG",
+      "custom": "Custom",
+      "order": "Order"
+    },
+    "actions": {
+      "create": "Create Room",
+      "join": "Join",
+      "leave": "Leave",
+      "ready": "Ready",
+      "cancelReady": "Cancel Ready",
+      "start": "Start Game",
+      "finish": "Finish Game",
+      "close": "Close Room",
+      "kick": "Kick"
+    },
+    "dialogs": {
+      "closeConfirm": {
+        "title": "Confirm Close Room",
+        "description": "Closing the room will remove all members. This action cannot be undone."
+      },
+      "enterPassword": {
+        "title": "Enter Password",
+        "description": "This room requires a password to join",
+        "placeholder": "Enter room password"
+      }
+    },
+    "members": "Members",
+    "private": "Private",
+    "voice": "Voice",
+    "host": "Host",
+    "notFound": "Room not found",
+    "enter": "Enter",
+    "full": "Full",
+    "joining": "Joining...",
+    "passwordRequired": "Password Required",
+    "passwordRequiredDescription": "This is a private room. Please enter the password to join.",
+    "showing": "Showing {{count}} of {{total}} rooms",
+    "createFirst": "Create First Room",
+    "noMembers": "No members",
+    "you": "You",
+    "member": "Member",
+    "errors": {
+      "passwordRequired": "Password is required",
+      "wrongPassword": "Wrong password"
+    },
+    "searchPlaceholder": "Search rooms...",
+    "filterStatus": "Filter by status",
+    "empty": "No rooms found",
+    "emptyDescription": "Create a room or wait for others to create one",
+    "maxMembers": "Max Members",
+    "people": "people",
+    "password": "Password",
+    "passwordPlaceholder": "Enter room password",
+    "enterPassword": "Enter Password",
+    "enterPasswordDescription": "This room requires a password to join"
+  },
+  "voice": {
+    "title": "Voice Channel",
+    "join": "Join Voice",
+    "leave": "Leave Voice",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "deafen": "Deafen",
+    "undeafen": "Undeafen",
+    "settings": "Voice Settings",
+    "selectDevice": "Select Device",
+    "speaking": "Speaking",
+    "muted": "Muted",
+    "deafened": "Deafened",
+    "members": "Voice Members",
+    "notEnabled": "Voice not enabled",
+    "enable": "Enable Voice",
+    "disable": "Disable Voice",
+    "connecting": "Connecting...",
+    "connected": "Connected",
+    "mutedAndDeafened": "Muted and Deafened",
+    "inputDevice": "Input Device",
+    "outputDevice": "Output Device",
+    "defaultDevice": "Default Device"
+  },
+  "lfg": {
+    "title": "Looking For Group",
+    "description": "Find players or teams to play with",
+    "list": {
+      "title": "LFG Request List",
+      "searchPlaceholder": "Search requests...",
+      "filterType": "Filter by type",
+      "empty": "No requests found",
+      "emptyDescription": "Be the first to create a request",
+      "createFirst": "Create First Request",
+      "myEmpty": "No requests yet",
+      "myEmptyDescription": "Create a request to find players or teams"
+    },
+    "form": {
+      "title": "Create LFG Request",
+      "description": "Post a request to find players or teams",
+      "fields": {
+        "type": "Request Type",
+        "typeDescriptionFindPlayer": "You're looking for players to join your team",
+        "typeDescriptionFindTeam": "You're looking for a team to join",
+        "game": "Game",
+        "gamePlaceholder": "Enter game ID",
+        "title": "Title",
+        "titlePlaceholder": "Give your request a title (optional)",
+        "description": "Description",
+        "descriptionPlaceholder": "Describe what you're looking for (optional)",
+        "requiredPlayers": "Required Players",
+        "people": "people",
+        "minRank": "Minimum Rank",
+        "minRankPlaceholder": "e.g., Diamond, Master (optional)",
+        "maxPrice": "Max Price (¥)",
+        "maxPricePlaceholder": "Maximum hourly rate (optional)",
+        "maxPriceHint": "Leave empty for no price limit",
+        "expireTime": "Expire Time",
+        "minutes": "minutes"
+      },
+      "errors": {
+        "gameRequired": "Game is required"
+      },
+      "creating": "Creating...",
+      "submit": "Create Request"
+    },
+    "type": {
+      "all": "All Types",
+      "findPlayer": "Find Player",
+      "findTeam": "Find Team"
+    },
+    "tabs": {
+      "browse": "Browse",
+      "my": "My Requests"
+    },
+    "card": {
+      "activeRequest": "Active Request",
+      "untitled": "Untitled Request",
+      "players": "{{count}} players needed",
+      "minRank": "Min Rank: {{rank}}",
+      "maxPrice": "Max Price: ¥{{price}}",
+      "expires": "Expires in {{time}}",
+      "expired": "Expired",
+      "you": "You",
+      "requiredPlayers": "{{count}} players needed",
+      "timeRemaining": "Expires in {{minutes}} min",
+      "expiringSoon": "Expiring soon",
+      "goToRoom": "Go to Room"
+    },
+    "actions": {
+      "create": "Create Request",
+      "cancel": "Cancel",
+      "accept": "Accept",
+      "accepting": "Accepting..."
+    },
+    "searchPlaceholder": "Search requests...",
+    "filterType": "Filter by type",
+    "empty": "No requests found",
+    "emptyDescription": "Be the first to create a request",
+    "createFirst": "Create First Request",
+    "myEmpty": "No requests yet",
+    "myEmptyDescription": "Create a request to find players or teams",
+    "activeRequest": "Active Request",
+    "untitled": "Untitled Request",
+    "expiringSoon": "Expiring soon",
+    "goToRoom": "Go to Room",
+    "you": "You",
+    "requiredPlayers": "{{count}} players needed",
+    "minRank": "Min Rank: {{rank}}",
+    "maxPrice": "Max Price: ¥{{price}}",
+    "timeRemaining": "Expires in {{minutes}} min",
+    "expired": "Expired",
+    "expires": "Expires in {{time}}",
+    "players": "{{count}} players needed"
+  },
+  "settings": {
+    "save": "Save Changes",
+    "cancel": "Cancel",
+    "avatar_url": "Avatar URL",
+    "update_success": "Profile updated successfully",
+    "password_mismatch": "New passwords do not match",
+    "current_password": "Current Password",
+    "new_password": "New Password",
+    "confirm_password": "Confirm New Password",
+    "security_tip": "Security Tip",
+    "tip_content": "Use at least 8 characters, including uppercase letters, numbers, and symbols.",
+    "username_locked": "Username cannot be changed",
+    "file_too_large": "File is too large, please select a file smaller than 5MB",
+    "upload_success": "Upload successful",
+    "security": "Security Settings",
+    "security_desc": "Protect your account and data"
+  },
+  "nav": {
+    "home": "Home",
+    "players": "Pro Players",
+    "rooms": "Game Rooms",
+    "lfg": "LFG",
+    "orders": "Orders",
+    "chat": "Chat",
+    "profile": "Profile",
+    "menu": "MENU",
+    "online_status": "Online - In Game",
+    "search_placeholder": "Search...",
+    "dashboard": "Dashboard",
+    "playerDashboard": "Dashboard",
+    "playerOrders": "My Orders",
+    "earnings": "Earnings",
+    "team": "My Team",
+    "verification": "Verification",
+    "playerProfile": "Player Profile",
+    "guest": "Guest",
+    "switchToUser": "Switch to User",
+    "switchToPlayer": "Switch to Player",
+    "playerMode": "Player Mode",
+    "userMode": "User Mode",
+    "find_players_title": "Find Players",
+    "find_players_desc": "Discover talented players to game with.",
+    "filter": {
+      "all": "All",
+      "rating": "Highest Rated",
+      "orders": "Most Orders",
+      "price": "Price",
+      "game": "Game",
+      "gender": "Gender"
+    },
+    "status": {
+      "online": "Online",
+      "offline": "Offline"
+    },
+    "action": {
+      "book_now": "Book Now",
+      "chat": "Chat"
+    },
+    "home_content": {
+      "select_game_desc": "Select a game to find your pro",
+      "top_players_desc": "Top rated players this week",
+      "features_subtitle": "Premier features for the ultimate gaming experience",
+      "orders_suffix": " orders",
+      "per_hour": "/hr"
+    },
+    "no_players": "No players found matching your criteria.",
+    "orders_title": "My Orders",
+    "orders_desc": "Manage and track your game service orders.",
+    "order_id": "Order #{{id}}",
+    "order_date": "Date",
+    "order_price": "Total",
+    "order_status": {
+      "pending": "Pending",
+      "accepted": "Accepted",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "chat_title": "Messages",
+    "chat_placeholder": "Type a message...",
+    "chat_send": "Send",
+    "no_conversations": "No conversations yet.",
+    "popular_games": "Popular Games",
+    "featured_pros": "Featured Pros",
+    "view_all": "View All",
+    "find_players": "Find Players",
+    "become_player": "Become a Pro",
+    "new_season": "New Season Live",
+    "hero_title": "Find Your Perfect",
+    "hero_highlight": "Duo",
+    "hero_desc": "Connect with top-tier gamers for coaching, ranking up, or just having fun. Join the community today.",
+    "why_choose": "Why choose GameLink?",
+    "secure_payments": "Secure Payments",
+    "secure_desc": "Your funds are protected until the order is complete.",
+    "verified_pros": "Verified Pros",
+    "verified_desc": "All players undergo strict skill verification.",
+    "support_247": "24/7 Support",
+    "support_desc": "We are here to help you anytime, anywhere."
+  },
+  "player": {
+    "all_games": "All Games",
+    "starting_at": "Starting at",
+    "no_results_desc": "Try adjusting your filters or come back later to see more pro players."
+  },
+  "order": {
+    "refresh": "Refresh",
+    "tab_active": "Active",
+    "tab_done": "Done",
+    "tab_cancel": "Cancelled",
+    "empty_desc": "You haven't placed any orders in this category yet.",
+    "details": "Details",
+    "pay_now": "Pay Now",
+    "qty": "Qty",
+    "total": "Total",
+    "service_type": "Boosting"
+  },
+  "chat": {
+    "loading": "Loading chats...",
+    "not_found": "Conversation not found.",
+    "back": "Back to list",
+    "updating": "Updating..."
+  },
+  "profile": {
+    "title": "Profile",
+    "edit": "Edit Profile",
+    "id": "ID",
     "wallet": {
-        "title": "Wallet Balance",
-        "recharge": "Recharge",
-        "withdraw": "Withdraw",
-        "transactions": "Transactions",
-        "no_transactions": "No transactions yet",
-        "type": {
-            "deposit": "Deposit",
-            "payment": "Payment",
-            "refund": "Refund",
-            "withdrawal": "Withdrawal"
-        },
-        "status": {
-            "pending": "Pending",
-            "completed": "Completed",
-            "failed": "Failed"
-        }
+      "title": "Wallet Balance",
+      "recharge": "Recharge"
     },
     "vip": {
-        "title": "VIP Status",
-        "plans": "Membership Plans",
-        "current_plan": "Current Plan",
-        "plan": {
-            "free": "Free Plan",
-            "pro": "Pro Plan",
-            "elite": "Elite Plan"
-        },
-        "feature": {
-            "ad_free": "Ad-free experience",
-            "priority": "Priority Support",
-            "badge": "Exclusive Badge"
-        },
-        "subscribe": "Subscribe Now",
-        "monthly": "/mo"
+      "title": "VIP Status",
+      "expires": "Expires: {{date}}",
+      "free": "Free Plan",
+      "level_prefix": "VIP Level",
+      "upgrade": "Upgrade Now",
+      "upgrade_cta": "Upgrade to unlock exclusive features"
     },
-    "notifications": {
-        "title": "Notifications",
-        "mark_all_read": "Mark all as read",
-        "empty": "No notifications",
-        "type": {
-            "system": "System",
-            "order": "Order"
-        }
+    "stats": {
+      "monthly_orders": "Monthly Orders",
+      "from_last_month": "from last month"
     },
-    "common": {
-        "cancel": "Cancel",
-        "confirm": "Confirm",
-        "save": "Save",
-        "delete": "Delete",
-        "edit": "Edit",
-        "back": "Back"
-    },
-    "room": {
-        "title": "Game Rooms",
-        "description": "Join or create game rooms to play with others",
-        "create": "Create Room",
-        "searchPlaceholder": "Search rooms...",
-        "filterStatus": "Filter by status",
-        "status": {
-            "all": "All",
-            "waiting": "Waiting",
-            "ready": "Ready",
-            "in_game": "In Game",
-            "finished": "Finished",
-            "canceled": "Canceled"
-        },
-        "empty": "No rooms found",
-        "emptyDescription": "Create a room or wait for others to create one",
-        "type": {
-            "team": "Team",
-            "lfg": "LFG",
-            "custom": "Custom",
-            "order": "Order"
-        },
-        "members": "{{current}}/{{max}} members",
-        "private": "Private",
-        "voice": "Voice",
-        "host": "Host",
-        "join": "Join",
-        "leave": "Leave",
-        "ready": "Ready",
-        "cancelReady": "Cancel Ready",
-        "start": "Start Game",
-        "finish": "Finish Game",
-        "close": "Close Room",
-        "kick": "Kick",
-        "notFound": "Room not found",
-        "enter": "Enter",
-        "full": "Full",
-        "joining": "Joining...",
-        "enterPassword": "Enter Password",
-        "enterPasswordDescription": "This room requires a password to join",
-        "passwordPlaceholder": "Enter room password",
-        "passwordRequired": "Password Required",
-        "passwordRequiredDescription": "This is a private room. Please enter the password to join.",
-        "password": "Password",
-        "showing": "Showing {{count}} of {{total}} rooms",
-        "createFirst": "Create First Room",
-        "noMembers": "No members",
-        "you": "You",
-        "member": "Member",
-        "info": "Room Info",
-        "members": "Members",
-        "actions": "Actions",
-        "startGame": "Start Game",
-        "finishGame": "Finish Game",
-        "settings": "Settings",
-        "closeConfirm": {
-            "title": "Confirm Close Room",
-            "description": "Closing the room will remove all members. This action cannot be undone."
-        },
-        "errors": {
-            "passwordRequired": "Password is required",
-            "wrongPassword": "Wrong password"
-        },
-        "create": {
-            "title": "Create Room",
-            "description": "Set up a new game room",
-            "name": "Room Name",
-            "namePlaceholder": "Enter room name",
-            "type": "Room Type",
-            "game": "Game",
-            "gamePlaceholder": "Enter game ID",
-            "maxMembers": "Max Members",
-            "people": "people",
-            "descriptionLabel": "Description",
-            "descriptionPlaceholder": "Describe your room (optional)",
-            "private": "Private Room",
-            "privateDescription": "Only players with password can join",
-            "password": "Password",
-            "passwordPlaceholder": "Enter room password",
-            "voice": "Voice Chat",
-            "voiceDescription": "Enable voice communication",
-            "creating": "Creating...",
-            "submit": "Create Room",
-            "errors": {
-                "nameRequired": "Room name is required",
-                "gameRequired": "Game is required",
-                "passwordRequired": "Password is required for private rooms"
-            }
-        }
-    },
-    "voice": {
-        "title": "Voice Channel",
-        "join": "Join Voice",
-        "leave": "Leave Voice",
-        "mute": "Mute",
-        "unmute": "Unmute",
-        "deafen": "Deafen",
-        "undeafen": "Undeafen",
-        "settings": "Voice Settings",
-        "selectDevice": "Select Device",
-        "speaking": "Speaking",
-        "muted": "Muted",
-        "deafened": "Deafened",
-        "members": "Voice Members",
-        "notEnabled": "Voice not enabled",
-        "enable": "Enable Voice",
-        "disable": "Disable Voice",
-        "connecting": "Connecting...",
-        "connected": "Connected",
-        "mutedAndDeafened": "Muted and Deafened",
-        "inputDevice": "Input Device",
-        "outputDevice": "Output Device",
-        "defaultDevice": "Default Device"
-    },
-    "lfg": {
-        "title": "Looking For Group",
-        "description": "Find players or teams to play with",
-        "create": "Create Request",
-        "searchPlaceholder": "Search requests...",
-        "filterType": "Filter by type",
-        "type": {
-            "all": "All Types",
-            "findPlayer": "Find Player",
-            "findTeam": "Find Team"
-        },
-        "tabs": {
-            "browse": "Browse",
-            "my": "My Requests"
-        },
-        "empty": "No requests found",
-        "emptyDescription": "Be the first to create a request",
-        "createFirst": "Create First Request",
-        "myEmpty": "No requests yet",
-        "myEmptyDescription": "Create a request to find players or teams",
-        "activeRequest": "Active Request",
-        "untitled": "Untitled Request",
-        "cancel": "Cancel",
-        "accept": "Accept",
-        "accepting": "Accepting...",
-        "players": "{{count}} players needed",
-        "minRank": "Min Rank: {{rank}}",
-        "maxPrice": "Max Price: ¥{{price}}",
-        "expires": "Expires in {{time}}",
-        "expired": "Expired",
-        "you": "You",
-        "requiredPlayers": "{{count}} players needed",
-        "timeRemaining": "Expires in {{minutes}} min",
-        "expiringSoon": "Expiring soon",
-        "goToRoom": "Go to Room",
-        "create": {
-            "title": "Create LFG Request",
-            "description": "Post a request to find players or teams",
-            "type": "Request Type",
-            "typeDescriptionFindPlayer": "You're looking for players to join your team",
-            "typeDescriptionFindTeam": "You're looking for a team to join",
-            "game": "Game",
-            "gamePlaceholder": "Enter game ID",
-            "titleLabel": "Title",
-            "titlePlaceholder": "Give your request a title (optional)",
-            "descriptionLabel": "Description",
-            "descriptionPlaceholder": "Describe what you're looking for (optional)",
-            "requiredPlayers": "Required Players",
-            "people": "people",
-            "minRank": "Minimum Rank",
-            "minRankPlaceholder": "e.g., Diamond, Master (optional)",
-            "maxPrice": "Max Price (¥)",
-            "maxPricePlaceholder": "Maximum hourly rate (optional)",
-            "maxPriceHint": "Leave empty for no price limit",
-            "expireTime": "Expire Time",
-            "minutes": "minutes",
-            "creating": "Creating...",
-            "submit": "Create Request",
-            "errors": {
-                "gameRequired": "Game is required"
-            }
-        }
+    "tabs": {
+      "account": "Account",
+      "security": "Security",
+      "notifications": "Notifications"
     },
     "settings": {
-        "save": "Save Changes",
-        "cancel": "Cancel",
-        "avatar_url": "Avatar URL",
-        "update_success": "Profile updated successfully",
-        "password_mismatch": "New passwords do not match",
-        "current_password": "Current Password",
-        "new_password": "New Password",
-        "confirm_password": "Confirm New Password",
-        "security_tip": "Security Tip",
-        "tip_content": "Use at least 8 characters, including uppercase letters, numbers, and symbols.",
-        "username_locked": "Username cannot be changed"
+      "general": "General Settings",
+      "general_desc": "Manage your account preferences and display settings.",
+      "personal_info": "Personal Information",
+      "personal_info_desc": "Update your name, bio, and avatar",
+      "payment": "Payment Methods",
+      "payment_desc": "Manage cards and billing info",
+      "security": "Security Settings",
+      "security_desc": "Protect your account and data.",
+      "password": "Password",
+      "password_last_updated": "Last updated 3 months ago",
+      "password_update": "Update",
+      "notifications": "Notification Preferences",
+      "notifications_desc": "Choose what you want to be notified about.",
+      "push": "Push Notifications",
+      "push_desc": "Receive alerts on your device"
     },
-    "game": {
-        "selectGame": "Select Game",
-        "searchPlaceholder": "Search games...",
-        "noResults": "No games found",
-        "noGames": "No games available"
+    "logout": "Log Out"
+  },
+  "game": {
+    "selectGame": "Select Game",
+    "searchPlaceholder": "Search games...",
+    "noResults": "No games found",
+    "noGames": "No games available"
+  },
+  "verification": {
+    "realname": {
+      "title": "Real Name Verification",
+      "description": "Complete identity verification for account security",
+      "min_length": "Real name must be at least 2 characters",
+      "invalid_id": "Please enter a valid ID number",
+      "submit_success": "Submitted Successfully",
+      "submit_success_desc": "Your verification has been submitted for review",
+      "submit_failed": "Submission Failed",
+      "try_again": "Please try again later",
+      "security_title": "Security Notice",
+      "security_desc": "Your information is only used for identity verification and will be kept strictly confidential.",
+      "identity_info": "Identity Information",
+      "identity_info_desc": "Please provide accurate information matching your ID",
+      "real_name": "Real Name",
+      "real_name_placeholder": "Enter your real name",
+      "id_number": "ID Number",
+      "id_number_placeholder": "Enter your 18-digit ID number",
+      "id_photos": "ID Photos",
+      "id_photos_desc": "Upload front and back photos of your valid ID",
+      "photo_front": "Front Side",
+      "photo_back": "Back Side",
+      "click_upload": "Click to Upload",
+      "submitting": "Submitting...",
+      "submit": "Submit Verification"
     },
-    "verification": {
-        "realname": {
-            "title": "Real Name Verification",
-            "description": "Complete identity verification for account security",
-            "min_length": "Real name must be at least 2 characters",
-            "invalid_id": "Please enter a valid ID number",
-            "submit_success": "Submitted Successfully",
-            "submit_success_desc": "Your verification has been submitted for review",
-            "submit_failed": "Submission Failed",
-            "try_again": "Please try again later",
-            "security_title": "Security Notice",
-            "security_desc": "Your information is only used for identity verification and will be kept strictly confidential.",
-            "identity_info": "Identity Information",
-            "identity_info_desc": "Please provide accurate information matching your ID",
-            "real_name": "Real Name",
-            "real_name_placeholder": "Enter your real name",
-            "id_number": "ID Number",
-            "id_number_placeholder": "Enter your 18-digit ID number",
-            "id_photos": "ID Photos",
-            "id_photos_desc": "Upload front and back photos of your valid ID",
-            "photo_front": "Front Side",
-            "photo_back": "Back Side",
-            "click_upload": "Click to Upload",
-            "submitting": "Submitting...",
-            "submit": "Submit Verification"
-        },
-        "skill": {
-            "title": "Skill Verification",
-            "description": "Verify your game rank to showcase your skills",
-            "select_game": "Please select a game",
-            "select_rank": "Select rank",
-            "submit_success": "Submitted Successfully",
-            "submit_success_desc": "Your skill verification has been submitted for review",
-            "submit_failed": "Submission Failed",
-            "try_again": "Please try again later",
-            "alert_title": "Verification Notice",
-            "alert_desc": "Please upload a screenshot of your profile with your game ID clearly visible.",
-            "game_info": "Game Information",
-            "game_info_desc": "Select your game and current rank",
-            "game": "Game",
-            "select_game_first": "Please select a game first",
-            "rank": "Rank",
-            "screenshot_title": "Rank Screenshot",
-            "screenshot_desc": "Upload a recent screenshot showing your game ID and rank",
-            "click_upload": "Click to Upload Screenshot",
-            "submitting": "Submitting...",
-            "submit": "Submit Verification",
-            "lol": {
-                "name": "League of Legends",
-                "challenger": "Challenger",
-                "grandmaster": "Grandmaster",
-                "master": "Master",
-                "diamond": "Diamond",
-                "platinum": "Platinum"
-            },
-            "wzry": {
-                "name": "Honor of Kings",
-                "glory_king": "Glory King",
-                "king": "King",
-                "star": "Star",
-                "diamond": "Diamond",
-                "platinum": "Platinum"
-            },
-            "pubg": {
-                "name": "PUBG",
-                "conqueror": "Conqueror",
-                "ace": "Ace",
-                "crown": "Crown",
-                "diamond": "Diamond",
-                "platinum": "Platinum"
-            },
-            "apex": {
-                "name": "Apex Legends",
-                "predator": "Predator",
-                "master": "Master",
-                "diamond": "Diamond",
-                "platinum": "Platinum",
-                "gold": "Gold"
-            }
-        }
-    },
-    "presence": {
-        "online": "Online",
-        "online_desc": "Show as online",
-        "accepting": "Accepting Orders",
-        "accepting_desc": "Available for orders",
-        "in_game": "In Game",
-        "in_game_desc": "Currently playing a game",
-        "resting": "Resting",
-        "resting_desc": "Taking a break, not accepting orders",
-        "invisible": "Invisible",
-        "invisible_desc": "Appear offline to others",
-        "offline": "Offline",
-        "offline_desc": "Set as offline",
-        "playing": "Playing {{game}}",
-        "status_updated": "Status updated to {{status}}",
-        "status_update_failed": "Failed to update status",
-        "current_status": "Current status: {{status}}",
-        "toggle_status": "Toggle online status",
-        "offline_banner": "Network disconnected. Some features may be unavailable."
+    "skill": {
+      "title": "Skill Verification",
+      "description": "Verify your game rank to showcase your skills",
+      "select_game": "Please select a game",
+      "select_rank": "Select rank",
+      "submit_success": "Submitted Successfully",
+      "submit_success_desc": "Your skill verification has been submitted for review",
+      "submit_failed": "Submission Failed",
+      "try_again": "Please try again later",
+      "alert_title": "Verification Notice",
+      "alert_desc": "Please upload a screenshot of your profile with your game ID clearly visible.",
+      "game_info": "Game Information",
+      "game_info_desc": "Select your game and current rank",
+      "game": "Game",
+      "select_game_first": "Please select a game first",
+      "rank": "Rank",
+      "screenshot_title": "Rank Screenshot",
+      "screenshot_desc": "Upload a recent screenshot showing your game ID and rank",
+      "click_upload": "Click to Upload Screenshot",
+      "submitting": "Submitting...",
+      "submit": "Submit Verification",
+      "lol": {
+        "name": "League of Legends",
+        "challenger": "Challenger",
+        "grandmaster": "Grandmaster",
+        "master": "Master",
+        "diamond": "Diamond",
+        "platinum": "Platinum"
+      },
+      "wzry": {
+        "name": "Honor of Kings",
+        "glory_king": "Glory King",
+        "king": "King",
+        "star": "Star",
+        "diamond": "Diamond",
+        "platinum": "Platinum"
+      },
+      "pubg": {
+        "name": "PUBG",
+        "conqueror": "Conqueror",
+        "ace": "Ace",
+        "crown": "Crown",
+        "diamond": "Diamond",
+        "platinum": "Platinum"
+      },
+      "apex": {
+        "name": "Apex Legends",
+        "predator": "Predator",
+        "master": "Master",
+        "diamond": "Diamond",
+        "platinum": "Platinum",
+        "gold": "Gold"
+      }
     }
+  },
+  "presence": {
+    "online": "Online",
+    "online_desc": "Show as online",
+    "accepting": "Accepting Orders",
+    "accepting_desc": "Available for orders",
+    "in_game": "In Game",
+    "in_game_desc": "Currently playing a game",
+    "resting": "Resting",
+    "resting_desc": "Taking a break, not accepting orders",
+    "invisible": "Invisible",
+    "invisible_desc": "Appear offline to others",
+    "offline": "Offline",
+    "offline_desc": "Set as offline",
+    "playing": "Playing {{game}}",
+    "status_updated": "Status updated to {{status}}",
+    "status_update_failed": "Failed to update status",
+    "current_status": "Current status: {{status}}",
+    "toggle_status": "Toggle online status",
+    "offline_banner": "Network disconnected. Some features may be unavailable."
+  }
 }
