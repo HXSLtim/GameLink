@@ -23,7 +23,7 @@ export default defineConfig([
       // Allow any in specific cases (will fix gradually)
       '@typescript-eslint/no-explicit-any': 'warn',
       // Allow unused vars with underscore prefix
-      '@typescript-eslint/no-unused-vars': ['error', { 
+      '@typescript-eslint/no-unused-vars': ['error', {
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',
         caughtErrorsIgnorePattern: '^_'
