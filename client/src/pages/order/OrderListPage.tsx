@@ -119,7 +119,7 @@ export default function OrderListPage() {
 
                                                             <div className="grid grid-cols-2 gap-2 text-sm mt-2">
                                                                 <div className="text-muted-foreground">{t('order.qty')}: <span className="text-foreground">{order.quantity}h</span></div>
-                                                                <div className="text-muted-foreground text-right">{t('order.total')}: <span className="font-bold text-foreground">¥{order.amount.toFixed(0)}</span></div>
+                                                                <div className="text-muted-foreground text-right">{t('order.total')}: <span className="font-bold text-foreground">¥{(order.amount ?? 0).toFixed(0)}</span></div>
                                                             </div>
 
                                                             {order.scheduledTime && (

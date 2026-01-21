@@ -100,7 +100,7 @@ export default function RoomListPage() {
                 {/* Create Button */}
                 <Button onClick={handleCreateRoom} className="gap-2">
                     <Plus className="h-4 w-4" />
-                    {t('room.create')}
+                    {t('room.actions.create')}
                 </Button>
             </div>
 

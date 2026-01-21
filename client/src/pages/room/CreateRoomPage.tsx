@@ -40,13 +40,13 @@ export default function CreateRoomPage() {
     const validate = () => {
         const newErrors: Record<string, string> = {};
         if (!formData.name.trim()) {
-            newErrors.name = t('room.create.errors.nameRequired');
+            newErrors.name = t('room.form.errors.nameRequired');
         }
         if (!formData.gameId) {
-            newErrors.gameId = t('room.create.errors.gameRequired');
+            newErrors.gameId = t('room.form.errors.gameRequired');
         }
         if (formData.isPrivate && !formData.password.trim()) {
-            newErrors.password = t('room.create.errors.passwordRequired');
+            newErrors.password = t('room.form.errors.passwordRequired');
         }
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -80,7 +80,7 @@ export default function CreateRoomPage() {
                     <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <PageHeader
-                    title={t('room.create')}
+                    title={t('room.form.title')}
                     description={t('room.description')}
                 />
             </div>
@@ -90,12 +90,12 @@ export default function CreateRoomPage() {
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {/* Room Name */}
                         <div className="space-y-2">
-                            <Label htmlFor="name">{t('room.createForm.name')}</Label>
+                            <Label htmlFor="name">{t('room.form.fields.name')}</Label>
                             <Input
                                 id="name"
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                placeholder={t('room.createForm.namePlaceholder')}
+                                placeholder={t('room.form.fields.namePlaceholder')}
                                 maxLength={64}
                             />
                             {errors.name && (
@@ -105,7 +105,7 @@ export default function CreateRoomPage() {
 
                         {/* Room Type */}
                         <div className="space-y-2">
-                            <Label>{t('room.createForm.type')}</Label>
+                            <Label>{t('room.form.fields.type')}</Label>
                             <Select
                                 value={formData.groupType}
                                 onValueChange={(value) =>
@@ -125,13 +125,13 @@ export default function CreateRoomPage() {
 
                         {/* Game Selection */}
                         <div className="space-y-2">
-                            <Label htmlFor="gameId">{t('room.createForm.game')}</Label>
+                            <Label htmlFor="gameId">{t('room.form.fields.game')}</Label>
                             <Input
                                 id="gameId"
                                 type="number"
                                 value={formData.gameId}
                                 onChange={(e) => setFormData({ ...formData, gameId: e.target.value })}
-                                placeholder={t('room.createForm.gamePlaceholder')}
+                                placeholder={t('room.form.fields.gamePlaceholder')}
                             />
                             {errors.gameId && (
                                 <p className="text-sm text-destructive">{errors.gameId}</p>
@@ -140,7 +140,7 @@ export default function CreateRoomPage() {
 
                         {/* Max Members */}
                         <div className="space-y-2">
-                            <Label>{t('room.create.maxMembers')}</Label>
+                            <Label>{t('room.form.fields.maxMembers')}</Label>
                             <Select
                                 value={formData.maxMembers}
                                 onValueChange={(value) =>
@@ -153,7 +153,7 @@ export default function CreateRoomPage() {
                                 <SelectContent>
                                     {[2, 3, 4, 5, 6, 8, 10, 15, 20].map((n) => (
                                         <SelectItem key={n} value={String(n)}>
-                                            {n} {t('room.create.people')}
+                                            {n} {t('room.form.fields.people')}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -162,14 +162,14 @@ export default function CreateRoomPage() {
 
                         {/* Description */}
                         <div className="space-y-2">
-                            <Label htmlFor="description">{t('room.create.descriptionLabel')}</Label>
+                            <Label htmlFor="description">{t('room.form.fields.description')}</Label>
                             <Textarea
                                 id="description"
                                 value={formData.description}
                                 onChange={(e) =>
                                     setFormData({ ...formData, description: e.target.value })
                                 }
-                                placeholder={t('room.create.descriptionPlaceholder')}
+                                placeholder={t('room.form.fields.descriptionPlaceholder')}
                                 rows={3}
                                 maxLength={256}
                             />
@@ -178,9 +178,9 @@ export default function CreateRoomPage() {
                         {/* Private Room */}
                         <div className="flex items-center justify-between">
                             <div>
-                                <Label>{t('room.create.private')}</Label>
+                                <Label>{t('room.form.fields.private')}</Label>
                                 <p className="text-sm text-muted-foreground">
-                                    {t('room.create.privateDescription')}
+                                    {t('room.form.fields.privateDescription')}
                                 </p>
                             </div>
                             <Switch
@@ -194,7 +194,7 @@ export default function CreateRoomPage() {
                         {/* Password (if private) */}
                         {formData.isPrivate && (
                             <div className="space-y-2">
-                                <Label htmlFor="password">{t('room.create.password')}</Label>
+                                <Label htmlFor="password">{t('room.form.fields.password')}</Label>
                                 <Input
                                     id="password"
                                     type="password"
@@ -202,7 +202,7 @@ export default function CreateRoomPage() {
                                     onChange={(e) =>
                                         setFormData({ ...formData, password: e.target.value })
                                     }
-                                    placeholder={t('room.create.passwordPlaceholder')}
+                                    placeholder={t('room.form.fields.passwordPlaceholder')}
                                     maxLength={32}
                                 />
                                 {errors.password && (
@@ -216,9 +216,9 @@ export default function CreateRoomPage() {
                             <div className="flex items-center gap-2">
                                 <Mic className="h-4 w-4 text-muted-foreground" />
                                 <div>
-                                    <Label>{t('room.create.voice')}</Label>
+                                    <Label>{t('room.form.voice.enable')}</Label>
                                     <p className="text-sm text-muted-foreground">
-                                        {t('room.create.voiceDescription')}
+                                        {t('room.form.voice.description')}
                                     </p>
                                 </div>
                             </div>
@@ -241,7 +241,7 @@ export default function CreateRoomPage() {
                                 {t('common.cancel')}
                             </Button>
                             <Button type="submit" disabled={isLoading} className="flex-1">
-                                {isLoading ? t('room.createForm.creating') : t('room.createForm.submit')}
+                                {isLoading ? t('room.form.creating') : t('room.form.submit')}
                             </Button>
                         </div>
                     </form>

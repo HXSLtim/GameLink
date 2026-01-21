@@ -168,7 +168,7 @@ export default function OrderDetailPage() {
                                     </div>
                                     <div className="flex flex-col">
                                         <span className="text-muted-foreground text-xs">Total Amount</span>
-                                        <span className="font-medium">¥{currentOrder.amount.toFixed(2)}</span>
+                                        <span className="font-medium">¥{(currentOrder.amount ?? 0).toFixed(2)}</span>
                                     </div>
                                 </div>
                             </div>

@@ -254,7 +254,7 @@ export default function RoomDetailPage() {
                             {!isMember ? (
                                 /* Join button */
                                 <Button className="w-full" onClick={handleJoin} disabled={isJoining}>
-                                    {isJoining ? t('room.joining') : t('room.join')}
+                                    {isJoining ? t('room.joining') : t('room.actions.join')}
                                 </Button>
                             ) : (
                                 <>
@@ -266,7 +266,7 @@ export default function RoomDetailPage() {
                                             onClick={handleToggleReady}
                                         >
                                             <Check className="h-4 w-4 mr-2" />
-                                            {currentMember?.isReady ? t('room.cancelReady') : t('room.ready')}
+                                            {currentMember?.isReady ? t('room.actions.cancelReady') : t('room.actions.ready')}
                                         </Button>
                                     )}
 
@@ -276,13 +276,13 @@ export default function RoomDetailPage() {
                                             {currentRoom.roomStatus === 'waiting' && (
                                                 <Button className="w-full" onClick={handleStartGame}>
                                                     <Play className="h-4 w-4 mr-2" />
-                                                    {t('room.startGame')}
+                                                    {t('room.actions.start')}
                                                 </Button>
                                             )}
                                             {currentRoom.roomStatus === 'in_game' && (
                                                 <Button className="w-full" onClick={handleFinishGame}>
                                                     <Square className="h-4 w-4 mr-2" />
-                                                    {t('room.finishGame')}
+                                                    {t('room.actions.finish')}
                                                 </Button>
                                             )}
                                             <Button
@@ -291,7 +291,7 @@ export default function RoomDetailPage() {
                                                 onClick={() => navigate(`/rooms/${roomId}/edit`)}
                                             >
                                                 <Settings className="h-4 w-4 mr-2" />
-                                                {t('room.settings')}
+                                                {t('room.detail.settings')}
                                             </Button>
                                         </>
                                     )}
@@ -301,14 +301,14 @@ export default function RoomDetailPage() {
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
                                                 <Button variant="destructive" className="w-full">
-                                                    {t('room.close')}
+                                                    {t('room.actions.close')}
                                                 </Button>
                                             </AlertDialogTrigger>
                                             <AlertDialogContent>
                                                 <AlertDialogHeader>
-                                                    <AlertDialogTitle>{t('room.closeConfirm.title')}</AlertDialogTitle>
+                                                    <AlertDialogTitle>{t('room.dialogs.closeConfirm.title')}</AlertDialogTitle>
                                                     <AlertDialogDescription>
-                                                        {t('room.closeConfirm.description')}
+                                                        {t('room.dialogs.closeConfirm.description')}
                                                     </AlertDialogDescription>
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
@@ -322,7 +322,7 @@ export default function RoomDetailPage() {
                                     ) : (
                                         <Button variant="outline" className="w-full" onClick={handleLeave}>
                                             <LogOut className="h-4 w-4 mr-2" />
-                                            {t('room.leave')}
+                                            {t('room.actions.leave')}
                                         </Button>
                                     )}
                                 </>
@@ -347,9 +347,9 @@ export default function RoomDetailPage() {
             <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>{t('room.passwordRequired')}</DialogTitle>
+                        <DialogTitle>{t('room.dialogs.enterPassword.title')}</DialogTitle>
                         <DialogDescription>
-                            {t('room.passwordRequiredDescription')}
+                            {t('room.dialogs.enterPassword.description')}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
@@ -360,7 +360,7 @@ export default function RoomDetailPage() {
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                placeholder={t('room.passwordPlaceholder')}
+                                placeholder={t('room.dialogs.enterPassword.placeholder')}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter') {
                                         handlePasswordSubmit();
@@ -380,7 +380,7 @@ export default function RoomDetailPage() {
                             {t('common.cancel')}
                         </Button>
                         <Button onClick={handlePasswordSubmit} disabled={isJoining || !password.trim()}>
-                            {isJoining ? t('room.joining') : t('room.join')}
+                            {isJoining ? t('room.joining') : t('room.actions.join')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

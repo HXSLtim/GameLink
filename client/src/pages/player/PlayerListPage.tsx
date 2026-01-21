@@ -155,7 +155,7 @@ export default function PlayerListPage() {
                                     <div className="flex items-center justify-between text-sm">
                                         <div className="flex items-center gap-1.5 bg-yellow-500/10 text-yellow-500 px-2 py-1 rounded-md font-medium">
                                             <Star className="w-3.5 h-3.5 fill-current" />
-                                            {player.rating.toFixed(1)}
+                                            {player.rating?.toFixed(1) || '-'}
                                         </div>
                                         <div className="text-muted-foreground flex items-center gap-1 text-xs">
                                             <ShoppingBag className="w-3.5 h-3.5" />
@@ -165,7 +165,7 @@ export default function PlayerListPage() {
 
                                     <div className="space-y-2">
                                         <div className="flex flex-wrap gap-1.5 h-6 overflow-hidden">
-                                            {player.tags.slice(0, 3).map(tag => (
+                                            {(player.tags || []).slice(0, 3).map(tag => (
                                                 <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-secondary/50 text-secondary-foreground border border-white/5">
                                                     {tag}
                                                 </span>

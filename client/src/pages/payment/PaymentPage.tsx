@@ -124,7 +124,7 @@ export default function PaymentPage() {
                         <CardContent className="grid gap-4">
                             <div className="flex items-center justify-between">
                                 <span className="font-medium">{order.serviceName}</span>
-                                <span className="font-mono text-lg">¥{order.amount.toFixed(2)}</span>
+                                <span className="font-mono text-lg">¥{(order.amount ?? 0).toFixed(2)}</span>
                             </div>
                             <div className="flex items-center justify-between text-sm text-muted-foreground">
                                 <span>{t('payment.order_no', { defaultValue: 'Order No.' })}</span>
@@ -153,10 +153,10 @@ export default function PaymentPage() {
                             <Button
                                 className="w-full h-12 text-lg"
                                 onClick={handlePay}
-                                disabled={processPayment || (paymentMethod === 'balance' && (balance || 0) < order.amount)}
+                                disabled={processPayment || (paymentMethod === 'balance' && (balance || 0) < (order.amount ?? 0))}
                             >
                                 {processPayment && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {t('payment.pay_now', { defaultValue: 'Pay' })} ¥{order.amount.toFixed(2)}
+                                {t('payment.pay_now', { defaultValue: 'Pay' })} ¥{(order.amount ?? 0).toFixed(2)}
                             </Button>
 
                             <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">

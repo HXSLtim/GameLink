@@ -91,7 +91,7 @@ export default function FavoritesPage() {
                                                 <h3 className="font-bold text-lg truncate">{player.nickname}</h3>
                                                 <div className="flex items-center text-yellow-400 text-sm font-bold bg-black/40 px-1.5 py-0.5 rounded backdrop-blur-md">
                                                     <Star className="h-3 w-3 fill-yellow-400 mr-1" />
-                                                    {player.rating.toFixed(1)}
+                                                    {player.rating?.toFixed(1) || '-'}
                                                 </div>
                                             </div>
                                             <div className="flex items-center text-xs text-white/80 mt-1">

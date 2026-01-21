@@ -118,7 +118,7 @@ export default function PlayerDetailPage() {
                                     <span>{currentPlayer.gameName}</span>
                                     <span className="mx-1">•</span>
                                     <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                                    <span className="font-medium text-foreground">{currentPlayer.rating.toFixed(1)}</span>
+                                    <span className="font-medium text-foreground">{currentPlayer.rating?.toFixed(1) || '-'}</span>
                                 </div>
                             </div>
                             <div className="flex flex-col items-end">
@@ -133,7 +133,7 @@ export default function PlayerDetailPage() {
 
                         {/* Tags */}
                         <div className="flex flex-wrap gap-2 pt-2">
-                            {currentPlayer.tags.map(tag => (
+                            {(currentPlayer.tags || []).map(tag => (
                                 <Badge key={tag} variant="secondary" className="px-3 py-1 bg-secondary/50 backdrop-blur-sm border border-white/5">
                                     {tag}
                                 </Badge>
@@ -284,7 +284,7 @@ export default function PlayerDetailPage() {
 
                             <div className="bg-muted/50 p-4 rounded-lg flex justify-between items-center">
                                 <span className="font-bold">Total Price</span>
-                                <span className="text-2xl font-bold text-primary">¥{(currentPlayer.price * quantity).toFixed(2)}</span>
+                                <span className="text-2xl font-bold text-primary">¥{((currentPlayer.price ?? 0) * quantity).toFixed(2)}</span>
                             </div>
                         </div>
                     )}

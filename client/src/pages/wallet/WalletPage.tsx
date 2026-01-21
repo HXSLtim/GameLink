@@ -62,7 +62,7 @@ export default function WalletPage() {
                                 <p className="text-indigo-100 font-medium tracking-wide opacity-80 uppercase text-sm">Total Balance</p>
                                 <h2 className="text-5xl font-bold mt-2 tracking-tight flex items-baseline gap-2">
                                     <span className="text-2xl opacity-60">{currency}</span>
-                                    {balance.toFixed(2)}
+                                    {(balance ?? 0).toFixed(2)}
                                 </h2>
                             </div>
 
@@ -160,7 +160,7 @@ export default function WalletPage() {
                                                 </div>
                                             </div>
                                             <div className={`font-bold ${tx.direction === 'in' ? 'text-green-500' : 'text-foreground'}`}>
-                                                {tx.direction === 'in' ? '+' : '-'}{currency}{(tx.amountCents / 100).toFixed(2)}
+                                                {tx.direction === 'in' ? '+' : '-'}{currency}{((tx.amountCents ?? 0) / 100).toFixed(2)}
                                             </div>
                                         </div>
                                     ))}

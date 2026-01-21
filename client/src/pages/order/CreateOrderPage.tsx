@@ -131,7 +131,7 @@ export default function CreateOrderPage() {
                         <div className="bg-primary/5 p-6 rounded-xl space-y-3">
                             <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">{t('orders.subtotal', { defaultValue: 'Subtotal' })}</span>
-                                <span>${totalAmount.toFixed(2)}</span>
+                                <span>${(totalAmount ?? 0).toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">{t('orders.service_fee', { defaultValue: 'Service Fee' })}</span>
@@ -140,7 +140,7 @@ export default function CreateOrderPage() {
                             <Separator className="bg-primary/10" />
                             <div className="flex justify-between items-end pt-2">
                                 <span className="font-semibold">{t('orders.total', { defaultValue: 'Total' })}</span>
-                                <span className="text-3xl font-bold text-primary">${totalAmount.toFixed(2)}</span>
+                                <span className="text-3xl font-bold text-primary">${(totalAmount ?? 0).toFixed(2)}</span>
                             </div>
                         </div>
                     </CardContent>

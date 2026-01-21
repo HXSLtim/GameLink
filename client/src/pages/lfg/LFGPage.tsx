@@ -104,7 +104,7 @@ export default function LFGPage() {
                             size="sm"
                             onClick={() => handleCancel(activeRequest.id)}
                         >
-                            {t('lfg.cancel')}
+                            {t('lfg.actions.cancel')}
                         </Button>
                     </div>
                 </div>
@@ -146,7 +146,7 @@ export default function LFGPage() {
                     disabled={!!activeRequest}
                 >
                     <Plus className="h-4 w-4" />
-                    {t('lfg.create')}
+                    {t('lfg.actions.create')}
                 </Button>
             </div>
 

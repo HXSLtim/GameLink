@@ -41,7 +41,7 @@ export default function CreateLFGPage() {
     const validate = () => {
         const newErrors: Record<string, string> = {};
         if (!formData.gameId) {
-            newErrors.gameId = t('lfg.create.errors.gameRequired');
+            newErrors.gameId = t('lfg.form.errors.gameRequired');
         }
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -77,8 +77,8 @@ export default function CreateLFGPage() {
                     <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <PageHeader
-                    title={t('lfg.create.title')}
-                    description={t('lfg.create.description')}
+                    title={t('lfg.form.title')}
+                    description={t('lfg.form.description')}
                 />
             </div>
 
@@ -87,7 +87,7 @@ export default function CreateLFGPage() {
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {/* Request Type */}
                         <div className="space-y-2">
-                            <Label>{t('lfg.create.type')}</Label>
+                            <Label>{t('lfg.form.fields.type')}</Label>
                             <Select
                                 value={formData.requestType}
                                 onValueChange={(value) =>
@@ -108,14 +108,14 @@ export default function CreateLFGPage() {
                             </Select>
                             <p className="text-sm text-muted-foreground">
                                 {formData.requestType === 'find_player'
-                                    ? t('lfg.create.typeDescriptionFindPlayer')
-                                    : t('lfg.create.typeDescriptionFindTeam')}
+                                    ? t('lfg.form.fields.typeDescriptionFindPlayer')
+                                    : t('lfg.form.fields.typeDescriptionFindTeam')}
                             </p>
                         </div>
 
                         {/* Game Selection */}
                         <div className="space-y-2">
-                            <Label>{t('lfg.create.game')}</Label>
+                            <Label>{t('lfg.form.fields.game')}</Label>
                             <GameSelector
                                 value={formData.gameId || undefined}
                                 onChange={(gameId: number, game: Game) => {
@@ -128,7 +128,7 @@ export default function CreateLFGPage() {
                                         setErrors({ ...errors, gameId: '' });
                                     }
                                 }}
-                                placeholder={t('lfg.create.gamePlaceholder')}
+                                placeholder={t('lfg.form.fields.gamePlaceholder')}
                                 error={errors.gameId}
                             />
                             {errors.gameId && (
@@ -138,26 +138,26 @@ export default function CreateLFGPage() {
 
                         {/* Title */}
                         <div className="space-y-2">
-                            <Label htmlFor="title">{t('lfg.create.titleLabel')}</Label>
+                            <Label htmlFor="title">{t('lfg.form.fields.title')}</Label>
                             <Input
                                 id="title"
                                 value={formData.title}
                                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                placeholder={t('lfg.create.titlePlaceholder')}
+                                placeholder={t('lfg.form.fields.titlePlaceholder')}
                                 maxLength={64}
                             />
                         </div>
 
                         {/* Description */}
                         <div className="space-y-2">
-                            <Label htmlFor="description">{t('lfg.create.descriptionLabel')}</Label>
+                            <Label htmlFor="description">{t('lfg.form.fields.description')}</Label>
                             <Textarea
                                 id="description"
                                 value={formData.description}
                                 onChange={(e) =>
                                     setFormData({ ...formData, description: e.target.value })
                                 }
-                                placeholder={t('lfg.create.descriptionPlaceholder')}
+                                placeholder={t('lfg.form.fields.descriptionPlaceholder')}
                                 rows={3}
                                 maxLength={256}
                             />
@@ -165,7 +165,7 @@ export default function CreateLFGPage() {
 
                         {/* Required Players */}
                         <div className="space-y-2">
-                            <Label>{t('lfg.create.requiredPlayers')}</Label>
+                            <Label>{t('lfg.form.fields.requiredPlayers')}</Label>
                             <Select
                                 value={formData.requiredPlayers}
                                 onValueChange={(value) =>
@@ -178,7 +178,7 @@ export default function CreateLFGPage() {
                                 <SelectContent>
                                     {[1, 2, 3, 4, 5].map((n) => (
                                         <SelectItem key={n} value={String(n)}>
-                                            {n} {t('lfg.create.people')}
+                                            {n} {t('lfg.form.fields.people')}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -187,19 +187,19 @@ export default function CreateLFGPage() {
 
                         {/* Min Rank */}
                         <div className="space-y-2">
-                            <Label htmlFor="minRank">{t('lfg.create.minRank')}</Label>
+                            <Label htmlFor="minRank">{t('lfg.form.fields.minRank')}</Label>
                             <Input
                                 id="minRank"
                                 value={formData.minRank}
                                 onChange={(e) => setFormData({ ...formData, minRank: e.target.value })}
-                                placeholder={t('lfg.create.minRankPlaceholder')}
+                                placeholder={t('lfg.form.fields.minRankPlaceholder')}
                                 maxLength={32}
                             />
                         </div>
 
                         {/* Max Price */}
                         <div className="space-y-2">
-                            <Label htmlFor="maxPrice">{t('lfg.create.maxPrice')}</Label>
+                            <Label htmlFor="maxPrice">{t('lfg.form.fields.maxPrice')}</Label>
                             <Input
                                 id="maxPrice"
                                 type="number"
@@ -207,16 +207,16 @@ export default function CreateLFGPage() {
                                 onChange={(e) =>
                                     setFormData({ ...formData, maxPriceCents: e.target.value })
                                 }
-                                placeholder={t('lfg.create.maxPricePlaceholder')}
+                                placeholder={t('lfg.form.fields.maxPricePlaceholder')}
                             />
                             <p className="text-sm text-muted-foreground">
-                                {t('lfg.create.maxPriceHint')}
+                                {t('lfg.form.fields.maxPriceHint')}
                             </p>
                         </div>
 
                         {/* Expire Time */}
                         <div className="space-y-2">
-                            <Label>{t('lfg.create.expireTime')}</Label>
+                            <Label>{t('lfg.form.fields.expireTime')}</Label>
                             <Select
                                 value={formData.expireMinutes}
                                 onValueChange={(value) =>
@@ -227,10 +227,10 @@ export default function CreateLFGPage() {
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="15">15 {t('lfg.create.minutes')}</SelectItem>
-                                    <SelectItem value="30">30 {t('lfg.create.minutes')}</SelectItem>
-                                    <SelectItem value="60">60 {t('lfg.create.minutes')}</SelectItem>
-                                    <SelectItem value="120">120 {t('lfg.create.minutes')}</SelectItem>
+                                    <SelectItem value="15">15 {t('lfg.form.fields.minutes')}</SelectItem>
+                                    <SelectItem value="30">30 {t('lfg.form.fields.minutes')}</SelectItem>
+                                    <SelectItem value="60">60 {t('lfg.form.fields.minutes')}</SelectItem>
+                                    <SelectItem value="120">120 {t('lfg.form.fields.minutes')}</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -246,7 +246,7 @@ export default function CreateLFGPage() {
                                 {t('common.cancel')}
                             </Button>
                             <Button type="submit" disabled={isLoading} className="flex-1">
-                                {isLoading ? t('lfg.create.creating') : t('lfg.create.submit')}
+                                {isLoading ? t('lfg.form.creating') : t('lfg.form.submit')}
                             </Button>
                         </div>
                     </form>

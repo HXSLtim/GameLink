@@ -163,14 +163,14 @@ export default function ReferralPage() {
                             <Card className="bg-gradient-to-br from-orange-500/10 to-orange-500/5 border-orange-500/20">
                                 <CardContent className="p-4 text-center">
                                     <Wallet className="w-5 h-5 mx-auto mb-2 text-orange-500" />
-                                    <div className="text-2xl font-bold text-orange-500">¥{rewardsSummary.total.toFixed(0)}</div>
+                                    <div className="text-2xl font-bold text-orange-500">¥{(rewardsSummary.total ?? 0).toFixed(0)}</div>
                                     <div className="text-xs text-muted-foreground">{t('referral.total_earned', { defaultValue: 'Earned' })}</div>
                                 </CardContent>
                             </Card>
                             <Card className="bg-gradient-to-br from-purple-500/10 to-purple-500/5 border-purple-500/20">
                                 <CardContent className="p-4 text-center">
                                     <Clock className="w-5 h-5 mx-auto mb-2 text-purple-500" />
-                                    <div className="text-2xl font-bold text-purple-500">¥{rewardsSummary.pending.toFixed(0)}</div>
+                                    <div className="text-2xl font-bold text-purple-500">¥{(rewardsSummary.pending ?? 0).toFixed(0)}</div>
                                     <div className="text-xs text-muted-foreground">{t('referral.pending', { defaultValue: 'Pending' })}</div>
                                 </CardContent>
                             </Card>
@@ -291,7 +291,7 @@ function ReferralRecordItem({ record }: { record: ReferralRecord }) {
             </div>
             <div className="flex items-center gap-3">
                 {record.status === ReferralStatus.REWARDED && (
-                    <span className="text-green-500 font-medium">+¥{(record.rewardCents / 100).toFixed(0)}</span>
+                    <span className="text-green-500 font-medium">+¥{((record.rewardCents ?? 0) / 100).toFixed(0)}</span>
                 )}
                 {getStatusBadge()}
             </div>

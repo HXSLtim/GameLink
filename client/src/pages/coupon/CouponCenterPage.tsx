@@ -234,7 +234,7 @@ function CouponTemplateCard({
                 </CardTitle>
                 <CardDescription>
                     {template.minOrderCents > 0
-                        ? t('coupon.min_spend', { defaultValue: 'Min. spend ¥{{amount}}', amount: (template.minOrderCents / 100).toFixed(0) })
+                        ? t('coupon.min_spend', { defaultValue: 'Min. spend ¥{{amount}}', amount: ((template.minOrderCents ?? 0) / 100).toFixed(0) })
                         : t('coupon.no_minimum', { defaultValue: 'No minimum spend' })}
                 </CardDescription>
             </CardHeader>
@@ -305,7 +305,7 @@ function MyCouponCard({ coupon, isHistory = false }: { coupon: Coupon; isHistory
                         </CardTitle>
                         <CardDescription className="mt-1">
                             {coupon.minOrderCents > 0
-                                ? t('coupon.min_spend', { defaultValue: 'Min. spend ¥{{amount}}', amount: (coupon.minOrderCents / 100).toFixed(0) })
+                                ? t('coupon.min_spend', { defaultValue: 'Min. spend ¥{{amount}}', amount: ((coupon.minOrderCents ?? 0) / 100).toFixed(0) })
                                 : t('coupon.no_minimum', { defaultValue: 'No minimum spend' })}
                         </CardDescription>
                     </div>

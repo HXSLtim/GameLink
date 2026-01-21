@@ -101,7 +101,7 @@ export default function EarningsPage() {
                                         <TableCell className="font-medium">{item.id}</TableCell>
                                         <TableCell>{item.date}</TableCell>
                                         <TableCell>{item.project}</TableCell>
-                                        <TableCell className="text-green-600 font-bold">+¥{item.amount.toFixed(2)}</TableCell>
+                                        <TableCell className="text-green-600 font-bold">+¥{(item.amount ?? 0).toFixed(2)}</TableCell>
                                         <TableCell>
                                             <Badge variant={item.status === 'completed' ? 'default' : 'secondary'}>
                                                 {item.status}

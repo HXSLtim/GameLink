@@ -142,7 +142,7 @@ export default function HomePage() {
                                                 <div className="flex items-center justify-between text-xs font-medium">
                                                     <div className="flex items-center gap-1 text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">
                                                         <Star className="h-3 w-3 fill-current" />
-                                                        {player.rating.toFixed(1)}
+                                                        {player.rating?.toFixed(1) || '-'}
                                                     </div>
                                                     <span className="text-muted-foreground">{player.orderCount} {t('nav.home_content.orders_suffix')}</span>
                                                 </div>

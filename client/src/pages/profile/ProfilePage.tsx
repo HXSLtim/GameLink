@@ -110,7 +110,7 @@ export default function ProfilePage() {
                             <CardTitle className="i18n-label">{t('profile.wallet.title')}</CardTitle>
                         </CardHeader>
                         <CardContent className="pb-6">
-                            <div className="text-3xl font-bold tracking-tight">{currency} {balance.toFixed(2)}</div>
+                            <div className="text-3xl font-bold tracking-tight">{currency} {balance?.toFixed(2) || '0.00'}</div>
                             <Button variant="link" className="px-0 h-auto mt-3 text-primary group-hover:underline-offset-4 text-base">
                                 {t('profile.wallet.recharge')} <ChevronRight className="h-4 w-4 ml-1 transition-transform group-hover:translate-x-1" />
                             </Button>

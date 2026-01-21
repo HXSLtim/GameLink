@@ -101,7 +101,7 @@ export default function PlayerOrderListPage() {
                                                         <p className="text-sm text-muted-foreground">{format(new Date(order.createdAt), 'MMM d, p')}</p>
                                                     </div>
                                                     <div className="text-right">
-                                                        <div className="text-lg font-bold">¥{order.amount.toFixed(0)}</div>
+                                                        <div className="text-lg font-bold">¥{(order.amount ?? 0).toFixed(0)}</div>
                                                         <div className="text-xs text-muted-foreground">{order.quantity} hours</div>
                                                     </div>
                                                 </div>
