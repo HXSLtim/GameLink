@@ -7,6 +7,9 @@ import { ThemeProvider } from '@/context/ThemeContext';
 import { ErrorBoundary } from '@/components';
 import { smartInit } from '@/services/init';
 import { logger } from '@/utils/logger';
+import { useAuthStore } from '@/stores/modules/authStore';
+import { useChatStore } from '@/stores/modules/chatStore';
+import { wsManager } from '@/utils/websocket';
 import './App.css';
 
 /**
@@ -18,6 +21,10 @@ function App() {
    * 自动同步路由和权限到后端，为超管分配所有权限
    */
   const initialized = useRef(false);
+
+  // 获取 auth 状态
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const token = useAuthStore((state) => state.token);
 
   useEffect(() => {
     if (initialized.current) return;
@@ -51,6 +58,40 @@ function App() {
 
     runInit();
   }, []);
+
+  /**
+   * WebSocket 连接管理
+   * 用户登录后建立 WebSocket 连接，登出时断开
+   */
+  useEffect(() => {
+    if (!isAuthenticated || !token) {
+      // 未登录或无 token，断开连接
+      wsManager.disconnect();
+      return;
+    }
+
+    // 构建 WebSocket URL
+    // 使用当前 API 基础 URL 替换协议为 ws/wss
+    const apiBase = import.meta.env.VITE_API_BASE_URL || window.location.host;
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${wsProtocol}//${apiBase}/api/v1/admin/ws/monitor`;
+
+    // 连接 WebSocket
+    wsManager.updateConfig({ url: wsUrl, token });
+    wsManager.connect();
+
+    // 初始化聊天 WebSocket 处理器
+    useChatStore.getState().initWebSocket();
+
+    logger.info('[App] WebSocket connected');
+
+    // 清理函数：组件卸载或用户登出时断开连接
+    return () => {
+      wsManager.disconnect();
+      useChatStore.getState().cleanupWebSocket();
+      logger.info('[App] WebSocket disconnected');
+    };
+  }, [isAuthenticated, token]);
 
   return (
     <ErrorBoundary>
