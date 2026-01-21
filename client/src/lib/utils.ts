@@ -10,7 +10,8 @@ export function cn(...inputs: ClassValue[]) {
  * @param cents Amount in cents (分)
  * @returns Formatted string like "¥12.34"
  */
-export function formatMoney(cents: number): string {
+export function formatMoney(cents?: number): string {
+    if (cents === undefined || cents === null) return '¥0.00';
     const yuan = cents / 100;
     return `¥${yuan.toFixed(2)}`;
 }
@@ -18,7 +19,8 @@ export function formatMoney(cents: number): string {
 /**
  * Format cents to yuan number
  */
-export function centsToYuan(cents: number): number {
+export function centsToYuan(cents?: number): number {
+    if (cents === undefined || cents === null) return 0;
     return cents / 100;
 }
 

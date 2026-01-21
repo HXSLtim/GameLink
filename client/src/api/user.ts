@@ -7,8 +7,7 @@ import { http } from '@/lib/http';
 import type {
     User,
     UpdateUserRequest,
-    UserPreferences,
-    PaginatedResponse
+    UserPreferences
 } from '@/types/api';
 
 export const userApi = {

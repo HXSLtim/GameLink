@@ -55,7 +55,7 @@ export async function performHealthChecks(): Promise<HealthCheckResult> {
             name: 'LocalStorage',
             status: 'pass',
         });
-    } catch (error) {
+    } catch (_error) {
         checks.push({
             name: 'LocalStorage',
             status: 'fail',
