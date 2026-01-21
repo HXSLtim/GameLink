@@ -1,0 +1,61 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - button "中 En Toggle language" [ref=e5] [cursor=pointer]:
+        - generic: 中
+        - generic [ref=e6]: En
+        - generic [ref=e7]: Toggle language
+      - button "Toggle Theme" [ref=e8] [cursor=pointer]:
+        - img
+        - img
+        - img
+        - generic [ref=e9]: Toggle Theme
+    - generic [ref=e10]:
+      - generic [ref=e14]:
+        - img [ref=e15]
+        - text: GameLink
+      - generic [ref=e17]:
+        - blockquote [ref=e18]:
+          - paragraph [ref=e19]: "\"Connect with pro players, elevate your skills, and experience gaming like never before.\""
+        - generic [ref=e20]:
+          - generic [ref=e21]:
+            - img [ref=e22]
+            - text: Anonymous
+          - generic [ref=e24]:
+            - img [ref=e25]
+            - text: Fast & Secure
+    - generic [ref=e31]:
+      - generic [ref=e32]:
+        - heading "Welcome Back" [level=1] [ref=e33]
+        - paragraph [ref=e34]: Enter your credentials to access your account
+      - generic [ref=e35]:
+        - generic [ref=e36]:
+          - generic [ref=e37]: Username
+          - textbox "Username" [ref=e38]
+        - generic [ref=e39]:
+          - generic [ref=e40]:
+            - generic [ref=e41]: Password
+            - link "Forgot password?" [ref=e42] [cursor=pointer]:
+              - /url: /forgot-password
+          - textbox "Password" [ref=e43]:
+            - /placeholder: ••••••••
+        - generic [ref=e44]:
+          - checkbox "Remember me" [ref=e45] [cursor=pointer]
+          - checkbox
+          - generic [ref=e46]: Remember me
+        - button "Sign In" [ref=e47] [cursor=pointer]
+      - generic [ref=e52]: Or continue with
+      - button "Create an account" [ref=e53] [cursor=pointer]
+      - paragraph [ref=e54]:
+        - text: By clicking continue, you agree to our
+        - link "Terms" [ref=e55] [cursor=pointer]:
+          - /url: /terms
+        - text: and
+        - link "Privacy Policy" [ref=e56] [cursor=pointer]:
+          - /url: /privacy
+        - text: .
+  - region "Notifications alt+T"
+```

@@ -1,0 +1,1545 @@
+{
+  "config": {
+    "configFile": "D:\\Desktop\\Code\\GameLink\\client\\playwright.config.ts",
+    "rootDir": "D:/Desktop/Code/GameLink/client/tests/e2e",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "html",
+        {
+          "open": "never",
+          "outputFolder": "playwright-report"
+        }
+      ],
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "D:/Desktop/Code/GameLink/client/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "D:/Desktop/Code/GameLink/client/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.57.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "auth.spec.ts",
+      "file": "auth.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Client Authentication",
+          "file": "auth.spec.ts",
+          "line": 17,
+          "column": 6,
+          "specs": [],
+          "suites": [
+            {
+              "title": "Login Page",
+              "file": "auth.spec.ts",
+              "line": 26,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "should display login page correctly",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 1082,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-01-20T18:09:44.499Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "d748ac400d08b85935ef-ce5f290d4cb833da021c",
+                  "file": "auth.spec.ts",
+                  "line": 27,
+                  "column": 5
+                },
+                {
+                  "title": "should show validation errors for empty fields",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 958,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-01-20T18:09:45.785Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "d748ac400d08b85935ef-bc9b45be36f19a5183b0",
+                  "file": "auth.spec.ts",
+                  "line": 39,
+                  "column": 5
+                },
+                {
+                  "title": "should allow Enter key to submit form",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 1013,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-01-20T18:09:46.753Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "d748ac400d08b85935ef-a7a377ecc4623e102d05",
+                  "file": "auth.spec.ts",
+                  "line": 55,
+                  "column": 5
+                }
+              ]
+            },
+            {
+              "title": "Login Flow",
+              "file": "auth.spec.ts",
+              "line": 72,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "should login successfully with valid credentials",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 1028,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-01-20T18:09:47.776Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "d748ac400d08b85935ef-e6900a3cda76f6314d7f",
+                  "file": "auth.spec.ts",
+                  "line": 78,
+                  "column": 5
+                },
+                {
+                  "title": "should show error with invalid credentials",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 1045,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-01-20T18:09:48.815Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "d748ac400d08b85935ef-8939f819665793d90b06",
+                  "file": "auth.spec.ts",
+                  "line": 89,
+                  "column": 5
+                },
+                {
+                  "title": "should persist session after page reload",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 1347,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-01-20T18:09:49.870Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "d748ac400d08b85935ef-35a4867148a07a931643",
+                  "file": "auth.spec.ts",
+                  "line": 115,
+                  "column": 5
+                }
+              ]
+            },
+            {
+              "title": "Navigation",
+              "file": "auth.spec.ts",
+              "line": 132,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "should redirect to login when accessing protected routes",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 636,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-01-20T18:09:51.228Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "d748ac400d08b85935ef-eadea454eb5d87a873a9",
+                  "file": "auth.spec.ts",
+                  "line": 133,
+                  "column": 5
+                },
+                {
+                  "title": "should navigate home after login",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 1319,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-01-20T18:09:51.874Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "d748ac400d08b85935ef-9d816fb1eccdb9b7fcfd",
+                  "file": "auth.spec.ts",
+                  "line": 143,
+                  "column": 5
+                }
+              ]
+            },
+            {
+              "title": "UI/UX",
+              "file": "auth.spec.ts",
+              "line": 161,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "should have responsive layout",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 1128,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-01-20T18:09:53.204Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "d748ac400d08b85935ef-c0fa3017c6066ed6cf5f",
+                  "file": "auth.spec.ts",
+                  "line": 162,
+                  "column": 5
+                },
+                {
+                  "title": "should show loading state during login",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 1040,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-01-20T18:09:54.342Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "d748ac400d08b85935ef-c9c9bc7b3c10c1f8d42e",
+                  "file": "auth.spec.ts",
+                  "line": 174,
+                  "column": 5
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "player-browsing.spec.ts",
+      "file": "player-browsing.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Player Browsing",
+          "file": "player-browsing.spec.ts",
+          "line": 16,
+          "column": 6,
+          "specs": [],
+          "suites": [
+            {
+              "title": "Home Page",
+              "file": "player-browsing.spec.ts",
+              "line": 27,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "should display home page correctly",
+                  "ok": false,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "failed",
+                          "duration": 5842,
+                          "error": {
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('button').filter({ hasText: /arrow/i }).or(locator('button').filter({ hasText: /find|players|陪玩|找/i })).first().or(getByRole('button').filter({ hasText: /become|player|陪玩/i }).or(locator('button[variant=\"outline\"]')).nth(1))\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('button').filter({ hasText: /arrow/i }).or(locator('button').filter({ hasText: /find|players|陪玩|找/i })).first().or(getByRole('button').filter({ hasText: /become|player|陪玩/i }).or(locator('button[variant=\"outline\"]')).nth(1))\u001b[22m\n",
+                            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('button').filter({ hasText: /arrow/i }).or(locator('button').filter({ hasText: /find|players|陪玩|找/i })).first().or(getByRole('button').filter({ hasText: /become|player|陪玩/i }).or(locator('button[variant=\"outline\"]')).nth(1))\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('button').filter({ hasText: /arrow/i }).or(locator('button').filter({ hasText: /find|players|陪玩|找/i })).first().or(getByRole('button').filter({ hasText: /become|player|陪玩/i }).or(locator('button[variant=\"outline\"]')).nth(1))\u001b[22m\n\n    at D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts:38:80",
+                            "location": {
+                              "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts",
+                              "column": 80,
+                              "line": 38
+                            },
+                            "snippet": "\u001b[0m \u001b[90m 36 |\u001b[39m\n \u001b[90m 37 |\u001b[39m       \u001b[90m// Check buttons exist\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 38 |\u001b[39m       \u001b[36mawait\u001b[39m expect(homePage\u001b[33m.\u001b[39mfindPlayersButton\u001b[33m.\u001b[39mor(homePage\u001b[33m.\u001b[39mbecomePlayerButton))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 39 |\u001b[39m\n \u001b[90m 40 |\u001b[39m       \u001b[90m// Check sections exist (they may have skeleton loaders)\u001b[39m\n \u001b[90m 41 |\u001b[39m       \u001b[36mawait\u001b[39m expect(homePage\u001b[33m.\u001b[39mgameCards\u001b[33m.\u001b[39mfirst()\u001b[33m.\u001b[39mor(homePage\u001b[33m.\u001b[39mskeletonLoaders\u001b[33m.\u001b[39mfirst()))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\u001b[0m"
+                          },
+                          "errors": [
+                            {
+                              "location": {
+                                "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts",
+                                "column": 80,
+                                "line": 38
+                              },
+                              "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('button').filter({ hasText: /arrow/i }).or(locator('button').filter({ hasText: /find|players|陪玩|找/i })).first().or(getByRole('button').filter({ hasText: /become|player|陪玩/i }).or(locator('button[variant=\"outline\"]')).nth(1))\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('button').filter({ hasText: /arrow/i }).or(locator('button').filter({ hasText: /find|players|陪玩|找/i })).first().or(getByRole('button').filter({ hasText: /become|player|陪玩/i }).or(locator('button[variant=\"outline\"]')).nth(1))\u001b[22m\n\n\n  36 |\n  37 |       // Check buttons exist\n> 38 |       await expect(homePage.findPlayersButton.or(homePage.becomePlayerButton)).toBeVisible();\n     |                                                                                ^\n  39 |\n  40 |       // Check sections exist (they may have skeleton loaders)\n  41 |       await expect(homePage.gameCards.first().or(homePage.skeletonLoaders.first())).toBeVisible();\n    at D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts:38:80"
+                            }
+                          ],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-01-20T18:09:55.410Z",
+                          "annotations": [],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-0a5a4-display-home-page-correctly-chromium\\test-failed-1.png"
+                            },
+                            {
+                              "name": "video",
+                              "contentType": "video/webm",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-0a5a4-display-home-page-correctly-chromium\\video.webm"
+                            },
+                            {
+                              "name": "error-context",
+                              "contentType": "text/markdown",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-0a5a4-display-home-page-correctly-chromium\\error-context.md"
+                            },
+                            {
+                              "name": "trace",
+                              "contentType": "application/zip",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-0a5a4-display-home-page-correctly-chromium\\trace.zip"
+                            }
+                          ],
+                          "errorLocation": {
+                            "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts",
+                            "column": 80,
+                            "line": 38
+                          }
+                        }
+                      ],
+                      "status": "unexpected"
+                    }
+                  ],
+                  "id": "9f68eafbb05ed7d822fc-49cdf819e32b47ab2261",
+                  "file": "player-browsing.spec.ts",
+                  "line": 28,
+                  "column": 5
+                },
+                {
+                  "title": "should navigate to players page from hero button",
+                  "ok": false,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 1,
+                          "parallelIndex": 0,
+                          "status": "failed",
+                          "duration": 10917,
+                          "error": {
+                            "message": "TimeoutError: locator.click: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button').filter({ hasText: /arrow/i }).or(locator('button').filter({ hasText: /find|players|陪玩|找/i })).first()\u001b[22m\n",
+                            "stack": "TimeoutError: locator.click: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button').filter({ hasText: /arrow/i }).or(locator('button').filter({ hasText: /find|players|陪玩|找/i })).first()\u001b[22m\n\n    at HomePage.clickFindPlayers (D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\pages\\HomePage.ts:100:34)\n    at D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts:46:22",
+                            "location": {
+                              "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\pages\\HomePage.ts",
+                              "column": 34,
+                              "line": 100
+                            },
+                            "snippet": "\u001b[90m   at \u001b[39mpages\\HomePage.ts:100\n\n\u001b[0m \u001b[90m  98 |\u001b[39m   \u001b[90m/** Click Find Players button */\u001b[39m\n \u001b[90m  99 |\u001b[39m   \u001b[36masync\u001b[39m clickFindPlayers() {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 100 |\u001b[39m     \u001b[36mawait\u001b[39m \u001b[36mthis\u001b[39m\u001b[33m.\u001b[39mfindPlayersButton\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                  \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 101 |\u001b[39m   }\n \u001b[90m 102 |\u001b[39m\n \u001b[90m 103 |\u001b[39m   \u001b[90m/** Click Become Player button */\u001b[39m\u001b[0m"
+                          },
+                          "errors": [
+                            {
+                              "location": {
+                                "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\pages\\HomePage.ts",
+                                "column": 34,
+                                "line": 100
+                              },
+                              "message": "TimeoutError: locator.click: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button').filter({ hasText: /arrow/i }).or(locator('button').filter({ hasText: /find|players|陪玩|找/i })).first()\u001b[22m\n\n\n   at pages\\HomePage.ts:100\n\n   98 |   /** Click Find Players button */\n   99 |   async clickFindPlayers() {\n> 100 |     await this.findPlayersButton.click();\n      |                                  ^\n  101 |   }\n  102 |\n  103 |   /** Click Become Player button */\n    at HomePage.clickFindPlayers (D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\pages\\HomePage.ts:100:34)\n    at D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts:46:22"
+                            }
+                          ],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-01-20T18:10:02.222Z",
+                          "annotations": [],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-c6ac6-ayers-page-from-hero-button-chromium\\test-failed-1.png"
+                            },
+                            {
+                              "name": "video",
+                              "contentType": "video/webm",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-c6ac6-ayers-page-from-hero-button-chromium\\video.webm"
+                            },
+                            {
+                              "name": "error-context",
+                              "contentType": "text/markdown",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-c6ac6-ayers-page-from-hero-button-chromium\\error-context.md"
+                            },
+                            {
+                              "name": "trace",
+                              "contentType": "application/zip",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-c6ac6-ayers-page-from-hero-button-chromium\\trace.zip"
+                            }
+                          ],
+                          "errorLocation": {
+                            "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\pages\\HomePage.ts",
+                            "column": 34,
+                            "line": 100
+                          }
+                        }
+                      ],
+                      "status": "unexpected"
+                    }
+                  ],
+                  "id": "9f68eafbb05ed7d822fc-897354dad48856791ed5",
+                  "file": "player-browsing.spec.ts",
+                  "line": 44,
+                  "column": 5
+                },
+                {
+                  "title": "should display game cards",
+                  "ok": false,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 2,
+                          "parallelIndex": 0,
+                          "status": "failed",
+                          "duration": 733,
+                          "error": {
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: > \u001b[32m0\u001b[39m\nReceived:   \u001b[31m0\u001b[39m",
+                            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: > \u001b[32m0\u001b[39m\nReceived:   \u001b[31m0\u001b[39m\n    at D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts:57:25",
+                            "location": {
+                              "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts",
+                              "column": 25,
+                              "line": 57
+                            },
+                            "snippet": "\u001b[0m \u001b[90m 55 |\u001b[39m       \u001b[90m// Check game cards are visible\u001b[39m\n \u001b[90m 56 |\u001b[39m       \u001b[36mconst\u001b[39m gameCount \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m homePage\u001b[33m.\u001b[39mgameCards\u001b[33m.\u001b[39mcount()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 57 |\u001b[39m       expect(gameCount)\u001b[33m.\u001b[39mtoBeGreaterThan(\u001b[35m0\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                         \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 58 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 59 |\u001b[39m\n \u001b[90m 60 |\u001b[39m     test(\u001b[32m'should display featured players'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m () \u001b[33m=>\u001b[39m {\u001b[0m"
+                          },
+                          "errors": [
+                            {
+                              "location": {
+                                "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts",
+                                "column": 25,
+                                "line": 57
+                              },
+                              "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: > \u001b[32m0\u001b[39m\nReceived:   \u001b[31m0\u001b[39m\n\n  55 |       // Check game cards are visible\n  56 |       const gameCount = await homePage.gameCards.count();\n> 57 |       expect(gameCount).toBeGreaterThan(0);\n     |                         ^\n  58 |     });\n  59 |\n  60 |     test('should display featured players', async () => {\n    at D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts:57:25"
+                            }
+                          ],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-01-20T18:10:14.296Z",
+                          "annotations": [],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-31eca-e-should-display-game-cards-chromium\\test-failed-1.png"
+                            },
+                            {
+                              "name": "video",
+                              "contentType": "video/webm",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-31eca-e-should-display-game-cards-chromium\\video.webm"
+                            },
+                            {
+                              "name": "error-context",
+                              "contentType": "text/markdown",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-31eca-e-should-display-game-cards-chromium\\error-context.md"
+                            },
+                            {
+                              "name": "trace",
+                              "contentType": "application/zip",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-31eca-e-should-display-game-cards-chromium\\trace.zip"
+                            }
+                          ],
+                          "errorLocation": {
+                            "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts",
+                            "column": 25,
+                            "line": 57
+                          }
+                        }
+                      ],
+                      "status": "unexpected"
+                    }
+                  ],
+                  "id": "9f68eafbb05ed7d822fc-59b98df76e69bde9ba2a",
+                  "file": "player-browsing.spec.ts",
+                  "line": 52,
+                  "column": 5
+                },
+                {
+                  "title": "should display featured players",
+                  "ok": false,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 3,
+                          "parallelIndex": 0,
+                          "status": "failed",
+                          "duration": 5747,
+                          "error": {
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText(/featured.*pros|推荐.*陪玩|top.*players/i)\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/featured.*pros|推荐.*陪玩|top.*players/i)\u001b[22m\n",
+                            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText(/featured.*pros|推荐.*陪玩|top.*players/i)\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/featured.*pros|推荐.*陪玩|top.*players/i)\u001b[22m\n\n    at D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts:64:53",
+                            "location": {
+                              "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts",
+                              "column": 53,
+                              "line": 64
+                            },
+                            "snippet": "\u001b[0m \u001b[90m 62 |\u001b[39m\n \u001b[90m 63 |\u001b[39m       \u001b[90m// Check featured players section\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 64 |\u001b[39m       \u001b[36mawait\u001b[39m expect(homePage\u001b[33m.\u001b[39mfeaturedPlayersSection)\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                     \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 65 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 66 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 67 |\u001b[39m\u001b[0m"
+                          },
+                          "errors": [
+                            {
+                              "location": {
+                                "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts",
+                                "column": 53,
+                                "line": 64
+                              },
+                              "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText(/featured.*pros|推荐.*陪玩|top.*players/i)\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/featured.*pros|推荐.*陪玩|top.*players/i)\u001b[22m\n\n\n  62 |\n  63 |       // Check featured players section\n> 64 |       await expect(homePage.featuredPlayersSection).toBeVisible();\n     |                                                     ^\n  65 |     });\n  66 |   });\n  67 |\n    at D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts:64:53"
+                            }
+                          ],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-01-20T18:10:16.124Z",
+                          "annotations": [],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-8652e-ld-display-featured-players-chromium\\test-failed-1.png"
+                            },
+                            {
+                              "name": "video",
+                              "contentType": "video/webm",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-8652e-ld-display-featured-players-chromium\\video.webm"
+                            },
+                            {
+                              "name": "error-context",
+                              "contentType": "text/markdown",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-8652e-ld-display-featured-players-chromium\\error-context.md"
+                            },
+                            {
+                              "name": "trace",
+                              "contentType": "application/zip",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-8652e-ld-display-featured-players-chromium\\trace.zip"
+                            }
+                          ],
+                          "errorLocation": {
+                            "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts",
+                            "column": 53,
+                            "line": 64
+                          }
+                        }
+                      ],
+                      "status": "unexpected"
+                    }
+                  ],
+                  "id": "9f68eafbb05ed7d822fc-59e151f537d0d2714012",
+                  "file": "player-browsing.spec.ts",
+                  "line": 60,
+                  "column": 5
+                }
+              ]
+            },
+            {
+              "title": "Player List Page",
+              "file": "player-browsing.spec.ts",
+              "line": 68,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "should display player list correctly",
+                  "ok": false,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 4,
+                          "parallelIndex": 0,
+                          "status": "failed",
+                          "duration": 5783,
+                          "error": {
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: /find players|找陪玩师/i })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: /find players|找陪玩师/i })\u001b[22m\n",
+                            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: /find players|找陪玩师/i })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: /find players|找陪玩师/i })\u001b[22m\n\n    at D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts:73:46",
+                            "location": {
+                              "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts",
+                              "column": 46,
+                              "line": 73
+                            },
+                            "snippet": "\u001b[0m \u001b[90m 71 |\u001b[39m\n \u001b[90m 72 |\u001b[39m       \u001b[90m// Check page title\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 73 |\u001b[39m       \u001b[36mawait\u001b[39m expect(playerListPage\u001b[33m.\u001b[39mpageTitle)\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                              \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 74 |\u001b[39m\n \u001b[90m 75 |\u001b[39m       \u001b[90m// Check filters are visible\u001b[39m\n \u001b[90m 76 |\u001b[39m       \u001b[36mawait\u001b[39m expect(playerListPage\u001b[33m.\u001b[39mfilterRating)\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\u001b[0m"
+                          },
+                          "errors": [
+                            {
+                              "location": {
+                                "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts",
+                                "column": 46,
+                                "line": 73
+                              },
+                              "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: /find players|找陪玩师/i })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: /find players|找陪玩师/i })\u001b[22m\n\n\n  71 |\n  72 |       // Check page title\n> 73 |       await expect(playerListPage.pageTitle).toBeVisible();\n     |                                              ^\n  74 |\n  75 |       // Check filters are visible\n  76 |       await expect(playerListPage.filterRating).toBeVisible();\n    at D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts:73:46"
+                            }
+                          ],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-01-20T18:10:23.006Z",
+                          "annotations": [],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-ab6e1-splay-player-list-correctly-chromium\\test-failed-1.png"
+                            },
+                            {
+                              "name": "video",
+                              "contentType": "video/webm",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-ab6e1-splay-player-list-correctly-chromium\\video.webm"
+                            },
+                            {
+                              "name": "error-context",
+                              "contentType": "text/markdown",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-ab6e1-splay-player-list-correctly-chromium\\error-context.md"
+                            },
+                            {
+                              "name": "trace",
+                              "contentType": "application/zip",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-ab6e1-splay-player-list-correctly-chromium\\trace.zip"
+                            }
+                          ],
+                          "errorLocation": {
+                            "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts",
+                            "column": 46,
+                            "line": 73
+                          }
+                        }
+                      ],
+                      "status": "unexpected"
+                    }
+                  ],
+                  "id": "9f68eafbb05ed7d822fc-e9b2ce09f25355114f25",
+                  "file": "player-browsing.spec.ts",
+                  "line": 69,
+                  "column": 5
+                },
+                {
+                  "title": "should filter players by rating",
+                  "ok": false,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 5,
+                          "parallelIndex": 0,
+                          "status": "failed",
+                          "duration": 585,
+                          "error": {
+                            "message": "ReferenceError: page is not defined",
+                            "stack": "ReferenceError: page is not defined\n    at D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts:85:7",
+                            "location": {
+                              "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts",
+                              "column": 7,
+                              "line": 85
+                            },
+                            "snippet": "\u001b[0m \u001b[90m 83 |\u001b[39m\n \u001b[90m 84 |\u001b[39m       \u001b[90m// Mock players data for testing\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 85 |\u001b[39m       \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mroute(\u001b[32m'**/api/v1/players**'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m route \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m       \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 86 |\u001b[39m         \u001b[36mawait\u001b[39m route\u001b[33m.\u001b[39mfulfill({\n \u001b[90m 87 |\u001b[39m           status\u001b[33m:\u001b[39m \u001b[35m200\u001b[39m\u001b[33m,\u001b[39m\n \u001b[90m 88 |\u001b[39m           contentType\u001b[33m:\u001b[39m \u001b[32m'application/json'\u001b[39m\u001b[33m,\u001b[39m\u001b[0m"
+                          },
+                          "errors": [
+                            {
+                              "location": {
+                                "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts",
+                                "column": 7,
+                                "line": 85
+                              },
+                              "message": "ReferenceError: page is not defined\n\n  83 |\n  84 |       // Mock players data for testing\n> 85 |       await page.route('**/api/v1/players**', async route => {\n     |       ^\n  86 |         await route.fulfill({\n  87 |           status: 200,\n  88 |           contentType: 'application/json',\n    at D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts:85:7"
+                            }
+                          ],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-01-20T18:10:29.920Z",
+                          "annotations": [],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-16fb0-ld-filter-players-by-rating-chromium\\test-failed-1.png"
+                            },
+                            {
+                              "name": "video",
+                              "contentType": "video/webm",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-16fb0-ld-filter-players-by-rating-chromium\\video.webm"
+                            },
+                            {
+                              "name": "error-context",
+                              "contentType": "text/markdown",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-16fb0-ld-filter-players-by-rating-chromium\\error-context.md"
+                            },
+                            {
+                              "name": "trace",
+                              "contentType": "application/zip",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-16fb0-ld-filter-players-by-rating-chromium\\trace.zip"
+                            }
+                          ],
+                          "errorLocation": {
+                            "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts",
+                            "column": 7,
+                            "line": 85
+                          }
+                        }
+                      ],
+                      "status": "unexpected"
+                    }
+                  ],
+                  "id": "9f68eafbb05ed7d822fc-daf91b1776c9810456aa",
+                  "file": "player-browsing.spec.ts",
+                  "line": 81,
+                  "column": 5
+                },
+                {
+                  "title": "should navigate to player detail",
+                  "ok": false,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 6,
+                          "parallelIndex": 0,
+                          "status": "failed",
+                          "duration": 610,
+                          "error": {
+                            "message": "TypeError: cards.nth is not a function",
+                            "stack": "TypeError: cards.nth is not a function\n    at PlayerListPage.clickPlayerCard (D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\pages\\PlayerListPage.ts:35:17)\n    at D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts:154:7",
+                            "location": {
+                              "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\pages\\PlayerListPage.ts",
+                              "column": 17,
+                              "line": 35
+                            },
+                            "snippet": "\u001b[90m   at \u001b[39mpages\\PlayerListPage.ts:35\n\n\u001b[0m \u001b[90m 33 |\u001b[39m   \u001b[36masync\u001b[39m clickPlayerCard(index\u001b[33m:\u001b[39m number) {\n \u001b[90m 34 |\u001b[39m     \u001b[36mconst\u001b[39m cards \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m \u001b[36mthis\u001b[39m\u001b[33m.\u001b[39mplayerCards\u001b[33m.\u001b[39mall()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 35 |\u001b[39m     \u001b[36mawait\u001b[39m cards\u001b[33m.\u001b[39mnth(index)\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                 \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 36 |\u001b[39m   }\n \u001b[90m 37 |\u001b[39m\n \u001b[90m 38 |\u001b[39m   \u001b[90m/** Filter by rating */\u001b[39m\u001b[0m"
+                          },
+                          "errors": [
+                            {
+                              "location": {
+                                "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\pages\\PlayerListPage.ts",
+                                "column": 17,
+                                "line": 35
+                              },
+                              "message": "TypeError: cards.nth is not a function\n\n   at pages\\PlayerListPage.ts:35\n\n  33 |   async clickPlayerCard(index: number) {\n  34 |     const cards = await this.playerCards.all();\n> 35 |     await cards.nth(index).click();\n     |                 ^\n  36 |   }\n  37 |\n  38 |   /** Filter by rating */\n    at PlayerListPage.clickPlayerCard (D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\pages\\PlayerListPage.ts:35:17)\n    at D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts:154:7"
+                            }
+                          ],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-01-20T18:10:31.593Z",
+                          "annotations": [],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-ff509-d-navigate-to-player-detail-chromium\\test-failed-1.png"
+                            },
+                            {
+                              "name": "video",
+                              "contentType": "video/webm",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-ff509-d-navigate-to-player-detail-chromium\\video.webm"
+                            },
+                            {
+                              "name": "error-context",
+                              "contentType": "text/markdown",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-ff509-d-navigate-to-player-detail-chromium\\error-context.md"
+                            },
+                            {
+                              "name": "trace",
+                              "contentType": "application/zip",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-ff509-d-navigate-to-player-detail-chromium\\trace.zip"
+                            }
+                          ],
+                          "errorLocation": {
+                            "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\pages\\PlayerListPage.ts",
+                            "column": 17,
+                            "line": 35
+                          }
+                        }
+                      ],
+                      "status": "unexpected"
+                    }
+                  ],
+                  "id": "9f68eafbb05ed7d822fc-fc6950a1666232a1c785",
+                  "file": "player-browsing.spec.ts",
+                  "line": 129,
+                  "column": 5
+                },
+                {
+                  "title": "should handle empty state",
+                  "ok": false,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 7,
+                          "parallelIndex": 0,
+                          "status": "failed",
+                          "duration": 5774,
+                          "error": {
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText(/no players|没有找到/i)\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/no players|没有找到/i)\u001b[22m\n",
+                            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText(/no players|没有找到/i)\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/no players|没有找到/i)\u001b[22m\n\n    at D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts:179:47",
+                            "location": {
+                              "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts",
+                              "column": 47,
+                              "line": 179
+                            },
+                            "snippet": "\u001b[0m \u001b[90m 177 |\u001b[39m\n \u001b[90m 178 |\u001b[39m       \u001b[90m// Verify empty state is shown\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 179 |\u001b[39m       \u001b[36mawait\u001b[39m expect(playerListPage\u001b[33m.\u001b[39memptyState)\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m5000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 180 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 181 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 182 |\u001b[39m\u001b[0m"
+                          },
+                          "errors": [
+                            {
+                              "location": {
+                                "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts",
+                                "column": 47,
+                                "line": 179
+                              },
+                              "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText(/no players|没有找到/i)\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/no players|没有找到/i)\u001b[22m\n\n\n  177 |\n  178 |       // Verify empty state is shown\n> 179 |       await expect(playerListPage.emptyState).toBeVisible({ timeout: 5000 });\n      |                                               ^\n  180 |     });\n  181 |   });\n  182 |\n    at D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts:179:47"
+                            }
+                          ],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-01-20T18:10:33.289Z",
+                          "annotations": [],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-ac380-e-should-handle-empty-state-chromium\\test-failed-1.png"
+                            },
+                            {
+                              "name": "video",
+                              "contentType": "video/webm",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-ac380-e-should-handle-empty-state-chromium\\video.webm"
+                            },
+                            {
+                              "name": "error-context",
+                              "contentType": "text/markdown",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-ac380-e-should-handle-empty-state-chromium\\error-context.md"
+                            },
+                            {
+                              "name": "trace",
+                              "contentType": "application/zip",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-ac380-e-should-handle-empty-state-chromium\\trace.zip"
+                            }
+                          ],
+                          "errorLocation": {
+                            "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts",
+                            "column": 47,
+                            "line": 179
+                          }
+                        }
+                      ],
+                      "status": "unexpected"
+                    }
+                  ],
+                  "id": "9f68eafbb05ed7d822fc-5d62e989c8f67cb3523c",
+                  "file": "player-browsing.spec.ts",
+                  "line": 160,
+                  "column": 5
+                }
+              ]
+            },
+            {
+              "title": "Player Detail Page",
+              "file": "player-browsing.spec.ts",
+              "line": 183,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "should display player details correctly",
+                  "ok": false,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 8,
+                          "parallelIndex": 0,
+                          "status": "failed",
+                          "duration": 5914,
+                          "error": {
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText(/\\s*¥\\s*\\d+/)\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/\\s*¥\\s*\\d+/)\u001b[22m\n",
+                            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText(/\\s*¥\\s*\\d+/)\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/\\s*¥\\s*\\d+/)\u001b[22m\n\n    at D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts:215:44",
+                            "location": {
+                              "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts",
+                              "column": 44,
+                              "line": 215
+                            },
+                            "snippet": "\u001b[0m \u001b[90m 213 |\u001b[39m       \u001b[90m// Check player info\u001b[39m\n \u001b[90m 214 |\u001b[39m       \u001b[36mawait\u001b[39m expect(playerDetailPage\u001b[33m.\u001b[39mplayerName)\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 215 |\u001b[39m       \u001b[36mawait\u001b[39m expect(playerDetailPage\u001b[33m.\u001b[39mprice)\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                            \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 216 |\u001b[39m\n \u001b[90m 217 |\u001b[39m       \u001b[90m// Check action buttons\u001b[39m\n \u001b[90m 218 |\u001b[39m       \u001b[36mawait\u001b[39m expect(playerDetailPage\u001b[33m.\u001b[39mbookButton)\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\u001b[0m"
+                          },
+                          "errors": [
+                            {
+                              "location": {
+                                "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts",
+                                "column": 44,
+                                "line": 215
+                              },
+                              "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText(/\\s*¥\\s*\\d+/)\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/\\s*¥\\s*\\d+/)\u001b[22m\n\n\n  213 |       // Check player info\n  214 |       await expect(playerDetailPage.playerName).toBeVisible();\n> 215 |       await expect(playerDetailPage.price).toBeVisible();\n      |                                            ^\n  216 |\n  217 |       // Check action buttons\n  218 |       await expect(playerDetailPage.bookButton).toBeVisible();\n    at D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts:215:44"
+                            }
+                          ],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-01-20T18:10:40.176Z",
+                          "annotations": [],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-d5d88-ay-player-details-correctly-chromium\\test-failed-1.png"
+                            },
+                            {
+                              "name": "video",
+                              "contentType": "video/webm",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-d5d88-ay-player-details-correctly-chromium\\video.webm"
+                            },
+                            {
+                              "name": "error-context",
+                              "contentType": "text/markdown",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-d5d88-ay-player-details-correctly-chromium\\error-context.md"
+                            },
+                            {
+                              "name": "trace",
+                              "contentType": "application/zip",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-d5d88-ay-player-details-correctly-chromium\\trace.zip"
+                            }
+                          ],
+                          "errorLocation": {
+                            "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts",
+                            "column": 44,
+                            "line": 215
+                          }
+                        }
+                      ],
+                      "status": "unexpected"
+                    }
+                  ],
+                  "id": "9f68eafbb05ed7d822fc-f6dbabd26063edf7630b",
+                  "file": "player-browsing.spec.ts",
+                  "line": 210,
+                  "column": 5
+                },
+                {
+                  "title": "should display player tags",
+                  "ok": false,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 9,
+                          "parallelIndex": 0,
+                          "status": "failed",
+                          "duration": 622,
+                          "error": {
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: > \u001b[32m0\u001b[39m\nReceived:   \u001b[31m0\u001b[39m",
+                            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: > \u001b[32m0\u001b[39m\nReceived:   \u001b[31m0\u001b[39m\n    at D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts:228:24",
+                            "location": {
+                              "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts",
+                              "column": 24,
+                              "line": 228
+                            },
+                            "snippet": "\u001b[0m \u001b[90m 226 |\u001b[39m       \u001b[90m// Check tags are displayed\u001b[39m\n \u001b[90m 227 |\u001b[39m       \u001b[36mconst\u001b[39m tagCount \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m playerDetailPage\u001b[33m.\u001b[39mtags\u001b[33m.\u001b[39mcount()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 228 |\u001b[39m       expect(tagCount)\u001b[33m.\u001b[39mtoBeGreaterThan(\u001b[35m0\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 229 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 230 |\u001b[39m\n \u001b[90m 231 |\u001b[39m     test(\u001b[32m'should display rating'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m () \u001b[33m=>\u001b[39m {\u001b[0m"
+                          },
+                          "errors": [
+                            {
+                              "location": {
+                                "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts",
+                                "column": 24,
+                                "line": 228
+                              },
+                              "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: > \u001b[32m0\u001b[39m\nReceived:   \u001b[31m0\u001b[39m\n\n  226 |       // Check tags are displayed\n  227 |       const tagCount = await playerDetailPage.tags.count();\n> 228 |       expect(tagCount).toBeGreaterThan(0);\n      |                        ^\n  229 |     });\n  230 |\n  231 |     test('should display rating', async () => {\n    at D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts:228:24"
+                            }
+                          ],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-01-20T18:10:47.205Z",
+                          "annotations": [],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-2b48c--should-display-player-tags-chromium\\test-failed-1.png"
+                            },
+                            {
+                              "name": "video",
+                              "contentType": "video/webm",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-2b48c--should-display-player-tags-chromium\\video.webm"
+                            },
+                            {
+                              "name": "error-context",
+                              "contentType": "text/markdown",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-2b48c--should-display-player-tags-chromium\\error-context.md"
+                            },
+                            {
+                              "name": "trace",
+                              "contentType": "application/zip",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-2b48c--should-display-player-tags-chromium\\trace.zip"
+                            }
+                          ],
+                          "errorLocation": {
+                            "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts",
+                            "column": 24,
+                            "line": 228
+                          }
+                        }
+                      ],
+                      "status": "unexpected"
+                    }
+                  ],
+                  "id": "9f68eafbb05ed7d822fc-65bc5d9cc80fc5e54ab1",
+                  "file": "player-browsing.spec.ts",
+                  "line": 223,
+                  "column": 5
+                },
+                {
+                  "title": "should display rating",
+                  "ok": false,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 10,
+                          "parallelIndex": 0,
+                          "status": "failed",
+                          "duration": 5758,
+                          "error": {
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText(/rating|评分/i).or(locator('[class*=\"star\"]'))\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/rating|评分/i).or(locator('[class*=\"star\"]'))\u001b[22m\n",
+                            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText(/rating|评分/i).or(locator('[class*=\"star\"]'))\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/rating|评分/i).or(locator('[class*=\"star\"]'))\u001b[22m\n\n    at D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts:236:28",
+                            "location": {
+                              "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts",
+                              "column": 28,
+                              "line": 236
+                            },
+                            "snippet": "\u001b[0m \u001b[90m 234 |\u001b[39m       \u001b[90m// Check rating is visible\u001b[39m\n \u001b[90m 235 |\u001b[39m       \u001b[36mconst\u001b[39m rating \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m playerDetailPage\u001b[33m.\u001b[39mrating\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 236 |\u001b[39m       \u001b[36mawait\u001b[39m expect(rating)\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                            \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 237 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 238 |\u001b[39m\n \u001b[90m 239 |\u001b[39m     test(\u001b[32m'should have working favorite button'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
+                          },
+                          "errors": [
+                            {
+                              "location": {
+                                "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts",
+                                "column": 28,
+                                "line": 236
+                              },
+                              "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText(/rating|评分/i).or(locator('[class*=\"star\"]'))\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/rating|评分/i).or(locator('[class*=\"star\"]'))\u001b[22m\n\n\n  234 |       // Check rating is visible\n  235 |       const rating = await playerDetailPage.rating;\n> 236 |       await expect(rating).toBeVisible();\n      |                            ^\n  237 |     });\n  238 |\n  239 |     test('should have working favorite button', async ({ page }) => {\n    at D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts:236:28"
+                            }
+                          ],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-01-20T18:10:48.935Z",
+                          "annotations": [],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-03771--Page-should-display-rating-chromium\\test-failed-1.png"
+                            },
+                            {
+                              "name": "video",
+                              "contentType": "video/webm",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-03771--Page-should-display-rating-chromium\\video.webm"
+                            },
+                            {
+                              "name": "error-context",
+                              "contentType": "text/markdown",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-03771--Page-should-display-rating-chromium\\error-context.md"
+                            },
+                            {
+                              "name": "trace",
+                              "contentType": "application/zip",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-03771--Page-should-display-rating-chromium\\trace.zip"
+                            }
+                          ],
+                          "errorLocation": {
+                            "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts",
+                            "column": 28,
+                            "line": 236
+                          }
+                        }
+                      ],
+                      "status": "unexpected"
+                    }
+                  ],
+                  "id": "9f68eafbb05ed7d822fc-0fbd5ff2d1d4693b7160",
+                  "file": "player-browsing.spec.ts",
+                  "line": 231,
+                  "column": 5
+                },
+                {
+                  "title": "should have working favorite button",
+                  "ok": false,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 11,
+                          "parallelIndex": 0,
+                          "status": "failed",
+                          "duration": 10907,
+                          "error": {
+                            "message": "TimeoutError: locator.click: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[class*=\"favorite\"]')\u001b[22m\n",
+                            "stack": "TimeoutError: locator.click: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[class*=\"favorite\"]')\u001b[22m\n\n    at PlayerDetailPage.toggleFavorite (D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\pages\\PlayerDetailPage.ts:50:31)\n    at D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts:252:30",
+                            "location": {
+                              "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\pages\\PlayerDetailPage.ts",
+                              "column": 31,
+                              "line": 50
+                            },
+                            "snippet": "\u001b[90m   at \u001b[39mpages\\PlayerDetailPage.ts:50\n\n\u001b[0m \u001b[90m 48 |\u001b[39m   \u001b[90m/** Click favorite button */\u001b[39m\n \u001b[90m 49 |\u001b[39m   \u001b[36masync\u001b[39m toggleFavorite() {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 50 |\u001b[39m     \u001b[36mawait\u001b[39m \u001b[36mthis\u001b[39m\u001b[33m.\u001b[39mfavoriteButton\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 51 |\u001b[39m   }\n \u001b[90m 52 |\u001b[39m\n \u001b[90m 53 |\u001b[39m   \u001b[90m/** Click chat button */\u001b[39m\u001b[0m"
+                          },
+                          "errors": [
+                            {
+                              "location": {
+                                "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\pages\\PlayerDetailPage.ts",
+                                "column": 31,
+                                "line": 50
+                              },
+                              "message": "TimeoutError: locator.click: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[class*=\"favorite\"]')\u001b[22m\n\n\n   at pages\\PlayerDetailPage.ts:50\n\n  48 |   /** Click favorite button */\n  49 |   async toggleFavorite() {\n> 50 |     await this.favoriteButton.click();\n     |                               ^\n  51 |   }\n  52 |\n  53 |   /** Click chat button */\n    at PlayerDetailPage.toggleFavorite (D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\pages\\PlayerDetailPage.ts:50:31)\n    at D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts:252:30"
+                            }
+                          ],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-01-20T18:10:55.818Z",
+                          "annotations": [],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-93267-ave-working-favorite-button-chromium\\test-failed-1.png"
+                            },
+                            {
+                              "name": "video",
+                              "contentType": "video/webm",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-93267-ave-working-favorite-button-chromium\\video.webm"
+                            },
+                            {
+                              "name": "error-context",
+                              "contentType": "text/markdown",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-93267-ave-working-favorite-button-chromium\\error-context.md"
+                            },
+                            {
+                              "name": "trace",
+                              "contentType": "application/zip",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-93267-ave-working-favorite-button-chromium\\trace.zip"
+                            }
+                          ],
+                          "errorLocation": {
+                            "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\pages\\PlayerDetailPage.ts",
+                            "column": 31,
+                            "line": 50
+                          }
+                        }
+                      ],
+                      "status": "unexpected"
+                    }
+                  ],
+                  "id": "9f68eafbb05ed7d822fc-cdbf1bd2e59f40f6e03a",
+                  "file": "player-browsing.spec.ts",
+                  "line": 239,
+                  "column": 5
+                }
+              ]
+            },
+            {
+              "title": "User Flow",
+              "file": "player-browsing.spec.ts",
+              "line": 259,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "should complete browse player flow",
+                  "ok": false,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 12,
+                          "parallelIndex": 0,
+                          "status": "failed",
+                          "duration": 11075,
+                          "error": {
+                            "message": "TimeoutError: locator.click: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button').filter({ hasText: /arrow/i }).or(locator('button').filter({ hasText: /find|players|陪玩|找/i })).first()\u001b[22m\n",
+                            "stack": "TimeoutError: locator.click: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button').filter({ hasText: /arrow/i }).or(locator('button').filter({ hasText: /find|players|陪玩|找/i })).first()\u001b[22m\n\n    at HomePage.clickFindPlayers (D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\pages\\HomePage.ts:100:34)\n    at D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts:293:22",
+                            "location": {
+                              "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\pages\\HomePage.ts",
+                              "column": 34,
+                              "line": 100
+                            },
+                            "snippet": "\u001b[90m   at \u001b[39mpages\\HomePage.ts:100\n\n\u001b[0m \u001b[90m  98 |\u001b[39m   \u001b[90m/** Click Find Players button */\u001b[39m\n \u001b[90m  99 |\u001b[39m   \u001b[36masync\u001b[39m clickFindPlayers() {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 100 |\u001b[39m     \u001b[36mawait\u001b[39m \u001b[36mthis\u001b[39m\u001b[33m.\u001b[39mfindPlayersButton\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                  \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 101 |\u001b[39m   }\n \u001b[90m 102 |\u001b[39m\n \u001b[90m 103 |\u001b[39m   \u001b[90m/** Click Become Player button */\u001b[39m\u001b[0m"
+                          },
+                          "errors": [
+                            {
+                              "location": {
+                                "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\pages\\HomePage.ts",
+                                "column": 34,
+                                "line": 100
+                              },
+                              "message": "TimeoutError: locator.click: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button').filter({ hasText: /arrow/i }).or(locator('button').filter({ hasText: /find|players|陪玩|找/i })).first()\u001b[22m\n\n\n   at pages\\HomePage.ts:100\n\n   98 |   /** Click Find Players button */\n   99 |   async clickFindPlayers() {\n> 100 |     await this.findPlayersButton.click();\n      |                                  ^\n  101 |   }\n  102 |\n  103 |   /** Click Become Player button */\n    at HomePage.clickFindPlayers (D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\pages\\HomePage.ts:100:34)\n    at D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\player-browsing.spec.ts:293:22"
+                            }
+                          ],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-01-20T18:11:07.875Z",
+                          "annotations": [],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-5b3e1-complete-browse-player-flow-chromium\\test-failed-1.png"
+                            },
+                            {
+                              "name": "video",
+                              "contentType": "video/webm",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-5b3e1-complete-browse-player-flow-chromium\\video.webm"
+                            },
+                            {
+                              "name": "error-context",
+                              "contentType": "text/markdown",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-5b3e1-complete-browse-player-flow-chromium\\error-context.md"
+                            },
+                            {
+                              "name": "trace",
+                              "contentType": "application/zip",
+                              "path": "D:\\Desktop\\Code\\GameLink\\client\\test-results\\player-browsing-Player-Bro-5b3e1-complete-browse-player-flow-chromium\\trace.zip"
+                            }
+                          ],
+                          "errorLocation": {
+                            "file": "D:\\Desktop\\Code\\GameLink\\client\\tests\\e2e\\pages\\HomePage.ts",
+                            "column": 34,
+                            "line": 100
+                          }
+                        }
+                      ],
+                      "status": "unexpected"
+                    }
+                  ],
+                  "id": "9f68eafbb05ed7d822fc-9a92bca3850c9a46c219",
+                  "file": "player-browsing.spec.ts",
+                  "line": 260,
+                  "column": 5
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-01-20T18:09:43.665Z",
+    "duration": 95697.32400000001,
+    "expected": 10,
+    "skipped": 0,
+    "unexpected": 13,
+    "flaky": 0
+  }
+}
