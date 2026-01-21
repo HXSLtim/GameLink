@@ -5,7 +5,7 @@
  * Features:
  * - 聊天室列表管理
  * - 消息历史（分页加载）
- * - 实时消息（WebSocket 集成接口）
+ * - 实时消息（WebSocket 集成）
  * - 未读计数
  * - 消息发送队列
  */
@@ -18,6 +18,8 @@ import {
   type ChatConversation,
   type ChatMessage as ApiChatMessage,
 } from '@/api/chat';
+import { useAuthStore } from './authStore';
+import { registerChatMessageHandlers, unregisterChatMessageHandlers } from '@/utils/websocket';
 
 // ==================== 类型定义 ====================
 
@@ -410,9 +412,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
    */
   closeRoom: async (roomId, reason) => {
     try {
+      // 获取当前管理员 ID
+      const userInfo = useAuthStore.getState().userInfo;
+      const closedBy = userInfo?.id ?? 0;
+
       await chatConversationApi.closeConversation(roomId, {
         reason,
-        closedBy: 0, // TODO: 从 auth store 获取当前管理员ID
+        closedBy,
       });
       get().updateRoom(roomId, { status: 'closed' } as Partial<ChatRoom>);
     } catch (error) {
@@ -670,12 +676,15 @@ export const useChatStore = create<ChatState>((set, get) => ({
       pendingMessages: [...state.pendingMessages, pendingMessage],
     }));
 
+    // 获取当前用户信息
+    const userInfo = useAuthStore.getState().userInfo;
+
     // 立即显示临时消息
     const tempChatMessage: ApiChatMessage = {
       id: 0,
       conversationId,
-      senderId: 0, // TODO: 从 auth store 获取
-      senderName: '管理员',
+      senderId: userInfo?.id ?? 0,
+      senderName: userInfo?.name ?? '管理员',
       senderType: 'user', // 管理员发送消息使用 user 类型
       content,
       messageType,
@@ -740,12 +749,23 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({ sendingMessages: true });
 
     try {
-      // TODO: 实际发送消息到后端
-      // 这里需要调用发送消息的 API（如果后端支持）
-      // 目前 chat API 中没有发送消息的接口，因为是管理员视角
+      const firstPending = state.pendingMessages[0];
+      if (!firstPending) {
+        return;
+      }
 
-      // 模拟发送成功
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      // 注意: 当前管理员面板不直接发送消息
+      // 如需实现此功能，需在后端添加管理员发送消息的 API
+      // 参考: POST /api/v1/admin/chat/conversations/:id/messages
+      //
+      // 实现示例:
+      // await chatMessageApi.sendMessage(firstPending.conversationId, {
+      //   content: firstPending.content,
+      //   messageType: firstPending.messageType,
+      // });
+
+      // 模拟发送成功（开发测试用）
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
       // 移除已发送的消息
       set((state) => ({
@@ -778,49 +798,22 @@ export const useChatStore = create<ChatState>((set, get) => ({
    * 初始化 WebSocket 监听
    */
   initWebSocket: () => {
-    // 预留 WebSocket 连接接口
-    // TODO: 集成实际的 WebSocket 客户端
-    //
-    // 示例实现：
-    // import { socket } from '@/utils/socket';
-    //
-    // socket.on('chat:message', (message: ApiChatMessage) => {
-    //   const { currentRoomId } = get();
-    //
-    //   // 添加消息
-    //   get().addMessage(message.conversationId, message);
-    //
-    //   // 如果不是当前聊天室，增加未读数
-    //   if (currentRoomId !== message.conversationId) {
-    //     get().incrementUnread(message.conversationId);
-    //   }
-    // });
-    //
-    // socket.on('chat:room_updated', (room: ChatRoom) => {
-    //   get().updateRoom(room.id, room);
-    // });
-    //
-    // socket.on('chat:room_closed', (data: { roomId: number }) => {
-    //   get().updateRoom(data.roomId, { status: 'closed' });
-    // });
+    // 注册聊天消息处理器
+    registerChatMessageHandlers();
 
-    logger.info('WebSocket integration initialized (placeholder)');
+    // WebSocket 连接在 App.tsx 中统一管理
+    // 这里只注册消息处理器，不负责连接管理
+    logger.info('Chat WebSocket message handlers registered');
   },
 
   /**
    * 清理 WebSocket 监听
    */
   cleanupWebSocket: () => {
-    // 预留 WebSocket 清理接口
-    // TODO: 清理 WebSocket 监听器
-    //
-    // 示例实现：
-    // import { socket } from '@/utils/socket';
-    // socket.off('chat:message');
-    // socket.off('chat:room_updated');
-    // socket.off('chat:room_closed');
+    // 取消聊天消息处理器
+    unregisterChatMessageHandlers();
 
-    logger.info('WebSocket listeners cleaned up (placeholder)');
+    logger.info('Chat WebSocket message handlers unregistered');
   },
 
   // ==================== 工具方法实现 ====================

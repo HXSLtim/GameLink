@@ -268,6 +268,15 @@ export const ADMIN_MENUS: MenuConfig[] = [
         description: '系统监控和数据分析',
         children: [
             {
+                name: '实时监控大屏',
+                path: '/admin/monitor',
+                component: 'Monitor',
+                icon: 'DashboardOutlined',
+                order: 0,
+                permission: 'admin.monitor.view',
+                description: '实时系统状态监控大屏',
+            },
+            {
                 name: '实时监控',
                 path: '/admin/monitor/realtime',
                 component: 'RealtimeMonitor',
@@ -358,11 +367,39 @@ export const ADMIN_MENUS: MenuConfig[] = [
         ],
     },
     {
+        name: '聊天管理',
+        path: '/admin/chat',
+        component: 'Layout',
+        icon: 'MessageOutlined',
+        order: 6,
+        description: '聊天会话和消息管理',
+        children: [
+            {
+                name: '聊天室管理',
+                path: '/admin/chat/rooms',
+                component: 'ChatRooms',
+                icon: 'TeamOutlined',
+                order: 1,
+                permission: 'admin.chat.conversations.list',
+                description: '管理所有聊天会话',
+            },
+            {
+                name: '聊天记录管理',
+                path: '/admin/chat/records',
+                component: 'ChatRecords',
+                icon: 'UnorderedListOutlined',
+                order: 2,
+                permission: 'admin.chat.messages.list',
+                description: '查看和管理聊天消息记录',
+            },
+        ],
+    },
+    {
         name: '营销管理',
         path: '/admin/marketing',
         component: 'Layout',
         icon: 'GiftOutlined',
-        order: 6,
+        order: 7,
         description: '营销活动和用户增长',
         children: [
             {
@@ -417,7 +454,7 @@ export const ADMIN_MENUS: MenuConfig[] = [
         path: '/admin/payment',
         component: 'Layout',
         icon: 'PayCircleOutlined',
-        order: 7,
+        order: 8,
         description: '支付和充值管理',
         children: [
             {
@@ -436,7 +473,7 @@ export const ADMIN_MENUS: MenuConfig[] = [
         path: '/admin/reviews',
         component: 'Layout',
         icon: 'StarOutlined',
-        order: 8,
+        order: 9,
         description: '评价和举报管理',
         children: [
             {

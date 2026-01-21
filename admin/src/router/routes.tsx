@@ -83,6 +83,13 @@ const ReferralPage = lazy(() => import('@/pages/admin/Referral'));
 const SettlementPage = lazy(() => import('@/pages/admin/Settlement'));
 const SettlementPlayersPage = lazy(() => import('@/pages/admin/Settlement/Players'));
 
+// 聊天管理页面
+const ChatRecordsPage = lazy(() => import('@/pages/adminChat/records'));
+const ChatRoomsPage = lazy(() => import('@/pages/adminChat/rooms'));
+
+// 实时监控页面
+const MonitorPage = lazy(() => import('@/pages/admin/Monitor'));
+
 // 个人中心页面
 const ProfilePage = lazy(() => import('@/pages/admin/Profile'));
 
@@ -291,7 +298,7 @@ export const routes: RouteConfig[] = [
                 meta: { title: '动态审核', permission: 'admin.content.feeds.list' }
             },
             {
-                path: 'content/chat',
+                path: 'content/chat-monitor',
                 element: <LazyLoad><ContentChatMonitor /></LazyLoad>,
                 meta: { title: '聊天监控', permission: 'admin.content.chat.list' }
             },
@@ -309,6 +316,23 @@ export const routes: RouteConfig[] = [
                 path: 'content/stats',
                 element: <LazyLoad><ContentStats /></LazyLoad>,
                 meta: { title: '内容统计', permission: 'admin.content.stats.list' }
+            },
+            // 聊天管理模块
+            {
+                path: 'chat/records',
+                element: <LazyLoad><ChatRecordsPage /></LazyLoad>,
+                meta: { title: '聊天记录管理', permission: 'admin.chat.messages.list' }
+            },
+            {
+                path: 'chat/rooms',
+                element: <LazyLoad><ChatRoomsPage /></LazyLoad>,
+                meta: { title: '聊天室管理', permission: 'admin.chat.conversations.list' }
+            },
+            // 实时监控模块
+            {
+                path: 'monitor',
+                element: <LazyLoad><MonitorPage /></LazyLoad>,
+                meta: { title: '实时监控', permission: 'admin.monitor.view' }
             },
             // VIP管理模块
             {

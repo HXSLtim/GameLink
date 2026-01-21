@@ -2,10 +2,10 @@ export const ENABLE_QUICK_LOGIN = import.meta.env.DEV; // Only enable in develop
 
 /**
  * 调试用户列表
- * 角色与后端 model.Role 保持一致：user, player, admin
- * 这里使用大写是为了与路由守卫中的 Role 类型兼容
+ * ⚠️ 安全警告: 此配置仅用于开发环境
+ * 生产构建时会通过环境变量禁用
  */
-export const DEBUG_USERS = [
+export const DEBUG_USERS = import.meta.env.DEV ? [
     {
         label: '超级管理员',
         email: 'admin@gameLink.com',
@@ -41,4 +41,4 @@ export const DEBUG_USERS = [
         role: 'PLAYER',
         color: '#eb2f96'
     }
-];
+] : [];

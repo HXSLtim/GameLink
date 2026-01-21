@@ -102,6 +102,8 @@ export default defineConfig(({ mode }) => ({
         ]
       },
       workbox: {
+        // 增加 PWA 缓存文件大小限制 (默认 2MB -> 10MB)
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
         // 缓存策略
         runtimeCaching: [
           {
@@ -228,20 +230,34 @@ export default defineConfig(({ mode }) => ({
         // 手动代码分割策略
         manualChunks: (id) => {
           // React 核心库 + React Router（合并到一起，避免加载顺序问题）
-          if (id.includes('node_modules/react/') || 
-              id.includes('node_modules/react-dom/') || 
+          if (id.includes('node_modules/react/') ||
+              id.includes('node_modules/react-dom/') ||
               id.includes('node_modules/scheduler/') ||
-              id.includes('node_modules/react-router') || 
+              id.includes('node_modules/react-router') ||
               id.includes('node_modules/@remix-run')) {
             return 'react-vendor';
           }
+          // Ant Design - 独立分包（按需导入后仍然较大）
+          if (id.includes('node_modules/antd/') ||
+              id.includes('node_modules/@ant-design/')) {
+            return 'antd-vendor';
+          }
+          // Recharts 图表库 - 独立分包
+          if (id.includes('node_modules/recharts/') ||
+              id.includes('node_modules/d3-') ||
+              id.includes('node_modules/victory-')) {
+            return 'charts-vendor';
+          }
           // 工具库（独立，不依赖其他库）
-          if (id.includes('node_modules/axios') || 
-              id.includes('node_modules/dayjs') || 
+          if (id.includes('node_modules/axios') ||
+              id.includes('node_modules/dayjs') ||
               id.includes('node_modules/lodash-es')) {
             return 'utils-vendor';
           }
-          // 图表库、Ant Design 等随页面按需加载
+          // Iconify 图标库
+          if (id.includes('node_modules/@iconify/')) {
+            return 'icons-vendor';
+          }
         },
         // 自定义 chunk 文件名
         chunkFileNames: 'assets/js/[name]-[hash].js',

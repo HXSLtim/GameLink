@@ -13,6 +13,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { UserInfo, LoginRequest } from '../types';
 import { authApi } from '@/api/auth';
+import { permissionApi } from '@/api/permission';
 
 import { logger } from '@/utils/logger';
 interface AuthState {
@@ -32,6 +33,7 @@ interface AuthState {
   setUserInfo: (user: UserInfo) => void;
   clearError: () => void;
   setLoading: (loading: boolean) => void;
+  refreshPermissions: () => Promise<void>;
 
   // Selectors (computed values)
   isAdmin: () => boolean;
@@ -66,6 +68,17 @@ export const useAuthStore = create<AuthState>()(
             throw new Error('Invalid response from server');
           }
 
+          // Fetch user permissions
+          let permissions: string[] = [];
+          try {
+            const permResponse = await permissionApi.getMyPermissions();
+            if (permResponse.data?.success && permResponse.data?.data) {
+              permissions = permResponse.data.data;
+            }
+          } catch (permError) {
+            logger.warn('[authStore] Failed to fetch permissions, continuing with empty permissions:', permError);
+          }
+
           // Map API user response to UserInfo interface
           const userInfo: UserInfo = {
             id: user.id,
@@ -74,7 +87,7 @@ export const useAuthStore = create<AuthState>()(
             phone: undefined,
             avatar: undefined,
             role: user.role,
-            permissions: [], // TODO: Fetch permissions from API
+            permissions,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           };
@@ -87,6 +100,8 @@ export const useAuthStore = create<AuthState>()(
             loading: false,
             error: null,
           });
+
+          logger.info('[authStore] Login successful, permissions:', permissions);
 
           // 不再手动写入 localStorage，由 persist 中间件自动处理
 
@@ -179,6 +194,27 @@ export const useAuthStore = create<AuthState>()(
 
       setLoading: (loading: boolean) => {
         set({ loading });
+      },
+
+      refreshPermissions: async () => {
+        const { userInfo } = get();
+        if (!userInfo) return;
+
+        try {
+          const permResponse = await permissionApi.getMyPermissions();
+          if (permResponse.data?.success && permResponse.data?.data) {
+            set({
+              userInfo: {
+                ...userInfo,
+                permissions: permResponse.data.data,
+                updatedAt: new Date().toISOString(),
+              },
+            });
+            logger.info('[authStore] Permissions refreshed:', permResponse.data.data);
+          }
+        } catch (error) {
+          logger.error('[authStore] Failed to refresh permissions:', error);
+        }
       },
 
       // Selectors
