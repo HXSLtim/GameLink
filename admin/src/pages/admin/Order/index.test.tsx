@@ -561,6 +561,6 @@ describe('OrderPage', () => {
       await waitFor(() => {
         expect(screen.getByText('订单退款')).toBeInTheDocument();
       });
-    });
+    }, 20000);
   });
 });

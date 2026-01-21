@@ -151,7 +151,7 @@ const UserRanking: React.FC = () => {
                                             </Space>
                                         }
                                         description={
-                                            <Space direction="vertical" size={4}>
+                                            <Space orientation="vertical" size={4}>
                                                 <Space>{player.games.map(g => <Tag key={g} color="blue">{g}</Tag>)}</Space>
                                                 <Space>{player.tags.slice(0, 2).map(t => <Tag key={t}>{t}</Tag>)}</Space>
                                             </Space>

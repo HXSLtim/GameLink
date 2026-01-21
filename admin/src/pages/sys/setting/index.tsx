@@ -488,7 +488,7 @@ const Settings: React.FC = () => {
                         title={<span><Text strong>同步操作说明</Text></span>}
                         style={{ marginBottom: 16, borderRadius: 12 }}
                     >
-                        <Space direction="vertical" size={12} style={{ width: '100%' }}>
+                        <Space orientation="vertical" size={12} style={{ width: '100%' }}>
                             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                                 <div style={{
                                     width: 24, height: 24, borderRadius: '50%',

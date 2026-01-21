@@ -146,7 +146,7 @@ const RoutingForm: React.FC<RoutingFormProps> = ({
             onCancel={onCancel}
             confirmLoading={submitting}
             width={700}
-            destroyOnClose
+            destroyOnHidden
         >
             <Form
                 form={form}
@@ -256,7 +256,7 @@ const RoutingForm: React.FC<RoutingFormProps> = ({
                     borderRadius: 4,
                     marginTop: 8
                 }}>
-                    <Space direction="vertical" size={4}>
+                    <Space orientation="vertical" size={4}>
                         <strong>规则说明:</strong>
                         <div style={{ fontSize: 12, color: '#666' }}>
                             1. 优先级数字越小，规则越优先匹配

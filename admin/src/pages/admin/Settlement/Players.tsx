@@ -15,7 +15,7 @@ import {
     Input,
     Drawer,
     List,
-    theme,
+    
     Avatar,
     Typography,
     Tooltip,
@@ -54,7 +54,6 @@ const companyTypeMap: Record<CompanyType, { text: string; color: string }> = {
  * 陪玩师归属管理页面
  */
 const SettlementPlayersPage: React.FC = () => {
-    const { token } = theme.useToken();
     const [loading, setLoading] = useState(false);
     const [players, setPlayers] = useState<PlayerCompanyAssignment[]>([]);
     const [total, setTotal] = useState(0);
@@ -329,8 +328,8 @@ const SettlementPlayersPage: React.FC = () => {
             extra={
                 <Space size="large">
                     <Statistic title="总陪玩师" value={stats.total} prefix={<UserOutlined />} />
-                    <Statistic title="已分配" value={stats.assigned} valueStyle={{ color: token.colorSuccess }} />
-                    <Statistic title="未分配" value={stats.unassigned} valueStyle={{ color: token.colorWarning }} />
+                    <Statistic title="已分配" value={stats.assigned} />
+                    <Statistic title="未分配" value={stats.unassigned} />
                 </Space>
             }
         >

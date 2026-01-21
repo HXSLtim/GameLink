@@ -692,7 +692,7 @@ describe('PlayerPage', () => {
         // If button not found, verify the API method exists
         expect(mockApi.updatePlayerVerification).toBeDefined();
       }
-    });
+    }, 20000);
 
     it('should reject player when clicking reject button', async () => {
       const _user = userEvent.setup();

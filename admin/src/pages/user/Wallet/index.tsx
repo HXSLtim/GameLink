@@ -195,12 +195,12 @@ const UserWallet: React.FC = () => {
                 </Col>
                 <Col xs={LAYOUT.COL_SPAN.HALF} sm={LAYOUT.COL_SPAN.QUARTER}>
                     <Card loading={loading}>
-                        <Statistic title="可用余额" value={walletInfo.balance} prefix="¥" precision={BUSINESS.PRECISION.AMOUNT} valueStyle={{ color: token.colorSuccess }} />
+                        <Statistic title="可用余额" value={walletInfo.balance} prefix="¥" precision={BUSINESS.PRECISION.AMOUNT} />
                     </Card>
                 </Col>
                 <Col xs={LAYOUT.COL_SPAN.HALF} sm={LAYOUT.COL_SPAN.QUARTER}>
                     <Card loading={loading}>
-                        <Statistic title="冻结金额" value={walletInfo.frozenAmount} prefix="¥" precision={BUSINESS.PRECISION.AMOUNT} valueStyle={{ color: token.colorWarning }} />
+                        <Statistic title="冻结金额" value={walletInfo.frozenAmount} prefix="¥" precision={BUSINESS.PRECISION.AMOUNT} />
                     </Card>
                 </Col>
             </Row>
@@ -238,7 +238,7 @@ const UserWallet: React.FC = () => {
                     <div>
                         <Text strong>选择支付方式</Text>
                         <Radio.Group value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} style={{ marginTop: LAYOUT.GUTTER, display: 'block' }}>
-                            <Space direction="vertical" style={{ width: '100%' }}>
+                            <Space orientation="vertical" style={{ width: '100%' }}>
                                 <Radio.Button value="alipay" style={{ width: '100%', height: SIZES.AVATAR.MEDIUM, lineHeight: `${SIZES.AVATAR.MEDIUM}px` }}>
                                     <AlipayOutlined style={{ color: token.colorPrimary, marginRight: 8 }} /> 支付宝
                                 </Radio.Button>

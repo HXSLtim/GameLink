@@ -18,7 +18,7 @@ import {
     Select,
     Modal,
     Descriptions,
-    theme,
+    
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
@@ -44,7 +44,6 @@ import { logger } from '@/utils/logger';
 const { Title, Text } = Typography;
 
 const UserCouponPage: React.FC = () => {
-    const { token } = theme.useToken();
     const [loading, setLoading] = useState(false);
     const [coupons, setCoupons] = useState<CouponWithTemplate[]>([]);
     const [total, setTotal] = useState(0);
@@ -124,7 +123,7 @@ const UserCouponPage: React.FC = () => {
             key: 'user',
             width: 150,
             render: (_, record) => (
-                <Space direction="vertical" size={0}>
+                <Space orientation="vertical" size={0}>
                     <Text strong>{record.user?.name || `用户${record.userId}`}</Text>
                     <Text type="secondary" style={{ fontSize: 12 }}>
                         ID: {record.userId}
@@ -138,7 +137,7 @@ const UserCouponPage: React.FC = () => {
             key: 'name',
             width: 150,
             render: (name, record) => (
-                <Space direction="vertical" size={0}>
+                <Space orientation="vertical" size={0}>
                     <Text strong>{name}</Text>
                     <Space size={4}>
                         <Tag color="blue" style={{ margin: 0 }}>
@@ -156,7 +155,7 @@ const UserCouponPage: React.FC = () => {
             key: 'discount',
             width: 120,
             render: (_, record) => (
-                <Space direction="vertical" size={0}>
+                <Space orientation="vertical" size={0}>
                     {record.type === 'deduct' ? (
                         <Text type="danger" strong>
                             减 ¥{centsToYuan(record.deductAmountCents)}
@@ -266,8 +265,7 @@ const UserCouponPage: React.FC = () => {
                         <Statistic
                             title="可用"
                             value={stats.available}
-                            valueStyle={{ color: token.colorSuccess }}
-                        />
+                            />
                     </Card>
                 </Col>
                 <Col xs={12} sm={6}>
@@ -275,8 +273,7 @@ const UserCouponPage: React.FC = () => {
                         <Statistic
                             title="已使用"
                             value={stats.used}
-                            valueStyle={{ color: token.colorPrimary }}
-                        />
+                            />
                     </Card>
                 </Col>
                 <Col xs={12} sm={6}>
@@ -284,8 +281,7 @@ const UserCouponPage: React.FC = () => {
                         <Statistic
                             title="已锁定"
                             value={stats.locked}
-                            valueStyle={{ color: token.colorWarning }}
-                        />
+                            />
                     </Card>
                 </Col>
                 <Col xs={12} sm={6}>
@@ -293,8 +289,7 @@ const UserCouponPage: React.FC = () => {
                         <Statistic
                             title="已过期"
                             value={stats.expired}
-                            valueStyle={{ color: token.colorTextSecondary }}
-                        />
+                            />
                     </Card>
                 </Col>
             </Row>

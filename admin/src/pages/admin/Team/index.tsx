@@ -18,7 +18,7 @@ import {
     Statistic,
     Form,
     Select,
-    theme,
+    
     Radio,
     InputNumber,
     Typography,
@@ -66,7 +66,6 @@ const shareTypeMap: Record<'equal' | 'custom', { text: string }> = {
  * 团队管理页面
  */
 const TeamPage: React.FC = () => {
-    const { token } = theme.useToken();
     const [loading, setLoading] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [loadError, setLoadError] = useState<string | null>(null);
@@ -561,7 +560,7 @@ const TeamPage: React.FC = () => {
                 stats && (
                     <Space size="large">
                         <Statistic title="总团队数" value={stats.totalTeams} />
-                        <Statistic title="活跃团队" value={stats.activeTeams} valueStyle={{ color: token.colorSuccess }} />
+                        <Statistic title="活跃团队" value={stats.activeTeams} />
                         <Statistic title="总成员数" value={stats.totalMembers} />
                     </Space>
                 )

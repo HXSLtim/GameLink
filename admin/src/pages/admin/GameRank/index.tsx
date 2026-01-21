@@ -360,7 +360,7 @@ const GameRankPage: React.FC = () => {
                 onCancel={() => setModalVisible(false)}
                 confirmLoading={submitLoading}
                 width={560}
-                destroyOnClose
+                destroyOnHidden
             >
                 <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
                     <Form.Item name="gameId" label="所属游戏" rules={[{ required: true, message: '请选择游戏' }]}>

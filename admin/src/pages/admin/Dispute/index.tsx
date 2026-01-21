@@ -18,7 +18,7 @@ import {
     Statistic,
     Alert,
     App,
-    theme,
+    
     Switch,
     Tooltip,
     Space,
@@ -65,7 +65,6 @@ interface DisputeQueryParams {
  */
 const DisputePage: React.FC = () => {
     const { message, modal } = App.useApp();
-    const { token } = theme.useToken();
     const [loading, setLoading] = useState(false);
     const [disputes, setDisputes] = useState<Dispute[]>([]);
     const [total, setTotal] = useState(0);
@@ -361,7 +360,6 @@ const DisputePage: React.FC = () => {
                             <Statistic
                                 title="待处理"
                                 value={stats.pending}
-                                valueStyle={{ color: token.colorWarning }}
                                 prefix={<ExclamationCircleOutlined />}
                             />
                         </Card>
@@ -371,8 +369,7 @@ const DisputePage: React.FC = () => {
                             <Statistic
                                 title="已指派"
                                 value={stats.assigned}
-                                valueStyle={{ color: token.colorPrimary }}
-                            />
+                                />
                         </Card>
                     </Col>
                     <Col span={4}>
@@ -380,8 +377,7 @@ const DisputePage: React.FC = () => {
                             <Statistic
                                 title="调解中"
                                 value={stats.mediating}
-                                valueStyle={{ color: token.colorInfo }}
-                            />
+                                />
                         </Card>
                     </Col>
                     <Col span={4}>
@@ -389,7 +385,6 @@ const DisputePage: React.FC = () => {
                             <Statistic
                                 title="已解决"
                                 value={stats.resolved}
-                                valueStyle={{ color: token.colorSuccess }}
                                 prefix={<CheckCircleOutlined />}
                             />
                         </Card>
@@ -399,8 +394,7 @@ const DisputePage: React.FC = () => {
                             <Statistic
                                 title="已驳回"
                                 value={stats.rejected}
-                                valueStyle={{ color: token.colorError }}
-                            />
+                                />
                         </Card>
                     </Col>
                     <Col span={4}>
@@ -408,7 +402,6 @@ const DisputePage: React.FC = () => {
                             <Statistic
                                 title="SLA超时"
                                 value={stats.slaBreached}
-                                valueStyle={{ color: token.colorError }}
                                 prefix={<ClockCircleOutlined />}
                             />
                         </Card>

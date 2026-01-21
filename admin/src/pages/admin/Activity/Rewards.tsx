@@ -16,7 +16,6 @@ import {
     Statistic,
     Select,
     Progress,
-    theme,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { logger } from '@/utils/logger';
@@ -35,7 +34,6 @@ import {
 const { Title, Text } = Typography;
 
 const RewardsPage: React.FC = () => {
-    const { token } = theme.useToken();
     const [loading, setLoading] = useState(false);
     const [activities, setActivities] = useState<Activity[]>([]);
     const [selectedActivityId, setSelectedActivityId] = useState<number | undefined>(undefined);
@@ -100,7 +98,7 @@ const RewardsPage: React.FC = () => {
             key: 'coupon',
             width: 220,
             render: (_, record) => (
-                <Space direction="vertical" size={0}>
+                <Space orientation="vertical" size={0}>
                     <Text strong>{record.couponTemplate?.name || `ID: ${record.couponTemplateId}`}</Text>
                     {record.couponTemplate?.type && (
                         <Tag color="blue" style={{ fontSize: 12 }}>
@@ -129,7 +127,7 @@ const RewardsPage: React.FC = () => {
             key: 'probability',
             width: 130,
             render: (probability) => (
-                <Space direction="vertical" size={0}>
+                <Space orientation="vertical" size={0}>
                     <Text strong style={{ color: probability > 20 ? '#ff4d4f' : undefined }}>
                         {probability}%
                     </Text>
@@ -154,7 +152,7 @@ const RewardsPage: React.FC = () => {
                 const isUnlimited = record.totalStock === 0;
 
                 return (
-                    <Space direction="vertical" size={0} style={{ width: '100%' }}>
+                    <Space orientation="vertical" size={0} style={{ width: '100%' }}>
                         <Text>
                             {record.remainingStock.toLocaleString()} / {' '}
                             {isUnlimited ? '无限制' : record.totalStock.toLocaleString()}
@@ -246,8 +244,7 @@ const RewardsPage: React.FC = () => {
                             <Statistic
                                 title="总库存"
                                 value={totalStock}
-                                valueStyle={{ color: token.colorPrimary }}
-                            />
+                                />
                         </Card>
                     </Col>
                     <Col xs={12} sm={6}>
@@ -255,8 +252,7 @@ const RewardsPage: React.FC = () => {
                             <Statistic
                                 title="剩余库存"
                                 value={totalRemaining}
-                                valueStyle={{ color: totalRemaining < totalStock * 0.2 ? token.colorError : token.colorSuccess }}
-                            />
+                                />
                         </Card>
                     </Col>
                     <Col xs={12} sm={6}>
@@ -265,8 +261,7 @@ const RewardsPage: React.FC = () => {
                                 title="总概率"
                                 value={totalProbability}
                                 suffix="%"
-                                valueStyle={{ color: totalProbability > 100 ? token.colorError : token.colorPrimary }}
-                            />
+                                />
                         </Card>
                     </Col>
                 </Row>

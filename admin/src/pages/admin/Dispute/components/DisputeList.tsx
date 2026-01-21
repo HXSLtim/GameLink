@@ -191,7 +191,7 @@ export const DisputeList: React.FC<DisputeListProps> = ({
                 // 已分配状态：显示客服信息
                 if (record.assignedServiceName) {
                     return (
-                        <Space direction="vertical" size={0}>
+                        <Space orientation="vertical" size={0}>
                             <span>{record.assignedServiceName}</span>
                             {record.originalServiceName && (
                                 <span style={{ fontSize: '12px', color: '#999' }}>

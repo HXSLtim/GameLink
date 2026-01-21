@@ -121,16 +121,14 @@ const MemberCard: React.FC<MemberCardProps> = React.memo(({
                             title="订单数"
                             value={member.orderCount}
                             suffix="单"
-                            valueStyle={{ fontSize: 14 }}
-                        />
+                            />
                     </Col>
                     <Col span={12}>
                         <Statistic
                             title="收益"
                             value={member.incomeCents ? (member.incomeCents / 100).toFixed(2) : 0}
                             prefix="¥"
-                            valueStyle={{ fontSize: 14 }}
-                        />
+                            />
                     </Col>
                 </Row>
             )}

@@ -3,7 +3,7 @@
  * 包含充值选项管理和充值记录管理两个子页面
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import { Tabs, Card, Statistic, Row, Col, App, Spin, theme } from 'antd';
+import { Tabs, Card, Statistic, Row, Col, App, Spin } from 'antd';
 import {
     WalletOutlined,
     TransactionOutlined,
@@ -23,7 +23,6 @@ import { logger } from '@/utils/logger';
  */
 const RechargePage: React.FC = () => {
     const { message } = App.useApp();
-    const { token } = theme.useToken();
     const [activeTab, setActiveTab] = useState('options');
     const [loading, setLoading] = useState(false);
     const [stats, setStats] = useState<RechargeStats | null>(null);
@@ -63,8 +62,7 @@ const RechargePage: React.FC = () => {
                                 title="总充值订单"
                                 value={stats?.totalOrders || 0}
                                 prefix={<TransactionOutlined />}
-                                valueStyle={{ color: token.colorPrimary }}
-                            />
+                                />
                         </Card>
                     </Col>
                     <Col xs={24} sm={12} md={6}>
@@ -74,8 +72,7 @@ const RechargePage: React.FC = () => {
                                 value={(stats?.totalAmountCents || 0) / 100}
                                 precision={2}
                                 prefix="¥"
-                                valueStyle={{ color: token.colorSuccess }}
-                            />
+                                />
                         </Card>
                     </Col>
                     <Col xs={24} sm={12} md={6}>
@@ -84,8 +81,7 @@ const RechargePage: React.FC = () => {
                                 title="成功订单"
                                 value={stats?.paidOrders || 0}
                                 prefix={<CheckCircleOutlined />}
-                                valueStyle={{ color: token.colorSuccess }}
-                            />
+                                />
                         </Card>
                     </Col>
                     <Col xs={24} sm={12} md={6}>
@@ -94,8 +90,7 @@ const RechargePage: React.FC = () => {
                                 title="失败订单"
                                 value={stats?.failedOrders || 0}
                                 prefix={<CloseCircleOutlined />}
-                                valueStyle={{ color: token.colorError }}
-                            />
+                                />
                         </Card>
                     </Col>
                 </Row>
@@ -119,8 +114,7 @@ const RechargePage: React.FC = () => {
                             value={(stats?.todayAmountCents || 0) / 100}
                             precision={2}
                             prefix="¥"
-                            valueStyle={{ color: token.colorWarning }}
-                        />
+                            />
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} md={8}>
@@ -130,8 +124,7 @@ const RechargePage: React.FC = () => {
                             value={(stats?.monthAmountCents || 0) / 100}
                             precision={2}
                             prefix="¥"
-                            valueStyle={{ color: token.colorInfo }}
-                        />
+                            />
                     </Card>
                 </Col>
             </Row>

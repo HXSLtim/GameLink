@@ -11,7 +11,7 @@ import {
     Row,
     Col,
     Statistic,
-    theme,
+    
 } from 'antd';
 import {
     TeamOutlined,
@@ -29,7 +29,6 @@ import { logger } from '@/utils/logger';
  * Referral Management Page
  */
 const ReferralPage: React.FC = () => {
-    const { token } = theme.useToken();
     const [stats, setStats] = useState<ReferralStats | null>(null);
     const [statsLoading, setStatsLoading] = useState(false);
     const [activeTab, setActiveTab] = useState('1');
@@ -80,8 +79,7 @@ const ReferralPage: React.FC = () => {
                             title="总推荐数"
                             value={stats?.totalReferrals || 0}
                             prefix={<TeamOutlined />}
-                            valueStyle={{ color: token.colorPrimary }}
-                        />
+                            />
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
@@ -90,8 +88,7 @@ const ReferralPage: React.FC = () => {
                             title="已完成推荐"
                             value={stats?.completedReferrals || 0}
                             prefix={<UserAddOutlined />}
-                            valueStyle={{ color: token.colorSuccess }}
-                        />
+                            />
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
@@ -102,8 +99,7 @@ const ReferralPage: React.FC = () => {
                             prefix={<DollarOutlined />}
                             precision={2}
                             suffix="元"
-                            valueStyle={{ color: token.colorWarning }}
-                        />
+                            />
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
@@ -112,8 +108,7 @@ const ReferralPage: React.FC = () => {
                             title="活跃邀请码"
                             value={stats?.activeCodes || 0}
                             prefix={<GiftOutlined />}
-                            valueStyle={{ color: token.colorInfo }}
-                        />
+                            />
                         <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 4 }}>
                             总计: {stats?.totalCodes || 0} 个
                         </div>

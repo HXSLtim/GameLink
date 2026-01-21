@@ -123,7 +123,7 @@ const OrderPage: React.FC = () => {
     /**
      * 查看详情
      */
-    const handleViewDetail = async (order: Order) => {
+    const handleViewDetail = useCallback(async (order: Order) => {
         try {
             const response = await adminApi.getOrder(order.id);
             if (response.data.success) {
@@ -135,12 +135,12 @@ const OrderPage: React.FC = () => {
             setCurrentOrder(order);
         }
         setDetailDrawerVisible(true);
-    };
+    }, []);
 
     /**
      * 取消订单
      */
-    const handleCancel = async (order: Order) => {
+    const handleCancel = useCallback(async (order: Order) => {
         try {
             await adminApi.cancelOrder(order.id);
             message.success(`订单 ${order.orderNo} 已取消`);
@@ -149,19 +149,20 @@ const OrderPage: React.FC = () => {
             logger.error('Cancel order error:', error);
             message.error('取消订单失败');
         }
-    };
+    }, [loadData]);
 
     /**
      * 打开退款弹窗
      */
-    const handleOpenRefund = (order: Order) => {
+    const handleOpenRefund = useCallback((order: Order) => {
         setCurrentOrder(order);
         refundForm.setFieldsValue({
             amount: order.totalPriceCents / 100,
             reason: '',
         });
         setRefundModalVisible(true);
-    };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     /**
      * 执行退款

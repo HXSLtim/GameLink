@@ -18,7 +18,7 @@ import {
     message,
     Badge,
     Progress,
-    theme,
+    
 } from 'antd';
 import {
     DollarOutlined,
@@ -52,7 +52,6 @@ interface PendingOrder {
 }
 
 const PlayerHome: React.FC = () => {
-    const { token } = theme.useToken();
     const [loading, setLoading] = useState(false);
     const [isOnline, setIsOnline] = useState(true);
     const [stats, setStats] = useState<DashboardStats>({
@@ -167,8 +166,7 @@ const PlayerHome: React.FC = () => {
                             value={stats.todayEarnings}
                             prefix={<DollarOutlined />}
                             suffix="元"
-                            valueStyle={{ color: token.colorSuccess }}
-                        />
+                            />
                     </Card>
                 </Col>
                 <Col xs={12} sm={6}>
@@ -178,8 +176,7 @@ const PlayerHome: React.FC = () => {
                             value={stats.monthEarnings}
                             prefix={<DollarOutlined />}
                             suffix="元"
-                            valueStyle={{ color: token.colorPrimary }}
-                        />
+                            />
                     </Card>
                 </Col>
                 <Col xs={12} sm={6}>
@@ -198,8 +195,7 @@ const PlayerHome: React.FC = () => {
                             value={stats.rating}
                             prefix={<StarOutlined />}
                             precision={1}
-                            valueStyle={{ color: token.colorWarning }}
-                        />
+                            />
                     </Card>
                 </Col>
             </Row>
@@ -274,7 +270,7 @@ const PlayerHome: React.FC = () => {
                                         </Space>
                                     }
                                     description={
-                                        <Space direction="vertical" size={0}>
+                                        <Space orientation="vertical" size={0}>
                                             <Text>{order.service} · {order.duration}小时</Text>
                                             <Text type="secondary">{order.createdAt}</Text>
                                         </Space>

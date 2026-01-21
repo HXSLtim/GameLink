@@ -290,7 +290,7 @@ const RoutingTestPage: React.FC = () => {
                                                 showIcon
                                                 style={{ marginBottom: 12 }}
                                             />
-                                            <Space direction="vertical" size={8} style={{ width: '100%' }}>
+                                            <Space orientation="vertical" size={8} style={{ width: '100%' }}>
                                                 {testResult.matchDetails.map((cond, index) => (
                                                     <Tag key={index} color="cyan" style={{
                                                         padding: '4px 12px',
@@ -319,16 +319,14 @@ const RoutingTestPage: React.FC = () => {
                                                 title="游戏类型"
                                                 value={form.getFieldValue('gameType') ?
                                                     getGameTypeLabel(form.getFieldValue('gameType')) : '-'}
-                                                valueStyle={{ fontSize: 14 }}
-                                            />
+                                                />
                                         </Col>
                                         <Col span={12}>
                                             <Statistic
                                                 title="服务类型"
                                                 value={form.getFieldValue('serviceType') ?
                                                     getServiceTypeLabel(form.getFieldValue('serviceType')) : '-'}
-                                                valueStyle={{ fontSize: 14 }}
-                                            />
+                                                />
                                         </Col>
                                         <Col span={12}>
                                             <Statistic
@@ -336,16 +334,14 @@ const RoutingTestPage: React.FC = () => {
                                                 value={form.getFieldValue('amountCents') || '-'}
                                                 suffix="元"
                                                 precision={2}
-                                                valueStyle={{ fontSize: 14 }}
-                                            />
+                                                />
                                         </Col>
                                         <Col span={12}>
                                             <Statistic
                                                 title="地区"
                                                 value={form.getFieldValue('region') ?
                                                     getRegionLabel(form.getFieldValue('region')) : '-'}
-                                                valueStyle={{ fontSize: 14 }}
-                                            />
+                                                />
                                         </Col>
                                     </Row>
                                 </Card>
@@ -369,7 +365,7 @@ const RoutingTestPage: React.FC = () => {
                 style={{ marginTop: 16 }}
                 size="small"
             >
-                <Space direction="vertical" size={8}>
+                <Space orientation="vertical" size={8}>
                     <div>1. 选择模拟订单的游戏类型、服务类型、金额和地区</div>
                     <div>2. 点击"测试路由"按钮进行规则匹配</div>
                     <div>3. 系统将按优先级顺序检查路由规则，返回匹配的主体</div>

@@ -367,7 +367,7 @@ const ReviewReports: React.FC = () => {
             onChange={e => setHandleAction(e.target.value)}
             style={{ display: 'block', marginTop: 8 }}
           >
-            <Space direction="vertical">
+            <Space orientation="vertical">
               <Radio value="delete">
                 <Space>
                   <DeleteOutlined style={{ color: '#ff4d4f' }} />

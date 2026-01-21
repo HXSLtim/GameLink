@@ -18,7 +18,7 @@ import {
     Switch,
     Modal,
     Input,
-    theme,
+    
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
@@ -50,7 +50,6 @@ const { Title, Text } = Typography;
 
 const CouponPage: React.FC = () => {
     const { message } = App.useApp();
-    const { token } = theme.useToken();
     const [loading, setLoading] = useState(false);
     const [templates, setTemplates] = useState<CouponTemplate[]>([]);
     const [stats, setStats] = useState<CouponStats | null>(null);
@@ -221,7 +220,7 @@ const CouponPage: React.FC = () => {
             key: 'name',
             width: TABLE.COLUMN_WIDTH.XXLARGE,
             render: (name, record) => (
-                <Space direction="vertical" size={OTHER.SPACE_SIZE.ZERO}>
+                <Space orientation="vertical" size={OTHER.SPACE_SIZE.ZERO}>
                     <Text strong>{name}</Text>
                     <Text type="secondary" style={{ fontSize: SIZES.SECONDARY_FONT_SIZE }}>
                         {getCouponTypeLabel(record.type)}
@@ -248,7 +247,7 @@ const CouponPage: React.FC = () => {
             key: 'discount',
             width: TABLE.COLUMN_WIDTH.XXLARGE,
             render: (_, record) => (
-                <Space direction="vertical" size={OTHER.SPACE_SIZE.ZERO}>
+                <Space orientation="vertical" size={OTHER.SPACE_SIZE.ZERO}>
                     {record.type === 'deduct' ? (
                         <Text type="danger" strong>
                             减 ¥{centsToYuan(record.deductAmountCents)}
@@ -393,8 +392,7 @@ const CouponPage: React.FC = () => {
                         <Statistic
                             title="启用模板"
                             value={stats?.activeTemplates || 0}
-                            valueStyle={{ color: token.colorSuccess }}
-                        />
+                            />
                     </Card>
                 </Col>
                 <Col xs={LAYOUT.COL_SPAN.HALF} sm={LAYOUT.COL_SPAN.QUARTER}>
@@ -410,8 +408,7 @@ const CouponPage: React.FC = () => {
                         <Statistic
                             title="已使用"
                             value={stats?.usedCoupons || 0}
-                            valueStyle={{ color: token.colorPrimary }}
-                        />
+                            />
                     </Card>
                 </Col>
             </Row>

@@ -137,7 +137,7 @@ const OptionForm: React.FC<OptionFormProps> = ({ visible, option, onCancel, onSu
             onCancel={onCancel}
             confirmLoading={loading}
             width={700}
-            destroyOnClose
+            destroyOnHidden
         >
             <Form form={form} layout="vertical">
                 {/* 基本信息 */}
@@ -368,7 +368,7 @@ const OptionForm: React.FC<OptionFormProps> = ({ visible, option, onCancel, onSu
 
                 {/* 说明信息 */}
                 <div style={{ marginTop: 16, padding: 12, backgroundColor: '#f0f5ff', borderRadius: 4 }}>
-                    <Space direction="vertical" size={4}>
+                    <Space orientation="vertical" size={4}>
                         <Text style={{ fontSize: 12 }}>
                             • 用户充值时，将支付售价并获得到账金额（售价+赠送金额）
                         </Text>

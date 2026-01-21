@@ -18,7 +18,7 @@ import {
     App,
     Popconfirm,
     Typography,
-    theme,
+    
     Row,
     Col,
     Statistic,
@@ -72,7 +72,6 @@ const subCategoryMap: Record<string, string> = {
 
 const AdminService: React.FC = () => {
     const { message } = App.useApp();
-    const { token } = theme.useToken();
     const [loading, setLoading] = useState(false);
     const [services, setServices] = useState<ServiceItem[]>([]);
     const [games, setGames] = useState<Game[]>([]);
@@ -251,7 +250,7 @@ const AdminService: React.FC = () => {
             dataIndex: 'name',
             key: 'name',
             render: (name, record) => (
-                <Space direction="vertical" size={0}>
+                <Space orientation="vertical" size={0}>
                     <Text strong>{name}</Text>
                     <Text type="secondary" style={{ fontSize: 12 }}>{record.itemCode}</Text>
                 </Space>
@@ -339,7 +338,7 @@ const AdminService: React.FC = () => {
                 </Col>
                 <Col xs={12} sm={6}>
                     <Card style={{ minHeight: 120 }}>
-                        <Statistic title="已启用" value={stats.active} valueStyle={{ color: token.colorSuccess }} />
+                        <Statistic title="已启用" value={stats.active} />
                     </Card>
                 </Col>
             </Row>

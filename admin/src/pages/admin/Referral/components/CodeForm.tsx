@@ -103,7 +103,7 @@ const CodeForm: React.FC<CodeFormProps> = ({
             onOk={handleOk}
             onCancel={onCancel}
             width={500}
-            destroyOnClose
+            destroyOnHidden
         >
             <Form
                 form={form}

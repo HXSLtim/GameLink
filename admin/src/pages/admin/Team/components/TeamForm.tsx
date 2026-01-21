@@ -116,7 +116,7 @@ const TeamForm: React.FC<TeamFormProps> = ({
             onCancel={onCancel}
             confirmLoading={loading || outerLoading}
             width={600}
-            destroyOnClose
+            destroyOnHidden
         >
             <Form
                 form={form}

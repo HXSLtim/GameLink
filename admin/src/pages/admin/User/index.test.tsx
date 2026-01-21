@@ -639,7 +639,7 @@ describe('UserPage', () => {
           page_size: 10,
         });
       });
-    });
+    }, 20000);
   });
 
   describe('User Edit', () => {

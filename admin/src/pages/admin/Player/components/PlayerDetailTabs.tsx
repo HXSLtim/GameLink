@@ -293,8 +293,7 @@ const EarningsTab: React.FC<{ player: Player }> = ({ player }) => {
                         value={stats ? (stats.totalEarnings / 100).toFixed(2) : 0}
                         prefix={<DollarOutlined />}
                         suffix="元"
-                        valueStyle={{ color: '#3f8600' }}
-                    />
+                        />
                 </Card>
             </Col>
             <Col span={12}>
@@ -304,8 +303,7 @@ const EarningsTab: React.FC<{ player: Player }> = ({ player }) => {
                         value={stats ? (stats.monthlyEarnings / 100).toFixed(2) : 0}
                         prefix={<DollarOutlined />}
                         suffix="元"
-                        valueStyle={{ color: '#1890ff' }}
-                    />
+                        />
                 </Card>
             </Col>
             <Col span={12}>

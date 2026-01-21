@@ -87,7 +87,7 @@ const RefundModal: React.FC<RefundModalProps> = ({ visible, record, onCancel, on
             okText="确认退款"
             okButtonProps={{ danger: true }}
             width={700}
-            destroyOnClose
+            destroyOnHidden
         >
             {/* 充值信息 */}
             <Descriptions column={2} bordered size="small" style={{ marginBottom: 16 }}>
@@ -131,7 +131,7 @@ const RefundModal: React.FC<RefundModalProps> = ({ visible, record, onCancel, on
             <Alert
                 message="退款警告"
                 description={
-                    <Space direction="vertical" size={4}>
+                    <Space orientation="vertical" size={4}>
                         <Text>• 退款将从用户余额中扣除已到账的充值金额（包含赠送金额）</Text>
                         <Text>• 退款后用户获得的优惠券将被收回</Text>
                         <Text>• 此操作不可撤销，请谨慎操作</Text>

@@ -124,19 +124,20 @@ const PlayerPage: React.FC = () => {
     /**
      * 查看详情
      */
-    const handleViewDetail = (player: Player) => {
+    const handleViewDetail = useCallback((player: Player) => {
         setCurrentPlayer(player);
         setDetailDrawerVisible(true);
-    };
+    }, []);
 
     /**
      * 打开审核弹窗
      */
-    const handleOpenAudit = (player: Player) => {
+    const handleOpenAudit = useCallback((player: Player) => {
         setCurrentPlayer(player);
         auditForm.resetFields();
         setAuditModalVisible(true);
-    };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     /**
      * 执行审核
@@ -160,7 +161,7 @@ const PlayerPage: React.FC = () => {
     /**
      * 封禁/解封
      */
-    const handleToggleBan = async (player: Player) => {
+    const handleToggleBan = useCallback(async (player: Player) => {
         try {
             const newStatus = player.verificationStatus === 'rejected' ? 'verified' : 'rejected';
             await adminApi.updatePlayerVerification(player.id, newStatus);
@@ -171,7 +172,7 @@ const PlayerPage: React.FC = () => {
             logger.error('Toggle ban error:', error);
             message.error('操作失败');
         }
-    };
+    }, [loadData]);
 
     /**
      * 批量修改状态

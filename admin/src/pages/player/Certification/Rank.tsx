@@ -173,7 +173,7 @@ const RankCertificationPage: React.FC = () => {
 
         return (
             <Card style={{ marginBottom: 24 }}>
-                <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                <Space orientation="vertical" size="large" style={{ width: '100%' }}>
                     <div>
                         <Title level={4}>认证状态</Title>
                         {getStatusTag(certification.status)}
@@ -292,7 +292,7 @@ const RankCertificationPage: React.FC = () => {
                 {certification?.status === 'rejected' && renderCertificationStatus()}
 
                 <Card>
-                    <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                    <Space orientation="vertical" size="large" style={{ width: '100%' }}>
                         <div>
                             <Title level={4}>
                                 <TrophyOutlined /> 段位认证

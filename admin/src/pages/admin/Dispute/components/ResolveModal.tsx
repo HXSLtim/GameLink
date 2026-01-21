@@ -76,7 +76,7 @@ export const ResolveModal: React.FC<ResolveModalProps> = ({
                             borderRadius: 4,
                         }}
                     >
-                        <Space direction="vertical" size={4}>
+                        <Space orientation="vertical" size={4}>
                             <div>
                                 <strong>纠纷ID:</strong> {dispute.id}
                             </div>
@@ -99,7 +99,7 @@ export const ResolveModal: React.FC<ResolveModalProps> = ({
                             rules={[{ required: true, message: '请选择解决方案' }]}
                         >
                             <Radio.Group>
-                                <Space direction="vertical">
+                                <Space orientation="vertical">
                                     {resolutionOptions.map((option) => (
                                         <Radio key={option.value} value={option.value}>
                                             {option.label}

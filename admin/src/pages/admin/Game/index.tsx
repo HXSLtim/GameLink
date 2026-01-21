@@ -237,7 +237,7 @@ const GamePage: React.FC = () => {
     const searchFields: SearchField[] = useMemo(() => [
         { name: 'keyword', label: '游戏名称', type: 'input', placeholder: '请输入游戏名称' },
         { name: 'category', label: '分类', type: 'select', options: categoryOptions },
-    ], [categoryOptions]);
+    ], []);
 
     /**
      * 表格列配置

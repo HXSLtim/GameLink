@@ -100,7 +100,7 @@ export const AssignModal: React.FC<AssignModalProps> = ({
                             borderRadius: 4,
                         }}
                     >
-                        <Space direction="vertical" size={4}>
+                        <Space orientation="vertical" size={4}>
                             <div>
                                 <strong>纠纷ID:</strong> {dispute.id}
                             </div>

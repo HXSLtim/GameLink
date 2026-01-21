@@ -112,7 +112,7 @@ const AdminNotificationsPage: React.FC = () => {
                                     {item.message}
                                 </div>
                             </div>
-                            <Space direction="vertical" align="end">
+                            <Space orientation="vertical" align="end">
                                 {!item.isRead && (
                                     <Button
                                         type="text"

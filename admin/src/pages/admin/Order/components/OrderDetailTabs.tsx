@@ -250,7 +250,6 @@ const PaymentTab: React.FC<{ order: Order }> = ({ order }) => {
                             title="订单金额"
                             value={(order.totalPriceCents / 100).toFixed(2)}
                             prefix="¥"
-                            valueStyle={{ color: '#cf1322' }}
                         />
                     </Card>
                 </Col>
@@ -258,12 +257,8 @@ const PaymentTab: React.FC<{ order: Order }> = ({ order }) => {
                     <Card size="small">
                         <Statistic
                             title="支付状态"
-                            value={order.status === 'completed' || order.status === 'in_progress' ? '已支付' : 
+                            value={order.status === 'completed' || order.status === 'in_progress' ? '已支付' :
                                    order.status === 'refunded' ? '已退款' : '待支付'}
-                            valueStyle={{ 
-                                color: order.status === 'completed' || order.status === 'in_progress' ? '#3f8600' : 
-                                       order.status === 'refunded' ? '#cf1322' : '#faad14'
-                            }}
                         />
                     </Card>
                 </Col>

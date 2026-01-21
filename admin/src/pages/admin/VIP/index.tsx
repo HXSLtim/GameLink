@@ -18,7 +18,7 @@ import {
     Statistic,
     Segmented,
     Input,
-    theme,
+    
 } from 'antd';
 import {
     PlusOutlined,
@@ -45,7 +45,6 @@ const { Search } = Input;
 
 const VIPPage: React.FC = () => {
     const { message } = App.useApp();
-    const { token } = theme.useToken();
     const [loading, setLoading] = useState(false);
     const [levels, setLevels] = useState<VIPLevel[]>([]);
     const [filteredLevels, setFilteredLevels] = useState<VIPLevel[]>([]);
@@ -201,7 +200,7 @@ const VIPPage: React.FC = () => {
                         borderTop: `4px solid ${levelColor}`,
                         position: 'relative',
                     }}
-                    bodyStyle={{ padding: 16 }}
+                    styles={{ body: { padding: 16 } }}
                 >
                     {/* 状态标签 */}
                     <div style={{ position: 'absolute', top: 12, right: 12 }}>
@@ -248,16 +247,14 @@ const VIPPage: React.FC = () => {
                                 <Statistic
                                     title="升级经验"
                                     value={level.expRequired}
-                                    valueStyle={{ fontSize: 16, color: token.colorPrimary }}
-                                />
+                                    />
                             </Col>
                             <Col span={12}>
                                 <Statistic
                                     title="订单折扣"
                                     value={level.orderDiscount * 100}
                                     suffix="%"
-                                    valueStyle={{ fontSize: 16, color: token.colorSuccess }}
-                                />
+                                    />
                             </Col>
                         </Row>
                         {level.monthlyCouponCount > 0 && (
@@ -397,7 +394,6 @@ const VIPPage: React.FC = () => {
                         <Statistic
                             title="已启用"
                             value={stats.active}
-                            valueStyle={{ color: token.colorSuccess }}
                             prefix={<CheckCircleOutlined />}
                         />
                     </Card>
@@ -407,7 +403,6 @@ const VIPPage: React.FC = () => {
                         <Statistic
                             title="默认等级"
                             value={stats.defaultCount}
-                            valueStyle={{ color: token.colorWarning }}
                             prefix={<StarOutlined />}
                         />
                     </Card>

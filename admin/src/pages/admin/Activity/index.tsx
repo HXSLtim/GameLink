@@ -19,7 +19,7 @@ import {
     Select,
     Switch,
     Modal,
-    theme,
+    
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
@@ -55,7 +55,6 @@ import { logger } from '@/utils/logger';
 const { Title, Text } = Typography;
 
 const ActivityPage: React.FC = () => {
-    const { token } = theme.useToken();
     const [loading, setLoading] = useState(false);
     const [activities, setActivities] = useState<Activity[]>([]);
     const [stats, setStats] = useState<AllActivityStats | null>(null);
@@ -144,7 +143,7 @@ const ActivityPage: React.FC = () => {
         setFormVisible(true);
     };
 
-    const handleDelete = async (id: number) => {
+    const handleDelete = useCallback(async (id: number) => {
         try {
             const res = await activityApi.deleteActivity(id);
             if (res.data?.success) {
@@ -158,7 +157,7 @@ const ActivityPage: React.FC = () => {
             logger.error('Failed to delete activity', err);
             message.error('删除失败');
         }
-    };
+    }, [loadData, loadStats]);
 
     const handleSubmit = async (values: CreateActivityDto) => {
         setFormLoading(true);
@@ -186,7 +185,7 @@ const ActivityPage: React.FC = () => {
         }
     };
 
-    const handlePublish = async (activity: Activity) => {
+    const handlePublish = useCallback(async (activity: Activity) => {
         try {
             const res = await activityApi.publishActivity(activity.id);
             if (res.data?.success) {
@@ -199,9 +198,9 @@ const ActivityPage: React.FC = () => {
             logger.error('Failed to publish activity', err);
             message.error('发布失败');
         }
-    };
+    }, [loadData]);
 
-    const handleUnpublish = async (activity: Activity) => {
+    const handleUnpublish = useCallback(async (activity: Activity) => {
         try {
             const res = await activityApi.unpublishActivity(activity.id);
             if (res.data?.success) {
@@ -214,7 +213,7 @@ const ActivityPage: React.FC = () => {
             logger.error('Failed to unpublish activity', err);
             message.error('下架失败');
         }
-    };
+    }, [loadData]);
 
     const handleViewDetail = async (activity: Activity) => {
         setDetailActivity(activity);
@@ -257,7 +256,7 @@ const ActivityPage: React.FC = () => {
         setRewardFormVisible(true);
     };
 
-    const handleDeleteReward = async (rewardId: number) => {
+    const handleDeleteReward = useCallback(async (rewardId: number) => {
         try {
             const res = await activityApi.deleteReward(rewardId);
             if (res.data?.success) {
@@ -276,7 +275,7 @@ const ActivityPage: React.FC = () => {
             logger.error('Failed to delete reward', err);
             message.error('删除失败');
         }
-    };
+    }, [rewardsActivity]);
 
     const handleSubmitReward = async (values: CreateRewardDto) => {
         setRewardLoading(true);
@@ -322,7 +321,7 @@ const ActivityPage: React.FC = () => {
             key: 'name',
             width: 180,
             render: (name, record) => (
-                <Space direction="vertical" size={0}>
+                <Space orientation="vertical" size={0}>
                     <Text strong>{name}</Text>
                     <Text type="secondary" style={{ fontSize: 12 }}>
                         {getActivityTypeLabel(record.type)}
@@ -353,7 +352,7 @@ const ActivityPage: React.FC = () => {
             key: 'time',
             width: 180,
             render: (_, record) => (
-                <Space direction="vertical" size={0}>
+                <Space orientation="vertical" size={0}>
                     <Text style={{ fontSize: 12 }}>
                         开始：{dayjs(record.startAt).format('MM-DD HH:mm')}
                     </Text>
@@ -368,7 +367,7 @@ const ActivityPage: React.FC = () => {
             key: 'participants',
             width: 100,
             render: (_, record) => (
-                <Space direction="vertical" size={0}>
+                <Space orientation="vertical" size={0}>
                     <Text>{record.totalParticipants.toLocaleString()}</Text>
                     <Text type="secondary" style={{ fontSize: 12 }}>
                         今日：{record.todayParticipants}
@@ -472,7 +471,7 @@ const ActivityPage: React.FC = () => {
                 </Space>
             ),
         },
-    ], []);
+    ], [handleDelete, handlePublish, handleUnpublish]);
 
     const rewardsColumns: ColumnsType<ActivityReward> = useMemo(() => [
         {
@@ -486,7 +485,7 @@ const ActivityPage: React.FC = () => {
             key: 'coupon',
             width: 200,
             render: (_, record) => (
-                <Space direction="vertical" size={0}>
+                <Space orientation="vertical" size={0}>
                     <Text>{record.couponTemplate?.name || `ID: ${record.couponTemplateId}`}</Text>
                     {record.couponTemplate?.type && (
                         <Text type="secondary" style={{ fontSize: 12 }}>
@@ -514,7 +513,7 @@ const ActivityPage: React.FC = () => {
             key: 'stock',
             width: 150,
             render: (_, record) => (
-                <Space direction="vertical" size={0}>
+                <Space orientation="vertical" size={0}>
                     <Text>
                         {record.remainingStock} / {record.totalStock || '无限制'}
                     </Text>
@@ -559,7 +558,8 @@ const ActivityPage: React.FC = () => {
                 </Space>
             ),
         },
-    ], [rewardsActivity]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    ], [rewardsActivity, handleDeleteReward]);
 
     return (
         <div style={{ padding: 24 }}>
@@ -583,8 +583,7 @@ const ActivityPage: React.FC = () => {
                         <Statistic
                             title="进行中"
                             value={stats?.activeActivities || 0}
-                            valueStyle={{ color: token.colorSuccess }}
-                        />
+                            />
                     </Card>
                 </Col>
                 <Col xs={12} sm={6}>
@@ -592,8 +591,7 @@ const ActivityPage: React.FC = () => {
                         <Statistic
                             title="草稿"
                             value={stats?.draftActivities || 0}
-                            valueStyle={{ color: token.colorWarning }}
-                        />
+                            />
                     </Card>
                 </Col>
                 <Col xs={12} sm={6}>
@@ -601,8 +599,7 @@ const ActivityPage: React.FC = () => {
                         <Statistic
                             title="总参与"
                             value={stats?.totalParticipants || 0}
-                            valueStyle={{ color: token.colorPrimary }}
-                        />
+                            />
                     </Card>
                 </Col>
             </Row>

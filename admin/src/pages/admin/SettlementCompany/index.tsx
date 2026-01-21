@@ -224,7 +224,7 @@ const SettlementCompanyPage: React.FC = () => {
                     <Card><Statistic title="公司总数" value={total} prefix={<BankOutlined />} /></Card>
                 </Col>
                 <Col span={8}>
-                    <Card><Statistic title="启用公司" value={companies.filter(c => c.status === 'active').length} valueStyle={{ color: '#52c41a' }} /></Card>
+                    <Card><Statistic title="启用公司" value={companies.filter(c => c.status === 'active').length} /></Card>
                 </Col>
                 <Col span={8}>
                     <Card><Statistic title="关联陪玩师" value={companies.reduce((sum, c) => sum + (c.playerCount || 0), 0)} /></Card>

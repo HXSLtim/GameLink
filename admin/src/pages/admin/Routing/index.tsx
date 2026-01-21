@@ -18,7 +18,7 @@ import {
     Popconfirm,
     Timeline,
     Descriptions,
-    theme,
+    
 } from 'antd';
 import {
     EditOutlined,
@@ -103,7 +103,6 @@ const renderConditions = (conditions: Array<{ field: string; operator: string; v
  */
 const RoutingRulePage: React.FC = () => {
     const navigate = useNavigate();
-    const { token } = theme.useToken();
     const [loading, setLoading] = useState(false);
     const [rules, setRules] = useState<RoutingRule[]>([]);
     const [total, setTotal] = useState(0);
@@ -254,7 +253,7 @@ const RoutingRulePage: React.FC = () => {
             key: 'name',
             width: 180,
             render: (text: string, record: RoutingRule) => (
-                <Space direction="vertical" size={2}>
+                <Space orientation="vertical" size={2}>
                     <span>{text}</span>
                     {record.description && (
                         <span style={{ fontSize: 11, color: '#999' }}>
@@ -395,7 +394,6 @@ const RoutingRulePage: React.FC = () => {
                         <Statistic
                             title="启用规则"
                             value={stats.active}
-                            valueStyle={{ color: token.colorSuccess }}
                             prefix={<CheckCircleOutlined />}
                         />
                     </Card>
@@ -405,7 +403,6 @@ const RoutingRulePage: React.FC = () => {
                         <Statistic
                             title="禁用规则"
                             value={stats.inactive}
-                            valueStyle={{ color: token.colorTextSecondary }}
                             prefix={<StopOutlined />}
                         />
                     </Card>
@@ -415,8 +412,7 @@ const RoutingRulePage: React.FC = () => {
                         <Statistic
                             title="默认主体"
                             value={stats.defaultEntity}
-                            valueStyle={{ fontSize: 16 }}
-                        />
+                            />
                     </Card>
                 </Col>
             </Row>

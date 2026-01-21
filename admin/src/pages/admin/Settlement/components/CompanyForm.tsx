@@ -138,7 +138,7 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
             onCancel={onCancel}
             confirmLoading={loading || outerLoading}
             width={700}
-            destroyOnClose
+            destroyOnHidden
         >
             <Form
                 form={form}

@@ -283,7 +283,7 @@ const ProfilePage: React.FC = () => {
 
                         <Divider />
 
-                        <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                        <Space orientation="vertical" style={{ width: '100%' }} size="middle">
                             <Button
                                 type="primary"
                                 icon={<EditOutlined />}
@@ -411,7 +411,7 @@ const ProfilePage: React.FC = () => {
             >
                 <Form form={editForm} layout="vertical" style={{ marginTop: 16 }}>
                     <Form.Item label="头像" name="avatarUrl">
-                        <Space direction="vertical" align="center" style={{ width: '100%' }}>
+                        <Space orientation="vertical" align="center" style={{ width: '100%' }}>
                             <Avatar
                                 size={80}
                                 src={editForm.getFieldValue('avatarUrl')}

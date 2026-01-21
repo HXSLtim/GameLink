@@ -584,8 +584,7 @@ const WithdrawPage: React.FC = () => {
                         <Statistic
                             title="待审核"
                             value={stats.pending}
-                            valueStyle={{ color: token.colorWarning }}
-                        />
+                            />
                     </Card>
                 </Col>
                 <Col span={6}>
@@ -593,8 +592,7 @@ const WithdrawPage: React.FC = () => {
                         <Statistic
                             title="已批准待打款"
                             value={stats.approved}
-                            valueStyle={{ color: token.colorPrimary }}
-                        />
+                            />
                     </Card>
                 </Col>
                 <Col span={6}>
@@ -602,8 +600,7 @@ const WithdrawPage: React.FC = () => {
                         <Statistic
                             title="已完成"
                             value={stats.completed}
-                            valueStyle={{ color: token.colorSuccess }}
-                        />
+                            />
                     </Card>
                 </Col>
                 <Col span={6}>
