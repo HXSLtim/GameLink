@@ -34,7 +34,7 @@ describe('auth-store', () => {
             const mockResponse = {
                 token: 'test-token',
                 refreshToken: 'test-refresh-token',
-                user: { id: '1', username: 'testuser', avatar: '' },
+                user: { id: 1, username: 'testuser', name: '', avatar: '' },
                 role: 'user',
                 permissions: ['read'],
             };
@@ -102,7 +102,7 @@ describe('auth-store', () => {
         it('should clear auth state on logout', async () => {
             // Set initial authenticated state
             useAuthStore.setState({
-                user: { id: '1', username: 'testuser', avatar: '' },
+                user: { id: 1, username: 'testuser', name: '', avatar: '' },
                 token: 'test-token',
                 refreshToken: 'test-refresh-token',
                 isAuthenticated: true,
@@ -127,13 +127,13 @@ describe('auth-store', () => {
         it('should refresh token successfully', async () => {
             useAuthStore.setState({
                 refreshToken: 'old-refresh-token',
-                user: { id: '1', username: 'testuser', avatar: '' },
+                user: { id: 1, username: 'testuser', name: '', avatar: '' },
             });
 
             const mockResponse = {
                 token: 'new-access-token',
                 refreshToken: 'new-refresh-token',
-                user: { id: '1', username: 'testuser', avatar: '' },
+                user: { id: 1, username: 'testuser', name: '', avatar: '' },
             };
 
             vi.mocked(http.post).mockResolvedValueOnce(mockResponse);

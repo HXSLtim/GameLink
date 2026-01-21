@@ -316,6 +316,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             name: 'auth-storage',
             partialize: (state) => ({
                 // Always persist auth state for session restoration
+                // Include isAuthenticated so it persists across page reloads
                 token: state.token,
                 refreshToken: state.refreshToken,
                 user: state.user,
@@ -323,21 +324,19 @@ export const useAuthStore = create<AuthState & AuthActions>()(
                 viewMode: state.viewMode,
                 isPlayer: state.isPlayer,
                 playerProfile: state.playerProfile,
+                isAuthenticated: state.isAuthenticated, // CRITICAL: persist auth state
             }),
             onRehydrateStorage: () => (state) => {
                 if (state) {
-                    // If we have a token, trust it and set isAuthenticated
-                    // The token will be validated on the next API call
-                    if (state.token) {
-                        useAuthStore.setState({ isAuthenticated: true });
-                    } else if (state.refreshToken && !state.token) {
-                        // Only refresh if we have a refresh token but no access token
-                        state.refresh().catch(() => {
-                            // Refresh failed, user will be logged out
+                    // If we have a refresh token but no access token, try to refresh
+                    // Use the store's refresh method via getState()
+                    if (!state.token && state.refreshToken) {
+                        useAuthStore.getState().refresh().catch(() => {
+                            // Refresh failed, clear state
                             useAuthStore.setState({
-                                user: null,
                                 token: null,
                                 refreshToken: null,
+                                user: null,
                                 isAuthenticated: false,
                                 role: 'guest'
                             });
