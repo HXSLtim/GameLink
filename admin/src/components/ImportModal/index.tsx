@@ -264,12 +264,12 @@ export const ImportModal: React.FC<ImportModalProps> = ({
   // Render upload step
   const renderUploadStep = () => (
     <div style={{ padding: '20px 0' }}>
-      <Space direction="vertical" size="large" style={{ width: '100%' }}>
+      <Space orientation="vertical" size="large" style={{ width: '100%' }}>
         {/* Template download */}
         <Alert
           message="下载导入模板"
           description={
-            <Space direction="vertical">
+            <Space orientation="vertical">
               <Text>请先下载模板文件，按照模板格式填写数据后上传。</Text>
               <Button
                 type="primary"
@@ -372,7 +372,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
 
     return (
       <div style={{ padding: '20px 0' }}>
-        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+        <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
           {/* File info */}
           <Alert
             message={`已选择文件: ${file?.name}`}
@@ -421,7 +421,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                   onChange={(e) => setDuplicateHandling(e.target.value)}
                   style={{ marginTop: 8 }}
                 >
-                  <Space direction="vertical">
+                  <Space orientation="vertical">
                     <Radio value="fail">报错 - 遇到重复标识时停止导入该行</Radio>
                     <Radio value="skip">跳过 - 遇到重复标识时跳过该行</Radio>
                     <Radio value="update">更新 - 遇到重复标识时更新已有数据</Radio>
@@ -445,7 +445,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
   // Render importing step
   const renderImportingStep = () => (
     <div style={{ padding: '40px 0', textAlign: 'center' }}>
-      <Space direction="vertical" size="large" align="center">
+      <Space orientation="vertical" size="large" align="center">
         <Title level={4}>正在导入数据...</Title>
         <Progress
           type="circle"
@@ -470,7 +470,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
           status={isSuccess ? 'success' : isPartial ? 'warning' : 'error'}
           title={isSuccess ? '导入成功' : isPartial ? '部分导入成功' : '导入失败'}
           subTitle={
-            <Space direction="vertical">
+            <Space orientation="vertical">
               <Text>总计 {result.totalRows} 行</Text>
               <Text type="success">成功导入 {result.importedCount} 行</Text>
               {result.skippedCount > 0 && (

@@ -228,7 +228,7 @@ export const ImportHistoryTable: React.FC<ImportHistoryTableProps> = ({
           : 0;
         
         return (
-          <Space direction="vertical" size={0}>
+          <Space orientation="vertical" size={0}>
             <Text>
               <Text type="success">{record.importedCount}</Text>
               {' / '}
@@ -309,7 +309,7 @@ export const ImportHistoryTable: React.FC<ImportHistoryTableProps> = ({
     const statusConfig = getStatusConfig(selectedRecord.status);
 
     return (
-      <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+      <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
         <Descriptions column={2} bordered size="small">
           <Descriptions.Item label="导入ID">{selectedRecord.id}</Descriptions.Item>
           <Descriptions.Item label="类型">

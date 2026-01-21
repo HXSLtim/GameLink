@@ -9,7 +9,9 @@ import type { Variants, Transition } from 'framer-motion';
 import { animationVariants, transitions } from './constants';
 
 // 重新导出常量
+/* eslint-disable react-refresh/only-export-components */
 export { animationVariants, transitions } from './constants';
+/* eslint-enable react-refresh/only-export-components */
 
 export type AnimationType = keyof typeof animationVariants;
 export type TransitionType = keyof typeof transitions;
