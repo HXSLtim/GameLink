@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
     usePresenceStore,
-    PlayerPresence,
+    type PlayerPresence,
     PresenceStatus,
     getStatusDisplay,
     getStatusColor,

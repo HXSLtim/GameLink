@@ -16,6 +16,7 @@ import {
     type OrderDispute,
     type DisputeTemplate,
     type DisputeMessage,
+    type DisputeState,
 } from '../dispute-store';
 
 // Mock http module

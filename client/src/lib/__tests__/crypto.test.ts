@@ -10,36 +10,16 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import CryptoJS from 'crypto-js';
 import {
     encryptRequest,
     shouldEncrypt,
     isCryptoConfigured,
     CryptoConfigError,
-    type EncryptedRequest,
 } from '../crypto';
-
-// Mock import.meta.env
-const mockEnv = {
-    VITE_CRYPTO_ENABLED: 'false',
-    VITE_CRYPTO_SECRET_KEY: '',
-    VITE_CRYPTO_IV: '',
-    VITE_CRYPTO_USE_SIGNATURE: 'true',
-    DEV: true,
-    PROD: false,
-    MODE: 'test',
-};
-
-// We need to properly mock the environment variables
-const originalEnv = import.meta.env;
 
 describe('Encryption Utilities', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        // Reset environment variables
-        mockEnv.VITE_CRYPTO_ENABLED = 'false';
-        mockEnv.VITE_CRYPTO_SECRET_KEY = '';
-        mockEnv.VITE_CRYPTO_IV = '';
     });
 
     afterEach(() => {
@@ -124,7 +104,7 @@ describe('Encryption Utilities', () => {
         });
 
         it('should handle empty arrays', () => {
-            const data = [];
+            const data: unknown[] = [];
             const result = encryptRequest(data);
 
             expect(result).toEqual(data);

@@ -10,8 +10,10 @@
  * - Error logging utilities
  */
 
+/* eslint-disable react-hooks/rules-of-hooks */
+
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import axios, { AxiosError } from 'axios';
+import { AxiosError } from 'axios';
 import {
     isAxiosError,
     getErrorMessage,
@@ -33,12 +35,11 @@ import {
     isValidationErrorByCode,
     isBusinessErrorByCode,
     ErrorMessages,
-    type AppError,
     type ApiErrorResponse,
 } from '../error';
 
-// Mock import.meta.env
-const mockDevMode = true;
+/* eslint-disable react-hooks/rules-of-hooks */
+// vi.mock callback uses 'use' parameter which triggers false positive from react-hooks plugin
 vi.mock('../error', async (importOriginal) => {
     const actual = await importOriginal<typeof import('../error')>();
     return {

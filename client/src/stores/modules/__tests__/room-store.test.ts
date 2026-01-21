@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { useRoomStore, GameRoom, RoomMember } from '../room-store';
+import { useRoomStore, type GameRoom, type RoomMember } from '../room-store';
 
 // Mock http module
 vi.mock('@/lib/http', () => ({

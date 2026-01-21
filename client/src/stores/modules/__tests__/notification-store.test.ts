@@ -61,17 +61,17 @@ describe('Notification Store', () => {
             const mockNotifications = {
                 items: [
                     {
-                        id: '1',
+                        id: 1,
                         title: '订单完成',
-                        message: '您的订单已完成',
+                        content: '您的订单已完成',
                         type: NotificationType.ORDER,
                         read: false,
                         createdAt: '2024-01-01T00:00:00Z',
                     },
                     {
-                        id: '2',
+                        id: 2,
                         title: '系统通知',
-                        message: '系统维护通知',
+                        content: '系统维护通知',
                         type: NotificationType.SYSTEM,
                         read: true,
                         createdAt: '2024-01-02T00:00:00Z',
@@ -99,9 +99,9 @@ describe('Notification Store', () => {
             useNotificationStore.setState({
                 notifications: [
                     {
-                        id: 'old',
+                        id: 100,
                         title: 'Old',
-                        message: 'Old message',
+                        content: 'Old message',
                         type: NotificationType.SYSTEM,
                         read: true,
                         createdAt: '2024-01-01',
@@ -113,9 +113,9 @@ describe('Notification Store', () => {
             mockHttp.get.mockResolvedValueOnce({
                 items: [
                     {
-                        id: 'new',
+                        id: 999,
                         title: 'New',
-                        message: 'New message',
+                        content: 'New message',
                         type: NotificationType.SYSTEM,
                         read: false,
                         createdAt: '2024-01-02',
@@ -130,16 +130,16 @@ describe('Notification Store', () => {
 
             const state = useNotificationStore.getState();
             expect(state.notifications).toHaveLength(1);
-            expect(state.notifications[0].id).toBe('new');
+            expect(state.notifications[0].id).toBe(999);
         });
 
         it('should append notifications when refresh is false', async () => {
             useNotificationStore.setState({
                 notifications: [
                     {
-                        id: '1',
+                        id: 1,
                         title: 'First',
-                        message: 'First message',
+                        content: 'First message',
                         type: NotificationType.SYSTEM,
                         read: true,
                         createdAt: '2024-01-01',
@@ -151,9 +151,9 @@ describe('Notification Store', () => {
             mockHttp.get.mockResolvedValueOnce({
                 items: [
                     {
-                        id: '2',
+                        id: 2,
                         title: 'Second',
-                        message: 'Second message',
+                        content: 'Second message',
                         type: NotificationType.SYSTEM,
                         read: false,
                         createdAt: '2024-01-02',
@@ -184,9 +184,9 @@ describe('Notification Store', () => {
             // Less than 20 items means no more
             mockHttp.get.mockResolvedValueOnce({
                 items: Array(10).fill({
-                    id: '1',
+                    id: 1,
                     title: 'Test',
-                    message: 'Test',
+                    content: 'Test',
                     type: NotificationType.SYSTEM,
                     read: true,
                     createdAt: '2024-01-01',
@@ -227,9 +227,9 @@ describe('Notification Store', () => {
             useNotificationStore.setState({
                 notifications: [
                     {
-                        id: '1',
+                        id: 1,
                         title: 'Test',
-                        message: 'Test message',
+                        content: 'Test message',
                         type: NotificationType.ORDER,
                         read: false,
                         createdAt: '2024-01-01',
@@ -240,7 +240,7 @@ describe('Notification Store', () => {
 
             mockHttp.put.mockResolvedValueOnce({});
 
-            await useNotificationStore.getState().markAsRead('1');
+            await useNotificationStore.getState().markAsRead(1);
 
             const state = useNotificationStore.getState();
             expect(state.notifications[0].read).toBe(true);
@@ -251,9 +251,9 @@ describe('Notification Store', () => {
             useNotificationStore.setState({
                 notifications: [
                     {
-                        id: '1',
+                        id: 1,
                         title: 'Test',
-                        message: 'Test message',
+                        content: 'Test message',
                         type: NotificationType.ORDER,
                         read: true,
                         createdAt: '2024-01-01',
@@ -262,7 +262,7 @@ describe('Notification Store', () => {
                 unreadCount: 0,
             });
 
-            await useNotificationStore.getState().markAsRead('1');
+            await useNotificationStore.getState().markAsRead(1);
 
             expect(mockHttp.put).not.toHaveBeenCalled();
         });
@@ -271,9 +271,9 @@ describe('Notification Store', () => {
             useNotificationStore.setState({
                 notifications: [
                     {
-                        id: '1',
+                        id: 1,
                         title: 'Test',
-                        message: 'Test message',
+                        content: 'Test message',
                         type: NotificationType.ORDER,
                         read: false,
                         createdAt: '2024-01-01',
@@ -284,7 +284,7 @@ describe('Notification Store', () => {
 
             mockHttp.put.mockRejectedValueOnce(new Error('API error'));
 
-            await useNotificationStore.getState().markAsRead('1');
+            await useNotificationStore.getState().markAsRead(1);
 
             const state = useNotificationStore.getState();
             expect(state.notifications[0].read).toBe(false);
@@ -298,17 +298,17 @@ describe('Notification Store', () => {
             useNotificationStore.setState({
                 notifications: [
                     {
-                        id: '1',
+                        id: 1,
                         title: 'Test 1',
-                        message: 'Message 1',
+                        content: 'Message 1',
                         type: NotificationType.ORDER,
                         read: false,
                         createdAt: '2024-01-01',
                     },
                     {
-                        id: '2',
+                        id: 2,
                         title: 'Test 2',
-                        message: 'Message 2',
+                        content: 'Message 2',
                         type: NotificationType.SYSTEM,
                         read: false,
                         createdAt: '2024-01-02',
@@ -329,9 +329,9 @@ describe('Notification Store', () => {
         it('should rollback on error', async () => {
             const originalNotifications = [
                 {
-                    id: '1',
+                    id: 1,
                     title: 'Test',
-                    message: 'Message',
+                    content: 'Message',
                     type: NotificationType.ORDER,
                     read: false,
                     createdAt: '2024-01-01',
@@ -358,9 +358,9 @@ describe('Notification Store', () => {
             useNotificationStore.setState({
                 notifications: [
                     {
-                        id: '1',
+                        id: 1,
                         title: 'Test',
-                        message: 'Message',
+                        content: 'Message',
                         type: NotificationType.ORDER,
                         read: false,
                         createdAt: '2024-01-01',
@@ -371,7 +371,7 @@ describe('Notification Store', () => {
 
             mockHttp.delete.mockResolvedValueOnce({});
 
-            await useNotificationStore.getState().deleteNotification('1');
+            await useNotificationStore.getState().deleteNotification(1);
 
             const state = useNotificationStore.getState();
             expect(state.notifications).toHaveLength(0);
@@ -382,9 +382,9 @@ describe('Notification Store', () => {
             useNotificationStore.setState({
                 notifications: [
                     {
-                        id: '1',
+                        id: 1,
                         title: 'Test',
-                        message: 'Message',
+                        content: 'Message',
                         type: NotificationType.ORDER,
                         read: true,
                         createdAt: '2024-01-01',
@@ -395,16 +395,16 @@ describe('Notification Store', () => {
 
             mockHttp.delete.mockResolvedValueOnce({});
 
-            await useNotificationStore.getState().deleteNotification('1');
+            await useNotificationStore.getState().deleteNotification(1);
 
             expect(useNotificationStore.getState().unreadCount).toBe(0);
         });
 
         it('should rollback on error', async () => {
             const notification = {
-                id: '1',
+                id: 1,
                 title: 'Test',
-                message: 'Message',
+                content: 'Message',
                 type: NotificationType.ORDER,
                 read: false,
                 createdAt: '2024-01-01',
@@ -417,7 +417,7 @@ describe('Notification Store', () => {
 
             mockHttp.delete.mockRejectedValueOnce(new Error('API error'));
 
-            await useNotificationStore.getState().deleteNotification('1');
+            await useNotificationStore.getState().deleteNotification(1);
 
             const state = useNotificationStore.getState();
             expect(state.notifications).toHaveLength(1);
@@ -429,9 +429,9 @@ describe('Notification Store', () => {
             useNotificationStore.setState({
                 notifications: [
                     {
-                        id: '1',
+                        id: 1,
                         title: 'Old',
-                        message: 'Old message',
+                        content: 'Old message',
                         type: NotificationType.SYSTEM,
                         read: true,
                         createdAt: '2024-01-01',
@@ -441,9 +441,9 @@ describe('Notification Store', () => {
             });
 
             const newNotification = {
-                id: '2',
+                id: 2,
                 title: 'New',
-                message: 'New message',
+                content: 'New message',
                 type: NotificationType.ORDER,
                 read: false,
                 createdAt: '2024-01-02',
@@ -453,7 +453,7 @@ describe('Notification Store', () => {
 
             const state = useNotificationStore.getState();
             expect(state.notifications).toHaveLength(2);
-            expect(state.notifications[0].id).toBe('2');
+            expect(state.notifications[0].id).toBe(2);
             expect(state.unreadCount).toBe(1);
         });
 
@@ -464,9 +464,9 @@ describe('Notification Store', () => {
             });
 
             const readNotification = {
-                id: '1',
+                id: 1,
                 title: 'Read',
-                message: 'Already read',
+                content: 'Already read',
                 type: NotificationType.SYSTEM,
                 read: true,
                 createdAt: '2024-01-01',
@@ -483,9 +483,9 @@ describe('Notification Store', () => {
             useNotificationStore.setState({
                 notifications: [
                     {
-                        id: '1',
+                        id: 1,
                         title: 'First',
-                        message: 'First message',
+                        content: 'First message',
                         type: NotificationType.SYSTEM,
                         read: true,
                         createdAt: '2024-01-01',
@@ -499,9 +499,9 @@ describe('Notification Store', () => {
             mockHttp.get.mockResolvedValueOnce({
                 items: [
                     {
-                        id: '2',
+                        id: 2,
                         title: 'Second',
-                        message: 'Second message',
+                        content: 'Second message',
                         type: NotificationType.SYSTEM,
                         read: true,
                         createdAt: '2024-01-02',
