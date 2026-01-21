@@ -287,7 +287,7 @@ jobs:
       # CRITICAL: Code quality gate - test failures block the build
       - name: Run tests
         working-directory: client
-        run: npm run test:run
+        run: npm run test:run || npm test -- --run
 
   # Client 端构建
   client-build:
@@ -367,6 +367,15 @@ jobs:
           context: ./admin
           push: false
           tags: gamelink-admin:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build client image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./client
+          push: false
+          tags: gamelink-client:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
