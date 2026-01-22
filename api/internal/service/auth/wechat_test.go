@@ -57,21 +57,35 @@ func (m *MockWeChatUserRepository) Update(ctx context.Context, user *model.User)
 	return args.Error(0)
 }
 
-func (m *MockWeChatUserRepository) List(ctx context.Context) ([]model.User, error)                   { return nil, nil }
+func (m *MockWeChatUserRepository) List(ctx context.Context) ([]model.User, error) { return nil, nil }
 func (m *MockWeChatUserRepository) ListPaged(ctx context.Context, page, pageSize int) ([]model.User, int64, error) {
 	return nil, 0, nil
 }
 func (m *MockWeChatUserRepository) ListWithFilters(ctx context.Context, opts repository.UserListOptions) ([]model.User, int64, error) {
 	return nil, 0, nil
 }
-func (m *MockWeChatUserRepository) Count(ctx context.Context, opts repository.UserListOptions) (int, error) { return 0, nil }
-func (m *MockWeChatUserRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.User, error)      { return nil, nil }
-func (m *MockWeChatUserRepository) GetByPhone(ctx context.Context, phone string) (*model.User, error)     { return nil, nil }
-func (m *MockWeChatUserRepository) GetByEmail(ctx context.Context, email string) (*model.User, error)     { return nil, nil }
-func (m *MockWeChatUserRepository) FindByEmail(ctx context.Context, email string) (*model.User, error)    { return nil, nil }
-func (m *MockWeChatUserRepository) FindByPhone(ctx context.Context, phone string) (*model.User, error)    { return nil, nil }
-func (m *MockWeChatUserRepository) Delete(ctx context.Context, id uint64) error                          { return nil }
-func (m *MockWeChatUserRepository) UpdatePassword(ctx context.Context, userID uint64, newPassword string) error { return nil }
+func (m *MockWeChatUserRepository) Count(ctx context.Context, opts repository.UserListOptions) (int, error) {
+	return 0, nil
+}
+func (m *MockWeChatUserRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.User, error) {
+	return nil, nil
+}
+func (m *MockWeChatUserRepository) GetByPhone(ctx context.Context, phone string) (*model.User, error) {
+	return nil, nil
+}
+func (m *MockWeChatUserRepository) GetByEmail(ctx context.Context, email string) (*model.User, error) {
+	return nil, nil
+}
+func (m *MockWeChatUserRepository) FindByEmail(ctx context.Context, email string) (*model.User, error) {
+	return nil, nil
+}
+func (m *MockWeChatUserRepository) FindByPhone(ctx context.Context, phone string) (*model.User, error) {
+	return nil, nil
+}
+func (m *MockWeChatUserRepository) Delete(ctx context.Context, id uint64) error { return nil }
+func (m *MockWeChatUserRepository) UpdatePassword(ctx context.Context, userID uint64, newPassword string) error {
+	return nil
+}
 
 // MockWeChatPlayerRepository is a mock implementation of PlayerRepository for WeChat tests
 type MockWeChatPlayerRepository struct {
@@ -86,22 +100,44 @@ func (m *MockWeChatPlayerRepository) GetByUserID(ctx context.Context, userID uin
 	return args.Get(0).(*model.Player), args.Error(1)
 }
 
-func (m *MockWeChatPlayerRepository) Create(ctx context.Context, player *model.Player) error { return nil }
-func (m *MockWeChatPlayerRepository) Get(ctx context.Context, id uint64) (*model.Player, error) { return nil, nil }
-func (m *MockWeChatPlayerRepository) Update(ctx context.Context, player *model.Player) error { return nil }
+func (m *MockWeChatPlayerRepository) Create(ctx context.Context, player *model.Player) error {
+	return nil
+}
+func (m *MockWeChatPlayerRepository) Get(ctx context.Context, id uint64) (*model.Player, error) {
+	return nil, nil
+}
+func (m *MockWeChatPlayerRepository) Update(ctx context.Context, player *model.Player) error {
+	return nil
+}
 func (m *MockWeChatPlayerRepository) Delete(ctx context.Context, id uint64) error { return nil }
-func (m *MockWeChatPlayerRepository) List(ctx context.Context) ([]model.Player, error) { return nil, nil }
+func (m *MockWeChatPlayerRepository) List(ctx context.Context) ([]model.Player, error) {
+	return nil, nil
+}
 func (m *MockWeChatPlayerRepository) ListPaged(ctx context.Context, page, pageSize int) ([]model.Player, int64, error) {
 	return nil, 0, nil
 }
 func (m *MockWeChatPlayerRepository) ListPagedWithFilter(ctx context.Context, page, pageSize int, keyword string, status *model.VerificationStatus) ([]model.Player, int64, error) {
 	return nil, 0, nil
 }
-func (m *MockWeChatPlayerRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.Player, error) { return nil, nil }
-func (m *MockWeChatPlayerRepository) BatchUpdateRank(ctx context.Context, ids []uint64, rank string) (int64, error) { return 0, nil }
-func (m *MockWeChatPlayerRepository) BatchUpdateHourlyRate(ctx context.Context, ids []uint64, rateCents int64) (int64, error) { return 0, nil }
-func (m *MockWeChatPlayerRepository) BatchUpdateStatus(ctx context.Context, ids []uint64, status model.VerificationStatus) (int64, error) { return 0, nil }
-func (m *MockWeChatPlayerRepository) BatchDelete(ctx context.Context, ids []uint64) (int64, error) { return 0, nil }
+func (m *MockWeChatPlayerRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.Player, error) {
+	return nil, nil
+}
+func (m *MockWeChatPlayerRepository) BatchUpdateRank(ctx context.Context, ids []uint64, rank string) (int64, error) {
+	return 0, nil
+}
+func (m *MockWeChatPlayerRepository) BatchUpdateHourlyRate(ctx context.Context, ids []uint64, rateCents int64) (int64, error) {
+	return 0, nil
+}
+func (m *MockWeChatPlayerRepository) BatchUpdateStatus(ctx context.Context, ids []uint64, status model.VerificationStatus) (int64, error) {
+	return 0, nil
+}
+func (m *MockWeChatPlayerRepository) BatchDelete(ctx context.Context, ids []uint64) (int64, error) {
+	return 0, nil
+}
+
+func (m *MockWeChatPlayerRepository) ListFeatured(ctx context.Context, limit int, status *model.VerificationStatus) ([]model.Player, int64, error) {
+	return nil, int64(0), nil
+}
 
 // ============================================================================
 // Tests

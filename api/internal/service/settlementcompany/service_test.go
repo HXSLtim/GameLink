@@ -187,6 +187,10 @@ func (m *MockPlayerRepository) GetByIDs(_ context.Context, _ []uint64) ([]model.
 	return nil, nil
 }
 
+func (m *MockPlayerRepository) ListFeatured(_ context.Context, _ int, _ *model.VerificationStatus) ([]model.Player, int64, error) {
+	return nil, 0, nil
+}
+
 // Test cases
 
 func TestCreateCompany_Success(t *testing.T) {

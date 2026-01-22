@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"testing"
 	"time"
 
 	"gamelink/internal/model"
+	"gamelink/internal/repository"
 	"gamelink/internal/repository/user"
 	svcauth "gamelink/internal/service/auth"
 	authpkg "gamelink/pkg/auth"
@@ -38,17 +38,17 @@ func DefaultConfig() *BenchmarkConfig {
 type BenchmarkSuite struct {
 	DB          *gorm.DB
 	AuthService *svcauth.AuthService
-	UserRepo    *user.UserRepository
+	UserRepo    repository.UserRepository
 	Config      *BenchmarkConfig
 	Cleanup     func()
 }
 
-func NewBenchmarkSuite(t testingTB, config *BenchmarkConfig) *BenchmarkSuite {
+func NewBenchmarkSuite(_ testingTB, config *BenchmarkConfig) *BenchmarkSuite {
 	if config == nil {
 		config = DefaultConfig()
 	}
 
-	db, cleanup := setupBenchmarkDB(t, config)
+	db, cleanup := setupBenchmarkDB(config)
 
 	userRepo := user.NewUserRepository(db)
 
@@ -64,14 +64,10 @@ func NewBenchmarkSuite(t testingTB, config *BenchmarkConfig) *BenchmarkSuite {
 		Cleanup:     cleanup,
 	}
 
-	t.Cleanup(func() {
-		suite.Cleanup()
-	})
-
 	return suite
 }
 
-func setupBenchmarkDB(t testingTB, config *BenchmarkConfig) (*gorm.DB, func()) {
+func setupBenchmarkDB(config *BenchmarkConfig) (*gorm.DB, func()) {
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable timezone=UTC",
 		config.DBHost, config.DBPort, config.DBUser, config.DBPassword, config.DBName)
 
@@ -79,12 +75,12 @@ func setupBenchmarkDB(t testingTB, config *BenchmarkConfig) (*gorm.DB, func()) {
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	if err != nil {
-		t.Fatalf("Failed to connect to benchmark database: %v", err)
+		log.Fatalf("Failed to connect to benchmark database: %v", err)
 	}
 
 	sqlDB, err := db.DB()
 	if err != nil {
-		t.Fatalf("Failed to get database instance: %v", err)
+		log.Fatalf("Failed to get database instance: %v", err)
 	}
 
 	sqlDB.SetMaxOpenConns(100)
@@ -92,7 +88,7 @@ func setupBenchmarkDB(t testingTB, config *BenchmarkConfig) (*gorm.DB, func()) {
 	sqlDB.SetConnMaxLifetime(time.Hour)
 
 	if err := sqlDB.Ping(); err != nil {
-		t.Fatalf("Failed to ping benchmark database: %v", err)
+		log.Fatalf("Failed to ping benchmark database: %v", err)
 	}
 
 	log.Printf("Connected to benchmark database: %s", config.DBName)
@@ -107,7 +103,7 @@ func setupBenchmarkDB(t testingTB, config *BenchmarkConfig) (*gorm.DB, func()) {
 	return db, cleanup
 }
 
-func (s *BenchmarkSuite) CreateBenchmarkUser(t testingTB, phone string) *model.User {
+func (s *BenchmarkSuite) CreateBenchmarkUser(_ testingTB, phone string) *model.User {
 	testUser := &model.User{
 		Phone:        phone,
 		Name:         "Benchmark User",
@@ -116,12 +112,12 @@ func (s *BenchmarkSuite) CreateBenchmarkUser(t testingTB, phone string) *model.U
 		PasswordHash: "$2a$10$benchmark.hash.for.testing",
 	}
 	if err := s.DB.Create(testUser).Error; err != nil {
-		t.Fatalf("Failed to create benchmark user: %v", err)
+		log.Fatalf("Failed to create benchmark user: %v", err)
 	}
 	return testUser
 }
 
-func (s *BenchmarkSuite) CreateBenchmarkPlayer(t testingTB, userID uint64, nickname string) *model.Player {
+func (s *BenchmarkSuite) CreateBenchmarkPlayer(_ testingTB, userID uint64, nickname string) *model.Player {
 	player := &model.Player{
 		UserID:          userID,
 		Nickname:        nickname,
@@ -133,12 +129,12 @@ func (s *BenchmarkSuite) CreateBenchmarkPlayer(t testingTB, userID uint64, nickn
 		AcceptingOrders: true,
 	}
 	if err := s.DB.Create(player).Error; err != nil {
-		t.Fatalf("Failed to create benchmark player: %v", err)
+		log.Fatalf("Failed to create benchmark player: %v", err)
 	}
 	return player
 }
 
-func (s *BenchmarkSuite) CreateBenchmarkGame(t testingTB, name string) *model.Game {
+func (s *BenchmarkSuite) CreateBenchmarkGame(_ testingTB, name string) *model.Game {
 	game := &model.Game{
 		Key:         "bench-" + name,
 		Name:        name,
@@ -147,12 +143,12 @@ func (s *BenchmarkSuite) CreateBenchmarkGame(t testingTB, name string) *model.Ga
 		IconURL:     "https://example.com/icon.png",
 	}
 	if err := s.DB.Create(game).Error; err != nil {
-		t.Fatalf("Failed to create benchmark game: %v", err)
+		log.Fatalf("Failed to create benchmark game: %v", err)
 	}
 	return game
 }
 
-func (s *BenchmarkSuite) CleanBenchmarkData(t testingTB) {
+func (s *BenchmarkSuite) CleanBenchmarkData(_ testingTB) {
 	tables := []string{
 		"order_players", "payments", "reviews", "disputes",
 		"orders", "players", "users", "games",
@@ -164,7 +160,7 @@ func (s *BenchmarkSuite) CleanBenchmarkData(t testingTB) {
 	}
 }
 
-func (s *BenchmarkSuite) ResetBenchmarkSequence(t testingTB) {
+func (s *BenchmarkSuite) ResetBenchmarkSequence(_ testingTB) {
 	sequences := []string{
 		"users_id_seq", "players_id_seq", "games_id_seq",
 		"orders_id_seq", "payments_id_seq",
@@ -181,7 +177,7 @@ type BenchmarkTimer struct {
 	name  string
 }
 
-func StartTimer(name string) *BenchmarkTimer {
+func NewBenchmarkTimer(name string) *BenchmarkTimer {
 	return &BenchmarkTimer{
 		start: time.Now(),
 		name:  name,
@@ -201,7 +197,9 @@ func getEnv(key, defaultValue string) string {
 	return defaultValue
 }
 
-type testingTB interface {
-	Fatalf(format string, args ...any)
-	Cleanup(func())
+type testingTB interface{}
+
+func init() {
+	_ = NewBenchmarkSuite
+	_ = NewBenchmarkTimer
 }

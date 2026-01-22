@@ -118,6 +118,10 @@ func (m *MockPlayerRepository) GetByIDs(ctx context.Context, ids []uint64) ([]mo
 	return nil, nil
 }
 
+func (m *MockPlayerRepository) ListFeatured(ctx context.Context, limit int, status *model.VerificationStatus) ([]model.Player, int64, error) {
+	return nil, int64(0), nil
+}
+
 type MockUserRepository struct {
 	getUser func(ctx context.Context, id uint64) (*model.User, error)
 }

@@ -88,24 +88,12 @@ func (m *MockPlayerRepository) GetByIDs(ctx context.Context, ids []uint64) ([]mo
 	return args.Get(0).([]model.Player), args.Error(1)
 }
 
-func (m *MockPlayerRepository) BatchUpdateRank(ctx context.Context, ids []uint64, rank string) (int64, error) {
-	args := m.Called(ctx, ids, rank)
-	return args.Get(0).(int64), args.Error(1)
-}
-
-func (m *MockPlayerRepository) BatchUpdateHourlyRate(ctx context.Context, ids []uint64, rateCents int64) (int64, error) {
-	args := m.Called(ctx, ids, rateCents)
-	return args.Get(0).(int64), args.Error(1)
-}
-
-func (m *MockPlayerRepository) BatchUpdateStatus(ctx context.Context, ids []uint64, status model.VerificationStatus) (int64, error) {
-	args := m.Called(ctx, ids, status)
-	return args.Get(0).(int64), args.Error(1)
-}
-
-func (m *MockPlayerRepository) BatchDelete(ctx context.Context, ids []uint64) (int64, error) {
-	args := m.Called(ctx, ids)
-	return args.Get(0).(int64), args.Error(1)
+func (m *MockPlayerRepository) ListFeatured(ctx context.Context, limit int, status *model.VerificationStatus) ([]model.Player, int64, error) {
+	args := m.Called(ctx, limit, status)
+	if args.Get(0) == nil {
+		return nil, 0, args.Error(2)
+	}
+	return args.Get(0).([]model.Player), args.Get(1).(int64), args.Error(2)
 }
 
 // MockUserRepository is a mock implementation of UserRepository
@@ -126,24 +114,42 @@ func (m *MockUserRepository) Update(ctx context.Context, user *model.User) error
 	return args.Error(0)
 }
 
-func (m *MockUserRepository) List(ctx context.Context) ([]model.User, error)                   { return nil, nil }
+func (m *MockUserRepository) List(ctx context.Context) ([]model.User, error) { return nil, nil }
 func (m *MockUserRepository) ListPaged(ctx context.Context, page, pageSize int) ([]model.User, int64, error) {
 	return nil, 0, nil
 }
 func (m *MockUserRepository) ListWithFilters(ctx context.Context, opts repository.UserListOptions) ([]model.User, int64, error) {
 	return nil, 0, nil
 }
-func (m *MockUserRepository) Count(ctx context.Context, opts repository.UserListOptions) (int, error) { return 0, nil }
-func (m *MockUserRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.User, error)      { return nil, nil }
-func (m *MockUserRepository) GetByPhone(ctx context.Context, phone string) (*model.User, error)     { return nil, nil }
-func (m *MockUserRepository) GetByEmail(ctx context.Context, email string) (*model.User, error)     { return nil, nil }
-func (m *MockUserRepository) FindByEmail(ctx context.Context, email string) (*model.User, error)    { return nil, nil }
-func (m *MockUserRepository) FindByPhone(ctx context.Context, phone string) (*model.User, error)    { return nil, nil }
-func (m *MockUserRepository) Create(ctx context.Context, user *model.User) error                   { return nil }
-func (m *MockUserRepository) Delete(ctx context.Context, id uint64) error                          { return nil }
-func (m *MockUserRepository) UpdatePassword(ctx context.Context, userID uint64, newPassword string) error { return nil }
-func (m *MockUserRepository) GetByWeChatOpenID(ctx context.Context, openID string) (*model.User, error) { return nil, nil }
-func (m *MockUserRepository) GetByWeChatUnionID(ctx context.Context, unionID string) (*model.User, error) { return nil, nil }
+func (m *MockUserRepository) Count(ctx context.Context, opts repository.UserListOptions) (int, error) {
+	return 0, nil
+}
+func (m *MockUserRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.User, error) {
+	return nil, nil
+}
+func (m *MockUserRepository) GetByPhone(ctx context.Context, phone string) (*model.User, error) {
+	return nil, nil
+}
+func (m *MockUserRepository) GetByEmail(ctx context.Context, email string) (*model.User, error) {
+	return nil, nil
+}
+func (m *MockUserRepository) FindByEmail(ctx context.Context, email string) (*model.User, error) {
+	return nil, nil
+}
+func (m *MockUserRepository) FindByPhone(ctx context.Context, phone string) (*model.User, error) {
+	return nil, nil
+}
+func (m *MockUserRepository) Create(ctx context.Context, user *model.User) error { return nil }
+func (m *MockUserRepository) Delete(ctx context.Context, id uint64) error        { return nil }
+func (m *MockUserRepository) UpdatePassword(ctx context.Context, userID uint64, newPassword string) error {
+	return nil
+}
+func (m *MockUserRepository) GetByWeChatOpenID(ctx context.Context, openID string) (*model.User, error) {
+	return nil, nil
+}
+func (m *MockUserRepository) GetByWeChatUnionID(ctx context.Context, unionID string) (*model.User, error) {
+	return nil, nil
+}
 
 // MockGameRepository is a mock implementation of GameRepository
 type MockGameRepository struct {
@@ -168,11 +174,21 @@ func (m *MockGameRepository) ListPaged(ctx context.Context, page, pageSize int) 
 func (m *MockGameRepository) ListPagedWithFilter(ctx context.Context, page, pageSize int, keyword string) ([]model.Game, int64, error) {
 	return nil, 0, nil
 }
-func (m *MockGameRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.Game, error) { return nil, nil }
-func (m *MockGameRepository) BatchDelete(ctx context.Context, ids []uint64) (int64, error)     { return 0, nil }
-func (m *MockGameRepository) BatchUpdateStatus(ctx context.Context, ids []uint64, isActive bool) (int64, error) { return 0, nil }
-func (m *MockGameRepository) BatchUpdateSortOrder(ctx context.Context, updates map[uint64]int) (int64, error) { return 0, nil }
-func (m *MockGameRepository) BatchUpdateCategory(ctx context.Context, ids []uint64, category string) (int64, error) { return 0, nil }
+func (m *MockGameRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.Game, error) {
+	return nil, nil
+}
+func (m *MockGameRepository) BatchDelete(ctx context.Context, ids []uint64) (int64, error) {
+	return 0, nil
+}
+func (m *MockGameRepository) BatchUpdateStatus(ctx context.Context, ids []uint64, isActive bool) (int64, error) {
+	return 0, nil
+}
+func (m *MockGameRepository) BatchUpdateSortOrder(ctx context.Context, updates map[uint64]int) (int64, error) {
+	return 0, nil
+}
+func (m *MockGameRepository) BatchUpdateCategory(ctx context.Context, ids []uint64, category string) (int64, error) {
+	return 0, nil
+}
 
 // MockOrderQuery is a mock implementation of OrderQuery
 type MockOrderQuery struct {
@@ -217,18 +233,38 @@ func (m *MockReviewRepository) List(ctx context.Context, opts repository.ReviewL
 }
 
 func (m *MockReviewRepository) Create(ctx context.Context, review *model.Review) error { return nil }
-func (m *MockReviewRepository) Get(ctx context.Context, id uint64) (*model.Review, error) { return nil, nil }
+func (m *MockReviewRepository) Get(ctx context.Context, id uint64) (*model.Review, error) {
+	return nil, nil
+}
 func (m *MockReviewRepository) Update(ctx context.Context, review *model.Review) error { return nil }
-func (m *MockReviewRepository) Delete(ctx context.Context, id uint64) error { return nil }
-func (m *MockReviewRepository) GetByOrderID(ctx context.Context, orderID uint64) (*model.Review, error) { return nil, nil }
-func (m *MockReviewRepository) ListPending(ctx context.Context, page, pageSize int) ([]model.Review, int64, error) { return nil, 0, nil }
-func (m *MockReviewRepository) UpdateStatus(ctx context.Context, id uint64, status model.ReviewStatus, rejectionReason string) error { return nil }
-func (m *MockReviewRepository) BatchUpdateStatus(ctx context.Context, ids []uint64, status model.ReviewStatus, rejectionReason string) error { return nil }
-func (m *MockReviewRepository) GetStats(ctx context.Context) (repository.ReviewStats, error) { return repository.ReviewStats{}, nil }
-func (m *MockReviewRepository) GetTrend(ctx context.Context, days int) ([]repository.DateValue, error) { return nil, nil }
-func (m *MockReviewRepository) GetTopPlayersByReviewCount(ctx context.Context, limit int) ([]repository.PlayerReviewStats, error) { return nil, nil }
-func (m *MockReviewRepository) GetTopPlayersByRating(ctx context.Context, limit int) ([]repository.PlayerReviewStats, error) { return nil, nil }
-func (m *MockReviewRepository) GetGameStats(ctx context.Context) ([]repository.GameReviewStats, error) { return nil, nil }
+func (m *MockReviewRepository) Delete(ctx context.Context, id uint64) error            { return nil }
+func (m *MockReviewRepository) GetByOrderID(ctx context.Context, orderID uint64) (*model.Review, error) {
+	return nil, nil
+}
+func (m *MockReviewRepository) ListPending(ctx context.Context, page, pageSize int) ([]model.Review, int64, error) {
+	return nil, 0, nil
+}
+func (m *MockReviewRepository) UpdateStatus(ctx context.Context, id uint64, status model.ReviewStatus, rejectionReason string) error {
+	return nil
+}
+func (m *MockReviewRepository) BatchUpdateStatus(ctx context.Context, ids []uint64, status model.ReviewStatus, rejectionReason string) error {
+	return nil
+}
+func (m *MockReviewRepository) GetStats(ctx context.Context) (repository.ReviewStats, error) {
+	return repository.ReviewStats{}, nil
+}
+func (m *MockReviewRepository) GetTrend(ctx context.Context, days int) ([]repository.DateValue, error) {
+	return nil, nil
+}
+func (m *MockReviewRepository) GetTopPlayersByReviewCount(ctx context.Context, limit int) ([]repository.PlayerReviewStats, error) {
+	return nil, nil
+}
+func (m *MockReviewRepository) GetTopPlayersByRating(ctx context.Context, limit int) ([]repository.PlayerReviewStats, error) {
+	return nil, nil
+}
+func (m *MockReviewRepository) GetGameStats(ctx context.Context) ([]repository.GameReviewStats, error) {
+	return nil, nil
+}
 
 // MockPlayerTagRepository is a mock implementation of PlayerTagRepository
 type MockPlayerTagRepository struct {

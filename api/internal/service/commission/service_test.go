@@ -271,6 +271,14 @@ func (m *MockPlayerRepository) GetByIDs(ctx context.Context, ids []uint64) ([]mo
 	return args.Get(0).([]model.Player), args.Error(1)
 }
 
+func (m *MockPlayerRepository) ListFeatured(ctx context.Context, limit int, status *model.VerificationStatus) ([]model.Player, int64, error) {
+	args := m.Called(ctx, limit, status)
+	if args.Get(0) == nil {
+		return nil, 0, args.Error(2)
+	}
+	return args.Get(0).([]model.Player), args.Get(1).(int64), args.Error(2)
+}
+
 // Helper function to create test order
 func createTestOrder(playerID uint64, totalPriceCents int64) *model.Order {
 	pID := playerID
