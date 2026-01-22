@@ -13,11 +13,8 @@ import (
 )
 
 var (
-	// ErrNotFound 记录不存
-	ErrNotFound = repository.ErrNotFound
-	// ErrValidation 表示输入校验失败
-	ErrValidation = apierr.BadRequest("验证失败")
-	// ErrInvalidGiftItem 无效的礼物项
+	ErrNotFound        = repository.ErrNotFound
+	ErrValidation      = apierr.BadRequest("验证失败")
 	ErrInvalidGiftItem = apierr.BadRequest("无效的礼物项")
 )
 
@@ -26,6 +23,7 @@ type GiftService struct {
 	items       repository.ServiceItemRepository
 	orders      repoiface.OrderRepository
 	players     repository.PlayerRepository
+	users       repository.UserRepository
 	commissions commissionrepo.CommissionRepository
 }
 
@@ -34,12 +32,14 @@ func NewGiftService(
 	items repository.ServiceItemRepository,
 	orders repoiface.OrderRepository,
 	players repository.PlayerRepository,
+	users repository.UserRepository,
 	commissions commissionrepo.CommissionRepository,
 ) *GiftService {
 	return &GiftService{
 		items:       items,
 		orders:      orders,
 		players:     players,
+		users:       users,
 		commissions: commissions,
 	}
 }
@@ -196,10 +196,17 @@ func (s *GiftService) GetPlayerReceivedGifts(ctx context.Context, playerID uint6
 				continue
 			}
 
-			// Get sender name if not anonymous
-			// Note: Currently no user repository in gift service, sender name will be empty
 			senderName := ""
-			// TODO: Add user repository to get sender nickname for non-anonymous gifts
+			if !order.IsAnonymous && order.UserID != 0 {
+				senderUser, err := s.users.Get(ctx, order.UserID)
+				if err == nil && senderUser != nil {
+					senderUserName := senderUser.Name
+					if senderUserName == "" {
+						senderUserName = senderUser.Phone
+					}
+					senderName = senderUserName
+				}
+			}
 
 			gifts = append(gifts, ReceivedGiftDTO{
 				OrderID:     order.ID,

@@ -10,6 +10,7 @@ import (
 	"os"
 	"time"
 
+	"gamelink/internal/service/sms"
 	"gamelink/pkg/cache"
 )
 
@@ -40,9 +41,10 @@ type Service struct {
 	cache       cache.Cache
 	masterCode  string
 	environment string
+	smsSvc      *sms.Service
 }
 
-func NewService(c cache.Cache) *Service {
+func NewService(c cache.Cache, smsSvc *sms.Service) *Service {
 	env := os.Getenv("APP_ENV")
 	if env == "" {
 		env = "development"
@@ -55,6 +57,7 @@ func NewService(c cache.Cache) *Service {
 		cache:       c,
 		masterCode:  masterCode,
 		environment: env,
+		smsSvc:      smsSvc,
 	}
 }
 
@@ -90,6 +93,26 @@ func (s *Service) GenerateCode(ctx context.Context, target string, codeType Code
 	}
 
 	return code, nil
+}
+
+// SendCode sends verification code via SMS or email
+func (s *Service) SendCode(ctx context.Context, target string, codeType CodeType) error {
+	code, err := s.GenerateCode(ctx, target, codeType)
+	if err != nil {
+		return err
+	}
+
+	switch codeType {
+	case CodeTypePhone:
+		if s.smsSvc != nil {
+			return s.smsSvc.SendCode(ctx, target, code)
+		}
+		fmt.Printf("[Verification] SMS not configured, code for %s: %s\n", target, code)
+	case CodeTypeEmail:
+		fmt.Printf("[Verification] Email not implemented, code for %s: %s\n", target, code)
+	}
+
+	return nil
 }
 
 func (s *Service) VerifyCode(ctx context.Context, target, code string, codeType CodeType) error {

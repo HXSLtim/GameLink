@@ -14,6 +14,7 @@ import (
 	"github.com/redis/go-redis/v9"
 
 	"gamelink/internal/repository"
+	"gamelink/internal/service/email"
 )
 
 const (
@@ -32,23 +33,24 @@ var (
 
 // PasswordResetService handles password reset operations
 type PasswordResetService struct {
-	users  repository.UserRepository
-	redis  *redis.Client
-	logger *slog.Logger
+	users    repository.UserRepository
+	redis    *redis.Client
+	logger   *slog.Logger
+	emailSvc *email.Service
 }
 
 // NewPasswordResetService creates a new password reset service
 func NewPasswordResetService(users repository.UserRepository, cacheClient interface{ GetClient() *redis.Client }, logger *slog.Logger) *PasswordResetService {
 	var redisClient *redis.Client
-	// Try to get the underlying Redis client from cache
 	if cacheClient != nil {
 		redisClient = cacheClient.GetClient()
 	}
 
 	return &PasswordResetService{
-		users:  users,
-		redis:  redisClient,
-		logger: logger,
+		users:    users,
+		redis:    redisClient,
+		logger:   logger,
+		emailSvc: email.NewService(),
 	}
 }
 
@@ -82,8 +84,7 @@ func (s *PasswordResetService) RequestReset(ctx context.Context, email string) e
 		return fmt.Errorf("redis not configured for password reset")
 	}
 
-	// 4. In production, send email with reset link
-	// For now, log the token (REMOVE IN PRODUCTION)
+	// 4. Send password reset email
 	resetURL := fmt.Sprintf("https://gamelink.com/reset-password?token=%s", resetToken)
 	s.logger.Info("password reset link generated",
 		"user_id", user.ID,
@@ -91,11 +92,9 @@ func (s *PasswordResetService) RequestReset(ctx context.Context, email string) e
 		"reset_url", resetURL,
 		"token_expires_in", passwordResetTokenExpiry)
 
-	// TODO: Integrate email service (e.g., cfg.ExternalAPI.SMS.Enabled)
-	// Example:
-	// if err := s.emailService.Send(email, "Password Reset", resetLink); err != nil {
-	//     return fmt.Errorf("failed to send reset email: %w", err)
-	// }
+	if err := s.emailSvc.SendPasswordReset(ctx, email, resetURL); err != nil {
+		s.logger.Error("failed to send password reset email", "error", err, "user_id", user.ID, "email", email)
+	}
 
 	return nil
 }

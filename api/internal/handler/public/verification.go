@@ -5,6 +5,7 @@ import (
 
 	"gamelink/internal/handler/resp"
 	_ "gamelink/internal/model" // for swagger
+	"gamelink/internal/service/sms"
 	"gamelink/internal/service/verification"
 	"gamelink/pkg/apierr"
 )
@@ -21,14 +22,14 @@ func NewVerificationHandler(svc *verification.Service) *VerificationHandler {
 
 // SendCodeRequest 发送验证码请求
 type SendCodeRequest struct {
-	Target string `json:"target" binding:"required"` // 手机号或邮箱
+	Target string `json:"target" binding:"required"`                 // 手机号或邮箱
 	Type   string `json:"type" binding:"required,oneof=phone email"` // phone 或 email
 }
 
 // VerifyCodeRequest 验证验证码请求
 type VerifyCodeRequest struct {
-	Target string `json:"target" binding:"required"` // 手机号或邮箱
-	Code   string `json:"code" binding:"required,len=6"` // 6位验证码
+	Target string `json:"target" binding:"required"`                 // 手机号或邮箱
+	Code   string `json:"code" binding:"required,len=6"`             // 6位验证码
 	Type   string `json:"type" binding:"required,oneof=phone email"` // phone 或 email
 }
 
@@ -69,26 +70,24 @@ func (h *VerificationHandler) SendCode(c *gin.Context) {
 	}
 
 	codeType := verification.CodeType(req.Type)
-	code, err := h.svc.GenerateCode(c.Request.Context(), req.Target, codeType)
+	err := h.svc.SendCode(c.Request.Context(), req.Target, codeType)
 	if err != nil {
 		switch err {
 		case verification.ErrRateLimited:
 			resp.Error(c, apierr.TooManyRequests("请等待60秒后再试"))
+		case sms.ErrSMSDisabled:
+			resp.Error(c, apierr.InternalError("短信服务未配置"))
 		default:
-			resp.Error(c, apierr.InternalError("发送验证码失败"))
+			resp.Error(c, apierr.InternalError("发送验证码失败: "+err.Error()))
 		}
 		return
 	}
 
-	// TODO: 实际发送验证码（短信/邮件）
-	// 开发环境下，在响应中返回验证码（仅用于测试）
 	response := gin.H{
 		"message": "验证码已发送",
 	}
 
-	// 非生产环境返回验证码（方便测试）
 	if h.svc.GetMasterCode() != "" {
-		response["code"] = code
 		response["masterCode"] = h.svc.GetMasterCode()
 	}
 
