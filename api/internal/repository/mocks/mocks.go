@@ -395,6 +395,22 @@ func (mr *MockPlayerRepositoryMockRecorder) ListPaged(ctx, page, pageSize interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPaged", reflect.TypeOf((*MockPlayerRepository)(nil).ListPaged), ctx, page, pageSize)
 }
 
+// ListFeatured mocks base method.
+func (m *MockPlayerRepository) ListFeatured(ctx context.Context, limit int, status *model.VerificationStatus) ([]model.Player, int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListFeatured", ctx, limit, status)
+	ret0, _ := ret[0].([]model.Player)
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// ListFeatured indicates an expected call of ListFeatured.
+func (mr *MockPlayerRepositoryMockRecorder) ListFeatured(ctx, limit, status interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFeatured", reflect.TypeOf((*MockPlayerRepository)(nil).ListFeatured), ctx, limit, status)
+}
+
 // Update mocks base method.
 func (m *MockPlayerRepository) Update(ctx context.Context, player *model.Player) error {
 	m.ctrl.T.Helper()
