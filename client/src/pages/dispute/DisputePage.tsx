@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { PageContainer } from '@/components/page-container';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EmptyState, SectionHeader, StatusBadge } from '@/components/common';
 import { VStack, HStack } from '@/components/layout';
@@ -90,7 +89,6 @@ export default function DisputePage() {
               <VStack spacing={4}>
                 {filteredDisputes.map((dispute) => {
                   const config = statusConfig[dispute.status] || statusConfig.pending;
-                  const StatusIcon = getStatusIcon(dispute.status);
                   
                   return (
                     <Card key={dispute.id} className="hover:shadow-md transition-shadow">
