@@ -9,6 +9,9 @@ import type {
     PaginatedResponse
 } from '@/types/api';
 
+// 重新导出 ServiceItem 类型，方便页面使用
+export type { ServiceItem } from '@/types/api';
+
 export const itemApi = {
     /**
      * Get service item list
@@ -44,4 +47,27 @@ export const itemApi = {
      */
     getPopular: (limit: number = 10) =>
         http.get<ServiceItem[]>('/item/popular', { params: { limit } }),
+
+    /**
+     * Get service items with filters
+     * @param params Filter parameters
+     */
+    getServiceItems: (params?: {
+        subCategory?: string; // 'service' | 'gift'
+        gameId?: number;
+        type?: string;
+        category?: string;
+        keyword?: string;
+    }) =>
+        http.get<ServiceItem[]>('/public/service-items', { params }),
+
+    /**
+     * Get gift items
+     */
+    getGifts: (params?: {
+        category?: string;
+    }) =>
+        http.get<ServiceItem[]>('/public/service-items', { 
+            params: { ...params, subCategory: 'gift' } 
+        }),
 };

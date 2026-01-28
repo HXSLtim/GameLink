@@ -50,6 +50,13 @@ const RealNamePage = lazy(() => import("@/pages/player/verification/RealNamePage
 const SkillAuthPage = lazy(() => import("@/pages/player/verification/SkillAuthPage"));
 const TeamPage = lazy(() => import("@/pages/player/team/TeamPage"));
 
+// Settings pages
+const SettingsPage = lazy(() => import("@/pages/settings/SettingsPage"));
+const BlockedUsersPage = lazy(() => import("@/pages/settings/BlockedUsersPage"));
+
+// Dispute page
+const DisputePage = lazy(() => import("@/pages/dispute/DisputePage"));
+
 // Room pages
 const RoomListPage = lazy(() => import("@/pages/room/RoomListPage"));
 const RoomDetailPage = lazy(() => import("@/pages/room/RoomDetailPage"));
@@ -58,6 +65,10 @@ const CreateRoomPage = lazy(() => import("@/pages/room/CreateRoomPage"));
 // LFG pages
 const LFGPage = lazy(() => import("@/pages/lfg/LFGPage"));
 const CreateLFGPage = lazy(() => import("@/pages/lfg/CreateLFGPage"));
+
+// Service and Gift pages
+const ServiceListPage = lazy(() => import("@/pages/service/ServiceListPage"));
+const GiftShopPage = lazy(() => import("@/pages/gift/GiftShopPage"));
 
 function App() {
   return (
@@ -102,12 +113,17 @@ function App() {
                   <Route path="/wallet" element={<WalletPage />} />
                   <Route path="/wallet/recharge" element={<RechargePage />} />
                   <Route path="/vip" element={<VipPage />} />
+                  <Route path="/settings" element={<SettingsPage />} />
                   <Route path="/settings/profile" element={<EditProfilePage />} />
                   <Route path="/settings/password" element={<ChangePasswordPage />} />
+                  <Route path="/settings/blocked" element={<BlockedUsersPage />} />
                   <Route path="/notifications" element={<NotificationPage />} />
                   <Route path="/coupons" element={<CouponCenterPage />} /> {/* Added route */}
                   <Route path="/referral" element={<ReferralPage />} /> {/* Added route */}
                   <Route path="/activities" element={<ActivityListPage />} /> {/* Added route */}
+
+                  {/* Dispute Route */}
+                  <Route path="/dispute/:orderId" element={<DisputePage />} />
 
                   {/* Room Routes */}
                   <Route path="/rooms" element={<RoomListPage />} />
@@ -117,6 +133,10 @@ function App() {
                   {/* LFG Routes */}
                   <Route path="/lfg" element={<LFGPage />} />
                   <Route path="/lfg/create" element={<CreateLFGPage />} />
+
+                  {/* Service and Gift Routes */}
+                  <Route path="/services" element={<ServiceListPage />} />
+                  <Route path="/gifts" element={<GiftShopPage />} />
 
                   <Route path="/page-structure" element={<PageShowcase />} />
                 </Route>

@@ -1,6 +1,5 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { useEffect } from "react";
-import { useTranslation } from "react-i18next";
 import { useOrderStore, useAuthStore } from "@/stores";
 import { cn } from "@/lib/utils";
 import {
@@ -15,19 +14,17 @@ import {
     Users,
     Target,
     Wallet,
-    // Star import removed as it is unused
     ArrowLeftRight,
     BadgeCheck,
-    // TrendingUp import removed as it is unused
+    Package,
+    Gift,
 } from "lucide-react";
 import { ModeToggle } from "@/components/mode-toggle";
-import { LanguageSwitcher } from "@/components/language-switcher";
 
 import { BottomNav } from "@/components/bottom-nav";
 
 export default function DesktopLayout() {
     const location = useLocation();
-    const { t } = useTranslation();
     const {
         user,
         viewMode,
@@ -38,24 +35,26 @@ export default function DesktopLayout() {
 
     // 用户视图导航
     const userNavItems = [
-        { icon: LayoutDashboard, label: t('nav.home'), path: "/" },
-        { icon: Gamepad2, label: t('nav.players'), path: "/players" },
-        { icon: Users, label: t('nav.rooms'), path: "/rooms" },
-        { icon: Target, label: t('nav.lfg'), path: "/lfg" },
-        { icon: ShoppingBag, label: t('nav.orders'), path: "/orders" },
-        { icon: MessageSquare, label: t('nav.chat'), path: "/chat" },
-        { icon: User, label: t('nav.profile'), path: "/profile" },
+        { icon: LayoutDashboard, label: "首页", path: "/" },
+        { icon: Gamepad2, label: "陪玩师", path: "/players" },
+        { icon: Package, label: "服务项目", path: "/services" },
+        { icon: Gift, label: "礼物商店", path: "/gifts" },
+        { icon: Users, label: "游戏房间", path: "/rooms" },
+        { icon: Target, label: "快速匹配", path: "/lfg" },
+        { icon: ShoppingBag, label: "订单", path: "/orders" },
+        { icon: MessageSquare, label: "聊天", path: "/chat" },
+        { icon: User, label: "个人中心", path: "/profile" },
     ];
 
     // 陪玩视图导航
     const playerNavItems = [
-        { icon: LayoutDashboard, label: t('nav.playerDashboard'), path: "/player/dashboard" },
-        { icon: ShoppingBag, label: t('nav.playerOrders'), path: "/player/orders" },
-        { icon: Wallet, label: t('nav.earnings'), path: "/player/earnings" },
-        { icon: Users, label: t('nav.team'), path: "/player/team" },
-        { icon: MessageSquare, label: t('nav.chat'), path: "/chat" },
-        { icon: BadgeCheck, label: t('nav.verification'), path: "/player/verification/realname" },
-        { icon: User, label: t('nav.playerProfile'), path: "/player/profile/edit" },
+        { icon: LayoutDashboard, label: "仪表盘", path: "/player/dashboard" },
+        { icon: ShoppingBag, label: "我的订单", path: "/player/orders" },
+        { icon: Wallet, label: "收益", path: "/player/earnings" },
+        { icon: Users, label: "我的团队", path: "/player/team" },
+        { icon: MessageSquare, label: "聊天", path: "/chat" },
+        { icon: BadgeCheck, label: "认证中心", path: "/player/verification/realname" },
+        { icon: User, label: "陪玩资料", path: "/player/profile/edit" },
     ];
 
     // 根据当前视图模式选择导航项
@@ -88,15 +87,15 @@ export default function DesktopLayout() {
                             GL
                         </div>
                         <span className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
-                            {t('app.name')}
+                            GameLink
                         </span>
                     </div>
                 </div>
 
                 {/* Nav Menu */}
-                <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
+                <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto scrollbar-minimal">
                     <div className="text-xs font-bold text-muted-foreground px-3 py-2 opacity-70">
-                        {t('nav.menu')}
+                        菜单
                     </div>
                     {navItems.map((item) => {
                         const isActive = isLinkActive(item.path);
@@ -107,7 +106,8 @@ export default function DesktopLayout() {
                                 key={item.path}
                                 to={item.path}
                                 className={cn(
-                                    "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 group relative overflow-hidden",
+                                    // 添加 h-11 固定高度，防止中英文切换时高度变化
+                                    "flex items-center gap-3 px-3 py-2.5 h-11 rounded-xl text-sm font-medium transition-all duration-300 group relative overflow-hidden",
                                     isActive
                                         ? "bg-primary/10 text-primary shadow-sm"
                                         : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
@@ -117,7 +117,8 @@ export default function DesktopLayout() {
                                     <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-50" />
                                 )}
                                 <Icon className={cn("w-5 h-5 flex-shrink-0 transition-transform duration-300", isActive ? "scale-110" : "group-hover:scale-110")} />
-                                <span className={cn("relative z-10 truncate", isActive && "font-semibold")}>{item.label}</span>
+                                {/* 使用 flex-1 和 min-w-0 确保文字区域固定，truncate 截断过长文字 */}
+                                <span className={cn("relative z-10 truncate flex-1 min-w-0", isActive && "font-semibold")}>{item.label}</span>
 
                                 {isActive && (
                                     <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
@@ -138,7 +139,7 @@ export default function DesktopLayout() {
                             <div className="flex items-center gap-2">
                                 <ArrowLeftRight className="w-4 h-4 text-primary" />
                                 <span className="text-sm font-medium text-foreground">
-                                    {viewMode === 'player' ? t('nav.switchToUser') : t('nav.switchToPlayer')}
+                                    {viewMode === 'player' ? '切换到用户' : '切换到陪玩'}
                                 </span>
                             </div>
                             <div className={cn(
@@ -147,7 +148,7 @@ export default function DesktopLayout() {
                                     ? "bg-purple-500/20 text-purple-400"
                                     : "bg-primary/20 text-primary"
                             )}>
-                                {viewMode === 'player' ? t('nav.playerMode') : t('nav.userMode')}
+                                {viewMode === 'player' ? '陪玩模式' : '用户模式'}
                             </div>
                         </button>
                     )}
@@ -167,10 +168,10 @@ export default function DesktopLayout() {
                         </div>
                         <div className="flex-1 min-w-0">
                             <div className="text-sm font-semibold truncate text-foreground group-hover:text-primary transition-colors">
-                                {user?.name || user?.username || t('nav.guest')}
+                                {user?.name || user?.username || '游客'}
                             </div>
                             <div className="text-xs text-muted-foreground truncate">
-                                {viewMode === 'player' ? t('nav.playerMode') : t('nav.online_status')}
+                                {viewMode === 'player' ? '陪玩模式' : '在线 - 游戏中'}
                             </div>
                         </div>
                         <Link to="/profile" className="p-1.5 hover:bg-muted rounded-full text-muted-foreground hover:text-foreground transition-colors">
@@ -189,7 +190,7 @@ export default function DesktopLayout() {
                             <LayoutDashboard className="w-5 h-5 text-muted-foreground" />
                         </div>
                         <h2 className="font-semibold text-lg text-foreground/90 tracking-tight">
-                            {t('nav.dashboard')}
+                            仪表盘
                         </h2>
                     </div>
 
@@ -200,15 +201,12 @@ export default function DesktopLayout() {
                             </div>
                             <input
                                 type="text"
-                                placeholder={t('nav.search_placeholder')}
+                                placeholder="搜索全站..."
                                 className="bg-background/50 border border-border/40 text-sm rounded-full pl-10 pr-4 py-2 w-64 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary/50 outline-none transition-all shadow-sm focus:w-72"
                             />
                         </div>
                         <div className="h-6 w-px bg-border/60 mx-1"></div>
-                        <div className="flex items-center gap-2">
-                            <LanguageSwitcher />
-                            <ModeToggle />
-                        </div>
+                        <ModeToggle />
                         <button className="relative p-2.5 bg-background/50 hover:bg-background border border-border/40 hover:border-border rounded-full text-muted-foreground hover:text-foreground transition-all shadow-sm">
                             <Bell className="w-5 h-5" />
                             <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-background animate-pulse"></span>
@@ -222,8 +220,8 @@ export default function DesktopLayout() {
                         <div className="absolute top-[-20%] right-[-10%] w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl opacity-50" />
                         <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] bg-purple-500/5 rounded-full blur-3xl opacity-50" />
                     </div>
-                    {/* Added pb-20 for mobile bottom nav spacing */}
-                    <div className="flex-1 relative z-10 overflow-y-scroll pb-20 md:pb-0">
+                    {/* 单一滚动容器 - pb-20 用于移动端底部导航间距 */}
+                    <div className="flex-1 relative z-10 overflow-y-auto pb-20 md:pb-6 scrollbar-thin">
                         <Outlet />
                     </div>
                 </div>
