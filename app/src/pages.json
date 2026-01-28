@@ -1,0 +1,38 @@
+{
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationBarTitleText": "GameLink",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/auth/login/index",
+      "style": {
+        "navigationBarTitleText": "登录",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/auth/register/index",
+      "style": {
+        "navigationBarTitleText": "注册",
+        "navigationStyle": "custom"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "GameLink",
+    "navigationBarBackgroundColor": "#FFFFFF",
+    "backgroundColor": "#F5F5F5",
+    "backgroundTextStyle": "dark"
+  },
+  "easycom": {
+    "autoscan": true,
+    "custom": {
+      "^uv-(.*)": "@climblee/uv-ui/components/uv-$1/uv-$1.vue"
+    }
+  }
+}

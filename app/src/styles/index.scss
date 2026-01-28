@@ -1,0 +1,227 @@
+/**
+ * GameLink 全局样式
+ */
+
+@import './variables.scss';
+
+// ============================================
+// CSS 变量 - 支持动态主题切换
+// ============================================
+:root,
+page {
+  // 默认日间主题
+  --color-primary: #{$light-primary};
+  --color-primary-light: #{$light-primary-light};
+  --color-primary-dark: #{$light-primary-dark};
+  --color-primary-gradient: #{$light-primary-gradient};
+  
+  --color-bg: #{$light-bg};
+  --color-bg-card: #{$light-bg-card};
+  --color-bg-secondary: #{$light-bg-secondary};
+  
+  --color-text: #{$light-text};
+  --color-text-secondary: #{$light-text-secondary};
+  --color-text-placeholder: #{$light-text-placeholder};
+  --color-text-disabled: #{$light-text-disabled};
+  
+  --color-border: #{$light-border};
+  --color-divider: #{$light-divider};
+  
+  // 通用色
+  --color-success: #{$success};
+  --color-warning: #{$warning};
+  --color-error: #{$error};
+  --color-info: #{$info};
+}
+
+// 夜间主题
+[data-theme="dark"],
+.theme-dark {
+  --color-primary: #{$dark-primary};
+  --color-primary-light: #{$dark-primary-light};
+  --color-primary-dark: #{$dark-primary-dark};
+  --color-primary-gradient: #{$dark-primary-gradient};
+  
+  --color-bg: #{$dark-bg};
+  --color-bg-card: #{$dark-bg-card};
+  --color-bg-secondary: #{$dark-bg-secondary};
+  
+  --color-text: #{$dark-text};
+  --color-text-secondary: #{$dark-text-secondary};
+  --color-text-placeholder: #{$dark-text-placeholder};
+  --color-text-disabled: #{$dark-text-disabled};
+  
+  --color-border: #{$dark-border};
+  --color-divider: #{$dark-divider};
+}
+
+// ============================================
+// 全局重置
+// ============================================
+page {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-size: $font-base;
+  line-height: 1.5;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+view, text {
+  box-sizing: border-box;
+}
+
+// ============================================
+// 工具类
+// ============================================
+
+// 文字颜色
+.text-primary { color: var(--color-primary); }
+.text-secondary { color: var(--color-text-secondary); }
+.text-placeholder { color: var(--color-text-placeholder); }
+.text-success { color: var(--color-success); }
+.text-warning { color: var(--color-warning); }
+.text-error { color: var(--color-error); }
+.text-info { color: var(--color-info); }
+
+// 背景色
+.bg-primary { background-color: var(--color-primary); }
+.bg-card { background-color: var(--color-bg-card); }
+.bg-secondary { background-color: var(--color-bg-secondary); }
+
+// 边框
+.border { border: 1rpx solid var(--color-border); }
+.border-t { border-top: 1rpx solid var(--color-border); }
+.border-b { border-bottom: 1rpx solid var(--color-border); }
+
+// Flex 布局
+.flex { display: flex; }
+.flex-col { display: flex; flex-direction: column; }
+.flex-center { display: flex; align-items: center; justify-content: center; }
+.flex-between { display: flex; align-items: center; justify-content: space-between; }
+.flex-wrap { flex-wrap: wrap; }
+.flex-1 { flex: 1; }
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+
+// 间距
+.p-xs { padding: $spacing-xs; }
+.p-sm { padding: $spacing-sm; }
+.p-md { padding: $spacing-md; }
+.p-lg { padding: $spacing-lg; }
+.p-xl { padding: $spacing-xl; }
+
+.m-xs { margin: $spacing-xs; }
+.m-sm { margin: $spacing-sm; }
+.m-md { margin: $spacing-md; }
+.m-lg { margin: $spacing-lg; }
+.m-xl { margin: $spacing-xl; }
+
+.mb-xs { margin-bottom: $spacing-xs; }
+.mb-sm { margin-bottom: $spacing-sm; }
+.mb-md { margin-bottom: $spacing-md; }
+.mb-lg { margin-bottom: $spacing-lg; }
+
+.mt-xs { margin-top: $spacing-xs; }
+.mt-sm { margin-top: $spacing-sm; }
+.mt-md { margin-top: $spacing-md; }
+.mt-lg { margin-top: $spacing-lg; }
+
+// 圆角
+.rounded { border-radius: $radius-md; }
+.rounded-sm { border-radius: $radius-sm; }
+.rounded-lg { border-radius: $radius-lg; }
+.rounded-xl { border-radius: $radius-xl; }
+.rounded-full { border-radius: $radius-full; }
+
+// 阴影
+.shadow { box-shadow: $shadow-md; }
+.shadow-sm { box-shadow: $shadow-sm; }
+.shadow-lg { box-shadow: $shadow-lg; }
+
+// 文字大小
+.text-xs { font-size: $font-xs; }
+.text-sm { font-size: $font-sm; }
+.text-md { font-size: $font-md; }
+.text-base { font-size: $font-base; }
+.text-lg { font-size: $font-lg; }
+.text-xl { font-size: $font-xl; }
+.text-2xl { font-size: $font-2xl; }
+
+// 文字样式
+.font-bold { font-weight: 600; }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.truncate { 
+  overflow: hidden; 
+  text-overflow: ellipsis; 
+  white-space: nowrap; 
+}
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+// 宽高
+.w-full { width: 100%; }
+.h-full { height: 100%; }
+
+// ============================================
+// 卡片组件
+// ============================================
+.card {
+  background-color: var(--color-bg-card);
+  border-radius: $radius-lg;
+  padding: $spacing-md;
+  box-shadow: $shadow-sm;
+}
+
+// ============================================
+// 按钮基础样式
+// ============================================
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-sm $spacing-lg;
+  border-radius: $radius-md;
+  font-size: $font-base;
+  font-weight: 500;
+  transition: all $transition-fast;
+  
+  &-primary {
+    background: var(--color-primary-gradient);
+    color: #FFFFFF;
+    
+    &:active {
+      opacity: 0.9;
+      transform: scale(0.98);
+    }
+  }
+  
+  &-outline {
+    background: transparent;
+    border: 2rpx solid var(--color-primary);
+    color: var(--color-primary);
+  }
+  
+  &-block {
+    display: flex;
+    width: 100%;
+  }
+}
+
+// ============================================
+// 安全区域
+// ============================================
+.safe-area-bottom {
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-area-top {
+  padding-top: constant(safe-area-inset-top);
+  padding-top: env(safe-area-inset-top);
+}
