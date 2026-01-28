@@ -1,0 +1,116 @@
+/**
+ * GameLink 主题变量
+ * 参考 KOOK / Discord 设计语言
+ * 日间：亮绿色  夜间：紫色
+ */
+
+// ============================================
+// 日间主题 (Light Theme)
+// ============================================
+$light-primary: #00D26A;           // 亮绿色 - 主色调
+$light-primary-light: #4ADE80;     // 浅绿色
+$light-primary-dark: #00B359;      // 深绿色
+$light-primary-gradient: linear-gradient(135deg, #00D26A 0%, #00B359 100%);
+
+$light-bg: #F5F5F5;                // 页面背景
+$light-bg-card: #FFFFFF;           // 卡片背景
+$light-bg-secondary: #FAFAFA;      // 次级背景
+
+$light-text: #1A1A1A;              // 主文字
+$light-text-secondary: #666666;    // 次级文字
+$light-text-placeholder: #999999;  // 占位文字
+$light-text-disabled: #CCCCCC;     // 禁用文字
+
+$light-border: #E5E5E5;            // 边框
+$light-divider: #EEEEEE;           // 分割线
+
+// ============================================
+// 夜间主题 (Dark Theme)
+// ============================================
+$dark-primary: #7C3AED;            // 紫色 - 主色调
+$dark-primary-light: #A78BFA;      // 浅紫色
+$dark-primary-dark: #6D28D9;       // 深紫色
+$dark-primary-gradient: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%);
+
+$dark-bg: #1E1E2E;                 // 页面背景
+$dark-bg-card: #2D2D3D;            // 卡片背景
+$dark-bg-secondary: #252535;       // 次级背景
+
+$dark-text: #E0E0E0;               // 主文字
+$dark-text-secondary: #A0A0A0;     // 次级文字
+$dark-text-placeholder: #707070;   // 占位文字
+$dark-text-disabled: #505050;      // 禁用文字
+
+$dark-border: #3D3D4D;             // 边框
+$dark-divider: #353545;            // 分割线
+
+// ============================================
+// 通用色彩
+// ============================================
+$success: #22C55E;                 // 成功
+$success-light: #4ADE80;
+$warning: #F59E0B;                 // 警告
+$warning-light: #FBBF24;
+$error: #EF4444;                   // 错误
+$error-light: #F87171;
+$info: #3B82F6;                    // 信息
+$info-light: #60A5FA;
+
+// ============================================
+// 状态色
+// ============================================
+$status-online: #22C55E;           // 在线
+$status-busy: #F59E0B;             // 忙碌
+$status-offline: #9CA3AF;          // 离线
+
+// 订单状态
+$order-pending: #F59E0B;           // 待支付
+$order-confirmed: #3B82F6;         // 已确认
+$order-in-progress: #22C55E;       // 进行中
+$order-completed: #6B7280;         // 已完成
+$order-canceled: #9CA3AF;          // 已取消
+$order-disputed: #EF4444;          // 争议中
+
+// ============================================
+// 间距
+// ============================================
+$spacing-xs: 8rpx;
+$spacing-sm: 16rpx;
+$spacing-md: 24rpx;
+$spacing-lg: 32rpx;
+$spacing-xl: 48rpx;
+
+// ============================================
+// 圆角
+// ============================================
+$radius-sm: 8rpx;
+$radius-md: 16rpx;
+$radius-lg: 24rpx;
+$radius-xl: 32rpx;
+$radius-full: 9999rpx;
+
+// ============================================
+// 字体大小
+// ============================================
+$font-xs: 20rpx;
+$font-sm: 24rpx;
+$font-md: 28rpx;
+$font-base: 32rpx;
+$font-lg: 36rpx;
+$font-xl: 40rpx;
+$font-2xl: 48rpx;
+$font-3xl: 56rpx;
+
+// ============================================
+// 阴影
+// ============================================
+$shadow-sm: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+$shadow-md: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
+$shadow-lg: 0 8rpx 32rpx rgba(0, 0, 0, 0.15);
+
+// ============================================
+// 动画
+// ============================================
+$transition-fast: 150ms ease;
+$transition-normal: 250ms ease;
+$transition-slow: 350ms ease;
