@@ -1,97 +1,73 @@
 <template>
-  <view class="order-card" @click="$emit('click', order)">
-    <!-- 头部：订单号和状态 -->
+  <view class="order-card" @tap="$emit('click')">
+    <!-- 订单头部 -->
     <view class="order-header">
       <text class="order-no">订单号：{{ order.orderNo }}</text>
-      <StatusBadge :status="order.status" size="small" />
-    </view>
-
-    <!-- 内容 -->
-    <view class="order-content">
-      <!-- 陪玩师/用户信息 -->
-      <view class="order-user">
-        <view class="user-avatar">
-          <image v-if="targetUser?.avatar" :src="targetUser.avatar" mode="aspectFill" />
-          <text v-else class="avatar-placeholder">{{ targetUser?.nickname?.[0] || '?' }}</text>
-        </view>
-        <view class="user-info">
-          <text class="user-name">{{ targetUser?.nickname || '未知用户' }}</text>
-          <text class="service-name">{{ order.serviceName || '游戏陪玩' }}</text>
-        </view>
-      </view>
-
-      <!-- 订单详情 -->
-      <view class="order-details">
-        <view class="detail-item">
-          <text class="detail-label">游戏</text>
-          <text class="detail-value">{{ order.gameName || '-' }}</text>
-        </view>
-        <view class="detail-item">
-          <text class="detail-label">数量</text>
-          <text class="detail-value">{{ order.quantity }}{{ order.unit || '局' }}</text>
-        </view>
-        <view class="detail-item">
-          <text class="detail-label">金额</text>
-          <text class="detail-value price">¥{{ formatPrice(order.totalAmount) }}</text>
-        </view>
+      <view class="order-status" :class="`order-status--${statusInfo.class}`">
+        {{ statusInfo.text }}
       </view>
     </view>
-
-    <!-- 底部：时间和操作 -->
-    <view class="order-footer">
-      <text class="order-time">{{ formatTime(order.createdAt) }}</text>
-      <view class="order-actions">
-        <slot name="actions">
-          <!-- 默认操作按钮 -->
-          <view v-if="showDefaultActions" class="action-buttons">
-            <button 
-              v-if="canCancel" 
-              class="btn-action btn-cancel"
-              @click.stop="$emit('cancel', order)"
-            >
-              取消订单
-            </button>
-            <button 
-              v-if="canPay" 
-              class="btn-action btn-primary"
-              @click.stop="$emit('pay', order)"
-            >
-              去支付
-            </button>
-            <button 
-              v-if="canReview" 
-              class="btn-action btn-primary"
-              @click.stop="$emit('review', order)"
-            >
-              去评价
-            </button>
-            <button 
-              v-if="canAccept" 
-              class="btn-action btn-primary"
-              @click.stop="$emit('accept', order)"
-            >
-              接单
-            </button>
-            <button 
-              v-if="canComplete" 
-              class="btn-action btn-primary"
-              @click.stop="$emit('complete', order)"
-            >
-              完成订单
-            </button>
-          </view>
-        </slot>
+    
+    <!-- 陪玩师信息 -->
+    <view class="order-player">
+      <GlAvatar
+        :src="order.player.avatar"
+        :text="order.player.nickname"
+        size="medium"
+        status="online"
+      />
+      <view class="player-info">
+        <text class="player-name">{{ order.player.nickname }}</text>
+        <text class="service-name">{{ order.serviceName }}</text>
       </view>
+    </view>
+    
+    <!-- 订单信息 -->
+    <view class="order-info">
+      <view class="info-item">
+        <text class="info-label">游戏</text>
+        <text class="info-value">{{ order.gameName }}</text>
+      </view>
+      <view class="info-item">
+        <text class="info-label">数量</text>
+        <text class="info-value">{{ order.quantity }}{{ order.unit }}</text>
+      </view>
+      <view class="info-item">
+        <text class="info-label">金额</text>
+        <text class="info-value info-value--price">¥{{ order.totalAmount.toFixed(2) }}</text>
+      </view>
+    </view>
+    
+    <!-- 订单时间 -->
+    <view class="order-time">
+      <text>{{ formattedTime }}</text>
+    </view>
+    
+    <!-- 操作按钮 -->
+    <view class="order-actions">
+      <template v-for="action in availableActions" :key="action.key">
+        <GlButton
+          :type="action.type"
+          :plain="action.plain"
+          size="small"
+          round
+          @click.stop="handleAction(action.key)"
+        >
+          {{ action.label }}
+        </GlButton>
+      </template>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import StatusBadge from '@/components/StatusBadge/index.vue'
-import dayjs from 'dayjs'
+import GlAvatar from '@/components/gl/Avatar/index.vue'
+import GlButton from '@/components/gl/Button/index.vue'
 
-export interface OrderUser {
+export type OrderStatus = 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'canceled' | 'refunded' | 'disputed'
+
+export interface OrderPlayer {
   id: number
   nickname: string
   avatar?: string
@@ -100,69 +76,97 @@ export interface OrderUser {
 export interface Order {
   id: number
   orderNo: string
-  status: string
-  gameName?: string
-  serviceName?: string
+  status: OrderStatus
+  player: OrderPlayer
+  gameName: string
+  serviceName: string
   quantity: number
-  unit?: string
+  unit: string
   totalAmount: number
   createdAt: string
-  user?: OrderUser
-  player?: OrderUser
+  reviewed?: boolean
 }
 
-const props = withDefaults(defineProps<{
+interface Props {
   order: Order
-  viewAs?: 'user' | 'player'  // 以用户视角还是陪玩师视角
-  showDefaultActions?: boolean
-}>(), {
-  viewAs: 'user',
-  showDefaultActions: true,
-})
+}
 
-defineEmits<{
-  click: [order: Order]
-  cancel: [order: Order]
-  pay: [order: Order]
-  review: [order: Order]
-  accept: [order: Order]
-  complete: [order: Order]
+const props = defineProps<Props>()
+
+const emit = defineEmits<{
+  click: []
+  action: [key: string, order: Order]
 }>()
 
-// 目标用户（用户视角看陪玩师，陪玩师视角看用户）
-const targetUser = computed(() => {
-  return props.viewAs === 'user' ? props.order.player : props.order.user
-})
-
-// 操作按钮显示逻辑
-const canCancel = computed(() => {
-  return props.order.status === 'pending' && props.viewAs === 'user'
-})
-
-const canPay = computed(() => {
-  return props.order.status === 'pending' && props.viewAs === 'user'
-})
-
-const canReview = computed(() => {
-  return props.order.status === 'completed' && props.viewAs === 'user'
-})
-
-const canAccept = computed(() => {
-  return props.order.status === 'confirmed' && props.viewAs === 'player'
-})
-
-const canComplete = computed(() => {
-  return props.order.status === 'in_progress' && props.viewAs === 'player'
-})
-
-// 格式化价格
-function formatPrice(amount: number): string {
-  return (amount / 100).toFixed(2)
+// 状态映射
+const statusMap: Record<OrderStatus, { text: string; class: string }> = {
+  pending: { text: '待支付', class: 'warning' },
+  confirmed: { text: '待服务', class: 'info' },
+  in_progress: { text: '进行中', class: 'primary' },
+  completed: { text: '已完成', class: 'success' },
+  canceled: { text: '已取消', class: 'default' },
+  refunded: { text: '已退款', class: 'default' },
+  disputed: { text: '争议中', class: 'error' },
 }
 
+const statusInfo = computed(() => statusMap[props.order.status] || { text: props.order.status, class: 'default' })
+
 // 格式化时间
-function formatTime(time: string): string {
-  return dayjs(time).format('YYYY-MM-DD HH:mm')
+const formattedTime = computed(() => {
+  const date = new Date(props.order.createdAt)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hour = String(date.getHours()).padStart(2, '0')
+  const minute = String(date.getMinutes()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hour}:${minute}`
+})
+
+// 可用操作按钮
+interface ActionButton {
+  key: string
+  label: string
+  type: 'primary' | 'default'
+  plain: boolean
+}
+
+const availableActions = computed((): ActionButton[] => {
+  const { status, reviewed } = props.order
+  const actions: ActionButton[] = []
+  
+  switch (status) {
+    case 'pending':
+      actions.push({ key: 'cancel', label: '取消订单', type: 'default', plain: true })
+      actions.push({ key: 'pay', label: '去支付', type: 'primary', plain: false })
+      break
+    case 'confirmed':
+    case 'in_progress':
+      actions.push({ key: 'contact', label: '联系陪玩', type: 'default', plain: true })
+      if (status === 'in_progress') {
+        actions.push({ key: 'complete', label: '确认完成', type: 'primary', plain: false })
+      }
+      break
+    case 'completed':
+      if (!reviewed) {
+        actions.push({ key: 'review', label: '去评价', type: 'primary', plain: false })
+      } else {
+        actions.push({ key: 'reorder', label: '再来一单', type: 'default', plain: true })
+      }
+      break
+    case 'canceled':
+    case 'refunded':
+      actions.push({ key: 'reorder', label: '再来一单', type: 'default', plain: true })
+      break
+    case 'disputed':
+      actions.push({ key: 'viewDispute', label: '查看进度', type: 'default', plain: true })
+      break
+  }
+  
+  return actions
+})
+
+const handleAction = (key: string) => {
+  emit('action', key, props.order)
 }
 </script>
 
@@ -170,136 +174,117 @@ function formatTime(time: string): string {
 .order-card {
   background: var(--color-bg-card);
   border-radius: 24rpx;
-  padding: 24rpx;
-  margin-bottom: 16rpx;
+  padding: 28rpx;
+  margin-bottom: 20rpx;
+  border: 2rpx solid var(--color-border);
+  transition: all 0.2s;
+  
+  &:active {
+    transform: scale(0.99);
+    border-color: var(--color-primary);
+  }
 }
 
-// 头部
 .order-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding-bottom: 20rpx;
-  border-bottom: 2rpx solid var(--color-divider);
+  align-items: center;
+  padding-bottom: 16rpx;
+  border-bottom: 1rpx solid var(--color-border);
+  margin-bottom: 20rpx;
+}
+
+.order-no {
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.order-status {
+  font-size: 26rpx;
+  font-weight: 600;
+  padding: 6rpx 16rpx;
+  border-radius: 12rpx;
   
-  .order-no {
-    font-size: 24rpx;
-    color: var(--color-text-secondary);
-  }
+  &--warning { color: var(--color-warning); background: rgba(245, 158, 11, 0.1); }
+  &--info { color: var(--color-info, #3B82F6); background: rgba(59, 130, 246, 0.1); }
+  &--primary { color: var(--color-primary); background: rgba(0, 210, 106, 0.1); }
+  &--success { color: var(--color-success); background: rgba(34, 197, 94, 0.1); }
+  &--default { color: var(--color-text-placeholder); background: rgba(156, 163, 175, 0.1); }
+  &--error { color: var(--color-error); background: rgba(239, 68, 68, 0.1); }
 }
 
-// 内容
-.order-content {
-  padding: 20rpx 0;
-}
-
-.order-user {
+.order-player {
   display: flex;
   align-items: center;
+  gap: 20rpx;
   margin-bottom: 20rpx;
-  
-  .user-avatar {
-    width: 80rpx;
-    height: 80rpx;
-    border-radius: 50%;
-    overflow: hidden;
-    background: var(--color-bg-secondary);
-    margin-right: 20rpx;
-    
-    image {
-      width: 100%;
-      height: 100%;
-    }
-    
-    .avatar-placeholder {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 32rpx;
-      color: #FFFFFF;
-      background: var(--color-primary);
-    }
-  }
-  
-  .user-info {
-    .user-name {
-      display: block;
-      font-size: 28rpx;
-      font-weight: 500;
-      color: var(--color-text);
-      margin-bottom: 4rpx;
-    }
-    
-    .service-name {
-      font-size: 24rpx;
-      color: var(--color-text-secondary);
-    }
-  }
 }
 
-.order-details {
+.player-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.player-name {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.service-name {
+  font-size: 26rpx;
+  color: var(--color-text-secondary);
+}
+
+.order-info {
   display: flex;
   gap: 32rpx;
+  padding: 20rpx;
+  background: var(--color-bg-secondary);
+  border-radius: 16rpx;
+  margin-bottom: 20rpx;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.info-label {
+  font-size: 22rpx;
+  color: var(--color-text-placeholder);
+}
+
+.info-value {
+  font-size: 28rpx;
+  font-weight: 500;
+  color: var(--color-text);
   
-  .detail-item {
-    .detail-label {
-      display: block;
-      font-size: 22rpx;
-      color: var(--color-text-placeholder);
-      margin-bottom: 4rpx;
-    }
-    
-    .detail-value {
-      font-size: 26rpx;
-      color: var(--color-text);
-      
-      &.price {
-        color: var(--color-primary);
-        font-weight: 600;
-      }
-    }
+  &--price {
+    font-weight: 700;
+    color: var(--color-primary);
+    font-size: 32rpx;
   }
 }
 
-// 底部
-.order-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 20rpx;
-  border-top: 2rpx solid var(--color-divider);
+.order-time {
+  margin-bottom: 16rpx;
   
-  .order-time {
-    font-size: 22rpx;
+  text {
+    font-size: 24rpx;
     color: var(--color-text-placeholder);
   }
 }
 
-.action-buttons {
+.order-actions {
   display: flex;
-  gap: 16rpx;
-}
-
-.btn-action {
-  padding: 12rpx 24rpx;
-  font-size: 24rpx;
-  border-radius: 32rpx;
-  border: none;
-  
-  &::after {
-    border: none;
-  }
-  
-  &.btn-primary {
-    background: var(--color-primary);
-    color: #FFFFFF;
-  }
-  
-  &.btn-cancel {
-    background: var(--color-bg-secondary);
-    color: var(--color-text-secondary);
-  }
+  justify-content: flex-end;
+  gap: 20rpx;
+  padding-top: 20rpx;
+  border-top: 1rpx solid var(--color-border);
 }
 </style>

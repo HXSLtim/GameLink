@@ -57,8 +57,10 @@
 
     <!-- 价格 -->
     <view class="player-price">
-      <text class="price-value">¥{{ player.minPrice || 20 }}</text>
-      <text class="price-unit">/局</text>
+      <view class="price-row">
+        <text class="price-value">¥{{ player.minPrice || 20 }}</text>
+        <text class="price-unit">/局</text>
+      </view>
     </view>
   </view>
 </template>
@@ -106,29 +108,39 @@ const moreGamesCount = computed(() => {
 </script>
 
 <style lang="scss" scoped>
+// 玩家卡片
 .player-card {
   display: flex;
   align-items: center;
-  padding: 24rpx;
+  padding: 24rpx 20rpx;
   background: var(--color-bg-card);
-  border-radius: 24rpx;
-  margin-bottom: 16rpx;
+  border-radius: 20rpx;
+  border: 2rpx solid var(--color-border);
+  transition: all 0.2s ease;
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  
+  &:active {
+    transform: scale(0.98);
+    border-color: var(--color-primary);
+    box-shadow: 0 4rpx 16rpx rgba(0, 210, 106, 0.15);
+  }
 }
 
-// 头像
+// 头像 - 增大尺寸
 .player-avatar {
   position: relative;
-  width: 120rpx;
-  height: 120rpx;
+  width: 100rpx;
+  height: 100rpx;
   border-radius: 50%;
-  overflow: hidden;
-  background: var(--color-bg-secondary);
-  margin-right: 24rpx;
+  margin-right: 20rpx;
   flex-shrink: 0;
   
   image {
     width: 100%;
     height: 100%;
+    border-radius: 50%;
   }
   
   .avatar-placeholder {
@@ -137,21 +149,22 @@ const moreGamesCount = computed(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 48rpx;
-    color: var(--color-text-placeholder);
-    background: var(--color-primary);
+    font-size: 40rpx;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--color-primary) 0%, #00E676 100%);
     color: #FFFFFF;
+    border-radius: 50%;
   }
   
   .online-dot {
     position: absolute;
     right: 4rpx;
     bottom: 4rpx;
-    width: 24rpx;
-    height: 24rpx;
+    width: 20rpx;
+    height: 20rpx;
     border-radius: 50%;
     background: #9CA3AF;
-    border: 4rpx solid var(--color-bg-card);
+    border: 3rpx solid var(--color-bg-card);
     
     &.online {
       background: #22C55E;
@@ -163,31 +176,36 @@ const moreGamesCount = computed(() => {
   }
 }
 
-// 信息
+// 信息区
 .player-info {
   flex: 1;
   min-width: 0;
+  overflow: hidden;
 }
 
 .player-header {
   display: flex;
   align-items: center;
-  margin-bottom: 12rpx;
+  gap: 8rpx;
+  margin-bottom: 8rpx;
   
   .player-name {
     font-size: 32rpx;
     font-weight: 600;
     color: var(--color-text);
-    margin-right: 12rpx;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   
   .verified-badge {
-    padding: 2rpx 12rpx;
+    flex-shrink: 0;
+    padding: 4rpx 10rpx;
     background: rgba(59, 130, 246, 0.1);
     border-radius: 8rpx;
     
     text {
-      font-size: 20rpx;
+      font-size: 18rpx;
       color: #3B82F6;
     }
   }
@@ -197,37 +215,39 @@ const moreGamesCount = computed(() => {
 .player-games {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
   gap: 8rpx;
-  margin-bottom: 12rpx;
+  margin-bottom: 10rpx;
+  overflow: hidden;
   
   .game-tag {
-    padding: 4rpx 16rpx;
-    background: var(--color-bg-secondary);
+    flex-shrink: 0;
+    padding: 4rpx 12rpx;
+    background: rgba(0, 210, 106, 0.1);
     border-radius: 8rpx;
     
     text {
       font-size: 22rpx;
-      color: var(--color-text-secondary);
+      color: var(--color-primary);
     }
   }
   
   .more-games {
+    flex-shrink: 0;
     font-size: 22rpx;
-    color: var(--color-text-placeholder);
+    color: var(--color-text-secondary);
   }
 }
 
-// 统计
+// 统计区
 .player-stats {
   display: flex;
   align-items: center;
-  gap: 24rpx;
+  gap: 16rpx;
   
   .stat-item {
     display: flex;
     align-items: center;
-    gap: 4rpx;
+    gap: 6rpx;
     
     .stat-icon {
       font-size: 24rpx;
@@ -235,32 +255,40 @@ const moreGamesCount = computed(() => {
     
     .stat-label {
       font-size: 22rpx;
-      color: var(--color-text-placeholder);
+      color: var(--color-text-secondary);
     }
     
     .stat-value {
       font-size: 24rpx;
-      color: var(--color-text-secondary);
+      font-weight: 600;
+      color: var(--color-text);
     }
   }
 }
 
-// 价格
+// 价格区
 .player-price {
-  display: flex;
-  align-items: baseline;
   flex-shrink: 0;
   margin-left: 16rpx;
+  text-align: right;
+  
+  .price-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: flex-end;
+  }
   
   .price-value {
-    font-size: 36rpx;
-    font-weight: 600;
-    color: var(--color-primary);
+    font-size: 40rpx;
+    font-weight: 800;
+    color: #F97316;
+    line-height: 1;
   }
   
   .price-unit {
     font-size: 22rpx;
     color: var(--color-text-secondary);
+    margin-left: 4rpx;
   }
 }
 </style>
