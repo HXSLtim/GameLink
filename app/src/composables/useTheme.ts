@@ -29,22 +29,40 @@ function applyTheme(dark: boolean) {
   isDark.value = dark
   
   // #ifdef H5
-  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light')
+  // 设置 HTML 元素的 data-theme 属性
+  if (typeof document !== 'undefined') {
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light')
+    // 同时设置 body 的 class
+    document.body.classList.toggle('theme-dark', dark)
+  }
   // #endif
   
   // #ifdef MP-WEIXIN
-  // 小程序通过全局样式类控制
-  // #endif
+  // 小程序设置状态栏和 TabBar 样式
+  try {
+    uni.setNavigationBarColor({
+      frontColor: dark ? '#ffffff' : '#000000',
+      backgroundColor: dark ? '#0F0F1A' : '#FFFFFF',
+      animation: {
+        duration: 300,
+        timingFunc: 'easeIn'
+      }
+    })
+  } catch (e) {
+    // 静默失败
+  }
   
-  // 设置状态栏样式
-  uni.setNavigationBarColor({
-    frontColor: dark ? '#ffffff' : '#000000',
-    backgroundColor: dark ? '#1E1E2E' : '#FFFFFF',
-    animation: {
-      duration: 300,
-      timingFunc: 'easeIn'
-    }
-  })
+  try {
+    uni.setTabBarStyle({
+      color: dark ? '#94A3B8' : '#64748B',
+      selectedColor: dark ? '#8B5CF6' : '#00D26A',
+      backgroundColor: dark ? '#1A1A2E' : '#FFFFFF',
+      borderStyle: dark ? 'black' : 'black',
+    })
+  } catch (e) {
+    // 静默失败
+  }
+  // #endif
 }
 
 /**
