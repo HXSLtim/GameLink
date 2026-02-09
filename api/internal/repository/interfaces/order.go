@@ -10,6 +10,7 @@ import (
 // OrderReader 只负责读取单个订单
 type OrderReader interface {
 	Get(ctx context.Context, id uint64) (*model.Order, error)
+	GetByIDs(ctx context.Context, ids []uint64) ([]model.Order, error)
 }
 
 // OrderWriter 只负责写入/删除订单

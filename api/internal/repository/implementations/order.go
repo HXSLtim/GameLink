@@ -96,6 +96,27 @@ func (r *gormOrderRepository) Get(ctx context.Context, id uint64) (*model.Order,
 	return &order, nil
 }
 
+// GetByIDs returns multiple orders by their IDs with related data preloaded.
+// This method is optimized for batch operations to avoid N+1 query problems.
+func (r *gormOrderRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.Order, error) {
+	if len(ids) == 0 {
+		return []model.Order{}, nil
+	}
+
+	var orders []model.Order
+	if err := r.db.WithContext(ctx).
+		Preload("User").
+		Preload("Player").
+		Preload("Player.User").
+		Preload("Game").
+		Where("id IN ?", ids).
+		Find(&orders).Error; err != nil {
+		return nil, err
+	}
+
+	return orders, nil
+}
+
 // Update updates editable fields of an order.
 func (r *gormOrderRepository) Update(ctx context.Context, order *model.Order) error {
 	tx := r.db.WithContext(ctx).Model(order).Where("id = ?", order.ID).Updates(map[string]any{
