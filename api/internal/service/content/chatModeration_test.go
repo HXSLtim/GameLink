@@ -465,9 +465,9 @@ func TestChatModerationService_ToMessageDTO(t *testing.T) {
 	t.Run("message with rejection", func(t *testing.T) {
 		svc := &ChatModerationService{}
 		msg := &model.ChatMessage{
-			Base:        model.Base{ID: 1, CreatedAt: now, UpdatedAt: now},
-			Content:     "Spam",
-			AuditStatus: model.ChatMessageAuditRejected,
+			Base:         model.Base{ID: 1, CreatedAt: now, UpdatedAt: now},
+			Content:      "Spam",
+			AuditStatus:  model.ChatMessageAuditRejected,
 			RejectReason: "violation",
 		}
 

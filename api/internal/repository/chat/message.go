@@ -71,8 +71,7 @@ func (r *chatMessageRepository) ListByGroup(ctx context.Context, opts repository
 		return nil, 0, err
 	}
 
-	// 使用 Preload 预加载发送者信息，避免 N+1 查询
-	dataQuery := applyFilters(r.db.WithContext(ctx).Preload("Sender"))
+	dataQuery := applyFilters(r.db.WithContext(ctx))
 	var messages []model.ChatMessage
 	if err := dataQuery.Order("id DESC").
 		Offset((page - 1) * pageSize).
@@ -143,8 +142,7 @@ func (r *chatMessageRepository) ListForModeration(ctx context.Context, opts repo
 		return nil, 0, err
 	}
 
-	// 使用 Preload 预加载发送者和群组信息，避免 N+1 查询
-	dataQuery := applyFilters(r.db.WithContext(ctx).Preload("Sender").Preload("Group"))
+	dataQuery := applyFilters(r.db.WithContext(ctx).Preload("Group"))
 	var messages []model.ChatMessage
 	if err := dataQuery.Order("created_at ASC").
 		Offset((page - 1) * pageSize).

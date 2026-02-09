@@ -14,10 +14,10 @@ import (
 
 // SettlementScheduler 结算调度器
 type SettlementScheduler struct {
-	commissionSvc interface{}            // Use interface to allow mocking
-	lock          cache.DistributedLock  // Redis distributed lock
+	commissionSvc interface{}           // Use interface to allow mocking
+	lock          cache.DistributedLock // Redis distributed lock
 	logger        *slog.Logger
-	Cron          *cron.Cron  // Exported for testing
+	Cron          *cron.Cron // Exported for testing
 }
 
 // NewSettlementScheduler 创建结算调度器

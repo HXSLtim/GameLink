@@ -1,5 +1,8 @@
 <template>
   <GlCard :title="title" :shadow="false" bordered>
+    <template v-if="$slots.extra" #extra>
+      <slot name="extra" />
+    </template>
     <view class="form-list">
       <slot></slot>
     </view>

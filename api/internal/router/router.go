@@ -20,6 +20,7 @@ import (
 	notificationhandler "gamelink/internal/handler/notification"
 	"gamelink/internal/model"
 	adminrepo "gamelink/internal/repository/admin"
+	chatrepo "gamelink/internal/repository/chat"
 	commissionrepo "gamelink/internal/repository/commission"
 	orderrepo "gamelink/internal/repository/implementations"
 	rankingrepo "gamelink/internal/repository/ranking"
@@ -111,12 +112,13 @@ func (r *Router) setupAuth() {
 
 // setupServices 初始化业务服务
 func (r *Router) setupServices() {
-	services := initServices(r.orm, r.cacheClient)
+	services := initServices(r.orm, r.cacheClient, r.cfg)
 	r.services = services
 
 	if r.lifecycle == nil {
 		services.settlementScheduler.Start()
 		services.chatRetention.Start()
+		services.businessScheduler.Start()
 		// Start monitor services
 		go services.wsHub.Run()
 		services.realtimeSvc.Start(context.Background())
@@ -136,6 +138,14 @@ func (r *Router) setupServices() {
 		return nil
 	}, func(context.Context) error {
 		services.chatRetention.Stop()
+		return nil
+	})
+
+	r.lifecycle.RegisterHook("scheduler:business", func(context.Context) error {
+		services.businessScheduler.Start()
+		return nil
+	}, func(context.Context) error {
+		services.businessScheduler.Stop()
 		return nil
 	})
 
@@ -173,10 +183,17 @@ func (r *Router) registerRoutes() {
 	registerPublicRoutes(api, r.orm, r.cacheClient)
 
 	// 认证路由
-	handler.RegisterAuthRoutes(api, r.authSvc)
+	handler.RegisterAuthRoutes(api, r.authSvc, r.services.referralTriggerSvc)
 
 	// 用户端路由（包含角色切换）
 	registerUserRoutesWithRoleSwitch(api, r.authMiddleware, r.services, r.orm)
+	notificationhandler.RegisterUserRoutes(api, r.services.notificationSvc, r.authMiddleware)
+
+	// 用户端 WebSocket 路由
+	if r.services != nil && r.services.wsHub != nil {
+		wsHandler := ws.NewHandler(r.services.wsHub)
+		api.GET("/ws", middleware.WSAuth(r.cfg.Auth.JWTSecret), wsHandler.ServeWS)
+	}
 
 	// 陪玩端路由
 	registerPlayerRoutes(api, r.authMiddleware, r.services)
@@ -260,6 +277,9 @@ func (r *Router) registerAdminRoutes(api *gin.RouterGroup) {
 
 	// 内容管理路由
 	r.registerContentRoutes(rbacGroup)
+
+	// 聊天管理路由
+	r.registerAdminChatRoutes(rbacGroup)
 
 	// 同步 API 路由到权限表
 	r.syncAPIPermissions(permService, roleSvc)
@@ -498,7 +518,7 @@ func (r *Router) registerKPIRoutes(rbacGroup *gin.RouterGroup) {
 func (r *Router) syncAPIPermissions(permService *adminservice.PermissionService, roleSvc *adminservice.RoleService) {
 	// 同步 API 路由到权限表（开发环境自动同步）
 	if os.Getenv("APP_ENV") != "production" || os.Getenv("SYNC_API_PERMISSIONS") == "true" {
-		log.Println("同步 API 权限到数据库...")
+		log.Println("[startup] 同步 API 权限到数据库...")
 		syncConfig := middleware.APISyncConfig{
 			GroupFilter: "/api/v1/admin",
 			SkipPaths: []string{
@@ -508,15 +528,17 @@ func (r *Router) syncAPIPermissions(permService *adminservice.PermissionService,
 			},
 			DryRun: false,
 		}
-		if err := middleware.SyncAPIPermissions(r.engine, permService, syncConfig); err != nil {
+		if err := middleware.SyncAPIPermissions(r.engine, r.orm, syncConfig); err != nil {
 			log.Printf("同步权限失败: %v", err)
 		}
 
 		// 权限同步后，为默认角色分配权限
-		log.Println("为默认角色分配权限...")
+		t := time.Now()
+		log.Println("[startup] 为默认角色分配权限...")
 		if err := AssignDefaultRolePermissions(context.Background(), roleSvc, permService); err != nil {
 			log.Printf("分配默认权限失败: %v", err)
 		}
+		log.Printf("[startup] 角色权限分配: %v", time.Since(t))
 	}
 }
 
@@ -539,6 +561,16 @@ func (r *Router) registerStatisticsRoutes(rbacGroup *gin.RouterGroup) {
 }
 
 // registerContentRoutes 注册内容管理路由
+// registerAdminChatRoutes 注册管理端聊天管理路由
+func (r *Router) registerAdminChatRoutes(rbacGroup *gin.RouterGroup) {
+	chatGroupRepo := chatrepo.NewChatGroupRepository(r.orm)
+	chatMemberRepo := chatrepo.NewChatMemberRepository(r.orm)
+	chatMessageRepo := chatrepo.NewChatMessageRepository(r.orm)
+	userRepo := userrepo.NewUserRepository(r.orm)
+	chatHandler := adminhandler.NewAdminChatHandler(chatGroupRepo, chatMemberRepo, chatMessageRepo, userRepo)
+	adminhandler.RegisterAdminChatRoutes(rbacGroup, chatHandler, r.permMiddleware)
+}
+
 func (r *Router) registerContentRoutes(rbacGroup *gin.RouterGroup) {
 	contentHandler := adminhandler.NewContentHandler(
 		r.services.adminFeedSvc,

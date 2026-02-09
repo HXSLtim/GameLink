@@ -1,48 +1,53 @@
 <template>
   <view class="input-bar">
     <view class="input-tools">
-      <view class="tool-btn" @tap="showVoice = !showVoice">
-        <text>{{ showVoice ? '⌨️' : '🎤' }}</text>
+      <view class="tool-btn" :class="{ active: showVoice }" @tap="showVoice = !showVoice">
+        <uv-icon :name="showVoice ? 'edit-pen' : 'mic'" size="20" color="var(--color-text-secondary)" />
       </view>
     </view>
     
     <!-- 文字输入 -->
-    <view v-if="!showVoice" class="input-wrap">
-      <textarea 
-        :value="modelValue"
-        class="message-input"
-        placeholder="输入消息..."
-        :maxlength="500"
-        :auto-height="true"
-        :show-confirm-bar="false"
-        :adjust-position="true"
-        @input="(e: any) => $emit('update:modelValue', e.detail.value)"
-        @confirm="$emit('send')"
-        @focus="$emit('focus')"
-      />
-    </view>
+    <GlInput
+      v-if="!showVoice"
+      class="input-wrap"
+      :model-value="modelValue"
+      type="textarea"
+      size="small"
+      placeholder="输入消息..."
+      :maxlength="500"
+      :auto-height="true"
+      :show-confirm-bar="false"
+      :adjust-position="true"
+      @update:modelValue="(value) => $emit('update:modelValue', value)"
+      @confirm="$emit('send')"
+      @focus="$emit('focus')"
+    />
     
     <!-- 语音输入 -->
     <view 
       v-else 
       class="voice-input-wrap"
+      :class="{ recording: recording }"
       @touchstart="$emit('record-start')"
       @touchend="$emit('record-end')"
       @touchcancel="$emit('record-cancel')"
     >
+      <uv-icon :name="recording ? 'mic' : 'mic'" size="16" :color="recording ? 'var(--color-primary)' : 'var(--color-text-secondary)'" />
       <text>{{ recording ? '松开发送' : '按住说话' }}</text>
     </view>
     
     <view class="input-actions">
-      <GlButton v-if="modelValue?.trim()" type="primary" size="small" round @click="$emit('send')">
-        发送
-      </GlButton>
+      <!-- 有文字时显示发送按钮 -->
+      <view v-if="modelValue?.trim()" class="send-btn" @click="$emit('send')">
+        <uv-icon name="play-right-fill" size="20" color="#fff" />
+      </view>
+      <!-- 无文字时显示功能按钮 -->
       <template v-else>
         <view class="tool-btn" @tap="$emit('image')">
-          <text>🖼️</text>
+          <uv-icon name="photo" size="20" color="var(--color-text-secondary)" />
         </view>
         <view class="tool-btn" @tap="$emit('more')">
-          <text>➕</text>
+          <uv-icon name="plus-circle" size="20" color="var(--color-text-secondary)" />
         </view>
       </template>
     </view>
@@ -51,7 +56,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import GlButton from '@/components/gl/Button/index.vue'
+import GlInput from '@/components/gl/Input/index.vue'
 
 interface Props {
   modelValue?: string
@@ -81,65 +86,103 @@ const showVoice = ref(false)
 .input-bar {
   display: flex;
   align-items: flex-end;
-  gap: 16rpx;
-  padding: 16rpx 24rpx;
-  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom));
   background: var(--color-bg-card);
   border-top: 1rpx solid var(--color-border);
 }
 
 .input-tools {
   display: flex;
-  gap: 8rpx;
+  gap: var(--spacing-sm);
+  padding-bottom: var(--spacing-xs);
 }
 
 .tool-btn {
-  width: 64rpx;
-  height: 64rpx;
+  width: 56rpx;
+  height: 56rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 36rpx;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: var(--color-bg-secondary);
+  }
+
+  &:active {
+    transform: scale(0.9);
+  }
+
+  &.active {
+    background: rgba(var(--color-primary-rgb), 0.1);
+  }
 }
 
 .input-wrap {
   flex: 1;
-  background: var(--color-bg-secondary);
-  border-radius: 32rpx;
-  border: 2rpx solid var(--color-border);
-  padding: 16rpx 24rpx;
-}
+  border-radius: var(--radius-lg);
 
-.message-input {
-  width: 100%;
-  max-height: 200rpx;
-  font-size: 30rpx;
-  color: var(--color-text);
-  line-height: 1.4;
+  :deep(.gl-input__textarea) {
+    max-height: 200rpx;
+    font-size: var(--font-sm);
+    color: var(--color-text);
+    line-height: 1.5;
+  }
 }
 
 .voice-input-wrap {
   flex: 1;
-  height: 72rpx;
+  height: 64rpx;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: var(--spacing-sm);
   background: var(--color-bg-secondary);
-  border-radius: 32rpx;
-  border: 2rpx solid var(--color-border);
-  font-size: 28rpx;
+  border-radius: var(--radius-lg);
+  border: 1rpx solid var(--color-border);
+  font-size: var(--font-sm);
   color: var(--color-text-secondary);
-  
-  &:active {
-    background: var(--color-primary);
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:active,
+  &.recording {
+    background: rgba(var(--color-primary-rgb), 0.08);
     border-color: var(--color-primary);
-    color: #fff;
+    color: var(--color-primary);
   }
 }
 
 .input-actions {
   display: flex;
   align-items: center;
-  gap: 8rpx;
+  gap: var(--spacing-sm);
+  padding-bottom: var(--spacing-xs);
+}
+
+.send-btn {
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4rpx 12rpx rgba(var(--color-primary-rgb), 0.3);
+
+  &:hover {
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.92);
+    box-shadow: 0 2rpx 6rpx rgba(var(--color-primary-rgb), 0.2);
+  }
 }
 </style>

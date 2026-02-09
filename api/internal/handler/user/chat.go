@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"gamelink/internal/handler/resp"
 	"gamelink/internal/model"
 	chatservice "gamelink/internal/service/chat"
 	"gamelink/pkg/apierr"
@@ -19,10 +20,200 @@ type ChatMessage = model.ChatMessage
 func RegisterChatRoutes(router gin.IRouter, svc *chatservice.ChatService, authMiddleware gin.HandlerFunc) {
 	group := router.Group("/chat")
 	group.Use(authMiddleware)
+	group.POST("/groups", func(c *gin.Context) { createChatGroupHandler(c, svc) })
 	group.GET("/groups", func(c *gin.Context) { listChatGroupsHandler(c, svc) })
+	group.GET("/groups/:id", func(c *gin.Context) { getChatGroupHandler(c, svc) })
+	group.POST("/groups/:id/join", func(c *gin.Context) { joinChatGroupHandler(c, svc) })
+	group.POST("/groups/:id/leave", func(c *gin.Context) { leaveChatGroupHandler(c, svc) })
+	group.POST("/groups/:id/read", func(c *gin.Context) { markChatGroupReadHandler(c, svc) })
 	group.GET("/groups/:id/messages", func(c *gin.Context) { listChatMessagesHandler(c, svc) })
 	group.POST("/groups/:id/messages", func(c *gin.Context) { sendChatMessageHandler(c, svc) })
 	group.POST("/messages/:id/report", func(c *gin.Context) { reportChatMessageHandler(c, svc) })
+}
+
+type createChatGroupRequest struct {
+	TargetUserID uint64  `json:"targetUserId" binding:"required"`
+	GroupType    string  `json:"groupType" binding:"required"` // private | order
+	OrderID      *uint64 `json:"orderId,omitempty"`
+}
+
+// createChatGroupHandler 创建私聊群组
+// @Summary      创建私聊群组
+// @Description  创建与陪玩师私聊或订单群组
+// @Tags         User - Chat
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string                 true  "Bearer {token}"
+// @Param        request        body      createChatGroupRequest true  "Create group request"
+// @Success      200            {object}  model.ChatGroup
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /user/chat/groups [post]
+func createChatGroupHandler(c *gin.Context, svc *chatservice.ChatService) {
+	userID := getUserIDFromContext(c)
+	var req createChatGroupRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	groupType := model.ChatGroupType(strings.ToLower(strings.TrimSpace(req.GroupType)))
+	if groupType != model.ChatGroupTypePrivate && groupType != model.ChatGroupTypeOrder {
+		respondError(c, http.StatusBadRequest, "unsupported group type")
+		return
+	}
+
+	group, err := svc.CreateGroup(c.Request.Context(), userID, req.TargetUserID, chatservice.CreateGroupRequest{
+		TargetUserID: req.TargetUserID,
+		GroupType:    groupType,
+		OrderID:      req.OrderID,
+	})
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	respondJSON[*model.ChatGroup](c, http.StatusOK, model.APIResponse[*model.ChatGroup]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: "OK",
+		Data:    group,
+	})
+}
+
+// getChatGroupHandler 获取群组详情
+// @Summary      获取群组详情
+// @Description  获取群组详情（包含成员列表）
+// @Tags         User - Chat
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string  true   "Bearer {token}"
+// @Param        id             path      int     true   "Group ID"
+// @Success      200            {object}  model.ChatGroup
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      403            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /user/chat/groups/{id} [get]
+func getChatGroupHandler(c *gin.Context, svc *chatservice.ChatService) {
+	userID := getUserIDFromContext(c)
+	groupID, err := parseUintParam(c, "id")
+	if err != nil {
+		respondError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		return
+	}
+	if _, err := svc.EnsureMembership(c.Request.Context(), groupID, userID); err != nil {
+		respondError(c, http.StatusForbidden, err.Error())
+		return
+	}
+	group, err := svc.GetGroupDetail(c.Request.Context(), groupID)
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondJSON[*model.ChatGroup](c, http.StatusOK, model.APIResponse[*model.ChatGroup]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: "OK",
+		Data:    group,
+	})
+}
+
+// joinChatGroupHandler 加入公共频道
+// @Summary      加入公共频道
+// @Tags         User - Chat
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string  true   "Bearer {token}"
+// @Param        id             path      int     true   "Group ID"
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /user/chat/groups/{id}/join [post]
+func joinChatGroupHandler(c *gin.Context, svc *chatservice.ChatService) {
+	userID := getUserIDFromContext(c)
+	groupID, err := parseUintParam(c, "id")
+	if err != nil {
+		respondError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		return
+	}
+	if err := svc.JoinGroupWithUser(c.Request.Context(), groupID, userID); err != nil {
+		respondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondJSON[any](c, http.StatusOK, model.APIResponse[any]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: "joined",
+	})
+}
+
+// leaveChatGroupHandler 离开群组
+// @Summary      离开群组
+// @Tags         User - Chat
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string  true   "Bearer {token}"
+// @Param        id             path      int     true   "Group ID"
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /user/chat/groups/{id}/leave [post]
+func leaveChatGroupHandler(c *gin.Context, svc *chatservice.ChatService) {
+	userID := getUserIDFromContext(c)
+	groupID, err := parseUintParam(c, "id")
+	if err != nil {
+		respondError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		return
+	}
+	if err := svc.LeaveGroup(c.Request.Context(), groupID, userID); err != nil {
+		respondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondJSON[any](c, http.StatusOK, model.APIResponse[any]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: "left",
+	})
+}
+
+type markChatReadRequest struct {
+	MessageID uint64 `json:"messageId" binding:"required"`
+}
+
+// markChatGroupReadHandler 标记消息已读
+// @Summary      标记消息已读
+// @Tags         User - Chat
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string              true  "Bearer {token}"
+// @Param        id             path      int                 true  "Group ID"
+// @Param        request        body      markChatReadRequest true  "Last read message id"
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /user/chat/groups/{id}/read [post]
+func markChatGroupReadHandler(c *gin.Context, svc *chatservice.ChatService) {
+	userID := getUserIDFromContext(c)
+	groupID, err := parseUintParam(c, "id")
+	if err != nil {
+		respondError(c, http.StatusBadRequest, apierr.ErrInvalidID)
+		return
+	}
+	var req markChatReadRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := svc.MarkRead(c.Request.Context(), groupID, userID, req.MessageID); err != nil {
+		resp.Error(c, err)
+		return
+	}
+	respondJSON[any](c, http.StatusOK, model.APIResponse[any]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: "read",
+	})
 }
 
 type reportMessageRequest struct {
@@ -60,7 +251,7 @@ func reportChatMessageHandler(c *gin.Context, svc *chatservice.ChatService) {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondJSON(c, http.StatusOK, model.APIResponse[any]{
+	respondJSON[any](c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "reported",
@@ -91,7 +282,7 @@ func listChatGroupsHandler(c *gin.Context, svc *chatservice.ChatService) {
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[any]{
+	respondJSON[any](c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
@@ -164,7 +355,7 @@ func listChatMessagesHandler(c *gin.Context, svc *chatservice.ChatService) {
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[any]{
+	respondJSON[any](c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
@@ -254,7 +445,7 @@ func sendChatMessageHandler(c *gin.Context, svc *chatservice.ChatService) {
 		return
 	}
 
-	respondJSON(c, http.StatusCreated, model.APIResponse[*model.ChatMessage]{
+	respondJSON[*model.ChatMessage](c, http.StatusCreated, model.APIResponse[*model.ChatMessage]{
 		Success: true,
 		Code:    http.StatusCreated,
 		Message: "created",

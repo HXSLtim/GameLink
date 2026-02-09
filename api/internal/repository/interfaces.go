@@ -63,6 +63,21 @@ type PlayerRepository interface {
 	BatchDelete(ctx context.Context, ids []uint64) (int64, error)
 }
 
+// PlayerServiceRepository defines persistence for player services.
+type PlayerServiceRepository interface {
+	Get(ctx context.Context, id uint64) (*model.PlayerService, error)
+	ListByPlayer(ctx context.Context, playerID uint64) ([]model.PlayerService, error)
+	Create(ctx context.Context, service *model.PlayerService) error
+	Update(ctx context.Context, service *model.PlayerService) error
+	Delete(ctx context.Context, id uint64) error
+}
+
+// PlayerScheduleRepository defines persistence for player schedules.
+type PlayerScheduleRepository interface {
+	GetByPlayerID(ctx context.Context, playerID uint64) (*model.PlayerSchedule, error)
+	Upsert(ctx context.Context, schedule *model.PlayerSchedule) error
+}
+
 // Order repository interfaces now live in the interfaces subpackage. Keep
 // aliases here to avoid forcing callers to update immediately.
 type (
@@ -82,7 +97,7 @@ type PaymentRepository interface {
 	GetWithRelations(ctx context.Context, id uint64) (*model.Payment, error) // 获取支付记录及关联的订单和用户信息
 	Update(ctx context.Context, payment *model.Payment) error
 	Delete(ctx context.Context, id uint64) error
-	GetByOrderID(ctx context.Context, orderID uint64) ([]model.Payment, error) // 根据订单ID获取支付记录
+	GetByOrderID(ctx context.Context, orderID uint64) ([]model.Payment, error)    // 根据订单ID获取支付记录
 	GetByRequestID(ctx context.Context, requestID string) (*model.Payment, error) // 根据幂等请求ID获取支付记录
 }
 
@@ -210,6 +225,7 @@ type ChatGroupRepository interface {
 	GetByRelatedLFGID(ctx context.Context, lfgID uint64) (*model.ChatGroup, error)
 	GetByVoiceRoomID(ctx context.Context, voiceRoomID string) (*model.ChatGroup, error)
 	ListByUser(ctx context.Context, userID uint64, opts ChatGroupListOptions) ([]model.ChatGroup, int64, error)
+	ListPublicChannels(ctx context.Context, page, pageSize int) ([]model.ChatGroup, int64, error)
 	ListMembers(ctx context.Context, groupID uint64, opts ChatGroupMemberListOptions) ([]model.ChatGroupMember, int64, error)
 	Update(ctx context.Context, group *model.ChatGroup) error
 	UpdateRoomStatus(ctx context.Context, id uint64, status model.ChatGroupStatus) error
@@ -224,6 +240,12 @@ type ChatGroupRepository interface {
 	DecrementMemberCount(ctx context.Context, groupID uint64) error
 	CountByRoomStatus(ctx context.Context) (map[model.ChatGroupStatus]int64, error)
 	CountActiveRooms(ctx context.Context) (int64, error)
+	// Admin: list all chat groups with filters (no user scope)
+	ListAll(ctx context.Context, opts AdminChatGroupListOptions) ([]model.ChatGroup, int64, error)
+	// Admin: count all chat groups
+	CountAll(ctx context.Context) (int64, error)
+	// Admin: reactivate a deactivated group
+	Reactivate(ctx context.Context, id uint64) error
 }
 
 // ChatMemberRepository defines membership access operations.
@@ -294,6 +316,23 @@ type NotificationRepository interface {
 	CountUnread(ctx context.Context, userID uint64) (int64, error)
 	Create(ctx context.Context, event *model.NotificationEvent) error
 	Delete(ctx context.Context, userID uint64, id uint64) error
+}
+
+// UploadRepository defines persistence for upload records.
+type UploadRepository interface {
+	Create(ctx context.Context, upload *model.Upload) error
+}
+
+// UserSettingsRepository defines user settings persistence.
+type UserSettingsRepository interface {
+	GetByUserID(ctx context.Context, userID uint64) (*model.UserSettings, error)
+	Upsert(ctx context.Context, settings *model.UserSettings) error
+}
+
+// UserNotificationSettingRepository defines notification settings persistence.
+type UserNotificationSettingRepository interface {
+	GetByUserID(ctx context.Context, userID uint64) (*model.UserNotificationSetting, error)
+	Upsert(ctx context.Context, settings *model.UserNotificationSetting) error
 }
 
 // ReviewReplyRepository defines data access for review replies.
@@ -411,6 +450,9 @@ type ReviewListOptions struct {
 	OrderID  *uint64
 	UserID   *uint64
 	PlayerID *uint64
+	Status   *model.ReviewStatus
+	IsPublic *bool
+	Rating   *int
 	DateFrom *time.Time
 	DateTo   *time.Time
 }
@@ -471,6 +513,19 @@ type ChatGroupListOptions struct {
 	IncludeInactive bool
 	Keyword         string
 	RelatedOrderID  *uint64
+}
+
+// AdminChatGroupListOptions defines filters for admin listing all chat groups.
+type AdminChatGroupListOptions struct {
+	Page           int
+	PageSize       int
+	GroupType      *model.ChatGroupType
+	IsActive       *bool // nil = all, true = active, false = closed
+	Keyword        string
+	RelatedOrderID *uint64
+	UserID         *uint64 // filter by member user
+	DateFrom       *time.Time
+	DateTo         *time.Time
 }
 
 // ChatGroupMemberListOptions defines pagination for group member listing.
@@ -1063,7 +1118,6 @@ type PlayerPresenceListOptions struct {
 	GameID     *uint64
 	DeviceType string
 }
-
 
 // ============================================================================
 // 快速匹配 (LFG) 模块接口

@@ -2,33 +2,26 @@
  * 创建订单专用 Hook
  */
 import { ref, reactive, computed } from 'vue'
-import { getPlayerDetail, createOrder } from '@/api/order'
-import type { OrderPlayerInfo } from '@/components/OrderPlayerCard/index.vue'
-import type { GameOption } from '@/components/GameSelector/index.vue'
-import type { ServiceOption } from '@/components/ServiceSelector/index.vue'
-
-interface Coupon {
-  id: number
-  name: string
-  discount: number
-  minAmount: number
-  expireDate: string
-  type: 'fixed' | 'percent'
-}
+import { createOrder } from '@/api/order'
+import { getPlayerDetail } from '@/api/publicPlayer'
+import type { GameOption } from '@/types/game'
+import type { Coupon } from '@/types/coupon'
+import type { PlayerOrderInfo, PlayerServiceData } from '@/types/player'
+import { formatYuan } from '@/utils/format'
 
 export function useOrderCreate() {
   // 页面参数
   const playerId = ref(0)
-  
+
   // 状态
   const loading = ref(true)
   const submitting = ref(false)
   const showDatePicker = ref(false)
   const showTimePicker = ref(false)
   const showCouponPicker = ref(false)
-  
+
   // 陪玩师数据
-  const player = reactive<OrderPlayerInfo & { games: GameOption[]; services: ServiceOption[] }>({
+  const player = reactive<PlayerOrderInfo & { games: GameOption[]; services: PlayerServiceData[] }>({
     id: 0,
     nickname: '',
     avatar: '',
@@ -37,7 +30,7 @@ export function useOrderCreate() {
     games: [],
     services: [],
   })
-  
+
   // 表单数据
   const selectedGameId = ref<number | undefined>()
   const selectedServiceId = ref<number | undefined>()
@@ -47,23 +40,23 @@ export function useOrderCreate() {
   const gameAccount = ref('')
   const remark = ref('')
   const selectedCoupon = ref<Coupon | null>(null)
-  
+
   // 优惠券
   const availableCoupons = ref<Coupon[]>([])
-  
+
   // 计算选中的服务
-  const selectedService = computed(() => 
-    player.services.find(s => s.id === selectedServiceId.value)
+  const selectedService = computed(() =>
+    player.services.find((s: ServiceOption) => s.id === selectedServiceId.value)
   )
-  
+
   // 费用计算
   const serviceFee = computed(() => {
     if (!selectedService.value) return 0
     return selectedService.value.price * quantity.value
   })
-  
+
   const vipDiscount = ref(0) // 根据用户 VIP 等级计算
-  
+
   const totalFee = computed(() => {
     let fee = serviceFee.value
     if (selectedCoupon.value) {
@@ -72,33 +65,33 @@ export function useOrderCreate() {
     fee -= vipDiscount.value
     return Math.max(0, fee)
   })
-  
+
   // 表单校验
   const canSubmit = computed(() => {
-    return selectedGameId.value && 
-           selectedServiceId.value && 
-           quantity.value > 0 &&
-           scheduledDate.value &&
-           scheduledTime.value
+    return selectedGameId.value &&
+      selectedServiceId.value &&
+      quantity.value > 0 &&
+      scheduledDate.value &&
+      scheduledTime.value
   })
-  
+
   // 数量标题
   const quantityTitle = computed(() => {
     return selectedService.value?.unit === '小时' ? '时长（小时）' : '局数'
   })
-  
+
   // 数量提示
   const quantityTip = computed(() => {
     const unit = selectedService.value?.unit || '局'
     const price = selectedService.value?.price || 0
-    return `单价 ¥${price}/${unit}，共 ¥${serviceFee.value.toFixed(2)}`
+    return `单价 ¥${price}/${unit}，共 ¥${formatYuan(serviceFee.value)}`
   })
-  
+
   // 加载陪玩师详情
   const loadPlayerDetail = async (id: number) => {
     playerId.value = id
     loading.value = true
-    
+
     try {
       const res = await getPlayerDetail(id)
       if (res.data) {
@@ -108,19 +101,19 @@ export function useOrderCreate() {
         player.avatar = data.avatar
         player.isOnline = data.isOnline
         player.rating = data.rating
-        player.games = (data.games || []).map((g: any) => ({
-          id: g.id,
-          name: g.name,
-          icon: g.icon,
+        player.games = (data.gameRanks || []).map((g: any) => ({
+          id: g.gameId,
+          name: g.gameName,
+          icon: g.gameIcon,
         }))
         player.services = (data.services || []).map((s: any) => ({
           id: s.id,
-          name: s.name,
+          name: s.serviceType,
           description: s.description,
           price: s.priceCents / 100,
           unit: s.unit || '局',
         }))
-        
+
         // 默认选中第一个游戏和服务
         if (player.games.length > 0) {
           selectedGameId.value = player.games[0].id
@@ -136,31 +129,32 @@ export function useOrderCreate() {
       loading.value = false
     }
   }
-  
+
   // 选择优惠券
   const selectCoupon = (coupon: Coupon | null) => {
     selectedCoupon.value = coupon
     showCouponPicker.value = false
   }
-  
+
   // 日期选择
   const onDateChange = (date: string) => {
     scheduledDate.value = date
     showDatePicker.value = false
   }
-  
+
   // 时间选择
   const onTimeChange = (time: string) => {
     scheduledTime.value = time
     showTimePicker.value = false
   }
-  
+
   // 提交订单
   const submitOrder = async () => {
     if (!canSubmit.value || submitting.value) return
-    
+    if (!selectedGameId.value || !selectedServiceId.value) return // Additional check for TS
+
     submitting.value = true
-    
+
     try {
       const orderData = {
         playerId: playerId.value,
@@ -172,11 +166,11 @@ export function useOrderCreate() {
         remark: remark.value || undefined,
         couponId: selectedCoupon.value?.id,
       }
-      
+
       const res = await createOrder(orderData)
-      
+
       uni.showToast({ title: '下单成功', icon: 'success' })
-      
+
       // 跳转到支付页
       setTimeout(() => {
         uni.redirectTo({
@@ -189,10 +183,10 @@ export function useOrderCreate() {
       submitting.value = false
     }
   }
-  
+
   // 导航
   const goBack = () => uni.navigateBack()
-  
+
   return {
     // 状态
     loading,
@@ -200,7 +194,7 @@ export function useOrderCreate() {
     showDatePicker,
     showTimePicker,
     showCouponPicker,
-    
+
     // 数据
     player,
     selectedGameId,
@@ -213,7 +207,7 @@ export function useOrderCreate() {
     remark,
     selectedCoupon,
     availableCoupons,
-    
+
     // 计算
     serviceFee,
     vipDiscount,
@@ -221,7 +215,7 @@ export function useOrderCreate() {
     canSubmit,
     quantityTitle,
     quantityTip,
-    
+
     // 方法
     loadPlayerDetail,
     selectCoupon,

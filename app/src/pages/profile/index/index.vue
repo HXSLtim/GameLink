@@ -1,5 +1,13 @@
 <template>
-  <view class="profile-page page-container">
+  <BasePageLayout
+    class="profile-page"
+    padding="0"
+    title="我的"
+    :show-back="false"
+    :show-tab-bar="true"
+    :tab-bar-current="3"
+  >
+
     <!-- 用户信息卡片 -->
     <ProfileHeader
       :avatar="userInfo.avatar"
@@ -18,9 +26,7 @@
     <!-- 订单入口 - 仅登录用户显示 -->
     <OrderQuickEntry
       v-if="isLoggedIn"
-      :pending-count="orderCounts.pending"
-      :in-progress-count="orderCounts.inProgress"
-      :to-review-count="orderCounts.toReview"
+      :counts="orderCounts"
       @click="handleOrderClick"
       @view-all="handleViewAllOrders"
     />
@@ -69,10 +75,8 @@
         立即登录
       </GlButton>
     </view>
-    
-    <!-- 自定义 TabBar -->
-    <CustomTabBar :current="3" />
-  </view>
+
+  </BasePageLayout>
 </template>
 
 <script setup lang="ts">
@@ -80,12 +84,12 @@ import { onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 // Pattern 组件
 import ProfileHeader from '@/components/ProfileHeader/index.vue'
+import BasePageLayout from '@/components/layout/BasePageLayout/index.vue'
 import OrderQuickEntry from '@/components/OrderQuickEntry/index.vue'
 import MenuList from '@/components/MenuList/index.vue'
 import GlButton from '@/components/gl/Button/index.vue'
 // Business 组件
 import ThemeToggle from '@/components/ThemeToggle/index.vue'
-import CustomTabBar from '@/components/CustomTabBar/index.vue'
 // Composables
 import { useProfile } from '@/composables/useProfile'
 
@@ -117,19 +121,10 @@ onShow(() => {
 
 <style lang="scss" scoped>
 .profile-page {
-  min-height: 100vh;
-  min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  background: var(--color-bg);
-  box-sizing: border-box;
   padding-bottom: calc(110rpx + env(safe-area-inset-bottom));
-  
+
   @include desktop {
-    height: 100vh;
-    min-height: auto;
     padding-bottom: 0;
-    overflow: hidden;
   }
 }
 

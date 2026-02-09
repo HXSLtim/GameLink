@@ -31,13 +31,13 @@ type E2EData struct {
 
 // TestUserWithCreds combines a user with their authentication credentials.
 type TestUserWithCreds struct {
-	UserID    uint64
-	Phone     string
-	Password  string
-	Token     string
-	Name      string
-	Email     string
-	Role      string
+	UserID   uint64
+	Phone    string
+	Password string
+	Token    string
+	Name     string
+	Email    string
+	Role     string
 }
 
 // GameData holds game information.
@@ -220,7 +220,7 @@ type LoginRequest struct {
 
 // LoginResponse represents a login response.
 type LoginResponse struct {
-	Code int    `json:"code"`
+	Code int `json:"code"`
 	Data struct {
 		Token string `json:"token"`
 		User  struct {
@@ -365,11 +365,11 @@ type CreateOrderRequest struct {
 type OrderResponse struct {
 	Code int `json:"code"`
 	Data struct {
-		OrderID       uint64 `json:"orderId"`
-		OrderNo       string `json:"orderNo"`
-		PriceCents    int64  `json:"priceCents"`
-		NeedPayment   bool   `json:"needPayment"`
-		Status        string `json:"status"`
+		OrderID     uint64 `json:"orderId"`
+		OrderNo     string `json:"orderNo"`
+		PriceCents  int64  `json:"priceCents"`
+		NeedPayment bool   `json:"needPayment"`
+		Status      string `json:"status"`
 	} `json:"data"`
 	Message string `json:"message"`
 }
@@ -386,12 +386,12 @@ func (c *HTTPTestClient) CreateOrder(t *testing.T, req CreateOrderRequest) Order
 type GetOrderResponse struct {
 	Code int `json:"code"`
 	Data struct {
-		ID            uint64 `json:"id"`
-		OrderNo       string `json:"orderNo"`
-		Status        string `json:"status"`
-		TotalPriceCents int64  `json:"totalPriceCents"`
-		PlayerID      *uint64 `json:"playerId"`
-		UserID        uint64 `json:"userId"`
+		ID              uint64  `json:"id"`
+		OrderNo         string  `json:"orderNo"`
+		Status          string  `json:"status"`
+		TotalPriceCents int64   `json:"totalPriceCents"`
+		PlayerID        *uint64 `json:"playerId"`
+		UserID          uint64  `json:"userId"`
 	} `json:"data"`
 	Message string `json:"message"`
 }
@@ -442,11 +442,11 @@ type CreatePaymentRequest struct {
 type PaymentResponse struct {
 	Code int `json:"code"`
 	Data struct {
-		PaymentID          uint64 `json:"paymentId"`
-		WalletPaidDirect   bool   `json:"walletPaidDirect"`
-		WalletDeducted     int64  `json:"walletDeducted"`
-		ThirdPartyAmount   int64  `json:"thirdPartyAmount"`
-		PayInfo            interface{} `json:"payInfo"`
+		PaymentID        uint64      `json:"paymentId"`
+		WalletPaidDirect bool        `json:"walletPaidDirect"`
+		WalletDeducted   int64       `json:"walletDeducted"`
+		ThirdPartyAmount int64       `json:"thirdPartyAmount"`
+		PayInfo          interface{} `json:"payInfo"`
 	} `json:"data"`
 	Message string `json:"message"`
 }
@@ -461,11 +461,11 @@ func (c *HTTPTestClient) CreatePayment(t *testing.T, req CreatePaymentRequest) P
 
 // InitiateDisputeRequest represents dispute initiation request.
 type InitiateDisputeRequest struct {
-	OrderID       uint64   `json:"orderId"`
-	Type          string   `json:"type"`
-	Reason        string   `json:"reason"`
-	EvidenceText  string   `json:"evidenceText,omitempty"`
-	EvidenceURLs  []string `json:"evidenceUrls,omitempty"`
+	OrderID      uint64   `json:"orderId"`
+	Type         string   `json:"type"`
+	Reason       string   `json:"reason"`
+	EvidenceText string   `json:"evidenceText,omitempty"`
+	EvidenceURLs []string `json:"evidenceUrls,omitempty"`
 }
 
 // DisputeResponse represents dispute response.
@@ -534,11 +534,11 @@ func (c *HTTPTestClient) GetWalletBalance(t *testing.T) WalletBalanceResponse {
 
 // WithdrawRequest represents withdraw request.
 type WithdrawRequest struct {
-	AmountCents    int64  `json:"amountCents"`
-	Method         string `json:"method"`
-	AccountName    string `json:"accountName"`
-	AccountNumber  string `json:"accountNumber"`
-	BankName       string `json:"bankName,omitempty"`
+	AmountCents   int64  `json:"amountCents"`
+	Method        string `json:"method"`
+	AccountName   string `json:"accountName"`
+	AccountNumber string `json:"accountNumber"`
+	BankName      string `json:"bankName,omitempty"`
 }
 
 // WithdrawResponse represents withdraw response.
@@ -580,7 +580,7 @@ func WaitForCondition(t *testing.T, condition func() bool, timeout time.Duration
 		}
 
 		if time.Now().After(deadline) {
-			t.Fatal(fmt.Sprintf("timeout waiting for condition: %s", msg))
+			t.Fatalf("timeout waiting for condition: %s", msg)
 		}
 
 		<-ticker.C

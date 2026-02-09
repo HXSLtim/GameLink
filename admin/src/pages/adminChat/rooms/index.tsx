@@ -30,6 +30,7 @@ import {
     DownloadOutlined,
 } from '@ant-design/icons';
 import { PageContainer, SearchTable, type ToolbarButton, type SearchField } from '@/components';
+import { useAuthStore } from '@/stores/modules/authStore';
 import { chatConversationApi } from '@/api/chat';
 import type {
   ChatConversation,
@@ -70,6 +71,7 @@ interface ConversationQueryParams extends ChatConversationQueryParams {
  */
 const ChatRoomsPage: React.FC = () => {
   const { message, modal } = App.useApp();
+  const userInfo = useAuthStore((state) => state.userInfo);
   const [loading, setLoading] = useState(false);
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [total, setTotal] = useState(0);
@@ -168,7 +170,7 @@ const ChatRoomsPage: React.FC = () => {
     try {
       const data: CloseConversationRequest = {
         reason: reason || '管理员关闭',
-        closedBy: 1, // TODO: Get actual admin ID from auth context
+        closedBy: userInfo?.id || 0,
       };
       await chatConversationApi.closeConversation(record.id, data);
       message.success('会话已关闭');

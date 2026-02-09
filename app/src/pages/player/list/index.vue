@@ -1,34 +1,32 @@
 <template>
-  <view class="player-list-page page-container">
-    <!-- 搜索栏 -->
-    <SearchBar
-      v-model="searchKeyword"
-      placeholder="搜索陪玩师"
-      :show-filter="true"
-      @search="handleSearch"
-      @filter="showFilter = true"
-    />
-    
-    <!-- 游戏分类 -->
-    <GameGrid
-      v-model="currentGameId"
-      :games="games"
-      @select="handleGameSelect"
-    />
-    
-    <!-- 离线提示 -->
-    <OfflineBanner
-      :visible="isOffline"
-      message="网络不可用，显示推荐陪玩师"
-      @action="refresh"
-    />
-    
-    <!-- 排序栏 -->
-    <SortBar
-      v-model="currentSort"
-      :options="sortOptions"
-      @change="handleSortChange"
-    />
+  <BasePageLayout
+    class="player-list-page"
+    :scroll="false"
+    padding="0"
+    title="陪玩师"
+    :show-back="false"
+    :show-tab-bar="true"
+    :tab-bar-current="1"
+  >
+    <template #search>
+      <!-- 搜索栏 -->
+      <SearchBar
+        v-model="searchKeyword"
+        placeholder="搜索陪玩师"
+        :show-filter="true"
+        @search="handleSearch"
+        @filter="showFilter = true"
+      />
+    </template>
+
+    <template #banner>
+      <!-- 离线提示 -->
+      <OfflineBanner
+        :visible="isOffline"
+        message="网络不可用，显示推荐陪玩师"
+        @action="refresh"
+      />
+    </template>
     
     <!-- 陪玩师列表 -->
     <InfiniteList
@@ -38,18 +36,22 @@
       :error-message="errorMessage"
       empty-title="暂无陪玩师"
       empty-desc="换个条件试试吧"
-      padding="8rpx 12rpx"
+      padding="var(--spacing-md)"
       @load-more="loadMore"
       @retry="refresh"
     >
-      <ListItem
-        v-for="(player, index) in players"
-        :key="player.id"
-        :index="index"
-        @click="goToDetail(player.id)"
-      >
-        <PlayerCard :player="player" />
-      </ListItem>
+      <view class="player-grid">
+        <PlayerCard
+          v-for="(player, index) in players"
+          :key="player.id"
+          class="player-grid-item"
+          :player="player"
+          variant="grid"
+          :clickable="true"
+          :style="{ animationDelay: `${(index % 8) * 0.04}s` }"
+          @click="goToDetail($event.id)"
+        />
+      </view>
     </InfiniteList>
     
     <!-- 筛选弹窗 -->
@@ -61,24 +63,19 @@
       @reset="handleFilterReset"
     />
     
-    <!-- 底部导航 -->
-    <CustomTabBar :current="1" />
-  </view>
+  </BasePageLayout>
 </template>
 
 <script setup lang="ts">
 import { onMounted } from 'vue'
 // Pattern 组件
 import SearchBar from '@/components/SearchBar/index.vue'
-import GameGrid from '@/components/GameGrid/index.vue'
-import SortBar from '@/components/SortBar/index.vue'
+import BasePageLayout from '@/components/layout/BasePageLayout/index.vue'
 import FilterPanel from '@/components/FilterPanel/index.vue'
 import OfflineBanner from '@/components/OfflineBanner/index.vue'
 import InfiniteList from '@/components/InfiniteList/index.vue'
-import ListItem from '@/components/ListItem/index.vue'
 // Business 组件
 import PlayerCard from '@/components/PlayerCard/index.vue'
-import CustomTabBar from '@/components/CustomTabBar/index.vue'
 // Composables
 import { usePlayerList } from '@/composables/usePlayerList'
 
@@ -93,20 +90,14 @@ const {
   isOffline,
   // 筛选状态
   searchKeyword,
-  currentGameId,
-  currentSort,
   showFilter,
   filterValues,
-  games,
   // 配置
-  sortOptions,
   filterSections,
   // 方法
   loadMore,
   refresh,
   handleSearch,
-  handleGameSelect,
-  handleSortChange,
   handleFilterApply,
   handleFilterReset,
   goToDetail,
@@ -118,19 +109,40 @@ onMounted(init)
 
 <style lang="scss" scoped>
 .player-list-page {
-  min-height: 100vh;
-  min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  background: var(--color-bg);
-  box-sizing: border-box;
   padding-bottom: calc(110rpx + env(safe-area-inset-bottom));
-  
+
   @include desktop {
-    height: 100vh;
-    min-height: auto;
     padding-bottom: 0;
-    overflow: hidden;
+  }
+}
+
+.player-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-md);
+
+  @include desktop {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--spacing-lg);
+  }
+
+  @include desktop-lg {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.player-grid-item {
+  animation: fadeSlideUp 0.3s ease-out both;
+}
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 </style>

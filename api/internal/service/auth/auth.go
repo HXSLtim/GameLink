@@ -90,7 +90,8 @@ type RegisterRequest struct {
 	Phone    string     `json:"phone"`
 	Email    string     `json:"email"`
 	Password string     `json:"password"`
-	Name     string     `json:"name"`
+	Name     string     `json:"name"`     // 真实姓名（可选）
+	Nickname string     `json:"nickname"` // 昵称（用于显示）
 	Role     model.Role `json:"role"`
 }
 
@@ -197,11 +198,18 @@ func (s *AuthService) Register(ctx context.Context, req RegisterRequest) (*Login
 	}
 
 	// 创建用户
+	// 如果没有提供昵称，使用姓名作为昵称
+	nickname := req.Nickname
+	if nickname == "" {
+		nickname = req.Name
+	}
+
 	user := &model.User{
 		Phone:        req.Phone,
 		Email:        req.Email,
 		PasswordHash: string(hashedPassword),
 		Name:         req.Name,
+		Nickname:     nickname,
 		Role:         req.Role,
 		Status:       model.UserStatusActive, // 默认激活状态
 	}

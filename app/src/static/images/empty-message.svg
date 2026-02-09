@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <path d="M50 60 L150 60 L150 130 L110 130 L100 145 L90 130 L50 130 Z" fill="#F5F5F5" stroke="#E5E5E5" stroke-width="2"/>
+  <circle cx="75" cy="95" r="6" fill="#E5E5E5"/>
+  <circle cx="100" cy="95" r="6" fill="#E5E5E5"/>
+  <circle cx="125" cy="95" r="6" fill="#E5E5E5"/>
+  <text x="100" y="170" text-anchor="middle" font-size="14" fill="#999999">���o</text>
+</svg>

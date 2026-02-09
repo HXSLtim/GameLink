@@ -53,6 +53,7 @@ func SetupTestDB(t testing.TB) *gorm.DB {
 	t.Helper()
 	// Type assert to *testing.T
 	if tt, ok := t.(*testing.T); ok {
+		integration.SkipIfNoTestDB(tt)
 		return integration.SetupTestDB(tt)
 	}
 	// Fallback for testing.B

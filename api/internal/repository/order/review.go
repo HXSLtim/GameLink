@@ -29,6 +29,15 @@ func (r *gormReviewRepository) List(ctx context.Context, opts repository.ReviewL
 	if opts.PlayerID != nil {
 		q = q.Where("player_id = ?", *opts.PlayerID)
 	}
+	if opts.Status != nil {
+		q = q.Where("status = ?", *opts.Status)
+	}
+	if opts.IsPublic != nil {
+		q = q.Where("is_public = ?", *opts.IsPublic)
+	}
+	if opts.Rating != nil {
+		q = q.Where("score = ?", *opts.Rating)
+	}
 	if opts.DateFrom != nil {
 		q = q.Where("created_at >= ?", *opts.DateFrom)
 	}

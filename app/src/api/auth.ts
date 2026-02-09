@@ -2,15 +2,17 @@
  * 认证相关 API
  */
 
-import { post, get } from './request'
+import { post, get, put, type RequestConfig } from './request'
 import type { UserInfo } from '@/store/user'
+import type { AppUserRole } from '@/types/user'
 
 // ============================================
 // 请求类型
 // ============================================
 
 export interface LoginRequest {
-  username: string  // 手机号或邮箱
+  phone?: string   // 手机号
+  email?: string   // 邮箱
   password: string
 }
 
@@ -25,7 +27,7 @@ export interface RegisterRequest {
   phone: string
   password: string
   nickname: string
-  role: 'user' | 'player'
+  role: AppUserRole
   verifyCode?: string
 }
 
@@ -34,10 +36,12 @@ export interface RegisterRequest {
 // ============================================
 
 export interface LoginResponse {
-  accessToken: string
-  refreshToken: string
-  expiresIn: number
+  token: string
+  expires_at: string
   user: UserInfo
+  // 兼容字段（部分接口可能使用）
+  accessToken?: string
+  refreshToken?: string
 }
 
 // ============================================
@@ -47,8 +51,8 @@ export interface LoginResponse {
 /**
  * 账号密码登录
  */
-export function login(data: LoginRequest) {
-  return post<LoginResponse>('/auth/login', data)
+export function login(data: LoginRequest, config?: Partial<RequestConfig>) {
+  return post<LoginResponse>('/auth/login', data, config)
 }
 
 /**
@@ -69,7 +73,7 @@ export function refreshToken(token: string) {
  * 获取用户信息
  */
 export function getProfile() {
-  return get<UserInfo>('/auth/profile')
+  return get<UserInfo>('/users/me')
 }
 
 /**
@@ -80,10 +84,10 @@ export function register(data: RegisterRequest) {
 }
 
 /**
- * 发送验证码
+ * 发送验证码（注册/登录等场景）
  */
 export function sendVerifyCode(phone: string) {
-  return post('/auth/verify-code', { phone })
+  return post('/public/verification/send', { phone })
 }
 
 /**

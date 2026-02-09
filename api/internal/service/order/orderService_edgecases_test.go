@@ -142,8 +142,8 @@ func TestOrderService_calculateOrderPricing_VeryHighRate(t *testing.T) {
 
 	totalPrice, commissionCents, playerIncomeCents := service.calculateOrderPricing(player, req)
 
-	assert.Equal(t, int64(500000), totalPrice)       // 100000 * 5
-	assert.Equal(t, int64(100000), commissionCents)  // 20% of 500000
+	assert.Equal(t, int64(500000), totalPrice)        // 100000 * 5
+	assert.Equal(t, int64(100000), commissionCents)   // 20% of 500000
 	assert.Equal(t, int64(400000), playerIncomeCents) // 500000 - 100000
 }
 
@@ -222,9 +222,9 @@ func TestOrderService_CancelOrder_ConfirmedWithRefund(t *testing.T) {
 	orders := &MockOrderRepository{
 		getOrder: func(ctx context.Context, id uint64) (*model.Order, error) {
 			return &model.Order{
-				Base:        model.Base{ID: id},
-				UserID:      userID,
-				Status:      model.OrderStatusConfirmed,
+				Base:            model.Base{ID: id},
+				UserID:          userID,
+				Status:          model.OrderStatusConfirmed,
 				TotalPriceCents: 10000,
 			}, nil
 		},
@@ -240,9 +240,9 @@ func TestOrderService_CancelOrder_ConfirmedWithRefund(t *testing.T) {
 		listPayments: func(ctx context.Context, opts repository.PaymentListOptions) ([]model.Payment, int64, error) {
 			return []model.Payment{
 				{
-					Base:        model.Base{ID: 1},
-					Status:      model.PaymentStatusPaid,
-					PaidAt:      &paymentTime,
+					Base:   model.Base{ID: 1},
+					Status: model.PaymentStatusPaid,
+					PaidAt: &paymentTime,
 				},
 			}, 1, nil
 		},
@@ -280,9 +280,9 @@ func TestOrderService_CancelOrder_PendingNoRefund(t *testing.T) {
 	orders := &MockOrderRepository{
 		getOrder: func(ctx context.Context, id uint64) (*model.Order, error) {
 			return &model.Order{
-				Base:        model.Base{ID: id},
-				UserID:      userID,
-				Status:      model.OrderStatusPending,
+				Base:            model.Base{ID: id},
+				UserID:          userID,
+				Status:          model.OrderStatusPending,
 				TotalPriceCents: 10000,
 			}, nil
 		},
@@ -536,7 +536,6 @@ func TestOrderService_GetAvailableOrders_WithPagination(t *testing.T) {
 	assert.Equal(t, "Order 2", availableOrders[1].Title)
 }
 
-
 // TestOrderService_buildOrderForCreation_CalculatesScheduledEnd tests that scheduled end is calculated correctly
 func TestOrderService_buildOrderForCreation_CalculatesScheduledEnd(t *testing.T) {
 	service := &OrderService{}
@@ -560,7 +559,7 @@ func TestOrderService_buildOrderForCreation_CalculatesScheduledEnd(t *testing.T)
 	assert.NotNil(t, order)
 	assert.NotNil(t, order.ScheduledEnd)
 
-	expectedEnd := scheduledStart.Add(2 * time.Hour + 30*time.Minute)
+	expectedEnd := scheduledStart.Add(2*time.Hour + 30*time.Minute)
 	assert.WithinDuration(t, expectedEnd, *order.ScheduledEnd, time.Second)
 }
 
@@ -573,9 +572,9 @@ func TestOrderService_recordCommissionAsync_WithExistingCommission(t *testing.T)
 		getOrder: func(ctx context.Context, id uint64) (*model.Order, error) {
 			playerID := uint64(100)
 			return &model.Order{
-				Base:             model.Base{ID: id},
-				PlayerID:         &playerID,
-				TotalPriceCents:  10000,
+				Base:            model.Base{ID: id},
+				PlayerID:        &playerID,
+				TotalPriceCents: 10000,
 			}, nil
 		},
 	}
@@ -611,10 +610,10 @@ func TestOrderService_toOrderCardDTO_WithCompletedOrder(t *testing.T) {
 
 	completedTime := time.Now()
 	order := &model.Order{
-		Base:         model.Base{ID: 123, CreatedAt: time.Now()},
-		UserID:       userID,
-		Status:       model.OrderStatusCompleted,
-		CompletedAt:  &completedTime,
+		Base:            model.Base{ID: 123, CreatedAt: time.Now()},
+		UserID:          userID,
+		Status:          model.OrderStatusCompleted,
+		CompletedAt:     &completedTime,
 		TotalPriceCents: 10000,
 	}
 
@@ -666,10 +665,10 @@ func TestOrderService_toOrderCardDTO_WithInProgressOrder(t *testing.T) {
 
 	startTime := time.Now()
 	order := &model.Order{
-		Base:         model.Base{ID: 123, CreatedAt: time.Now()},
-		UserID:       userID,
-		Status:       model.OrderStatusInProgress,
-		StartedAt:    &startTime,
+		Base:            model.Base{ID: 123, CreatedAt: time.Now()},
+		UserID:          userID,
+		Status:          model.OrderStatusInProgress,
+		StartedAt:       &startTime,
 		TotalPriceCents: 10000,
 	}
 
@@ -688,8 +687,8 @@ func TestOrderService_toOrderCardDTO_WithInProgressOrder(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, card)
 	assert.Equal(t, model.OrderStatusInProgress, card.Status)
-	assert.True(t, card.CanComplete)  // In progress orders can be completed
-	assert.False(t, card.CanReview)   // Can't review until completed
+	assert.True(t, card.CanComplete) // In progress orders can be completed
+	assert.False(t, card.CanReview)  // Can't review until completed
 }
 
 // TestOrderService_validateCreateOrder_GameRepositoryError tests validation when game repository errors
@@ -735,11 +734,11 @@ func TestOrderService_GetOrderDetail_MissingPaymentInfo(t *testing.T) {
 
 	playerID := uint64(100)
 	order := &model.Order{
-		Base:   model.Base{ID: orderID},
-		UserID: userID,
+		Base:     model.Base{ID: orderID},
+		UserID:   userID,
 		PlayerID: &playerID,
 		GameID:   &gameID,
-		Status:  model.OrderStatusCompleted,
+		Status:   model.OrderStatusCompleted,
 	}
 
 	orders := &MockOrderRepository{

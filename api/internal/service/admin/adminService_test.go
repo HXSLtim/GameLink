@@ -209,6 +209,143 @@ func (m *MockUserRepository) GetByWeChatUnionID(ctx context.Context, unionID str
 	return args.Get(0).(*model.User), args.Error(1)
 }
 
+type MockRoleRepository struct {
+	mock.Mock
+}
+
+func (m *MockRoleRepository) List(ctx context.Context) ([]model.RoleModel, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]model.RoleModel), args.Error(1)
+}
+
+func (m *MockRoleRepository) ListPaged(ctx context.Context, page, pageSize int) ([]model.RoleModel, int64, error) {
+	args := m.Called(ctx, page, pageSize)
+	if args.Get(0) == nil {
+		return nil, 0, args.Error(2)
+	}
+	return args.Get(0).([]model.RoleModel), args.Get(1).(int64), args.Error(2)
+}
+
+func (m *MockRoleRepository) ListPagedWithFilter(ctx context.Context, page, pageSize int, keyword string, isSystem *bool) ([]model.RoleModel, int64, error) {
+	args := m.Called(ctx, page, pageSize, keyword, isSystem)
+	if args.Get(0) == nil {
+		return nil, 0, args.Error(2)
+	}
+	return args.Get(0).([]model.RoleModel), args.Get(1).(int64), args.Error(2)
+}
+
+func (m *MockRoleRepository) ListWithPermissions(ctx context.Context) ([]model.RoleModel, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]model.RoleModel), args.Error(1)
+}
+
+func (m *MockRoleRepository) Get(ctx context.Context, id uint64) (*model.RoleModel, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.RoleModel), args.Error(1)
+}
+
+func (m *MockRoleRepository) GetWithPermissions(ctx context.Context, id uint64) (*model.RoleModel, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.RoleModel), args.Error(1)
+}
+
+func (m *MockRoleRepository) GetBySlug(ctx context.Context, slug string) (*model.RoleModel, error) {
+	args := m.Called(ctx, slug)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.RoleModel), args.Error(1)
+}
+
+func (m *MockRoleRepository) Create(ctx context.Context, role *model.RoleModel) error {
+	args := m.Called(ctx, role)
+	return args.Error(0)
+}
+
+func (m *MockRoleRepository) Update(ctx context.Context, role *model.RoleModel) error {
+	args := m.Called(ctx, role)
+	return args.Error(0)
+}
+
+func (m *MockRoleRepository) Delete(ctx context.Context, id uint64) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
+func (m *MockRoleRepository) AssignPermissions(ctx context.Context, roleID uint64, permissionIDs []uint64) error {
+	args := m.Called(ctx, roleID, permissionIDs)
+	return args.Error(0)
+}
+
+func (m *MockRoleRepository) AddPermissions(ctx context.Context, roleID uint64, permissionIDs []uint64) error {
+	args := m.Called(ctx, roleID, permissionIDs)
+	return args.Error(0)
+}
+
+func (m *MockRoleRepository) RemovePermissions(ctx context.Context, roleID uint64, permissionIDs []uint64) error {
+	args := m.Called(ctx, roleID, permissionIDs)
+	return args.Error(0)
+}
+
+func (m *MockRoleRepository) AssignToUser(ctx context.Context, userID uint64, roleIDs []uint64) error {
+	args := m.Called(ctx, userID, roleIDs)
+	return args.Error(0)
+}
+
+func (m *MockRoleRepository) RemoveFromUser(ctx context.Context, userID uint64, roleIDs []uint64) error {
+	args := m.Called(ctx, userID, roleIDs)
+	return args.Error(0)
+}
+
+func (m *MockRoleRepository) ListByUserID(ctx context.Context, userID uint64) ([]model.RoleModel, error) {
+	args := m.Called(ctx, userID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]model.RoleModel), args.Error(1)
+}
+
+func (m *MockRoleRepository) CheckUserHasRole(ctx context.Context, userID uint64, roleSlug string) (bool, error) {
+	args := m.Called(ctx, userID, roleSlug)
+	return args.Bool(0), args.Error(1)
+}
+
+func (m *MockRoleRepository) SetParent(ctx context.Context, roleID uint64, parentID *uint64) error {
+	return nil
+}
+
+func (m *MockRoleRepository) GetInheritanceChain(ctx context.Context, roleID uint64) ([]model.RoleModel, error) {
+	return []model.RoleModel{}, nil
+}
+
+func (m *MockRoleRepository) GetChildRoles(ctx context.Context, roleID uint64) ([]model.RoleModel, error) {
+	return []model.RoleModel{}, nil
+}
+
+func (m *MockRoleRepository) UpdateLevel(ctx context.Context, roleID uint64, level int) error {
+	return nil
+}
+
+func (m *MockRoleRepository) GetUserIDsByRoleID(ctx context.Context, roleID uint64) ([]uint64, error) {
+	args := m.Called(ctx, roleID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]uint64), args.Error(1)
+}
+
 // MockPlayerRepository is a mock implementation of PlayerRepository
 type MockPlayerRepository struct {
 	mock.Mock
@@ -263,6 +400,16 @@ func (m *MockPlayerRepository) Delete(ctx context.Context, id uint64) error {
 	return args.Error(0)
 }
 
+func (m *MockPlayerRepository) BatchUpdateRank(ctx context.Context, ids []uint64, rank string) (int64, error) {
+	args := m.Called(ctx, ids, rank)
+	return args.Get(0).(int64), args.Error(1)
+}
+
+func (m *MockPlayerRepository) BatchUpdateHourlyRate(ctx context.Context, ids []uint64, rateCents int64) (int64, error) {
+	args := m.Called(ctx, ids, rateCents)
+	return args.Get(0).(int64), args.Error(1)
+}
+
 func (m *MockPlayerRepository) BatchUpdateStatus(ctx context.Context, ids []uint64, status model.VerificationStatus) (int64, error) {
 	args := m.Called(ctx, ids, status)
 	return args.Get(0).(int64), args.Error(1)
@@ -287,6 +434,430 @@ func (m *MockPlayerRepository) ListFeatured(ctx context.Context, limit int, stat
 		return nil, 0, args.Error(2)
 	}
 	return args.Get(0).([]model.Player), args.Get(1).(int64), args.Error(2)
+}
+
+type MockOrderRepository struct {
+	mock.Mock
+}
+
+func (m *MockOrderRepository) Create(ctx context.Context, order *model.Order) error {
+	args := m.Called(ctx, order)
+	return args.Error(0)
+}
+
+func (m *MockOrderRepository) Get(ctx context.Context, id uint64) (*model.Order, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.Order), args.Error(1)
+}
+
+func (m *MockOrderRepository) Update(ctx context.Context, order *model.Order) error {
+	args := m.Called(ctx, order)
+	return args.Error(0)
+}
+
+func (m *MockOrderRepository) Delete(ctx context.Context, id uint64) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
+func (m *MockOrderRepository) UpdateWithCondition(ctx context.Context, orderID uint64, expectedStatus model.OrderStatus, updates map[string]any) (bool, error) {
+	args := m.Called(ctx, orderID, expectedStatus, updates)
+	return args.Bool(0), args.Error(1)
+}
+
+func (m *MockOrderRepository) List(ctx context.Context, opts repoiface.OrderListOptions) ([]model.Order, int64, error) {
+	args := m.Called(ctx, opts)
+	if args.Get(0) == nil {
+		return nil, 0, args.Error(2)
+	}
+	return args.Get(0).([]model.Order), args.Get(1).(int64), args.Error(2)
+}
+
+type MockServiceItemRepository struct {
+	mock.Mock
+}
+
+func (m *MockServiceItemRepository) Create(ctx context.Context, item *model.ServiceItem) error {
+	args := m.Called(ctx, item)
+	return args.Error(0)
+}
+
+func (m *MockServiceItemRepository) Get(ctx context.Context, id uint64) (*model.ServiceItem, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.ServiceItem), args.Error(1)
+}
+
+func (m *MockServiceItemRepository) GetByCode(ctx context.Context, itemCode string) (*model.ServiceItem, error) {
+	args := m.Called(ctx, itemCode)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.ServiceItem), args.Error(1)
+}
+
+func (m *MockServiceItemRepository) List(ctx context.Context, opts repository.ServiceItemListOptions) ([]model.ServiceItem, int64, error) {
+	args := m.Called(ctx, opts)
+	if args.Get(0) == nil {
+		return nil, 0, args.Error(2)
+	}
+	return args.Get(0).([]model.ServiceItem), args.Get(1).(int64), args.Error(2)
+}
+
+func (m *MockServiceItemRepository) Update(ctx context.Context, item *model.ServiceItem) error {
+	args := m.Called(ctx, item)
+	return args.Error(0)
+}
+
+func (m *MockServiceItemRepository) Delete(ctx context.Context, id uint64) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
+func (m *MockServiceItemRepository) BatchDelete(ctx context.Context, ids []uint64) (int64, error) {
+	args := m.Called(ctx, ids)
+	return args.Get(0).(int64), args.Error(1)
+}
+
+func (m *MockServiceItemRepository) BatchUpdateStatus(ctx context.Context, ids []uint64, isActive bool) error {
+	args := m.Called(ctx, ids, isActive)
+	return args.Error(0)
+}
+
+func (m *MockServiceItemRepository) BatchUpdatePrice(ctx context.Context, ids []uint64, basePriceCents int64) error {
+	args := m.Called(ctx, ids, basePriceCents)
+	return args.Error(0)
+}
+
+func (m *MockServiceItemRepository) BatchUpdateCommission(ctx context.Context, ids []uint64, commissionRate float64) error {
+	args := m.Called(ctx, ids, commissionRate)
+	return args.Error(0)
+}
+
+func (m *MockServiceItemRepository) GetGifts(ctx context.Context, page, pageSize int) ([]model.ServiceItem, int64, error) {
+	args := m.Called(ctx, page, pageSize)
+	if args.Get(0) == nil {
+		return nil, 0, args.Error(2)
+	}
+	return args.Get(0).([]model.ServiceItem), args.Get(1).(int64), args.Error(2)
+}
+
+func (m *MockServiceItemRepository) GetGameServices(ctx context.Context, gameID uint64, subCategory *model.ServiceItemSubCategory) ([]model.ServiceItem, error) {
+	args := m.Called(ctx, gameID, subCategory)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]model.ServiceItem), args.Error(1)
+}
+
+type MockPaymentRepository struct {
+	mock.Mock
+}
+
+func (m *MockPaymentRepository) Create(ctx context.Context, payment *model.Payment) error {
+	args := m.Called(ctx, payment)
+	return args.Error(0)
+}
+
+func (m *MockPaymentRepository) List(ctx context.Context, opts repository.PaymentListOptions) ([]model.Payment, int64, error) {
+	args := m.Called(ctx, opts)
+	if args.Get(0) == nil {
+		return nil, 0, args.Error(2)
+	}
+	return args.Get(0).([]model.Payment), args.Get(1).(int64), args.Error(2)
+}
+
+func (m *MockPaymentRepository) Get(ctx context.Context, id uint64) (*model.Payment, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.Payment), args.Error(1)
+}
+
+func (m *MockPaymentRepository) GetWithRelations(ctx context.Context, id uint64) (*model.Payment, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.Payment), args.Error(1)
+}
+
+func (m *MockPaymentRepository) Update(ctx context.Context, payment *model.Payment) error {
+	args := m.Called(ctx, payment)
+	return args.Error(0)
+}
+
+func (m *MockPaymentRepository) Delete(ctx context.Context, id uint64) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
+func (m *MockPaymentRepository) GetByOrderID(ctx context.Context, orderID uint64) ([]model.Payment, error) {
+	args := m.Called(ctx, orderID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]model.Payment), args.Error(1)
+}
+
+func (m *MockPaymentRepository) GetByRequestID(ctx context.Context, requestID string) (*model.Payment, error) {
+	args := m.Called(ctx, requestID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.Payment), args.Error(1)
+}
+
+type MockPermissionRepository struct {
+	mock.Mock
+}
+
+func (m *MockPermissionRepository) List(ctx context.Context) ([]model.Permission, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]model.Permission), args.Error(1)
+}
+
+func (m *MockPermissionRepository) ListPaged(ctx context.Context, page, pageSize int) ([]model.Permission, int64, error) {
+	args := m.Called(ctx, page, pageSize)
+	if args.Get(0) == nil {
+		return nil, 0, args.Error(2)
+	}
+	return args.Get(0).([]model.Permission), args.Get(1).(int64), args.Error(2)
+}
+
+func (m *MockPermissionRepository) ListPagedWithFilter(ctx context.Context, page, pageSize int, keyword, method, group string, isSystem *bool) ([]model.Permission, int64, error) {
+	args := m.Called(ctx, page, pageSize, keyword, method, group, isSystem)
+	if args.Get(0) == nil {
+		return nil, 0, args.Error(2)
+	}
+	return args.Get(0).([]model.Permission), args.Get(1).(int64), args.Error(2)
+}
+
+func (m *MockPermissionRepository) ListByGroup(ctx context.Context) (map[string][]model.Permission, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(map[string][]model.Permission), args.Error(1)
+}
+
+func (m *MockPermissionRepository) ListGroups(ctx context.Context) ([]string, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]string), args.Error(1)
+}
+
+func (m *MockPermissionRepository) Get(ctx context.Context, id uint64) (*model.Permission, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.Permission), args.Error(1)
+}
+
+func (m *MockPermissionRepository) GetByResource(ctx context.Context, resource, action string) (*model.Permission, error) {
+	args := m.Called(ctx, resource, action)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.Permission), args.Error(1)
+}
+
+func (m *MockPermissionRepository) GetByCode(ctx context.Context, code string) (*model.Permission, error) {
+	args := m.Called(ctx, code)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.Permission), args.Error(1)
+}
+
+func (m *MockPermissionRepository) GetByMethodAndPath(ctx context.Context, method, path string) (*model.Permission, error) {
+	args := m.Called(ctx, method, path)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.Permission), args.Error(1)
+}
+
+func (m *MockPermissionRepository) Create(ctx context.Context, perm *model.Permission) error {
+	args := m.Called(ctx, perm)
+	return args.Error(0)
+}
+
+func (m *MockPermissionRepository) Update(ctx context.Context, perm *model.Permission) error {
+	args := m.Called(ctx, perm)
+	return args.Error(0)
+}
+
+func (m *MockPermissionRepository) UpsertByMethodPath(ctx context.Context, perm *model.Permission) error {
+	args := m.Called(ctx, perm)
+	return args.Error(0)
+}
+
+func (m *MockPermissionRepository) Delete(ctx context.Context, id uint64) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
+func (m *MockPermissionRepository) ListByRoleID(ctx context.Context, roleID uint64) ([]model.Permission, error) {
+	args := m.Called(ctx, roleID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]model.Permission), args.Error(1)
+}
+
+func (m *MockPermissionRepository) ListByUserID(ctx context.Context, userID uint64) ([]model.Permission, error) {
+	args := m.Called(ctx, userID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]model.Permission), args.Error(1)
+}
+
+func (m *MockPermissionRepository) ListWithChildren(ctx context.Context) ([]model.Permission, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]model.Permission), args.Error(1)
+}
+
+func (m *MockPermissionRepository) GetWithChildren(ctx context.Context, id uint64) (*model.Permission, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.Permission), args.Error(1)
+}
+
+func (m *MockPermissionRepository) CountRoleReferences(ctx context.Context, permissionID uint64) (int64, error) {
+	args := m.Called(ctx, permissionID)
+	return args.Get(0).(int64), args.Error(1)
+}
+
+type MockMenuRepository struct {
+	mock.Mock
+}
+
+func (m *MockMenuRepository) Create(ctx context.Context, menu *model.Menu) error {
+	args := m.Called(ctx, menu)
+	return args.Error(0)
+}
+
+func (m *MockMenuRepository) Update(ctx context.Context, menu *model.Menu) error {
+	args := m.Called(ctx, menu)
+	return args.Error(0)
+}
+
+func (m *MockMenuRepository) Delete(ctx context.Context, id uint64) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
+func (m *MockMenuRepository) Get(ctx context.Context, id uint64) (*model.Menu, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.Menu), args.Error(1)
+}
+
+func (m *MockMenuRepository) List(ctx context.Context, parentID *uint64) ([]model.Menu, error) {
+	args := m.Called(ctx, parentID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]model.Menu), args.Error(1)
+}
+
+func (m *MockMenuRepository) ListPaged(ctx context.Context, page, pageSize int, parentID *uint64) ([]model.Menu, int64, error) {
+	args := m.Called(ctx, page, pageSize, parentID)
+	if args.Get(0) == nil {
+		return nil, 0, args.Error(2)
+	}
+	return args.Get(0).([]model.Menu), args.Get(1).(int64), args.Error(2)
+}
+
+func (m *MockMenuRepository) ListByPermission(ctx context.Context, codes []string) ([]model.Menu, error) {
+	args := m.Called(ctx, codes)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]model.Menu), args.Error(1)
+}
+
+func (m *MockMenuRepository) HasChildren(ctx context.Context, parentID uint64) (bool, error) {
+	args := m.Called(ctx, parentID)
+	return args.Bool(0), args.Error(1)
+}
+
+type MockStatsRepository struct {
+	mock.Mock
+}
+
+func (m *MockStatsRepository) Dashboard(ctx context.Context) (repository.Dashboard, error) {
+	args := m.Called(ctx)
+	return args.Get(0).(repository.Dashboard), args.Error(1)
+}
+
+func (m *MockStatsRepository) RevenueTrend(ctx context.Context, days int) ([]repository.DateValue, error) {
+	args := m.Called(ctx, days)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]repository.DateValue), args.Error(1)
+}
+
+func (m *MockStatsRepository) UserGrowth(ctx context.Context, days int) ([]repository.DateValue, error) {
+	args := m.Called(ctx, days)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]repository.DateValue), args.Error(1)
+}
+
+func (m *MockStatsRepository) OrdersByStatus(ctx context.Context) (map[string]int64, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(map[string]int64), args.Error(1)
+}
+
+func (m *MockStatsRepository) TopPlayers(ctx context.Context, limit int) ([]repository.PlayerTop, error) {
+	args := m.Called(ctx, limit)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]repository.PlayerTop), args.Error(1)
+}
+
+func (m *MockStatsRepository) AuditOverview(ctx context.Context, from, to *time.Time) (map[string]int64, map[string]int64, error) {
+	args := m.Called(ctx, from, to)
+	if args.Get(0) == nil {
+		return nil, nil, args.Error(2)
+	}
+	return args.Get(0).(map[string]int64), args.Get(1).(map[string]int64), args.Error(2)
+}
+
+func (m *MockStatsRepository) AuditTrend(ctx context.Context, from, to *time.Time, entity, action string) ([]repository.DateValue, error) {
+	args := m.Called(ctx, from, to, entity, action)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]repository.DateValue), args.Error(1)
 }
 
 // MockWalletRepository is a mock implementation of WalletRepository

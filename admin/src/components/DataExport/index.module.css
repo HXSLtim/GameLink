@@ -1,0 +1,8 @@
+.progress {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.progress :global(.ant-progress) {
+  margin-bottom: 12px;
+}

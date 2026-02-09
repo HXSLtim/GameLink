@@ -12,6 +12,7 @@
 
 <script setup lang="ts">
 import GlAvatar from '@/components/gl/Avatar/index.vue'
+import { useImageTools } from '@/composables/useImageTools'
 
 interface Props {
   modelValue?: string
@@ -29,17 +30,17 @@ const emit = defineEmits<{
   upload: []
 }>()
 
-const handleUpload = () => {
-  uni.chooseImage({
-    count: 1,
-    sizeType: ['compressed'],
-    sourceType: ['album', 'camera'],
-    success: (res) => {
-      const tempPath = res.tempFilePaths[0]
-      emit('update:modelValue', tempPath)
-      emit('upload')
-    }
-  })
+const { pickImages } = useImageTools()
+
+const handleUpload = async () => {
+  try {
+    const [tempPath] = await pickImages()
+    if (!tempPath) return
+    emit('update:modelValue', tempPath)
+    emit('upload')
+  } catch {
+    // ignore cancel
+  }
 }
 </script>
 
@@ -48,7 +49,9 @@ const handleUpload = () => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 48rpx 24rpx;
+  padding: var(--spacing-xl) var(--spacing-md);
+  cursor: pointer;
+  @include press-effect;
 }
 
 .avatar-wrap {
@@ -59,19 +62,20 @@ const handleUpload = () => {
   position: absolute;
   bottom: 0;
   right: 0;
-  width: 48rpx;
-  height: 48rpx;
-  background: var(--color-primary);
-  border-radius: 50%;
+  width: 40rpx;
+  height: 40rpx;
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-sm);
+  border: 1rpx solid var(--color-border);
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 4rpx solid var(--color-bg-card);
+  border: 2rpx solid var(--color-bg-card);
 }
 
 .avatar-tip {
-  margin-top: 16rpx;
-  font-size: 24rpx;
+  margin-top: var(--spacing-sm);
+  font-size: var(--font-sm);
   color: var(--color-text-secondary);
 }
 </style>

@@ -133,6 +133,10 @@ func migrateModels(db *gorm.DB) error {
 		// Notification
 		&model.NotificationEvent{},
 		&model.UserNotification{},
+		&model.UserNotificationSetting{},
+
+		// User Settings
+		&model.UserSettings{},
 
 		// Sensitive Word
 		&model.SensitiveWord{},
@@ -194,6 +198,10 @@ func migrateModels(db *gorm.DB) error {
 		&model.GameRank{},
 		&model.PlayerRankRecord{},
 		&model.PlayerCertification{},
+
+		// Player Service & Schedule
+		&model.PlayerService{},
+		&model.PlayerSchedule{},
 
 		// Order Timeout
 		&model.OrderTimeoutConfig{},
@@ -289,7 +297,9 @@ func cleanTables(t *testing.T, db *gorm.DB) {
 		// Chat
 		"chat_reports", "chat_messages", "chat_group_members", "chat_groups",
 		// Notification
-		"user_notifications", "notification_events",
+		"user_notifications", "notification_events", "user_notification_settings",
+		// User Settings
+		"user_settings",
 		// Sensitive Word
 		"sensitive_words",
 		// RBAC & Audit Logs
@@ -300,7 +310,8 @@ func cleanTables(t *testing.T, db *gorm.DB) {
 		// Order
 		"order_players", "order_items", "orders",
 		// Core
-		"service_items", "games", "game_categories",
+		"service_items", "player_services", "player_schedules",
+		"games", "game_categories",
 		"players", "users",
 	}
 

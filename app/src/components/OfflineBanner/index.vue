@@ -34,9 +34,9 @@ defineEmits<{
 
 const iconColor = computed(() => {
   const colors = {
-    warning: '#F59E0B',
-    error: '#EF4444',
-    info: '#3B82F6',
+    warning: 'var(--color-warning)',
+    error: 'var(--color-error)',
+    info: 'var(--color-info)',
   }
   return colors[props.type]
 })
@@ -47,47 +47,44 @@ const iconColor = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12rpx;
-  padding: 12rpx 20rpx;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-md);
+  background: var(--color-bg-card);
+  border-bottom: 1rpx solid var(--color-border);
   
   &--warning {
-    background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
-    border-bottom: 1rpx solid #F59E0B;
-    
-    .offline-text { color: #92400E; }
-    .action-btn { background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); }
+    border-left: 4rpx solid var(--color-warning);
+    .offline-text { color: var(--color-text); }
   }
   
   &--error {
-    background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
-    border-bottom: 1rpx solid #EF4444;
-    
-    .offline-text { color: #991B1B; }
-    .action-btn { background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%); }
+    border-left: 4rpx solid var(--color-error);
+    .offline-text { color: var(--color-text); }
   }
   
   &--info {
-    background: linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%);
-    border-bottom: 1rpx solid #3B82F6;
-    
-    .offline-text { color: #1E40AF; }
-    .action-btn { background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); }
+    border-left: 4rpx solid var(--color-info);
+    .offline-text { color: var(--color-text); }
   }
 }
 
 .offline-text {
-  font-size: 24rpx;
+  font-size: var(--font-sm);
   font-weight: 500;
 }
 
 .action-btn {
-  margin-left: 12rpx;
-  padding: 8rpx 16rpx;
-  border-radius: 16rpx;
+  margin-left: var(--spacing-xs);
+  padding: 2rpx var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  border: 1rpx solid var(--color-border);
+  background: var(--color-bg-secondary);
+  cursor: pointer;
+  @include press-effect;
   
   text {
-    font-size: 22rpx;
-    color: #fff;
+    font-size: var(--font-xs);
+    color: var(--color-text-secondary);
     font-weight: 600;
   }
   

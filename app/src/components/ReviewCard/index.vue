@@ -30,7 +30,7 @@
           :src="img"
           mode="aspectFill"
           class="review-image"
-          @tap.stop="previewImage(idx)"
+          @tap.stop="previewImages(review.images || [], idx)"
         />
       </view>
       
@@ -57,29 +57,12 @@ import GlAvatar from '@/components/gl/Avatar/index.vue'
 import GlTag from '@/components/gl/Tag/index.vue'
 import GlButton from '@/components/gl/Button/index.vue'
 import RatingStars from '@/components/RatingStars/index.vue'
-
-export interface ReviewPlayerInfo {
-  id: number
-  nickname: string
-  avatar?: string
-}
-
-export interface ReviewData {
-  id: number
-  orderId: number
-  player: ReviewPlayerInfo
-  gameName: string
-  serviceName: string
-  rating: number
-  tags?: string[]
-  content?: string
-  images?: string[]
-  reply?: string
-  createdAt: string
-}
+import { useImageTools } from '@/composables/useImageTools'
+import { formatDate } from '@/utils/format'
+import type { ReviewCardData } from '@/types/review'
 
 interface Props {
-  review: ReviewData
+  review: ReviewCardData
   showActions?: boolean
 }
 
@@ -96,38 +79,32 @@ defineEmits<{
 const ratingTexts = ['', '非常差', '较差', '一般', '满意', '非常满意']
 const ratingText = computed(() => ratingTexts[props.review.rating] || '')
 
+const { previewImages } = useImageTools()
+
 const formattedTime = computed(() => {
   if (!props.review.createdAt) return ''
-  const date = new Date(props.review.createdAt)
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+  return formatDate(props.review.createdAt)
 })
 
-const previewImage = (index: number) => {
-  if (props.review.images) {
-    uni.previewImage({
-      urls: props.review.images,
-      current: props.review.images[index],
-    })
-  }
-}
 </script>
 
 <style lang="scss" scoped>
 .review-card {
   background: var(--color-bg-card);
-  border-radius: 20rpx;
-  padding: 24rpx;
-  margin-bottom: 20rpx;
-  border: 2rpx solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  border: 1rpx solid var(--color-border);
 }
 
 .order-info {
   display: flex;
   align-items: center;
-  gap: 16rpx;
-  padding-bottom: 20rpx;
+  gap: var(--spacing-sm);
+  padding-bottom: var(--spacing-xs);
   border-bottom: 1rpx solid var(--color-border);
-  margin-bottom: 20rpx;
+  margin-bottom: var(--spacing-sm);
+  cursor: pointer;
+  @include press-effect;
 }
 
 .order-detail {
@@ -137,80 +114,85 @@ const previewImage = (index: number) => {
 
 .player-name {
   display: block;
-  font-size: 30rpx;
+  font-size: var(--font-md);
   font-weight: 600;
   color: var(--color-text);
   margin-bottom: 4rpx;
+  @include text-ellipsis;
 }
 
 .order-desc {
-  font-size: 24rpx;
+  font-size: var(--font-sm);
   color: var(--color-text-secondary);
+  @include text-ellipsis;
 }
 
 .review-content {
   display: flex;
   flex-direction: column;
-  gap: 16rpx;
+  gap: var(--spacing-xs);
 }
 
 .rating-row {
   display: flex;
   align-items: center;
-  gap: 16rpx;
+  gap: var(--spacing-xs);
 }
 
 .rating-text {
-  font-size: 26rpx;
-  color: var(--color-primary);
+  font-size: var(--font-sm);
+  color: var(--color-text-secondary);
   font-weight: 500;
 }
 
 .tags-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 12rpx;
+  gap: var(--spacing-xs);
 }
 
 .content-text {
-  font-size: 28rpx;
+  font-size: var(--font-sm);
   color: var(--color-text);
   line-height: 1.6;
 }
 
 .images-row {
   display: flex;
-  gap: 12rpx;
+  gap: var(--spacing-xs);
 }
 
 .review-image {
   width: 160rpx;
   height: 160rpx;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   object-fit: cover;
+  border: 1rpx solid var(--color-border);
 }
 
 .review-time {
-  font-size: 24rpx;
+  font-size: var(--font-xs);
   color: var(--color-text-placeholder);
+  align-self: flex-end;
 }
 
 .reply-section {
-  margin-top: 20rpx;
-  padding: 20rpx;
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-sm);
   background: var(--color-bg-secondary);
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
+  border: 1rpx solid var(--color-border);
 }
 
 .reply-label {
-  font-size: 24rpx;
+  font-size: var(--font-sm);
   color: var(--color-text-secondary);
-  margin-bottom: 8rpx;
+  margin-bottom: var(--spacing-xs);
   display: block;
 }
 
 .reply-content {
-  font-size: 26rpx;
+  font-size: var(--font-sm);
   color: var(--color-text);
   line-height: 1.5;
 }
@@ -218,9 +200,11 @@ const previewImage = (index: number) => {
 .pending-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 20rpx;
-  margin-top: 20rpx;
-  padding-top: 20rpx;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
+  padding-top: var(--spacing-xs);
   border-top: 1rpx solid var(--color-border);
+  flex-wrap: wrap;
+  row-gap: var(--spacing-xs);
 }
 </style>

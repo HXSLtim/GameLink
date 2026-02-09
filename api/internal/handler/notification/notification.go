@@ -37,6 +37,16 @@ func RegisterRoutes(router gin.IRouter, svc *contentservice.NotificationService,
 	group.DELETE("/:id", func(c *gin.Context) { deleteNotificationHandler(c, svc) })
 }
 
+// RegisterUserRoutes registers user scoped notification routes.
+func RegisterUserRoutes(router gin.IRouter, svc *contentservice.NotificationService, authMiddleware gin.HandlerFunc) {
+	group := router.Group("/user/notifications")
+	group.Use(authMiddleware)
+	group.GET("", func(c *gin.Context) { listNotificationsHandler(c, svc) })
+	group.GET("/unread-count", func(c *gin.Context) { unreadCountHandler(c, svc) })
+	group.POST("/read-all", func(c *gin.Context) { markAllNotificationsReadHandler(c, svc) })
+	group.POST("/:id/read", func(c *gin.Context) { markNotificationReadHandler(c, svc) })
+}
+
 // listNotificationsHandler 获取通知列表
 // @Summary      获取通知列表
 // @Description  获取当前用户的通知列表，支持分页和过滤
@@ -74,7 +84,7 @@ func listNotificationsHandler(c *gin.Context, svc *contentservice.NotificationSe
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondJSON(c, http.StatusOK, model.APIResponse[*contentservice.NotificationListResponse]{
+	respondJSON[*contentservice.NotificationListResponse](c, http.StatusOK, model.APIResponse[*contentservice.NotificationListResponse]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
@@ -99,7 +109,7 @@ func markAllNotificationsReadHandler(c *gin.Context, svc *contentservice.Notific
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondJSON(c, http.StatusOK, model.APIResponse[any]{
+	respondJSON[any](c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "所有通知已标记为已读",
@@ -130,7 +140,40 @@ func markNotificationsReadHandler(c *gin.Context, svc *contentservice.Notificati
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondJSON(c, http.StatusOK, model.APIResponse[any]{
+	respondJSON[any](c, http.StatusOK, model.APIResponse[any]{
+		Success: true,
+		Code:    http.StatusOK,
+		Message: "已标记为已读",
+	})
+}
+
+// markNotificationReadHandler 标记单条通知为已读
+// @Summary      标记单条通知为已读
+// @Description  将指定通知标记为已读
+// @Tags         Notifications
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string  true   "Bearer {token}"
+// @Param        id             path      uint64  true   "Notification ID"
+// @Success      200            {object}  model.SuccessResponse
+// @Failure      400            {object}  model.ErrorResponse
+// @Failure      401            {object}  model.ErrorResponse
+// @Failure      500            {object}  model.ErrorResponse
+// @Router       /user/notifications/{id}/read [post]
+func markNotificationReadHandler(c *gin.Context, svc *contentservice.NotificationService) {
+	userID := getUserIDFromContext(c)
+	var uri struct {
+		ID uint64 `uri:"id" binding:"required"`
+	}
+	if err := c.ShouldBindUri(&uri); err != nil {
+		respondError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := svc.MarkNotificationsRead(c.Request.Context(), userID, []uint64{uri.ID}); err != nil {
+		respondError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondJSON[any](c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "已标记为已读",
@@ -155,7 +198,7 @@ func unreadCountHandler(c *gin.Context, svc *contentservice.NotificationService)
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondJSON(c, http.StatusOK, model.APIResponse[map[string]int64]{
+	respondJSON[map[string]int64](c, http.StatusOK, model.APIResponse[map[string]int64]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
@@ -192,7 +235,7 @@ func deleteNotificationHandler(c *gin.Context, svc *contentservice.NotificationS
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[any]{
+	respondJSON[any](c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "通知已删除",

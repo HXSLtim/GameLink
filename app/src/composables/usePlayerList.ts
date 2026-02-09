@@ -7,23 +7,16 @@ import { useListPage } from './useListPage'
 import { getPlayerList, type PlayerInfo, type PlayerListParams } from '@/api/publicPlayer'
 import { getHotGames } from '@/api/game'
 import { getCachedPlayers, saveCachedPlayers } from '@/utils/offlineData'
-import type { GameItem } from '@/components/GameGrid/index.vue'
-import type { SortOption } from '@/components/SortBar/index.vue'
-import type { FilterSection, FilterValues } from '@/components/FilterPanel/index.vue'
+import { mapCachedPlayerToCard, mapCardToCachedPlayer, mapPlayerInfoToCard } from '@/utils/playerMapper'
+import type { FilterOption, FilterSection, FilterValues } from '@/types/filter'
+import type { PlayerCardData } from '@/types/player'
+import type { GameTabItem } from '@/types/game'
+import type { Gender } from '@/types/common'
 
 // 陪玩师数据类型
-export interface Player {
-  id: number
-  nickname: string
-  avatar?: string
-  isOnline?: boolean
-  isVerified?: boolean
-  status?: 'online' | 'busy' | 'offline'
-  rating?: number
-  orderCount?: number
-  minPrice?: number
-  games?: Array<{ id: number; name: string }>
-}
+export type Player = PlayerCardData & { id: number }
+
+export type SortOption = FilterOption
 
 // 默认排序选项
 export const defaultSortOptions: SortOption[] = [
@@ -65,6 +58,8 @@ export const defaultFilterSections: FilterSection[] = [
 
 // 默认筛选值
 export const defaultFilterValues: FilterValues = {
+  gameId: 'all',
+  sortBy: 'recommend',
   gender: '',
   priceRange: '',
   onlineOnly: false,
@@ -72,29 +67,12 @@ export const defaultFilterValues: FilterValues = {
 
 // 转换 API 响应为 Player 类型
 function transformPlayer(p: PlayerInfo): Player {
-  return {
-    id: p.id,
-    nickname: p.nickname,
-    avatar: p.avatar || '',
-    isOnline: p.isOnline,
-    isVerified: p.isVerified || false,
-    status: p.isOnline ? 'online' : 'offline',
-    rating: p.rating,
-    orderCount: p.orderCount,
-    minPrice: 20,
-    games: p.tags?.slice(0, 2).map((tag, i) => ({ id: i + 1, name: tag })) || [],
-  }
+  return mapPlayerInfoToCard(p)
 }
 
 export function usePlayerList() {
   // 搜索关键词
   const searchKeyword = ref('')
-  
-  // 当前游戏分类
-  const currentGameId = ref<number | string>('all')
-  
-  // 当前排序
-  const currentSort = ref('recommend')
   
   // 筛选弹窗显示状态
   const showFilter = ref(false)
@@ -103,19 +81,19 @@ export function usePlayerList() {
   const filterValues = ref<FilterValues>({ ...defaultFilterValues })
   
   // 游戏列表
-  const games = ref<GameItem[]>([
+  const games = ref<GameTabItem[]>([
     { id: 'all', name: '全部' },
   ])
   
   // 构建 API 参数
   const buildParams = (): Partial<PlayerListParams> => {
     const params: Partial<PlayerListParams> = {}
-    
-    if (currentGameId.value !== 'all') {
-      params.gameId = Number(currentGameId.value)
+
+    if (filterValues.value.gameId && filterValues.value.gameId !== 'all') {
+      params.gameId = Number(filterValues.value.gameId)
     }
     if (filterValues.value.gender) {
-      params.gender = filterValues.value.gender as 'male' | 'female'
+      params.gender = filterValues.value.gender as Gender
     }
     if (filterValues.value.priceRange) {
       const priceRange = filterValues.value.priceRange as string
@@ -129,8 +107,8 @@ export function usePlayerList() {
     if (searchKeyword.value.trim()) {
       params.keyword = searchKeyword.value.trim()
     }
-    if (currentSort.value !== 'recommend') {
-      params.sortBy = currentSort.value as PlayerListParams['sortBy']
+    if (filterValues.value.sortBy && filterValues.value.sortBy !== 'recommend') {
+      params.sortBy = filterValues.value.sortBy as PlayerListParams['sortBy']
     }
     
     return params
@@ -146,35 +124,14 @@ export function usePlayerList() {
       const playerList: PlayerInfo[] = data?.players || data || []
       return playerList.map(transformPlayer)
     },
-    pageSize: 10,
+    page_size: 10,
     getCacheFn: () => {
       const cached = getCachedPlayers()
       if (!cached) return null
-      return cached.map(p => ({
-        id: p.id,
-        nickname: p.nickname,
-        avatar: p.avatar || '',
-        isOnline: p.isOnline,
-        isVerified: false,
-        status: (p.isOnline ? 'online' : 'offline') as 'online' | 'offline',
-        rating: p.rating,
-        orderCount: p.orderCount,
-        minPrice: p.hourlyRate / 100,
-        games: p.mainGame ? [{ id: 1, name: p.mainGame }] : [],
-      }))
+      return cached.map(mapCachedPlayerToCard)
     },
     saveCacheFn: (items) => {
-      saveCachedPlayers(items.map(p => ({
-        id: p.id,
-        nickname: p.nickname,
-        avatar: p.avatar || '',
-        rank: p.games?.[0]?.name || '',
-        rating: p.rating || 5.0,
-        hourlyRate: (p.minPrice || 20) * 100,
-        isOnline: p.isOnline || false,
-        orderCount: p.orderCount || 0,
-        mainGame: p.games?.[0]?.name || '',
-      })))
+      saveCachedPlayers(items.map(mapCardToCachedPlayer))
     },
   })
   
@@ -207,16 +164,6 @@ export function usePlayerList() {
     refreshList()
   }
   
-  // 选择游戏
-  const handleGameSelect = () => {
-    refreshList()
-  }
-  
-  // 切换排序
-  const handleSortChange = () => {
-    refreshList()
-  }
-  
   // 应用筛选
   const handleFilterApply = () => {
     refreshList()
@@ -238,6 +185,31 @@ export function usePlayerList() {
     refreshList()
   }
   
+  const filterSections = computed<FilterSection[]>(() => {
+    const gameOptions = games.value.map((game) => ({
+      label: game.name,
+      value: game.id,
+    }))
+    const sortOptions = defaultSortOptions.map(option => ({
+      label: option.label,
+      value: option.value,
+    }))
+
+    return [
+      {
+        key: 'gameId',
+        label: '分类',
+        options: gameOptions,
+      },
+      ...defaultFilterSections,
+      {
+        key: 'sortBy',
+        label: '排序',
+        options: sortOptions,
+      },
+    ]
+  })
+
   return {
     // 列表数据
     players: listPage.list,
@@ -249,22 +221,17 @@ export function usePlayerList() {
     
     // 筛选相关
     searchKeyword,
-    currentGameId,
-    currentSort,
     showFilter,
     filterValues,
     games,
     
     // 配置
-    sortOptions: defaultSortOptions,
-    filterSections: defaultFilterSections,
+    filterSections,
     
     // 方法
     loadMore: listPage.loadMore,
     refresh: refreshList,
     handleSearch,
-    handleGameSelect,
-    handleSortChange,
     handleFilterApply,
     handleFilterReset,
     goToDetail,

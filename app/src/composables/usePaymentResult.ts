@@ -3,61 +3,54 @@
  */
 import { ref, computed } from 'vue'
 import { getOrderPaymentStatus } from '@/api/order'
-
-type ResultType = 'success' | 'pending' | 'failed'
-
-interface OrderInfo {
-  orderId?: number
-  orderNo?: string
-  amount?: number
-  method?: string
-  paidAt?: string
-}
+import { formatDateTimeSafe } from '@/utils/format'
+import { copyToClipboard } from '@/utils'
+import type { ResultStatusType } from '@/types/status'
+import type { OrderPaymentInfo, OrderPaymentMethod, OrderPaymentStatus } from '@/types/order'
 
 export function usePaymentResult() {
   // 状态
-  const resultType = ref<ResultType>('success')
-  const orderInfo = ref<OrderInfo>({})
+  const resultType = ref<ResultStatusType>('success')
+  const orderInfo = ref<OrderPaymentInfo>({})
   
   // 结果文案
   const resultTitle = computed(() => {
-    const titles: Record<ResultType, string> = {
+    const titles: Record<ResultStatusType, string> = {
       success: '支付成功',
       pending: '支付处理中',
       failed: '支付失败',
+      warning: '支付异常',
     }
     return titles[resultType.value]
   })
   
   const resultDesc = computed(() => {
-    const descs: Record<ResultType, string> = {
+    const descs: Record<ResultStatusType, string> = {
       success: '感谢您的支付，订单已生效',
       pending: '正在确认支付结果，请稍候...',
       failed: '支付未完成，请重新尝试',
+      warning: '支付状态异常，请稍后重试',
     }
     return descs[resultType.value]
   })
   
   const paymentMethodText = computed(() => {
-    const methods: Record<string, string> = {
+    const methods: Record<OrderPaymentMethod, string> = {
       wechat: '微信支付',
       alipay: '支付宝',
       wallet: '余额支付',
       combined: '组合支付',
     }
-    return methods[orderInfo.value.method || ''] || '在线支付'
+    const method = orderInfo.value.method
+    return (method && methods[method]) || '在线支付'
   })
   
   // 格式化时间
-  const formatTime = (dateStr?: string) => {
-    if (!dateStr) return '-'
-    const date = new Date(dateStr)
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
-  }
+  const formatTime = (dateStr?: string) => formatDateTimeSafe(dateStr)
   
   // 初始化
   const init = (options: any) => {
-    resultType.value = (options?.status as ResultType) || 'success'
+    resultType.value = (options?.status as ResultStatusType) || 'success'
     orderInfo.value = {
       orderId: options?.orderId ? parseInt(options.orderId) : undefined,
       orderNo: options?.orderNo,
@@ -81,9 +74,9 @@ export function usePaymentResult() {
       attempts++
       try {
         const res = await getOrderPaymentStatus(orderInfo.value.orderId!)
-        const status = (res.data as any)?.status
+        const status = (res.data as { status?: OrderPaymentStatus })?.status
         
-        if (status === 'paid') {
+        if (status === 'paid' || status === 'success') {
           resultType.value = 'success'
           return
         } else if (status === 'failed') {
@@ -107,10 +100,7 @@ export function usePaymentResult() {
   // 复制订单号
   const copyOrderNo = () => {
     if (!orderInfo.value.orderNo) return
-    uni.setClipboardData({
-      data: orderInfo.value.orderNo,
-      success: () => uni.showToast({ title: '已复制', icon: 'success' }),
-    })
+    copyToClipboard(orderInfo.value.orderNo).catch(() => undefined)
   }
   
   // 导航

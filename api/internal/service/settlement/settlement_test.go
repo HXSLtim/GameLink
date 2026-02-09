@@ -296,9 +296,9 @@ func TestGetPendingSettlementStats(t *testing.T) {
 	newDate := time.Now().AddDate(0, 0, -3)
 
 	records := []model.CommissionRecord{
-		{ID: 1, PlayerIncomeCents: 8000, CreatedAt: oldDate},  // Ready
-		{ID: 2, PlayerIncomeCents: 5000, CreatedAt: oldDate},  // Ready
-		{ID: 3, PlayerIncomeCents: 3000, CreatedAt: newDate},  // Not ready
+		{ID: 1, PlayerIncomeCents: 8000, CreatedAt: oldDate}, // Ready
+		{ID: 2, PlayerIncomeCents: 5000, CreatedAt: oldDate}, // Ready
+		{ID: 3, PlayerIncomeCents: 3000, CreatedAt: newDate}, // Not ready
 	}
 
 	mockCommissions.On("ListRecords", ctx, mock.Anything).Return(records, int64(3), nil)

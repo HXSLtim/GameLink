@@ -94,67 +94,74 @@ const handleClick = (e: Event) => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8rpx;
-  border-radius: 12rpx;
-  font-weight: 500;
+  gap: var(--spacing-xs);
+  border-radius: var(--radius-md);
+  font-weight: 600;
   transition: all 0.2s;
-  border: 2rpx solid transparent;
+  border: 1rpx solid transparent;
+  cursor: pointer;
   
   &:active:not(.gl-button--disabled):not(.gl-button--loading) {
     transform: scale(0.96);
     opacity: 0.9;
   }
   
+  @include hover-supported {
+    &:hover:not(.gl-button--disabled):not(.gl-button--loading) {
+      filter: brightness(1.02);
+    }
+  }
+  
   // 尺寸
   &--mini {
     height: 48rpx;
-    padding: 0 16rpx;
-    font-size: 22rpx;
-    border-radius: 8rpx;
+    padding: 0 var(--spacing-sm);
+    font-size: var(--font-xs);
+    border-radius: var(--radius-sm);
   }
   
   &--small {
     height: 60rpx;
-    padding: 0 24rpx;
-    font-size: 24rpx;
+    padding: 0 var(--spacing-md);
+    font-size: var(--font-sm);
   }
   
   &--medium {
     height: 80rpx;
-    padding: 0 32rpx;
-    font-size: 28rpx;
+    padding: 0 var(--spacing-lg);
+    font-size: var(--font-md);
   }
   
   &--large {
     height: 96rpx;
-    padding: 0 40rpx;
-    font-size: 32rpx;
+    padding: 0 var(--spacing-xl);
+    font-size: var(--font-base);
+    border-radius: var(--radius-md);
   }
   
   // 类型
   &--primary {
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light, #4ADE80) 100%);
+    background: var(--color-primary);
     color: #fff;
-    box-shadow: 0 4rpx 12rpx rgba(0, 210, 106, 0.3);
   }
   
   &--success {
-    background: linear-gradient(135deg, var(--color-success) 0%, #34D399 100%);
+    background: var(--color-success);
     color: #fff;
   }
   
   &--warning {
-    background: linear-gradient(135deg, var(--color-warning) 0%, #FBBF24 100%);
+    background: var(--color-warning);
     color: #fff;
   }
   
   &--error {
-    background: linear-gradient(135deg, var(--color-error) 0%, #F87171 100%);
+    background: var(--color-error);
     color: #fff;
   }
   
   &--info {
-    background: linear-gradient(135deg, var(--color-info, #3B82F6) 0%, #60A5FA 100%);
+    background: var(--color-info);
     color: #fff;
   }
   
@@ -186,8 +193,12 @@ const handleClick = (e: Event) => {
       color: var(--color-error);
     }
     &.gl-button--info {
-      border-color: var(--color-info, #3B82F6);
-      color: var(--color-info, #3B82F6);
+      border-color: var(--color-info);
+      color: var(--color-info);
+    }
+    &.gl-button--default {
+      border-color: var(--color-border);
+      color: var(--color-text);
     }
   }
   
@@ -206,11 +217,13 @@ const handleClick = (e: Event) => {
   &--disabled {
     opacity: 0.5;
     cursor: not-allowed;
+    pointer-events: none;
   }
   
   // 加载中
   &--loading {
     opacity: 0.7;
+    pointer-events: none;
   }
 }
 

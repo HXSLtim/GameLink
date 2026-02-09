@@ -42,7 +42,7 @@ function applyTheme(dark: boolean) {
   try {
     uni.setNavigationBarColor({
       frontColor: dark ? '#ffffff' : '#000000',
-      backgroundColor: dark ? '#0F0F1A' : '#FFFFFF',
+      backgroundColor: dark ? '#151618' : '#FFFFFF',
       animation: {
         duration: 300,
         timingFunc: 'easeIn'
@@ -55,8 +55,8 @@ function applyTheme(dark: boolean) {
   try {
     uni.setTabBarStyle({
       color: dark ? '#94A3B8' : '#64748B',
-      selectedColor: dark ? '#8B5CF6' : '#00D26A',
-      backgroundColor: dark ? '#1A1A2E' : '#FFFFFF',
+      selectedColor: dark ? '#5865F2' : '#7ACC35',
+      backgroundColor: dark ? '#1C1D20' : '#FFFFFF',
       borderStyle: dark ? 'black' : 'black',
     })
   } catch (e) {

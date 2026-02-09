@@ -9,7 +9,7 @@
         :class="{ active: modelValue === role.value }"
         @click="$emit('update:modelValue', role.value)"
       >
-        <view class="role-icon">{{ role.icon }}</view>
+        <view class="role-icon"><uv-icon :name="role.icon" size="28" color="var(--color-text-secondary)" /></view>
         <text class="role-name">{{ role.name }}</text>
         <text class="role-desc">{{ role.desc }}</text>
       </view>
@@ -18,17 +18,12 @@
 </template>
 
 <script setup lang="ts">
-export interface RoleOption {
-  value: string
-  icon: string
-  name: string
-  desc: string
-}
+import type { RoleOption } from '@/types/auth'
 
 interface Props {
   title?: string
   roles: RoleOption[]
-  modelValue?: string
+  modelValue?: RoleOption['value']
 }
 
 withDefaults(defineProps<Props>(), {
@@ -36,26 +31,26 @@ withDefaults(defineProps<Props>(), {
 })
 
 defineEmits<{
-  'update:modelValue': [value: string]
+  'update:modelValue': [value: RoleOption['value']]
 }>()
 </script>
 
 <style lang="scss" scoped>
 .role-section {
-  margin-bottom: 32rpx;
+  margin-bottom: var(--spacing-lg);
 }
 
 .section-title {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--font-md);
   font-weight: 600;
   color: var(--color-text);
-  margin-bottom: 20rpx;
+  margin-bottom: var(--spacing-sm);
 }
 
 .role-cards {
   display: flex;
-  gap: 24rpx;
+  gap: var(--spacing-md);
 }
 
 .role-card {
@@ -63,41 +58,41 @@ defineEmits<{
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 32rpx 16rpx;
-  background: var(--color-bg-secondary);
-  border: 2rpx solid var(--color-border);
-  border-radius: 20rpx;
+  padding: var(--spacing-md) var(--spacing-sm);
+  background: var(--color-bg-card);
+  border: 1rpx solid var(--color-border);
+  border-radius: var(--radius-md);
   transition: all 0.2s;
+  cursor: pointer;
+  @include press-effect;
   
   &.active {
-    border-color: var(--color-primary);
-    background: rgba(0, 210, 106, 0.1);
+    border-color: var(--color-border);
+    background: var(--color-bg-secondary);
   }
 }
 
 .role-icon {
-  width: 80rpx;
-  height: 80rpx;
-  background: var(--color-bg);
-  border-radius: 50%;
+  width: 64rpx;
+  height: 64rpx;
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-sm);
+  border: 1rpx solid var(--color-border);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32rpx;
-  font-weight: 700;
-  color: var(--color-primary);
-  margin-bottom: 16rpx;
+  margin-bottom: var(--spacing-sm);
 }
 
 .role-name {
-  font-size: 30rpx;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--color-text);
-  margin-bottom: 8rpx;
+  margin-bottom: var(--spacing-xs);
 }
 
 .role-desc {
-  font-size: 24rpx;
+  font-size: var(--font-sm);
   color: var(--color-text-secondary);
   text-align: center;
 }

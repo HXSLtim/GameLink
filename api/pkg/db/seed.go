@@ -19,6 +19,7 @@ type seedUserInput struct {
 	Email    string
 	Phone    string
 	Name     string
+	Nickname string // 昵称（可选，默认使用 Name）
 	Role     model.Role
 	Password string
 }
@@ -76,63 +77,103 @@ type seedReviewSpec struct {
 	RejectionReason string
 }
 
+// seedVersion 种子数据版本号。修改种子数据后递增此值，下次启动时会自动重新 seed。
+const seedVersion = "2026-02-07-v4"
+
+// isSeedUpToDate 检查种子数据版本是否已是最新，避免重复 seed。
+func isSeedUpToDate(db *gorm.DB) bool {
+	// 确保元数据表存在
+	db.Exec(`CREATE TABLE IF NOT EXISTS seed_metadata (key TEXT PRIMARY KEY, value TEXT)`)
+
+	var val string
+	err := db.Raw(`SELECT value FROM seed_metadata WHERE key = 'seed_version'`).Scan(&val).Error
+	if err != nil {
+		return false
+	}
+	return val == seedVersion
+}
+
+// markSeedVersion 标记当前种子版本
+func markSeedVersion(db *gorm.DB) {
+	db.Exec(`INSERT INTO seed_metadata (key, value) VALUES ('seed_version', ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, seedVersion)
+}
+
 func applySeeds(db *gorm.DB) error {
-	return db.Transaction(func(tx *gorm.DB) error {
-		// Clean up stale data to ensure consistency when seed data changes
-		// Use raw SQL with IF EXISTS to handle tables that may not exist
-		log.Println("Cleaning up stale seed data...")
-		cleanupSQL := []string{
-			// Child tables of orders (must be deleted first to avoid FK violations)
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'order_players') THEN DELETE FROM order_players; END IF; END $$;",
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'order_items') THEN DELETE FROM order_items; END IF; END $$;",
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'order_teams') THEN DELETE FROM order_teams; END IF; END $$;",
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'order_disputes') THEN DELETE FROM order_disputes; END IF; END $$;",
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'order_service_assignments') THEN DELETE FROM order_service_assignments; END IF; END $$;",
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'order_timeout_logs') THEN DELETE FROM order_timeout_logs; END IF; END $$;",
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'reviews') THEN DELETE FROM reviews; END IF; END $$;",
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'review_appeals') THEN DELETE FROM review_appeals; END IF; END $$;",
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'review_replies') THEN DELETE FROM review_replies; END IF; END $$;",
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'refund_records') THEN DELETE FROM refund_records; END IF; END $$;",
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'payments') THEN DELETE FROM payments; END IF; END $$;",
-			// Parent tables (deleted after children)
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'orders') THEN DELETE FROM orders; END IF; END $$;",
-			// Chat tables (order_service_assignments deleted before chat_groups)
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'chat_reports') THEN DELETE FROM chat_reports; END IF; END $$;",
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'chat_snapshots') THEN DELETE FROM chat_snapshots; END IF; END $$;",
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'chat_messages') THEN DELETE FROM chat_messages; END IF; END $$;",
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'chat_group_members') THEN DELETE FROM chat_group_members; END IF; END $$;",
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'chat_groups') THEN DELETE FROM chat_groups; END IF; END $$;",
-			// Team tables (teams may reference orders via current_order_id)
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'team_invites') THEN DELETE FROM team_invites; END IF; END $$;",
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'team_members') THEN DELETE FROM team_members; END IF; END $$;",
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'teams') THEN DELETE FROM teams; END IF; END $$;",
-			// Recharge and referral related tables (child tables first)
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'referral_rewards') THEN DELETE FROM referral_rewards; END IF; END $$;",
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'referrals') THEN DELETE FROM referrals; END IF; END $$;",
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'referral_codes') THEN DELETE FROM referral_codes; END IF; END $$;",
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'recharge_records') THEN DELETE FROM recharge_records; END IF; END $$;",
-			// Wallet and settlement related tables
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'player_company_assignments') THEN DELETE FROM player_company_assignments; END IF; END $$;",
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'monthly_settlements') THEN DELETE FROM monthly_settlements; END IF; END $$;",
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'ranking_rewards') THEN DELETE FROM ranking_rewards; END IF; END $$;",
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'settlement_companies') THEN DELETE FROM settlement_companies; END IF; END $$;",
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'wallets') THEN DELETE FROM wallets; END IF; END $$;",
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'withdraws') THEN DELETE FROM withdraws; END IF; END $$;",
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'user_notifications') THEN DELETE FROM user_notifications; END IF; END $$;",
-			// Marketing-related tables (child tables first)
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'recharge_options') THEN DELETE FROM recharge_options; END IF; END $$;",
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'activity_participations') THEN DELETE FROM activity_participations; END IF; END $$;",
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'activity_rewards') THEN DELETE FROM activity_rewards; END IF; END $$;",
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'activity_daily_stats') THEN DELETE FROM activity_daily_stats; END IF; END $$;",
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'user_coupons') THEN DELETE FROM user_coupons; END IF; END $$;",
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'coupons') THEN DELETE FROM coupons; END IF; END $$;",
-			"DO $$ BEGIN IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'coupon_templates') THEN DELETE FROM coupon_templates; END IF; END $$;",
+	// ── 版本检查：如果种子数据版本未变，跳过整个 seed 流程 ──
+	if isSeedUpToDate(db) {
+		log.Printf("[startup] seed data up-to-date (version=%s), skipping", seedVersion)
+		return nil
+	}
+	log.Printf("[startup] seed data outdated or missing, reseeding (version=%s)...", seedVersion)
+
+	err := db.Transaction(func(tx *gorm.DB) error {
+		// ── 清理旧数据：用 TRUNCATE CASCADE 替代逐表 DELETE，速度快 10-50 倍 ──
+		t := time.Now()
+		log.Println("[startup] seed: cleaning up stale data...")
+		truncateSQL := `
+DO $$
+DECLARE
+    tbl TEXT;
+    tables_to_clean TEXT[] := ARRAY[
+        -- 订单关联
+        'order_players','order_items','order_teams','order_disputes',
+        'order_service_assignments','order_timeout_logs','order_groups',
+        -- 评价/退款/支付/订单
+        'reviews','review_appeals','review_replies','review_reports',
+        'refund_records','payments','orders',
+        -- 聊天
+        'chat_reports','chat_snapshots','chat_messages','chat_group_members','chat_groups',
+        -- 团队
+        'team_invites','team_members','teams',
+        -- 推荐
+        'referral_rewards','referrals','referral_codes',
+        -- 充值
+        'recharge_records','recharge_options',
+        -- 结算/佣金/提现
+        'commission_records','commission_rules',
+        'player_company_assignments','monthly_settlements','ranking_rewards',
+        'ranking_commission_configs',
+        'settlement_companies','wallets','withdraws',
+        -- 通知
+        'user_notifications','notification_events','notification_schedules',
+        'user_notification_settings','notification_configs','notification_templates',
+        -- 营销
+        'activity_participations','activity_rewards',
+        'activity_daily_stats','activities',
+        'user_coupons','coupons','coupon_templates',
+        -- VIP
+        'vip_levels','vip_configs',
+        -- 内容
+        'feed_reports','feed_images','feeds','content_categories',
+        -- 游戏分类/段位
+        'game_categories','game_ranks',
+        'player_rank_records','player_certifications',
+        -- 用户扩展
+        'user_blocks','user_tag_relations','user_tags',
+        'user_login_histories','user_behaviors',
+        -- 收款/路由
+        'collection_entities','routing_rules','routing_rule_histories',
+        'collection_entity_histories','routing_logs','payment_channel_configs',
+        -- LFG/收藏/在线状态
+        'lfg_requests','favorites','player_presences',
+        -- 告警/KPI
+        'alerts','kpi_targets',
+        -- 敏感词
+        'sensitive_words',
+        -- Banner
+        'banners'
+    ];
+BEGIN
+    FOREACH tbl IN ARRAY tables_to_clean LOOP
+        IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = tbl) THEN
+            EXECUTE format('TRUNCATE TABLE %I CASCADE', tbl);
+        END IF;
+    END LOOP;
+END $$;`
+		if execErr := tx.Exec(truncateSQL).Error; execErr != nil {
+			log.Printf("[startup] seed: truncate warning: %v", execErr)
 		}
-		for _, sql := range cleanupSQL {
-			if err := tx.Exec(sql).Error; err != nil {
-				log.Printf("warning: failed to cleanup: %v", err)
-			}
-		}
+		log.Printf("[startup] seed: cleanup done in %v", time.Since(t))
 
 		games, err := seedGames(tx)
 		if err != nil {
@@ -453,6 +494,21 @@ func applySeeds(db *gorm.DB) error {
 				StartOffset: 1 * hour,
 				Duration:    3 * hour,
 			},
+			// 争议中订单
+			{
+				Key:         "orderDisputed1",
+				UserKey:     "customerE",
+				PlayerKey:   "playerC",
+				GameKey:     "csgo",
+				ItemCode:    "escort-default",
+				Title:       "CS:GO陪练争议",
+				Description: "用户认为陪玩师水平与宣传不符，发起争议。",
+				Status:      model.OrderStatusDisputed,
+				PriceCents:  15900,
+				Currency:    model.CurrencyCNY,
+				StartOffset: -4 * hour,
+				Duration:    2 * hour,
+			},
 			// E2E 测试专用订单 - 用于取消测试
 			{
 				Key:         "orderPendingE2E1",
@@ -695,6 +751,18 @@ func applySeeds(db *gorm.DB) error {
 				ProviderRaw:     `{"result":"success"}`,
 				PaidAtOffset:    ptrDuration(30 * time.Minute),
 			},
+			// 争议中订单的支付记录
+			{
+				OrderKey:        "orderDisputed1",
+				UserKey:         "customerE",
+				Method:          model.PaymentMethodWeChat,
+				AmountCents:     15900,
+				Currency:        model.CurrencyCNY,
+				Status:          model.PaymentStatusPaid,
+				ProviderTradeNo: "WXDISPUTE001",
+				ProviderRaw:     `{"result":"success"}`,
+				PaidAtOffset:    ptrDuration(-5 * hour),
+			},
 			// E2E 测试专用订单的支付记录 - 已完成订单需要支付记录才能退款
 			{
 				OrderKey:        "orderCompletedE2E1",
@@ -885,7 +953,7 @@ func applySeeds(db *gorm.DB) error {
 		}
 
 		// 监控模块种子数据
-		if err := seedMonitorData(tx); err != nil {
+		if err := seedMonitorData(tx, users); err != nil {
 			return err
 		}
 
@@ -940,12 +1008,12 @@ func applySeeds(db *gorm.DB) error {
 		}
 
 		// 收款主体和分流规则种子数据
-		if err := seedCollectionEntities(tx); err != nil {
+		if err := seedCollectionEntities(tx, users); err != nil {
 			return err
 		}
 
 		// 结算公司种子数据（传入players以创建分配关系）
-		if err := seedSettlementCompanies(tx, players); err != nil {
+		if err := seedSettlementCompanies(tx, players, users); err != nil {
 			return err
 		}
 
@@ -998,11 +1066,37 @@ func applySeeds(db *gorm.DB) error {
 			return err
 		}
 
+		// ========== 补充业务链种子数据 ==========
+		// 1. 游戏分类（替代 Game.Category 字段）
+		if _, err := seedGameCategories(tx, games); err != nil {
+			log.Printf("warning: failed to seed game categories: %v", err)
+		}
+
+		// 2. 快速匹配请求（LFG）
+		if err := seedLFGRequests(tx, users, games); err != nil {
+			log.Printf("warning: failed to seed LFG requests: %v", err)
+		}
+
+		// 3. 用户收藏
+		if err := seedFavorites(tx, users, players); err != nil {
+			log.Printf("warning: failed to seed favorites: %v", err)
+		}
+
+		// 4. 陪玩师在线状态（需要订单数据）
+		if err := seedPlayerPresences(tx, players, games, orders); err != nil {
+			log.Printf("warning: failed to seed player presences: %v", err)
+		}
+
 		if err := seedNotificationData(tx, users, orders, coupons, activities, vipLevels); err != nil {
 			return err
 		}
 
 		if err := seedAdditionalFlowOrders(tx, now, users, players, serviceItems, orders); err != nil {
+			return err
+		}
+
+		// 多时段订单（OrderGroup + 子订单）
+		if err := seedOrderGroupData(tx, now, users, players, serviceItems, orders); err != nil {
 			return err
 		}
 
@@ -1018,9 +1112,20 @@ func applySeeds(db *gorm.DB) error {
 			return err
 		}
 
-		log.Println("seed data ensured for demo environment")
+		// ── Banner 种子数据 ──
+		if err := seedBanners(tx); err != nil {
+			return err
+		}
+
+		log.Println("[startup] seed data ensured for demo environment")
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+	// 事务成功后标记种子版本
+	markSeedVersion(db)
+	return nil
 }
 
 type seedPlayerParams struct {
@@ -1155,10 +1260,17 @@ func seedUser(tx *gorm.DB, input seedUserInput) (*model.User, error) {
 	if err != nil {
 		return nil, err
 	}
+	// 如果没有提供昵称，使用姓名作为昵称
+	nickname := input.Nickname
+	if nickname == "" {
+		nickname = input.Name
+	}
+
 	user := &model.User{
 		Email:        input.Email,
 		Phone:        input.Phone,
 		Name:         input.Name,
+		Nickname:     nickname,
 		Role:         input.Role,
 		Status:       model.UserStatusActive,
 		PasswordHash: string(hashed),
@@ -1356,7 +1468,12 @@ func seedMenus(_ *gorm.DB) error {
 }
 
 // seedMonitorData 创建监控模块示例数据
-func seedMonitorData(tx *gorm.DB) error {
+func seedMonitorData(tx *gorm.DB, users map[string]*model.User) error {
+	// 获取管理员ID
+	adminID := uint64(1)
+	if admin, ok := users["adminA"]; ok {
+		adminID = admin.ID
+	}
 	// 创建示例告警
 	var alertCount int64
 	if err := tx.Model(&model.Alert{}).Count(&alertCount).Error; err != nil {
@@ -1430,7 +1547,7 @@ func seedMonitorData(tx *gorm.DB) error {
 				TargetValue: 1000000, // 100万GMV
 				StartDate:   monthStart,
 				EndDate:     monthEnd,
-				CreatedBy:   1,
+				CreatedBy:   adminID,
 			},
 			{
 				PeriodType:  "monthly",
@@ -1438,7 +1555,7 @@ func seedMonitorData(tx *gorm.DB) error {
 				TargetValue: 5000, // 5000订单
 				StartDate:   monthStart,
 				EndDate:     monthEnd,
-				CreatedBy:   1,
+				CreatedBy:   adminID,
 			},
 			{
 				PeriodType:  "monthly",
@@ -1446,7 +1563,7 @@ func seedMonitorData(tx *gorm.DB) error {
 				TargetValue: 1000, // 1000新用户
 				StartDate:   monthStart,
 				EndDate:     monthEnd,
-				CreatedBy:   1,
+				CreatedBy:   adminID,
 			},
 			{
 				PeriodType:  "monthly",
@@ -1454,7 +1571,7 @@ func seedMonitorData(tx *gorm.DB) error {
 				TargetValue: 100, // 100新陪玩师
 				StartDate:   monthStart,
 				EndDate:     monthEnd,
-				CreatedBy:   1,
+				CreatedBy:   adminID,
 			},
 			{
 				PeriodType:  "monthly",
@@ -1462,7 +1579,7 @@ func seedMonitorData(tx *gorm.DB) error {
 				TargetValue: 500, // 500日活
 				StartDate:   monthStart,
 				EndDate:     monthEnd,
-				CreatedBy:   1,
+				CreatedBy:   adminID,
 			},
 			{
 				PeriodType:  "monthly",
@@ -1470,7 +1587,7 @@ func seedMonitorData(tx *gorm.DB) error {
 				TargetValue: 40, // 40%留存率
 				StartDate:   monthStart,
 				EndDate:     monthEnd,
-				CreatedBy:   1,
+				CreatedBy:   adminID,
 			},
 			{
 				PeriodType:  "monthly",
@@ -1478,7 +1595,7 @@ func seedMonitorData(tx *gorm.DB) error {
 				TargetValue: 30, // 30%复购率
 				StartDate:   monthStart,
 				EndDate:     monthEnd,
-				CreatedBy:   1,
+				CreatedBy:   adminID,
 			},
 		}
 		for _, target := range kpiTargets {
@@ -2334,8 +2451,8 @@ func seedCommissionRecords(tx *gorm.DB, orders map[string]*model.Order, players 
 	return nil
 }
 
-// seedCollectionEntities 创建收款主体和分流规则种子数据
-func seedCollectionEntities(tx *gorm.DB) error {
+// seedCollectionEntities 创建收款主体种子数据（轮值收款模式）
+func seedCollectionEntities(tx *gorm.DB, _ map[string]*model.User) error {
 	// 检查是否已有收款主体
 	var entityCount int64
 	if err := tx.Model(&model.CollectionEntity{}).Count(&entityCount).Error; err != nil {
@@ -2345,6 +2462,17 @@ func seedCollectionEntities(tx *gorm.DB) error {
 		log.Println("collection entities already exist, skipping")
 		return nil
 	}
+
+	// 查找一个有效的 admin 用户作为创建者
+	var adminUser model.User
+	if err := tx.Where("role = ?", model.RoleAdmin).Order("id ASC").First(&adminUser).Error; err != nil {
+		// 如果没有 admin 用户，查找任何用户
+		if err := tx.Order("id ASC").First(&adminUser).Error; err != nil {
+			log.Println("no users found for collection entity creator, skipping collection entities seed")
+			return nil
+		}
+	}
+	creatorID := adminUser.ID
 
 	// 创建收款主体
 	entities := []model.CollectionEntity{
@@ -2356,7 +2484,7 @@ func seedCollectionEntities(tx *gorm.DB) error {
 			IsDefault:            true,
 			TotalCollectionCents: 1580000,
 			TransactionCount:     156,
-			CreatedBy:            1,
+			CreatedBy:            creatorID,
 		},
 		{
 			Name:                 "星耀互娱网络科技公司",
@@ -2366,7 +2494,7 @@ func seedCollectionEntities(tx *gorm.DB) error {
 			IsDefault:            false,
 			TotalCollectionCents: 890000,
 			TransactionCount:     89,
-			CreatedBy:            1,
+			CreatedBy:            creatorID,
 		},
 		{
 			Name:                 "电竞梦想文化传媒公司",
@@ -2376,7 +2504,7 @@ func seedCollectionEntities(tx *gorm.DB) error {
 			IsDefault:            false,
 			TotalCollectionCents: 320000,
 			TransactionCount:     32,
-			CreatedBy:            1,
+			CreatedBy:            creatorID,
 		},
 	}
 
@@ -2386,67 +2514,24 @@ func seedCollectionEntities(tx *gorm.DB) error {
 		}
 	}
 
-	// 创建分流规则
-	rules := []struct {
-		Name           string
-		Priority       int
-		TargetEntityID uint64
-		Conditions     []model.RoutingCondition
-		Description    string
-	}{
-		{
-			Name:           "大额订单分流",
-			Priority:       1,
-			TargetEntityID: 1,
-			Conditions: []model.RoutingCondition{
-				{Field: model.ConditionFieldOrderAmount, Operator: model.ConditionOperatorGreaterThan, Value: json.RawMessage(`500`)},
-			},
-			Description: "订单金额超过500元走主收款主体",
-		},
-		{
-			Name:           "LOL游戏分流",
-			Priority:       2,
-			TargetEntityID: 2,
-			Conditions: []model.RoutingCondition{
-				{Field: model.ConditionFieldGameType, Operator: model.ConditionOperatorEquals, Value: json.RawMessage(`"lol"`)},
-			},
-			Description: "英雄联盟游戏订单走星耀互娱",
-		},
-		{
-			Name:           "华东地区分流",
-			Priority:       3,
-			TargetEntityID: 2,
-			Conditions: []model.RoutingCondition{
-				{Field: model.ConditionFieldRegion, Operator: model.ConditionOperatorIn, Value: json.RawMessage(`["上海","江苏","浙江"]`)},
-			},
-			Description: "华东地区订单走星耀互娱",
-		},
-	}
+	// 轮值收款模式：不创建条件分流规则，通过 IsDefault 标记当前收款主体
+	// 管理员在后台切换"默认收款主体"即可实现轮值收款
+	// 当前 entities[0]（游戏联盟科技有限公司）的 IsDefault=true，表示当前所有收款走该公司
+	// entities[1]（星耀互娱网络科技公司）为备选，可随时切换为默认
+	// entities[2]（电竞梦想文化传媒公司）已停用
 
-	for _, spec := range rules {
-		rule := &model.RoutingRule{
-			Name:           spec.Name,
-			Priority:       spec.Priority,
-			TargetEntityID: spec.TargetEntityID,
-			Status:         model.RuleStatusActive,
-			Description:    spec.Description,
-			CreatedBy:      1,
-		}
-		if err := rule.SetConditions(spec.Conditions); err != nil {
-			return fmt.Errorf("failed to set conditions: %w", err)
-		}
-		if err := tx.Create(rule).Error; err != nil {
-			return fmt.Errorf("failed to create routing rule: %w", err)
-		}
-	}
-
-	log.Println("collection entities and routing rules seed data created successfully")
+	log.Println("collection entities seed data created successfully (轮值收款模式，无条件分流规则)")
 	return nil
 }
 
 // seedSettlementCompanies 创建结算公司种子数据并分配陪玩师
 // players 参数用于创建真实的陪玩师-结算公司分配关系
-func seedSettlementCompanies(tx *gorm.DB, players map[string]*model.Player) error {
+func seedSettlementCompanies(tx *gorm.DB, players map[string]*model.Player, users map[string]*model.User) error {
+	// 获取管理员ID
+	adminID := uint64(1)
+	if admin, ok := users["adminA"]; ok {
+		adminID = admin.ID
+	}
 	// 结算公司定义
 	companySpecs := []struct {
 		Name             string
@@ -2512,7 +2597,7 @@ func seedSettlementCompanies(tx *gorm.DB, players map[string]*model.Player) erro
 				Status:           spec.Status,
 				TotalPayoutCents: spec.TotalPayoutCents,
 				PlayerCount:      0, // 将根据实际分配更新
-				CreatedBy:        1,
+				CreatedBy:        adminID,
 			}
 			if err := tx.Create(&company).Error; err != nil {
 				return fmt.Errorf("failed to create settlement company %s: %w", spec.Name, err)
@@ -2584,7 +2669,7 @@ func seedSettlementCompanies(tx *gorm.DB, players map[string]*model.Player) erro
 			SettlementCompanyID: company.ID,
 			EffectiveDate:       now.AddDate(0, -1, 0), // 一个月前生效
 			Reason:              "初始分配 - 系统种子数据",
-			AssignedBy:          1, // 管理员ID
+			AssignedBy:          adminID, // 管理员ID
 			IsCurrent:           true,
 		}
 

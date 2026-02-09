@@ -21,14 +21,13 @@
         <slot></slot>
       </view>
       
-      <!-- 加载更多 -->
+      <!-- 加载状态 -->
       <LoadMore
         v-if="showLoadMore"
         :loading="loading"
         :no-more="noMore"
         :loading-text="loadingText"
         :no-more-text="noMoreText"
-        @load="handleLoadMore"
       />
     </scroll-view>
   </PageState>
@@ -36,9 +35,9 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import PageState from '@/components/PageState.vue'
+import PageState from '@/components/PageState/index.vue'
 import LoadMore from '@/components/LoadMore/index.vue'
-import type { PageStateType } from '@/components/PageState.vue'
+import type { PageStateType } from '@/types/page'
 
 interface Props {
   // 状态相关
@@ -79,8 +78,8 @@ const props = withDefaults(defineProps<Props>(), {
   showLoadMore: true,
   loadingText: '加载中...',
   noMoreText: '没有更多了',
-  gap: '16rpx',
-  padding: '16rpx',
+  gap: 'var(--spacing-sm)',
+  padding: 'var(--spacing-md)',
 })
 
 const emit = defineEmits<{
@@ -95,12 +94,6 @@ const contentStyle = computed(() => ({
 }))
 
 const handleScrollToLower = () => {
-  if (!props.loading && !props.noMore) {
-    emit('loadMore')
-  }
-}
-
-const handleLoadMore = () => {
   if (!props.loading && !props.noMore) {
     emit('loadMore')
   }

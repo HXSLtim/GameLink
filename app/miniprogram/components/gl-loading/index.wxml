@@ -1,4 +1,0 @@
-<view class="gl-loading {{fullscreen ? 'gl-loading--fullscreen' : ''}} gl-loading--{{size}}">
-  <view class="gl-loading__spinner"></view>
-  <text wx:if="{{showText}}" class="gl-loading__text">{{text}}</text>
-</view>

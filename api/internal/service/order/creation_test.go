@@ -14,12 +14,12 @@ import (
 
 // MockOrderGroupRepository 主订单仓储 Mock (for creation tests)
 type mockOrderGroupRepo struct {
-	createGroup       func(ctx context.Context, group *model.OrderGroup) error
-	getGroup          func(ctx context.Context, id uint64) (*model.OrderGroup, error)
-	getByGroupNo      func(ctx context.Context, groupNo string) (*model.OrderGroup, error)
-	getWithSubOrders  func(ctx context.Context, id uint64) (*model.OrderGroup, error)
-	updateGroup       func(ctx context.Context, group *model.OrderGroup) error
-	updateStatus      func(ctx context.Context, id uint64, status model.OrderGroupStatus) error
+	createGroup      func(ctx context.Context, group *model.OrderGroup) error
+	getGroup         func(ctx context.Context, id uint64) (*model.OrderGroup, error)
+	getByGroupNo     func(ctx context.Context, groupNo string) (*model.OrderGroup, error)
+	getWithSubOrders func(ctx context.Context, id uint64) (*model.OrderGroup, error)
+	updateGroup      func(ctx context.Context, group *model.OrderGroup) error
+	updateStatus     func(ctx context.Context, id uint64, status model.OrderGroupStatus) error
 }
 
 func (m *mockOrderGroupRepo) Create(ctx context.Context, group *model.OrderGroup) error {

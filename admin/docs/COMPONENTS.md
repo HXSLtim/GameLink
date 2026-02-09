@@ -4,6 +4,58 @@
 
 ---
 
+## 组件架构概览
+
+### 基础 UI 组件（基于 Ant Design）
+
+| 组件 | 职责 | 位置 | 状态 |
+|------|------|------|------|
+| Button | 统一按钮样式封装 | `components/Button/` | 稳定 |
+| Card | 统一卡片样式 | `components/Card/` | 稳定 |
+| PageContainer | 页面布局容器 | `components/PageContainer/` | 稳定 |
+| SearchTable | 带搜索的表格 | `components/SearchTable/` | 稳定 |
+| StatCard | 统计数据卡片 | `components/StatCard/` | 稳定 |
+
+### 权限组件
+
+| 组件 | 职责 | 使用场景 | 状态 |
+|------|------|----------|------|
+| PermissionGuard | 权限包装器，控制组件渲染 | 包裹需要权限控制的内容 | 稳定 |
+| PermissionButton | 带权限检查的按钮 | 操作按钮 | 稳定 |
+| PermissionTree | 权限树形选择器 | 角色权限配置 | 稳定 |
+| withPermission | 权限高阶组件 | 包装组件添加权限逻辑 | 稳定 |
+
+### 状态组件
+
+| 组件 | 职责 | 位置 | 状态 |
+|------|------|------|------|
+| StateContainer | 统一状态容器 | `components/common/StateContainer/` | 稳定 |
+| LoadingState | 加载状态展示 | `components/common/StateContainer/LoadingState/` | 稳定 |
+| EmptyState | 空数据状态 | `components/common/StateContainer/EmptyState/` | 稳定 |
+| ErrorBoundary | 错误边界捕获 | `components/ErrorBoundary/` | 稳定 |
+
+### 业务组件
+
+| 组件 | 职责 | 位置 | 状态 |
+|------|------|------|------|
+| BatchActions | 批量操作工具栏 | `components/common/BatchActions/` | 稳定 |
+| SearchFilters | 统一搜索筛选 | `components/common/SearchFilters/` | 稳定 |
+| ImportModal | 数据导入弹窗 | `components/ImportModal/` | 稳定 |
+| ImportHistoryTable | 导入历史记录 | `components/ImportHistoryTable/` | 稳定 |
+| GlobalSearch | 全局搜索 | `components/GlobalSearch/` | 稳定 |
+
+### 工具组件（已实现）
+
+| 组件 | 职责 | 位置 | 状态 |
+|------|------|------|------|
+| UserSelector | 用户/陪玩选择器（多处复用） | `components/UserSelector/` | ✅ 稳定 |
+| AmountDisplay | 金额展示组件（分转元、货币符号） | `components/AmountDisplay/` | ✅ 稳定 |
+| DataExport | 统一数据导出组件 | `components/DataExport/` | ✅ 稳定 |
+| AuditLog | 操作日志展示组件 | `components/AuditLog/` | ✅ 稳定 |
+| DateRangePicker | 封装带预设的日期范围选择 | `components/DateRangePicker/` | ✅ 稳定 |
+
+---
+
 ## 目录
 
 1. [PermissionGuard - 权限守卫](#permissionguard---权限守卫)

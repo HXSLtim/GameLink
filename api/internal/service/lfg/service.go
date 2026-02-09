@@ -26,14 +26,14 @@ const DefaultExpireDuration = 30 * time.Minute
 
 // CreateLFGRequest 创建LFG请求
 type CreateLFGRequest struct {
-	GameID          uint64              `json:"gameId" binding:"required"`
+	GameID          uint64               `json:"gameId" binding:"required"`
 	RequestType     model.LFGRequestType `json:"requestType" binding:"required"`
-	Title           string              `json:"title" binding:"max=64"`
-	Description     string              `json:"description" binding:"max=256"`
-	RequiredPlayers int                 `json:"requiredPlayers"`
-	MinRank         string              `json:"minRank"`
-	MaxPriceCents   int64               `json:"maxPriceCents"`
-	ExpireMinutes   int                 `json:"expireMinutes"`
+	Title           string               `json:"title" binding:"max=64"`
+	Description     string               `json:"description" binding:"max=256"`
+	RequiredPlayers int                  `json:"requiredPlayers"`
+	MinRank         string               `json:"minRank"`
+	MaxPriceCents   int64                `json:"maxPriceCents"`
+	ExpireMinutes   int                  `json:"expireMinutes"`
 }
 
 // Service LFG服务

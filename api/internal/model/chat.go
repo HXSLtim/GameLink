@@ -7,11 +7,12 @@ type ChatGroupType string
 
 // Supported chat group types.
 const (
-	ChatGroupTypePublic ChatGroupType = "public" // 公开群组
-	ChatGroupTypeOrder  ChatGroupType = "order"  // 订单房间
-	ChatGroupTypeTeam   ChatGroupType = "team"   // 组队房间
-	ChatGroupTypeLFG    ChatGroupType = "lfg"    // 快速匹配房间
-	ChatGroupTypeCustom ChatGroupType = "custom" // 自定义房间
+	ChatGroupTypePublic  ChatGroupType = "public"  // 公开群组
+	ChatGroupTypePrivate ChatGroupType = "private" // 私聊群组
+	ChatGroupTypeOrder   ChatGroupType = "order"   // 订单房间
+	ChatGroupTypeTeam    ChatGroupType = "team"    // 组队房间
+	ChatGroupTypeLFG     ChatGroupType = "lfg"     // 快速匹配房间
+	ChatGroupTypeCustom  ChatGroupType = "custom"  // 自定义房间
 )
 
 // ChatGroupStatus 房间状态 (用于游戏房间)
@@ -67,15 +68,15 @@ type ChatGroup struct {
 	MessageRetentionDays int           `json:"messageRetentionDays" gorm:"column:message_retention_days;default:30"` // 消息保留天数（默认30）
 
 	// 游戏房间字段 (Discord/Kook 风格)
-	GameID         *uint64         `json:"gameId,omitempty" gorm:"column:game_id;index"`                          // 关联游戏
-	RoomStatus     ChatGroupStatus `json:"roomStatus" gorm:"column:room_status;size:32;default:'waiting';index"`  // 房间状态
-	IsPrivate      bool            `json:"isPrivate" gorm:"column:is_private;default:false"`                      // 是否私密房间
-	Password       string          `json:"-" gorm:"column:password;size:64"`                                      // 房间密码（不返回给前端）
-	CurrentMembers int             `json:"currentMembers" gorm:"column:current_members;default:0"`                // 当前成员数
-	RelatedTeamID  *uint64         `json:"relatedTeamId,omitempty" gorm:"column:related_team_id;index"`           // 关联战队
-	RelatedLFGID   *uint64         `json:"relatedLfgId,omitempty" gorm:"column:related_lfg_id;index"`             // 关联LFG请求
-	StartedAt      *time.Time      `json:"startedAt,omitempty" gorm:"column:started_at"`                          // 游戏开始时间
-	FinishedAt     *time.Time      `json:"finishedAt,omitempty" gorm:"column:finished_at"`                        // 游戏结束时间
+	GameID         *uint64         `json:"gameId,omitempty" gorm:"column:game_id;index"`                         // 关联游戏
+	RoomStatus     ChatGroupStatus `json:"roomStatus" gorm:"column:room_status;size:32;default:'waiting';index"` // 房间状态
+	IsPrivate      bool            `json:"isPrivate" gorm:"column:is_private;default:false"`                     // 是否私密房间
+	Password       string          `json:"-" gorm:"column:password;size:64"`                                     // 房间密码（不返回给前端）
+	CurrentMembers int             `json:"currentMembers" gorm:"column:current_members;default:0"`               // 当前成员数
+	RelatedTeamID  *uint64         `json:"relatedTeamId,omitempty" gorm:"column:related_team_id;index"`          // 关联战队
+	RelatedLFGID   *uint64         `json:"relatedLfgId,omitempty" gorm:"column:related_lfg_id;index"`            // 关联LFG请求
+	StartedAt      *time.Time      `json:"startedAt,omitempty" gorm:"column:started_at"`                         // 游戏开始时间
+	FinishedAt     *time.Time      `json:"finishedAt,omitempty" gorm:"column:finished_at"`                       // 游戏结束时间
 
 	// 语音服务字段 (TRTC)
 	VoiceEnabled    bool       `json:"voiceEnabled" gorm:"column:voice_enabled;default:false"`     // 是否启用语音

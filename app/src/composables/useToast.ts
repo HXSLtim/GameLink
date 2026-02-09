@@ -1,18 +1,5 @@
 import { ref } from 'vue'
-
-export interface ToastOptions {
-  message: string
-  type?: 'success' | 'error' | 'warning' | 'info' | 'loading'
-  duration?: number
-  icon?: string
-}
-
-interface ToastState {
-  visible: boolean
-  message: string
-  type: ToastOptions['type']
-  icon?: string
-}
+import type { ToastOptions, ToastState } from '@/types/ui'
 
 const toastState = ref<ToastState>({
   visible: false,

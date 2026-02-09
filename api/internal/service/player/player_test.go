@@ -96,6 +96,38 @@ func (m *MockPlayerRepository) ListFeatured(ctx context.Context, limit int, stat
 	return args.Get(0).([]model.Player), args.Get(1).(int64), args.Error(2)
 }
 
+func (m *MockPlayerRepository) BatchUpdateRank(ctx context.Context, ids []uint64, rank string) (int64, error) {
+	args := m.Called(ctx, ids, rank)
+	if args.Get(0) == nil {
+		return 0, args.Error(1)
+	}
+	return args.Get(0).(int64), args.Error(1)
+}
+
+func (m *MockPlayerRepository) BatchUpdateHourlyRate(ctx context.Context, ids []uint64, rateCents int64) (int64, error) {
+	args := m.Called(ctx, ids, rateCents)
+	if args.Get(0) == nil {
+		return 0, args.Error(1)
+	}
+	return args.Get(0).(int64), args.Error(1)
+}
+
+func (m *MockPlayerRepository) BatchUpdateStatus(ctx context.Context, ids []uint64, status model.VerificationStatus) (int64, error) {
+	args := m.Called(ctx, ids, status)
+	if args.Get(0) == nil {
+		return 0, args.Error(1)
+	}
+	return args.Get(0).(int64), args.Error(1)
+}
+
+func (m *MockPlayerRepository) BatchDelete(ctx context.Context, ids []uint64) (int64, error) {
+	args := m.Called(ctx, ids)
+	if args.Get(0) == nil {
+		return 0, args.Error(1)
+	}
+	return args.Get(0).(int64), args.Error(1)
+}
+
 // MockUserRepository is a mock implementation of UserRepository
 type MockUserRepository struct {
 	mock.Mock

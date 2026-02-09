@@ -1,10 +1,18 @@
 <template>
-  <GlCard :shadow="false" bordered class="coupon-card" @click="$emit('click')">
+  <GlCard :shadow="false" bordered clickable class="coupon-card" @click="$emit('click')">
     <view class="coupon-row">
       <text class="coupon-icon">🎫</text>
       <text class="coupon-label">优惠券</text>
       <view class="coupon-right">
-        <text v-if="selectedCoupon" class="coupon-value">-¥{{ selectedCoupon.discount }}</text>
+        <view v-if="selectedCoupon" class="coupon-value">
+          <text>-</text>
+          <PriceTag
+            :amount="selectedCoupon.discount"
+            amount-unit="yuan"
+            size="small"
+            :show-decimal="false"
+          />
+        </view>
         <text v-else class="coupon-placeholder">
           {{ availableCount ? `${availableCount}张可用` : '暂无可用' }}
         </text>
@@ -16,14 +24,8 @@
 
 <script setup lang="ts">
 import GlCard from '@/components/gl/Card/index.vue'
-
-export interface Coupon {
-  id: number
-  name: string
-  discount: number
-  minAmount?: number
-  expireAt?: string
-}
+import PriceTag from '@/components/PriceTag/index.vue'
+import type { Coupon } from '@/types/coupon'
 
 interface Props {
   selectedCoupon?: Coupon | null
@@ -41,39 +43,45 @@ defineEmits<{
 
 <style lang="scss" scoped>
 .coupon-card {
-  cursor: pointer;
 }
 
 .coupon-row {
   display: flex;
   align-items: center;
-  gap: 12rpx;
+  gap: var(--spacing-xs);
 }
 
 .coupon-icon {
-  font-size: 32rpx;
+  font-size: var(--font-base);
 }
 
 .coupon-label {
   flex: 1;
-  font-size: 28rpx;
+  font-size: var(--font-md);
   color: var(--color-text);
 }
 
 .coupon-right {
   display: flex;
   align-items: center;
-  gap: 8rpx;
+  gap: var(--spacing-xs);
 }
 
 .coupon-value {
-  font-size: 28rpx;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4rpx;
+  font-size: var(--font-md);
   font-weight: 600;
   color: var(--color-error);
 }
 
+.coupon-value :deep(.price-tag) {
+  color: var(--color-error);
+}
+
 .coupon-placeholder {
-  font-size: 26rpx;
+  font-size: var(--font-sm);
   color: var(--color-text-secondary);
 }
 </style>

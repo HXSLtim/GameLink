@@ -13,8 +13,7 @@
           <text class="service-desc">{{ service.description }}</text>
         </view>
         <view class="service-price">
-          <text class="price-value">¥{{ service.price }}</text>
-          <text class="price-unit">/{{ service.unit || '局' }}</text>
+          <PriceTag :amount="service.price" amount-unit="yuan" :unit="service.unit || '局'" size="small" />
         </view>
         <view class="radio-box" :class="{ checked: modelValue === service.id }">
           <uv-icon v-if="modelValue === service.id" name="checkbox-mark" size="12" color="#fff"></uv-icon>
@@ -26,17 +25,11 @@
 
 <script setup lang="ts">
 import GlCard from '@/components/gl/Card/index.vue'
-
-export interface ServiceOption {
-  id: number
-  name: string
-  description?: string
-  price: number
-  unit?: string
-}
+import PriceTag from '@/components/PriceTag/index.vue'
+import type { PlayerServiceData } from '@/types/player'
 
 interface Props {
-  services: ServiceOption[]
+  services: PlayerServiceData[]
   modelValue?: number
 }
 
@@ -51,22 +44,24 @@ defineEmits<{
 .services-list {
   display: flex;
   flex-direction: column;
-  gap: 16rpx;
+  gap: var(--spacing-xs);
 }
 
 .service-option {
   display: flex;
   align-items: center;
-  gap: 20rpx;
-  padding: 24rpx;
-  background: var(--color-bg-secondary);
-  border-radius: 16rpx;
-  border: 2rpx solid var(--color-border);
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-sm);
+  border: 1rpx solid var(--color-border);
   transition: all 0.2s;
+  cursor: pointer;
+  @include press-effect;
   
   &.selected {
-    border-color: var(--color-primary);
-    background: rgba(0, 210, 106, 0.08);
+    border-color: var(--color-border);
+    background: var(--color-bg-secondary);
   }
 }
 
@@ -77,15 +72,16 @@ defineEmits<{
 
 .service-name {
   display: block;
-  font-size: 30rpx;
+  font-size: var(--font-md);
   font-weight: 600;
   color: var(--color-text);
-  margin-bottom: 6rpx;
+  margin-bottom: var(--spacing-xs);
 }
 
 .service-desc {
-  font-size: 24rpx;
+  font-size: var(--font-xs);
   color: var(--color-text-secondary);
+  @include text-ellipsis;
 }
 
 .service-price {
@@ -93,22 +89,11 @@ defineEmits<{
   text-align: right;
 }
 
-.price-value {
-  font-size: 32rpx;
-  font-weight: 700;
-  color: var(--color-primary);
-}
-
-.price-unit {
-  font-size: 22rpx;
-  color: var(--color-text-secondary);
-}
-
 .radio-box {
-  width: 40rpx;
-  height: 40rpx;
-  border-radius: 50%;
-  border: 2rpx solid var(--color-border);
+  width: 32rpx;
+  height: 32rpx;
+  border-radius: var(--radius-sm);
+  border: 1rpx solid var(--color-border);
   display: flex;
   align-items: center;
   justify-content: center;

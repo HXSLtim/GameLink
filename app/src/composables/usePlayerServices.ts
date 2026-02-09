@@ -3,33 +3,22 @@
  */
 import { ref, computed, reactive } from 'vue'
 import { getPlayerServices, createPlayerService, updatePlayerService, deletePlayerService } from '@/api/player'
-import type { PlayerService } from '@/components/ServiceCard/index.vue'
-import type { StatItem } from '@/components/StatsCard/index.vue'
-
-interface ServiceForm {
-  gameId?: number
-  gameName: string
-  serviceType: string
-  serviceName: string
-  rankId?: number
-  rankName: string
-  price: number
-  unit: string
-  description: string
-}
+import { confirmDialog } from '@/composables/useConfirmDialog'
+import type { PlayerServiceCardData, PlayerServiceForm } from '@/types/player'
+import type { StatItem } from '@/types/ui'
 
 export function usePlayerServices() {
   // 状态
   const loading = ref(true)
   const showEditor = ref(false)
   const saving = ref(false)
-  const editingService = ref<PlayerService | null>(null)
+  const editingService = ref<PlayerServiceCardData | null>(null)
   
   // 数据
-  const services = ref<PlayerService[]>([])
+  const services = ref<PlayerServiceCardData[]>([])
   
   // 表单
-  const form = reactive<ServiceForm>({
+  const form = reactive<PlayerServiceForm>({
     gameId: undefined,
     gameName: '',
     serviceType: '',
@@ -56,7 +45,7 @@ export function usePlayerServices() {
     loading.value = true
     try {
       const res = await getPlayerServices()
-      services.value = ((res.data as any)?.items || res.data || []).map((s: any): PlayerService => ({
+      services.value = ((res.data as any)?.items || res.data || []).map((s: any): PlayerServiceCardData => ({
         id: s.id,
         gameId: s.gameId,
         gameName: s.gameName || '未知游戏',
@@ -83,7 +72,7 @@ export function usePlayerServices() {
   }
   
   // 打开编辑
-  const editService = (service: PlayerService) => {
+  const editService = (service: PlayerServiceCardData) => {
     editingService.value = service
     form.gameId = service.gameId
     form.gameName = service.gameName
@@ -150,7 +139,7 @@ export function usePlayerServices() {
   }
   
   // 切换状态
-  const toggleStatus = async (service: PlayerService) => {
+  const toggleStatus = async (service: PlayerServiceCardData) => {
     try {
       await updatePlayerService(service.id, { isOnline: !service.isOnline })
       service.isOnline = !service.isOnline
@@ -161,22 +150,19 @@ export function usePlayerServices() {
   }
   
   // 删除服务
-  const handleDelete = (service: PlayerService) => {
-    uni.showModal({
+  const handleDelete = async (service: PlayerServiceCardData) => {
+    const confirmed = await confirmDialog({
       title: '确认删除',
       content: `确定要删除「${service.serviceName}」服务吗？`,
-      success: async (res) => {
-        if (res.confirm) {
-          try {
-            await deletePlayerService(service.id)
-            services.value = services.value.filter(s => s.id !== service.id)
-            uni.showToast({ title: '删除成功', icon: 'success' })
-          } catch (error) {
-            uni.showToast({ title: '删除失败', icon: 'none' })
-          }
-        }
-      }
     })
+    if (!confirmed) return
+    try {
+      await deletePlayerService(service.id)
+      services.value = services.value.filter(s => s.id !== service.id)
+      uni.showToast({ title: '删除成功', icon: 'success' })
+    } catch (error) {
+      uni.showToast({ title: '删除失败', icon: 'none' })
+    }
   }
   
   // 导航

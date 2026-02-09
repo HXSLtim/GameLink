@@ -4,49 +4,11 @@
 import { ref, computed, reactive } from 'vue'
 import { getOrderDetail, cancelOrder as cancelOrderApi, completeOrder as completeOrderApi, submitReview as submitReviewApi, type OrderDetail as ApiOrderDetail } from '@/api/order'
 import { payOrder } from '@/api/wallet'
-import type { InfoItem } from '@/components/OrderInfoSection/index.vue'
-import type { FeeItem } from '@/components/OrderFeeSection/index.vue'
-
-interface PlayerInfo {
-  id: number
-  nickname: string
-  avatar?: string
-  rating?: number
-  orderCount?: number
-}
-
-interface Review {
-  id: number
-  rating: number
-  content: string
-  tags?: string[]
-  images?: string[]
-  createdAt: string
-}
-
-interface OrderDetailData {
-  id: number
-  orderNo: string
-  status: string
-  player: PlayerInfo
-  gameName: string
-  serviceName: string
-  quantity: number
-  unit: string
-  gameAccount?: string
-  remark?: string
-  serviceFee: number
-  couponDiscount: number
-  vipDiscount: number
-  totalAmount: number
-  paymentMethod?: string
-  createdAt: string
-  paidAt?: string
-  startedAt?: string
-  completedAt?: string
-  scheduledStart?: string
-  review?: Review
-}
+import { confirmDialog } from '@/composables/useConfirmDialog'
+import type { FeeItem, InfoItem, OrderActionKey } from '@/types/order'
+import { formatDateTimeSafe } from '@/utils/format'
+import type { OrderDetailData } from '@/types/order'
+import { normalizeOrderStatus } from '@/components/OrderCard/utils'
 
 export function useOrderDetail() {
   // 状态
@@ -68,13 +30,6 @@ export function useOrderDetail() {
   
   const reviewTags = ['技术过硬', '声音好听', '态度温柔', '有耐心', '准时上线', '沟通顺畅']
   
-  // 格式化时间
-  const formatTime = (dateStr?: string) => {
-    if (!dateStr) return '-'
-    const date = new Date(dateStr)
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
-  }
-  
   // 服务信息
   const serviceInfo = computed((): InfoItem[] => {
     const o = order.value
@@ -93,12 +48,12 @@ export function useOrderDetail() {
     const o = order.value
     const items: InfoItem[] = [
       { label: '订单编号', value: o.orderNo || '-', copyable: true },
-      { label: '创建时间', value: formatTime(o.createdAt) },
+      { label: '创建时间', value: formatDateTimeSafe(o.createdAt) },
     ]
-    if (o.scheduledStart) items.push({ label: '预约时间', value: formatTime(o.scheduledStart) })
-    if (o.paidAt) items.push({ label: '支付时间', value: formatTime(o.paidAt) })
-    if (o.startedAt) items.push({ label: '服务开始', value: formatTime(o.startedAt) })
-    if (o.completedAt) items.push({ label: '完成时间', value: formatTime(o.completedAt) })
+    if (o.scheduledStart) items.push({ label: '预约时间', value: formatDateTimeSafe(o.scheduledStart) })
+    if (o.paidAt) items.push({ label: '支付时间', value: formatDateTimeSafe(o.paidAt) })
+    if (o.startedAt) items.push({ label: '服务开始', value: formatDateTimeSafe(o.startedAt) })
+    if (o.completedAt) items.push({ label: '完成时间', value: formatDateTimeSafe(o.completedAt) })
     return items
   })
   
@@ -125,7 +80,7 @@ export function useOrderDetail() {
       order.value = {
         id: data.id,
         orderNo: data.orderNo,
-        status: data.status,
+        status: normalizeOrderStatus(data.status, 'user'),
         player: {
           id: data.playerId,
           nickname: data.playerNickname || '陪玩师',
@@ -189,7 +144,7 @@ export function useOrderDetail() {
   }
   
   // 操作处理
-  const handleAction = async (action: string) => {
+  const handleAction = async (action: OrderActionKey) => {
     switch (action) {
       case 'pay':
         await handlePay()
@@ -229,39 +184,33 @@ export function useOrderDetail() {
   }
   
   const handleCancel = async () => {
-    uni.showModal({
+    const confirmed = await confirmDialog({
       title: '确认取消',
       content: '确定要取消此订单吗？',
-      success: async (res) => {
-        if (res.confirm) {
-          try {
-            await cancelOrderApi(orderId.value)
-            uni.showToast({ title: '订单已取消', icon: 'success' })
-            loadOrderDetail(orderId.value)
-          } catch (error: any) {
-            uni.showToast({ title: error?.message || '取消失败', icon: 'none' })
-          }
-        }
-      }
     })
+    if (!confirmed) return
+    try {
+      await cancelOrderApi(orderId.value)
+      uni.showToast({ title: '订单已取消', icon: 'success' })
+      loadOrderDetail(orderId.value)
+    } catch (error: any) {
+      uni.showToast({ title: error?.message || '取消失败', icon: 'none' })
+    }
   }
   
   const handleComplete = async () => {
-    uni.showModal({
+    const confirmed = await confirmDialog({
       title: '确认完成',
       content: '确定服务已完成？',
-      success: async (res) => {
-        if (res.confirm) {
-          try {
-            await completeOrderApi(orderId.value)
-            uni.showToast({ title: '订单已完成', icon: 'success' })
-            loadOrderDetail(orderId.value)
-          } catch (error: any) {
-            uni.showToast({ title: error?.message || '操作失败', icon: 'none' })
-          }
-        }
-      }
     })
+    if (!confirmed) return
+    try {
+      await completeOrderApi(orderId.value)
+      uni.showToast({ title: '订单已完成', icon: 'success' })
+      loadOrderDetail(orderId.value)
+    } catch (error: any) {
+      uni.showToast({ title: error?.message || '操作失败', icon: 'none' })
+    }
   }
   
   const handleRefund = () => {

@@ -13,20 +13,6 @@ const Menu = React.lazy(() => import('@/pages/sys/menu'));
 const Permission = React.lazy(() => import('@/pages/sys/permission'));
 const Role = React.lazy(() => import('@/pages/admin/Role'));
 
-// 用户端组件
-const UserHome = React.lazy(() => import('@/pages/user/Home'));
-const UserOrders = React.lazy(() => import('@/pages/user/Orders'));
-
-// 陪玩师端组件
-const PlayerHome = React.lazy(() => import('@/pages/player/Home'));
-const PlayerOrders = React.lazy(() => import('@/pages/player/Orders'));
-const PlayerEarnings = React.lazy(() => import('@/pages/player/Earnings'));
-const PlayerCertification = React.lazy(() => import('@/pages/player/Certification'));
-
-// 用户端扩展组件
-const UserWallet = React.lazy(() => import('@/pages/user/Wallet'));
-const UserRanking = React.lazy(() => import('@/pages/user/Ranking'));
-
 // 管理端扩展组件
 const AdminService = React.lazy(() => import('@/pages/admin/Service'));
 const AdminAlert = React.lazy(() => import('@/pages/admin/Alert'));
@@ -107,28 +93,6 @@ export const componentMap: Record<string, React.LazyExoticComponent<React.Compon
     'biz/commission': React.lazy(() => import('@/pages/admin/Commission')),
     'finance/withdraw': React.lazy(() => import('@/pages/admin/Withdraw')),
     'finance/commission': React.lazy(() => import('@/pages/admin/Commission')),
-    
-    // 用户端
-    'UserHome': UserHome,
-    'UserOrders': UserOrders,
-    'user/home': UserHome,
-    'user/orders': UserOrders,
-    
-    // 陪玩师端
-    'PlayerHome': PlayerHome,
-    'PlayerOrders': PlayerOrders,
-    'PlayerEarnings': PlayerEarnings,
-    'PlayerCertification': PlayerCertification,
-    'player/home': PlayerHome,
-    'player/orders': PlayerOrders,
-    'player/earnings': PlayerEarnings,
-    'player/certification': PlayerCertification,
-    
-    // 用户端扩展
-    'UserWallet': UserWallet,
-    'UserRanking': UserRanking,
-    'user/wallet': UserWallet,
-    'user/ranking': UserRanking,
     
     // 管理端扩展
     'AdminService': AdminService,
@@ -223,6 +187,45 @@ export const componentMap: Record<string, React.LazyExoticComponent<React.Compon
     // 个人中心
     'Profile': React.lazy(() => import('@/pages/admin/Profile')),
     'admin/profile': React.lazy(() => import('@/pages/admin/Profile')),
+
+    // 实时监控大屏
+    'Monitor': React.lazy(() => import('@/pages/admin/Monitor')),
+    'admin/monitor': React.lazy(() => import('@/pages/admin/Monitor')),
+
+    // 聊天管理
+    'ChatRooms': React.lazy(() => import('@/pages/adminChat/rooms')),
+    'ChatRecords': React.lazy(() => import('@/pages/adminChat/records')),
+    'admin/chat/rooms': React.lazy(() => import('@/pages/adminChat/rooms')),
+    'admin/chat/records': React.lazy(() => import('@/pages/adminChat/records')),
+
+    // 审计日志
+    'Audit': React.lazy(() => import('@/pages/sys/log')),
+    'admin/sys/log': React.lazy(() => import('@/pages/sys/log')),
+
+    // 告警管理
+    'Alert': AdminAlert,
+    'admin/alert': AdminAlert,
+
+    // 用户角色分配
+    'UserRole': React.lazy(() => import('@/pages/sys/user-role')),
+    'admin/sys/user-role': React.lazy(() => import('@/pages/sys/user-role')),
+
+    // 支付记录
+    'admin/payment/payment-records': React.lazy(() => import('@/pages/admin/PaymentRecords')),
+
+    // 结算公司管理（兼容旧路径）
+    'Settlement': React.lazy(() => import('@/pages/admin/Settlement')),
+    'admin/settlement': React.lazy(() => import('@/pages/admin/Settlement')),
+    'SettlementPlayers': React.lazy(() => import('@/pages/admin/Settlement/Players')),
+    'admin/settlement/players': React.lazy(() => import('@/pages/admin/Settlement/Players')),
+
+    // 评价设置
+    'ReviewSettings': React.lazy(() => import('@/pages/admin/Review/Settings')),
+    'admin/reviews/settings': React.lazy(() => import('@/pages/admin/Review/Settings')),
+
+    // 评价详情
+    'ReviewDetail': React.lazy(() => import('@/pages/admin/Review/Detail')),
+    'admin/reviews/detail': React.lazy(() => import('@/pages/admin/Review/Detail')),
 };
 
 export const getComponent = (componentKey: string) => {

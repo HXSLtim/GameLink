@@ -14,13 +14,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-
-export interface ServiceMessage {
-  id: number
-  content: string
-  isMe: boolean
-  createdAt: string
-}
+import type { ServiceMessage } from '@/types/customer-service'
 
 interface Props {
   message: ServiceMessage
@@ -39,8 +33,8 @@ const formattedTime = computed(() => {
 <style lang="scss" scoped>
 .chat-item {
   display: flex;
-  gap: 12rpx;
-  margin-bottom: 24rpx;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-md);
 
   &.mine {
     flex-direction: row-reverse;
@@ -54,12 +48,13 @@ const formattedTime = computed(() => {
 .msg-avatar {
   width: 64rpx;
   height: 64rpx;
-  background: linear-gradient(135deg, var(--color-primary), #00B85C);
-  border-radius: 50%;
+  background: var(--color-bg-secondary);
+  border: 1rpx solid var(--color-border);
+  border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32rpx;
+  font-size: var(--font-base);
   flex-shrink: 0;
 }
 
@@ -68,15 +63,15 @@ const formattedTime = computed(() => {
 }
 
 .msg-bubble {
-  padding: 16rpx 20rpx;
+  padding: var(--spacing-sm) var(--spacing-md);
   background: var(--color-bg-card);
-  border-radius: 16rpx;
-  border-top-left-radius: 4rpx;
+  border-radius: var(--radius-md);
+  border-top-left-radius: var(--radius-sm);
 
   &.mine {
     background: var(--color-primary);
-    border-radius: 16rpx;
-    border-top-right-radius: 4rpx;
+    border-radius: var(--radius-md);
+    border-top-right-radius: var(--radius-sm);
 
     text {
       color: #FFFFFF;
@@ -84,7 +79,7 @@ const formattedTime = computed(() => {
   }
 
   text {
-    font-size: 28rpx;
+    font-size: var(--font-md);
     color: var(--color-text);
     line-height: 1.6;
     white-space: pre-wrap;
@@ -93,8 +88,8 @@ const formattedTime = computed(() => {
 
 .msg-time {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--font-xs);
   color: var(--color-text-placeholder);
-  margin-top: 8rpx;
+  margin-top: var(--spacing-xs);
 }
 </style>

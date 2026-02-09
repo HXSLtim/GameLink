@@ -1,17 +1,19 @@
 <template>
-  <view class="agreement-page page-container">
-    <!-- 顶部导航 -->
-    <NavBar :title="pageTitle" @back="goBack" />
+  <PageShell class="agreement-page" padding="0">
+    <template #header>
+      <!-- 顶部导航 -->
+      <NavBar :title="pageTitle" @back="goBack" />
+    </template>
 
     <!-- 内容区域 -->
-    <scroll-view class="content-scroll" scroll-y>
-      <AgreementContent :content="agreementContent" />
-      <view class="bottom-placeholder"></view>
-    </scroll-view>
+    <AgreementContent :content="agreementContent" />
+    <view class="bottom-placeholder"></view>
 
-    <!-- PC 端侧边栏 -->
-    <CustomTabBar :show-mobile-tab-bar="false" />
-  </view>
+    <template #footer>
+      <!-- PC 端侧边栏 -->
+      <CustomTabBar :show-mobile-tab-bar="false" />
+    </template>
+  </PageShell>
 </template>
 
 <script setup lang="ts">
@@ -19,11 +21,13 @@ import { ref, computed } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 // Pattern 组件
 import NavBar from '@/components/NavBar/index.vue'
+import PageShell from '@/components/layout/PageShell/index.vue'
 // Business 组件
 import AgreementContent from '@/components/AgreementContent/index.vue'
 import CustomTabBar from '@/components/CustomTabBar/index.vue'
 // 数据
-import { agreements, agreementTitles, type AgreementType } from '@/data/agreements'
+import { agreements, agreementTitles } from '@/data/agreements'
+import type { AgreementType } from '@/types/agreement'
 
 const type = ref<AgreementType>('user')
 
@@ -42,18 +46,7 @@ onLoad((options) => {
 
 <style lang="scss" scoped>
 .agreement-page {
-  height: 100vh;
-  height: 100dvh;
-  display: flex;
-  flex-direction: column;
   background: var(--color-bg-card);
-  box-sizing: border-box;
-  overflow: hidden;
-}
-
-.content-scroll {
-  flex: 1;
-  overflow-y: auto;
 }
 
 .bottom-placeholder {

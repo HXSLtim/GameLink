@@ -27,7 +27,7 @@ func TestChatService_SensitiveWordFilter(t *testing.T) {
 	reportRepo := chatrepo.NewChatReportRepository(db)
 	memCache := cache.NewMemory()
 
-	svc := chat.NewChatService(groupRepo, memberRepo, messageRepo, reportRepo, memCache)
+	svc := chat.NewChatService(groupRepo, memberRepo, messageRepo, reportRepo, nil, memCache)
 
 	// Create test data
 	user := CreateUniqueTestUser(t, db, "sensitive_user")
@@ -67,7 +67,7 @@ func TestChatService_DeleteMessage(t *testing.T) {
 	reportRepo := chatrepo.NewChatReportRepository(db)
 	memCache := cache.NewMemory()
 
-	svc := chat.NewChatService(groupRepo, memberRepo, messageRepo, reportRepo, memCache)
+	svc := chat.NewChatService(groupRepo, memberRepo, messageRepo, reportRepo, nil, memCache)
 
 	// Create test data
 	user := CreateUniqueTestUser(t, db, "delete_msg_user")
@@ -174,7 +174,7 @@ func TestChatService_MessageRateLimit(t *testing.T) {
 	reportRepo := chatrepo.NewChatReportRepository(db)
 	memCache := cache.NewMemory()
 
-	svc := chat.NewChatService(groupRepo, memberRepo, messageRepo, reportRepo, memCache)
+	svc := chat.NewChatService(groupRepo, memberRepo, messageRepo, reportRepo, nil, memCache)
 
 	// Create test data
 	user := CreateUniqueTestUser(t, db, "rate_limit_user")
@@ -247,7 +247,7 @@ func TestChatService_ImageMessage(t *testing.T) {
 	reportRepo := chatrepo.NewChatReportRepository(db)
 	memCache := cache.NewMemory()
 
-	svc := chat.NewChatService(groupRepo, memberRepo, messageRepo, reportRepo, memCache)
+	svc := chat.NewChatService(groupRepo, memberRepo, messageRepo, reportRepo, nil, memCache)
 
 	// Create test data
 	user := CreateUniqueTestUser(t, db, "image_msg_user")
@@ -313,7 +313,7 @@ func TestChatService_MuteUser(t *testing.T) {
 	reportRepo := chatrepo.NewChatReportRepository(db)
 	memCache := cache.NewMemory()
 
-	svc := chat.NewChatService(groupRepo, memberRepo, messageRepo, reportRepo, memCache)
+	svc := chat.NewChatService(groupRepo, memberRepo, messageRepo, reportRepo, nil, memCache)
 
 	// Create test data
 	user := CreateUniqueTestUser(t, db, "mute_user")

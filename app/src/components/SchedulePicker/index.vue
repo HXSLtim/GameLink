@@ -93,27 +93,30 @@ const onTimeConfirm = (e: any) => {
 <style lang="scss" scoped>
 .schedule-row {
   display: flex;
-  gap: 24rpx;
+  gap: var(--spacing-md);
 }
 
 .schedule-item {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 12rpx;
-  padding: 16rpx 20rpx;
-  background: var(--color-bg-secondary);
-  border-radius: 12rpx;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-md);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-sm);
+  border: 1rpx solid var(--color-border);
+  cursor: pointer;
+  @include press-effect;
 }
 
 .schedule-label {
-  font-size: 26rpx;
+  font-size: var(--font-xs);
   color: var(--color-text-secondary);
 }
 
 .schedule-value {
   flex: 1;
-  font-size: 28rpx;
+  font-size: var(--font-sm);
   color: var(--color-text);
   text-align: right;
 

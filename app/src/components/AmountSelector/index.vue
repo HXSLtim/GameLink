@@ -8,8 +8,22 @@
         :class="{ selected: modelValue === option.value }"
         @tap="$emit('update:modelValue', option.value)"
       >
-        <text class="amount-value">¥{{ option.value }}</text>
-        <text v-if="option.bonus" class="amount-bonus">送 ¥{{ option.bonus }}</text>
+        <PriceTag
+          class="amount-value"
+          :amount="option.value"
+          amount-unit="yuan"
+          size="small"
+          :show-decimal="false"
+        />
+        <view v-if="option.bonus" class="amount-bonus">
+          <text>送</text>
+          <PriceTag
+            :amount="option.bonus"
+            amount-unit="yuan"
+            size="small"
+            :show-decimal="false"
+          />
+        </view>
       </view>
     </view>
     
@@ -18,13 +32,15 @@
       <text class="custom-label">自定义金额</text>
       <view class="custom-input-wrap">
         <text class="currency">¥</text>
-        <input 
-          type="digit"
-          :value="customValue"
+        <GlInput
           class="custom-input"
+          type="digit"
+          size="small"
+          variant="plain"
+          :model-value="customValue ?? ''"
           :placeholder="placeholder"
           @focus="$emit('update:modelValue', 0)"
-          @input="(e: any) => $emit('update:customValue', e.detail.value)"
+          @update:modelValue="(value) => $emit('update:customValue', value)"
         />
       </view>
     </view>
@@ -35,11 +51,9 @@
 
 <script setup lang="ts">
 import GlCard from '@/components/gl/Card/index.vue'
-
-export interface AmountOption {
-  value: number
-  bonus?: number
-}
+import GlInput from '@/components/gl/Input/index.vue'
+import PriceTag from '@/components/PriceTag/index.vue'
+import type { AmountOption } from '@/types/wallet'
 
 interface Props {
   options: AmountOption[]
@@ -64,8 +78,8 @@ defineEmits<{
 .amount-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16rpx;
-  margin-bottom: 24rpx;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-md);
 }
 
 .amount-option {
@@ -73,40 +87,57 @@ defineEmits<{
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 24rpx 16rpx;
-  background: var(--color-bg-secondary);
-  border-radius: 16rpx;
-  border: 2rpx solid var(--color-border);
+  padding: var(--spacing-sm) var(--spacing-sm);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-sm);
+  border: 1rpx solid var(--color-border);
   transition: all 0.2s;
+  cursor: pointer;
+  @include press-effect;
   
   &.selected {
-    border-color: var(--color-primary);
-    background: rgba(0, 210, 106, 0.1);
+    border-color: var(--color-border);
+    background: var(--color-bg-secondary);
   }
 }
 
 .amount-value {
-  font-size: 36rpx;
-  font-weight: 700;
+  font-size: var(--font-md);
+  font-weight: 600;
   color: var(--color-text);
 }
 
-.amount-bonus {
-  font-size: 22rpx;
-  color: var(--color-primary);
-  margin-top: 8rpx;
+.amount-value :deep(.price-tag) {
+  color: var(--color-text);
+}
+
+.amount-value :deep(.price-tag .amount) {
   font-weight: 600;
+}
+
+.amount-bonus {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4rpx;
+  font-size: var(--font-xs);
+  color: var(--color-text-secondary);
+  margin-top: var(--spacing-xs);
+  font-weight: 600;
+}
+
+.amount-bonus :deep(.price-tag) {
+  color: var(--color-text-secondary);
 }
 
 .custom-amount {
   display: flex;
   align-items: center;
-  gap: 20rpx;
-  margin-bottom: 16rpx;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
 }
 
 .custom-label {
-  font-size: 28rpx;
+  font-size: var(--font-sm);
   color: var(--color-text);
   flex-shrink: 0;
 }
@@ -115,27 +146,31 @@ defineEmits<{
   flex: 1;
   display: flex;
   align-items: center;
-  padding: 16rpx 20rpx;
-  background: var(--color-bg-secondary);
-  border-radius: 12rpx;
-  border: 2rpx solid var(--color-border);
+  padding: var(--spacing-xs) var(--spacing-md);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-sm);
+  border: 1rpx solid var(--color-border);
 }
 
 .currency {
-  font-size: 32rpx;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--color-text);
-  margin-right: 8rpx;
+  margin-right: var(--spacing-xs);
 }
 
 .custom-input {
   flex: 1;
-  font-size: 32rpx;
-  color: var(--color-text);
+  min-width: 0;
+  
+  :deep(.gl-input__field) {
+    font-size: var(--font-base);
+    color: var(--color-text);
+  }
 }
 
 .amount-tip {
-  font-size: 24rpx;
+  font-size: var(--font-sm);
   color: var(--color-text-secondary);
 }
 </style>

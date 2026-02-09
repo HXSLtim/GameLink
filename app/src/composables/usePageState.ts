@@ -1,18 +1,11 @@
 import { ref, computed } from 'vue'
-import type { PageStateType } from '@/components/PageState.vue'
-
-interface UsePageStateOptions {
-  /** 初始状态 */
-  initialState?: PageStateType
-  /** 是否需要登录 */
-  requireAuth?: boolean
-}
+import type { PageStateType, PageStateOptions } from '@/types/page'
 
 /**
  * 页面状态管理 Hook
  * 统一处理 loading/error/empty/content 状态
  */
-export function usePageState(options: UsePageStateOptions = {}) {
+export function usePageState(options: PageStateOptions = {}) {
   const { initialState = 'loading', requireAuth = false } = options
   
   const state = ref<PageStateType>(initialState)

@@ -4,7 +4,8 @@
 import { ref, computed } from 'vue'
 import { useListPage } from './useListPage'
 import { getFavorites, batchRemoveFavorites, type FavoritePlayer as ApiFavoritePlayer } from '@/api/favorite'
-import type { FavoritePlayerData } from '@/components/FavoritePlayerCard/index.vue'
+import type { FavoritePlayerData } from '@/types/player'
+import { confirmDialog } from '@/composables/useConfirmDialog'
 
 export function useFavoriteList() {
   // 编辑模式
@@ -16,7 +17,7 @@ export function useFavoriteList() {
     fetchFn: async (params) => {
       const res = await getFavorites({
         page: params.page,
-        pageSize: params.pageSize,
+        page_size: params.pageSize,
       }, { showError: false })
       return res
     },
@@ -34,7 +35,7 @@ export function useFavoriteList() {
         games: item.games || [],
       }))
     },
-    pageSize: 20,
+    page_size: 20,
   })
   
   // 全选状态
@@ -72,36 +73,34 @@ export function useFavoriteList() {
   // 删除选中
   const deleteSelected = async () => {
     if (selectedIds.value.length === 0) return
-    
-    uni.showModal({
+
+    const confirmed = await confirmDialog({
       title: '确认取消收藏',
       content: `确定要取消收藏选中的 ${selectedIds.value.length} 位陪玩师吗？`,
-      success: async (res) => {
-        if (res.confirm) {
-          try {
-            uni.showLoading({ title: '处理中...' })
-            await batchRemoveFavorites(selectedIds.value)
-            uni.hideLoading()
-            uni.showToast({ title: '已取消收藏', icon: 'success' })
-            
-            // 移除已删除的项
-            listPage.list.value = listPage.list.value.filter(
-              item => !selectedIds.value.includes(item.id)
-            )
-            selectedIds.value = []
-            
-            // 如果列表为空，退出编辑模式
-            if (listPage.list.value.length === 0) {
-              isEditMode.value = false
-              listPage.pageState.value = 'empty'
-            }
-          } catch (error: any) {
-            uni.hideLoading()
-            uni.showToast({ title: error?.message || '操作失败', icon: 'none' })
-          }
-        }
-      }
     })
+    if (!confirmed) return
+
+    try {
+      uni.showLoading({ title: '处理中...' })
+      await batchRemoveFavorites(selectedIds.value)
+      uni.hideLoading()
+      uni.showToast({ title: '已取消收藏', icon: 'success' })
+      
+      // 移除已删除的项
+      listPage.list.value = listPage.list.value.filter(
+        item => !selectedIds.value.includes(item.id)
+      )
+      selectedIds.value = []
+      
+      // 如果列表为空，退出编辑模式
+      if (listPage.list.value.length === 0) {
+        isEditMode.value = false
+        listPage.pageState.value = 'empty'
+      }
+    } catch (error: any) {
+      uni.hideLoading()
+      uni.showToast({ title: error?.message || '操作失败', icon: 'none' })
+    }
   }
   
   // 导航

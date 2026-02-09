@@ -1,5 +1,5 @@
 <template>
-  <GlCard :title="title" :shadow="false" bordered class="section-card">
+  <SectionCard :title="title">
     <view class="settings-list">
       <view 
         v-for="item in items" 
@@ -15,11 +15,11 @@
         <!-- 右侧内容 -->
         <text v-if="item.value" class="item-value">{{ item.value }}</text>
         
-        <switch 
+        <GlSwitch 
           v-if="item.type === 'switch'"
-          :checked="item.checked"
-          color="#00D26A"
-          @change="(e: any) => $emit('switch', item.key, e.detail.value)"
+          :model-value="!!item.checked"
+          size="small"
+          @update:modelValue="(value) => $emit('switch', item.key, value)"
         />
         
         <uv-icon 
@@ -30,21 +30,13 @@
         ></uv-icon>
       </view>
     </view>
-  </GlCard>
+  </SectionCard>
 </template>
 
 <script setup lang="ts">
-import GlCard from '@/components/gl/Card/index.vue'
-
-export interface SettingsItem {
-  key: string
-  label: string
-  icon?: string
-  iconColor?: string
-  value?: string
-  type?: 'link' | 'switch'
-  checked?: boolean
-}
+import SectionCard from '@/components/SectionCard/index.vue'
+import GlSwitch from '@/components/gl/Switch/index.vue'
+import type { SettingsItem } from '@/types/ui'
 
 interface Props {
   title: string
@@ -66,10 +58,6 @@ const handleClick = (item: SettingsItem) => {
 </script>
 
 <style lang="scss" scoped>
-.section-card {
-  margin: 0 24rpx 20rpx;
-}
-
 .settings-list {
   display: flex;
   flex-direction: column;
@@ -78,32 +66,38 @@ const handleClick = (item: SettingsItem) => {
 .settings-item {
   display: flex;
   align-items: center;
-  padding: 28rpx 0;
+  padding: var(--spacing-sm) 0;
   border-bottom: 1rpx solid var(--color-border);
+  transition: background 0.2s ease;
+  @include press-effect;
   
   &:last-child {
     border-bottom: none;
   }
+  
+  &:active {
+    background: var(--color-bg-secondary);
+  }
 }
 
 .item-icon {
-  width: 44rpx;
-  height: 44rpx;
+  width: 40rpx;
+  height: 40rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 20rpx;
+  margin-right: var(--spacing-sm);
 }
 
 .item-label {
   flex: 1;
-  font-size: 30rpx;
+  font-size: var(--font-md);
   color: var(--color-text);
 }
 
 .item-value {
-  font-size: 28rpx;
+  font-size: var(--font-sm);
   color: var(--color-text-secondary);
-  margin-right: 16rpx;
+  margin-right: var(--spacing-sm);
 }
 </style>

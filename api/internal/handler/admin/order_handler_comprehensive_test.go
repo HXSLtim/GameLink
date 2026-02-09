@@ -697,10 +697,10 @@ func TestOrderHandler_Comprehensive_ListOrders_AllFilters(t *testing.T) {
 		{
 			name: "combined_filters",
 			queryParams: map[string]string{
-				"status":   "pending",
-				"user_id":  fmt.Sprintf("%d", user1.ID),
-				"game_id":  fmt.Sprintf("%d", ctx.TestGame.ID),
-				"page":     "1",
+				"status":    "pending",
+				"user_id":   fmt.Sprintf("%d", user1.ID),
+				"game_id":   fmt.Sprintf("%d", ctx.TestGame.ID),
+				"page":      "1",
 				"page_size": "10",
 			},
 			minResults: 1,
@@ -900,14 +900,14 @@ func TestOrderHandler_Comprehensive_ListOrderReviews_WithReviews(t *testing.T) {
 
 	// Create a review
 	review := &model.Review{
-		Base:      model.Base{ExtJSON: "{}"},
-		OrderID:   order.ID,
-		UserID:    ctx.TestUser.ID,
-		PlayerID:  *order.PlayerID,
-		Score:     5,
-		Content:   "Excellent service!",
-		Status:    model.ReviewStatusApproved,
-		Images:    model.StringArray{},
+		Base:     model.Base{ExtJSON: "{}"},
+		OrderID:  order.ID,
+		UserID:   ctx.TestUser.ID,
+		PlayerID: *order.PlayerID,
+		Score:    5,
+		Content:  "Excellent service!",
+		Status:   model.ReviewStatusApproved,
+		Images:   model.StringArray{},
 	}
 	require.NoError(t, ctx.DB.Create(review).Error)
 
@@ -940,8 +940,8 @@ func TestOrderHandler_Comprehensive_ListOrderLogs_WithFilters(t *testing.T) {
 	}{
 		{
 			name:        "default parameters",
-			queryParams:  map[string]string{},
-			expectLogs:   true,
+			queryParams: map[string]string{},
+			expectLogs:  true,
 		},
 		{
 			name: "filter_by_action",

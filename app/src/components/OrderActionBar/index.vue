@@ -17,9 +17,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import GlButton from '@/components/gl/Button/index.vue'
+import type { OrderActionKey, OrderStatus } from '@/types/order'
 
 interface Props {
-  status: string
+  status: OrderStatus | 'cancelled'
   hasReview?: boolean
 }
 
@@ -28,11 +29,11 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 defineEmits<{
-  action: [key: string]
+  action: [key: OrderActionKey]
 }>()
 
 interface ActionItem {
-  key: string
+  key: OrderActionKey
   label: string
   primary?: boolean
 }
@@ -63,6 +64,7 @@ const actions = computed((): ActionItem[] => {
         ]
       }
       return [{ key: 'reorder', label: '再来一单', primary: true }]
+    case 'canceled':
     case 'cancelled':
     case 'refunded':
       return [{ key: 'reorder', label: '重新下单', primary: true }]
@@ -75,10 +77,10 @@ const actions = computed((): ActionItem[] => {
 <style lang="scss" scoped>
 .action-bar {
   display: flex;
-  gap: 24rpx;
-  padding: 20rpx 32rpx;
-  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
-  background: var(--color-bg-card);
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  padding-bottom: calc(var(--spacing-sm) + env(safe-area-inset-bottom));
+  background: var(--color-bg);
   border-top: 1rpx solid var(--color-border);
   
   :deep(.uv-button) {

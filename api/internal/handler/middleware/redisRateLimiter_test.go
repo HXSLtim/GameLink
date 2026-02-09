@@ -97,25 +97,29 @@ func TestRedisRateLimiter_NewRedisRateLimiter(t *testing.T) {
 func TestRedisRateLimiter_LoginRateLimit(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	s, client := setupTestRedis(t)
-	defer s.Close()
-
-	cacheClient := newTestCache(client)
 	config := RedisRateLimiterConfig{
 		Enabled:       true,
 		LoginRequests: 5,
 		LoginWindow:   15 * time.Minute,
 	}
 
-	limiter, err := NewRedisRateLimiter(cacheClient, config)
-	require.NoError(t, err)
+	setupEngine := func() (*gin.Engine, func()) {
+		s, client := setupTestRedis(t)
+		cacheClient := newTestCache(client)
+		limiter, err := NewRedisRateLimiter(cacheClient, config)
+		require.NoError(t, err)
 
-	engine := gin.New()
-	engine.POST("/api/v1/auth/login", limiter.LoginRateLimit(), func(c *gin.Context) {
-		c.JSON(200, gin.H{"success": true})
-	})
+		engine := gin.New()
+		engine.POST("/api/v1/auth/login", limiter.LoginRateLimit(), func(c *gin.Context) {
+			c.JSON(200, gin.H{"success": true})
+		})
+
+		return engine, s.Close
+	}
 
 	t.Run("Allow requests within rate limit", func(t *testing.T) {
+		engine, cleanup := setupEngine()
+		defer cleanup()
 		for i := 0; i < 5; i++ {
 			req, _ := http.NewRequest("POST", "/api/v1/auth/login", nil)
 			req.RemoteAddr = "192.168.1.100:12345"
@@ -131,6 +135,8 @@ func TestRedisRateLimiter_LoginRateLimit(t *testing.T) {
 	})
 
 	t.Run("Block requests over rate limit", func(t *testing.T) {
+		engine, cleanup := setupEngine()
+		defer cleanup()
 		// Use same IP as first test to verify rate limiting works
 		// Make 6 requests (5 allowed + 1 blocked)
 		for i := 0; i < 5; i++ {
@@ -155,6 +161,8 @@ func TestRedisRateLimiter_LoginRateLimit(t *testing.T) {
 	})
 
 	t.Run("Different IPs have separate limits", func(t *testing.T) {
+		engine, cleanup := setupEngine()
+		defer cleanup()
 		ips := []string{"10.0.0.1", "10.0.0.2"}
 
 		for _, ip := range ips {
@@ -174,25 +182,29 @@ func TestRedisRateLimiter_LoginRateLimit(t *testing.T) {
 func TestRedisRateLimiter_SMSRateLimit(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	s, client := setupTestRedis(t)
-	defer s.Close()
-
-	cacheClient := newTestCache(client)
 	config := RedisRateLimiterConfig{
 		Enabled:     true,
 		SMSRequests: 3,
 		SMSWindow:   1 * time.Hour,
 	}
 
-	limiter, err := NewRedisRateLimiter(cacheClient, config)
-	require.NoError(t, err)
+	setupEngine := func() (*gin.Engine, func()) {
+		s, client := setupTestRedis(t)
+		cacheClient := newTestCache(client)
+		limiter, err := NewRedisRateLimiter(cacheClient, config)
+		require.NoError(t, err)
 
-	engine := gin.New()
-	engine.POST("/api/v1/auth/sms", limiter.SMSRateLimit(), func(c *gin.Context) {
-		c.JSON(200, gin.H{"success": true})
-	})
+		engine := gin.New()
+		engine.POST("/api/v1/auth/sms", limiter.SMSRateLimit(), func(c *gin.Context) {
+			c.JSON(200, gin.H{"success": true})
+		})
+
+		return engine, s.Close
+	}
 
 	t.Run("Allow 3 SMS requests", func(t *testing.T) {
+		engine, cleanup := setupEngine()
+		defer cleanup()
 		for i := 0; i < 3; i++ {
 			req, _ := http.NewRequest("POST", "/api/v1/auth/sms", nil)
 			req.RemoteAddr = "192.168.1.200:12345"
@@ -204,6 +216,8 @@ func TestRedisRateLimiter_SMSRateLimit(t *testing.T) {
 	})
 
 	t.Run("Block 4th SMS request", func(t *testing.T) {
+		engine, cleanup := setupEngine()
+		defer cleanup()
 		// Make 3 requests first to consume limit
 		for i := 0; i < 3; i++ {
 			req, _ := http.NewRequest("POST", "/api/v1/auth/sms", nil)

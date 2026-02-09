@@ -45,9 +45,8 @@ export const filterMenusByPermission = (
         .filter(menu => {
             // 检查菜单是否隐藏（兼容 hidden 和 visible 两种字段）
             // 后端返回 hidden 字段，前端接口定义 visible 字段
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const menuAny = menu as any;
-            if (menuAny.hidden === true || menu.visible === false) {
+            const menuWithHidden = menu as Menu & { hidden?: boolean };
+            if (menuWithHidden.hidden === true || menu.visible === false) {
                 return false;
             }
 

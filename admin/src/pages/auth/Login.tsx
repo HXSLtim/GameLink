@@ -17,13 +17,13 @@ const Login: React.FC = () => {
     const [form] = Form.useForm();
     const { refreshMenus } = useAdmin();
 
-    // 加载记住的账号密码
+    // 加载记住的账号（不存储密码）
     useEffect(() => {
         const saved = localStorage.getItem(REMEMBER_KEY);
         if (saved) {
             try {
-                const { username, password, remember } = JSON.parse(saved);
-                form.setFieldsValue({ username, password, remember });
+                const { username, remember } = JSON.parse(saved);
+                form.setFieldsValue({ username, remember });
             } catch {
                 localStorage.removeItem(REMEMBER_KEY);
             }
@@ -55,11 +55,10 @@ const Login: React.FC = () => {
             
             const { token: authToken, user } = response.data;
 
-            // 保存或清除记住的账号密码
+            // 保存或清除记住的账号（不存储密码）
             if (values.remember) {
                 localStorage.setItem(REMEMBER_KEY, JSON.stringify({
                     username: values.username,
-                    password: values.password,
                     remember: true
                 }));
             } else {

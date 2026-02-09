@@ -1,31 +1,40 @@
 <template>
-  <view class="summary-card">
+  <SectionCard class="summary-card" margin="var(--spacing-md)" padding="var(--spacing-lg)">
     <view class="summary-header">
       <text class="summary-label">可提现金额（元）</text>
       <GlButton type="primary" size="mini" round @click="$emit('withdraw')">提现</GlButton>
     </view>
     <view class="summary-balance">
-      <text class="balance-value">{{ formatMoney(withdrawable) }}</text>
+      <PriceTag
+        class="balance-value"
+        :amount="withdrawable"
+        amount-unit="cents"
+        size="large"
+        :show-currency="false"
+      />
     </view>
     <view class="summary-row">
-      <view class="summary-item">
-        <text class="item-label">待结算</text>
-        <text class="item-value">¥{{ formatMoney(pending) }}</text>
-      </view>
-      <view class="summary-item">
-        <text class="item-label">已提现</text>
-        <text class="item-value">¥{{ formatMoney(withdrawn) }}</text>
-      </view>
-      <view class="summary-item">
-        <text class="item-label">累计收益</text>
-        <text class="item-value highlight">¥{{ formatMoney(total) }}</text>
-      </view>
+      <HeaderStatsRow :items="stats" :show-divider="false" size="md" item-padding="0">
+        <template #value="{ item }">
+          <PriceTag
+            :class="item.key === 'total' ? 'summary-highlight' : 'summary-normal'"
+            :amount="item.value"
+            amount-unit="cents"
+            size="small"
+          />
+        </template>
+      </HeaderStatsRow>
     </view>
-  </view>
+  </SectionCard>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import SectionCard from '@/components/SectionCard/index.vue'
 import GlButton from '@/components/gl/Button/index.vue'
+import PriceTag from '@/components/PriceTag/index.vue'
+import HeaderStatsRow from '@/components/HeaderStatsRow/index.vue'
+import type { HeaderStatItem } from '@/types/ui'
 
 interface Props {
   withdrawable: number // 分
@@ -34,69 +43,61 @@ interface Props {
   total: number // 分
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
 
 defineEmits<{
   withdraw: []
 }>()
 
-const formatMoney = (cents: number) => (cents / 100).toFixed(2)
+const stats = computed<HeaderStatItem[]>(() => [
+  { key: 'pending', label: '待结算', value: props.pending },
+  { key: 'withdrawn', label: '已提现', value: props.withdrawn },
+  { key: 'total', label: '累计收益', value: props.total },
+])
+
 </script>
 
 <style lang="scss" scoped>
-.summary-card {
-  margin: 24rpx;
-  padding: 32rpx;
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light, #4ADE80) 100%);
-  border-radius: 24rpx;
-  color: #FFFFFF;
-}
-
 .summary-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16rpx;
+  margin-bottom: var(--spacing-sm);
 }
 
 .summary-label {
-  font-size: 26rpx;
-  opacity: 0.85;
+  font-size: var(--font-sm);
+  color: var(--color-text-secondary);
 }
 
 .summary-balance {
-  margin-bottom: 32rpx;
+  margin-bottom: var(--spacing-lg);
 }
 
 .balance-value {
-  font-size: 64rpx;
-  font-weight: 800;
+  font-size: var(--font-xl);
+  font-weight: 700;
 }
 
 .summary-row {
-  display: flex;
-  padding-top: 24rpx;
-  border-top: 1rpx solid rgba(255, 255, 255, 0.2);
+  padding-top: var(--spacing-md);
+  border-top: 1rpx solid var(--color-border);
 }
 
-.summary-item {
-  flex: 1;
-  text-align: center;
+.summary-normal :deep(.price-tag) {
+  color: var(--color-text);
 }
 
-.item-label {
-  display: block;
-  font-size: 24rpx;
-  opacity: 0.7;
-  margin-bottom: 8rpx;
+.summary-highlight :deep(.price-tag) {
+  color: var(--color-primary);
 }
 
-.item-value {
-  font-size: 28rpx;
-  font-weight: 600;
-  
-  &.highlight {
-    font-weight: 700;
-  }
+.balance-value :deep(.price-tag) {
+  color: var(--color-text);
+}
+
+.balance-value :deep(.price-tag .amount) {
+  font-weight: 700;
+  font-size: var(--font-xl);
 }
 </style>

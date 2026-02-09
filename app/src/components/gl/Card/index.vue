@@ -16,7 +16,7 @@
     <view v-if="$slots.header || title" class="gl-card__header">
       <slot name="header">
         <view class="gl-card__title">
-          <uv-icon v-if="icon" :name="icon" size="18" color="var(--color-primary)" />
+          <uv-icon v-if="icon" :name="icon" size="18" color="var(--color-text-secondary)" />
           <text>{{ title }}</text>
         </view>
         <view v-if="$slots.extra || extra" class="gl-card__extra">
@@ -80,23 +80,33 @@ const handleClick = (e: Event) => {
 <style lang="scss" scoped>
 .gl-card {
   background: var(--color-bg-card);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   overflow: hidden;
+  border: 1rpx solid transparent;
   
   &--shadow {
-    box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+    box-shadow: none;
+    border-color: var(--color-border);
   }
   
   &--bordered {
-    border: 1rpx solid var(--color-border);
+    border-color: var(--color-border);
   }
   
   &--clickable {
     transition: all 0.2s;
+    cursor: pointer;
     
     &:active {
-      transform: scale(0.98);
-      opacity: 0.9;
+      transform: translateY(1rpx);
+      background: var(--color-bg-secondary);
+    }
+    
+    @include hover-supported {
+      &:hover {
+        background: var(--color-bg-hover, var(--color-bg-card));
+        border-color: var(--color-border);
+      }
     }
   }
   
@@ -109,21 +119,21 @@ const handleClick = (e: Event) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20rpx 24rpx;
+  padding: var(--spacing-xs) var(--spacing-md);
   border-bottom: 1rpx solid var(--color-border);
 }
 
 .gl-card__title {
   display: flex;
   align-items: center;
-  gap: 12rpx;
-  font-size: 30rpx;
+  gap: var(--spacing-sm);
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--color-text);
 }
 
 .gl-card__extra {
-  font-size: 26rpx;
+  font-size: var(--font-xs);
   color: var(--color-text-secondary);
 }
 
@@ -132,7 +142,7 @@ const handleClick = (e: Event) => {
 }
 
 .gl-card__footer {
-  padding: 20rpx 24rpx;
+  padding: var(--spacing-sm) var(--spacing-md);
   border-top: 1rpx solid var(--color-border);
 }
 </style>

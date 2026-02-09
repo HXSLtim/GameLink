@@ -20,12 +20,7 @@
 
 <script setup lang="ts">
 import GlCard from '@/components/gl/Card/index.vue'
-
-export interface GameOption {
-  id: number
-  name: string
-  icon?: string
-}
+import type { GameOption } from '@/types/game'
 
 interface Props {
   games: GameOption[]
@@ -43,48 +38,51 @@ defineEmits<{
 .games-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 16rpx;
+  gap: var(--spacing-sm);
 }
 
 .game-option {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12rpx;
-  padding: 20rpx 24rpx;
-  background: var(--color-bg-secondary);
-  border-radius: 16rpx;
-  border: 2rpx solid var(--color-border);
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-sm);
+  border: 1rpx solid var(--color-border);
   position: relative;
   min-width: 140rpx;
   transition: all 0.2s;
+  cursor: pointer;
+  @include press-effect;
   
   &.selected {
-    border-color: var(--color-primary);
-    background: rgba(0, 210, 106, 0.08);
+    border-color: var(--color-border);
+    background: var(--color-bg-secondary);
   }
 }
 
 .game-icon {
-  width: 64rpx;
-  height: 64rpx;
-  border-radius: 12rpx;
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: var(--radius-sm);
 }
 
 .game-name {
-  font-size: 26rpx;
+  font-size: var(--font-xs);
   color: var(--color-text);
   font-weight: 500;
+  @include text-ellipsis;
 }
 
 .check-mark {
   position: absolute;
   top: 8rpx;
   right: 8rpx;
-  width: 32rpx;
-  height: 32rpx;
+  width: 28rpx;
+  height: 28rpx;
   background: var(--color-primary);
-  border-radius: 50%;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;

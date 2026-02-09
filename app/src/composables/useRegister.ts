@@ -5,7 +5,9 @@ import { ref, reactive, computed } from 'vue'
 import { useUserStore, normalizeUserInfo } from '@/store/user'
 import { register } from '@/api/auth'
 import { consumeRedirectPath, redirectToUrl } from '@/utils/routeGuard'
-import type { RoleOption } from '@/components/RoleSelector/index.vue'
+import type { RegisterFormData, RoleOption } from '@/types/auth'
+import type { AppUserRole } from '@/types/user'
+import type { AgreementType } from '@/types/agreement'
 
 export function useRegister() {
   const userStore = useUserStore()
@@ -15,18 +17,18 @@ export function useRegister() {
   const agreed = ref(false)
   
   // 表单
-  const form = reactive({
+  const form = reactive<RegisterFormData & { role: AppUserRole }>({
     phone: '',
     nickname: '',
     password: '',
     confirmPassword: '',
-    role: 'user' as 'user' | 'player',
+    role: 'user' as AppUserRole,
   })
   
-  // 角色选项
+  // 角色选项（icon 为 uv-icon 名称）
   const roleOptions: RoleOption[] = [
-    { value: 'user', icon: '👤', name: '普通用户', desc: '找陪玩、享受游戏乐趣' },
-    { value: 'player', icon: '🎮', name: '陪玩师', desc: '提供服务、赚取收入' },
+    { value: 'user', icon: 'account', name: '普通用户', desc: '找陪玩、享受游戏乐趣' },
+    { value: 'player', icon: 'grid-fill', name: '陪玩师', desc: '提供服务、赚取收入' },
   ]
   
   // 是否可注册
@@ -109,7 +111,8 @@ export function useRegister() {
   // 导航
   const goBack = () => uni.navigateBack()
   const goToLogin = () => uni.navigateTo({ url: '/pages/auth/login/index' })
-  const goToAgreement = (type: string) => uni.navigateTo({ url: `/pages/agreement/index?type=${type}` })
+  const goToAgreement = (type: AgreementType) =>
+    uni.navigateTo({ url: `/pages/agreement/index?type=${type}` })
   
   return {
     // 状态

@@ -15,6 +15,7 @@ import (
 
 func setupTestDB(t *testing.T) *Repository {
 	t.Helper()
+	integration.SkipIfNoTestDB(t)
 	db := integration.SetupTestDB(t)
 	return NewRepository(db)
 }

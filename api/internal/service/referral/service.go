@@ -94,6 +94,37 @@ func (s *Service) GetExpireDays(ctx context.Context) int {
 	return days
 }
 
+func (s *Service) resolveRewardConfig(ctx context.Context, refType model.ReferralType) (model.RewardType, int64) {
+	typeKey := model.ReferralConfigUserRewardType
+	amountKey := model.ReferralConfigUserRewardAmount
+	switch refType {
+	case model.ReferralTypePlayerToPlayer, model.ReferralTypeUserToPlayer:
+		typeKey = model.ReferralConfigPlayerRewardType
+		amountKey = model.ReferralConfigPlayerRewardAmount
+	}
+
+	rewardType := model.RewardTypeCash
+	if value, err := s.GetConfig(ctx, typeKey); err == nil && value != "" {
+		switch value {
+		case string(model.RewardTypeCash):
+			rewardType = model.RewardTypeCash
+		case string(model.RewardTypeCoupon):
+			rewardType = model.RewardTypeCoupon
+		case string(model.RewardTypePoints):
+			rewardType = model.RewardTypePoints
+		}
+	}
+
+	var amount int64
+	if value, err := s.GetConfig(ctx, amountKey); err == nil && value != "" {
+		if parsed, parseErr := strconv.ParseInt(value, 10, 64); parseErr == nil && parsed > 0 {
+			amount = parsed
+		}
+	}
+
+	return rewardType, amount
+}
+
 // ============================================================================
 // 邀请码管理
 // ============================================================================
@@ -245,6 +276,8 @@ func (s *Service) CreateReferral(ctx context.Context, req CreateReferralRequest)
 		level = 1
 	}
 
+	rewardType, rewardAmount := s.resolveRewardConfig(ctx, req.Type)
+
 	referral := &model.Referral{
 		ReferrerID:       req.ReferrerID,
 		RefereeID:        req.RefereeID,
@@ -253,6 +286,8 @@ func (s *Service) CreateReferral(ctx context.Context, req CreateReferralRequest)
 		Level:            level,
 		Status:           model.ReferralStatusPending,
 		RefereeCondition: req.RefereeCondition,
+		RewardType:       rewardType,
+		RewardAmountCents: rewardAmount,
 	}
 
 	if err := s.repo.CreateReferral(ctx, referral); err != nil {

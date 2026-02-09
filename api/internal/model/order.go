@@ -74,13 +74,13 @@ type Order struct {
 	// Note: DisputeID removed - use reverse relationship from OrderDispute instead
 
 	// 订单拆分相关字段
-	GroupID      *uint64 `json:"groupId,omitempty" gorm:"column:group_id;index"`        // 主订单ID（用户视角）
-	HourIndex    int     `json:"hourIndex" gorm:"column:hour_index;default:1"`          // 第几小时 (1, 2, 3...)
-	IsSubOrder   bool    `json:"isSubOrder" gorm:"column:is_sub_order;default:false"`   // 是否为子订单
-	CanTransfer  bool    `json:"canTransfer" gorm:"column:can_transfer;default:true"`   // 是否可转单
-	TransferFrom *uint64 `json:"transferFrom,omitempty" gorm:"column:transfer_from"`    // 转单来源订单ID
-	TransferTo   *uint64 `json:"transferTo,omitempty" gorm:"column:transfer_to"`        // 转单目标订单ID
-	TransferNote string  `json:"transferNote,omitempty" gorm:"column:transfer_note"`    // 转单备注
+	GroupID      *uint64 `json:"groupId,omitempty" gorm:"column:group_id;index"`      // 主订单ID（用户视角）
+	HourIndex    int     `json:"hourIndex" gorm:"column:hour_index;default:1"`        // 第几小时 (1, 2, 3...)
+	IsSubOrder   bool    `json:"isSubOrder" gorm:"column:is_sub_order;default:false"` // 是否为子订单
+	CanTransfer  bool    `json:"canTransfer" gorm:"column:can_transfer;default:true"` // 是否可转单
+	TransferFrom *uint64 `json:"transferFrom,omitempty" gorm:"column:transfer_from"`  // 转单来源订单ID
+	TransferTo   *uint64 `json:"transferTo,omitempty" gorm:"column:transfer_to"`      // 转单目标订单ID
+	TransferNote string  `json:"transferNote,omitempty" gorm:"column:transfer_note"`  // 转单备注
 
 	// 多人服务字段
 	RequiredPlayers int `json:"requiredPlayers" gorm:"column:required_players;default:1"` // 需要的陪玩师数量

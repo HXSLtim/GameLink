@@ -1,10 +1,15 @@
 <template>
-  <view v-if="visible" class="filter-mask" @tap="handleClose">
-    <view class="filter-panel" :class="{ 'filter-panel--show': visible }" @tap.stop>
+  <view v-if="visible" class="filter-mask" :class="{ 'filter-mask--pc': isPC }" @tap="handleClose">
+    <view
+      class="filter-panel"
+      :class="{ 'filter-panel--show': visible, 'filter-panel--pc': isPC }"
+      @tap.stop
+    >
       <!-- 头部 -->
       <view class="filter-header">
+        <text class="filter-action" @tap="handleReset">{{ resetText }}</text>
         <text class="filter-title">{{ title }}</text>
-        <text class="filter-reset" @tap="handleReset">{{ resetText }}</text>
+        <text class="filter-action filter-action--primary" @tap="handleConfirm">{{ confirmText }}</text>
       </view>
       
       <!-- 筛选内容 -->
@@ -28,35 +33,14 @@
         <slot></slot>
       </scroll-view>
       
-      <!-- 底部按钮 -->
-      <view class="filter-footer">
-        <view class="filter-btn filter-btn--cancel" @tap="handleClose">
-          {{ cancelText }}
-        </view>
-        <view class="filter-btn filter-btn--confirm" @tap="handleConfirm">
-          {{ confirmText }}
-        </view>
-      </view>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-
-export interface FilterOption {
-  label: string
-  value: string | number | boolean
-}
-
-export interface FilterSection {
-  key: string
-  label: string
-  options: FilterOption[]
-  multiple?: boolean
-}
-
-export type FilterValues = Record<string, string | number | boolean | Array<string | number | boolean>>
+import { useDevice } from '@/composables/useDevice'
+import type { FilterOption, FilterSection, FilterValues } from '@/types/filter'
 
 interface Props {
   visible: boolean
@@ -64,15 +48,13 @@ interface Props {
   modelValue: FilterValues
   title?: string
   resetText?: string
-  cancelText?: string
   confirmText?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
   title: '筛选条件',
-  resetText: '重置',
-  cancelText: '取消',
-  confirmText: '确定',
+  resetText: '清空',
+  confirmText: '完成',
 })
 
 const emit = defineEmits<{
@@ -85,6 +67,7 @@ const emit = defineEmits<{
 
 // 内部状态（用于编辑）
 const localValues = ref<FilterValues>({ ...props.modelValue })
+const { isPC } = useDevice()
 
 // 监听外部值变化
 watch(() => props.modelValue, (newVal) => {
@@ -152,11 +135,20 @@ const handleConfirm = () => {
   right: 0;
   bottom: 0;
   z-index: 1000;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(8rpx);
+  background: rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: flex-end;
   animation: fadeIn 0.2s ease-out;
+}
+
+.filter-mask--pc {
+  align-items: stretch;
+  justify-content: flex-end;
+}
+
+.filter-mask--pc {
+  align-items: stretch;
+  justify-content: flex-end;
 }
 
 @keyframes fadeIn {
@@ -168,11 +160,23 @@ const handleConfirm = () => {
   width: 100%;
   max-height: 75vh;
   background: var(--color-bg-card);
-  border-radius: 40rpx 40rpx 0 0;
-  padding-bottom: calc(env(safe-area-inset-bottom) + 20rpx);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  border-top: 1rpx solid var(--color-border);
+  padding-bottom: calc(env(safe-area-inset-bottom) + var(--spacing-sm));
   animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
+}
+
+.filter-panel--pc {
+  width: 360px;
+  max-height: 100%;
+  height: 100%;
+  border-radius: 0;
+  border-top: none;
+  border-left: 1rpx solid var(--color-border);
+  padding-bottom: var(--spacing-lg);
+  animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes slideUp {
@@ -180,31 +184,48 @@ const handleConfirm = () => {
   to { transform: translateY(0); }
 }
 
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
 .filter-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 36rpx 32rpx;
+  padding: var(--spacing-lg) var(--spacing-md);
   border-bottom: 1rpx solid var(--color-border);
   flex-shrink: 0;
 }
 
 .filter-title {
-  font-size: 36rpx;
-  font-weight: 700;
+  font-size: var(--font-md);
+  font-weight: 600;
   color: var(--color-text);
+  text-align: center;
+  flex: 1;
 }
 
-.filter-reset {
-  font-size: 28rpx;
-  color: var(--color-primary);
+.filter-action {
+  font-size: var(--font-sm);
+  color: var(--color-text-secondary);
   font-weight: 500;
-  padding: 8rpx 20rpx;
-  border-radius: 16rpx;
+  padding: 6rpx var(--spacing-sm);
+  border-radius: var(--radius-md);
+  border: 1rpx solid var(--color-border);
+  background: var(--color-bg-secondary);
+  cursor: pointer;
+  @include press-effect;
   
   &:active {
-    background: rgba(0, 210, 106, 0.1);
+    background: var(--color-bg-secondary);
   }
+}
+
+.filter-action--primary {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  background: var(--color-bg-card);
 }
 
 .filter-content {
@@ -214,76 +235,46 @@ const handleConfirm = () => {
 }
 
 .filter-section {
-  padding: 28rpx 32rpx;
+  padding: var(--spacing-md) var(--spacing-md) var(--spacing-lg);
 }
 
 .section-title {
-  font-size: 28rpx;
+  font-size: var(--font-sm);
   color: var(--color-text-secondary);
-  margin-bottom: 24rpx;
+  margin-bottom: var(--spacing-md);
   font-weight: 500;
 }
 
 .filter-options {
   display: flex;
   flex-wrap: wrap;
-  gap: 20rpx;
+  gap: var(--spacing-sm);
+
+  @include desktop {
+    gap: var(--spacing-md);
+  }
 }
 
 .filter-option {
-  padding: 18rpx 36rpx;
-  background: var(--color-bg-secondary);
-  border-radius: 36rpx;
-  font-size: 28rpx;
+  padding: 8rpx var(--spacing-md);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
   color: var(--color-text);
-  border: 2rpx solid transparent;
+  border: 1rpx solid var(--color-border);
   transition: all 0.2s;
-  
+  cursor: pointer;
+  @include press-effect;
+
   &:active {
-    transform: scale(0.95);
+    background: var(--color-bg-secondary);
   }
-  
+
   &--active {
-    background: rgba(0, 210, 106, 0.1);
-    color: var(--color-primary);
+    background: var(--color-primary);
+    color: #fff;
     border-color: var(--color-primary);
     font-weight: 600;
-  }
-}
-
-.filter-footer {
-  display: flex;
-  gap: 24rpx;
-  padding: 28rpx 32rpx;
-  border-top: 1rpx solid var(--color-border);
-  flex-shrink: 0;
-}
-
-.filter-btn {
-  flex: 1;
-  height: 96rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 48rpx;
-  font-size: 32rpx;
-  font-weight: 600;
-  transition: all 0.2s;
-  
-  &:active {
-    transform: scale(0.98);
-  }
-  
-  &--cancel {
-    background: var(--color-bg-secondary);
-    color: var(--color-text);
-    border: 2rpx solid var(--color-border);
-  }
-  
-  &--confirm {
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light, #4ADE80) 100%);
-    color: #FFFFFF;
-    box-shadow: 0 6rpx 20rpx rgba(0, 210, 106, 0.35);
   }
 }
 </style>

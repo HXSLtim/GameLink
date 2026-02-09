@@ -49,7 +49,7 @@ func createFeedHandler(c *gin.Context, svc *contentservice.FeedService) {
 		}
 		return
 	}
-	respondJSON(c, http.StatusOK, model.APIResponse[any]{
+	respondJSON[any](c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
@@ -87,7 +87,7 @@ func listFeedsHandler(c *gin.Context, svc *contentservice.FeedService) {
 		}
 		return
 	}
-	respondJSON(c, http.StatusOK, model.APIResponse[any]{
+	respondJSON[any](c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
@@ -131,7 +131,7 @@ func reportFeedHandler(c *gin.Context, svc *contentservice.FeedService) {
 		}
 		return
 	}
-	respondJSON(c, http.StatusOK, model.APIResponse[any]{
+	respondJSON[any](c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "举报成功",

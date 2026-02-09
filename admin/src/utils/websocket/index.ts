@@ -9,6 +9,7 @@ export { WebSocketManager, wsManager, initWebSocket, disconnectWebSocket, getWeb
 // Types
 export type {
   WSMessage,
+  TMessageType,
   SystemStatus,
   OnlineUsers,
   OrderQueue,

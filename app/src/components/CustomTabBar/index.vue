@@ -22,7 +22,7 @@
           <uv-icon 
             :name="item.icon" 
             :size="20" 
-            :color="currentIndex === index ? '#fff' : 'var(--color-text-secondary)'"
+            :color="currentIndex === index ? 'var(--color-icon-accent)' : 'var(--color-text-secondary)'"
           ></uv-icon>
           <view v-if="item.badge" class="nav-badge">{{ item.badge > 99 ? '99+' : item.badge }}</view>
         </view>
@@ -61,7 +61,11 @@
         </view>
         <view class="footer-actions">
           <view class="action-btn" @click="toggleTheme" :title="isDark ? '切换日间' : '切换夜间'">
-            <uv-icon :name="isDark ? 'eye-off' : 'eye'" size="16" :color="isDark ? '#FFD700' : 'var(--color-text-secondary)'"></uv-icon>
+            <image
+              class="action-icon"
+              :src="isDark ? '/static/icons/moon.svg' : '/static/icons/sun.svg'"
+              mode="aspectFit"
+            />
           </view>
           <view class="action-btn" @click="navigateTo('/pages/settings/index/index')" title="设置">
             <uv-icon name="setting-fill" size="16" color="var(--color-text-secondary)"></uv-icon>
@@ -104,17 +108,7 @@ import { onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/store/user'
 import { useAppStore } from '@/store/app'
 import { useTheme } from '@/composables/useTheme'
-
-// TabBar 项配置
-interface TabItem {
-  path: string
-  text: string
-  icon: string
-  iconNormal?: string
-  iconActive?: string
-  badge?: number
-  dot?: boolean
-}
+import type { TabBarItem } from '@/types/ui'
 
 const props = withDefaults(defineProps<{
   current?: number
@@ -166,7 +160,7 @@ watch(() => props.current, (val) => {
 })
 
 // TabBar 项（移动端底部）
-const tabItems = computed<TabItem[]>(() => [
+const tabItems = computed<TabBarItem[]>(() => [
   { 
     path: '/pages/index/index', 
     text: '首页', 
@@ -199,7 +193,7 @@ const tabItems = computed<TabItem[]>(() => [
 ])
 
 // PC 端导航项（侧边栏）
-const navItems = computed<TabItem[]>(() => [
+const navItems = computed<TabBarItem[]>(() => [
   { path: '/pages/index/index', text: '首页', icon: 'home' },
   { path: '/pages/player/list/index', text: '陪玩', icon: 'grid' },
   { path: '/pages/message/list/index', text: '消息', icon: 'chat', badge: unreadCount.value || undefined },
@@ -207,7 +201,7 @@ const navItems = computed<TabItem[]>(() => [
 ])
 
 // PC 端额外导航项
-const extraNavItems: TabItem[] = [
+const extraNavItems: TabBarItem[] = [
   { path: '/pages/channel/list/index', text: '频道', icon: 'more-circle' },
   { path: '/pages/order/list/index', text: '订单', icon: 'file-text' },
   { path: '/pages/wallet/index/index', text: '钱包', icon: 'red-packet' },
@@ -280,14 +274,16 @@ const goToProfile = () => {
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 9998;
+  z-index: 100;
   display: flex;
   align-items: center;
-  height: 110rpx;
-  background: var(--color-bg-card, #FFFFFF);
+  height: 100rpx;
+  background: var(--color-bg-card);
   border-top: 1rpx solid var(--color-border, #E5E5E5);
   padding-bottom: env(safe-area-inset-bottom);
-  transition: background-color 0.3s, border-color 0.3s;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+  // 移动端轻微投影，强化层级
+  box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.04);
   
   // PC 端隐藏移动端 TabBar
   @media screen and (min-width: 1024px) {
@@ -295,15 +291,16 @@ const goToProfile = () => {
   }
   
   &.theme-dark {
-    background: var(--color-bg-card, #1A1A2E);
-    border-top-color: var(--color-border, #2D2D4A);
+    background: var(--color-bg-card, #1C1D20);
+    border-top-color: var(--color-border, #2A2B30);
+    box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.2);
     
     .tabbar-text {
       color: var(--color-text-secondary, #94A3B8);
     }
     
     .tabbar-item.active .tabbar-text {
-      color: var(--color-primary, #8B5CF6);
+      color: var(--color-icon-accent, #5865F2);
     }
   }
 }
@@ -315,20 +312,12 @@ const goToProfile = () => {
   align-items: center;
   justify-content: center;
   height: 100%;
-  transition: transform 0.2s;
-  
-  &:active {
-    transform: scale(0.92);
-  }
+  transition: background 0.2s;
   
   &.active {
     .tabbar-text {
-      color: var(--color-primary, #00D26A);
+      color: var(--color-icon-accent, #7ACC35);
       font-weight: 600;
-    }
-    
-    .tabbar-icon {
-      transform: scale(1.1);
     }
   }
 }
@@ -340,7 +329,6 @@ const goToProfile = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
   
   // 图片图标样式
   .icon-img {
@@ -357,13 +345,12 @@ const goToProfile = () => {
   min-width: 32rpx;
   height: 32rpx;
   padding: 0 8rpx;
-  background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
-  border-radius: 16rpx;
-  font-size: 20rpx;
+  background: var(--color-error);
+  border-radius: var(--radius-full);
+  font-size: var(--font-xs);
   color: #FFFFFF;
   text-align: center;
   line-height: 32rpx;
-  box-shadow: 0 2rpx 8rpx rgba(239, 68, 68, 0.4);
 }
 
 .tabbar-dot {
@@ -372,15 +359,14 @@ const goToProfile = () => {
   right: -4rpx;
   width: 16rpx;
   height: 16rpx;
-  background: #EF4444;
-  border-radius: 50%;
-  box-shadow: 0 0 8rpx rgba(239, 68, 68, 0.6);
+  background: var(--color-error);
+  border-radius: var(--radius-full);
 }
 
 .tabbar-text {
-  font-size: 22rpx;
+  font-size: var(--font-xs);
   color: var(--color-text-secondary, #666666);
-  margin-top: 6rpx;
+  margin-top: var(--spacing-xs);
   transition: color 0.3s, font-weight 0.2s;
 }
 
@@ -403,23 +389,23 @@ const goToProfile = () => {
   flex-direction: column;
   background: var(--color-bg-card, #FFFFFF);
   border-right: 1px solid var(--color-border, #E5E5E5);
-  z-index: 9999; // 确保在最上层
-  transition: background-color 0.3s, border-color 0.3s;
+  z-index: 100;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
   
   &.theme-dark {
-    background: var(--color-bg-card, #1A1A2E);
-    border-color: var(--color-border, #2D2D4A);
+    background: var(--color-bg-card, #1C1D20);
+    border-color: var(--color-border, #2A2B30);
     
     .nav-item:hover {
       background: var(--color-bg-hover, #252542);
     }
     
     .nav-item.active {
-      background: linear-gradient(135deg, var(--color-primary, #8B5CF6) 0%, var(--color-primary-dark, #7C3AED) 100%);
+      background: var(--color-bg-secondary);
     }
     
     .logo-icon {
-      background: linear-gradient(135deg, var(--color-primary, #8B5CF6) 0%, var(--color-primary-dark, #7C3AED) 100%);
+      background: var(--color-bg-secondary);
     }
   }
 }
@@ -428,34 +414,36 @@ const goToProfile = () => {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 20px;
+  padding: 16px 20px;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: opacity 0.2s ease;
+  border-bottom: 1px solid var(--color-divider);
   
   &:hover {
     opacity: 0.8;
   }
   
   .logo-icon {
-    width: 40px;
-    height: 40px;
-    background: linear-gradient(135deg, var(--color-primary, #00D26A) 0%, var(--color-primary-dark, #00B359) 100%);
-    border-radius: 12px;
+    width: 36px;
+    height: 36px;
+    background: var(--color-primary);
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
     
     text {
-      font-size: 20px;
+      font-size: var(--font-base);
       font-weight: 700;
-      color: #fff;
+      color: #FFFFFF;
     }
   }
   
   .logo-text {
-    font-size: 18px;
+    font-size: var(--font-md);
     font-weight: 700;
     color: var(--color-text);
+    letter-spacing: -0.3px;
   }
 }
 
@@ -470,20 +458,33 @@ const goToProfile = () => {
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  margin-bottom: 4px;
-  border-radius: 12px;
+  margin-bottom: 2px;
+  border-radius: 10px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.15s ease;
+  position: relative;
   
   &:hover {
     background: var(--color-bg-secondary, #F1F5F9);
   }
   
   &.active {
-    background: linear-gradient(135deg, var(--color-primary, #00D26A) 0%, var(--color-primary-dark, #00B359) 100%);
+    background: var(--color-bg-secondary);
+    
+    // 左侧主题色指示条
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 8px;
+      bottom: 8px;
+      width: 3px;
+      border-radius: 0 3px 3px 0;
+      background: var(--color-icon-accent);
+    }
     
     .nav-label {
-      color: #fff;
+      color: var(--color-text);
       font-weight: 600;
     }
   }
@@ -505,9 +506,9 @@ const goToProfile = () => {
   min-width: 18px;
   height: 18px;
   padding: 0 5px;
-  background: #EF4444;
+  background: var(--color-error);
   border-radius: 9px;
-  font-size: 11px;
+  font-size: var(--font-xs);
   font-weight: 600;
   color: #fff;
   text-align: center;
@@ -515,7 +516,7 @@ const goToProfile = () => {
 }
 
 .nav-label {
-  font-size: 14px;
+  font-size: var(--font-sm);
   color: var(--color-text-secondary);
   transition: color 0.2s;
 }
@@ -543,7 +544,7 @@ const goToProfile = () => {
   align-items: center;
   gap: 10px;
   padding: 8px;
-  border-radius: 10px;
+  border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.2s;
   flex: 1;
@@ -558,19 +559,14 @@ const goToProfile = () => {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark, #00B85A) 100%);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   overflow: hidden;
   flex-shrink: 0;
-  
-  text {
-    color: #fff;
-    font-size: 14px;
-    font-weight: 600;
-  }
   
   image {
     width: 100%;
@@ -579,7 +575,7 @@ const goToProfile = () => {
   }
   
   text {
-    font-size: 16px;
+    font-size: var(--font-sm);
     font-weight: 600;
     color: var(--color-text-secondary);
   }
@@ -591,7 +587,7 @@ const goToProfile = () => {
     right: 2px;
     width: 10px;
     height: 10px;
-    background: #10B981;
+    background: var(--color-success);
     border: 2px solid var(--color-bg-card);
     border-radius: 50%;
   }
@@ -603,7 +599,7 @@ const goToProfile = () => {
   
   .user-name {
     display: block;
-    font-size: 14px;
+    font-size: var(--font-sm);
     font-weight: 600;
     color: var(--color-text);
     overflow: hidden;
@@ -613,7 +609,7 @@ const goToProfile = () => {
   
   .user-status {
     display: block;
-    font-size: 12px;
+    font-size: var(--font-xs);
     color: var(--color-text-secondary);
   }
 }
@@ -639,5 +635,10 @@ const goToProfile = () => {
     background: var(--color-bg-secondary);
     transform: scale(1.05);
   }
+}
+
+.action-icon {
+  width: 18px;
+  height: 18px;
 }
 </style>

@@ -1,15 +1,22 @@
 <template>
   <view class="form-item" :class="{ clickable }" @tap="handleClick">
-    <text class="form-label">{{ label }}</text>
+    <view class="form-label-wrap">
+      <text class="form-label">{{ label }}</text>
+      <text v-if="required" class="form-required">*</text>
+    </view>
     
     <!-- 输入框 -->
     <template v-if="type === 'input'">
-      <input 
-        :value="modelValue"
+      <GlInput
         class="form-input"
+        :model-value="modelValue ?? ''"
         :placeholder="placeholder"
         :maxlength="maxlength"
-        @input="(e: any) => $emit('update:modelValue', e.detail.value)"
+        :disabled="disabled"
+        size="small"
+        variant="plain"
+        align="right"
+        @update:modelValue="(value) => $emit('update:modelValue', value)"
       />
     </template>
     
@@ -28,6 +35,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import GlInput from '@/components/gl/Input/index.vue'
 
 interface Props {
   label: string
@@ -37,12 +45,16 @@ interface Props {
   placeholder?: string
   maxlength?: number
   clickable?: boolean
+  required?: boolean
+  disabled?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   type: 'picker',
   placeholder: '请选择',
   clickable: true,
+  required: false,
+  disabled: false,
 })
 
 const emit = defineEmits<{
@@ -61,8 +73,9 @@ const handleClick = () => {
 .form-item {
   display: flex;
   align-items: center;
-  padding: 28rpx 0;
+  padding: var(--spacing-md) 0;
   border-bottom: 1rpx solid var(--color-border);
+  transition: background 0.2s ease;
   
   &:last-child {
     border-bottom: none;
@@ -70,22 +83,39 @@ const handleClick = () => {
   
   &.clickable {
     cursor: pointer;
+    
+    &:active {
+      background: var(--color-bg-secondary);
+    }
   }
 }
 
-.form-label {
+.form-label-wrap {
+  display: flex;
+  align-items: center;
   width: 160rpx;
-  font-size: 30rpx;
-  color: var(--color-text);
   flex-shrink: 0;
+}
+
+.form-label {
+  font-size: var(--font-base);
+  color: var(--color-text);
+}
+
+.form-required {
+  color: var(--color-error);
+  font-size: var(--font-base);
+  margin-left: 4rpx;
 }
 
 .form-input {
   flex: 1;
-  font-size: 30rpx;
-  color: var(--color-text);
-  text-align: right;
-  background: transparent;
+  min-width: 0;
+  
+  :deep(.gl-input__field) {
+    font-size: var(--font-base);
+    color: var(--color-text);
+  }
 }
 
 .form-value-wrap {
@@ -97,7 +127,7 @@ const handleClick = () => {
 }
 
 .form-value {
-  font-size: 30rpx;
+  font-size: var(--font-base);
   color: var(--color-text);
   
   &.placeholder {

@@ -24,7 +24,7 @@ func JSON[T any](c *gin.Context, status int, payload model.APIResponse[T]) {
 
 // Success sends a successful response with message and optional data.
 func Success[T any](c *gin.Context, message string, data T) {
-	JSON(c, http.StatusOK, model.APIResponse[T]{
+	JSON[T](c, http.StatusOK, model.APIResponse[T]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: message,
@@ -39,7 +39,7 @@ func OK[T any](c *gin.Context, data T) {
 
 // Created sends a 201 Created response.
 func Created[T any](c *gin.Context, data T) {
-	JSON(c, http.StatusCreated, model.APIResponse[T]{
+	JSON[T](c, http.StatusCreated, model.APIResponse[T]{
 		Success: true,
 		Code:    http.StatusCreated,
 		Message: "created",
@@ -49,7 +49,7 @@ func Created[T any](c *gin.Context, data T) {
 
 // Updated sends a successful update response.
 func Updated[T any](c *gin.Context, data T) {
-	JSON(c, http.StatusOK, model.APIResponse[T]{
+	JSON[T](c, http.StatusOK, model.APIResponse[T]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "updated",
@@ -59,7 +59,7 @@ func Updated[T any](c *gin.Context, data T) {
 
 // Deleted sends a successful delete response.
 func Deleted(c *gin.Context) {
-	JSON(c, http.StatusOK, model.APIResponse[any]{
+	JSON[any](c, http.StatusOK, model.APIResponse[any]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "deleted",
@@ -71,7 +71,7 @@ func List[T any](c *gin.Context, data []T, pagination *model.Pagination) {
 	if data == nil {
 		data = make([]T, 0)
 	}
-	JSON(c, http.StatusOK, model.APIResponse[[]T]{
+	JSON[[]T](c, http.StatusOK, model.APIResponse[[]T]{
 		Success:    true,
 		Code:       http.StatusOK,
 		Message:    "OK",

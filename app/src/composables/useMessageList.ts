@@ -6,9 +6,9 @@ import { ref, reactive } from 'vue'
 import { getChatGroups, type ChatGroup } from '@/api/chat'
 import { getNotifications, getUnreadCount, type Notification } from '@/api/notification'
 import { useUserStore } from '@/store/user'
-import type { PageStateType } from '@/components/PageState.vue'
-import type { MessageData } from '@/components/MessageItem/index.vue'
-import type { TabItem } from '@/components/TabsBar/index.vue'
+import type { PageStateType } from '@/types/page'
+import type { MessageData } from '@/types/message'
+import type { TabItem } from '@/types/ui'
 
 export function useMessageList() {
   const userStore = useUserStore()
@@ -24,6 +24,9 @@ export function useMessageList() {
   const pageState = ref<PageStateType>('loading')
   const errorMessage = ref('')
   const messages = ref<MessageData[]>([])
+
+  // PC 端选中的会话 ID（不跳转，在右侧面板展示）
+  const selectedChatId = ref<number | null>(null)
   
   // 切换标签
   const switchTab = (key: string) => {
@@ -109,7 +112,7 @@ export function useMessageList() {
     }
   }
   
-  // 跳转聊天
+  // 跳转聊天（移动端）
   const goToChat = (item: MessageData) => {
     if (item.type === 'chat') {
       uni.navigateTo({ url: `/pages/message/chat/index?groupId=${item.conversationId}` })
@@ -117,10 +120,12 @@ export function useMessageList() {
       uni.navigateTo({ url: '/pages/order/list/index' })
     }
   }
-  
-  // 跳转陪玩师列表
-  const goToPlayerList = () => {
-    uni.switchTab({ url: '/pages/player/list/index' })
+
+  // 选中会话（PC 端）
+  const selectChat = (item: MessageData) => {
+    if (item.type === 'chat') {
+      selectedChatId.value = item.conversationId
+    }
   }
   
   return {
@@ -132,11 +137,14 @@ export function useMessageList() {
     // 标签
     tabs,
     currentTab,
+
+    // PC 选中
+    selectedChatId,
     
     // 方法
     switchTab,
     loadMessages,
     goToChat,
-    goToPlayerList,
+    selectChat,
   }
 }

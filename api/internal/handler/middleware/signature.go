@@ -211,10 +211,6 @@ func normalizeHeaderName(name string) string {
 	if !strings.HasPrefix(name, "X-") && !strings.HasPrefix(name, "x-") {
 		return "X-" + name
 	}
-	// Capitalize first letter after X-
-	if len(name) > 2 {
-		return "X-" + strings.ToUpper(name[2:3])
-	}
 	return name
 }
 

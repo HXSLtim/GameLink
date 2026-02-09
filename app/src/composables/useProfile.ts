@@ -5,9 +5,12 @@
 import { ref, reactive, computed } from 'vue'
 import { useUserStore } from '@/store/user'
 import { useTheme } from '@/composables/useTheme'
+import { confirmDialog } from '@/composables/useConfirmDialog'
 import { getUserProfile } from '@/api/user'
 import { getWalletInfo } from '@/api/wallet'
-import type { MenuItem } from '@/components/MenuList/index.vue'
+import type { MenuItem } from '@/types/ui'
+import type { OrderCountSummary, OrderQuickEntryStatus } from '@/types/order'
+import type { ProfileStatKey } from '@/types/profile'
 
 export function useProfile() {
   const userStore = useUserStore()
@@ -21,10 +24,11 @@ export function useProfile() {
   })
   
   // 订单数量
-  const orderCounts = reactive({
+  const orderCounts = reactive<OrderCountSummary>({
     pending: 0,
     inProgress: 0,
     toReview: 0,
+    refunding: 0,
   })
   
   // 计算属性
@@ -35,22 +39,22 @@ export function useProfile() {
     ...userInfoData.value,
   }))
   
-  // 功能菜单（登录用户）
+  // 功能菜单（登录用户）— 图标统一使用中性色，保持页面干净
+  const menuIconColor = 'var(--color-text-secondary)'
+
   const userMenuItems = computed((): MenuItem[] => {
     const items: MenuItem[] = [
       {
         key: 'wallet',
         label: '我的钱包',
         icon: 'red-packet',
-        iconColor: 'var(--color-primary)',
-        iconBg: 'rgba(0, 210, 106, 0.1)',
+        iconColor: menuIconColor,
       },
       {
         key: 'favorites',
         label: '我的收藏',
-        icon: 'heart',
-        iconColor: '#EF4444',
-        iconBg: 'rgba(239, 68, 68, 0.1)',
+        icon: 'heart-fill',
+        iconColor: menuIconColor,
       },
     ]
     
@@ -58,17 +62,15 @@ export function useProfile() {
       items.push({
         key: 'playerCenter',
         label: '陪玩中心',
-        icon: 'grid',
-        iconColor: '#8B5CF6',
-        iconBg: 'rgba(139, 92, 246, 0.1)',
+        icon: 'star-fill',
+        iconColor: menuIconColor,
       })
     } else {
       items.push({
         key: 'becomePlayer',
         label: '成为陪玩师',
-        icon: 'grid',
-        iconColor: '#8B5CF6',
-        iconBg: 'rgba(139, 92, 246, 0.1)',
+        icon: 'star',
+        iconColor: menuIconColor,
       })
     }
     
@@ -81,13 +83,13 @@ export function useProfile() {
       key: 'settings',
       label: '设置',
       icon: 'setting',
-      iconColor: 'var(--color-text-secondary)',
+      iconColor: menuIconColor,
     },
     {
       key: 'help',
       label: '帮助与反馈',
       icon: 'question-circle',
-      iconColor: 'var(--color-text-secondary)',
+      iconColor: menuIconColor,
     },
   ]
   
@@ -96,8 +98,7 @@ export function useProfile() {
     key: 'theme',
     label: '深色模式',
     icon: isDark.value ? 'eye-off' : 'eye',
-    iconColor: isDark.value ? '#FFD700' : '#FF8C00',
-    iconBg: isDark.value ? 'rgba(255, 215, 0, 0.1)' : 'rgba(255, 140, 0, 0.1)',
+    iconColor: 'var(--color-text-secondary)',
   }))
   
   // 加载用户数据
@@ -149,7 +150,7 @@ export function useProfile() {
   }
   
   // 订单快捷入口点击
-  const handleOrderClick = (status: string) => {
+  const handleOrderClick = (status: OrderQuickEntryStatus) => {
     if (!isLoggedIn.value) {
       goToLogin()
       return
@@ -167,13 +168,13 @@ export function useProfile() {
   }
   
   // 统计点击
-  const handleStatClick = (type: 'orders' | 'favorites' | 'wallet') => {
+  const handleStatClick = (type: ProfileStatKey) => {
     if (!isLoggedIn.value) {
       goToLogin()
       return
     }
     
-    const routes = {
+    const routes: Record<ProfileStatKey, string> = {
       orders: '/pages/order/list/index',
       favorites: '/pages/favorite/list/index',
       wallet: '/pages/wallet/index/index',
@@ -196,17 +197,14 @@ export function useProfile() {
   }
   
   // 退出登录
-  const handleLogout = () => {
-    uni.showModal({
+  const handleLogout = async () => {
+    const confirmed = await confirmDialog({
       title: '提示',
       content: '确定要退出登录吗？',
-      success: (res) => {
-        if (res.confirm) {
-          userStore.logout()
-          uni.showToast({ title: '已退出登录', icon: 'success' })
-        }
-      }
     })
+    if (!confirmed) return
+    userStore.logout()
+    uni.showToast({ title: '已退出登录', icon: 'success' })
   }
   
   return {

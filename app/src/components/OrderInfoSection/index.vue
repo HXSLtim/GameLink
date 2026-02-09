@@ -1,5 +1,5 @@
 <template>
-  <GlCard :title="title" :shadow="false" bordered class="section-card">
+  <SectionCard :title="title" margin="var(--spacing-sm) var(--spacing-md)">
     <view class="info-list">
       <view v-for="item in items" :key="item.label" class="info-row">
         <text class="info-label">{{ item.label }}</text>
@@ -15,17 +15,13 @@
         </view>
       </view>
     </view>
-  </GlCard>
+  </SectionCard>
 </template>
 
 <script setup lang="ts">
-import GlCard from '@/components/gl/Card/index.vue'
-
-export interface InfoItem {
-  label: string
-  value: string
-  copyable?: boolean
-}
+import SectionCard from '@/components/SectionCard/index.vue'
+import type { InfoItem } from '@/types/order'
+import { copyToClipboard } from '@/utils'
 
 interface Props {
   title: string
@@ -35,34 +31,26 @@ interface Props {
 defineProps<Props>()
 
 const handleCopy = (text: string) => {
-  uni.setClipboardData({
-    data: text,
-    success: () => {
-      uni.showToast({ title: '复制成功', icon: 'success' })
-    }
-  })
+  copyToClipboard(text).catch(() => undefined)
 }
 </script>
 
 <style lang="scss" scoped>
-.section-card {
-  margin: 20rpx 24rpx;
-}
-
 .info-list {
   display: flex;
   flex-direction: column;
-  gap: 20rpx;
+  gap: var(--spacing-xs);
 }
 
 .info-row {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  gap: var(--spacing-sm);
 }
 
 .info-label {
-  font-size: 28rpx;
+  font-size: var(--font-xs);
   color: var(--color-text-secondary);
   flex-shrink: 0;
 }
@@ -70,21 +58,23 @@ const handleCopy = (text: string) => {
 .info-value-wrap {
   display: flex;
   align-items: center;
-  gap: 16rpx;
+  gap: var(--spacing-sm);
 }
 
 .info-value {
-  font-size: 28rpx;
+  font-size: var(--font-sm);
   color: var(--color-text);
   text-align: right;
 }
 
 .copy-btn {
-  font-size: 24rpx;
-  color: var(--color-primary);
-  padding: 4rpx 16rpx;
-  border: 1rpx solid var(--color-primary);
-  border-radius: 16rpx;
+  font-size: var(--font-xs);
+  color: var(--color-text-secondary);
+  padding: 2rpx var(--spacing-sm);
+  border: 1rpx solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-secondary);
+  @include press-effect;
   
   &:active {
     opacity: 0.7;

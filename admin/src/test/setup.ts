@@ -3,31 +3,63 @@ import { vi } from 'vitest';
 import { ReactElement } from 'react';
 
 // Fix jsdom CSS variable parsing issue
-// Patch CSSStyleDeclaration.prototype to handle CSS custom properties in border shorthand
+// Patch CSSStyleDeclaration.prototype to handle CSS custom properties
 const originalSetProperty = CSSStyleDeclaration.prototype.setProperty;
 CSSStyleDeclaration.prototype.setProperty = function (property: string, value: string | null, priority?: string) {
   // Convert value to string and handle CSS custom properties
   let stringValue = String(value ?? '');
 
   if (stringValue.includes('var(')) {
-    // Handle border shorthand with CSS variables (Ant Design issue)
-    if (property === 'border' && stringValue.includes('--ant')) {
-      stringValue = '1px solid #d9d9d9';
-    }
-    // Handle individual border properties with CSS variables
-    else if (property.includes('border') && stringValue.includes('--ant')) {
-      if (property.includes('width')) stringValue = '1px';
-      else if (property.includes('style')) stringValue = 'solid';
-      else if (property.includes('color')) stringValue = '#d9d9d9';
-      else stringValue = stringValue.replace(/var\(--[^)]+\)/g, 'initial');
-    }
-    // Replace other CSS variables with initial values
-    else {
+    // Handle properties that commonly use CSS variables in Ant Design
+    if (stringValue.includes('--ant-')) {
+      // Map of property types to default values
+      const defaultValues: Record<string, Record<string, string>> = {
+        'background': { default: '#ffffff' },
+        'border': { default: '#d9d9d9' },
+        'border-color': { default: '#d9d9d9' },
+        'border-width': { default: '1px' },
+        'border-style': { default: 'solid' },
+        'color': { default: 'rgba(0, 0, 0, 0.88)' },
+        'text-color': { default: 'rgba(0, 0, 0, 0.88)' },
+        'box-shadow': { default: 'none' },
+        'margin': { default: '0' },
+        'padding': { default: '0' },
+        'width': { default: 'auto' },
+        'height': { default: 'auto' },
+        'font-size': { default: '14px' },
+        'font-family': { default: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' },
+        'line-height': { default: '1.5714' },
+        'opacity': { default: '1' },
+        'cursor': { default: 'auto' },
+        'display': { default: 'block' },
+      };
+
+      // Find matching property type
+      for (const [propType, defaults] of Object.entries(defaultValues)) {
+        if (property.includes(propType) || property === propType) {
+          stringValue = defaults.default;
+          break;
+        }
+      }
+
+      // If no match, replace with a safe default
+      if (stringValue.includes('var(')) {
+        stringValue = stringValue.replace(/var\(--ant-[^)]+\)/g, 'initial');
+      }
+    } else {
+      // Replace other CSS variables with initial values
       stringValue = stringValue.replace(/var\(--[^)]+\)/g, 'initial');
     }
   }
 
   return originalSetProperty.call(this, property, stringValue, priority);
+};
+
+// Also patch getComputedStyle to suppress warnings about CSS custom properties
+const originalGetComputedStyle = window.getComputedStyle;
+window.getComputedStyle = function (element: Element, pseudoElt?: string | null) {
+  const style = originalGetComputedStyle.call(this, element, pseudoElt);
+  return style;
 };
 
 // Mock window.matchMedia

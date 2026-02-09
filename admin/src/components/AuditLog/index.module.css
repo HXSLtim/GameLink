@@ -1,0 +1,72 @@
+.auditLog {
+  padding: 12px 0;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 40px 0;
+}
+
+.logItem {
+  padding: 8px 0;
+}
+
+.logItem.clickable {
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border-radius: 4px;
+  margin: -8px;
+  padding: 8px;
+}
+
+.logItem.clickable:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.logHeader {
+  margin-bottom: 4px;
+}
+
+.logDescription {
+  margin: 8px 0 !important;
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.changes {
+  background-color: #fafafa;
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin: 8px 0;
+}
+
+.changeItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  margin: 4px 0;
+}
+
+.oldValue {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.newValue {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #1890ff;
+}
+
+.logFooter {
+  margin-top: 8px;
+}
+
+.logLine {
+  padding: 4px 0;
+}

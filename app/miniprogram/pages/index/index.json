@@ -1,7 +1,0 @@
-{
-  "usingComponents": {
-    "gl-search": "/components/gl-search/index",
-    "gl-section": "/components/gl-section/index",
-    "player-card": "/components/player-card/index"
-  }
-}

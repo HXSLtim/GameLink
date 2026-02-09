@@ -51,9 +51,9 @@ func TestWSMessageMarshalWithoutData(t *testing.T) {
 func TestNewWSMessage(t *testing.T) {
 	msgType := MessageTypeSystemStatus
 	data := SystemStatus{
-		CPUUsage:  75.5,
-		Status:    "healthy",
-		Uptime:    3600,
+		CPUUsage:   75.5,
+		Status:     "healthy",
+		Uptime:     3600,
 		Goroutines: 100,
 	}
 
@@ -97,15 +97,15 @@ func TestWSMessageToJSON(t *testing.T) {
 // TestNewSystemStatusMessage verifies creating system status message.
 func TestNewSystemStatusMessage(t *testing.T) {
 	status := &SystemStatus{
-		CPUUsage:      45.2,
-		MemoryUsage:   62.8,
-		MemoryTotal:   8589934592,  // 8GB
-		MemoryUsed:    5390110000,  // ~5GB
-		Goroutines:    150,
-		DBConnections: DBConnections{Active: 5, Idle: 10, Max: 20},
-		Uptime:        7200,
+		CPUUsage:       45.2,
+		MemoryUsage:    62.8,
+		MemoryTotal:    8589934592, // 8GB
+		MemoryUsed:     5390110000, // ~5GB
+		Goroutines:     150,
+		DBConnections:  DBConnections{Active: 5, Idle: 10, Max: 20},
+		Uptime:         7200,
 		RequestsPerSec: 125.5,
-		Status:        "healthy",
+		Status:         "healthy",
 	}
 
 	bytes, err := NewSystemStatusMessage(status)
@@ -363,9 +363,9 @@ func TestAlertFields(t *testing.T) {
 // TestWSMessageWithComplexData verifies handling complex nested data structures.
 func TestWSMessageWithComplexData(t *testing.T) {
 	type NestedData struct {
-		Name  string   `json:"name"`
-		Tags  []string `json:"tags"`
-		Meta  struct {
+		Name string   `json:"name"`
+		Tags []string `json:"tags"`
+		Meta struct {
 			Enabled bool `json:"enabled"`
 		} `json:"meta"`
 	}

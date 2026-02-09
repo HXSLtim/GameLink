@@ -1,5 +1,5 @@
 <template>
-  <uv-popup :show="show" mode="bottom" round="20" @close="$emit('close')">
+  <uv-popup :show="show" mode="bottom" round="16" @close="$emit('close')">
     <view class="review-modal">
       <view class="modal-header">
         <text class="modal-title">评价订单</text>
@@ -11,13 +11,19 @@
         <view class="rating-section">
           <text class="rating-label">服务评分</text>
           <view class="rating-stars">
-            <text 
-              v-for="i in 5" 
+            <view
+              v-for="i in 5"
               :key="i"
               class="star"
               :class="{ active: rating >= i }"
               @tap="$emit('update:rating', i)"
-            >★</text>
+            >
+              <uv-icon
+                :name="rating >= i ? 'star-fill' : 'star'"
+                size="24"
+                :color="rating >= i ? 'var(--color-gold)' : 'var(--color-text-disabled)'"
+              />
+            </view>
           </view>
         </view>
         
@@ -39,12 +45,14 @@
         
         <!-- 内容 -->
         <view class="content-section">
-          <textarea 
-            :value="content"
-            class="review-textarea"
+          <GlInput
+            class="review-input"
+            :model-value="content"
+            type="textarea"
+            size="small"
             placeholder="分享您的服务体验（选填）"
             :maxlength="500"
-            @input="(e: any) => $emit('update:content', e.detail.value)"
+            @update:modelValue="(value) => $emit('update:content', value)"
           />
         </view>
       </view>
@@ -59,6 +67,7 @@
 <script setup lang="ts">
 import GlTag from '@/components/gl/Tag/index.vue'
 import GlButton from '@/components/gl/Button/index.vue'
+import GlInput from '@/components/gl/Input/index.vue'
 
 interface Props {
   show: boolean
@@ -95,82 +104,73 @@ const toggleTag = (tag: string) => {
 
 <style lang="scss" scoped>
 .review-modal {
-  padding: 32rpx;
-  padding-bottom: calc(32rpx + env(safe-area-inset-bottom));
+  padding: var(--spacing-md);
+  padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom));
 }
 
 .modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 32rpx;
+  margin-bottom: var(--spacing-md);
 }
 
 .modal-title {
-  font-size: 34rpx;
+  font-size: var(--font-md);
   font-weight: 600;
   color: var(--color-text);
 }
 
 .review-form {
-  margin-bottom: 32rpx;
+  margin-bottom: var(--spacing-md);
 }
 
 .rating-section {
   display: flex;
   align-items: center;
-  gap: 24rpx;
-  margin-bottom: 32rpx;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
 }
 
 .rating-label,
 .tags-label {
-  font-size: 28rpx;
+  font-size: var(--font-sm);
   color: var(--color-text-secondary);
 }
 
 .rating-stars {
   display: flex;
-  gap: 8rpx;
+  gap: var(--spacing-xs);
 }
 
 .star {
-  font-size: 48rpx;
-  color: var(--color-border);
-  transition: color 0.2s;
-
-  &.active {
-    color: #FFB800;
-  }
+  transition: opacity 0.2s;
+  cursor: pointer;
+  @include press-effect;
 }
 
 .tags-section {
-  margin-bottom: 32rpx;
+  margin-bottom: var(--spacing-lg);
 }
 
 .tags-label {
   display: block;
-  margin-bottom: 16rpx;
+  margin-bottom: var(--spacing-sm);
 }
 
 .tags-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 16rpx;
+  gap: var(--spacing-sm);
 }
 
 .content-section {
-  margin-bottom: 16rpx;
+  margin-bottom: var(--spacing-sm);
 }
 
-.review-textarea {
-  width: 100%;
-  height: 200rpx;
-  padding: 20rpx;
-  background: var(--color-bg-secondary);
-  border-radius: 16rpx;
-  font-size: 28rpx;
-  color: var(--color-text);
-  box-sizing: border-box;
+.review-input {
+  :deep(.gl-input__textarea) {
+    min-height: 200rpx;
+  }
 }
 </style>

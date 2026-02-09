@@ -74,14 +74,14 @@ func TestService_List(t *testing.T) {
 	refID := uint64(100)
 
 	tests := []struct {
-		name          string
-		userID        uint64
-		req           ListRequest
-		setupMock     func(*MockNotificationRepository)
-		expectError   bool
-		expectItems   int
-		expectTotal   int64
-		expectUnread  int64
+		name         string
+		userID       uint64
+		req          ListRequest
+		setupMock    func(*MockNotificationRepository)
+		expectError  bool
+		expectItems  int
+		expectTotal  int64
+		expectUnread int64
 	}{
 		{
 			name:   "successful list notifications",

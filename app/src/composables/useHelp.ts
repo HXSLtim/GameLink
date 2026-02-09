@@ -2,19 +2,7 @@
  * 帮助中心专用 Hook
  */
 import { ref, computed } from 'vue'
-
-interface Category {
-  id: string
-  name: string
-  icon: string
-}
-
-interface FAQ {
-  id: number
-  categoryId: string
-  question: string
-  answer: string
-}
+import type { HelpCategory, HelpFaq } from '@/types/help'
 
 export function useHelp() {
   // 状态
@@ -22,18 +10,18 @@ export function useHelp() {
   const selectedCategory = ref<string | null>(null)
   const expandedId = ref<number | null>(null)
   
-  // 分类
-  const categories = ref<Category[]>([
-    { id: 'order', name: '订单相关', icon: '📋' },
-    { id: 'payment', name: '支付问题', icon: '💳' },
-    { id: 'account', name: '账号安全', icon: '🔐' },
-    { id: 'service', name: '服务规则', icon: '📖' },
-    { id: 'player', name: '陪玩入驻', icon: '🎮' },
-    { id: 'other', name: '其他问题', icon: '❓' },
+  // 分类（icon 为 uv-icon 名称）
+  const categories = ref<HelpCategory[]>([
+    { id: 'order', name: '订单相关', icon: 'list' },
+    { id: 'payment', name: '支付问题', icon: 'wallet' },
+    { id: 'account', name: '账号安全', icon: 'lock' },
+    { id: 'service', name: '服务规则', icon: 'file-text' },
+    { id: 'player', name: '陪玩入驻', icon: 'grid-fill' },
+    { id: 'other', name: '其他问题', icon: 'question-circle' },
   ])
   
   // FAQ 数据
-  const faqs = ref<FAQ[]>([
+  const faqs = ref<HelpFaq[]>([
     { id: 1, categoryId: 'order', question: '如何下单预约陪玩师？', answer: '1. 在陪玩师列表中选择心仪的陪玩师\n2. 进入详情页查看服务项目\n3. 点击"立即下单"按钮\n4. 选择游戏、服务类型和时长\n5. 确认订单信息并完成支付' },
     { id: 2, categoryId: 'order', question: '订单如何取消？', answer: '待支付订单可直接取消。\n已支付订单：\n- 服务开始前可申请全额退款\n- 服务进行中需联系客服协商处理\n- 订单完成后无法取消' },
     { id: 3, categoryId: 'order', question: '如何评价陪玩师？', answer: '订单完成后，您可以在订单详情页对陪玩师进行评价。评价包括星级评分和文字描述，帮助其他用户更好地选择陪玩师。' },

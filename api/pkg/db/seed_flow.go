@@ -361,26 +361,286 @@ func ensureOrderPlayerLink(tx *gorm.DB, orderID, orderItemID, playerID uint64) e
 
 func seedUserVipState(tx *gorm.DB, now time.Time, users map[string]*model.User, vipLevels map[string]*model.VipLevel) error {
 	vip1 := vipLevels["vip1"]
-	if vip1 == nil {
+	vip2 := vipLevels["vip2"]
+	svip := vipLevels["svip"]
+
+	type vipSpec struct {
+		UserKey            string
+		VipLevel           *model.VipLevel
+		VipExp             int64
+		TotalRechargeCents int64
+		ExpireDays         int // 0=永久, 负数=已过期
+	}
+
+	specs := []vipSpec{
+		// customerB: VIP2, 即将到期 (5天)
+		{UserKey: "customerB", VipLevel: vip2, VipExp: 150000, TotalRechargeCents: 100000, ExpireDays: 5},
+		// customerA: VIP1, 永久有效
+		{UserKey: "customerA", VipLevel: vip1, VipExp: 50000, TotalRechargeCents: 30000, ExpireDays: 0},
+		// customerH: SVIP, 长期有效
+		{UserKey: "customerH", VipLevel: svip, VipExp: 350000, TotalRechargeCents: 200000, ExpireDays: 60},
+		// customerC: VIP1, 已过期
+		{UserKey: "customerC", VipLevel: vip1, VipExp: 80000, TotalRechargeCents: 50000, ExpireDays: -15},
+	}
+
+	for _, spec := range specs {
+		user := users[spec.UserKey]
+		if user == nil || spec.VipLevel == nil {
+			continue
+		}
+		unlockedAt := now.Add(-30 * 24 * time.Hour)
+		updates := map[string]interface{}{
+			"vip_level_id":           spec.VipLevel.ID,
+			"vip_unlocked":           true,
+			"vip_exp":                spec.VipExp,
+			"total_recharge_cents":   spec.TotalRechargeCents,
+			"vip_unlocked_at":        &unlockedAt,
+			"last_monthly_coupon_at": now.Add(-35 * 24 * time.Hour),
+		}
+		if spec.ExpireDays != 0 {
+			expireAt := now.Add(time.Duration(spec.ExpireDays) * 24 * time.Hour)
+			updates["vip_expire_at"] = &expireAt
+		} else {
+			updates["vip_expire_at"] = nil // 永久
+		}
+		if err := tx.Model(&model.User{}).Where("id = ?", user.ID).Updates(updates).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// seedOrderGroupData 创建多时段（主订单+子订单）种子数据
+// 覆盖 OrderGroup 模型及 Order.GroupID 关联
+func seedOrderGroupData(
+	tx *gorm.DB,
+	now time.Time,
+	users map[string]*model.User,
+	players map[string]*model.Player,
+	serviceItems map[string]*model.ServiceItem,
+	orders map[string]*model.Order,
+) error {
+	customerA := users["customerA"]
+	customerB := users["customerB"]
+	playerA := players["playerA"]
+	playerB := players["playerB"]
+	item := serviceItems["escort-lol-solo"]
+	if customerA == nil || customerB == nil || playerA == nil || playerB == nil || item == nil {
 		return nil
 	}
-	user := users["customerB"]
-	if user == nil {
+	if item.GameID == nil {
 		return nil
 	}
 
-	expireAt := now.Add(5 * 24 * time.Hour)
-	unlockedAt := now.Add(-30 * 24 * time.Hour)
-	updates := map[string]interface{}{
-		"vip_level_id":           vip1.ID,
-		"vip_unlocked":           true,
-		"vip_exp":                int64(150000),
-		"total_recharge_cents":   int64(100000),
-		"vip_unlocked_at":        &unlockedAt,
-		"vip_expire_at":          &expireAt,
-		"last_monthly_coupon_at": now.Add(-35 * 24 * time.Hour),
+	ensureGroup := func(key string, group model.OrderGroup) (*model.OrderGroup, error) {
+		var existing model.OrderGroup
+		if err := tx.Where("group_no = ?", group.GroupNo).First(&existing).Error; err == nil {
+			orders["_orderGroup_"+key] = nil // placeholder
+			return &existing, nil
+		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
+		if err := tx.Create(&group).Error; err != nil {
+			return nil, err
+		}
+		return &group, nil
 	}
-	return tx.Model(&model.User{}).Where("id = ?", user.ID).Updates(updates).Error
+
+	// ========== 1. 已完成的多时段订单（3小时，全部完成） ==========
+	startCompleted := now.Add(-24 * time.Hour)
+	endCompleted := startCompleted.Add(3 * time.Hour)
+	completedGroup, err := ensureGroup("completed", model.OrderGroup{
+		GroupNo:         "OG-DEMO-COMPLETED-001",
+		UserID:          customerA.ID,
+		GameID:          *item.GameID,
+		ItemID:          item.ID,
+		OriginalPlayer:  playerA.ID,
+		TotalPriceCents: item.BasePriceCents * 3,
+		TotalHours:      3,
+		CompletedHours:  3,
+		Status:          model.OrderGroupStatusCompleted,
+		Title:           "英雄联盟3小时连续陪玩（已完成）",
+		Description:     "演示数据：多时段订单完整完成场景",
+		ScheduledStart:  &startCompleted,
+		ScheduledEnd:    &endCompleted,
+		Currency:        model.CurrencyCNY,
+	})
+	if err != nil {
+		return err
+	}
+
+	// 为已完成group创建3个子订单
+	for i := 0; i < 3; i++ {
+		hourStart := startCompleted.Add(time.Duration(i) * time.Hour)
+		hourEnd := hourStart.Add(1 * time.Hour)
+		title := fmt.Sprintf("英雄联盟陪玩-第%d小时（演示）", i+1)
+		_, err := seedOrder(tx, seedOrderParams{
+			Title:          title,
+			Description:    fmt.Sprintf("演示数据：多时段订单第%d小时子订单", i+1),
+			UserID:         customerA.ID,
+			PlayerID:       &playerA.ID,
+			ItemID:         item.ID,
+			GameID:         *item.GameID,
+			Status:         model.OrderStatusCompleted,
+			PriceCents:     item.BasePriceCents,
+			Currency:       model.CurrencyCNY,
+			ScheduledStart: &hourStart,
+			ScheduledEnd:   &hourEnd,
+			StartedAt:      &hourStart,
+			CompletedAt:    &hourEnd,
+		})
+		if err != nil {
+			return err
+		}
+		// Link to group (update GroupID)
+		tx.Model(&model.Order{}).Where("title = ? AND user_id = ?", title, customerA.ID).
+			Update("group_id", completedGroup.ID)
+	}
+
+	// ========== 2. 进行中的多时段订单（4小时，完成2小时） ==========
+	startProgress := now.Add(-2 * time.Hour)
+	endProgress := startProgress.Add(4 * time.Hour)
+	progressGroup, err := ensureGroup("progress", model.OrderGroup{
+		GroupNo:         "OG-DEMO-INPROGRESS-001",
+		UserID:          customerB.ID,
+		GameID:          *item.GameID,
+		ItemID:          item.ID,
+		OriginalPlayer:  playerA.ID,
+		TotalPriceCents: item.BasePriceCents * 4,
+		TotalHours:      4,
+		CompletedHours:  2,
+		Status:          model.OrderGroupStatusInProgress,
+		Title:           "英雄联盟4小时陪练（进行中）",
+		Description:     "演示数据：多时段订单部分完成场景",
+		ScheduledStart:  &startProgress,
+		ScheduledEnd:    &endProgress,
+		Currency:        model.CurrencyCNY,
+	})
+	if err != nil {
+		return err
+	}
+
+	// 已完成的2个子订单 + 1个进行中 + 1个待处理
+	for i := 0; i < 4; i++ {
+		hourStart := startProgress.Add(time.Duration(i) * time.Hour)
+		hourEnd := hourStart.Add(1 * time.Hour)
+		title := fmt.Sprintf("英雄联盟陪练-第%d小时（演示）", i+1)
+		var status model.OrderStatus
+		var startedAt, completedAt *time.Time
+		switch {
+		case i < 2:
+			status = model.OrderStatusCompleted
+			startedAt = &hourStart
+			completedAt = &hourEnd
+		case i == 2:
+			status = model.OrderStatusInProgress
+			startedAt = &hourStart
+		default:
+			status = model.OrderStatusPending
+		}
+		_, err := seedOrder(tx, seedOrderParams{
+			Title:          title,
+			Description:    fmt.Sprintf("演示数据：多时段订单第%d小时", i+1),
+			UserID:         customerB.ID,
+			PlayerID:       &playerA.ID,
+			ItemID:         item.ID,
+			GameID:         *item.GameID,
+			Status:         status,
+			PriceCents:     item.BasePriceCents,
+			Currency:       model.CurrencyCNY,
+			ScheduledStart: &hourStart,
+			ScheduledEnd:   &hourEnd,
+			StartedAt:      startedAt,
+			CompletedAt:    completedAt,
+		})
+		if err != nil {
+			return err
+		}
+		tx.Model(&model.Order{}).Where("title = ? AND user_id = ?", title, customerB.ID).
+			Update("group_id", progressGroup.ID)
+	}
+
+	// ========== 3. 部分完成（含转单）的多时段订单 ==========
+	startPartial := now.Add(-48 * time.Hour)
+	endPartial := startPartial.Add(3 * time.Hour)
+	partialGroup, err := ensureGroup("partial", model.OrderGroup{
+		GroupNo:         "OG-DEMO-PARTIAL-001",
+		UserID:          customerA.ID,
+		GameID:          *item.GameID,
+		ItemID:          item.ID,
+		OriginalPlayer:  playerB.ID,
+		TotalPriceCents: item.BasePriceCents * 3,
+		TotalHours:      3,
+		CompletedHours:  1,
+		Status:          model.OrderGroupStatusPartial,
+		Title:           "英雄联盟3小时陪玩（部分完成-含转单）",
+		Description:     "演示数据：陪玩师第2小时后转单给其他陪玩师",
+		ScheduledStart:  &startPartial,
+		ScheduledEnd:    &endPartial,
+		Currency:        model.CurrencyCNY,
+	})
+	if err != nil {
+		return err
+	}
+
+	// 第1小时完成，第2小时取消（转单），第3小时由新陪玩师完成
+	partialSubs := []struct {
+		HourIndex int
+		Status    model.OrderStatus
+		PlayerKey string
+		Note      string
+	}{
+		{0, model.OrderStatusCompleted, "playerB", "第1小时正常完成"},
+		{1, model.OrderStatusCanceled, "playerB", "第2小时陪玩师有事取消"},
+		{2, model.OrderStatusInProgress, "playerA", "转单给新陪玩师继续服务"},
+	}
+	for _, sub := range partialSubs {
+		hourStart := startPartial.Add(time.Duration(sub.HourIndex) * time.Hour)
+		hourEnd := hourStart.Add(1 * time.Hour)
+		title := fmt.Sprintf("多时段转单-第%d小时（演示）", sub.HourIndex+1)
+		player := players[sub.PlayerKey]
+		if player == nil {
+			continue
+		}
+		var startedAt, completedAt *time.Time
+		cancelReason := ""
+		if sub.Status == model.OrderStatusCompleted || sub.Status == model.OrderStatusInProgress {
+			startedAt = &hourStart
+		}
+		if sub.Status == model.OrderStatusCompleted {
+			completedAt = &hourEnd
+		}
+		if sub.Status == model.OrderStatusCanceled {
+			cancelReason = "陪玩师临时有事，转单处理"
+		}
+		_, err := seedOrder(tx, seedOrderParams{
+			Title:          title,
+			Description:    "演示数据：" + sub.Note,
+			UserID:         customerA.ID,
+			PlayerID:       &player.ID,
+			ItemID:         item.ID,
+			GameID:         *item.GameID,
+			Status:         sub.Status,
+			PriceCents:     item.BasePriceCents,
+			Currency:       model.CurrencyCNY,
+			ScheduledStart: &hourStart,
+			ScheduledEnd:   &hourEnd,
+			StartedAt:      startedAt,
+			CompletedAt:    completedAt,
+			CancelReason:   cancelReason,
+		})
+		if err != nil {
+			return err
+		}
+		tx.Model(&model.Order{}).Where("title = ? AND user_id = ?", title, customerA.ID).
+			Updates(map[string]interface{}{
+				"group_id":   partialGroup.ID,
+				"hour_index": sub.HourIndex,
+			})
+	}
+
+	log.Println("order group seed data created successfully")
+	return nil
 }
 
 func seedRefundAndTimeoutData(tx *gorm.DB, now time.Time, users map[string]*model.User) error {
@@ -1134,5 +1394,38 @@ func validateSeedAssociations(tx *gorm.DB) error {
 	}
 
 	log.Println("seed association validation passed")
+	return nil
+}
+
+// seedBanners 种子数据：首页轮播图
+func seedBanners(tx *gorm.DB) error {
+	banners := []model.Banner{
+		{
+			Title:       "探索热门游戏",
+			Description: "一键发现优质陪玩师，畅享游戏乐趣",
+			ImageURL:    "/static/images/banner-jump.svg",
+			Type:        model.BannerTypeLink,
+			Link:        "/pages/game/list/index",
+			ActionText:  "立即前往",
+			SortOrder:   0,
+			IsVisible:   true,
+		},
+		{
+			Title:       "新赛季展示",
+			Description: "查看最新活动海报与精彩内容",
+			ImageURL:    "/static/images/banner-preview.svg",
+			Type:        model.BannerTypePreview,
+			ActionText:  "查看详情",
+			SortOrder:   1,
+			IsVisible:   true,
+		},
+	}
+
+	for i := range banners {
+		if err := tx.Create(&banners[i]).Error; err != nil {
+			return fmt.Errorf("seed banner %d: %w", i, err)
+		}
+	}
+	log.Printf("[startup] seed: created %d banners", len(banners))
 	return nil
 }

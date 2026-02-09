@@ -1,15 +1,22 @@
 <template>
-  <view class="player-orders-page page-container">
-    <!-- 顶部导航 -->
-    <NavBar title="订单管理" @back="goBack" />
-
-    <!-- 状态标签 -->
-    <TabsBar
-      v-model="currentTab"
-      :tabs="tabs"
-      scrollable
-      @change="switchTab"
-    />
+  <BasePageLayout
+    class="player-orders-page"
+    :scroll="false"
+    padding="0"
+    title="订单管理"
+    :show-back="true"
+    :show-tab-bar="true"
+    :show-mobile-tab-bar="false"
+  >
+    <template #tabs>
+      <!-- 状态标签 -->
+      <TabsBar
+        v-model="currentTab"
+        :tabs="tabs"
+        scrollable
+        @change="switchTab"
+      />
+    </template>
 
     <!-- 订单列表 -->
     <InfiniteList
@@ -22,34 +29,34 @@
       @load-more="loadMore"
       @retry="refresh"
     >
-      <ListItem
-        v-for="(order, index) in orders"
-        :key="order.id"
-        :index="index"
-      >
-        <PlayerOrderCard
-          :order="order"
-          @user-click="() => {}"
-          @action="(action) => handleAction(order, action)"
-        />
-      </ListItem>
+      <view class="player-orders-grid">
+        <ListItem
+          v-for="(order, index) in orders"
+          :key="order.id"
+          :index="index"
+        >
+          <OrderCard
+            :order="order"
+            view-mode="player"
+            @person-click="() => {}"
+            @action="(action) => handleAction(order, action)"
+          />
+        </ListItem>
+      </view>
     </InfiniteList>
 
-    <!-- PC 端侧边栏 -->
-    <CustomTabBar :show-mobile-tab-bar="false" />
-  </view>
+  </BasePageLayout>
 </template>
 
 <script setup lang="ts">
 import { onShow } from '@dcloudio/uni-app'
 // Pattern 组件
-import NavBar from '@/components/NavBar/index.vue'
+import BasePageLayout from '@/components/layout/BasePageLayout/index.vue'
 import TabsBar from '@/components/TabsBar/index.vue'
 import InfiniteList from '@/components/InfiniteList/index.vue'
 import ListItem from '@/components/ListItem/index.vue'
 // Business 组件
-import PlayerOrderCard from '@/components/PlayerOrderCard/index.vue'
-import CustomTabBar from '@/components/CustomTabBar/index.vue'
+import OrderCard from '@/components/OrderCard/index.vue'
 // Composables
 import { usePlayerOrders } from '@/composables/usePlayerOrders'
 
@@ -75,18 +82,24 @@ onShow(() => {
 </script>
 
 <style lang="scss" scoped>
-.player-orders-page {
-  min-height: 100vh;
-  min-height: 100dvh;
+.player-orders-grid {
   display: flex;
   flex-direction: column;
-  background: var(--color-bg);
-  box-sizing: border-box;
-  
+  gap: var(--spacing-sm);
+
   @include desktop {
-    height: 100vh;
-    min-height: auto;
-    overflow: hidden;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--spacing-sm);
+    row-gap: var(--spacing-sm);
+  }
+
+  @include desktop-lg {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  :deep(.list-item) {
+    margin-bottom: 0;
   }
 }
 </style>

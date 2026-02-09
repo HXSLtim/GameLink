@@ -9,14 +9,14 @@ import (
 // It tracks when the system was last initialized with menu/permission sync
 type SystemState struct {
 	Base
-	Key         string    `json:"key" gorm:"size:64;uniqueIndex;not null"` // e.g., "admin_init"
-	Value       string    `json:"value" gorm:"type:text;not null"`           // JSON string containing state data
-	ExpiresAt   *time.Time `json:"expiresAt,omitempty" gorm:"index"`          // Optional expiration for cache-like behavior
-	Version     string    `json:"version" gorm:"size:32"`                    // Version hash for change detection
-	LastSyncAt  time.Time `json:"lastSyncAt" gorm:"index"`                   // When sync was performed
-	SyncedBy    uint64    `json:"syncedBy"`                                  // User ID who performed the sync
-	SyncedByIP  string    `json:"syncedByIp" gorm:"size:64"`                 // IP address of sync requester
-	Description string    `json:"description" gorm:"type:text"`              // Human-readable description
+	Key         string     `json:"key" gorm:"size:64;uniqueIndex;not null"` // e.g., "admin_init"
+	Value       string     `json:"value" gorm:"type:text;not null"`         // JSON string containing state data
+	ExpiresAt   *time.Time `json:"expiresAt,omitempty" gorm:"index"`        // Optional expiration for cache-like behavior
+	Version     string     `json:"version" gorm:"size:32"`                  // Version hash for change detection
+	LastSyncAt  time.Time  `json:"lastSyncAt" gorm:"index"`                 // When sync was performed
+	SyncedBy    uint64     `json:"syncedBy"`                                // User ID who performed the sync
+	SyncedByIP  string     `json:"syncedByIp" gorm:"size:64"`               // IP address of sync requester
+	Description string     `json:"description" gorm:"type:text"`            // Human-readable description
 }
 
 // TableName specifies the table name for SystemState
@@ -26,10 +26,10 @@ func (SystemState) TableName() string {
 
 // SystemInitData represents the initialization data stored in Value field
 type SystemInitData struct {
-	MenuCount      int       `json:"menuCount"`
-	PermissionCount int      `json:"permissionCount"`
-	MenuVersion    string    `json:"menuVersion"`
-	PermVersion    string    `json:"permVersion"`
+	MenuCount       int    `json:"menuCount"`
+	PermissionCount int    `json:"permissionCount"`
+	MenuVersion     string `json:"menuVersion"`
+	PermVersion     string `json:"permVersion"`
 }
 
 // GetInitData parses the Value JSON into SystemInitData

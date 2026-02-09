@@ -88,7 +88,7 @@ func TestCryptoMiddleware_PlainTextPassthrough(t *testing.T) {
 	cfg := config.CryptoConfig{
 		Enabled:      true,
 		SecretKey:    "12345678901234567890123456789012", // 32 bytes
-		IV:           "1234567890123456",                  // 16 bytes
+		IV:           "1234567890123456",                 // 16 bytes
 		UseSignature: false,
 		Methods:      []string{"POST"},
 		ExcludePaths: []string{},
@@ -149,7 +149,7 @@ func TestCryptoMiddleware_EndToEndEncryption(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	secretKey := "12345678901234567890123456789012" // 32 bytes for AES-256
-	iv := "1234567890123456"                       // 16 bytes
+	iv := "1234567890123456"                        // 16 bytes
 
 	cfg := config.CryptoConfig{
 		Enabled:      true,
@@ -723,15 +723,15 @@ func TestPKCS7Unpad(t *testing.T) {
 	}{
 		{
 			name:        "Valid padding - single byte",
-			input:       []byte("data\x01"),
+			input:       append(bytes.Repeat([]byte{0x61}, 15), 0x01),
 			expectError: false,
-			expected:    []byte("data"),
+			expected:    bytes.Repeat([]byte{0x61}, 15),
 		},
 		{
 			name:        "Valid padding - multiple bytes",
-			input:       []byte("data\x04\x04\x04\x04"),
+			input:       []byte("data12345678\x04\x04\x04\x04"),
 			expectError: false,
-			expected:    []byte("data"),
+			expected:    []byte("data12345678"),
 		},
 		{
 			name:        "Full block padding",

@@ -97,6 +97,12 @@ issues:
     - path: internal/repository/ranking/
       linters:
         - dupl
+    - path: internal/service/integration/e2eHelper\.go
+      linters:
+        - dupl
+    - path: pkg/db/seed_flow\.go
+      linters:
+        - dupl
     # Handler duplicates (similar CRUD patterns across admin handlers)
     - path: internal/handler/admin/
       linters:

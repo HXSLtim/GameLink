@@ -1,7 +1,0 @@
-<image
-  class="gl-icon gl-icon--{{size}}"
-  style="{{color ? 'filter: drop-shadow(0 0 0 ' + color + ');' : ''}}"
-  src="/assets/icons/{{name}}.svg"
-  mode="aspectFit"
-  bindtap="handleTap"
-/>

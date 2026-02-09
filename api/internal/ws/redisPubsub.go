@@ -14,20 +14,20 @@ import (
 
 const (
 	// Redis channels for WebSocket message distribution
-	ChannelBroadcast = "ws:broadcast"       // Broadcast to all connected clients
-	ChannelRole      = "ws:role:%s"         // Broadcast to specific role (user, player, admin)
-	ChannelUser      = "ws:user:%d"         // Send to specific user
-	ChannelPresence  = "ws:presence"        // User presence updates
+	ChannelBroadcast = "ws:broadcast" // Broadcast to all connected clients
+	ChannelRole      = "ws:role:%s"   // Broadcast to specific role (user, player, admin)
+	ChannelUser      = "ws:user:%d"   // Send to specific user
+	ChannelPresence  = "ws:presence"  // User presence updates
 )
 
 // RedisPubSub manages Redis Pub/Sub for cross-instance WebSocket communication.
 // This enables horizontal scaling by allowing multiple WebSocket server instances
 // to broadcast messages to each other's connected clients.
 type RedisPubSub struct {
-	client   *redis.Client
-	hub      *Hub                  // Local hub for local client broadcasting
-	ctx      context.Context
-	cancel   context.CancelFunc
+	client *redis.Client
+	hub    *Hub // Local hub for local client broadcasting
+	ctx    context.Context
+	cancel context.CancelFunc
 
 	// Subscription management
 	mu       sync.RWMutex
@@ -42,11 +42,11 @@ type RedisPubSub struct {
 
 // PubSubMessage represents a message transmitted via Redis Pub/Sub.
 type PubSubMessage struct {
-	Type      string      `json:"type"`      // broadcast, role, user
-	UserID    *uint64     `json:"userID"`    // Target user ID (for user messages)
-	Role      *string     `json:"role"`      // Target role (for role messages)
-	Data      []byte      `json:"data"`      // Actual message payload
-	Timestamp time.Time   `json:"timestamp"`
+	Type      string    `json:"type"`   // broadcast, role, user
+	UserID    *uint64   `json:"userID"` // Target user ID (for user messages)
+	Role      *string   `json:"role"`   // Target role (for role messages)
+	Data      []byte    `json:"data"`   // Actual message payload
+	Timestamp time.Time `json:"timestamp"`
 }
 
 // NewRedisPubSub creates a new Redis Pub/Sub manager for WebSocket multi-instance support.
@@ -68,11 +68,11 @@ func NewRedisPubSub(client *redis.Client, hub *Hub) *RedisPubSub {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return &RedisPubSub{
-		client:   client,
-		hub:      hub,
-		ctx:      ctx,
-		cancel:   cancel,
-		channels: make(map[string]struct{}),
+		client:         client,
+		hub:            hub,
+		ctx:            ctx,
+		cancel:         cancel,
+		channels:       make(map[string]struct{}),
 		lastActivityAt: time.Now(),
 	}
 }

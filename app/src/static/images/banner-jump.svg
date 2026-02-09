@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="450" viewBox="0 0 1200 450" fill="none">
+  <defs>
+    <linearGradient id="bg1" x1="0" y1="0" x2="1200" y2="450" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1a1a2e"/>
+      <stop offset="0.5" stop-color="#16213e"/>
+      <stop offset="1" stop-color="#0f3460"/>
+    </linearGradient>
+    <linearGradient id="accent1" x1="0" y1="0" x2="200" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7ACC35"/>
+      <stop offset="1" stop-color="#5BB318"/>
+    </linearGradient>
+    <radialGradient id="glow1" cx="900" cy="225" r="300" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7ACC35" stop-opacity="0.15"/>
+      <stop offset="1" stop-color="#7ACC35" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <!-- 背景 -->
+  <rect width="1200" height="450" rx="24" fill="url(#bg1)"/>
+  <rect width="1200" height="450" rx="24" fill="url(#glow1)"/>
+  <!-- 装饰：网格点阵 -->
+  <g opacity="0.08" fill="#7ACC35">
+    <circle cx="700" cy="60" r="3"/><circle cx="740" cy="60" r="3"/><circle cx="780" cy="60" r="3"/><circle cx="820" cy="60" r="3"/><circle cx="860" cy="60" r="3"/><circle cx="900" cy="60" r="3"/><circle cx="940" cy="60" r="3"/><circle cx="980" cy="60" r="3"/><circle cx="1020" cy="60" r="3"/><circle cx="1060" cy="60" r="3"/><circle cx="1100" cy="60" r="3"/>
+    <circle cx="700" cy="100" r="3"/><circle cx="740" cy="100" r="3"/><circle cx="780" cy="100" r="3"/><circle cx="820" cy="100" r="3"/><circle cx="860" cy="100" r="3"/><circle cx="900" cy="100" r="3"/><circle cx="940" cy="100" r="3"/><circle cx="980" cy="100" r="3"/><circle cx="1020" cy="100" r="3"/><circle cx="1060" cy="100" r="3"/><circle cx="1100" cy="100" r="3"/>
+    <circle cx="700" cy="140" r="3"/><circle cx="740" cy="140" r="3"/><circle cx="780" cy="140" r="3"/><circle cx="820" cy="140" r="3"/><circle cx="860" cy="140" r="3"/><circle cx="900" cy="140" r="3"/><circle cx="940" cy="140" r="3"/><circle cx="980" cy="140" r="3"/><circle cx="1020" cy="140" r="3"/><circle cx="1060" cy="140" r="3"/><circle cx="1100" cy="140" r="3"/>
+  </g>
+  <!-- 装饰：游戏手柄轮廓 -->
+  <g transform="translate(820, 120)" opacity="0.12" stroke="#7ACC35" stroke-width="3" fill="none">
+    <rect x="0" y="40" width="260" height="160" rx="80"/>
+    <circle cx="80" cy="120" r="30"/>
+    <circle cx="180" cy="120" r="12"/>
+    <circle cx="210" cy="90" r="12"/>
+    <circle cx="210" cy="150" r="12"/>
+    <circle cx="240" cy="120" r="12"/>
+    <rect x="90" y="0" width="80" height="50" rx="16"/>
+  </g>
+  <!-- 装饰：光环 -->
+  <circle cx="1050" cy="350" r="80" stroke="#7ACC35" stroke-width="2" fill="none" opacity="0.1"/>
+  <circle cx="1050" cy="350" r="50" stroke="#7ACC35" stroke-width="1.5" fill="none" opacity="0.08"/>
+  <circle cx="700" cy="380" r="120" stroke="#fff" stroke-width="1" fill="none" opacity="0.04"/>
+  <!-- 标签条 -->
+  <rect x="80" y="100" width="80" height="6" rx="3" fill="url(#accent1)"/>
+  <!-- 主标题 -->
+  <text x="80" y="170" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="48" font-weight="800" fill="#FFFFFF" letter-spacing="2">
+    发现热门游戏
+  </text>
+  <!-- 副标题 -->
+  <text x="80" y="225" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="22" font-weight="400" fill="#94a3b8">
+    海量陪玩师在线接单，找到你的最佳搭档
+  </text>
+  <!-- CTA 按钮 -->
+  <rect x="80" y="270" width="180" height="52" rx="26" fill="url(#accent1)"/>
+  <text x="122" y="303" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="20" font-weight="700" fill="#1a1a2e">
+    立即探索 →
+  </text>
+  <!-- 底部数据展示 -->
+  <g transform="translate(80, 360)">
+    <text font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="28" font-weight="800" fill="#7ACC35">1000+</text>
+    <text x="110" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="16" font-weight="400" fill="#64748b">位陪玩师</text>
+    <text x="230" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="28" font-weight="800" fill="#7ACC35">50+</text>
+    <text x="310" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="16" font-weight="400" fill="#64748b">款热门游戏</text>
+  </g>
+</svg>

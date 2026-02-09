@@ -1,15 +1,22 @@
 <template>
-  <view class="order-list-page page-container">
-    <!-- 顶部导航 -->
-    <NavBar title="我的订单" @back="goBack" />
-
-    <!-- 状态标签 -->
-    <TabsBar
-      v-model="currentTab"
-      :tabs="tabs"
-      scrollable
-      @change="switchTab"
-    />
+  <BasePageLayout
+    class="order-list-page"
+    :scroll="false"
+    padding="0"
+    title="我的订单"
+    :show-back="true"
+    :show-tab-bar="true"
+    :show-mobile-tab-bar="false"
+  >
+    <template #tabs>
+      <!-- 状态标签 -->
+      <TabsBar
+        v-model="currentTab"
+        :tabs="tabs"
+        scrollable
+        @change="switchTab"
+      />
+    </template>
 
     <!-- 订单列表 -->
     <InfiniteList
@@ -24,35 +31,34 @@
       @retry="refresh"
     >
       <template #default>
-        <ListItem
-          v-for="(order, index) in orders"
-          :key="order.id"
-          :index="index"
-          @click="goToDetail(order.id)"
-        >
-          <OrderCard
-            :order="order"
-            @action="handleOrderAction"
-          />
-        </ListItem>
+        <view class="order-grid">
+          <ListItem
+            v-for="(order, index) in orders"
+            :key="order.id"
+            :index="index"
+            @click="goToDetail(order.id)"
+          >
+            <OrderCard
+              :order="order"
+              @action="handleOrderAction"
+            />
+          </ListItem>
+        </view>
       </template>
     </InfiniteList>
     
-    <!-- PC 端侧边栏 -->
-    <CustomTabBar :show-mobile-tab-bar="false" />
-  </view>
+  </BasePageLayout>
 </template>
 
 <script setup lang="ts">
 import { onShow } from '@dcloudio/uni-app'
 // Pattern 组件
-import NavBar from '@/components/NavBar/index.vue'
+import BasePageLayout from '@/components/layout/BasePageLayout/index.vue'
 import TabsBar from '@/components/TabsBar/index.vue'
 import InfiniteList from '@/components/InfiniteList/index.vue'
 import ListItem from '@/components/ListItem/index.vue'
 // Business 组件
 import OrderCard from '@/components/OrderCard/index.vue'
-import CustomTabBar from '@/components/CustomTabBar/index.vue'
 // Composables
 import { useOrderList } from '@/composables/useOrderList'
 
@@ -80,19 +86,31 @@ onShow(() => {
 
 <style lang="scss" scoped>
 .order-list-page {
-  min-height: 100vh;
-  min-height: 100dvh;
+  padding-bottom: calc(110rpx + env(safe-area-inset-bottom));
+
+  @include desktop {
+    padding-bottom: 0;
+  }
+}
+
+.order-grid {
   display: flex;
   flex-direction: column;
-  background: var(--color-bg);
-  box-sizing: border-box;
-  padding-bottom: calc(110rpx + env(safe-area-inset-bottom));
-  
+  gap: var(--spacing-sm);
+
   @include desktop {
-    height: 100vh;
-    min-height: auto;
-    padding-bottom: 0;
-    overflow: hidden;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--spacing-sm);
+    row-gap: var(--spacing-sm);
+  }
+
+  @include desktop-lg {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  :deep(.list-item) {
+    margin-bottom: 0;
   }
 }
 </style>

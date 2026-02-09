@@ -2,6 +2,7 @@ package notification
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"gamelink/internal/model"
@@ -103,4 +104,124 @@ func (s *Service) MarkRead(ctx context.Context, userID uint64, ids []uint64) err
 // GetUnreadCount returns unread notifications count.
 func (s *Service) GetUnreadCount(ctx context.Context, userID uint64) (int64, error) {
 	return s.repo.CountUnread(ctx, userID)
+}
+
+// SendNotificationRequest 发送通知请求
+type SendNotificationRequest struct {
+	UserID        uint64                     // 接收者用户ID
+	Title         string                     // 通知标题
+	Message       string                     // 通知内容
+	Priority      model.NotificationPriority // 优先级
+	Channel       string                     // 渠道（默认 "in_app"）
+	ReferenceType string                     // 关联类型（如 order, gift, coupon）
+	ReferenceID   *uint64                    // 关联ID
+}
+
+// Send 发送通知
+func (s *Service) Send(ctx context.Context, req SendNotificationRequest) error {
+	if req.Channel == "" {
+		req.Channel = "in_app"
+	}
+	if req.Priority == "" {
+		req.Priority = model.NotificationPriorityNormal
+	}
+
+	notification := &model.NotificationEvent{
+		UserID:        req.UserID,
+		Title:         req.Title,
+		Message:       req.Message,
+		Priority:      req.Priority,
+		Channel:       req.Channel,
+		ReferenceType: req.ReferenceType,
+		ReferenceID:   req.ReferenceID,
+	}
+
+	return s.repo.Create(ctx, notification)
+}
+
+// SendGiftNotification 发送礼物通知
+func (s *Service) SendGiftNotification(ctx context.Context, playerUserID uint64, senderName string, giftName string, quantity int, orderID uint64) error {
+	title := "收到新礼物"
+	message := senderName + " 赠送了您 " + giftName
+	if quantity > 1 {
+		message += " x" + formatInt(quantity)
+	}
+
+	return s.Send(ctx, SendNotificationRequest{
+		UserID:        playerUserID,
+		Title:         title,
+		Message:       message,
+		Priority:      model.NotificationPriorityNormal,
+		ReferenceType: "gift",
+		ReferenceID:   &orderID,
+	})
+}
+
+// SendOrderNotification 发送订单通知
+func (s *Service) SendOrderNotification(ctx context.Context, userID uint64, title, message string, orderID uint64) error {
+	return s.Send(ctx, SendNotificationRequest{
+		UserID:        userID,
+		Title:         title,
+		Message:       message,
+		Priority:      model.NotificationPriorityNormal,
+		ReferenceType: "order",
+		ReferenceID:   &orderID,
+	})
+}
+
+// SendVipNotification 发送 VIP 相关通知
+func (s *Service) SendVipNotification(ctx context.Context, userID uint64, title, message string) error {
+	return s.Send(ctx, SendNotificationRequest{
+		UserID:        userID,
+		Title:         title,
+		Message:       message,
+		Priority:      model.NotificationPriorityNormal,
+		ReferenceType: "vip",
+	})
+}
+
+// SendCouponNotification 发送优惠券通知
+func (s *Service) SendCouponNotification(ctx context.Context, userID uint64, title, message string, couponID *uint64) error {
+	return s.Send(ctx, SendNotificationRequest{
+		UserID:        userID,
+		Title:         title,
+		Message:       message,
+		Priority:      model.NotificationPriorityNormal,
+		ReferenceType: "coupon",
+		ReferenceID:   couponID,
+	})
+}
+
+// SendReferralRewardNotification 发送推荐奖励通知
+func (s *Service) SendReferralRewardNotification(ctx context.Context, userID uint64, rewardType string, amount int64) error {
+	title := "推荐奖励已到账"
+	var message string
+	if rewardType == "cash" {
+		message = "恭喜您获得推荐奖励 ¥" + formatCents(amount) + "，已存入您的钱包"
+	} else {
+		message = "恭喜您获得推荐奖励，优惠券已发放到您的账户"
+	}
+
+	return s.Send(ctx, SendNotificationRequest{
+		UserID:        userID,
+		Title:         title,
+		Message:       message,
+		Priority:      model.NotificationPriorityNormal,
+		ReferenceType: "referral",
+	})
+}
+
+// formatInt 格式化整数
+func formatInt(n int) string {
+	return fmt.Sprintf("%d", n)
+}
+
+// formatCents 格式化分为元
+func formatCents(cents int64) string {
+	yuan := cents / 100
+	fen := cents % 100
+	if fen == 0 {
+		return fmt.Sprintf("%d", yuan)
+	}
+	return fmt.Sprintf("%d.%02d", yuan, fen)
 }

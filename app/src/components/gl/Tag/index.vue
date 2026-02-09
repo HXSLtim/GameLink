@@ -77,59 +77,59 @@ const handleClose = (e: Event) => {
   display: inline-flex;
   align-items: center;
   gap: 4rpx;
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   font-weight: 500;
   border: 1rpx solid transparent;
   
   // 尺寸
   &--mini {
     height: 32rpx;
-    padding: 0 8rpx;
-    font-size: 20rpx;
-    border-radius: 6rpx;
+    padding: 0 var(--spacing-xs);
+    font-size: var(--font-xs);
+    border-radius: var(--radius-sm);
   }
   
   &--small {
     height: 40rpx;
-    padding: 0 12rpx;
-    font-size: 22rpx;
+    padding: 0 var(--spacing-sm);
+    font-size: var(--font-sm);
   }
   
   &--medium {
     height: 48rpx;
-    padding: 0 16rpx;
-    font-size: 24rpx;
+    padding: 0 var(--spacing-md);
+    font-size: var(--font-md);
   }
   
-  // 类型
+  // 类型 - 使用 CSS 变量适配日/夜主题
   &--primary {
-    background: rgba(0, 210, 106, 0.1);
+    background: var(--color-primary-tint);
     color: var(--color-primary);
-    border-color: rgba(0, 210, 106, 0.2);
+    border-color: var(--color-primary-tint-border);
   }
   
   &--success {
-    background: rgba(16, 185, 129, 0.1);
+    background: var(--color-success-tint);
     color: var(--color-success);
-    border-color: rgba(16, 185, 129, 0.2);
+    border-color: var(--color-success-tint-border);
   }
   
   &--warning {
-    background: rgba(245, 158, 11, 0.1);
+    background: var(--color-warning-tint);
     color: var(--color-warning);
-    border-color: rgba(245, 158, 11, 0.2);
+    border-color: var(--color-warning-tint-border);
   }
   
   &--error {
-    background: rgba(239, 68, 68, 0.1);
+    background: var(--color-error-tint);
     color: var(--color-error);
-    border-color: rgba(239, 68, 68, 0.2);
+    border-color: var(--color-error-tint-border);
   }
   
   &--info {
-    background: rgba(59, 130, 246, 0.1);
-    color: var(--color-info, #3B82F6);
-    border-color: rgba(59, 130, 246, 0.2);
+    background: var(--color-info-tint);
+    color: var(--color-info);
+    border-color: var(--color-info-tint-border);
   }
   
   &--default {
@@ -162,10 +162,11 @@ const handleClose = (e: Event) => {
   padding: 4rpx;
   border-radius: 50%;
   opacity: 0.7;
+  transition: all 0.15s ease;
   
   &:active {
     opacity: 1;
-    background: rgba(0, 0, 0, 0.1);
+    background: var(--color-bg-secondary);
   }
 }
 </style>

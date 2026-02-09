@@ -1,22 +1,25 @@
 /**
  * 频道列表专用 Hook
  */
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useListPage } from './useListPage'
 import { getPublicChannels, joinChatGroup, leaveChatGroup, type PublicChannel } from '@/api/chat'
 import { getHotGames, type Game } from '@/api/game'
 import { useUserStore } from '@/store/user'
 import { setRedirectPath } from '@/utils/routeGuard'
 import { getCachedChannels, saveCachedChannels } from '@/utils/offlineData'
-import type { ChannelData } from '@/components/ChannelCard/index.vue'
-import type { GameTabItem } from '@/components/GameTabs/index.vue'
+import { confirmDialog } from '@/composables/useConfirmDialog'
+import type { ChannelData } from '@/types/community'
+import type { GameTabItem } from '@/types/game'
+import type { FilterSection, FilterValues } from '@/types/filter'
 
 export function useChannelList() {
   const userStore = useUserStore()
   
   // 搜索和筛选
   const searchKeyword = ref('')
-  const currentGameId = ref<number | string>('all')
+  const showFilter = ref(false)
+  const filterValues = ref<FilterValues>({ gameId: 'all' })
   const isOfflineMode = ref(false)
   
   // 游戏分类
@@ -25,8 +28,8 @@ export function useChannelList() {
   // 构建 API 参数
   const buildParams = () => {
     const params: Record<string, any> = {}
-    if (currentGameId.value !== 'all') {
-      params.gameId = Number(currentGameId.value)
+    if (filterValues.value.gameId && filterValues.value.gameId !== 'all') {
+      params.gameId = Number(filterValues.value.gameId)
     }
     if (searchKeyword.value.trim()) {
       params.keyword = searchKeyword.value.trim()
@@ -39,7 +42,7 @@ export function useChannelList() {
     fetchFn: async (params) => {
       const res = await getPublicChannels({
         page: params.page,
-        pageSize: params.pageSize,
+        page_size: params.pageSize,
         ...buildParams(),
       }, { showError: false })
       return res
@@ -59,7 +62,7 @@ export function useChannelList() {
         gameName: c.gameName,
       }))
     },
-    pageSize: 20,
+    page_size: 20,
     getCacheFn: () => {
       const cached = getCachedChannels()
       if (!cached) return null
@@ -119,9 +122,23 @@ export function useChannelList() {
     refreshList()
   }
   
-  // 选择游戏
-  const handleGameSelect = () => {
+  const filterSections = computed<FilterSection[]>(() => [
+    {
+      key: 'gameId',
+      label: '分类',
+      options: games.value.map(game => ({
+        label: game.name,
+        value: game.id,
+      })),
+    },
+  ])
+
+  const handleFilterApply = () => {
     refreshList()
+  }
+
+  const handleFilterReset = () => {
+    filterValues.value = { gameId: 'all' }
   }
   
   // 加入频道
@@ -147,25 +164,22 @@ export function useChannelList() {
   
   // 离开频道
   const leaveChannel = async (channel: ChannelData) => {
-    uni.showModal({
+    const confirmed = await confirmDialog({
       title: '确认离开',
       content: `确定要离开"${channel.name}"频道吗？`,
-      success: async (res) => {
-        if (res.confirm) {
-          try {
-            uni.showLoading({ title: '处理中...' })
-            await leaveChatGroup(channel.id)
-            channel.isJoined = false
-            if (channel.memberCount > 0) channel.memberCount--
-            uni.hideLoading()
-            uni.showToast({ title: '已离开', icon: 'success' })
-          } catch (error: any) {
-            uni.hideLoading()
-            uni.showToast({ title: error?.message || '操作失败', icon: 'none' })
-          }
-        }
-      }
     })
+    if (!confirmed) return
+    try {
+      uni.showLoading({ title: '处理中...' })
+      await leaveChatGroup(channel.id)
+      channel.isJoined = false
+      if (channel.memberCount > 0) channel.memberCount--
+      uni.hideLoading()
+      uni.showToast({ title: '已离开', icon: 'success' })
+    } catch (error: any) {
+      uni.hideLoading()
+      uni.showToast({ title: error?.message || '操作失败', icon: 'none' })
+    }
   }
   
   // 进入频道
@@ -199,15 +213,18 @@ export function useChannelList() {
     
     // 筛选
     searchKeyword,
-    currentGameId,
+    showFilter,
+    filterValues,
     games,
+    filterSections,
     isOfflineMode,
     
     // 方法
     loadMore: listPage.loadMore,
     refresh: refreshList,
     handleSearch,
-    handleGameSelect,
+    handleFilterApply,
+    handleFilterReset,
     joinChannel,
     leaveChannel,
     enterChannel,

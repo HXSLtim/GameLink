@@ -63,21 +63,35 @@ func (m *MockRoleUserRepository) Update(ctx context.Context, user *model.User) e
 	return args.Error(0)
 }
 
-func (m *MockRoleUserRepository) List(ctx context.Context) ([]model.User, error)                   { return nil, nil }
+func (m *MockRoleUserRepository) List(ctx context.Context) ([]model.User, error) { return nil, nil }
 func (m *MockRoleUserRepository) ListPaged(ctx context.Context, page, pageSize int) ([]model.User, int64, error) {
 	return nil, 0, nil
 }
 func (m *MockRoleUserRepository) ListWithFilters(ctx context.Context, opts repository.UserListOptions) ([]model.User, int64, error) {
 	return nil, 0, nil
 }
-func (m *MockRoleUserRepository) Count(ctx context.Context, opts repository.UserListOptions) (int, error) { return 0, nil }
-func (m *MockRoleUserRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.User, error)      { return nil, nil }
-func (m *MockRoleUserRepository) GetByPhone(ctx context.Context, phone string) (*model.User, error)     { return nil, nil }
-func (m *MockRoleUserRepository) GetByEmail(ctx context.Context, email string) (*model.User, error)     { return nil, nil }
-func (m *MockRoleUserRepository) FindByEmail(ctx context.Context, email string) (*model.User, error)    { return nil, nil }
-func (m *MockRoleUserRepository) FindByPhone(ctx context.Context, phone string) (*model.User, error)    { return nil, nil }
-func (m *MockRoleUserRepository) Delete(ctx context.Context, id uint64) error                          { return nil }
-func (m *MockRoleUserRepository) UpdatePassword(ctx context.Context, userID uint64, newPassword string) error { return nil }
+func (m *MockRoleUserRepository) Count(ctx context.Context, opts repository.UserListOptions) (int, error) {
+	return 0, nil
+}
+func (m *MockRoleUserRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.User, error) {
+	return nil, nil
+}
+func (m *MockRoleUserRepository) GetByPhone(ctx context.Context, phone string) (*model.User, error) {
+	return nil, nil
+}
+func (m *MockRoleUserRepository) GetByEmail(ctx context.Context, email string) (*model.User, error) {
+	return nil, nil
+}
+func (m *MockRoleUserRepository) FindByEmail(ctx context.Context, email string) (*model.User, error) {
+	return nil, nil
+}
+func (m *MockRoleUserRepository) FindByPhone(ctx context.Context, phone string) (*model.User, error) {
+	return nil, nil
+}
+func (m *MockRoleUserRepository) Delete(ctx context.Context, id uint64) error { return nil }
+func (m *MockRoleUserRepository) UpdatePassword(ctx context.Context, userID uint64, newPassword string) error {
+	return nil
+}
 
 // MockRolePlayerRepository is a mock implementation of PlayerRepository for role tests
 type MockRolePlayerRepository struct {
@@ -92,10 +106,16 @@ func (m *MockRolePlayerRepository) GetByUserID(ctx context.Context, userID uint6
 	return args.Get(0).(*model.Player), args.Error(1)
 }
 
-func (m *MockRolePlayerRepository) Create(ctx context.Context, player *model.Player) error { return nil }
-func (m *MockRolePlayerRepository) Get(ctx context.Context, id uint64) (*model.Player, error) { return nil, nil }
-func (m *MockRolePlayerRepository) Update(ctx context.Context, player *model.Player) error { return nil }
-func (m *MockRolePlayerRepository) Delete(ctx context.Context, id uint64) error { return nil }
+func (m *MockRolePlayerRepository) Create(ctx context.Context, player *model.Player) error {
+	return nil
+}
+func (m *MockRolePlayerRepository) Get(ctx context.Context, id uint64) (*model.Player, error) {
+	return nil, nil
+}
+func (m *MockRolePlayerRepository) Update(ctx context.Context, player *model.Player) error {
+	return nil
+}
+func (m *MockRolePlayerRepository) Delete(ctx context.Context, id uint64) error      { return nil }
 func (m *MockRolePlayerRepository) List(ctx context.Context) ([]model.Player, error) { return nil, nil }
 func (m *MockRolePlayerRepository) ListPaged(ctx context.Context, page, pageSize int) ([]model.Player, int64, error) {
 	return nil, 0, nil
@@ -103,11 +123,24 @@ func (m *MockRolePlayerRepository) ListPaged(ctx context.Context, page, pageSize
 func (m *MockRolePlayerRepository) ListPagedWithFilter(ctx context.Context, page, pageSize int, keyword string, status *model.VerificationStatus) ([]model.Player, int64, error) {
 	return nil, 0, nil
 }
-func (m *MockRolePlayerRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.Player, error) { return nil, nil }
-func (m *MockRolePlayerRepository) BatchUpdateRank(ctx context.Context, ids []uint64, rank string) (int64, error) { return 0, nil }
-func (m *MockRolePlayerRepository) BatchUpdateHourlyRate(ctx context.Context, ids []uint64, rateCents int64) (int64, error) { return 0, nil }
-func (m *MockRolePlayerRepository) BatchUpdateStatus(ctx context.Context, ids []uint64, status model.VerificationStatus) (int64, error) { return 0, nil }
-func (m *MockRolePlayerRepository) BatchDelete(ctx context.Context, ids []uint64) (int64, error) { return 0, nil }
+func (m *MockRolePlayerRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.Player, error) {
+	return nil, nil
+}
+func (m *MockRolePlayerRepository) BatchUpdateRank(ctx context.Context, ids []uint64, rank string) (int64, error) {
+	return 0, nil
+}
+func (m *MockRolePlayerRepository) BatchUpdateHourlyRate(ctx context.Context, ids []uint64, rateCents int64) (int64, error) {
+	return 0, nil
+}
+func (m *MockRolePlayerRepository) BatchUpdateStatus(ctx context.Context, ids []uint64, status model.VerificationStatus) (int64, error) {
+	return 0, nil
+}
+func (m *MockRolePlayerRepository) BatchDelete(ctx context.Context, ids []uint64) (int64, error) {
+	return 0, nil
+}
+func (m *MockRolePlayerRepository) ListFeatured(ctx context.Context, limit int, status *model.VerificationStatus) ([]model.Player, int64, error) {
+	return nil, 0, nil
+}
 
 // ============================================================================
 // Tests

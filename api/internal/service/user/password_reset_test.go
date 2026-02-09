@@ -19,7 +19,7 @@ import (
 
 // mockUserRepository is a mock implementation of UserRepository for testing
 type mockUserRepository struct {
-	users        map[uint64]*model.User
+	users         map[uint64]*model.User
 	findByEmailFn func(ctx context.Context, email string) (*model.User, error)
 	updatePassFn  func(ctx context.Context, userID uint64, newPassword string) error
 }
@@ -52,24 +52,40 @@ func (m *mockUserRepository) UpdatePassword(ctx context.Context, userID uint64, 
 }
 
 // Implement other required methods (stubs)
-func (m *mockUserRepository) List(ctx context.Context) ([]model.User, error)                   { return nil, nil }
+func (m *mockUserRepository) List(ctx context.Context) ([]model.User, error) { return nil, nil }
 func (m *mockUserRepository) ListPaged(ctx context.Context, page, pageSize int) ([]model.User, int64, error) {
 	return nil, 0, nil
 }
 func (m *mockUserRepository) ListWithFilters(ctx context.Context, opts repository.UserListOptions) ([]model.User, int64, error) {
 	return nil, 0, nil
 }
-func (m *mockUserRepository) Count(ctx context.Context, opts repository.UserListOptions) (int, error) { return 0, nil }
-func (m *mockUserRepository) Get(ctx context.Context, id uint64) (*model.User, error)               { return nil, nil }
-func (m *mockUserRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.User, error)      { return nil, nil }
-func (m *mockUserRepository) GetByPhone(ctx context.Context, phone string) (*model.User, error)     { return nil, nil }
-func (m *mockUserRepository) GetByEmail(ctx context.Context, email string) (*model.User, error)     { return nil, nil }
-func (m *mockUserRepository) FindByPhone(ctx context.Context, phone string) (*model.User, error)    { return nil, nil }
-func (m *mockUserRepository) Create(ctx context.Context, user *model.User) error                   { return nil }
-func (m *mockUserRepository) Update(ctx context.Context, user *model.User) error                   { return nil }
-func (m *mockUserRepository) Delete(ctx context.Context, id uint64) error                          { return nil }
-func (m *mockUserRepository) GetByWeChatOpenID(ctx context.Context, openID string) (*model.User, error) { return nil, nil }
-func (m *mockUserRepository) GetByWeChatUnionID(ctx context.Context, unionID string) (*model.User, error) { return nil, nil }
+func (m *mockUserRepository) Count(ctx context.Context, opts repository.UserListOptions) (int, error) {
+	return 0, nil
+}
+func (m *mockUserRepository) Get(ctx context.Context, id uint64) (*model.User, error) {
+	return nil, nil
+}
+func (m *mockUserRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.User, error) {
+	return nil, nil
+}
+func (m *mockUserRepository) GetByPhone(ctx context.Context, phone string) (*model.User, error) {
+	return nil, nil
+}
+func (m *mockUserRepository) GetByEmail(ctx context.Context, email string) (*model.User, error) {
+	return nil, nil
+}
+func (m *mockUserRepository) FindByPhone(ctx context.Context, phone string) (*model.User, error) {
+	return nil, nil
+}
+func (m *mockUserRepository) Create(ctx context.Context, user *model.User) error { return nil }
+func (m *mockUserRepository) Update(ctx context.Context, user *model.User) error { return nil }
+func (m *mockUserRepository) Delete(ctx context.Context, id uint64) error        { return nil }
+func (m *mockUserRepository) GetByWeChatOpenID(ctx context.Context, openID string) (*model.User, error) {
+	return nil, nil
+}
+func (m *mockUserRepository) GetByWeChatUnionID(ctx context.Context, unionID string) (*model.User, error) {
+	return nil, nil
+}
 
 // setupTestRedis creates a miniredis instance for testing
 func setupTestRedis(t *testing.T) (*miniredis.Miniredis, *redis.Client) {
@@ -92,8 +108,8 @@ func TestPasswordResetService_RequestReset(t *testing.T) {
 		expectSuccess bool
 	}{
 		{
-			name:    "valid email",
-			email:   "test@example.com",
+			name:  "valid email",
+			email: "test@example.com",
 			setupMock: func(m *mockUserRepository) {
 				m.users = map[uint64]*model.User{
 					1: {
@@ -167,13 +183,13 @@ func (c *testCache) Close(context.Context) error {
 
 func TestPasswordResetService_ResetPassword(t *testing.T) {
 	tests := []struct {
-		name          string
-		token         string
-		newPassword   string
-		setupMock     func(*mockUserRepository)
-		setupToken    func(*miniredis.Miniredis, string)
-		expectError   error
-		verifyCalled  bool
+		name         string
+		token        string
+		newPassword  string
+		setupMock    func(*mockUserRepository)
+		setupToken   func(*miniredis.Miniredis, string)
+		expectError  error
+		verifyCalled bool
 	}{
 		{
 			name:        "valid token and strong password",

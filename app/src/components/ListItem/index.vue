@@ -49,7 +49,7 @@ const handleClick = () => {
 
 <style lang="scss" scoped>
 .list-item {
-  margin-bottom: 8rpx;
+  margin-bottom: var(--spacing-sm);
   
   &--animated {
     animation: fadeSlideUp 0.3s ease-out;
@@ -57,9 +57,13 @@ const handleClick = () => {
   }
   
   &--clickable {
+    border-radius: var(--radius-md);
+    transition: background 0.2s ease;
+    cursor: pointer;
+    @include press-effect;
+
     &:active {
-      transform: scale(0.98);
-      opacity: 0.9;
+      background: var(--color-bg-secondary);
     }
   }
 }

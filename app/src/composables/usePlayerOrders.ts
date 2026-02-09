@@ -3,20 +3,23 @@
  */
 import { ref, reactive } from 'vue'
 import { useListPage } from './useListPage'
-import { getPlayerOrders, acceptPlayerOrder, completePlayerOrder } from '@/api/order'
-import type { PlayerOrderData } from '@/components/PlayerOrderCard/index.vue'
-import type { TabItem } from '@/components/TabsBar/index.vue'
+import { getPlayerOrders, acceptOrder as acceptPlayerOrder, finishService as completePlayerOrder } from '@/api/order'
+import { confirmDialog } from '@/composables/useConfirmDialog'
+import type { Order, OrderActionKey, OrderTabItem, OrderTabKey } from '@/types/order'
+import { normalizeOrderStatus } from '@/components/OrderCard/utils'
+
+type PlayerOrderData = Order
 
 export function usePlayerOrders() {
   // 标签
-  const tabs = reactive<TabItem[]>([
+  const tabs = reactive<OrderTabItem[]>([
     { key: 'all', label: '全部', badge: 0 },
     { key: 'pending', label: '待接单', badge: 0 },
     { key: 'in_progress', label: '进行中', badge: 0 },
     { key: 'completed', label: '已完成', badge: 0 },
   ])
-  const currentTab = ref('all')
-  
+  const currentTab = ref<OrderTabKey>('all')
+
   // 构建参数
   const buildParams = () => {
     const params: Record<string, any> = {}
@@ -25,13 +28,13 @@ export function usePlayerOrders() {
     }
     return params
   }
-  
+
   // 使用通用列表 Hook
   const listPage = useListPage<PlayerOrderData>({
     fetchFn: async (params) => {
       const res = await getPlayerOrders({
         page: params.page,
-        pageSize: params.pageSize,
+        page_size: params.pageSize,
         ...buildParams(),
       }, { showError: false })
       return res
@@ -41,7 +44,7 @@ export function usePlayerOrders() {
       return orders.map((o: any): PlayerOrderData => ({
         id: o.id,
         orderNo: o.orderNo,
-        status: o.status,
+        status: normalizeOrderStatus(o.status, 'player'),
         user: {
           id: o.userId,
           nickname: o.userNickname || '用户',
@@ -56,15 +59,15 @@ export function usePlayerOrders() {
         createdAt: o.createdAt,
       }))
     },
-    pageSize: 20,
+    page_size: 20,
   })
-  
+
   // 切换标签
-  const switchTab = (tab: string) => {
+  const switchTab = (tab: OrderTabKey) => {
     currentTab.value = tab
     listPage.refresh(buildParams())
   }
-  
+
   // 获取空状态文案
   const getEmptyTitle = () => {
     const titles: Record<string, string> = {
@@ -75,7 +78,7 @@ export function usePlayerOrders() {
     }
     return titles[currentTab.value] || '暂无订单'
   }
-  
+
   const getEmptyDesc = () => {
     const descs: Record<string, string> = {
       all: '努力接单，收益多多',
@@ -85,9 +88,9 @@ export function usePlayerOrders() {
     }
     return descs[currentTab.value] || ''
   }
-  
+
   // 操作处理
-  const handleAction = async (order: PlayerOrderData, action: string) => {
+  const handleAction = async (order: PlayerOrderData, action: OrderActionKey) => {
     switch (action) {
       case 'accept':
         await acceptOrder(order)
@@ -109,78 +112,69 @@ export function usePlayerOrders() {
         break
     }
   }
-  
+
   const acceptOrder = async (order: PlayerOrderData) => {
-    uni.showModal({
+    const confirmed = await confirmDialog({
       title: '确认接单',
       content: '确定接受该订单吗？',
-      success: async (res) => {
-        if (res.confirm) {
-          try {
-            uni.showLoading({ title: '处理中...' })
-            await acceptPlayerOrder(order.id)
-            uni.hideLoading()
-            uni.showToast({ title: '接单成功', icon: 'success' })
-            listPage.refresh(buildParams())
-          } catch (error: any) {
-            uni.hideLoading()
-            uni.showToast({ title: error?.message || '操作失败', icon: 'none' })
-          }
-        }
-      }
     })
+    if (!confirmed) return
+    try {
+      uni.showLoading({ title: '处理中...' })
+      await acceptPlayerOrder(order.id)
+      uni.hideLoading()
+      uni.showToast({ title: '接单成功', icon: 'success' })
+      listPage.refresh(buildParams())
+    } catch (error: any) {
+      uni.hideLoading()
+      uni.showToast({ title: error?.message || '操作失败', icon: 'none' })
+    }
   }
-  
-  const rejectOrder = (order: PlayerOrderData) => {
-    uni.showModal({
+
+  const rejectOrder = async (order: PlayerOrderData) => {
+    const confirmed = await confirmDialog({
       title: '确认拒绝',
       content: '确定拒绝该订单吗？',
-      success: (res) => {
-        if (res.confirm) {
-          uni.showToast({ title: '已拒绝', icon: 'success' })
-          listPage.refresh(buildParams())
-        }
-      }
     })
+    if (!confirmed) return
+    uni.showToast({ title: '已拒绝', icon: 'success' })
+    listPage.refresh(buildParams())
   }
-  
+
   const startService = (order: PlayerOrderData) => {
     uni.showToast({ title: '开始服务', icon: 'success' })
     listPage.refresh(buildParams())
   }
-  
+
   const completeService = async (order: PlayerOrderData) => {
-    uni.showModal({
+    const confirmed = await confirmDialog({
       title: '确认完成',
       content: '确定服务已完成吗？',
-      success: async (res) => {
-        if (res.confirm) {
-          try {
-            uni.showLoading({ title: '处理中...' })
-            await completePlayerOrder(order.id)
-            uni.hideLoading()
-            uni.showToast({ title: '服务已完成', icon: 'success' })
-            listPage.refresh(buildParams())
-          } catch (error: any) {
-            uni.hideLoading()
-            uni.showToast({ title: error?.message || '操作失败', icon: 'none' })
-          }
-        }
-      }
     })
+    if (!confirmed) return
+    try {
+      uni.showLoading({ title: '处理中...' })
+      await completePlayerOrder(order.id)
+      uni.hideLoading()
+      uni.showToast({ title: '服务已完成', icon: 'success' })
+      listPage.refresh(buildParams())
+    } catch (error: any) {
+      uni.hideLoading()
+      uni.showToast({ title: error?.message || '操作失败', icon: 'none' })
+    }
   }
-  
+
   const contactUser = (order: PlayerOrderData) => {
     uni.navigateTo({ url: `/pages/message/chat/index?userId=${order.user.id}` })
   }
-  
+
   const viewDetail = (order: PlayerOrderData) => {
     uni.navigateTo({ url: `/pages/order/detail/index?id=${order.id}` })
   }
-  
+
   // 导航
   const goBack = () => uni.navigateBack()
-  
+
   return {
     // 列表数据
     orders: listPage.list,
@@ -188,11 +182,11 @@ export function usePlayerOrders() {
     loading: listPage.loading,
     loadingMore: listPage.loadingMore,
     noMore: listPage.noMore,
-    
+
     // 标签
     tabs,
     currentTab,
-    
+
     // 方法
     loadMore: listPage.loadMore,
     refresh: listPage.refresh,

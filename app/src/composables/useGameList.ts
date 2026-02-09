@@ -4,26 +4,23 @@
 import { ref, computed } from 'vue'
 import { useListPage } from './useListPage'
 import { getGames, getGameCategories, type Game as ApiGame, type GameCategory as ApiGameCategory } from '@/api/game'
-import type { GameData } from '@/components/GameCardLarge/index.vue'
-
-interface GameCategory {
-  id: string
-  name: string
-}
+import type { GameCardData, GameTabItem } from '@/types/game'
+import type { FilterSection, FilterValues } from '@/types/filter'
 
 export function useGameList() {
   // 搜索和筛选
   const searchKeyword = ref('')
-  const currentCategory = ref('all')
+  const showFilter = ref(false)
+  const filterValues = ref<FilterValues>({ categoryId: 'all' })
   
   // 分类列表
-  const categories = ref<GameCategory[]>([{ id: 'all', name: '全部' }])
+  const categories = ref<GameTabItem[]>([{ id: 'all', name: '全部' }])
   
   // 构建 API 参数
   const buildParams = () => {
     const params: Record<string, any> = {}
-    if (currentCategory.value !== 'all') {
-      params.categoryId = currentCategory.value
+    if (filterValues.value.categoryId && filterValues.value.categoryId !== 'all') {
+      params.categoryId = filterValues.value.categoryId
     }
     if (searchKeyword.value.trim()) {
       params.keyword = searchKeyword.value.trim()
@@ -32,18 +29,18 @@ export function useGameList() {
   }
   
   // 使用通用列表 Hook
-  const listPage = useListPage<GameData>({
+  const listPage = useListPage<GameCardData>({
     fetchFn: async (params) => {
       const res = await getGames({
         page: params.page,
-        pageSize: params.pageSize,
+        page_size: params.pageSize,
         ...buildParams(),
       }, { showError: false })
       return res
     },
     extractList: (data: any) => {
       const gameList: ApiGame[] = data?.games || data?.items || data || []
-      return gameList.map((g): GameData => ({
+      return gameList.map((g): GameCardData => ({
         id: g.id,
         name: g.name,
         coverImage: g.coverImage || g.icon,
@@ -54,7 +51,7 @@ export function useGameList() {
         maxPrice: g.maxPrice ? g.maxPrice / 100 : 100,
       }))
     },
-    pageSize: 20,
+    page_size: 20,
   })
   
   // 过滤后的游戏列表
@@ -100,14 +97,29 @@ export function useGameList() {
     refreshList()
   }
   
-  // 选择分类
-  const selectCategory = (id: string) => {
-    currentCategory.value = id
+  const filterSections = computed<FilterSection[]>(() => [
+    {
+      key: 'categoryId',
+      label: '分类',
+      options: categories.value.map(category => ({
+        label: category.name,
+        value: category.id,
+      })),
+    },
+  ])
+
+  // 应用筛选
+  const handleFilterApply = () => {
     refreshList()
+  }
+
+  // 重置筛选
+  const handleFilterReset = () => {
+    filterValues.value = { categoryId: 'all' }
   }
   
   // 跳转游戏详情
-  const goToGame = (game: GameData) => {
+  const goToGame = (game: GameCardData) => {
     uni.navigateTo({ url: `/pages/player/list/index?gameId=${game.id}` })
   }
   
@@ -134,15 +146,18 @@ export function useGameList() {
     
     // 筛选
     searchKeyword,
-    currentCategory,
+    showFilter,
+    filterValues,
     categories,
+    filterSections,
     
     // 方法
     loadMore: listPage.loadMore,
     refresh: refreshList,
     handleSearch,
     clearSearch,
-    selectCategory,
+    handleFilterApply,
+    handleFilterReset,
     goToGame,
     goBack,
     init,

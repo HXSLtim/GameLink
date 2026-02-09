@@ -1,28 +1,25 @@
 <template>
-  <GlCard title="费用明细" :shadow="false" bordered class="section-card">
+  <SectionCard title="费用明细" margin="var(--spacing-sm) var(--spacing-md)">
     <view class="fee-list">
       <view v-for="item in fees" :key="item.label" class="fee-row">
         <text class="fee-label">{{ item.label }}</text>
-        <text class="fee-value" :class="{ discount: item.isDiscount }">
-          {{ item.isDiscount ? '-' : '' }}¥{{ item.value.toFixed(2) }}
-        </text>
+        <view class="fee-value" :class="{ discount: item.isDiscount }">
+          <text v-if="item.isDiscount" class="fee-sign">-</text>
+          <PriceTag :amount="item.value" amount-unit="yuan" size="small" />
+        </view>
       </view>
     </view>
     <view class="fee-total">
       <text class="total-label">实付金额</text>
-      <text class="total-value">¥{{ total.toFixed(2) }}</text>
+      <PriceTag class="total-value" :amount="total" amount-unit="yuan" size="small" />
     </view>
-  </GlCard>
+  </SectionCard>
 </template>
 
 <script setup lang="ts">
-import GlCard from '@/components/gl/Card/index.vue'
-
-export interface FeeItem {
-  label: string
-  value: number
-  isDiscount?: boolean
-}
+import SectionCard from '@/components/SectionCard/index.vue'
+import PriceTag from '@/components/PriceTag/index.vue'
+import type { FeeItem } from '@/types/order'
 
 interface Props {
   fees: FeeItem[]
@@ -33,15 +30,11 @@ defineProps<Props>()
 </script>
 
 <style lang="scss" scoped>
-.section-card {
-  margin: 20rpx 24rpx;
-}
-
 .fee-list {
   display: flex;
   flex-direction: column;
-  gap: 20rpx;
-  padding-bottom: 24rpx;
+  gap: var(--spacing-xs);
+  padding-bottom: var(--spacing-sm);
   border-bottom: 1rpx solid var(--color-border);
 }
 
@@ -51,12 +44,15 @@ defineProps<Props>()
 }
 
 .fee-label {
-  font-size: 28rpx;
+  font-size: var(--font-xs);
   color: var(--color-text-secondary);
 }
 
 .fee-value {
-  font-size: 28rpx;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4rpx;
+  font-size: var(--font-sm);
   color: var(--color-text);
   
   &.discount {
@@ -64,22 +60,34 @@ defineProps<Props>()
   }
 }
 
+.fee-value :deep(.price-tag) {
+  color: inherit;
+}
+
+.fee-sign {
+  font-size: var(--font-sm);
+}
+
 .fee-total {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-top: 24rpx;
+  padding-top: var(--spacing-sm);
 }
 
 .total-label {
-  font-size: 30rpx;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--color-text);
 }
 
 .total-value {
-  font-size: 40rpx;
+  font-size: var(--font-base);
   font-weight: 700;
-  color: var(--color-primary);
+  color: var(--color-text);
+}
+
+.total-value :deep(.price-tag) {
+  color: var(--color-text);
 }
 </style>

@@ -34,14 +34,14 @@ import (
 
 // PermissionTestContext provides test context for permission handler tests.
 type PermissionTestContext struct {
-	Router       *gin.Engine
-	Handler      *PermissionHandler
-	Service      *adminservice.AdminService
+	Router        *gin.Engine
+	Handler       *PermissionHandler
+	Service       *adminservice.AdminService
 	PermissionSvc *adminservice.PermissionService
-	RoleSvc      *adminservice.RoleService
-	DB           *gorm.DB
-	AdminUser    *model.User
-	AdminToken   string
+	RoleSvc       *adminservice.RoleService
+	DB            *gorm.DB
+	AdminUser     *model.User
+	AdminToken    string
 }
 
 // SetupPermissionTest initializes test environment for permission handler tests.

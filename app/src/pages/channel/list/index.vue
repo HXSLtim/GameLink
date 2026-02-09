@@ -1,28 +1,32 @@
 <template>
-  <view class="channel-list-page page-container">
-    <!-- 顶部导航 -->
-    <NavBar title="公共频道" @back="goBack" />
+  <BasePageLayout
+    class="channel-list-page"
+    :scroll="false"
+    padding="0"
+    title="公共频道"
+    :show-back="true"
+    :show-tab-bar="true"
+    :show-mobile-tab-bar="false"
+  >
+    <template #search>
+      <!-- 搜索栏 -->
+      <SearchBar
+        v-model="searchKeyword"
+        placeholder="搜索频道"
+        :show-filter="true"
+        @search="handleSearch"
+        @filter="showFilter = true"
+      />
+    </template>
 
-    <!-- 搜索栏 -->
-    <SearchBar
-      v-model="searchKeyword"
-      placeholder="搜索频道"
-      @search="handleSearch"
-    />
-
-    <!-- 离线提示 -->
-    <OfflineBanner
-      :visible="isOffline"
-      message="网络不可用，显示推荐频道"
-      @action="refresh"
-    />
-
-    <!-- 游戏分类 -->
-    <GameTabs
-      v-model="currentGameId"
-      :games="games"
-      @select="handleGameSelect"
-    />
+    <template #banner>
+      <!-- 离线提示 -->
+      <OfflineBanner
+        :visible="isOffline"
+        message="网络不可用，显示推荐频道"
+        @action="refresh"
+      />
+    </template>
 
     <!-- 频道列表 -->
     <InfiniteList
@@ -36,38 +40,45 @@
       @load-more="loadMore"
       @retry="refresh"
     >
-      <ListItem
-        v-for="(channel, index) in channels"
-        :key="channel.id"
-        :index="index"
-        @click="enterChannel(channel)"
-      >
-        <ChannelCard
-          :channel="channel"
-          @join="joinChannel(channel)"
-          @leave="leaveChannel(channel)"
-        />
-      </ListItem>
+      <view class="channel-grid">
+        <ListItem
+          v-for="(channel, index) in channels"
+          :key="channel.id"
+          :index="index"
+          @click="enterChannel(channel)"
+        >
+          <ChannelCard
+            :channel="channel"
+            @join="joinChannel(channel)"
+            @leave="leaveChannel(channel)"
+          />
+        </ListItem>
+      </view>
     </InfiniteList>
     
-    <!-- PC 端侧边栏 -->
-    <CustomTabBar :show-mobile-tab-bar="false" />
-  </view>
+    <!-- 筛选弹窗 -->
+    <FilterPanel
+      v-model:visible="showFilter"
+      v-model="filterValues"
+      :sections="filterSections"
+      @apply="handleFilterApply"
+      @reset="handleFilterReset"
+    />
+  </BasePageLayout>
 </template>
 
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 // Pattern 组件
-import NavBar from '@/components/NavBar/index.vue'
+import BasePageLayout from '@/components/layout/BasePageLayout/index.vue'
 import SearchBar from '@/components/SearchBar/index.vue'
 import OfflineBanner from '@/components/OfflineBanner/index.vue'
-import GameTabs from '@/components/GameTabs/index.vue'
+import FilterPanel from '@/components/FilterPanel/index.vue'
 import InfiniteList from '@/components/InfiniteList/index.vue'
 import ListItem from '@/components/ListItem/index.vue'
 // Business 组件
 import ChannelCard from '@/components/ChannelCard/index.vue'
-import CustomTabBar from '@/components/CustomTabBar/index.vue'
 // Composables
 import { useChannelList } from '@/composables/useChannelList'
 
@@ -79,12 +90,14 @@ const {
   noMore,
   isOffline,
   searchKeyword,
-  currentGameId,
-  games,
+  showFilter,
+  filterValues,
+  filterSections,
   loadMore,
   refresh,
   handleSearch,
-  handleGameSelect,
+  handleFilterApply,
+  handleFilterReset,
   joinChannel,
   leaveChannel,
   enterChannel,
@@ -100,18 +113,24 @@ onShow(() => {
 </script>
 
 <style lang="scss" scoped>
-.channel-list-page {
-  min-height: 100vh;
-  min-height: 100dvh;
+.channel-grid {
   display: flex;
   flex-direction: column;
-  background: var(--color-bg);
-  box-sizing: border-box;
-  
+  gap: var(--spacing-sm);
+
   @include desktop {
-    height: 100vh;
-    min-height: auto;
-    overflow: hidden;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--spacing-sm);
+    row-gap: var(--spacing-sm);
+  }
+
+  @include desktop-lg {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  :deep(.list-item) {
+    margin-bottom: 0;
   }
 }
 </style>

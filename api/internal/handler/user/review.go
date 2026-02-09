@@ -63,7 +63,7 @@ func createReviewHandler(c *gin.Context, svc *orderservice.ReviewService) {
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[orderservice.CreateReviewResponse]{
+	respondJSON[orderservice.CreateReviewResponse](c, http.StatusOK, model.APIResponse[orderservice.CreateReviewResponse]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "评价创建成功",
@@ -94,7 +94,7 @@ func getMyReviewsHandler(c *gin.Context, svc *orderservice.ReviewService) {
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[orderservice.MyReviewListResponse]{
+	respondJSON[orderservice.MyReviewListResponse](c, http.StatusOK, model.APIResponse[orderservice.MyReviewListResponse]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",

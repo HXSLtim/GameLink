@@ -78,57 +78,43 @@ import (
 	"gamelink/internal/handler/middleware"
 	"gamelink/pkg/config"
 	"gamelink/pkg/container"
-	"gamelink/pkg/db"
 	"gamelink/pkg/lifecycle"
 	"gamelink/pkg/metrics"
-
-	"gorm.io/gorm"
 )
 
-type cfgAdapter struct{ cfg config.AppConfig }
-
-func (a *cfgAdapter) GetDatabaseDSN() string  { return a.cfg.Database.DSN }
-func (a *cfgAdapter) IsSeedEnabled() bool     { return false }
-func (a *cfgAdapter) GetMaxOpenConns() int    { return 1 }
-func (a *cfgAdapter) GetDatabaseType() string { return a.cfg.Database.Type }
-
-type noopMetrics struct{}
-
-func (n *noopMetrics) InstrumentGorm(db interface{}) error { return nil }
-
 func main() {
+	bootStart := time.Now()
+
+	t := time.Now()
 	app, err := container.NewApplication()
 	if err != nil {
 		log.Fatalf("failed to bootstrap application: %v", err)
 	}
+	log.Printf("[startup] container init: %v", time.Since(t))
 
 	logCryptoStatus(app.Config)
 
 	// Initialize metrics collector (includes HTTP and DB metrics)
+	t = time.Now()
 	metrics.NewCollector(app.PrometheusRegistry)
-
-	// Initialize business metrics
 	metrics.InitBusinessMetrics(app.PrometheusRegistry)
+	log.Printf("[startup] metrics init: %v", time.Since(t))
 
 	// Configure metrics authentication based on environment
 	metricsAuthConfig := middleware.DefaultMetricsAuthConfig()
 
-	// In production, require admin authentication or IP whitelist
 	appEnv := os.Getenv("APP_ENV")
 	if appEnv == "production" {
-		// Check if METRICS_ALLOWED_CIDRS is set for private network access
 		if allowedCIDRs := os.Getenv("METRICS_ALLOWED_CIDRS"); allowedCIDRs != "" {
 			metricsAuthConfig.AllowedCIDRs = parseCIDRs(allowedCIDRs)
 		}
 		metricsAuthConfig.Enabled = true
 		log.Println("metrics endpoint: secured with IP whitelist")
 	} else {
-		// In development/staging, allow all access
 		metricsAuthConfig.Enabled = false
 		log.Println("metrics endpoint: open (development mode)")
 	}
 
-	// Expose metrics endpoint with authentication
 	app.Engine.GET("/metrics",
 		middleware.MetricsAuth(metricsAuthConfig),
 		gin.WrapH(promhttp.HandlerFor(app.PrometheusRegistry, promhttp.HandlerOpts{
@@ -136,37 +122,17 @@ func main() {
 		})),
 	)
 
+	t = time.Now()
 	if err := app.Lifecycle.Start(context.Background()); err != nil {
 		log.Fatalf("failed to start services: %v", err)
 	}
+	log.Printf("[startup] lifecycle start: %v", time.Since(t))
 
-	// 迁移用户管理相关表结构
-	if err := migrateUserManagement(app.Config); err != nil {
-		log.Fatalf("failed to migrate user management tables: %v", err)
-	}
+	// 注意：用户管理表迁移已合并到主 autoMigrate 流程中，
+	// 无需再单独打开第二个数据库连接。
 
+	log.Printf("[startup] total boot time: %v", time.Since(bootStart))
 	startServer(app.Engine, app.Config.Port, app.Lifecycle)
-}
-
-// migrateUserManagement 打开数据库并执行用户管理模块的迁移
-func migrateUserManagement(cfg config.AppConfig) error {
-	orm, err := db.Open(&cfgAdapter{cfg: cfg}, &noopMetrics{})
-	if err != nil {
-		return err
-	}
-	if err := db.MigrateUserManagement(orm); err != nil {
-		return err
-	}
-	return closeSQL(orm)
-}
-
-// closeSQL 关闭底层 SQL 连接
-func closeSQL(orm *gorm.DB) error {
-	sqlDB, err := orm.DB()
-	if err != nil {
-		return err
-	}
-	return sqlDB.Close()
 }
 
 func startServer(router *gin.Engine, port string, lifecycle *lifecycle.Manager) {

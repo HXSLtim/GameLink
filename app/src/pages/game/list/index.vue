@@ -1,24 +1,25 @@
 <template>
-  <view class="game-list-page page-container">
-    <!-- 顶部导航 -->
-    <NavBar title="游戏列表" @back="goBack" />
-
-    <!-- 搜索栏 -->
-    <SearchBar
-      v-model="searchKeyword"
-      placeholder="搜索游戏"
-      :clearable="true"
-      @search="handleSearch"
-      @clear="clearSearch"
-    />
-
-    <!-- 分类标签 -->
-    <TabsBar
-      v-model="currentCategory"
-      :tabs="categoryTabs"
-      scrollable
-      @change="selectCategory"
-    />
+  <BasePageLayout
+    class="game-list-page"
+    :scroll="false"
+    padding="0"
+    title="游戏列表"
+    :show-back="true"
+    :show-tab-bar="true"
+    :show-mobile-tab-bar="false"
+  >
+    <template #search>
+      <!-- 搜索栏 -->
+      <SearchBar
+        v-model="searchKeyword"
+        placeholder="搜索游戏"
+        :clearable="true"
+        :show-filter="true"
+        @search="handleSearch"
+        @clear="clearSearch"
+        @filter="showFilter = true"
+      />
+    </template>
 
     <!-- 游戏列表 -->
     <InfiniteList
@@ -33,31 +34,38 @@
       @retry="refresh"
     >
       <view class="games-grid">
-        <GameCardLarge
-          v-for="game in filteredGames"
+        <GameCard
+          v-for="(game, index) in filteredGames"
           :key="game.id"
+          class="game-grid-item"
           :game="game"
+          :style="{ animationDelay: `${(index % 8) * 0.04}s` }"
           @click="goToGame(game)"
         />
       </view>
     </InfiniteList>
 
-    <!-- PC 端侧边栏 -->
-    <CustomTabBar :show-mobile-tab-bar="false" />
-  </view>
+    <!-- 筛选弹窗 -->
+    <FilterPanel
+      v-model:visible="showFilter"
+      v-model="filterValues"
+      :sections="filterSections"
+      @apply="handleFilterApply"
+      @reset="handleFilterReset"
+    />
+  </BasePageLayout>
 </template>
 
 <script setup lang="ts">
-import { onMounted, computed } from 'vue'
+import { onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 // Pattern 组件
-import NavBar from '@/components/NavBar/index.vue'
+import BasePageLayout from '@/components/layout/BasePageLayout/index.vue'
 import SearchBar from '@/components/SearchBar/index.vue'
-import TabsBar from '@/components/TabsBar/index.vue'
+import FilterPanel from '@/components/FilterPanel/index.vue'
 import InfiniteList from '@/components/InfiniteList/index.vue'
 // Business 组件
-import GameCardLarge from '@/components/GameCardLarge/index.vue'
-import CustomTabBar from '@/components/CustomTabBar/index.vue'
+import GameCard from '@/components/GameCard/index.vue'
 // Composables
 import { useGameList } from '@/composables/useGameList'
 
@@ -68,22 +76,19 @@ const {
   loadingMore,
   noMore,
   searchKeyword,
-  currentCategory,
-  categories,
+  showFilter,
+  filterValues,
+  filterSections,
   loadMore,
   refresh,
   handleSearch,
   clearSearch,
-  selectCategory,
+  handleFilterApply,
+  handleFilterReset,
   goToGame,
   goBack,
   init,
 } = useGameList()
-
-// 转换为 TabsBar 需要的格式
-const categoryTabs = computed(() => 
-  categories.value.map(c => ({ key: c.id, label: c.name }))
-)
 
 onMounted(init)
 
@@ -93,28 +98,33 @@ onShow(() => {
 </script>
 
 <style lang="scss" scoped>
-.game-list-page {
-  min-height: 100vh;
-  min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  background: var(--color-bg);
-  box-sizing: border-box;
-  
-  @include desktop {
-    height: 100vh;
-    min-height: auto;
-    overflow: hidden;
-  }
-}
-
 .games-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 20rpx;
+  gap: var(--spacing-sm);
   
   @include desktop {
     grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-md);
+  }
+
+  @include desktop-lg {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.game-grid-item {
+  animation: fadeSlideUp 0.3s ease-out both;
+}
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 </style>

@@ -14,9 +14,10 @@ export { default as GlTag } from './Tag/index.vue'
 export { default as GlAvatar } from './Avatar/index.vue'
 export { default as GlCard } from './Card/index.vue'
 export { default as GlEmpty } from './Empty/index.vue'
+export { default as GlInput } from './Input/index.vue'
+export { default as GlSwitch } from './Switch/index.vue'
 
 // 后续扩展：
-// export { default as GlInput } from './Input/index.vue'
 // export { default as GlModal } from './Modal/index.vue'
 // export { default as GlToast } from './Toast/index.vue'
 // export { default as GlPopup } from './Popup/index.vue'

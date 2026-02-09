@@ -4,16 +4,9 @@
 import { ref, reactive, computed } from 'vue'
 import { useUserStore } from '@/store/user'
 import { getUserProfile, updateUserProfile, uploadAvatar } from '@/api/user'
-
-interface ProfileForm {
-  avatar: string
-  nickname: string
-  gender: string
-  birthday: string
-  region: string
-  bio: string
-  games: string[]
-}
+import { formatDate, maskPhone } from '@/utils/format'
+import type { ProfileForm, ProfileContactInfo } from '@/types/profile'
+import type { ProfileGender, ProfileGenderValue } from '@/types/common'
 
 export function useProfileEdit() {
   const userStore = useUserStore()
@@ -23,7 +16,7 @@ export function useProfileEdit() {
   const showGenderPicker = ref(false)
   const showBirthdayPicker = ref(false)
   const showRegionPicker = ref(false)
-  const tempGender = ref('')
+  const tempGender = ref<ProfileGenderValue>('')
   
   // 原始数据
   const originalForm = ref<ProfileForm | null>(null)
@@ -40,16 +33,16 @@ export function useProfileEdit() {
   })
   
   // 联系方式（只读）
-  const profile = reactive({
+  const profile = reactive<ProfileContactInfo>({
     phone: '',
     wechatBound: false,
   })
   
   // 性别选项
-  const genderOptions = [
+  const genderOptions: Array<{ label: string; value: ProfileGender }> = [
     { label: '男', value: 'male' },
     { label: '女', value: 'female' },
-    { label: '保密', value: 'secret' },
+    { label: '保密', value: 'unknown' },
   ]
   
   // 日期范围
@@ -63,16 +56,13 @@ export function useProfileEdit() {
   })
   
   // 获取性别文案
-  const getGenderText = (gender: string) => {
+  const getGenderText = (gender: ProfileGenderValue) => {
     const option = genderOptions.find(o => o.value === gender)
     return option?.label || '请选择'
   }
   
   // 格式化手机号
-  const formatPhone = (phone: string) => {
-    if (!phone) return ''
-    return phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')
-  }
+  const formatPhone = (phone: string) => maskPhone(phone)
   
   // 加载资料
   const loadProfile = async () => {
@@ -130,7 +120,7 @@ export function useProfileEdit() {
   // 生日确认
   const onBirthdayConfirm = (e: any) => {
     const date = new Date(e.value)
-    form.birthday = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+  form.birthday = formatDate(date)
     showBirthdayPicker.value = false
   }
   
@@ -141,10 +131,11 @@ export function useProfileEdit() {
     saving.value = true
     
     try {
+      const normalizedGender = form.gender === '' ? undefined : form.gender
       await updateUserProfile({
         avatar: form.avatar,
         nickname: form.nickname,
-        gender: form.gender,
+        gender: normalizedGender,
         birthday: form.birthday,
         region: form.region,
         bio: form.bio,

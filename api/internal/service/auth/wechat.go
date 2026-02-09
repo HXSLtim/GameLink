@@ -16,16 +16,17 @@ import (
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
+	referralservice "gamelink/internal/service/referral"
 	"gamelink/pkg/apierr"
 	"gamelink/pkg/auth"
 )
 
 // WeChatLoginRequest 微信登录请求
 type WeChatLoginRequest struct {
-	Code          string `json:"code" binding:"required"`  // 微信登录凭证
-	EncryptedData string `json:"encryptedData,omitempty"`  // 加密数据（获取手机号）
-	IV            string `json:"iv,omitempty"`             // 解密向量
-	ReferralCode  string `json:"referralCode,omitempty"`   // 推荐码
+	Code          string `json:"code" binding:"required"` // 微信登录凭证
+	EncryptedData string `json:"encryptedData,omitempty"` // 加密数据（获取手机号）
+	IV            string `json:"iv,omitempty"`            // 解密向量
+	ReferralCode  string `json:"referralCode,omitempty"`  // 推荐码
 }
 
 // WeChatLoginResponse 微信登录响应
@@ -70,8 +71,10 @@ var (
 
 // WeChatAuthService 微信认证服务
 type WeChatAuthService struct {
-	users   repository.UserRepository
-	players repository.PlayerRepository
+	users           repository.UserRepository
+	players         repository.PlayerRepository
+	referralSvc     *referralservice.Service
+	referralTrigger *referralservice.TriggerService
 }
 
 // NewWeChatAuthService 创建微信认证服务
@@ -80,6 +83,16 @@ func NewWeChatAuthService(users repository.UserRepository, players repository.Pl
 		users:   users,
 		players: players,
 	}
+}
+
+// SetReferralService injects referral service for processing referral codes.
+func (s *WeChatAuthService) SetReferralService(referralSvc *referralservice.Service) {
+	s.referralSvc = referralSvc
+}
+
+// SetReferralTrigger injects referral trigger for registration reward checks.
+func (s *WeChatAuthService) SetReferralTrigger(trigger *referralservice.TriggerService) {
+	s.referralTrigger = trigger
 }
 
 // WeChatLogin 微信小程序登录
@@ -109,6 +122,11 @@ func (s *WeChatAuthService) WeChatLogin(ctx context.Context, req WeChatLoginRequ
 	// 4. 处理推荐码（仅新用户）
 	if isNew && req.ReferralCode != "" {
 		_ = s.processReferral(ctx, user.ID, req.ReferralCode)
+	}
+
+	// 触发推荐奖励检查（注册条件）
+	if isNew && s.referralTrigger != nil {
+		go s.referralTrigger.OnUserRegistered(ctx, user.ID)
 	}
 
 	// 5. 检查用户是否是陪玩师
@@ -300,9 +318,18 @@ func (s *WeChatAuthService) checkIsPlayer(ctx context.Context, userID uint64) bo
 }
 
 // processReferral 处理推荐码
-func (s *WeChatAuthService) processReferral(_ context.Context, _ uint64, _ string) error {
-	// TODO: 调用推荐服务处理推荐关系
-	return nil
+func (s *WeChatAuthService) processReferral(ctx context.Context, userID uint64, code string) error {
+	if s.referralSvc == nil {
+		return nil
+	}
+	if code == "" {
+		return nil
+	}
+	_, err := s.referralSvc.UseCode(ctx, referralservice.UseCodeRequest{
+		Code:      code,
+		RefereeID: userID,
+	})
+	return err
 }
 
 // generateWeChatToken 生成微信登录 Token

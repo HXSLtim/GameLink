@@ -58,7 +58,7 @@ func TestFeedService_CreateFeed(t *testing.T) {
 		moderation.On("Evaluate", ctx, mock.AnythingOfType("content.FeedModerationInput")).
 			Return(FeedModerationResult{
 				Decision: FeedModerationDecisionApprove,
-				Reason:  "auto-approved",
+				Reason:   "auto-approved",
 			}, nil)
 		repo.On("UpdateModeration", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -88,7 +88,7 @@ func TestFeedService_CreateFeed(t *testing.T) {
 		moderation.On("Evaluate", ctx, mock.AnythingOfType("content.FeedModerationInput")).
 			Return(FeedModerationResult{
 				Decision: FeedModerationDecisionManual,
-				Reason:  "needs review",
+				Reason:   "needs review",
 			}, nil)
 		repo.On("UpdateModeration", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 

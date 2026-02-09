@@ -1,19 +1,35 @@
 <template>
-  <view class="order-create-page page-container">
-    <!-- 顶部导航 -->
-    <NavBar title="下单" @back="goBack" />
+  <BasePageLayout
+    class="order-create-page"
+    :scroll="!loading"
+    title="下单"
+    :show-back="true"
+    :show-tab-bar="true"
+    :show-mobile-tab-bar="false"
+  >
+    <template #nav>
+      <!-- 顶部导航 -->
+      <NavBar title="下单" @back="goBack" />
+    </template>
 
     <!-- 加载状态 -->
     <template v-if="loading">
       <view class="loading-wrap">
-        <uv-skeleton rows="3" title loading></uv-skeleton>
+        <Skeleton :rows="3" />
       </view>
     </template>
 
     <!-- 内容区域 -->
-    <scroll-view v-else class="content-scroll" scroll-y>
+    <template v-else>
       <!-- 陪玩师信息 -->
-      <OrderPlayerCard :player="player" />
+      <PlayerCard
+        class="order-player-card"
+        :player="player"
+        variant="compact"
+        :show-online-tag="true"
+        :show-offline-tag="true"
+        :clickable="false"
+      />
 
       <!-- 选择游戏 -->
       <GameSelector v-model="selectedGameId" :games="player.games" />
@@ -28,15 +44,27 @@
       <QuantitySelector v-model="quantity" :title="quantityTitle" :min="1" :max="10" :tip="quantityTip" />
 
       <!-- 游戏账号 -->
-      <GlCard title="游戏账号" :shadow="false" bordered>
-        <input v-model="gameAccount" class="text-input" placeholder="请输入您的游戏账号（选填）" />
-      </GlCard>
+      <SectionCard title="游戏账号" margin="var(--spacing-sm) var(--spacing-md)">
+        <GlInput
+          v-model="gameAccount"
+          class="text-input"
+          placeholder="请输入您的游戏账号（选填）"
+          size="medium"
+        />
+      </SectionCard>
 
       <!-- 备注信息 -->
-      <GlCard title="备注信息" :shadow="false" bordered>
-        <textarea v-model="remark" class="textarea-input" placeholder="请输入备注信息（选填）" :maxlength="200" />
+      <SectionCard title="备注信息" margin="var(--spacing-sm) var(--spacing-md)">
+        <GlInput
+          v-model="remark"
+          class="textarea-input"
+          type="textarea"
+          size="medium"
+          placeholder="请输入备注信息（选填）"
+          :maxlength="200"
+        />
         <text class="char-count">{{ remark.length }}/200</text>
-      </GlCard>
+      </SectionCard>
 
       <!-- 优惠券 -->
       <CouponSelector
@@ -55,14 +83,13 @@
 
       <!-- 底部占位 -->
       <view class="bottom-placeholder"></view>
-    </scroll-view>
+    </template>
 
-    <!-- 底部操作栏 -->
-    <OrderSubmitBar :total="totalFee" :disabled="!canSubmit" :loading="submitting" @submit="submitOrder" />
-
-    <!-- PC 端侧边栏 -->
-    <CustomTabBar :show-mobile-tab-bar="false" />
-  </view>
+    <template #footer>
+      <!-- 底部操作栏 -->
+      <OrderSubmitBar :total="totalFee" :disabled="!canSubmit" :loading="submitting" @submit="submitOrder" />
+    </template>
+  </BasePageLayout>
 </template>
 
 <script setup lang="ts">
@@ -70,9 +97,12 @@ import { computed } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 // Pattern 组件
 import NavBar from '@/components/NavBar/index.vue'
-import GlCard from '@/components/gl/Card/index.vue'
+import BasePageLayout from '@/components/layout/BasePageLayout/index.vue'
+import SectionCard from '@/components/SectionCard/index.vue'
+import GlInput from '@/components/gl/Input/index.vue'
+import Skeleton from '@/components/Skeleton/index.vue'
 // Business 组件
-import OrderPlayerCard from '@/components/OrderPlayerCard/index.vue'
+import PlayerCard from '@/components/PlayerCard/index.vue'
 import GameSelector from '@/components/GameSelector/index.vue'
 import ServiceSelector from '@/components/ServiceSelector/index.vue'
 import SchedulePicker from '@/components/SchedulePicker/index.vue'
@@ -80,7 +110,6 @@ import QuantitySelector from '@/components/QuantitySelector/index.vue'
 import CouponSelector from '@/components/CouponSelector/index.vue'
 import OrderFeeSection from '@/components/OrderFeeSection/index.vue'
 import OrderSubmitBar from '@/components/OrderSubmitBar/index.vue'
-import CustomTabBar from '@/components/CustomTabBar/index.vue'
 // Composables
 import { useOrderCreate } from '@/composables/useOrderCreate'
 
@@ -126,47 +155,40 @@ onLoad((options) => {
 </script>
 
 <style lang="scss" scoped>
-.order-create-page {
-  height: 100vh;
-  height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  background: var(--color-bg);
-  box-sizing: border-box;
-  overflow: hidden;
-}
-
 .loading-wrap {
   flex: 1;
-  padding: 24rpx;
+  padding: var(--spacing-md);
 }
 
-.content-scroll {
-  flex: 1;
-  padding: 24rpx;
-  overflow-y: auto;
+.order-player-card {
+  margin-bottom: var(--spacing-md);
 }
 
 .text-input {
   width: 100%;
-  font-size: 28rpx;
-  color: var(--color-text);
+  
+  :deep(.gl-input__field) {
+    font-size: var(--font-md);
+    color: var(--color-text);
+  }
 }
 
 .textarea-input {
   width: 100%;
-  min-height: 120rpx;
-  font-size: 28rpx;
-  color: var(--color-text);
-  box-sizing: border-box;
+  
+  :deep(.gl-input__textarea) {
+    min-height: 120rpx;
+    font-size: var(--font-md);
+    color: var(--color-text);
+  }
 }
 
 .char-count {
   display: block;
   text-align: right;
-  font-size: 24rpx;
+  font-size: var(--font-xs);
   color: var(--color-text-placeholder);
-  margin-top: 8rpx;
+  margin-top: var(--spacing-sm);
 }
 
 .bottom-placeholder {

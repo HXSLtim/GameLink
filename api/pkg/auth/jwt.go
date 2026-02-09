@@ -33,11 +33,11 @@ type Claims struct {
 
 // CustomClaims 扩展的JWT载荷（用于小程序等场景）
 type CustomClaims struct {
-	UserID      uint64 `json:"user_id"`               // 用户ID
-	Role        string `json:"role"`                  // 基础角色
-	IsPlayer    bool   `json:"is_player,omitempty"`   // 是否是陪玩师
+	UserID      uint64 `json:"user_id"`                // 用户ID
+	Role        string `json:"role"`                   // 基础角色
+	IsPlayer    bool   `json:"is_player,omitempty"`    // 是否是陪玩师
 	CurrentRole string `json:"current_role,omitempty"` // 当前激活角色 (user/player)
-	IsRefresh   bool   `json:"is_refresh,omitempty"`  // 是否是刷新Token
+	IsRefresh   bool   `json:"is_refresh,omitempty"`   // 是否是刷新Token
 	jwt.RegisteredClaims
 }
 

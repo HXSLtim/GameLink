@@ -3,28 +3,31 @@
  */
 import { ref, reactive } from 'vue'
 import { useListPage } from './useListPage'
-import type { ReviewData } from '@/components/ReviewCard/index.vue'
+import { get, type RequestConfig } from '@/api/request'
+import type { ReviewCardData } from '@/types/review'
+import type { TabItem } from '@/types/ui'
 
-// Mock API - 实际应替换为真实 API
-const getReviews = async (params: any) => {
-  // TODO: 替换为真实 API
-  return { data: { items: [], total: 0 } }
+/**
+ * 获取我的评价列表
+ */
+function getMyReviews(params?: Record<string, any>, config?: Partial<RequestConfig>) {
+  return get<{ items: ReviewCardData[]; total: number }>('/user/reviews/my', params, config)
 }
 
 export function useReviewList() {
   // 标签
-  const tabs = reactive([
-    { label: '已评价', value: 'completed', count: 0 },
-    { label: '待评价', value: 'pending', count: 0 },
+  const tabs = reactive<TabItem[]>([
+    { key: 'completed', label: '已评价', badge: 0 },
+    { key: 'pending', label: '待评价', badge: 0 },
   ])
   const currentTab = ref('completed')
   
   // 使用通用列表 Hook
-  const listPage = useListPage<ReviewData>({
+  const listPage = useListPage<ReviewCardData>({
     fetchFn: async (params) => {
-      const res = await getReviews({
+      const res = await getMyReviews({
         page: params.page,
-        pageSize: params.pageSize,
+        page_size: params.pageSize,
         type: currentTab.value,
       })
       return res
@@ -32,7 +35,7 @@ export function useReviewList() {
     extractList: (data: any) => {
       return data?.items || data || []
     },
-    pageSize: 20,
+    page_size: 20,
   })
   
   // 切换标签
@@ -47,13 +50,13 @@ export function useReviewList() {
   }
   
   // 跳过评价
-  const skipReview = (review: ReviewData) => {
+  const skipReview = (review: ReviewCardData) => {
     uni.showToast({ title: '已跳过', icon: 'success' })
     listPage.list.value = listPage.list.value.filter(r => r.id !== review.id)
   }
   
   // 去评价
-  const writeReview = (review: ReviewData) => {
+  const writeReview = (review: ReviewCardData) => {
     uni.navigateTo({ url: `/pages/order/detail/index?id=${review.orderId}&action=review` })
   }
   

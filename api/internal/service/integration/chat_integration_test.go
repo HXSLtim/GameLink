@@ -26,7 +26,7 @@ func setupChatService(t *testing.T) (*chat.ChatService, context.Context) {
 	reportRepo := chatrepo.NewChatReportRepository(db)
 	memCache := cache.NewMemory()
 
-	svc := chat.NewChatService(groupRepo, memberRepo, messageRepo, reportRepo, memCache)
+	svc := chat.NewChatService(groupRepo, memberRepo, messageRepo, reportRepo, nil, memCache)
 	return svc, ctx
 }
 

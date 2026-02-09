@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <rect x="40" y="50" width="120" height="100" rx="8" fill="#F5F5F5" stroke="#E5E5E5" stroke-width="2"/>
+  <rect x="55" y="70" width="90" height="12" rx="2" fill="#E5E5E5"/>
+  <rect x="55" y="92" width="60" height="10" rx="2" fill="#E5E5E5"/>
+  <rect x="55" y="112" width="75" height="10" rx="2" fill="#E5E5E5"/>
+  <circle cx="100" cy="100" r="35" fill="none" stroke="#7ACC35" stroke-width="3" stroke-dasharray="10 5" opacity="0.5"/>
+  <text x="100" y="170" text-anchor="middle" font-size="14" fill="#999999">��U</text>
+</svg>

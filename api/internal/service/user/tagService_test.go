@@ -100,25 +100,43 @@ func (m *MockTagUserRepository) Get(ctx context.Context, id uint64) (*model.User
 	return args.Get(0).(*model.User), args.Error(1)
 }
 
-func (m *MockTagUserRepository) List(ctx context.Context) ([]model.User, error)                   { return nil, nil }
+func (m *MockTagUserRepository) List(ctx context.Context) ([]model.User, error) { return nil, nil }
 func (m *MockTagUserRepository) ListPaged(ctx context.Context, page, pageSize int) ([]model.User, int64, error) {
 	return nil, 0, nil
 }
 func (m *MockTagUserRepository) ListWithFilters(ctx context.Context, opts repository.UserListOptions) ([]model.User, int64, error) {
 	return nil, 0, nil
 }
-func (m *MockTagUserRepository) Count(ctx context.Context, opts repository.UserListOptions) (int, error) { return 0, nil }
-func (m *MockTagUserRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.User, error)      { return nil, nil }
-func (m *MockTagUserRepository) GetByPhone(ctx context.Context, phone string) (*model.User, error)     { return nil, nil }
-func (m *MockTagUserRepository) GetByEmail(ctx context.Context, email string) (*model.User, error)     { return nil, nil }
-func (m *MockTagUserRepository) FindByEmail(ctx context.Context, email string) (*model.User, error)    { return nil, nil }
-func (m *MockTagUserRepository) FindByPhone(ctx context.Context, phone string) (*model.User, error)    { return nil, nil }
-func (m *MockTagUserRepository) Create(ctx context.Context, user *model.User) error                   { return nil }
-func (m *MockTagUserRepository) Update(ctx context.Context, user *model.User) error                   { return nil }
-func (m *MockTagUserRepository) Delete(ctx context.Context, id uint64) error                          { return nil }
-func (m *MockTagUserRepository) UpdatePassword(ctx context.Context, userID uint64, newPassword string) error { return nil }
-func (m *MockTagUserRepository) GetByWeChatOpenID(ctx context.Context, openID string) (*model.User, error) { return nil, nil }
-func (m *MockTagUserRepository) GetByWeChatUnionID(ctx context.Context, unionID string) (*model.User, error) { return nil, nil }
+func (m *MockTagUserRepository) Count(ctx context.Context, opts repository.UserListOptions) (int, error) {
+	return 0, nil
+}
+func (m *MockTagUserRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.User, error) {
+	return nil, nil
+}
+func (m *MockTagUserRepository) GetByPhone(ctx context.Context, phone string) (*model.User, error) {
+	return nil, nil
+}
+func (m *MockTagUserRepository) GetByEmail(ctx context.Context, email string) (*model.User, error) {
+	return nil, nil
+}
+func (m *MockTagUserRepository) FindByEmail(ctx context.Context, email string) (*model.User, error) {
+	return nil, nil
+}
+func (m *MockTagUserRepository) FindByPhone(ctx context.Context, phone string) (*model.User, error) {
+	return nil, nil
+}
+func (m *MockTagUserRepository) Create(ctx context.Context, user *model.User) error { return nil }
+func (m *MockTagUserRepository) Update(ctx context.Context, user *model.User) error { return nil }
+func (m *MockTagUserRepository) Delete(ctx context.Context, id uint64) error        { return nil }
+func (m *MockTagUserRepository) UpdatePassword(ctx context.Context, userID uint64, newPassword string) error {
+	return nil
+}
+func (m *MockTagUserRepository) GetByWeChatOpenID(ctx context.Context, openID string) (*model.User, error) {
+	return nil, nil
+}
+func (m *MockTagUserRepository) GetByWeChatUnionID(ctx context.Context, unionID string) (*model.User, error) {
+	return nil, nil
+}
 
 // MockTagCache is a mock implementation of cache.Cache
 type MockTagCache struct {
@@ -893,7 +911,7 @@ func TestUserTagService_BatchAssignTagsToUsers(t *testing.T) {
 	result, err := svc.BatchAssignTagsToUsers(context.Background(), []uint64{1, 2}, []uint64{1, 2})
 
 	assert.NoError(t, err)
-	assert.Equal(t, 4, result.TotalCount)  // 2 users * 2 tags
+	assert.Equal(t, 4, result.TotalCount) // 2 users * 2 tags
 	assert.Equal(t, 4, result.SuccessCount)
 	assert.Equal(t, 0, result.FailedCount)
 }
@@ -913,7 +931,7 @@ func TestUserTagService_BatchRemoveTagsFromUsers(t *testing.T) {
 	result, err := svc.BatchRemoveTagsFromUsers(context.Background(), []uint64{1, 2}, []uint64{1, 2})
 
 	assert.NoError(t, err)
-	assert.Equal(t, 4, result.TotalCount)  // 2 users * 2 tags
+	assert.Equal(t, 4, result.TotalCount) // 2 users * 2 tags
 	assert.Equal(t, 4, result.SuccessCount)
 	assert.Equal(t, 0, result.FailedCount)
 }

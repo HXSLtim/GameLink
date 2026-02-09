@@ -1,5 +1,5 @@
 <template>
-  <GlCard title="我的订单" :shadow="false" bordered class="order-section">
+  <SectionCard title="我的订单" margin="var(--spacing-sm) var(--spacing-md)">
     <template #extra>
       <view class="section-more" @tap="$emit('view-all')">
         <text>全部订单</text>
@@ -21,78 +21,87 @@
         <text class="tab-text">{{ tab.label }}</text>
       </view>
     </view>
-  </GlCard>
+  </SectionCard>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import GlCard from '@/components/gl/Card/index.vue'
+import SectionCard from '@/components/SectionCard/index.vue'
+import type { OrderCountSummary, OrderQuickEntryStatus } from '@/types/order'
 
 interface Props {
-  pendingCount?: number
-  inProgressCount?: number
-  toReviewCount?: number
+  counts?: OrderCountSummary
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  pendingCount: 0,
-  inProgressCount: 0,
-  toReviewCount: 0,
+  counts: () => ({
+    pending: 0,
+    inProgress: 0,
+    toReview: 0,
+    refunding: 0,
+  }),
 })
 
 defineEmits<{
-  click: [status: string]
+  click: [status: OrderQuickEntryStatus]
   'view-all': []
 }>()
 
-const tabs = computed(() => [
+// 订单状态图标统一使用中性色，状态由文字标签传达
+const iconColor = 'var(--color-text-secondary)'
+
+const tabs = computed<Array<{
+  key: OrderQuickEntryStatus
+  label: string
+  icon: string
+  iconColor: string
+  badge?: number | string
+}>>(() => [
   { 
     key: 'pending', 
     label: '待支付', 
     icon: 'bag', 
-    iconColor: 'var(--color-primary)',
-    badge: props.pendingCount || undefined,
+    iconColor,
+    badge: props.counts?.pending || undefined,
   },
   { 
     key: 'in_progress', 
     label: '进行中', 
     icon: 'clock', 
-    iconColor: '#3B82F6',
-    badge: props.inProgressCount || undefined,
+    iconColor,
+    badge: props.counts?.inProgress || undefined,
   },
   { 
     key: 'completed', 
     label: '待评价', 
     icon: 'checkmark-circle', 
-    iconColor: '#10B981',
-    badge: props.toReviewCount || undefined,
+    iconColor,
+    badge: props.counts?.toReview || undefined,
   },
-  { 
-    key: 'refund', 
-    label: '退款', 
-    icon: 'reload', 
-    iconColor: '#F59E0B',
-    badge: undefined,
+  {
+    key: 'refunding',
+    label: '退款中',
+    icon: 'reload',
+    iconColor,
+    badge: props.counts?.refunding || undefined,
   },
 ])
 </script>
 
 <style lang="scss" scoped>
-.order-section {
-  margin: 20rpx 28rpx;
-}
-
 .section-more {
   display: flex;
   align-items: center;
-  gap: 4rpx;
-  font-size: 26rpx;
+  gap: var(--spacing-xs);
+  font-size: var(--font-xs);
   color: var(--color-text-secondary);
+  cursor: pointer;
+  @include press-effect;
 }
 
 .order-tabs {
   display: flex;
-  padding-top: 8rpx;
+  padding-top: var(--spacing-xs);
 }
 
 .order-tab {
@@ -100,30 +109,37 @@ const tabs = computed(() => [
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 16rpx 8rpx;
-  border-radius: 16rpx;
-  transition: all 0.2s;
+  padding: var(--spacing-xs) var(--spacing-xs);
+  border-radius: var(--radius-sm);
+  transition: background 0.2s ease, transform 0.15s ease;
+  cursor: pointer;
+  @include press-effect;
+
+  &:hover {
+    background: var(--color-bg-secondary);
+  }
   
   &:active {
     background: var(--color-bg-secondary);
-    transform: scale(0.95);
+    transform: scale(0.96);
   }
 }
 
 .tab-icon-wrap {
   position: relative;
-  width: 56rpx;
-  height: 56rpx;
+  width: 40rpx;
+  height: 40rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--color-bg-secondary);
-  border-radius: 16rpx;
-  margin-bottom: 8rpx;
+  border-radius: var(--radius-sm);
+  border: 1rpx solid var(--color-border);
+  margin-bottom: var(--spacing-xs);
 }
 
 .tab-text {
-  font-size: 24rpx;
+  font-size: var(--font-xs);
   font-weight: 500;
   color: var(--color-text-secondary);
 }
@@ -132,16 +148,15 @@ const tabs = computed(() => [
   position: absolute;
   top: -8rpx;
   right: -8rpx;
-  min-width: 32rpx;
-  height: 32rpx;
-  padding: 0 8rpx;
-  background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
-  border-radius: 18rpx;
-  font-size: 20rpx;
+  min-width: 28rpx;
+  height: 28rpx;
+  padding: 0 var(--spacing-xs);
+  background: var(--color-error);
+  border-radius: var(--radius-full);
+  font-size: var(--font-xs);
   font-weight: 600;
   color: #FFFFFF;
   text-align: center;
-  line-height: 32rpx;
-  box-shadow: 0 4rpx 12rpx rgba(239, 68, 68, 0.4);
+  line-height: 28rpx;
 }
 </style>

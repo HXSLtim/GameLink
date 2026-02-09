@@ -19,16 +19,7 @@
 </template>
 
 <script setup lang="ts">
-export interface AgreementSection {
-  title: string
-  text: string
-}
-
-export interface AgreementData {
-  title: string
-  updateTime: string
-  sections: AgreementSection[]
-}
+import type { AgreementData } from '@/types/agreement'
 
 interface Props {
   content: AgreementData
@@ -39,43 +30,43 @@ defineProps<Props>()
 
 <style lang="scss" scoped>
 .agreement-content {
-  padding: 24rpx;
+  padding: var(--spacing-md);
 }
 
 .header-section {
-  margin-bottom: 32rpx;
+  margin-bottom: var(--spacing-lg);
   text-align: center;
 }
 
 .main-title {
   display: block;
-  font-size: 36rpx;
+  font-size: var(--font-lg);
   font-weight: bold;
   color: var(--color-text);
-  margin-bottom: 12rpx;
+  margin-bottom: var(--spacing-xs);
 }
 
 .update-time {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--font-sm);
   color: var(--color-text-placeholder);
 }
 
 .section {
-  margin-bottom: 32rpx;
+  margin-bottom: var(--spacing-lg);
 }
 
 .section-title {
   display: block;
-  font-size: 30rpx;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--color-text);
-  margin-bottom: 16rpx;
+  margin-bottom: var(--spacing-sm);
 }
 
 .section-text {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--font-md);
   color: var(--color-text-secondary);
   line-height: 1.8;
   white-space: pre-wrap;

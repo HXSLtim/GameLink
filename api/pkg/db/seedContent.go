@@ -38,7 +38,12 @@ func seedContentData(tx *gorm.DB, users map[string]*model.User) error {
 		return err
 	}
 
-	// 6. 创建内容管理权限
+	// 6. 创建聊天举报
+	if err := seedChatReports(tx, users, groups); err != nil {
+		return err
+	}
+
+	// 7. 创建内容管理权限
 	if err := seedContentPermissions(tx); err != nil {
 		return err
 	}
@@ -118,60 +123,47 @@ func seedContentCategories(tx *gorm.DB) (map[string]*model.ContentCategory, erro
 	return result, nil
 }
 
-// seedChatGroups 创建聊天群组种子数据
+// seedChatGroups 创建聊天群组种子数据（覆盖所有群类型）
 func seedChatGroups(tx *gorm.DB, users map[string]*model.User) (map[string]*model.ChatGroup, error) {
 	adminUser := users["adminA"]
 	proA := users["proA"]
 	proB := users["proB"]
+	customerA := users["customerA"]
+	customerB := users["customerB"]
+
+	now := time.Now()
 
 	seeds := []struct {
-		Key       string
-		GroupName string
-		GroupType model.ChatGroupType
-		CreatedBy uint64
-		IsActive  bool
-		Desc      string
+		Key        string
+		GroupName  string
+		GroupType  model.ChatGroupType
+		CreatedBy  uint64
+		IsActive   bool
+		Desc       string
+		MaxMembers int
+		RoomStatus model.ChatGroupStatus
+		IsPrivate  bool
 	}{
-		{
-			Key:       "public_lol",
-			GroupName: "英雄联盟交流群",
-			GroupType: model.ChatGroupTypePublic,
-			CreatedBy: adminUser.ID,
-			IsActive:  true,
-			Desc:      "英雄联盟玩家交流群，分享攻略和组队",
-		},
-		{
-			Key:       "public_valorant",
-			GroupName: "无畏契约玩家群",
-			GroupType: model.ChatGroupTypePublic,
-			CreatedBy: adminUser.ID,
-			IsActive:  true,
-			Desc:      "无畏契约玩家交流，战术分享",
-		},
-		{
-			Key:       "public_general",
-			GroupName: "GameLink综合交流群",
-			GroupType: model.ChatGroupTypePublic,
-			CreatedBy: adminUser.ID,
-			IsActive:  true,
-			Desc:      "平台综合交流群，欢迎所有玩家",
-		},
-		{
-			Key:       "order_group_1",
-			GroupName: "订单服务群-001",
-			GroupType: model.ChatGroupTypeOrder,
-			CreatedBy: proA.ID,
-			IsActive:  true,
-			Desc:      "陪玩订单专属服务群",
-		},
-		{
-			Key:       "order_group_2",
-			GroupName: "订单服务群-002",
-			GroupType: model.ChatGroupTypeOrder,
-			CreatedBy: proB.ID,
-			IsActive:  false,
-			Desc:      "已完成订单的服务群",
-		},
+		// ===== 公开群组 =====
+		{Key: "public_lol", GroupName: "英雄联盟交流群", GroupType: model.ChatGroupTypePublic, CreatedBy: adminUser.ID, IsActive: true, Desc: "英雄联盟玩家交流群，分享攻略和组队", MaxMembers: 200},
+		{Key: "public_valorant", GroupName: "无畏契约玩家群", GroupType: model.ChatGroupTypePublic, CreatedBy: adminUser.ID, IsActive: true, Desc: "无畏契约玩家交流，战术分享", MaxMembers: 200},
+		{Key: "public_general", GroupName: "GameLink综合交流群", GroupType: model.ChatGroupTypePublic, CreatedBy: adminUser.ID, IsActive: true, Desc: "平台综合交流群，欢迎所有玩家", MaxMembers: 500},
+		// ===== 订单群组 =====
+		{Key: "order_group_1", GroupName: "订单服务群-001", GroupType: model.ChatGroupTypeOrder, CreatedBy: proA.ID, IsActive: true, Desc: "陪玩订单专属服务群", MaxMembers: 10, RoomStatus: model.ChatGroupStatusInGame},
+		{Key: "order_group_2", GroupName: "订单服务群-002", GroupType: model.ChatGroupTypeOrder, CreatedBy: proB.ID, IsActive: false, Desc: "已完成订单的服务群（已关闭）", MaxMembers: 10, RoomStatus: model.ChatGroupStatusFinished},
+		// ===== 私聊群组 =====
+		{Key: "private_dm_1", GroupName: "私聊-用户A与陪玩师A", GroupType: model.ChatGroupTypePrivate, CreatedBy: customerA.ID, IsActive: true, Desc: "用户与陪玩师的1v1私聊", MaxMembers: 2},
+		{Key: "private_dm_2", GroupName: "私聊-用户B与陪玩师B", GroupType: model.ChatGroupTypePrivate, CreatedBy: customerB.ID, IsActive: true, Desc: "用户与陪玩师的1v1私聊", MaxMembers: 2},
+		{Key: "private_dm_closed", GroupName: "私聊-已关闭对话", GroupType: model.ChatGroupTypePrivate, CreatedBy: customerA.ID, IsActive: false, Desc: "已关闭的私聊对话", MaxMembers: 2},
+		// ===== 团队群组 =====
+		{Key: "team_group_1", GroupName: "峡谷车队交流群", GroupType: model.ChatGroupTypeTeam, CreatedBy: proA.ID, IsActive: true, Desc: "峡谷车队内部沟通群", MaxMembers: 10, RoomStatus: model.ChatGroupStatusReady},
+		{Key: "team_group_2", GroupName: "冠军冲分队交流群", GroupType: model.ChatGroupTypeTeam, CreatedBy: proB.ID, IsActive: true, Desc: "冠军冲分队内部沟通", MaxMembers: 10, RoomStatus: model.ChatGroupStatusInGame},
+		// ===== LFG 匹配群组 =====
+		{Key: "lfg_group_1", GroupName: "快速匹配-英雄联盟5v5", GroupType: model.ChatGroupTypeLFG, CreatedBy: customerA.ID, IsActive: true, Desc: "LFG自动匹配创建的临时房间", MaxMembers: 10, RoomStatus: model.ChatGroupStatusWaiting},
+		{Key: "lfg_group_2", GroupName: "快速匹配-Valorant排位", GroupType: model.ChatGroupTypeLFG, CreatedBy: customerB.ID, IsActive: false, Desc: "LFG已过期的匹配房间", MaxMembers: 10, RoomStatus: model.ChatGroupStatusCanceled},
+		// ===== 自定义群组 =====
+		{Key: "custom_group_1", GroupName: "周末开黑群", GroupType: model.ChatGroupTypeCustom, CreatedBy: customerA.ID, IsActive: true, Desc: "玩家自建群-周末组队开黑", MaxMembers: 20, IsPrivate: true},
+		{Key: "custom_group_2", GroupName: "FPS爱好者联盟", GroupType: model.ChatGroupTypeCustom, CreatedBy: proB.ID, IsActive: true, Desc: "FPS游戏交流社区群", MaxMembers: 50},
 	}
 
 	result := make(map[string]*model.ChatGroup, len(seeds))
@@ -183,20 +175,141 @@ func seedChatGroups(tx *gorm.DB, users map[string]*model.User) (map[string]*mode
 		} else if err != gorm.ErrRecordNotFound {
 			return nil, err
 		}
+		maxMem := s.MaxMembers
+		if maxMem == 0 {
+			maxMem = 100
+		}
 		group := &model.ChatGroup{
 			GroupName:   s.GroupName,
 			GroupType:   s.GroupType,
 			CreatedBy:   s.CreatedBy,
-			MaxMembers:  100,
+			MaxMembers:  maxMem,
 			IsActive:    s.IsActive,
 			Description: s.Desc,
-			Settings:    "{}", // 空 JSON 对象，PostgreSQL JSON 类型不接受空字符串
+			Settings:    "{}",
+			RoomStatus:  s.RoomStatus,
+			IsPrivate:   s.IsPrivate,
 		}
 		if err := tx.Create(group).Error; err != nil {
 			return nil, err
 		}
 		result[s.Key] = group
 	}
+
+	// ===== 为每个群组添加成员 =====
+	type memberSpec struct {
+		GroupKey  string
+		UserKey   string
+		Role      model.ChatMemberRole
+		Nickname  string
+		IsMuted   bool
+		MuteUntil *time.Time
+		IsActive  bool
+	}
+
+	muteUntil := now.Add(24 * time.Hour)
+	memberSpecs := []memberSpec{
+		// 公开群-英雄联盟
+		{GroupKey: "public_lol", UserKey: "adminA", Role: model.ChatMemberRoleAdmin, Nickname: "管理员", IsActive: true},
+		{GroupKey: "public_lol", UserKey: "proA", Role: model.ChatMemberRoleMember, Nickname: "峡谷守护者", IsActive: true},
+		{GroupKey: "public_lol", UserKey: "customerA", Role: model.ChatMemberRoleMember, Nickname: "测试用户", IsActive: true},
+		{GroupKey: "public_lol", UserKey: "customerB", Role: model.ChatMemberRoleMember, Nickname: "高级会员", IsActive: true},
+		{GroupKey: "public_lol", UserKey: "customerC", Role: model.ChatMemberRoleMember, Nickname: "体验用户", IsActive: true},
+		{GroupKey: "public_lol", UserKey: "customerD", Role: model.ChatMemberRoleMember, Nickname: "休闲玩家", IsActive: true},
+		{GroupKey: "public_lol", UserKey: "customerE", Role: model.ChatMemberRoleMember, Nickname: "竞技高手", IsMuted: true, MuteUntil: &muteUntil, IsActive: true},
+		{GroupKey: "public_lol", UserKey: "customerH", Role: model.ChatMemberRoleMember, Nickname: "商务人士", IsActive: true},
+		// 公开群-无畏契约
+		{GroupKey: "public_valorant", UserKey: "adminA", Role: model.ChatMemberRoleAdmin, Nickname: "管理员", IsActive: true},
+		{GroupKey: "public_valorant", UserKey: "proB", Role: model.ChatMemberRoleMember, Nickname: "王牌射手", IsActive: true},
+		{GroupKey: "public_valorant", UserKey: "customerE", Role: model.ChatMemberRoleMember, Nickname: "竞技高手", IsActive: true},
+		{GroupKey: "public_valorant", UserKey: "customerF", Role: model.ChatMemberRoleMember, Nickname: "周末玩家", IsActive: true},
+		{GroupKey: "public_valorant", UserKey: "customerG", Role: model.ChatMemberRoleMember, Nickname: "新手玩家", IsMuted: true, MuteUntil: &muteUntil, IsActive: true},
+		// 综合交流群
+		{GroupKey: "public_general", UserKey: "adminA", Role: model.ChatMemberRoleOwner, Nickname: "系统管理员", IsActive: true},
+		{GroupKey: "public_general", UserKey: "customerG", Role: model.ChatMemberRoleMember, Nickname: "新手玩家", IsActive: true},
+		{GroupKey: "public_general", UserKey: "customerH", Role: model.ChatMemberRoleMember, Nickname: "商务人士", IsActive: true},
+		{GroupKey: "public_general", UserKey: "customerF", Role: model.ChatMemberRoleMember, Nickname: "周末玩家", IsMuted: true, MuteUntil: &muteUntil, IsActive: true},
+		// 订单群-活跃
+		{GroupKey: "order_group_1", UserKey: "proA", Role: model.ChatMemberRoleOwner, Nickname: "峡谷守护者", IsActive: true},
+		{GroupKey: "order_group_1", UserKey: "customerA", Role: model.ChatMemberRoleMember, Nickname: "下单用户", IsActive: true},
+		{GroupKey: "order_group_1", UserKey: "adminA", Role: model.ChatMemberRoleAdmin, Nickname: "客服", IsActive: true},
+		// 订单群-已关闭
+		{GroupKey: "order_group_2", UserKey: "proB", Role: model.ChatMemberRoleOwner, Nickname: "王牌射手", IsActive: false},
+		{GroupKey: "order_group_2", UserKey: "customerB", Role: model.ChatMemberRoleMember, Nickname: "高级会员", IsActive: false},
+		// 私聊
+		{GroupKey: "private_dm_1", UserKey: "customerA", Role: model.ChatMemberRoleMember, Nickname: "测试用户", IsActive: true},
+		{GroupKey: "private_dm_1", UserKey: "proA", Role: model.ChatMemberRoleMember, Nickname: "峡谷守护者", IsActive: true},
+		{GroupKey: "private_dm_2", UserKey: "customerB", Role: model.ChatMemberRoleMember, Nickname: "高级会员", IsActive: true},
+		{GroupKey: "private_dm_2", UserKey: "proB", Role: model.ChatMemberRoleMember, Nickname: "王牌射手", IsActive: true},
+		{GroupKey: "private_dm_closed", UserKey: "customerA", Role: model.ChatMemberRoleMember, Nickname: "测试用户", IsActive: false},
+		{GroupKey: "private_dm_closed", UserKey: "proC", Role: model.ChatMemberRoleMember, Nickname: "枪神降临", IsActive: false},
+		// 团队群
+		{GroupKey: "team_group_1", UserKey: "proA", Role: model.ChatMemberRoleOwner, Nickname: "队长-峡谷守护者", IsActive: true},
+		{GroupKey: "team_group_1", UserKey: "proB", Role: model.ChatMemberRoleMember, Nickname: "王牌射手", IsActive: true},
+		{GroupKey: "team_group_1", UserKey: "proC", Role: model.ChatMemberRoleMember, Nickname: "枪神降临", IsActive: true},
+		{GroupKey: "team_group_2", UserKey: "proB", Role: model.ChatMemberRoleOwner, Nickname: "队长-王牌射手", IsActive: true},
+		{GroupKey: "team_group_2", UserKey: "proA", Role: model.ChatMemberRoleMember, Nickname: "峡谷守护者", IsActive: true},
+		// LFG群
+		{GroupKey: "lfg_group_1", UserKey: "customerA", Role: model.ChatMemberRoleOwner, Nickname: "发起人", IsActive: true},
+		{GroupKey: "lfg_group_1", UserKey: "customerD", Role: model.ChatMemberRoleMember, Nickname: "休闲玩家", IsActive: true},
+		{GroupKey: "lfg_group_2", UserKey: "customerB", Role: model.ChatMemberRoleOwner, Nickname: "发起人", IsActive: false},
+		{GroupKey: "lfg_group_2", UserKey: "customerE", Role: model.ChatMemberRoleMember, Nickname: "竞技高手", IsActive: false},
+		// 自定义群
+		{GroupKey: "custom_group_1", UserKey: "customerA", Role: model.ChatMemberRoleOwner, Nickname: "群主", IsActive: true},
+		{GroupKey: "custom_group_1", UserKey: "customerB", Role: model.ChatMemberRoleAdmin, Nickname: "管理", IsActive: true},
+		{GroupKey: "custom_group_1", UserKey: "customerD", Role: model.ChatMemberRoleMember, Nickname: "休闲玩家", IsActive: true},
+		{GroupKey: "custom_group_1", UserKey: "customerF", Role: model.ChatMemberRoleMember, Nickname: "周末玩家", IsActive: true},
+		{GroupKey: "custom_group_2", UserKey: "proB", Role: model.ChatMemberRoleOwner, Nickname: "群主-王牌射手", IsActive: true},
+		{GroupKey: "custom_group_2", UserKey: "proC", Role: model.ChatMemberRoleAdmin, Nickname: "管理-枪神降临", IsActive: true},
+		{GroupKey: "custom_group_2", UserKey: "customerE", Role: model.ChatMemberRoleMember, Nickname: "竞技高手", IsActive: true},
+	}
+
+	for _, ms := range memberSpecs {
+		group, ok := result[ms.GroupKey]
+		if !ok {
+			continue
+		}
+		user, ok := users[ms.UserKey]
+		if !ok {
+			continue
+		}
+		var existing model.ChatGroupMember
+		if err := tx.Where("group_id = ? AND user_id = ?", group.ID, user.ID).First(&existing).Error; err == nil {
+			continue
+		} else if err != gorm.ErrRecordNotFound {
+			return nil, err
+		}
+		m := model.ChatGroupMember{
+			GroupID:  group.ID,
+			UserID:   user.ID,
+			Role:     ms.Role,
+			Nickname: ms.Nickname,
+			JoinedAt: now.Add(-7 * 24 * time.Hour),
+			IsActive: ms.IsActive,
+			IsMuted:  ms.IsMuted,
+		}
+		if ms.MuteUntil != nil {
+			m.MutedUntil = ms.MuteUntil
+			m.MuteReason = "违反群规：发送广告/不当言论"
+			if adminUser != nil {
+				m.MutedBy = &adminUser.ID
+			}
+		}
+		if err := tx.Create(&m).Error; err != nil {
+			return nil, err
+		}
+	}
+
+	// 更新 CurrentMembers 计数
+	for key, group := range result {
+		var count int64
+		tx.Model(&model.ChatGroupMember{}).Where("group_id = ? AND is_active = true", group.ID).Count(&count)
+		if count > 0 {
+			tx.Model(&model.ChatGroup{}).Where("id = ?", group.ID).Update("current_members", count)
+		}
+		_ = key
+	}
+
 	return result, nil
 }
 
@@ -468,6 +581,41 @@ func seedChatMessages(tx *gorm.DB, users map[string]*model.User, groups map[stri
 		{GroupKey: "order_group_1", SenderKey: "proA", Content: "您好，我是您的陪玩师，请问现在方便开始吗？", MessageType: model.ChatMessageTypeText, AuditStatus: model.ChatMessageAuditApproved, TimeOffset: -1 * time.Hour},
 		{GroupKey: "order_group_1", SenderKey: "customerA", Content: "可以的，我已经上线了", MessageType: model.ChatMessageTypeText, AuditStatus: model.ChatMessageAuditApproved, TimeOffset: -55 * time.Minute},
 		{GroupKey: "order_group_1", SenderKey: "proA", Content: "好的，我加您游戏好友", MessageType: model.ChatMessageTypeText, AuditStatus: model.ChatMessageAuditApproved, TimeOffset: -50 * time.Minute},
+
+		// 私聊消息
+		{GroupKey: "private_dm_1", SenderKey: "customerA", Content: "你好，我看了你的主页，想约一次陪玩", MessageType: model.ChatMessageTypeText, AuditStatus: model.ChatMessageAuditApproved, TimeOffset: -48 * time.Hour},
+		{GroupKey: "private_dm_1", SenderKey: "proA", Content: "你好！欢迎~ 请问想玩什么游戏呢？", MessageType: model.ChatMessageTypeText, AuditStatus: model.ChatMessageAuditApproved, TimeOffset: -47*time.Hour - 50*time.Minute},
+		{GroupKey: "private_dm_1", SenderKey: "customerA", Content: "英雄联盟，我是黄金段位想上铂金", MessageType: model.ChatMessageTypeText, AuditStatus: model.ChatMessageAuditApproved, TimeOffset: -47 * time.Hour},
+		{GroupKey: "private_dm_1", SenderKey: "proA", Content: "没问题，下单后我来帮你上分~", MessageType: model.ChatMessageTypeText, AuditStatus: model.ChatMessageAuditApproved, TimeOffset: -46*time.Hour - 30*time.Minute},
+
+		{GroupKey: "private_dm_2", SenderKey: "customerB", Content: "想了解一下Valorant陪练服务", MessageType: model.ChatMessageTypeText, AuditStatus: model.ChatMessageAuditApproved, TimeOffset: -24 * time.Hour},
+		{GroupKey: "private_dm_2", SenderKey: "proB", Content: "我主打Valorant，可以教枪法和战术，时薪129元", MessageType: model.ChatMessageTypeText, AuditStatus: model.ChatMessageAuditApproved, TimeOffset: -23*time.Hour - 45*time.Minute},
+
+		// 团队群消息
+		{GroupKey: "team_group_1", SenderKey: "proA", Content: "兄弟们，今晚8点有个单子，英雄联盟双人车队，大家准时上线", MessageType: model.ChatMessageTypeText, AuditStatus: model.ChatMessageAuditApproved, TimeOffset: -6 * time.Hour},
+		{GroupKey: "team_group_1", SenderKey: "proB", Content: "收到，我准时到", MessageType: model.ChatMessageTypeText, AuditStatus: model.ChatMessageAuditApproved, TimeOffset: -5*time.Hour - 50*time.Minute},
+		{GroupKey: "team_group_1", SenderKey: "proC", Content: "我也在，有需要可以替补", MessageType: model.ChatMessageTypeText, AuditStatus: model.ChatMessageAuditApproved, TimeOffset: -5*time.Hour - 40*time.Minute},
+
+		{GroupKey: "team_group_2", SenderKey: "proB", Content: "当前订单正在进行，注意配合", MessageType: model.ChatMessageTypeText, AuditStatus: model.ChatMessageAuditApproved, TimeOffset: -1 * time.Hour},
+		{GroupKey: "team_group_2", SenderKey: "proA", Content: "明白，我负责辅助位", MessageType: model.ChatMessageTypeText, AuditStatus: model.ChatMessageAuditApproved, TimeOffset: -55 * time.Minute},
+
+		// LFG群消息
+		{GroupKey: "lfg_group_1", SenderKey: "customerA", Content: "有人一起打英雄联盟5v5吗？", MessageType: model.ChatMessageTypeText, AuditStatus: model.ChatMessageAuditApproved, TimeOffset: -30 * time.Minute},
+		{GroupKey: "lfg_group_1", SenderKey: "customerD", Content: "我可以！我是中单位", MessageType: model.ChatMessageTypeText, AuditStatus: model.ChatMessageAuditApproved, TimeOffset: -25 * time.Minute},
+
+		// 自定义群消息
+		{GroupKey: "custom_group_1", SenderKey: "customerA", Content: "周末晚上8点老地方集合，目标连胜5把", MessageType: model.ChatMessageTypeText, AuditStatus: model.ChatMessageAuditApproved, TimeOffset: -72 * time.Hour},
+		{GroupKey: "custom_group_1", SenderKey: "customerB", Content: "收到，我准时到", MessageType: model.ChatMessageTypeText, AuditStatus: model.ChatMessageAuditApproved, TimeOffset: -71 * time.Hour},
+		{GroupKey: "custom_group_1", SenderKey: "customerD", Content: "我这周有事来不了，下次一定", MessageType: model.ChatMessageTypeText, AuditStatus: model.ChatMessageAuditApproved, TimeOffset: -70 * time.Hour},
+		{GroupKey: "custom_group_1", SenderKey: "customerF", Content: "我来替补！", MessageType: model.ChatMessageTypeText, AuditStatus: model.ChatMessageAuditApproved, TimeOffset: -69 * time.Hour},
+
+		{GroupKey: "custom_group_2", SenderKey: "proB", Content: "今天聊聊新版本的枪械平衡调整", MessageType: model.ChatMessageTypeText, AuditStatus: model.ChatMessageAuditApproved, TimeOffset: -10 * time.Hour},
+		{GroupKey: "custom_group_2", SenderKey: "proC", Content: "AK的后坐力改了，需要重新练习压枪", MessageType: model.ChatMessageTypeText, AuditStatus: model.ChatMessageAuditApproved, TimeOffset: -9*time.Hour - 30*time.Minute},
+		{GroupKey: "custom_group_2", SenderKey: "customerE", Content: "是的，感觉M4更好用了", MessageType: model.ChatMessageTypeText, AuditStatus: model.ChatMessageAuditApproved, TimeOffset: -9 * time.Hour},
+
+		// 系统消息（不同群类型）
+		{GroupKey: "team_group_1", SenderKey: "adminA", Content: "峡谷车队已创建", MessageType: model.ChatMessageTypeSystem, AuditStatus: model.ChatMessageAuditApproved, TimeOffset: -168 * time.Hour},
+		{GroupKey: "lfg_group_1", SenderKey: "adminA", Content: "快速匹配房间已创建，等待更多玩家加入", MessageType: model.ChatMessageTypeSystem, AuditStatus: model.ChatMessageAuditApproved, TimeOffset: -35 * time.Minute},
 	}
 
 	for _, spec := range specs {
@@ -619,6 +767,78 @@ func seedFeedReports(tx *gorm.DB, users map[string]*model.User, feeds map[string
 		if err := tx.Model(&model.Feed{}).Where("id = ?", feed.ID).
 			Update("metrics_report_count", gorm.Expr("metrics_report_count + 1")).Error; err != nil {
 			return err
+		}
+	}
+
+	return nil
+}
+
+// seedChatReports 创建聊天举报种子数据
+func seedChatReports(tx *gorm.DB, users map[string]*model.User, _ map[string]*model.ChatGroup) error {
+	now := time.Now()
+	adminUser := users["adminA"]
+
+	// 先获取一些消息用于举报
+	var messages []model.ChatMessage
+	if err := tx.Where("audit_status = ? AND is_deleted = false", model.ChatMessageAuditApproved).Limit(6).Find(&messages).Error; err != nil {
+		return nil
+	}
+	if len(messages) == 0 {
+		return nil
+	}
+
+	type reportSpec struct {
+		MsgIdx      int
+		ReporterKey string
+		Reason      string
+		Status      string
+		Notes       string
+		IsHandled   bool
+	}
+
+	specs := []reportSpec{
+		// 待处理举报
+		{MsgIdx: 0, ReporterKey: "customerB", Reason: "消息内容涉嫌辱骂", Status: "pending"},
+		{MsgIdx: 1, ReporterKey: "customerC", Reason: "疑似广告信息", Status: "pending"},
+		// 已处理-通过
+		{MsgIdx: 2, ReporterKey: "customerD", Reason: "包含不当内容", Status: "approved", Notes: "经核实，已对消息进行处理", IsHandled: true},
+		// 已处理-驳回
+		{MsgIdx: 3, ReporterKey: "customerE", Reason: "恶意举报", Status: "rejected", Notes: "经审核，消息内容正常，驳回举报", IsHandled: true},
+	}
+
+	for _, spec := range specs {
+		if spec.MsgIdx >= len(messages) {
+			continue
+		}
+		reporter, ok := users[spec.ReporterKey]
+		if !ok {
+			continue
+		}
+		msg := messages[spec.MsgIdx]
+
+		var existing model.ChatReport
+		if err := tx.Where("message_id = ? AND reporter_id = ?", msg.ID, reporter.ID).First(&existing).Error; err == nil {
+			continue
+		} else if err != gorm.ErrRecordNotFound {
+			continue
+		}
+
+		report := &model.ChatReport{
+			MessageID:  msg.ID,
+			ReporterID: reporter.ID,
+			Reason:     spec.Reason,
+			Status:     spec.Status,
+		}
+
+		if spec.IsHandled && adminUser != nil {
+			handledAt := now.Add(-6 * time.Hour)
+			report.HandledBy = &adminUser.ID
+			report.HandledAt = &handledAt
+			report.Notes = spec.Notes
+		}
+
+		if err := tx.Create(report).Error; err != nil {
+			continue // 表可能不存在，跳过
 		}
 	}
 

@@ -61,11 +61,11 @@ func NewService(
 
 // UserSigResponse UserSig响应
 type UserSigResponse struct {
-	UserSig   string `json:"userSig"`
-	SDKAppID  uint64 `json:"sdkAppId"`
-	UserID    string `json:"userId"`
-	RoomID    string `json:"roomId"`
-	ExpireAt  int64  `json:"expireAt"`
+	UserSig  string `json:"userSig"`
+	SDKAppID uint64 `json:"sdkAppId"`
+	UserID   string `json:"userId"`
+	RoomID   string `json:"roomId"`
+	ExpireAt int64  `json:"expireAt"`
 }
 
 // GetUserSig 获取用户签名（用于加入语音房间）

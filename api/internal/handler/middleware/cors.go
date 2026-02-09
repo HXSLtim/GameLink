@@ -92,11 +92,9 @@ func getAllowedOrigins() []string {
 		return list
 	}
 
-	// Development defaults (localhost only - no wildcard)
-	return []string{
-		"http://localhost:5173",  // Vite dev server
-		"http://localhost:3000",  // Alternative dev server
-		"http://127.0.0.1:5173",
-		"http://127.0.0.1:3000",
-	}
+	// Development: allow all origins (echo back the request origin)
+	// This enables LAN access (192.168.x.x, 10.x.x.x, etc.) without
+	// needing to enumerate every possible dev machine IP.
+	// Production/staging will NEVER reach here — they return early above.
+	return []string{"*"}
 }

@@ -59,7 +59,7 @@ func (r *gormPlayerRepository) ListPaged(ctx context.Context, page, pageSize int
 // Get returns a player by id with User preloaded.
 func (r *gormPlayerRepository) Get(ctx context.Context, id uint64) (*model.Player, error) {
 	var player model.Player
-	if err := r.db.WithContext(ctx).Preload("User").First(&player, id).Error; err != nil {
+	if err := r.db.WithContext(ctx).Preload("User").Preload("MainGame").First(&player, id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, repository.ErrNotFound
 		}
@@ -71,7 +71,7 @@ func (r *gormPlayerRepository) Get(ctx context.Context, id uint64) (*model.Playe
 // GetByUserID returns player by bound user id with User preloaded.
 func (r *gormPlayerRepository) GetByUserID(ctx context.Context, userID uint64) (*model.Player, error) {
 	var player model.Player
-	if err := r.db.WithContext(ctx).Preload("User").Where("user_id = ?", userID).First(&player).Error; err != nil {
+	if err := r.db.WithContext(ctx).Preload("User").Preload("MainGame").Where("user_id = ?", userID).First(&player).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, repository.ErrNotFound
 		}
@@ -86,7 +86,7 @@ func (r *gormPlayerRepository) GetByIDs(ctx context.Context, ids []uint64) ([]mo
 		return []model.Player{}, nil
 	}
 	var players []model.Player
-	if err := r.db.WithContext(ctx).Preload("User").Where("id IN ?", ids).Find(&players).Error; err != nil {
+	if err := r.db.WithContext(ctx).Preload("User").Preload("MainGame").Where("id IN ?", ids).Find(&players).Error; err != nil {
 		return nil, err
 	}
 	return players, nil
@@ -156,7 +156,7 @@ func (r *gormPlayerRepository) ListPagedWithFilter(ctx context.Context, page, pa
 
 	var players []model.Player
 	// 使用新的查询以便添加 Preload
-	findQuery := r.db.WithContext(ctx).Preload("User")
+	findQuery := r.db.WithContext(ctx).Preload("User").Preload("MainGame")
 	if keyword != "" {
 		likePattern := "%" + keyword + "%"
 		findQuery = findQuery.Where("nickname ILIKE ? OR bio ILIKE ?", likePattern, likePattern)
@@ -184,9 +184,9 @@ func (r *gormPlayerRepository) ListFeatured(ctx context.Context, limit int, stat
 		return nil, 0, err
 	}
 
-	// Order by rating (desc) and rating count (desc) to get featured players, with User preloaded
+	// Order by rating (desc) and rating count (desc) to get featured players, with User and MainGame preloaded
 	var players []model.Player
-	findQuery := r.db.WithContext(ctx).Preload("User")
+	findQuery := r.db.WithContext(ctx).Preload("User").Preload("MainGame")
 	if status != nil {
 		findQuery = findQuery.Where("verification_status = ?", *status)
 	}

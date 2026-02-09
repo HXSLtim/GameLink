@@ -22,16 +22,7 @@
 </template>
 
 <script setup lang="ts">
-export interface MenuItem {
-  key: string
-  label: string
-  icon: string
-  iconColor?: string
-  iconBg?: string
-  badge?: number | string
-  value?: string
-  disabled?: boolean
-}
+import type { MenuItem } from '@/types/ui'
 
 interface Props {
   items: MenuItem[]
@@ -52,21 +43,28 @@ const handleClick = (item: MenuItem) => {
 <style lang="scss" scoped>
 .menu-list {
   background: var(--color-bg-card);
-  margin: 20rpx 28rpx;
-  border-radius: 20rpx;
+  margin: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
   overflow: hidden;
-  border: 2rpx solid var(--color-border);
+  border: 1rpx solid var(--color-border);
 }
 
 .menu-item {
   display: flex;
   align-items: center;
-  padding: 28rpx 24rpx;
+  padding: var(--spacing-sm) var(--spacing-md);
   border-bottom: 1rpx solid var(--color-border);
-  transition: all 0.2s;
+  transition: background 0.2s ease, padding-left 0.2s ease;
+  cursor: pointer;
+  @include press-effect;
   
   &:last-child {
     border-bottom: none;
+  }
+  
+  &:hover {
+    background: var(--color-bg-secondary);
+    padding-left: calc(var(--spacing-md) + 4rpx);
   }
   
   &:active {
@@ -75,38 +73,39 @@ const handleClick = (item: MenuItem) => {
 }
 
 .menu-icon {
-  width: 52rpx;
-  height: 52rpx;
+  width: 44rpx;
+  height: 44rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 24rpx;
-  border-radius: 16rpx;
+  margin-right: var(--spacing-md);
+  border-radius: var(--radius-sm);
+  border: 1rpx solid var(--color-border);
 }
 
 .menu-text {
   flex: 1;
-  font-size: 30rpx;
+  font-size: var(--font-md);
   font-weight: 500;
   color: var(--color-text);
 }
 
 .menu-badge {
-  min-width: 36rpx;
-  height: 36rpx;
-  padding: 0 10rpx;
+  min-width: 28rpx;
+  height: 28rpx;
+  padding: 0 var(--spacing-xs);
   background: var(--color-error);
-  border-radius: 18rpx;
-  font-size: 22rpx;
+  border-radius: var(--radius-full);
+  font-size: var(--font-xs);
   font-weight: 600;
   color: #FFFFFF;
   text-align: center;
-  line-height: 36rpx;
+  line-height: 28rpx;
 }
 
 .menu-value {
-  font-size: 26rpx;
+  font-size: var(--font-sm);
   color: var(--color-text-secondary);
-  margin-right: 8rpx;
+  margin-right: var(--spacing-xs);
 }
 </style>

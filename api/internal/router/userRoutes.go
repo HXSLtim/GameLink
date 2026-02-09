@@ -32,6 +32,7 @@ func registerUserRoutes(api *gin.RouterGroup, authMiddleware gin.HandlerFunc, se
 		userhandler.RegisterRechargeRoutes(userGroup, services.rechargeSvc, authMiddleware)
 		userhandler.RegisterActivityRoutes(userGroup, services.activitySvc, authMiddleware)
 		userhandler.RegisterReferralRoutes(userGroup, services.referralSvc, authMiddleware)
+		userhandler.RegisterSettingsRoutes(userGroup, services.userSettingsSvc, services.notificationSettingsSvc, authMiddleware)
 		// 主订单路由（订单拆分与转单）
 		orderGroupHandler := userhandler.NewOrderGroupHandler(services.orderSvc, services.orderGroupRepo)
 		orderGroupHandler.RegisterRoutes(userGroup)
@@ -100,8 +101,12 @@ func registerUserRoutesWithRoleSwitch(api *gin.RouterGroup, authMiddleware gin.H
 		userhandler.RegisterVoiceRoutes(userGroup, services.trtcSvc, authMiddleware)
 	}
 
+	// 上传相关路由（注册在 /api/v1 下）
+	if services.uploadSvc != nil {
+		userhandler.RegisterUploadRoutes(api, authMiddleware, services.uploadSvc)
+	}
+
 	// 修改密码路由（注册在 /api/v1 下，不是 /user 下）
 	userRepo := userrepo.NewUserRepository(orm)
 	userhandler.RegisterChangePasswordRoutes(api, userRepo, authMiddleware)
 }
-

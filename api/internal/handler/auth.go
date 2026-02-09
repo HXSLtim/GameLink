@@ -11,6 +11,7 @@ import (
 	"gamelink/internal/model"
 	"gamelink/internal/service"
 	authservice "gamelink/internal/service/auth"
+	referralservice "gamelink/internal/service/referral"
 	"gamelink/pkg/apierr"
 	"gamelink/pkg/auth"
 )
@@ -22,10 +23,10 @@ import (
 // POST /auth/refresh  -> Authorization: Bearer <token>
 // POST /auth/logout   -> stateless logout, client discards token
 // GET  /auth/me       -> return current user info (JWT required)
-func RegisterAuthRoutes(router gin.IRouter, svc *authservice.AuthService) {
+func RegisterAuthRoutes(router gin.IRouter, svc *authservice.AuthService, referralTrigger *referralservice.TriggerService) {
 	auth := router.Group("/auth")
 	auth.POST("/login", func(c *gin.Context) { loginHandler(c, svc) })
-	auth.POST("/register", func(c *gin.Context) { registerHandler(c, svc) })
+	auth.POST("/register", func(c *gin.Context) { registerHandler(c, svc, referralTrigger) })
 	auth.POST("/refresh", func(c *gin.Context) { refreshHandler(c, svc) })
 	auth.POST("/logout", logoutHandler)
 
@@ -51,7 +52,8 @@ type registerRequest struct {
 	Phone    string `json:"phone"`
 	Email    string `json:"email"`
 	Password string `json:"password" binding:"required,min=6"`
-	Name     string `json:"name" binding:"required"`
+	Name     string `json:"name"`                              // 真实姓名（可选）
+	Nickname string `json:"nickname" binding:"required,min=2"` // 昵称（必填，至少2个字符）
 }
 
 // Login handles user login
@@ -125,7 +127,7 @@ func loginHandler(c *gin.Context, svc *authservice.AuthService) {
 // @Success      200      {object}  loginResponse
 // @Failure      400      {object}  apierr.APIError
 // @Router       /auth/register [post]
-func registerHandler(c *gin.Context, svc *authservice.AuthService) {
+func registerHandler(c *gin.Context, svc *authservice.AuthService, referralTrigger *referralservice.TriggerService) {
 	var req registerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		resp.BadRequest(c, "无效的请求格式: "+err.Error())
@@ -137,11 +139,17 @@ func registerHandler(c *gin.Context, svc *authservice.AuthService) {
 		Email:    req.Email,
 		Password: req.Password,
 		Name:     req.Name,
+		Nickname: req.Nickname,
 		Role:     model.RoleUser,
 	})
 	if err != nil {
 		resp.Error(c, apierr.BadRequest("注册失败: "+err.Error()))
 		return
+	}
+
+	// 触发推荐奖励检查（注册条件）
+	if referralTrigger != nil {
+		go referralTrigger.OnUserRegistered(c.Request.Context(), r.User.ID)
 	}
 
 	resp.Success(c, "登录成功", loginResponse{

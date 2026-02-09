@@ -35,10 +35,10 @@ func TestHubRun(t *testing.T) {
 
 	// Create a test client
 	client := &Client{
-		UserID:  123,
-		Role:    "admin",
-		hub:     hub,
-		send:    make(chan []byte, 256),
+		UserID: 123,
+		Role:   "admin",
+		hub:    hub,
+		send:   make(chan []byte, 256),
 	}
 
 	// Test registration
@@ -78,16 +78,16 @@ func TestHubClientRegistration(t *testing.T) {
 
 	// Create test clients
 	client1 := &Client{
-		UserID:  1,
-		Role:    "admin",
-		hub:     hub,
-		send:    make(chan []byte, 256),
+		UserID: 1,
+		Role:   "admin",
+		hub:    hub,
+		send:   make(chan []byte, 256),
 	}
 	client2 := &Client{
-		UserID:  2,
-		Role:    "user",
-		hub:     hub,
-		send:    make(chan []byte, 256),
+		UserID: 2,
+		Role:   "user",
+		hub:    hub,
+		send:   make(chan []byte, 256),
 	}
 
 	// Register first client
@@ -120,10 +120,10 @@ func TestHubDuplicateRegistration(t *testing.T) {
 	go hub.Run()
 
 	client := &Client{
-		UserID:  1,
-		Role:    "admin",
-		hub:     hub,
-		send:    make(chan []byte, 256),
+		UserID: 1,
+		Role:   "admin",
+		hub:    hub,
+		send:   make(chan []byte, 256),
 	}
 
 	// Register client twice
@@ -149,10 +149,10 @@ func TestHubBroadcast(t *testing.T) {
 	var clients []*Client
 	for i := 0; i < 5; i++ {
 		client := &Client{
-			UserID:  uint64(i + 1),
-			Role:    "user",
-			hub:     hub,
-			send:    make(chan []byte, 256),
+			UserID: uint64(i + 1),
+			Role:   "user",
+			hub:    hub,
+			send:   make(chan []byte, 256),
 		}
 		clients = append(clients, client)
 		hub.register <- client
@@ -184,22 +184,22 @@ func TestHubBroadcastToRole(t *testing.T) {
 
 	// Create clients with different roles
 	admin1 := &Client{
-		UserID:  1,
-		Role:    "admin",
-		hub:     hub,
-		send:    make(chan []byte, 256),
+		UserID: 1,
+		Role:   "admin",
+		hub:    hub,
+		send:   make(chan []byte, 256),
 	}
 	admin2 := &Client{
-		UserID:  2,
-		Role:    "admin",
-		hub:     hub,
-		send:    make(chan []byte, 256),
+		UserID: 2,
+		Role:   "admin",
+		hub:    hub,
+		send:   make(chan []byte, 256),
 	}
 	user1 := &Client{
-		UserID:  3,
-		Role:    "user",
-		hub:     hub,
-		send:    make(chan []byte, 256),
+		UserID: 3,
+		Role:   "user",
+		hub:    hub,
+		send:   make(chan []byte, 256),
 	}
 
 	hub.register <- admin1
@@ -245,16 +245,16 @@ func TestHubBroadcastToUser(t *testing.T) {
 
 	// Create multiple clients
 	client1 := &Client{
-		UserID:  1,
-		Role:    "user",
-		hub:     hub,
-		send:    make(chan []byte, 256),
+		UserID: 1,
+		Role:   "user",
+		hub:    hub,
+		send:   make(chan []byte, 256),
 	}
 	client2 := &Client{
-		UserID:  2,
-		Role:    "user",
-		hub:     hub,
-		send:    make(chan []byte, 256),
+		UserID: 2,
+		Role:   "user",
+		hub:    hub,
+		send:   make(chan []byte, 256),
 	}
 
 	hub.register <- client1
@@ -300,10 +300,10 @@ func TestHubGetMetrics(t *testing.T) {
 	// Register clients
 	for i := 0; i < 3; i++ {
 		client := &Client{
-			UserID:  uint64(i + 1),
-			Role:    "user",
-			hub:     hub,
-			send:    make(chan []byte, 256),
+			UserID: uint64(i + 1),
+			Role:   "user",
+			hub:    hub,
+			send:   make(chan []byte, 256),
 		}
 		hub.register <- client
 	}
@@ -333,10 +333,10 @@ func TestHubGetOnlineCount(t *testing.T) {
 	// Add clients
 	for i := 0; i < 5; i++ {
 		client := &Client{
-			UserID:  uint64(i + 1),
-			Role:    "user",
-			hub:     hub,
-			send:    make(chan []byte, 256),
+			UserID: uint64(i + 1),
+			Role:   "user",
+			hub:    hub,
+			send:   make(chan []byte, 256),
 		}
 		hub.register <- client
 	}
@@ -346,9 +346,9 @@ func TestHubGetOnlineCount(t *testing.T) {
 
 	// Remove clients
 	client := &Client{
-		UserID:  999,
-		hub:     hub,
-		send:    make(chan []byte, 256),
+		UserID: 999,
+		hub:    hub,
+		send:   make(chan []byte, 256),
 	}
 	hub.unregister <- client
 	time.Sleep(10 * time.Millisecond)
@@ -394,10 +394,10 @@ func TestHubClientCount(t *testing.T) {
 	// Add clients
 	for i := 0; i < 10; i++ {
 		client := &Client{
-			UserID:  uint64(i + 1),
-			Role:    "user",
-			hub:     hub,
-			send:    make(chan []byte, 256),
+			UserID: uint64(i + 1),
+			Role:   "user",
+			hub:    hub,
+			send:   make(chan []byte, 256),
 		}
 		hub.register <- client
 	}
@@ -420,10 +420,10 @@ func TestHubConcurrentRegistration(t *testing.T) {
 		go func(id int) {
 			defer wg.Done()
 			client := &Client{
-				UserID:  uint64(id + 1),
-				Role:    "user",
-				hub:     hub,
-				send:    make(chan []byte, 256),
+				UserID: uint64(id + 1),
+				Role:   "user",
+				hub:    hub,
+				send:   make(chan []byte, 256),
 			}
 			hub.register <- client
 		}(i)
@@ -444,10 +444,10 @@ func TestHubConcurrentBroadcast(t *testing.T) {
 	numClients := 50
 	for i := 0; i < numClients; i++ {
 		client := &Client{
-			UserID:  uint64(i + 1),
-			Role:    "user",
-			hub:     hub,
-			send:    make(chan []byte, 512), // Larger buffer for concurrent sends
+			UserID: uint64(i + 1),
+			Role:   "user",
+			hub:    hub,
+			send:   make(chan []byte, 512), // Larger buffer for concurrent sends
 		}
 		hub.register <- client
 	}
@@ -481,10 +481,10 @@ func TestHubClientSendBufferFull(t *testing.T) {
 
 	// Create client with small send buffer
 	client := &Client{
-		UserID:  1,
-		Role:    "user",
-		hub:     hub,
-		send:    make(chan []byte, 1), // Very small buffer
+		UserID: 1,
+		Role:   "user",
+		hub:    hub,
+		send:   make(chan []byte, 1), // Very small buffer
 	}
 
 	hub.register <- client
@@ -517,10 +517,10 @@ func TestHubMetricsUpdate(t *testing.T) {
 	// Wait a bit and register a client
 	time.Sleep(10 * time.Millisecond)
 	client := &Client{
-		UserID:  1,
-		Role:    "user",
-		hub:     hub,
-		send:    make(chan []byte, 256),
+		UserID: 1,
+		Role:   "user",
+		hub:    hub,
+		send:   make(chan []byte, 256),
 	}
 	hub.register <- client
 
@@ -545,10 +545,10 @@ func TestHubRaceConditions(t *testing.T) {
 		go func(id int) {
 			defer wg.Done()
 			client := &Client{
-				UserID:  uint64(id + 1),
-				Role:    "user",
-				hub:     hub,
-				send:    make(chan []byte, 256),
+				UserID: uint64(id + 1),
+				Role:   "user",
+				hub:    hub,
+				send:   make(chan []byte, 256),
 			}
 			hub.register <- client
 		}(i)
@@ -596,9 +596,9 @@ func TestHubUnregisterNonExistentClient(t *testing.T) {
 	go hub.Run()
 
 	client := &Client{
-		UserID:  999,
-		hub:     hub,
-		send:    make(chan []byte, 256),
+		UserID: 999,
+		hub:    hub,
+		send:   make(chan []byte, 256),
 	}
 
 	// Unregister without registering

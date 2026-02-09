@@ -70,11 +70,11 @@ func TestSystemHandler_InitStatus_Initialized(t *testing.T) {
 
 	// Create test menu
 	menu := &model.Menu{
-		Name:     "Test Menu",
-		Path:     "/test",
-		Icon:     "test",
-		Order: 1,
-		Hidden:   false,
+		Name:   "Test Menu",
+		Path:   "/test",
+		Icon:   "test",
+		Order:  1,
+		Hidden: false,
 	}
 	require.NoError(t, db.Create(menu).Error)
 
@@ -283,19 +283,19 @@ func TestSystemHandler_InitStatus_WithSystemState(t *testing.T) {
 	require.NoError(t, db.Create(perm).Error)
 
 	menu := &model.Menu{
-		Name:     "Test Menu",
-		Path:     "/test",
-		Icon:     "test",
-		Order: 1,
-		Hidden:   false,
+		Name:   "Test Menu",
+		Path:   "/test",
+		Icon:   "test",
+		Order:  1,
+		Hidden: false,
 	}
 	require.NoError(t, db.Create(menu).Error)
 
 	// Create system state record
 	state := model.SystemState{
-		Key:       model.SystemStateKeyAdminInit,
-		Version:   "1.0.0",
-		SyncedBy:  1,
+		Key:        model.SystemStateKeyAdminInit,
+		Version:    "1.0.0",
+		SyncedBy:   1,
 		LastSyncAt: time.Now(),
 	}
 	require.NoError(t, db.Create(&state).Error)

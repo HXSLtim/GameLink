@@ -4,14 +4,28 @@
 
 import { ref, onUnmounted } from 'vue'
 import { useUserStore } from '@/store'
+import type { WsEventHandler, WsMessage } from '@/types/message'
 
-export interface WsMessage {
-  type: 'chat_message' | 'order_status' | 'order_new' | 'notification' | 'pong'
-  timestamp: number
-  data: unknown
+/**
+ * 构建 WebSocket URL
+ * 优先使用 VITE_WS_URL；否则自动从当前页面 hostname + 后端端口推导
+ */
+function resolveWsUrl(token: string): string {
+  const envWs = import.meta.env.VITE_WS_URL
+  if (envWs) return `${envWs}?token=${token}`
+
+  // #ifdef H5
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:'
+  const host = location.hostname || 'localhost'
+  return `${proto}//${host}:8080/api/v1/ws?token=${token}`
+  // #endif
+
+  // 非 H5 平台：从 API BASE URL 推导
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'
+  const wsProto = baseUrl.startsWith('https') ? 'wss:' : 'ws:'
+  const wsHost = baseUrl.replace(/^https?:\/\//, '').replace(/\/api\/v1$/, '')
+  return `${wsProto}//${wsHost}/api/v1/ws?token=${token}`
 }
-
-export type WsEventHandler = (message: WsMessage) => void
 
 export function useWebSocket() {
   const userStore = useUserStore()
@@ -36,24 +50,14 @@ export function useWebSocket() {
     
     isConnecting.value = true
     
-    // #ifdef H5
-    const wsUrl = `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/api/v1/ws?token=${userStore.token}`
-    // #endif
-    
-    // #ifndef H5
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'
-    const wsProtocol = baseUrl.startsWith('https') ? 'wss:' : 'ws:'
-    const wsHost = baseUrl.replace(/^https?:\/\//, '').replace(/\/api\/v1$/, '')
-    const wsUrl = `${wsProtocol}//${wsHost}/api/v1/ws?token=${userStore.token}`
-    // #endif
+    const wsUrl = resolveWsUrl(userStore.token)
     
     ws = uni.connectSocket({
       url: wsUrl,
-      success: () => console.log('WebSocket connecting...'),
+      success: () => {},
     })
     
     ws.onOpen(() => {
-      console.log('WebSocket connected')
       isConnected.value = true
       isConnecting.value = false
       reconnectAttempts = 0
@@ -71,7 +75,6 @@ export function useWebSocket() {
     })
     
     ws.onClose(() => {
-      console.log('WebSocket closed')
       isConnected.value = false
       isConnecting.value = false
       stopHeartbeat()
@@ -163,10 +166,7 @@ export function useWebSocket() {
    */
   function scheduleReconnect() {
     if (reconnectTimer) return
-    if (reconnectAttempts >= maxReconnectAttempts) {
-      console.log('Max reconnect attempts reached')
-      return
-    }
+    if (reconnectAttempts >= maxReconnectAttempts) return
     
     const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000)
     reconnectAttempts++

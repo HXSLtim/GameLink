@@ -6,18 +6,9 @@ import { getPlayerDetail, getPlayerReviews, type PlayerDetail as ApiPlayerDetail
 import { addFavorite, removeFavorite, checkFavorite as checkFavoriteApi } from '@/api/favorite'
 import { useUserStore } from '@/store/user'
 import { setRedirectPath } from '@/utils/routeGuard'
-import type { PageStateType } from '@/components/PageState.vue'
-import type { PlayerHeaderData } from '@/components/PlayerDetailHeader/index.vue'
-import type { PlayerGameData } from '@/components/PlayerGamesSection/index.vue'
-import type { ServiceData } from '@/components/PlayerServicesSection/index.vue'
-import type { ReviewData } from '@/components/PlayerReviewsSection/index.vue'
-
-interface PlayerDetailData extends PlayerHeaderData {
-  id: number
-  games: PlayerGameData[]
-  services: ServiceData[]
-  reviews: ReviewData[]
-}
+import type { PageStateType } from '@/types/page'
+import type { PlayerDetailData, PlayerGameData, PlayerServiceData } from '@/types/player'
+import type { PlayerReviewData } from '@/types/review'
 
 export function usePlayerDetail() {
   const userStore = useUserStore()
@@ -30,7 +21,7 @@ export function usePlayerDetail() {
   const playerId = ref<number>(0)
   const player = ref<PlayerDetailData>({} as PlayerDetailData)
   const isFavorite = ref(false)
-  const selectedService = ref<ServiceData | null>(null)
+  const selectedService = ref<PlayerServiceData | null>(null)
   
   // 评价预览
   const displayReviews = computed(() => player.value.reviews?.slice(0, 3) || [])
@@ -102,9 +93,9 @@ export function usePlayerDetail() {
   // 加载评价
   const loadReviews = async (id: number) => {
     try {
-      const res = await getPlayerReviews(id, { pageSize: 5 }, { showError: false })
+      const res = await getPlayerReviews(id, { page_size: 5 }, { showError: false })
       const reviews = res.data || []
-      player.value.reviews = reviews.map((r: any): ReviewData => ({
+      player.value.reviews = reviews.map((r: any): PlayerReviewData => ({
         id: r.id,
         userId: r.userId,
         userName: r.userName,
@@ -154,7 +145,7 @@ export function usePlayerDetail() {
   }
   
   // 选择服务
-  const selectService = (service: ServiceData) => {
+  const selectService = (service: PlayerServiceData) => {
     selectedService.value = service
   }
   

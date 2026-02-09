@@ -15,7 +15,7 @@ import (
 type ChatRetentionScheduler struct {
 	groups        repository.ChatGroupRepository
 	messages      repository.ChatMessageRepository
-	lock          cache.DistributedLock  // Redis distributed lock
+	lock          cache.DistributedLock // Redis distributed lock
 	logger        *slog.Logger
 	cron          *cron.Cron
 	RetentionDays int

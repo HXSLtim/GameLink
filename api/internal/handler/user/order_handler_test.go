@@ -34,14 +34,14 @@ import (
 
 // UserOrderTestContext provides test context for user order handler tests.
 type UserOrderTestContext struct {
-	Router      *gin.Engine
-	Service     *order.OrderService
-	DB          *gorm.DB
-	TestUser    *model.User
-	TestPlayer  *model.Player
-	TestGame    *model.Game
-	TestItem    *model.ServiceItem
-	AuthToken   string
+	Router     *gin.Engine
+	Service    *order.OrderService
+	DB         *gorm.DB
+	TestUser   *model.User
+	TestPlayer *model.Player
+	TestGame   *model.Game
+	TestItem   *model.ServiceItem
+	AuthToken  string
 }
 
 // SetupUserOrderTest initializes test environment for user order handler tests.
@@ -162,12 +162,12 @@ func TestUserOrderHandler_Unit_CreateOrder_Success(t *testing.T) {
 	}
 
 	w := ctx.makeRequest(t, "POST", "/user/orders", payload)
-	
+
 	// Debug: print response body if not 200
 	if w.Code != http.StatusOK {
 		t.Logf("Response body: %s", w.Body.String())
 	}
-	
+
 	testutil.AssertSuccess(t, w, http.StatusOK)
 
 	var response map[string]interface{}
@@ -311,7 +311,7 @@ func TestUserOrderHandler_Unit_GetMyOrders_WithPagination(t *testing.T) {
 	data := response["data"].(map[string]interface{})
 	items := data["orders"].([]interface{})
 	total := data["total"].(float64)
-	
+
 	// With pageSize=10, we should get at most 10 items
 	assert.LessOrEqual(t, len(items), 10)
 	// Total should be 15 (all created orders)

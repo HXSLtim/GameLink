@@ -1,21 +1,43 @@
 <template>
   <view class="channel-card" @tap="$emit('click')">
-    <!-- 头像 -->
-    <view class="channel-avatar">
+    <!-- 封面 -->
+    <view class="channel-cover">
       <GlAvatar
         :src="channel.avatar"
         :text="channel.name"
-        size="large"
+        size="xlarge"
         shape="square"
       />
+      <GlTag v-if="channel.isActive" type="success" size="mini" class="channel-badge">活跃</GlTag>
     </view>
     
     <!-- 信息 -->
-    <view class="channel-info">
-      <view class="channel-header">
+    <view class="channel-body">
+      <view class="channel-title-row">
         <text class="channel-name">{{ channel.name }}</text>
-        <GlTag v-if="channel.isActive" type="success" size="mini">活跃</GlTag>
+        <view class="channel-action">
+          <GlButton
+            v-if="channel.isJoined"
+            size="small"
+            type="default"
+            plain
+            round
+            @click.stop="$emit('leave')"
+          >
+            已加入
+          </GlButton>
+          <GlButton
+            v-else
+            size="small"
+            type="primary"
+            round
+            @click.stop="$emit('join')"
+          >
+            加入
+          </GlButton>
+        </view>
       </view>
+
       <text class="channel-desc">{{ channel.description || '暂无描述' }}</text>
       <view class="channel-meta">
         <view class="meta-item">
@@ -28,29 +50,6 @@
         </view>
       </view>
     </view>
-    
-    <!-- 操作按钮 -->
-    <view class="channel-action">
-      <GlButton
-        v-if="channel.isJoined"
-        size="small"
-        type="default"
-        plain
-        round
-        @click.stop="$emit('leave')"
-      >
-        已加入
-      </GlButton>
-      <GlButton
-        v-else
-        size="small"
-        type="primary"
-        round
-        @click.stop="$emit('join')"
-      >
-        加入
-      </GlButton>
-    </view>
   </view>
 </template>
 
@@ -58,19 +57,7 @@
 import GlAvatar from '@/components/gl/Avatar/index.vue'
 import GlTag from '@/components/gl/Tag/index.vue'
 import GlButton from '@/components/gl/Button/index.vue'
-
-export interface ChannelData {
-  id: number
-  name: string
-  description?: string
-  avatar?: string
-  memberCount: number
-  maxMembers?: number
-  isActive: boolean
-  isJoined: boolean
-  gameId?: number
-  gameName?: string
-}
+import type { ChannelData } from '@/types/community'
 
 interface Props {
   channel: ChannelData
@@ -88,63 +75,76 @@ defineEmits<{
 <style lang="scss" scoped>
 .channel-card {
   display: flex;
-  gap: 24rpx;
-  padding: 28rpx;
+  flex-direction: column;
   background: var(--color-bg-card);
-  border-radius: 20rpx;
-  margin-bottom: 16rpx;
-  border: 2rpx solid var(--color-border);
+  border-radius: var(--radius-md);
+  border: 1rpx solid var(--color-border);
+  overflow: hidden;
   transition: all 0.2s;
+  cursor: pointer;
   
   &:active {
-    transform: scale(0.99);
-    border-color: var(--color-primary);
+    background: var(--color-bg-secondary);
+    border-color: var(--color-border);
   }
 }
 
-.channel-avatar {
-  flex-shrink: 0;
-}
-
-.channel-info {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8rpx;
-}
-
-.channel-header {
+.channel-cover {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 12rpx;
+  justify-content: center;
+  padding: var(--spacing-sm);
+  background: var(--color-bg-secondary);
+  border-bottom: 1rpx solid var(--color-border);
+}
+
+.channel-badge {
+  position: absolute;
+  top: var(--spacing-sm);
+  right: var(--spacing-sm);
+}
+
+.channel-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm);
+}
+
+.channel-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
 }
 
 .channel-name {
-  font-size: 32rpx;
+  font-size: var(--font-md);
   font-weight: 600;
   color: var(--color-text);
+  flex: 1;
+  min-width: 0;
+  @include text-ellipsis;
 }
 
 .channel-desc {
-  font-size: 26rpx;
+  font-size: var(--font-sm);
   color: var(--color-text-secondary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  @include text-ellipsis;
 }
 
 .channel-meta {
   display: flex;
-  gap: 24rpx;
-  margin-top: 8rpx;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-xs);
 }
 
 .meta-item {
   display: flex;
   align-items: center;
-  gap: 6rpx;
-  font-size: 22rpx;
+  gap: var(--spacing-xs);
+  font-size: var(--font-xs);
   color: var(--color-text-secondary);
 }
 

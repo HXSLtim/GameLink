@@ -1,78 +1,95 @@
 <template>
-  <GlCard :title="title" :shadow="false" bordered class="stats-card">
+  <SectionCard :title="title">
     <template #extra>
-      <text class="stats-date">{{ subtitle }}</text>
+      <slot name="extra">
+        <text v-if="subtitle" class="stats-date">{{ subtitle }}</text>
+      </slot>
     </template>
     
-    <view class="stats-grid">
+    <view class="stats-grid" :style="gridStyle">
       <view 
         v-for="item in items" 
         :key="item.label" 
         class="stat-item"
+        :class="{ 'stat-item--clickable': !!item.onClick }"
         @tap="item.onClick?.()"
       >
         <text class="stat-value" :class="{ highlight: item.highlight }">{{ item.value }}</text>
         <text class="stat-label">{{ item.label }}</text>
+        <text v-if="item.unit" class="stat-unit">{{ item.unit }}</text>
       </view>
     </view>
-  </GlCard>
+  </SectionCard>
 </template>
 
 <script setup lang="ts">
-import GlCard from '@/components/gl/Card/index.vue'
-
-export interface StatItem {
-  value: string | number
-  label: string
-  highlight?: boolean
-  onClick?: () => void
-}
+import { computed } from 'vue'
+import SectionCard from '@/components/SectionCard/index.vue'
+import type { StatItem } from '@/types/ui'
 
 interface Props {
   title: string
   subtitle?: string
   items: StatItem[]
+  /** 网格列数，默认自适应（≤3 项等分，>3 项 4 列） */
+  columns?: number
 }
 
-defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  columns: 0,
+})
+
+const gridStyle = computed(() => {
+  const cols = props.columns > 0
+    ? props.columns
+    : Math.min(props.items.length, 4)
+  return { gridTemplateColumns: `repeat(${cols}, 1fr)` }
+})
 </script>
 
 <style lang="scss" scoped>
-.stats-card {
-  margin: 0 24rpx 20rpx;
-}
-
 .stats-date {
-  font-size: 24rpx;
+  font-size: var(--font-xs);
   color: var(--color-text-secondary);
 }
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16rpx;
+  gap: var(--spacing-xs);
 }
 
 .stat-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8rpx;
-  padding: 16rpx 0;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) 0;
+
+  &--clickable {
+    cursor: pointer;
+    @include press-effect;
+  }
 }
 
 .stat-value {
-  font-size: 36rpx;
-  font-weight: 700;
+  font-size: var(--font-md);
+  font-weight: 600;
   color: var(--color-text);
   
   &.highlight {
     color: var(--color-primary);
+    font-weight: 700;
   }
 }
 
 .stat-label {
-  font-size: 24rpx;
+  font-size: var(--font-xs);
   color: var(--color-text-secondary);
+}
+
+.stat-unit {
+  font-size: var(--font-xs);
+  color: var(--color-text-placeholder);
+  margin-top: -4rpx;
 }
 </style>

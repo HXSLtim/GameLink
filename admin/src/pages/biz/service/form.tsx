@@ -9,6 +9,7 @@ import {
 } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import { adminApi } from '@/api/admin';
+import type { CreateServiceItemDto, UpdateServiceItemDto } from '@/api/admin';
 import { motion } from 'framer-motion';
 
 const { Option } = Select;
@@ -28,8 +29,9 @@ const ServiceItemForm: React.FC = () => {
             const loadData = async () => {
                 try {
                     const res = await adminApi.getServiceItem(Number(id));
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    if (isMounted) form.setFieldsValue((res as any).data);
+                    if (isMounted) {
+                        form.setFieldsValue(res.data.data);
+                    }
                 } catch {
                     message.error('Failed to load data');
                 } finally {
@@ -42,15 +44,14 @@ const ServiceItemForm: React.FC = () => {
         }
     }, [isEdit, form, id]);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const onFinish = async (values: any) => {
+    const onFinish = async (values: Record<string, unknown>) => {
         setSubmitting(true);
         try {
             if (isEdit) {
-                await adminApi.updateServiceItem(Number(id), values);
+                await adminApi.updateServiceItem(Number(id), values as UpdateServiceItemDto);
                 message.success('Updated successfully');
             } else {
-                await adminApi.createServiceItem(values);
+                await adminApi.createServiceItem(values as unknown as CreateServiceItemDto);
                 message.success('Created successfully');
             }
             navigate('/admin/biz/service');

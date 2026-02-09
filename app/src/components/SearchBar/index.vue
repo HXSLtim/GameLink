@@ -1,19 +1,24 @@
 <template>
   <view class="search-bar">
     <view class="search-input-wrap" :class="{ focused: isFocused }">
-      <uv-icon name="search" size="18" color="var(--color-text-secondary)"></uv-icon>
-      <input
-        :value="modelValue"
+      <GlInput
         class="search-input"
+        :model-value="modelValue"
         :placeholder="placeholder"
         :disabled="disabled"
-        @input="handleInput"
+        :readonly="readonly"
+        size="small"
+        variant="plain"
+        @update:modelValue="handleInput"
         @confirm="handleConfirm"
         @focus="handleFocus"
         @blur="handleBlur"
       />
       <view v-if="modelValue && clearable" class="clear-btn" @tap.stop="handleClear">
         <uv-icon name="close-circle-fill" size="16" color="var(--color-text-placeholder)"></uv-icon>
+      </view>
+      <view class="search-icon">
+        <uv-icon name="search" size="18" color="var(--color-text-secondary)"></uv-icon>
       </view>
     </view>
     
@@ -29,6 +34,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import GlInput from '@/components/gl/Input/index.vue'
 
 interface Props {
   modelValue: string
@@ -37,6 +43,7 @@ interface Props {
   filterText?: string
   clearable?: boolean
   disabled?: boolean
+  readonly?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -45,6 +52,7 @@ const props = withDefaults(defineProps<Props>(), {
   filterText: '筛选',
   clearable: true,
   disabled: false,
+  readonly: false,
 })
 
 const emit = defineEmits<{
@@ -58,8 +66,8 @@ const emit = defineEmits<{
 
 const isFocused = ref(false)
 
-const handleInput = (e: any) => {
-  emit('update:modelValue', e.detail.value)
+const handleInput = (value: string) => {
+  emit('update:modelValue', value)
 }
 
 const handleConfirm = () => {
@@ -85,46 +93,58 @@ const handleBlur = () => {
 <style lang="scss" scoped>
 .search-bar {
   display: flex;
-  gap: 12rpx;
-  padding: 12rpx 16rpx;
-  background: var(--color-bg-card);
-  border-bottom: 1rpx solid var(--color-border);
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md) var(--spacing-xs);
+  background: transparent;
 }
 
 .search-input-wrap {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 12rpx;
-  padding: 0 20rpx;
-  height: 68rpx;
-  background: var(--color-bg-secondary);
-  border-radius: 34rpx;
-  border: 1rpx solid transparent;
+  gap: var(--spacing-sm);
+  padding: 0 var(--spacing-md);
+  height: 64rpx;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  border: 1rpx solid var(--color-border);
   transition: all 0.2s;
   
   &.focused {
     border-color: var(--color-primary);
     background: var(--color-bg-card);
+    box-shadow: 0 0 0 3rpx rgba(var(--color-primary-rgb, 122, 204, 53), 0.15);
   }
 }
 
 .search-input {
   flex: 1;
-  font-size: 26rpx;
-  color: var(--color-text);
+  min-width: 0;
+  height: 100%;
   
-  &::placeholder {
+  :deep(.gl-input__field) {
+    font-size: var(--font-sm);
+    color: var(--color-text);
+  }
+  
+  :deep(.gl-input__field::placeholder) {
     color: var(--color-text-placeholder);
   }
 }
 
 .clear-btn {
-  padding: 8rpx;
+  padding: var(--spacing-xs);
+  @include press-effect;
   
   &:active {
     opacity: 0.7;
   }
+}
+
+.search-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .filter-btn {
@@ -132,19 +152,20 @@ const handleBlur = () => {
   align-items: center;
   justify-content: center;
   gap: 6rpx;
-  padding: 0 20rpx;
-  height: 68rpx;
-  background: var(--color-bg-secondary);
-  border-radius: 34rpx;
-  font-size: 26rpx;
+  padding: 0 var(--spacing-md);
+  height: 64rpx;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
   color: var(--color-text);
-  border: 1rpx solid transparent;
+  border: 1rpx solid var(--color-border);
   transition: all 0.2s;
+  @include press-effect;
   
   &:active {
     border-color: var(--color-primary);
-    background: rgba(0, 210, 106, 0.1);
-    color: var(--color-primary);
+    background: var(--color-bg-secondary);
+    color: var(--color-text);
   }
 }
 </style>

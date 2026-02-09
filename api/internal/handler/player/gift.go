@@ -48,7 +48,7 @@ func getReceivedGiftsHandler(c *gin.Context, svc *gift.GiftService) {
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[gift.ReceivedGiftsResponse]{
+	respondJSON[gift.ReceivedGiftsResponse](c, http.StatusOK, model.APIResponse[gift.ReceivedGiftsResponse]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
@@ -79,7 +79,7 @@ func getGiftStatsHandler(c *gin.Context, svc *gift.GiftService) {
 		return
 	}
 
-	respondJSON(c, http.StatusOK, model.APIResponse[gift.GiftStatsResponse]{
+	respondJSON[gift.GiftStatsResponse](c, http.StatusOK, model.APIResponse[gift.GiftStatsResponse]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",

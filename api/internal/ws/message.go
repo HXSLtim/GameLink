@@ -27,6 +27,12 @@ const (
 	MessageTypePong      MessageType = "pong"
 	MessageTypeSubscribe MessageType = "subscribe"
 
+	// User realtime message types
+	MessageTypeChatMessage  MessageType = "chat_message"
+	MessageTypeNotification MessageType = "notification"
+	MessageTypeOrderStatus  MessageType = "order_status"
+	MessageTypeOrderNew     MessageType = "order_new"
+
 	// Presence message types (Discord/Kook style)
 	MessageTypePresenceUpdate    MessageType = "presence_update"    // 状态变更
 	MessageTypePresenceSubscribe MessageType = "presence_subscribe" // 订阅状态
@@ -55,6 +61,29 @@ const (
 	MessageTypeVoiceMemberLeft   MessageType = "voice_member_left"   // 成员离开语音
 	MessageTypeVoiceMemberMuted  MessageType = "voice_member_muted"  // 成员静音状态变更
 )
+
+// ChatMessageEvent represents a real-time chat message event.
+type ChatMessageEvent struct {
+	GroupID uint64      `json:"groupId"`
+	Message interface{} `json:"message"`
+}
+
+// OrderStatusEvent represents order status changes.
+type OrderStatusEvent struct {
+	OrderID   uint64 `json:"orderId"`
+	Status    string `json:"status"`
+	Message   string `json:"message,omitempty"`
+	UpdatedAt string `json:"updatedAt"`
+}
+
+// OrderNewEvent represents a new order available event.
+type OrderNewEvent struct {
+	OrderID        uint64     `json:"orderId"`
+	Title          string     `json:"title"`
+	PriceCents     int64      `json:"priceCents"`
+	ScheduledStart *time.Time `json:"scheduledStart,omitempty"`
+	GameID         *uint64    `json:"gameId,omitempty"`
+}
 
 // SystemStatus represents system health metrics.
 type SystemStatus struct {

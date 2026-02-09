@@ -106,6 +106,14 @@ func (m *MockEarningsPlayerRepository) BatchDelete(ctx context.Context, ids []ui
 	return args.Get(0).(int64), args.Error(1)
 }
 
+func (m *MockEarningsPlayerRepository) ListFeatured(ctx context.Context, limit int, status *model.VerificationStatus) ([]model.Player, int64, error) {
+	args := m.Called(ctx, limit, status)
+	if args.Get(0) == nil {
+		return nil, 0, args.Error(2)
+	}
+	return args.Get(0).([]model.Player), args.Get(1).(int64), args.Error(2)
+}
+
 // MockOrderQuery is a mock implementation of OrderQuery
 type MockOrderQuery struct {
 	mock.Mock
@@ -655,7 +663,7 @@ func TestEarningsService_GetWithdrawHistory(t *testing.T) {
 		{
 			name:     "default pagination values",
 			userID:   1,
-			page:     0,  // Should default to 1
+			page:     0, // Should default to 1
 			pageSize: 0, // Should default to 20
 			setupMock: func(players *MockEarningsPlayerRepository, orders *MockOrderQuery, withdraws *MockWithdrawRepository) {
 				player := model.Player{UserID: 1}

@@ -38,10 +38,11 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import type { DashboardStatus } from '@/types/status'
 
 type AvatarSize = 'mini' | 'small' | 'medium' | 'large' | 'xlarge' | number
 type AvatarShape = 'circle' | 'square'
-type AvatarStatus = 'online' | 'offline' | 'busy'
+type AvatarStatus = DashboardStatus
 
 interface Props {
   src?: string
@@ -112,18 +113,18 @@ const handleError = (e: Event) => {
   overflow: hidden;
   background: var(--color-bg-secondary);
   flex-shrink: 0;
+  cursor: pointer;
   
   &--circle {
-    border-radius: 50%;
+    border-radius: var(--radius-full);
   }
   
   &--square {
-    border-radius: 12rpx;
+    border-radius: var(--radius-md);
   }
   
   &--bordered {
-    border: 4rpx solid var(--color-bg-card);
-    box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+    border: 2rpx solid var(--color-bg-card);
   }
 }
 
@@ -143,6 +144,7 @@ const handleError = (e: Event) => {
 
 .gl-avatar__text {
   font-weight: 600;
+  font-size: var(--font-sm);
   color: var(--color-text-secondary);
 }
 
@@ -152,12 +154,12 @@ const handleError = (e: Event) => {
   right: -4rpx;
   min-width: 32rpx;
   height: 32rpx;
-  padding: 0 8rpx;
+  padding: 0 var(--spacing-xs);
   background: var(--color-error);
   color: #fff;
-  font-size: 20rpx;
+  font-size: var(--font-xs);
   font-weight: 600;
-  border-radius: 16rpx;
+  border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -168,10 +170,10 @@ const handleError = (e: Event) => {
   position: absolute;
   bottom: 0;
   right: 0;
-  width: 20rpx;
-  height: 20rpx;
-  border-radius: 50%;
-  border: 3rpx solid var(--color-bg-card);
+  width: 18rpx;
+  height: 18rpx;
+  border-radius: var(--radius-full);
+  border: 2rpx solid var(--color-bg-card);
   
   &--online {
     background: var(--color-success, #10B981);

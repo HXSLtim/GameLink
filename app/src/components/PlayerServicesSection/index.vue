@@ -1,5 +1,5 @@
 <template>
-  <GlCard title="服务项目" :shadow="false" bordered class="section-card">
+  <SectionCard title="服务项目">
     <view class="services-list">
       <view 
         v-for="service in services" 
@@ -13,8 +13,7 @@
           <text v-if="service.description" class="service-desc">{{ service.description }}</text>
         </view>
         <view class="service-price">
-          <text class="price-value">¥{{ service.price }}</text>
-          <text class="price-unit">/{{ service.unit || '局' }}</text>
+          <PriceTag :amount="service.price" amount-unit="yuan" :unit="service.unit || '局'" size="small" />
         </view>
         <view v-if="selectedId === service.id" class="check-icon">
           <uv-icon name="checkbox-mark" size="16" color="var(--color-primary)"></uv-icon>
@@ -23,61 +22,55 @@
       
       <GlEmpty v-if="!services?.length" title="暂无服务项目" compact />
     </view>
-  </GlCard>
+  </SectionCard>
 </template>
 
 <script setup lang="ts">
-import GlCard from '@/components/gl/Card/index.vue'
+import SectionCard from '@/components/SectionCard/index.vue'
+import PriceTag from '@/components/PriceTag/index.vue'
 import GlEmpty from '@/components/gl/Empty/index.vue'
-
-export interface ServiceData {
-  id: number
-  name: string
-  description?: string
-  price: number
-  unit?: string
-}
+import type { PlayerServiceData } from '@/types/player'
 
 interface Props {
-  services: ServiceData[]
+  services: PlayerServiceData[]
   selectedId?: number
 }
 
 defineProps<Props>()
 
 defineEmits<{
-  select: [service: ServiceData]
+  select: [service: PlayerServiceData]
 }>()
 </script>
 
 <style lang="scss" scoped>
-.section-card {
-  margin: 0 24rpx 20rpx;
-}
-
 .services-list {
   display: flex;
   flex-direction: column;
-  gap: 16rpx;
+  gap: var(--spacing-md);
 }
 
 .service-item {
   display: flex;
   align-items: center;
-  gap: 16rpx;
-  padding: 24rpx;
-  background: var(--color-bg-secondary);
-  border-radius: 16rpx;
-  border: 2rpx solid transparent;
-  transition: all 0.2s;
-  
-  &:active {
-    transform: scale(0.99);
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  border: 1rpx solid var(--color-border);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  @include press-effect;
+
+  &:hover {
+    border-color: var(--color-primary);
+    background: var(--color-bg-secondary);
   }
-  
+
   &--selected {
     border-color: var(--color-primary);
-    background: rgba(0, 210, 106, 0.05);
+    background: var(--color-primary-tint);
+    box-shadow: var(--shadow-sm);
   }
 }
 
@@ -88,18 +81,16 @@ defineEmits<{
 
 .service-name {
   display: block;
-  font-size: 30rpx;
+  font-size: var(--font-md);
   font-weight: 600;
   color: var(--color-text);
-  margin-bottom: 8rpx;
+  margin-bottom: var(--spacing-xs);
 }
 
 .service-desc {
-  font-size: 24rpx;
+  font-size: var(--font-xs);
   color: var(--color-text-secondary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  @include text-ellipsis;
 }
 
 .service-price {
@@ -107,25 +98,15 @@ defineEmits<{
   text-align: right;
 }
 
-.price-value {
-  font-size: 32rpx;
-  font-weight: 700;
-  color: var(--color-primary);
-}
-
-.price-unit {
-  font-size: 22rpx;
-  color: var(--color-text-secondary);
-}
-
 .check-icon {
   flex-shrink: 0;
-  width: 40rpx;
-  height: 40rpx;
+  width: 32rpx;
+  height: 32rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 210, 106, 0.1);
-  border-radius: 50%;
+  background: var(--color-bg-secondary);
+  border: 1rpx solid var(--color-border);
+  border-radius: var(--radius-md);
 }
 </style>

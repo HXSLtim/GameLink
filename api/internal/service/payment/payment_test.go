@@ -1423,7 +1423,7 @@ func TestPaymentService_CreatePayment_Combined_CreatePaymentError(t *testing.T) 
 
 	order := createTestOrder(orderID, userID, model.OrderStatusPending, 10000)
 	wallet := createTestWallet(userID, 10000, 0)
-	updatedWallet := createTestWallet(userID, 4000, 0)   // After deduction
+	updatedWallet := createTestWallet(userID, 4000, 0)     // After deduction
 	rolledBackWallet := createTestWallet(userID, 10000, 0) // After rollback
 
 	mockOrders.On("Get", ctx, orderID).Return(order, nil)
@@ -1562,7 +1562,7 @@ func TestPaymentService_HandlePaymentCallback_NoAmount(t *testing.T) {
 	callbackData := map[string]interface{}{
 		"payment_id": paymentID,
 		// No amount_cents field - should skip validation
-		"trade_no":   "wx_trade_123",
+		"trade_no": "wx_trade_123",
 	}
 
 	err := service.HandlePaymentCallback(ctx, "wechat", callbackData)

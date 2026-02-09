@@ -2,27 +2,31 @@
   <view class="form-section">
     <view class="input-group">
       <text class="input-label">手机号/邮箱</text>
-      <input
-        :value="username"
-        class="input"
+      <GlInput
+        :model-value="account"
         type="text"
         placeholder="请输入手机号或邮箱"
-        @input="(e: any) => $emit('update:username', e.detail.value)"
+        size="medium"
+        clearable
+        @update:modelValue="(value) => $emit('update:account', value)"
       />
     </view>
 
     <view class="input-group">
       <text class="input-label">密码</text>
-      <input
-        :value="password"
-        class="input"
-        type="password"
+      <GlInput
+        :model-value="password"
+        :type="showPassword ? 'text' : 'password'"
         placeholder="请输入密码"
-        @input="(e: any) => $emit('update:password', e.detail.value)"
+        size="medium"
+        :suffix-icon="showPassword ? 'eye' : 'eye-off'"
+        :suffix-clickable="true"
+        @suffix-click="togglePassword"
+        @update:modelValue="(value) => $emit('update:password', value)"
       />
     </view>
 
-    <GlButton 
+    <GlButton
       type="primary"
       block
       round
@@ -37,11 +41,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import GlButton from '@/components/gl/Button/index.vue'
+import GlInput from '@/components/gl/Input/index.vue'
 
 interface Props {
-  username: string
+  account: string
   password: string
   loading?: boolean
 }
@@ -49,39 +54,34 @@ interface Props {
 const props = defineProps<Props>()
 
 defineEmits<{
-  'update:username': [value: string]
+  'update:account': [value: string]
   'update:password': [value: string]
   submit: []
 }>()
 
-const canSubmit = computed(() => props.username && props.password)
+const canSubmit = computed(() => props.account && props.password)
+
+const showPassword = ref(false)
+const togglePassword = () => {
+  showPassword.value = !showPassword.value
+}
 </script>
 
 <style lang="scss" scoped>
 .form-section {
-  padding: 0 48rpx;
+  padding: 0 var(--spacing-lg);
 }
 
 .input-group {
-  margin-bottom: 32rpx;
+  margin-bottom: var(--spacing-md);
 }
 
 .input-label {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--font-sm);
   font-weight: 500;
   color: var(--color-text);
-  margin-bottom: 16rpx;
+  margin-bottom: var(--spacing-sm);
 }
 
-.input {
-  width: 100%;
-  height: 88rpx;
-  padding: 0 24rpx;
-  background: var(--color-bg-secondary);
-  border: 2rpx solid var(--color-border);
-  border-radius: 16rpx;
-  font-size: 30rpx;
-  color: var(--color-text);
-}
 </style>

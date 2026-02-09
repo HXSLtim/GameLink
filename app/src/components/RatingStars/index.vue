@@ -7,13 +7,19 @@
       :class="{ active: i <= Math.round(modelValue), half: isHalfStar(i) }"
       @click="handleClick(i)"
     >
-      <text>{{ i <= Math.round(modelValue) ? '★' : '☆' }}</text>
+      <uv-icon
+        :name="i <= Math.round(modelValue) ? 'star-fill' : 'star'"
+        :size="starSize"
+        :color="i <= Math.round(modelValue) ? 'var(--color-gold)' : 'var(--color-text-disabled)'"
+      />
     </view>
     <text v-if="showValue" class="rating-value">{{ modelValue.toFixed(1) }}</text>
   </view>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+
 const props = withDefaults(defineProps<{
   modelValue: number
   readonly?: boolean
@@ -29,6 +35,11 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   'update:modelValue': [value: number]
 }>()
+
+const starSize = computed(() => {
+  const map = { small: 12, medium: 16, large: 24 }
+  return map[props.size] ?? 16
+})
 
 function isHalfStar(index: number): boolean {
   const value = props.modelValue
@@ -48,12 +59,9 @@ function handleClick(index: number) {
   gap: 4rpx;
   
   .star {
-    color: #D1D5DB;
-    transition: color 0.2s;
-    
-    &.active {
-      color: #FBBF24;
-    }
+    transition: opacity 0.2s;
+    cursor: pointer;
+    @include press-effect;
   }
   
   .rating-value {
@@ -64,17 +72,14 @@ function handleClick(index: number) {
 
 // 尺寸
 .size-small {
-  .star text { font-size: 24rpx; }
-  .rating-value { font-size: 22rpx; }
+  .rating-value { font-size: var(--font-xs); }
 }
 
 .size-medium {
-  .star text { font-size: 32rpx; }
-  .rating-value { font-size: 26rpx; }
+  .rating-value { font-size: var(--font-sm); }
 }
 
 .size-large {
-  .star text { font-size: 48rpx; }
-  .rating-value { font-size: 32rpx; }
+  .rating-value { font-size: var(--font-md); }
 }
 </style>

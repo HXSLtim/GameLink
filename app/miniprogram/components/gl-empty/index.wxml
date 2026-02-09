@@ -1,8 +1,0 @@
-<view class="gl-empty">
-  <image class="gl-empty__icon" src="{{icon}}" mode="aspectFit" />
-  <text class="gl-empty__title">{{title}}</text>
-  <text wx:if="{{description}}" class="gl-empty__desc">{{description}}</text>
-  <view wx:if="{{showAction}}" class="gl-empty__action">
-    <gl-button type="primary" size="medium" bindtap="onAction">{{actionText}}</gl-button>
-  </view>
-</view>

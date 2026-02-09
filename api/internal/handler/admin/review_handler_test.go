@@ -809,11 +809,11 @@ func TestReviewHandler_GetReviewReport_Success(t *testing.T) {
 
 	// Create report directly in DB
 	report := &model.ReviewReport{
-		Base:        model.Base{ExtJSON: "{}"},
-		ReviewID:    review.ID,
-		ReporterID:  ctx.AdminUser.ID,
-		Reason:      "Test report",
-		Status:      model.ReviewReportStatusPending,
+		Base:       model.Base{ExtJSON: "{}"},
+		ReviewID:   review.ID,
+		ReporterID: ctx.AdminUser.ID,
+		Reason:     "Test report",
+		Status:     model.ReviewReportStatusPending,
 	}
 
 	require.NoError(t, ctx.DB.Create(report).Error)
@@ -848,11 +848,11 @@ func TestReviewHandler_HandleReviewReport_DeleteAction(t *testing.T) {
 	review := ctx.CreateTestReviewWithOrder(t, model.Rating(5), model.ReviewStatusApproved)
 
 	report := &model.ReviewReport{
-		Base:        model.Base{ExtJSON: "{}"},
-		ReviewID:    review.ID,
-		ReporterID:  ctx.AdminUser.ID,
-		Reason:      "Test report",
-		Status:      model.ReviewReportStatusPending,
+		Base:       model.Base{ExtJSON: "{}"},
+		ReviewID:   review.ID,
+		ReporterID: ctx.AdminUser.ID,
+		Reason:     "Test report",
+		Status:     model.ReviewReportStatusPending,
 	}
 
 	require.NoError(t, ctx.DB.Create(report).Error)
@@ -878,11 +878,11 @@ func TestReviewHandler_HandleReviewReport_WarnAction(t *testing.T) {
 	review := ctx.CreateTestReviewWithOrder(t, model.Rating(5), model.ReviewStatusApproved)
 
 	report := &model.ReviewReport{
-		Base:        model.Base{ExtJSON: "{}"},
-		ReviewID:    review.ID,
-		ReporterID:  ctx.AdminUser.ID,
-		Reason:      "Test report",
-		Status:      model.ReviewReportStatusPending,
+		Base:       model.Base{ExtJSON: "{}"},
+		ReviewID:   review.ID,
+		ReporterID: ctx.AdminUser.ID,
+		Reason:     "Test report",
+		Status:     model.ReviewReportStatusPending,
 	}
 
 	require.NoError(t, ctx.DB.Create(report).Error)
@@ -903,11 +903,11 @@ func TestReviewHandler_HandleReviewReport_RejectAction(t *testing.T) {
 	review := ctx.CreateTestReviewWithOrder(t, model.Rating(5), model.ReviewStatusApproved)
 
 	report := &model.ReviewReport{
-		Base:        model.Base{ExtJSON: "{}"},
-		ReviewID:    review.ID,
-		ReporterID:  ctx.AdminUser.ID,
-		Reason:      "Test report",
-		Status:      model.ReviewReportStatusPending,
+		Base:       model.Base{ExtJSON: "{}"},
+		ReviewID:   review.ID,
+		ReporterID: ctx.AdminUser.ID,
+		Reason:     "Test report",
+		Status:     model.ReviewReportStatusPending,
 	}
 
 	require.NoError(t, ctx.DB.Create(report).Error)
@@ -933,11 +933,11 @@ func TestReviewHandler_HandleReviewReport_InvalidAction(t *testing.T) {
 	review := ctx.CreateTestReviewWithOrder(t, model.Rating(5), model.ReviewStatusApproved)
 
 	report := &model.ReviewReport{
-		Base:        model.Base{ExtJSON: "{}"},
-		ReviewID:    review.ID,
-		ReporterID:  ctx.AdminUser.ID,
-		Reason:      "Test report",
-		Status:      model.ReviewReportStatusPending,
+		Base:       model.Base{ExtJSON: "{}"},
+		ReviewID:   review.ID,
+		ReporterID: ctx.AdminUser.ID,
+		Reason:     "Test report",
+		Status:     model.ReviewReportStatusPending,
 	}
 
 	require.NoError(t, ctx.DB.Create(report).Error)
@@ -1002,11 +1002,11 @@ func TestReviewHandler_UpdateReply_Success(t *testing.T) {
 	review := ctx.CreateTestReviewWithOrder(t, model.Rating(5), model.ReviewStatusApproved)
 
 	reply := &model.ReviewReply{
-		Base:        model.Base{ExtJSON: "{}"},
-		ReviewID:    review.ID,
-		PlayerID:    review.PlayerID,
-		Content:     "Original reply",
-		Status:      model.ReviewReplyStatusApproved,
+		Base:     model.Base{ExtJSON: "{}"},
+		ReviewID: review.ID,
+		PlayerID: review.PlayerID,
+		Content:  "Original reply",
+		Status:   model.ReviewReplyStatusApproved,
 	}
 
 	require.NoError(t, ctx.DB.Create(reply).Error)
@@ -1047,11 +1047,11 @@ func TestReviewHandler_DeleteReply_Success(t *testing.T) {
 	review := ctx.CreateTestReviewWithOrder(t, model.Rating(5), model.ReviewStatusApproved)
 
 	reply := &model.ReviewReply{
-		Base:        model.Base{ExtJSON: "{}"},
-		ReviewID:    review.ID,
-		PlayerID:    review.PlayerID,
-		Content:     "Reply to delete",
-		Status:      model.ReviewReplyStatusApproved,
+		Base:     model.Base{ExtJSON: "{}"},
+		ReviewID: review.ID,
+		PlayerID: review.PlayerID,
+		Content:  "Reply to delete",
+		Status:   model.ReviewReplyStatusApproved,
 	}
 
 	require.NoError(t, ctx.DB.Create(reply).Error)

@@ -34,18 +34,23 @@ type PublicPlayerInfo struct {
 	Avatar             string  `json:"avatar"`
 	Bio                string  `json:"bio"`
 	Rank               string  `json:"rank"`
+	MainGame           string  `json:"mainGame"`
+	HourlyRateCents    int64   `json:"hourlyRateCents"`
+	OrderCount         uint32  `json:"orderCount"`
 	RatingAverage      float32 `json:"ratingAverage"`
 	RatingCount        uint32  `json:"ratingCount"`
+	IsOnline           bool    `json:"isOnline"`
+	IsVerified         bool    `json:"isVerified"`
 	OnlineStatus       string  `json:"onlineStatus"`
 	VerificationStatus string  `json:"verificationStatus"`
 }
 
 // PlayerListResponse 陪玩师列表响应
 type PlayerListResponse struct {
-	Players []PublicPlayerInfo `json:"players"`
-	Total   int64              `json:"total"`
-	Page    int                `json:"page"`
-	PageSize int               `json:"pageSize"`
+	Players  []PublicPlayerInfo `json:"players"`
+	Total    int64              `json:"total"`
+	Page     int                `json:"page"`
+	PageSize int                `json:"pageSize"`
 }
 
 // ListPlayers 获取陪玩师列表（公开）
@@ -86,6 +91,10 @@ func (h *PlayerHandler) ListPlayers(c *gin.Context) {
 		if p.User != nil {
 			avatar = p.User.AvatarURL
 		}
+		mainGameName := ""
+		if p.MainGame != nil {
+			mainGameName = p.MainGame.Name
+		}
 		info := PublicPlayerInfo{
 			ID:                 p.ID,
 			UserID:             p.UserID,
@@ -93,8 +102,13 @@ func (h *PlayerHandler) ListPlayers(c *gin.Context) {
 			Avatar:             avatar,
 			Bio:                p.Bio,
 			Rank:               p.Rank,
+			MainGame:           mainGameName,
+			HourlyRateCents:    p.HourlyRateCents,
+			OrderCount:         p.OrderCount,
 			RatingAverage:      p.RatingAverage,
 			RatingCount:        p.RatingCount,
+			IsOnline:           p.OnlineStatus == model.PlayerOnlineStatusOnline,
+			IsVerified:         p.VerificationStatus == model.VerificationVerified,
 			OnlineStatus:       string(p.OnlineStatus),
 			VerificationStatus: string(p.VerificationStatus),
 		}
@@ -147,6 +161,10 @@ func (h *PlayerHandler) GetPlayer(c *gin.Context) {
 	if player.User != nil {
 		avatar = player.User.AvatarURL
 	}
+	mainGameName := ""
+	if player.MainGame != nil {
+		mainGameName = player.MainGame.Name
+	}
 
 	info := PublicPlayerInfo{
 		ID:                 player.ID,
@@ -155,8 +173,13 @@ func (h *PlayerHandler) GetPlayer(c *gin.Context) {
 		Avatar:             avatar,
 		Bio:                player.Bio,
 		Rank:               player.Rank,
+		MainGame:           mainGameName,
+		HourlyRateCents:    player.HourlyRateCents,
+		OrderCount:         player.OrderCount,
 		RatingAverage:      player.RatingAverage,
 		RatingCount:        player.RatingCount,
+		IsOnline:           player.OnlineStatus == model.PlayerOnlineStatusOnline,
+		IsVerified:         player.VerificationStatus == model.VerificationVerified,
 		OnlineStatus:       string(player.OnlineStatus),
 		VerificationStatus: string(player.VerificationStatus),
 	}
@@ -194,6 +217,10 @@ func (h *PlayerHandler) ListFeaturedPlayers(c *gin.Context) {
 		if p.User != nil {
 			avatar = p.User.AvatarURL
 		}
+		mainGameName := ""
+		if p.MainGame != nil {
+			mainGameName = p.MainGame.Name
+		}
 		info := PublicPlayerInfo{
 			ID:                 p.ID,
 			UserID:             p.UserID,
@@ -201,8 +228,13 @@ func (h *PlayerHandler) ListFeaturedPlayers(c *gin.Context) {
 			Avatar:             avatar,
 			Bio:                p.Bio,
 			Rank:               p.Rank,
+			MainGame:           mainGameName,
+			HourlyRateCents:    p.HourlyRateCents,
+			OrderCount:         p.OrderCount,
 			RatingAverage:      p.RatingAverage,
 			RatingCount:        p.RatingCount,
+			IsOnline:           p.OnlineStatus == model.PlayerOnlineStatusOnline,
+			IsVerified:         p.VerificationStatus == model.VerificationVerified,
 			OnlineStatus:       string(p.OnlineStatus),
 			VerificationStatus: string(p.VerificationStatus),
 		}

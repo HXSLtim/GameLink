@@ -1,5 +1,12 @@
 <template>
-  <view class="payment-result-page page-container">
+  <BasePageLayout
+    class="payment-result-page"
+    padding="0"
+    title="支付结果"
+    :show-back="true"
+    :show-tab-bar="true"
+    :show-mobile-tab-bar="false"
+  >
     <!-- 结果卡片 -->
     <ResultCard
       :type="resultType"
@@ -9,7 +16,7 @@
     />
 
     <!-- 订单信息 -->
-    <GlCard v-if="orderInfo.orderNo" :shadow="false" bordered class="order-info-card">
+    <SectionCard v-if="orderInfo.orderNo" margin="0 24rpx 24rpx" padding="24rpx">
       <view class="info-row">
         <text class="info-label">订单编号</text>
         <view class="info-value-wrap">
@@ -25,7 +32,7 @@
         <text class="info-label">支付时间</text>
         <text class="info-value">{{ formatTime(orderInfo.paidAt) }}</text>
       </view>
-    </GlCard>
+    </SectionCard>
 
     <!-- 操作按钮 -->
     <view class="action-buttons">
@@ -34,27 +41,25 @@
     </view>
 
     <!-- 温馨提示 -->
-    <GlCard title="温馨提示" :shadow="false" bordered class="tips-card">
+    <SectionCard title="温馨提示" margin="0 24rpx">
       <view class="tips-list">
         <text class="tips-item">• 支付成功后，陪玩师将尽快与您联系</text>
         <text class="tips-item">• 如有问题，请联系在线客服</text>
         <text class="tips-item">• 您可以在「我的订单」中查看订单状态</text>
       </view>
-    </GlCard>
+    </SectionCard>
 
-    <!-- PC 端侧边栏 -->
-    <CustomTabBar :show-mobile-tab-bar="false" />
-  </view>
+  </BasePageLayout>
 </template>
 
 <script setup lang="ts">
 import { onLoad } from '@dcloudio/uni-app'
 // Pattern 组件
-import GlCard from '@/components/gl/Card/index.vue'
+import SectionCard from '@/components/SectionCard/index.vue'
+import BasePageLayout from '@/components/layout/BasePageLayout/index.vue'
 import GlButton from '@/components/gl/Button/index.vue'
 // Business 组件
 import ResultCard from '@/components/ResultCard/index.vue'
-import CustomTabBar from '@/components/CustomTabBar/index.vue'
 // Composables
 import { usePaymentResult } from '@/composables/usePaymentResult'
 
@@ -78,16 +83,9 @@ onLoad((options) => {
 
 <style lang="scss" scoped>
 .payment-result-page {
-  min-height: 100vh;
-  min-height: 100dvh;
-  background: var(--color-bg);
-  box-sizing: border-box;
   padding-bottom: 100rpx;
 }
 
-.order-info-card {
-  margin: 0 24rpx 24rpx;
-}
 
 .info-row {
   display: flex;
@@ -102,7 +100,7 @@ onLoad((options) => {
 }
 
 .info-label {
-  font-size: 28rpx;
+  font-size: var(--font-sm);
   color: var(--color-text-secondary);
 }
 
@@ -113,12 +111,12 @@ onLoad((options) => {
 }
 
 .info-value {
-  font-size: 28rpx;
+  font-size: var(--font-sm);
   color: var(--color-text);
 }
 
 .copy-btn {
-  font-size: 24rpx;
+  font-size: var(--font-xs);
   color: var(--color-primary);
 }
 
@@ -129,9 +127,6 @@ onLoad((options) => {
   padding: 24rpx;
 }
 
-.tips-card {
-  margin: 0 24rpx;
-}
 
 .tips-list {
   display: flex;
@@ -140,7 +135,7 @@ onLoad((options) => {
 }
 
 .tips-item {
-  font-size: 26rpx;
+  font-size: var(--font-sm);
   color: var(--color-text-secondary);
   line-height: 1.5;
 }

@@ -4,11 +4,15 @@
       <uv-icon name="arrow-left" size="20" color="var(--color-text)"></uv-icon>
     </view>
     <view class="nav-center">
-      <text class="nav-title">{{ name }}</text>
-      <text v-if="type === 'private'" class="online-status" :class="{ online: isOnline }">
+      <view class="nav-title-row">
+        <text class="nav-title">{{ name }}</text>
+        <!-- 私聊在线状态 -->
+        <view v-if="type === 'private'" class="online-dot" :class="{ online: isOnline }" />
+      </view>
+      <text v-if="type === 'private'" class="nav-subtitle">
         {{ isOnline ? '在线' : '离线' }}
       </text>
-      <text v-else-if="memberCount" class="member-count">
+      <text v-else-if="memberCount" class="nav-subtitle">
         {{ memberCount }}人
       </text>
     </view>
@@ -21,12 +25,9 @@
 </template>
 
 <script setup lang="ts">
-interface Props {
-  name: string
-  type?: 'private' | 'order' | 'public'
-  isOnline?: boolean
-  memberCount?: number
-}
+import type { ChatInfo } from '@/types/message'
+
+type Props = Pick<ChatInfo, 'name'> & Partial<Pick<ChatInfo, 'type' | 'isOnline' | 'memberCount'>>
 
 withDefaults(defineProps<Props>(), {
   type: 'private',
@@ -43,8 +44,8 @@ defineEmits<{
 .nav-bar {
   display: flex;
   align-items: center;
-  padding: 16rpx 24rpx;
-  padding-top: calc(16rpx + env(safe-area-inset-top));
+  padding: var(--spacing-sm) var(--spacing-md);
+  padding-top: calc(var(--spacing-sm) + env(safe-area-inset-top));
   background: var(--color-bg-card);
   border-bottom: 1rpx solid var(--color-border);
   min-height: 88rpx;
@@ -56,6 +57,17 @@ defineEmits<{
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover {
+    background: var(--color-bg-secondary);
+  }
+
+  &:active {
+    transform: scale(0.92);
+  }
 }
 
 .nav-center {
@@ -66,9 +78,15 @@ defineEmits<{
   min-width: 0;
 }
 
+.nav-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
 .nav-title {
-  font-size: 34rpx;
-  font-weight: 700;
+  font-size: var(--font-md);
+  font-weight: 600;
   color: var(--color-text);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -76,20 +94,24 @@ defineEmits<{
   max-width: 400rpx;
 }
 
-.online-status {
-  font-size: 22rpx;
-  color: var(--color-text-secondary);
-  margin-top: 4rpx;
-  
+.online-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: var(--color-text-placeholder);
+  flex-shrink: 0;
+  transition: background 0.3s;
+
   &.online {
-    color: var(--color-primary);
+    background: #34C759;
+    box-shadow: 0 0 6rpx rgba(52, 199, 89, 0.5);
   }
 }
 
-.member-count {
-  font-size: 22rpx;
+.nav-subtitle {
+  font-size: var(--font-xs);
   color: var(--color-text-secondary);
-  margin-top: 4rpx;
+  margin-top: 2rpx;
 }
 
 .nav-actions {
@@ -104,5 +126,16 @@ defineEmits<{
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover {
+    background: var(--color-bg-secondary);
+  }
+
+  &:active {
+    transform: scale(0.92);
+  }
 }
 </style>

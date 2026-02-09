@@ -5,6 +5,7 @@ import (
 	"mime/multipart"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -60,6 +61,7 @@ func (s *Service) UploadImage(c *gin.Context, userID uint64, file *multipart.Fil
 
 	filePath := localRes.FilePath
 	fileURL := buildPublicURL(localRes.FilePath)
+	responseURL := fileURL
 
 	// Upload to OSS if enabled
 	if s.ossSvc != nil && s.ossCfg != nil && s.ossCfg.OSS.Enabled {
@@ -77,6 +79,11 @@ func (s *Service) UploadImage(c *gin.Context, userID uint64, file *multipart.Fil
 
 		filePath = key
 		fileURL = url
+		responseURL = url
+
+		if signedURL, err := s.ossSvc.GetSignedURL(c.Request.Context(), key, resolveSignedURLTTL()); err == nil {
+			responseURL = signedURL
+		}
 	}
 
 	// Persist upload record (best-effort)
@@ -97,7 +104,7 @@ func (s *Service) UploadImage(c *gin.Context, userID uint64, file *multipart.Fil
 
 	return &Result{
 		FilePath: filePath,
-		FileURL:  fileURL,
+		FileURL:  responseURL,
 		Hash:     localRes.Hash,
 	}, nil
 }
@@ -135,4 +142,17 @@ func buildPublicURL(filePath string) string {
 		return clean
 	}
 	return strings.TrimRight(baseURL, "/") + clean
+}
+
+func resolveSignedURLTTL() time.Duration {
+	const defaultTTLSeconds = 3600
+	raw := strings.TrimSpace(os.Getenv("OSS_SIGNED_URL_TTL_SECONDS"))
+	if raw == "" {
+		return time.Duration(defaultTTLSeconds) * time.Second
+	}
+	ttlSeconds, err := strconv.Atoi(raw)
+	if err != nil || ttlSeconds <= 0 {
+		return time.Duration(defaultTTLSeconds) * time.Second
+	}
+	return time.Duration(ttlSeconds) * time.Second
 }

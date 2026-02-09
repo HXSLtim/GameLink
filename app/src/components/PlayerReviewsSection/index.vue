@@ -1,5 +1,5 @@
 <template>
-  <GlCard :shadow="false" bordered class="section-card">
+  <SectionCard>
     <template #header>
       <SectionHeader title="用户评价" @more="$emit('more')" />
     </template>
@@ -31,7 +31,7 @@
             :src="img"
             mode="aspectFill"
             class="review-image"
-            @tap="previewImage(review.images!, idx)"
+            @tap="previewImages(review.images!, idx)"
           />
           <view v-if="review.images.length > 3" class="more-images">
             <text>+{{ review.images.length - 3 }}</text>
@@ -41,30 +41,22 @@
       
       <GlEmpty v-if="!reviews?.length" title="暂无评价" description="下单体验后来评价吧" compact />
     </view>
-  </GlCard>
+  </SectionCard>
 </template>
 
 <script setup lang="ts">
-import GlCard from '@/components/gl/Card/index.vue'
+import SectionCard from '@/components/SectionCard/index.vue'
 import GlAvatar from '@/components/gl/Avatar/index.vue'
 import GlEmpty from '@/components/gl/Empty/index.vue'
 import SectionHeader from '@/components/SectionHeader/index.vue'
 import RatingStars from '@/components/RatingStars/index.vue'
-
-export interface ReviewData {
-  id: number
-  userId: number
-  userName: string
-  userAvatar?: string
-  rating: number
-  content: string
-  images?: string[]
-  createdAt: string
-}
+import { useImageTools } from '@/composables/useImageTools'
+import { formatRelativeTimeShort } from '@/utils/format'
+import type { PlayerReviewData } from '@/types/review'
 
 interface Props {
   rating?: number
-  reviews: ReviewData[]
+  reviews: PlayerReviewData[]
 }
 
 defineProps<Props>()
@@ -73,59 +65,44 @@ defineEmits<{
   more: []
 }>()
 
+const { previewImages } = useImageTools()
+
 const formatTime = (dateStr: string) => {
   if (!dateStr) return ''
-  const date = new Date(dateStr)
-  const now = new Date()
-  const diff = now.getTime() - date.getTime()
-  
-  if (diff < 60 * 1000) return '刚刚'
-  if (diff < 60 * 60 * 1000) return `${Math.floor(diff / 60 / 1000)}分钟前`
-  if (diff < 24 * 60 * 60 * 1000) return `${Math.floor(diff / 60 / 60 / 1000)}小时前`
-  if (diff < 7 * 24 * 60 * 60 * 1000) return `${Math.floor(diff / 24 / 60 / 60 / 1000)}天前`
-  
-  return `${date.getMonth() + 1}/${date.getDate()}`
+  return formatRelativeTimeShort(dateStr)
 }
 
-const previewImage = (images: string[], index: number) => {
-  uni.previewImage({
-    urls: images,
-    current: images[index],
-  })
-}
 </script>
 
 <style lang="scss" scoped>
-.section-card {
-  margin: 0 24rpx 20rpx;
-}
-
 .reviews-summary {
-  padding-bottom: 24rpx;
+  padding-bottom: var(--spacing-sm);
   border-bottom: 1rpx solid var(--color-border);
-  margin-bottom: 24rpx;
+  margin-bottom: var(--spacing-sm);
 }
 
 .rating-big {
   display: flex;
-  align-items: center;
-  gap: 16rpx;
+  align-items: baseline;
+  gap: var(--spacing-sm);
 }
 
 .rating-value {
-  font-size: 56rpx;
+  font-size: var(--font-2xl);
   font-weight: 800;
-  color: var(--color-primary);
+  color: var(--color-text);
+  letter-spacing: -0.5px;
+  line-height: 1;
 }
 
 .reviews-list {
   display: flex;
   flex-direction: column;
-  gap: 24rpx;
+  gap: var(--spacing-sm);
 }
 
 .review-item {
-  padding-bottom: 24rpx;
+  padding-bottom: var(--spacing-sm);
   border-bottom: 1rpx solid var(--color-border);
   
   &:last-child {
@@ -137,8 +114,8 @@ const previewImage = (images: string[], index: number) => {
 .review-header {
   display: flex;
   align-items: center;
-  gap: 16rpx;
-  margin-bottom: 16rpx;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
 }
 
 .review-user-info {
@@ -148,48 +125,61 @@ const previewImage = (images: string[], index: number) => {
 
 .review-user-name {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--font-sm);
   font-weight: 500;
   color: var(--color-text);
   margin-bottom: 4rpx;
 }
 
 .review-time {
-  font-size: 24rpx;
+  font-size: var(--font-xs);
   color: var(--color-text-placeholder);
   flex-shrink: 0;
 }
 
 .review-content {
-  font-size: 28rpx;
+  font-size: var(--font-sm);
   color: var(--color-text);
   line-height: 1.6;
-  margin-bottom: 16rpx;
+  margin-bottom: var(--spacing-xs);
 }
 
 .review-images {
   display: flex;
-  gap: 12rpx;
+  gap: var(--spacing-xs);
 }
 
 .review-image {
   width: 160rpx;
   height: 160rpx;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   object-fit: cover;
+  border: 1rpx solid var(--color-border);
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+
+  &:hover {
+    transform: scale(1.03);
+    opacity: 0.9;
+  }
+  
+  &:active {
+    transform: scale(0.97);
+  }
 }
 
 .more-images {
   width: 160rpx;
   height: 160rpx;
-  border-radius: 12rpx;
-  background: var(--color-bg-secondary);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-card);
+  border: 1rpx solid var(--color-border);
   display: flex;
   align-items: center;
   justify-content: center;
   
   text {
-    font-size: 28rpx;
+    font-size: var(--font-sm);
     color: var(--color-text-secondary);
   }
 }

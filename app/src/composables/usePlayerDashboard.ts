@@ -4,37 +4,22 @@
 import { ref, reactive, computed } from 'vue'
 import { useUserStore } from '@/store/user'
 import { getTodayStats } from '@/api/player'
-import type { StatItem } from '@/components/StatsCard/index.vue'
-import type { QuickActionItem } from '@/components/QuickActions/index.vue'
-import type { MenuItem } from '@/components/MenuList/index.vue'
+import type { StatItem, QuickActionItem, MenuItem } from '@/types/ui'
+import { formatDateChinese, formatYuan } from '@/utils/format'
+import type { PlayerDashboardInfo, PlayerTodayStats } from '@/types/player'
+import type { DashboardStatus } from '@/types/status'
 
-type WorkStatus = 'online' | 'busy' | 'offline'
-
-interface TodayStats {
-  orders: number
-  earnings: number
-  duration: number
-  rating: string
-}
-
-interface PlayerInfo {
-  id: number
-  nickname: string
-  avatar?: string
-  rating: number
-  certificationStatus: 'pending' | 'approved' | 'rejected' | 'none'
-}
 
 export function usePlayerDashboard() {
   const userStore = useUserStore()
   
   // 状态
   const refreshing = ref(false)
-  const workStatus = ref<WorkStatus>('offline')
+  const workStatus = ref<DashboardStatus>('offline')
   const orderBadge = ref(0)
   
   // 数据
-  const playerInfo = ref<PlayerInfo>({
+  const playerInfo = ref<PlayerDashboardInfo>({
     id: userStore.userInfo?.id || 0,
     nickname: userStore.userInfo?.nickname || '陪玩师',
     avatar: userStore.userInfo?.avatar,
@@ -42,7 +27,7 @@ export function usePlayerDashboard() {
     certificationStatus: 'none',
   })
   
-  const todayStats = reactive<TodayStats>({
+  const todayStats = reactive<PlayerTodayStats>({
     orders: 0,
     earnings: 0,
     duration: 0,
@@ -52,25 +37,25 @@ export function usePlayerDashboard() {
   // 统计数据项
   const statItems = computed((): StatItem[] => [
     { value: todayStats.orders, label: '接单数', onClick: goToOrders },
-    { value: `¥${todayStats.earnings}`, label: '收益', highlight: true, onClick: goToEarnings },
+    { value: `¥${formatYuan(todayStats.earnings)}`, label: '收益', highlight: true, onClick: goToEarnings },
     { value: `${todayStats.duration}h`, label: '服务时长' },
     { value: todayStats.rating, label: '评分' },
   ])
   
-  // 快捷入口
+  // 快捷入口（icon 为 uv-icon 名称）
   const quickActions = computed((): QuickActionItem[] => [
-    { key: 'orders', icon: '📋', label: '订单管理', badge: orderBadge.value },
-    { key: 'earnings', icon: '💰', label: '我的收益' },
-    { key: 'services', icon: '🎮', label: '服务管理' },
-    { key: 'schedule', icon: '📅', label: '排班设置' },
+    { key: 'orders', icon: 'list', label: '订单管理', badge: orderBadge.value },
+    { key: 'earnings', icon: 'red-packet', label: '我的收益' },
+    { key: 'services', icon: 'grid-fill', label: '服务管理' },
+    { key: 'schedule', icon: 'calendar', label: '排班设置' },
   ])
   
   // 功能菜单
   const menuItems = computed((): MenuItem[] => [
-    { key: 'certification', label: '陪玩认证', icon: 'checkbox-mark', iconColor: '#10B981' },
-    { key: 'profile', label: '个人资料', icon: 'account', iconColor: '#3B82F6' },
-    { key: 'reviews', label: '用户评价', icon: 'star', iconColor: '#F59E0B', value: playerInfo.value.rating?.toFixed(1) || '5.0' },
-    { key: 'help', label: '帮助中心', icon: 'question-circle', iconColor: '#8B5CF6' },
+    { key: 'certification', label: '陪玩认证', icon: 'checkbox-mark' },
+    { key: 'profile', label: '个人资料', icon: 'account' },
+    { key: 'reviews', label: '用户评价', icon: 'star', value: playerInfo.value.rating?.toFixed(1) || '5.0' },
+    { key: 'help', label: '帮助中心', icon: 'question-circle' },
   ])
   
   // 加载今日数据
@@ -142,9 +127,7 @@ export function usePlayerDashboard() {
   const goToEarnings = () => uni.navigateTo({ url: '/pages/player/earnings/index' })
   
   // 格式化日期
-  const formatDate = (date: Date) => {
-    return `${date.getMonth() + 1}月${date.getDate()}日`
-  }
+  const formatDate = (date: Date) => formatDateChinese(date)
   
   // 初始化
   const init = () => {

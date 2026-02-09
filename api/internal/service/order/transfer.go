@@ -5,16 +5,20 @@ import (
 	"fmt"
 	"time"
 
+	"gorm.io/gorm"
+
 	"gamelink/internal/model"
+	orderrepo "gamelink/internal/repository/implementations"
+	"gamelink/internal/repository/ordergroup"
 	"gamelink/pkg/apierr"
 )
 
 // TransferSubOrderRequest 转单请求
 type TransferSubOrderRequest struct {
-	SubOrderID       uint64 `json:"subOrderId" binding:"required"`        // 要转的子订单ID
-	NewPlayerID      uint64 `json:"newPlayerId" binding:"required"`       // 新陪玩师ID
-	TransferNote     string `json:"transferNote"`                         // 转单备注
-	CompletedMinutes int    `json:"completedMinutes"`                     // 原陪玩师已完成的分钟数（0表示未开始）
+	SubOrderID       uint64 `json:"subOrderId" binding:"required"`  // 要转的子订单ID
+	NewPlayerID      uint64 `json:"newPlayerId" binding:"required"` // 新陪玩师ID
+	TransferNote     string `json:"transferNote"`                   // 转单备注
+	CompletedMinutes int    `json:"completedMinutes"`               // 原陪玩师已完成的分钟数（0表示未开始）
 }
 
 // TransferSubOrderResponse 转单响应
@@ -97,15 +101,15 @@ func (s *OrderService) TransferSubOrder(ctx context.Context, operatorID uint64, 
 		Base: model.Base{
 			ExtJSON: "{}",
 		},
-		OrderNo:           model.GenerateEscortOrderNo(),
-		UserID:            subOrder.UserID,
-		ItemID:            subOrder.ItemID,
-		PlayerID:          &req.NewPlayerID,
-		GameID:            subOrder.GameID,
-		GroupID:           subOrder.GroupID,
-		Quantity:          subOrder.Quantity,
-		UnitPriceCents:    subOrder.UnitPriceCents,
-		TotalPriceCents:   subOrder.TotalPriceCents,
+		OrderNo:         model.GenerateEscortOrderNo(),
+		UserID:          subOrder.UserID,
+		ItemID:          subOrder.ItemID,
+		PlayerID:        &req.NewPlayerID,
+		GameID:          subOrder.GameID,
+		GroupID:         subOrder.GroupID,
+		Quantity:        subOrder.Quantity,
+		UnitPriceCents:  subOrder.UnitPriceCents,
+		TotalPriceCents: subOrder.TotalPriceCents,
 		// 关键修复：新订单的抽成为0（抽成已在原订单计算），收入为剩余部分
 		CommissionCents:   0, // 抽成不重复计算
 		PlayerIncomeCents: newPlayerIncome,
@@ -131,24 +135,35 @@ func (s *OrderService) TransferSubOrder(ctx context.Context, operatorID uint64, 
 	subOrder.CancelReason = fmt.Sprintf("转单给陪玩师 %d (已完成%d分钟): %s", req.NewPlayerID, completedMinutes, req.TransferNote)
 	subOrder.CompletedAt = &now
 
-	// 8. 保存新订单
-	if err := s.orders.Create(ctx, newSubOrder); err != nil {
-		return nil, apierr.InternalError("创建新订单失败").WithDetails(err.Error())
-	}
+	// 8-10. 使用事务确保新订单创建、原订单更新、主订单状态更新的原子性
+	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		txOrderRepo := orderrepo.NewOrderRepository(tx)
 
-	// 9. 更新原订单的 TransferTo
-	subOrder.TransferTo = &newSubOrder.ID
-	if err := s.orders.Update(ctx, subOrder); err != nil {
-		return nil, apierr.InternalError("更新原订单失败").WithDetails(err.Error())
-	}
-
-	// 10. 更新主订单状态
-	if subOrder.GroupID != nil && s.orderGroups != nil {
-		group, err := s.orderGroups.GetWithSubOrders(ctx, *subOrder.GroupID)
-		if err == nil {
-			group.UpdateStatusFromSubOrders(group.SubOrders)
-			_ = s.orderGroups.Update(ctx, group)
+		// 8. 保存新订单
+		if err := txOrderRepo.Create(ctx, newSubOrder); err != nil {
+			return fmt.Errorf("创建新订单失败: %w", err)
 		}
+
+		// 9. 更新原订单的 TransferTo
+		subOrder.TransferTo = &newSubOrder.ID
+		if err := txOrderRepo.Update(ctx, subOrder); err != nil {
+			return fmt.Errorf("更新原订单失败: %w", err)
+		}
+
+		// 10. 更新主订单状态
+		if subOrder.GroupID != nil {
+			txGroupRepo := ordergroup.NewRepository(tx)
+			group, err := txGroupRepo.GetWithSubOrders(ctx, *subOrder.GroupID)
+			if err == nil {
+				group.UpdateStatusFromSubOrders(group.SubOrders)
+				_ = txGroupRepo.Update(ctx, group)
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, apierr.InternalError(err.Error())
 	}
 
 	return &TransferSubOrderResponse{

@@ -76,6 +76,8 @@ const SettlementPage: React.FC = () => {
     // 批量操作状态
     const [selectedCompanyIds, setSelectedCompanyIds] = useState<number[]>([]);
     const [batchTarget, setBatchTarget] = useState<'selected' | 'status' | 'all'>('selected');
+    const [batchDeleteModalVisible, setBatchDeleteModalVisible] = useState(false);
+    const [batchDeleting, setBatchDeleting] = useState(false);
 
     /**
      * 加载结算公司数据
@@ -234,10 +236,71 @@ const SettlementPage: React.FC = () => {
      * 批量删除
      */
     const handleBatchDelete = (keys: React.Key[]) => {
-        setSelectedCompanyIds(keys ? keys.map(k => Number(k)) : []);
-        setBatchTarget((keys && keys.length > 0) ? 'selected' : 'all');
-        // TODO: Implement batch delete modal
-        message.info('批量删除功能开发中');
+        const ids = keys ? keys.map(k => Number(k)) : [];
+        setSelectedCompanyIds(ids);
+        setBatchTarget(ids.length > 0 ? 'selected' : 'all');
+        setBatchDeleteModalVisible(true);
+    };
+
+    /**
+     * 确认批量删除
+     */
+    const submitBatchDelete = async () => {
+        try {
+            setBatchDeleting(true);
+            let companyIds: number[] = [];
+
+            if (batchTarget === 'selected') {
+                companyIds = selectedCompanyIds;
+            } else {
+                // 获取所有公司
+                const response = await settlementApi.getSettlementCompanies({ pageSize: 1000 });
+                if (response.data.success && response.data.data) {
+                    companyIds = response.data.data.map((c: SettlementCompany) => c.id);
+                }
+            }
+
+            if (companyIds.length === 0) {
+                message.warning('没有可删除的公司');
+                setBatchDeleteModalVisible(false);
+                return;
+            }
+
+            const response = await settlementApi.batchDeleteCompanies({ companyIds });
+
+            if (response.data.success) {
+                const result = response.data.data;
+                if (result.failedCount > 0) {
+                    message.warning(`批量删除完成：成功 ${result.successCount}，失败 ${result.failedCount}`);
+                    // 显示失败原因
+                    if (result.failedItems?.length > 0) {
+                        Modal.info({
+                            title: '部分删除失败',
+                            content: (
+                                <div style={{ maxHeight: 300, overflowY: 'auto' }}>
+                                    {result.failedItems.map(item => (
+                                        <div key={item.id} style={{ marginBottom: 8 }}>
+                                            <Tag color="error">ID: {item.id}</Tag>
+                                            <span style={{ marginLeft: 8, color: '#999' }}>{item.message}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            ),
+                        });
+                    }
+                } else {
+                    message.success(`成功删除 ${result.successCount} 个公司`);
+                }
+                loadData();
+            }
+        } catch (error) {
+            logger.error('Batch delete error:', error);
+            message.error('批量删除失败');
+        } finally {
+            setBatchDeleting(false);
+            setBatchDeleteModalVisible(false);
+            setSelectedCompanyIds([]);
+        }
     };
 
     /**
@@ -536,6 +599,41 @@ const SettlementPage: React.FC = () => {
                         暂无变更记录
                     </div>
                 )}
+            </Modal>
+
+            {/* 批量删除确认弹窗 */}
+            <Modal
+                title="批量删除确认"
+                open={batchDeleteModalVisible}
+                onCancel={() => {
+                    setBatchDeleteModalVisible(false);
+                    setSelectedCompanyIds([]);
+                }}
+                onOk={submitBatchDelete}
+                okText="确认删除"
+                cancelText="取消"
+                okButtonProps={{ danger: true, loading: batchDeleting }}
+                confirmLoading={batchDeleting}
+            >
+                <div style={{ padding: '16px 0' }}>
+                    {batchTarget === 'selected' ? (
+                        <>
+                            <p>确定要删除选中的 <strong>{selectedCompanyIds.length}</strong> 个结算公司吗？</p>
+                            <p style={{ color: '#ff4d4f', marginTop: 8 }}>
+                                <DeleteOutlined style={{ marginRight: 4 }} />
+                                删除后，关联的陪玩师将变为未分配状态。此操作不可撤销！
+                            </p>
+                        </>
+                    ) : (
+                        <>
+                            <p>确定要删除 <strong>所有</strong> 结算公司吗？</p>
+                            <p style={{ color: '#ff4d4f', marginTop: 8 }}>
+                                <DeleteOutlined style={{ marginRight: 4 }} />
+                                这将删除全部 {total} 个结算公司，所有陪玩师将变为未分配状态。此操作不可撤销！
+                            </p>
+                        </>
+                    )}
+                </div>
             </Modal>
         </PageContainer>
     );

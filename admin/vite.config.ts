@@ -190,8 +190,19 @@ export default defineConfig(({ mode }) => ({
   server: {
     // 监听所有网络接口，可以通过局域网IP访问
     host: '0.0.0.0',
+    // 明确指定端口
+    port: 5173,
     // 严格端口，如果被占用则失败而不是尝试下一个端口
-    strictPort: false,
+    strictPort: true,
+    headers: {
+      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' wss: ws: https: http:; frame-ancestors 'none';",
+      'X-Frame-Options': 'DENY',
+      'X-Content-Type-Options': 'nosniff',
+      'X-XSS-Protection': '1; mode=block',
+      'Referrer-Policy': 'strict-origin-when-cross-origin',
+      'Permissions-Policy': 'geolocation=(), microphone=(), camera=(), payment=()',
+      'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+    },
     proxy: {
       '/api/v1': {
         target: 'http://localhost:8080',  // Docker后端端口
@@ -204,6 +215,15 @@ export default defineConfig(({ mode }) => ({
   preview: {
     host: '0.0.0.0',
     port: 5173,
+    headers: {
+      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' wss: ws: https: http:; frame-ancestors 'none';",
+      'X-Frame-Options': 'DENY',
+      'X-Content-Type-Options': 'nosniff',
+      'X-XSS-Protection': '1; mode=block',
+      'Referrer-Policy': 'strict-origin-when-cross-origin',
+      'Permissions-Policy': 'geolocation=(), microphone=(), camera=(), payment=()',
+      'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+    },
     proxy: {
       '/api/v1': {
         target: 'http://localhost:8081',  // 生产环境后端端口

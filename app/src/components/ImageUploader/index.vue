@@ -6,7 +6,7 @@
       :key="index"
       class="image-item"
     >
-      <image :src="image" mode="aspectFill" @click="previewImage(index)" />
+      <image :src="image" mode="aspectFill" @click="previewImages(modelValue, index)" />
       <view v-if="!readonly" class="delete-btn" @click="removeImage(index)">
         <text>×</text>
       </view>
@@ -33,6 +33,7 @@
 
 <script setup lang="ts">
 import { uploadFile } from '@/api/request'
+import { useImageTools } from '@/composables/useImageTools'
 
 const props = withDefaults(defineProps<{
   modelValue: string[]
@@ -55,43 +56,33 @@ const emit = defineEmits<{
   'update:modelValue': [value: string[]]
 }>()
 
+const { pickImages, previewImages } = useImageTools()
+
 // 选择图片
-function chooseImage() {
+async function chooseImage() {
   const count = props.maxCount - props.modelValue.length
   if (count <= 0) return
-  
-  uni.chooseImage({
-    count,
-    sizeType: ['compressed'],
-    sourceType: ['album', 'camera'],
-    success: async (res) => {
-      const tempFilePaths = res.tempFilePaths || []
-      
-      for (const filePath of tempFilePaths) {
-        try {
-          // 上传图片
-          uni.showLoading({ title: '上传中...' })
-          const result = await uploadFile(props.uploadUrl, filePath)
-          uni.hideLoading()
-          
-          // 更新图片列表
-          const newImages = [...props.modelValue, result.data.filePath]
-          emit('update:modelValue', newImages)
-        } catch (error) {
-          uni.hideLoading()
-          console.error('Upload failed:', error)
-        }
+
+  try {
+    const tempFilePaths = await pickImages({ count })
+    for (const filePath of tempFilePaths) {
+      try {
+        // 上传图片
+        uni.showLoading({ title: '上传中...' })
+        const result = await uploadFile(props.uploadUrl, filePath)
+        uni.hideLoading()
+        
+        // 更新图片列表
+        const newImages = [...props.modelValue, result.data.filePath]
+        emit('update:modelValue', newImages)
+      } catch (error) {
+        uni.hideLoading()
+        console.error('Upload failed:', error)
       }
     }
-  })
-}
-
-// 预览图片
-function previewImage(index: number) {
-  uni.previewImage({
-    urls: props.modelValue,
-    current: index
-  })
+  } catch {
+    // ignore cancel
+  }
 }
 
 // 删除图片
@@ -106,15 +97,16 @@ function removeImage(index: number) {
 .image-uploader {
   display: flex;
   flex-wrap: wrap;
-  gap: 16rpx;
+  gap: var(--spacing-sm);
 }
 
 .image-item {
   position: relative;
   width: 200rpx;
   height: 200rpx;
-  border-radius: 16rpx;
+  border-radius: var(--radius-sm);
   overflow: hidden;
+  cursor: pointer;
   
   image {
     width: 100%;
@@ -131,11 +123,12 @@ function removeImage(index: number) {
     align-items: center;
     justify-content: center;
     background: rgba(0, 0, 0, 0.5);
-    border-radius: 50%;
+    border-radius: var(--radius-full);
+    @include press-effect;
     
     text {
       color: #FFFFFF;
-      font-size: 28rpx;
+      font-size: var(--font-md);
       line-height: 1;
     }
   }
@@ -148,29 +141,32 @@ function removeImage(index: number) {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: var(--color-bg-secondary);
-  border: 2rpx dashed var(--color-border);
-  border-radius: 16rpx;
+  background: var(--color-bg-card);
+  border: 1rpx dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  @include press-effect;
   
   .upload-icon {
-    width: 64rpx;
-    height: 64rpx;
+    width: 56rpx;
+    height: 56rpx;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--color-bg-card);
-    border-radius: 50%;
-    margin-bottom: 12rpx;
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-sm);
+    border: 1rpx solid var(--color-border);
+    margin-bottom: var(--spacing-xs);
     
     text {
-      font-size: 40rpx;
-      color: var(--color-text-placeholder);
+      font-size: var(--font-xl);
+      color: var(--color-text-secondary);
       line-height: 1;
     }
   }
   
   .upload-text {
-    font-size: 24rpx;
+    font-size: var(--font-sm);
     color: var(--color-text-placeholder);
   }
 }
@@ -180,7 +176,7 @@ function removeImage(index: number) {
   text-align: right;
   
   text {
-    font-size: 22rpx;
+    font-size: var(--font-xs);
     color: var(--color-text-placeholder);
   }
 }

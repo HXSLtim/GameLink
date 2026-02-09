@@ -34,6 +34,7 @@
 
 <script setup lang="ts">
 import GlCard from '@/components/gl/Card/index.vue'
+import { useImageTools } from '@/composables/useImageTools'
 
 interface Props {
   frontImage?: string
@@ -50,39 +51,40 @@ const emit = defineEmits<{
   'update:backImage': [url: string]
 }>()
 
-const uploadCard = (side: 'front' | 'back') => {
+const { pickImages } = useImageTools()
+
+const uploadCard = async (side: 'front' | 'back') => {
   if (props.disabled) return
-  
-  uni.chooseImage({
-    count: 1,
-    sizeType: ['compressed'],
-    sourceType: ['album', 'camera'],
-    success: (res) => {
-      const tempPath = res.tempFilePaths[0]
-      if (side === 'front') {
-        emit('update:frontImage', tempPath)
-      } else {
-        emit('update:backImage', tempPath)
-      }
+  try {
+    const [tempPath] = await pickImages()
+    if (!tempPath) return
+    if (side === 'front') {
+      emit('update:frontImage', tempPath)
+    } else {
+      emit('update:backImage', tempPath)
     }
-  })
+  } catch {
+    // ignore cancel
+  }
 }
 </script>
 
 <style lang="scss" scoped>
 .id-card-upload {
   display: flex;
-  gap: 20rpx;
-  margin-bottom: 16rpx;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
 }
 
 .upload-item {
   flex: 1;
   height: 180rpx;
-  border-radius: 16rpx;
+  border-radius: var(--radius-sm);
   overflow: hidden;
-  border: 2rpx dashed var(--color-border);
-  background: var(--color-bg-secondary);
+  border: 1rpx dashed var(--color-border);
+  background: var(--color-bg-card);
+  cursor: pointer;
+  @include press-effect;
 }
 
 .upload-preview {
@@ -98,16 +100,16 @@ const uploadCard = (side: 'front' | 'back') => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12rpx;
+  gap: var(--spacing-xs);
 }
 
 .upload-text {
-  font-size: 24rpx;
+  font-size: var(--font-sm);
   color: var(--color-text-secondary);
 }
 
 .upload-tip {
-  font-size: 24rpx;
+  font-size: var(--font-sm);
   color: var(--color-text-placeholder);
 }
 </style>

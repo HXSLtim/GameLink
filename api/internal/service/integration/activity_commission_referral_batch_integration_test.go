@@ -677,6 +677,10 @@ func (m *mockPlayerRepo) ListPagedWithFilter(ctx context.Context, page, pageSize
 	return []model.Player{}, 0, nil
 }
 
+func (m *mockPlayerRepo) ListFeatured(ctx context.Context, limit int, status *model.VerificationStatus) ([]model.Player, int64, error) {
+	return []model.Player{}, 0, nil
+}
+
 func (m *mockPlayerRepo) Create(ctx context.Context, player *model.Player) error {
 	return nil
 }

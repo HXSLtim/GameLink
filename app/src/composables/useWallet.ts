@@ -3,17 +3,8 @@
  */
 import { ref, computed, reactive } from 'vue'
 import { getWalletInfo, getTransactions } from '@/api/wallet'
-import type { TransactionData, TransactionType } from '@/components/TransactionItem/index.vue'
-import type { QuickActionItem } from '@/components/QuickActions/index.vue'
-
-interface WalletInfo {
-  balance: number
-  frozenBalance: number
-  vipLevel: number
-  couponCount: number
-  totalSpent: number
-  totalRecharge: number
-}
+import type { TransactionData, TransactionType, WalletState } from '@/types/wallet'
+import type { QuickActionItem, TabItem } from '@/types/ui'
 
 export function useWallet() {
   // 状态
@@ -25,7 +16,7 @@ export function useWallet() {
   const page = ref(1)
   
   // 数据
-  const wallet = reactive<WalletInfo>({
+  const wallet = reactive<WalletState>({
     balance: 0,
     frozenBalance: 0,
     vipLevel: 0,
@@ -37,18 +28,18 @@ export function useWallet() {
   const records = ref<TransactionData[]>([])
   
   // 筛选标签
-  const filterTabs = [
+  const filterTabs: TabItem[] = [
     { key: 'all', label: '全部' },
     { key: 'income', label: '收入' },
     { key: 'expense', label: '支出' },
   ]
   
-  // 快捷入口
+  // 快捷入口（icon 为 uv-icon 名称）
   const quickActions = computed((): QuickActionItem[] => [
-    { key: 'coupons', icon: '🎫', label: '优惠券', badge: wallet.couponCount || undefined },
-    { key: 'earnings', icon: '📊', label: '收益' },
-    { key: 'invite', icon: '🎁', label: '邀请有礼' },
-    { key: 'help', icon: '❓', label: '帮助' },
+    { key: 'coupons', icon: 'coupon', label: '优惠券', badge: wallet.couponCount || undefined },
+    { key: 'earnings', icon: 'list', label: '收益' },
+    { key: 'invite', icon: 'gift', label: '邀请有礼' },
+    { key: 'help', icon: 'question-circle', label: '帮助' },
   ])
   
   // 过滤后的记录
@@ -97,7 +88,7 @@ export function useWallet() {
     try {
       const res = await getTransactions({
         page: page.value,
-        pageSize: 20,
+        page_size: 20,
       }, { showError: false })
       
       const items = (res.data as any)?.items || res.data || []
@@ -129,14 +120,16 @@ export function useWallet() {
     }
   }
   
-  const getTypeTitle = (type: string) => {
-    const titles: Record<string, string> = {
+  const getTypeTitle = (type: TransactionType) => {
+    const titles: Record<TransactionType, string> = {
       recharge: '充值',
       withdraw: '提现',
+      withdrawal: '提现',
       payment: '订单支付',
       refund: '退款',
       earning: '收益入账',
       bonus: '活动奖励',
+      commission: '佣金',
     }
     return titles[type] || '交易'
   }

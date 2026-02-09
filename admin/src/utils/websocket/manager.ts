@@ -30,10 +30,10 @@ class WebSocketManager {
   private defaultConfig: Required<WebSocketConfig> = {
     url: '',
     token: null,
-    heartbeatInterval: 30000, // 30 秒心跳
+    heartbeatInterval: Number(import.meta.env.VITE_WEBSOCKET_HEARTBEAT_INTERVAL) || 54000, // 54 秒心跳 - 对齐后端配置
     reconnect: true,
-    reconnectInterval: 1000,
-    maxReconnectAttempts: 10,
+    reconnectInterval: Number(import.meta.env.VITE_WEBSOCKET_RECONNECT_INTERVAL) || 1000,
+    maxReconnectAttempts: Number(import.meta.env.VITE_WEBSOCKET_RECONNECT_ATTEMPTS) || 10,
     debug: import.meta.env.DEV,
   };
 

@@ -41,7 +41,7 @@ import { PageContainer, SearchTable, type ToolbarButton, ImportModal } from '@/c
 import type { SearchField } from '@/components';
 import { USER_PERMISSIONS } from '@/constants/permissions';
 import { PermissionGuard } from '@/components/PermissionGuard';
-import { adminApi, type User, type CreateUserDto, type UpdateUserDto, type UserQueryParams, type UserStats, type ApiResponse, type LoginHistory, type AuditLog } from '@/api/admin';
+import { adminApi, type User, type CreateUserDto, type UpdateUserDto, type UserQueryParams, type UserStats, type ApiResponse, type LoginHistory, type AuditLog, type BatchNotificationDto, type BatchPointsDto } from '@/api/admin';
 import { Table } from 'antd';
 import dayjs from 'dayjs';
 import { logger } from '@/utils/logger';
@@ -62,6 +62,22 @@ const statusMap = {
     active: { color: 'success', text: '正常' },
     banned: { color: 'error', text: '已封禁' },
     suspended: { color: 'warning', text: '已停用' },
+};
+
+type BatchNotificationFormValues = {
+    target: 'users' | 'role' | 'all';
+    title: string;
+    content: string;
+    type: BatchNotificationDto['type'];
+    roles?: string[];
+};
+
+type BatchPointsFormValues = {
+    target: 'users' | 'role' | 'all';
+    points: number | string;
+    reason: string;
+    type: string;
+    roles?: string[];
 };
 
 /**
@@ -449,13 +465,12 @@ const UserPage: React.FC = () => {
 
     const submitBatchNotification = async () => {
         try {
-            const values = await notificationForm.validateFields();
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const payload: any = {
+            const values = await notificationForm.validateFields() as BatchNotificationFormValues;
+            const payload: BatchNotificationDto = {
                 target: values.target,
                 title: values.title,
                 content: values.content,
-                type: values.type
+                type: values.type,
             };
 
             if (values.target === 'users') {
@@ -487,13 +502,12 @@ const UserPage: React.FC = () => {
 
     const submitBatchPoints = async () => {
         try {
-            const values = await pointsForm.validateFields();
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const payload: any = {
+            const values = await pointsForm.validateFields() as BatchPointsFormValues;
+            const payload: BatchPointsDto = {
                 target: values.target,
                 cents: Number(values.points),
                 reason: values.reason,
-                type: values.type
+                type: values.type,
             };
 
             if (values.target === 'users') {

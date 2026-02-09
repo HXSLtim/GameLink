@@ -8,6 +8,7 @@ import (
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
+	"gamelink/internal/ws"
 	"gamelink/pkg/apierr"
 	"gamelink/pkg/cache"
 )
@@ -31,9 +32,30 @@ type SendMessageInput struct {
 	ImageURL    string
 }
 
-// ApproveMessage sets audit status to approved.
+// CreateGroupRequest represents payload for creating a chat group.
+type CreateGroupRequest struct {
+	TargetUserID uint64
+	GroupType    model.ChatGroupType
+	OrderID      *uint64
+}
+
+// ApproveMessage sets audit status to approved and broadcasts the message to group members.
 func (s *ChatService) ApproveMessage(ctx context.Context, messageID uint64, moderatorID uint64) error {
-	return s.messages.UpdateAuditStatus(ctx, messageID, model.ChatMessageAuditApproved, &moderatorID, "")
+	if err := s.messages.UpdateAuditStatus(ctx, messageID, model.ChatMessageAuditApproved, &moderatorID, ""); err != nil {
+		return err
+	}
+
+	// 审核通过后广播消息给群组成员
+	msg, err := s.messages.Get(ctx, messageID)
+	if err != nil {
+		return nil // 审核已成功，广播失败不影响主流程
+	}
+	group, err := s.groups.Get(ctx, msg.GroupID)
+	if err != nil {
+		return nil
+	}
+	s.broadcastChatMessage(group, msg)
+	return nil
 }
 
 // RejectMessage sets audit status to rejected with reason.
@@ -79,7 +101,9 @@ type ChatService struct {
 	members  repository.ChatMemberRepository
 	messages repository.ChatMessageRepository
 	reports  repository.ChatReportRepository
+	users    repository.UserRepository
 	cache    cache.Cache
+	hub      *ws.Hub
 }
 
 // NewChatService constructs a ChatService instance.
@@ -88,6 +112,7 @@ func NewChatService(
 	members repository.ChatMemberRepository,
 	messages repository.ChatMessageRepository,
 	reports repository.ChatReportRepository,
+	users repository.UserRepository,
 	cache cache.Cache,
 ) *ChatService {
 	return &ChatService{
@@ -95,8 +120,88 @@ func NewChatService(
 		members:  members,
 		messages: messages,
 		reports:  reports,
+		users:    users,
 		cache:    cache,
 	}
+}
+
+// CreateGroup creates a private/order chat group and adds both members.
+func (s *ChatService) CreateGroup(ctx context.Context, creatorID uint64, targetID uint64, req CreateGroupRequest) (*model.ChatGroup, error) {
+	if req.TargetUserID == 0 {
+		req.TargetUserID = targetID
+	}
+	if req.TargetUserID == 0 || req.GroupType == "" {
+		return nil, apierr.BadRequest("invalid group request")
+	}
+	switch req.GroupType {
+	case model.ChatGroupTypePrivate, model.ChatGroupTypeOrder:
+	default:
+		return nil, apierr.BadRequest("unsupported group type")
+	}
+
+	groupName := "私聊"
+	maxMembers := 2
+	autoDestroy := false
+	if req.GroupType == model.ChatGroupTypeOrder {
+		groupName = "订单聊天"
+		autoDestroy = true
+	}
+
+	group := &model.ChatGroup{
+		GroupName:      groupName,
+		GroupType:      req.GroupType,
+		RelatedOrderID: req.OrderID,
+		CreatedBy:      creatorID,
+		MaxMembers:     maxMembers,
+		IsActive:       true,
+		AutoDestroy:    autoDestroy,
+	}
+
+	if err := s.groups.Create(ctx, group); err != nil {
+		return nil, apierr.InternalError("创建群组失败").WithDetails(err.Error())
+	}
+
+	now := time.Now()
+	creatorNickname := s.resolveNickname(ctx, creatorID)
+	targetNickname := s.resolveNickname(ctx, req.TargetUserID)
+	members := []*model.ChatGroupMember{
+		{
+			GroupID:  group.ID,
+			UserID:   creatorID,
+			Role:     model.ChatMemberRoleOwner,
+			Nickname: creatorNickname,
+			JoinedAt: now,
+			IsActive: true,
+		},
+		{
+			GroupID:  group.ID,
+			UserID:   req.TargetUserID,
+			Role:     model.ChatMemberRoleMember,
+			Nickname: targetNickname,
+			JoinedAt: now,
+			IsActive: true,
+		},
+	}
+	if err := s.members.AddBatch(ctx, members); err != nil {
+		return nil, apierr.InternalError("添加群成员失败").WithDetails(err.Error())
+	}
+
+	return s.groups.GetWithRelations(ctx, group.ID)
+}
+
+// GetGroupDetail returns group with members.
+func (s *ChatService) GetGroupDetail(ctx context.Context, groupID uint64) (*model.ChatGroup, error) {
+	return s.groups.GetWithRelations(ctx, groupID)
+}
+
+// ListPublicChannels returns active public channels with pagination.
+func (s *ChatService) ListPublicChannels(ctx context.Context, page, pageSize int) ([]model.ChatGroup, int64, error) {
+	return s.groups.ListPublicChannels(ctx, page, pageSize)
+}
+
+// SetWebsocketHub injects WebSocket hub for realtime notifications.
+func (s *ChatService) SetWebsocketHub(hub *ws.Hub) {
+	s.hub = hub
 }
 
 // ListUserGroups returns groups joined by the user with pagination.
@@ -222,7 +327,33 @@ func (s *ChatService) SendMessage(ctx context.Context, input SendMessageInput) (
 		return nil, apierr.InternalError("创建聊天消息失败").WithDetails(err.Error())
 	}
 
+	// 只广播已审核通过的消息，待审核消息不广播（公共群需审核后再推送）
+	if msg.AuditStatus != model.ChatMessageAuditPending {
+		s.broadcastChatMessage(group, msg)
+	}
 	return msg, nil
+}
+
+func (s *ChatService) broadcastChatMessage(group *model.ChatGroup, msg *model.ChatMessage) {
+	if s.hub == nil || group == nil || msg == nil {
+		return
+	}
+
+	payload := ws.ChatMessageEvent{
+		GroupID: group.ID,
+		Message: msg,
+	}
+	data, err := ws.NewWSMessage(ws.MessageTypeChatMessage, payload).ToJSON()
+	if err != nil {
+		return
+	}
+
+	for _, member := range group.Members {
+		if !member.IsActive {
+			continue
+		}
+		s.hub.BroadcastToUser(data, member.UserID)
+	}
 }
 
 // JoinGroup marks user as active member of group (creates if needed).
@@ -270,6 +401,28 @@ func (s *ChatService) LeaveGroup(ctx context.Context, groupID, userID uint64) er
 	return s.members.Update(ctx, member)
 }
 
+// JoinGroupWithUser resolves nickname and joins group.
+func (s *ChatService) JoinGroupWithUser(ctx context.Context, groupID, userID uint64) error {
+	return s.JoinGroup(ctx, groupID, userID, s.resolveNickname(ctx, userID))
+}
+
+func (s *ChatService) resolveNickname(ctx context.Context, userID uint64) string {
+	if s.users == nil {
+		return fmt.Sprintf("用户%d", userID)
+	}
+	user, err := s.users.Get(ctx, userID)
+	if err != nil {
+		return fmt.Sprintf("用户%d", userID)
+	}
+	if user.Nickname != "" {
+		return user.Nickname
+	}
+	if user.Name != "" {
+		return user.Name
+	}
+	return fmt.Sprintf("用户%d", userID)
+}
+
 // MarkRead updates last read pointer for membership.
 func (s *ChatService) MarkRead(ctx context.Context, groupID, userID, messageID uint64) error {
 	member, err := s.members.Get(ctx, groupID, userID)
@@ -278,6 +431,15 @@ func (s *ChatService) MarkRead(ctx context.Context, groupID, userID, messageID u
 			return ErrNotMember
 		}
 		return apierr.InternalError("获取聊天成员信息失败").WithDetails(err.Error())
+	}
+	if messageID > 0 {
+		msg, err := s.messages.Get(ctx, messageID)
+		if err != nil {
+			return err
+		}
+		if msg.GroupID != groupID {
+			return apierr.BadRequest("message not in group")
+		}
 	}
 	member.LastReadMessageID = &messageID
 	now := time.Now()

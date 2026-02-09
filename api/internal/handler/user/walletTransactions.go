@@ -24,14 +24,14 @@ func NewWalletTransactionsHandler(paymentRepo repository.PaymentRepository) *Wal
 
 // TransactionItem 交易记录项
 type TransactionItem struct {
-	ID               uint64 `json:"id"`
-	Type             string `json:"type"` // recharge, payment, refund, withdrawal
-	AmountCents      int64  `json:"amountCents"`
-	Status           string `json:"status"` // pending, success, failed
-	Description      string `json:"description"`
-	OrderID          uint64 `json:"orderId,omitempty"`
+	ID                uint64 `json:"id"`
+	Type              string `json:"type"` // recharge, payment, refund, withdrawal
+	AmountCents       int64  `json:"amountCents"`
+	Status            string `json:"status"` // pending, success, failed
+	Description       string `json:"description"`
+	OrderID           uint64 `json:"orderId,omitempty"`
 	BalanceAfterCents int64  `json:"balanceAfterCents,omitempty"`
-	CreatedAt        string `json:"createdAt"`
+	CreatedAt         string `json:"createdAt"`
 }
 
 // TransactionsResponse 交易记录响应

@@ -3,11 +3,7 @@
  */
 
 import { ref, computed } from 'vue'
-
-export interface PaginationOptions {
-  initialPage?: number
-  pageSize?: number
-}
+import type { PaginationOptions } from '@/types/page'
 
 export function usePagination<T>(options: PaginationOptions = {}) {
   const { initialPage = 1, pageSize = 20 } = options
@@ -93,7 +89,7 @@ export function usePagination<T>(options: PaginationOptions = {}) {
   function getParams() {
     return {
       page: page.value,
-      pageSize: size.value,
+      page_size: size.value,
     }
   }
   

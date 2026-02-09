@@ -3,8 +3,7 @@
  */
 import { ref, computed } from 'vue'
 import { getWalletInfo, recharge } from '@/api/wallet'
-import type { AmountOption } from '@/components/AmountSelector/index.vue'
-import type { PaymentMethod } from '@/components/PaymentMethodSelector/index.vue'
+import type { AmountOption, PaymentMethod, RechargeMethod } from '@/types/wallet'
 
 export function useRecharge() {
   // 状态
@@ -26,12 +25,12 @@ export function useRecharge() {
   ]
   
   // 支付方式
-  const selectedMethod = ref('wechat')
+  const selectedMethod = ref<RechargeMethod>('wechat')
   
   const paymentMethods: PaymentMethod[] = [
-    { value: 'wechat', name: '微信支付', icon: '💚', enabled: true },
-    { value: 'alipay', name: '支付宝', icon: '💙', enabled: true },
-    { value: 'apple', name: 'Apple Pay', icon: '🍎', enabled: false, tip: '暂不支持' },
+    { value: 'wechat', name: '微信支付', icon: 'wechat', enabled: true },
+    { value: 'alipay', name: '支付宝', icon: 'wallet', enabled: true },
+    { value: 'apple', name: 'Apple Pay', icon: 'apple', enabled: false, tip: '暂不支持' },
   ]
   
   // 计算最终金额
@@ -55,9 +54,6 @@ export function useRecharge() {
            selectedMethod.value && 
            agreeTerms.value
   })
-  
-  // 格式化余额
-  const formatBalance = (cents: number) => (cents / 100).toFixed(2)
   
   // 加载余额
   const loadBalance = async () => {
@@ -84,7 +80,7 @@ export function useRecharge() {
     try {
       const res = await recharge({
         amountCents: Math.round(finalAmount.value * 100),
-        paymentMethod: selectedMethod.value,
+        method: selectedMethod.value,
       })
       
       // 调用支付
@@ -150,7 +146,6 @@ export function useRecharge() {
     canSubmit,
     
     // 方法
-    formatBalance,
     selectAmount,
     submitRecharge,
     viewAgreement,

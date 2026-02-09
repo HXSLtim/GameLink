@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -108,6 +109,85 @@ func JWTAuth(secretKey string) gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+// WSAuth WebSocket 认证中间件，支持 header / query / cookie
+func WSAuth(secretKey string) gin.HandlerFunc {
+	// 验证密钥长度
+	if len(secretKey) < 32 {
+		logging.Error("JWT secret too short, must be at least 32 characters")
+		return func(c *gin.Context) {
+			c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{
+				"success": false,
+				"code":    http.StatusServiceUnavailable,
+				"message": "认证服务配置错误，请联系管理员",
+			})
+		}
+	}
+
+	tokenDuration := auth.DefaultTokenDuration
+	jwtManager := auth.NewJWTManager(secretKey, tokenDuration)
+
+	return func(c *gin.Context) {
+		tokenString := resolveWSToken(c)
+		if tokenString == "" {
+			resp.Error(c, apierr.Unauthorized("缺少Authorization头"))
+			c.Abort()
+			return
+		}
+
+		claims, err := jwtManager.VerifyToken(tokenString)
+		if err != nil {
+			resp.Error(c, apierr.Unauthorized("无效的Token: "+err.Error()))
+			c.Abort()
+			return
+		}
+		if auth.IsTokenExpired(claims) {
+			resp.Error(c, apierr.Unauthorized("Token已过期"))
+			c.Abort()
+			return
+		}
+
+		c.Set("user_id", claims.UserID)
+		c.Set("user_role", claims.Role)
+		c.Set("jwt_claims", claims)
+		c.Request = c.Request.WithContext(logging.WithActorUserID(c.Request.Context(), claims.UserID))
+		c.Next()
+	}
+}
+
+func resolveWSToken(c *gin.Context) string {
+	authHeader := strings.TrimSpace(c.GetHeader("Authorization"))
+	if authHeader != "" {
+		if token, err := auth.ExtractTokenFromHeader(authHeader); err == nil {
+			return token
+		}
+		if token := trimBearer(authHeader); token != "" {
+			return token
+		}
+	}
+
+	if token := strings.TrimSpace(c.Query("token")); token != "" {
+		return trimBearer(token)
+	}
+	if token := strings.TrimSpace(c.Query("access_token")); token != "" {
+		return trimBearer(token)
+	}
+	if cookie, err := c.Cookie("auth_token"); err == nil {
+		return strings.TrimSpace(cookie)
+	}
+	return ""
+}
+
+func trimBearer(token string) string {
+	token = strings.TrimSpace(token)
+	if token == "" {
+		return ""
+	}
+	if strings.HasPrefix(strings.ToLower(token), "bearer ") {
+		return strings.TrimSpace(token[7:])
+	}
+	return token
 }
 
 // RequireRole 要求特定角色的中间件

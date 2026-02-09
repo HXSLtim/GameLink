@@ -2,50 +2,9 @@
  * 列表页通用 Hook
  * 封装分页加载、刷新、错误处理等逻辑
  */
-import { ref, computed, type Ref } from 'vue'
-import type { PageStateType } from '@/components/PageState.vue'
-
-export interface UseListPageOptions<T, P = Record<string, any>> {
-  /** 获取数据的 API 函数 */
-  fetchFn: (params: P & { page: number; pageSize: number }) => Promise<{ data: any }>
-  /** 从响应中提取数据列表 */
-  extractList?: (data: any) => T[]
-  /** 每页数量 */
-  pageSize?: number
-  /** 是否立即加载 */
-  immediate?: boolean
-  /** 缓存 key（用于离线缓存） */
-  cacheKey?: string
-  /** 获取缓存数据的函数 */
-  getCacheFn?: () => T[] | null
-  /** 保存缓存数据的函数 */
-  saveCacheFn?: (data: T[]) => void
-}
-
-export interface UseListPageReturn<T, P = Record<string, any>> {
-  // 状态
-  list: Ref<T[]>
-  pageState: Ref<PageStateType>
-  errorMessage: Ref<string>
-  loading: Ref<boolean>
-  loadingMore: Ref<boolean>
-  noMore: Ref<boolean>
-  refreshing: Ref<boolean>
-  isOffline: Ref<boolean>
-  
-  // 分页信息
-  page: Ref<number>
-  total: Ref<number>
-  
-  // 方法
-  load: (params?: Partial<P>) => Promise<void>
-  loadMore: () => Promise<void>
-  refresh: (params?: Partial<P>) => Promise<void>
-  reset: () => void
-  
-  // 额外参数
-  extraParams: Ref<Partial<P>>
-}
+import { ref, type Ref } from 'vue'
+import type { PageStateType, UseListPageOptions, UseListPageReturn } from '@/types/page'
+export type { UseListPageOptions, UseListPageReturn } from '@/types/page'
 
 export function useListPage<T, P = Record<string, any>>(
   options: UseListPageOptions<T, P>
@@ -97,7 +56,7 @@ export function useListPage<T, P = Record<string, any>>(
         ...params,
         page: currentPage,
         pageSize,
-      } as P & { page: number; pageSize: number }
+      } as P & { page: number; page_size: number }
       
       const res = await fetchFn(mergedParams)
       const items = extractList(res.data)

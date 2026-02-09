@@ -28,25 +28,43 @@ func (m *MockBatchUserRepository) Get(ctx context.Context, id uint64) (*model.Us
 	return args.Get(0).(*model.User), args.Error(1)
 }
 
-func (m *MockBatchUserRepository) List(ctx context.Context) ([]model.User, error)                   { return nil, nil }
+func (m *MockBatchUserRepository) List(ctx context.Context) ([]model.User, error) { return nil, nil }
 func (m *MockBatchUserRepository) ListPaged(ctx context.Context, page, pageSize int) ([]model.User, int64, error) {
 	return nil, 0, nil
 }
 func (m *MockBatchUserRepository) ListWithFilters(ctx context.Context, opts repository.UserListOptions) ([]model.User, int64, error) {
 	return nil, 0, nil
 }
-func (m *MockBatchUserRepository) Count(ctx context.Context, opts repository.UserListOptions) (int, error) { return 0, nil }
-func (m *MockBatchUserRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.User, error)      { return nil, nil }
-func (m *MockBatchUserRepository) GetByPhone(ctx context.Context, phone string) (*model.User, error)     { return nil, nil }
-func (m *MockBatchUserRepository) GetByEmail(ctx context.Context, email string) (*model.User, error)     { return nil, nil }
-func (m *MockBatchUserRepository) FindByEmail(ctx context.Context, email string) (*model.User, error)    { return nil, nil }
-func (m *MockBatchUserRepository) FindByPhone(ctx context.Context, phone string) (*model.User, error)    { return nil, nil }
-func (m *MockBatchUserRepository) Create(ctx context.Context, user *model.User) error                   { return nil }
-func (m *MockBatchUserRepository) Update(ctx context.Context, user *model.User) error                   { return nil }
-func (m *MockBatchUserRepository) Delete(ctx context.Context, id uint64) error                          { return nil }
-func (m *MockBatchUserRepository) UpdatePassword(ctx context.Context, userID uint64, newPassword string) error { return nil }
-func (m *MockBatchUserRepository) GetByWeChatOpenID(ctx context.Context, openID string) (*model.User, error) { return nil, nil }
-func (m *MockBatchUserRepository) GetByWeChatUnionID(ctx context.Context, unionID string) (*model.User, error) { return nil, nil }
+func (m *MockBatchUserRepository) Count(ctx context.Context, opts repository.UserListOptions) (int, error) {
+	return 0, nil
+}
+func (m *MockBatchUserRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.User, error) {
+	return nil, nil
+}
+func (m *MockBatchUserRepository) GetByPhone(ctx context.Context, phone string) (*model.User, error) {
+	return nil, nil
+}
+func (m *MockBatchUserRepository) GetByEmail(ctx context.Context, email string) (*model.User, error) {
+	return nil, nil
+}
+func (m *MockBatchUserRepository) FindByEmail(ctx context.Context, email string) (*model.User, error) {
+	return nil, nil
+}
+func (m *MockBatchUserRepository) FindByPhone(ctx context.Context, phone string) (*model.User, error) {
+	return nil, nil
+}
+func (m *MockBatchUserRepository) Create(ctx context.Context, user *model.User) error { return nil }
+func (m *MockBatchUserRepository) Update(ctx context.Context, user *model.User) error { return nil }
+func (m *MockBatchUserRepository) Delete(ctx context.Context, id uint64) error        { return nil }
+func (m *MockBatchUserRepository) UpdatePassword(ctx context.Context, userID uint64, newPassword string) error {
+	return nil
+}
+func (m *MockBatchUserRepository) GetByWeChatOpenID(ctx context.Context, openID string) (*model.User, error) {
+	return nil, nil
+}
+func (m *MockBatchUserRepository) GetByWeChatUnionID(ctx context.Context, unionID string) (*model.User, error) {
+	return nil, nil
+}
 
 // MockNotificationRepository is a mock implementation of NotificationRepository
 type MockNotificationRepository struct {

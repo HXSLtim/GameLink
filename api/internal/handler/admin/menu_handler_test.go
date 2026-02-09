@@ -87,25 +87,25 @@ func TestMenuHandler_ListMenus(t *testing.T) {
 		name           string
 		queryParams    string
 		expectedStatus int
-		expectedCount   int
+		expectedCount  int
 	}{
 		{
 			name:           "list all menus",
 			queryParams:    "",
 			expectedStatus: http.StatusOK,
-			expectedCount:   2,
+			expectedCount:  2,
 		},
 		{
 			name:           "list with pagination",
 			queryParams:    "?page=1&pageSize=1",
 			expectedStatus: http.StatusOK,
-			expectedCount:   1,
+			expectedCount:  1,
 		},
 		{
 			name:           "list by parent ID",
 			queryParams:    "?parentId=1",
 			expectedStatus: http.StatusOK,
-			expectedCount:   1,
+			expectedCount:  1,
 		},
 	}
 
@@ -142,11 +142,11 @@ func TestMenuHandler_GetMenu(t *testing.T) {
 
 	// Create test menu
 	menu := &model.Menu{
-		Name:     "Test Menu",
-		Path:     "/test",
-		Icon:     "test",
-		Order: 1,
-		Hidden:   false,
+		Name:   "Test Menu",
+		Path:   "/test",
+		Icon:   "test",
+		Order:  1,
+		Hidden: false,
 	}
 	require.NoError(t, db.Create(menu).Error)
 
@@ -268,11 +268,11 @@ func TestMenuHandler_UpdateMenu(t *testing.T) {
 
 	// Create test menu
 	menu := &model.Menu{
-		Name:     "Test Menu",
-		Path:     "/test",
-		Icon:     "test",
-		Order: 1,
-		Hidden:   false,
+		Name:   "Test Menu",
+		Path:   "/test",
+		Icon:   "test",
+		Order:  1,
+		Hidden: false,
 	}
 	require.NoError(t, db.Create(menu).Error)
 
@@ -337,11 +337,11 @@ func TestMenuHandler_DeleteMenu(t *testing.T) {
 
 	// Create test menu
 	menu := &model.Menu{
-		Name:     "Test Menu",
-		Path:     "/test",
-		Icon:     "test",
-		Order: 1,
-		Hidden:   false,
+		Name:   "Test Menu",
+		Path:   "/test",
+		Icon:   "test",
+		Order:  1,
+		Hidden: false,
 	}
 	require.NoError(t, db.Create(menu).Error)
 

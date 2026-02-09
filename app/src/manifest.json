@@ -1,10 +1,11 @@
 {
-    "name" : "",
-    "appid" : "",
-    "description" : "",
+    "name" : "GameLink",
+    "appid" : "__UNI__GAMELINK",
+    "description" : "游戏陪玩平台 - 找陪玩，就上GameLink",
     "versionName" : "1.0.0",
     "versionCode" : "100",
     "transformPx" : false,
+    "locale": "zh-Hans",
     /* 5+App特有相关 */
     "app-plus" : {
         "usingComponents" : true,
@@ -52,9 +53,25 @@
     "mp-weixin" : {
         "appid" : "",
         "setting" : {
-            "urlCheck" : false
+            "urlCheck" : false,
+            "es6" : true,
+            "enhance" : true,
+            "minified" : true,
+            "postcss" : true
         },
-        "usingComponents" : true
+        "usingComponents" : true,
+        "lazyCodeLoading" : "requiredComponents",
+        "permission" : {
+            "scope.userLocation" : {
+                "desc" : "用于显示附近的陪玩师"
+            }
+        },
+        "requiredPrivateInfos" : [
+            "chooseImage",
+            "chooseVideo",
+            "getLocation"
+        ],
+        "__usePrivacyCheck__" : true
     },
     "mp-alipay" : {
         "usingComponents" : true
@@ -68,5 +85,24 @@
     "uniStatistics": {  
         "enable": false
     },
-    "vueVersion" : "3"
+    "vueVersion" : "3",
+    /* H5 特有相关 */
+    "h5" : {
+        "title" : "GameLink - 游戏陪玩平台",
+        "router" : {
+            "mode" : "history",
+            "base" : "/"
+        },
+        "optimization" : {
+            "prefetch" : true,
+            "preload" : true,
+            "treeShaking" : {
+                "enable" : true
+            }
+        },
+        "devServer" : {
+            "port" : 3000,
+            "disableHostCheck" : true
+        }
+    }
 }

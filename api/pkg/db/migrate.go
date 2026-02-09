@@ -111,7 +111,38 @@ func prepareOrdersMigration(db *gorm.DB) error {
 	return nil
 }
 
+// migrateVersion 迁移版本号。修改 model 后递增此值，下次启动时触发 AutoMigrate。
+const migrateVersion = "2026-02-07-v1"
+
+// isMigrateUpToDate 检查迁移版本是否已是最新，避免每次启动都跑 AutoMigrate。
+func isMigrateUpToDate(db *gorm.DB) bool {
+	// 先检查核心表是否存在（首次运行时 seed_metadata 还没建）
+	var exists bool
+	db.Raw(`SELECT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'users')`).Scan(&exists)
+	if !exists {
+		return false // 首次运行，必须执行迁移
+	}
+
+	db.Exec(`CREATE TABLE IF NOT EXISTS seed_metadata (key TEXT PRIMARY KEY, value TEXT)`)
+	var val string
+	if err := db.Raw(`SELECT value FROM seed_metadata WHERE key = 'migrate_version'`).Scan(&val).Error; err != nil {
+		return false
+	}
+	return val == migrateVersion
+}
+
+func markMigrateVersion(db *gorm.DB) {
+	db.Exec(`INSERT INTO seed_metadata (key, value) VALUES ('migrate_version', ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, migrateVersion)
+}
+
 func autoMigrate(db *gorm.DB) error {
+	// ── 版本检查：schema 未变则跳过 AutoMigrate ──
+	if isMigrateUpToDate(db) {
+		log.Printf("[startup] auto-migrate up-to-date (version=%s), skipping", migrateVersion)
+		return nil
+	}
+	log.Printf("[startup] auto-migrate outdated, running migration (version=%s)...", migrateVersion)
+
 	// 先处理 orders 表的特殊字段（PostgreSQL）
 	if err := prepareOrdersMigration(db); err != nil {
 		return err
@@ -243,15 +274,33 @@ func autoMigrate(db *gorm.DB) error {
 		&model.TagThreshold{},
 		// System state tracking (for initialization status)
 		&model.SystemState{},
+		// Game categories
+		&model.GameCategory{},
+		// LFG (Looking For Group) system
+		&model.LFGRequest{},
+		// Favorites system
+		&model.Favorite{},
+		// Player presence system
+		&model.PlayerPresence{},
+		// Banner system (首页轮播图)
+		&model.Banner{},
+		// User management (previously a separate migration)
+		&model.UserTag{},
+		&model.UserTagRelation{},
+		&model.UserLoginHistory{},
+		&model.UserBehavior{},
 	); err != nil {
 		log.Printf("Phase 2 failed: %v", err)
 		return fmt.Errorf("phase 2 migration failed: %w", err)
 	}
 	log.Printf("Phase 2: Dependent tables created successfully")
+
+	// 标记迁移版本
+	markMigrateVersion(db)
 	return nil
 }
 
-// MigrateUserManagement 迁移用户管理相关数据表
+// MigrateUserManagement 迁移用户管理相关数据表（保留以兼容外部调用，内部已合并到 autoMigrate）
 func MigrateUserManagement(db *gorm.DB) error {
 	return db.AutoMigrate(
 		&model.UserTag{},

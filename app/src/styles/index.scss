@@ -2,22 +2,32 @@
  * GameLink 全局样式
  */
 
-@import './variables.scss';
+@use './animations.scss';
 
 // ============================================
 // CSS 变量 - 支持动态主题切换
 // ============================================
 :root,
-page {
+page,
+uni-page-body {
   // 默认日间主题
   --color-primary: #{$light-primary};
   --color-primary-light: #{$light-primary-light};
   --color-primary-dark: #{$light-primary-dark};
   --color-primary-gradient: #{$light-primary-gradient};
+  --color-primary-glow: #{$light-primary-glow};
+  
+  --color-accent: #{$light-accent};
+  --color-accent-gradient: #{$light-accent-gradient};
+  --color-gold: #{$light-gold};
+  --color-gold-gradient: #{$light-gold-gradient};
+  --color-wechat: #07C160;
+  --color-icon-accent: #{$light-accent};
   
   --color-bg: #{$light-bg};
   --color-bg-card: #{$light-bg-card};
   --color-bg-secondary: #{$light-bg-secondary};
+  --color-bg-hover: #{$light-bg-secondary};
   
   --color-text: #{$light-text};
   --color-text-secondary: #{$light-text-secondary};
@@ -27,24 +37,78 @@ page {
   --color-border: #{$light-border};
   --color-divider: #{$light-divider};
   
+  // 间距
+  --spacing-xs: #{$spacing-xs};
+  --spacing-sm: #{$spacing-sm};
+  --spacing-md: #{$spacing-md};
+  --spacing-lg: #{$spacing-lg};
+  --spacing-xl: #{$spacing-xl};
+  
+  // 圆角
+  --radius-sm: #{$radius-sm};
+  --radius-md: #{$radius-md};
+  --radius-lg: #{$radius-lg};
+  --radius-xl: #{$radius-xl};
+  --radius-full: #{$radius-full};
+  
+  // 字体
+  --font-xs: #{$font-xs};
+  --font-sm: #{$font-sm};
+  --font-md: #{$font-md};
+  --font-base: #{$font-base};
+  --font-lg: #{$font-lg};
+  --font-xl: #{$font-xl};
+  --font-2xl: #{$font-2xl};
+  --font-3xl: #{$font-3xl};
+  
+  // 阴影
+  --shadow-sm: #{$shadow-sm};
+  --shadow-md: #{$shadow-md};
+  --shadow-lg: #{$shadow-lg};
+  
   // 通用色
   --color-success: #{$success};
   --color-warning: #{$warning};
   --color-error: #{$error};
   --color-info: #{$info};
+
+  // 状态色半透明底色（用于标签、徽章背景）
+  --color-primary-tint: rgba(122, 204, 53, 0.1);
+  --color-success-tint: rgba(16, 185, 129, 0.1);
+  --color-warning-tint: rgba(245, 158, 11, 0.1);
+  --color-error-tint: rgba(239, 68, 68, 0.1);
+  --color-info-tint: rgba(59, 130, 246, 0.1);
+  --color-primary-tint-border: rgba(122, 204, 53, 0.2);
+  --color-success-tint-border: rgba(16, 185, 129, 0.2);
+  --color-warning-tint-border: rgba(245, 158, 11, 0.2);
+  --color-error-tint-border: rgba(239, 68, 68, 0.2);
+  --color-info-tint-border: rgba(59, 130, 246, 0.2);
 }
 
-// 夜间主题
+// 夜间主题 - 支持多种选择器
+html[data-theme="dark"],
 [data-theme="dark"],
-.theme-dark {
+.theme-dark,
+.theme-dark page,
+.theme-dark uni-page-body {
   --color-primary: #{$dark-primary};
   --color-primary-light: #{$dark-primary-light};
   --color-primary-dark: #{$dark-primary-dark};
   --color-primary-gradient: #{$dark-primary-gradient};
+  --color-primary-glow: #{$dark-primary-glow};
+  
+  --color-accent: #{$dark-accent};
+  --color-accent-gradient: #{$dark-accent-gradient};
+  --color-accent-glow: #{$dark-accent-glow};
+  --color-gold: #{$dark-gold};
+  --color-gold-gradient: #{$dark-gold-gradient};
+  --color-icon-accent: #{$dark-primary};
   
   --color-bg: #{$dark-bg};
   --color-bg-card: #{$dark-bg-card};
   --color-bg-secondary: #{$dark-bg-secondary};
+  --color-bg-elevated: #{$dark-bg-elevated};
+  --color-bg-hover: #{$dark-bg-hover};
   
   --color-text: #{$dark-text};
   --color-text-secondary: #{$dark-text-secondary};
@@ -53,6 +117,138 @@ page {
   
   --color-border: #{$dark-border};
   --color-divider: #{$dark-divider};
+  
+  // 夜间模式阴影（保持克制）
+  --shadow-sm: 0 2rpx 6rpx rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4rpx 12rpx rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 8rpx 24rpx rgba(0, 0, 0, 0.4);
+
+  // 夜间：状态色半透明底色（稍高不透明度，深色背景上更可见）
+  --color-primary-tint: rgba(88, 101, 242, 0.15);
+  --color-success-tint: rgba(16, 185, 129, 0.15);
+  --color-warning-tint: rgba(245, 158, 11, 0.15);
+  --color-error-tint: rgba(239, 68, 68, 0.15);
+  --color-info-tint: rgba(59, 130, 246, 0.15);
+  --color-primary-tint-border: rgba(88, 101, 242, 0.25);
+  --color-success-tint-border: rgba(16, 185, 129, 0.25);
+  --color-warning-tint-border: rgba(245, 158, 11, 0.25);
+  --color-error-tint-border: rgba(239, 68, 68, 0.25);
+  --color-info-tint-border: rgba(59, 130, 246, 0.25);
+}
+
+// PC 端字体统一放大
+@include desktop {
+  :root,
+  page,
+  uni-page-body {
+    --font-xs: 13px;
+    --font-sm: 15px;
+    --font-md: 17px;
+    --font-base: 19px;
+    --font-lg: 21px;
+    --font-xl: 24px;
+    --font-2xl: 28px;
+    --font-3xl: 32px;
+
+    // PC 端间距微调
+    --spacing-page: 24px;
+  }
+}
+
+// 移动端：统一 TabBar 底部安全间距
+.tabbar-safe-bottom {
+  padding-bottom: calc(110rpx + env(safe-area-inset-bottom));
+
+  @include desktop {
+    padding-bottom: 0;
+  }
+}
+
+// ============================================
+// PC 端响应式布局 - Discord/KOOK 风格
+// ============================================
+
+// PC 端侧边栏宽度变量
+:root {
+  --sidebar-width: 240px;
+}
+
+// ============================================
+// 隐藏原生 TabBar（全局，因为使用自定义 TabBar）
+// ============================================
+// uni-app H5 原生 TabBar 相关选择器
+uni-tabbar,
+.uni-tabbar,
+.uni-tabbar-bottom,
+.uni-tabbar__placeholder,
+.uni-tabbar__border,
+.uni-tabbar-item,
+[class*="uni-tabbar"],
+// H5 环境下的 div 容器
+div.uni-tabbar,
+div[class*="tabbar"],
+// 底部固定的 tabbar 容器
+.tabbar-wrapper,
+.tabbar-container {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  max-height: 0 !important;
+  min-height: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  z-index: -9999 !important;
+}
+
+// 修复 tabbar 占位问题
+uni-page-body,
+.uni-page-body {
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+// H5 环境下移除页面底部为原生 tabbar 预留的空间
+page {
+  padding-bottom: 0 !important;
+}
+
+// uni-app 页面结构高度自适应
+uni-page,
+uni-page-wrapper,
+uni-page-body {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+@media screen and (min-width: 1024px) {
+  // PC 端全屏布局，不限制宽度
+  html, body, #app, page, uni-page-body {
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  // PC 端页面内容区预留侧边栏空间
+  .page-container,
+  .page-content,
+  .page-wrapper {
+    margin-left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
+  }
+
+  // PC 端：所有可点击元素统一 hover 过渡
+  [class*="card"],
+  [class*="item"],
+  [class*="btn"] {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  }
+}
+
+// 平板端（可选：中等尺寸）
+@media screen and (min-width: 768px) and (max-width: 1023px) {
+  // 平板端可以保持移动布局或做适当调整
 }
 
 // ============================================
@@ -68,6 +264,51 @@ page {
 
 view, text {
   box-sizing: border-box;
+}
+
+// ============================================
+// 全局无痕滚动条 - 跟随主题
+// ============================================
+* {
+  // Webkit 浏览器（Chrome, Safari, Edge）
+  &::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: var(--color-border, rgba(128, 128, 128, 0.2));
+    border-radius: 4px;
+    transition: background 0.2s;
+    
+    &:hover {
+      background: var(--color-text-secondary, rgba(128, 128, 128, 0.4));
+    }
+  }
+  
+  &::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}
+
+// Firefox 滚动条
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border, rgba(128, 128, 128, 0.2)) transparent;
+}
+
+// 隐藏滚动条但保持滚动功能（可选）
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 // ============================================
@@ -169,47 +410,152 @@ view, text {
 .h-full { height: 100%; }
 
 // ============================================
-// 卡片组件
+// 卡片组件 - 游戏风格
 // ============================================
 .card {
   background-color: var(--color-bg-card);
   border-radius: $radius-lg;
   padding: $spacing-md;
-  box-shadow: $shadow-sm;
+  box-shadow: var(--shadow-sm, #{$shadow-sm});
+  border: 1rpx solid var(--color-border);
+  transition: all $transition-normal;
+  
+  // 悬停效果（PC端）
+  @media (hover: hover) {
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md, #{$shadow-md});
+      border-color: var(--color-primary);
+    }
+  }
+  
+  // 点击效果
+  &:active {
+    transform: scale(0.98);
+  }
+
+  // PC 端：卡片内边距加大
+  @include desktop {
+    padding: 20px;
+  }
+  
+  // 高亮卡片
+  &-highlight {
+    border: 2rpx solid var(--color-primary);
+    box-shadow: 0 0 20rpx rgba(122, 204, 53, 0.2);
+  }
+  
+  // 金色卡片（VIP/特殊）
+  &-gold {
+    border: 2rpx solid rgba(245, 158, 11, 0.5);
+    background: linear-gradient(135deg, var(--color-bg-card) 0%, rgba(245, 158, 11, 0.05) 100%);
+    box-shadow: 0 4rpx 24rpx rgba(245, 158, 11, 0.15);
+  }
+  
+  // 玻璃态卡片
+  &-glass {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20rpx);
+    border: 1rpx solid rgba(255, 255, 255, 0.2);
+  }
 }
 
 // ============================================
-// 按钮基础样式
+// 按钮基础样式 - 游戏风格
 // ============================================
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 12rpx;
   padding: $spacing-sm $spacing-lg;
   border-radius: $radius-md;
   font-size: $font-base;
-  font-weight: 500;
-  transition: all $transition-fast;
+  font-weight: 600;
+  transition: all $transition-normal;
+  position: relative;
+  overflow: hidden;
+  
+  // 点击波纹效果
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+    opacity: 0;
+    transform: scale(0);
+    transition: all $transition-normal;
+  }
+  
+  &:active::after {
+    opacity: 1;
+    transform: scale(2);
+    transition: none;
+  }
   
   &-primary {
     background: var(--color-primary-gradient);
     color: #FFFFFF;
+    box-shadow: 0 4rpx 16rpx rgba(122, 204, 53, 0.3);
     
     &:active {
-      opacity: 0.9;
-      transform: scale(0.98);
+      transform: scale(0.96);
+      box-shadow: 0 2rpx 8rpx rgba(122, 204, 53, 0.4);
     }
+  }
+  
+  &-accent {
+    background: var(--color-accent-gradient);
+    color: #FFFFFF;
+    box-shadow: 0 4rpx 16rpx rgba(122, 204, 53, 0.3);
+  }
+  
+  &-gold {
+    background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+    color: #FFFFFF;
+    box-shadow: 0 4rpx 16rpx rgba(245, 158, 11, 0.3);
   }
   
   &-outline {
     background: transparent;
     border: 2rpx solid var(--color-primary);
     color: var(--color-primary);
+    
+    &:active {
+      background: var(--color-primary-tint);
+    }
+  }
+  
+  &-ghost {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--color-text);
+    backdrop-filter: blur(10rpx);
+    
+    &:active {
+      background: rgba(255, 255, 255, 0.2);
+    }
   }
   
   &-block {
     display: flex;
     width: 100%;
+  }
+  
+  &-sm {
+    padding: $spacing-xs $spacing-md;
+    font-size: $font-sm;
+    border-radius: $radius-sm;
+  }
+  
+  &-lg {
+    padding: $spacing-md $spacing-xl;
+    font-size: $font-lg;
+    border-radius: $radius-lg;
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 }
 
@@ -225,3 +571,389 @@ view, text {
   padding-top: constant(safe-area-inset-top);
   padding-top: env(safe-area-inset-top);
 }
+
+// ============================================
+// 徽章组件 - 游戏风格
+// ============================================
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rpx 16rpx;
+  font-size: $font-xs;
+  font-weight: 600;
+  border-radius: $radius-full;
+  white-space: nowrap;
+  
+  &-primary {
+    background: var(--color-primary);
+    color: #FFFFFF;
+  }
+  
+  &-accent {
+    background: var(--color-accent);
+    color: #FFFFFF;
+  }
+  
+  &-gold {
+    background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+    color: #FFFFFF;
+    box-shadow: 0 2rpx 8rpx rgba(245, 158, 11, 0.3);
+  }
+  
+  &-outline {
+    background: transparent;
+    border: 1rpx solid var(--color-primary);
+    color: var(--color-primary);
+  }
+  
+  // 等级徽章
+  &-rank {
+    padding: 6rpx 20rpx;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1rpx;
+    
+    &.bronze { background: linear-gradient(135deg, #CD7F32 0%, #B8860B 100%); }
+    &.silver { background: linear-gradient(135deg, #C0C0C0 0%, #A8A8A8 100%); }
+    &.gold { background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); }
+    &.platinum { background: linear-gradient(135deg, #E5E4E2 0%, #BDC3C7 100%); color: #333; }
+    &.diamond { background: linear-gradient(135deg, #B9F2FF 0%, #7FDBFF 100%); color: #006994; }
+    &.master { background: linear-gradient(135deg, #9B59B6 0%, #8E44AD 100%); }
+    &.grandmaster { background: linear-gradient(135deg, #E74C3C 0%, #C0392B 100%); }
+    &.challenger { background: linear-gradient(135deg, #F39C12 0%, #E67E22 100%); }
+  }
+}
+
+// ============================================
+// 在线状态指示器
+// ============================================
+.status-dot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+  
+  &-online {
+    background: #{$status-online};
+    box-shadow: 0 0 8rpx rgba(16, 185, 129, 0.6);
+    animation: pulse-green 2s infinite;
+  }
+  
+  &-busy {
+    background: #{$status-busy};
+    box-shadow: 0 0 8rpx rgba(245, 158, 11, 0.6);
+  }
+  
+  &-offline {
+    background: #{$status-offline};
+  }
+  
+  &-dnd {
+    background: #{$status-dnd};
+    box-shadow: 0 0 8rpx rgba(239, 68, 68, 0.6);
+  }
+  
+  // 大尺寸
+  &-lg {
+    width: 24rpx;
+    height: 24rpx;
+  }
+}
+
+@keyframes pulse-green {
+  0%, 100% { box-shadow: 0 0 8rpx rgba(16, 185, 129, 0.6); }
+  50% { box-shadow: 0 0 16rpx rgba(16, 185, 129, 0.8); }
+}
+
+// ============================================
+// 进度条 - 游戏风格
+// ============================================
+.progress-bar {
+  height: 12rpx;
+  background: var(--color-bg-secondary);
+  border-radius: $radius-full;
+  overflow: hidden;
+  
+  &-fill {
+    height: 100%;
+    background: var(--color-primary-gradient);
+    border-radius: $radius-full;
+    transition: width $transition-slow;
+    position: relative;
+    
+    // 光泽效果
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 50%;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.3) 0%, transparent 100%);
+    }
+  }
+  
+  // 经验条样式
+  &-exp {
+    height: 16rpx;
+    
+    .progress-bar-fill {
+      background: linear-gradient(90deg, #10B981 0%, #34D399 50%, #10B981 100%);
+      background-size: 200% 100%;
+      animation: shimmer 2s linear infinite;
+    }
+  }
+  
+  // 金色进度条
+  &-gold {
+    .progress-bar-fill {
+      background: linear-gradient(90deg, #F59E0B 0%, #FBBF24 50%, #F59E0B 100%);
+      background-size: 200% 100%;
+      animation: shimmer 2s linear infinite;
+    }
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+// ============================================
+// 头像组件 - 游戏风格
+// ============================================
+.avatar {
+  position: relative;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--color-bg-secondary);
+  
+  &-sm { width: 64rpx; height: 64rpx; }
+  &-md { width: 96rpx; height: 96rpx; }
+  &-lg { width: 128rpx; height: 128rpx; }
+  &-xl { width: 160rpx; height: 160rpx; }
+  
+  image, img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  // 在线状态角标
+  &-status {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 20rpx;
+    height: 20rpx;
+    border-radius: 50%;
+    border: 3rpx solid var(--color-bg-card);
+    
+    &.online { background: #{$status-online}; }
+    &.busy { background: #{$status-busy}; }
+    &.offline { background: #{$status-offline}; }
+  }
+  
+  // VIP 边框
+  &-vip {
+    border: 3rpx solid transparent;
+    background: linear-gradient(var(--color-bg-card), var(--color-bg-card)) padding-box,
+                linear-gradient(135deg, #FFD700 0%, #FFA500 100%) border-box;
+  }
+  
+  // 发光效果
+  &-glow {
+    box-shadow: 0 0 20rpx rgba(122, 204, 53, 0.4);
+  }
+}
+
+// ============================================
+// 列表项 - 游戏风格
+// ============================================
+.list-item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-md;
+  background: var(--color-bg-card);
+  border-radius: $radius-md;
+  transition: all $transition-fast;
+  
+  &:active {
+    background: var(--color-bg-hover, var(--color-bg-secondary));
+    transform: scale(0.99);
+  }
+  
+  @media (hover: hover) {
+    &:hover {
+      background: var(--color-bg-hover, var(--color-bg-secondary));
+    }
+  }
+  
+  &-content {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  &-title {
+    font-size: $font-base;
+    font-weight: 500;
+    color: var(--color-text);
+    margin-bottom: 4rpx;
+  }
+  
+  &-desc {
+    font-size: $font-sm;
+    color: var(--color-text-secondary);
+  }
+  
+  &-action {
+    flex-shrink: 0;
+  }
+}
+
+// ============================================
+// 标签组件
+// ============================================
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6rpx;
+  padding: 6rpx 16rpx;
+  font-size: $font-xs;
+  border-radius: $radius-sm;
+  background: var(--color-bg-secondary);
+  color: var(--color-text-secondary);
+  
+  &-primary {
+    background: var(--color-primary-tint);
+    color: var(--color-primary);
+  }
+  
+  &-accent {
+    background: var(--color-primary-tint);
+    color: var(--color-accent);
+  }
+  
+  &-warning {
+    background: rgba(245, 158, 11, 0.1);
+    color: #{$warning};
+  }
+  
+  &-error {
+    background: rgba(239, 68, 68, 0.1);
+    color: #{$error};
+  }
+}
+
+// ============================================
+// 分割线
+// ============================================
+.divider {
+  height: 1rpx;
+  background: var(--color-divider);
+  margin: $spacing-md 0;
+  
+  &-vertical {
+    width: 1rpx;
+    height: 100%;
+    margin: 0 $spacing-md;
+  }
+}
+
+// ============================================
+// 动画效果
+// ============================================
+// 淡入
+.fade-in {
+  animation: fadeIn $transition-normal forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+// 上滑淡入
+.slide-up {
+  animation: slideUp $transition-normal forwards;
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0; 
+    transform: translateY(20rpx); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+// 缩放弹入
+.scale-in {
+  animation: scaleIn $transition-spring forwards;
+}
+
+@keyframes scaleIn {
+  from { 
+    opacity: 0; 
+    transform: scale(0.9); 
+  }
+  to { 
+    opacity: 1; 
+    transform: scale(1); 
+  }
+}
+
+// 加载旋转
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+// 呼吸效果
+.pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+// ============================================
+// 骨架屏加载
+// ============================================
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-secondary) 25%,
+    var(--color-bg-card) 50%,
+    var(--color-bg-secondary) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: $radius-sm;
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+// ============================================
+// uni.previewImage 层级修复（H5 端）
+// 确保图片预览在侧边栏、TabBar、NavBar 之上
+// uni-app 内部挂载到 #u-a-p 容器，内联 zIndex: 999
+// ============================================
+#u-a-p > div {
+  z-index: 10000 !important;
+}
+

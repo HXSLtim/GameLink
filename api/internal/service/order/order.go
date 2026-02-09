@@ -4,13 +4,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
+
+	"gorm.io/gorm"
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	commissionrepo "gamelink/internal/repository/commission"
+	orderrepo "gamelink/internal/repository/implementations"
 	repoiface "gamelink/internal/repository/interfaces"
 	"gamelink/internal/repository/ordergroup"
+	"gamelink/internal/ws"
 	"gamelink/pkg/apierr"
 	"gamelink/pkg/cache"
 )
@@ -26,6 +31,16 @@ var (
 	ErrUnauthorized = apierr.Forbidden("unauthorized")
 )
 
+// ReferralTrigger 推荐奖励触发接口（可选依赖）
+type ReferralTrigger interface {
+	OnFirstOrderCompleted(ctx context.Context, userID uint64) error
+}
+
+// PaymentRefundor defines refund capability for paid orders.
+type PaymentRefundor interface {
+	RefundPayment(ctx context.Context, paymentID uint64, reason string) error
+}
+
 // OrderService 订单服务
 //
 // 功能：
@@ -34,6 +49,7 @@ var (
 // 3. 订单状态流转管理
 // 4. 订单拆分与转单
 type OrderService struct {
+	db              *gorm.DB                      // 数据库连接，用于事务管理
 	orders          repoiface.OrderRepository
 	orderGroups     ordergroup.Repository // 主订单仓储
 	players         repository.PlayerRepository
@@ -44,6 +60,10 @@ type OrderService struct {
 	commissions     commissionrepo.CommissionRepository
 	chatGroups      repository.ChatGroupRepository // optional: for order chat auto-destroy
 	distributedLock cache.DistributedLock          // 分布式锁，用于并发控制
+	referralTrigger ReferralTrigger                // optional: for referral reward trigger
+	paymentRefundor PaymentRefundor                // optional: refund processor
+	notifications   repository.NotificationRepository
+	hub             *ws.Hub
 }
 
 // NewOrderService 创建订单服务
@@ -67,6 +87,11 @@ func NewOrderService(
 	}
 }
 
+// SetDB injects *gorm.DB for transaction management in multi-step operations.
+func (s *OrderService) SetDB(db *gorm.DB) {
+	s.db = db
+}
+
 // SetOrderGroupRepository 注入主订单仓储
 func (s *OrderService) SetOrderGroupRepository(repo ordergroup.Repository) {
 	s.orderGroups = repo
@@ -77,9 +102,29 @@ func (s *OrderService) SetDistributedLock(lock cache.DistributedLock) {
 	s.distributedLock = lock
 }
 
+// SetReferralTrigger injects referral trigger for first order reward
+func (s *OrderService) SetReferralTrigger(trigger ReferralTrigger) {
+	s.referralTrigger = trigger
+}
+
+// SetPaymentRefundor injects refund processor for paid order cancellation.
+func (s *OrderService) SetPaymentRefundor(refundor PaymentRefundor) {
+	s.paymentRefundor = refundor
+}
+
 // SetChatGroupRepository injects chat group repository for auto-destroying order chat groups.
 func (s *OrderService) SetChatGroupRepository(chatGroups repository.ChatGroupRepository) {
 	s.chatGroups = chatGroups
+}
+
+// SetNotificationRepository injects notification repository for order events.
+func (s *OrderService) SetNotificationRepository(repo repository.NotificationRepository) {
+	s.notifications = repo
+}
+
+// SetWebsocketHub injects WebSocket hub for realtime order updates.
+func (s *OrderService) SetWebsocketHub(hub *ws.Hub) {
+	s.hub = hub
 }
 
 // deactivateOrderChat best-effort deactivates the chat group bound to the order.
@@ -110,9 +155,9 @@ type CreateOrderRequest struct {
 // CreateOrderResponse 创建订单响应
 type CreateOrderResponse struct {
 	OrderID       uint64 `json:"orderId"`
-	GroupNo       string `json:"groupNo,omitempty"`       // 主订单号（拆分时返回）
+	GroupNo       string `json:"groupNo,omitempty"` // 主订单号（拆分时返回）
 	PriceCents    int64  `json:"priceCents"`
-	TotalHours    int    `json:"totalHours,omitempty"`    // 总时长（拆分时返回）
+	TotalHours    int    `json:"totalHours,omitempty"` // 总时长（拆分时返回）
 	NeedPayment   bool   `json:"needPayment"`
 	IsSplit       bool   `json:"isSplit,omitempty"`       // 是否拆分订单
 	SubOrderCount int    `json:"subOrderCount,omitempty"` // 子订单数量
@@ -243,6 +288,8 @@ func (s *OrderService) CreateOrder(ctx context.Context, userID uint64, req Creat
 		return nil, err
 	}
 
+	s.notifyOrderStatus(ctx, order.UserID, order.ID, string(order.Status), "订单已创建", "订单已创建，待支付")
+
 	return &CreateOrderResponse{
 		OrderID:     order.ID,
 		PriceCents:  hourlyPrice,
@@ -251,6 +298,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, userID uint64, req Creat
 }
 
 // createOrderWithSplit 创建拆分订单（主订单 + 子订单）
+// 使用数据库事务确保主订单和子订单的原子性创建
 func (s *OrderService) createOrderWithSplit(
 	ctx context.Context,
 	userID uint64,
@@ -260,26 +308,39 @@ func (s *OrderService) createOrderWithSplit(
 	// 构建主订单和子订单
 	group, subOrders := s.buildOrderGroupWithSubOrders(userID, req, hourlyPrice, commissionPerHour, playerIncomePerHour)
 
-	// 1. 创建主订单
-	if err := s.orderGroups.Create(ctx, group); err != nil {
-		return nil, apierr.InternalError("创建主订单失败").WithDetails(err.Error())
+	// 使用事务确保主订单和所有子订单原子性创建
+	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		txGroupRepo := ordergroup.NewRepository(tx)
+		txOrderRepo := orderrepo.NewOrderRepository(tx)
+
+		// 1. 创建主订单
+		if err := txGroupRepo.Create(ctx, group); err != nil {
+			return fmt.Errorf("创建主订单失败: %w", err)
+		}
+
+		// 2. 创建子订单，关联主订单ID
+		for _, subOrder := range subOrders {
+			subOrder.GroupID = &group.ID
+			if err := txOrderRepo.Create(ctx, subOrder); err != nil {
+				return fmt.Errorf("创建子订单失败: %w", err)
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, apierr.InternalError(err.Error())
 	}
 
-	// 2. 创建子订单，关联主订单ID
-	for _, subOrder := range subOrders {
-		subOrder.GroupID = &group.ID
-		if err := s.orders.Create(ctx, subOrder); err != nil {
-			return nil, apierr.InternalError("创建子订单失败").WithDetails(err.Error())
-		}
-	}
+	s.notifyOrderStatus(ctx, userID, group.ID, string(model.OrderStatusPending), "订单已创建", "订单已创建，待支付")
 
 	return &CreateOrderResponse{
-		OrderID:     group.ID,                // 返回主订单ID（用户视角）
-		GroupNo:     group.GroupNo,           // 主订单号
-		PriceCents:  group.TotalPriceCents,
-		TotalHours:  group.TotalHours,
-		NeedPayment: true,
-		IsSplit:     true,
+		OrderID:       group.ID,      // 返回主订单ID（用户视角）
+		GroupNo:       group.GroupNo, // 主订单号
+		PriceCents:    group.TotalPriceCents,
+		TotalHours:    group.TotalHours,
+		NeedPayment:   true,
+		IsSplit:       true,
 		SubOrderCount: len(subOrders),
 	}, nil
 }
@@ -481,6 +542,7 @@ func (s *OrderService) GetOrderDetail(ctx context.Context, userID uint64, orderI
 }
 
 // CancelOrder 取消订单（用户端）
+// 使用原子性状态检查避免并发取消的竞态条件
 func (s *OrderService) CancelOrder(ctx context.Context, userID uint64, orderID uint64, req CancelOrderRequest) error {
 	// 获取订单
 	order, err := s.orders.Get(ctx, orderID)
@@ -501,9 +563,7 @@ func (s *OrderService) CancelOrder(ctx context.Context, userID uint64, orderID u
 	// 保存原始状态
 	originalStatus := order.Status
 
-	// 更新订单状态
-	order.Status = model.OrderStatusCanceled
-	order.CancelReason = req.Reason
+	refundHandled := false
 
 	// 如果已支付，需要退款
 	if originalStatus == model.OrderStatusConfirmed {
@@ -518,22 +578,68 @@ func (s *OrderService) CancelOrder(ctx context.Context, userID uint64, orderID u
 			payment := payments[0]
 			// 如果支付已完成，执行退款
 			if payment.Status == model.PaymentStatusPaid {
-				// 注意：这里直接更新订单状态，实际退款由支付服务的RefundPayment处理
-				now := time.Now()
-				order.RefundAmountCents = order.TotalPriceCents
-				order.RefundReason = "用户取消订单"
-				order.RefundedAt = &now
-				order.Status = model.OrderStatusRefunded
+				if s.paymentRefundor != nil {
+					if err := s.paymentRefundor.RefundPayment(ctx, payment.ID, "用户取消订单"); err != nil {
+						return err
+					}
+					refundHandled = true
+				} else {
+					// 兼容逻辑：没有退款服务时直接标记退款（使用原子更新）
+					now := time.Now()
+					updated, err := s.orders.UpdateWithCondition(ctx, orderID, originalStatus, map[string]any{
+						"status":             model.OrderStatusRefunded,
+						"cancel_reason":      req.Reason,
+						"refund_amount_cents": order.TotalPriceCents,
+						"refund_reason":      "用户取消订单",
+						"refunded_at":        &now,
+					})
+					if err != nil {
+						return err
+					}
+					if !updated {
+						return ErrInvalidTransition
+					}
+					order.Status = model.OrderStatusRefunded
+				}
 			}
 		}
 	}
 
-	if err := s.orders.Update(ctx, order); err != nil {
-		return err
+	if !refundHandled {
+		// 使用原子性更新避免并发竞态: 只在状态仍为原始状态时更新
+		updated, err := s.orders.UpdateWithCondition(ctx, orderID, originalStatus, map[string]any{
+			"status":        model.OrderStatusCanceled,
+			"cancel_reason": req.Reason,
+		})
+		if err != nil {
+			return err
+		}
+		if !updated {
+			return ErrInvalidTransition
+		}
+		order.Status = model.OrderStatusCanceled
+		order.CancelReason = req.Reason
+	} else {
+		// 退款已由支付服务处理，补充取消原因（不影响主流程）
+		if updatedOrder, err := s.orders.Get(ctx, orderID); err == nil {
+			updatedOrder.CancelReason = req.Reason
+			_ = s.orders.Update(ctx, updatedOrder)
+		}
 	}
 
 	// auto-destroy order chat group
 	s.deactivateOrderChat(ctx, orderID)
+
+	if refundHandled {
+		// 退款通知由支付服务负责，避免重复推送
+		return nil
+	}
+
+	title := "订单已取消"
+	if order.Status == model.OrderStatusRefunded {
+		title = "订单已退款"
+	}
+	s.notifyOrderStatus(ctx, order.UserID, order.ID, string(order.Status), title, s.buildOrderStatusMessage(order))
 	return nil
 }
 
@@ -567,11 +673,21 @@ func (s *OrderService) CompleteOrder(ctx context.Context, userID uint64, orderID
 	// 订单完成后，自动记录抽成
 	if err := s.recordCommissionAsync(ctx, orderID); err != nil {
 		// 记录日志但不影响订单完成
-		// Note: Structured logging will be added when log integration is complete
+		slog.Error("failed to record commission", "orderID", orderID, "error", err)
+	}
+
+	// 触发推荐奖励检查（首单条件）
+	if s.referralTrigger != nil {
+		go func() {
+			if err := s.referralTrigger.OnFirstOrderCompleted(ctx, order.UserID); err != nil {
+				slog.Error("failed to trigger referral reward", "userID", order.UserID, "error", err)
+			}
+		}()
 	}
 
 	// auto-destroy order chat group
 	s.deactivateOrderChat(ctx, orderID)
+	s.notifyOrderStatus(ctx, order.UserID, order.ID, string(order.Status), "订单已完成", "订单已完成")
 	return nil
 }
 
@@ -965,6 +1081,10 @@ func (s *OrderService) AcceptOrder(ctx context.Context, playerUserID uint64, ord
 		return ErrInvalidTransition
 	}
 
+	if order, err := s.orders.Get(ctx, orderID); err == nil {
+		s.notifyOrderStatus(ctx, order.UserID, order.ID, string(order.Status), "订单已被接单", "订单已被陪玩师接单")
+	}
+
 	return nil
 }
 
@@ -1009,5 +1129,67 @@ func (s *OrderService) CompleteOrderByPlayer(ctx context.Context, playerUserID u
 		// Note: Structured logging will be added when log integration is complete
 	}
 
+	s.notifyOrderStatus(ctx, order.UserID, order.ID, string(order.Status), "订单已完成", "订单已完成")
+
 	return nil
+}
+
+func (s *OrderService) buildOrderStatusMessage(order *model.Order) string {
+	if order == nil {
+		return ""
+	}
+	switch order.Status {
+	case model.OrderStatusRefunded:
+		return "订单已退款"
+	case model.OrderStatusCanceled:
+		return "订单已取消"
+	default:
+		return "订单状态已更新"
+	}
+}
+
+func (s *OrderService) notifyOrderStatus(ctx context.Context, userID, orderID uint64, status, title, message string) {
+	s.broadcastOrderStatus(userID, orderID, status, message)
+
+	if s.notifications == nil {
+		return
+	}
+	refID := orderID
+	event := &model.NotificationEvent{
+		UserID:        userID,
+		Title:         title,
+		Message:       message,
+		Priority:      model.NotificationPriorityNormal,
+		Channel:       "in_app",
+		ReferenceType: "order",
+		ReferenceID:   &refID,
+	}
+	if err := s.notifications.Create(ctx, event); err != nil {
+		return
+	}
+	s.broadcastNotification(event)
+}
+
+func (s *OrderService) broadcastOrderStatus(userID, orderID uint64, status, message string) {
+	if s.hub == nil {
+		return
+	}
+	payload := ws.OrderStatusEvent{
+		OrderID:   orderID,
+		Status:    status,
+		Message:   message,
+		UpdatedAt: time.Now().Format(time.RFC3339),
+	}
+	if data, err := ws.NewWSMessage(ws.MessageTypeOrderStatus, payload).ToJSON(); err == nil {
+		s.hub.BroadcastToUser(data, userID)
+	}
+}
+
+func (s *OrderService) broadcastNotification(event *model.NotificationEvent) {
+	if s.hub == nil || event == nil {
+		return
+	}
+	if data, err := ws.NewWSMessage(ws.MessageTypeNotification, event).ToJSON(); err == nil {
+		s.hub.BroadcastToUser(data, event.UserID)
+	}
 }

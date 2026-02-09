@@ -1,10 +1,12 @@
 <template>
-  <view class="service-page page-container">
-    <!-- 顶部导航 -->
-    <NavBar title="在线客服" @back="goBack" />
+  <PageShell class="service-page" :scroll="false" padding="0" content-class="service-content">
+    <template #header>
+      <!-- 顶部导航 -->
+      <NavBar title="在线客服" @back="goBack" />
+    </template>
 
     <!-- 客服状态 -->
-    <ServiceStatusCard :is-online="isOnline" />
+    <SupportAgentStatus :is-online="isOnline" />
 
     <!-- 快捷问题 -->
     <QuickQuestionBar :questions="quickQuestions" @select="selectQuestion" />
@@ -29,11 +31,13 @@
     <!-- 输入区域 -->
     <view class="input-bar">
       <view class="input-wrap">
-        <input
+        <GlInput
           v-model="inputContent"
           class="chat-input"
           placeholder="请输入您的问题..."
           :disabled="sending"
+          size="small"
+          variant="plain"
           @confirm="sendMessage"
         />
       </view>
@@ -48,17 +52,21 @@
       </GlButton>
     </view>
 
-    <!-- PC 端侧边栏 -->
-    <CustomTabBar :show-mobile-tab-bar="false" />
-  </view>
+    <template #footer>
+      <!-- PC 端侧边栏 -->
+      <CustomTabBar :show-mobile-tab-bar="false" />
+    </template>
+  </PageShell>
 </template>
 
 <script setup lang="ts">
 // Pattern 组件
 import NavBar from '@/components/NavBar/index.vue'
+import PageShell from '@/components/layout/PageShell/index.vue'
 import GlButton from '@/components/gl/Button/index.vue'
+import GlInput from '@/components/gl/Input/index.vue'
 // Business 组件
-import ServiceStatusCard from '@/components/ServiceStatusCard/index.vue'
+import SupportAgentStatus from '@/components/SupportAgentStatus/index.vue'
 import QuickQuestionBar from '@/components/QuickQuestionBar/index.vue'
 import ServiceChatMessage from '@/components/ServiceChatMessage/index.vue'
 import CustomTabBar from '@/components/CustomTabBar/index.vue'
@@ -79,14 +87,11 @@ const {
 </script>
 
 <style lang="scss" scoped>
-.service-page {
-  height: 100vh;
-  height: 100dvh;
+.service-content {
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  background: var(--color-bg);
-  box-sizing: border-box;
-  overflow: hidden;
 }
 
 .chat-scroll {
@@ -120,7 +125,12 @@ const {
 
 .chat-input {
   flex: 1;
-  font-size: 28rpx;
-  color: var(--color-text);
+  min-width: 0;
+  height: 100%;
+  
+  :deep(.gl-input__field) {
+    font-size: var(--font-md);
+    color: var(--color-text);
+  }
 }
 </style>

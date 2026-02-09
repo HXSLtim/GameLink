@@ -581,10 +581,20 @@ export const adminApi = {
     completeWithdraw: (id: number) => apiClient.post<ApiResponse<void>>(`/admin/withdraws/${id}/complete`),
 
     // Commission Management
-    createCommissionRule: (data: CreateCommissionRuleDto) => apiClient.post<ApiResponse<CommissionRule>>('/admin/commission/rules', data),
-    updateCommissionRule: (id: number, data: UpdateCommissionRuleDto) => apiClient.put<ApiResponse<void>>(`/admin/commission/rules/${id}`, data),
-    triggerSettlement: (month?: string) => apiClient.post<ApiResponse<void>>('/admin/commission/settlements/trigger', null, { params: { month } }),
-    getPlatformStats: (month?: string) => apiClient.get<ApiResponse<PlatformStats>>('/admin/commission/stats', { params: { month } }),
+    getCommissionRules: (params?: { page?: number; pageSize?: number; status?: string }) => 
+        apiClient.get<ApiResponse<{ rules: CommissionRule[]; total: number }>>('/admin/commission/rules', { params }),
+    getCommissionRule: (id: number) => 
+        apiClient.get<ApiResponse<CommissionRule>>(`/admin/commission/rules/${id}`),
+    createCommissionRule: (data: CreateCommissionRuleDto) => 
+        apiClient.post<ApiResponse<CommissionRule>>('/admin/commission/rules', data),
+    updateCommissionRule: (id: number, data: UpdateCommissionRuleDto) => 
+        apiClient.put<ApiResponse<void>>(`/admin/commission/rules/${id}`, data),
+    deleteCommissionRule: (id: number) => 
+        apiClient.delete<ApiResponse<void>>(`/admin/commission/rules/${id}`),
+    triggerSettlement: (month?: string) => 
+        apiClient.post<ApiResponse<void>>('/admin/commission/settlements/trigger', null, { params: { month } }),
+    getPlatformStats: (month?: string) => 
+        apiClient.get<ApiResponse<PlatformStats>>('/admin/commission/stats', { params: { month } }),
 
     // Dashboard & Stats
     getDashboardStats: () => apiClient.get<ApiResponse<DashboardStats>>('/admin/stats/dashboard'),
@@ -626,7 +636,88 @@ export const adminApi = {
     verifyPlayerCertification: (id: number, data: VerifyPlayerCertificationDto) => apiClient.post<ApiResponse<PlayerCertification>>(`/admin/player-certifications/${id}/verify`, data),
     deletePlayerCertification: (id: number) => apiClient.delete<ApiResponse<void>>(`/admin/player-certifications/${id}`),
     getPlayerCertificationByPlayer: (playerId: number) => apiClient.get<ApiResponse<PlayerCertification>>(`/admin/player-certifications/player/${playerId}`),
+
+    // ========== Payment Management (支付管理) ==========
+    getPayments: (params?: PaymentQueryParams) => apiClient.get<ApiResponse<Payment[]>>('/admin/payments', { params }),
+    getPayment: (id: number) => apiClient.get<ApiResponse<Payment>>(`/admin/payments/${id}`),
+    createPayment: (data: CreatePaymentDto) => apiClient.post<ApiResponse<Payment>>('/admin/payments', data),
+    updatePayment: (id: number, data: UpdatePaymentDto) => apiClient.put<ApiResponse<Payment>>(`/admin/payments/${id}`, data),
+    deletePayment: (id: number) => apiClient.delete<ApiResponse<void>>(`/admin/payments/${id}`),
+    capturePayment: (id: number) => apiClient.post<ApiResponse<Payment>>(`/admin/payments/${id}/capture`),
+    refundPayment: (id: number, data: RefundPaymentDto) => apiClient.post<ApiResponse<Payment>>(`/admin/payments/${id}/refund`, data),
+    getPaymentLogs: (id: number, params?: { page?: number; pageSize?: number }) => apiClient.get<ApiResponse<OperationLog[]>>(`/admin/payments/${id}/logs`, { params }),
+    getPaymentRefunds: (id: number) => apiClient.get<ApiResponse<OperationLog[]>>(`/admin/payments/${id}/refunds`),
 };
+
+// ========== Payment (支付记录) ==========
+export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded' | 'canceled';
+export type PaymentMethod = 'wechat' | 'alipay' | 'balance' | 'bank';
+
+export interface Payment {
+    id: number;
+    orderId: number;
+    userId: number;
+    amountCents: number;
+    status: PaymentStatus;
+    method: PaymentMethod;
+    providerTradeNo?: string;
+    providerRaw?: Record<string, unknown>;
+    paidAt?: string;
+    refundedAt?: string;
+    refundedAmountCents?: number;
+    createdAt: string;
+    updatedAt: string;
+    order?: Order;
+    user?: User;
+}
+
+export interface PaymentQueryParams {
+    page?: number;
+    pageSize?: number;
+    orderId?: number;
+    userId?: number;
+    status?: PaymentStatus;
+    method?: PaymentMethod;
+    dateFrom?: string;
+    dateTo?: string;
+    keyword?: string;
+}
+
+export interface CreatePaymentDto {
+    orderId: number;
+    amountCents: number;
+    method: PaymentMethod;
+    providerTradeNo?: string;
+    providerRaw?: Record<string, unknown>;
+}
+
+export interface UpdatePaymentDto {
+    status: PaymentStatus;
+    providerTradeNo?: string;
+    providerRaw?: Record<string, unknown>;
+    paidAt?: string;
+    refundedAt?: string;
+}
+
+export interface RefundPaymentDto {
+    amountCents: number;
+    reason?: string;
+    providerTradeNo?: string;
+    providerRaw?: Record<string, unknown>;
+}
+
+export interface OperationLog {
+    id: number;
+    entityType: string;
+    entityId: number;
+    action: string;
+    actorUserId: number;
+    actorUser?: User;
+    oldValue?: Record<string, unknown>;
+    newValue?: Record<string, unknown>;
+    remark?: string;
+    createdAt: string;
+}
 
 export interface DashboardStats {
     totalUsers: number;

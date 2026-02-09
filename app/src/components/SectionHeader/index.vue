@@ -30,15 +30,19 @@ defineEmits<{
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24rpx;
+  margin-bottom: var(--spacing-sm);
+
+  @include desktop {
+    margin-bottom: var(--spacing-md);
+  }
 }
 
 .section-title {
-  font-size: 34rpx;
-  font-weight: 700;
+  font-size: var(--font-md);
+  font-weight: 600;
   color: var(--color-text);
   position: relative;
-  padding-left: 20rpx;
+  padding-left: var(--spacing-sm);
   
   &::before {
     content: '';
@@ -46,28 +50,60 @@ defineEmits<{
     left: 0;
     top: 50%;
     transform: translateY(-50%);
-    width: 6rpx;
-    height: 28rpx;
-    background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-primary-light, #4ADE80) 100%);
-    border-radius: 3rpx;
+    width: 4rpx;
+    height: 20rpx;
+    background: var(--color-primary);
+    border-radius: var(--radius-full);
+  }
+
+  @include desktop {
+    font-size: 17px;
+    font-weight: 700;
+    padding-left: 14px;
+
+    &::before {
+      width: 3px;
+      height: 16px;
+    }
   }
 }
 
 .section-more {
   display: flex;
   align-items: center;
-  gap: 4rpx;
-  padding: 8rpx 16rpx;
-  border-radius: 16rpx;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-md);
+  border: 1rpx solid var(--color-border);
   transition: all 0.2s;
+  cursor: pointer;
+  @include press-effect;
+  
+  &:hover {
+    background: var(--color-bg-secondary);
+    border-color: var(--color-primary);
+    
+    text {
+      color: var(--color-primary);
+    }
+  }
   
   &:active {
     background: var(--color-bg-secondary);
   }
   
   text {
-    font-size: 26rpx;
+    font-size: var(--font-xs);
     color: var(--color-text-secondary);
+    transition: color 0.2s;
+  }
+
+  @include desktop {
+    padding: 6px 14px;
+
+    text {
+      font-size: 13px;
+    }
   }
 }
 </style>

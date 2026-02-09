@@ -9,7 +9,7 @@
           class="quick-item"
           @tap="$emit('select', item)"
         >
-          <text class="quick-icon">{{ item.icon }}</text>
+          <view class="quick-icon"><uv-icon :name="item.icon" size="16" color="var(--color-text-secondary)" /></view>
           <text class="quick-text">{{ item.text }}</text>
           <text class="quick-arrow">›</text>
         </view>
@@ -19,12 +19,7 @@
 </template>
 
 <script setup lang="ts">
-export interface QuickQuestion {
-  id: number
-  icon: string
-  text: string
-  answer: string
-}
+import type { QuickQuestion } from '@/types/customer-service'
 
 interface Props {
   questions: QuickQuestion[]
@@ -39,47 +34,53 @@ defineEmits<{
 
 <style lang="scss" scoped>
 .quick-section {
-  padding: 16rpx 24rpx;
+  padding: var(--spacing-sm) var(--spacing-md);
   background: var(--color-bg);
 }
 
 .section-title {
-  font-size: 26rpx;
+  font-size: var(--font-xs);
   color: var(--color-text-secondary);
-  margin-bottom: 12rpx;
+  margin-bottom: var(--spacing-xs);
 }
 
 .quick-scroll {
   white-space: nowrap;
+  @include hide-scrollbar;
 }
 
 .quick-list {
   display: inline-flex;
-  gap: 16rpx;
-  padding-bottom: 8rpx;
+  gap: var(--spacing-xs);
+  padding-bottom: var(--spacing-xs);
 }
 
 .quick-item {
   display: inline-flex;
   align-items: center;
-  gap: 8rpx;
-  padding: 12rpx 20rpx;
+  gap: var(--spacing-xs);
+  padding: 2rpx var(--spacing-md);
   background: var(--color-bg-card);
-  border-radius: 24rpx;
+  border-radius: var(--radius-sm);
+  border: 1rpx solid var(--color-border);
   flex-shrink: 0;
+  cursor: pointer;
+  @include press-effect;
 }
 
 .quick-icon {
-  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .quick-text {
-  font-size: 26rpx;
+  font-size: var(--font-xs);
   color: var(--color-text);
 }
 
 .quick-arrow {
-  font-size: 24rpx;
+  font-size: var(--font-xs);
   color: var(--color-text-placeholder);
 }
 </style>

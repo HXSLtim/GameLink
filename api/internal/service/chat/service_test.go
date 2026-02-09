@@ -326,7 +326,7 @@ func TestNewChatService(t *testing.T) {
 	reports := &MockChatReportRepository{}
 	cache := &MockCache{}
 
-	svc := NewChatService(groups, members, messages, reports, cache)
+	svc := NewChatService(groups, members, messages, reports, nil, cache)
 
 	assert.NotNil(t, svc)
 	assert.Equal(t, groups, svc.groups)
@@ -411,7 +411,7 @@ func TestChatService_ListUserGroups(t *testing.T) {
 
 			tt.setupMock(groups)
 
-			svc := NewChatService(groups, members, messages, reports, cache)
+			svc := NewChatService(groups, members, messages, reports, nil, cache)
 			result, total, err := svc.ListUserGroups(context.Background(), tt.userID, tt.page, tt.pageSize)
 
 			if tt.expectError {
@@ -482,7 +482,7 @@ func TestChatService_EnsureMembership(t *testing.T) {
 
 			tt.setupMock(members)
 
-			svc := NewChatService(groups, members, messages, reports, cache)
+			svc := NewChatService(groups, members, messages, reports, nil, cache)
 			member, err := svc.EnsureMembership(context.Background(), tt.groupID, tt.userID)
 
 			if tt.expectError {
@@ -571,7 +571,8 @@ func TestChatService_SendMessage(t *testing.T) {
 				Content:     "",
 				MessageType: model.ChatMessageTypeText,
 			},
-			setupMock:   func(groups *MockChatGroupRepository, members *MockChatMemberRepository, messages *MockChatMessageRepository, cache *MockCache) {},
+			setupMock: func(groups *MockChatGroupRepository, members *MockChatMemberRepository, messages *MockChatMessageRepository, cache *MockCache) {
+			},
 			expectError: true,
 		},
 		{
@@ -616,7 +617,7 @@ func TestChatService_SendMessage(t *testing.T) {
 
 			tt.setupMock(groups, members, messages, cache)
 
-			svc := NewChatService(groups, members, messages, reports, cache)
+			svc := NewChatService(groups, members, messages, reports, nil, cache)
 			msg, err := svc.SendMessage(context.Background(), tt.input)
 
 			if tt.expectError {
@@ -689,7 +690,7 @@ func TestChatService_JoinGroup(t *testing.T) {
 
 			tt.setupMock(groups, members)
 
-			svc := NewChatService(groups, members, messages, reports, cache)
+			svc := NewChatService(groups, members, messages, reports, nil, cache)
 			err := svc.JoinGroup(context.Background(), tt.groupID, tt.userID, tt.nickname)
 
 			if tt.expectError {
@@ -741,7 +742,7 @@ func TestChatService_LeaveGroup(t *testing.T) {
 
 			tt.setupMock(members)
 
-			svc := NewChatService(groups, members, messages, reports, cache)
+			svc := NewChatService(groups, members, messages, reports, nil, cache)
 			err := svc.LeaveGroup(context.Background(), tt.groupID, tt.userID)
 
 			if tt.expectError {
@@ -796,7 +797,7 @@ func TestChatService_MarkRead(t *testing.T) {
 
 			tt.setupMock(members)
 
-			svc := NewChatService(groups, members, messages, reports, cache)
+			svc := NewChatService(groups, members, messages, reports, nil, cache)
 			err := svc.MarkRead(context.Background(), tt.groupID, tt.userID, tt.messageID)
 
 			if tt.expectError {
@@ -818,7 +819,7 @@ func TestChatService_ApproveMessage(t *testing.T) {
 	moderatorID := uint64(100)
 	messages.On("UpdateAuditStatus", mock.Anything, uint64(1), model.ChatMessageAuditApproved, &moderatorID, "").Return(nil)
 
-	svc := NewChatService(groups, members, messages, reports, cache)
+	svc := NewChatService(groups, members, messages, reports, nil, cache)
 	err := svc.ApproveMessage(context.Background(), 1, moderatorID)
 
 	assert.NoError(t, err)
@@ -848,7 +849,7 @@ func TestChatService_RejectMessage(t *testing.T) {
 			}
 			messages.On("UpdateAuditStatus", mock.Anything, uint64(1), model.ChatMessageAuditRejected, &moderatorID, expectedReason).Return(nil)
 
-			svc := NewChatService(groups, members, messages, reports, cache)
+			svc := NewChatService(groups, members, messages, reports, nil, cache)
 			err := svc.RejectMessage(context.Background(), 1, moderatorID, tt.reason)
 
 			assert.NoError(t, err)
@@ -911,11 +912,11 @@ func TestChatService_ReportMessage(t *testing.T) {
 			var svc *ChatService
 			if tt.nilReports {
 				// Pass actual nil interface, not typed nil
-				svc = NewChatService(groups, members, messages, nil, cache)
+				svc = NewChatService(groups, members, messages, nil, nil, cache)
 			} else {
 				reports := &MockChatReportRepository{}
 				tt.setupMock(reports)
-				svc = NewChatService(groups, members, messages, reports, cache)
+				svc = NewChatService(groups, members, messages, reports, nil, cache)
 			}
 
 			err := svc.ReportMessage(context.Background(), tt.reporterID, tt.messageID, tt.reason, tt.evidence)
@@ -1004,7 +1005,7 @@ func TestChatService_ListMessages(t *testing.T) {
 
 			tt.setupMock(groups, members, messages)
 
-			svc := NewChatService(groups, members, messages, reports, cache)
+			svc := NewChatService(groups, members, messages, reports, nil, cache)
 			msgs, total, err := svc.ListMessages(context.Background(), tt.userID, tt.groupID, tt.opts)
 
 			if tt.expectError {

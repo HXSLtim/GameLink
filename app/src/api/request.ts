@@ -6,10 +6,26 @@
 import { useUserStore } from '@/store/user'
 
 // API 基础路径
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081/api/v1'
+// 开发环境：自动使用当前页面的 hostname，解决局域网访问问题
+// 生产环境：使用环境变量配置
+function resolveBaseUrl(): string {
+  const envUrl = import.meta.env.VITE_API_BASE_URL
+  if (envUrl) return envUrl
+
+  // 未配置时，自动匹配当前访问的主机名（支持 localhost 和 LAN IP）
+  // #ifdef H5
+  const host = window.location.hostname || 'localhost'
+  return `http://${host}:8080/api/v1`
+  // #endif
+
+  // 非 H5 平台使用默认值
+  return 'http://localhost:8080/api/v1'
+}
+
+const BASE_URL = resolveBaseUrl()
 
 // 请求配置
-interface RequestConfig {
+export interface RequestConfig {
   url: string
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
   data?: Record<string, any>
@@ -27,7 +43,7 @@ interface ApiResponse<T = any> {
   data: T
   pagination?: {
     page: number
-    pageSize: number
+    page_size: number
     total: number
     totalPages: number
   }
@@ -192,7 +208,12 @@ export function del<T = any>(url: string, params?: Record<string, any>, config?:
 /**
  * 上传文件
  */
-export function uploadFile(url: string, filePath: string, name: string = 'file'): Promise<ApiResponse> {
+export function uploadFile(
+  url: string, 
+  filePath: string, 
+  name: string = 'file',
+  formData?: Record<string, any>
+): Promise<ApiResponse> {
   const userStore = useUserStore()
   
   return new Promise((resolve, reject) => {
@@ -200,6 +221,7 @@ export function uploadFile(url: string, filePath: string, name: string = 'file')
       url: BASE_URL + url,
       filePath,
       name,
+      formData,
       header: {
         'Authorization': userStore.token ? `Bearer ${userStore.token}` : '',
       },

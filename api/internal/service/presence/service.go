@@ -14,12 +14,12 @@ import (
 
 // Cache key patterns and TTL
 const (
-	cacheKeyPresence       = "presence:player:%d"
-	cacheKeyOnlineCount    = "presence:online:count"
-	cacheKeyOnlinePlayers  = "presence:online:players"
-	cacheTTLPresence       = 5 * time.Minute
-	cacheTTLOnlineCount    = 30 * time.Second
-	cacheTTLOnlinePlayers  = 1 * time.Minute
+	cacheKeyPresence      = "presence:player:%d"
+	cacheKeyOnlineCount   = "presence:online:count"
+	cacheKeyOnlinePlayers = "presence:online:players"
+	cacheTTLPresence      = 5 * time.Minute
+	cacheTTLOnlineCount   = 30 * time.Second
+	cacheTTLOnlinePlayers = 1 * time.Minute
 
 	// Heartbeat timeout - if no heartbeat for this duration, mark as offline
 	HeartbeatTimeout = 2 * time.Minute

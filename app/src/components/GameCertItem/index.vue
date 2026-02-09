@@ -40,14 +40,8 @@
 
 <script setup lang="ts">
 import FormItem from '@/components/FormItem/index.vue'
-
-export interface GameCertData {
-  gameId?: number
-  gameName: string
-  rankId?: number
-  rankName: string
-  screenshot?: string
-}
+import type { GameCertData } from '@/types/certification'
+import { useImageTools } from '@/composables/useImageTools'
 
 interface Props {
   game: GameCertData
@@ -62,43 +56,49 @@ const emit = defineEmits<{
   'update:screenshot': [url: string]
 }>()
 
-const uploadScreenshot = () => {
-  uni.chooseImage({
-    count: 1,
-    sizeType: ['compressed'],
-    success: (res) => {
-      emit('update:screenshot', res.tempFilePaths[0])
-    }
-  })
+const { pickImages } = useImageTools()
+
+const uploadScreenshot = async () => {
+  try {
+    const [tempPath] = await pickImages()
+    if (!tempPath) return
+    emit('update:screenshot', tempPath)
+  } catch {
+    // ignore cancel
+  }
 }
 </script>
 
 <style lang="scss" scoped>
 .game-cert-item {
-  padding: 20rpx;
-  background: var(--color-bg-secondary);
-  border-radius: 16rpx;
-  margin-bottom: 16rpx;
+  padding: var(--spacing-md);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-sm);
+  border: 1rpx solid var(--color-border);
+  margin-bottom: var(--spacing-sm);
 }
 
 .game-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16rpx;
-  padding-bottom: 16rpx;
+  margin-bottom: var(--spacing-sm);
+  padding-bottom: var(--spacing-sm);
   border-bottom: 1rpx solid var(--color-border);
 }
 
 .game-name {
-  font-size: 30rpx;
+  font-size: var(--font-md);
   font-weight: 600;
   color: var(--color-text);
+  @include text-ellipsis;
 }
 
 .remove-btn {
-  font-size: 26rpx;
-  color: var(--color-error);
+  font-size: var(--font-xs);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  @include press-effect;
 }
 
 .game-form {
@@ -110,21 +110,23 @@ const uploadScreenshot = () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16rpx 0;
+  padding: var(--spacing-sm) 0;
 }
 
 .row-label {
-  font-size: 28rpx;
+  font-size: var(--font-sm);
   color: var(--color-text);
 }
 
 .screenshot-upload {
   width: 100rpx;
   height: 100rpx;
-  border-radius: 12rpx;
+  border-radius: var(--radius-sm);
   overflow: hidden;
-  border: 2rpx dashed var(--color-border);
-  background: var(--color-bg);
+  border: 1rpx dashed var(--color-border);
+  background: var(--color-bg-card);
+  cursor: pointer;
+  @include press-effect;
 }
 
 .screenshot-preview {

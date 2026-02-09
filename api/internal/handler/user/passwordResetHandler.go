@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/gin-gonic/gin"
 	"log/slog"
+
+	"github.com/gin-gonic/gin"
 
 	"gamelink/internal/handler/resp"
 	_ "gamelink/internal/model" // Imported for Swagger annotations

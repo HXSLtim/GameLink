@@ -48,6 +48,7 @@ interface CommissionRule {
     isDefault: boolean;
     status: 'active' | 'inactive';
     createdAt: string;
+    updatedAt?: string;
 }
 
 /**
@@ -58,8 +59,8 @@ const CommissionPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [stats, setStats] = useState<PlatformStats | null>(null);
     const [selectedMonth, setSelectedMonth] = useState(dayjs().format('YYYY-MM'));
-    // TODO: Load rules from API when backend supports listing
-    const rules: CommissionRule[] = [];
+    const [rules, setRules] = useState<CommissionRule[]>([]);
+    const [rulesLoading, setRulesLoading] = useState(false);
 
     // 弹窗状态
     const [ruleModalVisible, setRuleModalVisible] = useState(false);
@@ -86,9 +87,38 @@ const CommissionPage: React.FC = () => {
         }
     }, [selectedMonth, message]);
 
+    /**
+     * 加载佣金规则列表
+     */
+    const loadRules = useCallback(async () => {
+        setRulesLoading(true);
+        try {
+            const response = await adminApi.getCommissionRules({ pageSize: 100 });
+            if (response.data.success) {
+                const data = response.data.data;
+                setRules(data?.rules || []);
+            }
+        } catch (error) {
+            logger.error('Load rules error:', error);
+            // 如果 API 不存在，使用默认规则
+            setRules([{
+                id: 1,
+                name: '默认抽成规则',
+                ratePercent: 20,
+                isDefault: true,
+                status: 'active',
+                createdAt: '2024-01-01',
+                updatedAt: '2024-01-01',
+            }]);
+        } finally {
+            setRulesLoading(false);
+        }
+    }, []);
+
     useEffect(() => {
         loadStats();
-    }, [loadStats]);
+        loadRules();
+    }, [loadStats, loadRules]);
 
     /**
      * 触发结算
@@ -162,7 +192,7 @@ const CommissionPage: React.FC = () => {
                 message.success('创建成功');
             }
             setRuleModalVisible(false);
-            // 刷新规则列表（如果有API的话）
+            loadRules(); // 刷新规则列表
         } catch (error) {
             logger.error('Save rule error:', error);
             message.error('保存失败');
@@ -212,18 +242,6 @@ const CommissionPage: React.FC = () => {
                     </Button>
                 </PermissionGuard>
             ),
-        },
-    ];
-
-    // 默认规则数据（实际应从API获取）
-    const defaultRules: CommissionRule[] = [
-        {
-            id: 1,
-            name: '默认抽成规则',
-            ratePercent: 20,
-            isDefault: true,
-            status: 'active',
-            createdAt: '2024-01-01',
         },
     ];
 
@@ -320,10 +338,12 @@ const CommissionPage: React.FC = () => {
                 />
                 <Table
                     columns={ruleColumns}
-                    dataSource={rules.length > 0 ? rules : defaultRules}
+                    dataSource={rules}
                     rowKey="id"
+                    loading={rulesLoading}
                     pagination={false}
                     scroll={{ x: 1000 }}
+                    locale={{ emptyText: '暂无佣金规则，请点击"新增规则"创建' }}
                 />
             </Card>
 

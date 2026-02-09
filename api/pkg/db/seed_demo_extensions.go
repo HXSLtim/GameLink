@@ -56,12 +56,12 @@ func seedNotificationData(tx *gorm.DB, users map[string]*model.User, orders map[
 
 func couponFromTemplate(userID uint64, tpl *model.CouponTemplate, state model.CouponState, claimedAt *time.Time, expireAt time.Time) model.Coupon {
 	c := model.Coupon{
-		TemplateID: tpl.ID,
-		UserID:     userID,
-		State:      state,
-		Name:       tpl.Name,
-		Type:       tpl.Type,
-		Source:     tpl.Source,
+		TemplateID:        tpl.ID,
+		UserID:            userID,
+		State:             state,
+		Name:              tpl.Name,
+		Type:              tpl.Type,
+		Source:            tpl.Source,
 		MinAmountCents:    tpl.MinAmountCents,
 		DeductAmountCents: tpl.DeductAmountCents,
 		DiscountRate:      tpl.DiscountRate,
@@ -844,15 +844,15 @@ func seedTeamDataInternal(tx *gorm.DB, players map[string]*model.Player, orders 
 	}
 
 	activeTeam, err := ensureTeam("峡谷车队（演示）", model.Team{
-		Name:            "峡谷车队（演示）",
-		Description:     "演示数据：用于团队管理模块测试",
-		AvatarURL:       "https://example.com/team/avatar1.png",
-		LeaderID:        playerA.ID,
-		Status:          model.TeamStatusActive,
-		MaxMembers:      5,
-		MemberCount:     3,
-		IncomeShareType: "equal",
-		TotalOrderCount: 12,
+		Name:             "峡谷车队（演示）",
+		Description:      "演示数据：用于团队管理模块测试",
+		AvatarURL:        "https://example.com/team/avatar1.png",
+		LeaderID:         playerA.ID,
+		Status:           model.TeamStatusActive,
+		MaxMembers:       5,
+		MemberCount:      3,
+		IncomeShareType:  "equal",
+		TotalOrderCount:  12,
 		TotalIncomeCents: 258000,
 	})
 	if err != nil {
@@ -864,16 +864,16 @@ func seedTeamDataInternal(tx *gorm.DB, players map[string]*model.Player, orders 
 		currentOrderID = &o.ID
 	}
 	busyTeam, err := ensureTeam("冠军冲分队（演示）", model.Team{
-		Name:            "冠军冲分队（演示）",
-		Description:     "演示数据：忙碌状态团队（CurrentOrderID 非空）",
-		AvatarURL:       "https://example.com/team/avatar2.png",
-		LeaderID:        playerB.ID,
-		Status:          model.TeamStatusBusy,
-		MaxMembers:      5,
-		MemberCount:     2,
-		IncomeShareType: "equal",
-		CurrentOrderID:  currentOrderID,
-		TotalOrderCount: 5,
+		Name:             "冠军冲分队（演示）",
+		Description:      "演示数据：忙碌状态团队（CurrentOrderID 非空）",
+		AvatarURL:        "https://example.com/team/avatar2.png",
+		LeaderID:         playerB.ID,
+		Status:           model.TeamStatusBusy,
+		MaxMembers:       5,
+		MemberCount:      2,
+		IncomeShareType:  "equal",
+		CurrentOrderID:   currentOrderID,
+		TotalOrderCount:  5,
 		TotalIncomeCents: 98000,
 	})
 	if err != nil {
@@ -1098,29 +1098,90 @@ func seedUserBlockDataInternal(tx *gorm.DB, users map[string]*model.User) error 
 }
 
 func seedGameRankAndCertificationDataInternal(tx *gorm.DB, games map[string]*model.Game, players map[string]*model.Player, users map[string]*model.User) error {
-	lol := games["lol"]
-	valorant := games["valorant"]
-	if lol == nil || valorant == nil {
-		return nil
+	// ========== 定义完整的段位体系（价格：¥20-80/小时）==========
+	// 段位定义：level, name, priceCents, color
+	type rankDef struct {
+		Level      int
+		Name       string
+		PriceCents int64  // 单位：分
+		Color      string // 前端显示颜色
 	}
 
+	// 通用段位体系（适用于 MOBA/FPS 等竞技游戏）
+	competitiveRanks := []rankDef{
+		{1, "青铜", 2000, "#CD7F32"}, // ¥20/小时
+		{2, "白银", 2500, "#C0C0C0"}, // ¥25/小时
+		{3, "黄金", 3000, "#FFD700"}, // ¥30/小时
+		{4, "铂金", 4000, "#E5E4E2"}, // ¥40/小时
+		{5, "钻石", 5000, "#4B9CD3"}, // ¥50/小时
+		{6, "大师", 6000, "#9B59B6"}, // ¥60/小时
+		{7, "王者", 8000, "#FF4500"}, // ¥80/小时（最高段位溢价）
+	}
+
+	// RPG/休闲游戏段位体系（按游戏时长/成就划分）
+	casualRanks := []rankDef{
+		{1, "新手", 2000, "#90EE90"}, // ¥20/小时
+		{2, "熟练", 2500, "#87CEEB"}, // ¥25/小时
+		{3, "精通", 3500, "#DDA0DD"}, // ¥35/小时
+		{4, "专家", 5000, "#FFB6C1"}, // ¥50/小时
+		{5, "大神", 7000, "#FF6347"}, // ¥70/小时
+	}
+
+	// 体育游戏段位体系
+	sportsRanks := []rankDef{
+		{1, "业余", 2000, "#98FB98"},  // ¥20/小时
+		{2, "半职业", 3000, "#87CEFA"}, // ¥30/小时
+		{3, "职业", 4500, "#DDA0DD"},  // ¥45/小时
+		{4, "全明星", 6000, "#FFD700"}, // ¥60/小时
+		{5, "传奇", 8000, "#FF4500"},  // ¥80/小时
+	}
+
+	// 游戏→段位体系映射
+	gameRankMapping := map[string][]rankDef{
+		// MOBA 游戏
+		"lol":   competitiveRanks,
+		"dota2": competitiveRanks,
+		"wzry":  competitiveRanks,
+		// FPS 游戏
+		"valorant":  competitiveRanks,
+		"csgo":      competitiveRanks,
+		"apex":      competitiveRanks,
+		"pubg":      competitiveRanks,
+		"overwatch": competitiveRanks,
+		// RPG 游戏
+		"genshin":   casualRanks,
+		"wow":       casualRanks,
+		"minecraft": casualRanks,
+		// 体育游戏
+		"fifa":  sportsRanks,
+		"nba2k": sportsRanks,
+		// 休闲派对
+		"amongus":  casualRanks,
+		"fallguys": casualRanks,
+	}
+
+	// ========== 创建段位数据 ==========
 	ensureRank := func(gameID uint64, level int, name string, price int64, color string) (*model.GameRank, error) {
 		var existing model.GameRank
 		if err := tx.Where("game_id = ? AND level = ?", gameID, level).First(&existing).Error; err == nil {
+			// 更新价格（如果已存在但价格不同）
+			if existing.PriceCents != price {
+				tx.Model(&existing).Update("price_cents", price)
+			}
 			return &existing, nil
 		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, err
 		}
 		rank := model.GameRank{
-			GameID:       gameID,
-			Name:         name,
-			Level:        level,
-			PriceCents:   price,
-			IconURL:      "https://example.com/rank/icon.png",
-			Color:        color,
-			Description:  "演示数据：用于段位与定价展示",
-			SortOrder:    level,
-			IsActive:     true,
+			GameID:      gameID,
+			Name:        name,
+			Level:       level,
+			PriceCents:  price,
+			IconURL:     fmt.Sprintf("https://cdn.gamelink.com/ranks/%s_%d.png", name, level),
+			Color:       color,
+			Description: fmt.Sprintf("%s段位 - 时薪¥%d/小时", name, price/100),
+			SortOrder:   level,
+			IsActive:    true,
 		}
 		rank.ExtJSON = `{"seed":"demo"}`
 		if err := tx.Create(&rank).Error; err != nil {
@@ -1129,28 +1190,38 @@ func seedGameRankAndCertificationDataInternal(tx *gorm.DB, games map[string]*mod
 		return &rank, nil
 	}
 
-	lolGold, err := ensureRank(lol.ID, 3, "黄金", 9900, "#FFD700")
-	if err != nil {
-		return err
-	}
-	lolDiamond, err := ensureRank(lol.ID, 5, "钻石", 15900, "#4B9CD3")
-	if err != nil {
-		return err
-	}
-	valSilver, err := ensureRank(valorant.ID, 2, "白银", 10900, "#C0C0C0")
-	if err != nil {
-		return err
+	// 存储创建的段位用于后续陪玩师认证
+	rankCache := make(map[string]map[int]*model.GameRank) // gameKey -> level -> rank
+
+	// 为每个游戏创建段位体系
+	for gameKey, ranks := range gameRankMapping {
+		game, ok := games[gameKey]
+		if !ok {
+			continue
+		}
+		rankCache[gameKey] = make(map[int]*model.GameRank)
+		for _, r := range ranks {
+			rank, err := ensureRank(game.ID, r.Level, r.Name, r.PriceCents, r.Color)
+			if err != nil {
+				log.Printf("warning: failed to create rank %s for game %s: %v", r.Name, gameKey, err)
+				continue
+			}
+			rankCache[gameKey][r.Level] = rank
+		}
 	}
 
+	log.Printf("game ranks ensured for %d games\n", len(gameRankMapping))
+
+	// ========== 创建陪玩师段位认证记录 ==========
 	admin := users["adminA"]
-	playerA := players["playerA"]
-	playerB := players["playerB"]
-	playerC := players["playerC"]
-	if admin == nil || playerA == nil || playerB == nil || playerC == nil {
+	if admin == nil {
 		return nil
 	}
 
 	ensureRankRecord := func(p *model.Player, g *model.Game, rank *model.GameRank, status model.PlayerRankStatus, rejectReason string) error {
+		if p == nil || g == nil || rank == nil {
+			return nil
+		}
 		var existing model.PlayerRankRecord
 		if err := tx.Where("player_id = ? AND rank_id = ?", p.ID, rank.ID).First(&existing).Error; err == nil {
 			return nil
@@ -1163,11 +1234,11 @@ func seedGameRankAndCertificationDataInternal(tx *gorm.DB, games map[string]*mod
 			GameID:         g.ID,
 			RankID:         rank.ID,
 			Status:         status,
-			ScreenshotURLs: `["https://example.com/rank/shot1.png"]`,
+			ScreenshotURLs: `["https://cdn.gamelink.com/certify/rank_screenshot.png"]`,
 			VerifiedAt:     &now,
 			VerifiedBy:     &admin.ID,
 			RejectReason:   rejectReason,
-			Remark:         "演示数据：用于陪玩师段位审核列表",
+			Remark:         fmt.Sprintf("段位认证：%s %s", g.Name, rank.Name),
 		}
 		if status == model.PlayerRankStatusPending || status == model.PlayerRankStatusRejected {
 			rec.VerifiedAt = nil
@@ -1177,11 +1248,83 @@ func seedGameRankAndCertificationDataInternal(tx *gorm.DB, games map[string]*mod
 		return tx.Create(&rec).Error
 	}
 
-	_ = ensureRankRecord(playerA, lol, lolDiamond, model.PlayerRankStatusVerified, "")
-	_ = ensureRankRecord(playerB, valorant, valSilver, model.PlayerRankStatusPending, "")
-	_ = ensureRankRecord(playerC, lol, lolGold, model.PlayerRankStatusRejected, "截图不清晰")
+	// 更新陪玩师时薪（根据最高认证段位）
+	updatePlayerHourlyRate := func(p *model.Player, priceCents int64) {
+		if p == nil {
+			return
+		}
+		// 只在时薪为0或低于新价格时更新
+		if p.HourlyRateCents == 0 || p.HourlyRateCents < priceCents {
+			tx.Model(p).Update("hourly_rate_cents", priceCents)
+		}
+	}
 
-	ensureCertification := func(p *model.Player, status model.CertificationStatus, rejectReason string) error {
+	// 陪玩师段位认证数据（覆盖各种状态）
+	// playerKey, gameKey, rankLevel, status, rejectReason
+	certifications := []struct {
+		PlayerKey    string
+		GameKey      string
+		RankLevel    int
+		Status       model.PlayerRankStatus
+		RejectReason string
+	}{
+		// playerA: LOL钻石（已认证）、Valorant铂金（已认证）
+		{"playerA", "lol", 5, model.PlayerRankStatusVerified, ""},
+		{"playerA", "valorant", 4, model.PlayerRankStatusVerified, ""},
+		// playerB: LOL黄金（待审核）、CSGO白银（已认证）
+		{"playerB", "lol", 3, model.PlayerRankStatusPending, ""},
+		{"playerB", "csgo", 2, model.PlayerRankStatusVerified, ""},
+		// playerC: LOL王者（已认证）、DOTA2大师（已认证）
+		{"playerC", "lol", 7, model.PlayerRankStatusVerified, ""},
+		{"playerC", "dota2", 6, model.PlayerRankStatusVerified, ""},
+		// playerD: 原神专家（已认证）、魔兽世界精通（已认证）
+		{"playerD", "genshin", 4, model.PlayerRankStatusVerified, ""},
+		{"playerD", "wow", 3, model.PlayerRankStatusVerified, ""},
+		// playerE: Apex钻石（已认证）、PUBG铂金（待审核）
+		{"playerE", "apex", 5, model.PlayerRankStatusVerified, ""},
+		{"playerE", "pubg", 4, model.PlayerRankStatusPending, ""},
+		// playerF: 王者荣耀大师（已认证）
+		{"playerF", "wzry", 6, model.PlayerRankStatusVerified, ""},
+		// playerG: LOL铂金（已拒绝 - 截图不清晰）
+		{"playerG", "lol", 4, model.PlayerRankStatusRejected, "段位截图不清晰，请重新提交"},
+		// playerH: FIFA全明星（已认证）、NBA2K职业（已认证）
+		{"playerH", "fifa", 4, model.PlayerRankStatusVerified, ""},
+		{"playerH", "nba2k", 3, model.PlayerRankStatusVerified, ""},
+	}
+
+	for _, cert := range certifications {
+		player := players[cert.PlayerKey]
+		game := games[cert.GameKey]
+		if player == nil || game == nil {
+			continue
+		}
+		gameRanks, ok := rankCache[cert.GameKey]
+		if !ok {
+			continue
+		}
+		rank := gameRanks[cert.RankLevel]
+		if rank == nil {
+			continue
+		}
+
+		if err := ensureRankRecord(player, game, rank, cert.Status, cert.RejectReason); err != nil {
+			log.Printf("warning: failed to create rank record for %s: %v", cert.PlayerKey, err)
+			continue
+		}
+
+		// 如果认证通过，更新陪玩师时薪
+		if cert.Status == model.PlayerRankStatusVerified {
+			updatePlayerHourlyRate(player, rank.PriceCents)
+		}
+	}
+
+	log.Println("player rank records ensured")
+
+	// ========== 实名认证数据 ==========
+	ensureCertification := func(p *model.Player, realName string, status model.CertificationStatus, rejectReason string) error {
+		if p == nil {
+			return nil
+		}
 		var existing model.PlayerCertification
 		if err := tx.Where("player_id = ?", p.ID).First(&existing).Error; err == nil {
 			return nil
@@ -1191,16 +1334,16 @@ func seedGameRankAndCertificationDataInternal(tx *gorm.DB, games map[string]*mod
 		now := time.Now()
 		cert := model.PlayerCertification{
 			PlayerID:       p.ID,
-			RealName:       "张三",
+			RealName:       realName,
 			IDCardNo:       "ENCRYPTED_DEMO",
-			IDCardFrontURL: "https://example.com/id/front.png",
-			IDCardBackURL:  "https://example.com/id/back.png",
+			IDCardFrontURL: "https://cdn.gamelink.com/certify/id_front.png",
+			IDCardBackURL:  "https://cdn.gamelink.com/certify/id_back.png",
 			Status:         status,
 			VerifiedAt:     &now,
 			VerifiedBy:     &admin.ID,
 			RejectReason:   rejectReason,
-			PhotoURL:       "https://example.com/photo.png",
-			VoiceURL:       "https://example.com/voice.mp3",
+			PhotoURL:       "https://cdn.gamelink.com/certify/photo.png",
+			VoiceURL:       "https://cdn.gamelink.com/certify/voice.mp3",
 			ExtJSON:        `{"seed":"demo"}`,
 		}
 		if status == model.CertificationStatusPending || status == model.CertificationStatusRejected {
@@ -1210,9 +1353,32 @@ func seedGameRankAndCertificationDataInternal(tx *gorm.DB, games map[string]*mod
 		return tx.Create(&cert).Error
 	}
 
-	_ = ensureCertification(playerA, model.CertificationStatusVerified, "")
-	_ = ensureCertification(playerB, model.CertificationStatusPending, "")
-	_ = ensureCertification(playerC, model.CertificationStatusRejected, "证件信息不一致")
+	// 实名认证种子数据（覆盖各种状态）
+	playerCerts := []struct {
+		PlayerKey    string
+		RealName     string
+		Status       model.CertificationStatus
+		RejectReason string
+	}{
+		{"playerA", "张伟", model.CertificationStatusVerified, ""},
+		{"playerB", "李明", model.CertificationStatusPending, ""},
+		{"playerC", "王芳", model.CertificationStatusRejected, "证件信息不一致"},
+		{"playerD", "赵静", model.CertificationStatusVerified, ""},
+		{"playerE", "刘强", model.CertificationStatusVerified, ""},
+		{"playerF", "陈燕", model.CertificationStatusPending, ""},
+		{"playerG", "杨洋", model.CertificationStatusRejected, "照片不清晰"},
+		{"playerH", "周华", model.CertificationStatusVerified, ""},
+	}
+
+	for _, pc := range playerCerts {
+		player := players[pc.PlayerKey]
+		if player == nil {
+			continue
+		}
+		if err := ensureCertification(player, pc.RealName, pc.Status, pc.RejectReason); err != nil {
+			log.Printf("warning: failed to create certification for %s: %v", pc.PlayerKey, err)
+		}
+	}
 
 	log.Println("game ranks and certifications seed data ensured")
 	return nil

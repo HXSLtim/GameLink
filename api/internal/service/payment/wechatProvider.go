@@ -195,6 +195,70 @@ func (p *RealWeChatProvider) verifySign(resp WeChatRefundResponse) bool {
 	return true
 }
 
+// VerifySign verifies WeChat Pay notification signature
+func (p *RealWeChatProvider) VerifySign(params map[string]string) bool {
+	// Get original sign
+	sign := params["sign"]
+	if sign == "" {
+		return false
+	}
+
+	// Build string to sign
+	var keys []string
+	for k := range params {
+		if k != "sign" && params[k] != "" {
+			keys = append(keys, k)
+		}
+	}
+	sort.Strings(keys)
+
+	var sb strings.Builder
+	for _, k := range keys {
+		sb.WriteString(k)
+		sb.WriteString("=")
+		sb.WriteString(params[k])
+		sb.WriteString("&")
+	}
+	sb.WriteString("key=")
+	sb.WriteString(p.config.WeChatPay.APIKey)
+
+	// Calculate signature
+	hash := md5.Sum([]byte(sb.String()))
+	calculated := strings.ToUpper(hex.EncodeToString(hash[:]))
+
+	return calculated == sign
+}
+
+// ParseWeChatXML parses WeChat XML notification body
+func ParseWeChatXML(data []byte) (map[string]string, error) {
+	result := make(map[string]string)
+	decoder := xml.NewDecoder(strings.NewReader(string(data)))
+
+	var currentKey string
+	for {
+		token, err := decoder.Token()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		switch t := token.(type) {
+		case xml.StartElement:
+			currentKey = t.Name.Local
+		case xml.CharData:
+			if currentKey != "" && currentKey != "xml" {
+				result[currentKey] = strings.TrimSpace(string(t))
+			}
+		case xml.EndElement:
+			currentKey = ""
+		}
+	}
+
+	return result, nil
+}
+
 // CreateOrder creates WeChat Pay order
 func (p *RealWeChatProvider) CreateOrder(ctx context.Context, orderID, description string, amountCents int64, clientIP string) (map[string]interface{}, error) {
 	// Timeout choice: 60s for payment gateway order creation

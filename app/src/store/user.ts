@@ -4,15 +4,32 @@
 
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import type { AppUserRole, UserRole } from '@/types/user'
 
 export interface UserInfo {
   id: number
   phone: string
   nickname: string
   avatar: string
-  role: 'user' | 'player' | 'admin'
+  avatarUrl?: string  // 后端返回的字段名
+  role: UserRole
   status: string
   playerId?: number // 如果是陪玩师，关联的陪玩师ID
+}
+
+/**
+ * 标准化用户信息（处理后端字段名差异）
+ */
+export function normalizeUserInfo(raw: any): UserInfo {
+  return {
+    id: raw.id,
+    phone: raw.phone || '',
+    nickname: raw.nickname || raw.name || '',
+    avatar: raw.avatar || raw.avatarUrl || '',
+    role: raw.role || 'user',
+    status: raw.status || 'active',
+    playerId: raw.playerId,
+  }
 }
 
 const TOKEN_KEY = 'gamelink_token'
@@ -113,7 +130,7 @@ export const useUserStore = defineStore('user', () => {
   /**
    * 切换角色（用户/陪玩师）
    */
-  function switchRole(role: 'user' | 'player') {
+  function switchRole(role: AppUserRole) {
     if (userInfo.value) {
       userInfo.value.role = role
       uni.setStorageSync(USER_KEY, JSON.stringify(userInfo.value))

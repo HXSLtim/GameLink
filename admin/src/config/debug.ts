@@ -1,44 +1,63 @@
-export const ENABLE_QUICK_LOGIN = import.meta.env.DEV; // Only enable in development
+/**
+ * 启用快速登录
+ * ⚠️ 安全警告: 生产环境必须设置为 false
+ */
+export const ENABLE_QUICK_LOGIN = import.meta.env.VITE_DEBUG_USERS !== 'false' && import.meta.env.DEV;
+
+export type DebugUser = {
+    label: string;
+    email: string;
+    password: string;
+    role: string;
+    color: string;
+};
+
+/**
+ * 解析调试用户配置
+ * 从环境变量 JSON 字符串或使用默认值
+ */
+function parseDebugUsers(): DebugUser[] {
+    if (import.meta.env.PROD) {
+        // 生产环境构建时报错
+        throw new Error('DEBUG_USERS must not be enabled in production. Set VITE_DEBUG_USERS=false');
+    }
+    
+    // 优先使用环境变量
+    const envUsers = import.meta.env.VITE_DEBUG_USERS;
+    if (envUsers) {
+        try {
+            return JSON.parse(envUsers) as DebugUser[];
+        } catch (e) {
+            console.error('Failed to parse VITE_DEBUG_USERS:', e);
+            return [];
+        }
+    }
+    
+    // 默认仅用于本地开发
+    return import.meta.env.DEV ? [
+        {
+            label: '超级管理员',
+            email: 'admin@gameLink.com',
+            password: '123456',
+            role: 'ADMIN',
+            color: '#f50'
+        },
+        {
+            label: '测试用户',
+            email: 'demo.user@gamelink.com',
+            password: 'User@123456',
+            role: 'USER',
+            color: '#2db7f5'
+        }
+    ] : [];
+}
 
 /**
  * 调试用户列表
- * ⚠️ 安全警告: 此配置仅用于开发环境
- * 生产构建时会通过环境变量禁用
+ * ⚠️ 安全警告:
+ * 1. 仅用于开发环境
+ * 2. 生产构建会自动禁用
+ * 3. 使用 .gitignore 防止提交
+ * 4. 建议使用强密码
  */
-export const DEBUG_USERS = import.meta.env.DEV ? [
-    {
-        label: '超级管理员',
-        email: 'admin@gameLink.com',
-        password: '123456',
-        role: 'ADMIN',
-        color: '#f50'
-    },
-    {
-        label: '测试用户',
-        email: 'demo.user@gamelink.com',
-        password: 'User@123456',
-        role: 'USER',
-        color: '#2db7f5'
-    },
-    {
-        label: '高级会员',
-        email: 'vip.user@gamelink.com',
-        password: 'Vip@123456',
-        role: 'USER',
-        color: '#108ee9'
-    },
-    {
-        label: '职业陪玩',
-        email: 'pro.player@gamelink.com',
-        password: 'Player@123456',
-        role: 'PLAYER',
-        color: '#722ed1'
-    },
-    {
-        label: '魔王主播',
-        email: 'streamer@gamelink.com',
-        password: 'Player@654321',
-        role: 'PLAYER',
-        color: '#eb2f96'
-    }
-] : [];
+export const DEBUG_USERS = parseDebugUsers();

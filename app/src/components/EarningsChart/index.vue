@@ -1,9 +1,12 @@
 <template>
   <GlCard :shadow="false" bordered>
-    <template #title>
+    <template #header>
       <view class="chart-header">
         <text class="chart-title">{{ title }}</text>
-        <text class="chart-total">共 ¥{{ formatMoney(total) }}</text>
+        <view class="chart-total">
+          <text>共</text>
+          <PriceTag :amount="total" amount-unit="cents" size="small" />
+        </view>
       </view>
     </template>
     
@@ -28,11 +31,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import GlCard from '@/components/gl/Card/index.vue'
-
-export interface ChartDataItem {
-  label: string
-  value: number
-}
+import PriceTag from '@/components/PriceTag/index.vue'
+import type { ChartDataItem } from '@/types/chart'
 
 interface Props {
   title: string
@@ -41,8 +41,6 @@ interface Props {
 }
 
 const props = defineProps<Props>()
-
-const formatMoney = (cents: number) => (cents / 100).toFixed(2)
 
 const maxValue = computed(() => Math.max(...props.data.map(d => d.value), 1))
 
@@ -60,26 +58,33 @@ const getBarHeight = (value: number) => {
 }
 
 .chart-title {
-  font-size: 30rpx;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--color-text);
 }
 
 .chart-total {
-  font-size: 28rpx;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4rpx;
+  font-size: var(--font-md);
   font-weight: 600;
   color: var(--color-primary);
 }
 
+.chart-total :deep(.price-tag) {
+  color: var(--color-primary);
+}
+
 .chart-container {
-  padding: 24rpx 0;
+  padding: var(--spacing-md) 0;
 }
 
 .chart-bars {
   display: flex;
   align-items: flex-end;
   height: 200rpx;
-  gap: 16rpx;
+  gap: var(--spacing-sm);
 }
 
 .chart-bar-wrap {
@@ -93,16 +98,16 @@ const getBarHeight = (value: number) => {
 .chart-bar {
   width: 100%;
   max-width: 60rpx;
-  background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-primary-light, #4ADE80) 100%);
-  border-radius: 8rpx 8rpx 0 0;
+  background: var(--color-primary);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
   min-height: 8rpx;
   margin-top: auto;
   transition: height 0.3s;
 }
 
 .chart-label {
-  margin-top: 12rpx;
-  font-size: 22rpx;
+  margin-top: var(--spacing-xs);
+  font-size: var(--font-xs);
   color: var(--color-text-secondary);
 }
 </style>

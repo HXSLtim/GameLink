@@ -58,7 +58,7 @@ func replyReviewHandler(c *gin.Context, svc *orderservice.ReviewService) {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondJSON(c, http.StatusOK, model.APIResponse[*orderservice.ReplyReviewResponse]{
+	respondJSON[*orderservice.ReplyReviewResponse](c, http.StatusOK, model.APIResponse[*orderservice.ReplyReviewResponse]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "回复已提交",

@@ -33,33 +33,35 @@ defineEmits<{
 <style lang="scss" scoped>
 .faq-item {
   background: var(--color-bg-card);
-  border-radius: 16rpx;
-  margin-bottom: 16rpx;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-sm);
   overflow: hidden;
-  border: 2rpx solid var(--color-border);
+  border: 1rpx solid var(--color-border);
+  cursor: pointer;
+  @include press-effect;
 }
 
 .faq-header {
   display: flex;
   align-items: center;
-  padding: 28rpx 24rpx;
+  padding: var(--spacing-md) var(--spacing-md);
 }
 
 .faq-question {
   flex: 1;
-  font-size: 30rpx;
+  font-size: var(--font-md);
   font-weight: 500;
   color: var(--color-text);
   line-height: 1.4;
 }
 
 .faq-answer {
-  padding: 0 24rpx 28rpx;
+  padding: 0 var(--spacing-md) var(--spacing-md);
   border-top: 1rpx solid var(--color-border);
-  padding-top: 20rpx;
+  padding-top: var(--spacing-sm);
   
   text {
-    font-size: 28rpx;
+    font-size: var(--font-sm);
     color: var(--color-text-secondary);
     line-height: 1.6;
     white-space: pre-wrap;

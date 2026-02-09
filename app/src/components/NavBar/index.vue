@@ -1,5 +1,5 @@
 <template>
-  <view class="navbar" :class="{ 'navbar-transparent': transparent }">
+  <view class="navbar" :class="{ 'navbar-transparent': transparent, 'navbar--fixed': fixed }">
     <!-- 状态栏占位 -->
     <view class="navbar-status-bar" :style="{ height: statusBarHeight + 'px' }"></view>
     
@@ -16,7 +16,7 @@
       </view>
       
       <!-- 标题区域 -->
-      <view class="navbar-title">
+  <view class="navbar-title" :class="`navbar-title--${resolvedTitleAlign}`">
         <slot name="title">
           <text class="navbar-title-text">{{ title }}</text>
         </slot>
@@ -34,7 +34,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useDevice } from '@/composables/useDevice'
 
 const props = withDefaults(defineProps<{
   title?: string
@@ -43,6 +44,7 @@ const props = withDefaults(defineProps<{
   transparent?: boolean
   placeholder?: boolean
   fixed?: boolean
+  titleAlign?: 'left' | 'center'
 }>(), {
   title: '',
   showBack: true,
@@ -50,24 +52,34 @@ const props = withDefaults(defineProps<{
   transparent: false,
   placeholder: true,
   fixed: true,
+  titleAlign: 'left',
 })
 
 const emit = defineEmits<{
   (e: 'back'): void
 }>()
 
+const { isPC } = useDevice()
+
 // 状态栏高度
 const statusBarHeight = ref(20)
+const defaultStatusBarHeight = ref(20)
 // 导航栏内容高度
-const navContentHeight = 44
+const navContentHeight = 48
 // 总高度
 const navbarHeight = computed(() => statusBarHeight.value + navContentHeight)
+const resolvedTitleAlign = computed(() => (isPC.value ? 'center' : props.titleAlign))
 
 onMounted(() => {
   // 获取系统信息
   const systemInfo = uni.getSystemInfoSync()
-  statusBarHeight.value = systemInfo.statusBarHeight || 20
+  defaultStatusBarHeight.value = systemInfo.statusBarHeight || 20
+  statusBarHeight.value = defaultStatusBarHeight.value
 })
+
+watch(isPC, (value) => {
+  statusBarHeight.value = value ? 0 : defaultStatusBarHeight.value
+}, { immediate: true })
 
 const handleBack = () => {
   if (!props.showBack) return
@@ -86,71 +98,139 @@ const handleBack = () => {
 
 <style lang="scss" scoped>
 .navbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 999;
-  background: var(--bg-card, #FFFFFF);
+  position: relative;
+  width: 100%;
+  background: var(--color-bg);
+  border-bottom: 1rpx solid var(--color-border);
+  box-shadow: none;
+
+  // PC 端：用柔和阴影替代硬边框
+  @include desktop {
+    width: 100%;
+    border-bottom: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  }
   
   &-transparent {
     background: transparent;
+    border-bottom: none;
+    box-shadow: none;
+  }
+
+  &--fixed {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 999;
+
+    @include desktop {
+      left: var(--sidebar-width);
+      right: 0;
+      width: calc(100% - var(--sidebar-width));
+    }
   }
   
   &-status-bar {
     width: 100%;
+
+    @include desktop {
+      height: 0 !important;
+      display: none;
+    }
   }
   
   &-content {
     display: flex;
     align-items: center;
-    height: 88rpx;
-    padding: 0 24rpx;
+    height: 96rpx;
+    padding: 0 var(--spacing-md);
+
+    @include desktop {
+      height: 52px;
+      padding: 0 24px;
+    }
   }
   
   &-left {
     flex-shrink: 0;
-    min-width: 120rpx;
+    min-width: 88rpx;
+
+    @include desktop {
+      min-width: 64px;
+    }
   }
   
   &-back {
     display: flex;
     align-items: center;
+    gap: var(--spacing-xs);
+    @include press-effect;
+
+    // PC 端：hover 反馈
+    @include hover-supported {
+      &:hover {
+        opacity: 0.7;
+      }
+    }
     
     &-icon {
-      font-size: 48rpx;
-      font-weight: 300;
-      color: var(--text-primary, #1A1A1A);
+      font-size: var(--font-xl);
+      font-weight: 400;
+      color: var(--color-text);
       line-height: 1;
     }
     
     &-text {
-      font-size: 28rpx;
-      color: var(--text-primary, #1A1A1A);
-      margin-left: 8rpx;
+      font-size: var(--font-sm);
+      color: var(--color-text);
     }
   }
   
   &-title {
     flex: 1;
-    text-align: center;
     overflow: hidden;
+    min-width: 0;
+    
+    &--left {
+      text-align: left;
+      padding-left: var(--spacing-sm);
+
+      @include desktop {
+        padding-left: 0;
+      }
+    }
+    
+    &--center {
+      text-align: center;
+    }
     
     &-text {
-      font-size: 34rpx;
+      font-size: var(--font-xl);
       font-weight: 600;
-      color: var(--text-primary, #1A1A1A);
+      color: var(--color-text);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+
+      @include desktop {
+        font-size: var(--font-md);
+        font-weight: 700;
+        letter-spacing: -0.2px;
+      }
     }
   }
   
   &-right {
     flex-shrink: 0;
-    min-width: 120rpx;
+    min-width: 88rpx;
     display: flex;
     justify-content: flex-end;
+    gap: 8px;
+
+    @include desktop {
+      min-width: 64px;
+    }
   }
 }
 

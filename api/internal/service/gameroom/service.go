@@ -29,13 +29,13 @@ var (
 
 // CreateRoomRequest 创建房间请求
 type CreateRoomRequest struct {
-	Name        string               `json:"name" binding:"required,max=64"`
-	GroupType   model.ChatGroupType  `json:"groupType" binding:"required"`
-	GameID      uint64               `json:"gameId" binding:"required"`
-	MaxMembers  int                  `json:"maxMembers"`
-	IsPrivate   bool                 `json:"isPrivate"`
-	Password    string               `json:"password"`
-	Description string               `json:"description"`
+	Name         string              `json:"name" binding:"required,max=64"`
+	GroupType    model.ChatGroupType `json:"groupType" binding:"required"`
+	GameID       uint64              `json:"gameId" binding:"required"`
+	MaxMembers   int                 `json:"maxMembers"`
+	IsPrivate    bool                `json:"isPrivate"`
+	Password     string              `json:"password"`
+	Description  string              `json:"description"`
 	VoiceEnabled bool                `json:"voiceEnabled"`
 }
 

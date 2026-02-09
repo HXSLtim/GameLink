@@ -1,7 +1,0 @@
-{
-  "usingComponents": {
-    "gl-loading": "/components/gl-loading/index",
-    "gl-empty": "/components/gl-empty/index",
-    "message-item": "/components/message-item/index"
-  }
-}

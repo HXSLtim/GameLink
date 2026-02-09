@@ -17,7 +17,7 @@ import (
 func Error(c *gin.Context, err error) {
 	// Handle apierr.APIError
 	if apiErr, ok := err.(*apierr.APIError); ok {
-		JSON(c, apiErr.Code, model.APIResponse[any]{
+		JSON[any](c, apiErr.Code, model.APIResponse[any]{
 			Success: false,
 			Code:    apiErr.Code,
 			Message: apiErr.Message,
@@ -28,7 +28,7 @@ func Error(c *gin.Context, err error) {
 
 	// Handle repository.ErrNotFound
 	if errors.Is(err, repository.ErrNotFound) {
-		JSON(c, http.StatusNotFound, model.APIResponse[any]{
+		JSON[any](c, http.StatusNotFound, model.APIResponse[any]{
 			Success: false,
 			Code:    http.StatusNotFound,
 			Message: "resource not found",
@@ -38,7 +38,7 @@ func Error(c *gin.Context, err error) {
 
 	// Handle validation errors
 	if apierr.IsValidationError(err) {
-		JSON(c, http.StatusBadRequest, model.APIResponse[any]{
+		JSON[any](c, http.StatusBadRequest, model.APIResponse[any]{
 			Success: false,
 			Code:    http.StatusBadRequest,
 			Message: err.Error(),
@@ -47,7 +47,7 @@ func Error(c *gin.Context, err error) {
 	}
 
 	// Default: internal server error
-	JSON(c, http.StatusInternalServerError, model.APIResponse[any]{
+	JSON[any](c, http.StatusInternalServerError, model.APIResponse[any]{
 		Success: false,
 		Code:    http.StatusInternalServerError,
 		Message: err.Error(),
@@ -56,7 +56,7 @@ func Error(c *gin.Context, err error) {
 
 // ErrorMsg sends an error response with status code and message.
 func ErrorMsg(c *gin.Context, status int, msg string) {
-	JSON(c, status, model.APIResponse[any]{
+	JSON[any](c, status, model.APIResponse[any]{
 		Success: false,
 		Code:    status,
 		Message: msg,

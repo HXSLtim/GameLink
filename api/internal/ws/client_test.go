@@ -447,10 +447,10 @@ func TestClientSendBufferCapacity(t *testing.T) {
 
 	// Create client manually to test buffer capacity
 	client := &Client{
-		hub:     hub,
-		send:    make(chan []byte, 256),
-		UserID:  123,
-		Role:    "admin",
+		hub:    hub,
+		send:   make(chan []byte, 256),
+		UserID: 123,
+		Role:   "admin",
 	}
 
 	assert.Equal(t, 256, cap(client.send))

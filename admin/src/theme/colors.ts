@@ -3,19 +3,36 @@
  * 统一管理应用中的颜色，避免魔法数字
  *
  * 使用方式:
- * import { semanticColors, chartColors } from '@/theme';
+ * import { semanticColors, chartColors, brandColors } from '@/theme';
  */
+
+/**
+ * GameLink 品牌色
+ * 与移动端保持一致
+ */
+export const brandColors = {
+  primary: '#7ACC35',      // 品牌绿色（KOOK 绿）
+  primaryLight: '#87D149', // 浅绿色
+  primaryDark: '#6DB72F',  // 深绿色
+  primaryGradient: 'linear-gradient(135deg, #7ACC35 0%, #6DB72F 100%)',
+
+  gold: '#F59E0B',         // 金色（VIP/稀有）
+  goldGradient: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+
+  purple: '#722ED1',       // 紫色（陪玩）
+  cyan: '#13C2C2',         // 青色
+} as const;
 
 /**
  * 语义化颜色 - 基于 Ant Design 主题变量
  * 优先使用 CSS 变量，确保主题切换时自动适配
  */
 export const semanticColors = {
-  // 主色调
-  primary: 'var(--ant-color-primary)',
-  primaryHover: 'var(--ant-color-primary-hover)',
-  primaryActive: 'var(--ant-color-primary-active)',
-  primaryBg: 'var(--ant-color-primary-bg)',
+  // 主色调（使用 GameLink 品牌色）
+  primary: brandColors.primary,
+  primaryHover: brandColors.primaryLight,
+  primaryActive: brandColors.primaryDark,
+  primaryBg: 'rgba(122, 204, 53, 0.1)',
 
   // 功能色
   success: 'var(--ant-color-success)',
@@ -58,11 +75,13 @@ export const chartColors = {
     '#ff7c7c', // 红色
   ],
 
-  // 语义化图表颜色
-  revenue: '#faad14', // 收入 - 金色
-  users: '#1677ff', // 用户 - 蓝色
-  orders: '#52c41a', // 订单 - 绿色
-  players: '#722ed1', // 陪玩 - 紫色
+  // 语义化图表颜色（使用品牌色）
+  revenue: '#faad14',    // 收入 - 金色
+  users: '#7ACC35',     // 用户 - 品牌绿
+  orders: '#7ACC35',    // 订单 - 品牌绿
+  players: '#722ED1',   // 陪玩 - 紫色
+  games: '#13C2C2',     // 游戏 - 青色
+  vip: '#F59E0B',       // VIP - 金色
 } as const;
 
 /**

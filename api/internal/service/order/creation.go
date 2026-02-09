@@ -130,4 +130,3 @@ func (s *OrderService) buildOrderGroupWithSubOrders(
 
 	return group, subOrders
 }
-

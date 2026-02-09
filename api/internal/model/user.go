@@ -1,8 +1,9 @@
 package model
 
 import (
-	"golang.org/x/crypto/bcrypt"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 // HashPassword creates a bcrypt hash of the password
@@ -54,7 +55,8 @@ type User struct {
 	Phone        string     `json:"phone,omitempty" gorm:"size:32;uniqueIndex"`
 	Email        string     `json:"email,omitempty" gorm:"size:128;uniqueIndex"`
 	PasswordHash string     `json:"-" gorm:"column:password_hash;size:255"`
-	Name         string     `json:"name" gorm:"size:64;index"` // 添加索引，用于搜索
+	Name         string     `json:"name" gorm:"size:64;index"`     // 真实姓名（身份识别）
+	Nickname     string     `json:"nickname" gorm:"size:64;index"` // 昵称（社交展示）
 	AvatarURL    string     `json:"avatarUrl,omitempty" gorm:"column:avatar_url;size:255"`
 	Role         Role       `json:"role" gorm:"size:32;comment:主要角色（向后兼容）"`
 	Status       UserStatus `json:"status" gorm:"size:32;index;index:idx_status_last_login,priority:1"`                       // 复合索引第一部分

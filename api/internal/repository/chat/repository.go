@@ -153,6 +153,36 @@ func (r *chatGroupRepository) ListMembers(ctx context.Context, groupID uint64, o
 	return members, total, nil
 }
 
+func (r *chatGroupRepository) ListPublicChannels(ctx context.Context, page, pageSize int) ([]model.ChatGroup, int64, error) {
+	tx := r.db.WithContext(ctx).Model(&model.ChatGroup{}).
+		Where("group_type = ?", model.ChatGroupTypePublic).
+		Where("is_active = ?", true)
+
+	if page <= 0 {
+		page = 1
+	}
+	if pageSize <= 0 || pageSize > 100 {
+		pageSize = 20
+	}
+
+	var total int64
+	if err := tx.Session(&gorm.Session{}).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	var groups []model.ChatGroup
+	if err := tx.
+		Preload("Members").
+		Order("updated_at DESC").
+		Offset((page - 1) * pageSize).
+		Limit(pageSize).
+		Find(&groups).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return groups, total, nil
+}
+
 func (r *chatGroupRepository) Update(ctx context.Context, group *model.ChatGroup) error {
 	return r.db.WithContext(ctx).Save(group).Error
 }
@@ -408,6 +438,80 @@ func (r *chatGroupRepository) CountByRoomStatus(ctx context.Context) (map[model.
 		counts[r.RoomStatus] = r.Count
 	}
 	return counts, nil
+}
+
+// ListAll lists all chat groups with admin-level filters (no user scope).
+func (r *chatGroupRepository) ListAll(ctx context.Context, opts repository.AdminChatGroupListOptions) ([]model.ChatGroup, int64, error) {
+	tx := r.db.WithContext(ctx).Model(&model.ChatGroup{})
+
+	if opts.GroupType != nil {
+		tx = tx.Where("group_type = ?", *opts.GroupType)
+	}
+	if opts.IsActive != nil {
+		tx = tx.Where("is_active = ?", *opts.IsActive)
+	}
+	if opts.Keyword != "" {
+		like := fmt.Sprintf("%%%s%%", opts.Keyword)
+		tx = tx.Where("group_name LIKE ? OR description LIKE ?", like, like)
+	}
+	if opts.RelatedOrderID != nil {
+		tx = tx.Where("related_order_id = ?", *opts.RelatedOrderID)
+	}
+	if opts.UserID != nil {
+		tx = tx.Joins("JOIN chat_group_members AS m ON m.group_id = chat_groups.id AND m.user_id = ?", *opts.UserID)
+	}
+	if opts.DateFrom != nil {
+		tx = tx.Where("chat_groups.created_at >= ?", *opts.DateFrom)
+	}
+	if opts.DateTo != nil {
+		tx = tx.Where("chat_groups.created_at <= ?", *opts.DateTo)
+	}
+
+	page := opts.Page
+	if page <= 0 {
+		page = 1
+	}
+	pageSize := opts.PageSize
+	if pageSize <= 0 || pageSize > 1000 {
+		pageSize = 20
+	}
+
+	var total int64
+	if err := tx.Session(&gorm.Session{}).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	var groups []model.ChatGroup
+	if err := tx.
+		Preload("Members").
+		Order("chat_groups.updated_at DESC").
+		Offset((page - 1) * pageSize).
+		Limit(pageSize).
+		Find(&groups).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return groups, total, nil
+}
+
+// CountAll returns the total number of chat groups.
+func (r *chatGroupRepository) CountAll(ctx context.Context) (int64, error) {
+	var count int64
+	if err := r.db.WithContext(ctx).Model(&model.ChatGroup{}).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+// Reactivate reactivates a deactivated chat group.
+func (r *chatGroupRepository) Reactivate(ctx context.Context, id uint64) error {
+	return r.db.WithContext(ctx).
+		Model(&model.ChatGroup{}).
+		Where("id = ?", id).
+		Updates(map[string]any{
+			"is_active":      true,
+			"deactivated_at": nil,
+		}).Error
 }
 
 // CountActiveRooms 统计活跃房间数

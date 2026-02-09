@@ -4,23 +4,16 @@
 import { ref, reactive, computed } from 'vue'
 import { useTheme } from '@/composables/useTheme'
 import { useUserStore } from '@/store/user'
-import type { SettingsItem } from '@/components/SettingsSection/index.vue'
-
-interface Settings {
-  pushEnabled: boolean
-  messageEnabled: boolean
-  orderEnabled: boolean
-  promotionEnabled: boolean
-  showOnlineStatus: boolean
-  allowStrangerMessage: boolean
-}
+import { confirmDialog } from '@/composables/useConfirmDialog'
+import type { SettingsItem, SettingsState } from '@/types/ui'
+import { maskPhone } from '@/utils/format'
 
 export function useSettings() {
   const { isDark, toggleTheme } = useTheme()
   const userStore = useUserStore()
   
   // 设置状态
-  const settings = reactive<Settings>({
+  const settings = reactive<SettingsState>({
     pushEnabled: true,
     messageEnabled: true,
     orderEnabled: true,
@@ -33,16 +26,10 @@ export function useSettings() {
   const blacklistCount = ref(0)
   const cacheSize = ref('12.5MB')
   
-  // 格式化手机号
-  const formatPhone = (phone: string) => {
-    if (!phone) return ''
-    return phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')
-  }
-  
   // 账号安全菜单
   const securityItems = computed((): SettingsItem[] => [
     { key: 'password', label: '修改密码', icon: 'lock' },
-    { key: 'phone', label: '更换手机号', icon: 'phone', value: formatPhone(userPhone.value) },
+    { key: 'phone', label: '更换手机号', icon: 'phone', value: maskPhone(userPhone.value) },
     { key: 'bind', label: '账号绑定', icon: 'link' },
   ])
   
@@ -63,7 +50,7 @@ export function useSettings() {
   
   // 通用设置菜单
   const generalItems = computed((): SettingsItem[] => [
-    { key: 'theme', label: '深色模式', icon: isDark.value ? 'eye-off' : 'eye', iconColor: isDark.value ? '#FFD700' : '#FF8C00', type: 'switch', checked: isDark.value },
+    { key: 'theme', label: '深色模式', icon: isDark.value ? 'eye-off' : 'eye', type: 'switch', checked: isDark.value },
     { key: 'language', label: '语言', icon: 'earth', value: '简体中文' },
     { key: 'cache', label: '清除缓存', icon: 'trash', value: cacheSize.value },
   ])
@@ -130,21 +117,18 @@ export function useSettings() {
   }
   
   // 清除缓存
-  const clearCache = () => {
-    uni.showModal({
+  const clearCache = async () => {
+    const confirmed = await confirmDialog({
       title: '清除缓存',
       content: '确定要清除所有缓存吗？',
-      success: (res) => {
-        if (res.confirm) {
-          uni.showLoading({ title: '清除中...' })
-          setTimeout(() => {
-            cacheSize.value = '0KB'
-            uni.hideLoading()
-            uni.showToast({ title: '清除成功', icon: 'success' })
-          }, 1000)
-        }
-      }
     })
+    if (!confirmed) return
+    uni.showLoading({ title: '清除中...' })
+    setTimeout(() => {
+      cacheSize.value = '0KB'
+      uni.hideLoading()
+      uni.showToast({ title: '清除成功', icon: 'success' })
+    }, 1000)
   }
   
   // 检查更新
@@ -153,17 +137,14 @@ export function useSettings() {
   }
   
   // 退出登录
-  const handleLogout = () => {
-    uni.showModal({
+  const handleLogout = async () => {
+    const confirmed = await confirmDialog({
       title: '确认退出',
       content: '确定要退出登录吗？',
-      success: (res) => {
-        if (res.confirm) {
-          userStore.logout()
-          uni.reLaunch({ url: '/pages/index/index' })
-        }
-      }
     })
+    if (!confirmed) return
+    userStore.logout()
+    uni.reLaunch({ url: '/pages/index/index' })
   }
   
   // 导航

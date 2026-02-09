@@ -2,14 +2,15 @@ package oss
 
 import (
 	"context"
-	"crypto/hmac"
-	"crypto/sha1"
-	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"path"
+	"strings"
 	"time"
+
+	"github.com/tencentyun/cos-go-sdk-v5"
 
 	"gamelink/internal/service/external"
 )
@@ -117,111 +118,96 @@ type TencentCOSProvider struct {
 	Bucket    string
 	Region    string
 	Endpoint  string
+	client    *cos.Client
 }
 
 // Upload uploads file to Tencent COS
 func (p *TencentCOSProvider) Upload(ctx context.Context, key string, reader io.Reader) (string, error) {
-	// Build COS endpoint
-	// Format: https://{bucket-name}-{appid}.cos.{region}.myqcloud.com/{key}
-	bucketURL := fmt.Sprintf("https://%s.cos.%s.myqcloud.com", p.Bucket, p.Region)
-	fullURL := fmt.Sprintf("%s/%s", bucketURL, key)
-
-	// Create HTTP request
-	req, err := http.NewRequestWithContext(ctx, "PUT", fullURL, reader)
+	client, err := p.getClient()
 	if err != nil {
 		return "", err
 	}
 
-	// Add authorization header
-	auth := p.generateAuth("PUT", key, "")
-	req.Header.Set("Authorization", auth)
-	req.Header.Set("Host", fmt.Sprintf("%s.cos.%s.myqcloud.com", p.Bucket, p.Region))
-
-	// Execute request with timeout
-	// Timeout choice: 60s for file upload operations (can be large files)
-	client := &http.Client{Timeout: 60 * time.Second}
-	resp, err := client.Do(req)
+	_, err = client.Object.Put(ctx, key, reader, nil)
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("upload failed with status %d: %s", resp.StatusCode, string(body))
-	}
-
-	// Return file URL
-	return fullURL, nil
+	return p.objectURL(key)
 }
 
 // Delete deletes file from Tencent COS
 func (p *TencentCOSProvider) Delete(ctx context.Context, key string) error {
-	bucketURL := fmt.Sprintf("https://%s.cos.%s.myqcloud.com", p.Bucket, p.Region)
-	fullURL := fmt.Sprintf("%s/%s", bucketURL, key)
-
-	req, err := http.NewRequestWithContext(ctx, "DELETE", fullURL, nil)
+	client, err := p.getClient()
 	if err != nil {
 		return err
 	}
 
-	auth := p.generateAuth("DELETE", key, "")
-	req.Header.Set("Authorization", auth)
-	req.Header.Set("Host", fmt.Sprintf("%s.cos.%s.myqcloud.com", p.Bucket, p.Region))
-
-	// Timeout choice: 10s for delete operations (should be fast)
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("delete failed with status %d", resp.StatusCode)
-	}
-
-	return nil
+	_, err = client.Object.Delete(ctx, key)
+	return err
 }
 
 // GetSignedURL generates signed URL for Tencent COS
 func (p *TencentCOSProvider) GetSignedURL(ctx context.Context, key string, expire time.Duration) (string, error) {
-	bucketURL := fmt.Sprintf("https://%s.cos.%s.myqcloud.com", p.Bucket, p.Region)
-	fullURL := fmt.Sprintf("%s/%s", bucketURL, key)
+	client, err := p.getClient()
+	if err != nil {
+		return "", err
+	}
 
-	// Add signed parameters
-	expiredTime := time.Now().Add(expire).Unix()
+	signedURL, err := client.Object.GetPresignedURL(ctx, http.MethodGet, key, p.SecretID, p.SecretKey, expire, nil)
+	if err != nil {
+		return "", err
+	}
+	return signedURL.String(), nil
+}
 
-	// Generate signature
-	keyTime := fmt.Sprintf("%d;%d", time.Now().Unix(), expiredTime)
+func (p *TencentCOSProvider) getClient() (*cos.Client, error) {
+	if p.client != nil {
+		return p.client, nil
+	}
 
-	// COS signature generation will be implemented for production
-	// Reference: https://cloud.tencent.com/document/product/436/7778
-	// Requires: HMAC-SHA1, q-sign-algorithm, q-ak, q-sign-time headers
+	bucketURL, err := p.buildBucketURL()
+	if err != nil {
+		return nil, err
+	}
 
-	u, _ := url.Parse(fullURL)
-	q := u.Query()
-	q.Set("sign", p.generateSign(key, keyTime))
-	u.RawQuery = q.Encode()
+	baseURL := &cos.BaseURL{BucketURL: bucketURL}
+	httpClient := &http.Client{
+		Transport: &cos.AuthorizationTransport{
+			SecretID:  strings.TrimSpace(p.SecretID),
+			SecretKey: strings.TrimSpace(p.SecretKey),
+		},
+		Timeout: 60 * time.Second,
+	}
+	p.client = cos.NewClient(baseURL, httpClient)
+	return p.client, nil
+}
 
+func (p *TencentCOSProvider) buildBucketURL() (*url.URL, error) {
+	endpoint := strings.TrimSpace(p.Endpoint)
+	if endpoint != "" {
+		if !strings.HasPrefix(endpoint, "http://") && !strings.HasPrefix(endpoint, "https://") {
+			endpoint = "https://" + endpoint
+		}
+		return url.Parse(endpoint)
+	}
+	if p.Bucket == "" || p.Region == "" {
+		return nil, fmt.Errorf("missing cos bucket or region")
+	}
+	return url.Parse(fmt.Sprintf("https://%s.cos.%s.myqcloud.com", p.Bucket, p.Region))
+}
+
+func (p *TencentCOSProvider) objectURL(key string) (string, error) {
+	base, err := p.buildBucketURL()
+	if err != nil {
+		return "", err
+	}
+	u := *base
+	cleanKey := strings.TrimPrefix(key, "/")
+	if cleanKey != "" {
+		u.Path = path.Join(strings.TrimSuffix(u.Path, "/"), cleanKey)
+	}
 	return u.String(), nil
-}
-
-// generateAuth generates Tencent COS authorization header
-func (p *TencentCOSProvider) generateAuth(method, key, signTime string) string {
-	// COS authorization will be implemented for production
-	// Reference: https://cloud.tencent.com/document/product/436/7778
-	requestTime := time.Now().UTC().Format("2006-01-02T15:04:05Z")
-	return fmt.Sprintf("q-sign-algorithm=sha1&q-ak=%s&q-sign-time=%s&q-key-time=%s&q-header-list=&q-url-param-list=&q-signature=",
-		p.SecretID, requestTime, requestTime)
-}
-
-// generateSign generates signature for Tencent COS
-func (p *TencentCOSProvider) generateSign(key, signTime string) string {
-	// Simple implementation
-	h := hmac.New(sha1.New, []byte(p.SecretKey))
-	h.Write([]byte(key + signTime))
-	return base64.StdEncoding.EncodeToString(h.Sum(nil))
 }
 
 // AliyunOSSProvider implements OSS provider for Aliyun OSS

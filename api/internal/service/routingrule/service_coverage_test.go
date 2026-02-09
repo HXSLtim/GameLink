@@ -718,10 +718,10 @@ func TestRoutingEngine_GetMerchantNo_ChannelDisabled(t *testing.T) {
 	}
 
 	channel := &model.PaymentChannelConfig{
-		Base:        model.Base{ID: 1},
-		Channel:     model.PaymentMethodWeChat,
-		MerchantNo:  "TEST_MERCHANT",
-		Enabled:     false, // Disabled
+		Base:       model.Base{ID: 1},
+		Channel:    model.PaymentMethodWeChat,
+		MerchantNo: "TEST_MERCHANT",
+		Enabled:    false, // Disabled
 	}
 
 	mockEntityRepo.On("GetChannelByEntityAndMethod", ctx, uint64(1), model.PaymentMethodWeChat).Return(channel, nil)

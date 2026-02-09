@@ -1,11 +1,7 @@
 <template>
   <view v-if="status !== 'connected'" class="connection-status" :class="status">
-    <uv-icon 
-      :name="status === 'connecting' ? 'reload' : 'wifi-off'" 
-      size="14" 
-      color="#fff"
-    ></uv-icon>
-    <text>{{ statusText }}</text>
+    <view class="status-dot" :class="{ spin: status === 'connecting' }" />
+    <text class="status-text">{{ statusText }}</text>
     <view v-if="status === 'disconnected'" class="reconnect-btn" @tap="$emit('reconnect')">
       重新连接
     </view>
@@ -14,8 +10,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-
-type WsStatus = 'connecting' | 'connected' | 'disconnected'
+import type { WsStatus } from '@/types/message'
 
 interface Props {
   status: WsStatus
@@ -42,25 +37,55 @@ const statusText = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12rpx;
-  padding: 16rpx 24rpx;
-  font-size: 24rpx;
+  gap: var(--spacing-sm);
+  padding: 10rpx var(--spacing-md);
+  font-size: var(--font-xs);
   color: #fff;
   
   &.connecting {
-    background: #F59E0B;
+    background: var(--color-warning);
   }
   
   &.disconnected {
-    background: #EF4444;
+    background: var(--color-error);
   }
 }
 
+.status-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.8);
+
+  &.spin {
+    animation: blink 1s ease-in-out infinite;
+  }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.status-text {
+  font-weight: 500;
+}
+
 .reconnect-btn {
-  margin-left: 16rpx;
-  padding: 8rpx 16rpx;
+  margin-left: var(--spacing-xs);
+  padding: 4rpx var(--spacing-sm);
   background: rgba(255, 255, 255, 0.2);
-  border-radius: 8rpx;
-  font-size: 22rpx;
+  border-radius: 100rpx;
+  font-size: var(--font-xs);
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.35);
+  }
+  
+  &:active {
+    transform: scale(0.95);
+  }
 }
 </style>

@@ -17,11 +17,16 @@ import (
 	gamerepo "gamelink/internal/repository/game"
 	gamerankrepo "gamelink/internal/repository/gamerank"
 	orderrepo "gamelink/internal/repository/implementations"
+	lfgrepo "gamelink/internal/repository/lfg"
+	notificationsettingsrepo "gamelink/internal/repository/notification"
 	ordermodelsrepo "gamelink/internal/repository/order"
 	ordergrouprepo "gamelink/internal/repository/ordergroup"
 	ordertimeoutrepo "gamelink/internal/repository/ordertimeout"
 	playercertificationrepo "gamelink/internal/repository/playercertification"
 	playerrankrepo "gamelink/internal/repository/playerrank"
+	playerschedulerepo "gamelink/internal/repository/playerschedule"
+	playerservicerepo "gamelink/internal/repository/playerservice"
+	presencerepo "gamelink/internal/repository/presence"
 	rechargerepo "gamelink/internal/repository/recharge"
 	referralrepo "gamelink/internal/repository/referral"
 	reviewdisplaysettingsrepo "gamelink/internal/repository/reviewdisplaysettings"
@@ -30,6 +35,7 @@ import (
 	serviceitemrepo "gamelink/internal/repository/serviceitem"
 	settlementcompanyrepo "gamelink/internal/repository/settlementcompany"
 	teamrepo "gamelink/internal/repository/team"
+	uploadrepo "gamelink/internal/repository/upload"
 	userrepo "gamelink/internal/repository/user"
 	userblockrepo "gamelink/internal/repository/userblock"
 	viprepo "gamelink/internal/repository/vip"
@@ -41,17 +47,22 @@ import (
 	contentservice "gamelink/internal/service/content"
 	contentcategoryservice "gamelink/internal/service/contentcategory"
 	couponservice "gamelink/internal/service/coupon"
+	"gamelink/internal/service/external"
 	gamerankservice "gamelink/internal/service/gamerank"
+	gameroomservice "gamelink/internal/service/gameroom"
 	giftservice "gamelink/internal/service/gift"
 	itemservice "gamelink/internal/service/item"
 	kpiservice "gamelink/internal/service/kpi"
+	lfgservice "gamelink/internal/service/lfg"
 	monitorservice "gamelink/internal/service/monitor"
+	notificationservice "gamelink/internal/service/notification"
 	orderservice "gamelink/internal/service/order"
 	ordertimeoutservice "gamelink/internal/service/ordertimeout"
 	paymentservice "gamelink/internal/service/payment"
 	serviceplayer "gamelink/internal/service/player"
 	playercertificationservice "gamelink/internal/service/playercertification"
 	playerrankservice "gamelink/internal/service/playerrank"
+	presenceservice "gamelink/internal/service/presence"
 	rechargeservice "gamelink/internal/service/recharge"
 	referralservice "gamelink/internal/service/referral"
 	reviewservice "gamelink/internal/service/review"
@@ -59,40 +70,42 @@ import (
 	sensitivewordservice "gamelink/internal/service/sensitiveword"
 	statisticsservice "gamelink/internal/service/statistics"
 	teamservice "gamelink/internal/service/team"
+	trtcservice "gamelink/internal/service/trtc"
+	uploadservice "gamelink/internal/service/upload"
 	userservice "gamelink/internal/service/user"
 	userblockservice "gamelink/internal/service/userblock"
 	vipservice "gamelink/internal/service/vip"
 	walletservice "gamelink/internal/service/wallet"
 	withdrawservice "gamelink/internal/service/withdraw"
-	gameroomservice "gamelink/internal/service/gameroom"
-	lfgservice "gamelink/internal/service/lfg"
-	trtcservice "gamelink/internal/service/trtc"
-	presencerepo "gamelink/internal/repository/presence"
-	lfgrepo "gamelink/internal/repository/lfg"
-	presenceservice "gamelink/internal/service/presence"
 	"gamelink/internal/ws"
 	"gamelink/pkg/cache"
+	"gamelink/pkg/config"
 	"gamelink/pkg/scheduler"
 )
 
 // appServices 包含所有领域服务实例和调度器句柄，供路由注册使用。
 type appServices struct {
-	commissionSvc       *commissionservice.CommissionService
-	serviceItemSvc      *itemservice.ServiceItemService
-	giftSvc             *giftservice.GiftService
-	orderSvc            *orderservice.OrderService
-	orderGroupRepo      ordergrouprepo.Repository // 主订单仓储
-	paymentSvc          *paymentservice.PaymentService
-	playerSvc           *serviceplayer.PlayerService
-	reviewSvc           *orderservice.ReviewService
-	disputeSvc          *orderservice.DisputeService
-	earningsSvc         *userservice.EarningsService
-	chatSvc             *chatservice.ChatService
-	feedSvc             *contentservice.FeedService
-	notificationSvc     *contentservice.NotificationService
-	walletSvc           *walletservice.WalletService
-	settlementScheduler *scheduler.SettlementScheduler
-	chatRetention       *scheduler.ChatRetentionScheduler
+	commissionSvc           *commissionservice.CommissionService
+	serviceItemSvc          *itemservice.ServiceItemService
+	giftSvc                 *giftservice.GiftService
+	orderSvc                *orderservice.OrderService
+	orderGroupRepo          ordergrouprepo.Repository // 主订单仓储
+	paymentSvc              *paymentservice.PaymentService
+	playerSvc               *serviceplayer.PlayerService
+	reviewSvc               *orderservice.ReviewService
+	disputeSvc              *orderservice.DisputeService
+	earningsSvc             *userservice.EarningsService
+	chatSvc                 *chatservice.ChatService
+	feedSvc                 *contentservice.FeedService
+	notificationSvc         *contentservice.NotificationService
+	uploadSvc               *uploadservice.Service
+	walletSvc               *walletservice.WalletService
+	userSettingsSvc         *userservice.SettingsService
+	notificationSettingsSvc *notificationservice.SettingsService
+	playerServiceMgmtSvc    *serviceplayer.ServiceManagement
+	playerScheduleSvc       *serviceplayer.ScheduleService
+	settlementScheduler     *scheduler.SettlementScheduler
+	chatRetention           *scheduler.ChatRetentionScheduler
 	// Monitor services
 	wsHub       *ws.Hub
 	realtimeSvc *monitorservice.RealtimeService
@@ -152,14 +165,19 @@ type appServices struct {
 	lfgSvc *lfgservice.Service
 	// TRTC service (语音通话)
 	trtcSvc *trtcservice.Service
+	// Business scheduler (综合业务调度器)
+	businessScheduler *scheduler.BusinessScheduler
+	// Referral trigger service (推荐奖励触发)
+	referralTriggerSvc *referralservice.TriggerService
 }
 
 // initServices 初始化领域服务和调度任务（但不启动调度器）。
-func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
+func initServices(orm *gorm.DB, cacheClient cache.Cache, cfg config.AppConfig) *appServices {
 	// 仓库实例（仅在此函数内部复用）
 	userRepo := userrepo.NewUserRepository(orm)
 	playerRepo := userrepo.NewPlayerRepository(orm)
 	gameRepo := gamerepo.NewGameRepository(orm)
+	gameRankRepo := gamerankrepo.NewGameRankRepository(orm)
 	orderRepo := orderrepo.NewOrderRepository(orm)
 	chatGroupRepo := chatrepo.NewChatGroupRepository(orm)
 	chatMemberRepo := chatrepo.NewChatMemberRepository(orm)
@@ -172,31 +190,48 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 	withdrawRepo := withdrawrepo.NewWithdrawRepository(orm)
 	commissionRepo := commissionrepo.NewCommissionRepository(orm)
 	serviceItemRepo := serviceitemrepo.NewServiceItemRepository(orm)
+	playerServiceRepo := playerservicerepo.NewPlayerServiceRepository(orm)
+	playerScheduleRepo := playerschedulerepo.NewPlayerScheduleRepository(orm)
 	feedRepo := contentrepo.NewFeedRepository(orm)
 	notificationRepo := contentrepo.NewNotificationRepository(orm)
 	walletRepo := userrepo.NewWalletRepository(orm)
+	uploadRepo := uploadrepo.NewUploadRepository(orm)
+	userSettingsRepo := userrepo.NewUserSettingsRepository(orm)
+	notificationSettingsRepo := notificationsettingsrepo.NewNotificationSettingRepository(orm)
+
+	externalCfg := external.NewConfig(cfg.ExternalAPI)
 
 	// 领域服务
 	commissionSvc := commissionservice.NewCommissionService(commissionRepo, orderRepo, playerRepo)
 	serviceItemSvc := itemservice.NewServiceItemService(serviceItemRepo, gameRepo, playerRepo)
-	giftSvc := giftservice.NewGiftService(serviceItemRepo, orderRepo, playerRepo, commissionRepo)
+	giftSvc := giftservice.NewGiftService(serviceItemRepo, orderRepo, playerRepo, userRepo, commissionRepo)
 	orderSvc := orderservice.NewOrderService(orderRepo, playerRepo, userRepo, gameRepo, paymentRepo, reviewRepo, commissionRepo)
+	orderSvc.SetDB(orm) // 注入数据库连接用于事务管理
 	// 注入聊天群仓库用于订单聊天自动销毁
 	orderSvc.SetChatGroupRepository(chatGroupRepo)
 	// 注入主订单仓库用于订单拆分
 	orderGroupRepo := ordergrouprepo.NewRepository(orm)
 	orderSvc.SetOrderGroupRepository(orderGroupRepo)
 	paymentSvc := paymentservice.NewPaymentService(paymentRepo, orderRepo)
+	paymentSvc.SetDB(orm) // 注入数据库连接用于事务管理
+	paymentSvc.SetExternalConfig(externalCfg)
+	paymentSvc.SetWalletRepository(walletRepo)
+	orderSvc.SetPaymentRefundor(paymentSvc)
 	playerSvc := serviceplayer.NewPlayerService(playerRepo, userRepo, gameRepo, orderRepo, reviewRepo, playerTagRepo, cacheClient)
+	playerServiceMgmtSvc := serviceplayer.NewServiceManagement(playerServiceRepo, playerRepo, gameRepo, gameRankRepo)
+	playerScheduleSvc := serviceplayer.NewScheduleService(playerScheduleRepo, playerRepo)
 	reviewSvc := orderservice.NewReviewService(reviewRepo, orderRepo, playerRepo, userRepo, reviewReplyRepo, notificationRepo)
 	disputeRepo := ordermodelsrepo.NewDisputeRepository(orm)
 	operationLogRepo := adminrepo.NewOperationLogRepository(orm)
 	disputeSvc := orderservice.NewDisputeService(disputeRepo, orderRepo, userRepo, operationLogRepo, notificationRepo, paymentRepo)
 	earningsSvc := userservice.NewEarningsService(playerRepo, orderRepo, withdrawRepo)
-	chatSvc := chatservice.NewChatService(chatGroupRepo, chatMemberRepo, chatMessageRepo, chatReportRepo, cacheClient)
+	chatSvc := chatservice.NewChatService(chatGroupRepo, chatMemberRepo, chatMessageRepo, chatReportRepo, userRepo, cacheClient)
 	feedSvc := contentservice.NewFeedService(feedRepo, nil)
 	notificationSvc := contentservice.NewNotificationService(notificationRepo)
+	uploadSvc := uploadservice.NewService(uploadRepo, externalCfg)
 	walletSvc := walletservice.NewWalletService(walletRepo, paymentRepo, orderRepo)
+	userSettingsSvc := userservice.NewSettingsService(userSettingsRepo)
+	notificationSettingsSvc := notificationservice.NewSettingsService(notificationSettingsRepo)
 
 	// Create distributed lock for schedulers
 	distributedLock := cache.NewDistributedLock(cacheClient)
@@ -204,6 +239,12 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 	// 调度器（先构造，调用方负责 Start/Stop）
 	settlementScheduler := scheduler.NewSettlementScheduler(commissionSvc, distributedLock)
 	chatRetention := scheduler.NewChatRetentionScheduler(chatGroupRepo, chatMessageRepo, distributedLock, 30)
+	businessScheduler := scheduler.NewBusinessScheduler(orm, distributedLock)
+
+	// 推荐奖励触发服务
+	referralTriggerSvc := referralservice.NewTriggerService(orm)
+	// 注入推荐触发服务到订单服务（用于首单奖励）
+	orderSvc.SetReferralTrigger(referralTriggerSvc)
 
 	// Monitor services - WebSocket Hub with Redis support for horizontal scaling
 	// If cacheClient uses Redis, WebSocket will enable multi-instance support via Pub/Sub
@@ -217,6 +258,13 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 	wsHub := ws.NewHubWithRedis(redisClient)
 	alertRepo := alertrepo.NewAlertRepository(orm)
 	realtimeSvc := monitorservice.NewRealtimeService(wsHub, orm)
+
+	// Realtime event wiring
+	orderSvc.SetNotificationRepository(notificationRepo)
+	orderSvc.SetWebsocketHub(wsHub)
+	chatSvc.SetWebsocketHub(wsHub)
+	paymentSvc.SetNotificationRepository(notificationRepo)
+	paymentSvc.SetWebsocketHub(wsHub)
 
 	// Analytics service
 	analyticsSvc := analyticsservice.NewAnalyticsService(orm)
@@ -258,7 +306,6 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 	statisticsHooks := statisticsservice.NewEventHooks(statisticsSvc)
 
 	// Player rank services (陪玩师等级/认证)
-	gameRankRepo := gamerankrepo.NewGameRankRepository(orm)
 	playerRankRepo := playerrankrepo.NewPlayerRankRepository(orm)
 	playerCertificationRepo := playercertificationrepo.NewPlayerCertificationRepository(orm)
 	gameRankSvc := gamerankservice.NewGameRankService(gameRankRepo, gameRepo)
@@ -284,6 +331,8 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 	// Recharge service (充值)
 	rechargeRepo := rechargerepo.NewRechargeRepository(orm)
 	rechargeSvc := rechargeservice.NewRechargeService(rechargeRepo, walletRepo, couponSvc)
+	// 注入推荐触发服务到充值服务（用于首充奖励）
+	rechargeSvc.SetReferralTrigger(referralTriggerSvc)
 
 	// Activity service (活动)
 	activityRepo := activityrepo.NewActivityRepository(orm)
@@ -327,41 +376,46 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 	// }
 
 	return &appServices{
-		commissionSvc:       commissionSvc,
-		serviceItemSvc:      serviceItemSvc,
-		giftSvc:             giftSvc,
-		orderSvc:            orderSvc,
-		orderGroupRepo:      orderGroupRepo,
-		paymentSvc:          paymentSvc,
-		playerSvc:           playerSvc,
-		reviewSvc:           reviewSvc,
-		disputeSvc:          disputeSvc,
-		earningsSvc:         earningsSvc,
-		chatSvc:             chatSvc,
-		feedSvc:             feedSvc,
-		notificationSvc:     notificationSvc,
-		walletSvc:           walletSvc,
-		settlementScheduler: settlementScheduler,
-		chatRetention:       chatRetention,
-		wsHub:               wsHub,
-		realtimeSvc:         realtimeSvc,
-		alertRepo:           alertRepo,
-		analyticsSvc:        analyticsSvc,
-		kpiSvc:              kpiSvc,
-		tagSvc:              tagSvc,
-		batchSvc:            batchSvc,
-		reviewStatsSvc:      reviewStatsSvc,
-		adminFeedSvc:        adminFeedSvc,
-		chatModerationSvc:   chatModerationSvc,
-		feedReportSvc:       feedReportSvc,
-		contentStatsSvc:     contentStatsSvc,
-		contentCategorySvc:  contentCategorySvc,
-		sensitiveWordSvc:    sensitiveWordSvc,
-		reviewSettingsSvc:   reviewSettingsSvc,
-		routingRuleSvc:      routingRuleSvc,
-		statisticsSvc:       statisticsSvc,
-		statisticsEvaluator: statisticsEvaluator,
-		statisticsHooks:     statisticsHooks,
+		commissionSvc:           commissionSvc,
+		serviceItemSvc:          serviceItemSvc,
+		giftSvc:                 giftSvc,
+		orderSvc:                orderSvc,
+		orderGroupRepo:          orderGroupRepo,
+		paymentSvc:              paymentSvc,
+		playerSvc:               playerSvc,
+		playerServiceMgmtSvc:    playerServiceMgmtSvc,
+		playerScheduleSvc:       playerScheduleSvc,
+		reviewSvc:               reviewSvc,
+		disputeSvc:              disputeSvc,
+		earningsSvc:             earningsSvc,
+		chatSvc:                 chatSvc,
+		feedSvc:                 feedSvc,
+		notificationSvc:         notificationSvc,
+		uploadSvc:               uploadSvc,
+		walletSvc:               walletSvc,
+		userSettingsSvc:         userSettingsSvc,
+		notificationSettingsSvc: notificationSettingsSvc,
+		settlementScheduler:     settlementScheduler,
+		chatRetention:           chatRetention,
+		wsHub:                   wsHub,
+		realtimeSvc:             realtimeSvc,
+		alertRepo:               alertRepo,
+		analyticsSvc:            analyticsSvc,
+		kpiSvc:                  kpiSvc,
+		tagSvc:                  tagSvc,
+		batchSvc:                batchSvc,
+		reviewStatsSvc:          reviewStatsSvc,
+		adminFeedSvc:            adminFeedSvc,
+		chatModerationSvc:       chatModerationSvc,
+		feedReportSvc:           feedReportSvc,
+		contentStatsSvc:         contentStatsSvc,
+		contentCategorySvc:      contentCategorySvc,
+		sensitiveWordSvc:        sensitiveWordSvc,
+		reviewSettingsSvc:       reviewSettingsSvc,
+		routingRuleSvc:          routingRuleSvc,
+		statisticsSvc:           statisticsSvc,
+		statisticsEvaluator:     statisticsEvaluator,
+		statisticsHooks:         statisticsHooks,
 		// Player rank services
 		gameRankSvc:            gameRankSvc,
 		playerRankSvc:          playerRankSvc,
@@ -392,5 +446,9 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache) *appServices {
 		lfgSvc: lfgSvc,
 		// TRTC service
 		trtcSvc: trtcSvc,
+		// Business scheduler
+		businessScheduler: businessScheduler,
+		// Referral trigger service
+		referralTriggerSvc: referralTriggerSvc,
 	}
 }

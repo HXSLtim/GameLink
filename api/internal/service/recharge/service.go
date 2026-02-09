@@ -41,11 +41,22 @@ type CouponService interface {
 	IssueCoupon(ctx context.Context, userID, templateID uint64, source model.CouponSource) (*model.Coupon, error)
 }
 
+// ReferralTrigger 推荐奖励触发接口（可选依赖）
+type ReferralTrigger interface {
+	OnFirstRechargeCompleted(ctx context.Context, userID uint64) error
+}
+
 // Service 充值业务逻辑层
 type Service struct {
-	repo       RechargeRepository
-	walletRepo walletrepo.Repository
-	couponSvc  CouponService
+	repo            RechargeRepository
+	walletRepo      walletrepo.Repository
+	couponSvc       CouponService
+	referralTrigger ReferralTrigger
+}
+
+// SetReferralTrigger 设置推荐奖励触发服务
+func (s *Service) SetReferralTrigger(trigger ReferralTrigger) {
+	s.referralTrigger = trigger
 }
 
 // NewRechargeService 创建充值服务
@@ -317,6 +328,13 @@ func (s *Service) HandlePaymentCallback(ctx context.Context, orderNo, providerTr
 				s.issueCoupons(ctx, record.ID, record.UserID, *option.CouponTemplateID, option.CouponCount)
 			}
 		}
+	}
+
+	// 触发推荐奖励检查（首次充值条件）
+	if s.referralTrigger != nil {
+		go func() {
+			_ = s.referralTrigger.OnFirstRechargeCompleted(ctx, record.UserID)
+		}()
 	}
 
 	return nil

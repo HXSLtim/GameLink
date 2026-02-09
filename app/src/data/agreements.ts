@@ -1,9 +1,7 @@
 /**
  * 协议内容数据
  */
-import type { AgreementData } from '@/components/AgreementContent/index.vue'
-
-export type AgreementType = 'user' | 'privacy' | 'player' | 'recharge'
+import type { AgreementData, AgreementType } from '@/types/agreement'
 
 export const agreementTitles: Record<AgreementType, string> = {
   user: '用户协议',

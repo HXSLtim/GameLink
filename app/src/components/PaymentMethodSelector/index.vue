@@ -8,7 +8,7 @@
         :class="{ selected: modelValue === method.value, disabled: !method.enabled }"
         @tap="method.enabled && $emit('update:modelValue', method.value)"
       >
-        <text class="method-icon">{{ method.icon }}</text>
+        <view class="method-icon"><uv-icon :name="method.icon" size="22" color="var(--color-text-secondary)" /></view>
         <view class="method-info">
           <text class="method-name">{{ method.name }}</text>
           <text v-if="!method.enabled" class="method-tip">{{ method.tip }}</text>
@@ -23,24 +23,17 @@
 
 <script setup lang="ts">
 import GlCard from '@/components/gl/Card/index.vue'
-
-export interface PaymentMethod {
-  value: string
-  name: string
-  icon: string
-  enabled: boolean
-  tip?: string
-}
+import type { PaymentMethod } from '@/types/wallet'
 
 interface Props {
   methods: PaymentMethod[]
-  modelValue?: string
+  modelValue?: PaymentMethod['value']
 }
 
 defineProps<Props>()
 
 defineEmits<{
-  'update:modelValue': [value: string]
+  'update:modelValue': [value: PaymentMethod['value']]
 }>()
 </script>
 
@@ -48,22 +41,24 @@ defineEmits<{
 .payment-methods {
   display: flex;
   flex-direction: column;
-  gap: 16rpx;
+  gap: var(--spacing-xs);
 }
 
 .payment-method {
   display: flex;
   align-items: center;
-  gap: 20rpx;
-  padding: 24rpx;
-  background: var(--color-bg-secondary);
-  border-radius: 16rpx;
-  border: 2rpx solid var(--color-border);
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-sm);
+  border: 1rpx solid var(--color-border);
   transition: all 0.2s;
+  cursor: pointer;
+  @include press-effect;
   
   &.selected {
-    border-color: var(--color-primary);
-    background: rgba(0, 210, 106, 0.08);
+    border-color: var(--color-border);
+    background: var(--color-bg-secondary);
   }
   
   &.disabled {
@@ -72,7 +67,9 @@ defineEmits<{
 }
 
 .method-icon {
-  font-size: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .method-info {
@@ -81,21 +78,21 @@ defineEmits<{
 
 .method-name {
   display: block;
-  font-size: 30rpx;
-  font-weight: 500;
+  font-size: var(--font-sm);
+  font-weight: 600;
   color: var(--color-text);
 }
 
 .method-tip {
-  font-size: 24rpx;
+  font-size: var(--font-xs);
   color: var(--color-text-secondary);
 }
 
 .radio-box {
-  width: 40rpx;
-  height: 40rpx;
-  border-radius: 50%;
-  border: 2rpx solid var(--color-border);
+  width: 32rpx;
+  height: 32rpx;
+  border-radius: var(--radius-sm);
+  border: 1rpx solid var(--color-border);
   display: flex;
   align-items: center;
   justify-content: center;

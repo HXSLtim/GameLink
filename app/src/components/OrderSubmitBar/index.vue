@@ -2,7 +2,7 @@
   <view class="action-bar">
     <view class="total-info">
       <text class="total-label">合计：</text>
-      <text class="total-price">¥{{ total.toFixed(2) }}</text>
+      <PriceTag class="total-price" :amount="total" amount-unit="yuan" size="small" />
     </view>
     <GlButton 
       type="primary" 
@@ -19,6 +19,7 @@
 
 <script setup lang="ts">
 import GlButton from '@/components/gl/Button/index.vue'
+import PriceTag from '@/components/PriceTag/index.vue'
 
 interface Props {
   total: number
@@ -43,9 +44,9 @@ defineEmits<{
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20rpx 24rpx;
-  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
-  background: var(--color-bg-card);
+  padding: var(--spacing-sm) var(--spacing-md);
+  padding-bottom: calc(var(--spacing-sm) + env(safe-area-inset-bottom));
+  background: var(--color-bg);
   border-top: 1rpx solid var(--color-border);
   position: sticky;
   bottom: 0;
@@ -57,17 +58,21 @@ defineEmits<{
 .total-info {
   display: flex;
   align-items: baseline;
-  gap: 8rpx;
+  gap: var(--spacing-xs);
 }
 
 .total-label {
-  font-size: 28rpx;
+  font-size: var(--font-sm);
   color: var(--color-text-secondary);
 }
 
 .total-price {
-  font-size: 40rpx;
-  font-weight: 800;
+  font-size: var(--font-lg);
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.total-price :deep(.price-tag) {
   color: var(--color-primary);
 }
 </style>

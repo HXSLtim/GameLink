@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "build:analyze": "tsc -b && vite build --mode analyze",
+    "build": "tsc -b tsconfig.app.json tsconfig.node.json && vite build",
+    "build:analyze": "tsc -b tsconfig.app.json tsconfig.node.json && vite build --mode analyze",
     "lint": "eslint .",
     "preview": "vite preview",
     "prepare": "husky",

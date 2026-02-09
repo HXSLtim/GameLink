@@ -83,14 +83,17 @@ const ChatRecordsPage: React.FC = () => {
    */
   const loadStats = useCallback(async () => {
     try {
-      const response = await fetch('/admin/chat/stats', {
-        headers: { 'Content-Type': 'application/json' },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setStats(data.data.overview);
-        }
+      const response = await chatMessageApi.getAllMessages({ pageSize: 1 });
+      if (response.data?.success) {
+        const msgTotal = response.data.data?.total || 0;
+        setStats({
+          totalConversations: 0,
+          activeConversations: 0,
+          totalMessages: msgTotal,
+          todayMessages: 0,
+          totalUsers: 0,
+          onlineUsers: 0,
+        });
       }
     } catch (error) {
       logger.error('Load stats error:', error);

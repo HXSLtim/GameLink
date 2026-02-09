@@ -43,8 +43,12 @@ const renderRoutes = (routes: RouteConfig[]): RouteObject[] => {
 const STATIC_CHILD_ROUTES = [
     'sys/role/:id/permissions',  // 角色权限配置页面
     'sys/user/:id/portrait',     // 用户画像页面
+    'sys/user/behavior',         // 用户行为分析页面
+    'sys/user/tags',             // 用户标签管理页面
+    'sys/user/level',            // 用户等级管理页面
     'biz/service/create',        // 服务项目创建页面
     'biz/service/:id',           // 服务项目详情页面（编辑使用模态弹窗）
+    'reviews/detail/:id',        // 评价详情页面
     'profile',                   // 个人中心页面（通过用户下拉菜单访问）
 ];
 

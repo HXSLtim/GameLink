@@ -10,20 +10,9 @@ import {
   sendChatMessage, 
   markMessagesRead 
 } from '@/api/chat'
-import type { ChatMessageData } from '@/components/ChatMessageBubble/index.vue'
-
-type ChatType = 'private' | 'order' | 'public'
-type WsStatus = 'connecting' | 'connected' | 'disconnected'
-
-interface ChatInfo {
-  id: number
-  type: ChatType
-  name: string
-  targetId?: number
-  orderId?: number
-  isOnline?: boolean
-  memberCount?: number
-}
+import type { ChatInfo, ChatMessageData, ChatType, WsStatus } from '@/types/message'
+import { confirmDialog } from '@/composables/useConfirmDialog'
+import { useImageTools } from '@/composables/useImageTools'
 
 export function useChatRoom() {
   const userStore = useUserStore()
@@ -54,6 +43,8 @@ export function useChatRoom() {
   const currentUserId = computed(() => userStore.userInfo?.id || 0)
   const currentUserName = computed(() => userStore.userInfo?.nickname || '我')
   const currentUserAvatar = computed(() => userStore.userInfo?.avatar || '')
+
+  const { pickImages, previewImages } = useImageTools()
   
   // 初始化聊天
   const initChat = async (options: Record<string, any>) => {
@@ -258,27 +249,29 @@ export function useChatRoom() {
   }
   
   // 选择图片
-  const chooseImage = () => {
-    uni.chooseImage({
-      count: 1,
-      sizeType: ['compressed'],
-      success: (res) => {
-        sendImage(res.tempFilePaths[0])
-      }
-    })
+  const chooseImage = async () => {
     showMore.value = false
+    try {
+      const [tempPath] = await pickImages()
+      if (tempPath) {
+        sendImage(tempPath)
+      }
+    } catch {
+      // ignore cancel
+    }
   }
   
   // 拍照
-  const takePhoto = () => {
-    uni.chooseImage({
-      count: 1,
-      sourceType: ['camera'],
-      success: (res) => {
-        sendImage(res.tempFilePaths[0])
-      }
-    })
+  const takePhoto = async () => {
     showMore.value = false
+    try {
+      const [tempPath] = await pickImages({ sourceType: ['camera'] })
+      if (tempPath) {
+        sendImage(tempPath)
+      }
+    } catch {
+      // ignore cancel
+    }
   }
   
   // 重发消息
@@ -292,10 +285,8 @@ export function useChatRoom() {
   
   // 预览图片
   const previewImage = (url: string) => {
-    uni.previewImage({
-      urls: messages.value.filter(m => m.type === 'image').map(m => m.content),
-      current: url,
-    })
+    const urls = messages.value.filter(m => m.type === 'image').map(m => m.content)
+    previewImages(urls, url)
   }
   
   // 播放语音
@@ -444,31 +435,25 @@ export function useChatRoom() {
     showMore.value = false
   }
   
-  const clearHistory = () => {
-    uni.showModal({
+  const clearHistory = async () => {
+    const confirmed = await confirmDialog({
       title: '清空聊天记录',
       content: '确定要清空聊天记录吗？',
-      success: (res) => {
-        if (res.confirm) {
-          messages.value = []
-          showMenu.value = false
-        }
-      }
     })
+    if (!confirmed) return
+    messages.value = []
+    showMenu.value = false
   }
   
-  const blockUser = () => {
-    uni.showModal({
+  const blockUser = async () => {
+    const confirmed = await confirmDialog({
       title: '拉黑用户',
       content: '拉黑后将无法接收对方消息，确定继续？',
-      success: (res) => {
-        if (res.confirm) {
-          uni.showToast({ title: '已拉黑', icon: 'success' })
-          showMenu.value = false
-          setTimeout(() => uni.navigateBack(), 500)
-        }
-      }
     })
+    if (!confirmed) return
+    uni.showToast({ title: '已拉黑', icon: 'success' })
+    showMenu.value = false
+    setTimeout(() => uni.navigateBack(), 500)
   }
   
   const reportChat = () => {

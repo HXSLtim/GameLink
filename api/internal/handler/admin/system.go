@@ -49,13 +49,13 @@ func RegisterSystemRoutes(router gin.IRouter, cfg config.AppConfig, sqlDB *sql.D
 
 // InitStatusResponse represents the initialization status response
 type InitStatusResponse struct {
-	Initialized    bool      `json:"initialized"`
-	LastSyncAt     *time.Time `json:"lastSyncAt,omitempty"`
-	MenuCount      int       `json:"menuCount,omitempty"`
-	PermissionCount int      `json:"permissionCount,omitempty"`
-	Version        string    `json:"version,omitempty"`
-	SyncedBy       uint64    `json:"syncedBy,omitempty"`
-	Message        string    `json:"message,omitempty"`
+	Initialized     bool       `json:"initialized"`
+	LastSyncAt      *time.Time `json:"lastSyncAt,omitempty"`
+	MenuCount       int        `json:"menuCount,omitempty"`
+	PermissionCount int        `json:"permissionCount,omitempty"`
+	Version         string     `json:"version,omitempty"`
+	SyncedBy        uint64     `json:"syncedBy,omitempty"`
+	Message         string     `json:"message,omitempty"`
 }
 
 // InitStatus 获取系统初始化状态

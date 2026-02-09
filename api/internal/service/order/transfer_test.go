@@ -15,12 +15,12 @@ import (
 
 // MockOrderGroupRepository 主订单仓储 Mock
 type MockOrderGroupRepository struct {
-	createGroup       func(ctx context.Context, group *model.OrderGroup) error
-	getGroup          func(ctx context.Context, id uint64) (*model.OrderGroup, error)
-	getByGroupNo      func(ctx context.Context, groupNo string) (*model.OrderGroup, error)
-	getWithSubOrders  func(ctx context.Context, id uint64) (*model.OrderGroup, error)
-	updateGroup       func(ctx context.Context, group *model.OrderGroup) error
-	updateStatus      func(ctx context.Context, id uint64, status model.OrderGroupStatus) error
+	createGroup      func(ctx context.Context, group *model.OrderGroup) error
+	getGroup         func(ctx context.Context, id uint64) (*model.OrderGroup, error)
+	getByGroupNo     func(ctx context.Context, groupNo string) (*model.OrderGroup, error)
+	getWithSubOrders func(ctx context.Context, id uint64) (*model.OrderGroup, error)
+	updateGroup      func(ctx context.Context, group *model.OrderGroup) error
+	updateStatus     func(ctx context.Context, id uint64, status model.OrderGroupStatus) error
 }
 
 func (m *MockOrderGroupRepository) Create(ctx context.Context, group *model.OrderGroup) error {
@@ -530,7 +530,6 @@ func TestGetTransferableSubOrders_Success(t *testing.T) {
 	assert.Len(t, transferable, 2) // 只有 subOrder2 和 subOrder3 可转
 }
 
-
 // TestTransferSubOrder_IncomeAttribution_NoServiceStarted 测试转单收入归属 - 未开始服务
 func TestTransferSubOrder_IncomeAttribution_NoServiceStarted(t *testing.T) {
 	ctx := context.Background()
@@ -878,8 +877,8 @@ func TestBatchTransferSubOrders_IncomeAttribution(t *testing.T) {
 	orderGroups := &MockOrderGroupRepository{
 		getWithSubOrders: func(ctx context.Context, id uint64) (*model.OrderGroup, error) {
 			return &model.OrderGroup{
-				Base:       model.Base{ID: groupID},
-				SubOrders:  []model.Order{*subOrder1, *subOrder2},
+				Base:      model.Base{ID: groupID},
+				SubOrders: []model.Order{*subOrder1, *subOrder2},
 			}, nil
 		},
 		updateGroup: func(ctx context.Context, group *model.OrderGroup) error { return nil },

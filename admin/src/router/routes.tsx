@@ -52,6 +52,7 @@ const ReviewModeration = lazy(() => import('@/pages/admin/Review/Moderation'));
 const ReviewReports = lazy(() => import('@/pages/admin/Review/Reports'));
 const SensitiveWords = lazy(() => import('@/pages/admin/Review/SensitiveWords'));
 const ReviewStats = lazy(() => import('@/pages/admin/Review/Stats'));
+const ReviewSettings = lazy(() => import('@/pages/admin/Review/Settings'));
 
 // 内容管理模块页面
 const ContentFeeds = lazy(() => import('@/pages/admin/Content/Feeds'));
@@ -78,6 +79,18 @@ const ActivityPage = lazy(() => import('@/pages/admin/Activity'));
 const RechargePage = lazy(() => import('@/pages/admin/Recharge'));
 const TeamPage = lazy(() => import('@/pages/admin/Team'));
 const ReferralPage = lazy(() => import('@/pages/admin/Referral'));
+
+// 财务管理页面
+const WithdrawPage = lazy(() => import('@/pages/admin/Withdraw'));
+const CommissionPage = lazy(() => import('@/pages/admin/Commission'));
+const RankingCommissionPage = lazy(() => import('@/pages/admin/RankingCommission'));
+
+// 业务管理页面
+const DisputePage = lazy(() => import('@/pages/admin/Dispute'));
+const RoutingPage = lazy(() => import('@/pages/admin/Routing'));
+
+// 支付管理页面
+const PaymentRecordsPage = lazy(() => import('@/pages/admin/PaymentRecords'));
 
 // 结算公司管理页面
 const SettlementPage = lazy(() => import('@/pages/admin/Settlement'));
@@ -291,6 +304,11 @@ export const routes: RouteConfig[] = [
                 element: <LazyLoad><ReviewStats /></LazyLoad>,
                 meta: { title: '评价统计', permission: 'admin.reviews.stats.list' }
             },
+            {
+                path: 'reviews/settings',
+                element: <LazyLoad><ReviewSettings /></LazyLoad>,
+                meta: { title: '评价设置', permission: 'admin.reviews.settings.update' }
+            },
             // 内容管理模块
             {
                 path: 'content/feeds',
@@ -328,11 +346,11 @@ export const routes: RouteConfig[] = [
                 element: <LazyLoad><ChatRoomsPage /></LazyLoad>,
                 meta: { title: '聊天室管理', permission: 'admin.chat.conversations.list' }
             },
-            // 实时监控模块
+            // 实时监控大屏
             {
-                path: 'monitor',
+                path: 'monitor/dashboard',
                 element: <LazyLoad><MonitorPage /></LazyLoad>,
-                meta: { title: '实时监控', permission: 'admin.monitor.view' }
+                meta: { title: '实时监控大屏', permission: 'admin.monitor.view' }
             },
             // VIP管理模块
             {
@@ -354,27 +372,60 @@ export const routes: RouteConfig[] = [
             {
                 path: 'coupon',
                 element: <LazyLoad><CouponPage /></LazyLoad>,
-                meta: { title: '优惠券管理', permission: 'admin.coupon.list' }
+                meta: { title: '优惠券管理', permission: 'admin.coupons.list' }
             },
             {
                 path: 'activity',
                 element: <LazyLoad><ActivityPage /></LazyLoad>,
-                meta: { title: '活动管理', permission: 'admin.activity.list' }
+                meta: { title: '活动管理', permission: 'admin.activities.list' }
             },
             {
                 path: 'recharge',
                 element: <LazyLoad><RechargePage /></LazyLoad>,
-                meta: { title: '充值套餐管理', permission: 'admin.recharge.list' }
+                meta: { title: '充值套餐管理', permission: 'admin.recharges.list' }
             },
             {
                 path: 'team',
                 element: <LazyLoad><TeamPage /></LazyLoad>,
-                meta: { title: '战队管理', permission: 'admin.team.list' }
+                meta: { title: '战队管理', permission: 'admin.teams.list' }
             },
             {
                 path: 'referral',
                 element: <LazyLoad><ReferralPage /></LazyLoad>,
-                meta: { title: '推荐管理', permission: 'admin.referral.list' }
+                meta: { title: '推荐管理', permission: 'admin.referrals.list' }
+            },
+            // 财务管理模块
+            {
+                path: 'finance/withdraw',
+                element: <LazyLoad><WithdrawPage /></LazyLoad>,
+                meta: { title: '提现管理', permission: 'admin.withdraws.list' }
+            },
+            {
+                path: 'finance/commission',
+                element: <LazyLoad><CommissionPage /></LazyLoad>,
+                meta: { title: '佣金管理', permission: 'admin.commissions.list' }
+            },
+            {
+                path: 'finance/ranking-commission',
+                element: <LazyLoad><RankingCommissionPage /></LazyLoad>,
+                meta: { title: '排名佣金配置', permission: 'admin.ranking-commissions.list' }
+            },
+            // 支付管理模块
+            {
+                path: 'payment/records',
+                element: <LazyLoad><PaymentRecordsPage /></LazyLoad>,
+                meta: { title: '支付记录', permission: 'admin.payments.list' }
+            },
+            // 业务管理模块 - 纠纷和分流
+            {
+                path: 'biz/dispute',
+                element: <LazyLoad><DisputePage /></LazyLoad>,
+                meta: { title: '纠纷管理', permission: 'admin.disputes.list' }
+            },
+            {
+                path: 'biz/routing',
+                element: <LazyLoad><RoutingPage /></LazyLoad>,
+                meta: { title: '分流规则管理', permission: 'admin.routing.list' }
             },
             // 结算公司管理模块
             {
@@ -397,6 +448,44 @@ export const routes: RouteConfig[] = [
                 path: 'profile',
                 element: <LazyLoad><ProfilePage /></LazyLoad>,
                 meta: { title: '个人中心' }
+            },
+            // 营销管理（动态菜单路径兼容）
+            {
+                path: 'marketing/vip',
+                element: <LazyLoad><VIPLevels /></LazyLoad>,
+                meta: { title: 'VIP等级管理', permission: 'admin.vip.list' }
+            },
+            {
+                path: 'marketing/coupon',
+                element: <LazyLoad><CouponPage /></LazyLoad>,
+                meta: { title: '优惠券管理', permission: 'admin.coupons.list' }
+            },
+            {
+                path: 'marketing/referral',
+                element: <LazyLoad><ReferralPage /></LazyLoad>,
+                meta: { title: '推荐管理', permission: 'admin.referrals.list' }
+            },
+            {
+                path: 'marketing/team',
+                element: <LazyLoad><TeamPage /></LazyLoad>,
+                meta: { title: '战队管理', permission: 'admin.teams.list' }
+            },
+            {
+                path: 'marketing/activity',
+                element: <LazyLoad><ActivityPage /></LazyLoad>,
+                meta: { title: '活动管理', permission: 'admin.activities.list' }
+            },
+            // 支付记录（动态菜单路径）
+            {
+                path: 'payment/payment-records',
+                element: <LazyLoad><PaymentRecordsPage /></LazyLoad>,
+                meta: { title: '支付记录', permission: 'admin.payments.list' }
+            },
+            // 告警管理（动态菜单路径）
+            {
+                path: 'monitor/alert',
+                element: <LazyLoad><AdminAlert /></LazyLoad>,
+                meta: { title: '告警管理', permission: 'admin.monitor.alerts' }
             }
         ]
     },

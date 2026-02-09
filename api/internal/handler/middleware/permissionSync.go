@@ -1,15 +1,16 @@
 package middleware
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"gamelink/internal/model"
-	permissionservice "gamelink/internal/service/admin"
 )
 
 // APISyncConfig API 同步配置。
@@ -23,26 +24,21 @@ type APISyncConfig struct {
 }
 
 // SyncAPIPermissions 同步 API 路由到权限表。
-// 在应用启动后调用，遍历所有路由并注册到 permissions 表。
-func SyncAPIPermissions(router *gin.Engine, permissionSvc *permissionservice.PermissionService, cfg APISyncConfig) error {
+// 使用 GORM 批量 ON CONFLICT upsert，将 N×2 次 DB 调用压缩为几次批量操作。
+func SyncAPIPermissions(router *gin.Engine, db *gorm.DB, cfg APISyncConfig) error {
+	t := time.Now()
 	routes := router.Routes()
 
 	var permissions []model.Permission
 	for _, route := range routes {
-		// 跳过不匹配的分组
 		if cfg.GroupFilter != "" && !strings.HasPrefix(route.Path, cfg.GroupFilter) {
 			continue
 		}
-
-		// 跳过指定路径
 		if shouldSkip(route.Path, cfg.SkipPaths) {
 			continue
 		}
 
-		// 提取分组（取路径的第三级，如 /api/v1/admin/games -> /admin/games）
 		group := extractGroup(route.Path)
-
-		// 生成语义化 code（如 admin.games.list）
 		code := generatePermissionCode(route.Method, route.Path)
 
 		perm := model.Permission{
@@ -52,7 +48,6 @@ func SyncAPIPermissions(router *gin.Engine, permissionSvc *permissionservice.Per
 			Group:       group,
 			Description: fmt.Sprintf("%s %s", route.Method, route.Path),
 		}
-
 		permissions = append(permissions, perm)
 	}
 
@@ -64,18 +59,20 @@ func SyncAPIPermissions(router *gin.Engine, permissionSvc *permissionservice.Per
 		return nil
 	}
 
-	// 批量 upsert 权限
-	ctx := context.Background()
-	for _, perm := range permissions {
-		// 创建局部副本，避免 range 变量复用问题
-		p := perm
-		if err := permissionSvc.UpsertPermission(ctx, &p); err != nil {
-			log.Printf("Failed to upsert permission %s %s: %v", p.Method, p.Path, err)
-			// 继续处理其他权限
-		}
+	if len(permissions) == 0 {
+		return nil
 	}
 
-	log.Printf("Synced %d API permissions to database", len(permissions))
+	// 使用 GORM Clauses 批量 upsert — 按 code 冲突时更新关键字段
+	err := db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "code"}},
+		DoUpdates: clause.AssignmentColumns([]string{"method", "path", "group", "description", "updated_at"}),
+	}).CreateInBatches(permissions, 100).Error
+	if err != nil {
+		log.Printf("[startup] permission batch upsert error: %v", err)
+	}
+
+	log.Printf("[startup] synced %d API permissions in %v", len(permissions), time.Since(t))
 	return nil
 }
 

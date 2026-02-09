@@ -26,7 +26,7 @@
         type="default"
         round
         plain
-        custom-style="background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.3); color: #fff;"
+        custom-style="background: var(--color-bg-secondary); border-color: var(--color-border); color: var(--color-text);"
         @click="$emit('edit')"
       >
         编辑资料
@@ -37,7 +37,7 @@
         type="default"
         round
         plain
-        custom-style="background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.3); color: #fff;"
+        custom-style="background: var(--color-bg-secondary); border-color: var(--color-border); color: var(--color-text);"
         @click="$emit('login')"
       >
         立即登录
@@ -45,20 +45,25 @@
     </view>
     
     <!-- 统计数据 -->
-    <view v-if="isLoggedIn" class="user-stats">
-      <view class="stat-item" @tap="$emit('stat-click', 'orders')">
-        <text class="stat-value">{{ orderCount }}</text>
-        <text class="stat-label">订单</text>
-      </view>
-      <view class="stat-item" @tap="$emit('stat-click', 'favorites')">
-        <text class="stat-value">{{ favoriteCount }}</text>
-        <text class="stat-label">收藏</text>
-      </view>
-      <view class="stat-item" @tap="$emit('stat-click', 'wallet')">
-        <text class="stat-value">¥{{ balanceYuan }}</text>
-        <text class="stat-label">余额</text>
-      </view>
-    </view>
+    <HeaderStatsRow
+      v-if="isLoggedIn"
+      class="user-stats"
+      :items="stats"
+      :show-divider="false"
+      clickable
+      size="lg"
+      @item-click="handleStatClick"
+    >
+      <template #value="{ item }">
+        <PriceTag
+          v-if="item.key === 'wallet'"
+          :amount="balance"
+          amount-unit="cents"
+          size="small"
+        />
+        <text v-else>{{ item.value }}</text>
+      </template>
+    </HeaderStatsRow>
     
     <!-- 未登录提示 -->
     <view v-else class="login-prompt">
@@ -71,6 +76,10 @@
 import { computed } from 'vue'
 import GlAvatar from '@/components/gl/Avatar/index.vue'
 import GlButton from '@/components/gl/Button/index.vue'
+import PriceTag from '@/components/PriceTag/index.vue'
+import HeaderStatsRow from '@/components/HeaderStatsRow/index.vue'
+import type { HeaderStatItem } from '@/types/ui'
+import type { ProfileStatKey } from '@/types/profile'
 
 interface Props {
   avatar?: string
@@ -89,12 +98,6 @@ const props = withDefaults(defineProps<Props>(), {
   balance: 0,
 })
 
-defineEmits<{
-  edit: []
-  login: []
-  'stat-click': [type: 'orders' | 'favorites' | 'wallet']
-}>()
-
 const displayName = computed(() => {
   if (props.userId) {
     return props.nickname || `用户${props.userId}`
@@ -102,33 +105,37 @@ const displayName = computed(() => {
   return '未登录'
 })
 
-const balanceYuan = computed(() => (props.balance / 100).toFixed(2))
+const stats = computed<Array<HeaderStatItem & { key: ProfileStatKey }>>(() => [
+  { key: 'orders', label: '订单', value: props.orderCount || 0 },
+  { key: 'favorites', label: '收藏', value: props.favoriteCount || 0 },
+  { key: 'wallet', label: '余额', value: props.balance || 0 },
+])
+
+const emit = defineEmits<{
+  edit: []
+  login: []
+  'stat-click': [type: ProfileStatKey]
+}>()
+
+const handleStatClick = (item: HeaderStatItem & { key?: ProfileStatKey }) => {
+  if (!item.key) return
+  emit('stat-click', item.key)
+}
+
 </script>
 
 <style lang="scss" scoped>
 .profile-header {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light, #4ADE80) 100%);
-  padding: 80rpx 32rpx 48rpx;
-  border-radius: 0 0 48rpx 48rpx;
-  position: relative;
-  overflow: hidden;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    right: -30%;
-    width: 400rpx;
-    height: 400rpx;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
-    border-radius: 50%;
-  }
+  background: linear-gradient(180deg, var(--color-bg-secondary) 0%, var(--color-bg-card) 100%);
+  padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-md);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  border-bottom: 1rpx solid var(--color-border);
 }
 
 .user-info {
   display: flex;
   align-items: center;
-  gap: 28rpx;
+  gap: var(--spacing-lg);
   position: relative;
   z-index: 1;
 }
@@ -138,89 +145,57 @@ const balanceYuan = computed(() => (props.balance / 100).toFixed(2))
 }
 
 .user-name {
-  font-size: 40rpx;
-  font-weight: 800;
-  color: #FFFFFF;
-  text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.2);
+  font-size: var(--font-lg);
+  font-weight: 700;
+  color: var(--color-text);
 }
 
 .user-id {
-  font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.85);
-  margin-top: 10rpx;
+  font-size: var(--font-sm);
+  color: var(--color-text-secondary);
+  margin-top: var(--spacing-xs);
 }
 
 .player-badge {
   display: inline-flex;
-  padding: 8rpx 20rpx;
-  background: rgba(255, 255, 255, 0.2);
-  border: 1rpx solid rgba(255, 255, 255, 0.3);
-  border-radius: 20rpx;
-  margin-top: 16rpx;
+  padding: 2rpx var(--spacing-sm);
+  background: var(--color-bg-secondary);
+  border: 1rpx solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  margin-top: var(--spacing-sm);
   
   text {
-    font-size: 22rpx;
+    font-size: var(--font-xs);
     font-weight: 600;
-    color: #FFFFFF;
+    color: var(--color-primary);
   }
 }
 
 .login-tip {
-  margin-top: 16rpx;
+  margin-top: var(--spacing-sm);
   
   text {
-    font-size: 26rpx;
-    color: rgba(255, 255, 255, 0.8);
+    font-size: var(--font-sm);
+    color: var(--color-text-secondary);
   }
 }
 
 .user-stats {
-  display: flex;
-  margin-top: 36rpx;
-  padding-top: 36rpx;
-  border-top: 1rpx solid rgba(255, 255, 255, 0.25);
-  position: relative;
-  z-index: 1;
-}
-
-.stat-item {
-  flex: 1;
-  text-align: center;
-  padding: 8rpx 0;
-  transition: all 0.2s;
-  
-  &:active {
-    transform: scale(0.95);
-  }
-}
-
-.stat-value {
-  display: block;
-  font-size: 44rpx;
-  font-weight: 800;
-  color: #FFFFFF;
-  text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.2);
-}
-
-.stat-label {
-  font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.85);
-  margin-top: 10rpx;
-  font-weight: 500;
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1rpx solid var(--color-border);
 }
 
 .login-prompt {
-  margin-top: 28rpx;
-  padding-top: 28rpx;
-  border-top: 1rpx solid rgba(255, 255, 255, 0.25);
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1rpx solid var(--color-border);
   text-align: center;
-  position: relative;
-  z-index: 1;
 }
 
 .prompt-text {
-  font-size: 28rpx;
-  color: rgba(255, 255, 255, 0.85);
+  font-size: var(--font-sm);
+  color: var(--color-text-secondary);
   font-weight: 500;
 }
 </style>

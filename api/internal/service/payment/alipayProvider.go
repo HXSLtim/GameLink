@@ -227,28 +227,42 @@ func (p *RealAlipayProvider) doRequest(ctx context.Context, params map[string]st
 	return io.ReadAll(resp.Body)
 }
 
-// loadPrivateKey loads RSA private key from file
-func loadPrivateKey(path string) (*rsa.PrivateKey, error) {
-	// PEM key loading will be implemented for production
-	// Reference: https://opendocs.alipay.com/common/02kppl
-	// Requires: x509.ParsePKCS1PrivateKey, pem.Decode
-	return nil, nil
-}
-
-// loadPublicKey loads RSA public key from file
-func loadPublicKey(path string) (*rsa.PublicKey, error) {
-	// PEM key loading will be implemented for production
-	// Requires: x509.ParsePKIXPublicKey, pem.Decode
-	return nil, nil
-}
-
-// VerifySign verifies Alipay response signature
+// VerifySign verifies Alipay response signature using RSA2
 func (p *RealAlipayProvider) VerifySign(params map[string]string, sign string) bool {
 	if p.alipayPublic == nil {
 		return false
 	}
 
-	// Signature verification will be implemented for production
-	// Reference: https://opendocs.alipay.com/common/02kdpe
-	return true
+	// Decode signature
+	signature, err := base64.StdEncoding.DecodeString(sign)
+	if err != nil {
+		return false
+	}
+
+	// Sort keys
+	var keys []string
+	for k := range params {
+		if k != "sign" && k != "sign_type" {
+			keys = append(keys, k)
+		}
+	}
+	sort.Strings(keys)
+
+	// Build string
+	var parts []string
+	for _, k := range keys {
+		v := strings.TrimSpace(params[k])
+		if v != "" {
+			parts = append(parts, fmt.Sprintf("%s=%s", k, v))
+		}
+	}
+	signStr := strings.Join(parts, "&")
+
+	// RSA2 verify
+	h := sha256.New()
+	h.Write([]byte(signStr))
+	hashed := h.Sum(nil)
+
+	err = rsa.VerifyPKCS1v15(p.alipayPublic, crypto.SHA256, hashed, signature)
+	return err == nil
 }
