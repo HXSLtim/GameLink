@@ -457,20 +457,16 @@ func (s *OrderService) GetOrderDetail(ctx context.Context, userID uint64, orderI
 		return nil, ErrUnauthorized
 	}
 
-	// 获取陪玩师信息
+	// ✅ 优化：使用预加载的陪玩师数据,避免重复查询
+	// order.Player 和 order.Player.User 已在 repository.Get() 中预加载
 	var playerCard *PlayerCardDTO
-	playerID := order.GetPlayerID()
-	if playerID > 0 {
-		player, err := s.players.Get(ctx, playerID)
-		if err == nil {
-			user, err := s.users.Get(ctx, player.UserID)
-			if err == nil {
-				playerCard = &PlayerCardDTO{
-					ID:        player.ID,
-					Nickname:  player.Nickname,
-					AvatarURL: user.AvatarURL,
-					Rank:      player.Rank,
-				}
+	if order.Player != nil {
+		if order.Player.User != nil {
+			playerCard = &PlayerCardDTO{
+				ID:        order.Player.ID,
+				Nickname:  order.Player.Nickname,
+				AvatarURL: order.Player.User.AvatarURL,
+				Rank:      order.Player.Rank,
 			}
 		}
 	}
@@ -743,29 +739,25 @@ func (s *OrderService) recordCommissionAsync(ctx context.Context, orderID uint64
 }
 
 // toOrderCardDTO 转换为订单卡DTO
+// 使用预加载的关联数据,避免N+1查询问题
+// 注意：order对象应通过orders.Get()获取,该方法已预加载Player,Player.User和Game
 func (s *OrderService) toOrderCardDTO(ctx context.Context, order *model.Order, userID uint64) (*OrderCardDTO, error) {
-	// 获取陪玩师信息
+	// ✅ 优化：直接使用预加载的关联数据,避免重复查询
+	// order.Player, order.Player.User, order.Game 已在 repository.Get() 中预加载
+
+	// 获取陪玩师信息（从预加载的数据）
 	var playerNickname, playerAvatar string
-	playerID := order.GetPlayerID()
-	if playerID > 0 {
-		player, err := s.players.Get(ctx, playerID)
-		if err == nil {
-			playerNickname = player.Nickname
-			user, err := s.users.Get(ctx, player.UserID)
-			if err == nil {
-				playerAvatar = user.AvatarURL
-			}
+	if order.Player != nil {
+		playerNickname = order.Player.Nickname
+		if order.Player.User != nil {
+			playerAvatar = order.Player.User.AvatarURL
 		}
 	}
 
-	// 获取游戏信息
+	// 获取游戏信息（从预加载的数据）
 	var gameName string
-	gameID := order.GetGameID()
-	if gameID > 0 {
-		game, err := s.games.Get(ctx, gameID)
-		if err == nil {
-			gameName = game.Name
-		}
+	if order.Game != nil {
+		gameName = order.Game.Name
 	}
 
 	// 判断操作权限

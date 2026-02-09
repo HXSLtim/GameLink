@@ -18,6 +18,7 @@ import (
 type MockOrderRepository struct {
 	createOrder         func(ctx context.Context, order *model.Order) error
 	getOrder            func(ctx context.Context, id uint64) (*model.Order, error)
+	getOrdersByIDs      func(ctx context.Context, ids []uint64) ([]model.Order, error)
 	updateOrder         func(ctx context.Context, order *model.Order) error
 	updateWithCondition func(ctx context.Context, orderID uint64, expectedStatus model.OrderStatus, updates map[string]any) (bool, error)
 	listOrders          func(ctx context.Context, opts repoiface.OrderListOptions) ([]model.Order, int64, error)
@@ -36,6 +37,13 @@ func (m *MockOrderRepository) Get(ctx context.Context, id uint64) (*model.Order,
 		return m.getOrder(ctx, id)
 	}
 	return nil, nil
+}
+
+func (m *MockOrderRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.Order, error) {
+	if m.getOrdersByIDs != nil {
+		return m.getOrdersByIDs(ctx, ids)
+	}
+	return []model.Order{}, nil
 }
 
 func (m *MockOrderRepository) Update(ctx context.Context, order *model.Order) error {
