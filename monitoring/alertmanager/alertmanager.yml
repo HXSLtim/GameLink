@@ -1,0 +1,69 @@
+global:
+  resolve_timeout: 5m
+
+# 路由配置
+route:
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 12h
+  receiver: 'default'
+  routes:
+    # 关键告警 - 立即通知
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      continue: true
+
+    # 警告告警 - 聚合通知
+    - match:
+        severity: warning
+      receiver: 'warning-alerts'
+      group_wait: 30s
+      repeat_interval: 4h
+
+# 接收器配置
+receivers:
+  - name: 'default'
+    webhook_configs:
+      - url: 'http://grafana:3000/api/alerts'
+        send_resolved: true
+
+  - name: 'critical-alerts'
+    # 可以添加钉钉、企业微信等通知方式
+    webhook_configs:
+      - url: 'http://grafana:3000/api/alerts'
+        send_resolved: true
+    # 钉钉通知示例（取消注释以启用）
+    # dingtalk_configs:
+    #   - webhook_url: 'https://oapi.dingtalk.com/robot/send?access_token=YOUR_TOKEN'
+    #     message: |
+    #       {
+    #         "msgtype": "text",
+    #         "text": {
+    #           "content": "【关键告警】\n{{ range .Alerts }}{{ .Annotations.summary }}\n{{ end }}"
+    #         }
+    #       }
+
+  - name: 'warning-alerts'
+    webhook_configs:
+      - url: 'http://grafana:3000/api/alerts'
+        send_resolved: true
+
+# 抑制规则
+inhibit_rules:
+  # 如果服务宕机，抑制该服务的其他告警
+  - source_match:
+      alertname: 'HighCPUUsage'
+    target_match:
+      alertname: 'ServiceDown'
+    equal:
+      - 'instance'
+
+  # 如果数据库连接问题，抑制数据库相关告警
+  - source_match:
+      alertname: 'DatabaseConnectionHigh'
+    target_match:
+      alertname: 'SlowAPIResponse'
+    equal:
+      - 'instance'

@@ -1,0 +1,113 @@
+groups:
+  - name: gamelink_alerts
+    interval: 30s
+    rules:
+      # 服务可用性告警
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: infrastructure
+        annotations:
+          summary: "服务 {{ $labels.instance }} 宕机"
+          description: "{{ $labels.job }} 服务已经宕机超过 1 分钟"
+
+      # 高 CPU 使用率告警
+      - alert: HighCPUUsage
+        expr: rate(process_cpu_seconds_total[5m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          component: performance
+        annotations:
+          summary: "CPU 使用率过高"
+          description: "{{ $labels.instance }} CPU 使用率超过 80% (当前值: {{ $value }}%)"
+
+      # 高内存使用率告警
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          component: performance
+        annotations:
+          summary: "内存使用率过高"
+          description: "内存使用率超过 85% (当前值: {{ $value }}%)"
+
+      # 磁盘空间告警
+      - alert: LowDiskSpace
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 15
+        for: 5m
+        labels:
+          severity: warning
+          component: storage
+        annotations:
+          summary: "磁盘空间不足"
+          description: "根分区可用空间低于 15% (当前值: {{ $value }}%)"
+
+      # API 响应时间告警
+      - alert: SlowAPIResponse
+        expr: histogram_quantile(0.95, http_request_duration_seconds_bucket) > 1
+        for: 5m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "API 响应时间过长"
+          description: "95% 的 API 请求响应时间超过 1 秒 (当前值: {{ $value }}s)"
+
+      # API 错误率告警
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "API 错误率过高"
+          description: "API 错误率超过 5% (当前值: {{ $value }})"
+
+      # 数据库连接告警
+      - alert: DatabaseConnectionHigh
+        expr: pg_stat_database_numbackends{datname="gamelink"} > 80
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "数据库连接数过高"
+          description: "PostgreSQL 连接数超过 80 (当前值: {{ $value }})"
+
+      # Redis 内存使用告警
+      - alert: RedisMemoryHigh
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          component: cache
+        annotations:
+          summary: "Redis 内存使用率过高"
+          description: "Redis 内存使用率超过 90% (当前值: {{ $value }})"
+
+      # 容器重启告警
+      - alert: ContainerRestarting
+        expr: rate(kube_pod_container_status_restarts_total[1h]) > 0
+        for: 5m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "容器频繁重启"
+          description: "{{ $labels.pod }} 容器在过去 1 小时内重启 {{ $value }} 次"
+
+      # 磁盘 I/O 等待告警
+      - alert: HighDiskIOWait
+        expr: rate(node_cpu_seconds_total{mode="iowait"}[5m]) * 100 > 20
+        for: 5m
+        labels:
+          severity: warning
+          component: storage
+        annotations:
+          summary: "磁盘 I/O 等待过高"
+          description: "CPU I/O 等待时间超过 20% (当前值: {{ $value }}%)"

@@ -1,0 +1,146 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "GameLink 系统概览",
+    "tags": ["gamelink", "overview"],
+    "style": "dark",
+    "timezone": "browser",
+    "refresh": "30s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "容器状态",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "up",
+            "legendFormat": "{{job}}"
+          }
+        ],
+        "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+        "options": {
+          "colorMode": "background",
+          "graphMode": "none"
+        }
+      },
+      {
+        "id": 2,
+        "title": "CPU 使用率",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(process_cpu_seconds_total[5m]) * 100",
+            "legendFormat": "{{instance}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+        "yaxes": [
+          {
+            "format": "percent",
+            "label": "CPU",
+            "max": 100
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "内存使用率",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100",
+            "legendFormat": "主机"
+          },
+          {
+            "expr": "container_memory_usage_bytes / container_spec_memory_limit_bytes * 100",
+            "legendFormat": "{{container}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+        "yaxes": [
+          {
+            "format": "percent",
+            "label": "内存",
+            "max": 100
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "磁盘使用率",
+        "type": "gauge",
+        "targets": [
+          {
+            "expr": "(1 - (node_filesystem_avail_bytes{mountpoint=\"/\"} / node_filesystem_size_bytes{mountpoint=\"/\"})) * 100"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 6, "x": 0, "y": 12},
+        "options": {
+          "orientation": "horizontal",
+          "max": 100,
+          "min": 0,
+          "showThresholdLabels": true,
+          "thresholds": [
+            {"value": 70, "color": "green"},
+            {"value": 85, "color": "yellow"},
+            {"value": 95, "color": "red"}
+          ]
+        }
+      },
+      {
+        "id": 5,
+        "title": "网络 I/O",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(container_network_receive_bytes_total[5m])",
+            "legendFormat": "{{container}} ↓ 接收"
+          },
+          {
+            "expr": "rate(container_network_transmit_bytes_total[5m])",
+            "legendFormat": "{{container}} ↑ 发送"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 6, "y": 12},
+        "yaxes": [
+          {
+            "format": "Bps",
+            "label": "网络"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "服务健康状态",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "up",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {
+                "Time": true,
+                "Value": true
+              },
+              "indexByName": {
+                "Value": 0
+              },
+              "renameByName": {
+                "Value": "状态",
+                "instance": "实例",
+                "job": "服务"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

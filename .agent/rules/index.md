@@ -14,12 +14,12 @@ trigger: always_on
 
 | 我要... | 查看文档 |
 |---------|----------|
-| 🚀 **快速了解项目** | [quickstart.md](./quickstart.md) |
-| 📋 **理解业务规则** | [01-product.md](./01-product.md) |
-| 🏗️ **开发新功能** | [03-project-structure.md](./03-project-structure.md) → [04-data-models.md](./04-data-models.md) |
-| 🧪 **编写测试** | [05-testing-standard.md](./05-testing-standard.md) |
-| 📊 **查看进度** | [06-progress.md](./06-progress.md) |
-| 📱 **开发客户端** | [client/web-pages.md](./client/web-pages.md) |
+| 🚀 **快速了解项目** | [quickstart.md](../../.kiro/steering/quickstart.md) |
+| 📋 **理解业务规则** | [01-product.md](../../.kiro/steering/01-product.md) |
+| 🏗️ **开发新功能** | [03-project-structure.md](../../.kiro/steering/03-project-structure.md) → [04-data-models.md](../../.kiro/steering/04-data-models.md) |
+| 🧪 **编写测试** | [05-testing-standard.md](../../.kiro/steering/05-testing-standard.md) |
+| 📊 **查看进度** | [06-progress.md](../../.kiro/steering/06-progress.md) |
+| 📱 **开发客户端** | [client/web-pages.md](../../.kiro/steering/client/web-pages.md) |
 
 ---
 
@@ -29,45 +29,45 @@ trigger: always_on
 
 | 文件 | 说明 |
 |------|------|
-| [quickstart.md](./quickstart.md) | 快速参考指南（命名规范、业务规则速查） |
-| [01-product.md](./01-product.md) | 产品概述、商业模式、功能清单 |
-| [02-tech-stack.md](./02-tech-stack.md) | 技术栈、CI/CD、部署配置 |
-| [03-project-structure.md](./03-project-structure.md) | 代码结构、命名规范、目录布局 |
-| [04-data-models.md](./04-data-models.md) | **核心数据模型**（含业务逻辑） |
-| [05-testing-standard.md](./05-testing-standard.md) | 测试规范、检查清单 |
-| [06-progress.md](./06-progress.md) | 项目进度、模块状态 |
+| [quickstart.md](../../.kiro/steering/quickstart.md) | 快速参考指南（命名规范、业务规则速查） |
+| [01-product.md](../../.kiro/steering/01-product.md) | 产品概述、商业模式、功能清单 |
+| [02-tech-stack.md](../../.kiro/steering/02-tech-stack.md) | 技术栈、CI/CD、部署配置 |
+| [03-project-structure.md](../../.kiro/steering/03-project-structure.md) | 代码结构、命名规范、目录布局 |
+| [04-data-models.md](../../.kiro/steering/04-data-models.md) | **核心数据模型**（含业务逻辑） |
+| [05-testing-standard.md](../../.kiro/steering/05-testing-standard.md) | 测试规范、检查清单 |
+| [06-progress.md](../../.kiro/steering/06-progress.md) | 项目进度、模块状态 |
 
 ### 数据模型附录
 
 | 文件 | 说明 |
 |------|------|
-| [04a-marketing-models.md](./04a-marketing-models.md) | 营销模块（VIP/优惠券/活动） |
-| [04b-team-models.md](./04b-team-models.md) | 团队系统 |
-| [04c-enums-indexes.md](./04c-enums-indexes.md) | 枚举类型、数据库索引 |
-| [04d-notification-models.md](./04d-notification-models.md) | 通知系统 |
+| [04a-marketing-models.md](../../.kiro/steering/04a-marketing-models.md) | 营销模块（VIP/优惠券/活动） |
+| [04b-team-models.md](../../.kiro/steering/04b-team-models.md) | 团队系统 |
+| [04c-enums-indexes.md](../../.kiro/steering/04c-enums-indexes.md) | 枚举类型、数据库索引 |
+| [04d-notification-models.md](../../.kiro/steering/04d-notification-models.md) | 通知系统 |
 
 ### 测试文档
 
 | 文件 | 说明 |
 |------|------|
-| [07-integration-test-plan.md](./07-integration-test-plan.md) | 集成测试计划 |
+| [07-integration-test-plan.md](../../.kiro/steering/07-integration-test-plan.md) | 集成测试计划 |
 
 ### 客户端文档 (client/)
 
 | 文件 | 说明 |
 |------|------|
-| [client/apps-roadmap.md](./client/apps-roadmap.md) | 客户端应用路线图 |
-| [client/web-pages.md](./client/web-pages.md) | Web 页面规范 |
-| [client/web-design-system.md](./client/web-design-system.md) | 设计系统 |
-| [client/web-color-palette.md](./client/web-color-palette.md) | 配色方案 |
-| [client/web-pwa-checklist.md](./client/web-pwa-checklist.md) | PWA 检查清单 |
-| [client/miniprogram-design.md](./client/miniprogram-design.md) | 小程序设计 |
+| [client/apps-roadmap.md](../../.kiro/steering/client/apps-roadmap.md) | 客户端应用路线图 |
+| [client/web-pages.md](../../.kiro/steering/client/web-pages.md) | Web 页面规范 |
+| [client/web-design-system.md](../../.kiro/steering/client/web-design-system.md) | 设计系统 |
+| [client/web-color-palette.md](../../.kiro/steering/client/web-color-palette.md) | 配色方案 |
+| [client/web-pwa-checklist.md](../../.kiro/steering/client/web-pwa-checklist.md) | PWA 检查清单 |
+| [client/miniprogram-design.md](../../.kiro/steering/client/miniprogram-design.md) | 小程序设计 |
 
 ### 辅助工具
 
 | 文件 | 说明 |
 |------|------|
-| [ui-ux-pro-max.md](./ui-ux-pro-max.md) | UI/UX 设计智能工具 |
+| [ui-ux-pro-max.md](../../.kiro/steering/ui-ux-pro-max.md) | UI/UX 设计智能工具 |
 
 ---
 

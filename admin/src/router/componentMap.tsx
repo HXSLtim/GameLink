@@ -202,10 +202,6 @@ export const componentMap: Record<string, React.LazyExoticComponent<React.Compon
     'Audit': React.lazy(() => import('@/pages/sys/log')),
     'admin/sys/log': React.lazy(() => import('@/pages/sys/log')),
 
-    // 告警管理
-    'Alert': AdminAlert,
-    'admin/alert': AdminAlert,
-
     // 用户角色分配
     'UserRole': React.lazy(() => import('@/pages/sys/user-role')),
     'admin/sys/user-role': React.lazy(() => import('@/pages/sys/user-role')),

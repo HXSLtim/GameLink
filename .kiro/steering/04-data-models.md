@@ -45,7 +45,8 @@ type Base struct {
 | Phone | string | 手机号，唯一索引 |
 | Email | string | 邮箱，唯一索引 |
 | PasswordHash | string | 密码哈希（不返回前端） |
-| Name | string | 用户名 |
+| Name | string | 真实姓名（身份识别） |
+| Nickname | string | 昵称（社交展示） |
 | AvatarURL | string | 头像URL |
 | Role | Role | 主要角色：user/player/admin |
 | Status | UserStatus | 状态：active/suspended/banned |

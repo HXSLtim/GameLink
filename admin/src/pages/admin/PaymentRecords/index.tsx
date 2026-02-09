@@ -41,7 +41,7 @@ const PaymentRecords: React.FC = () => {
             const status = mergedParams.status as PaymentStatus | undefined;
             const dateRange = mergedParams.dateRange as [dayjs.Dayjs, dayjs.Dayjs] | undefined;
 
-            const params: PaymentQueryParams = {
+            const queryParams: PaymentQueryParams = {
                 page,
                 pageSize,
                 keyword: keyword || undefined,
@@ -51,7 +51,7 @@ const PaymentRecords: React.FC = () => {
                 dateTo: dateRange?.[1]?.format('YYYY-MM-DD'),
             };
 
-            const response = await adminApi.getPayments(params);
+            const response = await adminApi.getPayments(queryParams);
             if (response.data.success) {
                 const payments = response.data.data || [];
                 setData(payments);

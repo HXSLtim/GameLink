@@ -1,292 +1,238 @@
-# 🎮 GameLink - 现代化游戏陪玩管理平台
+# GameLink
 
-[![Go Version](https://img.shields.io/badge/Go-1.25.5+-00ADD8?style=flat&logo=go)](https://golang.org/)
-[![React Version](https://img.shields.io/badge/React-18+-61DAFB?style=flat&logo=react)](https://reactjs.org/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen)](https://github.com/HXSLtim/GameLink/actions)
-[![Coverage](https://img.shields.io/badge/Coverage-~80%25-green)](backend/LATEST_COVERAGE_REPORT.md)
-
-**Go + React 全栈项目 | 智能订单分发 | 多角色管理 | 实时通讯**
+现代化游戏陪玩社交平台，连接游戏玩家与陪玩师，提供从下单、匹配、服务、评价到结算的完整闭环。
 
 ---
 
-## 🌟 项目简介
+## 技术栈
 
-GameLink 是一个现代化的游戏陪玩管理平台，采用 Go 后端 + React 前端的架构，为游戏陪玩服务提供高效的订单分发、用户管理和陪玩师管理功能。
-
-### 核心功能
-
-- 🎯 **智能订单分发** - 自动匹配用户与陪玩师，支持抢单池和客服指派
-- 👥 **多角色管理** - 用户/陪玩师/管理员权限体系 + RBAC 权限控制
-- 💬 **实时通讯** - WebSocket 即时通讯，支持公共聊天室和订单群聊（不支持私聊）
-- 💳 **完整支付** - 订单支付、退款、收益结算一体化
-- 📊 **数据监控** - 实时订单状态、收益统计、系统指标
-- 🔐 **安全认证** - JWT + RBAC 权限控制 + AES-256-CBC 通信加密
+| 层 | 技术 | 版本 |
+|----|------|------|
+| 后端 | Go + Gin + GORM | Go 1.24.5 |
+| 管理后台 | React + Ant Design + TypeScript | React 19 / AntD 6 |
+| 小程序/H5 | uni-app + Vue 3 + TypeScript | Vue 3.4 |
+| 数据库 | PostgreSQL | 16+ |
+| 缓存 | Redis | 7+ |
+| 部署 | Docker + Nginx | - |
 
 ---
 
-## 📊 项目状态
+## 项目结构
 
-| 指标 | 当前值 | 目标 |
-|------|--------|------|
-| 后端模块完成度 | 100%（36/36 模块） | 100% ✅ |
-| 前端完成度 | 75% | 100% |
-| 测试覆盖率 | ~80% | 80%+ |
-| CI/CD | ✅ 完善 | - |
-
-### 模块实现状态
-
-| 分类 | 完成 | 进行中 | 仅Model | 说明 |
-|------|------|--------|---------|------|
-| 核心模块 | 19 | 0 | 0 | user/order/player/chat/dispute 等 |
-| 新增业务模块 | 4 | 0 | 0 | player-rank/order-timeout/user-block/vip |
-| 营销模块 | 6 | 0 | 0 | vip/coupon/recharge/activity/team/referral |
-| 辅助模块 | 7 | 0 | 0 | commission/ranking/routing-rule/operation-log 等 |
-
----
-
-## 🚀 快速开始
-
-### 🐳 方式一：Docker 部署（推荐）
-
-**环境要求**: Docker 20.10+ 和 Docker Compose 2.0+
-
-#### 开发环境
-```powershell
-# Windows PowerShell
-.\scripts\docker-dev-start.ps1
-
-# 或手动启动
-docker-compose up -d
+```
+GameLink/
+├── api/                # Go 后端服务
+│   ├── internal/
+│   │   ├── handler/    # 路由处理（admin/user/player/public）
+│   │   ├── service/    # 业务逻辑（57 个模块）
+│   │   ├── repository/ # 数据访问（56 个模块）
+│   │   ├── model/      # 数据模型（67 个）
+│   │   ├── router/     # 路由注册
+│   │   └── ws/         # WebSocket
+│   └── pkg/            # 公共包（auth/config/db/scheduler）
+├── admin/              # 管理后台（React 19）
+│   └── src/
+│       ├── pages/      # 40+ 功能模块
+│       ├── components/ # 通用组件
+│       ├── api/        # API 封装
+│       └── router/     # 路由配置
+├── app/                # 小程序/H5（uni-app）
+│   └── src/
+│       ├── pages/      # 28 个页面
+│       ├── components/ # 133 个组件
+│       ├── composables/# 38 个 Hook
+│       ├── api/        # 14 个 API 模块
+│       ├── store/      # 3 个 Store
+│       ├── styles/     # 主题系统（CSS 变量）
+│       └── types/      # 27 个类型定义
+├── docs/               # 项目文档（PRD/进度/架构）
+├── scripts/            # 部署脚本
+└── docker-compose.yml  # Docker 编排
 ```
 
-#### 生产环境部署
-```powershell
-# 1. 配置环境变量
-Copy-Item .env.example .env
-notepad .env  # 编辑配置
+---
 
-# 2. 启动服务（加密版，推荐）
-.\scripts\deploy-production-encrypted.ps1
-```
+## 快速开始
 
-**访问地址**:
-- 🌐 **前端应用**: http://localhost
-- 🔌 **后端API**: http://localhost:8080
-- 📚 **Swagger文档**: http://localhost:8080/swagger/index.html
-- 👤 **默认管理员**: admin@gamelink.com / admin123456
+### 环境要求
 
-### 💻 方式二：本地开发
+- Go 1.24+
+- Node.js 20+
+- PostgreSQL 16+
+- Redis 7+
+- Docker & Docker Compose（可选）
 
-**环境要求**: Go 1.25.5+, Node.js 18+, PostgreSQL 16+, Redis 7+
+### 1. 克隆项目
 
-#### 后端服务
 ```bash
-cd backend
-go mod download
-go run cmd/main.go
+git clone https://github.com/your-org/gamelink.git
+cd gamelink
 ```
 
-#### 前端应用
+### 2. 环境配置
+
+```bash
+cp .env.example .env
+# 编辑 .env，配置数据库、Redis、JWT 密钥等
+```
+
+### 3. Docker 一键启动（推荐）
+
+```bash
+# 启动基础服务（PostgreSQL + Redis）
+docker compose up -d
+
+# 启动开发环境（后端 + 管理后台）
+docker compose -f docker-compose.dev.yml up -d
+```
+
+### 4. 手动启动
+
+**后端：**
+
+```bash
+cd api
+go mod download
+go run main.go
+# 服务运行在 http://localhost:8080
+# Swagger 文档：http://localhost:8080/swagger/index.html
+```
+
+**管理后台：**
+
 ```bash
 cd admin
 npm install
 npm run dev
+# 访问 http://localhost:5173
 ```
 
----
-
-## 🏗️ 系统架构
-
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   前端应用       │    │   后端API服务    │    │   数据存储       │
-│                │    │                │    │                │
-│ • React 18     │◄──►│ • Go 1.25.5    │◄──►│ • PostgreSQL   │
-│ • TypeScript   │    │ • Gin + GORM   │    │ • Redis        │
-│ • Ant Design   │    │ • JWT Auth     │    │                │
-│ • WebSocket    │    │ • Swagger API  │    │                │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-```
-
-### 技术栈
-
-| 层级 | 技术 |
-|------|------|
-| 后端 | Go 1.25.5+, Gin, GORM, JWT, WebSocket, Wire |
-| 前端 | React 18, TypeScript, Vite, Ant Design 6.0 |
-| 数据库 | PostgreSQL 16+, Redis 7+ |
-| 部署 | Docker, Nginx, GitHub Actions |
-| 安全 | AES-256-CBC + SHA-256, JWT + RBAC |
-
-### 后端分层架构
-
-```
-Handler → Service → Repository → Model
-```
-
-- **Handler**: HTTP 请求处理、参数验证、响应格式化
-- **Service**: 业务逻辑、事务管理、跨模块协调
-- **Repository**: 数据库操作、缓存、查询封装
-- **Model**: 数据结构、数据库映射、验证规则
-
----
-
-## 📁 项目结构
-
-```
-GameLink/
-├── admin/                  # 管理后台前端 (React)
-├── api/                    # Go 后端服务
-│   ├── cmd/               # 应用入口
-│   ├── internal/          # 内部模块
-│   │   ├── handler/       # HTTP 处理器
-│   │   ├── service/       # 业务逻辑层
-│   │   ├── repository/    # 数据访问层
-│   │   └── model/         # 数据模型
-│   ├── pkg/               # 公共包
-│   └── docs/              # API 文档
-├── app/                    # 小程序 (Taro)
-├── client/                 # 用户端前端 (待开发)
-├── scripts/                # 部署脚本
-├── docs/                   # 项目文档
-└── .kiro/steering/         # Kiro steering 规则
-```
-
----
-
-## 🎯 功能特色
-
-### 三端架构
-
-| 端 | 主要功能 |
-|------|----------|
-| 用户端 | 首页、游戏列表、陪玩师浏览、订单创建、支付、评价 |
-| 陪玩师端 | 工作台、订单管理、收益管理、服务管理、团队功能 |
-| 管理后台 | 仪表盘、用户管理、订单监控、财务管理、系统设置 |
-
-### 核心业务流程
-
-```
-用户下单 → 支付 → 等待接单 → 陪玩师接单 → 服务进行中 → 服务完成 → 用户评价
-```
-
-### 商业模式
-
-- **平台抽成**: 15-25%（三维度计算：项目抽成 + 陪玩师个人抽成 + 上月排名调整）
-- **系统统一定价**: ¥20-60+/小时（按段位，陪玩师不可自定义）
-- **收入来源**: 服务佣金、认证费用、推广服务
-
----
-
-## 📚 文档导航
-
-### 开发文档
-
-| 文档 | 说明 |
-|------|------|
-| [PROGRESS.md](PROGRESS.md) | 开发进度文档 |
-| [docs/PRD.md](docs/PRD.md) | 产品需求文档 |
-| [.kiro/steering/](/.kiro/steering/) | Steering 规则文档 |
-
-### Steering 规则
-
-| 文档 | 说明 |
-|------|------|
-| [01-product.md](.kiro/steering/01-product.md) | 产品概述 |
-| [02-tech-stack.md](.kiro/steering/02-tech-stack.md) | 技术栈 |
-| [03-project-structure.md](.kiro/steering/03-project-structure.md) | 项目结构 |
-| [04-data-models.md](.kiro/steering/04-data-models.md) | 数据模型 |
-| [05-testing-standard.md](.kiro/steering/05-testing-standard.md) | 测试规范 |
-| [06-project-management.md](.kiro/steering/06-project-management.md) | 项目管理 |
-
----
-
-## 🔧 常用命令
-
-### 后端
+**小程序/H5：**
 
 ```bash
-cd api
-go mod tidy          # 整理依赖
-go run cmd/main.go   # 运行应用
-make test            # 运行测试
-make swagger         # 生成 API 文档
+cd app
+npm install
+
+# H5 开发
+npm run dev:h5
+# 访问 http://localhost:5174
+
+# 微信小程序
+npm run dev:mp-weixin
+# 用微信开发者工具打开 dist/dev/mp-weixin
 ```
+
+---
+
+## 默认账号
+
+| 角色 | 账号 | 密码 |
+|------|------|------|
+| 超级管理员 | admin@gamelink.com | Admin123456 |
+
+启动后端后自动创建种子数据，包含演示用户和陪玩师。
+
+---
+
+## 核心功能
+
+### 用户端（小程序/H5）
+
+- 浏览陪玩师（筛选、排序、搜索）
+- 下单 + 支付（余额/微信/支付宝）
+- 实时聊天（WebSocket）
+- 订单管理（状态流转、取消、评价）
+- 钱包与充值
+- 收藏、帮助中心、在线客服
+
+### 陪玩师端
+
+- 工作台（今日统计、快捷入口）
+- 接单管理（可接订单、我的订单）
+- 服务管理（上下架、定价）
+- 收益与提现
+- 实名认证 + 段位认证
+- 在线/离线状态切换
 
 ### 管理后台
 
+- 仪表盘（核心指标）
+- 用户/陪玩师/订单管理
+- 财务（结算、佣金、提现）
+- 内容审核（聊天监控、敏感词）
+- 营销（活动、优惠券、VIP、推荐）
+- RBAC 权限系统
+- 实时监控 + 数据分析 + KPI
+
+---
+
+## API 文档
+
+后端启动后访问 Swagger：
+
+```
+http://localhost:8080/swagger/index.html
+```
+
+API 基础路径：`/api/v1`
+
+主要路由分组：
+
+| 前缀 | 说明 | 认证 |
+|------|------|------|
+| `/api/v1/auth` | 登录、注册、刷新 Token | 部分需要 |
+| `/api/v1/public` | 公开接口（陪玩师列表、游戏等） | 不需要 |
+| `/api/v1/user` | 用户端接口（订单、钱包、聊天等） | 需要 |
+| `/api/v1/player` | 陪玩师端接口（接单、服务、收益等） | 需要 |
+| `/api/v1/admin` | 管理端接口（全部功能） | 需要 + RBAC |
+
+---
+
+## 测试
+
+**后端测试：**
+
+```bash
+cd api
+go test ./... -v -cover
+# 159 个测试文件，覆盖率目标 70%+
+```
+
+**管理后台测试：**
+
 ```bash
 cd admin
-npm install          # 安装依赖
-npm run dev          # 开发服务器 (localhost:5173)
-npm run build        # 生产构建
-```
-
-### Docker
-
-```powershell
-# 查看所有命令
-.\scripts\docker-manager.ps1 help
-
-# 快速启动
-.\scripts\docker-manager.ps1 start
-
-# 查看服务状态
-docker-compose ps
+npm run test
+# 88 个单元测试
 ```
 
 ---
 
-## 🛡️ 安全特性
+## CI/CD
 
-| 特性 | 说明 |
-|------|------|
-| 通信加密 | AES-256-CBC + SHA-256 签名（生产环境强制启用） |
-| 认证 | JWT Token + 刷新机制 |
-| 权限控制 | RBAC 角色权限系统 |
-| 数据保护 | 敏感数据加密存储 |
+项目配置了 4 条 GitHub Actions 流水线：
 
----
-
-## 🤝 贡献指南
-
-1. Fork 项目到你的 GitHub 账户
-2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交代码 (`git commit -m 'feat: add AmazingFeature'`)
-4. 推送分支 (`git push origin feature/AmazingFeature`)
-5. 创建 Pull Request
-
-### 开发规范
-
-- 遵循 [Go 编码规范](https://golang.org/doc/effective_go.html)
-- 遵循 [TypeScript 编码规范](https://www.typescriptlang.org/docs/)
-- 添加必要的测试用例
-- 更新相关文档
-- 通过所有 CI 检查
+| 流水线 | 说明 |
+|--------|------|
+| `ci.yml` | 主 CI（lint、test、build、Docker 镜像） |
+| `deploy.yml` | 自动部署 |
+| `pre-commit-check.yml` | 提交前检查 |
+| `security.yml` | 安全扫描 |
 
 ---
 
-## 📞 联系我们
+## 文档
 
-- **项目负责人**: GameLink开发团队
-- **技术支持**: a2778978136@163.com
-- **项目仓库**: https://github.com/HXSLtim/GameLink.git
-
----
-
-## 📄 开源协议
-
-本项目采用 [MIT License](LICENSE) 开源协议。
+| 文档 | 路径 | 说明 |
+|------|------|------|
+| PRD | [docs/PRD.md](docs/PRD.md) | 产品需求文档 |
+| 进度 | [docs/PROGRESS.md](docs/PROGRESS.md) | 项目进度与版本历史 |
+| 组件文档 | [app/docs/COMPONENTS.md](app/docs/COMPONENTS.md) | 小程序组件职责 |
+| 页面计划 | [app/docs/PAGE_COMPONENT_USAGE_PLAN.md](app/docs/PAGE_COMPONENT_USAGE_PLAN.md) | 页面组件使用清单 |
+| 重构计划 | [app/docs/REFACTOR_PLAN.md](app/docs/REFACTOR_PLAN.md) | 前端重构记录 |
 
 ---
 
-<div align="center">
+## License
 
-**⭐ 如果这个项目对你有帮助，请给我们一个Star！**
-
-**🚀 让我们一起构建更好的游戏陪玩生态！**
-
-*最后更新: 2025-01-10 | 版本: v3.1*
-
-</div>
+Private - All Rights Reserved
