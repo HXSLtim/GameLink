@@ -237,30 +237,80 @@ const PaymentRecords: React.FC = () => {
 
     return (
         <PageContainer title="支付记录" subTitle="查看平台支付流水与统计">
-            <Row gutter={16} style={{ marginBottom: '24px' }}>
-                <Col span={6}>
-                    <Card>
-                        <Statistic title="总支付记录" value={stats.total} />
-                    </Card>
-                </Col>
-                <Col span={6}>
-                    <Card>
-                        <Statistic title="今日支付" value={stats.todayCount} suffix="笔" />
-                    </Card>
-                </Col>
-                <Col span={6}>
-                    <Card>
-                        <Statistic 
-                            title="今日金额" 
-                            value={stats.todayAmount / 100} 
-                            precision={2}
-                            prefix="¥" 
+            <Row gutter={16} style={{ marginBottom: 24 }}>
+                <Col xs={24} sm={12} lg={6}>
+                    <Card
+                        style={{
+                            border: 'none',
+                            borderRadius: 12,
+                            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
+                            transition: 'all 0.2s ease-in-out'
+                        }}
+                        bodyStyle={{ padding: '24px' }}
+                    >
+                        <Statistic
+                            title="总支付记录"
+                            value={stats.total}
+                            valueStyle={{ fontWeight: 600 }}
                         />
                     </Card>
                 </Col>
-                <Col span={6}>
-                    <Card>
-                        <Statistic title="成功率" value={stats.successRate} suffix="%" />
+                <Col xs={24} sm={12} lg={6}>
+                    <Card
+                        style={{
+                            border: 'none',
+                            borderRadius: 12,
+                            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
+                            transition: 'all 0.2s ease-in-out'
+                        }}
+                        bodyStyle={{ padding: '24px' }}
+                    >
+                        <Statistic
+                            title="今日支付"
+                            value={stats.todayCount}
+                            suffix="笔"
+                            valueStyle={{ fontWeight: 600 }}
+                        />
+                    </Card>
+                </Col>
+                <Col xs={24} sm={12} lg={6}>
+                    <Card
+                        style={{
+                            border: 'none',
+                            borderRadius: 12,
+                            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
+                            transition: 'all 0.2s ease-in-out'
+                        }}
+                        bodyStyle={{ padding: '24px' }}
+                    >
+                        <Statistic
+                            title="今日金额"
+                            value={stats.todayAmount / 100}
+                            precision={2}
+                            prefix="¥"
+                            valueStyle={{ fontWeight: 600, color: '#52c41a' }}
+                        />
+                    </Card>
+                </Col>
+                <Col xs={24} sm={12} lg={6}>
+                    <Card
+                        style={{
+                            border: 'none',
+                            borderRadius: 12,
+                            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
+                            transition: 'all 0.2s ease-in-out'
+                        }}
+                        bodyStyle={{ padding: '24px' }}
+                    >
+                        <Statistic
+                            title="成功率"
+                            value={stats.successRate}
+                            suffix="%"
+                            valueStyle={{
+                                fontWeight: 600,
+                                color: stats.successRate >= 90 ? '#52c41a' : stats.successRate >= 70 ? '#faad14' : '#ff4d4f'
+                            }}
+                        />
                     </Card>
                 </Col>
             </Row>

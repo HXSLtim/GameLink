@@ -797,44 +797,80 @@ const UserPage: React.FC = () => {
     return (
         <PageContainer title="用户管理" subTitle="管理平台所有注册用户">
             {/* 统计卡片 */}
-            <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+            <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card variant="borderless" loading={statsLoading}>
+                    <Card
+                        loading={statsLoading}
+                        style={{
+                            border: 'none',
+                            borderRadius: token.borderRadiusLG,
+                            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
+                            transition: 'all 0.2s ease-in-out'
+                        }}
+                        bodyStyle={{ padding: '24px' }}
+                    >
                         <Statistic
                             title="用户总数"
                             value={stats?.total || 0}
-                            prefix={<TeamOutlined />}
-                            styles={{ content: { color: token.colorPrimary } }}
+                            prefix={<TeamOutlined style={{ color: token.colorPrimary }} />}
+                            valueStyle={{ color: token.colorPrimary, fontWeight: 600 }}
                         />
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card variant="borderless" loading={statsLoading}>
+                    <Card
+                        loading={statsLoading}
+                        style={{
+                            border: 'none',
+                            borderRadius: token.borderRadiusLG,
+                            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
+                            transition: 'all 0.2s ease-in-out'
+                        }}
+                        bodyStyle={{ padding: '24px' }}
+                    >
                         <Statistic
                             title="陪玩师"
                             value={stats?.byRole.player || 0}
-                            prefix={<CrownOutlined />}
-                            styles={{ content: { color: '#722ed1' } }}
+                            prefix={<CrownOutlined style={{ color: '#722ed1' }} />}
+                            valueStyle={{ color: '#722ed1', fontWeight: 600 }}
                         />
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card variant="borderless" loading={statsLoading}>
+                    <Card
+                        loading={statsLoading}
+                        style={{
+                            border: 'none',
+                            borderRadius: token.borderRadiusLG,
+                            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
+                            transition: 'all 0.2s ease-in-out'
+                        }}
+                        bodyStyle={{ padding: '24px' }}
+                    >
                         <Statistic
                             title="正常用户"
                             value={stats?.byStatus.active || 0}
-                            prefix={<SafetyOutlined />}
-                            styles={{ content: { color: '#52c41a' } }}
+                            prefix={<SafetyOutlined style={{ color: '#52c41a' }} />}
+                            valueStyle={{ color: '#52c41a', fontWeight: 600 }}
                         />
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card variant="borderless" loading={statsLoading}>
+                    <Card
+                        loading={statsLoading}
+                        style={{
+                            border: 'none',
+                            borderRadius: token.borderRadiusLG,
+                            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
+                            transition: 'all 0.2s ease-in-out'
+                        }}
+                        bodyStyle={{ padding: '24px' }}
+                    >
                         <Statistic
                             title="最近注册"
                             value={stats?.recentRegistrations || 0}
-                            prefix={<UserOutlined />}
-                            styles={{ content: { color: '#52c41a' } }}
+                            prefix={<UserOutlined style={{ color: '#52c41a' }} />}
+                            valueStyle={{ color: '#52c41a', fontWeight: 600 }}
                         />
                     </Card>
                 </Col>
@@ -961,41 +997,70 @@ const UserPage: React.FC = () => {
 
             {/* 详情抽屉 */}
             <Drawer
-                title="用户详情"
+                title={<span style={{ fontSize: '16px', fontWeight: 600 }}>用户详情</span>}
                 open={detailDrawerVisible}
                 onClose={() => setDetailDrawerVisible(false)}
                 size="large"
                 style={{ maxWidth: '100%' }}
+                styles={{
+                    body: { padding: '24px' }
+                }}
             >
                 {currentUser && (
                     <Tabs defaultActiveKey="1" onChange={handleTabChange}>
                         <Tabs.TabPane tab="基本信息" key="1">
-                            <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                            <div style={{ textAlign: 'center', marginBottom: 32 }}>
                                 <Avatar
-                                    size={80}
+                                    size={96}
                                     src={currentUser.avatarUrl || undefined}
                                     icon={<UserOutlined />}
-                                    style={{ backgroundColor: token.colorPrimary }}
+                                    style={{
+                                        backgroundColor: token.colorPrimary,
+                                        boxShadow: '0 4px 12px rgba(122, 204, 53, 0.25)'
+                                    }}
                                 />
-                                <h2 style={{ marginTop: 16, marginBottom: 4 }}>{currentUser.name}</h2>
-                                <Tag color={roleMap[currentUser.role].color}>{roleMap[currentUser.role].text}</Tag>
-                                <Tag color={statusMap[currentUser.status].color}>{statusMap[currentUser.status].text}</Tag>
+                                <h2 style={{
+                                    marginTop: 20,
+                                    marginBottom: 8,
+                                    fontSize: '20px',
+                                    fontWeight: 600,
+                                    color: token.colorTextHeading
+                                }}>
+                                    {currentUser.name}
+                                </h2>
+                                <Space size={8}>
+                                    <Tag color={roleMap[currentUser.role].color} style={{ fontSize: '13px' }}>
+                                        {roleMap[currentUser.role].text}
+                                    </Tag>
+                                    <Tag color={statusMap[currentUser.status].color} style={{ fontSize: '13px' }}>
+                                        {statusMap[currentUser.status].text}
+                                    </Tag>
+                                </Space>
                             </div>
 
-                            <Divider />
+                            <Divider style={{ margin: '24px 0' }} />
 
-                            <Descriptions column={2} labelStyle={{ width: 100 }}>
+                            <Descriptions
+                                column={2}
+                                labelStyle={{ width: 120, fontWeight: 500, color: token.colorTextSecondary }}
+                            >
                                 <Descriptions.Item label="用户ID">{currentUser.id}</Descriptions.Item>
                                 <Descriptions.Item label="邮箱">{currentUser.email}</Descriptions.Item>
                                 <Descriptions.Item label="手机号">{currentUser.phone}</Descriptions.Item>
-                                <Descriptions.Item label="等级">Lv.{currentUser.level || 0}</Descriptions.Item>
+                                <Descriptions.Item label="等级">
+                                    <Tag color="gold" style={{ fontWeight: 500 }}>Lv.{currentUser.level || 0}</Tag>
+                                </Descriptions.Item>
                                 <Descriptions.Item label="标签">
-                                    {currentUser.tags?.map(tag => <Tag key={tag}>{tag}</Tag>)}
+                                    <Space size={4} wrap>
+                                        {currentUser.tags?.map(tag => (
+                                            <Tag key={tag} style={{ fontSize: '12px' }}>{tag}</Tag>
+                                        ))}
+                                    </Space>
                                 </Descriptions.Item>
                                 <Descriptions.Item label="注册时间">
                                     {dayjs(currentUser.createdAt).format('YYYY-MM-DD HH:mm:ss')}
                                 </Descriptions.Item>
-                                <Descriptions.Item label="最后登录">
+                                <Descriptions.Item label="最后登录" span={2}>
                                     {currentUser.lastLoginAt ? dayjs(currentUser.lastLoginAt).format('YYYY-MM-DD HH:mm:ss') : '从未登录'}
                                 </Descriptions.Item>
                             </Descriptions>

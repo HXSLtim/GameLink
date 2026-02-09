@@ -505,9 +505,23 @@ const SettlementPage: React.FC = () => {
             subTitle="管理陪玩师结算公司与归属关系"
             extra={
                 <Space size="large">
-                    <Statistic title="公司总数" value={stats.total} prefix={<BankOutlined />} />
-                    <Statistic title="启用公司" value={stats.active} />
-                    <Statistic title="关联陪玩师" value={stats.totalPlayers} prefix={<TeamOutlined />} />
+                    <Statistic
+                        title="公司总数"
+                        value={stats.total}
+                        prefix={<BankOutlined />}
+                        valueStyle={{ fontWeight: 600 }}
+                    />
+                    <Statistic
+                        title="启用公司"
+                        value={stats.active}
+                        valueStyle={{ fontWeight: 600, color: '#52c41a' }}
+                    />
+                    <Statistic
+                        title="关联陪玩师"
+                        value={stats.totalPlayers}
+                        prefix={<TeamOutlined />}
+                        valueStyle={{ fontWeight: 600 }}
+                    />
                 </Space>
             }
         >
@@ -551,11 +565,14 @@ const SettlementPage: React.FC = () => {
 
             {/* 历史记录抽屉 */}
             <Modal
-                title="变更历史"
+                title={<span style={{ fontSize: '16px', fontWeight: 600 }}>变更历史</span>}
                 open={historyDrawerVisible}
                 onCancel={() => setHistoryDrawerVisible(false)}
                 footer={null}
                 width={800}
+                styles={{
+                    body: { padding: '24px' }
+                }}
             >
                 {companyHistory.length > 0 ? (
                     <div style={{ maxHeight: 500, overflowY: 'auto' }}>
@@ -563,31 +580,36 @@ const SettlementPage: React.FC = () => {
                             <Card
                                 key={item.id || index}
                                 size="small"
-                                style={{ marginBottom: 8 }}
+                                style={{
+                                    marginBottom: 12,
+                                    borderRadius: 8,
+                                    border: '1px solid rgba(0, 0, 0, 0.06)'
+                                }}
+                                bodyStyle={{ padding: '16px' }}
                             >
                                 <Row gutter={16}>
                                     <Col span={6}>
-                                        <Tag color="blue">{item.fieldName}</Tag>
+                                        <Tag color="blue" style={{ fontSize: '13px' }}>{item.fieldName}</Tag>
                                     </Col>
                                     <Col span={7}>
-                                        <del style={{ color: '#999' }}>
+                                        <del style={{ color: 'rgba(0, 0, 0, 0.45)', fontSize: '13px' }}>
                                             {item.oldValue || '-'}
                                         </del>
                                     </Col>
-                                    <Col span={1} style={{ textAlign: 'center' }}>
+                                    <Col span={1} style={{ textAlign: 'center', color: 'rgba(0, 0, 0, 0.25)' }}>
                                         →
                                     </Col>
                                     <Col span={7}>
-                                        <span style={{ color: '#52c41a', fontWeight: 500 }}>
+                                        <span style={{ color: '#52c41a', fontWeight: 500, fontSize: '13px' }}>
                                             {item.newValue || '-'}
                                         </span>
                                     </Col>
-                                    <Col span={3} style={{ textAlign: 'right', fontSize: 12, color: '#999' }}>
+                                    <Col span={3} style={{ textAlign: 'right', fontSize: '12px', color: 'rgba(0, 0, 0, 0.45)' }}>
                                         {dayjs(item.changedAt).format('MM-DD HH:mm')}
                                     </Col>
                                 </Row>
                                 {item.changedByAdmin && (
-                                    <div style={{ fontSize: 12, color: '#999', marginTop: 4 }}>
+                                    <div style={{ fontSize: '12px', color: 'rgba(0, 0, 0, 0.45)', marginTop: 8 }}>
                                         操作人: {item.changedByAdmin.name}
                                     </div>
                                 )}
@@ -595,7 +617,7 @@ const SettlementPage: React.FC = () => {
                         ))}
                     </div>
                 ) : (
-                    <div style={{ textAlign: 'center', padding: 40, color: '#999' }}>
+                    <div style={{ textAlign: 'center', padding: 60, color: 'rgba(0, 0, 0, 0.45)', fontSize: '14px' }}>
                         暂无变更记录
                     </div>
                 )}

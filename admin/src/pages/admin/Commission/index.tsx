@@ -248,14 +248,23 @@ const CommissionPage: React.FC = () => {
     return (
         <PageContainer title="佣金管理" subTitle="平台佣金设置与结算管理">
             {/* 月份选择 */}
-            <Card style={{ marginBottom: 16 }}>
-                <Space>
-                    <Text>选择月份：</Text>
+            <Card
+                style={{
+                    marginBottom: 24,
+                    border: 'none',
+                    borderRadius: 12,
+                    boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)'
+                }}
+                bodyStyle={{ padding: '20px 24px' }}
+            >
+                <Space size="middle">
+                    <Text style={{ fontSize: '14px', fontWeight: 500 }}>选择月份：</Text>
                     <DatePicker
                         picker="month"
                         value={dayjs(selectedMonth)}
                         onChange={(date) => setSelectedMonth(date?.format('YYYY-MM') || dayjs().format('YYYY-MM'))}
                         allowClear={false}
+                        style={{ borderRadius: 6 }}
                     />
                     <Button icon={<SyncOutlined />} onClick={loadStats} loading={loading}>
                         刷新
@@ -266,6 +275,10 @@ const CommissionPage: React.FC = () => {
                             icon={<SettingOutlined />}
                             onClick={handleTriggerSettlement}
                             loading={triggeringSettlement}
+                            style={{
+                                borderRadius: 6,
+                                boxShadow: triggeringSettlement ? 'none' : '0 2px 4px rgba(122, 204, 53, 0.2)'
+                            }}
                         >
                             触发月度结算
                         </Button>
@@ -274,41 +287,81 @@ const CommissionPage: React.FC = () => {
             </Card>
 
             {/* 统计卡片 */}
-            <Row gutter={16} style={{ marginBottom: 16 }}>
-                <Col span={6}>
-                    <Card style={{ minHeight: 120 }}>
+            <Row gutter={16} style={{ marginBottom: 24 }}>
+                <Col xs={24} sm={12} lg={6}>
+                    <Card
+                        loading={loading}
+                        style={{
+                            border: 'none',
+                            borderRadius: 12,
+                            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
+                            minHeight: 120
+                        }}
+                        bodyStyle={{ padding: '24px' }}
+                    >
                         <Statistic
                             title="平台总收入"
                             value={stats?.totalRevenueCents ? stats.totalRevenueCents / 100 : 0}
                             precision={2}
                             prefix="¥"
-                            />
+                            valueStyle={{ fontWeight: 600, color: '#faad14' }}
+                        />
                     </Card>
                 </Col>
-                <Col span={6}>
-                    <Card style={{ minHeight: 120 }}>
+                <Col xs={24} sm={12} lg={6}>
+                    <Card
+                        loading={loading}
+                        style={{
+                            border: 'none',
+                            borderRadius: 12,
+                            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
+                            minHeight: 120
+                        }}
+                        bodyStyle={{ padding: '24px' }}
+                    >
                         <Statistic
                             title="平台佣金"
                             value={stats?.totalCommissionCents ? stats.totalCommissionCents / 100 : 0}
                             precision={2}
                             prefix="¥"
-                            />
-                    </Card>
-                </Col>
-                <Col span={6}>
-                    <Card style={{ minHeight: 120 }}>
-                        <Statistic
-                            title="总订单数"
-                            value={stats?.totalOrderCount || 0}
+                            valueStyle={{ fontWeight: 600, color: '#7ACC35' }}
                         />
                     </Card>
                 </Col>
-                <Col span={6}>
-                    <Card style={{ minHeight: 120 }}>
+                <Col xs={24} sm={12} lg={6}>
+                    <Card
+                        loading={loading}
+                        style={{
+                            border: 'none',
+                            borderRadius: 12,
+                            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
+                            minHeight: 120
+                        }}
+                        bodyStyle={{ padding: '24px' }}
+                    >
+                        <Statistic
+                            title="总订单数"
+                            value={stats?.totalOrderCount || 0}
+                            valueStyle={{ fontWeight: 600 }}
+                        />
+                    </Card>
+                </Col>
+                <Col xs={24} sm={12} lg={6}>
+                    <Card
+                        loading={loading}
+                        style={{
+                            border: 'none',
+                            borderRadius: 12,
+                            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
+                            minHeight: 120
+                        }}
+                        bodyStyle={{ padding: '24px' }}
+                    >
                         <Statistic
                             title="完成订单数"
                             value={stats?.completedOrderCount || 0}
-                            />
+                            valueStyle={{ fontWeight: 600, color: '#52c41a' }}
+                        />
                     </Card>
                 </Col>
             </Row>
@@ -317,24 +370,48 @@ const CommissionPage: React.FC = () => {
             <Card
                 title={
                     <Space>
-                        <DollarOutlined />
-                        <span>佣金规则</span>
+                        <DollarOutlined style={{ color: '#7ACC35' }} />
+                        <span style={{ fontSize: '15px', fontWeight: 500 }}>佣金规则</span>
                     </Space>
                 }
                 extra={
                     <PermissionGuard permission={COMMISSION_PERMISSIONS.CREATE}>
-                        <Button type="primary" icon={<PlusOutlined />} onClick={handleCreateRule}>
+                        <Button
+                            type="primary"
+                            icon={<PlusOutlined />}
+                            onClick={handleCreateRule}
+                            style={{
+                                borderRadius: 6,
+                                boxShadow: '0 2px 4px rgba(122, 204, 53, 0.2)'
+                            }}
+                        >
                             新增规则
                         </Button>
                     </PermissionGuard>
                 }
+                style={{
+                    border: 'none',
+                    borderRadius: 12,
+                    boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)'
+                }}
+                headStyle={{
+                    borderBottom: '1px solid rgba(0, 0, 0, 0.06)',
+                    fontSize: '15px',
+                    fontWeight: 500
+                }}
+                bodyStyle={{ padding: '24px' }}
             >
                 <Alert
                     message="佣金说明"
                     description="平台从每笔完成的订单中按比例抽取佣金。默认抽成比例为20%，可根据游戏类型或陪玩师等级设置不同的抽成规则。"
                     type="info"
                     showIcon
-                    style={{ marginBottom: 16 }}
+                    style={{
+                        marginBottom: 24,
+                        borderRadius: 8,
+                        border: '1px solid rgba(122, 204, 53, 0.2)',
+                        backgroundColor: 'rgba(122, 204, 53, 0.05)'
+                    }}
                 />
                 <Table
                     columns={ruleColumns}
@@ -347,25 +424,38 @@ const CommissionPage: React.FC = () => {
                 />
             </Card>
 
-            <Divider />
+            <Divider style={{ margin: '24px 0' }} />
 
             {/* 结算说明 */}
-            <Card title="结算说明">
+            <Card
+                title={<span style={{ fontSize: '15px', fontWeight: 500 }}>结算说明</span>}
+                style={{
+                    border: 'none',
+                    borderRadius: 12,
+                    boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)'
+                }}
+                headStyle={{
+                    borderBottom: '1px solid rgba(0, 0, 0, 0.06)',
+                    fontSize: '15px',
+                    fontWeight: 500
+                }}
+                bodyStyle={{ padding: '24px' }}
+            >
                 <Row gutter={24}>
                     <Col span={12}>
-                        <Title level={5}>结算周期</Title>
-                        <ul>
-                            <li>结算周期为每月一次</li>
-                            <li>每月1日自动触发上月结算</li>
-                            <li>也可手动触发指定月份的结算</li>
+                        <Title level={5} style={{ fontSize: '14px', fontWeight: 600, marginBottom: 12 }}>结算周期</Title>
+                        <ul style={{ paddingLeft: 16, margin: 0 }}>
+                            <li style={{ marginBottom: 8, fontSize: '14px', lineHeight: '1.6' }}>结算周期为每月一次</li>
+                            <li style={{ marginBottom: 8, fontSize: '14px', lineHeight: '1.6' }}>每月1日自动触发上月结算</li>
+                            <li style={{ fontSize: '14px', lineHeight: '1.6' }}>也可手动触发指定月份的结算</li>
                         </ul>
                     </Col>
                     <Col span={12}>
-                        <Title level={5}>结算规则</Title>
-                        <ul>
-                            <li>只结算已完成的订单</li>
-                            <li>退款订单不计入结算</li>
-                            <li>结算金额 = 订单金额 × (1 - 抽成比例)</li>
+                        <Title level={5} style={{ fontSize: '14px', fontWeight: 600, marginBottom: 12 }}>结算规则</Title>
+                        <ul style={{ paddingLeft: 16, margin: 0 }}>
+                            <li style={{ marginBottom: 8, fontSize: '14px', lineHeight: '1.6' }}>只结算已完成的订单</li>
+                            <li style={{ marginBottom: 8, fontSize: '14px', lineHeight: '1.6' }}>退款订单不计入结算</li>
+                            <li style={{ fontSize: '14px', lineHeight: '1.6' }}>结算金额 = 订单金额 × (1 - 抽成比例)</li>
                         </ul>
                     </Col>
                 </Row>
@@ -373,59 +463,68 @@ const CommissionPage: React.FC = () => {
 
             {/* 规则编辑弹窗 */}
             <Modal
-                title={currentRule ? '编辑佣金规则' : '新增佣金规则'}
+                title={<span style={{ fontSize: '16px', fontWeight: 600 }}>{currentRule ? '编辑佣金规则' : '新增佣金规则'}</span>}
                 open={ruleModalVisible}
                 onOk={handleSaveRule}
                 onCancel={() => setRuleModalVisible(false)}
                 confirmLoading={submitting}
                 width={500}
+                okButtonProps={{
+                    style: {
+                        borderRadius: 6,
+                        boxShadow: '0 2px 4px rgba(122, 204, 53, 0.2)'
+                    }
+                }}
+                styles={{
+                    body: { padding: '24px' }
+                }}
             >
                 <Form form={form} layout="vertical">
                     <Form.Item
                         name="name"
-                        label="规则名称"
+                        label={<span style={{ fontSize: '14px', fontWeight: 500 }}>规则名称</span>}
                         rules={[{ required: true, message: '请输入规则名称' }]}
                     >
-                        <Input placeholder="请输入规则名称" />
+                        <Input placeholder="请输入规则名称" style={{ borderRadius: 6 }} />
                     </Form.Item>
 
                     <Form.Item
                         name="ratePercent"
-                        label="抽成比例 (%)"
+                        label={<span style={{ fontSize: '14px', fontWeight: 500 }}>抽成比例 (%)</span>}
                         rules={[{ required: true, message: '请输入抽成比例' }]}
                     >
                         <InputNumber
                             min={0}
                             max={100}
                             precision={1}
-                            style={{ width: '100%' }}
+                            style={{ width: '100%', borderRadius: 6 }}
                             placeholder="请输入抽成比例"
                             addonAfter="%"
                         />
                     </Form.Item>
 
-                    <Form.Item name="minAmountCents" label="最低订单金额 (元)">
+                    <Form.Item name="minAmountCents" label={<span style={{ fontSize: '14px', fontWeight: 500 }}>最低订单金额 (元)</span>}>
                         <InputNumber
                             min={0}
                             precision={2}
-                            style={{ width: '100%' }}
+                            style={{ width: '100%', borderRadius: 6 }}
                             placeholder="不限制请留空"
                             addonBefore="¥"
                         />
                     </Form.Item>
 
-                    <Form.Item name="maxAmountCents" label="最高订单金额 (元)">
+                    <Form.Item name="maxAmountCents" label={<span style={{ fontSize: '14px', fontWeight: 500 }}>最高订单金额 (元)</span>}>
                         <InputNumber
                             min={0}
                             precision={2}
-                            style={{ width: '100%' }}
+                            style={{ width: '100%', borderRadius: 6 }}
                             placeholder="不限制请留空"
                             addonBefore="¥"
                         />
                     </Form.Item>
 
-                    <Form.Item name="isDefault" label="是否默认规则">
-                        <Select>
+                    <Form.Item name="isDefault" label={<span style={{ fontSize: '14px', fontWeight: 500 }}>是否默认规则</span>}>
+                        <Select style={{ borderRadius: 6 }}>
                             <Select.Option value={true}>是</Select.Option>
                             <Select.Option value={false}>否</Select.Option>
                         </Select>
