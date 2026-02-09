@@ -1,10 +1,11 @@
 /**
  * 可折叠区块组件
  * 用于仪表盘等页面的渐进式披露
+ * GameLink 设计规范：专业、简洁、克制
  */
 import React, { useState } from 'react';
 import type { ReactNode } from 'react';
-import { Typography, Button, Space } from 'antd';
+import { Typography, Button, Space, theme } from 'antd';
 import { DownOutlined, UpOutlined } from '@ant-design/icons';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -42,6 +43,7 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
   extra,
   level = 5,
 }) => {
+  const { token } = theme.useToken();
   const [internalCollapsed, setInternalCollapsed] = useState(defaultCollapsed);
 
   // 支持受控和非受控模式
@@ -54,20 +56,34 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
   };
 
   return (
-    <section aria-labelledby={`section-${id}`} style={{ marginTop: 16 }}>
+    <section
+      aria-labelledby={`section-${id}`}
+      style={{
+        marginTop: 24,
+        marginBottom: 8
+      }}
+    >
       <div
         style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           marginBottom: isCollapsed ? 0 : 16,
+          paddingBottom: 12,
+          borderBottom: `1px solid ${token.colorBorderSecondary}`,
         }}
       >
         <Space>
           <Title
             id={`section-${id}`}
             level={level}
-            style={{ margin: 0, cursor: 'pointer' }}
+            style={{
+              margin: 0,
+              cursor: 'pointer',
+              fontSize: '16px',
+              fontWeight: 600,
+              color: token.colorTextHeading
+            }}
             onClick={handleToggle}
           >
             {title}
@@ -80,6 +96,16 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
             aria-expanded={!isCollapsed}
             aria-controls={`content-${id}`}
             aria-label={isCollapsed ? '展开' : '折叠'}
+            style={{
+              color: token.colorTextSecondary,
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = token.colorPrimary;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = token.colorTextSecondary;
+            }}
           />
         </Space>
         {extra && <div>{extra}</div>}

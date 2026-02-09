@@ -132,74 +132,183 @@ const Login: React.FC = () => {
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            height: '100vh',
-            background: token.colorBgLayout
+            minHeight: '100vh',
+            background: `linear-gradient(135deg, ${token.colorBgLayout} 0%, rgba(122, 204, 53, 0.05) 100%)`,
+            padding: '24px',
+            position: 'relative',
+            overflow: 'hidden'
         }}>
-            <Card style={{ width: 400, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-                <div style={{ textAlign: 'center', marginBottom: 24 }}>
-                    <h1 style={{ margin: 0, color: token.colorTextHeading }}>GameLink</h1>
-                    <p style={{ color: token.colorTextSecondary }}>游戏陪玩平台</p>
+            {/* 背景装饰元素 */}
+            <div style={{
+                position: 'absolute',
+                width: '600px',
+                height: '600px',
+                borderRadius: '50%',
+                background: 'radial-gradient(circle, rgba(122, 204, 53, 0.08) 0%, transparent 70%)',
+                top: '-300px',
+                right: '-300px',
+                pointerEvents: 'none'
+            }} />
+            <div style={{
+                position: 'absolute',
+                width: '400px',
+                height: '400px',
+                borderRadius: '50%',
+                background: 'radial-gradient(circle, rgba(122, 204, 53, 0.05) 0%, transparent 70%)',
+                bottom: '-200px',
+                left: '-200px',
+                pointerEvents: 'none'
+            }} />
+
+            <Card
+                style={{
+                    width: '100%',
+                    maxWidth: 420,
+                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
+                    borderRadius: token.borderRadiusLG,
+                    border: `1px solid ${token.colorBorderSecondary}`,
+                    position: 'relative',
+                    zIndex: 1
+                }}
+                bodyStyle={{
+                    padding: '40px 32px'
+                }}
+            >
+                <div style={{ textAlign: 'center', marginBottom: 32 }}>
+                    <h1 style={{
+                        margin: '0 0 8px 0',
+                        color: token.colorTextHeading,
+                        fontSize: '28px',
+                        fontWeight: 600,
+                        letterSpacing: '-0.5px'
+                    }}>
+                        GameLink
+                    </h1>
+                    <p style={{
+                        margin: 0,
+                        color: token.colorTextSecondary,
+                        fontSize: '14px'
+                    }}>
+                        游戏陪玩平台 · 管理后台
+                    </p>
                 </div>
 
-                <Tabs defaultActiveKey="account" items={[
-                    {
-                        key: 'account',
-                        label: '账号登录',
-                        children: (
-                            <Form
-                                name="login"
-                                form={form}
-                                onFinish={onFinish}
-                                layout="vertical"
-                            >
-                                <Form.Item
-                                    name="username"
-                                    rules={[{ required: true, message: '请输入用户名！' }]}
+                <Tabs
+                    defaultActiveKey="account"
+                    items={[
+                        {
+                            key: 'account',
+                            label: '账号登录',
+                            children: (
+                                <Form
+                                    name="login"
+                                    form={form}
+                                    onFinish={onFinish}
+                                    layout="vertical"
+                                    requiredMark={false}
                                 >
-                                    <Input prefix={<UserOutlined />} placeholder="用户名" size="large" />
-                                </Form.Item>
+                                    <Form.Item
+                                        name="username"
+                                        label={<span style={{ fontSize: '14px', fontWeight: 500 }}>用户名</span>}
+                                        rules={[{ required: true, message: '请输入用户名！' }]}
+                                    >
+                                        <Input
+                                            prefix={<UserOutlined style={{ color: token.colorTextSecondary }} />}
+                                            placeholder="请输入用户名"
+                                            size="large"
+                                            style={{
+                                                borderRadius: token.borderRadiusSM
+                                            }}
+                                        />
+                                    </Form.Item>
 
-                                <Form.Item
-                                    name="password"
-                                    rules={[{ required: true, message: '请输入密码！' }]}
-                                >
-                                    <Input.Password prefix={<LockOutlined />} placeholder="密码" size="large" />
-                                </Form.Item>
+                                    <Form.Item
+                                        name="password"
+                                        label={<span style={{ fontSize: '14px', fontWeight: 500 }}>密码</span>}
+                                        rules={[{ required: true, message: '请输入密码！' }]}
+                                    >
+                                        <Input.Password
+                                            prefix={<LockOutlined style={{ color: token.colorTextSecondary }} />}
+                                            placeholder="请输入密码"
+                                            size="large"
+                                            style={{
+                                                borderRadius: token.borderRadiusSM
+                                            }}
+                                        />
+                                    </Form.Item>
 
-                                <Form.Item name="remember" valuePropName="checked">
-                                    <Checkbox>记住密码</Checkbox>
-                                </Form.Item>
+                                    <Form.Item name="remember" valuePropName="checked">
+                                        <Checkbox style={{ fontSize: '14px' }}>记住密码</Checkbox>
+                                    </Form.Item>
 
-                                <Form.Item>
-                                    <Button type="primary" htmlType="submit" block size="large" loading={loading}>
-                                        登录
-                                    </Button>
-                                </Form.Item>
+                                    <Form.Item style={{ marginBottom: 16 }}>
+                                        <Button
+                                            type="primary"
+                                            htmlType="submit"
+                                            block
+                                            size="large"
+                                            loading={loading}
+                                            style={{
+                                                height: '44px',
+                                                borderRadius: token.borderRadiusSM,
+                                                fontSize: '16px',
+                                                fontWeight: 500,
+                                                boxShadow: loading ? 'none' : '0 2px 8px rgba(122, 204, 53, 0.25)'
+                                            }}
+                                        >
+                                            登录
+                                        </Button>
+                                    </Form.Item>
 
-                                <div style={{ textAlign: 'center' }}>
-                                    没有账号？ <Link to="/register">立即注册</Link>
-                                </div>
-                            </Form>
-                        )
-                    }
-                ]} />
+                                    <div style={{
+                                        textAlign: 'center',
+                                        fontSize: '14px',
+                                        color: token.colorTextSecondary
+                                    }}>
+                                        没有账号？{' '}
+                                        <Link to="/register" style={{ fontWeight: 500 }}>
+                                            立即注册
+                                        </Link>
+                                    </div>
+                                </Form>
+                            )
+                        }
+                    ]}
+                />
 
                 {/* Quick Login for Development */}
                 {ENABLE_QUICK_LOGIN && (
-                    <div style={{ marginTop: 24, borderTop: `1px solid ${token.colorBorderSecondary}`, paddingTop: 16 }}>
-                        <div style={{ marginBottom: 8, color: token.colorTextSecondary, fontSize: 12, textAlign: 'center' }}>
+                    <div style={{
+                        marginTop: 32,
+                        paddingTop: 24,
+                        borderTop: `1px solid ${token.colorBorderSecondary}`
+                    }}>
+                        <div style={{
+                            marginBottom: 16,
+                            color: token.colorTextSecondary,
+                            fontSize: '13px',
+                            textAlign: 'center',
+                            fontWeight: 500
+                        }}>
                             开发环境快速登录
                         </div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
+                        <div style={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: 12,
+                            justifyContent: 'center'
+                        }}>
                             {DEBUG_USERS.map(user => (
                                 <Button
                                     key={user.email}
-                                    size="small"
+                                    size="large"
                                     onClick={() => onFinish({ username: user.email, password: user.password })}
                                     style={{
                                         borderColor: user.color,
                                         color: user.color,
-                                        fontSize: 12
+                                        fontSize: '13px',
+                                        borderRadius: token.borderRadiusSM,
+                                        borderWidth: '1.5px'
                                     }}
                                 >
                                     {user.label}

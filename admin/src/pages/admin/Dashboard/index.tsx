@@ -86,7 +86,24 @@ interface PieChartCardProps {
 }
 
 const PieChartCard = memo(({ title, data, loading, chartHeight, token, ariaLabel }: PieChartCardProps) => (
-  <Card title={title} loading={loading} style={{ border: 'none' }}>
+  <Card
+    title={title}
+    loading={loading}
+    style={{
+      border: 'none',
+      borderRadius: token.borderRadiusLG,
+      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
+      transition: 'all 0.2s ease-in-out'
+    }}
+    headStyle={{
+      borderBottom: `1px solid ${token.colorBorderSecondary}`,
+      fontSize: '15px',
+      fontWeight: 500
+    }}
+    bodyStyle={{
+      padding: '24px'
+    }}
+  >
     <div
       style={{ height: chartHeight + 20, width: '100%', minWidth: 1, minHeight: 1, overflow: 'hidden' }}
       role="img"
@@ -110,7 +127,12 @@ const PieChartCard = memo(({ title, data, loading, chartHeight, token, ariaLabel
               ))}
             </Pie>
             <Tooltip
-              contentStyle={{ backgroundColor: token.colorBgElevated, borderColor: token.colorBorder }}
+              contentStyle={{
+                backgroundColor: token.colorBgElevated,
+                borderColor: token.colorBorder,
+                borderRadius: token.borderRadiusSM,
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)'
+              }}
               itemStyle={{ color: token.colorText }}
             />
             <Legend />
@@ -135,7 +157,24 @@ interface LineChartCardProps {
 }
 
 const LineChartCard = memo(({ title, data, loading, chartHeight, token, ariaLabel, dataName, lineColor }: LineChartCardProps) => (
-  <Card title={title} loading={loading} style={{ border: 'none' }}>
+  <Card
+    title={title}
+    loading={loading}
+    style={{
+      border: 'none',
+      borderRadius: token.borderRadiusLG,
+      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
+      transition: 'all 0.2s ease-in-out'
+    }}
+    headStyle={{
+      borderBottom: `1px solid ${token.colorBorderSecondary}`,
+      fontSize: '15px',
+      fontWeight: 500
+    }}
+    bodyStyle={{
+      padding: '24px'
+    }}
+  >
     <div
       style={{ height: chartHeight + 20, width: '100%', minWidth: 1, minHeight: 1, overflow: 'hidden' }}
       role="img"
@@ -147,7 +186,12 @@ const LineChartCard = memo(({ title, data, loading, chartHeight, token, ariaLabe
           <XAxis dataKey="date" stroke={token.colorTextSecondary} />
           <YAxis stroke={token.colorTextSecondary} />
           <Tooltip
-            contentStyle={{ backgroundColor: token.colorBgElevated, borderColor: token.colorBorder }}
+            contentStyle={{
+              backgroundColor: token.colorBgElevated,
+              borderColor: token.colorBorder,
+              borderRadius: token.borderRadiusSM,
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)'
+            }}
             itemStyle={{ color: token.colorText }}
           />
           <Legend />
@@ -156,7 +200,8 @@ const LineChartCard = memo(({ title, data, loading, chartHeight, token, ariaLabe
             dataKey="value"
             name={dataName}
             stroke={lineColor}
-            activeDot={{ r: 8 }}
+            strokeWidth={2}
+            activeDot={{ r: 6, strokeWidth: 0 }}
           />
         </LineChart>
       </ResponsiveContainer>
@@ -398,14 +443,19 @@ const Dashboard: React.FC = () => {
       }
       extra={
         <Space size="middle">
-          <Select value={days} onChange={setDays} style={{ width: 120 }}>
+          <Select
+            value={days}
+            onChange={setDays}
+            style={{ width: 120 }}
+            size="large"
+          >
             <Option value={7}>近7天</Option>
             <Option value={30}>近30天</Option>
             <Option value={90}>近90天</Option>
           </Select>
           <AntdTooltip title="自动刷新（每30秒）">
             <Space>
-              <SyncOutlined spin={autoRefresh && refreshing} />
+              <SyncOutlined spin={autoRefresh && refreshing} style={{ color: token.colorPrimary }} />
               <Switch
                 checked={autoRefresh}
                 onChange={setAutoRefresh}
@@ -415,10 +465,19 @@ const Dashboard: React.FC = () => {
           </AntdTooltip>
           <AntdTooltip title="手动刷新">
             <Badge dot={refreshing}>
-              <ReloadOutlined
-                spin={refreshing}
+              <Button
+                type="text"
+                icon={<ReloadOutlined spin={refreshing} />}
                 onClick={handleManualRefresh}
-                style={{ cursor: 'pointer', fontSize: 16 }}
+                style={{
+                  fontSize: 16,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: token.borderRadiusSM
+                }}
               />
             </Badge>
           </AntdTooltip>
@@ -431,16 +490,30 @@ const Dashboard: React.FC = () => {
           message={
             <Space>
               <WarningOutlined />
-              <span>有 <strong>{pendingOrderCount}</strong> 个订单待处理，请及时关注</span>
+              <span>
+                有 <strong>{pendingOrderCount}</strong> 个订单待处理，请及时关注
+              </span>
             </Space>
           }
           type="warning"
           showIcon={false}
           banner
           closable
-          style={{ marginBottom: 16 }}
+          style={{
+            marginBottom: 24,
+            borderRadius: token.borderRadiusLG,
+            borderLeftWidth: 4
+          }}
           action={
-            <a href="/admin/biz/order?status=pending">立即处理</a>
+            <a
+              href="/admin/biz/order?status=pending"
+              style={{
+                color: token.colorWarning,
+                fontWeight: 500
+              }}
+            >
+              立即处理
+            </a>
           }
         />
       )}
@@ -610,34 +683,80 @@ const Dashboard: React.FC = () => {
             <Card
               title={
                 <Space>
-                  <ClockCircleOutlined />
+                  <ClockCircleOutlined style={{ color: token.colorPrimary }} />
                   <span>最新订单</span>
                 </Space>
               }
-              extra={<a href="/admin/biz/order">查看全部</a>}
+              extra={
+                <a
+                  href="/admin/biz/order"
+                  style={{
+                    color: token.colorPrimary,
+                    fontWeight: 500
+                  }}
+                >
+                  查看全部
+                </a>
+              }
               loading={loading}
-              style={{ flex: 1, width: '100%', border: 'none' }}
+              style={{
+                flex: 1,
+                width: '100%',
+                border: 'none',
+                borderRadius: token.borderRadiusLG,
+                boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
+                transition: 'all 0.2s ease-in-out'
+              }}
+              headStyle={{
+                borderBottom: `1px solid ${token.colorBorderSecondary}`,
+                fontSize: '15px',
+                fontWeight: 500
+              }}
+              bodyStyle={{
+                padding: '16px 24px 24px'
+              }}
             >
-              <Table columns={orderColumns} dataSource={recentOrders} rowKey="id" pagination={false} size="small" />
+              <Table
+                columns={orderColumns}
+                dataSource={recentOrders}
+                rowKey="id"
+                pagination={false}
+                size="middle"
+              />
             </Card>
           </Col>
           <Col xs={24} xl={8} style={{ display: 'flex', flexDirection: 'column' }}>
             <Card
               title={
                 <Space>
-                  <RiseOutlined />
+                  <RiseOutlined style={{ color: token.colorPrimary }} />
                   <span>热门陪玩</span>
                 </Space>
               }
               loading={loading}
-              style={{ flex: 1, width: '100%', border: 'none' }}
+              style={{
+                flex: 1,
+                width: '100%',
+                border: 'none',
+                borderRadius: token.borderRadiusLG,
+                boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
+                transition: 'all 0.2s ease-in-out'
+              }}
+              headStyle={{
+                borderBottom: `1px solid ${token.colorBorderSecondary}`,
+                fontSize: '15px',
+                fontWeight: 500
+              }}
+              bodyStyle={{
+                padding: '16px 24px 24px'
+              }}
             >
               <Table
                 columns={topPlayersColumns}
                 dataSource={topPlayers}
                 rowKey="playerId"
                 pagination={false}
-                size="small"
+                size="middle"
               />
             </Card>
           </Col>
