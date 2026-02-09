@@ -285,7 +285,7 @@ const PlayerCard: React.FC<PlayerCardProps> = ({ player, onOrder, onViewDetail }
             {player.game} · {player.rank}
           </div>
         </div>
-        <StatusBadge status={player.status} />
+        <Tag>{player.status}</Tag>
       </div>
 
       <div className="player-card__body">

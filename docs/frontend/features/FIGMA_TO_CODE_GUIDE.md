@@ -85,7 +85,7 @@ GameLink 设计文件/
 └── 📁 2-Components（自定义组件）
     ├── DataCard
     ├── UserAvatar
-    └── StatusBadge
+    └── Tag
 ```
 
 ### 2. 使用 Arco 组件

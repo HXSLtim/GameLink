@@ -1,6 +1,6 @@
 # 📚 GameLink Frontend 文档索引
 
-**更新日期**: 2025-10-31
+**更新日期**: 2026-01-31
 
 ---
 
@@ -28,6 +28,7 @@
 - **[LOGIN_PAGE_DESIGN.md](./LOGIN_PAGE_DESIGN.md)** - 登录页设计
 - **[REGISTER_PAGE_CREATED.md](./REGISTER_PAGE_CREATED.md)** - 注册页实现
 - **[组件库文档.md](./组件库文档.md)** - 组件使用指南
+- **[APP_BASE_LAYOUT_SPEC.md](./design/APP_BASE_LAYOUT_SPEC.md)** - App 端基础布局与视觉规范
 
 ---
 
@@ -60,11 +61,13 @@
 - [HMR_AND_THEME_FIX.md](./refactoring/HMR_AND_THEME_FIX.md) - HMR 和主题修复
 - [IMPORT_PATH_GUIDE.md](./refactoring/IMPORT_PATH_GUIDE.md) - 导入路径指南
 - [PATH_ALIAS_FIX.md](./refactoring/PATH_ALIAS_FIX.md) - 路径别名修复
+- [FRONTEND_REFACTORING_STANDARDS.md](./refactoring/FRONTEND_REFACTORING_STANDARDS.md) - 前端重构规范（UI 布局与组件拆分）
 
 ### 🎨 设计规范 (`design/`)
 - [DESIGN_SYSTEM.md](./design/DESIGN_SYSTEM.md) - 设计系统
 - [DESIGN_SYSTEM_V2.md](./design/DESIGN_SYSTEM_V2.md) - 设计系统 V2
 - [CODING_STANDARDS.md](./design/CODING_STANDARDS.md) - 编码规范
+- [APP_BASE_LAYOUT_SPEC.md](./design/APP_BASE_LAYOUT_SPEC.md) - App 端基础布局与视觉规范
 
 ---
 
@@ -94,12 +97,12 @@
 | 开发指南 | 3 | 入门和迁移 |
 | API 集成 | 8 | API 文档和集成 |
 | 功能特性 | 6 | 功能和实现 |
-| 重构记录 | 4 | 代码重构历史 |
-| 设计规范 | 3 | 设计系统 |
+| 重构记录 | 5 | 代码重构历史 |
+| 设计规范 | 4 | 设计系统 |
 | 加密文档 | 5 | 安全和加密 |
 | 历史归档 | 22 | 报告和总结 |
 
-**总计**: **63 个文档文件** (⭐ 新增4个)
+**总计**: **65 个文档文件** (⭐ 新增6个)
 
 ---
 
@@ -171,10 +174,12 @@
 
 ---
 
-**最后更新**: 2025-10-31
-**新增文档** (共4个):
-1. [FRONTEND_DEVELOPMENT_COMPLETE_GUIDE.md](./FRONTEND_DEVELOPMENT_COMPLETE_GUIDE.md) - 前端开发完整指南 - 2025-10-31
-2. [FRONTEND_PAGES_STRUCTURE.md](./FRONTEND_PAGES_STRUCTURE.md) - 前端页面结构文档 - 2025-10-31
-3. [USER_FACING_PAGES_GUIDE.md](./USER_FACING_PAGES_GUIDE.md) - 用户侧和陪玩师端页面指南 - 2025-10-31
-4. [COMPLETE_THREE_END_SYSTEM_GUIDE.md](./COMPLETE_THREE_END_SYSTEM_GUIDE.md) - 三端页面体系完整指南 - 2025-10-31
+**最后更新**: 2026-01-31
+**新增文档** (共6个):
+1. [FRONTEND_REFACTORING_STANDARDS.md](./refactoring/FRONTEND_REFACTORING_STANDARDS.md) - 前端重构规范（UI 布局与组件拆分） - 2026-01-31
+2. [FRONTEND_DEVELOPMENT_COMPLETE_GUIDE.md](./FRONTEND_DEVELOPMENT_COMPLETE_GUIDE.md) - 前端开发完整指南 - 2025-10-31
+3. [FRONTEND_PAGES_STRUCTURE.md](./FRONTEND_PAGES_STRUCTURE.md) - 前端页面结构文档 - 2025-10-31
+4. [USER_FACING_PAGES_GUIDE.md](./USER_FACING_PAGES_GUIDE.md) - 用户侧和陪玩师端页面指南 - 2025-10-31
+5. [COMPLETE_THREE_END_SYSTEM_GUIDE.md](./COMPLETE_THREE_END_SYSTEM_GUIDE.md) - 三端页面体系完整指南 - 2025-10-31
+6. [APP_BASE_LAYOUT_SPEC.md](./design/APP_BASE_LAYOUT_SPEC.md) - App 端基础布局与视觉规范 - 2026-01-31
 

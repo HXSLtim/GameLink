@@ -1097,7 +1097,7 @@ const PlayerRoute = ({ children }) => {
 - `OrderCard` - 订单卡片 (用户端、陪玩师端通用)
 - `RatingDisplay` - 评分展示
 - `PriceTag` - 价格标签
-- `StatusBadge` - 状态标识
+- `GlTag` - 状态标识
 
 #### 页面专属组件
 - `UserLayout` - 用户端布局
