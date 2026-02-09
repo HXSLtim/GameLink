@@ -103,8 +103,8 @@ defineEmits<{
   transition: background 0.3s;
 
   &.online {
-    background: #34C759;
-    box-shadow: 0 0 6rpx rgba(52, 199, 89, 0.5);
+    background: #7ACC35;
+    box-shadow: 0 0 6rpx rgba(122, 204, 53, 0.5);
   }
 }
 

@@ -55,7 +55,7 @@ function applyTheme(dark: boolean) {
   try {
     uni.setTabBarStyle({
       color: dark ? '#94A3B8' : '#64748B',
-      selectedColor: dark ? '#5865F2' : '#7ACC35',
+      selectedColor: dark ? '#7ACC35' : '#7ACC35',
       backgroundColor: dark ? '#1C1D20' : '#FFFFFF',
       borderStyle: dark ? 'black' : 'black',
     })

@@ -33,18 +33,18 @@ $light-border: #E2E8F0;            // 边框
 $light-divider: #F1F5F9;           // 分割线
 
 // ============================================
-// 夜间主题 (Dark Theme) - 霓虹游戏风
+// 夜间主题 (Dark Theme) - KOOK 霓虹游戏风
 // ============================================
-$dark-primary: #5865F2;            // Discord Blurple - 主色调
-$dark-primary-light: #7B85F6;      // 浅紫色
-$dark-primary-dark: #4752C4;       // 深紫色
-$dark-primary-gradient: linear-gradient(135deg, #5865F2 0%, #4752C4 100%);
-$dark-primary-glow: 0 0 20rpx rgba(88, 101, 242, 0.5);
+$dark-primary: #7ACC35;            // KOOK 绿 - 主色调
+$dark-primary-light: #87D149;      // 浅绿色
+$dark-primary-dark: #6DB72F;       // 深绿色
+$dark-primary-gradient: linear-gradient(135deg, #7ACC35 0%, #6DB72F 100%);
+$dark-primary-glow: 0 0 20rpx rgba(122, 204, 53, 0.5);
 
 // 强调色（与主色一致，降低认知负担）
-$dark-accent: #5865F2;
-$dark-accent-gradient: linear-gradient(135deg, #5865F2 0%, #4752C4 100%);
-$dark-accent-glow: 0 0 20rpx rgba(88, 101, 242, 0.5);
+$dark-accent: #7ACC35;
+$dark-accent-gradient: linear-gradient(135deg, #7ACC35 0%, #6DB72F 100%);
+$dark-accent-glow: 0 0 20rpx rgba(122, 204, 53, 0.5);
 $dark-gold: #FBBF24;               // 金色（VIP/稀有）
 $dark-gold-gradient: linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%);
 $dark-gold-glow: 0 0 20rpx rgba(251, 191, 36, 0.4);

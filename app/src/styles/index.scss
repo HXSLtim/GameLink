@@ -124,12 +124,12 @@ html[data-theme="dark"],
   --shadow-lg: 0 8rpx 24rpx rgba(0, 0, 0, 0.4);
 
   // 夜间：状态色半透明底色（稍高不透明度，深色背景上更可见）
-  --color-primary-tint: rgba(88, 101, 242, 0.15);
+  --color-primary-tint: rgba(122, 204, 53, 0.15);
   --color-success-tint: rgba(16, 185, 129, 0.15);
   --color-warning-tint: rgba(245, 158, 11, 0.15);
   --color-error-tint: rgba(239, 68, 68, 0.15);
   --color-info-tint: rgba(59, 130, 246, 0.15);
-  --color-primary-tint-border: rgba(88, 101, 242, 0.25);
+  --color-primary-tint-border: rgba(122, 204, 53, 0.25);
   --color-success-tint-border: rgba(16, 185, 129, 0.25);
   --color-warning-tint-border: rgba(245, 158, 11, 0.25);
   --color-error-tint-border: rgba(239, 68, 68, 0.25);

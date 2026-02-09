@@ -294,13 +294,13 @@ const goToProfile = () => {
     background: var(--color-bg-card, #1C1D20);
     border-top-color: var(--color-border, #2A2B30);
     box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.2);
-    
+
     .tabbar-text {
       color: var(--color-text-secondary, #94A3B8);
     }
-    
+
     .tabbar-item.active .tabbar-text {
-      color: var(--color-icon-accent, #5865F2);
+      color: var(--color-icon-accent, #7ACC35);
     }
   }
 }
