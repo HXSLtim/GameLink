@@ -1,0 +1,96 @@
+name: Dependabot Auto-Merge
+
+on:
+  pull_request_target:
+    types: [labeled, opened, synchronize]
+  workflow_dispatch:
+
+permissions:
+  pull-requests: write
+  contents: write
+
+jobs:
+  auto-merge-dependabot:
+    name: Auto-Merge Dependabot PRs
+    runs-on: ubuntu-latest
+    if: contains(github.event.pull_request.labels.*.name, 'dependencies') && github.event.pull_request.user.login == 'dependabot[bot]'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Wait for CI checks
+        uses: lewagon/wait-on-check-action@v1.3.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          check-name: 'Backend Tests'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 30
+          timeout: 1800
+
+      - name: Wait for Admin tests
+        uses: lewagon/wait-on-check-action@v1.3.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          check-name: 'Admin Tests'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 30
+          timeout: 1800
+
+      - name: Check PR status
+        id: check-status
+        run: |
+          echo "Checking PR status..."
+
+          # Get PR details
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          PR_DATA=$(gh pr view $PR_NUMBER --json title,headRefName,state,mergeable)
+
+          echo "PR Title: $(echo $PR_DATA | jq -r '.title')"
+          echo "PR State: $(echo $PR_DATA | jq -r '.state')"
+          echo "PR Mergeable: $(echo $PR_DATA | jq -r '.mergeable')"
+
+          # Check if PR is mergeable
+          MERGEABLE=$(echo $PR_DATA | jq -r '.mergeable')
+          if [ "$MERGEABLE" != "true" ]; then
+            echo "::error::PR is not mergeable"
+            exit 1
+          fi
+
+          echo "status=success" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Merge PR
+        if: steps.check-status.outputs.status == 'success'
+        run: |
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          echo "Merging PR #$PR_NUMBER..."
+
+          gh pr merge $PR_NUMBER \
+            --squash \
+            --delete-branch \
+            --subject "Auto-merge dependency update: ${{ github.event.pull_request.title }}" \
+            --body "Automatically merged by Dependabot auto-merge workflow"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Comment on merge
+        if: success()
+        run: |
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          gh pr comment $PR_NUMBER \
+            --body "✅ Automatically merged by Dependabot auto-merge workflow. All CI checks passed."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          gh pr comment $PR_NUMBER \
+            --body "⚠️ Auto-merge failed. Please review manually.\n\nPossible reasons:\n- CI checks did not pass\n- PR has merge conflicts\n- PR is not approved"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

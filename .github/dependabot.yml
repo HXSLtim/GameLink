@@ -1,0 +1,166 @@
+version: 2
+updates:
+  # Backend Go dependencies
+  - package-ecosystem: "gomod"
+    directory: "/api"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "Backend-Lead"
+    labels:
+      - "dependencies"
+      - "go"
+    commit-message:
+      prefix: "chore(api)"
+      include: "scope"
+    ignore:
+      # Ignore major version updates for stability
+      - dependency-name: "github.com/*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      # Group all minor and patch updates together
+      go-dependencies:
+        patterns:
+          - "github.com/*"
+        exclude-patterns:
+          - "github.com/golangci/golangci-lint"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+
+  # Admin panel npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/admin"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "Frontend-Lead"
+    labels:
+      - "dependencies"
+      - "javascript"
+      - "admin"
+    commit-message:
+      prefix: "chore(admin)"
+      include: "scope"
+    versioning-strategy: increase
+    ignore:
+      # Ignore major version updates that may break things
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-router-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+    groups:
+      admin-ui-dependencies:
+        patterns:
+          - "react*"
+          - "@tanstack/*"
+          - "antd"
+        update-types:
+          - "version-update:semver-patch"
+
+  # Client npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/client"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "Frontend-Lead"
+    labels:
+      - "dependencies"
+      - "javascript"
+      - "client"
+    commit-message:
+      prefix: "chore(client)"
+      include: "scope"
+    versioning-strategy: increase
+    ignore:
+      # Ignore major version updates
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-router-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+    groups:
+      client-ui-dependencies:
+        patterns:
+          - "react*"
+          - "@tanstack/*"
+          - "shadcn-ui*"
+        update-types:
+          - "version-update:semver-patch"
+
+  # App npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/app"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "Mobile-Lead"
+    labels:
+      - "dependencies"
+      - "javascript"
+      - "mobile"
+    commit-message:
+      prefix: "chore(app)"
+      include: "scope"
+    versioning-strategy: increase
+    ignore:
+      # Ignore major version updates
+      - dependency-name: "vue"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "vite"
+        update-types: ["version-update:semver-major"]
+    groups:
+      app-ui-dependencies:
+        patterns:
+          - "vue*"
+          - "pinia*"
+          - "@dcloudio/*"
+        update-types:
+          - "version-update:semver-patch"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "DevOps-Engineer"
+    labels:
+      - "dependencies"
+      - "ci-cd"
+    commit-message:
+      prefix: "chore(ci)"
+      include: "scope"
+    groups:
+      github-actions:
+        patterns:
+          - "actions/*"
+          - "docker/*"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+
+# Configuration for automatic merging
+# PRs labeled with 'dependencies' will be auto-merged if CI passes
+# See .github/workflows/dependabot-merge.yml

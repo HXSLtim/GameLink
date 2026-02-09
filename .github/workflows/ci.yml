@@ -253,6 +253,9 @@ jobs:
           retention-days: 7
 
   # Client 端测试
+  # NOTE: Client CI is handled here in the main workflow to avoid duplicate execution.
+  # Do NOT create a separate client-ci.yml - it would run simultaneously with this workflow
+  # on client/** changes, wasting CI resources and creating race conditions.
   client-test:
     name: Client Tests
     runs-on: ubuntu-latest
@@ -388,18 +391,58 @@ jobs:
     steps:
       - name: Check CI Status
         run: |
+          echo "=== CI Job Results ==="
           echo "Backend Test: ${{ needs.backend-test.result }}"
           echo "Backend Build: ${{ needs.backend-build.result }}"
           echo "Admin Test: ${{ needs.admin-test.result }}"
           echo "Admin Build: ${{ needs.admin-build.result }}"
           echo "Client Test: ${{ needs.client-test.result }}"
           echo "Client Build: ${{ needs.client-build.result }}"
+          echo ""
 
-          if [[ "${{ needs.backend-build.result }}" == "failure" ]] || \
-             [[ "${{ needs.admin-build.result }}" == "failure" ]] || \
-             [[ "${{ needs.client-build.result }}" == "failure" ]]; then
-            echo "::error::Build failed"
+          # Helper function: Check if result is acceptable (success or skipped)
+          # Jobs may be skipped when no relevant changes are detected in PRs
+          check_result() {
+            local job_name="$1"
+            local result="$2"
+            if [[ "$result" == "failure" ]]; then
+              echo "::error::$job_name failed"
+              return 1
+            elif [[ "$result" == "cancelled" ]]; then
+              echo "::warning::$job_name was cancelled"
+              return 1
+            elif [[ "$result" == "skipped" ]]; then
+              echo "ℹ️ $job_name was skipped (no relevant changes detected)"
+              return 0
+            elif [[ "$result" == "success" ]]; then
+              echo "✅ $job_name passed"
+              return 0
+            else
+              echo "::warning::$job_name has unexpected status: $result"
+              return 0
+            fi
+          }
+
+          FAILED=0
+
+          # Check test results (CRITICAL: tests must pass if they ran)
+          echo ""
+          echo "=== Checking Test Results ==="
+          check_result "Backend Test" "${{ needs.backend-test.result }}" || FAILED=1
+          check_result "Admin Test" "${{ needs.admin-test.result }}" || FAILED=1
+          check_result "Client Test" "${{ needs.client-test.result }}" || FAILED=1
+
+          # Check build results
+          echo ""
+          echo "=== Checking Build Results ==="
+          check_result "Backend Build" "${{ needs.backend-build.result }}" || FAILED=1
+          check_result "Admin Build" "${{ needs.admin-build.result }}" || FAILED=1
+          check_result "Client Build" "${{ needs.client-build.result }}" || FAILED=1
+
+          echo ""
+          if [[ "$FAILED" == "1" ]]; then
+            echo "::error::CI failed - one or more jobs failed or were cancelled"
             exit 1
           fi
 
-          echo "✅ CI passed successfully"
+          echo "✅ CI passed successfully (all executed jobs passed, skipped jobs are acceptable)"

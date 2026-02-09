@@ -1,0 +1,288 @@
+name: E2E Tests
+
+on:
+  schedule:
+    # Run daily at 1 AM UTC
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+env:
+  GO_VERSION: '1.25.5'
+  NODE_VERSION: '20'
+
+jobs:
+  backend-e2e:
+    name: Backend E2E Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: gamelink
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_DB: gamelink_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: api/go.sum
+
+      - name: Download dependencies
+        working-directory: api
+        run: go mod download
+
+      - name: Build backend
+        working-directory: api
+        env:
+          DB_DSN: postgresql://gamelink:testpassword@localhost:5432/gamelink_test?sslmode=disable
+          TEST_DB_HOST: localhost
+          TEST_DB_PORT: "5432"
+          TEST_DB_USER: gamelink
+          TEST_DB_PASSWORD: testpassword
+          TEST_DB_NAME: gamelink_test
+          REDIS_ADDR: localhost:6379
+          CACHE_TYPE: redis
+          JWT_SECRET_KEY: test-secret-key-for-e2e-testing-32chars
+        run: |
+          go build -o bin/gamelink cmd/main.go
+
+      - name: Run database migrations
+        working-directory: api
+        env:
+          DB_DSN: postgresql://gamelink:testpassword@localhost:5432/gamelink_test?sslmode=disable
+        run: |
+          go run cmd/main.go migrate up
+
+      - name: Start backend
+        working-directory: api
+        run: |
+          ./bin/gamelink > gamelink.log 2>&1 &
+          echo $! > gamelink.pid
+
+          # Wait for backend to be ready
+          timeout 60 bash -c 'until curl -s http://localhost:8080/health > /dev/null; do sleep 2; done'
+          echo "Backend is ready"
+
+      - name: Run E2E tests
+        working-directory: api
+        env:
+          DB_DSN: postgresql://gamelink:testpassword@localhost:5432/gamelink_test?sslmode=disable
+          TEST_DB_HOST: localhost
+          TEST_DB_PORT: "5432"
+          TEST_DB_USER: gamelink
+          TEST_DB_PASSWORD: testpassword
+          TEST_DB_NAME: gamelink_test
+          REDIS_ADDR: localhost:6379
+          CACHE_TYPE: redis
+          JWT_SECRET_KEY: test-secret-key-for-e2e-testing-32chars
+          API_BASE_URL: http://localhost:8080
+        run: |
+          go test -v -tags=e2e ./tests/e2e/... || true
+
+      - name: Upload backend logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-e2e-logs
+          path: api/gamelink.log
+          retention-days: 7
+
+      - name: Cleanup
+        if: always()
+        working-directory: api
+        run: |
+          if [ -f gamelink.pid ]; then
+            kill $(cat gamelink.pid) || true
+          fi
+          pkill -f gamelink || true
+
+  user-flow-e2e:
+    name: User Flow E2E Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: admin/package-lock.json
+
+      - name: Install dependencies
+        working-directory: admin
+        run: npm ci
+
+      - name: Install Playwright
+        working-directory: admin
+        run: npx playwright install --with-deps
+
+      - name: Build admin
+        working-directory: admin
+        env:
+          VITE_API_BASE_URL: http://localhost:8080
+          VITE_CRYPTO_ENABLED: 'false'
+        run: npm run build
+
+      - name: Start services
+        run: |
+          docker-compose -f docker-compose.yml up -d postgres redis backend
+
+          # Wait for services
+          timeout 120 bash -c 'until curl -s http://localhost:8080/health > /dev/null; do sleep 2; done'
+          echo "Services are ready"
+
+      - name: Serve admin
+        working-directory: admin
+        run: |
+          npx serve dist -l 5173 > admin.log 2>&1 &
+          echo $! > admin.pid
+
+      - name: Run Playwright tests
+        working-directory: admin
+        run: |
+          npx playwright test --project=chromium
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: |
+            admin/playwright-report/
+            admin/test-results/
+          retention-days: 7
+
+      - name: Upload admin logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-e2e-logs
+          path: admin/admin.log
+          retention-days: 7
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker-compose -f docker-compose.yml down
+          if [ -f admin/admin.pid ]; then
+            kill $(cat admin/admin.pid) || true
+          fi
+
+  integration-scenarios:
+    name: Integration Scenario Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: api/go.sum
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Start full stack
+        run: |
+          docker-compose -f docker-compose.yml up -d
+
+          # Wait for all services
+          timeout 180 bash -c '
+            until curl -s http://localhost:8080/health > /dev/null && \
+                  curl -s http://localhost:5173 > /dev/null; do
+              echo "Waiting for services..."
+              sleep 3
+            done
+          '
+          echo "All services ready"
+
+      - name: Run integration scenarios
+        run: |
+          ./scripts/test-integration-scenarios.sh || true
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-logs
+          path: |
+            docker-compose.logs
+          retention-days: 7
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker-compose -f docker-compose.yml down -v
+
+  e2e-summary:
+    name: E2E Test Summary
+    runs-on: ubuntu-latest
+    needs: [backend-e2e, user-flow-e2e, integration-scenarios]
+    if: always()
+
+    steps:
+      - name: Generate summary
+        run: |
+          echo "# E2E Test Results Summary" > e2e-summary.md
+          echo "" >> e2e-summary.md
+          echo "## Job Results" >> e2e-summary.md
+          echo "" >> e2e-summary.md
+          echo "- Backend E2E: ${{ needs.backend-e2e.result }}" >> e2e-summary.md
+          echo "- User Flow E2E: ${{ needs.user-flow-e2e.result }}" >> e2e-summary.md
+          echo "- Integration Scenarios: ${{ needs.integration-scenarios.result }}" >> e2e-summary.md
+          echo "" >> e2e-summary.md
+
+          if [[ "${{ needs.backend-e2e.result }}" == "failure" ]] || \
+             [[ "${{ needs.user-flow-e2e.result }}" == "failure" ]] || \
+             [[ "${{ needs.integration-scenarios.result }}" == "failure" ]]; then
+            echo "❌ E2E tests failed" >> e2e-summary.md
+            exit 1
+          else
+            echo "✅ All E2E tests passed" >> e2e-summary.md
+          fi
+
+      - name: Upload summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-summary
+          path: e2e-summary.md

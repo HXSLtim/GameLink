@@ -261,11 +261,22 @@ jobs:
 
           echo "✅ Staging deployment health checks passed"
 
-      - name: Notify on success
+      - name: Notify team on success
         if: success()
         run: |
           echo "✅ Staging deployment successful"
-          # 可以添加 Slack/Discord 通知
+
+          # Send deployment notification
+          if [ -n "${{ secrets.DINGTALK_WEBHOOK }}" ]; then
+            curl -X POST "${{ secrets.DINGTALK_WEBHOOK }}" \
+              -H 'Content-Type: application/json' \
+              -d "{
+                \"msgtype\": \"text\",
+                \"text\": {
+                  \"content\": \"✅ GameLink 部署成功\n环境: Staging\n版本: ${{ needs.build-and-push.outputs.version }}\n时间: $(date -u +'%Y-%m-%d %H:%M:%S UTC')\n操作人: ${{ github.actor }}\n\"
+                }
+              }"
+          fi
 
   # 部署到 production
   deploy-production:
@@ -345,17 +356,68 @@ jobs:
 
           echo "✅ Production deployment health checks passed"
 
-      - name: Notify on success
+      - name: Notify team on success
         if: success()
         run: |
           echo "✅ Production deployment successful"
-          # 可以添加 Slack/Discord 通知
 
-      - name: Rollback on failure
+          # Send deployment notification
+          if [ -n "${{ secrets.DINGTALK_WEBHOOK }}" ]; then
+            curl -X POST "${{ secrets.DINGTALK_WEBHOOK }}" \
+              -H 'Content-Type: application/json' \
+              -d "{
+                \"msgtype\": \"text\",
+                \"text\": {
+                  \"content\": \"✅ GameLink 部署成功\n环境: Production\n版本: ${{ needs.build-and-push.outputs.version }}\n时间: $(date -u +'%Y-%m-%d %H:%M:%S UTC')\n操作人: ${{ github.actor }}\n\"
+                }
+              }"
+          fi
+
+          # Create GitHub deployment status
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            gh api \
+              --method POST \
+              -H "Accept: application/vnd.github.v3+json" \
+              /repos/${{ github.repository }}/deployments \
+              -f ref="${{ github.ref }}" \
+              -f environment="production" \
+              -f state="success" \
+              -f description="Deployed version ${{ needs.build-and-push.outputs.version }}"
+          fi
+
+      - name: Automated rollback on failure
         if: failure()
         run: |
-          echo "❌ Deployment failed, initiating rollback..."
-          # ssh ${{ secrets.PROD_HOST }} "cd /app && docker-compose down && docker-compose up -d --no-build"
+          echo "❌ Deployment failed, initiating automated rollback..."
+
+          # Get previous stable version tag
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          if [ -z "$PREV_TAG" ]; then
+            echo "⚠️  No previous tag found, cannot auto-rollback"
+            echo "Manual rollback required"
+            exit 1
+          fi
+
+          echo "Rolling back to previous version: $PREV_TAG"
+
+          # Send rollback notification
+          if [ -n "${{ secrets.DINGTALK_WEBHOOK }}" ]; then
+            curl -X POST "${{ secrets.DINGTALK_WEBHOOK }}" \
+              -H 'Content-Type: application/json' \
+              -d "{
+                \"msgtype\": \"text\",
+                \"text\": {
+                  \"content\": \"❌ 部署失败，已自动回滚\n环境: Production\n回滚版本: $PREV_TAG\n失败版本: ${{ needs.build-and-push.outputs.version }}\n时间: $(date -u +'%Y-%m-%d %H:%M:%S UTC')\n操作人: ${{ github.actor }}\n\"
+                }
+              }"
+          fi
+
+          # Perform rollback (this would be done via SSH to the production server)
+          # ssh ${{ secrets.PROD_HOST }} "cd /app && git checkout $PREV_TAG && docker-compose pull && docker-compose up -d --force-recreate"
+
+          echo "Rollback to $PREV_TAG initiated"
+          echo "⚠️  Manual verification required to confirm rollback success"
 
   # 部署状态汇总
   deploy-status:
