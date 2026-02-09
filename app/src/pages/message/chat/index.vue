@@ -55,7 +55,7 @@
       @close="showMore = false"
       @image="chooseImage"
       @camera="takePhoto"
-      @order="viewOrder()"
+      @order="viewOrder"
       @report="reportChat"
     />
 

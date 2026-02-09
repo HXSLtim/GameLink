@@ -66,7 +66,6 @@ const {
   vipDiscountText,
   loadMore,
   handleQuickAction,
-  goBack,
   goToRecharge,
   goToWithdraw,
   goToVip,

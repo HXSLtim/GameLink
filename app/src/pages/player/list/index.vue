@@ -49,7 +49,7 @@
           variant="grid"
           :clickable="true"
           :style="{ animationDelay: `${(index % 8) * 0.04}s` }"
-          @click="goToDetail($event.id)"
+          @click="goToDetail(player.id)"
         />
       </view>
     </InfiniteList>
