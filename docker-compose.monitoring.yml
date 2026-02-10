@@ -19,7 +19,7 @@ services:
       - '--storage.tsdb.retention.time=30d'
     networks:
       - monitoring
-      - default
+      - gamelink-network
     restart: unless-stopped
 
   # Grafana - 可视化仪表板
@@ -40,7 +40,7 @@ services:
       - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
     networks:
       - monitoring
-      - default
+      - gamelink-network
     restart: unless-stopped
     depends_on:
       - prometheus
@@ -59,7 +59,7 @@ services:
       - /dev/disk/:/dev/disk:ro
     networks:
       - monitoring
-      - default
+      - gamelink-network
     restart: unless-stopped
     privileged: true
     devices:
@@ -81,7 +81,7 @@ services:
       - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
     networks:
       - monitoring
-      - default
+      - gamelink-network
     restart: unless-stopped
 
   # Alertmanager - 告警管理
@@ -95,7 +95,7 @@ services:
       - alertmanager-data:/alertmanager
     networks:
       - monitoring
-      - default
+      - gamelink-network
     restart: unless-stopped
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
@@ -103,7 +103,7 @@ services:
 networks:
   monitoring:
     driver: bridge
-  default:
+  gamelink-network:
     external: true
 
 volumes:

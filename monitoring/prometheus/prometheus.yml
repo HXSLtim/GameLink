@@ -36,17 +36,17 @@ scrape_configs:
     scrape_interval: 10s
     scheme: http
 
-  # PostgreSQL (通过 postgres_exporter)
-  - job_name: 'postgres'
-    static_configs:
-      - targets: ['postgres-exporter:9187']
-    scrape_interval: 30s
+  # PostgreSQL (通过 postgres_exporter) - 待部署
+  # - job_name: 'postgres'
+  #   static_configs:
+  #     - targets: ['postgres-exporter:9187']
+  #   scrape_interval: 30s
 
-  # Redis (通过 redis_exporter)
-  - job_name: 'redis'
-    static_configs:
-      - targets: ['redis-exporter:9121']
-    scrape_interval: 30s
+  # Redis (通过 redis_exporter) - 待部署
+  # - job_name: 'redis'
+  #   static_configs:
+  #     - targets: ['redis-exporter:9121']
+  #   scrape_interval: 30s
 
 # 告警管理器配置
 alerting:
