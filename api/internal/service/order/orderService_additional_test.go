@@ -138,7 +138,23 @@ func (m *MockChatGroupRepository) CountActiveRooms(ctx context.Context) (int64, 
 	return 0, nil
 }
 
-// TestOrderService_CreateOrder_WithDistributedLock tests order creation with distributed lock
+func (m *MockChatGroupRepository) ListPublicChannels(ctx context.Context, page, pageSize int) ([]model.ChatGroup, int64, error) {
+	return nil, 0, nil
+}
+
+func (m *MockChatGroupRepository) ListAll(ctx context.Context, opts repository.AdminChatGroupListOptions) ([]model.ChatGroup, int64, error) {
+	return nil, 0, nil
+}
+
+func (m *MockChatGroupRepository) CountAll(ctx context.Context) (int64, error) {
+	return 0, nil
+}
+
+func (m *MockChatGroupRepository) Reactivate(ctx context.Context, id uint64) error {
+	return nil
+}
+
+// TestOrderService_CreateOrder_WithDistributedLock
 func TestOrderService_CreateOrder_WithDistributedLock(t *testing.T) {
 	ctx := context.Background()
 	userID := uint64(1)

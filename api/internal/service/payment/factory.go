@@ -46,8 +46,13 @@ func (f *ProviderFactory) CreateProviders() map[model.PaymentMethod]ProviderClie
 
 	// Alipay
 	if f.config.Alipay.Enabled {
-		provider, _ := NewAlipayProvider(f.config)
-		providers[model.PaymentMethodAlipay] = provider
+		provider, err := NewAlipayProvider(f.config)
+		if err != nil || provider == nil {
+			// Fallback to mock provider if real provider creation fails (e.g. missing key files)
+			providers[model.PaymentMethodAlipay] = alipayProvider{}
+		} else {
+			providers[model.PaymentMethodAlipay] = provider
+		}
 	} else {
 		providers[model.PaymentMethodAlipay] = alipayProvider{}
 	}

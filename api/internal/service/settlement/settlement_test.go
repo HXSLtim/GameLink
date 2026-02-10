@@ -7,6 +7,7 @@ import (
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository/commission"
+	"gamelink/pkg/testutil"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -147,13 +148,42 @@ func (m *mockWalletRepo) Save(ctx context.Context, wallet *model.Wallet) error {
 	return m.Called(ctx, wallet).Error(0)
 }
 
+func (m *mockWalletRepo) SaveWithOptimisticLock(ctx context.Context, wallet *model.Wallet) error {
+	return m.Called(ctx, wallet).Error(0)
+}
+
+func (m *mockWalletRepo) UpdateBalanceWithLock(ctx context.Context, userID uint64, delta int64, maxRetries int) (*model.Wallet, error) {
+	args := m.Called(ctx, userID, delta, maxRetries)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.Wallet), args.Error(1)
+}
+
+// TestProcessT7Unfreeze_Success uses in-memory SQLite DB because ProcessT7Unfreeze runs
+// a gorm.DB.Transaction internally which creates real repositories from the DB connection.
 func TestProcessT7Unfreeze_Success(t *testing.T) {
 	ctx := context.Background()
+
+	// Setup in-memory DB for transaction support
+	db := testutil.NewMemoryDB(t)
+	testutil.MigrateTables(t, db, &model.Wallet{}, &model.CommissionRecord{})
+	defer testutil.CleanDB(t, db)
+
+	// Seed wallet in DB (the transaction creates real wallet repo from db)
+	wallet := &model.Wallet{
+		UserID:       1,
+		BalanceCents: 10000,
+		FrozenCents:  15000, // 8000 + 5000 + 2000 extra
+		Version:      1,
+	}
+	db.Create(wallet)
+
 	mockCommissions := new(mockCommissionRepo)
-	mockWallets := new(mockWalletRepo)
 
 	// No player repo - will use playerID as userID
-	svc := NewSettlementService(mockCommissions, mockWallets, nil)
+	svc := NewSettlementService(mockCommissions, nil, nil)
+	svc.SetDB(db)
 
 	// Create test records (8 days old)
 	oldDate := time.Now().AddDate(0, 0, -8)
@@ -176,26 +206,13 @@ func TestProcessT7Unfreeze_Success(t *testing.T) {
 		},
 	}
 
-	// Mock list records
-	mockCommissions.On("ListRecords", ctx, mock.Anything).Return(records, int64(2), nil)
-
-	// Mock wallet operations
-	wallet := &model.Wallet{
-		UserID:       1,
-		BalanceCents: 10000,
-		FrozenCents:  15000, // 8000 + 5000 + 2000 extra
-		Version:      1,
+	// Seed commission records in DB (the transaction creates real commission repo from db)
+	for _, r := range records {
+		db.Create(&r)
 	}
-	mockWallets.On("GetByUserID", ctx, uint64(1)).Return(wallet, nil)
-	mockWallets.On("Save", ctx, mock.MatchedBy(func(w *model.Wallet) bool {
-		// After unfreeze: balance should increase, frozen should decrease
-		return w.BalanceCents == 23000 && w.FrozenCents == 2000
-	})).Return(nil)
 
-	// Mock update records
-	mockCommissions.On("UpdateRecord", ctx, mock.MatchedBy(func(r *model.CommissionRecord) bool {
-		return r.SettlementStatus == model.SettlementStatusSettled && r.SettledAt != nil
-	})).Return(nil).Times(2)
+	// Mock ListRecords (called on the injected repo, before the transaction)
+	mockCommissions.On("ListRecords", ctx, mock.Anything).Return(records, int64(2), nil)
 
 	result, err := svc.ProcessT7Unfreeze(ctx)
 
@@ -205,8 +222,13 @@ func TestProcessT7Unfreeze_Success(t *testing.T) {
 	assert.Equal(t, 0, result.FailedCount)
 	assert.Equal(t, int64(13000), result.TotalUnfrozen)
 
+	// Verify wallet state in DB
+	var updatedWallet model.Wallet
+	db.Where("user_id = ?", uint64(1)).First(&updatedWallet)
+	assert.Equal(t, int64(23000), updatedWallet.BalanceCents)
+	assert.Equal(t, int64(2000), updatedWallet.FrozenCents)
+
 	mockCommissions.AssertExpectations(t)
-	mockWallets.AssertExpectations(t)
 }
 
 func TestProcessT7Unfreeze_NoRecords(t *testing.T) {
@@ -230,10 +252,21 @@ func TestProcessT7Unfreeze_NoRecords(t *testing.T) {
 
 func TestUnfreezeByOrderID_Success(t *testing.T) {
 	ctx := context.Background()
-	mockCommissions := new(mockCommissionRepo)
-	mockWallets := new(mockWalletRepo)
 
-	svc := NewSettlementService(mockCommissions, mockWallets, nil)
+	db := testutil.NewMemoryDB(t)
+	testutil.MigrateTables(t, db, &model.Wallet{}, &model.CommissionRecord{})
+	defer testutil.CleanDB(t, db)
+
+	// Seed wallet in DB (unfreezePlayerIncomeWithTx uses real wallet repo from DB)
+	wallet := &model.Wallet{
+		UserID:       1,
+		BalanceCents: 10000,
+		FrozenCents:  10000,
+		Version:      1,
+	}
+	db.Create(wallet)
+
+	mockCommissions := new(mockCommissionRepo)
 
 	record := &model.CommissionRecord{
 		ID:                1,
@@ -243,25 +276,24 @@ func TestUnfreezeByOrderID_Success(t *testing.T) {
 		SettlementStatus:  model.SettlementStatusPending,
 	}
 
-	wallet := &model.Wallet{
-		UserID:       1,
-		BalanceCents: 10000,
-		FrozenCents:  10000,
-		Version:      1,
-	}
-
 	mockCommissions.On("GetRecordByOrderID", ctx, uint64(100)).Return(record, nil)
-	mockWallets.On("GetByUserID", ctx, uint64(1)).Return(wallet, nil)
-	mockWallets.On("Save", ctx, mock.Anything).Return(nil)
 	mockCommissions.On("UpdateRecord", ctx, mock.MatchedBy(func(r *model.CommissionRecord) bool {
 		return r.SettlementStatus == model.SettlementStatusSettled
 	})).Return(nil)
+
+	svc := NewSettlementService(mockCommissions, nil, nil)
+	svc.SetDB(db)
 
 	err := svc.UnfreezeByOrderID(ctx, 100)
 
 	require.NoError(t, err)
 	mockCommissions.AssertExpectations(t)
-	mockWallets.AssertExpectations(t)
+
+	// Verify wallet was updated in DB
+	var updatedWallet model.Wallet
+	db.Where("user_id = ?", uint64(1)).First(&updatedWallet)
+	assert.Equal(t, int64(18000), updatedWallet.BalanceCents)
+	assert.Equal(t, int64(2000), updatedWallet.FrozenCents)
 }
 
 func TestUnfreezeByOrderID_AlreadySettled(t *testing.T) {

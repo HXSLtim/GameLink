@@ -175,6 +175,14 @@ func (m *MockOrderRepository) GetByNo(ctx context.Context, orderNo string) (*mod
 	return args.Get(0).(*model.Order), args.Error(1)
 }
 
+func (m *MockOrderRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.Order, error) {
+	args := m.Called(ctx, ids)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]model.Order), args.Error(1)
+}
+
 // ============================================================================
 // Helper Functions
 // ============================================================================

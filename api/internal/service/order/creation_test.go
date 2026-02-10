@@ -10,6 +10,7 @@ import (
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository/ordergroup"
+	"gamelink/pkg/testutil"
 )
 
 // MockOrderGroupRepository 主订单仓储 Mock (for creation tests)
@@ -211,6 +212,7 @@ func TestBuildOrderGroupWithSubOrders_ZeroHours(t *testing.T) {
 }
 
 // TestCreateOrderWithSplit_Success 测试拆分订单创建
+// Uses in-memory SQLite DB because createOrderWithSplit runs a gorm.DB.Transaction internally.
 func TestCreateOrderWithSplit_Success(t *testing.T) {
 	ctx := context.Background()
 	userID := uint64(1)
@@ -218,24 +220,10 @@ func TestCreateOrderWithSplit_Success(t *testing.T) {
 	gameID := uint64(1)
 	scheduledStart := time.Now().Add(time.Hour)
 
-	var createdGroup *model.OrderGroup
-	var createdSubOrders []*model.Order
-
-	orders := &MockOrderRepository{
-		createOrder: func(ctx context.Context, order *model.Order) error {
-			order.ID = uint64(len(createdSubOrders) + 10)
-			createdSubOrders = append(createdSubOrders, order)
-			return nil
-		},
-	}
-
-	orderGroups := &mockOrderGroupRepo{
-		createGroup: func(ctx context.Context, group *model.OrderGroup) error {
-			group.ID = 1
-			createdGroup = group
-			return nil
-		},
-	}
+	// Setup in-memory DB for transaction support
+	db := testutil.NewMemoryDB(t)
+	testutil.MigrateTables(t, db, &model.OrderGroup{}, &model.Order{})
+	defer testutil.CleanDB(t, db)
 
 	players := &MockPlayerRepository{
 		getPlayer: func(ctx context.Context, id uint64) (*model.Player, error) {
@@ -249,8 +237,13 @@ func TestCreateOrderWithSplit_Success(t *testing.T) {
 		},
 	}
 
+	// Use a mock order repo for non-transactional calls; the transaction path creates its own repos from db.
+	orders := &MockOrderRepository{}
+	orderGroups := &mockOrderGroupRepo{}
+
 	service := NewOrderService(orders, players, &MockUserRepository{}, games, &MockPaymentRepository{}, &MockReviewRepository{}, &MockCommissionRepository{})
 	service.SetOrderGroupRepository(orderGroups)
+	service.SetDB(db)
 
 	req := CreateOrderRequest{
 		PlayerID:       playerID,
@@ -267,17 +260,19 @@ func TestCreateOrderWithSplit_Success(t *testing.T) {
 	assert.True(t, resp.IsSplit)
 	assert.Equal(t, 3, resp.SubOrderCount)
 	assert.Equal(t, 3, resp.TotalHours)
-	assert.Equal(t, uint64(1), resp.OrderID)
+	assert.True(t, resp.OrderID > 0)
 	assert.NotEmpty(t, resp.GroupNo)
 
-	// 验证创建的主订单
-	assert.NotNil(t, createdGroup)
-	assert.Equal(t, 3, createdGroup.TotalHours)
+	// Verify records in DB
+	var groups []model.OrderGroup
+	db.Find(&groups)
+	require.Len(t, groups, 1)
+	assert.Equal(t, 3, groups[0].TotalHours)
 
-	// 验证创建的子订单
-	assert.Len(t, createdSubOrders, 3)
-	for i, sub := range createdSubOrders {
-		assert.Equal(t, uint64(1), *sub.GroupID)
+	var subOrders []model.Order
+	db.Where("is_sub_order = ?", true).Order("hour_index").Find(&subOrders)
+	assert.Len(t, subOrders, 3)
+	for i, sub := range subOrders {
 		assert.Equal(t, i+1, sub.HourIndex)
 		assert.True(t, sub.IsSubOrder)
 	}

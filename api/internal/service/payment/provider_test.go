@@ -159,18 +159,10 @@ func TestRealAlipayProvider_VerifySign_WithPublicKey(t *testing.T) {
 		},
 	}
 
-	provider, err := NewAlipayProvider(cfg)
-	assert.NoError(t, err)
-
-	params := map[string]string{"app_id": "test"}
-	sign := "any_signature"
-
-	// loadPublicKey returns nil, nil, so alipayPublic is still nil, returns false
-	result := provider.VerifySign(params, sign)
-
-	// Note: This test will be updated when loadPublicKey is fully implemented
-	// Currently returns false because loadPublicKey doesn't actually load keys
-	assert.False(t, result)
+	// loadPublicKey returns error for non-existent file, so provider creation fails
+	_, err := NewAlipayProvider(cfg)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to load alipay public key")
 }
 
 // TestNewAlipayProvider_Creation tests provider creation

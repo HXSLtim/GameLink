@@ -648,6 +648,16 @@ func (m *mockOrderReader) Get(ctx context.Context, id uint64) (*model.Order, err
 	return order, nil
 }
 
+func (m *mockOrderReader) GetByIDs(ctx context.Context, ids []uint64) ([]model.Order, error) {
+	orders := make([]model.Order, len(ids))
+	gameID := uint64(1)
+	for i, id := range ids {
+		orders[i] = model.Order{TotalPriceCents: 10000, GameID: &gameID, ItemID: 1}
+		orders[i].ID = id
+	}
+	return orders, nil
+}
+
 // mockPlayerRepo is a minimal mock implementation of PlayerRepository
 type mockPlayerRepo struct{}
 

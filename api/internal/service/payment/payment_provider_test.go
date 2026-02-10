@@ -14,6 +14,7 @@ import (
 	"gamelink/internal/repository"
 	"gamelink/internal/service/external"
 	"gamelink/pkg/config"
+	"gamelink/pkg/testutil"
 
 	_ "gamelink/pkg/cache" // Import for cache.DistributedLock interface
 )
@@ -202,84 +203,126 @@ func TestProviderFactory_CreateProviders(t *testing.T) {
 	}
 }
 
-// TestPaymentService_RefundPayment_ThirdParty_Success tests third-party payment refund
+// TestPaymentService_RefundPayment_ThirdParty_Success tests third-party payment refund.
+// Uses in-memory SQLite DB because RefundPayment runs a gorm.DB.Transaction internally.
 func TestPaymentService_RefundPayment_ThirdParty_Success(t *testing.T) {
 	ctx := context.Background()
-	paymentID := uint64(1)
-	orderID := uint64(1000)
 	userID := uint64(100)
 	amountCents := int64(10000)
 
+	// Setup in-memory DB for transaction support
+	db := testutil.NewMemoryDB(t)
+	testutil.MigrateTables(t, db, &model.Payment{}, &model.Order{})
+	defer testutil.CleanDB(t, db)
+
+	// Seed data directly in DB (the transaction path creates repos from db)
+	order := &model.Order{
+		OrderNo:         "ORD123456",
+		UserID:          userID,
+		ItemID:          1,
+		Status:          model.OrderStatusConfirmed,
+		TotalPriceCents: amountCents,
+		Currency:        model.CurrencyCNY,
+	}
+	db.Create(order)
+
+	payment := &model.Payment{
+		OrderID:     order.ID,
+		UserID:      userID,
+		AmountCents: amountCents,
+		Status:      model.PaymentStatusPaid,
+		Method:      model.PaymentMethodWeChat,
+		Currency:    model.CurrencyCNY,
+	}
+	db.Create(payment)
+
+	// Mock the Get call (pre-transaction) on the injected repo
 	mockPayments := new(MockPaymentRepository)
-	mockOrders := new(MockOrderRepository)
+	mockPayments.On("Get", ctx, payment.ID).Return(payment, nil)
 
-	payment := createTestPayment(paymentID, orderID, userID, model.PaymentStatusPaid, amountCents, model.PaymentMethodWeChat)
+	service := NewPaymentService(mockPayments, nil)
+	service.SetDB(db)
 
-	order := createTestOrder(orderID, userID, model.OrderStatusConfirmed, amountCents)
-
-	mockPayments.On("Get", ctx, paymentID).Return(payment, nil)
-	mockPayments.On("Update", ctx, mock.MatchedBy(func(p *model.Payment) bool {
-		return p.Status == model.PaymentStatusRefunded && p.RefundedAt != nil
-	})).Return(nil)
-	mockOrders.On("Get", ctx, orderID).Return(order, nil)
-	mockOrders.On("Update", ctx, mock.MatchedBy(func(o *model.Order) bool {
-		return o.Status == model.OrderStatusRefunded && o.RefundAmountCents == amountCents
-	})).Return(nil)
-
-	service := NewPaymentService(mockPayments, mockOrders)
-
-	err := service.RefundPayment(ctx, paymentID, "customer request")
+	err := service.RefundPayment(ctx, payment.ID, "customer request")
 
 	assert.NoError(t, err)
 
-	mockPayments.AssertExpectations(t)
-	mockOrders.AssertExpectations(t)
+	// Verify DB state
+	var updatedPayment model.Payment
+	db.First(&updatedPayment, payment.ID)
+	assert.Equal(t, model.PaymentStatusRefunded, updatedPayment.Status)
+	assert.NotNil(t, updatedPayment.RefundedAt)
+
+	var updatedOrder model.Order
+	db.First(&updatedOrder, order.ID)
+	assert.Equal(t, model.OrderStatusRefunded, updatedOrder.Status)
+	assert.Equal(t, amountCents, updatedOrder.RefundAmountCents)
 }
 
-// TestPaymentService_RefundPayment_Combined_Success tests combined payment refund (both wallet and third-party)
+// TestPaymentService_RefundPayment_Combined_Success tests combined payment refund (both wallet and third-party).
+// Uses in-memory SQLite DB because RefundPayment runs a gorm.DB.Transaction internally.
 func TestPaymentService_RefundPayment_Combined_Success(t *testing.T) {
 	ctx := context.Background()
-	paymentID := uint64(1)
-	orderID := uint64(1000)
 	userID := uint64(100)
 	totalCents := int64(10000)
 	walletCents := int64(6000)
 	thirdPartyCents := int64(4000)
 
+	// Setup in-memory DB for transaction support
+	db := testutil.NewMemoryDB(t)
+	testutil.MigrateTables(t, db, &model.Payment{}, &model.Order{})
+	defer testutil.CleanDB(t, db)
+
+	// Seed order and payment in DB
+	order := &model.Order{
+		OrderNo:         "ORD123456",
+		UserID:          userID,
+		ItemID:          1,
+		Status:          model.OrderStatusConfirmed,
+		TotalPriceCents: totalCents,
+		Currency:        model.CurrencyCNY,
+	}
+	db.Create(order)
+
+	payment := &model.Payment{
+		OrderID:               order.ID,
+		UserID:                userID,
+		AmountCents:           totalCents,
+		Status:                model.PaymentStatusPaid,
+		Method:                model.PaymentMethodCombined,
+		Currency:              model.CurrencyCNY,
+		WalletAmountCents:     walletCents,
+		ThirdPartyAmountCents: thirdPartyCents,
+		ThirdPartyMethod:      model.PaymentMethodWeChat,
+	}
+	db.Create(payment)
+
 	mockPayments := new(MockPaymentRepository)
-	mockOrders := new(MockOrderRepository)
 	mockWallets := new(MockWalletRepository)
 
-	payment := createTestPayment(paymentID, orderID, userID, model.PaymentStatusPaid, totalCents, model.PaymentMethodCombined)
-	payment.WalletAmountCents = walletCents
-	payment.ThirdPartyAmountCents = thirdPartyCents
-	payment.ThirdPartyMethod = model.PaymentMethodWeChat
+	mockPayments.On("Get", ctx, payment.ID).Return(payment, nil)
+	// creditWallet uses UpdateBalanceWithLock
+	updatedWallet := createTestWallet(userID, walletCents, 0)
+	mockWallets.On("UpdateBalanceWithLock", ctx, userID, walletCents, 3).Return(updatedWallet, nil)
 
-	order := createTestOrder(orderID, userID, model.OrderStatusConfirmed, totalCents)
-	wallet := createTestWallet(userID, 0, 0)
-
-	mockPayments.On("Get", ctx, paymentID).Return(payment, nil)
-	mockWallets.On("GetByUserID", ctx, userID).Return(wallet, nil).Once()
-	mockWallets.On("Save", ctx, mock.MatchedBy(func(w *model.Wallet) bool {
-		return w.BalanceCents == walletCents
-	})).Return(nil)
-	mockPayments.On("Update", ctx, mock.MatchedBy(func(p *model.Payment) bool {
-		return p.Status == model.PaymentStatusRefunded && p.RefundedAt != nil
-	})).Return(nil)
-	mockOrders.On("Get", ctx, orderID).Return(order, nil)
-	mockOrders.On("Update", ctx, mock.MatchedBy(func(o *model.Order) bool {
-		return o.Status == model.OrderStatusRefunded && o.RefundAmountCents == totalCents
-	})).Return(nil)
-
-	service := NewPaymentService(mockPayments, mockOrders)
+	service := NewPaymentService(mockPayments, nil)
 	service.SetWalletRepository(mockWallets)
+	service.SetDB(db)
 
-	err := service.RefundPayment(ctx, paymentID, "customer request")
+	err := service.RefundPayment(ctx, payment.ID, "customer request")
 
 	assert.NoError(t, err)
 
+	// Verify DB state
+	var updatedPayment model.Payment
+	db.First(&updatedPayment, payment.ID)
+	assert.Equal(t, model.PaymentStatusRefunded, updatedPayment.Status)
+
+	var updatedOrder model.Order
+	db.First(&updatedOrder, order.ID)
+	assert.Equal(t, model.OrderStatusRefunded, updatedOrder.Status)
+
 	mockPayments.AssertExpectations(t)
-	mockOrders.AssertExpectations(t)
 	mockWallets.AssertExpectations(t)
 }
 
@@ -293,7 +336,6 @@ func TestPaymentService_RefundPayment_Combined_ThirdPartyRefundFailed(t *testing
 	walletCents := int64(6000)
 
 	mockPayments := new(MockPaymentRepository)
-	mockOrders := new(MockOrderRepository)
 	mockWallets := new(MockWalletRepository)
 
 	payment := createTestPayment(paymentID, orderID, userID, model.PaymentStatusPaid, totalCents, model.PaymentMethodCombined)
@@ -301,21 +343,16 @@ func TestPaymentService_RefundPayment_Combined_ThirdPartyRefundFailed(t *testing
 	payment.ThirdPartyAmountCents = totalCents - walletCents
 	payment.ThirdPartyMethod = model.PaymentMethodWeChat
 
-	wallet := createTestWallet(userID, 10000, 0)
+	creditWallet := createTestWallet(userID, 16000, 0)
+	rollbackWallet := createTestWallet(userID, 10000, 0)
 
 	mockPayments.On("Get", ctx, paymentID).Return(payment, nil)
-	mockWallets.On("GetByUserID", ctx, userID).Return(wallet, nil).Once()
-	// First wallet credit (refund part)
-	mockWallets.On("Save", ctx, mock.MatchedBy(func(w *model.Wallet) bool {
-		return w.BalanceCents == 16000 // 10000 + 6000
-	})).Return(nil).Once()
-	// Third-party refund fails, so debit wallet to rollback - need to get wallet again
-	mockWallets.On("GetByUserID", ctx, userID).Return(wallet, nil).Once()
-	mockWallets.On("Save", ctx, mock.MatchedBy(func(w *model.Wallet) bool {
-		return w.BalanceCents == 10000 // Rollback to 10000
-	})).Return(nil).Once()
+	// creditWallet uses UpdateBalanceWithLock
+	mockWallets.On("UpdateBalanceWithLock", ctx, userID, walletCents, 3).Return(creditWallet, nil)
+	// Third-party refund fails → debitWallet rollback also uses UpdateBalanceWithLock
+	mockWallets.On("UpdateBalanceWithLock", ctx, userID, -walletCents, 3).Return(rollbackWallet, nil)
 
-	service := NewPaymentService(mockPayments, mockOrders)
+	service := NewPaymentService(mockPayments, nil)
 	service.SetWalletRepository(mockWallets)
 
 	// Create a provider that will fail
@@ -341,19 +378,16 @@ func TestPaymentService_RefundPayment_WalletCreditFailed(t *testing.T) {
 	amountCents := int64(10000)
 
 	mockPayments := new(MockPaymentRepository)
-	mockOrders := new(MockOrderRepository)
 	mockWallets := new(MockWalletRepository)
 
 	payment := createTestPayment(paymentID, orderID, userID, model.PaymentStatusPaid, amountCents, model.PaymentMethodWallet)
 	payment.WalletAmountCents = amountCents
 
-	wallet := createTestWallet(userID, 0, 0)
-
 	mockPayments.On("Get", ctx, paymentID).Return(payment, nil)
-	mockWallets.On("GetByUserID", ctx, userID).Return(wallet, nil)
-	mockWallets.On("Save", ctx, mock.AnythingOfType("*model.Wallet")).Return(errors.New("wallet save failed"))
+	// creditWallet uses UpdateBalanceWithLock which fails
+	mockWallets.On("UpdateBalanceWithLock", ctx, userID, amountCents, 3).Return(nil, errors.New("wallet save failed"))
 
-	service := NewPaymentService(mockPayments, mockOrders)
+	service := NewPaymentService(mockPayments, nil)
 	service.SetWalletRepository(mockWallets)
 
 	err := service.RefundPayment(ctx, paymentID, "customer request")
@@ -365,34 +399,41 @@ func TestPaymentService_RefundPayment_WalletCreditFailed(t *testing.T) {
 	mockWallets.AssertExpectations(t)
 }
 
-// TestPaymentService_RefundPayment_OrderUpdateFailed tests refund when order update fails
+// TestPaymentService_RefundPayment_OrderUpdateFailed tests refund when order update fails.
+// Uses in-memory SQLite DB because RefundPayment runs a gorm.DB.Transaction internally.
+// Payment exists in DB but order does NOT, so the Get inside the transaction fails.
 func TestPaymentService_RefundPayment_OrderUpdateFailed(t *testing.T) {
 	ctx := context.Background()
-	paymentID := uint64(1)
-	orderID := uint64(1000)
 	userID := uint64(100)
 	amountCents := int64(10000)
 
+	db := testutil.NewMemoryDB(t)
+	testutil.MigrateTables(t, db, &model.Payment{}, &model.Order{})
+	defer testutil.CleanDB(t, db)
+
+	// Seed payment WITHOUT a matching order
+	payment := &model.Payment{
+		OrderID:     9999, // non-existent order
+		UserID:      userID,
+		AmountCents: amountCents,
+		Status:      model.PaymentStatusPaid,
+		Method:      model.PaymentMethodWeChat,
+		Currency:    model.CurrencyCNY,
+	}
+	db.Create(payment)
+
 	mockPayments := new(MockPaymentRepository)
-	mockOrders := new(MockOrderRepository)
+	mockPayments.On("Get", ctx, payment.ID).Return(payment, nil)
 
-	payment := createTestPayment(paymentID, orderID, userID, model.PaymentStatusPaid, amountCents, model.PaymentMethodWeChat)
+	service := NewPaymentService(mockPayments, nil)
+	service.SetDB(db)
 
-	mockPayments.On("Get", ctx, paymentID).Return(payment, nil)
-	mockPayments.On("Update", ctx, mock.MatchedBy(func(p *model.Payment) bool {
-		return p.Status == model.PaymentStatusRefunded
-	})).Return(nil)
-	mockOrders.On("Get", ctx, orderID).Return(nil, errors.New("order not found"))
-
-	service := NewPaymentService(mockPayments, mockOrders)
-
-	err := service.RefundPayment(ctx, paymentID, "customer request")
+	err := service.RefundPayment(ctx, payment.ID, "customer request")
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "order not found")
+	assert.Contains(t, err.Error(), "order")
 
 	mockPayments.AssertExpectations(t)
-	mockOrders.AssertExpectations(t)
 }
 
 // TestPaymentService_routePayment_NoRoutingEngine tests routePayment without routing engine
@@ -775,29 +816,43 @@ func TestPaymentService_HandlePaymentCallback_OrderNotFound(t *testing.T) {
 	mockOrders.AssertExpectations(t)
 }
 
-// TestPaymentService_HandlePaymentCallback_PaymentUpdateFailed tests callback when payment update fails
+// TestPaymentService_HandlePaymentCallback_PaymentUpdateFailed tests callback when payment update fails.
+// Uses in-memory SQLite DB because HandlePaymentCallback runs a gorm.DB.Transaction internally.
+// The order is seeded but the payment is NOT, so txPaymentRepo.Update fails inside the transaction.
 func TestPaymentService_HandlePaymentCallback_PaymentUpdateFailed(t *testing.T) {
 	ctx := context.Background()
-	paymentID := uint64(1)
-	orderID := uint64(1000)
 	userID := uint64(100)
+
+	db := testutil.NewMemoryDB(t)
+	testutil.MigrateTables(t, db, &model.Payment{}, &model.Order{})
+	defer testutil.CleanDB(t, db)
+
+	// Seed order in DB (needed for txOrderRepo.Update inside the transaction)
+	order := &model.Order{
+		OrderNo:         "ORD-CALLBACK",
+		UserID:          userID,
+		ItemID:          1,
+		Status:          model.OrderStatusPending,
+		TotalPriceCents: 10000,
+		Currency:        model.CurrencyCNY,
+	}
+	db.Create(order)
+
+	// Payment object returned by mock but NOT seeded in DB
+	// so txPaymentRepo.Update inside transaction will fail (RowsAffected=0 → ErrNotFound)
+	payment := createTestPayment(9999, order.ID, userID, model.PaymentStatusPending, 10000, model.PaymentMethodWeChat)
 
 	mockPayments := new(MockPaymentRepository)
 	mockOrders := new(MockOrderRepository)
 
-	payment := createTestPayment(paymentID, orderID, userID, model.PaymentStatusPending, 10000, model.PaymentMethodWeChat)
-	order := createTestOrder(orderID, userID, model.OrderStatusPending, 10000)
-
-	mockPayments.On("Get", ctx, paymentID).Return(payment, nil)
-	// Order is fetched first
-	mockOrders.On("Get", ctx, orderID).Return(order, nil)
-	// Then payment update fails
-	mockPayments.On("Update", ctx, mock.AnythingOfType("*model.Payment")).Return(errors.New("update failed"))
+	mockPayments.On("Get", ctx, uint64(9999)).Return(payment, nil)
+	mockOrders.On("Get", ctx, order.ID).Return(order, nil)
 
 	service := NewPaymentService(mockPayments, mockOrders)
+	service.SetDB(db)
 
 	callbackData := map[string]interface{}{
-		"payment_id":   paymentID,
+		"payment_id":   uint64(9999),
 		"amount_cents": int64(10000),
 		"trade_no":     "wx_trade_123",
 	}
@@ -805,7 +860,7 @@ func TestPaymentService_HandlePaymentCallback_PaymentUpdateFailed(t *testing.T) 
 	err := service.HandlePaymentCallback(ctx, "wechat", callbackData)
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "update failed")
+	assert.Contains(t, err.Error(), "update payment")
 
 	mockPayments.AssertExpectations(t)
 	mockOrders.AssertExpectations(t)
@@ -894,7 +949,7 @@ func TestPaymentService_SetProviders(t *testing.T) {
 	assert.Equal(t, providers, service.providers)
 }
 
-// TestPaymentService_creditWallet tests wallet crediting
+// TestPaymentService_creditWallet tests wallet crediting via UpdateBalanceWithLock
 func TestPaymentService_creditWallet(t *testing.T) {
 	ctx := context.Background()
 	userID := uint64(100)
@@ -908,28 +963,14 @@ func TestPaymentService_creditWallet(t *testing.T) {
 		{
 			name: "Credit existing wallet",
 			setupMocks: func(m *MockWalletRepository) {
-				m.On("GetByUserID", ctx, userID).Return(createTestWallet(userID, 10000, 0), nil)
-				m.On("Save", ctx, mock.MatchedBy(func(w *model.Wallet) bool {
-					return w.BalanceCents == 15000
-				})).Return(nil)
+				m.On("UpdateBalanceWithLock", ctx, userID, amount, 3).Return(createTestWallet(userID, 15000, 0), nil)
 			},
 			expectError: false,
 		},
 		{
-			name: "Credit new wallet when not found",
+			name: "Wallet update fails",
 			setupMocks: func(m *MockWalletRepository) {
-				m.On("GetByUserID", ctx, userID).Return(nil, repository.ErrNotFound)
-				m.On("Save", ctx, mock.MatchedBy(func(w *model.Wallet) bool {
-					return w.BalanceCents == amount
-				})).Return(nil)
-			},
-			expectError: false,
-		},
-		{
-			name: "Wallet save fails",
-			setupMocks: func(m *MockWalletRepository) {
-				m.On("GetByUserID", ctx, userID).Return(createTestWallet(userID, 10000, 0), nil)
-				m.On("Save", ctx, mock.AnythingOfType("*model.Wallet")).Return(errors.New("save failed"))
+				m.On("UpdateBalanceWithLock", ctx, userID, amount, 3).Return(nil, errors.New("save failed"))
 			},
 			expectError: true,
 		},
@@ -956,7 +997,7 @@ func TestPaymentService_creditWallet(t *testing.T) {
 	}
 }
 
-// TestPaymentService_debitWallet tests wallet debiting
+// TestPaymentService_debitWallet tests wallet debiting via UpdateBalanceWithLock (negative delta)
 func TestPaymentService_debitWallet(t *testing.T) {
 	ctx := context.Background()
 	userID := uint64(100)
@@ -970,25 +1011,22 @@ func TestPaymentService_debitWallet(t *testing.T) {
 		{
 			name: "Debit existing wallet",
 			setupMocks: func(m *MockWalletRepository) {
-				m.On("GetByUserID", ctx, userID).Return(createTestWallet(userID, 10000, 0), nil)
-				m.On("Save", ctx, mock.MatchedBy(func(w *model.Wallet) bool {
-					return w.BalanceCents == 5000
-				})).Return(nil)
+				// debitWallet passes -amount to UpdateBalanceWithLock
+				m.On("UpdateBalanceWithLock", ctx, userID, -amount, 3).Return(createTestWallet(userID, 5000, 0), nil)
 			},
 			expectError: false,
 		},
 		{
 			name: "Wallet not found",
 			setupMocks: func(m *MockWalletRepository) {
-				m.On("GetByUserID", ctx, userID).Return(nil, repository.ErrNotFound)
+				m.On("UpdateBalanceWithLock", ctx, userID, -amount, 3).Return(nil, repository.ErrNotFound)
 			},
 			expectError: true,
 		},
 		{
-			name: "Wallet save fails",
+			name: "Wallet update fails",
 			setupMocks: func(m *MockWalletRepository) {
-				m.On("GetByUserID", ctx, userID).Return(createTestWallet(userID, 10000, 0), nil)
-				m.On("Save", ctx, mock.AnythingOfType("*model.Wallet")).Return(errors.New("save failed"))
+				m.On("UpdateBalanceWithLock", ctx, userID, -amount, 3).Return(nil, errors.New("save failed"))
 			},
 			expectError: true,
 		},
@@ -1090,82 +1128,120 @@ func TestRefundService_SetExternalConfig(t *testing.T) {
 	assert.NotNil(t, service.providers)
 }
 
-// TestPaymentService_RefundPayment_RefundToWalletOnly tests refund to wallet only
+// TestPaymentService_RefundPayment_RefundToWalletOnly tests refund to wallet only.
+// Uses in-memory SQLite DB because RefundPayment runs a gorm.DB.Transaction internally.
 func TestPaymentService_RefundPayment_RefundToWalletOnly(t *testing.T) {
 	ctx := context.Background()
-	paymentID := uint64(1)
-	orderID := uint64(1000)
 	userID := uint64(100)
 	amountCents := int64(10000)
 
+	db := testutil.NewMemoryDB(t)
+	testutil.MigrateTables(t, db, &model.Payment{}, &model.Order{})
+	defer testutil.CleanDB(t, db)
+
+	// Seed order and payment in DB
+	order := &model.Order{
+		OrderNo:         "ORD-WALLET",
+		UserID:          userID,
+		ItemID:          1,
+		Status:          model.OrderStatusConfirmed,
+		TotalPriceCents: amountCents,
+		Currency:        model.CurrencyCNY,
+	}
+	db.Create(order)
+
+	payment := &model.Payment{
+		OrderID:           order.ID,
+		UserID:            userID,
+		AmountCents:       amountCents,
+		Status:            model.PaymentStatusPaid,
+		Method:            model.PaymentMethodWallet,
+		Currency:          model.CurrencyCNY,
+		WalletAmountCents: amountCents,
+	}
+	db.Create(payment)
+
 	mockPayments := new(MockPaymentRepository)
-	mockOrders := new(MockOrderRepository)
 	mockWallets := new(MockWalletRepository)
 
-	payment := createTestPayment(paymentID, orderID, userID, model.PaymentStatusPaid, amountCents, model.PaymentMethodWallet)
-	payment.WalletAmountCents = amountCents
+	mockPayments.On("Get", ctx, payment.ID).Return(payment, nil)
+	// creditWallet uses UpdateBalanceWithLock
+	updatedWallet := createTestWallet(userID, 15000, 0)
+	mockWallets.On("UpdateBalanceWithLock", ctx, userID, amountCents, 3).Return(updatedWallet, nil)
 
-	wallet := createTestWallet(userID, 5000, 0)
-
-	mockPayments.On("Get", ctx, paymentID).Return(payment, nil)
-	mockWallets.On("GetByUserID", ctx, userID).Return(wallet, nil)
-	mockWallets.On("Save", ctx, mock.MatchedBy(func(w *model.Wallet) bool {
-		return w.BalanceCents == 15000 // 5000 + 10000
-	})).Return(nil)
-	mockPayments.On("Update", ctx, mock.MatchedBy(func(p *model.Payment) bool {
-		return p.Status == model.PaymentStatusRefunded
-	})).Return(nil)
-	mockOrders.On("Get", ctx, orderID).Return(createTestOrder(orderID, userID, model.OrderStatusConfirmed, amountCents), nil)
-	mockOrders.On("Update", ctx, mock.AnythingOfType("*model.Order")).Return(nil)
-
-	service := NewPaymentService(mockPayments, mockOrders)
+	service := NewPaymentService(mockPayments, nil)
 	service.SetWalletRepository(mockWallets)
+	service.SetDB(db)
 
-	err := service.RefundPayment(ctx, paymentID, "customer request")
+	err := service.RefundPayment(ctx, payment.ID, "customer request")
 
 	assert.NoError(t, err)
+
+	// Verify DB state
+	var updatedPayment model.Payment
+	db.First(&updatedPayment, payment.ID)
+	assert.Equal(t, model.PaymentStatusRefunded, updatedPayment.Status)
+
+	var updatedOrder model.Order
+	db.First(&updatedOrder, order.ID)
+	assert.Equal(t, model.OrderStatusRefunded, updatedOrder.Status)
 
 	mockPayments.AssertExpectations(t)
 	mockWallets.AssertExpectations(t)
-	mockOrders.AssertExpectations(t)
 }
 
-// TestPaymentService_RefundPayment_PartialRefundThirdParty tests partial refund of third-party payment
+// TestPaymentService_RefundPayment_PartialRefundThirdParty tests partial refund of third-party payment.
+// Uses in-memory SQLite DB because RefundPayment runs a gorm.DB.Transaction internally.
 func TestPaymentService_RefundPayment_PartialRefundThirdParty(t *testing.T) {
 	ctx := context.Background()
-	paymentID := uint64(1)
-	orderID := uint64(1000)
 	userID := uint64(100)
 	fullAmountCents := int64(10000)
 
+	db := testutil.NewMemoryDB(t)
+	testutil.MigrateTables(t, db, &model.Payment{}, &model.Order{})
+	defer testutil.CleanDB(t, db)
+
+	// Seed order and payment in DB
+	order := &model.Order{
+		OrderNo:         "ORD-PARTIAL",
+		UserID:          userID,
+		ItemID:          1,
+		Status:          model.OrderStatusConfirmed,
+		TotalPriceCents: fullAmountCents,
+		Currency:        model.CurrencyCNY,
+	}
+	db.Create(order)
+
+	payment := &model.Payment{
+		OrderID:     order.ID,
+		UserID:      userID,
+		AmountCents: fullAmountCents,
+		Status:      model.PaymentStatusPaid,
+		Method:      model.PaymentMethodWeChat,
+		Currency:    model.CurrencyCNY,
+	}
+	db.Create(payment)
+
 	mockPayments := new(MockPaymentRepository)
-	mockOrders := new(MockOrderRepository)
+	mockPayments.On("Get", ctx, payment.ID).Return(payment, nil)
 
-	payment := createTestPayment(paymentID, orderID, userID, model.PaymentStatusPaid, fullAmountCents, model.PaymentMethodWeChat)
+	service := NewPaymentService(mockPayments, nil)
+	service.SetDB(db)
 
-	order := createTestOrder(orderID, userID, model.OrderStatusConfirmed, fullAmountCents)
-
-	mockPayments.On("Get", ctx, paymentID).Return(payment, nil)
-	// Third-party refunds always mark the payment as refunded (even for partial amounts)
-	// The current implementation doesn't support partial third-party refunds properly
-	mockPayments.On("Update", ctx, mock.MatchedBy(func(p *model.Payment) bool {
-		// Current behavior: third-party refund marks as fully refunded
-		return p.Status == model.PaymentStatusRefunded && p.RefundedAt != nil
-	})).Return(nil)
-	mockOrders.On("Get", ctx, orderID).Return(order, nil)
-	mockOrders.On("Update", ctx, mock.MatchedBy(func(o *model.Order) bool {
-		// Order is also marked as refunded
-		return o.Status == model.OrderStatusRefunded
-	})).Return(nil)
-
-	service := NewPaymentService(mockPayments, mockOrders)
-
-	err := service.RefundPayment(ctx, paymentID, "partial refund")
+	err := service.RefundPayment(ctx, payment.ID, "partial refund")
 
 	assert.NoError(t, err)
 
+	// Verify DB state
+	var updatedPayment model.Payment
+	db.First(&updatedPayment, payment.ID)
+	assert.Equal(t, model.PaymentStatusRefunded, updatedPayment.Status)
+
+	var updatedOrder model.Order
+	db.First(&updatedOrder, order.ID)
+	assert.Equal(t, model.OrderStatusRefunded, updatedOrder.Status)
+
 	mockPayments.AssertExpectations(t)
-	mockOrders.AssertExpectations(t)
 }
 
 // TestPaymentService_RefundPayment_Combined_Partial tests partial refund of combined payment

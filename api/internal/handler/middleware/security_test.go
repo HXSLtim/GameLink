@@ -169,7 +169,9 @@ func TestCORS_DevelopmentDefaults(t *testing.T) {
 		{"http://localhost:3000", true},
 		{"http://127.0.0.1:5173", true},
 		{"http://127.0.0.1:3000", true},
-		{"https://malicious-site.com", false},
+		// Development mode uses wildcard ("*") to support LAN access,
+		// so all origins are allowed. Production/staging blocks unknown origins.
+		{"https://malicious-site.com", true},
 	}
 
 	for _, tt := range tests {
@@ -181,7 +183,7 @@ func TestCORS_DevelopmentDefaults(t *testing.T) {
 
 			allowHeader := w.Header().Get("Access-Control-Allow-Origin")
 			if tt.shouldAllow {
-				assert.Equal(t, tt.origin, allowHeader, "Should allow localhost in development")
+			assert.Equal(t, tt.origin, allowHeader, "Should allow all origins in development (wildcard)")
 			} else {
 				assert.Empty(t, allowHeader, "Should not allow external sites in development")
 			}

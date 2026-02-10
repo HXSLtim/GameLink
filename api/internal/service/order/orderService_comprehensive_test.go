@@ -279,14 +279,15 @@ func TestOrderService_CancelOrder_PendingToCanceled(t *testing.T) {
 
 	testOrder := createTestOrder(orderID, userID, model.OrderStatusPending)
 
-	var updatedOrder *model.Order
+	// CancelOrder now uses UpdateWithCondition (atomic update) instead of Update
+	var capturedUpdates map[string]any
 	orders := &MockOrderRepository{
 		getOrder: func(ctx context.Context, id uint64) (*model.Order, error) {
 			return testOrder, nil
 		},
-		updateOrder: func(ctx context.Context, order *model.Order) error {
-			updatedOrder = order
-			return nil
+		updateWithCondition: func(ctx context.Context, oID uint64, expectedStatus model.OrderStatus, updates map[string]any) (bool, error) {
+			capturedUpdates = updates
+			return true, nil
 		},
 	}
 
@@ -306,9 +307,9 @@ func TestOrderService_CancelOrder_PendingToCanceled(t *testing.T) {
 	err := service.CancelOrder(ctx, userID, orderID, req)
 
 	require.NoError(t, err)
-	assert.NotNil(t, updatedOrder)
-	assert.Equal(t, model.OrderStatusCanceled, updatedOrder.Status)
-	assert.Equal(t, "No longer needed", updatedOrder.CancelReason)
+	assert.NotNil(t, capturedUpdates)
+	assert.Equal(t, model.OrderStatusCanceled, capturedUpdates["status"])
+	assert.Equal(t, "No longer needed", capturedUpdates["cancel_reason"])
 }
 
 // TestOrderService_CancelOrder_NotFound tests cancellation of non-existent order
@@ -353,8 +354,8 @@ func TestOrderService_CancelOrder_DatabaseError(t *testing.T) {
 		getOrder: func(ctx context.Context, id uint64) (*model.Order, error) {
 			return testOrder, nil
 		},
-		updateOrder: func(ctx context.Context, order *model.Order) error {
-			return assert.AnError
+		updateWithCondition: func(ctx context.Context, oID uint64, expectedStatus model.OrderStatus, updates map[string]any) (bool, error) {
+			return false, assert.AnError
 		},
 	}
 

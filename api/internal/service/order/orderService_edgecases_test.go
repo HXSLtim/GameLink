@@ -218,7 +218,8 @@ func TestOrderService_CancelOrder_ConfirmedWithRefund(t *testing.T) {
 	userID := uint64(1)
 	orderID := uint64(123)
 
-	var updatedOrder *model.Order
+	// CancelOrder now uses UpdateWithCondition (atomic update) for confirmed orders
+	var capturedUpdates map[string]any
 	orders := &MockOrderRepository{
 		getOrder: func(ctx context.Context, id uint64) (*model.Order, error) {
 			return &model.Order{
@@ -228,9 +229,9 @@ func TestOrderService_CancelOrder_ConfirmedWithRefund(t *testing.T) {
 				TotalPriceCents: 10000,
 			}, nil
 		},
-		updateOrder: func(ctx context.Context, order *model.Order) error {
-			updatedOrder = order
-			return nil
+		updateWithCondition: func(ctx context.Context, oID uint64, expectedStatus model.OrderStatus, updates map[string]any) (bool, error) {
+			capturedUpdates = updates
+			return true, nil
 		},
 	}
 
@@ -263,11 +264,11 @@ func TestOrderService_CancelOrder_ConfirmedWithRefund(t *testing.T) {
 	err := service.CancelOrder(ctx, userID, orderID, req)
 
 	require.NoError(t, err)
-	assert.NotNil(t, updatedOrder)
-	assert.Equal(t, model.OrderStatusRefunded, updatedOrder.Status)
-	assert.Equal(t, int64(10000), updatedOrder.RefundAmountCents)
-	assert.Equal(t, "用户取消订单", updatedOrder.RefundReason)
-	assert.NotNil(t, updatedOrder.RefundedAt)
+	assert.NotNil(t, capturedUpdates)
+	assert.Equal(t, model.OrderStatusRefunded, capturedUpdates["status"])
+	assert.Equal(t, int64(10000), capturedUpdates["refund_amount_cents"])
+	assert.Equal(t, "用户取消订单", capturedUpdates["refund_reason"])
+	assert.NotNil(t, capturedUpdates["refunded_at"])
 }
 
 // TestOrderService_CancelOrder_PendingNoRefund tests canceling pending order doesn't trigger refund
@@ -276,7 +277,8 @@ func TestOrderService_CancelOrder_PendingNoRefund(t *testing.T) {
 	userID := uint64(1)
 	orderID := uint64(123)
 
-	var updatedOrder *model.Order
+	// CancelOrder now uses UpdateWithCondition (atomic update)
+	var capturedUpdates map[string]any
 	orders := &MockOrderRepository{
 		getOrder: func(ctx context.Context, id uint64) (*model.Order, error) {
 			return &model.Order{
@@ -286,9 +288,9 @@ func TestOrderService_CancelOrder_PendingNoRefund(t *testing.T) {
 				TotalPriceCents: 10000,
 			}, nil
 		},
-		updateOrder: func(ctx context.Context, order *model.Order) error {
-			updatedOrder = order
-			return nil
+		updateWithCondition: func(ctx context.Context, oID uint64, expectedStatus model.OrderStatus, updates map[string]any) (bool, error) {
+			capturedUpdates = updates
+			return true, nil
 		},
 	}
 
@@ -313,10 +315,11 @@ func TestOrderService_CancelOrder_PendingNoRefund(t *testing.T) {
 	err := service.CancelOrder(ctx, userID, orderID, req)
 
 	require.NoError(t, err)
-	assert.NotNil(t, updatedOrder)
-	assert.Equal(t, model.OrderStatusCanceled, updatedOrder.Status) // Not refunded
-	assert.Equal(t, "Changed mind", updatedOrder.CancelReason)
-	assert.Nil(t, updatedOrder.RefundedAt)
+	assert.NotNil(t, capturedUpdates)
+	assert.Equal(t, model.OrderStatusCanceled, capturedUpdates["status"]) // Not refunded
+	assert.Equal(t, "Changed mind", capturedUpdates["cancel_reason"])
+	// No refunded_at for pending orders
+	assert.Nil(t, capturedUpdates["refunded_at"])
 }
 
 // TestOrderService_CompleteOrder_AlreadyCompleted tests completing already completed order

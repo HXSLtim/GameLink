@@ -1032,6 +1032,9 @@ func TestService_CreateReferral(t *testing.T) {
 			RefereeCondition: "registered",
 		}
 		mockRepo.On("GetReferralByReferee", ctx, uint64(2)).Return(nil, repository.ErrNotFound).Once()
+		// resolveRewardConfig calls GetConfig for reward type and amount
+		mockRepo.On("GetConfig", ctx, model.ReferralConfigUserRewardType).Return(nil, repository.ErrNotFound).Once()
+		mockRepo.On("GetConfig", ctx, model.ReferralConfigUserRewardAmount).Return(nil, repository.ErrNotFound).Once()
 		mockRepo.On("CreateReferral", ctx, mock.AnythingOfType("*model.Referral")).Return(nil).Once()
 		mockRepo.On("IncrementCodeUseCount", ctx, uint64(1)).Return(nil).Once()
 		result, err := svc.CreateReferral(ctx, req)
@@ -1056,6 +1059,9 @@ func TestService_CreateReferral(t *testing.T) {
 		svc := NewReferralService(mockRepo)
 		req := CreateReferralRequest{ReferrerID: 1, RefereeID: 2, Level: 0}
 		mockRepo.On("GetReferralByReferee", ctx, uint64(2)).Return(nil, repository.ErrNotFound).Once()
+		// resolveRewardConfig calls GetConfig for reward type and amount
+		mockRepo.On("GetConfig", ctx, model.ReferralConfigUserRewardType).Return(nil, repository.ErrNotFound).Once()
+		mockRepo.On("GetConfig", ctx, model.ReferralConfigUserRewardAmount).Return(nil, repository.ErrNotFound).Once()
 		mockRepo.On("CreateReferral", ctx, mock.MatchedBy(func(r *model.Referral) bool {
 			return r.Level == 1
 		})).Return(nil).Once()
@@ -1076,6 +1082,9 @@ func TestService_UseCode(t *testing.T) {
 		req := UseCodeRequest{Code: "ABC123", RefereeID: 2}
 		mockRepo.On("GetCodeByCode", ctx, "ABC123").Return(code, nil).Once()
 		mockRepo.On("GetReferralByReferee", ctx, uint64(2)).Return(nil, repository.ErrNotFound).Once()
+		// resolveRewardConfig calls GetConfig for reward type and amount
+		mockRepo.On("GetConfig", ctx, model.ReferralConfigUserRewardType).Return(nil, repository.ErrNotFound).Once()
+		mockRepo.On("GetConfig", ctx, model.ReferralConfigUserRewardAmount).Return(nil, repository.ErrNotFound).Once()
 		mockRepo.On("CreateReferral", ctx, mock.AnythingOfType("*model.Referral")).Return(nil).Once()
 		mockRepo.On("IncrementCodeUseCount", ctx, uint64(1)).Return(nil).Once()
 		result, err := svc.UseCode(ctx, req)
@@ -1541,6 +1550,8 @@ func TestService_CreateReferral_MultiLevel(t *testing.T) {
 			Level:      1,
 		}
 		mockRepo.On("GetReferralByReferee", ctx, uint64(2)).Return(nil, repository.ErrNotFound).Once()
+		mockRepo.On("GetConfig", ctx, model.ReferralConfigUserRewardType).Return(nil, repository.ErrNotFound).Once()
+		mockRepo.On("GetConfig", ctx, model.ReferralConfigUserRewardAmount).Return(nil, repository.ErrNotFound).Once()
 		mockRepo.On("CreateReferral", ctx, mock.MatchedBy(func(r *model.Referral) bool {
 			return r.Level == 1
 		})).Return(nil).Once()
@@ -1560,6 +1571,8 @@ func TestService_CreateReferral_MultiLevel(t *testing.T) {
 			Level:      2,
 		}
 		mockRepo.On("GetReferralByReferee", ctx, uint64(4)).Return(nil, repository.ErrNotFound).Once()
+		mockRepo.On("GetConfig", ctx, model.ReferralConfigUserRewardType).Return(nil, repository.ErrNotFound).Once()
+		mockRepo.On("GetConfig", ctx, model.ReferralConfigUserRewardAmount).Return(nil, repository.ErrNotFound).Once()
 		mockRepo.On("CreateReferral", ctx, mock.MatchedBy(func(r *model.Referral) bool {
 			return r.Level == 2
 		})).Return(nil).Once()
@@ -1578,6 +1591,8 @@ func TestService_CreateReferral_MultiLevel(t *testing.T) {
 			Level:      3,
 		}
 		mockRepo.On("GetReferralByReferee", ctx, uint64(6)).Return(nil, repository.ErrNotFound).Once()
+		mockRepo.On("GetConfig", ctx, model.ReferralConfigPlayerRewardType).Return(nil, repository.ErrNotFound).Once()
+		mockRepo.On("GetConfig", ctx, model.ReferralConfigPlayerRewardAmount).Return(nil, repository.ErrNotFound).Once()
 		mockRepo.On("CreateReferral", ctx, mock.MatchedBy(func(r *model.Referral) bool {
 			return r.Level == 3
 		})).Return(nil).Once()
@@ -1596,6 +1611,8 @@ func TestService_CreateReferral_MultiLevel(t *testing.T) {
 			Level:      -1,
 		}
 		mockRepo.On("GetReferralByReferee", ctx, uint64(8)).Return(nil, repository.ErrNotFound).Once()
+		mockRepo.On("GetConfig", ctx, model.ReferralConfigUserRewardType).Return(nil, repository.ErrNotFound).Once()
+		mockRepo.On("GetConfig", ctx, model.ReferralConfigUserRewardAmount).Return(nil, repository.ErrNotFound).Once()
 		mockRepo.On("CreateReferral", ctx, mock.MatchedBy(func(r *model.Referral) bool {
 			return r.Level == 1
 		})).Return(nil).Once()
@@ -1615,6 +1632,8 @@ func TestService_CreateReferral_MultiLevel(t *testing.T) {
 			Level:      1,
 		}
 		mockRepo.On("GetReferralByReferee", ctx, uint64(10)).Return(nil, repository.ErrNotFound).Once()
+		mockRepo.On("GetConfig", ctx, model.ReferralConfigUserRewardType).Return(nil, repository.ErrNotFound).Once()
+		mockRepo.On("GetConfig", ctx, model.ReferralConfigUserRewardAmount).Return(nil, repository.ErrNotFound).Once()
 		mockRepo.On("CreateReferral", ctx, mock.AnythingOfType("*model.Referral")).Return(nil).Once()
 		result, err := svc.CreateReferral(ctx, req)
 		require.NoError(t, err)
@@ -2070,6 +2089,7 @@ func TestService_ErrorScenarios(t *testing.T) {
 			Type:       model.ReferralTypeUserToUser,
 		}
 		mockRepo.On("GetReferralByReferee", ctx, uint64(2)).Return(nil, repository.ErrNotFound).Once()
+		mockRepo.On("GetConfig", ctx, mock.AnythingOfType("string")).Return((*model.ReferralConfig)(nil), errors.New("not found")).Maybe()
 		mockRepo.On("CreateReferral", ctx, mock.AnythingOfType("*model.Referral")).Return(errors.New("timeout")).Once()
 		_, err := svc.CreateReferral(ctx, req)
 		assert.Error(t, err)
@@ -2087,6 +2107,7 @@ func TestService_ErrorScenarios(t *testing.T) {
 			Type:       model.ReferralTypeUserToUser,
 		}
 		mockRepo.On("GetReferralByReferee", ctx, uint64(4)).Return(nil, repository.ErrNotFound).Once()
+		mockRepo.On("GetConfig", ctx, mock.AnythingOfType("string")).Return((*model.ReferralConfig)(nil), errors.New("not found")).Maybe()
 		mockRepo.On("CreateReferral", ctx, mock.AnythingOfType("*model.Referral")).Return(nil).Once()
 		mockRepo.On("IncrementCodeUseCount", ctx, uint64(5)).Return(errors.New("increment failed")).Once()
 		result, err := svc.CreateReferral(ctx, req)
@@ -2213,6 +2234,7 @@ func TestService_MultiTypeReferrals(t *testing.T) {
 		}
 		mockRepo.On("GetCodeByCode", ctx, "U2U").Return(code, nil).Once()
 		mockRepo.On("GetReferralByReferee", ctx, uint64(2)).Return(nil, repository.ErrNotFound).Once()
+		mockRepo.On("GetConfig", ctx, mock.AnythingOfType("string")).Return((*model.ReferralConfig)(nil), errors.New("not found")).Maybe()
 		mockRepo.On("CreateReferral", ctx, mock.MatchedBy(func(r *model.Referral) bool {
 			return r.Type == model.ReferralTypeUserToUser
 		})).Return(nil).Once()
@@ -2234,6 +2256,7 @@ func TestService_MultiTypeReferrals(t *testing.T) {
 		}
 		mockRepo.On("GetCodeByCode", ctx, "P2P").Return(code, nil).Once()
 		mockRepo.On("GetReferralByReferee", ctx, uint64(20)).Return(nil, repository.ErrNotFound).Once()
+		mockRepo.On("GetConfig", ctx, mock.AnythingOfType("string")).Return((*model.ReferralConfig)(nil), errors.New("not found")).Maybe()
 		mockRepo.On("CreateReferral", ctx, mock.MatchedBy(func(r *model.Referral) bool {
 			return r.Type == model.ReferralTypePlayerToPlayer
 		})).Return(nil).Once()
@@ -2255,6 +2278,7 @@ func TestService_MultiTypeReferrals(t *testing.T) {
 		}
 		mockRepo.On("GetCodeByCode", ctx, "U2P").Return(code, nil).Once()
 		mockRepo.On("GetReferralByReferee", ctx, uint64(200)).Return(nil, repository.ErrNotFound).Once()
+		mockRepo.On("GetConfig", ctx, mock.AnythingOfType("string")).Return((*model.ReferralConfig)(nil), errors.New("not found")).Maybe()
 		mockRepo.On("CreateReferral", ctx, mock.MatchedBy(func(r *model.Referral) bool {
 			return r.Type == model.ReferralTypeUserToPlayer
 		})).Return(nil).Once()

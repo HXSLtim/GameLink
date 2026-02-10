@@ -166,7 +166,33 @@ func (m *MockChatGroupRepository) CountActiveRooms(ctx context.Context) (int64, 
 	return args.Get(0).(int64), args.Error(1)
 }
 
-// MockChatMemberRepository is a mock implementation of ChatMemberRepository
+func (m *MockChatGroupRepository) ListPublicChannels(ctx context.Context, page, pageSize int) ([]model.ChatGroup, int64, error) {
+	args := m.Called(ctx, page, pageSize)
+	if args.Get(0) == nil {
+		return nil, args.Get(1).(int64), args.Error(2)
+	}
+	return args.Get(0).([]model.ChatGroup), args.Get(1).(int64), args.Error(2)
+}
+
+func (m *MockChatGroupRepository) ListAll(ctx context.Context, opts repository.AdminChatGroupListOptions) ([]model.ChatGroup, int64, error) {
+	args := m.Called(ctx, opts)
+	if args.Get(0) == nil {
+		return nil, args.Get(1).(int64), args.Error(2)
+	}
+	return args.Get(0).([]model.ChatGroup), args.Get(1).(int64), args.Error(2)
+}
+
+func (m *MockChatGroupRepository) CountAll(ctx context.Context) (int64, error) {
+	args := m.Called(ctx)
+	return args.Get(0).(int64), args.Error(1)
+}
+
+func (m *MockChatGroupRepository) Reactivate(ctx context.Context, id uint64) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
+// MockChatMemberRepository
 type MockChatMemberRepository struct {
 	mock.Mock
 }
@@ -756,12 +782,13 @@ func TestChatService_LeaveGroup(t *testing.T) {
 
 func TestChatService_MarkRead(t *testing.T) {
 	tests := []struct {
-		name        string
-		groupID     uint64
-		userID      uint64
-		messageID   uint64
-		setupMock   func(*MockChatMemberRepository)
-		expectError bool
+		name             string
+		groupID          uint64
+		userID           uint64
+		messageID        uint64
+		setupMock        func(*MockChatMemberRepository)
+		setupMessageMock func(*MockChatMessageRepository)
+		expectError      bool
 	}{
 		{
 			name:      "successful mark read",
@@ -773,6 +800,10 @@ func TestChatService_MarkRead(t *testing.T) {
 				members.On("Get", mock.Anything, uint64(1), uint64(1)).Return(member, nil)
 				members.On("Update", mock.Anything, mock.Anything).Return(nil)
 			},
+			setupMessageMock: func(messages *MockChatMessageRepository) {
+				msg := &model.ChatMessage{Base: model.Base{ID: 100}, GroupID: 1}
+				messages.On("Get", mock.Anything, uint64(100)).Return(msg, nil)
+			},
 			expectError: false,
 		},
 		{
@@ -783,7 +814,8 @@ func TestChatService_MarkRead(t *testing.T) {
 			setupMock: func(members *MockChatMemberRepository) {
 				members.On("Get", mock.Anything, uint64(1), uint64(2)).Return(nil, repository.ErrNotFound)
 			},
-			expectError: true,
+			setupMessageMock: nil,
+			expectError:      true,
 		},
 	}
 
@@ -796,6 +828,9 @@ func TestChatService_MarkRead(t *testing.T) {
 			cache := &MockCache{}
 
 			tt.setupMock(members)
+			if tt.setupMessageMock != nil {
+				tt.setupMessageMock(messages)
+			}
 
 			svc := NewChatService(groups, members, messages, reports, nil, cache)
 			err := svc.MarkRead(context.Background(), tt.groupID, tt.userID, tt.messageID)
@@ -818,6 +853,11 @@ func TestChatService_ApproveMessage(t *testing.T) {
 
 	moderatorID := uint64(100)
 	messages.On("UpdateAuditStatus", mock.Anything, uint64(1), model.ChatMessageAuditApproved, &moderatorID, "").Return(nil)
+	// ApproveMessage fetches the message for broadcasting after audit status update
+	msg := &model.ChatMessage{Base: model.Base{ID: 1}, GroupID: 1}
+	messages.On("Get", mock.Anything, uint64(1)).Return(msg, nil)
+	group := &model.ChatGroup{Base: model.Base{ID: 1}, GroupType: model.ChatGroupTypeOrder, IsActive: true}
+	groups.On("Get", mock.Anything, uint64(1)).Return(group, nil)
 
 	svc := NewChatService(groups, members, messages, reports, nil, cache)
 	err := svc.ApproveMessage(context.Background(), 1, moderatorID)

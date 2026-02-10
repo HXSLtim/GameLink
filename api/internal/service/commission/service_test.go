@@ -162,6 +162,14 @@ func (m *MockOrderReader) Get(ctx context.Context, id uint64) (*model.Order, err
 	return args.Get(0).(*model.Order), args.Error(1)
 }
 
+func (m *MockOrderReader) GetByIDs(ctx context.Context, ids []uint64) ([]model.Order, error) {
+	args := m.Called(ctx, ids)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]model.Order), args.Error(1)
+}
+
 func (m *MockOrderReader) List(ctx context.Context, opts repoiface.OrderListOptions) ([]model.Order, int64, error) {
 	args := m.Called(ctx, opts)
 	if args.Get(0) == nil {

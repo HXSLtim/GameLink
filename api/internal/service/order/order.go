@@ -596,6 +596,7 @@ func (s *OrderService) CancelOrder(ctx context.Context, userID uint64, orderID u
 						return ErrInvalidTransition
 					}
 					order.Status = model.OrderStatusRefunded
+					refundHandled = true
 				}
 			}
 		}
@@ -1073,7 +1074,7 @@ func (s *OrderService) AcceptOrder(ctx context.Context, playerUserID uint64, ord
 		return ErrInvalidTransition
 	}
 
-	if order, err := s.orders.Get(ctx, orderID); err == nil {
+	if order, err := s.orders.Get(ctx, orderID); err == nil && order != nil {
 		s.notifyOrderStatus(ctx, order.UserID, order.ID, string(order.Status), "订单已被接单", "订单已被陪玩师接单")
 	}
 

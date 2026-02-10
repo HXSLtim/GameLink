@@ -705,6 +705,11 @@ func TestOrderService_GetOrderDetail_Success(t *testing.T) {
 	testOrder := createTestOrder(orderID, userID, model.OrderStatusCompleted)
 	now := time.Now()
 	testOrder.CompletedAt = &now
+	// Set preloaded relations expected by GetOrderDetail
+	testPlayer := createTestPlayer(100, 200)
+	testUser := createTestUser(200)
+	testPlayer.User = testUser
+	testOrder.Player = testPlayer
 
 	orders := &MockOrderRepository{
 		getOrder: func(ctx context.Context, id uint64) (*model.Order, error) {
@@ -821,14 +826,15 @@ func TestOrderService_CancelOrder_Success(t *testing.T) {
 
 	testOrder := createTestOrder(orderID, userID, model.OrderStatusPending)
 
-	var updatedOrder *model.Order
+	// CancelOrder now uses UpdateWithCondition (atomic update)
+	var capturedUpdates map[string]any
 	orders := &MockOrderRepository{
 		getOrder: func(ctx context.Context, id uint64) (*model.Order, error) {
 			return testOrder, nil
 		},
-		updateOrder: func(ctx context.Context, order *model.Order) error {
-			updatedOrder = order
-			return nil
+		updateWithCondition: func(ctx context.Context, oID uint64, expectedStatus model.OrderStatus, updates map[string]any) (bool, error) {
+			capturedUpdates = updates
+			return true, nil
 		},
 	}
 
@@ -848,9 +854,9 @@ func TestOrderService_CancelOrder_Success(t *testing.T) {
 	err := service.CancelOrder(ctx, userID, orderID, req)
 
 	require.NoError(t, err)
-	assert.NotNil(t, updatedOrder)
-	assert.Equal(t, model.OrderStatusCanceled, updatedOrder.Status)
-	assert.Equal(t, "Changed mind", updatedOrder.CancelReason)
+	assert.NotNil(t, capturedUpdates)
+	assert.Equal(t, model.OrderStatusCanceled, capturedUpdates["status"])
+	assert.Equal(t, "Changed mind", capturedUpdates["cancel_reason"])
 }
 
 // TestOrderService_CancelOrder_WithRefund tests order cancellation with refund
@@ -861,14 +867,15 @@ func TestOrderService_CancelOrder_WithRefund(t *testing.T) {
 
 	testOrder := createTestOrder(orderID, userID, model.OrderStatusConfirmed)
 
-	var updatedOrder *model.Order
+	// CancelOrder now uses UpdateWithCondition (atomic update) for the fallback refund path
+	var capturedUpdates map[string]any
 	orders := &MockOrderRepository{
 		getOrder: func(ctx context.Context, id uint64) (*model.Order, error) {
 			return testOrder, nil
 		},
-		updateOrder: func(ctx context.Context, order *model.Order) error {
-			updatedOrder = order
-			return nil
+		updateWithCondition: func(ctx context.Context, oID uint64, expectedStatus model.OrderStatus, updates map[string]any) (bool, error) {
+			capturedUpdates = updates
+			return true, nil
 		},
 	}
 
@@ -896,11 +903,11 @@ func TestOrderService_CancelOrder_WithRefund(t *testing.T) {
 	err := service.CancelOrder(ctx, userID, orderID, req)
 
 	require.NoError(t, err)
-	assert.NotNil(t, updatedOrder)
-	assert.Equal(t, model.OrderStatusRefunded, updatedOrder.Status)
-	assert.Equal(t, int64(5000), updatedOrder.RefundAmountCents)
-	assert.Equal(t, "用户取消订单", updatedOrder.RefundReason)
-	assert.NotNil(t, updatedOrder.RefundedAt)
+	assert.NotNil(t, capturedUpdates)
+	assert.Equal(t, model.OrderStatusRefunded, capturedUpdates["status"])
+	assert.Equal(t, int64(5000), capturedUpdates["refund_amount_cents"])
+	assert.Equal(t, "用户取消订单", capturedUpdates["refund_reason"])
+	assert.NotNil(t, capturedUpdates["refunded_at"])
 }
 
 // TestOrderService_CancelOrder_InvalidStatus tests order cancellation with invalid status
