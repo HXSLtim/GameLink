@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"gamelink/internal/handler/admin/dto"
 	"gamelink/internal/model"
 	adminservice "gamelink/internal/service/admin"
 	"gamelink/pkg/apierr"
@@ -94,7 +95,7 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 		respondError(c, apierr.InternalError("获取用户信息失败").WithDetails(err.Error()))
 		return
 	}
-	respondSuccess(c, user)
+	respondSuccess(c, dto.ToUserResponse(user))
 }
 
 // CreateUser
@@ -141,7 +142,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		respondError(c, apierr.InternalError("创建用户失败").WithDetails(err.Error()))
 		return
 	}
-	respondCreated(c, user)
+	respondCreated(c, dto.ToUserResponse(user))
 }
 
 // UpdateUser
@@ -199,7 +200,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		respondError(c, err)
 		return
 	}
-	respondUpdated(c, user)
+	respondUpdated(c, dto.ToUserResponse(user))
 }
 
 // DeleteUser
@@ -316,7 +317,7 @@ func (h *UserHandler) UpdateUserStatus(c *gin.Context) {
 		respondError(c, err)
 		return
 	}
-	respondUpdated(c, out)
+	respondUpdated(c, dto.ToUserResponse(out))
 }
 
 // UpdateUserRole
@@ -346,7 +347,7 @@ func (h *UserHandler) UpdateUserRole(c *gin.Context) {
 		respondError(c, err)
 		return
 	}
-	respondUpdated(c, out)
+	respondUpdated(c, dto.ToUserResponse(out))
 }
 
 // ListUserOrders
@@ -466,7 +467,7 @@ func (h *UserHandler) CreateUserWithPlayer(c *gin.Context) {
 		respondError(c, err)
 		return
 	}
-	respondCreated(c, map[string]any{"user": user, "player": player})
+	respondCreated(c, map[string]any{"user": dto.ToUserResponse(user), "player": dto.ToPlayerResponse(player)})
 }
 
 var phoneRegexp = regexp.MustCompile(`^1[3-9]\d{9}$`)
