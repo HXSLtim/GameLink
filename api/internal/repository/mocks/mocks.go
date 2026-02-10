@@ -491,6 +491,21 @@ func (mr *MockOrderRepositoryMockRecorder) Get(ctx, id interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockOrderRepository)(nil).Get), ctx, id)
 }
 
+// GetByIDs mocks base method.
+func (m *MockOrderRepository) GetByIDs(ctx context.Context, ids []uint64) ([]model.Order, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByIDs", ctx, ids)
+	ret0, _ := ret[0].([]model.Order)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByIDs indicates an expected call of GetByIDs.
+func (mr *MockOrderRepositoryMockRecorder) GetByIDs(ctx, ids interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByIDs", reflect.TypeOf((*MockOrderRepository)(nil).GetByIDs), ctx, ids)
+}
+
 // List mocks base method.
 func (m *MockOrderRepository) List(ctx context.Context, opts repository.OrderListOptions) ([]model.Order, int64, error) {
 	m.ctrl.T.Helper()
@@ -519,6 +534,21 @@ func (m *MockOrderRepository) Update(ctx context.Context, order *model.Order) er
 func (mr *MockOrderRepositoryMockRecorder) Update(ctx, order interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockOrderRepository)(nil).Update), ctx, order)
+}
+
+// UpdateWithCondition mocks base method.
+func (m *MockOrderRepository) UpdateWithCondition(ctx context.Context, orderID uint64, expectedStatus model.OrderStatus, updates map[string]any) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateWithCondition", ctx, orderID, expectedStatus, updates)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateWithCondition indicates an expected call of UpdateWithCondition.
+func (mr *MockOrderRepositoryMockRecorder) UpdateWithCondition(ctx, orderID, expectedStatus, updates interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateWithCondition", reflect.TypeOf((*MockOrderRepository)(nil).UpdateWithCondition), ctx, orderID, expectedStatus, updates)
 }
 
 // MockPaymentRepository is a mock of PaymentRepository interface.
