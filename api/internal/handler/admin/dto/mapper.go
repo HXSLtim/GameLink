@@ -80,7 +80,7 @@ func ToUserResponseWithConfig(user *model.User, config MapperConfig) *UserRespon
 // ToUserListResponseWithConfig 列表转换（带分页）
 func ToUserListResponseWithConfig(
 	users []model.User,
-	total int64,
+	total int,
 	page, pageSize int,
 	config MapperConfig,
 ) *UserListResponse {
@@ -93,8 +93,8 @@ func ToUserListResponseWithConfig(
 		}
 	}
 	
-	totalPages := int(total) / pageSize
-	if int(total)%pageSize > 0 {
+	totalPages := total / pageSize
+	if total%pageSize > 0 {
 		totalPages++
 	}
 	

@@ -54,15 +54,16 @@ type UserResponse struct {
 
 // VipLevelBrief VIP 等级简要信息
 type VipLevelBrief struct {
-	ID    uint64 `json:"id"`
-	Level int    `json:"level"`
-	Name  string `json:"name"`
+	ID        uint64 `json:"id"`
+	Slug      string `json:"slug"`
+	Title     string `json:"title"`
+	SortOrder int    `json:"sortOrder"`
 }
 
 // UserListResponse 用户列表响应
 type UserListResponse struct {
 	Items      []UserResponse `json:"items"`
-	Total      int64          `json:"total"`
+	Total      int            `json:"total"`
 	Page       int            `json:"page"`
 	PageSize   int            `json:"pageSize"`
 	TotalPages int            `json:"totalPages"`
@@ -104,9 +105,10 @@ func ToUserResponse(user *model.User) *UserResponse {
 	// 转换 VIP 等级信息
 	if user.VipLevel != nil {
 		resp.VipLevel = &VipLevelBrief{
-			ID:    user.VipLevel.ID,
-			Level: user.VipLevel.Level,
-			Name:  user.VipLevel.Name,
+			ID:        user.VipLevel.ID,
+			Slug:      user.VipLevel.Slug,
+			Title:     user.VipLevel.Title,
+			SortOrder: user.VipLevel.SortOrder,
 		}
 	}
 	
