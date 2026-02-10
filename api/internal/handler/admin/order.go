@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"gamelink/internal/handler/admin/dto"
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	adminservice "gamelink/internal/service/admin"
@@ -80,7 +81,7 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("create order failed").WithDetails(err.Error()))
 		return
 	}
-	respondCreated(c, *order)
+	respondCreated(c, dto.ToOrderResponse(order))
 }
 
 // AssignOrder
@@ -117,10 +118,10 @@ func (h *OrderHandler) AssignOrder(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("assign order failed").WithDetails(err.Error()))
 		return
 	}
-	respondUpdated(c, *order)
+	respondUpdated(c, dto.ToOrderResponse(order))
 }
 
-// ConfirmOrder 确认订单// @Summary      确认订单
+// ConfirmOrder
 // @Description  将订单状态从 pending 置为 confirmed
 // @Tags         Admin/Orders
 // @Security     BearerAuth
@@ -156,7 +157,7 @@ func (h *OrderHandler) ConfirmOrder(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("confirm order failed").WithDetails(err.Error()))
 		return
 	}
-	respondUpdated(c, *order)
+	respondUpdated(c, dto.ToOrderResponse(order))
 }
 
 // @Description  API endpoint// @Security     BearerAuth
@@ -192,10 +193,10 @@ func (h *OrderHandler) StartOrder(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("start order failed").WithDetails(err.Error()))
 		return
 	}
-	respondUpdated(c, *order)
+	respondUpdated(c, dto.ToOrderResponse(order))
 }
 
-// CompleteOrder 完成订单// @Summary      完成订单
+// CompleteOrder
 // @Description  将订单状态从 in_progress 置为 completed，并记录完成时间
 // @Tags         Admin/Orders
 // @Security     BearerAuth
@@ -231,7 +232,7 @@ func (h *OrderHandler) CompleteOrder(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("complete order failed").WithDetails(err.Error()))
 		return
 	}
-	respondUpdated(c, *order)
+	respondUpdated(c, dto.ToOrderResponse(order))
 }
 
 // ListOrders
@@ -261,7 +262,7 @@ func (h *OrderHandler) ListOrders(c *gin.Context) {
 		return
 	}
 	orders = ensureSlice(orders)
-	respondList(c, orders, pagination)
+	respondList(c, dto.ToOrderResponseList(orders), pagination)
 }
 
 // GetOrder
@@ -289,14 +290,14 @@ func (h *OrderHandler) GetOrder(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("get order failed").WithDetails(err.Error()))
 		return
 	}
-	respondSuccess(c, *order)
+	respondSuccess(c, dto.ToOrderResponse(order))
 }
 
 // @Description  API endpoint// @Security     BearerAuth
 // @Accept       json
 // @Produce      json
 // @Param        id       path  int                  true  "订单ID"
-// @Param        request        body     orderRefundPayload true   "Request body"// @Success      200  {array}   Payment
+// @Param        request        body     orderRefundPayload true   "Request body"
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/orders/{id}/refund [post]
 func (h *OrderHandler) RefundOrder(c *gin.Context) {
@@ -326,7 +327,7 @@ func (h *OrderHandler) RefundOrder(c *gin.Context) {
 		respondAPIError(c, apierr.InternalError("refund order failed").WithDetails(err.Error()))
 		return
 	}
-	respondUpdated(c, *order)
+	respondUpdated(c, dto.ToOrderResponse(order))
 }
 
 // @Description  API endpoint// @Tags         Admin/Orders
@@ -491,7 +492,7 @@ func (h *OrderHandler) UpdateOrder(c *gin.Context) {
 		return
 	}
 
-	respondUpdated(c, *order)
+	respondUpdated(c, dto.ToOrderResponse(order))
 }
 
 // DeleteOrder
@@ -1158,7 +1159,7 @@ func (h *OrderHandler) ReviewOrder(c *gin.Context) {
 		return
 	}
 
-	respondUpdated(c, *updated)
+	respondUpdated(c, dto.ToOrderResponse(updated))
 }
 
 // CancelOrder
@@ -1215,10 +1216,10 @@ func (h *OrderHandler) CancelOrder(c *gin.Context) {
 		return
 	}
 
-	respondUpdated(c, *updated)
+	respondUpdated(c, dto.ToOrderResponse(updated))
 }
 
-// ReviewOrderPayload defines approval decision.
+// ReviewOrderPayload
 type ReviewOrderPayload struct {
 	Approved bool   `json:"approved"`
 	Reason   string `json:"reason"`

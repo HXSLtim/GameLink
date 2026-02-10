@@ -3,6 +3,7 @@ package admin
 import (
 	"github.com/gin-gonic/gin"
 
+	"gamelink/internal/handler/admin/dto"
 	"gamelink/internal/model"
 	adminservice "gamelink/internal/service/admin"
 	"gamelink/pkg/apierr"
@@ -55,7 +56,7 @@ func (h *PlayerHandler) ListPlayers(c *gin.Context) {
 			respondError(c, apierr.InternalError("list players failed").WithDetails(err.Error()))
 			return
 		}
-		respondList(c, players, pagination)
+		respondList(c, dto.ToPlayerResponseList(players), pagination)
 		return
 	}
 
@@ -64,7 +65,7 @@ func (h *PlayerHandler) ListPlayers(c *gin.Context) {
 		respondError(c, apierr.InternalError("list players failed").WithDetails(err.Error()))
 		return
 	}
-	respondList(c, players, pagination)
+	respondList(c, dto.ToPlayerResponseList(players), pagination)
 }
 
 // GetPlayer
@@ -88,7 +89,7 @@ func (h *PlayerHandler) GetPlayer(c *gin.Context) {
 		respondError(c, err)
 		return
 	}
-	respondSuccess(c, player)
+	respondSuccess(c, dto.ToPlayerResponse(player))
 }
 
 // CreatePlayer
@@ -122,7 +123,7 @@ func (h *PlayerHandler) CreatePlayer(c *gin.Context) {
 		respondError(c, err)
 		return
 	}
-	respondCreated(c, player)
+	respondCreated(c, dto.ToPlayerResponse(player))
 }
 
 // UpdatePlayer
@@ -161,7 +162,7 @@ func (h *PlayerHandler) UpdatePlayer(c *gin.Context) {
 		respondError(c, err)
 		return
 	}
-	respondUpdated(c, player)
+	respondUpdated(c, dto.ToPlayerResponse(player))
 }
 
 // DeletePlayer
@@ -253,10 +254,10 @@ func (h *PlayerHandler) UpdatePlayerVerification(c *gin.Context) {
 		respondError(c, err)
 		return
 	}
-	respondUpdated(c, out)
+	respondUpdated(c, dto.ToPlayerResponse(out))
 }
 
-// UpdateVerificationPayload 审核请求参数
+// UpdateVerificationPayload
 type UpdateVerificationPayload struct {
 	VerificationStatus string `json:"verification_status" binding:"required,oneof=pending verified rejected"`
 	Remark             string `json:"remark"`
@@ -302,7 +303,7 @@ func (h *PlayerHandler) UpdatePlayerGames(c *gin.Context) {
 		respondError(c, err)
 		return
 	}
-	respondUpdated(c, out)
+	respondUpdated(c, dto.ToPlayerResponse(out))
 }
 
 // UpdatePlayerSkillTags
