@@ -7,12 +7,11 @@ import (
 	"fmt"
 	"strings"
 	"time"
-	
+
 	"log/slog"
-	
+
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
-	"gamelink/internal/repository/common"
 	"gamelink/pkg/apierr"
 	"gamelink/pkg/logging"
 )
@@ -683,20 +682,10 @@ func (s *AdminService) GetPaymentLogs(ctx context.Context, paymentID uint64, opt
 	if s.tx == nil {
 		return nil, 0, apierr.InternalError("transaction manager not configured")
 	}
-
-	var logs []model.OperationLog
-	var total int64
-
-	err := s.tx.WithTx(ctx, func(r *common.Repos) error {
-		var err error
-		logs, total, err = r.OpLogs.ListByEntity(ctx, string(model.OpEntityPayment), paymentID, opts)
-		return err
-	})
-
+	logs, total, err := s.repos().OpLogs.ListByEntity(ctx, string(model.OpEntityPayment), paymentID, opts)
 	if err != nil {
 		return nil, 0, WrapError(err, "get payment logs")
 	}
-
 	return logs, total, nil
 }
 

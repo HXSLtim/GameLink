@@ -103,7 +103,12 @@ func NewAdminService(
 // TxManager abstracts UnitOfWork for transactional operations.
 type TxManager interface {
 	WithTx(ctx context.Context, fn func(r *common.Repos) error) error
+	// Repos returns repositories bound to the root DB (non-transactional).
+	Repos() *common.Repos
 }
+
+// repos returns non-transactional repositories for read-only operations.
+func (s *AdminService) repos() *common.Repos { return s.tx.Repos() }
 
 // PermissionService 获取权限服务
 func (s *AdminService) PermissionService() *PermissionService {
@@ -206,25 +211,26 @@ func (s *AdminService) RegisterUserAndPlayer(ctx context.Context, u CreateUserIn
 }
 
 // appendLogAsync 追加操作日志（尽力而为，不影响主流程）。
+// 日志写入在后台 goroutine 中执行，使用独立 context 以避免请求取消导致日志丢失。
 func (s *AdminService) appendLogAsync(ctx context.Context, entity string, id uint64, action string, meta map[string]any) {
 	if s.tx == nil {
 		return
 	}
-	_ = s.tx.WithTx(ctx, func(r *common.Repos) error {
-		var raw []byte
-		if meta != nil {
-			if b, err := json.Marshal(meta); err == nil {
-				raw = b
-			}
+	var raw []byte
+	if meta != nil {
+		if b, err := json.Marshal(meta); err == nil {
+			raw = b
 		}
-		var actorPtr *uint64
-		if uid, ok := logging.ActorUserIDFromContext(ctx); ok {
-			actorID := uid
-			actorPtr = &actorID
-		}
-		log := &model.OperationLog{EntityType: entity, EntityID: id, Action: action, ActorUserID: actorPtr, MetadataJSON: raw}
-		return r.OpLogs.Append(ctx, log)
-	})
+	}
+	var actorPtr *uint64
+	if uid, ok := logging.ActorUserIDFromContext(ctx); ok {
+		actorID := uid
+		actorPtr = &actorID
+	}
+	log := &model.OperationLog{EntityType: entity, EntityID: id, Action: action, ActorUserID: actorPtr, MetadataJSON: raw}
+	go func() {
+		_ = s.repos().OpLogs.Append(context.Background(), log)
+	}()
 }
 
 func (s *AdminService) listPaymentsByOrder(ctx context.Context, orderID uint64) ([]model.Payment, error) {
@@ -318,28 +324,19 @@ func (s *AdminService) ListOperationLogs(ctx context.Context, entityType string,
 	if s.tx == nil {
 		return nil, nil, apierr.InternalError("事务管理器未配置")
 	}
-	var logs []model.OperationLog
-	var total int64
-	err := s.tx.WithTx(ctx, func(r *common.Repos) error {
-		norm := repository.OperationLogListOptions{
-			Page:        repository.NormalizePage(opts.Page),
-			PageSize:    repository.NormalizePageSize(opts.PageSize),
-			Action:      opts.Action,
-			ActorUserID: opts.ActorUserID,
-			DateFrom:    opts.DateFrom,
-			DateTo:      opts.DateTo,
-		}
-		items, cnt, err := r.OpLogs.ListByEntity(ctx, entityType, entityID, norm)
-		if err != nil {
-			return err
-		}
-		logs, total = items, cnt
-		return nil
-	})
+	norm := repository.OperationLogListOptions{
+		Page:        repository.NormalizePage(opts.Page),
+		PageSize:    repository.NormalizePageSize(opts.PageSize),
+		Action:      opts.Action,
+		ActorUserID: opts.ActorUserID,
+		DateFrom:    opts.DateFrom,
+		DateTo:      opts.DateTo,
+	}
+	logs, total, err := s.repos().OpLogs.ListByEntity(ctx, entityType, entityID, norm)
 	if err != nil {
 		return nil, nil, err
 	}
-	p := buildPagination(repository.NormalizePage(opts.Page), repository.NormalizePageSize(opts.PageSize), total)
+	p := buildPagination(norm.Page, norm.PageSize, total)
 	return logs, &p, nil
 }
 
@@ -348,30 +345,21 @@ func (s *AdminService) SearchOperationLogs(ctx context.Context, opts repository.
 	if s.tx == nil {
 		return nil, nil, apierr.InternalError("事务管理器未配置")
 	}
-	var logs []model.OperationLog
-	var total int64
-	err := s.tx.WithTx(ctx, func(r *common.Repos) error {
-		norm := repository.OperationLogSearchOptions{
-			Page:        repository.NormalizePage(opts.Page),
-			PageSize:    repository.NormalizePageSize(opts.PageSize),
-			EntityType:  opts.EntityType,
-			EntityID:    opts.EntityID,
-			Action:      opts.Action,
-			ActorUserID: opts.ActorUserID,
-			DateFrom:    opts.DateFrom,
-			DateTo:      opts.DateTo,
-		}
-		items, cnt, err := r.OpLogs.List(ctx, norm)
-		if err != nil {
-			return err
-		}
-		logs, total = items, cnt
-		return nil
-	})
+	norm := repository.OperationLogSearchOptions{
+		Page:        repository.NormalizePage(opts.Page),
+		PageSize:    repository.NormalizePageSize(opts.PageSize),
+		EntityType:  opts.EntityType,
+		EntityID:    opts.EntityID,
+		Action:      opts.Action,
+		ActorUserID: opts.ActorUserID,
+		DateFrom:    opts.DateFrom,
+		DateTo:      opts.DateTo,
+	}
+	logs, total, err := s.repos().OpLogs.List(ctx, norm)
 	if err != nil {
 		return nil, nil, err
 	}
-	p := buildPagination(repository.NormalizePage(opts.Page), repository.NormalizePageSize(opts.PageSize), total)
+	p := buildPagination(norm.Page, norm.PageSize, total)
 	return logs, &p, nil
 }
 

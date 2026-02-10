@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/wire"
@@ -109,7 +110,9 @@ func ProvideAdminService(orm *gorm.DB, cacheClient cache.Cache) *adminservice.Ad
 		gamecategoryrepo.NewGameCategoryRepository(orm),
 		cacheClient,
 	)
-	svc.SetTxManager(common.NewUnitOfWork(orm))
+	uow := common.NewUnitOfWork(orm)
+	uow.SetDefaultTimeout(30 * time.Second)
+	svc.SetTxManager(uow)
 	return svc
 }
 

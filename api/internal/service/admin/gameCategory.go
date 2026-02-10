@@ -87,18 +87,10 @@ func (s *AdminService) GetGameCategory(ctx context.Context, id uint64) (*model.G
 	if s.tx == nil {
 		return nil, apierr.InternalError("transaction manager not configured")
 	}
-
-	var category *model.GameCategory
-	err := s.tx.WithTx(ctx, func(r *common.Repos) error {
-		var err error
-		category, err = r.GameCategories.Get(ctx, id)
-		return err
-	})
-
+	category, err := s.repos().GameCategories.Get(ctx, id)
 	if err != nil {
 		return nil, wrapRepositoryError("get game category", err)
 	}
-
 	return category, nil
 }
 
@@ -107,33 +99,20 @@ func (s *AdminService) ListGameCategoriesPaged(ctx context.Context, page, pageSi
 	if s.tx == nil {
 		return nil, nil, apierr.InternalError("transaction manager not configured")
 	}
-
-	var categories []*model.GameCategory
-	var total int64
-
-	err := s.tx.WithTx(ctx, func(r *common.Repos) error {
-		opts := repository.GameCategoryListOptions{
-			Page:     page,
-			PageSize: pageSize,
-			Keyword:  strings.TrimSpace(keyword),
-			IsActive: isActive,
-		}
-
-		var err error
-		categories, total, err = r.GameCategories.List(ctx, opts)
-		return err
+	categories, total, err := s.repos().GameCategories.List(ctx, repository.GameCategoryListOptions{
+		Page:     page,
+		PageSize: pageSize,
+		Keyword:  strings.TrimSpace(keyword),
+		IsActive: isActive,
 	})
-
 	if err != nil {
 		return nil, nil, wrapRepositoryError("list game categories", err)
 	}
-
 	pagination := &model.Pagination{
 		Page:     page,
 		PageSize: pageSize,
 		Total:    int(total),
 	}
-
 	return categories, pagination, nil
 }
 

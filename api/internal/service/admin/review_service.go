@@ -23,24 +23,15 @@ func (s *AdminService) ListReviews(ctx context.Context, opts repository.ReviewLi
 	if s.tx == nil {
 		return nil, nil, apierr.InternalError("事务管理器未配置")
 	}
-	var items []model.Review
-	var total int64
-	err := s.tx.WithTx(ctx, func(r *common.Repos) error {
-		page := repository.NormalizePage(opts.Page)
-		size := repository.NormalizePageSize(opts.PageSize)
-		out, cnt, err := r.Reviews.List(ctx, repository.ReviewListOptions{
-			Page: page, PageSize: size, OrderID: opts.OrderID, UserID: opts.UserID, PlayerID: opts.PlayerID, DateFrom: opts.DateFrom, DateTo: opts.DateTo,
-		})
-		if err != nil {
-			return err
-		}
-		items, total = out, cnt
-		return nil
+	page := repository.NormalizePage(opts.Page)
+	size := repository.NormalizePageSize(opts.PageSize)
+	items, total, err := s.repos().Reviews.List(ctx, repository.ReviewListOptions{
+		Page: page, PageSize: size, OrderID: opts.OrderID, UserID: opts.UserID, PlayerID: opts.PlayerID, DateFrom: opts.DateFrom, DateTo: opts.DateTo,
 	})
 	if err != nil {
 		return nil, nil, err
 	}
-	p := buildPagination(repository.NormalizePage(opts.Page), repository.NormalizePageSize(opts.PageSize), total)
+	p := buildPagination(page, size, total)
 	return items, &p, nil
 }
 
@@ -49,12 +40,7 @@ func (s *AdminService) GetReview(ctx context.Context, id uint64) (*model.Review,
 	if s.tx == nil {
 		return nil, apierr.InternalError("事务管理器未配置")
 	}
-	var item *model.Review
-	err := s.tx.WithTx(ctx, func(r *common.Repos) error {
-		var err error
-		item, err = r.Reviews.Get(ctx, id)
-		return err
-	})
+	item, err := s.repos().Reviews.Get(ctx, id)
 	if err != nil {
 		return nil, WrapError(err, "get review")
 	}
@@ -185,24 +171,15 @@ func (s *AdminService) ListReviewReports(ctx context.Context, page, pageSize int
 	if s.tx == nil {
 		return nil, nil, apierr.InternalError("事务管理器未配置")
 	}
-
-	var reports []model.ReviewReport
-	var total int64
-
-	err := s.tx.WithTx(ctx, func(r *common.Repos) error {
-		var err error
-		reports, total, err = r.ReviewReports.List(ctx, repository.ReviewReportListOptions{
-			Page:       page,
-			PageSize:   pageSize,
-			ReviewID:   reviewID,
-			ReporterID: reporterID,
-			Status:     status,
-			DateFrom:   dateFrom,
-			DateTo:     dateTo,
-		})
-		return err
+	reports, total, err := s.repos().ReviewReports.List(ctx, repository.ReviewReportListOptions{
+		Page:       page,
+		PageSize:   pageSize,
+		ReviewID:   reviewID,
+		ReporterID: reporterID,
+		Status:     status,
+		DateFrom:   dateFrom,
+		DateTo:     dateTo,
 	})
-
 	if err != nil {
 		return nil, nil, WrapError(err, "list review reports")
 	}
@@ -252,14 +229,7 @@ func (s *AdminService) GetReviewReport(ctx context.Context, id uint64) (*ReviewR
 	if s.tx == nil {
 		return nil, apierr.InternalError("事务管理器未配置")
 	}
-
-	var report *model.ReviewReport
-	err := s.tx.WithTx(ctx, func(r *common.Repos) error {
-		var err error
-		report, err = r.ReviewReports.Get(ctx, id)
-		return err
-	})
-
+	report, err := s.repos().ReviewReports.Get(ctx, id)
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
 			return nil, ErrNotFound
@@ -447,19 +417,10 @@ func (s *AdminService) ListPendingReviews(ctx context.Context, page, pageSize in
 	if s.tx == nil {
 		return nil, 0, apierr.InternalError("事务管理器未配置")
 	}
-
-	var reviews []model.Review
-	var total int64
-	err := s.tx.WithTx(ctx, func(r *common.Repos) error {
-		var err error
-		reviews, total, err = r.Reviews.ListPending(ctx, page, pageSize)
-		return err
-	})
-
+	reviews, total, err := s.repos().Reviews.ListPending(ctx, page, pageSize)
 	if err != nil {
 		return nil, 0, WrapError(err, "list pending reviews")
 	}
-
 	return reviews, total, nil
 }
 

@@ -2,6 +2,8 @@ package common
 
 import (
 	"context"
+	"sync"
+	"time"
 
 	"gorm.io/gorm"
 
@@ -36,32 +38,59 @@ type Repos struct {
 
 // UnitOfWork provides a simple transaction wrapper for GORM repositories.
 type UnitOfWork struct {
-	db *gorm.DB
+	db             *gorm.DB
+	defaultTimeout time.Duration
+	once           sync.Once
+	root           *Repos // cached non-transactional repos
 }
 
 // NewUnitOfWork creates a UnitOfWork from the root *gorm.DB.
 func NewUnitOfWork(db *gorm.DB) *UnitOfWork { return &UnitOfWork{db: db} }
 
+// SetDefaultTimeout configures a default context timeout applied to every
+// transactional call. A zero value disables the timeout.
+func (u *UnitOfWork) SetDefaultTimeout(d time.Duration) { u.defaultTimeout = d }
+
+// Repos returns repositories bound to the root (non-transactional) DB handle.
+// The result is cached after the first call.
+func (u *UnitOfWork) Repos() *Repos {
+	u.once.Do(func() {
+		u.root = buildRepos(u.db)
+	})
+	return u.root
+}
+
 // WithTx runs fn within a database transaction. If fn returns an error the
 // transaction is rolled back; otherwise it is committed.
+// When a default timeout is configured the context is wrapped with
+// context.WithTimeout before entering the transaction.
 func (u *UnitOfWork) WithTx(ctx context.Context, fn func(r *Repos) error) error {
+	if u.defaultTimeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, u.defaultTimeout)
+		defer cancel()
+	}
 	return u.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		r := &Repos{
-			Games:          gameRepo.NewGameRepository(tx),
-			GameCategories: gamecategoryrepo.NewGameCategoryRepository(tx),
-			Users:          user.NewUserRepository(tx),
-			Players:        user.NewPlayerRepository(tx),
-			Orders:         orderrepo.NewOrderRepository(tx),
-			Payments:       order.NewPaymentRepository(tx),
-			Tags:           user.NewPlayerTagRepository(tx),
-			OpLogs:         adminrepo.NewOperationLogRepository(tx),
-			Reviews:        order.NewReviewRepository(tx),
-			ReviewReports:  reviewreport.NewReviewReportRepository(tx),
-			ReviewReplies:  reviewreply.NewReviewReplyRepository(tx),
-			Notifications:  notification.NewNotificationRepository(tx),
-		}
-		return fn(r)
+		return fn(buildRepos(tx))
 	})
+}
+
+// buildRepos constructs a Repos struct bound to the given *gorm.DB handle.
+func buildRepos(db *gorm.DB) *Repos {
+	return &Repos{
+		Games:          gameRepo.NewGameRepository(db),
+		GameCategories: gamecategoryrepo.NewGameCategoryRepository(db),
+		Users:          user.NewUserRepository(db),
+		Players:        user.NewPlayerRepository(db),
+		Orders:         orderrepo.NewOrderRepository(db),
+		Payments:       order.NewPaymentRepository(db),
+		Tags:           user.NewPlayerTagRepository(db),
+		OpLogs:         adminrepo.NewOperationLogRepository(db),
+		Reviews:        order.NewReviewRepository(db),
+		ReviewReports:  reviewreport.NewReviewReportRepository(db),
+		ReviewReplies:  reviewreply.NewReviewReplyRepository(db),
+		Notifications:  notification.NewNotificationRepository(db),
+	}
 }
 
 // MustGetGameCategoryRepo returns the GameCategoryRepository (for use in service methods)
