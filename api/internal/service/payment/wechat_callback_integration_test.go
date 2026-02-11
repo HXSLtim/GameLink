@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"gamelink/internal/model"
-	"gamelink/internal/repository"
+	"gamelink/internal/repository/common"
 	"gamelink/internal/repository/implementations"
 )
 
@@ -24,7 +24,7 @@ func TestPaymentService_HandleWeChatPaymentCallback(t *testing.T) {
 
 	// 创建支付服务
 	paymentService := NewPaymentService(paymentRepo, orderRepo)
-	paymentService.SetDB(db)
+	paymentService.SetTxManager(common.NewUnitOfWork(db))
 
 	// 创建微信回调处理器
 	wechatHandler := NewWeChatCallbackHandler(

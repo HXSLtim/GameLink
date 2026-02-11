@@ -10,6 +10,7 @@ import (
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
+	"gamelink/internal/repository/common"
 	"gamelink/internal/repository/ordergroup"
 	"gamelink/pkg/testutil"
 )
@@ -159,7 +160,7 @@ func TestTransferSubOrder_Success(t *testing.T) {
 
 	service := NewOrderService(orders, players, &MockUserRepository{}, &MockGameRepository{}, &MockPaymentRepository{}, &MockReviewRepository{}, &MockCommissionRepository{})
 	service.SetOrderGroupRepository(orderGroups)
-	service.SetDB(db)
+	service.SetTxManager(common.NewUnitOfWork(db))
 
 	req := TransferSubOrderRequest{
 		SubOrderID:   subOrder.ID,
@@ -406,7 +407,7 @@ func TestBatchTransferSubOrders_Success(t *testing.T) {
 
 	service := NewOrderService(orders, players, &MockUserRepository{}, &MockGameRepository{}, &MockPaymentRepository{}, &MockReviewRepository{}, &MockCommissionRepository{})
 	service.SetOrderGroupRepository(orderGroups)
-	service.SetDB(db)
+	service.SetTxManager(common.NewUnitOfWork(db))
 
 	req := BatchTransferRequest{
 		SubOrderIDs:  []uint64{subOrder1.ID, subOrder2.ID},
@@ -485,7 +486,7 @@ func TestBatchTransferSubOrders_PartialFailure(t *testing.T) {
 
 	service := NewOrderService(orders, players, &MockUserRepository{}, &MockGameRepository{}, &MockPaymentRepository{}, &MockReviewRepository{}, &MockCommissionRepository{})
 	service.SetOrderGroupRepository(orderGroups)
-	service.SetDB(db)
+	service.SetTxManager(common.NewUnitOfWork(db))
 
 	req := BatchTransferRequest{
 		SubOrderIDs:  []uint64{subOrder1.ID, subOrder2.ID},
@@ -575,7 +576,7 @@ func TestTransferSubOrder_IncomeAttribution_NoServiceStarted(t *testing.T) {
 
 	service := NewOrderService(orders, players, &MockUserRepository{}, &MockGameRepository{}, &MockPaymentRepository{}, &MockReviewRepository{}, &MockCommissionRepository{})
 	service.SetOrderGroupRepository(orderGroups)
-	service.SetDB(db)
+	service.SetTxManager(common.NewUnitOfWork(db))
 
 	req := TransferSubOrderRequest{
 		SubOrderID:       subOrderID,
@@ -648,7 +649,7 @@ func TestTransferSubOrder_IncomeAttribution_HalfCompleted(t *testing.T) {
 
 	service := NewOrderService(orders, players, &MockUserRepository{}, &MockGameRepository{}, &MockPaymentRepository{}, &MockReviewRepository{}, &MockCommissionRepository{})
 	service.SetOrderGroupRepository(orderGroups)
-	service.SetDB(db)
+	service.SetTxManager(common.NewUnitOfWork(db))
 
 	req := TransferSubOrderRequest{
 		SubOrderID:       subOrderID,
@@ -721,7 +722,7 @@ func TestTransferSubOrder_IncomeAttribution_MostlyCompleted(t *testing.T) {
 
 	service := NewOrderService(orders, players, &MockUserRepository{}, &MockGameRepository{}, &MockPaymentRepository{}, &MockReviewRepository{}, &MockCommissionRepository{})
 	service.SetOrderGroupRepository(orderGroups)
-	service.SetDB(db)
+	service.SetTxManager(common.NewUnitOfWork(db))
 
 	req := TransferSubOrderRequest{
 		SubOrderID:       subOrderID,
@@ -793,7 +794,7 @@ func TestTransferSubOrder_IncomeAttribution_InvalidMinutes(t *testing.T) {
 
 	service := NewOrderService(orders, players, &MockUserRepository{}, &MockGameRepository{}, &MockPaymentRepository{}, &MockReviewRepository{}, &MockCommissionRepository{})
 	service.SetOrderGroupRepository(orderGroups)
-	service.SetDB(db)
+	service.SetTxManager(common.NewUnitOfWork(db))
 
 	// 测试负数分钟数 - 应该被修正为0
 	req := TransferSubOrderRequest{
@@ -883,7 +884,7 @@ func TestBatchTransferSubOrders_IncomeAttribution(t *testing.T) {
 
 	service := NewOrderService(orders, players, &MockUserRepository{}, &MockGameRepository{}, &MockPaymentRepository{}, &MockReviewRepository{}, &MockCommissionRepository{})
 	service.SetOrderGroupRepository(orderGroups)
-	service.SetDB(db)
+	service.SetTxManager(common.NewUnitOfWork(db))
 
 	req := BatchTransferRequest{
 		SubOrderIDs:      []uint64{subOrder1.ID, subOrder2.ID},

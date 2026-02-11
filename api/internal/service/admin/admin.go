@@ -30,6 +30,23 @@ var (
 	ErrNotFound = repository.ErrNotFound
 )
 
+// AdminDeps groups all dependencies for AdminService construction.
+type AdminDeps struct {
+	Games          repository.GameRepository
+	Users          repository.UserRepository
+	Players        repository.PlayerRepository
+	Orders         repoiface.OrderRepository
+	Payments       repository.PaymentRepository
+	Roles          repository.RoleRepository
+	ServiceItems   repository.ServiceItemRepository
+	Permissions    repository.PermissionRepository
+	Menus          repository.MenuRepository
+	Stats          repository.StatsRepository
+	Wallets        repository.WalletRepository
+	GameCategories repository.GameCategoryRepository
+	Cache          cache.Cache
+}
+
 // AdminService 聚合后台管理所需的业务逻辑。
 type AdminService struct {
 	games          repository.GameRepository
@@ -38,14 +55,14 @@ type AdminService struct {
 	orders         repoiface.OrderRepository
 	payments       repository.PaymentRepository
 	roles          repository.RoleRepository
-	serviceItems   repository.ServiceItemRepository // 服务项目仓库
+	serviceItems   repository.ServiceItemRepository
 	permissions    repository.PermissionRepository
 	menus          repository.MenuRepository
 	stats          repository.StatsRepository
-	wallets        repository.WalletRepository       // 用户钱包仓库
-	gameCategories repository.GameCategoryRepository // 游戏分类仓库
+	wallets        repository.WalletRepository
+	gameCategories repository.GameCategoryRepository
 	cache          cache.Cache
-	tx             TxManager
+	tx             common.TxManager
 }
 
 const (
@@ -68,43 +85,22 @@ func readListCacheTTL() time.Duration {
 }
 
 // NewAdminService 创建服务实例。
-func NewAdminService(
-	games repository.GameRepository,
-	users repository.UserRepository,
-	players repository.PlayerRepository,
-	orders repoiface.OrderRepository,
-	payments repository.PaymentRepository,
-	roles repository.RoleRepository,
-	serviceItems repository.ServiceItemRepository,
-	permissions repository.PermissionRepository,
-	menus repository.MenuRepository,
-	stats repository.StatsRepository,
-	wallets repository.WalletRepository,
-	gameCategories repository.GameCategoryRepository,
-	cache cache.Cache,
-) *AdminService {
+func NewAdminService(d AdminDeps) *AdminService {
 	return &AdminService{
-		games:          games,
-		users:          users,
-		players:        players,
-		orders:         orders,
-		payments:       payments,
-		roles:          roles,
-		serviceItems:   serviceItems,
-		permissions:    permissions,
-		menus:          menus,
-		stats:          stats,
-		wallets:        wallets,
-		gameCategories: gameCategories,
-		cache:          cache,
+		games:          d.Games,
+		users:          d.Users,
+		players:        d.Players,
+		orders:         d.Orders,
+		payments:       d.Payments,
+		roles:          d.Roles,
+		serviceItems:   d.ServiceItems,
+		permissions:    d.Permissions,
+		menus:          d.Menus,
+		stats:          d.Stats,
+		wallets:        d.Wallets,
+		gameCategories: d.GameCategories,
+		cache:          d.Cache,
 	}
-}
-
-// TxManager abstracts UnitOfWork for transactional operations.
-type TxManager interface {
-	WithTx(ctx context.Context, fn func(r *common.Repos) error) error
-	// Repos returns repositories bound to the root DB (non-transactional).
-	Repos() *common.Repos
 }
 
 // repos returns non-transactional repositories for read-only operations.
@@ -131,7 +127,7 @@ func (s *AdminService) StatsService() *StatsService {
 }
 
 // SetTxManager injects a transaction manager.
-func (s *AdminService) SetTxManager(tx TxManager) { s.tx = tx }
+func (s *AdminService) SetTxManager(tx common.TxManager) { s.tx = tx }
 
 // UpdatePlayerSkillTags 替换玩家技能标签集合（需要 TxManager）。
 func (s *AdminService) UpdatePlayerSkillTags(ctx context.Context, playerID uint64, tags []string) error {

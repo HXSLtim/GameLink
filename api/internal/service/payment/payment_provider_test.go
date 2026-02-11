@@ -12,6 +12,7 @@ import (
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
+	"gamelink/internal/repository/common"
 	"gamelink/internal/service/external"
 	"gamelink/pkg/config"
 	"gamelink/pkg/testutil"
@@ -241,7 +242,7 @@ func TestPaymentService_RefundPayment_ThirdParty_Success(t *testing.T) {
 	mockPayments.On("Get", ctx, payment.ID).Return(payment, nil)
 
 	service := NewPaymentService(mockPayments, nil)
-	service.SetDB(db)
+	service.SetTxManager(common.NewUnitOfWork(db))
 
 	err := service.RefundPayment(ctx, payment.ID, "customer request")
 
@@ -307,7 +308,7 @@ func TestPaymentService_RefundPayment_Combined_Success(t *testing.T) {
 
 	service := NewPaymentService(mockPayments, nil)
 	service.SetWalletRepository(mockWallets)
-	service.SetDB(db)
+	service.SetTxManager(common.NewUnitOfWork(db))
 
 	err := service.RefundPayment(ctx, payment.ID, "customer request")
 
@@ -426,7 +427,7 @@ func TestPaymentService_RefundPayment_OrderUpdateFailed(t *testing.T) {
 	mockPayments.On("Get", ctx, payment.ID).Return(payment, nil)
 
 	service := NewPaymentService(mockPayments, nil)
-	service.SetDB(db)
+	service.SetTxManager(common.NewUnitOfWork(db))
 
 	err := service.RefundPayment(ctx, payment.ID, "customer request")
 
@@ -849,7 +850,7 @@ func TestPaymentService_HandlePaymentCallback_PaymentUpdateFailed(t *testing.T) 
 	mockOrders.On("Get", ctx, order.ID).Return(order, nil)
 
 	service := NewPaymentService(mockPayments, mockOrders)
-	service.SetDB(db)
+	service.SetTxManager(common.NewUnitOfWork(db))
 
 	callbackData := map[string]interface{}{
 		"payment_id":   uint64(9999),
@@ -1171,7 +1172,7 @@ func TestPaymentService_RefundPayment_RefundToWalletOnly(t *testing.T) {
 
 	service := NewPaymentService(mockPayments, nil)
 	service.SetWalletRepository(mockWallets)
-	service.SetDB(db)
+	service.SetTxManager(common.NewUnitOfWork(db))
 
 	err := service.RefundPayment(ctx, payment.ID, "customer request")
 
@@ -1226,7 +1227,7 @@ func TestPaymentService_RefundPayment_PartialRefundThirdParty(t *testing.T) {
 	mockPayments.On("Get", ctx, payment.ID).Return(payment, nil)
 
 	service := NewPaymentService(mockPayments, nil)
-	service.SetDB(db)
+	service.SetTxManager(common.NewUnitOfWork(db))
 
 	err := service.RefundPayment(ctx, payment.ID, "partial refund")
 

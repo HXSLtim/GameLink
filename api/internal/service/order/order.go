@@ -7,12 +7,10 @@ import (
 	"log/slog"
 	"time"
 
-	"gorm.io/gorm"
-
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	commissionrepo "gamelink/internal/repository/commission"
-	orderrepo "gamelink/internal/repository/implementations"
+	"gamelink/internal/repository/common"
 	repoiface "gamelink/internal/repository/interfaces"
 	"gamelink/internal/repository/ordergroup"
 	"gamelink/internal/ws"
@@ -49,7 +47,7 @@ type PaymentRefundor interface {
 // 3. 订单状态流转管理
 // 4. 订单拆分与转单
 type OrderService struct {
-	db              *gorm.DB                      // 数据库连接，用于事务管理
+	tx              common.TxManager              // 事务管理器
 	orders          repoiface.OrderRepository
 	orderGroups     ordergroup.Repository // 主订单仓储
 	players         repository.PlayerRepository
@@ -87,9 +85,9 @@ func NewOrderService(
 	}
 }
 
-// SetDB injects *gorm.DB for transaction management in multi-step operations.
-func (s *OrderService) SetDB(db *gorm.DB) {
-	s.db = db
+// SetTxManager injects a transaction manager for multi-step operations.
+func (s *OrderService) SetTxManager(tx common.TxManager) {
+	s.tx = tx
 }
 
 // SetOrderGroupRepository 注入主订单仓储
@@ -309,19 +307,16 @@ func (s *OrderService) createOrderWithSplit(
 	group, subOrders := s.buildOrderGroupWithSubOrders(userID, req, hourlyPrice, commissionPerHour, playerIncomePerHour)
 
 	// 使用事务确保主订单和所有子订单原子性创建
-	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		txGroupRepo := ordergroup.NewRepository(tx)
-		txOrderRepo := orderrepo.NewOrderRepository(tx)
-
+	err := s.tx.WithTx(ctx, func(r *common.Repos) error {
 		// 1. 创建主订单
-		if err := txGroupRepo.Create(ctx, group); err != nil {
+		if err := r.OrderGroups.Create(ctx, group); err != nil {
 			return fmt.Errorf("创建主订单失败: %w", err)
 		}
 
 		// 2. 创建子订单，关联主订单ID
 		for _, subOrder := range subOrders {
 			subOrder.GroupID = &group.ID
-			if err := txOrderRepo.Create(ctx, subOrder); err != nil {
+			if err := r.Orders.Create(ctx, subOrder); err != nil {
 				return fmt.Errorf("创建子订单失败: %w", err)
 			}
 		}

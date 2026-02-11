@@ -10,6 +10,7 @@ import (
 	alertrepo "gamelink/internal/repository/alert"
 	chatrepo "gamelink/internal/repository/chat"
 	collectionentityrepo "gamelink/internal/repository/collectionentity"
+	"gamelink/internal/repository/common"
 	commissionrepo "gamelink/internal/repository/commission"
 	contentrepo "gamelink/internal/repository/content"
 	contentcategoryrepo "gamelink/internal/repository/contentcategory"
@@ -205,15 +206,16 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache, cfg config.AppConfig) *
 	commissionSvc := commissionservice.NewCommissionService(commissionRepo, orderRepo, playerRepo)
 	serviceItemSvc := itemservice.NewServiceItemService(serviceItemRepo, gameRepo, playerRepo)
 	giftSvc := giftservice.NewGiftService(serviceItemRepo, orderRepo, playerRepo, userRepo, commissionRepo)
+	uow := common.NewUnitOfWork(orm)
 	orderSvc := orderservice.NewOrderService(orderRepo, playerRepo, userRepo, gameRepo, paymentRepo, reviewRepo, commissionRepo)
-	orderSvc.SetDB(orm) // 注入数据库连接用于事务管理
+	orderSvc.SetTxManager(uow) // 注入事务管理器
 	// 注入聊天群仓库用于订单聊天自动销毁
 	orderSvc.SetChatGroupRepository(chatGroupRepo)
 	// 注入主订单仓库用于订单拆分
 	orderGroupRepo := ordergrouprepo.NewRepository(orm)
 	orderSvc.SetOrderGroupRepository(orderGroupRepo)
 	paymentSvc := paymentservice.NewPaymentService(paymentRepo, orderRepo)
-	paymentSvc.SetDB(orm) // 注入数据库连接用于事务管理
+	paymentSvc.SetTxManager(uow) // 注入事务管理器
 	paymentSvc.SetExternalConfig(externalCfg)
 	paymentSvc.SetWalletRepository(walletRepo)
 	orderSvc.SetPaymentRefundor(paymentSvc)

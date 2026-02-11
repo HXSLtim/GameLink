@@ -69,15 +69,6 @@ type UserListResponse struct {
 	TotalPages int            `json:"totalPages"`
 }
 
-// UserStatsResponse 用户统计响应
-type UserStatsResponse struct {
-	TotalUsers      int64          `json:"totalUsers"`
-	ActiveUsers     int64          `json:"activeUsers"`
-	SuspendedUsers  int64          `json:"suspendedUsers"`
-	BannedUsers     int64          `json:"bannedUsers"`
-	RoleDistribution map[string]int64 `json:"roleDistribution"` // role -> count
-}
-
 // ==================== 转换函数 ====================
 
 // ToUserResponse 将 model.User 转换为 UserResponse

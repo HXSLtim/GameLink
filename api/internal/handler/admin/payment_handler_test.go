@@ -67,10 +67,11 @@ func SetupPaymentTest(t *testing.T) *PaymentTestContext {
 	c := cache.NewMemory()
 
 	// Create admin service
-	svc := adminservice.NewAdminService(
-		games, users, players, orders, payments,
-		roles, serviceItems, permissions, menus, statsRepo, nil, gameCategories, c,
-	)
+	svc := adminservice.NewAdminService(adminservice.AdminDeps{
+		Games: games, Users: users, Players: players, Orders: orders, Payments: payments,
+		Roles: roles, ServiceItems: serviceItems, Permissions: permissions, Menus: menus,
+		Stats: statsRepo, GameCategories: gameCategories, Cache: c,
+	})
 
 	// Setup router
 	router := testutil.SetupGinTest(t)

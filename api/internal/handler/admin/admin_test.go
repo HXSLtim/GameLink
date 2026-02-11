@@ -69,10 +69,11 @@ func SetupAdminTest(t *testing.T) *AdminTestHelper {
 	uow := common.NewUnitOfWork(db)
 
 	// Create admin service
-	svc := adminservice.NewAdminService(
-		games, users, players, orders, payments,
-		roles, serviceItems, permissions, menus, statsRepo, wallets, gameCategories, c,
-	)
+	svc := adminservice.NewAdminService(adminservice.AdminDeps{
+		Games: games, Users: users, Players: players, Orders: orders, Payments: payments,
+		Roles: roles, ServiceItems: serviceItems, Permissions: permissions, Menus: menus,
+		Stats: statsRepo, Wallets: wallets, GameCategories: gameCategories, Cache: c,
+	})
 
 	// Set TxManager for operation logs support
 	svc.SetTxManager(uow)

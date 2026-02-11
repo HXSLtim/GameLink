@@ -22,21 +22,10 @@ import (
 
 // createTestAdminService creates an admin service with only game repository populated.
 func createTestAdminService(db *gorm.DB, gameRepo repository.GameRepository) *admin.AdminService {
-	return admin.NewAdminService(
-		gameRepo,
-		nil, // users
-		nil, // players
-		nil, // orders
-		nil, // payments
-		nil, // roles
-		nil, // serviceItems
-		nil, // permissions
-		nil, // menus
-		nil, // stats
-		nil, // wallets
-		gamecategory.NewGameCategoryRepository(db),
-		nil, // cache
-	)
+	return admin.NewAdminService(admin.AdminDeps{
+		Games:          gameRepo,
+		GameCategories: gamecategory.NewGameCategoryRepository(db),
+	})
 }
 
 // CreateTestGameWithCategory creates a test game with specified category.

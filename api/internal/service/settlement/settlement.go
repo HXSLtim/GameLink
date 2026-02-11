@@ -12,12 +12,10 @@ import (
 	"fmt"
 	"time"
 
-	"gorm.io/gorm"
-
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	commissionrepo "gamelink/internal/repository/commission"
-	walletrepo "gamelink/internal/repository/wallet"
+	"gamelink/internal/repository/common"
 	"gamelink/pkg/apierr"
 )
 
@@ -30,7 +28,7 @@ type WalletRepository interface {
 
 // SettlementService handles T+7 frozen balance unfreezing
 type SettlementService struct {
-	db          *gorm.DB // 数据库连接，用于事务管理
+	tx          common.TxManager // 事务管理器
 	commissions commissionrepo.CommissionRepository
 	wallets     WalletRepository
 	players     repository.PlayerRepository // To get user ID from player ID
@@ -49,9 +47,9 @@ func NewSettlementService(
 	}
 }
 
-// SetDB injects *gorm.DB for transaction management.
-func (s *SettlementService) SetDB(db *gorm.DB) {
-	s.db = db
+// SetTxManager injects a transaction manager.
+func (s *SettlementService) SetTxManager(tx common.TxManager) {
+	s.tx = tx
 }
 
 // UnfreezeResult represents the result of an unfreeze operation
@@ -104,20 +102,19 @@ func (s *SettlementService) ProcessT7Unfreeze(ctx context.Context) (*UnfreezeRes
 	now := time.Now()
 	for playerID, incomeToUnfreeze := range playerIncomes {
 		// 使用事务确保钱包解冻和佣金记录更新的原子性
-		txErr := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		txErr := s.tx.WithTx(ctx, func(r *common.Repos) error {
 			// 使用乐观锁解冻钱包余额
-			if err := s.unfreezePlayerIncomeWithTx(ctx, tx, playerID, incomeToUnfreeze); err != nil {
+			if err := s.unfreezePlayerIncomeWithRepos(ctx, r, playerID, incomeToUnfreeze); err != nil {
 				return err
 			}
 
 			// 在同一事务中更新佣金记录
-			txCommissionRepo := commissionrepo.NewCommissionRepository(tx)
 			for i := range recordsByPlayer[playerID] {
 				record := &recordsByPlayer[playerID][i]
 				record.SettlementStatus = model.SettlementStatusSettled
 				record.SettledAt = &now
 
-				if err := txCommissionRepo.UpdateRecord(ctx, record); err != nil {
+				if err := r.Commissions.UpdateRecord(ctx, record); err != nil {
 					return fmt.Errorf("update record %d: %w", record.ID, err)
 				}
 			}
@@ -142,13 +139,13 @@ func (s *SettlementService) ProcessT7Unfreeze(ctx context.Context) (*UnfreezeRes
 	return result, nil
 }
 
-// unfreezePlayerIncome moves frozen income to available balance for a player (non-transactional, legacy)
+// unfreezePlayerIncome moves frozen income to available balance for a player (non-transactional).
 func (s *SettlementService) unfreezePlayerIncome(ctx context.Context, playerID uint64, amount int64) error {
-	return s.unfreezePlayerIncomeWithTx(ctx, s.db, playerID, amount)
+	return s.unfreezePlayerIncomeWithRepos(ctx, s.tx.Repos(), playerID, amount)
 }
 
-// unfreezePlayerIncomeWithTx moves frozen income to available balance using optimistic locking within a tx
-func (s *SettlementService) unfreezePlayerIncomeWithTx(ctx context.Context, tx *gorm.DB, playerID uint64, amount int64) error {
+// unfreezePlayerIncomeWithRepos moves frozen income to available balance using optimistic locking.
+func (s *SettlementService) unfreezePlayerIncomeWithRepos(ctx context.Context, r *common.Repos, playerID uint64, amount int64) error {
 	if amount <= 0 {
 		return nil
 	}
@@ -167,8 +164,7 @@ func (s *SettlementService) unfreezePlayerIncomeWithTx(ctx context.Context, tx *
 	}
 
 	// 使用乐观锁确保钱包更新的并发安全
-	txWalletRepo := walletrepo.NewWalletRepository(tx)
-	wallet, err := txWalletRepo.GetByUserID(ctx, userID)
+	wallet, err := r.Wallets.GetByUserID(ctx, userID)
 	if err != nil {
 		return fmt.Errorf("get wallet: %w", err)
 	}
@@ -183,7 +179,7 @@ func (s *SettlementService) unfreezePlayerIncomeWithTx(ctx context.Context, tx *
 	wallet.BalanceCents += amount
 
 	// Save wallet with optimistic locking
-	err = txWalletRepo.SaveWithOptimisticLock(ctx, wallet)
+	err = r.Wallets.SaveWithOptimisticLock(ctx, wallet)
 	if err != nil {
 		return fmt.Errorf("update wallet: %w", err)
 	}

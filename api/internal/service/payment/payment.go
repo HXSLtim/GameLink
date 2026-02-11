@@ -6,11 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	"gorm.io/gorm"
-
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	"gamelink/internal/repository/collectionentity"
+	"gamelink/internal/repository/common"
 	repoiface "gamelink/internal/repository/interfaces"
 	"gamelink/internal/repository/routingrule"
 	"gamelink/internal/service/external"
@@ -18,8 +17,6 @@ import (
 	"gamelink/internal/ws"
 	"gamelink/pkg/apierr"
 	"gamelink/pkg/cache"
-	ordermodelsrepo "gamelink/internal/repository/order"
-	orderrepo "gamelink/internal/repository/implementations"
 )
 
 var (
@@ -64,7 +61,7 @@ var (
 //
 // ============================================================================
 type PaymentService struct {
-	db                    *gorm.DB                           // 数据库连接，用于事务管理
+	tx                    common.TxManager                   // 事务管理器
 	payments              repository.PaymentRepository
 	orders                repoiface.OrderReadWriter
 	providers             map[model.PaymentMethod]ProviderClient
@@ -91,9 +88,9 @@ func NewPaymentService(
 	}
 }
 
-// SetDB injects *gorm.DB for transaction management in multi-step operations.
-func (s *PaymentService) SetDB(db *gorm.DB) {
-	s.db = db
+// SetTxManager injects a transaction manager for multi-step operations.
+func (s *PaymentService) SetTxManager(tx common.TxManager) {
+	s.tx = tx
 }
 
 // SetDistributedLock injects distributed lock for concurrency control
@@ -667,16 +664,13 @@ func (s *PaymentService) HandlePaymentCallback(ctx context.Context, provider str
 	}
 
 	// 使用事务确保支付状态和订单状态的原子性更新
-	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		txPaymentRepo := ordermodelsrepo.NewPaymentRepository(tx)
-		txOrderRepo := orderrepo.NewOrderRepository(tx)
-
-		if err := txPaymentRepo.Update(ctx, payment); err != nil {
+	err = s.tx.WithTx(ctx, func(r *common.Repos) error {
+		if err := r.Payments.Update(ctx, payment); err != nil {
 			return fmt.Errorf("update payment: %w", err)
 		}
 
 		order.Status = model.OrderStatusConfirmed
-		if err := txOrderRepo.Update(ctx, order); err != nil {
+		if err := r.Orders.Update(ctx, order); err != nil {
 			return fmt.Errorf("update order: %w", err)
 		}
 
@@ -829,16 +823,13 @@ func (s *PaymentService) RefundPayment(ctx context.Context, paymentID uint64, re
 
 	var order *model.Order
 
-	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		txPaymentRepo := ordermodelsrepo.NewPaymentRepository(tx)
-		txOrderRepo := orderrepo.NewOrderRepository(tx)
-
-		if err := txPaymentRepo.Update(ctx, payment); err != nil {
+	err = s.tx.WithTx(ctx, func(r *common.Repos) error {
+		if err := r.Payments.Update(ctx, payment); err != nil {
 			return fmt.Errorf("update payment: %w", err)
 		}
 
 		var getErr error
-		order, getErr = txOrderRepo.Get(ctx, payment.OrderID)
+		order, getErr = r.Orders.Get(ctx, payment.OrderID)
 		if getErr != nil {
 			return fmt.Errorf("get order: %w", getErr)
 		}
@@ -848,7 +839,7 @@ func (s *PaymentService) RefundPayment(ctx context.Context, paymentID uint64, re
 		order.RefundReason = reason
 		order.RefundedAt = &now
 
-		if err := txOrderRepo.Update(ctx, order); err != nil {
+		if err := r.Orders.Update(ctx, order); err != nil {
 			return fmt.Errorf("update order: %w", err)
 		}
 

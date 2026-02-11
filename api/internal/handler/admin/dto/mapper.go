@@ -106,32 +106,3 @@ func ToUserListResponseWithConfig(
 		TotalPages: totalPages,
 	}
 }
-
-// ==================== 统计数据转换 ====================
-
-// ToUserStatsResponse 转换用户统计数据
-func ToUserStatsResponse(stats map[string]interface{}) *UserStatsResponse {
-	resp := &UserStatsResponse{
-		RoleDistribution: make(map[string]int64),
-	}
-	
-	if total, ok := stats["total"].(int64); ok {
-		resp.TotalUsers = total
-	}
-	if active, ok := stats["active"].(int64); ok {
-		resp.ActiveUsers = active
-	}
-	if suspended, ok := stats["suspended"].(int64); ok {
-		resp.SuspendedUsers = suspended
-	}
-	if banned, ok := stats["banned"].(int64); ok {
-		resp.BannedUsers = banned
-	}
-	
-	// 角色分布
-	if roles, ok := stats["role_distribution"].(map[string]int64); ok {
-		resp.RoleDistribution = roles
-	}
-	
-	return resp
-}

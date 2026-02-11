@@ -9,16 +9,26 @@ import (
 
 	"gamelink/internal/repository"
 	adminrepo "gamelink/internal/repository/admin"
+	commissionrepo "gamelink/internal/repository/commission"
 	notification "gamelink/internal/repository/content"
 	gameRepo "gamelink/internal/repository/game"
 	gamecategoryrepo "gamelink/internal/repository/gamecategory"
 	orderrepo "gamelink/internal/repository/implementations"
 	repoiface "gamelink/internal/repository/interfaces"
 	order "gamelink/internal/repository/order"
+	"gamelink/internal/repository/ordergroup"
 	"gamelink/internal/repository/reviewreply"
 	"gamelink/internal/repository/reviewreport"
 	"gamelink/internal/repository/user"
+	walletrepo "gamelink/internal/repository/wallet"
 )
+
+// TxManager abstracts UnitOfWork for transactional operations.
+type TxManager interface {
+	WithTx(ctx context.Context, fn func(r *Repos) error) error
+	// Repos returns repositories bound to the root DB (non-transactional).
+	Repos() *Repos
+}
 
 // Repos bundles repository interfaces bound to a specific DB (tx) handle.
 type Repos struct {
@@ -28,12 +38,15 @@ type Repos struct {
 	Players        repository.PlayerRepository
 	Orders         repoiface.OrderRepository
 	Payments       repository.PaymentRepository
+	Wallets        repository.WalletRepository
 	Tags           repository.PlayerTagRepository
 	OpLogs         repository.OperationLogRepository
 	Reviews        repository.ReviewRepository
 	ReviewReports  repository.ReviewReportRepository
 	ReviewReplies  repository.ReviewReplyRepository
 	Notifications  repository.NotificationRepository
+	OrderGroups    ordergroup.Repository
+	Commissions    commissionrepo.CommissionRepository
 }
 
 // UnitOfWork provides a simple transaction wrapper for GORM repositories.
@@ -84,12 +97,15 @@ func buildRepos(db *gorm.DB) *Repos {
 		Players:        user.NewPlayerRepository(db),
 		Orders:         orderrepo.NewOrderRepository(db),
 		Payments:       order.NewPaymentRepository(db),
+		Wallets:        walletrepo.NewWalletRepository(db),
 		Tags:           user.NewPlayerTagRepository(db),
 		OpLogs:         adminrepo.NewOperationLogRepository(db),
 		Reviews:        order.NewReviewRepository(db),
 		ReviewReports:  reviewreport.NewReviewReportRepository(db),
 		ReviewReplies:  reviewreply.NewReviewReplyRepository(db),
 		Notifications:  notification.NewNotificationRepository(db),
+		OrderGroups:    ordergroup.NewRepository(db),
+		Commissions:    commissionrepo.NewCommissionRepository(db),
 	}
 }
 

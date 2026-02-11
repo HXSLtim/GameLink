@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"gamelink/internal/model"
+	"gamelink/internal/repository/common"
 	"gamelink/internal/repository/ordergroup"
 	"gamelink/pkg/testutil"
 )
@@ -243,7 +244,7 @@ func TestCreateOrderWithSplit_Success(t *testing.T) {
 
 	service := NewOrderService(orders, players, &MockUserRepository{}, games, &MockPaymentRepository{}, &MockReviewRepository{}, &MockCommissionRepository{})
 	service.SetOrderGroupRepository(orderGroups)
-	service.SetDB(db)
+	service.SetTxManager(common.NewUnitOfWork(db))
 
 	req := CreateOrderRequest{
 		PlayerID:       playerID,

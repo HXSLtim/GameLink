@@ -60,7 +60,9 @@ func setupPaymentBatchTest(t *testing.T) (*httptest.Server, *integration.TestHel
 	}
 
 	// Setup router
-	adminSvc := admin.NewAdminService(helper.DB, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, gamecategory.NewGameCategoryRepository(helper.DB), nil)
+	adminSvc := admin.NewAdminService(admin.AdminDeps{
+		GameCategories: gamecategory.NewGameCategoryRepository(helper.DB),
+	})
 	jwtService := auth.NewJWTService("test-secret-key-12345678901234567890", time.Hour)
 	pm := middleware.NewPermissionMiddleware(adminSvc, jwtService)
 

@@ -41,8 +41,11 @@ func setupOrderBatchAdminService(t *testing.T, db *gorm.DB) *admin.AdminService 
 	var stats repository.StatsRepository = nil
 	var wallets repository.WalletRepository = nil
 
-	return admin.NewAdminService(games, users, players, orders, payments, roles,
-		serviceItems, permissions, menus, stats, wallets, gamecategory.NewGameCategoryRepository(db), nil)
+	return admin.NewAdminService(admin.AdminDeps{
+		Games: games, Users: users, Players: players, Orders: orders, Payments: payments,
+		Roles: roles, ServiceItems: serviceItems, Permissions: permissions, Menus: menus,
+		Stats: stats, Wallets: wallets, GameCategories: gamecategory.NewGameCategoryRepository(db),
+	})
 }
 
 // ============================================================================

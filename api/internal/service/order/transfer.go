@@ -5,11 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"gorm.io/gorm"
-
 	"gamelink/internal/model"
-	orderrepo "gamelink/internal/repository/implementations"
-	"gamelink/internal/repository/ordergroup"
+	"gamelink/internal/repository/common"
 	"gamelink/pkg/apierr"
 )
 
@@ -136,27 +133,24 @@ func (s *OrderService) TransferSubOrder(ctx context.Context, operatorID uint64, 
 	subOrder.CompletedAt = &now
 
 	// 8-10. 使用事务确保新订单创建、原订单更新、主订单状态更新的原子性
-	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		txOrderRepo := orderrepo.NewOrderRepository(tx)
-
+	err = s.tx.WithTx(ctx, func(r *common.Repos) error {
 		// 8. 保存新订单
-		if err := txOrderRepo.Create(ctx, newSubOrder); err != nil {
+		if err := r.Orders.Create(ctx, newSubOrder); err != nil {
 			return fmt.Errorf("创建新订单失败: %w", err)
 		}
 
 		// 9. 更新原订单的 TransferTo
 		subOrder.TransferTo = &newSubOrder.ID
-		if err := txOrderRepo.Update(ctx, subOrder); err != nil {
+		if err := r.Orders.Update(ctx, subOrder); err != nil {
 			return fmt.Errorf("更新原订单失败: %w", err)
 		}
 
 		// 10. 更新主订单状态
 		if subOrder.GroupID != nil {
-			txGroupRepo := ordergroup.NewRepository(tx)
-			group, err := txGroupRepo.GetWithSubOrders(ctx, *subOrder.GroupID)
+			group, err := r.OrderGroups.GetWithSubOrders(ctx, *subOrder.GroupID)
 			if err == nil {
 				group.UpdateStatusFromSubOrders(group.SubOrders)
-				_ = txGroupRepo.Update(ctx, group)
+				_ = r.OrderGroups.Update(ctx, group)
 			}
 		}
 

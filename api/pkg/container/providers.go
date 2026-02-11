@@ -95,21 +95,21 @@ func ProvideCache(cfg config.AppConfig, reg *lifecycle.Registry) (cache.Cache, e
 
 // ProvideAdminService wires the admin service and its transactional manager.
 func ProvideAdminService(orm *gorm.DB, cacheClient cache.Cache) *adminservice.AdminService {
-	svc := adminservice.NewAdminService(
-		gamerepo.NewGameRepository(orm),
-		userrepo.NewUserRepository(orm),
-		userrepo.NewPlayerRepository(orm),
-		orderrepo.NewOrderRepository(orm),
-		paymentrepo.NewPaymentRepository(orm),
-		rolerepo.NewRoleRepository(orm),
-		serviceitemrepo.NewServiceItemRepository(orm),
-		permissionrepo.NewPermissionRepository(orm),
-		menurepo.NewMenuRepository(orm),
-		statsrepo.NewStatsRepository(orm),
-		walletrepo.NewWalletRepository(orm),
-		gamecategoryrepo.NewGameCategoryRepository(orm),
-		cacheClient,
-	)
+	svc := adminservice.NewAdminService(adminservice.AdminDeps{
+		Games:          gamerepo.NewGameRepository(orm),
+		Users:          userrepo.NewUserRepository(orm),
+		Players:        userrepo.NewPlayerRepository(orm),
+		Orders:         orderrepo.NewOrderRepository(orm),
+		Payments:       paymentrepo.NewPaymentRepository(orm),
+		Roles:          rolerepo.NewRoleRepository(orm),
+		ServiceItems:   serviceitemrepo.NewServiceItemRepository(orm),
+		Permissions:    permissionrepo.NewPermissionRepository(orm),
+		Menus:          menurepo.NewMenuRepository(orm),
+		Stats:          statsrepo.NewStatsRepository(orm),
+		Wallets:        walletrepo.NewWalletRepository(orm),
+		GameCategories: gamecategoryrepo.NewGameCategoryRepository(orm),
+		Cache:          cacheClient,
+	})
 	uow := common.NewUnitOfWork(orm)
 	uow.SetDefaultTimeout(30 * time.Second)
 	svc.SetTxManager(uow)

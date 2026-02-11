@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
+	"gamelink/internal/repository/common"
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
@@ -744,7 +745,7 @@ func TestPaymentService_RefundPayment_Wallet_Success(t *testing.T) {
 
 	service := NewPaymentService(mockPayments, nil)
 	service.SetWalletRepository(mockWallets)
-	service.SetDB(db)
+	service.SetTxManager(common.NewUnitOfWork(db))
 
 	err := service.RefundPayment(ctx, payment.ID, "customer request")
 
@@ -1014,7 +1015,7 @@ func TestPaymentService_HandlePaymentCallback_Success(t *testing.T) {
 	mockOrders.On("Get", ctx, order.ID).Return(order, nil)
 
 	service := NewPaymentService(mockPayments, mockOrders)
-	service.SetDB(db)
+	service.SetTxManager(common.NewUnitOfWork(db))
 
 	callbackData := map[string]interface{}{
 		"payment_id":   payment.ID,
@@ -1529,7 +1530,7 @@ func TestPaymentService_HandlePaymentCallback_FloatPaymentID(t *testing.T) {
 	mockOrders.On("Get", ctx, order.ID).Return(order, nil)
 
 	service := NewPaymentService(mockPayments, mockOrders)
-	service.SetDB(db)
+	service.SetTxManager(common.NewUnitOfWork(db))
 
 	callbackData := map[string]interface{}{
 		"payment_id":   float64(payment.ID),
@@ -1557,7 +1558,7 @@ func TestPaymentService_HandlePaymentCallback_NoTradeNo(t *testing.T) {
 	mockOrders.On("Get", ctx, order.ID).Return(order, nil)
 
 	service := NewPaymentService(mockPayments, mockOrders)
-	service.SetDB(db)
+	service.SetTxManager(common.NewUnitOfWork(db))
 
 	callbackData := map[string]interface{}{
 		"payment_id":   payment.ID,
@@ -1584,7 +1585,7 @@ func TestPaymentService_HandlePaymentCallback_NoAmount(t *testing.T) {
 	mockOrders.On("Get", ctx, order.ID).Return(order, nil)
 
 	service := NewPaymentService(mockPayments, mockOrders)
-	service.SetDB(db)
+	service.SetTxManager(common.NewUnitOfWork(db))
 
 	callbackData := map[string]interface{}{
 		"payment_id": payment.ID,

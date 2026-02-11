@@ -7,6 +7,7 @@ import (
 
 	"gamelink/internal/model"
 	"gamelink/internal/repository/commission"
+	"gamelink/internal/repository/common"
 	"gamelink/pkg/testutil"
 
 	"github.com/stretchr/testify/assert"
@@ -183,7 +184,7 @@ func TestProcessT7Unfreeze_Success(t *testing.T) {
 
 	// No player repo - will use playerID as userID
 	svc := NewSettlementService(mockCommissions, nil, nil)
-	svc.SetDB(db)
+	svc.SetTxManager(common.NewUnitOfWork(db))
 
 	// Create test records (8 days old)
 	oldDate := time.Now().AddDate(0, 0, -8)
@@ -282,7 +283,7 @@ func TestUnfreezeByOrderID_Success(t *testing.T) {
 	})).Return(nil)
 
 	svc := NewSettlementService(mockCommissions, nil, nil)
-	svc.SetDB(db)
+	svc.SetTxManager(common.NewUnitOfWork(db))
 
 	err := svc.UnfreezeByOrderID(ctx, 100)
 
