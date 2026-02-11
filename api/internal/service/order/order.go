@@ -620,7 +620,13 @@ func (s *OrderService) CancelOrder(ctx context.Context, userID uint64, orderID u
 		// 退款已由支付服务处理，补充取消原因（不影响主流程）
 		if updatedOrder, err := s.orders.Get(ctx, orderID); err == nil {
 			updatedOrder.CancelReason = req.Reason
-			_ = s.orders.Update(ctx, updatedOrder)
+			if err := s.orders.Update(ctx, updatedOrder); err != nil {
+				slog.Warn("failed to update cancel reason after refund",
+					"orderID", orderID, "error", err)
+			}
+		} else {
+			slog.Warn("failed to re-fetch order for cancel reason update",
+				"orderID", orderID, "error", err)
 		}
 	}
 

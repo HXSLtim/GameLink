@@ -1,6 +1,8 @@
 package payment
 
 import (
+	"log/slog"
+
 	"gamelink/internal/model"
 	"gamelink/internal/service/external"
 )
@@ -25,7 +27,12 @@ func (f *ProviderFactory) CreateProvider(method model.PaymentMethod) (ProviderCl
 		return wechatProvider{}, nil // Use mock
 	case model.PaymentMethodAlipay:
 		if f.config.Alipay.Enabled {
-			return NewAlipayProvider(f.config)
+			provider, err := NewAlipayProvider(f.config)
+			if err != nil {
+				slog.Error("failed to create alipay provider, falling back to mock", "error", err)
+				return alipayProvider{}, nil
+			}
+			return provider, nil
 		}
 		return alipayProvider{}, nil // Use mock
 	default:
@@ -48,7 +55,13 @@ func (f *ProviderFactory) CreateProviders() map[model.PaymentMethod]ProviderClie
 	if f.config.Alipay.Enabled {
 		provider, err := NewAlipayProvider(f.config)
 		if err != nil || provider == nil {
-			// Fallback to mock provider if real provider creation fails (e.g. missing key files)
+			// ⚠️ 生产风险: Alipay 配置为启用但 provider 创建失败，降级为 mock。
+			// 应检查密钥文件路径配置是否正确。
+			slog.Error("alipay enabled but provider creation failed, falling back to mock provider",
+				"error", err,
+				"publicKeyPath", f.config.Alipay.PublicKeyPath,
+				"privateKeyPath", f.config.Alipay.PrivateKeyPath,
+			)
 			providers[model.PaymentMethodAlipay] = alipayProvider{}
 		} else {
 			providers[model.PaymentMethodAlipay] = provider
