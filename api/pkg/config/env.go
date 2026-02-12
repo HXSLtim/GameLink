@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"os"
@@ -243,6 +244,8 @@ type fileConfig struct {
 
 // Load 读取配置文件及环境变量，生成最终配置。
 func Load() AppConfig {
+	loadDotEnvFallback()
+
 	env := os.Getenv("APP_ENV")
 	if env == "" {
 		env = "development"
@@ -326,6 +329,69 @@ func Load() AppConfig {
 	}
 
 	return cfg
+}
+
+// loadDotEnvFallback loads key-value pairs from local .env files when
+// process-level environment variables are absent.
+//
+// Priority rule:
+// 1) Existing process env (highest, never overridden)
+// 2) .env in current working directory
+// 3) ../.env (useful when running from api/ and .env lives at repo root)
+func loadDotEnvFallback() {
+	candidates := []string{".env", filepath.Join("..", ".env")}
+	for _, path := range candidates {
+		if _, err := os.Stat(path); err != nil {
+			continue
+		}
+
+		file, err := os.Open(path)
+		if err != nil {
+			log.Printf("读取 .env 文件失败 (%s): %v", path, err)
+			continue
+		}
+
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			line := strings.TrimSpace(scanner.Text())
+			if line == "" || strings.HasPrefix(line, "#") {
+				continue
+			}
+
+			if strings.HasPrefix(line, "export ") {
+				line = strings.TrimSpace(strings.TrimPrefix(line, "export "))
+			}
+
+			key, value, ok := strings.Cut(line, "=")
+			if !ok {
+				continue
+			}
+
+			key = strings.TrimSpace(key)
+			value = strings.TrimSpace(value)
+			if key == "" {
+				continue
+			}
+
+			if len(value) >= 2 {
+				if (strings.HasPrefix(value, "\"") && strings.HasSuffix(value, "\"")) ||
+					(strings.HasPrefix(value, "'") && strings.HasSuffix(value, "'")) {
+					value = value[1 : len(value)-1]
+				}
+			}
+
+			if _, exists := os.LookupEnv(key); exists {
+				continue
+			}
+			_ = os.Setenv(key, value)
+		}
+
+		if err := scanner.Err(); err != nil {
+			log.Printf("解析 .env 文件失败 (%s): %v", path, err)
+		}
+
+		_ = file.Close()
+	}
 }
 
 func loadFromFile(env string, cfg *AppConfig) {
