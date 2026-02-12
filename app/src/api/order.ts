@@ -173,26 +173,24 @@ export function submitReview(orderId: number, data: {
  * 获取订单支付状态
  */
 export function getOrderPaymentStatus(orderId: number) {
-  return get<{ status: OrderPaymentStatus }>(`/user/orders/${orderId}/payment-status`)
-    .catch(async () => {
-      const fallback = await get<{ items?: Array<{ orderId?: number; status?: string }> }>(
-        '/user/payments',
-        { page: 1, pageSize: 50 },
-        { showError: false }
-      )
-      const items = Array.isArray(fallback.data?.items) ? fallback.data.items : []
-      const matched = items.find(item => Number(item.orderId) === orderId)
-      const rawStatus = matched?.status || 'pending'
-      const normalized: OrderPaymentStatus =
-        rawStatus === 'paid' || rawStatus === 'success' ? 'paid'
-          : rawStatus === 'failed' ? 'failed'
-            : 'pending'
+  return get<{ items?: Array<{ orderId?: number; status?: string }> }>(
+    '/user/payments',
+    { page: 1, pageSize: 50 },
+    { showError: false }
+  ).then((fallback) => {
+    const items = Array.isArray(fallback.data?.items) ? fallback.data.items : []
+    const matched = items.find(item => Number(item.orderId) === orderId)
+    const rawStatus = matched?.status || 'pending'
+    const normalized: OrderPaymentStatus =
+      rawStatus === 'paid' || rawStatus === 'success' ? 'paid'
+        : rawStatus === 'failed' ? 'failed'
+          : 'pending'
 
-      return {
-        ...fallback,
-        data: { status: normalized },
-      }
-    })
+    return {
+      ...fallback,
+      data: { status: normalized },
+    }
+  })
 }
 
 // ============ 陪玩师订单 API ============
@@ -201,7 +199,7 @@ export function getOrderPaymentStatus(orderId: number) {
  * 获取陪玩师订单列表
  */
 export function getPlayerOrders(params?: OrderListParams, config?: Partial<RequestConfig>) {
-  return get<Order[]>('/player/orders', params, config)
+  return get<Order[]>('/player/orders/my', params, config)
 }
 
 /**

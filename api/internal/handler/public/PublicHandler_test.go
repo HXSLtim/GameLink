@@ -15,7 +15,9 @@ import (
 	"gamelink/internal/handler/testutil"
 	"gamelink/internal/model"
 	gamerepo "gamelink/internal/repository/game"
+	gamecategoryrepo "gamelink/internal/repository/gamecategory"
 	playerrepo "gamelink/internal/repository/player"
+	playerservicerepo "gamelink/internal/repository/playerservice"
 	serviceitemrepo "gamelink/internal/repository/serviceitem"
 	userrepo "gamelink/internal/repository/user"
 )
@@ -68,15 +70,17 @@ func (ctx *PublicTestContext) RegisterPublicRoutes() {
 
 	userRepo := userrepo.NewUserRepository(ctx.DB)
 	playerRepo := playerrepo.NewPlayerRepository(ctx.DB)
+	playerServiceRepo := playerservicerepo.NewPlayerServiceRepository(ctx.DB)
 	gameRepo := gamerepo.NewGameRepository(ctx.DB)
+	gameCategoryRepo := gamecategoryrepo.NewGameCategoryRepository(ctx.DB)
 	serviceItemRepo := serviceitemrepo.NewServiceItemRepository(ctx.DB)
 
 	// Register player routes
-	playerHandler := NewPlayerHandler(playerRepo, userRepo)
+	playerHandler := NewPlayerHandler(playerRepo, playerServiceRepo, userRepo)
 	playerHandler.RegisterRoutes(publicGroup)
 
 	// Register game routes
-	gameHandler := NewGameHandler(gameRepo)
+	gameHandler := NewGameHandler(gameRepo, gameCategoryRepo)
 	gameHandler.RegisterRoutes(publicGroup)
 
 	// Register service item routes

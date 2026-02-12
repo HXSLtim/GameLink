@@ -21,6 +21,7 @@ This directory contains CI/CD workflows for the GameLink project.
 | **e2e.yml** | End-to-end integration testing | Schedule/Manual | P0 |
 | **flow-guard-regression.yml** | Order/Payment guard regression (unpaid-complete block) | Schedule/Manual | P0 |
 | **withdraw-flow-regression.yml** | Withdraw flow regression (request/approve/complete) | Schedule/Manual | P0 |
+| **full-service-flow-acceptance.yml** | Full acceptance (smoke + order + dispute + withdraw + integrity) | Manual | P0 |
 | **test-report.yml** | Test coverage and results aggregation | PR/Manual | P1 |
 | **dependabot-merge.yml** | Automated dependency updates | Dependabot PR | P2 |
 
@@ -106,6 +107,18 @@ This directory contains CI/CD workflows for the GameLink project.
 - Uploads regression script output (`withdraw-flow-regression.log` + summary markdown artifact)
 
 **Schedule:** Daily at 3:00 AM UTC + manual trigger
+
+### Full Service Flow Acceptance Workflow (`full-service-flow-acceptance.yml`)
+
+**Purpose:** One-click milestone acceptance for the complete backend critical chain
+
+**Features:**
+- Starts backend with PostgreSQL + Redis service containers
+- Runs `api/scripts/run_full_service_flow_acceptance.ps1`
+- Covers smoke compatibility checks + order/payment guards + dispute permissions + withdraw flow + integrity checks
+- Uploads acceptance log and markdown summary artifacts
+
+**Schedule:** Manual trigger only (recommended before milestone merge/deploy)
 
 ### Test Report Workflow (`test-report.yml`)
 
@@ -229,6 +242,9 @@ gh workflow run flow-guard-regression.yml
 
 # Run withdraw-flow regression
 gh workflow run withdraw-flow-regression.yml
+
+# Run full service flow acceptance
+gh workflow run full-service-flow-acceptance.yml
 ```
 
 ### Checking Workflow Status

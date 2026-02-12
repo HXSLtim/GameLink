@@ -20,7 +20,7 @@ func registerPlayerRoutes(api *gin.RouterGroup, authMiddleware gin.HandlerFunc, 
 		playerhandler.RegisterServiceRoutes(playerGroup, services.playerServiceMgmtSvc, authMiddleware)
 		playerhandler.RegisterScheduleRoutes(playerGroup, services.playerScheduleSvc, authMiddleware)
 		playerhandler.RegisterStatsRoutes(playerGroup, services.playerSvc, authMiddleware)
-		playerhandler.RegisterCertificationRoutes(playerGroup, services.playerRankSvc, services.playerCertificationSvc, authMiddleware)
+		playerhandler.RegisterCertificationRoutes(playerGroup, services.playerRankSvc, services.playerCertificationSvc, services.playerRepo, authMiddleware)
 		playerhandler.RegisterTeamRoutes(playerGroup, services.teamSvc, authMiddleware)
 		playerhandler.RegisterStatusRoutes(playerGroup, services.playerSvc, authMiddleware)
 	}

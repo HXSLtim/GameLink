@@ -57,6 +57,7 @@ func registerUserRoutesWithRoleSwitch(api *gin.RouterGroup, authMiddleware gin.H
 		userhandler.RegisterRechargeRoutes(userGroup, services.rechargeSvc, authMiddleware)
 		userhandler.RegisterActivityRoutes(userGroup, services.activitySvc, authMiddleware)
 		userhandler.RegisterReferralRoutes(userGroup, services.referralSvc, authMiddleware)
+		userhandler.RegisterSettingsRoutes(userGroup, services.userSettingsSvc, services.notificationSettingsSvc, authMiddleware)
 		// 主订单路由（订单拆分与转单）
 		orderGroupHandler := userhandler.NewOrderGroupHandler(services.orderSvc, services.orderGroupRepo)
 		orderGroupHandler.RegisterRoutes(userGroup)

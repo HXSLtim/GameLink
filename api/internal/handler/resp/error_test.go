@@ -66,7 +66,7 @@ func TestError_GenericError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.False(t, resp.Success)
 	assert.Equal(t, http.StatusInternalServerError, resp.Code)
-	assert.Equal(t, "something went wrong", resp.Message)
+	assert.Equal(t, "internal server error", resp.Message)
 }
 
 func TestErrorMsg(t *testing.T) {

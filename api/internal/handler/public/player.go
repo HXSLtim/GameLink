@@ -14,15 +14,21 @@ import (
 
 // PlayerHandler 公共陪玩师处理器
 type PlayerHandler struct {
-	players repository.PlayerRepository
-	users   repository.UserRepository
+	players  repository.PlayerRepository
+	services repository.PlayerServiceRepository
+	users    repository.UserRepository
 }
 
 // NewPlayerHandler 创建公共陪玩师处理器
-func NewPlayerHandler(players repository.PlayerRepository, users repository.UserRepository) *PlayerHandler {
+func NewPlayerHandler(
+	players repository.PlayerRepository,
+	services repository.PlayerServiceRepository,
+	users repository.UserRepository,
+) *PlayerHandler {
 	return &PlayerHandler{
-		players: players,
-		users:   users,
+		players:  players,
+		services: services,
+		users:    users,
 	}
 }
 
@@ -51,6 +57,19 @@ type PlayerListResponse struct {
 	Total    int64              `json:"total"`
 	Page     int                `json:"page"`
 	PageSize int                `json:"pageSize"`
+}
+
+// PublicPlayerServiceInfo 公开的陪玩师服务信息
+type PublicPlayerServiceInfo struct {
+	ID          uint64 `json:"id"`
+	GameID      uint64 `json:"gameId"`
+	GameName    string `json:"gameName"`
+	ServiceType string `json:"serviceType"`
+	RankID      uint64 `json:"rankId"`
+	RankName    string `json:"rankName"`
+	PriceCents  int64  `json:"priceCents"`
+	Unit        string `json:"unit"`
+	Description string `json:"description"`
 }
 
 // ListPlayers 获取陪玩师列表（公开）
@@ -244,12 +263,86 @@ func (h *PlayerHandler) ListFeaturedPlayers(c *gin.Context) {
 	resp.OK(c, result)
 }
 
+// ListPlayerServices 获取陪玩师服务列表（公开）
+// @Summary 获取陪玩师服务列表
+// @Description 获取指定陪玩师的服务项目，无需登录
+// @Tags 公共-陪玩师
+// @Accept json
+// @Produce json
+// @Param id path int true "陪玩师ID"
+// @Success 200 {array} PublicPlayerServiceInfo
+// @Failure 404 {object} apierr.APIError
+// @Router /public/players/{id}/services [get]
+func (h *PlayerHandler) ListPlayerServices(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		resp.Error(c, apierr.BadRequest("无效的陪玩师ID"))
+		return
+	}
+
+	player, err := h.players.Get(c.Request.Context(), id)
+	if err != nil {
+		if err == repository.ErrNotFound {
+			resp.Error(c, apierr.NotFound("陪玩师不存在"))
+			return
+		}
+		resp.Error(c, apierr.InternalError("获取陪玩师信息失败"))
+		return
+	}
+	// 只返回已认证陪玩师的服务
+	if player.VerificationStatus != model.VerificationVerified {
+		resp.Error(c, apierr.NotFound("陪玩师不存在"))
+		return
+	}
+
+	if h.services == nil {
+		resp.OK(c, []PublicPlayerServiceInfo{})
+		return
+	}
+
+	services, err := h.services.ListByPlayer(c.Request.Context(), id)
+	if err != nil {
+		resp.Error(c, apierr.InternalError("获取陪玩师服务失败"))
+		return
+	}
+
+	result := make([]PublicPlayerServiceInfo, 0, len(services))
+	for _, item := range services {
+		if !item.IsActive {
+			continue
+		}
+		gameName := ""
+		if item.Game != nil {
+			gameName = item.Game.Name
+		}
+		rankName := ""
+		if item.Rank != nil {
+			rankName = item.Rank.Name
+		}
+		result = append(result, PublicPlayerServiceInfo{
+			ID:          item.ID,
+			GameID:      item.GameID,
+			GameName:    gameName,
+			ServiceType: "陪玩",
+			RankID:      item.RankID,
+			RankName:    rankName,
+			PriceCents:  player.HourlyRateCents,
+			Unit:        "hour",
+			Description: item.Description,
+		})
+	}
+
+	resp.OK(c, result)
+}
+
 // RegisterRoutes 注册公共陪玩师路由
 func (h *PlayerHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	players := rg.Group("/players")
 	{
 		players.GET("", h.ListPlayers)
 		players.GET("/featured", h.ListFeaturedPlayers)
+		players.GET("/:id/services", h.ListPlayerServices)
 		players.GET("/:id", h.GetPlayer)
 	}
 }

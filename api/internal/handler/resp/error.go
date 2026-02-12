@@ -48,7 +48,17 @@ func Error(c *gin.Context, err error) {
 	}
 
 	// Default: internal server error — 不暴露原始错误信息
-	slog.Error("unhandled error", "error", err.Error(), "path", c.Request.URL.Path)
+	path := ""
+	if c != nil && c.Request != nil && c.Request.URL != nil {
+		path = c.Request.URL.Path
+	}
+
+	errorMessage := "unknown error"
+	if err != nil {
+		errorMessage = err.Error()
+	}
+
+	slog.Error("unhandled error", "error", errorMessage, "path", path)
 	JSON[any](c, http.StatusInternalServerError, model.APIResponse[any]{
 		Success: false,
 		Code:    http.StatusInternalServerError,

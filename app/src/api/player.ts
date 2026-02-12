@@ -2,7 +2,7 @@
  * 陪玩师相关 API
  */
 
-import { get, post, put, del, type RequestConfig } from './request'
+import { get, post, put, del, ApiError, type RequestConfig } from './request'
 
 // ============ 陪玩师服务 ============
 
@@ -199,7 +199,18 @@ export function getEarningsStats(params?: { period: string }, config?: Partial<R
  * 获取实名认证状态
  */
 export function getCertificationStatus() {
-  return get<any>('/player/certification/identity')
+  return get<any>('/player/certification/identity', undefined, { showError: false })
+    .catch((error: unknown) => {
+      if (error instanceof ApiError && error.code === 401 && error.message.includes('missing player')) {
+        return {
+          success: true,
+          code: 200,
+          message: 'OK',
+          data: { status: 'none' },
+        }
+      }
+      throw error
+    })
 }
 
 /**

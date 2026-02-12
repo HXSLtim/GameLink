@@ -1,25 +1,35 @@
 <template>
-  <view class="action-bar">
-    <view class="total-info">
-      <text class="total-label">合计：</text>
-      <PriceTag class="total-price" :amount="total" amount-unit="yuan" size="small" />
+  <view class="submit-bar-shell">
+    <view class="submit-bar">
+      <view class="submit-bar__content">
+        <view class="price-section">
+          <text class="label">合计</text>
+          <view class="price-wrap">
+            <text class="symbol">¥</text>
+            <text class="amount">{{ total }}</text>
+          </view>
+        </view>
+
+        <GlButton
+          class="submit-btn"
+          type="primary"
+          size="large"
+          round
+          :disabled="disabled"
+          :loading="loading"
+          @click="$emit('submit')"
+        >
+          {{ loading ? '提交中...' : buttonText }}
+        </GlButton>
+      </view>
     </view>
-    <GlButton 
-      type="primary" 
-      size="large" 
-      round 
-      :disabled="disabled"
-      :loading="loading"
-      @click="$emit('submit')"
-    >
-      {{ loading ? '提交中...' : buttonText }}
-    </GlButton>
+    <!-- 占位符，防止内容被遮挡 -->
+    <view class="submit-bar-placeholder"></view>
   </view>
 </template>
 
 <script setup lang="ts">
 import GlButton from '@/components/gl/Button/index.vue'
-import PriceTag from '@/components/PriceTag/index.vue'
 
 interface Props {
   total: number
@@ -31,7 +41,7 @@ interface Props {
 withDefaults(defineProps<Props>(), {
   disabled: false,
   loading: false,
-  buttonText: '提交订单',
+  buttonText: '立即支付',
 })
 
 defineEmits<{
@@ -40,39 +50,67 @@ defineEmits<{
 </script>
 
 <style lang="scss" scoped>
-.action-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--spacing-sm) var(--spacing-md);
-  padding-bottom: calc(var(--spacing-sm) + env(safe-area-inset-bottom));
-  background: var(--color-bg);
-  border-top: 1rpx solid var(--color-border);
-  position: sticky;
-  bottom: 0;
-  left: 0;
-  right: 0;
+.submit-bar-shell {
+  position: relative;
   z-index: 100;
 }
 
-.total-info {
+.submit-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-top: 1rpx solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.03);
+  padding-bottom: env(safe-area-inset-bottom);
+  transition: all 0.3s ease;
+}
+
+.submit-bar__content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 112rpx; // 56px
+  padding: 0 $gl-spacing-lg;
+}
+
+.price-section {
   display: flex;
   align-items: baseline;
-  gap: var(--spacing-xs);
+  gap: $gl-spacing-xs;
+
+  .label {
+    font-size: 26rpx;
+    color: $gl-text-secondary;
+  }
+
+  .price-wrap {
+    color: #FF5252; // 价格强调色
+    font-weight: 700;
+    font-family: 'DIN Alternate', sans-serif;
+    line-height: 1;
+
+    .symbol {
+      font-size: 28rpx;
+      margin-right: 4rpx;
+    }
+
+    .amount {
+      font-size: 44rpx;
+    }
+  }
 }
 
-.total-label {
-  font-size: var(--font-sm);
-  color: var(--color-text-secondary);
+.submit-btn {
+  min-width: 240rpx;
+  font-weight: 600;
+  box-shadow: 0 8rpx 20rpx rgba($gl-color-primary, 0.25);
 }
 
-.total-price {
-  font-size: var(--font-lg);
-  font-weight: 700;
-  color: var(--color-primary);
-}
-
-.total-price :deep(.price-tag) {
-  color: var(--color-primary);
+.submit-bar-placeholder {
+  height: calc(112rpx + env(safe-area-inset-bottom));
+  width: 100%;
 }
 </style>

@@ -2,7 +2,7 @@
  * 陪玩认证相关 API
  */
 
-import { get, post, put } from './request'
+import { get, post, put, ApiError } from './request'
 import { uploadFile } from './request'
 import type { Gender } from '@/types/common'
 import type { CertStatus } from '@/types/status'
@@ -52,7 +52,18 @@ export interface SubmitCertificationParams {
  * 获取实名认证状态
  */
 export function getCertificationStatus() {
-  return get<CertificationInfo>('/player/certification/identity')
+  return get<CertificationInfo>('/player/certification/identity', undefined, { showError: false })
+    .catch((error: unknown) => {
+      if (error instanceof ApiError && error.code === 401 && error.message.includes('missing player')) {
+        return {
+          success: true,
+          code: 200,
+          message: 'OK',
+          data: { status: 'none' } as CertificationInfo,
+        }
+      }
+      throw error
+    })
 }
 
 /**

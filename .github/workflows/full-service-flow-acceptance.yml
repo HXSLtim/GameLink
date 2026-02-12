@@ -1,0 +1,150 @@
+name: Full Service Flow Acceptance
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GO_VERSION: "1.25.5"
+
+jobs:
+  full-service-flow-acceptance:
+    name: Full Service Flow Acceptance (Smoke + Order + Dispute + Withdraw + Integrity)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: gamelink
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_DB: gamelink_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U gamelink -d gamelink_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: api/go.sum
+
+      - name: Download backend dependencies
+        working-directory: api
+        run: go mod download
+
+      - name: Start backend with seed data
+        working-directory: api
+        env:
+          APP_ENV: development
+          DB_DSN: postgresql://gamelink:testpassword@localhost:5432/gamelink_test?sslmode=disable
+          CACHE_TYPE: redis
+          REDIS_ADDR: localhost:6379
+          JWT_SECRET_KEY: test-secret-key-for-full-service-flow-acceptance-32chars
+          SEED_ENABLED: "true"
+          CRYPTO_ENABLED: "false"
+        run: |
+          nohup go run cmd/main.go > backend.log 2>&1 &
+          echo $! > backend.pid
+
+      - name: Wait backend health
+        working-directory: api
+        run: |
+          for i in $(seq 1 90); do
+            if curl -fsS http://127.0.0.1:8080/api/v1/healthz >/dev/null; then
+              echo "Backend is ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Backend did not become ready in time"
+          tail -n 200 backend.log || true
+          exit 1
+
+      - name: Run full service flow acceptance
+        id: full_acceptance
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          & ./api/scripts/run_full_service_flow_acceptance.ps1 `
+            -BaseUrl "http://127.0.0.1:8080/api/v1" `
+            -DBUser "gamelink" `
+            -DBName "gamelink_test" 2>&1 |
+            Tee-Object -FilePath "api/full-service-flow-acceptance.log"
+          if ($LASTEXITCODE -ne 0) {
+            throw "full service flow acceptance failed with exit code $LASTEXITCODE"
+          }
+
+      - name: Generate acceptance summary
+        if: always()
+        shell: pwsh
+        run: |
+          $outcome = "${{ steps.full_acceptance.outcome }}"
+          $summaryPath = "api/full-service-flow-acceptance-summary.md"
+          $lines = @()
+          $lines += "# Full Service Flow Acceptance Summary"
+          $lines += ""
+          $lines += "- Outcome: **$outcome**"
+          $lines += "- Generated At (UTC): $(Get-Date -AsUTC -Format 'yyyy-MM-ddTHH:mm:ssZ')"
+          $lines += ""
+          $lines += "## Tail Log"
+          $lines += ""
+          if (Test-Path "api/full-service-flow-acceptance.log") {
+            $tail = Get-Content "api/full-service-flow-acceptance.log" -Tail 120
+            $lines += "```text"
+            $lines += $tail
+            $lines += "```"
+          } else {
+            $lines += "_No acceptance log found._"
+          }
+          $content = ($lines -join "`n")
+          Set-Content -Path $summaryPath -Value $content -Encoding UTF8
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value $content
+
+      - name: Upload backend log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-service-flow-backend-log
+          path: api/backend.log
+          retention-days: 7
+
+      - name: Upload acceptance outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-service-flow-acceptance-output
+          path: |
+            api/full-service-flow-acceptance.log
+            api/full-service-flow-acceptance-summary.md
+          retention-days: 7
+
+      - name: Cleanup backend process
+        if: always()
+        working-directory: api
+        run: |
+          if [ -f backend.pid ]; then
+            kill "$(cat backend.pid)" || true
+          fi

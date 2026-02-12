@@ -5,10 +5,10 @@
         <uv-icon :name="icon" :size="resolvedIconSize" color="var(--color-text-placeholder)" />
       </slot>
     </view>
-    
+
     <text v-if="title" class="gl-empty__title">{{ title }}</text>
     <text v-if="description" class="gl-empty__desc">{{ description }}</text>
-    
+
     <view v-if="showActionArea" class="gl-empty__action">
       <slot v-if="$slots.default"></slot>
       <GlButton
@@ -71,49 +71,60 @@ const handleAction = () => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-xl) var(--spacing-lg);
+  padding: $gl-spacing-xxl $gl-spacing-lg;
+  min-height: 400rpx;
 }
 
 .gl-empty__icon {
-  margin-bottom: var(--spacing-md);
-  opacity: 0.6;
+  margin-bottom: $gl-spacing-lg;
+  opacity: 0.8;
+  // 增加轻微浮动动画，增加生动感
+  animation: float 3s ease-in-out infinite;
 }
 
 .gl-empty__title {
-  font-size: var(--font-lg);
+  font-size: 32rpx;
   font-weight: 600;
-  color: var(--color-text-secondary);
-  margin-bottom: var(--spacing-xs);
+  color: $gl-text-secondary;
+  margin-bottom: $gl-spacing-sm;
 }
 
 .gl-empty__desc {
-  font-size: var(--font-sm);
-  color: var(--color-text-placeholder);
+  font-size: 26rpx;
+  color: $gl-text-placeholder;
   text-align: center;
-  max-width: 400rpx;
+  max-width: 480rpx;
+  line-height: 1.5;
 }
 
 .gl-empty__action {
-  margin-top: var(--spacing-lg);
+  margin-top: $gl-spacing-xl;
 }
 
 .gl-empty--compact {
-  padding: var(--spacing-md);
-  
+  padding: $gl-spacing-lg;
+  min-height: auto;
+
   .gl-empty__icon {
-    margin-bottom: var(--spacing-sm);
+    margin-bottom: $gl-spacing-sm;
   }
-  
+
   .gl-empty__title {
-    font-size: var(--font-base);
+    font-size: 28rpx;
   }
-  
+
   .gl-empty__desc {
-    font-size: var(--font-xs);
+    font-size: 24rpx;
   }
-  
+
   .gl-empty__action {
-    margin-top: var(--spacing-md);
+    margin-top: $gl-spacing-md;
   }
+}
+
+@keyframes float {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-10rpx); }
+  100% { transform: translateY(0); }
 }
 </style>

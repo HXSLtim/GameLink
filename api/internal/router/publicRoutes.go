@@ -10,8 +10,10 @@ import (
 	"gamelink/internal/repository"
 	chatrepo "gamelink/internal/repository/chat"
 	gamerepo "gamelink/internal/repository/game"
+	gamecategoryrepo "gamelink/internal/repository/gamecategory"
 	orderrepo "gamelink/internal/repository/order"
 	playerrepo "gamelink/internal/repository/player"
+	playerservicerepo "gamelink/internal/repository/playerservice"
 	referralrepo "gamelink/internal/repository/referral"
 	serviceitemrepo "gamelink/internal/repository/serviceitem"
 	userrepo "gamelink/internal/repository/user"
@@ -34,7 +36,9 @@ func registerPublicRoutes(api *gin.RouterGroup, orm *gorm.DB, cacheClient cache.
 	// 初始化仓库
 	userRepo := userrepo.NewUserRepository(orm)
 	playerRepo := playerrepo.NewPlayerRepository(orm)
+	playerServiceRepo := playerservicerepo.NewPlayerServiceRepository(orm)
 	gameRepo := gamerepo.NewGameRepository(orm)
+	gameCategoryRepo := gamecategoryrepo.NewGameCategoryRepository(orm)
 	serviceItemRepo := serviceitemrepo.NewServiceItemRepository(orm)
 	chatGroupRepo := chatrepo.NewChatGroupRepository(orm)
 	reviewRepo := orderrepo.NewReviewRepository(orm)
@@ -62,7 +66,7 @@ func registerPublicRoutes(api *gin.RouterGroup, orm *gorm.DB, cacheClient cache.
 	authGroup.POST("/wechat/refresh", authHandler.RefreshToken)
 
 	// 注册陪玩师列表路由
-	playerHandler := publichandler.NewPlayerHandler(playerRepo, userRepo)
+	playerHandler := publichandler.NewPlayerHandler(playerRepo, playerServiceRepo, userRepo)
 	playerHandler.RegisterRoutes(publicGroup)
 
 	// 注册陪玩师评价路由
@@ -70,7 +74,7 @@ func registerPublicRoutes(api *gin.RouterGroup, orm *gorm.DB, cacheClient cache.
 	reviewHandler.RegisterRoutes(publicGroup)
 
 	// 注册游戏列表路由
-	gameHandler := publichandler.NewGameHandler(gameRepo)
+	gameHandler := publichandler.NewGameHandler(gameRepo, gameCategoryRepo)
 	gameHandler.RegisterRoutes(publicGroup)
 
 	// 注册服务项目列表路由

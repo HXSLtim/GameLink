@@ -7,6 +7,7 @@ import (
 
 	"gamelink/internal/handler/resp"
 	_ "gamelink/internal/model" // Imported for Swagger annotations
+	"gamelink/internal/repository"
 	"gamelink/internal/service/playercertification"
 	"gamelink/internal/service/playerrank"
 	"gamelink/pkg/apierr"
@@ -16,17 +17,39 @@ import (
 type CertificationHandler struct {
 	rankSvc *playerrank.PlayerRankService
 	certSvc *playercertification.PlayerCertificationService
+	players repository.PlayerRepository
 }
 
 // NewCertificationHandler 创建Handler
 func NewCertificationHandler(
 	rankSvc *playerrank.PlayerRankService,
 	certSvc *playercertification.PlayerCertificationService,
+	players repository.PlayerRepository,
 ) *CertificationHandler {
 	return &CertificationHandler{
 		rankSvc: rankSvc,
 		certSvc: certSvc,
+		players: players,
 	}
+}
+
+func (h *CertificationHandler) resolvePlayerID(c *gin.Context) (uint64, bool) {
+	playerID := resp.GetPlayerID(c)
+	if playerID != 0 {
+		return playerID, true
+	}
+
+	userID, ok := resp.GetUserIDOrFail(c)
+	if !ok {
+		return 0, false
+	}
+
+	player, err := h.players.GetByUserID(c.Request.Context(), userID)
+	if err != nil {
+		respondAPIError(c, apierr.Unauthorized("missing player"))
+		return 0, false
+	}
+	return player.ID, true
 }
 
 // ApplyRankRequest 申请段位认证请求
@@ -58,7 +81,7 @@ type ApplyCertificationRequest struct {
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /player/certification/rank [post]
 func (h *CertificationHandler) ApplyRank(c *gin.Context) {
-	playerID, ok := resp.GetPlayerIDOrFail(c)
+	playerID, ok := h.resolvePlayerID(c)
 	if !ok {
 		return
 	}
@@ -92,7 +115,7 @@ func (h *CertificationHandler) ApplyRank(c *gin.Context) {
 // @Success      200  {array}   model.PlayerRankRecord
 // @Router       /player/certification/ranks [get]
 func (h *CertificationHandler) GetMyRanks(c *gin.Context) {
-	playerID, ok := resp.GetPlayerIDOrFail(c)
+	playerID, ok := h.resolvePlayerID(c)
 	if !ok {
 		return
 	}
@@ -142,7 +165,7 @@ func (h *CertificationHandler) GetRankDetail(c *gin.Context) {
 // @Failure      400  {object}  model.ErrorResponse
 // @Router       /player/certification/identity [post]
 func (h *CertificationHandler) ApplyCertification(c *gin.Context) {
-	playerID, ok := resp.GetPlayerIDOrFail(c)
+	playerID, ok := h.resolvePlayerID(c)
 	if !ok {
 		return
 	}
@@ -179,7 +202,7 @@ func (h *CertificationHandler) ApplyCertification(c *gin.Context) {
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /player/certification/identity [get]
 func (h *CertificationHandler) GetMyCertification(c *gin.Context) {
-	playerID, ok := resp.GetPlayerIDOrFail(c)
+	playerID, ok := h.resolvePlayerID(c)
 	if !ok {
 		return
 	}
@@ -198,9 +221,10 @@ func RegisterCertificationRoutes(
 	router gin.IRouter,
 	rankSvc *playerrank.PlayerRankService,
 	certSvc *playercertification.PlayerCertificationService,
+	players repository.PlayerRepository,
 	authMiddleware gin.HandlerFunc,
 ) {
-	h := NewCertificationHandler(rankSvc, certSvc)
+	h := NewCertificationHandler(rankSvc, certSvc, players)
 
 	group := router.Group("/certification")
 	group.Use(authMiddleware)

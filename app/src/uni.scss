@@ -79,3 +79,46 @@ $uni-color-subtitle: #555; // 二级标题颜色
 $uni-font-size-subtitle: 18px;
 $uni-color-paragraph: #3f536e; // 文章段落颜色
 $uni-font-size-paragraph: 15px;
+
+// =============================================================================
+// GameLink Design System (GLDS)
+// =============================================================================
+
+// 1. 品牌色系 (Brand Colors)
+$gl-color-primary: #7ACC35;
+$gl-color-primary-dark: #68B02A;
+$gl-color-primary-light: #E8F5DC;
+$gl-color-secondary: #2C2C2C;
+$gl-color-accent: #FF6B6B;
+
+// 2. 布局间距 (Layout Spacing)
+$gl-spacing-xs: 8rpx;   // 4px
+$gl-spacing-sm: 16rpx;  // 8px
+$gl-spacing-md: 24rpx;  // 12px
+$gl-spacing-lg: 32rpx;  // 16px
+$gl-spacing-xl: 48rpx;  // 24px
+$gl-spacing-xxl: 64rpx; // 32px
+
+// 3. 圆角系统 (Radius System)
+$gl-radius-sm: 8rpx;
+$gl-radius-md: 16rpx;   // 卡片标准圆角
+$gl-radius-lg: 24rpx;   // 弹窗大圆角
+$gl-radius-circle: 9999px;
+
+// 4. 阴影层级 (Shadow Depth)
+$gl-shadow-sm: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+$gl-shadow-md: 0 8rpx 24rpx rgba(0, 0, 0, 0.08); // 悬浮按钮/卡片
+$gl-shadow-lg: 0 16rpx 48rpx rgba(0, 0, 0, 0.12); // 弹窗
+
+// 5. 文字系统 (Typography)
+$gl-text-main: #1A1A1A;
+$gl-text-secondary: #666666;
+$gl-text-placeholder: #999999;
+$gl-text-disabled: #CCCCCC;
+
+// 6. 安全区 (Safe Area)
+// 用于 padding-bottom: constant(safe-area-inset-bottom); 的快捷方式
+@mixin safe-area-bottom {
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+}

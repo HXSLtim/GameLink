@@ -23,6 +23,7 @@ func RegisterOrderRoutes(router gin.IRouter, svc *order.OrderService, authMiddle
 	group := router.Group("/orders")
 	group.Use(authMiddleware)
 	group.GET("/available", func(c *gin.Context) { getAvailableOrdersHandler(c, svc) })
+	group.GET("", func(c *gin.Context) { getMyAcceptedOrdersHandler(c, svc) }) // 兼容前端调用 /player/orders
 	group.POST(":id/accept", func(c *gin.Context) { acceptOrderHandler(c, svc) })
 	group.GET("/my", func(c *gin.Context) { getMyAcceptedOrdersHandler(c, svc) })
 	group.PUT(":id/complete", func(c *gin.Context) { completeOrderByPlayerHandler(c, svc) })

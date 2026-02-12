@@ -8,13 +8,15 @@
     :enable-back-to-top="enableBackToTop"
     :refresher-enabled="refresherEnabled"
     :refresher-triggered="refresherTriggered"
+    :refresher-background="refresherBackground"
     @scroll="handleScroll"
     @scrolltolower="handleScrollToLower"
     @refresherrefresh="handleRefresh"
+    @refresherrestore="handleRestore"
   >
     <!-- 顶部占位 -->
     <view class="top-placeholder" :style="{ height: `${topHeight}px` }"></view>
-    
+
     <!-- 可见列表项 -->
     <view
       v-for="item in visibleItems"
@@ -24,14 +26,15 @@
     >
       <slot name="item" :item="item.data" :index="item.index"></slot>
     </view>
-    
+
     <!-- 底部占位 -->
     <view class="bottom-placeholder" :style="{ height: `${bottomHeight}px` }"></view>
-    
-    <!-- 加载更多 -->
+
+    <!-- 加载更多 / 底部状态 -->
     <view v-if="showLoadMore" class="load-more">
       <slot name="loading" v-if="loading">
         <view class="loading-default">
+          <view class="loading-icon"></view>
           <text>加载中...</text>
         </view>
       </slot>
@@ -48,31 +51,19 @@
 import { ref, computed, watch, onMounted } from 'vue'
 
 interface Props {
-  // 数据源
   list: any[]
-  // 每项高度（固定高度时必填）
   itemHeight?: number
-  // 预估高度（动态高度时使用）
   estimatedHeight?: number
-  // 缓冲区大小（渲染可视区域外的额外项数）
   buffer?: number
-  // 唯一键字段名
   keyField?: string
-  // 容器高度
   height?: string | number
-  // 是否启用下拉刷新
   refresherEnabled?: boolean
-  // 是否正在刷新
   refresherTriggered?: boolean
-  // 是否正在加载
+  refresherBackground?: string
   loading?: boolean
-  // 是否没有更多
   noMore?: boolean
-  // 是否显示加载更多
   showLoadMore?: boolean
-  // 滚动动画
   scrollWithAnimation?: boolean
-  // 点击顶部状态栏回到顶部
   enableBackToTop?: boolean
 }
 
@@ -84,6 +75,7 @@ const props = withDefaults(defineProps<Props>(), {
   height: '100vh',
   refresherEnabled: false,
   refresherTriggered: false,
+  refresherBackground: 'transparent',
   loading: false,
   noMore: false,
   showLoadMore: true,
@@ -92,15 +84,15 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
-  scroll: [e: any]
-  scrollToLower: []
-  refresh: []
+  (e: 'scroll', event: any): void
+  (e: 'scrollToLower'): void
+  (e: 'refresh'): void
+  (e: 'restore'): void
 }>()
 
 // 状态
 const scrollTop = ref(0)
 const scrollIntoView = ref('')
-const containerHeight = ref(0)
 const currentScrollTop = ref(0)
 
 // 实际使用的项高度
@@ -108,7 +100,7 @@ const realItemHeight = computed(() => props.itemHeight || props.estimatedHeight)
 
 // 可见项数量
 const visibleCount = computed(() => {
-  const height = typeof props.height === 'number' ? props.height : parseInt(props.height) || 600
+  const height = typeof props.height === 'number' ? props.height : parseInt(props.height as string) || 600
   return Math.ceil(height / realItemHeight.value) + props.buffer * 2
 })
 
@@ -142,7 +134,7 @@ const bottomHeight = computed(() => {
 
 // 获取项的唯一键
 const getItemKey = (item: { data: any; index: number }) => {
-  if (props.keyField && item.data[props.keyField] !== undefined) {
+  if (props.keyField && item.data && item.data[props.keyField] !== undefined) {
     return item.data[props.keyField]
   }
   return item.index
@@ -162,6 +154,10 @@ const handleScrollToLower = () => {
 // 下拉刷新
 const handleRefresh = () => {
   emit('refresh')
+}
+
+const handleRestore = () => {
+  emit('restore')
 }
 
 // 滚动到指定位置
@@ -185,25 +181,41 @@ defineExpose({
 .virtual-list {
   width: 100%;
   height: v-bind('typeof props.height === "number" ? props.height + "px" : props.height');
-  overflow: hidden;
-  
+
   .list-item {
     width: 100%;
+    box-sizing: border-box;
   }
-  
+
   .load-more {
-    padding: var(--spacing-md) 0;
-    
+    padding: $gl-spacing-md 0;
+
     .loading-default,
     .no-more-default {
       display: flex;
+      flex-direction: row;
+      align-items: center;
       justify-content: center;
-      
+      gap: $gl-spacing-sm;
+
       text {
-        font-size: var(--font-sm);
-        color: var(--color-text-placeholder);
+        font-size: 24rpx;
+        color: $gl-text-placeholder;
       }
     }
+
+    .loading-icon {
+      width: 28rpx;
+      height: 28rpx;
+      border: 2rpx solid $gl-color-primary;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
   }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 </style>
