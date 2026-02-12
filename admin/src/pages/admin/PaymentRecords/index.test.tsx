@@ -15,7 +15,10 @@ import PaymentRecords from './index';
 import { renderWithProviders, resetAllMocks, flushPromises } from '@/testutils';
 
 // Mock antd App.useApp
-const { mockMessage } = vi.hoisted(() => ({
+const { mockApi, mockMessage } = vi.hoisted(() => ({
+  mockApi: {
+    getPayments: vi.fn(),
+  },
   mockMessage: {
     success: vi.fn(),
     error: vi.fn(),
@@ -23,6 +26,10 @@ const { mockMessage } = vi.hoisted(() => ({
     info: vi.fn(),
     loading: vi.fn(),
   },
+}));
+
+vi.mock('@/api/admin', () => ({
+  adminApi: mockApi,
 }));
 
 vi.mock('antd', async () => {
@@ -41,10 +48,48 @@ vi.mock('antd', async () => {
 describe('PaymentRecords', () => {
   beforeEach(() => {
     resetAllMocks();
+    mockApi.getPayments.mockClear();
     mockMessage.success.mockClear();
     mockMessage.error.mockClear();
     localStorage.setItem('token', 'test-token');
     localStorage.setItem('user_role', 'admin');
+
+    mockApi.getPayments.mockResolvedValue({
+      data: {
+        success: true,
+        data: [
+          {
+            id: 1,
+            orderId: 101,
+            userId: 4,
+            amountCents: 21900,
+            status: 'paid',
+            method: 'wechat',
+            providerTradeNo: 'ESC20251231113618283671',
+            paidAt: '2026-02-11 10:20:30',
+            createdAt: '2026-02-11 10:15:30',
+            updatedAt: '2026-02-11 10:20:30',
+          },
+          {
+            id: 2,
+            orderId: 102,
+            userId: 5,
+            amountCents: 9900,
+            status: 'refunded',
+            method: 'alipay',
+            providerTradeNo: 'ALI20251231113618283672',
+            paidAt: '2026-02-11 11:20:30',
+            createdAt: '2026-02-11 11:15:30',
+            updatedAt: '2026-02-11 11:25:30',
+          },
+        ],
+        pagination: {
+          page: 1,
+          page_size: 10,
+          total: 2,
+        },
+      },
+    });
   });
 
   afterEach(() => {
@@ -102,7 +147,7 @@ describe('PaymentRecords', () => {
       renderWithProviders(<PaymentRecords />);
 
       await waitFor(() => {
-        expect(screen.getByText('订单号')).toBeInTheDocument();
+        expect(screen.getByText('订单')).toBeInTheDocument();
       });
     });
 
@@ -198,7 +243,7 @@ describe('PaymentRecords', () => {
       renderWithProviders(<PaymentRecords />);
 
       await waitFor(() => {
-        expect(screen.getByText('刷新')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: '刷新' })).toBeInTheDocument();
       });
     });
 
@@ -216,7 +261,7 @@ describe('PaymentRecords', () => {
       renderWithProviders(<PaymentRecords />);
 
       await waitFor(() => {
-        expect(screen.getByPlaceholderText('搜索订单号')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText('搜索订单号/流水号')).toBeInTheDocument();
       });
     });
 

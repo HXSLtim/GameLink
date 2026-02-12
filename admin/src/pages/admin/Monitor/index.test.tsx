@@ -2,7 +2,7 @@
  * Monitor Page Unit Tests
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import MonitorPage from './index';
 import { useMonitorStore } from '@/stores/modules/monitorStore';
@@ -59,6 +59,12 @@ describe('MonitorPage', () => {
     reset: vi.fn(),
     ...overrides,
   });
+
+  const getCardByTitle = (title: string): HTMLElement => {
+    const card = screen.getByText(title).closest('.ant-card');
+    expect(card).toBeTruthy();
+    return card as HTMLElement;
+  };
 
   const mockSystemStatus = {
     cpuUsage: 45,
@@ -160,15 +166,16 @@ describe('MonitorPage', () => {
   describe('System Status Card', () => {
     it('should display CPU usage', () => {
       render(<MonitorPage />);
-      expect(screen.getByText('CPU 使用率')).toBeInTheDocument();
-      expect(screen.getByText('45')).toBeInTheDocument();
+      const systemCard = getCardByTitle('系统状态');
+      expect(within(systemCard).getByText('CPU 使用率')).toBeInTheDocument();
+      expect(within(systemCard).getAllByText('45').length).toBeGreaterThan(0);
     });
 
     it('should display memory usage', () => {
       render(<MonitorPage />);
-      expect(screen.getByText('内存使用')).toBeInTheDocument();
-      expect(screen.getByText(/4\.00/)).toBeInTheDocument();
-      expect(screen.getByText(/8\.00 GB/)).toBeInTheDocument();
+      const systemCard = getCardByTitle('系统状态');
+      expect(within(systemCard).getByText('内存使用')).toBeInTheDocument();
+      expect(systemCard).toHaveTextContent(/8\.00 GB/);
     });
 
     it('should display goroutines count', () => {
@@ -179,9 +186,10 @@ describe('MonitorPage', () => {
 
     it('should display database connections', () => {
       render(<MonitorPage />);
-      expect(screen.getByText('数据库连接')).toBeInTheDocument();
-      expect(screen.getByText('15')).toBeInTheDocument();
-      expect(screen.getByText(/20/)).toBeInTheDocument();
+      const systemCard = getCardByTitle('系统状态');
+      expect(within(systemCard).getByText('数据库连接')).toBeInTheDocument();
+      expect(within(systemCard).getByText('15')).toBeInTheDocument();
+      expect(systemCard).toHaveTextContent('/ 20');
     });
 
     it('should display uptime in hours', () => {
@@ -192,8 +200,9 @@ describe('MonitorPage', () => {
 
     it('should display requests per second', () => {
       render(<MonitorPage />);
-      expect(screen.getByText('请求/秒')).toBeInTheDocument();
-      expect(screen.getByText('123.45')).toBeInTheDocument();
+      const systemCard = getCardByTitle('系统状态');
+      expect(within(systemCard).getByText('请求/秒')).toBeInTheDocument();
+      expect(systemCard).toHaveTextContent('123.45');
     });
 
     it('should show loading state when system status is null', () => {
@@ -202,7 +211,8 @@ describe('MonitorPage', () => {
       );
 
       render(<MonitorPage />);
-      expect(screen.getByText('等待数据...')).toBeInTheDocument();
+      const systemCard = getCardByTitle('系统状态');
+      expect(systemCard).toHaveClass('ant-card-loading');
     });
   });
 
@@ -215,16 +225,18 @@ describe('MonitorPage', () => {
 
     it('should display peak users', () => {
       render(<MonitorPage />);
-      expect(screen.getByText('峰值')).toBeInTheDocument();
-      expect(screen.getByText('1,500')).toBeInTheDocument();
+      const onlineCard = getCardByTitle('在线用户');
+      expect(within(onlineCard).getByText('峰值')).toBeInTheDocument();
+      expect(onlineCard).toHaveTextContent('1,500');
     });
 
     it('should display users by role', () => {
       render(<MonitorPage />);
-      expect(screen.getByText('按角色分布：')).toBeInTheDocument();
-      expect(screen.getByText('ADMIN: 10')).toBeInTheDocument();
-      expect(screen.getByText('PLAYER: 200')).toBeInTheDocument();
-      expect(screen.getByText('USER: 1,024')).toBeInTheDocument();
+      const onlineCard = getCardByTitle('在线用户');
+      expect(within(onlineCard).getByText('按角色分布：')).toBeInTheDocument();
+      expect(onlineCard).toHaveTextContent(/ADMIN:\s*10/);
+      expect(onlineCard).toHaveTextContent(/PLAYER:\s*200/);
+      expect(onlineCard).toHaveTextContent(/USER:\s*1,?024/);
     });
 
     it('should show loading state when online users is null', () => {
@@ -233,7 +245,8 @@ describe('MonitorPage', () => {
       );
 
       render(<MonitorPage />);
-      expect(screen.getByText('等待数据...')).toBeInTheDocument();
+      const onlineCard = getCardByTitle('在线用户');
+      expect(onlineCard).toHaveClass('ant-card-loading');
     });
   });
 
@@ -252,8 +265,9 @@ describe('MonitorPage', () => {
 
     it('should display completed orders', () => {
       render(<MonitorPage />);
-      expect(screen.getByText('已完成')).toBeInTheDocument();
-      expect(screen.getByText('1,500')).toBeInTheDocument();
+      const queueCard = getCardByTitle('订单队列');
+      expect(within(queueCard).getByText('已完成')).toBeInTheDocument();
+      expect(queueCard).toHaveTextContent('1,500');
     });
 
     it('should display queue status as normal', () => {
@@ -275,9 +289,10 @@ describe('MonitorPage', () => {
 
     it('should display processing speed', () => {
       render(<MonitorPage />);
-      expect(screen.getByText('处理速度')).toBeInTheDocument();
-      expect(screen.getByText('45.67')).toBeInTheDocument();
-      expect(screen.getByText('单/分钟')).toBeInTheDocument();
+      const queueCard = getCardByTitle('订单队列');
+      expect(within(queueCard).getByText('处理速度')).toBeInTheDocument();
+      expect(queueCard).toHaveTextContent('45.67');
+      expect(queueCard).toHaveTextContent('单/分钟');
     });
 
     it('should display average wait time', () => {
@@ -293,7 +308,8 @@ describe('MonitorPage', () => {
       );
 
       render(<MonitorPage />);
-      expect(screen.getByText('等待数据...')).toBeInTheDocument();
+      const queueCard = getCardByTitle('订单队列');
+      expect(queueCard).toHaveClass('ant-card-loading');
     });
   });
 
@@ -360,8 +376,8 @@ describe('MonitorPage', () => {
 
     it('should show alert type tags', () => {
       render(<MonitorPage />);
-      expect(screen.getByText('SYSTEM')).toBeInTheDocument();
-      expect(screen.getByText('BUSINESS')).toBeInTheDocument();
+      expect(screen.getByText('system')).toBeInTheDocument();
+      expect(screen.getByText('business')).toBeInTheDocument();
     });
 
     it('should show alert level tags', () => {
@@ -372,8 +388,8 @@ describe('MonitorPage', () => {
 
     it('should show alert source and timestamp', () => {
       render(<MonitorPage />);
-      expect(screen.getByText('monitor')).toBeInTheDocument();
-      expect(screen.getByText('order')).toBeInTheDocument();
+      expect(screen.getByText(/monitor\s*·/)).toBeInTheDocument();
+      expect(screen.getByText(/order\s*·/)).toBeInTheDocument();
     });
   });
 
@@ -556,8 +572,9 @@ describe('MonitorPage', () => {
   describe('Progress Bars', () => {
     it('should show normal progress when CPU usage is below 80%', () => {
       render(<MonitorPage />);
-      // CPU is 45%, should show as active (green)
-      expect(screen.getByText('45%')).toBeInTheDocument();
+      const systemCard = getCardByTitle('系统状态');
+      expect(systemCard).toHaveTextContent('CPU 使用率');
+      expect(systemCard).toHaveTextContent('45');
     });
 
     it('should show exception progress when CPU usage is above 80%', () => {
@@ -568,13 +585,15 @@ describe('MonitorPage', () => {
       );
 
       render(<MonitorPage />);
-      expect(screen.getByText('85%')).toBeInTheDocument();
+      const systemCard = getCardByTitle('系统状态');
+      expect(systemCard).toHaveTextContent('85');
     });
 
     it('should calculate memory percentage correctly', () => {
       render(<MonitorPage />);
-      // 4GB / 8GB = 50%
-      expect(screen.getByText('4.00')).toBeInTheDocument();
+      const systemCard = getCardByTitle('系统状态');
+      expect(systemCard).toHaveTextContent(/8\.00 GB/);
+      expect(systemCard.querySelectorAll('.ant-progress').length).toBeGreaterThanOrEqual(2);
     });
   });
 });

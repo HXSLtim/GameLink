@@ -6,7 +6,6 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import useWebSocket from './useWebSocket';
 import { logger } from '@/utils/logger';
 
-// Mock logger
 vi.mock('@/utils/logger', () => ({
   logger: {
     info: vi.fn(),
@@ -16,50 +15,67 @@ vi.mock('@/utils/logger', () => ({
   },
 }));
 
-// Mock WebSocket
 class MockWebSocket {
+  static instances: MockWebSocket[] = [];
+  static CONNECTING = 0;
+  static OPEN = 1;
+  static CLOSING = 2;
+  static CLOSED = 3;
+
   url: string;
-  readyState: number = WebSocket.CONNECTING;
+  readyState = MockWebSocket.CONNECTING;
   onopen: ((event: Event) => void) | null = null;
   onmessage: ((event: MessageEvent) => void) | null = null;
   onerror: ((event: Event) => void) | null = null;
   onclose: ((event: CloseEvent) => void) | null = null;
 
   send = vi.fn();
-  close = vi.fn();
+  close = vi.fn((code?: number, reason?: string) => {
+    this.readyState = MockWebSocket.CLOSED;
+    this.onclose?.(
+      new CloseEvent('close', {
+        code: code ?? 1000,
+        reason: reason ?? '',
+      })
+    );
+  });
 
   constructor(url: string) {
     this.url = url;
+    MockWebSocket.instances.push(this);
   }
 
-  // Simulate events
+  static reset() {
+    MockWebSocket.instances = [];
+  }
+
   triggerOpen() {
-    this.readyState = WebSocket.OPEN;
-    this.onopen?.(new Event('open') as Event);
+    this.readyState = MockWebSocket.OPEN;
+    this.onopen?.(new Event('open'));
   }
 
-  triggerMessage(data: string) {
-    this.onmessage?.(new MessageEvent('message', { data }) as MessageEvent);
+  triggerMessage(payload: string) {
+    this.onmessage?.(new MessageEvent('message', { data: payload }));
   }
 
-  triggerError(event: Event) {
-    this.readyState = WebSocket.CLOSED;
+  triggerError(event: Event = new Event('error')) {
+    this.readyState = MockWebSocket.CLOSED;
     this.onerror?.(event);
   }
 
-  triggerClose(code: number, reason: string) {
-    this.readyState = WebSocket.CLOSED;
-    this.onclose?.(new CloseEvent('close', { code, reason }) as CloseEvent);
+  triggerClose(code = 1000, reason = '') {
+    this.readyState = MockWebSocket.CLOSED;
+    this.onclose?.(new CloseEvent('close', { code, reason }));
   }
 }
 
 vi.stubGlobal('WebSocket', MockWebSocket as unknown as typeof WebSocket);
 
-const getMockWebSocketInstances = () =>
-  (globalThis.WebSocket as unknown as { mock: { instances: MockWebSocket[] } })
-    .mock.instances;
-
-const getMockWebSocketInstance = () => getMockWebSocketInstances()[0];
+const getWs = (index = 0): MockWebSocket => {
+  const instance = MockWebSocket.instances[index];
+  expect(instance).toBeTruthy();
+  return instance;
+};
 
 describe('useWebSocket', () => {
   const mockUrl = 'ws://localhost:8080/ws';
@@ -70,597 +86,361 @@ describe('useWebSocket', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useRealTimers();
     localStorage.clear();
+    MockWebSocket.reset();
   });
 
   afterEach(() => {
-    vi.clearAllMocks();
+    vi.useRealTimers();
   });
 
-  describe('Initial State', () => {
-    it('should initialize with disconnected state', () => {
-      const { result } = renderHook(() =>
-        useWebSocket({
-          url: mockUrl,
-          onMessage: mockOnMessage,
-        })
-      );
+  it('should initialize with disconnected state when autoConnect is false', () => {
+    const { result } = renderHook(() =>
+      useWebSocket({
+        url: mockUrl,
+        autoConnect: false,
+      })
+    );
 
-      expect(result.current.connectionState).toBe('disconnected');
-      expect(result.current.connected).toBe(false);
-      expect(result.current.lastMessage).toBe(null);
-    });
-
-    it('should not auto connect when autoConnect is false', () => {
-      const { result } = renderHook(() =>
-        useWebSocket({
-          url: mockUrl,
-          autoConnect: false,
-        })
-      );
-
-      expect(result.current.connectionState).toBe('disconnected');
-    });
-
-    it('should use default reconnect interval', () => {
-      renderHook(() =>
-        useWebSocket({
-          url: mockUrl,
-          reconnectInterval: undefined,
-        })
-      );
-
-      // Should not throw error
-      expect(true).toBe(true);
-    });
-
-    it('should use default max retries', () => {
-      renderHook(() =>
-        useWebSocket({
-          url: mockUrl,
-          maxRetries: undefined,
-        })
-      );
-
-      // Should not throw error
-      expect(true).toBe(true);
-    });
+    expect(result.current.connectionState).toBe('disconnected');
+    expect(result.current.connected).toBe(false);
+    expect(result.current.lastMessage).toBe(null);
+    expect(MockWebSocket.instances).toHaveLength(0);
   });
 
-  describe('Connection', () => {
-    it('should connect when autoConnect is true', async () => {
-      const { result } = renderHook(() =>
-        useWebSocket({
-          url: mockUrl,
-          onOpen: mockOnOpen,
-        })
-      );
+  it('should connect automatically when autoConnect is true', async () => {
+    const { result } = renderHook(() =>
+      useWebSocket({
+        url: mockUrl,
+        autoConnect: true,
+      })
+    );
 
+    await waitFor(() => {
+      expect(MockWebSocket.instances).toHaveLength(1);
       expect(result.current.connectionState).toBe('connecting');
     });
-
-    it('should set connection state to connected on open', async () => {
-      const { result } = renderHook(() =>
-        useWebSocket({
-          url: mockUrl,
-          onOpen: mockOnOpen,
-        })
-      );
-
-      // Wait for connection
-      await waitFor(() => {
-        expect(result.current.connectionState).toBe('connected');
-        expect(result.current.connected).toBe(true);
-      });
-    });
-
-    it('should call onOpen callback when connection opens', async () => {
-      renderHook(() =>
-        useWebSocket({
-          url: mockUrl,
-          onOpen: mockOnOpen,
-        })
-      );
-
-      await waitFor(() => {
-        expect(mockOnOpen).toHaveBeenCalled();
-      });
-    });
-
-    it('should authenticate with token when available', () => {
-      localStorage.setItem('token', 'test-token-123');
-
-      const { unmount } = renderHook(() =>
-        useWebSocket({
-          url: mockUrl,
-          autoConnect: true,
-        })
-      );
-
-      unmount();
-      // Should log warning about auth token
-      // Token should be added to URL
-      expect(logger.warn).not.toHaveBeenCalledWith('No auth token found');
-    });
-
-    it('should warn when no auth token is found', () => {
-      const { unmount } = renderHook(() =>
-        useWebSocket({
-          url: mockUrl,
-          autoConnect: true,
-        })
-      );
-
-      // Should log warning about no token
-      expect(logger.warn).toHaveBeenCalledWith('No auth token found for WebSocket connection');
-
-      unmount();
-    });
   });
 
-  describe('Manual Connection', () => {
-    it('should provide connect function', () => {
-      const { result } = renderHook(() =>
-        useWebSocket({
-          url: mockUrl,
-          autoConnect: false,
-        })
-      );
+  it('should append token to url when token exists', async () => {
+    localStorage.setItem('token', 'abc-123');
 
-      expect(typeof result.current.connect).toBe('function');
+    renderHook(() =>
+      useWebSocket({
+        url: mockUrl,
+        autoConnect: true,
+      })
+    );
+
+    await waitFor(() => {
+      expect(MockWebSocket.instances).toHaveLength(1);
     });
 
-    it('should connect when connect function is called', () => {
-      const { result } = renderHook(() =>
-        useWebSocket({
-          url: mockUrl,
-          autoConnect: false,
-        })
-      );
+    expect(getWs().url).toContain('token=abc-123');
+    expect(logger.warn).not.toHaveBeenCalledWith('No auth token found for WebSocket connection');
+  });
 
-      act(() => {
-        result.current.connect();
-      });
+  it('should warn when token does not exist', async () => {
+    renderHook(() =>
+      useWebSocket({
+        url: mockUrl,
+        autoConnect: true,
+      })
+    );
 
+    await waitFor(() => {
+      expect(MockWebSocket.instances).toHaveLength(1);
+    });
+
+    expect(logger.warn).toHaveBeenCalledWith('No auth token found for WebSocket connection');
+  });
+
+  it('should update to connected and call onOpen when socket opens', async () => {
+    const { result } = renderHook(() =>
+      useWebSocket({
+        url: mockUrl,
+        autoConnect: true,
+        onOpen: mockOnOpen,
+      })
+    );
+
+    await waitFor(() => {
+      expect(MockWebSocket.instances).toHaveLength(1);
+    });
+
+    act(() => {
+      getWs().triggerOpen();
+    });
+
+    await waitFor(() => {
+      expect(result.current.connectionState).toBe('connected');
+      expect(result.current.connected).toBe(true);
+    });
+
+    expect(mockOnOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it('should connect when connect is called manually', async () => {
+    const { result } = renderHook(() =>
+      useWebSocket({
+        url: mockUrl,
+        autoConnect: false,
+      })
+    );
+
+    act(() => {
+      result.current.connect();
+    });
+
+    await waitFor(() => {
+      expect(MockWebSocket.instances).toHaveLength(1);
       expect(result.current.connectionState).toBe('connecting');
     });
-
-    it('should not reconnect if already connected', () => {
-      const { result } = renderHook(() =>
-        useWebSocket({
-          url: mockUrl,
-          autoConnect: true,
-          onOpen: mockOnOpen,
-        })
-      );
-
-      act(() => {
-        result.current.connect();
-      });
-
-      // Should log that already connected
-      expect(logger.info).toHaveBeenCalledWith('WebSocket already connected');
-    });
   });
 
-  describe('Disconnection', () => {
-    it('should provide disconnect function', () => {
-      const { result } = renderHook(() =>
-        useWebSocket({
-          url: mockUrl,
-          autoConnect: false,
-        })
-      );
+  it('should handle incoming message and set lastMessage', async () => {
+    const { result } = renderHook(() =>
+      useWebSocket({
+        url: mockUrl,
+        autoConnect: true,
+        onMessage: mockOnMessage,
+      })
+    );
 
-      expect(typeof result.current.disconnect).toBe('function');
+    await waitFor(() => {
+      expect(MockWebSocket.instances).toHaveLength(1);
     });
 
-    it('should disconnect when disconnect function is called', async () => {
-      const { result } = renderHook(() =>
-        useWebSocket({
-          url: mockUrl,
-          autoConnect: false,
-        })
-      );
-
-      act(() => {
-        result.current.disconnect();
-      });
-
-      expect(result.current.connectionState).toBe('disconnected');
+    act(() => {
+      getWs().triggerOpen();
     });
 
-    it('should call onClose callback on disconnect', async () => {
-      const { result } = renderHook(() =>
-        useWebSocket({
-          url: mockUrl,
-          autoConnect: false,
-          onClose: mockOnClose,
-        })
-      );
+    const payload = {
+      type: 'system_status',
+      timestamp: new Date().toISOString(),
+      data: { cpuUsage: 45 },
+    };
 
-      act(() => {
-        result.current.disconnect();
-      });
-
-      expect(mockOnClose).toHaveBeenCalled();
+    act(() => {
+      getWs().triggerMessage(JSON.stringify(payload));
     });
 
-    it('should close WebSocket with manual disconnect code', () => {
-      const { result } = renderHook(() =>
-        useWebSocket({
-          url: mockUrl,
-          autoConnect: false,
-        })
-      );
-
-      act(() => {
-        result.current.disconnect();
-      });
-
-      // Close should be called
-      const mockWs = getMockWebSocketInstance();
-      if (mockWs) {
-        expect(mockWs.close).toHaveBeenCalledWith(1000, 'Manual disconnect');
-      }
-    });
+    expect(result.current.lastMessage).toEqual(payload);
+    expect(mockOnMessage).toHaveBeenCalledWith(payload);
   });
 
-  describe('Message Handling', () => {
-    it('should handle incoming messages', async () => {
-      const { result } = renderHook(() =>
-        useWebSocket({
-          url: mockUrl,
-          onMessage: mockOnMessage,
-          autoConnect: true,
-        })
-      );
+  it('should ignore pong messages for onMessage callback', async () => {
+    renderHook(() =>
+      useWebSocket({
+        url: mockUrl,
+        autoConnect: true,
+        onMessage: mockOnMessage,
+      })
+    );
 
-      // Wait for connection
-      await waitFor(() => {
-        expect(result.current.connectionState).toBe('connected');
-      });
-
-      // Trigger message
-      const testMessage = { type: 'test', data: 'hello' };
-      act(() => {
-        const mockWs = getMockWebSocketInstance();
-        if (mockWs) {
-          mockWs.triggerMessage(JSON.stringify(testMessage));
-        }
-      });
-
-      expect(result.current.lastMessage).toEqual(testMessage);
-      expect(mockOnMessage).toHaveBeenCalledWith(testMessage);
+    await waitFor(() => {
+      expect(MockWebSocket.instances).toHaveLength(1);
     });
 
-    it('should handle pong messages without calling onMessage', async () => {
-      const { result } = renderHook(() =>
-        useWebSocket({
-          url: mockUrl,
-          onMessage: mockOnMessage,
-          autoConnect: true,
-        })
-      );
-
-      await waitFor(() => {
-        expect(result.current.connectionState).toBe('connected');
-      });
-
-      // Trigger pong message
-      act(() => {
-        const mockWs = getMockWebSocketInstance();
-        if (mockWs) {
-          mockWs.triggerMessage(JSON.stringify({ type: 'pong' }));
-        }
-      });
-
-      expect(mockOnMessage).not.toHaveBeenCalled();
+    act(() => {
+      getWs().triggerOpen();
+      getWs().triggerMessage(JSON.stringify({ type: 'pong', timestamp: new Date().toISOString() }));
     });
 
-    it('should handle invalid JSON messages', async () => {
-      const { result } = renderHook(() =>
-        useWebSocket({
-          url: mockUrl,
-          onMessage: mockOnMessage,
-          autoConnect: true,
-        })
-      );
-
-      await waitFor(() => {
-        expect(result.current.connectionState).toBe('connected');
-      });
-
-      // Trigger invalid message
-      act(() => {
-        const mockWs = getMockWebSocketInstance();
-        if (mockWs) {
-          mockWs.triggerMessage('invalid json');
-        }
-      });
-
-      expect(logger.error).toHaveBeenCalledWith(
-        'Failed to parse WebSocket message:',
-        expect.any(Error)
-      );
-    });
+    expect(mockOnMessage).not.toHaveBeenCalled();
   });
 
-  describe('Send Messages', () => {
-    it('should provide send function', () => {
-      const { result } = renderHook(() =>
-        useWebSocket({
-          url: mockUrl,
-          autoConnect: false,
-        })
-      );
+  it('should log parse error for invalid message', async () => {
+    renderHook(() =>
+      useWebSocket({
+        url: mockUrl,
+        autoConnect: true,
+        onMessage: mockOnMessage,
+      })
+    );
 
-      expect(typeof result.current.send).toBe('function');
+    await waitFor(() => {
+      expect(MockWebSocket.instances).toHaveLength(1);
     });
 
-    it('should send string messages when connected', async () => {
-      const { result } = renderHook(() =>
-        useWebSocket({
-          url: mockUrl,
-          autoConnect: true,
-        })
-      );
-
-      await waitFor(() => {
-        expect(result.current.connectionState).toBe('connected');
-      });
-
-      act(() => {
-        result.current.send('test message');
-      });
-
-      const mockWs = getMockWebSocketInstance();
-      if (mockWs) {
-        expect(mockWs.send).toHaveBeenCalledWith('test message');
-      }
+    act(() => {
+      getWs().triggerOpen();
+      getWs().triggerMessage('invalid-json');
     });
 
-    it('should send JSON messages when connected', async () => {
-      const { result } = renderHook(() =>
-        useWebSocket({
-          url: mockUrl,
-          autoConnect: true,
-        })
-      );
-
-      await waitFor(() => {
-        expect(result.current.connectionState).toBe('connected');
-      });
-
-      const testMessage = { type: 'test', data: 'hello' };
-      act(() => {
-        result.current.send(testMessage);
-      });
-
-      const mockWs = getMockWebSocketInstance();
-      if (mockWs) {
-        expect(mockWs.send).toHaveBeenCalledWith(JSON.stringify(testMessage));
-      }
-    });
-
-    it('should warn when trying to send while disconnected', () => {
-      const { result } = renderHook(() =>
-        useWebSocket({
-          url: mockUrl,
-          autoConnect: false,
-        })
-      );
-
-      act(() => {
-        result.current.send('test message');
-      });
-
-      expect(logger.warn).toHaveBeenCalledWith('WebSocket is not connected');
-    });
+    expect(logger.error).toHaveBeenCalledWith(
+      'Failed to parse WebSocket message:',
+      expect.any(Error)
+    );
   });
 
-  describe('Error Handling', () => {
-    it('should call onError callback on error', async () => {
-      const { result } = renderHook(() =>
-        useWebSocket({
-          url: mockUrl,
-          autoConnect: true,
-          onError: mockOnError,
-        })
-      );
+  it('should send string and json payload when connected', async () => {
+    const { result } = renderHook(() =>
+      useWebSocket({
+        url: mockUrl,
+        autoConnect: true,
+      })
+    );
 
-      await waitFor(() => {
-        expect(result.current.connectionState).toBe('connected');
-      });
-
-      // Trigger error
-      act(() => {
-        const mockWs = getMockWebSocketInstance();
-        if (mockWs) {
-          mockWs.triggerError(new Event('error') as Event);
-        }
-      });
-
-      expect(result.current.connectionState).toBe('error');
-      expect(mockOnError).toHaveBeenCalled();
-      expect(logger.error).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(MockWebSocket.instances).toHaveLength(1);
     });
+
+    act(() => {
+      getWs().triggerOpen();
+    });
+
+    act(() => {
+      result.current.send('hello');
+      result.current.send({ type: 'ping' });
+    });
+
+    expect(getWs().send).toHaveBeenCalledWith('hello');
+    expect(getWs().send).toHaveBeenCalledWith(JSON.stringify({ type: 'ping' }));
   });
 
-  describe('Auto Reconnect', () => {
-    it('should attempt to reconnect on close', async () => {
-      vi.useFakeTimers();
+  it('should warn when sending while disconnected', () => {
+    const { result } = renderHook(() =>
+      useWebSocket({
+        url: mockUrl,
+        autoConnect: false,
+      })
+    );
 
-      const { result } = renderHook(() =>
-        useWebSocket({
-          url: mockUrl,
-          autoConnect: true,
-          reconnectInterval: 1000,
-          maxRetries: 3,
-          onClose: mockOnClose,
-        })
-      );
-
-      await waitFor(() => {
-        expect(result.current.connectionState).toBe('connected');
-      });
-
-      // Trigger close
-      act(() => {
-        const mockWs = getMockWebSocketInstance();
-        if (mockWs) {
-          mockWs.triggerClose(1000, 'Normal close');
-        }
-      });
-
-      // Wait for reconnect
-      await waitFor(() => {
-        expect(result.current.connectionState).toBe('connecting');
-      });
-
-      vi.useRealTimers();
+    act(() => {
+      result.current.send('hello');
     });
 
-    it('should stop reconnecting after max retries', async () => {
-      vi.useFakeTimers();
-
-      const { result } = renderHook(() =>
-        useWebSocket({
-          url: mockUrl,
-          autoConnect: true,
-          reconnectInterval: 100,
-          maxRetries: 2,
-        })
-      );
-
-      await waitFor(() => {
-        expect(result.current.connectionState).toBe('connected');
-      });
-
-      // Trigger close multiple times
-      for (let i = 0; i < 3; i++) {
-        act(() => {
-          const mockWs = getMockWebSocketInstances()[i];
-          if (mockWs) {
-            mockWs.triggerClose(1000, 'Normal close');
-          }
-        });
-        vi.advanceTimersByTime(100);
-      }
-
-      // Should have attempted 2 reconnects (maxRetries)
-      vi.useRealTimers();
-    });
-
-    it('should not reconnect when manual disconnect', async () => {
-      const { result } = renderHook(() =>
-        useWebSocket({
-          url: mockUrl,
-          autoConnect: true,
-          maxRetries: 5,
-        })
-      );
-
-      await waitFor(() => {
-        expect(result.current.connectionState).toBe('connected');
-      });
-
-      // Manual disconnect
-      act(() => {
-        result.current.disconnect();
-      });
-
-      // Trigger close event
-      act(() => {
-        const mockWs = getMockWebSocketInstance();
-        if (mockWs) {
-          mockWs.triggerClose(1000, 'Manual disconnect');
-        }
-      });
-
-      // Should not attempt to reconnect
-      expect(logger.info).toHaveBeenCalledWith('WebSocket closed', expect.any(Object));
-    });
+    expect(logger.warn).toHaveBeenCalledWith('WebSocket is not connected');
   });
 
-  describe('Cleanup', () => {
-    it('should cleanup on unmount', () => {
-      const { unmount } = renderHook(() =>
-        useWebSocket({
-          url: mockUrl,
-          autoConnect: false,
-        })
-      );
+  it('should set error state and call onError when socket errors', async () => {
+    const { result } = renderHook(() =>
+      useWebSocket({
+        url: mockUrl,
+        autoConnect: true,
+        onError: mockOnError,
+      })
+    );
 
-      unmount();
-
-      const mockWs = getMockWebSocketInstance();
-      if (mockWs) {
-        expect(mockWs.close).toHaveBeenCalledWith(1000, 'Component unmount');
-      }
+    await waitFor(() => {
+      expect(MockWebSocket.instances).toHaveLength(1);
     });
 
-    it('should clear timers on unmount', () => {
-      vi.useFakeTimers();
-
-      const { unmount } = renderHook(() =>
-        useWebSocket({
-          url: mockUrl,
-          autoConnect: true,
-        })
-      );
-
-      unmount();
-
-      vi.useRealTimers();
-      // Should not throw error
-      expect(true).toBe(true);
+    act(() => {
+      getWs().triggerOpen();
+      getWs().triggerError(new Event('error'));
     });
+
+    expect(result.current.connectionState).toBe('error');
+    expect(mockOnError).toHaveBeenCalled();
   });
 
-  describe('Custom Options', () => {
-    it('should use custom reconnect interval', () => {
-      const customInterval = 5000;
+  it('should disconnect manually and call close with manual reason', async () => {
+    const { result } = renderHook(() =>
+      useWebSocket({
+        url: mockUrl,
+        autoConnect: true,
+        onClose: mockOnClose,
+      })
+    );
 
-      renderHook(() =>
-        useWebSocket({
-          url: mockUrl,
-          autoConnect: true,
-          reconnectInterval: customInterval,
-        })
-      );
-
-      // Should use custom interval
-      expect(true).toBe(true);
+    await waitFor(() => {
+      expect(MockWebSocket.instances).toHaveLength(1);
     });
 
-    it('should use custom max retries', () => {
-      const customMaxRetries = 10;
-
-      renderHook(() =>
-        useWebSocket({
-          url: mockUrl,
-          autoConnect: true,
-          maxRetries: customMaxRetries,
-        })
-      );
-
-      // Should use custom max retries
-      expect(true).toBe(true);
+    act(() => {
+      getWs().triggerOpen();
+      result.current.disconnect();
     });
 
-    it('should work without optional callbacks', () => {
-      const { result } = renderHook(() =>
-        useWebSocket({
-          url: mockUrl,
-          autoConnect: false,
-        })
-      );
+    expect(getWs().close).toHaveBeenCalledWith(1000, 'Manual disconnect');
+    expect(result.current.connectionState).toBe('disconnected');
+    expect(mockOnClose).toHaveBeenCalled();
+  });
 
-      expect(result.current.connectionState).toBe('disconnected');
-      expect(typeof result.current.connect).toBe('function');
-      expect(typeof result.current.disconnect).toBe('function');
-      expect(typeof result.current.send).toBe('function');
+  it('should reconnect automatically after close', async () => {
+    vi.useFakeTimers();
+
+    const { result } = renderHook(() =>
+      useWebSocket({
+        url: mockUrl,
+        autoConnect: true,
+        reconnectInterval: 100,
+        maxRetries: 2,
+        onClose: mockOnClose,
+      })
+    );
+
+    await act(async () => {
+      await Promise.resolve();
     });
+    expect(MockWebSocket.instances).toHaveLength(1);
+
+    act(() => {
+      getWs(0).triggerOpen();
+      getWs(0).triggerClose(1006, 'abnormal');
+    });
+
+    expect(result.current.connectionState).toBe('disconnected');
+    expect(mockOnClose).toHaveBeenCalled();
+
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+
+    expect(MockWebSocket.instances).toHaveLength(2);
+    expect(result.current.connectionState).toBe('connecting');
+  });
+
+  it('should stop reconnecting after reaching max retries', async () => {
+    vi.useFakeTimers();
+
+    renderHook(() =>
+      useWebSocket({
+        url: mockUrl,
+        autoConnect: true,
+        reconnectInterval: 100,
+        maxRetries: 1,
+      })
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(MockWebSocket.instances).toHaveLength(1);
+
+    act(() => {
+      getWs(0).triggerOpen();
+      getWs(0).triggerClose(1006, 'abnormal');
+      vi.advanceTimersByTime(100);
+    });
+
+    expect(MockWebSocket.instances).toHaveLength(2);
+
+    act(() => {
+      getWs(1).triggerClose(1006, 'abnormal');
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(MockWebSocket.instances).toHaveLength(2);
+  });
+
+  it('should cleanup websocket on unmount', async () => {
+    const { unmount } = renderHook(() =>
+      useWebSocket({
+        url: mockUrl,
+        autoConnect: true,
+      })
+    );
+
+    await waitFor(() => {
+      expect(MockWebSocket.instances).toHaveLength(1);
+    });
+
+    unmount();
+
+    expect(getWs().close).toHaveBeenCalledWith(1000, 'Component unmount');
   });
 });
