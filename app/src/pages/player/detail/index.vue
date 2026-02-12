@@ -20,33 +20,63 @@
       empty-desc="该陪玩师可能已下架"
       @retry="handleRetry"
     >
-      <!-- 头部信息卡片 -->
-      <PlayerDetailHeader :player="player" />
+      <!-- PC 端布局 -->
+      <view v-if="isPC" class="pc-detail-layout">
+        <!-- 左侧主要内容 -->
+        <view class="pc-detail-main">
+          <PlayerDetailHeader :player="player" />
+          <PlayerGamesSection :games="player.games" />
+          <PlayerReviewsSection
+            :rating="player.rating"
+            :reviews="displayReviews"
+            @more="goToReviews"
+          />
+        </view>
+        
+        <!-- 右侧侧边栏 (服务选择 + 操作) -->
+        <view class="pc-detail-sidebar">
+          <PlayerServicesSection
+            :services="player.services"
+            :selected-id="selectedService?.id"
+            @select="selectService"
+          />
+          
+          <view class="pc-action-bar-wrapper">
+            <PlayerActionBar
+              :is-favorite="isFavorite"
+              :is-online="player.isOnline"
+              @favorite="toggleFavorite"
+              @chat="goToChat"
+              @order="goToOrder"
+            />
+          </view>
+        </view>
+      </view>
 
-      <!-- 擅长游戏 -->
-      <PlayerGamesSection :games="player.games" />
-
-      <!-- 服务项目 -->
-      <PlayerServicesSection
-        :services="player.services"
-        :selected-id="selectedService?.id"
-        @select="selectService"
-      />
-
-      <!-- 用户评价 -->
-      <PlayerReviewsSection
-        :rating="player.rating"
-        :reviews="displayReviews"
-        @more="goToReviews"
-      />
-
-      <!-- 底部占位 -->
-      <view class="bottom-placeholder"></view>
+      <!-- 移动端布局 (垂直堆叠) -->
+      <view v-else class="mobile-detail-layout">
+        <PlayerDetailHeader :player="player" />
+        <PlayerGamesSection :games="player.games" />
+        <PlayerServicesSection
+          :services="player.services"
+          :selected-id="selectedService?.id"
+          @select="selectService"
+        />
+        <PlayerReviewsSection
+          :rating="player.rating"
+          :reviews="displayReviews"
+          @more="goToReviews"
+        />
+        
+        <!-- 底部占位 -->
+        <view class="bottom-placeholder"></view>
+      </view>
     </PageState>
 
     <template #footer>
-      <!-- 底部操作栏 -->
+      <!-- 移动端底部操作栏 -->
       <PlayerActionBar
+        v-if="!isPC"
         :is-favorite="isFavorite"
         :is-online="player.isOnline"
         @favorite="toggleFavorite"
@@ -71,6 +101,7 @@ import PlayerReviewsSection from '@/components/PlayerReviewsSection/index.vue'
 import PlayerActionBar from '@/components/PlayerActionBar/index.vue'
 // Composables
 import { usePlayerDetail } from '@/composables/usePlayerDetail'
+import { useDevice } from '@/composables/useDevice'
 
 const {
   pageState,
@@ -90,6 +121,8 @@ const {
   goToOrder,
 } = usePlayerDetail()
 
+const { isPC } = useDevice()
+
 onLoad((options) => {
   const id = Number(options?.id)
   if (id) {
@@ -99,6 +132,45 @@ onLoad((options) => {
 </script>
 
 <style lang="scss" scoped>
+// 底部操作栏（PC端侧边栏用）
+.pc-action-bar-wrapper {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--color-bg-card);
+  border: 1rpx solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.pc-detail-layout {
+  display: flex;
+  gap: var(--spacing-lg);
+  align-items: flex-start;
+  padding: var(--spacing-md);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.pc-detail-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.pc-detail-sidebar {
+  width: 360px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 20px;
+}
+
+.mobile-detail-layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm); // Mobile gap
+}
+
 .bottom-placeholder {
   height: 160rpx;
 }

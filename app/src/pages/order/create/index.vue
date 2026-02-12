@@ -21,7 +21,8 @@
 
     <!-- 内容区域 -->
     <template v-else>
-      <!-- 陪玩师信息 -->
+      <view class="order-create-content">
+        <!-- 陪玩师信息 -->
       <PlayerCard
         class="order-player-card"
         :player="player"
@@ -81,13 +82,14 @@
         :total="totalFee"
       />
 
-      <!-- 底部占位 -->
-      <view class="bottom-placeholder"></view>
+      <!-- PC 端 Submit Bar (Inside flow) -->
+      <OrderSubmitBar v-if="isPC" :total="totalFee" :disabled="!canSubmit" :loading="submitting" @submit="submitOrder" />
+    </view>
     </template>
 
     <template #footer>
-      <!-- 底部操作栏 -->
-      <OrderSubmitBar :total="totalFee" :disabled="!canSubmit" :loading="submitting" @submit="submitOrder" />
+      <!-- 底部操作栏 (Mobile) -->
+      <OrderSubmitBar v-if="!isPC" :total="totalFee" :disabled="!canSubmit" :loading="submitting" @submit="submitOrder" />
     </template>
   </BasePageLayout>
 </template>
@@ -112,6 +114,9 @@ import OrderFeeSection from '@/components/OrderFeeSection/index.vue'
 import OrderSubmitBar from '@/components/OrderSubmitBar/index.vue'
 // Composables
 import { useOrderCreate } from '@/composables/useOrderCreate'
+import { useDevice } from '@/composables/useDevice'
+
+const { isPC } = useDevice()
 
 const {
   loading,
@@ -193,5 +198,32 @@ onLoad((options) => {
 
 .bottom-placeholder {
   height: 160rpx;
+
+  @include desktop {
+    display: none;
+  }
+}
+
+// PC Layout
+.order-create-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md); // Add spacing between components
+
+  @include desktop {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: var(--spacing-xl) 0;
+    
+    // Override OrderSubmitBar style
+    :deep(.action-bar) {
+      position: static !important;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      margin-top: var(--spacing-lg);
+      padding: var(--spacing-md);
+      background: var(--color-bg-card);
+    }
+  }
 }
 </style>

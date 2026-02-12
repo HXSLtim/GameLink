@@ -21,6 +21,8 @@ export default defineConfig({
         // 全局引入变量和 mixins 文件
         additionalData: `@use "@/styles/variables.scss" as *;
 @use "@/styles/mixins.scss" as *;`,
+        api: 'modern-compiler',
+        silenceDeprecations: ['legacy-js-api', 'import'],
         quietDeps: true,
       },
     },

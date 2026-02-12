@@ -24,6 +24,7 @@
       </NavBar>
     </template>
 
+    <view class="edit-profile-content">
       <!-- 头像 -->
       <AvatarUploader
         v-model="form.avatar"
@@ -63,6 +64,7 @@
       />
 
       <view class="bottom-placeholder"></view>
+    </view>
 
     <template #footer>
       <!-- 性别选择器 -->
@@ -135,6 +137,19 @@ onMounted(() => {
 
 :deep(.gl-card) {
   margin: 0 24rpx 20rpx;
+}
+
+.edit-profile-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding-bottom: var(--spacing-xl);
+
+  @include desktop {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: var(--spacing-xl) 0;
+  }
 }
 
 .bottom-placeholder {

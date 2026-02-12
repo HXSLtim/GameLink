@@ -10,12 +10,12 @@ import type { AgreementType } from '@/types/agreement'
 
 export function useLogin() {
   const userStore = useUserStore()
-  
+
   // 状态
   const loginLoading = ref(false)
   const wechatLoading = ref(false)
   const showAccountLogin = ref(false)
-  
+
   // 表单
   const form = reactive({
     account: '',  // 手机号或邮箱
@@ -39,7 +39,7 @@ export function useLogin() {
     }
     return '登录失败，请稍后重试'
   }
-  
+
   // 账号密码登录
   const handleLogin = async () => {
     if (loginLoading.value) return
@@ -63,8 +63,7 @@ export function useLogin() {
       }
 
       const res = await login({
-        phone: isPhone ? account : undefined,
-        email: isEmail ? account : undefined,
+        username: account,
         password: form.password,
       }, { showError: false })
 
@@ -92,26 +91,17 @@ export function useLogin() {
       loginLoading.value = false
     }
   }
-  
+
   // 微信登录
   const handleWechatLogin = async () => {
     if (wechatLoading.value) return
-    
+
     wechatLoading.value = true
-    
+
     try {
       // #ifdef MP-WEIXIN
-      const loginRes = await new Promise<UniApp.LoginRes>((resolve, reject) => {
-        uni.login({
-          provider: 'weixin',
-          success: resolve,
-          fail: reject,
-        })
-      })
-      
-      const res = await doWeChatLogin({ code: loginRes.code })
-      const data = res.data as any
-      
+      const data = await doWeChatLogin()
+
       const accessToken = data.accessToken || data.token || ''
       const refreshToken = data.refreshToken || ''
       if (!accessToken) {
@@ -120,9 +110,9 @@ export function useLogin() {
 
       userStore.setToken(accessToken, refreshToken)
       userStore.setUserInfo(normalizeUserInfo(data.user))
-      
+
       uni.showToast({ title: '登录成功', icon: 'success' })
-      
+
       setTimeout(() => {
         handleRedirect()
       }, 500)
@@ -133,7 +123,7 @@ export function useLogin() {
       wechatLoading.value = false
     }
   }
-  
+
   // 处理重定向
   const handleRedirect = () => {
     const redirectPath = consumeRedirectPath()
@@ -143,22 +133,22 @@ export function useLogin() {
       uni.switchTab({ url: '/pages/index/index' })
     }
   }
-  
+
   // 导航
   const goToRegister = () => uni.navigateTo({ url: '/pages/auth/register/index' })
   const goToAgreement = (type: AgreementType) =>
     uni.navigateTo({ url: `/pages/agreement/index?type=${type}` })
-  
+
   return {
     // 状态
     loginLoading,
     wechatLoading,
     showAccountLogin,
-    
+
     // 数据
     form,
     canLogin,
-    
+
     // 方法
     handleLogin,
     handleWechatLogin,

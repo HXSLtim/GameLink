@@ -70,13 +70,19 @@ function App() {
       return;
     }
 
-    // 构建 WebSocket URL
-    // 使用当前 API 基础 URL 替换协议为 ws/wss
-    const apiBase = import.meta.env.VITE_API_BASE_URL || window.location.host;
+    // Build monitor WebSocket URL from either relative or absolute API base URL
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${wsProtocol}//${apiBase}/api/v1/admin/ws/monitor`;
+    const apiBase = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+    let wsUrl = `${wsProtocol}//${window.location.host}/api/v1/admin/ws/monitor`;
 
-    // 连接 WebSocket
+    try {
+      const parsed = new URL(apiBase, window.location.origin);
+      wsUrl = `${parsed.protocol === 'https:' ? 'wss:' : 'ws:'}//${parsed.host}/api/v1/admin/ws/monitor`;
+    } catch {
+      // Keep default URL when env value is malformed
+    }
+
+    // Connect monitor WebSocket
     wsManager.updateConfig({ url: wsUrl, token });
     wsManager.connect();
 

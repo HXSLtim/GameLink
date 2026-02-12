@@ -11,8 +11,7 @@ import type { AppUserRole } from '@/types/user'
 // ============================================
 
 export interface LoginRequest {
-  phone?: string   // 手机号
-  email?: string   // 邮箱
+  username: string
   password: string
 }
 
@@ -132,7 +131,7 @@ export async function doWeChatLogin(): Promise<LoginResponse> {
       },
     })
     // #endif
-    
+
     // #ifndef MP-WEIXIN
     reject(new Error('当前环境不支持微信登录'))
     // #endif

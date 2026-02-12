@@ -1,6 +1,7 @@
 <template>
   <PageShell
     class="base-page-layout"
+    :class="{ 'with-sidebar': showTabBar }"
     :scroll="scroll"
     :padding="padding"
     :lower-threshold="lowerThreshold"
