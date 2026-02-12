@@ -104,6 +104,10 @@ func ensureRolePermissionsByMethodPath(
 		return fmt.Errorf("role %s not found: %w", roleSlug, err)
 	}
 
+	// 这里不能信任缓存：seed / SyncAPIPermissions / 角色权限分配会在启动阶段调整 role_permissions，
+	// 如果 Redis 中残留旧的 role->permissions 缓存，会导致后续误判“权限已存在”从而不补齐。
+	_ = roleSvc.InvalidateRolePermissionsAndPropagateToUsers(ctx, role.ID)
+
 	existing, err := permService.ListPermissionsByRoleID(ctx, role.ID)
 	if err != nil {
 		return fmt.Errorf("list role permissions failed: %w", err)
@@ -116,13 +120,15 @@ func ensureRolePermissionsByMethodPath(
 
 	pathKeyToPermissionID := make(map[string]uint64, len(allPermissions))
 	for _, perm := range allPermissions {
-		key := fmt.Sprintf("%s:%s", perm.Method, perm.Path)
+		// 注意：perm.Method 是自定义 string alias（model.HTTPMethod），需要显式转 string，
+		// 否则 fmt 的 %s 会输出格式化错误字符串（导致 method+path 匹配失败）。
+		key := fmt.Sprintf("%s:%s", string(perm.Method), perm.Path)
 		pathKeyToPermissionID[key] = perm.ID
 	}
 
 	missingIDs := make([]uint64, 0, len(required))
 	for _, rp := range required {
-		key := fmt.Sprintf("%s:%s", rp.method, rp.path)
+		key := fmt.Sprintf("%s:%s", string(rp.method), rp.path)
 		permID, exists := pathKeyToPermissionID[key]
 		if !exists {
 			log.Printf("警告：权限不存在，跳过 %s", key)
