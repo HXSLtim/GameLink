@@ -164,4 +164,6 @@ func RegisterVipInfoRoutes(rg *gin.RouterGroup, vipSvc *vipservice.Service, user
 	// 注意：这个路由会追加到 /user/vip 组下
 	vipGroup := rg.Group("/vip")
 	vipGroup.GET("/info", h.GetUserVipInfo)
+	// Backward compatibility for clients that call /user/vip/status.
+	vipGroup.GET("/status", h.GetUserVipInfo)
 }

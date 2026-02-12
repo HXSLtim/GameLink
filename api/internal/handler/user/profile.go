@@ -72,6 +72,10 @@ func (h *ProfileHandler) UpdateProfile(c *gin.Context) {
 	// 获取当前用户
 	user, err := h.userRepo.Get(c.Request.Context(), userID)
 	if err != nil {
+		if repository.IsNotFound(err) {
+			resp.Error(c, apierr.Unauthorized("登录状态已失效，请重新登录"))
+			return
+		}
 		resp.Error(c, apierr.InternalError("获取用户信息失败").WithDetails(err.Error()))
 		return
 	}
@@ -116,6 +120,10 @@ func (h *ProfileHandler) GetProfile(c *gin.Context) {
 
 	user, err := h.userRepo.Get(c.Request.Context(), userID)
 	if err != nil {
+		if repository.IsNotFound(err) {
+			resp.Error(c, apierr.Unauthorized("登录状态已失效，请重新登录"))
+			return
+		}
 		resp.Error(c, apierr.InternalError("获取用户信息失败").WithDetails(err.Error()))
 		return
 	}
@@ -136,6 +144,7 @@ func (h *ProfileHandler) GetProfile(c *gin.Context) {
 func RegisterProfileRoutes(rg *gin.RouterGroup, userRepo repository.UserRepository, _ gin.HandlerFunc) {
 	h := NewProfileHandler(userRepo)
 
+	rg.GET("/me", h.GetProfile) // 兼容历史路径
 	rg.GET("/profile", h.GetProfile)
 	rg.PUT("/profile", h.UpdateProfile)
 }

@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"context"
 	"time"
 
 	_ "gamelink/internal/model" // Imported for Swagger annotations
@@ -9,6 +10,7 @@ import (
 
 	adminservice "gamelink/internal/service/admin"
 	"gamelink/pkg/apierr"
+	"gamelink/pkg/logging"
 )
 
 // BatchCancelOrders 批量取消订单
@@ -38,7 +40,7 @@ func (h *OrderHandler) BatchCancelOrders(c *gin.Context) {
 		return
 	}
 
-	result, err := h.svc.BatchCancelOrders(c.Request.Context(), req.OrderIDs, req.Reason, req.Note)
+	result, err := h.svc.BatchCancelOrders(contextWithActor(c), req.OrderIDs, req.Reason, req.Note)
 	if err != nil {
 		respondAPIError(c, apierr.InternalError("batch cancel orders failed").WithDetails(err.Error()))
 		return
@@ -74,7 +76,7 @@ func (h *OrderHandler) BatchConfirmOrders(c *gin.Context) {
 		return
 	}
 
-	result, err := h.svc.BatchConfirmOrders(c.Request.Context(), req.OrderIDs, req.Note)
+	result, err := h.svc.BatchConfirmOrders(contextWithActor(c), req.OrderIDs, req.Note)
 	if err != nil {
 		respondAPIError(c, apierr.InternalError("batch confirm orders failed").WithDetails(err.Error()))
 		return
@@ -110,7 +112,7 @@ func (h *OrderHandler) BatchCompleteOrders(c *gin.Context) {
 		return
 	}
 
-	result, err := h.svc.BatchCompleteOrders(c.Request.Context(), req.OrderIDs, req.Note)
+	result, err := h.svc.BatchCompleteOrders(contextWithActor(c), req.OrderIDs, req.Note)
 	if err != nil {
 		respondAPIError(c, apierr.InternalError("batch complete orders failed").WithDetails(err.Error()))
 		return
@@ -150,7 +152,7 @@ func (h *OrderHandler) BatchRefundOrders(c *gin.Context) {
 		return
 	}
 
-	result, err := h.svc.BatchRefundOrders(c.Request.Context(), req.OrderIDs, adminservice.BatchRefundInput{
+	result, err := h.svc.BatchRefundOrders(contextWithActor(c), req.OrderIDs, adminservice.BatchRefundInput{
 		Reason:      req.Reason,
 		AmountCents: req.AmountCents,
 		Note:        req.Note,
@@ -191,7 +193,7 @@ func (h *OrderHandler) BatchDeleteOrders(c *gin.Context) {
 		return
 	}
 
-	result, err := h.svc.BatchDeleteOrders(c.Request.Context(), req.OrderIDs)
+	result, err := h.svc.BatchDeleteOrders(contextWithActor(c), req.OrderIDs)
 	if err != nil {
 		respondAPIError(c, apierr.InternalError("batch delete orders failed").WithDetails(err.Error()))
 		return
@@ -231,7 +233,7 @@ func (h *OrderHandler) BatchUpdateOrderStatus(c *gin.Context) {
 		return
 	}
 
-	result, err := h.svc.BatchUpdateOrderStatus(c.Request.Context(), req.OrderIDs, adminservice.BatchUpdateStatusInput{
+	result, err := h.svc.BatchUpdateOrderStatus(contextWithActor(c), req.OrderIDs, adminservice.BatchUpdateStatusInput{
 		Status:       normalizeOrderStatus(req.Status),
 		Note:         req.Note,
 		StartedAt:    parseTimePtr(req.StartedAt),
@@ -277,7 +279,7 @@ func (h *OrderHandler) BatchAssignOrders(c *gin.Context) {
 		return
 	}
 
-	result, err := h.svc.BatchAssignOrders(c.Request.Context(), req.OrderIDs, req.PlayerID)
+	result, err := h.svc.BatchAssignOrders(contextWithActor(c), req.OrderIDs, req.PlayerID)
 	if err != nil {
 		respondAPIError(c, apierr.InternalError("batch assign orders failed").WithDetails(err.Error()))
 		return
@@ -335,6 +337,14 @@ type BatchUpdateOrderStatusRequest struct {
 type BatchAssignOrdersRequest struct {
 	OrderIDs []uint64 `json:"order_ids" binding:"required,min=1,max=100"`
 	PlayerID uint64   `json:"player_id" binding:"required"`
+}
+
+func contextWithActor(c *gin.Context) context.Context {
+	ctx := c.Request.Context()
+	if actorUserID := getUserIDFromContext(c); actorUserID != 0 {
+		return logging.WithActorUserID(ctx, actorUserID)
+	}
+	return ctx
 }
 
 // Helper function to parse time pointer

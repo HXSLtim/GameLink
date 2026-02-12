@@ -196,6 +196,79 @@ func (s *Service) GetUserAvailableCoupons(ctx context.Context, userID uint64) ([
 	return coupons, nil
 }
 
+// UserCouponStats 用户优惠券统计
+type UserCouponStats struct {
+	Total     int64 `json:"total"`
+	Available int64 `json:"available"`
+	Used      int64 `json:"used"`
+	Expired   int64 `json:"expired"`
+	Locked    int64 `json:"locked"`
+	Deleted   int64 `json:"deleted"`
+}
+
+// GetUserCouponStats 获取用户优惠券统计
+func (s *Service) GetUserCouponStats(ctx context.Context, userID uint64) (*UserCouponStats, error) {
+	if userID == 0 {
+		return nil, errors.New("invalid user id")
+	}
+
+	countByState := func(state *model.CouponState) (int64, error) {
+		opts := couponrepo.CouponListOptions{
+			Page:     1,
+			PageSize: 1,
+			UserID:   &userID,
+			State:    state,
+		}
+		_, total, err := s.repo.ListCoupons(ctx, opts)
+		if err != nil {
+			return 0, err
+		}
+		return total, nil
+	}
+
+	var (
+		availableState = model.CouponStateAvailable
+		usedState      = model.CouponStateUsed
+		expiredState   = model.CouponStateExpired
+		lockedState    = model.CouponStateLocked
+		deletedState   = model.CouponStateDeleted
+	)
+
+	total, err := countByState(nil)
+	if err != nil {
+		return nil, fmt.Errorf("count total user coupons: %w", err)
+	}
+	available, err := countByState(&availableState)
+	if err != nil {
+		return nil, fmt.Errorf("count available user coupons: %w", err)
+	}
+	used, err := countByState(&usedState)
+	if err != nil {
+		return nil, fmt.Errorf("count used user coupons: %w", err)
+	}
+	expired, err := countByState(&expiredState)
+	if err != nil {
+		return nil, fmt.Errorf("count expired user coupons: %w", err)
+	}
+	locked, err := countByState(&lockedState)
+	if err != nil {
+		return nil, fmt.Errorf("count locked user coupons: %w", err)
+	}
+	deleted, err := countByState(&deletedState)
+	if err != nil {
+		return nil, fmt.Errorf("count deleted user coupons: %w", err)
+	}
+
+	return &UserCouponStats{
+		Total:     total,
+		Available: available,
+		Used:      used,
+		Expired:   expired,
+		Locked:    locked,
+		Deleted:   deleted,
+	}, nil
+}
+
 // ClaimCoupon 领取优惠券
 func (s *Service) ClaimCoupon(ctx context.Context, userID, templateID uint64) (*model.Coupon, error) {
 	// 获取模板

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"gamelink/internal/model"
@@ -42,7 +43,7 @@ type PaymentRefundor interface {
 // OrderDeps holds all dependencies for OrderService.
 type OrderDeps struct {
 	Orders          repoiface.OrderRepository
-	OrderGroups     ordergroup.Repository         // 主订单仓储 (optional)
+	OrderGroups     ordergroup.Repository // 主订单仓储 (optional)
 	Players         repository.PlayerRepository
 	Users           repository.UserRepository
 	Games           repository.GameRepository
@@ -52,7 +53,7 @@ type OrderDeps struct {
 	Commissions     commissionrepo.CommissionRepository
 	ChatGroups      repository.ChatGroupRepository // optional: for order chat auto-destroy
 	Tx              common.TxManager               // 事务管理器 (optional)
-	DistributedLock cache.DistributedLock           // 分布式锁 (optional)
+	DistributedLock cache.DistributedLock          // 分布式锁 (optional)
 	ReferralTrigger ReferralTrigger                // optional: for referral reward trigger
 	PaymentRefundor PaymentRefundor                // optional: refund processor
 	Notifications   repository.NotificationRepository
@@ -560,11 +561,11 @@ func (s *OrderService) CancelOrder(ctx context.Context, userID uint64, orderID u
 					// 兼容逻辑：没有退款服务时直接标记退款（使用原子更新）
 					now := time.Now()
 					updated, err := s.orders.UpdateWithCondition(ctx, orderID, originalStatus, map[string]any{
-						"status":             model.OrderStatusRefunded,
-						"cancel_reason":      req.Reason,
+						"status":              model.OrderStatusRefunded,
+						"cancel_reason":       req.Reason,
 						"refund_amount_cents": order.TotalPriceCents,
-						"refund_reason":      "用户取消订单",
-						"refunded_at":        &now,
+						"refund_reason":       "用户取消订单",
+						"refunded_at":         &now,
 					})
 					if err != nil {
 						return err
@@ -641,6 +642,14 @@ func (s *OrderService) CompleteOrder(ctx context.Context, userID uint64, orderID
 		return ErrInvalidTransition
 	}
 
+	hasPaid, err := s.hasPaidPayment(ctx, orderID)
+	if err != nil {
+		return err
+	}
+	if !hasPaid {
+		return apierr.BadRequest("order must be paid before completion")
+	}
+
 	// 更新订单状态
 	now := time.Now()
 	order.Status = model.OrderStatusCompleted
@@ -669,6 +678,40 @@ func (s *OrderService) CompleteOrder(ctx context.Context, userID uint64, orderID
 	s.deactivateOrderChat(ctx, orderID)
 	s.notifyOrderStatus(ctx, order.UserID, order.ID, string(order.Status), "订单已完成", "订单已完成")
 	return nil
+}
+
+func (s *OrderService) hasPaidPayment(ctx context.Context, orderID uint64) (bool, error) {
+	if s.payments == nil {
+		return false, nil
+	}
+
+	orderIDPtr := &orderID
+	page := 1
+	pageSize := 50
+
+	for {
+		payments, total, err := s.payments.List(ctx, repository.PaymentListOptions{
+			OrderID:  orderIDPtr,
+			Page:     page,
+			PageSize: pageSize,
+		})
+		if err != nil {
+			return false, err
+		}
+
+		for _, payment := range payments {
+			if payment.Status == model.PaymentStatusPaid {
+				return true, nil
+			}
+		}
+
+		if int64(page*pageSize) >= total || len(payments) == 0 {
+			break
+		}
+		page++
+	}
+
+	return false, nil
 }
 
 // recordCommissionAsync 异步记录抽成
@@ -926,6 +969,24 @@ type AvailableOrderDTO struct {
 	CreatedAt      time.Time  `json:"createdAt"`
 }
 
+// PlayerAcceptedOrderDTO 陪玩师端订单列表项
+type PlayerAcceptedOrderDTO struct {
+	ID                  uint64            `json:"id"`
+	OrderNo             string            `json:"orderNo"`
+	Status              model.OrderStatus `json:"status"`
+	UserID              uint64            `json:"userId"`
+	UserNickname        string            `json:"userNickname"`
+	UserAvatar          string            `json:"userAvatar,omitempty"`
+	GameName            string            `json:"gameName"`
+	ServiceType         string            `json:"serviceType"`
+	Quantity            int               `json:"quantity"`
+	Unit                string            `json:"unit"`
+	TotalCents          int64             `json:"totalCents"`
+	PlayerEarningsCents int64             `json:"playerEarningsCents"`
+	Remark              string            `json:"remark,omitempty"`
+	CreatedAt           time.Time         `json:"createdAt"`
+}
+
 // GetAvailableOrders 获取可接订单列表（陪玩师端）
 func (s *OrderService) GetAvailableOrders(ctx context.Context, req AvailableOrdersRequest) ([]AvailableOrderDTO, int64, error) {
 	// 默认分页参数
@@ -1028,6 +1089,82 @@ func (s *OrderService) GetAvailableOrders(ctx context.Context, req AvailableOrde
 	return availableOrders, total, nil
 }
 
+// GetMyAcceptedOrders 获取陪玩师已接订单列表
+func (s *OrderService) GetMyAcceptedOrders(ctx context.Context, playerUserID uint64, req MyOrderListRequest) ([]PlayerAcceptedOrderDTO, int64, error) {
+	if req.Page < 1 {
+		req.Page = 1
+	}
+	if req.PageSize < 1 || req.PageSize > 100 {
+		req.PageSize = 20
+	}
+
+	player, err := s.players.GetByUserID(ctx, playerUserID)
+	if err != nil {
+		return nil, 0, apierr.NotFound("陪玩师不存在")
+	}
+
+	playerID := player.ID
+	opts := repoiface.OrderListOptions{
+		PlayerID: &playerID,
+		Page:     req.Page,
+		PageSize: req.PageSize,
+	}
+	if req.Status != "" {
+		opts.Statuses = []model.OrderStatus{model.OrderStatus(req.Status)}
+	}
+
+	orders, total, err := s.orders.List(ctx, opts)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	result := make([]PlayerAcceptedOrderDTO, 0, len(orders))
+	for _, o := range orders {
+		userNickname := "用户"
+		userAvatar := ""
+		if o.User.ID > 0 {
+			if strings.TrimSpace(o.User.Name) != "" {
+				userNickname = o.User.Name
+			}
+			userAvatar = o.User.AvatarURL
+		}
+
+		gameName := ""
+		if o.Game != nil {
+			gameName = o.Game.Name
+		}
+
+		serviceType := strings.TrimSpace(o.Title)
+		if serviceType == "" {
+			serviceType = "陪玩"
+		}
+
+		earnings := o.PlayerIncomeCents
+		if earnings <= 0 && o.TotalPriceCents > 0 {
+			earnings = int64(float64(o.TotalPriceCents) * 0.8)
+		}
+
+		result = append(result, PlayerAcceptedOrderDTO{
+			ID:                  o.ID,
+			OrderNo:             o.OrderNo,
+			Status:              o.Status,
+			UserID:              o.UserID,
+			UserNickname:        userNickname,
+			UserAvatar:          userAvatar,
+			GameName:            gameName,
+			ServiceType:         serviceType,
+			Quantity:            o.Quantity,
+			Unit:                "小时",
+			TotalCents:          o.TotalPriceCents,
+			PlayerEarningsCents: earnings,
+			Remark:              o.Description,
+			CreatedAt:           o.CreatedAt,
+		})
+	}
+
+	return result, total, nil
+}
+
 // AcceptOrder 接单（陪玩师端）
 // 使用原子性更新避免并发竞态条件,确保一个订单只能被一个陪玩师接单
 func (s *OrderService) AcceptOrder(ctx context.Context, playerUserID uint64, orderID uint64) error {
@@ -1088,6 +1225,14 @@ func (s *OrderService) CompleteOrderByPlayer(ctx context.Context, playerUserID u
 	// 状态检查：只有 in_progress 状态可以完成
 	if order.Status != model.OrderStatusInProgress {
 		return ErrInvalidTransition
+	}
+
+	hasPaid, err := s.hasPaidPayment(ctx, orderID)
+	if err != nil {
+		return err
+	}
+	if !hasPaid {
+		return apierr.BadRequest("order must be paid before completion")
 	}
 
 	// 完成订单

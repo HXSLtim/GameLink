@@ -3,6 +3,7 @@ package wallet
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"gamelink/internal/model"
@@ -15,13 +16,32 @@ var ErrInvalidAmount = errors.New("invalid amount")
 
 // WalletService 提供钱包余额与充值能力
 type WalletService struct {
-	wallets  walletrepo.Repository
-	payments repository.PaymentRepository
-	orders   interfaces.OrderRepository
+	wallets      walletrepo.Repository
+	payments     repository.PaymentRepository
+	orders       interfaces.OrderRepository
+	serviceItems serviceItemLister
 }
 
-func NewWalletService(wallets walletrepo.Repository, payments repository.PaymentRepository, orders interfaces.OrderRepository) *WalletService {
-	return &WalletService{wallets: wallets, payments: payments, orders: orders}
+type serviceItemLister interface {
+	List(ctx context.Context, opts repository.ServiceItemListOptions) ([]model.ServiceItem, int64, error)
+}
+
+func NewWalletService(
+	wallets walletrepo.Repository,
+	payments repository.PaymentRepository,
+	orders interfaces.OrderRepository,
+	serviceItems ...serviceItemLister,
+) *WalletService {
+	var lister serviceItemLister
+	if len(serviceItems) > 0 {
+		lister = serviceItems[0]
+	}
+	return &WalletService{
+		wallets:      wallets,
+		payments:     payments,
+		orders:       orders,
+		serviceItems: lister,
+	}
 }
 
 type RechargeRequest struct {
@@ -41,10 +61,17 @@ func (s *WalletService) Recharge(ctx context.Context, userID uint64, req Recharg
 		return nil, ErrInvalidAmount
 	}
 
+	// Reuse an existing valid service item as recharge order template to satisfy order FK constraints.
+	template, err := s.findRechargeOrderTemplate(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
 	now := time.Now().UTC()
 	order := &model.Order{
 		UserID:          userID,
-		ItemID:          0,
+		ItemID:          template.ItemID,
+		GameID:          template.GameID,
 		Status:          model.OrderStatusCompleted,
 		Title:           "Wallet Recharge",
 		UnitPriceCents:  req.AmountCents,
@@ -58,7 +85,7 @@ func (s *WalletService) Recharge(ctx context.Context, userID uint64, req Recharg
 	payment := &model.Payment{
 		OrderID:     order.ID,
 		UserID:      userID,
-		Method:      req.Method,
+		Method:      model.PaymentMethodWallet,
 		AmountCents: req.AmountCents,
 		Currency:    model.CurrencyCNY,
 		Status:      model.PaymentStatusPaid,
@@ -86,6 +113,39 @@ func (s *WalletService) Recharge(ctx context.Context, userID uint64, req Recharg
 		PaymentID: payment.ID,
 		Balance:   w.BalanceCents,
 	}, nil
+}
+
+func (s *WalletService) findRechargeOrderTemplate(ctx context.Context, userID uint64) (*model.Order, error) {
+	// Prefer user's own order to keep tenant/data affinity.
+	opts := interfaces.OrderListOptions{Page: 1, PageSize: 1, UserID: &userID}
+	if orders, _, err := s.orders.List(ctx, opts); err == nil && len(orders) > 0 {
+		return &orders[0], nil
+	}
+
+	// Fallback to any existing order if current user has no history.
+	opts = interfaces.OrderListOptions{Page: 1, PageSize: 1}
+	orders, _, err := s.orders.List(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	if len(orders) == 0 {
+		if s.serviceItems != nil {
+			isActive := true
+			itemOpts := repository.ServiceItemListOptions{
+				Page:     1,
+				PageSize: 1,
+				IsActive: &isActive,
+			}
+			if items, _, itemErr := s.serviceItems.List(ctx, itemOpts); itemErr == nil && len(items) > 0 {
+				return &model.Order{
+					ItemID: items[0].ID,
+					GameID: items[0].GameID,
+				}, nil
+			}
+		}
+		return nil, fmt.Errorf("no order template available for wallet recharge (missing orders and service items)")
+	}
+	return &orders[0], nil
 }
 
 func (s *WalletService) GetBalance(ctx context.Context, userID uint64) (*model.Wallet, error) {

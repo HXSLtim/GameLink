@@ -37,6 +37,22 @@ func (h *CouponHandler) ListMyCoupons(c *gin.Context) {
 	resp.OK(c, coupons)
 }
 
+// GetMyCouponStats 获取当前用户优惠券统计（兼容前端 /coupons/stats）
+func (h *CouponHandler) GetMyCouponStats(c *gin.Context) {
+	userID, ok := resp.GetUserIDOrFail(c)
+	if !ok {
+		return
+	}
+
+	stats, err := h.svc.GetUserCouponStats(c.Request.Context(), userID)
+	if err != nil {
+		resp.Error(c, apierr.InternalError("获取优惠券统计失败").WithDetails(err.Error()))
+		return
+	}
+
+	resp.OK(c, stats)
+}
+
 // GetCoupon 获取优惠券详情
 func (h *CouponHandler) GetCoupon(c *gin.Context) {
 	userID, ok := resp.GetUserIDOrFail(c)
@@ -116,6 +132,7 @@ func RegisterCouponRoutes(rg *gin.RouterGroup, svc *couponservice.Service, _ gin
 	couponGroup := rg.Group("/coupons")
 	{
 		couponGroup.GET("", h.ListMyCoupons)
+		couponGroup.GET("/stats", h.GetMyCouponStats)
 		couponGroup.GET("/:id", h.GetCoupon)
 		couponGroup.POST("/claim", h.ClaimCoupon)
 	}

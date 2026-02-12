@@ -11,8 +11,8 @@ import (
 	alertrepo "gamelink/internal/repository/alert"
 	chatrepo "gamelink/internal/repository/chat"
 	collectionentityrepo "gamelink/internal/repository/collectionentity"
-	"gamelink/internal/repository/common"
 	commissionrepo "gamelink/internal/repository/commission"
+	"gamelink/internal/repository/common"
 	contentrepo "gamelink/internal/repository/content"
 	contentcategoryrepo "gamelink/internal/repository/contentcategory"
 	couponrepo "gamelink/internal/repository/coupon"
@@ -89,15 +89,15 @@ import (
 // appServices 包含所有领域服务实例和调度器句柄，供路由注册使用。
 type appServices struct {
 	// 共享仓储（避免在路由注册中重复创建）
-	userRepo       repository.UserRepository
-	playerRepo     repository.PlayerRepository
-	orderRepo      repoiface.OrderRepository
-	withdrawRepo   withdrawrepo.WithdrawRepository
-	commissionRepo commissionrepo.CommissionRepository
+	userRepo        repository.UserRepository
+	playerRepo      repository.PlayerRepository
+	orderRepo       repoiface.OrderRepository
+	withdrawRepo    withdrawrepo.WithdrawRepository
+	commissionRepo  commissionrepo.CommissionRepository
 	serviceItemRepo repository.ServiceItemRepository
-	paymentRepo    repository.PaymentRepository
-	chatGroupRepo  repository.ChatGroupRepository
-	chatMemberRepo repository.ChatMemberRepository
+	paymentRepo     repository.PaymentRepository
+	chatGroupRepo   repository.ChatGroupRepository
+	chatMemberRepo  repository.ChatMemberRepository
 	chatMessageRepo repository.ChatMessageRepository
 
 	commissionSvc           *commissionservice.CommissionService
@@ -278,7 +278,7 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache, cfg config.AppConfig) *
 	feedSvc := contentservice.NewFeedService(feedRepo, nil)
 	notificationSvc := contentservice.NewNotificationService(notificationRepo)
 	uploadSvc := uploadservice.NewService(uploadRepo, externalCfg)
-	walletSvc := walletservice.NewWalletService(walletRepo, paymentRepo, orderRepo)
+	walletSvc := walletservice.NewWalletService(walletRepo, paymentRepo, orderRepo, serviceItemRepo)
 	userSettingsSvc := userservice.NewSettingsService(userSettingsRepo)
 	notificationSettingsSvc := notificationservice.NewSettingsService(notificationSettingsRepo)
 
@@ -403,15 +403,15 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache, cfg config.AppConfig) *
 
 	return &appServices{
 		// 共享仓储
-		userRepo:       userRepo,
-		playerRepo:     playerRepo,
-		orderRepo:      orderRepo,
-		withdrawRepo:   withdrawRepo,
-		commissionRepo: commissionRepo,
+		userRepo:        userRepo,
+		playerRepo:      playerRepo,
+		orderRepo:       orderRepo,
+		withdrawRepo:    withdrawRepo,
+		commissionRepo:  commissionRepo,
 		serviceItemRepo: serviceItemRepo,
-		paymentRepo:    paymentRepo,
-		chatGroupRepo:  chatGroupRepo,
-		chatMemberRepo: chatMemberRepo,
+		paymentRepo:     paymentRepo,
+		chatGroupRepo:   chatGroupRepo,
+		chatMemberRepo:  chatMemberRepo,
 		chatMessageRepo: chatMessageRepo,
 		// 服务
 		commissionSvc:           commissionSvc,

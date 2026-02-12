@@ -212,9 +212,8 @@ func (h *DisputeHandler) AssignDispute(c *gin.Context) {
 		return
 	}
 
-	// Get actor user ID from context (set by auth middleware)
-	actorUserID, exists := c.Get("userID")
-	if !exists {
+	actorUserID := getUserIDFromContext(c)
+	if actorUserID == 0 {
 		respondError(c, apierr.Unauthorized(apierr.ErrUserIDNotInContext))
 		return
 	}
@@ -223,7 +222,7 @@ func (h *DisputeHandler) AssignDispute(c *gin.Context) {
 		DisputeID:         disputeID,
 		AssignedServiceID: payload.AssignedServiceID,
 		OriginalServiceID: payload.OriginalServiceID,
-		ActorUserID:       actorUserID.(uint64),
+		ActorUserID:       actorUserID,
 	})
 
 	if err != nil {
@@ -274,9 +273,8 @@ func (h *DisputeHandler) RollbackAssignment(c *gin.Context) {
 		return
 	}
 
-	// Get actor user ID from context
-	actorUserID, exists := c.Get("userID")
-	if !exists {
+	actorUserID := getUserIDFromContext(c)
+	if actorUserID == 0 {
 		respondError(c, apierr.Unauthorized(apierr.ErrUserIDNotInContext))
 		return
 	}
@@ -284,7 +282,7 @@ func (h *DisputeHandler) RollbackAssignment(c *gin.Context) {
 	err := h.svc.RollbackDisputeAssignment(c.Request.Context(), orderservice.RollbackDisputeRequest{
 		DisputeID:      disputeID,
 		RollbackReason: payload.RollbackReason,
-		ActorUserID:    actorUserID.(uint64),
+		ActorUserID:    actorUserID,
 	})
 
 	if err != nil {
@@ -336,9 +334,8 @@ func (h *DisputeHandler) ResolveDispute(c *gin.Context) {
 		return
 	}
 
-	// Get actor user ID from context
-	actorUserID, exists := c.Get("userID")
-	if !exists {
+	actorUserID := getUserIDFromContext(c)
+	if actorUserID == 0 {
 		respondError(c, apierr.Unauthorized(apierr.ErrUserIDNotInContext))
 		return
 	}
@@ -349,7 +346,7 @@ func (h *DisputeHandler) ResolveDispute(c *gin.Context) {
 		DisputeID:     disputeID,
 		Resolution:    resolution,
 		ResolveRemark: payload.ResolveRemark,
-		ActorUserID:   actorUserID.(uint64),
+		ActorUserID:   actorUserID,
 	})
 
 	if err != nil {
@@ -415,9 +412,8 @@ func (h *DisputeHandler) BatchAssignDisputes(c *gin.Context) {
 		return
 	}
 
-	// Get actor user ID from context
-	actorUserID, exists := c.Get("userID")
-	if !exists {
+	actorUserID := getUserIDFromContext(c)
+	if actorUserID == 0 {
 		respondError(c, apierr.Unauthorized(apierr.ErrUserIDNotInContext))
 		return
 	}
@@ -426,7 +422,7 @@ func (h *DisputeHandler) BatchAssignDisputes(c *gin.Context) {
 		DisputeIDs:        req.DisputeIDs,
 		AssignedServiceID: req.AssignedServiceID,
 		OriginalServiceID: req.OriginalServiceID,
-		ActorUserID:       actorUserID.(uint64),
+		ActorUserID:       actorUserID,
 	})
 
 	if err != nil {
@@ -477,9 +473,8 @@ func (h *DisputeHandler) BatchUpdateDisputesStatus(c *gin.Context) {
 		return
 	}
 
-	// Get actor user ID from context
-	actorUserID, exists := c.Get("userID")
-	if !exists {
+	actorUserID := getUserIDFromContext(c)
+	if actorUserID == 0 {
 		respondError(c, apierr.Unauthorized(apierr.ErrUserIDNotInContext))
 		return
 	}
@@ -489,7 +484,7 @@ func (h *DisputeHandler) BatchUpdateDisputesStatus(c *gin.Context) {
 	svcResult, err := h.svc.BatchUpdateDisputesStatus(c.Request.Context(), orderservice.BatchUpdateDisputesStatusRequest{
 		DisputeIDs:  req.DisputeIDs,
 		Status:      status,
-		ActorUserID: actorUserID.(uint64),
+		ActorUserID: actorUserID,
 	})
 
 	if err != nil {
@@ -541,9 +536,8 @@ func (h *DisputeHandler) BatchCloseDisputes(c *gin.Context) {
 		return
 	}
 
-	// Get actor user ID from context
-	actorUserID, exists := c.Get("userID")
-	if !exists {
+	actorUserID := getUserIDFromContext(c)
+	if actorUserID == 0 {
 		respondError(c, apierr.Unauthorized(apierr.ErrUserIDNotInContext))
 		return
 	}
@@ -554,7 +548,7 @@ func (h *DisputeHandler) BatchCloseDisputes(c *gin.Context) {
 		DisputeIDs:    req.DisputeIDs,
 		Resolution:    resolution,
 		ResolveRemark: req.ResolveRemark,
-		ActorUserID:   actorUserID.(uint64),
+		ActorUserID:   actorUserID,
 	})
 
 	if err != nil {

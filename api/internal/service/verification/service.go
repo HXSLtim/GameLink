@@ -105,7 +105,11 @@ func (s *Service) SendCode(ctx context.Context, target string, codeType CodeType
 	switch codeType {
 	case CodeTypePhone:
 		if s.smsSvc != nil {
-			return s.smsSvc.SendCode(ctx, target, code)
+			if err := s.smsSvc.SendCode(ctx, target, code); err != nil {
+				s.cleanupGeneratedCode(ctx, target, codeType)
+				return err
+			}
+			return nil
 		}
 		fmt.Printf("[Verification] SMS not configured, code for %s: %s\n", target, code)
 	case CodeTypeEmail:
@@ -176,6 +180,11 @@ func (s *Service) codeKey(target string, codeType CodeType) string {
 
 func (s *Service) rateLimitKey(target string, codeType CodeType) string {
 	return fmt.Sprintf("verification:ratelimit:%s:%s", codeType, target)
+}
+
+func (s *Service) cleanupGeneratedCode(ctx context.Context, target string, codeType CodeType) {
+	_ = s.cache.Delete(ctx, s.codeKey(target, codeType))
+	_ = s.cache.Delete(ctx, s.rateLimitKey(target, codeType))
 }
 
 type codeRecord struct {

@@ -232,6 +232,10 @@ func completeOrderHandler(c *gin.Context, svc *order.OrderService) {
 			respondAPIError(c, apierr.BadRequest(err.Error()))
 			return
 		}
+		if apierr.IsValidationError(err) || apierr.IsBadRequest(err) || apierr.IsForbidden(err) || apierr.IsUnauthorized(err) || apierr.IsNotFound(err) {
+			respondAPIError(c, err)
+			return
+		}
 		respondAPIError(c, apierr.InternalError("完成订单失败").WithDetails(err.Error()))
 		return
 	}

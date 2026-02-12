@@ -54,6 +54,7 @@ cover.out
 profile.out
 
 # Go local caches (do not commit)
+.gocache/
 backend/.gocache/
 backend/.modcache/
 backend/.gopath/
@@ -116,3 +117,5 @@ admin/test-results.json
 api/test_coverage.txt
 test_frontend.txt
 
+# Local database backup dumps
+api/backups/

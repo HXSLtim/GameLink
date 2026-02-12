@@ -131,13 +131,16 @@ func getMyAcceptedOrdersHandler(c *gin.Context, svc *order.OrderService) {
 		return
 	}
 
-	resp, err := svc.GetMyOrders(c.Request.Context(), userID, req)
+	orders, total, err := svc.GetMyAcceptedOrders(c.Request.Context(), userID, req)
 	if err != nil {
 		respondAPIError(c, apierr.InternalError("获取订单列表失败").WithDetails(err.Error()))
 		return
 	}
 
-	respondSuccess(c, "OK", *resp)
+	respondSuccess(c, "OK", map[string]interface{}{
+		"orders": orders,
+		"total":  total,
+	})
 }
 
 // completeOrderByPlayerHandler 完成订单（陪玩师端）
@@ -172,6 +175,10 @@ func completeOrderByPlayerHandler(c *gin.Context, svc *order.OrderService) {
 		}
 		if err == order.ErrInvalidTransition {
 			respondAPIError(c, apierr.BadRequest(err.Error()))
+			return
+		}
+		if apierr.IsValidationError(err) || apierr.IsBadRequest(err) || apierr.IsForbidden(err) || apierr.IsUnauthorized(err) || apierr.IsNotFound(err) {
+			respondAPIError(c, err)
 			return
 		}
 		respondAPIError(c, apierr.InternalError("完成订单失败").WithDetails(err.Error()))

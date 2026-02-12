@@ -311,8 +311,37 @@ func batchSendNotificationHandler(s *user.BatchOperationService) gin.HandlerFunc
 
 // getUserIDFromContext 从上下文获取用户ID
 func getUserIDFromContext(c *gin.Context) uint64 {
-	// 从JWT token或session获取用户ID
-	// 这里简化处理，实际应该从中间件获取
-	userID, _ := strconv.ParseUint(c.GetString("userId"), 10, 64)
-	return userID
+	if v, exists := c.Get("user_id"); exists {
+		switch id := v.(type) {
+		case uint64:
+			return id
+		case int:
+			if id > 0 {
+				return uint64(id)
+			}
+		case int64:
+			if id > 0 {
+				return uint64(id)
+			}
+		case float64:
+			if id > 0 {
+				return uint64(id)
+			}
+		case string:
+			if parsed, err := strconv.ParseUint(id, 10, 64); err == nil {
+				return parsed
+			}
+		}
+	}
+
+	// 兼容历史字段
+	for _, key := range []string{"userId", "user_id"} {
+		if s := c.GetString(key); s != "" {
+			if parsed, err := strconv.ParseUint(s, 10, 64); err == nil {
+				return parsed
+			}
+		}
+	}
+
+	return 0
 }

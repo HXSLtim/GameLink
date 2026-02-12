@@ -1,6 +1,8 @@
 package router
 
 import (
+	"time"
+
 	"github.com/gin-gonic/gin"
 
 	publichandler "gamelink/internal/handler/public"
@@ -18,6 +20,7 @@ import (
 	referralservice "gamelink/internal/service/referral"
 	"gamelink/internal/service/sms"
 	"gamelink/internal/service/verification"
+	pkgauth "gamelink/pkg/auth"
 	"gamelink/pkg/cache"
 	"gamelink/pkg/config"
 
@@ -38,12 +41,19 @@ func registerPublicRoutes(api *gin.RouterGroup, orm *gorm.DB, cacheClient cache.
 	referralRepo := referralrepo.NewReferralRepository(orm)
 
 	// 初始化服务
+	jwtManager := pkgauth.NewJWTManager(cfg.Auth.JWTSecret, time.Duration(cfg.Auth.TokenTTLHours)*time.Hour)
+	authSvc := authservice.NewAuthService(userRepo, jwtManager)
+
+	externalCfg := external.NewConfig(cfg.ExternalAPI)
+	smsSvc := sms.NewService(externalCfg)
+	verificationSvc := verification.NewService(cacheClient, smsSvc)
+
 	wechatSvc := authservice.NewWeChatAuthService(userRepo, playerRepo)
 	wechatSvc.SetReferralService(referralservice.NewReferralService(referralRepo))
 	wechatSvc.SetReferralTrigger(referralservice.NewTriggerService(orm))
 
 	// 注册认证路由
-	authHandler := publichandler.NewAuthHandler(wechatSvc)
+	authHandler := publichandler.NewAuthHandler(wechatSvc, authSvc, verificationSvc)
 	authHandler.RegisterRoutes(publicGroup)
 
 	// 兼容路径：/api/v1/auth/wechat/*
@@ -76,9 +86,6 @@ func registerPublicRoutes(api *gin.RouterGroup, orm *gorm.DB, cacheClient cache.
 	publichandler.RegisterSearchRoutes(publicGroup, searchHandler)
 
 	// 注册验证码路由
-	externalCfg := external.NewConfig(cfg.ExternalAPI)
-	smsSvc := sms.NewService(externalCfg)
-	verificationSvc := verification.NewService(cacheClient, smsSvc)
 	verificationHandler := publichandler.NewVerificationHandler(verificationSvc)
 	verificationHandler.RegisterRoutes(publicGroup)
 

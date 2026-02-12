@@ -76,6 +76,13 @@ func (h *VerificationHandler) SendCode(c *gin.Context) {
 		case verification.ErrRateLimited:
 			resp.Error(c, apierr.TooManyRequests("请等待60秒后再试"))
 		case sms.ErrSMSDisabled:
+			if h.svc.GetMasterCode() != "" {
+				resp.OK(c, gin.H{
+					"message":    "短信服务未配置，开发环境请使用万能验证码",
+					"masterCode": h.svc.GetMasterCode(),
+				})
+				return
+			}
 			resp.Error(c, apierr.InternalError("短信服务未配置"))
 		default:
 			resp.Error(c, apierr.InternalError("发送验证码失败: "+err.Error()))

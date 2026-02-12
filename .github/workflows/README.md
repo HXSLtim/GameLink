@@ -19,6 +19,7 @@ This directory contains CI/CD workflows for the GameLink project.
 |----------|---------|---------|----------|
 | **performance.yml** | Performance benchmarking and regression testing | PR/Schedule/Manual | P0 |
 | **e2e.yml** | End-to-end integration testing | Schedule/Manual | P0 |
+| **flow-guard-regression.yml** | Order/Payment guard regression (unpaid-complete block) | Schedule/Manual | P0 |
 | **test-report.yml** | Test coverage and results aggregation | PR/Manual | P1 |
 | **dependabot-merge.yml** | Automated dependency updates | Dependabot PR | P2 |
 
@@ -76,6 +77,19 @@ This directory contains CI/CD workflows for the GameLink project.
 - Real-time chat (WebSocket)
 
 **Schedule:** Daily at 1 AM UTC
+
+### Flow Guard Regression Workflow (`flow-guard-regression.yml`)
+
+**Purpose:** Verify critical business guards for order completion and reviews
+
+**Features:**
+- Starts backend with PostgreSQL + Redis service containers
+- Enables seed data and runs full flow-guard regression script
+- Verifies unpaid order completion is blocked (`400`)
+- Verifies review submission before completion is blocked (`400`)
+- Verifies paid flow can complete and review successfully
+
+**Schedule:** Daily at 2:30 AM UTC + manual trigger
 
 ### Test Report Workflow (`test-report.yml`)
 
@@ -193,6 +207,9 @@ gh workflow run performance.yml
 
 # Run E2E tests
 gh workflow run e2e.yml -f environment=staging
+
+# Run flow-guard regression
+gh workflow run flow-guard-regression.yml
 ```
 
 ### Checking Workflow Status

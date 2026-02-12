@@ -411,6 +411,22 @@ func (s *DisputeService) GetDisputeDetail(ctx context.Context, disputeID uint64)
 	return s.disputes.Get(ctx, disputeID)
 }
 
+// GetDisputeByOrderID retrieves dispute information by order ID.
+func (s *DisputeService) GetDisputeByOrderID(ctx context.Context, orderID uint64) (*model.OrderDispute, error) {
+	if orderID == 0 {
+		return nil, ErrDisputeValidation
+	}
+
+	dispute, err := s.disputes.GetByOrderID(ctx, orderID)
+	if err != nil {
+		if err == repository.ErrNotFound {
+			return nil, ErrDisputeNotFound
+		}
+		return nil, err
+	}
+	return dispute, nil
+}
+
 // ListPendingDisputes lists disputes pending assignment
 func (s *DisputeService) ListPendingDisputes(ctx context.Context, page, pageSize int) ([]model.OrderDispute, int64, error) {
 	return s.disputes.ListPendingAssignment(ctx, page, pageSize)
@@ -471,6 +487,32 @@ func (s *DisputeService) processRefund(ctx context.Context, order *model.Order, 
 
 	if err := s.orders.Update(ctx, order); err != nil {
 		return err
+	}
+
+	// Keep payment status in sync with refunded order.
+	// Prefer the latest paid/pending payment for this order.
+	orderID := order.ID
+	payments, _, err := s.payments.List(ctx, repository.PaymentListOptions{
+		OrderID:  &orderID,
+		Page:     1,
+		PageSize: 20,
+	})
+	if err == nil {
+		for i := range payments {
+			p := payments[i]
+			if p.Status != model.PaymentStatusPaid && p.Status != model.PaymentStatusPending {
+				continue
+			}
+			p.Status = model.PaymentStatusRefunded
+			p.RefundedAt = &now
+			refundAmount := amount
+			if refundAmount > p.AmountCents {
+				refundAmount = p.AmountCents
+			}
+			p.RefundedAmountCents = refundAmount
+			_ = s.payments.Update(ctx, &p)
+			break
+		}
 	}
 
 	// Log refund operation

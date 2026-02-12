@@ -2,6 +2,8 @@ package auth
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"net/mail"
 	"regexp"
 	"strings"
@@ -93,6 +95,12 @@ type RegisterRequest struct {
 	Name     string     `json:"name"`     // 真实姓名（可选）
 	Nickname string     `json:"nickname"` // 昵称（用于显示）
 	Role     model.Role `json:"role"`
+}
+
+// PhoneCodeLoginRequest 手机验证码登录请求
+type PhoneCodeLoginRequest struct {
+	Phone    string `json:"phone"`
+	Nickname string `json:"nickname,omitempty"`
 }
 
 // Login 用户登录
@@ -258,6 +266,71 @@ func (s *AuthService) RefreshToken(ctx context.Context, tokenString string) (str
 	return newToken, nil
 }
 
+// LoginOrRegisterByPhone verifies a phone login flow after code verification.
+// If user does not exist, it will create a default active user account.
+func (s *AuthService) LoginOrRegisterByPhone(ctx context.Context, req PhoneCodeLoginRequest) (*LoginResponse, error) {
+	phone := strings.TrimSpace(req.Phone)
+	if !isValidPhone(phone) {
+		return nil, apierr.BadRequest("手机号格式错误")
+	}
+
+	user, err := s.userRepo.FindByPhone(ctx, phone)
+	if err != nil {
+		if err != repository.ErrNotFound {
+			return nil, apierr.InternalError("查找用户失败").WithDetails(err.Error())
+		}
+
+		displayName := strings.TrimSpace(req.Nickname)
+		if displayName == "" {
+			displayName = "手机用户" + phone[len(phone)-4:]
+		}
+
+		passwordHash, hashErr := bcrypt.GenerateFromPassword([]byte(generateRandomPassword()), bcrypt.DefaultCost)
+		if hashErr != nil {
+			return nil, apierr.InternalError("创建账号失败").WithDetails(hashErr.Error())
+		}
+
+		newUser := &model.User{
+			Phone:        phone,
+			PasswordHash: string(passwordHash),
+			Name:         displayName,
+			Nickname:     displayName,
+			Role:         model.RoleUser,
+			Status:       model.UserStatusActive,
+		}
+
+		if createErr := s.userRepo.Create(ctx, newUser); createErr != nil {
+			// 并发场景下手机号已被其他请求创建，回读即可
+			if existed, findErr := s.userRepo.FindByPhone(ctx, phone); findErr == nil {
+				user = existed
+			} else {
+				return nil, apierr.InternalError("创建账号失败").WithDetails(createErr.Error())
+			}
+		} else {
+			user = newUser
+		}
+	}
+
+	if user.Status != model.UserStatusActive {
+		return nil, ErrUserDisabled
+	}
+
+	token, err := s.jwtManager.GenerateToken(user.ID, string(user.Role))
+	if err != nil {
+		return nil, apierr.InternalError("生成Token失败").WithDetails(err.Error())
+	}
+
+	now := time.Now()
+	user.LastLoginAt = &now
+	_ = s.userRepo.Update(ctx, user)
+
+	return &LoginResponse{
+		Token:     token,
+		ExpiresAt: time.Now().Add(24 * time.Hour),
+		User:      *user,
+	}, nil
+}
+
 // validateRegisterInput 验证注册输入
 func validateRegisterInput(req RegisterRequest) error {
 	if req.Name == "" {
@@ -284,6 +357,7 @@ func validateRegisterInput(req RegisterRequest) error {
 
 // emailRegex 邮箱正则表达式
 var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+var phoneRegex = regexp.MustCompile(`^1[3-9]\d{9}$`)
 
 // isValidEmail 检查是否是有效的邮箱格式
 func isValidEmail(email string) bool {
@@ -315,4 +389,17 @@ func isValidEmail(email string) bool {
 	}
 
 	return true
+}
+
+func isValidPhone(phone string) bool {
+	return phoneRegex.MatchString(strings.TrimSpace(phone))
+}
+
+func generateRandomPassword() string {
+	buf := make([]byte, 16)
+	if _, err := rand.Read(buf); err != nil {
+		// fallback
+		return "PhoneLogin@123456"
+	}
+	return hex.EncodeToString(buf)
 }

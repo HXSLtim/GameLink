@@ -1013,7 +1013,13 @@ func TestOrderService_CompleteOrder_Success(t *testing.T) {
 	players := &MockPlayerRepository{}
 	users := &MockUserRepository{}
 	games := &MockGameRepository{}
-	payments := &MockPaymentRepository{}
+	payments := &MockPaymentRepository{
+		listPayments: func(ctx context.Context, opts repository.PaymentListOptions) ([]model.Payment, int64, error) {
+			return []model.Payment{
+				{OrderID: orderID, Status: model.PaymentStatusPaid},
+			}, 1, nil
+		},
+	}
 	reviews := &MockReviewRepository{}
 
 	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: users, Games: games, Payments: payments, Reviews: reviews, Commissions: commissions})
@@ -1054,6 +1060,47 @@ func TestOrderService_CompleteOrder_InvalidStatus(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Equal(t, ErrInvalidTransition, err)
+}
+
+// TestOrderService_CompleteOrder_UnpaidOrder tests completion fails when order has no paid payment
+func TestOrderService_CompleteOrder_UnpaidOrder(t *testing.T) {
+	ctx := context.Background()
+	userID := uint64(1)
+	orderID := uint64(1)
+
+	testOrder := createTestOrder(orderID, userID, model.OrderStatusInProgress)
+
+	updateCalled := false
+	orders := &MockOrderRepository{
+		getOrder: func(ctx context.Context, id uint64) (*model.Order, error) {
+			return testOrder, nil
+		},
+		updateOrder: func(ctx context.Context, order *model.Order) error {
+			updateCalled = true
+			return nil
+		},
+	}
+
+	players := &MockPlayerRepository{}
+	users := &MockUserRepository{}
+	games := &MockGameRepository{}
+	payments := &MockPaymentRepository{
+		listPayments: func(ctx context.Context, opts repository.PaymentListOptions) ([]model.Payment, int64, error) {
+			return []model.Payment{
+				{OrderID: orderID, Status: model.PaymentStatusPending},
+			}, 1, nil
+		},
+	}
+	reviews := &MockReviewRepository{}
+	commissions := &MockCommissionRepository{}
+
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: users, Games: games, Payments: payments, Reviews: reviews, Commissions: commissions})
+
+	err := service.CompleteOrder(ctx, userID, orderID)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "order must be paid before completion")
+	assert.False(t, updateCalled)
 }
 
 // TestOrderService_AcceptOrder_Success tests successful order acceptance by player
@@ -1179,7 +1226,13 @@ func TestOrderService_CompleteOrderByPlayer_Success(t *testing.T) {
 
 	users := &MockUserRepository{}
 	games := &MockGameRepository{}
-	payments := &MockPaymentRepository{}
+	payments := &MockPaymentRepository{
+		listPayments: func(ctx context.Context, opts repository.PaymentListOptions) ([]model.Payment, int64, error) {
+			return []model.Payment{
+				{OrderID: orderID, Status: model.PaymentStatusPaid},
+			}, 1, nil
+		},
+	}
 	reviews := &MockReviewRepository{}
 	commissions := &MockCommissionRepository{}
 
@@ -1191,6 +1244,53 @@ func TestOrderService_CompleteOrderByPlayer_Success(t *testing.T) {
 	assert.NotNil(t, updatedOrder)
 	assert.Equal(t, model.OrderStatusCompleted, updatedOrder.Status)
 	assert.NotNil(t, updatedOrder.CompletedAt)
+}
+
+// TestOrderService_CompleteOrderByPlayer_UnpaidOrder tests player completion fails when order has no paid payment
+func TestOrderService_CompleteOrderByPlayer_UnpaidOrder(t *testing.T) {
+	ctx := context.Background()
+	playerUserID := uint64(200)
+	playerID := uint64(100)
+	orderID := uint64(1)
+
+	testOrder := createTestOrder(orderID, 1, model.OrderStatusInProgress)
+
+	updateCalled := false
+	orders := &MockOrderRepository{
+		getOrder: func(ctx context.Context, id uint64) (*model.Order, error) {
+			return testOrder, nil
+		},
+		updateOrder: func(ctx context.Context, order *model.Order) error {
+			updateCalled = true
+			return nil
+		},
+	}
+
+	players := &MockPlayerRepository{
+		getPlayerByUser: func(ctx context.Context, userID uint64) (*model.Player, error) {
+			return createTestPlayer(playerID, playerUserID), nil
+		},
+	}
+
+	users := &MockUserRepository{}
+	games := &MockGameRepository{}
+	payments := &MockPaymentRepository{
+		listPayments: func(ctx context.Context, opts repository.PaymentListOptions) ([]model.Payment, int64, error) {
+			return []model.Payment{
+				{OrderID: orderID, Status: model.PaymentStatusPending},
+			}, 1, nil
+		},
+	}
+	reviews := &MockReviewRepository{}
+	commissions := &MockCommissionRepository{}
+
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: users, Games: games, Payments: payments, Reviews: reviews, Commissions: commissions})
+
+	err := service.CompleteOrderByPlayer(ctx, playerUserID, orderID)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "order must be paid before completion")
+	assert.False(t, updateCalled)
 }
 
 // TestOrderService_CompleteOrderByPlayer_Unauthorized tests order completion by unauthorized player

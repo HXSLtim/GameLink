@@ -12,9 +12,119 @@ import (
 // superAdmin: All permissions (handled specially with "*")
 // admin: Management permissions (users, players, orders, payments, content, reviews)
 // finance: Financial permissions (withdraws, payments, refunds)
-// customerService: Customer service permissions (disputes, orders, users)
+// customerService/csLeader: Customer service supervisor permissions (legacy + new)
+// csAgent: Customer service agent permissions (daily handling subset)
 // player: Player-specific permissions (view own data, manage services)
 // user: Basic user permissions (view public data)
+var customerServiceLeaderPermissions = []string{
+	// User Management (用户管理 - 只读和状态更新)
+	model.PermCodeAdminUsersRead,
+	model.PermCodeAdminUsersStatus,
+
+	// Player Management (陪玩师管理 - 只读)
+	model.PermCodeAdminPlayersRead,
+
+	// Order Management (订单管理 - 查看、确认、取消、分配)
+	model.PermCodeAdminOrdersRead,
+	model.PermCodeAdminOrdersConfirm,
+	model.PermCodeAdminOrdersCancel,
+	model.PermCodeAdminOrdersAssign,
+
+	// Payment Management (支付管理 - 只读)
+	model.PermCodeAdminPaymentsRead,
+
+	// Dispute Management (纠纷管理)
+	model.PermCodeDisputeRead,
+	model.PermCodeDisputeCreate,
+	model.PermCodeDisputeResolve,
+
+	// Review Management (评论管理 - 审核)
+	model.PermCodeReviewList,
+	model.PermCodeReviewGet,
+	model.PermCodeReviewPending,
+	model.PermCodeReviewApprove,
+	model.PermCodeReviewReject,
+	model.PermCodeReviewBatchApprove,
+	model.PermCodeReviewBatchReject,
+
+	// Content Management (内容管理 - 审核)
+	model.PermCodeContentFeedList,
+	model.PermCodeContentFeedGet,
+	model.PermCodeContentFeedApprove,
+	model.PermCodeContentFeedReject,
+	model.PermCodeContentFeedBatchApprove,
+	model.PermCodeContentFeedBatchReject,
+
+	// Chat Monitoring (聊天监控)
+	model.PermCodeContentChatList,
+
+	// Content Report (内容举报)
+	model.PermCodeContentReportList,
+	model.PermCodeContentReportGet,
+	model.PermCodeContentReportProcess,
+
+	// Notification (通知)
+	model.PermCodeNotificationRead,
+	model.PermCodeNotificationCreate,
+	model.PermCodeNotificationBatchSend,
+
+	// Stats (统计)
+	model.PermCodeAdminStatsRead,
+
+	// Operation Log
+	model.PermCodeOperationLogList,
+}
+
+var customerServiceAgentPermissions = []string{
+	// User Management (用户管理 - 只读和状态更新)
+	model.PermCodeAdminUsersRead,
+	model.PermCodeAdminUsersStatus,
+
+	// Player Management (陪玩师管理 - 只读)
+	model.PermCodeAdminPlayersRead,
+
+	// Order Management (订单管理 - 查看、确认、取消)
+	model.PermCodeAdminOrdersRead,
+	model.PermCodeAdminOrdersConfirm,
+	model.PermCodeAdminOrdersCancel,
+
+	// Payment Management (支付管理 - 只读)
+	model.PermCodeAdminPaymentsRead,
+
+	// Dispute Management (纠纷管理)
+	model.PermCodeDisputeRead,
+	model.PermCodeDisputeCreate,
+	model.PermCodeDisputeResolve,
+
+	// Review Management (评论管理 - 基础审核)
+	model.PermCodeReviewList,
+	model.PermCodeReviewGet,
+	model.PermCodeReviewPending,
+	model.PermCodeReviewApprove,
+	model.PermCodeReviewReject,
+
+	// Content Management (内容管理 - 基础审核)
+	model.PermCodeContentFeedList,
+	model.PermCodeContentFeedGet,
+	model.PermCodeContentFeedApprove,
+	model.PermCodeContentFeedReject,
+
+	// Chat Monitoring (聊天监控)
+	model.PermCodeContentChatList,
+
+	// Content Report (内容举报)
+	model.PermCodeContentReportList,
+	model.PermCodeContentReportGet,
+	model.PermCodeContentReportProcess,
+
+	// Notification (通知)
+	model.PermCodeNotificationRead,
+	model.PermCodeNotificationCreate,
+
+	// Stats (统计)
+	model.PermCodeAdminStatsRead,
+}
+
 var DefaultRolePermissions = map[model.RoleSlug][]string{
 	model.RoleSlugSuperAdmin: {
 		// SuperAdmin gets all permissions via "*" wildcard
@@ -55,66 +165,11 @@ var DefaultRolePermissions = map[model.RoleSlug][]string{
 		model.PermCodeOperationLogList,
 	},
 	// ============================================================
-	// 客服角色 - Customer Service
+	// 客服角色 - Customer Service (Legacy + New)
 	// ============================================================
-	model.RoleSlugCustomerService: {
-		// User Management (用户管理 - 只读和状态更新)
-		model.PermCodeAdminUsersRead,
-		model.PermCodeAdminUsersStatus,
-
-		// Player Management (陪玩师管理 - 只读)
-		model.PermCodeAdminPlayersRead,
-
-		// Order Management (订单管理 - 查看、确认、取消)
-		model.PermCodeAdminOrdersRead,
-		model.PermCodeAdminOrdersConfirm,
-		model.PermCodeAdminOrdersCancel,
-		model.PermCodeAdminOrdersAssign,
-
-		// Payment Management (支付管理 - 只读)
-		model.PermCodeAdminPaymentsRead,
-
-		// Dispute Management (纠纷管理)
-		model.PermCodeDisputeRead,
-		model.PermCodeDisputeCreate,
-		model.PermCodeDisputeResolve,
-
-		// Review Management (评论管理 - 审核)
-		model.PermCodeReviewList,
-		model.PermCodeReviewGet,
-		model.PermCodeReviewPending,
-		model.PermCodeReviewApprove,
-		model.PermCodeReviewReject,
-		model.PermCodeReviewBatchApprove,
-		model.PermCodeReviewBatchReject,
-
-		// Content Management (内容管理 - 审核)
-		model.PermCodeContentFeedList,
-		model.PermCodeContentFeedGet,
-		model.PermCodeContentFeedApprove,
-		model.PermCodeContentFeedReject,
-		model.PermCodeContentFeedBatchApprove,
-		model.PermCodeContentFeedBatchReject,
-
-		// Chat Monitoring (聊天监控)
-		model.PermCodeContentChatList,
-
-		// Content Report (内容举报)
-		model.PermCodeContentReportList,
-		model.PermCodeContentReportGet,
-		model.PermCodeContentReportProcess,
-
-		// Notification (通知)
-		model.PermCodeNotificationRead,
-		model.PermCodeNotificationCreate,
-		model.PermCodeNotificationBatchSend,
-
-		// Stats (统计)
-		model.PermCodeAdminStatsRead,
-
-		// Operation Log
-		model.PermCodeOperationLogList,
-	},
+	model.RoleSlugCustomerService: customerServiceLeaderPermissions,
+	model.RoleSlugCSLeader:        customerServiceLeaderPermissions,
+	model.RoleSlugCSAgent:         customerServiceAgentPermissions,
 	model.RoleSlugAdmin: {
 		// User Management
 		model.PermCodeAdminUsersRead,
@@ -351,9 +406,25 @@ var SystemRoleDefinitions = []model.RoleModel{
 	{
 		Slug:        string(model.RoleSlugCustomerService),
 		Name:        "客服",
-		Description: "客服人员，负责纠纷处理、订单协助、用户服务等",
+		Description: "客服角色（兼容旧版），建议迁移至客服主管/客服专员",
 		IsSystem:    true,
 		Priority:    300,
+		Level:       0,
+	},
+	{
+		Slug:        string(model.RoleSlugCSLeader),
+		Name:        "客服主管",
+		Description: "负责客服团队管理、升级纠纷处理与审核决策",
+		IsSystem:    true,
+		Priority:    320,
+		Level:       0,
+	},
+	{
+		Slug:        string(model.RoleSlugCSAgent),
+		Name:        "客服专员",
+		Description: "负责用户咨询、订单协助、基础纠纷调解与内容审核",
+		IsSystem:    true,
+		Priority:    280,
 		Level:       0,
 	},
 	{
@@ -387,6 +458,8 @@ func seedDefaultRoles(tx *gorm.DB) error {
 			existing.Description = role.Description
 			existing.IsSystem = role.IsSystem
 			existing.Priority = role.Priority
+			existing.ParentID = role.ParentID
+			existing.Level = role.Level
 			if err := tx.Save(&existing).Error; err != nil {
 				return err
 			}
@@ -402,7 +475,33 @@ func seedDefaultRoles(tx *gorm.DB) error {
 		}
 	}
 
-	// 2. Assign permissions to each role
+	// 2. Build inheritance relationships for predefined roles.
+	// 继承方向说明：子角色继承父角色权限。客服主管继承客服专员，以便在专员权限基础上扩展管理能力。
+	parentRoleSlugs := map[model.RoleSlug]model.RoleSlug{
+		model.RoleSlugCSLeader: model.RoleSlugCSAgent,
+	}
+	for childSlug, parentSlug := range parentRoleSlugs {
+		childRole := roles[string(childSlug)]
+		parentRole := roles[string(parentSlug)]
+		if childRole == nil || parentRole == nil {
+			log.Printf("Warning: role inheritance skipped for %s -> %s (missing role)\n", childSlug, parentSlug)
+			continue
+		}
+
+		level := parentRole.Level + 1
+		if err := tx.Model(&model.RoleModel{}).Where("id = ?", childRole.ID).Updates(map[string]any{
+			"parent_id": parentRole.ID,
+			"level":     level,
+		}).Error; err != nil {
+			return err
+		}
+
+		parentID := parentRole.ID
+		childRole.ParentID = &parentID
+		childRole.Level = level
+	}
+
+	// 3. Assign permissions to each role
 	for roleSlug, permCodes := range DefaultRolePermissions {
 		role, ok := roles[string(roleSlug)]
 		if !ok {

@@ -16,6 +16,7 @@ func registerUserRoutes(api *gin.RouterGroup, authMiddleware gin.HandlerFunc, se
 	userGroup.Use(authMiddleware)
 	{
 		userhandler.RegisterOrderRoutes(userGroup, services.orderSvc, authMiddleware)
+		userhandler.RegisterDisputeRoutes(userGroup, services.disputeSvc, authMiddleware)
 		userhandler.RegisterPaymentRoutes(userGroup, services.paymentSvc, authMiddleware)
 		userhandler.RegisterWalletRoutes(userGroup, services.walletSvc, authMiddleware)
 		userhandler.RegisterPlayerRoutes(userGroup, services.playerSvc, authMiddleware)
@@ -42,6 +43,7 @@ func registerUserRoutesWithRoleSwitch(api *gin.RouterGroup, authMiddleware gin.H
 	userGroup.Use(authMiddleware)
 	{
 		userhandler.RegisterOrderRoutes(userGroup, services.orderSvc, authMiddleware)
+		userhandler.RegisterDisputeRoutes(userGroup, services.disputeSvc, authMiddleware)
 		userhandler.RegisterPaymentRoutes(userGroup, services.paymentSvc, authMiddleware)
 		userhandler.RegisterWalletRoutes(userGroup, services.walletSvc, authMiddleware)
 		userhandler.RegisterPlayerRoutes(userGroup, services.playerSvc, authMiddleware)
@@ -93,6 +95,14 @@ func registerUserRoutesWithRoleSwitch(api *gin.RouterGroup, authMiddleware gin.H
 
 		// 语音通话路由
 		userhandler.RegisterVoiceRoutes(userGroup, services.trtcSvc, authMiddleware)
+	}
+
+	// 兼容旧版前端路径：/users/*
+	legacyUsersGroup := api.Group("/users")
+	legacyUsersGroup.Use(authMiddleware)
+	{
+		userhandler.RegisterChatRoutes(legacyUsersGroup, services.chatSvc, authMiddleware)
+		userhandler.RegisterProfileRoutes(legacyUsersGroup, services.userRepo, authMiddleware)
 	}
 
 	// 上传相关路由（注册在 /api/v1 下）

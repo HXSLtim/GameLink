@@ -401,24 +401,64 @@ func ensureDefaultRoles(db *gorm.DB) error {
 			Name:        "超级管理员",
 			Description: "拥有系统所有权限，不可删除",
 			IsSystem:    true,
+			Priority:    1000,
+			Level:       0,
 		},
 		{
 			Slug:        string(model.RoleSlugAdmin),
 			Name:        "管理员",
 			Description: "后台管理权限",
 			IsSystem:    true,
+			Priority:    500,
+			Level:       0,
+		},
+		{
+			Slug:        string(model.RoleSlugFinance),
+			Name:        "财务",
+			Description: "财务人员，负责提现审批与退款操作",
+			IsSystem:    true,
+			Priority:    400,
+			Level:       0,
+		},
+		{
+			Slug:        string(model.RoleSlugCustomerService),
+			Name:        "客服",
+			Description: "客服角色（兼容旧版），建议迁移到客服主管/客服专员",
+			IsSystem:    true,
+			Priority:    300,
+			Level:       0,
+		},
+		{
+			Slug:        string(model.RoleSlugCSLeader),
+			Name:        "客服主管",
+			Description: "负责客服团队管理和升级纠纷处理",
+			IsSystem:    true,
+			Priority:    320,
+			Level:       0,
+		},
+		{
+			Slug:        string(model.RoleSlugCSAgent),
+			Name:        "客服专员",
+			Description: "负责用户咨询、订单协助与基础纠纷调解",
+			IsSystem:    true,
+			Priority:    280,
+			Level:       0,
 		},
 		{
 			Slug:        string(model.RoleSlugPlayer),
 			Name:        "陪玩师",
 			Description: "提供陪玩服务的用户",
 			IsSystem:    true,
+			Priority:    100,
+			Level:       0,
 		},
 		{
 			Slug:        string(model.RoleSlugUser),
 			Name:        "普通用户",
 			Description: "平台普通用户",
 			IsSystem:    true,
+			Priority:    10,
+			Level:       0,
 		},
 	}
 
@@ -428,12 +468,21 @@ func ensureDefaultRoles(db *gorm.DB) error {
 		err := db.Where("slug = ?", role.Slug).First(&existing).Error
 		if err == nil {
 			// Role exists, update description if needed
-			if existing.Name != role.Name || existing.Description != role.Description {
-				db.Model(&existing).Updates(map[string]interface{}{
+			if existing.Name != role.Name ||
+				existing.Description != role.Description ||
+				existing.IsSystem != role.IsSystem ||
+				existing.Priority != role.Priority ||
+				existing.Level != role.Level {
+				if err := db.Model(&existing).Updates(map[string]interface{}{
 					"name":        role.Name,
 					"description": role.Description,
 					"is_system":   true,
-				})
+					"priority":    role.Priority,
+					"level":       role.Level,
+					"parent_id":   role.ParentID,
+				}).Error; err != nil {
+					return err
+				}
 			}
 			continue
 		}
@@ -445,6 +494,29 @@ func ensureDefaultRoles(db *gorm.DB) error {
 			return err
 		}
 		log.Printf("created system role: %s (id=%d)", role.Slug, role.ID)
+	}
+
+	parentRoleSlugs := map[model.RoleSlug]model.RoleSlug{
+		model.RoleSlugCSLeader: model.RoleSlugCSAgent,
+	}
+	for childSlug, parentSlug := range parentRoleSlugs {
+		var childRole model.RoleModel
+		if err := db.Where("slug = ?", string(childSlug)).First(&childRole).Error; err != nil {
+			return err
+		}
+
+		var parentRole model.RoleModel
+		if err := db.Where("slug = ?", string(parentSlug)).First(&parentRole).Error; err != nil {
+			return err
+		}
+
+		level := parentRole.Level + 1
+		if err := db.Model(&childRole).Updates(map[string]interface{}{
+			"parent_id": parentRole.ID,
+			"level":     level,
+		}).Error; err != nil {
+			return err
+		}
 	}
 
 	return nil

@@ -11,6 +11,8 @@ const (
 	RoleSlugAdmin           RoleSlug = "admin"           // 管理员/店长
 	RoleSlugFinance         RoleSlug = "finance"         // 财务
 	RoleSlugCustomerService RoleSlug = "customerService" // 客服
+	RoleSlugCSLeader        RoleSlug = "csLeader"        // 客服主管
+	RoleSlugCSAgent         RoleSlug = "csAgent"         // 普通客服
 	RoleSlugPlayer          RoleSlug = "player"          // 陪玩师
 	RoleSlugUser            RoleSlug = "user"            // 普通用户
 )

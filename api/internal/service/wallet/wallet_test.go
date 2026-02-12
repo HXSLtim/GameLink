@@ -183,6 +183,19 @@ func (m *MockOrderRepository) GetByIDs(ctx context.Context, ids []uint64) ([]mod
 	return args.Get(0).([]model.Order), args.Error(1)
 }
 
+// MockServiceItemLister is a mock implementation for service item list fallback.
+type MockServiceItemLister struct {
+	mock.Mock
+}
+
+func (m *MockServiceItemLister) List(ctx context.Context, opts repository.ServiceItemListOptions) ([]model.ServiceItem, int64, error) {
+	args := m.Called(ctx, opts)
+	if args.Get(0) == nil {
+		return nil, args.Get(1).(int64), args.Error(2)
+	}
+	return args.Get(0).([]model.ServiceItem), args.Get(1).(int64), args.Error(2)
+}
+
 // ============================================================================
 // Helper Functions
 // ============================================================================
@@ -192,6 +205,15 @@ func createTestWalletService() (*WalletService, *MockWalletRepository, *MockPaym
 	mockWallets := new(MockWalletRepository)
 	mockPayments := new(MockPaymentRepository)
 	mockOrders := new(MockOrderRepository)
+	// Recharge flow now queries one order template before creating recharge order.
+	mockOrders.On("List", mock.Anything, mock.Anything).
+		Return([]model.Order{
+			{
+				Base:   model.Base{ID: 1},
+				UserID: 1001,
+				ItemID: 1,
+			},
+		}, int64(1), nil)
 	svc := NewWalletService(mockWallets, mockPayments, mockOrders)
 	return svc, mockWallets, mockPayments, mockOrders
 }
@@ -266,6 +288,64 @@ func TestWalletService_Recharge_Success(t *testing.T) {
 	mockOrders.AssertExpectations(t)
 	mockPayments.AssertExpectations(t)
 	mockWallets.AssertExpectations(t)
+}
+
+func TestWalletService_Recharge_UsesServiceItemFallbackWhenNoOrders(t *testing.T) {
+	mockWallets := new(MockWalletRepository)
+	mockPayments := new(MockPaymentRepository)
+	mockOrders := new(MockOrderRepository)
+	mockServiceItems := new(MockServiceItemLister)
+
+	svc := NewWalletService(mockWallets, mockPayments, mockOrders, mockServiceItems)
+	ctx := context.Background()
+	userID := uint64(1001)
+
+	req := RechargeRequest{
+		AmountCents: 10000,
+		Method:      model.PaymentMethodAlipay,
+	}
+
+	// No user order, no global order.
+	mockOrders.On("List", ctx, mock.Anything).Return([]model.Order{}, int64(0), nil).Twice()
+
+	// Fallback to first active service item.
+	mockServiceItems.On("List", ctx, mock.Anything).Return([]model.ServiceItem{
+		{
+			ID:     999,
+			GameID: nil,
+		},
+	}, int64(1), nil).Once()
+
+	mockOrders.On("Create", ctx, mock.AnythingOfType("*model.Order")).
+		Run(func(args mock.Arguments) {
+			order := args.Get(1).(*model.Order)
+			order.ID = 1001
+			assert.Equal(t, uint64(999), order.ItemID)
+		}).
+		Return(nil).Once()
+
+	mockPayments.On("Create", ctx, mock.AnythingOfType("*model.Payment")).
+		Run(func(args mock.Arguments) {
+			payment := args.Get(1).(*model.Payment)
+			payment.ID = 2001
+			assert.Equal(t, model.PaymentMethodWallet, payment.Method)
+		}).
+		Return(nil).Once()
+
+	mockWallets.On("GetByUserID", ctx, userID).
+		Return(nil, repository.ErrNotFound).Once()
+	mockWallets.On("Save", ctx, mock.AnythingOfType("*model.Wallet")).
+		Return(nil).Once()
+
+	resp, err := svc.Recharge(ctx, userID, req)
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, uint64(1001), resp.OrderID)
+
+	mockOrders.AssertExpectations(t)
+	mockPayments.AssertExpectations(t)
+	mockWallets.AssertExpectations(t)
+	mockServiceItems.AssertExpectations(t)
 }
 
 func TestWalletService_Recharge_ExistingWallet(t *testing.T) {
@@ -496,7 +576,7 @@ func TestWalletService_Recharge_DifferentPaymentMethods(t *testing.T) {
 			mockPayments.On("Create", ctx, mock.AnythingOfType("*model.Payment")).
 				Run(func(args mock.Arguments) {
 					payment := args.Get(1).(*model.Payment)
-					assert.Equal(t, method, payment.Method)
+					assert.Equal(t, model.PaymentMethodWallet, payment.Method)
 				}).
 				Return(nil).Once()
 
@@ -878,7 +958,7 @@ func TestWalletService_Recharge_OrderFields(t *testing.T) {
 		Run(func(args mock.Arguments) {
 			order := args.Get(1).(*model.Order)
 			assert.Equal(t, userID, order.UserID)
-			assert.Equal(t, uint64(0), order.ItemID) // No service item for recharge
+			assert.True(t, order.ItemID > 0)
 			assert.Equal(t, "Wallet Recharge", order.Title)
 			assert.Equal(t, int64(10000), order.UnitPriceCents)
 			assert.Equal(t, int64(10000), order.TotalPriceCents)
@@ -889,7 +969,7 @@ func TestWalletService_Recharge_OrderFields(t *testing.T) {
 	mockPayments.On("Create", ctx, mock.AnythingOfType("*model.Payment")).
 		Run(func(args mock.Arguments) {
 			payment := args.Get(1).(*model.Payment)
-			assert.Equal(t, model.PaymentMethodAlipay, payment.Method)
+			assert.Equal(t, model.PaymentMethodWallet, payment.Method)
 			assert.Equal(t, model.CurrencyCNY, payment.Currency)
 			assert.Equal(t, model.PaymentStatusPaid, payment.Status)
 		}).

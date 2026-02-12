@@ -8,6 +8,7 @@ import (
 
 // RegisterHealth 注册健康检查路由。
 func RegisterHealth(router gin.IRoutes) {
+	router.GET("/health", Health)
 	router.GET("/healthz", Health)
 }
 
