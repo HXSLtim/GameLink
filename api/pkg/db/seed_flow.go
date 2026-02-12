@@ -474,7 +474,7 @@ func seedOrderGroupData(
 		hourStart := startCompleted.Add(time.Duration(i) * time.Hour)
 		hourEnd := hourStart.Add(1 * time.Hour)
 		title := fmt.Sprintf("英雄联盟陪玩-第%d小时（演示）", i+1)
-		_, err := seedOrder(tx, seedOrderParams{
+		order, err := seedOrder(tx, seedOrderParams{
 			Title:          title,
 			Description:    fmt.Sprintf("演示数据：多时段订单第%d小时子订单", i+1),
 			UserID:         customerA.ID,
@@ -490,6 +490,19 @@ func seedOrderGroupData(
 			CompletedAt:    &hourEnd,
 		})
 		if err != nil {
+			return err
+		}
+		if err := seedPayment(tx, seedPaymentParams{
+			OrderID:         order.ID,
+			UserID:          customerA.ID,
+			Method:          model.PaymentMethodWeChat,
+			AmountCents:     item.BasePriceCents,
+			Currency:        model.CurrencyCNY,
+			Status:          model.PaymentStatusPaid,
+			ProviderTradeNo: fmt.Sprintf("WX-DEMO-OG-COMP-%02d", i+1),
+			ProviderRaw:     json.RawMessage(`{"seed":"order_group","group_no":"OG-DEMO-COMPLETED-001"}`),
+			PaidAt:          ptrTime(hourStart.Add(-5 * time.Minute)),
+		}); err != nil {
 			return err
 		}
 		// Link to group (update GroupID)
@@ -538,7 +551,7 @@ func seedOrderGroupData(
 		default:
 			status = model.OrderStatusPending
 		}
-		_, err := seedOrder(tx, seedOrderParams{
+		order, err := seedOrder(tx, seedOrderParams{
 			Title:          title,
 			Description:    fmt.Sprintf("演示数据：多时段订单第%d小时", i+1),
 			UserID:         customerB.ID,
@@ -555,6 +568,21 @@ func seedOrderGroupData(
 		})
 		if err != nil {
 			return err
+		}
+		if status == model.OrderStatusCompleted {
+			if err := seedPayment(tx, seedPaymentParams{
+				OrderID:         order.ID,
+				UserID:          customerB.ID,
+				Method:          model.PaymentMethodWeChat,
+				AmountCents:     item.BasePriceCents,
+				Currency:        model.CurrencyCNY,
+				Status:          model.PaymentStatusPaid,
+				ProviderTradeNo: fmt.Sprintf("WX-DEMO-OG-PROG-%02d", i+1),
+				ProviderRaw:     json.RawMessage(`{"seed":"order_group","group_no":"OG-DEMO-INPROGRESS-001"}`),
+				PaidAt:          ptrTime(hourStart.Add(-5 * time.Minute)),
+			}); err != nil {
+				return err
+			}
 		}
 		tx.Model(&model.Order{}).Where("title = ? AND user_id = ?", title, customerB.ID).
 			Update("group_id", progressGroup.ID)
@@ -613,7 +641,7 @@ func seedOrderGroupData(
 		if sub.Status == model.OrderStatusCanceled {
 			cancelReason = "陪玩师临时有事，转单处理"
 		}
-		_, err := seedOrder(tx, seedOrderParams{
+		order, err := seedOrder(tx, seedOrderParams{
 			Title:          title,
 			Description:    "演示数据：" + sub.Note,
 			UserID:         customerA.ID,
@@ -631,6 +659,21 @@ func seedOrderGroupData(
 		})
 		if err != nil {
 			return err
+		}
+		if sub.Status == model.OrderStatusCompleted {
+			if err := seedPayment(tx, seedPaymentParams{
+				OrderID:         order.ID,
+				UserID:          customerA.ID,
+				Method:          model.PaymentMethodWeChat,
+				AmountCents:     item.BasePriceCents,
+				Currency:        model.CurrencyCNY,
+				Status:          model.PaymentStatusPaid,
+				ProviderTradeNo: fmt.Sprintf("WX-DEMO-OG-PART-%02d", sub.HourIndex+1),
+				ProviderRaw:     json.RawMessage(`{"seed":"order_group","group_no":"OG-DEMO-PARTIAL-001"}`),
+				PaidAt:          ptrTime(hourStart.Add(-5 * time.Minute)),
+			}); err != nil {
+				return err
+			}
 		}
 		tx.Model(&model.Order{}).Where("title = ? AND user_id = ?", title, customerA.ID).
 			Updates(map[string]interface{}{
