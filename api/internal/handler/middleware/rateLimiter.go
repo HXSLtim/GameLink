@@ -3,6 +3,7 @@ package middleware
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -315,10 +316,21 @@ func RateLimit(config RateLimiterConfig) gin.HandlerFunc {
 // DefaultRateLimitConfig 返回默认限流配置
 // QPS 优化：提升限流阈值以支持更高并发
 func DefaultRateLimitConfig() RateLimiterConfig {
+	// Development / local integration testing:
+	// - Most workflows run against localhost, but when the API is containerized the
+	//   real client IP becomes the Docker bridge gateway (e.g. 172.20.0.1), which
+	//   will not match the 127.0.0.1 whitelist.
+	// - This makes scripted regression (and fast UI iteration) flaky due to the
+	//   auth/login route limit.
+	//
+	// We keep rate limiting enabled for staging/production only.
+	env := strings.TrimSpace(os.Getenv("APP_ENV"))
+	enabled := env == "production" || env == "staging"
+
 	return RateLimiterConfig{
-		Enabled:               true, // 生产环境启用限流
-		IPRequestsPerSecond:   50,   // 每秒50个请求（提升5倍）
-		UserRequestsPerMinute: 300,  // 每分钟300个请求（提升5倍）
+		Enabled:               enabled, // staging/production 启用；development 默认关闭
+		IPRequestsPerSecond:   50,      // 每秒50个请求（提升5倍）
+		UserRequestsPerMinute: 300,     // 每分钟300个请求（提升5倍）
 		WhitelistIPs:          []string{"127.0.0.1", "::1"},
 		WhitelistRoles:        []string{"superAdmin"},
 		RouteLimits: map[string]RouteLimit{

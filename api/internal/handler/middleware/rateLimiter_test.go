@@ -444,26 +444,36 @@ func TestRateLimiter_ClientIP(t *testing.T) {
 
 // TestRateLimiter_DefaultConfig tests default configuration
 func TestRateLimiter_DefaultConfig(t *testing.T) {
-	config := DefaultRateLimitConfig()
+	t.Run("development disables rate limiting by default", func(t *testing.T) {
+		t.Setenv("APP_ENV", "development")
+		config := DefaultRateLimitConfig()
 
-	assert.True(t, config.Enabled, "Rate limiting should be enabled by default")
-	assert.Equal(t, 50.0, config.IPRequestsPerSecond)
-	assert.Equal(t, 300, config.UserRequestsPerMinute)
-	assert.NotEmpty(t, config.WhitelistIPs, "Should have whitelisted IPs")
-	assert.NotEmpty(t, config.WhitelistRoles, "Should have whitelisted roles")
-	assert.NotEmpty(t, config.RouteLimits, "Should have route-specific limits")
+		assert.False(t, config.Enabled, "Rate limiting should be disabled in development by default")
+		assert.Equal(t, 50.0, config.IPRequestsPerSecond)
+		assert.Equal(t, 300, config.UserRequestsPerMinute)
+		assert.NotEmpty(t, config.WhitelistIPs, "Should have whitelisted IPs")
+		assert.NotEmpty(t, config.WhitelistRoles, "Should have whitelisted roles")
+		assert.NotEmpty(t, config.RouteLimits, "Should have route-specific limits")
+	})
 
-	// Check specific route limits
-	loginLimit, exists := config.RouteLimits["/api/v1/auth/login"]
-	require.True(t, exists, "Login route should have rate limit")
-	assert.Equal(t, 10, loginLimit.Requests)
-	assert.Equal(t, time.Minute, loginLimit.Window)
-	assert.True(t, loginLimit.LimitByIP)
+	t.Run("production enables rate limiting by default", func(t *testing.T) {
+		t.Setenv("APP_ENV", "production")
+		config := DefaultRateLimitConfig()
 
-	registerLimit, exists := config.RouteLimits["/api/v1/auth/register"]
-	require.True(t, exists, "Register route should have rate limit")
-	assert.Equal(t, 20, registerLimit.Requests)
-	assert.Equal(t, time.Hour, registerLimit.Window)
+		assert.True(t, config.Enabled, "Rate limiting should be enabled in production by default")
+
+		// Check specific route limits
+		loginLimit, exists := config.RouteLimits["/api/v1/auth/login"]
+		require.True(t, exists, "Login route should have rate limit")
+		assert.Equal(t, 10, loginLimit.Requests)
+		assert.Equal(t, time.Minute, loginLimit.Window)
+		assert.True(t, loginLimit.LimitByIP)
+
+		registerLimit, exists := config.RouteLimits["/api/v1/auth/register"]
+		require.True(t, exists, "Register route should have rate limit")
+		assert.Equal(t, 20, registerLimit.Requests)
+		assert.Equal(t, time.Hour, registerLimit.Window)
+	})
 }
 
 // TestRateLimiter_NewRateLimiter tests RateLimiter initialization
