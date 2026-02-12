@@ -433,22 +433,98 @@ func (s *AdminService) RefundOrder(ctx context.Context, id uint64, input RefundO
 		return nil, apierr.BadRequest("reason is required")
 	}
 	switch order.Status {
-	case model.OrderStatusCompleted, model.OrderStatusInProgress, model.OrderStatusConfirmed:
+	case model.OrderStatusCompleted, model.OrderStatusInProgress, model.OrderStatusConfirmed, model.OrderStatusRefunded:
 		// allowed
 	default:
 		return nil, apierr.BadRequest("invalid order status for refund")
 	}
-	amount := order.TotalPriceCents
+
+	// 先汇总当前支付退款信息，避免订单字段与支付字段不一致
+	payments, err := s.listPaymentsByOrder(ctx, id)
+	if err != nil {
+		return nil, WrapError(err, "list payments by order")
+	}
+
+	var paymentRefundedCents int64
+	var paymentRemainingCents int64
+	for _, pay := range payments {
+		if pay.Status != model.PaymentStatusPaid && pay.Status != model.PaymentStatusRefunded {
+			continue
+		}
+		refunded := clampRefundedAmount(pay.RefundedAmountCents, pay.AmountCents)
+		paymentRefundedCents += refunded
+		paymentRemainingCents += maxInt64(pay.AmountCents-refunded, 0)
+	}
+
+	if len(payments) == 0 && order.RefundAmountCents == 0 {
+		return nil, apierr.BadRequest("no payment record for refund")
+	}
+
+	baseRefunded := maxInt64(order.RefundAmountCents, paymentRefundedCents)
+	remainingOrderRefundable := order.TotalPriceCents - baseRefunded
+	if remainingOrderRefundable <= 0 {
+		return nil, apierr.BadRequest("order already fully refunded")
+	}
+
+	amount := remainingOrderRefundable
 	if input.AmountCents != nil {
-		if *input.AmountCents <= 0 || *input.AmountCents > order.TotalPriceCents {
+		if *input.AmountCents <= 0 || *input.AmountCents > remainingOrderRefundable {
 			return nil, apierr.BadRequest("invalid refund amount")
 		}
 		amount = *input.AmountCents
 	}
+
 	refundedAt := time.Now().UTC()
 	note := strings.TrimSpace(input.Note)
+
+	// 优先把退款分摊到支付记录（最多分摊到可退款余额）
+	remainingToAllocate := minInt64(amount, paymentRemainingCents)
+	for _, pay := range payments {
+		if remainingToAllocate <= 0 {
+			break
+		}
+		if pay.Status != model.PaymentStatusPaid && pay.Status != model.PaymentStatusRefunded {
+			continue
+		}
+		currentRefunded := clampRefundedAmount(pay.RefundedAmountCents, pay.AmountCents)
+		paymentRemaining := pay.AmountCents - currentRefunded
+		if paymentRemaining <= 0 {
+			continue
+		}
+
+		allocate := minInt64(paymentRemaining, remainingToAllocate)
+		newRefundedTotal := currentRefunded + allocate
+		nextStatus := model.PaymentStatusPaid
+		if newRefundedTotal >= pay.AmountCents {
+			nextStatus = model.PaymentStatusRefunded
+		}
+
+		_, updErr := s.UpdatePayment(ctx, pay.ID, UpdatePaymentInput{
+			Status:              nextStatus,
+			ProviderTradeNo:     pay.ProviderTradeNo,
+			ProviderRaw:         pay.ProviderRaw,
+			PaidAt:              pay.PaidAt,
+			RefundedAt:          &refundedAt,
+			RefundedAmountCents: &newRefundedTotal,
+		})
+		if updErr != nil && !errors.Is(updErr, ErrValidation) {
+			return nil, WrapError(updErr, "update payment")
+		}
+		remainingToAllocate -= allocate
+	}
+
+	updatedRefundedTotal := baseRefunded + amount
+	if updatedRefundedTotal > order.TotalPriceCents {
+		updatedRefundedTotal = order.TotalPriceCents
+	}
+
+	nextOrderStatus := order.Status
+	if updatedRefundedTotal >= order.TotalPriceCents {
+		nextOrderStatus = model.OrderStatusRefunded
+	}
+
 	updatedOrder, err := s.UpdateOrder(ctx, id, UpdateOrderInput{
-		Status:            model.OrderStatusRefunded,
+		Status:            nextOrderStatus,
 		TotalPriceCents:   order.TotalPriceCents,
 		Currency:          order.Currency,
 		ScheduledStart:    order.ScheduledStart,
@@ -456,7 +532,7 @@ func (s *AdminService) RefundOrder(ctx context.Context, id uint64, input RefundO
 		CancelReason:      order.CancelReason,
 		StartedAt:         order.StartedAt,
 		CompletedAt:       order.CompletedAt,
-		RefundAmountCents: &amount,
+		RefundAmountCents: &updatedRefundedTotal,
 		RefundReason:      reason,
 		RefundedAt:        &refundedAt,
 		Note:              note,
@@ -465,28 +541,6 @@ func (s *AdminService) RefundOrder(ctx context.Context, id uint64, input RefundO
 		return nil, WrapError(err, "update order")
 	}
 
-	// 更新相关支付为已退款状态（若存在）
-	payments, err := s.listPaymentsByOrder(ctx, id)
-	if err != nil {
-		return nil, WrapError(err, "list payments by order")
-	}
-	for _, pay := range payments {
-		if pay.Status == model.PaymentStatusRefunded {
-			continue
-		}
-		if pay.Status == model.PaymentStatusPaid || pay.Status == model.PaymentStatusPending {
-			_, updErr := s.UpdatePayment(ctx, pay.ID, UpdatePaymentInput{
-				Status:          model.PaymentStatusRefunded,
-				ProviderTradeNo: pay.ProviderTradeNo,
-				ProviderRaw:     pay.ProviderRaw,
-				PaidAt:          pay.PaidAt,
-				RefundedAt:      &refundedAt,
-			})
-			if updErr != nil && !errors.Is(updErr, ErrValidation) {
-				return nil, WrapError(updErr, "update payment")
-			}
-		}
-	}
 	return updatedOrder, nil
 }
 
@@ -507,17 +561,24 @@ func (s *AdminService) GetOrderRefunds(ctx context.Context, orderID uint64) ([]O
 	}
 
 	result := make([]OrderRefundItem, 0)
+	var aggregatedRefundedCents int64
 	for _, pay := range payments {
-		if pay.Status != model.PaymentStatusRefunded {
+		refundedAmount := clampRefundedAmount(pay.RefundedAmountCents, pay.AmountCents)
+		if refundedAmount <= 0 {
 			continue
+		}
+		aggregatedRefundedCents += refundedAmount
+		status := "partial"
+		if pay.IsFullyRefunded() {
+			status = mapRefundStatus(pay.Status)
 		}
 		item := OrderRefundItem{
 			ID:          pay.ID,
 			OrderID:     orderID,
 			PaymentID:   pay.ID,
-			AmountCents: pay.AmountCents,
+			AmountCents: refundedAmount,
 			Method:      string(pay.Method),
-			Status:      mapRefundStatus(pay.Status),
+			Status:      status,
 			RefundedAt:  pay.RefundedAt,
 			CreatedAt:   pay.CreatedAt,
 			Reason:      order.RefundReason,
@@ -526,40 +587,60 @@ func (s *AdminService) GetOrderRefunds(ctx context.Context, orderID uint64) ([]O
 		result = append(result, item)
 	}
 
-	// 如果订单存在退款金额但支付记录未覆盖，则补充一条摘要信息
-	if order.RefundAmountCents > 0 {
-		hasSummary := false
-		for _, item := range result {
-			if item.AmountCents == order.RefundAmountCents {
-				hasSummary = true
-				break
-			}
+	// 如果订单存在“人工退款差额”（未映射到支付记录），补充一条摘要
+	manualRefundCents := order.RefundAmountCents - aggregatedRefundedCents
+	if manualRefundCents > 0 {
+		createdAt := order.UpdatedAt
+		if order.RefundedAt != nil {
+			createdAt = *order.RefundedAt
 		}
-		if !hasSummary {
-			createdAt := order.UpdatedAt
-			if order.RefundedAt != nil {
-				createdAt = *order.RefundedAt
-			}
-			item := OrderRefundItem{
-				ID:          orderID*10 + 1,
-				OrderID:     orderID,
-				PaymentID:   0,
-				AmountCents: order.RefundAmountCents,
-				Method:      "unknown",
-				Status:      "success",
-				Reason:      order.RefundReason,
-				RefundedAt:  order.RefundedAt,
-				CreatedAt:   createdAt,
-				Note:        order.RefundReason,
-			}
-			result = append(result, item)
+		status := "partial"
+		if order.RefundAmountCents >= order.TotalPriceCents {
+			status = "success"
 		}
+		item := OrderRefundItem{
+			ID:          orderID*10 + 1,
+			OrderID:     orderID,
+			PaymentID:   0,
+			AmountCents: manualRefundCents,
+			Method:      "manual",
+			Status:      status,
+			Reason:      order.RefundReason,
+			RefundedAt:  order.RefundedAt,
+			CreatedAt:   createdAt,
+			Note:        order.RefundReason,
+		}
+		result = append(result, item)
 	}
 
 	sort.Slice(result, func(i, j int) bool {
 		return result[i].CreatedAt.Before(result[j].CreatedAt)
 	})
 	return result, nil
+}
+
+func minInt64(a, b int64) int64 {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func maxInt64(a, b int64) int64 {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+func clampRefundedAmount(refunded, total int64) int64 {
+	if refunded < 0 {
+		return 0
+	}
+	if total >= 0 && refunded > total {
+		return total
+	}
+	return refunded
 }
 
 // GetOrderReviews 返回订单相关的全部评价。

@@ -490,6 +490,44 @@ func TestPaymentHandler_Unit_RefundPayment_FullRefund(t *testing.T) {
 	assert.Equal(t, model.PaymentStatusRefunded, updatedPayment.Status)
 }
 
+func TestPaymentHandler_Unit_RefundPayment_CumulativePartial(t *testing.T) {
+	ctx := SetupPaymentTest(t)
+	ctx.RegisterPaymentRoutes()
+
+	// 退款语义在已支付订单上更清晰
+	require.NoError(t, ctx.DB.Model(&model.Order{}).
+		Where("id = ?", ctx.TestOrder.ID).
+		Update("status", model.OrderStatusCompleted).Error)
+
+	testPayment := testutil.CreateTestPayment(t, ctx.DB, ctx.TestOrder.ID, ctx.TestUser.ID, model.PaymentStatusPaid)
+
+	firstPayload := map[string]interface{}{
+		"amount_cents": int64(3000),
+		"reason":       "First partial refund",
+	}
+	firstPath := fmt.Sprintf("/admin/payments/%d/refund", testPayment.ID)
+	firstResp := testutil.MakeAuthenticatedRequest(t, ctx.Router, "POST", firstPath, ctx.AdminToken, firstPayload)
+	testutil.AssertSuccess(t, firstResp)
+
+	secondPayload := map[string]interface{}{
+		"amount_cents": int64(2000),
+		"reason":       "Second partial refund",
+	}
+	secondPath := fmt.Sprintf("/admin/payments/%d/refund", testPayment.ID)
+	secondResp := testutil.MakeAuthenticatedRequest(t, ctx.Router, "POST", secondPath, ctx.AdminToken, secondPayload)
+	testutil.AssertSuccess(t, secondResp)
+
+	var updatedPayment model.Payment
+	require.NoError(t, ctx.DB.First(&updatedPayment, testPayment.ID).Error)
+	assert.Equal(t, int64(5000), updatedPayment.RefundedAmountCents)
+	assert.Equal(t, model.PaymentStatusPaid, updatedPayment.Status)
+
+	var updatedOrder model.Order
+	require.NoError(t, ctx.DB.First(&updatedOrder, ctx.TestOrder.ID).Error)
+	assert.Equal(t, int64(5000), updatedOrder.RefundAmountCents)
+	assert.Equal(t, model.OrderStatusCompleted, updatedOrder.Status)
+}
+
 func TestPaymentHandler_Unit_RefundPayment_InvalidAmount(t *testing.T) {
 	ctx := SetupPaymentTest(t)
 	ctx.RegisterPaymentRoutes()

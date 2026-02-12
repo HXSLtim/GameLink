@@ -831,6 +831,64 @@ func TestOrderService_AcceptOrder_UpdateError(t *testing.T) {
 	assert.Error(t, err)
 }
 
+// TestOrderService_AcceptOrder_NotifyUserWithPlayerName tests notification content when player accepts order.
+func TestOrderService_AcceptOrder_NotifyUserWithPlayerName(t *testing.T) {
+	ctx := context.Background()
+	playerUserID := uint64(200)
+	orderID := uint64(1)
+	orderUserID := uint64(999)
+
+	players := &MockPlayerRepository{
+		getPlayerByUser: func(ctx context.Context, userID uint64) (*model.Player, error) {
+			player := createTestPlayer(100, playerUserID)
+			player.Nickname = "王牌打手A"
+			return player, nil
+		},
+	}
+
+	orders := &MockOrderRepository{
+		updateWithCondition: func(ctx context.Context, id uint64, expectedStatus model.OrderStatus, updates map[string]any) (bool, error) {
+			return true, nil
+		},
+		getOrder: func(ctx context.Context, id uint64) (*model.Order, error) {
+			order := createTestOrder(orderID, orderUserID, model.OrderStatusInProgress)
+			return order, nil
+		},
+	}
+
+	users := &MockUserRepository{}
+	games := &MockGameRepository{}
+	payments := &MockPaymentRepository{}
+	reviews := &MockReviewRepository{}
+	commissions := &MockCommissionRepository{}
+
+	var createdNotification *model.NotificationEvent
+	notifications := &MockNotificationRepository{
+		createNotification: func(ctx context.Context, event *model.NotificationEvent) error {
+			createdNotification = event
+			return nil
+		},
+	}
+
+	service := NewOrderService(OrderDeps{
+		Orders:        orders,
+		Players:       players,
+		Users:         users,
+		Games:         games,
+		Payments:      payments,
+		Reviews:       reviews,
+		Commissions:   commissions,
+		Notifications: notifications,
+	})
+
+	err := service.AcceptOrder(ctx, playerUserID, orderID)
+	require.NoError(t, err)
+	require.NotNil(t, createdNotification)
+	assert.Equal(t, orderUserID, createdNotification.UserID)
+	assert.Equal(t, "订单已被接单", createdNotification.Title)
+	assert.Contains(t, createdNotification.Message, "王牌打手A")
+}
+
 // TestOrderService_CompleteOrderByPlayer_InvalidStatus tests player completion with invalid status
 func TestOrderService_CompleteOrderByPlayer_InvalidStatus(t *testing.T) {
 	ctx := context.Background()

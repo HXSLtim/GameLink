@@ -565,6 +565,11 @@ func TestOrderHandler_Comprehensive_RefundOrder_PartialRefund(t *testing.T) {
 	path := fmt.Sprintf("/admin/orders/%d/refund", order.ID)
 	w := testutil.MakeAuthenticatedRequest(t, ctx.Router, "POST", path, ctx.AdminToken, payload)
 	testutil.AssertSuccess(t, w)
+
+	var updated model.Order
+	require.NoError(t, ctx.DB.First(&updated, order.ID).Error)
+	assert.Equal(t, model.OrderStatusCompleted, updated.Status)
+	assert.Equal(t, partialAmount, updated.RefundAmountCents)
 }
 
 func TestOrderHandler_Comprehensive_RefundOrder_NoPayment(t *testing.T) {

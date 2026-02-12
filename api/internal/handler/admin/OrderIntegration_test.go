@@ -667,7 +667,8 @@ func TestOrderHandler_RefundOrder(t *testing.T) {
 
 		assert.True(t, response["success"].(bool))
 		data := response["data"].(map[string]interface{})
-		assert.Equal(t, "refunded", data["status"])
+		assert.Equal(t, "completed", data["status"])
+		assert.Equal(t, float64(5000), data["refund_amount_cents"])
 	})
 
 	t.Run("RefundOrderFullRefund", func(t *testing.T) {

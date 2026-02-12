@@ -1195,7 +1195,12 @@ func (s *OrderService) AcceptOrder(ctx context.Context, playerUserID uint64, ord
 	}
 
 	if order, err := s.orders.Get(ctx, orderID); err == nil && order != nil {
-		s.notifyOrderStatus(ctx, order.UserID, order.ID, string(order.Status), "订单已被接单", "订单已被陪玩师接单")
+		playerName := strings.TrimSpace(player.Nickname)
+		if playerName == "" {
+			playerName = fmt.Sprintf("陪玩师#%d", player.ID)
+		}
+		message := fmt.Sprintf("陪玩师 %s 已接受您的订单", playerName)
+		s.notifyOrderStatus(ctx, order.UserID, order.ID, string(order.Status), "订单已被接单", message)
 	}
 
 	return nil

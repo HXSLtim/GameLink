@@ -164,6 +164,9 @@ func (s *AdminService) UpdatePayment(ctx context.Context, id uint64, input Updat
 	payment.ProviderRaw = input.ProviderRaw
 	payment.PaidAt = input.PaidAt
 	payment.RefundedAt = input.RefundedAt
+	if input.RefundedAmountCents != nil {
+		payment.RefundedAmountCents = *input.RefundedAmountCents
+	}
 
 	if err := s.payments.Update(ctx, payment); err != nil {
 		return nil, WrapError(err, "update payment")
@@ -219,6 +222,11 @@ func (s *AdminService) UpdatePaymentWithRefund(ctx context.Context, id uint64, i
 	}
 
 	s.invalidateCache(ctx, cacheKeyPayments)
+
+	// 同步订单退款聚合字段（累计退款金额、退款状态）
+	if err := s.syncOrderRefundSummary(ctx, payment.OrderID, reason, input.RefundedAt); err != nil {
+		return nil, WrapError(err, "sync order refund summary")
+	}
 
 	// Log the refund operation with detailed metadata
 	s.appendLogAsync(ctx, string(model.OpEntityPayment), payment.ID, string(model.OpActionRefund), map[string]any{
@@ -687,6 +695,55 @@ func (s *AdminService) GetPaymentLogs(ctx context.Context, paymentID uint64, opt
 		return nil, 0, WrapError(err, "get payment logs")
 	}
 	return logs, total, nil
+}
+
+func (s *AdminService) syncOrderRefundSummary(ctx context.Context, orderID uint64, reason string, refundedAt *time.Time) error {
+	order, err := s.orders.Get(ctx, orderID)
+	if err != nil {
+		return WrapError(err, "get order")
+	}
+
+	payments, err := s.listPaymentsByOrder(ctx, orderID)
+	if err != nil {
+		return WrapError(err, "list payments by order")
+	}
+
+	var totalRefundedCents int64
+	for _, pay := range payments {
+		totalRefundedCents += clampRefundedAmount(pay.RefundedAmountCents, pay.AmountCents)
+	}
+	if totalRefundedCents > order.TotalPriceCents {
+		totalRefundedCents = order.TotalPriceCents
+	}
+
+	order.RefundAmountCents = totalRefundedCents
+	if totalRefundedCents > 0 {
+		trimmedReason := strings.TrimSpace(reason)
+		if trimmedReason != "" {
+			order.RefundReason = trimmedReason
+		}
+		if refundedAt != nil {
+			order.RefundedAt = refundedAt
+		} else if order.RefundedAt == nil {
+			now := time.Now().UTC()
+			order.RefundedAt = &now
+		}
+		if order.TotalPriceCents > 0 && totalRefundedCents >= order.TotalPriceCents {
+			order.Status = model.OrderStatusRefunded
+		}
+	}
+
+	if err := s.orders.Update(ctx, order); err != nil {
+		return WrapError(err, "update order")
+	}
+
+	s.invalidateCache(ctx, cacheKeyOrders)
+	s.appendLogAsync(ctx, string(model.OpEntityOrder), order.ID, string(model.OpActionRefund), map[string]any{
+		"refund_amount_cents": order.RefundAmountCents,
+		"refund_reason":       order.RefundReason,
+		"status":              order.Status,
+	})
+	return nil
 }
 
 

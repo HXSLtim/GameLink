@@ -563,7 +563,7 @@ func TestOrderHandler_Unit_RefundOrder_Success(t *testing.T) {
 	ctx.RegisterOrderRoutes()
 
 	order := testutil.CreateTestOrder(t, ctx.DB, ctx.TestUser.ID, ctx.TestPlayer.ID, ctx.TestGame.ID, model.OrderStatusCompleted)
-	_ = testutil.CreateTestPayment(t, ctx.DB, order.ID, ctx.TestUser.ID, model.PaymentStatusPaid)
+	payment := testutil.CreateTestPayment(t, ctx.DB, order.ID, ctx.TestUser.ID, model.PaymentStatusPaid)
 
 	payload := map[string]interface{}{
 		"reason":       "Customer service refund",
@@ -574,6 +574,50 @@ func TestOrderHandler_Unit_RefundOrder_Success(t *testing.T) {
 	path := fmt.Sprintf("/admin/orders/%d/refund", order.ID)
 	w := testutil.MakeAuthenticatedRequest(t, ctx.Router, "POST", path, ctx.AdminToken, payload)
 	testutil.AssertSuccess(t, w)
+
+	var updatedOrder model.Order
+	require.NoError(t, ctx.DB.First(&updatedOrder, order.ID).Error)
+	assert.Equal(t, model.OrderStatusCompleted, updatedOrder.Status)
+	assert.Equal(t, int64(5000), updatedOrder.RefundAmountCents)
+
+	var updatedPayment model.Payment
+	require.NoError(t, ctx.DB.First(&updatedPayment, payment.ID).Error)
+	assert.Equal(t, model.PaymentStatusPaid, updatedPayment.Status)
+	assert.Equal(t, int64(5000), updatedPayment.RefundedAmountCents)
+}
+
+func TestOrderHandler_Unit_RefundOrder_CumulativeToFullRefund(t *testing.T) {
+	ctx := SetupOrderTest(t)
+	ctx.RegisterOrderRoutes()
+
+	order := testutil.CreateTestOrder(t, ctx.DB, ctx.TestUser.ID, ctx.TestPlayer.ID, ctx.TestGame.ID, model.OrderStatusCompleted)
+	payment := testutil.CreateTestPayment(t, ctx.DB, order.ID, ctx.TestUser.ID, model.PaymentStatusPaid)
+
+	firstPayload := map[string]interface{}{
+		"reason":       "First partial refund",
+		"amount_cents": int64(4000),
+	}
+	firstPath := fmt.Sprintf("/admin/orders/%d/refund", order.ID)
+	firstResp := testutil.MakeAuthenticatedRequest(t, ctx.Router, "POST", firstPath, ctx.AdminToken, firstPayload)
+	testutil.AssertSuccess(t, firstResp)
+
+	secondPayload := map[string]interface{}{
+		"reason":       "Second partial refund",
+		"amount_cents": int64(6000),
+	}
+	secondPath := fmt.Sprintf("/admin/orders/%d/refund", order.ID)
+	secondResp := testutil.MakeAuthenticatedRequest(t, ctx.Router, "POST", secondPath, ctx.AdminToken, secondPayload)
+	testutil.AssertSuccess(t, secondResp)
+
+	var updatedOrder model.Order
+	require.NoError(t, ctx.DB.First(&updatedOrder, order.ID).Error)
+	assert.Equal(t, model.OrderStatusRefunded, updatedOrder.Status)
+	assert.Equal(t, int64(10000), updatedOrder.RefundAmountCents)
+
+	var updatedPayment model.Payment
+	require.NoError(t, ctx.DB.First(&updatedPayment, payment.ID).Error)
+	assert.Equal(t, model.PaymentStatusRefunded, updatedPayment.Status)
+	assert.Equal(t, int64(10000), updatedPayment.RefundedAmountCents)
 }
 
 // ============================================================================
