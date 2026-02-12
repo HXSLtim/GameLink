@@ -225,11 +225,55 @@ npm run test
 
 | 文档 | 路径 | 说明 |
 |------|------|------|
+| 项目概览 | [PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md) | 完整项目介绍 |
+| API对齐 | [API_ALIGNMENT.md](API_ALIGNMENT.md) | 前后端接口对齐文档 |
+| 架构图 | [docs/ARCHITECTURE_DIAGRAMS.md](docs/ARCHITECTURE_DIAGRAMS.md) | 系统架构可视化 |
+| 技术债务 | [docs/TECHNICAL_DEBT.md](docs/TECHNICAL_DEBT.md) | 技术债务清单 |
+| 开发任务 | [docs/DEV_TASKS_BACKLOG.md](docs/DEV_TASKS_BACKLOG.md) | 开发任务清单 |
 | PRD | [docs/PRD.md](docs/PRD.md) | 产品需求文档 |
 | 进度 | [docs/PROGRESS.md](docs/PROGRESS.md) | 项目进度与版本历史 |
 | 组件文档 | [app/docs/COMPONENTS.md](app/docs/COMPONENTS.md) | 小程序组件职责 |
-| 页面计划 | [app/docs/PAGE_COMPONENT_USAGE_PLAN.md](app/docs/PAGE_COMPONENT_USAGE_PLAN.md) | 页面组件使用清单 |
 | 重构计划 | [app/docs/REFACTOR_PLAN.md](app/docs/REFACTOR_PLAN.md) | 前端重构记录 |
+
+---
+
+## 项目状态
+
+| 模块 | 完成度 | 状态 |
+|------|--------|------|
+| 后端 API | 100% | 已完成，待联调 |
+| 管理后台 | 90% | 核心功能完成，部分页面待完善 |
+| 小程序 / H5 | 95% | 组件化完成，API 对齐完成，待联调 |
+| DevOps | 85% | CI/CD 完成，生产部署配置待验证 |
+
+**当前版本**: v5.1 | **最后更新**: 2026-02-11
+
+---
+
+## 下一步计划
+
+### 高优先级
+- [ ] 前后端联调测试
+- [ ] 第三方服务对接（支付、登录、短信、OSS）
+- [ ] 生产环境部署验证
+
+### 中优先级
+- [ ] 小程序单元测试
+- [ ] E2E 测试
+- [ ] 性能测试与优化
+
+详见 [开发任务清单](docs/DEV_TASKS_BACKLOG.md)
+
+---
+
+## 团队
+
+| 角色 | 职责 |
+|-----|------|
+| 产品经理 | 产品规划、需求分析、文档管理 |
+| 后端开发 | API 开发、数据库设计 |
+| 前端开发 | 管理后台、小程序/H5 开发 |
+| DevOps | 部署、CI/CD、运维 |
 
 ---
 
