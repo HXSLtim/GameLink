@@ -38,14 +38,14 @@
 
 ### 2) 提现链路
 
-- ✅ `GET /player/earnings/summary` 查询成功（本次 `availableBalance=0`）
-- ⚠️ 新建提现请求未触发（可用余额不足 10000 分）
-- ✅ 复用历史待处理提现单（`withdrawId=129`）
-- ✅ `POST /admin/withdraws/129/approve` 审核通过
-- ✅ `POST /admin/withdraws/129/complete` 打款完成
+- ✅ `GET /player/earnings/summary` 查询成功（本次 `availableBalance=78300`）
+- ✅ `POST /player/earnings/withdraw` 新建提现成功（`withdrawId=137`）
+- ✅ `POST /admin/withdraws/137/approve` 审核通过
+- ✅ `POST /admin/withdraws/137/complete` 打款完成
 - ✅ `GET /player/earnings/withdraw-history` 玩家侧状态为 `completed`
+- ✅ `summary.withdrawTotal` 从 `80000` 增长到 `90000`（`delta=10000`）
 
-结论：提现审核与打款链路可用；**新提现申请场景受测试数据余额限制**。
+结论：提现申请、审核、打款、玩家侧回写全链路可闭环。
 
 ### 3) 客服权限链路
 
@@ -66,9 +66,9 @@
 
 ### P1
 
-- 增加“自动构造可提现余额”的测试前置步骤（或种子数据）：
-  - 保证至少 1 个陪玩师 `availableBalance >= 10000`
-  - 避免每次回归都依赖历史待处理提现单
+- 将提现回归脚本接入 CI（手动触发 + 定时）：
+  - 脚本：`api/scripts/run_withdraw_flow_regression.ps1`
+  - 目标：每次自动执行“余额前置 + 申请 + 审核 + 打款 + 历史核验”
 
 ### P1
 

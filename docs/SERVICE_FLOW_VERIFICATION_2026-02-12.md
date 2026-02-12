@@ -136,3 +136,21 @@
 - 结论：
   - 当前“全链路回归 + 数据可信度”均通过；
   - 后续仅需补齐“新提现申请（余额前置）”自动化场景。
+
+## 11) 提现链路自动化回归（2026-02-12 夜间）
+- 新增脚本：
+  - `api/scripts/run_withdraw_flow_regression.ps1`
+- 覆盖链路：
+  - 登录（admin/user/player）
+  - 清理目标陪玩师 `pending/approved` 提现单（防止阻断）
+  - 自动检查/补齐可提现余额（不足时自动创建“已支付+已完成”订单）
+  - 玩家发起提现 `POST /player/earnings/withdraw`
+  - 管理员审核 `POST /admin/withdraws/:id/approve`
+  - 管理员打款 `POST /admin/withdraws/:id/complete`
+  - 玩家侧历史核验 `GET /player/earnings/withdraw-history`
+  - 收益汇总核验（`withdrawTotal` 增量断言）
+- 本次执行结果：
+  - `W0~W7` 全部 PASS
+  - 样例：`withdrawId=137`，`withdrawTotal: 80000 -> 90000`（`delta=10000`）
+- 执行后数据一致性复检：
+  - `api/scripts/run_data_integrity.ps1` 全项为 0（orphan + business consistency）
