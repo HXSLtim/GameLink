@@ -20,6 +20,7 @@ This directory contains CI/CD workflows for the GameLink project.
 | **performance.yml** | Performance benchmarking and regression testing | PR/Schedule/Manual | P0 |
 | **e2e.yml** | End-to-end integration testing | Schedule/Manual | P0 |
 | **flow-guard-regression.yml** | Order/Payment guard regression (unpaid-complete block) | Schedule/Manual | P0 |
+| **withdraw-flow-regression.yml** | Withdraw flow regression (request/approve/complete) | Schedule/Manual | P0 |
 | **test-report.yml** | Test coverage and results aggregation | PR/Manual | P1 |
 | **dependabot-merge.yml** | Automated dependency updates | Dependabot PR | P2 |
 
@@ -90,6 +91,20 @@ This directory contains CI/CD workflows for the GameLink project.
 - Verifies paid flow can complete and review successfully
 
 **Schedule:** Daily at 2:30 AM UTC + manual trigger
+
+### Withdraw Flow Regression Workflow (`withdraw-flow-regression.yml`)
+
+**Purpose:** Verify withdraw end-to-end flow with automatic balance precheck
+
+**Features:**
+- Starts backend with PostgreSQL + Redis service containers
+- Enables seed data and runs withdraw flow regression script
+- Auto-clears pending/approved withdraws for target player (precheck)
+- Auto-topups available balance when needed (paid + completed order path)
+- Verifies request (`/player/earnings/withdraw`) to admin approve/complete
+- Verifies player withdraw-history and summary delta assertions
+
+**Schedule:** Daily at 3:00 AM UTC + manual trigger
 
 ### Test Report Workflow (`test-report.yml`)
 
@@ -192,7 +207,7 @@ REGISTRY: ghcr.io
 - Push to main/dev branches → CI + Security
 - Create PR → CI + Security + Test Report
 - Create tag `v*` → Deploy
-- Daily schedule → Performance + E2E + Security
+- Daily schedule → Performance + E2E + Flow Guard + Withdraw Flow + Security
 
 **Manual:**
 ```bash
@@ -210,6 +225,9 @@ gh workflow run e2e.yml -f environment=staging
 
 # Run flow-guard regression
 gh workflow run flow-guard-regression.yml
+
+# Run withdraw-flow regression
+gh workflow run withdraw-flow-regression.yml
 ```
 
 ### Checking Workflow Status
