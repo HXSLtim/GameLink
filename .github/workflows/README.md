@@ -103,6 +103,7 @@ This directory contains CI/CD workflows for the GameLink project.
 - Auto-topups available balance when needed (paid + completed order path)
 - Verifies request (`/player/earnings/withdraw`) to admin approve/complete
 - Verifies player withdraw-history and summary delta assertions
+- Uploads regression script output (`withdraw-flow-regression.log` + summary markdown artifact)
 
 **Schedule:** Daily at 3:00 AM UTC + manual trigger
 

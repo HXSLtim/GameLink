@@ -86,9 +86,41 @@ jobs:
           exit 1
 
       - name: Run withdraw flow regression script
+        id: withdraw_regression
         shell: pwsh
         run: |
-          ./api/scripts/run_withdraw_flow_regression.ps1 -BaseUrl "http://127.0.0.1:8080/api/v1"
+          $ErrorActionPreference = "Stop"
+          & ./api/scripts/run_withdraw_flow_regression.ps1 -BaseUrl "http://127.0.0.1:8080/api/v1" 2>&1 |
+            Tee-Object -FilePath "api/withdraw-flow-regression.log"
+          if ($LASTEXITCODE -ne 0) {
+            throw "withdraw flow regression failed with exit code $LASTEXITCODE"
+          }
+
+      - name: Generate withdraw regression summary
+        if: always()
+        shell: pwsh
+        run: |
+          $outcome = "${{ steps.withdraw_regression.outcome }}"
+          $summaryPath = "api/withdraw-flow-regression-summary.md"
+          $lines = @()
+          $lines += "# Withdraw Flow Regression Summary"
+          $lines += ""
+          $lines += "- Outcome: **$outcome**"
+          $lines += "- Generated At (UTC): $(Get-Date -AsUTC -Format 'yyyy-MM-ddTHH:mm:ssZ')"
+          $lines += ""
+          $lines += "## Key Checks (tail)"
+          $lines += ""
+          if (Test-Path "api/withdraw-flow-regression.log") {
+            $tail = Get-Content "api/withdraw-flow-regression.log" -Tail 80
+            $lines += "```text"
+            $lines += $tail
+            $lines += "```"
+          } else {
+            $lines += "_No regression log found._"
+          }
+          $content = ($lines -join "`n")
+          Set-Content -Path $summaryPath -Value $content -Encoding UTF8
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value $content
 
       - name: Upload backend log
         if: always()
@@ -96,6 +128,16 @@ jobs:
         with:
           name: withdraw-flow-backend-log
           path: api/backend.log
+          retention-days: 7
+
+      - name: Upload withdraw regression outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: withdraw-flow-regression-output
+          path: |
+            api/withdraw-flow-regression.log
+            api/withdraw-flow-regression-summary.md
           retention-days: 7
 
       - name: Cleanup backend process
