@@ -1019,7 +1019,7 @@ func (h *PaymentHandler) RefundPayment(c *gin.Context) {
 		RefundedAmountCents: &payment.RefundedAmountCents,
 	}
 
-	updated, err := h.svc.UpdatePaymentWithRefund(c.Request.Context(), id, input, payload.AmountCents, payload.Reason, operatorID)
+	updated, err := h.svc.UpdatePaymentWithRefund(c.Request.Context(), id, input, payload.AmountCents, payload.Reason, payload.Note, operatorID)
 	if err != nil {
 		if apierr.IsValidationError(err) {
 			respondAPIError(c, err)

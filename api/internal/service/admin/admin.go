@@ -1,4 +1,4 @@
-﻿package admin
+package admin
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 	"time"
-	
+
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	"gamelink/internal/repository/common"
@@ -37,6 +37,7 @@ type AdminDeps struct {
 	Players        repository.PlayerRepository
 	Orders         repoiface.OrderRepository
 	Payments       repository.PaymentRepository
+	Refunds        repository.RefundRecordRepository
 	Roles          repository.RoleRepository
 	ServiceItems   repository.ServiceItemRepository
 	Permissions    repository.PermissionRepository
@@ -54,6 +55,7 @@ type AdminService struct {
 	players        repository.PlayerRepository
 	orders         repoiface.OrderRepository
 	payments       repository.PaymentRepository
+	refunds        repository.RefundRecordRepository
 	roles          repository.RoleRepository
 	serviceItems   repository.ServiceItemRepository
 	permissions    repository.PermissionRepository
@@ -92,6 +94,7 @@ func NewAdminService(d AdminDeps) *AdminService {
 		players:        d.Players,
 		orders:         d.Orders,
 		payments:       d.Payments,
+		refunds:        d.Refunds,
 		roles:          d.Roles,
 		serviceItems:   d.ServiceItems,
 		permissions:    d.Permissions,

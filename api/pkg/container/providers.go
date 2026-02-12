@@ -19,6 +19,7 @@ import (
 	gamecategoryrepo "gamelink/internal/repository/gamecategory"
 	orderrepo "gamelink/internal/repository/implementations"
 	paymentrepo "gamelink/internal/repository/order"
+	paymentrecordrepo "gamelink/internal/repository/payment"
 	serviceitemrepo "gamelink/internal/repository/serviceitem"
 	statsrepo "gamelink/internal/repository/stats"
 	userrepo "gamelink/internal/repository/user"
@@ -101,6 +102,7 @@ func ProvideAdminService(orm *gorm.DB, cacheClient cache.Cache) *adminservice.Ad
 		Players:        userrepo.NewPlayerRepository(orm),
 		Orders:         orderrepo.NewOrderRepository(orm),
 		Payments:       paymentrepo.NewPaymentRepository(orm),
+		Refunds:        paymentrecordrepo.NewRefundRecordRepository(orm),
 		Roles:          rolerepo.NewRoleRepository(orm),
 		ServiceItems:   serviceitemrepo.NewServiceItemRepository(orm),
 		Permissions:    permissionrepo.NewPermissionRepository(orm),

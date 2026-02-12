@@ -1,4 +1,4 @@
-﻿package admin
+package admin
 
 import (
 	"context"
@@ -187,7 +187,7 @@ func (s *AdminService) UpdatePayment(ctx context.Context, id uint64, input Updat
 
 // UpdatePaymentWithRefund processes a refund with amount validation and logging.
 // Requirements: 2.1, 2.2, 2.3, 2.4, 9.1, 9.2, 9.3
-func (s *AdminService) UpdatePaymentWithRefund(ctx context.Context, id uint64, input UpdatePaymentInput, refundAmount int64, reason string, operatorID *uint64) (*model.Payment, error) {
+func (s *AdminService) UpdatePaymentWithRefund(ctx context.Context, id uint64, input UpdatePaymentInput, refundAmount int64, reason string, note string, operatorID *uint64) (*model.Payment, error) {
 	payment, err := s.payments.Get(ctx, id)
 	if err != nil {
 		return nil, WrapError(err, "get payment")
@@ -222,6 +222,26 @@ func (s *AdminService) UpdatePaymentWithRefund(ctx context.Context, id uint64, i
 	}
 
 	s.invalidateCache(ctx, cacheKeyPayments)
+
+	// Persist refund record for audit/debugging (best-effort but should be available in normal deployments)
+	if s.refunds != nil {
+		refundedAt := input.RefundedAt
+		record := &model.RefundRecord{
+			PaymentID:       payment.ID,
+			OrderID:         payment.OrderID,
+			UserID:          payment.UserID,
+			AmountCents:     refundAmount,
+			Reason:          strings.TrimSpace(reason),
+			Status:          model.RefundStatusProcessed,
+			ProviderTradeNo: strings.TrimSpace(payment.ProviderTradeNo),
+			OperatorID:      operatorID,
+			RefundedAt:      refundedAt,
+			Note:            strings.TrimSpace(note),
+		}
+		if err := s.refunds.Create(ctx, record); err != nil {
+			return nil, WrapError(err, "create refund record")
+		}
+	}
 
 	// 同步订单退款聚合字段（累计退款金额、退款状态）
 	if err := s.syncOrderRefundSummary(ctx, payment.OrderID, reason, input.RefundedAt); err != nil {
@@ -746,7 +766,6 @@ func (s *AdminService) syncOrderRefundSummary(ctx context.Context, orderID uint6
 	return nil
 }
 
-
 func isValidPaymentStatus(status model.PaymentStatus) bool {
 	switch status {
 	case model.PaymentStatusPending, model.PaymentStatusPaid, model.PaymentStatusFailed, model.PaymentStatusRefunded:
@@ -771,4 +790,3 @@ func isAllowedPaymentTransition(prev, next model.PaymentStatus) bool {
 		return false
 	}
 }
-

@@ -69,7 +69,8 @@ func SetupPaymentTest(t *testing.T) *PaymentTestContext {
 	// Create admin service
 	svc := adminservice.NewAdminService(adminservice.AdminDeps{
 		Games: games, Users: users, Players: players, Orders: orders, Payments: payments,
-		Roles: roles, ServiceItems: serviceItems, Permissions: permissions, Menus: menus,
+		Refunds: payment.NewRefundRecordRepository(db),
+		Roles:   roles, ServiceItems: serviceItems, Permissions: permissions, Menus: menus,
 		Stats: statsRepo, GameCategories: gameCategories, Cache: c,
 	})
 

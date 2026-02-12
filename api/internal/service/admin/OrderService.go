@@ -510,6 +510,27 @@ func (s *AdminService) RefundOrder(ctx context.Context, id uint64, input RefundO
 		if updErr != nil && !errors.Is(updErr, ErrValidation) {
 			return nil, WrapError(updErr, "update payment")
 		}
+
+		if s.refunds != nil {
+			var operatorID *uint64
+			if uid, ok := logging.ActorUserIDFromContext(ctx); ok {
+				id := uid
+				operatorID = &id
+			}
+			record := &model.RefundRecord{
+				PaymentID:       pay.ID,
+				OrderID:         id,
+				UserID:          pay.UserID,
+				AmountCents:     allocate,
+				Reason:          strings.TrimSpace(reason),
+				Status:          model.RefundStatusProcessed,
+				ProviderTradeNo: strings.TrimSpace(pay.ProviderTradeNo),
+				OperatorID:      operatorID,
+				RefundedAt:      &refundedAt,
+				Note:            note,
+			}
+			_ = s.refunds.Create(ctx, record)
+		}
 		remainingToAllocate -= allocate
 	}
 
@@ -558,6 +579,42 @@ func (s *AdminService) GetOrderRefunds(ctx context.Context, orderID uint64) ([]O
 	payments, err := s.listPaymentsByOrder(ctx, orderID)
 	if err != nil {
 		return nil, err
+	}
+
+	if s.refunds != nil {
+		records, err := s.refunds.ListByOrderID(ctx, orderID)
+		if err == nil && len(records) > 0 {
+			paymentByID := make(map[uint64]model.Payment, len(payments))
+			for _, p := range payments {
+				paymentByID[p.ID] = p
+			}
+			result := make([]OrderRefundItem, 0, len(records))
+			for _, rec := range records {
+				method := "unknown"
+				status := mapRefundRecordStatus(rec.Status)
+				if pay, ok := paymentByID[rec.PaymentID]; ok {
+					method = string(pay.Method)
+					if rec.Status == model.RefundStatusProcessed && pay.Status != model.PaymentStatusRefunded {
+						status = "partial"
+					}
+				}
+				refundedAt := rec.RefundedAt
+				result = append(result, OrderRefundItem{
+					ID:          rec.ID,
+					OrderID:     orderID,
+					PaymentID:   rec.PaymentID,
+					AmountCents: rec.AmountCents,
+					Method:      method,
+					Status:      status,
+					RefundedAt:  refundedAt,
+					CreatedAt:   rec.CreatedAt,
+					Reason:      rec.Reason,
+					Note:        rec.Note,
+				})
+			}
+			sort.Slice(result, func(i, j int) bool { return result[i].CreatedAt.Before(result[j].CreatedAt) })
+			return result, nil
+		}
 	}
 
 	result := make([]OrderRefundItem, 0)
@@ -617,6 +674,19 @@ func (s *AdminService) GetOrderRefunds(ctx context.Context, orderID uint64) ([]O
 		return result[i].CreatedAt.Before(result[j].CreatedAt)
 	})
 	return result, nil
+}
+
+func mapRefundRecordStatus(status model.RefundStatus) string {
+	switch status {
+	case model.RefundStatusProcessed:
+		return "success"
+	case model.RefundStatusPending:
+		return "pending"
+	case model.RefundStatusFailed:
+		return "failed"
+	default:
+		return "unknown"
+	}
 }
 
 func minInt64(a, b int64) int64 {
