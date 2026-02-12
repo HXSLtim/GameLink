@@ -664,7 +664,7 @@ export const adminApi = {
     capturePayment: (id: number) => apiClient.post<ApiResponse<Payment>>(`/admin/payments/${id}/capture`),
     refundPayment: (id: number, data: RefundPaymentDto) => apiClient.post<ApiResponse<Payment>>(`/admin/payments/${id}/refund`, data),
     getPaymentLogs: (id: number, params?: { page?: number; pageSize?: number }) => apiClient.get<ApiResponse<OperationLog[]>>(`/admin/payments/${id}/logs`, { params }),
-    getPaymentRefunds: (id: number) => apiClient.get<ApiResponse<OperationLog[]>>(`/admin/payments/${id}/refunds`),
+    getPaymentRefunds: (id: number) => apiClient.get<ApiResponse<RefundRecord[]>>(`/admin/payments/${id}/refunds`),
 };
 
 // ========== Payment (支付记录) ==========
@@ -722,6 +722,24 @@ export interface RefundPaymentDto {
     reason?: string;
     providerTradeNo?: string;
     providerRaw?: Record<string, unknown>;
+}
+
+export type RefundStatus = 'pending' | 'processed' | 'failed';
+
+export interface RefundRecord {
+    id: number;
+    paymentId: number;
+    orderId: number;
+    userId: number;
+    amountCents: number;
+    reason?: string;
+    status: RefundStatus;
+    providerTradeNo?: string;
+    operatorId?: number;
+    refundedAt?: string;
+    note?: string;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface OperationLog {

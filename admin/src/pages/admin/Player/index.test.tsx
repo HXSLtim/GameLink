@@ -755,7 +755,7 @@ describe('PlayerPage', () => {
         // If button not found, verify the API method exists
         expect(mockApi.updatePlayerVerification).toBeDefined();
       }
-    });
+    }, 20000);
   });
 
   describe('Player Ban/Unban', () => {

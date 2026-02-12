@@ -3,7 +3,7 @@
  * Display all payment records in the system
  */
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Card, Tag, Space, Statistic, Row, Col, App } from 'antd';
+import { Card, Tag, Space, Statistic, Row, Col, App, Button, Drawer, Table, Typography } from 'antd';
 import { DownloadOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
@@ -14,6 +14,8 @@ import {
     type PaymentStatus, 
     type PaymentMethod,
     type PaymentQueryParams,
+    type RefundRecord,
+    type RefundStatus,
 } from '@/api/admin';
 
 const PaymentRecords: React.FC = () => {
@@ -23,6 +25,11 @@ const PaymentRecords: React.FC = () => {
     const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
     
     const searchParamsRef = useRef<Record<string, unknown>>({});
+
+    const [refundDrawerOpen, setRefundDrawerOpen] = useState(false);
+    const [refundLoading, setRefundLoading] = useState(false);
+    const [refundRecords, setRefundRecords] = useState<RefundRecord[]>([]);
+    const [refundPayment, setRefundPayment] = useState<Payment | null>(null);
 
     // 统计数据
     const [stats, setStats] = useState({
@@ -121,6 +128,47 @@ const PaymentRecords: React.FC = () => {
         return <span>{text}</span>;
     };
 
+    const getRefundStatusTag = (status: RefundStatus) => {
+        const statusMap: Record<RefundStatus, { color: string; text: string }> = {
+            pending: { color: 'default', text: '处理中' },
+            processed: { color: 'success', text: '已完成' },
+            failed: { color: 'error', text: '失败' },
+        };
+        const { color, text } = statusMap[status] || { color: 'default', text: status };
+        return <Tag color={color}>{text}</Tag>;
+    };
+
+    const totalRefundedCents = useMemo(
+        () => refundRecords.reduce((sum, r) => sum + (r.amountCents || 0), 0),
+        [refundRecords],
+    );
+
+    const openRefundDrawer = useCallback(async (payment: Payment) => {
+        setRefundPayment(payment);
+        setRefundDrawerOpen(true);
+        setRefundLoading(true);
+        try {
+            const res = await adminApi.getPaymentRefunds(payment.id);
+            if (res.data.success) {
+                setRefundRecords(res.data.data || []);
+            } else {
+                setRefundRecords([]);
+            }
+        } catch {
+            setRefundRecords([]);
+            message.error('获取退款记录失败');
+        } finally {
+            setRefundLoading(false);
+        }
+    }, [message]);
+
+    const closeRefundDrawer = useCallback(() => {
+        setRefundDrawerOpen(false);
+        setRefundRecords([]);
+        setRefundPayment(null);
+        setRefundLoading(false);
+    }, []);
+
     const columns: ColumnsType<Payment> = [
         {
             title: 'ID',
@@ -181,6 +229,76 @@ const PaymentRecords: React.FC = () => {
             key: 'paidAt',
             width: 180,
             render: (text: string) => text || '-',
+        },
+        {
+            title: '创建时间',
+            dataIndex: 'createdAt',
+            key: 'createdAt',
+            width: 180,
+        },
+        {
+            title: '操作',
+            key: 'actions',
+            width: 120,
+            render: (_, record) => {
+                const hasRefund = (record.refundedAmountCents || 0) > 0 || record.status === 'refunded';
+                return (
+                    <Space size={8}>
+                        <Button
+                            type="link"
+                            size="small"
+                            disabled={!hasRefund}
+                            onClick={() => openRefundDrawer(record)}
+                        >
+                            退款记录
+                        </Button>
+                    </Space>
+                );
+            },
+        },
+    ];
+
+    const refundColumns: ColumnsType<RefundRecord> = [
+        {
+            title: 'ID',
+            dataIndex: 'id',
+            key: 'id',
+            width: 80,
+        },
+        {
+            title: '金额',
+            dataIndex: 'amountCents',
+            key: 'amountCents',
+            width: 120,
+            render: (amount: number) => `¥${(amount / 100).toFixed(2)}`,
+        },
+        {
+            title: '状态',
+            dataIndex: 'status',
+            key: 'status',
+            width: 100,
+            render: (status: RefundStatus) => getRefundStatusTag(status),
+        },
+        {
+            title: '原因',
+            dataIndex: 'reason',
+            key: 'reason',
+            width: 220,
+            render: (text?: string) => text || '-',
+        },
+        {
+            title: '流水号',
+            dataIndex: 'providerTradeNo',
+            key: 'providerTradeNo',
+            width: 220,
+            render: (text?: string) => text || '-',
+        },
+        {
+            title: '退款时间',
+            dataIndex: 'refundedAt',
+            key: 'refundedAt',
+            width: 180,
+            render: (text?: string) => text || '-',
         },
         {
             title: '创建时间',
@@ -334,6 +452,41 @@ const PaymentRecords: React.FC = () => {
                     onChange: (page, pageSize) => fetchRecords(page, pageSize),
                 }}
             />
+            <Drawer
+                title="退款记录"
+                open={refundDrawerOpen}
+                width={920}
+                onClose={closeRefundDrawer}
+                destroyOnClose
+            >
+                <Space direction="vertical" size={16} style={{ width: '100%' }}>
+                    <Card size="small">
+                        <Space direction="vertical" size={4}>
+                            <Typography.Text type="secondary">
+                                支付ID：{refundPayment?.id ?? '-'}
+                            </Typography.Text>
+                            <Typography.Text type="secondary">
+                                订单ID：{refundPayment?.orderId ?? '-'}
+                            </Typography.Text>
+                            <Typography.Text>
+                                已退款合计：
+                                <Typography.Text strong style={{ marginLeft: 8 }}>
+                                    ¥{(totalRefundedCents / 100).toFixed(2)}
+                                </Typography.Text>
+                            </Typography.Text>
+                        </Space>
+                    </Card>
+                    <Table<RefundRecord>
+                        columns={refundColumns}
+                        dataSource={refundRecords}
+                        loading={refundLoading}
+                        rowKey="id"
+                        pagination={false}
+                        locale={{ emptyText: '暂无退款记录' }}
+                        scroll={{ x: 1000 }}
+                    />
+                </Space>
+            </Drawer>
         </PageContainer>
     );
 };
