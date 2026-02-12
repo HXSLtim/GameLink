@@ -55,7 +55,7 @@ export function clearStorage(): void {
 /**
  * 获取存储信息
  */
-export function getStorageInfo(): UniApp.GetStorageInfoSyncRes | null {
+export function getStorageInfo(): UniNamespace.GetStorageInfoSuccess | null {
   try {
     return uni.getStorageInfoSync()
   } catch (error) {

@@ -62,7 +62,7 @@ export function useOrderList() {
       const orderList: ApiOrder[] = data?.orders || data || []
       return orderList.map(transformOrder)
     },
-    page_size: 10,
+    pageSize: 10,
   })
 
   // 切换标签
@@ -113,6 +113,10 @@ export function useOrderList() {
         uni.navigateTo({ url: `/pages/order/detail/index?id=${order.id}&needPay=1` })
         break
       case 'contact':
+        if (!order.player?.id) {
+          uni.showToast({ title: '陪玩师信息缺失', icon: 'none' })
+          break
+        }
         uni.navigateTo({ url: `/pages/message/chat/index?playerId=${order.player.id}` })
         break
       case 'complete':
@@ -122,6 +126,10 @@ export function useOrderList() {
         uni.navigateTo({ url: `/pages/order/detail/index?id=${order.id}&action=review` })
         break
       case 'reorder':
+        if (!order.player?.id) {
+          uni.showToast({ title: '陪玩师信息缺失', icon: 'none' })
+          break
+        }
         uni.navigateTo({ url: `/pages/order/create/index?playerId=${order.player.id}` })
         break
       case 'viewDispute':

@@ -124,7 +124,7 @@ export function usePlayerList() {
       const playerList: PlayerInfo[] = data?.players || data || []
       return playerList.map(transformPlayer)
     },
-    page_size: 10,
+    pageSize: 10,
     getCacheFn: () => {
       const cached = getCachedPlayers()
       if (!cached) return null

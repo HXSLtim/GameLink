@@ -17,11 +17,14 @@ export interface Game {
   id: number
   name: string
   icon?: string
+  coverImage?: string
   categoryId: number
   categoryName: string
   playerCount: number
   isHot: boolean
   sort: number
+  minPrice?: number
+  maxPrice?: number
 }
 
 // 段位

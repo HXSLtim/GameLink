@@ -1,11 +1,11 @@
 <template>
-  <view class="theme-toggle" :class="{ 'theme-dark': isDark }" @tap="toggleTheme">
+  <view class="theme-toggle" :class="{ 'theme-dark': isDarkMode }" @tap="toggleTheme">
     <view class="toggle-track">
       <view class="toggle-icon sun"><image class="toggle-svg" src="/static/icons/sun.svg" mode="aspectFit" /></view>
       <view class="toggle-icon moon"><image class="toggle-svg" src="/static/icons/moon.svg" mode="aspectFit" /></view>
       <view class="toggle-thumb"></view>
     </view>
-    <text v-if="showLabel" class="toggle-label">{{ isDark ? '夜间模式' : '日间模式' }}</text>
+    <text v-if="showLabel" class="toggle-label">{{ isDarkMode ? '夜间模式' : '日间模式' }}</text>
   </view>
 </template>
 
@@ -19,9 +19,9 @@ withDefaults(defineProps<{
   showLabel: false,
 })
 
-const { theme, toggleTheme: toggle } = useTheme()
+const { themeMode, isDark, toggleTheme: toggle } = useTheme()
 
-const isDark = computed(() => theme.value === 'dark')
+const isDarkMode = computed(() => isDark.value || themeMode.value === 'dark')
 
 const toggleTheme = () => {
   toggle()

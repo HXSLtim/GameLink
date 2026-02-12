@@ -204,6 +204,11 @@ const stats = computed<HeaderStatItem[]>(() => [
   margin-bottom: var(--spacing-md);
 }
 
+.hero-avatar {
+  border: 4rpx solid #fff;
+  box-shadow: 0 0 32rpx rgba(var(--color-primary-rgb), 0.4);
+}
+
 .hero-info {
   flex: 1;
   margin-bottom: var(--spacing-xs);

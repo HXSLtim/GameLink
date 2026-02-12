@@ -101,7 +101,7 @@
             }
         },
         "devServer" : {
-            "port" : 3000,
+            "port" : 5174,
             "disableHostCheck" : true
         }
     }

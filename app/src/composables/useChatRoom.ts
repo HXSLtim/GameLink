@@ -201,13 +201,19 @@ export function useChatRoom() {
       // 更新消息 ID 和状态
       const idx = messages.value.findIndex(m => m.id === tempId)
       if (idx !== -1 && res.data) {
-        messages.value[idx].id = String((res.data as any).id)
-        messages.value[idx].status = 'sent'
+        const target = messages.value[idx]
+        if (target) {
+          target.id = String((res.data as any).id)
+          target.status = 'sent'
+        }
       }
     } catch (error) {
       const idx = messages.value.findIndex(m => m.id === tempId)
       if (idx !== -1) {
-        messages.value[idx].status = 'failed'
+        const target = messages.value[idx]
+        if (target) {
+          target.status = 'failed'
+        }
       }
     }
   }
@@ -237,13 +243,19 @@ export function useChatRoom() {
       
       const idx = messages.value.findIndex(m => m.id === tempId)
       if (idx !== -1 && res.data) {
-        messages.value[idx].id = String((res.data as any).id)
-        messages.value[idx].status = 'sent'
+        const target = messages.value[idx]
+        if (target) {
+          target.id = String((res.data as any).id)
+          target.status = 'sent'
+        }
       }
     } catch (error) {
       const idx = messages.value.findIndex(m => m.id === tempId)
       if (idx !== -1) {
-        messages.value[idx].status = 'failed'
+        const target = messages.value[idx]
+        if (target) {
+          target.status = 'failed'
+        }
       }
     }
   }
@@ -304,6 +316,7 @@ export function useChatRoom() {
   const shouldShowTime = (message: ChatMessageData, index: number) => {
     if (index === 0) return true
     const prev = messages.value[index - 1]
+    if (!prev) return true
     const prevTime = new Date(prev.createdAt).getTime()
     const currTime = new Date(message.createdAt).getTime()
     return currTime - prevTime > 5 * 60 * 1000 // 5分钟

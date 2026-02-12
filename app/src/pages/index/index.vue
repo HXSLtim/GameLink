@@ -129,7 +129,7 @@
             :players="recommendPlayers"
             :loading="playersLoading"
             @more="goToPlayerList"
-            @select="(player) => goToPlayerDetail(player.id)"
+            @select="(player) => player.id && goToPlayerDetail(player.id)"
             @refresh="refreshAll"
           />
         </view>

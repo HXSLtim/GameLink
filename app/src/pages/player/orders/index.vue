@@ -14,7 +14,7 @@
         v-model="currentTab"
         :tabs="tabs"
         scrollable
-        @change="switchTab"
+        @change="handleTabChange"
       />
     </template>
 
@@ -50,6 +50,8 @@
 
 <script setup lang="ts">
 import { onShow } from '@dcloudio/uni-app'
+import type { TabItem } from '@/types/ui'
+import type { OrderTabKey } from '@/types/order'
 // Pattern 组件
 import BasePageLayout from '@/components/layout/BasePageLayout/index.vue'
 import TabsBar from '@/components/TabsBar/index.vue'
@@ -79,6 +81,10 @@ const {
 onShow(() => {
   refresh()
 })
+
+const handleTabChange = (key: string, _tab: TabItem) => {
+  switchTab(key as OrderTabKey)
+}
 </script>
 
 <style lang="scss" scoped>

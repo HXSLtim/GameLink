@@ -83,7 +83,7 @@ export function getChatGroups(
   params?: { page?: number; page_size?: number },
   config?: Partial<RequestConfig>
 ) {
-  return get<ChatGroup[]>('/users/chat/groups', params, config)
+  return get<ChatGroup[]>('/user/chat/groups', params, config)
 }
 
 /**
@@ -97,28 +97,28 @@ export function createChatGroup(
 },
   config?: Partial<RequestConfig>
 ) {
-  return post<ChatGroup>('/users/chat/groups', data, config)
+  return post<ChatGroup>('/user/chat/groups', data, config)
 }
 
 /**
  * 获取群组详情
  */
 export function getChatGroupDetail(groupId: number, config?: Partial<RequestConfig>) {
-  return get<ChatGroupDetail>(`/users/chat/groups/${groupId}`, undefined, config)
+  return get<ChatGroupDetail>(`/user/chat/groups/${groupId}`, undefined, config)
 }
 
 /**
  * 加入公共频道
  */
 export function joinChatGroup(groupId: number, config?: Partial<RequestConfig>) {
-  return post<void>(`/users/chat/groups/${groupId}/join`, undefined, config)
+  return post<void>(`/user/chat/groups/${groupId}/join`, undefined, config)
 }
 
 /**
  * 离开群组/频道
  */
 export function leaveChatGroup(groupId: number, config?: Partial<RequestConfig>) {
-  return post<void>(`/users/chat/groups/${groupId}/leave`, undefined, config)
+  return post<void>(`/user/chat/groups/${groupId}/leave`, undefined, config)
 }
 
 /**
@@ -126,10 +126,10 @@ export function leaveChatGroup(groupId: number, config?: Partial<RequestConfig>)
  */
 export function markMessagesRead(
   groupId: number,
-  messageId: string,
+  messageId?: string,
   config?: Partial<RequestConfig>
 ) {
-  return post<void>(`/users/chat/groups/${groupId}/read`, { messageId }, config)
+  return post<void>(`/user/chat/groups/${groupId}/read`, messageId ? { messageId } : undefined, config)
 }
 
 /**
@@ -140,11 +140,18 @@ export function getChatMessages(
   params?: { 
     page?: number
     page_size?: number
+    limit?: number
     beforeId?: string 
   },
   config?: Partial<RequestConfig>
 ) {
-  return get<ChatMessage[]>(`/users/chat/groups/${groupId}/messages`, params, config)
+  const normalizedParams = params
+    ? {
+        ...params,
+        page_size: params.page_size ?? params.limit,
+      }
+    : params
+  return get<ChatMessage[]>(`/user/chat/groups/${groupId}/messages`, normalizedParams, config)
 }
 
 /**
@@ -153,20 +160,25 @@ export function getChatMessages(
 export function sendChatMessage(
   groupId: number,
   data: {
-    type: 'text' | 'image' | 'voice'
+    type?: 'text' | 'image' | 'voice'
+    messageType?: 'text' | 'image' | 'voice'
     content: string
     duration?: number
   },
   config?: Partial<RequestConfig>
 ) {
-  return post<ChatMessage>(`/users/chat/groups/${groupId}/messages`, data, config)
+  const payload = {
+    ...data,
+    type: data.type ?? data.messageType,
+  }
+  return post<ChatMessage>(`/user/chat/groups/${groupId}/messages`, payload, config)
 }
 
 /**
  * 举报消息
  */
 export function reportMessage(messageId: string, reason: string, config?: Partial<RequestConfig>) {
-  return post<void>(`/users/chat/messages/${messageId}/report`, { reason }, config)
+  return post<void>(`/user/chat/messages/${messageId}/report`, { reason }, config)
 }
 
 /**

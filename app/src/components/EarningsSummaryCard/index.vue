@@ -18,7 +18,7 @@
         <template #value="{ item }">
           <PriceTag
             :class="item.key === 'total' ? 'summary-highlight' : 'summary-normal'"
-            :amount="item.value"
+            :amount="Number(item.value || 0)"
             amount-unit="cents"
             size="small"
           />

@@ -76,9 +76,7 @@
 
       <!-- 费用明细 -->
       <OrderFeeSection
-        :service-fee="serviceFee"
-        :coupon-discount="selectedCoupon?.discount"
-        :vip-discount="vipDiscount"
+        :fees="feeItems"
         :total="totalFee"
       />
 
@@ -97,6 +95,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
+import type { FeeItem } from '@/types/order'
 // Pattern 组件
 import NavBar from '@/components/NavBar/index.vue'
 import BasePageLayout from '@/components/layout/BasePageLayout/index.vue'
@@ -136,25 +135,38 @@ const {
   vipDiscount,
   totalFee,
   canSubmit,
-  loadPlayerInfo,
+  loadPlayerDetail,
   submitOrder,
   goBack,
 } = useOrderCreate()
 
+const feeItems = computed(() => {
+  const items: FeeItem[] = [
+    { label: '服务费', value: serviceFee.value },
+  ]
+  if ((selectedCoupon.value?.discount || 0) > 0) {
+    items.push({ label: '优惠券抵扣', value: selectedCoupon.value?.discount || 0, isDiscount: true })
+  }
+  if (vipDiscount.value > 0) {
+    items.push({ label: 'VIP 折扣', value: vipDiscount.value, isDiscount: true })
+  }
+  return items
+})
+
 const quantityTitle = computed(() => {
-  const service = player.value.services?.find((s: any) => s.id === selectedServiceId.value)
+  const service = player.services?.find((s: any) => s.id === selectedServiceId.value)
   return service?.unit === 'hour' ? '服务时长' : '局数'
 })
 
 const quantityTip = computed(() => {
-  const service = player.value.services?.find((s: any) => s.id === selectedServiceId.value)
+  const service = player.services?.find((s: any) => s.id === selectedServiceId.value)
   return service?.unit === 'hour' ? '小时' : '局'
 })
 
 onLoad((options) => {
   const playerId = Number(options?.playerId)
   if (playerId) {
-    loadPlayerInfo(playerId)
+    loadPlayerDetail(playerId)
   }
 })
 </script>

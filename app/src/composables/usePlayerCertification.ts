@@ -99,19 +99,25 @@ export function usePlayerCertification() {
 
   // 选择游戏（需要外部实现 Picker）
   const selectGame = (index: number, gameId: number, gameName: string) => {
-    form.games[index].gameId = gameId
-    form.games[index].gameName = gameName
+    const item = form.games[index]
+    if (!item) return
+    item.gameId = gameId
+    item.gameName = gameName
   }
 
   // 选择段位（需要外部实现 Picker）
   const selectRank = (index: number, rankId: number, rankName: string) => {
-    form.games[index].rankId = rankId
-    form.games[index].rankName = rankName
+    const item = form.games[index]
+    if (!item) return
+    item.rankId = rankId
+    item.rankName = rankName
   }
 
   // 更新截图
   const updateScreenshot = (index: number, url: string) => {
-    form.games[index].screenshot = url
+    const item = form.games[index]
+    if (!item) return
+    item.screenshot = url
   }
 
   // 录音相关

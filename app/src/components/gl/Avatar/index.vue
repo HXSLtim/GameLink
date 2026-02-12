@@ -13,8 +13,11 @@
       v-if="src"
       :src="src"
       class="gl-avatar__image"
+      :class="{ loaded: isLoaded }"
       mode="aspectFill"
+      :lazy-load="true"
       @error="handleError"
+      @load="handleLoad"
     />
     <view v-else class="gl-avatar__placeholder">
       <uv-icon v-if="icon" :name="icon" :size="iconSize" color="var(--color-text-secondary)" />
@@ -99,8 +102,14 @@ const displayText = computed(() => {
   return props.text.slice(0, 2).toUpperCase()
 })
 
+const isLoaded = ref(false)
+
 const handleError = (e: Event) => {
   fallbackSrc.value = ''
+}
+
+const handleLoad = () => {
+  isLoaded.value = true
 }
 </script>
 
@@ -132,6 +141,12 @@ const handleError = (e: Event) => {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+
+  &.loaded {
+    opacity: 1;
+  }
 }
 
 .gl-avatar__placeholder {

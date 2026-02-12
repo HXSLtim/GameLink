@@ -51,7 +51,7 @@ async function syncUnreadCount() {
 </script>
 
 <style lang="scss">
-/* 
+/*
  * 全局样式已在 main.ts 中引入
  * @import './styles/index.scss';
  */

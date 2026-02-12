@@ -55,8 +55,9 @@ export function useListPage<T, P = Record<string, any>>(
         ...extraParams.value,
         ...params,
         page: currentPage,
+        page_size: pageSize,
         pageSize,
-      } as P & { page: number; page_size: number }
+      } as P & { page: number; page_size: number; pageSize: number }
       
       const res = await fetchFn(mergedParams)
       const items = extractList(res.data)

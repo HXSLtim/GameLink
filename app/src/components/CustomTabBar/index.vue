@@ -212,7 +212,9 @@ const updateCurrentIndex = () => {
   const pages = getCurrentPages()
   if (pages.length > 0) {
     const currentPage = pages[pages.length - 1]
-    const route = '/' + currentPage.route
+    const routePath = currentPage?.route
+    if (!routePath) return
+    const route = '/' + routePath
     // 检查 tabItems（移动端）和 navItems（PC端）
     const items = isPC.value ? navItems.value : tabItems.value
     const index = items.findIndex(item => item.path === route)

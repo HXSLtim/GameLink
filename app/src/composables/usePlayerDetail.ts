@@ -50,8 +50,8 @@ export function usePlayerDetail() {
         gender: data.gender === 'unknown' ? undefined : data.gender,
         isOnline: data.isOnline,
         isVerified: data.isVerified,
-        rating: data.rating,
-        orderCount: data.orderCount,
+        rating: data.rating ?? 5,
+        orderCount: data.orderCount ?? 0,
         favoriteCount: data.followerCount,
         createdAt: data.createdAt,
         games: data.gameRanks?.map(g => ({
@@ -79,7 +79,7 @@ export function usePlayerDetail() {
       
       // 默认选中第一个服务
       if (player.value.services?.length) {
-        selectedService.value = player.value.services[0]
+        selectedService.value = player.value.services[0] ?? null
       }
       
       pageState.value = 'content'
@@ -115,7 +115,7 @@ export function usePlayerDetail() {
     if (!userStore.isLoggedIn) return
     try {
       const res = await checkFavoriteApi(playerId.value)
-      isFavorite.value = res.data?.isFavorited || false
+      isFavorite.value = Boolean(res.data?.isFavorite ?? res.data?.isFavorited)
     } catch (error) {
       isFavorite.value = false
     }

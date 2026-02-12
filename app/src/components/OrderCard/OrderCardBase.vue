@@ -113,7 +113,7 @@ const statusMap: Record<OrderStatus, { text: string; class: string }> = {
 const statusInfo = computed(() => statusMap[props.order.status] || { text: props.order.status, class: 'default' })
 const formattedTime = computed(() => formatDateTime(props.order.createdAt))
 
-const handleAction = (key: string) => {
+const handleAction = (key: OrderActionKey) => {
   emit('action', key, props.order)
 }
 </script>

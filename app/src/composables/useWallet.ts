@@ -2,7 +2,7 @@
  * 钱包专用 Hook
  */
 import { ref, computed, reactive } from 'vue'
-import { getWalletInfo, getTransactions } from '@/api/wallet'
+import { getCouponStats, getTransactions, getVipStatus, getWalletInfo } from '@/api/wallet'
 import type { TransactionData, TransactionType, WalletState } from '@/types/wallet'
 import type { QuickActionItem, TabItem } from '@/types/ui'
 
@@ -60,14 +60,30 @@ export function useWallet() {
   // 加载钱包信息
   const loadWalletInfo = async () => {
     try {
-      const res = await getWalletInfo()
-      if (res.data) {
-        wallet.balance = res.data.balanceCents || 0
-        wallet.frozenBalance = res.data.frozenCents || 0
-        wallet.vipLevel = res.data.vipLevel || 0
-        wallet.couponCount = res.data.couponCount || 0
-        wallet.totalSpent = res.data.totalSpentCents || 0
-        wallet.totalRecharge = res.data.totalRechargeCents || 0
+      const [walletRes, couponStatsRes, vipRes] = await Promise.allSettled([
+        getWalletInfo(),
+        getCouponStats(),
+        getVipStatus(),
+      ])
+
+      if (walletRes.status === 'fulfilled' && walletRes.value.data) {
+        const data = walletRes.value.data
+        wallet.balance = data.balanceCents || 0
+        wallet.frozenBalance = data.frozenCents || 0
+        wallet.totalSpent = data.totalSpentCents || 0
+        wallet.totalRecharge = data.totalRechargeCents || 0
+      }
+
+      if (couponStatsRes.status === 'fulfilled' && couponStatsRes.value.data) {
+        wallet.couponCount = couponStatsRes.value.data.available || 0
+      } else {
+        wallet.couponCount = 0
+      }
+
+      if (vipRes.status === 'fulfilled' && vipRes.value.data) {
+        wallet.vipLevel = vipRes.value.data.currentLevel?.level || 0
+      } else {
+        wallet.vipLevel = 0
       }
     } catch (error) {
       console.error('加载钱包信息失败', error)
@@ -88,7 +104,7 @@ export function useWallet() {
     try {
       const res = await getTransactions({
         page: page.value,
-        page_size: 20,
+        pageSize: 20,
       }, { showError: false })
       
       const items = (res.data as any)?.items || res.data || []

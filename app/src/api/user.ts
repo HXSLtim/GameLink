@@ -2,7 +2,7 @@
  * 用户信息相关 API
  */
 
-import { get, put } from './request'
+import { get, post, put, ApiError } from './request'
 import { uploadFile } from './request'
 import type { ProfileGender } from '@/types/common'
 import type { AppUserRole } from '@/types/user'
@@ -26,32 +26,34 @@ export interface UserProfile {
 
 // 更新资料参数
 export interface UpdateProfileParams {
+  avatar?: string
   nickname?: string
   gender?: ProfileGender
   birthday?: string
   region?: string
   bio?: string
+  games?: string[]
 }
 
 /**
  * 获取当前用户资料
  */
 export function getUserProfile() {
-  return get<UserProfile>('/users/me')
+  return get<UserProfile>('/user/profile')
 }
 
 /**
  * 更新用户资料
  */
 export function updateUserProfile(data: UpdateProfileParams) {
-  return put<UserProfile>('/users/me', data)
+  return put<UserProfile>('/user/profile', data)
 }
 
 /**
  * 上传头像
  */
 export function uploadAvatar(filePath: string) {
-  return uploadFile('/users/avatar', filePath, 'avatar')
+  return uploadFile('/user/avatar', filePath, 'avatar')
 }
 
 /**
@@ -61,7 +63,7 @@ export function changePassword(data: {
   oldPassword: string
   newPassword: string
 }) {
-  return put<void>('/users/password', data)
+  return post<void>('/auth/change-password', data)
 }
 
 /**
@@ -71,14 +73,19 @@ export function bindPhone(data: {
   phone: string
   code: string
 }) {
-  return put<void>('/users/phone', data)
+  void data
+  return Promise.reject(new ApiError('当前后端未开放手机号绑定接口', 501))
 }
 
 /**
  * 发送验证码
  */
 export function sendVerifyCode(phone: string, type: 'bind' | 'reset' = 'bind') {
-  return get<void>('/users/verify-code', { phone, type })
+  return post<void>('/public/verification/send', {
+    target: phone,
+    type: 'phone',
+    purpose: type,
+  })
 }
 
 export default {

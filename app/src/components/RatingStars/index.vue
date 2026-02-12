@@ -23,7 +23,7 @@ import { computed } from 'vue'
 const props = withDefaults(defineProps<{
   modelValue: number
   readonly?: boolean
-  size?: 'small' | 'medium' | 'large'
+  size?: 'small' | 'medium' | 'large' | 'mini'
   showValue?: boolean
 }>(), {
   modelValue: 0,
@@ -37,7 +37,7 @@ const emit = defineEmits<{
 }>()
 
 const starSize = computed(() => {
-  const map = { small: 12, medium: 16, large: 24 }
+  const map = { mini: 10, small: 12, medium: 16, large: 24 }
   return map[props.size] ?? 16
 })
 

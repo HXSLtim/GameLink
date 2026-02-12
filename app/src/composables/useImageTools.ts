@@ -14,7 +14,16 @@ export function useImageTools() {
         ...defaultPickOptions,
         ...options,
         success: (res) => {
-          resolve(res.tempFilePaths || [])
+          const tempFilePaths = res.tempFilePaths
+          if (Array.isArray(tempFilePaths)) {
+            resolve(tempFilePaths)
+            return
+          }
+          if (typeof tempFilePaths === 'string') {
+            resolve([tempFilePaths])
+            return
+          }
+          resolve([])
         },
         fail: (error) => {
           reject(error)

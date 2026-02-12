@@ -105,7 +105,7 @@ const currentRanks = computed(() => {
 const showPicker = () => {
   tempSelected.value = selectedRank.value
   if (props.games.length > 0 && !currentGameId.value) {
-    currentGameId.value = props.games[0].id
+    currentGameId.value = props.games[0]?.id
   }
   visible.value = true
 }

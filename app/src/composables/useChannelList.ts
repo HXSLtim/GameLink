@@ -62,7 +62,7 @@ export function useChannelList() {
         gameName: c.gameName,
       }))
     },
-    page_size: 20,
+    pageSize: 20,
     getCacheFn: () => {
       const cached = getCachedChannels()
       if (!cached) return null
@@ -70,10 +70,10 @@ export function useChannelList() {
         id: c.id,
         name: c.name,
         description: c.description,
-        avatar: c.avatar,
-        memberCount: c.memberCount,
+        avatar: c.avatar || c.avatarUrl,
+        memberCount: c.memberCount ?? c.currentMembers ?? 0,
         maxMembers: 100,
-        isActive: c.memberCount > 5,
+        isActive: (c.memberCount ?? c.currentMembers ?? 0) > 5,
         isJoined: false,
         gameId: c.gameId,
         gameName: c.gameName,

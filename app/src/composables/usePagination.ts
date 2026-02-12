@@ -60,7 +60,9 @@ export function usePagination<T>(options: PaginationOptions = {}) {
   function updateItem(predicate: (item: T) => boolean, updater: (item: T) => T) {
     const index = list.value.findIndex(predicate)
     if (index > -1) {
-      list.value[index] = updater(list.value[index])
+      const current = list.value[index]
+      if (current === undefined) return
+      list.value[index] = updater(current)
     }
   }
   

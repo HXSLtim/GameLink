@@ -77,6 +77,7 @@ export interface OrderDetailData {
   completedAt?: string
   scheduledStart?: string
   review?: OrderReviewData
+  refund?: RefundInfo
 }
 
 export interface InfoItem {
@@ -109,3 +110,34 @@ export interface OrderPaymentInfo {
 export type OrderPaymentMethod = 'wechat' | 'alipay' | 'wallet' | 'combined'
 
 export type OrderPaymentStatus = 'success' | 'pending' | 'failed' | 'paid'
+
+// ============ 退款相关类型 ============
+
+/** 退款状态 */
+export type RefundStatus = 'pending' | 'processing' | 'refunded' | 'rejected'
+
+/** 退款详情 */
+export interface RefundInfo {
+  id: number
+  status: RefundStatus
+  reason: string
+  amount: number
+  createdAt: string
+  processedAt?: string
+  rejectReason?: string
+}
+
+// ============ 订单进度相关类型 ============
+
+/** 订单进度步骤 */
+export interface OrderProgressStep {
+  key: string
+  label: string
+  icon: string
+  /** 是否已完成 */
+  done: boolean
+  /** 是否为当前步骤 */
+  active: boolean
+  /** 完成时间 */
+  time?: string
+}

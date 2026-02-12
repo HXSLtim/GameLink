@@ -40,6 +40,7 @@ export interface PlayerTodayStats {
 }
 
 export interface PlayerHeaderData {
+  id: number
   nickname: string
   avatar?: string
   coverImage?: string
@@ -51,6 +52,7 @@ export interface PlayerHeaderData {
   orderCount: number
   favoriteCount: number
   createdAt: string
+  price?: number | string // Added price
 }
 
 export interface PlayerDetailData extends PlayerHeaderData {

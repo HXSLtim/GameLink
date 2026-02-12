@@ -2,8 +2,8 @@
  * 订单相关 API
  */
 
-import { get, post, put, type RequestConfig } from './request'
-import type { OrderPaymentStatus } from '@/types/order'
+import { get, post, put, ApiError, type RequestConfig } from './request'
+import type { OrderPaymentStatus, RefundInfo } from '@/types/order'
 
 // 订单状态
 export type OrderStatus =
@@ -68,9 +68,15 @@ export interface OrderDetail extends Order {
 // 创建订单参数
 export interface CreateOrderParams {
   playerId: number
-  serviceId: number
-  quantity: number
+  gameId: number
+  serviceId?: number
+  title?: string
+  description?: string
+  scheduledStart: string
+  durationHours?: number
+  quantity?: number
   couponId?: number
+  gameAccount?: string
   remark?: string
 }
 
@@ -85,42 +91,70 @@ export interface OrderListParams {
  * 获取订单列表
  */
 export function getOrders(params?: OrderListParams, config?: Partial<RequestConfig>) {
-  return get<Order[]>('/orders', params, config)
+  return get<Order[]>('/user/orders', params, config)
 }
 
 /**
  * 获取订单详情
  */
 export function getOrderDetail(orderId: number, config?: Partial<RequestConfig>) {
-  return get<OrderDetail>(`/orders/${orderId}`, undefined, config)
+  return get<OrderDetail>(`/user/orders/${orderId}`, undefined, config)
 }
 
 /**
  * 创建订单
  */
 export function createOrder(data: CreateOrderParams) {
-  return post<Order>('/orders', data)
+  const duration = data.durationHours ?? data.quantity ?? 1
+  const payload = {
+    playerId: data.playerId,
+    gameId: data.gameId,
+    serviceId: data.serviceId,
+    title: data.title ?? '用户下单',
+    description: data.description ?? data.remark ?? '',
+    scheduledStart: data.scheduledStart,
+    durationHours: duration,
+  }
+  return post<Order>('/user/orders', payload)
 }
 
 /**
  * 取消订单
  */
 export function cancelOrder(orderId: number, reason?: string) {
-  return put<void>(`/orders/${orderId}/cancel`, { reason })
+  return put<void>(`/user/orders/${orderId}/cancel`, { reason })
 }
 
 /**
  * 确认完成订单
  */
 export function completeOrder(orderId: number) {
-  return put<void>(`/orders/${orderId}/complete`)
+  return put<void>(`/user/orders/${orderId}/complete`)
 }
 
 /**
  * 申请退款
  */
 export function refundOrder(orderId: number, reason: string) {
-  return post<void>(`/orders/${orderId}/refund`, { reason })
+  return post<void>(`/user/orders/${orderId}/refund`, { reason })
+}
+
+/**
+ * 查询退款状态
+ */
+export function getRefundStatus(orderId: number) {
+  return get<RefundInfo | null>(`/user/orders/${orderId}/refund`, undefined, { showError: false })
+    .catch((error: unknown) => {
+      if (error instanceof ApiError && error.code === 404) {
+        return {
+          success: true,
+          code: 200,
+          message: 'OK',
+          data: null,
+        }
+      }
+      throw error
+    })
 }
 
 /**
@@ -132,14 +166,33 @@ export function submitReview(orderId: number, data: {
   tags?: string[]
   images?: string[]
 }) {
-  return post<void>('/users/reviews', { orderId, ...data })
+  return post<void>('/user/reviews', { orderId, ...data })
 }
 
 /**
  * 获取订单支付状态
  */
 export function getOrderPaymentStatus(orderId: number) {
-  return get<{ status: OrderPaymentStatus }>(`/orders/${orderId}/payment-status`)
+  return get<{ status: OrderPaymentStatus }>(`/user/orders/${orderId}/payment-status`)
+    .catch(async () => {
+      const fallback = await get<{ items?: Array<{ orderId?: number; status?: string }> }>(
+        '/user/payments',
+        { page: 1, pageSize: 50 },
+        { showError: false }
+      )
+      const items = Array.isArray(fallback.data?.items) ? fallback.data.items : []
+      const matched = items.find(item => Number(item.orderId) === orderId)
+      const rawStatus = matched?.status || 'pending'
+      const normalized: OrderPaymentStatus =
+        rawStatus === 'paid' || rawStatus === 'success' ? 'paid'
+          : rawStatus === 'failed' ? 'failed'
+            : 'pending'
+
+      return {
+        ...fallback,
+        data: { status: normalized },
+      }
+    })
 }
 
 // ============ 陪玩师订单 API ============
@@ -185,7 +238,7 @@ export function finishService(orderId: number) {
  * 获取我的评价列表
  */
 export function getMyReviews(params?: { page?: number; page_size?: number; type?: string }) {
-  return get<any>('/users/reviews/my', params)
+  return get<any>('/user/reviews/my', params)
 }
 
 /**
@@ -198,7 +251,7 @@ export function createReview(data: {
   tags?: string[]
   images?: string[]
 }) {
-  return post<void>('/users/reviews', data)
+  return post<void>('/user/reviews', data)
 }
 
 export default {
@@ -208,6 +261,7 @@ export default {
   cancelOrder,
   completeOrder,
   refundOrder,
+  getRefundStatus,
   submitReview,
   getOrderPaymentStatus,
   getPlayerOrders,

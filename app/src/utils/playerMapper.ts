@@ -18,13 +18,13 @@ export function mapPlayerInfoToCard(p: PlayerInfo): PlayerCardData & { id: numbe
         ? (p as { minPrice?: number }).minPrice
         : undefined
 
-  const hourlyRateCents =
+  const hourlyRateCents: number =
     typeof p.hourlyRateCents === 'number'
-      ? p.hourlyRateCents
+      ? (p.hourlyRateCents as number)
       : typeof (p as { hourlyRate?: number }).hourlyRate === 'number'
-        ? (p as { hourlyRate?: number }).hourlyRate
+        ? ((p as { hourlyRate?: number }).hourlyRate as number)
         : typeof minPriceCents === 'number'
-          ? minPriceCents
+          ? (minPriceCents as number)
           : DEFAULT_PRICE_CENTS
 
   const minPrice =
@@ -33,7 +33,7 @@ export function mapPlayerInfoToCard(p: PlayerInfo): PlayerCardData & { id: numbe
       : Math.round(hourlyRateCents / 100)
 
   // 处理后端返回的字符串状态字段
-  const pAny = p as Record<string, unknown>
+  const pAny = p as unknown as Record<string, unknown>
   const onlineStatus = pAny.onlineStatus ?? pAny.OnlineStatus
   const verificationStatus = pAny.verificationStatus ?? pAny.VerificationStatus
   

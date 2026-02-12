@@ -35,7 +35,7 @@ export function useReviewList() {
     extractList: (data: any) => {
       return data?.items || data || []
     },
-    page_size: 20,
+    pageSize: 20,
   })
   
   // 切换标签

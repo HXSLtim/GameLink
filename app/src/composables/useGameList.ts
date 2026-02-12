@@ -51,7 +51,7 @@ export function useGameList() {
         maxPrice: g.maxPrice ? g.maxPrice / 100 : 100,
       }))
     },
-    page_size: 20,
+    pageSize: 20,
   })
   
   // 过滤后的游戏列表

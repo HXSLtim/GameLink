@@ -43,7 +43,7 @@ const AUTH_PREFIXES = [
 const CHAT_PAGE = '/pages/message/chat/index'
 
 function normalizePath(url: string): string {
-  return url.split('?')[0]
+  return url.split('?')[0] || ''
 }
 
 function isAuthRequired(path: string): boolean {

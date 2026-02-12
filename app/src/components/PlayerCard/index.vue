@@ -317,9 +317,11 @@ const handleClick = () => {
   gap: var(--spacing-md);
   padding: var(--spacing-sm) var(--spacing-md);
   background: var(--color-bg-card);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg); // 优化：加大圆角
   border: 1rpx solid var(--color-border);
   width: 100%;
+  position: relative;
+  overflow: hidden; // 确保子元素不溢出圆角
 }
 
 .player-card--compact {
@@ -339,9 +341,9 @@ const handleClick = () => {
   }
 
   &:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
-    border-color: rgba(var(--color-primary-rgb), 0.4);
+    transform: translateY(-4rpx);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--color-primary);
   }
 }
 
@@ -423,16 +425,18 @@ const handleClick = () => {
 
 .player-card--clickable {
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); // 优化动画曲线
   @include press-effect;
 
   &:hover {
     box-shadow: var(--shadow-md);
-    border-color: var(--color-primary);
+    border-color: var(--color-primary-light);
+    transform: translateY(-2rpx);
   }
 
   &:active {
     background: var(--color-bg-secondary);
+    transform: scale(0.98);
   }
 }
 

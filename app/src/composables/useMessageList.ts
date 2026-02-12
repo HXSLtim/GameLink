@@ -79,7 +79,9 @@ export function useMessageList() {
       type: 'chat',
     }))
     
-    tabs[0].badge = messages.value.reduce((sum, m) => sum + m.unread, 0)
+    if (tabs[0]) {
+      tabs[0].badge = messages.value.reduce((sum, m) => sum + m.unread, 0)
+    }
   }
   
   // 加载系统通知
@@ -104,8 +106,12 @@ export function useMessageList() {
     try {
       const unreadRes = await getUnreadCount({ showError: false })
       if (unreadRes.data) {
-        tabs[0].badge = unreadRes.data.chat
-        tabs[1].badge = unreadRes.data.system
+        if (tabs[0]) {
+          tabs[0].badge = unreadRes.data.chat
+        }
+        if (tabs[1]) {
+          tabs[1].badge = unreadRes.data.system
+        }
       }
     } catch (e) {
       // 未读数加载失败不影响主流程

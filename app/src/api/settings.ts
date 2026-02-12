@@ -27,28 +27,28 @@ export interface NotificationSettings {
  * 获取用户通用设置
  */
 export function getUserSettings() {
-  return get<UserSettings>('/users/settings')
+  return get<UserSettings>('/user/settings')
 }
 
 /**
  * 更新用户通用设置
  */
 export function updateUserSettings(data: Partial<UserSettings>) {
-  return put<UserSettings>('/users/settings', data)
+  return put<UserSettings>('/user/settings', data)
 }
 
 /**
  * 获取通知设置
  */
 export function getNotificationSettings() {
-  return get<NotificationSettings>('/users/notification-settings')
+  return get<NotificationSettings>('/user/notification-settings')
 }
 
 /**
  * 更新通知设置
  */
 export function updateNotificationSettings(data: Partial<NotificationSettings>) {
-  return put<NotificationSettings>('/users/notification-settings', data)
+  return put<NotificationSettings>('/user/notification-settings', data)
 }
 
 export default {

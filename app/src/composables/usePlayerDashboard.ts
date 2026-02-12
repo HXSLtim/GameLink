@@ -65,7 +65,7 @@ export function usePlayerDashboard() {
       if (res.data) {
         todayStats.orders = res.data.orderCount || 0
         todayStats.earnings = (res.data.earningsCents || 0) / 100
-        todayStats.duration = res.data.serviceDuration || 0
+        todayStats.duration = res.data.serviceDurationMinutes || res.data.serviceDuration || 0
         todayStats.rating = res.data.averageRating?.toFixed(1) || '5.0'
       }
     } catch (error) {

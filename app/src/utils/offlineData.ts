@@ -184,11 +184,14 @@ export interface CachedChannel {
   name: string
   description?: string
   avatarUrl?: string
-  currentMembers: number
-  maxMembers: number
-  isActive: boolean
+  avatar?: string
+  currentMembers?: number
+  memberCount?: number
+  maxMembers?: number
+  isActive?: boolean
   gameId?: number
-  isJoined: boolean
+  gameName?: string
+  isJoined?: boolean
 }
 
 /**

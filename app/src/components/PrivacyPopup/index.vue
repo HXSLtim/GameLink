@@ -33,6 +33,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 
+// 声明 wx 全局变量
+declare const wx: any
+
 interface Props {
   visible?: boolean
 }

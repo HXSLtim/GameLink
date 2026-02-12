@@ -5,7 +5,7 @@
       <GlInput
         v-model="form.phone"
         type="number"
-        maxlength="11"
+        :maxlength="11"
         placeholder="请输入手机号"
         size="medium"
         clearable
@@ -17,7 +17,7 @@
       <GlInput
         v-model="form.nickname"
         type="text"
-        maxlength="20"
+        :maxlength="20"
         placeholder="请输入昵称"
         size="medium"
         clearable

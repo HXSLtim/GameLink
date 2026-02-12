@@ -1,3 +1,11 @@
-export type UserRole = 'user' | 'player' | 'admin'
+export type UserRole =
+  | 'user'
+  | 'player'
+  | 'admin'
+  | 'superAdmin'
+  | 'finance'
+  | 'customerService'
+  | 'csLeader'
+  | 'csAgent'
 
-export type AppUserRole = Exclude<UserRole, 'admin'>
+export type AppUserRole = 'user' | 'player'

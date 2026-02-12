@@ -30,12 +30,80 @@
 
               <!-- H5/App 环境显示账号登录 -->
               <!-- #ifndef MP-WEIXIN -->
+              <view class="login-mode-tabs">
+                <view
+                  class="mode-tab"
+                  :class="{ 'mode-tab--active': loginMode === 'password' }"
+                  @tap="loginMode = 'password'"
+                >
+                  账号密码
+                </view>
+                <view
+                  class="mode-tab"
+                  :class="{ 'mode-tab--active': loginMode === 'sms' }"
+                  @tap="loginMode = 'sms'"
+                >
+                  验证码登录
+                </view>
+              </view>
+
               <LoginForm
+                v-if="loginMode === 'password'"
                 v-model:account="form.account"
                 v-model:password="form.password"
                 :loading="loginLoading"
                 @submit="handleLogin"
               />
+
+              <view v-else class="sms-form">
+                <view class="input-group">
+                  <text class="input-label">手机号</text>
+                  <GlInput
+                    v-model="phoneForm.phone"
+                    type="number"
+                    :maxlength="11"
+                    placeholder="请输入手机号"
+                    size="medium"
+                    clearable
+                  />
+                </view>
+
+                <view class="input-group">
+                  <text class="input-label">验证码</text>
+                  <view class="code-row">
+                    <view class="code-input">
+                      <GlInput
+                        v-model="phoneForm.code"
+                        type="number"
+                        :maxlength="6"
+                        placeholder="请输入6位验证码"
+                        size="medium"
+                      />
+                    </view>
+                    <GlButton
+                      type="default"
+                      size="medium"
+                      :loading="smsSending"
+                      :disabled="!canSendSmsCode"
+                      @click="handleSendSmsCode"
+                    >
+                      {{ smsCooldown > 0 ? `${smsCooldown}s` : '获取验证码' }}
+                    </GlButton>
+                  </view>
+                </view>
+
+                <GlButton
+                  type="primary"
+                  block
+                  round
+                  size="large"
+                  :loading="loginLoading"
+                  :disabled="!canPhoneLogin"
+                  @click="handlePhoneLogin"
+                >
+                  登录
+                </GlButton>
+              </view>
               <!-- #endif -->
 
               <!-- 分割线 -->
@@ -73,6 +141,7 @@
 <script setup lang="ts">
 // Pattern 组件
 import GlButton from '@/components/gl/Button/index.vue'
+import GlInput from '@/components/gl/Input/index.vue'
 import PageShell from '@/components/layout/PageShell/index.vue'
 // Business 组件
 import AuthLogo from '@/components/AuthLogo/index.vue'
@@ -87,10 +156,18 @@ import { useLogin } from '@/composables/useLogin'
 const {
   loginLoading,
   wechatLoading,
+  smsSending,
   showAccountLogin,
+  loginMode,
+  smsCooldown,
   form,
+  phoneForm,
   handleLogin,
+  handlePhoneLogin,
+  handleSendSmsCode,
   handleWechatLogin,
+  canPhoneLogin,
+  canSendSmsCode,
   goToRegister,
   goToAgreement,
 } = useLogin()
@@ -132,6 +209,58 @@ const {
 .login-section {
   display: flex;
   flex-direction: column;
+}
+
+.login-mode-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8rpx;
+  padding: 8rpx;
+  margin-bottom: 24rpx;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-soft, #f5f7fa);
+}
+
+.mode-tab {
+  text-align: center;
+  font-size: var(--font-md);
+  color: var(--color-text-secondary);
+  padding: 16rpx 0;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+}
+
+.mode-tab--active {
+  color: var(--color-primary);
+  background: var(--color-bg-card);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
+}
+
+.sms-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.input-label {
+  font-size: var(--font-sm);
+  color: var(--color-text-secondary);
+}
+
+.code-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.code-input {
+  flex: 1;
 }
 
 .wechat-section {

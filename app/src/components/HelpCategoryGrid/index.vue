@@ -26,7 +26,7 @@ interface Props {
 defineProps<Props>()
 
 defineEmits<{
-  select: [id: number]
+  select: [id: string]
 }>()
 </script>
 

@@ -59,7 +59,7 @@ export function usePlayerOrders() {
         createdAt: o.createdAt,
       }))
     },
-    page_size: 20,
+    pageSize: 20,
   })
 
   // 切换标签
@@ -165,7 +165,12 @@ export function usePlayerOrders() {
   }
 
   const contactUser = (order: PlayerOrderData) => {
-    uni.navigateTo({ url: `/pages/message/chat/index?userId=${order.user.id}` })
+    const userId = order.user?.id
+    if (!userId) {
+      uni.showToast({ title: '用户信息缺失', icon: 'none' })
+      return
+    }
+    uni.navigateTo({ url: `/pages/message/chat/index?userId=${userId}` })
   }
 
   const viewDetail = (order: PlayerOrderData) => {

@@ -140,7 +140,7 @@ export function useTheme() {
     const modes: ThemeMode[] = ['light', 'dark', 'auto']
     const currentIndex = modes.indexOf(themeMode.value)
     const nextIndex = (currentIndex + 1) % modes.length
-    themeMode.value = modes[nextIndex]
+    themeMode.value = modes[nextIndex] || 'light'
   }
   
   return {

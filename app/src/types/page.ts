@@ -16,7 +16,7 @@ export interface PaginationOptions {
 
 export interface UseListPageOptions<T, P = Record<string, any>> {
   /** 获取数据的 API 函数 */
-  fetchFn: (params: P & { page: number; page_size: number }) => Promise<{ data: any }>
+  fetchFn: (params: P & { page: number; page_size: number; pageSize: number }) => Promise<{ data: any }>
   /** 从响应中提取数据列表 */
   extractList?: (data: any) => T[]
   /** 每页数量 */

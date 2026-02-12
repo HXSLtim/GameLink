@@ -23,7 +23,7 @@
         />
         
         <uv-icon 
-          v-else-if="item.type !== 'switch'" 
+          v-else
           name="arrow-right" 
           size="14" 
           color="var(--color-text-secondary)"

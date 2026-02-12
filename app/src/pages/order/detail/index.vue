@@ -46,7 +46,7 @@
       <OrderReviewSection
         v-if="order.status === 'completed' && order.review"
         :rating="order.review.rating"
-        :content="order.review.content"
+        :content="order.review.content || ''"
       />
 
       <!-- 底部占位 -->

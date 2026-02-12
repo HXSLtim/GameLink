@@ -82,15 +82,16 @@ export function useRecharge() {
         amountCents: Math.round(finalAmount.value * 100),
         method: selectedMethod.value,
       })
-      
-      // 调用支付
+
       const paymentData = res.data as any
-      
-      if (selectedMethod.value === 'wechat') {
+      const payInfo = paymentData?.payInfo
+      const hasPayInfo = !!(payInfo && Object.keys(payInfo).length > 0)
+
+      if (selectedMethod.value === 'wechat' && hasPayInfo) {
         // #ifdef MP-WEIXIN
         uni.requestPayment({
           provider: 'wxpay',
-          ...paymentData,
+          ...payInfo,
           success: () => {
             uni.showToast({ title: '充值成功', icon: 'success' })
             setTimeout(() => {
@@ -106,7 +107,13 @@ export function useRecharge() {
         uni.showToast({ title: '请在微信中完成支付', icon: 'none' })
         // #endif
       } else {
-        uni.showToast({ title: '支付发起成功', icon: 'success' })
+        if (typeof paymentData?.balanceCents === 'number') {
+          currentBalance.value = paymentData.balanceCents
+        }
+        uni.showToast({ title: '充值成功', icon: 'success' })
+        setTimeout(() => {
+          uni.navigateBack()
+        }, 800)
       }
     } catch (error: any) {
       uni.showToast({ title: error?.message || '充值失败', icon: 'none' })
@@ -126,7 +133,7 @@ export function useRecharge() {
   // 初始化
   const init = () => {
     loadBalance()
-    selectedAmount.value = amountOptions[0].value
+    selectedAmount.value = amountOptions[0]?.value ?? 10
   }
   
   return {

@@ -23,6 +23,10 @@ export function useAuth() {
       // #ifdef MP-WEIXIN
       uni.login({
         success: async (loginRes) => {
+          if (!loginRes.code) {
+            reject(new Error('微信登录失败：未获取到 code'))
+            return
+          }
           try {
             const res = await wechatLogin({
               code: loginRes.code,
@@ -30,8 +34,13 @@ export function useAuth() {
             })
             
             if (res.data) {
+              const accessToken = res.data.accessToken || res.data.token
+              if (!accessToken) {
+                reject(new Error('登录失败：缺少 access token'))
+                return
+              }
               userStore.login({
-                accessToken: res.data.accessToken,
+                accessToken,
                 refreshToken: res.data.refreshToken,
                 user: res.data.user,
               })
@@ -62,7 +71,7 @@ export function useAuth() {
     try {
       const res = await refreshTokenApi(userStore.refreshToken)
       if (res.data) {
-        userStore.setToken(res.data.accessToken, res.data.refreshToken)
+        userStore.setToken(res.data.accessToken, userStore.refreshToken || '')
         return res.data
       }
     } catch (error) {

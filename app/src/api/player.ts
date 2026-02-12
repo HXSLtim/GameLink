@@ -26,11 +26,15 @@ export interface PlayerService {
 
 export interface CreateServiceData {
   gameId: number
-  serviceType: string
+  serviceType?: string
+  serviceName?: string
   rankId?: number
-  price: number
+  rankName?: string
+  price?: number
+  priceCents?: number
   unit: string
   description?: string
+  isOnline?: boolean
 }
 
 /**
@@ -104,6 +108,7 @@ export interface TodayStats {
   orderCount: number
   earningsCents: number
   serviceDurationMinutes: number
+  serviceDuration?: number
   averageRating: number
   newFollowers: number
 }

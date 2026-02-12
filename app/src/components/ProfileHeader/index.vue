@@ -117,9 +117,10 @@ const emit = defineEmits<{
   'stat-click': [type: ProfileStatKey]
 }>()
 
-const handleStatClick = (item: HeaderStatItem & { key?: ProfileStatKey }) => {
-  if (!item.key) return
-  emit('stat-click', item.key)
+const handleStatClick = (item: HeaderStatItem) => {
+  const key = item.key as ProfileStatKey | undefined
+  if (!key) return
+  emit('stat-click', key)
 }
 
 </script>

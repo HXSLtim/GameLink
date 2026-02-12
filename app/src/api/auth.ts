@@ -2,7 +2,7 @@
  * 认证相关 API
  */
 
-import { post, get, put, type RequestConfig } from './request'
+import { post, get, type RequestConfig } from './request'
 import type { UserInfo } from '@/store/user'
 import type { AppUserRole } from '@/types/user'
 
@@ -28,6 +28,16 @@ export interface RegisterRequest {
   nickname: string
   role: AppUserRole
   verifyCode?: string
+}
+
+export interface PhoneLoginRequest {
+  phone: string
+  code: string
+}
+
+export interface SendSmsCodeRequest {
+  phone: string
+  scene?: 'login' | 'register' | 'reset'
 }
 
 // ============================================
@@ -72,7 +82,7 @@ export function refreshToken(token: string) {
  * 获取用户信息
  */
 export function getProfile() {
-  return get<UserInfo>('/users/me')
+  return get<UserInfo>('/auth/me')
 }
 
 /**
@@ -86,7 +96,10 @@ export function register(data: RegisterRequest) {
  * 发送验证码（注册/登录等场景）
  */
 export function sendVerifyCode(phone: string) {
-  return post('/public/verification/send', { phone })
+  return post('/public/verification/send', {
+    target: phone,
+    type: 'phone',
+  })
 }
 
 /**
@@ -101,6 +114,27 @@ export function logout() {
  */
 export function changePassword(data: { oldPassword: string; newPassword: string }) {
   return post('/auth/change-password', data)
+}
+
+/**
+ * 发送短信验证码
+ * 用于手机号登录/注册场景，新用户首次登录自动注册
+ */
+export function sendSmsCode(data: SendSmsCodeRequest) {
+  return post<{ message: string; masterCode?: string }>('/public/verification/send', {
+    target: data.phone,
+    type: 'phone',
+  })
+}
+
+/**
+ * 手机号 + 验证码登录（新用户自动注册）
+ * 后端根据手机号判断是否为新用户：
+ * - 已注册用户：直接登录
+ * - 新用户：自动创建账号并登录
+ */
+export function loginWithPhone(_data: PhoneLoginRequest) {
+  return post<LoginResponse>('/public/auth/phone/login', _data)
 }
 
 // ============================================

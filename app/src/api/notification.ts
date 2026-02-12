@@ -51,28 +51,28 @@ export interface NotificationListParams {
  * 获取通知列表
  */
 export function getNotifications(params?: NotificationListParams, config?: Partial<RequestConfig>) {
-  return get<Notification[]>('/users/notifications', params, config)
+  return get<Notification[]>('/user/notifications', params, config)
 }
 
 /**
  * 获取未读通知数量
  */
 export function getUnreadCount(config?: Partial<RequestConfig>) {
-  return get<UnreadCount>('/users/notifications/unread-count', undefined, config)
+  return get<UnreadCount>('/user/notifications/unread-count', undefined, config)
 }
 
 /**
  * 标记单条通知为已读
  */
 export function markNotificationRead(notificationId: number, config?: Partial<RequestConfig>) {
-  return post<void>(`/users/notifications/${notificationId}/read`, undefined, config)
+  return post<void>(`/user/notifications/${notificationId}/read`, undefined, config)
 }
 
 /**
  * 标记所有通知为已读
  */
 export function markAllNotificationsRead(config?: Partial<RequestConfig>) {
-  return post<void>('/users/notifications/read-all', undefined, config)
+  return post<void>('/user/notifications/read-all', undefined, config)
 }
 
 export default {

@@ -2,7 +2,14 @@
  * 订单详情专用 Hook
  */
 import { ref, computed, reactive } from 'vue'
-import { getOrderDetail, cancelOrder as cancelOrderApi, completeOrder as completeOrderApi, submitReview as submitReviewApi, type OrderDetail as ApiOrderDetail } from '@/api/order'
+import {
+  getOrderDetail,
+  getRefundStatus as getRefundStatusApi,
+  cancelOrder as cancelOrderApi,
+  completeOrder as completeOrderApi,
+  submitReview as submitReviewApi,
+  refundOrder as refundOrderApi,
+} from '@/api/order'
 import { payOrder } from '@/api/wallet'
 import { confirmDialog } from '@/composables/useConfirmDialog'
 import type { FeeItem, InfoItem, OrderActionKey } from '@/types/order'
@@ -75,16 +82,16 @@ export function useOrderDetail() {
     
     try {
       const res = await getOrderDetail(id)
-      const data = res.data as ApiOrderDetail
+      const data = res.data as any
       
       order.value = {
         id: data.id,
         orderNo: data.orderNo,
         status: normalizeOrderStatus(data.status, 'user'),
         player: {
-          id: data.playerId,
-          nickname: data.playerNickname || '陪玩师',
-          avatar: data.playerAvatar,
+          id: data.playerId || data.player?.id || 0,
+          nickname: data.playerNickname || data.player?.nickname || data.playerName || '陪玩师',
+          avatar: data.playerAvatar || data.player?.avatar,
           rating: 5.0,
           orderCount: 0,
         },
@@ -94,10 +101,10 @@ export function useOrderDetail() {
         unit: data.unit || '局',
         gameAccount: data.gameAccount,
         remark: data.remark,
-        serviceFee: (data.totalCents || 0) / 100,
+        serviceFee: (data.totalCents || data.totalPriceCents || 0) / 100,
         couponDiscount: 0,
         vipDiscount: 0,
-        totalAmount: (data.totalCents || 0) / 100,
+        totalAmount: (data.totalCents || data.totalPriceCents || 0) / 100,
         paymentMethod: data.paymentMethod,
         createdAt: data.createdAt,
         paidAt: data.paidAt,
@@ -111,6 +118,17 @@ export function useOrderDetail() {
           images: data.review.images,
           createdAt: data.review.createdAt,
         } : undefined,
+      }
+
+      if (order.value.status === 'refunding' || order.value.status === 'refunded') {
+        try {
+          const refundRes = await getRefundStatusApi(orderId.value)
+          if (refundRes.data) {
+            order.value.refund = refundRes.data
+          }
+        } catch {
+          // noop: refund detail is optional in detail page
+        }
       }
       
       // 启动倒计时
@@ -156,7 +174,7 @@ export function useOrderDetail() {
         goToChat()
         break
       case 'refund':
-        handleRefund()
+        await handleRefund()
         break
       case 'complete':
         await handleComplete()
@@ -173,7 +191,11 @@ export function useOrderDetail() {
   const handlePay = async () => {
     try {
       uni.showLoading({ title: '支付中...' })
-      await payOrder(orderId.value, 'wallet')
+      await payOrder({
+        orderId: orderId.value,
+        method: 'wallet',
+        requestId: `wallet-${orderId.value}-${Date.now()}`,
+      })
       uni.hideLoading()
       uni.showToast({ title: '支付成功', icon: 'success' })
       loadOrderDetail(orderId.value)
@@ -213,8 +235,19 @@ export function useOrderDetail() {
     }
   }
   
-  const handleRefund = () => {
-    uni.showToast({ title: '退款功能开发中', icon: 'none' })
+  const handleRefund = async () => {
+    const confirmed = await confirmDialog({
+      title: '申请退款',
+      content: '确认提交退款申请吗？提交后将进入客服处理流程。',
+    })
+    if (!confirmed) return
+    try {
+      await refundOrderApi(orderId.value, '用户申请退款')
+      uni.showToast({ title: '退款申请已提交', icon: 'success' })
+      loadOrderDetail(orderId.value)
+    } catch (error: any) {
+      uni.showToast({ title: error?.message || '退款申请失败', icon: 'none' })
+    }
   }
   
   const handleReorder = () => {

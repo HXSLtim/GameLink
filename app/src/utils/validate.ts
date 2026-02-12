@@ -38,11 +38,16 @@ export function isValidIdCard(idCard: string): boolean {
   
   let sum = 0
   for (let i = 0; i < 17; i++) {
-    sum += parseInt(idCard[i]) * weights[i]
+    const digit = idCard[i]
+    const weight = weights[i]
+    if (!digit || weight === undefined) return false
+    sum += parseInt(digit, 10) * weight
   }
   
   const checkCode = checkCodes[sum % 11]
-  return idCard[17].toUpperCase() === checkCode
+  const lastChar = idCard[17]
+  if (!checkCode || !lastChar) return false
+  return lastChar.toUpperCase() === checkCode
 }
 
 /**
@@ -57,7 +62,9 @@ export function isValidBankCard(cardNo: string): boolean {
   const digits = cardNo.split('').reverse()
   
   for (let i = 0; i < digits.length; i++) {
-    let digit = parseInt(digits[i])
+    const current = digits[i]
+    if (!current) return false
+    let digit = parseInt(current, 10)
     if (i % 2 === 1) {
       digit *= 2
       if (digit > 9) {

@@ -22,7 +22,7 @@
           <template #value="{ item }">
             <PriceTag
               v-if="showBalance"
-              :amount="item.value"
+              :amount="Number(item.value || 0)"
               amount-unit="cents"
               size="small"
               :show-currency="false"

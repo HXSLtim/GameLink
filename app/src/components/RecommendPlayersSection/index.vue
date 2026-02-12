@@ -38,7 +38,7 @@ import SectionHeader from '@/components/SectionHeader/index.vue'
 import GlEmpty from '@/components/gl/Empty/index.vue'
 import Skeleton from '@/components/Skeleton/index.vue'
 import PlayerCard from '@/components/PlayerCard/index.vue'
-import type { RecommendPlayerData } from '@/types/player'
+import type { PlayerCardData, RecommendPlayerData } from '@/types/player'
 
 interface Props {
   players: RecommendPlayerData[]
@@ -51,7 +51,7 @@ withDefaults(defineProps<Props>(), {
 
 defineEmits<{
   more: []
-  select: [player: RecommendPlayerData]
+  select: [player: PlayerCardData]
   refresh: []
 }>()
 </script>

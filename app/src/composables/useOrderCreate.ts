@@ -46,7 +46,7 @@ export function useOrderCreate() {
 
   // 计算选中的服务
   const selectedService = computed(() =>
-    player.services.find((s: ServiceOption) => s.id === selectedServiceId.value)
+    player.services.find((s: PlayerServiceData) => s.id === selectedServiceId.value)
   )
 
   // 费用计算
@@ -116,10 +116,10 @@ export function useOrderCreate() {
 
         // 默认选中第一个游戏和服务
         if (player.games.length > 0) {
-          selectedGameId.value = player.games[0].id
+          selectedGameId.value = player.games[0]?.id
         }
         if (player.services.length > 0) {
-          selectedServiceId.value = player.services[0].id
+          selectedServiceId.value = player.services[0]?.id
         }
       }
     } catch (error) {

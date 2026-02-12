@@ -87,7 +87,9 @@ export const usePlayerStore = defineStore('player', () => {
   function updateService(id: number, data: Partial<PlayerService>) {
     const index = services.value.findIndex(s => s.id === id)
     if (index > -1) {
-      services.value[index] = { ...services.value[index], ...data }
+      const current = services.value[index]
+      if (!current) return
+      services.value[index] = { ...current, ...data }
     }
   }
   

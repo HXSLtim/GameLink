@@ -26,16 +26,16 @@ export function useFavoriteList() {
       return list.map((item): FavoritePlayerData => ({
         id: item.id,
         playerId: item.playerId,
-        nickname: item.nickname,
-        avatar: item.avatar,
+        nickname: item.nickname || item.playerName || '陪玩师',
+        avatar: item.avatar || item.playerAvatar,
         isOnline: item.isOnline,
-        rating: item.rating || 5.0,
+        rating: item.rating || item.playerRating || 5.0,
         orderCount: item.orderCount || 0,
         minPrice: item.minPrice || 20,
-        games: item.games || [],
+        games: item.games || item.gameNames || [],
       }))
     },
-    page_size: 20,
+    pageSize: 20,
   })
   
   // 全选状态
@@ -82,7 +82,10 @@ export function useFavoriteList() {
 
     try {
       uni.showLoading({ title: '处理中...' })
-      await batchRemoveFavorites(selectedIds.value)
+      const selectedPlayerIds = listPage.list.value
+        .filter(item => selectedIds.value.includes(item.id))
+        .map(item => item.playerId)
+      await batchRemoveFavorites(selectedPlayerIds)
       uni.hideLoading()
       uni.showToast({ title: '已取消收藏', icon: 'success' })
       
