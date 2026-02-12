@@ -41,12 +41,12 @@
   - 支付单 `#267` 状态：`paid`
   - 评价单 `#158` 已创建
 
-## 4) 数据可信度检查结果（当前）
+## 4) 数据可信度检查结果（首次检查）
 执行脚本：`api/scripts/data_integrity_check.sql`
 
 - Orphan（孤儿关联）
   - 大部分为 0
-  - `player_schedules.player_id -> players.id = 12`（存在脏数据）
+  - `player_schedules.player_id -> players.id = 12`（首次检查发现脏数据）
 
 - Business Consistency（业务一致性）
   - `reviews on non-completed orders = 7`
@@ -117,3 +117,22 @@
 - 最近一次执行（2026-02-12）：
   - Case A（未支付拦截）订单 `#471`：A1~A5 全部 PASS
   - Case B（支付后完成）订单 `#472`：B1~B4 全部 PASS
+
+## 10) 最新复验（2026-02-12 晚间）
+- 变更：
+  - `api/scripts/run_cs_permission_regression.ps1` 在创建争议测试单后，新增 `POST /user/payments`（`method=wechat` mock）步骤。
+  - 目的：避免回归脚本产生“已完成但无支付记录”脏数据。
+- 回归结果：
+  - 客服权限回归：`C0~C9` 全部 PASS（订单 `#500/#501`，争议 `#97/#98`）。
+  - 流程守卫回归：`A1~A5`、`B1~B4` 全部 PASS（订单 `#502/#503`）。
+- 数据一致性复检：
+  - 执行 `api/scripts/run_data_integrity.ps1 -Fix` 后，再执行两次 `api/scripts/run_data_integrity.ps1`。
+  - 结果：
+    - `reviews on non-completed orders = 0`
+    - `multi pending payments on same order = 0`
+    - `completed orders without paid/refunded payment = 0`
+    - `paid payments on canceled orders = 0`
+    - Orphan 关联检查项全部 `0`
+- 结论：
+  - 当前“全链路回归 + 数据可信度”均通过；
+  - 后续仅需补齐“新提现申请（余额前置）”自动化场景。

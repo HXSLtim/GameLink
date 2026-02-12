@@ -25,17 +25,16 @@
 
 ### 1) 争议链路
 
-- ✅ `POST /user/orders` 创建订单成功（`orderId=475`）
-- ✅ `POST /user/payments` 钱包支付成功
-- ✅ `POST /admin/orders/475/start` 开始服务成功
-- ✅ `POST /user/orders/475/dispute` 发起争议成功（`disputeId=84`）
-- ✅ `POST /admin/disputes/84/assign` 分配客服成功（`assignedServiceId=247`）
-- ⚠️ `csAgent` 处理争议：`POST /admin/disputes/84/resolve` 返回 `403`
-- ⚠️ `csLeader` 处理争议：`POST /admin/disputes/84/resolve` 返回 `403`
-- ✅ 管理员兜底处理：`POST /admin/disputes/84/resolve` 成功
-- ✅ 用户侧状态核验：`GET /user/orders/475/disputes` -> `status=rejected`, `resolution=reject`
+- ✅ `POST /user/orders` 创建订单成功（`orderId=500`、`orderId=501`）
+- ✅ `POST /user/payments`（`method=wechat` mock）支付成功
+- ✅ `POST /admin/orders/:id/confirm` + `POST /admin/orders/:id/start` 成功
+- ✅ `POST /user/orders/:id/dispute` 发起争议成功（`disputeId=97`、`disputeId=98`）
+- ✅ `csAgent` 无法分配争议：`POST /admin/disputes/:id/assign` 返回 `403`（符合预期）
+- ✅ `csAgent` 可处理争议：`POST /admin/disputes/97/resolve` 返回 `200`
+- ✅ `csLeader` 可分配争议：`POST /admin/disputes/98/assign` 返回 `200`
+- ✅ `csLeader` 可处理争议：`POST /admin/disputes/98/resolve` 返回 `200`
 
-结论：争议主流程可闭环；**客服角色缺少争议处理权限**（当前只能管理员处理）。
+结论：争议链路与客服权限边界已按设计生效。
 
 ### 2) 提现链路
 
@@ -52,9 +51,10 @@
 
 - ✅ `csLeader` 访问 `GET /admin/operation-logs` 返回 `200`
 - ✅ `csAgent` 访问 `GET /admin/operation-logs` 返回 `403`（符合权限隔离预期）
-- ⚠️ `csLeader/csAgent` 均无法处理争议（`/admin/disputes/:id/resolve` 返回 `403`）
+- ✅ `csAgent` 可处理争议但不可分配
+- ✅ `csLeader` 可分配并处理争议
 
-结论：操作日志权限边界正常；争议处理权限未下放到客服角色。
+结论：操作日志权限边界与争议权限分层均正常。
 
 ---
 
@@ -62,10 +62,7 @@
 
 ### P0
 
-- 为 `csLeader`（及必要时 `csAgent`）补齐争议处理权限：
-  - `POST /api/v1/admin/disputes/:id/assign`
-  - `POST /api/v1/admin/disputes/:id/resolve`
-  - `GET /api/v1/admin/disputes/:id`
+- 将“争议 + 客服权限 + 流程守卫”脚本纳入固定 CI 时段，避免规则回归。
 
 ### P1
 
@@ -75,8 +72,8 @@
 
 ### P1
 
-- 增加单脚本回归（CI可跑）：
-  - 争议链路 + 客服权限断言 + 提现链路断言
+- 增加单脚本回归（CI 可跑）：
+  - 争议链路 + 客服权限断言 + 提现链路断言 + 数据一致性断言
 
 ---
 
@@ -93,4 +90,5 @@
 - 客服权限：
   - `csAgent` 不可访问高敏日志；
   - `csLeader` 可访问日志；
-  - 客服争议处理权限按角色设计生效（当前此项待补齐）。
+  - `csAgent` 可处理争议但不可分配；
+  - `csLeader` 可分配并处理争议。

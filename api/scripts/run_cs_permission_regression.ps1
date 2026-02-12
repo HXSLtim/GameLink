@@ -201,6 +201,16 @@ function New-DisputeCase {
 
   $orderID = [uint64]$createOrder.Data.data.orderId
 
+  # Use wechat mock to create a paid record, avoiding integrity pollution
+  # (completed/dispute-resolved orders without paid/refunded payment).
+  $pay = Invoke-Api -Method "POST" -Path "/user/payments" -Token $UserToken -Body @{
+    orderId = $orderID
+    method  = "wechat"
+  }
+  if (-not $pay.Ok) {
+    throw "支付订单失败(orderId=$orderID): $($pay.Message)"
+  }
+
   $confirm = Invoke-Api -Method "POST" -Path "/admin/orders/$orderID/confirm" -Token $AdminToken -Body @{ note = "confirm for dispute regression" }
   if (-not $confirm.Ok) {
     throw "确认订单失败(orderId=$orderID): $($confirm.Message)"
