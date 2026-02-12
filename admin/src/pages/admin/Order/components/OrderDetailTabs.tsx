@@ -29,7 +29,7 @@ import {
     ExclamationCircleOutlined,
     CloseCircleOutlined,
 } from '@ant-design/icons';
-import type { Order } from '@/api/admin';
+import { adminApi, type Order, type OrderRefundItemDto } from '@/api/admin';
 import { disputeApi } from '@/api/dispute';
 import dayjs from 'dayjs';
 import { logger } from '@/utils/logger';
@@ -79,6 +79,15 @@ const BasicInfoTab: React.FC<{ order: Order }> = ({ order }) => (
             <Descriptions.Item label="金额">
                 ¥{(order.totalPriceCents / 100).toFixed(2)} {order.currency}
             </Descriptions.Item>
+            <Descriptions.Item label="已退款">
+                ¥{(((order.refundAmountCents || 0) as number) / 100).toFixed(2)}
+                {(order.refundAmountCents || 0) > 0 && (order.totalPriceCents > 0 && (order.refundAmountCents || 0) < order.totalPriceCents) && (
+                    <Tag color="warning" style={{ marginLeft: 8 }}>部分退款</Tag>
+                )}
+            </Descriptions.Item>
+            <Descriptions.Item label="剩余可退">
+                ¥{(Math.max(0, order.totalPriceCents - (order.refundAmountCents || 0)) / 100).toFixed(2)}
+            </Descriptions.Item>
             <Descriptions.Item label="状态">
                 <Tag color={statusMap[order.status]?.color}>
                     {statusMap[order.status]?.text}
@@ -102,6 +111,11 @@ const BasicInfoTab: React.FC<{ order: Order }> = ({ order }) => (
             {order.cancelReason && (
                 <Descriptions.Item label="取消原因" span={2}>
                     <Text type="danger">{order.cancelReason}</Text>
+                </Descriptions.Item>
+            )}
+            {order.refundReason && (
+                <Descriptions.Item label="退款原因" span={2}>
+                    <Text type="warning">{order.refundReason}</Text>
                 </Descriptions.Item>
             )}
         </Descriptions>
@@ -227,6 +241,21 @@ const ProgressTab: React.FC<{ order: Order }> = ({ order }) => {
             });
         }
 
+        // 部分退款：订单状态可能仍是 completed/in_progress/confirmed，但 refundAmountCents 已累计
+        if ((order.refundAmountCents || 0) > 0 && order.status !== 'refunded') {
+            const refundedCents = order.refundAmountCents || 0;
+            items.push({
+                color: 'orange',
+                dot: <ExclamationCircleOutlined />,
+                children: (
+                    <div>
+                        <div>已部分退款</div>
+                        <Text type="secondary">¥{(refundedCents / 100).toFixed(2)}</Text>
+                    </div>
+                ),
+            });
+        }
+
         return items;
     };
 
@@ -241,6 +270,8 @@ const ProgressTab: React.FC<{ order: Order }> = ({ order }) => {
  * 支付信息 Tab
  */
 const PaymentTab: React.FC<{ order: Order }> = ({ order }) => {
+    const refundedCents = order.refundAmountCents || 0;
+    const remainingCents = Math.max(0, order.totalPriceCents - refundedCents);
     return (
         <>
             <Row gutter={[16, 16]}>
@@ -260,6 +291,16 @@ const PaymentTab: React.FC<{ order: Order }> = ({ order }) => {
                             value={order.status === 'completed' || order.status === 'in_progress' ? '已支付' :
                                    order.status === 'refunded' ? '已退款' : '待支付'}
                         />
+                    </Card>
+                </Col>
+                <Col span={12}>
+                    <Card size="small">
+                        <Statistic title="已退款金额" value={(refundedCents / 100).toFixed(2)} prefix="¥" />
+                    </Card>
+                </Col>
+                <Col span={12}>
+                    <Card size="small">
+                        <Statistic title="剩余可退款" value={(remainingCents / 100).toFixed(2)} prefix="¥" />
                     </Card>
                 </Col>
             </Row>
@@ -379,6 +420,75 @@ const RelatedRecordsTab: React.FC<{ order: Order }> = ({ order }) => {
     );
 };
 
+const RefundsTab: React.FC<{ order: Order }> = ({ order }) => {
+    const [loading, setLoading] = useState(false);
+    const [refunds, setRefunds] = useState<OrderRefundItemDto[]>([]);
+
+    useEffect(() => {
+        const loadRefunds = async () => {
+            setLoading(true);
+            try {
+                const resp = await adminApi.getOrderRefunds(order.id);
+                if (resp.data.success) {
+                    setRefunds(resp.data.data || []);
+                }
+            } catch (error) {
+                logger.error('Load order refunds error:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadRefunds();
+    }, [order.id]);
+
+    const columns = [
+        { title: 'ID', dataIndex: 'id', key: 'id', width: 80 },
+        { title: '支付ID', dataIndex: 'payment_id', key: 'payment_id', width: 100, render: (v: number) => v || '-' },
+        {
+            title: '退款金额',
+            dataIndex: 'amount_cents',
+            key: 'amount_cents',
+            width: 120,
+            render: (v: number) => <Text style={{ color: '#fa8c16' }}>¥{(v / 100).toFixed(2)}</Text>,
+        },
+        {
+            title: '状态',
+            dataIndex: 'status',
+            key: 'status',
+            width: 100,
+            render: (status: string) => {
+                const map: Record<string, { color: string; text: string }> = {
+                    success: { color: 'success', text: '成功' },
+                    partial: { color: 'warning', text: '部分退款' },
+                    pending: { color: 'processing', text: '处理中' },
+                    failed: { color: 'error', text: '失败' },
+                };
+                const it = map[status] || { color: 'default', text: status };
+                return <Tag color={it.color}>{it.text}</Tag>;
+            },
+        },
+        { title: '渠道', dataIndex: 'refund_method', key: 'refund_method', width: 120 },
+        { title: '原因', dataIndex: 'reason', key: 'reason', ellipsis: true },
+        {
+            title: '时间',
+            dataIndex: 'created_at',
+            key: 'created_at',
+            width: 170,
+            render: (v: string) => v ? dayjs(v).format('YYYY-MM-DD HH:mm:ss') : '-',
+        },
+    ];
+
+    if (loading) {
+        return <Spin style={{ display: 'block', textAlign: 'center', padding: 40 }} />;
+    }
+
+    if (!refunds.length) {
+        return <Empty description="暂无退款记录" image={Empty.PRESENTED_IMAGE_SIMPLE} />;
+    }
+
+    return <Table rowKey="id" size="small" columns={columns} dataSource={refunds} pagination={false} />;
+};
+
 /**
  * 订单详情 Tabs 主组件
  */
@@ -413,6 +523,16 @@ const OrderDetailTabs: React.FC<OrderDetailTabsProps> = ({ order }) => {
                 </span>
             ),
             children: <PaymentTab order={order} />,
+        },
+        {
+            key: 'refunds',
+            label: (
+                <span>
+                    <ExclamationCircleOutlined />
+                    退款记录
+                </span>
+            ),
+            children: <RefundsTab order={order} />,
         },
         {
             key: 'records',

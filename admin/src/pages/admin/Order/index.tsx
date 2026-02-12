@@ -155,9 +155,11 @@ const OrderPage: React.FC = () => {
      * 打开退款弹窗
      */
     const handleOpenRefund = useCallback((order: Order) => {
+        const alreadyRefunded = order.refundAmountCents || 0;
+        const remainingRefundableCents = Math.max(0, order.totalPriceCents - alreadyRefunded);
         setCurrentOrder(order);
         refundForm.setFieldsValue({
-            amount: order.totalPriceCents / 100,
+            amount: remainingRefundableCents / 100,
             reason: '',
         });
         setRefundModalVisible(true);
@@ -363,6 +365,24 @@ const OrderPage: React.FC = () => {
             render: cents => <Text strong style={{ color: '#f5222d' }}>¥{(cents / 100).toFixed(2)}</Text>,
         },
         {
+            title: '退款',
+            key: 'refund',
+            width: 140,
+            render: (_, record) => {
+                const refunded = record.refundAmountCents || 0;
+                if (!refunded) {
+                    return <Text type="secondary">-</Text>;
+                }
+                const isFull = record.totalPriceCents > 0 && refunded >= record.totalPriceCents;
+                return (
+                    <Space size={4}>
+                        <Tag color={isFull ? 'error' : 'warning'}>{isFull ? '全额退款' : '部分退款'}</Tag>
+                        <Text style={{ color: '#fa8c16' }}>¥{(refunded / 100).toFixed(2)}</Text>
+                    </Space>
+                );
+            },
+        },
+        {
             title: '订单状态',
             dataIndex: 'status',
             key: 'status',
@@ -418,7 +438,11 @@ const OrderPage: React.FC = () => {
                             size="small"
                             icon={<DollarOutlined />}
                             onClick={() => handleOpenRefund(record)}
-                            disabled={['canceled', 'refunded'].includes(record.status) || record.totalPriceCents <= 0}
+                            disabled={
+                                ['canceled', 'refunded'].includes(record.status) ||
+                                record.totalPriceCents <= 0 ||
+                                (record.refundAmountCents || 0) >= record.totalPriceCents
+                            }
                         >
                             退款
                         </Button>
@@ -533,6 +557,29 @@ const OrderPage: React.FC = () => {
             >
                 {currentOrder && (
                     <>
+                        {(() => {
+                            const refunded = currentOrder.refundAmountCents || 0;
+                            const remaining = Math.max(0, currentOrder.totalPriceCents - refunded);
+                            return (
+                                <>
+                                    <Card size="small" style={{ marginBottom: 16, borderColor: refunded > 0 ? '#faad14' : undefined }}>
+                                        <Descriptions column={2} size="small">
+                                            <Descriptions.Item label="已退款" span={1}>
+                                                <Text style={{ color: refunded > 0 ? '#fa8c16' : undefined }}>
+                                                    ¥{(refunded / 100).toFixed(2)}
+                                                </Text>
+                                            </Descriptions.Item>
+                                            <Descriptions.Item label="剩余可退" span={1}>
+                                                <Text style={{ color: remaining > 0 ? '#f5222d' : undefined }}>
+                                                    ¥{(remaining / 100).toFixed(2)}
+                                                </Text>
+                                            </Descriptions.Item>
+                                        </Descriptions>
+                                    </Card>
+                                </>
+                            );
+                        })()}
+
                         {/* 订单信息概览 */}
                         <Card size="small" style={{ marginBottom: 16, backgroundColor: '#fafafa' }}>
                             <Descriptions column={2} size="small">
@@ -580,15 +627,15 @@ const OrderPage: React.FC = () => {
                                     { required: true, message: '请输入退款金额' },
                                     {
                                         type: 'number',
-                                        max: currentOrder.totalPriceCents / 100,
-                                        message: `退款金额不能超过 ¥${(currentOrder.totalPriceCents / 100).toFixed(2)}`,
+                                        max: Math.max(0, (currentOrder.totalPriceCents - (currentOrder.refundAmountCents || 0)) / 100),
+                                        message: `退款金额不能超过剩余可退金额`,
                                     },
                                 ]}
-                                extra={`最大可退款金额: ¥${(currentOrder.totalPriceCents / 100).toFixed(2)}`}
+                                extra={`最大可退款金额: ¥${(Math.max(0, (currentOrder.totalPriceCents - (currentOrder.refundAmountCents || 0))) / 100).toFixed(2)}`}
                             >
                                 <InputNumber
                                     min={0.01}
-                                    max={currentOrder.totalPriceCents / 100}
+                                    max={Math.max(0, (currentOrder.totalPriceCents - (currentOrder.refundAmountCents || 0)) / 100)}
                                     precision={2}
                                     prefix="¥"
                                     style={{ width: '100%' }}

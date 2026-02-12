@@ -44,6 +44,10 @@ export interface Order {
     title: string;
     description: string;
     totalPriceCents: number;
+    /** 已退款金额（分）；部分退款时用于计算剩余可退金额 */
+    refundAmountCents?: number;
+    refundReason?: string;
+    refundedAt?: string;
     currency: string;
     status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'canceled' | 'refunded';
     scheduledStart: string;
@@ -55,6 +59,19 @@ export interface Order {
     user?: { id: number; name: string; avatarUrl?: string };
     player?: { id: number; nickname: string; user?: { avatarUrl?: string } };
     game?: { id: number; name: string };
+}
+
+export interface OrderRefundItemDto {
+    id: number;
+    order_id: number;
+    payment_id: number;
+    amount_cents: number;
+    reason?: string;
+    status: 'success' | 'pending' | 'failed' | 'partial' | string;
+    refund_method: string;
+    note?: string;
+    refunded_at?: string;
+    created_at: string;
 }
 
 export interface AuditLog {
@@ -569,6 +586,7 @@ export const adminApi = {
     getOrder: (id: number) => apiClient.get<ApiResponse<Order>>(`/admin/orders/${id}`),
     cancelOrder: (id: number, note?: string) => apiClient.post<ApiResponse<Order>>(`/admin/orders/${id}/cancel`, { note }),
     refundOrder: (id: number, data: { reason: string; amount_cents: number; note?: string }) => apiClient.post<ApiResponse<Order>>(`/admin/orders/${id}/refund`, data),
+    getOrderRefunds: (id: number) => apiClient.get<ApiResponse<OrderRefundItemDto[]>>(`/admin/orders/${id}/refunds`),
     // Order Batch Operations
     batchCancelOrders: (orderIds: number[], reason?: string) => apiClient.post<ApiResponse<void>>('/admin/orders/batch/cancel', { orderIds, reason }),
     batchCompleteOrders: (orderIds: number[]) => apiClient.post<ApiResponse<void>>('/admin/orders/batch/complete', { orderIds }),
