@@ -1,4 +1,4 @@
-﻿package admin
+package admin
 
 import (
 	"context"
@@ -7,9 +7,9 @@ import (
 	"sort"
 	"strings"
 	"time"
-	
+
 	"log/slog"
-	
+
 	"gamelink/internal/model"
 	"gamelink/internal/repository"
 	repoiface "gamelink/internal/repository/interfaces"
@@ -221,8 +221,22 @@ func (s *AdminService) UpdateOrder(ctx context.Context, id uint64, input UpdateO
 	if !isAllowedOrderTransition(order.Status, input.Status) {
 		return nil, ErrOrderInvalidTransition
 	}
+	if input.Status == model.OrderStatusCompleted && order.Status != model.OrderStatusCompleted {
+		hasPaid, err := s.hasPaidPayment(ctx, order.ID)
+		if err != nil {
+			return nil, err
+		}
+		if !hasPaid {
+			return nil, apierr.BadRequest("order must be paid before completion")
+		}
+	}
 
 	prevStatus := order.Status
+	if input.Status == model.OrderStatusCanceled {
+		if err := s.syncCancellationPayments(ctx, order); err != nil {
+			return nil, err
+		}
+	}
 
 	order.Status = input.Status
 	order.TotalPriceCents = input.TotalPriceCents
@@ -300,6 +314,39 @@ func (s *AdminService) UpdateOrder(ctx context.Context, id uint64, input UpdateO
 	return order, nil
 }
 
+func (s *AdminService) syncCancellationPayments(ctx context.Context, order *model.Order) error {
+	payments, err := s.payments.GetByOrderID(ctx, order.ID)
+	if err != nil {
+		return err
+	}
+
+	now := time.Now().UTC()
+	var refundedAmount int64
+
+	for _, payment := range payments {
+		if payment.Status != model.PaymentStatusPaid {
+			continue
+		}
+		payment.Status = model.PaymentStatusRefunded
+		payment.RefundedAmountCents = payment.AmountCents
+		payment.RefundedAt = &now
+		if err := s.payments.Update(ctx, &payment); err != nil {
+			return err
+		}
+		refundedAmount += payment.AmountCents
+	}
+
+	if refundedAmount > 0 {
+		order.RefundAmountCents = refundedAmount
+		order.RefundedAt = &now
+		if strings.TrimSpace(order.RefundReason) == "" {
+			order.RefundReason = "order canceled"
+		}
+	}
+
+	return nil
+}
+
 // ConfirmOrder 将订单从 pending 确认到 confirmed。
 func (s *AdminService) ConfirmOrder(ctx context.Context, id uint64, note string) (*model.Order, error) {
 	order, err := s.orders.Get(ctx, id)
@@ -350,6 +397,13 @@ func (s *AdminService) CompleteOrder(ctx context.Context, id uint64, note string
 	order, err := s.orders.Get(ctx, id)
 	if err != nil {
 		return nil, err
+	}
+	hasPaid, err := s.hasPaidPayment(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if !hasPaid {
+		return nil, apierr.BadRequest("order must be paid before completion")
 	}
 	note = strings.TrimSpace(note)
 	completedAt := time.Now().UTC()
@@ -639,6 +693,19 @@ func (s *AdminService) DeleteOrder(ctx context.Context, id uint64) error {
 	return nil
 }
 
+func (s *AdminService) hasPaidPayment(ctx context.Context, orderID uint64) (bool, error) {
+	payments, err := s.listPaymentsByOrder(ctx, orderID)
+	if err != nil {
+		return false, err
+	}
+	for _, payment := range payments {
+		if payment.Status == model.PaymentStatusPaid {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func isValidOrderStatus(status model.OrderStatus) bool {
 	switch status {
 	case model.OrderStatusPending, model.OrderStatusConfirmed, model.OrderStatusInProgress,
@@ -718,4 +785,3 @@ func mapTimelineTitle(action string) string {
 		return strings.ReplaceAll(action, "_", " ")
 	}
 }
-

@@ -2,7 +2,7 @@
  * 客服聊天 Hook
  */
 import { ref, nextTick, onMounted } from 'vue'
-import type { ServiceMessage, QuickQuestion } from '@/types/customer-service'
+import type { ServiceMessage, QuickQuestion } from '@/types/CustomerService'
 
 export function useCustomerService() {
   // 状态

@@ -513,7 +513,13 @@ func TestOrderService_CompleteOrder_WithChatDeactivation(t *testing.T) {
 	players := &MockPlayerRepository{}
 	users := &MockUserRepository{}
 	games := &MockGameRepository{}
-	payments := &MockPaymentRepository{}
+	payments := &MockPaymentRepository{
+		listPayments: func(ctx context.Context, opts repository.PaymentListOptions) ([]model.Payment, int64, error) {
+			return []model.Payment{
+				{OrderID: orderID, Status: model.PaymentStatusPaid},
+			}, 1, nil
+		},
+	}
 	reviews := &MockReviewRepository{}
 
 	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: users, Games: games, Payments: payments, Reviews: reviews, Commissions: commissions})

@@ -108,7 +108,7 @@ Tests for admin operations.
   - Timeout errors
   - 500 internal server error
 
-### 4. **api-helpers.ts**
+### 4. **ApiHelpers.ts**
 Shared test utilities and helpers.
 
 **Exports**:
@@ -228,7 +228,7 @@ Coverage:
 ## Files Modified
 
 - `admin/src/test/setup.ts` - Added window.location.pathname mock
-- `admin/src/test/api-helpers.ts` - Created (NEW)
+- `admin/src/test/ApiHelpers.ts` - Created (NEW)
 - `admin/src/api/client.test.ts` - Created (NEW)
 - `admin/src/api/auth.test.ts` - Created (NEW)
 - `admin/src/api/admin.test.ts` - Created (NEW)

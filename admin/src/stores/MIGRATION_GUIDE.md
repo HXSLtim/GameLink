@@ -176,7 +176,7 @@ await rejectPlayer(1, '资料不全');
 
 ### 示例 1: Admin 用户列表页
 
-参见: `admin/src/pages/admin/Users/stores-example.tsx`
+参见: `admin/src/pages/admin/Users/StoresExample.tsx`
 
 ```tsx
 import { useEffect } from 'react';

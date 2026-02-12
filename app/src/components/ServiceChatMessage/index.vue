@@ -14,7 +14,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { ServiceMessage } from '@/types/customer-service'
+import type { ServiceMessage } from '@/types/CustomerService'
 
 interface Props {
   message: ServiceMessage

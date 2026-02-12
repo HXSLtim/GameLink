@@ -19,7 +19,7 @@
 </template>
 
 <script setup lang="ts">
-import type { QuickQuestion } from '@/types/customer-service'
+import type { QuickQuestion } from '@/types/CustomerService'
 
 interface Props {
   questions: QuickQuestion[]
