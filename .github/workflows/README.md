@@ -116,9 +116,19 @@ This directory contains CI/CD workflows for the GameLink project.
 - Starts backend with PostgreSQL + Redis service containers
 - Runs `api/scripts/run_full_service_flow_acceptance.ps1`
 - Covers smoke compatibility checks + order/payment guards + dispute permissions + withdraw flow + integrity checks
+- Supports optional OSS smoke validation (`api/scripts/run_oss_smoke.ps1`)
 - Uploads acceptance log and markdown summary artifacts
 
 **Schedule:** Manual trigger only (recommended before milestone merge/deploy)
+
+**Optional OSS Secrets (required only when `run_oss_smoke=true`):**
+- `OSS_ENABLED=true`
+- `OSS_ENDPOINT`
+- `OSS_ACCESS_KEY`
+- `OSS_SECRET_KEY`
+- `OSS_BUCKET`
+- `OSS_REGION`
+- `OSS_PROVIDER` (optional, default `qcloud`)
 
 ### Test Report Workflow (`test-report.yml`)
 
@@ -245,6 +255,11 @@ gh workflow run withdraw-flow-regression.yml
 
 # Run full service flow acceptance
 gh workflow run full-service-flow-acceptance.yml
+
+# Run full service flow acceptance + OSS smoke
+gh workflow run full-service-flow-acceptance.yml \
+  -f run_oss_smoke=true \
+  -f oss_expected_host=your-bucket.cos.ap-shanghai.myqcloud.com
 ```
 
 ### Checking Workflow Status

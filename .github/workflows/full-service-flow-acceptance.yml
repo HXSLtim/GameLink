@@ -2,6 +2,17 @@ name: Full Service Flow Acceptance
 
 on:
   workflow_dispatch:
+    inputs:
+      run_oss_smoke:
+        description: "Run optional OSS smoke check after full acceptance"
+        required: false
+        default: false
+        type: boolean
+      oss_expected_host:
+        description: "Optional expected OSS host (e.g. xxx.cos.ap-shanghai.myqcloud.com)"
+        required: false
+        default: ""
+        type: string
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -65,6 +76,13 @@ jobs:
           JWT_SECRET_KEY: test-secret-key-for-full-service-flow-acceptance-32chars
           SEED_ENABLED: "true"
           CRYPTO_ENABLED: "false"
+          OSS_PROVIDER: ${{ secrets.OSS_PROVIDER || 'qcloud' }}
+          OSS_ENDPOINT: ${{ secrets.OSS_ENDPOINT }}
+          OSS_ACCESS_KEY: ${{ secrets.OSS_ACCESS_KEY }}
+          OSS_SECRET_KEY: ${{ secrets.OSS_SECRET_KEY }}
+          OSS_BUCKET: ${{ secrets.OSS_BUCKET }}
+          OSS_REGION: ${{ secrets.OSS_REGION }}
+          OSS_ENABLED: ${{ secrets.OSS_ENABLED || 'false' }}
         run: |
           nohup go run cmd/main.go > backend.log 2>&1 &
           echo $! > backend.pid
@@ -97,19 +115,51 @@ jobs:
             throw "full service flow acceptance failed with exit code $LASTEXITCODE"
           }
 
+      - name: Run OSS smoke check (optional)
+        if: ${{ github.event.inputs.run_oss_smoke == 'true' }}
+        id: oss_smoke
+        shell: pwsh
+        env:
+          OSS_ENDPOINT: ${{ secrets.OSS_ENDPOINT }}
+          OSS_ENABLED: ${{ secrets.OSS_ENABLED || 'false' }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          if ($env:OSS_ENABLED -ne "true") {
+            throw "run_oss_smoke=true but OSS_ENABLED secret is not true"
+          }
+          if ([string]::IsNullOrWhiteSpace($env:OSS_ENDPOINT)) {
+            throw "run_oss_smoke=true but OSS_ENDPOINT secret is empty"
+          }
+          & ./api/scripts/run_oss_smoke.ps1 `
+            -BaseUrl "http://127.0.0.1:8080/api/v1" `
+            -ExpectedHost "${{ github.event.inputs.oss_expected_host }}" 2>&1 |
+            Tee-Object -FilePath "api/oss-smoke.log"
+          if ($LASTEXITCODE -ne 0) {
+            throw "oss smoke check failed with exit code $LASTEXITCODE"
+          }
+
       - name: Generate acceptance summary
         if: always()
         shell: pwsh
         run: |
           $outcome = "${{ steps.full_acceptance.outcome }}"
+          $ossRequested = "${{ github.event.inputs.run_oss_smoke }}"
+          $ossOutcome = ""
+          if ($ossRequested -eq "true") {
+            $ossOutcome = "${{ steps.oss_smoke.outcome }}"
+          }
           $summaryPath = "api/full-service-flow-acceptance-summary.md"
           $lines = @()
           $lines += "# Full Service Flow Acceptance Summary"
           $lines += ""
           $lines += "- Outcome: **$outcome**"
+          $lines += "- OSS Smoke Requested: **$ossRequested**"
+          if ($ossRequested -eq "true") {
+            $lines += "- OSS Smoke Outcome: **$ossOutcome**"
+          }
           $lines += "- Generated At (UTC): $(Get-Date -AsUTC -Format 'yyyy-MM-ddTHH:mm:ssZ')"
           $lines += ""
-          $lines += "## Tail Log"
+          $lines += "## Acceptance Tail Log"
           $lines += ""
           if (Test-Path "api/full-service-flow-acceptance.log") {
             $tail = Get-Content "api/full-service-flow-acceptance.log" -Tail 120
@@ -118,6 +168,19 @@ jobs:
             $lines += "```"
           } else {
             $lines += "_No acceptance log found._"
+          }
+          if ($ossRequested -eq "true") {
+            $lines += ""
+            $lines += "## OSS Smoke Tail Log"
+            $lines += ""
+            if (Test-Path "api/oss-smoke.log") {
+              $ossTail = Get-Content "api/oss-smoke.log" -Tail 80
+              $lines += "```text"
+              $lines += $ossTail
+              $lines += "```"
+            } else {
+              $lines += "_No OSS smoke log found._"
+            }
           }
           $content = ($lines -join "`n")
           Set-Content -Path $summaryPath -Value $content -Encoding UTF8
@@ -138,7 +201,9 @@ jobs:
           name: full-service-flow-acceptance-output
           path: |
             api/full-service-flow-acceptance.log
+            api/oss-smoke.log
             api/full-service-flow-acceptance-summary.md
+          if-no-files-found: warn
           retention-days: 7
 
       - name: Cleanup backend process
