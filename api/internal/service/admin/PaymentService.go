@@ -126,6 +126,22 @@ func (s *AdminService) GetPayment(ctx context.Context, id uint64) (*model.Paymen
 	return payment, nil
 }
 
+// GetPaymentRefundRecords returns refund records for a payment.
+func (s *AdminService) GetPaymentRefundRecords(ctx context.Context, paymentID uint64) ([]model.RefundRecord, error) {
+	// Verify payment exists
+	if _, err := s.payments.Get(ctx, paymentID); err != nil {
+		return nil, WrapError(err, "get payment")
+	}
+	if s.refunds == nil {
+		return nil, apierr.InternalError("refund repository not configured")
+	}
+	records, err := s.refunds.ListByPaymentID(ctx, paymentID)
+	if err != nil {
+		return nil, WrapError(err, "list refund records")
+	}
+	return records, nil
+}
+
 // GetPaymentWithRelations 获取支付详情及关联的订单和用户信息。
 func (s *AdminService) GetPaymentWithRelations(ctx context.Context, id uint64) (*model.Payment, error) {
 	payment, err := s.payments.GetWithRelations(ctx, id)

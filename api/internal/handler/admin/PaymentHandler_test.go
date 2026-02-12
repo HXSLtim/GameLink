@@ -568,6 +568,15 @@ func TestPaymentHandler_Unit_GetRefundHistory_Success(t *testing.T) {
 
 	testPayment := testutil.CreateTestPayment(t, ctx.DB, ctx.TestOrder.ID, ctx.TestUser.ID, model.PaymentStatusPaid)
 
+	// Create one refund first, then verify history returns it
+	refundPayload := map[string]interface{}{
+		"amount_cents": int64(1000),
+		"reason":       "Test refund history",
+	}
+	refundPath := fmt.Sprintf("/admin/payments/%d/refund", testPayment.ID)
+	refundResp := testutil.MakeAuthenticatedRequest(t, ctx.Router, "POST", refundPath, ctx.AdminToken, refundPayload)
+	testutil.AssertSuccess(t, refundResp)
+
 	path := fmt.Sprintf("/admin/payments/%d/refunds", testPayment.ID)
 	w := testutil.MakeAuthenticatedRequest(t, ctx.Router, "GET", path, ctx.AdminToken, nil)
 	testutil.AssertSuccess(t, w)
@@ -576,8 +585,8 @@ func TestPaymentHandler_Unit_GetRefundHistory_Success(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	require.NoError(t, err)
 
-	data := response["data"]
-	assert.NotNil(t, data)
+	data := response["data"].([]interface{})
+	assert.GreaterOrEqual(t, len(data), 1)
 }
 
 func TestPaymentHandler_Unit_GetRefundHistory_NotFound(t *testing.T) {

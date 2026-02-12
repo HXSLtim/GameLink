@@ -1065,7 +1065,7 @@ func parseRFC3339Ptr(value *string) (*time.Time, error) {
 // @Security     BearerAuth
 // @Produce      json
 // @Param        id   path  int  true  "支付ID"
-// @Success      200  {array}   model.OperationLog
+// @Success      200  {array}   model.RefundRecord
 // @Failure      404  {object}  model.ErrorResponse
 // @Router       /admin/payments/{id}/refunds [get]
 func (h *PaymentHandler) GetRefundHistory(c *gin.Context) {
@@ -1074,29 +1074,17 @@ func (h *PaymentHandler) GetRefundHistory(c *gin.Context) {
 		return
 	}
 
-	// Verify payment exists
-	_, err := h.svc.GetPayment(c.Request.Context(), id)
+	records, err := h.svc.GetPaymentRefundRecords(c.Request.Context(), id)
 	if err != nil {
 		if apierr.IsNotFound(err) {
 			respondAPIError(c, err)
 			return
 		}
-		respondAPIError(c, apierr.InternalError("get payment failed").WithDetails(err.Error()))
-		return
-	}
-
-	// Get refund-related operation logs for this payment
-	logs, _, err := h.svc.GetPaymentLogs(c.Request.Context(), id, repository.OperationLogListOptions{
-		Page:     1,
-		PageSize: 100,
-		Action:   string(model.OpActionRefund),
-	})
-	if err != nil {
 		respondAPIError(c, apierr.InternalError("get refund history failed").WithDetails(err.Error()))
 		return
 	}
 
-	respondSuccess(c, logs)
+	respondSuccess(c, ensureSlice(records))
 }
 
 // ReviewOrder
