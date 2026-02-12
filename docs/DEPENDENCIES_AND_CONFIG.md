@@ -142,6 +142,7 @@ SMS_PROVIDER=                   # 选项: aliyun, tencent
 SMS_ACCESS_KEY=
 SMS_SECRET_KEY=
 SMS_SIGN_NAME=                  # 短信签名
+SMS_TEMPLATE_ORDER_ACCEPTED=    # 订单接单通知模板ID（可选；用于“陪玩师接单通知用户”离线短信）
 SMS_ENABLED=false
 ```
 

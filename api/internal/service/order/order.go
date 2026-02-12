@@ -40,24 +40,32 @@ type PaymentRefundor interface {
 	RefundPayment(ctx context.Context, paymentID uint64, reason string) error
 }
 
+// SMSNotifier defines an optional out-of-app notification channel (e.g. SMS).
+// It's best-effort and should not block core order flows.
+type SMSNotifier interface {
+	SendNotification(ctx context.Context, phone, templateID string, params map[string]string) error
+}
+
 // OrderDeps holds all dependencies for OrderService.
 type OrderDeps struct {
-	Orders          repoiface.OrderRepository
-	OrderGroups     ordergroup.Repository // 主订单仓储 (optional)
-	Players         repository.PlayerRepository
-	Users           repository.UserRepository
-	Games           repository.GameRepository
-	Payments        repository.PaymentRepository
-	Reviews         repository.ReviewRepository
-	ServiceItems    repository.ServiceItemRepository
-	Commissions     commissionrepo.CommissionRepository
-	ChatGroups      repository.ChatGroupRepository // optional: for order chat auto-destroy
-	Tx              common.TxManager               // 事务管理器 (optional)
-	DistributedLock cache.DistributedLock          // 分布式锁 (optional)
-	ReferralTrigger ReferralTrigger                // optional: for referral reward trigger
-	PaymentRefundor PaymentRefundor                // optional: refund processor
-	Notifications   repository.NotificationRepository
-	Hub             *ws.Hub
+	Orders                     repoiface.OrderRepository
+	OrderGroups                ordergroup.Repository // 主订单仓储 (optional)
+	Players                    repository.PlayerRepository
+	Users                      repository.UserRepository
+	Games                      repository.GameRepository
+	Payments                   repository.PaymentRepository
+	Reviews                    repository.ReviewRepository
+	ServiceItems               repository.ServiceItemRepository
+	Commissions                commissionrepo.CommissionRepository
+	ChatGroups                 repository.ChatGroupRepository // optional: for order chat auto-destroy
+	Tx                         common.TxManager               // 事务管理器 (optional)
+	DistributedLock            cache.DistributedLock          // 分布式锁 (optional)
+	ReferralTrigger            ReferralTrigger                // optional: for referral reward trigger
+	PaymentRefundor            PaymentRefundor                // optional: refund processor
+	Notifications              repository.NotificationRepository
+	SMS                        SMSNotifier // optional: out-of-app notification (sms/subscription message)
+	SMSOrderAcceptedTemplateID string
+	Hub                        *ws.Hub
 }
 
 // OrderService 订单服务
@@ -68,43 +76,47 @@ type OrderDeps struct {
 // 3. 订单状态流转管理
 // 4. 订单拆分与转单
 type OrderService struct {
-	tx              common.TxManager
-	orders          repoiface.OrderRepository
-	orderGroups     ordergroup.Repository
-	players         repository.PlayerRepository
-	users           repository.UserRepository
-	games           repository.GameRepository
-	payments        repository.PaymentRepository
-	reviews         repository.ReviewRepository
-	serviceItems    repository.ServiceItemRepository
-	commissions     commissionrepo.CommissionRepository
-	chatGroups      repository.ChatGroupRepository
-	distributedLock cache.DistributedLock
-	referralTrigger ReferralTrigger
-	paymentRefundor PaymentRefundor
-	notifications   repository.NotificationRepository
-	hub             *ws.Hub
+	tx                         common.TxManager
+	orders                     repoiface.OrderRepository
+	orderGroups                ordergroup.Repository
+	players                    repository.PlayerRepository
+	users                      repository.UserRepository
+	games                      repository.GameRepository
+	payments                   repository.PaymentRepository
+	reviews                    repository.ReviewRepository
+	serviceItems               repository.ServiceItemRepository
+	commissions                commissionrepo.CommissionRepository
+	chatGroups                 repository.ChatGroupRepository
+	distributedLock            cache.DistributedLock
+	referralTrigger            ReferralTrigger
+	paymentRefundor            PaymentRefundor
+	notifications              repository.NotificationRepository
+	sms                        SMSNotifier
+	smsOrderAcceptedTemplateID string
+	hub                        *ws.Hub
 }
 
 // NewOrderService 创建订单服务
 func NewOrderService(deps OrderDeps) *OrderService {
 	return &OrderService{
-		orders:          deps.Orders,
-		orderGroups:     deps.OrderGroups,
-		players:         deps.Players,
-		users:           deps.Users,
-		games:           deps.Games,
-		payments:        deps.Payments,
-		reviews:         deps.Reviews,
-		serviceItems:    deps.ServiceItems,
-		commissions:     deps.Commissions,
-		chatGroups:      deps.ChatGroups,
-		tx:              deps.Tx,
-		distributedLock: deps.DistributedLock,
-		referralTrigger: deps.ReferralTrigger,
-		paymentRefundor: deps.PaymentRefundor,
-		notifications:   deps.Notifications,
-		hub:             deps.Hub,
+		orders:                     deps.Orders,
+		orderGroups:                deps.OrderGroups,
+		players:                    deps.Players,
+		users:                      deps.Users,
+		games:                      deps.Games,
+		payments:                   deps.Payments,
+		reviews:                    deps.Reviews,
+		serviceItems:               deps.ServiceItems,
+		commissions:                deps.Commissions,
+		chatGroups:                 deps.ChatGroups,
+		tx:                         deps.Tx,
+		distributedLock:            deps.DistributedLock,
+		referralTrigger:            deps.ReferralTrigger,
+		paymentRefundor:            deps.PaymentRefundor,
+		notifications:              deps.Notifications,
+		sms:                        deps.SMS,
+		smsOrderAcceptedTemplateID: strings.TrimSpace(deps.SMSOrderAcceptedTemplateID),
+		hub:                        deps.Hub,
 	}
 }
 
@@ -1201,9 +1213,29 @@ func (s *OrderService) AcceptOrder(ctx context.Context, playerUserID uint64, ord
 		}
 		message := fmt.Sprintf("陪玩师 %s 已接受您的订单", playerName)
 		s.notifyOrderStatus(ctx, order.UserID, order.ID, string(order.Status), "订单已被接单", message)
+		s.notifyOrderAcceptedOutOfApp(ctx, order, playerName)
 	}
 
 	return nil
+}
+
+func (s *OrderService) notifyOrderAcceptedOutOfApp(ctx context.Context, order *model.Order, playerName string) {
+	if order == nil || s.sms == nil || s.smsOrderAcceptedTemplateID == "" {
+		return
+	}
+	user, err := s.users.Get(ctx, order.UserID)
+	if err != nil || user == nil {
+		return
+	}
+	phone := strings.TrimSpace(user.Phone)
+	if phone == "" {
+		return
+	}
+	params := map[string]string{
+		"playerName": playerName,
+		"orderNo":    strings.TrimSpace(order.OrderNo),
+	}
+	_ = s.sms.SendNotification(ctx, phone, s.smsOrderAcceptedTemplateID, params)
 }
 
 // CompleteOrderByPlayer 完成订单（陪玩师端）

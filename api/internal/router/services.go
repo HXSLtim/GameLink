@@ -1,6 +1,9 @@
 package router
 
 import (
+	"os"
+	"strings"
+
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 
@@ -71,6 +74,7 @@ import (
 	reviewservice "gamelink/internal/service/review"
 	routingruleservice "gamelink/internal/service/routingrule"
 	sensitivewordservice "gamelink/internal/service/sensitiveword"
+	"gamelink/internal/service/sms"
 	statisticsservice "gamelink/internal/service/statistics"
 	teamservice "gamelink/internal/service/team"
 	trtcservice "gamelink/internal/service/trtc"
@@ -235,6 +239,10 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache, cfg config.AppConfig) *
 	// 推荐奖励触发服务
 	referralTriggerSvc := referralservice.NewTriggerService(orm)
 
+	// Optional SMS notifier (for out-of-app notifications like "order accepted")
+	smsSvc := sms.NewService(externalCfg)
+	smsOrderAcceptedTemplateID := strings.TrimSpace(os.Getenv("SMS_TEMPLATE_ORDER_ACCEPTED"))
+
 	// Payment service (needed by order service as PaymentRefundor)
 	paymentSvc := paymentservice.NewPaymentService(paymentservice.PaymentDeps{
 		Payments:      paymentRepo,
@@ -248,21 +256,23 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache, cfg config.AppConfig) *
 
 	// Order service (all deps available)
 	orderSvc := orderservice.NewOrderService(orderservice.OrderDeps{
-		Orders:          orderRepo,
-		OrderGroups:     orderGroupRepo,
-		Players:         playerRepo,
-		Users:           userRepo,
-		Games:           gameRepo,
-		Payments:        paymentRepo,
-		Reviews:         reviewRepo,
-		ServiceItems:    serviceItemRepo,
-		Commissions:     commissionRepo,
-		ChatGroups:      chatGroupRepo,
-		Tx:              uow,
-		Notifications:   notificationRepo,
-		Hub:             wsHub,
-		ReferralTrigger: referralTriggerSvc,
-		PaymentRefundor: paymentSvc,
+		Orders:                     orderRepo,
+		OrderGroups:                orderGroupRepo,
+		Players:                    playerRepo,
+		Users:                      userRepo,
+		Games:                      gameRepo,
+		Payments:                   paymentRepo,
+		Reviews:                    reviewRepo,
+		ServiceItems:               serviceItemRepo,
+		Commissions:                commissionRepo,
+		ChatGroups:                 chatGroupRepo,
+		Tx:                         uow,
+		Notifications:              notificationRepo,
+		SMS:                        smsSvc,
+		SMSOrderAcceptedTemplateID: smsOrderAcceptedTemplateID,
+		Hub:                        wsHub,
+		ReferralTrigger:            referralTriggerSvc,
+		PaymentRefundor:            paymentSvc,
 	})
 
 	playerSvc := serviceplayer.NewPlayerService(playerRepo, userRepo, gameRepo, orderRepo, reviewRepo, playerTagRepo, cacheClient)
