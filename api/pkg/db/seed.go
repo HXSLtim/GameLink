@@ -78,7 +78,7 @@ type seedReviewSpec struct {
 }
 
 // seedVersion 种子数据版本号。修改种子数据后递增此值，下次启动时会自动重新 seed。
-const seedVersion = "2026-02-12-v10"
+const seedVersion = "2026-02-12-v12"
 
 // isSeedUpToDate 检查种子数据版本是否已是最新，避免重复 seed。
 func isSeedUpToDate(db *gorm.DB) bool {
@@ -101,7 +101,13 @@ func markSeedVersion(db *gorm.DB) {
 func applySeeds(db *gorm.DB) error {
 	// ── 版本检查：如果种子数据版本未变，跳过整个 seed 流程 ──
 	if isSeedUpToDate(db) {
-		log.Printf("[startup] seed data up-to-date (version=%s), skipping", seedVersion)
+		log.Printf("[startup] seed data up-to-date (version=%s), skipping full reseed", seedVersion)
+		// 版本未变化时，仍执行系统权限轻量同步，确保 method+path 映射持续收敛。
+		if err := db.Transaction(func(tx *gorm.DB) error {
+			return seedSystemPermissions(tx)
+		}); err != nil {
+			log.Printf("[startup] seed: system permissions sync warning: %v", err)
+		}
 		return nil
 	}
 	log.Printf("[startup] seed data outdated or missing, reseeding (version=%s)...", seedVersion)
@@ -201,6 +207,8 @@ END $$;`
 			{Key: "customerG", Email: "newbie.player@gamelink.com", Phone: "13800138012", Name: "新手玩家", Role: model.RoleUser, Password: "User@234567"},
 			{Key: "proF", Email: "party.entertainer@gamelink.com", Phone: "13800138013", Name: "派对达人", Role: model.RolePlayer, Password: "Player@345678"},
 			{Key: "customerH", Email: "business.professional@gamelink.com", Phone: "13800138014", Name: "商务人士", Role: model.RoleUser, Password: "User@567890"},
+			{Key: "csLeaderA", Email: "cs.leader@gamelink.com", Phone: "13800138120", Name: "客服主管A", Role: model.RoleAdmin, Password: "CsLeader@123"},
+			{Key: "csAgentA", Email: "cs.agent@gamelink.com", Phone: "13800138121", Name: "客服专员A", Role: model.RoleAdmin, Password: "CsAgent@123"},
 		}
 
 		users := make(map[string]*model.User, len(userInputs))
@@ -1368,6 +1376,13 @@ func seedUserRoles(tx *gorm.DB, users map[string]*model.User) error {
 		model.RoleUser:   model.RoleSlugUser,
 	}
 
+	// 特定演示账号使用显式 RBAC 角色分配，避免仅凭 user.Role=admin 获得完整 admin 权限。
+	// 这允许“后台入口角色”与“RBAC 权限角色”分离（例如客服主管/专员）。
+	explicitRoleSlugsByUserKey := map[string][]model.RoleSlug{
+		"csLeaderA": {model.RoleSlugCSLeader, model.RoleSlugCustomerService},
+		"csAgentA":  {model.RoleSlugCSAgent},
+	}
+
 	ensureUserRole := func(userID, roleID uint64) error {
 		var ur model.UserRole
 		err := tx.Where("user_id = ? AND role_id = ?", userID, roleID).First(&ur).Error
@@ -1380,10 +1395,24 @@ func seedUserRoles(tx *gorm.DB, users map[string]*model.User) error {
 		return tx.Create(&model.UserRole{UserID: userID, RoleID: roleID}).Error
 	}
 
-	for _, user := range users {
+	for userKey, user := range users {
 		if user == nil {
 			continue
 		}
+
+		if explicitRoleSlugs, ok := explicitRoleSlugsByUserKey[userKey]; ok && len(explicitRoleSlugs) > 0 {
+			for _, slug := range explicitRoleSlugs {
+				role := rolesBySlug[slug]
+				if role == nil {
+					return fmt.Errorf("seed user explicit role mapping failed: role %s not found", slug)
+				}
+				if err := ensureUserRole(user.ID, role.ID); err != nil {
+					return err
+				}
+			}
+			continue
+		}
+
 		slug, ok := roleToSlug[user.Role]
 		if !ok {
 			continue

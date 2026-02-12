@@ -1,6 +1,7 @@
 package user
 
 import (
+	"errors"
 	"strconv"
 	"time"
 
@@ -56,10 +57,13 @@ func createPaymentHandler(c *gin.Context, svc *paymentservice.PaymentService) {
 			respondAPIError(c, apierr.Conflict(err.Error()))
 			return
 		}
-		if err == paymentservice.ErrValidation {
-			respondAPIError(c, apierr.BadRequest(err.Error()))
+
+		var apiErr *apierr.APIError
+		if errors.As(err, &apiErr) {
+			respondAPIError(c, apiErr)
 			return
 		}
+
 		respondAPIError(c, apierr.InternalError("创建支付失败").WithDetails(err.Error()))
 		return
 	}
