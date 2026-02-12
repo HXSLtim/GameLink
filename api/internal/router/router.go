@@ -20,15 +20,10 @@ import (
 	notificationhandler "gamelink/internal/handler/notification"
 	"gamelink/internal/model"
 	adminrepo "gamelink/internal/repository/admin"
-	chatrepo "gamelink/internal/repository/chat"
-	commissionrepo "gamelink/internal/repository/commission"
-	orderrepo "gamelink/internal/repository/implementations"
 	rankingrepo "gamelink/internal/repository/ranking"
-	serviceitemrepo "gamelink/internal/repository/serviceitem"
 	settlementcompanyrepo "gamelink/internal/repository/settlementcompany"
 	statsrepo "gamelink/internal/repository/stats"
 	userrepo "gamelink/internal/repository/user"
-	withdrawrepo "gamelink/internal/repository/withdraw"
 	adminservice "gamelink/internal/service/admin"
 	authservice "gamelink/internal/service/auth"
 	settlementcompanysvc "gamelink/internal/service/settlementcompany"
@@ -116,13 +111,8 @@ func (r *Router) setupServices() {
 	r.services = services
 
 	if r.lifecycle == nil {
-		services.settlementScheduler.Start()
-		services.chatRetention.Start()
-		services.businessScheduler.Start()
-		// Start monitor services
-		go services.wsHub.Run()
-		services.realtimeSvc.Start(context.Background())
-		return
+		log.Println("[warn] lifecycle registry is nil, creating fallback — schedulers will lack graceful shutdown")
+		r.lifecycle = lifecycle.NewRegistry()
 	}
 
 	r.lifecycle.RegisterHook("scheduler:settlement", func(context.Context) error {
@@ -180,7 +170,7 @@ func (r *Router) registerRoutes() {
 	handler.RegisterHealth(api)
 
 	// 公共 API 路由（无需认证）
-	registerPublicRoutes(api, r.orm, r.cacheClient)
+	registerPublicRoutes(api, r.orm, r.cacheClient, r.cfg)
 
 	// 认证路由
 	handler.RegisterAuthRoutes(api, r.authSvc, r.services.referralTriggerSvc)
@@ -390,16 +380,10 @@ func (r *Router) registerAdminBusinessRoutes(rbacGroup *gin.RouterGroup) {
 	adminhandler.RegisterServiceItemRoutes(rbacGroup, r.services.serviceItemSvc)
 
 	// Withdraw management routes
-	withdrawRepo := withdrawrepo.NewWithdrawRepository(r.orm)
-	adminhandler.RegisterWithdrawRoutes(rbacGroup, withdrawRepo, r.services.withdrawRoutingSvc)
+	adminhandler.RegisterWithdrawRoutes(rbacGroup, r.services.withdrawRepo, r.services.withdrawRoutingSvc)
 
 	// Dashboard routes
-	userRepo := userrepo.NewUserRepository(r.orm)
-	playerRepo := userrepo.NewPlayerRepository(r.orm)
-	orderRepo := orderrepo.NewOrderRepository(r.orm)
-	commissionRepo := commissionrepo.NewCommissionRepository(r.orm)
-	serviceItemRepo := serviceitemrepo.NewServiceItemRepository(r.orm)
-	adminhandler.RegisterDashboardRoutes(rbacGroup, userRepo, playerRepo, orderRepo, withdrawRepo, serviceItemRepo, commissionRepo)
+	adminhandler.RegisterDashboardRoutes(rbacGroup, r.services.userRepo, r.services.playerRepo, r.services.orderRepo, r.services.withdrawRepo, r.services.serviceItemRepo, r.services.commissionRepo)
 
 	// Ranking Commission routes
 	rankingCommissionRepo := rankingrepo.NewRankingCommissionRepository(r.orm)
@@ -563,11 +547,7 @@ func (r *Router) registerStatisticsRoutes(rbacGroup *gin.RouterGroup) {
 // registerContentRoutes 注册内容管理路由
 // registerAdminChatRoutes 注册管理端聊天管理路由
 func (r *Router) registerAdminChatRoutes(rbacGroup *gin.RouterGroup) {
-	chatGroupRepo := chatrepo.NewChatGroupRepository(r.orm)
-	chatMemberRepo := chatrepo.NewChatMemberRepository(r.orm)
-	chatMessageRepo := chatrepo.NewChatMessageRepository(r.orm)
-	userRepo := userrepo.NewUserRepository(r.orm)
-	chatHandler := adminhandler.NewAdminChatHandler(chatGroupRepo, chatMemberRepo, chatMessageRepo, userRepo)
+	chatHandler := adminhandler.NewAdminChatHandler(r.services.chatGroupRepo, r.services.chatMemberRepo, r.services.chatMessageRepo, r.services.userRepo)
 	adminhandler.RegisterAdminChatRoutes(rbacGroup, chatHandler, r.permMiddleware)
 }
 

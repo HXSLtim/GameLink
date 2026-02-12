@@ -112,7 +112,7 @@ func prepareOrdersMigration(db *gorm.DB) error {
 }
 
 // migrateVersion 迁移版本号。修改 model 后递增此值，下次启动时触发 AutoMigrate。
-const migrateVersion = "2026-02-07-v1"
+const migrateVersion = "2026-02-12-v4"
 
 // isMigrateUpToDate 检查迁移版本是否已是最新，避免每次启动都跑 AutoMigrate。
 func isMigrateUpToDate(db *gorm.DB) bool {
@@ -198,6 +198,8 @@ func autoMigrate(db *gorm.DB) error {
 		&model.GameRank{},            // 游戏段位配置
 		&model.PlayerRankRecord{},    // 陪玩师段位认证记录
 		&model.PlayerCertification{}, // 陪玩师实名认证
+		&model.PlayerService{},       // 陪玩师服务列表
+		&model.PlayerSchedule{},      // 陪玩师排班
 		// Referral system (预留)
 		&model.ReferralConfig{}, // 推荐配置
 		&model.ReferralCode{},   // 邀请码
@@ -227,6 +229,7 @@ func autoMigrate(db *gorm.DB) error {
 		// Ranking models
 		&model.PlayerRanking{},
 		&model.RankingCommissionConfig{},
+		&model.RankingReward{},
 		// RBAC models
 		&model.Permission{},
 		&model.RoleModel{},
@@ -242,12 +245,14 @@ func autoMigrate(db *gorm.DB) error {
 		&model.ChatGroupMember{},
 		&model.ChatMessage{},
 		&model.ChatReport{},
+		&model.ChatSnapshot{},
 		&model.Feed{},
 		&model.FeedImage{},
 		&model.FeedReport{},
 		&model.ContentCategory{}, // 内容分类
 		&model.NotificationEvent{},
 		&model.ReviewReply{},
+		&model.ReviewAppeal{},
 		// Monitor and KPI models
 		&model.Alert{},
 		&model.KPITarget{},
@@ -289,6 +294,7 @@ func autoMigrate(db *gorm.DB) error {
 		&model.UserTagRelation{},
 		&model.UserLoginHistory{},
 		&model.UserBehavior{},
+		&model.UserSettings{},
 	); err != nil {
 		log.Printf("Phase 2 failed: %v", err)
 		return fmt.Errorf("phase 2 migration failed: %w", err)

@@ -11,11 +11,11 @@ func TestPaymentService_SetRoutingEngine(t *testing.T) {
 	mockPayments := new(MockPaymentRepository)
 	mockOrders := new(MockOrderRepository)
 
-	service := NewPaymentService(mockPayments, mockOrders)
+	service := NewPaymentService(PaymentDeps{Payments: mockPayments, Orders: mockOrders})
 
 	// Create a nil routing engine (just for testing injection)
 	// Note: routingEngine is private, we're testing that SetRoutingEngine doesn't panic
-	service.SetRoutingEngine(nil)
+	service.routingEngine = nil
 
 	// Verify the service was created properly
 	assert.NotNil(t, service)
@@ -28,7 +28,7 @@ func TestPaymentService_InitRoutingEngine(t *testing.T) {
 	mockPayments := new(MockPaymentRepository)
 	mockOrders := new(MockOrderRepository)
 
-	service := NewPaymentService(mockPayments, mockOrders)
+	service := NewPaymentService(PaymentDeps{Payments: mockPayments, Orders: mockOrders})
 
 	// Note: InitRoutingEngine requires real repositories with full interface implementation
 	// For now, just verify the method exists and service is properly created

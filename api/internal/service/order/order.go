@@ -39,6 +39,26 @@ type PaymentRefundor interface {
 	RefundPayment(ctx context.Context, paymentID uint64, reason string) error
 }
 
+// OrderDeps holds all dependencies for OrderService.
+type OrderDeps struct {
+	Orders          repoiface.OrderRepository
+	OrderGroups     ordergroup.Repository         // 主订单仓储 (optional)
+	Players         repository.PlayerRepository
+	Users           repository.UserRepository
+	Games           repository.GameRepository
+	Payments        repository.PaymentRepository
+	Reviews         repository.ReviewRepository
+	ServiceItems    repository.ServiceItemRepository
+	Commissions     commissionrepo.CommissionRepository
+	ChatGroups      repository.ChatGroupRepository // optional: for order chat auto-destroy
+	Tx              common.TxManager               // 事务管理器 (optional)
+	DistributedLock cache.DistributedLock           // 分布式锁 (optional)
+	ReferralTrigger ReferralTrigger                // optional: for referral reward trigger
+	PaymentRefundor PaymentRefundor                // optional: refund processor
+	Notifications   repository.NotificationRepository
+	Hub             *ws.Hub
+}
+
 // OrderService 订单服务
 //
 // 功能：
@@ -47,82 +67,44 @@ type PaymentRefundor interface {
 // 3. 订单状态流转管理
 // 4. 订单拆分与转单
 type OrderService struct {
-	tx              common.TxManager              // 事务管理器
+	tx              common.TxManager
 	orders          repoiface.OrderRepository
-	orderGroups     ordergroup.Repository // 主订单仓储
+	orderGroups     ordergroup.Repository
 	players         repository.PlayerRepository
 	users           repository.UserRepository
 	games           repository.GameRepository
 	payments        repository.PaymentRepository
 	reviews         repository.ReviewRepository
+	serviceItems    repository.ServiceItemRepository
 	commissions     commissionrepo.CommissionRepository
-	chatGroups      repository.ChatGroupRepository // optional: for order chat auto-destroy
-	distributedLock cache.DistributedLock          // 分布式锁，用于并发控制
-	referralTrigger ReferralTrigger                // optional: for referral reward trigger
-	paymentRefundor PaymentRefundor                // optional: refund processor
+	chatGroups      repository.ChatGroupRepository
+	distributedLock cache.DistributedLock
+	referralTrigger ReferralTrigger
+	paymentRefundor PaymentRefundor
 	notifications   repository.NotificationRepository
 	hub             *ws.Hub
 }
 
 // NewOrderService 创建订单服务
-func NewOrderService(
-	orders repoiface.OrderRepository,
-	players repository.PlayerRepository,
-	users repository.UserRepository,
-	games repository.GameRepository,
-	payments repository.PaymentRepository,
-	reviews repository.ReviewRepository,
-	commissions commissionrepo.CommissionRepository,
-) *OrderService {
+func NewOrderService(deps OrderDeps) *OrderService {
 	return &OrderService{
-		orders:      orders,
-		players:     players,
-		users:       users,
-		games:       games,
-		payments:    payments,
-		reviews:     reviews,
-		commissions: commissions,
+		orders:          deps.Orders,
+		orderGroups:     deps.OrderGroups,
+		players:         deps.Players,
+		users:           deps.Users,
+		games:           deps.Games,
+		payments:        deps.Payments,
+		reviews:         deps.Reviews,
+		serviceItems:    deps.ServiceItems,
+		commissions:     deps.Commissions,
+		chatGroups:      deps.ChatGroups,
+		tx:              deps.Tx,
+		distributedLock: deps.DistributedLock,
+		referralTrigger: deps.ReferralTrigger,
+		paymentRefundor: deps.PaymentRefundor,
+		notifications:   deps.Notifications,
+		hub:             deps.Hub,
 	}
-}
-
-// SetTxManager injects a transaction manager for multi-step operations.
-func (s *OrderService) SetTxManager(tx common.TxManager) {
-	s.tx = tx
-}
-
-// SetOrderGroupRepository 注入主订单仓储
-func (s *OrderService) SetOrderGroupRepository(repo ordergroup.Repository) {
-	s.orderGroups = repo
-}
-
-// SetDistributedLock injects distributed lock for concurrency control
-func (s *OrderService) SetDistributedLock(lock cache.DistributedLock) {
-	s.distributedLock = lock
-}
-
-// SetReferralTrigger injects referral trigger for first order reward
-func (s *OrderService) SetReferralTrigger(trigger ReferralTrigger) {
-	s.referralTrigger = trigger
-}
-
-// SetPaymentRefundor injects refund processor for paid order cancellation.
-func (s *OrderService) SetPaymentRefundor(refundor PaymentRefundor) {
-	s.paymentRefundor = refundor
-}
-
-// SetChatGroupRepository injects chat group repository for auto-destroying order chat groups.
-func (s *OrderService) SetChatGroupRepository(chatGroups repository.ChatGroupRepository) {
-	s.chatGroups = chatGroups
-}
-
-// SetNotificationRepository injects notification repository for order events.
-func (s *OrderService) SetNotificationRepository(repo repository.NotificationRepository) {
-	s.notifications = repo
-}
-
-// SetWebsocketHub injects WebSocket hub for realtime order updates.
-func (s *OrderService) SetWebsocketHub(hub *ws.Hub) {
-	s.hub = hub
 }
 
 // deactivateOrderChat best-effort deactivates the chat group bound to the order.

@@ -878,7 +878,7 @@ func TestPaymentService_SetDistributedLock(t *testing.T) {
 
 	// Create a mock lock
 	mockLock := &MockDistributedLock{}
-	service.SetDistributedLock(mockLock)
+	service.distributedLock = mockLock
 
 	// Should now be set
 	assert.NotNil(t, service.distributedLock)

@@ -65,7 +65,7 @@ func SetupUserOrderTest(t *testing.T) *UserOrderTestContext {
 	commissions := commission.NewCommissionRepository(db)
 
 	// Create order service with all required dependencies
-	orderSvc := order.NewOrderService(orders, players, users, games, payments, reviews, commissions)
+	orderSvc := order.NewOrderService(order.OrderDeps{Orders: orders, Players: players, Users: users, Games: games, Payments: payments, Reviews: reviews, Commissions: commissions})
 
 	// Create test user (the one placing orders)
 	testUser := testutil.CreateAdminUser(t, db, model.RoleUser)

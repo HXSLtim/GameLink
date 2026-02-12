@@ -34,7 +34,7 @@ func TestOrderService_CreateOrder(t *testing.T) {
 	reviewRepo := review.NewReviewRepository(db)
 	commissionRepo := commissionrepo.NewCommissionRepository(db)
 
-	svc := order.NewOrderService(orderRepo, playerRepo, userRepo, gameRepo, paymentRepo, reviewRepo, commissionRepo)
+	svc := order.NewOrderService(order.OrderDeps{Orders: orderRepo, Players: playerRepo, Users: userRepo, Games: gameRepo, Payments: paymentRepo, Reviews: reviewRepo, Commissions: commissionRepo})
 
 	// Create test data
 	testUser := CreateUniqueTestUser(t, db, "order_user")
@@ -84,7 +84,7 @@ func TestOrderService_GetMyOrders(t *testing.T) {
 	reviewRepo := review.NewReviewRepository(db)
 	commissionRepo := commissionrepo.NewCommissionRepository(db)
 
-	svc := order.NewOrderService(orderRepo, playerRepo, userRepo, gameRepo, paymentRepo, reviewRepo, commissionRepo)
+	svc := order.NewOrderService(order.OrderDeps{Orders: orderRepo, Players: playerRepo, Users: userRepo, Games: gameRepo, Payments: paymentRepo, Reviews: reviewRepo, Commissions: commissionRepo})
 
 	// Create test data
 	testUser := CreateUniqueTestUser(t, db, "myorders_user")
@@ -133,7 +133,7 @@ func TestOrderService_CancelOrder(t *testing.T) {
 	reviewRepo := review.NewReviewRepository(db)
 	commissionRepo := commissionrepo.NewCommissionRepository(db)
 
-	svc := order.NewOrderService(orderRepo, playerRepo, userRepo, gameRepo, paymentRepo, reviewRepo, commissionRepo)
+	svc := order.NewOrderService(order.OrderDeps{Orders: orderRepo, Players: playerRepo, Users: userRepo, Games: gameRepo, Payments: paymentRepo, Reviews: reviewRepo, Commissions: commissionRepo})
 
 	// Create test data
 	testUser := CreateUniqueTestUser(t, db, "cancel_user")
@@ -172,7 +172,7 @@ func TestOrderService_CancelOrder_Unauthorized(t *testing.T) {
 	reviewRepo := review.NewReviewRepository(db)
 	commissionRepo := commissionrepo.NewCommissionRepository(db)
 
-	svc := order.NewOrderService(orderRepo, playerRepo, userRepo, gameRepo, paymentRepo, reviewRepo, commissionRepo)
+	svc := order.NewOrderService(order.OrderDeps{Orders: orderRepo, Players: playerRepo, Users: userRepo, Games: gameRepo, Payments: paymentRepo, Reviews: reviewRepo, Commissions: commissionRepo})
 
 	// Create test data
 	testUser := CreateUniqueTestUser(t, db, "cancel_auth_user")
@@ -205,7 +205,7 @@ func TestOrderService_CompleteOrder(t *testing.T) {
 	reviewRepo := review.NewReviewRepository(db)
 	commissionRepo := commissionrepo.NewCommissionRepository(db)
 
-	svc := order.NewOrderService(orderRepo, playerRepo, userRepo, gameRepo, paymentRepo, reviewRepo, commissionRepo)
+	svc := order.NewOrderService(order.OrderDeps{Orders: orderRepo, Players: playerRepo, Users: userRepo, Games: gameRepo, Payments: paymentRepo, Reviews: reviewRepo, Commissions: commissionRepo})
 
 	// Create default commission rule
 	CreateTestCommissionRule(t, db, model.CommissionRuleTypeDefault, 20)
@@ -245,7 +245,7 @@ func TestOrderService_AcceptOrder(t *testing.T) {
 	reviewRepo := review.NewReviewRepository(db)
 	commissionRepo := commissionrepo.NewCommissionRepository(db)
 
-	svc := order.NewOrderService(orderRepo, playerRepo, userRepo, gameRepo, paymentRepo, reviewRepo, commissionRepo)
+	svc := order.NewOrderService(order.OrderDeps{Orders: orderRepo, Players: playerRepo, Users: userRepo, Games: gameRepo, Payments: paymentRepo, Reviews: reviewRepo, Commissions: commissionRepo})
 
 	// Create test data
 	testUser := CreateUniqueTestUser(t, db, "accept_user")
@@ -285,7 +285,7 @@ func TestOrderService_GetAvailableOrders(t *testing.T) {
 	reviewRepo := review.NewReviewRepository(db)
 	commissionRepo := commissionrepo.NewCommissionRepository(db)
 
-	svc := order.NewOrderService(orderRepo, playerRepo, userRepo, gameRepo, paymentRepo, reviewRepo, commissionRepo)
+	svc := order.NewOrderService(order.OrderDeps{Orders: orderRepo, Players: playerRepo, Users: userRepo, Games: gameRepo, Payments: paymentRepo, Reviews: reviewRepo, Commissions: commissionRepo})
 
 	// Create test data
 	testUser := CreateUniqueTestUser(t, db, "available_user")
@@ -322,7 +322,7 @@ func TestOrderService_GetOrderDetail(t *testing.T) {
 	reviewRepo := review.NewReviewRepository(db)
 	commissionRepo := commissionrepo.NewCommissionRepository(db)
 
-	svc := order.NewOrderService(orderRepo, playerRepo, userRepo, gameRepo, paymentRepo, reviewRepo, commissionRepo)
+	svc := order.NewOrderService(order.OrderDeps{Orders: orderRepo, Players: playerRepo, Users: userRepo, Games: gameRepo, Payments: paymentRepo, Reviews: reviewRepo, Commissions: commissionRepo})
 
 	// Create test data
 	testUser := CreateUniqueTestUser(t, db, "detail_user")

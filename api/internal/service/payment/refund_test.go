@@ -103,7 +103,7 @@ func TestRefundService_ProcessRefund_Success(t *testing.T) {
 	mockOpLogs.On("Append", ctx, mock.AnythingOfType("*model.OperationLog")).Return(nil)
 
 	service := NewRefundService(mockPayments, mockRefunds, mockOrders)
-	service.SetWalletRepository(mockWallets)
+	service.wallets = mockWallets
 	service.SetOperationLogRepository(mockOpLogs)
 
 	req := model.RefundRequest{
@@ -167,7 +167,7 @@ func TestRefundService_ProcessRefund_FullRefund(t *testing.T) {
 	mockOpLogs.On("Append", ctx, mock.AnythingOfType("*model.OperationLog")).Return(nil)
 
 	service := NewRefundService(mockPayments, mockRefunds, mockOrders)
-	service.SetWalletRepository(mockWallets)
+	service.wallets = mockWallets
 	service.SetOperationLogRepository(mockOpLogs)
 
 	req := model.RefundRequest{

@@ -35,7 +35,7 @@ func TestOrderService_CreateMultiPlayerOrder(t *testing.T) {
 	reviewRepo := review.NewReviewRepository(db)
 	commissionRepo := commission.NewCommissionRepository(db)
 
-	svc := order.NewOrderService(orderRepo, playerRepo, userRepo, gameRepo, paymentRepo, reviewRepo, commissionRepo)
+	svc := order.NewOrderService(order.OrderDeps{Orders: orderRepo, Players: playerRepo, Users: userRepo, Games: gameRepo, Payments: paymentRepo, Reviews: reviewRepo, Commissions: commissionRepo})
 
 	// Create test data
 	testUser := CreateUniqueTestUser(t, db, "multi_order_user")
@@ -359,7 +359,7 @@ func TestOrderService_OrderCancellation(t *testing.T) {
 	reviewRepo := review.NewReviewRepository(db)
 	commissionRepo := commission.NewCommissionRepository(db)
 
-	svc := order.NewOrderService(orderRepo, playerRepo, userRepo, gameRepo, paymentRepo, reviewRepo, commissionRepo)
+	svc := order.NewOrderService(order.OrderDeps{Orders: orderRepo, Players: playerRepo, Users: userRepo, Games: gameRepo, Payments: paymentRepo, Reviews: reviewRepo, Commissions: commissionRepo})
 
 	// Create test data
 	testUser := CreateUniqueTestUser(t, db, "cancel_order_user")

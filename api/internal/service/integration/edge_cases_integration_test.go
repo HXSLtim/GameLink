@@ -108,7 +108,7 @@ func TestOrder_ConcurrentOrderCreation(t *testing.T) {
 	reviewRepo := review.NewReviewRepository(db)
 	commissionRepo := commissionrepo.NewCommissionRepository(db)
 
-	svc := order.NewOrderService(orderRepo, playerRepo, userRepo, gameRepo, paymentRepo, reviewRepo, commissionRepo)
+	svc := order.NewOrderService(order.OrderDeps{Orders: orderRepo, Players: playerRepo, Users: userRepo, Games: gameRepo, Payments: paymentRepo, Reviews: reviewRepo, Commissions: commissionRepo})
 
 	testUser := CreateUniqueTestUser(t, db, "concurrent_user")
 	playerUser := CreateUniqueTestUser(t, db, "concurrent_player")

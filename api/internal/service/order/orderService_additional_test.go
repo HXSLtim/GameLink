@@ -186,7 +186,7 @@ func TestOrderService_CreateOrder_WithDistributedLock(t *testing.T) {
 	reviews := &MockReviewRepository{}
 	commissions := &MockCommissionRepository{}
 
-	service := NewOrderService(orders, players, users, games, payments, reviews, commissions)
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: users, Games: games, Payments: payments, Reviews: reviews, Commissions: commissions})
 
 	// Inject distributed lock
 	mockLock := &MockDistributedLock{
@@ -197,7 +197,7 @@ func TestOrderService_CreateOrder_WithDistributedLock(t *testing.T) {
 			return nil
 		},
 	}
-	service.SetDistributedLock(mockLock)
+	service.distributedLock = mockLock
 
 	req := CreateOrderRequest{
 		PlayerID:       playerID,
@@ -241,7 +241,7 @@ func TestOrderService_CreateOrder_LockConflict(t *testing.T) {
 	reviews := &MockReviewRepository{}
 	commissions := &MockCommissionRepository{}
 
-	service := NewOrderService(orders, players, users, games, payments, reviews, commissions)
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: users, Games: games, Payments: payments, Reviews: reviews, Commissions: commissions})
 
 	// Inject distributed lock that returns false (locked)
 	mockLock := &MockDistributedLock{
@@ -249,7 +249,7 @@ func TestOrderService_CreateOrder_LockConflict(t *testing.T) {
 			return false, nil // Already locked
 		},
 	}
-	service.SetDistributedLock(mockLock)
+	service.distributedLock = mockLock
 
 	req := CreateOrderRequest{
 		PlayerID:       playerID,
@@ -270,7 +270,7 @@ func TestOrderService_SetDistributedLock(t *testing.T) {
 	service := &OrderService{}
 
 	var mockLock cache.DistributedLock = &MockDistributedLock{}
-	service.SetDistributedLock(mockLock)
+	service.distributedLock = mockLock
 
 	assert.Equal(t, mockLock, service.distributedLock)
 }
@@ -280,7 +280,7 @@ func TestOrderService_SetChatGroupRepository(t *testing.T) {
 	service := &OrderService{}
 
 	mockChatGroups := &MockChatGroupRepository{}
-	service.SetChatGroupRepository(mockChatGroups)
+	service.chatGroups = mockChatGroups
 
 	assert.Equal(t, mockChatGroups, service.chatGroups)
 }
@@ -452,8 +452,8 @@ func TestOrderService_CancelOrder_WithChatDeactivation(t *testing.T) {
 	reviews := &MockReviewRepository{}
 	commissions := &MockCommissionRepository{}
 
-	service := NewOrderService(orders, players, users, games, payments, reviews, commissions)
-	service.SetChatGroupRepository(mockChatGroups)
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: users, Games: games, Payments: payments, Reviews: reviews, Commissions: commissions})
+	service.chatGroups = mockChatGroups
 
 	req := CancelOrderRequest{
 		Reason: "Test",
@@ -516,8 +516,8 @@ func TestOrderService_CompleteOrder_WithChatDeactivation(t *testing.T) {
 	payments := &MockPaymentRepository{}
 	reviews := &MockReviewRepository{}
 
-	service := NewOrderService(orders, players, users, games, payments, reviews, commissions)
-	service.SetChatGroupRepository(mockChatGroups)
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: users, Games: games, Payments: payments, Reviews: reviews, Commissions: commissions})
+	service.chatGroups = mockChatGroups
 
 	err := service.CompleteOrder(ctx, userID, orderID)
 
@@ -561,7 +561,7 @@ func TestOrderService_recordCommissionAsync_WithDefaultRule(t *testing.T) {
 	payments := &MockPaymentRepository{}
 	reviews := &MockReviewRepository{}
 
-	service := NewOrderService(orders, players, users, games, payments, reviews, commissions)
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: users, Games: games, Payments: payments, Reviews: reviews, Commissions: commissions})
 
 	err := service.recordCommissionAsync(ctx, orderID)
 
@@ -607,7 +607,7 @@ func TestOrderService_recordCommissionAsync_DefaultRuleError(t *testing.T) {
 	payments := &MockPaymentRepository{}
 	reviews := &MockReviewRepository{}
 
-	service := NewOrderService(orders, players, users, games, payments, reviews, commissions)
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: users, Games: games, Payments: payments, Reviews: reviews, Commissions: commissions})
 
 	// Should still succeed with hardcoded default rate of 20%
 	err := service.recordCommissionAsync(ctx, orderID)
@@ -665,7 +665,7 @@ func TestOrderService_GetMyOrders_WithReviewCheck(t *testing.T) {
 	payments := &MockPaymentRepository{}
 	commissions := &MockCommissionRepository{}
 
-	service := NewOrderService(orders, players, users, games, payments, reviews, commissions)
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: users, Games: games, Payments: payments, Reviews: reviews, Commissions: commissions})
 
 	req := MyOrderListRequest{
 		Page:     1,
@@ -738,7 +738,7 @@ func TestOrderService_GetOrderDetail_WithReview(t *testing.T) {
 
 	commissions := &MockCommissionRepository{}
 
-	service := NewOrderService(orders, players, users, games, payments, reviews, commissions)
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: users, Games: games, Payments: payments, Reviews: reviews, Commissions: commissions})
 
 	resp, err := service.GetOrderDetail(ctx, userID, orderID)
 
@@ -785,7 +785,7 @@ func TestOrderService_GetOrderDetail_NoPlayerInfo(t *testing.T) {
 	reviews := &MockReviewRepository{}
 	commissions := &MockCommissionRepository{}
 
-	service := NewOrderService(orders, players, users, games, payments, reviews, commissions)
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: users, Games: games, Payments: payments, Reviews: reviews, Commissions: commissions})
 
 	resp, err := service.GetOrderDetail(ctx, userID, orderID)
 
@@ -818,7 +818,7 @@ func TestOrderService_AcceptOrder_UpdateError(t *testing.T) {
 	reviews := &MockReviewRepository{}
 	commissions := &MockCommissionRepository{}
 
-	service := NewOrderService(orders, players, users, games, payments, reviews, commissions)
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: users, Games: games, Payments: payments, Reviews: reviews, Commissions: commissions})
 
 	err := service.AcceptOrder(ctx, playerUserID, orderID)
 
@@ -853,7 +853,7 @@ func TestOrderService_CompleteOrderByPlayer_InvalidStatus(t *testing.T) {
 	reviews := &MockReviewRepository{}
 	commissions := &MockCommissionRepository{}
 
-	service := NewOrderService(orders, players, users, games, payments, reviews, commissions)
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: users, Games: games, Payments: payments, Reviews: reviews, Commissions: commissions})
 
 	err := service.CompleteOrderByPlayer(ctx, playerUserID, orderID)
 
@@ -895,7 +895,7 @@ func TestOrderService_GetAvailableOrders_CalculateDuration(t *testing.T) {
 	reviews := &MockReviewRepository{}
 	commissions := &MockCommissionRepository{}
 
-	service := NewOrderService(orders, players, users, games, payments, reviews, commissions)
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: users, Games: games, Payments: payments, Reviews: reviews, Commissions: commissions})
 
 	req := AvailableOrdersRequest{
 		Page:     1,
@@ -943,7 +943,7 @@ func TestOrderService_GetAvailableOrders_NoDurationInfo(t *testing.T) {
 	reviews := &MockReviewRepository{}
 	commissions := &MockCommissionRepository{}
 
-	service := NewOrderService(orders, players, users, games, payments, reviews, commissions)
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: users, Games: games, Payments: payments, Reviews: reviews, Commissions: commissions})
 
 	req := AvailableOrdersRequest{
 		Page:     1,
@@ -978,7 +978,7 @@ func TestOrderService_GetMyOrders_PageSizeTooLarge(t *testing.T) {
 	reviews := &MockReviewRepository{}
 	commissions := &MockCommissionRepository{}
 
-	service := NewOrderService(orders, players, users, games, payments, reviews, commissions)
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: users, Games: games, Payments: payments, Reviews: reviews, Commissions: commissions})
 
 	req := MyOrderListRequest{
 		Page:     1,
@@ -1012,7 +1012,7 @@ func TestOrderService_GetAvailableOrders_PageSizeTooLarge(t *testing.T) {
 	reviews := &MockReviewRepository{}
 	commissions := &MockCommissionRepository{}
 
-	service := NewOrderService(orders, players, users, games, payments, reviews, commissions)
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: users, Games: games, Payments: payments, Reviews: reviews, Commissions: commissions})
 
 	req := AvailableOrdersRequest{
 		Page:     1,
@@ -1062,7 +1062,7 @@ func TestOrderService_toOrderCardDTO_WithReviewCheck(t *testing.T) {
 	}
 	commissions := &MockCommissionRepository{}
 
-	service := NewOrderService(orders, players, users, games, payments, reviews, commissions)
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: users, Games: games, Payments: payments, Reviews: reviews, Commissions: commissions})
 
 	card, err := service.toOrderCardDTO(ctx, testOrder, userID)
 
@@ -1103,7 +1103,7 @@ func TestOrderService_toOrderCardDTO_NoReviewYet(t *testing.T) {
 	}
 	commissions := &MockCommissionRepository{}
 
-	service := NewOrderService(orders, players, users, games, payments, reviews, commissions)
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: users, Games: games, Payments: payments, Reviews: reviews, Commissions: commissions})
 
 	card, err := service.toOrderCardDTO(ctx, testOrder, userID)
 
@@ -1127,7 +1127,7 @@ func TestOrderService_buildOrderTimeline_CompletedOrder(t *testing.T) {
 	reviews := &MockReviewRepository{}
 	commissions := &MockCommissionRepository{}
 
-	service := NewOrderService(orders, players, users, games, payments, reviews, commissions)
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: users, Games: games, Payments: payments, Reviews: reviews, Commissions: commissions})
 
 	timeline := service.buildOrderTimeline(testOrder)
 
@@ -1155,7 +1155,7 @@ func TestOrderService_buildOrderTimeline_InProgressOrder(t *testing.T) {
 	reviews := &MockReviewRepository{}
 	commissions := &MockCommissionRepository{}
 
-	service := NewOrderService(orders, players, users, games, payments, reviews, commissions)
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: users, Games: games, Payments: payments, Reviews: reviews, Commissions: commissions})
 
 	timeline := service.buildOrderTimeline(testOrder)
 
@@ -1181,7 +1181,7 @@ func TestOrderService_buildOrderTimeline_PendingOrder(t *testing.T) {
 	reviews := &MockReviewRepository{}
 	commissions := &MockCommissionRepository{}
 
-	service := NewOrderService(orders, players, users, games, payments, reviews, commissions)
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: users, Games: games, Payments: payments, Reviews: reviews, Commissions: commissions})
 
 	timeline := service.buildOrderTimeline(testOrder)
 

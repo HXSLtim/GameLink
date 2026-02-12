@@ -19,25 +19,18 @@ import (
 	"gamelink/pkg/apierr"
 )
 
-// WalletRepository defines wallet operations needed by settlement service
-type WalletRepository interface {
-	GetByUserID(ctx context.Context, userID uint64) (*model.Wallet, error)
-	Save(ctx context.Context, wallet *model.Wallet) error
-	SaveWithOptimisticLock(ctx context.Context, wallet *model.Wallet) error
-}
-
 // SettlementService handles T+7 frozen balance unfreezing
 type SettlementService struct {
 	tx          common.TxManager // 事务管理器
 	commissions commissionrepo.CommissionRepository
-	wallets     WalletRepository
+	wallets     repository.WalletRepository
 	players     repository.PlayerRepository // To get user ID from player ID
 }
 
 // NewSettlementService creates a new settlement service
 func NewSettlementService(
 	commissions commissionrepo.CommissionRepository,
-	wallets WalletRepository,
+	wallets repository.WalletRepository,
 	players repository.PlayerRepository,
 ) *SettlementService {
 	return &SettlementService{

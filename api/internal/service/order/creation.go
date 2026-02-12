@@ -1,10 +1,12 @@
 package order
 
 import (
+	"context"
 	"math"
 	"time"
 
 	"gamelink/internal/model"
+	"gamelink/internal/repository"
 )
 
 // buildOrderForCreation 根据请求和定价结果构建待持久化的订单实体
@@ -15,11 +17,7 @@ func (s *OrderService) buildOrderForCreation(userID uint64, req CreateOrderReque
 	playerID := req.PlayerID
 	gameID := req.GameID
 
-	// 使用请求中的 ServiceID，如果未提供则默认为 0（允许 NULL）
-	var itemID uint64
-	if req.ServiceID != nil {
-		itemID = *req.ServiceID
-	}
+	itemID := s.resolveOrderItemID(req)
 
 	return &model.Order{
 		Base: model.Base{
@@ -67,10 +65,7 @@ func (s *OrderService) buildOrderGroupWithSubOrders(
 	playerID := req.PlayerID
 	gameID := req.GameID
 
-	var itemID uint64
-	if req.ServiceID != nil {
-		itemID = *req.ServiceID
-	}
+	itemID := s.resolveOrderItemID(req)
 
 	// 创建主订单
 	group := &model.OrderGroup{
@@ -129,4 +124,59 @@ func (s *OrderService) buildOrderGroupWithSubOrders(
 	}
 
 	return group, subOrders
+}
+
+// resolveOrderItemID resolves a valid service item for order creation.
+// Priority:
+// 1) request.serviceId
+// 2) active player-specific item
+// 3) active game-specific item
+// 4) any active item
+func (s *OrderService) resolveOrderItemID(req CreateOrderRequest) uint64 {
+	if req.ServiceID != nil && *req.ServiceID > 0 {
+		return *req.ServiceID
+	}
+	if s.serviceItems == nil {
+		return 0
+	}
+
+	ctx := context.Background()
+	active := true
+
+	if req.PlayerID > 0 {
+		playerID := req.PlayerID
+		items, _, err := s.serviceItems.List(ctx, repository.ServiceItemListOptions{
+			PlayerID: &playerID,
+			IsActive: &active,
+			Page:     1,
+			PageSize: 1,
+		})
+		if err == nil && len(items) > 0 {
+			return items[0].ID
+		}
+	}
+
+	if req.GameID > 0 {
+		gameID := req.GameID
+		items, _, err := s.serviceItems.List(ctx, repository.ServiceItemListOptions{
+			GameID:   &gameID,
+			IsActive: &active,
+			Page:     1,
+			PageSize: 1,
+		})
+		if err == nil && len(items) > 0 {
+			return items[0].ID
+		}
+	}
+
+	items, _, err := s.serviceItems.List(ctx, repository.ServiceItemListOptions{
+		IsActive: &active,
+		Page:     1,
+		PageSize: 1,
+	})
+	if err == nil && len(items) > 0 {
+		return items[0].ID
+	}
+
+	return 0
 }

@@ -142,7 +142,16 @@ func (a *configProviderAdapter) IsSeedEnabled() bool {
 }
 
 func (a *configProviderAdapter) GetMaxOpenConns() int {
-	return 1 // Default for SQLite, can be made configurable
+	if a.cfg.Database.MaxConns > 0 {
+		return a.cfg.Database.MaxConns
+	}
+	// 根据数据库类型设置合理的默认值
+	switch a.cfg.Database.Type {
+	case "postgres", "postgresql", "mysql":
+		return 25 // 生产环境合理默认值
+	default:
+		return 1 // SQLite 等嵌入式数据库
+	}
 }
 
 func (a *configProviderAdapter) GetDatabaseType() string {

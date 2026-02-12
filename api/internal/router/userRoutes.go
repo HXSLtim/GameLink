@@ -6,10 +6,7 @@ import (
 
 	userhandler "gamelink/internal/handler/user"
 	favoriterepo "gamelink/internal/repository/favorite"
-	orderrepo "gamelink/internal/repository/implementations"
-	paymentrepo "gamelink/internal/repository/payment"
 	playerrepo "gamelink/internal/repository/player"
-	userrepo "gamelink/internal/repository/user"
 	authservice "gamelink/internal/service/auth"
 )
 
@@ -63,30 +60,27 @@ func registerUserRoutesWithRoleSwitch(api *gin.RouterGroup, authMiddleware gin.H
 		orderGroupHandler.RegisterRoutes(userGroup)
 
 		// 角色切换路由（小程序用户/陪玩师切换）
-		userRepo := userrepo.NewUserRepository(orm)
-		playerRepo := playerrepo.NewPlayerRepository(orm)
-		roleSvc := authservice.NewRoleService(userRepo, playerRepo)
+		roleSvc := authservice.NewRoleService(services.userRepo, services.playerRepo)
 		roleHandler := userhandler.NewRoleHandler(roleSvc)
 		roleHandler.RegisterRoutes(userGroup)
 
 		// 收藏路由
 		favoriteRepo := favoriterepo.NewRepository(orm)
+		playerRepo := playerrepo.NewPlayerRepository(orm) // favoriteHandler 需要 playerrepo 子包类型
 		favoriteHandler := userhandler.NewFavoriteHandler(favoriteRepo, playerRepo)
 		userhandler.RegisterFavoriteRoutes(userGroup, favoriteHandler, authMiddleware)
 
 		// 用户资料路由
-		userhandler.RegisterProfileRoutes(userGroup, userRepo, authMiddleware)
+		userhandler.RegisterProfileRoutes(userGroup, services.userRepo, authMiddleware)
 
 		// 订单统计路由
-		orderRepo := orderrepo.NewOrderRepository(orm)
-		userhandler.RegisterOrderStatsRoutes(userGroup, orderRepo, authMiddleware)
+		userhandler.RegisterOrderStatsRoutes(userGroup, services.orderRepo, authMiddleware)
 
 		// VIP 用户信息路由
-		userhandler.RegisterVipInfoRoutes(userGroup, services.vipSvc, userRepo, authMiddleware)
+		userhandler.RegisterVipInfoRoutes(userGroup, services.vipSvc, services.userRepo, authMiddleware)
 
 		// 钱包交易记录路由
-		paymentRepo := paymentrepo.NewPaymentRepository(orm)
-		userhandler.RegisterWalletTransactionsRoutes(userGroup, paymentRepo, authMiddleware)
+		userhandler.RegisterWalletTransactionsRoutes(userGroup, services.paymentRepo, authMiddleware)
 
 		// 在线状态路由
 		userhandler.RegisterPresenceRoutes(userGroup, services.presenceSvc, authMiddleware)
@@ -107,6 +101,5 @@ func registerUserRoutesWithRoleSwitch(api *gin.RouterGroup, authMiddleware gin.H
 	}
 
 	// 修改密码路由（注册在 /api/v1 下，不是 /user 下）
-	userRepo := userrepo.NewUserRepository(orm)
-	userhandler.RegisterChangePasswordRoutes(api, userRepo, authMiddleware)
+	userhandler.RegisterChangePasswordRoutes(api, services.userRepo, authMiddleware)
 }

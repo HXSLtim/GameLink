@@ -78,8 +78,8 @@ func TestPaymentService_CombinedPaymentRefund(t *testing.T) {
 	walletRepo := wallet.NewWalletRepository(db)
 	orderRepo := implementations.NewOrderRepository(db)
 
-	svc := paymentservice.NewPaymentService(paymentRepo, orderRepo)
-	svc.SetWalletRepository(walletRepo)
+	svc := paymentservice.NewPaymentService(paymentservice.PaymentDeps{Payments: paymentRepo, Orders: orderRepo, Wallets: walletRepo})
+	// wallet injected via PaymentDeps
 
 	// Create test data
 	testUser := CreateUniqueTestUser(t, db, "combined_refund_user")

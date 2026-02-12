@@ -5,6 +5,7 @@ import (
 	"gorm.io/gorm"
 
 	"gamelink/internal/model"
+	"gamelink/internal/repository"
 	activityrepo "gamelink/internal/repository/activity"
 	adminrepo "gamelink/internal/repository/admin"
 	alertrepo "gamelink/internal/repository/alert"
@@ -18,6 +19,7 @@ import (
 	gamerepo "gamelink/internal/repository/game"
 	gamerankrepo "gamelink/internal/repository/gamerank"
 	orderrepo "gamelink/internal/repository/implementations"
+	repoiface "gamelink/internal/repository/interfaces"
 	lfgrepo "gamelink/internal/repository/lfg"
 	notificationsettingsrepo "gamelink/internal/repository/notification"
 	ordermodelsrepo "gamelink/internal/repository/order"
@@ -86,6 +88,18 @@ import (
 
 // appServices 包含所有领域服务实例和调度器句柄，供路由注册使用。
 type appServices struct {
+	// 共享仓储（避免在路由注册中重复创建）
+	userRepo       repository.UserRepository
+	playerRepo     repository.PlayerRepository
+	orderRepo      repoiface.OrderRepository
+	withdrawRepo   withdrawrepo.WithdrawRepository
+	commissionRepo commissionrepo.CommissionRepository
+	serviceItemRepo repository.ServiceItemRepository
+	paymentRepo    repository.PaymentRepository
+	chatGroupRepo  repository.ChatGroupRepository
+	chatMemberRepo repository.ChatMemberRepository
+	chatMessageRepo repository.ChatMessageRepository
+
 	commissionSvc           *commissionservice.CommissionService
 	serviceItemSvc          *itemservice.ServiceItemService
 	giftSvc                 *giftservice.GiftService
@@ -207,18 +221,50 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache, cfg config.AppConfig) *
 	serviceItemSvc := itemservice.NewServiceItemService(serviceItemRepo, gameRepo, playerRepo)
 	giftSvc := giftservice.NewGiftService(serviceItemRepo, orderRepo, playerRepo, userRepo, commissionRepo)
 	uow := common.NewUnitOfWork(orm)
-	orderSvc := orderservice.NewOrderService(orderRepo, playerRepo, userRepo, gameRepo, paymentRepo, reviewRepo, commissionRepo)
-	orderSvc.SetTxManager(uow) // 注入事务管理器
-	// 注入聊天群仓库用于订单聊天自动销毁
-	orderSvc.SetChatGroupRepository(chatGroupRepo)
-	// 注入主订单仓库用于订单拆分
 	orderGroupRepo := ordergrouprepo.NewRepository(orm)
-	orderSvc.SetOrderGroupRepository(orderGroupRepo)
-	paymentSvc := paymentservice.NewPaymentService(paymentRepo, orderRepo)
-	paymentSvc.SetTxManager(uow) // 注入事务管理器
-	paymentSvc.SetExternalConfig(externalCfg)
-	paymentSvc.SetWalletRepository(walletRepo)
-	orderSvc.SetPaymentRefundor(paymentSvc)
+
+	// WebSocket Hub (needed by order/payment services)
+	var redisClient *redis.Client
+	if client := cacheClient.GetRedisClient(); client != nil {
+		if rc, ok := client.(*redis.Client); ok {
+			redisClient = rc
+		}
+	}
+	wsHub := ws.NewHubWithRedis(redisClient)
+
+	// 推荐奖励触发服务
+	referralTriggerSvc := referralservice.NewTriggerService(orm)
+
+	// Payment service (needed by order service as PaymentRefundor)
+	paymentSvc := paymentservice.NewPaymentService(paymentservice.PaymentDeps{
+		Payments:      paymentRepo,
+		Orders:        orderRepo,
+		Providers:     paymentservice.NewProviderFactory(externalCfg).CreateProviders(),
+		Tx:            uow,
+		Wallets:       walletRepo,
+		Notifications: notificationRepo,
+		Hub:           wsHub,
+	})
+
+	// Order service (all deps available)
+	orderSvc := orderservice.NewOrderService(orderservice.OrderDeps{
+		Orders:          orderRepo,
+		OrderGroups:     orderGroupRepo,
+		Players:         playerRepo,
+		Users:           userRepo,
+		Games:           gameRepo,
+		Payments:        paymentRepo,
+		Reviews:         reviewRepo,
+		ServiceItems:    serviceItemRepo,
+		Commissions:     commissionRepo,
+		ChatGroups:      chatGroupRepo,
+		Tx:              uow,
+		Notifications:   notificationRepo,
+		Hub:             wsHub,
+		ReferralTrigger: referralTriggerSvc,
+		PaymentRefundor: paymentSvc,
+	})
+
 	playerSvc := serviceplayer.NewPlayerService(playerRepo, userRepo, gameRepo, orderRepo, reviewRepo, playerTagRepo, cacheClient)
 	playerServiceMgmtSvc := serviceplayer.NewServiceManagement(playerServiceRepo, playerRepo, gameRepo, gameRankRepo)
 	playerScheduleSvc := serviceplayer.NewScheduleService(playerScheduleRepo, playerRepo)
@@ -228,6 +274,7 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache, cfg config.AppConfig) *
 	disputeSvc := orderservice.NewDisputeService(disputeRepo, orderRepo, userRepo, operationLogRepo, notificationRepo, paymentRepo)
 	earningsSvc := userservice.NewEarningsService(playerRepo, orderRepo, withdrawRepo)
 	chatSvc := chatservice.NewChatService(chatGroupRepo, chatMemberRepo, chatMessageRepo, chatReportRepo, userRepo, cacheClient)
+	chatSvc.SetWebsocketHub(wsHub)
 	feedSvc := contentservice.NewFeedService(feedRepo, nil)
 	notificationSvc := contentservice.NewNotificationService(notificationRepo)
 	uploadSvc := uploadservice.NewService(uploadRepo, externalCfg)
@@ -243,30 +290,8 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache, cfg config.AppConfig) *
 	chatRetention := scheduler.NewChatRetentionScheduler(chatGroupRepo, chatMessageRepo, distributedLock, 30)
 	businessScheduler := scheduler.NewBusinessScheduler(orm, distributedLock)
 
-	// 推荐奖励触发服务
-	referralTriggerSvc := referralservice.NewTriggerService(orm)
-	// 注入推荐触发服务到订单服务（用于首单奖励）
-	orderSvc.SetReferralTrigger(referralTriggerSvc)
-
-	// Monitor services - WebSocket Hub with Redis support for horizontal scaling
-	// If cacheClient uses Redis, WebSocket will enable multi-instance support via Pub/Sub
-	// If cacheClient uses memory, WebSocket will run in single-instance mode (backward compatible)
-	var redisClient *redis.Client
-	if client := cacheClient.GetRedisClient(); client != nil {
-		if rc, ok := client.(*redis.Client); ok {
-			redisClient = rc
-		}
-	}
-	wsHub := ws.NewHubWithRedis(redisClient)
 	alertRepo := alertrepo.NewAlertRepository(orm)
 	realtimeSvc := monitorservice.NewRealtimeService(wsHub, orm)
-
-	// Realtime event wiring
-	orderSvc.SetNotificationRepository(notificationRepo)
-	orderSvc.SetWebsocketHub(wsHub)
-	chatSvc.SetWebsocketHub(wsHub)
-	paymentSvc.SetNotificationRepository(notificationRepo)
-	paymentSvc.SetWebsocketHub(wsHub)
 
 	// Analytics service
 	analyticsSvc := analyticsservice.NewAnalyticsService(orm)
@@ -276,9 +301,8 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache, cfg config.AppConfig) *
 
 	// User management services
 	tagRepo := userrepo.NewUserTagRepository(orm)
-	notifRepo := contentrepo.NewNotificationRepository(orm)
 	tagSvc := userservice.NewUserTagService(tagRepo, userRepo, cacheClient)
-	batchSvc := userservice.NewBatchOperationService(orm, userRepo, tagRepo, notifRepo)
+	batchSvc := userservice.NewBatchOperationService(orm, userRepo, tagRepo, notificationRepo)
 
 	// Review stats service
 	reviewStatsSvc := reviewservice.NewReviewStatsService(reviewRepo)
@@ -378,6 +402,18 @@ func initServices(orm *gorm.DB, cacheClient cache.Cache, cfg config.AppConfig) *
 	// }
 
 	return &appServices{
+		// 共享仓储
+		userRepo:       userRepo,
+		playerRepo:     playerRepo,
+		orderRepo:      orderRepo,
+		withdrawRepo:   withdrawRepo,
+		commissionRepo: commissionRepo,
+		serviceItemRepo: serviceItemRepo,
+		paymentRepo:    paymentRepo,
+		chatGroupRepo:  chatGroupRepo,
+		chatMemberRepo: chatMemberRepo,
+		chatMessageRepo: chatMessageRepo,
+		// 服务
 		commissionSvc:           commissionSvc,
 		serviceItemSvc:          serviceItemSvc,
 		giftSvc:                 giftSvc,

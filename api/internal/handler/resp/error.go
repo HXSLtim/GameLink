@@ -2,6 +2,7 @@ package resp
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -46,11 +47,12 @@ func Error(c *gin.Context, err error) {
 		return
 	}
 
-	// Default: internal server error
+	// Default: internal server error — 不暴露原始错误信息
+	slog.Error("unhandled error", "error", err.Error(), "path", c.Request.URL.Path)
 	JSON[any](c, http.StatusInternalServerError, model.APIResponse[any]{
 		Success: false,
 		Code:    http.StatusInternalServerError,
-		Message: err.Error(),
+		Message: "internal server error",
 	})
 }
 

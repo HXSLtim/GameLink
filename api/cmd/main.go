@@ -95,9 +95,9 @@ func main() {
 	logCryptoStatus(app.Config)
 
 	// Initialize metrics collector (includes HTTP and DB metrics)
+	// 注意：InitBusinessMetrics 已在 Wire 生成的 initializeApplication 中调用，无需重复
 	t = time.Now()
 	metrics.NewCollector(app.PrometheusRegistry)
-	metrics.InitBusinessMetrics(app.PrometheusRegistry)
 	log.Printf("[startup] metrics init: %v", time.Since(t))
 
 	// Configure metrics authentication based on environment
@@ -161,13 +161,19 @@ func startServer(router *gin.Engine, port string, lifecycle *lifecycle.Manager) 
 
 	log.Println("Shutting down server...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	// HTTP server shutdown: drain in-flight requests
+	httpCtx, httpCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer httpCancel()
 
-	if err := server.Shutdown(ctx); err != nil {
+	if err := server.Shutdown(httpCtx); err != nil {
 		log.Fatalf("shutdown error: %v", err)
 	}
-	if err := lifecycle.Stop(ctx); err != nil {
+
+	// Lifecycle services shutdown: schedulers, ws hub, etc.
+	svcCtx, svcCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer svcCancel()
+
+	if err := lifecycle.Stop(svcCtx); err != nil {
 		log.Printf("service shutdown encountered errors: %v", err)
 	}
 

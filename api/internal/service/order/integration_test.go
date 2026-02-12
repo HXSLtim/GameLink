@@ -149,8 +149,7 @@ func createTestService(t *testing.T) (*OrderService, ordergrouprepo.Repository) 
 	commissionRepo := commissionrepo.NewCommissionRepository(testDB)
 	orderGroupRepo := ordergrouprepo.NewRepository(testDB)
 
-	svc := NewOrderService(orderRepo, playerRepo, userRepo, gameRepo, paymentRepo, reviewRepo, commissionRepo)
-	svc.SetOrderGroupRepository(orderGroupRepo)
+	svc := NewOrderService(OrderDeps{Orders: orderRepo, Players: playerRepo, Users: userRepo, Games: gameRepo, Payments: paymentRepo, Reviews: reviewRepo, Commissions: commissionRepo, OrderGroups: orderGroupRepo})
 
 	return svc, orderGroupRepo
 }

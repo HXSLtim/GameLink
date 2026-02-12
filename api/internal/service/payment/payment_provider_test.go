@@ -241,8 +241,8 @@ func TestPaymentService_RefundPayment_ThirdParty_Success(t *testing.T) {
 	mockPayments := new(MockPaymentRepository)
 	mockPayments.On("Get", ctx, payment.ID).Return(payment, nil)
 
-	service := NewPaymentService(mockPayments, nil)
-	service.SetTxManager(common.NewUnitOfWork(db))
+	service := NewPaymentService(PaymentDeps{Payments: mockPayments, Orders: nil})
+	service.tx = common.NewUnitOfWork(db)
 
 	err := service.RefundPayment(ctx, payment.ID, "customer request")
 
@@ -306,9 +306,9 @@ func TestPaymentService_RefundPayment_Combined_Success(t *testing.T) {
 	updatedWallet := createTestWallet(userID, walletCents, 0)
 	mockWallets.On("UpdateBalanceWithLock", ctx, userID, walletCents, 3).Return(updatedWallet, nil)
 
-	service := NewPaymentService(mockPayments, nil)
-	service.SetWalletRepository(mockWallets)
-	service.SetTxManager(common.NewUnitOfWork(db))
+	service := NewPaymentService(PaymentDeps{Payments: mockPayments, Orders: nil})
+	service.wallets = mockWallets
+	service.tx = common.NewUnitOfWork(db)
 
 	err := service.RefundPayment(ctx, payment.ID, "customer request")
 
@@ -353,13 +353,13 @@ func TestPaymentService_RefundPayment_Combined_ThirdPartyRefundFailed(t *testing
 	// Third-party refund fails → debitWallet rollback also uses UpdateBalanceWithLock
 	mockWallets.On("UpdateBalanceWithLock", ctx, userID, -walletCents, 3).Return(rollbackWallet, nil)
 
-	service := NewPaymentService(mockPayments, nil)
-	service.SetWalletRepository(mockWallets)
+	service := NewPaymentService(PaymentDeps{Payments: mockPayments, Orders: nil})
+	service.wallets = mockWallets
 
 	// Create a provider that will fail
 	providers := make(map[model.PaymentMethod]ProviderClient)
 	providers[model.PaymentMethodWeChat] = &mockThirdPartyFailingProvider{}
-	service.SetProviders(providers)
+	service.providers = providers
 
 	err := service.RefundPayment(ctx, paymentID, "customer request")
 
@@ -388,8 +388,8 @@ func TestPaymentService_RefundPayment_WalletCreditFailed(t *testing.T) {
 	// creditWallet uses UpdateBalanceWithLock which fails
 	mockWallets.On("UpdateBalanceWithLock", ctx, userID, amountCents, 3).Return(nil, errors.New("wallet save failed"))
 
-	service := NewPaymentService(mockPayments, nil)
-	service.SetWalletRepository(mockWallets)
+	service := NewPaymentService(PaymentDeps{Payments: mockPayments, Orders: nil})
+	service.wallets = mockWallets
 
 	err := service.RefundPayment(ctx, paymentID, "customer request")
 
@@ -426,8 +426,8 @@ func TestPaymentService_RefundPayment_OrderUpdateFailed(t *testing.T) {
 	mockPayments := new(MockPaymentRepository)
 	mockPayments.On("Get", ctx, payment.ID).Return(payment, nil)
 
-	service := NewPaymentService(mockPayments, nil)
-	service.SetTxManager(common.NewUnitOfWork(db))
+	service := NewPaymentService(PaymentDeps{Payments: mockPayments, Orders: nil})
+	service.tx = common.NewUnitOfWork(db)
 
 	err := service.RefundPayment(ctx, payment.ID, "customer request")
 
@@ -440,7 +440,7 @@ func TestPaymentService_RefundPayment_OrderUpdateFailed(t *testing.T) {
 // TestPaymentService_routePayment_NoRoutingEngine tests routePayment without routing engine
 func TestPaymentService_routePayment_NoRoutingEngine(t *testing.T) {
 	ctx := context.Background()
-	service := NewPaymentService(nil, nil)
+	service := NewPaymentService(PaymentDeps{Payments: nil, Orders: nil})
 
 	order := createTestOrder(1000, 100, model.OrderStatusPending, 10000)
 
@@ -454,7 +454,7 @@ func TestPaymentService_routePayment_NoRoutingEngine(t *testing.T) {
 // TestPaymentService_GetPaymentRoutingLog_NoRoutingEngine tests getting routing log without routing engine
 func TestPaymentService_GetPaymentRoutingLog_NoRoutingEngine(t *testing.T) {
 	ctx := context.Background()
-	service := NewPaymentService(nil, nil)
+	service := NewPaymentService(PaymentDeps{Payments: nil, Orders: nil})
 
 	log, err := service.GetPaymentRoutingLog(ctx, 1)
 
@@ -487,8 +487,8 @@ func TestPaymentService_CreatePayment_WithDistributedLock_Success(t *testing.T) 
 	mockPayments.On("Update", ctx, mock.AnythingOfType("*model.Payment")).Return(nil)
 	mockOrders.On("Update", ctx, mock.AnythingOfType("*model.Order")).Return(nil)
 
-	service := NewPaymentService(mockPayments, mockOrders)
-	service.SetDistributedLock(mockLock)
+	service := NewPaymentService(PaymentDeps{Payments: mockPayments, Orders: mockOrders})
+	service.distributedLock = mockLock
 
 	req := CreatePaymentRequest{
 		OrderID: orderID,
@@ -517,8 +517,8 @@ func TestPaymentService_CreatePayment_WithDistributedLock_Failed(t *testing.T) {
 
 	mockLock.On("TryLock", ctx, mock.AnythingOfType("string"), time.Second*10, 3, time.Millisecond*50).Return(false, errors.New("lock timeout"))
 
-	service := NewPaymentService(mockPayments, mockOrders)
-	service.SetDistributedLock(mockLock)
+	service := NewPaymentService(PaymentDeps{Payments: mockPayments, Orders: mockOrders})
+	service.distributedLock = mockLock
 
 	req := CreatePaymentRequest{
 		OrderID: orderID,
@@ -546,8 +546,8 @@ func TestPaymentService_CreatePayment_WithDistributedLock_Locked(t *testing.T) {
 
 	mockLock.On("TryLock", ctx, mock.AnythingOfType("string"), time.Second*10, 3, time.Millisecond*50).Return(false, nil)
 
-	service := NewPaymentService(mockPayments, mockOrders)
-	service.SetDistributedLock(mockLock)
+	service := NewPaymentService(PaymentDeps{Payments: mockPayments, Orders: mockOrders})
+	service.distributedLock = mockLock
 
 	req := CreatePaymentRequest{
 		OrderID: orderID,
@@ -581,8 +581,8 @@ func TestPaymentService_CreatePayment_WalletSaveFailed(t *testing.T) {
 	mockWallets.On("GetByUserID", ctx, userID).Return(wallet, nil)
 	mockWallets.On("UpdateBalanceWithLock", ctx, userID, int64(-10000), 3).Return(nil, errors.New("wallet save failed"))
 
-	service := NewPaymentService(mockPayments, mockOrders)
-	service.SetWalletRepository(mockWallets)
+	service := NewPaymentService(PaymentDeps{Payments: mockPayments, Orders: mockOrders})
+	service.wallets = mockWallets
 
 	req := CreatePaymentRequest{
 		OrderID: orderID,
@@ -620,8 +620,8 @@ func TestPaymentService_CreatePayment_PaymentCreateFailed(t *testing.T) {
 	// Rollback wallet
 	mockWallets.On("UpdateBalanceWithLock", ctx, userID, int64(10000), 3).Return(createTestWallet(userID, 20000, 0), nil)
 
-	service := NewPaymentService(mockPayments, mockOrders)
-	service.SetWalletRepository(mockWallets)
+	service := NewPaymentService(PaymentDeps{Payments: mockPayments, Orders: mockOrders})
+	service.wallets = mockWallets
 
 	req := CreatePaymentRequest{
 		OrderID: orderID,
@@ -657,8 +657,8 @@ func TestPaymentService_CreatePayment_CombinedWalletSaveFailed(t *testing.T) {
 	mockWallets.On("GetByUserID", ctx, userID).Return(wallet, nil)
 	mockWallets.On("UpdateBalanceWithLock", ctx, userID, int64(-6000), 3).Return(nil, errors.New("wallet save failed"))
 
-	service := NewPaymentService(mockPayments, mockOrders)
-	service.SetWalletRepository(mockWallets)
+	service := NewPaymentService(PaymentDeps{Payments: mockPayments, Orders: mockOrders})
+	service.wallets = mockWallets
 
 	req := CreatePaymentRequest{
 		OrderID:           orderID,
@@ -692,8 +692,8 @@ func TestPaymentService_CreatePayment_Combined_InvalidThirdPartyMethod(t *testin
 	mockOrders.On("Get", ctx, orderID).Return(order, nil)
 	mockPayments.On("List", ctx, mock.AnythingOfType("repository.PaymentListOptions")).Return([]model.Payment{}, int64(0), nil)
 
-	service := NewPaymentService(mockPayments, mockOrders)
-	service.SetWalletRepository(mockWallets)
+	service := NewPaymentService(PaymentDeps{Payments: mockPayments, Orders: mockOrders})
+	service.wallets = mockWallets
 
 	req := CreatePaymentRequest{
 		OrderID:           orderID,
@@ -722,7 +722,7 @@ func TestPaymentService_CreatePayment_OrderNotFound(t *testing.T) {
 
 	mockOrders.On("Get", ctx, orderID).Return(nil, repository.ErrNotFound)
 
-	service := NewPaymentService(mockPayments, mockOrders)
+	service := NewPaymentService(PaymentDeps{Payments: mockPayments, Orders: mockOrders})
 
 	req := CreatePaymentRequest{
 		OrderID: orderID,
@@ -745,7 +745,7 @@ func TestPaymentService_HandlePaymentCallback_MissingPaymentID(t *testing.T) {
 	mockPayments := new(MockPaymentRepository)
 	mockOrders := new(MockOrderRepository)
 
-	service := NewPaymentService(mockPayments, mockOrders)
+	service := NewPaymentService(PaymentDeps{Payments: mockPayments, Orders: mockOrders})
 
 	callbackData := map[string]interface{}{
 		"amount_cents": int64(10000),
@@ -767,7 +767,7 @@ func TestPaymentService_HandlePaymentCallback_PaymentNotFound(t *testing.T) {
 
 	mockPayments.On("Get", ctx, paymentID).Return(nil, repository.ErrNotFound)
 
-	service := NewPaymentService(mockPayments, nil)
+	service := NewPaymentService(PaymentDeps{Payments: mockPayments, Orders: nil})
 
 	callbackData := map[string]interface{}{
 		"payment_id":   paymentID,
@@ -800,7 +800,7 @@ func TestPaymentService_HandlePaymentCallback_OrderNotFound(t *testing.T) {
 	mockOrders.On("Get", ctx, orderID).Return(nil, repository.ErrNotFound)
 	// Payment update won't be reached since order Get fails
 
-	service := NewPaymentService(mockPayments, mockOrders)
+	service := NewPaymentService(PaymentDeps{Payments: mockPayments, Orders: mockOrders})
 
 	callbackData := map[string]interface{}{
 		"payment_id":   paymentID,
@@ -849,8 +849,8 @@ func TestPaymentService_HandlePaymentCallback_PaymentUpdateFailed(t *testing.T) 
 	mockPayments.On("Get", ctx, uint64(9999)).Return(payment, nil)
 	mockOrders.On("Get", ctx, order.ID).Return(order, nil)
 
-	service := NewPaymentService(mockPayments, mockOrders)
-	service.SetTxManager(common.NewUnitOfWork(db))
+	service := NewPaymentService(PaymentDeps{Payments: mockPayments, Orders: mockOrders})
+	service.tx = common.NewUnitOfWork(db)
 
 	callbackData := map[string]interface{}{
 		"payment_id":   uint64(9999),
@@ -877,7 +877,7 @@ func TestPaymentService_CancelPayment_PaymentNotFound(t *testing.T) {
 
 	mockPayments.On("Get", ctx, paymentID).Return(nil, repository.ErrNotFound)
 
-	service := NewPaymentService(mockPayments, nil)
+	service := NewPaymentService(PaymentDeps{Payments: mockPayments, Orders: nil})
 
 	err := service.CancelPayment(ctx, userID, paymentID)
 
@@ -900,7 +900,7 @@ func TestPaymentService_CancelPayment_UpdateFailed(t *testing.T) {
 	mockPayments.On("Get", ctx, paymentID).Return(payment, nil)
 	mockPayments.On("Update", ctx, mock.AnythingOfType("*model.Payment")).Return(errors.New("update failed"))
 
-	service := NewPaymentService(mockPayments, nil)
+	service := NewPaymentService(PaymentDeps{Payments: mockPayments, Orders: nil})
 
 	err := service.CancelPayment(ctx, userID, paymentID)
 
@@ -910,10 +910,8 @@ func TestPaymentService_CancelPayment_UpdateFailed(t *testing.T) {
 	mockPayments.AssertExpectations(t)
 }
 
-// TestPaymentService_SetExternalConfig tests setting external config
-func TestPaymentService_SetExternalConfig(t *testing.T) {
-	service := NewPaymentService(nil, nil)
-
+// TestPaymentService_ProviderFactory tests creating providers via factory config
+func TestPaymentService_ProviderFactory(t *testing.T) {
 	cfg := &external.Config{
 		WeChatPay: config.WeChatPayConfig{
 			Enabled: true,
@@ -929,7 +927,9 @@ func TestPaymentService_SetExternalConfig(t *testing.T) {
 		},
 	}
 
-	service.SetExternalConfig(cfg)
+	service := NewPaymentService(PaymentDeps{
+		Providers: NewProviderFactory(cfg).CreateProviders(),
+	})
 
 	assert.NotNil(t, service.providers)
 	assert.Contains(t, service.providers, model.PaymentMethodWeChat)
@@ -938,14 +938,14 @@ func TestPaymentService_SetExternalConfig(t *testing.T) {
 
 // TestPaymentService_SetProviders tests setting providers directly
 func TestPaymentService_SetProviders(t *testing.T) {
-	service := NewPaymentService(nil, nil)
+	service := NewPaymentService(PaymentDeps{Payments: nil, Orders: nil})
 
 	providers := map[model.PaymentMethod]ProviderClient{
 		model.PaymentMethodWeChat: wechatProvider{},
 		model.PaymentMethodAlipay: alipayProvider{},
 	}
 
-	service.SetProviders(providers)
+	service.providers = providers
 
 	assert.Equal(t, providers, service.providers)
 }
@@ -982,8 +982,8 @@ func TestPaymentService_creditWallet(t *testing.T) {
 			mockWallets := new(MockWalletRepository)
 			tt.setupMocks(mockWallets)
 
-			service := NewPaymentService(nil, nil)
-			service.SetWalletRepository(mockWallets)
+			service := NewPaymentService(PaymentDeps{Payments: nil, Orders: nil})
+			service.wallets = mockWallets
 
 			err := service.creditWallet(ctx, userID, amount)
 
@@ -1038,8 +1038,8 @@ func TestPaymentService_debitWallet(t *testing.T) {
 			mockWallets := new(MockWalletRepository)
 			tt.setupMocks(mockWallets)
 
-			service := NewPaymentService(nil, nil)
-			service.SetWalletRepository(mockWallets)
+			service := NewPaymentService(PaymentDeps{Payments: nil, Orders: nil})
+			service.wallets = mockWallets
 
 			err := service.debitWallet(ctx, userID, amount)
 
@@ -1063,8 +1063,8 @@ func TestPaymentService_GetWalletBalance_Error(t *testing.T) {
 
 	mockWallets.On("GetByUserID", ctx, userID).Return(nil, errors.New("database error"))
 
-	service := NewPaymentService(nil, nil)
-	service.SetWalletRepository(mockWallets)
+	service := NewPaymentService(PaymentDeps{Payments: nil, Orders: nil})
+	service.wallets = mockWallets
 
 	resp, err := service.GetWalletBalance(ctx, userID)
 
@@ -1085,7 +1085,7 @@ func TestPaymentService_CalculateCombinedPayment_OrderNotFound(t *testing.T) {
 
 	mockOrders.On("Get", ctx, orderID).Return(nil, repository.ErrNotFound)
 
-	service := NewPaymentService(nil, mockOrders)
+	service := NewPaymentService(PaymentDeps{Payments: nil, Orders: mockOrders})
 
 	req := CalculateCombinedPaymentRequest{
 		OrderID: orderID,
@@ -1170,9 +1170,9 @@ func TestPaymentService_RefundPayment_RefundToWalletOnly(t *testing.T) {
 	updatedWallet := createTestWallet(userID, 15000, 0)
 	mockWallets.On("UpdateBalanceWithLock", ctx, userID, amountCents, 3).Return(updatedWallet, nil)
 
-	service := NewPaymentService(mockPayments, nil)
-	service.SetWalletRepository(mockWallets)
-	service.SetTxManager(common.NewUnitOfWork(db))
+	service := NewPaymentService(PaymentDeps{Payments: mockPayments, Orders: nil})
+	service.wallets = mockWallets
+	service.tx = common.NewUnitOfWork(db)
 
 	err := service.RefundPayment(ctx, payment.ID, "customer request")
 
@@ -1226,8 +1226,8 @@ func TestPaymentService_RefundPayment_PartialRefundThirdParty(t *testing.T) {
 	mockPayments := new(MockPaymentRepository)
 	mockPayments.On("Get", ctx, payment.ID).Return(payment, nil)
 
-	service := NewPaymentService(mockPayments, nil)
-	service.SetTxManager(common.NewUnitOfWork(db))
+	service := NewPaymentService(PaymentDeps{Payments: mockPayments, Orders: nil})
+	service.tx = common.NewUnitOfWork(db)
 
 	err := service.RefundPayment(ctx, payment.ID, "partial refund")
 

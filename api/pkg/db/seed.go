@@ -78,7 +78,7 @@ type seedReviewSpec struct {
 }
 
 // seedVersion 种子数据版本号。修改种子数据后递增此值，下次启动时会自动重新 seed。
-const seedVersion = "2026-02-07-v4"
+const seedVersion = "2026-02-12-v10"
 
 // isSeedUpToDate 检查种子数据版本是否已是最新，避免重复 seed。
 func isSeedUpToDate(db *gorm.DB) bool {
@@ -116,7 +116,7 @@ DECLARE
     tbl TEXT;
     tables_to_clean TEXT[] := ARRAY[
         -- 订单关联
-        'order_players','order_items','order_teams','order_disputes',
+        'order_players','order_items','order_disputes',
         'order_service_assignments','order_timeout_logs','order_groups',
         -- 评价/退款/支付/订单
         'reviews','review_appeals','review_replies','review_reports',
@@ -148,8 +148,10 @@ DECLARE
         -- 游戏分类/段位
         'game_categories','game_ranks',
         'player_rank_records','player_certifications',
+        'player_games','player_skill_tags',
+        'review_display_settings',
         -- 用户扩展
-        'user_blocks','user_tag_relations','user_tags',
+        'user_blocks','user_settings','user_tag_relations','user_tags',
         'user_login_histories','user_behaviors',
         -- 收款/路由
         'collection_entities','routing_rules','routing_rule_histories',
@@ -183,6 +185,7 @@ END $$;`
 		now := time.Now()
 
 		userInputs := []seedUserInput{
+			{Key: "superAdminA", Email: "admin@gamelink.com", Phone: "13800138101", Name: "超级管理员", Role: model.RoleAdmin, Password: "Admin123456"},
 			{Key: "customerA", Email: "demo.user@gamelink.com", Phone: "13800138000", Name: "测试用户", Role: model.RoleUser, Password: "User@123456"},
 			{Key: "proA", Email: "pro.player@gamelink.com", Phone: "13800138001", Name: "职业陪玩", Role: model.RolePlayer, Password: "Player@123456"},
 			{Key: "customerB", Email: "vip.user@gamelink.com", Phone: "13800138002", Name: "高级会员", Role: model.RoleUser, Password: "Vip@123456"},
@@ -976,6 +979,10 @@ END $$;`
 		if err := seedDefaultRoles(tx); err != nil {
 			return err
 		}
+		// 用户角色映射（确保 admin@gamelink.com 与 sysadmin@gamelink.com 权限一致）
+		if err := seedUserRoles(tx, users); err != nil {
+			return err
+		}
 
 		// 提现种子数据
 		if err := seedWithdrawData(tx, players); err != nil {
@@ -1026,6 +1033,19 @@ END $$;`
 		if err := seedOrderDisputes(tx, orders, users); err != nil {
 			return err
 		}
+		// Phase 2: 评价扩展/争议聊天快照/用户设置/支付路由扩展
+		if err := seedReviewExtensions(tx, users, players, orders); err != nil {
+			return err
+		}
+		if err := seedChatSnapshots(tx, orders); err != nil {
+			return err
+		}
+		if err := seedUserSettings(tx, users); err != nil {
+			return err
+		}
+		if err := seedPaymentRoutingExtensions(tx, users, orders); err != nil {
+			return err
+		}
 
 		couponTemplates, vipLevels, err := seedVipAndCouponTemplates(tx, games, serviceItems)
 		if err != nil {
@@ -1063,6 +1083,25 @@ END $$;`
 		}
 
 		if err := seedGameRankAndCertificationData(tx, games, players, users); err != nil {
+			return err
+		}
+		// 陪玩师服务与排班扩展数据（前端页面直接依赖）
+		if err := seedPlayerServices(tx, players, games); err != nil {
+			return err
+		}
+		if err := seedPlayerSchedules(tx, players); err != nil {
+			return err
+		}
+		if err := seedPlayerGames(tx, players, games); err != nil {
+			return err
+		}
+		if err := seedPlayerSkillTags(tx, players); err != nil {
+			return err
+		}
+		if err := seedReviewDisplaySettings(tx); err != nil {
+			return err
+		}
+		if err := seedRankingRewards(tx); err != nil {
 			return err
 		}
 
@@ -1105,6 +1144,10 @@ END $$;`
 		}
 
 		if err := seedOrderChatAndServiceAssignment(tx, now, users, players, orders); err != nil {
+			return err
+		}
+		// 审计日志扩展数据（管理后台操作日志页面依赖）
+		if err := seedOperationLogs(tx, users, players, orders); err != nil {
 			return err
 		}
 
@@ -1252,6 +1295,33 @@ func seedUser(tx *gorm.DB, input seedUserInput) (*model.User, error) {
 				return nil, err
 			}
 		}
+		updates := map[string]interface{}{
+			"name":   input.Name,
+			"role":   input.Role,
+			"status": model.UserStatusActive,
+		}
+		if input.Nickname != "" {
+			updates["nickname"] = input.Nickname
+		} else if input.Name != "" {
+			updates["nickname"] = input.Name
+		}
+		// 已有手机号时保留，避免破坏历史数据；为空时用种子值补齐
+		if strings.TrimSpace(existing.Phone) == "" && strings.TrimSpace(input.Phone) != "" {
+			updates["phone"] = input.Phone
+		}
+		if input.Password != "" {
+			hashed, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
+			if err != nil {
+				return nil, err
+			}
+			updates["password_hash"] = string(hashed)
+		}
+		if err := tx.Model(&model.User{}).Where("id = ?", existing.ID).Updates(updates).Error; err != nil {
+			return nil, err
+		}
+		if err := tx.First(&existing, existing.ID).Error; err != nil {
+			return nil, err
+		}
 		return &existing, nil
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
@@ -1279,6 +1349,76 @@ func seedUser(tx *gorm.DB, input seedUserInput) (*model.User, error) {
 		return nil, err
 	}
 	return user, nil
+}
+
+func seedUserRoles(tx *gorm.DB, users map[string]*model.User) error {
+	rolesBySlug := map[model.RoleSlug]*model.RoleModel{}
+	var roles []model.RoleModel
+	if err := tx.Find(&roles).Error; err != nil {
+		return err
+	}
+	for i := range roles {
+		r := roles[i]
+		rolesBySlug[model.RoleSlug(r.Slug)] = &r
+	}
+
+	roleToSlug := map[model.Role]model.RoleSlug{
+		model.RoleAdmin:  model.RoleSlugAdmin,
+		model.RolePlayer: model.RoleSlugPlayer,
+		model.RoleUser:   model.RoleSlugUser,
+	}
+
+	ensureUserRole := func(userID, roleID uint64) error {
+		var ur model.UserRole
+		err := tx.Where("user_id = ? AND role_id = ?", userID, roleID).First(&ur).Error
+		if err == nil {
+			return nil
+		}
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+		return tx.Create(&model.UserRole{UserID: userID, RoleID: roleID}).Error
+	}
+
+	for _, user := range users {
+		if user == nil {
+			continue
+		}
+		slug, ok := roleToSlug[user.Role]
+		if !ok {
+			continue
+		}
+		role := rolesBySlug[slug]
+		if role == nil {
+			return fmt.Errorf("seed user role mapping failed: role %s not found", slug)
+		}
+		if err := ensureUserRole(user.ID, role.ID); err != nil {
+			return err
+		}
+	}
+
+	// 管理员账号统一：两个管理员都具备 super_admin + admin 角色
+	consistentAdmins := []string{"admin@gamelink.com", "sysadmin@gamelink.com"}
+	for _, email := range consistentAdmins {
+		var user model.User
+		if err := tx.Where("email = ?", email).First(&user).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				continue
+			}
+			return err
+		}
+		for _, slug := range []model.RoleSlug{model.RoleSlugSuperAdmin, model.RoleSlugAdmin} {
+			role := rolesBySlug[slug]
+			if role == nil {
+				return fmt.Errorf("seed admin role sync failed: role %s not found", slug)
+			}
+			if err := ensureUserRole(user.ID, role.ID); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func seedPlayer(tx *gorm.DB, input seedPlayerParams) (*model.Player, error) {

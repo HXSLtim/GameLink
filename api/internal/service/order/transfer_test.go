@@ -158,9 +158,9 @@ func TestTransferSubOrder_Success(t *testing.T) {
 	// Seed the original sub-order in DB (needed for transaction)
 	db.Create(subOrder)
 
-	service := NewOrderService(orders, players, &MockUserRepository{}, &MockGameRepository{}, &MockPaymentRepository{}, &MockReviewRepository{}, &MockCommissionRepository{})
-	service.SetOrderGroupRepository(orderGroups)
-	service.SetTxManager(common.NewUnitOfWork(db))
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: &MockUserRepository{}, Games: &MockGameRepository{}, Payments: &MockPaymentRepository{}, Reviews: &MockReviewRepository{}, Commissions: &MockCommissionRepository{}})
+	service.orderGroups = orderGroups
+	service.tx = common.NewUnitOfWork(db)
 
 	req := TransferSubOrderRequest{
 		SubOrderID:   subOrder.ID,
@@ -191,7 +191,7 @@ func TestTransferSubOrder_NotSubOrder(t *testing.T) {
 		},
 	}
 
-	service := NewOrderService(orders, &MockPlayerRepository{}, &MockUserRepository{}, &MockGameRepository{}, &MockPaymentRepository{}, &MockReviewRepository{}, &MockCommissionRepository{})
+	service := NewOrderService(OrderDeps{Orders: orders, Players: &MockPlayerRepository{}, Users: &MockUserRepository{}, Games: &MockGameRepository{}, Payments: &MockPaymentRepository{}, Reviews: &MockReviewRepository{}, Commissions: &MockCommissionRepository{}})
 
 	req := TransferSubOrderRequest{
 		SubOrderID:  orderID,
@@ -221,7 +221,7 @@ func TestTransferSubOrder_CannotTransfer(t *testing.T) {
 		},
 	}
 
-	service := NewOrderService(orders, &MockPlayerRepository{}, &MockUserRepository{}, &MockGameRepository{}, &MockPaymentRepository{}, &MockReviewRepository{}, &MockCommissionRepository{})
+	service := NewOrderService(OrderDeps{Orders: orders, Players: &MockPlayerRepository{}, Users: &MockUserRepository{}, Games: &MockGameRepository{}, Payments: &MockPaymentRepository{}, Reviews: &MockReviewRepository{}, Commissions: &MockCommissionRepository{}})
 
 	req := TransferSubOrderRequest{
 		SubOrderID:  subOrderID,
@@ -250,7 +250,7 @@ func TestTransferSubOrder_CompletedOrder(t *testing.T) {
 		},
 	}
 
-	service := NewOrderService(orders, &MockPlayerRepository{}, &MockUserRepository{}, &MockGameRepository{}, &MockPaymentRepository{}, &MockReviewRepository{}, &MockCommissionRepository{})
+	service := NewOrderService(OrderDeps{Orders: orders, Players: &MockPlayerRepository{}, Users: &MockUserRepository{}, Games: &MockGameRepository{}, Payments: &MockPaymentRepository{}, Reviews: &MockReviewRepository{}, Commissions: &MockCommissionRepository{}})
 
 	req := TransferSubOrderRequest{
 		SubOrderID:  subOrderID,
@@ -289,7 +289,7 @@ func TestTransferSubOrder_SamePlayer(t *testing.T) {
 		},
 	}
 
-	service := NewOrderService(orders, players, &MockUserRepository{}, &MockGameRepository{}, &MockPaymentRepository{}, &MockReviewRepository{}, &MockCommissionRepository{})
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: &MockUserRepository{}, Games: &MockGameRepository{}, Payments: &MockPaymentRepository{}, Reviews: &MockReviewRepository{}, Commissions: &MockCommissionRepository{}})
 
 	req := TransferSubOrderRequest{
 		SubOrderID:  subOrderID,
@@ -328,7 +328,7 @@ func TestTransferSubOrder_UnverifiedPlayer(t *testing.T) {
 		},
 	}
 
-	service := NewOrderService(orders, players, &MockUserRepository{}, &MockGameRepository{}, &MockPaymentRepository{}, &MockReviewRepository{}, &MockCommissionRepository{})
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: &MockUserRepository{}, Games: &MockGameRepository{}, Payments: &MockPaymentRepository{}, Reviews: &MockReviewRepository{}, Commissions: &MockCommissionRepository{}})
 
 	req := TransferSubOrderRequest{
 		SubOrderID:  subOrderID,
@@ -405,9 +405,9 @@ func TestBatchTransferSubOrders_Success(t *testing.T) {
 	db.Create(subOrder1)
 	db.Create(subOrder2)
 
-	service := NewOrderService(orders, players, &MockUserRepository{}, &MockGameRepository{}, &MockPaymentRepository{}, &MockReviewRepository{}, &MockCommissionRepository{})
-	service.SetOrderGroupRepository(orderGroups)
-	service.SetTxManager(common.NewUnitOfWork(db))
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: &MockUserRepository{}, Games: &MockGameRepository{}, Payments: &MockPaymentRepository{}, Reviews: &MockReviewRepository{}, Commissions: &MockCommissionRepository{}})
+	service.orderGroups = orderGroups
+	service.tx = common.NewUnitOfWork(db)
 
 	req := BatchTransferRequest{
 		SubOrderIDs:  []uint64{subOrder1.ID, subOrder2.ID},
@@ -484,9 +484,9 @@ func TestBatchTransferSubOrders_PartialFailure(t *testing.T) {
 	db.Create(subOrder1)
 	db.Create(subOrder2)
 
-	service := NewOrderService(orders, players, &MockUserRepository{}, &MockGameRepository{}, &MockPaymentRepository{}, &MockReviewRepository{}, &MockCommissionRepository{})
-	service.SetOrderGroupRepository(orderGroups)
-	service.SetTxManager(common.NewUnitOfWork(db))
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: &MockUserRepository{}, Games: &MockGameRepository{}, Payments: &MockPaymentRepository{}, Reviews: &MockReviewRepository{}, Commissions: &MockCommissionRepository{}})
+	service.orderGroups = orderGroups
+	service.tx = common.NewUnitOfWork(db)
 
 	req := BatchTransferRequest{
 		SubOrderIDs:  []uint64{subOrder1.ID, subOrder2.ID},
@@ -524,8 +524,8 @@ func TestGetTransferableSubOrders_Success(t *testing.T) {
 		},
 	}
 
-	service := NewOrderService(&MockOrderRepository{}, &MockPlayerRepository{}, &MockUserRepository{}, &MockGameRepository{}, &MockPaymentRepository{}, &MockReviewRepository{}, &MockCommissionRepository{})
-	service.SetOrderGroupRepository(orderGroups)
+	service := NewOrderService(OrderDeps{Orders: &MockOrderRepository{}, Players: &MockPlayerRepository{}, Users: &MockUserRepository{}, Games: &MockGameRepository{}, Payments: &MockPaymentRepository{}, Reviews: &MockReviewRepository{}, Commissions: &MockCommissionRepository{}})
+	service.orderGroups = orderGroups
 
 	transferable, err := service.GetTransferableSubOrders(ctx, groupID)
 
@@ -574,9 +574,9 @@ func TestTransferSubOrder_IncomeAttribution_NoServiceStarted(t *testing.T) {
 	defer testutil.CleanDB(t, db)
 	db.Create(subOrder)
 
-	service := NewOrderService(orders, players, &MockUserRepository{}, &MockGameRepository{}, &MockPaymentRepository{}, &MockReviewRepository{}, &MockCommissionRepository{})
-	service.SetOrderGroupRepository(orderGroups)
-	service.SetTxManager(common.NewUnitOfWork(db))
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: &MockUserRepository{}, Games: &MockGameRepository{}, Payments: &MockPaymentRepository{}, Reviews: &MockReviewRepository{}, Commissions: &MockCommissionRepository{}})
+	service.orderGroups = orderGroups
+	service.tx = common.NewUnitOfWork(db)
 
 	req := TransferSubOrderRequest{
 		SubOrderID:       subOrderID,
@@ -647,9 +647,9 @@ func TestTransferSubOrder_IncomeAttribution_HalfCompleted(t *testing.T) {
 	defer testutil.CleanDB(t, db)
 	db.Create(subOrder)
 
-	service := NewOrderService(orders, players, &MockUserRepository{}, &MockGameRepository{}, &MockPaymentRepository{}, &MockReviewRepository{}, &MockCommissionRepository{})
-	service.SetOrderGroupRepository(orderGroups)
-	service.SetTxManager(common.NewUnitOfWork(db))
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: &MockUserRepository{}, Games: &MockGameRepository{}, Payments: &MockPaymentRepository{}, Reviews: &MockReviewRepository{}, Commissions: &MockCommissionRepository{}})
+	service.orderGroups = orderGroups
+	service.tx = common.NewUnitOfWork(db)
 
 	req := TransferSubOrderRequest{
 		SubOrderID:       subOrderID,
@@ -720,9 +720,9 @@ func TestTransferSubOrder_IncomeAttribution_MostlyCompleted(t *testing.T) {
 	defer testutil.CleanDB(t, db)
 	db.Create(subOrder)
 
-	service := NewOrderService(orders, players, &MockUserRepository{}, &MockGameRepository{}, &MockPaymentRepository{}, &MockReviewRepository{}, &MockCommissionRepository{})
-	service.SetOrderGroupRepository(orderGroups)
-	service.SetTxManager(common.NewUnitOfWork(db))
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: &MockUserRepository{}, Games: &MockGameRepository{}, Payments: &MockPaymentRepository{}, Reviews: &MockReviewRepository{}, Commissions: &MockCommissionRepository{}})
+	service.orderGroups = orderGroups
+	service.tx = common.NewUnitOfWork(db)
 
 	req := TransferSubOrderRequest{
 		SubOrderID:       subOrderID,
@@ -792,9 +792,9 @@ func TestTransferSubOrder_IncomeAttribution_InvalidMinutes(t *testing.T) {
 	defer testutil.CleanDB(t, db)
 	db.Create(subOrder)
 
-	service := NewOrderService(orders, players, &MockUserRepository{}, &MockGameRepository{}, &MockPaymentRepository{}, &MockReviewRepository{}, &MockCommissionRepository{})
-	service.SetOrderGroupRepository(orderGroups)
-	service.SetTxManager(common.NewUnitOfWork(db))
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: &MockUserRepository{}, Games: &MockGameRepository{}, Payments: &MockPaymentRepository{}, Reviews: &MockReviewRepository{}, Commissions: &MockCommissionRepository{}})
+	service.orderGroups = orderGroups
+	service.tx = common.NewUnitOfWork(db)
 
 	// 测试负数分钟数 - 应该被修正为0
 	req := TransferSubOrderRequest{
@@ -882,9 +882,9 @@ func TestBatchTransferSubOrders_IncomeAttribution(t *testing.T) {
 	db.Create(subOrder1)
 	db.Create(subOrder2)
 
-	service := NewOrderService(orders, players, &MockUserRepository{}, &MockGameRepository{}, &MockPaymentRepository{}, &MockReviewRepository{}, &MockCommissionRepository{})
-	service.SetOrderGroupRepository(orderGroups)
-	service.SetTxManager(common.NewUnitOfWork(db))
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: &MockUserRepository{}, Games: &MockGameRepository{}, Payments: &MockPaymentRepository{}, Reviews: &MockReviewRepository{}, Commissions: &MockCommissionRepository{}})
+	service.orderGroups = orderGroups
+	service.tx = common.NewUnitOfWork(db)
 
 	req := BatchTransferRequest{
 		SubOrderIDs:      []uint64{subOrder1.ID, subOrder2.ID},

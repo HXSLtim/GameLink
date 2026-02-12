@@ -12,7 +12,6 @@ import (
 	"gamelink/internal/repository/common"
 	repoiface "gamelink/internal/repository/interfaces"
 	"gamelink/internal/repository/routingrule"
-	"gamelink/internal/service/external"
 	routingruleservice "gamelink/internal/service/routingrule"
 	"gamelink/internal/ws"
 	"gamelink/pkg/apierr"
@@ -29,6 +28,20 @@ var (
 	// ErrInvalidOrderStatus 订单状态不正确
 	ErrInvalidOrderStatus = apierr.BadRequest("invalid order status")
 )
+
+// PaymentDeps holds all dependencies for PaymentService.
+type PaymentDeps struct {
+	Payments        repository.PaymentRepository
+	Orders          repoiface.OrderReadWriter
+	Providers       map[model.PaymentMethod]ProviderClient // nil → defaults to mock
+	Tx              common.TxManager
+	DistributedLock cache.DistributedLock
+	Wallets         repository.WalletRepository
+	Notifications   repository.NotificationRepository
+	Hub             *ws.Hub
+	WeChatCallback  *WeChatCallbackHandler
+	RoutingEngine   *routingruleservice.RoutingEngine
+}
 
 // PaymentService 支付服务
 //
@@ -61,67 +74,39 @@ var (
 //
 // ============================================================================
 type PaymentService struct {
-	tx                    common.TxManager                   // 事务管理器
+	tx                    common.TxManager
 	payments              repository.PaymentRepository
 	orders                repoiface.OrderReadWriter
 	providers             map[model.PaymentMethod]ProviderClient
 	distributedLock       cache.DistributedLock
-	wallets               repository.WalletRepository       // 钱包仓储
-	routingEngine         *routingruleservice.RoutingEngine // 收款分流引擎
+	wallets               repository.WalletRepository
+	routingEngine         *routingruleservice.RoutingEngine
 	notifications         repository.NotificationRepository
 	hub                   *ws.Hub
-	wechatCallbackHandler *WeChatCallbackHandler           // 微信支付回调处理器
+	wechatCallbackHandler *WeChatCallbackHandler
 }
 
 // NewPaymentService 创建支付服务
-func NewPaymentService(
-	payments repository.PaymentRepository,
-	orders repoiface.OrderReadWriter,
-) *PaymentService {
-	return &PaymentService{
-		payments: payments,
-		orders:   orders,
-		providers: map[model.PaymentMethod]ProviderClient{
+func NewPaymentService(deps PaymentDeps) *PaymentService {
+	providers := deps.Providers
+	if providers == nil {
+		providers = map[model.PaymentMethod]ProviderClient{
 			model.PaymentMethodWeChat: wechatProvider{},
 			model.PaymentMethodAlipay: alipayProvider{},
-		},
+		}
 	}
-}
-
-// SetTxManager injects a transaction manager for multi-step operations.
-func (s *PaymentService) SetTxManager(tx common.TxManager) {
-	s.tx = tx
-}
-
-// SetDistributedLock injects distributed lock for concurrency control
-func (s *PaymentService) SetDistributedLock(lock cache.DistributedLock) {
-	s.distributedLock = lock
-}
-
-// SetWalletRepository injects wallet repository for refund credit.
-func (s *PaymentService) SetWalletRepository(repo repository.WalletRepository) {
-	s.wallets = repo
-}
-
-// SetNotificationRepository injects notification repository for payment events.
-func (s *PaymentService) SetNotificationRepository(repo repository.NotificationRepository) {
-	s.notifications = repo
-}
-
-// SetWebsocketHub injects WebSocket hub for realtime order updates.
-func (s *PaymentService) SetWebsocketHub(hub *ws.Hub) {
-	s.hub = hub
-}
-
-// SetWeChatCallbackHandler injects WeChat payment callback handler.
-func (s *PaymentService) SetWeChatCallbackHandler(handler *WeChatCallbackHandler) {
-	s.wechatCallbackHandler = handler
-}
-
-// SetRoutingEngine injects routing engine for payment routing.
-// Requirements: 17.1, 17.2, 17.3
-func (s *PaymentService) SetRoutingEngine(engine *routingruleservice.RoutingEngine) {
-	s.routingEngine = engine
+	return &PaymentService{
+		payments:              deps.Payments,
+		orders:                deps.Orders,
+		providers:             providers,
+		tx:                    deps.Tx,
+		distributedLock:       deps.DistributedLock,
+		wallets:               deps.Wallets,
+		notifications:         deps.Notifications,
+		hub:                   deps.Hub,
+		wechatCallbackHandler: deps.WeChatCallback,
+		routingEngine:         deps.RoutingEngine,
+	}
 }
 
 // InitRoutingEngine initializes the routing engine with repositories.
@@ -131,17 +116,6 @@ func (s *PaymentService) InitRoutingEngine(
 	entityRepo collectionentity.CollectionEntityRepository,
 ) {
 	s.routingEngine = routingruleservice.NewRoutingEngine(ruleRepo, entityRepo)
-}
-
-// SetExternalConfig configures external API credentials for payment providers
-func (s *PaymentService) SetExternalConfig(cfg *external.Config) {
-	factory := NewProviderFactory(cfg)
-	s.providers = factory.CreateProviders()
-}
-
-// SetProviders sets payment providers directly (for testing)
-func (s *PaymentService) SetProviders(providers map[model.PaymentMethod]ProviderClient) {
-	s.providers = providers
 }
 
 // CreatePaymentRequest 创建支付请求

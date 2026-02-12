@@ -242,9 +242,9 @@ func TestCreateOrderWithSplit_Success(t *testing.T) {
 	orders := &MockOrderRepository{}
 	orderGroups := &mockOrderGroupRepo{}
 
-	service := NewOrderService(orders, players, &MockUserRepository{}, games, &MockPaymentRepository{}, &MockReviewRepository{}, &MockCommissionRepository{})
-	service.SetOrderGroupRepository(orderGroups)
-	service.SetTxManager(common.NewUnitOfWork(db))
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: &MockUserRepository{}, Games: games, Payments: &MockPaymentRepository{}, Reviews: &MockReviewRepository{}, Commissions: &MockCommissionRepository{}})
+	service.orderGroups = orderGroups
+	service.tx = common.NewUnitOfWork(db)
 
 	req := CreateOrderRequest{
 		PlayerID:       playerID,
@@ -311,8 +311,8 @@ func TestCreateOrder_NoSplitForShortDuration(t *testing.T) {
 		},
 	}
 
-	service := NewOrderService(orders, players, &MockUserRepository{}, games, &MockPaymentRepository{}, &MockReviewRepository{}, &MockCommissionRepository{})
-	service.SetOrderGroupRepository(orderGroups)
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: &MockUserRepository{}, Games: games, Payments: &MockPaymentRepository{}, Reviews: &MockReviewRepository{}, Commissions: &MockCommissionRepository{}})
+	service.orderGroups = orderGroups
 
 	req := CreateOrderRequest{
 		PlayerID:       playerID,
@@ -367,7 +367,7 @@ func TestCreateOrder_NoSplitWithoutOrderGroupRepo(t *testing.T) {
 	}
 
 	// 不设置 orderGroups 仓储
-	service := NewOrderService(orders, players, &MockUserRepository{}, games, &MockPaymentRepository{}, &MockReviewRepository{}, &MockCommissionRepository{})
+	service := NewOrderService(OrderDeps{Orders: orders, Players: players, Users: &MockUserRepository{}, Games: games, Payments: &MockPaymentRepository{}, Reviews: &MockReviewRepository{}, Commissions: &MockCommissionRepository{}})
 
 	req := CreateOrderRequest{
 		PlayerID:       playerID,

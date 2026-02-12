@@ -146,7 +146,18 @@ func (r *gormUserRepository) FindByPhone(ctx context.Context, phone string) (*mo
 
 // Create inserts a new user.
 func (r *gormUserRepository) Create(ctx context.Context, user *model.User) error {
-	return r.db.WithContext(ctx).Create(user).Error
+	tx := r.db.WithContext(ctx)
+
+	// Avoid unique conflicts on empty string for optional unique fields.
+	// If phone/email is blank, omit it so DB stores NULL instead of ''.
+	if strings.TrimSpace(user.Phone) == "" {
+		tx = tx.Omit("Phone")
+	}
+	if strings.TrimSpace(user.Email) == "" {
+		tx = tx.Omit("Email")
+	}
+
+	return tx.Create(user).Error
 }
 
 // Update updates editable fields of a user.

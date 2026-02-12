@@ -24,7 +24,7 @@ func TestPaymentService_CreatePayment_ThirdParty(t *testing.T) {
 	paymentRepo := payment.NewPaymentRepository(db)
 	orderRepo := implementations.NewOrderRepository(db)
 
-	svc := paymentservice.NewPaymentService(paymentRepo, orderRepo)
+	svc := paymentservice.NewPaymentService(paymentservice.PaymentDeps{Payments: paymentRepo, Orders: orderRepo})
 
 	// Create test data
 	testUser := CreateUniqueTestUser(t, db, "payment_user")
@@ -58,8 +58,8 @@ func TestPaymentService_CreatePayment_WalletOnly(t *testing.T) {
 	walletRepo := wallet.NewWalletRepository(db)
 	orderRepo := implementations.NewOrderRepository(db)
 
-	svc := paymentservice.NewPaymentService(paymentRepo, orderRepo)
-	svc.SetWalletRepository(walletRepo)
+	svc := paymentservice.NewPaymentService(paymentservice.PaymentDeps{Payments: paymentRepo, Orders: orderRepo, Wallets: walletRepo})
+	// wallet injected via PaymentDeps
 
 	// Create test data
 	testUser := CreateUniqueTestUser(t, db, "wallet_user")
@@ -101,8 +101,8 @@ func TestPaymentService_CreatePayment_WalletInsufficientBalance(t *testing.T) {
 	walletRepo := wallet.NewWalletRepository(db)
 	orderRepo := implementations.NewOrderRepository(db)
 
-	svc := paymentservice.NewPaymentService(paymentRepo, orderRepo)
-	svc.SetWalletRepository(walletRepo)
+	svc := paymentservice.NewPaymentService(paymentservice.PaymentDeps{Payments: paymentRepo, Orders: orderRepo, Wallets: walletRepo})
+	// wallet injected via PaymentDeps
 
 	// Create test data
 	testUser := CreateUniqueTestUser(t, db, "insufficient_user")
@@ -136,8 +136,8 @@ func TestPaymentService_CreatePayment_Combined(t *testing.T) {
 	walletRepo := wallet.NewWalletRepository(db)
 	orderRepo := implementations.NewOrderRepository(db)
 
-	svc := paymentservice.NewPaymentService(paymentRepo, orderRepo)
-	svc.SetWalletRepository(walletRepo)
+	svc := paymentservice.NewPaymentService(paymentservice.PaymentDeps{Payments: paymentRepo, Orders: orderRepo, Wallets: walletRepo})
+	// wallet injected via PaymentDeps
 
 	// Create test data
 	testUser := CreateUniqueTestUser(t, db, "combined_user")
@@ -180,7 +180,7 @@ func TestPaymentService_GetPaymentStatus(t *testing.T) {
 	paymentRepo := payment.NewPaymentRepository(db)
 	orderRepo := implementations.NewOrderRepository(db)
 
-	svc := paymentservice.NewPaymentService(paymentRepo, orderRepo)
+	svc := paymentservice.NewPaymentService(paymentservice.PaymentDeps{Payments: paymentRepo, Orders: orderRepo})
 
 	// Create test data
 	testUser := CreateUniqueTestUser(t, db, "status_user")
@@ -217,7 +217,7 @@ func TestPaymentService_GetPaymentStatus_NotFound(t *testing.T) {
 	paymentRepo := payment.NewPaymentRepository(db)
 	orderRepo := implementations.NewOrderRepository(db)
 
-	svc := paymentservice.NewPaymentService(paymentRepo, orderRepo)
+	svc := paymentservice.NewPaymentService(paymentservice.PaymentDeps{Payments: paymentRepo, Orders: orderRepo})
 
 	// Try to get non-existent payment
 	_, err := svc.GetPaymentStatus(ctx, 99999)
@@ -234,7 +234,7 @@ func TestPaymentService_CancelPayment(t *testing.T) {
 	paymentRepo := payment.NewPaymentRepository(db)
 	orderRepo := implementations.NewOrderRepository(db)
 
-	svc := paymentservice.NewPaymentService(paymentRepo, orderRepo)
+	svc := paymentservice.NewPaymentService(paymentservice.PaymentDeps{Payments: paymentRepo, Orders: orderRepo})
 
 	// Create test data
 	testUser := CreateUniqueTestUser(t, db, "cancel_user")
@@ -278,7 +278,7 @@ func TestPaymentService_CancelPayment_Unauthorized(t *testing.T) {
 	paymentRepo := payment.NewPaymentRepository(db)
 	orderRepo := implementations.NewOrderRepository(db)
 
-	svc := paymentservice.NewPaymentService(paymentRepo, orderRepo)
+	svc := paymentservice.NewPaymentService(paymentservice.PaymentDeps{Payments: paymentRepo, Orders: orderRepo})
 
 	// Create test data
 	testUser := CreateUniqueTestUser(t, db, "unauth_user")
@@ -320,8 +320,8 @@ func TestPaymentService_RefundPayment(t *testing.T) {
 	walletRepo := wallet.NewWalletRepository(db)
 	orderRepo := implementations.NewOrderRepository(db)
 
-	svc := paymentservice.NewPaymentService(paymentRepo, orderRepo)
-	svc.SetWalletRepository(walletRepo)
+	svc := paymentservice.NewPaymentService(paymentservice.PaymentDeps{Payments: paymentRepo, Orders: orderRepo, Wallets: walletRepo})
+	// wallet injected via PaymentDeps
 
 	// Create test data
 	testUser := CreateUniqueTestUser(t, db, "refund_user")
@@ -375,8 +375,8 @@ func TestPaymentService_GetWalletBalance(t *testing.T) {
 	walletRepo := wallet.NewWalletRepository(db)
 	orderRepo := implementations.NewOrderRepository(db)
 
-	svc := paymentservice.NewPaymentService(paymentRepo, orderRepo)
-	svc.SetWalletRepository(walletRepo)
+	svc := paymentservice.NewPaymentService(paymentservice.PaymentDeps{Payments: paymentRepo, Orders: orderRepo, Wallets: walletRepo})
+	// wallet injected via PaymentDeps
 
 	// Create test data
 	testUser := CreateUniqueTestUser(t, db, "balance_user")
@@ -403,8 +403,8 @@ func TestPaymentService_GetWalletBalance_NoWallet(t *testing.T) {
 	walletRepo := wallet.NewWalletRepository(db)
 	orderRepo := implementations.NewOrderRepository(db)
 
-	svc := paymentservice.NewPaymentService(paymentRepo, orderRepo)
-	svc.SetWalletRepository(walletRepo)
+	svc := paymentservice.NewPaymentService(paymentservice.PaymentDeps{Payments: paymentRepo, Orders: orderRepo, Wallets: walletRepo})
+	// wallet injected via PaymentDeps
 
 	// Create test user without wallet
 	testUser := CreateUniqueTestUser(t, db, "no_wallet_user")
@@ -426,8 +426,8 @@ func TestPaymentService_CalculateCombinedPayment(t *testing.T) {
 	walletRepo := wallet.NewWalletRepository(db)
 	orderRepo := implementations.NewOrderRepository(db)
 
-	svc := paymentservice.NewPaymentService(paymentRepo, orderRepo)
-	svc.SetWalletRepository(walletRepo)
+	svc := paymentservice.NewPaymentService(paymentservice.PaymentDeps{Payments: paymentRepo, Orders: orderRepo, Wallets: walletRepo})
+	// wallet injected via PaymentDeps
 
 	// Create test data
 	testUser := CreateUniqueTestUser(t, db, "calc_user")
@@ -465,8 +465,8 @@ func TestPaymentService_CalculateCombinedPayment_CanPayWithWalletOnly(t *testing
 	walletRepo := wallet.NewWalletRepository(db)
 	orderRepo := implementations.NewOrderRepository(db)
 
-	svc := paymentservice.NewPaymentService(paymentRepo, orderRepo)
-	svc.SetWalletRepository(walletRepo)
+	svc := paymentservice.NewPaymentService(paymentservice.PaymentDeps{Payments: paymentRepo, Orders: orderRepo, Wallets: walletRepo})
+	// wallet injected via PaymentDeps
 
 	// Create test data
 	testUser := CreateUniqueTestUser(t, db, "full_wallet_user")

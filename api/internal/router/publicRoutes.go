@@ -25,7 +25,7 @@ import (
 )
 
 // registerPublicRoutes 注册公共 API 路由（无需认证）
-func registerPublicRoutes(api *gin.RouterGroup, orm *gorm.DB, cacheClient cache.Cache) {
+func registerPublicRoutes(api *gin.RouterGroup, orm *gorm.DB, cacheClient cache.Cache, cfg config.AppConfig) {
 	publicGroup := api.Group("/public")
 
 	// 初始化仓库
@@ -76,8 +76,7 @@ func registerPublicRoutes(api *gin.RouterGroup, orm *gorm.DB, cacheClient cache.
 	publichandler.RegisterSearchRoutes(publicGroup, searchHandler)
 
 	// 注册验证码路由
-	appCfg := config.Load()
-	externalCfg := external.NewConfig(appCfg.ExternalAPI)
+	externalCfg := external.NewConfig(cfg.ExternalAPI)
 	smsSvc := sms.NewService(externalCfg)
 	verificationSvc := verification.NewService(cacheClient, smsSvc)
 	verificationHandler := publichandler.NewVerificationHandler(verificationSvc)
