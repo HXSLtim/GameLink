@@ -53,6 +53,47 @@ type chatMessageItem struct {
 	CreatedAt      string                `json:"createdAt"`
 }
 
+type chatGroupMemberItem struct {
+	ID                uint64               `json:"id"`
+	GroupID           uint64               `json:"groupId"`
+	UserID            uint64               `json:"userId"`
+	Role              model.ChatMemberRole `json:"role"`
+	Nickname          string               `json:"nickname,omitempty"`
+	JoinedAt          string               `json:"joinedAt"`
+	LastReadAt        *string              `json:"lastReadAt,omitempty"`
+	LastReadMessageID *uint64              `json:"lastReadMessageId,omitempty"`
+	IsMuted           bool                 `json:"isMuted"`
+	MutedUntil        *string              `json:"mutedUntil,omitempty"`
+	MuteReason        string               `json:"muteReason,omitempty"`
+	IsActive          bool                 `json:"isActive"`
+	IsReady           bool                 `json:"isReady"`
+}
+
+type chatGroupDetailResponse struct {
+	chatGroupSummaryResponse
+	CreatedBy      uint64                `json:"createdBy"`
+	MaxMembers     int                   `json:"maxMembers"`
+	CurrentMembers int                   `json:"currentMembers"`
+	AutoDestroy    bool                  `json:"autoDestroy"`
+	DeactivatedAt  *string               `json:"deactivatedAt,omitempty"`
+	GameID         *uint64               `json:"gameId,omitempty"`
+	IsPrivate      bool                  `json:"isPrivate"`
+	RelatedTeamID  *uint64               `json:"relatedTeamId,omitempty"`
+	RelatedLFGID   *uint64               `json:"relatedLfgId,omitempty"`
+	StartedAt      *string               `json:"startedAt,omitempty"`
+	FinishedAt     *string               `json:"finishedAt,omitempty"`
+	VoiceEnabled   bool                  `json:"voiceEnabled"`
+	VoiceRoomID    string                `json:"voiceRoomId,omitempty"`
+	VoiceProvider  string                `json:"voiceProvider,omitempty"`
+	VoiceSDKAppID  uint64                `json:"voiceSdkAppId"`
+	VoiceStartedAt *string               `json:"voiceStartedAt,omitempty"`
+	VoiceEndedAt   *string               `json:"voiceEndedAt,omitempty"`
+	VoiceDuration  int                   `json:"voiceDuration"`
+	VoiceRecordURL string                `json:"voiceRecordUrl,omitempty"`
+	VoiceMaxMember int                   `json:"voiceMaxMembers"`
+	Members        []chatGroupMemberItem `json:"members"`
+}
+
 // RegisterChatRoutes 注册用户端聊天相关路由。
 func RegisterChatRoutes(router gin.IRouter, svc *chatservice.ChatService, authMiddleware gin.HandlerFunc) {
 	group := router.Group("/chat")
@@ -82,7 +123,7 @@ type createChatGroupRequest struct {
 // @Produce      json
 // @Param        Authorization  header    string                 true  "Bearer {token}"
 // @Param        request        body      createChatGroupRequest true  "Create group request"
-// @Success      200            {object}  model.ChatGroup
+// @Success      200            {object}  chatGroupDetailResponse
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      401            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
@@ -110,12 +151,13 @@ func createChatGroupHandler(c *gin.Context, svc *chatservice.ChatService) {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
+	groupData := toChatGroupDetail(group, userID)
 
-	respondJSON[*model.ChatGroup](c, http.StatusOK, model.APIResponse[*model.ChatGroup]{
+	respondJSON[chatGroupDetailResponse](c, http.StatusOK, model.APIResponse[chatGroupDetailResponse]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
-		Data:    group,
+		Data:    groupData,
 	})
 }
 
@@ -127,7 +169,7 @@ func createChatGroupHandler(c *gin.Context, svc *chatservice.ChatService) {
 // @Produce      json
 // @Param        Authorization  header    string  true   "Bearer {token}"
 // @Param        id             path      int     true   "Group ID"
-// @Success      200            {object}  model.ChatGroup
+// @Success      200            {object}  chatGroupDetailResponse
 // @Failure      400            {object}  model.ErrorResponse
 // @Failure      403            {object}  model.ErrorResponse
 // @Failure      500            {object}  model.ErrorResponse
@@ -148,11 +190,12 @@ func getChatGroupHandler(c *gin.Context, svc *chatservice.ChatService) {
 		respondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondJSON[*model.ChatGroup](c, http.StatusOK, model.APIResponse[*model.ChatGroup]{
+	groupData := toChatGroupDetail(group, userID)
+	respondJSON[chatGroupDetailResponse](c, http.StatusOK, model.APIResponse[chatGroupDetailResponse]{
 		Success: true,
 		Code:    http.StatusOK,
 		Message: "OK",
-		Data:    group,
+		Data:    groupData,
 	})
 }
 
@@ -606,5 +649,93 @@ func toChatMessageItem(msg *model.ChatMessage, group *model.ChatGroup) chatMessa
 		Status:         status,
 		OrderID:        orderID,
 		CreatedAt:      msg.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+	}
+}
+
+func toChatGroupDetail(group *model.ChatGroup, currentUserID uint64) chatGroupDetailResponse {
+	if group == nil {
+		return chatGroupDetailResponse{}
+	}
+
+	summary := toChatGroupSummary(group, currentUserID)
+	members := make([]chatGroupMemberItem, 0, len(group.Members))
+	for i := range group.Members {
+		member := group.Members[i]
+		var lastReadAt *string
+		if member.LastReadAt != nil {
+			value := member.LastReadAt.Format("2006-01-02T15:04:05Z07:00")
+			lastReadAt = &value
+		}
+		var mutedUntil *string
+		if member.MutedUntil != nil {
+			value := member.MutedUntil.Format("2006-01-02T15:04:05Z07:00")
+			mutedUntil = &value
+		}
+		members = append(members, chatGroupMemberItem{
+			ID:                member.ID,
+			GroupID:           member.GroupID,
+			UserID:            member.UserID,
+			Role:              member.Role,
+			Nickname:          strings.TrimSpace(member.Nickname),
+			JoinedAt:          member.JoinedAt.Format("2006-01-02T15:04:05Z07:00"),
+			LastReadAt:        lastReadAt,
+			LastReadMessageID: member.LastReadMessageID,
+			IsMuted:           member.IsMuted,
+			MutedUntil:        mutedUntil,
+			MuteReason:        member.MuteReason,
+			IsActive:          member.IsActive,
+			IsReady:           member.IsReady,
+		})
+	}
+
+	var deactivatedAt *string
+	if group.DeactivatedAt != nil {
+		value := group.DeactivatedAt.Format("2006-01-02T15:04:05Z07:00")
+		deactivatedAt = &value
+	}
+	var startedAt *string
+	if group.StartedAt != nil {
+		value := group.StartedAt.Format("2006-01-02T15:04:05Z07:00")
+		startedAt = &value
+	}
+	var finishedAt *string
+	if group.FinishedAt != nil {
+		value := group.FinishedAt.Format("2006-01-02T15:04:05Z07:00")
+		finishedAt = &value
+	}
+	var voiceStartedAt *string
+	if group.VoiceStartedAt != nil {
+		value := group.VoiceStartedAt.Format("2006-01-02T15:04:05Z07:00")
+		voiceStartedAt = &value
+	}
+	var voiceEndedAt *string
+	if group.VoiceEndedAt != nil {
+		value := group.VoiceEndedAt.Format("2006-01-02T15:04:05Z07:00")
+		voiceEndedAt = &value
+	}
+
+	return chatGroupDetailResponse{
+		chatGroupSummaryResponse: summary,
+		CreatedBy:                group.CreatedBy,
+		MaxMembers:               group.MaxMembers,
+		CurrentMembers:           group.CurrentMembers,
+		AutoDestroy:              group.AutoDestroy,
+		DeactivatedAt:            deactivatedAt,
+		GameID:                   group.GameID,
+		IsPrivate:                group.IsPrivate,
+		RelatedTeamID:            group.RelatedTeamID,
+		RelatedLFGID:             group.RelatedLFGID,
+		StartedAt:                startedAt,
+		FinishedAt:               finishedAt,
+		VoiceEnabled:             group.VoiceEnabled,
+		VoiceRoomID:              group.VoiceRoomID,
+		VoiceProvider:            group.VoiceProvider,
+		VoiceSDKAppID:            group.VoiceSDKAppID,
+		VoiceStartedAt:           voiceStartedAt,
+		VoiceEndedAt:             voiceEndedAt,
+		VoiceDuration:            group.VoiceDuration,
+		VoiceRecordURL:           group.VoiceRecordURL,
+		VoiceMaxMember:           group.VoiceMaxMembers,
+		Members:                  members,
 	}
 }

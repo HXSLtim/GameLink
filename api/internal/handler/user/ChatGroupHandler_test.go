@@ -86,7 +86,7 @@ func TestUserChat_CreateAndGetGroup(t *testing.T) {
 	ctx.Router.ServeHTTP(w, req)
 	testutil.AssertSuccess(t, w)
 
-	var createResp model.APIResponse[model.ChatGroup]
+	var createResp model.APIResponse[chatGroupDetailResponse]
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &createResp))
 	assert.Equal(t, model.ChatGroupTypePrivate, createResp.Data.GroupType)
 	assert.Len(t, createResp.Data.Members, 2)
